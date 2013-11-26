@@ -25,13 +25,11 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 
 CarlaEngineThread::CarlaEngineThread(CarlaEngine* const engine)
-    : Thread("CarlaEngineThread"),
+    : CarlaThread("CarlaEngineThread"),
       fEngine(engine)
 {
     CARLA_ASSERT(engine != nullptr);
     carla_debug("CarlaEngineThread::CarlaEngineThread(%p)", engine);
-
-    setPriority(5);
 }
 
 CarlaEngineThread::~CarlaEngineThread()
@@ -50,7 +48,7 @@ void CarlaEngineThread::run()
     bool oscRegisted, needsSingleThread;
     float value;
 
-    while (fEngine->isRunning() && ! threadShouldExit())
+    while (fEngine->isRunning() && ! shouldExit())
     {
 #ifdef BUILD_BRIDGE
         oscRegisted = fEngine->isOscBridgeRegistered();
@@ -113,7 +111,7 @@ void CarlaEngineThread::run()
         }
 
         fEngine->idleOsc();
-        Thread::sleep(oscRegisted ? 30 : 50);
+        carla_msleep(oscRegisted ? 30 : 50);
     }
 }
 

@@ -40,16 +40,18 @@
  * Basic typedefs to help make code cleaner.
  * @{
  */
-typedef CarlaBackend::BinaryType CarlaBinaryType;
-typedef CarlaBackend::PluginType CarlaPluginType;
-typedef CarlaBackend::PluginCategory CarlaPluginCategory;
-typedef CarlaBackend::OptionsType CarlaOptionsType;
-typedef CarlaBackend::CallbackType CarlaCallbackType;
-typedef CarlaBackend::CallbackFunc CarlaCallbackFunc;
-typedef CarlaBackend::ParameterData CarlaParameterData;
-typedef CarlaBackend::ParameterRanges CarlaParameterRanges;
-typedef CarlaBackend::MidiProgramData CarlaMidiProgramData;
-typedef CarlaBackend::CustomData CarlaCustomData;
+typedef CarlaBackend::BinaryType           CarlaBinaryType;
+typedef CarlaBackend::PluginType           CarlaPluginType;
+typedef CarlaBackend::PluginCategory       CarlaPluginCategory;
+typedef CarlaBackend::EngineCallbackFunc   CarlaEngineCallbackFunc;
+typedef CarlaBackend::EngineCallbackOpcode CarlaEngineCallbackOpcode;
+typedef CarlaBackend::EngineOption         CarlaEngineOption;
+typedef CarlaBackend::FileCallbackFunc     CarlaFileCallbackFunc;
+typedef CarlaBackend::FileCallbackOpcode   CarlaFileCallbackOpcode;
+typedef CarlaBackend::ParameterData        CarlaParameterData;
+typedef CarlaBackend::ParameterRanges      CarlaParameterRanges;
+typedef CarlaBackend::MidiProgramData      CarlaMidiProgramData;
+typedef CarlaBackend::CustomData           CarlaCustomData;
 /**@}*/
 
 /*!
@@ -344,14 +346,20 @@ CARLA_EXPORT void carla_set_engine_about_to_close();
  * Set the engine callback function to \a func.
  * Use \a ptr to pass a custom pointer to the callback.
  */
-CARLA_EXPORT void carla_set_engine_callback(CarlaCallbackFunc func, void* ptr);
+CARLA_EXPORT void carla_set_engine_callback(CarlaEngineCallbackFunc func, void* ptr);
 
 /*!
  * Set the engine option \a option.\n
  * With the exception of OPTION_PROCESS_NAME, OPTION_TRANSPORT_MODE and OPTION_PATH_*,
  * this function should not be called when the engine is running.
  */
-CARLA_EXPORT void carla_set_engine_option(CarlaOptionsType option, int value, const char* valueStr);
+CARLA_EXPORT void carla_set_engine_option(CarlaEngineOption option, int value, const char* valueStr);
+
+/*!
+ * Set the file callback function to \a func.
+ * Use \a ptr to pass a custom pointer to the callback.
+ */
+CARLA_EXPORT void carla_set_file_callback(CarlaFileCallbackFunc func, void* ptr);
 
 /*!
  * Load \a filename of any type.\n

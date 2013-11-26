@@ -150,9 +150,10 @@ struct CarlaEngineProtectedData {
 
     const CarlaOscData* oscData;
 
-    CallbackFunc callback;
-    void*        callbackPtr;
-    CarlaString  lastError;
+    EngineCallbackFunc callback;
+    void*              callbackPtr;
+
+    CarlaString lastError;
 
     bool         aboutToClose;    // don't re-activate thread if true
     unsigned int curPluginCount;  // number of plugins loaded (0...max)

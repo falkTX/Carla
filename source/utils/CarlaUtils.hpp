@@ -231,7 +231,7 @@ const char* carla_strdup_free(char* const strBuf)
 }
 
 // -----------------------------------------------------------------------
-// math functions
+// math functions (base)
 
 /*
  * Return the lower of 2 values, with 'min' as the minimum possible value.
@@ -300,6 +300,36 @@ void carla_add(T* dataDst, const T* dataSrc, const size_t size)
 }
 
 /*
+ * Copy array values to another array.
+ */
+template<typename T>
+static inline
+void carla_copy(T* dataDst, T* dataSrc, const size_t size)
+{
+    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(size > 0,);
+
+    for (size_t i=0; i < size; ++i)
+        *dataDst++ = *dataSrc++;
+}
+
+/*
+ * Copy array values to another array.
+ */
+template<typename T>
+static inline
+void carla_copy(T* dataDst, const T* dataSrc, const size_t size)
+{
+    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(size > 0,);
+
+    for (size_t i=0; i < size; ++i)
+        *dataDst++ = *dataSrc++;
+}
+
+/*
  * Fill an array with a fixed value.
  */
 template<typename T>
@@ -311,6 +341,36 @@ void carla_fill(T* data, const size_t size, const T v)
 
     for (size_t i=0; i < size; ++i)
         *data++ = v;
+}
+
+// -----------------------------------------------------------------------
+// math functions (extended)
+
+/*
+ * Add float array values to another float array.
+ */
+static inline
+void carla_addFloat(float* dataDst, float* dataSrc, const size_t numSamples)
+{
+    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(numSamples > 0,);
+
+    for (size_t i=0; i < numSamples; ++i)
+        *dataDst++ += *dataSrc++;
+}
+
+/*
+ * Copy float array values to another float array.
+ */
+static inline
+void carla_copyFloat(float* const dataDst, float* const dataSrc, const size_t numSamples)
+{
+    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(numSamples > 0,);
+
+    std::memcpy(dataDst, dataSrc, numSamples*sizeof(float));
 }
 
 #if defined(CARLA_OS_MAC) && ! defined(DISTRHO_OS_MAC)
@@ -344,6 +404,15 @@ void carla_zeroChar(C* const data, const size_t numChars)
     CARLA_SAFE_ASSERT_RETURN(numChars > 0,);
 
     std::memset(data, 0, numChars*sizeof(C));
+}
+
+/*
+ * Clear a float array.
+ */
+static inline
+void carla_zeroFloat(float* const data, const size_t numSamples)
+{
+    std::memset(data, 0, numSamples*sizeof(float));
 }
 
 /*

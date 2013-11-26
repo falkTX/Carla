@@ -232,8 +232,8 @@ struct EngineEvent {
  * Engine options.
  */
 struct EngineOptions {
-    ProcessMode   processMode;
-    TransportMode transportMode;
+    EngineProcessMode   processMode;
+    EngineTransportMode transportMode;
 
     bool forceStereo;
     bool preferPluginBridges;
@@ -259,6 +259,7 @@ struct EngineOptions {
     CarlaString bridge_lv2Extrn;
     CarlaString bridge_lv2Gtk2;
     CarlaString bridge_lv2Gtk3;
+    CarlaString bridge_lv2Ntk;
     CarlaString bridge_lv2Qt4;
     CarlaString bridge_lv2Qt5;
     CarlaString bridge_lv2Cocoa;
@@ -273,11 +274,11 @@ struct EngineOptions {
 
     EngineOptions()
 #if defined(CARLA_OS_LINUX)
-        : processMode(PROCESS_MODE_MULTIPLE_CLIENTS),
-          transportMode(TRANSPORT_MODE_JACK),
+        : processMode(ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS),
+          transportMode(ENGINE_TRANSPORT_MODE_JACK),
 #else
-        : processMode(PROCESS_MODE_CONTINUOUS_RACK),
-          transportMode(TRANSPORT_MODE_INTERNAL),
+        : processMode(ENGINE_PROCESS_MODE_CONTINUOUS_RACK),
+          transportMode(ENGINE_TRANSPORT_MODE_INTERNAL),
 #endif
           forceStereo(false),
           preferPluginBridges(false),
@@ -926,7 +927,7 @@ public:
     /*!
      * Get the engine proccess mode.
      */
-    ProcessMode getProccessMode() const noexcept
+    EngineProcessMode getProccessMode() const noexcept
     {
         return fOptions.processMode;
     }
@@ -960,12 +961,12 @@ public:
     /*!
      * TODO.
      */
-    void callback(const CallbackType action, const unsigned int pluginId, const int value1, const int value2, const float value3, const char* const valueStr);
+    void callback(const EngineCallbackOpcode action, const unsigned int pluginId, const int value1, const int value2, const float value3, const char* const valueStr);
 
     /*!
      * TODO.
      */
-    void setCallback(const CallbackFunc func, void* const ptr);
+    void setCallback(const EngineCallbackFunc func, void* const ptr);
 
     // -------------------------------------------------------------------
     // Patchbay
@@ -1031,7 +1032,7 @@ public:
     /*!
      * Set the engine option \a option.
      */
-    void setOption(const OptionsType option, const int value, const char* const valueStr);
+    void setOption(const EngineOption option, const int value, const char* const valueStr);
 
     // -------------------------------------------------------------------
     // OSC Stuff

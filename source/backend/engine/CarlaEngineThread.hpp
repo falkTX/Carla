@@ -19,8 +19,7 @@
 #define CARLA_ENGINE_THREAD_HPP_INCLUDED
 
 #include "CarlaBackend.hpp"
-
-#include "juce_core.h"
+#include "CarlaThread.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -30,7 +29,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
 
-class CarlaEngineThread : public juce::Thread
+class CarlaEngineThread : public CarlaThread
 {
 public:
     CarlaEngineThread(CarlaEngine* const engine);
@@ -42,7 +41,7 @@ protected:
 private:
     CarlaEngine* const fEngine;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineThread)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineThread)
 };
 
 // -----------------------------------------------------------------------

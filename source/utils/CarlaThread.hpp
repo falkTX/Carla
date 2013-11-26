@@ -40,7 +40,7 @@ protected:
     /*
      * Destructor.
      */
-    ~CarlaThread()
+    virtual ~CarlaThread()
     {
         CARLA_SAFE_ASSERT(! isRunning());
 
@@ -155,7 +155,7 @@ public:
 
 private:
     const CarlaString   fName;       // Thread name
-    volatile CarlaMutex fLock;       // Thread lock
+    CarlaMutex          fLock;       // Thread lock
     volatile pthread_t  fHandle;     // Handle for this thread
     volatile bool       fShouldExit; // true if thread should exit
 
@@ -186,8 +186,7 @@ private:
         return nullptr;
     }
 
-    CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaThread)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaThread)
 };
 
 // -----------------------------------------------------------------------

@@ -21,11 +21,15 @@
 
 #include "jackbridge/JackBridge.hpp"
 
-#include "juce_audio_basics.h"
+#include <cmath>
 
 #define URI_CANVAS_ICON "http://kxstudio.sf.net/ns/canvas/icon"
 
+#ifdef USE_JUCE
+#include "juce_audio_basics.h"
+
 using juce::FloatVectorOperations;
+#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -51,7 +55,7 @@ public:
     {
         carla_debug("CarlaEngineJackAudioPort::CarlaEngineJackAudioPort(name:\"%s\", %s, %p, %p)", engine.getName(), bool2str(isInput), client, port);
 
-        if (fEngine.getProccessMode() == PROCESS_MODE_SINGLE_CLIENT || fEngine.getProccessMode() == PROCESS_MODE_MULTIPLE_CLIENTS)
+        if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             CARLA_ASSERT(client != nullptr && port != nullptr);
         }
@@ -79,7 +83,13 @@ public:
         fBuffer = (float*)jackbridge_port_get_buffer(fPort, bufferSize);
 
         if (! fIsInput)
+        {
+#ifdef USE_JUCE
            FloatVectorOperations::clear(fBuffer, bufferSize);
+#else
+           carla_zeroFloat(fBuffer, bufferSize);
+#endif
+        }
     }
 
 private:
@@ -104,7 +114,7 @@ public:
     {
         carla_debug("CarlaEngineJackCVPort::CarlaEngineJackCVPort(name:\"%s\", %s, %p, %p)", engine.getName(), bool2str(isInput), client, port);
 
-        if (fEngine.getProccessMode() == PROCESS_MODE_SINGLE_CLIENT || fEngine.getProccessMode() == PROCESS_MODE_MULTIPLE_CLIENTS)
+        if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             CARLA_ASSERT(client != nullptr && port != nullptr);
         }
@@ -132,11 +142,19 @@ public:
         if (fIsInput)
         {
             float* const jackBuffer((float*)jackbridge_port_get_buffer(fPort, bufferSize));
+#ifdef USE_JUCE
             FloatVectorOperations::copy(fBuffer, jackBuffer, bufferSize);
+#else
+            carla_copyFloat(fBuffer, jackBuffer, bufferSize);
+#endif
         }
         else
         {
+#ifdef USE_JUCE
             FloatVectorOperations::clear(fBuffer, bufferSize);
+#else
+            carla_zeroFloat(fBuffer, bufferSize);
+#endif
         }
     }
 
@@ -145,7 +163,12 @@ public:
         CARLA_SAFE_ASSERT_RETURN(! fIsInput,);
 
         float* const jackBuffer((float*)jackbridge_port_get_buffer(fPort, fEngine.getBufferSize()));
+
+#ifdef USE_JUCE
         FloatVectorOperations::copy(jackBuffer+timeOffset, fBuffer, frames);
+#else
+        carla_copyFloat(jackBuffer+timeOffset, fBuffer, frames);
+#endif
     }
 
 private:
@@ -171,7 +194,7 @@ public:
     {
         carla_debug("CarlaEngineJackEventPort::CarlaEngineJackEventPort(name:\"%s\", %s, %p, %p)", engine.getName(), bool2str(isInput), client, port);
 
-        if (fEngine.getProccessMode() == PROCESS_MODE_SINGLE_CLIENT || fEngine.getProccessMode() == PROCESS_MODE_MULTIPLE_CLIENTS)
+        if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             CARLA_ASSERT(client != nullptr && port != nullptr);
         }
@@ -412,7 +435,7 @@ public:
     CarlaEngineJackClient(const CarlaEngine& engine, jack_client_t* const client)
         : CarlaEngineClient(engine),
           fClient(client),
-          fUseClient(engine.getProccessMode() == PROCESS_MODE_SINGLE_CLIENT || engine.getProccessMode() == PROCESS_MODE_MULTIPLE_CLIENTS)
+          fUseClient(engine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || engine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
     {
         carla_debug("CarlaEngineJackClient::CarlaEngineJackClient(name:\"%s\", %p)", engine.getName(), client);
 
@@ -430,7 +453,7 @@ public:
     {
         carla_debug("CarlaEngineClient::~CarlaEngineClient()");
 
-        if (fEngine.getProccessMode() == PROCESS_MODE_MULTIPLE_CLIENTS && fClient != nullptr)
+        if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS && fClient != nullptr)
             jackbridge_client_close(fClient);
     }
 
@@ -438,7 +461,7 @@ public:
     {
         carla_debug("CarlaEngineJackClient::activate()");
 
-        if (fEngine.getProccessMode() == PROCESS_MODE_MULTIPLE_CLIENTS)
+        if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             CARLA_SAFE_ASSERT_RETURN(fClient != nullptr && ! fActive,);
 
@@ -452,7 +475,7 @@ public:
     {
         carla_debug("CarlaEngineJackClient::deactivate()");
 
-        if (fEngine.getProccessMode() == PROCESS_MODE_MULTIPLE_CLIENTS)
+        if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             CARLA_SAFE_ASSERT_RETURN(fClient != nullptr && fActive,);
 
@@ -560,13 +583,13 @@ public:
         carla_debug("CarlaEngineJack::CarlaEngineJack()");
 
 #ifdef BUILD_BRIDGE
-        fOptions.processMode = PROCESS_MODE_MULTIPLE_CLIENTS;
+        fOptions.processMode = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS;
 #else
         carla_fill<jack_port_t*>(fRackPorts, kRackPortCount, nullptr);
 #endif
 
         // FIXME: Always enable JACK transport for now
-        fOptions.transportMode = TRANSPORT_MODE_JACK;
+        fOptions.transportMode = ENGINE_TRANSPORT_MODE_JACK;
 
         carla_zeroStruct<jack_position_t>(fTransportPos);
     }
@@ -589,7 +612,7 @@ public:
 
     unsigned int getMaxClientNameSize() const noexcept override
     {
-        if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT || fOptions.processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
+        if (fOptions.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT || fOptions.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             unsigned int ret = 0;
 
@@ -606,7 +629,7 @@ public:
 
     unsigned int getMaxPortNameSize() const noexcept override
     {
-        if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT || fOptions.processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
+        if (fOptions.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT || fOptions.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             unsigned int ret = 0;
 
@@ -669,7 +692,7 @@ public:
             jackbridge_set_port_connect_callback(fClient, carla_jack_port_connect_callback, this);
             jackbridge_set_port_rename_callback(fClient, carla_jack_port_rename_callback, this);
 
-            if (fOptions.processMode == PROCESS_MODE_CONTINUOUS_RACK)
+            if (fOptions.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
             {
                 fRackPorts[kRackPortAudioIn1]  = jackbridge_port_register(fClient, "audio-in1",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
                 fRackPorts[kRackPortAudioIn2]  = jackbridge_port_register(fClient, "audio-in2",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
@@ -724,7 +747,7 @@ public:
 #else
         if (jackbridge_deactivate(fClient))
         {
-            if (fOptions.processMode == PROCESS_MODE_CONTINUOUS_RACK)
+            if (fOptions.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
             {
                 jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioIn1]);
                 jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioIn2]);
@@ -777,10 +800,10 @@ public:
         void*  data;
         size_t dataSize;
 
-        NonRtList<int> groupIconsCopy;
+        List<int> groupIconsCopy;
         fGroupIconsChanged.spliceAppend(groupIconsCopy, true);
 
-        for (NonRtList<int>::Itenerator it = groupIconsCopy.begin(); it.valid(); it.next())
+        for (List<int>::Itenerator it = groupIconsCopy.begin(); it.valid(); it.next())
         {
             const int& groupId(*it);
             const char* const groupName(getGroupName(groupId));
@@ -793,7 +816,7 @@ public:
                 const char* const icon((const char*)data);
                 CARLA_ASSERT(std::strlen(icon)+1 == dataSize);
 
-                callback(CALLBACK_PATCHBAY_ICON_CHANGED, 0, groupId, 0, 0.0f, icon);
+                callback(ENGINE_CALLBACK_PATCHBAY_ICON_CHANGED, 0, groupId, 0, 0.0f, icon);
 
                 jackbridge_free(data);
             }
@@ -849,11 +872,11 @@ public:
         jackbridge_set_process_callback(client, carla_jack_process_callback, this);
         jackbridge_on_shutdown(client, carla_jack_shutdown_callback, this);
 #else
-        if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT)
+        if (fOptions.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
         {
             client = fClient;
         }
-        else if (fOptions.processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
+        else if (fOptions.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             client = jackbridge_client_open(plugin->getName(), JackNullOption, nullptr);
 
@@ -893,13 +916,13 @@ public:
 
         CARLA_ASSERT(plugin->getId() == id);
 
-        bool needsReinit = (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT);
+        bool needsReinit = (fOptions.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT);
         const char* name = getUniquePluginName(newName);
 
         // TODO - use rename port if single-client
 
         // JACK client rename
-        if (fOptions.processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
+        if (fOptions.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             CarlaEngineJackClient* const client((CarlaEngineJackClient*)plugin->getEngineClient());
 
@@ -994,7 +1017,7 @@ public:
             return false;
         }
 
-        for (NonRtList<ConnectionToId>::Itenerator it = fUsedConnections.begin(); it.valid(); it.next())
+        for (List<ConnectionToId>::Itenerator it = fUsedConnections.begin(); it.valid(); it.next())
         {
             const ConnectionToId& connectionToId(*it);
 
@@ -1042,7 +1065,7 @@ public:
 
     void transportPlay() override
     {
-        if (fOptions.transportMode == TRANSPORT_MODE_INTERNAL)
+        if (fOptions.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
             CarlaEngine::transportPlay();
         else if (fClient != nullptr)
             jackbridge_transport_start(fClient);
@@ -1050,7 +1073,7 @@ public:
 
     void transportPause() override
     {
-        if (fOptions.transportMode == TRANSPORT_MODE_INTERNAL)
+        if (fOptions.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
             CarlaEngine::transportPause();
         else if (fClient != nullptr)
             jackbridge_transport_stop(fClient);
@@ -1058,7 +1081,7 @@ public:
 
     void transportRelocate(const uint32_t frame) override
     {
-        if (fOptions.transportMode == TRANSPORT_MODE_INTERNAL)
+        if (fOptions.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
             CarlaEngine::transportRelocate(frame);
         else if (fClient != nullptr)
             jackbridge_transport_locate(fClient, frame);
@@ -1096,7 +1119,7 @@ protected:
 
     void saveTransportInfo()
     {
-        if (fOptions.transportMode != TRANSPORT_MODE_JACK)
+        if (fOptions.transportMode != ENGINE_TRANSPORT_MODE_JACK)
             return;
 
         fTransportPos.unique_1 = fTransportPos.unique_2 + 1; // invalidate
@@ -1140,7 +1163,7 @@ protected:
         {
 #ifndef BUILD_BRIDGE
             // pass-through
-            if (fOptions.processMode == PROCESS_MODE_CONTINUOUS_RACK)
+            if (fOptions.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
             {
                 float* const audioIn1  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn1], nframes);
                 float* const audioIn2  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn2], nframes);
@@ -1148,8 +1171,11 @@ protected:
                 float* const audioOut2 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut2], nframes);
                 void*  const eventOut  = jackbridge_port_get_buffer(fRackPorts[kRackPortEventOut], nframes);
 
+#ifdef USE_JUCE
                 FloatVectorOperations::copy(audioOut1, audioIn1, nframes);
                 FloatVectorOperations::copy(audioOut2, audioIn2, nframes);
+#else
+#endif
                 jackbridge_midi_clear_buffer(eventOut);
             }
 #endif
@@ -1169,7 +1195,7 @@ protected:
 
         return runPendingRtEvents();
 #else
-        if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT)
+        if (fOptions.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
         {
             for (unsigned int i=0; i < pData->curPluginCount; ++i)
             {
@@ -1186,7 +1212,7 @@ protected:
             return runPendingRtEvents();
         }
 
-        if (fOptions.processMode == PROCESS_MODE_CONTINUOUS_RACK)
+        if (fOptions.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
         {
             // get buffers from jack
             float* const audioIn1  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn1], nframes);
@@ -1387,7 +1413,7 @@ protected:
 
     void handleJackLatencyCallback(const jack_latency_callback_mode_t mode)
     {
-        if (fOptions.processMode != PROCESS_MODE_SINGLE_CLIENT)
+        if (fOptions.processMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             return;
 
         for (unsigned int i=0; i < pData->curPluginCount; ++i)
@@ -1426,7 +1452,7 @@ protected:
         GroupNameToId groupNameId(id, name);
         fUsedGroupNames.removeAll(groupNameId);
 
-        callback(CALLBACK_PATCHBAY_CLIENT_REMOVED, 0, id, 0, 0.0f, name);
+        callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED, 0, id, 0, 0.0f, name);
     }
 
     void handleJackPortRegistrationCallback(const jack_port_id_t port, const bool reg)
@@ -1464,12 +1490,12 @@ protected:
 
                 if (jackPortFlags & JackPortIsPhysical)
                 {
-                    callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, groupName);
+                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, groupName);
                     // hardware
                 }
                 else
                 {
-                    callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, groupName);
+                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, groupName);
                     fGroupIconsChanged.append(groupId);
                     // "application"
                 }
@@ -1489,7 +1515,7 @@ protected:
             PortNameToId portNameToId(groupId, fLastPortId++, portName, fullPortName);
             fUsedPortNames.append(portNameToId);
 
-            callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, groupId, portNameToId.portId, canvasPortFlags, portName);
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, 0, groupId, portNameToId.portId, canvasPortFlags, portName);
         }
         else
         {
@@ -1504,7 +1530,7 @@ protected:
             PortNameToId portNameId(groupId, portId, portName, fullPortName);
             fUsedPortNames.removeOne(portNameId);
 
-            callback(CALLBACK_PATCHBAY_PORT_REMOVED, 0, groupId, portId, 0.0f, portName);
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED, 0, groupId, portId, 0.0f, portName);
         }
     }
 
@@ -1540,17 +1566,17 @@ protected:
             ConnectionToId connectionToId(fLastConnectionId++, portIdA, portIdB);
             fUsedConnections.append(connectionToId);
 
-            callback(CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, connectionToId.id, portIdA, portIdB, nullptr);
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, connectionToId.id, portIdA, portIdB, nullptr);
         }
         else
         {
-            for (NonRtList<ConnectionToId>::Itenerator it = fUsedConnections.begin(); it.valid(); it.next())
+            for (List<ConnectionToId>::Itenerator it = fUsedConnections.begin(); it.valid(); it.next())
             {
                 const ConnectionToId& connectionToId(*it);
 
                 if (connectionToId.portOut == portIdA && connectionToId.portIn == portIdB)
                 {
-                    callback(CALLBACK_PATCHBAY_CONNECTION_REMOVED, 0, connectionToId.id, 0, 0.0f, nullptr);
+                    callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, 0, connectionToId.id, 0, 0.0f, nullptr);
                     fUsedConnections.remove(it);
                     break;
                 }
@@ -1560,14 +1586,14 @@ protected:
 
     void handleJackClientRenameCallback(const char* const oldName, const char* const newName)
     {
-        for (NonRtList<GroupNameToId>::Itenerator it = fUsedGroupNames.begin(); it.valid(); it.next())
+        for (List<GroupNameToId>::Itenerator it = fUsedGroupNames.begin(); it.valid(); it.next())
         {
             GroupNameToId& groupNameToId(*it);
 
             if (std::strcmp(groupNameToId.name, oldName) == 0)
             {
                 groupNameToId.rename(newName);
-                callback(CALLBACK_PATCHBAY_CLIENT_RENAMED, 0, groupNameToId.id, 0, 0.0f, newName);
+                callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED, 0, groupNameToId.id, 0, 0.0f, newName);
                 break;
             }
         }
@@ -1596,7 +1622,7 @@ protected:
         if (groupId == -1)
             return;
 
-        for (NonRtList<PortNameToId>::Itenerator it = fUsedPortNames.begin(); it.valid(); it.next())
+        for (List<PortNameToId>::Itenerator it = fUsedPortNames.begin(); it.valid(); it.next())
         {
             PortNameToId& portNameId(*it);
 
@@ -1604,7 +1630,7 @@ protected:
             {
                 CARLA_ASSERT(portNameId.groupId == groupId);
                 portNameId.rename(portName, newName);
-                callback(CALLBACK_PATCHBAY_PORT_RENAMED, 0, groupId, portNameId.portId, 0.0f, newName);
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED, 0, groupId, portNameId.portId, 0.0f, newName);
                 break;
             }
         }
@@ -1622,7 +1648,7 @@ protected:
         }
 
         fClient = nullptr;
-        callback(CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
+        callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
     }
 
     // -------------------------------------------------------------------
@@ -1764,10 +1790,10 @@ private:
     int fLastPortId;
     int fLastConnectionId;
 
-    NonRtList<GroupNameToId>  fUsedGroupNames;
-    NonRtList<PortNameToId>   fUsedPortNames;
-    NonRtList<ConnectionToId> fUsedConnections;
-    NonRtList<int>            fGroupIconsChanged;
+    List<GroupNameToId>  fUsedGroupNames;
+    List<PortNameToId>   fUsedPortNames;
+    List<ConnectionToId> fUsedConnections;
+    List<int>            fGroupIconsChanged;
 
     int getGroupId(const char* const name)
     {
@@ -1776,7 +1802,7 @@ private:
         if (name == nullptr)
             return -1;
 
-        for (NonRtList<GroupNameToId>::Itenerator it = fUsedGroupNames.begin(); it.valid(); it.next())
+        for (List<GroupNameToId>::Itenerator it = fUsedGroupNames.begin(); it.valid(); it.next())
         {
             const GroupNameToId& groupNameId(*it);
 
@@ -1796,7 +1822,7 @@ private:
         if (groupId < 0)
             return fallback;
 
-        for (NonRtList<GroupNameToId>::Itenerator it = fUsedGroupNames.begin(); it.valid(); it.next())
+        for (List<GroupNameToId>::Itenerator it = fUsedGroupNames.begin(); it.valid(); it.next())
         {
             const GroupNameToId& groupNameId(*it);
 
@@ -1814,7 +1840,7 @@ private:
         if (fullName == nullptr)
             return -1;
 
-        for (NonRtList<PortNameToId>::Itenerator it = fUsedPortNames.begin(); it.valid(); it.next())
+        for (List<PortNameToId>::Itenerator it = fUsedPortNames.begin(); it.valid(); it.next())
         {
             const PortNameToId& portNameId(*it);
 
@@ -1827,7 +1853,7 @@ private:
 
     void getFullPortName(const int portId, char nameBuf[STR_MAX+1])
     {
-        for (NonRtList<PortNameToId>::Itenerator it = fUsedPortNames.begin(); it.valid(); it.next())
+        for (List<PortNameToId>::Itenerator it = fUsedPortNames.begin(); it.valid(); it.next())
         {
             const PortNameToId& portNameId(*it);
 
@@ -1849,6 +1875,7 @@ private:
         CARLA_ASSERT(fLastConnectionId == 0);
         CARLA_ASSERT(ourName != nullptr);
 
+#ifdef USE_JUCE
         using namespace juce;
 
         // query initial jack ports
@@ -1862,7 +1889,7 @@ private:
             GroupNameToId groupNameToId(fLastGroupId++, ourName);
             fUsedGroupNames.append(groupNameToId);
 
-            callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupNameToId.id, 0, 0.0f, ourName);
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupNameToId.id, 0, 0.0f, ourName);
             // carla
         }
 
@@ -1913,7 +1940,7 @@ private:
                         // icon
                     }
 
-                    callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, groupName);
+                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, groupName);
                 }
 
                 bool portIsInput = (jackPortFlags & JackPortIsInput);
@@ -1930,7 +1957,7 @@ private:
                 PortNameToId portNameToId(groupId, fLastPortId++, portName, fullPortName);
                 fUsedPortNames.append(portNameToId);
 
-                callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, groupId, portNameToId.portId, canvasPortFlags, portName);
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, 0, groupId, portNameToId.portId, canvasPortFlags, portName);
             }
 
 #if 0
@@ -1969,7 +1996,7 @@ private:
                         ConnectionToId connectionToId(fLastConnectionId++, thisPortId, targetPortId);
                         fUsedConnections.append(connectionToId);
 
-                        callback(CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, connectionToId.id, thisPortId, targetPortId, nullptr);
+                        callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, connectionToId.id, thisPortId, targetPortId, nullptr);
                     }
 
                     jackbridge_free(connections);
@@ -1980,6 +2007,7 @@ private:
 
             jackbridge_free(ports);
         }
+#endif
     }
 #endif
 

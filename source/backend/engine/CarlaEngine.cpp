@@ -30,9 +30,11 @@
 #include "CarlaStateUtils.hpp"
 #include "CarlaMIDI.h"
 
+#ifdef USE_JUCE
 #include "juce_audio_basics.h"
 
 using juce::FloatVectorOperations;
+#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -41,8 +43,8 @@ CARLA_BACKEND_START_NAMESPACE
 #endif
 
 // Engine helper macro, sets lastError and returns false/NULL
-#define CARLA_SAFE_ASSERT_RETURN_ERR(cond, err)  if (cond) pass(); else { carla_assert(#cond, __FILE__, __LINE__); setLastError(err); return false; }
-#define CARLA_SAFE_ASSERT_RETURN_ERRN(cond, err) if (cond) pass(); else { carla_assert(#cond, __FILE__, __LINE__); setLastError(err); return nullptr; }
+#define CARLA_SAFE_ASSERT_RETURN_ERR(cond, err)  if (cond) pass(); else { carla_safe_assert(#cond, __FILE__, __LINE__); setLastError(err); return false; }
+#define CARLA_SAFE_ASSERT_RETURN_ERRN(cond, err) if (cond) pass(); else { carla_safe_assert(#cond, __FILE__, __LINE__); setLastError(err); return nullptr; }
 
 // -----------------------------------------------------------------------
 // Fallback data
@@ -102,7 +104,9 @@ void CarlaEngineCVPort::initBuffer()
 {
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
 
+#ifdef USE_JUCE
     FloatVectorOperations::clear(fBuffer, fEngine.getBufferSize());
+#endif
 }
 
 void CarlaEngineCVPort::writeBuffer(const uint32_t, const uint32_t)
@@ -127,7 +131,7 @@ CarlaEngineEventPort::CarlaEngineEventPort(const CarlaEngine& engine, const bool
 {
     carla_debug("CarlaEngineEventPort::CarlaEngineEventPort(name:\"%s\", %s)", engine.getName(), bool2str(isInput));
 
-    if (fEngine.getProccessMode() == PROCESS_MODE_PATCHBAY)
+    if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_PATCHBAY)
         fBuffer = new EngineEvent[kEngineMaxInternalEventCount];
 }
 
@@ -135,7 +139,7 @@ CarlaEngineEventPort::~CarlaEngineEventPort()
 {
     carla_debug("CarlaEngineEventPort::~CarlaEngineEventPort()");
 
-    if (fEngine.getProccessMode() == PROCESS_MODE_PATCHBAY)
+    if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_PATCHBAY)
     {
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
 
@@ -146,9 +150,9 @@ CarlaEngineEventPort::~CarlaEngineEventPort()
 
 void CarlaEngineEventPort::initBuffer()
 {
-    if (fEngine.getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK || fEngine.getProccessMode() == PROCESS_MODE_BRIDGE)
+    if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || fEngine.getProccessMode() == ENGINE_PROCESS_MODE_BRIDGE)
         fBuffer = fEngine.getInternalEventBuffer(fIsInput);
-    else if (fEngine.getProccessMode() == PROCESS_MODE_PATCHBAY && ! fIsInput)
+    else if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_PATCHBAY && ! fIsInput)
         carla_zeroStruct<EngineEvent>(fBuffer, kEngineMaxInternalEventCount);
 }
 
@@ -156,7 +160,7 @@ uint32_t CarlaEngineEventPort::getEventCount() const
 {
     CARLA_SAFE_ASSERT_RETURN(fIsInput, 0);
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, 0);
-    CARLA_SAFE_ASSERT_RETURN(fEngine.getProccessMode() != PROCESS_MODE_SINGLE_CLIENT && fEngine.getProccessMode() != PROCESS_MODE_MULTIPLE_CLIENTS, 0);
+    CARLA_SAFE_ASSERT_RETURN(fEngine.getProccessMode() != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fEngine.getProccessMode() != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, 0);
 
     uint32_t i=0;
 
@@ -173,7 +177,7 @@ const EngineEvent& CarlaEngineEventPort::getEvent(const uint32_t index)
 {
     CARLA_SAFE_ASSERT_RETURN(fIsInput, kFallbackEngineEvent);
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, kFallbackEngineEvent);
-    CARLA_SAFE_ASSERT_RETURN(fEngine.getProccessMode() != PROCESS_MODE_SINGLE_CLIENT && fEngine.getProccessMode() != PROCESS_MODE_MULTIPLE_CLIENTS, kFallbackEngineEvent);
+    CARLA_SAFE_ASSERT_RETURN(fEngine.getProccessMode() != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fEngine.getProccessMode() != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, kFallbackEngineEvent);
     CARLA_SAFE_ASSERT_RETURN(index < kEngineMaxInternalEventCount, kFallbackEngineEvent);
 
     return fBuffer[index];
@@ -188,7 +192,7 @@ bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
 {
     CARLA_SAFE_ASSERT_RETURN(! fIsInput, false);
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
-    CARLA_SAFE_ASSERT_RETURN(fEngine.getProccessMode() != PROCESS_MODE_SINGLE_CLIENT && fEngine.getProccessMode() != PROCESS_MODE_MULTIPLE_CLIENTS, false);
+    CARLA_SAFE_ASSERT_RETURN(fEngine.getProccessMode() != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fEngine.getProccessMode() != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, false);
     CARLA_SAFE_ASSERT_RETURN(type != kEngineControlEventTypeNull, false);
     CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, false);
     CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.0f);
@@ -226,7 +230,7 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
 {
     CARLA_SAFE_ASSERT_RETURN(! fIsInput, false);
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
-    CARLA_SAFE_ASSERT_RETURN(fEngine.getProccessMode() != PROCESS_MODE_SINGLE_CLIENT && fEngine.getProccessMode() != PROCESS_MODE_MULTIPLE_CLIENTS, false);
+    CARLA_SAFE_ASSERT_RETURN(fEngine.getProccessMode() != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fEngine.getProccessMode() != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, false);
     CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, false);
     CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
     CARLA_SAFE_ASSERT_RETURN(size > 0 && size <= 4, false);
@@ -494,22 +498,22 @@ bool CarlaEngine::init(const char* const clientName)
 
     switch (fOptions.processMode)
     {
-    case PROCESS_MODE_SINGLE_CLIENT:
-    case PROCESS_MODE_MULTIPLE_CLIENTS:
+    case ENGINE_PROCESS_MODE_SINGLE_CLIENT:
+    case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
         pData->maxPluginNumber = MAX_DEFAULT_PLUGINS;
         break;
 
-    case PROCESS_MODE_CONTINUOUS_RACK:
+    case ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
         pData->maxPluginNumber = MAX_RACK_PLUGINS;
         pData->bufEvents.in    = new EngineEvent[kEngineMaxInternalEventCount];
         pData->bufEvents.out   = new EngineEvent[kEngineMaxInternalEventCount];
         break;
 
-    case PROCESS_MODE_PATCHBAY:
+    case ENGINE_PROCESS_MODE_PATCHBAY:
         pData->maxPluginNumber = MAX_PATCHBAY_PLUGINS;
         break;
 
-    case PROCESS_MODE_BRIDGE:
+    case ENGINE_PROCESS_MODE_BRIDGE:
         pData->maxPluginNumber = 1;
         pData->bufEvents.in    = new EngineEvent[kEngineMaxInternalEventCount];
         pData->bufEvents.out   = new EngineEvent[kEngineMaxInternalEventCount];
@@ -533,9 +537,9 @@ bool CarlaEngine::init(const char* const clientName)
 #endif
 
     pData->nextAction.ready();
-    pData->thread.startThread();
+    pData->thread.start();
 
-    callback(CALLBACK_ENGINE_STARTED, 0, 0, 0, 0.0f, getCurrentDriverName());
+    callback(ENGINE_CALLBACK_ENGINE_STARTED, 0, 0, 0, 0.0f, getCurrentDriverName());
 
     return true;
 }
@@ -548,7 +552,7 @@ bool CarlaEngine::close()
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data (err #9)");
     carla_debug("CarlaEngine::close()");
 
-    pData->thread.stopThread(500);
+    pData->thread.stop(500);
     pData->nextAction.ready();
 
 #ifndef BUILD_BRIDGE
@@ -582,7 +586,7 @@ bool CarlaEngine::close()
 
     fName.clear();
 
-    callback(CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0.0f, nullptr);
+    callback(ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0.0f, nullptr);
 
     return true;
 }
@@ -779,12 +783,12 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     if (oldPlugin != nullptr)
     {
         delete oldPlugin;
-        callback(CALLBACK_RELOAD_ALL, id, 0, 0, 0.0f, plugin->getName());
+        callback(ENGINE_CALLBACK_RELOAD_ALL, id, 0, 0, 0.0f, plugin->getName());
     }
     else
     {
         ++pData->curPluginCount;
-        callback(CALLBACK_PLUGIN_ADDED, id, 0, 0, 0.0f, plugin->getName());
+        callback(ENGINE_CALLBACK_PLUGIN_ADDED, id, 0, 0, 0.0f, plugin->getName());
     }
 
     return true;
@@ -803,9 +807,9 @@ bool CarlaEngine::removePlugin(const unsigned int id)
     CARLA_SAFE_ASSERT_RETURN_ERR(plugin != nullptr, "Could not find plugin to remove");
     CARLA_SAFE_ASSERT_RETURN_ERR(plugin->getId() == id, "Invalid engine internal data (err #17)");
 
-    pData->thread.stopThread(500);
+    pData->thread.stop(500);
 
-    const bool lockWait(isRunning() && fOptions.processMode != PROCESS_MODE_MULTIPLE_CLIENTS);
+    const bool lockWait(isRunning() && fOptions.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS);
     const CarlaEngineProtectedData::ScopedActionLock sal(pData, kEnginePostActionRemovePlugin, id, 0, lockWait);
 
 #ifndef BUILD_BRIDGE
@@ -816,9 +820,9 @@ bool CarlaEngine::removePlugin(const unsigned int id)
     delete plugin;
 
     if (isRunning() && ! pData->aboutToClose)
-        pData->thread.startThread();
+        pData->thread.start();
 
-    callback(CALLBACK_PLUGIN_REMOVED, id, 0, 0, 0.0f, nullptr);
+    callback(ENGINE_CALLBACK_PLUGIN_REMOVED, id, 0, 0, 0.0f, nullptr);
     return true;
 }
 
@@ -832,7 +836,7 @@ bool CarlaEngine::removeAllPlugins()
     if (pData->curPluginCount == 0)
         return true;
 
-    pData->thread.stopThread(500);
+    pData->thread.stop(500);
 
     const bool lockWait(isRunning());
     const CarlaEngineProtectedData::ScopedActionLock sal(pData, kEnginePostActionZeroCount, 0, 0, lockWait);
@@ -854,7 +858,7 @@ bool CarlaEngine::removeAllPlugins()
     }
 
     if (isRunning() && ! pData->aboutToClose)
-        pData->thread.startThread();
+        pData->thread.start();
 
     return true;
 }
@@ -949,9 +953,9 @@ bool CarlaEngine::switchPlugins(const unsigned int idA, const unsigned int idB)
     CARLA_SAFE_ASSERT_RETURN_ERR(pluginA->getId() == idA, "Invalid engine internal data (err #36)");
     CARLA_SAFE_ASSERT_RETURN_ERR(pluginB->getId() == idB, "Invalid engine internal data (err #37)");
 
-    pData->thread.stopThread(500);
+    pData->thread.stop(500);
 
-    const bool lockWait(isRunning() && fOptions.processMode != PROCESS_MODE_MULTIPLE_CLIENTS);
+    const bool lockWait(isRunning() && fOptions.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS);
     const CarlaEngineProtectedData::ScopedActionLock sal(pData, kEnginePostActionSwitchPlugins, idA, idB, lockWait);
 
 #ifndef BUILD_BRIDGE // TODO
@@ -960,7 +964,7 @@ bool CarlaEngine::switchPlugins(const unsigned int idA, const unsigned int idB)
 #endif
 
     if (isRunning() && ! pData->aboutToClose)
-        pData->thread.startThread();
+        pData->thread.start();
 
     return true;
 }
@@ -1073,6 +1077,7 @@ bool CarlaEngine::loadFilename(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename (err #1)");
     carla_debug("CarlaEngine::loadFilename(\"%s\")", filename);
 
+#ifdef USE_JUCE
     using namespace juce;
 
     File file(filename);
@@ -1113,7 +1118,7 @@ bool CarlaEngine::loadFilename(const char* const filename)
         if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "audiofile"))
         {
             if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
-                plugin->setCustomData(CUSTOM_DATA_STRING, "file", filename, true);
+                plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "file", filename, true);
             return true;
         }
         return false;
@@ -1131,7 +1136,7 @@ bool CarlaEngine::loadFilename(const char* const filename)
         if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "audiofile"))
         {
             if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
-                plugin->setCustomData(CUSTOM_DATA_STRING, "file", filename, true);
+                plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "file", filename, true);
             return true;
         }
         return false;
@@ -1153,7 +1158,7 @@ bool CarlaEngine::loadFilename(const char* const filename)
         if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "midifile"))
         {
             if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
-                plugin->setCustomData(CUSTOM_DATA_STRING, "file", filename, true);
+                plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "file", filename, true);
             return true;
         }
         return false;
@@ -1172,7 +1177,7 @@ bool CarlaEngine::loadFilename(const char* const filename)
         if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "zynaddsubfx"))
         {
             if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
-                plugin->setCustomData(CUSTOM_DATA_STRING, (extension == "xmz") ? "CarlaAlternateFile1" : "CarlaAlternateFile2", filename, true);
+                plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, (extension == "xmz") ? "CarlaAlternateFile1" : "CarlaAlternateFile2", filename, true);
             return true;
         }
         return false;
@@ -1181,6 +1186,7 @@ bool CarlaEngine::loadFilename(const char* const filename)
         return false;
 #endif
     }
+#endif
 
     // -------------------------------------------------------------------
 
@@ -1207,6 +1213,7 @@ bool CarlaEngine::loadProject(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename (err #2)");
     carla_debug("CarlaEngine::loadProject(\"%s\")", filename);
 
+#ifdef USE_JUCE
     using namespace juce;
 
     File file(filename);
@@ -1267,6 +1274,7 @@ bool CarlaEngine::loadProject(const char* const filename)
         delete xmlCheck;
         return false;
     }
+#endif
 
     setLastError("Not a valid file");
     return false;
@@ -1277,6 +1285,7 @@ bool CarlaEngine::saveProject(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename (err #3)");
     carla_debug("CarlaEngine::saveProject(\"%s\")", filename);
 
+#ifdef USE_JUCE
     using namespace juce;
 
     File file(filename);
@@ -1323,6 +1332,9 @@ bool CarlaEngine::saveProject(const char* const filename)
     out << "</CARLA-PROJECT>\n";
 
     return file.replaceWithData(out.getData(), out.getDataSize());
+#endif
+
+    return false;
 }
 
 // -----------------------------------------------------------------------
@@ -1349,15 +1361,15 @@ float CarlaEngine::getOutputPeak(const unsigned int pluginId, const unsigned sho
 // -----------------------------------------------------------------------
 // Callback
 
-void CarlaEngine::callback(const CallbackType action, const unsigned int pluginId, const int value1, const int value2, const float value3, const char* const valueStr)
+void CarlaEngine::callback(const EngineCallbackOpcode action, const unsigned int pluginId, const int value1, const int value2, const float value3, const char* const valueStr)
 {
-    carla_debug("CarlaEngine::callback(%s, %i, %i, %i, %f, \"%s\")", CallbackType2Str(action), pluginId, value1, value2, value3, valueStr);
+    carla_debug("CarlaEngine::callback(%s, %i, %i, %i, %f, \"%s\")", EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
 
     if (pData->callback != nullptr)
         pData->callback(pData->callbackPtr, action, pluginId, value1, value2, value3, valueStr);
 }
 
-void CarlaEngine::setCallback(const CallbackFunc func, void* const ptr)
+void CarlaEngine::setCallback(const EngineCallbackFunc func, void* const ptr)
 {
     CARLA_ASSERT(func != nullptr);
     carla_debug("CarlaEngine::setCallback(%p, %p)", func, ptr);
@@ -1427,146 +1439,149 @@ void CarlaEngine::setAboutToClose()
 // -----------------------------------------------------------------------
 // Global options
 
-void CarlaEngine::setOption(const OptionsType option, const int value, const char* const valueStr)
+void CarlaEngine::setOption(const EngineOption option, const int value, const char* const valueStr)
 {
-    carla_debug("CarlaEngine::setOption(%i:%s, %i, \"%s\")", option, OptionsType2Str(option), value, valueStr);
+    carla_debug("CarlaEngine::setOption(%i:%s, %i, \"%s\")", option, EngineOption2Str(option), value, valueStr);
 
 #ifndef BUILD_BRIDGE
-    if (option >= OPTION_PROCESS_MODE && option < OPTION_PATH_RESOURCES && isRunning())
-        return carla_stderr("CarlaEngine::setOption(%s, %i, \"%s\") - Cannot set this option while engine is running!", OptionsType2Str(option), value, valueStr);
+    if (option >= ENGINE_OPTION_PROCESS_MODE && option < ENGINE_OPTION_PATH_RESOURCES && isRunning())
+        return carla_stderr("CarlaEngine::setOption(%s, %i, \"%s\") - Cannot set this option while engine is running!", EngineOption2Str(option), value, valueStr);
 #endif
 
     switch (option)
     {
-    case OPTION_PROCESS_NAME:
+    case ENGINE_OPTION_PROCESS_NAME:
         break;
 
-    case OPTION_PROCESS_MODE:
-        if (value < PROCESS_MODE_SINGLE_CLIENT || value > PROCESS_MODE_PATCHBAY)
-            return carla_stderr("CarlaEngine::setOption(OPTION_PROCESS_MODE, %i, \"%s\") - invalid value", value, valueStr);
+    case ENGINE_OPTION_PROCESS_MODE:
+        if (value < ENGINE_PROCESS_MODE_SINGLE_CLIENT || value > ENGINE_PROCESS_MODE_PATCHBAY)
+            return carla_stderr("CarlaEngine::setOption(ENGINE_OPTION_PROCESS_MODE, %i, \"%s\") - invalid value", value, valueStr);
 
-        fOptions.processMode = static_cast<ProcessMode>(value);
+        fOptions.processMode = static_cast<EngineProcessMode>(value);
         break;
 
-    case OPTION_TRANSPORT_MODE:
-        if (value < TRANSPORT_MODE_INTERNAL || value > TRANSPORT_MODE_JACK)
-            return carla_stderr2("carla_set_engine_option(OPTION_TRANSPORT_MODE, %i, \"%s\") - invalid value", value, valueStr);
+    case ENGINE_OPTION_TRANSPORT_MODE:
+        if (value < ENGINE_TRANSPORT_MODE_INTERNAL || value > ENGINE_TRANSPORT_MODE_JACK)
+            return carla_stderr2("carla_set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, %i, \"%s\") - invalid value", value, valueStr);
 
-        fOptions.transportMode = static_cast<TransportMode>(value);
+        fOptions.transportMode = static_cast<EngineTransportMode>(value);
         break;
 
-    case OPTION_FORCE_STEREO:
+    case ENGINE_OPTION_FORCE_STEREO:
         fOptions.forceStereo = (value != 0);
         break;
 
-    case OPTION_PREFER_PLUGIN_BRIDGES:
+    case ENGINE_OPTION_PREFER_PLUGIN_BRIDGES:
         fOptions.preferPluginBridges = (value != 0);
         break;
 
-    case OPTION_PREFER_UI_BRIDGES:
+    case ENGINE_OPTION_PREFER_UI_BRIDGES:
         fOptions.preferUiBridges = (value != 0);
         break;
 
-    case OPTION_UIS_ALWAYS_ON_TOP:
+    case ENGINE_OPTION_UIS_ALWAYS_ON_TOP:
         fOptions.uisAlwaysOnTop = (value != 0);
         break;
 
-    case OPTION_MAX_PARAMETERS:
+    case ENGINE_OPTION_MAX_PARAMETERS:
         if (value < 1)
-            return carla_stderr2("carla_set_engine_option(OPTION_MAX_PARAMETERS, %i, \"%s\") - invalid value", value, valueStr);
+            return carla_stderr2("carla_set_engine_option(ENGINE_OPTION_MAX_PARAMETERS, %i, \"%s\") - invalid value", value, valueStr);
 
         fOptions.maxParameters = static_cast<uint>(value);
         break;
 
-    case OPTION_UI_BRIDGES_TIMEOUT:
+    case ENGINE_OPTION_UI_BRIDGES_TIMEOUT:
         if (value < 1)
-            return carla_stderr2("carla_set_engine_option(OPTION_UI_BRIDGES_TIMEOUT, %i, \"%s\") - invalid value", value, valueStr);
+            return carla_stderr2("carla_set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT, %i, \"%s\") - invalid value", value, valueStr);
 
         fOptions.uiBridgesTimeout = static_cast<uint>(value);
         break;
 
-    case OPTION_AUDIO_NUM_PERIODS:
+    case ENGINE_OPTION_AUDIO_NUM_PERIODS:
         if (value < 2 || value > 3)
-            return carla_stderr2("carla_set_engine_option(OPTION_AUDIO_NUM_PERIODS, %i, \"%s\") - invalid value", value, valueStr);
+            return carla_stderr2("carla_set_engine_option(ENGINE_OPTION_AUDIO_NUM_PERIODS, %i, \"%s\") - invalid value", value, valueStr);
 
         fOptions.audioNumPeriods = static_cast<uint>(value);
         break;
 
-    case OPTION_AUDIO_BUFFER_SIZE:
+    case ENGINE_OPTION_AUDIO_BUFFER_SIZE:
         if (value < 8)
-            return carla_stderr2("carla_set_engine_option(OPTION_AUDIO_BUFFER_SIZE, %i, \"%s\") - invalid value", value, valueStr);
+            return carla_stderr2("carla_set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, %i, \"%s\") - invalid value", value, valueStr);
 
         fOptions.audioBufferSize = static_cast<uint>(value);
         break;
 
-    case OPTION_AUDIO_SAMPLE_RATE:
+    case ENGINE_OPTION_AUDIO_SAMPLE_RATE:
         if (value < 22050)
-            return carla_stderr2("carla_set_engine_option(OPTION_AUDIO_SAMPLE_RATE, %i, \"%s\") - invalid value", value, valueStr);
+            return carla_stderr2("carla_set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, %i, \"%s\") - invalid value", value, valueStr);
 
         fOptions.audioSampleRate = static_cast<uint>(value);
         break;
 
-    case OPTION_AUDIO_DEVICE:
+    case ENGINE_OPTION_AUDIO_DEVICE:
         fOptions.audioDevice = valueStr;
         break;
 
-    case OPTION_PATH_RESOURCES:
+    case ENGINE_OPTION_PATH_RESOURCES:
         fOptions.resourceDir = valueStr;
         break;
 
 #ifndef BUILD_BRIDGE
-    case OPTION_PATH_BRIDGE_NATIVE:
+    case ENGINE_OPTION_PATH_BRIDGE_NATIVE:
         fOptions.bridge_native = valueStr;
         break;
-    case OPTION_PATH_BRIDGE_POSIX32:
+    case ENGINE_OPTION_PATH_BRIDGE_POSIX32:
         fOptions.bridge_posix32 = valueStr;
         break;
-    case OPTION_PATH_BRIDGE_POSIX64:
+    case ENGINE_OPTION_PATH_BRIDGE_POSIX64:
         fOptions.bridge_posix64 = valueStr;
         break;
-    case OPTION_PATH_BRIDGE_WIN32:
+    case ENGINE_OPTION_PATH_BRIDGE_WIN32:
         fOptions.bridge_win32 = valueStr;
         break;
-    case OPTION_PATH_BRIDGE_WIN64:
+    case ENGINE_OPTION_PATH_BRIDGE_WIN64:
         fOptions.bridge_win64 = valueStr;
         break;
 #endif
 
 #ifdef WANT_LV2
-    case OPTION_PATH_BRIDGE_LV2_EXTERNAL:
+    case ENGINE_OPTION_PATH_BRIDGE_LV2_EXTERNAL:
         fOptions.bridge_lv2Extrn = valueStr;
         break;
-    case OPTION_PATH_BRIDGE_LV2_GTK2:
+    case ENGINE_OPTION_PATH_BRIDGE_LV2_GTK2:
         fOptions.bridge_lv2Gtk2 = valueStr;
         break;
-    case OPTION_PATH_BRIDGE_LV2_GTK3:
+    case ENGINE_OPTION_PATH_BRIDGE_LV2_GTK3:
         fOptions.bridge_lv2Gtk3 = valueStr;
         break;
-    case OPTION_PATH_BRIDGE_LV2_QT4:
+    case ENGINE_OPTION_PATH_BRIDGE_LV2_NTK:
+        fOptions.bridge_lv2Ntk = valueStr;
+        break;
+    case ENGINE_OPTION_PATH_BRIDGE_LV2_QT4:
         fOptions.bridge_lv2Qt4 = valueStr;
         break;
-    case OPTION_PATH_BRIDGE_LV2_QT5:
+    case ENGINE_OPTION_PATH_BRIDGE_LV2_QT5:
         fOptions.bridge_lv2Qt5 = valueStr;
         break;
-    case OPTION_PATH_BRIDGE_LV2_COCOA:
+    case ENGINE_OPTION_PATH_BRIDGE_LV2_COCOA:
         fOptions.bridge_lv2Cocoa = valueStr;
         break;
-    case OPTION_PATH_BRIDGE_LV2_WINDOWS:
+    case ENGINE_OPTION_PATH_BRIDGE_LV2_WINDOWS:
         fOptions.bridge_lv2Win = valueStr;
         break;
-    case OPTION_PATH_BRIDGE_LV2_X11:
+    case ENGINE_OPTION_PATH_BRIDGE_LV2_X11:
         fOptions.bridge_lv2X11 = valueStr;
         break;
 #endif
 
 #ifdef WANT_VST
-    case OPTION_PATH_BRIDGE_VST_MAC:
+    case ENGINE_OPTION_PATH_BRIDGE_VST_MAC:
         fOptions.bridge_vstMac = valueStr;
         break;
-    case OPTION_PATH_BRIDGE_VST_HWND:
+    case ENGINE_OPTION_PATH_BRIDGE_VST_HWND:
         fOptions.bridge_vstHWND = valueStr;
         break;
-    case OPTION_PATH_BRIDGE_VST_X11:
+    case ENGINE_OPTION_PATH_BRIDGE_VST_X11:
         fOptions.bridge_vstX11 = valueStr;
         break;
 #endif
@@ -1641,7 +1656,7 @@ void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
             plugin->bufferSizeChanged(newBufferSize);
     }
 
-    callback(CALLBACK_BUFFER_SIZE_CHANGED, 0, newBufferSize, 0, 0.0f, nullptr);
+    callback(ENGINE_CALLBACK_BUFFER_SIZE_CHANGED, 0, newBufferSize, 0, 0.0f, nullptr);
 }
 
 void CarlaEngine::sampleRateChanged(const double newSampleRate)
@@ -1656,7 +1671,7 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
             plugin->sampleRateChanged(newSampleRate);
     }
 
-    callback(CALLBACK_SAMPLE_RATE_CHANGED, 0, 0, 0, newSampleRate, nullptr);
+    callback(ENGINE_CALLBACK_SAMPLE_RATE_CHANGED, 0, 0, 0, newSampleRate, nullptr);
 }
 
 void CarlaEngine::offlineModeChanged(const bool isOffline)
@@ -1679,7 +1694,7 @@ void CarlaEngine::runPendingRtEvents()
     if (pData->time.playing)
         pData->time.frame += fBufferSize;
 
-    if (fOptions.transportMode == TRANSPORT_MODE_INTERNAL)
+    if (fOptions.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
     {
         fTimeInfo.playing = pData->time.playing;
         fTimeInfo.frame   = pData->time.frame;
@@ -1707,6 +1722,7 @@ void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint3
     float inBuf1[frames];
     float* inBuf[2] = { inBuf0, inBuf1 };
 
+#ifdef USE_JUCE
     // initialize audio inputs
     FloatVectorOperations::copy(inBuf0, inBufReal[0], frames);
     FloatVectorOperations::copy(inBuf1, inBufReal[1], frames);
@@ -1714,6 +1730,15 @@ void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint3
     // initialize audio outputs (zero)
     FloatVectorOperations::clear(outBuf[0], frames);
     FloatVectorOperations::clear(outBuf[1], frames);
+#else
+    // initialize audio inputs
+    carla_copyFloat(inBuf0, inBufReal[0], frames);
+    carla_copyFloat(inBuf1, inBufReal[1], frames);
+
+    // initialize audio outputs (zero)
+    carla_zeroFloat(outBuf[0], frames);
+    carla_zeroFloat(outBuf[1], frames);
+#endif
 
     // initialize event outputs (zero)
     carla_zeroMem(pData->bufEvents.out, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
@@ -1733,6 +1758,7 @@ void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint3
 
         if (processed)
         {
+#ifdef USE_JUCE
             // initialize audio inputs (from previous outputs)
             FloatVectorOperations::copy(inBuf0, outBuf[0], frames);
             FloatVectorOperations::copy(inBuf1, outBuf[1], frames);
@@ -1740,6 +1766,15 @@ void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint3
             // initialize audio outputs (zero)
             FloatVectorOperations::clear(outBuf[0], frames);
             FloatVectorOperations::clear(outBuf[1], frames);
+#else
+            // initialize audio inputs (from previous outputs)
+            carla_copyFloat(inBuf0, outBuf[0], frames);
+            carla_copyFloat(inBuf1, outBuf[1], frames);
+
+            // initialize audio outputs (zero)
+            carla_zeroFloat(outBuf[0], frames);
+            carla_zeroFloat(outBuf[1], frames);
+#endif
 
             // if plugin has no midi out, add previous events
             if (oldMidiOutCount == 0 && pData->bufEvents.in[0].type != kEngineEventTypeNull)
@@ -1771,14 +1806,21 @@ void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint3
         // if plugin has no audio inputs, add input buffer
         if (oldAudioInCount == 0)
         {
+#ifdef USE_JUCE
             FloatVectorOperations::add(outBuf[0], inBuf0, frames);
             FloatVectorOperations::add(outBuf[1], inBuf1, frames);
+#else
+            carla_addFloat(outBuf[0], inBuf0, frames);
+            carla_addFloat(outBuf[1], inBuf1, frames);
+#endif
         }
 
         // set peaks
         {
-            float tmpMin, tmpMax;
             EnginePluginData& pluginData(pData->plugins[i]);
+
+#ifdef USE_JUCE
+            float tmpMin, tmpMax;
 
             FloatVectorOperations::findMinAndMax(inBuf0, frames, tmpMin, tmpMax);
             pluginData.insPeak[0] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
@@ -1791,6 +1833,10 @@ void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint3
 
             FloatVectorOperations::findMinAndMax(outBuf[1], frames, tmpMin, tmpMax);
             pluginData.outsPeak[1] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
+#else
+            // TODO
+            (void)pluginData;
+#endif
         }
 
         processed = true;
@@ -1968,7 +2014,7 @@ void CarlaEngine::oscSend_control_set_parameter_value(const int32_t pluginId, co
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->maxPluginNumber),);
-    carla_debug("CarlaEngine::oscSend_control_set_parameter_value(%i, %i:%s, %f)", pluginId, index, (index < 0) ? InternalParametersIndex2Str(static_cast<InternalParametersIndex>(index)) : "(none)", value);
+    carla_debug("CarlaEngine::oscSend_control_set_parameter_value(%i, %i:%s, %f)", pluginId, index, (index < 0) ? InternalParameterIndex2Str(static_cast<InternalParameterIndex>(index)) : "(none)", value);
 
     if (pData->oscData->target != nullptr)
     {

@@ -50,9 +50,11 @@ const char* PluginOption2Str(const unsigned int option)
         return "PLUGIN_OPTION_SEND_ALL_SOUND_OFF";
     }
 
-    carla_stderr("CarlaBackend::PluginOption2Str(%i) - invalid type", option);
+    carla_stderr("CarlaBackend::PluginOption2Str(%i) - invalid option", option);
     return nullptr;
 }
+
+// -----------------------------------------------------------------------
 
 static inline
 const char* BinaryType2Str(const BinaryType type)
@@ -125,6 +127,8 @@ const char* PluginCategory2Str(const PluginCategory category)
         return "PLUGIN_CATEGORY_EQ";
     case PLUGIN_CATEGORY_FILTER:
         return "PLUGIN_CATEGORY_FILTER";
+    case PLUGIN_CATEGORY_DISTORTION:
+        return "PLUGIN_CATEGORY_DISTORTION";
     case PLUGIN_CATEGORY_DYNAMICS:
         return "PLUGIN_CATEGORY_DYNAMICS";
     case PLUGIN_CATEGORY_MODULATOR:
@@ -150,16 +154,8 @@ const char* ParameterType2Str(const ParameterType type)
         return "PARAMETER_INPUT";
     case PARAMETER_OUTPUT:
         return "PARAMETER_OUTPUT";
-    case PARAMETER_LATENCY:
-        return "PARAMETER_LATENCY";
-    case PARAMETER_SAMPLE_RATE:
-        return "PARAMETER_SAMPLE_RATE";
-#ifdef WANT_LV2
-    case PARAMETER_LV2_FREEWHEEL:
-        return "PARAMETER_LV2_FREEWHEEL";
-    case PARAMETER_LV2_TIME:
-        return "PARAMETER_LV2_TIME";
-#endif
+    case PARAMETER_SPECIAL:
+        return "PARAMETER_SPECIAL";
     }
 
     carla_stderr("CarlaBackend::ParameterType2Str(%i) - invalid type", type);
@@ -167,7 +163,7 @@ const char* ParameterType2Str(const ParameterType type)
 }
 
 static inline
-const char* InternalParametersIndex2Str(const InternalParametersIndex index)
+const char* InternalParameterIndex2Str(const InternalParameterIndex index)
 {
     switch (index)
     {
@@ -191,211 +187,215 @@ const char* InternalParametersIndex2Str(const InternalParametersIndex index)
         return "PARAMETER_MAX";
     }
 
-    carla_stderr("CarlaBackend::InternalParametersIndex2Str(%i) - invalid index", index);
+    carla_stderr("CarlaBackend::InternalParameterIndex2Str(%i) - invalid index", index);
     return nullptr;
 }
 
 static inline
-const char* OptionsType2Str(const OptionsType option)
+const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode)
+{
+    switch (opcode)
+    {
+    case ENGINE_CALLBACK_DEBUG:
+        return "ENGINE_CALLBACK_DEBUG";
+    case ENGINE_CALLBACK_PLUGIN_ADDED:
+        return "ENGINE_CALLBACK_PLUGIN_ADDED";
+    case ENGINE_CALLBACK_PLUGIN_REMOVED:
+        return "ENGINE_CALLBACK_PLUGIN_REMOVED";
+    case ENGINE_CALLBACK_PLUGIN_RENAMED:
+        return "ENGINE_CALLBACK_PLUGIN_RENAMED";
+    case ENGINE_CALLBACK_PLUGIN_DISABLED:
+        return "ENGINE_CALLBACK_PLUGIN_DISABLED";
+    case ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
+        return "ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED";
+    case ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
+        return "ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED";
+    case ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
+        return "ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED";
+    case ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
+        return "ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED";
+    case ENGINE_CALLBACK_PROGRAM_CHANGED:
+        return "ENGINE_CALLBACK_PROGRAM_CHANGED";
+    case ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
+        return "ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED";
+    case ENGINE_CALLBACK_UI_STATE_CHANGED:
+        return "ENGINE_CALLBACK_UI_STATE_CHANGED";
+    case ENGINE_CALLBACK_NOTE_ON:
+        return "ENGINE_CALLBACK_NOTE_ON";
+    case ENGINE_CALLBACK_NOTE_OFF:
+        return "ENGINE_CALLBACK_NOTE_OFF";
+    case ENGINE_CALLBACK_UPDATE:
+        return "ENGINE_CALLBACK_UPDATE";
+    case ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED:
+        return "ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED";
+    case ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED:
+        return "ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED";
+    case ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED:
+        return "ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED";
+    case ENGINE_CALLBACK_PATCHBAY_PORT_ADDED:
+        return "ENGINE_CALLBACK_PATCHBAY_PORT_ADDED";
+    case ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED:
+        return "ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED";
+    case ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED:
+        return "ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED";
+    case ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED:
+        return "ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED";
+    case ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED:
+        return "ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED";
+    case ENGINE_CALLBACK_PATCHBAY_ICON_CHANGED:
+        return "ENGINE_CALLBACK_PATCHBAY_ICON_CHANGED";
+    case ENGINE_CALLBACK_RELOAD_INFO:
+        return "ENGINE_CALLBACK_RELOAD_INFO";
+    case ENGINE_CALLBACK_RELOAD_PARAMETERS:
+        return "ENGINE_CALLBACK_RELOAD_PARAMETERS";
+    case ENGINE_CALLBACK_RELOAD_PROGRAMS:
+        return "ENGINE_CALLBACK_RELOAD_PROGRAMS";
+    case ENGINE_CALLBACK_RELOAD_ALL:
+        return "ENGINE_CALLBACK_RELOAD_ALL";
+    case ENGINE_CALLBACK_BUFFER_SIZE_CHANGED:
+        return "ENGINE_CALLBACK_BUFFER_SIZE_CHANGED";
+    case ENGINE_CALLBACK_SAMPLE_RATE_CHANGED:
+        return "ENGINE_CALLBACK_SAMPLE_RATE_CHANGED";
+    case ENGINE_CALLBACK_PROCESS_MODE_CHANGED:
+        return "ENGINE_CALLBACK_PROCESS_MODE_CHANGED";
+    case ENGINE_CALLBACK_ENGINE_STARTED:
+        return "ENGINE_CALLBACK_ENGINE_STARTED";
+    case ENGINE_CALLBACK_ENGINE_STOPPED:
+        return "ENGINE_CALLBACK_ENGINE_STOPPED";
+    case ENGINE_CALLBACK_NSM_ANNOUNCE:
+        return "ENGINE_CALLBACK_NSM_ANNOUNCE";
+    case ENGINE_CALLBACK_NSM_OPEN:
+        return "ENGINE_CALLBACK_NSM_OPEN";
+    case ENGINE_CALLBACK_NSM_SAVE:
+        return "ENGINE_CALLBACK_NSM_SAVE";
+    case ENGINE_CALLBACK_ERROR:
+        return "ENGINE_CALLBACK_ERROR";
+    case ENGINE_CALLBACK_INFO:
+        return "ENGINE_CALLBACK_INFO";
+    case ENGINE_CALLBACK_QUIT:
+        return "ENGINE_CALLBACK_QUIT";
+    }
+
+    carla_stderr("CarlaBackend::EngineCallbackOpcode2Str(%i) - invalid opcode", opcode);
+    return nullptr;
+}
+
+static inline
+const char* EngineOption2Str(const EngineOption option)
 {
     switch (option)
     {
-    case OPTION_PROCESS_NAME:
-        return "OPTION_PROCESS_NAME";
-    case OPTION_PROCESS_MODE:
-        return "OPTION_PROCESS_MODE";
-    case OPTION_TRANSPORT_MODE:
-        return "OPTION_TRANSPORT_MODE";
-    case OPTION_FORCE_STEREO:
-        return "OPTION_FORCE_STEREO";
-    case OPTION_PREFER_PLUGIN_BRIDGES:
-        return "OPTION_PREFER_PLUGIN_BRIDGES";
-    case OPTION_PREFER_UI_BRIDGES:
-        return "OPTION_PREFER_UI_BRIDGES";
-    case OPTION_UIS_ALWAYS_ON_TOP:
-        return "OPTION_UIS_ALWAYS_ON_TOP";
-    case OPTION_MAX_PARAMETERS:
-        return "OPTION_MAX_PARAMETERS";
-    case OPTION_UI_BRIDGES_TIMEOUT:
-        return "OPTION_UI_BRIDGES_TIMEOUT";
-    case OPTION_AUDIO_NUM_PERIODS:
-        return "OPTION_AUDIO_NUM_PERIODS";
-    case OPTION_AUDIO_BUFFER_SIZE:
-        return "OPTION_AUDIO_BUFFER_SIZE";
-    case OPTION_AUDIO_SAMPLE_RATE:
-        return "OPTION_AUDIO_SAMPLE_RATE";
-    case OPTION_AUDIO_DEVICE:
-        return "OPTION_AUDIO_DEVICE";
-    case OPTION_PATH_RESOURCES:
-        return "OPTION_PATH_RESOURCES";
+    case ENGINE_OPTION_PROCESS_NAME:
+        return "ENGINE_OPTION_PROCESS_NAME";
+    case ENGINE_OPTION_PROCESS_MODE:
+        return "ENGINE_OPTION_PROCESS_MODE";
+    case ENGINE_OPTION_TRANSPORT_MODE:
+        return "ENGINE_OPTION_TRANSPORT_MODE";
+    case ENGINE_OPTION_FORCE_STEREO:
+        return "ENGINE_OPTION_FORCE_STEREO";
+    case ENGINE_OPTION_PREFER_PLUGIN_BRIDGES:
+        return "ENGINE_OPTION_PREFER_PLUGIN_BRIDGES";
+    case ENGINE_OPTION_PREFER_UI_BRIDGES:
+        return "ENGINE_OPTION_PREFER_UI_BRIDGES";
+    case ENGINE_OPTION_UIS_ALWAYS_ON_TOP:
+        return "ENGINE_OPTION_UIS_ALWAYS_ON_TOP";
+    case ENGINE_OPTION_MAX_PARAMETERS:
+        return "ENGINE_OPTION_MAX_PARAMETERS";
+    case ENGINE_OPTION_UI_BRIDGES_TIMEOUT:
+        return "ENGINE_OPTION_UI_BRIDGES_TIMEOUT";
+    case ENGINE_OPTION_AUDIO_NUM_PERIODS:
+        return "ENGINE_OPTION_AUDIO_NUM_PERIODS";
+    case ENGINE_OPTION_AUDIO_BUFFER_SIZE:
+        return "ENGINE_OPTION_AUDIO_BUFFER_SIZE";
+    case ENGINE_OPTION_AUDIO_SAMPLE_RATE:
+        return "ENGINE_OPTION_AUDIO_SAMPLE_RATE";
+    case ENGINE_OPTION_AUDIO_DEVICE:
+        return "ENGINE_OPTION_AUDIO_DEVICE";
+    case ENGINE_OPTION_PATH_RESOURCES:
+        return "ENGINE_OPTION_PATH_RESOURCES";
 #ifndef BUILD_BRIDGE
-    case OPTION_PATH_BRIDGE_NATIVE:
-        return "OPTION_PATH_BRIDGE_NATIVE";
-    case OPTION_PATH_BRIDGE_POSIX32:
-        return "OPTION_PATH_BRIDGE_POSIX32";
-    case OPTION_PATH_BRIDGE_POSIX64:
-        return "OPTION_PATH_BRIDGE_POSIX64";
-    case OPTION_PATH_BRIDGE_WIN32:
-        return "OPTION_PATH_BRIDGE_WIN32";
-    case OPTION_PATH_BRIDGE_WIN64:
-        return "OPTION_PATH_BRIDGE_WIN64";
+    case ENGINE_OPTION_PATH_BRIDGE_NATIVE:
+        return "ENGINE_OPTION_PATH_BRIDGE_NATIVE";
+    case ENGINE_OPTION_PATH_BRIDGE_POSIX32:
+        return "ENGINE_OPTION_PATH_BRIDGE_POSIX32";
+    case ENGINE_OPTION_PATH_BRIDGE_POSIX64:
+        return "ENGINE_OPTION_PATH_BRIDGE_POSIX64";
+    case ENGINE_OPTION_PATH_BRIDGE_WIN32:
+        return "ENGINE_OPTION_PATH_BRIDGE_WIN32";
+    case ENGINE_OPTION_PATH_BRIDGE_WIN64:
+        return "ENGINE_OPTION_PATH_BRIDGE_WIN64";
 #endif
 #ifdef WANT_LV2
-    case OPTION_PATH_BRIDGE_LV2_EXTERNAL:
-        return "OPTION_PATH_BRIDGE_LV2_EXTERNAL";
-    case OPTION_PATH_BRIDGE_LV2_GTK2:
-        return "OPTION_PATH_BRIDGE_LV2_GTK2";
-    case OPTION_PATH_BRIDGE_LV2_GTK3:
-        return "OPTION_PATH_BRIDGE_LV2_GTK3";
-    case OPTION_PATH_BRIDGE_LV2_QT4:
-        return "OPTION_PATH_BRIDGE_LV2_QT4";
-    case OPTION_PATH_BRIDGE_LV2_QT5:
-        return "OPTION_PATH_BRIDGE_LV2_QT5";
-    case OPTION_PATH_BRIDGE_LV2_COCOA:
-        return "OPTION_PATH_BRIDGE_LV2_COCOA";
-    case OPTION_PATH_BRIDGE_LV2_WINDOWS:
-        return "OPTION_PATH_BRIDGE_LV2_WINDOWS";
-    case OPTION_PATH_BRIDGE_LV2_X11:
-        return "OPTION_PATH_BRIDGE_LV2_X11";
+    case ENGINE_OPTION_PATH_BRIDGE_LV2_EXTERNAL:
+        return "ENGINE_OPTION_PATH_BRIDGE_LV2_EXTERNAL";
+    case ENGINE_OPTION_PATH_BRIDGE_LV2_GTK2:
+        return "ENGINE_OPTION_PATH_BRIDGE_LV2_GTK2";
+    case ENGINE_OPTION_PATH_BRIDGE_LV2_GTK3:
+        return "ENGINE_OPTION_PATH_BRIDGE_LV2_GTK3";
+    case ENGINE_OPTION_PATH_BRIDGE_LV2_NTK:
+        return "ENGINE_OPTION_PATH_BRIDGE_LV2_NTK";
+    case ENGINE_OPTION_PATH_BRIDGE_LV2_QT4:
+        return "ENGINE_OPTION_PATH_BRIDGE_LV2_QT4";
+    case ENGINE_OPTION_PATH_BRIDGE_LV2_QT5:
+        return "ENGINE_OPTION_PATH_BRIDGE_LV2_QT5";
+    case ENGINE_OPTION_PATH_BRIDGE_LV2_COCOA:
+        return "ENGINE_OPTION_PATH_BRIDGE_LV2_COCOA";
+    case ENGINE_OPTION_PATH_BRIDGE_LV2_WINDOWS:
+        return "ENGINE_OPTION_PATH_BRIDGE_LV2_WINDOWS";
+    case ENGINE_OPTION_PATH_BRIDGE_LV2_X11:
+        return "ENGINE_OPTION_PATH_BRIDGE_LV2_X11";
 #endif
 #ifdef WANT_VST
-    case OPTION_PATH_BRIDGE_VST_MAC:
-        return "OPTION_PATH_BRIDGE_VST_MAC";
-    case OPTION_PATH_BRIDGE_VST_HWND:
-        return "OPTION_PATH_BRIDGE_VST_HWND";
-    case OPTION_PATH_BRIDGE_VST_X11:
-        return "OPTION_PATH_BRIDGE_VST_X11";
+    case ENGINE_OPTION_PATH_BRIDGE_VST_MAC:
+        return "ENGINE_OPTION_PATH_BRIDGE_VST_MAC";
+    case ENGINE_OPTION_PATH_BRIDGE_VST_HWND:
+        return "ENGINE_OPTION_PATH_BRIDGE_VST_HWND";
+    case ENGINE_OPTION_PATH_BRIDGE_VST_X11:
+        return "ENGINE_OPTION_PATH_BRIDGE_VST_X11";
 #endif
     }
 
-    carla_stderr("CarlaBackend::OptionsType2Str(%i) - invalid option", option);
+    carla_stderr("CarlaBackend::EngineOption2Str(%i) - invalid option", option);
     return nullptr;
 }
 
 static inline
-const char* CallbackType2Str(const CallbackType type)
-{
-    switch (type)
-    {
-    case CALLBACK_DEBUG:
-        return "CALLBACK_DEBUG";
-    case CALLBACK_PLUGIN_ADDED:
-        return "CALLBACK_PLUGIN_ADDED";
-    case CALLBACK_PLUGIN_REMOVED:
-        return "CALLBACK_PLUGIN_REMOVED";
-    case CALLBACK_PLUGIN_RENAMED:
-        return "CALLBACK_PLUGIN_RENAMED";
-    case CALLBACK_PARAMETER_VALUE_CHANGED:
-        return "CALLBACK_PARAMETER_VALUE_CHANGED";
-    case CALLBACK_PARAMETER_DEFAULT_CHANGED:
-        return "CALLBACK_PARAMETER_DEFAULT_CHANGED";
-    case CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
-        return "CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED";
-    case CALLBACK_PARAMETER_MIDI_CC_CHANGED:
-        return "CALLBACK_PARAMETER_MIDI_CC_CHANGED";
-    case CALLBACK_PROGRAM_CHANGED:
-        return "CALLBACK_PROGRAM_CHANGED";
-    case CALLBACK_MIDI_PROGRAM_CHANGED:
-        return "CALLBACK_MIDI_PROGRAM_CHANGED";
-    case CALLBACK_NOTE_ON:
-        return "CALLBACK_NOTE_ON";
-    case CALLBACK_NOTE_OFF:
-        return "CALLBACK_NOTE_OFF";
-    case CALLBACK_SHOW_GUI:
-        return "CALLBACK_SHOW_GUI";
-    case CALLBACK_UPDATE:
-        return "CALLBACK_UPDATE";
-    case CALLBACK_PATCHBAY_CLIENT_ADDED:
-        return "CALLBACK_PATCHBAY_CLIENT_ADDED";
-    case CALLBACK_PATCHBAY_CLIENT_REMOVED:
-        return "CALLBACK_PATCHBAY_CLIENT_REMOVED";
-    case CALLBACK_PATCHBAY_CLIENT_RENAMED:
-        return "CALLBACK_PATCHBAY_CLIENT_RENAMED";
-    case CALLBACK_PATCHBAY_PORT_ADDED:
-        return "CALLBACK_PATCHBAY_PORT_ADDED";
-    case CALLBACK_PATCHBAY_PORT_REMOVED:
-        return "CALLBACK_PATCHBAY_PORT_REMOVED";
-    case CALLBACK_PATCHBAY_PORT_RENAMED:
-        return "CALLBACK_PATCHBAY_PORT_RENAMED";
-    case CALLBACK_PATCHBAY_CONNECTION_ADDED:
-        return "CALLBACK_PATCHBAY_CONNECTION_ADDED";
-    case CALLBACK_PATCHBAY_CONNECTION_REMOVED:
-        return "CALLBACK_PATCHBAY_CONNECTION_REMOVED";
-    case CALLBACK_PATCHBAY_ICON_CHANGED:
-        return "CALLBACK_PATCHBAY_ICON_CHANGED";
-    case CALLBACK_RELOAD_INFO:
-        return "CALLBACK_RELOAD_INFO";
-    case CALLBACK_RELOAD_PARAMETERS:
-        return "CALLBACK_RELOAD_PARAMETERS";
-    case CALLBACK_RELOAD_PROGRAMS:
-        return "CALLBACK_RELOAD_PROGRAMS";
-    case CALLBACK_RELOAD_ALL:
-        return "CALLBACK_RELOAD_ALL";
-    case CALLBACK_BUFFER_SIZE_CHANGED:
-        return "CALLBACK_BUFFER_SIZE_CHANGED";
-    case CALLBACK_SAMPLE_RATE_CHANGED:
-        return "CALLBACK_SAMPLE_RATE_CHANGED";
-    case CALLBACK_PROCESS_MODE_CHANGED:
-        return "CALLBACK_PROCESS_MODE_CHANGED";
-    case CALLBACK_ENGINE_STARTED:
-        return "CALLBACK_ENGINE_STARTED";
-    case CALLBACK_ENGINE_STOPPED:
-        return "CALLBACK_ENGINE_STOPPED";
-    case CALLBACK_NSM_ANNOUNCE:
-        return "CALLBACK_NSM_ANNOUNCE";
-    case CALLBACK_NSM_OPEN:
-        return "CALLBACK_NSM_OPEN";
-    case CALLBACK_NSM_SAVE:
-        return "CALLBACK_NSM_SAVE";
-    case CALLBACK_ERROR:
-        return "CALLBACK_ERROR";
-    case CALLBACK_INFO:
-        return "CALLBACK_INFO";
-    case CALLBACK_QUIT:
-        return "CALLBACK_QUIT";
-    }
-
-    carla_stderr("CarlaBackend::CallbackType2Str(%i) - invalid type", type);
-    return nullptr;
-}
-
-static inline
-const char* ProcessMode2Str(const ProcessMode mode)
+const char* EngineProcessMode2Str(const EngineProcessMode mode)
 {
     switch (mode)
     {
-    case PROCESS_MODE_SINGLE_CLIENT:
-        return "PROCESS_MODE_SINGLE_CLIENT";
-    case PROCESS_MODE_MULTIPLE_CLIENTS:
-        return "PROCESS_MODE_MULTIPLE_CLIENTS";
-    case PROCESS_MODE_CONTINUOUS_RACK:
-        return "PROCESS_MODE_CONTINUOUS_RACK";
-    case PROCESS_MODE_PATCHBAY:
-        return "PROCESS_MODE_PATCHBAY";
-    case PROCESS_MODE_BRIDGE:
-        return "PROCESS_MODE_BRIDGE";
+    case ENGINE_PROCESS_MODE_SINGLE_CLIENT:
+        return "ENGINE_PROCESS_MODE_SINGLE_CLIENT";
+    case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
+        return "ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS";
+    case ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
+        return "ENGINE_PROCESS_MODE_CONTINUOUS_RACK";
+    case ENGINE_PROCESS_MODE_PATCHBAY:
+        return "ENGINE_PROCESS_MODE_PATCHBAY";
+    case ENGINE_PROCESS_MODE_BRIDGE:
+        return "ENGINE_PROCESS_MODE_BRIDGE";
     }
 
-    carla_stderr("CarlaBackend::ProcessMode2Str(%i) - invalid mode", mode);
+    carla_stderr("CarlaBackend::EngineProcessMode2Str(%i) - invalid mode", mode);
     return nullptr;
 }
 
 static inline
-const char* TransportMode2Str(const TransportMode mode)
+const char* EngineTransportMode2Str(const EngineTransportMode mode)
 {
     switch (mode)
     {
-    case TRANSPORT_MODE_INTERNAL:
-        return "TRANSPORT_MODE_INTERNAL";
-    case TRANSPORT_MODE_JACK:
-        return "TRANSPORT_MODE_JACK";
-    case TRANSPORT_MODE_PLUGIN:
-        return "TRANSPORT_MODE_PLUGIN";
-    case TRANSPORT_MODE_BRIDGE:
-        return "TRANSPORT_MODE_BRIDGE";
+    case ENGINE_TRANSPORT_MODE_INTERNAL:
+        return "ENGINE_TRANSPORT_MODE_INTERNAL";
+    case ENGINE_TRANSPORT_MODE_JACK:
+        return "ENGINE_TRANSPORT_MODE_JACK";
+    case ENGINE_TRANSPORT_MODE_PLUGIN:
+        return "ENGINE_TRANSPORT_MODE_PLUGIN";
+    case ENGINE_TRANSPORT_MODE_BRIDGE:
+        return "ENGINE_TRANSPORT_MODE_BRIDGE";
     }
 
-    carla_stderr("CarlaBackend::TransportMode2Str(%i) - invalid mode", mode);
+    carla_stderr("CarlaBackend::EngineTransportMode2Str(%i) - invalid mode", mode);
     return nullptr;
 }
 
@@ -425,7 +425,7 @@ T* getPointerFromAddress(uintptr_t& addr)
 static inline
 const char* getPluginTypeAsString(const PluginType type)
 {
-    carla_debug("CarlaBackend::getPluginTypeAsString(%s)", PluginType2Str(type));
+    carla_debug("CarlaBackend::getPluginTypeAsString(%i:%s)", type, PluginType2Str(type));
 
     switch (type)
     {
@@ -517,6 +517,10 @@ PluginCategory getPluginCategoryFromName(const char* const name)
     // filter
     if (sname.contains("filter"))
         return PLUGIN_CATEGORY_FILTER;
+
+    // distortion
+    if (sname.contains("distortion"))
+        return PLUGIN_CATEGORY_DISTORTION;
 
     // dynamics
     if (sname.contains("dynamics"))

@@ -215,7 +215,7 @@ enum ParameterType SIZE_INT {
  * Internal parameter indexes.\n
  * These are special parameters used internally, plugins do not know about their existence.
  */
-enum InternalParametersIndex SIZE_INT {
+enum InternalParameterIndex SIZE_INT {
     PARAMETER_NULL          = -1, //!< Null parameter.
     PARAMETER_ACTIVE        = -2, //!< Active parameter, can only be 'true' or 'false'; default is 'false'.
     PARAMETER_DRYWET        = -3, //!< Dry/Wet parameter, range 0.0...1.0; default is 1.0.
@@ -228,231 +228,10 @@ enum InternalParametersIndex SIZE_INT {
 };
 
 /*!
- * Engine process mode.
- * \see ENGINE_OPTION_PROCESS_MODE
- */
-enum ProcessMode SIZE_INT {
-    PROCESS_MODE_SINGLE_CLIENT    = 0, //!< Single client mode (dynamic input/outputs as needed by plugins).
-    PROCESS_MODE_MULTIPLE_CLIENTS = 1, //!< Multiple client mode (1 master client + 1 client per plugin).
-    PROCESS_MODE_CONTINUOUS_RACK  = 2, //!< Single client, 'rack' mode. Processes plugins in order of Id, with forced stereo.
-    PROCESS_MODE_PATCHBAY         = 3, //!< Single client, 'patchbay' mode.
-    PROCESS_MODE_BRIDGE           = 4  //!< Special mode, used in plugin-bridges only.
-};
-
-/*!
- * All the available transport modes
- */
-enum TransportMode SIZE_INT {
-    TRANSPORT_MODE_INTERNAL = 0, //!< Internal transport mode.
-    TRANSPORT_MODE_JACK     = 1, //!< Transport from JACK, only available if driver name is "JACK".
-    TRANSPORT_MODE_PLUGIN   = 2, //!< Transport from host, used when Carla is a plugin.
-    TRANSPORT_MODE_BRIDGE   = 3  //!< Special mode, used in plugin-bridges only.
-};
-
-/*!
- * Options used in the CarlaEngine::setOption() calls.\n
- * All options except paths must be set before initiliazing or after closing the engine.
- */
-enum EngineOptionsType SIZE_INT {
-    /*!
-     * Set the current process name.\n
-     * This is a convenience option, as Python lacks this functionality.
-     */
-    ENGINE_OPTION_PROCESS_NAME = 0,
-
-    /*!
-     * Set the engine processing mode.\n
-     * Default is PROCESS_MODE_MULTIPLE_CLIENTS on Linux and PROCESS_MODE_CONTINUOUS_RACK for all other OSes.
-     * \see ProcessMode
-     */
-    ENGINE_OPTION_PROCESS_MODE = 1,
-
-    /*!
-     * Set the engine transport mode.\n
-     * Default is TRANSPORT_MODE_INTERNAL.
-     * \see TransportMode
-     */
-    ENGINE_OPTION_TRANSPORT_MODE = 2,
-
-    /*!
-     * Force mono plugins as stereo, by running 2 instances at the same time.
-     * \note Not supported by all plugins.
-     * \see PLUGIN_OPTION_FORCE_STEREO
-     */
-    ENGINE_OPTION_FORCE_STEREO = 3,
-
-    /*!
-     * Use plugin bridges whenever possible.\n
-     * Default is no, EXPERIMENTAL.
-     */
-    ENGINE_OPTION_PREFER_PLUGIN_BRIDGES = 4,
-
-    /*!
-     * Use UI bridges whenever possible, otherwise UIs will be handled in the main thread.\n
-     * Default is yes.
-     */
-    ENGINE_OPTION_PREFER_UI_BRIDGES = 5,
-
-    /*!
-     * Make plugin UIs always-on-top.\n
-     * Default is yes.
-     */
-    ENGINE_OPTION_UIS_ALWAYS_ON_TOP = 6,
-
-    /*!
-     * Maximum number of parameters allowed.\n
-     * Default is MAX_DEFAULT_PARAMETERS.
-     */
-    ENGINE_OPTION_MAX_PARAMETERS = 7,
-
-    /*!
-     * Timeout value in ms for how much to wait for UI-Bridges to respond.\n
-     * Default is 4000 (4 secs).
-     */
-    ENGINE_OPTION_UI_BRIDGES_TIMEOUT = 8,
-
-    /*!
-     * Audio number of periods.
-     */
-    ENGINE_OPTION_AUDIO_NUM_PERIODS = 9,
-
-    /*!
-     * Audio buffer size.
-     */
-    ENGINE_OPTION_AUDIO_BUFFER_SIZE = 10,
-
-    /*!
-     * Audio sample rate.
-     */
-    ENGINE_OPTION_AUDIO_SAMPLE_RATE = 11,
-
-    /*!
-     * Audio device.
-     */
-    ENGINE_OPTION_AUDIO_DEVICE = 12,
-
-    /*!
-     * Set path to the resource files.\n
-     * Default unset.
-     *
-     * \note Must be set for some internal plugins to work!
-     */
-    ENGINE_OPTION_PATH_RESOURCES = 13,
-
-#ifndef BUILD_BRIDGE
-    /*!
-     * Set path to the native plugin bridge executable.\n
-     * Default unset.
-     */
-    ENGINE_OPTION_PATH_BRIDGE_NATIVE = 14,
-
-    /*!
-     * Set path to the POSIX 32bit plugin bridge executable.\n
-     * Default unset.
-     */
-    ENGINE_OPTION_PATH_BRIDGE_POSIX32 = 15,
-
-    /*!
-     * Set path to the POSIX 64bit plugin bridge executable.\n
-     * Default unset.
-     */
-    ENGINE_OPTION_PATH_BRIDGE_POSIX64 = 16,
-
-    /*!
-     * Set path to the Windows 32bit plugin bridge executable.\n
-     * Default unset.
-     */
-    ENGINE_OPTION_PATH_BRIDGE_WIN32 = 17,
-
-    /*!
-     * Set path to the Windows 64bit plugin bridge executable.\n
-     * Default unset.
-     */
-    ENGINE_OPTION_PATH_BRIDGE_WIN64 = 18,
-#endif
-
-#ifdef WANT_LV2
-    /*!
-     * Set path to the LV2 External UI bridge executable.\n
-     * Default unset.
-     */
-    ENGINE_OPTION_PATH_BRIDGE_LV2_EXTERNAL = 19,
-
-    /*!
-     * Set path to the LV2 Gtk2 UI bridge executable.\n
-     * Default unset.
-     */
-    ENGINE_OPTION_PATH_BRIDGE_LV2_GTK2 = 20,
-
-    /*!
-     * Set path to the LV2 Gtk3 UI bridge executable.\n
-     * Default unset.
-     */
-    ENGINE_OPTION_PATH_BRIDGE_LV2_GTK3 = 21,
-
-    /*!
-     * Set path to the LV2 Ntk UI bridge executable.\n
-     * Default unset.
-     */
-    ENGINE_OPTION_PATH_BRIDGE_LV2_NTK = 22,
-
-    /*!
-     * Set path to the LV2 Qt4 UI bridge executable.\n
-     * Default unset.
-     */
-    ENGINE_OPTION_PATH_BRIDGE_LV2_QT4 = 23,
-
-    /*!
-     * Set path to the LV2 Qt5 UI bridge executable.\n
-     * Default unset.
-     */
-    ENGINE_OPTION_PATH_BRIDGE_LV2_QT5 = 24,
-
-    /*!
-     * Set path to the LV2 Cocoa UI bridge executable.\n
-     * Default unset.
-     */
-    ENGINE_OPTION_PATH_BRIDGE_LV2_COCOA = 25,
-
-    /*!
-     * Set path to the LV2 Windows UI bridge executable.\n
-     * Default unset.
-     */
-    ENGINE_OPTION_PATH_BRIDGE_LV2_WINDOWS = 26,
-
-    /*!
-     * Set path to the LV2 X11 UI bridge executable.\n
-     * Default unset.
-     */
-    ENGINE_OPTION_PATH_BRIDGE_LV2_X11 = 27,
-#endif
-
-#ifdef WANT_VST
-    /*!
-     * Set path to the VST Mac UI bridge executable.\n
-     * Default unset.
-     */
-    ENGINE_OPTION_PATH_BRIDGE_VST_MAC = 28,
-
-    /*!
-     * Set path to the VST HWND UI bridge executable.\n
-     * Default unset.
-     */
-    ENGINE_OPTION_PATH_BRIDGE_VST_HWND = 29,
-
-    /*!
-     * Set path to the VST X11 UI bridge executable.\n
-     * Default unset.
-     */
-    ENGINE_OPTION_PATH_BRIDGE_VST_X11 = 30
-#endif
-};
-
-/*!
  * Opcodes sent from the engine callback to the GUI, as defined by EngineCallbackFunc.
  * \see CarlaEngine::setCallback()
  */
-enum EngineCallbackType SIZE_INT {
+enum EngineCallbackOpcode SIZE_INT {
     /*!
      * Debug.\n
      * This opcode is undefined and used only for testing purposes.
@@ -699,9 +478,230 @@ enum EngineCallbackType SIZE_INT {
 };
 
 /*!
+ * Options used in the CarlaEngine::setOption() calls.\n
+ * All options except paths must be set before initiliazing or after closing the engine.
+ */
+enum EngineOption SIZE_INT {
+    /*!
+     * Set the current process name.\n
+     * This is a convenience option, as Python lacks this functionality.
+     */
+    ENGINE_OPTION_PROCESS_NAME = 0,
+
+    /*!
+     * Set the engine processing mode.\n
+     * Default is PROCESS_MODE_MULTIPLE_CLIENTS on Linux and PROCESS_MODE_CONTINUOUS_RACK for all other OSes.
+     * \see ProcessMode
+     */
+    ENGINE_OPTION_PROCESS_MODE = 1,
+
+    /*!
+     * Set the engine transport mode.\n
+     * Default is TRANSPORT_MODE_INTERNAL.
+     * \see TransportMode
+     */
+    ENGINE_OPTION_TRANSPORT_MODE = 2,
+
+    /*!
+     * Force mono plugins as stereo, by running 2 instances at the same time.
+     * \note Not supported by all plugins.
+     * \see PLUGIN_OPTION_FORCE_STEREO
+     */
+    ENGINE_OPTION_FORCE_STEREO = 3,
+
+    /*!
+     * Use plugin bridges whenever possible.\n
+     * Default is no, EXPERIMENTAL.
+     */
+    ENGINE_OPTION_PREFER_PLUGIN_BRIDGES = 4,
+
+    /*!
+     * Use UI bridges whenever possible, otherwise UIs will be handled in the main thread.\n
+     * Default is yes.
+     */
+    ENGINE_OPTION_PREFER_UI_BRIDGES = 5,
+
+    /*!
+     * Make plugin UIs always-on-top.\n
+     * Default is yes.
+     */
+    ENGINE_OPTION_UIS_ALWAYS_ON_TOP = 6,
+
+    /*!
+     * Maximum number of parameters allowed.\n
+     * Default is MAX_DEFAULT_PARAMETERS.
+     */
+    ENGINE_OPTION_MAX_PARAMETERS = 7,
+
+    /*!
+     * Timeout value in ms for how much to wait for UI-Bridges to respond.\n
+     * Default is 4000 (4 secs).
+     */
+    ENGINE_OPTION_UI_BRIDGES_TIMEOUT = 8,
+
+    /*!
+     * Audio number of periods.
+     */
+    ENGINE_OPTION_AUDIO_NUM_PERIODS = 9,
+
+    /*!
+     * Audio buffer size.
+     */
+    ENGINE_OPTION_AUDIO_BUFFER_SIZE = 10,
+
+    /*!
+     * Audio sample rate.
+     */
+    ENGINE_OPTION_AUDIO_SAMPLE_RATE = 11,
+
+    /*!
+     * Audio device.
+     */
+    ENGINE_OPTION_AUDIO_DEVICE = 12,
+
+    /*!
+     * Set path to the resource files.\n
+     * Default unset.
+     *
+     * \note Must be set for some internal plugins to work!
+     */
+    ENGINE_OPTION_PATH_RESOURCES = 13,
+
+#ifndef BUILD_BRIDGE
+    /*!
+     * Set path to the native plugin bridge executable.\n
+     * Default unset.
+     */
+    ENGINE_OPTION_PATH_BRIDGE_NATIVE = 14,
+
+    /*!
+     * Set path to the POSIX 32bit plugin bridge executable.\n
+     * Default unset.
+     */
+    ENGINE_OPTION_PATH_BRIDGE_POSIX32 = 15,
+
+    /*!
+     * Set path to the POSIX 64bit plugin bridge executable.\n
+     * Default unset.
+     */
+    ENGINE_OPTION_PATH_BRIDGE_POSIX64 = 16,
+
+    /*!
+     * Set path to the Windows 32bit plugin bridge executable.\n
+     * Default unset.
+     */
+    ENGINE_OPTION_PATH_BRIDGE_WIN32 = 17,
+
+    /*!
+     * Set path to the Windows 64bit plugin bridge executable.\n
+     * Default unset.
+     */
+    ENGINE_OPTION_PATH_BRIDGE_WIN64 = 18,
+#endif
+
+#ifdef WANT_LV2
+    /*!
+     * Set path to the LV2 External UI bridge executable.\n
+     * Default unset.
+     */
+    ENGINE_OPTION_PATH_BRIDGE_LV2_EXTERNAL = 19,
+
+    /*!
+     * Set path to the LV2 Gtk2 UI bridge executable.\n
+     * Default unset.
+     */
+    ENGINE_OPTION_PATH_BRIDGE_LV2_GTK2 = 20,
+
+    /*!
+     * Set path to the LV2 Gtk3 UI bridge executable.\n
+     * Default unset.
+     */
+    ENGINE_OPTION_PATH_BRIDGE_LV2_GTK3 = 21,
+
+    /*!
+     * Set path to the LV2 Ntk UI bridge executable.\n
+     * Default unset.
+     */
+    ENGINE_OPTION_PATH_BRIDGE_LV2_NTK = 22,
+
+    /*!
+     * Set path to the LV2 Qt4 UI bridge executable.\n
+     * Default unset.
+     */
+    ENGINE_OPTION_PATH_BRIDGE_LV2_QT4 = 23,
+
+    /*!
+     * Set path to the LV2 Qt5 UI bridge executable.\n
+     * Default unset.
+     */
+    ENGINE_OPTION_PATH_BRIDGE_LV2_QT5 = 24,
+
+    /*!
+     * Set path to the LV2 Cocoa UI bridge executable.\n
+     * Default unset.
+     */
+    ENGINE_OPTION_PATH_BRIDGE_LV2_COCOA = 25,
+
+    /*!
+     * Set path to the LV2 Windows UI bridge executable.\n
+     * Default unset.
+     */
+    ENGINE_OPTION_PATH_BRIDGE_LV2_WINDOWS = 26,
+
+    /*!
+     * Set path to the LV2 X11 UI bridge executable.\n
+     * Default unset.
+     */
+    ENGINE_OPTION_PATH_BRIDGE_LV2_X11 = 27,
+#endif
+
+#ifdef WANT_VST
+    /*!
+     * Set path to the VST Mac UI bridge executable.\n
+     * Default unset.
+     */
+    ENGINE_OPTION_PATH_BRIDGE_VST_MAC = 28,
+
+    /*!
+     * Set path to the VST HWND UI bridge executable.\n
+     * Default unset.
+     */
+    ENGINE_OPTION_PATH_BRIDGE_VST_HWND = 29,
+
+    /*!
+     * Set path to the VST X11 UI bridge executable.\n
+     * Default unset.
+     */
+    ENGINE_OPTION_PATH_BRIDGE_VST_X11 = 30
+#endif
+};
+
+/*!
+ * Engine process mode.
+ * \see ENGINE_OPTION_PROCESS_MODE
+ */
+enum EngineProcessMode SIZE_INT {
+    ENGINE_PROCESS_MODE_SINGLE_CLIENT    = 0, //!< Single client mode (dynamic input/outputs as needed by plugins).
+    ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS = 1, //!< Multiple client mode (1 master client + 1 client per plugin).
+    ENGINE_PROCESS_MODE_CONTINUOUS_RACK  = 2, //!< Single client, 'rack' mode. Processes plugins in order of Id, with forced stereo.
+    ENGINE_PROCESS_MODE_PATCHBAY         = 3, //!< Single client, 'patchbay' mode.
+    ENGINE_PROCESS_MODE_BRIDGE           = 4  //!< Special mode, used in plugin-bridges only.
+};
+
+/*!
+ * All the available transport modes
+ */
+enum EngineTransportMode SIZE_INT {
+    ENGINE_TRANSPORT_MODE_INTERNAL = 0, //!< Internal transport mode.
+    ENGINE_TRANSPORT_MODE_JACK     = 1, //!< Transport from JACK, only available if driver name is "JACK".
+    ENGINE_TRANSPORT_MODE_PLUGIN   = 2, //!< Transport from host, used when Carla is a plugin.
+    ENGINE_TRANSPORT_MODE_BRIDGE   = 3  //!< Special mode, used in plugin-bridges only.
+};
+
+/*!
  * Opcodes sent from the backend to the frontend, asking for file related tasks.
  */
-enum FileCallbackType SIZE_INT {
+enum FileCallbackOpcode SIZE_INT {
     /*!
      * Debug.\n
      * This opcode is undefined and used only for testing purposes.
@@ -723,13 +723,13 @@ enum FileCallbackType SIZE_INT {
  * Engine callback function.
  * \see EngineCallbackType
  */
-typedef void (*EngineCallbackFunc)(void* ptr, EngineCallbackType action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr);
+typedef void (*EngineCallbackFunc)(void* ptr, EngineCallbackOpcode action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr);
 
 /*!
  * File callback function.
  * \see FileCallbackType
  */
-typedef char* (*FileCallbackFunc)(void* ptr, FileCallbackType action, bool isDir, const char* title, const char* filter);
+typedef const char* (*FileCallbackFunc)(void* ptr, FileCallbackOpcode action, bool isDir, const char* title, const char* filter);
 
 /*!
  * Parameter data.

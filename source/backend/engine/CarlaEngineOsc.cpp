@@ -463,7 +463,7 @@ int CarlaEngineOsc::handleMsgConfigure(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     const char* const key   = (const char*)&argv[0]->s;
     const char* const value = (const char*)&argv[1]->s;
 
-    plugin->setCustomData(CUSTOM_DATA_STRING, key, value, false);
+    plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, key, value, false);
 
     return 0;
 }
@@ -589,7 +589,7 @@ int CarlaEngineOsc::handleMsgExiting(CARLA_ENGINE_OSC_HANDLE_ARGS1)
     carla_debug("CarlaEngineOsc::handleMsgExiting()");
 
     // TODO - check for non-UIs (dssi-vst) and set to -1 instead
-    fEngine->callback(CALLBACK_SHOW_GUI, plugin->getId(), 0, 0, 0.0f, nullptr);
+    fEngine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, plugin->getId(), 0, 0, 0.0f, nullptr);
 
     // TODO
     //plugin->freeOscData();

@@ -22,7 +22,9 @@
 #include "CarlaMIDI.h"
 #include "List.hpp"
 
-#include "juce_core.h"
+#ifdef USE_JUCE
+# include "juce_core.h"
+#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -211,6 +213,7 @@ struct SaveState {
     CARLA_DECLARE_NON_COPY_STRUCT(SaveState)
 };
 
+#ifdef USE_JUCE
 // -----------------------------------------------------------------------
 
 static inline
@@ -578,6 +581,7 @@ void fillXmlStringFromSaveState(juce::String& content, const SaveState& saveStat
 }
 
 // -----------------------------------------------------------------------
+#endif
 
 CARLA_BACKEND_END_NAMESPACE
 

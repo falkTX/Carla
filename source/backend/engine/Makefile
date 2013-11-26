@@ -24,8 +24,10 @@ OBJSp = \
 OBJS  = $(OBJSp) \
 	CarlaEngineBridge.cpp.o \
 	CarlaEngineJack.cpp.o \
-	CarlaEngineJuce.cpp.o \
 	CarlaEngineRtAudio.cpp.o
+
+# OBJS += \
+# 	CarlaEngineJuce.cpp.o
 
 HEADERS = \
 	../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp \
