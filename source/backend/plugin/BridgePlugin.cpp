@@ -277,7 +277,7 @@ public:
             pData->active = false;
         }
 
-        if (pData->osc.thread.isThreadRunning())
+        if (pData->osc.thread.isRunning())
         {
             fShmControl.writeOpcode(kPluginBridgeOpcodeQuit);
             fShmControl.commitWrite();
@@ -291,7 +291,7 @@ public:
         }
 
         pData->osc.data.free();
-        pData->osc.thread.stopThread(6000);
+        pData->osc.thread.stop(6000);
 
         if (fNeedsSemDestroy)
         {
@@ -588,7 +588,7 @@ public:
 
     void idleGui() override
     {
-        if (! pData->osc.thread.isThreadRunning())
+        if (! pData->osc.thread.isRunning())
             carla_stderr2("TESTING: Bridge has closed!");
 
         CarlaPlugin::idleGui();
@@ -602,7 +602,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
         carla_debug("BridgePlugin::reload() - start");
 
-        const ProcessMode processMode(pData->engine->getProccessMode());
+        const EngineProcessMode processMode(pData->engine->getProccessMode());
 
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
@@ -635,7 +635,7 @@ public:
         {
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -659,7 +659,7 @@ public:
         {
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -682,7 +682,7 @@ public:
         {
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -698,7 +698,7 @@ public:
         {
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -750,7 +750,13 @@ public:
         {
             // disable any output sound
             for (i=0; i < pData->audioOut.count; ++i)
+            {
+#ifdef USE_JUCE
                 FloatVectorOperations::clear(outBuffer[i], frames);
+#else
+                carla_zeroFloat(outBuffer[i], frames);
+#endif
+            }
 
             return;
         }
@@ -1055,7 +1061,12 @@ public:
         else if (! pData->singleMutex.tryLock())
         {
             for (i=0; i < pData->audioOut.count; ++i)
+            {
+#ifdef USE_JUCE
                 FloatVectorOperations::clear(outBuffer[i], frames);
+#else
+#endif
+            }
 
             return false;
         }
@@ -1064,7 +1075,12 @@ public:
         // Reset audio buffers
 
         for (i=0; i < fInfo.aIns; ++i)
+        {
+#ifdef USE_JUCE
             FloatVectorOperations::copy(fShmAudioPool.data + (i * frames), inBuffer[i], frames);
+#else
+#endif
+        }
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -1079,7 +1095,12 @@ public:
         }
 
         for (i=0; i < fInfo.aOuts; ++i)
+        {
+#ifdef USE_JUCE
             FloatVectorOperations::copy(outBuffer[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), frames);
+#else
+#endif
+        }
 
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
@@ -1112,7 +1133,10 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
+#ifdef USE_JUCE
                         FloatVectorOperations::copy(oldBufLeft, outBuffer[i], frames);
+#else
+#endif
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
@@ -1486,7 +1510,7 @@ public:
                 break;
 
             if (std::strcmp(key, CARLA_BRIDGE_MSG_HIDE_GUI) == 0)
-                pData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, fId, 0, 0, 0.0f, nullptr);
             else if (std::strcmp(key, CARLA_BRIDGE_MSG_SAVED) == 0)
                 fSaved = true;
 
@@ -1775,12 +1799,12 @@ public:
             std::strncat(shmIdStr, &fShmControl.filename[fShmControl.filename.length()-6], 6);
 
             pData->osc.thread.setOscData(bridgeBinary, label, getPluginTypeAsString(fPluginType), shmIdStr);
-            pData->osc.thread.startThread(7);
+            pData->osc.thread.start();
         }
 
         for (int i=0; i < 200; ++i)
         {
-            if (fInitiated || ! pData->osc.thread.isThreadRunning())
+            if (fInitiated || ! pData->osc.thread.isRunning())
                 break;
             carla_msleep(50);
         }
@@ -1790,7 +1814,7 @@ public:
             // unregister so it gets handled properly
             pData->engine->registerEnginePlugin(fId, nullptr);
 
-            pData->osc.thread.stopThread(6000);
+            pData->osc.thread.stop(6000);
 
             if (! fInitError)
                 pData->engine->setLastError("Timeout while waiting for a response from plugin-bridge\n(or the plugin crashed on initialization?)");
@@ -1911,7 +1935,7 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 
     plugin->reload();
 
-    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
+    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
     {
         init.engine->setLastError("Carla's rack mode can only work with Stereo Bridged plugins, sorry!");
         delete plugin;

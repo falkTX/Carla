@@ -46,7 +46,10 @@ public:
     {
         carla_debug("FluidSynthPlugin::FluidSynthPlugin(%p, %i, %s)", engine, id,  bool2str(use16Outs));
 
+#ifdef USE_JUCE
         FloatVectorOperations::clear(fParamBuffers, FluidSynthParametersMax);
+#else
+#endif
         carla_fill<int32_t>(fCurMidiProgs, MAX_MIDI_CHANNELS, 0);
 
         // create settings
@@ -355,7 +358,7 @@ public:
                                                                                           fCurMidiProgs[8],  fCurMidiProgs[9],  fCurMidiProgs[10], fCurMidiProgs[11],
                                                                                           fCurMidiProgs[12], fCurMidiProgs[13], fCurMidiProgs[14], fCurMidiProgs[15]);
 
-        CarlaPlugin::setCustomData(CUSTOM_DATA_STRING, "midiPrograms", strBuf, false);
+        CarlaPlugin::setCustomData(CUSTOM_DATA_TYPE_STRING, "midiPrograms", strBuf, false);
     }
 
     // -------------------------------------------------------------------
@@ -432,7 +435,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
         carla_debug("DssiPlugin::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
 
-        if (std::strcmp(type, CUSTOM_DATA_STRING) != 0)
+        if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) != 0)
             return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
         if (std::strcmp(key, "midiPrograms") != 0)
@@ -510,7 +513,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fSynth != nullptr,);
         carla_debug("FluidSynthPlugin::reload() - start");
 
-        const ProcessMode processMode(pData->engine->getProccessMode());
+        const EngineProcessMode processMode(pData->engine->getProccessMode());
 
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
@@ -539,7 +542,7 @@ public:
             {
                 portName.clear();
 
-                if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+                if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
                 {
                     portName  = fName;
                     portName += ":";
@@ -573,7 +576,7 @@ public:
             // out-left
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -588,7 +591,7 @@ public:
             // out-right
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -607,7 +610,7 @@ public:
         {
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -625,7 +628,7 @@ public:
         {
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -985,7 +988,7 @@ public:
         }
         else
         {
-            pData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -1003,7 +1006,12 @@ public:
         {
             // disable any output sound
             for (i=0; i < pData->audioOut.count; ++i)
+            {
+#ifdef USE_JUCE
                 FloatVectorOperations::clear(outBuffer[i], frames);
+#else
+#endif
+            }
 
             return;
         }
@@ -1376,7 +1384,12 @@ public:
         if (kUses16Outs)
         {
             for (i=0; i < pData->audioOut.count; ++i)
+            {
+#ifdef USE_JUCE
                 FloatVectorOperations::clear(fAudio16Buffers[i], frames);
+#else
+#endif
+            }
 
             fluid_synth_process(fSynth, frames, 0, nullptr, pData->audioOut.count, fAudio16Buffers);
         }
@@ -1400,7 +1413,12 @@ public:
                 if (doBalance)
                 {
                     if (i % 2 == 0)
+                    {
+#ifdef USE_JUCE
                         FloatVectorOperations::copy(oldBufLeft, outBuffer[i]+timeOffset, frames);
+#else
+#endif
+                    }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (pData->postProc.balanceRight + 1.0f)/2.0f;
@@ -1650,7 +1668,7 @@ CarlaPlugin* CarlaPlugin::newSF2(const Initializer& init, const bool use16Outs)
         return nullptr;
     }
 
-    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && use16Outs)
+    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && use16Outs)
     {
         init.engine->setLastError("Carla's rack mode can only work with Stereo modules, please choose the 2-channel only SoundFont version");
         return nullptr;

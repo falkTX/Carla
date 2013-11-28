@@ -401,7 +401,7 @@ public:
 
             if (fUi.type == PLUGIN_UI_OSC)
             {
-                pData->osc.thread.stopThread(pData->engine->getOptions().uiBridgesTimeout);
+                pData->osc.thread.stop(pData->engine->getOptions().uiBridgesTimeout);
             }
             else
             {
@@ -503,7 +503,7 @@ public:
             }
         }
 
-        for (NonRtList<const char*>::Itenerator it = fCustomURIDs.begin(); it.valid(); it.next())
+        for (List<const char*>::Itenerator it = fCustomURIDs.begin(); it.valid(); it.next())
         {
             const char*& uri(*it);
 
@@ -641,7 +641,7 @@ public:
         if (! (hasMidiIn || needsFixedBuffer()))
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        if (pData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK)
+        if (pData->engine->getProccessMode() != ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
         {
             if (fOptions & PLUGIN_OPTION_FORCE_STEREO)
                 options |= PLUGIN_OPTION_FORCE_STEREO;
@@ -1075,7 +1075,7 @@ public:
         {
             if (yesNo)
             {
-                pData->osc.thread.startThread();
+                pData->osc.thread.start();
             }
             else
             {
@@ -1086,7 +1086,7 @@ public:
                     pData->osc.data.free();
                 }
 
-                pData->osc.thread.stopThread(pData->engine->getOptions().uiBridgesTimeout);
+                pData->osc.thread.stop(pData->engine->getOptions().uiBridgesTimeout);
             }
 
             return;
@@ -1136,8 +1136,8 @@ public:
                 {
                     fUi.handle = nullptr;
                     fUi.widget = nullptr;
-                    pData->engine->callback(CALLBACK_ERROR, fId, 0, 0, 0.0f, "Plugin refused to open its own UI");
-                    pData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
+                    pData->engine->callback(ENGINE_CALLBACK_ERROR, fId, 0, 0, 0.0f, "Plugin refused to open its own UI");
+                    pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, fId, 0, 0, 0.0f, nullptr);
                     return;
                 }
 
@@ -1237,7 +1237,7 @@ public:
         //if (! fAtomQueueOut.isEmpty())
         {
             Lv2AtomQueue tmpQueue;
-            tmpQueue.copyDataFrom(fAtomQueueOut);
+            tmpQueue.copyDataFromQueue(fAtomQueueOut);
 
             uint32_t portIndex;
             const LV2_Atom* atom;
@@ -1271,7 +1271,7 @@ public:
             if (fExt.uiidle != nullptr && fExt.uiidle->idle(fUi.handle) != 0)
             {
                 showGui(false);
-                pData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, fId, 0, 0, 0.0f, nullptr);
             }
         }
 
@@ -1289,7 +1289,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
         carla_debug("Lv2Plugin::reload() - start");
 
-        const ProcessMode processMode(pData->engine->getProccessMode());
+        const EngineProcessMode processMode(pData->engine->getProccessMode());
 
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
@@ -1304,7 +1304,7 @@ public:
 
         uint32_t aIns, aOuts, cvIns, cvOuts, params, j;
         aIns = aOuts = cvIns = cvOuts = params = 0;
-        NonRtList<unsigned int> evIns, evOuts;
+        List<unsigned int> evIns, evOuts;
 
         bool forcedStereoIn, forcedStereoOut;
         forcedStereoIn = forcedStereoOut = false;
@@ -1433,7 +1433,10 @@ public:
             pData->param.createNew(params+cvIns+cvOuts);
 
             fParamBuffers = new float[params+cvIns+cvOuts];
+#ifdef USE_JUCE
             FloatVectorOperations::clear(fParamBuffers, params+cvIns+cvOuts);
+#else
+#endif
         }
 
         if (evIns.count() > 0)
@@ -1511,7 +1514,7 @@ public:
 
             if (LV2_IS_PORT_AUDIO(portTypes) || LV2_IS_PORT_ATOM_SEQUENCE(portTypes) || LV2_IS_PORT_CV(portTypes) || LV2_IS_PORT_EVENT(portTypes) || LV2_IS_PORT_MIDI_LL(portTypes))
             {
-                if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+                if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
                 {
                     portName  = fName;
                     portName += ":";
@@ -1944,16 +1947,16 @@ public:
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
 
-                        pData->param.data[j].type  = PARAMETER_SAMPLE_RATE;
+                        //pData->param.data[j].type  = PARAMETER_SAMPLE_RATE;
                         pData->param.data[j].hints = 0x0;
                     }
                     else if (LV2_IS_PORT_DESIGNATION_FREEWHEELING(portDesignation))
                     {
-                        pData->param.data[j].type = PARAMETER_LV2_FREEWHEEL;
+                        //pData->param.data[j].type = PARAMETER_LV2_FREEWHEEL;
                     }
                     else if (LV2_IS_PORT_DESIGNATION_TIME(portDesignation))
                     {
-                        pData->param.data[j].type = PARAMETER_LV2_TIME;
+                        //pData->param.data[j].type = PARAMETER_LV2_TIME;
                     }
                     else
                     {
@@ -1983,7 +1986,7 @@ public:
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
 
-                        pData->param.data[j].type  = PARAMETER_LATENCY;
+                        //pData->param.data[j].type  = PARAMETER_LATENCY;
                         pData->param.data[j].hints = 0x0;
                     }
                     else if (LV2_IS_PORT_DESIGNATION_SAMPLE_RATE(portDesignation))
@@ -1993,7 +1996,7 @@ public:
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
 
-                        pData->param.data[j].type  = PARAMETER_SAMPLE_RATE;
+                        //pData->param.data[j].type  = PARAMETER_SAMPLE_RATE;
                         pData->param.data[j].hints = 0x0;
                     }
                     else if (LV2_IS_PORT_DESIGNATION_FREEWHEELING(portDesignation))
@@ -2002,7 +2005,7 @@ public:
                     }
                     else if (LV2_IS_PORT_DESIGNATION_TIME(portDesignation))
                     {
-                        pData->param.data[j].type = PARAMETER_LV2_TIME;
+                        //pData->param.data[j].type = PARAMETER_LV2_TIME;
                     }
                     else
                     {
@@ -2047,10 +2050,10 @@ public:
                 pData->param.ranges[j].stepLarge = stepLarge;
 
                 // Start parameters in their default values
-                if (pData->param.data[j].type != PARAMETER_LV2_FREEWHEEL)
+                //if (pData->param.data[j].type != PARAMETER_LV2_FREEWHEEL)
                     fParamBuffers[j] = def;
-                else
-                    fParamBuffers[j] = min;
+                //else
+                //    fParamBuffers[j] = min;
 
                 fDescriptor->connect_port(fHandle, i, &fParamBuffers[j]);
 
@@ -2071,7 +2074,7 @@ public:
         {
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -2087,7 +2090,7 @@ public:
         {
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -2281,7 +2284,7 @@ public:
             if (programChanged)
                 setMidiProgram(pData->midiprog.current, true, true, true);
 
-            pData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -2329,7 +2332,12 @@ public:
         {
             // disable any output sound
             for (i=0; i < pData->audioOut.count; ++i)
+            {
+#ifdef USE_JUCE
                 FloatVectorOperations::clear(outBuffer[i], frames);
+#else
+#endif
+            }
 
             return;
         }
@@ -2464,7 +2472,7 @@ public:
             // update input ports
             for (k=0; k < pData->param.count; ++k)
             {
-                if (pData->param.data[k].type != PARAMETER_LV2_TIME)
+                //if (pData->param.data[k].type != PARAMETER_LV2_TIME)
                     continue;
 
                 doPostRt = false;
@@ -3137,9 +3145,20 @@ public:
         // Reset audio buffers
 
         for (i=0; i < pData->audioIn.count; ++i)
+        {
+#ifdef USE_JUCE
             FloatVectorOperations::copy(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
+#else
+#endif
+        }
+
         for (i=0; i < pData->audioOut.count; ++i)
+        {
+#ifdef USE_JUCE
             FloatVectorOperations::clear(fAudioOutBuffers[i], frames);
+#else
+#endif
+        }
 
         // --------------------------------------------------------------------------------------------------------
         // Set CV input buffers
@@ -3221,7 +3240,10 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
+#ifdef USE_JUCE
                         FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], frames);
+#else
+#endif
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
@@ -3400,7 +3422,7 @@ public:
 
         for (uint32_t k=0; k < pData->param.count; ++k)
         {
-            if (pData->param.data[k].type == PARAMETER_SAMPLE_RATE)
+            //if (pData->param.data[k].type == PARAMETER_SAMPLE_RATE)
             {
                 fParamBuffers[k] = newSampleRate;
                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 1, fParamBuffers[k]);
@@ -3414,7 +3436,7 @@ public:
     {
         for (uint32_t k=0; k < pData->param.count; ++k)
         {
-            if (pData->param.data[k].type == PARAMETER_LV2_FREEWHEEL)
+            //if (pData->param.data[k].type == PARAMETER_LV2_FREEWHEEL)
             {
                 fParamBuffers[k] = isOffline ? pData->param.ranges[k].max : pData->param.ranges[k].min;
                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 1, fParamBuffers[k]);
@@ -3683,9 +3705,9 @@ protected:
                 pData->midiprog.data[index].name = carla_strdup(progDesc->name ? progDesc->name : "");
 
                 if (index == pData->midiprog.current)
-                    pData->engine->callback(CALLBACK_UPDATE, fId, 0, 0, 0.0, nullptr);
+                    pData->engine->callback(ENGINE_CALLBACK_UPDATE, fId, 0, 0, 0.0, nullptr);
                 else
-                    pData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0, nullptr);
+                    pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0, nullptr);
             }
         }
     }
@@ -3735,7 +3757,7 @@ protected:
         }
 
         // Check if we already have this key
-        for (NonRtList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
+        for (List<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
         {
             CustomData& data(*it);
 
@@ -3797,7 +3819,7 @@ protected:
         const char* stype = nullptr;
         const char* stringData = nullptr;
 
-        for (NonRtList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
+        for (List<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
         {
             CustomData& data(*it);
 
@@ -3881,7 +3903,7 @@ protected:
 
         fUi.handle = nullptr;
         fUi.widget = nullptr;
-        pData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, fId, 0, 0, 0.0f, nullptr);
     }
 
     uint32_t handleUiPortMap(const char* const symbol)
@@ -4847,7 +4869,7 @@ private:
     Lv2PluginEventData fEventsOut;
     Lv2PluginOptions   fLv2Options;
 
-    NonRtList<const char*> fCustomURIDs;
+    List<const char*> fCustomURIDs;
 
     bool fFirstActive; // first process() call after activate()
     EngineTimeInfo fLastTimeInfo;
@@ -5450,7 +5472,7 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
 
     plugin->reload();
 
-    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
+    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
     {
         init.engine->setLastError("Carla's rack mode can only work with Mono or Stereo LV2 plugins, sorry!");
         delete plugin;

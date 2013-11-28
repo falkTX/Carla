@@ -130,4 +130,67 @@ private:
     }
 };
 
+//==============================================================================
+/**
+    Helper class providing an RAII-based mechanism for temporarily setting and
+    then re-setting a value.
+
+    E.g. @code
+    int x = 1;
+
+    {
+        ScopedValueSetter setter (x, 2);
+
+        // x is now 2
+    }
+
+    // x is now 1 again
+
+    {
+        ScopedValueSetter setter (x, 3, 4);
+
+        // x is now 3
+    }
+
+    // x is now 4
+    @endcode
+*/
+template <typename ValueType>
+class ScopedValueSetter
+{
+public:
+    /** Creates a ScopedValueSetter that will immediately change the specified value to the
+        given new value, and will then reset it to its original value when this object is deleted.
+    */
+    ScopedValueSetter(ValueType& valueToSet, ValueType newValue)
+        : value(valueToSet),
+          originalValue(valueToSet)
+    {
+        valueToSet = newValue;
+    }
+
+    /** Creates a ScopedValueSetter that will immediately change the specified value to the
+        given new value, and will then reset it to be valueWhenDeleted when this object is deleted.
+    */
+    ScopedValueSetter(ValueType& valueToSet, ValueType newValue, ValueType valueWhenDeleted)
+        : value(valueToSet),
+          originalValue(valueWhenDeleted)
+    {
+        valueToSet = newValue;
+    }
+
+    ~ScopedValueSetter()
+    {
+        value = originalValue;
+    }
+
+private:
+    //==============================================================================
+    ValueType& value;
+    const ValueType originalValue;
+
+    CARLA_DECLARE_NON_COPY_CLASS(ScopedValueSetter)
+    CARLA_PREVENT_HEAP_ALLOCATION
+};
+
 #endif // CARLA_JUCE_UTILS_HPP_INCLUDED

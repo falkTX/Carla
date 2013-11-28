@@ -28,8 +28,8 @@ extern void carla_register_native_plugin_nekofilter();
 
 // Simple plugins (C++)
 extern void carla_register_native_plugin_sunvoxfile();
-extern void carla_register_native_plugin_vex_fx();
-extern void carla_register_native_plugin_vex_synth();
+//extern void carla_register_native_plugin_vex_fx();
+//extern void carla_register_native_plugin_vex_synth();
 
 // Carla
 extern void carla_register_native_plugin_carla();
@@ -77,8 +77,8 @@ void carla_register_all_plugins()
 
     // Simple plugins (C++)
     //carla_register_native_plugin_sunvoxfile(); // unfinished
-    carla_register_native_plugin_vex_fx();
-    carla_register_native_plugin_vex_synth();
+    //carla_register_native_plugin_vex_fx();
+    //carla_register_native_plugin_vex_synth();
 
     // Carla
     //carla_register_native_plugin_carla(); // kinda unfinished

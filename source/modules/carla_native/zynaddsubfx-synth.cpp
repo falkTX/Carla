@@ -21,8 +21,8 @@
 
 #include "CarlaNative.hpp"
 #include "CarlaMIDI.h"
-#include "CarlaString.hpp"
-#include "RtList.hpp"
+#include "CarlaThread.hpp"
+#include "List.hpp"
 
 #include "zynaddsubfx/DSP/FFTwrapper.h"
 #include "zynaddsubfx/Misc/Master.h"
@@ -51,9 +51,10 @@
 #include <set>
 #include <string>
 
+#ifdef USE_JUCE
 #include "juce_audio_basics.h"
-
 using juce::FloatVectorOperations;
+#endif
 
 #ifdef WANT_ZYNADDSUBFX_UI
 static Fl_Tiled_Image* gModuleBackdrop = nullptr;
@@ -218,7 +219,7 @@ private:
 
     bool fInitiated;
     MidiProgram fRetProgram;
-    NonRtList<const ProgramInfo*> fPrograms;
+    List<const ProgramInfo*> fPrograms;
 
     CARLA_DECLARE_NON_COPY_CLASS(ZynAddSubFxPrograms)
 };
@@ -331,11 +332,11 @@ static ZynAddSubFxInstanceCount sInstanceCount;
 
 // -----------------------------------------------------------------------
 
-class ZynAddSubFxThread : public juce::Thread
+class ZynAddSubFxThread : public CarlaThread
 {
 public:
     ZynAddSubFxThread(Master* const master, const HostDescriptor* const host)
-        : juce::Thread("ZynAddSubFxThread"),
+        : CarlaThread("ZynAddSubFxThread"),
           fMaster(master),
           kHost(host),
 #ifdef WANT_ZYNADDSUBFX_UI
@@ -410,7 +411,7 @@ public:
 protected:
     void run() override
     {
-        while (! threadShouldExit())
+        while (! shouldExit())
         {
 #ifdef WANT_ZYNADDSUBFX_UI
             Fl::lock();
@@ -509,7 +510,7 @@ protected:
         }
 
 #ifdef WANT_ZYNADDSUBFX_UI
-        if (threadShouldExit() || fUi != nullptr)
+        if (shouldExit() || fUi != nullptr)
         {
             Fl::lock();
             delete fUi;
@@ -548,7 +549,7 @@ public:
           fIsActive(false),
           fThread(fMaster, host)
     {
-        fThread.startThread(3);
+        fThread.start();
 
         for (int i = 0; i < NUM_MIDI_PARTS; ++i)
             fMaster->partonoff(i, 1);
@@ -624,8 +625,13 @@ protected:
     {
         if (pthread_mutex_trylock(&fMaster->mutex) != 0)
         {
+#ifdef USE_JUCE
             FloatVectorOperations::clear(outBuffer[0], frames);
             FloatVectorOperations::clear(outBuffer[1], frames);
+#else
+            carla_zeroFloat(outBuffer[0], frames);
+            carla_zeroFloat(outBuffer[1], frames);
+#endif
             return;
         }
 
@@ -734,7 +740,7 @@ protected:
     {
         fMaster = new Master();
         fThread.setMaster(fMaster);
-        fThread.startThread(3);
+        fThread.start();
 
         for (int i = 0; i < NUM_MIDI_PARTS; ++i)
             fMaster->partonoff(i, 1);
@@ -745,7 +751,7 @@ protected:
         //ensure that everything has stopped
         pthread_mutex_lock(&fMaster->mutex);
         pthread_mutex_unlock(&fMaster->mutex);
-        fThread.stopThread(-1);
+        fThread.stop(-1);
 
         delete fMaster;
         fMaster = nullptr;

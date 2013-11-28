@@ -29,11 +29,14 @@
 #include "CarlaMIDI.h"
 #include "RtList.hpp"
 
+#include <cmath>
+
+#define CARLA_PROCESS_CONTINUE_CHECK if (! fEnabled) { pData->engine->callback(ENGINE_CALLBACK_DEBUG, fId, 0, 0, 0.0f, "Processing while plugin is disabled!!"); return; }
+
+#ifdef USE_JUCE
 #include "juce_audio_basics.h"
-
-#define CARLA_PROCESS_CONTINUE_CHECK if (! fEnabled) { pData->engine->callback(CALLBACK_DEBUG, fId, 0, 0, 0.0f, "Processing while plugin is disabled!!"); return; }
-
 using juce::FloatVectorOperations;
+#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -509,7 +512,7 @@ struct CarlaPluginProtectedData {
     PluginParameterData param;
     PluginProgramData prog;
     PluginMidiProgramData midiprog;
-    NonRtList<CustomData> custom;
+    List<CustomData> custom;
 
     SaveState saveState;
 
@@ -665,7 +668,7 @@ struct CarlaPluginProtectedData {
             if (client->isActive())
             {
                 // must not happen
-                carla_assert("client->isActive()", __FILE__, __LINE__);
+                carla_safe_assert("client->isActive()", __FILE__, __LINE__);
                 client->deactivate();
             }
 
@@ -675,7 +678,7 @@ struct CarlaPluginProtectedData {
             client = nullptr;
         }
 
-        for (NonRtList<CustomData>::Itenerator it = custom.begin(); it.valid(); it.next())
+        for (List<CustomData>::Itenerator it = custom.begin(); it.valid(); it.next())
         {
             CustomData& cData(*it);
 
@@ -685,7 +688,7 @@ struct CarlaPluginProtectedData {
                 cData.type = nullptr;
             }
             else
-                carla_assert("cData.type != nullptr", __FILE__, __LINE__);
+                carla_safe_assert("cData.type != nullptr", __FILE__, __LINE__);
 
             if (cData.key != nullptr)
             {
@@ -693,7 +696,7 @@ struct CarlaPluginProtectedData {
                 cData.key = nullptr;
             }
             else
-                carla_assert("cData.key != nullptr", __FILE__, __LINE__);
+                carla_safe_assert("cData.key != nullptr", __FILE__, __LINE__);
 
             if (cData.value != nullptr)
             {
@@ -701,7 +704,7 @@ struct CarlaPluginProtectedData {
                 cData.value = nullptr;
             }
             else
-                carla_assert("cData.value != nullptr", __FILE__, __LINE__);
+                carla_safe_assert("cData.value != nullptr", __FILE__, __LINE__);
         }
 
         prog.clear();
@@ -773,7 +776,11 @@ struct CarlaPluginProtectedData {
             for (uint32_t i=0; i < audioIn.count; ++i)
             {
                 latencyBuffers[i] = new float[latency];
+#ifdef USE_JUCE
                 FloatVectorOperations::clear(latencyBuffers[i], latency);
+#else
+                carla_zeroFloat(latencyBuffers[i], latency);
+#endif
             }
         }
     }

@@ -18,9 +18,11 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaLibCounter.hpp"
 
+#ifdef USE_JUCE
 #include "juce_data_structures.h"
 
 using namespace juce;
+#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -107,6 +109,7 @@ void* CarlaPluginProtectedData::uiLibSymbol(const char* const symbol)
 
 void CarlaPluginProtectedData::saveSetting(const unsigned int option, const bool yesNo)
 {
+#ifdef USE_JUCE
     PropertiesFile::Options opts;
     opts.applicationName     = "common"; // TODO, (const char*)idStr
     opts.filenameSuffix      = ".cfg";
@@ -160,10 +163,12 @@ void CarlaPluginProtectedData::saveSetting(const unsigned int option, const bool
 
     appProps.saveIfNeeded();
     appProps.closeFiles();
+#endif
 }
 
 unsigned int CarlaPluginProtectedData::loadSettings(const unsigned int options, const unsigned int availOptions)
 {
+#ifdef USE_JUCE
     PropertiesFile::Options opts;
     opts.applicationName     = "common"; // TODO, (const char*)idStr
     opts.filenameSuffix      = ".cfg";
@@ -209,6 +214,8 @@ unsigned int CarlaPluginProtectedData::loadSettings(const unsigned int options, 
     #undef CHECK_AND_SET_OPTION
 
     return newOptions;
+#endif
+    return 0x0;
 }
 
 // -------------------------------------------------------------------
@@ -229,20 +236,20 @@ CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
 
     switch (engine->getProccessMode())
     {
-    case PROCESS_MODE_SINGLE_CLIENT:
-    case PROCESS_MODE_MULTIPLE_CLIENTS:
+    case ENGINE_PROCESS_MODE_SINGLE_CLIENT:
+    case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
         CARLA_ASSERT(id < MAX_DEFAULT_PLUGINS);
         break;
 
-    case PROCESS_MODE_CONTINUOUS_RACK:
+    case ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
         CARLA_ASSERT(id < MAX_RACK_PLUGINS);
         break;
 
-    case PROCESS_MODE_PATCHBAY:
+    case ENGINE_PROCESS_MODE_PATCHBAY:
         CARLA_ASSERT(id < MAX_PATCHBAY_PLUGINS);
         break;
 
-    case PROCESS_MODE_BRIDGE:
+    case ENGINE_PROCESS_MODE_BRIDGE:
         CARLA_ASSERT(id == 0);
         break;
     }
@@ -509,6 +516,7 @@ const SaveState& CarlaPlugin::getSaveState()
     pData->saveState.ctrlChannel  = pData->ctrlChannel;
 #endif
 
+#ifdef USE_JUCE
     // ---------------------------------------------------------------
     // Chunk
 
@@ -526,6 +534,7 @@ const SaveState& CarlaPlugin::getSaveState()
             return pData->saveState;
         }
     }
+#endif
 
     // ---------------------------------------------------------------
     // Current Program
@@ -582,7 +591,7 @@ const SaveState& CarlaPlugin::getSaveState()
     // ---------------------------------------------------------------
     // Custom Data
 
-    for (NonRtList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
+    for (List<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
     {
         const CustomData& cData(*it);
 
@@ -609,7 +618,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------
     // Part 1 - PRE-set custom data (only that which reload programs)
 
-    for (NonRtList<StateCustomData*>::Itenerator it = saveState.customData.begin(); it.valid(); it.next())
+    for (List<StateCustomData*>::Itenerator it = saveState.customData.begin(); it.valid(); it.next())
     {
         const StateCustomData* const stateCustomData(*it);
         const char* const key(stateCustomData->key);
@@ -667,7 +676,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------
     // Part 4a - get plugin parameter symbols
 
-    NonRtList<ParamSymbol*> paramSymbols;
+    List<ParamSymbol*> paramSymbols;
 
     if (getType() == PLUGIN_LADSPA || getType() == PLUGIN_LV2)
     {
@@ -689,7 +698,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
 
     const float sampleRate(pData->engine->getSampleRate());
 
-    for (NonRtList<StateParameter*>::Itenerator it = saveState.parameters.begin(); it.valid(); it.next())
+    for (List<StateParameter*>::Itenerator it = saveState.parameters.begin(); it.valid(); it.next())
     {
         StateParameter* const stateParameter(*it);
 
@@ -700,7 +709,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
             // Try to set by symbol, otherwise use index
             if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
             {
-                for (NonRtList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
+                for (List<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
                 {
                     ParamSymbol* const paramSymbol(*it);
 
@@ -721,7 +730,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
             // Symbol only
             if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
             {
-                for (NonRtList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
+                for (List<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
                 {
                     ParamSymbol* const paramSymbol(*it);
 
@@ -762,7 +771,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------
     // Part 4c - clear
 
-    for (NonRtList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
+    for (List<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
     {
         ParamSymbol* const paramSymbol(*it);
         delete paramSymbol;
@@ -773,7 +782,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------
     // Part 5 - set custom data
 
-    for (NonRtList<StateCustomData*>::Itenerator it = saveState.customData.begin(); it.valid(); it.next())
+    for (List<StateCustomData*>::Itenerator it = saveState.customData.begin(); it.valid(); it.next())
     {
         const StateCustomData* const stateCustomData(*it);
         const char* const key(stateCustomData->key);
@@ -812,6 +821,7 @@ bool CarlaPlugin::saveStateToFile(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
     carla_debug("CarlaPlugin::saveStateToFile(\"%s\")", filename);
 
+#ifdef USE_JUCE
     File file(filename);
 
     String content;
@@ -825,6 +835,9 @@ bool CarlaPlugin::saveStateToFile(const char* const filename)
     out << "</CARLA-PRESET>\n";
 
     return file.replaceWithData(out.getData(), out.getDataSize());
+#else
+    return false;
+#endif
 }
 
 bool CarlaPlugin::loadStateFromFile(const char* const filename)
@@ -832,6 +845,7 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
     carla_debug("CarlaPlugin::loadStateFromFile(\"%s\")", filename);
 
+#ifdef USE_JUCE
     File file(filename);
 
     XmlDocument xml(file);
@@ -859,6 +873,7 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
         delete xmlCheck;
         return false;
     }
+#endif
 
     pData->engine->setLastError("Not a valid file");
     return false;
@@ -932,7 +947,7 @@ void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool se
         pData->engine->oscSend_control_set_parameter_value(fId, PARAMETER_ACTIVE, value);
 
     if (sendCallback)
-        pData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_ACTIVE, 0, value, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_ACTIVE, 0, value, nullptr);
 #else
     return;
 
@@ -958,7 +973,7 @@ void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool se
         pData->engine->oscSend_control_set_parameter_value(fId, PARAMETER_DRYWET, fixedValue);
 
     if (sendCallback)
-        pData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_DRYWET, 0, fixedValue, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_DRYWET, 0, fixedValue, nullptr);
 }
 
 void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool sendCallback)
@@ -976,7 +991,7 @@ void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool se
         pData->engine->oscSend_control_set_parameter_value(fId, PARAMETER_VOLUME, fixedValue);
 
     if (sendCallback)
-        pData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_VOLUME, 0, fixedValue, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_VOLUME, 0, fixedValue, nullptr);
 }
 
 void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bool sendCallback)
@@ -994,7 +1009,7 @@ void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bo
         pData->engine->oscSend_control_set_parameter_value(fId, PARAMETER_BALANCE_LEFT, fixedValue);
 
     if (sendCallback)
-        pData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_BALANCE_LEFT, 0, fixedValue, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_BALANCE_LEFT, 0, fixedValue, nullptr);
 }
 
 void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const bool sendCallback)
@@ -1012,7 +1027,7 @@ void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const b
         pData->engine->oscSend_control_set_parameter_value(fId, PARAMETER_BALANCE_RIGHT, fixedValue);
 
     if (sendCallback)
-        pData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_BALANCE_RIGHT, 0, fixedValue, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_BALANCE_RIGHT, 0, fixedValue, nullptr);
 }
 
 void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool sendCallback)
@@ -1030,7 +1045,7 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
         pData->engine->oscSend_control_set_parameter_value(fId, PARAMETER_PANNING, fixedValue);
 
     if (sendCallback)
-        pData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_PANNING, 0, fixedValue, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_PANNING, 0, fixedValue, nullptr);
 }
 #endif
 
@@ -1053,7 +1068,7 @@ void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const
         pData->engine->oscSend_control_set_parameter_value(fId, PARAMETER_CTRL_CHANNEL, ctrlf);
 
     if (sendCallback)
-        pData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_CTRL_CHANNEL, 0, ctrlf, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_CTRL_CHANNEL, 0, ctrlf, nullptr);
 
     if (fHints & PLUGIN_IS_BRIDGE)
         osc_send_control(pData->osc.data, PARAMETER_CTRL_CHANNEL, ctrlf);
@@ -1088,7 +1103,7 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
 #endif
 
     if (sendCallback)
-        pData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, parameterId, 0, value, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, fId, parameterId, 0, value, nullptr);
 
 #ifdef BUILD_BRIDGE
     return;
@@ -1152,7 +1167,7 @@ void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, uint8_t ch
         pData->engine->oscSend_control_set_parameter_midi_channel(fId, parameterId, channel);
 
     if (sendCallback)
-        pData->engine->callback(CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED, fId, parameterId, channel, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED, fId, parameterId, channel, 0.0f, nullptr);
 
     if (fHints & PLUGIN_IS_BRIDGE)
         {} // TODO
@@ -1181,7 +1196,7 @@ void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, int16_t cc, con
         pData->engine->oscSend_control_set_parameter_midi_cc(fId, parameterId, cc);
 
     if (sendCallback)
-        pData->engine->callback(CALLBACK_PARAMETER_MIDI_CC_CHANGED, fId, parameterId, cc, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED, fId, parameterId, cc, 0.0f, nullptr);
 
     if (fHints & PLUGIN_IS_BRIDGE)
         {} // TODO
@@ -1217,7 +1232,7 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
 
     bool saveData = true;
 
-    if (std::strcmp(type, CUSTOM_DATA_STRING) == 0)
+    if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) == 0)
     {
         // Ignore some keys
         if (std::strncmp(key, "OSC:", 4) == 0 || std::strncmp(key, "CarlaAlternateFile", 18) == 0 || std::strcmp(key, "guiVisible") == 0)
@@ -1230,7 +1245,7 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
         return;
 
     // Check if we already have this key
-    for (NonRtList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
+    for (List<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
     {
         CustomData& cData(*it);
 
@@ -1294,7 +1309,7 @@ void CarlaPlugin::setProgram(int32_t index, const bool sendGui, const bool sendO
 #endif
 
     if (sendCallback)
-        pData->engine->callback(CALLBACK_PROGRAM_CHANGED, fId, fixedIndex, 0, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED, fId, fixedIndex, 0, 0.0f, nullptr);
 
     // Change default parameter values
     if (fixedIndex >= 0)
@@ -1320,8 +1335,8 @@ void CarlaPlugin::setProgram(int32_t index, const bool sendGui, const bool sendO
                 pData->engine->oscSend_control_set_parameter_value(fId, i, value);
 #endif
 
-                pData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, i, 0, value, nullptr);
-                pData->engine->callback(CALLBACK_PARAMETER_DEFAULT_CHANGED, fId, i, 0, value, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, fId, i, 0, value, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, fId, i, 0, value, nullptr);
             }
         }
     }
@@ -1357,7 +1372,7 @@ void CarlaPlugin::setMidiProgram(int32_t index, const bool sendGui, const bool s
 #endif
 
     if (sendCallback)
-        pData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fId, fixedIndex, 0, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, fId, fixedIndex, 0, 0.0f, nullptr);
 
     if (fixedIndex >= 0)
     {
@@ -1382,8 +1397,8 @@ void CarlaPlugin::setMidiProgram(int32_t index, const bool sendGui, const bool s
                 pData->engine->oscSend_control_set_parameter_value(fId, i, value);
 #endif
 
-                pData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, i, 0, value, nullptr);
-                pData->engine->callback(CALLBACK_PARAMETER_DEFAULT_CHANGED, fId, i, 0, value, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, fId, i, 0, value, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, fId, i, 0, value, nullptr);
             }
         }
     }
@@ -1671,7 +1686,7 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
 
     osc_send_sample_rate(pData->osc.data, pData->engine->getSampleRate());
 
-    for (NonRtList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
+    for (List<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
     {
         const CustomData& cData(*it);
 
@@ -1679,7 +1694,7 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
         CARLA_ASSERT(cData.key != nullptr);
         CARLA_ASSERT(cData.value != nullptr);
 
-        if (std::strcmp(cData.type, CUSTOM_DATA_STRING) == 0)
+        if (std::strcmp(cData.type, CUSTOM_DATA_TYPE_STRING) == 0)
             osc_send_configure(pData->osc.data, cData.key, cData.value);
     }
 
@@ -1766,7 +1781,7 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
     }
 
     if (sendCallback)
-        pData->engine->callback((velo > 0) ? CALLBACK_NOTE_ON : CALLBACK_NOTE_OFF, fId, channel, note, velo, nullptr);
+        pData->engine->callback((velo > 0) ? ENGINE_CALLBACK_NOTE_ON : ENGINE_CALLBACK_NOTE_OFF, fId, channel, note, velo, nullptr);
 }
 #endif
 
@@ -1806,7 +1821,7 @@ void CarlaPlugin::postRtEventsRun()
 
         case kPluginPostRtEventDebug:
 #ifndef BUILD_BRIDGE
-            pData->engine->callback(CALLBACK_DEBUG, fId, event.value1, event.value2, event.value3, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_DEBUG, fId, event.value1, event.value2, event.value3, nullptr);
 #endif
             break;
 
@@ -1823,7 +1838,7 @@ void CarlaPlugin::postRtEventsRun()
                     pData->engine->oscSend_control_set_parameter_value(fId, event.value1, event.value3);
 
                 // Update Host
-                pData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, event.value1, 0, event.value3, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, fId, event.value1, 0, event.value3, nullptr);
             }
 #endif
             break;
@@ -1839,7 +1854,7 @@ void CarlaPlugin::postRtEventsRun()
                 pData->engine->oscSend_control_set_program(fId, event.value1);
 
             // Update Host
-            pData->engine->callback(CALLBACK_PROGRAM_CHANGED, fId, event.value1, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED, fId, event.value1, 0, 0.0f, nullptr);
 
             // Update param values
             {
@@ -1855,8 +1870,8 @@ void CarlaPlugin::postRtEventsRun()
                         pData->engine->oscSend_control_set_default_value(fId, j, pData->param.ranges[j].def);
                     }
 
-                    pData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, j, 0, value, nullptr);
-                    pData->engine->callback(CALLBACK_PARAMETER_DEFAULT_CHANGED, fId, j, 0, pData->param.ranges[j].def, nullptr);
+                    pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, fId, j, 0, value, nullptr);
+                    pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, fId, j, 0, pData->param.ranges[j].def, nullptr);
                 }
             }
 #endif
@@ -1873,7 +1888,7 @@ void CarlaPlugin::postRtEventsRun()
                 pData->engine->oscSend_control_set_midi_program(fId, event.value1);
 
             // Update Host
-            pData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fId, event.value1, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, fId, event.value1, 0, 0.0f, nullptr);
 
             // Update param values
             {
@@ -1889,8 +1904,8 @@ void CarlaPlugin::postRtEventsRun()
                         pData->engine->oscSend_control_set_default_value(fId, j, pData->param.ranges[j].def);
                     }
 
-                    pData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, j, 0, value, nullptr);
-                    pData->engine->callback(CALLBACK_PARAMETER_DEFAULT_CHANGED, fId, j, 0, pData->param.ranges[j].def, nullptr);
+                    pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, fId, j, 0, value, nullptr);
+                    pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, fId, j, 0, pData->param.ranges[j].def, nullptr);
                 }
             }
 #endif
@@ -1906,7 +1921,7 @@ void CarlaPlugin::postRtEventsRun()
                 pData->engine->oscSend_control_note_on(fId, event.value1, event.value2, int(event.value3));
 
             // Update Host
-            pData->engine->callback(CALLBACK_NOTE_ON, fId, event.value1, event.value2, int(event.value3), nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_NOTE_ON, fId, event.value1, event.value2, int(event.value3), nullptr);
 #endif
             break;
 
@@ -1920,7 +1935,7 @@ void CarlaPlugin::postRtEventsRun()
                 pData->engine->oscSend_control_note_off(fId, event.value1, event.value2);
 
             // Update Host
-            pData->engine->callback(CALLBACK_NOTE_OFF, fId, event.value1, event.value2, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_NOTE_OFF, fId, event.value1, event.value2, 0.0f, nullptr);
 #endif
             break;
         }

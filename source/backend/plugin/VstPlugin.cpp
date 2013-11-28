@@ -78,7 +78,7 @@ public:
 
             if (fGui.isOsc)
             {
-                pData->osc.thread.stopThread(pData->engine->getOptions().uiBridgesTimeout);
+                pData->osc.thread.stop(pData->engine->getOptions().uiBridgesTimeout);
             }
         }
 
@@ -372,7 +372,7 @@ public:
         {
             if (yesNo)
             {
-                pData->osc.thread.startThread();
+                pData->osc.thread.start();
             }
             else
             {
@@ -383,7 +383,7 @@ public:
                     pData->osc.data.free();
                 }
 
-                pData->osc.thread.stopThread(pData->engine->getOptions().uiBridgesTimeout);
+                pData->osc.thread.stop(pData->engine->getOptions().uiBridgesTimeout);
             }
         }
         else
@@ -498,7 +498,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
         carla_debug("VstPlugin::reload() - start");
 
-        const ProcessMode processMode(pData->engine->getProccessMode());
+        const EngineProcessMode processMode(pData->engine->getProccessMode());
 
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
@@ -558,7 +558,7 @@ public:
         {
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -583,7 +583,7 @@ public:
         {
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -749,7 +749,7 @@ public:
         {
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -765,7 +765,7 @@ public:
         {
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -961,7 +961,7 @@ public:
                     dispatcher(effSetProgram, 0, pData->prog.current, nullptr, 0.0f);
             }
 
-            pData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -991,7 +991,12 @@ public:
         {
             // disable any output sound
             for (i=0; i < pData->audioOut.count; ++i)
+            {
+#ifdef USE_JUCE
                 FloatVectorOperations::clear(outBuffer[i], frames);
+#else
+#endif
+            }
 
             return;
         }
@@ -1037,7 +1042,12 @@ public:
             if (pData->latency > 0)
             {
                 for (i=0; i < pData->audioIn.count; ++i)
+                {
+#ifdef USE_JUCE
                     FloatVectorOperations::clear(pData->latencyBuffers[i], pData->latency);
+#else
+#endif
+                }
             }
 
             pData->needsReset = false;
@@ -1512,7 +1522,12 @@ public:
         else
         {
             for (i=0; i < pData->audioOut.count; ++i)
+            {
+#ifdef USE_JUCE
                 FloatVectorOperations::clear(vstOutBuffer[i], frames);
+#else
+#endif
+            }
 
 #if ! VST_FORCE_DEPRECATED
             fEffect->process(fEffect,
@@ -1557,7 +1572,10 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
+#ifdef USE_JUCE
                         FloatVectorOperations::copy(oldBufLeft, outBuffer[i]+timeOffset, frames);
+#else
+#endif
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
@@ -2080,12 +2098,12 @@ protected:
                     if (pData->prog.current != current)
                     {
                         pData->prog.current = current;
-                        pData->engine->callback(CALLBACK_PROGRAM_CHANGED, fId, current, 0, 0.0f, nullptr);
+                        pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED, fId, current, 0, 0.0f, nullptr);
                     }
                 }
             }
 
-            pData->engine->callback(CALLBACK_UPDATE, fId, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_UPDATE, fId, 0, 0, 0.0f, nullptr);
             ret = 1;
             break;
 
@@ -2542,7 +2560,7 @@ CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
 
     plugin->reload();
 
-    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
+    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
     {
         init.engine->setLastError("Carla's rack mode can only work with Stereo VST plugins, sorry!");
         delete plugin;

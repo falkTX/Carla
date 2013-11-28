@@ -57,7 +57,7 @@ public:
         {
             showGui(false);
 
-            pData->osc.thread.stopThread(pData->engine->getOptions().uiBridgesTimeout * 2);
+            pData->osc.thread.stop(pData->engine->getOptions().uiBridgesTimeout * 2);
         }
 
         pData->singleMutex.lock();
@@ -167,7 +167,7 @@ public:
         {
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-            if (pData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK)
+            if (pData->engine->getProccessMode() != ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
             {
                 if (fOptions & PLUGIN_OPTION_FORCE_STEREO)
                     options |= PLUGIN_OPTION_FORCE_STEREO;
@@ -285,7 +285,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
         carla_debug("DssiPlugin::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
 
-        if (std::strcmp(type, CUSTOM_DATA_STRING) != 0)
+        if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) != 0)
             return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
         if (fDssiDescriptor->configure != nullptr)
@@ -362,7 +362,7 @@ public:
     {
         if (yesNo)
         {
-            pData->osc.thread.startThread();
+            pData->osc.thread.start();
         }
         else
         {
@@ -373,7 +373,7 @@ public:
                 pData->osc.data.free();
             }
 
-            pData->osc.thread.stopThread(pData->engine->getOptions().uiBridgesTimeout);
+            pData->osc.thread.stop(pData->engine->getOptions().uiBridgesTimeout);
         }
     }
 
@@ -388,7 +388,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         carla_debug("DssiPlugin::reload() - start");
 
-        const ProcessMode processMode(pData->engine->getProccessMode());
+        const EngineProcessMode processMode(pData->engine->getProccessMode());
 
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
@@ -483,7 +483,10 @@ public:
             pData->param.createNew(params);
 
             fParamBuffers = new float[params];
+#ifdef USE_JUCE
             FloatVectorOperations::clear(fParamBuffers, params);
+#else
+#endif
         }
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
@@ -500,7 +503,7 @@ public:
             {
                 portName.clear();
 
-                if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+                if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
                 {
                     portName  = fName;
                     portName += ":";
@@ -640,7 +643,7 @@ public:
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
 
-                        pData->param.data[j].type  = PARAMETER_LATENCY;
+                        //pData->param.data[j].type  = PARAMETER_LATENCY;
                         pData->param.data[j].hints = 0;
                     }
                     else if (std::strcmp(fDescriptor->PortNames[i], "_sample-rate") == 0)
@@ -650,7 +653,7 @@ public:
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
 
-                        pData->param.data[j].type  = PARAMETER_SAMPLE_RATE;
+                        //pData->param.data[j].type  = PARAMETER_SAMPLE_RATE;
                         pData->param.data[j].hints = 0;
                     }
                     else
@@ -702,7 +705,7 @@ public:
         {
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -718,7 +721,7 @@ public:
         {
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -767,8 +770,8 @@ public:
         {
             for (uint32_t i=0; i < pData->param.count; ++i)
             {
-                if (pData->param.data[i].type != PARAMETER_LATENCY)
-                    continue;
+                //if (pData->param.data[i].type != PARAMETER_LATENCY)
+                //    continue;
 
                 // we need to pre-run the plugin so it can update its latency control-port
 
@@ -909,7 +912,7 @@ public:
             if (programChanged)
                 setMidiProgram(pData->midiprog.current, true, true, true);
 
-            pData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -953,7 +956,12 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
+            {
+#ifdef USE_JUCE
                 FloatVectorOperations::clear(outBuffer[i], frames);
+#else
+#endif
+            }
 
             return;
         }
@@ -997,7 +1005,12 @@ public:
             if (pData->latency > 0)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
+                {
+#ifdef USE_JUCE
                     FloatVectorOperations::clear(pData->latencyBuffers[i], pData->latency);
+#else
+#endif
+                }
             }
 
             pData->needsReset = false;
@@ -1448,9 +1461,20 @@ public:
         // Reset audio buffers
 
         for (uint32_t i=0; i < pData->audioIn.count; ++i)
+        {
+#ifdef USE_JUCE
             FloatVectorOperations::copy(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
+#else
+#endif
+        }
+
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
+        {
+#ifdef USE_JUCE
             FloatVectorOperations::clear(fAudioOutBuffers[i], frames);
+#else
+#endif
+        }
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -1515,7 +1539,10 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
+#ifdef USE_JUCE
                         FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], frames);
+#else
+#endif
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
@@ -1884,10 +1911,10 @@ public:
         // ---------------------------------------------------------------
         // gui stuff
 
-        if (const char* const guiFilename = find_dssi_ui(filename, fDescriptor->Label))
+        //if (const char* const guiFilename = find_dssi_ui(filename, fDescriptor->Label))
         {
-            pData->osc.thread.setOscData(guiFilename, fDescriptor->Label);
-            fGuiFilename = guiFilename;
+            //pData->osc.thread.setOscData(guiFilename, fDescriptor->Label);
+            //fGuiFilename = guiFilename;
         }
 
         // ---------------------------------------------------------------
@@ -1951,13 +1978,13 @@ private:
     float*  fParamBuffers;
     snd_seq_event_t fMidiEvents[kPluginMaxMidiEvents];
 
-    static NonRtList<const char*> sMultiSynthList;
+    static List<const char*> sMultiSynthList;
 
     static bool addUniqueMultiSynth(const char* const label)
     {
         CARLA_SAFE_ASSERT_RETURN(label != nullptr, true);
 
-        for (NonRtList<const char*>::Itenerator it = sMultiSynthList.begin(); it.valid(); it.next())
+        for (List<const char*>::Itenerator it = sMultiSynthList.begin(); it.valid(); it.next())
         {
             const char*& itLabel(*it);
 
@@ -1973,7 +2000,7 @@ private:
     {
         CARLA_SAFE_ASSERT_RETURN(label != nullptr,);
 
-        for (NonRtList<const char*>::Itenerator it = sMultiSynthList.begin(); it.valid(); it.next())
+        for (List<const char*>::Itenerator it = sMultiSynthList.begin(); it.valid(); it.next())
         {
             const char*& itLabel(*it);
 
@@ -1989,7 +2016,7 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DssiPlugin)
 };
 
-NonRtList<const char*> DssiPlugin::sMultiSynthList;
+List<const char*> DssiPlugin::sMultiSynthList;
 
 CARLA_BACKEND_END_NAMESPACE
 
@@ -2014,7 +2041,7 @@ CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init)
 
     plugin->reload();
 
-    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
+    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
     {
         init.engine->setLastError("Carla's rack mode can only work with Mono or Stereo DSSI plugins, sorry!");
         delete plugin;

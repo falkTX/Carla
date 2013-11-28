@@ -32,7 +32,6 @@
 
 #ifdef USE_JUCE
 #include "juce_audio_basics.h"
-
 using juce::FloatVectorOperations;
 #endif
 
@@ -366,7 +365,9 @@ unsigned int CarlaEngine::getDriverCount()
 
 #ifndef BUILD_BRIDGE
     count += getRtAudioApiCount();
+# ifdef USE_JUCE
     count += getJuceApiCount();
+# endif
 #endif
 
     return count;
@@ -385,10 +386,12 @@ const char* CarlaEngine::getDriverName(const unsigned int index)
     if (rtAudioIndex < getRtAudioApiCount())
         return getRtAudioApiName(rtAudioIndex);
 
+# ifdef USE_JUCE
     const unsigned int juceIndex(index-rtAudioIndex-1);
 
     if (juceIndex < getJuceApiCount())
         return getJuceApiName(juceIndex);
+# endif
 #endif
 
     carla_stderr("CarlaEngine::getDriverName(%i) - invalid index", index);
@@ -411,10 +414,12 @@ const char** CarlaEngine::getDriverDeviceNames(const unsigned int index)
     if (rtAudioIndex < getRtAudioApiCount())
         return getRtAudioApiDeviceNames(rtAudioIndex);
 
+# ifdef USE_JUCE
     const unsigned int juceIndex(index-rtAudioIndex-1);
 
     if (juceIndex < getJuceApiCount())
         return getJuceApiDeviceNames(juceIndex);
+# endif
 #endif
 
     carla_stderr("CarlaEngine::getDriverDeviceNames(%i) - invalid index", index);

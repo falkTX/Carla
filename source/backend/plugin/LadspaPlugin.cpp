@@ -173,7 +173,7 @@ public:
         {
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-            if (pData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK)
+            if (pData->engine->getProccessMode() != ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
             {
                 if (fOptions & PLUGIN_OPTION_FORCE_STEREO)
                     options |= PLUGIN_OPTION_FORCE_STEREO;
@@ -397,7 +397,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         carla_debug("LadspaPlugin::reload() - start");
 
-        const ProcessMode processMode(pData->engine->getProccessMode());
+        const EngineProcessMode processMode(pData->engine->getProccessMode());
 
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
@@ -486,7 +486,10 @@ public:
             pData->param.createNew(params);
 
             fParamBuffers = new float[params];
+#ifdef USE_JUCE
             FloatVectorOperations::clear(fParamBuffers, params);
+#else
+#endif
         }
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
@@ -504,7 +507,7 @@ public:
             {
                 portName.clear();
 
-                if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+                if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
                 {
                     portName  = fName;
                     portName += ":";
@@ -635,7 +638,7 @@ public:
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
 
-                        pData->param.data[j].type  = PARAMETER_LATENCY;
+                        //pData->param.data[j].type  = PARAMETER_LATENCY;
                         pData->param.data[j].hints = 0;
                     }
                     else if (std::strcmp(fDescriptor->PortNames[i], "_sample-rate") == 0)
@@ -645,7 +648,7 @@ public:
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
 
-                        pData->param.data[j].type  = PARAMETER_SAMPLE_RATE;
+                        //pData->param.data[j].type  = PARAMETER_SAMPLE_RATE;
                         pData->param.data[j].hints = 0;
                     }
                     else
@@ -701,7 +704,7 @@ public:
         {
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -717,7 +720,7 @@ public:
         {
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -760,8 +763,8 @@ public:
         {
             for (uint32_t i=0; i < pData->param.count; ++i)
             {
-                if (pData->param.data[i].type != PARAMETER_LATENCY)
-                    continue;
+                //if (pData->param.data[i].type != PARAMETER_LATENCY)
+                //    continue;
 
                 // we need to pre-run the plugin so it can update its latency control-port
 
@@ -853,7 +856,12 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
+            {
+#ifdef USE_JUCE
                 FloatVectorOperations::clear(outBuffer[i], frames);
+#else
+#endif
+            }
 
             return;
         }
@@ -866,7 +874,12 @@ public:
             if (pData->latency > 0)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
+                {
+#ifdef USE_JUCE
                     FloatVectorOperations::clear(pData->latencyBuffers[i], pData->latency);
+#else
+#endif
+                }
             }
 
             pData->needsReset = false;
@@ -1098,9 +1111,20 @@ public:
         // Reset audio buffers
 
         for (uint32_t i=0; i < pData->audioIn.count; ++i)
+        {
+#ifdef USE_JUCE
             FloatVectorOperations::copy(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
+#else
+#endif
+        }
+
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
+        {
+#ifdef USE_JUCE
             FloatVectorOperations::clear(fAudioOutBuffers[i], frames);
+#else
+#endif
+        }
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -1147,7 +1171,10 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
+#ifdef USE_JUCE
                         FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], frames);
+#else
+#endif
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
@@ -1500,7 +1527,7 @@ CarlaPlugin* CarlaPlugin::newLADSPA(const Initializer& init, const LADSPA_RDF_De
 
     plugin->reload();
 
-    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
+    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
     {
         init.engine->setLastError("Carla's rack mode can only work with Mono or Stereo LADSPA plugins, sorry!");
         delete plugin;

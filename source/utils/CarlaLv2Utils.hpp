@@ -61,7 +61,9 @@
 #include "lilv/lilvmm.hpp"
 #include "sratom/sratom.h"
 
+#ifdef USE_JUCE
 #include "juce_core.h"
+#endif
 
 // -----------------------------------------------------------------------
 // Define namespaces and missing prefixes
@@ -550,6 +552,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
 
             if (replaceNode.is_uri())
             {
+#ifdef USE_JUCE
                 const juce::String replaceURI(replaceNode.as_uri());
 
                 if (replaceURI.startsWith("urn:"))
@@ -557,6 +560,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
                     if (int uniqueId = replaceURI.getTrailingIntValue())
                         rdfDescriptor->UniqueID = (unsigned long)uniqueId;
                 }
+#endif
             }
         }
     }
@@ -1003,6 +1007,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
         }
     }
 
+#ifdef USE_JUCE
     // -------------------------------------------------------------------
     // Set Plugin Presets
 
@@ -1065,6 +1070,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
             }
         }
     }
+#endif
 
     // -------------------------------------------------------------------
     // Set Plugin Features

@@ -19,9 +19,7 @@
 #define CARLA_PLUGIN_THREAD_HPP_INCLUDED
 
 #include "CarlaBackend.hpp"
-#include "CarlaString.hpp"
-
-#include "juce_core.h"
+#include "CarlaThread.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -31,7 +29,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
 
-class CarlaPluginThread : public juce::Thread
+class CarlaPluginThread : public CarlaThread
 {
 public:
     enum Mode {
@@ -60,7 +58,7 @@ private:
     CarlaString fExtra1;
     CarlaString fExtra2;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginThread)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginThread)
 };
 
 // -----------------------------------------------------------------------

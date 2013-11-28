@@ -79,10 +79,10 @@ OBJS += \
 	nekofilter.c.o
 
 # Simple plugins (C++)
-OBJS += \
-	vex-fx.cpp.o \
-	vex-synth.cpp.o \
-	vex-src.cpp.o
+# OBJS += \
+# 	vex-fx.cpp.o \
+# 	vex-synth.cpp.o \
+# 	vex-src.cpp.o
 
 # AudioFile
 ifeq ($(HAVE_AF_DEPS),true)

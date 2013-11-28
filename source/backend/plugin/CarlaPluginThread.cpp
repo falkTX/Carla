@@ -20,9 +20,11 @@
 #include "CarlaPlugin.hpp"
 #include "CarlaEngine.hpp"
 
+#ifdef USE_JUCE
 using juce::ChildProcess;
 using juce::String;
 using juce::StringArray;
+#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -47,19 +49,19 @@ const char* PluginThreadMode2str(const CarlaPluginThread::Mode mode)
 }
 
 CarlaPluginThread::CarlaPluginThread(CarlaBackend::CarlaEngine* const engine, CarlaBackend::CarlaPlugin* const plugin, const Mode mode)
-    : juce::Thread("CarlaPluginThread"),
+    : CarlaThread("CarlaPluginThread"),
       fEngine(engine),
       fPlugin(plugin),
       fMode(mode)
 {
     carla_debug("CarlaPluginThread::CarlaPluginThread(plugin:\"%s\", engine:\"%s\", %s)", plugin->getName(), engine->getName(), PluginThreadMode2str(mode));
 
-    setPriority(5);
+    //setPriority(5);
 }
 
 void CarlaPluginThread::setMode(const CarlaPluginThread::Mode mode)
 {
-    CARLA_ASSERT(! isThreadRunning());
+    CARLA_ASSERT(! isRunning());
     carla_debug("CarlaPluginThread::setMode(%s)", PluginThreadMode2str(mode));
 
     fMode = mode;
@@ -67,7 +69,7 @@ void CarlaPluginThread::setMode(const CarlaPluginThread::Mode mode)
 
 void CarlaPluginThread::setOscData(const char* const binary, const char* const label, const char* const extra1, const char* const extra2)
 {
-    CARLA_ASSERT(! isThreadRunning());
+    CARLA_ASSERT(! isRunning());
     carla_debug("CarlaPluginThread::setOscData(\"%s\", \"%s\", \"%s\", \"%s\")", binary, label, extra1, extra2);
 
     fBinary = binary;
@@ -80,6 +82,7 @@ void CarlaPluginThread::run()
 {
     carla_debug("CarlaPluginThread::run()");
 
+#ifdef USE_JUCE
     ChildProcess process;
 
     StringArray arguments;
@@ -180,6 +183,7 @@ void CarlaPluginThread::run()
         }
         break;
     }
+#endif
 }
 
 CARLA_BACKEND_END_NAMESPACE

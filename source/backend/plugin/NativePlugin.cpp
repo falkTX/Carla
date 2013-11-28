@@ -233,7 +233,7 @@ public:
         if (const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
             return param->scalePointCount;
 
-        carla_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
+        carla_safe_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
         return 0;
     }
 
@@ -259,7 +259,7 @@ public:
         if (getMidiInCount() == 0 && (fDescriptor->hints & ::PLUGIN_NEEDS_FIXED_BUFFERS) == 0)
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        if (pData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK)
+        if (pData->engine->getProccessMode() != ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
         {
             if (fOptions & PLUGIN_OPTION_FORCE_STEREO)
                 options |= PLUGIN_OPTION_FORCE_STEREO;
@@ -305,7 +305,7 @@ public:
             return scalePoint->value;
         }
 
-        carla_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
+        carla_safe_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
         return 0.0f;
     }
 
@@ -363,11 +363,11 @@ public:
                 std::strncpy(strBuf, param->name, STR_MAX);
                 return;
             }
-            carla_assert("param->name != nullptr", __FILE__, __LINE__);
+            carla_safe_assert("param->name != nullptr", __FILE__, __LINE__);
             return CarlaPlugin::getParameterName(parameterId, strBuf);
         }
 
-        carla_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
+        carla_safe_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
         CarlaPlugin::getParameterName(parameterId, strBuf);
     }
 
@@ -387,7 +387,7 @@ public:
             return;
         }
 
-        carla_assert("const char* const text = fDescriptor->get_parameter_text(fHandle, parameterId, value)", __FILE__, __LINE__);
+        carla_safe_assert("const char* const text = fDescriptor->get_parameter_text(fHandle, parameterId, value)", __FILE__, __LINE__);
         CarlaPlugin::getParameterText(parameterId, strBuf);
     }
 
@@ -408,7 +408,7 @@ public:
             return CarlaPlugin::getParameterUnit(parameterId, strBuf);
         }
 
-        carla_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
+        carla_safe_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
         CarlaPlugin::getParameterUnit(parameterId, strBuf);
     }
 
@@ -429,11 +429,11 @@ public:
                 std::strncpy(strBuf, scalePoint->label, STR_MAX);
                 return;
             }
-            carla_assert("scalePoint->label != nullptr", __FILE__, __LINE__);
+            carla_safe_assert("scalePoint->label != nullptr", __FILE__, __LINE__);
             return CarlaPlugin::getParameterScalePointLabel(parameterId, scalePointId, strBuf);
         }
 
-        carla_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
+        carla_safe_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
         CarlaPlugin::getParameterScalePointLabel(parameterId, scalePointId, strBuf);
     }
 
@@ -455,7 +455,7 @@ public:
                           fCurMidiProgs[12], fCurMidiProgs[13], fCurMidiProgs[14], fCurMidiProgs[15]);
             strBuf[STR_MAX] = '\0';
 
-            CarlaPlugin::setCustomData(CUSTOM_DATA_STRING, "midiPrograms", strBuf, false);
+            CarlaPlugin::setCustomData(CUSTOM_DATA_TYPE_STRING, "midiPrograms", strBuf, false);
         }
 
         if (fDescriptor == nullptr || fDescriptor->get_state == nullptr || (fDescriptor->hints & ::PLUGIN_USES_STATE) == 0)
@@ -463,7 +463,7 @@ public:
 
         if (char* data = fDescriptor->get_state(fHandle))
         {
-            CarlaPlugin::setCustomData(CUSTOM_DATA_CHUNK, "State", data, false);
+            CarlaPlugin::setCustomData(CUSTOM_DATA_TYPE_CHUNK, "State", data, false);
             std::free(data);
         }
     }
@@ -528,10 +528,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
         carla_debug("NativePlugin::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
 
-        if (std::strcmp(type, CUSTOM_DATA_STRING) != 0 && std::strcmp(type, CUSTOM_DATA_CHUNK) != 0)
+        if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) != 0 && std::strcmp(type, CUSTOM_DATA_TYPE_CHUNK) != 0)
             return carla_stderr2("NativePlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is invalid", type, key, value, bool2str(sendGui));
 
-        if (std::strcmp(type, CUSTOM_DATA_CHUNK) == 0)
+        if (std::strcmp(type, CUSTOM_DATA_TYPE_CHUNK) == 0)
         {
             if (fDescriptor->set_state != nullptr && (fDescriptor->hints & ::PLUGIN_USES_STATE) != 0)
             {
@@ -571,7 +571,7 @@ public:
                         if (pData->ctrlChannel == static_cast<int32_t>(i))
                         {
                             pData->midiprog.current = index;
-                            pData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fId, index, 0, 0.0f, nullptr);
+                            pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, fId, index, 0, 0.0f, nullptr);
                         }
                     }
 
@@ -644,11 +644,11 @@ public:
 
         if (fDescriptor->ui_set_custom_data != nullptr)
         {
-            for (NonRtList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
+            for (List<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
             {
                 const CustomData& cData(*it);
 
-                if (std::strcmp(cData.type, CUSTOM_DATA_STRING) == 0 && std::strcmp(cData.key, "midiPrograms") != 0)
+                if (std::strcmp(cData.type, CUSTOM_DATA_TYPE_STRING) == 0 && std::strcmp(cData.key, "midiPrograms") != 0)
                     fDescriptor->ui_set_custom_data(fHandle, cData.key, cData.value);
             }
         }
@@ -689,7 +689,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         carla_debug("NativePlugin::reload() - start");
 
-        const ProcessMode processMode(pData->engine->getProccessMode());
+        const EngineProcessMode processMode(pData->engine->getProccessMode());
 
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
@@ -780,7 +780,7 @@ public:
         {
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -813,7 +813,7 @@ public:
         {
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -848,7 +848,7 @@ public:
             {
                 portName.clear();
 
-                if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+                if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
                 {
                     portName  = fName;
                     portName += ":";
@@ -870,7 +870,7 @@ public:
             {
                 portName.clear();
 
-                if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+                if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
                 {
                     portName  = fName;
                     portName += ":";
@@ -996,7 +996,7 @@ public:
         {
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -1012,7 +1012,7 @@ public:
         {
             portName.clear();
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
                 portName  = fName;
                 portName += ":";
@@ -1151,7 +1151,7 @@ public:
             if (programChanged)
                 setMidiProgram(pData->midiprog.current, true, true, true);
 
-            pData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -1197,7 +1197,12 @@ public:
         {
             // disable any output sound
             for (i=0; i < pData->audioOut.count; ++i)
+            {
+#ifdef USE_JUCE
                 FloatVectorOperations::clear(outBuffer[i], frames);
+#else
+#endif
+            }
 
             return;
         }
@@ -1684,9 +1689,20 @@ public:
         // Reset audio buffers
 
         for (i=0; i < pData->audioIn.count; ++i)
+        {
+#ifdef USE_JUCE
             FloatVectorOperations::copy(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
+#else
+#endif
+        }
+
         for (i=0; i < pData->audioOut.count; ++i)
+        {
+#ifdef USE_JUCE
             FloatVectorOperations::clear(fAudioOutBuffers[i], frames);
+#else
+#endif
+        }
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -1744,7 +1760,10 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
+#ifdef USE_JUCE
                         FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], frames);
+#else
+#endif
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
@@ -2040,12 +2059,12 @@ protected:
 
     void handleUiCustomDataChanged(const char* const key, const char* const value)
     {
-        setCustomData(CUSTOM_DATA_STRING, key, value, false);
+        setCustomData(CUSTOM_DATA_TYPE_STRING, key, value, false);
     }
 
     void handleUiClosed()
     {
-        pData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, fId, 0, 0, 0.0f, nullptr);
         fIsUiVisible = false;
     }
 
@@ -2123,7 +2142,7 @@ protected:
         case ::HOST_OPCODE_RELOAD_ALL:
             break;
         case HOST_OPCODE_UI_UNAVAILABLE:
-            pData->engine->callback(CALLBACK_SHOW_GUI, fId, -1, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, fId, -1, 0, 0.0f, nullptr);
             break;
         }
 
@@ -2185,7 +2204,7 @@ public:
         // ---------------------------------------------------------------
         // get descriptor that matches label
 
-        for (NonRtList<const ::PluginDescriptor*>::Itenerator it = sPluginDescriptors.begin(); it.valid(); it.next())
+        for (List<const ::PluginDescriptor*>::Itenerator it = sPluginDescriptors.begin(); it.valid(); it.next())
         {
             fDescriptor = *it;
 
@@ -2343,7 +2362,7 @@ private:
 
     ::TimeInfo fTimeInfo;
 
-    static NonRtList<const ::PluginDescriptor*> sPluginDescriptors;
+    static List<const ::PluginDescriptor*> sPluginDescriptors;
 
     // -------------------------------------------------------------------
 
@@ -2409,7 +2428,7 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NativePlugin)
 };
 
-NonRtList<const ::PluginDescriptor*> NativePlugin::sPluginDescriptors;
+List<const ::PluginDescriptor*> NativePlugin::sPluginDescriptors;
 
 static const NativePlugin::ScopedInitializer _si;
 
@@ -2458,7 +2477,7 @@ CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)
 
     plugin->reload();
 
-    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
+    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
     {
         init.engine->setLastError("Carla's rack mode can only work with Mono or Stereo Internal plugins, sorry!");
         delete plugin;

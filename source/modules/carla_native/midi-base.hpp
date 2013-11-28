@@ -20,7 +20,7 @@
 
 #include "CarlaMIDI.h"
 #include "CarlaMutex.hpp"
-#include "RtList.hpp"
+#include "List.hpp"
 
 #define MAX_EVENT_DATA_SIZE          4
 #define MIN_PREALLOCATED_EVENT_COUNT 100
@@ -180,7 +180,7 @@ public:
         if (! fMutex.tryLock())
             return;
 
-        for (NonRtList<const RawMidiEvent*>::Itenerator it = fData.begin(); it.valid(); it.next())
+        for (List<const RawMidiEvent*>::Itenerator it = fData.begin(); it.valid(); it.next())
         {
             const RawMidiEvent* const rawMidiEvent(*it);
 
@@ -208,7 +208,7 @@ private:
     uint32_t fDuration;  // unused
 
     CarlaMutex fMutex;
-    NonRtList<const RawMidiEvent*> fData;
+    List<const RawMidiEvent*> fData;
 
     void append(const RawMidiEvent* const event)
     {
@@ -219,7 +219,7 @@ private:
             return;
         }
 
-        for (NonRtList<const RawMidiEvent*>::Itenerator it = fData.begin(); it.valid(); it.next())
+        for (List<const RawMidiEvent*>::Itenerator it = fData.begin(); it.valid(); it.next())
         {
             const RawMidiEvent* const oldEvent(*it);
 

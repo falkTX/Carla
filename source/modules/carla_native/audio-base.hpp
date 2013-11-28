@@ -18,12 +18,12 @@
 #ifndef AUDIO_BASE_HPP_INCLUDED
 #define AUDIO_BASE_HPP_INCLUDED
 
-#include "CarlaMutex.hpp"
+#include "CarlaThread.hpp"
 
+#ifdef USE_JUCE
 #include "juce_audio_basics.h"
-
 using juce::FloatVectorOperations;
-using juce::Thread;
+#endif
 
 extern "C" {
 #include "audio_decoder/ad.h"
@@ -100,8 +100,14 @@ struct AudioFilePool {
         CARLA_ASSERT(size != 0);
 
         startFrame = 0;
+
+#ifdef USE_JUCE
         FloatVectorOperations::clear(buffer[0], size);
         FloatVectorOperations::clear(buffer[1], size);
+#else
+        carla_zeroFloat(buffer[0], size);
+        carla_zeroFloat(buffer[1], size);
+#endif
     }
 };
 
@@ -112,11 +118,11 @@ public:
     virtual uint32_t getLastFrame() const = 0;
 };
 
-class AudioFileThread : public Thread
+class AudioFileThread : public CarlaThread
 {
 public:
     AudioFileThread(AbstractAudioPlayer* const player, const double sampleRate)
-        : Thread("AudioFileThread"),
+        : CarlaThread("AudioFileThread"),
           kPlayer(player),
           fNeedsRead(false),
           fFilePtr(nullptr)
@@ -138,7 +144,7 @@ public:
 
     ~AudioFileThread() override
     {
-        CARLA_ASSERT(! isThreadRunning());
+        CARLA_ASSERT(! isRunning());
 
         if (fFilePtr != nullptr)
             ad_close(fFilePtr);
@@ -149,13 +155,13 @@ public:
     void startNow()
     {
         fNeedsRead = true;
-        startThread(2);
+        start();
     }
 
     void stopNow()
     {
         fNeedsRead = false;
-        stopThread(1000);
+        stop(1000);
 
         const CarlaMutex::ScopedLocker sl(fMutex);
         fPool.reset();
@@ -173,7 +179,7 @@ public:
 
     bool loadFilename(const char* const filename)
     {
-        CARLA_ASSERT(! isThreadRunning());
+        CARLA_ASSERT(! isRunning());
         CARLA_ASSERT(filename != nullptr);
 
         fPool.startFrame = 0;
@@ -226,8 +232,14 @@ public:
         //if (pool.startFrame != fPool.startFrame || pool.buffer[0] != fPool.buffer[0] || pool.buffer[1] != fPool.buffer[1])
         {
             pool.startFrame = fPool.startFrame;
+
+#ifdef USE_JUCE
             FloatVectorOperations::copy(pool.buffer[0], fPool.buffer[0], fPool.size);
             FloatVectorOperations::copy(pool.buffer[1], fPool.buffer[1], fPool.size);
+#else
+            carla_copyFloat(pool.buffer[0], fPool.buffer[0], fPool.size);
+            carla_copyFloat(pool.buffer[1], fPool.buffer[1], fPool.size);
+#endif
         }
 
         fMutex.unlock();
@@ -277,7 +289,12 @@ public:
         const size_t tmpSize = fPool.size * fFileNfo.channels;
 
         float tmpData[tmpSize];
+
+#ifdef USE_JUCE
         FloatVectorOperations::clear(tmpData, tmpSize);
+#else
+        carla_zeroFloat(tmpData, tmpSize);
+#endif
 
         {
             carla_stderr("R: poll data - reading at %li:%02li", readFrame/44100/60, (readFrame/44100) % 60);
@@ -359,7 +376,7 @@ public:
 protected:
     void run() override
     {
-        while (! threadShouldExit())
+        while (! shouldExit())
         {
             const uint32_t lastFrame(kPlayer->getLastFrame());
 
