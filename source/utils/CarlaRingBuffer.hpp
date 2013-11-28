@@ -28,12 +28,11 @@
 // -----------------------------------------------------------------------
 // RingBuffer struct
 
-PRE_PACKED_STRUCTURE
 struct RingBuffer {
     int32_t head, tail, written;
     bool    invalidateCommit;
     char    buf[RING_BUFFER_SIZE];
-} POST_PACKED_STRUCTURE;
+};
 
 // -----------------------------------------------------------------------
 // RingBufferControl class

@@ -154,8 +154,8 @@ public:
     }
 
 private:
-    const CarlaString   fName;       // Thread name
     CarlaMutex          fLock;       // Thread lock
+    const CarlaString   fName;       // Thread name
     volatile pthread_t  fHandle;     // Handle for this thread
     volatile bool       fShouldExit; // true if thread should exit
 

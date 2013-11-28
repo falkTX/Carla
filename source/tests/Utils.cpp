@@ -16,15 +16,31 @@
  */
 
 #include "CarlaUtils.hpp"
-#include "CarlaLibUtils.hpp"
-#include "CarlaJuceUtils.hpp"
 
+#include "CarlaBackendUtils.hpp"
+#include "CarlaBridgeUtils.hpp"
+// #include "CarlaDssiUtils.hpp"
+#include "CarlaJuceUtils.hpp"
+#include "CarlaLadspaUtils.hpp"
+#include "CarlaLibUtils.hpp"
+// #include "CarlaLv2Utils.hpp"
+#include "CarlaOscUtils.hpp"
+#include "CarlaPipeUtils.hpp"
+#include "CarlaShmUtils.hpp"
+// #include "CarlaStateUtils.hpp"
+#include "CarlaVstUtils.hpp"
+
+#include "CarlaLibCounter.hpp"
+//#include "CarlaLogThread.hpp"
 #include "CarlaMutex.hpp"
+#include "CarlaRingBuffer.hpp"
 #include "CarlaString.hpp"
 #include "CarlaThread.hpp"
+#include "List.hpp"
+#include "Lv2AtomQueue.hpp"
+#include "RtList.hpp"
 
-#include <cassert>
-#include <cstdlib>
+//#include "JucePluginWindow.hpp"
 
 struct MyStruct {
     char pad[100];
@@ -76,6 +92,10 @@ protected:
             carla_sleep(1);
 
         carla_stderr("Thread finished");
+
+        return;
+
+        vstPluginCanDo(nullptr, "something");
     }
 
 private:
@@ -264,5 +284,3 @@ int main()
 
     return 0;
 }
-
-#include "../utils/Utils.cpp"
