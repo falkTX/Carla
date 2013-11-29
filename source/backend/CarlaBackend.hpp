@@ -260,7 +260,7 @@ enum EngineCallbackOpcode SIZE_INT {
      * A plugin has been disabled.
      * \param valueStr Error details
      */
-    ENGINE_CALLBACK_PLUGIN_DISABLED = 4,
+    ENGINE_CALLBACK_PLUGIN_UNAVAILABLE = 4, // FIXME?
 
     /*!
      * A parameter value has been changed.
@@ -701,6 +701,7 @@ enum EngineTransportMode SIZE_INT {
 
 /*!
  * Opcodes sent from the backend to the frontend, asking for file related tasks.
+ * Front-end MUST always block-wait for user input.
  */
 enum FileCallbackOpcode SIZE_INT {
     /*!
