@@ -307,21 +307,25 @@ unsigned int carla_get_engine_driver_count()
     return CarlaEngine::getDriverCount();
 }
 
-const CarlaEngineDriverInfo* carla_get_engine_driver_info(unsigned int index)
+const char* carla_get_engine_driver_name(unsigned int index)
 {
     carla_debug("carla_get_engine_driver_info(%i)", index);
 
-    static CarlaEngineDriverInfo info;
-    info.name = CarlaEngine::getDriverName(index);
-
-    return &info;
+    return CarlaEngine::getDriverName(index);
 }
 
-const char** carla_get_engine_driver_device_names(unsigned int index)
+const char* const* carla_get_engine_driver_device_names(unsigned int index)
 {
     carla_debug("carla_get_engine_driver_device_names(%i)", index);
 
     return CarlaEngine::getDriverDeviceNames(index);
+}
+
+const CarlaEngineDriverDeviceInfo* carla_get_engine_driver_device_info(unsigned int index, const char* deviceName)
+{
+    carla_debug("carla_get_engine_driver_device_info(%i, \"%s\")", index, deviceName);
+
+    return CarlaEngine::getDriverDeviceInfo(index, deviceName);
 }
 
 // -------------------------------------------------------------------------------------------------------------------

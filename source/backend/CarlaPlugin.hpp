@@ -879,6 +879,11 @@ protected:
     unsigned int fOptions;
 
     /*!
+     * Patchbay client Id that matches this plugin, 0 if unused.
+     */
+    int fPatchbayClientId;
+
+    /*!
      * Wherever the plugin is ready for usage.\n
      * When a plugin is disabled, it will never be processed or managed in any way.
      * \see isEnabled() and setEnabled()

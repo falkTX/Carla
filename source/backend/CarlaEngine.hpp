@@ -696,7 +696,7 @@ class CarlaEngine
 protected:
     /*!
      * The constructor, protected.\n
-     * \note This only initializes engine data, it doesn't initialize the engine itself.
+     * \note This only initializes engine data, it doesn't start the engine (audio).
      */
     CarlaEngine();
 
@@ -721,10 +721,14 @@ public:
     static const char* getDriverName(const unsigned int index);
 
     /*!
-     * Get the device names of driver at \a index (for use in non-JACK drivers).\n
-     * May return NULL.
+     * Get the device names of driver at \a index.
      */
-    static const char** getDriverDeviceNames(const unsigned int index);
+    static const char* const* getDriverDeviceNames(const unsigned int index);
+
+    /*!
+     * Get the device names of driver at \a index.
+     */
+    static const EngineDriverDeviceInfo* getDriverDeviceInfo(const unsigned int index, const char* const driverName);
 
     /*!
      * Create a new engine, using driver \a driverName. \n
@@ -893,7 +897,15 @@ public:
     // Information (base)
 
     /*!
-     * Get current buffer size.
+     * Get the current engine driver hints.
+     */
+    unsigned int getHints() const noexcept
+    {
+        return fHints;
+    }
+
+    /*!
+     * Get the current buffer size.
      */
     uint32_t getBufferSize() const noexcept
     {
@@ -901,7 +913,7 @@ public:
     }
 
     /*!
-     * Get current sample rate.
+     * Get the current sample rate.
      */
     double getSampleRate() const noexcept
     {
@@ -909,7 +921,7 @@ public:
     }
 
     /*!
-     * Get engine name.
+     * Get the current engine name.
      */
     const char* getName() const noexcept
     {
@@ -917,15 +929,7 @@ public:
     }
 
     /*!
-     * Get the engine options (read-only).
-     */
-    const EngineOptions& getOptions() const noexcept
-    {
-        return fOptions;
-    }
-
-    /*!
-     * Get the engine proccess mode.
+     * Get the current engine proccess mode.
      */
     EngineProcessMode getProccessMode() const noexcept
     {
@@ -933,7 +937,15 @@ public:
     }
 
     /*!
-     * Get current Time information (read-only).
+     * Get the current engine options (read-only).
+     */
+    const EngineOptions& getOptions() const noexcept
+    {
+        return fOptions;
+    }
+
+    /*!
+     * Get the current Time information (read-only).
      */
     const EngineTimeInfo& getTimeInfo() const noexcept
     {
@@ -1090,6 +1102,12 @@ public:
 
 protected:
     /*!
+     * Current engine driver hints.
+     * \see getHints()
+     */
+    unsigned int fHints;
+
+    /*!
      * Current buffer size.
      * \see getBufferSize()
      */
@@ -1199,20 +1217,23 @@ private:
         AUDIO_API_DS    = 7
     };
 
-    static CarlaEngine* newJuce(const AudioApi api);
-    static size_t       getJuceApiCount();
-    static const char*  getJuceApiName(const unsigned int index);
-    static const char** getJuceApiDeviceNames(const unsigned int index);
+    static CarlaEngine*       newRtAudio(const AudioApi api);
+    static size_t             getRtAudioApiCount();
+    static const char*        getRtAudioApiName(const unsigned int index);
+    static const char* const* getRtAudioApiDeviceNames(const unsigned int index);
+    static const EngineDriverDeviceInfo* getRtAudioDeviceInfo(const unsigned int index, const char* const deviceName);
 
-    static CarlaEngine* newRtAudio(const AudioApi api);
-    static size_t       getRtAudioApiCount();
-    static const char*  getRtAudioApiName(const unsigned int index);
-    static const char** getRtAudioApiDeviceNames(const unsigned int index);
+# ifdef USE_JUCE
+    static CarlaEngine*       newJuce(const AudioApi api);
+    static size_t             getJuceApiCount();
+    static const char*        getJuceApiName(const unsigned int index);
+    static const char* const* getJuceApiDeviceNames(const unsigned int index);
+    static const EngineDriverDeviceInfo* getJuceDeviceInfo(const unsigned int index, const char* const deviceName);
+# endif
 #endif
 
     // -------------------------------------------------------------------
     // Bridge/Controller OSC stuff
-
 public:
 #ifdef BUILD_BRIDGE
     void oscSend_bridge_audio_count(const int32_t ins, const int32_t outs, const int32_t total);

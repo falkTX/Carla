@@ -1455,21 +1455,22 @@ const char* CarlaEngine::getRtAudioApiName(const unsigned int index)
 {
     initRtApis();
 
-    if (index < gRtAudioApis.size())
-    {
-        const RtAudio::Api& api(gRtAudioApis[index]);
+    if (index >= gRtAudioApis.size())
+        return nullptr;
 
-        switch (api)
-        {
-        case RtAudio::UNSPECIFIED:
-            return "Unspecified";
-        case RtAudio::LINUX_ALSA:
-            return "ALSA";
-        case RtAudio::LINUX_PULSE:
-            return "PulseAudio";
-        case RtAudio::LINUX_OSS:
-            return "OSS";
-        case RtAudio::UNIX_JACK:
+    const RtAudio::Api& api(gRtAudioApis[index]);
+
+    switch (api)
+    {
+    case RtAudio::UNSPECIFIED:
+        return "Unspecified";
+    case RtAudio::LINUX_ALSA:
+        return "ALSA";
+    case RtAudio::LINUX_PULSE:
+        return "PulseAudio";
+    case RtAudio::LINUX_OSS:
+        return "OSS";
+    case RtAudio::UNIX_JACK:
 #if defined(CARLA_OS_WIN)
         return "JACK with WinMM";
 #elif defined(CARLA_OS_MAC)
@@ -1479,68 +1480,128 @@ const char* CarlaEngine::getRtAudioApiName(const unsigned int index)
 #else
         return "JACK (RtAudio)";
 #endif
-        case RtAudio::MACOSX_CORE:
-            return "CoreAudio";
-        case RtAudio::WINDOWS_ASIO:
-            return "ASIO";
-        case RtAudio::WINDOWS_DS:
-            return "DirectSound";
-        case RtAudio::RTAUDIO_DUMMY:
-            return "Dummy";
-        }
+    case RtAudio::MACOSX_CORE:
+        return "CoreAudio";
+    case RtAudio::WINDOWS_ASIO:
+        return "ASIO";
+    case RtAudio::WINDOWS_DS:
+        return "DirectSound";
+    case RtAudio::RTAUDIO_DUMMY:
+        return "Dummy";
     }
 
     return nullptr;
 }
 
-const char** CarlaEngine::getRtAudioApiDeviceNames(const unsigned int index)
+const char* const* CarlaEngine::getRtAudioApiDeviceNames(const unsigned int index)
 {
     initRtApis();
 
-    if (index < gRtAudioApis.size())
+    if (index >= gRtAudioApis.size())
+        return nullptr;
+
+    const RtAudio::Api& api(gRtAudioApis[index]);
+
+    RtAudio rtAudio(api);
+
+    if (gRetNames != nullptr)
     {
-        const RtAudio::Api& api(gRtAudioApis[index]);
-
-        RtAudio rtAudio(api);
-
-        if (gRetNames != nullptr)
-        {
-            int i=0;
-            while (gRetNames[i] != nullptr)
-                delete[] gRetNames[i++];
-            delete[] gRetNames;
-            gRetNames = nullptr;
-        }
-
-        const unsigned int devCount(rtAudio.getDeviceCount());
-
-        if (devCount > 0)
-        {
-            List<const char*> devNames;
-
-            for (unsigned int i=0; i < devCount; ++i)
-            {
-                RtAudio::DeviceInfo devInfo(rtAudio.getDeviceInfo(i));
-
-                if (devInfo.probed && devInfo.outputChannels > 0 /*&& (devInfo.nativeFormats & RTAUDIO_FLOAT32) != 0*/)
-                    devNames.append(carla_strdup(devInfo.name.c_str()));
-            }
-
-            const unsigned int realDevCount(devNames.count());
-
-            gRetNames = new const char*[realDevCount+1];
-
-            for (unsigned int i=0; i < realDevCount; ++i)
-                gRetNames[i] = devNames.getAt(i);
-
-            gRetNames[realDevCount] = nullptr;
-            devNames.clear();
-
-            return gRetNames;
-        }
+        int i=0;
+        while (gRetNames[i] != nullptr)
+            delete[] gRetNames[i++];
+        delete[] gRetNames;
+        gRetNames = nullptr;
     }
 
-    return nullptr;
+    const unsigned int devCount(rtAudio.getDeviceCount());
+
+    if (devCount == 0)
+        return nullptr;
+
+    List<const char*> devNames;
+
+    for (unsigned int i=0; i < devCount; ++i)
+    {
+        RtAudio::DeviceInfo devInfo(rtAudio.getDeviceInfo(i));
+
+        if (devInfo.probed && devInfo.outputChannels > 0 /*&& (devInfo.nativeFormats & RTAUDIO_FLOAT32) != 0*/)
+            devNames.append(carla_strdup(devInfo.name.c_str()));
+    }
+
+    const unsigned int realDevCount(devNames.count());
+
+    gRetNames = new const char*[realDevCount+1];
+
+    for (unsigned int i=0; i < realDevCount; ++i)
+        gRetNames[i] = devNames.getAt(i);
+
+    gRetNames[realDevCount] = nullptr;
+    devNames.clear();
+
+    return gRetNames;
+}
+
+const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const unsigned int index, const char* const deviceName)
+{
+    initRtApis();
+
+    if (index >= gRtAudioApis.size())
+        return nullptr;
+
+    const RtAudio::Api& api(gRtAudioApis[index]);
+
+    RtAudio rtAudio(api);
+
+    const unsigned int devCount(rtAudio.getDeviceCount());
+
+    if (devCount == 0)
+        return nullptr;
+
+    unsigned int i;
+    RtAudio::DeviceInfo rtAudioDevInfo;
+
+    for (i=0; i < devCount; ++i)
+    {
+        rtAudioDevInfo = rtAudio.getDeviceInfo(i);
+
+        if (rtAudioDevInfo.name == deviceName)
+            break;
+    }
+
+    if (i == devCount)
+        return nullptr;
+
+    static EngineDriverDeviceInfo devInfo;
+    static uint32_t dummyBufferSizes[11] = { 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 0 };
+    static double   dummySampleRates[14] = { 22050.0, 32000.0, 44100.0, 48000.0, 88200.0, 96000.0, 176400.0, 192000.0, 0.0 };
+
+    // reset
+    devInfo.hints = 0x0;
+    devInfo.bufferSizes = dummyBufferSizes;
+
+    // cleanup
+    if (devInfo.sampleRates != nullptr && devInfo.sampleRates != dummySampleRates)
+    {
+        delete[] devInfo.sampleRates;
+        devInfo.sampleRates = nullptr;
+    }
+
+    if (size_t sampleRatesCount = rtAudioDevInfo.sampleRates.size())
+    {
+        double* sampleRates(new double[sampleRatesCount+1]);
+
+        for (size_t i=0; i < sampleRatesCount; ++i)
+            sampleRates[i] = rtAudioDevInfo.sampleRates[i];
+        sampleRates[sampleRatesCount] = 0.0;
+
+        devInfo.sampleRates = sampleRates;
+    }
+    else
+    {
+        devInfo.sampleRates = dummySampleRates;
+    }
+
+    return &devInfo;
 }
 
 // -----------------------------------------

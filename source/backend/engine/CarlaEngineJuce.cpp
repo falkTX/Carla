@@ -141,7 +141,7 @@ const char* CarlaEngine::getJuceApiName(const unsigned int /*index*/)
     return nullptr;
 }
 
-const char** CarlaEngine::getJuceApiDeviceNames(const unsigned int /*index*/)
+const char* const* CarlaEngine::getJuceApiDeviceNames(const unsigned int /*index*/)
 {
 #if 0
     juce::ScopedPointer<juce::AudioIODeviceType> deviceType;

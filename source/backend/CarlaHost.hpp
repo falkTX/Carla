@@ -40,18 +40,19 @@
  * Basic typedefs to help make code cleaner.
  * @{
  */
-typedef CarlaBackend::BinaryType           CarlaBinaryType;
-typedef CarlaBackend::PluginType           CarlaPluginType;
-typedef CarlaBackend::PluginCategory       CarlaPluginCategory;
-typedef CarlaBackend::EngineCallbackFunc   CarlaEngineCallbackFunc;
-typedef CarlaBackend::EngineCallbackOpcode CarlaEngineCallbackOpcode;
-typedef CarlaBackend::EngineOption         CarlaEngineOption;
-typedef CarlaBackend::FileCallbackFunc     CarlaFileCallbackFunc;
-typedef CarlaBackend::FileCallbackOpcode   CarlaFileCallbackOpcode;
-typedef CarlaBackend::ParameterData        CarlaParameterData;
-typedef CarlaBackend::ParameterRanges      CarlaParameterRanges;
-typedef CarlaBackend::MidiProgramData      CarlaMidiProgramData;
-typedef CarlaBackend::CustomData           CarlaCustomData;
+typedef CarlaBackend::BinaryType             CarlaBinaryType;
+typedef CarlaBackend::PluginType             CarlaPluginType;
+typedef CarlaBackend::PluginCategory         CarlaPluginCategory;
+typedef CarlaBackend::EngineCallbackFunc     CarlaEngineCallbackFunc;
+typedef CarlaBackend::EngineCallbackOpcode   CarlaEngineCallbackOpcode;
+typedef CarlaBackend::EngineOption           CarlaEngineOption;
+typedef CarlaBackend::FileCallbackFunc       CarlaFileCallbackFunc;
+typedef CarlaBackend::FileCallbackOpcode     CarlaFileCallbackOpcode;
+typedef CarlaBackend::ParameterData          CarlaParameterData;
+typedef CarlaBackend::ParameterRanges        CarlaParameterRanges;
+typedef CarlaBackend::MidiProgramData        CarlaMidiProgramData;
+typedef CarlaBackend::CustomData             CarlaCustomData;
+typedef CarlaBackend::EngineDriverDeviceInfo CarlaEngineDriverDeviceInfo;
 /**@}*/
 
 /*!
@@ -250,21 +251,6 @@ struct CarlaTransportInfo {
 };
 
 /*!
- * Engine driver information.
- * \see carla_get_engine_driver_info()
- */
-struct CarlaEngineDriverInfo {
-    const char* name;
-    unsigned int hints;
-
-#ifndef DOXYGEN
-    CarlaEngineDriverInfo()
-        : name(nullptr),
-          hints(0x0) {}
-#endif
-};
-
-/*!
  * Get the complete license text of used third-party code and features.\n
  * Returned string is in basic html format.
  */
@@ -287,13 +273,17 @@ CARLA_EXPORT unsigned int carla_get_engine_driver_count();
 /*!
  * Get the engine driver info for \a index.
  */
-CARLA_EXPORT const CarlaEngineDriverInfo* carla_get_engine_driver_info(unsigned int index);
+CARLA_EXPORT const char* carla_get_engine_driver_name(unsigned int index);
 
 /*!
- * Get the device names of the engine driver at \a index (for use in non-JACK drivers).\n
- * May return NULL.
+ * Get the device names of the engine driver at \a index.
  */
-CARLA_EXPORT const char** carla_get_engine_driver_device_names(unsigned int index);
+CARLA_EXPORT const char* const* carla_get_engine_driver_device_names(unsigned int index);
+
+/*!
+ * Get a device driver info.
+ */
+CARLA_EXPORT const CarlaEngineDriverDeviceInfo* carla_get_engine_driver_device_info(unsigned int index, const char* driverName);
 
 /*!
  * Get how many internal plugins are available to use.

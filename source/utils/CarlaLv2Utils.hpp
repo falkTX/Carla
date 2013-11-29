@@ -81,8 +81,8 @@
 
 #define LV2_OSC__OscEvent     "http://kxstudio.sf.net/ns/lv2ext/osc#OscEvent"
 
-#define LV2_UI__Qt5UI         LV2_UI_PREFIX "Qt5UI"
 #define LV2_UI__NtkUI         LV2_UI_PREFIX "NtkUI"
+#define LV2_UI__Qt5UI         LV2_UI_PREFIX "Qt5UI"
 #define LV2_UI__idle          LV2_UI_PREFIX "idle"
 #define LV2_UI__makeResident  LV2_UI_PREFIX "makeResident"
 

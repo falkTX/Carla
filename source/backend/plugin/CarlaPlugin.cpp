@@ -225,6 +225,7 @@ CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
     : fId(id),
       fHints(0x0),
       fOptions(0x0),
+      fPatchbayClientId(0),
       fEnabled(false),
       fIconName("plugin"),
       pData(new CarlaPluginProtectedData(engine, this))

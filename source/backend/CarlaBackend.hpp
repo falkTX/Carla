@@ -40,7 +40,7 @@ CARLA_BACKEND_START_NAMESPACE
  * @defgroup CarlaBackendAPI Carla Backend API
  *
  * The Carla Backend API.\n
- * This is the base definitions for everything in the Carla code.
+ * This is the base definitions for everything in the Carla backend code.
  * @{
  */
 
@@ -53,6 +53,7 @@ const unsigned int MAX_DEFAULT_PARAMETERS = 200; //!< Maximum default number of 
  * @defgroup EngineDriverHints Engine Driver Hints
  *
  * Various engine driver hints.
+ * \see CarlaEngine::hints()
  * @{
  */
 const unsigned int ENGINE_DRIVER_HAS_CONTROL_PANEL    = 0x1; //!< Engine driver has custom control-panel.
@@ -861,6 +862,22 @@ struct CustomData {
         : type(nullptr),
           key(nullptr),
           value(nullptr) {}
+#endif
+};
+
+/*!
+ * Engine driver device information.
+ */
+struct EngineDriverDeviceInfo {
+    unsigned int hints;
+    const uint32_t* bufferSizes; // terminated with 0
+    const double* sampleRates;   // terminated with 0.0
+
+#ifndef DOXYGEN
+    EngineDriverDeviceInfo()
+        : hints(0x0),
+          bufferSizes(nullptr),
+          sampleRates(nullptr) {}
 #endif
 };
 

@@ -343,6 +343,13 @@ class CustomData(Structure):
         ("value", c_char_p)
     ]
 
+class EngineDriverDeviceInfo(Structure):
+    _fields_ = [
+        ("hints", c_uint),
+        ("bufferSizes", POINTER(c_uint32)),
+        ("sampleRates", POINTER(c_double))
+    ]
+
 # ------------------------------------------------------------------------------------------------------------
 # Host C++ -> Python variables
 
@@ -408,12 +415,6 @@ class CarlaTransportInfo(Structure):
         ("beat", c_int32),
         ("tick", c_int32),
         ("bpm", c_double)
-    ]
-
-class CarlaEngineDriverInfo(Structure):
-    _fields_ = [
-        ("name", c_char_p),
-        ("hints", c_uint)
     ]
 
 # ------------------------------------------------------------------------------------------------------------
@@ -515,11 +516,14 @@ class Host(object):
         self.lib.carla_get_engine_driver_count.argtypes = None
         self.lib.carla_get_engine_driver_count.restype = c_uint
 
-        self.lib.carla_get_engine_driver_info.argtypes = [c_uint]
-        self.lib.carla_get_engine_driver_info.restype = POINTER(CarlaEngineDriverInfo)
+        self.lib.carla_get_engine_driver_name.argtypes = [c_uint]
+        self.lib.carla_get_engine_driver_name.restype = c_char_p
 
         self.lib.carla_get_engine_driver_device_names.argtypes = [c_uint]
         self.lib.carla_get_engine_driver_device_names.restype = POINTER(c_char_p)
+
+        self.lib.carla_get_engine_driver_device_info.argtypes = [c_uint, c_char_p]
+        self.lib.carla_get_engine_driver_device_info.restype = POINTER(EngineDriverDeviceInfo)
 
         self.lib.carla_get_internal_plugin_count.argtypes = None
         self.lib.carla_get_internal_plugin_count.restype = c_uint
@@ -542,7 +546,7 @@ class Host(object):
         self.lib.carla_set_engine_about_to_close.argtypes = None
         self.lib.carla_set_engine_about_to_close.restype = None
 
-        self.lib.carla_set_engine_callback.argtypes = [CallbackFunc, c_void_p]
+        self.lib.carla_set_engine_callback.argtypes = [EngineCallbackFunc, c_void_p]
         self.lib.carla_set_engine_callback.restype = None
 
         self.lib.carla_set_engine_option.argtypes = [c_enum, c_int, c_char_p]
@@ -773,11 +777,14 @@ class Host(object):
     def get_engine_driver_count(self):
         return self.lib.carla_get_engine_driver_count()
 
-    def get_engine_driver_info(self, index):
-        return structToDict(self.lib.carla_get_engine_driver_info(index))
+    def get_engine_driver_name(self, index):
+        return self.lib.carla_get_engine_driver_name(index)
 
     def get_engine_driver_device_names(self, index):
         return charStringList(self.lib.carla_get_engine_driver_device_names(index))
+
+    def get_engine_driver_device_info(self, index, deviceName):
+        return structToDict(self.lib.carla_get_engine_driver_device_info(index, deviceName))
 
     def get_internal_plugin_count(self):
         return self.lib.carla_get_internal_plugin_count()

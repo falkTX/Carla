@@ -340,7 +340,8 @@ CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const
 // Carla Engine
 
 CarlaEngine::CarlaEngine()
-    : fBufferSize(0),
+    : fHints(0x0),
+      fBufferSize(0),
       fSampleRate(0.0),
       pData(new CarlaEngineProtectedData(this))
 {
@@ -398,7 +399,7 @@ const char* CarlaEngine::getDriverName(const unsigned int index)
     return nullptr;
 }
 
-const char** CarlaEngine::getDriverDeviceNames(const unsigned int index)
+const char* const* CarlaEngine::getDriverDeviceNames(const unsigned int index)
 {
     carla_debug("CarlaEngine::getDriverDeviceNames(%i)", index);
 
@@ -423,6 +424,37 @@ const char** CarlaEngine::getDriverDeviceNames(const unsigned int index)
 #endif
 
     carla_stderr("CarlaEngine::getDriverDeviceNames(%i) - invalid index", index);
+    return nullptr;
+}
+
+const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const unsigned int index, const char* const deviceName)
+{
+    carla_debug("CarlaEngine::getDriverDeviceInfo(%i, \"%s\")", index, deviceName);
+
+    if (index == 0)
+    {
+        static uint32_t bufSizes[11] = { 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 0 };
+        static EngineDriverDeviceInfo devInfo;
+        devInfo.hints      |= ENGINE_DRIVER_VARIABLE_BUFFER_SIZE;
+        devInfo.bufferSizes = bufSizes;
+        return &devInfo;
+    }
+
+#ifndef BUILD_BRIDGE
+    const unsigned int rtAudioIndex(index-1);
+
+    if (rtAudioIndex < getRtAudioApiCount())
+        return getRtAudioDeviceInfo(rtAudioIndex, deviceName);
+
+# ifdef USE_JUCE
+    const unsigned int juceIndex(index-rtAudioIndex-1);
+
+    if (juceIndex < getJuceApiCount())
+        return getJuceDeviceInfo(juceIndex, deviceName);
+# endif
+#endif
+
+    carla_stderr("CarlaEngine::getDriverDeviceNames(%i, \"%s\") - invalid index", index, deviceName);
     return nullptr;
 }
 
