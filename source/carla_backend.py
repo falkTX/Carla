@@ -29,6 +29,11 @@ from sys import platform, maxsize
 kIs64bit = bool(architecture()[0] == "64bit" and maxsize > 2**32)
 
 # ------------------------------------------------------------------------------------------------------------
+# Define enum type (integer)
+
+c_enum = c_int
+
+# ------------------------------------------------------------------------------------------------------------
 # Set Platform
 
 if platform == "darwin":
@@ -131,13 +136,14 @@ MAX_DEFAULT_PARAMETERS = 200
 # Engine Driver Device Hints
 
 # Engine driver device has custom control-panel.
-# @see ENGINE_OPTION_AUDIO_SHOW_CTRL_PANEL
 ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL = 0x1
 
 # Engine driver device can change buffer-size on the fly.
+# @see ENGINE_OPTION_AUDIO_BUFFER_SIZE
 ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE = 0x2
 
 # Engine driver device can change sample-rate on the fly.
+# @see ENGINE_OPTION_AUDIO_SAMPLE_RATE
 ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE = 0x4
 
 # ------------------------------------------------------------------------------------------------------------
@@ -202,14 +208,18 @@ PLUGIN_OPTION_SEND_ALL_SOUND_OFF = 0x100
 # ------------------------------------------------------------------------------------------------------------
 # Parameter Hints
 
+# Parameter is input.
+# When this hint is not set, parameter is assumed to be output.
+PARAMETER_IS_INPUT = 0x001
+
 # Parameter value is boolean.
-PARAMETER_IS_BOOLEAN = 0x001
+PARAMETER_IS_BOOLEAN = 0x002
 
 # Parameter value is integer.
-PARAMETER_IS_INTEGER = 0x002
+PARAMETER_IS_INTEGER = 0x004
 
 # Parameter value is logarithmic.
-PARAMETER_IS_LOGARITHMIC = 0x004
+PARAMETER_IS_LOGARITHMIC = 0x008
 
 # Parameter is enabled.
 # It can be viewed, changed and stored.
@@ -367,22 +377,6 @@ PLUGIN_CATEGORY_UTILITY = 8
 
 # Miscellaneous plugin (used to check if the plugin has a category).
 PLUGIN_CATEGORY_OTHER = 9
-
-# ------------------------------------------------------------------------------------------------------------
-# Parameter Type
-
-# Unknown parameter type.
-PARAMETER_UNKNOWN = 0
-
-# Input parameter.
-PARAMETER_INPUT = 1
-
-# Output parameter.
-PARAMETER_OUTPUT = 2
-
-# Special parameter.
-# Used to report specific information to plugins.
-PARAMETER_SPECIAL = 3
 
 # ------------------------------------------------------------------------------------------------------------
 # Internal Parameters Index
@@ -682,8 +676,6 @@ else:
 
 # ------------------------------------------------------------------------------------------------------------
 # Backend C++ -> Python variables
-
-c_enum = c_int32
 
 EngineCallbackFunc = CFUNCTYPE(None, c_void_p, c_enum, c_uint, c_int, c_int, c_float, c_char_p)
 FileCallbackFunc = CFUNCTYPE(c_char_p, c_void_p, c_enum, c_bool, c_char_p, c_char_p)

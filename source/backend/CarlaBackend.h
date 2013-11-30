@@ -76,17 +76,18 @@ const unsigned int MAX_DEFAULT_PARAMETERS = 200;
 
 /*!
  * Engine driver device has custom control-panel.
- * @see ENGINE_OPTION_AUDIO_SHOW_CTRL_PANEL
  */
 const unsigned int ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL = 0x1;
 
 /*!
  * Engine driver device can change buffer-size on the fly.
+ * @see ENGINE_OPTION_AUDIO_BUFFER_SIZE
  */
 const unsigned int ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE = 0x2;
 
 /*!
  * Engine driver device can change sample-rate on the fly.
+ * @see ENGINE_OPTION_AUDIO_SAMPLE_RATE
  */
 const unsigned int ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE = 0x4;
 
@@ -101,7 +102,7 @@ const unsigned int ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE = 0x4;
  */
 
 /*!
- * Plugin is a bridge.
+ * Plugin is a bridge.\n
  * This hint is required because "bridge" itself is not a plugin type.
  */
 const unsigned int PLUGIN_IS_BRIDGE = 0x01;
@@ -208,20 +209,26 @@ const unsigned int PLUGIN_OPTION_SEND_ALL_SOUND_OFF = 0x100;
  */
 
 /*!
+ * Parameter is input.\n
+ * When this hint is not set, parameter is assumed to be output.
+ */
+const unsigned int PARAMETER_IS_INPUT = 0x001;
+
+/*!
  * Parameter value is boolean.
  * It's always at either minimum or maximum value.
  */
-const unsigned int PARAMETER_IS_BOOLEAN = 0x001;
+const unsigned int PARAMETER_IS_BOOLEAN = 0x002;
 
 /*!
  * Parameter value is integer.
  */
-const unsigned int PARAMETER_IS_INTEGER = 0x002;
+const unsigned int PARAMETER_IS_INTEGER = 0x004;
 
 /*!
  * Parameter value is logarithmic.
  */
-const unsigned int PARAMETER_IS_LOGARITHMIC = 0x004;
+const unsigned int PARAMETER_IS_LOGARITHMIC = 0x008;
 
 /*!
  * Parameter is enabled.
@@ -500,33 +507,6 @@ typedef enum {
     PLUGIN_CATEGORY_OTHER = 9
 
 } PluginCategory;
-
-/*!
- * Plugin parameter type.
- */
-typedef enum {
-    /*!
-     * Unknown parameter type.
-     */
-    PARAMETER_UNKNOWN = 0,
-
-    /*!
-     * Input parameter.
-     */
-    PARAMETER_INPUT = 1,
-
-    /*!
-     * Output parameter.
-     */
-    PARAMETER_OUTPUT = 2,
-
-    /*!
-     * Special parameter.
-     * Used to report specific information to plugins.
-     */
-    PARAMETER_SPECIAL = 3
-
-} ParameterType;
 
 /*!
  * Special parameters used internally in Carla.
@@ -1063,17 +1043,12 @@ typedef struct _ParameterData {
     /*!
      *
      */
-    ParameterType type;
+    int32_t index;
 
     /*!
      *
      */
-    int32_t  index;
-
-    /*!
-     *
-     */
-    int32_t  rindex;
+    int32_t rindex;
 
     /*!
      *
@@ -1095,8 +1070,7 @@ typedef struct _ParameterData {
      *
      */
     _ParameterData() noexcept
-        : type(PARAMETER_UNKNOWN),
-          index(PARAMETER_NULL),
+        : index(PARAMETER_NULL),
           rindex(-1),
           hints(0x0),
           midiChannel(0),
