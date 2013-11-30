@@ -16,19 +16,42 @@ BUILD_CXX_FLAGS += -isystem /opt/kxstudio/include
 # BUILD_CXX_FLAGS += -isystem /usr/include/qt5
 # BUILD_CXX_FLAGS += -I/opt/mingw32/include
 
-ANSI_CXX_FLAGS   = -DBUILD_ANSI_TEST -DVESTIGE_HEADER
-ANSI_CXX_FLAGS  += -ansi -pedantic -pedantic-errors -Wunused-parameter -Wuninitialized -Wno-vla
-ANSI_CXX_FLAGS  += -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Waggregate-return
+# --------------------------------------------------------------
+
+# ANSI_CXX_FLAGS  += -ansi -pedantic -pedantic-errors -Wunused-parameter -Wuninitialized -Wno-vla
+# ANSI_CXX_FLAGS  += -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Waggregate-return
 # ANSI_CXX_FLAGS  += -std=c++11 -Wzero-as-null-pointer-constant
 
-TARGETS = CarlaString Print RtList Utils
+# --------------------------------------------------------------
+
+ANSI_FLAGS  = -DBUILD_ANSI_TEST -I../backend -I../includes
+ANSI_FLAGS += -Wall -Wextra -Werror
+BASE_FLAGS += -DDEBUG -O0 -g
+BASE_FLAGS += -ansi -pedantic -pedantic-errors
+BASE_FLAGS += -Wunused-parameter -Wuninitialized -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Waggregate-return
+
+# --------------------------------------------------------------
+
+TARGETS  = ansi-pedantic-test_c ansi-pedantic-test_c99 ansi-pedantic-test_cxx ansi-pedantic-test_cxx11
+# TARGETS += CarlaString Print RtList Utils
 
 all: $(TARGETS)
 
 # --------------------------------------------------------------
 
-ANSI: ANSI.cpp #../backend/standalone/CarlaStandalone.cpp.o CarlaBackendDummy.cpp.o ../modules/theme.a
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(ANSI_CXX_FLAGS) $(LINK_FLAGS) -L/opt/kxstudio/lib -lQtCore -lQtGui -llo -o $@
+ansi-pedantic-test_c: ansi-pedantic-test.c ../backend/CarlaBackend.h
+	$(CC) $< $(ANSI_FLAGS) -Wc++-compat -o $@
+
+ansi-pedantic-test_c99: ansi-pedantic-test.c ../backend/CarlaBackend.h
+	$(CC) $< $(ANSI_FLAGS) -std=c99 -Wc++-compat -o $@
+
+ansi-pedantic-test_cxx: ansi-pedantic-test.c ../backend/CarlaBackend.h
+	$(CXX) $< $(ANSI_FLAGS) -o $@
+
+ansi-pedantic-test_cxx11: ansi-pedantic-test.c ../backend/CarlaBackend.h
+	$(CXX) $< $(ANSI_FLAGS) -std=c++11 -Wzero-as-null-pointer-constant -o $@
+
+# --------------------------------------------------------------
 
 CarlaString: CarlaString.cpp ../utils/CarlaString.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
