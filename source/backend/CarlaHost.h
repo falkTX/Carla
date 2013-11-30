@@ -56,6 +56,36 @@ typedef CarlaBackend::EngineDriverDeviceInfo CarlaEngineDriverDeviceInfo;
 /**@}*/
 
 /*!
+ * File callback opcodes.\n
+ * Front-ends must always block-wait for user input.
+ * @see FileCallbackFunc and carla_set_file_callback()
+ */
+typedef enum {
+    /*!
+     * Debug.
+     * This opcode is undefined and used only for testing purposes.
+     */
+    FILE_CALLBACK_DEBUG = 0,
+
+    /*!
+     * Open file or folder.
+     */
+    FILE_CALLBACK_OPEN = 1,
+
+    /*!
+     * Save file or folder.
+     */
+    FILE_CALLBACK_SAVE = 2
+
+} FileCallbackOpcode;
+
+/*!
+ * File callback function.
+ * @see FileCallbackType
+ */
+typedef const char* (*FileCallbackFunc)(void* ptr, FileCallbackOpcode action, bool isDir, const char* title, const char* filter);
+
+/*!
  * Plugin information.
  * \see carla_get_plugin_info()
  */

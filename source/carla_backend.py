@@ -117,7 +117,7 @@ def structToDict(struct):
     return dict((attr, getattr(struct, attr)) for attr, value in struct._fields_)
 
 # ------------------------------------------------------------------------------------------------------------
-# Carla Backend API
+# Carla Backend API (base definitions)
 
 # Maximum default number of loadable plugins.
 MAX_DEFAULT_PLUGINS = 99
@@ -478,9 +478,9 @@ ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED = 10
 
 # A plugin's custom UI state has changed.
 # @param pluginId Plugin Id
-# @param value1   New state, as follows:\n
-#                  0: UI is now hidden\n
-#                  1: UI is now visible\n
+# @param value1   New state, as follows:
+#                  0: UI is now hidden
+#                  1: UI is now visible
 #                 -1: UI has crashed and should not be shown again
 ENGINE_CALLBACK_UI_STATE_CHANGED = 11
 
@@ -606,63 +606,207 @@ ENGINE_CALLBACK_ERROR = 35
 ENGINE_CALLBACK_QUIT = 36
 
 # ------------------------------------------------------------------------------------------------------------
-# Engine Options Type
+# Engine Option
 
-ENGINE_OPTION_PROCESS_NAME             = 0
-ENGINE_OPTION_PROCESS_MODE             = 1
-ENGINE_OPTION_TRANSPORT_MODE           = 2
-ENGINE_OPTION_FORCE_STEREO             = 3
-ENGINE_OPTION_PREFER_PLUGIN_BRIDGES    = 4
-ENGINE_OPTION_PREFER_UI_BRIDGES        = 5
-ENGINE_OPTION_UIS_ALWAYS_ON_TOP        = 6
-ENGINE_OPTION_MAX_PARAMETERS           = 7
-ENGINE_OPTION_UI_BRIDGES_TIMEOUT       = 8
-ENGINE_OPTION_AUDIO_NUM_PERIODS        = 9
-ENGINE_OPTION_AUDIO_BUFFER_SIZE        = 10
-ENGINE_OPTION_AUDIO_SAMPLE_RATE        = 11
-ENGINE_OPTION_AUDIO_DEVICE             = 12
-ENGINE_OPTION_PATH_RESOURCES           = 13
-ENGINE_OPTION_PATH_BRIDGE_NATIVE       = 14
-ENGINE_OPTION_PATH_BRIDGE_POSIX32      = 15
-ENGINE_OPTION_PATH_BRIDGE_POSIX64      = 16
-ENGINE_OPTION_PATH_BRIDGE_WIN32        = 17
-ENGINE_OPTION_PATH_BRIDGE_WIN64        = 18
-ENGINE_OPTION_PATH_BRIDGE_LV2_EXTERNAL = 19
-ENGINE_OPTION_PATH_BRIDGE_LV2_GTK2     = 20
-ENGINE_OPTION_PATH_BRIDGE_LV2_GTK3     = 21
-ENGINE_OPTION_PATH_BRIDGE_LV2_NTK      = 22
-ENGINE_OPTION_PATH_BRIDGE_LV2_QT4      = 23
-ENGINE_OPTION_PATH_BRIDGE_LV2_QT5      = 24
-ENGINE_OPTION_PATH_BRIDGE_LV2_COCOA    = 25
-ENGINE_OPTION_PATH_BRIDGE_LV2_WINDOWS  = 26
-ENGINE_OPTION_PATH_BRIDGE_LV2_X11      = 27
-ENGINE_OPTION_PATH_BRIDGE_VST_MAC      = 28
-ENGINE_OPTION_PATH_BRIDGE_VST_HWND     = 29
-ENGINE_OPTION_PATH_BRIDGE_VST_X11      = 30
+# Debug.
+# This option is undefined and used only for testing purposes.
+ENGINE_OPTION_DEBUG = 0
+
+# Set the engine processing mode.
+# Default is ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS on Linux and ENGINE_PROCESS_MODE_CONTINUOUS_RACK for all other OSes.
+# @see EngineProcessMode
+ENGINE_OPTION_PROCESS_MODE = 1
+
+# Set the engine transport mode.
+# Default is ENGINE_TRANSPORT_MODE_JACK on Linux and ENGINE_TRANSPORT_MODE_INTERNAL for all other OSes.
+# @see EngineTransportMode
+ENGINE_OPTION_TRANSPORT_MODE = 2
+
+# Force mono plugins as stereo, by running 2 instances at the same time.
+# Default is false, but always true when process mode is ENGINE_PROCESS_MODE_CONTINUOUS_RACK.
+# @note Not supported by all plugins
+# @see PLUGIN_OPTION_FORCE_STEREO
+ENGINE_OPTION_FORCE_STEREO = 3
+
+# Use plugin bridges whenever possible.
+# Default is no, EXPERIMENTAL.
+ENGINE_OPTION_PREFER_PLUGIN_BRIDGES = 4
+
+# Use UI bridges whenever possible, otherwise UIs will be directly handled in the main backend thread.
+# Default is yes.
+ENGINE_OPTION_PREFER_UI_BRIDGES = 5
+
+# Make custom plugin UIs always-on-top.
+# Default is yes.
+ENGINE_OPTION_UIS_ALWAYS_ON_TOP = 6
+
+# Maximum number of parameters allowed.
+# Default is MAX_DEFAULT_PARAMETERS.
+ENGINE_OPTION_MAX_PARAMETERS = 7
+
+# Timeout value for how much to wait for UI bridges to respond, in milliseconds.
+# Default is 4000 (4 seconds).
+ENGINE_OPTION_UI_BRIDGES_TIMEOUT = 8
+
+# Audio number of periods.
+# Default is 2.
+ENGINE_OPTION_AUDIO_NUM_PERIODS = 9
+
+# Audio buffer size.
+# Default is 512.
+ENGINE_OPTION_AUDIO_BUFFER_SIZE = 10
+
+# Audio sample rate.
+# Default is 44100.
+ENGINE_OPTION_AUDIO_SAMPLE_RATE = 11
+
+# Audio device (within a driver).
+# Default unset.
+ENGINE_OPTION_AUDIO_DEVICE = 12
+
+# Set path to the binary files.
+# Default unset.
+# @note Must be set for plugin and UI bridges to work
+ENGINE_OPTION_PATH_BINARIES = 13
+
+# Set path to the resource files.
+# Default unset.
+# @note Must be set for some internal plugins to work
+ENGINE_OPTION_PATH_RESOURCES = 14
 
 # ------------------------------------------------------------------------------------------------------------
-# Process Mode
+# Engine Process Mode
 
-PROCESS_MODE_SINGLE_CLIENT    = 0
-PROCESS_MODE_MULTIPLE_CLIENTS = 1
-PROCESS_MODE_CONTINUOUS_RACK  = 2
-PROCESS_MODE_PATCHBAY         = 3
-PROCESS_MODE_BRIDGE           = 4
+# Single client mode.
+# Inputs and outputs are added dynamically as needed by plugins.
+ENGINE_PROCESS_MODE_SINGLE_CLIENT = 0
+
+# Multiple client mode.
+# It has 1 master client + 1 client per plugin.
+ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS = 1
+
+# Single client, 'rack' mode.
+# Processes plugins in order of Id, with forced stereo always on.
+ENGINE_PROCESS_MODE_CONTINUOUS_RACK = 2
+
+# Single client, 'patchbay' mode.
+ENGINE_PROCESS_MODE_PATCHBAY = 3
+
+# Special mode, used in plugin-bridges only.
+ENGINE_PROCESS_MODE_BRIDGE = 4
 
 # ------------------------------------------------------------------------------------------------------------
-# Transport Mode
+# Engine Transport Mode
 
-TRANSPORT_MODE_INTERNAL = 0
-TRANSPORT_MODE_JACK     = 1
-TRANSPORT_MODE_PLUGIN   = 2
-TRANSPORT_MODE_BRIDGE   = 3
+# Internal transport mode.
+ENGINE_TRANSPORT_MODE_INTERNAL = 0
+
+# Transport from JACK.
+# Only available if driver name is "JACK".
+ENGINE_TRANSPORT_MODE_JACK = 1
+
+# Transport from host, used when Carla is a plugin.
+ENGINE_TRANSPORT_MODE_PLUGIN = 2
+
+# Special mode, used in plugin-bridges only.
+ENGINE_TRANSPORT_MODE_BRIDGE = 3
 
 # ------------------------------------------------------------------------------------------------------------
-# File Callback Type
+# Carla Backend API (C stuff)
 
-FILE_CALLBACK_DEBUG = 0
-FILE_CALLBACK_OPEN  = 1
-FILE_CALLBACK_SAVE  = 2
+# Engine callback function.
+# Front-ends must never block indefinitely during a callback.
+# @see EngineCallbackOpcode and carla_set_engine_callback()
+EngineCallbackFunc = CFUNCTYPE(None, c_void_p, c_enum, c_uint, c_int, c_int, c_float, c_char_p)
+
+# Parameter data.
+class ParameterData(Structure):
+    _fields_ = [
+        ("type", c_enum),
+        ("index", c_int32),
+        ("rindex", c_int32),
+        ("hints", c_uint),
+        ("midiCC", c_int16),
+        ("midiChannel", c_uint8)
+    ]
+
+# Parameter ranges.
+class ParameterRanges(Structure):
+    _fields_ = [
+        ("def", c_float),
+        ("min", c_float),
+        ("max", c_float),
+        ("step", c_float),
+        ("stepSmall", c_float),
+        ("stepLarge", c_float)
+    ]
+
+# MIDI Program data.
+class MidiProgramData(Structure):
+    _fields_ = [
+        ("bank", c_uint32),
+        ("program", c_uint32),
+        ("name", c_char_p)
+    ]
+
+# Custom data, for saving key:value 'dictionaries'.
+class CustomData(Structure):
+    _fields_ = [
+        ("type", c_char_p),
+        ("key", c_char_p),
+        ("value", c_char_p)
+    ]
+
+# Engine driver device information.
+class EngineDriverDeviceInfo(Structure):
+    _fields_ = [
+        ("hints", c_uint),
+        ("bufferSizes", POINTER(c_uint32)),
+        ("sampleRates", POINTER(c_double))
+    ]
+
+# ------------------------------------------------------------------------------------------------------------
+# Carla Backend API (Python compatible stuff)
+
+# @see ParameterData
+PyParameterData = {
+    'index': PARAMETER_NULL,
+    'rindex': -1,
+    'hints': 0x0,
+    'midiCC': -1,
+    'midiChannel': 0
+}
+
+# @see ParameterRanges
+PyParameterRanges = {
+    'def': 0.0,
+    'min': 0.0,
+    'max': 1.0,
+    'step': 0.01,
+    'stepSmall': 0.0001,
+    'stepLarge': 0.1
+}
+
+# @see MidiProgramData
+PyMidiProgramData = {
+    'bank': 0,
+    'program': 0,
+    'name': None
+}
+
+# @see CustomData
+PyCustomData = {
+    'type': None,
+    'key': None,
+    'value': None
+}
+
+# @see EngineDriverDeviceInfo
+PyEngineDriverDeviceInfo = {
+    'hints': 0x0,
+    'bufferSizes': [],
+    'sampleRates': []
+}
 
 # ------------------------------------------------------------------------------------------------------------
 # Set BINARY_NATIVE
@@ -677,52 +821,17 @@ else:
 # ------------------------------------------------------------------------------------------------------------
 # Backend C++ -> Python variables
 
-EngineCallbackFunc = CFUNCTYPE(None, c_void_p, c_enum, c_uint, c_int, c_int, c_float, c_char_p)
 FileCallbackFunc = CFUNCTYPE(c_char_p, c_void_p, c_enum, c_bool, c_char_p, c_char_p)
-
-class ParameterData(Structure):
-    _fields_ = [
-        ("type", c_enum),
-        ("index", c_int32),
-        ("rindex", c_int32),
-        ("hints", c_uint),
-        ("midiChannel", c_uint8),
-        ("midiCC", c_int16)
-    ]
-
-class ParameterRanges(Structure):
-    _fields_ = [
-        ("def", c_float),
-        ("min", c_float),
-        ("max", c_float),
-        ("step", c_float),
-        ("stepSmall", c_float),
-        ("stepLarge", c_float)
-    ]
-
-class MidiProgramData(Structure):
-    _fields_ = [
-        ("bank", c_uint32),
-        ("program", c_uint32),
-        ("name", c_char_p)
-    ]
-
-class CustomData(Structure):
-    _fields_ = [
-        ("type", c_char_p),
-        ("key", c_char_p),
-        ("value", c_char_p)
-    ]
-
-class EngineDriverDeviceInfo(Structure):
-    _fields_ = [
-        ("hints", c_uint),
-        ("bufferSizes", POINTER(c_uint32)),
-        ("sampleRates", POINTER(c_double))
-    ]
 
 # ------------------------------------------------------------------------------------------------------------
 # Host C++ -> Python variables
+
+# ------------------------------------------------------------------------------------------------------------
+# File Callback Type
+
+FILE_CALLBACK_DEBUG = 0
+FILE_CALLBACK_OPEN  = 1
+FILE_CALLBACK_SAVE  = 2
 
 class CarlaPluginInfo(Structure):
     _fields_ = [
@@ -790,36 +899,6 @@ class CarlaTransportInfo(Structure):
 
 # ------------------------------------------------------------------------------------------------------------
 # Python object dicts compatible with ctypes struct
-
-PyParameterData = {
-    'type': PARAMETER_NULL,
-    'index': PARAMETER_NULL,
-    'rindex': -1,
-    'hints': 0x0,
-    'midiChannel': 0,
-    'midiCC': -1
-}
-
-PyParameterRanges = {
-    'def': 0.0,
-    'min': 0.0,
-    'max': 1.0,
-    'step': 0.01,
-    'stepSmall': 0.0001,
-    'stepLarge': 0.1
-}
-
-PyMidiProgramData = {
-    'bank': 0,
-    'program': 0,
-    'name': None
-}
-
-PyCustomData = {
-    'type': None,
-    'key': None,
-    'value': None
-}
 
 PyCarlaPluginInfo = {
     'type': PLUGIN_NONE,

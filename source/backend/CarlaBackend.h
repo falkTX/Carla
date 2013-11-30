@@ -274,7 +274,7 @@ const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x400;
  */
 
 /*!
- * Patchbay port is input.
+ * Patchbay port is input.\n
  * When this hint is not set, port is assumed to be output.
  */
 const unsigned int PATCHBAY_PORT_IS_INPUT = 0x1;
@@ -299,14 +299,13 @@ const unsigned int PATCHBAY_PORT_TYPE_MIDI = 0x8;
 /*!
  * @defgroup CustomDataTypes Custom Data Types
  *
- * These types define how the @param value in the CustomData struct is stored.
- * The types are valid URIs. Any non-string or non-simple type (not integral) is saved in a base64 encoded format.
- * @see CustomData
+ * These types define how the value in the CustomData struct is stored.
+ * @see CustomData::type
  * @{
  */
 
 /*!
- * Boolean string type URI.
+ * Boolean string type URI.\n
  * Only "true" and "false" are valid values.
  */
 const char* const CUSTOM_DATA_TYPE_BOOLEAN = "http://kxstudio.sf.net/ns/carla/boolean";
@@ -327,7 +326,7 @@ const char* const CUSTOM_DATA_TYPE_STRING = "http://kxstudio.sf.net/ns/carla/str
  * @defgroup CustomDataKeys Custom Data Keys
  *
  * Pre-defined keys used internally in Carla.
- * @see CustomData
+ * @see CustomData::key
  * @{
  */
 
@@ -509,7 +508,7 @@ typedef enum {
 } PluginCategory;
 
 /*!
- * Special parameters used internally in Carla.
+ * Special parameters used internally in Carla.\n
  * Plugins do not know about their existence.
  */
 typedef enum {
@@ -519,43 +518,43 @@ typedef enum {
     PARAMETER_NULL = -1,
 
     /*!
-     * Active parameter, boolean type.
+     * Active parameter, boolean type.\n
      * Default is 'false'.
      */
     PARAMETER_ACTIVE = -2,
 
     /*!
-     * Dry/Wet parameter.
+     * Dry/Wet parameter.\n
      * Range 0.0...1.0; default is 1.0.
      */
     PARAMETER_DRYWET = -3,
 
     /*!
-     * Volume parameter.
+     * Volume parameter.\n
      * Range 0.0...1.27; default is 1.0.
      */
     PARAMETER_VOLUME = -4,
 
     /*!
-     * Stereo Balance-Left parameter.
+     * Stereo Balance-Left parameter.\n
      * Range -1.0...1.0; default is -1.0.
      */
     PARAMETER_BALANCE_LEFT = -5,
 
     /*!
-     * Stereo Balance-Right parameter.
+     * Stereo Balance-Right parameter.\n
      * Range -1.0...1.0; default is 1.0.
      */
     PARAMETER_BALANCE_RIGHT = -6,
 
     /*!
-     * Mono Panning parameter.
+     * Mono Panning parameter.\n
      * Range -1.0...1.0; default is 0.0.
      */
     PARAMETER_PANNING = -7,
 
     /*!
-     * MIDI Control channel, integer type.
+     * MIDI Control channel, integer type.\n
      * Range -1...15 (-1 = off).
      */
     PARAMETER_CTRL_CHANNEL = -8,
@@ -946,7 +945,7 @@ typedef enum {
 typedef enum {
     /*!
      * Single client mode.\n
-     * Inputs and outputs are added as needed by plugins.
+     * Inputs and outputs are added dynamically as needed by plugins.
      */
     ENGINE_PROCESS_MODE_SINGLE_CLIENT = 0,
 
@@ -958,7 +957,7 @@ typedef enum {
 
     /*!
      * Single client, 'rack' mode.\n
-     * Processes plugins in order of Id, with forced stereo.
+     * Processes plugins in order of Id, with forced stereo always on.
      */
     ENGINE_PROCESS_MODE_CONTINUOUS_RACK = 2,
 
@@ -975,7 +974,7 @@ typedef enum {
 } EngineProcessMode;
 
 /*!
- * All the available transport modes
+ * Engine transport mode
  * @see ENGINE_OPTION_TRANSPORT_MODE
  */
 typedef enum {
@@ -985,7 +984,8 @@ typedef enum {
     ENGINE_TRANSPORT_MODE_INTERNAL = 0,
 
     /*!
-     * Transport from JACK, only available if driver name is "JACK".
+     * Transport from JACK.\n
+     * Only available if driver name is "JACK".
      */
     ENGINE_TRANSPORT_MODE_JACK = 1,
 
@@ -1002,39 +1002,11 @@ typedef enum {
 } EngineTransportMode;
 
 /*!
- * Opcodes sent from the backend to the frontend, asking for file related tasks.
- * Front-end MUST always block-wait for user input.
- */
-typedef enum {
-    /*!
-     * Debug.
-     * This opcode is undefined and used only for testing purposes.
-     */
-    FILE_CALLBACK_DEBUG = 0,
-
-    /*!
-     * Open file or folder.
-     */
-    FILE_CALLBACK_OPEN = 1,
-
-    /*!
-     * Save file or folder.
-     */
-    FILE_CALLBACK_SAVE = 2
-
-} FileCallbackOpcode;
-
-/*!
- * Engine callback function.
- * @see EngineCallbackType
+ * Engine callback function.\n
+ * Front-ends must never block indefinitely during a callback.
+ * @see EngineCallbackOpcode, CarlaEngine::setCallback() and carla_set_engine_callback()
  */
 typedef void (*EngineCallbackFunc)(void* ptr, EngineCallbackOpcode action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr);
-
-/*!
- * File callback function.
- * @see FileCallbackType
- */
-typedef const char* (*FileCallbackFunc)(void* ptr, FileCallbackOpcode action, bool isDir, const char* title, const char* filter);
 
 /*!
  * Parameter data.
@@ -1058,12 +1030,12 @@ typedef struct _ParameterData {
     /*!
      *
      */
-    uint8_t  midiChannel;
+    int16_t midiCC;
 
     /*!
      *
      */
-    int16_t  midiCC;
+    uint8_t midiChannel;
 
 #ifdef __cplusplus
     /*!
@@ -1073,8 +1045,8 @@ typedef struct _ParameterData {
         : index(PARAMETER_NULL),
           rindex(-1),
           hints(0x0),
-          midiChannel(0),
-          midiCC(-1) {}
+          midiCC(-1),
+          midiChannel(0) {}
 #endif
 } ParameterData;
 
