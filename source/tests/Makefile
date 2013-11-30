@@ -39,16 +39,16 @@ all: $(TARGETS)
 
 # --------------------------------------------------------------
 
-ansi-pedantic-test_c: ansi-pedantic-test.c ../backend/CarlaBackend.h
+ansi-pedantic-test_c: ansi-pedantic-test.c ../backend/Carla*.h
 	$(CC) $< $(ANSI_FLAGS) -Wc++-compat -o $@
 
-ansi-pedantic-test_c99: ansi-pedantic-test.c ../backend/CarlaBackend.h
+ansi-pedantic-test_c99: ansi-pedantic-test.c ../backend/Carla*.h
 	$(CC) $< $(ANSI_FLAGS) -std=c99 -Wc++-compat -o $@
 
-ansi-pedantic-test_cxx: ansi-pedantic-test.c ../backend/CarlaBackend.h
+ansi-pedantic-test_cxx: ansi-pedantic-test.c ../backend/Carla*.h
 	$(CXX) $< $(ANSI_FLAGS) -o $@
 
-ansi-pedantic-test_cxx11: ansi-pedantic-test.c ../backend/CarlaBackend.h
+ansi-pedantic-test_cxx11: ansi-pedantic-test.c ../backend/Carla*.h
 	$(CXX) $< $(ANSI_FLAGS) -std=c++11 -Wzero-as-null-pointer-constant -o $@
 
 # --------------------------------------------------------------

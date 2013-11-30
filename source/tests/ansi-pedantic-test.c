@@ -16,6 +16,7 @@
  */
 
 #include "CarlaBackend.h"
+#include "CarlaHost.h"
 
 int main(int argc, char* argv[])
 {

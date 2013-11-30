@@ -15,10 +15,28 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef CARLA_HOST_HPP_INCLUDED
-#define CARLA_HOST_HPP_INCLUDED
+#ifndef CARLA_HOST_H_INCLUDED
+#define CARLA_HOST_H_INCLUDED
 
-#include "CarlaBackend.hpp"
+#include "CarlaBackend.h"
+
+#ifdef __cplusplus
+using CarlaBackend::BinaryType;
+using CarlaBackend::PluginType;
+using CarlaBackend::PluginCategory;
+using CarlaBackend::InternalParameterIndex;
+using CarlaBackend::EngineCallbackOpcode;
+using CarlaBackend::EngineOption;
+using CarlaBackend::EngineProcessMode;
+using CarlaBackend::EngineTransportMode;
+using CarlaBackend::EngineCallbackFunc;
+using CarlaBackend::ParameterData;
+using CarlaBackend::ParameterRanges;
+using CarlaBackend::MidiProgramData;
+using CarlaBackend::CustomData;
+using CarlaBackend::EngineDriverDeviceInfo;
+using CarlaBackend::CarlaEngine;
+#endif
 
 /*!
  * @defgroup CarlaHostAPI Carla Host API
@@ -33,27 +51,6 @@
  *
  * @{
  */
-
-/*!
- * @defgroup HelperTypedefs Helper typedefs
- *
- * Basic typedefs to help make code cleaner.
- * @{
- */
-typedef CarlaBackend::BinaryType             CarlaBinaryType;
-typedef CarlaBackend::PluginType             CarlaPluginType;
-typedef CarlaBackend::PluginCategory         CarlaPluginCategory;
-typedef CarlaBackend::EngineCallbackFunc     CarlaEngineCallbackFunc;
-typedef CarlaBackend::EngineCallbackOpcode   CarlaEngineCallbackOpcode;
-typedef CarlaBackend::EngineOption           CarlaEngineOption;
-typedef CarlaBackend::FileCallbackFunc       CarlaFileCallbackFunc;
-typedef CarlaBackend::FileCallbackOpcode     CarlaFileCallbackOpcode;
-typedef CarlaBackend::ParameterData          CarlaParameterData;
-typedef CarlaBackend::ParameterRanges        CarlaParameterRanges;
-typedef CarlaBackend::MidiProgramData        CarlaMidiProgramData;
-typedef CarlaBackend::CustomData             CarlaCustomData;
-typedef CarlaBackend::EngineDriverDeviceInfo CarlaEngineDriverDeviceInfo;
-/**@}*/
 
 /*!
  * File callback opcodes.\n
@@ -81,17 +78,17 @@ typedef enum {
 
 /*!
  * File callback function.
- * @see FileCallbackType
+ * @see FileCallbackOpcode
  */
 typedef const char* (*FileCallbackFunc)(void* ptr, FileCallbackOpcode action, bool isDir, const char* title, const char* filter);
 
 /*!
  * Plugin information.
- * \see carla_get_plugin_info()
+ * @see carla_get_plugin_info()
  */
-struct CarlaPluginInfo {
-    CarlaPluginType type;
-    CarlaPluginCategory category;
+typedef struct _CarlaPluginInfo {
+    PluginType type;
+    PluginCategory category;
     unsigned int hints;
     unsigned int optionsAvailable;
     unsigned int optionsEnabled;
@@ -104,8 +101,8 @@ struct CarlaPluginInfo {
     int patchbayClientId;
     long uniqueId;
 
-#ifndef DOXYGEN
-    CarlaPluginInfo()
+#ifdef __cplusplus
+    _CarlaPluginInfo()
         : type(CarlaBackend::PLUGIN_NONE),
           category(CarlaBackend::PLUGIN_CATEGORY_NONE),
           hints(0x0),
@@ -120,7 +117,7 @@ struct CarlaPluginInfo {
           patchbayClientId(0),
           uniqueId(0) {}
 
-    ~CarlaPluginInfo()
+    ~_CarlaPluginInfo()
     {
         if (label != nullptr)
         {
@@ -139,14 +136,14 @@ struct CarlaPluginInfo {
         }
     }
 #endif
-};
+} CarlaPluginInfo;
 
 /*!
  * Native plugin information.
- * \see carla_get_internal_plugin_info()
+ * @see carla_get_internal_plugin_info()
  */
-struct CarlaNativePluginInfo {
-    CarlaPluginCategory category;
+typedef struct _CarlaNativePluginInfo {
+    PluginCategory category;
     unsigned int hints;
     uint32_t audioIns;
     uint32_t audioOuts;
@@ -159,8 +156,8 @@ struct CarlaNativePluginInfo {
     const char* maker;
     const char* copyright;
 
-#ifndef DOXYGEN
-    CarlaNativePluginInfo()
+#ifdef __cplusplus
+    _CarlaNativePluginInfo()
         : category(CarlaBackend::PLUGIN_CATEGORY_NONE),
           hints(0x0),
           audioIns(0),
@@ -174,45 +171,45 @@ struct CarlaNativePluginInfo {
           maker(nullptr),
           copyright(nullptr) {}
 #endif
-};
+} CarlaNativePluginInfo;
 
 /*!
  * Port count information, used for Audio and MIDI ports and parameters.
- * \see carla_get_audio_port_count_info()
- * \see carla_get_midi_port_count_info()
- * \see carla_get_parameter_count_info()
+ * @see carla_get_audio_port_count_info()
+ * @see carla_get_midi_port_count_info()
+ * @see carla_get_parameter_count_info()
  */
-struct CarlaPortCountInfo {
+typedef struct _CarlaPortCountInfo {
     uint32_t ins;
     uint32_t outs;
     uint32_t total;
 
-#ifndef DOXYGEN
-    CarlaPortCountInfo()
+#ifdef __cplusplus
+    _CarlaPortCountInfo()
         : ins(0),
           outs(0),
           total(0) {}
 #endif
-};
+} CarlaPortCountInfo;
 
 /*!
  * Parameter information.
- * \see carla_get_parameter_info()
+ * @see carla_get_parameter_info()
  */
-struct CarlaParameterInfo {
+typedef struct _CarlaParameterInfo {
     const char* name;
     const char* symbol;
     const char* unit;
     uint32_t scalePointCount;
 
-#ifndef DOXYGEN
-    CarlaParameterInfo()
+#ifdef __cplusplus
+    _CarlaParameterInfo()
         : name(nullptr),
           symbol(nullptr),
           unit(nullptr),
           scalePointCount(0) {}
 
-    ~CarlaParameterInfo()
+    ~_CarlaParameterInfo()
     {
         if (name != nullptr)
         {
@@ -231,22 +228,22 @@ struct CarlaParameterInfo {
         }
     }
 #endif
-};
+} CarlaParameterInfo;
 
 /*!
  * Parameter scale point information.
- * \see carla_get_parameter_scalepoint_info()
+ * @see carla_get_parameter_scalepoint_info()
  */
-struct CarlaScalePointInfo {
+typedef struct _CarlaScalePointInfo {
     float value;
     const char* label;
 
-#ifndef DOXYGEN
-    CarlaScalePointInfo()
+#ifdef __cplusplus
+    _CarlaScalePointInfo()
         : value(0.0f),
           label(nullptr) {}
 
-    ~CarlaScalePointInfo()
+    ~_CarlaScalePointInfo()
     {
         if (label != nullptr)
         {
@@ -255,13 +252,13 @@ struct CarlaScalePointInfo {
         }
     }
 #endif
-};
+} CarlaScalePointInfo;
 
 /*!
  * Transport information.
- * \see carla_get_transport_info()
+ * @see carla_get_transport_info()
  */
-struct CarlaTransportInfo {
+typedef struct _CarlaTransportInfo {
     bool playing;
     uint64_t frame;
     int32_t bar;
@@ -269,8 +266,8 @@ struct CarlaTransportInfo {
     int32_t tick;
     double bpm;
 
-#ifndef DOXYGEN
-    CarlaTransportInfo()
+#ifdef __cplusplus
+    _CarlaTransportInfo()
         : playing(false),
           frame(0),
           bar(0),
@@ -278,7 +275,7 @@ struct CarlaTransportInfo {
           tick(0),
           bpm(0.0) {}
 #endif
-};
+} CarlaTransportInfo;
 
 /*!
  * Get the complete license text of used third-party code and features.\n
@@ -313,7 +310,7 @@ CARLA_EXPORT const char* const* carla_get_engine_driver_device_names(unsigned in
 /*!
  * Get a device driver info.
  */
-CARLA_EXPORT const CarlaEngineDriverDeviceInfo* carla_get_engine_driver_device_info(unsigned int index, const char* driverName);
+CARLA_EXPORT const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(unsigned int index, const char* driverName);
 
 /*!
  * Get how many internal plugins are available to use.
@@ -324,6 +321,13 @@ CARLA_EXPORT unsigned int carla_get_internal_plugin_count();
  * Get information about the internal plugin \a internalPluginId.
  */
 CARLA_EXPORT const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int internalPluginId);
+
+#ifdef __cplusplus
+/*!
+ * TODO.
+ */
+CARLA_EXPORT CarlaEngine* carla_get_standalone_engine();
+#endif
 
 /*!
  * Initialize the engine with driver \a driverName, using \a clientName for its internal name.\n
@@ -366,26 +370,26 @@ CARLA_EXPORT void carla_set_engine_about_to_close();
  * Set the engine callback function to \a func.
  * Use \a ptr to pass a custom pointer to the callback.
  */
-CARLA_EXPORT void carla_set_engine_callback(CarlaEngineCallbackFunc func, void* ptr);
+CARLA_EXPORT void carla_set_engine_callback(EngineCallbackFunc func, void* ptr);
 
 /*!
  * Set the engine option \a option.\n
  * With the exception of OPTION_PROCESS_NAME, OPTION_TRANSPORT_MODE and OPTION_PATH_*,
  * this function should not be called when the engine is running.
  */
-CARLA_EXPORT void carla_set_engine_option(CarlaEngineOption option, int value, const char* valueStr);
+CARLA_EXPORT void carla_set_engine_option(EngineOption option, int value, const char* valueStr);
 
 /*!
  * Set the file callback function to \a func.
  * Use \a ptr to pass a custom pointer to the callback.
  */
-CARLA_EXPORT void carla_set_file_callback(CarlaFileCallbackFunc func, void* ptr);
+CARLA_EXPORT void carla_set_file_callback(FileCallbackFunc func, void* ptr);
 
 /*!
  * Load \a filename of any type.\n
  * This will try to load a generic file as a plugin,
  * either by direct handling (GIG, SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
- * \see carla_get_supported_file_types()
+ * @see carla_get_supported_file_types()
  */
 CARLA_EXPORT bool carla_load_filename(const char* filename);
 
@@ -446,7 +450,7 @@ CARLA_EXPORT const CarlaTransportInfo* carla_get_transport_info();
  * Add new plugin.\n
  * If you don't know the binary type, use BINARY_NATIVE.
  */
-CARLA_EXPORT bool carla_add_plugin(CarlaBinaryType btype, CarlaPluginType ptype, const char* filename, const char* name, const char* label, const void* extraPtr);
+CARLA_EXPORT bool carla_add_plugin(BinaryType btype, PluginType ptype, const char* filename, const char* name, const char* label, const void* extraPtr);
 
 /*!
  * Remove plugin with id \a pluginId.
@@ -484,14 +488,14 @@ CARLA_EXPORT bool carla_switch_plugins(unsigned int pluginIdA, unsigned int plug
 /*!
  * Load the plugin state at \a filename.\n
  * (Plugin states have *.carxs extension).
- * \see carla_save_plugin_state()
+ * @see carla_save_plugin_state()
  */
 CARLA_EXPORT bool carla_load_plugin_state(unsigned int pluginId, const char* filename);
 
 /*!
  * Load the plugin state at \a filename.\n
  * (Plugin states have *.carxs extension).
- * \see carla_load_plugin_state()
+ * @see carla_load_plugin_state()
  */
 CARLA_EXPORT bool carla_save_plugin_state(unsigned int pluginId, const char* filename);
 
@@ -528,22 +532,22 @@ CARLA_EXPORT const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(unsi
 /*!
  * Get a plugin's parameter data.
  */
-CARLA_EXPORT const CarlaParameterData* carla_get_parameter_data(unsigned int pluginId, uint32_t parameterId);
+CARLA_EXPORT const ParameterData* carla_get_parameter_data(unsigned int pluginId, uint32_t parameterId);
 
 /*!
  * Get a plugin's parameter ranges.
  */
-CARLA_EXPORT const CarlaParameterRanges* carla_get_parameter_ranges(unsigned int pluginId, uint32_t parameterId);
+CARLA_EXPORT const ParameterRanges* carla_get_parameter_ranges(unsigned int pluginId, uint32_t parameterId);
 
 /*!
  * Get a plugin's midi program data.
  */
-CARLA_EXPORT const CarlaMidiProgramData* carla_get_midi_program_data(unsigned int pluginId, uint32_t midiProgramId);
+CARLA_EXPORT const MidiProgramData* carla_get_midi_program_data(unsigned int pluginId, uint32_t midiProgramId);
 
 /*!
  * Get a plugin's custom data.
  */
-CARLA_EXPORT const CarlaCustomData* carla_get_custom_data(unsigned int pluginId, uint32_t customDataId);
+CARLA_EXPORT const CustomData* carla_get_custom_data(unsigned int pluginId, uint32_t customDataId);
 
 /*!
  * Get a plugin's chunk data.
@@ -567,13 +571,13 @@ CARLA_EXPORT uint32_t carla_get_midi_program_count(unsigned int pluginId);
 
 /*!
  * Get how many custom data sets a plugin has.
- * \see carla_prepare_for_save()
+ * @see carla_prepare_for_save()
  */
 CARLA_EXPORT uint32_t carla_get_custom_data_count(unsigned int pluginId);
 
 /*!
  * Get a plugin's custom parameter text display.
- * \see PARAMETER_USES_CUSTOM_TEXT
+ * @see PARAMETER_USES_CUSTOM_TEXT
  */
 CARLA_EXPORT const char* carla_get_parameter_text(unsigned int pluginId, uint32_t parameterId);
 
@@ -627,7 +631,7 @@ CARLA_EXPORT float carla_get_output_peak_value(unsigned int pluginId, unsigned s
 
 /*!
  * Enable a plugin's option.
- * \see PluginOptions
+ * @see PluginOptions
  */
 CARLA_EXPORT void carla_set_option(unsigned int pluginId, unsigned int option, bool yesNo);
 
@@ -721,7 +725,7 @@ CARLA_EXPORT void carla_send_midi_note(unsigned int pluginId, uint8_t channel, u
 
 /*!
  * Tell a plugin to show its own custom UI.
- * \see PLUGIN_HAS_CUSTOM_UI
+ * @see PLUGIN_HAS_CUSTOM_UI
  */
 CARLA_EXPORT void carla_show_custom_ui(unsigned int pluginId, bool yesNo);
 
@@ -750,33 +754,6 @@ CARLA_EXPORT const char* carla_get_host_osc_url_tcp();
  */
 CARLA_EXPORT const char* carla_get_host_osc_url_udp();
 
-/*!
- * Send NSM announce message.
- */
-CARLA_EXPORT void carla_nsm_announce(const char* url, const char* appName, int pid);
+/** @} */
 
-/*!
- * Ready for handling NSM messages.
- */
-CARLA_EXPORT void carla_nsm_ready();
-
-/*!
- * Reply to NSM open message.
- * \see CALLBACK_NSM_OPEN
- */
-CARLA_EXPORT void carla_nsm_reply_open();
-
-/*!
- * Reply to NSM save message.
- * \see CALLBACK_NSM_SAVE
- */
-CARLA_EXPORT void carla_nsm_reply_save();
-
-#ifdef BUILD_BRIDGE
-using CarlaBackend::CarlaEngine;
-CARLA_EXPORT CarlaEngine* carla_get_standalone_engine();
-#endif
-
-/**@}*/
-
-#endif // CARLA_HOST_HPP_INCLUDED
+#endif // CARLA_HOST_H_INCLUDED

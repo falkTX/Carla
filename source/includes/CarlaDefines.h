@@ -189,14 +189,21 @@ private:                               \
     static void operator delete(void*);
 #endif
 
+/* Define EXTERN_C */
+#ifdef __cplusplus
+# define EXTERN_C extern "C"
+#else
+# define EXTERN_C
+#endif
+
 /* Define CARLA_EXPORT */
 #ifdef BUILD_BRIDGE
-# define CARLA_EXPORT extern "C"
+# define CARLA_EXPORT EXTERN_C
 #else
 # if defined(CARLA_OS_WIN) && ! defined(__WINE__)
-#  define CARLA_EXPORT extern "C" __declspec (dllexport)
+#  define CARLA_EXPORT EXTERN_C __declspec (dllexport)
 # else
-#  define CARLA_EXPORT extern "C" __attribute__ ((visibility("default")))
+#  define CARLA_EXPORT EXTERN_C __attribute__ ((visibility("default")))
 # endif
 #endif
 

@@ -809,29 +809,24 @@ PyEngineDriverDeviceInfo = {
 }
 
 # ------------------------------------------------------------------------------------------------------------
-# Set BINARY_NATIVE
+# File Callback Opcode
 
-if HAIKU or LINUX or MACOS:
-    BINARY_NATIVE = BINARY_POSIX64 if kIs64bit else BINARY_POSIX32
-elif WINDOWS:
-    BINARY_NATIVE = BINARY_WIN64 if kIs64bit else BINARY_WIN32
-else:
-    BINARY_NATIVE = BINARY_OTHER
-
-# ------------------------------------------------------------------------------------------------------------
-# Backend C++ -> Python variables
-
-FileCallbackFunc = CFUNCTYPE(c_char_p, c_void_p, c_enum, c_bool, c_char_p, c_char_p)
-
-# ------------------------------------------------------------------------------------------------------------
-# Host C++ -> Python variables
-
-# ------------------------------------------------------------------------------------------------------------
-# File Callback Type
-
+# Debug.
+# This opcode is undefined and used only for testing purposes.
 FILE_CALLBACK_DEBUG = 0
-FILE_CALLBACK_OPEN  = 1
-FILE_CALLBACK_SAVE  = 2
+
+# Open file or folder.
+FILE_CALLBACK_OPEN = 1
+
+# Save file or folder.
+FILE_CALLBACK_SAVE = 2
+
+# ------------------------------------------------------------------------------------------------------------
+# Carla Host API (C stuff)
+
+# File callback function.
+# @see FileCallbackOpcode
+FileCallbackFunc = CFUNCTYPE(c_char_p, c_void_p, c_enum, c_bool, c_char_p, c_char_p)
 
 class CarlaPluginInfo(Structure):
     _fields_ = [
@@ -898,7 +893,7 @@ class CarlaTransportInfo(Structure):
     ]
 
 # ------------------------------------------------------------------------------------------------------------
-# Python object dicts compatible with ctypes struct
+# Carla Host API (Python compatible stuff)
 
 PyCarlaPluginInfo = {
     'type': PLUGIN_NONE,
@@ -943,13 +938,18 @@ PyCarlaTransportInfo = {
     "bpm": 0.0
 }
 
-PyCarlaEngineDriverInfo = {
-    "name": None,
-    "hints": 0x0
-}
+# ------------------------------------------------------------------------------------------------------------
+# Set BINARY_NATIVE
+
+if HAIKU or LINUX or MACOS:
+    BINARY_NATIVE = BINARY_POSIX64 if kIs64bit else BINARY_POSIX32
+elif WINDOWS:
+    BINARY_NATIVE = BINARY_WIN64 if kIs64bit else BINARY_WIN32
+else:
+    BINARY_NATIVE = BINARY_OTHER
 
 # ------------------------------------------------------------------------------------------------------------
-# Host Python object (Control/Standalone)
+# Python Host object (Control/Standalone)
 
 class Host(object):
     def __init__(self, libName):

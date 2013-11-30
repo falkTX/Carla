@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef CARLA_BACKEND_HPP_INCLUDED
-#define CARLA_BACKEND_HPP_INCLUDED
+#ifndef CARLA_BACKEND_H_INCLUDED
+#define CARLA_BACKEND_H_INCLUDED
 
 #include "CarlaDefines.h"
 
@@ -1270,4 +1270,4 @@ class CarlaPlugin;
 CARLA_BACKEND_END_NAMESPACE
 #endif
 
-#endif /* CARLA_BACKEND_HPP_INCLUDED */
+#endif /* CARLA_BACKEND_H_INCLUDED */
