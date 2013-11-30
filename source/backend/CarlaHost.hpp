@@ -691,9 +691,9 @@ CARLA_EXPORT void carla_send_midi_note(unsigned int pluginId, uint8_t channel, u
 
 /*!
  * Tell a plugin to show its own custom UI.
- * \see PLUGIN_HAS_GUI
+ * \see PLUGIN_HAS_CUSTOM_UI
  */
-CARLA_EXPORT void carla_show_gui(unsigned int pluginId, bool yesNo);
+CARLA_EXPORT void carla_show_custom_ui(unsigned int pluginId, bool yesNo);
 
 /*!
  * Get the current engine buffer size.

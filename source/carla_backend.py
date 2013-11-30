@@ -58,25 +58,52 @@ else:
     WINDOWS = False
 
 # ------------------------------------------------------------------------------------------------------------
-# Convert a ctypes char** into a python string list
+# Convert a ctypes c_char_p into a python string
 
-def charStringList(charPtrPtr):
+def charPtrToString(value):
+    if not value:
+        return ""
+    if isinstance(value, str):
+        return value
+    return value.decode("utf-8", errors="ignore")
+
+# ------------------------------------------------------------------------------------------------------------
+# Convert a ctypes POINTER(c_char_p) into a python string list
+
+def charPtrPtrToStringList(charPtrPtr):
     if not charPtrPtr:
         return []
 
-    i = 0
+    i       = 0
+    charPtr = charPtrPtr[0]
     strList = []
 
-    while True:
+    while charPtr:
+        strList.append(charPtr.decode("utf-8", errors="ignore"))
+
+        i += 1
         charPtr = charPtrPtr[i]
 
-        if not charPtr:
-            break
-
-        strList.append(charPtr.decode("utf-8", errors="ignore"))
-        i += 1
-
     return strList
+
+# ------------------------------------------------------------------------------------------------------------
+# Convert a ctypes POINTER(c_<num>) into a python number list
+
+def numPtrToList(numPtr):
+    if not numPtr:
+        return []
+
+    i       = 0
+    num     = numPtr[0].value
+    numList = []
+
+    while num not in (0, 0.0):
+        numList.append(num)
+
+        i += 1
+        num = numPtr[i].value
+
+    return numList
 
 # ------------------------------------------------------------------------------------------------------------
 # Convert a ctypes struct into a python dict
@@ -85,135 +112,508 @@ def structToDict(struct):
     return dict((attr, getattr(struct, attr)) for attr, value in struct._fields_)
 
 # ------------------------------------------------------------------------------------------------------------
-# Backend defines
+# Carla Backend API
 
-MAX_DEFAULT_PLUGINS    = 99
-MAX_RACK_PLUGINS       = 16
-MAX_PATCHBAY_PLUGINS   = 255
+# Maximum default number of loadable plugins.
+MAX_DEFAULT_PLUGINS = 99
+
+# Maximum number of loadable plugins in rack mode.
+MAX_RACK_PLUGINS = 16
+
+# Maximum number of loadable plugins in patchbay mode.
+MAX_PATCHBAY_PLUGINS = 255
+
+# Maximum default number of parameters allowed.
+# @see ENGINE_OPTION_MAX_PARAMETERS
 MAX_DEFAULT_PARAMETERS = 200
 
-# Engine Driver Hints
-ENGINE_DRIVER_HAS_CONTROL_PANEL    = 0x1
-ENGINE_DRIVER_VARIABLE_BUFFER_SIZE = 0x2
-ENGINE_DRIVER_VARIABLE_SAMPLE_RATE = 0x4
+# ------------------------------------------------------------------------------------------------------------
+# Engine Driver Device Hints
 
+# Engine driver device has custom control-panel.
+# @see ENGINE_OPTION_AUDIO_SHOW_CTRL_PANEL
+ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL = 0x1
+
+# Engine driver device can change buffer-size on the fly.
+ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE = 0x2
+
+# Engine driver device can change sample-rate on the fly.
+ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE = 0x4
+
+# ------------------------------------------------------------------------------------------------------------
 # Plugin Hints
-PLUGIN_IS_BRIDGE   = 0x001
-PLUGIN_IS_RTSAFE   = 0x002
-PLUGIN_IS_SYNTH    = 0x004
-PLUGIN_HAS_GUI     = 0x008
-PLUGIN_CAN_DRYWET  = 0x010
-PLUGIN_CAN_VOLUME  = 0x020
-PLUGIN_CAN_BALANCE = 0x040
-PLUGIN_CAN_PANNING = 0x080
-PLUGIN_NEEDS_FIXED_BUFFERS = 0x100
-PLUGIN_NEEDS_SINGLE_THREAD = 0x200
 
+# Plugin is a bridge.
+# This hint is required because "bridge" itself is not a plugin type.
+PLUGIN_IS_BRIDGE = 0x01
+
+# Plugin is hard real-time safe.
+PLUGIN_IS_RTSAFE = 0x02
+
+# Plugin is a synth (produces sound).
+PLUGIN_IS_SYNTH = 0x04
+
+# Plugin has its own custom UI.
+# @see carla_show_custom_ui()
+PLUGIN_HAS_CUSTOM_UI = 0x08
+
+# Plugin can use internal Dry/Wet control.
+PLUGIN_CAN_DRYWET = 0x10
+
+# Plugin can use internal Volume control.
+PLUGIN_CAN_VOLUME = 0x20
+
+# Plugin can use internal (Stereo) Balance controls.
+PLUGIN_CAN_BALANCE = 0x40
+
+# Plugin can use internal (Mono) Panning control.
+PLUGIN_CAN_PANNING = 0x80
+
+# ------------------------------------------------------------------------------------------------------------
 # Plugin Options
-PLUGIN_OPTION_FIXED_BUFFERS         = 0x001
-PLUGIN_OPTION_FORCE_STEREO          = 0x002
-PLUGIN_OPTION_MAP_PROGRAM_CHANGES   = 0x004
-PLUGIN_OPTION_USE_CHUNKS            = 0x008
-PLUGIN_OPTION_SEND_CONTROL_CHANGES  = 0x010
-PLUGIN_OPTION_SEND_CHANNEL_PRESSURE = 0x020
-PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH  = 0x040
-PLUGIN_OPTION_SEND_PITCHBEND        = 0x080
-PLUGIN_OPTION_SEND_ALL_SOUND_OFF    = 0x100
 
+# Use constant/fixed-size audio buffers.
+PLUGIN_OPTION_FIXED_BUFFERS = 0x001
+
+# Force mono plugin as stereo.
+PLUGIN_OPTION_FORCE_STEREO = 0x002
+
+# Map MIDI programs to plugin programs.
+PLUGIN_OPTION_MAP_PROGRAM_CHANGES = 0x004
+
+# Use chunks to save and restore data.
+PLUGIN_OPTION_USE_CHUNKS = 0x008
+
+# Send MIDI control change events.
+PLUGIN_OPTION_SEND_CONTROL_CHANGES = 0x010
+
+# Send MIDI channel pressure events.
+PLUGIN_OPTION_SEND_CHANNEL_PRESSURE = 0x020
+
+# Send MIDI note after-touch events.
+PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH = 0x040
+
+# Send MIDI pitch-bend events.
+PLUGIN_OPTION_SEND_PITCHBEND = 0x080
+
+# Send MIDI all-sounds/notes-off events, single note-offs otherwise.
+PLUGIN_OPTION_SEND_ALL_SOUND_OFF = 0x100
+
+# ------------------------------------------------------------------------------------------------------------
 # Parameter Hints
-PARAMETER_IS_BOOLEAN       = 0x001
-PARAMETER_IS_INTEGER       = 0x002
-PARAMETER_IS_LOGARITHMIC   = 0x004
-PARAMETER_IS_ENABLED       = 0x010
-PARAMETER_IS_AUTOMABLE     = 0x020
-PARAMETER_IS_READ_ONLY     = 0x040
-PARAMETER_USES_SAMPLERATE  = 0x100
+
+# Parameter value is boolean.
+PARAMETER_IS_BOOLEAN = 0x001
+
+# Parameter value is integer.
+PARAMETER_IS_INTEGER = 0x002
+
+# Parameter value is logarithmic.
+PARAMETER_IS_LOGARITHMIC = 0x004
+
+# Parameter is enabled.
+# It can be viewed, changed and stored.
+PARAMETER_IS_ENABLED = 0x010
+
+# Parameter is automable (real-time safe).
+PARAMETER_IS_AUTOMABLE = 0x020
+
+# Parameter is read-only.
+# It cannot be changed.
+PARAMETER_IS_READ_ONLY = 0x040
+
+# Parameter needs sample rate to work.
+# Value and ranges are multiplied by sample rate on usage and divided by sample rate on save.
+PARAMETER_USES_SAMPLERATE = 0x100
+
+# Parameter uses scale points to define internal values in a meaningful way.
 PARAMETER_USES_SCALEPOINTS = 0x200
+
+# Parameter uses custom text for displaying its value.
+# @see carla_get_parameter_text()
 PARAMETER_USES_CUSTOM_TEXT = 0x400
 
-# Custom Data Types
-CUSTOM_DATA_TYPE_CHUNK     = "http://kxstudio.sf.net/ns/carla/chunk"
-CUSTOM_DATA_TYPE_STRING    = "http://kxstudio.sf.net/ns/carla/string"
-
-# Custom Data Keys
-CUSTOM_DATA_KEY_OPTIONS    = "CarlaOptions"
-CUSTOM_DATA_KEY_UI_X       = "CarlaUI:X"
-CUSTOM_DATA_KEY_UI_Y       = "CarlaUI:Y"
-CUSTOM_DATA_KEY_UI_WIDTH   = "CarlaUI:Width"
-CUSTOM_DATA_KEY_UI_HEIGHT  = "CarlaUI:Height"
-CUSTOM_DATA_KEY_UI_VISIBLE = "CarlaUI:Visible"
-
+# ------------------------------------------------------------------------------------------------------------
 # Patchbay Port Hints
-PATCHBAY_PORT_IS_INPUT  = 0x01
-PATCHBAY_PORT_IS_OUTPUT = 0x02
-PATCHBAY_PORT_IS_AUDIO  = 0x10
-PATCHBAY_PORT_IS_CV     = 0x20
-PATCHBAY_PORT_IS_MIDI   = 0x40
 
+# Patchbay port is input.
+# When this hint is not set, port is assumed to be output.
+PATCHBAY_PORT_IS_INPUT = 0x1
+
+# Patchbay port is of Audio type.
+PATCHBAY_PORT_TYPE_AUDIO = 0x2
+
+# Patchbay port is of CV type (Control Voltage).
+PATCHBAY_PORT_TYPE_CV = 0x4
+
+# Patchbay port is of MIDI type.
+PATCHBAY_PORT_TYPE_MIDI = 0x8
+
+# ------------------------------------------------------------------------------------------------------------
+# Custom Data Types
+
+# Boolean string type URI.
+# Only "true" and "false" are valid values.
+CUSTOM_DATA_TYPE_BOOLEAN = "http://kxstudio.sf.net/ns/carla/boolean"
+
+# Chunk type URI.
+CUSTOM_DATA_TYPE_CHUNK = "http://kxstudio.sf.net/ns/carla/chunk"
+
+# String type URI.
+CUSTOM_DATA_TYPE_STRING = "http://kxstudio.sf.net/ns/carla/string"
+
+# ------------------------------------------------------------------------------------------------------------
+# Custom Data Keys
+
+# Plugin options key.
+CUSTOM_DATA_KEY_PLUGIN_OPTIONS = "CarlaPluginOptions"
+
+# UI position key.
+CUSTOM_DATA_KEY_UI_POSITION = "CarlaUiPosition"
+
+# UI size key.
+CUSTOM_DATA_KEY_UI_SIZE = "CarlaUiSize"
+
+# UI visible key.
+CUSTOM_DATA_KEY_UI_VISIBLE = "CarlaUiVisible"
+
+# ------------------------------------------------------------------------------------------------------------
 # Binary Type
-BINARY_NONE    = 0
+
+# Null binary type.
+BINARY_NONE = 0
+
+# POSIX 32bit binary.
 BINARY_POSIX32 = 1
+
+# POSIX 64bit binary.
 BINARY_POSIX64 = 2
-BINARY_WIN32   = 3
-BINARY_WIN64   = 4
-BINARY_OTHER   = 5
 
+# Windows 32bit binary.
+BINARY_WIN32 = 3
+
+# Windows 64bit binary.
+BINARY_WIN64 = 4
+
+# Other binary type.
+BINARY_OTHER = 5
+
+# ------------------------------------------------------------------------------------------------------------
 # Plugin Type
-PLUGIN_NONE     = 0
+
+# Null plugin type.
+PLUGIN_NONE = 0
+
+# Internal plugin.
 PLUGIN_INTERNAL = 1
-PLUGIN_LADSPA   = 2
-PLUGIN_DSSI     = 3
-PLUGIN_LV2      = 4
-PLUGIN_VST      = 5
-PLUGIN_AU       = 6
-PLUGIN_CSOUND   = 7
-PLUGIN_GIG      = 8
-PLUGIN_SF2      = 9
-PLUGIN_SFZ      = 10
 
+# LADSPA plugin.
+PLUGIN_LADSPA = 2
+
+# DSSI plugin.
+PLUGIN_DSSI = 3
+
+# LV2 plugin.
+PLUGIN_LV2 = 4
+
+# VST plugin.
+PLUGIN_VST = 5
+
+# AU plugin.
+# @note MacOS only
+PLUGIN_AU = 6
+
+# Csound file.
+PLUGIN_CSOUND = 7
+
+# GIG file.
+PLUGIN_GIG = 8
+
+# SF2 file (also known as SoundFont).
+PLUGIN_SF2 = 9
+
+# SFZ file.
+PLUGIN_SFZ = 10
+
+# ------------------------------------------------------------------------------------------------------------
 # Plugin Category
-PLUGIN_CATEGORY_NONE       = 0
-PLUGIN_CATEGORY_SYNTH      = 1
-PLUGIN_CATEGORY_DELAY      = 2
-PLUGIN_CATEGORY_EQ         = 3
-PLUGIN_CATEGORY_FILTER     = 4
-PLUGIN_CATEGORY_DISTORTION = 5
-PLUGIN_CATEGORY_DYNAMICS   = 6
-PLUGIN_CATEGORY_MODULATOR  = 7
-PLUGIN_CATEGORY_UTILITY    = 8
-PLUGIN_CATEGORY_OTHER      = 9
 
+# Null plugin category.
+PLUGIN_CATEGORY_NONE = 0
+
+# A synthesizer or generator.
+PLUGIN_CATEGORY_SYNTH = 1
+
+# A delay or reverb.
+PLUGIN_CATEGORY_DELAY = 2
+
+# An equalizer.
+PLUGIN_CATEGORY_EQ = 3
+
+# A filter.
+PLUGIN_CATEGORY_FILTER = 4
+
+# A distortion plugin.
+PLUGIN_CATEGORY_DISTORTION = 5
+
+# A 'dynamic' plugin (amplifier, compressor, gate, etc).
+PLUGIN_CATEGORY_DYNAMICS = 6
+
+# A 'modulator' plugin (chorus, flanger, phaser, etc).
+PLUGIN_CATEGORY_MODULATOR = 7
+
+# An 'utility' plugin (analyzer, converter, mixer, etc).
+PLUGIN_CATEGORY_UTILITY = 8
+
+# Miscellaneous plugin (used to check if the plugin has a category).
+PLUGIN_CATEGORY_OTHER = 9
+
+# ------------------------------------------------------------------------------------------------------------
 # Parameter Type
+
+# Unknown parameter type.
 PARAMETER_UNKNOWN = 0
-PARAMETER_INPUT   = 1
-PARAMETER_OUTPUT  = 2
+
+# Input parameter.
+PARAMETER_INPUT = 1
+
+# Output parameter.
+PARAMETER_OUTPUT = 2
+
+# Special parameter.
+# Used to report specific information to plugins.
 PARAMETER_SPECIAL = 3
 
+# ------------------------------------------------------------------------------------------------------------
 # Internal Parameters Index
-PARAMETER_NULL          = -1
-PARAMETER_ACTIVE        = -2
-PARAMETER_DRYWET        = -3
-PARAMETER_VOLUME        = -4
-PARAMETER_BALANCE_LEFT  = -5
+
+# Null parameter.
+PARAMETER_NULL = -1
+
+# Active parameter, boolean type.
+# Default is 'false'.
+PARAMETER_ACTIVE = -2
+
+# Dry/Wet parameter.
+# Range 0.0...1.0; default is 1.0.
+PARAMETER_DRYWET = -3
+
+# Volume parameter.
+# Range 0.0...1.27; default is 1.0.
+PARAMETER_VOLUME = -4
+
+# Stereo Balance-Left parameter.
+# Range -1.0...1.0; default is -1.0.
+PARAMETER_BALANCE_LEFT = -5
+
+# Stereo Balance-Right parameter.
+# Range -1.0...1.0; default is 1.0.
 PARAMETER_BALANCE_RIGHT = -6
-PARAMETER_PANNING       = -7
-PARAMETER_CTRL_CHANNEL  = -8
-PARAMETER_MAX           = -9
 
-# Process Mode
-PROCESS_MODE_SINGLE_CLIENT    = 0
-PROCESS_MODE_MULTIPLE_CLIENTS = 1
-PROCESS_MODE_CONTINUOUS_RACK  = 2
-PROCESS_MODE_PATCHBAY         = 3
-PROCESS_MODE_BRIDGE           = 4
+# Mono Panning parameter.
+# Range -1.0...1.0; default is 0.0.
+PARAMETER_PANNING = -7
 
-# Transport Mode
-TRANSPORT_MODE_INTERNAL = 0
-TRANSPORT_MODE_JACK     = 1
-TRANSPORT_MODE_PLUGIN   = 2
-TRANSPORT_MODE_BRIDGE   = 3
+# MIDI Control channel, integer type.
+# Range -1...15 (-1 = off).
+PARAMETER_CTRL_CHANNEL = -8
 
+# Max value, defined only for convenience.
+PARAMETER_MAX = -9
+
+# ------------------------------------------------------------------------------------------------------------
+# Engine Callback Opcode
+
+# Debug.
+# This opcode is undefined and used only for testing purposes.
+ENGINE_CALLBACK_DEBUG = 0
+
+# A plugin has been added.
+# @param pluginId Plugin Id
+# @param valueStr Plugin name
+ENGINE_CALLBACK_PLUGIN_ADDED = 1
+
+# A plugin has been removed.
+# @param pluginId Plugin Id
+ENGINE_CALLBACK_PLUGIN_REMOVED = 2
+
+# A plugin has been renamed.
+# @param pluginId Plugin Id
+# @param valueStr New plugin name
+ENGINE_CALLBACK_PLUGIN_RENAMED = 3
+
+# A plugin has become unavailable.
+# @param pluginId Plugin Id
+# @param valueStr Related error string
+ENGINE_CALLBACK_PLUGIN_UNAVAILABLE = 4
+
+# A parameter value has changed.
+# @param pluginId Plugin Id
+# @param value1   Parameter index
+# @param value3   New parameter value
+ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED = 5
+
+# A parameter default has changed.
+# @param pluginId Plugin Id
+# @param value1   Parameter index
+# @param value3   New default value
+ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED = 6
+
+# A parameter's MIDI CC has changed.
+# @param pluginId Plugin Id
+# @param value1   Parameter index
+# @param value2   New MIDI CC
+ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED = 7
+
+# A parameter's MIDI channel has changed.
+# @param pluginId Plugin Id
+# @param value1   Parameter index
+# @param value2   New MIDI channel
+ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED = 8
+
+# The current program of a plugin has changed.
+# @param pluginId Plugin Id
+# @param value1   New program index
+ENGINE_CALLBACK_PROGRAM_CHANGED = 9
+
+# The current MIDI program of a plugin has changed.
+# @param pluginId Plugin Id
+# @param value1   New MIDI bank
+# @param value2   New MIDI program
+ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED = 10
+
+# A plugin's custom UI state has changed.
+# @param pluginId Plugin Id
+# @param value1   New state, as follows:\n
+#                  0: UI is now hidden\n
+#                  1: UI is now visible\n
+#                 -1: UI has crashed and should not be shown again
+ENGINE_CALLBACK_UI_STATE_CHANGED = 11
+
+# A note has been pressed.
+# @param pluginId Plugin Id
+# @param value1   Channel
+# @param value2   Note
+# @param value3   Velocity
+ENGINE_CALLBACK_NOTE_ON = 12
+
+# A note has been released.
+# @param pluginId Plugin Id
+# @param value1   Channel
+# @param value2   Note
+ENGINE_CALLBACK_NOTE_OFF = 13
+
+# A plugin needs update.
+# @param pluginId Plugin Id
+ENGINE_CALLBACK_UPDATE = 14
+
+# A plugin's data/information has changed.
+# @param pluginId Plugin Id
+ENGINE_CALLBACK_RELOAD_INFO = 15
+
+# A plugin's parameters have changed.
+# @param pluginId Plugin Id
+ENGINE_CALLBACK_RELOAD_PARAMETERS = 16
+
+# A plugin's programs have changed.
+# @param pluginId Plugin Id
+ENGINE_CALLBACK_RELOAD_PROGRAMS = 17
+
+# A plugin state has changed.
+# @param pluginId Plugin Id
+ENGINE_CALLBACK_RELOAD_ALL = 18
+
+# A patchbay client has been added.
+# @param pluginId Client Id
+# @param valueStr Client name and icon, as "name:icon"
+ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED = 19
+
+# A patchbay client has been removed.
+# @param pluginId Client Id
+ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED = 20
+
+# A patchbay client has been renamed.
+# @param pluginId Client Id
+# @param valueStr New client name
+ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED = 21
+
+# A patchbay client icon has changed.
+# @param pluginId Client Id
+# @param valueStr New icon name
+ENGINE_CALLBACK_PATCHBAY_CLIENT_ICON_CHANGED = 22
+
+# A patchbay port has been added.
+# @param pluginId Client Id
+# @param value1   Port Id
+# @param value2   Port hints
+# @param valueStr Port name
+# @see PatchbayPortHints
+ENGINE_CALLBACK_PATCHBAY_PORT_ADDED = 23
+
+# A patchbay port has been removed.
+# @param pluginId Client Id
+# @param value1   Port Id
+ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED = 24
+
+# A patchbay port has been renamed.
+# @param pluginId Client Id
+# @param value1   Port Id
+# @param valueStr New port name
+ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED = 25
+
+# A patchbay connection has been added.
+# @param value1 Output port Id
+# @param value2 Input port Id
+ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED = 26
+
+# A patchbay connection has been removed.
+# @param value1 Output port Id
+# @param value2 Input port Id
+ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED = 27
+
+# Engine started.
+# @param value1   Process mode
+# @param value2   Transport mode
+# @param valuestr Engine driver
+# @see EngineProcessMode
+# @see EngineTransportMode
+ENGINE_CALLBACK_ENGINE_STARTED = 28
+
+# Engine stopped.
+ENGINE_CALLBACK_ENGINE_STOPPED = 29
+
+# Engine process mode has changed.
+# @param value1 New process mode
+# @see EngineProcessMode
+ENGINE_CALLBACK_PROCESS_MODE_CHANGED = 30
+
+# Engine transport mode has changed.
+# @param value1 New transport mode
+# @see EngineTransportMode
+ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED = 31
+
+# Engine buffer-size changed.
+# @param value1 New buffer size
+ENGINE_CALLBACK_BUFFER_SIZE_CHANGED = 32
+
+# Engine sample-rate changed.
+# @param value3 New sample rate
+ENGINE_CALLBACK_SAMPLE_RATE_CHANGED = 33
+
+# Show a message as information.
+# @param valueStr The message
+ENGINE_CALLBACK_INFO = 34
+
+# Show a message as an error.
+# @param valueStr The message
+ENGINE_CALLBACK_ERROR = 35
+
+# The engine has crashed or malfunctioned and will no longer work.
+ENGINE_CALLBACK_QUIT = 36
+
+# ------------------------------------------------------------------------------------------------------------
 # Engine Options Type
+
 ENGINE_OPTION_PROCESS_NAME             = 0
 ENGINE_OPTION_PROCESS_MODE             = 1
 ENGINE_OPTION_TRANSPORT_MODE           = 2
@@ -246,53 +646,33 @@ ENGINE_OPTION_PATH_BRIDGE_VST_MAC      = 28
 ENGINE_OPTION_PATH_BRIDGE_VST_HWND     = 29
 ENGINE_OPTION_PATH_BRIDGE_VST_X11      = 30
 
-# Engine Callback Type
-ENGINE_CALLBACK_DEBUG           = 0
-ENGINE_CALLBACK_PLUGIN_ADDED    = 1
-ENGINE_CALLBACK_PLUGIN_REMOVED  = 2
-ENGINE_CALLBACK_PLUGIN_RENAMED  = 3
-ENGINE_CALLBACK_PLUGIN_DISABLED = 4
-ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED        = 5
-ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED      = 6
-ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED = 7
-ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED      = 8
-ENGINE_CALLBACK_PROGRAM_CHANGED         = 9
-ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED    = 10
-ENGINE_CALLBACK_UI_STATE_CHANGED        = 11
-ENGINE_CALLBACK_NOTE_ON                 = 12
-ENGINE_CALLBACK_NOTE_OFF                = 13
-ENGINE_CALLBACK_UPDATE                  = 14
-ENGINE_CALLBACK_RELOAD_INFO             = 15
-ENGINE_CALLBACK_RELOAD_PARAMETERS       = 16
-ENGINE_CALLBACK_RELOAD_PROGRAMS         = 17
-ENGINE_CALLBACK_RELOAD_ALL              = 18
-ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED   = 19
-ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED = 20
-ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED = 21
-ENGINE_CALLBACK_PATCHBAY_PORT_ADDED         = 22
-ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED       = 23
-ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED       = 24
-ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED   = 25
-ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED = 26
-ENGINE_CALLBACK_PATCHBAY_ICON_CHANGED = 27
-ENGINE_CALLBACK_BUFFER_SIZE_CHANGED   = 28
-ENGINE_CALLBACK_SAMPLE_RATE_CHANGED   = 29
-ENGINE_CALLBACK_PROCESS_MODE_CHANGED  = 30
-ENGINE_CALLBACK_ENGINE_STARTED = 31
-ENGINE_CALLBACK_ENGINE_STOPPED = 32
-ENGINE_CALLBACK_NSM_ANNOUNCE = 33
-ENGINE_CALLBACK_NSM_OPEN     = 34
-ENGINE_CALLBACK_NSM_SAVE     = 35
-ENGINE_CALLBACK_INFO  = 36
-ENGINE_CALLBACK_ERROR = 37
-ENGINE_CALLBACK_QUIT  = 38
+# ------------------------------------------------------------------------------------------------------------
+# Process Mode
 
+PROCESS_MODE_SINGLE_CLIENT    = 0
+PROCESS_MODE_MULTIPLE_CLIENTS = 1
+PROCESS_MODE_CONTINUOUS_RACK  = 2
+PROCESS_MODE_PATCHBAY         = 3
+PROCESS_MODE_BRIDGE           = 4
+
+# ------------------------------------------------------------------------------------------------------------
+# Transport Mode
+
+TRANSPORT_MODE_INTERNAL = 0
+TRANSPORT_MODE_JACK     = 1
+TRANSPORT_MODE_PLUGIN   = 2
+TRANSPORT_MODE_BRIDGE   = 3
+
+# ------------------------------------------------------------------------------------------------------------
 # File Callback Type
+
 FILE_CALLBACK_DEBUG = 0
 FILE_CALLBACK_OPEN  = 1
 FILE_CALLBACK_SAVE  = 2
 
+# ------------------------------------------------------------------------------------------------------------
 # Set BINARY_NATIVE
+
 if HAIKU or LINUX or MACOS:
     BINARY_NATIVE = BINARY_POSIX64 if kIs64bit else BINARY_POSIX32
 elif WINDOWS:

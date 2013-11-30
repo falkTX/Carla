@@ -659,16 +659,6 @@ def initHost(appName, libPrefix = None, failError = True):
             Carla.host.set_engine_option(OPTION_PATH_BRIDGE_VST_X11, 0, carla_bridge_vst_x11)
 
 # ------------------------------------------------------------------------------------------------------------
-# Convert a ctypes c_char_p into a python string
-
-def cString(value):
-    if not value:
-        return ""
-    if isinstance(value, str):
-        return value
-    return value.decode("utf-8", errors="ignore")
-
-# ------------------------------------------------------------------------------------------------------------
 # Check if a value is a number (float support)
 
 def isNumber(value):

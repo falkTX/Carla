@@ -48,9 +48,11 @@ CARLA_BACKEND_START_NAMESPACE
 
 const unsigned short kPluginMaxMidiEvents = 512;
 
-const unsigned int PLUGIN_EXTRA_HINT_HAS_MIDI_IN  = 0x1;
-const unsigned int PLUGIN_EXTRA_HINT_HAS_MIDI_OUT = 0x2;
-const unsigned int PLUGIN_EXTRA_HINT_CAN_RUN_RACK = 0x4;
+const unsigned int PLUGIN_EXTRA_HINT_HAS_MIDI_IN   = 0x01;
+const unsigned int PLUGIN_EXTRA_HINT_HAS_MIDI_OUT  = 0x02;
+const unsigned int PLUGIN_EXTRA_HINT_CAN_RUN_RACK  = 0x04;
+const unsigned int PLUGIN_EXTRA_HINT_FIXED_BUFFERS = 0x10;
+const unsigned int PLUGIN_EXTRA_HINT_SINGLE_THREAD = 0x20;
 
 // -----------------------------------------------------------------------
 

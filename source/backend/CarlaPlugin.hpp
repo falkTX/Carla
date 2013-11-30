@@ -119,7 +119,7 @@ public:
      *
      * \see PluginOptions, getAvailableOptions() and setOption()
      */
-    unsigned int getOptions() const noexcept
+    unsigned int getOptionsEnabled() const noexcept
     {
         return fOptions;
     }
@@ -299,7 +299,7 @@ public:
      *
      * \see PluginOptions, getOptions() and setOption()
      */
-    virtual unsigned int getAvailableOptions() const;
+    virtual unsigned int getOptionsAvailable() const;
 
     /*!
      * Get the current parameter value of \a parameterId.
@@ -620,18 +620,18 @@ public:
     // Set gui stuff
 
     /*!
-     * Show (or hide) the plugin's custom GUI according to \a yesNo.
+     * Idle function.
      *
      * \note This function must be always called from the main thread.
      */
-    virtual void showGui(const bool yesNo);
+    virtual void idle();
 
     /*!
-     * Idle the plugin's custom GUI.
+     * Show (or hide) the plugin's custom UI according to \a yesNo.
      *
      * \note This function must be always called from the main thread.
      */
-    virtual void idleGui();
+    virtual void showCustomUI(const bool yesNo);
 
     // -------------------------------------------------------------------
     // Plugin state
@@ -874,7 +874,7 @@ protected:
 
     /*!
      * Defined and currently in-use options, returned in getOptions().
-     * \see PluginOptions, getOptions(), getAvailableOptions() and setOption()
+     * \see PluginOptions, getOptionsAvailable(), getOptionsEnabled(), setOption()
      */
     unsigned int fOptions;
 

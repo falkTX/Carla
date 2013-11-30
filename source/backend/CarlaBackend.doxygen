@@ -244,7 +244,7 @@ INCLUDE_FILE_PATTERNS  =
 PREDEFINED             = DOXYGEN \
                          WANT_NATIVE WANT_LADSPA WANT_DSSI WANT_LV2 WANT_VST WANT_AU WANT_CSDOUND WANT_FLUIDSYNTH WANT_LINUXSAMPLER \
                          WANT_OPENGL WANT_AUDIOFILE WANT_MIDIFILE WANT_ZYNADDSUBFX WANT_ZYNADDSUBFX_UI \
-                         CARLA_EXPORT
+                         CARLA_EXPORT SIZE_INT
 EXPAND_AS_DEFINED      =
 SKIP_FUNCTION_MACROS   = YES
 #---------------------------------------------------------------------------
