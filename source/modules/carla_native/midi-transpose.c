@@ -23,13 +23,13 @@
 // -----------------------------------------------------------------------
 
 typedef struct {
-    const HostDescriptor* host;
+    const NativeHostDescriptor* host;
     int octaves;
 } MidiTransposeHandle;
 
 // -----------------------------------------------------------------------
 
-static PluginHandle midiTranspose_instantiate(const HostDescriptor* host)
+static NativePluginHandle midiTranspose_instantiate(const NativeHostDescriptor* host)
 {
     MidiTransposeHandle* const handle = (MidiTransposeHandle*)malloc(sizeof(MidiTransposeHandle));
 
@@ -43,12 +43,12 @@ static PluginHandle midiTranspose_instantiate(const HostDescriptor* host)
 
 #define handlePtr ((MidiTransposeHandle*)handle)
 
-static void midiTranspose_cleanup(PluginHandle handle)
+static void midiTranspose_cleanup(NativePluginHandle handle)
 {
     free(handlePtr);
 }
 
-static uint32_t midiTranspose_get_parameter_count(PluginHandle handle)
+static uint32_t midiTranspose_get_parameter_count(NativePluginHandle handle)
 {
     return 1;
 
@@ -56,12 +56,12 @@ static uint32_t midiTranspose_get_parameter_count(PluginHandle handle)
     (void)handle;
 }
 
-const Parameter* midiTranspose_get_parameter_info(PluginHandle handle, uint32_t index)
+const NativeParameter* midiTranspose_get_parameter_info(NativePluginHandle handle, uint32_t index)
 {
     if (index != 0)
         return NULL;
 
-    static Parameter param;
+    static NativeParameter param;
 
     param.name  = "Octaves";
     param.unit  = NULL;
@@ -81,7 +81,7 @@ const Parameter* midiTranspose_get_parameter_info(PluginHandle handle, uint32_t 
     (void)handle;
 }
 
-static float midiTranspose_get_parameter_value(PluginHandle handle, uint32_t index)
+static float midiTranspose_get_parameter_value(NativePluginHandle handle, uint32_t index)
 {
     if (index != 0)
         return 0.0f;
@@ -89,7 +89,7 @@ static float midiTranspose_get_parameter_value(PluginHandle handle, uint32_t ind
     return (float)handlePtr->octaves;
 }
 
-static void midiTranspose_set_parameter_value(PluginHandle handle, uint32_t index, float value)
+static void midiTranspose_set_parameter_value(NativePluginHandle handle, uint32_t index, float value)
 {
     if (index != 0)
         return;
@@ -97,15 +97,15 @@ static void midiTranspose_set_parameter_value(PluginHandle handle, uint32_t inde
     handlePtr->octaves = (int)value;
 }
 
-static void midiTranspose_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
+static void midiTranspose_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
-    const HostDescriptor* const host = handlePtr->host;
+    const NativeHostDescriptor* const host = handlePtr->host;
     const int octaves = handlePtr->octaves;
-    MidiEvent tmpEvent;
+    NativeMidiEvent tmpEvent;
 
     for (uint32_t i=0; i < midiEventCount; ++i)
     {
-        const MidiEvent* const midiEvent = &midiEvents[i];
+        const NativeMidiEvent* const midiEvent = &midiEvents[i];
 
         const uint8_t status = MIDI_GET_STATUS_FROM_DATA(midiEvent->data);
 
@@ -143,7 +143,7 @@ static void midiTranspose_process(PluginHandle handle, float** inBuffer, float**
 
 // -----------------------------------------------------------------------
 
-static const PluginDescriptor midiTransposeDesc = {
+static const NativePluginDescriptor midiTransposeDesc = {
     .category  = PLUGIN_CATEGORY_UTILITY,
     .hints     = PLUGIN_IS_RTSAFE,
     .supports  = PLUGIN_SUPPORTS_EVERYTHING,

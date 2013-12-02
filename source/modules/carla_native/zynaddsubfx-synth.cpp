@@ -174,7 +174,7 @@ public:
         return fPrograms.count();
     }
 
-    const MidiProgram* getInfo(const uint32_t index)
+    const NativeMidiProgram* getInfo(const uint32_t index)
     {
         if (index >= fPrograms.count())
             return nullptr;
@@ -218,7 +218,7 @@ private:
     };
 
     bool fInitiated;
-    MidiProgram fRetProgram;
+    NativeMidiProgram fRetProgram;
     List<const ProgramInfo*> fPrograms;
 
     CARLA_DECLARE_NON_COPY_CLASS(ZynAddSubFxPrograms)
@@ -241,7 +241,7 @@ public:
         CARLA_ASSERT(fCount == 0);
     }
 
-    void addOne(const HostDescriptor* const host)
+    void addOne(const NativeHostDescriptor* const host)
     {
         if (fCount++ == 0)
         {
@@ -278,7 +278,7 @@ public:
         }
     }
 
-    void reinit(const HostDescriptor* const host)
+    void reinit(const NativeHostDescriptor* const host)
     {
         Master::deleteInstance();
 
@@ -313,7 +313,7 @@ public:
         Master::getInstance();
     }
 
-    void maybeReinit(const HostDescriptor* const host)
+    void maybeReinit(const NativeHostDescriptor* const host)
     {
         if (host->get_buffer_size(host->handle) == static_cast<uint32_t>(synth->buffersize) &&
             host->get_sample_rate(host->handle) == static_cast<double>(synth->samplerate))
@@ -335,7 +335,7 @@ static ZynAddSubFxInstanceCount sInstanceCount;
 class ZynAddSubFxThread : public CarlaThread
 {
 public:
-    ZynAddSubFxThread(Master* const master, const HostDescriptor* const host)
+    ZynAddSubFxThread(Master* const master, const NativeHostDescriptor* const host)
         : CarlaThread("ZynAddSubFxThread"),
           fMaster(master),
           kHost(host),
@@ -523,7 +523,7 @@ protected:
 
 private:
     Master* fMaster;
-    const HostDescriptor* const kHost;
+    const NativeHostDescriptor* const kHost;
 
 #ifdef WANT_ZYNADDSUBFX_UI
     MasterUI* fUi;
@@ -539,11 +539,11 @@ private:
 
 // -----------------------------------------------------------------------
 
-class ZynAddSubFxPlugin : public PluginClass
+class ZynAddSubFxPlugin : public NativePluginClass
 {
 public:
-    ZynAddSubFxPlugin(const HostDescriptor* const host)
-        : PluginClass(host),
+    ZynAddSubFxPlugin(const NativeHostDescriptor* const host)
+        : NativePluginClass(host),
           fMaster(new Master()),
           fSampleRate(getSampleRate()),
           fIsActive(false),
@@ -571,7 +571,7 @@ protected:
         return sPrograms.count();
     }
 
-    const MidiProgram* getMidiProgramInfo(const uint32_t index) const override
+    const NativeMidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
         return sPrograms.getInfo(index);
     }
@@ -621,7 +621,7 @@ protected:
         fIsActive = false;
     }
 
-    void process(float**, float** const outBuffer, const uint32_t frames, const MidiEvent* const midiEvents, const uint32_t midiEventCount) override
+    void process(float**, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
         if (pthread_mutex_trylock(&fMaster->mutex) != 0)
         {
@@ -637,7 +637,7 @@ protected:
 
         for (uint32_t i=0; i < midiEventCount; ++i)
         {
-            const MidiEvent* const midiEvent(&midiEvents[i]);
+            const NativeMidiEvent* const midiEvent(&midiEvents[i]);
 
             const uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent->data);
             const uint8_t channel = MIDI_GET_CHANNEL_FROM_DATA(midiEvent->data);
@@ -774,12 +774,12 @@ private:
     ZynAddSubFxThread fThread;
 
 public:
-    static PluginHandle _instantiate(const HostDescriptor* host)
+    static NativePluginHandle _instantiate(const NativeHostDescriptor* host)
     {
         sInstanceCount.addOne(host);
         return new ZynAddSubFxPlugin(host);
     }
-    static void _cleanup(PluginHandle handle)
+    static void _cleanup(NativePluginHandle handle)
     {
         delete (ZynAddSubFxPlugin*)handle;
         sInstanceCount.removeOne();
@@ -790,14 +790,14 @@ public:
 
 // -----------------------------------------------------------------------
 
-static const PluginDescriptor zynaddsubfxDesc = {
+static const NativePluginDescriptor zynaddsubfxDesc = {
     /* category  */ PLUGIN_CATEGORY_SYNTH,
 #ifdef WANT_ZYNADDSUBFX_UI
-    /* hints     */ static_cast<PluginHints>(PLUGIN_HAS_GUI|PLUGIN_USES_STATE),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_HAS_UI|PLUGIN_USES_STATE),
 #else
-    /* hints     */ static_cast<PluginHints>(PLUGIN_USES_STATE),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_USES_STATE),
 #endif
-    /* supports  */ static_cast<PluginSupports>(PLUGIN_SUPPORTS_CONTROL_CHANGES|PLUGIN_SUPPORTS_NOTE_AFTERTOUCH|PLUGIN_SUPPORTS_PITCHBEND|PLUGIN_SUPPORTS_ALL_SOUND_OFF),
+    /* supports  */ static_cast<NativePluginSupports>(PLUGIN_SUPPORTS_CONTROL_CHANGES|PLUGIN_SUPPORTS_NOTE_AFTERTOUCH|PLUGIN_SUPPORTS_PITCHBEND|PLUGIN_SUPPORTS_ALL_SOUND_OFF),
     /* audioIns  */ 0,
     /* audioOuts */ 2,
     /* midiIns   */ 1,

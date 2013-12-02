@@ -32,11 +32,11 @@ using juce::FloatVectorOperations;
 
 // -----------------------------------------------------------------------
 
-class FxAbstractPlugin : public PluginClass
+class FxAbstractPlugin : public NativePluginClass
 {
 protected:
-    FxAbstractPlugin(const HostDescriptor* const host, const uint32_t paramCount, const uint32_t programCount)
-        : PluginClass(host),
+    FxAbstractPlugin(const NativeHostDescriptor* const host, const uint32_t paramCount, const uint32_t programCount)
+        : NativePluginClass(host),
           fParamCount(paramCount-2), // volume and pan handled by host
           fProgramCount(programCount),
           fEffect(nullptr),
@@ -135,7 +135,7 @@ protected:
         }
     }
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const MidiEvent* const, const uint32_t) final
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) final
     {
         fEffect->out(Stereo<float*>(inBuffer[0], inBuffer[1]));
 
@@ -199,7 +199,7 @@ protected:
 class FxAlienWahPlugin : public FxAbstractPlugin
 {
 public:
-    FxAlienWahPlugin(const HostDescriptor* const host)
+    FxAlienWahPlugin(const NativeHostDescriptor* const host)
         : FxAbstractPlugin(host, 11, 4)
     {
         fEffect = new Alienwah(false, efxoutl, efxoutr, getSampleRate(), getBufferSize());
@@ -209,13 +209,13 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    const Parameter* getParameterInfo(const uint32_t index) const override
+    const NativeParameter* getParameterInfo(const uint32_t index) const override
     {
         if (index >= fParamCount)
             return nullptr;
 
-        static Parameter param;
-        static ParameterScalePoint scalePoints[2];
+        static NativeParameter param;
+        static NativeParameterScalePoint scalePoints[2];
 
         int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_INTEGER;
 
@@ -287,7 +287,7 @@ protected:
             break;
         }
 
-        param.hints = static_cast<ParameterHints>(hints);
+        param.hints = static_cast<NativeParameterHints>(hints);
 
         return &param;
     }
@@ -295,12 +295,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    const MidiProgram* getMidiProgramInfo(const uint32_t index) const override
+    const NativeMidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
         if (index >= fProgramCount)
             return nullptr;
 
-        static MidiProgram midiProg;
+        static NativeMidiProgram midiProg;
 
         midiProg.bank    = 0;
         midiProg.program = index;
@@ -344,7 +344,7 @@ protected:
 class FxChorusPlugin : public FxAbstractPlugin
 {
 public:
-    FxChorusPlugin(const HostDescriptor* const host)
+    FxChorusPlugin(const NativeHostDescriptor* const host)
         : FxAbstractPlugin(host, 12, 10)
     {
         fEffect = new Chorus(false, efxoutl, efxoutr, getSampleRate(), getBufferSize());
@@ -354,13 +354,13 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    const Parameter* getParameterInfo(const uint32_t index) const override
+    const NativeParameter* getParameterInfo(const uint32_t index) const override
     {
         if (index >= fParamCount)
             return nullptr;
 
-        static Parameter param;
-        static ParameterScalePoint scalePoints[2];
+        static NativeParameter param;
+        static NativeParameterScalePoint scalePoints[2];
 
         int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_INTEGER;
 
@@ -438,7 +438,7 @@ protected:
             break;
         }
 
-        param.hints = static_cast<ParameterHints>(hints);
+        param.hints = static_cast<NativeParameterHints>(hints);
 
         return &param;
     }
@@ -446,12 +446,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    const MidiProgram* getMidiProgramInfo(const uint32_t index) const override
+    const NativeMidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
         if (index >= fProgramCount)
             return nullptr;
 
-        static MidiProgram midiProg;
+        static NativeMidiProgram midiProg;
 
         midiProg.bank    = 0;
         midiProg.program = index;
@@ -513,7 +513,7 @@ protected:
 class FxDistortionPlugin : public FxAbstractPlugin
 {
 public:
-    FxDistortionPlugin(const HostDescriptor* const host)
+    FxDistortionPlugin(const NativeHostDescriptor* const host)
         : FxAbstractPlugin(host, 11, 6)
     {
         fEffect = new Distorsion(false, efxoutl, efxoutr, getSampleRate(), getBufferSize());
@@ -523,13 +523,13 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    const Parameter* getParameterInfo(const uint32_t index) const override
+    const NativeParameter* getParameterInfo(const uint32_t index) const override
     {
         if (index >= fParamCount)
             return nullptr;
 
-        static Parameter param;
-        static ParameterScalePoint scalePoints[14];
+        static NativeParameter param;
+        static NativeParameterScalePoint scalePoints[14];
 
         int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_INTEGER;
 
@@ -627,7 +627,7 @@ protected:
             break;
         }
 
-        param.hints = static_cast<ParameterHints>(hints);
+        param.hints = static_cast<NativeParameterHints>(hints);
 
         return &param;
     }
@@ -635,12 +635,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    const MidiProgram* getMidiProgramInfo(const uint32_t index) const override
+    const NativeMidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
         if (index >= fProgramCount)
             return nullptr;
 
-        static MidiProgram midiProg;
+        static NativeMidiProgram midiProg;
 
         midiProg.bank    = 0;
         midiProg.program = index;
@@ -690,7 +690,7 @@ protected:
 class FxDynamicFilterPlugin : public FxAbstractPlugin
 {
 public:
-    FxDynamicFilterPlugin(const HostDescriptor* const host)
+    FxDynamicFilterPlugin(const NativeHostDescriptor* const host)
         : FxAbstractPlugin(host, 10, 5)
     {
         fEffect = new DynamicFilter(false, efxoutl, efxoutr, getSampleRate(), getBufferSize());
@@ -700,13 +700,13 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    const Parameter* getParameterInfo(const uint32_t index) const override
+    const NativeParameter* getParameterInfo(const uint32_t index) const override
     {
         if (index >= fParamCount)
             return nullptr;
 
-        static Parameter param;
-        static ParameterScalePoint scalePoints[2];
+        static NativeParameter param;
+        static NativeParameterScalePoint scalePoints[2];
 
         int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_INTEGER;
 
@@ -773,7 +773,7 @@ protected:
             break;
         }
 
-        param.hints = static_cast<ParameterHints>(hints);
+        param.hints = static_cast<NativeParameterHints>(hints);
 
         return &param;
     }
@@ -781,12 +781,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    const MidiProgram* getMidiProgramInfo(const uint32_t index) const override
+    const NativeMidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
         if (index >= fProgramCount)
             return nullptr;
 
-        static MidiProgram midiProg;
+        static NativeMidiProgram midiProg;
 
         midiProg.bank    = 0;
         midiProg.program = index;
@@ -833,7 +833,7 @@ protected:
 class FxEchoPlugin : public FxAbstractPlugin
 {
 public:
-    FxEchoPlugin(const HostDescriptor* const host)
+    FxEchoPlugin(const NativeHostDescriptor* const host)
         : FxAbstractPlugin(host, 7, 9)
     {
         fEffect = new Echo(false, efxoutl, efxoutr, getSampleRate(), getBufferSize());
@@ -843,12 +843,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    const Parameter* getParameterInfo(const uint32_t index) const override
+    const NativeParameter* getParameterInfo(const uint32_t index) const override
     {
         if (index >= fParamCount)
             return nullptr;
 
-        static Parameter param;
+        static NativeParameter param;
 
         int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_INTEGER;
 
@@ -892,7 +892,7 @@ protected:
             break;
         }
 
-        param.hints = static_cast<ParameterHints>(hints);
+        param.hints = static_cast<NativeParameterHints>(hints);
 
         return &param;
     }
@@ -900,12 +900,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    const MidiProgram* getMidiProgramInfo(const uint32_t index) const override
+    const NativeMidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
         if (index >= fProgramCount)
             return nullptr;
 
-        static MidiProgram midiProg;
+        static NativeMidiProgram midiProg;
 
         midiProg.bank    = 0;
         midiProg.program = index;
@@ -964,7 +964,7 @@ protected:
 class FxPhaserPlugin : public FxAbstractPlugin
 {
 public:
-    FxPhaserPlugin(const HostDescriptor* const host)
+    FxPhaserPlugin(const NativeHostDescriptor* const host)
         : FxAbstractPlugin(host, 15, 12)
     {
         fEffect = new Phaser(false, efxoutl, efxoutr, getSampleRate(), getBufferSize());
@@ -974,13 +974,13 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    const Parameter* getParameterInfo(const uint32_t index) const override
+    const NativeParameter* getParameterInfo(const uint32_t index) const override
     {
         if (index >= fParamCount)
             return nullptr;
 
-        static Parameter param;
-        static ParameterScalePoint scalePoints[2];
+        static NativeParameter param;
+        static NativeParameterScalePoint scalePoints[2];
 
         int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_INTEGER;
 
@@ -1075,7 +1075,7 @@ protected:
             break;
         }
 
-        param.hints = static_cast<ParameterHints>(hints);
+        param.hints = static_cast<NativeParameterHints>(hints);
 
         return &param;
     }
@@ -1083,12 +1083,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    const MidiProgram* getMidiProgramInfo(const uint32_t index) const override
+    const NativeMidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
         if (index >= fProgramCount)
             return nullptr;
 
-        static MidiProgram midiProg;
+        static NativeMidiProgram midiProg;
 
         midiProg.bank    = 0;
         midiProg.program = index;
@@ -1156,7 +1156,7 @@ protected:
 class FxReverbPlugin : public FxAbstractPlugin
 {
 public:
-    FxReverbPlugin(const HostDescriptor* const host)
+    FxReverbPlugin(const NativeHostDescriptor* const host)
         : FxAbstractPlugin(host, 13, 13)
     {
         fEffect = new Reverb(false, efxoutl, efxoutr, getSampleRate(), getBufferSize());
@@ -1166,13 +1166,13 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    const Parameter* getParameterInfo(const uint32_t index) const override
+    const NativeParameter* getParameterInfo(const uint32_t index) const override
     {
         if (index >= fParamCount)
             return nullptr;
 
-        static Parameter param;
-        static ParameterScalePoint scalePoints[3];
+        static NativeParameter param;
+        static NativeParameterScalePoint scalePoints[3];
 
         int hints = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER;
 
@@ -1250,7 +1250,7 @@ protected:
             break;
         }
 
-        param.hints = static_cast<ParameterHints>(hints);
+        param.hints = static_cast<NativeParameterHints>(hints);
 
         return &param;
     }
@@ -1258,12 +1258,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    const MidiProgram* getMidiProgramInfo(const uint32_t index) const override
+    const NativeMidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
         if (index >= fProgramCount)
             return nullptr;
 
-        static MidiProgram midiProg;
+        static NativeMidiProgram midiProg;
 
         midiProg.bank    = 0;
         midiProg.program = index;
@@ -1331,10 +1331,10 @@ protected:
 
 // -----------------------------------------------------------------------
 
-static const PluginDescriptor fxAlienWahDesc = {
+static const NativePluginDescriptor fxAlienWahDesc = {
     /* category  */ PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
-    /* supports  */ static_cast<PluginSupports>(0x0),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 0,
@@ -1348,10 +1348,10 @@ static const PluginDescriptor fxAlienWahDesc = {
     PluginDescriptorFILL(FxAlienWahPlugin)
 };
 
-static const PluginDescriptor fxChorusDesc = {
+static const NativePluginDescriptor fxChorusDesc = {
     /* category  */ PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
-    /* supports  */ static_cast<PluginSupports>(0x0),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 0,
@@ -1365,10 +1365,10 @@ static const PluginDescriptor fxChorusDesc = {
     PluginDescriptorFILL(FxChorusPlugin)
 };
 
-static const PluginDescriptor fxDistortionDesc = {
+static const NativePluginDescriptor fxDistortionDesc = {
     /* category  */ PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
-    /* supports  */ static_cast<PluginSupports>(0x0),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 0,
@@ -1382,10 +1382,10 @@ static const PluginDescriptor fxDistortionDesc = {
     PluginDescriptorFILL(FxDistortionPlugin)
 };
 
-static const PluginDescriptor fxDynamicFilterDesc = {
+static const NativePluginDescriptor fxDynamicFilterDesc = {
     /* category  */ PLUGIN_CATEGORY_FILTER,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
-    /* supports  */ static_cast<PluginSupports>(0x0),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 0,
@@ -1399,10 +1399,10 @@ static const PluginDescriptor fxDynamicFilterDesc = {
     PluginDescriptorFILL(FxDynamicFilterPlugin)
 };
 
-static const PluginDescriptor fxEchoDesc = {
+static const NativePluginDescriptor fxEchoDesc = {
     /* category  */ PLUGIN_CATEGORY_DELAY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
-    /* supports  */ static_cast<PluginSupports>(0x0),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 0,
@@ -1416,10 +1416,10 @@ static const PluginDescriptor fxEchoDesc = {
     PluginDescriptorFILL(FxEchoPlugin)
 };
 
-static const PluginDescriptor fxPhaserDesc = {
+static const NativePluginDescriptor fxPhaserDesc = {
     /* category  */ PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
-    /* supports  */ static_cast<PluginSupports>(0x0),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 0,
@@ -1433,10 +1433,10 @@ static const PluginDescriptor fxPhaserDesc = {
     PluginDescriptorFILL(FxPhaserPlugin)
 };
 
-static const PluginDescriptor fxReverbDesc = {
+static const NativePluginDescriptor fxReverbDesc = {
     /* category  */ PLUGIN_CATEGORY_DELAY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
-    /* supports  */ static_cast<PluginSupports>(0x0),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 0,

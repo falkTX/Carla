@@ -47,15 +47,15 @@ struct nekofilter
   filter_handle filter;
   float params_global[GLOBAL_PARAMETERS_COUNT];
   float params_bands[BAND_PARAMETERS_COUNT*BANDS_COUNT];
-  const HostDescriptor* host;
+  const NativeHostDescriptor* host;
 #ifdef WANT_UI
   struct control* ui;
 #endif
 };
 
-PluginHandle
+NativePluginHandle
 nekofilter_instantiate(
-  const HostDescriptor* host)
+  const NativeHostDescriptor* host)
 {
   struct nekofilter * nekofilter_ptr;
   unsigned int i;
@@ -134,14 +134,14 @@ nekofilter_instantiate(
                                   &nekofilter_ptr->params_bands[i*BAND_PARAMETERS_COUNT + BAND_PARAMETER_GAIN]);
   }
 
-  return (PluginHandle)nekofilter_ptr;
+  return (NativePluginHandle)nekofilter_ptr;
 }
 
 #define nekofilter_ptr ((struct nekofilter *)handle)
 
 uint32_t
 nekofilter_get_parameter_count(
-  PluginHandle handle)
+  NativePluginHandle handle)
 {
   return GLOBAL_PARAMETERS_COUNT + BAND_PARAMETERS_COUNT*BANDS_COUNT;
 
@@ -149,12 +149,12 @@ nekofilter_get_parameter_count(
   (void)handle;
 }
 
-const Parameter*
+const NativeParameter*
 nekofilter_get_parameter_info(
-  PluginHandle handle,
+  NativePluginHandle handle,
   uint32_t index)
 {
-  static Parameter param;
+  static NativeParameter param;
   static bool first_init = true;
   uint32_t band;
   char strBuf[32];
@@ -288,7 +288,7 @@ ready:
 
 float
 nekofilter_get_parameter_value(
-  PluginHandle handle,
+  NativePluginHandle handle,
   uint32_t index)
 {
   if (index < GLOBAL_PARAMETERS_COUNT)
@@ -306,7 +306,7 @@ nekofilter_get_parameter_value(
 
 void
 nekofilter_set_parameter_value(
-  PluginHandle handle,
+  NativePluginHandle handle,
   uint32_t index,
   float value)
 {
@@ -325,11 +325,11 @@ nekofilter_set_parameter_value(
 
 void
 nekofilter_process(
-  PluginHandle handle,
+  NativePluginHandle handle,
   float** inBuffer,
   float** outBuffer,
   uint32_t frames,
-  const MidiEvent* midiEvents,
+  const NativeMidiEvent* midiEvents,
   uint32_t midiEventCount)
 {
   LOG_DEBUG("nekofilter_run");
@@ -348,7 +348,7 @@ nekofilter_process(
 
 #ifdef WANT_UI
 void nekofilter_ui_show(
-  PluginHandle handle,
+  NativePluginHandle handle,
   bool show)
 {
   if (show)
@@ -365,14 +365,14 @@ void nekofilter_ui_show(
 }
 
 void nekofilter_ui_idle(
-  PluginHandle handle)
+  NativePluginHandle handle)
 {
   if (nekofilter_ptr->ui != NULL)
     nekoui_run(nekofilter_ptr->ui);
 }
 
 void nekofilter_ui_set_parameter_value(
-  PluginHandle handle,
+  NativePluginHandle handle,
   uint32_t index,
   float value)
 {
@@ -383,7 +383,7 @@ void nekofilter_ui_set_parameter_value(
 
 void
 nekofilter_cleanup(
-  PluginHandle handle)
+  NativePluginHandle handle)
 {
 #ifdef WANT_UI
   if (nekofilter_ptr->ui != NULL)

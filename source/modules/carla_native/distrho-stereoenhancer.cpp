@@ -29,10 +29,10 @@ START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
-static const PluginDescriptor stereoenhancerDesc = {
+static const NativePluginDescriptor stereoenhancerDesc = {
     /* category  */ PLUGIN_CATEGORY_EQ,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_GUI),
-    /* supports  */ static_cast<PluginSupports>(0x0),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_UI),
+    /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ DISTRHO_PLUGIN_NUM_INPUTS,
     /* audioOuts */ DISTRHO_PLUGIN_NUM_OUTPUTS,
     /* midiIns   */ 0,

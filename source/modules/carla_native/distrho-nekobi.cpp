@@ -29,10 +29,10 @@ START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
-static const PluginDescriptor nekobiDesc = {
+static const NativePluginDescriptor nekobiDesc = {
     /* category  */ PLUGIN_CATEGORY_SYNTH,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_GUI),
-    /* supports  */ static_cast<PluginSupports>(PLUGIN_SUPPORTS_CONTROL_CHANGES|PLUGIN_SUPPORTS_ALL_SOUND_OFF),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_UI),
+    /* supports  */ static_cast<NativePluginSupports>(PLUGIN_SUPPORTS_CONTROL_CHANGES|PLUGIN_SUPPORTS_ALL_SOUND_OFF),
     /* audioIns  */ DISTRHO_PLUGIN_NUM_INPUTS,
     /* audioOuts */ DISTRHO_PLUGIN_NUM_OUTPUTS,
     /* midiIns   */ 1,

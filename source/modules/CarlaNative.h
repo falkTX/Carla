@@ -33,28 +33,29 @@ extern "C" {
  * @{
  */
 
-typedef void* HostHandle;
-typedef void* PluginHandle;
+typedef void* NativeHostHandle;
+typedef void* NativePluginHandle;
 
 // -----------------------------------------------------------------------
 // enums
 
 typedef enum {
-    PLUGIN_CATEGORY_NONE      = 0, //!< Null plugin category.
-    PLUGIN_CATEGORY_SYNTH     = 1, //!< A synthesizer or generator.
-    PLUGIN_CATEGORY_DELAY     = 2, //!< A delay or reverberator.
-    PLUGIN_CATEGORY_EQ        = 3, //!< An equalizer.
-    PLUGIN_CATEGORY_FILTER    = 4, //!< A filter.
-    PLUGIN_CATEGORY_DYNAMICS  = 5, //!< A 'dynamic' plugin (amplifier, compressor, gate, etc).
-    PLUGIN_CATEGORY_MODULATOR = 6, //!< A 'modulator' plugin (chorus, flanger, phaser, etc).
-    PLUGIN_CATEGORY_UTILITY   = 7, //!< An 'utility' plugin (analyzer, converter, mixer, etc).
-    PLUGIN_CATEGORY_OTHER     = 8  //!< Misc plugin (used to check if the plugin has a category).
-} PluginCategory;
+    PLUGIN_CATEGORY_NONE       = 0, //!< Null plugin category.
+    PLUGIN_CATEGORY_SYNTH      = 1, //!< A synthesizer or generator.
+    PLUGIN_CATEGORY_DELAY      = 2, //!< A delay or reverberator.
+    PLUGIN_CATEGORY_EQ         = 3, //!< An equalizer.
+    PLUGIN_CATEGORY_FILTER     = 4, //!< A filter.
+    PLUGIN_CATEGORY_DISTORTION = 5, //!< A distortion plugin.
+    PLUGIN_CATEGORY_DYNAMICS   = 6, //!< A 'dynamic' plugin (amplifier, compressor, gate, etc).
+    PLUGIN_CATEGORY_MODULATOR  = 7, //!< A 'modulator' plugin (chorus, flanger, phaser, etc).
+    PLUGIN_CATEGORY_UTILITY    = 8, //!< An 'utility' plugin (analyzer, converter, mixer, etc).
+    PLUGIN_CATEGORY_OTHER      = 9  //!< Misc plugin (used to check if the plugin has a category).
+} NativePluginCategory;
 
 typedef enum {
     PLUGIN_IS_RTSAFE           = 1 << 0,
     PLUGIN_IS_SYNTH            = 1 << 1,
-    PLUGIN_HAS_GUI             = 1 << 2,
+    PLUGIN_HAS_UI              = 1 << 2,
     PLUGIN_NEEDS_FIXED_BUFFERS = 1 << 3,
     PLUGIN_NEEDS_SINGLE_THREAD = 1 << 4,
     PLUGIN_NEEDS_UI_JUCE       = 1 << 5,
@@ -62,7 +63,7 @@ typedef enum {
     PLUGIN_USES_PANNING        = 1 << 7, // uses stereo balance if unset (default)
     PLUGIN_USES_STATE          = 1 << 8,
     PLUGIN_USES_TIME           = 1 << 9
-} PluginHints;
+} NativePluginHints;
 
 typedef enum {
     PLUGIN_SUPPORTS_PROGRAM_CHANGES  = 1 << 0, // handles MIDI programs internally instead of host-exposed/exported
@@ -72,7 +73,7 @@ typedef enum {
     PLUGIN_SUPPORTS_PITCHBEND        = 1 << 4,
     PLUGIN_SUPPORTS_ALL_SOUND_OFF    = 1 << 5,
     PLUGIN_SUPPORTS_EVERYTHING       = (1 << 6)-1
-} PluginSupports;
+} NativePluginSupports;
 
 typedef enum {
     PARAMETER_IS_OUTPUT        = 1 << 0,
@@ -84,7 +85,7 @@ typedef enum {
     PARAMETER_USES_SAMPLE_RATE = 1 << 6,
     PARAMETER_USES_SCALEPOINTS = 1 << 7,
     PARAMETER_USES_CUSTOM_TEXT = 1 << 8
-} ParameterHints;
+} NativeParameterHints;
 
 typedef enum {
     PLUGIN_OPCODE_NULL                = 0, // nothing
@@ -92,7 +93,7 @@ typedef enum {
     PLUGIN_OPCODE_SAMPLE_RATE_CHANGED = 2, // uses opt
     PLUGIN_OPCODE_OFFLINE_CHANGED     = 3, // uses value (0=off, 1=on)
     PLUGIN_OPCODE_UI_NAME_CHANGED     = 4  // uses ptr
-} PluginDispatcherOpcode;
+} NativePluginDispatcherOpcode;
 
 typedef enum {
     HOST_OPCODE_NULL                  = 0,  // nothing
@@ -110,7 +111,7 @@ typedef enum {
     HOST_OPCODE_RELOAD_MIDI_PROGRAMS  = 12, // nothing
     HOST_OPCODE_RELOAD_ALL            = 13, // nothing
     HOST_OPCODE_UI_UNAVAILABLE        = 14  // nothing
-} HostDispatcherOpcode;
+} NativeHostDispatcherOpcode;
 
 // -----------------------------------------------------------------------
 // base structs
@@ -118,7 +119,7 @@ typedef enum {
 typedef struct {
     const char* label;
     float value;
-} ParameterScalePoint;
+} NativeParameterScalePoint;
 
 typedef struct {
     float def;
@@ -127,34 +128,34 @@ typedef struct {
     float step;
     float stepSmall;
     float stepLarge;
-} ParameterRanges;
+} NativeParameterRanges;
 
 #define PARAMETER_RANGES_DEFAULT_STEP       0.01f
 #define PARAMETER_RANGES_DEFAULT_STEP_SMALL 0.0001f
 #define PARAMETER_RANGES_DEFAULT_STEP_LARGE 0.1f
 
 typedef struct {
-    ParameterHints hints;
+    NativeParameterHints hints;
     const char* name;
     const char* unit;
-    ParameterRanges ranges;
+    NativeParameterRanges ranges;
 
     uint32_t scalePointCount;
-    ParameterScalePoint* scalePoints;
-} Parameter;
+    NativeParameterScalePoint* scalePoints;
+} NativeParameter;
 
 typedef struct {
     uint8_t  port;
     uint32_t time;
     uint8_t  data[4];
     uint8_t  size;
-} MidiEvent;
+} NativeMidiEvent;
 
 typedef struct {
     uint32_t bank;
     uint32_t program;
     const char* name;
-} MidiProgram;
+} NativeMidiProgram;
 
 typedef struct {
     bool valid;
@@ -169,49 +170,49 @@ typedef struct {
 
     double ticksPerBeat;
     double beatsPerMinute;
-} TimeInfoBBT;
+} NativeTimeInfoBBT;
 
 typedef struct {
     bool playing;
     uint64_t frame;
     uint64_t usecs;
-    TimeInfoBBT bbt;
-} TimeInfo;
+    NativeTimeInfoBBT bbt;
+} NativeTimeInfo;
 
 // -----------------------------------------------------------------------
 // HostDescriptor
 
 typedef struct {
-    HostHandle handle;
+    NativeHostHandle handle;
     const char* resourceDir;
     const char* uiName;
 
-    uint32_t (*get_buffer_size)(HostHandle handle);
-    double   (*get_sample_rate)(HostHandle handle);
-    bool     (*is_offline)(HostHandle handle);
+    uint32_t (*get_buffer_size)(NativeHostHandle handle);
+    double   (*get_sample_rate)(NativeHostHandle handle);
+    bool     (*is_offline)(NativeHostHandle handle);
 
-    const TimeInfo* (*get_time_info)(HostHandle handle);
-    bool            (*write_midi_event)(HostHandle handle, const MidiEvent* event);
+    const NativeTimeInfo* (*get_time_info)(NativeHostHandle handle);
+    bool                  (*write_midi_event)(NativeHostHandle handle, const NativeMidiEvent* event);
 
-    void (*ui_parameter_changed)(HostHandle handle, uint32_t index, float value);
-    void (*ui_midi_program_changed)(HostHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
-    void (*ui_custom_data_changed)(HostHandle handle, const char* key, const char* value);
-    void (*ui_closed)(HostHandle handle);
+    void (*ui_parameter_changed)(NativeHostHandle handle, uint32_t index, float value);
+    void (*ui_midi_program_changed)(NativeHostHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
+    void (*ui_custom_data_changed)(NativeHostHandle handle, const char* key, const char* value);
+    void (*ui_closed)(NativeHostHandle handle);
 
-    const char* (*ui_open_file)(HostHandle handle, bool isDir, const char* title, const char* filter);
-    const char* (*ui_save_file)(HostHandle handle, bool isDir, const char* title, const char* filter);
+    const char* (*ui_open_file)(NativeHostHandle handle, bool isDir, const char* title, const char* filter);
+    const char* (*ui_save_file)(NativeHostHandle handle, bool isDir, const char* title, const char* filter);
 
-    intptr_t (*dispatcher)(HostHandle handle, HostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt);
+    intptr_t (*dispatcher)(NativeHostHandle handle, NativeHostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt);
 
-} HostDescriptor;
+} NativeHostDescriptor;
 
 // -----------------------------------------------------------------------
 // PluginDescriptor
 
-typedef struct _PluginDescriptor {
-    const PluginCategory category;
-    const PluginHints hints;
-    const PluginSupports supports;
+typedef struct _NativePluginDescriptor {
+    const NativePluginCategory category;
+    const NativePluginHints hints;
+    const NativePluginSupports supports;
     const uint32_t audioIns;
     const uint32_t audioOuts;
     const uint32_t midiIns;
@@ -223,44 +224,44 @@ typedef struct _PluginDescriptor {
     const char* const maker;
     const char* const copyright;
 
-    PluginHandle (*instantiate)(const HostDescriptor* host);
-    void         (*cleanup)(PluginHandle handle);
+    NativePluginHandle (*instantiate)(const NativeHostDescriptor* host);
+    void               (*cleanup)(NativePluginHandle handle);
 
-    uint32_t         (*get_parameter_count)(PluginHandle handle);
-    const Parameter* (*get_parameter_info)(PluginHandle handle, uint32_t index);
-    float            (*get_parameter_value)(PluginHandle handle, uint32_t index);
-    const char*      (*get_parameter_text)(PluginHandle handle, uint32_t index, float value);
+    uint32_t               (*get_parameter_count)(NativePluginHandle handle);
+    const NativeParameter* (*get_parameter_info)(NativePluginHandle handle, uint32_t index);
+    float                  (*get_parameter_value)(NativePluginHandle handle, uint32_t index);
+    const char*            (*get_parameter_text)(NativePluginHandle handle, uint32_t index, float value);
 
-    uint32_t           (*get_midi_program_count)(PluginHandle handle);
-    const MidiProgram* (*get_midi_program_info)(PluginHandle handle, uint32_t index);
+    uint32_t                 (*get_midi_program_count)(NativePluginHandle handle);
+    const NativeMidiProgram* (*get_midi_program_info)(NativePluginHandle handle, uint32_t index);
 
-    void (*set_parameter_value)(PluginHandle handle, uint32_t index, float value);
-    void (*set_midi_program)(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
-    void (*set_custom_data)(PluginHandle handle, const char* key, const char* value);
+    void (*set_parameter_value)(NativePluginHandle handle, uint32_t index, float value);
+    void (*set_midi_program)(NativePluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
+    void (*set_custom_data)(NativePluginHandle handle, const char* key, const char* value);
 
-    void (*ui_show)(PluginHandle handle, bool show);
-    void (*ui_idle)(PluginHandle handle);
+    void (*ui_show)(NativePluginHandle handle, bool show);
+    void (*ui_idle)(NativePluginHandle handle);
 
-    void (*ui_set_parameter_value)(PluginHandle handle, uint32_t index, float value);
-    void (*ui_set_midi_program)(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
-    void (*ui_set_custom_data)(PluginHandle handle, const char* key, const char* value);
+    void (*ui_set_parameter_value)(NativePluginHandle handle, uint32_t index, float value);
+    void (*ui_set_midi_program)(NativePluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
+    void (*ui_set_custom_data)(NativePluginHandle handle, const char* key, const char* value);
 
-    void (*activate)(PluginHandle handle);
-    void (*deactivate)(PluginHandle handle);
-    void (*process)(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount);
+    void (*activate)(NativePluginHandle handle);
+    void (*deactivate)(NativePluginHandle handle);
+    void (*process)(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount);
 
-    char* (*get_state)(PluginHandle handle);
-    void  (*set_state)(PluginHandle handle, const char* data);
+    char* (*get_state)(NativePluginHandle handle);
+    void  (*set_state)(NativePluginHandle handle, const char* data);
 
-    intptr_t (*dispatcher)(PluginHandle handle, PluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt);
+    intptr_t (*dispatcher)(NativePluginHandle handle, NativePluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt);
 
-} PluginDescriptor;
+} NativePluginDescriptor;
 
 // -----------------------------------------------------------------------
 // Register plugin
 
 // Implemented by host
-extern void carla_register_native_plugin(const PluginDescriptor* desc);
+extern void carla_register_native_plugin(const NativePluginDescriptor* desc);
 
 // Called once on host init
 void carla_register_all_plugins();

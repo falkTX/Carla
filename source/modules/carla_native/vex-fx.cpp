@@ -30,7 +30,7 @@ using namespace juce;
 
 // -----------------------------------------------------------------------
 
-class VexArpPlugin : public PluginClass,
+class VexArpPlugin : public NativePluginClass,
                      public PeggyViewComponent::Callback
 {
 public:
@@ -45,8 +45,8 @@ public:
         kParamCount = kParamLast + VexArpSettings::kVelocitiesSize + VexArpSettings::kGridSize
     };
 
-    VexArpPlugin(const HostDescriptor* const host)
-        : PluginClass(host),
+    VexArpPlugin(const NativeHostDescriptor* const host)
+        : NativePluginClass(host),
           fArp(&fSettings),
           fNeedsUpdate(true)
     {
@@ -63,10 +63,10 @@ protected:
         return kParamCount;
     }
 
-    const Parameter* getParameterInfo(const uint32_t index) const override
+    const NativeParameter* getParameterInfo(const uint32_t index) const override
     {
-        static Parameter paramInfo;
-        static ParameterScalePoint scalePoints[4];
+        static NativeParameter paramInfo;
+        static NativeParameterScalePoint scalePoints[4];
         static char bufName[24+1];
 
         int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE;
@@ -183,7 +183,7 @@ protected:
             paramInfo.name = bufName;
         }
 
-        paramInfo.hints = static_cast<ParameterHints>(hints);
+        paramInfo.hints = static_cast<NativeParameterHints>(hints);
         return &paramInfo;
     }
 
@@ -261,7 +261,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(float**, float**, const uint32_t frames, const MidiEvent* const midiEvents, const uint32_t midiEventCount) override
+    void process(float**, float**, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
         if (! fSettings.on)
         {
@@ -271,7 +271,7 @@ protected:
             return;
         }
 
-        const TimeInfo* const timeInfo(getTimeInfo());
+        const NativeTimeInfo* const timeInfo(getTimeInfo());
 
         bool   timePlaying = false;
         double ppqPos      = 0.0;
@@ -298,7 +298,7 @@ protected:
 
         for (uint32_t i=0; i < midiEventCount; ++i)
         {
-            const MidiEvent* const midiEvent(&midiEvents[i]);
+            const NativeMidiEvent* const midiEvent(&midiEvents[i]);
             fMidiInBuffer.addEvent(midiEvent->data, midiEvent->size, midiEvent->time);
         }
 
@@ -309,7 +309,7 @@ protected:
         int numBytes;
         int sampleNumber;
 
-        MidiEvent tmpEvent;
+        NativeMidiEvent tmpEvent;
         tmpEvent.port = 0;
 
         while (outBufferIterator.getNextEvent(midiData, numBytes, sampleNumber))
@@ -429,7 +429,7 @@ private:
 
 // -----------------------------------------------------------------------
 
-class VexChorusPlugin : public PluginClass
+class VexChorusPlugin : public NativePluginClass
 {
 public:
     enum Params {
@@ -438,8 +438,8 @@ public:
         kParamCount
     };
 
-    VexChorusPlugin(const HostDescriptor* const host)
-        : PluginClass(host),
+    VexChorusPlugin(const NativeHostDescriptor* const host)
+        : NativePluginClass(host),
           fChorus(fParameters)
     {
         std::memset(fParameters, 0, sizeof(float)*92);
@@ -459,9 +459,9 @@ protected:
         return kParamCount;
     }
 
-    const Parameter* getParameterInfo(const uint32_t index) const override
+    const NativeParameter* getParameterInfo(const uint32_t index) const override
     {
-        static Parameter paramInfo;
+        static NativeParameter paramInfo;
 
         int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE;
 
@@ -488,7 +488,7 @@ protected:
             break;
         }
 
-        paramInfo.hints = static_cast<ParameterHints>(hints);
+        paramInfo.hints = static_cast<NativeParameterHints>(hints);
 
         return &paramInfo;
     }
@@ -527,7 +527,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const MidiEvent* const, const uint32_t) override
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
     {
         if (inBuffer[0] != outBuffer[0])
             FloatVectorOperations::copy(outBuffer[0], inBuffer[0], frames);
@@ -555,7 +555,7 @@ private:
 
 // -----------------------------------------------------------------------
 
-class VexDelayPlugin : public PluginClass
+class VexDelayPlugin : public NativePluginClass
 {
 public:
     enum Params {
@@ -564,8 +564,8 @@ public:
         kParamCount
     };
 
-    VexDelayPlugin(const HostDescriptor* const host)
-        : PluginClass(host),
+    VexDelayPlugin(const NativeHostDescriptor* const host)
+        : NativePluginClass(host),
           fDelay(fParameters)
     {
         std::memset(fParameters, 0, sizeof(float)*92);
@@ -585,9 +585,9 @@ protected:
         return kParamCount;
     }
 
-    const Parameter* getParameterInfo(const uint32_t index) const override
+    const NativeParameter* getParameterInfo(const uint32_t index) const override
     {
-        static Parameter paramInfo;
+        static NativeParameter paramInfo;
 
         int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE;
 
@@ -621,7 +621,7 @@ protected:
             break;
         }
 
-        paramInfo.hints = static_cast<ParameterHints>(hints);
+        paramInfo.hints = static_cast<NativeParameterHints>(hints);
 
         return &paramInfo;
     }
@@ -660,14 +660,14 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const MidiEvent* const, const uint32_t) override
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
     {
         if (inBuffer[0] != outBuffer[0])
             FloatVectorOperations::copy(outBuffer[0], inBuffer[0], frames);
         if (inBuffer[1] != outBuffer[1])
             FloatVectorOperations::copy(outBuffer[1], inBuffer[1], frames);
 
-        const TimeInfo* const timeInfo(getTimeInfo());
+        const NativeTimeInfo* const timeInfo(getTimeInfo());
         const double bpm((timeInfo != nullptr && timeInfo->bbt.valid) ? timeInfo->bbt.beatsPerMinute : 120.0);
 
         fDelay.processBlock(outBuffer[0], outBuffer[1], frames, bpm);
@@ -691,7 +691,7 @@ private:
 
 // -----------------------------------------------------------------------
 
-class VexReverbPlugin : public PluginClass
+class VexReverbPlugin : public NativePluginClass
 {
 public:
     enum Params {
@@ -701,8 +701,8 @@ public:
         kParamCount
     };
 
-    VexReverbPlugin(const HostDescriptor* const host)
-        : PluginClass(host),
+    VexReverbPlugin(const NativeHostDescriptor* const host)
+        : NativePluginClass(host),
           fReverb(fParameters)
     {
         std::memset(fParameters, 0, sizeof(float)*92);
@@ -721,9 +721,9 @@ protected:
         return kParamCount;
     }
 
-    const Parameter* getParameterInfo(const uint32_t index) const override
+    const NativeParameter* getParameterInfo(const uint32_t index) const override
     {
-        static Parameter paramInfo;
+        static NativeParameter paramInfo;
 
         int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE;
 
@@ -754,7 +754,7 @@ protected:
             break;
         }
 
-        paramInfo.hints = static_cast<ParameterHints>(hints);
+        paramInfo.hints = static_cast<NativeParameterHints>(hints);
 
         return &paramInfo;
     }
@@ -798,7 +798,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const MidiEvent* const, const uint32_t) override
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
     {
         for (uint32_t i=0; i< frames; ++i)
             FloatVectorOperations::copyWithMultiply(outBuffer[0], inBuffer[0], 0.5f, frames);
@@ -818,10 +818,10 @@ private:
 
 // -----------------------------------------------------------------------
 
-static const PluginDescriptor vexArpDesc = {
+static const NativePluginDescriptor vexArpDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_HAS_GUI|PLUGIN_NEEDS_UI_JUCE|PLUGIN_USES_TIME),
-    /* supports  */ static_cast<PluginSupports>(PLUGIN_SUPPORTS_EVERYTHING),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_HAS_UI|PLUGIN_NEEDS_UI_JUCE|PLUGIN_USES_TIME),
+    /* supports  */ static_cast<NativePluginSupports>(PLUGIN_SUPPORTS_EVERYTHING),
     /* audioIns  */ 0,
     /* audioOuts */ 0,
     /* midiIns   */ 1,
@@ -835,10 +835,10 @@ static const PluginDescriptor vexArpDesc = {
     PluginDescriptorFILL(VexArpPlugin)
 };
 
-static const PluginDescriptor vexChorusDesc = {
+static const NativePluginDescriptor vexChorusDesc = {
     /* category  */ PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE),
-    /* supports  */ static_cast<PluginSupports>(0x0),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE),
+    /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 0,
@@ -852,10 +852,10 @@ static const PluginDescriptor vexChorusDesc = {
     PluginDescriptorFILL(VexChorusPlugin)
 };
 
-static const PluginDescriptor vexDelayDesc = {
+static const NativePluginDescriptor vexDelayDesc = {
     /* category  */ PLUGIN_CATEGORY_DELAY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_TIME),
-    /* supports  */ static_cast<PluginSupports>(0x0),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_TIME),
+    /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 0,
@@ -869,10 +869,10 @@ static const PluginDescriptor vexDelayDesc = {
     PluginDescriptorFILL(VexDelayPlugin)
 };
 
-static const PluginDescriptor vexReverbDesc = {
+static const NativePluginDescriptor vexReverbDesc = {
     /* category  */ PLUGIN_CATEGORY_DELAY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE),
-    /* supports  */ static_cast<PluginSupports>(0x0),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE),
+    /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 0,

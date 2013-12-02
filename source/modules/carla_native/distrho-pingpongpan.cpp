@@ -29,10 +29,10 @@ START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
-static PluginDescriptor pppDesc = {
+static const NativePluginDescriptor pppDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_GUI),
-    /* supports  */ static_cast<PluginSupports>(0x0),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_UI),
+    /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ DISTRHO_PLUGIN_NUM_INPUTS,
     /* audioOuts */ DISTRHO_PLUGIN_NUM_OUTPUTS,
     /* midiIns   */ 0,

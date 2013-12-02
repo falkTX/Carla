@@ -63,7 +63,7 @@ class UICarla
 #endif
 {
 public:
-    UICarla(const HostDescriptor* const host, PluginInternal* const plugin)
+    UICarla(const NativeHostDescriptor* const host, PluginInternal* const plugin)
         : fHost(host),
           fPlugin(plugin),
           fUi(this, 0, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, uiResizeCallback)
@@ -254,7 +254,7 @@ protected:
 
 private:
     // Plugin stuff
-    const HostDescriptor* const fHost;
+    const NativeHostDescriptor* const fHost;
     PluginInternal* const fPlugin;
 
     // UI
@@ -310,11 +310,11 @@ private:
 // -----------------------------------------------------------------------
 // Carla Plugin
 
-class PluginCarla : public PluginClass
+class PluginCarla : public NativePluginClass
 {
 public:
-    PluginCarla(const HostDescriptor* const host)
-        : PluginClass(host)
+    PluginCarla(const NativeHostDescriptor* const host)
+        : NativePluginClass(host)
     {
 #if DISTRHO_PLUGIN_HAS_UI
         fUiPtr = nullptr;
@@ -341,11 +341,11 @@ protected:
         return fPlugin.getParameterCount();
     }
 
-    const ::Parameter* getParameterInfo(const uint32_t index) const override
+    const NativeParameter* getParameterInfo(const uint32_t index) const override
     {
         CARLA_ASSERT(index < getParameterCount());
 
-        static ::Parameter param;
+        static NativeParameter param;
 
         // reset
         param.hints = ::PARAMETER_IS_ENABLED;
@@ -367,7 +367,7 @@ protected:
             if (paramHints & PARAMETER_IS_OUTPUT)
                 nativeParamHints |= ::PARAMETER_IS_OUTPUT;
 
-            param.hints = static_cast<ParameterHints>(nativeParamHints);
+            param.hints = static_cast<NativeParameterHints>(nativeParamHints);
         }
 
         param.name = fPlugin.getParameterName(index);
@@ -403,14 +403,14 @@ protected:
         return fPlugin.getProgramCount();
     }
 
-    const ::MidiProgram* getMidiProgramInfo(const uint32_t index) const override
+    const NativeMidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
         CARLA_ASSERT(index < getMidiProgramCount());
 
         if (index >= fPlugin.getProgramCount())
             return nullptr;
 
-        static ::MidiProgram midiProgram;
+        static NativeMidiProgram midiProgram;
 
         midiProgram.bank    = index / 128;
         midiProgram.program = index % 128;
@@ -466,14 +466,14 @@ protected:
     }
 
 #if DISTRHO_PLUGIN_IS_SYNTH
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const ::MidiEvent* const midiEvents, const uint32_t midiEventCount) override
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
         uint32_t i;
 
         for (i=0; i < midiEventCount && i < MAX_MIDI_EVENTS; ++i)
         {
-            const ::MidiEvent* const midiEvent = &midiEvents[i];
-            MidiEvent* const realMidiEvent = &fRealMidiEvents[i];
+            const NativeMidiEvent* const midiEvent(&midiEvents[i]);
+            MidiEvent* const realMidiEvent(&fRealMidiEvents[i]);
 
             realMidiEvent->frame = midiEvent->time;
             realMidiEvent->size  = midiEvent->size;
@@ -485,7 +485,7 @@ protected:
         fPlugin.run(inBuffer, outBuffer, frames, fRealMidiEvents, i);
     }
 #else
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const ::MidiEvent* const, const uint32_t) override
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
     {
         fPlugin.run(inBuffer, outBuffer, frames, nullptr, 0);
     }
@@ -598,14 +598,14 @@ private:
     // -------------------------------------------------------------------
 
 public:
-    static PluginHandle _instantiate(const HostDescriptor* host)
+    static NativePluginHandle _instantiate(const NativeHostDescriptor* host)
     {
         d_lastBufferSize = host->get_buffer_size(host->handle);
         d_lastSampleRate = host->get_sample_rate(host->handle);
         return new PluginCarla(host);
     }
 
-    static void _cleanup(PluginHandle handle)
+    static void _cleanup(NativePluginHandle handle)
     {
         delete (PluginCarla*)handle;
     }

@@ -20,15 +20,15 @@
 
 // -----------------------------------------------------------------------
 
-static PluginHandle midiThrough_instantiate(const HostDescriptor* host)
+static NativePluginHandle midiThrough_instantiate(const NativeHostDescriptor* host)
 {
     // use HostDescriptor as PluginHandle
-    return (PluginHandle)host;
+    return (NativePluginHandle)host;
 }
 
-static void midiThrough_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
+static void midiThrough_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
-    const HostDescriptor* const host = (const HostDescriptor*)handle;
+    const NativeHostDescriptor* const host = (const NativeHostDescriptor*)handle;
 
     for (uint32_t i=0; i < midiEventCount; ++i)
         host->write_midi_event(host->handle, &midiEvents[i]);
@@ -43,7 +43,7 @@ static void midiThrough_process(PluginHandle handle, float** inBuffer, float** o
 
 // -----------------------------------------------------------------------
 
-static const PluginDescriptor midiThroughDesc = {
+static const NativePluginDescriptor midiThroughDesc = {
     .category  = PLUGIN_CATEGORY_UTILITY,
     .hints     = PLUGIN_IS_RTSAFE,
     .supports  = PLUGIN_SUPPORTS_EVERYTHING,

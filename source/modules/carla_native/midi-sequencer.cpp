@@ -18,12 +18,12 @@
 #include "CarlaNative.hpp"
 #include "midi-base.hpp"
 
-class MidiSequencerPlugin : public PluginClass,
+class MidiSequencerPlugin : public NativePluginClass,
                             public AbstractMidiPlayer
 {
 public:
-    MidiSequencerPlugin(const HostDescriptor* const host)
-        : PluginClass(host),
+    MidiSequencerPlugin(const NativeHostDescriptor* const host)
+        : NativePluginClass(host),
           fWantInEvents(false),
           fMidiOut(this)
     {
@@ -136,9 +136,9 @@ protected:
     {
     }
 
-    void process(float**, float**, const uint32_t frames, const MidiEvent* const midiEvents, const uint32_t midiEventCount) override
+    void process(float**, float**, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
-        const TimeInfo* const timePos = getTimeInfo();
+        const NativeTimeInfo* const timePos = getTimeInfo();
 
         if (fWantInEvents)
         {
@@ -146,7 +146,7 @@ protected:
 
             for (uint32_t i=0; i < midiEventCount; ++i)
             {
-                const MidiEvent* const midiEvent = &midiEvents[i];
+                const NativeMidiEvent* const midiEvent = &midiEvents[i];
 
                 rawMidiEvent.data[0] = midiEvent->data[0];
                 rawMidiEvent.data[1] = midiEvent->data[1];
@@ -174,7 +174,7 @@ protected:
 
     void writeMidiEvent(const uint32_t timePosFrame, const RawMidiEvent* const event) override
     {
-        MidiEvent midiEvent;
+        NativeMidiEvent midiEvent;
 
         midiEvent.port    = 0;
         midiEvent.time    = event->time-timePosFrame;
@@ -184,7 +184,7 @@ protected:
         midiEvent.data[3] = event->data[3];
         midiEvent.size    = event->size;
 
-        PluginClass::writeMidiEvent(&midiEvent);
+        NativePluginClass::writeMidiEvent(&midiEvent);
     }
 
 private:
@@ -232,10 +232,10 @@ private:
 
 // -----------------------------------------------------------------------
 
-static const PluginDescriptor midiSequencerDesc = {
+static const NativePluginDescriptor midiSequencerDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
     /* hints     */ PLUGIN_IS_RTSAFE/*|PLUGIN_HAS_GUI*/,
-    /* supports  */ static_cast<PluginSupports>(0x0),
+    /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 0,
     /* audioOuts */ 0,
     /* midiIns   */ 1,

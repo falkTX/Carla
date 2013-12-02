@@ -24,7 +24,7 @@
 
 #include "CarlaBackendUtils.hpp"
 //#include "CarlaOscUtils.hpp"
-//#include "CarlaNative.h"
+#include "CarlaNative.h"
 
 #ifdef USE_JUCE
 # include "juce_gui_basics.h"
@@ -304,7 +304,6 @@ const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(unsigned int i
     return CarlaEngine::getDriverDeviceInfo(index, name);
 }
 
-#if 0
 // -------------------------------------------------------------------------------------------------------------------
 
 unsigned int carla_get_internal_plugin_count()
@@ -318,29 +317,27 @@ unsigned int carla_get_internal_plugin_count()
 #endif
 }
 
-const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int internalPluginId)
+const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int index)
 {
-    carla_debug("carla_get_internal_plugin_info(%i)", internalPluginId);
-
-    static CarlaNativePluginInfo info;
+    carla_debug("carla_get_internal_plugin_info(%i)", index);
 
 #ifdef WANT_NATIVE
-    const PluginDescriptor* const nativePlugin(CarlaPlugin::getNativePluginDescriptor(internalPluginId));
+    static CarlaNativePluginInfo info;
+
+    const NativePluginDescriptor* const nativePlugin(CarlaPlugin::getNativePluginDescriptor(index));
 
     // as internal plugin, this must never fail
     CARLA_SAFE_ASSERT_RETURN(nativePlugin != nullptr, nullptr);
 
-     info.category = static_cast<CarlaPluginCategory>(nativePlugin->category);
+     info.category = static_cast<CB::PluginCategory>(nativePlugin->category);
      info.hints    = 0x0;
 
-     if (nativePlugin->hints & PLUGIN_IS_RTSAFE)
+     if (nativePlugin->hints & ::PLUGIN_IS_RTSAFE)
          info.hints |= CB::PLUGIN_IS_RTSAFE;
-     if (nativePlugin->hints & PLUGIN_HAS_GUI)
-         info.hints |= CB::PLUGIN_HAS_GUI;
-     if (nativePlugin->hints & PLUGIN_NEEDS_SINGLE_THREAD)
-         info.hints |= CB::PLUGIN_NEEDS_SINGLE_THREAD;
-     if (nativePlugin->hints & PLUGIN_NEEDS_FIXED_BUFFERS)
-         info.hints |= CB::PLUGIN_NEEDS_FIXED_BUFFERS;
+     if (nativePlugin->hints & ::PLUGIN_IS_SYNTH)
+         info.hints |= CB::PLUGIN_IS_SYNTH;
+     if (nativePlugin->hints & ::PLUGIN_HAS_UI)
+         info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
 
      info.audioIns  = nativePlugin->audioIns;
      info.audioOuts = nativePlugin->audioOuts;
@@ -353,17 +350,17 @@ const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int interna
      info.label     = nativePlugin->label;
      info.maker     = nativePlugin->maker;
      info.copyright = nativePlugin->copyright;
-#endif
 
     return &info;
+#else
+    return nullptr;
 
-#ifndef WANT_NATIVE
     // unused
-    (void)internalPluginId;
+    (void)index;
 #endif
 }
-#endif
 
+#if 0
 // -------------------------------------------------------------------------------------------------------------------
 
 bool carla_engine_init(const char* driverName, const char* clientName)
@@ -895,6 +892,7 @@ const CarlaTransportInfo* carla_get_transport_info()
 
     return &info;
 }
+#endif
 #endif
 
 // -------------------------------------------------------------------------------------------------------------------

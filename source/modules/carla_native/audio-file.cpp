@@ -22,12 +22,12 @@
 
 #define PROGRAM_COUNT 16
 
-class AudioFilePlugin : public PluginClass,
+class AudioFilePlugin : public NativePluginClass,
                         public AbstractAudioPlayer
 {
 public:
-    AudioFilePlugin(const HostDescriptor* const host)
-        : PluginClass(host),
+    AudioFilePlugin(const NativeHostDescriptor* const host)
+        : NativePluginClass(host),
           AbstractAudioPlayer(),
           fLoopMode(false),
           fDoProcess(false),
@@ -58,16 +58,16 @@ protected:
         return 0; // TODO - loopMode
     }
 
-    const Parameter* getParameterInfo(const uint32_t index) const override
+    const NativeParameter* getParameterInfo(const uint32_t index) const override
     {
         if (index != 0)
             return nullptr;
 
-        static Parameter param;
+        static NativeParameter param;
 
         param.name  = "Loop Mode";
         param.unit  = nullptr;
-        param.hints = static_cast<ParameterHints>(PARAMETER_IS_ENABLED|PARAMETER_IS_BOOLEAN);
+        param.hints = static_cast<NativeParameterHints>(PARAMETER_IS_ENABLED|PARAMETER_IS_BOOLEAN);
         param.ranges.def = 1.0f;
         param.ranges.min = 0.0f;
         param.ranges.max = 1.0f;
@@ -116,9 +116,9 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(float**, float** const outBuffer, const uint32_t frames, const MidiEvent* const, const uint32_t) override
+    void process(float**, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
     {
-        const TimeInfo* const timePos(getTimeInfo());
+        const NativeTimeInfo* const timePos(getTimeInfo());
 
         float* out1 = outBuffer[0];
         float* out2 = outBuffer[1];
@@ -259,10 +259,10 @@ private:
 
 // -----------------------------------------------------------------------
 
-static const PluginDescriptor audiofileDesc = {
+static const NativePluginDescriptor audiofileDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_GUI|PLUGIN_NEEDS_UI_OPEN_SAVE),
-    /* supports  */ static_cast<PluginSupports>(0x0),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_UI|PLUGIN_NEEDS_UI_OPEN_SAVE),
+    /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 0,
     /* audioOuts */ 2,
     /* midiIns   */ 0,

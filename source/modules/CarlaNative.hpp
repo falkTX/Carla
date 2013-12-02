@@ -30,16 +30,16 @@
 // -----------------------------------------------------------------------
 // Plugin Class
 
-class PluginClass
+class NativePluginClass
 {
 public:
-    PluginClass(const HostDescriptor* const host)
+    NativePluginClass(const NativeHostDescriptor* const host)
         : pHost(host)
     {
         CARLA_ASSERT(host != nullptr);
     }
 
-    virtual ~PluginClass()
+    virtual ~NativePluginClass()
     {
     }
 
@@ -47,7 +47,7 @@ protected:
     // -------------------------------------------------------------------
     // Host calls
 
-    const HostDescriptor* getHostHandle() const noexcept
+    const NativeHostDescriptor* getHostHandle() const noexcept
     {
         return pHost;
     }
@@ -87,14 +87,14 @@ protected:
         return pHost->is_offline(pHost->handle);
     }
 
-    const TimeInfo* getTimeInfo() const
+    const NativeTimeInfo* getTimeInfo() const
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, nullptr);
 
         return pHost->get_time_info(pHost->handle);
     }
 
-    void writeMidiEvent(const MidiEvent* const event) const
+    void writeMidiEvent(const NativeMidiEvent* const event) const
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
 
@@ -266,7 +266,7 @@ protected:
         return 0;
     }
 
-    virtual const Parameter* getParameterInfo(const uint32_t index) const
+    virtual const NativeParameter* getParameterInfo(const uint32_t index) const
     {
         CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(), nullptr);
         return nullptr;
@@ -295,7 +295,7 @@ protected:
         return 0;
     }
 
-    virtual const MidiProgram* getMidiProgramInfo(const uint32_t index) const
+    virtual const NativeMidiProgram* getMidiProgramInfo(const uint32_t index) const
     {
         CARLA_SAFE_ASSERT_RETURN(index < getMidiProgramCount(), nullptr);
         return nullptr;
@@ -340,7 +340,7 @@ protected:
     {
     }
 
-    virtual void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const MidiEvent* const midiEvents, const uint32_t midiEventCount) = 0;
+    virtual void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) = 0;
 
     // -------------------------------------------------------------------
     // Plugin UI calls
@@ -427,110 +427,110 @@ protected:
     // -------------------------------------------------------------------
 
 private:
-    const HostDescriptor* const pHost;
+    const NativeHostDescriptor* const pHost;
 
     // -------------------------------------------------------------------
 
 #ifndef DOXYGEN
 public:
-    #define handlePtr ((PluginClass*)handle)
+    #define handlePtr ((NativePluginClass*)handle)
 
-    static uint32_t _get_parameter_count(PluginHandle handle)
+    static uint32_t _get_parameter_count(NativePluginHandle handle)
     {
         return handlePtr->getParameterCount();
     }
 
-    static const Parameter* _get_parameter_info(PluginHandle handle, uint32_t index)
+    static const NativeParameter* _get_parameter_info(NativePluginHandle handle, uint32_t index)
     {
         return handlePtr->getParameterInfo(index);
     }
 
-    static float _get_parameter_value(PluginHandle handle, uint32_t index)
+    static float _get_parameter_value(NativePluginHandle handle, uint32_t index)
     {
         return handlePtr->getParameterValue(index);
     }
 
-    static const char* _get_parameter_text(PluginHandle handle, uint32_t index, float value)
+    static const char* _get_parameter_text(NativePluginHandle handle, uint32_t index, float value)
     {
         return handlePtr->getParameterText(index, value);
     }
 
-    static uint32_t _get_midi_program_count(PluginHandle handle)
+    static uint32_t _get_midi_program_count(NativePluginHandle handle)
     {
         return handlePtr->getMidiProgramCount();
     }
 
-    static const MidiProgram* _get_midi_program_info(PluginHandle handle, uint32_t index)
+    static const NativeMidiProgram* _get_midi_program_info(NativePluginHandle handle, uint32_t index)
     {
         return handlePtr->getMidiProgramInfo(index);
     }
 
-    static void _set_parameter_value(PluginHandle handle, uint32_t index, float value)
+    static void _set_parameter_value(NativePluginHandle handle, uint32_t index, float value)
     {
         handlePtr->setParameterValue(index, value);
     }
 
-    static void _set_midi_program(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program)
+    static void _set_midi_program(NativePluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program)
     {
         handlePtr->setMidiProgram(channel, bank, program);
     }
 
-    static void _set_custom_data(PluginHandle handle, const char* key, const char* value)
+    static void _set_custom_data(NativePluginHandle handle, const char* key, const char* value)
     {
         handlePtr->setCustomData(key, value);
     }
 
-    static void _ui_show(PluginHandle handle, bool show)
+    static void _ui_show(NativePluginHandle handle, bool show)
     {
         handlePtr->uiShow(show);
     }
 
-    static void _ui_idle(PluginHandle handle)
+    static void _ui_idle(NativePluginHandle handle)
     {
         handlePtr->uiIdle();
     }
 
-    static void _ui_set_parameter_value(PluginHandle handle, uint32_t index, float value)
+    static void _ui_set_parameter_value(NativePluginHandle handle, uint32_t index, float value)
     {
         handlePtr->uiSetParameterValue(index, value);
     }
 
-    static void _ui_set_midi_program(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program)
+    static void _ui_set_midi_program(NativePluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program)
     {
         handlePtr->uiSetMidiProgram(channel, bank, program);
     }
 
-    static void _ui_set_custom_data(PluginHandle handle, const char* key, const char* value)
+    static void _ui_set_custom_data(NativePluginHandle handle, const char* key, const char* value)
     {
         handlePtr->uiSetCustomData(key, value);
     }
 
-    static void _activate(PluginHandle handle)
+    static void _activate(NativePluginHandle handle)
     {
         handlePtr->activate();
     }
 
-    static void _deactivate(PluginHandle handle)
+    static void _deactivate(NativePluginHandle handle)
     {
         handlePtr->deactivate();
     }
 
-    static void _process(PluginHandle handle, float** inBuffer, float** outBuffer, const uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
+    static void _process(NativePluginHandle handle, float** inBuffer, float** outBuffer, const uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
     {
         handlePtr->process(inBuffer, outBuffer, frames, midiEvents, midiEventCount);
     }
 
-    static char* _get_state(PluginHandle handle)
+    static char* _get_state(NativePluginHandle handle)
     {
         return handlePtr->getState();
     }
 
-    static void _set_state(PluginHandle handle, const char* data)
+    static void _set_state(NativePluginHandle handle, const char* data)
     {
         handlePtr->setState(data);
     }
 
-    static intptr_t _dispatcher(PluginHandle handle, PluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
+    static intptr_t _dispatcher(NativePluginHandle handle, NativePluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
     {
         switch(opcode)
         {
@@ -559,7 +559,7 @@ public:
 
     #undef handlePtr
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginClass)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NativePluginClass)
 #endif
 };
 
@@ -567,15 +567,15 @@ public:
 
 // -----------------------------------------------------------------------
 
-#define PluginClassEND(ClassName)                                \
-public:                                                          \
-    static PluginHandle _instantiate(const HostDescriptor* host) \
-    {                                                            \
-        return new ClassName(host);                              \
-    }                                                            \
-    static void _cleanup(PluginHandle handle)                    \
-    {                                                            \
-        delete (ClassName*)handle;                               \
+#define PluginClassEND(ClassName)                   \
+public:                                             \
+    static NativePluginHandle _instantiate(const NativeHostDescriptor* host) \
+    {                                               \
+        return new ClassName(host);                 \
+    }                                               \
+    static void _cleanup(NativePluginHandle handle) \
+    {                                               \
+        delete (ClassName*)handle;                  \
     }
 
 #define PluginDescriptorFILL(ClassName) \

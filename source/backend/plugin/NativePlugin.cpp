@@ -120,8 +120,8 @@ public:
         carla_debug("NativePlugin::NativePlugin(%p, %i)", engine, id);
 
         carla_fill<int32_t>(fCurMidiProgs, MAX_MIDI_CHANNELS, 0);
-        carla_zeroStruct< ::MidiEvent>(fMidiEvents, kPluginMaxMidiEvents*2);
-        carla_zeroStruct< ::TimeInfo>(fTimeInfo);
+        carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kPluginMaxMidiEvents*2);
+        carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
 
         fHost.handle      = this;
         fHost.resourceDir = carla_strdup((const char*)engine->getOptions().resourceDir);
@@ -145,7 +145,7 @@ public:
         carla_debug("NativePlugin::~NativePlugin()");
 
         // close UI
-        if (fHints & PLUGIN_HAS_GUI)
+        if (fHints & PLUGIN_HAS_UI)
         {
             if (fIsUiVisible && fDescriptor != nullptr && fDescriptor->ui_show != nullptr && fHandle != nullptr)
                 fDescriptor->ui_show(fHandle, false);
@@ -230,7 +230,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, 0);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0);
 
-        if (const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
+        if (const NativeParameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
             return param->scalePointCount;
 
         carla_safe_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
@@ -299,9 +299,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
         CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId), 0.0f);
 
-        if (const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
+        if (const NativeParameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
         {
-            const ParameterScalePoint* scalePoint(&param->scalePoints[scalePointId]);
+            const NativeParameterScalePoint* scalePoint(&param->scalePoints[scalePointId]);
             return scalePoint->value;
         }
 
@@ -356,7 +356,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
-        if (const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
+        if (const NativeParameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
         {
             if (param->name != nullptr)
             {
@@ -398,7 +398,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
-        if (const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
+        if (const NativeParameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
         {
             if (param->unit != nullptr)
             {
@@ -420,9 +420,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
         CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId),);
 
-        if (const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
+        if (const NativeParameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
         {
-            const ParameterScalePoint* scalePoint(&param->scalePoints[scalePointId]);
+            const NativeParameterScalePoint* scalePoint(&param->scalePoints[scalePointId]);
 
             if (scalePoint->label != nullptr)
             {
@@ -889,12 +889,9 @@ public:
 
         for (j=0; j < params; ++j)
         {
-            const ::Parameter* const paramInfo(fDescriptor->get_parameter_info(fHandle, j));
+            const NativeParameter* const paramInfo(fDescriptor->get_parameter_info(fHandle, j));
 
-            CARLA_ASSERT(paramInfo != nullptr);
-
-            if (paramInfo == nullptr)
-                continue;
+            CARLA_SAFE_ASSERT_CONTINUE(paramInfo != nullptr);
 
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
@@ -1045,8 +1042,10 @@ public:
         // native plugin hints
         if (fDescriptor->hints & ::PLUGIN_IS_RTSAFE)
             fHints |= PLUGIN_IS_RTSAFE;
-        if (fDescriptor->hints & ::PLUGIN_HAS_GUI)
-            fHints |= PLUGIN_HAS_GUI;
+        if (fDescriptor->hints & ::PLUGIN_IS_SYNTH)
+            fHints |= PLUGIN_IS_SYNTH;
+        if (fDescriptor->hints & ::PLUGIN_HAS_UI)
+            fHints |= PLUGIN_HAS_CUSTOM_UI;
         if (fDescriptor->hints & ::PLUGIN_NEEDS_SINGLE_THREAD)
             fHints |= PLUGIN_NEEDS_SINGLE_THREAD;
         if (fDescriptor->hints & ::PLUGIN_NEEDS_FIXED_BUFFERS)
@@ -1088,7 +1087,7 @@ public:
             // Update data
             for (i=0; i < count; ++i)
             {
-                const ::MidiProgram* const mpDesc = fDescriptor->get_midi_program_info(fHandle, i);
+                const NativeMidiProgram* const mpDesc(fDescriptor->get_midi_program_info(fHandle, i));
                 CARLA_ASSERT(mpDesc != nullptr);
                 CARLA_ASSERT(mpDesc->name != nullptr);
 
@@ -1209,7 +1208,7 @@ public:
         }
 
         fMidiEventCount = 0;
-        carla_zeroStruct< ::MidiEvent>(fMidiEvents, kPluginMaxMidiEvents*2);
+        carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kPluginMaxMidiEvents*2);
 
         // --------------------------------------------------------------------------------------------------------
         // Check if needs reset
@@ -1348,7 +1347,7 @@ public:
 
                         if (fMidiEventCount > 0)
                         {
-                            carla_zeroStruct< ::MidiEvent>(fMidiEvents, fMidiEventCount);
+                            carla_zeroStruct<NativeMidiEvent>(fMidiEvents, fMidiEventCount);
                             fMidiEventCount = 0;
                         }
                     }
@@ -2011,14 +2010,14 @@ protected:
         return pData->engine->isOffline();
     }
 
-    const ::TimeInfo* handleGetTimeInfo() const
+    const NativeTimeInfo* handleGetTimeInfo() const
     {
         CARLA_SAFE_ASSERT_RETURN(fIsProcessing, nullptr);
 
         return &fTimeInfo;
     }
 
-    bool handleWriteMidiEvent(const ::MidiEvent* const event)
+    bool handleWriteMidiEvent(const NativeMidiEvent* const event)
     {
         CARLA_ASSERT(fEnabled);
         CARLA_ASSERT(fIsProcessing);
@@ -2045,7 +2044,7 @@ protected:
         {
             if (fMidiEvents[i].data[0] == 0)
             {
-                std::memcpy(&fMidiEvents[i], event, sizeof(::MidiEvent));
+                std::memcpy(&fMidiEvents[i], event, sizeof(NativeMidiEvent));
                 return true;
             }
         }
@@ -2091,7 +2090,7 @@ protected:
         return retStr.isNotEmpty() ? (const char*)retStr : nullptr;
     }
 
-    intptr_t handleDispatcher(const ::HostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
+    intptr_t handleDispatcher(const NativeHostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
     {
         carla_debug("NativePlugin::handleDispatcher(%i, %i, " P_INTPTR ", %p, %f)", opcode, index, value, ptr, opt);
 
@@ -2163,7 +2162,7 @@ public:
         return sPluginDescriptors.count();
     }
 
-    static const ::PluginDescriptor* getPluginDescriptor(const size_t index)
+    static const NativePluginDescriptor* getPluginDescriptor(const size_t index)
     {
         CARLA_ASSERT(index < sPluginDescriptors.count());
 
@@ -2173,7 +2172,7 @@ public:
         return nullptr;
     }
 
-    static void registerPlugin(const ::PluginDescriptor* desc)
+    static void registerPlugin(const NativePluginDescriptor* desc)
     {
         sPluginDescriptors.append(desc);
     }
@@ -2205,7 +2204,7 @@ public:
         // ---------------------------------------------------------------
         // get descriptor that matches label
 
-        for (List<const ::PluginDescriptor*>::Itenerator it = sPluginDescriptors.begin(); it.valid(); it.next())
+        for (List<const NativePluginDescriptor*>::Itenerator it = sPluginDescriptors.begin(); it.valid(); it.next())
         {
             fDescriptor = *it;
 
@@ -2343,83 +2342,83 @@ public:
     };
 
 private:
-    ::PluginHandle   fHandle;
-    ::PluginHandle   fHandle2;
-    ::HostDescriptor fHost;
-    const ::PluginDescriptor* fDescriptor;
+    NativePluginHandle   fHandle;
+    NativePluginHandle   fHandle2;
+    NativeHostDescriptor fHost;
+    const NativePluginDescriptor* fDescriptor;
 
     bool fIsProcessing;
     bool fIsUiVisible;
 
-    float**     fAudioInBuffers;
-    float**     fAudioOutBuffers;
-    uint32_t    fMidiEventCount;
-    ::MidiEvent fMidiEvents[kPluginMaxMidiEvents*2];
+    float**         fAudioInBuffers;
+    float**         fAudioOutBuffers;
+    uint32_t        fMidiEventCount;
+    NativeMidiEvent fMidiEvents[kPluginMaxMidiEvents*2];
 
     int32_t fCurMidiProgs[MAX_MIDI_CHANNELS];
 
     NativePluginMidiData fMidiIn;
     NativePluginMidiData fMidiOut;
 
-    ::TimeInfo fTimeInfo;
+    NativeTimeInfo fTimeInfo;
 
-    static List<const ::PluginDescriptor*> sPluginDescriptors;
+    static List<const NativePluginDescriptor*> sPluginDescriptors;
 
     // -------------------------------------------------------------------
 
     #define handlePtr ((NativePlugin*)handle)
 
-    static uint32_t carla_host_get_buffer_size(::HostHandle handle)
+    static uint32_t carla_host_get_buffer_size(NativeHostHandle handle)
     {
         return handlePtr->handleGetBufferSize();
     }
 
-    static double carla_host_get_sample_rate(::HostHandle handle)
+    static double carla_host_get_sample_rate(NativeHostHandle handle)
     {
         return handlePtr->handleGetSampleRate();
     }
 
-    static bool carla_host_is_offline(::HostHandle handle)
+    static bool carla_host_is_offline(NativeHostHandle handle)
     {
         return handlePtr->handleIsOffline();
     }
 
-    static const ::TimeInfo* carla_host_get_time_info(::HostHandle handle)
+    static const NativeTimeInfo* carla_host_get_time_info(NativeHostHandle handle)
     {
         return handlePtr->handleGetTimeInfo();
     }
 
-    static bool carla_host_write_midi_event(::HostHandle handle, const ::MidiEvent* event)
+    static bool carla_host_write_midi_event(NativeHostHandle handle, const NativeMidiEvent* event)
     {
         return handlePtr->handleWriteMidiEvent(event);
     }
 
-    static void carla_host_ui_parameter_changed(::HostHandle handle, uint32_t index, float value)
+    static void carla_host_ui_parameter_changed(NativeHostHandle handle, uint32_t index, float value)
     {
         handlePtr->handleUiParameterChanged(index, value);
     }
 
-    static void carla_host_ui_custom_data_changed(::HostHandle handle, const char* key, const char* value)
+    static void carla_host_ui_custom_data_changed(NativeHostHandle handle, const char* key, const char* value)
     {
         handlePtr->handleUiCustomDataChanged(key, value);
     }
 
-    static void carla_host_ui_closed(::HostHandle handle)
+    static void carla_host_ui_closed(NativeHostHandle handle)
     {
         handlePtr->handleUiClosed();
     }
 
-    static const char* carla_host_ui_open_file(::HostHandle handle, bool isDir, const char* title, const char* filter)
+    static const char* carla_host_ui_open_file(NativeHostHandle handle, bool isDir, const char* title, const char* filter)
     {
         return handlePtr->handleUiOpenFile(isDir, title, filter);
     }
 
-    static const char* carla_host_ui_save_file(::HostHandle handle, bool isDir, const char* title, const char* filter)
+    static const char* carla_host_ui_save_file(NativeHostHandle handle, bool isDir, const char* title, const char* filter)
     {
         return handlePtr->handleUiSaveFile(isDir, title, filter);
     }
 
-    static intptr_t carla_host_dispatcher(::HostHandle handle, ::HostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
+    static intptr_t carla_host_dispatcher(NativeHostHandle handle, NativeHostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
     {
         return handlePtr->handleDispatcher(opcode, index, value, ptr, opt);
     }
@@ -2429,13 +2428,13 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NativePlugin)
 };
 
-List<const ::PluginDescriptor*> NativePlugin::sPluginDescriptors;
+List<const NativePluginDescriptor*> NativePlugin::sPluginDescriptors;
 
 static const NativePlugin::ScopedInitializer _si;
 
 CARLA_BACKEND_END_NAMESPACE
 
-void carla_register_native_plugin(const PluginDescriptor* desc)
+void carla_register_native_plugin(const NativePluginDescriptor* desc)
 {
     CARLA_BACKEND_USE_NAMESPACE
     NativePlugin::registerPlugin(desc);
@@ -2455,7 +2454,7 @@ size_t CarlaPlugin::getNativePluginCount()
     return NativePlugin::getPluginCount();
 }
 
-const PluginDescriptor* CarlaPlugin::getNativePluginDescriptor(const size_t index)
+const NativePluginDescriptor* CarlaPlugin::getNativePluginDescriptor(const size_t index)
 {
     return NativePlugin::getPluginDescriptor(index);
 }

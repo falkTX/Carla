@@ -23,7 +23,7 @@
 
 // Avoid including extra libs here
 typedef void* lo_address;
-typedef struct _PluginDescriptor PluginDescriptor;
+typedef struct _NativePluginDescriptor NativePluginDescriptor;
 #ifndef LADSPA_RDF_HPP_INCLUDED
 struct LADSPA_RDF_Descriptor;
 #endif
@@ -852,7 +852,7 @@ public:
     };
 
     static size_t getNativePluginCount();
-    static const PluginDescriptor* getNativePluginDescriptor(const size_t index);
+    static const NativePluginDescriptor* getNativePluginDescriptor(const size_t index);
 
     static CarlaPlugin* newNative(const Initializer& init);
     static CarlaPlugin* newBridge(const Initializer& init, const BinaryType btype, const PluginType ptype, const char* const bridgeBinary);

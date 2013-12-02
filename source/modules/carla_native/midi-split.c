@@ -20,20 +20,20 @@
 
 // -----------------------------------------------------------------------
 
-static PluginHandle midiSplit_instantiate(const HostDescriptor* host)
+static NativePluginHandle midiSplit_instantiate(const NativeHostDescriptor* host)
 {
     // use HostDescriptor as PluginHandle
-    return (PluginHandle)host;
+    return (NativePluginHandle)host;
 }
 
-static void midiSplit_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
+static void midiSplit_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
-    const HostDescriptor* const host = (const HostDescriptor*)handle;
-    MidiEvent tmpEvent;
+    const NativeHostDescriptor* const host = (const NativeHostDescriptor*)handle;
+    NativeMidiEvent tmpEvent;
 
     for (uint32_t i=0; i < midiEventCount; ++i)
     {
-        const MidiEvent* const midiEvent = &midiEvents[i];
+        const NativeMidiEvent* const midiEvent = &midiEvents[i];
 
         const uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent->data);
         const uint8_t channel = MIDI_GET_CHANNEL_FROM_DATA(midiEvent->data);
@@ -62,7 +62,7 @@ static void midiSplit_process(PluginHandle handle, float** inBuffer, float** out
 
 // -----------------------------------------------------------------------
 
-static const PluginDescriptor midiSplitDesc = {
+static const NativePluginDescriptor midiSplitDesc = {
     .category  = PLUGIN_CATEGORY_UTILITY,
     .hints     = PLUGIN_IS_RTSAFE,
     .supports  = PLUGIN_SUPPORTS_EVERYTHING,

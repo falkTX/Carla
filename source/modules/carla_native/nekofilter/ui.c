@@ -69,7 +69,7 @@
 
 struct control
 {
-  const HostDescriptor* host;
+  const NativeHostDescriptor* host;
 
   bool running;  /* true if UI launched and 'exiting' not received */
   bool visible;  /* true if 'show' sent */
@@ -365,7 +365,7 @@ static bool do_fork(const char * argv[6], int* ret)
 static
 struct control*
 nekoui_instantiate(
-  const HostDescriptor* host)
+  const NativeHostDescriptor* host)
 {
   struct control * control_ptr;
   char * filename;

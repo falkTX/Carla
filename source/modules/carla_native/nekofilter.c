@@ -26,10 +26,10 @@
 
 // -----------------------------------------------------------------------
 
-static const PluginDescriptor nekofilterDesc = {
+static const NativePluginDescriptor nekofilterDesc = {
     .category  = PLUGIN_CATEGORY_FILTER,
 #ifdef WANT_UI
-    .hints     = PLUGIN_IS_RTSAFE|PLUGIN_HAS_GUI,
+    .hints     = PLUGIN_IS_RTSAFE|PLUGIN_HAS_UI,
 #else
     .hints     = PLUGIN_IS_RTSAFE,
 #endif

@@ -508,9 +508,10 @@ CARLA_EXPORT const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(u
 CARLA_EXPORT unsigned int carla_get_internal_plugin_count();
 
 /*!
- * Get information about the internal plugin \a internalPluginId.
+ * Get information about an internal plugin.
+ * @param index Internal plugin Id
  */
-CARLA_EXPORT const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int internalPluginId);
+CARLA_EXPORT const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int index);
 
 #ifdef __cplusplus
 /*!

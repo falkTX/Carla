@@ -20,12 +20,12 @@
 
 #include <smf.h>
 
-class MidiFilePlugin : public PluginClass,
+class MidiFilePlugin : public NativePluginClass,
                        public AbstractMidiPlayer
 {
 public:
-    MidiFilePlugin(const HostDescriptor* const host)
-        : PluginClass(host),
+    MidiFilePlugin(const NativeHostDescriptor* const host)
+        : NativePluginClass(host),
           fMidiOut(this),
           fWasPlayingBefore(false)
     {
@@ -53,9 +53,9 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(float**, float**, const uint32_t frames, const MidiEvent* const, const uint32_t) override
+    void process(float**, float**, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
     {
-        const TimeInfo* const timePos(getTimeInfo());
+        const NativeTimeInfo* const timePos(getTimeInfo());
 
         if (timePos->playing)
         {
@@ -63,7 +63,7 @@ protected:
         }
         else if (fWasPlayingBefore)
         {
-            MidiEvent midiEvent;
+            NativeMidiEvent midiEvent;
 
             midiEvent.port    = 0;
             midiEvent.time    = 0;
@@ -76,7 +76,7 @@ protected:
             for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
             {
                 midiEvent.data[0] = MIDI_STATUS_CONTROL_CHANGE+i;
-                PluginClass::writeMidiEvent(&midiEvent);
+                NativePluginClass::writeMidiEvent(&midiEvent);
             }
 
             carla_stdout("WAS PLAYING BEFORE, NOW STOPPED");
@@ -106,7 +106,7 @@ protected:
 
     void writeMidiEvent(const uint32_t timePosFrame, const RawMidiEvent* const event) override
     {
-        MidiEvent midiEvent;
+        NativeMidiEvent midiEvent;
 
         midiEvent.port    = 0;
         midiEvent.time    = event->time-timePosFrame;
@@ -116,7 +116,7 @@ protected:
         midiEvent.data[3] = event->data[3];
         midiEvent.size    = event->size;
 
-        PluginClass::writeMidiEvent(&midiEvent);
+        NativePluginClass::writeMidiEvent(&midiEvent);
     }
 
 private:
@@ -218,10 +218,10 @@ private:
 
 // -----------------------------------------------------------------------
 
-static const PluginDescriptor midifileDesc = {
+static const NativePluginDescriptor midifileDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_GUI|PLUGIN_NEEDS_UI_OPEN_SAVE),
-    /* supports  */ static_cast<PluginSupports>(0x0),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_UI|PLUGIN_NEEDS_UI_OPEN_SAVE),
+    /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 0,
     /* audioOuts */ 0,
     /* midiIns   */ 0,

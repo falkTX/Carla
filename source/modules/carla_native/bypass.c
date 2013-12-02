@@ -21,13 +21,13 @@
 
 // -----------------------------------------------------------------------
 
-static PluginHandle bypass_instantiate(const HostDescriptor* host)
+static NativePluginHandle bypass_instantiate(const NativeHostDescriptor* host)
 {
     // dummy, return non-NULL
-    return (PluginHandle)host;
+    return (NativePluginHandle)host;
 }
 
-static void bypass_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
+static void bypass_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
     memcpy(outBuffer[0], inBuffer[0], sizeof(float)*frames);
     return;
@@ -40,7 +40,7 @@ static void bypass_process(PluginHandle handle, float** inBuffer, float** outBuf
 
 // -----------------------------------------------------------------------
 
-static const PluginDescriptor bypassDesc = {
+static const NativePluginDescriptor bypassDesc = {
     .category  = PLUGIN_CATEGORY_NONE,
     .hints     = PLUGIN_IS_RTSAFE,
     .supports  = 0x0,

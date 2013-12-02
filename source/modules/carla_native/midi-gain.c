@@ -32,7 +32,7 @@ typedef enum {
 } MidiGainParams;
 
 typedef struct {
-    const HostDescriptor* host;
+    const NativeHostDescriptor* host;
     float gain;
     bool applyNotes;
     bool applyAftertouch;
@@ -41,7 +41,7 @@ typedef struct {
 
 // -----------------------------------------------------------------------
 
-static PluginHandle midiGain_instantiate(const HostDescriptor* host)
+static NativePluginHandle midiGain_instantiate(const NativeHostDescriptor* host)
 {
     MidiGainHandle* const handle = (MidiGainHandle*)malloc(sizeof(MidiGainHandle));
 
@@ -58,12 +58,12 @@ static PluginHandle midiGain_instantiate(const HostDescriptor* host)
 
 #define handlePtr ((MidiGainHandle*)handle)
 
-static void midiGain_cleanup(PluginHandle handle)
+static void midiGain_cleanup(NativePluginHandle handle)
 {
     free(handlePtr);
 }
 
-static uint32_t midiGain_get_parameter_count(PluginHandle handle)
+static uint32_t midiGain_get_parameter_count(NativePluginHandle handle)
 {
     return PARAM_COUNT;
 
@@ -71,12 +71,12 @@ static uint32_t midiGain_get_parameter_count(PluginHandle handle)
     (void)handle;
 }
 
-const Parameter* midiGain_get_parameter_info(PluginHandle handle, uint32_t index)
+const NativeParameter* midiGain_get_parameter_info(NativePluginHandle handle, uint32_t index)
 {
     if (index > PARAM_COUNT)
         return NULL;
 
-    static Parameter param;
+    static NativeParameter param;
 
     param.hints = PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE;
     param.unit  = NULL;
@@ -132,7 +132,7 @@ const Parameter* midiGain_get_parameter_info(PluginHandle handle, uint32_t index
     (void)handle;
 }
 
-static float midiGain_get_parameter_value(PluginHandle handle, uint32_t index)
+static float midiGain_get_parameter_value(NativePluginHandle handle, uint32_t index)
 {
     switch (index)
     {
@@ -149,7 +149,7 @@ static float midiGain_get_parameter_value(PluginHandle handle, uint32_t index)
     }
 }
 
-static void midiGain_set_parameter_value(PluginHandle handle, uint32_t index, float value)
+static void midiGain_set_parameter_value(NativePluginHandle handle, uint32_t index, float value)
 {
     switch (index)
     {
@@ -168,18 +168,18 @@ static void midiGain_set_parameter_value(PluginHandle handle, uint32_t index, fl
     }
 }
 
-static void midiGain_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
+static void midiGain_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
-    const HostDescriptor* const host = handlePtr->host;
+    const NativeHostDescriptor* const host = handlePtr->host;
     const float gain           = handlePtr->gain;
     const bool applyNotes      = handlePtr->applyNotes;
     const bool applyAftertouch = handlePtr->applyAftertouch;
     const bool applyCC         = handlePtr->applyCC;
-    MidiEvent tmpEvent;
+    NativeMidiEvent tmpEvent;
 
     for (uint32_t i=0; i < midiEventCount; ++i)
     {
-        const MidiEvent* const midiEvent = &midiEvents[i];
+        const NativeMidiEvent* const midiEvent = &midiEvents[i];
 
         const uint8_t status = MIDI_GET_STATUS_FROM_DATA(midiEvent->data);
 
@@ -187,7 +187,7 @@ static void midiGain_process(PluginHandle handle, float** inBuffer, float** outB
                                      (applyAftertouch &&  status == MIDI_STATUS_POLYPHONIC_AFTERTOUCH) ||
                                      (applyCC         &&  status == MIDI_STATUS_CONTROL_CHANGE)))
         {
-            memcpy(&tmpEvent, midiEvent, sizeof(MidiEvent));
+            memcpy(&tmpEvent, midiEvent, sizeof(NativeMidiEvent));
 
             float value = (float)midiEvent->data[2] * gain;
 
@@ -214,7 +214,7 @@ static void midiGain_process(PluginHandle handle, float** inBuffer, float** outB
 
 // -----------------------------------------------------------------------
 
-static const PluginDescriptor midiGainDesc = {
+static const NativePluginDescriptor midiGainDesc = {
     .category  = PLUGIN_CATEGORY_UTILITY,
     .hints     = PLUGIN_IS_RTSAFE,
     .supports  = PLUGIN_SUPPORTS_EVERYTHING,

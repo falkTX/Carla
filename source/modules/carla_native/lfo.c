@@ -35,7 +35,7 @@ typedef enum {
 } LfoParams;
 
 typedef struct {
-    const HostDescriptor* host;
+    const NativeHostDescriptor* host;
     int   mode;
     float speed;
     float multiplier;
@@ -45,7 +45,7 @@ typedef struct {
 
 // -----------------------------------------------------------------------
 
-static PluginHandle lfo_instantiate(const HostDescriptor* host)
+static NativePluginHandle lfo_instantiate(const NativeHostDescriptor* host)
 {
     LfoHandle* const handle = (LfoHandle*)malloc(sizeof(LfoHandle));
 
@@ -65,12 +65,12 @@ static PluginHandle lfo_instantiate(const HostDescriptor* host)
 
 #define handlePtr ((LfoHandle*)handle)
 
-static void lfo_cleanup(PluginHandle handle)
+static void lfo_cleanup(NativePluginHandle handle)
 {
     free(handlePtr);
 }
 
-static uint32_t lfo_get_parameter_count(PluginHandle handle)
+static uint32_t lfo_get_parameter_count(NativePluginHandle handle)
 {
     return PARAM_COUNT;
 
@@ -78,13 +78,13 @@ static uint32_t lfo_get_parameter_count(PluginHandle handle)
     (void)handle;
 }
 
-const Parameter* lfo_get_parameter_info(PluginHandle handle, uint32_t index)
+const NativeParameter* lfo_get_parameter_info(NativePluginHandle handle, uint32_t index)
 {
     if (index > PARAM_COUNT)
         return NULL;
 
-    static Parameter param;
-    static ParameterScalePoint paramModes[5];
+    static NativeParameter param;
+    static NativeParameterScalePoint paramModes[5];
 
     param.hints = PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE;
     param.scalePointCount = 0;
@@ -166,7 +166,7 @@ const Parameter* lfo_get_parameter_info(PluginHandle handle, uint32_t index)
     (void)handle;
 }
 
-static float lfo_get_parameter_value(PluginHandle handle, uint32_t index)
+static float lfo_get_parameter_value(NativePluginHandle handle, uint32_t index)
 {
     switch (index)
     {
@@ -185,7 +185,7 @@ static float lfo_get_parameter_value(PluginHandle handle, uint32_t index)
     }
 }
 
-static void lfo_set_parameter_value(PluginHandle handle, uint32_t index, float value)
+static void lfo_set_parameter_value(NativePluginHandle handle, uint32_t index, float value)
 {
     switch (index)
     {
@@ -207,10 +207,10 @@ static void lfo_set_parameter_value(PluginHandle handle, uint32_t index, float v
     }
 }
 
-static void lfo_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
+static void lfo_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
-    const HostDescriptor* const host     = handlePtr->host;
-    const TimeInfo*       const timeInfo = host->get_time_info(host->handle);
+    const NativeHostDescriptor* const host     = handlePtr->host;
+    const NativeTimeInfo*       const timeInfo = host->get_time_info(host->handle);
 
     if (! timeInfo->playing)
        return;
@@ -266,7 +266,7 @@ static void lfo_process(PluginHandle handle, float** inBuffer, float** outBuffer
 
 // -----------------------------------------------------------------------
 
-static const PluginDescriptor lfoDesc = {
+static const NativePluginDescriptor lfoDesc = {
     .category  = PLUGIN_CATEGORY_UTILITY,
     .hints     = PLUGIN_IS_RTSAFE,
     .supports  = 0x0,
