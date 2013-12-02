@@ -889,16 +889,16 @@ class CarlaPluginInfo(Structure):
         # @see PluginOptions
         ("optionsAvailable", c_uint),
 
-        # Plugin options currently enabled.\n
+        # Plugin options currently enabled.
         # Some options are enabled but not available, which means they will always be on.
         # @see PluginOptions
         ("optionsEnabled", c_uint),
 
-        # Plugin filename.\n
+        # Plugin filename.
         # This can be the plugin binary or resource file.
         ("filename", c_char_p),
 
-        # Plugin name.\n
+        # Plugin name.
         # This name is unique within a Carla instance.
         # @see carla_get_real_plugin_name()
         ("name", c_char_p),
@@ -912,15 +912,15 @@ class CarlaPluginInfo(Structure):
         # Plugin copyright/license.
         ("copyright", c_char_p),
 
-        # Icon name for this plugin, in lowercase.\n
+        # Icon name for this plugin, in lowercase.
         # Default is "plugin".
         ("iconName", c_char_p),
 
-        # Patchbay client Id for this plugin.\n
+        # Patchbay client Id for this plugin.
         # When 0, Id is considered invalid or unused.
         ("patchbayClientId", c_int),
 
-        # Plugin unique Id.\n
+        # Plugin unique Id.
         # This Id is dependant on the plugin type and may sometimes be 0.
         ("uniqueId", c_long)
     ]
@@ -1104,12 +1104,18 @@ class Host(object):
         object.__init__(self)
         self._init(libName)
 
-    # ...
-    def get_extended_license_text(self):
-        return self.lib.carla_get_extended_license_text()
+    # Get the complete license text of used third-party code and features.
+    # Returned string is in basic html format.
+    def get_complete_license_text(self):
+        return self.lib.carla_get_complete_license_text()
 
-    def get_supported_file_types(self):
-        return self.lib.carla_get_supported_file_types()
+    # Get all the supported file types in carla_load_filename().
+    # Returned string uses this syntax:
+    # @code
+    # "*.ext1;*.ext2;*.ext3"
+    # @endcode
+    def get_supported_file_extensions(self):
+        return self.lib.carla_get_supported_file_extensions()
 
     def get_engine_driver_count(self):
         return self.lib.carla_get_engine_driver_count()
@@ -1373,11 +1379,13 @@ class Host(object):
     def _init(self, libName):
         self.lib = cdll.LoadLibrary(libName)
 
-        self.lib.carla_get_extended_license_text.argtypes = None
-        self.lib.carla_get_extended_license_text.restype = c_char_p
+        self.lib.carla_get_complete_license_text.argtypes = None
+        self.lib.carla_get_complete_license_text.restype = c_char_p
 
-        self.lib.carla_get_supported_file_types.argtypes = None
-        self.lib.carla_get_supported_file_types.restype = c_char_p
+        self.lib.carla_get_supported_file_extensions.argtypes = None
+        self.lib.carla_get_supported_file_extensions.restype = c_char_p
+
+        return
 
         self.lib.carla_get_engine_driver_count.argtypes = None
         self.lib.carla_get_engine_driver_count.restype = c_uint

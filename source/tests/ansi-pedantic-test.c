@@ -18,11 +18,37 @@
 #include "CarlaBackend.h"
 #include "CarlaHost.h"
 
+#include <stdio.h>
+
 int main(int argc, char* argv[])
 {
+    ParameterData a;
+    ParameterRanges b;
+    MidiProgramData c;
+    CustomData d;
+    EngineDriverDeviceInfo e;
+
+    CarlaPluginInfo f;
+    CarlaNativePluginInfo g;
+    CarlaPortCountInfo h;
+    CarlaParameterInfo i;
+    CarlaScalePointInfo j;
+    CarlaTransportInfo k;
+
+    const char* licenseText;
+    const char* fileExtensions;
+
+    licenseText = carla_get_complete_license_text();
+    printf("LICENSE:\n%s\n", licenseText);
+
+    fileExtensions = carla_get_supported_file_extensions();
+    printf("FILE EXTENSIONS:\n%s\n", fileExtensions);
+
     return 0;
 
     /* unused */
     (void)argc;
     (void)argv;
+    (void)a; (void)b; (void)c; (void)d; (void)e;
+    (void)f; (void)g; (void)h; (void)i; (void)j; (void)k;
 }

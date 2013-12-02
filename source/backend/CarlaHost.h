@@ -36,6 +36,7 @@ using CarlaBackend::MidiProgramData;
 using CarlaBackend::CustomData;
 using CarlaBackend::EngineDriverDeviceInfo;
 using CarlaBackend::CarlaEngine;
+using CarlaBackend::CarlaPlugin;
 #endif
 
 /*!
@@ -472,16 +473,16 @@ typedef struct _CarlaTransportInfo {
  * Get the complete license text of used third-party code and features.\n
  * Returned string is in basic html format.
  */
-CARLA_EXPORT const char* carla_get_extended_license_text();
+CARLA_EXPORT const char* carla_get_complete_license_text();
 
 /*!
- * Get the supported file types in carla_load_filename().\n
+ * Get all the supported file types in carla_load_filename().\n
  * Returned string uses this syntax:
- * \code
+ * @code
  * "*.ext1;*.ext2;*.ext3"
- * \endcode
+ * @endcode
  */
-CARLA_EXPORT const char* carla_get_supported_file_types();
+CARLA_EXPORT const char* carla_get_supported_file_extensions();
 
 /*!
  * Get how many engine drivers are available to use.
@@ -947,4 +948,4 @@ CARLA_EXPORT const char* carla_get_host_osc_url_udp();
 
 /** @} */
 
-#endif // CARLA_HOST_H_INCLUDED
+#endif /* CARLA_HOST_H_INCLUDED */

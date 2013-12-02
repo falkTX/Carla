@@ -18,7 +18,7 @@
 #ifndef CARLA_ENGINE_HPP_INCLUDED
 #define CARLA_ENGINE_HPP_INCLUDED
 
-#include "CarlaBackend.hpp"
+#include "CarlaBackend.h"
 #include "CarlaMIDI.h"
 #include "CarlaString.hpp"
 

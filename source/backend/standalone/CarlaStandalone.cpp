@@ -22,31 +22,17 @@
 #include "CarlaEngine.hpp"
 #include "CarlaPlugin.hpp"
 
-#include "CarlaBackendUtils.hpp"
-#include "CarlaOscUtils.hpp"
-#include "CarlaNative.h"
+//#include "CarlaBackendUtils.hpp"
+//#include "CarlaOscUtils.hpp"
+//#include "CarlaNative.h"
 
 #ifdef USE_JUCE
 # include "juce_gui_basics.h"
 #endif
 
-//#include "CarlaLogThread.hpp"
-//#if ! (defined(DEBUG) || defined(WANT_LOGS) || defined(BUILD_ANSI_TEST))
-//# define WANT_LOGS
-//#endif
-
 namespace CB = CarlaBackend;
 
-using CB::CarlaEngine;
-using CB::CarlaPlugin;
-using CB::EngineCallbackFunc;
-using CB::EngineOptions;
-using CB::EngineTimeInfo;
-using CB::FileCallbackFunc;
-
 #ifdef USE_JUCE
-using namespace juce;
-
 // -----------------------------------------------------------------------
 // Juce Message Thread
 
@@ -95,17 +81,22 @@ juce_ImplementSingleton(JuceMessageThread)
 // Single, standalone engine
 
 struct CarlaBackendStandalone {
-    EngineCallbackFunc callback;
-    void*              callbackPtr;
+    CarlaEngine*       engine;
+    EngineCallbackFunc engineCallback;
+    void*              engineCallbackPtr;
+    //EngineOptions      engineOptions;
 
-    CarlaEngine*  engine;
-    CarlaString   lastError;
-    EngineOptions options;
+    FileCallbackFunc fileCallback;
+    void*            fileCallbackPtr;
+
+    CarlaString lastError;
 
     CarlaBackendStandalone()
-        : callback(nullptr),
-          callbackPtr(nullptr),
-          engine(nullptr) {}
+        : engine(nullptr),
+          engineCallback(nullptr),
+          engineCallbackPtr(nullptr),
+          fileCallback(nullptr),
+          fileCallbackPtr(nullptr) {}
 
     ~CarlaBackendStandalone()
     {
@@ -115,52 +106,35 @@ struct CarlaBackendStandalone {
 #endif
     }
 
+#ifdef USE_JUCE
     void init()
     {
-#ifdef USE_JUCE
         JUCE_AUTORELEASEPOOL
 
         initialiseJuce_GUI();
         JuceMessageThread::getInstance();
-#endif
     }
-
-    void idle() {}
 
     void close()
     {
-#ifdef USE_JUCE
         JUCE_AUTORELEASEPOOL
 
         JuceMessageThread::deleteInstance();
         shutdownJuce_GUI();
-#endif
     }
+#endif
 
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaBackendStandalone)
 };
 
-struct CarlaBackendFileHandler {
-    FileCallbackFunc callback;
-    void*            callbackPtr;
-
-    CarlaBackendFileHandler()
-        : callback(nullptr),
-          callbackPtr(nullptr) {}
-};
-
-//#ifdef WANT_LOGS
-//static CarlaLogThread gLogThread;
-//#endif
-static CarlaBackendStandalone  gStandalone;
-static CarlaBackendFileHandler gFileHandler;
+static CarlaBackendStandalone gStandalone;
 
 // -------------------------------------------------------------------------------------------------------------------
 // API
 
-const char* carla_get_extended_license_text()
+const char* carla_get_complete_license_text()
 {
-    carla_debug("carla_get_extended_license_text()");
+    carla_debug("carla_get_complete_license_text()");
 
     static CarlaString retText;
 
@@ -205,23 +179,24 @@ const char* carla_get_extended_license_text()
         text2 += "<li>LinuxSampler library for GIG and SFZ support*, http://www.linuxsampler.org/</li>";
 #endif
 
+#ifdef WANT_NATIVE
         // Internal plugins
-#ifdef WANT_OPENGL
+# ifdef WANT_OPENGL
         text3 += "<li>DISTRHO Mini-Series plugin code, based on LOSER-dev suite by Michael Gruhn</li>";
-#endif
+# endif
         text3 += "<li>NekoFilter plugin code, based on lv2fil by Nedko Arnaudov and Fons Adriaensen</li>";
         //text1 += "<li>SunVox library file support, http://www.warmplace.ru/soft/sunvox/</li>"; // unfinished
-
-#ifdef WANT_AUDIOFILE
+# ifdef WANT_AUDIOFILE
         text3 += "<li>AudioDecoder library for Audio file support, by Robin Gareus</li>";
-#endif
-#ifdef WANT_MIDIFILE
+# endif
+# ifdef WANT_MIDIFILE
         text3 += "<li>LibSMF library for MIDI file support, http://libsmf.sourceforge.net/</li>";
-#endif
-#ifdef WANT_ZYNADDSUBFX
+# endif
+# ifdef WANT_ZYNADDSUBFX
         text3 += "<li>ZynAddSubFX plugin code, http://zynaddsubfx.sf.net/</li>";
-# ifdef WANT_ZYNADDSUBFX_UI
+#  ifdef WANT_ZYNADDSUBFX_UI
         text3 += "<li>ZynAddSubFX UI using NTK, http://non.tuxfamily.org/wiki/NTK</li>";
+#  endif
 # endif
 #endif
 
@@ -243,8 +218,8 @@ const char* carla_get_extended_license_text()
         text5 += "<li>Real-time memory pool, by Nedko Arnaudov</li>";
         text5 += "</ul>";
 
-        // LinuxSampler GPL exception
 #ifdef WANT_LINUXSAMPLER
+        // LinuxSampler GPL exception
         text5 += "<p>(*) Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors.</p>";
 #endif
 
@@ -254,9 +229,9 @@ const char* carla_get_extended_license_text()
     return retText;
 }
 
-const char* carla_get_supported_file_types()
+const char* carla_get_supported_file_extensions()
 {
-    carla_debug("carla_get_supported_file_types()");
+    carla_debug("carla_get_supported_file_extensions()");
 
     static CarlaString retText;
 
@@ -321,13 +296,14 @@ const char* const* carla_get_engine_driver_device_names(unsigned int index)
     return CarlaEngine::getDriverDeviceNames(index);
 }
 
-const CarlaEngineDriverDeviceInfo* carla_get_engine_driver_device_info(unsigned int index, const char* deviceName)
+const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(unsigned int index, const char* deviceName)
 {
     carla_debug("carla_get_engine_driver_device_info(%i, \"%s\")", index, deviceName);
 
     return CarlaEngine::getDriverDeviceInfo(index, deviceName);
 }
 
+#if 0
 // -------------------------------------------------------------------------------------------------------------------
 
 unsigned int carla_get_internal_plugin_count()
@@ -2245,6 +2221,18 @@ void carla_nsm_reply_save()
 
     gCarlaNSM.replySave();
 }
+#endif
+
+// -------------------------------------------------------------------------------------------------------------------
+
+//#include "CarlaLogThread.hpp"
+//#if ! (defined(DEBUG) || defined(WANT_LOGS) || defined(BUILD_ANSI_TEST))
+//# define WANT_LOGS
+//#endif
+
+//#ifdef WANT_LOGS
+//static CarlaLogThread gLogThread;
+//#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 

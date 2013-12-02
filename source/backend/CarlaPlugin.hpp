@@ -18,7 +18,7 @@
 #ifndef CARLA_PLUGIN_HPP_INCLUDED
 #define CARLA_PLUGIN_HPP_INCLUDED
 
-#include "CarlaBackend.hpp"
+#include "CarlaBackend.h"
 #include "CarlaString.hpp"
 
 // Avoid including extra libs here
