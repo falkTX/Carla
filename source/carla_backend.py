@@ -777,7 +777,7 @@ class MidiProgramData(Structure):
         ("name", c_char_p)
     ]
 
-# Custom data, for saving key:value 'dictionaries'.
+# Custom data, used for saving key:value 'dictionaries'.
 class CustomData(Structure):
     _fields_ = [
         # Value type, in URI form.
@@ -871,80 +871,181 @@ FILE_CALLBACK_SAVE = 2
 # @see FileCallbackOpcode
 FileCallbackFunc = CFUNCTYPE(c_char_p, c_void_p, c_enum, c_bool, c_char_p, c_char_p)
 
+# Information about a loaded plugin.
+# @see carla_get_plugin_info()
 class CarlaPluginInfo(Structure):
     _fields_ = [
+        # Plugin type.
         ("type", c_enum),
+
+        # Plugin category.
         ("category", c_enum),
+
+        # Plugin hints.
+        # @see PluginHints
         ("hints", c_uint),
+
+        # Plugin options available for the user to change.
+        # @see PluginOptions
         ("optionsAvailable", c_uint),
+
+        # Plugin options currently enabled.\n
+        # Some options are enabled but not available, which means they will always be on.
+        # @see PluginOptions
         ("optionsEnabled", c_uint),
-        ("binary", c_char_p),
+
+        # Plugin filename.\n
+        # This can be the plugin binary or resource file.
+        ("filename", c_char_p),
+
+        # Plugin name.\n
+        # This name is unique within a Carla instance.
+        # @see carla_get_real_plugin_name()
         ("name", c_char_p),
+
+        # Plugin label or URI.
         ("label", c_char_p),
+
+        # Plugin author/maker.
         ("maker", c_char_p),
+
+        # Plugin copyright/license.
         ("copyright", c_char_p),
+
+        # Icon name for this plugin, in lowercase.\n
+        # Default is "plugin".
         ("iconName", c_char_p),
+
+        # Patchbay client Id for this plugin.\n
+        # When 0, Id is considered invalid or unused.
         ("patchbayClientId", c_int),
+
+        # Plugin unique Id.\n
+        # This Id is dependant on the plugin type and may sometimes be 0.
         ("uniqueId", c_long)
     ]
 
+# Information about an internal Carla plugin.
+# @see carla_get_internal_plugin_info()
 class CarlaNativePluginInfo(Structure):
     _fields_ = [
+        # Plugin category.
         ("category", c_enum),
+
+        # Plugin hints.
+        # @see PluginHints
         ("hints", c_uint),
+
+        # Number of audio inputs.
         ("audioIns", c_uint32),
+
+        # Number of audio outputs.
         ("audioOuts", c_uint32),
+
+        # Number of MIDI inputs.
         ("midiIns", c_uint32),
+
+        # Number of MIDI outputs.
         ("midiOuts", c_uint32),
+
+        # Number of input parameters.
         ("parameterIns", c_uint32),
+
+        # Number of output parameters.
         ("parameterOuts", c_uint32),
+
+        # Plugin name.
         ("name", c_char_p),
+
+        # Plugin label.
         ("label", c_char_p),
+
+        # Plugin author/maker.
         ("maker", c_char_p),
+
+        # Plugin copyright/license.
         ("copyright", c_char_p)
     ]
 
+# Port count information, used for Audio and MIDI ports and parameters.
+# @see carla_get_audio_port_count_info()
+# @see carla_get_midi_port_count_info()
+# @see carla_get_parameter_count_info()
 class CarlaPortCountInfo(Structure):
     _fields_ = [
+        # Number of inputs.
         ("ins", c_uint32),
+
+        # Number of outputs.
         ("outs", c_uint32),
+
+        # Total number of ports.
         ("total", c_uint32)
     ]
 
+# Parameter information.
+# @see carla_get_parameter_info()
 class CarlaParameterInfo(Structure):
     _fields_ = [
+        # Parameter name.
         ("name", c_char_p),
+
+        # Parameter symbol.
         ("symbol", c_char_p),
+
+        # Parameter unit.
         ("unit", c_char_p),
+
+        # Number of scale points.
+        # @see CarlaScalePointInfo
         ("scalePointCount", c_uint32)
     ]
 
+# Parameter scale point information.
+# @see carla_get_parameter_scalepoint_info()
 class CarlaScalePointInfo(Structure):
     _fields_ = [
+        # Scale point value.
         ("value", c_float),
+
+        # Scale point label.
         ("label", c_char_p)
     ]
 
+# Transport information.
+# @see carla_get_transport_info()
 class CarlaTransportInfo(Structure):
     _fields_ = [
+        # Wherever transport is playing.
         ("playing", c_bool),
+
+        # Current transport frame.
         ("frame", c_uint64),
+
+        # Bar
         ("bar", c_int32),
+
+        # Beat
         ("beat", c_int32),
+
+        # Tick
         ("tick", c_int32),
+
+        # Beats per minute.
         ("bpm", c_double)
     ]
 
 # ------------------------------------------------------------------------------------------------------------
 # Carla Host API (Python compatible stuff)
 
+# @see CarlaPluginInfo
 PyCarlaPluginInfo = {
     'type': PLUGIN_NONE,
     'category': PLUGIN_CATEGORY_NONE,
     'hints': 0x0,
     'optionsAvailable': 0x0,
     'optionsEnabled': 0x0,
-    'binary': None,
+    'filename': None,
     'name':  None,
     'label': None,
     'maker': None,
@@ -954,12 +1055,14 @@ PyCarlaPluginInfo = {
     'uniqueId': 0
 }
 
+# @see CarlaPortCountInfo
 PyCarlaPortCountInfo = {
     'ins': 0,
     'outs': 0,
     'total': 0
 }
 
+# @see CarlaParameterInfo
 PyCarlaParameterInfo = {
     'name': None,
     'symbol': None,
@@ -967,11 +1070,13 @@ PyCarlaParameterInfo = {
     'scalePointCount': 0,
 }
 
+# @see CarlaScalePointInfo
 PyCarlaScalePointInfo = {
     'value': 0.0,
     'label': None
 }
 
+# @see CarlaTransportInfo
 PyCarlaTransportInfo = {
     "playing": False,
     "frame": 0,

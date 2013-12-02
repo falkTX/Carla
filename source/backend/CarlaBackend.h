@@ -1206,7 +1206,7 @@ typedef struct _MidiProgramData {
 } MidiProgramData;
 
 /*!
- * Custom data, for saving key:value 'dictionaries'.
+ * Custom data, used for saving key:value 'dictionaries'.
  */
 typedef struct _CustomData {
     /*!

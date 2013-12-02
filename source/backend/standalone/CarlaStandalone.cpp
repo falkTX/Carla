@@ -18,7 +18,7 @@
 // TODO:
 // Check carla_stderr2("Engine is not running"); <= prepend func name and args
 
-#include "CarlaHost.hpp"
+#include "CarlaHost.h"
 #include "CarlaEngine.hpp"
 #include "CarlaPlugin.hpp"
 

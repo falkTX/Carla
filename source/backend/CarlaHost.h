@@ -43,12 +43,10 @@ using CarlaBackend::CarlaEngine;
  *
  * The Carla Host API.
  *
- * This API makes it possible to use the Carla Backend in a Host application.\n
- * All functions are C-compatible, making it possible to use this API in non-C++ hosts.
+ * This API makes it possible to use the Carla Backend in a standalone host application..
  *
  * None of the returned values in this API calls need to be deleted or free'd.\n
  * When a function fails (returns false or NULL), use carla_get_last_error() to find out what went wrong.
- *
  * @{
  */
 
@@ -59,7 +57,7 @@ using CarlaBackend::CarlaEngine;
  */
 typedef enum {
     /*!
-     * Debug.
+     * Debug.\n
      * This opcode is undefined and used only for testing purposes.
      */
     FILE_CALLBACK_DEBUG = 0,
@@ -83,32 +81,96 @@ typedef enum {
 typedef const char* (*FileCallbackFunc)(void* ptr, FileCallbackOpcode action, bool isDir, const char* title, const char* filter);
 
 /*!
- * Plugin information.
+ * Information about a loaded plugin.
  * @see carla_get_plugin_info()
  */
 typedef struct _CarlaPluginInfo {
+    /*!
+     * Plugin type.
+     */
     PluginType type;
+
+    /*!
+     * Plugin category.
+     */
     PluginCategory category;
+
+    /*!
+     * Plugin hints.
+     * @see PluginHints
+     */
     unsigned int hints;
+
+    /*!
+     * Plugin options available for the user to change.
+     * @see PluginOptions
+     */
     unsigned int optionsAvailable;
+
+    /*!
+     * Plugin options currently enabled.\n
+     * Some options are enabled but not available, which means they will always be on.
+     * @see PluginOptions
+     */
     unsigned int optionsEnabled;
-    const char* binary;
+
+    /*!
+     * Plugin filename.\n
+     * This can be the plugin binary or resource file.
+     */
+    const char* filename;
+
+    /*!
+     * Plugin name.\n
+     * This name is unique within a Carla instance.
+     * @see carla_get_real_plugin_name()
+     */
     const char* name;
+
+    /*!
+     * Plugin label or URI.
+     */
     const char* label;
+
+    /*!
+     * Plugin author/maker.
+     */
     const char* maker;
+
+    /*!
+     * Plugin copyright/license.
+     */
     const char* copyright;
+
+    /*!
+     * Icon name for this plugin, in lowercase.\n
+     * Default is "plugin".
+     */
     const char* iconName;
+
+    /*!
+     * Patchbay client Id for this plugin.\n
+     * When 0, Id is considered invalid or unused.
+     */
     int patchbayClientId;
+
+    /*!
+     * Plugin unique Id.\n
+     * This Id is dependant on the plugin type and may sometimes be 0.
+     */
     long uniqueId;
 
 #ifdef __cplusplus
+    /*!
+     * C++ constructor.
+     */
     _CarlaPluginInfo()
         : type(CarlaBackend::PLUGIN_NONE),
           category(CarlaBackend::PLUGIN_CATEGORY_NONE),
           hints(0x0),
           optionsAvailable(0x0),
           optionsEnabled(0x0),
-          binary(nullptr),
+          filename(nullptr),
           name(nullptr),
           label(nullptr),
           maker(nullptr),
@@ -117,6 +179,9 @@ typedef struct _CarlaPluginInfo {
           patchbayClientId(0),
           uniqueId(0) {}
 
+    /*!
+     * C++ destructor.
+     */
     ~_CarlaPluginInfo()
     {
         if (label != nullptr)
@@ -139,24 +204,75 @@ typedef struct _CarlaPluginInfo {
 } CarlaPluginInfo;
 
 /*!
- * Native plugin information.
+ * Information about an internal Carla plugin.
  * @see carla_get_internal_plugin_info()
  */
 typedef struct _CarlaNativePluginInfo {
+    /*!
+     * Plugin category.
+     */
     PluginCategory category;
+
+    /*!
+     * Plugin hints.
+     * @see PluginHints
+     */
     unsigned int hints;
+
+    /*!
+     * Number of audio inputs.
+     */
     uint32_t audioIns;
+
+    /*!
+     * Number of audio outputs.
+     */
     uint32_t audioOuts;
+
+    /*!
+     * Number of MIDI inputs.
+     */
     uint32_t midiIns;
+
+    /*!
+     * Number of MIDI outputs.
+     */
     uint32_t midiOuts;
+
+    /*!
+     * Number of input parameters.
+     */
     uint32_t parameterIns;
+
+    /*!
+     * Number of output parameters.
+     */
     uint32_t parameterOuts;
+
+    /*!
+     * Plugin name.
+     */
     const char* name;
+
+    /*!
+     * Plugin label.
+     */
     const char* label;
+
+    /*!
+     * Plugin author/maker.
+     */
     const char* maker;
+
+    /*!
+     * Plugin copyright/license.
+     */
     const char* copyright;
 
 #ifdef __cplusplus
+    /*!
+     * C++ constructor.
+     */
     _CarlaNativePluginInfo()
         : category(CarlaBackend::PLUGIN_CATEGORY_NONE),
           hints(0x0),
@@ -180,11 +296,25 @@ typedef struct _CarlaNativePluginInfo {
  * @see carla_get_parameter_count_info()
  */
 typedef struct _CarlaPortCountInfo {
+    /*!
+     * Number of inputs.
+     */
     uint32_t ins;
+
+    /*!
+     * Number of outputs.
+     */
     uint32_t outs;
+
+    /*!
+     * Total number of ports.
+     */
     uint32_t total;
 
 #ifdef __cplusplus
+    /*!
+     * C++ constructor.
+     */
     _CarlaPortCountInfo()
         : ins(0),
           outs(0),
@@ -197,18 +327,40 @@ typedef struct _CarlaPortCountInfo {
  * @see carla_get_parameter_info()
  */
 typedef struct _CarlaParameterInfo {
+    /*!
+     * Parameter name.
+     */
     const char* name;
+
+    /*!
+     * Parameter symbol.
+     */
     const char* symbol;
+
+    /*!
+     * Parameter unit.
+     */
     const char* unit;
+
+    /*!
+     * Number of scale points.
+     * @see CarlaScalePointInfo
+     */
     uint32_t scalePointCount;
 
 #ifdef __cplusplus
+    /*!
+     * C++ constructor.
+     */
     _CarlaParameterInfo()
         : name(nullptr),
           symbol(nullptr),
           unit(nullptr),
           scalePointCount(0) {}
 
+    /*!
+     * C++ destructor.
+     */
     ~_CarlaParameterInfo()
     {
         if (name != nullptr)
@@ -235,14 +387,27 @@ typedef struct _CarlaParameterInfo {
  * @see carla_get_parameter_scalepoint_info()
  */
 typedef struct _CarlaScalePointInfo {
+    /*!
+     * Scale point value.
+     */
     float value;
+
+    /*!
+     * Scale point label.
+     */
     const char* label;
 
 #ifdef __cplusplus
+    /*!
+     * C++ constructor.
+     */
     _CarlaScalePointInfo()
         : value(0.0f),
           label(nullptr) {}
 
+    /*!
+     * C++ destructor.
+     */
     ~_CarlaScalePointInfo()
     {
         if (label != nullptr)
@@ -259,14 +424,40 @@ typedef struct _CarlaScalePointInfo {
  * @see carla_get_transport_info()
  */
 typedef struct _CarlaTransportInfo {
+    /*!
+     * Wherever transport is playing.
+     */
     bool playing;
+
+    /*!
+     * Current transport frame.
+     */
     uint64_t frame;
+
+    /*!
+     * Bar.
+     */
     int32_t bar;
+
+    /*!
+     * Beat.
+     */
     int32_t beat;
+
+    /*!
+     * Tick.
+     */
     int32_t tick;
+
+    /*!
+     * Beats per minute.
+     */
     double bpm;
 
 #ifdef __cplusplus
+    /*!
+     * C++ constructor.
+     */
     _CarlaTransportInfo()
         : playing(false),
           frame(0),
