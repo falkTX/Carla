@@ -722,46 +722,89 @@ EngineCallbackFunc = CFUNCTYPE(None, c_void_p, c_enum, c_uint, c_int, c_int, c_f
 # Parameter data.
 class ParameterData(Structure):
     _fields_ = [
-        ("type", c_enum),
+        # Index as seen by Carla.
         ("index", c_int32),
+
+        # Real index as seen by plugins.
         ("rindex", c_int32),
+
+        # This parameter hints.
+        # @see ParameterHints
         ("hints", c_uint),
+
+        # Currently mapped MIDI CC.
+        # A value lower than 0 means invalid or unused.
+        # Maximum allowed value is 95 (0x5F).
         ("midiCC", c_int16),
+
+        # Currently mapped MIDI channel.
+        # Counts from 0 to 15.
         ("midiChannel", c_uint8)
     ]
 
 # Parameter ranges.
 class ParameterRanges(Structure):
     _fields_ = [
+        # Default value.
         ("def", c_float),
+
+        # Minimum value.
         ("min", c_float),
+
+        # Maximum value.
         ("max", c_float),
+
+        # Regular, single step value.
         ("step", c_float),
+
+        # Small step value.
         ("stepSmall", c_float),
+
+        # Large step value.
         ("stepLarge", c_float)
     ]
 
 # MIDI Program data.
 class MidiProgramData(Structure):
     _fields_ = [
+        # MIDI bank.
         ("bank", c_uint32),
+
+        # MIDI program.
         ("program", c_uint32),
+
+        # MIDI program name.
         ("name", c_char_p)
     ]
 
 # Custom data, for saving key:value 'dictionaries'.
 class CustomData(Structure):
     _fields_ = [
+        # Value type, in URI form.
+        # @see CustomDataTypes
         ("type", c_char_p),
+
+        # Key.
+        # @see CustomDataKeys
         ("key", c_char_p),
+
+        # Value.
         ("value", c_char_p)
     ]
 
 # Engine driver device information.
 class EngineDriverDeviceInfo(Structure):
     _fields_ = [
+        # This driver device hints.
+        # @see EngineDriverHints
         ("hints", c_uint),
+
+        # Available buffer sizes.
+        # Terminated with 0.
         ("bufferSizes", POINTER(c_uint32)),
+
+        # Available sample rates.
+        # Terminated with 0.0.
         ("sampleRates", POINTER(c_double))
     ]
 

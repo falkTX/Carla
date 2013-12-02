@@ -1013,33 +1013,37 @@ typedef void (*EngineCallbackFunc)(void* ptr, EngineCallbackOpcode action, unsig
  */
 typedef struct _ParameterData {
     /*!
-     *
+     * Index as seen by Carla.
      */
     int32_t index;
 
     /*!
-     *
+     * Real index as seen by plugins.
      */
     int32_t rindex;
 
     /*!
-     *
+     * This parameter hints.
+     * @see ParameterHints
      */
     unsigned int hints;
 
     /*!
-     *
+     * Currently mapped MIDI CC.\n
+     * A value lower than 0 means invalid or unused.\n
+     * Maximum allowed value is 95 (0x5F).
      */
     int16_t midiCC;
 
     /*!
-     *
+     * Currently mapped MIDI channel.\n
+     * Counts from 0 to 15.
      */
     uint8_t midiChannel;
 
 #ifdef __cplusplus
     /*!
-     *
+     * C++ constructor.
      */
     _ParameterData() noexcept
         : index(PARAMETER_NULL),
@@ -1070,7 +1074,7 @@ typedef struct _ParameterRanges {
     float max;
 
     /*!
-     * Regular step value.
+     * Regular, single step value.
      */
     float step;
 
@@ -1086,7 +1090,7 @@ typedef struct _ParameterRanges {
 
 #ifdef __cplusplus
     /*!
-     *
+     * C++ constructor.
      */
     _ParameterRanges() noexcept
         : def(0.0f),
@@ -1097,7 +1101,7 @@ typedef struct _ParameterRanges {
           stepLarge(0.1f) {}
 
     /*!
-     * Fix default value range.
+     * Fix default value within range.
      */
     void fixDefault() noexcept
     {
@@ -1116,7 +1120,7 @@ typedef struct _ParameterRanges {
     }
 
     /*!
-     *
+     * Get a fixed value within range.
      */
     float getFixedValue(const float& value) const noexcept
     {
@@ -1142,7 +1146,7 @@ typedef struct _ParameterRanges {
     }
 
     /*!
-     * Get a value normalized to 0.0<->1.0, but fix range first.
+     * Get a value normalized to 0.0<->1.0, fixed within range.
      */
     float getFixedAndNormalizedValue(const float& value) const noexcept
     {
@@ -1176,23 +1180,23 @@ typedef struct _ParameterRanges {
  */
 typedef struct _MidiProgramData {
     /*!
-     *
+     * MIDI bank.
      */
     uint32_t bank;
 
     /*!
-     *
+     * MIDI program.
      */
     uint32_t program;
 
     /*!
-     *
+     * Midi program name.
      */
     const char* name;
 
 #ifdef __cplusplus
     /*!
-     *
+     * C++ constructor.
      */
     _MidiProgramData() noexcept
         : bank(0),
@@ -1223,6 +1227,9 @@ typedef struct _CustomData {
     const char* value;
 
 #ifdef __cplusplus
+    /*!
+     * C++ constructor.
+     */
     _CustomData() noexcept
         : type(nullptr),
           key(nullptr),
@@ -1235,23 +1242,26 @@ typedef struct _CustomData {
  */
 typedef struct _EngineDriverDeviceInfo {
     /*!
-     *
+     * This driver device hints.
+     * @see EngineDriverHints
      */
     unsigned int hints;
 
     /*!
-     *
+     * Available buffer sizes.\n
+     * Terminated with 0.
      */
-    const uint32_t* bufferSizes; // terminated with 0
+    const uint32_t* bufferSizes;
 
     /*!
-     *
+     * Available sample rates.\n
+     * Terminated with 0.0.
      */
-    const double* sampleRates;   // terminated with 0.0
+    const double* sampleRates;
 
 #ifdef __cplusplus
     /*!
-     *
+     * C++ constructor.
      */
     _EngineDriverDeviceInfo()
         : hints(0x0),
