@@ -24,7 +24,7 @@ BUILD_CXX_FLAGS += -isystem /opt/kxstudio/include
 
 # --------------------------------------------------------------
 
-ANSI_FLAGS  = -DBUILD_ANSI_TEST -I../backend -I../includes
+ANSI_FLAGS  = -DBUILD_ANSI_TEST -DREAL_BUILD -I/usr/include/carla -I/usr/include/carla/includes
 ANSI_FLAGS += -Wall -Wextra -Werror
 BASE_FLAGS += -DDEBUG -O0 -g
 BASE_FLAGS += -ansi -pedantic -pedantic-errors

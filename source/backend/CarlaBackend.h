@@ -1190,7 +1190,7 @@ typedef struct _MidiProgramData {
     uint32_t program;
 
     /*!
-     * Midi program name.
+     * MIDI program name.
      */
     const char* name;
 

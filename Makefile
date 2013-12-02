@@ -141,6 +141,14 @@ doxygen:
 
 # --------------------------------------------------------------
 
+install-dev:
+	install -d $(DESTDIR)$(PREFIX)/include/carla/
+	install -d $(DESTDIR)$(PREFIX)/include/carla/includes/
+
+	install -m 644 source/backend/CarlaBackend.h  $(DESTDIR)$(PREFIX)/include/carla/
+	install -m 644 source/backend/CarlaHost.h     $(DESTDIR)$(PREFIX)/include/carla/
+	install -m 644 source/includes/CarlaDefines.h $(DESTDIR)$(PREFIX)/include/carla/includes/
+
 install:
 	# Create directories
 	install -d $(DESTDIR)$(PREFIX)/bin/
