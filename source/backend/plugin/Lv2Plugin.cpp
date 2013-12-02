@@ -397,7 +397,7 @@ public:
         // close UI
         if (fUi.type != PLUGIN_UI_NULL)
         {
-            showGui(false);
+            showCustomUI(false);
 
             if (fUi.type == PLUGIN_UI_OSC)
             {
@@ -630,7 +630,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getAvailableOptions() const override
+    unsigned int getOptionsAvailable() const override
     {
         const uint32_t hasMidiIn(getMidiInCount() > 0);
 
@@ -1066,7 +1066,7 @@ public:
     // -------------------------------------------------------------------
     // Set gui stuff
 
-    void showGui(const bool yesNo) override
+    void showCustomUI(const bool yesNo) override
     {
         if (fUi.type == PLUGIN_UI_NULL)
             return;
@@ -1229,7 +1229,7 @@ public:
         }
     }
 
-    void idleGui() override
+    void idle() override
     {
         //if (fUi.type == PLUGIN_UI_NULL)
         //    return CarlaPlugin::idleGui();
@@ -1270,12 +1270,12 @@ public:
 
             if (fExt.uiidle != nullptr && fExt.uiidle->idle(fUi.handle) != 0)
             {
-                showGui(false);
+                showCustomUI(false);
                 pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, fId, 0, 0, 0.0f, nullptr);
             }
         }
 
-        CarlaPlugin::idleGui();
+        CarlaPlugin::idle();
     }
 
     // -------------------------------------------------------------------
@@ -1570,10 +1570,9 @@ public:
                         fDescriptor->connect_port(fHandle2, i, fCvIn.ports[j].port->getBuffer());
 
                     j = fCvIn.ports[j].param;
-                    pData->param.data[j].type   = PARAMETER_INPUT;
                     pData->param.data[j].index  = j;
                     pData->param.data[j].rindex = i;
-                    pData->param.data[j].hints  = PARAMETER_IS_ENABLED|PARAMETER_IS_READ_ONLY;
+                    pData->param.data[j].hints  = PARAMETER_IS_INPUT|PARAMETER_IS_ENABLED|PARAMETER_IS_READ_ONLY;
                     pData->param.data[j].midiChannel = 0;
                     pData->param.data[j].midiCC = -1;
                     pData->param.ranges[j].min = -1.0f;
@@ -1598,7 +1597,6 @@ public:
                         fDescriptor->connect_port(fHandle2, i, fCvOut.ports[j].port->getBuffer());
 
                     j = fCvOut.ports[j].param;
-                    pData->param.data[j].type   = PARAMETER_OUTPUT;
                     pData->param.data[j].index  = j;
                     pData->param.data[j].rindex = i;
                     pData->param.data[j].hints  = PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE;
@@ -1960,7 +1958,7 @@ public:
                     }
                     else
                     {
-                        pData->param.data[j].type   = PARAMETER_INPUT;
+                        pData->param.data[j].hints |= PARAMETER_IS_INPUT;
                         pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                         pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                         needsCtrlIn = true;
@@ -2009,7 +2007,6 @@ public:
                     }
                     else
                     {
-                        pData->param.data[j].type   = PARAMETER_OUTPUT;
                         pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                         pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                         needsCtrlOut = true;
@@ -2017,7 +2014,6 @@ public:
                 }
                 else
                 {
-                    pData->param.data[j].type = PARAMETER_UNKNOWN;
                     carla_stderr2("WARNING - Got a broken Port (Control, but not input or output)");
                 }
 
@@ -2121,7 +2117,7 @@ public:
 
         if (fUi.type != PLUGIN_UI_NULL)
         {
-            fHints |= PLUGIN_HAS_GUI;
+            fHints |= PLUGIN_HAS_CUSTOM_UI;
 
             if (fUi.type == PLUGIN_UI_QT || fUi.type == PLUGIN_UI_PARENT)
                 fHints |= PLUGIN_NEEDS_SINGLE_THREAD;
@@ -2804,7 +2800,7 @@ public:
                                 continue;
                             if (pData->param.data[k].midiCC != ctrlEvent.param)
                                 continue;
-                            if (pData->param.data[k].type != PARAMETER_INPUT)
+                            if ((pData->param.data[k].hints & PARAMETER_IS_INPUT) == 0)
                                 continue;
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
@@ -3064,7 +3060,7 @@ public:
 
             for (k=0; k < pData->param.count; ++k)
             {
-                if (pData->param.data[k].type != PARAMETER_OUTPUT)
+                if (pData->param.data[k].hints & PARAMETER_IS_INPUT)
                     continue;
 
                 if (pData->param.data[k].hints & PARAMETER_IS_STRICT_BOUNDS)
@@ -3188,7 +3184,7 @@ public:
 
         for (k=0; k < pData->param.count; ++k)
         {
-            if (pData->param.data[k].type != PARAMETER_INPUT)
+            if ((pData->param.data[k].hints & PARAMETER_IS_INPUT) == 0)
                 continue;
 
             if (pData->param.data[k].hints & PARAMETER_IS_TRIGGER)
@@ -4046,20 +4042,20 @@ protected:
 
         switch (type)
         {
-        case LV2_UI_GTK2:
-            return options.bridge_lv2Gtk2;
-        case LV2_UI_GTK3:
-            return options.bridge_lv2Gtk3;
-        case LV2_UI_QT4:
-            return options.bridge_lv2Qt4;
-        case LV2_UI_QT5:
-            return options.bridge_lv2Qt5;
-        case LV2_UI_COCOA:
-            return options.bridge_lv2Cocoa;
-        case LV2_UI_WINDOWS:
-            return options.bridge_lv2Win;
-        case LV2_UI_X11:
-            return options.bridge_lv2X11;
+//         case LV2_UI_GTK2:
+//             return options.bridge_lv2Gtk2;
+//         case LV2_UI_GTK3:
+//             return options.bridge_lv2Gtk3;
+//         case LV2_UI_QT4:
+//             return options.bridge_lv2Qt4;
+//         case LV2_UI_QT5:
+//             return options.bridge_lv2Qt5;
+//         case LV2_UI_COCOA:
+//             return options.bridge_lv2Cocoa;
+//         case LV2_UI_WINDOWS:
+//             return options.bridge_lv2Win;
+//         case LV2_UI_X11:
+//             return options.bridge_lv2X11;
         default:
             return nullptr;
         }
@@ -4469,7 +4465,7 @@ public:
             // load settings
             pData->idStr  = "LV2/";
             pData->idStr += uri;
-            fOptions = pData->loadSettings(fOptions, getAvailableOptions());
+            fOptions = pData->loadSettings(fOptions, getOptionsAvailable());
 
             // ignore settings, we need this anyway
             if (getMidiInCount() > 0 || needsFixedBuffer())

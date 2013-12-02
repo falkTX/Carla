@@ -977,10 +977,7 @@ class CarlaPortCountInfo(Structure):
         ("ins", c_uint32),
 
         # Number of outputs.
-        ("outs", c_uint32),
-
-        # Total number of ports.
-        ("total", c_uint32)
+        ("outs", c_uint32)
     ]
 
 # Parameter information.
@@ -1058,8 +1055,7 @@ PyCarlaPluginInfo = {
 # @see CarlaPortCountInfo
 PyCarlaPortCountInfo = {
     'ins': 0,
-    'outs': 0,
-    'total': 0
+    'outs': 0
 }
 
 # @see CarlaParameterInfo
@@ -1117,17 +1113,25 @@ class Host(object):
     def get_supported_file_extensions(self):
         return self.lib.carla_get_supported_file_extensions()
 
+    # Get how many engine drivers are available.
     def get_engine_driver_count(self):
         return self.lib.carla_get_engine_driver_count()
 
+    # Get an engine driver name.
+    # @param index Driver index
     def get_engine_driver_name(self, index):
         return self.lib.carla_get_engine_driver_name(index)
 
+    # Get the device names of an engine driver.
+    # @param index Driver index
     def get_engine_driver_device_names(self, index):
         return charPtrPtrToStringList(self.lib.carla_get_engine_driver_device_names(index))
 
-    def get_engine_driver_device_info(self, index, deviceName):
-        return structToDict(self.lib.carla_get_engine_driver_device_info(index, deviceName))
+    # Get information about a device driver.
+    # @param index Driver index
+    # @param name  Device name
+    def get_engine_driver_device_info(self, index, name):
+        return structToDict(self.lib.carla_get_engine_driver_device_info(index, name))
 
     def get_internal_plugin_count(self):
         return self.lib.carla_get_internal_plugin_count()
@@ -1385,8 +1389,6 @@ class Host(object):
         self.lib.carla_get_supported_file_extensions.argtypes = None
         self.lib.carla_get_supported_file_extensions.restype = c_char_p
 
-        return
-
         self.lib.carla_get_engine_driver_count.argtypes = None
         self.lib.carla_get_engine_driver_count.restype = c_uint
 
@@ -1398,6 +1400,8 @@ class Host(object):
 
         self.lib.carla_get_engine_driver_device_info.argtypes = [c_uint, c_char_p]
         self.lib.carla_get_engine_driver_device_info.restype = POINTER(EngineDriverDeviceInfo)
+
+        return
 
         self.lib.carla_get_internal_plugin_count.argtypes = None
         self.lib.carla_get_internal_plugin_count.restype = c_uint

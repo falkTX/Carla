@@ -34,7 +34,7 @@ OBJS = \
 	LinuxSamplerPlugin.cpp.o
 
 HEADERS = \
-	../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp \
+	../CarlaBackend.h ../CarlaEngine.hpp ../CarlaPlugin.hpp \
 	CarlaPluginInternal.hpp CarlaPluginThread.hpp
 
 TARGET = ../libcarla_plugin.a

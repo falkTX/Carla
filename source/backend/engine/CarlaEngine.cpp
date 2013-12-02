@@ -328,8 +328,6 @@ CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const
         return new CarlaEngineCVPort(fEngine, isInput);
     case kEnginePortTypeEvent:
         return new CarlaEngineEventPort(fEngine, isInput);
-    case kEnginePortTypeOSC:
-        return nullptr; //new CarlaEngineOscPort(fEngine, isInput);
     }
 
     carla_stderr("CarlaEngineClient::addPort(%i, \"%s\", %s) - invalid type", portType, name, bool2str(isInput));
@@ -403,7 +401,7 @@ const char* const* CarlaEngine::getDriverDeviceNames(const unsigned int index)
 {
     carla_debug("CarlaEngine::getDriverDeviceNames(%i)", index);
 
-    if (index == 0)
+    if (index == 0) // JACK
     {
         static const char* ret[3] = { "Auto-Connect OFF", "Auto-Connect ON", nullptr };
         return ret;
@@ -431,12 +429,13 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const unsigned in
 {
     carla_debug("CarlaEngine::getDriverDeviceInfo(%i, \"%s\")", index, deviceName);
 
-    if (index == 0)
+    if (index == 0) // JACK
     {
         static uint32_t bufSizes[11] = { 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 0 };
         static EngineDriverDeviceInfo devInfo;
-        devInfo.hints      |= ENGINE_DRIVER_VARIABLE_BUFFER_SIZE;
+        devInfo.hints       = ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE;
         devInfo.bufferSizes = bufSizes;
+        devInfo.sampleRates = nullptr;
         return &devInfo;
     }
 
@@ -639,7 +638,7 @@ void CarlaEngine::idle()
         CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
         if (plugin != nullptr && plugin->isEnabled())
-            plugin->idleGui();
+            plugin->idle();
     }
 }
 
@@ -696,7 +695,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
 
     CarlaPlugin* plugin = nullptr;
 
-#ifndef BUILD_BRIDGE
+#if 0 //ndef BUILD_BRIDGE
     const char* bridgeBinary;
 
     switch (btype)
@@ -720,7 +719,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
 
 # ifndef CARLA_OS_WIN
     if (btype == BINARY_NATIVE && fOptions.bridge_native.isNotEmpty())
-        bridgeBinary = (const char*)fOptions.bridge_native;
+       bridgeBinary = (const char*)fOptions.bridge_native;
 # endif
 
     if (btype != BINARY_NATIVE || (fOptions.preferPluginBridges && bridgeBinary != nullptr))
@@ -1487,7 +1486,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
 
     switch (option)
     {
-    case ENGINE_OPTION_PROCESS_NAME:
+    case ENGINE_OPTION_DEBUG:
         break;
 
     case ENGINE_OPTION_PROCESS_MODE:
@@ -1559,69 +1558,13 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         fOptions.audioDevice = valueStr;
         break;
 
+    case ENGINE_OPTION_PATH_BINARIES:
+        fOptions.binaryDir = valueStr;
+        break;
+
     case ENGINE_OPTION_PATH_RESOURCES:
         fOptions.resourceDir = valueStr;
         break;
-
-#ifndef BUILD_BRIDGE
-    case ENGINE_OPTION_PATH_BRIDGE_NATIVE:
-        fOptions.bridge_native = valueStr;
-        break;
-    case ENGINE_OPTION_PATH_BRIDGE_POSIX32:
-        fOptions.bridge_posix32 = valueStr;
-        break;
-    case ENGINE_OPTION_PATH_BRIDGE_POSIX64:
-        fOptions.bridge_posix64 = valueStr;
-        break;
-    case ENGINE_OPTION_PATH_BRIDGE_WIN32:
-        fOptions.bridge_win32 = valueStr;
-        break;
-    case ENGINE_OPTION_PATH_BRIDGE_WIN64:
-        fOptions.bridge_win64 = valueStr;
-        break;
-#endif
-
-#ifdef WANT_LV2
-    case ENGINE_OPTION_PATH_BRIDGE_LV2_EXTERNAL:
-        fOptions.bridge_lv2Extrn = valueStr;
-        break;
-    case ENGINE_OPTION_PATH_BRIDGE_LV2_GTK2:
-        fOptions.bridge_lv2Gtk2 = valueStr;
-        break;
-    case ENGINE_OPTION_PATH_BRIDGE_LV2_GTK3:
-        fOptions.bridge_lv2Gtk3 = valueStr;
-        break;
-    case ENGINE_OPTION_PATH_BRIDGE_LV2_NTK:
-        fOptions.bridge_lv2Ntk = valueStr;
-        break;
-    case ENGINE_OPTION_PATH_BRIDGE_LV2_QT4:
-        fOptions.bridge_lv2Qt4 = valueStr;
-        break;
-    case ENGINE_OPTION_PATH_BRIDGE_LV2_QT5:
-        fOptions.bridge_lv2Qt5 = valueStr;
-        break;
-    case ENGINE_OPTION_PATH_BRIDGE_LV2_COCOA:
-        fOptions.bridge_lv2Cocoa = valueStr;
-        break;
-    case ENGINE_OPTION_PATH_BRIDGE_LV2_WINDOWS:
-        fOptions.bridge_lv2Win = valueStr;
-        break;
-    case ENGINE_OPTION_PATH_BRIDGE_LV2_X11:
-        fOptions.bridge_lv2X11 = valueStr;
-        break;
-#endif
-
-#ifdef WANT_VST
-    case ENGINE_OPTION_PATH_BRIDGE_VST_MAC:
-        fOptions.bridge_vstMac = valueStr;
-        break;
-    case ENGINE_OPTION_PATH_BRIDGE_VST_HWND:
-        fOptions.bridge_vstHWND = valueStr;
-        break;
-    case ENGINE_OPTION_PATH_BRIDGE_VST_X11:
-        fOptions.bridge_vstX11 = valueStr;
-        break;
-#endif
     }
 }
 
@@ -1963,37 +1906,36 @@ void CarlaEngine::oscSend_control_set_plugin_data(const int32_t pluginId, const 
     }
 }
 
-void CarlaEngine::oscSend_control_set_plugin_ports(const int32_t pluginId, const int32_t audioIns, const int32_t audioOuts, const int32_t midiIns, const int32_t midiOuts, const int32_t cIns, const int32_t cOuts, const int32_t cTotals)
+void CarlaEngine::oscSend_control_set_plugin_ports(const int32_t pluginId, const int32_t audioIns, const int32_t audioOuts, const int32_t midiIns, const int32_t midiOuts, const int32_t cIns, const int32_t cOuts)
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->maxPluginNumber),);
-    carla_debug("CarlaEngine::oscSend_control_set_plugin_ports(%i, %i, %i, %i, %i, %i, %i, %i)", pluginId, audioIns, audioOuts, midiIns, midiOuts, cIns, cOuts, cTotals);
+    carla_debug("CarlaEngine::oscSend_control_set_plugin_ports(%i, %i, %i, %i, %i, %i, %i)", pluginId, audioIns, audioOuts, midiIns, midiOuts, cIns, cOuts);
 
     if (pData->oscData->target != nullptr)
     {
         char targetPath[std::strlen(pData->oscData->path)+18];
         std::strcpy(targetPath, pData->oscData->path);
         std::strcat(targetPath, "/set_plugin_ports");
-        lo_send(pData->oscData->target, targetPath, "iiiiiiii", pluginId, audioIns, audioOuts, midiIns, midiOuts, cIns, cOuts, cTotals);
+        lo_send(pData->oscData->target, targetPath, "iiiiiii", pluginId, audioIns, audioOuts, midiIns, midiOuts, cIns, cOuts);
     }
 }
 
-void CarlaEngine::oscSend_control_set_parameter_data(const int32_t pluginId, const int32_t index, const int32_t type, const int32_t hints, const char* const name, const char* const unit, const float current)
+void CarlaEngine::oscSend_control_set_parameter_data(const int32_t pluginId, const int32_t index, const int32_t hints, const char* const name, const char* const unit, const float current)
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->maxPluginNumber),);
     CARLA_SAFE_ASSERT_RETURN(index >= 0,);
-    CARLA_SAFE_ASSERT_RETURN(type != PARAMETER_UNKNOWN,);
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(unit != nullptr,);
-    carla_debug("CarlaEngine::oscSend_control_set_parameter_data(%i, %i, %i, %i, \"%s\", \"%s\", %f)", pluginId, index, type, hints, name, unit, current);
+    carla_debug("CarlaEngine::oscSend_control_set_parameter_data(%i, %i, %i, %i, \"%s\", \"%s\", %f)", pluginId, index, hints, name, unit, current);
 
     if (pData->oscData->target != nullptr)
     {
         char targetPath[std::strlen(pData->oscData->path)+20];
         std::strcpy(targetPath, pData->oscData->path);
         std::strcat(targetPath, "/set_parameter_data");
-        lo_send(pData->oscData->target, targetPath, "iiiissf", pluginId, index, type, hints, name, unit, current);
+        lo_send(pData->oscData->target, targetPath, "iiissf", pluginId, index, hints, name, unit, current);
     }
 }
 
@@ -2350,17 +2292,17 @@ void CarlaEngine::oscSend_bridge_parameter_info(const int32_t index, const char*
     }
 }
 
-void CarlaEngine::oscSend_bridge_parameter_data(const int32_t index, const int32_t type, const int32_t rindex, const int32_t hints, const int32_t midiChannel, const int32_t midiCC)
+void CarlaEngine::oscSend_bridge_parameter_data(const int32_t index, const int32_t rindex, const int32_t hints, const int32_t midiChannel, const int32_t midiCC)
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    carla_debug("CarlaEngine::oscSend_bridge_parameter_data(%i, %i, %i, %i, %i, %i)", index, type, rindex, hints, midiChannel, midiCC);
+    carla_debug("CarlaEngine::oscSend_bridge_parameter_data(%i, %i, %i, %i, %i)", index, rindex, hints, midiChannel, midiCC);
 
     if (pData->oscData->target != nullptr)
     {
         char targetPath[std::strlen(pData->oscData->path)+23];
         std::strcpy(targetPath, pData->oscData->path);
         std::strcat(targetPath, "/bridge_parameter_data");
-        lo_send(pData->oscData->target, targetPath, "iiiiii", index, type, rindex, hints, midiChannel, midiCC);
+        lo_send(pData->oscData->target, targetPath, "iiiii", index, rindex, hints, midiChannel, midiCC);
     }
 }
 

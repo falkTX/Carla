@@ -296,11 +296,11 @@ const char* const* carla_get_engine_driver_device_names(unsigned int index)
     return CarlaEngine::getDriverDeviceNames(index);
 }
 
-const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(unsigned int index, const char* deviceName)
+const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(unsigned int index, const char* name)
 {
-    carla_debug("carla_get_engine_driver_device_info(%i, \"%s\")", index, deviceName);
+    carla_debug("carla_get_engine_driver_device_info(%i, \"%s\")", index, name);
 
-    return CarlaEngine::getDriverDeviceInfo(index, deviceName);
+    return CarlaEngine::getDriverDeviceInfo(index, name);
 }
 
 #if 0

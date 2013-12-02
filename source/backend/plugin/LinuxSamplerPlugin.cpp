@@ -245,7 +245,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getAvailableOptions() const override
+    unsigned int getOptionsAvailable() const override
     {
         unsigned int options = 0x0;
 
@@ -682,7 +682,7 @@ public:
                                 continue;
                             if (pData->param.data[k].midiCC != ctrlEvent.param)
                                 continue;
-                            if (pData->param.data[k].type != PARAMETER_INPUT)
+                            if ((pData->param.data[k].hints & PARAMETER_IS_INPUT) == 0)
                                 continue;
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
@@ -1104,7 +1104,7 @@ public:
             pData->idStr  = kIsGIG ? "GIG" : "SFZ";
             pData->idStr += "/";
             pData->idStr += label;
-            fOptions = pData->loadSettings(fOptions, getAvailableOptions());
+            fOptions = pData->loadSettings(fOptions, getOptionsAvailable());
         }
 
         return true;

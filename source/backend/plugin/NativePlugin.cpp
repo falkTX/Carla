@@ -245,7 +245,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getAvailableOptions() const override
+    unsigned int getOptionsAvailable() const override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, 0x0);
 
@@ -628,7 +628,7 @@ public:
     // -------------------------------------------------------------------
     // Set gui stuff
 
-    void showGui(const bool yesNo) override
+    void showCustomUI(const bool yesNo) override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
@@ -670,13 +670,15 @@ public:
         }
     }
 
-    void idleGui() override
+    void idle() override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
 
         if (fIsUiVisible && fDescriptor->ui_idle != nullptr)
             fDescriptor->ui_idle(fHandle);
+
+        CarlaPlugin::idle();
     }
 
     // -------------------------------------------------------------------
@@ -959,12 +961,11 @@ public:
 
             if (paramInfo->hints & ::PARAMETER_IS_OUTPUT)
             {
-                pData->param.data[j].type = PARAMETER_OUTPUT;
                 needsCtrlOut = true;
             }
             else
             {
-                pData->param.data[j].type = PARAMETER_INPUT;
+                pData->param.data[j].hints |= PARAMETER_IS_INPUT;
                 needsCtrlIn = true;
             }
 
@@ -1428,7 +1429,7 @@ public:
                                 continue;
                             if (pData->param.data[k].midiCC != ctrlEvent.param)
                                 continue;
-                            if (pData->param.data[k].type != PARAMETER_INPUT)
+                            if ((pData->param.data[k].hints & PARAMETER_IS_INPUT) == 0)
                                 continue;
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
@@ -1614,7 +1615,7 @@ public:
 
             for (k=0; k < pData->param.count; ++k)
             {
-                if (pData->param.data[k].type != PARAMETER_OUTPUT)
+                if (pData->param.data[k].hints & PARAMETER_IS_INPUT)
                     continue;
 
                 curValue = fDescriptor->get_parameter_value(fHandle, k);
@@ -2317,7 +2318,7 @@ public:
             // load settings
             pData->idStr  = "Native/";
             pData->idStr += label;
-            fOptions = pData->loadSettings(fOptions, getAvailableOptions());
+            fOptions = pData->loadSettings(fOptions, getOptionsAvailable());
 
             // ignore settings, we need this anyway
             if (getMidiInCount() > 0 || (fDescriptor->hints & ::PLUGIN_NEEDS_FIXED_BUFFERS) != 0)

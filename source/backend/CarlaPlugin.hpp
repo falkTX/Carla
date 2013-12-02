@@ -31,6 +31,16 @@ struct LADSPA_RDF_Descriptor;
 CARLA_BACKEND_START_NAMESPACE
 
 /*!
+ * @defgroup PluginHints
+ * @{
+ */
+
+const unsigned int PLUGIN_NEEDS_FIXED_BUFFERS = 0x100;
+const unsigned int PLUGIN_NEEDS_SINGLE_THREAD = 0x200;
+
+/** @} */
+
+/*!
  * @defgroup CarlaPluginAPI Carla Plugin API
  *
  * The Carla Plugin API.
@@ -378,7 +388,7 @@ public:
      *
      * \see getParameterCount()
      */
-    void getParameterCountInfo(uint32_t& ins, uint32_t& outs, uint32_t& total) const;
+    void getParameterCountInfo(uint32_t& ins, uint32_t& outs) const noexcept;
 
     // -------------------------------------------------------------------
     // Set data (state)

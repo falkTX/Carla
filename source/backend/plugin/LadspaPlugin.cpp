@@ -163,7 +163,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getAvailableOptions() const override
+    unsigned int getOptionsAvailable() const override
     {
         const bool isDssiVst = fFilename.contains("dssi-vst", true);
 
@@ -622,7 +622,7 @@ public:
 
                 if (LADSPA_IS_PORT_INPUT(portType))
                 {
-                    pData->param.data[j].type   = PARAMETER_INPUT;
+                    pData->param.data[j].hints |= PARAMETER_IS_INPUT;
                     pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                     pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                     needsCtrlIn = true;
@@ -653,7 +653,6 @@ public:
                     }
                     else
                     {
-                        pData->param.data[j].type   = PARAMETER_OUTPUT;
                         pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                         pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                         needsCtrlOut = true;
@@ -661,7 +660,6 @@ public:
                 }
                 else
                 {
-                    pData->param.data[j].type = PARAMETER_UNKNOWN;
                     carla_stderr2("WARNING - Got a broken Port (Control, but not input or output)");
                 }
 
@@ -988,7 +986,7 @@ public:
                                 continue;
                             if (pData->param.data[k].midiCC != ctrlEvent.param)
                                 continue;
-                            if (pData->param.data[k].type != PARAMETER_INPUT)
+                            if ((pData->param.data[k].hints & PARAMETER_IS_INPUT) == 0)
                                 continue;
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
@@ -1059,7 +1057,7 @@ public:
 
             for (uint32_t k=0; k < pData->param.count; ++k)
             {
-                if (pData->param.data[k].type != PARAMETER_OUTPUT)
+                if (pData->param.data[k].hints & PARAMETER_IS_INPUT)
                     continue;
 
                 pData->param.ranges[k].fixValue(fParamBuffers[k]);
@@ -1481,7 +1479,7 @@ public:
             pData->idStr += CarlaString(getUniqueId());
             pData->idStr += "/";
             pData->idStr += label;
-            fOptions = pData->loadSettings(fOptions, getAvailableOptions());
+            fOptions = pData->loadSettings(fOptions, getOptionsAvailable());
 
             // ignore settings, we need this anyway
             if (isDssiVst)

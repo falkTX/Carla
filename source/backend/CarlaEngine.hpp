@@ -100,13 +100,7 @@ enum EnginePortType {
     * Event port type (Control or MIDI).
     ** \see CarlaEngineEventPort
     */
-    kEnginePortTypeEvent = 3,
-
-    /*!
-    * OSC port type.
-    ** \see CarlaEngineOscPort
-    */
-    kEnginePortTypeOSC = 4
+    kEnginePortTypeEvent = 3
 };
 
 /*!
@@ -246,34 +240,12 @@ struct EngineOptions {
     unsigned int audioBufferSize;
     unsigned int audioSampleRate;
     CarlaString  audioDevice;
-    CarlaString  resourceDir;
 
-#ifndef BUILD_BRIDGE
-    CarlaString bridge_native;
-    CarlaString bridge_posix32;
-    CarlaString bridge_posix64;
-    CarlaString bridge_win32;
-    CarlaString bridge_win64;
-#endif
-#ifdef WANT_LV2
-    CarlaString bridge_lv2Extrn;
-    CarlaString bridge_lv2Gtk2;
-    CarlaString bridge_lv2Gtk3;
-    CarlaString bridge_lv2Ntk;
-    CarlaString bridge_lv2Qt4;
-    CarlaString bridge_lv2Qt5;
-    CarlaString bridge_lv2Cocoa;
-    CarlaString bridge_lv2Win;
-    CarlaString bridge_lv2X11;
-#endif
-#ifdef WANT_VST
-    CarlaString bridge_vstMac;
-    CarlaString bridge_vstHWND;
-    CarlaString bridge_vstX11;
-#endif
+    CarlaString binaryDir;
+    CarlaString resourceDir;
 
     EngineOptions()
-#if defined(CARLA_OS_LINUX)
+#ifdef CARLA_OS_LINUX
         : processMode(ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS),
           transportMode(ENGINE_TRANSPORT_MODE_JACK),
 #else
@@ -1243,7 +1215,7 @@ public:
     void oscSend_bridge_midi_program_count(const int32_t count);
     void oscSend_bridge_plugin_info(const int32_t category, const int32_t hints, const char* const name, const char* const label, const char* const maker, const char* const copyright, const int64_t uniqueId);
     void oscSend_bridge_parameter_info(const int32_t index, const char* const name, const char* const unit);
-    void oscSend_bridge_parameter_data(const int32_t index, const int32_t type, const int32_t rindex, const int32_t hints, const int32_t midiChannel, const int32_t midiCC);
+    void oscSend_bridge_parameter_data(const int32_t index, const int32_t rindex, const int32_t hints, const int32_t midiChannel, const int32_t midiCC);
     void oscSend_bridge_parameter_ranges(const int32_t index, const float def, const float min, const float max, const float step, const float stepSmall, const float stepLarge);
     void oscSend_bridge_program_info(const int32_t index, const char* const name);
     void oscSend_bridge_midi_program_info(const int32_t index, const int32_t bank, const int32_t program, const char* const label);
@@ -1260,8 +1232,8 @@ public:
     void oscSend_control_add_plugin_end(const int32_t pluginId);
     void oscSend_control_remove_plugin(const int32_t pluginId);
     void oscSend_control_set_plugin_data(const int32_t pluginId, const int32_t type, const int32_t category, const int32_t hints, const char* const realName, const char* const label, const char* const maker, const char* const copyright, const int64_t uniqueId);
-    void oscSend_control_set_plugin_ports(const int32_t pluginId, const int32_t audioIns, const int32_t audioOuts, const int32_t midiIns, const int32_t midiOuts, const int32_t cIns, const int32_t cOuts, const int32_t cTotals);
-    void oscSend_control_set_parameter_data(const int32_t pluginId, const int32_t index, const int32_t type, const int32_t hints, const char* const name, const char* const unit, const float current);
+    void oscSend_control_set_plugin_ports(const int32_t pluginId, const int32_t audioIns, const int32_t audioOuts, const int32_t midiIns, const int32_t midiOuts, const int32_t cIns, const int32_t cOuts);
+    void oscSend_control_set_parameter_data(const int32_t pluginId, const int32_t index, const int32_t hints, const char* const name, const char* const unit, const float current);
     void oscSend_control_set_parameter_ranges(const int32_t pluginId, const int32_t index, const float min, const float max, const float def, const float step, const float stepSmall, const float stepLarge);
     void oscSend_control_set_parameter_midi_cc(const int32_t pluginId, const int32_t index, const int32_t cc);
     void oscSend_control_set_parameter_midi_channel(const int32_t pluginId, const int32_t index, const int32_t channel);

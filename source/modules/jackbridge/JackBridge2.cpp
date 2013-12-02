@@ -14,7 +14,7 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "CarlaDefines.hpp"
+#include "CarlaDefines.h"
 
 #include "JackBridge.hpp"
 

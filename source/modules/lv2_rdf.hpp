@@ -18,7 +18,7 @@
 #ifndef LV2_RDF_HPP_INCLUDED
 #define LV2_RDF_HPP_INCLUDED
 
-#include "CarlaDefines.hpp"
+#include "CarlaDefines.h"
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
 # include <cstdint>

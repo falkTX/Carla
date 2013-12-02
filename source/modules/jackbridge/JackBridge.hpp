@@ -17,7 +17,7 @@
 #ifndef JACKBRIDGE_HPP_INCLUDED
 #define JACKBRIDGE_HPP_INCLUDED
 
-#include "CarlaDefines.hpp"
+#include "CarlaDefines.h"
 
 #ifndef JACKBRIDGE_EXPORT
 # undef CARLA_EXPORT

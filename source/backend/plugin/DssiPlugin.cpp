@@ -53,9 +53,9 @@ public:
         carla_debug("DssiPlugin::~DssiPlugin()");
 
         // close UI
-        if (fHints & PLUGIN_HAS_GUI)
+        if (fHints & PLUGIN_HAS_CUSTOM_UI)
         {
-            showGui(false);
+            showCustomUI(false);
 
             pData->osc.thread.stop(pData->engine->getOptions().uiBridgesTimeout * 2);
         }
@@ -154,7 +154,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getAvailableOptions() const override
+    unsigned int getOptionsAvailable() const override
     {
         const bool isAmSynth = fFilename.contains("amsynth", true);
         const bool isDssiVst = fFilename.contains("dssi-vst", true);
@@ -358,7 +358,7 @@ public:
     // -------------------------------------------------------------------
     // Set gui stuff
 
-    void showGui(const bool yesNo) override
+    void showCustomUI(const bool yesNo) override
     {
         if (yesNo)
         {
@@ -615,7 +615,7 @@ public:
 
                 if (LADSPA_IS_PORT_INPUT(portType))
                 {
-                    pData->param.data[j].type   = PARAMETER_INPUT;
+                    pData->param.data[j].hints |= PARAMETER_IS_INPUT;
                     pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                     pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                     needsCtrlIn = true;
@@ -658,7 +658,6 @@ public:
                     }
                     else
                     {
-                        pData->param.data[j].type   = PARAMETER_OUTPUT;
                         pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                         pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                         needsCtrlOut = true;
@@ -666,7 +665,6 @@ public:
                 }
                 else
                 {
-                    pData->param.data[j].type = PARAMETER_UNKNOWN;
                     carla_stderr2("WARNING - Got a broken Port (Control, but not input or output)");
                 }
 
@@ -745,7 +743,7 @@ public:
             fHints |= PLUGIN_IS_RTSAFE;
 
         if (fGuiFilename != nullptr)
-            fHints |= PLUGIN_HAS_GUI;
+            fHints |= PLUGIN_HAS_CUSTOM_UI;
 
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
             fHints |= PLUGIN_CAN_DRYWET;
@@ -1163,7 +1161,7 @@ public:
                                 continue;
                             if (pData->param.data[k].midiCC != ctrlEvent.param)
                                 continue;
-                            if (pData->param.data[k].type != PARAMETER_INPUT)
+                            if ((pData->param.data[k].hints & PARAMETER_IS_INPUT) == 0)
                                 continue;
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
@@ -1411,7 +1409,7 @@ public:
 
             for (uint32_t k=0; k < pData->param.count; ++k)
             {
-                if (pData->param.data[k].type != PARAMETER_OUTPUT)
+                if (pData->param.data[k].hints & PARAMETER_IS_INPUT)
                     continue;
 
                 if (pData->param.data[k].midiCC > 0)
@@ -1954,7 +1952,7 @@ public:
             pData->idStr += std::strrchr(filename, OS_SEP)+1;
             pData->idStr += "/";
             pData->idStr += label;
-            fOptions = pData->loadSettings(fOptions, getAvailableOptions());
+            fOptions = pData->loadSettings(fOptions, getOptionsAvailable());
 
             // ignore settings, we need this anyway
             if (isAmSynth || isDssiVst)

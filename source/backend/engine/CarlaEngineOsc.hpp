@@ -18,7 +18,7 @@
 #ifndef CARLA_ENGINE_OSC_HPP_INCLUDED
 #define CARLA_ENGINE_OSC_HPP_INCLUDED
 
-#include "CarlaBackend.hpp"
+#include "CarlaBackend.h"
 #include "CarlaOscUtils.hpp"
 #include "CarlaString.hpp"
 

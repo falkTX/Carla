@@ -45,7 +45,7 @@
 #ifndef RTMIDI_H
 #define RTMIDI_H
 
-#include "CarlaDefines.hpp"
+#include "CarlaDefines.h"
 
 #include "RtError.h"
 #include <string>

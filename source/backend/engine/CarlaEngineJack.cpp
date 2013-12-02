@@ -528,8 +528,6 @@ public:
             case kEnginePortTypeEvent:
                 port = jackbridge_port_register(fClient, name, JACK_DEFAULT_MIDI_TYPE, isInput ? JackPortIsInput : JackPortIsOutput, 0);
                 break;
-            case kEnginePortTypeOSC:
-                break;
             }
         }
 
@@ -544,8 +542,6 @@ public:
             return new CarlaEngineJackCVPort(fEngine, isInput, fClient, port);
         case kEnginePortTypeEvent:
             return new CarlaEngineJackEventPort(fEngine, isInput, fClient, port);
-        case kEnginePortTypeOSC:
-            break;
         }
 
         carla_stderr("CarlaEngineJackClient::addPort(%s, \"%s\", %s) - invalid type", EnginePortType2Str(portType), name, bool2str(isInput));
@@ -816,7 +812,7 @@ public:
                 const char* const icon((const char*)data);
                 CARLA_ASSERT(std::strlen(icon)+1 == dataSize);
 
-                callback(ENGINE_CALLBACK_PATCHBAY_ICON_CHANGED, 0, groupId, 0, 0.0f, icon);
+                callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ICON_CHANGED, 0, groupId, 0, 0.0f, icon);
 
                 jackbridge_free(data);
             }
@@ -1175,6 +1171,8 @@ protected:
                 FloatVectorOperations::copy(audioOut1, audioIn1, nframes);
                 FloatVectorOperations::copy(audioOut2, audioIn2, nframes);
 #else
+                carla_copyFloat(audioOut1, audioIn1, nframes);
+                carla_copyFloat(audioOut2, audioIn2, nframes);
 #endif
                 jackbridge_midi_clear_buffer(eventOut);
             }
@@ -1506,11 +1504,11 @@ protected:
             bool portIsCV    = (jackPortFlags & JackPortIsControlVoltage);
 
             unsigned int canvasPortFlags = 0x0;
-            canvasPortFlags |= portIsInput ? PATCHBAY_PORT_IS_INPUT : PATCHBAY_PORT_IS_OUTPUT;
-            canvasPortFlags |= portIsAudio ? PATCHBAY_PORT_IS_AUDIO : PATCHBAY_PORT_IS_MIDI;
+            canvasPortFlags |= portIsInput ? PATCHBAY_PORT_IS_INPUT : 0x0;
+            canvasPortFlags |= portIsAudio ? PATCHBAY_PORT_TYPE_AUDIO : PATCHBAY_PORT_TYPE_MIDI;
 
             if (portIsAudio && portIsCV)
-                canvasPortFlags |= PATCHBAY_PORT_IS_CV;
+                canvasPortFlags |= PATCHBAY_PORT_TYPE_CV;
 
             PortNameToId portNameToId(groupId, fLastPortId++, portName, fullPortName);
             fUsedPortNames.append(portNameToId);

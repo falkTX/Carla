@@ -156,7 +156,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getAvailableOptions() const override
+    unsigned int getOptionsAvailable() const override
     {
         unsigned int options = 0x0;
 
@@ -644,8 +644,7 @@ public:
         j = FluidSynthReverbOnOff;
         pData->param.data[j].index  = j;
         pData->param.data[j].rindex = j;
-        pData->param.data[j].type   = PARAMETER_INPUT;
-        pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/ | PARAMETER_IS_BOOLEAN;
+        pData->param.data[j].hints  = PARAMETER_IS_INPUT | PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/ | PARAMETER_IS_BOOLEAN;
         pData->param.data[j].midiChannel = 0;
         pData->param.data[j].midiCC = -1;
         pData->param.ranges[j].min = 0.0f;
@@ -660,8 +659,7 @@ public:
         j = FluidSynthReverbRoomSize;
         pData->param.data[j].index  = j;
         pData->param.data[j].rindex = j;
-        pData->param.data[j].type   = PARAMETER_INPUT;
-        pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
+        pData->param.data[j].hints  = PARAMETER_IS_INPUT | PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
         pData->param.data[j].midiChannel = 0;
         pData->param.data[j].midiCC = -1;
         pData->param.ranges[j].min = 0.0f;
@@ -676,8 +674,7 @@ public:
         j = FluidSynthReverbDamp;
         pData->param.data[j].index  = j;
         pData->param.data[j].rindex = j;
-        pData->param.data[j].type   = PARAMETER_INPUT;
-        pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
+        pData->param.data[j].hints  = PARAMETER_IS_INPUT | PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
         pData->param.data[j].midiChannel = 0;
         pData->param.data[j].midiCC = -1;
         pData->param.ranges[j].min = 0.0f;
@@ -692,8 +689,7 @@ public:
         j = FluidSynthReverbLevel;
         pData->param.data[j].index  = j;
         pData->param.data[j].rindex = j;
-        pData->param.data[j].type   = PARAMETER_INPUT;
-        pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
+        pData->param.data[j].hints  = PARAMETER_IS_INPUT | PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
         pData->param.data[j].midiChannel = 0;
         pData->param.data[j].midiCC = MIDI_CONTROL_REVERB_SEND_LEVEL;
         pData->param.ranges[j].min = 0.0f;
@@ -708,8 +704,7 @@ public:
         j = FluidSynthReverbWidth;
         pData->param.data[j].index  = j;
         pData->param.data[j].rindex = j;
-        pData->param.data[j].type   = PARAMETER_INPUT;
-        pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
+        pData->param.data[j].hints  = PARAMETER_IS_INPUT | PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
         pData->param.data[j].midiChannel = 0;
         pData->param.data[j].midiCC = -1;
         pData->param.ranges[j].min = 0.0f;
@@ -724,8 +719,7 @@ public:
         j = FluidSynthChorusOnOff;
         pData->param.data[j].index  = j;
         pData->param.data[j].rindex = j;
-        pData->param.data[j].type   = PARAMETER_INPUT;
-        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_BOOLEAN;
+        pData->param.data[j].hints  = PARAMETER_IS_INPUT | PARAMETER_IS_ENABLED | PARAMETER_IS_BOOLEAN;
         pData->param.data[j].midiChannel = 0;
         pData->param.data[j].midiCC = -1;
         pData->param.ranges[j].min = 0.0f;
@@ -740,8 +734,7 @@ public:
         j = FluidSynthChorusNr;
         pData->param.data[j].index  = j;
         pData->param.data[j].rindex = j;
-        pData->param.data[j].type   = PARAMETER_INPUT;
-        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER;
+        pData->param.data[j].hints  = PARAMETER_IS_INPUT | PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER;
         pData->param.data[j].midiChannel = 0;
         pData->param.data[j].midiCC = -1;
         pData->param.ranges[j].min = 0.0f;
@@ -756,8 +749,7 @@ public:
         j = FluidSynthChorusLevel;
         pData->param.data[j].index  = j;
         pData->param.data[j].rindex = j;
-        pData->param.data[j].type   = PARAMETER_INPUT;
-        pData->param.data[j].hints  = PARAMETER_IS_ENABLED;
+        pData->param.data[j].hints  = PARAMETER_IS_INPUT | PARAMETER_IS_ENABLED;
         pData->param.data[j].midiChannel = 0;
         pData->param.data[j].midiCC = 0; //MIDI_CONTROL_CHORUS_SEND_LEVEL;
         pData->param.ranges[j].min = 0.0f;
@@ -772,8 +764,7 @@ public:
         j = FluidSynthChorusSpeedHz;
         pData->param.data[j].index  = j;
         pData->param.data[j].rindex = j;
-        pData->param.data[j].type   = PARAMETER_INPUT;
-        pData->param.data[j].hints  = PARAMETER_IS_ENABLED;
+        pData->param.data[j].hints  = PARAMETER_IS_INPUT | PARAMETER_IS_ENABLED;
         pData->param.data[j].midiChannel = 0;
         pData->param.data[j].midiCC = -1;
         pData->param.ranges[j].min = 0.29f;
@@ -788,8 +779,7 @@ public:
         j = FluidSynthChorusDepthMs;
         pData->param.data[j].index  = j;
         pData->param.data[j].rindex = j;
-        pData->param.data[j].type   = PARAMETER_INPUT;
-        pData->param.data[j].hints  = PARAMETER_IS_ENABLED;
+        pData->param.data[j].hints  = PARAMETER_IS_INPUT | PARAMETER_IS_ENABLED;
         pData->param.data[j].midiChannel = 0;
         pData->param.data[j].midiCC = -1;
         pData->param.ranges[j].min = 0.0f;
@@ -804,8 +794,7 @@ public:
         j = FluidSynthChorusType;
         pData->param.data[j].index  = j;
         pData->param.data[j].rindex = j;
-        pData->param.data[j].type   = PARAMETER_INPUT;
-        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER | PARAMETER_USES_SCALEPOINTS;
+        pData->param.data[j].hints  = PARAMETER_IS_INPUT | PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER | PARAMETER_USES_SCALEPOINTS;
         pData->param.data[j].midiChannel = 0;
         pData->param.data[j].midiCC = -1;
         pData->param.ranges[j].min = FLUID_CHORUS_MOD_SINE;
@@ -820,8 +809,7 @@ public:
         j = FluidSynthPolyphony;
         pData->param.data[j].index  = j;
         pData->param.data[j].rindex = j;
-        pData->param.data[j].type   = PARAMETER_INPUT;
-        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER;
+        pData->param.data[j].hints  = PARAMETER_IS_INPUT | PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER;
         pData->param.data[j].midiChannel = 0;
         pData->param.data[j].midiCC = -1;
         pData->param.ranges[j].min = 1.0f;
@@ -836,8 +824,7 @@ public:
         j = FluidSynthInterpolation;
         pData->param.data[j].index  = j;
         pData->param.data[j].rindex = j;
-        pData->param.data[j].type   = PARAMETER_INPUT;
-        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER | PARAMETER_USES_SCALEPOINTS;
+        pData->param.data[j].hints  = PARAMETER_IS_INPUT | PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER | PARAMETER_USES_SCALEPOINTS;
         pData->param.data[j].midiChannel = 0;
         pData->param.data[j].midiCC = -1;
         pData->param.ranges[j].min = FLUID_INTERP_NONE;
@@ -852,7 +839,6 @@ public:
         j = FluidSynthVoiceCount;
         pData->param.data[j].index  = j;
         pData->param.data[j].rindex = j;
-        pData->param.data[j].type   = PARAMETER_OUTPUT;
         pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE | PARAMETER_IS_INTEGER;
         pData->param.data[j].midiChannel = 0;
         pData->param.data[j].midiCC = -1;
@@ -1176,7 +1162,7 @@ public:
                                 continue;
                             if (pData->param.data[k].midiCC != ctrlEvent.param)
                                 continue;
-                            if (pData->param.data[k].type != PARAMETER_INPUT)
+                            if ((pData->param.data[k].hints & PARAMETER_IS_INPUT) == 0)
                                 continue;
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
@@ -1608,7 +1594,7 @@ public:
             // load settings
             pData->idStr  = "SF2/";
             pData->idStr += label;
-            fOptions = pData->loadSettings(fOptions, getAvailableOptions());
+            fOptions = pData->loadSettings(fOptions, getOptionsAvailable());
         }
 
         return true;

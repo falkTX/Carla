@@ -365,7 +365,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getAvailableOptions() const override
+    unsigned int getOptionsAvailable() const override
     {
         unsigned int options = 0x0;
 
@@ -578,7 +578,7 @@ public:
     // -------------------------------------------------------------------
     // Set gui stuff
 
-    void showGui(const bool yesNo) override
+    void showCustomUI(const bool yesNo) override
     {
         if (yesNo)
             osc_send_show(pData->osc.data);
@@ -586,12 +586,12 @@ public:
             osc_send_hide(pData->osc.data);
     }
 
-    void idleGui() override
+    void idle() override
     {
         if (! pData->osc.thread.isRunning())
             carla_stderr2("TESTING: Bridge has closed!");
 
-        CarlaPlugin::idleGui();
+        CarlaPlugin::idle();
     }
 
     // -------------------------------------------------------------------
@@ -891,7 +891,7 @@ public:
                                 continue;
                             if (pData->param.data[k].midiCC != ctrlEvent.param)
                                 continue;
-                            if (pData->param.data[k].type != PARAMETER_INPUT)
+                            if ((pData->param.data[k].hints & PARAMETER_IS_INPUT) == 0)
                                 continue;
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
@@ -1389,17 +1389,15 @@ public:
 
         case kPluginBridgeParameterData:
         {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(6, "iiiiii");
+            CARLA_BRIDGE_CHECK_OSC_TYPES(5, "iiiii");
 
             const int32_t index   = argv[0]->i;
-            const int32_t type    = argv[1]->i;
             const int32_t rindex  = argv[2]->i;
             const int32_t hints   = argv[3]->i;
             const int32_t channel = argv[4]->i;
             const int32_t cc      = argv[5]->i;
 
             CARLA_ASSERT_INT2(index >= 0 && index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
-            CARLA_ASSERT(type >= 0);
             CARLA_ASSERT(rindex >= 0);
             CARLA_ASSERT(hints >= 0);
             CARLA_ASSERT(channel >= 0 && channel < 16);
@@ -1407,7 +1405,6 @@ public:
 
             if (index >= 0 && static_cast<int32_t>(pData->param.count))
             {
-                pData->param.data[index].type    = static_cast<ParameterType>(type);
                 pData->param.data[index].index   = index;
                 pData->param.data[index].rindex  = rindex;
                 pData->param.data[index].hints   = hints;

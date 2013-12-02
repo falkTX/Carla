@@ -307,19 +307,13 @@ typedef struct _CarlaPortCountInfo {
      */
     uint32_t outs;
 
-    /*!
-     * Total number of ports.
-     */
-    uint32_t total;
-
 #ifdef __cplusplus
     /*!
      * C++ constructor.
      */
     _CarlaPortCountInfo()
         : ins(0),
-          outs(0),
-          total(0) {}
+          outs(0) {}
 #endif
 } CarlaPortCountInfo;
 
@@ -485,27 +479,31 @@ CARLA_EXPORT const char* carla_get_complete_license_text();
 CARLA_EXPORT const char* carla_get_supported_file_extensions();
 
 /*!
- * Get how many engine drivers are available to use.
+ * Get how many engine drivers are available.
  */
 CARLA_EXPORT unsigned int carla_get_engine_driver_count();
 
 /*!
- * Get the engine driver info for \a index.
+ * Get an engine driver name.
+ * @param index Driver index
  */
 CARLA_EXPORT const char* carla_get_engine_driver_name(unsigned int index);
 
 /*!
- * Get the device names of the engine driver at \a index.
+ * Get the device names of an engine driver.
+ * @param index Driver index
  */
 CARLA_EXPORT const char* const* carla_get_engine_driver_device_names(unsigned int index);
 
 /*!
- * Get a device driver info.
+ * Get information about a device driver.
+ * @param index Driver index
+ * @param name  Device name
  */
-CARLA_EXPORT const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(unsigned int index, const char* driverName);
+CARLA_EXPORT const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(unsigned int index, const char* name);
 
 /*!
- * Get how many internal plugins are available to use.
+ * Get how many internal plugins are available.
  */
 CARLA_EXPORT unsigned int carla_get_internal_plugin_count();
 

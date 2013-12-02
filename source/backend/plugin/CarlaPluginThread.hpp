@@ -18,7 +18,7 @@
 #ifndef CARLA_PLUGIN_THREAD_HPP_INCLUDED
 #define CARLA_PLUGIN_THREAD_HPP_INCLUDED
 
-#include "CarlaBackend.hpp"
+#include "CarlaBackend.h"
 #include "CarlaThread.hpp"
 
 CARLA_BACKEND_START_NAMESPACE

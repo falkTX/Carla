@@ -349,7 +349,7 @@ const ParameterRanges& CarlaPlugin::getParameterRanges(const uint32_t parameterI
 bool CarlaPlugin::isParameterOutput(const uint32_t parameterId) const
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
-    return (pData->param.data[parameterId].type == PARAMETER_OUTPUT);
+    return ((pData->param.data[parameterId].hints & PARAMETER_IS_INPUT) == 0);
 }
 
 const MidiProgramData& CarlaPlugin::getMidiProgramData(const uint32_t index) const
@@ -374,7 +374,7 @@ int32_t CarlaPlugin::getChunkData(void** const dataPtr) const
 // -------------------------------------------------------------------
 // Information (per-plugin data)
 
-unsigned int CarlaPlugin::getAvailableOptions() const
+unsigned int CarlaPlugin::getOptionsAvailable() const
 {
     CARLA_ASSERT(false); // this should never happen
     return 0x0;
@@ -463,17 +463,16 @@ void CarlaPlugin::getMidiProgramName(const uint32_t index, char* const strBuf) c
     std::strncpy(strBuf, pData->midiprog.data[index].name, STR_MAX);
 }
 
-void CarlaPlugin::getParameterCountInfo(uint32_t& ins, uint32_t& outs, uint32_t& total) const
+void CarlaPlugin::getParameterCountInfo(uint32_t& ins, uint32_t& outs) const noexcept
 {
     ins   = 0;
     outs  = 0;
-    total = pData->param.count;
 
     for (uint32_t i=0; i < pData->param.count; ++i)
     {
-        if (pData->param.data[i].type == PARAMETER_INPUT)
+        if (pData->param.data[i].hints & PARAMETER_IS_INPUT)
             ++ins;
-        else if (pData->param.data[i].type == PARAMETER_OUTPUT)
+        else
             ++outs;
     }
 }
@@ -566,7 +565,7 @@ const SaveState& CarlaPlugin::getSaveState()
     {
         const ParameterData& paramData(pData->param.data[i]);
 
-        if (paramData.type != PARAMETER_INPUT || (paramData.hints & PARAMETER_IS_ENABLED) == 0)
+        if ((paramData.hints & PARAMETER_IS_INPUT) == 0 || (paramData.hints & PARAMETER_IS_ENABLED) == 0)
             continue;
 
         StateParameter* stateParameter(new StateParameter());
@@ -897,7 +896,7 @@ void CarlaPlugin::setName(const char* const newName)
 
 void CarlaPlugin::setOption(const unsigned int option, const bool yesNo)
 {
-    CARLA_ASSERT(getAvailableOptions() & option);
+    CARLA_ASSERT(getOptionsAvailable() & option);
 
     if (yesNo)
         fOptions |= option;
@@ -1424,7 +1423,7 @@ void CarlaPlugin::setMidiProgramById(const uint32_t bank, const uint32_t program
 // -------------------------------------------------------------------
 // Set gui stuff
 
-void CarlaPlugin::showGui(const bool yesNo)
+void CarlaPlugin::showCustomUI(const bool yesNo)
 {
     CARLA_ASSERT(false);
     return;
@@ -1433,7 +1432,7 @@ void CarlaPlugin::showGui(const bool yesNo)
     (void)yesNo;
 }
 
-void CarlaPlugin::idleGui()
+void CarlaPlugin::idle()
 {
     if (! fEnabled)
         return;
@@ -1446,7 +1445,7 @@ void CarlaPlugin::idleGui()
         // Update parameter outputs
         for (uint32_t i=0; i < pData->param.count; ++i)
         {
-            if (pData->param.data[i].type == PARAMETER_OUTPUT)
+            if ((pData->param.data[i].hints & PARAMETER_IS_INPUT) == 0)
                 uiParameterChange(i, getParameterValue(i));
         }
     }
@@ -1546,15 +1545,15 @@ void CarlaPlugin::registerToOscClient()
 
     // Base count
     {
-        uint32_t cIns, cOuts, cTotals;
-        getParameterCountInfo(cIns, cOuts, cTotals);
+        uint32_t cIns, cOuts;
+        getParameterCountInfo(cIns, cOuts);
 
 #ifdef BUILD_BRIDGE
         pData->engine->oscSend_bridge_audio_count(getAudioInCount(), getAudioOutCount(), getAudioInCount() + getAudioOutCount());
         pData->engine->oscSend_bridge_midi_count(getMidiInCount(), getMidiOutCount(), getMidiInCount() + getMidiOutCount());
         pData->engine->oscSend_bridge_parameter_count(cIns, cOuts, cTotals);
 #else
-        pData->engine->oscSend_control_set_plugin_ports(fId, getAudioInCount(), getAudioOutCount(), getMidiInCount(), getMidiOutCount(), cIns, cOuts, cTotals);
+        pData->engine->oscSend_control_set_plugin_ports(fId, getAudioInCount(), getAudioOutCount(), getMidiInCount(), getMidiOutCount(), cIns, cOuts);
 #endif
     }
 
@@ -1576,11 +1575,11 @@ void CarlaPlugin::registerToOscClient()
 
 #ifdef BUILD_BRIDGE
             pData->engine->oscSend_bridge_parameter_info(i, bufName, bufUnit);
-            pData->engine->oscSend_bridge_parameter_data(i, paramData.type, paramData.rindex, paramData.hints, paramData.midiChannel, paramData.midiCC);
+            pData->engine->oscSend_bridge_parameter_data(i, paramData.rindex, paramData.hints, paramData.midiChannel, paramData.midiCC);
             pData->engine->oscSend_bridge_parameter_ranges(i, paramRanges.def, paramRanges.min, paramRanges.max, paramRanges.step, paramRanges.stepSmall, paramRanges.stepLarge);
             pData->engine->oscSend_bridge_set_parameter_value(i, getParameterValue(i));
 #else
-            pData->engine->oscSend_control_set_parameter_data(fId, i, paramData.type, paramData.hints, bufName, bufUnit, getParameterValue(i));
+            pData->engine->oscSend_control_set_parameter_data(fId, i,paramData.hints, bufName, bufUnit, getParameterValue(i));
             pData->engine->oscSend_control_set_parameter_ranges(fId, i, paramRanges.min, paramRanges.max, paramRanges.def, paramRanges.step, paramRanges.stepSmall, paramRanges.stepLarge);
             pData->engine->oscSend_control_set_parameter_midi_cc(fId, i, paramData.midiCC);
             pData->engine->oscSend_control_set_parameter_midi_channel(fId, i, paramData.midiChannel);

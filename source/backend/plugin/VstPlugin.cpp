@@ -72,9 +72,9 @@ public:
         carla_debug("VstPlugin::~VstPlugin()");
 
         // close UI
-        if (fHints & PLUGIN_HAS_GUI)
+        if (fHints & PLUGIN_HAS_CUSTOM_UI)
         {
-            showGui(false);
+            showCustomUI(false);
 
             if (fGui.isOsc)
             {
@@ -177,7 +177,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getAvailableOptions() const override
+    unsigned int getOptionsAvailable() const override
     {
         CARLA_ASSERT(fEffect != nullptr);
 
@@ -363,7 +363,7 @@ public:
     // -------------------------------------------------------------------
     // Set gui stuff
 
-    void showGui(const bool yesNo) override
+    void showCustomUI(const bool yesNo) override
     {
         if (fGui.isVisible == yesNo)
             return;
@@ -468,7 +468,7 @@ public:
         fGui.isVisible = yesNo;
     }
 
-    void idleGui() override
+    void idle() override
     {
 #ifdef VESTIGE_HEADER
         if (fEffect != nullptr /*&& effect->ptr1*/)
@@ -486,7 +486,7 @@ public:
             }
         }
 
-        CarlaPlugin::idleGui();
+        CarlaPlugin::idle();
     }
 
     // -------------------------------------------------------------------
@@ -605,10 +605,9 @@ public:
 
         for (j=0; j < params; ++j)
         {
-            pData->param.data[j].type   = PARAMETER_INPUT;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
-            pData->param.data[j].hints  = 0x0;
+            pData->param.data[j].hints  = PARAMETER_IS_INPUT;
             pData->param.data[j].midiChannel = 0;
             pData->param.data[j].midiCC = -1;
 
@@ -787,7 +786,7 @@ public:
 
         if (fEffect->flags & effFlagsHasEditor)
         {
-            fHints |= PLUGIN_HAS_GUI;
+            fHints |= PLUGIN_HAS_CUSTOM_UI;
 
             if (! fGui.isOsc)
                 fHints |= PLUGIN_NEEDS_SINGLE_THREAD;
@@ -798,9 +797,6 @@ public:
 
         if ((fEffect->flags & effFlagsCanReplacing) != 0 && fEffect->processReplacing != fEffect->process)
             fHints |= PLUGIN_CAN_PROCESS_REPLACING;
-
-        if (fEffect->flags & effFlagsHasEditor)
-            fHints |= PLUGIN_HAS_GUI;
 
         if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, (void*)"hasCockosExtensions", 0.0f)) == 0xbeef0000)
             fHints |= PLUGIN_HAS_COCKOS_EXTENSIONS;
@@ -1256,7 +1252,7 @@ public:
                                 continue;
                             if (pData->param.data[k].midiCC != ctrlEvent.param)
                                 continue;
-                            if (pData->param.data[k].type != PARAMETER_INPUT)
+                            if ((pData->param.data[k].hints & PARAMETER_IS_INPUT) == 0)
                                 continue;
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
@@ -2327,7 +2323,7 @@ public:
             //pData->idStr += std::strrchr(filename, OS_SEP)+1; // FIXME!
             //pData->idStr += "/";
             pData->idStr += CarlaString(getUniqueId());
-            fOptions = pData->loadSettings(fOptions, getAvailableOptions());
+            fOptions = pData->loadSettings(fOptions, getOptionsAvailable());
 
             // ignore settings, we need this anyway
             if (getMidiInCount() > 0)

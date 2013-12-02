@@ -18,7 +18,7 @@
 #ifndef LADSPA_RDF_HPP_INCLUDED
 #define LADSPA_RDF_HPP_INCLUDED
 
-#include "CarlaDefines.hpp"
+#include "CarlaDefines.h"
 
 // Base Types
 typedef float LADSPA_Data;
