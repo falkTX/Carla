@@ -97,7 +97,16 @@ struct CarlaBackendStandalone {
           engineCallback(nullptr),
           engineCallbackPtr(nullptr),
           fileCallback(nullptr),
-          fileCallbackPtr(nullptr) {}
+          fileCallbackPtr(nullptr)
+    {
+#ifdef BUILD_BRIDGE
+        engineOptions.processMode         = CB::ENGINE_PROCESS_MODE_BRIDGE;
+        engineOptions.transportMode       = CB::ENGINE_TRANSPORT_MODE_BRIDGE;
+        engineOptions.forceStereo         = CB::ENGINE_OPTION_FORCE_STEREO          = false;
+        engineOptions.preferPluginBridges = CB::ENGINE_OPTION_PREFER_PLUGIN_BRIDGES = false;
+        engineOptions.preferUiBridges     = CB::ENGINE_OPTION_PREFER_UI_BRIDGES     = false;
+#endif
+    }
 
     ~CarlaBackendStandalone()
     {
@@ -299,6 +308,7 @@ const char* const* carla_get_engine_driver_device_names(unsigned int index)
 
 const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(unsigned int index, const char* name)
 {
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', nullptr);
     carla_debug("carla_get_engine_driver_device_info(%i, \"%s\")", index, name);
 
     return CarlaEngine::getDriverDeviceInfo(index, name);
@@ -360,7 +370,13 @@ const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int index)
 #endif
 }
 
-#if 0
+// -------------------------------------------------------------------------------------------------------------------
+
+CarlaEngine* carla_get_host_engine()
+{
+    return gStandalone.engine;
+}
+
 // -------------------------------------------------------------------------------------------------------------------
 
 bool carla_engine_init(const char* driverName, const char* clientName)
@@ -417,7 +433,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 
     if (gStandalone.engine->init(clientName))
     {
-        gStandalone.lastError = "no error";
+        gStandalone.lastError = "No error";
 #ifdef USE_JUCE
         gStandalone.init();
 #endif
@@ -433,12 +449,12 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 }
 
 #ifdef BUILD_BRIDGE
-bool carla_engine_init_bridge(const char* audioBaseName, const char* controlBaseName, const char* clientName)
+bool carla_engine_init_bridge(const char audioBaseName[6], const char controlBaseName[6], const char* clientName)
 {
     CARLA_SAFE_ASSERT_RETURN(audioBaseName != nullptr && audioBaseName[0] != '\0', false);
     CARLA_SAFE_ASSERT_RETURN(controlBaseName != nullptr && controlBaseName[0] != '\0', false);
     CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0', false);
-    carla_debug("carla_engine_init_bridge(\"%s\", %s, %s)", audioBaseName, controlBaseName, clientName);
+    carla_debug("carla_engine_init_bridge(\"%s\", \"%s\", \"%s\")", audioBaseName, controlBaseName, clientName);
 
     if (gStandalone.engine != nullptr)
     {
@@ -456,22 +472,28 @@ bool carla_engine_init_bridge(const char* audioBaseName, const char* controlBase
         return false;
     }
 
-    if (gStandalone.callback != nullptr)
-        gStandalone.engine->setCallback(gStandalone.callback, gStandalone.callbackPtr);
+    gStandalone.engine->setCallback(gStandalone.engineCallback, gStandalone.engineCallbackPtr);
 
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,          CB::PROCESS_MODE_BRIDGE,   nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,        CB::TRANSPORT_MODE_BRIDGE, nullptr);
+    // forced options for bridge mode
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,          CB::ENGINE_PROCESS_MODE_BRIDGE,   nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,        CB::ENGINE_TRANSPORT_MODE_BRIDGE, nullptr);
     gStandalone.engine->setOption(CB::ENGINE_OPTION_FORCE_STEREO,          false, nullptr);
     gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, false, nullptr);
     gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_UI_BRIDGES,     false, nullptr);
-    //gStandalone.engine->setOption(CB::ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     gStandalone.engineOptions.uisAlwaysOnTop      ? 1 : 0,        nullptr);
-    //gStandalone.engine->setOption(CB::ENGINE_OPTION_MAX_PARAMETERS,        static_cast<int>(gStandalone.engineOptions.maxParameters),    nullptr);
-    //gStandalone.engine->setOption(CB::ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    static_cast<int>(gStandalone.engineOptions.uiBridgesTimeout), nullptr);
+
+    // TODO: get these from environment
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_UIS_ALWAYS_ON_TOP,           gStandalone.engineOptions.uisAlwaysOnTop      ? 1 : 0,        nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_MAX_PARAMETERS,              static_cast<int>(gStandalone.engineOptions.maxParameters),    nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_UI_BRIDGES_TIMEOUT,          static_cast<int>(gStandalone.engineOptions.uiBridgesTimeout), nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,            0, (const char*)gStandalone.engineOptions.binaryDir);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,           0, (const char*)gStandalone.engineOptions.resourceDir);
 
     if (gStandalone.engine->init(clientName))
     {
-        gStandalone.lastError = "no error";
+        gStandalone.lastError = "No error";
+#ifdef USE_JUCE
         gStandalone.init();
+#endif
         return true;
     }
     else
@@ -525,7 +547,6 @@ bool carla_is_engine_running()
     return (gStandalone.engine != nullptr && gStandalone.engine->isRunning());
 }
 
-#if 0
 void carla_set_engine_about_to_close()
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
@@ -534,12 +555,12 @@ void carla_set_engine_about_to_close()
     gStandalone.engine->setAboutToClose();
 }
 
-void carla_set_engine_callback(CarlaEngineCallbackFunc func, void* ptr)
+void carla_set_engine_callback(EngineCallbackFunc func, void* ptr)
 {
     carla_debug("carla_set_engine_callback(%p, %p)", func, ptr);
 
-    gStandalone.callback    = func;
-    gStandalone.callbackPtr = ptr;
+    gStandalone.engineCallback    = func;
+    gStandalone.engineCallbackPtr = ptr;
 
     if (gStandalone.engine != nullptr)
         gStandalone.engine->setCallback(func, ptr);
@@ -549,6 +570,8 @@ void carla_set_engine_callback(CarlaEngineCallbackFunc func, void* ptr)
 //#endif
 }
 
+#if 0
+#if 0
 void carla_set_engine_option(CarlaEngineOption option, int value, const char* valueStr)
 {
     carla_debug("carla_set_engine_option(%i:%s, %i, \"%s\")", option, CB::EngineOption2Str(option), value, valueStr);
@@ -2227,10 +2250,3 @@ void carla_nsm_reply_save()
 //#endif
 
 // -------------------------------------------------------------------------------------------------------------------
-
-#ifdef BUILD_BRIDGE
-CarlaEngine* carla_get_standalone_engine()
-{
-    return gStandalone.engine;
-}
-#endif

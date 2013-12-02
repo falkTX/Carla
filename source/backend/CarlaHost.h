@@ -515,34 +515,40 @@ CARLA_EXPORT const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigne
 
 #ifdef __cplusplus
 /*!
- * TODO.
+ * Get the currently used Host engine.
+ * @note C++ only
  */
-CARLA_EXPORT CarlaEngine* carla_get_standalone_engine();
+CARLA_EXPORT CarlaEngine* carla_get_host_engine();
 #endif
 
 /*!
- * Initialize the engine with driver \a driverName, using \a clientName for its internal name.\n
+ * Initialize the engine.\n
  * Make sure to call carla_engine_idle() at regular intervals afterwards.
+ * @param driverName Driver to use
+ * @param clientName Engine master client name
  */
 CARLA_EXPORT bool carla_engine_init(const char* driverName, const char* clientName);
 
-#ifdef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE
 /*!
  * Initialize the engine in bridged mode.
+ * @param audioBaseName   Shared memory key for audio pool
+ * @param controlBaseName Shared memory key for control messages
+ * @param clientName      Engine master client name
  */
-CARLA_EXPORT bool carla_engine_init_bridge(const char* audioBaseName, const char* controlBaseName, const char* clientName);
+CARLA_EXPORT bool carla_engine_init_bridge(const char audioBaseName[6], const char controlBaseName[6], const char* clientName);
 #endif
 
 /*!
- * Close the running engine.\n
+ * Close the engine.\n
  * This function always closes the engine even if it returns false.\n
- * When false is returned, something went wrong when closing the engine, but it was still closed nonetheless.
+ * In other words, something went wrong when closing the engine but it was still closed nonetheless.
  */
 CARLA_EXPORT bool carla_engine_close();
 
 /*!
- * Idle the running engine.\n
- * \note This should never be called if the engine is not running.
+ * Idle the engine.\n
+ * Do not call this if the engine is not running.
  */
 CARLA_EXPORT void carla_engine_idle();
 
