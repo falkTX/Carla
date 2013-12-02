@@ -1407,7 +1407,6 @@ void CarlaEngine::callback(const EngineCallbackOpcode action, const unsigned int
 
 void CarlaEngine::setCallback(const EngineCallbackFunc func, void* const ptr)
 {
-    CARLA_ASSERT(func != nullptr);
     carla_debug("CarlaEngine::setCallback(%p, %p)", func, ptr);
 
     pData->callback    = func;

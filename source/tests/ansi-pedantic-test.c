@@ -20,6 +20,14 @@
 
 #include <stdio.h>
 
+#ifdef __cplusplus
+CARLA_BACKEND_USE_NAMESPACE
+# ifdef CARLA_PROPER_CPP11_SUPPORT
+#  undef NULL
+#  define NULL nullptr
+# endif
+#endif
+
 int main(int argc, char* argv[])
 {
     ParameterData a;
@@ -38,11 +46,57 @@ int main(int argc, char* argv[])
     const char* licenseText;
     const char* fileExtensions;
 
+    uint l, count;
+
     licenseText = carla_get_complete_license_text();
     printf("LICENSE:\n%s\n", licenseText);
 
     fileExtensions = carla_get_supported_file_extensions();
     printf("FILE EXTENSIONS:\n%s\n", fileExtensions);
+
+    count = carla_get_engine_driver_count();
+    printf("DRIVER COUNT: %i\n", count);
+
+    for (l=0; l < count; ++l)
+    {
+        const char*        driverName;
+        const char* const* driverDeviceNames;
+        uint m, count2;
+
+        driverName        = carla_get_engine_driver_name(l);
+        driverDeviceNames = carla_get_engine_driver_device_names(l);
+        printf("DRIVER %i/%i: \"%s\" : DEVICES:\n", l+1, count, driverName);
+
+        count2 = 0;
+        while (driverDeviceNames[count2] != NULL)
+            ++count2;
+
+        for (m = 0; m < count2; ++m)
+        {
+            printf("DRIVER DEVICE %i/%i: \"%s\"\n", m+1, count2, driverDeviceNames[m]);
+        }
+    }
+
+    if (carla_engine_init("JACK", "ansi-test"))
+    {
+        if (carla_add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, NULL, NULL, "audiofile", NULL))
+        {
+            carla_set_custom_data(0, CUSTOM_DATA_TYPE_STRING, "file", "/home/falktx/Music/test.wav");
+            carla_transport_play();
+        }
+        else
+        {
+            printf("%s\n", carla_get_last_error());
+        }
+
+        while (carla_is_engine_running())
+        {
+            carla_engine_idle();
+            sleep(1);
+        }
+
+        carla_engine_close();
+    }
 
     return 0;
 
