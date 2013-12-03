@@ -470,7 +470,7 @@ typedef struct _CarlaTransportInfo {
 CARLA_EXPORT const char* carla_get_complete_license_text();
 
 /*!
- * Get all the supported file types in carla_load_filename().\n
+ * Get all the supported file extensions in carla_load_file().\n
  * Returned string uses this syntax:
  * @code
  * "*.ext1;*.ext2;*.ext3"
@@ -529,7 +529,7 @@ CARLA_EXPORT CarlaEngine* carla_get_host_engine();
  */
 CARLA_EXPORT bool carla_engine_init(const char* driverName, const char* clientName);
 
-#ifndef BUILD_BRIDGE
+#ifdef BUILD_BRIDGE
 /*!
  * Initialize the engine in bridged mode.
  * @param audioBaseName   Shared memory key for audio pool
@@ -542,7 +542,7 @@ CARLA_EXPORT bool carla_engine_init_bridge(const char audioBaseName[6], const ch
 /*!
  * Close the engine.\n
  * This function always closes the engine even if it returns false.\n
- * In other words, something went wrong when closing the engine but it was still closed nonetheless.
+ * In other words, even when something goes wrong when closing the engine it still be closed nonetheless.
  */
 CARLA_EXPORT bool carla_engine_close();
 
@@ -564,42 +564,48 @@ CARLA_EXPORT bool carla_is_engine_running();
 CARLA_EXPORT void carla_set_engine_about_to_close();
 
 /*!
- * Set the engine callback function to \a func.
- * Use \a ptr to pass a custom pointer to the callback.
+ * Set the engine callback function.
+ * @param func Callback function
+ * @param ptr  Callback pointer
  */
 CARLA_EXPORT void carla_set_engine_callback(EngineCallbackFunc func, void* ptr);
 
+#ifndef BUILD_BRIDGE
 /*!
- * Set the engine option \a option.\n
- * With the exception of OPTION_PROCESS_NAME, OPTION_TRANSPORT_MODE and OPTION_PATH_*,
- * this function should not be called when the engine is running.
+ * Set an engine option.
+ * @param option   Option
+ * @param value    Value as number
+ * @param valueStr Value as string
  */
 CARLA_EXPORT void carla_set_engine_option(EngineOption option, int value, const char* valueStr);
+#endif
 
 /*!
- * Set the file callback function to \a func.
- * Use \a ptr to pass a custom pointer to the callback.
+ * Set the file callback function.
+ * @param func Callback function
+ * @param ptr  Callback pointer
  */
 CARLA_EXPORT void carla_set_file_callback(FileCallbackFunc func, void* ptr);
 
 /*!
- * Load \a filename of any type.\n
+ * Load a file of any type.\n
  * This will try to load a generic file as a plugin,
- * either by direct handling (GIG, SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
- * @see carla_get_supported_file_types()
+ * either by direct handling (Csound, GIG, SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
+ * @param Filename Filename
+ * @see carla_get_supported_file_extensions()
  */
-CARLA_EXPORT bool carla_load_filename(const char* filename);
+CARLA_EXPORT bool carla_load_file(const char* filename);
 
 /*!
- * Load \a filename project file.\n
- * (project files have *.carxp extension)
- * \note Already loaded plugins are not removed; call carla_remove_all_plugins() first if needed.
+ * Load a Carla project file.
+ * @param Filename Filename
+ * @note Currently loaded plugins are not removed; call carla_remove_all_plugins() first if needed.
  */
 CARLA_EXPORT bool carla_load_project(const char* filename);
 
 /*!
- * Save current project to \a filename.\n
- * (project files have *.carxp extension)
+ * Save current project to a file.
+ * @param Filename Filename
  */
 CARLA_EXPORT bool carla_save_project(const char* filename);
 

@@ -72,7 +72,7 @@ public:
         carla_debug("VstPlugin::~VstPlugin()");
 
         // close UI
-        if (fHints & PLUGIN_HAS_CUSTOM_UI)
+        if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
         {
             showCustomUI(false);
 
@@ -147,7 +147,7 @@ public:
         if (fEffect->flags & effFlagsIsSynth)
             return PLUGIN_CATEGORY_SYNTH;
 
-        return getPluginCategoryFromName(fName);
+        return getPluginCategoryFromName(pData->name);
     }
 
     long getUniqueId() const override
@@ -167,7 +167,7 @@ public:
 
     int32_t getChunkData(void** const dataPtr) const override
     {
-        CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
+        CARLA_ASSERT(pData->options & PLUGIN_OPTION_USE_CHUNKS);
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(dataPtr != nullptr);
 
@@ -194,7 +194,7 @@ public:
         if (fEffect->flags & effFlagsProgramChunks)
             options |= PLUGIN_OPTION_USE_CHUNKS;
 
-        if (vstPluginCanDo(fEffect, "receiveVstEvents") || vstPluginCanDo(fEffect, "receiveVstMidiEvent") || (fEffect->flags & effFlagsIsSynth) > 0 || (fHints & PLUGIN_WANTS_MIDI_INPUT))
+        if (vstPluginCanDo(fEffect, "receiveVstEvents") || vstPluginCanDo(fEffect, "receiveVstMidiEvent") || (fEffect->flags & effFlagsIsSynth) > 0 || (pData->hints & PLUGIN_WANTS_MIDI_INPUT))
         {
             options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
             options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
@@ -289,7 +289,7 @@ public:
         CarlaPlugin::setName(newName);
 
         //if (pData->gui != nullptr)
-        //    pData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)fName));
+        //    pData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)pData->name));
     }
 
     // -------------------------------------------------------------------
@@ -309,7 +309,7 @@ public:
 
     void setChunkData(const char* const stringData) override
     {
-        CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
+        CARLA_ASSERT(pData->options & PLUGIN_OPTION_USE_CHUNKS);
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(stringData != nullptr);
 
@@ -427,7 +427,7 @@ public:
                             pData->gui->setSize(fGui.lastWidth, fGui.lastHeight);
                     }
 
-                    pData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)fName));
+                    pData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)pData->name));
                     pData->gui->show();
                 }
                 else
@@ -440,8 +440,8 @@ public:
                         pData->gui = nullptr;
                     }
 
-                    pData->engine->callback(CALLBACK_ERROR, fId, 0, 0, 0.0f, "Plugin refused to open its own UI");
-                    pData->engine->callback(CALLBACK_SHOW_GUI, fId, -1, 0, 0.0f, nullptr);
+                    pData->engine->callback(CALLBACK_ERROR, pData->id, 0, 0, 0.0f, "Plugin refused to open its own UI");
+                    pData->engine->callback(CALLBACK_SHOW_GUI, pData->id, -1, 0, 0.0f, nullptr);
                     return;
                 }
             }
@@ -517,7 +517,7 @@ public:
         aOuts  = fEffect->numOutputs;
         params = fEffect->numParams;
 
-        if (vstPluginCanDo(fEffect, "receiveVstEvents") || vstPluginCanDo(fEffect, "receiveVstMidiEvent") || (fEffect->flags & effFlagsIsSynth) > 0 || (fHints & PLUGIN_WANTS_MIDI_INPUT))
+        if (vstPluginCanDo(fEffect, "receiveVstEvents") || vstPluginCanDo(fEffect, "receiveVstMidiEvent") || (fEffect->flags & effFlagsIsSynth) > 0 || (pData->hints & PLUGIN_WANTS_MIDI_INPUT))
         {
             mIns = 1;
             needsCtrlIn = true;
@@ -560,7 +560,7 @@ public:
 
             if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = fName;
+                portName  = pData->name;
                 portName += ":";
             }
 
@@ -585,7 +585,7 @@ public:
 
             if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = fName;
+                portName  = pData->name;
                 portName += ":";
             }
 
@@ -616,7 +616,7 @@ public:
             VstParameterProperties prop;
             carla_zeroStruct<VstParameterProperties>(prop);
 
-            if (fHints & PLUGIN_HAS_COCKOS_EXTENSIONS)
+            if (pData->hints & PLUGIN_HAS_COCKOS_EXTENSIONS)
             {
                 double range[2] = { 0.0, 1.0 };
 
@@ -725,7 +725,7 @@ public:
             pData->param.data[j].hints |= PARAMETER_USES_CUSTOM_TEXT;
 #endif
 
-            if ((fHints & PLUGIN_USES_OLD_VSTSDK) != 0 || dispatcher(effCanBeAutomated, j, 0, nullptr, 0.0f) == 1)
+            if ((pData->hints & PLUGIN_USES_OLD_VSTSDK) != 0 || dispatcher(effCanBeAutomated, j, 0, nullptr, 0.0f) == 1)
                 pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
 
             // no such thing as VST default parameters
@@ -750,7 +750,7 @@ public:
 
             if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = fName;
+                portName  = pData->name;
                 portName += ":";
             }
 
@@ -766,7 +766,7 @@ public:
 
             if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = fName;
+                portName  = pData->name;
                 portName += ":";
             }
 
@@ -779,36 +779,36 @@ public:
         // plugin hints
         const intptr_t vstCategory = dispatcher(effGetPlugCategory, 0, 0, nullptr, 0.0f);
 
-        fHints = 0x0;
+        pData->hints = 0x0;
 
         //if (vstCategory == kPlugCategSynth || vstCategory == kPlugCategGenerator)
-        //    fHints |= PLUGIN_IS_SYNTH;
+        //    pData->hints |= PLUGIN_IS_SYNTH;
 
         if (fEffect->flags & effFlagsHasEditor)
         {
-            fHints |= PLUGIN_HAS_CUSTOM_UI;
+            pData->hints |= PLUGIN_HAS_CUSTOM_UI;
 
             if (! fGui.isOsc)
-                fHints |= PLUGIN_NEEDS_SINGLE_THREAD;
+                pData->hints |= PLUGIN_NEEDS_SINGLE_THREAD;
         }
 
         if (dispatcher(effGetVstVersion, 0, 0, nullptr, 0.0f) < kVstVersion)
-            fHints |= PLUGIN_USES_OLD_VSTSDK;
+            pData->hints |= PLUGIN_USES_OLD_VSTSDK;
 
         if ((fEffect->flags & effFlagsCanReplacing) != 0 && fEffect->processReplacing != fEffect->process)
-            fHints |= PLUGIN_CAN_PROCESS_REPLACING;
+            pData->hints |= PLUGIN_CAN_PROCESS_REPLACING;
 
         if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, (void*)"hasCockosExtensions", 0.0f)) == 0xbeef0000)
-            fHints |= PLUGIN_HAS_COCKOS_EXTENSIONS;
+            pData->hints |= PLUGIN_HAS_COCKOS_EXTENSIONS;
 
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
-            fHints |= PLUGIN_CAN_DRYWET;
+            pData->hints |= PLUGIN_CAN_DRYWET;
 
         if (aOuts > 0)
-            fHints |= PLUGIN_CAN_VOLUME;
+            pData->hints |= PLUGIN_CAN_VOLUME;
 
         if (aOuts >= 2 && aOuts % 2 == 0)
-            fHints |= PLUGIN_CAN_BALANCE;
+            pData->hints |= PLUGIN_CAN_BALANCE;
 
         // extra plugin hints
         pData->extraHints = 0x0;
@@ -829,7 +829,7 @@ public:
         }
 
         // check latency
-        if (fHints & PLUGIN_CAN_DRYWET)
+        if (pData->hints & PLUGIN_CAN_DRYWET)
         {
 #ifdef VESTIGE_HEADER
             char* const empty3Ptr = &fEffect->empty3[0];
@@ -899,10 +899,10 @@ public:
         // Update OSC Names
         if (pData->engine->isOscControlRegistered())
         {
-            pData->engine->oscSend_control_set_program_count(fId, count);
+            pData->engine->oscSend_control_set_program_count(pData->id, count);
 
             for (i=0; i < count; ++i)
-                pData->engine->oscSend_control_set_program_name(fId, i, pData->prog.names[i]);
+                pData->engine->oscSend_control_set_program_name(pData->id, i, pData->prog.names[i]);
         }
 #endif
 
@@ -957,7 +957,7 @@ public:
                     dispatcher(effSetProgram, 0, pData->prog.current, nullptr, 0.0f);
             }
 
-            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -1005,7 +1005,7 @@ public:
 
         if (pData->needsReset)
         {
-            if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+            if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
                 for (k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; ++k)
                 {
@@ -1145,7 +1145,7 @@ public:
             // Event Input (System)
 
             bool allNotesOffSent = false;
-            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
+            bool sampleAccurate  = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t time, nEvents = pData->event.portIn->getEventCount();
             uint32_t startTime  = 0;
@@ -1202,21 +1202,21 @@ public:
                         {
                             float value;
 
-                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (fHints & PLUGIN_CAN_DRYWET) > 0)
+                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) > 0)
                             {
                                 value = ctrlEvent.value;
                                 setDryWet(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
                             }
 
-                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) > 0)
+                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) > 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
                             }
 
-                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) > 0)
+                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) > 0)
                             {
                                 float left, right;
                                 value = ctrlEvent.value/0.5f - 1.0f;
@@ -1275,7 +1275,7 @@ public:
                             pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
 
-                        if ((fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
+                        if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
                             if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                                 continue;
@@ -1299,7 +1299,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
-                        if (event.channel == pData->ctrlChannel && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
                         {
                             if (ctrlEvent.param < pData->prog.count)
                             {
@@ -1311,7 +1311,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllSoundOff:
-                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
                             if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                                 continue;
@@ -1329,7 +1329,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllNotesOff:
-                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
@@ -1366,13 +1366,13 @@ public:
                     uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
                     uint8_t channel = event.channel;
 
-                    if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
+                    if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
                         continue;
-                    if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
+                    if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
                         continue;
-                    if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
+                    if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
                         continue;
-                    if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (fOptions & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
+                    if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
                         continue;
 
                     // Fix bad note-off
@@ -1508,7 +1508,7 @@ public:
 
         fIsProcessing = true;
 
-        if (fHints & PLUGIN_CAN_PROCESS_REPLACING)
+        if (pData->hints & PLUGIN_CAN_PROCESS_REPLACING)
         {
             fEffect->processReplacing(fEffect,
                                       (pData->audioIn.count > 0) ? vstInBuffer : nullptr,
@@ -1541,9 +1541,9 @@ public:
         // Post-processing (dry/wet, volume and balance)
 
         {
-            const bool doVolume  = (fHints & PLUGIN_CAN_VOLUME) != 0 && pData->postProc.volume != 1.0f;
-            const bool doDryWet  = (fHints & PLUGIN_CAN_DRYWET) != 0 && pData->postProc.dryWet != 1.0f;
-            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) != 0 && (pData->postProc.balanceLeft != -1.0f || pData->postProc.balanceRight != 1.0f);
+            const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) != 0 && pData->postProc.volume != 1.0f;
+            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && pData->postProc.dryWet != 1.0f;
+            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && (pData->postProc.balanceLeft != -1.0f || pData->postProc.balanceRight != 1.0f);
 
             bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];
@@ -1733,7 +1733,7 @@ protected:
 //     void guiClosedCallback() override
 //     {
 //         showGui(false);
-//         pData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
+//         pData->engine->callback(CALLBACK_SHOW_GUI, pData->id, 0, 0, 0.0f, nullptr);
 //     }
 
     intptr_t dispatcher(int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt) const
@@ -1787,7 +1787,7 @@ protected:
         switch (opcode)
         {
         case audioMasterAutomate:
-            if (! fEnabled)
+            if (! pData->enabled)
                 break;
 
             // plugins should never do this:
@@ -1840,7 +1840,7 @@ protected:
 
         case audioMasterWantMidi:
             // Deprecated in VST SDK 2.4
-            fHints |= PLUGIN_WANTS_MIDI_INPUT;
+            pData->hints |= PLUGIN_WANTS_MIDI_INPUT;
             break;
 #endif
 
@@ -1853,12 +1853,12 @@ protected:
             break;
 
         case audioMasterProcessEvents:
-            CARLA_ASSERT(fEnabled);
+            CARLA_ASSERT(pData->enabled);
             CARLA_ASSERT(fIsProcessing);
             CARLA_ASSERT(pData->event.portOut != nullptr);
             CARLA_ASSERT(ptr != nullptr);
 
-            if (! fEnabled)
+            if (! pData->enabled)
                 return 0;
             if (! fIsProcessing)
                 return 0;
@@ -1928,11 +1928,11 @@ protected:
 
 #if 0
         case audioMasterIOChanged:
-            CARLA_ASSERT(fEnabled);
+            CARLA_ASSERT(pData->enabled);
 
             // TESTING
 
-            if (! fEnabled)
+            if (! pData->enabled)
             {
                 ret = 1;
                 break;
@@ -2094,12 +2094,12 @@ protected:
                     if (pData->prog.current != current)
                     {
                         pData->prog.current = current;
-                        pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED, fId, current, 0, 0.0f, nullptr);
+                        pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED, pData->id, current, 0, 0.0f, nullptr);
                     }
                 }
             }
 
-            pData->engine->callback(ENGINE_CALLBACK_UPDATE, fId, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0f, nullptr);
             ret = 1;
             break;
 
@@ -2224,7 +2224,7 @@ public:
 
         if (name != nullptr)
         {
-            fName = pData->engine->getUniquePluginName(name);
+            pData->name = pData->engine->getUniquePluginName(name);
         }
         else
         {
@@ -2233,16 +2233,16 @@ public:
 
             if (strBuf[0] != '\0')
             {
-                fName = pData->engine->getUniquePluginName(strBuf);
+                pData->name = pData->engine->getUniquePluginName(strBuf);
             }
             else
             {
                 const char* const label = std::strrchr(filename, OS_SEP)+1;
-                fName = pData->engine->getUniquePluginName(label);
+                pData->name = pData->engine->getUniquePluginName(label);
             }
         }
 
-        fFilename = filename;
+        pData->filename = filename;
 
         // ---------------------------------------------------------------
         // register client
@@ -2266,10 +2266,10 @@ public:
         dispatcher(effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
 
         if (dispatcher(effGetVstVersion, 0, 0, nullptr, 0.0f) < kVstVersion)
-            fHints |= PLUGIN_USES_OLD_VSTSDK;
+            pData->hints |= PLUGIN_USES_OLD_VSTSDK;
 
         if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, (void*)"hasCockosExtensions", 0.0f)) == 0xbeef0000)
-            fHints |= PLUGIN_HAS_COCKOS_EXTENSIONS;
+            pData->hints |= PLUGIN_HAS_COCKOS_EXTENSIONS;
 
         // ---------------------------------------------------------------
         // gui stuff
@@ -2300,22 +2300,22 @@ public:
 
         {
             // set default options
-            fOptions = 0x0;
+            pData->options = 0x0;
 
-            fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
             if (getMidiInCount() > 0)
-                fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
+                pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
             if (fEffect->flags & effFlagsProgramChunks)
-                fOptions |= PLUGIN_OPTION_USE_CHUNKS;
+                pData->options |= PLUGIN_OPTION_USE_CHUNKS;
 
-            if (vstPluginCanDo(fEffect, "receiveVstEvents") || vstPluginCanDo(fEffect, "receiveVstMidiEvent") || (fEffect->flags & effFlagsIsSynth) > 0 || (fHints & PLUGIN_WANTS_MIDI_INPUT))
+            if (vstPluginCanDo(fEffect, "receiveVstEvents") || vstPluginCanDo(fEffect, "receiveVstMidiEvent") || (fEffect->flags & effFlagsIsSynth) > 0 || (pData->hints & PLUGIN_WANTS_MIDI_INPUT))
             {
-                fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-                fOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-                fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
-                fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+                pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+                pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+                pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+                pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
             }
 
             // load settings
@@ -2323,11 +2323,11 @@ public:
             //pData->idStr += std::strrchr(filename, OS_SEP)+1; // FIXME!
             //pData->idStr += "/";
             pData->idStr += CarlaString(getUniqueId());
-            fOptions = pData->loadSettings(fOptions, getOptionsAvailable());
+            pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
 
             // ignore settings, we need this anyway
             if (getMidiInCount() > 0)
-                fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
+                pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
         }
 
         return true;

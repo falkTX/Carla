@@ -312,7 +312,7 @@ public:
 
             if (pData->engine->isOffline())
             {
-                fEngineChannel->PrepareLoadInstrument((const char*)fFilename, rIndex);
+                fEngineChannel->PrepareLoadInstrument((const char*)pData->filename, rIndex);
                 fEngineChannel->LoadInstrument();
             }
             else
@@ -360,7 +360,7 @@ public:
 
             if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = fName;
+                portName  = pData->name;
                 portName += ":";
             }
 
@@ -375,7 +375,7 @@ public:
 
             if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = fName;
+                portName  = pData->name;
                 portName += ":";
             }
 
@@ -394,7 +394,7 @@ public:
 
             if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = fName;
+                portName  = pData->name;
                 portName += ":";
             }
 
@@ -407,10 +407,10 @@ public:
         // ---------------------------------------
 
         // plugin hints
-        fHints  = 0x0;
-        //fHints |= PLUGIN_IS_SYNTH;
-        fHints |= PLUGIN_CAN_VOLUME;
-        fHints |= PLUGIN_CAN_BALANCE;
+        pData->hints  = 0x0;
+        //pData->hints |= PLUGIN_IS_SYNTH;
+        pData->hints |= PLUGIN_CAN_VOLUME;
+        pData->hints |= PLUGIN_CAN_BALANCE;
 
         // extra plugin hints
         pData->extraHints  = 0x0;
@@ -466,10 +466,10 @@ public:
         // Update OSC Names
         if (pData->engine->isOscControlRegistered())
         {
-            pData->engine->oscSend_control_set_midi_program_count(fId, count);
+            pData->engine->oscSend_control_set_midi_program_count(pData->id, count);
 
             for (i=0; i < count; ++i)
-                pData->engine->oscSend_control_set_midi_program_data(fId, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
+                pData->engine->oscSend_control_set_midi_program_data(pData->id, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
         }
 #endif
 
@@ -479,7 +479,7 @@ public:
         }
         else
         {
-            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -526,7 +526,7 @@ public:
 
         if (pData->needsReset)
         {
-            if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+            if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
                 for (k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; ++k)
                 {
@@ -572,7 +572,7 @@ public:
             // Event Input (System)
 
             bool allNotesOffSent = false;
-            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
+            bool sampleAccurate  = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t time, nEvents = pData->event.portIn->getEventCount();
             uint32_t startTime  = 0;
@@ -632,21 +632,21 @@ public:
                         {
                             float value;
 
-                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (fHints & PLUGIN_CAN_DRYWET) > 0)
+                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) > 0)
                             {
                                 value = ctrlEvent.value;
                                 setDryWet(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
                             }
 
-                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) > 0)
+                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) > 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
                             }
 
-                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) > 0)
+                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) > 0)
                             {
                                 float left, right;
                                 value = ctrlEvent.value/0.5f - 1.0f;
@@ -705,7 +705,7 @@ public:
                             pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
 
-                        if ((fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
+                        if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
                             fMidiInputPort->DispatchControlChange(ctrlEvent.param, ctrlEvent.value*127.0f, event.channel, sampleAccurate ? startTime : time);
                         }
@@ -714,12 +714,12 @@ public:
                     }
 
                     case kEngineControlEventTypeMidiBank:
-                        if (event.channel == pData->ctrlChannel && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
                             nextBankId = ctrlEvent.param;
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
-                        if (event.channel == pData->ctrlChannel && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
                         {
                             const uint32_t nextProgramId = ctrlEvent.param;
 
@@ -736,14 +736,14 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllSoundOff:
-                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
                             fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_SOUND_OFF, 0, event.channel, sampleAccurate ? startTime : time);
                         }
                         break;
 
                     case kEngineControlEventTypeAllNotesOff:
-                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
@@ -789,27 +789,27 @@ public:
 
                         pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, note, velo);
                     }
-                    else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) != 0)
+                    else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) != 0)
                     {
                         //const uint8_t note     = midiEvent.data[1];
                         //const uint8_t pressure = midiEvent.data[2];
 
                         // unsupported
                     }
-                    else if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0)
+                    else if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0)
                     {
                         const uint8_t control = midiEvent.data[1];
                         const uint8_t value   = midiEvent.data[2];
 
                         fMidiInputPort->DispatchControlChange(control, value, channel, fragmentPos);
                     }
-                    else if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) != 0)
+                    else if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) != 0)
                     {
                         //const uint8_t pressure = midiEvent.data[1];
 
                         // unsupported
                     }
-                    else if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (fOptions & PLUGIN_OPTION_SEND_PITCHBEND) != 0)
+                    else if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) != 0)
                     {
                         const uint8_t lsb = midiEvent.data[1];
                         const uint8_t msb = midiEvent.data[2];
@@ -873,8 +873,8 @@ public:
         // Post-processing (dry/wet, volume and balance)
 
         {
-            const bool doVolume  = (fHints & PLUGIN_CAN_VOLUME) > 0 && pData->postProc.volume != 1.0f;
-            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) > 0 && (pData->postProc.balanceLeft != -1.0f || pData->postProc.balanceRight != 1.0f);
+            const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) > 0 && pData->postProc.volume != 1.0f;
+            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) > 0 && (pData->postProc.balanceLeft != -1.0f || pData->postProc.balanceRight != 1.0f);
 
             float oldBufLeft[doBalance ? frames : 1];
 
@@ -1053,15 +1053,15 @@ public:
         fRealName = info.InstrumentName.c_str();
         fLabel    = info.Product.c_str();
         fMaker    = info.Artists.c_str();
-        fFilename = filename;
+        pData->filename = filename;
 
         if (kUses16Outs && ! fLabel.endsWith(" (16 outs)"))
             fLabel += " (16 outs)";
 
         if (name != nullptr)
-            fName = pData->engine->getUniquePluginName(name);
+            pData->name = pData->engine->getUniquePluginName(name);
         else
-            fName = pData->engine->getUniquePluginName((const char*)fRealName);
+            pData->name = pData->engine->getUniquePluginName((const char*)fRealName);
 
         // ---------------------------------------------------------------
         // Register client
@@ -1094,17 +1094,17 @@ public:
 
         {
             // set default options
-            fOptions = 0x0;
+            pData->options = 0x0;
 
-            fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-            fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
-            fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+            pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+            pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
             // load settings
             pData->idStr  = kIsGIG ? "GIG" : "SFZ";
             pData->idStr += "/";
             pData->idStr += label;
-            fOptions = pData->loadSettings(fOptions, getOptionsAvailable());
+            pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
         }
 
         return true;

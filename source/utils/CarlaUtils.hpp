@@ -32,6 +32,13 @@
 # include <stdint.h>
 #endif
 
+#ifdef CARLA_OS_WIN
+# include <winsock2.h>
+# include <windows.h>
+#else
+# include <unistd.h>
+#endif
+
 // -----------------------------------------------------------------------
 // misc functions
 

@@ -1103,24 +1103,24 @@ class Host(object):
     # Get the complete license text of used third-party code and features.
     # Returned string is in basic html format.
     def get_complete_license_text(self):
-        return self.lib.carla_get_complete_license_text()
+        return charPtrToString(self.lib.carla_get_complete_license_text())
 
-    # Get all the supported file types in carla_load_filename().
+    # Get all the supported file extensions in carla_load_file().
     # Returned string uses this syntax:
     # @code
     # "*.ext1;*.ext2;*.ext3"
     # @endcode
     def get_supported_file_extensions(self):
-        return self.lib.carla_get_supported_file_extensions()
+        return charPtrToString(self.lib.carla_get_supported_file_extensions())
 
     # Get how many engine drivers are available.
     def get_engine_driver_count(self):
-        return self.lib.carla_get_engine_driver_count()
+        return int(self.lib.carla_get_engine_driver_count())
 
     # Get an engine driver name.
     # @param index Driver index
     def get_engine_driver_name(self, index):
-        return self.lib.carla_get_engine_driver_name(index)
+        return charPtrToString(self.lib.carla_get_engine_driver_name(index))
 
     # Get the device names of an engine driver.
     # @param index Driver index
@@ -1133,40 +1133,78 @@ class Host(object):
     def get_engine_driver_device_info(self, index, name):
         return structToDict(self.lib.carla_get_engine_driver_device_info(index, name))
 
+    # Get how many internal plugins are available.
     def get_internal_plugin_count(self):
-        return self.lib.carla_get_internal_plugin_count()
+        return int(self.lib.carla_get_internal_plugin_count())
 
-    def get_internal_plugin_info(self, internalPluginId):
-        return structToDict(self.lib.carla_get_internal_plugin_info(internalPluginId).contents)
+    # Get information about an internal plugin.
+    # @param index Internal plugin Id
+    def get_internal_plugin_info(self, index):
+        return structToDict(self.lib.carla_get_internal_plugin_info(index).contents)
 
+    # Initialize the engine.
+    # Make sure to call carla_engine_idle() at regular intervals afterwards.
+    # @param driverName Driver to use
+    # @param clientName Engine master client name
     def engine_init(self, driverName, clientName):
-        return self.lib.carla_engine_init(driverName.encode("utf-8"), clientName.encode("utf-8"))
+        return bool(self.lib.carla_engine_init(driverName.encode("utf-8"), clientName.encode("utf-8")))
 
+    # Close the engine.
+    # This function always closes the engine even if it returns false.
+    # In other words, even when something goes wrong when closing the engine it still be closed nonetheless.
     def engine_close(self):
-        return self.lib.carla_engine_close()
+        return bool(self.lib.carla_engine_close())
 
+    # Idle the engine.
+    # Do not call this if the engine is not running.
     def engine_idle(self):
         self.lib.carla_engine_idle()
 
+    # Check if the engine is running.
     def is_engine_running(self):
-        return self.lib.carla_is_engine_running()
+        return bool(self.lib.carla_is_engine_running())
 
+    # Tell the engine it's about to close.
+    # This is used to prevent the engine thread(s) from reactivating.
     def set_engine_about_to_close(self):
         self.lib.carla_set_engine_about_to_close()
 
+    # Set the engine callback function.
+    # @param func Callback function
     def set_engine_callback(self, func):
-        self._callback = EngineCallbackFunc(func)
-        self.lib.carla_set_engine_callback(self._callback, c_nullptr)
+        self._engineCallback = EngineCallbackFunc(func)
+        self.lib.carla_set_engine_callback(self._engineCallback, None)
 
+    # Set an engine option.
+    # @param option   Option
+    # @param value    Value as number
+    # @param valueStr Value as string
     def set_engine_option(self, option, value, valueStr):
         self.lib.carla_set_engine_option(option, value, valueStr.encode("utf-8"))
 
-    def load_filename(self, filename):
-        return self.lib.carla_load_filename(filename.encode("utf-8"))
+    # Set the file callback function.
+    # @param func Callback function
+    # @param ptr  Callback pointer
+    def set_file_callback(self, func):
+        self._fileCallback = FileCallbackFunc(func)
+        self.lib.carla_set_file_callback(self._fileCallback, None)
 
+    # Load a file of any type.\n
+    # This will try to load a generic file as a plugin,
+    # either by direct handling (Csound, GIG, SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
+    # @param Filename Filename
+    # @see carla_get_supported_file_extensions()
+    def load_file(self, filename):
+        return self.lib.carla_load_file(filename.encode("utf-8"))
+
+    # Load a Carla project file.
+    # @param Filename Filename
+    # @note Currently loaded plugins are not removed; call carla_remove_all_plugins() first if needed.
     def load_project(self, filename):
         return self.lib.carla_load_project(filename.encode("utf-8"))
 
+    # Save current project to a file.
+    # @param Filename Filename
     def save_project(self, filename):
         return self.lib.carla_save_project(filename.encode("utf-8"))
 
@@ -1401,8 +1439,6 @@ class Host(object):
         self.lib.carla_get_engine_driver_device_info.argtypes = [c_uint, c_char_p]
         self.lib.carla_get_engine_driver_device_info.restype = POINTER(EngineDriverDeviceInfo)
 
-        return
-
         self.lib.carla_get_internal_plugin_count.argtypes = None
         self.lib.carla_get_internal_plugin_count.restype = c_uint
 
@@ -1424,14 +1460,16 @@ class Host(object):
         self.lib.carla_set_engine_about_to_close.argtypes = None
         self.lib.carla_set_engine_about_to_close.restype = None
 
+        return
+
         self.lib.carla_set_engine_callback.argtypes = [EngineCallbackFunc, c_void_p]
         self.lib.carla_set_engine_callback.restype = None
 
         self.lib.carla_set_engine_option.argtypes = [c_enum, c_int, c_char_p]
         self.lib.carla_set_engine_option.restype = None
 
-        self.lib.carla_load_filename.argtypes = [c_char_p]
-        self.lib.carla_load_filename.restype = c_bool
+        self.lib.carla_load_file.argtypes = [c_char_p]
+        self.lib.carla_load_file.restype = c_bool
 
         self.lib.carla_load_project.argtypes = [c_char_p]
         self.lib.carla_load_project.restype = c_bool

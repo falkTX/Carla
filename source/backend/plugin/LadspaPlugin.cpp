@@ -127,7 +127,7 @@ public:
                 return PLUGIN_CATEGORY_SYNTH;
         }
 
-        return getPluginCategoryFromName(fName);
+        return getPluginCategoryFromName(pData->name);
     }
 
     long getUniqueId() const override
@@ -165,7 +165,7 @@ public:
 
     unsigned int getOptionsAvailable() const override
     {
-        const bool isDssiVst = fFilename.contains("dssi-vst", true);
+        const bool isDssiVst = pData->filename.contains("dssi-vst", true);
 
         unsigned int options = 0x0;
 
@@ -175,7 +175,7 @@ public:
 
             if (pData->engine->getProccessMode() != ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
             {
-                if (fOptions & PLUGIN_OPTION_FORCE_STEREO)
+                if (pData->options & PLUGIN_OPTION_FORCE_STEREO)
                     options |= PLUGIN_OPTION_FORCE_STEREO;
                 else if (pData->audioIn.count <= 1 && pData->audioOut.count <= 1 && (pData->audioIn.count != 0 || pData->audioOut.count != 0))
                     options |= PLUGIN_OPTION_FORCE_STEREO;
@@ -441,7 +441,7 @@ public:
             }
         }
 
-        if ((fOptions & PLUGIN_OPTION_FORCE_STEREO) != 0 && (aIns == 1 || aOuts == 1))
+        if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && (aIns == 1 || aOuts == 1))
         {
             if (fHandle2 == nullptr)
                 fHandle2 = fDescriptor->instantiate(fDescriptor, (unsigned long)sampleRate);
@@ -509,7 +509,7 @@ public:
 
                 if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
                 {
-                    portName  = fName;
+                    portName  = pData->name;
                     portName += ":";
                 }
 
@@ -704,7 +704,7 @@ public:
 
             if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = fName;
+                portName  = pData->name;
                 portName += ":";
             }
 
@@ -720,7 +720,7 @@ public:
 
             if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = fName;
+                portName  = pData->name;
                 portName += ":";
             }
 
@@ -731,24 +731,24 @@ public:
         }
 
         if (forcedStereoIn || forcedStereoOut)
-            fOptions |= PLUGIN_OPTION_FORCE_STEREO;
+            pData->options |= PLUGIN_OPTION_FORCE_STEREO;
         else
-            fOptions &= ~PLUGIN_OPTION_FORCE_STEREO;
+            pData->options &= ~PLUGIN_OPTION_FORCE_STEREO;
 
         // plugin hints
-        fHints = 0x0;
+        pData->hints = 0x0;
 
         if (LADSPA_IS_HARD_RT_CAPABLE(fDescriptor->Properties))
-            fHints |= PLUGIN_IS_RTSAFE;
+            pData->hints |= PLUGIN_IS_RTSAFE;
 
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
-            fHints |= PLUGIN_CAN_DRYWET;
+            pData->hints |= PLUGIN_CAN_DRYWET;
 
         if (aOuts > 0)
-            fHints |= PLUGIN_CAN_VOLUME;
+            pData->hints |= PLUGIN_CAN_VOLUME;
 
         if (aOuts >= 2 && aOuts % 2 == 0)
-            fHints |= PLUGIN_CAN_BALANCE;
+            pData->hints |= PLUGIN_CAN_BALANCE;
 
         // extra plugin hints
         pData->extraHints = 0x0;
@@ -757,7 +757,7 @@ public:
             pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
 
         // check latency
-        if (fHints & PLUGIN_CAN_DRYWET)
+        if (pData->hints & PLUGIN_CAN_DRYWET)
         {
             for (uint32_t i=0; i < pData->param.count; ++i)
             {
@@ -891,7 +891,7 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
-            bool isSampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
+            bool isSampleAccurate  = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t time, numEvents = pData->event.portIn->getEventCount();
             uint32_t timeOffset = 0;
@@ -936,21 +936,21 @@ public:
                         {
                             float value;
 
-                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (fHints & PLUGIN_CAN_DRYWET) > 0)
+                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) > 0)
                             {
                                 value = ctrlEvent.value;
                                 setDryWet(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
                             }
 
-                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) > 0)
+                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) > 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
                             }
 
-                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) > 0)
+                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) > 0)
                             {
                                 float left, right;
                                 value = ctrlEvent.value/0.5f - 1.0f;
@@ -1137,8 +1137,8 @@ public:
         // Post-processing (dry/wet, volume and balance)
 
         {
-            const bool doDryWet  = (fHints & PLUGIN_CAN_DRYWET) != 0 && pData->postProc.dryWet != 1.0f;
-            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) != 0 && (pData->postProc.balanceLeft != -1.0f || pData->postProc.balanceRight != 1.0f);
+            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && pData->postProc.dryWet != 1.0f;
+            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && (pData->postProc.balanceLeft != -1.0f || pData->postProc.balanceRight != 1.0f);
 
             bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];
@@ -1422,18 +1422,18 @@ public:
             fRdfDescriptor = ladspa_rdf_dup(rdfDescriptor);
 
         if (name != nullptr)
-            fName = pData->engine->getUniquePluginName(name);
+            pData->name = pData->engine->getUniquePluginName(name);
         else if (fRdfDescriptor != nullptr && fRdfDescriptor->Title != nullptr)
-            fName = pData->engine->getUniquePluginName(fRdfDescriptor->Title);
+            pData->name = pData->engine->getUniquePluginName(fRdfDescriptor->Title);
         else if (fDescriptor->Name != nullptr)
-            fName = pData->engine->getUniquePluginName(fDescriptor->Name);
+            pData->name = pData->engine->getUniquePluginName(fDescriptor->Name);
         else
-            fName = pData->engine->getUniquePluginName(fDescriptor->Label);
+            pData->name = pData->engine->getUniquePluginName(fDescriptor->Label);
 
-        fFilename = filename;
+        pData->filename = filename;
 
-        CARLA_ASSERT(fName.isNotEmpty());
-        CARLA_ASSERT(fFilename.isNotEmpty());
+        CARLA_ASSERT(pData->name.isNotEmpty());
+        CARLA_ASSERT(pData->filename.isNotEmpty());
 
         // ---------------------------------------------------------------
         // register client
@@ -1461,16 +1461,16 @@ public:
         // load plugin settings
 
         {
-            const bool isDssiVst = fFilename.contains("dssi-vst", true);
+            const bool isDssiVst = pData->filename.contains("dssi-vst", true);
 
             // set default options
-            fOptions = 0x0;
+            pData->options = 0x0;
 
             if (isDssiVst)
-                fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
+                pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
             if (pData->engine->getOptions().forceStereo)
-                fOptions |= PLUGIN_OPTION_FORCE_STEREO;
+                pData->options |= PLUGIN_OPTION_FORCE_STEREO;
 
             // load settings
             pData->idStr  = "LADSPA/";
@@ -1479,11 +1479,11 @@ public:
             pData->idStr += CarlaString(getUniqueId());
             pData->idStr += "/";
             pData->idStr += label;
-            fOptions = pData->loadSettings(fOptions, getOptionsAvailable());
+            pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
 
             // ignore settings, we need this anyway
             if (isDssiVst)
-                fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
+                pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
         }
 
         return true;

@@ -53,7 +53,7 @@ public:
         carla_debug("DssiPlugin::~DssiPlugin()");
 
         // close UI
-        if (fHints & PLUGIN_HAS_CUSTOM_UI)
+        if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
         {
             showCustomUI(false);
 
@@ -74,7 +74,7 @@ public:
 
         if (fDescriptor != nullptr)
         {
-            if (fName.isNotEmpty() && fDssiDescriptor != nullptr && fDssiDescriptor->run_synth == nullptr && fDssiDescriptor->run_multiple_synths != nullptr)
+            if (pData->name.isNotEmpty() && fDssiDescriptor != nullptr && fDssiDescriptor->run_synth == nullptr && fDssiDescriptor->run_multiple_synths != nullptr)
                 removeUniqueMultiSynth(fDescriptor->Label);
 
             if (fDescriptor->cleanup != nullptr)
@@ -115,7 +115,7 @@ public:
         if (pData->audioIn.count == 0 && pData->audioOut.count > 0 && (fDssiDescriptor->run_synth != nullptr || fDssiDescriptor->run_multiple_synths != nullptr))
             return PLUGIN_CATEGORY_SYNTH;
 
-        return getPluginCategoryFromName(fName);
+        return getPluginCategoryFromName(pData->name);
     }
 
     long getUniqueId() const override
@@ -136,7 +136,7 @@ public:
     int32_t getChunkData(void** const dataPtr) const override
     {
         CARLA_SAFE_ASSERT_RETURN(fUsesCustomData, 0);
-        CARLA_SAFE_ASSERT_RETURN(fOptions & PLUGIN_OPTION_USE_CHUNKS, 0);
+        CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS, 0);
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr, 0);
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor->get_custom_data != nullptr, 0);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, 0);
@@ -156,8 +156,8 @@ public:
 
     unsigned int getOptionsAvailable() const override
     {
-        const bool isAmSynth = fFilename.contains("amsynth", true);
-        const bool isDssiVst = fFilename.contains("dssi-vst", true);
+        const bool isAmSynth = pData->filename.contains("amsynth", true);
+        const bool isDssiVst = pData->filename.contains("dssi-vst", true);
 
         unsigned int options = 0x0;
 
@@ -169,7 +169,7 @@ public:
 
             if (pData->engine->getProccessMode() != ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
             {
-                if (fOptions & PLUGIN_OPTION_FORCE_STEREO)
+                if (pData->options & PLUGIN_OPTION_FORCE_STEREO)
                     options |= PLUGIN_OPTION_FORCE_STEREO;
                 else if (pData->audioIn.count <= 1 && pData->audioOut.count <= 1 && (pData->audioIn.count != 0 || pData->audioOut.count != 0))
                     options |= PLUGIN_OPTION_FORCE_STEREO;
@@ -311,7 +311,7 @@ public:
     void setChunkData(const char* const stringData) override
     {
         CARLA_SAFE_ASSERT_RETURN(fUsesCustomData,);
-        CARLA_SAFE_ASSERT_RETURN(fOptions & PLUGIN_OPTION_USE_CHUNKS,);
+        CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS,);
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor->set_custom_data != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
@@ -432,7 +432,7 @@ public:
             }
         }
 
-        if ((fOptions & PLUGIN_OPTION_FORCE_STEREO) != 0 && (aIns == 1 || aOuts == 1))
+        if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && (aIns == 1 || aOuts == 1))
         {
             if (fHandle2 == nullptr)
                 fHandle2 = fDescriptor->instantiate(fDescriptor, (unsigned long)sampleRate);
@@ -505,7 +505,7 @@ public:
 
                 if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
                 {
-                    portName  = fName;
+                    portName  = pData->name;
                     portName += ":";
                 }
 
@@ -705,7 +705,7 @@ public:
 
             if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = fName;
+                portName  = pData->name;
                 portName += ":";
             }
 
@@ -721,7 +721,7 @@ public:
 
             if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = fName;
+                portName  = pData->name;
                 portName += ":";
             }
 
@@ -732,27 +732,27 @@ public:
         }
 
         if (forcedStereoIn || forcedStereoOut)
-            fOptions |= PLUGIN_OPTION_FORCE_STEREO;
+            pData->options |= PLUGIN_OPTION_FORCE_STEREO;
         else
-            fOptions &= ~PLUGIN_OPTION_FORCE_STEREO;
+            pData->options &= ~PLUGIN_OPTION_FORCE_STEREO;
 
         // plugin hints
-        fHints = 0x0;
+        pData->hints = 0x0;
 
         if (LADSPA_IS_HARD_RT_CAPABLE(fDescriptor->Properties))
-            fHints |= PLUGIN_IS_RTSAFE;
+            pData->hints |= PLUGIN_IS_RTSAFE;
 
         if (fGuiFilename != nullptr)
-            fHints |= PLUGIN_HAS_CUSTOM_UI;
+            pData->hints |= PLUGIN_HAS_CUSTOM_UI;
 
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
-            fHints |= PLUGIN_CAN_DRYWET;
+            pData->hints |= PLUGIN_CAN_DRYWET;
 
         if (aOuts > 0)
-            fHints |= PLUGIN_CAN_VOLUME;
+            pData->hints |= PLUGIN_CAN_VOLUME;
 
         if (aOuts >= 2 && aOuts % 2 == 0)
-            fHints |= PLUGIN_CAN_BALANCE;
+            pData->hints |= PLUGIN_CAN_BALANCE;
 
         // extra plugin hints
         pData->extraHints = 0x0;
@@ -764,7 +764,7 @@ public:
             pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
 
         // check latency
-        if (fHints & PLUGIN_CAN_DRYWET)
+        if (pData->hints & PLUGIN_CAN_DRYWET)
         {
             for (uint32_t i=0; i < pData->param.count; ++i)
             {
@@ -860,10 +860,10 @@ public:
         // Update OSC Names
         if (pData->engine->isOscControlRegistered())
         {
-            pData->engine->oscSend_control_set_midi_program_count(fId, count);
+            pData->engine->oscSend_control_set_midi_program_count(pData->id, count);
 
             for (i=0; i < count; ++i)
-                pData->engine->oscSend_control_set_midi_program_data(fId, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
+                pData->engine->oscSend_control_set_midi_program_data(pData->id, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
         }
 #endif
 
@@ -910,7 +910,7 @@ public:
             if (programChanged)
                 setMidiProgram(pData->midiprog.current, true, true, true);
 
-            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -971,7 +971,7 @@ public:
 
         if (pData->needsReset)
         {
-            if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+            if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
                 midiEventCount = MAX_MIDI_CHANNELS*2;
                 carla_zeroStruct<snd_seq_event_t>(fMidiEvents, midiEventCount);
@@ -1049,7 +1049,7 @@ public:
             // Event Input (System)
 
             bool allNotesOffSent  = false;
-            bool isSampleAccurate = (fOptions & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
+            bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t time, numEvents = pData->event.portIn->getEventCount();
             uint32_t startTime  = 0;
@@ -1111,21 +1111,21 @@ public:
                         {
                             float value;
 
-                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (fHints & PLUGIN_CAN_DRYWET) != 0)
+                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
                                 value = ctrlEvent.value;
                                 setDryWet(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
                             }
 
-                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) != 0)
+                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
                             }
 
-                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) != 0)
+                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
                             {
                                 float left, right;
                                 value = ctrlEvent.value/0.5f - 1.0f;
@@ -1184,7 +1184,7 @@ public:
                             pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
 
-                        if ((fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
+                        if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
                             if (midiEventCount >= kPluginMaxMidiEvents)
                                 continue;
@@ -1204,12 +1204,12 @@ public:
                     }
 
                     case kEngineControlEventTypeMidiBank:
-                        if (event.channel == pData->ctrlChannel && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
                             nextBankId = ctrlEvent.param;
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
-                        if (event.channel == pData->ctrlChannel && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
                         {
                             const uint32_t nextProgramId = ctrlEvent.param;
 
@@ -1226,7 +1226,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllSoundOff:
-                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
                             if (midiEventCount >= kPluginMaxMidiEvents)
                                 continue;
@@ -1243,7 +1243,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllNotesOff:
-                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
@@ -1318,7 +1318,7 @@ public:
                     }
                     case MIDI_STATUS_POLYPHONIC_AFTERTOUCH:
                     {
-                        if (fOptions & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
+                        if (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
                         {
                             const uint8_t note     = engineEvent.data[1];
                             const uint8_t pressure = engineEvent.data[2];
@@ -1332,7 +1332,7 @@ public:
                     }
                     case MIDI_STATUS_CONTROL_CHANGE:
                     {
-                        if (fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+                        if (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
                         {
                             const uint8_t control = engineEvent.data[1];
                             const uint8_t value   = engineEvent.data[2];
@@ -1346,7 +1346,7 @@ public:
                     }
                     case MIDI_STATUS_CHANNEL_PRESSURE:
                     {
-                        if (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE)
+                        if (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE)
                         {
                             const uint8_t pressure = engineEvent.data[1];
 
@@ -1358,7 +1358,7 @@ public:
                     }
                     case MIDI_STATUS_PITCH_WHEEL_CONTROL:
                     {
-                        if (fOptions & PLUGIN_OPTION_SEND_PITCHBEND)
+                        if (pData->options & PLUGIN_OPTION_SEND_PITCHBEND)
                         {
                             const uint8_t lsb = engineEvent.data[1];
                             const uint8_t msb = engineEvent.data[2];
@@ -1505,8 +1505,8 @@ public:
         // Post-processing (dry/wet, volume and balance)
 
         {
-            const bool doDryWet  = (fHints & PLUGIN_CAN_DRYWET) != 0 && pData->postProc.dryWet != 1.0f;
-            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) != 0 && (pData->postProc.balanceLeft != -1.0f || pData->postProc.balanceRight != 1.0f);
+            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && pData->postProc.dryWet != 1.0f;
+            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && (pData->postProc.balanceLeft != -1.0f || pData->postProc.balanceRight != 1.0f);
 
             bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];
@@ -1859,16 +1859,16 @@ public:
         // get info
 
         if (name != nullptr)
-            fName = pData->engine->getUniquePluginName(name);
+            pData->name = pData->engine->getUniquePluginName(name);
         else if (fDescriptor->Name != nullptr)
-            fName = pData->engine->getUniquePluginName(fDescriptor->Name);
+            pData->name = pData->engine->getUniquePluginName(fDescriptor->Name);
         else
-            fName = pData->engine->getUniquePluginName(fDescriptor->Label);
+            pData->name = pData->engine->getUniquePluginName(fDescriptor->Label);
 
-        fFilename = filename;
+        pData->filename = filename;
 
-        CARLA_ASSERT(fName.isNotEmpty());
-        CARLA_ASSERT(fFilename.isNotEmpty());
+        CARLA_ASSERT(pData->name.isNotEmpty());
+        CARLA_ASSERT(pData->filename.isNotEmpty());
 
         // ---------------------------------------------------------------
         // register client
@@ -1919,29 +1919,29 @@ public:
         // load plugin settings
 
         {
-            const bool isAmSynth = fFilename.contains("amsynth", true);
-            const bool isDssiVst = fFilename.contains("dssi-vst", true);
+            const bool isAmSynth = pData->filename.contains("amsynth", true);
+            const bool isDssiVst = pData->filename.contains("dssi-vst", true);
 
             // set default options
-            fOptions = 0x0;
+            pData->options = 0x0;
 
-            fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
             if (isAmSynth || isDssiVst)
-                fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
+                pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
             if (pData->engine->getOptions().forceStereo)
-                fOptions |= PLUGIN_OPTION_FORCE_STEREO;
+                pData->options |= PLUGIN_OPTION_FORCE_STEREO;
 
             if (fUsesCustomData)
-                fOptions |= PLUGIN_OPTION_USE_CHUNKS;
+                pData->options |= PLUGIN_OPTION_USE_CHUNKS;
 
             if (fDssiDescriptor->run_synth != nullptr || fDssiDescriptor->run_multiple_synths != nullptr)
             {
-                fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-                fOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-                fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
-                fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+                pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+                pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+                pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+                pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
                 if (fDssiDescriptor->run_synth == nullptr)
                     carla_stderr2("WARNING: Plugin can ONLY use run_multiple_synths!");
@@ -1952,11 +1952,11 @@ public:
             pData->idStr += std::strrchr(filename, OS_SEP)+1;
             pData->idStr += "/";
             pData->idStr += label;
-            fOptions = pData->loadSettings(fOptions, getOptionsAvailable());
+            pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
 
             // ignore settings, we need this anyway
             if (isAmSynth || isDssiVst)
-                fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
+                pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
         }
 
         return true;

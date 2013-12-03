@@ -114,9 +114,9 @@ public:
 #endif
 
         // just to make sure
-        fOptions.forceStereo   = true;
-        fOptions.processMode   = ENGINE_PROCESS_MODE_CONTINUOUS_RACK;
-        fOptions.transportMode = ENGINE_TRANSPORT_MODE_INTERNAL;
+        pData->options.forceStereo   = true;
+        pData->options.processMode   = ENGINE_PROCESS_MODE_CONTINUOUS_RACK;
+        pData->options.transportMode = ENGINE_TRANSPORT_MODE_INTERNAL;
     }
 
     ~CarlaEngineRtAudio() override
@@ -162,13 +162,13 @@ public:
             return false;
         }
 
-        if (fOptions.audioDevice.isNotEmpty())
+        if (pData->options.audioDevice != nullptr)
         {
             for (unsigned int i=0; i < devCount; ++i)
             {
                 RtAudio::DeviceInfo devInfo(fAudio.getDeviceInfo(i));
 
-                if (devInfo.probed && devInfo.outputChannels > 0 && devInfo.name == (const char*)fOptions.audioDevice)
+                if (devInfo.probed && devInfo.outputChannels > 0 && devInfo.name == (const char*)pData->options.audioDevice)
                 {
                     deviceSet    = true;
                     fConnectName = devInfo.name.c_str();
@@ -205,10 +205,10 @@ public:
         else
             fAudioIsInterleaved = true;
 
-        fBufferSize = fOptions.audioBufferSize;
+        pData->bufferSize = pData->options.audioBufferSize;
 
         try {
-            fAudio.openStream(&oParams, &iParams, RTAUDIO_FLOAT32, fOptions.audioSampleRate, &fBufferSize, carla_rtaudio_process_callback, this, &rtOptions);
+            fAudio.openStream(&oParams, &iParams, RTAUDIO_FLOAT32, pData->options.audioSampleRate, &pData->bufferSize, carla_rtaudio_process_callback, this, &rtOptions);
         }
         catch (RtError& e)
         {
@@ -228,7 +228,7 @@ public:
 
         fAudioCountIn  = iParams.nChannels;
         fAudioCountOut = oParams.nChannels;
-        fSampleRate    = fAudio.getStreamSampleRate();
+        pData->sampleRate = fAudio.getStreamSampleRate();
 
         CARLA_ASSERT(fAudioCountOut > 0);
 
@@ -237,7 +237,7 @@ public:
             fAudioBufIn  = new float*[fAudioCountIn];
 
             for (uint i=0; i < fAudioCountIn; ++i)
-                fAudioBufIn[i] = new float[fBufferSize];
+                fAudioBufIn[i] = new float[pData->bufferSize];
         }
 
         if (fAudioCountOut > 0)
@@ -245,13 +245,13 @@ public:
             fAudioBufOut = new float*[fAudioCountOut];
 
             for (uint i=0; i < fAudioCountOut; ++i)
-                fAudioBufOut[i] = new float[fBufferSize];
+                fAudioBufOut[i] = new float[pData->bufferSize];
         }
 
-        fAudioBufRackIn[0]  = new float[fBufferSize];
-        fAudioBufRackIn[1]  = new float[fBufferSize];
-        fAudioBufRackOut[0] = new float[fBufferSize];
-        fAudioBufRackOut[1] = new float[fBufferSize];
+        fAudioBufRackIn[0]  = new float[pData->bufferSize];
+        fAudioBufRackIn[1]  = new float[pData->bufferSize];
+        fAudioBufRackOut[0] = new float[pData->bufferSize];
+        fAudioBufRackOut[1] = new float[pData->bufferSize];
 
         fAudioIsReady = true;
 
@@ -639,12 +639,9 @@ public:
         return true;
     }
 
-    void patchbayRefresh() override
+    bool patchbayRefresh() override
     {
-        CARLA_ASSERT(fAudioIsReady);
-
-        if (! fAudioIsReady)
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fAudioIsReady, false);
 
         char strBuf[STR_MAX+1];
 
@@ -840,7 +837,7 @@ protected:
 
         // assert buffers
         CARLA_ASSERT(nframes != 0);
-        CARLA_ASSERT_INT2(nframes == fBufferSize, nframes, fBufferSize);
+        CARLA_ASSERT_INT2(nframes == pData->bufferSize, nframes, pData->bufferSize);
         CARLA_ASSERT(outsPtr != nullptr);
 
         if (pData->curPluginCount == 0 || fAudioCountOut == 0 || ! fAudioIsReady)
@@ -905,17 +902,17 @@ protected:
 
                 engineEvent.channel = midiChannel;
 
-                if (midiEvent.time < fTimeInfo.frame)
+                if (midiEvent.time < pData->timeInfo.frame)
                 {
                     engineEvent.time = 0;
                 }
-                else if (midiEvent.time >= fTimeInfo.frame + nframes)
+                else if (midiEvent.time >= pData->timeInfo.frame + nframes)
                 {
-                    engineEvent.time = fTimeInfo.frame + nframes-1;
-                    carla_stderr("MIDI Event in the future!, %i vs %i", engineEvent.time, fTimeInfo.frame);
+                    engineEvent.time = pData->timeInfo.frame + nframes-1;
+                    carla_stderr("MIDI Event in the future!, %i vs %i", engineEvent.time, pData->timeInfo.frame);
                 }
                 else
-                    engineEvent.time = midiEvent.time - fTimeInfo.frame;
+                    engineEvent.time = midiEvent.time - pData->timeInfo.frame;
 
                 if (MIDI_IS_STATUS_CONTROL_CHANGE(midiStatus))
                 {
@@ -1143,7 +1140,7 @@ protected:
             timeStamp = 0.0;
 
         RtMidiEvent midiEvent;
-        midiEvent.time = fTimeInfo.frame + (timeStamp*(double)fBufferSize);
+        midiEvent.time = pData->timeInfo.frame + (timeStamp*(double)pData->bufferSize);
 
         if (midiEvent.time < lastTime)
             midiEvent.time = lastTime;

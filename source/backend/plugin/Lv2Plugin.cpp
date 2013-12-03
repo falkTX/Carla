@@ -559,7 +559,7 @@ public:
         if (LV2_IS_UTILITY(cat1, cat2))
             return PLUGIN_CATEGORY_UTILITY;
 
-        return getPluginCategoryFromName(fName);
+        return getPluginCategoryFromName(pData->name);
     }
 
     long getUniqueId() const override
@@ -643,7 +643,7 @@ public:
 
         if (pData->engine->getProccessMode() != ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
         {
-            if (fOptions & PLUGIN_OPTION_FORCE_STEREO)
+            if (pData->options & PLUGIN_OPTION_FORCE_STEREO)
                 options |= PLUGIN_OPTION_FORCE_STEREO;
             else if (pData->audioIn.count <= 1 && pData->audioOut.count <= 1 && (pData->audioIn.count != 0 || pData->audioOut.count != 0))
                 options |= PLUGIN_OPTION_FORCE_STEREO;
@@ -910,7 +910,7 @@ public:
     {
         CarlaPlugin::setName(newName);
 
-        //QString guiTitle(QString("%1 (GUI)").arg((const char*)fName));
+        //QString guiTitle(QString("%1 (GUI)").arg((const char*)pData->name));
 
         //if (pData->gui != nullptr)
             //pData->gui->setWindowTitle(guiTitle);
@@ -1136,8 +1136,8 @@ public:
                 {
                     fUi.handle = nullptr;
                     fUi.widget = nullptr;
-                    pData->engine->callback(ENGINE_CALLBACK_ERROR, fId, 0, 0, 0.0f, "Plugin refused to open its own UI");
-                    pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, fId, 0, 0, 0.0f, nullptr);
+                    pData->engine->callback(ENGINE_CALLBACK_ERROR, pData->id, 0, 0, 0.0f, "Plugin refused to open its own UI");
+                    pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
                     return;
                 }
 
@@ -1198,8 +1198,8 @@ public:
                     delete pData->gui;
                     pData->gui = nullptr;
 
-                    pData->engine->callback(CALLBACK_ERROR, fId, 0, 0, 0.0f, "Plugin refused to open its own UI");
-                    pData->engine->callback(CALLBACK_SHOW_GUI, fId, -1, 0, 0.0f, nullptr);
+                    pData->engine->callback(CALLBACK_ERROR, pData->id, 0, 0, 0.0f, "Plugin refused to open its own UI");
+                    pData->engine->callback(CALLBACK_SHOW_GUI, pData->id, -1, 0, 0.0f, nullptr);
                     return;
                 }
 
@@ -1208,7 +1208,7 @@ public:
 
                 updateUi();
 
-                pData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)fName));
+                pData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)pData->name));
                 pData->gui->show();
             }
             else
@@ -1271,7 +1271,7 @@ public:
             if (fExt.uiidle != nullptr && fExt.uiidle->idle(fUi.handle) != 0)
             {
                 showCustomUI(false);
-                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, fId, 0, 0, 0.0f, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
             }
         }
 
@@ -1376,7 +1376,7 @@ public:
                 fExt.worker = (const LV2_Worker_Interface*)fDescriptor->extension_data(LV2_WORKER__interface);
         }
 
-        if ((fOptions & PLUGIN_OPTION_FORCE_STEREO) != 0 && (aIns == 1 || aOuts == 1) && fExt.state == nullptr && fExt.worker == nullptr)
+        if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && (aIns == 1 || aOuts == 1) && fExt.state == nullptr && fExt.worker == nullptr)
         {
             if (fHandle2 == nullptr)
                 fHandle2 = fDescriptor->instantiate(fDescriptor, sampleRate, fRdfDescriptor->Bundle, fFeatures);
@@ -1516,7 +1516,7 @@ public:
             {
                 if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
                 {
-                    portName  = fName;
+                    portName  = pData->name;
                     portName += ":";
                 }
 
@@ -2072,7 +2072,7 @@ public:
 
             if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = fName;
+                portName  = pData->name;
                 portName += ":";
             }
 
@@ -2088,7 +2088,7 @@ public:
 
             if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = fName;
+                portName  = pData->name;
                 portName += ":";
             }
 
@@ -2105,35 +2105,35 @@ public:
             fEventsOut.ctrl->port = pData->event.portOut;
 
         if (forcedStereoIn || forcedStereoOut)
-            fOptions |= PLUGIN_OPTION_FORCE_STEREO;
+            pData->options |= PLUGIN_OPTION_FORCE_STEREO;
         else
-            fOptions &= ~PLUGIN_OPTION_FORCE_STEREO;
+            pData->options &= ~PLUGIN_OPTION_FORCE_STEREO;
 
         // plugin hints
-        fHints = 0x0;
+        pData->hints = 0x0;
 
         if (isRealtimeSafe())
-            fHints |= PLUGIN_IS_RTSAFE;
+            pData->hints |= PLUGIN_IS_RTSAFE;
 
         if (fUi.type != PLUGIN_UI_NULL)
         {
-            fHints |= PLUGIN_HAS_CUSTOM_UI;
+            pData->hints |= PLUGIN_HAS_CUSTOM_UI;
 
             if (fUi.type == PLUGIN_UI_QT || fUi.type == PLUGIN_UI_PARENT)
-                fHints |= PLUGIN_NEEDS_SINGLE_THREAD;
+                pData->hints |= PLUGIN_NEEDS_SINGLE_THREAD;
         }
 
         //if (LV2_IS_GENERATOR(fRdfDescriptor->Type[0], fRdfDescriptor->Type[1]))
-        //    fHints |= PLUGIN_IS_SYNTH;
+        //    pData->hints |= PLUGIN_IS_SYNTH;
 
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
-            fHints |= PLUGIN_CAN_DRYWET;
+            pData->hints |= PLUGIN_CAN_DRYWET;
 
         if (aOuts > 0)
-            fHints |= PLUGIN_CAN_VOLUME;
+            pData->hints |= PLUGIN_CAN_VOLUME;
 
         if (aOuts >= 2 && aOuts % 2 == 0)
-            fHints |= PLUGIN_CAN_BALANCE;
+            pData->hints |= PLUGIN_CAN_BALANCE;
 
         // extra plugin hints
         pData->extraHints &= ~PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
@@ -2215,10 +2215,10 @@ public:
         // Update OSC Names
         if (pData->engine->isOscControlRegistered())
         {
-            pData->engine->oscSend_control_set_midi_program_count(fId, count);
+            pData->engine->oscSend_control_set_midi_program_count(pData->id, count);
 
             for (i=0; i < count; ++i)
-                pData->engine->oscSend_control_set_midi_program_data(fId, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
+                pData->engine->oscSend_control_set_midi_program_data(pData->id, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
         }
 #endif
 
@@ -2280,7 +2280,7 @@ public:
             if (programChanged)
                 setMidiProgram(pData->midiprog.current, true, true, true);
 
-            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -2396,7 +2396,7 @@ public:
             {
                 k = fEventsIn.ctrlIndex;
 
-                if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                 {
                     for (i=0; i < MAX_MIDI_CHANNELS; ++i)
                     {
@@ -2670,7 +2670,7 @@ public:
             // Event Input (System)
 
             bool allNotesOffSent = false;
-            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
+            bool sampleAccurate  = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t time, nEvents = (fEventsIn.ctrl->port != nullptr) ? fEventsIn.ctrl->port->getEventCount() : 0;
             uint32_t startTime  = 0;
@@ -2750,21 +2750,21 @@ public:
                         {
                             float value;
 
-                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (fHints & PLUGIN_CAN_DRYWET) > 0)
+                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) > 0)
                             {
                                 value = ctrlEvent.value;
                                 setDryWet(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
                             }
 
-                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) > 0)
+                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) > 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
                             }
 
-                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) > 0)
+                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) > 0)
                             {
                                 float left, right;
                                 value = ctrlEvent.value/0.5f - 1.0f;
@@ -2823,7 +2823,7 @@ public:
                             pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
 
-                        if ((fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
+                        if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
                             uint8_t midiData[3];
                             midiData[0] = MIDI_STATUS_CONTROL_CHANGE + i;
@@ -2844,12 +2844,12 @@ public:
                     }
 
                     case kEngineControlEventTypeMidiBank:
-                        if (event.channel == pData->ctrlChannel && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
                             nextBankId = ctrlEvent.param;
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
-                        if (event.channel == pData->ctrlChannel && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
                         {
                             const uint32_t nextProgramId = ctrlEvent.param;
 
@@ -2866,7 +2866,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllSoundOff:
-                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
                             const uint32_t mtime(sampleAccurate ? startTime : time);
 
@@ -2887,7 +2887,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllNotesOff:
-                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
@@ -2925,13 +2925,13 @@ public:
                     uint8_t channel = event.channel;
                     uint32_t mtime  = sampleAccurate ? startTime : time;
 
-                    if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
+                    if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
                         continue;
-                    if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
+                    if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
                         continue;
-                    if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
+                    if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
                         continue;
-                    if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (fOptions & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
+                    if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
                         continue;
 
                     // Fix bad note-off
@@ -3204,8 +3204,8 @@ public:
         // Post-processing (dry/wet, volume and balance)
 
         {
-            const bool doDryWet  = (fHints & PLUGIN_CAN_DRYWET) != 0 && pData->postProc.dryWet != 1.0f;
-            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) != 0 && (pData->postProc.balanceLeft != -1.0f || pData->postProc.balanceRight != 1.0f);
+            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && pData->postProc.dryWet != 1.0f;
+            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && (pData->postProc.balanceLeft != -1.0f || pData->postProc.balanceRight != 1.0f);
 
             bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];
@@ -3632,7 +3632,7 @@ protected:
 //     void guiClosedCallback() override
 //     {
 //         showGui(false);
-//         pData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
+//         pData->engine->callback(CALLBACK_SHOW_GUI, pData->id, 0, 0, 0.0f, nullptr);
 //     }
 
     // -------------------------------------------------------------------
@@ -3701,9 +3701,9 @@ protected:
                 pData->midiprog.data[index].name = carla_strdup(progDesc->name ? progDesc->name : "");
 
                 if (index == pData->midiprog.current)
-                    pData->engine->callback(ENGINE_CALLBACK_UPDATE, fId, 0, 0, 0.0, nullptr);
+                    pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0, nullptr);
                 else
-                    pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0, nullptr);
+                    pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0, nullptr);
             }
         }
     }
@@ -3899,7 +3899,7 @@ protected:
 
         fUi.handle = nullptr;
         fUi.widget = nullptr;
-        pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, fId, 0, 0, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
     }
 
     uint32_t handleUiPortMap(const char* const symbol)
@@ -4413,9 +4413,9 @@ public:
         // get info
 
         if (name != nullptr)
-            fName = pData->engine->getUniquePluginName(name);
+            pData->name = pData->engine->getUniquePluginName(name);
         else
-            fName = pData->engine->getUniquePluginName(fRdfDescriptor->Name);
+            pData->name = pData->engine->getUniquePluginName(fRdfDescriptor->Name);
 
         // ---------------------------------------------------------------
         // register client
@@ -4444,32 +4444,32 @@ public:
 
         {
             // set default options
-            fOptions = 0x0;
+            pData->options = 0x0;
 
-            fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
             if (getMidiInCount() > 0 || needsFixedBuffer())
-                fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
+                pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
             if (pData->engine->getOptions().forceStereo)
-                fOptions |= PLUGIN_OPTION_FORCE_STEREO;
+                pData->options |= PLUGIN_OPTION_FORCE_STEREO;
 
             if (getMidiInCount() > 0)
             {
-                fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-                fOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-                fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
-                fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+                pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+                pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+                pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+                pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
             }
 
             // load settings
             pData->idStr  = "LV2/";
             pData->idStr += uri;
-            fOptions = pData->loadSettings(fOptions, getOptionsAvailable());
+            pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
 
             // ignore settings, we need this anyway
             if (getMidiInCount() > 0 || needsFixedBuffer())
-                fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
+                pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
         }
 
         // ---------------------------------------------------------------
@@ -4488,7 +4488,7 @@ public:
 //#ifdef BUILD_BRIDGE
 //        const bool preferUiBridges(pData->engine->getOptions().preferUiBridges);
 //#else
-//        const bool preferUiBridges(pData->engine->getOptions().preferUiBridges && (fHints & PLUGIN_IS_BRIDGE) == 0);
+//        const bool preferUiBridges(pData->engine->getOptions().preferUiBridges && (pData->hints & PLUGIN_IS_BRIDGE) == 0);
 //#endif
 
         for (uint32_t i=0; i < fRdfDescriptor->UICount; ++i)
@@ -4752,7 +4752,7 @@ public:
             // -------------------------------------------------------
             // initialize ui features (part 1)
 
-            //QString guiTitle(QString("%1 (GUI)").arg((const char*)fName));
+            //QString guiTitle(QString("%1 (GUI)").arg((const char*)pData->name));
 
             LV2_Extension_Data_Feature* const uiDataFt = new LV2_Extension_Data_Feature;
             uiDataFt->data_access                      = fDescriptor->extension_data;

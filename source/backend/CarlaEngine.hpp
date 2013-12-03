@@ -20,7 +20,6 @@
 
 #include "CarlaBackend.h"
 #include "CarlaMIDI.h"
-#include "CarlaString.hpp"
 
 #ifdef BUILD_BRIDGE
 struct CarlaOscData;
@@ -239,10 +238,10 @@ struct EngineOptions {
     unsigned int audioNumPeriods;
     unsigned int audioBufferSize;
     unsigned int audioSampleRate;
-    CarlaString  audioDevice;
+    const char*  audioDevice;
 
-    CarlaString binaryDir;
-    CarlaString resourceDir;
+    const char* binaryDir;
+    const char* resourceDir;
 
     EngineOptions()
 #ifdef CARLA_OS_LINUX
@@ -260,7 +259,31 @@ struct EngineOptions {
           uiBridgesTimeout(4000),
           audioNumPeriods(2),
           audioBufferSize(512),
-          audioSampleRate(44100) {}
+          audioSampleRate(44100),
+          audioDevice(nullptr),
+          binaryDir(nullptr),
+          resourceDir(nullptr) {}
+
+    ~EngineOptions()
+    {
+        if (audioDevice != nullptr)
+        {
+            delete[] audioDevice;
+            audioDevice = nullptr;
+        }
+
+        if (binaryDir != nullptr)
+        {
+            delete[] binaryDir;
+            binaryDir = nullptr;
+        }
+
+        if (resourceDir != nullptr)
+        {
+            delete[] resourceDir;
+            resourceDir = nullptr;
+        }
+    }
 };
 
 /*!
@@ -377,7 +400,7 @@ protected:
     const CarlaEngine& fEngine;
     const bool fIsInput;
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEnginePort)
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaEnginePort)
 #endif
 };
 
@@ -425,7 +448,7 @@ public:
 protected:
     float* fBuffer;
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineAudioPort)
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineAudioPort)
 #endif
 };
 
@@ -481,7 +504,7 @@ public:
 protected:
     float* fBuffer;
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineCVPort)
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineCVPort)
 #endif
 };
 
@@ -574,7 +597,7 @@ public:
 protected:
     EngineEvent* fBuffer;
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineEventPort)
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineEventPort)
 #endif
 };
 
@@ -647,7 +670,7 @@ protected:
     bool     fActive;
     uint32_t fLatency;
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineClient)
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineClient)
 #endif
 };
 
@@ -846,22 +869,20 @@ public:
     // Project management
 
     /*!
-     * Load \a filename of any type.\n
+     * Load a file of any type.\n
      * This will try to load a generic file as a plugin,
      * either by direct handling (GIG, SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
      */
-    bool loadFilename(const char* const filename);
+    bool loadFile(const char* const filename);
 
     /*!
-     * Load \a filename project file.\n
-     * (project files have *.carxp extension)
-     * \note Already loaded plugins are not removed; call removeAllPlugins() first if needed.
+     * Load a project file.
+     * @note Already loaded plugins are not removed; call removeAllPlugins() first if needed.
      */
     bool loadProject(const char* const filename);
 
     /*!
-     * Save current project to \a filename.\n
-     * (project files have *.carxp extension)
+     * Save current project to a file.
      */
     bool saveProject(const char* const filename);
 
@@ -871,58 +892,37 @@ public:
     /*!
      * Get the current engine driver hints.
      */
-    unsigned int getHints() const noexcept
-    {
-        return fHints;
-    }
+    unsigned int getHints() const noexcept;
 
     /*!
      * Get the current buffer size.
      */
-    uint32_t getBufferSize() const noexcept
-    {
-        return fBufferSize;
-    }
+    uint32_t getBufferSize() const noexcept;
 
     /*!
      * Get the current sample rate.
      */
-    double getSampleRate() const noexcept
-    {
-        return fSampleRate;
-    }
+    double getSampleRate() const noexcept;
 
     /*!
      * Get the current engine name.
      */
-    const char* getName() const noexcept
-    {
-        return (const char*)fName;
-    }
+    const char* getName() const noexcept;
 
     /*!
      * Get the current engine proccess mode.
      */
-    EngineProcessMode getProccessMode() const noexcept
-    {
-        return fOptions.processMode;
-    }
+    EngineProcessMode getProccessMode() const noexcept;
 
     /*!
      * Get the current engine options (read-only).
      */
-    const EngineOptions& getOptions() const noexcept
-    {
-        return fOptions;
-    }
+    const EngineOptions& getOptions() const noexcept;
 
     /*!
      * Get the current Time information (read-only).
      */
-    const EngineTimeInfo& getTimeInfo() const noexcept
-    {
-        return fTimeInfo;
-    }
+    const EngineTimeInfo& getTimeInfo() const noexcept;
 
     // -------------------------------------------------------------------
     // Information (peaks)
@@ -968,7 +968,7 @@ public:
     /*!
      * Force the engine to resend all patchbay clients, ports and connections again.
      */
-    virtual void patchbayRefresh();
+    virtual bool patchbayRefresh();
 
     // -------------------------------------------------------------------
     // Transport
@@ -1073,42 +1073,6 @@ public:
     // -------------------------------------------------------------------
 
 protected:
-    /*!
-     * Current engine driver hints.
-     * \see getHints()
-     */
-    unsigned int fHints;
-
-    /*!
-     * Current buffer size.
-     * \see getBufferSize()
-     */
-    uint32_t fBufferSize;
-
-    /*!
-     * Current sample rate.
-     * \see getSampleRate()
-     */
-    double fSampleRate;
-
-    /*!
-     * Engine name.
-     * \see getName()
-     */
-    CarlaString fName;
-
-    /*!
-     * Engine options.
-     * \see getOptions() and setOption()
-     */
-    EngineOptions fOptions;
-
-    /*!
-     * Current time-pos information.
-     * \see getTimeInfo()
-     */
-    EngineTimeInfo fTimeInfo;
-
     /*!
      * Internal data, for CarlaEngine subclasses only.
      */
@@ -1251,7 +1215,7 @@ public:
     void oscSend_control_exit();
 #endif
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngine)
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngine)
 };
 
 /**@}*/

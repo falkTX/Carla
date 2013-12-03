@@ -19,14 +19,13 @@
 #define CARLA_PLUGIN_HPP_INCLUDED
 
 #include "CarlaBackend.h"
-#include "CarlaString.hpp"
 
 // Avoid including extra libs here
 typedef void* lo_address;
 typedef struct _NativePluginDescriptor NativePluginDescriptor;
-#ifndef LADSPA_RDF_HPP_INCLUDED
+//#ifndef LADSPA_RDF_HPP_INCLUDED
 struct LADSPA_RDF_Descriptor;
-#endif
+//#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -109,30 +108,21 @@ public:
      *
      * \see setId()
      */
-    unsigned int getId() const noexcept
-    {
-        return fId;
-    }
+    unsigned int getId() const noexcept;
 
     /*!
      * Get the plugin's hints.
      *
      * \see PluginHints
      */
-    unsigned int getHints() const noexcept
-    {
-        return fHints;
-    }
+    unsigned int getHints() const noexcept;
 
     /*!
      * Get the plugin's options (currently in use).
      *
      * \see PluginOptions, getAvailableOptions() and setOption()
      */
-    unsigned int getOptionsEnabled() const noexcept
-    {
-        return fOptions;
-    }
+    unsigned int getOptionsEnabled() const noexcept;
 
     /*!
      * Check if the plugin is enabled.\n
@@ -140,10 +130,7 @@ public:
      *
      * \see setEnabled()
      */
-    bool isEnabled() const noexcept
-    {
-        return fEnabled;
-    }
+    bool isEnabled() const noexcept;
 
     /*!
      * Get the plugin's internal name.\n
@@ -151,27 +138,18 @@ public:
      *
      * \see getRealName() and setName()
      */
-    const char* getName() const noexcept
-    {
-        return (const char*)fName;
-    }
+    const char* getName() const noexcept;
 
     /*!
      * Get the currently loaded DLL filename for this plugin.\n
      * (Sound kits return their exact filename).
      */
-    const char* getFilename() const noexcept
-    {
-        return (const char*)fFilename;
-    }
+    const char* getFilename() const noexcept;
 
     /*!
      * Get the plugins's icon name.
      */
-    const char* getIconName() const noexcept
-    {
-        return (const char*)fIconName;
-    }
+    const char* getIconName() const noexcept;
 
     /*!
      * Get the plugin's category (delay, filter, synth, etc).
@@ -871,54 +849,6 @@ public:
 
 protected:
     /*!
-     * Plugin Id, as passed in the constructor, returned in getId().
-     * \see getId and setId()
-     */
-    unsigned int fId;
-
-    /*!
-     * Hints, as returned in getHints().
-     * \see PluginHints and getHints()
-     */
-    unsigned int fHints;
-
-    /*!
-     * Defined and currently in-use options, returned in getOptions().
-     * \see PluginOptions, getOptionsAvailable(), getOptionsEnabled(), setOption()
-     */
-    unsigned int fOptions;
-
-    /*!
-     * Patchbay client Id that matches this plugin, 0 if unused.
-     */
-    int fPatchbayClientId;
-
-    /*!
-     * Wherever the plugin is ready for usage.\n
-     * When a plugin is disabled, it will never be processed or managed in any way.
-     * \see isEnabled() and setEnabled()
-     */
-    bool fEnabled;
-
-    /*!
-     * Plugin name
-     * \see getName(), getRealName() and setName()
-     */
-    CarlaString fName;
-
-    /*!
-     * Plugin filename, if applicable
-     * \see getFilename()
-     */
-    CarlaString fFilename;
-
-    /*!
-     * Icon name
-     * \see getIconName()
-     */
-    CarlaString fIconName;
-
-    /*!
      * Internal data, for CarlaPlugin subclasses only.
      */
     CarlaPluginProtectedData* const pData;
@@ -963,7 +893,7 @@ protected:
         CARLA_DECLARE_NON_COPY_CLASS(ScopedSingleProcessLocker)
     };
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPlugin)
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaPlugin)
 };
 
 /**@}*/

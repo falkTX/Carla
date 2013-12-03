@@ -69,18 +69,11 @@
 #endif
 
 /* Common includes */
-#ifdef CARLA_OS_WIN
-# include <winsock2.h>
-# include <windows.h>
+#ifdef __cplusplus
+# include <cstddef>
 #else
-# include <unistd.h>
-# ifndef __cdecl
-#  define __cdecl
-# endif
-#endif
-
-#ifndef __cplusplus
 # include <stdbool.h>
+# include <stddef.h>
 #endif
 
 /* Define various string format types */

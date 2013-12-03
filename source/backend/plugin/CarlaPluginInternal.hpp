@@ -31,7 +31,7 @@
 
 #include <cmath>
 
-#define CARLA_PROCESS_CONTINUE_CHECK if (! fEnabled) { pData->engine->callback(ENGINE_CALLBACK_DEBUG, fId, 0, 0, 0.0f, "Processing while plugin is disabled!!"); return; }
+#define CARLA_PROCESS_CONTINUE_CHECK if (! pData->enabled) { pData->engine->callback(ENGINE_CALLBACK_DEBUG, pData->id, 0, 0, 0.0f, "Processing while plugin is disabled!!"); return; }
 
 #ifdef USE_JUCE
 #include "juce_audio_basics.h"
@@ -491,21 +491,33 @@ struct CarlaPluginProtectedData {
     CarlaEngine* const engine;
     CarlaEngineClient* client;
 
+    unsigned int id;
+    unsigned int hints;
+    unsigned int options;
+
     bool active;
+    bool enabled;
     bool needsReset;
+
     void* lib;
     void* uiLib;
 
     // misc
     int8_t       ctrlChannel;
     unsigned int extraHints;
-    CarlaString  idStr;
+    int          patchbayClientId;
 
     // latency
     uint32_t latency;
     float**  latencyBuffers;
 
-    // data
+    // data 1
+    CarlaString name;
+    CarlaString filename;
+    CarlaString iconName;
+    CarlaString idStr;
+
+    // data 2
     PluginAudioData audioIn;
     PluginAudioData audioOut;
     PluginEventData event;
@@ -624,12 +636,17 @@ struct CarlaPluginProtectedData {
     CarlaPluginProtectedData(CarlaEngine* const eng, CarlaPlugin* const plug)
         : engine(eng),
           client(nullptr),
+          id(0),
+          hints(0x0),
+          options(0x0),
           active(false),
+          enabled(false),
           needsReset(false),
           lib(nullptr),
           uiLib(nullptr),
           ctrlChannel(0),
           extraHints(0x0),
+          patchbayClientId(0),
           latency(0),
           latencyBuffers(nullptr),
           osc(eng, plug) {}

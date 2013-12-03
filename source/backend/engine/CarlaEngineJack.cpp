@@ -579,13 +579,13 @@ public:
         carla_debug("CarlaEngineJack::CarlaEngineJack()");
 
 #ifdef BUILD_BRIDGE
-        fOptions.processMode = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS;
+        pData->options.processMode = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS;
 #else
         carla_fill<jack_port_t*>(fRackPorts, kRackPortCount, nullptr);
 #endif
 
         // FIXME: Always enable JACK transport for now
-        fOptions.transportMode = ENGINE_TRANSPORT_MODE_JACK;
+        pData->options.transportMode = ENGINE_TRANSPORT_MODE_JACK;
 
         carla_zeroStruct<jack_position_t>(fTransportPos);
     }
@@ -608,7 +608,7 @@ public:
 
     unsigned int getMaxClientNameSize() const noexcept override
     {
-        if (fOptions.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT || fOptions.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT || pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             unsigned int ret = 0;
 
@@ -625,7 +625,7 @@ public:
 
     unsigned int getMaxPortNameSize() const noexcept override
     {
-        if (fOptions.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT || fOptions.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT || pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             unsigned int ret = 0;
 
@@ -666,8 +666,8 @@ public:
 
         if (fClient != nullptr)
         {
-            fBufferSize = jackbridge_get_buffer_size(fClient);
-            fSampleRate = jackbridge_get_sample_rate(fClient);
+            pData->bufferSize = jackbridge_get_buffer_size(fClient);
+            pData->sampleRate = jackbridge_get_sample_rate(fClient);
 
             jackbridge_custom_publish_data(fClient, URI_CANVAS_ICON, "carla", 6);
             jackbridge_custom_set_data_appearance_callback(fClient, carla_jack_custom_appearance_callback, this);
@@ -688,7 +688,7 @@ public:
             jackbridge_set_port_connect_callback(fClient, carla_jack_port_connect_callback, this);
             jackbridge_set_port_rename_callback(fClient, carla_jack_port_rename_callback, this);
 
-            if (fOptions.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+            if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
             {
                 fRackPorts[kRackPortAudioIn1]  = jackbridge_port_register(fClient, "audio-in1",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
                 fRackPorts[kRackPortAudioIn2]  = jackbridge_port_register(fClient, "audio-in2",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
@@ -715,13 +715,13 @@ public:
 
         return false;
 #else
-        if (fBufferSize == 0 || fSampleRate == 0.0)
+        if (pData->bufferSize == 0 || pData->sampleRate == 0.0)
         {
             // open temp client to get initial buffer-size and sample-rate values
             if (jack_client_t* tmpClient = jackbridge_client_open(clientName, JackNullOption, nullptr))
             {
-                fBufferSize = jackbridge_get_buffer_size(tmpClient);
-                fSampleRate = jackbridge_get_sample_rate(tmpClient);
+                pData->bufferSize = jackbridge_get_buffer_size(tmpClient);
+                pData->sampleRate = jackbridge_get_sample_rate(tmpClient);
 
                 jackbridge_client_close(tmpClient);
             }
@@ -743,7 +743,7 @@ public:
 #else
         if (jackbridge_deactivate(fClient))
         {
-            if (fOptions.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+            if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
             {
                 jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioIn1]);
                 jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioIn2]);
@@ -856,8 +856,8 @@ public:
 
         CARLA_SAFE_ASSERT_RETURN(client != nullptr, nullptr);
 
-        fBufferSize = jackbridge_get_buffer_size(client);
-        fSampleRate = jackbridge_get_sample_rate(client);
+        pData->bufferSize = jackbridge_get_buffer_size(client);
+        pData->sampleRate = jackbridge_get_sample_rate(client);
 
         jackbridge_custom_publish_data(client, URI_CANVAS_ICON, iconName, std::strlen(iconName)+1);
 
@@ -868,11 +868,11 @@ public:
         jackbridge_set_process_callback(client, carla_jack_process_callback, this);
         jackbridge_on_shutdown(client, carla_jack_shutdown_callback, this);
 #else
-        if (fOptions.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
         {
             client = fClient;
         }
-        else if (fOptions.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+        else if (pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             client = jackbridge_client_open(plugin->getName(), JackNullOption, nullptr);
 
@@ -912,13 +912,13 @@ public:
 
         CARLA_ASSERT(plugin->getId() == id);
 
-        bool needsReinit = (fOptions.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT);
+        bool needsReinit = (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT);
         const char* name = getUniquePluginName(newName);
 
         // TODO - use rename port if single-client
 
         // JACK client rename
-        if (fOptions.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             CarlaEngineJackClient* const client((CarlaEngineJackClient*)plugin->getEngineClient());
 
@@ -1039,9 +1039,9 @@ public:
         return false;
     }
 
-    void patchbayRefresh() override
+    bool patchbayRefresh() override
     {
-        CARLA_SAFE_ASSERT_RETURN(fClient != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
 
         fLastGroupId = 0;
         fLastPortId  = 0;
@@ -1053,6 +1053,8 @@ public:
         fGroupIconsChanged.clear();
 
         initJackPatchbay(jackbridge_get_client_name(fClient));
+
+        return true;
     }
 #endif
 
@@ -1061,7 +1063,7 @@ public:
 
     void transportPlay() override
     {
-        if (fOptions.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
+        if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
             CarlaEngine::transportPlay();
         else if (fClient != nullptr)
             jackbridge_transport_start(fClient);
@@ -1069,7 +1071,7 @@ public:
 
     void transportPause() override
     {
-        if (fOptions.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
+        if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
             CarlaEngine::transportPause();
         else if (fClient != nullptr)
             jackbridge_transport_stop(fClient);
@@ -1077,7 +1079,7 @@ public:
 
     void transportRelocate(const uint32_t frame) override
     {
-        if (fOptions.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
+        if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
             CarlaEngine::transportRelocate(frame);
         else if (fClient != nullptr)
             jackbridge_transport_locate(fClient, frame);
@@ -1088,19 +1090,19 @@ public:
 protected:
     void handleJackBufferSizeCallback(const uint32_t newBufferSize)
     {
-        if (fBufferSize == newBufferSize)
+        if (pData->bufferSize == newBufferSize)
             return;
 
-        fBufferSize = newBufferSize;
+        pData->bufferSize = newBufferSize;
         bufferSizeChanged(newBufferSize);
     }
 
     void handleJackSampleRateCallback(const double newSampleRate)
     {
-        if (fSampleRate == newSampleRate)
+        if (pData->sampleRate == newSampleRate)
             return;
 
-        fSampleRate = newSampleRate;
+        pData->sampleRate = newSampleRate;
         sampleRateChanged(newSampleRate);
     }
 
@@ -1115,39 +1117,39 @@ protected:
 
     void saveTransportInfo()
     {
-        if (fOptions.transportMode != ENGINE_TRANSPORT_MODE_JACK)
+        if (pData->options.transportMode != ENGINE_TRANSPORT_MODE_JACK)
             return;
 
         fTransportPos.unique_1 = fTransportPos.unique_2 + 1; // invalidate
 
         fTransportState = jackbridge_transport_query(fClient, &fTransportPos);
 
-        fTimeInfo.playing = (fTransportState == JackTransportRolling);
+        pData->timeInfo.playing = (fTransportState == JackTransportRolling);
 
         if (fTransportPos.unique_1 == fTransportPos.unique_2)
         {
-            fTimeInfo.frame = fTransportPos.frame;
-            fTimeInfo.usecs = fTransportPos.usecs;
+            pData->timeInfo.frame = fTransportPos.frame;
+            pData->timeInfo.usecs = fTransportPos.usecs;
 
             if (fTransportPos.valid & JackPositionBBT)
             {
-                fTimeInfo.valid              = EngineTimeInfo::ValidBBT;
-                fTimeInfo.bbt.bar            = fTransportPos.bar;
-                fTimeInfo.bbt.beat           = fTransportPos.beat;
-                fTimeInfo.bbt.tick           = fTransportPos.tick;
-                fTimeInfo.bbt.barStartTick   = fTransportPos.bar_start_tick;
-                fTimeInfo.bbt.beatsPerBar    = fTransportPos.beats_per_bar;
-                fTimeInfo.bbt.beatType       = fTransportPos.beat_type;
-                fTimeInfo.bbt.ticksPerBeat   = fTransportPos.ticks_per_beat;
-                fTimeInfo.bbt.beatsPerMinute = fTransportPos.beats_per_minute;
+                pData->timeInfo.valid              = EngineTimeInfo::ValidBBT;
+                pData->timeInfo.bbt.bar            = fTransportPos.bar;
+                pData->timeInfo.bbt.beat           = fTransportPos.beat;
+                pData->timeInfo.bbt.tick           = fTransportPos.tick;
+                pData->timeInfo.bbt.barStartTick   = fTransportPos.bar_start_tick;
+                pData->timeInfo.bbt.beatsPerBar    = fTransportPos.beats_per_bar;
+                pData->timeInfo.bbt.beatType       = fTransportPos.beat_type;
+                pData->timeInfo.bbt.ticksPerBeat   = fTransportPos.ticks_per_beat;
+                pData->timeInfo.bbt.beatsPerMinute = fTransportPos.beats_per_minute;
             }
             else
-                fTimeInfo.valid = 0x0;
+                pData->timeInfo.valid = 0x0;
         }
         else
         {
-            fTimeInfo.frame = 0;
-            fTimeInfo.valid = 0x0;
+            pData->timeInfo.frame = 0;
+            pData->timeInfo.valid = 0x0;
         }
     }
 
@@ -1159,7 +1161,7 @@ protected:
         {
 #ifndef BUILD_BRIDGE
             // pass-through
-            if (fOptions.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+            if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
             {
                 float* const audioIn1  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn1], nframes);
                 float* const audioIn2  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn2], nframes);
@@ -1193,7 +1195,7 @@ protected:
 
         return runPendingRtEvents();
 #else
-        if (fOptions.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
         {
             for (unsigned int i=0; i < pData->curPluginCount; ++i)
             {
@@ -1210,7 +1212,7 @@ protected:
             return runPendingRtEvents();
         }
 
-        if (fOptions.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
         {
             // get buffers from jack
             float* const audioIn1  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn1], nframes);
@@ -1411,7 +1413,7 @@ protected:
 
     void handleJackLatencyCallback(const jack_latency_callback_mode_t mode)
     {
-        if (fOptions.processMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+        if (pData->options.processMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             return;
 
         for (unsigned int i=0; i < pData->curPluginCount; ++i)

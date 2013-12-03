@@ -151,12 +151,19 @@ struct CarlaEngineProtectedData {
     EngineCallbackFunc callback;
     void*              callbackPtr;
 
-    CarlaString lastError;
+    unsigned int hints;
+    uint32_t     bufferSize;
+    double       sampleRate;
 
     bool         aboutToClose;    // don't re-activate thread if true
     unsigned int curPluginCount;  // number of plugins loaded (0...max)
     unsigned int maxPluginNumber; // number of plugins allowed (0, 16, 99 or 255)
     unsigned int nextPluginId;    // invalid if == maxPluginNumber
+
+    CarlaString    lastError;
+    CarlaString    name;
+    EngineOptions  options;
+    EngineTimeInfo timeInfo;
 
     EnginePluginData* plugins;
 
@@ -213,6 +220,9 @@ struct CarlaEngineProtectedData {
           oscData(nullptr),
           callback(nullptr),
           callbackPtr(nullptr),
+          hints(0x0),
+          bufferSize(0),
+          sampleRate(0.0),
           aboutToClose(false),
           curPluginCount(0),
           maxPluginNumber(0),

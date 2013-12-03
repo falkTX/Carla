@@ -397,7 +397,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 #endif
 
     // TODO: make this an option, put somewhere else
-    if (getenv("WINE_RT") == nullptr)
+    if (std::getenv("WINE_RT") == nullptr)
     {
         carla_setenv("WINE_RT", "15");
         carla_setenv("WINE_SVR_RT", "10");
@@ -570,28 +570,22 @@ void carla_set_engine_callback(EngineCallbackFunc func, void* ptr)
 //#endif
 }
 
-#if 0
-#if 0
-void carla_set_engine_option(CarlaEngineOption option, int value, const char* valueStr)
+void carla_set_engine_option(EngineOption option, int value, const char* valueStr)
 {
     carla_debug("carla_set_engine_option(%i:%s, %i, \"%s\")", option, CB::EngineOption2Str(option), value, valueStr);
 
     switch (option)
     {
-    case CB::ENGINE_OPTION_PROCESS_NAME:
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-#ifdef USE_JUCE
-        juce::Thread::setCurrentThreadName(valueStr);
-#endif
+    case CB::ENGINE_OPTION_DEBUG:
         break;
 
     case CB::ENGINE_OPTION_PROCESS_MODE:
-        CARLA_SAFE_ASSERT_RETURN(value >= CB::ENGINE_PROCESS_MODE_SINGLE_CLIENT && value <= CB::ENGINE_PROCESS_MODE_BRIDGE,);
+        CARLA_SAFE_ASSERT_RETURN(value >= CB::ENGINE_PROCESS_MODE_SINGLE_CLIENT && value < CB::ENGINE_PROCESS_MODE_BRIDGE,);
         gStandalone.engineOptions.processMode = static_cast<CB::EngineProcessMode>(value);
         break;
 
     case CB::ENGINE_OPTION_TRANSPORT_MODE:
-        CARLA_SAFE_ASSERT_RETURN(value >= CB::ENGINE_TRANSPORT_MODE_INTERNAL && value <= CB::ENGINE_TRANSPORT_MODE_BRIDGE,);
+        CARLA_SAFE_ASSERT_RETURN(value >= CB::ENGINE_TRANSPORT_MODE_INTERNAL && value < CB::ENGINE_TRANSPORT_MODE_BRIDGE,);
         gStandalone.engineOptions.transportMode = static_cast<CB::EngineTransportMode>(value);
         break;
 
@@ -626,7 +620,7 @@ void carla_set_engine_option(CarlaEngineOption option, int value, const char* va
         break;
 
     case CB::ENGINE_OPTION_AUDIO_NUM_PERIODS:
-        CARLA_SAFE_ASSERT_RETURN(value == 2 || value == 3,);
+        CARLA_SAFE_ASSERT_RETURN(value >= 2 && value <= 3,);
         gStandalone.engineOptions.audioNumPeriods = static_cast<unsigned int>(value);
         break;
 
@@ -645,101 +639,15 @@ void carla_set_engine_option(CarlaEngineOption option, int value, const char* va
         gStandalone.engineOptions.audioDevice = valueStr;
         break;
 
+    case CB::ENGINE_OPTION_PATH_BINARIES:
+        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
+        gStandalone.engineOptions.binaryDir = valueStr;
+        break;
+
     case CB::ENGINE_OPTION_PATH_RESOURCES:
         CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
         gStandalone.engineOptions.resourceDir = valueStr;
         break;
-
-#ifndef BUILD_BRIDGE
-    case CB::ENGINE_OPTION_PATH_BRIDGE_NATIVE:
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-        gStandalone.engineOptions.bridge_native = valueStr;
-        break;
-
-    case CB::ENGINE_OPTION_PATH_BRIDGE_POSIX32:
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-        gStandalone.engineOptions.bridge_posix32 = valueStr;
-        break;
-
-    case CB::ENGINE_OPTION_PATH_BRIDGE_POSIX64:
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-        gStandalone.engineOptions.bridge_posix64 = valueStr;
-        break;
-
-    case CB::ENGINE_OPTION_PATH_BRIDGE_WIN32:
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-        gStandalone.engineOptions.bridge_win32 = valueStr;
-        break;
-
-    case CB::ENGINE_OPTION_PATH_BRIDGE_WIN64:
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-        gStandalone.engineOptions.bridge_win64 = valueStr;
-        break;
-#endif
-
-#ifdef WANT_LV2
-    case CB::ENGINE_OPTION_PATH_BRIDGE_LV2_EXTERNAL:
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-        gStandalone.engineOptions.bridge_lv2Extrn = valueStr;
-        break;
-
-    case CB::ENGINE_OPTION_PATH_BRIDGE_LV2_GTK2:
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-        gStandalone.engineOptions.bridge_lv2Gtk2 = valueStr;
-        break;
-
-    case CB::ENGINE_OPTION_PATH_BRIDGE_LV2_GTK3:
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-        gStandalone.engineOptions.bridge_lv2Gtk3 = valueStr;
-        break;
-
-    case CB::ENGINE_OPTION_PATH_BRIDGE_LV2_NTK:
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-        gStandalone.engineOptions.bridge_lv2Ntk = valueStr;
-        break;
-
-    case CB::ENGINE_OPTION_PATH_BRIDGE_LV2_QT4:
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-        gStandalone.engineOptions.bridge_lv2Qt4 = valueStr;
-        break;
-
-    case CB::ENGINE_OPTION_PATH_BRIDGE_LV2_QT5:
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-        gStandalone.engineOptions.bridge_lv2Qt5 = valueStr;
-        break;
-
-    case CB::ENGINE_OPTION_PATH_BRIDGE_LV2_COCOA:
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-        gStandalone.engineOptions.bridge_lv2Cocoa = valueStr;
-        break;
-
-    case CB::ENGINE_OPTION_PATH_BRIDGE_LV2_WINDOWS:
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-        gStandalone.engineOptions.bridge_lv2Win = valueStr;
-        break;
-
-    case CB::ENGINE_OPTION_PATH_BRIDGE_LV2_X11:
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-        gStandalone.engineOptions.bridge_lv2X11 = valueStr;
-        break;
-#endif
-
-#ifdef WANT_VST
-    case CB::ENGINE_OPTION_PATH_BRIDGE_VST_MAC:
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-        gStandalone.engineOptions.bridge_vstMac = valueStr;
-        break;
-
-    case CB::ENGINE_OPTION_PATH_BRIDGE_VST_HWND:
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-        gStandalone.engineOptions.bridge_vstHWND = valueStr;
-        break;
-
-    case CB::ENGINE_OPTION_PATH_BRIDGE_VST_X11:
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-        gStandalone.engineOptions.bridge_vstX11 = valueStr;
-        break;
-#endif
     }
 
     if (gStandalone.engine != nullptr)
@@ -748,45 +656,43 @@ void carla_set_engine_option(CarlaEngineOption option, int value, const char* va
 
 // -------------------------------------------------------------------------------------------------------------------
 
-void carla_set_file_callback(CarlaFileCallbackFunc func, void* ptr)
+void carla_set_file_callback(FileCallbackFunc func, void* ptr)
 {
     carla_debug("carla_set_file_callback(%p, %p)", func, ptr);
 
-    gFileHandler.callback    = func;
-    gFileHandler.callbackPtr = ptr;
+    gStandalone.fileCallback    = func;
+    gStandalone.fileCallbackPtr = ptr;
 }
 
-const char* carla_file_callback(CarlaFileCallbackOpcode action, bool isDir, const char* title, const char* filter)
+const char* carla_file_callback(FileCallbackOpcode action, bool isDir, const char* title, const char* filter)
 {
-    if (gFileHandler.callback == nullptr)
+    if (gStandalone.fileCallback == nullptr)
         return nullptr;
 
-    return gFileHandler.callback(gFileHandler.callbackPtr, action, isDir, title, filter);
+    return gStandalone.fileCallback(gStandalone.fileCallbackPtr, action, isDir, title, filter);
 }
 
 // -------------------------------------------------------------------------------------------------------------------
-#endif
 
-bool carla_load_filename(const char* filename)
+bool carla_load_file(const char* filename)
 {
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
-    carla_debug("carla_load_filename(\"%s\")", filename);
+    carla_debug("carla_load_file(\"%s\")", filename);
 
-    if (gStandalone.engine != nullptr && gStandalone.engine->isRunning())
-        return gStandalone.engine->loadFilename(filename);
+    if (gStandalone.engine != nullptr)
+        return gStandalone.engine->loadFile(filename);
 
     carla_stderr2("Engine is not running");
     gStandalone.lastError = "Engine is not running";
     return false;
 }
 
-#if 0
 bool carla_load_project(const char* filename)
 {
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
     carla_debug("carla_load_project(\"%s\")", filename);
 
-    if (gStandalone.engine != nullptr && gStandalone.engine->isRunning())
+    if (gStandalone.engine != nullptr)
         return gStandalone.engine->loadProject(filename);
 
     carla_stderr2("Engine is not running");
@@ -799,7 +705,6 @@ bool carla_save_project(const char* filename)
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
     carla_debug("carla_save_project(\"%s\")", filename);
 
-    // allow to save even if engine isn't running
     if (gStandalone.engine != nullptr)
         return gStandalone.engine->saveProject(filename);
 
@@ -815,7 +720,7 @@ bool carla_patchbay_connect(int portA, int portB)
     CARLA_SAFE_ASSERT_RETURN(portA != portB, false);
     carla_debug("carla_patchbay_connect(%i, %i)", portA, portB);
 
-    if (gStandalone.engine != nullptr && gStandalone.engine->isRunning())
+    if (gStandalone.engine != nullptr)
         return gStandalone.engine->patchbayConnect(portA, portB);
 
     carla_stderr2("Engine is not running");
@@ -827,7 +732,7 @@ bool carla_patchbay_disconnect(int connectionId)
 {
     carla_debug("carla_patchbay_disconnect(%i)", connectionId);
 
-    if (gStandalone.engine != nullptr && gStandalone.engine->isRunning())
+    if (gStandalone.engine != nullptr)
         return gStandalone.engine->patchbayDisconnect(connectionId);
 
     carla_stderr2("Engine is not running");
@@ -839,11 +744,8 @@ bool carla_patchbay_refresh()
 {
     carla_debug("carla_patchbay_refresh()");
 
-    if (gStandalone.engine != nullptr && gStandalone.engine->isRunning())
-    {
-        gStandalone.engine->patchbayRefresh();
-        return true;
-    }
+    if (gStandalone.engine != nullptr)
+        return gStandalone.engine->patchbayRefresh();
 
     carla_stderr2("Engine is not running");
     gStandalone.lastError = "Engine is not running";
@@ -851,7 +753,6 @@ bool carla_patchbay_refresh()
 }
 
 // -------------------------------------------------------------------------------------------------------------------
-#endif
 
 void carla_transport_play()
 {
@@ -885,7 +786,6 @@ uint64_t carla_get_current_transport_frame()
     return timeInfo.frame;
 }
 
-#if 0
 const CarlaTransportInfo* carla_get_transport_info()
 {
     static CarlaTransportInfo info;
@@ -900,7 +800,7 @@ const CarlaTransportInfo* carla_get_transport_info()
 
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &info);
 
-    const EngineTimeInfo& timeInfo(gStandalone.engine->getTimeInfo());
+    const CB::EngineTimeInfo& timeInfo(gStandalone.engine->getTimeInfo());
 
     info.playing = timeInfo.playing;
     info.frame   = timeInfo.frame;
@@ -915,8 +815,6 @@ const CarlaTransportInfo* carla_get_transport_info()
 
     return &info;
 }
-#endif
-#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 

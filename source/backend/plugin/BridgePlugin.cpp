@@ -258,7 +258,7 @@ public:
 
         pData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_BRIDGE);
 
-        fHints |= PLUGIN_IS_BRIDGE;
+        pData->hints |= PLUGIN_IS_BRIDGE;
     }
 
     ~BridgePlugin() override
@@ -348,7 +348,7 @@ public:
 
     int32_t getChunkData(void** const dataPtr) const override
     {
-        CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
+        CARLA_ASSERT(pData->options & PLUGIN_OPTION_USE_CHUNKS);
         CARLA_ASSERT(dataPtr != nullptr);
 
 #if 0
@@ -637,7 +637,7 @@ public:
 
             if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = fName;
+                portName  = pData->name;
                 portName += ":";
             }
 
@@ -661,7 +661,7 @@ public:
 
             if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = fName;
+                portName  = pData->name;
                 portName += ":";
             }
 
@@ -684,7 +684,7 @@ public:
 
             if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = fName;
+                portName  = pData->name;
                 portName += ":";
             }
 
@@ -700,7 +700,7 @@ public:
 
             if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = fName;
+                portName  = pData->name;
                 portName += ":";
             }
 
@@ -842,21 +842,21 @@ public:
                         {
                             float value;
 
-                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (fHints & PLUGIN_CAN_DRYWET) > 0)
+                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) > 0)
                             {
                                 value = ctrlEvent.value;
                                 setDryWet(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
                             }
 
-                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) > 0)
+                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) > 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
                             }
 
-                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) > 0)
+                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) > 0)
                             {
                                 float left, right;
                                 value = ctrlEvent.value/0.5f - 1.0f;
@@ -914,7 +914,7 @@ public:
                             pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
 
-                        if ((fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
+                        if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
                             fShmControl.writeOpcode(kPluginBridgeOpcodeMidiEvent);
                             fShmControl.writeLong(event.time);
@@ -928,12 +928,12 @@ public:
                     }
 
                     case kEngineControlEventTypeMidiBank:
-                        if (event.channel == pData->ctrlChannel && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
                             nextBankId = ctrlEvent.param;
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
-                        if (event.channel == pData->ctrlChannel && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
                         {
                             const uint32_t nextProgramId(ctrlEvent.param);
 
@@ -956,14 +956,14 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllSoundOff:
-                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
                             // TODO
                         }
                         break;
 
                     case kEngineControlEventTypeAllNotesOff:
-                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
@@ -986,13 +986,13 @@ public:
                     uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
                     uint8_t channel = event.channel;
 
-                    if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
+                    if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
                         continue;
-                    if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
+                    if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
                         continue;
-                    if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
+                    if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
                         continue;
-                    if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (fOptions & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
+                    if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
                         continue;
 
                     // Fix bad note-off
@@ -1106,9 +1106,9 @@ public:
         // Post-processing (dry/wet, volume and balance)
 
         {
-            const bool doVolume  = (fHints & PLUGIN_CAN_VOLUME) != 0 && pData->postProc.volume != 1.0f;
-            const bool doDryWet  = (fHints & PLUGIN_CAN_DRYWET) != 0 && pData->postProc.dryWet != 1.0f;
-            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) != 0 && (pData->postProc.balanceLeft != -1.0f || pData->postProc.balanceRight != 1.0f);
+            const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) != 0 && pData->postProc.volume != 1.0f;
+            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && pData->postProc.dryWet != 1.0f;
+            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && (pData->postProc.balanceLeft != -1.0f || pData->postProc.balanceRight != 1.0f);
 
             bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];
@@ -1350,7 +1350,7 @@ public:
             CARLA_ASSERT(maker != nullptr);
             CARLA_ASSERT(copyright != nullptr);
 
-            fHints = hints | PLUGIN_IS_BRIDGE;
+            pData->hints = hints | PLUGIN_IS_BRIDGE;
 
             fInfo.category = static_cast<PluginCategory>(category);
             fInfo.uniqueId = uniqueId;
@@ -1360,8 +1360,8 @@ public:
             fInfo.maker = maker;
             fInfo.copyright = copyright;
 
-            if (fName.isEmpty())
-                fName = name;
+            if (pData->name.isEmpty())
+                pData->name = name;
 
             break;
         }
@@ -1507,7 +1507,7 @@ public:
                 break;
 
             if (std::strcmp(key, CARLA_BRIDGE_MSG_HIDE_GUI) == 0)
-                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, fId, 0, 0, 0.0f, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
             else if (std::strcmp(key, CARLA_BRIDGE_MSG_SAVED) == 0)
                 fSaved = true;
 
@@ -1698,9 +1698,9 @@ public:
         // set info
 
         if (name != nullptr)
-            fName = pData->engine->getUniquePluginName(name);
+            pData->name = pData->engine->getUniquePluginName(name);
 
-        fFilename = filename;
+        pData->filename = filename;
         fBridgeBinary = bridgeBinary;
 
         // ---------------------------------------------------------------
@@ -1786,8 +1786,8 @@ public:
         fShmControl.commitWrite();
 
         // register plugin now so we can receive OSC (and wait for it)
-        fHints |= PLUGIN_IS_BRIDGE;
-        pData->engine->registerEnginePlugin(fId, this);
+        pData->hints |= PLUGIN_IS_BRIDGE;
+        pData->engine->registerEnginePlugin(pData->id, this);
 
         // init OSC
         {
@@ -1809,7 +1809,7 @@ public:
         if (fInitError || ! fInitiated)
         {
             // unregister so it gets handled properly
-            pData->engine->registerEnginePlugin(fId, nullptr);
+            pData->engine->registerEnginePlugin(pData->id, nullptr);
 
             pData->osc.thread.stop(6000);
 
@@ -1822,14 +1822,14 @@ public:
         // ---------------------------------------------------------------
         // register client
 
-        if (fName.isEmpty())
+        if (pData->name.isEmpty())
         {
             if (name != nullptr)
-                fName = pData->engine->getUniquePluginName(name);
+                pData->name = pData->engine->getUniquePluginName(name);
             else if (label != nullptr)
-                fName = pData->engine->getUniquePluginName(label);
+                pData->name = pData->engine->getUniquePluginName(label);
             else
-                fName = pData->engine->getUniquePluginName("unknown");
+                pData->name = pData->engine->getUniquePluginName("unknown");
         }
 
         pData->client = pData->engine->addClient(this);
