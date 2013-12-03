@@ -52,7 +52,7 @@ ICON_STATE_ON    = 3
 gFakePluginInfo = {
     "type": PLUGIN_NONE,
     "category": PLUGIN_CATEGORY_SYNTH,
-    "hints": PLUGIN_CAN_DRYWET|PLUGIN_CAN_VOLUME|PLUGIN_CAN_PANNING, # PLUGIN_IS_SYNTH
+    "hints": PLUGIN_IS_SYNTH|PLUGIN_CAN_DRYWET|PLUGIN_CAN_VOLUME|PLUGIN_CAN_PANNING,
     "optionsAvailable": 0x1FF, # all
     "optionsEnabled": 0x1FF, # all
     "binary": "AwesoomeBinary.yeah",
@@ -66,8 +66,7 @@ gFakePluginInfo = {
 }
 
 gFakeParamInfo = {
-    'type':  PARAMETER_INPUT,
-    'hints': PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE,
+    'hints': PARAMETER_IS_INPUT|PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE,
     'name':  "Parameter Name",
     'unit':  "",
     'scalePoints': [],
@@ -120,11 +119,11 @@ class CarlaAboutW(QDialog):
             self.adjustSize()
 
         else:
-            self.ui.l_extended.setText(cString(Carla.host.get_extended_license_text()))
+            self.ui.l_extended.setText(Carla.host.get_complete_license_text())
 
             if Carla.host.is_engine_running():
-                self.ui.le_osc_url_tcp.setText(cString(Carla.host.get_host_osc_url_tcp()))
-                self.ui.le_osc_url_udp.setText(cString(Carla.host.get_host_osc_url_udp()))
+                self.ui.le_osc_url_tcp.setText(Carla.host.get_host_osc_url_tcp())
+                self.ui.le_osc_url_udp.setText(Carla.host.get_host_osc_url_udp())
             else:
                 self.ui.le_osc_url_tcp.setText(self.tr("(Engine not running)"))
                 self.ui.le_osc_url_udp.setText(self.tr("(Engine not running)"))
@@ -219,46 +218,29 @@ class PluginParameter(QWidget):
         self.ui.label.setText(pInfo['name'])
         self.ui.widget.setName(pInfo['name'])
 
-        if pType == PARAMETER_INPUT:
-            self.ui.widget.setMinimum(pInfo['minimum'])
-            self.ui.widget.setMaximum(pInfo['maximum'])
-            self.ui.widget.setDefault(pInfo['default'])
-            self.ui.widget.setValue(pInfo['current'], False)
-            self.ui.widget.setLabel(pInfo['unit'])
-            self.ui.widget.setStep(pInfo['step'])
-            self.ui.widget.setStepSmall(pInfo['stepSmall'])
-            self.ui.widget.setStepLarge(pInfo['stepLarge'])
-            self.ui.widget.setScalePoints(pInfo['scalePoints'], bool(pHints & PARAMETER_USES_SCALEPOINTS))
+        self.ui.widget.setMinimum(pInfo['minimum'])
+        self.ui.widget.setMaximum(pInfo['maximum'])
+        self.ui.widget.setDefault(pInfo['default'])
+        self.ui.widget.setValue(pInfo['current'], False)
+        self.ui.widget.setLabel(pInfo['unit'])
+        self.ui.widget.setStep(pInfo['step'])
+        self.ui.widget.setStepSmall(pInfo['stepSmall'])
+        self.ui.widget.setStepLarge(pInfo['stepLarge'])
+        self.ui.widget.setScalePoints(pInfo['scalePoints'], bool(pHints & PARAMETER_USES_SCALEPOINTS))
 
-            if not pHints & PARAMETER_IS_ENABLED:
-                self.ui.label.setEnabled(False)
-                self.ui.widget.setEnabled(False)
-                self.ui.widget.setReadOnly(True)
-                self.ui.sb_control.setEnabled(False)
-                self.ui.sb_channel.setEnabled(False)
-
-            elif not pHints & PARAMETER_IS_AUTOMABLE:
-                self.ui.sb_control.setEnabled(False)
-                self.ui.sb_channel.setEnabled(False)
-
-                if pHints & PARAMETER_IS_READ_ONLY:
-                    self.ui.widget.setReadOnly(True)
-
-        elif pType == PARAMETER_OUTPUT:
-            self.ui.widget.setMinimum(pInfo['minimum'])
-            self.ui.widget.setMaximum(pInfo['maximum'])
-            self.ui.widget.setValue(pInfo['current'], False)
-            self.ui.widget.setLabel(pInfo['unit'])
+        if not pHints & PARAMETER_IS_ENABLED:
+            self.ui.label.setEnabled(False)
+            self.ui.widget.setEnabled(False)
             self.ui.widget.setReadOnly(True)
+            self.ui.sb_control.setEnabled(False)
+            self.ui.sb_channel.setEnabled(False)
 
-            if not pHints & PARAMETER_IS_AUTOMABLE:
-                self.ui.sb_control.setEnabled(False)
-                self.ui.sb_channel.setEnabled(False)
+        elif not pHints & PARAMETER_IS_AUTOMABLE:
+            self.ui.sb_control.setEnabled(False)
+            self.ui.sb_channel.setEnabled(False)
 
-        else:
-            self.ui.widget.setVisible(False)
-            self.ui.sb_control.setVisible(False)
-            self.ui.sb_channel.setVisible(False)
+        if pHints & PARAMETER_IS_READ_ONLY:
+            self.ui.widget.setReadOnly(True)
 
         if pHints & PARAMETER_USES_CUSTOM_TEXT:
             self.ui.widget.setTextCallback(self._textCallBack)
@@ -369,7 +351,7 @@ class PluginParameter(QWidget):
         self.valueChanged.emit(self.fParameterId, value)
 
     def _textCallBack(self):
-        return cString(Carla.host.get_parameter_text(self.fPluginId, self.fParameterId))
+        return Carla.host.get_parameter_text(self.fPluginId, self.fParameterId)
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Editor (Built-in)

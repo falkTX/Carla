@@ -354,6 +354,8 @@ class CarlaObject(object):
         'isPlugin',
         # current process mode
         'processMode',
+        # current transport mode
+        'transportMode',
         # current max parameters
         'maxParameters',
         # discovery tools
@@ -380,7 +382,8 @@ Carla.gui  = None
 Carla.isControl = False
 Carla.isLocal   = True
 Carla.isPlugin  = False
-Carla.processMode   = PROCESS_MODE_MULTIPLE_CLIENTS if LINUX else PROCESS_MODE_CONTINUOUS_RACK
+Carla.processMode   = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS if LINUX else ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+Carla.transportMode = ENGINE_TRANSPORT_MODE_JACK if LINUX else ENGINE_TRANSPORT_MODE_INTERNAL
 Carla.maxParameters = MAX_DEFAULT_PARAMETERS
 
 Carla.discovery_native  = ""
@@ -502,34 +505,10 @@ def initHost(appName, libPrefix = None, failError = True):
                 libfilename = ""
 
     # -------------------------------------------------------------
-    # Search for Carla tools
-
-    carla_bridge_native  = ""
-    carla_bridge_posix32 = ""
-    carla_bridge_posix64 = ""
-    carla_bridge_win32   = ""
-    carla_bridge_win64   = ""
-
-    carla_bridge_lv2_external = ""
-    carla_bridge_lv2_gtk2     = ""
-    carla_bridge_lv2_gtk3     = ""
-    carla_bridge_lv2_qt4      = ""
-    carla_bridge_lv2_qt5      = ""
-    carla_bridge_lv2_cocoa    = ""
-    carla_bridge_lv2_windows  = ""
-    carla_bridge_lv2_x11      = ""
-
-    carla_bridge_vst_mac  = ""
-    carla_bridge_vst_hwnd = ""
-    carla_bridge_vst_x11  = ""
-
-    # -------------------------------------------------------------
     # find windows tools
 
     Carla.discovery_win32 = findTool("discovery", "carla-discovery-win32.exe")
     Carla.discovery_win64 = findTool("discovery", "carla-discovery-win64.exe")
-    carla_bridge_win32    = findTool("bridges", "carla-bridge-win32.exe")
-    carla_bridge_win64    = findTool("bridges", "carla-bridge-win64.exe")
 
     # -------------------------------------------------------------
     # find native and posix tools
@@ -538,39 +517,6 @@ def initHost(appName, libPrefix = None, failError = True):
         Carla.discovery_native  = findTool("discovery", "carla-discovery-native")
         Carla.discovery_posix32 = findTool("discovery", "carla-discovery-posix32")
         Carla.discovery_posix64 = findTool("discovery", "carla-discovery-posix64")
-        carla_bridge_native     = findTool("bridges", "carla-bridge-native")
-        carla_bridge_posix32    = findTool("bridges", "carla-bridge-posix32")
-        carla_bridge_posix64    = findTool("bridges", "carla-bridge-posix64")
-
-    # -------------------------------------------------------------
-    # find generic tools
-
-    carla_bridge_lv2_external = findTool("bridges", "carla-bridge-lv2-external")
-
-    # -------------------------------------------------------------
-    # find windows only tools
-
-    if WINDOWS:
-        carla_bridge_lv2_windows = findTool("bridges", "carla-bridge-lv2-windows.exe")
-        carla_bridge_vst_hwnd    = findTool("bridges", "carla-bridge-vst-hwnd.exe")
-
-    # -------------------------------------------------------------
-    # find mac os only tools
-
-    elif MACOS:
-        carla_bridge_lv2_cocoa = findTool("bridges", "carla-bridge-lv2-cocoa")
-        carla_bridge_vst_mac   = findTool("bridges", "carla-bridge-vst-mac")
-
-    # -------------------------------------------------------------
-    # find other tools
-
-    else:
-        carla_bridge_lv2_gtk2 = findTool("bridges", "carla-bridge-lv2-gtk2")
-        carla_bridge_lv2_gtk3 = findTool("bridges", "carla-bridge-lv2-gtk3")
-        carla_bridge_lv2_qt4  = findTool("bridges", "carla-bridge-lv2-qt4")
-        carla_bridge_lv2_qt5  = findTool("bridges", "carla-bridge-lv2-qt5")
-        carla_bridge_lv2_x11  = findTool("bridges", "carla-bridge-lv2-x11")
-        carla_bridge_vst_x11  = findTool("bridges", "carla-bridge-vst-x11")
 
     if not libfilename:
         if failError:
@@ -584,79 +530,29 @@ def initHost(appName, libPrefix = None, failError = True):
     Carla.host = Host(libfilename)
 
     # -------------------------------------------------------------
-    # Set internal stuff
+    # Set binary path
 
-    Carla.host.set_engine_option(OPTION_PROCESS_NAME, 0, os.path.basename(appName))
+    libfolder      = libfilename.replace(libname, "")
+    localBinaries  = os.path.join(libfolder, "..", "bridges")
+    systemBinaries = os.path.join(libfolder, "bridges")
 
-    NSM_URL = os.getenv("NSM_URL")
-
-    if NSM_URL:
-        Carla.host.nsm_announce(NSM_URL, appName, os.getpid())
+    if os.path.exists(libfolder):
+        Carla.host.set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, libfolder)
+    elif os.path.exists(localBinaries):
+        Carla.host.set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, localBinaries)
+    elif os.path.exists(systemBinaries):
+        Carla.host.set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, systemBinaries)
 
     # -------------------------------------------------------------
     # Set resource path
 
-    localResources  = os.path.join(libfilename.replace(libname, ""), "..", "modules", "carla_native", "resources")
-    systemResources = os.path.join(libfilename.replace(libname, ""), "resources")
+    localResources  = os.path.join(libfolder, "..", "modules", "carla_native", "resources")
+    systemResources = os.path.join(libfolder, "resources")
 
     if os.path.exists(localResources):
-        Carla.host.set_engine_option(OPTION_PATH_RESOURCES, 0, localResources)
+        Carla.host.set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, localResources)
     elif os.path.exists(systemResources):
-        Carla.host.set_engine_option(OPTION_PATH_RESOURCES, 0, systemResources)
-
-    # -------------------------------------------------------------
-    # Set bridge paths
-
-    if carla_bridge_native:
-        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_NATIVE, 0, carla_bridge_native)
-
-    if carla_bridge_posix32:
-        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_POSIX32, 0, carla_bridge_posix32)
-
-    if carla_bridge_posix64:
-        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_POSIX64, 0, carla_bridge_posix64)
-
-    if carla_bridge_win32:
-        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_WIN32, 0, carla_bridge_win32)
-
-    if carla_bridge_win64:
-        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_WIN64, 0, carla_bridge_win64)
-
-    if carla_bridge_lv2_external:
-        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_EXTERNAL, 0, carla_bridge_lv2_external)
-
-    if WINDOWS:
-        if carla_bridge_lv2_windows:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_WINDOWS, 0, carla_bridge_lv2_windows)
-
-        if carla_bridge_vst_hwnd:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_VST_HWND, 0, carla_bridge_vst_hwnd)
-
-    elif MACOS:
-        if carla_bridge_lv2_cocoa:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_COCOA, 0, carla_bridge_lv2_cocoa)
-
-        if carla_bridge_vst_mac:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_VST_MAC, 0, carla_bridge_vst_mac)
-
-    else:
-        if carla_bridge_lv2_gtk2:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_GTK2, 0, carla_bridge_lv2_gtk2)
-
-        if carla_bridge_lv2_gtk3:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_GTK3, 0, carla_bridge_lv2_gtk3)
-
-        if carla_bridge_lv2_qt4:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_QT4, 0, carla_bridge_lv2_qt4)
-
-        if carla_bridge_lv2_qt5:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_QT5, 0, carla_bridge_lv2_qt5)
-
-        if carla_bridge_lv2_x11:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_X11, 0, carla_bridge_lv2_x11)
-
-        if carla_bridge_vst_x11:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_VST_X11, 0, carla_bridge_vst_x11)
+        Carla.host.set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, systemResources)
 
 # ------------------------------------------------------------------------------------------------------------
 # Check if a value is a number (float support)
