@@ -16,17 +16,20 @@
 
 #include "DistrhoPluginInternal.hpp"
 
-#include "lv2/lv2.h"
 #include "lv2/atom.h"
+#include "lv2/atom-util.h"
 #include "lv2/buf-size.h"
+#include "lv2/midi.h"
 #include "lv2/options.h"
-#include "lv2/programs.h"
 #include "lv2/state.h"
+#include "lv2/time.h"
 #include "lv2/urid.h"
 #include "lv2/worker.h"
+#include "lv2/lv2_programs.h"
 
-// #include "lv2/atom-util.h"
-// #include "lv2/midi.h"
+#ifdef noexcept
+# undef noexcept
+#endif
 
 #include <map>
 
@@ -34,9 +37,6 @@
 # error DISTRHO_PLUGIN_URI undefined!
 #endif
 
-#if DISTRHO_PLUGIN_IS_SYNTH
-# warning LV2 Synth still TODO
-#endif
 #if DISTRHO_PLUGIN_WANT_STATE
 # warning LV2 State still TODO
 #endif
@@ -44,10 +44,9 @@
 # warning LV2 TimePos still TODO
 #endif
 
-#define DISTRHO_LV2_USE_EVENTS_IN  (DISTRHO_PLUGIN_IS_SYNTH || DISTRHO_PLUGIN_WANT_STATE || DISTRHO_PLUGIN_WANT_TIMEPOS)
-#define DISTRHO_LV2_USE_EVENTS_OUT (DISTRHO_PLUGIN_WANT_STATE)
+#define DISTRHO_LV2_USE_EVENTS_IN  (DISTRHO_PLUGIN_IS_SYNTH || DISTRHO_PLUGIN_WANT_TIMEPOS || (DISTRHO_PLUGIN_WANT_STATE && DISTRHO_PLUGIN_HAS_UI))
+#define DISTRHO_LV2_USE_EVENTS_OUT (DISTRHO_PLUGIN_WANT_STATE && DISTRHO_PLUGIN_HAS_UI)
 
-typedef float* floatptr;
 typedef std::map<d_string,d_string> StringMap;
 
 START_NAMESPACE_DISTRHO
@@ -60,6 +59,9 @@ public:
     PluginLv2(const LV2_URID_Map* const uridMap, const LV2_Worker_Schedule* const worker)
         : fPortControls(nullptr),
           fLastControlValues(nullptr),
+#if DISTRHO_LV2_USE_EVENTS_IN || DISTRHO_LV2_USE_EVENTS_OUT
+          fURIDs(uridMap),
+#endif
           fUridMap(uridMap),
           fWorker(worker)
     {
@@ -70,15 +72,15 @@ public:
             fPortAudioOuts[i] = nullptr;
 
         {
-            const uint32_t count(fPlugin.parameterCount());
+            const uint32_t count(fPlugin.getParameterCount());
 
-            fPortControls = new floatptr[count];;
-            fLastControlValues = new float[count];;
+            fPortControls      = new float*[count];
+            fLastControlValues = new float[count];
 
             for (uint32_t i=0; i < count; ++i)
             {
                 fPortControls[i] = nullptr;
-                fLastControlValues[i] = fPlugin.parameterValue(i);
+                fLastControlValues[i] = fPlugin.getParameterValue(i);
             }
         }
 
@@ -91,36 +93,6 @@ public:
 #if DISTRHO_PLUGIN_WANT_LATENCY
         fPortLatency = nullptr;
 #endif
-
-// #if DISTRHO_LV2_USE_EVENTS
-//         uridIdAtomString   = 0;
-// # if DISTRHO_PLUGIN_IS_SYNTH
-//         uridIdMidiEvent    = 0;
-// # endif
-// # if DISTRHO_PLUGIN_WANT_STATE
-
-// # endif
-//
-//         for (uint32_t i=0; features[i]; i++)
-//         {
-//             if (strcmp(features[i]->URI, LV2_URID__map) == 0)
-//             {
-//                 uridMap = (LV2_URID_Map*)features[i]->data;
-//
-//                 uridIdAtomString   = uridMap->map(uridMap->handle, LV2_ATOM__String);
-// # if DISTRHO_PLUGIN_IS_SYNTH
-//                 uridIdMidiEvent    = uridMap->map(uridMap->handle, LV2_MIDI__MidiEvent);
-// # endif
-// # if DISTRHO_PLUGIN_WANT_STATE
-//                 uridIdPatchMessage = uridMap->map(uridMap->handle, LV2_PATCH__Message);
-// # endif
-//             }
-//             else if (strcmp(features[i]->URI, LV2_WORKER__schedule) == 0)
-//             {
-//                 workerSchedule = (LV2_Worker_Schedule*)features[i]->data;
-//             }
-//         }
-// #endif
     }
 
     ~PluginLv2()
@@ -137,10 +109,12 @@ public:
             fLastControlValues = nullptr;
         }
 
-// #if DISTRHO_PLUGIN_WANT_STATE
-//         stateMap.clear();
-// #endif
+#if DISTRHO_PLUGIN_WANT_STATE
+        fStateMap.clear();
+#endif
     }
+
+    // -------------------------------------------------------------------
 
     void lv2_activate()
     {
@@ -152,6 +126,8 @@ public:
         fPlugin.deactivate();
     }
 
+    // -------------------------------------------------------------------
+
     void lv2_connect_port(const uint32_t port, void* const dataLocation)
     {
         uint32_t index = 0;
@@ -160,7 +136,7 @@ public:
         {
             if (port == index++)
             {
-                fPortAudioIns[i] = (floatptr)dataLocation;
+                fPortAudioIns[i] = (float*)dataLocation;
                 return;
             }
         }
@@ -169,7 +145,7 @@ public:
         {
             if (port == index++)
             {
-                fPortAudioOuts[i] = (floatptr)dataLocation;
+                fPortAudioOuts[i] = (float*)dataLocation;
                 return;
             }
         }
@@ -193,77 +169,86 @@ public:
 #if DISTRHO_PLUGIN_WANT_LATENCY
         if (port == index++)
         {
-            fPortLatency = (floatptr)dataLocation;
+            fPortLatency = (float*)dataLocation;
             return;
         }
 #endif
 
-        for (uint32_t i=0, count=fPlugin.parameterCount(); i < count; ++i)
+        for (uint32_t i=0, count=fPlugin.getParameterCount(); i < count; ++i)
         {
             if (port == index++)
             {
-                fPortControls[i] = (floatptr)dataLocation;
+                fPortControls[i] = (float*)dataLocation;
                 return;
             }
         }
     }
 
-    void lv2_run(const uint32_t bufferSize)
+    // -------------------------------------------------------------------
+
+    void lv2_run(const uint32_t sampleCount)
     {
-        if (bufferSize == 0)
-        {
-            updateParameterOutputs();
-            return;
-        }
+        // pre-roll
+        if (sampleCount == 0)
+            return updateParameterOutputs();
 
         // Check for updated parameters
         float curValue;
 
-        for (uint32_t i=0, count=fPlugin.parameterCount(); i < count; ++i)
+        for (uint32_t i=0, count=fPlugin.getParameterCount(); i < count; ++i)
         {
-            assert(fPortControls[i] != nullptr);
+            if (fPortControls[i] == nullptr)
+                continue;
 
             curValue = *fPortControls[i];
 
-            if (fLastControlValues[i] != curValue && ! fPlugin.parameterIsOutput(i))
+            if (fLastControlValues[i] != curValue && ! fPlugin.isParameterOutput(i))
             {
                 fLastControlValues[i] = curValue;
                 fPlugin.setParameterValue(i, curValue);
             }
         }
 
-#if DISTRHO_PLUGIN_IS_SYNTH
-        // Get Events, xxx
+#if DISTRHO_LV2_USE_EVENTS_IN
+# if DISTRHO_PLUGIN_IS_SYNTH
         uint32_t midiEventCount = 0;
-
-#if DISTRHO_LV2_USE_EVENTS
-        LV2_ATOM_SEQUENCE_FOREACH(portEventsIn, iter)
+# endif
+        LV2_ATOM_SEQUENCE_FOREACH(fPortEventsIn, event)
         {
-            const LV2_Atom_Event* event = /*(const LV2_Atom_Event*)*/iter;
-
-            if (! event)
-                continue;
+            if (event == nullptr)
+                break;
 
 # if DISTRHO_PLUGIN_IS_SYNTH
-            if (event->body.type == uridIdMidiEvent)
+            if (event->body.type == fURIDs.midiEvent)
             {
-                if (event->time.frames >= bufferSize || midiEventCount >= MAX_MIDI_EVENTS)
-                    break;
-
-                if (event->body.size > 3)
+                if (event->body.size > 4 || midiEventCount >= kMaxMidiEvents)
                     continue;
 
-                const uint8_t* data = (const uint8_t*)(event + 1);
+                const uint8_t* data((const uint8_t*)(event + 1));
 
-                midiEvents[midiEventCount].frame = event->time.frames;
-                memcpy(midiEvents[midiEventCount].buffer, data, event->body.size);
+                MidiEvent& midiEvent(fMidiEvents[midiEventCount]);
 
-                midiEventCount += 1;
+                midiEvent.frame = event->time.frames;
+                midiEvent.size  = event->body.size;
+
+                uint8_t i;
+                for (i=0; i < midiEvent.size; ++i)
+                    midiEvent.buf[i] = data[i];
+                for (; i < 4; ++i)
+                  midiEvent.buf[i] = 0;
+
+                ++midiEventCount;
                 continue;
             }
 # endif
-# if DISTRHO_PLUGIN_WANT_STATE
-            if (event->body.type == uridIdPatchMessage)
+# if DISTRHO_PLUGIN_WANT_TIMEPOS
+            if (event->body.type == fURIDs.timePosition)
+            {
+                // TODO
+            }
+# endif
+# if (DISTRHO_PLUGIN_WANT_STATE && DISTRHO_PLUGIN_HAS_UI)
+            //if (event->body.type == fURIDs.midiEvent)
             {
                 // TODO
                 //if (workerSchedule)
@@ -273,18 +258,38 @@ public:
         }
 #endif
 
-        fPlugin.run(fPortAudioIns, fPortAudioOuts, bufferSize, midiEventCount, midiEvents);
+#if DISTRHO_PLUGIN_IS_SYNTH
+        fPlugin.run(fPortAudioIns, fPortAudioOuts, sampleCount, fMidiEvents, midiEventCount);
 #else
-        fPlugin.run(fPortAudioIns, fPortAudioOuts, bufferSize, 0, nullptr);
+        fPlugin.run(fPortAudioIns, fPortAudioOuts, sampleCount);
+#endif
+
+#if DISTRHO_LV2_USE_EVENTS_OUT
+        LV2_ATOM_SEQUENCE_FOREACH(fPortEventsOut, event)
+        {
+            if (event == nullptr)
+                break;
+
+# if DISTRHO_PLUGIN_WANT_STATE
+            if (event->body.type == fURIDs.midiEvent)
+            {
+                // TODO
+                //if (workerSchedule)
+                //    workerSchedule->schedule_work(workerSchedule->handle, event->body.size, )
+            }
+# endif
+        }
 #endif
 
         updateParameterOutputs();
     }
 
+    // -------------------------------------------------------------------
+
     uint32_t lv2_get_options(LV2_Options_Option* const /*options*/)
     {
         // currently unused
-        return LV2_OPTIONS_SUCCESS;
+        return LV2_OPTIONS_ERR_UNKNOWN;
     }
 
     uint32_t lv2_set_options(const LV2_Options_Option* const options)
@@ -297,9 +302,13 @@ public:
                 {
                     const int bufferSize(*(const int*)options[i].value);
                     fPlugin.setBufferSize(bufferSize);
+                    return LV2_OPTIONS_SUCCESS;
                 }
                 else
+                {
                     d_stderr("Host changed maxBlockLength but with wrong value type");
+                    return LV2_OPTIONS_ERR_BAD_VALUE;
+                }
             }
             else if (options[i].key == fUridMap->map(fUridMap->handle, LV2_CORE__sampleRate))
             {
@@ -307,26 +316,32 @@ public:
                 {
                     const double sampleRate(*(const double*)options[i].value);
                     fPlugin.setSampleRate(sampleRate);
+                    return LV2_OPTIONS_SUCCESS;
                 }
                 else
+                {
                     d_stderr("Host changed sampleRate but with wrong value type");
+                    return LV2_OPTIONS_ERR_BAD_VALUE;
+                }
             }
         }
 
-        return LV2_OPTIONS_SUCCESS;
+        return LV2_OPTIONS_ERR_BAD_KEY;
     }
+
+    // -------------------------------------------------------------------
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
     const LV2_Program_Descriptor* lv2_get_program(const uint32_t index)
     {
-        if (index >= fPlugin.programCount())
+        if (index >= fPlugin.getProgramCount())
             return nullptr;
 
         static LV2_Program_Descriptor desc;
 
         desc.bank    = index / 128;
         desc.program = index % 128;
-        desc.name    = fPlugin.programName(index);
+        desc.name    = fPlugin.getProgramName(index);
 
         return &desc;
     }
@@ -335,63 +350,67 @@ public:
     {
         const uint32_t realProgram(bank * 128 + program);
 
-        if (realProgram >= fPlugin.programCount())
+        if (realProgram >= fPlugin.getProgramCount())
             return;
 
         fPlugin.setProgram(realProgram);
 
-        // Update parameters
-        for (uint32_t i=0, count=fPlugin.parameterCount(); i < count; ++i)
+        // Update control inputs
+        for (uint32_t i=0, count=fPlugin.getParameterCount(); i < count; ++i)
         {
-            if (! fPlugin.parameterIsOutput(i))
-            {
-                fLastControlValues[i] = fPlugin.parameterValue(i);
+            if (fPlugin.isParameterOutput(i))
+                continue;
 
-                if (fPortControls[i] != nullptr)
-                    *fPortControls[i] = fLastControlValues[i];
-            }
+            fLastControlValues[i] = fPlugin.getParameterValue(i);
+
+            if (fPortControls[i] != nullptr)
+                *fPortControls[i] = fLastControlValues[i];
         }
     }
 #endif
 
+    // -------------------------------------------------------------------
+
 #if DISTRHO_PLUGIN_WANT_STATE
-    LV2_State_Status lv2_save(LV2_State_Store_Function store, LV2_State_Handle handle, const uint32_t flags, const LV2_Feature* const* /*features*/)
+    LV2_State_Status lv2_save(LV2_State_Store_Function store, LV2_State_Handle handle, uint32_t flags, const LV2_Feature* const* /*features*/)
     {
-//         flags = LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE;
+        flags = LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE;
 
-//         for (auto i = stateMap.begin(); i != stateMap.end(); i++)
-//         {
-//             const d_string& key   = i->first;
-//             const d_string& value = i->second;
-//
-//             store(handle, uridMap->map(uridMap->handle, (const char*)key), (const char*)value, value.length(), uridIdAtomString, flags);
-//         }
+        for (auto it = fStateMap.begin(), end = fStateMap.end(); it != end; ++it)
+        {
+            const d_string& key   = it->first;
+            const d_string& value = it->second;
+
+            store(handle, fUridMap->map(fUridMap->handle, (const char*)key), (const char*)value, value.length()+1, fURIDs.atomString, flags);
+        }
 
         return LV2_STATE_SUCCESS;
     }
 
-    LV2_State_Status lv2_restore(LV2_State_Retrieve_Function retrieve, LV2_State_Handle handle, const uint32_t flags, const LV2_Feature* const* /*features*/)
+    LV2_State_Status lv2_restore(LV2_State_Retrieve_Function retrieve, LV2_State_Handle handle, uint32_t flags, const LV2_Feature* const* /*features*/)
     {
-//         size_t   size;
-//         uint32_t type;
+        size_t   size;
+        uint32_t type;
 
-//         for (uint32_t i=0; i < plugin.stateCount(); i++)
-//         {
-//             const d_string& key = plugin.stateKey(i);
-//
-//             const void* data = retrieve(handle, uridMap->map(uridMap->handle, (const char*)key), &size, &type, &flags);
-//
-//             if (size == 0 || ! data)
-//                 continue;
-//             if (type != uridIdAtomString)
-//                 continue;
-//
-//             const char* value = (const char*)data;
-//             setState(key, value);
-//         }
+        for (uint32_t i=0, count=fPlugin.getStateCount(); i < count; ++i)
+        {
+            const d_string& key = fPlugin.getStateKey(i);
+
+            const void* data = retrieve(handle, fUridMap->map(fUridMap->handle, (const char*)key), &size, &type, &flags);
+
+            if (size == 0 || data == nullptr)
+                continue;
+            if (type != fURIDs.atomString)
+                continue;
+
+            //const char* value = (const char*)data;
+            //setState(key, value);
+        }
 
         return LV2_STATE_SUCCESS;
     }
+
+    // -------------------------------------------------------------------
 
     LV2_Worker_Status lv2_work(LV2_Worker_Respond_Function /*respond*/, LV2_Worker_Respond_Handle /*handle*/, const uint32_t /*size*/, const void* /*data*/)
     {
@@ -406,13 +425,15 @@ public:
     }
 #endif
 
+    // -------------------------------------------------------------------
+
 private:
-    PluginInternal fPlugin;
+    PluginExporter fPlugin;
 
     // LV2 ports
-    floatptr  fPortAudioIns[DISTRHO_PLUGIN_NUM_INPUTS];
-    floatptr  fPortAudioOuts[DISTRHO_PLUGIN_NUM_OUTPUTS];
-    floatptr* fPortControls;
+    float*  fPortAudioIns[DISTRHO_PLUGIN_NUM_INPUTS];
+    float*  fPortAudioOuts[DISTRHO_PLUGIN_NUM_OUTPUTS];
+    float** fPortControls;
 #if DISTRHO_LV2_USE_EVENTS_IN
     LV2_Atom_Sequence* fPortEventsIn;
 #endif
@@ -420,75 +441,74 @@ private:
     LV2_Atom_Sequence* fPortEventsOut;
 #endif
 #if DISTRHO_PLUGIN_WANT_LATENCY
-    floatptr fPortLatency;
+    float* fPortLatency;
 #endif
 
     // Temporary data
     float* fLastControlValues;
+#if DISTRHO_PLUGIN_IS_SYNTH
+    MidiEvent fMidiEvents[kMaxMidiEvents];
+#endif
 
-// #if DISTRHO_PLUGIN_IS_SYNTH
-//     MidiEvent fMidiEvents[MAX_MIDI_EVENTS];
-// #endif
+    // LV2 URIDs
+#if DISTRHO_LV2_USE_EVENTS_IN || DISTRHO_LV2_USE_EVENTS_OUT
+    struct URIDs {
+        LV2_URID atomString;
+        LV2_URID midiEvent;
+        LV2_URID timePosition;
 
-    // Feature data
+        URIDs(const LV2_URID_Map* const uridMap)
+            : atomString(uridMap->map(uridMap->handle, LV2_ATOM__String)),
+              midiEvent(uridMap->map(uridMap->handle, LV2_MIDI__MidiEvent)),
+              timePosition(uridMap->map(uridMap->handle, LV2_TIME__Position)) {}
+    } fURIDs;
+#endif
+
+    // LV2 features
     const LV2_URID_Map* const fUridMap;
     const LV2_Worker_Schedule* const fWorker;
 
-    // xxx
-// #if DISTRHO_LV2_USE_EVENTS
-//
-//     // URIDs
-//     LV2_URID_Map* uridMap;
-//     LV2_URID      uridIdAtomString;
-// # if DISTRHO_PLUGIN_IS_SYNTH
-//     LV2_URID      uridIdMidiEvent;
-// # endif
-// # if DISTRHO_PLUGIN_WANT_STATE
-//     LV2_URID      uridIdPatchMessage;
-//     LV2_Worker_Schedule* workerSchedule;
-// # endif
-// #endif
+#if DISTRHO_PLUGIN_WANT_STATE
+    StringMap fStateMap;
 
-// #if DISTRHO_PLUGIN_WANT_STATE
-//     stringMap stateMap;
-//
-//     void setState(const char* newKey, const char* newValue)
-//     {
-//         plugin.setState(newKey, newValue);
-//
-//         // check if key already exists
-//         for (auto i = stateMap.begin(); i != stateMap.end(); i++)
-//         {
-//             const d_string& key = i->first;
-//
-//             if (key == newKey)
-//             {
-//                 i->second = newValue;
-//                 return;
-//             }
-//         }
-//
-//         // add a new one then
-//         stateMap[newKey] = newValue;
-//     }
-// #endif
+    void setState(const char* const newKey, const char* const newValue)
+    {
+        fPlugin.setState(newKey, newValue);
+
+        // check if key already exists
+        for (auto it = fStateMap.begin(), end = fStateMap.end(); it != end; ++it)
+        {
+            const d_string& key = it->first;
+
+            if (key == newKey)
+            {
+                it->second = newValue;
+                return;
+            }
+        }
+
+        // add a new one then
+        d_string d_key(newKey);
+        fStateMap[d_key] = newValue;
+    }
+#endif
 
     void updateParameterOutputs()
     {
-        for (uint32_t i=0, count=fPlugin.parameterCount(); i < count; ++i)
+        for (uint32_t i=0, count=fPlugin.getParameterCount(); i < count; ++i)
         {
-            if (fPlugin.parameterIsOutput(i))
-            {
-                fLastControlValues[i] = fPlugin.parameterValue(i);
+            if (! fPlugin.isParameterOutput(i))
+                continue;
 
-                if (fPortControls[i] != nullptr)
-                    *fPortControls[i] = fLastControlValues[i];
-            }
+            fLastControlValues[i] = fPlugin.getParameterValue(i);
+
+            if (fPortControls[i] != nullptr)
+                *fPortControls[i] = fLastControlValues[i];
         }
 
 #if DISTRHO_PLUGIN_WANT_LATENCY
         if (fPortLatency != nullptr)
-            *fPortLatency = fPlugin.latency();
+            *fPortLatency = fPlugin.getLatency();
 #endif
     }
 };
@@ -511,11 +531,25 @@ static LV2_Handle lv2_instantiate(const LV2_Descriptor*, double sampleRate, cons
             worker = (const LV2_Worker_Schedule*)features[i]->data;
     }
 
+    if (options == nullptr)
+    {
+        d_stderr("Options feature missing, cannot continue!");
+        return nullptr;
+    }
+
     if (uridMap == nullptr)
     {
         d_stderr("URID Map feature missing, cannot continue!");
         return nullptr;
     }
+
+#if DISTRHO_PLUGIN_WANT_STATE
+    if (worker == nullptr)
+    {
+        d_stderr("Worker feature missing, cannot continue!");
+        return nullptr;
+    }
+#endif
 
     for (int i=0; options[i].key != 0; ++i)
     {
@@ -531,7 +565,7 @@ static LV2_Handle lv2_instantiate(const LV2_Descriptor*, double sampleRate, cons
     }
 
     if (d_lastBufferSize == 0)
-        d_lastBufferSize = 512;
+        d_lastBufferSize = 2048;
 
     d_lastSampleRate = sampleRate;
 
@@ -565,6 +599,8 @@ static void lv2_cleanup(LV2_Handle instance)
     delete instancePtr;
 }
 
+// -----------------------------------------------------------------------
+
 static uint32_t lv2_get_options(LV2_Handle instance, LV2_Options_Option* options)
 {
     return instancePtr->lv2_get_options(options);
@@ -574,6 +610,8 @@ static uint32_t lv2_set_options(LV2_Handle instance, const LV2_Options_Option* o
 {
     return instancePtr->lv2_set_options(options);
 }
+
+// -----------------------------------------------------------------------
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
 static const LV2_Program_Descriptor* lv2_get_program(LV2_Handle instance, uint32_t index)
@@ -586,6 +624,8 @@ static void lv2_select_program(LV2_Handle instance, uint32_t bank, uint32_t prog
     instancePtr->lv2_select_program(bank, program);
 }
 #endif
+
+// -----------------------------------------------------------------------
 
 #if DISTRHO_PLUGIN_WANT_STATE
 static LV2_State_Status lv2_save(LV2_Handle instance, LV2_State_Store_Function store, LV2_State_Handle handle, uint32_t flags, const LV2_Feature* const* features)
@@ -608,6 +648,8 @@ LV2_Worker_Status lv2_work_response(LV2_Handle instance, uint32_t size, const vo
     return instancePtr->lv2_work_response(size, body);
 }
 #endif
+
+// -----------------------------------------------------------------------
 
 static const void* lv2_extension_data(const char* uri)
 {
@@ -640,7 +682,7 @@ static const void* lv2_extension_data(const char* uri)
 
 // -----------------------------------------------------------------------
 
-static LV2_Descriptor sLv2Descriptor = {
+static const LV2_Descriptor sLv2Descriptor = {
     DISTRHO_PLUGIN_URI,
     lv2_instantiate,
     lv2_connect_port,
@@ -661,3 +703,5 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
     USE_NAMESPACE_DISTRHO
     return (index == 0) ? &sLv2Descriptor : nullptr;
 }
+
+// -----------------------------------------------------------------------

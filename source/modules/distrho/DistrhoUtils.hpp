@@ -141,24 +141,49 @@ public:
     // -------------------------------------------------------------------
     // constructors (no explicit conversions allowed)
 
+    /*
+     * Empty string.
+     */
     explicit d_string()
     {
         _init();
         _dup(nullptr);
     }
 
+    /*
+     * Simple character.
+     */
+    explicit d_string(const char c)
+    {
+        char ch[2];
+        ch[0] = c;
+        ch[1] = '\0';
+
+        _init();
+        _dup(ch);
+    }
+
+    /*
+     * Simple char string.
+     */
     explicit d_string(char* const strBuf)
     {
         _init();
         _dup(strBuf);
     }
 
+    /*
+     * Simple const char string.
+     */
     explicit d_string(const char* const strBuf)
     {
         _init();
         _dup(strBuf);
     }
 
+    /*
+     * Integer.
+     */
     explicit d_string(const int value)
     {
         char strBuf[0xff+1];
@@ -169,6 +194,9 @@ public:
         _dup(strBuf);
     }
 
+    /*
+     * Unsigned integer, possibly in hexadecimal.
+     */
     explicit d_string(const unsigned int value, const bool hexadecimal = false)
     {
         char strBuf[0xff+1];
@@ -179,6 +207,9 @@ public:
         _dup(strBuf);
     }
 
+    /*
+     * Long integer.
+     */
     explicit d_string(const long int value)
     {
         char strBuf[0xff+1];
@@ -189,6 +220,9 @@ public:
         _dup(strBuf);
     }
 
+    /*
+     * Long unsigned integer, possibly hexadecimal.
+     */
     explicit d_string(const unsigned long int value, const bool hexadecimal = false)
     {
         char strBuf[0xff+1];
@@ -199,6 +233,9 @@ public:
         _dup(strBuf);
     }
 
+    /*
+     * Single-precision floating point number.
+     */
     explicit d_string(const float value)
     {
         char strBuf[0xff+1];
@@ -209,6 +246,9 @@ public:
         _dup(strBuf);
     }
 
+    /*
+     * Double-precision floating point number.
+     */
     explicit d_string(const double value)
     {
         char strBuf[0xff+1];
@@ -222,6 +262,9 @@ public:
     // -------------------------------------------------------------------
     // non-explicit constructor
 
+    /*
+     * Create string from another string.
+     */
     d_string(const d_string& str)
     {
         _init();
@@ -231,6 +274,9 @@ public:
     // -------------------------------------------------------------------
     // destructor
 
+    /*
+     * Destructor.
+     */
     ~d_string()
     {
         assert(fBuffer != nullptr);
@@ -242,52 +288,64 @@ public:
     // -------------------------------------------------------------------
     // public methods
 
+    /*
+     * Get length of the string.
+     */
     size_t length() const noexcept
     {
         return fBufferLen;
     }
 
+    /*
+     * Check if the string is empty.
+     */
     bool isEmpty() const noexcept
     {
         return (fBufferLen == 0);
     }
 
+    /*
+     * Check if the string is not empty.
+     */
     bool isNotEmpty() const noexcept
     {
         return (fBufferLen != 0);
     }
 
-#ifdef __USE_GNU
+    /*
+     * Check if the string contains another string, optionally ignoring case.
+     */
     bool contains(const char* const strBuf, const bool ignoreCase = false) const
     {
         if (strBuf == nullptr)
             return false;
 
         if (ignoreCase)
+        {
+#ifdef __USE_GNU
             return (strcasestr(fBuffer, strBuf) != nullptr);
-        else
-            return (std::strstr(fBuffer, strBuf) != nullptr);
-    }
-
-    bool contains(const d_string& str, const bool ignoreCase = false) const
-    {
-        return contains(str.fBuffer, ignoreCase);
-    }
 #else
-    bool contains(const char* const strBuf) const
-    {
-        if (strBuf == nullptr)
-            return false;
+            d_string tmp1(fBuffer), tmp2(strBuf);
+            tmp1.toLower();
+            tmp2.toLower();
+            return (std::strstr((const char*)tmp1, (const char*)tmp2) != nullptr);
+#endif
+        }
 
         return (std::strstr(fBuffer, strBuf) != nullptr);
     }
 
-    bool contains(const d_string& str) const
+    /*
+     * Overloaded function.
+     */
+    bool contains(const d_string& str, const bool ignoreCase = false) const
     {
-        return contains(str.fBuffer);
+        return contains(str.fBuffer, ignoreCase);
     }
-#endif
 
+    /*
+     * Check if character at 'pos' is a digit.
+     */
     bool isDigit(const size_t pos) const noexcept
     {
         if (pos >= fBufferLen)
@@ -296,6 +354,20 @@ public:
         return (fBuffer[pos] >= '0' && fBuffer[pos] <= '9');
     }
 
+    /*
+     * Check if the string starts with the character 'c'.
+     */
+    bool startsWith(const char c) const
+    {
+        if (c == '\0')
+            return false;
+
+        return (fBufferLen > 0 && fBuffer[0] == c);
+    }
+
+    /*
+     * Check if the string starts with the string 'prefix'.
+     */
     bool startsWith(const char* const prefix) const
     {
         if (prefix == nullptr)
@@ -309,6 +381,20 @@ public:
         return (std::strncmp(fBuffer + (fBufferLen-prefixLen), prefix, prefixLen) == 0);
     }
 
+    /*
+     * Check if the string ends with the character 'c'.
+     */
+    bool endsWith(const char c) const
+    {
+        if (c == '\0')
+            return false;
+
+        return (fBufferLen > 0 && fBuffer[fBufferLen] == c);
+    }
+
+    /*
+     * Check if the string ends with the string 'suffix'.
+     */
     bool endsWith(const char* const suffix) const
     {
         if (suffix == nullptr)
@@ -322,56 +408,20 @@ public:
         return (std::strncmp(fBuffer + (fBufferLen-suffixLen), suffix, suffixLen) == 0);
     }
 
+    /*
+     * Clear the string.
+     */
     void clear() noexcept
     {
         truncate(0);
     }
 
-    size_t find(const char c) const noexcept
-    {
-        for (size_t i=0; i < fBufferLen; ++i)
-        {
-            if (fBuffer[i] == c)
-                return i;
-        }
-
-        return 0;
-    }
-
-    size_t rfind(const char c) const noexcept
-    {
-        for (size_t i=fBufferLen; i > 0; --i)
-        {
-            if (fBuffer[i-1] == c)
-                return i-1;
-        }
-
-        return 0;
-    }
-
-    size_t rfind(const char* const strBuf) const
-    {
-        if (strBuf == nullptr || strBuf[0] == '\0')
-            return fBufferLen;
-
-        size_t ret = fBufferLen+1;
-        const char* tmpBuf = fBuffer;
-
-        for (size_t i=0; i < fBufferLen; ++i)
-        {
-            if (std::strstr(tmpBuf, strBuf) == nullptr)
-                break;
-
-            --ret;
-            ++tmpBuf;
-        }
-
-        return (ret > fBufferLen) ? fBufferLen : fBufferLen-ret;
-    }
-
+    /*
+     * Replace all occurrences of character 'before' with character 'after'.
+     */
     void replace(const char before, const char after) noexcept
     {
-        if (after == '\0')
+        if (before == '\0' || after == '\0')
             return;
 
         for (size_t i=0; i < fBufferLen; ++i)
@@ -383,6 +433,9 @@ public:
         }
     }
 
+    /*
+     * Truncate the string to size 'n'.
+     */
     void truncate(const size_t n) noexcept
     {
         if (n >= fBufferLen)
@@ -394,6 +447,9 @@ public:
         fBufferLen = n;
     }
 
+    /*
+     * Convert all non-basic characters to '_'.
+     */
     void toBasic() noexcept
     {
         for (size_t i=0; i < fBufferLen; ++i)
@@ -411,6 +467,9 @@ public:
         }
     }
 
+    /*
+     * Convert to all ascii characters to lowercase.
+     */
     void toLower() noexcept
     {
         static const char kCharDiff('a' - 'A');
@@ -422,6 +481,9 @@ public:
         }
     }
 
+    /*
+     * Convert to all ascii characters to uppercase.
+     */
     void toUpper() noexcept
     {
         static const char kCharDiff('a' - 'A');
@@ -480,7 +542,10 @@ public:
 
     d_string& operator+=(const char* const strBuf)
     {
-        const size_t newBufSize = fBufferLen + ((strBuf != nullptr) ? std::strlen(strBuf) : 0) + 1;
+        if (strBuf == nullptr)
+            return *this;
+
+        const size_t newBufSize = fBufferLen + std::strlen(strBuf) + 1;
         char         newBuf[newBufSize];
 
         std::strcpy(newBuf, fBuffer);
@@ -502,7 +567,9 @@ public:
         char         newBuf[newBufSize];
 
         std::strcpy(newBuf, fBuffer);
-        std::strcat(newBuf, strBuf);
+
+        if (strBuf != nullptr)
+            std::strcat(newBuf, strBuf);
 
         return d_string(newBuf);
     }
@@ -515,10 +582,14 @@ public:
     // -------------------------------------------------------------------
 
 private:
-    char*  fBuffer;
-    size_t fBufferLen;
-    bool   fFirstInit;
+    char*  fBuffer;    // the actual string buffer
+    size_t fBufferLen; // string length
+    bool   fFirstInit; // true when first initiated
 
+    /*
+     * Shared init function.
+     * Called on all constructors.
+     */
     void _init() noexcept
     {
         fBuffer    = nullptr;
@@ -526,8 +597,14 @@ private:
         fFirstInit = true;
     }
 
-    // allocate string strBuf if not null
-    // size > 0 only if strBuf is valid
+    /*
+     * Helper function.
+     * Called whenever the string needs to be allocated.
+     *
+     * Notes:
+     * - Allocates string only if first initiated, or if 'strBuf' is not null and new string contents are different
+     * - If 'strBuf' is null 'size' must be 0
+     */
     void _dup(const char* const strBuf, const size_t size = 0)
     {
         if (strBuf != nullptr)
@@ -580,7 +657,7 @@ static inline
 d_string operator+(const d_string& strBefore, const char* const strBufAfter)
 {
     const char* const strBufBefore = (const char*)strBefore;
-    const      size_t newBufSize   = strBefore.length() + ((strBufAfter != nullptr) ? std::strlen(strBufAfter) : 0) + 1;
+    const size_t newBufSize        = strBefore.length() + ((strBufAfter != nullptr) ? std::strlen(strBufAfter) : 0) + 1;
     char newBuf[newBufSize];
 
     std::strcpy(newBuf, strBufBefore);

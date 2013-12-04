@@ -37,36 +37,17 @@ struct ParameterRanges {
     float def;
     float min;
     float max;
-    float step;
-    float stepSmall;
-    float stepLarge;
 
     ParameterRanges() noexcept
         : def(0.0f),
           min(0.0f),
-          max(1.0f),
-          step(0.001f),
-          stepSmall(0.00001f),
-          stepLarge(0.01f) {}
+          max(1.0f) {}
 
     ParameterRanges(float def, float min, float max) noexcept
-        : step(0.001f),
-          stepSmall(0.00001f),
-          stepLarge(0.01f)
     {
         this->def = def;
         this->min = min;
         this->max = max;
-    }
-
-    ParameterRanges(float def, float min, float max, float step, float stepSmall, float stepLarge) noexcept
-    {
-        this->def = def;
-        this->min = min;
-        this->max = max;
-        this->step = step;
-        this->stepSmall = stepSmall;
-        this->stepLarge = stepLarge;
     }
 
     void clear() noexcept
@@ -74,9 +55,6 @@ struct ParameterRanges {
         def = 0.0f;
         min = 0.0f;
         max = 1.0f;
-        step = 0.001f;
-        stepSmall = 0.00001f;
-        stepLarge = 0.01f;
     }
 
     void fixValue(float& value) const noexcept
@@ -141,22 +119,17 @@ struct Parameter {
 
 struct MidiEvent {
     uint32_t frame;
-    uint8_t  buf[4];
     uint8_t  size;
-
-    MidiEvent() noexcept
-    {
-        clear();
-    }
+    uint8_t  buf[4];
 
     void clear() noexcept
     {
         frame  = 0;
+        size   = 0;
         buf[0] = 0;
         buf[1] = 0;
         buf[2] = 0;
         buf[3] = 0;
-        size   = 0;
     }
 };
 
@@ -234,7 +207,11 @@ protected:
 
     virtual void d_activate() {}
     virtual void d_deactivate() {}
+#if DISTRHO_PLUGIN_IS_SYNTH
     virtual void d_run(float** inputs, float** outputs, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount) = 0;
+#else
+    virtual void d_run(float** inputs, float** outputs, uint32_t frames) = 0;
+#endif
 
     // -------------------------------------------------------------------
     // Callbacks (optional)
@@ -247,7 +224,7 @@ protected:
 private:
     struct PrivateData;
     PrivateData* const pData;
-    friend class PluginInternal;
+    friend class PluginExporter;
 };
 
 // -----------------------------------------------------------------------

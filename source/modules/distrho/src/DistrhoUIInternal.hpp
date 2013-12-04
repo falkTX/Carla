@@ -19,33 +19,28 @@
 
 #include "../DistrhoUI.hpp"
 
-#if defined(DISTRHO_UI_EXTERNAL)
-# include "../DistrhoUIExternal.hpp"
-#elif defined(DISTRHO_UI_OPENGL)
-# include "../DistrhoUIOpenGL.hpp"
-# include "../dgl/App.hpp"
-# include "../dgl/Window.hpp"
-#elif defined(DISTRHO_UI_QT)
-# include "../DistrhoUIQt.hpp"
-#else
-# error Invalid UI type
-#endif
-
-#include <cassert>
+#include "../dgl/App.hpp"
+#include "../dgl/Window.hpp"
+#include <lo/lo_osc_types.h>
 
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
-
-typedef void (*editParamFunc) (void* ptr, uint32_t index, bool started);
-typedef void (*setParamFunc)  (void* ptr, uint32_t index, float value);
-typedef void (*setStateFunc)  (void* ptr, const char* key, const char* value);
-typedef void (*sendNoteFunc)  (void* ptr, bool onOff, uint8_t channel, uint8_t note, uint8_t velo);
-typedef void (*uiResizeFunc)  (void* ptr, unsigned int width, unsigned int height);
+// Static data, see DistrhoUI.cpp
 
 extern double d_lastUiSampleRate;
 
 // -----------------------------------------------------------------------
+// UI callbacks
+
+typedef void (*editParamFunc) (void* ptr, uint32_t rindex, bool started);
+typedef void (*setParamFunc)  (void* ptr, uint32_t rindex, float value);
+typedef void (*setStateFunc)  (void* ptr, const char* key, const char* value);
+typedef void (*sendNoteFunc)  (void* ptr, uint8_t channel, uint8_t note, uint8_t velo);
+typedef void (*uiResizeFunc)  (void* ptr, unsigned int width, unsigned int height);
+
+// -----------------------------------------------------------------------
+// UI private data
 
 struct UI::PrivateData {
     // DSP
@@ -60,7 +55,7 @@ struct UI::PrivateData {
     uiResizeFunc  uiResizeCallbackFunc;
     void*         ptr;
 
-    PrivateData()
+    PrivateData() noexcept
         : sampleRate(d_lastUiSampleRate),
           parameterOffset(0),
           editParamCallbackFunc(nullptr),
@@ -78,33 +73,41 @@ struct UI::PrivateData {
         parameterOffset += 1;
 # endif
 #endif
+#ifdef DISTRHO_PLUGIN_TARGET_LV2
+# if (DISTRHO_PLUGIN_IS_SYNTH || DISTRHO_PLUGIN_WANT_TIMEPOS || DISTRHO_PLUGIN_WANT_STATE)
+        parameterOffset += 1;
+#  if DISTRHO_PLUGIN_WANT_STATE
+        parameterOffset += 1;
+#  endif
+# endif
+#endif
     }
 
-    void editParamCallback(uint32_t index, bool started)
+    void editParamCallback(const uint32_t rindex, const bool started)
     {
         if (editParamCallbackFunc != nullptr)
-            editParamCallbackFunc(ptr, index, started);
+            editParamCallbackFunc(ptr, rindex, started);
     }
 
-    void setParamCallback(uint32_t rindex, float value)
+    void setParamCallback(const uint32_t rindex, const float value)
     {
         if (setParamCallbackFunc != nullptr)
             setParamCallbackFunc(ptr, rindex, value);
     }
 
-    void setStateCallback(const char* key, const char* value)
+    void setStateCallback(const char* const key, const char* const value)
     {
         if (setStateCallbackFunc != nullptr)
             setStateCallbackFunc(ptr, key, value);
     }
 
-    void sendNoteCallback(bool onOff, uint8_t channel, uint8_t note, uint8_t velocity)
+    void sendNoteCallback(const uint8_t channel, const uint8_t note, const uint8_t velocity)
     {
         if (sendNoteCallbackFunc != nullptr)
-            sendNoteCallbackFunc(ptr, onOff, channel, note, velocity);
+            sendNoteCallbackFunc(ptr, channel, note, velocity);
     }
 
-    void uiResizeCallback(unsigned int width, unsigned int height)
+    void uiResizeCallback(const unsigned int width, const unsigned int height)
     {
         if (uiResizeCallbackFunc != nullptr)
             uiResizeCallbackFunc(ptr, width, height);
@@ -112,18 +115,16 @@ struct UI::PrivateData {
 };
 
 // -----------------------------------------------------------------------
+// UI exporter class
 
-class UIInternal
+class UIExporter
 {
 public:
-    UIInternal(void* ptr, intptr_t winId, editParamFunc editParamCall, setParamFunc setParamCall, setStateFunc setStateCall, sendNoteFunc sendNoteCall, uiResizeFunc uiResizeCall)
-#ifdef DISTRHO_UI_OPENGL
+    UIExporter(void* const ptr, const intptr_t winId,
+               const editParamFunc editParamCall, const setParamFunc setParamCall, const setStateFunc setStateCall, const sendNoteFunc sendNoteCall, const uiResizeFunc uiResizeCall)
         : glApp(),
           glWindow(glApp, winId),
           fUi(createUI()),
-#else
-        : fUi(createUI()),
-#endif
           fData((fUi != nullptr) ? fUi->pData : nullptr)
     {
         assert(fUi != nullptr);
@@ -138,145 +139,106 @@ public:
         fData->sendNoteCallbackFunc  = sendNoteCall;
         fData->uiResizeCallbackFunc  = uiResizeCall;
 
-#ifdef DISTRHO_UI_OPENGL
         glWindow.setSize(fUi->d_getWidth(), fUi->d_getHeight());
         glWindow.setResizable(false);
-#else
-        assert(winId == 0);
-        return;
-
-        // unused
-        (void)winId;
-#endif
     }
 
-    ~UIInternal()
+    ~UIExporter()
     {
-        if (fUi != nullptr)
-            delete fUi;
+        delete fUi;
     }
 
     // -------------------------------------------------------------------
 
-    const char* getName() const
+    const char* getName() const noexcept
     {
-        assert(fUi != nullptr);
         return (fUi != nullptr) ? fUi->d_getName() : "";
     }
 
-    unsigned int getWidth() const
+    unsigned int getWidth() const noexcept
     {
-        assert(fUi != nullptr);
         return (fUi != nullptr) ? fUi->d_getWidth() : 0;
     }
 
-    unsigned int getHeight() const
+    unsigned int getHeight() const noexcept
     {
-        assert(fUi != nullptr);
         return (fUi != nullptr) ? fUi->d_getHeight() : 0;
     }
 
     // -------------------------------------------------------------------
 
-    void parameterChanged(uint32_t index, float value)
+    uint32_t getParameterOffset() const noexcept
     {
-        assert(fUi != nullptr);
+        return (fData != nullptr) ? fData->parameterOffset : 0;
+    }
 
+    // -------------------------------------------------------------------
+
+    void parameterChanged(const uint32_t index, const float value)
+    {
         if (fUi != nullptr)
             fUi->d_parameterChanged(index, value);
     }
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
-    void programChanged(uint32_t index)
+    void programChanged(const uint32_t index)
     {
-        assert(fUi != nullptr);
-
         if (fUi != nullptr)
             fUi->d_programChanged(index);
     }
 #endif
 
 #if DISTRHO_PLUGIN_WANT_STATE
-    void stateChanged(const char* key, const char* value)
+    void stateChanged(const char* const key, const char* const value)
     {
-        assert(fUi != nullptr);
-
         if (fUi != nullptr)
             fUi->d_stateChanged(key, value);
     }
 #endif
 
-#if DISTRHO_PLUGIN_IS_SYNTH
-    void noteReceived(bool onOff, uint8_t channel, uint8_t note, uint8_t velocity)
-    {
-        assert(fUi != nullptr);
-
-        if (fUi != nullptr)
-            fUi->d_noteReceived(onOff, channel, note, velocity);
-    }
-#endif
-
     // -------------------------------------------------------------------
 
-    void idle()
+    bool idle()
     {
-        assert(fUi != nullptr);
-
         if (fUi != nullptr)
             fUi->d_uiIdle();
 
-#ifdef DISTRHO_UI_OPENGL
         glApp.idle();
-#endif
+
+        return ! glApp.isQuiting();
     }
 
-#if defined(DISTRHO_UI_EXTERNAL)
-    const char* getExternalFilename() const
+    void quit()
     {
-        return ((ExternalUI*)fUi)->d_getExternalFilename();
-    }
-#elif defined(DISTRHO_UI_OPENGL)
-    DGL::App& getApp()
-    {
-        return glApp;
+        glWindow.close();
+        glApp.quit();
     }
 
-    DGL::Window& getWindow()
+    void setSize(const unsigned int width, const unsigned int height)
     {
-        return glWindow;
+        glWindow.setSize(width, height);
     }
 
-    /*intptr_t getWindowId() const
+    void setTitle(const char* const uiTitle)
     {
-        return glWindow.getWindowId();
-    }*/
-
-    /*void fixWindowSize()
-    {
-        assert(fUi != nullptr);
-        glWindow.setSize(fUi->d_getWidth(), fUi->d_getHeight());
-    }*/
-#elif defined(DISTRHO_UI_QT)
-    /*QtUI* getQtUI() const
-    {
-        return (QtUI*)fUi;
-    }*/
-
-    bool isResizable() const
-    {
-        return ((QtUI*)fUi)->d_isResizable();
+        glWindow.setTitle(uiTitle);
     }
-#endif
 
-    // -------------------------------------------------------------------
+    void setVisible(const bool yesNo)
+    {
+        glWindow.setVisible(yesNo);
+    }
 
-#ifdef DISTRHO_UI_OPENGL
 private:
+    // -------------------------------------------------------------------
+    // DGL Application and Window for this plugin
+
     DGL::App    glApp;
     DGL::Window glWindow;
-#endif
 
-protected:
+    // -------------------------------------------------------------------
+    // private members accessed by DistrhoPlugin class
+
     UI* const fUi;
     UI::PrivateData* const fData;
 };

@@ -16,18 +16,17 @@
 
 #include "DistrhoPluginInternal.hpp"
 
-#include "lv2/lv2.h"
 #include "lv2/atom.h"
 #include "lv2/buf-size.h"
-// #include "lv2/midi.h"
+#include "lv2/midi.h"
 #include "lv2/options.h"
-#include "lv2/programs.h"
-// #include "lv2/state.h"
+#include "lv2/state.h"
 #include "lv2/time.h"
-// #include "lv2/ui.h"
-#include "lv2/urid.h"
+#include "lv2/ui.h"
 #include "lv2/units.h"
-// #include "lv2/worker.h"
+#include "lv2/urid.h"
+#include "lv2/worker.h"
+#include "lv2/lv2_programs.h"
 
 #include <fstream>
 #include <iostream>
@@ -36,20 +35,8 @@
 # error DISTRHO_PLUGIN_URI undefined!
 #endif
 
-// TODO: UI
-#undef DISTRHO_PLUGIN_HAS_UI
-
-#undef DISTRHO_PLUGIN_WANT_LATENCY
-#undef DISTRHO_PLUGIN_WANT_PROGRAMS
-#undef DISTRHO_PLUGIN_WANT_STATE
-#undef DISTRHO_PLUGIN_WANT_TIMEPOS
-#define DISTRHO_PLUGIN_WANT_LATENCY  1
-#define DISTRHO_PLUGIN_WANT_PROGRAMS 1
-#define DISTRHO_PLUGIN_WANT_STATE    1
-#define DISTRHO_PLUGIN_WANT_TIMEPOS  1
-
-#define DISTRHO_LV2_USE_EVENTS_IN  (DISTRHO_PLUGIN_IS_SYNTH || DISTRHO_PLUGIN_WANT_STATE || DISTRHO_PLUGIN_WANT_TIMEPOS)
-#define DISTRHO_LV2_USE_EVENTS_OUT (DISTRHO_PLUGIN_WANT_STATE)
+#define DISTRHO_LV2_USE_EVENTS_IN  (DISTRHO_PLUGIN_IS_SYNTH || DISTRHO_PLUGIN_WANT_TIMEPOS || (DISTRHO_PLUGIN_WANT_STATE && DISTRHO_PLUGIN_HAS_UI))
+#define DISTRHO_LV2_USE_EVENTS_OUT (DISTRHO_PLUGIN_WANT_STATE && DISTRHO_PLUGIN_HAS_UI)
 
 // -----------------------------------------------------------------------
 
@@ -61,7 +48,7 @@ void lv2_generate_ttl(const char* const basename)
     // Dummy plugin to get data from
     d_lastBufferSize = 512;
     d_lastSampleRate = 44100.0;
-    PluginInternal plugin;
+    PluginExporter plugin;
     d_lastBufferSize = 0;
     d_lastSampleRate = 0.0;
 
@@ -99,14 +86,18 @@ void lv2_generate_ttl(const char* const basename)
 # else
         manifestString += "    a ui:X11UI ;\n";
 # endif
-        manifestString += "    ui:binary <" + pluginLabel + "_ui." DISTRHO_DLL_EXTENSION "> .\n";
-// # if DISTRHO_LV2_USE_EVENTS
-//         manifestString += "    lv2:optionalFeature <" LV2_URID__map "> ,\n";
-//         manifestString += "                        ui:noUserResize .\n";
-// # else
-//         manifestString += "    lv2:optionalFeature ui:noUserResize .\n";
-// # endif
-        manifestString += "\n";
+        manifestString += "    ui:binary <" + pluginLabel + "_ui." DISTRHO_DLL_EXTENSION "> ;\n";
+#if DISTRHO_PLUGIN_WANT_PROGRAMS
+        manifestString += "    lv2:extensionData ui:idleInterface ,\n";
+        manifestString += "                      <" LV2_PROGRAMS__Interface "> ;\n";
+#else
+        manifestString += "    lv2:extensionData ui:idleInterface ;\n";
+#endif
+        manifestString += "    lv2:optionalFeature ui:noUserResize ,\n";
+        manifestString += "                        ui:touch ;\n";
+        manifestString += "    lv2:requiredFeature ui:resize ,\n";
+        manifestString += "                        <" LV2_OPTIONS__options "> ,\n";
+        manifestString += "                        <" LV2_URID__map "> .\n";
 #endif
 
         manifestFile << manifestString << std::endl;
@@ -121,6 +112,8 @@ void lv2_generate_ttl(const char* const basename)
         std::fstream pluginFile(pluginTTL, std::ios::out);
 
         d_string pluginString;
+
+        // header
 #if DISTRHO_LV2_USE_EVENTS_IN
         pluginString += "@prefix atom: <" LV2_ATOM_PREFIX "> .\n";
 #endif
@@ -133,6 +126,7 @@ void lv2_generate_ttl(const char* const basename)
         pluginString += "@prefix unit: <" LV2_UNITS_PREFIX "> .\n";
         pluginString += "\n";
 
+        // plugin
         pluginString += "<" DISTRHO_PLUGIN_URI ">\n";
 #if DISTRHO_PLUGIN_IS_SYNTH
         pluginString += "    a lv2:InstrumentPlugin, lv2:Plugin ;\n";
@@ -141,35 +135,31 @@ void lv2_generate_ttl(const char* const basename)
 #endif
         pluginString += "\n";
 
-#if (DISTRHO_PLUGIN_WANT_STATE || DISTRHO_PLUGIN_WANT_PROGRAMS)
-        pluginString += "    lv2:extensionData <" LV2_OPTIONS__interface "> ,\n";
-# if DISTRHO_PLUGIN_WANT_STATE
-        pluginString += "                      <" LV2_STATE__interface "> ,\n";
-        pluginString += "                      <" LV2_WORKER__interface "> \n";
-#  if DISTRHO_PLUGIN_WANT_PROGRAMS
-        pluginString += ",\n";
-#  else
-        pluginString += ";\n";
-#  endif
-# endif
-# if DISTRHO_PLUGIN_WANT_PROGRAMS
-        pluginString += "                      <" LV2_PROGRAMS__Interface "> ;\n";
-# endif
-#endif
-        pluginString += "\n";
-
+        // extensionData
+        pluginString += "    lv2:extensionData <" LV2_OPTIONS__interface "> ";
 #if DISTRHO_PLUGIN_WANT_STATE
-        pluginString += "    lv2:optionalFeature <" LV2_CORE__hardRTCapable "> ,\n";
-        pluginString += "                        <" LV2_WORKER__schedule "> ;\n";
-#else
-        pluginString += "    lv2:optionalFeature <" LV2_CORE__hardRTCapable "> ;\n";
+        pluginString += ",\n                      <" LV2_OPTIONS__interface "> ";
+        pluginString += ",\n                      <" LV2_WORKER__interface "> ";
 #endif
+#if DISTRHO_PLUGIN_WANT_PROGRAMS
+        pluginString += ",\n                      <" LV2_PROGRAMS__Interface "> ";
+#endif
+        pluginString += ";\n\n";
+
+        // optionalFeatures
+        pluginString += "    lv2:optionalFeature <" LV2_CORE__hardRTCapable "> ,\n";
+        pluginString += "                        <" LV2_BUF_SIZE__boundedBlockLength "> ;\n";
         pluginString += "\n";
 
-        pluginString += "    lv2:requiredFeature <" LV2_BUF_SIZE__boundedBlockLength "> ,\n";
-        pluginString += "                        <" LV2_URID__map "> ;\n";
-        pluginString += "\n";
+        // requiredFeatures
+        pluginString += "    lv2:requiredFeature <" LV2_OPTIONS__options "> ";
+        pluginString += ",\n                        <" LV2_URID__map "> ";
+#if DISTRHO_PLUGIN_WANT_STATE
+        pluginString += ",\n                        <" LV2_WORKER__schedule "> ";
+#endif
+        pluginString += ";\n\n";
 
+        // UI
 #if DISTRHO_PLUGIN_HAS_UI
         pluginString += "    ui:ui <" DISTRHO_UI_URI "> ;\n";
         pluginString += "\n";
@@ -178,7 +168,7 @@ void lv2_generate_ttl(const char* const basename)
         {
             uint32_t portIndex = 0;
 
-            for (uint32_t i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i)
+            for (uint32_t i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i, ++portIndex)
             {
                 if (i == 0)
                     pluginString += "    lv2:port [\n";
@@ -186,7 +176,7 @@ void lv2_generate_ttl(const char* const basename)
                     pluginString += "    [\n";
 
                 pluginString += "        a lv2:InputPort, lv2:AudioPort ;\n";
-                pluginString += "        lv2:index " + d_string(portIndex++) + " ;\n";
+                pluginString += "        lv2:index " + d_string(portIndex) + " ;\n";
                 pluginString += "        lv2:symbol \"lv2_audio_in_" + d_string(i+1) + "\" ;\n";
                 pluginString += "        lv2:name \"Audio Input " + d_string(i+1) + "\" ;\n";
 
@@ -196,7 +186,7 @@ void lv2_generate_ttl(const char* const basename)
                     pluginString += "    ] ,\n";
             }
 
-            for (uint32_t i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; ++i)
+            for (uint32_t i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; ++i, ++portIndex)
             {
                 if (i == 0)
                     pluginString += "    lv2:port [\n";
@@ -204,7 +194,7 @@ void lv2_generate_ttl(const char* const basename)
                     pluginString += "    [\n";
 
                 pluginString += "        a lv2:OutputPort, lv2:AudioPort ;\n";
-                pluginString += "        lv2:index " + d_string(portIndex++) + " ;\n";
+                pluginString += "        lv2:index " + d_string(portIndex) + " ;\n";
                 pluginString += "        lv2:symbol \"lv2_audio_out_" + d_string(i+1) + "\" ;\n";
                 pluginString += "        lv2:name \"Audio Output " + d_string(i+1) + "\" ;\n";
 
@@ -217,19 +207,22 @@ void lv2_generate_ttl(const char* const basename)
 #if DISTRHO_LV2_USE_EVENTS_IN
             pluginString += "    lv2:port [\n";
             pluginString += "        a lv2:InputPort, atom:AtomPort ;\n";
-            pluginString += "        lv2:index " + d_string(portIndex++) + " ;\n";
+            pluginString += "        lv2:index " + d_string(portIndex) + " ;\n";
             pluginString += "        lv2:name \"Events Input\" ;\n";
             pluginString += "        lv2:symbol \"lv2_events_in\" ;\n";
             pluginString += "        atom:bufferType atom:Sequence ;\n";
-# if (DISTRHO_PLUGIN_IS_SYNTH && DISTRHO_PLUGIN_WANT_TIMEPOS) // TODO
-            pluginString += "        atom:supports <" LV2_MIDI__MidiEvent "> ,\n";
-            pluginString += "                      <" LV2_TIME__Position "> ;\n";
-# elif DISTRHO_PLUGIN_IS_SYNTH
-            pluginString += "        atom:supports <" LV2_MIDI__MidiEvent "> ;\n";
-# else
+# if (DISTRHO_PLUGIN_WANT_STATE && DISTRHO_PLUGIN_HAS_UI)
+            pluginString += "        atom:supports <" LV2_ATOM__String "> ;\n";
+# endif
+# if DISTRHO_PLUGIN_WANT_TIMEPOS
             pluginString += "        atom:supports <" LV2_TIME__Position "> ;\n";
 # endif
+# if DISTRHO_PLUGIN_IS_SYNTH
+            pluginString += "        atom:supports <" LV2_MIDI__MidiEvent "> ;\n";
+# endif
+
             pluginString += "    ] ;\n";
+            ++portIndex;
 #endif
 
 #if DISTRHO_LV2_USE_EVENTS_OUT
@@ -239,38 +232,41 @@ void lv2_generate_ttl(const char* const basename)
             pluginString += "        lv2:name \"Events Output\" ;\n";
             pluginString += "        lv2:symbol \"lv2_events_out\" ;\n";
             pluginString += "        atom:bufferType atom:Sequence ;\n";
-            pluginString += "        atom:supports <something_here> ;\n"; // TODO
+            pluginString += "        atom:supports <" LV2_ATOM__String "> ;\n";
             pluginString += "    ] ;\n";
+            ++portIndex;
 #endif
 
 #if DISTRHO_PLUGIN_WANT_LATENCY
             pluginString += "    lv2:port [\n";
             pluginString += "        a lv2:OutputPort, lv2:ControlPort ;\n";
-            pluginString += "        lv2:index " + d_string(portIndex++) + " ;\n";
+            pluginString += "        lv2:index " + d_string(portIndex) + " ;\n";
             pluginString += "        lv2:name \"Latency\" ;\n";
             pluginString += "        lv2:symbol \"lv2_latency\" ;\n";
             pluginString += "        lv2:designation lv2:latency ;\n";
+            pluginString += "        lv2:portProperty lv2:reportsLatency ;\n";
             pluginString += "    ] ;\n";
+            ++portIndex;
 #endif
 
-            for (uint32_t i=0; i < plugin.parameterCount(); ++i)
+            for (uint32_t i=0, count=plugin.getParameterCount(); i < count; ++i, ++portIndex)
             {
                 if (i == 0)
                     pluginString += "    lv2:port [\n";
                 else
                     pluginString += "    [\n";
 
-                if (plugin.parameterIsOutput(i))
+                if (plugin.isParameterOutput(i))
                     pluginString += "        a lv2:OutputPort, lv2:ControlPort ;\n";
                 else
                     pluginString += "        a lv2:InputPort, lv2:ControlPort ;\n";
 
-                pluginString += "        lv2:index " + d_string(portIndex++) + " ;\n";
-                pluginString += "        lv2:name \"" + plugin.parameterName(i) + "\" ;\n";
+                pluginString += "        lv2:index " + d_string(portIndex) + " ;\n";
+                pluginString += "        lv2:name \"" + plugin.getParameterName(i) + "\" ;\n";
 
                 // symbol
                 {
-                    d_string symbol(plugin.parameterSymbol(i));
+                    d_string symbol(plugin.getParameterSymbol(i));
 
                     if (symbol.isEmpty())
                         symbol = "lv2_port_" + d_string(portIndex-1);
@@ -280,17 +276,17 @@ void lv2_generate_ttl(const char* const basename)
 
                 // ranges
                 {
-                    const ParameterRanges& ranges(plugin.parameterRanges(i));
+                    const ParameterRanges& ranges(plugin.getParameterRanges(i));
 
-                    if (plugin.parameterHints(i) & PARAMETER_IS_INTEGER)
+                    if (plugin.getParameterHints(i) & PARAMETER_IS_INTEGER)
                     {
-                        pluginString += "        lv2:default " + d_string(int(plugin.parameterValue(i))) + " ;\n";
+                        pluginString += "        lv2:default " + d_string(int(plugin.getParameterValue(i))) + " ;\n";
                         pluginString += "        lv2:minimum " + d_string(int(ranges.min)) + " ;\n";
                         pluginString += "        lv2:maximum " + d_string(int(ranges.max)) + " ;\n";
                     }
                     else
                     {
-                        pluginString += "        lv2:default " + d_string(plugin.parameterValue(i)) + " ;\n";
+                        pluginString += "        lv2:default " + d_string(plugin.getParameterValue(i)) + " ;\n";
                         pluginString += "        lv2:minimum " + d_string(ranges.min) + " ;\n";
                         pluginString += "        lv2:maximum " + d_string(ranges.max) + " ;\n";
                     }
@@ -298,7 +294,7 @@ void lv2_generate_ttl(const char* const basename)
 
                 // unit
                 {
-                    const d_string& unit(plugin.parameterUnit(i));
+                    const d_string& unit(plugin.getParameterUnit(i));
 
                     if (! unit.isEmpty())
                     {
@@ -332,7 +328,7 @@ void lv2_generate_ttl(const char* const basename)
 
                 // hints
                 {
-                    const uint32_t hints(plugin.parameterHints(i));
+                    const uint32_t hints(plugin.getParameterHints(i));
 
                     if (hints & PARAMETER_IS_BOOLEAN)
                         pluginString += "        lv2:portProperty lv2:toggled ;\n";
@@ -340,17 +336,19 @@ void lv2_generate_ttl(const char* const basename)
                         pluginString += "        lv2:portProperty lv2:integer ;\n";
                     if (hints & PARAMETER_IS_LOGARITHMIC)
                         pluginString += "        lv2:portProperty <http://lv2plug.in/ns/ext/port-props#logarithmic> ;\n";
+                    if ((hints & PARAMETER_IS_AUTOMABLE) == 0 && ! plugin.isParameterOutput(i))
+                        pluginString += "        lv2:portProperty <http://lv2plug.in/ns/ext/port-props#expensive> ;\n";
                 }
 
-                if (i+1 == plugin.parameterCount())
+                if (i+1 == count)
                     pluginString += "    ] ;\n\n";
                 else
                     pluginString += "    ] ,\n";
             }
         }
 
-        pluginString += "    doap:name \"" + d_string(plugin.name()) + "\" ;\n";
-        pluginString += "    doap:maintainer [ foaf:name \"" + d_string(plugin.maker()) + "\" ] .\n";
+        pluginString += "    doap:name \"" + d_string(plugin.getName()) + "\" ;\n";
+        pluginString += "    doap:maintainer [ foaf:name \"" + d_string(plugin.getMaker()) + "\" ] .\n";
 
         pluginFile << pluginString << std::endl;
         pluginFile.close();

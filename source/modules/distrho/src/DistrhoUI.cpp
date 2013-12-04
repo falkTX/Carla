@@ -16,6 +16,10 @@
 
 #include "DistrhoUIInternal.hpp"
 
+START_NAMESPACE_DGL
+extern Window* dgl_lastUiParent;
+END_NAMESPACE_DGL
+
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
@@ -27,8 +31,12 @@ double d_lastUiSampleRate = 0.0;
 // UI
 
 UI::UI()
-    : pData(new PrivateData())
+    : DGL::Widget(*DGL::dgl_lastUiParent),
+      pData(new PrivateData())
 {
+    assert(DGL::dgl_lastUiParent != nullptr);
+
+    DGL::dgl_lastUiParent = nullptr;
 }
 
 UI::~UI()
@@ -46,7 +54,7 @@ double UI::d_getSampleRate() const noexcept
 
 void UI::d_editParameter(uint32_t index, bool started)
 {
-    pData->editParamCallback(index, started);
+    pData->editParamCallback(index + pData->parameterOffset, started);
 }
 
 void UI::d_setParameterValue(uint32_t index, float value)
@@ -62,9 +70,9 @@ void UI::d_setState(const char* key, const char* value)
 #endif
 
 #if DISTRHO_PLUGIN_IS_SYNTH
-void UI::d_sendNote(bool onOff, uint8_t channel, uint8_t note, uint8_t velocity)
+void UI::d_sendNote(uint8_t channel, uint8_t note, uint8_t velocity)
 {
-    pData->sendNoteCallback(onOff, channel, note, velocity);
+    pData->sendNoteCallback(channel, note, velocity);
 }
 #endif
 

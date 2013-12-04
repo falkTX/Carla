@@ -55,12 +55,6 @@
 # error DISTRHO_PLUGIN_WANT_TIMEPOS undefined!
 #endif
 
-#if DISTRHO_PLUGIN_HAS_UI
-# if ! (defined(DISTRHO_UI_EXTERNAL) || defined(DISTRHO_UI_OPENGL) || defined(DISTRHO_UI_QT))
-#  error DISTRHO_PLUGIN_HAS_UI is defined but not its type; please define one of DISTRHO_UI_EXTERNAL, DISTRHO_UI_OPENGL or DISTRHO_UI_QT
-# endif
-#endif
-
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 # define DISTRHO_PLUGIN_EXPORT extern "C" __declspec (dllexport)
 # define DISTRHO_OS_WINDOWS    1

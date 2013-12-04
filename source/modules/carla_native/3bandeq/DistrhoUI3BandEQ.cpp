@@ -16,12 +16,14 @@
 
 #include "DistrhoUI3BandEQ.hpp"
 
+using DGL::Point;
+
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
 DistrhoUI3BandEQ::DistrhoUI3BandEQ()
-    : OpenGLUI(),
+    : UI(),
       fAboutWindow(this)
 {
     // background

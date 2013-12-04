@@ -19,12 +19,14 @@
 
 #include "DistrhoUtils.hpp"
 
+#include "dgl/Widget.hpp"
+
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 // UI
 
-class UI
+class UI : public DGL::Widget
 {
 public:
     UI();
@@ -40,7 +42,7 @@ public:
     void   d_setState(const char* key, const char* value);
 #endif
 #if DISTRHO_PLUGIN_IS_SYNTH
-    void   d_sendNote(bool onOff, uint8_t channel, uint8_t note, uint8_t velocity);
+    void   d_sendNote(uint8_t channel, uint8_t note, uint8_t velocity);
 #endif
 
     // -------------------------------------------------------------------
@@ -66,9 +68,6 @@ protected:
 #if DISTRHO_PLUGIN_WANT_STATE
     virtual void d_stateChanged(const char* key, const char* value) = 0;
 #endif
-#if DISTRHO_PLUGIN_IS_SYNTH
-    virtual void d_noteReceived(bool onOff, uint8_t channel, uint8_t note, uint8_t velocity) = 0;
-#endif
 
     // -------------------------------------------------------------------
     // UI Callbacks (optional)
@@ -80,7 +79,7 @@ protected:
 private:
     struct PrivateData;
     PrivateData* const pData;
-    friend class UIInternal;
+    friend class UIExporter;
 };
 
 // -----------------------------------------------------------------------

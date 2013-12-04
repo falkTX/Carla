@@ -19,16 +19,16 @@
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
-// Static data
+// Static data, see DistrhoPluginInternal.hpp
 
 uint32_t d_lastBufferSize = 0;
 double   d_lastSampleRate = 0.0;
 
 // -----------------------------------------------------------------------
-// Static, fallback data
+// Static fallback data, see DistrhoPluginInternal.hpp
 
-const d_string        PluginInternal::sFallbackString;
-const ParameterRanges PluginInternal::sFallbackRanges;
+const d_string        PluginExporter::sFallbackString;
+const ParameterRanges PluginExporter::sFallbackRanges;
 
 // -----------------------------------------------------------------------
 // Plugin
@@ -92,7 +92,7 @@ void Plugin::d_setLatency(uint32_t frames) noexcept
 #endif
 
 // -----------------------------------------------------------------------
-// Callbacks
+// Callbacks (optional)
 
 void Plugin::d_bufferSizeChanged(uint32_t)
 {

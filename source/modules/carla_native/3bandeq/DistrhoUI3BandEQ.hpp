@@ -17,7 +17,7 @@
 #ifndef DISTRHO_UI_3BANDEQ_HPP_INCLUDED
 #define DISTRHO_UI_3BANDEQ_HPP_INCLUDED
 
-#include "DistrhoUIOpenGL.hpp"
+#include "DistrhoUI.hpp"
 
 #include "dgl/ImageAboutWindow.hpp"
 #include "dgl/ImageButton.hpp"
@@ -27,11 +27,17 @@
 #include "DistrhoArtwork3BandEQ.hpp"
 #include "DistrhoPlugin3BandEQ.hpp"
 
+using DGL::Image;
+using DGL::ImageAboutWindow;
+using DGL::ImageButton;
+using DGL::ImageKnob;
+using DGL::ImageSlider;
+
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
-class DistrhoUI3BandEQ : public OpenGLUI,
+class DistrhoUI3BandEQ : public UI,
                          public ImageButton::Callback,
                          public ImageKnob::Callback,
                          public ImageSlider::Callback

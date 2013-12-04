@@ -16,19 +16,10 @@
 
 #include "DistrhoUIInternal.hpp"
 
-#ifdef DISTRHO_UI_EXTERNAL
-# error DSSI always uses external UI, no wrapper needed!
-#endif
+#include "dgl/App.hpp"
+#include "dgl/Window.hpp"
 
 #include <lo/lo.h>
-
-#ifdef DISTRHO_UI_QT
-# include <QtGui/QApplication>
-# include <QtGui/QMainWindow>
-#else
-# include "dgl/App.hpp"
-# include "dgl/Window.hpp"
-#endif
 
 START_NAMESPACE_DISTRHO
 
@@ -95,78 +86,34 @@ struct OscData {
 
 // -----------------------------------------------------------------------
 
-#ifdef DISTRHO_UI_QT
-class UIDssi : public QMainWindow
-#else
 class UIDssi
-#endif
 {
 public:
     UIDssi(const OscData& oscData, const char* const uiTitle)
-#ifdef DISTRHO_UI_QT
-        : QMainWindow(nullptr),
-          fUI(this, 0, nullptr, setParameterCallback, setStateCallback, uiSendNoteCallback, uiResizeCallback),
+        : fUI(this, 0, nullptr, setParameterCallback, setStateCallback, sendNoteCallback, uiResizeCallback),
           fHostClosed(false),
-          qtTimer(0),
-#else
-        : fUI(this, 0, nullptr, setParameterCallback, setStateCallback, uiSendNoteCallback, uiResizeCallback),
-          fHostClosed(false),
-          glApp(fUI.getApp()),
-          glWindow(fUI.getWindow()),
-#endif
           fOscData(oscData)
     {
-#ifdef DISTRHO_UI_QT
-        QtUI* const qtUI(fUI.getQt4Ui());
-
-        setCentralWidget(qtUI);
-        setWindowTitle(uiTitle);
-
-        if (qtUI->d_resizable())
-        {
-            adjustSize();
-        }
-        else
-        {
-            setFixedSize(qtUI->width(), qtUI->height());
-# ifdef DISTRHO_OS_WINDOWS
-            setWindowFlags(windowFlags()|Qt::MSWindowsFixedSizeDialogHint);
-# endif
-        }
-#else
-        glWindow.setTitle(uiTitle);
-#endif
+        fUI.setTitle(uiTitle);
     }
 
     ~UIDssi()
     {
-#ifdef DISTRHO_UI_QT
-        if (qtTimer != 0)
-        {
-            killTimer(qtTimer);
-            qtTimer = 0;
-        }
-#endif
-
         if (fOscData.server != nullptr && ! fHostClosed)
             fOscData.send_exiting();
     }
 
     void exec()
     {
-#ifdef DISTRHO_UI_QT
-        assert(qtTimer == 0);
-
-        qtTimer = startTimer(50);
-        qApp->exec();
-#else
-        while (! glApp.isQuiting())
+        for (;;)
         {
             fOscData.idle();
-            fUI.idle();
-            msleep(50);
+
+            if (! fUI.idle())
+                break;
+
+            d_msleep(50);
         }
-#endif
     }
 
     // -------------------------------------------------------------------
@@ -190,70 +137,26 @@ public:
     }
 #endif
 
-#if DISTRHO_PLUGIN_IS_SYNTH
-    void dssiui_midi(uint8_t data[4])
-    {
-        uint8_t status  = data[1] & 0xF0;
-        uint8_t channel = data[1] & 0x0F;
-
-        // fix bad note-off
-        if (status == 0x90 && data[3] == 0)
-            status -= 0x10;
-
-        if (status == 0x80)
-        {
-            uint8_t note = data[2];
-            fUI.noteReceived(false, channel, note, 0);
-        }
-        else if (status == 0x90)
-        {
-            uint8_t note = data[2];
-            uint8_t velo = data[3];
-            fUI.noteReceived(true, channel, note, velo);
-        }
-    }
-#endif
-
     void dssiui_show()
     {
-#ifdef DISTRHO_UI_QT
-        show();
-#else
-        glWindow.show();
-#endif
+        fUI.setVisible(true);
     }
 
     void dssiui_hide()
     {
-#ifdef DISTRHO_UI_QT
-        hide();
-#else
-        glWindow.hide();
-#endif
+        fUI.setVisible(false);
     }
 
     void dssiui_quit()
     {
         fHostClosed = true;
-
-#ifdef DISTRHO_UI_QT
-        if (qtTimer != 0)
-        {
-            killTimer(qtTimer);
-            qtTimer = 0;
-        }
-        close();
-        qApp->quit();
-#else
-        glWindow.close();
-        glApp.quit();
-#endif
+        fUI.quit();
     }
 
     // -------------------------------------------------------------------
 
 protected:
-    void setParameterValue(uint32_t rindex, float value)
+    void setParameterValue(const uint32_t rindex, const float value)
     {
         if (fOscData.server == nullptr)
             return;
@@ -261,7 +164,7 @@ protected:
         fOscData.send_control(rindex, value);
     }
 
-    void setState(const char* key, const char* value)
+    void setState(const char* const key, const char* const value)
     {
         if (fOscData.server == nullptr)
             return;
@@ -269,7 +172,7 @@ protected:
         fOscData.send_configure(key, value);
     }
 
-    void uiSendNote(bool onOff, uint8_t channel, uint8_t note, uint8_t velocity)
+    void sendNote(const uint8_t channel, const uint8_t note, const uint8_t velocity)
     {
         if (fOscData.server == nullptr)
             return;
@@ -277,46 +180,19 @@ protected:
             return;
 
         uint8_t mdata[4] = { 0, channel, note, velocity };
-        mdata[1] += onOff ? 0x90 : 0x80;
+        mdata[1] += (velocity != 0) ? 0x90 : 0x80;
 
         fOscData.send_midi(mdata);
     }
 
-    void uiResize(unsigned int width, unsigned int height)
+    void uiResize(const unsigned int width, const unsigned int height)
     {
-#ifdef DISTRHO_UI_QT
-        setFixedSize(width, height);
-#else
-        glWindow.setSize(width, height);
-#endif
+        fUI.setSize(width, height);
     }
-
-#ifdef DISTRHO_UI_QT
-    void timerEvent(QTimerEvent* event)
-    {
-        if (event->timerId() == uiTimer)
-        {
-            fOscData.idle();
-            fUI.idle();
-        }
-
-        QMainWindow::timerEvent(event);
-    }
-#endif
 
 private:
-    // Plugin UI
-    UIInternal fUI;
+    UIExporter fUI;
     bool fHostClosed;
-
-#ifdef DISTRHO_UI_QT
-    // Qt4 stuff
-    int qtTimer;
-#else
-    // OpenGL stuff
-    App& glApp;
-    Window& glWindow;
-#endif
 
     const OscData& fOscData;
 
@@ -335,9 +211,9 @@ private:
         uiPtr->setState(key, value);
     }
 
-    static void uiSendNoteCallback(void* ptr, bool onOff, uint8_t channel, uint8_t note, uint8_t velocity)
+    static void sendNoteCallback(void* ptr, uint8_t channel, uint8_t note, uint8_t velocity)
     {
-        uiPtr->uiSendNote(onOff, channel, note, velocity);
+        uiPtr->sendNote(channel, note, velocity);
     }
 
     static void uiResizeCallback(void* ptr, unsigned int width, unsigned int height)
@@ -431,19 +307,6 @@ int osc_program_handler(const char*, const char*, lo_arg** argv, int, lo_message
 }
 #endif
 
-#if DISTRHO_PLUGIN_IS_SYNTH
-int osc_midi_handler(const char*, const char*, lo_arg** argv, int, lo_message, void*)
-{
-    d_debug("osc_midi_handler()");
-
-    initUiIfNeeded();
-
-    globalUI->dssiui_midi(argv[0]->m);
-
-    return 0;
-}
-#endif
-
 int osc_sample_rate_handler(const char*, const char*, lo_arg** argv, int, lo_message, void*)
 {
     const int32_t sampleRate = argv[0]->i;
@@ -470,7 +333,7 @@ int osc_hide_handler(const char*, const char*, lo_arg**, int, lo_message, void*)
     d_debug("osc_hide_handler()");
 
     if (globalUI != nullptr)
-       globalUI->dssiui_hide();
+        globalUI->dssiui_hide();
 
     return 0;
 }
@@ -481,10 +344,6 @@ int osc_quit_handler(const char*, const char*, lo_arg**, int, lo_message, void*)
 
     if (globalUI != nullptr)
         globalUI->dssiui_quit();
-#ifdef DISTRHO_UI_QT
-    else if (QApplication* app = qApp)
-        app->quit();
-#endif
 
     return 0;
 }
@@ -500,9 +359,6 @@ int main(int argc, char* argv[])
     // dummy test mode
     if (argc == 1)
     {
-#ifdef DISTRHO_UI_QT
-        QApplication app(argc, argv, true);
-#endif
         gUiTitle = "DSSI UI Test";
 
         initUiIfNeeded();
@@ -517,10 +373,6 @@ int main(int argc, char* argv[])
         fprintf(stderr, "Usage: %s <osc-url> <plugin-dll> <plugin-label> <instance-name>\n", argv[0]);
         return 1;
     }
-
-#ifdef DISTRHO_UI_QT
-    QApplication app(argc, argv, true);
-#endif
 
     const char* oscUrl  = argv[1];
     const char* uiTitle = argv[4];
@@ -559,13 +411,6 @@ int main(int argc, char* argv[])
     strcpy(oscPathProgram, oscPath);
     strcat(oscPathProgram, "/program");
     lo_server_add_method(oscServer, oscPathProgram, "ii", osc_program_handler, nullptr);
-#endif
-
-#if DISTRHO_PLUGIN_IS_SYNTH
-    char oscPathMidi[oscPathSize+6];
-    strcpy(oscPathMidi, oscPath);
-    strcat(oscPathMidi, "/midi");
-    lo_server_add_method(oscServer, oscPathMidi, "m", osc_midi_handler, nullptr);
 #endif
 
     char oscPathSampleRate[oscPathSize+13];
@@ -629,19 +474,16 @@ int main(int argc, char* argv[])
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
     lo_server_del_method(oscServer, oscPathProgram, "ii");
 #endif
-#if DISTRHO_PLUGIN_IS_SYNTH
-    lo_server_del_method(oscServer, oscPathMidi, "m");
-#endif
     lo_server_del_method(oscServer, oscPathSampleRate, "i");
     lo_server_del_method(oscServer, oscPathShow, "");
     lo_server_del_method(oscServer, oscPathHide, "");
     lo_server_del_method(oscServer, oscPathQuit, "");
     lo_server_del_method(oscServer, nullptr, nullptr);
 
-    free(oscServerPath);
-    free(oscHost);
-    free(oscPort);
-    free(oscPath);
+    std::free(oscServerPath);
+    std::free(oscHost);
+    std::free(oscPort);
+    std::free(oscPath);
 
     lo_address_free(oscAddr);
     lo_server_free(oscServer);
