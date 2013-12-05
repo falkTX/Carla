@@ -369,57 +369,44 @@ public:
     // -------------------------------------------------------------------
 
 #if DISTRHO_PLUGIN_WANT_STATE
-    LV2_State_Status lv2_save(LV2_State_Store_Function store, LV2_State_Handle handle, uint32_t flags, const LV2_Feature* const* /*features*/)
+    LV2_State_Status lv2_save(const LV2_State_Store_Function store, const LV2_State_Handle handle, const uint32_t flags)
     {
-        flags = LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE;
+        //flags = LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE;
 
         for (auto it = fStateMap.begin(), end = fStateMap.end(); it != end; ++it)
         {
             const d_string& key   = it->first;
             const d_string& value = it->second;
 
-            store(handle, fUridMap->map(fUridMap->handle, (const char*)key), (const char*)value, value.length(), fURIDs.atomString, flags);
+            store(handle, fUridMap->map(fUridMap->handle, (const char*)key), (const char*)value, value.length()+1, fURIDs.atomString, flags);
         }
 
         return LV2_STATE_SUCCESS;
     }
 
-    LV2_State_Status lv2_restore(LV2_State_Retrieve_Function retrieve, LV2_State_Handle handle, uint32_t flags, const LV2_Feature* const* /*features*/)
+    LV2_State_Status lv2_restore(const LV2_State_Retrieve_Function retrieve, const LV2_State_Handle handle)
     {
-        size_t   size = 0;
-        uint32_t type = 0;
+        size_t   size  = 0;
+        uint32_t type  = 0;
+        uint32_t flags = LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE;
 
-        flags = LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE;
-
-        d_stderr2("lv2_restore called");
-
-        //for (uint32_t i=0, count=fPlugin.getStateCount(); i < count; ++i)
+        for (uint32_t i=0, count=fPlugin.getStateCount(); i < count; ++i)
         {
-            //const d_string& key = fPlugin.getStateKey(i);
-            const d_string key("yKey1");
+            const d_string& key = fPlugin.getStateKey(i);
 
             const void* data = retrieve(handle, fUridMap->map(fUridMap->handle, (const char*)key), &size, &type, &flags);
 
-            if (size == 0 || data == nullptr)
-            {
-                d_stderr2("lv2_restore err 1");
-                return LV2_STATE_SUCCESS;//continue;
-            }
+            if (size == 0)
+                continue;
+            if (data == nullptr)
+                continue;
             if (type != fURIDs.atomString)
-            {
-                d_stderr2("lv2_restore err 2");
-                return LV2_STATE_SUCCESS;//continue;
-            }
+                continue;
 
             const char* const value((const char*)data);
 
             if (std::strlen(value) != size)
-            {
-                d_stderr2("lv2_restore err 3");
-                return LV2_STATE_SUCCESS;//continue;
-            }
-
-            d_stderr2("Got request of state restore, key: \"%s\", value: \"%s\"", (const char*)key, (const char*)value);
+                continue;
 
             setState(key, value);
         }
@@ -431,7 +418,7 @@ public:
 
     LV2_Worker_Status lv2_work(const void* const data)
     {
-        const char* const stateKey((const char*)data + 1);
+        const char* const stateKey((const char*)data);
         const char* const stateValue(stateKey+std::strlen(stateKey)+1);
 
         setState(stateKey, stateValue);
@@ -496,16 +483,16 @@ private:
 #if DISTRHO_PLUGIN_WANT_STATE
     StringMap fStateMap;
 
-    void setState(const char* const newKey, const char* const newValue)
+    void setState(const char* const key, const char* const newValue)
     {
-        fPlugin.setState(newKey, newValue);
+        fPlugin.setState(key, newValue);
 
         // check if key already exists
         for (auto it = fStateMap.begin(), end = fStateMap.end(); it != end; ++it)
         {
-            const d_string& key = it->first;
+            const d_string& d_key = it->first;
 
-            if (key == newKey)
+            if (d_key == key)
             {
                 it->second = newValue;
                 return;
@@ -513,7 +500,7 @@ private:
         }
 
         // add a new one then
-        d_string d_key(newKey);
+        d_string d_key(key);
         fStateMap[d_key] = newValue;
     }
 #endif
@@ -653,14 +640,14 @@ static void lv2_select_program(LV2_Handle instance, uint32_t bank, uint32_t prog
 // -----------------------------------------------------------------------
 
 #if DISTRHO_PLUGIN_WANT_STATE
-static LV2_State_Status lv2_save(LV2_Handle instance, LV2_State_Store_Function store, LV2_State_Handle handle, uint32_t flags, const LV2_Feature* const* features)
+static LV2_State_Status lv2_save(LV2_Handle instance, LV2_State_Store_Function store, LV2_State_Handle handle, uint32_t flags, const LV2_Feature* const*)
 {
-    return instancePtr->lv2_save(store, handle, flags, features);
+    return instancePtr->lv2_save(store, handle, flags);
 }
 
-static LV2_State_Status lv2_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_State_Handle handle, uint32_t flags, const LV2_Feature* const* features)
+static LV2_State_Status lv2_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_State_Handle handle, uint32_t, const LV2_Feature* const*)
 {
-    return instancePtr->lv2_restore(retrieve, handle, flags, features);
+    return instancePtr->lv2_restore(retrieve, handle);
 }
 
 LV2_Worker_Status lv2_work(LV2_Handle instance, LV2_Worker_Respond_Function, LV2_Worker_Respond_Handle, uint32_t, const void* data)

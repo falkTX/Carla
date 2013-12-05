@@ -136,7 +136,7 @@ void lv2_generate_ttl(const char* const basename)
         pluginString += "\n";
 
         // extensionData
-        pluginString += "    lv2:extensionData <" LV2_OPTIONS__interface "> ";
+        pluginString += "    lv2:extensionData <" LV2_STATE__interface "> ";
 #if DISTRHO_PLUGIN_WANT_STATE
         pluginString += ",\n                      <" LV2_OPTIONS__interface "> ";
         pluginString += ",\n                      <" LV2_WORKER__interface "> ";

@@ -111,20 +111,12 @@ protected:
 
         // join key and value
         std::string tmpStr;
-        tmpStr += key;
-        tmpStr += "\xff";
-        tmpStr += value;
+        tmpStr += std::string(key);
+        tmpStr += std::string("\0", 1);
+        tmpStr += std::string(value);
 
-        // get size
+        // get msg size
         const size_t msgSize(tmpStr.size()+1);
-
-        // convert into char[]
-        char msg[msgSize];
-        std::memcpy(msg, tmpStr.c_str(), msgSize-1);
-
-        // set proper null chars
-        msg[std::strlen(key)] = '\0';
-        msg[msgSize]          = '\0';
 
         // reserve atom space
         const size_t atomSize(lv2_atom_pad_size(sizeof(LV2_Atom) + msgSize));
@@ -137,7 +129,7 @@ protected:
         atom->type = fUridMap->map(fUridMap->handle, "urn:distrho:keyValueState");
 
         // set atom data
-        std::memcpy(atomBuf + sizeof(LV2_Atom), msg, msgSize);
+        std::memcpy(atomBuf + sizeof(LV2_Atom), tmpStr.data(), msgSize-1);
 
         // send to DSP side
         fWriteFunction(fController, eventInPortIndex, atomSize, fUridMap->map(fUridMap->handle, LV2_ATOM__eventTransfer), atom);
