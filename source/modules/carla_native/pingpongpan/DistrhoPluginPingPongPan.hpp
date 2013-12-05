@@ -84,7 +84,7 @@ protected:
 
     void d_activate() override;
     void d_deactivate() override;
-    void d_run(float** inputs, float** outputs, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount) override;
+    void d_run(float** inputs, float** outputs, uint32_t frames) override;
 
     // -------------------------------------------------------------------
 

@@ -17,7 +17,7 @@
 #ifndef DISTRHO_UI_3BANDSPLITTER_HPP_INCLUDED
 #define DISTRHO_UI_3BANDSPLITTER_HPP_INCLUDED
 
-#include "DistrhoUIOpenGL.hpp"
+#include "DistrhoUI.hpp"
 
 #include "dgl/ImageAboutWindow.hpp"
 #include "dgl/ImageButton.hpp"
@@ -27,11 +27,17 @@
 #include "DistrhoArtwork3BandSplitter.hpp"
 #include "DistrhoPlugin3BandSplitter.hpp"
 
+using DGL::Image;
+using DGL::ImageAboutWindow;
+using DGL::ImageButton;
+using DGL::ImageKnob;
+using DGL::ImageSlider;
+
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
-class DistrhoUI3BandSplitter : public OpenGLUI,
+class DistrhoUI3BandSplitter : public UI,
                                public ImageButton::Callback,
                                public ImageKnob::Callback,
                                public ImageSlider::Callback

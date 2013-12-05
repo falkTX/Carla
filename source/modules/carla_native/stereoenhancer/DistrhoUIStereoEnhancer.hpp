@@ -17,7 +17,7 @@
 #ifndef DISTRHO_UI_STEREO_ENHANCER_HPP_INCLUDED
 #define DISTRHO_UI_STEREO_ENHANCER_HPP_INCLUDED
 
-#include "DistrhoUIOpenGL.hpp"
+#include "DistrhoUI.hpp"
 
 #include "dgl/ImageAboutWindow.hpp"
 #include "dgl/ImageButton.hpp"
@@ -26,11 +26,16 @@
 #include "DistrhoArtworkStereoEnhancer.hpp"
 #include "DistrhoPluginStereoEnhancer.hpp"
 
+using DGL::Image;
+using DGL::ImageAboutWindow;
+using DGL::ImageButton;
+using DGL::ImageKnob;
+
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
-class DistrhoUIStereoEnhancer : public OpenGLUI,
+class DistrhoUIStereoEnhancer : public UI,
                                 public ImageButton::Callback,
                                 public ImageKnob::Callback
 {

@@ -91,7 +91,7 @@ class NativePlugin : public LV2_External_UI_Widget
 public:
     static const uint32_t kMaxMidiEvents = 512;
 
-    NativePlugin(const PluginDescriptor* const desc, const double sampleRate, const char* const bundlePath, const LV2_Feature* const* features)
+    NativePlugin(const NativePluginDescriptor* const desc, const double sampleRate, const char* const bundlePath, const LV2_Feature* const* features)
         : fHandle(nullptr),
           fDescriptor(desc),
           fMidiEventCount(0),
@@ -218,8 +218,8 @@ public:
         if (fHandle == nullptr)
             return false;
 
-        carla_zeroStruct<MidiEvent>(fMidiEvents, kMaxMidiEvents*2);
-        carla_zeroStruct<TimeInfo>(fTimeInfo);
+        carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kMaxMidiEvents*2);
+        carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
 
         fPorts.init(fDescriptor, fHandle);
         fUris.map(fUridMap);
@@ -240,7 +240,7 @@ public:
         if (fDescriptor->activate != nullptr)
             fDescriptor->activate(fHandle);
 
-        carla_zeroStruct<TimeInfo>(fTimeInfo);
+        carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
     }
 
     void lv2_deactivate()
@@ -303,7 +303,7 @@ public:
         if (fDescriptor->midiIns > 0 || (fDescriptor->hints & PLUGIN_USES_TIME) != 0)
         {
             fMidiEventCount = 0;
-            carla_zeroStruct<MidiEvent>(fMidiEvents, kMaxMidiEvents*2);
+            carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kMaxMidiEvents*2);
 
             LV2_ATOM_SEQUENCE_FOREACH(fPorts.eventsIn[0], iter)
             {
@@ -503,7 +503,7 @@ public:
         if (index >= fDescriptor->get_midi_program_count(fHandle))
             return nullptr;
 
-        const MidiProgram* const midiProg(fDescriptor->get_midi_program_info(fHandle, index));
+        const NativeMidiProgram* const midiProg(fDescriptor->get_midi_program_info(fHandle, index));
 
         if (midiProg == nullptr)
             return nullptr;
@@ -691,14 +691,14 @@ protected:
         return (fPorts.freewheel != nullptr && *fPorts.freewheel >= 0.5f);
     }
 
-    const TimeInfo* handleGetTimeInfo() const
+    const NativeTimeInfo* handleGetTimeInfo() const
     {
         CARLA_SAFE_ASSERT_RETURN(fIsProcessing, nullptr);
 
         return &fTimeInfo;
     }
 
-    bool handleWriteMidiEvent(const MidiEvent* const event)
+    bool handleWriteMidiEvent(const NativeMidiEvent* const event)
     {
         CARLA_SAFE_ASSERT_RETURN(fIsProcessing, false);
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->midiOuts > 0, false);
@@ -710,7 +710,7 @@ protected:
         {
             if (fMidiEvents[i].data[0] == 0)
             {
-                std::memcpy(&fMidiEvents[i], event, sizeof(MidiEvent));
+                std::memcpy(&fMidiEvents[i], event, sizeof(NativeMidiEvent));
                 return true;
             }
         }
@@ -752,7 +752,7 @@ protected:
         return nullptr;
     }
 
-    intptr_t handleDispatcher(const HostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
+    intptr_t handleDispatcher(const NativeHostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
     {
         carla_debug("NativePlugin::handleDispatcher(%i, %i, " P_INTPTR ", %p, %f)", opcode, index, value, ptr, opt);
 
@@ -814,14 +814,14 @@ protected:
 
 private:
     // Native data
-    PluginHandle   fHandle;
-    HostDescriptor fHost;
-    const PluginDescriptor* const fDescriptor;
-    LV2_Program_Descriptor        fProgramDesc;
+    NativePluginHandle   fHandle;
+    NativeHostDescriptor fHost;
+    const NativePluginDescriptor* const fDescriptor;
+    LV2_Program_Descriptor              fProgramDesc;
 
-    uint32_t  fMidiEventCount;
-    MidiEvent fMidiEvents[kMaxMidiEvents*2];
-    TimeInfo  fTimeInfo;
+    uint32_t        fMidiEventCount;
+    NativeMidiEvent fMidiEvents[kMaxMidiEvents*2];
+    NativeTimeInfo  fTimeInfo;
 
     bool  fUiWasShown;
     bool  fIsProcessing;
@@ -959,7 +959,7 @@ private:
             }
         }
 
-        void init(const PluginDescriptor* const desc, PluginHandle handle)
+        void init(const NativePluginDescriptor* const desc, NativePluginHandle handle)
         {
             CARLA_SAFE_ASSERT_RETURN(desc != nullptr && handle != nullptr,)
 
@@ -1018,7 +1018,7 @@ private:
             }
         }
 
-        void connectPort(const PluginDescriptor* const desc, const uint32_t port, void* const dataLocation)
+        void connectPort(const NativePluginDescriptor* const desc, const uint32_t port, void* const dataLocation)
         {
             uint32_t index = 0;
 
@@ -1109,57 +1109,57 @@ private:
 
     #define handlePtr ((NativePlugin*)handle)
 
-    static uint32_t host_get_buffer_size(HostHandle handle)
+    static uint32_t host_get_buffer_size(NativeHostHandle handle)
     {
         return handlePtr->handleGetBufferSize();
     }
 
-    static double host_get_sample_rate(HostHandle handle)
+    static double host_get_sample_rate(NativeHostHandle handle)
     {
         return handlePtr->handleGetSampleRate();
     }
 
-    static bool host_is_offline(HostHandle handle)
+    static bool host_is_offline(NativeHostHandle handle)
     {
         return handlePtr->handleIsOffline();
     }
 
-    static const TimeInfo* host_get_time_info(HostHandle handle)
+    static const NativeTimeInfo* host_get_time_info(NativeHostHandle handle)
     {
         return handlePtr->handleGetTimeInfo();
     }
 
-    static bool host_write_midi_event(HostHandle handle, const ::MidiEvent* event)
+    static bool host_write_midi_event(NativeHostHandle handle, const NativeMidiEvent* event)
     {
         return handlePtr->handleWriteMidiEvent(event);
     }
 
-    static void host_ui_parameter_changed(HostHandle handle, uint32_t index, float value)
+    static void host_ui_parameter_changed(NativeHostHandle handle, uint32_t index, float value)
     {
         handlePtr->handleUiParameterChanged(index, value);
     }
 
-    static void host_ui_custom_data_changed(HostHandle handle, const char* key, const char* value)
+    static void host_ui_custom_data_changed(NativeHostHandle handle, const char* key, const char* value)
     {
         handlePtr->handleUiCustomDataChanged(key, value);
     }
 
-    static void host_ui_closed(HostHandle handle)
+    static void host_ui_closed(NativeHostHandle handle)
     {
         handlePtr->handleUiClosed();
     }
 
-    static const char* host_ui_open_file(HostHandle handle, bool isDir, const char* title, const char* filter)
+    static const char* host_ui_open_file(NativeHostHandle handle, bool isDir, const char* title, const char* filter)
     {
         return handlePtr->handleUiOpenFile(isDir, title, filter);
     }
 
-    static const char* host_ui_save_file(HostHandle handle, bool isDir, const char* title, const char* filter)
+    static const char* host_ui_save_file(NativeHostHandle handle, bool isDir, const char* title, const char* filter)
     {
         return handlePtr->handleUiSaveFile(isDir, title, filter);
     }
 
-    static intptr_t host_dispatcher(HostHandle handle, HostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
+    static intptr_t host_dispatcher(NativeHostHandle handle, NativeHostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
     {
         return handlePtr->handleDispatcher(opcode, index, value, ptr, opt);
     }
@@ -1176,8 +1176,8 @@ static LV2_Handle lv2_instantiate(const LV2_Descriptor* lv2Descriptor, double sa
 {
     carla_debug("lv2_instantiate(%p, %g, %s, %p)", lv2Descriptor, sampleRate, bundlePath, features);
 
-    const PluginDescriptor* pluginDesc  = nullptr;
-    const char*             pluginLabel = nullptr;
+    const NativePluginDescriptor* pluginDesc  = nullptr;
+    const char*                   pluginLabel = nullptr;
 
     if (std::strncmp(lv2Descriptor->URI, "http://kxstudio.sf.net/carla/plugins/", 37) == 0)
         pluginLabel = lv2Descriptor->URI+37;
@@ -1192,9 +1192,9 @@ static LV2_Handle lv2_instantiate(const LV2_Descriptor* lv2Descriptor, double sa
 
     carla_debug("lv2_instantiate() - looking up label \"%s\"", pluginLabel);
 
-    for (NonRtList<const PluginDescriptor*>::Itenerator it = sPluginDescsMgr.descs.begin(); it.valid(); it.next())
+    for (List<const NativePluginDescriptor*>::Itenerator it = sPluginDescsMgr.descs.begin(); it.valid(); it.next())
     {
-        const PluginDescriptor*& tmpDesc(*it);
+        const NativePluginDescriptor*& tmpDesc(*it);
 
         if (std::strcmp(tmpDesc->label, pluginLabel) == 0)
         {
@@ -1395,7 +1395,7 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
         return sPluginDescsMgr.lv2Descs.getAt(index);
     }
 
-    const PluginDescriptor*& pluginDesc(sPluginDescsMgr.descs.getAt(index));
+    const NativePluginDescriptor*& pluginDesc(sPluginDescsMgr.descs.getAt(index));
 
     CarlaString tmpURI;
 

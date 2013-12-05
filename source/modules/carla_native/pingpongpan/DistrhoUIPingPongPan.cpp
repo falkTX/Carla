@@ -16,14 +16,14 @@
 
 #include "DistrhoUIPingPongPan.hpp"
 
-#include "dgl/ImageAboutWindow.hpp"
+using DGL::Point;
 
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
 DistrhoUIPingPongPan::DistrhoUIPingPongPan()
-    : OpenGLUI(),
+    : UI(),
       fAboutWindow(this)
 {
     // background

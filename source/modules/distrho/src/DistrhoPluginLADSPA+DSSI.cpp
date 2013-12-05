@@ -43,11 +43,19 @@ public:
         : fPortControls(nullptr),
           fLastControlValues(nullptr)
     {
+#if DISTRHO_PLUGIN_NUM_INPUTS > 0
         for (uint32_t i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i)
             fPortAudioIns[i] = nullptr;
+#else
+        fPortAudioIns = nullptr;
+#endif
 
+#if DISTRHO_PLUGIN_NUM_OUTPUTS > 0
         for (uint32_t i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; ++i)
             fPortAudioOuts[i] = nullptr;
+#else
+        fPortAudioOuts = nullptr;
+#endif
 
         {
             const uint32_t count(fPlugin.getParameterCount());
@@ -100,6 +108,7 @@ public:
     {
         unsigned long index = 0;
 
+#if DISTRHO_PLUGIN_NUM_INPUTS > 0
         for (unsigned long i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i)
         {
             if (port == index++)
@@ -108,7 +117,9 @@ public:
                 return;
             }
         }
+#endif
 
+#if DISTRHO_PLUGIN_NUM_OUTPUTS > 0
         for (unsigned long i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; ++i)
         {
             if (port == index++)
@@ -117,6 +128,7 @@ public:
                 return;
             }
         }
+#endif
 
 #if DISTRHO_PLUGIN_WANT_LATENCY
         if (port == index++)
@@ -318,8 +330,16 @@ private:
     PluginExporter fPlugin;
 
     // LADSPA ports
+#if DISTRHO_PLUGIN_NUM_INPUTS > 0
     LADSPA_Data*  fPortAudioIns[DISTRHO_PLUGIN_NUM_INPUTS];
+#else
+    LADSPA_Data** fPortAudioIns;
+#endif
+#if DISTRHO_PLUGIN_NUM_OUTPUTS > 0
     LADSPA_Data*  fPortAudioOuts[DISTRHO_PLUGIN_NUM_OUTPUTS];
+#else
+    LADSPA_Data** fPortAudioOuts;
+#endif
     LADSPA_Data** fPortControls;
 #if DISTRHO_PLUGIN_WANT_LATENCY
     LADSPA_Data*  fPortLatency;
@@ -496,6 +516,7 @@ public:
         LADSPA_PortRangeHint*  portRangeHints  = new LADSPA_PortRangeHint [portCount];
 
         // Set ports
+#if DISTRHO_PLUGIN_NUM_INPUTS > 0
         for (unsigned long i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i, ++port)
         {
             char portName[24] = { '\0' };
@@ -508,7 +529,9 @@ public:
             portRangeHints[port].LowerBound = 0.0f;
             portRangeHints[port].UpperBound = 1.0f;
         }
+#endif
 
+#if DISTRHO_PLUGIN_NUM_OUTPUTS > 0
         for (unsigned long i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; ++i, ++port)
         {
             char portName[24] = { '\0' };
@@ -521,6 +544,7 @@ public:
             portRangeHints[port].LowerBound = 0.0f;
             portRangeHints[port].UpperBound = 1.0f;
         }
+#endif
 
 #if DISTRHO_PLUGIN_WANT_LATENCY
         // Set latency port

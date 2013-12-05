@@ -17,7 +17,7 @@
 #ifndef DISTRHO_UI_PINGPONGPAN_HPP_INCLUDED
 #define DISTRHO_UI_PINGPONGPAN_HPP_INCLUDED
 
-#include "DistrhoUIOpenGL.hpp"
+#include "DistrhoUI.hpp"
 
 #include "dgl/ImageAboutWindow.hpp"
 #include "dgl/ImageButton.hpp"
@@ -26,11 +26,16 @@
 #include "DistrhoArtworkPingPongPan.hpp"
 #include "DistrhoPluginPingPongPan.hpp"
 
+using DGL::Image;
+using DGL::ImageAboutWindow;
+using DGL::ImageButton;
+using DGL::ImageKnob;
+
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
-class DistrhoUIPingPongPan : public OpenGLUI,
+class DistrhoUIPingPongPan : public UI,
                              public ImageButton::Callback,
                              public ImageKnob::Callback
 {

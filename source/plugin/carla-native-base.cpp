@@ -16,7 +16,7 @@
  */
 
 #include "CarlaNative.h"
-#include "RtList.hpp"
+#include "List.hpp"
 
 #include "lv2/lv2.h"
 
@@ -31,7 +31,7 @@ struct PluginListManager {
 
     ~PluginListManager()
     {
-        for (NonRtList<const LV2_Descriptor*>::Itenerator it = lv2Descs.begin(); it.valid(); it.next())
+        for (List<const LV2_Descriptor*>::Itenerator it = lv2Descs.begin(); it.valid(); it.next())
         {
             const LV2_Descriptor*& lv2Desc(*it);
             delete[] lv2Desc->URI;
@@ -42,15 +42,15 @@ struct PluginListManager {
         lv2Descs.clear();
     }
 
-    NonRtList<const PluginDescriptor*> descs;
-    NonRtList<const LV2_Descriptor*> lv2Descs;
+    List<const NativePluginDescriptor*> descs;
+    List<const LV2_Descriptor*> lv2Descs;
 };
 
 static PluginListManager sPluginDescsMgr;
 
 // -----------------------------------------------------------------------
 
-void carla_register_native_plugin(const PluginDescriptor* desc)
+void carla_register_native_plugin(const NativePluginDescriptor* desc)
 {
 #ifdef CARLA_NATIVE_PLUGIN_LV2
     // LV2 MIDI Out and Open/Save are not implemented yet

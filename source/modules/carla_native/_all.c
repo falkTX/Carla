@@ -54,9 +54,9 @@ extern void carla_register_native_plugin_StereoEnhancer();
 #endif
 
 // DISTRHO plugins (PyQt)
-extern void carla_register_native_plugin_BigMeter();
-extern void carla_register_native_plugin_BigMeterM();
-extern void carla_register_native_plugin_Notes();
+// extern void carla_register_native_plugin_BigMeter();
+// extern void carla_register_native_plugin_BigMeterM();
+// extern void carla_register_native_plugin_Notes();
 
 #ifdef WANT_ZYNADDSUBFX
 // ZynAddSubFX
@@ -103,9 +103,9 @@ void carla_register_all_plugins()
 #endif
 
     // DISTRHO plugins (PyQt)
-    carla_register_native_plugin_BigMeter();
-    carla_register_native_plugin_BigMeterM();
-    carla_register_native_plugin_Notes();
+//     carla_register_native_plugin_BigMeter();
+//     carla_register_native_plugin_BigMeterM();
+//     carla_register_native_plugin_Notes();
 
 #ifdef WANT_ZYNADDSUBFX
     // ZynAddSubFX

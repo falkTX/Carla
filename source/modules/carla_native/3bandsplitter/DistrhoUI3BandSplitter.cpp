@@ -16,12 +16,14 @@
 
 #include "DistrhoUI3BandSplitter.hpp"
 
+using DGL::Point;
+
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
 DistrhoUI3BandSplitter::DistrhoUI3BandSplitter()
-    : OpenGLUI(),
+    : UI(),
       fAboutWindow(this)
 {
     // background

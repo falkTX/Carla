@@ -114,9 +114,9 @@ void writeManifestFile()
     // -------------------------------------------------------------------
     // Plugins
 
-    for (NonRtList<const PluginDescriptor*>::Itenerator it = sPluginDescsMgr.descs.begin(); it.valid(); it.next())
+    for (List<const NativePluginDescriptor*>::Itenerator it = sPluginDescsMgr.descs.begin(); it.valid(); it.next())
     {
-        const PluginDescriptor*& pluginDesc(*it);
+        const NativePluginDescriptor*& pluginDesc(*it);
         const String label(pluginDesc->label);
 
         if (label == "carla")
@@ -149,12 +149,12 @@ void writeManifestFile()
 
 // -----------------------------------------------------------------------
 
-static uint32_t host_getBufferSize(HostHandle) { return 512;     }
-static double   host_getSampleRate(HostHandle) { return 44100.0; }
-static bool     host_isOffline(HostHandle)     { return true;    }
-static intptr_t host_dispatcher(HostHandle, HostDispatcherOpcode, int32_t, intptr_t, void*, float) { return 0; }
+static uint32_t host_getBufferSize(NativeHostHandle) { return 512;     }
+static double   host_getSampleRate(NativeHostHandle) { return 44100.0; }
+static bool     host_isOffline(NativeHostHandle)     { return true;    }
+static intptr_t host_dispatcher(NativeHostHandle, NativeHostDispatcherOpcode, int32_t, intptr_t, void*, float) { return 0; }
 
-void writePluginFile(const PluginDescriptor* const pluginDesc)
+void writePluginFile(const NativePluginDescriptor* const pluginDesc)
 {
     const String pluginLabel(pluginDesc->label);
     const String pluginFile("carla-native.lv2/" + pluginLabel + ".ttl");
@@ -169,7 +169,7 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
     // -------------------------------------------------------------------
     // Init plugin
 
-    HostDescriptor hostDesc;
+    NativeHostDescriptor hostDesc;
     hostDesc.handle      = nullptr;
     hostDesc.resourceDir = "";
     hostDesc.uiName      = "";
@@ -186,7 +186,7 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
     hostDesc.ui_save_file = nullptr;
     hostDesc.dispatcher   = host_dispatcher;
 
-    PluginHandle pluginHandle = pluginDesc->instantiate(&hostDesc);
+    NativePluginHandle pluginHandle = pluginDesc->instantiate(&hostDesc);
 
     CARLA_SAFE_ASSERT_RETURN(pluginHandle != nullptr,)
 
@@ -290,7 +290,7 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
     // -------------------------------------------------------------------
     // UIs
 
-    if (pluginDesc->hints & PLUGIN_HAS_GUI)
+    if (pluginDesc->hints & PLUGIN_HAS_UI)
     {
         text += "    ui:ui <http://kxstudio.sf.net/carla/ui> ;\n";
         text += "\n";
@@ -459,9 +459,9 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
 
     for (uint32_t i=0; i < paramCount; ++i)
     {
-        const Parameter* paramInfo(pluginDesc->get_parameter_info(pluginHandle, i));
-        const String     paramName(paramInfo->name != nullptr ? paramInfo->name : "");
-        const String     paramUnit(paramInfo->unit != nullptr ? paramInfo->unit : "");
+        const NativeParameter* paramInfo(pluginDesc->get_parameter_info(pluginHandle, i));
+        const String           paramName(paramInfo->name != nullptr ? paramInfo->name : "");
+        const String           paramUnit(paramInfo->unit != nullptr ? paramInfo->unit : "");
 
         CARLA_SAFE_ASSERT_RETURN(paramInfo != nullptr,)
 
@@ -509,7 +509,7 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
 
         for (uint32_t j=0; j < paramInfo->scalePointCount; ++j)
         {
-            const ParameterScalePoint* const scalePoint(&paramInfo->scalePoints[j]);
+            const NativeParameterScalePoint* const scalePoint(&paramInfo->scalePoints[j]);
 
             if (j == 0)
                 text += "        lv2:scalePoint [ ";
@@ -564,9 +564,9 @@ int main()
 {
     writeManifestFile();
 
-    for (NonRtList<const PluginDescriptor*>::Itenerator it = sPluginDescsMgr.descs.begin(); it.valid(); it.next())
+    for (List<const NativePluginDescriptor*>::Itenerator it = sPluginDescsMgr.descs.begin(); it.valid(); it.next())
     {
-        const PluginDescriptor*& pluginDesc(*it);
+        const NativePluginDescriptor*& pluginDesc(*it);
         writePluginFile(pluginDesc);
     }
 

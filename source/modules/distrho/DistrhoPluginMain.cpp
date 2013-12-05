@@ -16,9 +16,7 @@
 
 #include "src/DistrhoPlugin.cpp"
 
-#if defined(DISTRHO_PLUGIN_TARGET_JACK)
-# include "src/DistrhoPluginJACK.cpp"
-#elif (defined(DISTRHO_PLUGIN_TARGET_LADSPA) || defined(DISTRHO_PLUGIN_TARGET_DSSI))
+#if (defined(DISTRHO_PLUGIN_TARGET_LADSPA) || defined(DISTRHO_PLUGIN_TARGET_DSSI))
 # include "src/DistrhoPluginLADSPA+DSSI.cpp"
 #elif defined(DISTRHO_PLUGIN_TARGET_LV2)
 # include "src/DistrhoPluginLV2.cpp"

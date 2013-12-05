@@ -21,7 +21,6 @@
 
 #include "../dgl/App.hpp"
 #include "../dgl/Window.hpp"
-#include <lo/lo_osc_types.h>
 
 START_NAMESPACE_DISTRHO
 

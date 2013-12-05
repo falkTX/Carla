@@ -110,10 +110,10 @@ OBJS += \
 endif
 
 # DISTRHO plugins (PyQt)
-OBJS += \
-	distrho-bigmeter.cpp.o \
-	distrho-bigmeterM.cpp.o \
-	distrho-notes.cpp.o
+# OBJS += \
+# 	distrho-bigmeter.cpp.o \
+# 	distrho-bigmeterM.cpp.o \
+# 	distrho-notes.cpp.o
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 # ZynAddSubFX

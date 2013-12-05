@@ -16,20 +16,10 @@
 
 #include "src/DistrhoUI.cpp"
 
-#if defined(DISTRHO_PLUGIN_TARGET_JACK)
-// nothing
-#elif defined(DISTRHO_PLUGIN_TARGET_DSSI)
+#if defined(DISTRHO_PLUGIN_TARGET_DSSI)
 # include "src/DistrhoUIDSSI.cpp"
 #elif defined(DISTRHO_PLUGIN_TARGET_LV2)
 # include "src/DistrhoUILV2.cpp"
 #elif defined(DISTRHO_PLUGIN_TARGET_VST)
 // nothing
-#endif
-
-#if defined(DISTRHO_UI_EXTERNAL)
-# include "src/DistrhoUIExternal.cpp"
-#elif defined(DISTRHO_UI_OPENGL)
-# include "src/DistrhoUIOpenGL.cpp"
-#elif defined(DISTRHO_UI_QT)
-# include "src/DistrhoUIQt.cpp"
 #endif

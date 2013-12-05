@@ -16,14 +16,14 @@
 
 #include "DistrhoUIStereoEnhancer.hpp"
 
-#include "dgl/ImageAboutWindow.hpp"
+using DGL::Point;
 
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
 DistrhoUIStereoEnhancer::DistrhoUIStereoEnhancer()
-    : OpenGLUI(),
+    : UI(),
       fAboutWindow(this)
 {
     // background

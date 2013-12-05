@@ -84,23 +84,23 @@ ifneq ($(shell pkg-config --exists liblo && echo true),true)
 $(error liblo missing, cannot continue)
 endif
 
-# ifeq ($(LINUX),true)
-# ifneq ($(shell pkg-config --exists x11 && echo true),true)
-# $(error X11 missing, cannot continue)
-# endif
-# ifneq ($(shell pkg-config --exists xinerama && echo true),true)
-# $(error Xinerama missing, cannot continue)
-# endif
-# ifneq ($(shell pkg-config --exists xext && echo true),true)
-# $(error Xext missing, cannot continue)
-# endif
-# ifneq ($(shell pkg-config --exists xcursor && echo true),true)
-# $(error Xcursor missing, cannot continue)
-# endif
-# ifneq ($(shell pkg-config --exists freetype2 && echo true),true)
-# $(error FreeType2 missing, cannot continue)
-# endif
-# endif
+ifeq ($(LINUX),true)
+ifneq ($(shell pkg-config --exists x11 && echo true),true)
+$(error X11 missing, cannot continue)
+endif
+ifneq ($(shell pkg-config --exists xinerama && echo true),true)
+$(error Xinerama missing, cannot continue)
+endif
+ifneq ($(shell pkg-config --exists xext && echo true),true)
+$(error Xext missing, cannot continue)
+endif
+ifneq ($(shell pkg-config --exists xcursor && echo true),true)
+$(error Xcursor missing, cannot continue)
+endif
+ifneq ($(shell pkg-config --exists freetype2 && echo true),true)
+$(error FreeType2 missing, cannot continue)
+endif
+endif
 
 # --------------------------------------------------------------
 # Check for optional libs (required by backend or bridges)
@@ -150,13 +150,13 @@ DGL_FLAGS                = $(shell pkg-config --cflags gl x11)
 DGL_LIBS                 = $(shell pkg-config --libs gl x11)
 endif
 JACKBRIDGE_LIBS          = -ldl -lpthread -lrt
-# JUCE_CORE_LIBS           = -ldl -lpthread -lrt
-# JUCE_EVENTS_FLAGS        = $(shell pkg-config --cflags x11)
-# JUCE_EVENTS_LIBS         = $(shell pkg-config --libs x11)
-# JUCE_GRAPHICS_FLAGS      = $(shell pkg-config --cflags x11 xinerama xext freetype2)
-# JUCE_GRAPHICS_LIBS       = $(shell pkg-config --libs x11 xinerama xext freetype2)
-# JUCE_GUI_BASICS_FLAGS    = $(shell pkg-config --cflags x11 xinerama xext xcursor)
-# JUCE_GUI_BASICS_LIBS     = $(shell pkg-config --libs x11 xinerama xext xcursor) -ldl
+JUCE_CORE_LIBS           = -ldl -lpthread -lrt
+JUCE_EVENTS_FLAGS        = $(shell pkg-config --cflags x11)
+JUCE_EVENTS_LIBS         = $(shell pkg-config --libs x11)
+JUCE_GRAPHICS_FLAGS      = $(shell pkg-config --cflags x11 xinerama xext freetype2)
+JUCE_GRAPHICS_LIBS       = $(shell pkg-config --libs x11 xinerama xext freetype2)
+JUCE_GUI_BASICS_FLAGS    = $(shell pkg-config --cflags x11 xinerama xext xcursor)
+JUCE_GUI_BASICS_LIBS     = $(shell pkg-config --libs x11 xinerama xext xcursor) -ldl
 LILV_LIBS                = -ldl -lm -lrt
 ifeq ($(HAVE_ALSA),true)
 RTAUDIO_FLAGS           += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
@@ -173,12 +173,12 @@ endif
 ifeq ($(MACOS),true)
 DGL_LIBS                = -framework OpenGL -framework Cocoa
 JACKBRIDGE_LIBS         = -ldl -lpthread
-# JUCE_AUDIO_BASICS_LIBS  = -framework Accelerate
-# JUCE_AUDIO_DEVICES_LIBS = -framework CoreAudio -framework CoreMIDI -framework DiscRecording
-# JUCE_AUDIO_FORMATS_LIBS = -framework CoreAudio -framework CoreMIDI -framework QuartzCore -framework AudioToolbox
-# JUCE_CORE_LIBS          = -framework Cocoa -framework IOKit
-# JUCE_GRAPHICS_LIBS      = -framework Cocoa -framework QuartzCore
-# JUCE_GUI_BASICS_LIBS    = -framework Cocoa -framework Carbon -framework QuartzCore
+JUCE_AUDIO_BASICS_LIBS  = -framework Accelerate
+JUCE_AUDIO_DEVICES_LIBS = -framework CoreAudio -framework CoreMIDI -framework DiscRecording
+JUCE_AUDIO_FORMATS_LIBS = -framework CoreAudio -framework CoreMIDI -framework QuartzCore -framework AudioToolbox
+JUCE_CORE_LIBS          = -framework Cocoa -framework IOKit
+JUCE_GRAPHICS_LIBS      = -framework Cocoa -framework QuartzCore
+JUCE_GUI_BASICS_LIBS    = -framework Cocoa -framework Carbon -framework QuartzCore
 LILV_LIBS               = -ldl -lm
 RTAUDIO_FLAGS          += -D__MACOSX_CORE__
 RTAUDIO_LIBS           += -lpthread
@@ -188,11 +188,11 @@ endif
 ifeq ($(WIN32),true)
 DGL_LIBS                = -lopengl32 -lgdi32
 JACKBRIDGE_LIBS         = -lpthread
-# JUCE_AUDIO_DEVICES_LIBS = -lwinmm -lole32
-# JUCE_CORE_LIBS          = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
-# JUCE_EVENTS_LIBS        = -lole32
-# JUCE_GRAPHICS_LIBS      = -lgdi32
-# JUCE_GUI_BASICS_LIBS    = -lgdi32 -limm32 -lcomdlg32 -lole32
+JUCE_AUDIO_DEVICES_LIBS = -lwinmm -lole32
+JUCE_CORE_LIBS          = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
+JUCE_EVENTS_LIBS        = -lole32
+JUCE_GRAPHICS_LIBS      = -lgdi32
+JUCE_GUI_BASICS_LIBS    = -lgdi32 -limm32 -lcomdlg32 -lole32
 LILV_LIBS               = -lm
 RTAUDIO_FLAGS          += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__
 RTAUDIO_LIBS           += -lpthread
