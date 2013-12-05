@@ -18,7 +18,7 @@
 #ifndef DISTRHO_UI_NEKOBI_HPP_INCLUDED
 #define DISTRHO_UI_NEKOBI_HPP_INCLUDED
 
-#include "DistrhoUIOpenGL.hpp"
+#include "DistrhoUI.hpp"
 
 #include "dgl/ImageAboutWindow.hpp"
 #include "dgl/ImageButton.hpp"
@@ -29,11 +29,16 @@
 #include "DistrhoPluginNekobi.hpp"
 #include "NekoWidget.hpp"
 
+using DGL::ImageAboutWindow;
+using DGL::ImageButton;
+using DGL::ImageKnob;
+using DGL::ImageSlider;
+
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
-class DistrhoUINekobi : public OpenGLUI,
+class DistrhoUINekobi : public UI,
                         public ImageButton::Callback,
                         public ImageKnob::Callback,
                         public ImageSlider::Callback
@@ -60,7 +65,7 @@ protected:
     // DSP Callbacks
 
     void d_parameterChanged(uint32_t index, float value) override;
-    void d_noteReceived(bool, uint8_t, uint8_t, uint8_t) override {}
+    void d_stateChanged(const char*, const char*) override {}
 
     // -------------------------------------------------------------------
     // UI Callbacks

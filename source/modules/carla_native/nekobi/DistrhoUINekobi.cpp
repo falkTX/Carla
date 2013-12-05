@@ -17,14 +17,14 @@
 
 #include "DistrhoUINekobi.hpp"
 
-#include "dgl/ImageAboutWindow.hpp"
+using DGL::Point;
 
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
 DistrhoUINekobi::DistrhoUINekobi()
-    : OpenGLUI(),
+    : UI(),
       fAboutWindow(this)
 {
     // FIXME

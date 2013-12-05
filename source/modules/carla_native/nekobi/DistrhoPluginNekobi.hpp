@@ -48,6 +48,9 @@ public:
     DistrhoPluginNekobi();
     ~DistrhoPluginNekobi() override;
 
+    void d_initStateKey(uint32_t, d_string&)  override {}
+    void d_setState(const char*, const char*)  override {}
+
 protected:
     // -------------------------------------------------------------------
     // Information

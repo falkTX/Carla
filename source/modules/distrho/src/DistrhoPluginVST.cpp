@@ -24,14 +24,37 @@
 # define __cdecl
 #endif
 
+#ifdef noexcept
+# undef noexcept
+#endif
+
+#define VESTIGE_HEADER
 #define VST_FORCE_DEPRECATED 0
 
-//#if VESTIGE_HEADER
-//# include "vestige/aeffectx.h"
-//# define effSetProgramName 4
-//#else
-#include "aeffectx.h"
-//#endif
+#include <map>
+#include <string>
+
+#ifdef VESTIGE_HEADER
+# include "vestige/aeffectx.h"
+#define effFlagsProgramChunks (1 << 5)
+#define effGetParamLabel 6
+#define effGetParamDisplay 7
+#define effGetChunk 23
+#define effSetChunk 24
+#define effCanBeAutomated 26
+#define effGetProgramNameIndexed 29
+#define effGetPlugCategory 35
+#define kPlugCategEffect 1
+#define kPlugCategSynth 2
+#define kVstVersion 2400
+struct ERect {
+    int16_t top, left, bottom, right;
+};
+#else
+# include "vst/aeffectx.h"
+#endif
+
+typedef std::map<d_string,d_string> StringMap;
 
 START_NAMESPACE_DISTRHO
 
@@ -45,14 +68,22 @@ void strncpy(char* const dst, const char* const src, const size_t size)
 
 // -----------------------------------------------------------------------
 
+class StateHelper
+{
+public:
+    virtual ~StateHelper() {}
+    virtual void setSharedState(const char* const newKey, const char* const newValue) = 0;
+};
+
 #if DISTRHO_PLUGIN_HAS_UI
 class UIVst
 {
 public:
-    UIVst(const audioMasterCallback audioMaster, AEffect* const effect, PluginExporter* const plugin, const intptr_t winId)
+    UIVst(const audioMasterCallback audioMaster, AEffect* const effect, PluginExporter* const plugin, StateHelper* const stateHelper, const intptr_t winId)
         : fAudioMaster(audioMaster),
           fEffect(effect),
           fPlugin(plugin),
+          fStateHelper(stateHelper),
           fUI(this, winId, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, uiResizeCallback),
           fParameterChecks(nullptr),
           fParameterValues(nullptr)
@@ -128,20 +159,30 @@ public:
     // -------------------------------------------------------------------
     // functions called from the plugin side, RT no block
 
-    void setParameterValueFromPlugin(const uint32_t index, const float perValue)
+    void setParameterValueFromPlugin(const uint32_t index, const float perValue) noexcept
     {
         fParameterChecks[index] = true;
         fParameterValues[index] = perValue;
     }
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
-    void setProgramFromPlugin(const uint32_t index)
+    void setProgramFromPlugin(const uint32_t index) noexcept
     {
         fNextProgram = index;
 
         // set previous parameters invalid
         for (uint32_t i=0, count = fPlugin->getParameterCount(); i < count; ++i)
             fParameterChecks[i] = false;
+    }
+#endif
+
+    // -------------------------------------------------------------------
+    // functions called from the plugin side, block
+
+#if DISTRHO_PLUGIN_WANT_STATE
+    void setStateFromPlugin(const char* const key, const char* const value)
+    {
+        fUI.stateChanged(key, value);
     }
 #endif
 
@@ -173,7 +214,7 @@ protected:
     void setState(const char* const key, const char* const value)
     {
 #if DISTRHO_PLUGIN_WANT_STATE
-        fPlugin->setState(key, value);
+        fStateHelper->setSharedState(key, value);
 #else
         return; // unused
         (void)key;
@@ -183,7 +224,7 @@ protected:
 
     void sendNote(const uint8_t channel, const uint8_t note, const uint8_t velocity)
     {
-#if DISTRHO_PLUGIN_IS_SYNTH
+#if 0 //DISTRHO_PLUGIN_IS_SYNTH
         // TODO
 #else
         return; // unused
@@ -204,6 +245,7 @@ private:
     const audioMasterCallback fAudioMaster;
     AEffect* const fEffect;
     PluginExporter* const fPlugin;
+    StateHelper* const fStateHelper;
 
     // Plugin UI
     UIExporter fUI;
@@ -251,10 +293,10 @@ private:
 
 // -----------------------------------------------------------------------
 
-class PluginVst
+class PluginVst : public StateHelper
 {
 public:
-    PluginVst(const audioMasterCallback audioMaster, AEffect* const effect)
+    PluginVst(const audioMasterCallback audioMaster, AEffect* const effect) noexcept
         : fAudioMaster(audioMaster),
           fEffect(effect)
     {
@@ -273,7 +315,24 @@ public:
         fVstRect.bottom = 0;
         fVstRect.right  = 0;
 #endif
+
+#if DISTRHO_PLUGIN_WANT_STATE
+        fStateChunk = nullptr;
+#endif
     }
+
+#if DISTRHO_PLUGIN_WANT_STATE
+    ~PluginVst()
+    {
+        if (fStateChunk != nullptr)
+        {
+            delete[] fStateChunk;
+            fStateChunk = nullptr;
+        }
+
+        fStateMap.clear();
+    }
+#endif
 
     intptr_t vst_dispatcher(const int32_t opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
     {
@@ -301,14 +360,14 @@ public:
             ret = fCurProgram;
             break;
 
-        case effSetProgramName:
-            // unsupported
-            break;
+        //case effSetProgramName:
+        // unsupported
+        //    break;
 
         case effGetProgramName:
             if (ptr != nullptr && fCurProgram >= 0 && fCurProgram < static_cast<int32_t>(fPlugin.getProgramCount()))
             {
-                DISTRHO::strncpy((char*)ptr, fPlugin.getProgramName(fCurProgram), kVstMaxProgNameLen);
+                DISTRHO::strncpy((char*)ptr, fPlugin.getProgramName(fCurProgram), 24);
                 ret = 1;
             }
             break;
@@ -318,8 +377,8 @@ public:
             if (ptr != nullptr && index < static_cast<int32_t>(fPlugin.getParameterCount()))
             {
                 char* buf = (char*)ptr;
-                std::snprintf((char*)ptr, kVstMaxParamStrLen, "%f", fPlugin.getParameterValue(index));
-                buf[kVstMaxParamStrLen] = '\0';
+                std::snprintf((char*)ptr, 8, "%f", fPlugin.getParameterValue(index));
+                buf[8] = '\0';
                 ret = 1;
             }
             break;
@@ -333,10 +392,17 @@ public:
             break;
 
         case effMainsChanged:
-            if (value == 0)
-                fPlugin.deactivate();
-            else
+            if (value != 0)
+            {
                 fPlugin.activate();
+#if DISTRHO_PLUGIN_IS_SYNTH
+                fMidiEventCount = 0;
+#endif
+            }
+            else
+            {
+                fPlugin.deactivate();
+            }
             break;
 
 #if DISTRHO_PLUGIN_HAS_UI
@@ -362,7 +428,7 @@ public:
             {
                 d_lastUiSampleRate = fAudioMaster(fEffect, audioMasterGetSampleRate, 0, 0, nullptr, 0.0f);
 
-                fVstUi = new UIVst(fAudioMaster, fEffect, &fPlugin, (intptr_t)ptr);
+                fVstUi = new UIVst(fAudioMaster, fEffect, &fPlugin, this, (intptr_t)ptr);
 
 # if DISTRHO_PLUGIN_WANT_PROGRAMS
                 if (fCurProgram >= 0)
@@ -373,6 +439,20 @@ public:
 
                 fVstUi->idle();
 
+#if DISTRHO_PLUGIN_WANT_STATE
+                if (fStateMap.size() > 0)
+                {
+                    for (auto it = fStateMap.begin(), end = fStateMap.end(); it != end; ++it)
+                    {
+                        const d_string& key   = it->first;
+                        const d_string& value = it->second;
+
+                        fVstUi->setStateFromPlugin((const char*)key, (const char*)value);
+                    }
+
+                    fVstUi->idle();
+                }
+#endif
                 ret = 1;
             }
             break;
@@ -394,17 +474,114 @@ public:
 
 #if DISTRHO_PLUGIN_WANT_STATE
         case effGetChunk:
+            if (ptr == nullptr)
+                return 0;
+
+            if (fStateChunk != nullptr)
+                delete[] fStateChunk;
+
+            if (fStateMap.size() == 0)
+            {
+                fStateChunk    = new char[1];
+                fStateChunk[0] = '\0';
+                ret = 1;
+            }
+            else
+            {
+                std::string tmpStr;
+
+                for (auto it = fStateMap.begin(), end = fStateMap.end(); it != end; ++it)
+                {
+                    const d_string& key   = it->first;
+                    const d_string& value = it->second;
+
+                    tmpStr += (const char*)key;
+                    tmpStr += "\xff";
+                    tmpStr += (const char*)value;
+                    tmpStr += "\xff";
+                }
+
+                const size_t size(tmpStr.size());
+                fStateChunk = new char[size];
+                std::memcpy(fStateChunk, tmpStr.c_str(), size*sizeof(char));
+
+                for (size_t i=0; i < size; ++i)
+                {
+                    if (fStateChunk[i] == '\xff')
+                        fStateChunk[i] = '\0';
+                }
+
+                ret = size;
+            }
+
+            *(void**)ptr = fStateChunk;
+            break;
+
         case effSetChunk:
-            // TODO
+            if (value <= 0)
+                return 0;
+            if (value == 1)
+                return 1;
+
+            if (const char* const state = (const char*)ptr)
+            {
+                const size_t stateSize  = value;
+                const char*  stateKey   = state;
+                const char*  stateValue = nullptr;
+
+                for (size_t i=0; i < stateSize; ++i)
+                {
+                    // find next null char
+                    if (state[i] != '\0')
+                        continue;
+
+                    // found, set value
+                    stateValue = &state[i+1];
+                    setSharedState(stateKey, stateValue);
+
+                    if (fVstUi != nullptr)
+                        fVstUi->setStateFromPlugin(stateKey, stateValue);
+
+                    // increment text position
+                    i += std::strlen(stateValue) + 2;
+
+                    // check if end of data
+                    if (i >= stateSize)
+                        break;
+
+                    // get next key
+                    stateKey = &state[i];
+                }
+
+                ret = 1;
+            }
+
             break;
 #endif
 
 #if DISTRHO_PLUGIN_IS_SYNTH
         case effProcessEvents:
-            if (ptr)
+            if (const VstEvents* const events = (const VstEvents*)ptr)
             {
-                //VstEvents* events = (VstEvents*)ptr;
-                // TODO
+                if (events->numEvents == 0)
+                    break;
+
+                for (int i=0, count=events->numEvents; i < count; ++i)
+                {
+                    const VstMidiEvent* const vstMidiEvent((const VstMidiEvent*)events->events[i]);
+
+                    if (vstMidiEvent == nullptr)
+                        break;
+                    if (vstMidiEvent->type != kVstMidiType)
+                        continue;
+                    if (fMidiEventCount >= kMaxMidiEvents)
+                        break;
+
+                    MidiEvent& midiEvent(fMidiEvents[fMidiEventCount++]);
+                    midiEvent.frame  = vstMidiEvent->deltaFrames;
+                    midiEvent.size   = 3;
+                    std::memcpy(midiEvent.buf, vstMidiEvent->midiData, 3*sizeof(uint8_t));
+                }
             }
             break;
 #endif
@@ -420,21 +597,28 @@ public:
             }
             break;
 
+#if (DISTRHO_PLUGIN_IS_SYNTH || DISTRHO_PLUGIN_WANT_TIMEPOS)
         case effCanDo:
-#if DISTRHO_PLUGIN_IS_SYNTH
             if (const char* const canDo = (const char*)ptr)
             {
+# if DISTRHO_PLUGIN_IS_SYNTH
                 if (std::strcmp(canDo, "receiveVstEvents") == 0)
-                    ret = 1;
-                else if (std::strcmp(canDo, "receiveVstMidiEvent") == 0)
-                    ret = 1;
+                    return 1;
+                if (std::strcmp(canDo, "receiveVstMidiEvent") == 0)
+                    return 1;
+# endif
+# if DISTRHO_PLUGIN_WANT_TIMEPOS
+                if (std::strcmp(canDo, "receiveVstTimeInfo") == 0)
+                    return 1;
+# endif
             }
+            break;
 #endif
-            break;
 
-        case effStartProcess:
-        case effStopProcess:
-            break;
+        //case effStartProcess:
+        //case effStopProcess:
+        // unused
+        //    break;
         }
 
         return ret;
@@ -460,14 +644,22 @@ public:
 
     void vst_processReplacing(float** const inputs, float** const outputs, const int32_t sampleFrames)
     {
+#if DISTRHO_PLUGIN_WANT_TIMEPOS
+        if (const VstTimeInfo* const timeInfo = (const VstTimeInfo*)fEffect->dispatcher(fEffect, audioMasterGetTime, 0, kVstTempoValid, nullptr, 0.0f))
+            fPlugin.setTimePos((timeInfo->flags & kVstTransportPlaying) != 0, timeInfo->samplePos, timeInfo->tempo);
+#endif
+
 #if DISTRHO_PLUGIN_IS_SYNTH
-        fPlugin.run(inputs, outputs, sampleFrames, fMidiEventCount, fMidiEvents);
+        fPlugin.run(inputs, outputs, sampleFrames, fMidiEvents, fMidiEventCount);
+        fMidiEventCount = 0;
 #else
         fPlugin.run(inputs, outputs, sampleFrames);
 #endif
     }
 
     // -------------------------------------------------------------------
+
+    friend class UIVst;
 
 private:
     // VST stuff
@@ -490,11 +682,43 @@ private:
     UIVst* fVstUi;
     ERect  fVstRect;
 #endif
+
+#if DISTRHO_PLUGIN_WANT_STATE
+    char*     fStateChunk;
+    StringMap fStateMap;
+
+    void setSharedState(const char* const newKey, const char* const newValue) override
+    {
+        fPlugin.setState(newKey, newValue);
+
+        // check if key already exists
+        for (auto it = fStateMap.begin(), end = fStateMap.end(); it != end; ++it)
+        {
+            const d_string& key = it->first;
+
+            if (key == newKey)
+            {
+                it->second = newValue;
+                return;
+            }
+        }
+
+        // add a new one then
+        d_string d_key(newKey);
+        fStateMap[d_key] = newValue;
+    }
+#endif
 };
 
 // -----------------------------------------------------------------------
 
-#define handlePtr ((PluginVst*)effect->resvd2)
+#ifdef VESTIGE_HEADER
+# define handlePtr   ((PluginVst*)effect->ptr2)
+# define validEffect effect != nullptr && effect->ptr2 != nullptr
+#else
+# define handlePtr   ((PluginVst*)effect->resvd2)
+# define validEffect effect != nullptr && effect->resvd2 != 0
+#endif
 
 static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt)
 {
@@ -525,23 +749,39 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
     switch (opcode)
     {
     case effOpen:
-        if (effect != nullptr && effect->object != nullptr /*&& dynamic_cast<audioMasterCallback>(effect->object)*/)
+#ifdef VESTIGE_HEADER
+        if (effect != nullptr && effect->ptr3 != nullptr)
+        {
+            audioMasterCallback audioMaster = (audioMasterCallback)effect->ptr3;
+#else
+        if (effect != nullptr && effect->object != nullptr)
         {
             audioMasterCallback audioMaster = (audioMasterCallback)effect->object;
+#endif
             d_lastBufferSize = audioMaster(effect, audioMasterGetBlockSize, 0, 0, nullptr, 0.0f);
             d_lastSampleRate = audioMaster(effect, audioMasterGetSampleRate, 0, 0, nullptr, 0.0f);
             PluginVst* const plugin(new PluginVst(audioMaster, effect));
+#ifdef VESTIGE_HEADER
+            effect->ptr2 = plugin;
+#else
             effect->resvd2 = (intptr_t)plugin;
+#endif
             return 1;
         }
         return 0;
 
     case effClose:
-        if (effect != nullptr && effect->resvd2 != 0)
+        if (validEffect)
         {
+#ifdef VESTIGE_HEADER
+            delete (PluginVst*)effect->ptr2;
+            effect->ptr2 = nullptr;
+            effect->ptr3 = nullptr;
+#else
             delete (PluginVst*)effect->resvd2;
-            effect->object = nullptr;
             effect->resvd2 = 0;
+            effect->object = nullptr;
+#endif
             delete effect;
             return 1;
         }
@@ -550,7 +790,7 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
     case effGetParamLabel:
         if (ptr != nullptr && index < static_cast<int32_t>(plugin.getParameterCount()))
         {
-            DISTRHO::strncpy((char*)ptr, plugin.getParameterUnit(index), kVstMaxParamStrLen);
+            DISTRHO::strncpy((char*)ptr, plugin.getParameterUnit(index), 8);
             return 1;
         }
         return 0;
@@ -558,7 +798,7 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
     case effGetParamName:
         if (ptr != nullptr && index < static_cast<int32_t>(plugin.getParameterCount()))
         {
-            DISTRHO::strncpy((char*)ptr, plugin.getParameterName(index), kVstMaxParamStrLen);
+            DISTRHO::strncpy((char*)ptr, plugin.getParameterName(index), 8);
             return 1;
         }
         return 0;
@@ -567,7 +807,7 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
     case effGetProgramNameIndexed:
         if (ptr != nullptr && index < static_cast<int32_t>(plugin.getProgramCount()))
         {
-            DISTRHO::strncpy((char*)ptr, plugin.getProgramName(index), kVstMaxProgNameLen);
+            DISTRHO::strncpy((char*)ptr, plugin.getProgramName(index), 24);
             return 1;
         }
         return 0;
@@ -583,7 +823,7 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
     case effGetEffectName:
         if (ptr != nullptr)
         {
-            DISTRHO::strncpy((char*)ptr, plugin.getName(), kVstMaxProductStrLen);
+            DISTRHO::strncpy((char*)ptr, plugin.getName(), 64);
             return 1;
         }
         return 0;
@@ -591,7 +831,7 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
     case effGetVendorString:
         if (ptr != nullptr)
         {
-            DISTRHO::strncpy((char*)ptr, plugin.getMaker(), kVstMaxVendorStrLen);
+            DISTRHO::strncpy((char*)ptr, plugin.getMaker(), 64);
             return 1;
         }
         return 0;
@@ -599,7 +839,7 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
     case effGetProductString:
         if (ptr != nullptr)
         {
-            DISTRHO::strncpy((char*)ptr, plugin.getLabel(), kVstMaxEffectNameLen);
+            DISTRHO::strncpy((char*)ptr, plugin.getLabel(), 32);
             return 1;
         }
         return 0;
@@ -612,7 +852,7 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
     };
 
     // handle advanced opcodes
-    if (effect != nullptr && effect->resvd2 != 0)
+    if (validEffect)
         return handlePtr->vst_dispatcher(opcode, index, value, ptr, opt);
 
     return 0;
@@ -620,26 +860,26 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
 
 static float vst_getParameterCallback(AEffect* effect, int32_t index)
 {
-    if (effect != nullptr && effect->resvd2 != 0)
+    if (validEffect)
         return handlePtr->vst_getParameter(index);
     return 0.0f;
 }
 
 static void vst_setParameterCallback(AEffect* effect, int32_t index, float value)
 {
-    if (effect != nullptr && effect->resvd2 != 0)
+    if (validEffect)
         handlePtr->vst_setParameter(index, value);
 }
 
 static void vst_processCallback(AEffect* effect, float** inputs, float** outputs, int32_t sampleFrames)
 {
-    if (effect != nullptr && effect->resvd2 != 0)
+    if (validEffect)
         handlePtr->vst_processReplacing(inputs, outputs, sampleFrames);
 }
 
 static void vst_processReplacingCallback(AEffect* effect, float** inputs, float** outputs, int32_t sampleFrames)
 {
-    if (effect != nullptr && effect->resvd2 != 0)
+    if (validEffect)
         handlePtr->vst_processReplacing(inputs, outputs, sampleFrames);
 }
 
@@ -668,7 +908,11 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
     // vst fields
     effect->magic    = kEffectMagic;
     effect->uniqueID = plugin->getUniqueId();
+#ifdef VESTIGE_HEADER
+    *(int32_t*)&effect->unknown1 = plugin->getVersion();
+#else
     effect->version  = plugin->getVersion();
+#endif
 
     // plugin fields
     effect->numParams   = plugin->getParameterCount();
@@ -696,10 +940,13 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
     effect->getParameter = vst_getParameterCallback;
     effect->setParameter = vst_setParameterCallback;
     effect->processReplacing = vst_processReplacingCallback;
-    effect->processDoubleReplacing = nullptr;
 
     // pointers
+#ifdef VESTIGE_HEADER
+    effect->ptr3   = (void*)audioMaster;
+#else
     effect->object = (void*)audioMaster;
+#endif
 
     return effect;
 }

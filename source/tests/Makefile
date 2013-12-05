@@ -61,7 +61,7 @@ DISTRHO: DISTRHO.cpp ../modules/distrho/*.hpp ../modules/distrho/src/*.cpp
 	./DISTRHO
 
 DISTRHO.so: DISTRHO.cpp ../modules/distrho/*.hpp ../modules/distrho/src/*.cpp
-	$(CXX) $< ../modules/dgl.a $(BUILD_CXX_FLAGS) -I../modules/distrho -DSHARED_DLL $(LINK_FLAGS) $(DGL_LIBS) -shared -Wl,--no-undefined -o $@
+	$(CXX) $< ../modules/dgl.a $(BUILD_CXX_FLAGS) -I../modules/distrho -I../modules/carla_native/nekobi -DSHARED_DLL $(LINK_FLAGS) $(DGL_LIBS) -lpthread -shared -Wl,--no-undefined -o $@
 
 DGL: DGL.cpp ../modules/distrho/dgl/src/Window.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(LINK_FLAGS) $(DGL_LIBS) -o $@

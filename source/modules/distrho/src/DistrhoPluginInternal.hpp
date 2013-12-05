@@ -278,6 +278,18 @@ public:
     }
 #endif
 
+#if DISTRHO_PLUGIN_WANT_TIMEPOS
+    void setTimePos(const bool playing, const uint64_t frame, const double bpm)
+    {
+        if (fData != nullptr)
+        {
+            fData->timePos.playing = playing;
+            fData->timePos.frame   = frame;
+            fData->timePos.bpm     = bpm;
+        }
+    }
+#endif
+
     // -------------------------------------------------------------------
 
     void activate()

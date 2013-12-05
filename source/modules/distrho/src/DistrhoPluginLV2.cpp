@@ -403,8 +403,12 @@ public:
             if (type != fURIDs.atomString)
                 continue;
 
-            //const char* value = (const char*)data;
-            //setState(key, value);
+            const char* const value((const char*)data);
+
+            if (std::strlen(value)+1 != size)
+                continue;
+
+            setState(key, value);
         }
 
         return LV2_STATE_SUCCESS;

@@ -25,6 +25,8 @@
 
 #include "DistrhoArtworkNekobi.hpp"
 
+using DGL::Image;
+
 USE_NAMESPACE_DGL;
 
 // -----------------------------------------------------------------------

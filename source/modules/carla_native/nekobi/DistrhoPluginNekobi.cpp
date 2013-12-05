@@ -121,7 +121,7 @@ DistrhoPluginNekobi::DistrhoPluginNekobi()
 
     fSynth->voice = nekobee_voice_new();
     fSynth->voicelist_mutex_grab_failed = 0;
-    pthread_mutex_init(&fSynth->voicelist_mutex, NULL);
+    pthread_mutex_init(&fSynth->voicelist_mutex, nullptr);
 
     fSynth->channel_pressure = 0;
     fSynth->pitch_wheel_sensitivity = 0;
