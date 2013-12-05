@@ -17,6 +17,7 @@
 #include "DistrhoUIInternal.hpp"
 
 #include "lv2/atom.h"
+#include "lv2/atom-util.h"
 #include "lv2/options.h"
 #include "lv2/ui.h"
 #include "lv2/urid.h"
@@ -38,6 +39,9 @@ public:
           fWriteFunction(writeFunc)
     {
         fUiResize->ui_resize(fUiResize->handle, fUI.getWidth(), fUI.getHeight());
+
+        setState("MyKey1", "MyValue1");
+        setState("My Key 2", "My Value 2");
     }
 
     // -------------------------------------------------------------------
@@ -74,12 +78,14 @@ public:
 
     // -------------------------------------------------------------------
 
+#if DISTRHO_PLUGIN_WANT_PROGRAMS
     void lv2ui_select_program(const uint32_t bank, const uint32_t program)
     {
         const uint32_t realProgram(bank * 128 + program);
 
         fUI.programChanged(realProgram);
     }
+#endif
 
     // -------------------------------------------------------------------
 
@@ -96,8 +102,45 @@ protected:
             fWriteFunction(fController, rindex, sizeof(float), 0, &value);
     }
 
-    void setState(const char* const /*key*/, const char* const /*value*/)
+    void setState(const char* const key, const char* const value)
     {
+        if (fWriteFunction == nullptr)
+            return;
+
+        const uint32_t eventInPortIndex(DISTRHO_PLUGIN_NUM_INPUTS + DISTRHO_PLUGIN_NUM_OUTPUTS);
+
+        // join key and value
+        std::string tmpStr;
+        tmpStr += key;
+        tmpStr += "\xff";
+        tmpStr += value;
+
+        // get size
+        const size_t msgSize(tmpStr.size()+1);
+
+        // convert into char[]
+        char msg[msgSize];
+        std::memcpy(msg, tmpStr.c_str(), msgSize-1);
+
+        // set proper null chars
+        msg[std::strlen(key)] = '\0';
+        msg[msgSize]          = '\0';
+
+        // reserve atom space
+        const size_t atomSize(lv2_atom_pad_size(sizeof(LV2_Atom) + msgSize));
+        char         atomBuf[atomSize];
+        std::memset(atomBuf, 0, atomSize);
+
+        // set atom info
+        LV2_Atom* const atom((LV2_Atom*)atomBuf);
+        atom->size = msgSize;
+        atom->type = fUridMap->map(fUridMap->handle, "urn:distrho:keyValueState");
+
+        // set atom data
+        std::memcpy(atomBuf + sizeof(LV2_Atom), msg, msgSize);
+
+        // send to DSP side
+        fWriteFunction(fController, eventInPortIndex, atomSize, fUridMap->map(fUridMap->handle, LV2_ATOM__eventTransfer), atom);
     }
 
     void sendNote(const uint8_t /*channel*/, const uint8_t /*note*/, const uint8_t /*velocity*/)

@@ -57,7 +57,7 @@ CarlaString: CarlaString.cpp ../utils/CarlaString.hpp
 # 	valgrind ./CarlaString
 
 DISTRHO: DISTRHO.cpp ../modules/distrho/*.hpp ../modules/distrho/src/*.cpp
-	$(CXX) $< ../modules/dgl.a $(BUILD_CXX_FLAGS) -I../modules/distrho $(LINK_FLAGS) $(DGL_LIBS) $(shell pkg-config --libs liblo) -o $@
+	$(CXX) $< ../modules/dgl.a $(BUILD_CXX_FLAGS) -I../modules/distrho -I../modules/carla_native/nekobi $(LINK_FLAGS) $(DGL_LIBS) -lpthread -o $@
 	./DISTRHO
 
 DISTRHO.so: DISTRHO.cpp ../modules/distrho/*.hpp ../modules/distrho/src/*.cpp

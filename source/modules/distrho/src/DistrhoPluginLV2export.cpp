@@ -168,6 +168,7 @@ void lv2_generate_ttl(const char* const basename)
         {
             uint32_t portIndex = 0;
 
+#if DISTRHO_PLUGIN_NUM_INPUTS > 0
             for (uint32_t i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i, ++portIndex)
             {
                 if (i == 0)
@@ -185,7 +186,10 @@ void lv2_generate_ttl(const char* const basename)
                 else
                     pluginString += "    ] ,\n";
             }
+            pluginString += "\n";
+#endif
 
+#if DISTRHO_PLUGIN_NUM_OUTPUTS > 0
             for (uint32_t i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; ++i, ++portIndex)
             {
                 if (i == 0)
@@ -203,6 +207,8 @@ void lv2_generate_ttl(const char* const basename)
                 else
                     pluginString += "    ] ,\n";
             }
+            pluginString += "\n";
+#endif
 
 #if DISTRHO_LV2_USE_EVENTS_IN
             pluginString += "    lv2:port [\n";
@@ -221,19 +227,19 @@ void lv2_generate_ttl(const char* const basename)
             pluginString += "        atom:supports <" LV2_MIDI__MidiEvent "> ;\n";
 # endif
 
-            pluginString += "    ] ;\n";
+            pluginString += "    ] ;\n\n";
             ++portIndex;
 #endif
 
 #if DISTRHO_LV2_USE_EVENTS_OUT
             pluginString += "    lv2:port [\n";
             pluginString += "        a lv2:OutputPort, atom:AtomPort ;\n";
-            pluginString += "        lv2:index " + d_string(portIndex++) + " ;\n";
+            pluginString += "        lv2:index " + d_string(portIndex) + " ;\n";
             pluginString += "        lv2:name \"Events Output\" ;\n";
             pluginString += "        lv2:symbol \"lv2_events_out\" ;\n";
             pluginString += "        atom:bufferType atom:Sequence ;\n";
             pluginString += "        atom:supports <" LV2_ATOM__String "> ;\n";
-            pluginString += "    ] ;\n";
+            pluginString += "    ] ;\n\n";
             ++portIndex;
 #endif
 
@@ -245,7 +251,7 @@ void lv2_generate_ttl(const char* const basename)
             pluginString += "        lv2:symbol \"lv2_latency\" ;\n";
             pluginString += "        lv2:designation lv2:latency ;\n";
             pluginString += "        lv2:portProperty lv2:reportsLatency ;\n";
-            pluginString += "    ] ;\n";
+            pluginString += "    ] ;\n\n";
             ++portIndex;
 #endif
 
@@ -314,13 +320,17 @@ void lv2_generate_ttl(const char* const basename)
                         {
                             pluginString += "        unit:unit unit:mhz ;\n";
                         }
+                        else if (unit == "%")
+                        {
+                            pluginString += "        unit:unit unit:pc ;\n";
+                        }
                         else
                         {
                             pluginString += "        unit:unit [\n";
                             pluginString += "            a unit:Unit ;\n";
                             pluginString += "            unit:name   \"" + unit + "\" ;\n";
                             pluginString += "            unit:symbol \"" + unit + "\" ;\n";
-                            pluginString += "            unit:render \"%f f\" ;\n";
+                            pluginString += "            unit:render \"%f " + unit + "\" ;\n";
                             pluginString += "        ] ;\n";
                         }
                     }

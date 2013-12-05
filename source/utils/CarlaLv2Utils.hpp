@@ -91,7 +91,7 @@
 
 struct LV2_Atom_MidiEvent {
     LV2_Atom_Event event;
-    uint8_t data[4];
+    uint8_t data[8];
 };
 
 // -----------------------------------------------------------------------
