@@ -64,6 +64,8 @@
 #if defined(__cplusplus) && !defined(CARLA_PROPER_CPP11_SUPPORT)
 # ifndef __clang__
 #  define noexcept throw()
+# else
+#  define noexcept
 # endif
 # define override
 # define final
