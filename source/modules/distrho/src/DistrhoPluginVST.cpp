@@ -68,12 +68,18 @@ void strncpy(char* const dst, const char* const src, const size_t size)
 
 // -----------------------------------------------------------------------
 
+#if DISTRHO_PLUGIN_WANT_STATE
 class StateHelper
 {
 public:
     virtual ~StateHelper() {}
     virtual void setSharedState(const char* const newKey, const char* const newValue) = 0;
 };
+#else
+typedef void StateHelper;
+#endif
+
+// -----------------------------------------------------------------------
 
 #if DISTRHO_PLUGIN_HAS_UI
 class UIVst
@@ -293,7 +299,11 @@ private:
 
 // -----------------------------------------------------------------------
 
+#if DISTRHO_PLUGIN_WANT_STATE
 class PluginVst : public StateHelper
+#else
+class PluginVst
+#endif
 {
 public:
     PluginVst(const audioMasterCallback audioMaster, AEffect* const effect) noexcept

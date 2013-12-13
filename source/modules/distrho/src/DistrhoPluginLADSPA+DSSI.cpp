@@ -262,7 +262,7 @@ public:
 
         updateParameterOutputs();
 
-#if ! DISTRHO_PLUGIN_IS_SYNTH
+#if defined(DISTRHO_PLUGIN_TARGET_DSSI) && ! DISTRHO_PLUGIN_IS_SYNTH
         return; // unused
         (void)events;
         (void)eventCount;

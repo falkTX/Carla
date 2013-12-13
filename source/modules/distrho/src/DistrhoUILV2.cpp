@@ -23,6 +23,8 @@
 #include "lv2/urid.h"
 #include "lv2/lv2_programs.h"
 
+#include <string>
+
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
@@ -39,9 +41,6 @@ public:
           fWriteFunction(writeFunc)
     {
         fUiResize->ui_resize(fUiResize->handle, fUI.getWidth(), fUI.getHeight());
-
-        setState("MyKey1", "MyValue1");
-        setState("My Key 2", "My Value 2");
     }
 
     // -------------------------------------------------------------------
@@ -59,8 +58,6 @@ public:
 
             const float value(*(const float*)buffer);
             fUI.parameterChanged(rindex-parameterOffset, value);
-
-            d_stderr("port changed %i, %i, %f", rindex, parameterOffset, value);
         }
         else
         {
