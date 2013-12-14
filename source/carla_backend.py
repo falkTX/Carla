@@ -1195,27 +1195,27 @@ class Host(object):
     # @param Filename Filename
     # @see carla_get_supported_file_extensions()
     def load_file(self, filename):
-        return self.lib.carla_load_file(filename.encode("utf-8"))
+        return bool(self.lib.carla_load_file(filename.encode("utf-8")))
 
     # Load a Carla project file.
     # @param Filename Filename
     # @note Currently loaded plugins are not removed; call carla_remove_all_plugins() first if needed.
     def load_project(self, filename):
-        return self.lib.carla_load_project(filename.encode("utf-8"))
+        return bool(self.lib.carla_load_project(filename.encode("utf-8")))
 
     # Save current project to a file.
     # @param Filename Filename
     def save_project(self, filename):
-        return self.lib.carla_save_project(filename.encode("utf-8"))
+        return bool(self.lib.carla_save_project(filename.encode("utf-8")))
 
     def patchbay_connect(self, portIdA, portIdB):
-        return self.lib.carla_patchbay_connect(portIdA, portIdB)
+        return bool(self.lib.carla_patchbay_connect(portIdA, portIdB))
 
     def patchbay_disconnect(self, connectionId):
-        return self.lib.carla_patchbay_disconnect(connectionId)
+        return bool(self.lib.carla_patchbay_disconnect(connectionId))
 
     def patchbay_refresh(self):
-        return self.lib.carla_patchbay_refresh()
+        return bool(self.lib.carla_patchbay_refresh())
 
     def transport_play(self):
         self.lib.carla_transport_play()
@@ -1227,40 +1227,40 @@ class Host(object):
         self.lib.carla_transport_relocate(frames)
 
     def get_current_transport_frame(self):
-        return self.lib.carla_get_current_transport_frame()
+        return bool(self.lib.carla_get_current_transport_frame())
 
     def get_transport_info(self):
         return structToDict(self.lib.carla_get_transport_info().contents)
 
     def add_plugin(self, btype, ptype, filename, name, label, extraStuff):
-        cfilename = filename.encode("utf-8") if filename else c_nullptr
-        cname     = name.encode("utf-8") if name else c_nullptr
-        clabel    = label.encode("utf-8") if label else c_nullptr
-        return self.lib.carla_add_plugin(btype, ptype, cfilename, cname, clabel, cast(extraStuff, c_void_p))
+        cfilename = filename.encode("utf-8") if filename else None
+        cname     = name.encode("utf-8") if name else None
+        clabel    = label.encode("utf-8") if label else None
+        return bool(self.lib.carla_add_plugin(btype, ptype, cfilename, cname, clabel, cast(extraStuff, c_void_p)))
 
     def remove_plugin(self, pluginId):
-        return self.lib.carla_remove_plugin(pluginId)
+        return bool(self.lib.carla_remove_plugin(pluginId))
 
     def remove_all_plugins(self):
-        return self.lib.carla_remove_all_plugins()
+        return bool(self.lib.carla_remove_all_plugins())
 
     def rename_plugin(self, pluginId, newName):
-        return self.lib.carla_rename_plugin(pluginId, newName.encode("utf-8"))
+        return bool(self.lib.carla_rename_plugin(pluginId, newName.encode("utf-8")))
 
     def clone_plugin(self, pluginId):
-        return self.lib.carla_clone_plugin(pluginId)
+        return bool(self.lib.carla_clone_plugin(pluginId))
 
     def replace_plugin(self, pluginId):
-        return self.lib.carla_replace_plugin(pluginId)
+        return bool(self.lib.carla_replace_plugin(pluginId))
 
     def switch_plugins(self, pluginIdA, pluginIdB):
-        return self.lib.carla_switch_plugins(pluginIdA, pluginIdB)
+        return bool(self.lib.carla_switch_plugins(pluginIdA, pluginIdB))
 
     def load_plugin_state(self, pluginId, filename):
-        return self.lib.carla_load_plugin_state(pluginId, filename.encode("utf-8"))
+        return bool(self.lib.carla_load_plugin_state(pluginId, filename.encode("utf-8")))
 
     def save_plugin_state(self, pluginId, filename):
-        return self.lib.carla_save_plugin_state(pluginId, filename.encode("utf-8"))
+        return bool(self.lib.carla_save_plugin_state(pluginId, filename.encode("utf-8")))
 
     def get_plugin_info(self, pluginId):
         return structToDict(self.lib.carla_get_plugin_info(pluginId).contents)
@@ -1293,31 +1293,31 @@ class Host(object):
         return structToDict(self.lib.carla_get_custom_data(pluginId, customDataId).contents)
 
     def get_chunk_data(self, pluginId):
-        return self.lib.carla_get_chunk_data(pluginId)
+        return charPtrToString(self.lib.carla_get_chunk_data(pluginId))
 
     def get_parameter_count(self, pluginId):
-        return self.lib.carla_get_parameter_count(pluginId)
+        return int(self.lib.carla_get_parameter_count(pluginId))
 
     def get_program_count(self, pluginId):
-        return self.lib.carla_get_program_count(pluginId)
+        return int(self.lib.carla_get_program_count(pluginId))
 
     def get_midi_program_count(self, pluginId):
-        return self.lib.carla_get_midi_program_count(pluginId)
+        return int(self.lib.carla_get_midi_program_count(pluginId))
 
     def get_custom_data_count(self, pluginId):
-        return self.lib.carla_get_custom_data_count(pluginId)
+        return int(self.lib.carla_get_custom_data_count(pluginId))
 
     def get_parameter_text(self, pluginId, parameterId):
-        return self.lib.carla_get_parameter_text(pluginId, parameterId)
+        return charPtrToString(self.lib.carla_get_parameter_text(pluginId, parameterId))
 
     def get_program_name(self, pluginId, programId):
-        return self.lib.carla_get_program_name(pluginId, programId)
+        return charPtrToString(self.lib.carla_get_program_name(pluginId, programId))
 
     def get_midi_program_name(self, pluginId, midiProgramId):
-        return self.lib.carla_get_midi_program_name(pluginId, midiProgramId)
+        return charPtrToString(self.lib.carla_get_midi_program_name(pluginId, midiProgramId))
 
     def get_real_plugin_name(self, pluginId):
-        return self.lib.carla_get_real_plugin_name(pluginId)
+        return charPtrToString(self.lib.carla_get_real_plugin_name(pluginId))
 
     def get_current_program_index(self, pluginId):
         return self.lib.carla_get_current_program_index(pluginId)
@@ -1459,8 +1459,6 @@ class Host(object):
 
         self.lib.carla_set_engine_about_to_close.argtypes = None
         self.lib.carla_set_engine_about_to_close.restype = None
-
-        return
 
         self.lib.carla_set_engine_callback.argtypes = [EngineCallbackFunc, c_void_p]
         self.lib.carla_set_engine_callback.restype = None
@@ -1671,6 +1669,8 @@ class Host(object):
 
         self.lib.carla_get_host_osc_url_udp.argtypes = None
         self.lib.carla_get_host_osc_url_udp.restype = c_char_p
+
+        return
 
         self.lib.carla_nsm_announce.argtypes = [c_char_p, c_char_p, c_int]
         self.lib.carla_nsm_announce.restype = None

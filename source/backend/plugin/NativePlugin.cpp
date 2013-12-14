@@ -20,6 +20,9 @@
 #ifdef WANT_NATIVE
 
 #include "CarlaNative.h"
+#include "CarlaHost.h"
+
+extern const char* carla_file_callback(FileCallbackOpcode action, bool isDir, const char* title, const char* filter);
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -2070,24 +2073,12 @@ protected:
 
     const char* handleUiOpenFile(const bool isDir, const char* const title, const char* const filter)
     {
-        static CarlaString retStr;
-#if 0
-        QFileDialog::Options options(isDir ? QFileDialog::ShowDirsOnly : 0x0);
-
-        retStr = QFileDialog::getOpenFileName(nullptr, title, "", filter, nullptr, options).toUtf8().constData();
-#endif
-        return retStr.isNotEmpty() ? (const char*)retStr : nullptr;
+        return carla_file_callback(FILE_CALLBACK_OPEN, isDir, title, filter);
     }
 
     const char* handleUiSaveFile(const bool isDir, const char* const title, const char* const filter)
     {
-        static CarlaString retStr;
-#if 0
-        QFileDialog::Options options(isDir ? QFileDialog::ShowDirsOnly : 0x0);
-
-        retStr = QFileDialog::getSaveFileName(nullptr, title, "", filter, nullptr, options).toUtf8().constData();
-#endif
-        return retStr.isNotEmpty() ? (const char*)retStr : nullptr;
+        return carla_file_callback(FILE_CALLBACK_SAVE, isDir, title, filter);
     }
 
     intptr_t handleDispatcher(const NativeHostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)

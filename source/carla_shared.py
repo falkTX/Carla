@@ -447,12 +447,14 @@ elif CWD.endswith("\\carla.exe"):
 
 # find tool
 def findTool(toolDir, toolName):
-    if os.path.exists(os.path.join(CWD, toolDir, toolName)):
-        return os.path.join(CWD, toolDir, toolName)
+    path = os.path.join(CWD, toolDir, toolName)
+    if os.path.exists(path):
+        return path
 
     for p in PATH:
-        if os.path.exists(os.path.join(p, toolName)):
-            return os.path.join(p, toolName)
+        path = os.path.join(p, toolName)
+        if os.path.exists(path):
+            return path
 
     return ""
 
@@ -461,7 +463,7 @@ def findTool(toolDir, toolName):
 
 def initHost(appName, libPrefix = None, failError = True):
     # -------------------------------------------------------------
-    # Search for Carla library
+    # Set Carla library name
 
     libname = "libcarla_"
 
@@ -477,17 +479,23 @@ def initHost(appName, libPrefix = None, failError = True):
     else:
         libname += ".so"
 
+    # -------------------------------------------------------------
+    # Search for the Carla library
+
+    libfilename = ""
+
     if libPrefix is not None:
         libfilename = os.path.join(libPrefix, "lib", "carla", libname)
-
     else:
-        if os.path.exists(os.path.join(CWD, "backend", libname)):
-            libfilename = os.path.join(CWD, "backend", libname)
-        else:
-            CARLA_LIB_PATH_env = os.getenv("CARLA_LIB_PATH")
+        path = os.path.join(CWD, "backend", libname)
 
-            if CARLA_LIB_PATH_env and os.path.exists(CARLA_LIB_PATH_env):
-                CARLA_LIB_PATH = (CARLA_LIB_PATH_env,)
+        if os.path.exists(path):
+            libfilename = path
+        else:
+            path = os.getenv("CARLA_LIB_PATH")
+
+            if path and os.path.exists(path):
+                CARLA_LIB_PATH = (path,)
             elif WINDOWS:
                 CARLA_LIB_PATH = (os.path.join(PROGRAMFILES, "Carla"),)
             elif MACOS:
@@ -495,14 +503,11 @@ def initHost(appName, libPrefix = None, failError = True):
             else:
                 CARLA_LIB_PATH = ("/usr/local/lib/", "/usr/lib")
 
-            del CARLA_LIB_PATH_env
-
-            for path in CARLA_LIB_PATH:
-                if os.path.exists(os.path.join(path, "carla", libname)):
-                    libfilename = os.path.join(path, "carla", libname)
+            for libpath in CARLA_LIB_PATH:
+                path = os.path.join(libpath, "carla", libname)
+                if os.path.exists(path):
+                    libfilename = path
                     break
-            else:
-                libfilename = ""
 
     # -------------------------------------------------------------
     # find windows tools
@@ -525,7 +530,7 @@ def initHost(appName, libPrefix = None, failError = True):
         return
 
     # -------------------------------------------------------------
-    # Init now
+    # Init host
 
     Carla.host = Host(libfilename)
 

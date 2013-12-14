@@ -29,6 +29,10 @@ struct LADSPA_RDF_Descriptor;
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
+} /* Fix editor indentation */
+#endif
+
 /*!
  * @defgroup PluginHints
  * @{

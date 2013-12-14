@@ -212,7 +212,6 @@ class PluginParameter(QWidget):
         # -------------------------------------------------------------
         # Set-up GUI
 
-        pType  = pInfo['type']
         pHints = pInfo['hints']
 
         self.ui.label.setText(pInfo['name'])
@@ -379,7 +378,7 @@ class PluginEdit(QDialog):
         self.fScrollAreaSetup = False
 
         self.fParameterCount = 0
-        self.fParameterList  = []     # (type, id, widget)
+        self.fParameterList  = []     # (isInput, id, widget)
         self.fParametersToUpdate = [] # (id, value)
 
         self.fPlayingNotes = [] # (channel, note)
@@ -468,15 +467,15 @@ class PluginEdit(QDialog):
     def reloadAll(self):
         if Carla.host is not None:
             self.fPluginInfo = Carla.host.get_plugin_info(self.fPluginId)
-            self.fPluginInfo['binary']    = cString(self.fPluginInfo['binary'])
-            self.fPluginInfo['name']      = cString(self.fPluginInfo['name'])
-            self.fPluginInfo['label']     = cString(self.fPluginInfo['label'])
-            self.fPluginInfo['maker']     = cString(self.fPluginInfo['maker'])
-            self.fPluginInfo['copyright'] = cString(self.fPluginInfo['copyright'])
-            self.fPluginInfo['iconName']  = cString(self.fPluginInfo['iconName'])
+            self.fPluginInfo['binary']    = charPtrToString(self.fPluginInfo['binary'])
+            self.fPluginInfo['name']      = charPtrToString(self.fPluginInfo['name'])
+            self.fPluginInfo['label']     = charPtrToString(self.fPluginInfo['label'])
+            self.fPluginInfo['maker']     = charPtrToString(self.fPluginInfo['maker'])
+            self.fPluginInfo['copyright'] = charPtrToString(self.fPluginInfo['copyright'])
+            self.fPluginInfo['iconName']  = charPtrToString(self.fPluginInfo['iconName'])
 
             if not Carla.isLocal:
-                self.fPluginInfo['hints'] &= ~PLUGIN_HAS_GUI
+                self.fPluginInfo['hints'] &= ~PLUGIN_HAS_CUSTOM_UI
 
         else:
             self.fPluginInfo = gFakePluginInfo
@@ -493,7 +492,7 @@ class PluginEdit(QDialog):
 
     def reloadInfo(self):
         if Carla.host is not None:
-            pluginName     = cString(Carla.host.get_real_plugin_name(self.fPluginId))
+            pluginName     = Carla.host.get_real_plugin_name(self.fPluginId)
             audioCountInfo = Carla.host.get_audio_port_count_info(self.fPluginId)
             midiCountInfo  = Carla.host.get_midi_port_count_info(self.fPluginId)
             paramCountInfo = Carla.host.get_parameter_count_info(self.fPluginId)
@@ -646,7 +645,7 @@ class PluginEdit(QDialog):
             paramFakeList.append(gFakeParamInfo)
             paramFakeListFull.append((paramFakeList, paramFakeWidth))
 
-            self._createParameterWidgets(PARAMETER_INPUT, paramFakeListFull,  self.tr("Parameters"))
+            self._createParameterWidgets(True, paramFakeListFull,  self.tr("Parameters"))
             return
 
         parameterCount = Carla.host.get_parameter_count(self.fPluginId)
@@ -669,14 +668,11 @@ class PluginEdit(QDialog):
                 paramRanges = Carla.host.get_parameter_ranges(self.fPluginId, i)
                 paramValue  = Carla.host.get_current_parameter_value(self.fPluginId, i)
 
-                if paramData['type'] not in (PARAMETER_INPUT, PARAMETER_OUTPUT):
-                    continue
-
                 parameter = {
                     'type':  paramData['type'],
                     'hints': paramData['hints'],
-                    'name':  cString(paramInfo['name']),
-                    'unit':  cString(paramInfo['unit']),
+                    'name':  charPtrToString(paramInfo['name']),
+                    'unit':  charPtrToString(paramInfo['unit']),
                     'scalePoints': [],
 
                     'index':   paramData['index'],
@@ -697,7 +693,7 @@ class PluginEdit(QDialog):
 
                     parameter['scalePoints'].append({
                         'value': scalePointInfo['value'],
-                        'label': cString(scalePointInfo['label'])
+                        'label': charPtrToString(scalePointInfo['label'])
                     })
 
                 #parameter['name'] = parameter['name'][:30] + (parameter['name'][30:] and "...")
@@ -705,7 +701,7 @@ class PluginEdit(QDialog):
                 # -----------------------------------------------------------------
                 # Get width values, in packs of 10
 
-                if parameter['type'] == PARAMETER_INPUT:
+                if parameter['hints'] == PARAMETER_IS_INPUT:
                     paramInputWidthTMP = QFontMetrics(self.font()).width(parameter['name'])
 
                     if paramInputWidthTMP > paramInputWidth:
@@ -743,8 +739,8 @@ class PluginEdit(QDialog):
             # -----------------------------------------------------------------
             # Create parameter tabs + widgets
 
-            self._createParameterWidgets(PARAMETER_INPUT,  paramInputListFull,  self.tr("Parameters"))
-            self._createParameterWidgets(PARAMETER_OUTPUT, paramOutputListFull, self.tr("Outputs"))
+            self._createParameterWidgets(True,  paramInputListFull,  self.tr("Parameters"))
+            self._createParameterWidgets(False, paramOutputListFull, self.tr("Outputs"))
 
         else: # > Carla.maxParameters
             fakeName = self.tr("This plugin has too many parameters to display here!")
@@ -754,8 +750,7 @@ class PluginEdit(QDialog):
             paramFakeWidth = QFontMetrics(self.font()).width(fakeName)
 
             parameter = {
-                'type':  PARAMETER_UNKNOWN,
-                'hints': 0,
+                'hints': PARAMETER_IS_INPUT|PARAMETER_IS_ENABLED|PARAMETER_IS_READ_ONLY,
                 'name':  fakeName,
                 'unit':  "",
                 'scalePoints': [],
@@ -776,7 +771,7 @@ class PluginEdit(QDialog):
             paramFakeList.append(parameter)
             paramFakeListFull.append((paramFakeList, paramFakeWidth))
 
-            self._createParameterWidgets(PARAMETER_UNKNOWN, paramFakeListFull, self.tr("Information"))
+            self._createParameterWidgets(True, paramFakeListFull, self.tr("Information"))
 
     def reloadPrograms(self):
         # Programs
@@ -790,7 +785,7 @@ class PluginEdit(QDialog):
             self.ui.label_programs.setEnabled(True)
 
             for i in range(programCount):
-                pName = cString(Carla.host.get_program_name(self.fPluginId, i))
+                pName = charPtrToString(Carla.host.get_program_name(self.fPluginId, i))
                 #pName = pName[:40] + (pName[40:] and "...")
                 self.ui.cb_programs.addItem(pName)
 
@@ -818,7 +813,7 @@ class PluginEdit(QDialog):
                 mpData = Carla.host.get_midi_program_data(self.fPluginId, i)
                 mpBank = int(mpData['bank'])
                 mpProg = int(mpData['program'])
-                mpName = cString(mpData['name'])
+                mpName = charPtrToString(mpData['name'])
                 #mpName = mpName[:40] + (mpName[40:] and "...")
 
                 self.ui.cb_midi_programs.addItem("%03i:%03i - %s" % (mpBank+1, mpProg+1, mpName))
@@ -842,7 +837,7 @@ class PluginEdit(QDialog):
         # Update current program text
         if self.ui.cb_programs.count() > 0:
             pIndex = self.ui.cb_programs.currentIndex()
-            pName  = cString(Carla.host.get_program_name(self.fPluginId, pIndex))
+            pName  = charPtrToString(Carla.host.get_program_name(self.fPluginId, pIndex))
             #pName  = pName[:40] + (pName[40:] and "...")
             self.ui.cb_programs.setItemText(pIndex, pName)
 
@@ -852,12 +847,12 @@ class PluginEdit(QDialog):
             mpData  = Carla.host.get_midi_program_data(self.fPluginId, mpIndex)
             mpBank  = int(mpData['bank'])
             mpProg  = int(mpData['program'])
-            mpName  = cString(mpData['name'])
+            mpName  = charPtrToString(mpData['name'])
             #mpName  = mpName[:40] + (mpName[40:] and "...")
             self.ui.cb_midi_programs.setItemText(mpIndex, "%03i:%03i - %s" % (mpBank+1, mpProg+1, mpName))
 
         # Update all parameter values
-        for paramType, paramId, paramWidget in self.fParameterList:
+        for isInput, paramId, paramWidget in self.fParameterList:
             paramWidget.setValue(Carla.host.get_current_parameter_value(self.fPluginId, paramId), False)
             paramWidget.update()
 
@@ -880,19 +875,19 @@ class PluginEdit(QDialog):
             self.fParametersToUpdate.append([parameterId, value])
 
     def setParameterDefault(self, parameterId, value):
-        for paramType, paramId, paramWidget in self.fParameterList:
+        for isInput, paramId, paramWidget in self.fParameterList:
             if paramId == parameterId:
                 paramWidget.setDefault(value)
                 break
 
     def setParameterMidiControl(self, parameterId, control):
-        for paramType, paramId, paramWidget in self.fParameterList:
+        for isInput, paramId, paramWidget in self.fParameterList:
             if paramId == parameterId:
                 paramWidget.setMidiControl(control)
                 break
 
     def setParameterMidiChannel(self, parameterId, channel):
-        for paramType, paramId, paramWidget in self.fParameterList:
+        for isInput, paramId, paramWidget in self.fParameterList:
             if paramId == parameterId:
                 paramWidget.setMidiChannel(channel+1)
                 break
@@ -985,13 +980,13 @@ class PluginEdit(QDialog):
                 self._updateCtrlMidiProgram()
 
             elif index >= 0:
-                for paramType, paramId, paramWidget in self.fParameterList:
+                for isInput, paramId, paramWidget in self.fParameterList:
                     if paramId != index:
                         continue
 
                     paramWidget.setValue(value, False)
 
-                    if paramType == PARAMETER_INPUT:
+                    if isInput:
                         tabIndex = paramWidget.tabIndex()
 
                         if self.fTabIconTimers[tabIndex-1] == ICON_STATE_NULL:
@@ -1005,8 +1000,8 @@ class PluginEdit(QDialog):
         self.fParametersToUpdate = []
 
         # Update parameter outputs
-        for paramType, paramId, paramWidget in self.fParameterList:
-            if paramType == PARAMETER_OUTPUT:
+        for isInput, paramId, paramWidget in self.fParameterList:
+            if not isInput:
                 value = Carla.host.get_current_parameter_value(self.fPluginId, paramId)
                 paramWidget.setValue(value, False)
 
@@ -1041,7 +1036,7 @@ class PluginEdit(QDialog):
             presetList = []
 
             for i in range(Carla.host.get_program_count(self.fPluginId)):
-                presetList.append("%03i - %s" % (i+1, cString(Carla.host.get_program_name(self.fPluginId, i))))
+                presetList.append("%03i - %s" % (i+1, charPtrToString(Carla.host.get_program_name(self.fPluginId, i))))
 
             ret = QInputDialog.getItem(self, self.tr("Open LV2 Preset"), self.tr("Select an LV2 Preset:"), presetList, 0, False)
 
@@ -1257,7 +1252,7 @@ class PluginEdit(QDialog):
             selChannel = int(actSel.text())
             self.ui.sb_ctrl_channel.setValue(selChannel)
 
-    def _createParameterWidgets(self, paramType, paramListFull, tabPageName):
+    def _createParameterWidgets(self, isInput, paramListFull, tabPageName):
         i = 1
         for paramList, width in paramListFull:
             if len(paramList) == 0:
@@ -1273,9 +1268,9 @@ class PluginEdit(QDialog):
                 paramWidget.setLabelWidth(width)
                 tabPageLayout.addWidget(paramWidget)
 
-                self.fParameterList.append((paramType, paramInfo['index'], paramWidget))
+                self.fParameterList.append((isInput, paramInfo['index'], paramWidget))
 
-                if paramType == PARAMETER_INPUT:
+                if isInput:
                     paramWidget.valueChanged.connect(self.slot_parameterValueChanged)
 
                 paramWidget.midiControlChanged.connect(self.slot_parameterMidiControlChanged)
@@ -1286,7 +1281,7 @@ class PluginEdit(QDialog):
             self.ui.tabWidget.addTab(tabPageContainer, "%s (%i)" % (tabPageName, i))
             i += 1
 
-            if paramType == PARAMETER_INPUT:
+            if isInput:
                 self.ui.tabWidget.setTabIcon(tabIndex, self.fTabIconOff)
 
             self.fTabIconTimers.append(ICON_STATE_NULL)
@@ -1336,22 +1331,22 @@ class PluginWidget(QFrame):
         self.fPluginId   = pluginId
         self.fPluginInfo = Carla.host.get_plugin_info(self.fPluginId) if Carla.host is not None else gFakePluginInfo
 
-        self.fPluginInfo['binary']    = cString(self.fPluginInfo['binary'])
-        self.fPluginInfo['name']      = cString(self.fPluginInfo['name'])
-        self.fPluginInfo['label']     = cString(self.fPluginInfo['label'])
-        self.fPluginInfo['maker']     = cString(self.fPluginInfo['maker'])
-        self.fPluginInfo['copyright'] = cString(self.fPluginInfo['copyright'])
-        self.fPluginInfo['iconName']  = cString(self.fPluginInfo['iconName'])
+        self.fPluginInfo['binary']    = charPtrToString(self.fPluginInfo['binary'])
+        self.fPluginInfo['name']      = charPtrToString(self.fPluginInfo['name'])
+        self.fPluginInfo['label']     = charPtrToString(self.fPluginInfo['label'])
+        self.fPluginInfo['maker']     = charPtrToString(self.fPluginInfo['maker'])
+        self.fPluginInfo['copyright'] = charPtrToString(self.fPluginInfo['copyright'])
+        self.fPluginInfo['iconName']  = charPtrToString(self.fPluginInfo['iconName'])
 
         if not Carla.isLocal:
-            self.fPluginInfo['hints'] &= ~PLUGIN_HAS_GUI
+            self.fPluginInfo['hints'] &= ~PLUGIN_HAS_CUSTOM_UI
 
         self.fLastGreenLedState = False
         self.fLastBlueLedState  = False
 
         self.fParameterIconTimer = ICON_STATE_NULL
 
-        if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK or Carla.host is None:
+        if Carla.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK or Carla.host is None:
             self.fPeaksInputCount  = 2
             self.fPeaksOutputCount = 2
 
@@ -1511,7 +1506,7 @@ class PluginWidget(QFrame):
 
     def recheckPluginHints(self, hints):
         self.fPluginInfo['hints'] = hints
-        self.ui.b_gui.setEnabled(hints & PLUGIN_HAS_GUI)
+        self.ui.b_gui.setEnabled(hints & PLUGIN_HAS_CUSTOM_UI)
 
     def setActive(self, active, sendGui=False, sendCallback=True):
         if sendGui:      self.ui.b_enable.setChecked(active)
@@ -1593,7 +1588,7 @@ class PluginWidget(QFrame):
         elif actSel == actClone:
             if not Carla.host.clone_plugin(self.fPluginId):
                 CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
-                                       cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
+                                       Carla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
         elif actSel == actRename:
             oldName    = self.fPluginInfo['name']
@@ -1611,12 +1606,12 @@ class PluginWidget(QFrame):
                 self.ui.label_name.setText(newName)
             else:
                 CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
-                                       cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
+                                       Carla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
         elif actSel == actRemove:
             if not Carla.host.remove_plugin(self.fPluginId):
                 CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
-                                       cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
+                                       Carla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
     @pyqtSlot(bool)
     def slot_enableClicked(self, yesNo):

@@ -788,32 +788,32 @@ uint64_t carla_get_current_transport_frame()
 
 const CarlaTransportInfo* carla_get_transport_info()
 {
-    static CarlaTransportInfo info;
+    static CarlaTransportInfo retInfo;
 
     // reset
-    info.playing = false;
-    info.frame   = 0;
-    info.bar     = 0;
-    info.beat    = 0;
-    info.tick    = 0;
-    info.bpm     = 0.0;
+    retInfo.playing = false;
+    retInfo.frame   = 0;
+    retInfo.bar     = 0;
+    retInfo.beat    = 0;
+    retInfo.tick    = 0;
+    retInfo.bpm     = 0.0;
 
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &info);
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &retInfo);
 
     const CB::EngineTimeInfo& timeInfo(gStandalone.engine->getTimeInfo());
 
-    info.playing = timeInfo.playing;
-    info.frame   = timeInfo.frame;
+    retInfo.playing = timeInfo.playing;
+    retInfo.frame   = timeInfo.frame;
 
     if (timeInfo.valid & timeInfo.ValidBBT)
     {
-        info.bar  = timeInfo.bbt.bar;
-        info.beat = timeInfo.bbt.beat;
-        info.tick = timeInfo.bbt.tick;
-        info.bpm  = timeInfo.bbt.beatsPerMinute;
+        retInfo.bar  = timeInfo.bbt.bar;
+        retInfo.beat = timeInfo.bbt.beat;
+        retInfo.tick = timeInfo.bbt.tick;
+        retInfo.bpm  = timeInfo.bbt.beatsPerMinute;
     }
 
-    return &info;
+    return &retInfo;
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -823,7 +823,7 @@ bool carla_add_plugin(BinaryType btype, PluginType ptype, const char* filename, 
     CARLA_SAFE_ASSERT_RETURN(label != nullptr && label[0] != '\0', false);
     carla_debug("carla_add_plugin(%i:%s, %i:%s, \"%s\", \"%s\", \"%s\", %p)", btype, CB::BinaryType2Str(btype), ptype, CB::PluginType2Str(ptype), filename, name, label, extraStuff);
 
-    if (gStandalone.engine != nullptr && gStandalone.engine->isRunning())
+    if (gStandalone.engine != nullptr)
         return gStandalone.engine->addPlugin(btype, ptype, filename, name, label, extraStuff);
 
     carla_stderr2("Engine is not running");
@@ -831,12 +831,11 @@ bool carla_add_plugin(BinaryType btype, PluginType ptype, const char* filename, 
     return false;
 }
 
-#if 0
 bool carla_remove_plugin(unsigned int pluginId)
 {
     carla_debug("carla_remove_plugin(%i)", pluginId);
 
-    if (gStandalone.engine != nullptr && gStandalone.engine->isRunning())
+    if (gStandalone.engine != nullptr)
         return gStandalone.engine->removePlugin(pluginId);
 
     carla_stderr2("Engine is not running");
@@ -848,11 +847,8 @@ bool carla_remove_all_plugins()
 {
     carla_debug("carla_remove_all_plugins()");
 
-    if (gStandalone.engine != nullptr && gStandalone.engine->isRunning())
-    {
-        gStandalone.engine->removeAllPlugins();
-        return true;
-    }
+    if (gStandalone.engine != nullptr)
+        return gStandalone.engine->removeAllPlugins();
 
     carla_stderr2("Engine is not running");
     gStandalone.lastError = "Engine is not running";
@@ -864,7 +860,7 @@ const char* carla_rename_plugin(unsigned int pluginId, const char* newName)
     CARLA_SAFE_ASSERT_RETURN(newName != nullptr && newName[0] != '\0', nullptr);
     carla_debug("carla_rename_plugin(%i, \"%s\")", pluginId, newName);
 
-    if (gStandalone.engine != nullptr && gStandalone.engine->isRunning())
+    if (gStandalone.engine != nullptr)
         return gStandalone.engine->renamePlugin(pluginId, newName);
 
     carla_stderr2("Engine is not running");
@@ -876,7 +872,7 @@ bool carla_clone_plugin(unsigned int pluginId)
 {
     carla_debug("carla_clone_plugin(%i)", pluginId);
 
-    if (gStandalone.engine != nullptr && gStandalone.engine->isRunning())
+    if (gStandalone.engine != nullptr)
         return gStandalone.engine->clonePlugin(pluginId);
 
     carla_stderr2("Engine is not running");
@@ -888,7 +884,7 @@ bool carla_replace_plugin(unsigned int pluginId)
 {
     carla_debug("carla_replace_plugin(%i)", pluginId);
 
-    if (gStandalone.engine != nullptr && gStandalone.engine->isRunning())
+    if (gStandalone.engine != nullptr)
         return gStandalone.engine->replacePlugin(pluginId);
 
     carla_stderr2("Engine is not running");
@@ -901,7 +897,7 @@ bool carla_switch_plugins(unsigned int pluginIdA, unsigned int pluginIdB)
     CARLA_SAFE_ASSERT_RETURN(pluginIdA != pluginIdB, false);
     carla_debug("carla_switch_plugins(%i, %i)", pluginIdA, pluginIdB);
 
-    if (gStandalone.engine != nullptr && gStandalone.engine->isRunning())
+    if (gStandalone.engine != nullptr)
         return gStandalone.engine->switchPlugins(pluginIdA, pluginIdB);
 
     carla_stderr2("Engine is not running");
@@ -965,7 +961,7 @@ const CarlaPluginInfo* carla_get_plugin_info(unsigned int pluginId)
     info.hints            = 0x0;
     info.optionsAvailable = 0x0;
     info.optionsEnabled   = 0x0;
-    info.binary           = nullptr;
+    info.filename         = nullptr;
     info.name             = nullptr;
     info.iconName         = nullptr;
     info.patchbayClientId = 0;
@@ -1005,13 +1001,13 @@ const CarlaPluginInfo* carla_get_plugin_info(unsigned int pluginId)
         info.type     = plugin->getType();
         info.category = plugin->getCategory();
         info.hints    = plugin->getHints();
-        info.binary   = plugin->getFilename();
+        info.filename = plugin->getFilename();
         info.name     = plugin->getName();
         info.iconName = plugin->getIconName();
         info.uniqueId = plugin->getUniqueId();
 
-        info.optionsAvailable = plugin->getAvailableOptions();
-        info.optionsEnabled   = plugin->getOptions();
+        info.optionsAvailable = plugin->getOptionsAvailable();
+        info.optionsEnabled   = plugin->getOptionsEnabled();
 
         plugin->getLabel(strBufLabel);
         info.label = carla_strdup(strBufLabel);
@@ -1038,7 +1034,6 @@ const CarlaPortCountInfo* carla_get_audio_port_count_info(unsigned int pluginId)
     // reset
     info.ins   = 0;
     info.outs  = 0;
-    info.total = 0;
 
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &info);
 
@@ -1046,7 +1041,6 @@ const CarlaPortCountInfo* carla_get_audio_port_count_info(unsigned int pluginId)
     {
         info.ins   = plugin->getAudioInCount();
         info.outs  = plugin->getAudioOutCount();
-        info.total = info.ins + info.outs;
         return &info;
     }
 
@@ -1063,7 +1057,6 @@ const CarlaPortCountInfo* carla_get_midi_port_count_info(unsigned int pluginId)
     // reset
     info.ins   = 0;
     info.outs  = 0;
-    info.total = 0;
 
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &info);
 
@@ -1071,7 +1064,6 @@ const CarlaPortCountInfo* carla_get_midi_port_count_info(unsigned int pluginId)
     {
         info.ins   = plugin->getMidiInCount();
         info.outs  = plugin->getMidiOutCount();
-        info.total = info.ins + info.outs;
         return &info;
     }
 
@@ -1088,13 +1080,12 @@ const CarlaPortCountInfo* carla_get_parameter_count_info(unsigned int pluginId)
     // reset
     info.ins   = 0;
     info.outs  = 0;
-    info.total = 0;
 
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &info);
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
     {
-        plugin->getParameterCountInfo(info.ins, info.outs, info.total);
+        plugin->getParameterCountInfo(info.ins, info.outs);
         return &info;
     }
 
@@ -1213,11 +1204,11 @@ const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(unsigned int plug
 
 // -------------------------------------------------------------------------------------------------------------------
 
-const CarlaParameterData* carla_get_parameter_data(unsigned int pluginId, uint32_t parameterId)
+const ParameterData* carla_get_parameter_data(unsigned int pluginId, uint32_t parameterId)
 {
     carla_debug("carla_get_parameter_data(%i, %i)", pluginId, parameterId);
 
-    static CarlaParameterData fallbackParamData;
+    static ParameterData fallbackParamData;
 
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &fallbackParamData);
 
@@ -1234,11 +1225,11 @@ const CarlaParameterData* carla_get_parameter_data(unsigned int pluginId, uint32
     return &fallbackParamData;
 }
 
-const CarlaParameterRanges* carla_get_parameter_ranges(unsigned int pluginId, uint32_t parameterId)
+const ParameterRanges* carla_get_parameter_ranges(unsigned int pluginId, uint32_t parameterId)
 {
     carla_debug("carla_get_parameter_ranges(%i, %i)", pluginId, parameterId);
 
-    static CarlaParameterRanges fallbackParamRanges;
+    static ParameterRanges fallbackParamRanges;
 
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &fallbackParamRanges);
 
@@ -1255,11 +1246,11 @@ const CarlaParameterRanges* carla_get_parameter_ranges(unsigned int pluginId, ui
     return &fallbackParamRanges;
 }
 
-const CarlaMidiProgramData* carla_get_midi_program_data(unsigned int pluginId, uint32_t midiProgramId)
+const MidiProgramData* carla_get_midi_program_data(unsigned int pluginId, uint32_t midiProgramId)
 {
     carla_debug("carla_get_midi_program_data(%i, %i)", pluginId, midiProgramId);
 
-    static CarlaMidiProgramData fallbackMidiProgData;
+    static MidiProgramData fallbackMidiProgData;
 
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &fallbackMidiProgData);
 
@@ -1276,11 +1267,11 @@ const CarlaMidiProgramData* carla_get_midi_program_data(unsigned int pluginId, u
     return &fallbackMidiProgData;
 }
 
-const CarlaCustomData* carla_get_custom_data(unsigned int pluginId, uint32_t customDataId)
+const CustomData* carla_get_custom_data(unsigned int pluginId, uint32_t customDataId)
 {
     carla_debug("carla_get_custom_data(%i, %i)", pluginId, customDataId);
 
-    static CarlaCustomData fallbackCustomData;
+    static CustomData fallbackCustomData;
 
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &fallbackCustomData);
 
@@ -1747,7 +1738,6 @@ void carla_set_midi_program(unsigned int pluginId, uint32_t midiProgramId)
 }
 
 // -------------------------------------------------------------------------------------------------------------------
-#endif
 
 void carla_set_custom_data(unsigned int pluginId, const char* type, const char* key, const char* value)
 {
@@ -1763,7 +1753,6 @@ void carla_set_custom_data(unsigned int pluginId, const char* type, const char* 
     carla_stderr2("carla_set_custom_data(%i, \"%s\", \"%s\", \"%s\") - could not find plugin", pluginId, type, key, value);
 }
 
-#if 0
 void carla_set_chunk_data(unsigned int pluginId, const char* chunkData)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
@@ -1772,7 +1761,7 @@ void carla_set_chunk_data(unsigned int pluginId, const char* chunkData)
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
     {
-        if (plugin->getOptions() & CB::PLUGIN_OPTION_USE_CHUNKS)
+        if (plugin->getOptionsEnabled() & CB::PLUGIN_OPTION_USE_CHUNKS)
             return plugin->setChunkData(chunkData);
 
         carla_stderr2("carla_set_chunk_data(%i, \"%s\") - plugin does not use chunks", pluginId, chunkData);
@@ -1808,15 +1797,15 @@ void carla_send_midi_note(unsigned int pluginId, uint8_t channel, uint8_t note, 
 }
 #endif
 
-void carla_show_gui(unsigned int pluginId, bool yesno)
+void carla_show_custom_ui(unsigned int pluginId, bool yesno)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
-    carla_debug("carla_show_gui(%i, %s)", pluginId, bool2str(yesno));
+    carla_debug("carla_show_custom_ui(%i, %s)", pluginId, bool2str(yesno));
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->showGui(yesno);
+        return plugin->showCustomUI(yesno);
 
-    carla_stderr2("carla_show_gui(%i, %s) - could not find plugin", pluginId, bool2str(yesno));
+    carla_stderr2("carla_show_custom_ui(%i, %s) - could not find plugin", pluginId, bool2str(yesno));
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -1838,7 +1827,6 @@ double carla_get_sample_rate()
 }
 
 // -------------------------------------------------------------------------------------------------------------------
-#endif
 
 const char* carla_get_last_error()
 {
@@ -1850,7 +1838,6 @@ const char* carla_get_last_error()
     return gStandalone.lastError;
 }
 
-#if 0
 const char* carla_get_host_osc_url_tcp()
 {
     carla_debug("carla_get_host_osc_url_tcp()");
@@ -1879,6 +1866,7 @@ const char* carla_get_host_osc_url_udp()
     return gStandalone.engine->getOscServerPathUDP();
 }
 
+#if 0
 // -------------------------------------------------------------------------------------------------------------------
 
 #define NSM_API_VERSION_MAJOR 1
