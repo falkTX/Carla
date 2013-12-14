@@ -43,6 +43,7 @@ private:
     void onReshape(int width, int height) override
     {
         // handle resize
+        setSize(width, height);
         Widget::onReshape(width, height);
 
         // free previous if needed

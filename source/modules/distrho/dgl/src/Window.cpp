@@ -554,7 +554,6 @@ protected:
         FOR_EACH_WIDGET(it)
         {
             Widget* const widget(*it);
-            widget->fArea.setSize(width, height);
             widget->onReshape(width, height);
         }
     }
