@@ -197,10 +197,6 @@ void Widget::repaint()
     fParent.repaint();
 }
 
-void Widget::onDisplay()
-{
-}
-
 bool Widget::onKeyboard(bool, uint32_t)
 {
     return false;

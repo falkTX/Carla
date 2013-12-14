@@ -76,7 +76,7 @@ public:
     void repaint();
 
 protected:
-    virtual void onDisplay();
+    virtual void onDisplay() = 0;
     virtual bool onKeyboard(bool press, uint32_t key);
     virtual bool onMouse(int button, bool press, int x, int y);
     virtual bool onMotion(int x, int y);

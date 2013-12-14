@@ -18,7 +18,6 @@
 #define DGL_STANDALONE_WINDOW_HPP_INCLUDED
 
 #include "App.hpp"
-#include "Widget.hpp"
 #include "Window.hpp"
 
 START_NAMESPACE_DGL
@@ -30,16 +29,16 @@ class StandaloneWindow
 public:
     StandaloneWindow()
         : fApp(),
-          fWindow(&fApp)
+          fWindow(fApp)
     {
     }
 
-    App& getApp() const noexcept
+    App& getApp() noexcept
     {
         return fApp;
     }
 
-    Window& getWindow() const noexcept
+    Window& getWindow() noexcept
     {
         return fWindow;
     }

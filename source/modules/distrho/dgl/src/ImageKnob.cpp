@@ -209,7 +209,7 @@ void ImageKnob::onDisplay()
         const GLint w2 = getWidth()/2;
         const GLint h2 = getHeight()/2;
 
-        glTranslatef(getX()+w2, getY()+h2, 0.f);
+        glTranslatef(getX()+w2, getY()+h2, 0.0f);
         glRotatef(normValue*fRotationAngle, 0.0f, 0.0f, 1.0f);
 
         glBegin(GL_QUADS);
