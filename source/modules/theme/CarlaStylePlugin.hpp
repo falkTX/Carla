@@ -18,7 +18,7 @@
 #ifndef CARLA_STYLE_PLUGIN_HPP_INCLUDED
 #define CARLA_STYLE_PLUGIN_HPP_INCLUDED
 
-#include "CarlaDefines.hpp"
+#include "CarlaDefines.h"
 
 #include <QtCore/Qt>
 

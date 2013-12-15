@@ -193,6 +193,8 @@ class CarlaApplication(object):
             elif proThemeColor == "blue":
                 self.fApp.setPalette(self.fPalBlue)
 
+        print("Using \"%s\" theme" % self.fApp.style().objectName())
+
     def arguments(self):
         return self.fApp.arguments()
 

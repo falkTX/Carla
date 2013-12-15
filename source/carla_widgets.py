@@ -55,39 +55,37 @@ gFakePluginInfo = {
     "hints": PLUGIN_IS_SYNTH|PLUGIN_CAN_DRYWET|PLUGIN_CAN_VOLUME|PLUGIN_CAN_PANNING,
     "optionsAvailable": 0x1FF, # all
     "optionsEnabled": 0x1FF, # all
-    "binary": "AwesoomeBinary.yeah",
+    "filename": "AwesoomeFilename.what",
     "name": "Awesoome Name",
     "label": "awesoomeLabel",
     "maker": "Awesoome Maker",
     "copyright": "Awesoome Copyright",
     "iconName": "plugin",
-    "uniqueId": 0,
-    "latency": 0
+    "uniqueId": 0
 }
 
 gFakeParamInfo = {
-    'hints': PARAMETER_IS_INPUT|PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE,
-    'name':  "Parameter Name",
-    'unit':  "",
-    'scalePoints': [],
+    "hints": PARAMETER_IS_INPUT|PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE,
+    "name":  "Parameter Name",
+    "unit":  "",
+    "scalePoints": [],
 
-    'index':   0,
-    'default': 0.0,
-    'minimum': 0.0,
-    'maximum': 1.0,
-    'step':    0.01,
-    'stepSmall': 0.01,
-    'stepLarge': 0.01,
-    'midiCC':   -1,
-    'midiChannel': 1,
+    "index":   0,
+    "default": 0.0,
+    "minimum": 0.0,
+    "maximum": 1.0,
+    "step":    0.01,
+    "stepSmall": 0.01,
+    "stepLarge": 0.01,
+    "midiCC":   -1,
+    "midiChannel": 1,
 
-    'current': 0.0
+    "current": 0.0
 }
 
-gFakeCountInfo = {
+gFakePortCountInfo = {
     "ins": 0,
-    "outs": 0,
-    "total": 0
+    "outs": 0
 }
 
 # ------------------------------------------------------------------------------------------------------------
@@ -260,10 +258,10 @@ class PluginParameter(QWidget):
 
         # -------------------------------------------------------------
 
-    def pluginId(self):
+    def getPluginId(self):
         return self.fPluginId
 
-    def tabIndex(self):
+    def getTabIndex(self):
         return self.fTabIndex
 
     def setDefault(self, value):
@@ -498,9 +496,9 @@ class PluginEdit(QDialog):
             paramCountInfo = Carla.host.get_parameter_count_info(self.fPluginId)
         else:
             pluginName     = ""
-            audioCountInfo = gFakeCountInfo
-            midiCountInfo  = gFakeCountInfo
-            paramCountInfo = gFakeCountInfo
+            audioCountInfo = gFakePortCountInfo
+            midiCountInfo  = gFakePortCountInfo
+            paramCountInfo = gFakePortCountInfo
 
         pluginType  = self.fPluginInfo['type']
         pluginHints = self.fPluginInfo['hints']
@@ -1133,12 +1131,12 @@ class PluginEdit(QDialog):
 
     @pyqtSlot(int)
     def slot_noteOn(self, note):
-        if self.fControlChannel >= 0:
+        if self.fControlChannel >= 0 and Carla.host is not None:
             Carla.host.send_midi_note(self.fPluginId, self.fControlChannel, note, 100)
 
     @pyqtSlot(int)
     def slot_noteOff(self, note):
-        if self.fControlChannel >= 0:
+        if self.fControlChannel >= 0 and Carla.host is not None:
             Carla.host.send_midi_note(self.fPluginId, self.fControlChannel, note, 0)
 
     @pyqtSlot()
@@ -1672,20 +1670,14 @@ class PluginWidget(QFrame):
 # Main
 
 if __name__ == '__main__':
-    try:
-        from PyQt5.QtWidgets import QApplication
-    except:
-        from PyQt4.QtGui import QApplication
+    from carla_style import *
 
-    app = QApplication(sys.argv)
-    app.setApplicationName("Carla")
-    app.setApplicationVersion(VERSION)
-    app.setOrganizationName("falkTX")
-    app.setWindowIcon(QIcon(":/scalable/carla.svg"))
+    app = CarlaApplication()
 
+    #gui = CarlaAboutW(None)
     #gui = PluginParameter(None, gFakeParamInfo, 0, 0)
-    #gui = PluginEdit(None, 0)
-    gui = PluginWidget(None, 0)
+    gui = PluginEdit(None, 0)
+    #gui = PluginWidget(None, 0)
     gui.show()
 
     sys.exit(app.exec_())
