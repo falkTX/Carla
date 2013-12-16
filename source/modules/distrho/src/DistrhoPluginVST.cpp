@@ -24,6 +24,7 @@
 # define __cdecl
 #endif
 
+// has some conflicts
 #ifdef noexcept
 # undef noexcept
 #endif
@@ -152,12 +153,12 @@ public:
         fUI.idle();
     }
 
-    int16_t getWidth() const noexcept
+    int16_t getWidth() const
     {
         return fUI.getWidth();
     }
 
-    int16_t getHeight() const noexcept
+    int16_t getHeight() const
     {
         return fUI.getHeight();
     }
@@ -165,14 +166,14 @@ public:
     // -------------------------------------------------------------------
     // functions called from the plugin side, RT no block
 
-    void setParameterValueFromPlugin(const uint32_t index, const float perValue) noexcept
+    void setParameterValueFromPlugin(const uint32_t index, const float perValue)
     {
         fParameterChecks[index] = true;
         fParameterValues[index] = perValue;
     }
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
-    void setProgramFromPlugin(const uint32_t index) noexcept
+    void setProgramFromPlugin(const uint32_t index)
     {
         fNextProgram = index;
 
@@ -306,7 +307,7 @@ class PluginVst
 #endif
 {
 public:
-    PluginVst(const audioMasterCallback audioMaster, AEffect* const effect) noexcept
+    PluginVst(const audioMasterCallback audioMaster, AEffect* const effect)
         : fAudioMaster(audioMaster),
           fEffect(effect)
     {
