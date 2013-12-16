@@ -75,9 +75,9 @@
 void
 puglDisplay(PuglView* view)
 {
-        if (view->displayFunc) {
-                view->displayFunc(view);
-        }
+	if (view->displayFunc) {
+		view->displayFunc(view);
+	}
 }
 
 @interface PuglOpenGLView : NSOpenGLView
@@ -327,7 +327,7 @@ puglCreate(PuglNativeWindow parent,
            int              width,
            int              height,
            bool             resizable,
-           bool             addToDesktop)
+           bool             visible)
 {
 	PuglView*      view = (PuglView*)calloc(1, sizeof(PuglView));
 	PuglInternals* impl = (PuglInternals*)calloc(1, sizeof(PuglInternals));
@@ -361,7 +361,7 @@ puglCreate(PuglNativeWindow parent,
 	[window makeFirstResponder:impl->glview];
 	[window makeKeyAndOrderFront:window];
 
-	if (! addToDesktop) {
+	if (! visible) {
 		[window setIsVisible:NO];
 	}
 

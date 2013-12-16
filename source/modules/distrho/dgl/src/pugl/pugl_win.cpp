@@ -55,7 +55,7 @@ puglCreate(PuglNativeWindow parent,
            int              width,
            int              height,
            bool             resizable,
-           bool             addToDesktop)
+           bool             visible)
 {
 	PuglView*      view = (PuglView*)calloc(1, sizeof(PuglView));
 	PuglInternals* impl = (PuglInternals*)calloc(1, sizeof(PuglInternals));
@@ -92,13 +92,12 @@ puglCreate(PuglNativeWindow parent,
 
 	// Adjust the overall window size to accomodate our requested client size
 	RECT wr = { 0, 0, width, height };
-	AdjustWindowRectEx(
-		&wr, winFlags, FALSE, WS_EX_TOPMOST);
+	AdjustWindowRectEx(&wr, winFlags, FALSE, WS_EX_TOPMOST);
 
 	impl->hwnd = CreateWindowEx(
 		WS_EX_TOPMOST,
 		classNameBuf, title,
-		(addToDesktop ? WS_VISIBLE : 0) | (parent ? WS_CHILD : winFlags),
+		(visible ? WS_VISIBLE : 0) | (parent ? WS_CHILD : winFlags),
 		0, 0, wr.right-wr.left, wr.bottom-wr.top,
 		(HWND)parent, NULL, NULL, NULL);
 
@@ -107,7 +106,7 @@ puglCreate(PuglNativeWindow parent,
 		free(view);
 		return NULL;
 	}
-
+		
 	SetWindowLongPtr(impl->hwnd, GWL_USERDATA, (LONG)view);
 
 	impl->hdc = GetDC(impl->hwnd);

@@ -1,6 +1,7 @@
 /*
   Copyright 2012 David Robillard <http://drobilla.net>
   Copyright 2011-2012 Ben Loftis, Harrison Consoles
+  Copyright 2013 Robin Gareus <robin@gareus.org>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -30,6 +31,16 @@
 #include <X11/keysym.h>
 
 #include "pugl_internal.h"
+
+/* work around buggy re-parent & focus issues on some systems
+ * where no keyboard events are passed through even if the
+ * app has mouse-focus and all other events are working.
+ */
+#define XKEYFOCUSGRAB
+
+/* show messages during initalization
+ */
+//#define VERBOSE_PUGL
 
 struct PuglInternalsImpl {
 	Display*   display;
@@ -71,7 +82,7 @@ puglCreate(PuglNativeWindow parent,
            int              width,
            int              height,
            bool             resizable,
-           bool             addToDesktop)
+           bool             visible)
 {
 	PuglView*      view = (PuglView*)calloc(1, sizeof(PuglView));
 	PuglInternals* impl = (PuglInternals*)calloc(1, sizeof(PuglInternals));
@@ -90,15 +101,21 @@ puglCreate(PuglNativeWindow parent,
 	if (!vi) {
 		vi = glXChooseVisual(impl->display, impl->screen, attrListSgl);
 		impl->doubleBuffered = False;
-		printf("singlebuffered rendering will be used, no doublebuffering available\n");
+#ifdef VERBOSE_PUGL
+		printf("puGL: singlebuffered rendering will be used, no doublebuffering available\n");
+#endif
 	} else {
 		impl->doubleBuffered = True;
-		printf("doublebuffered rendering available\n");
+#ifdef VERBOSE_PUGL
+		printf("puGL: doublebuffered rendering available\n");
+#endif
 	}
 
 	int glxMajor, glxMinor;
 	glXQueryVersion(impl->display, &glxMajor, &glxMinor);
-	printf("GLX-Version %d.%d\n", glxMajor, glxMinor);
+#ifdef VERBOSE_PUGL
+	printf("puGL: GLX-Version : %d.%d\n", glxMajor, glxMinor);
+#endif
 
 	impl->ctx = glXCreateContext(impl->display, vi, 0, GL_TRUE);
 
@@ -116,6 +133,9 @@ puglCreate(PuglNativeWindow parent,
 
 	attr.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask
 		| ButtonPressMask | ButtonReleaseMask
+#ifdef XKEYFOCUSGRAB
+		| EnterWindowMask
+#endif
 		| PointerMotionMask | StructureNotifyMask;
 
 	impl->win = XCreateWindow(
@@ -143,14 +163,18 @@ puglCreate(PuglNativeWindow parent,
 		XSetWMProtocols(impl->display, impl->win, &wmDelete, 1);
 	}
 
-	if (addToDesktop) {
+	if (visible) {
 		XMapRaised(impl->display, impl->win);
 	}
 
 	if (glXIsDirect(impl->display, impl->ctx)) {
-		printf("DRI enabled\n");
+#ifdef VERBOSE_PUGL
+		printf("puGL: DRI enabled\n");
+#endif
 	} else {
-		printf("No DRI available\n");
+#ifdef VERBOSE_PUGL
+		printf("puGL: No DRI available\n");
+#endif
 	}
 
 	XFree(vi);
@@ -191,8 +215,10 @@ static void
 puglDisplay(PuglView* view)
 {
 	glXMakeCurrent(view->impl->display, view->impl->win, view->impl->ctx);
+#if 0
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
+#endif
 
 	if (view->displayFunc) {
 		view->displayFunc(view);
@@ -342,8 +368,7 @@ puglProcessEvents(PuglView* view)
 			}
 
 			if (!repeated && view->keyboardFunc) {
-				KeySym sym = XKeycodeToKeysym(
-					view->impl->display, event.xkey.keycode, 0);
+				KeySym sym = XLookupKeysym(&event.xkey, 0);
 				PuglKey special = keySymToSpecial(sym);
 				if (!special) {
 					view->keyboardFunc(view, false, sym);
@@ -361,6 +386,11 @@ puglProcessEvents(PuglView* view)
 				}
 			}
 			break;
+#ifdef XKEYFOCUSGRAB
+		case EnterNotify:
+			XSetInputFocus(view->impl->display, view->impl->win, RevertToPointerRoot, CurrentTime);
+			break;
+#endif
 		default:
 			break;
 		}
