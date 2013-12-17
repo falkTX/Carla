@@ -1,20 +1,66 @@
 # Carla TODO
 
+# ----------------------------------------------------------------------------
+# in short
+
+1. move backend from Qt to Juce (80% done)
+2. move frontend from PyQt4 to PyQt5, rewrite to share widget code (60% done)
+3. allow to use old Qt code (except graphics) for non-Juce-supported OSes (BSD, Haiku, Solaris, etc)
+4. custom "plugin slots" skins, ala Reaper (also define set of keys for a new LV2 extension)
+5. internal patchbay processing mode (needs #1)
+6. Carla as an LV2 plugin (needs #5)
+7. direct support for csound files (as plugins, inspired by 'cabbage')
+8. OSX builds (needs #1 and #2)
+
+Ideas for later:
+
+ 9. Carla as VST plugin (will have to be a custom UI)
+10. easier canvas connections by using smart key shortcuts
+11. Mobile version (using Android Patchfield for example)
+12. Mobile OSC Control app
+13. Port good JACK-only apps as internal plugins (zita stuff would be nice)
+
+# ----------------------------------------------------------------------------
+# more detailed
+
 GENERAL:
+ - finalize Juce backend move
+ - finalize PyQt5 move
+ - add back old Qt code for when Juce is not available (or disabled by user)
  - add direct program access on ui-dialogs (needed for standalone bridges), maybe add extra buttons too (reset plugin, fix ui size)
  - implement midi-learn (new dialog)
- - implement midi-cc automation special rules (invert, half, logarithmic, etc)
- - allow to change position of plugins (up/down)
- - add control-out rate/freq option in frames (or just a regular block-size option?)
- - control/midi-out in singleProcess() calls, use timeoutFrames var
+ - custom skins for plugin slots, design for 8 types + instruments (gig, sf2, sfz)
+ - custom skins for internal plugins
+ - implement favorite plugins, add in new tab near file-browser
+ - blender style canvas theme
+ - make it possible to run forced (and only) rack or patchbay mode
+ - make it possible to use backend as fake standalone app (using pipes) instead of a shared library
+ - create startup scripts for carla-rack, carla-patchbay, carla-settings, etc
+ - smarter carla-single script (LV2 must only need URI for example, and ignore all other hints)
+ - alternate, simpler UI for mobile and/or VST version
 
 ENGINE:
+ - allow to change position of plugins (up/down)
+ - allow to add plugins when engine is stopped
+ - save&restore canvas connections (optional, must not be used under SM)
  - complete RtAudio+RtMidi support (only MIDI out missing + save&restore)
- - implement Haiku Media support (based from JACK?)
+ - complete Juce engine driver support
+ - implement Haiku Media support (based from JACK?, LATER)
  - implement latency in continuous-rack mode
- - DSSI/LV2/VST version (needs add-new support on control side)
- - Handle sample-rate changes in JACK (made possible by switch-master)
- - Add MIDI-bank change type (GM, GS, XG and MMA). See fluidsynth docs
+ - implement internal patchbay mode (once Juce move is complete)
+ - engine as internal plugin
+ - internal patchbay mode, based on Juce graph code
+ - handle sample-rate changes in JACK (made possible by switch-master)
+ - add MIDI-bank change type (GM, GS, XG and MMA). See fluidsynth docs
+ - allow to use static OSC ports
+
+PLUGINS:
+ - add control-out rate/freq option in frames (or just a regular block-size option?)
+ - control/midi-out in singleProcess() calls, use timeoutFrames var
+ - implement midi-cc automation special rules (invert, half, logarithmic, etc)
+ - implement Juce plugin hosting (provides AU and VST2/3 support; will replace current VST hosting if Juce is used)
+ - implement LSCP file support (new native plugin)
+ - implement Csound file support
 
 Native:
  - Cleanup API
@@ -23,13 +69,19 @@ Native:
 LADSPA:
 
 DSSI:
+ - custom chunk-data extension, publish on kx website when complete
 
 LV2:
  - complete lv2-worker support
+ - handle in-process graphics via Juce
+ - no in-process UI support if juce disabled
+ - revisit all extensions
+ - option to set lv2 preset folder
+ - only load LV2 bundles on request, never load full LV2 world
 
-VST:
- - add support for old X11 UIs
- - implement cockos extensions
+VST: (non-Juce build)
+ - no UI support
+ - simplify code (because of no Juce)
 
 FluidSynth:
  - per-channel volume control
