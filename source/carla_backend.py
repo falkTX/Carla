@@ -134,6 +134,8 @@ MAX_DEFAULT_PARAMETERS = 200
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine Driver Device Hints
+# Various engine driver device hints.
+# @see carla_get_engine_driver_device_info()
 
 # Engine driver device has custom control-panel.
 ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL = 0x1
@@ -148,6 +150,8 @@ ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE = 0x4
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Hints
+# Various plugin hints.
+# @see carla_get_plugin_info()
 
 # Plugin is a bridge.
 # This hint is required because "bridge" itself is not a plugin type.
@@ -177,6 +181,8 @@ PLUGIN_CAN_PANNING = 0x80
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Options
+# Various plugin options.
+# @see carla_get_plugin_info() and carla_set_option()
 
 # Use constant/fixed-size audio buffers.
 PLUGIN_OPTION_FIXED_BUFFERS = 0x001
@@ -207,6 +213,8 @@ PLUGIN_OPTION_SEND_ALL_SOUND_OFF = 0x100
 
 # ------------------------------------------------------------------------------------------------------------
 # Parameter Hints
+# Various parameter hints.
+# @see CarlaPlugin::getParameterData() and carla_get_parameter_data()
 
 # Parameter is input.
 # When this hint is not set, parameter is assumed to be output.
@@ -245,6 +253,7 @@ PARAMETER_USES_CUSTOM_TEXT = 0x400
 
 # ------------------------------------------------------------------------------------------------------------
 # Patchbay Port Hints
+# Various patchbay port hints.
 
 # Patchbay port is input.
 # When this hint is not set, port is assumed to be output.
@@ -261,6 +270,8 @@ PATCHBAY_PORT_TYPE_MIDI = 0x8
 
 # ------------------------------------------------------------------------------------------------------------
 # Custom Data Types
+# These types define how the value in the CustomData struct is stored.
+# @see CustomData.type
 
 # Boolean string type URI.
 # Only "true" and "false" are valid values.
@@ -274,6 +285,8 @@ CUSTOM_DATA_TYPE_STRING = "http://kxstudio.sf.net/ns/carla/string"
 
 # ------------------------------------------------------------------------------------------------------------
 # Custom Data Keys
+# Pre-defined keys used internally in Carla.
+# @see CustomData.key
 
 # Plugin options key.
 CUSTOM_DATA_KEY_PLUGIN_OPTIONS = "CarlaPluginOptions"
@@ -289,6 +302,7 @@ CUSTOM_DATA_KEY_UI_VISIBLE = "CarlaUiVisible"
 
 # ------------------------------------------------------------------------------------------------------------
 # Binary Type
+# The binary type of a plugin.
 
 # Null binary type.
 BINARY_NONE = 0
@@ -310,6 +324,8 @@ BINARY_OTHER = 5
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Type
+# Plugin type.
+# Some files are handled as if they were plugins.
 
 # Null plugin type.
 PLUGIN_NONE = 0
@@ -347,6 +363,7 @@ PLUGIN_SFZ = 10
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Category
+# Plugin category, which describes the functionality of a plugin.
 
 # Null plugin category.
 PLUGIN_CATEGORY_NONE = 0
@@ -379,7 +396,9 @@ PLUGIN_CATEGORY_UTILITY = 8
 PLUGIN_CATEGORY_OTHER = 9
 
 # ------------------------------------------------------------------------------------------------------------
-# Internal Parameters Index
+# Internal Parameter Index
+# Special parameters used internally in Carla.
+# Plugins do not know about their existence.
 
 # Null parameter.
 PARAMETER_NULL = -1
@@ -417,6 +436,9 @@ PARAMETER_MAX = -9
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine Callback Opcode
+# Engine callback opcodes.
+# Front-ends must never block indefinitely during a callback.
+# @see EngineCallbackFunc and carla_set_engine_callback()
 
 # Debug.
 # This opcode is undefined and used only for testing purposes.
@@ -607,6 +629,8 @@ ENGINE_CALLBACK_QUIT = 36
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine Option
+# Engine options.
+# @see carla_set_engine_option()
 
 # Debug.
 # This option is undefined and used only for testing purposes.
@@ -676,6 +700,8 @@ ENGINE_OPTION_PATH_RESOURCES = 14
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine Process Mode
+# Engine process mode.
+# @see ENGINE_OPTION_PROCESS_MODE
 
 # Single client mode.
 # Inputs and outputs are added dynamically as needed by plugins.
@@ -697,6 +723,8 @@ ENGINE_PROCESS_MODE_BRIDGE = 4
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine Transport Mode
+# Engine transport mode.
+# @see ENGINE_OPTION_TRANSPORT_MODE
 
 # Internal transport mode.
 ENGINE_TRANSPORT_MODE_INTERNAL = 0
@@ -853,6 +881,9 @@ PyEngineDriverDeviceInfo = {
 
 # ------------------------------------------------------------------------------------------------------------
 # File Callback Opcode
+# File callback opcodes.
+# Front-ends must always block-wait for user input.
+# @see FileCallbackFunc and carla_set_file_callback()
 
 # Debug.
 # This opcode is undefined and used only for testing purposes.
@@ -1208,27 +1239,41 @@ class Host(object):
     def save_project(self, filename):
         return bool(self.lib.carla_save_project(filename.encode("utf-8")))
 
+    # Connect two patchbay ports.
+    # @param portA Output port
+    # @param portB Input port
+    # @see ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED
     def patchbay_connect(self, portIdA, portIdB):
         return bool(self.lib.carla_patchbay_connect(portIdA, portIdB))
 
+    # Disconnect two patchbay ports.
+    # @param connectionId Connection Id
+    # @see ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED
     def patchbay_disconnect(self, connectionId):
         return bool(self.lib.carla_patchbay_disconnect(connectionId))
 
+    # Force the engine to resend all patchbay clients, ports and connections again.
     def patchbay_refresh(self):
         return bool(self.lib.carla_patchbay_refresh())
 
+    # Start playback of the engine transport.
     def transport_play(self):
         self.lib.carla_transport_play()
 
+    # Pause the engine transport.
     def transport_pause(self):
         self.lib.carla_transport_pause()
 
+    # Relocate the engine transport to a specific frame.
+    # @param frames Frame to relocate to.
     def transport_relocate(self, frames):
         self.lib.carla_transport_relocate(frames)
 
+    # Get the current transport frame.
     def get_current_transport_frame(self):
         return bool(self.lib.carla_get_current_transport_frame())
 
+    # Get the engine transport information.
     def get_transport_info(self):
         return structToDict(self.lib.carla_get_transport_info().contents)
 
@@ -1405,18 +1450,6 @@ class Host(object):
 
     def get_sample_rate(self):
         return self.lib.carla_get_sample_rate()
-
-    def nsm_announce(self, url, appName_, pid):
-        self.lib.carla_nsm_announce(url.encode("utf-8"), appName_.encode("utf-8"), pid)
-
-    def nsm_ready(self):
-        self.lib.carla_nsm_ready()
-
-    def nsm_reply_open(self):
-        self.lib.carla_nsm_reply_open()
-
-    def nsm_reply_save(self):
-        self.lib.carla_nsm_reply_save()
 
     def _init(self, libName):
         self.lib = cdll.LoadLibrary(libName)
@@ -1669,17 +1702,3 @@ class Host(object):
 
         self.lib.carla_get_host_osc_url_udp.argtypes = None
         self.lib.carla_get_host_osc_url_udp.restype = c_char_p
-
-        return
-
-        self.lib.carla_nsm_announce.argtypes = [c_char_p, c_char_p, c_int]
-        self.lib.carla_nsm_announce.restype = None
-
-        self.lib.carla_nsm_ready.argtypes = None
-        self.lib.carla_nsm_ready.restype = None
-
-        self.lib.carla_nsm_reply_open.argtypes = None
-        self.lib.carla_nsm_reply_open.restype = None
-
-        self.lib.carla_nsm_reply_save.argtypes = None
-        self.lib.carla_nsm_reply_save.restype = None

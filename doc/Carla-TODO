@@ -91,3 +91,17 @@ LinuxSampler:
  - multi-program
  - 16outs (depends on multi-program)
  - proper buffer-size/sample-rate change
+
+# ----------------------------------------------------------------------------
+# current work
+
+BACKEND:
+ - cleanup API, document everything properly (tested with doxygen)
+ - apply API docs to python code as well (TODO: use proper predefined pydoc style)
+
+FRONTEND:
+ - fix things to new cleanup API
+ - share code as much as possible
+
+OTHER:
+ - create tests for all utils code

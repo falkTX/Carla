@@ -51,6 +51,9 @@ using CarlaBackend::CarlaPlugin;
  * @{
  */
 
+// ------------------------------------------------------------------------------------------------------------
+// File Callback Opcode
+
 /*!
  * File callback opcodes.\n
  * Front-ends must always block-wait for user input.
@@ -74,6 +77,9 @@ typedef enum {
     FILE_CALLBACK_SAVE = 2
 
 } FileCallbackOpcode;
+
+// ------------------------------------------------------------------------------------------------------------
+// Carla Host API (C stuff)
 
 /*!
  * File callback function.
@@ -463,6 +469,9 @@ typedef struct _CarlaTransportInfo {
 #endif
 } CarlaTransportInfo;
 
+// ------------------------------------------------------------------------------------------------------------
+// Carla Host API (C functions)
+
 /*!
  * Get the complete license text of used third-party code and features.\n
  * Returned string is in basic html format.
@@ -515,10 +524,10 @@ CARLA_EXPORT const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigne
 
 #ifdef __cplusplus
 /*!
- * Get the currently used Host engine.
+ * Get the currently used engine, maybe be NULL.
  * @note C++ only
  */
-CARLA_EXPORT CarlaEngine* carla_get_host_engine();
+CARLA_EXPORT const CarlaEngine* carla_get_engine();
 #endif
 
 /*!
@@ -610,12 +619,17 @@ CARLA_EXPORT bool carla_load_project(const char* filename);
 CARLA_EXPORT bool carla_save_project(const char* filename);
 
 /*!
- * Connect patchbay ports \a portA and \a portB.
+ * Connect two patchbay ports.
+ * @param portA Output port
+ * @param portB Input port
+ * @see ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED
  */
 CARLA_EXPORT bool carla_patchbay_connect(int portA, int portB);
 
 /*!
- * Disconnect patchbay connection \a connectionId.
+ * Disconnect two patchbay ports.
+ * @param connectionId Connection Id
+ * @see ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED
  */
 CARLA_EXPORT bool carla_patchbay_disconnect(int connectionId);
 
@@ -635,7 +649,8 @@ CARLA_EXPORT void carla_transport_play();
 CARLA_EXPORT void carla_transport_pause();
 
 /*!
- * Relocate the engine transport to \a frames.
+ * Relocate the engine transport to a specific frame.
+ * @param frames Frame to relocate to.
  */
 CARLA_EXPORT void carla_transport_relocate(uint32_t frames);
 

@@ -45,6 +45,9 @@ CARLA_BACKEND_START_NAMESPACE
  * @{
  */
 
+// ------------------------------------------------------------------------------------------------------------
+// Carla Backend API (base definitions)
+
 /*!
  * Maximum default number of loadable plugins.
  */
@@ -65,6 +68,9 @@ const unsigned int MAX_PATCHBAY_PLUGINS = 255;
  * @see ENGINE_OPTION_MAX_PARAMETERS
  */
 const unsigned int MAX_DEFAULT_PARAMETERS = 200;
+
+// ------------------------------------------------------------------------------------------------------------
+// Engine Driver Device Hints
 
 /*!
  * @defgroup EngineDriverHints Engine Driver Device Hints
@@ -92,6 +98,9 @@ const unsigned int ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE = 0x2;
 const unsigned int ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE = 0x4;
 
 /** @} */
+
+// ------------------------------------------------------------------------------------------------------------
+// Plugin Hints
 
 /*!
  * @defgroup PluginHints Plugin Hints
@@ -145,11 +154,14 @@ const unsigned int PLUGIN_CAN_PANNING = 0x80;
 
 /** @} */
 
+// ------------------------------------------------------------------------------------------------------------
+// Plugin Options
+
 /*!
  * @defgroup PluginOptions Plugin Options
  *
  * Various plugin options.
- * @see CarlaPlugin::getOptionsAvailable(), CarlaPlugin::getOptionsEnabled() and carla_get_plugin_info()
+ * @see CarlaPlugin::getOptionsAvailable(), CarlaPlugin::getOptionsEnabled(), carla_get_plugin_info() and carla_set_option()
  * @{
  */
 
@@ -199,6 +211,9 @@ const unsigned int PLUGIN_OPTION_SEND_PITCHBEND = 0x080;
 const unsigned int PLUGIN_OPTION_SEND_ALL_SOUND_OFF = 0x100;
 
 /** @} */
+
+// ------------------------------------------------------------------------------------------------------------
+// Parameter Hints
 
 /*!
  * @defgroup ParameterHints Parameter Hints
@@ -266,6 +281,9 @@ const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x400;
 
 /** @} */
 
+// ------------------------------------------------------------------------------------------------------------
+// Patchbay Port Hints
+
 /*!
  * @defgroup PatchbayPortHints Patchbay Port Hints
  *
@@ -296,6 +314,9 @@ const unsigned int PATCHBAY_PORT_TYPE_MIDI = 0x8;
 
 /** @} */
 
+// ------------------------------------------------------------------------------------------------------------
+// Custom Data Types
+
 /*!
  * @defgroup CustomDataTypes Custom Data Types
  *
@@ -321,6 +342,9 @@ const char* const CUSTOM_DATA_TYPE_CHUNK = "http://kxstudio.sf.net/ns/carla/chun
 const char* const CUSTOM_DATA_TYPE_STRING = "http://kxstudio.sf.net/ns/carla/string";
 
 /** @} */
+
+// ------------------------------------------------------------------------------------------------------------
+// Custom Data Keys
 
 /*!
  * @defgroup CustomDataKeys Custom Data Keys
@@ -351,6 +375,9 @@ const char* const CUSTOM_DATA_KEY_UI_SIZE = "CarlaUiSize";
 const char* const CUSTOM_DATA_KEY_UI_VISIBLE = "CarlaUiVisible";
 
 /** @} */
+
+// ------------------------------------------------------------------------------------------------------------
+// Binary Type
 
 /*!
  * The binary type of a plugin.
@@ -387,6 +414,9 @@ typedef enum {
     BINARY_OTHER = 5
 
 } BinaryType;
+
+// ------------------------------------------------------------------------------------------------------------
+// Plugin Type
 
 /*!
  * Plugin type.
@@ -451,6 +481,9 @@ typedef enum {
 
 } PluginType;
 
+// ------------------------------------------------------------------------------------------------------------
+// Plugin Category
+
 /*!
  * Plugin category, which describes the functionality of a plugin.
  */
@@ -506,6 +539,9 @@ typedef enum {
     PLUGIN_CATEGORY_OTHER = 9
 
 } PluginCategory;
+
+// ------------------------------------------------------------------------------------------------------------
+// Internal Parameter Index
 
 /*!
  * Special parameters used internally in Carla.\n
@@ -565,6 +601,9 @@ typedef enum {
     PARAMETER_MAX = -9
 
 } InternalParameterIndex;
+
+// ------------------------------------------------------------------------------------------------------------
+// Engine Callback Opcode
 
 /*!
  * Engine callback opcodes.\n
@@ -835,6 +874,9 @@ typedef enum {
 
 } EngineCallbackOpcode;
 
+// ------------------------------------------------------------------------------------------------------------
+// Engine Option
+
 /*!
  * Engine options.
  * @see CarlaEngine::getOptions(), CarlaEngine::setOption() and carla_set_engine_option()
@@ -938,6 +980,9 @@ typedef enum {
 
 } EngineOption;
 
+// ------------------------------------------------------------------------------------------------------------
+// Engine Process Mode
+
 /*!
  * Engine process mode.
  * @see ENGINE_OPTION_PROCESS_MODE
@@ -973,8 +1018,11 @@ typedef enum {
 
 } EngineProcessMode;
 
+// ------------------------------------------------------------------------------------------------------------
+// Engine Transport Mode
+
 /*!
- * Engine transport mode
+ * Engine transport mode.
  * @see ENGINE_OPTION_TRANSPORT_MODE
  */
 typedef enum {
@@ -1001,12 +1049,15 @@ typedef enum {
 
 } EngineTransportMode;
 
+// ------------------------------------------------------------------------------------------------------------
+// Carla Backend API (C stuff)
+
 /*!
  * Engine callback function.\n
  * Front-ends must never block indefinitely during a callback.
  * @see EngineCallbackOpcode, CarlaEngine::setCallback() and carla_set_engine_callback()
  */
-typedef void (*EngineCallbackFunc)(void* ptr, EngineCallbackOpcode action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr);
+typedef void (*EngineCallbackFunc)(void* ptr, EngineCallbackOpcode action, uint pluginId, int value1, int value2, float value3, const char* valueStr);
 
 /*!
  * Parameter data.
