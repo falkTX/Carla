@@ -770,12 +770,12 @@ void carla_transport_pause()
     gStandalone.engine->transportPause();
 }
 
-void carla_transport_relocate(uint32_t frames)
+void carla_transport_relocate(uint32_t frame)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr && gStandalone.engine->isRunning(),);
-    carla_debug("carla_transport_relocate(%i)", frames);
+    carla_debug("carla_transport_relocate(%i)", frame);
 
-    gStandalone.engine->transportRelocate(frames);
+    gStandalone.engine->transportRelocate(frame);
 }
 
 uint64_t carla_get_current_transport_frame()

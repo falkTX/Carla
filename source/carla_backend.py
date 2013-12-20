@@ -1266,8 +1266,8 @@ class Host(object):
 
     # Relocate the engine transport to a specific frame.
     # @param frames Frame to relocate to.
-    def transport_relocate(self, frames):
-        self.lib.carla_transport_relocate(frames)
+    def transport_relocate(self, frame):
+        self.lib.carla_transport_relocate(frame)
 
     # Get the current transport frame.
     def get_current_transport_frame(self):
@@ -1277,179 +1277,360 @@ class Host(object):
     def get_transport_info(self):
         return structToDict(self.lib.carla_get_transport_info().contents)
 
+    # Add a new plugin.
+    # If you don't know the binary type use the BINARY_NATIVE macro.
+    # @param btype    Binary type
+    # @param ptype    Plugin type
+    # @param filename Filename, if applicable
+    # @param name     Name of the plugin, can be NULL
+    # @param label    Plugin label, if applicable
+    # @param extraPtr Extra pointer, defined per plugin type
     def add_plugin(self, btype, ptype, filename, name, label, extraStuff):
         cfilename = filename.encode("utf-8") if filename else None
         cname     = name.encode("utf-8") if name else None
         clabel    = label.encode("utf-8") if label else None
         return bool(self.lib.carla_add_plugin(btype, ptype, cfilename, cname, clabel, cast(extraStuff, c_void_p)))
 
+    # Remove a plugin.
+    # @param pluginId Plugin to remove.
     def remove_plugin(self, pluginId):
         return bool(self.lib.carla_remove_plugin(pluginId))
 
+    # Remove all plugins.
     def remove_all_plugins(self):
         return bool(self.lib.carla_remove_all_plugins())
 
+    # Rename a plugin.\n
+    # Returns the new name, or NULL if the operation failed.
+    # @param pluginId Plugin to rename
+    # @param newName  New plugin name
     def rename_plugin(self, pluginId, newName):
         return bool(self.lib.carla_rename_plugin(pluginId, newName.encode("utf-8")))
 
+    # Clone a plugin.
+    # @param pluginId Plugin to clone
     def clone_plugin(self, pluginId):
         return bool(self.lib.carla_clone_plugin(pluginId))
 
+    # Prepare replace of a plugin.\n
+    # The next call to carla_add_plugin() will use this id, replacing the current plugin.
+    # @param pluginId Plugin to replace
+    # @note This function requires carla_add_plugin() to be called afterwards *as soon as possible*.
     def replace_plugin(self, pluginId):
         return bool(self.lib.carla_replace_plugin(pluginId))
 
+    # Switch two plugins positions.
+    # @param pluginIdA Plugin A
+    # @param pluginIdB Plugin B
     def switch_plugins(self, pluginIdA, pluginIdB):
         return bool(self.lib.carla_switch_plugins(pluginIdA, pluginIdB))
 
+    # Load a plugin state.
+    # @param pluginId Plugin
+    # @param filename Path to plugin state
+    # @see carla_save_plugin_state()
     def load_plugin_state(self, pluginId, filename):
         return bool(self.lib.carla_load_plugin_state(pluginId, filename.encode("utf-8")))
 
+    # Save a plugin state.
+    # @param pluginId Plugin
+    # @param filename Path to plugin state
+    # @see carla_load_plugin_state()
     def save_plugin_state(self, pluginId, filename):
         return bool(self.lib.carla_save_plugin_state(pluginId, filename.encode("utf-8")))
 
+    # Get information from a plugin.
+    # @param pluginId Plugin
     def get_plugin_info(self, pluginId):
         return structToDict(self.lib.carla_get_plugin_info(pluginId).contents)
 
+    # Get audio port count information from a plugin.
+    # @param pluginId Plugin
     def get_audio_port_count_info(self, pluginId):
         return structToDict(self.lib.carla_get_audio_port_count_info(pluginId).contents)
 
+    # Get MIDI port count information from a plugin.
+    # @param pluginId Plugin
     def get_midi_port_count_info(self, pluginId):
         return structToDict(self.lib.carla_get_midi_port_count_info(pluginId).contents)
 
+    # Get parameter count information from a plugin.
+    # @param pluginId Plugin
     def get_parameter_count_info(self, pluginId):
         return structToDict(self.lib.carla_get_parameter_count_info(pluginId).contents)
 
+    # Get parameter information from a plugin.
+    # @param pluginId    Plugin
+    # @param parameterId Parameter index
+    # @see carla_get_parameter_count()
     def get_parameter_info(self, pluginId, parameterId):
         return structToDict(self.lib.carla_get_parameter_info(pluginId, parameterId).contents)
 
+    # Get parameter scale point information from a plugin.
+    # @param pluginId     Plugin
+    # @param parameterId  Parameter index
+    # @param scalePointId Parameter scale-point index
+    # @see CarlaParameterInfo::scalePointCount
     def get_parameter_scalepoint_info(self, pluginId, parameterId, scalePointId):
         return structToDict(self.lib.carla_get_parameter_scalepoint_info(pluginId, parameterId, scalePointId).contents)
 
+    # Get a plugin's parameter data.
+    # @param pluginId    Plugin
+    # @param parameterId Parameter index
+    # @see carla_get_parameter_count()
     def get_parameter_data(self, pluginId, parameterId):
         return structToDict(self.lib.carla_get_parameter_data(pluginId, parameterId).contents)
 
+    # Get a plugin's parameter ranges.
+    # @param pluginId    Plugin
+    # @param parameterId Parameter index
+    # @see carla_get_parameter_count()
     def get_parameter_ranges(self, pluginId, parameterId):
         return structToDict(self.lib.carla_get_parameter_ranges(pluginId, parameterId).contents)
 
+    # Get a plugin's MIDI program data.
+    # @param pluginId      Plugin
+    # @param midiProgramId MIDI Program index
+    # @see carla_get_midi_program_count()
     def get_midi_program_data(self, pluginId, midiProgramId):
         return structToDict(self.lib.carla_get_midi_program_data(pluginId, midiProgramId).contents)
 
+    # Get a plugin's custom data.
+    # @param pluginId     Plugin
+    # @param customDataId Custom data index
+    # @see carla_get_custom_data_count()
     def get_custom_data(self, pluginId, customDataId):
         return structToDict(self.lib.carla_get_custom_data(pluginId, customDataId).contents)
 
+    # Get a plugin's chunk data.
+    # @param pluginId Plugin
+    # @see PLUGIN_OPTION_USE_CHUNKS
     def get_chunk_data(self, pluginId):
         return charPtrToString(self.lib.carla_get_chunk_data(pluginId))
 
+    # Get how many parameters a plugin has.
+    # @param pluginId Plugin
     def get_parameter_count(self, pluginId):
         return int(self.lib.carla_get_parameter_count(pluginId))
 
+    # Get how many programs a plugin has.
+    # @param pluginId Plugin
+    # @see carla_get_program_name()
     def get_program_count(self, pluginId):
         return int(self.lib.carla_get_program_count(pluginId))
 
+    # Get how many MIDI programs a plugin has.
+    # @param pluginId Plugin
+    # @see carla_get_midi_program_name() and carla_get_midi_program_data()
     def get_midi_program_count(self, pluginId):
         return int(self.lib.carla_get_midi_program_count(pluginId))
 
+    # Get how many custom data sets a plugin has.
+    # @param pluginId Plugin
+    # @see carla_get_custom_data()
     def get_custom_data_count(self, pluginId):
         return int(self.lib.carla_get_custom_data_count(pluginId))
 
+    # Get a plugin's parameter text (custom display of internal values).
+    # @param pluginId    Plugin
+    # @param parameterId Parameter index
+    # @see PARAMETER_USES_CUSTOM_TEXT
     def get_parameter_text(self, pluginId, parameterId):
         return charPtrToString(self.lib.carla_get_parameter_text(pluginId, parameterId))
 
+    # Get a plugin's program name.
+    # @param pluginId  Plugin
+    # @param programId Program index
+    # @see carla_get_program_count()
     def get_program_name(self, pluginId, programId):
         return charPtrToString(self.lib.carla_get_program_name(pluginId, programId))
 
+    # Get a plugin's MIDI program name.
+    # @param pluginId      Plugin
+    # @param midiProgramId MIDI Program index
+    # @see carla_get_midi_program_count()
     def get_midi_program_name(self, pluginId, midiProgramId):
         return charPtrToString(self.lib.carla_get_midi_program_name(pluginId, midiProgramId))
 
+    # Get a plugin's real name.\n
+    # This is the name the plugin uses to identify itself; may not be unique.
+    # @param pluginId Plugin
     def get_real_plugin_name(self, pluginId):
         return charPtrToString(self.lib.carla_get_real_plugin_name(pluginId))
 
+    # Get a plugin's program index.
+    # @param pluginId Plugin
     def get_current_program_index(self, pluginId):
         return self.lib.carla_get_current_program_index(pluginId)
 
+    # Get a plugin's midi program index.
+    # @param pluginId Plugin
     def get_current_midi_program_index(self, pluginId):
         return self.lib.carla_get_current_midi_program_index(pluginId)
 
+    # Get a plugin's default parameter value.
+    # @param pluginId    Plugin
+    # @param parameterId Parameter index
     def get_default_parameter_value(self, pluginId, parameterId):
         return self.lib.carla_get_default_parameter_value(pluginId, parameterId)
 
+    # Get a plugin's current parameter value.
+    # @param pluginId    Plugin
+    # @param parameterId Parameter index
     def get_current_parameter_value(self, pluginId, parameterId):
         return self.lib.carla_get_current_parameter_value(pluginId, parameterId)
 
-    def get_input_peak_value(self, pluginId, portId):
-        return self.lib.carla_get_input_peak_value(pluginId, portId)
+    # Get a plugin's input peak value.
+    # @param pluginId Plugin
+    # @param isLeft   Wherever to get the left/mono value, otherwise right.
+    def get_input_peak_value(self, pluginId, isLeft):
+        return self.lib.carla_get_input_peak_value(pluginId, isLeft)
 
-    def get_output_peak_value(self, pluginId, portId):
-        return self.lib.carla_get_output_peak_value(pluginId, portId)
+    # Get a plugin's output peak value.
+    # @param pluginId Plugin
+    # @param isLeft   Wherever to get the left/mono value, otherwise right.
+    def get_output_peak_value(self, pluginId, isLeft):
+        return self.lib.carla_get_output_peak_value(pluginId, isLeft)
 
+    # Enable a plugin's option.
+    # @param pluginId Plugin
+    # @param option   An option from PluginOptions
+    # @param yesNo    New enabled state
     def set_option(self, pluginId, option, yesNo):
         self.lib.carla_set_option(pluginId, option, yesNo)
 
+    # Enable or disable a plugin.
+    # @param pluginId Plugin
+    # @param onOff    New active state
     def set_active(self, pluginId, onOff):
         self.lib.carla_set_active(pluginId, onOff)
 
+    # Change a plugin's internal dry/wet.
+    # @param pluginId Plugin
+    # @param value    New dry/wet value
     def set_drywet(self, pluginId, value):
         self.lib.carla_set_drywet(pluginId, value)
 
+    # Change a plugin's internal volume.
+    # @param pluginId Plugin
+    # @param value    New volume
     def set_volume(self, pluginId, value):
         self.lib.carla_set_volume(pluginId, value)
 
+    # Change a plugin's internal stereo balance, left channel.
+    # @param pluginId Plugin
+    # @param value    New value
     def set_balance_left(self, pluginId, value):
         self.lib.carla_set_balance_left(pluginId, value)
 
+    # Change a plugin's internal stereo balance, right channel.
+    # @param pluginId Plugin
+    # @param value    New value
     def set_balance_right(self, pluginId, value):
         self.lib.carla_set_balance_right(pluginId, value)
 
+    # Change a plugin's internal mono panning value.
+    # @param pluginId Plugin
+    # @param value    New value
     def set_panning(self, pluginId, value):
         self.lib.carla_set_panning(pluginId, value)
 
+    # Change a plugin's internal control channel.
+    # @param pluginId Plugin
+    # @param channel  New channel
     def set_ctrl_channel(self, pluginId, channel):
         self.lib.carla_set_ctrl_channel(pluginId, channel)
 
+    # Change a plugin's parameter value.
+    # @param pluginId    Plugin
+    # @param parameterId Parameter index
+    # @param value       New value
     def set_parameter_value(self, pluginId, parameterId, value):
         self.lib.carla_set_parameter_value(pluginId, parameterId, value)
 
-    def set_parameter_midi_cc(self, pluginId, parameterId, cc):
-        self.lib.carla_set_parameter_midi_cc(pluginId, parameterId, cc)
-
+    # Change a plugin's parameter MIDI cc.
+    # @param pluginId    Plugin
+    # @param parameterId Parameter index
+    # @param cc          New MIDI cc
     def set_parameter_midi_channel(self, pluginId, parameterId, channel):
         self.lib.carla_set_parameter_midi_channel(pluginId, parameterId, channel)
 
+    # Change a plugin's parameter MIDI channel.
+    # @param pluginId    Plugin
+    # @param parameterId Parameter index
+    # @param channel     New MIDI channel
+    def set_parameter_midi_cc(self, pluginId, parameterId, cc):
+        self.lib.carla_set_parameter_midi_cc(pluginId, parameterId, cc)
+
+    # Change a plugin's current program.
+    # @param pluginId  Plugin
+    # @param programId New program
     def set_program(self, pluginId, programId):
         self.lib.carla_set_program(pluginId, programId)
 
+    # Change a plugin's current MIDI program.
+    # @param pluginId      Plugin
+    # @param midiProgramId New value
     def set_midi_program(self, pluginId, midiProgramId):
         self.lib.carla_set_midi_program(pluginId, midiProgramId)
 
+    # Set a plugin's custom data set.
+    # @param pluginId Plugin
+    # @param type     Type
+    # @param key      Key
+    # @param value    New value
+    # @see CustomDataTypes and CustomDataKeys
     def set_custom_data(self, pluginId, type_, key, value):
         self.lib.carla_set_custom_data(pluginId, type_.encode("utf-8"), key.encode("utf-8"), value.encode("utf-8"))
 
+    # Set a plugin's chunk data.
+    # @param pluginId Plugin
+    # @param value    New value
+    # @see PLUGIN_OPTION_USE_CHUNKS and carla_get_chunk_data()
     def set_chunk_data(self, pluginId, chunkData):
         self.lib.carla_set_chunk_data(pluginId, chunkData.encode("utf-8"))
 
+    # Tell a plugin to prepare for save.\n
+    # This should be called before saving custom data sets.
+    # @param pluginId Plugin
     def prepare_for_save(self, pluginId):
         self.lib.carla_prepare_for_save(pluginId)
 
+    # Send a single note of a plugin.\n
+    # If velocity is 0, note-off is sent; note-on otherwise.
+    # @param pluginId Plugin
+    # @param channel  Note channel
+    # @param note     Note pitch
+    # @param velocity Note velocity
     def send_midi_note(self, pluginId, channel, note, velocity):
         self.lib.carla_send_midi_note(pluginId, channel, note, velocity)
 
-    def show_gui(self, pluginId, yesNo):
-        self.lib.carla_show_gui(pluginId, yesNo)
+    # Tell a plugin to show its own custom UI.
+    # @param pluginId Plugin
+    # @param yesNo    New UI state, visible or not
+    # @see PLUGIN_HAS_CUSTOM_UI
+    def show_custom_ui(self, pluginId, yesNo):
+        self.lib.carla_show_custom_ui(pluginId, yesNo)
 
-    def get_last_error(self):
-        return self.lib.carla_get_last_error()
-
-    def get_host_osc_url_tcp(self):
-        return self.lib.carla_get_host_osc_url_tcp()
-
-    def get_host_osc_url_udp(self):
-        return self.lib.carla_get_host_osc_url_udp()
-
+    # Get the current engine buffer size.
     def get_buffer_size(self):
         return self.lib.carla_get_buffer_size()
 
+    # Get the current engine sample rate.
     def get_sample_rate(self):
         return self.lib.carla_get_sample_rate()
+
+    # Get the last error.
+    def get_last_error(self):
+        return self.lib.carla_get_last_error()
+
+    # Get the current engine OSC URL (TCP).
+    def get_host_osc_url_tcp(self):
+        return self.lib.carla_get_host_osc_url_tcp()
+
+    # Get the current engine OSC URL (UDP).
+    def get_host_osc_url_udp(self):
+        return self.lib.carla_get_host_osc_url_udp()
 
     def _init(self, libName):
         self.lib = cdll.LoadLibrary(libName)
