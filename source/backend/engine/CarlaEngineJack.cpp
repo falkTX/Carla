@@ -2032,8 +2032,8 @@ private:
         float* inBuffer[inCount];
         float* outBuffer[outCount];
 
-        float inPeaks[2] = { 0.0f };
-        float outPeaks[2] = { 0.0f };
+        float inPeaks[2] = { 0.0f, 0.0f };
+        float outPeaks[2] = { 0.0f, 0.0f };
 
         for (uint32_t i=0; i < inCount; ++i)
         {
