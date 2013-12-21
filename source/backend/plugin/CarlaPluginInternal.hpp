@@ -360,11 +360,7 @@ struct PluginPostRtEvent {
           value2(-1),
           value3(0.0f) {}
 
-#ifndef DEBUG
     CARLA_DECLARE_NON_COPY_STRUCT(PluginPostRtEvent)
-#else
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PluginPostRtEvent)
-#endif
 };
 
 // -----------------------------------------------------------------------
@@ -379,11 +375,7 @@ struct ExternalMidiNote {
           note(0),
           velo(0) {}
 
-#ifndef DEBUG
     CARLA_DECLARE_NON_COPY_STRUCT(ExternalMidiNote)
-#else
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(ExternalMidiNote)
-#endif
 };
 
 // -----------------------------------------------------------------------
@@ -445,8 +437,7 @@ struct CarlaPluginProtectedData {
             mutex.unlock();
         }
 
-        CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(ExternalNotes)
-
+        CARLA_DECLARE_NON_COPY_STRUCT(ExternalNotes)
     } extNotes;
 
     struct PostRtEvents {
@@ -487,8 +478,7 @@ struct CarlaPluginProtectedData {
             mutex.unlock();
         }
 
-        CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PostRtEvents)
-
+        CARLA_DECLARE_NON_COPY_STRUCT(PostRtEvents)
     } postRtEvents;
 
 #ifndef BUILD_BRIDGE
@@ -506,8 +496,7 @@ struct CarlaPluginProtectedData {
               balanceRight(1.0f),
               panning(0.0f) {}
 
-        CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PostProc)
-
+        CARLA_DECLARE_NON_COPY_STRUCT(PostProc)
     } postProc;
 #endif
 
@@ -523,8 +512,6 @@ struct CarlaPluginProtectedData {
         OSC(OSC&) = delete;
         OSC(const OSC&) = delete;
 #endif
-        CARLA_LEAK_DETECTOR(OSC)
-
     } osc;
 
     CarlaPluginProtectedData(CarlaEngine* const engine_, CarlaPlugin* const plugin)
