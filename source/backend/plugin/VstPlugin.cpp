@@ -909,7 +909,7 @@ public:
                     dispatcher(effSetProgram, 0, i, nullptr, 0.0f);
                     dispatcher(effGetProgramName, 0, 0, strBuf, 0.0f);
                 }
-                kData->prog.names[i] = strdup(strBuf);
+                kData->prog.names[i] = carla_strdup(strBuf);
             }
         }
 
