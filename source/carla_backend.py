@@ -1162,7 +1162,7 @@ class Host(object):
     # @param index Driver index
     # @param name  Device name
     def get_engine_driver_device_info(self, index, name):
-        return structToDict(self.lib.carla_get_engine_driver_device_info(index, name))
+        return structToDict(self.lib.carla_get_engine_driver_device_info(index, name).contents)
 
     # Get how many internal plugins are available.
     def get_internal_plugin_count(self):
@@ -1240,8 +1240,8 @@ class Host(object):
         return bool(self.lib.carla_save_project(filename.encode("utf-8")))
 
     # Connect two patchbay ports.
-    # @param portA Output port
-    # @param portB Input port
+    # @param portIdA Output port
+    # @param portIdB Input port
     # @see ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED
     def patchbay_connect(self, portIdA, portIdB):
         return bool(self.lib.carla_patchbay_connect(portIdA, portIdB))
@@ -1285,11 +1285,11 @@ class Host(object):
     # @param name     Name of the plugin, can be NULL
     # @param label    Plugin label, if applicable
     # @param extraPtr Extra pointer, defined per plugin type
-    def add_plugin(self, btype, ptype, filename, name, label, extraStuff):
+    def add_plugin(self, btype, ptype, filename, name, label, extraPtr):
         cfilename = filename.encode("utf-8") if filename else None
         cname     = name.encode("utf-8") if name else None
         clabel    = label.encode("utf-8") if label else None
-        return bool(self.lib.carla_add_plugin(btype, ptype, cfilename, cname, clabel, cast(extraStuff, c_void_p)))
+        return bool(self.lib.carla_add_plugin(btype, ptype, cfilename, cname, clabel, cast(extraPtr, c_void_p)))
 
     # Remove a plugin.
     # @param pluginId Plugin to remove.
@@ -1305,7 +1305,7 @@ class Host(object):
     # @param pluginId Plugin to rename
     # @param newName  New plugin name
     def rename_plugin(self, pluginId, newName):
-        return bool(self.lib.carla_rename_plugin(pluginId, newName.encode("utf-8")))
+        return charPtrToString(self.lib.carla_rename_plugin(pluginId, newName.encode("utf-8")))
 
     # Clone a plugin.
     # @param pluginId Plugin to clone
@@ -1461,36 +1461,36 @@ class Host(object):
     # Get a plugin's program index.
     # @param pluginId Plugin
     def get_current_program_index(self, pluginId):
-        return self.lib.carla_get_current_program_index(pluginId)
+        return int(self.lib.carla_get_current_program_index(pluginId))
 
     # Get a plugin's midi program index.
     # @param pluginId Plugin
     def get_current_midi_program_index(self, pluginId):
-        return self.lib.carla_get_current_midi_program_index(pluginId)
+        return int(self.lib.carla_get_current_midi_program_index(pluginId))
 
     # Get a plugin's default parameter value.
     # @param pluginId    Plugin
     # @param parameterId Parameter index
     def get_default_parameter_value(self, pluginId, parameterId):
-        return self.lib.carla_get_default_parameter_value(pluginId, parameterId)
+        return float(self.lib.carla_get_default_parameter_value(pluginId, parameterId))
 
     # Get a plugin's current parameter value.
     # @param pluginId    Plugin
     # @param parameterId Parameter index
     def get_current_parameter_value(self, pluginId, parameterId):
-        return self.lib.carla_get_current_parameter_value(pluginId, parameterId)
+        return float(self.lib.carla_get_current_parameter_value(pluginId, parameterId))
 
     # Get a plugin's input peak value.
     # @param pluginId Plugin
     # @param isLeft   Wherever to get the left/mono value, otherwise right.
     def get_input_peak_value(self, pluginId, isLeft):
-        return self.lib.carla_get_input_peak_value(pluginId, isLeft)
+        return float(self.lib.carla_get_input_peak_value(pluginId, isLeft))
 
     # Get a plugin's output peak value.
     # @param pluginId Plugin
     # @param isLeft   Wherever to get the left/mono value, otherwise right.
     def get_output_peak_value(self, pluginId, isLeft):
-        return self.lib.carla_get_output_peak_value(pluginId, isLeft)
+        return float(self.lib.carla_get_output_peak_value(pluginId, isLeft))
 
     # Enable a plugin's option.
     # @param pluginId Plugin
@@ -1614,23 +1614,23 @@ class Host(object):
 
     # Get the current engine buffer size.
     def get_buffer_size(self):
-        return self.lib.carla_get_buffer_size()
+        return int(self.lib.carla_get_buffer_size())
 
     # Get the current engine sample rate.
     def get_sample_rate(self):
-        return self.lib.carla_get_sample_rate()
+        return float(self.lib.carla_get_sample_rate())
 
     # Get the last error.
     def get_last_error(self):
-        return self.lib.carla_get_last_error()
+        return charPtrToString(self.lib.carla_get_last_error())
 
     # Get the current engine OSC URL (TCP).
     def get_host_osc_url_tcp(self):
-        return self.lib.carla_get_host_osc_url_tcp()
+        return charPtrToString(self.lib.carla_get_host_osc_url_tcp())
 
     # Get the current engine OSC URL (UDP).
     def get_host_osc_url_udp(self):
-        return self.lib.carla_get_host_osc_url_udp()
+        return charPtrToString(self.lib.carla_get_host_osc_url_udp())
 
     def _init(self, libName):
         self.lib = cdll.LoadLibrary(libName)
@@ -1680,6 +1680,9 @@ class Host(object):
         self.lib.carla_set_engine_option.argtypes = [c_enum, c_int, c_char_p]
         self.lib.carla_set_engine_option.restype = None
 
+        self.lib.carla_set_file_callback.argtypes = [FileCallbackFunc, c_void_p]
+        self.lib.carla_set_file_callback.restype = None
+
         self.lib.carla_load_file.argtypes = [c_char_p]
         self.lib.carla_load_file.restype = c_bool
 
@@ -1704,7 +1707,7 @@ class Host(object):
         self.lib.carla_transport_pause.argtypes = None
         self.lib.carla_transport_pause.restype = None
 
-        self.lib.carla_transport_relocate.argtypes = [c_uint32]
+        self.lib.carla_transport_relocate.argtypes = [c_uint64]
         self.lib.carla_transport_relocate.restype = None
 
         self.lib.carla_get_current_transport_frame.argtypes = None
@@ -1809,10 +1812,10 @@ class Host(object):
         self.lib.carla_get_current_parameter_value.argtypes = [c_uint, c_uint32]
         self.lib.carla_get_current_parameter_value.restype = c_float
 
-        self.lib.carla_get_input_peak_value.argtypes = [c_uint, c_ushort]
+        self.lib.carla_get_input_peak_value.argtypes = [c_uint, c_bool]
         self.lib.carla_get_input_peak_value.restype = c_float
 
-        self.lib.carla_get_output_peak_value.argtypes = [c_uint, c_ushort]
+        self.lib.carla_get_output_peak_value.argtypes = [c_uint, c_bool]
         self.lib.carla_get_output_peak_value.restype = c_float
 
         self.lib.carla_set_option.argtypes = [c_uint, c_uint, c_bool]
@@ -1842,11 +1845,11 @@ class Host(object):
         self.lib.carla_set_parameter_value.argtypes = [c_uint, c_uint32, c_float]
         self.lib.carla_set_parameter_value.restype = None
 
-        self.lib.carla_set_parameter_midi_cc.argtypes = [c_uint, c_uint32, c_int16]
-        self.lib.carla_set_parameter_midi_cc.restype = None
-
         self.lib.carla_set_parameter_midi_channel.argtypes = [c_uint, c_uint32, c_uint8]
         self.lib.carla_set_parameter_midi_channel.restype = None
+
+        self.lib.carla_set_parameter_midi_cc.argtypes = [c_uint, c_uint32, c_int16]
+        self.lib.carla_set_parameter_midi_cc.restype = None
 
         self.lib.carla_set_program.argtypes = [c_uint, c_uint32]
         self.lib.carla_set_program.restype = None
@@ -1866,8 +1869,8 @@ class Host(object):
         self.lib.carla_send_midi_note.argtypes = [c_uint, c_uint8, c_uint8, c_uint8]
         self.lib.carla_send_midi_note.restype = None
 
-        self.lib.carla_show_gui.argtypes = [c_uint, c_bool]
-        self.lib.carla_show_gui.restype = None
+        self.lib.carla_show_custom_ui.argtypes = [c_uint, c_bool]
+        self.lib.carla_show_custom_ui.restype = None
 
         self.lib.carla_get_buffer_size.argtypes = None
         self.lib.carla_get_buffer_size.restype = c_uint32

@@ -620,11 +620,11 @@ CARLA_EXPORT bool carla_save_project(const char* filename);
 
 /*!
  * Connect two patchbay ports.
- * @param portA Output port
- * @param portB Input port
+ * @param portIdA Output port
+ * @param portIdB Input port
  * @see ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED
  */
-CARLA_EXPORT bool carla_patchbay_connect(int portA, int portB);
+CARLA_EXPORT bool carla_patchbay_connect(int portIdA, int portIdB);
 
 /*!
  * Disconnect two patchbay ports.
@@ -652,7 +652,7 @@ CARLA_EXPORT void carla_transport_pause();
  * Relocate the engine transport to a specific frame.
  * @param frames Frame to relocate to.
  */
-CARLA_EXPORT void carla_transport_relocate(uint32_t frame);
+CARLA_EXPORT void carla_transport_relocate(uint64_t frame);
 
 /*!
  * Get the current transport frame.
@@ -680,7 +680,7 @@ CARLA_EXPORT bool carla_add_plugin(BinaryType btype, PluginType ptype, const cha
  * Remove one plugin.
  * @param pluginId Plugin to remove.
  */
-CARLA_EXPORT bool carla_remove_plugin(unsigned int pluginId);
+CARLA_EXPORT bool carla_remove_plugin(uint pluginId);
 
 /*!
  * Remove all plugins.
@@ -693,13 +693,13 @@ CARLA_EXPORT bool carla_remove_all_plugins();
  * @param pluginId Plugin to rename
  * @param newName  New plugin name
  */
-CARLA_EXPORT const char* carla_rename_plugin(unsigned int pluginId, const char* newName);
+CARLA_EXPORT const char* carla_rename_plugin(uint pluginId, const char* newName);
 
 /*!
  * Clone a plugin.
  * @param pluginId Plugin to clone
  */
-CARLA_EXPORT bool carla_clone_plugin(unsigned int pluginId);
+CARLA_EXPORT bool carla_clone_plugin(uint pluginId);
 
 /*!
  * Prepare replace of a plugin.\n
@@ -707,14 +707,14 @@ CARLA_EXPORT bool carla_clone_plugin(unsigned int pluginId);
  * @param pluginId Plugin to replace
  * @note This function requires carla_add_plugin() to be called afterwards *as soon as possible*.
  */
-CARLA_EXPORT bool carla_replace_plugin(unsigned int pluginId);
+CARLA_EXPORT bool carla_replace_plugin(uint pluginId);
 
 /*!
  * Switch two plugins positions.
  * @param pluginIdA Plugin A
  * @param pluginIdB Plugin B
  */
-CARLA_EXPORT bool carla_switch_plugins(unsigned int pluginIdA, unsigned int pluginIdB);
+CARLA_EXPORT bool carla_switch_plugins(uint pluginIdA, uint pluginIdB);
 
 /*!
  * Load a plugin state.
@@ -722,7 +722,7 @@ CARLA_EXPORT bool carla_switch_plugins(unsigned int pluginIdA, unsigned int plug
  * @param filename Path to plugin state
  * @see carla_save_plugin_state()
  */
-CARLA_EXPORT bool carla_load_plugin_state(unsigned int pluginId, const char* filename);
+CARLA_EXPORT bool carla_load_plugin_state(uint pluginId, const char* filename);
 
 /*!
  * Save a plugin state.
@@ -730,31 +730,31 @@ CARLA_EXPORT bool carla_load_plugin_state(unsigned int pluginId, const char* fil
  * @param filename Path to plugin state
  * @see carla_load_plugin_state()
  */
-CARLA_EXPORT bool carla_save_plugin_state(unsigned int pluginId, const char* filename);
+CARLA_EXPORT bool carla_save_plugin_state(uint pluginId, const char* filename);
 
 /*!
  * Get information from a plugin.
  * @param pluginId Plugin
  */
-CARLA_EXPORT const CarlaPluginInfo* carla_get_plugin_info(unsigned int pluginId);
+CARLA_EXPORT const CarlaPluginInfo* carla_get_plugin_info(uint pluginId);
 
 /*!
  * Get audio port count information from a plugin.
  * @param pluginId Plugin
  */
-CARLA_EXPORT const CarlaPortCountInfo* carla_get_audio_port_count_info(unsigned int pluginId);
+CARLA_EXPORT const CarlaPortCountInfo* carla_get_audio_port_count_info(uint pluginId);
 
 /*!
  * Get MIDI port count information from a plugin.
  * @param pluginId Plugin
  */
-CARLA_EXPORT const CarlaPortCountInfo* carla_get_midi_port_count_info(unsigned int pluginId);
+CARLA_EXPORT const CarlaPortCountInfo* carla_get_midi_port_count_info(uint pluginId);
 
 /*!
  * Get parameter count information from a plugin.
  * @param pluginId Plugin
  */
-CARLA_EXPORT const CarlaPortCountInfo* carla_get_parameter_count_info(unsigned int pluginId);
+CARLA_EXPORT const CarlaPortCountInfo* carla_get_parameter_count_info(uint pluginId);
 
 /*!
  * Get parameter information from a plugin.
@@ -762,7 +762,7 @@ CARLA_EXPORT const CarlaPortCountInfo* carla_get_parameter_count_info(unsigned i
  * @param parameterId Parameter index
  * @see carla_get_parameter_count()
  */
-CARLA_EXPORT const CarlaParameterInfo* carla_get_parameter_info(unsigned int pluginId, uint32_t parameterId);
+CARLA_EXPORT const CarlaParameterInfo* carla_get_parameter_info(uint pluginId, uint32_t parameterId);
 
 /*!
  * Get parameter scale point information from a plugin.
@@ -771,7 +771,7 @@ CARLA_EXPORT const CarlaParameterInfo* carla_get_parameter_info(unsigned int plu
  * @param scalePointId Parameter scale-point index
  * @see CarlaParameterInfo::scalePointCount
  */
-CARLA_EXPORT const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(unsigned int pluginId, uint32_t parameterId, uint32_t scalePointId);
+CARLA_EXPORT const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(uint pluginId, uint32_t parameterId, uint32_t scalePointId);
 
 /*!
  * Get a plugin's parameter data.
@@ -779,7 +779,7 @@ CARLA_EXPORT const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(unsi
  * @param parameterId Parameter index
  * @see carla_get_parameter_count()
  */
-CARLA_EXPORT const ParameterData* carla_get_parameter_data(unsigned int pluginId, uint32_t parameterId);
+CARLA_EXPORT const ParameterData* carla_get_parameter_data(uint pluginId, uint32_t parameterId);
 
 /*!
  * Get a plugin's parameter ranges.
@@ -787,7 +787,7 @@ CARLA_EXPORT const ParameterData* carla_get_parameter_data(unsigned int pluginId
  * @param parameterId Parameter index
  * @see carla_get_parameter_count()
  */
-CARLA_EXPORT const ParameterRanges* carla_get_parameter_ranges(unsigned int pluginId, uint32_t parameterId);
+CARLA_EXPORT const ParameterRanges* carla_get_parameter_ranges(uint pluginId, uint32_t parameterId);
 
 /*!
  * Get a plugin's MIDI program data.
@@ -795,7 +795,7 @@ CARLA_EXPORT const ParameterRanges* carla_get_parameter_ranges(unsigned int plug
  * @param midiProgramId MIDI Program index
  * @see carla_get_midi_program_count()
  */
-CARLA_EXPORT const MidiProgramData* carla_get_midi_program_data(unsigned int pluginId, uint32_t midiProgramId);
+CARLA_EXPORT const MidiProgramData* carla_get_midi_program_data(uint pluginId, uint32_t midiProgramId);
 
 /*!
  * Get a plugin's custom data.
@@ -803,41 +803,41 @@ CARLA_EXPORT const MidiProgramData* carla_get_midi_program_data(unsigned int plu
  * @param customDataId Custom data index
  * @see carla_get_custom_data_count()
  */
-CARLA_EXPORT const CustomData* carla_get_custom_data(unsigned int pluginId, uint32_t customDataId);
+CARLA_EXPORT const CustomData* carla_get_custom_data(uint pluginId, uint32_t customDataId);
 
 /*!
  * Get a plugin's chunk data.
  * @param pluginId Plugin
  * @see PLUGIN_OPTION_USE_CHUNKS and carla_set_chunk_data()
  */
-CARLA_EXPORT const char* carla_get_chunk_data(unsigned int pluginId);
+CARLA_EXPORT const char* carla_get_chunk_data(uint pluginId);
 
 /*!
  * Get how many parameters a plugin has.
  * @param pluginId Plugin
  */
-CARLA_EXPORT uint32_t carla_get_parameter_count(unsigned int pluginId);
+CARLA_EXPORT uint32_t carla_get_parameter_count(uint pluginId);
 
 /*!
  * Get how many programs a plugin has.
  * @param pluginId Plugin
  * @see carla_get_program_name()
  */
-CARLA_EXPORT uint32_t carla_get_program_count(unsigned int pluginId);
+CARLA_EXPORT uint32_t carla_get_program_count(uint pluginId);
 
 /*!
  * Get how many MIDI programs a plugin has.
  * @param pluginId Plugin
  * @see carla_get_midi_program_name() and carla_get_midi_program_data()
  */
-CARLA_EXPORT uint32_t carla_get_midi_program_count(unsigned int pluginId);
+CARLA_EXPORT uint32_t carla_get_midi_program_count(uint pluginId);
 
 /*!
  * Get how many custom data sets a plugin has.
  * @param pluginId Plugin
  * @see carla_get_custom_data()
  */
-CARLA_EXPORT uint32_t carla_get_custom_data_count(unsigned int pluginId);
+CARLA_EXPORT uint32_t carla_get_custom_data_count(uint pluginId);
 
 /*!
  * Get a plugin's parameter text (custom display of internal values).
@@ -845,7 +845,7 @@ CARLA_EXPORT uint32_t carla_get_custom_data_count(unsigned int pluginId);
  * @param parameterId Parameter index
  * @see PARAMETER_USES_CUSTOM_TEXT
  */
-CARLA_EXPORT const char* carla_get_parameter_text(unsigned int pluginId, uint32_t parameterId);
+CARLA_EXPORT const char* carla_get_parameter_text(uint pluginId, uint32_t parameterId);
 
 /*!
  * Get a plugin's program name.
@@ -853,7 +853,7 @@ CARLA_EXPORT const char* carla_get_parameter_text(unsigned int pluginId, uint32_
  * @param programId Program index
  * @see carla_get_program_count()
  */
-CARLA_EXPORT const char* carla_get_program_name(unsigned int pluginId, uint32_t programId);
+CARLA_EXPORT const char* carla_get_program_name(uint pluginId, uint32_t programId);
 
 /*!
  * Get a plugin's MIDI program name.
@@ -861,54 +861,54 @@ CARLA_EXPORT const char* carla_get_program_name(unsigned int pluginId, uint32_t 
  * @param midiProgramId MIDI Program index
  * @see carla_get_midi_program_count()
  */
-CARLA_EXPORT const char* carla_get_midi_program_name(unsigned int pluginId, uint32_t midiProgramId);
+CARLA_EXPORT const char* carla_get_midi_program_name(uint pluginId, uint32_t midiProgramId);
 
 /*!
  * Get a plugin's real name.\n
  * This is the name the plugin uses to identify itself; may not be unique.
  * @param pluginId Plugin
  */
-CARLA_EXPORT const char* carla_get_real_plugin_name(unsigned int pluginId);
+CARLA_EXPORT const char* carla_get_real_plugin_name(uint pluginId);
 
 /*!
  * Get a plugin's program index.
  * @param pluginId Plugin
  */
-CARLA_EXPORT int32_t carla_get_current_program_index(unsigned int pluginId);
+CARLA_EXPORT int32_t carla_get_current_program_index(uint pluginId);
 
 /*!
  * Get a plugin's midi program index.
  * @param pluginId Plugin
  */
-CARLA_EXPORT int32_t carla_get_current_midi_program_index(unsigned int pluginId);
+CARLA_EXPORT int32_t carla_get_current_midi_program_index(uint pluginId);
 
 /*!
  * Get a plugin's default parameter value.
  * @param pluginId    Plugin
  * @param parameterId Parameter index
  */
-CARLA_EXPORT float carla_get_default_parameter_value(unsigned int pluginId, uint32_t parameterId);
+CARLA_EXPORT float carla_get_default_parameter_value(uint pluginId, uint32_t parameterId);
 
 /*!
  * Get a plugin's current parameter value.
  * @param pluginId    Plugin
  * @param parameterId Parameter index
  */
-CARLA_EXPORT float carla_get_current_parameter_value(unsigned int pluginId, uint32_t parameterId);
+CARLA_EXPORT float carla_get_current_parameter_value(uint pluginId, uint32_t parameterId);
 
 /*!
  * Get a plugin's input peak value.
  * @param pluginId Plugin
  * @param isLeft   Wherever to get the left/mono value, otherwise right.
  */
-CARLA_EXPORT float carla_get_input_peak_value(unsigned int pluginId, bool isLeft);
+CARLA_EXPORT float carla_get_input_peak_value(uint pluginId, bool isLeft);
 
 /*!
  * Get a plugin's output peak value.
  * @param pluginId Plugin
  * @param isLeft   Wherever to get the left/mono value, otherwise right.
  */
-CARLA_EXPORT float carla_get_output_peak_value(unsigned int pluginId, bool isLeft);
+CARLA_EXPORT float carla_get_output_peak_value(uint pluginId, bool isLeft);
 
 /*!
  * Enable a plugin's option.
@@ -916,14 +916,14 @@ CARLA_EXPORT float carla_get_output_peak_value(unsigned int pluginId, bool isLef
  * @param option   An option from PluginOptions
  * @param yesNo    New enabled state
  */
-CARLA_EXPORT void carla_set_option(unsigned int pluginId, uint option, bool yesNo);
+CARLA_EXPORT void carla_set_option(uint pluginId, uint option, bool yesNo);
 
 /*!
  * Enable or disable a plugin.
  * @param pluginId Plugin
  * @param onOff    New active state
  */
-CARLA_EXPORT void carla_set_active(unsigned int pluginId, bool onOff);
+CARLA_EXPORT void carla_set_active(uint pluginId, bool onOff);
 
 #ifndef BUILD_BRIDGE
 /*!
@@ -931,35 +931,35 @@ CARLA_EXPORT void carla_set_active(unsigned int pluginId, bool onOff);
  * @param pluginId Plugin
  * @param value    New dry/wet value
  */
-CARLA_EXPORT void carla_set_drywet(unsigned int pluginId, float value);
+CARLA_EXPORT void carla_set_drywet(uint pluginId, float value);
 
 /*!
  * Change a plugin's internal volume.
  * @param pluginId Plugin
  * @param value    New volume
  */
-CARLA_EXPORT void carla_set_volume(unsigned int pluginId, float value);
+CARLA_EXPORT void carla_set_volume(uint pluginId, float value);
 
 /*!
  * Change a plugin's internal stereo balance, left channel.
  * @param pluginId Plugin
  * @param value    New value
  */
-CARLA_EXPORT void carla_set_balance_left(unsigned int pluginId, float value);
+CARLA_EXPORT void carla_set_balance_left(uint pluginId, float value);
 
 /*!
  * Change a plugin's internal stereo balance, right channel.
  * @param pluginId Plugin
  * @param value    New value
  */
-CARLA_EXPORT void carla_set_balance_right(unsigned int pluginId, float value);
+CARLA_EXPORT void carla_set_balance_right(uint pluginId, float value);
 
 /*!
  * Change a plugin's internal mono panning value.
  * @param pluginId Plugin
  * @param value    New value
  */
-CARLA_EXPORT void carla_set_panning(unsigned int pluginId, float value);
+CARLA_EXPORT void carla_set_panning(uint pluginId, float value);
 #endif
 
 /*!
@@ -967,7 +967,7 @@ CARLA_EXPORT void carla_set_panning(unsigned int pluginId, float value);
  * @param pluginId Plugin
  * @param channel  New channel
  */
-CARLA_EXPORT void carla_set_ctrl_channel(unsigned int pluginId, int8_t channel);
+CARLA_EXPORT void carla_set_ctrl_channel(uint pluginId, int8_t channel);
 
 /*!
  * Change a plugin's parameter value.
@@ -975,7 +975,7 @@ CARLA_EXPORT void carla_set_ctrl_channel(unsigned int pluginId, int8_t channel);
  * @param parameterId Parameter index
  * @param value       New value
  */
-CARLA_EXPORT void carla_set_parameter_value(unsigned int pluginId, uint32_t parameterId, float value);
+CARLA_EXPORT void carla_set_parameter_value(uint pluginId, uint32_t parameterId, float value);
 
 #ifndef BUILD_BRIDGE
 /*!
@@ -984,7 +984,7 @@ CARLA_EXPORT void carla_set_parameter_value(unsigned int pluginId, uint32_t para
  * @param parameterId Parameter index
  * @param channel     New MIDI channel
  */
-CARLA_EXPORT void carla_set_parameter_midi_channel(unsigned int pluginId, uint32_t parameterId, uint8_t channel);
+CARLA_EXPORT void carla_set_parameter_midi_channel(uint pluginId, uint32_t parameterId, uint8_t channel);
 
 /*!
  * Change a plugin's parameter MIDI cc.
@@ -992,7 +992,7 @@ CARLA_EXPORT void carla_set_parameter_midi_channel(unsigned int pluginId, uint32
  * @param parameterId Parameter index
  * @param cc          New MIDI cc
  */
-CARLA_EXPORT void carla_set_parameter_midi_cc(unsigned int pluginId, uint32_t parameterId, int16_t cc);
+CARLA_EXPORT void carla_set_parameter_midi_cc(uint pluginId, uint32_t parameterId, int16_t cc);
 #endif
 
 /*!
@@ -1000,14 +1000,14 @@ CARLA_EXPORT void carla_set_parameter_midi_cc(unsigned int pluginId, uint32_t pa
  * @param pluginId  Plugin
  * @param programId New program
  */
-CARLA_EXPORT void carla_set_program(unsigned int pluginId, uint32_t programId);
+CARLA_EXPORT void carla_set_program(uint pluginId, uint32_t programId);
 
 /*!
  * Change a plugin's current MIDI program.
  * @param pluginId      Plugin
  * @param midiProgramId New value
  */
-CARLA_EXPORT void carla_set_midi_program(unsigned int pluginId, uint32_t midiProgramId);
+CARLA_EXPORT void carla_set_midi_program(uint pluginId, uint32_t midiProgramId);
 
 /*!
  * Set a plugin's custom data set.
@@ -1017,7 +1017,7 @@ CARLA_EXPORT void carla_set_midi_program(unsigned int pluginId, uint32_t midiPro
  * @param value    New value
  * @see CustomDataTypes and CustomDataKeys
  */
-CARLA_EXPORT void carla_set_custom_data(unsigned int pluginId, const char* type, const char* key, const char* value);
+CARLA_EXPORT void carla_set_custom_data(uint pluginId, const char* type, const char* key, const char* value);
 
 /*!
  * Set a plugin's chunk data.
@@ -1025,14 +1025,14 @@ CARLA_EXPORT void carla_set_custom_data(unsigned int pluginId, const char* type,
  * @param value    New value
  * @see PLUGIN_OPTION_USE_CHUNKS and carla_get_chunk_data()
  */
-CARLA_EXPORT void carla_set_chunk_data(unsigned int pluginId, const char* chunkData);
+CARLA_EXPORT void carla_set_chunk_data(uint pluginId, const char* chunkData);
 
 /*!
  * Tell a plugin to prepare for save.\n
  * This should be called before saving custom data sets.
  * @param pluginId Plugin
  */
-CARLA_EXPORT void carla_prepare_for_save(unsigned int pluginId);
+CARLA_EXPORT void carla_prepare_for_save(uint pluginId);
 
 #ifndef BUILD_BRIDGE
 /*!
@@ -1043,7 +1043,7 @@ CARLA_EXPORT void carla_prepare_for_save(unsigned int pluginId);
  * @param note     Note pitch
  * @param velocity Note velocity
  */
-CARLA_EXPORT void carla_send_midi_note(unsigned int pluginId, uint8_t channel, uint8_t note, uint8_t velocity);
+CARLA_EXPORT void carla_send_midi_note(uint pluginId, uint8_t channel, uint8_t note, uint8_t velocity);
 #endif
 
 /*!
@@ -1052,7 +1052,7 @@ CARLA_EXPORT void carla_send_midi_note(unsigned int pluginId, uint8_t channel, u
  * @param yesNo    New UI state, visible or not
  * @see PLUGIN_HAS_CUSTOM_UI
  */
-CARLA_EXPORT void carla_show_custom_ui(unsigned int pluginId, bool yesNo);
+CARLA_EXPORT void carla_show_custom_ui(uint pluginId, bool yesNo);
 
 /*!
  * Get the current engine buffer size.
