@@ -976,7 +976,7 @@ public:
                     jackbridge_set_latency_callback(jclient, carla_jack_latency_callback_plugin, plugin);
 
                     // this is supposed to be constant...
-                    std::memcpy((jack_client_t**)&client->kClient, &jclient, sizeof(jack_client_t**));
+                    *((jack_client_t**)&client->kClient) = jclient;
                 }
             }
         }
