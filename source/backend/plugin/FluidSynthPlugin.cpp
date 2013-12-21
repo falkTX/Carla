@@ -1599,7 +1599,7 @@ public:
 
             fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
             fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-            fOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+            //fOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
             fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
             fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 

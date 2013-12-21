@@ -250,6 +250,7 @@ public:
 
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+        options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
         options |= PLUGIN_OPTION_SEND_PITCHBEND;
         options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
@@ -1057,6 +1058,8 @@ public:
             fOptions = 0x0;
 
             fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+            fOptions |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+            fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
             fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
             fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
