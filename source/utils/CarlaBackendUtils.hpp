@@ -19,6 +19,7 @@
 #define CARLA_BACKEND_UTILS_HPP_INCLUDED
 
 #include "CarlaBackend.h"
+#include "CarlaHost.h"
 #include "CarlaString.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
@@ -341,22 +342,20 @@ const char* EngineTransportMode2Str(const EngineTransportMode mode)
 // -----------------------------------------------------------------------
 
 static inline
-uintptr_t getAddressFromPointer(void* ptr)
+const char* FileCallbackOpcode2Str(const FileCallbackOpcode opcode)
 {
-    CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, 0);
+    switch (opcode)
+    {
+    case FILE_CALLBACK_DEBUG:
+        return "FILE_CALLBACK_DEBUG";
+    case FILE_CALLBACK_OPEN:
+        return "FILE_CALLBACK_OPEN";
+    case FILE_CALLBACK_SAVE:
+        return "FILE_CALLBACK_SAVE";
+    }
 
-    uintptr_t* const addr((uintptr_t*)&ptr);
-    return *addr;
-}
-
-template<typename T>
-static inline
-T* getPointerFromAddress(uintptr_t& addr)
-{
-    CARLA_SAFE_ASSERT_RETURN(addr != 0, nullptr);
-
-    T** const ptr((T**)&addr);
-    return *ptr;
+    carla_stderr("CarlaBackend::FileCallbackOpcode2Str(%i) - invalid opcode", opcode);
+    return nullptr;
 }
 
 // -----------------------------------------------------------------------

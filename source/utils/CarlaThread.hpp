@@ -171,7 +171,7 @@ private:
 
     void _runEntryPoint()
     {
-        // tell dad we're ready
+        // report ready
         fLock.unlock();
 
         run();

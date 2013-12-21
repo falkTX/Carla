@@ -545,7 +545,7 @@ CARLA_EXPORT bool carla_engine_init(const char* driverName, const char* clientNa
  * @param controlBaseName Shared memory key for control messages
  * @param clientName      Engine master client name
  */
-CARLA_EXPORT bool carla_engine_init_bridge(const char audioBaseName[6], const char controlBaseName[6], const char* clientName);
+CARLA_EXPORT bool carla_engine_init_bridge(const char audioBaseName[6+1], const char controlBaseName[6+1], const char* clientName);
 #endif
 
 /*!
