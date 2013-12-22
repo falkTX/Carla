@@ -27,26 +27,27 @@
 # include "CarlaDssiUtils.hpp"
 #endif
 #ifdef WANT_LV2
+# include <QtCore/QUrl>
 # include "CarlaLv2Utils.hpp"
 #endif
 #ifdef WANT_VST
 # include "CarlaVstUtils.hpp"
 #endif
+#ifdef WANT_CSOUND
+# include "juce_core.h"
+# include <csound/csound.hpp>
+#endif
 #ifdef WANT_FLUIDSYNTH
 # include <fluidsynth.h>
 #endif
 #ifdef WANT_LINUXSAMPLER
+# include <QtCore/QFileInfo>
 # include "linuxsampler/EngineFactory.h"
 #endif
-
-#include "juce_audio_basics.h"
 
 #include <iostream>
 
 #define DISCOVERY_OUT(x, y) std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl;
-
-using juce::File;
-using juce::FloatVectorOperations;
 
 CARLA_BACKEND_USE_NAMESPACE
 
@@ -187,11 +188,7 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         timeInfo.timeSigDenominator = 4;
         timeInfo.flags |= kVstTimeSigValid;
 
-#ifdef VESTIGE_HEADER
-        ret = getAddressFromPointer(&timeInfo);
-#else
-        ret = ToVstPtr<VstTimeInfo_R>(&timeInfo);
-#endif
+        ret = (intptr_t)&timeInfo;
         break;
 
     case DECLARE_VST_DEPRECATED(audioMasterTempoAt):
@@ -355,13 +352,10 @@ public:
 
         DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
         DISCOVERY_OUT("audio.outs", 2);
-        DISCOVERY_OUT("audio.total", 2);
         DISCOVERY_OUT("midi.ins", 1);
-        DISCOVERY_OUT("midi.total", 1);
-        DISCOVERY_OUT("programs.total", programs);
         //DISCOVERY_OUT("parameters.ins", 13); // defined in Carla, TODO
         //DISCOVERY_OUT("parameters.outs", 1);
-        //DISCOVERY_OUT("parameters.total", 14);
+        DISCOVERY_OUT("programs", programs);
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("end", "------------");
     }
@@ -525,7 +519,7 @@ void do_ladspa_check(void*& libHandle, const char* const filename, const bool in
 
                 if (LADSPA_IS_PORT_AUDIO(portDescriptor))
                 {
-                    FloatVectorOperations::clear(bufferAudio[iA], kBufferSize);
+                    carla_zeroFloat(bufferAudio[iA], kBufferSize);
                     descriptor->connect_port(handle, j, bufferAudio[iA++]);
                 }
                 else if (LADSPA_IS_PORT_CONTROL(portDescriptor))
@@ -604,10 +598,8 @@ void do_ladspa_check(void*& libHandle, const char* const filename, const bool in
         DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("audio.ins", audioIns);
         DISCOVERY_OUT("audio.outs", audioOuts);
-        DISCOVERY_OUT("audio.total", audioTotal);
         DISCOVERY_OUT("parameters.ins", parametersIns);
         DISCOVERY_OUT("parameters.outs", parametersOuts);
-        DISCOVERY_OUT("parameters.total", parametersTotal);
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("end", "------------");
     }
@@ -718,11 +710,10 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
         int audioOuts = 0;
         int audioTotal = 0;
         int midiIns = 0;
-        int midiTotal = 0;
         int parametersIns = 0;
         int parametersOuts = 0;
         int parametersTotal = 0;
-        int programsTotal = 0;
+        int programs = 0;
 
         if (LADSPA_IS_HARD_RT_CAPABLE(ldescriptor->Properties))
             hints |= PLUGIN_IS_RTSAFE;
@@ -753,14 +744,14 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
         }
 
         if (descriptor->run_synth != nullptr || descriptor->run_multiple_synths != nullptr)
-            midiIns = midiTotal = 1;
+            midiIns = 1;
 
         if (midiIns > 0 && audioIns == 0 && audioOuts > 0)
             hints |= PLUGIN_IS_SYNTH;
 
         if (const char* const ui = find_dssi_ui(filename, ldescriptor->Label))
         {
-            hints |= PLUGIN_HAS_GUI;
+            hints |= PLUGIN_HAS_CUSTOM_UI;
             delete[] ui;
         }
 
@@ -790,7 +781,7 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
 
             if (descriptor->get_program != nullptr && descriptor->select_program != nullptr)
             {
-                while (descriptor->get_program(handle, programsTotal++))
+                while (descriptor->get_program(handle, programs++))
                     continue;
             }
 
@@ -806,7 +797,7 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
 
                 if (LADSPA_IS_PORT_AUDIO(portDescriptor))
                 {
-                    FloatVectorOperations::clear(bufferAudio[iA], kBufferSize);
+                    carla_zeroFloat(bufferAudio[iA], kBufferSize);
                     ldescriptor->connect_port(handle, j, bufferAudio[iA++]);
                 }
                 else if (LADSPA_IS_PORT_CONTROL(portDescriptor))
@@ -863,7 +854,7 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
             }
 
             // select first midi-program if available
-            if (programsTotal > 0)
+            if (programs > 0)
             {
                 if (const DSSI_Program_Descriptor* const pDesc = descriptor->get_program(handle, 0))
                     descriptor->select_program(handle, pDesc->Bank, pDesc->Program);
@@ -919,13 +910,10 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
         DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("audio.ins", audioIns);
         DISCOVERY_OUT("audio.outs", audioOuts);
-        DISCOVERY_OUT("audio.total", audioTotal);
         DISCOVERY_OUT("midi.ins", midiIns);
-        DISCOVERY_OUT("midi.total", midiTotal);
         DISCOVERY_OUT("parameters.ins", parametersIns);
         DISCOVERY_OUT("parameters.outs", parametersOuts);
-        DISCOVERY_OUT("parameters.total", parametersTotal);
-        DISCOVERY_OUT("programs.total", programsTotal);
+        DISCOVERY_OUT("programs", programs);
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("end", "------------");
     }
@@ -946,16 +934,12 @@ void do_lv2_check(const char* const bundle, const bool init)
     Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
 
     // Convert bundle filename to URI
-    const size_t bundleSize(std::strlen(bundle)+8);
-    char bundleURI[bundleSize];
-    std::strcpy(bundleURI, "file://");
-    std::strcat(bundleURI, bundle);
-
-    bundleURI[bundleSize-1] = OS_SEP;
-    bundleURI[bundleSize]   = '\0';
+    QString qBundle(QUrl::fromLocalFile(bundle).toString());
+    if (! qBundle.endsWith(OS_SEP_STR))
+        qBundle += OS_SEP_STR;
 
     // Load bundle
-    Lilv::Node lilvBundle(lv2World.new_uri(bundleURI));
+    Lilv::Node lilvBundle(lv2World.new_uri(qBundle.toUtf8().constData()));
     lv2World.load_bundle(lilvBundle);
 
     // Load plugins in this bundle
@@ -1058,17 +1042,14 @@ void do_lv2_check(const char* const bundle, const bool init)
             }
         }
 
-        int hints = 0;
+        int hints = 0x0;
         int audioIns = 0;
         int audioOuts = 0;
-        int audioTotal = 0;
         int midiIns = 0;
         int midiOuts = 0;
-        int midiTotal = 0;
         int parametersIns = 0;
         int parametersOuts = 0;
-        int parametersTotal = 0;
-        int programsTotal = rdfDescriptor->PresetCount;
+        int programs = rdfDescriptor->PresetCount;
 
         for (uint32_t j=0; j < rdfDescriptor->FeatureCount; ++j)
         {
@@ -1088,8 +1069,6 @@ void do_lv2_check(const char* const bundle, const bool init)
                     audioIns += 1;
                 else if (LV2_IS_PORT_OUTPUT(rdfPort->Types))
                     audioOuts += 1;
-
-                audioTotal += 1;
             }
             else if (LV2_IS_PORT_CONTROL(rdfPort->Types))
             {
@@ -1115,8 +1094,6 @@ void do_lv2_check(const char* const bundle, const bool init)
                         parametersIns += 1;
                     else if (LV2_IS_PORT_OUTPUT(rdfPort->Types))
                         parametersOuts += 1;
-
-                    parametersTotal += 1;
                 }
             }
             else if (LV2_PORT_SUPPORTS_MIDI_EVENT(rdfPort->Types))
@@ -1125,8 +1102,6 @@ void do_lv2_check(const char* const bundle, const bool init)
                     midiIns += 1;
                 else if (LV2_IS_PORT_OUTPUT(rdfPort->Types))
                     midiOuts += 1;
-
-                midiTotal += 1;
             }
         }
 
@@ -1134,7 +1109,7 @@ void do_lv2_check(const char* const bundle, const bool init)
             hints |= PLUGIN_IS_SYNTH;
 
         if (rdfDescriptor->UICount > 0)
-            hints |= PLUGIN_HAS_GUI;
+            hints |= PLUGIN_HAS_CUSTOM_UI;
 
         DISCOVERY_OUT("init", "-----------");
         DISCOVERY_OUT("uri", rdfDescriptor->URI);
@@ -1148,14 +1123,11 @@ void do_lv2_check(const char* const bundle, const bool init)
         DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("audio.ins", audioIns);
         DISCOVERY_OUT("audio.outs", audioOuts);
-        DISCOVERY_OUT("audio.total", audioTotal);
         DISCOVERY_OUT("midi.ins", midiIns);
         DISCOVERY_OUT("midi.outs", midiOuts);
-        DISCOVERY_OUT("midi.total", midiTotal);
         DISCOVERY_OUT("parameters.ins", parametersIns);
         DISCOVERY_OUT("parameters.outs", parametersOuts);
-        DISCOVERY_OUT("parameters.total", parametersTotal);
-        DISCOVERY_OUT("programs.total", programsTotal);
+        DISCOVERY_OUT("programs", programs);
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("end", "------------");
 
@@ -1255,16 +1227,13 @@ void do_vst_check(void*& libHandle, const bool init)
         int hints = 0x0;
         int audioIns = effect->numInputs;
         int audioOuts = effect->numOutputs;
-        int audioTotal = audioIns + audioOuts;
         int midiIns = 0;
         int midiOuts = 0;
-        int midiTotal = 0;
-        int parametersIns = effect->numParams;
-        int parametersTotal = parametersIns;
-        int programsTotal = effect->numPrograms;
+        int parameters = effect->numParams;
+        int programs = effect->numPrograms;
 
         if (effect->flags & effFlagsHasEditor)
-            hints |= PLUGIN_HAS_GUI;
+            hints |= PLUGIN_HAS_CUSTOM_UI;
 
         if (effect->flags & effFlagsIsSynth)
             hints |= PLUGIN_IS_SYNTH;
@@ -1274,8 +1243,6 @@ void do_vst_check(void*& libHandle, const bool init)
 
         if (vstPluginCanDo(effect, "sendVstEvents") || vstPluginCanDo(effect, "sendVstMidiEvent"))
             midiOuts = 1;
-
-        midiTotal = midiIns + midiOuts;
 
         // -----------------------------------------------------------------------
         // start crash-free plugin test
@@ -1295,21 +1262,20 @@ void do_vst_check(void*& libHandle, const bool init)
             if (midiIns == 0 && gVstWantsMidi)
             {
                 midiIns = 1;
-                midiTotal = midiIns + midiOuts;
             }
 
             float* bufferAudioIn[audioIns];
             for (int j=0; j < audioIns; ++j)
             {
                 bufferAudioIn[j] = new float[kBufferSize];
-                FloatVectorOperations::clear(bufferAudioIn[j], kBufferSize);
+                carla_zeroFloat(bufferAudioIn[j], kBufferSize);
             }
 
             float* bufferAudioOut[audioOuts];
             for (int j=0; j < audioOuts; ++j)
             {
                 bufferAudioOut[j] = new float[kBufferSize];
-                FloatVectorOperations::clear(bufferAudioOut[j], kBufferSize);
+                carla_zeroFloat(bufferAudioOut[j], kBufferSize);
             }
 
             struct VstEventsFixed {
@@ -1383,13 +1349,10 @@ void do_vst_check(void*& libHandle, const bool init)
         DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("audio.ins", audioIns);
         DISCOVERY_OUT("audio.outs", audioOuts);
-        DISCOVERY_OUT("audio.total", audioTotal);
         DISCOVERY_OUT("midi.ins", midiIns);
         DISCOVERY_OUT("midi.outs", midiOuts);
-        DISCOVERY_OUT("midi.total", midiTotal);
-        DISCOVERY_OUT("parameters.ins", parametersIns);
-        DISCOVERY_OUT("parameters.total", parametersTotal);
-        DISCOVERY_OUT("programs.total", programsTotal);
+        DISCOVERY_OUT("parameters.ins", parameters);
+        DISCOVERY_OUT("programs", programs);
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("end", "------------");
 
@@ -1420,6 +1383,389 @@ void do_vst_check(void*& libHandle, const bool init)
 
     // unused
     (void)libHandle;
+    (void)init;
+#endif
+}
+
+#ifdef WANT_CSOUND
+static int csound_midiInOpen(CSOUND*,  void**, const char*)        { return 0; }
+static int csound_midiRead(CSOUND*,    void*, unsigned char*, int) { return 0; }
+static int csound_midiInClose(CSOUND*, void*)                      { return 0; }
+
+static int csound_midiOutOpen(CSOUND*,  void**, const char*)               { return 0; }
+static int csound_midiWrite(CSOUND*,    void*,  const unsigned char*, int) { return 0; }
+static int csound_midiOutClose(CSOUND*, void*)                             { return 0; }
+
+#if 1//ndef DEBUG
+static void csound_silence(CSOUND*, int, const char*, va_list) {}
+#endif
+#endif
+
+void do_csound_check(const char* const filename, const bool init)
+{
+#ifdef WANT_CSOUND
+    Csound csound;
+#if 1//ndef DEBUG
+    csound.SetMessageCallback(csound_silence);
+#endif
+    csound.SetHostImplementedAudioIO(true, kBufferSize);
+    csound.SetHostImplementedMIDIIO(true);
+    csound.Reset();
+
+    csound.SetExternalMidiInOpenCallback(csound_midiInOpen);
+    csound.SetExternalMidiReadCallback(csound_midiRead);
+    csound.SetExternalMidiInCloseCallback(csound_midiInClose);
+
+    csound.SetExternalMidiOutOpenCallback(csound_midiOutOpen);
+    csound.SetExternalMidiWriteCallback(csound_midiWrite);
+    csound.SetExternalMidiOutCloseCallback(csound_midiOutClose);
+
+    if (csound.Compile(const_cast<char*>(filename)) != 0)
+    {
+        DISCOVERY_OUT("error", "csound failed to compile");
+        return;
+    }
+
+    csound.PerformKsmps();
+    csound.SetScoreOffsetSeconds(0);
+    csound.RewindScore();
+
+    int hints = 0x0;
+    int audioIns = 0;
+    int audioOuts = 0;
+    int midiIns = 0;
+    int midiOuts = 0;
+    int parametersIns = 0;
+    int parametersOuts = 0;
+    int programs = 0;
+
+    int numChannels;
+    controlChannelInfo_t* channelList;
+
+    numChannels = csound.ListChannels(channelList);
+
+    carla_stderr2("Num chan %i", numChannels);
+
+    if (numChannels != 0 && channelList != nullptr)
+    {
+        for (int i=0; i < numChannels; ++i)
+        {
+            const controlChannelInfo_t& channel(channelList[i]);
+
+            carla_stderr2("chan @%i, type %i", i, channel.type);
+
+            if (channel.type & CSOUND_AUDIO_CHANNEL)
+            {
+                if (channel.type & CSOUND_INPUT_CHANNEL)
+                    audioIns += 1;
+                else if (channel.type & CSOUND_OUTPUT_CHANNEL)
+                    audioOuts += 1;
+            }
+            else if (channel.type & CSOUND_CONTROL_CHANNEL)
+            {
+                if (channel.type & CSOUND_INPUT_CHANNEL)
+                    parametersIns += 1;
+                else if (channel.type & CSOUND_OUTPUT_CHANNEL)
+                    parametersOuts += 1;
+            }
+        }
+
+        csound.DeleteChannelList(channelList);
+    }
+
+#if 1
+    using namespace juce;
+
+    String plantFlag, presetFlag;
+
+    File file(filename);
+    String source(file.loadFileAsString());
+
+    StringArray csdText;
+    int lines=1;
+    String csdLine("");
+    csdText.addLines(source);
+    bool multiComment = false;
+    bool multiLine = false;
+
+    // check for minimal Cabbage GUI
+    for (int i=0, _size=csdText.size(); i < _size; ++i)
+    {
+        if (csdText[i].indexOfWholeWordIgnoreCase(String("</Cabbage>")) != -1)
+            break;
+
+        // we don't enter for multitab, plants need to be created first
+        if (csdText[i].contains("multitab "))
+            continue;
+
+        if (csdText[i].trim().isNotEmpty())
+        {
+            if (csdText[i].contains("), \\") || csdText[i].contains("),\\") || csdText[i].contains(") \\"))
+            {
+                multiLine = true;
+                csdLine="";
+                lines=0;
+
+                while (multiLine)
+                {
+                    if (csdText[i+lines].contains("), \\") || csdText[i+lines].contains("),\\") || csdText[i+lines].contains(") \\"))
+                        lines++;
+                    else
+                        multiLine=false;
+                }
+
+                for (int y=0;y<=lines;y++)
+                    csdLine = csdLine + " "+ csdText[i+y].trim()+" ";
+
+                i=i+lines;
+            }
+            else
+                csdLine = csdText[i];
+
+            //tidy up string
+            csdLine = csdLine.trimStart();
+            //csdLine = csdLine.removeCharacters(" \\");
+            //csdLine = csdLine.removeCharacters(",\\");
+            //Logger::writeToLog(csdLine);
+            StringArray tokes;
+            tokes.addTokens(csdLine.trimEnd(), ", ", "\"");
+
+            if (tokes.getReference(0).containsIgnoreCase(String("/*")))
+            {
+                multiComment = true;
+            }
+            if (tokes.getReference(0).containsIgnoreCase(String("*\\")))
+            {
+                multiComment = false;
+            }
+
+            if (tokes.getReference(0).containsIgnoreCase(String(";")))
+            {
+                // allows for single line comments
+            }
+            else if (tokes.getReference(0).containsIgnoreCase(String("}")))
+            {
+                plantFlag = ""; // reset plantFlag when a closing bracket is found
+                presetFlag = "";
+            }
+
+            if (! multiComment)
+            {
+                // populate the guiLayoutCtrls vector with non-interactive widgets
+                // the host widgets aren't GUI based but they can be added to this
+                // vector too, as can the editor button.
+                if (tokes.getReference(0).equalsIgnoreCase(String("form"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("image"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("keyboard"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("csoundoutput"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("line"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("label"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("hostbpm"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("hosttime"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("hostplaying"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("hostppqpos"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("vumeter"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("patmatrix"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("source"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("multitab"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("infobutton"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("filebutton"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("soundfiler"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("snapshot"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("table"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("pvsview"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("hostrecording"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("directorylist"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("transport"))
+                    || tokes.getReference(0).equalsIgnoreCase(String("groupbox")))
+                {
+#if 0
+                    CabbageGUIClass cAttr(csdLine.trimEnd(), guiID);
+
+                    if (cAttr.getStringProp("native").length()>0)
+                    {
+                        //create generic plugin editor and break..
+                        setupNativePluginEditor();
+                        nativePluginEditor = true;
+                        return;
+                    }
+
+                    // showMessage(cAttr.getStringProp("type"));
+                    csdLine = "";
+
+                    // add soundfiler buffering sources
+                    if (tokes.getReference(0).equalsIgnoreCase(String("soundfiler")))
+                    {
+                        addSoundfilerSource(cAttr.getStringProp(("file")), cAttr.getChannels());
+                        Logger::writeToLog(String(audioSourcesArray.size()-1));
+                        cAttr.setNumProp("soundfilerIndex", audioSourcesArray.size()-1);
+                    }
+
+                    // set up plant flag if needed for other widgets
+                    if (cAttr.getStringProp(String("plant")).isNotEmpty())
+                    {
+                        plantFlag = cAttr.getStringProp(String("plant"));
+                        presetFlag = cAttr.getStringProp(String("preset"));
+                    }
+                    else if (cAttr.getStringProp(String("relToPlant")).equalsIgnoreCase(String("")))
+                        cAttr.setStringProp(String("relToPlant"), plantFlag);
+
+                    guiLayoutCtrls.add(cAttr);
+
+                    guiID++;
+                    if (cAttr.getStringProp("type").containsIgnoreCase("form"))
+                        if (cAttr.getStringProp("text").length()>2)
+                            setPluginName(cAttr.getStringProp("text"));
+                        else if(cAttr.getStringProp("caption").length()>2)
+                            setPluginName(cAttr.getStringProp("caption"));
+                        else
+                            setPluginName("Untitled Cabbage Patch!");
+
+                    //StringArray log = logGUIAttributes(cAttr, String("Non-Interactive"));
+                    //debugMessageArray.addArray(logGUIAttributes(cAttr, String("Non-Interactive")));
+                    sendChangeMessage();
+
+                    // if instrument uses any of the host widgets, or an xypad, turn
+                    // on the timer
+                    if (tokes.getReference(0).equalsIgnoreCase(String("hostbpm"))
+                      ||tokes.getReference(0).equalsIgnoreCase(String("hosttime"))
+                      ||tokes.getReference(0).equalsIgnoreCase(String("hostplaying"))
+                      ||tokes.getReference(0).equalsIgnoreCase(String("hostppqpos"))
+                      ||tokes.getReference(0).equalsIgnoreCase(String("hostrecording")))
+                            startTimer(20);
+#endif
+                }
+                // populate the guiCtrls vector with interactive widgets
+                else if (tokes.getReference(0).equalsIgnoreCase(String("hslider"))
+                      || tokes.getReference(0).equalsIgnoreCase(String("vslider"))
+                      || tokes.getReference(0).equalsIgnoreCase(String("rslider"))
+                      || tokes.getReference(0).equalsIgnoreCase(String("combobox"))
+                      || tokes.getReference(0).equalsIgnoreCase(String("checkbox"))
+                      || tokes.getReference(0).equalsIgnoreCase(String("xypad"))
+                      || tokes.getReference(0).equalsIgnoreCase(String("button")))
+                {
+#if 0
+                    CabbageGUIClass cAttr(csdLine.trimEnd(), guiID);
+                    csdLine = "";
+                                                                            //Logger::writeToLog(tokes.getReference(0));
+                    // attach widget to plant if need be
+                    if (cAttr.getStringProp(String("relToPlant")).equalsIgnoreCase(String("")))
+                    {
+                            //showMessage(cAttr.getStringProp(String("relToPlant")));
+                            cAttr.setStringProp(String("relToPlant"), plantFlag);
+                            //showMessage(String("presetFlag:")+presetFlag);
+                            //showMessage(cAttr.getStringProp("name"));
+                            if (cAttr.getStringProp("preset").length()<1)
+                                cAttr.setStringProp(String("preset"), presetFlag.trim());
+                            //showMessage(cAttr.getStringProp("preset"));
+                    }
+
+                    // xypad contain two control paramters, one for x axis and another for y. As such we add two
+                    // to our contorl vector so that plugin hosts display two sliders. We name one of the xypad pads
+                    // 'dummy' so that our editor doesn't display it. Our editor only needs to show one xypad.
+                    if (tokes.getReference(0).equalsIgnoreCase(String("xypad")))
+                    {
+                        cAttr.setStringProp(String("xyChannel"), String("X"));
+                        cAttr.setNumProp("sliderRange",  cAttr.getNumProp("xypadRangeX"));
+                        cAttr.setNumProp("min",  cAttr.getNumProp("minX"));
+                        cAttr.setNumProp("max",  cAttr.getNumProp("maxX"));
+                                                                                        cAttr.setNumProp("value", cAttr.getNumProp("valueX"));
+                        cAttr.setStringProp(String("channel"), cAttr.getStringProp("xChannel"));
+                        guiCtrls.add(cAttr);
+
+                        cAttr.setStringProp(String("xyChannel"), String("Y"));
+                        cAttr.setNumProp("sliderRange",  cAttr.getNumProp("xypadRangeY"));
+                        cAttr.setNumProp("min",  cAttr.getNumProp("minY"));
+                        cAttr.setNumProp("max",  cAttr.getNumProp("maxY"));
+                                                                                        cAttr.setNumProp("value", cAttr.getNumProp("valueY"));
+                        cAttr.setStringProp(String("channel"), cAttr.getStringProp("yChannel"));
+                        //append 'dummy' to name so the editor know not to display the
+                        //second xypad
+                        cAttr.setStringProp("name", cAttr.getStringProp("name")+String("dummy"));
+                        guiCtrls.add(cAttr);
+                        guiID++;
+                        startTimer(20);
+                    }
+                    else
+                    {
+                        guiCtrls.add(cAttr);
+                        guiID++;
+                    }
+
+                    //debugMessageArray.addArray(logGUIAttributes(cAttr, String("Interactive")));
+                    sendChangeMessage();
+#endif
+                }
+            }
+        }
+
+    } // end of scan through entire csd text, control vectors are now populated
+
+    // create multitabs now that plants have been inserted to control vector..
+    for (int i=0, _size=csdText.size(); i < _size; ++i)
+    {
+        if (csdText[i].contains("multitab ") && ! csdText[i].contains(";"))
+        {
+            csdLine = csdText[i];
+            csdLine = csdLine.trimStart();
+            StringArray tokes;
+            tokes.addTokens(csdLine.trimEnd(), ", ", "\"");
+
+#if 0
+            if (tokes.getReference(0).equalsIgnoreCase(String("multitab")))
+            {
+                CabbageGUIClass cAttr(csdLine.trimEnd(), guiID);
+                //showMessage(cAttr.getStringProp("type"));
+                csdLine = "";
+                //set up plant flag if needed for other widgets
+                if(cAttr.getStringProp(String("plant")).isNotEmpty()){
+                plantFlag = cAttr.getStringProp(String("plant"));
+                presetFlag = cAttr.getStringProp(String("preset"));
+                }
+                else if(cAttr.getStringProp(String("relToPlant")).equalsIgnoreCase(String("")))
+                cAttr.setStringProp(String("relToPlant"), plantFlag);
+                guiLayoutCtrls.add(cAttr);
+                guiID++;
+            }
+#endif
+        }
+    } // end of multitab check
+
+#if 0
+    // init all channels with their init val
+    for(int i=0;i<guiCtrls.size();i++)
+    {
+        csound->SetChannel( guiCtrls.getReference(i).getStringProp("channel").toUTF8(), guiCtrls.getReference(i).getNumProp("value"));
+        //Logger::writeToLog(guiCtrls.getReference(i).getStringProp("channel")+": "+String(guiCtrls.getReference(i).getNumProp("value")));
+    }
+#endif
+#endif
+
+    csound.Cleanup();
+    csound.Reset();
+
+    DISCOVERY_OUT("init", "-----------");
+//     DISCOVERY_OUT("name", (const char*)name);
+//     DISCOVERY_OUT("label", (const char*)label);
+//     DISCOVERY_OUT("maker", "");
+//     DISCOVERY_OUT("copyright", "");
+    DISCOVERY_OUT("hints", hints);
+    DISCOVERY_OUT("audio.ins", audioIns);
+    DISCOVERY_OUT("audio.outs", audioOuts);
+    DISCOVERY_OUT("midi.ins", midiIns);
+    DISCOVERY_OUT("midi.outs", midiOuts);
+    DISCOVERY_OUT("parameters.ins", parametersIns);
+    DISCOVERY_OUT("parameters.outs", parametersOuts);
+    DISCOVERY_OUT("programs", programs);
+    DISCOVERY_OUT("build", BINARY_NATIVE);
+    DISCOVERY_OUT("end", "------------");
+
+#else
+    DISCOVERY_OUT("error", "csound support not available");
+    return;
+
+    // unused
+    (void)filename;
     (void)init;
 #endif
 }
@@ -1460,13 +1806,8 @@ void do_fluidsynth_check(const char* const filename, const bool init)
         delete_fluid_settings(f_settings);
     }
 
-#ifdef CARLA_OS_WIN
-    int sep = '\\';
-#else
-    int sep = '/';
-#endif
-
-    CarlaString name(std::strrchr(filename, sep)+1);
+    // FIXME
+    CarlaString name(std::strrchr(filename, OS_SEP)+1);
     name.truncate(name.rfind('.'));
 
     CarlaString label(name);
@@ -1479,13 +1820,10 @@ void do_fluidsynth_check(const char* const filename, const bool init)
     DISCOVERY_OUT("copyright", "");
     DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
     DISCOVERY_OUT("audio.outs", 2);
-    DISCOVERY_OUT("audio.total", 2);
     DISCOVERY_OUT("midi.ins", 1);
-    DISCOVERY_OUT("midi.total", 1);
-    DISCOVERY_OUT("programs.total", programs);
+    DISCOVERY_OUT("programs", programs);
     DISCOVERY_OUT("parameters.ins", 13); // defined in Carla
     DISCOVERY_OUT("parameters.outs", 1);
-    DISCOVERY_OUT("parameters.total", 14);
     DISCOVERY_OUT("build", BINARY_NATIVE);
     DISCOVERY_OUT("end", "------------");
 
@@ -1500,13 +1838,10 @@ void do_fluidsynth_check(const char* const filename, const bool init)
     DISCOVERY_OUT("copyright", "");
     DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
     DISCOVERY_OUT("audio.outs", 32);
-    DISCOVERY_OUT("audio.total", 32);
     DISCOVERY_OUT("midi.ins", 1);
-    DISCOVERY_OUT("midi.total", 1);
-    DISCOVERY_OUT("programs.total", programs);
+    DISCOVERY_OUT("programs", programs);
     DISCOVERY_OUT("parameters.ins", 13); // defined in Carla
     DISCOVERY_OUT("parameters.outs", 1);
-    DISCOVERY_OUT("parameters.total", 14);
     DISCOVERY_OUT("build", BINARY_NATIVE);
     DISCOVERY_OUT("end", "------------");
 #else
@@ -1522,18 +1857,30 @@ void do_fluidsynth_check(const char* const filename, const bool init)
 void do_linuxsampler_check(const char* const filename, const char* const stype, const bool init)
 {
 #ifdef WANT_LINUXSAMPLER
-    const juce::File file(filename);
+    const QFileInfo file(filename);
 
-    if (! file.existsAsFile())
+    if (! file.exists())
     {
-        DISCOVERY_OUT("error", "Requested file is not valid or does not exist");
+        DISCOVERY_OUT("error", "Requested file does not exist");
+        return;
+    }
+
+    if (! file.isFile())
+    {
+        DISCOVERY_OUT("error", "Requested file is not valid");
+        return;
+    }
+
+    if (! file.isReadable())
+    {
+        DISCOVERY_OUT("error", "Requested file is not readable");
         return;
     }
 
     if (init)
         const LinuxSamplerScopedEngine engine(filename, stype);
     else
-        LinuxSamplerScopedEngine::outputInfo(nullptr, 0, file.getFileNameWithoutExtension().toRawUTF8());
+        LinuxSamplerScopedEngine::outputInfo(nullptr, 0, file.baseName().toUtf8().constData());
 #else
     DISCOVERY_OUT("error", stype << " support not available");
     return;
@@ -1546,6 +1893,7 @@ void do_linuxsampler_check(const char* const filename, const char* const stype, 
 
 // --------------------------------------------------------------------------
 
+#if 0
 class ScopedWorkingDirSet
 {
 public:
@@ -1563,62 +1911,12 @@ public:
 private:
     const File fPreviousWorkingDirectory;
 };
+#endif
 
 // ------------------------------ main entry point ------------------------------
 
 int main(int argc, char* argv[])
 {
-    if (argc == 2 && std::strcmp(argv[1], "-formats") == 0)
-    {
-        printf("Available plugin formats:\n");
-        printf("LADSPA: ");
-#ifdef WANT_LADSPA
-        printf("yes\n");
-#else
-        printf("no\n");
-#endif
-        printf("DSSI:   ");
-#ifdef WANT_DSSI
-        printf("yes\n");
-#else
-        printf("no\n");
-#endif
-        printf("LV2:    ");
-#ifdef WANT_LV2
-        printf("yes\n");
-#else
-        printf("no\n");
-#endif
-        printf("VST:    ");
-#ifdef WANT_VST
-        printf("yes\n");
-#else
-        printf("no\n");
-#endif
-        printf("\n");
-
-        printf("Available sampler formats:\n");
-        printf("GIG (LinuxSampler): ");
-#ifdef WANT_LINUXSAMPLER
-        printf("yes\n");
-#else
-        printf("no\n");
-#endif
-        printf("SF2 (FluidSynth):   ");
-#ifdef WANT_FLUIDSYNTH
-        printf("yes\n");
-#else
-        printf("no\n");
-#endif
-        printf("SFZ (LinuxSampler): ");
-#ifdef WANT_LINUXSAMPLER
-        printf("yes\n");
-#else
-        printf("no\n");
-#endif
-        return 0;
-    }
-
     if (argc != 3)
     {
         carla_stdout("usage: %s <type> </path/to/plugin>", argv[0]);
@@ -1629,7 +1927,7 @@ int main(int argc, char* argv[])
     const char* const filename = argv[2];
     const PluginType  type     = getPluginTypeFromString(stype);
 
-    const ScopedWorkingDirSet swds(filename);
+    //const ScopedWorkingDirSet swds(filename);
 
     CarlaString filenameStr(filename);
     filenameStr.toLower();
@@ -1712,7 +2010,7 @@ int main(int argc, char* argv[])
         //do_au_check(handle, doInit);
         break;
     case PLUGIN_CSOUND:
-        //do_csound_check(handle, doInit);
+        do_csound_check(filename, doInit);
         break;
     case PLUGIN_GIG:
         do_linuxsampler_check(filename, "gig", doInit);

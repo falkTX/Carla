@@ -80,26 +80,14 @@ endif
 # --------------------------------------------------------------
 # Check for required libs
 
+# liblo always required
 ifneq ($(shell pkg-config --exists liblo && echo true),true)
 $(error liblo missing, cannot continue)
 endif
 
-ifeq ($(LINUX),true)
-ifneq ($(shell pkg-config --exists x11 && echo true),true)
-$(error X11 missing, cannot continue)
-endif
-ifneq ($(shell pkg-config --exists xinerama && echo true),true)
-$(error Xinerama missing, cannot continue)
-endif
-ifneq ($(shell pkg-config --exists xext && echo true),true)
-$(error Xext missing, cannot continue)
-endif
-ifneq ($(shell pkg-config --exists xcursor && echo true),true)
-$(error Xcursor missing, cannot continue)
-endif
-ifneq ($(shell pkg-config --exists freetype2 && echo true),true)
-$(error FreeType2 missing, cannot continue)
-endif
+# Qt5 always required
+ifneq ($(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true),true)
+$(error liblo missing, cannot continue)
 endif
 
 # --------------------------------------------------------------
@@ -111,12 +99,16 @@ ifeq ($(LINUX),true)
 HAVE_ALSA         = $(shell pkg-config --exists alsa && echo true)
 HAVE_GTK2         = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3         = $(shell pkg-config --exists gtk+-3.0 && echo true)
+HAVE_OPENGL       = $(shell pkg-config --exists gl && echo true)
 HAVE_PULSEAUDIO   = $(shell pkg-config --exists libpulse-simple && echo true)
 HAVE_QT4          = $(shell pkg-config --exists QtCore QtGui && echo true)
-HAVE_QT5          = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
-HAVE_OPENGL       = $(shell pkg-config --exists gl && echo true)
 else
 HAVE_OPENGL       = true
+endif
+
+ifeq ($(CARLA_CSOUND_SUPPORT),true)
+# FIXME ?
+HAVE_CSOUND       = $(shell pkg-config --exists sndfile && echo true)
 endif
 
 ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
@@ -130,7 +122,26 @@ endif
 HAVE_AF_DEPS      = $(shell pkg-config --exists sndfile && echo true)
 HAVE_MF_DEPS      = $(shell pkg-config --exists smf && echo true)
 HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
-HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk ntk_images && echo true)
+HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk_images ntk && echo true)
+
+# --------------------------------------------------------------
+# Check for juce support
+
+ifeq ($(HAIKU),true)
+HAVE_JUCE = false
+endif
+
+ifeq ($(LINUX),true)
+HAVE_JUCE = $(shell pkg-config --exists x11 xinerama xext xcursor freetype2 && echo true)
+endif
+
+ifeq ($(MACOS),true)
+HAVE_JUCE = true
+endif
+
+ifeq ($(WIN32),true)
+HAVE_JUCE = true
+endif
 
 # --------------------------------------------------------------
 # Set libs stuff
@@ -144,12 +155,16 @@ endif
 
 RTMEMPOOL_LIBS = -lpthread
 
+ifeq ($(HAIKU),true)
+endif
+
 ifeq ($(LINUX),true)
 ifeq ($(HAVE_OPENGL),true)
 DGL_FLAGS                = $(shell pkg-config --cflags gl x11)
 DGL_LIBS                 = $(shell pkg-config --libs gl x11)
 endif
 JACKBRIDGE_LIBS          = -ldl -lpthread -lrt
+ifeq ($(HAVE_JUCE),true)
 JUCE_CORE_LIBS           = -ldl -lpthread -lrt
 JUCE_EVENTS_FLAGS        = $(shell pkg-config --cflags x11)
 JUCE_EVENTS_LIBS         = $(shell pkg-config --libs x11)
@@ -157,7 +172,10 @@ JUCE_GRAPHICS_FLAGS      = $(shell pkg-config --cflags x11 xinerama xext freetyp
 JUCE_GRAPHICS_LIBS       = $(shell pkg-config --libs x11 xinerama xext freetype2)
 JUCE_GUI_BASICS_FLAGS    = $(shell pkg-config --cflags x11 xinerama xext xcursor)
 JUCE_GUI_BASICS_LIBS     = $(shell pkg-config --libs x11 xinerama xext xcursor) -ldl
+endif
 LILV_LIBS                = -ldl -lm -lrt
+QTCORE_FLAGS             = $(shell pkg-config --cflags Qt5Core)
+QTCORE_LIBS              = $(shell pkg-config --libs Qt5Core)
 ifeq ($(HAVE_ALSA),true)
 RTAUDIO_FLAGS           += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
 RTAUDIO_LIBS            += $(shell pkg-config --libs alsa) -lpthread
@@ -180,6 +198,7 @@ JUCE_CORE_LIBS          = -framework Cocoa -framework IOKit
 JUCE_GRAPHICS_LIBS      = -framework Cocoa -framework QuartzCore
 JUCE_GUI_BASICS_LIBS    = -framework Cocoa -framework Carbon -framework QuartzCore
 LILV_LIBS               = -ldl -lm
+QTCORE_LIBS             = -framework Qt5Core
 RTAUDIO_FLAGS          += -D__MACOSX_CORE__
 RTAUDIO_LIBS           += -lpthread
 RTMIDI_FLAGS           += -D__MACOSX_CORE__
@@ -194,6 +213,8 @@ JUCE_EVENTS_LIBS        = -lole32
 JUCE_GRAPHICS_LIBS      = -lgdi32
 JUCE_GUI_BASICS_LIBS    = -lgdi32 -limm32 -lcomdlg32 -lole32
 LILV_LIBS               = -lm
+QTCORE_FLAGS            = $(shell pkg-config --cflags Qt5Core)
+QTCORE_LIBS             = $(shell pkg-config --libs Qt5Core)
 RTAUDIO_FLAGS          += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__
 RTAUDIO_LIBS           += -lpthread
 RTMIDI_FLAGS           += -D__WINDOWS_MM__

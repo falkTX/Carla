@@ -19,14 +19,17 @@
 // Check carla_stderr2("Engine is not running"); <= prepend func name and args
 
 #include "CarlaHost.h"
+#include "CarlaNative.h"
+
 #include "CarlaEngine.hpp"
 #include "CarlaPlugin.hpp"
 
 #include "CarlaBackendUtils.hpp"
-//#include "CarlaOscUtils.hpp"
-#include "CarlaNative.h"
+#include "CarlaThread.hpp"
 
-#ifdef USE_JUCE
+#include <QtCore/QByteArray>
+
+#ifdef HAVE_JUCE
 # include "juce_gui_basics.h"
 using juce::initialiseJuce_GUI;
 using juce::shutdownJuce_GUI;
@@ -36,7 +39,7 @@ using juce::MessageManager;
 namespace CB = CarlaBackend;
 using CB::EngineOptions;
 
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
 // -----------------------------------------------------------------------
 // Juce Message Thread
 
@@ -107,7 +110,7 @@ struct CarlaBackendStandalone {
 
     CarlaString lastError;
 
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
     JuceMessageThread juceMsgThread;
 #endif
 
@@ -130,12 +133,12 @@ struct CarlaBackendStandalone {
     ~CarlaBackendStandalone()
     {
         CARLA_ASSERT(engine == nullptr);
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
         CARLA_ASSERT(MessageManager::getInstanceWithoutCreating() == nullptr);
 #endif
     }
 
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
     void init()
     {
         JUCE_AUTORELEASEPOOL
@@ -457,7 +460,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     if (gStandalone.engine->init(clientName))
     {
         gStandalone.lastError = "No error";
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
         gStandalone.init();
 #endif
         return true;
@@ -514,7 +517,7 @@ bool carla_engine_init_bridge(const char audioBaseName[6+1], const char controlB
     if (gStandalone.engine->init(clientName))
     {
         gStandalone.lastError = "No error";
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
         gStandalone.init();
 #endif
         return true;
@@ -548,7 +551,7 @@ bool carla_engine_close()
     if (! closed)
         gStandalone.lastError = gStandalone.engine->getLastError();
 
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
     gStandalone.close();
 #endif
 
@@ -693,7 +696,7 @@ const char* carla_file_callback(FileCallbackOpcode action, bool isDir, const cha
 {
     CARLA_SAFE_ASSERT_RETURN(title != nullptr && title[0] != '\0', nullptr);
     CARLA_SAFE_ASSERT_RETURN(filter != nullptr && filter[0] != '\0', nullptr);
-    carla_debug("carla_file_callback(%i:%s, %s, \"%s\", \"%s\")", action, FileCallbackOpcode2Str(action), bool2str(isDir), title, filter);
+    carla_debug("carla_file_callback(%i:%s, %s, \"%s\", \"%s\")", action, CB::FileCallbackOpcode2Str(action), bool2str(isDir), title, filter);
 
     if (gStandalone.fileCallback == nullptr)
         return nullptr;
@@ -746,7 +749,7 @@ bool carla_save_project(const char* filename)
 
 bool carla_patchbay_connect(int portIdA, int portIdB)
 {
-    CARLA_SAFE_ASSERT_RETURN(portA != portB, false);
+    CARLA_SAFE_ASSERT_RETURN(portIdA != portIdB, false);
     carla_debug("carla_patchbay_connect(%i, %i)", portIdA, portIdB);
 
     if (gStandalone.engine != nullptr)
@@ -1330,16 +1333,20 @@ const char* carla_get_chunk_data(uint pluginId)
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
     {
-#ifdef USE_JUCE
-        if (plugin->getOptions() & CB::PLUGIN_OPTION_USE_CHUNKS)
+        if (plugin->getOptionsEnabled() & CB::PLUGIN_OPTION_USE_CHUNKS)
         {
             void* data = nullptr;
             const int32_t dataSize(plugin->getChunkData(&data));
 
             if (data != nullptr && dataSize > 0)
             {
+#if 0 //def HAVE_JUCE
                 juce::MemoryBlock memBlock(data, dataSize);
                 chunkData = memBlock.toBase64Encoding().toRawUTF8();
+#else
+                QByteArray chunk(QByteArray((char*)data, dataSize).toBase64());
+                chunkData = chunk.constData();
+#endif
                 return (const char*)chunkData;
             }
             else
@@ -1347,9 +1354,7 @@ const char* carla_get_chunk_data(uint pluginId)
         }
         else
             carla_stderr2("carla_get_chunk_data(%i) - plugin does not use chunks", pluginId);
-#else
-        carla_stderr2("carla_get_chunk_data(%i) - unsupported", pluginId);
-#endif
+
         return nullptr;
     }
 
@@ -1565,25 +1570,23 @@ float carla_get_current_parameter_value(uint pluginId, uint32_t parameterId)
 
 // -------------------------------------------------------------------------------------------------------------------
 
-float carla_get_input_peak_value(uint pluginId, unsigned short portId)
+float carla_get_input_peak_value(uint pluginId, bool isLeft)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0.0f);
-    CARLA_SAFE_ASSERT_RETURN(portId == 1 || portId == 2, 0.0f);
 
-    return gStandalone.engine->getInputPeak(pluginId, portId);
+    return gStandalone.engine->getInputPeak(pluginId, isLeft);
 }
 
-float carla_get_output_peak_value(uint pluginId, unsigned short portId)
+float carla_get_output_peak_value(uint pluginId, bool isLeft)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0.0f);
-    CARLA_SAFE_ASSERT_RETURN(portId == 1 || portId == 2, 0.0f);
 
-    return gStandalone.engine->getOutputPeak(pluginId, portId);
+    return gStandalone.engine->getOutputPeak(pluginId, isLeft);
 }
 
 // -------------------------------------------------------------------------------------------------------------------
 
-void carla_set_option(uint pluginId, unsigned int option, bool yesNo)
+void carla_set_option(uint pluginId, uint option, bool yesNo)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
     carla_debug("carla_set_option(%i, %i, %s)", pluginId, option, bool2str(yesNo));
@@ -1826,15 +1829,15 @@ void carla_send_midi_note(uint pluginId, uint8_t channel, uint8_t note, uint8_t 
 }
 #endif
 
-void carla_show_custom_ui(uint pluginId, bool yesno)
+void carla_show_custom_ui(uint pluginId, bool yesNo)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
-    carla_debug("carla_show_custom_ui(%i, %s)", pluginId, bool2str(yesno));
+    carla_debug("carla_show_custom_ui(%i, %s)", pluginId, bool2str(yesNo));
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->showCustomUI(yesno);
+        return plugin->showCustomUI(yesNo);
 
-    carla_stderr2("carla_show_custom_ui(%i, %s) - could not find plugin", pluginId, bool2str(yesno));
+    carla_stderr2("carla_show_custom_ui(%i, %s) - could not find plugin", pluginId, bool2str(yesNo));
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -1895,7 +1898,18 @@ const char* carla_get_host_osc_url_udp()
     return gStandalone.engine->getOscServerPathUDP();
 }
 
+// -------------------------------------------------------------------------------------------------------------------
+
 #if 0
+int main(int argc, char* argv[])
+{
+    return 0;
+}
+#endif
+
+#if 0
+//#include "CarlaOscUtils.hpp"
+
 // -------------------------------------------------------------------------------------------------------------------
 
 #define NSM_API_VERSION_MAJOR 1

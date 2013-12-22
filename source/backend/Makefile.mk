@@ -9,6 +9,18 @@ include ../../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I. -I.. -I../../includes -I../../modules -I../../utils
+BUILD_CXX_FLAGS += $(QTCORE_FLAGS)
+
+ifeq ($(HAVE_FFMPEG),true)
+BUILD_CXX_FLAGS += -DHAVE_FFMPEG
+endif
+
+ifeq ($(HAVE_JUCE),true)
+# BUILD_CXX_FLAGS += -DHAVE_JUCE
+endif
+
+# --------------------------------------------------------------
+
 BUILD_CXX_FLAGS += -DWANT_NATIVE
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
@@ -18,11 +30,11 @@ BUILD_CXX_FLAGS += -DVESTIGE_HEADER
 endif
 endif
 
-ifeq ($(CARLA_CSOUND_SUPPORT),true)
+# --------------------------------------------------------------
+
+ifeq ($(HAVE_CSOUND),true)
 BUILD_CXX_FLAGS += -DWANT_CSOUND
 endif
-
-# --------------------------------------------------------------
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 BUILD_CXX_FLAGS += -DWANT_FLUIDSYNTH
@@ -36,9 +48,6 @@ endif
 
 ifeq ($(HAVE_AF_DEPS),true)
 BUILD_CXX_FLAGS += -DWANT_AUDIOFILE
-ifeq ($(HAVE_FFMPEG),true)
-BUILD_CXX_FLAGS += -DHAVE_FFMPEG
-endif
 endif
 
 ifeq ($(HAVE_MF_DEPS),true)

@@ -9,17 +9,27 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I../backend -I../includes -I../modules -I../utils
+BUILD_CXX_FLAGS += $(QTCORE_FLAGS)
+LINK_FLAGS      += $(QTCORE_LIBS)
+
+# --------------------------------------------------------------
+
 BUILD_CXX_FLAGS += -DWANT_NATIVE
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
+BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_VST
 ifeq ($(CARLA_VESTIGE_HEADER),true)
 BUILD_CXX_FLAGS += -DVESTIGE_HEADER
 endif
 endif
 
-ifeq ($(CARLA_CSOUND_SUPPORT),true)
-NATIVE_FLAGS += -DWANT_CSOUND
+# -DWANT_DSSI -DWANT_LV2
+
+# --------------------------------------------------------------
+
+ifeq ($(HAVE_CSOUND),true)
+NATIVE_FLAGS += $(shell pkg-config --cflags --libs sndfile) -lcsound64 -DWANT_CSOUND
+NATIVE_FLAGS += $(JUCE_CORE_FLAGS) $(JUCE_CORE_LIBS)
 endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
@@ -27,13 +37,23 @@ NATIVE_FLAGS += $(shell pkg-config --cflags --libs fluidsynth) -DWANT_FLUIDSYNTH
 endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
-NATIVE_FLAGS += $(shell pkg-config --cflags --libs linuxsampler) -DWANT_LINUXSAMPLER
+# NATIVE_FLAGS += $(shell pkg-config --cflags --libs linuxsampler) -DWANT_LINUXSAMPLER
 endif
 
-LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
-LINK_FLAGS += $(JUCE_CORE_LIBS)
-
 # --------------------------------------------------------------
+
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+LIBS          = ../modules/lilv.a
+LIBS_posix32  = ../modules/lilv.posix32.a
+LIBS_posix64  = ../modules/lilv.posix64.a
+LIBS_win32    = ../modules/lilv.win32.a
+LIBS_win64    = ../modules/lilv.win64.a
+LINK_FLAGS   += $(LILV_LIBS)
+endif
+
+ifeq ($(HAVE_CSOUND),true)
+LIBS = ../modules/juce_core.a
+endif
 
 POSIX_BUILD_FLAGS = $(BUILD_CXX_FLAGS)
 POSIX_32BIT_FLAGS = $(32BIT_FLAGS) -L/usr/lib32 -L/usr/lib/i386-linux-gnu
@@ -43,28 +63,7 @@ POSIX_LINK_FLAGS  = $(LINK_FLAGS) -ldl
 WIN_BUILD_FLAGS   = $(BUILD_CXX_FLAGS)
 WIN_32BIT_FLAGS   = $(32BIT_FLAGS)
 WIN_64BIT_FLAGS   = $(64BIT_FLAGS)
-WIN_LINK_FLAGS    = $(LINK_FLAGS) -lkernel32
-
-LIBS          = ../modules/juce_audio_basics.a
-LIBS_posix32  = ../modules/juce_audio_basics.posix32.a
-LIBS_posix64  = ../modules/juce_audio_basics.posix64.a
-LIBS_win32    = ../modules/juce_audio_basics.win32.a
-LIBS_win64    = ../modules/juce_audio_basics.win64.a
-
-LIBS         += ../modules/juce_core.a
-LIBS_posix32 += ../modules/juce_core.posix32.a
-LIBS_posix64 += ../modules/juce_core.posix64.a
-LIBS_win32   += ../modules/juce_core.win32.a
-LIBS_win64   += ../modules/juce_core.win64.a
-
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-LIBS         += ../modules/lilv.a
-LIBS_posix32 += ../modules/lilv.posix32.a
-LIBS_posix64 += ../modules/lilv.posix64.a
-LIBS_win32   += ../modules/lilv.win32.a
-LIBS_win64   += ../modules/lilv.win64.a
-LINK_FLAGS   += $(LILV_LIBS)
-endif
+WIN_LINK_FLAGS    = $(LINK_FLAGS)
 
 OBJS = carla-discovery.cpp
 
@@ -113,12 +112,6 @@ debug:
 
 .FORCE:
 .PHONY: .FORCE
-
-../modules/juce_audio_basics.%.a: .FORCE
-	$(MAKE) -C ../modules juce_audio_basics_$*
-
-../modules/juce_core.%.a: .FORCE
-	$(MAKE) -C ../modules juce_core_$*
 
 ../modules/lilv.%.a: .FORCE
 	$(MAKE) -C ../modules lilv_$*
