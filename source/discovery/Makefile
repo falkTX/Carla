@@ -17,13 +17,11 @@ LINK_FLAGS      += $(QTCORE_LIBS)
 BUILD_CXX_FLAGS += -DWANT_NATIVE
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_LV2 -DWANT_VST
+BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
 ifeq ($(CARLA_VESTIGE_HEADER),true)
 BUILD_CXX_FLAGS += -DVESTIGE_HEADER
 endif
 endif
-
-# -DWANT_DSSI
 
 # --------------------------------------------------------------
 

@@ -46,6 +46,7 @@
 #endif
 
 #include <iostream>
+# include <QtCore/QDir>
 
 #define DISCOVERY_OUT(x, y) std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl;
 
@@ -86,8 +87,6 @@ bool gVstWantsTime = false;
 
 // Current uniqueId for VST shell plugins
 intptr_t gVstCurrentUniqueId = 0;
-
-// todo: add test, time requested without asking feature
 
 // Supported Carla features
 intptr_t vstHostCanDo(const char* const feature)
@@ -146,6 +145,7 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
 {
     carla_debug("vstHostCallback(%p, %i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
 
+    static VstTimeInfo_R timeInfo;
     intptr_t ret = 0;
 
     switch (opcode)
@@ -175,7 +175,6 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         if (! gVstIsProcessing) DISCOVERY_OUT("warning", "plugin requested timeInfo out of process");
         if (! gVstWantsTime)    DISCOVERY_OUT("warning", "plugin requested timeInfo but didn't ask if host could do \"sendVstTimeInfo\"");
 
-        static VstTimeInfo_R timeInfo;
         carla_zeroStruct<VstTimeInfo_R>(timeInfo);
         timeInfo.sampleRate = kSampleRate;
 
@@ -1473,273 +1472,7 @@ void do_csound_check(const char* const filename, const bool init)
         csound.DeleteChannelList(channelList);
     }
 
-#if 1
-    using namespace juce;
-
-    String plantFlag, presetFlag;
-
-    File file(filename);
-    String source(file.loadFileAsString());
-
-    StringArray csdText;
-    int lines=1;
-    String csdLine("");
-    csdText.addLines(source);
-    bool multiComment = false;
-    bool multiLine = false;
-
-    // check for minimal Cabbage GUI
-    for (int i=0, _size=csdText.size(); i < _size; ++i)
-    {
-        if (csdText[i].indexOfWholeWordIgnoreCase(String("</Cabbage>")) != -1)
-            break;
-
-        // we don't enter for multitab, plants need to be created first
-        if (csdText[i].contains("multitab "))
-            continue;
-
-        if (csdText[i].trim().isNotEmpty())
-        {
-            if (csdText[i].contains("), \\") || csdText[i].contains("),\\") || csdText[i].contains(") \\"))
-            {
-                multiLine = true;
-                csdLine="";
-                lines=0;
-
-                while (multiLine)
-                {
-                    if (csdText[i+lines].contains("), \\") || csdText[i+lines].contains("),\\") || csdText[i+lines].contains(") \\"))
-                        lines++;
-                    else
-                        multiLine=false;
-                }
-
-                for (int y=0;y<=lines;y++)
-                    csdLine = csdLine + " "+ csdText[i+y].trim()+" ";
-
-                i=i+lines;
-            }
-            else
-                csdLine = csdText[i];
-
-            //tidy up string
-            csdLine = csdLine.trimStart();
-            //csdLine = csdLine.removeCharacters(" \\");
-            //csdLine = csdLine.removeCharacters(",\\");
-            //Logger::writeToLog(csdLine);
-            StringArray tokes;
-            tokes.addTokens(csdLine.trimEnd(), ", ", "\"");
-
-            if (tokes.getReference(0).containsIgnoreCase(String("/*")))
-            {
-                multiComment = true;
-            }
-            if (tokes.getReference(0).containsIgnoreCase(String("*\\")))
-            {
-                multiComment = false;
-            }
-
-            if (tokes.getReference(0).containsIgnoreCase(String(";")))
-            {
-                // allows for single line comments
-            }
-            else if (tokes.getReference(0).containsIgnoreCase(String("}")))
-            {
-                plantFlag = ""; // reset plantFlag when a closing bracket is found
-                presetFlag = "";
-            }
-
-            if (! multiComment)
-            {
-                // populate the guiLayoutCtrls vector with non-interactive widgets
-                // the host widgets aren't GUI based but they can be added to this
-                // vector too, as can the editor button.
-                if (tokes.getReference(0).equalsIgnoreCase(String("form"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("image"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("keyboard"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("csoundoutput"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("line"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("label"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("hostbpm"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("hosttime"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("hostplaying"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("hostppqpos"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("vumeter"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("patmatrix"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("source"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("multitab"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("infobutton"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("filebutton"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("soundfiler"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("snapshot"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("table"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("pvsview"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("hostrecording"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("directorylist"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("transport"))
-                    || tokes.getReference(0).equalsIgnoreCase(String("groupbox")))
-                {
-#if 0
-                    CabbageGUIClass cAttr(csdLine.trimEnd(), guiID);
-
-                    if (cAttr.getStringProp("native").length()>0)
-                    {
-                        //create generic plugin editor and break..
-                        setupNativePluginEditor();
-                        nativePluginEditor = true;
-                        return;
-                    }
-
-                    // showMessage(cAttr.getStringProp("type"));
-                    csdLine = "";
-
-                    // add soundfiler buffering sources
-                    if (tokes.getReference(0).equalsIgnoreCase(String("soundfiler")))
-                    {
-                        addSoundfilerSource(cAttr.getStringProp(("file")), cAttr.getChannels());
-                        Logger::writeToLog(String(audioSourcesArray.size()-1));
-                        cAttr.setNumProp("soundfilerIndex", audioSourcesArray.size()-1);
-                    }
-
-                    // set up plant flag if needed for other widgets
-                    if (cAttr.getStringProp(String("plant")).isNotEmpty())
-                    {
-                        plantFlag = cAttr.getStringProp(String("plant"));
-                        presetFlag = cAttr.getStringProp(String("preset"));
-                    }
-                    else if (cAttr.getStringProp(String("relToPlant")).equalsIgnoreCase(String("")))
-                        cAttr.setStringProp(String("relToPlant"), plantFlag);
-
-                    guiLayoutCtrls.add(cAttr);
-
-                    guiID++;
-                    if (cAttr.getStringProp("type").containsIgnoreCase("form"))
-                        if (cAttr.getStringProp("text").length()>2)
-                            setPluginName(cAttr.getStringProp("text"));
-                        else if(cAttr.getStringProp("caption").length()>2)
-                            setPluginName(cAttr.getStringProp("caption"));
-                        else
-                            setPluginName("Untitled Cabbage Patch!");
-
-                    //StringArray log = logGUIAttributes(cAttr, String("Non-Interactive"));
-                    //debugMessageArray.addArray(logGUIAttributes(cAttr, String("Non-Interactive")));
-                    sendChangeMessage();
-
-                    // if instrument uses any of the host widgets, or an xypad, turn
-                    // on the timer
-                    if (tokes.getReference(0).equalsIgnoreCase(String("hostbpm"))
-                      ||tokes.getReference(0).equalsIgnoreCase(String("hosttime"))
-                      ||tokes.getReference(0).equalsIgnoreCase(String("hostplaying"))
-                      ||tokes.getReference(0).equalsIgnoreCase(String("hostppqpos"))
-                      ||tokes.getReference(0).equalsIgnoreCase(String("hostrecording")))
-                            startTimer(20);
-#endif
-                }
-                // populate the guiCtrls vector with interactive widgets
-                else if (tokes.getReference(0).equalsIgnoreCase(String("hslider"))
-                      || tokes.getReference(0).equalsIgnoreCase(String("vslider"))
-                      || tokes.getReference(0).equalsIgnoreCase(String("rslider"))
-                      || tokes.getReference(0).equalsIgnoreCase(String("combobox"))
-                      || tokes.getReference(0).equalsIgnoreCase(String("checkbox"))
-                      || tokes.getReference(0).equalsIgnoreCase(String("xypad"))
-                      || tokes.getReference(0).equalsIgnoreCase(String("button")))
-                {
-#if 0
-                    CabbageGUIClass cAttr(csdLine.trimEnd(), guiID);
-                    csdLine = "";
-                                                                            //Logger::writeToLog(tokes.getReference(0));
-                    // attach widget to plant if need be
-                    if (cAttr.getStringProp(String("relToPlant")).equalsIgnoreCase(String("")))
-                    {
-                            //showMessage(cAttr.getStringProp(String("relToPlant")));
-                            cAttr.setStringProp(String("relToPlant"), plantFlag);
-                            //showMessage(String("presetFlag:")+presetFlag);
-                            //showMessage(cAttr.getStringProp("name"));
-                            if (cAttr.getStringProp("preset").length()<1)
-                                cAttr.setStringProp(String("preset"), presetFlag.trim());
-                            //showMessage(cAttr.getStringProp("preset"));
-                    }
-
-                    // xypad contain two control paramters, one for x axis and another for y. As such we add two
-                    // to our contorl vector so that plugin hosts display two sliders. We name one of the xypad pads
-                    // 'dummy' so that our editor doesn't display it. Our editor only needs to show one xypad.
-                    if (tokes.getReference(0).equalsIgnoreCase(String("xypad")))
-                    {
-                        cAttr.setStringProp(String("xyChannel"), String("X"));
-                        cAttr.setNumProp("sliderRange",  cAttr.getNumProp("xypadRangeX"));
-                        cAttr.setNumProp("min",  cAttr.getNumProp("minX"));
-                        cAttr.setNumProp("max",  cAttr.getNumProp("maxX"));
-                                                                                        cAttr.setNumProp("value", cAttr.getNumProp("valueX"));
-                        cAttr.setStringProp(String("channel"), cAttr.getStringProp("xChannel"));
-                        guiCtrls.add(cAttr);
-
-                        cAttr.setStringProp(String("xyChannel"), String("Y"));
-                        cAttr.setNumProp("sliderRange",  cAttr.getNumProp("xypadRangeY"));
-                        cAttr.setNumProp("min",  cAttr.getNumProp("minY"));
-                        cAttr.setNumProp("max",  cAttr.getNumProp("maxY"));
-                                                                                        cAttr.setNumProp("value", cAttr.getNumProp("valueY"));
-                        cAttr.setStringProp(String("channel"), cAttr.getStringProp("yChannel"));
-                        //append 'dummy' to name so the editor know not to display the
-                        //second xypad
-                        cAttr.setStringProp("name", cAttr.getStringProp("name")+String("dummy"));
-                        guiCtrls.add(cAttr);
-                        guiID++;
-                        startTimer(20);
-                    }
-                    else
-                    {
-                        guiCtrls.add(cAttr);
-                        guiID++;
-                    }
-
-                    //debugMessageArray.addArray(logGUIAttributes(cAttr, String("Interactive")));
-                    sendChangeMessage();
-#endif
-                }
-            }
-        }
-
-    } // end of scan through entire csd text, control vectors are now populated
-
-    // create multitabs now that plants have been inserted to control vector..
-    for (int i=0, _size=csdText.size(); i < _size; ++i)
-    {
-        if (csdText[i].contains("multitab ") && ! csdText[i].contains(";"))
-        {
-            csdLine = csdText[i];
-            csdLine = csdLine.trimStart();
-            StringArray tokes;
-            tokes.addTokens(csdLine.trimEnd(), ", ", "\"");
-
-#if 0
-            if (tokes.getReference(0).equalsIgnoreCase(String("multitab")))
-            {
-                CabbageGUIClass cAttr(csdLine.trimEnd(), guiID);
-                //showMessage(cAttr.getStringProp("type"));
-                csdLine = "";
-                //set up plant flag if needed for other widgets
-                if(cAttr.getStringProp(String("plant")).isNotEmpty()){
-                plantFlag = cAttr.getStringProp(String("plant"));
-                presetFlag = cAttr.getStringProp(String("preset"));
-                }
-                else if(cAttr.getStringProp(String("relToPlant")).equalsIgnoreCase(String("")))
-                cAttr.setStringProp(String("relToPlant"), plantFlag);
-                guiLayoutCtrls.add(cAttr);
-                guiID++;
-            }
-#endif
-        }
-    } // end of multitab check
-
-#if 0
-    // init all channels with their init val
-    for(int i=0;i<guiCtrls.size();i++)
-    {
-        csound->SetChannel( guiCtrls.getReference(i).getStringProp("channel").toUTF8(), guiCtrls.getReference(i).getNumProp("value"));
-        //Logger::writeToLog(guiCtrls.getReference(i).getStringProp("channel")+": "+String(guiCtrls.getReference(i).getNumProp("value")));
-    }
-#endif
-#endif
+    // TODO
 
     csound.Cleanup();
     csound.Reset();
@@ -1893,25 +1626,25 @@ void do_linuxsampler_check(const char* const filename, const char* const stype, 
 
 // --------------------------------------------------------------------------
 
-#if 0
 class ScopedWorkingDirSet
 {
 public:
     ScopedWorkingDirSet(const char* const filename)
-        : fPreviousWorkingDirectory(File::getCurrentWorkingDirectory())
+        : fPreviousPath(QDir::currentPath())
     {
-        File(filename).getParentDirectory().setAsCurrentWorkingDirectory();
+        QDir dir(filename);
+        dir.cdUp();
+        QDir::setCurrent(dir.absolutePath());
     }
 
     ~ScopedWorkingDirSet()
     {
-        fPreviousWorkingDirectory.setAsCurrentWorkingDirectory();
+        QDir::setCurrent(fPreviousPath);
     }
 
 private:
-    const File fPreviousWorkingDirectory;
+    const QString fPreviousPath;
 };
-#endif
 
 // ------------------------------ main entry point ------------------------------
 
@@ -1927,7 +1660,7 @@ int main(int argc, char* argv[])
     const char* const filename = argv[2];
     const PluginType  type     = getPluginTypeFromString(stype);
 
-    //const ScopedWorkingDirSet swds(filename);
+    const ScopedWorkingDirSet swds(filename);
 
     CarlaString filenameStr(filename);
     filenameStr.toLower();

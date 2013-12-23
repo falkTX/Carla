@@ -21,8 +21,6 @@
 #include "CarlaLadspaUtils.hpp"
 #include "dssi/dssi.h"
 
-#include "juce_core.h"
-
 // -----------------------------------------------------------------------
 
 static inline
@@ -32,6 +30,7 @@ const char* find_dssi_ui(const char* const filename, const char* const label)
     CARLA_SAFE_ASSERT_RETURN(label    != nullptr, nullptr);
     carla_debug("find_dssi_ui(\"%s\", \"%s\")", filename, label);
 
+#if 0
     using namespace juce;
 
     File pluginFile(filename);
@@ -66,6 +65,7 @@ const char* find_dssi_ui(const char* const filename, const char* const label)
         if (gui.startsWith(checkLabel) || gui.startsWith(checkShort))
             return carla_strdup(File(pluginDir).getChildFile(gui).getFullPathName().toRawUTF8());
     }
+#endif
 
     return nullptr;
 }
