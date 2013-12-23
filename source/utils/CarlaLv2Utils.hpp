@@ -18,7 +18,7 @@
 #ifndef CARLA_LV2_UTILS_HPP_INCLUDED
 #define CARLA_LV2_UTILS_HPP_INCLUDED
 
-#include "CarlaJuceUtils.hpp"
+#include "CarlaUtils.hpp"
 
 #include "lv2/lv2.h"
 #include "lv2/atom.h"
@@ -61,9 +61,8 @@
 #include "lilv/lilvmm.hpp"
 #include "sratom/sratom.h"
 
-#ifdef USE_JUCE
-#include "juce_core.h"
-#endif
+#include <QtCore/QMap>
+#include <QtCore/QStringList>
 
 // -----------------------------------------------------------------------
 // Define namespaces and missing prefixes
@@ -79,9 +78,6 @@
 
 #define LV2_MIDI_LL__MidiPort "http://ll-plugins.nongnu.org/lv2/ext/MidiPort"
 
-#define LV2_OSC__OscEvent     "http://kxstudio.sf.net/ns/lv2ext/osc#OscEvent"
-
-#define LV2_UI__NtkUI         LV2_UI_PREFIX "NtkUI"
 #define LV2_UI__Qt5UI         LV2_UI_PREFIX "Qt5UI"
 #define LV2_UI__idle          LV2_UI_PREFIX "idle"
 #define LV2_UI__makeResident  LV2_UI_PREFIX "makeResident"
@@ -91,7 +87,7 @@
 
 struct LV2_Atom_MidiEvent {
     LV2_Atom_Event event;
-    uint8_t data[8];
+    uint8_t data[4];
 };
 
 // -----------------------------------------------------------------------
@@ -183,7 +179,6 @@ public:
     Lilv::Node ui_gtk3;
     Lilv::Node ui_qt4;
     Lilv::Node ui_qt5;
-    Lilv::Node ui_ntk;
     Lilv::Node ui_cocoa;
     Lilv::Node ui_windows;
     Lilv::Node ui_x11;
@@ -205,7 +200,6 @@ public:
 
     // Port Data Types
     Lilv::Node midi_event;
-    Lilv::Node osc_event;
     Lilv::Node patch_message;
     Lilv::Node time_position;
 
@@ -301,7 +295,6 @@ public:
           ui_gtk3            (new_uri(LV2_UI__Gtk3UI)),
           ui_qt4             (new_uri(LV2_UI__Qt4UI)),
           ui_qt5             (new_uri(LV2_UI__Qt5UI)),
-          ui_ntk             (new_uri(LV2_UI__NtkUI)),
           ui_cocoa           (new_uri(LV2_UI__CocoaUI)),
           ui_windows         (new_uri(LV2_UI__WindowsUI)),
           ui_x11             (new_uri(LV2_UI__X11UI)),
@@ -321,7 +314,6 @@ public:
           value_maximum      (new_uri(LV2_CORE__maximum)),
 
           midi_event         (new_uri(LV2_MIDI__MidiEvent)),
-          osc_event          (new_uri(LV2_OSC__OscEvent)),
           patch_message      (new_uri(LV2_PATCH__Message)),
           time_position      (new_uri(LV2_TIME__Position)),
 
@@ -552,13 +544,26 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
 
             if (replaceNode.is_uri())
             {
-#ifdef USE_JUCE
+#if 0//def HAVE_JUCE
                 const juce::String replaceURI(replaceNode.as_uri());
 
                 if (replaceURI.startsWith("urn:"))
                 {
                     if (int uniqueId = replaceURI.getTrailingIntValue())
                         rdfDescriptor->UniqueID = (unsigned long)uniqueId;
+                }
+#else
+                const QString replaceURI(replaceNode.as_uri());
+
+                if (replaceURI.startsWith("urn:"))
+                {
+                    const QString replaceId(replaceURI.split(":").last());
+
+                    bool ok;
+                    const ulong uniqueId(replaceId.toULong(&ok));
+
+                    if (ok && uniqueId != 0)
+                        rdfDescriptor->UniqueID = uniqueId;
                 }
 #endif
             }
@@ -1007,7 +1012,6 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
         }
     }
 
-#ifdef USE_JUCE
     // -------------------------------------------------------------------
     // Set Plugin Presets
 
@@ -1018,23 +1022,42 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
         if (presetNodes.size() > 0)
         {
             // create a list of preset URIs (for checking appliesTo, sorting and unique-ness)
+#if 0//def HAVE_JUCE
             juce::StringArray presetListURIs;
+#else
+            QStringList presetListURIs;
+#endif
 
             LILV_FOREACH(nodes, j, presetNodes)
             {
                 Lilv::Node presetNode(presetNodes.get(j));
                 // FIXME - check appliesTo?
 
+#if 0//def HAVE_JUCE
                 juce::String presetURI(presetNode.as_uri());
 
                 if (presetURI.trim().isNotEmpty())
                     presetListURIs.addIfNotAlreadyThere(presetURI);
+#else
+                QString presetURI(presetNode.as_uri());
+
+                if (! (presetURI.trimmed().isEmpty() || presetListURIs.contains(presetURI)))
+                    presetListURIs.append(presetURI);
+#endif
             }
 
+#if 0//def HAVE_JUCE
             presetListURIs.sort(false);
+#else
+            presetListURIs.sort();
+#endif
 
             // create presets with unique URIs
+#if 0//def HAVE_JUCE
             rdfDescriptor->PresetCount = static_cast<uint32_t>(presetListURIs.size());
+#else
+            rdfDescriptor->PresetCount = static_cast<uint32_t>(presetListURIs.count());
+#endif
             rdfDescriptor->Presets = new LV2_RDF_Preset[rdfDescriptor->PresetCount];
 
             // set preset data
@@ -1047,8 +1070,11 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
 
                 if (const char* const presetURI = presetNode.as_uri())
                 {
+#if 0//def HAVE_JUCE
                     const int index(presetListURIs.indexOf(juce::String(presetURI)));
-
+#else
+                    const int index(presetListURIs.indexOf(QString(presetURI)));
+#endif
                     CARLA_SAFE_ASSERT_CONTINUE(index >= 0);
 
                     LV2_RDF_Preset* const rdfPreset(&rdfDescriptor->Presets[index]);
@@ -1070,7 +1096,6 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
             }
         }
     }
-#endif
 
     // -------------------------------------------------------------------
     // Set Plugin Features

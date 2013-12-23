@@ -1,0 +1,10 @@
+prefix=X-PREFIX-X
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: carla-standalone
+Version: 1.9.1
+Description: Carla Host Standalone
+Libs: -L${libdir}
+Cflags: -I${includedir}/carla -I${includedir}/carla/includes

@@ -99,7 +99,7 @@ public:
 
     char readChar()
     {
-        char c = 0;
+        char c = '\0';
         tryRead(&c, sizeof(char));
         return c;
     }

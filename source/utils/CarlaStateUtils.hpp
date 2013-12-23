@@ -22,9 +22,7 @@
 #include "CarlaMIDI.h"
 #include "List.hpp"
 
-#ifdef USE_JUCE
-# include "juce_core.h"
-#endif
+#include <QtXml/QDomNode>
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -213,13 +211,12 @@ struct SaveState {
     CARLA_DECLARE_NON_COPY_STRUCT(SaveState)
 };
 
-#ifdef USE_JUCE
 // -----------------------------------------------------------------------
 
 static inline
-juce::String xmlSafeString(const juce::String& string, const bool toXml)
+QString xmlSafeString(const QString& string, const bool toXml)
 {
-    juce::String newString(string);
+    QString newString(string);
 
     if (toXml)
         return newString.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("'","&apos;").replace("\"","&quot;");
@@ -228,97 +225,124 @@ juce::String xmlSafeString(const juce::String& string, const bool toXml)
 }
 
 static inline
-const char* xmlSafeStringCharDup(const juce::String& string, const bool toXml)
+const char* xmlSafeStringCharDup(const QString& string, const bool toXml)
 {
-    return carla_strdup(xmlSafeString(string, toXml).toRawUTF8());
+    return carla_strdup(xmlSafeString(string, toXml).toUtf8().constData());
 }
 
 // -----------------------------------------------------------------------
 
 static inline
-void fillSaveStateFromXmlElement(SaveState& saveState, const juce::XmlElement* const xmlElement)
+void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
 {
-    using namespace juce;
+    if (xmlNode.isNull())
+        return saveState;
 
-    for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
+    for (QDomNode node = xmlNode.firstChild(); ! node.isNull(); node = node.nextSibling())
     {
+        QString tagName(node.toElement().tagName());
+
         // ---------------------------------------------------------------
         // Info
 
-        if (elem->getTagName().equalsIgnoreCase("info"))
+        if (tagName.compare("info", Qt::CaseInsensitive) == 0)
         {
-            for (XmlElement* xmlInfo = elem->getFirstChildElement(); xmlInfo != nullptr; xmlInfo = xmlInfo->getNextElement())
+            for (QDomNode xmlInfo = node.toElement().firstChild(); ! xmlInfo.isNull(); xmlInfo = xmlInfo.nextSibling())
             {
-                const String& tag(xmlInfo->getTagName());
-                const String  text(xmlInfo->getAllSubText().trim());
+                const QString tag(xmlInfo.toElement().tagName());
+                const QString text(xmlInfo.toElement().text().trimmed());
 
-                if (tag.equalsIgnoreCase("type"))
+                if (tag.compare("type", Qt::CaseInsensitive) == 0)
+                {
                     saveState.type = xmlSafeStringCharDup(text, false);
-                else if (tag.equalsIgnoreCase("name"))
+                }
+                else if (tag.compare("name", Qt::CaseInsensitive) == 0)
+                {
                     saveState.name = xmlSafeStringCharDup(text, false);
-                else if (tag.equalsIgnoreCase("label") || tag.equalsIgnoreCase("uri"))
+                }
+                else if (tag.compare("label", Qt::CaseInsensitive) == 0 || tag.compare("uri", Qt::CaseInsensitive) == 0)
+                {
                     saveState.label = xmlSafeStringCharDup(text, false);
-                else if (tag.equalsIgnoreCase("binary") || tag.equalsIgnoreCase("filename"))
+                }
+                else if (tag.compare("binary", Qt::CaseInsensitive) == 0 || tag.compare("filename", Qt::CaseInsensitive) == 0)
+                {
                     saveState.binary = xmlSafeStringCharDup(text, false);
-                else if (tag.equalsIgnoreCase("uniqueid"))
-                    saveState.uniqueID = text.getLargeIntValue();
+                }
+                else if (tag.compare("uniqueid", Qt::CaseInsensitive) == 0)
+                {
+                    bool ok;
+                    const long uniqueID(text.toLong(&ok));
+                    if (ok) saveState.uniqueID = uniqueID;
+                }
             }
         }
 
         // ---------------------------------------------------------------
         // Data
 
-        else if (elem->getTagName().equalsIgnoreCase("data"))
+        else if (tagName.compare("data", Qt::CaseInsensitive) == 0)
         {
-            for (XmlElement* xmlData = elem->getFirstChildElement(); xmlData != nullptr; xmlData = xmlData->getNextElement())
+            for (QDomNode xmlData = node.toElement().firstChild(); ! xmlData.isNull(); xmlData = xmlData.nextSibling())
             {
-                const String& tag(xmlData->getTagName());
-                const String  text(xmlData->getAllSubText().trim());
+                const QString tag(xmlData.toElement().tagName());
+                const QString text(xmlData.toElement().text().trimmed());
 
                 // -------------------------------------------------------
                 // Internal Data
 
-                if (tag.equalsIgnoreCase("active"))
+                if (tag.compare("active", Qt::CaseInsensitive) == 0)
                 {
-                    saveState.active = (text.equalsIgnoreCase("yes"));
+                    saveState.active = (text.compare("yes", Qt::CaseInsensitive) == 0 || text.compare("true", Qt::CaseInsensitive) == 0);
                 }
-                else if (tag.equalsIgnoreCase("drywet"))
+                else if (tag.compare("drywet", Qt::CaseInsensitive) == 0)
                 {
-                    saveState.dryWet = carla_fixValue(0.0f, 1.0f, text.getFloatValue());
+                    bool ok;
+                    const float value(text.toFloat(&ok));
+                    if (ok) saveState.dryWet = carla_fixValue(0.0f, 1.0f, value);
                 }
-                else if (tag.equalsIgnoreCase("volume"))
+                else if (tag.compare("volume", Qt::CaseInsensitive) == 0)
                 {
-                    saveState.volume = carla_fixValue(0.0f, 1.27f, text.getFloatValue());
+                    bool ok;
+                    const float value(text.toFloat(&ok));
+                    if (ok) saveState.volume = carla_fixValue(0.0f, 1.27f, value);
                 }
-                else if (tag.equalsIgnoreCase("balanceleft") || tag.equalsIgnoreCase("balance-left"))
+                else if (tag.compare("balanceleft", Qt::CaseInsensitive) == 0 || tag.compare("balance-left", Qt::CaseInsensitive) == 0)
                 {
-                    saveState.balanceLeft = carla_fixValue(-1.0f, 1.0f, text.getFloatValue());
+                    bool ok;
+                    const float value(text.toFloat(&ok));
+                    if (ok) saveState.balanceLeft = carla_fixValue(-1.0f, 1.0f, value);
                 }
-                else if (tag.equalsIgnoreCase("balanceright") || tag.equalsIgnoreCase("balance-right"))
+                else if (tag.compare("balanceright", Qt::CaseInsensitive) == 0 || tag.compare("balance-right", Qt::CaseInsensitive) == 0)
                 {
-                    saveState.balanceRight = carla_fixValue(-1.0f, 1.0f, text.getFloatValue());
+                    bool ok;
+                    const float value(text.toFloat(&ok));
+                    if (ok) saveState.balanceRight = carla_fixValue(-1.0f, 1.0f, value);
                 }
-                else if (tag.equalsIgnoreCase("panning"))
+                else if (tag.compare("panning", Qt::CaseInsensitive) == 0)
                 {
-                    saveState.panning = carla_fixValue(-1.0f, 1.0f, text.getFloatValue());
+                    bool ok;
+                    const float value(text.toFloat(&ok));
+                    if (ok) saveState.panning = carla_fixValue(-1.0f, 1.0f, value);
                 }
-                else if (tag.equalsIgnoreCase("controlchannel") || tag.equalsIgnoreCase("control-channel"))
+                else if (tag.compare("controlchannel", Qt::CaseInsensitive) == 0 || tag.compare("control-channel", Qt::CaseInsensitive) == 0)
                 {
-                    const int value(text.getIntValue());
-                    if (value >= 1 && value <= MAX_MIDI_CHANNELS)
+                    bool ok;
+                    const short value(text.toShort(&ok));
+                    if (ok && value >= 1 && value < MAX_MIDI_CHANNELS)
                         saveState.ctrlChannel = static_cast<int8_t>(value-1);
                 }
 
                 // -------------------------------------------------------
                 // Program (current)
 
-                else if (tag.equalsIgnoreCase("currentprogramindex") || tag.equalsIgnoreCase("current-program-index"))
+                else if (tag.compare("currentprogramindex", Qt::CaseInsensitive) == 0 || tag.compare("current-program-index", Qt::CaseInsensitive) == 0)
                 {
-                    const int value(text.getIntValue());
-                    if (value >= 1)
+                    bool ok;
+                    const int value(text.toInt(&ok));
+                    if (ok && value >= 1)
                         saveState.currentProgramIndex = value-1;
                 }
-                else if (tag.equalsIgnoreCase("currentprogramname") || tag.equalsIgnoreCase("current-program-name"))
+                else if (tag.compare("currentprogramname", Qt::CaseInsensitive) == 0 || tag.compare("current-program-name", Qt::CaseInsensitive) == 0)
                 {
                     saveState.currentProgramName = xmlSafeStringCharDup(text, false);
                 }
@@ -326,59 +350,65 @@ void fillSaveStateFromXmlElement(SaveState& saveState, const juce::XmlElement* c
                 // -------------------------------------------------------
                 // Midi Program (current)
 
-                else if (tag.equalsIgnoreCase("currentmidibank") || tag.equalsIgnoreCase("current-midi-bank"))
+                else if (tag.compare("currentmidibank", Qt::CaseInsensitive) == 0 || tag.compare("current-midi-bank", Qt::CaseInsensitive) == 0)
                 {
-                    const int value(text.getIntValue());
-                    if (value >= 1)
+                    bool ok;
+                    const int value(text.toInt(&ok));
+                    if (ok && value >= 1)
                         saveState.currentMidiBank = value-1;
                 }
-                else if (tag.equalsIgnoreCase("currentmidiprogram") || tag.equalsIgnoreCase("current-midi-program"))
+                else if (tag.compare("currentmidiprogram", Qt::CaseInsensitive) == 0 || tag.compare("current-midi-program", Qt::CaseInsensitive) == 0)
                 {
-                    const int value(text.getIntValue());
-                    if (value >= 1)
+                    bool ok;
+                    const int value(text.toInt(&ok));
+                    if (ok && value >= 1)
                         saveState.currentMidiProgram = value-1;
                 }
 
                 // -------------------------------------------------------
                 // Parameters
 
-                else if (tag.equalsIgnoreCase("parameter"))
+                else if (tag.compare("parameter", Qt::CaseInsensitive) == 0)
                 {
                     StateParameter* const stateParameter(new StateParameter());
 
-                    for (XmlElement* xmlSubData = xmlData->getFirstChildElement(); xmlSubData != nullptr; xmlSubData = xmlSubData->getNextElement())
+                    for (QDomNode xmlSubData = xmlData.toElement().firstChild(); ! xmlSubData.isNull(); xmlSubData = xmlSubData.nextSibling())
                     {
-                        const String& pTag(xmlSubData->getTagName());
-                        const String  pText(xmlSubData->getAllSubText().trim());
+                        const QString pTag(xmlSubData.toElement().tagName());
+                        const QString pText(xmlSubData.toElement().text().trimmed());
 
-                        if (pTag.equalsIgnoreCase("index"))
+                        if (pTag.compare("index", Qt::CaseInsensitive) == 0)
                         {
-                            const int index(pText.getIntValue());
-                            if (index >= 0)
-                                stateParameter->index = static_cast<uint32_t>(index);
+                            bool ok;
+                            const uint index(pText.toUInt(&ok));
+                            if (ok) stateParameter->index = index;
                         }
-                        else if (pTag.equalsIgnoreCase("name"))
+                        else if (pTag.compare("name", Qt::CaseInsensitive) == 0)
                         {
                             stateParameter->name = xmlSafeStringCharDup(pText, false);
                         }
-                        else if (pTag.equalsIgnoreCase("symbol"))
+                        else if (pTag.compare("symbol", Qt::CaseInsensitive) == 0)
                         {
                             stateParameter->symbol = xmlSafeStringCharDup(pText, false);
                         }
-                        else if (pTag.equalsIgnoreCase("value"))
+                        else if (pTag.compare("value", Qt::CaseInsensitive) == 0)
                         {
-                            stateParameter->value = pText.getFloatValue();
+                            bool ok;
+                            const float value(pText.toFloat(&ok));
+                            if (ok) stateParameter->value = value;
                         }
-                        else if (pTag.equalsIgnoreCase("midichannel") || pTag.equalsIgnoreCase("midi-channel"))
+                        else if (pTag.compare("midichannel", Qt::CaseInsensitive) == 0 || pTag.compare("midi-channel", Qt::CaseInsensitive) == 0)
                         {
-                            const int channel(pText.getIntValue());
-                            if (channel >= 1 && channel <= MAX_MIDI_CHANNELS)
+                            bool ok;
+                            const ushort channel(pText.toUShort(&ok));
+                            if (ok && channel >= 1 && channel < MAX_MIDI_CHANNELS)
                                 stateParameter->midiChannel = static_cast<uint8_t>(channel-1);
                         }
-                        else if (pTag.equalsIgnoreCase("midicc") || pTag.equalsIgnoreCase("midi-cc"))
+                        else if (pTag.compare("midicc", Qt::CaseInsensitive) == 0 || pTag.compare("midi-cc", Qt::CaseInsensitive) == 0)
                         {
-                            const int cc(pText.getIntValue());
-                            if (cc >= 1 && cc < 0x5F)
+                            bool ok;
+                            const int cc(pText.toInt(&ok));
+                            if (ok && cc >= 1 && cc < 0x5F)
                                 stateParameter->midiCC = static_cast<int16_t>(cc);
                         }
                     }
@@ -389,20 +419,20 @@ void fillSaveStateFromXmlElement(SaveState& saveState, const juce::XmlElement* c
                 // -------------------------------------------------------
                 // Custom Data
 
-                else if (tag.equalsIgnoreCase("customdata") || tag.equalsIgnoreCase("custom-data"))
+                else if (tag.compare("customdata", Qt::CaseInsensitive) == 0 || tag.compare("custom-data", Qt::CaseInsensitive) == 0)
                 {
                     StateCustomData* const stateCustomData(new StateCustomData());
 
-                    for (XmlElement* xmlSubData = xmlData->getFirstChildElement(); xmlSubData != nullptr; xmlSubData = xmlSubData->getNextElement())
+                    for (QDomNode xmlSubData = xmlData.toElement().firstChild(); ! xmlSubData.isNull(); xmlSubData = xmlSubData.nextSibling())
                     {
-                        const String& cTag(xmlSubData->getTagName());
-                        const String  cText(xmlSubData->getAllSubText().trim());
+                        const QString cTag(xmlSubData.toElement().tagName());
+                        const QString cText(xmlSubData.toElement().text().trimmed());
 
-                        if (cTag.equalsIgnoreCase("type"))
+                        if (cTag.compare("type", Qt::CaseInsensitive) == 0)
                             stateCustomData->type = xmlSafeStringCharDup(cText, false);
-                        else if (cTag.equalsIgnoreCase("key"))
+                        else if (cTag.compare("key", Qt::CaseInsensitive) == 0)
                             stateCustomData->key = xmlSafeStringCharDup(cText, false);
-                        else if (cTag.equalsIgnoreCase("value"))
+                        else if (cTag.compare("value", Qt::CaseInsensitive) == 0)
                             stateCustomData->value = xmlSafeStringCharDup(cText, false);
                     }
 
@@ -412,7 +442,7 @@ void fillSaveStateFromXmlElement(SaveState& saveState, const juce::XmlElement* c
                 // -------------------------------------------------------
                 // Chunk
 
-                else if (tag.equalsIgnoreCase("chunk"))
+                else if (tag.compare("chunk", Qt::CaseInsensitive) == 0)
                 {
                     saveState.chunk = xmlSafeStringCharDup(text, false);
                 }
@@ -424,164 +454,162 @@ void fillSaveStateFromXmlElement(SaveState& saveState, const juce::XmlElement* c
 // -----------------------------------------------------------------------
 
 static inline
-void fillXmlStringFromSaveState(juce::String& content, const SaveState& saveState)
+void fillXmlStringFromSaveState(QString& content, const SaveState& saveState)
 {
-    using namespace juce;
-
     {
-        String info("  <Info>\n");
+        QString info("  <Info>\n");
 
-        info << "   <Type>" << saveState.type                      << "</Type>\n";
-        info << "   <Name>" << xmlSafeString(saveState.name, true) << "</Name>\n";
+        info += QString("   <Type>%1</Type>\n").arg(saveState.type);
+        info += QString("   <Name>%1</Name>\n").arg(xmlSafeString(saveState.name, true));
 
         switch (getPluginTypeFromString(saveState.type))
         {
         case PLUGIN_NONE:
             break;
         case PLUGIN_INTERNAL:
-            info << "   <Label>"    << xmlSafeString(saveState.label, true)  << "</Label>\n";
+            info += QString("   <Label>%1</Label>\n").arg(xmlSafeString(saveState.label, true));
             break;
         case PLUGIN_LADSPA:
-            info << "   <Binary>"   << xmlSafeString(saveState.binary, true) << "</Binary>\n";
-            info << "   <Label>"    << xmlSafeString(saveState.label, true)  << "</Label>\n";
-            info << "   <UniqueID>" << saveState.uniqueID                    << "</UniqueID>\n";
+            info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
+            info += QString("   <Label>%1</Label>\n").arg(xmlSafeString(saveState.label, true));
+            info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueID);
             break;
         case PLUGIN_DSSI:
-            info << "   <Binary>"   << xmlSafeString(saveState.binary, true) << "</Binary>\n";
-            info << "   <Label>"    << xmlSafeString(saveState.label, true)  << "</Label>\n";
+            info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
+            info += QString("   <Label>%1</Label>\n").arg(xmlSafeString(saveState.label, true));
             break;
         case PLUGIN_LV2:
-            info << "   <URI>"      << xmlSafeString(saveState.label, true)  << "</URI>\n";
+            info += QString("   <URI>%1</URI>\n").arg(xmlSafeString(saveState.label, true));
             break;
         case PLUGIN_VST:
-            info << "   <Binary>"   << xmlSafeString(saveState.binary, true) << "</Binary>\n";
-            info << "   <UniqueID>" << saveState.uniqueID                    << "</UniqueID>\n";
+            info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
+            info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueID);
             break;
         case PLUGIN_AU:
             // TODO?
-            info << "   <Binary>"   << xmlSafeString(saveState.binary, true) << "</Binary>\n";
-            info << "   <UniqueID>" << saveState.uniqueID                    << "</UniqueID>\n";
+            info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
+            info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueID);
             break;
         case PLUGIN_CSOUND:
         case PLUGIN_GIG:
         case PLUGIN_SF2:
         case PLUGIN_SFZ:
-            info << "   <Filename>" << xmlSafeString(saveState.binary, true) << "</Filename>\n";
-            info << "   <Label>"    << xmlSafeString(saveState.label, true)  << "</Label>\n";
+            info += QString("   <Filename>%1</Filename>\n").arg(xmlSafeString(saveState.binary, true));
+            info += QString("   <Label>%1</Label>\n").arg(xmlSafeString(saveState.label, true));
             break;
         }
 
-        info << "  </Info>\n\n";
+        info += "  </Info>\n\n";
 
-        content << info;
+        content += info;
     }
 
     {
-        String data("  <Data>\n");
+        QString data("  <Data>\n");
 
-        data << "   <Active>" << (saveState.active ? "Yes" : "No") << "</Active>\n";
+        data += QString("   <Active>%1</Active>\n").arg(saveState.active ? "Yes" : "No");
 
         if (saveState.dryWet != 1.0f)
-            data << "   <DryWet>"        << saveState.dryWet       << "</DryWet>\n";
+            data += QString("   <DryWet>%1</DryWet>\n").arg(saveState.dryWet);
         if (saveState.volume != 1.0f)
-            data << "   <Volume>"        << saveState.volume       << "</Volume>\n";
+            data += QString("   <Volume>%1</Volume>\n").arg(saveState.volume);
         if (saveState.balanceLeft != -1.0f)
-            data << "   <Balance-Left>"  << saveState.balanceLeft  << "</Balance-Left>\n";
+            data += QString("   <Balance-Left>%1</Balance-Left>\n").arg(saveState.balanceLeft);
         if (saveState.balanceRight != 1.0f)
-            data << "   <Balance-Right>" << saveState.balanceRight << "</Balance-Right>\n";
+            data += QString("   <Balance-Right>%1</Balance-Right>\n").arg(saveState.balanceRight);
         if (saveState.panning != 0.0f)
-            data << "   <Panning>"       << saveState.panning      << "</Panning>\n";
+            data += QString("   <Panning>%1</Panning>\n").arg(saveState.panning);
 
         if (saveState.ctrlChannel < 0)
-            data << "   <ControlChannel>N</ControlChannel>\n";
+            data += QString("   <ControlChannel>N</ControlChannel>\n");
         else
-            data << "   <ControlChannel>" << saveState.ctrlChannel+1 << "</ControlChannel>\n";
+            data += QString("   <ControlChannel>%1</ControlChannel>\n").arg(saveState.ctrlChannel+1);
 
-        content << data;
+        content += data;
     }
 
     for (StateParameterItenerator it = saveState.parameters.begin(); it.valid(); it.next())
     {
         StateParameter* const stateParameter(*it);
 
-        String parameter("\n""   <Parameter>\n");
+        QString parameter("\n""   <Parameter>\n");
 
-        parameter << "    <Index>" << (long)stateParameter->index               << "</Index>\n"; // FIXME
-        parameter << "    <Name>"  << xmlSafeString(stateParameter->name, true) << "</Name>\n";
+        parameter += QString("    <Index>%1</Index>\n").arg(stateParameter->index);
+        parameter += QString("    <Name>%1</Name>\n").arg(xmlSafeString(stateParameter->name, true));
 
         if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
-            parameter << "    <Symbol>" << xmlSafeString(stateParameter->symbol, true) << "</Symbol>\n";
+            parameter += QString("    <Symbol>%1</Symbol>\n").arg(xmlSafeString(stateParameter->symbol, true));
 
-        parameter << "    <Value>" << stateParameter->value << "</Value>\n";
+        parameter += QString("    <Value>%1</Value>\n").arg(stateParameter->value);
 
         if (stateParameter->midiCC > 0)
         {
-            parameter << "    <MidiCC>"      << stateParameter->midiCC        << "</MidiCC>\n";
-            parameter << "    <MidiChannel>" << stateParameter->midiChannel+1 << "</MidiChannel>\n";
+            parameter += QString("    <MidiCC>%1</MidiCC>\n").arg(stateParameter->midiCC);
+            parameter += QString("    <MidiChannel>%1</MidiChannel>\n").arg(stateParameter->midiChannel+1);
         }
 
-        parameter << "   </Parameter>\n";
+        parameter += "   </Parameter>\n";
 
-        content << parameter;
+        content += parameter;
     }
 
-    if (saveState.currentProgramIndex >= 0 && saveState.currentProgramName != nullptr)
+    if (saveState.currentProgramIndex >= 0 && saveState.currentProgramName != nullptr && saveState.currentProgramName[0] != '\0')
     {
         // ignore 'default' program
-#ifdef __USE_GNU
-        if ((saveState.currentProgramIndex > 0 || strcasecmp(saveState.currentProgramName, "default") != 0))
-#else
-        if ((saveState.currentProgramIndex > 0 || std::strcmp(saveState.currentProgramName, "Default") != 0))
-#endif
+        if (saveState.currentProgramIndex > 0 || QString(saveState.currentProgramName).compare("default", Qt::CaseInsensitive) != 0)
         {
-            String program("\n");
-            program << "   <CurrentProgramIndex>" << saveState.currentProgramIndex+1                   << "</CurrentProgramIndex>\n";
-            program << "   <CurrentProgramName>"  << xmlSafeString(saveState.currentProgramName, true) << "</CurrentProgramName>\n";
+            QString program("\n");
+            program += QString("   <CurrentProgramIndex>%1</CurrentProgramIndex>\n").arg(saveState.currentProgramIndex+1);
+            program += QString("   <CurrentProgramName>%1</CurrentProgramName>\n").arg(xmlSafeString(saveState.currentProgramName, true));
 
-            content << program;
+            content += program;
         }
     }
 
     if (saveState.currentMidiBank >= 0 && saveState.currentMidiProgram >= 0)
     {
-        String midiProgram("\n");
-        midiProgram << "   <CurrentMidiBank>"    << saveState.currentMidiBank+1    << "</CurrentMidiBank>\n";
-        midiProgram << "   <CurrentMidiProgram>" << saveState.currentMidiProgram+1 << "</CurrentMidiProgram>\n";
+        QString midiProgram("\n");
+        midiProgram += QString("   <CurrentMidiBank>%1</CurrentMidiBank>\n").arg(saveState.currentMidiBank+1);
+        midiProgram += QString("   <CurrentMidiProgram>%1</CurrentMidiProgram>\n").arg(saveState.currentMidiProgram+1);
 
-        content << midiProgram;
+        content += midiProgram;
     }
 
     for (StateCustomDataItenerator it = saveState.customData.begin(); it.valid(); it.next())
     {
         StateCustomData* const stateCustomData(*it);
 
-        String customData("\n""   <CustomData>\n");
-        customData << "    <Type>" << xmlSafeString(stateCustomData->type, true) << "</Type>\n";
-        customData << "    <Key>"  << xmlSafeString(stateCustomData->key, true)  << "</Key>\n";
+        QString customData("\n""   <CustomData>\n");
+        customData += QString("    <Type>%1</Type>\n").arg(xmlSafeString(stateCustomData->type, true));
+        customData += QString("    <Key>%1</Key>\n").arg(xmlSafeString(stateCustomData->key, true));
 
-        if (std::strcmp(stateCustomData->type, CUSTOM_DATA_CHUNK) == 0 || std::strlen(stateCustomData->value) >= 128)
-            customData << "    <Value>\n" << xmlSafeString(stateCustomData->value, true) << "\n    </Value>\n";
+        if (std::strcmp(stateCustomData->type, CUSTOM_DATA_TYPE_CHUNK) == 0 || std::strlen(stateCustomData->value) >= 128)
+        {
+            customData += "    <Value>\n";
+            customData += QString("%1\n").arg(xmlSafeString(stateCustomData->value, true));
+            customData += "    </Value>\n";
+        }
         else
-            customData << "    <Value>"   << xmlSafeString(stateCustomData->value, true) << "</Value>\n";
+            customData += QString("    <Value>%1</Value>\n").arg(xmlSafeString(stateCustomData->value, true));
 
-        customData << "   </CustomData>\n";
+        customData += "   </CustomData>\n";
 
-        content << customData;
+        content += customData;
     }
 
     if (saveState.chunk != nullptr && saveState.chunk[0] != '\0')
     {
-        String chunk("\n""   <Chunk>\n");
-        chunk << saveState.chunk << "\n   </Chunk>\n";
+        QString chunk("\n""   <Chunk>\n");
+        chunk += QString("%1\n").arg(saveState.chunk);
+        chunk += "   </Chunk>\n";
 
-        content << chunk;
+        content += chunk;
     }
 
-    content << "  </Data>\n";
+    content += "  </Data>\n";
 }
 
 // -----------------------------------------------------------------------
-#endif
 
 CARLA_BACKEND_END_NAMESPACE
 

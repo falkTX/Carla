@@ -17,19 +17,19 @@ LINK_FLAGS      += $(QTCORE_LIBS)
 BUILD_CXX_FLAGS += -DWANT_NATIVE
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_VST
+BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_LV2 -DWANT_VST
 ifeq ($(CARLA_VESTIGE_HEADER),true)
 BUILD_CXX_FLAGS += -DVESTIGE_HEADER
 endif
 endif
 
-# -DWANT_DSSI -DWANT_LV2
+# -DWANT_DSSI
 
 # --------------------------------------------------------------
 
 ifeq ($(HAVE_CSOUND),true)
-NATIVE_FLAGS += $(shell pkg-config --cflags --libs sndfile) -lcsound64 -DWANT_CSOUND
-NATIVE_FLAGS += $(JUCE_CORE_FLAGS) $(JUCE_CORE_LIBS)
+# NATIVE_FLAGS += $(shell pkg-config --cflags --libs sndfile) -lcsound64 -DWANT_CSOUND
+# NATIVE_FLAGS += $(JUCE_CORE_FLAGS) $(JUCE_CORE_LIBS)
 endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
@@ -52,7 +52,7 @@ LINK_FLAGS   += $(LILV_LIBS)
 endif
 
 ifeq ($(HAVE_CSOUND),true)
-LIBS = ../modules/juce_core.a
+# LIBS = ../modules/juce_core.a
 endif
 
 POSIX_BUILD_FLAGS = $(BUILD_CXX_FLAGS)

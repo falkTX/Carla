@@ -946,30 +946,30 @@ void do_lv2_check(const char* const bundle, const bool init)
     const Lilv::Plugins lilvPlugins(lv2World.get_all_plugins());
 
     // Get all plugin URIs in this bundle
-    juce::StringArray URIs;
+    QStringList URIs;
 
     LILV_FOREACH(plugins, i, lilvPlugins)
     {
         Lilv::Plugin lilvPlugin(lilv_plugins_get(lilvPlugins, i));
 
         if (const char* const uri = lilvPlugin.get_uri().as_string())
-            URIs.add(juce::String(uri));
+            URIs.append(QString(uri));
     }
 
-    if (URIs.size() == 0)
+    if (URIs.count() == 0)
     {
         DISCOVERY_OUT("warning", "LV2 Bundle doesn't provide any plugins");
         return;
     }
 
     // Get & check every plugin-instance
-    for (juce::String* it = URIs.begin(); it != URIs.end(); ++it)
+    for (int i=0, count=URIs.count(); i < count; ++i)
     {
-        const LV2_RDF_Descriptor* const rdfDescriptor(lv2_rdf_new(it->toRawUTF8(), false));
+        const LV2_RDF_Descriptor* const rdfDescriptor(lv2_rdf_new(URIs.at(i).toUtf8().constData(), false));
 
         if (rdfDescriptor == nullptr || rdfDescriptor->URI == nullptr)
         {
-            DISCOVERY_OUT("error", "Failed to find LV2 plugin '" << it->toRawUTF8() << "'");
+            DISCOVERY_OUT("error", "Failed to find LV2 plugin '" << URIs.at(i).toUtf8().constData() << "'");
             continue;
         }
 
