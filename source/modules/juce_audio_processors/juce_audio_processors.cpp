@@ -37,7 +37,7 @@
 
 #include "../juce_core/native/juce_BasicNativeHeaders.h"
 #include "juce_audio_processors.h"
-#include "../juce_gui_extra/juce_gui_extra.h"
+//#include "../juce_gui_extra/juce_gui_extra.h"
 
 //==============================================================================
 #if JUCE_MAC

@@ -19,13 +19,13 @@
 
     @see VSTPluginFormat, AudioPluginFormat, AudioPluginFormatManager, JUCE_PLUGINHOST_AU
 */
-#define JUCE_PLUGINHOST_VST 0
+#define JUCE_PLUGINHOST_VST 1
 
 /** Config: JUCE_PLUGINHOST_AU
     Enables the AudioUnit plugin hosting classes. This is Mac-only, of course.
 
     @see AudioUnitPluginFormat, AudioPluginFormat, AudioPluginFormatManager, JUCE_PLUGINHOST_VST
 */
-#define JUCE_PLUGINHOST_AU 0
+#define JUCE_PLUGINHOST_AU 1
 
 #endif // CARLA_JUCE_AUDIO_PROCESSORS_APPCONFIG_H_INCLUDED

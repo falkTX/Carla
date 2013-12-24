@@ -23,6 +23,13 @@
 // -----------------------------------------------------------------------
 // Include fixes
 
+// Define __cdecl if needed
+#ifndef CARLA_OS_WIN
+# ifndef __cdecl
+#  define __cdecl
+# endif
+#endif
+
 // Disable deprecated VST features (NOT)
 #define VST_2_4_EXTENSIONS 1
 #define VST_FORCE_DEPRECATED 0
@@ -106,7 +113,7 @@
 #define kVstTransportChanged 1
 #define kVstVersion 2400
 #define DECLARE_VST_DEPRECATED(idx) idx
-#define VSTCALLBACK
+#define VSTCALLBACK __cdecl
 struct ERect {
     int16_t top, left, bottom, right;
 };

@@ -331,6 +331,7 @@ public:
     */
     void setNonRealtime (bool isNonRealtime) noexcept;
 
+#ifndef JUCE_PLUGIN_HOST_NO_UI
     //==============================================================================
     /** Creates the filter's UI.
 
@@ -360,12 +361,14 @@ public:
         @see hasEditor
     */
     virtual AudioProcessorEditor* createEditor() = 0;
+#endif
 
     /** Your filter must override this and return true if it can create an editor component.
         @see createEditor
     */
     virtual bool hasEditor() const = 0;
 
+#ifndef JUCE_PLUGIN_HOST_NO_UI
     //==============================================================================
     /** Returns the active editor, if there is one.
         Bear in mind this can return nullptr, even if an editor has previously been opened.
@@ -376,6 +379,7 @@ public:
         This may call createEditor() internally to create the component.
     */
     AudioProcessorEditor* createEditorIfNeeded();
+#endif
 
     //==============================================================================
     /** This must return the correct value immediately after the object has been
@@ -582,7 +586,7 @@ public:
     //==============================================================================
     /** LV2 specific calls, saving/restore as string. */
     virtual String getStateInformationString () { return String::empty; }
-    virtual void setStateInformationString (const String& data) {}
+    virtual void setStateInformationString (const String&) {}
 
     //==============================================================================
     /** Adds a listener that will be called when an aspect of this processor changes. */
@@ -602,9 +606,11 @@ public:
     /** This is called by the processor to specify its details before being played. */
     void setPlayConfigDetails (int numIns, int numOuts, double sampleRate, int blockSize) noexcept;
 
+#ifndef JUCE_PLUGIN_HOST_NO_UI
     //==============================================================================
     /** Not for public use - this is called before deleting an editor component. */
     void editorBeingDeleted (AudioProcessorEditor*) noexcept;
+#endif
 
     /** Not for public use - this is called to initialise the processor before playing. */
     void setSpeakerArrangement (const String& inputs, const String& outputs);
@@ -656,7 +662,9 @@ protected:
 
 private:
     Array<AudioProcessorListener*> listeners;
+#ifndef JUCE_PLUGIN_HOST_NO_UI
     Component::SafePointer<AudioProcessorEditor> activeEditor;
+#endif
     double sampleRate;
     int blockSize, numInputChannels, numOutputChannels, latencySamples;
     bool suspended, nonRealtime;

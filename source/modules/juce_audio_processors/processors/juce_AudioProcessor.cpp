@@ -44,9 +44,11 @@ AudioProcessor::AudioProcessor()
 
 AudioProcessor::~AudioProcessor()
 {
+#ifndef JUCE_PLUGIN_HOST_NO_UI
     // ooh, nasty - the editor should have been deleted before the filter
     // that it refers to is deleted..
     jassert (activeEditor == nullptr);
+#endif
 
    #if JUCE_DEBUG
     // This will fail if you've called beginParameterChangeGesture() for one
@@ -214,6 +216,7 @@ void AudioProcessor::suspendProcessing (const bool shouldBeSuspended)
 void AudioProcessor::reset() {}
 void AudioProcessor::processBlockBypassed (AudioSampleBuffer&, MidiBuffer&) {}
 
+#ifndef JUCE_PLUGIN_HOST_NO_UI
 //==============================================================================
 void AudioProcessor::editorBeingDeleted (AudioProcessorEditor* const editor) noexcept
 {
@@ -244,6 +247,7 @@ AudioProcessorEditor* AudioProcessor::createEditorIfNeeded()
 
     return ed;
 }
+#endif
 
 //==============================================================================
 void AudioProcessor::getCurrentProgramStateInformation (juce::MemoryBlock& destData)

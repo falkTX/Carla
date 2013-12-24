@@ -20,6 +20,16 @@
 #include "CarlaString.hpp"
 #include "CarlaMIDI.h"
 
+#ifdef HAVE_JUCE
+# define JUCE_PLUGIN_HOST_NO_UI
+# undef WANT_VST
+# undef WANT_AU
+# include "juce_core.h"
+# include "juce_audio_processors.h"
+#else
+# undef WANT_CSOUND
+#endif
+
 #ifdef WANT_LADSPA
 # include "CarlaLadspaUtils.hpp"
 #endif
@@ -27,26 +37,26 @@
 # include "CarlaDssiUtils.hpp"
 #endif
 #ifdef WANT_LV2
-# include <QtCore/QUrl>
 # include "CarlaLv2Utils.hpp"
 #endif
 #ifdef WANT_VST
 # include "CarlaVstUtils.hpp"
 #endif
 #ifdef WANT_CSOUND
-# include "juce_core.h"
 # include <csound/csound.hpp>
 #endif
 #ifdef WANT_FLUIDSYNTH
 # include <fluidsynth.h>
 #endif
 #ifdef WANT_LINUXSAMPLER
-# include <QtCore/QFileInfo>
 # include "linuxsampler/EngineFactory.h"
 #endif
 
 #include <iostream>
-# include <QtCore/QDir>
+
+#include <QtCore/QDir>
+#include <QtCore/QFileInfo>
+#include <QtCore/QUrl>
 
 #define DISCOVERY_OUT(x, y) std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl;
 
@@ -261,6 +271,23 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
 
     return ret;
 }
+#endif
+
+#ifdef WANT_CSOUND
+// --------------------------------------------------------------------------
+// Csound stuff
+
+static int csound_midiInOpen(CSOUND*,  void**, const char*)        { return 0; }
+static int csound_midiRead(CSOUND*,    void*, unsigned char*, int) { return 0; }
+static int csound_midiInClose(CSOUND*, void*)                      { return 0; }
+
+static int csound_midiOutOpen(CSOUND*,  void**, const char*)               { return 0; }
+static int csound_midiWrite(CSOUND*,    void*,  const unsigned char*, int) { return 0; }
+static int csound_midiOutClose(CSOUND*, void*)                             { return 0; }
+
+# ifndef DEBUG
+static void csound_silence(CSOUND*, int, const char*, va_list) {}
+# endif
 #endif
 
 #ifdef WANT_LINUXSAMPLER
@@ -1386,27 +1413,113 @@ void do_vst_check(void*& libHandle, const bool init)
 #endif
 }
 
-#ifdef WANT_CSOUND
-static int csound_midiInOpen(CSOUND*,  void**, const char*)        { return 0; }
-static int csound_midiRead(CSOUND*,    void*, unsigned char*, int) { return 0; }
-static int csound_midiInClose(CSOUND*, void*)                      { return 0; }
+void do_au_check(void*& libHandle, const bool init)
+{
+#if 0 //def WANT_AU
+#else
+    DISCOVERY_OUT("error", "AU support not available");
+    return;
 
-static int csound_midiOutOpen(CSOUND*,  void**, const char*)               { return 0; }
-static int csound_midiWrite(CSOUND*,    void*,  const unsigned char*, int) { return 0; }
-static int csound_midiOutClose(CSOUND*, void*)                             { return 0; }
-
-#if 1//ndef DEBUG
-static void csound_silence(CSOUND*, int, const char*, va_list) {}
+    // unused
+    (void)libHandle;
+    (void)init;
 #endif
+};
+
+#ifdef HAVE_JUCE
+void do_juce_check(const char* const filename, const char* const stype, const bool init)
+{
+    using namespace juce;
+
+    ScopedPointer<AudioPluginFormat> pluginFormat;
+
+    if (stype == nullptr)
+        return;
+#if JUCE_PLUGINHOST_AU && JUCE_MAC
+    else if (std::strcmp(stype, "au") == 0)
+        pluginFormat = new AudioUnitPluginFormat();
+#endif
+#if JUCE_PLUGINHOST_LADSPA && JUCE_LINUX
+    else if (std::strcmp(stype, "ladspa") == 0)
+        pluginFormat = new LADSPAPluginFormat();
+#endif
+#if JUCE_PLUGINHOST_VST
+    else if (std::strcmp(stype, "vst") == 0)
+        pluginFormat = new VSTPluginFormat();
+#endif
+
+    if (pluginFormat == nullptr)
+    {
+        DISCOVERY_OUT("error", stype << " support not available");
+        return;
+    }
+
+    OwnedArray<PluginDescription> results;
+    pluginFormat->findAllTypesForFile(results, filename);
+
+    for (auto it = results.begin(), end = results.end(); it != end; ++it)
+    {
+        static int iv=0;
+        carla_stderr2("LOOKING FOR PLUGIN %i", iv++);
+        PluginDescription* desc(*it);
+
+        int hints = 0x0;
+        int audioIns = desc->numInputChannels;
+        int audioOuts = desc->numOutputChannels;
+        int midiIns = 0;
+        int midiOuts = 0;
+        int parameters = 0;
+        int programs = 0;
+
+        if (desc->isInstrument)
+            hints |= PLUGIN_IS_SYNTH;
+
+//         if (init)
+//         {
+//             if (AudioPluginInstance* const instance = pluginFormat->createInstanceFromDescription(*desc, kSampleRate, kBufferSize))
+//             {
+//                 instance->refreshParameterList();
+//
+//                 parameters = instance->getNumParameters();
+//                 programs   = instance->getNumPrograms();
+//
+//                 if (instance->hasEditor())
+//                     hints |= PLUGIN_HAS_CUSTOM_UI;
+//                 if (instance->acceptsMidi())
+//                     midiIns = 1;
+//                 if (instance->producesMidi())
+//                     midiOuts = 1;
+//
+//                 delete instance;
+//             }
+//         }
+
+        DISCOVERY_OUT("init", "-----------");
+        DISCOVERY_OUT("name", desc->name);
+        DISCOVERY_OUT("label", desc->descriptiveName);
+        DISCOVERY_OUT("maker", desc->manufacturerName);
+        DISCOVERY_OUT("copyright", desc->manufacturerName);
+        DISCOVERY_OUT("uniqueId", desc->uid);
+        DISCOVERY_OUT("hints", hints);
+        DISCOVERY_OUT("audio.ins", audioIns);
+        DISCOVERY_OUT("audio.outs", audioOuts);
+        DISCOVERY_OUT("midi.ins", midiIns);
+        DISCOVERY_OUT("midi.outs", midiOuts);
+        DISCOVERY_OUT("parameters.ins", parameters);
+        DISCOVERY_OUT("programs", programs);
+        DISCOVERY_OUT("build", BINARY_NATIVE);
+        DISCOVERY_OUT("end", "------------");
+    }
+}
 #endif
 
 void do_csound_check(const char* const filename, const bool init)
 {
 #ifdef WANT_CSOUND
     Csound csound;
-#if 1//ndef DEBUG
+# ifndef DEBUG
     csound.SetMessageCallback(csound_silence);
-#endif
+# endif
     csound.SetHostImplementedAudioIO(true, kBufferSize);
     csound.SetHostImplementedMIDIIO(true);
     csound.Reset();
@@ -1672,8 +1785,10 @@ int main(int argc, char* argv[])
     {
     case PLUGIN_LADSPA:
     case PLUGIN_DSSI:
+#ifndef HAVE_JUCE
     case PLUGIN_VST:
     case PLUGIN_AU:
+#endif
         openLib = true;
     default:
         break;
@@ -1737,10 +1852,18 @@ int main(int argc, char* argv[])
         do_lv2_check(filename, doInit);
         break;
     case PLUGIN_VST:
+#ifdef HAVE_JUCE
+        do_juce_check(filename, "vst", doInit);
+#else
         do_vst_check(handle, doInit);
+#endif
         break;
     case PLUGIN_AU:
-        //do_au_check(handle, doInit);
+#ifdef HAVE_JUCE
+        do_juce_check(filename, "au", doInit);
+#else
+        do_au_check(handle, doInit);
+#endif
         break;
     case PLUGIN_CSOUND:
         do_csound_check(filename, doInit);
@@ -1763,3 +1886,36 @@ int main(int argc, char* argv[])
 
     return 0;
 }
+
+#ifdef HAVE_JUCE
+// --------------------------------------------------------------------------
+// we want juce processors but without UI code
+// this is copied from juce_audio_processors.cpp
+
+#include "juce_core/native/juce_BasicNativeHeaders.h"
+
+namespace juce
+{
+
+static inline
+bool arrayContainsPlugin(const OwnedArray<PluginDescription>& list, const PluginDescription& desc)
+{
+    for (int i = list.size(); --i >= 0;)
+    {
+        if (list.getUnchecked(i)->isDuplicateOf(desc))
+            return true;
+    }
+
+    return false;
+}
+
+#include "juce_audio_processors/format/juce_AudioPluginFormat.cpp"
+#include "juce_audio_processors/processors/juce_AudioProcessor.cpp"
+#include "juce_audio_processors/processors/juce_PluginDescription.cpp"
+#include "juce_audio_processors/format_types/juce_AudioUnitPluginFormat.mm"
+#include "juce_audio_processors/format_types/juce_LADSPAPluginFormat.cpp"
+#include "juce_audio_processors/format_types/juce_VSTPluginFormat.cpp"
+}
+#endif
+
+// --------------------------------------------------------------------------

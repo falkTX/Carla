@@ -191,7 +191,11 @@ class IdleCallRecursionPreventer
 {
 public:
     IdleCallRecursionPreventer()
+#ifndef JUCE_PLUGIN_HOST_NO_UI
         : isMessageThread (MessageManager::getInstance()->isThisTheMessageThread())
+#else
+        : isMessageThread (false)
+#endif
     {
         if (isMessageThread)
             ++insideVSTCallback;
@@ -237,7 +241,7 @@ static void* NewCFMFromMachO (void* const machofp) noexcept
 #endif
 
 //==============================================================================
-#if JUCE_LINUX
+#if JUCE_LINUX && ! defined(JUCE_PLUGIN_HOST_NO_UI)
 
 extern Display* display;
 extern XContext windowHandleXContext;
@@ -710,9 +714,13 @@ static const int defaultVSTBlockSizeValue = 512;
 
 //==============================================================================
 //==============================================================================
+#ifndef JUCE_PLUGIN_HOST_NO_UI
 class VSTPluginInstance     : public AudioPluginInstance,
                               private Timer,
                               private AsyncUpdater
+#else
+class VSTPluginInstance     : public AudioPluginInstance
+#endif
 {
 public:
     VSTPluginInstance (const ModuleHandle::Ptr& module_)
@@ -782,8 +790,10 @@ public:
                 UseResFile (module->resFileId);
            #endif
 
+           #ifndef JUCE_PLUGIN_HOST_NO_UI
             // Must delete any editors before deleting the plugin instance!
             jassert (getActiveEditor() == 0);
+           #endif
 
             _fpreset(); // some dodgy plugs fuck around with this
 
@@ -1088,7 +1098,9 @@ public:
 
     //==============================================================================
     bool hasEditor() const override                  { return effect != nullptr && (effect->flags & effFlagsHasEditor) != 0; }
+#ifndef JUCE_PLUGIN_HOST_NO_UI
     AudioProcessorEditor* createEditor() override;
+#endif
 
     //==============================================================================
     const String getInputChannelName (int index) const override
@@ -1237,6 +1249,7 @@ public:
     void setCurrentProgramStateInformation (const void* data, int size) override { loadFromFXBFile (data, size); }
 
     //==============================================================================
+#ifndef JUCE_PLUGIN_HOST_NO_UI
     void timerCallback() override
     {
         if (dispatch (effIdle, 0, 0, 0, 0) == 0)
@@ -1248,6 +1261,7 @@ public:
         // indicates that something about the plugin has changed..
         updateHostDisplay();
     }
+#endif
 
     VstIntPtr handleCallback (VstInt32 opcode, VstInt32 index, VstIntPtr value, void* ptr, float opt)
     {
@@ -1265,6 +1279,7 @@ public:
             #pragma warning (pop)
            #endif
 
+#ifndef JUCE_PLUGIN_HOST_NO_UI
             case audioMasterIdle:
                 if (insideVSTCallback == 0 && MessageManager::getInstance()->isThisTheMessageThread())
                 {
@@ -1293,6 +1308,7 @@ public:
             case audioMasterUpdateDisplay:      triggerAsyncUpdate(); break;
             case audioMasterIOChanged:          setLatencySamples (effect->initialDelay); break;
             case audioMasterNeedIdle:           startTimer (50); break;
+#endif
 
             case audioMasterGetSampleRate:      return (VstIntPtr) (getSampleRate() > 0 ? getSampleRate() : defaultVSTSampleRateValue);
             case audioMasterGetBlockSize:       return (VstIntPtr) (getBlockSize() > 0  ? getBlockSize()  : defaultVSTBlockSizeValue);
@@ -1378,10 +1394,12 @@ public:
             case audioMasterGetVendorString:
             case audioMasterGetProductString:
             {
-                String hostName ("Juce VST Host");
+                String hostName ("Carla");
 
+#ifndef JUCE_PLUGIN_HOST_NO_UI
                 if (JUCEApplicationBase* app = JUCEApplicationBase::getInstance())
                     hostName = app->getApplicationName();
+#endif
 
                 hostName.copyToUTF8 ((char*) ptr, (size_t) jmin (kVstMaxVendorStrLen, kVstMaxProductStrLen) - 1);
                 break;
@@ -1882,6 +1900,7 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VSTPluginInstance)
 };
 
+#ifndef JUCE_PLUGIN_HOST_NO_UI
 //==============================================================================
 static Array <VSTPluginWindow*> activeVSTWindows;
 
@@ -2588,13 +2607,16 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VSTPluginWindow)
 };
+#endif
 
+#ifndef JUCE_PLUGIN_HOST_NO_UI
 //==============================================================================
 AudioProcessorEditor* VSTPluginInstance::createEditor()
 {
     return hasEditor() ? new VSTPluginWindow (*this)
                        : nullptr;
 }
+#endif
 
 //==============================================================================
 // entry point for all callbacks from the plugin
