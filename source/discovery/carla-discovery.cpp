@@ -22,7 +22,8 @@
 
 #ifdef HAVE_JUCE
 # define JUCE_PLUGIN_HOST_NO_UI
-# undef WANT_VST
+# undef VESTIGE_HEADER
+//# undef WANT_VST
 # undef WANT_AU
 # include "juce_core.h"
 # include "juce_audio_processors.h"
@@ -1474,25 +1475,25 @@ void do_juce_check(const char* const filename, const char* const stype, const bo
         if (desc->isInstrument)
             hints |= PLUGIN_IS_SYNTH;
 
-//         if (init)
-//         {
-//             if (AudioPluginInstance* const instance = pluginFormat->createInstanceFromDescription(*desc, kSampleRate, kBufferSize))
-//             {
-//                 instance->refreshParameterList();
-//
-//                 parameters = instance->getNumParameters();
-//                 programs   = instance->getNumPrograms();
-//
-//                 if (instance->hasEditor())
-//                     hints |= PLUGIN_HAS_CUSTOM_UI;
-//                 if (instance->acceptsMidi())
-//                     midiIns = 1;
-//                 if (instance->producesMidi())
-//                     midiOuts = 1;
-//
-//                 delete instance;
-//             }
-//         }
+        if (init)
+        {
+            if (AudioPluginInstance* const instance = pluginFormat->createInstanceFromDescription(*desc, kSampleRate, kBufferSize))
+            {
+                instance->refreshParameterList();
+
+                parameters = instance->getNumParameters();
+                programs   = instance->getNumPrograms();
+
+                if (instance->hasEditor())
+                    hints |= PLUGIN_HAS_CUSTOM_UI;
+                if (instance->acceptsMidi())
+                    midiIns = 1;
+                if (instance->producesMidi())
+                    midiOuts = 1;
+
+                delete instance;
+            }
+        }
 
         DISCOVERY_OUT("init", "-----------");
         DISCOVERY_OUT("name", desc->name);
@@ -1785,8 +1786,8 @@ int main(int argc, char* argv[])
     {
     case PLUGIN_LADSPA:
     case PLUGIN_DSSI:
-#ifndef HAVE_JUCE
     case PLUGIN_VST:
+#ifndef HAVE_JUCE
     case PLUGIN_AU:
 #endif
         openLib = true;
@@ -1852,11 +1853,11 @@ int main(int argc, char* argv[])
         do_lv2_check(filename, doInit);
         break;
     case PLUGIN_VST:
-#ifdef HAVE_JUCE
-        do_juce_check(filename, "vst", doInit);
-#else
+//#ifdef HAVE_JUCE
+//        do_juce_check(filename, "vst", doInit);
+//#else
         do_vst_check(handle, doInit);
-#endif
+//#endif
         break;
     case PLUGIN_AU:
 #ifdef HAVE_JUCE
@@ -1889,7 +1890,7 @@ int main(int argc, char* argv[])
 
 #ifdef HAVE_JUCE
 // --------------------------------------------------------------------------
-// we want juce processors but without UI code
+// we want juce_audio_processors but without UI code
 // this is copied from juce_audio_processors.cpp
 
 #include "juce_core/native/juce_BasicNativeHeaders.h"

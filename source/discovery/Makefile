@@ -24,43 +24,38 @@ BUILD_CXX_FLAGS += -DWANT_NATIVE
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
-ifeq ($(CARLA_VESTIGE_HEADER),true) # TODO: and not have juce
+ifeq ($(CARLA_VESTIGE_HEADER),true)
 BUILD_CXX_FLAGS += -DVESTIGE_HEADER
 endif
 endif
 
 # --------------------------------------------------------------
 
-# ifeq ($(HAVE_CSOUND),true)
-# NATIVE_FLAGS += $(shell pkg-config --cflags --libs sndfile) -lcsound64 -DWANT_CSOUND
-# endif
-#
-# ifeq ($(HAVE_FLUIDSYNTH),true)
-# NATIVE_FLAGS += $(shell pkg-config --cflags --libs fluidsynth) -DWANT_FLUIDSYNTH
-# endif
-#
-# ifeq ($(HAVE_LINUXSAMPLER),true)
-# NATIVE_FLAGS += $(shell pkg-config --cflags --libs linuxsampler) -DWANT_LINUXSAMPLER
-# endif
+ifeq ($(HAVE_CSOUND),true)
+NATIVE_FLAGS += $(shell pkg-config --cflags --libs sndfile) -lcsound64 -DWANT_CSOUND
+endif
+
+ifeq ($(HAVE_FLUIDSYNTH),true)
+NATIVE_FLAGS += $(shell pkg-config --cflags --libs fluidsynth) -DWANT_FLUIDSYNTH
+endif
+
+ifeq ($(HAVE_LINUXSAMPLER),true)
+NATIVE_FLAGS += $(shell pkg-config --cflags --libs linuxsampler) -DWANT_LINUXSAMPLER
+endif
 
 # --------------------------------------------------------------
 
 ifeq ($(HAVE_JUCE),true)
-LIBS         += ../modules/juce_core.a
-LIBS_posix32 += ../modules/juce_core.posix32.a
-LIBS_posix64 += ../modules/juce_core.posix64.a
-LIBS_win32   += ../modules/juce_core.win32.a
-LIBS_win64   += ../modules/juce_core.win64.a
 LIBS         += ../modules/juce_audio_basics.a
 LIBS_posix32 += ../modules/juce_audio_basics.posix32.a
 LIBS_posix64 += ../modules/juce_audio_basics.posix64.a
 LIBS_win32   += ../modules/juce_audio_basics.win32.a
 LIBS_win64   += ../modules/juce_audio_basics.win64.a
-# LIBS         += ../modules/juce_audio_processors.a
-# LIBS_posix32 += ../modules/juce_audio_processors.posix32.a
-# LIBS_posix64 += ../modules/juce_audio_processors.posix64.a
-# LIBS_win32   += ../modules/juce_audio_processors.win32.a
-# LIBS_win64   += ../modules/juce_audio_processors.win64.a
+LIBS         += ../modules/juce_core.a
+LIBS_posix32 += ../modules/juce_core.posix32.a
+LIBS_posix64 += ../modules/juce_core.posix64.a
+LIBS_win32   += ../modules/juce_core.win32.a
+LIBS_win64   += ../modules/juce_core.win64.a
 endif
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
