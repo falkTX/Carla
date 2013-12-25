@@ -364,7 +364,10 @@ if readEnvVars:
     if haveLRDF:
         LADSPA_RDF_PATH_env = os.getenv("LADSPA_RDF_PATH")
         if LADSPA_RDF_PATH_env:
-            ladspa_rdf.set_rdf_path(LADSPA_RDF_PATH_env.split(splitter))
+            try:
+                ladspa_rdf.set_rdf_path(LADSPA_RDF_PATH_env.split(splitter))
+            except:
+                pass
         del LADSPA_RDF_PATH_env
 
 else:
@@ -2471,13 +2474,18 @@ class SearchPluginsThread(QThread):
                 startValue = self.fLastCheckValue - rdfPadValue
 
                 self._pluginLook(startValue, "LADSPA RDFs...")
-                ladspaRdfInfo = ladspa_rdf.recheck_all_plugins(self, startValue, self.fCurPercentValue, checkValue)
 
-                SettingsDir = os.path.join(HOME, ".config", "falkTX")
+                try:
+                    ladspaRdfInfo = ladspa_rdf.recheck_all_plugins(self, startValue, self.fCurPercentValue, checkValue)
+                except:
+                    ladspaRdfInfo = None
 
-                fLadspa = open(os.path.join(SettingsDir, "ladspa_rdf.db"), 'w')
-                json.dump(ladspaRdfInfo, fLadspa)
-                fLadspa.close()
+                if ladspaRdfInfo is not None:
+                    SettingsDir = os.path.join(HOME, ".config", "falkTX")
+
+                    fLadspa = open(os.path.join(SettingsDir, "ladspa_rdf.db"), 'w')
+                    json.dump(ladspaRdfInfo, fLadspa)
+                    fLadspa.close()
 
         if self.fCheckDSSI:
             if self.fCheckNative:
