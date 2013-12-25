@@ -9,7 +9,7 @@
 3.  Rack mode is still a bit experimental, specially on non-JACK drivers.
 
 4.  LV2 plugin support is incomplete (although already in a good state).
-    Plugins that use CV ports or Worker extension will not work right now.
+    Plugins that use CV ports, multiple MIDI ports or Worker extension will not work right now.
 
 5.  Carla will not work with non-native LV2 Plugin UIs that require the instance-data extension.
     This is by design and not a bug.
