@@ -286,16 +286,19 @@ struct Lv2PluginEventData {
 };
 
 struct Lv2PluginOptions {
+    enum OptIndex {
+        MaxBlockLenth = 0,
+        MinBlockLenth,
+        SequenceSize,
+        SampleRate,
+        Null
+    };
+
     int maxBufferSize;
     int minBufferSize;
     int sequenceSize;
     double sampleRate;
-    LV2_Options_Option optMaxBlockLenth;
-    LV2_Options_Option optMinBlockLenth;
-    LV2_Options_Option optSequenceSize;
-    LV2_Options_Option optSampleRate;
-    LV2_Options_Option optNull;
-    LV2_Options_Option* opts[5];
+    LV2_Options_Option opts[5];
 
     Lv2PluginOptions()
         : maxBufferSize(0),
@@ -303,6 +306,7 @@ struct Lv2PluginOptions {
           sequenceSize(MAX_EVENT_BUFFER),
           sampleRate(0.0)
     {
+        LV2_Options_Option& optMaxBlockLenth(opts[MaxBlockLenth]);
         optMaxBlockLenth.context = LV2_OPTIONS_INSTANCE;
         optMaxBlockLenth.subject = 0;
         optMaxBlockLenth.key     = CARLA_URI_MAP_ID_BUF_MAX_LENGTH;
@@ -310,6 +314,7 @@ struct Lv2PluginOptions {
         optMaxBlockLenth.type    = CARLA_URI_MAP_ID_ATOM_INT;
         optMaxBlockLenth.value   = &maxBufferSize;
 
+        LV2_Options_Option& optMinBlockLenth(opts[MinBlockLenth]);
         optMinBlockLenth.context = LV2_OPTIONS_INSTANCE;
         optMinBlockLenth.subject = 0;
         optMinBlockLenth.key     = CARLA_URI_MAP_ID_BUF_MIN_LENGTH;
@@ -317,6 +322,7 @@ struct Lv2PluginOptions {
         optMinBlockLenth.type    = CARLA_URI_MAP_ID_ATOM_INT;
         optMinBlockLenth.value   = &minBufferSize;
 
+        LV2_Options_Option& optSequenceSize(opts[SequenceSize]);
         optSequenceSize.context = LV2_OPTIONS_INSTANCE;
         optSequenceSize.subject = 0;
         optSequenceSize.key     = CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE;
@@ -324,6 +330,7 @@ struct Lv2PluginOptions {
         optSequenceSize.type    = CARLA_URI_MAP_ID_ATOM_INT;
         optSequenceSize.value   = &sequenceSize;
 
+        LV2_Options_Option& optSampleRate(opts[SampleRate]);
         optSampleRate.context = LV2_OPTIONS_INSTANCE;
         optSampleRate.subject = 0;
         optSampleRate.key     = CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE;
@@ -331,18 +338,13 @@ struct Lv2PluginOptions {
         optSampleRate.type    = CARLA_URI_MAP_ID_ATOM_DOUBLE;
         optSampleRate.value   = &sampleRate;
 
+        LV2_Options_Option& optNull(opts[Null]);
         optNull.context = LV2_OPTIONS_INSTANCE;
         optNull.subject = 0;
         optNull.key     = CARLA_URI_MAP_ID_NULL;
         optNull.size    = 0;
         optNull.type    = CARLA_URI_MAP_ID_NULL;
         optNull.value   = nullptr;
-
-        opts[0] = &optMinBlockLenth;
-        opts[1] = &optMaxBlockLenth;
-        opts[2] = &optSequenceSize;
-        opts[3] = &optSampleRate;
-        opts[4] = &optNull;
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(Lv2PluginOptions)
@@ -3288,8 +3290,8 @@ public:
 
             if (fExt.options != nullptr && fExt.options->set != nullptr)
             {
-                fExt.options->set(fHandle, &fLv2Options.optMinBlockLenth);
-                fExt.options->set(fHandle, &fLv2Options.optMaxBlockLenth);
+                fExt.options->set(fHandle, &fLv2Options.opts[Lv2PluginOptions::MaxBlockLenth]);
+                fExt.options->set(fHandle, &fLv2Options.opts[Lv2PluginOptions::MinBlockLenth]);
             }
         }
 
@@ -3306,7 +3308,7 @@ public:
             fLv2Options.sampleRate = newSampleRate;
 
             if (fExt.options != nullptr && fExt.options->set != nullptr)
-                fExt.options->set(fHandle, &fLv2Options.optSampleRate);
+                fExt.options->set(fHandle, &fLv2Options.opts[Lv2PluginOptions::SampleRate]);
         }
 
         for (uint32_t k=0; k < kData->param.count; ++k)
