@@ -2001,7 +2001,7 @@ private:
                 if (thisPortId == -1)
                     continue;
 
-                if (const char** connections = jackbridge_port_get_connections(jackPort))
+                if (const char** connections = jackbridge_port_get_all_connections(fClient, jackPort))
                 {
                     for (int j=0; connections[j] != nullptr; ++j)
                     {
