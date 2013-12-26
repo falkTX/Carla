@@ -546,6 +546,7 @@ void CarlaStyle::setColorScheme(ColorScheme color)
     }
 }
 
+#if 0
 void printPalette(const QPalette& pal)
 {
 #define PAL "fPalBlue"
@@ -582,6 +583,7 @@ void printPalette(const QPalette& pal)
 
 #undef PAL
 }
+#endif
 
 void CarlaStyle::ready(QApplication* app)
 {
