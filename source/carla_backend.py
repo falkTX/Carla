@@ -155,29 +155,35 @@ ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE = 0x4
 
 # Plugin is a bridge.
 # This hint is required because "bridge" itself is not a plugin type.
-PLUGIN_IS_BRIDGE = 0x01
+PLUGIN_IS_BRIDGE = 0x001
 
 # Plugin is hard real-time safe.
-PLUGIN_IS_RTSAFE = 0x02
+PLUGIN_IS_RTSAFE = 0x002
 
 # Plugin is a synth (produces sound).
-PLUGIN_IS_SYNTH = 0x04
+PLUGIN_IS_SYNTH = 0x004
 
 # Plugin has its own custom UI.
 # @see carla_show_custom_ui()
-PLUGIN_HAS_CUSTOM_UI = 0x08
+PLUGIN_HAS_CUSTOM_UI = 0x008
 
 # Plugin can use internal Dry/Wet control.
-PLUGIN_CAN_DRYWET = 0x10
+PLUGIN_CAN_DRYWET = 0x010
 
 # Plugin can use internal Volume control.
-PLUGIN_CAN_VOLUME = 0x20
+PLUGIN_CAN_VOLUME = 0x020
 
 # Plugin can use internal (Stereo) Balance controls.
-PLUGIN_CAN_BALANCE = 0x40
+PLUGIN_CAN_BALANCE = 0x040
 
 # Plugin can use internal (Mono) Panning control.
-PLUGIN_CAN_PANNING = 0x80
+PLUGIN_CAN_PANNING = 0x080
+
+# Plugin needs a constant, fixed-size audio buffer.
+PLUGIN_NEEDS_FIXED_BUFFERS = 0x100
+
+# Plugin needs all UI events in a single/main thread.
+PLUGIN_NEEDS_SINGLE_THREAD = 0x200
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Options
@@ -394,6 +400,22 @@ PLUGIN_CATEGORY_UTILITY = 8
 
 # Miscellaneous plugin (used to check if the plugin has a category).
 PLUGIN_CATEGORY_OTHER = 9
+
+# ------------------------------------------------------------------------------------------------------------
+# Parameter Type
+# Plugin parameter type.
+
+# Null parameter type.
+PARAMETER_UNKNOWN = 0
+
+# Input parameter.
+PARAMETER_INPUT = 1
+
+# Ouput parameter.
+PARAMETER_OUTPUT = 2
+
+# Special (hidden) parameter.
+PARAMETER_SPECIAL = 3
 
 # ------------------------------------------------------------------------------------------------------------
 # Internal Parameter Index
@@ -750,15 +772,18 @@ EngineCallbackFunc = CFUNCTYPE(None, c_void_p, c_enum, c_uint, c_int, c_int, c_f
 # Parameter data.
 class ParameterData(Structure):
     _fields_ = [
+        # This parameter type.
+        ("type", c_enum),
+
+        # This parameter hints.
+        # @see ParameterHints
+        ("hints", c_uint),
+
         # Index as seen by Carla.
         ("index", c_int32),
 
         # Real index as seen by plugins.
         ("rindex", c_int32),
-
-        # This parameter hints.
-        # @see ParameterHints
-        ("hints", c_uint),
 
         # Currently mapped MIDI CC.
         # A value lower than 0 means invalid or unused.

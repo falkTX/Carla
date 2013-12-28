@@ -114,43 +114,53 @@ const unsigned int ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE = 0x4;
  * Plugin is a bridge.\n
  * This hint is required because "bridge" itself is not a plugin type.
  */
-const unsigned int PLUGIN_IS_BRIDGE = 0x01;
+const unsigned int PLUGIN_IS_BRIDGE = 0x001;
 
 /*!
  * Plugin is hard real-time safe.
  */
-const unsigned int PLUGIN_IS_RTSAFE = 0x02;
+const unsigned int PLUGIN_IS_RTSAFE = 0x002;
 
 /*!
  * Plugin is a synth (produces sound).
  */
-const unsigned int PLUGIN_IS_SYNTH = 0x04;
+const unsigned int PLUGIN_IS_SYNTH = 0x004;
 
 /*!
  * Plugin has its own custom UI.
  * @see CarlaPlugin::showCustomUI() and carla_show_custom_ui()
  */
-const unsigned int PLUGIN_HAS_CUSTOM_UI = 0x08;
+const unsigned int PLUGIN_HAS_CUSTOM_UI = 0x008;
 
 /*!
  * Plugin can use internal Dry/Wet control.
  */
-const unsigned int PLUGIN_CAN_DRYWET = 0x10;
+const unsigned int PLUGIN_CAN_DRYWET = 0x010;
 
 /*!
  * Plugin can use internal Volume control.
  */
-const unsigned int PLUGIN_CAN_VOLUME = 0x20;
+const unsigned int PLUGIN_CAN_VOLUME = 0x020;
 
 /*!
  * Plugin can use internal (Stereo) Balance controls.
  */
-const unsigned int PLUGIN_CAN_BALANCE = 0x40;
+const unsigned int PLUGIN_CAN_BALANCE = 0x040;
 
 /*!
  * Plugin can use internal (Mono) Panning control.
  */
-const unsigned int PLUGIN_CAN_PANNING = 0x80;
+const unsigned int PLUGIN_CAN_PANNING = 0x080;
+
+/*!
+ * Plugin needs a constant, fixed-size audio buffer.
+ */
+const unsigned int PLUGIN_NEEDS_FIXED_BUFFERS = 0x100;
+
+/*!
+ * Plugin needs all UI events in a single/main thread.
+ */
+const unsigned int PLUGIN_NEEDS_SINGLE_THREAD = 0x200;
 
 /** @} */
 
@@ -539,6 +549,35 @@ typedef enum {
     PLUGIN_CATEGORY_OTHER = 9
 
 } PluginCategory;
+
+// ------------------------------------------------------------------------------------------------------------
+// Parameter Type
+
+/*!
+ * Plugin parameter type.
+ */
+typedef enum {
+    /*!
+     * Null parameter type.
+     */
+    PARAMETER_UNKNOWN = 0,
+
+    /*!
+     * Input parameter.
+     */
+    PARAMETER_INPUT = 1,
+
+    /*!
+     * Ouput parameter.
+     */
+    PARAMETER_OUTPUT = 2,
+
+    /*!
+     * Special (hidden) parameter.
+     */
+    PARAMETER_SPECIAL = 3
+
+} ParameterType;
 
 // ------------------------------------------------------------------------------------------------------------
 // Internal Parameter Index
@@ -1062,7 +1101,18 @@ typedef void (*EngineCallbackFunc)(void* ptr, EngineCallbackOpcode action, uint 
 /*!
  * Parameter data.
  */
-typedef struct _ParameterData {
+typedef struct {
+    /*!
+     * This parameter type.
+     */
+    ParameterType type;
+
+    /*!
+     * This parameter hints.
+     * @see ParameterHints
+     */
+    unsigned int hints;
+
     /*!
      * Index as seen by Carla.
      */
@@ -1072,12 +1122,6 @@ typedef struct _ParameterData {
      * Real index as seen by plugins.
      */
     int32_t rindex;
-
-    /*!
-     * This parameter hints.
-     * @see ParameterHints
-     */
-    unsigned int hints;
 
     /*!
      * Currently mapped MIDI CC.\n
@@ -1094,21 +1138,24 @@ typedef struct _ParameterData {
 
 #ifdef __cplusplus
     /*!
-     * C++ constructor.
+     * Clear data.
      */
-    _ParameterData() noexcept
-        : index(PARAMETER_NULL),
-          rindex(-1),
-          hints(0x0),
-          midiCC(-1),
-          midiChannel(0) {}
+    void clear() noexcept
+    {
+        type   = PARAMETER_UNKNOWN;
+        hints  = 0x0;
+        index  = PARAMETER_NULL;
+        rindex = -1;
+        midiCC =-1;
+        midiChannel = 0;
+    }
 #endif
 } ParameterData;
 
 /*!
  * Parameter ranges.
  */
-typedef struct _ParameterRanges {
+typedef struct {
     /*!
      * Default value.
      */
@@ -1141,15 +1188,17 @@ typedef struct _ParameterRanges {
 
 #ifdef __cplusplus
     /*!
-     * C++ constructor.
+     * Clear data.
      */
-    _ParameterRanges() noexcept
-        : def(0.0f),
-          min(0.0f),
-          max(1.0f),
-          step(0.01f),
-          stepSmall(0.0001f),
-          stepLarge(0.1f) {}
+    void clear() noexcept
+    {
+        def  = 0.0f;
+        min  = 0.0f;
+        max  = 1.0f;
+        step = 0.01f;
+        stepSmall = 0.0001f;
+        stepLarge = 0.1f;
+    }
 
     /*!
      * Fix default value within range.
@@ -1229,7 +1278,7 @@ typedef struct _ParameterRanges {
 /*!
  * MIDI Program data.
  */
-typedef struct _MidiProgramData {
+typedef struct {
     /*!
      * MIDI bank.
      */
@@ -1247,19 +1296,21 @@ typedef struct _MidiProgramData {
 
 #ifdef __cplusplus
     /*!
-     * C++ constructor.
+     * Clear data.
      */
-    _MidiProgramData() noexcept
-        : bank(0),
-          program(0),
-          name(nullptr) {}
+    void clear() noexcept
+    {
+        bank    = 0;
+        program = 0;
+        name    = nullptr;
+    }
 #endif
 } MidiProgramData;
 
 /*!
  * Custom data, used for saving key:value 'dictionaries'.
  */
-typedef struct _CustomData {
+typedef struct {
     /*!
      * Value type, in URI form.
      * @see CustomDataTypes
@@ -1279,19 +1330,21 @@ typedef struct _CustomData {
 
 #ifdef __cplusplus
     /*!
-     * C++ constructor.
+     * Clear data.
      */
-    _CustomData() noexcept
-        : type(nullptr),
-          key(nullptr),
-          value(nullptr) {}
+    void clear() noexcept
+    {
+        type  = nullptr;
+        key   = nullptr;
+        value = nullptr;
+    }
 #endif
 } CustomData;
 
 /*!
  * Engine driver device information.
  */
-typedef struct _EngineDriverDeviceInfo {
+typedef struct {
     /*!
      * This driver device hints.
      * @see EngineDriverHints
@@ -1312,12 +1365,14 @@ typedef struct _EngineDriverDeviceInfo {
 
 #ifdef __cplusplus
     /*!
-     * C++ constructor.
+     * Clear data.
      */
-    _EngineDriverDeviceInfo()
-        : hints(0x0),
-          bufferSizes(nullptr),
-          sampleRates(nullptr) {}
+    void clear() noexcept
+    {
+        hints = 0x0;
+        bufferSizes = nullptr;
+        sampleRates = nullptr;
+    }
 #endif
 } EngineDriverDeviceInfo;
 

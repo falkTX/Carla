@@ -131,13 +131,6 @@ struct EnginePluginData {
     CarlaPlugin* plugin;
     float insPeak[2];
     float outsPeak[2];
-
-    EnginePluginData()
-        : plugin(nullptr)
-    {
-        insPeak[0] = insPeak[1] = 0.0f;
-        outsPeak[0] = outsPeak[1] = 0.0f;
-    }
 };
 
 // -----------------------------------------------------------------------
@@ -171,7 +164,7 @@ struct CarlaEngineProtectedData {
         EngineEvent* in;
         EngineEvent* out;
 
-        InternalEvents()
+        InternalEvents() noexcept
             : in(nullptr),
               out(nullptr) {}
 
@@ -186,7 +179,7 @@ struct CarlaEngineProtectedData {
         bool playing;
         uint64_t frame;
 
-        InternalTime()
+        InternalTime() noexcept
             : playing(false),
               frame(0) {}
     } time;
@@ -197,7 +190,7 @@ struct CarlaEngineProtectedData {
         unsigned int value;
         CarlaMutex   mutex;
 
-        NextAction()
+        NextAction() noexcept
             : opcode(kEnginePostActionNull),
               pluginId(0),
               value(0) {}
@@ -207,7 +200,7 @@ struct CarlaEngineProtectedData {
             CARLA_ASSERT(opcode == kEnginePostActionNull);
         }
 
-        void ready()
+        void ready() noexcept
         {
             mutex.lock();
             mutex.unlock();
@@ -253,10 +246,7 @@ struct CarlaEngineProtectedData {
         {
             CarlaPlugin* const plugin(plugins[i+1].plugin);
 
-            CARLA_ASSERT(plugin != nullptr);
-
-            if (plugin == nullptr)
-                break;
+            CARLA_SAFE_ASSERT_BREAK(plugin != nullptr);
 
             plugin->setId(i);
 
@@ -299,7 +289,7 @@ struct CarlaEngineProtectedData {
 #endif
     }
 
-    void doNextPluginAction(const bool unlock)
+    void doNextPluginAction(const bool unlock) noexcept
     {
         switch (nextAction.opcode)
         {
@@ -351,7 +341,7 @@ struct CarlaEngineProtectedData {
             }
         }
 
-        ~ScopedActionLock()
+        ~ScopedActionLock() noexcept
         {
             fData->nextAction.mutex.unlock();
         }

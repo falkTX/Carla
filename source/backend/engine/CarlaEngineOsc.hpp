@@ -68,12 +68,12 @@ public:
 
     const char* getServerPathTCP() const noexcept
     {
-        return (const char*)fServerPathTCP;
+        return fServerPathTCP.getBuffer();
     }
 
     const char* getServerPathUDP() const noexcept
     {
-        return (const char*)fServerPathUDP;
+        return fServerPathUDP.getBuffer();
     }
 
     // -------------------------------------------------------------------

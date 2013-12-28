@@ -34,16 +34,6 @@ CARLA_BACKEND_START_NAMESPACE
 #endif
 
 /*!
- * @defgroup PluginHints
- * @{
- */
-
-const unsigned int PLUGIN_NEEDS_FIXED_BUFFERS = 0x100;
-const unsigned int PLUGIN_NEEDS_SINGLE_THREAD = 0x200;
-
-/** @} */
-
-/*!
  * @defgroup CarlaPluginAPI Carla Plugin API
  *
  * The Carla Plugin API.

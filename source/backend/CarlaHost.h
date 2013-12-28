@@ -171,7 +171,7 @@ typedef struct _CarlaPluginInfo {
     /*!
      * C++ constructor.
      */
-    _CarlaPluginInfo()
+    _CarlaPluginInfo() noexcept
         : type(CarlaBackend::PLUGIN_NONE),
           category(CarlaBackend::PLUGIN_CATEGORY_NONE),
           hints(0x0),
@@ -280,7 +280,7 @@ typedef struct _CarlaNativePluginInfo {
     /*!
      * C++ constructor.
      */
-    _CarlaNativePluginInfo()
+    _CarlaNativePluginInfo() noexcept
         : category(CarlaBackend::PLUGIN_CATEGORY_NONE),
           hints(0x0),
           audioIns(0),
@@ -317,7 +317,7 @@ typedef struct _CarlaPortCountInfo {
     /*!
      * C++ constructor.
      */
-    _CarlaPortCountInfo()
+    _CarlaPortCountInfo() noexcept
         : ins(0),
           outs(0) {}
 #endif
@@ -353,7 +353,7 @@ typedef struct _CarlaParameterInfo {
     /*!
      * C++ constructor.
      */
-    _CarlaParameterInfo()
+    _CarlaParameterInfo() noexcept
         : name(nullptr),
           symbol(nullptr),
           unit(nullptr),
@@ -402,7 +402,7 @@ typedef struct _CarlaScalePointInfo {
     /*!
      * C++ constructor.
      */
-    _CarlaScalePointInfo()
+    _CarlaScalePointInfo() noexcept
         : value(0.0f),
           label(nullptr) {}
 
@@ -459,7 +459,7 @@ typedef struct _CarlaTransportInfo {
     /*!
      * C++ constructor.
      */
-    _CarlaTransportInfo()
+    _CarlaTransportInfo() noexcept
         : playing(false),
           frame(0),
           bar(0),

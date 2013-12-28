@@ -168,6 +168,9 @@ struct EngineControlEvent {
     uint16_t param;              //!< Parameter Id, midi bank or midi program.
     float    value;              //!< Parameter value, normalized to 0.0f<->1.0f.
 
+    /*!
+     * Clear data.
+     */
     void clear() noexcept
     {
         type  = kEngineControlEventTypeNull;
@@ -181,17 +184,20 @@ struct EngineControlEvent {
  */
 struct EngineMidiEvent {
     uint8_t port;    //!< Port offset (usually 0)
-    uint8_t data[4]; //!< MIDI data, without channel bit
     uint8_t size;    //!< Number of bytes used
+    uint8_t data[4]; //!< MIDI data, without channel bit
 
+    /*!
+     * Clear data.
+     */
     void clear() noexcept
     {
         port    = 0;
+        size    = 0;
         data[0] = 0;
         data[1] = 0;
         data[2] = 0;
         data[3] = 0;
-        size    = 0;
     }
 };
 
@@ -203,16 +209,17 @@ struct EngineEvent {
     uint32_t time;        //!< Time offset in frames
     uint8_t  channel;     //!< Channel, used for MIDI-related events
 
+    /*!
+     * Event specific data.
+     */
     union {
         EngineControlEvent ctrl;
         EngineMidiEvent midi;
     };
 
-    EngineEvent() noexcept
-    {
-        clear();
-    }
-
+    /*!
+     * Clear data.
+     */
     void clear() noexcept
     {
         type = kEngineEventTypeNull;
@@ -325,9 +332,10 @@ struct EngineTimeInfo {
     EngineTimeInfoBBT bbt;
 
     EngineTimeInfo() noexcept
-    {
-        clear();
-    }
+        : playing(false),
+          frame(0),
+          usecs(0),
+          valid(0x0) {}
 
     void clear() noexcept
     {

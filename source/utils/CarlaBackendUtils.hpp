@@ -145,6 +145,25 @@ const char* PluginCategory2Str(const PluginCategory category)
 }
 
 static inline
+const char* ParameterType2Str(const ParameterType type)
+{
+    switch (type)
+    {
+    case PARAMETER_UNKNOWN:
+        return "PARAMETER_UNKNOWN";
+    case PARAMETER_INPUT:
+        return "PARAMETER_INPUT";
+    case PARAMETER_OUTPUT:
+        return "PARAMETER_OUTPUT";
+    case PARAMETER_SPECIAL:
+        return "PARAMETER_SPECIAL";
+    }
+
+    carla_stderr("CarlaBackend::ParameterType2Str(%i) - invalid type", type);
+    return nullptr;
+}
+
+static inline
 const char* InternalParameterIndex2Str(const InternalParameterIndex index)
 {
     switch (index)
