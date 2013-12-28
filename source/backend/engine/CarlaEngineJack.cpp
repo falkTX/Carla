@@ -19,17 +19,18 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMIDI.h"
 
+#include "List.hpp"
 #include "jackbridge/JackBridge.hpp"
 
 #include <cmath>
+#include <QtCore/QStringList>
 
-#define URI_CANVAS_ICON "http://kxstudio.sf.net/ns/canvas/icon"
-
-#ifdef USE_JUCE
-#include "juce_audio_basics.h"
-
+#ifdef HAVE_JUCE
+# include "juce_audio_basics.h"
 using juce::FloatVectorOperations;
 #endif
+
+#define URI_CANVAS_ICON "http://kxstudio.sf.net/ns/canvas/icon"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -40,7 +41,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 // Fallback data
 
-static const EngineEvent kFallbackJackEngineEvent;
+static EngineEvent kFallbackJackEngineEvent;
 
 // -----------------------------------------------------------------------
 // Carla Engine JACK-Audio port
@@ -53,7 +54,7 @@ public:
           fClient(client),
           fPort(port)
     {
-        carla_debug("CarlaEngineJackAudioPort::CarlaEngineJackAudioPort(name:\"%s\", %s, %p, %p)", engine.getName(), bool2str(isInput), client, port);
+        carla_debug("CarlaEngineJackAudioPort::CarlaEngineJackAudioPort(%s, %p, %p)", bool2str(isInput), client, port);
 
         if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
@@ -84,7 +85,7 @@ public:
 
         if (! fIsInput)
         {
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
            FloatVectorOperations::clear(fBuffer, bufferSize);
 #else
            carla_zeroFloat(fBuffer, bufferSize);
@@ -112,7 +113,7 @@ public:
           fClient(client),
           fPort(port)
     {
-        carla_debug("CarlaEngineJackCVPort::CarlaEngineJackCVPort(name:\"%s\", %s, %p, %p)", engine.getName(), bool2str(isInput), client, port);
+        carla_debug("CarlaEngineJackCVPort::CarlaEngineJackCVPort(%s, %p, %p)", bool2str(isInput), client, port);
 
         if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
@@ -142,7 +143,7 @@ public:
         if (fIsInput)
         {
             float* const jackBuffer((float*)jackbridge_port_get_buffer(fPort, bufferSize));
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
             FloatVectorOperations::copy(fBuffer, jackBuffer, bufferSize);
 #else
             carla_copyFloat(fBuffer, jackBuffer, bufferSize);
@@ -150,7 +151,7 @@ public:
         }
         else
         {
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
             FloatVectorOperations::clear(fBuffer, bufferSize);
 #else
             carla_zeroFloat(fBuffer, bufferSize);
@@ -158,18 +159,20 @@ public:
         }
     }
 
+#if 0
     void writeBuffer(const uint32_t frames, const uint32_t timeOffset) override
     {
         CARLA_SAFE_ASSERT_RETURN(! fIsInput,);
 
         float* const jackBuffer((float*)jackbridge_port_get_buffer(fPort, fEngine.getBufferSize()));
 
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
         FloatVectorOperations::copy(jackBuffer+timeOffset, fBuffer, frames);
 #else
         carla_copyFloat(jackBuffer+timeOffset, fBuffer, frames);
 #endif
     }
+#endif
 
 private:
     jack_client_t* fClient;
@@ -192,7 +195,15 @@ public:
           fPort(port),
           fJackBuffer(nullptr)
     {
-        carla_debug("CarlaEngineJackEventPort::CarlaEngineJackEventPort(name:\"%s\", %s, %p, %p)", engine.getName(), bool2str(isInput), client, port);
+        carla_debug("CarlaEngineJackEventPort::CarlaEngineJackEventPort(%s, %p, %p)", bool2str(isInput), client, port);
+
+        static bool sFallbackJackEngineEventNeedsInit = true;
+
+        if (sFallbackJackEngineEventNeedsInit)
+        {
+            kFallbackJackEngineEvent.clear();
+            sFallbackJackEngineEventNeedsInit = false;
+        }
 
         if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
@@ -437,7 +448,7 @@ public:
           fClient(client),
           fUseClient(engine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || engine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
     {
-        carla_debug("CarlaEngineJackClient::CarlaEngineJackClient(name:\"%s\", %p)", engine.getName(), client);
+        carla_debug("CarlaEngineJackClient::CarlaEngineJackClient(%p)", client);
 
         if (fUseClient)
         {
@@ -1169,13 +1180,13 @@ protected:
                 float* const audioOut2 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut2], nframes);
                 void*  const eventOut  = jackbridge_port_get_buffer(fRackPorts[kRackPortEventOut], nframes);
 
-#ifdef USE_JUCE
+# ifdef HAVE_JUCE
                 FloatVectorOperations::copy(audioOut1, audioIn1, nframes);
                 FloatVectorOperations::copy(audioOut2, audioIn2, nframes);
-#else
+# else
                 carla_copyFloat(audioOut1, audioIn1, nframes);
                 carla_copyFloat(audioOut2, audioIn2, nframes);
-#endif
+# endif
                 jackbridge_midi_clear_buffer(eventOut);
             }
 #endif
@@ -1875,7 +1886,7 @@ private:
         CARLA_ASSERT(fLastConnectionId == 0);
         CARLA_ASSERT(ourName != nullptr);
 
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
         using namespace juce;
 
         // query initial jack ports

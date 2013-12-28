@@ -1845,11 +1845,7 @@ protected:
 #endif
 
         case audioMasterGetTime:
-#ifdef VESTIGE_HEADER
-            ret = getAddressFromPointer(&fTimeInfo);
-#else
-            ret = ToVstPtr<VstTimeInfo_R>(&fTimeInfo);
-#endif
+            ret = (intptr_t)&fTimeInfo;
             break;
 
         case audioMasterProcessEvents:
@@ -2278,15 +2274,15 @@ public:
         {
             const EngineOptions& engineOptions(pData->engine->getOptions());
 
-#if defined(Q_WS_X11)
-            CarlaString uiBridgeBinary(engineOptions.bridge_vstX11);
-#elif defined(CARLA_OS_MAC)
-            CarlaString uiBridgeBinary(engineOptions.bridge_vstMac);
-#elif defined(CARLA_OS_WIN)
-            CarlaString uiBridgeBinary(engineOptions.bridge_vstHWND);
-#else
+// #if defined(Q_WS_X11)
+//             CarlaString uiBridgeBinary(engineOptions.bridge_vstX11);
+// #elif defined(CARLA_OS_MAC)
+//             CarlaString uiBridgeBinary(engineOptions.bridge_vstMac);
+// #elif defined(CARLA_OS_WIN)
+//             CarlaString uiBridgeBinary(engineOptions.bridge_vstHWND);
+// #else
             CarlaString uiBridgeBinary;
-#endif
+// #endif
 
             if (engineOptions.preferUiBridges && uiBridgeBinary.isNotEmpty() && (fEffect->flags & effFlagsProgramChunks) == 0)
             {

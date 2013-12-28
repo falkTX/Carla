@@ -24,7 +24,6 @@
 #include "CarlaPlugin.hpp"
 
 #include "CarlaMutex.hpp"
-#include "RtList.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -131,6 +130,13 @@ struct EnginePluginData {
     CarlaPlugin* plugin;
     float insPeak[2];
     float outsPeak[2];
+
+    void clear()
+    {
+        plugin = nullptr;
+        insPeak[0]  = insPeak[1]  = 0.0f;
+        outsPeak[0] = outsPeak[1] = 0.0f;
+    }
 };
 
 // -----------------------------------------------------------------------

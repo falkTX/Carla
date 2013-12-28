@@ -48,7 +48,7 @@ void CarlaEngineThread::run()
     bool oscRegisted, needsSingleThread;
     float value;
 
-    while (fEngine->isRunning() && ! shouldExit())
+    for (; fEngine->isRunning() && ! shouldExit();)
     {
 #ifdef BUILD_BRIDGE
         oscRegisted = fEngine->isOscBridgeRegistered();
@@ -60,8 +60,7 @@ void CarlaEngineThread::run()
         {
             CarlaPlugin* const plugin(fEngine->getPluginUnchecked(i));
 
-            if (plugin == nullptr || ! plugin->isEnabled())
-                continue;
+            CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr && plugin->isEnabled());
 
             CARLA_SAFE_ASSERT_INT2(i == plugin->getId(), i, plugin->getId());
 

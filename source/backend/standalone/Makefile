@@ -7,35 +7,34 @@
 include ../Makefile.mk
 
 # --------------------------------------------------------------
-
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
-
-# --------------------------------------------------------------
 # Common
 
 LINK_FLAGS += $(shell pkg-config --libs liblo)
+LINK_FLAGS += $(QTCORE_LIBS)
+LINK_FLAGS += $(QTXML_LIBS)
+LINK_FLAGS += $(RTMEMPOOL_LIBS)
+
+# --------------------------------------------------------------
+# Engine
+
+LINK_FLAGS += $(RTAUDIO_LIBS)
+LINK_FLAGS += $(RTMIDI_LIBS)
 
 LINK_FLAGS += $(JACKBRIDGE_LIBS)
+
 # LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
 # LINK_FLAGS += $(JUCE_CORE_LIBS)
 # LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
 # LINK_FLAGS += $(JUCE_EVENTS_LIBS)
 # LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
 # LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
-LINK_FLAGS += $(RTAUDIO_LIBS)
-LINK_FLAGS += $(RTMIDI_LIBS)
-LINK_FLAGS += $(RTMEMPOOL_LIBS)
 
-ifeq ($(HAVE_OPENGL),true)
-LINK_FLAGS += $(DGL_LIBS)
-endif
+# --------------------------------------------------------------
+# Plugin
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 LINK_FLAGS += $(LILV_LIBS)
 endif
-
-# --------------------------------------------------------------
-# Plugin
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 LINK_FLAGS += $(shell pkg-config --libs fluidsynth)
@@ -50,6 +49,10 @@ endif
 
 # --------------------------------------------------------------
 # Native
+
+ifeq ($(HAVE_OPENGL),true)
+LINK_FLAGS += $(DGL_LIBS)
+endif
 
 ifeq ($(HAVE_AF_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs sndfile)

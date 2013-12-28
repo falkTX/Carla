@@ -415,11 +415,11 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP, const int argc, const lo
         std::free(port);
     }
 
-    for (unsigned short i=0; i < fEngine->getCurrentPluginCount(); ++i)
+    for (unsigned short i=0, count=fEngine->getCurrentPluginCount(); i < count; ++i)
     {
-        CarlaPlugin* const plugin = fEngine->getPluginUnchecked(i);
+        CarlaPlugin* const plugin(fEngine->getPluginUnchecked(i));
 
-        if (plugin && plugin->isEnabled())
+        if (plugin != nullptr && plugin->isEnabled())
             plugin->registerToOscClient();
     }
 

@@ -21,53 +21,45 @@
 #include "CarlaLadspaUtils.hpp"
 #include "dssi/dssi.h"
 
+#include <QtCore/QDir>
+#include <QtCore/QFileInfo>
+#include <QtCore/QStringList>
+
 // -----------------------------------------------------------------------
 
 static inline
 const char* find_dssi_ui(const char* const filename, const char* const label)
 {
-    CARLA_SAFE_ASSERT_RETURN(filename != nullptr, nullptr);
-    CARLA_SAFE_ASSERT_RETURN(label    != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', nullptr);
+    CARLA_SAFE_ASSERT_RETURN(label    != nullptr && label[0]    != '\0', nullptr);
     carla_debug("find_dssi_ui(\"%s\", \"%s\")", filename, label);
 
-#if 0
-    using namespace juce;
+    QString guiFilename;
+    QString pluginDir(filename);
+    pluginDir.resize(pluginDir.lastIndexOf("."));
 
-    File pluginFile(filename);
-    File pluginDir(pluginFile.getParentDirectory().getFullPathName() + File::separatorString + pluginFile.getFileNameWithoutExtension());
-
-    Array<File> results;
-
-    if (pluginDir.findChildFiles(results, File::findFiles|File::ignoreHiddenFiles, false) == 0)
-        return nullptr;
-
-    StringArray guiFiles;
-
-    for (int i=0, count=results.size(); i < count; ++i)
-    {
-        const File& file(results[i]);
-        guiFiles.add(file.getFileName());
-    }
-
-    String pluginDirName(pluginDir.getFullPathName());
-    String pluginShortName(pluginFile.getFileNameWithoutExtension());
-
-    String checkLabel(label);
-    String checkShort(pluginShortName);
+    QString checkLabel(label);
+    QString checkSName(QFileInfo(pluginDir).baseName());
 
     if (! checkLabel.endsWith("_")) checkLabel += "_";
-    if (! checkShort.endsWith("_")) checkShort += "_";
+    if (! checkSName.endsWith("_")) checkSName += "_";
 
-    for (int i=0, count=guiFiles.size(); i < count; ++i)
+    QStringList guiFiles(QDir(pluginDir).entryList());
+
+    foreach (const QString& gui, guiFiles)
     {
-        const String& gui(guiFiles[i]);
-
-        if (gui.startsWith(checkLabel) || gui.startsWith(checkShort))
-            return carla_strdup(File(pluginDir).getChildFile(gui).getFullPathName().toRawUTF8());
+        if (gui.startsWith(checkLabel) || gui.startsWith(checkSName))
+        {
+            QFileInfo finalname(pluginDir + QDir::separator() + gui);
+            guiFilename = finalname.absoluteFilePath();
+            break;
+        }
     }
-#endif
 
-    return nullptr;
+    if (guiFilename.isEmpty())
+        return nullptr;
+
+    return carla_strdup(guiFilename.toUtf8().constData());
 }
 
 // -----------------------------------------------------------------------

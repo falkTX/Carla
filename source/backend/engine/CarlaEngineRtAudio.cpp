@@ -824,6 +824,8 @@ public:
             fUsedConnections.append(connectionToId);
             fLastConnectionId++;
         }
+
+        return true;
     }
 
     // -------------------------------------------------------------------

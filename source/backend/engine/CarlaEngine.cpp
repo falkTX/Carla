@@ -30,9 +30,15 @@
 #include "CarlaStateUtils.hpp"
 #include "CarlaMIDI.h"
 
-#ifdef USE_JUCE
-#include "juce_audio_basics.h"
+#include <QtCore/QFile>
+#include <QtCore/QFileInfo>
+#include <QtCore/QTextStream>
+
+#ifdef HAVE_JUCE
+# include "juce_audio_basics.h"
 using juce::FloatVectorOperations;
+#else
+# include <cmath>
 #endif
 
 CARLA_BACKEND_START_NAMESPACE
@@ -48,7 +54,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 // Fallback data
 
-static const EngineEvent kFallbackEngineEvent;
+static EngineEvent kFallbackEngineEvent;
 
 // -----------------------------------------------------------------------
 // Carla Engine port (Abstract)
@@ -57,7 +63,7 @@ CarlaEnginePort::CarlaEnginePort(const CarlaEngine& engine, const bool isInput)
     : fEngine(engine),
       fIsInput(isInput)
 {
-    carla_debug("CarlaEnginePort::CarlaEnginePort(name:\"%s\", %s)", engine.getName(), bool2str(isInput));
+    carla_debug("CarlaEnginePort::CarlaEnginePort(%s)", bool2str(isInput));
 }
 
 CarlaEnginePort::~CarlaEnginePort()
@@ -72,12 +78,16 @@ CarlaEngineAudioPort::CarlaEngineAudioPort(const CarlaEngine& engine, const bool
     : CarlaEnginePort(engine, isInput),
       fBuffer(nullptr)
 {
-    carla_debug("CarlaEngineAudioPort::CarlaEngineAudioPort(name:\"%s\", %s)", engine.getName(), bool2str(isInput));
+    carla_debug("CarlaEngineAudioPort::CarlaEngineAudioPort(%s)", bool2str(isInput));
 }
 
 CarlaEngineAudioPort::~CarlaEngineAudioPort()
 {
     carla_debug("CarlaEngineAudioPort::~CarlaEngineAudioPort()");
+}
+
+void CarlaEngineAudioPort::initBuffer()
+{
 }
 
 // -----------------------------------------------------------------------
@@ -87,7 +97,7 @@ CarlaEngineCVPort::CarlaEngineCVPort(const CarlaEngine& engine, const bool isInp
     : CarlaEnginePort(engine, isInput),
       fBuffer(new float[engine.getBufferSize()])
 {
-    carla_debug("CarlaEngineCVPort::CarlaEngineCVPort(name:\"%s\", %s)", engine.getName(), bool2str(isInput));
+    carla_debug("CarlaEngineCVPort::CarlaEngineCVPort(%s)", bool2str(isInput));
 }
 
 CarlaEngineCVPort::~CarlaEngineCVPort()
@@ -103,14 +113,17 @@ void CarlaEngineCVPort::initBuffer()
 {
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
 
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
     FloatVectorOperations::clear(fBuffer, fEngine.getBufferSize());
+#else
+    carla_zeroFloat(fBuffer, fEngine.getBufferSize());
 #endif
 }
 
+#if 0
 void CarlaEngineCVPort::writeBuffer(const uint32_t, const uint32_t)
 {
-    CARLA_ASSERT(! fIsInput);
+    CARLA_SAFE_ASSERT_RETURN(! fIsInput,);
 }
 
 void CarlaEngineCVPort::setBufferSize(const uint32_t bufferSize)
@@ -120,6 +133,7 @@ void CarlaEngineCVPort::setBufferSize(const uint32_t bufferSize)
 
     fBuffer = new float[bufferSize];
 }
+#endif
 
 // -----------------------------------------------------------------------
 // Carla Engine Event port
@@ -128,7 +142,15 @@ CarlaEngineEventPort::CarlaEngineEventPort(const CarlaEngine& engine, const bool
     : CarlaEnginePort(engine, isInput),
       fBuffer(nullptr)
 {
-    carla_debug("CarlaEngineEventPort::CarlaEngineEventPort(name:\"%s\", %s)", engine.getName(), bool2str(isInput));
+    carla_debug("CarlaEngineEventPort::CarlaEngineEventPort(%s)", bool2str(isInput));
+
+    static bool sFallbackEngineEventNeedsInit = true;
+
+    if (sFallbackEngineEventNeedsInit)
+    {
+        kFallbackEngineEvent.clear();
+        sFallbackEngineEventNeedsInit = false;
+    }
 
     if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_PATCHBAY)
         fBuffer = new EngineEvent[kEngineMaxInternalEventCount];
@@ -268,7 +290,7 @@ CarlaEngineClient::CarlaEngineClient(const CarlaEngine& engine)
       fActive(false),
       fLatency(0)
 {
-    carla_debug("CarlaEngineClient::CarlaEngineClient(name:\"%s\")", engine.getName());
+    carla_debug("CarlaEngineClient::CarlaEngineClient()");
 }
 
 CarlaEngineClient::~CarlaEngineClient()
@@ -361,7 +383,7 @@ unsigned int CarlaEngine::getDriverCount()
 
 #ifndef BUILD_BRIDGE
     count += getRtAudioApiCount();
-# ifdef USE_JUCE
+# ifdef HAVE_JUCE
     count += getJuceApiCount();
 # endif
 #endif
@@ -382,7 +404,7 @@ const char* CarlaEngine::getDriverName(const unsigned int index)
     if (rtAudioIndex < getRtAudioApiCount())
         return getRtAudioApiName(rtAudioIndex);
 
-# ifdef USE_JUCE
+# ifdef HAVE_JUCE
     const unsigned int juceIndex(index-rtAudioIndex-1);
 
     if (juceIndex < getJuceApiCount())
@@ -410,7 +432,7 @@ const char* const* CarlaEngine::getDriverDeviceNames(const unsigned int index)
     if (rtAudioIndex < getRtAudioApiCount())
         return getRtAudioApiDeviceNames(rtAudioIndex);
 
-# ifdef USE_JUCE
+# ifdef HAVE_JUCE
     const unsigned int juceIndex(index-rtAudioIndex-1);
 
     if (juceIndex < getJuceApiCount())
@@ -442,7 +464,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const unsigned in
     if (rtAudioIndex < getRtAudioApiCount())
         return getRtAudioDeviceInfo(rtAudioIndex, deviceName);
 
-# ifdef USE_JUCE
+# ifdef HAVE_JUCE
     const unsigned int juceIndex(index-rtAudioIndex-1);
 
     if (juceIndex < getJuceApiCount())
@@ -729,7 +751,9 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
         else if (btype == BINARY_WIN32)
         {
             // fallback to dssi-vst
-            CarlaString label2("filename");
+            QFileInfo fileInfo(filename);
+
+            CarlaString label2(fileInfo.fileName().toUtf8().constData());
             label2.replace(' ', '*');
 
             CarlaPlugin::Initializer init2 = {
@@ -740,7 +764,13 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
                 (const char*)label2
             };
 
+            char* const oldVstPath(getenv("VST_PATH"));
+            carla_setenv("VST_PATH", fileInfo.absoluteDir().absolutePath().toUtf8().constData());
+
             plugin = CarlaPlugin::newDSSI(init2);
+
+            if (oldVstPath != nullptr)
+                carla_setenv("VST_PATH", oldVstPath);
         }
 # endif
         else
@@ -1110,22 +1140,29 @@ bool CarlaEngine::loadFile(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename (err #1)");
     carla_debug("CarlaEngine::loadFile(\"%s\")", filename);
 
-#ifdef USE_JUCE
-    using namespace juce;
+    QFileInfo fileInfo(filename);
 
-    File file(filename);
-
-    if (! file.existsAsFile())
+    if (! fileInfo.exists())
     {
         setLastError("File does not exist");
         return false;
     }
 
-    CarlaString baseName(file.getFileNameWithoutExtension().toRawUTF8());
-    CarlaString extension(file.getFileExtension().toRawUTF8()+1);
-    extension.toLower();
+    if (! fileInfo.isFile())
+    {
+        setLastError("Not a file");
+        return false;
+    }
 
-    carla_stdout("load filename with extension %s", (const char*)extension);
+    if (! fileInfo.isReadable())
+    {
+        setLastError("File is not readable");
+        return false;
+    }
+
+    CarlaString baseName(fileInfo.baseName().toUtf8().constData());
+    CarlaString extension(fileInfo.suffix().toLower().toUtf8().constData());
+    extension.toLower();
 
     // -------------------------------------------------------------------
 
@@ -1133,6 +1170,9 @@ bool CarlaEngine::loadFile(const char* const filename)
         return loadProject(filename);
 
     // -------------------------------------------------------------------
+
+    if (extension == "csd")
+        return addPlugin(PLUGIN_CSOUND, filename, baseName, baseName);
 
     if (extension == "gig")
         return addPlugin(PLUGIN_GIG, filename, baseName, baseName);
@@ -1219,7 +1259,6 @@ bool CarlaEngine::loadFile(const char* const filename)
         return false;
 #endif
     }
-#endif
 
     // -------------------------------------------------------------------
 
@@ -1227,90 +1266,64 @@ bool CarlaEngine::loadFile(const char* const filename)
     return false;
 }
 
-bool charEndsWith(const char* const str, const char* const suffix)
-{
-    if (str == nullptr || suffix == nullptr)
-        return false;
-
-    const size_t strLen(std::strlen(str));
-    const size_t suffixLen(std::strlen(suffix));
-
-    if (strLen < suffixLen)
-        return false;
-
-    return (std::strncmp(str + (strLen-suffixLen), suffix, suffixLen) == 0);
-}
-
 bool CarlaEngine::loadProject(const char* const filename)
 {
     CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename (err #2)");
     carla_debug("CarlaEngine::loadProject(\"%s\")", filename);
 
-#ifdef USE_JUCE
-    using namespace juce;
+    QFile file(filename);
 
-    File file(filename);
+    if (! file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return false;
 
-    XmlDocument xml(file);
+    QDomDocument xml;
+    xml.setContent(file.readAll());
+    file.close();
 
-    if (XmlElement* const xmlCheck = xml.getDocumentElement(true))
+    QDomNode xmlNode(xml.documentElement());
+
+    const bool isPreset(xmlNode.toElement().tagName().compare("carla-preset", Qt::CaseInsensitive) == 0);
+
+    if (xmlNode.toElement().tagName().compare("carla-project", Qt::CaseInsensitive) != 0 && ! isPreset)
     {
-        const String& tagNameTest(xmlCheck->getTagName());
-        const bool    isPreset(tagNameTest.equalsIgnoreCase("carla-preset"));
-
-        if (tagNameTest.equalsIgnoreCase("carla-project") || isPreset)
-        {
-            if (XmlElement* const xmlElem = xml.getDocumentElement(false))
-            {
-                for (XmlElement* subElem = xmlElem->getFirstChildElement(); subElem != nullptr; subElem = subElem->getNextElement())
-                {
-                    if (isPreset || subElem->getTagName().equalsIgnoreCase("Plugin"))
-                    {
-                        SaveState saveState;
-                        fillSaveStateFromXmlElement(saveState, isPreset ? xmlElem : subElem);
-
-                        CARLA_SAFE_ASSERT_CONTINUE(saveState.type != nullptr);
-
-                        const void* extraStuff = nullptr;
-
-                        if (std::strcmp(saveState.type, "SF2") == 0)
-                        {
-                            const char* const use16OutsSuffix = " (16 outs)";
-
-                            if (charEndsWith(saveState.label, use16OutsSuffix))
-                                extraStuff = (void*)0x1; // non-null
-                        }
-
-                        // TODO - proper find&load plugins
-
-                        if (addPlugin(getPluginTypeFromString(saveState.type), saveState.binary, saveState.name, saveState.label, extraStuff))
-                        {
-                            if (CarlaPlugin* plugin = getPlugin(pData->curPluginCount-1))
-                                plugin->loadSaveState(saveState);
-                        }
-                    }
-
-                    if (isPreset)
-                        break;
-                }
-
-                delete xmlElem;
-                delete xmlCheck;
-                return true;
-            }
-            else
-                setLastError("Failed to parse file");
-        }
-        else
-            setLastError("Not a valid Carla project or preset file");
-
-        delete xmlCheck;
+        setLastError("Not a valid Carla project or preset file");
         return false;
     }
-#endif
 
-    setLastError("Not a valid file");
-    return false;
+    for (QDomNode node = xmlNode.firstChild(); ! node.isNull(); node = node.nextSibling())
+    {
+        if (isPreset || node.toElement().tagName().compare("plugin", Qt::CaseInsensitive) == 0)
+        {
+            SaveState saveState;
+            fillSaveStateFromXmlNode(saveState, isPreset ? xmlNode : node);
+
+            CARLA_SAFE_ASSERT_CONTINUE(saveState.type != nullptr);
+
+            const void* extraStuff = nullptr;
+
+            // check if using GIG, SF2 or SFZ 16outs
+            static const char kUse16OutsSuffix[] = " (16 outs)";
+
+            if (CarlaString(saveState.label).endsWith(kUse16OutsSuffix))
+            {
+                if (std::strcmp(saveState.type, "GIG") == 0 || std::strcmp(saveState.type, "SF2") == 0 || std::strcmp(saveState.type, "SFZ") == 0)
+                    extraStuff = (void*)0x1; // non-null
+            }
+
+            // TODO - proper find&load plugins
+
+            if (addPlugin(getPluginTypeFromString(saveState.type), saveState.binary, saveState.name, saveState.label, extraStuff))
+            {
+                if (CarlaPlugin* plugin = getPlugin(pData->curPluginCount-1))
+                    plugin->loadSaveState(saveState);
+            }
+        }
+
+        if (isPreset)
+            break;
+    }
+
+    return true;
 }
 
 bool CarlaEngine::saveProject(const char* const filename)
@@ -1318,12 +1331,12 @@ bool CarlaEngine::saveProject(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename (err #3)");
     carla_debug("CarlaEngine::saveProject(\"%s\")", filename);
 
-#ifdef USE_JUCE
-    using namespace juce;
+    QFile file(filename);
 
-    File file(filename);
+    if (! file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return false;
 
-    MemoryOutputStream out;
+    QTextStream out(&file);
     out << "<?xml version='1.0' encoding='UTF-8'?>\n";
     out << "<!DOCTYPE CARLA-PROJECT>\n";
     out << "<CARLA-PROJECT VERSION='2.0'>\n";
@@ -1345,13 +1358,9 @@ bool CarlaEngine::saveProject(const char* const filename)
             plugin->getRealName(strBuf);
 
             if (strBuf[0] != '\0')
-            {
-                out << " <!-- ";
-                out << xmlSafeString(strBuf, true);
-                out << " -->\n";
-            }
+                out << QString(" <!-- %1 -->\n").arg(xmlSafeString(strBuf, true));
 
-            String content;
+            QString content;
             fillXmlStringFromSaveState(content, plugin->getSaveState());
 
             out << " <Plugin>\n";
@@ -1364,10 +1373,8 @@ bool CarlaEngine::saveProject(const char* const filename)
 
     out << "</CARLA-PROJECT>\n";
 
-    return file.replaceWithData(out.getData(), out.getDataSize());
-#endif
-
-    return false;
+    file.close();
+    return true;
 }
 
 // -----------------------------------------------------------------------
@@ -1758,7 +1765,7 @@ void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint3
     float inBuf1[frames];
     float* inBuf[2] = { inBuf0, inBuf1 };
 
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
     // initialize audio inputs
     FloatVectorOperations::copy(inBuf0, inBufReal[0], frames);
     FloatVectorOperations::copy(inBuf1, inBufReal[1], frames);
@@ -1777,7 +1784,7 @@ void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint3
 #endif
 
     // initialize event outputs (zero)
-    carla_zeroMem(pData->bufEvents.out, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
+    carla_zeroStruct<EngineEvent>(pData->bufEvents.out, kEngineMaxInternalEventCount);
 
     bool processed = false;
 
@@ -1794,7 +1801,7 @@ void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint3
 
         if (processed)
         {
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
             // initialize audio inputs (from previous outputs)
             FloatVectorOperations::copy(inBuf0, outBuf[0], frames);
             FloatVectorOperations::copy(inBuf1, outBuf[1], frames);
@@ -1842,7 +1849,7 @@ void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint3
         // if plugin has no audio inputs, add input buffer
         if (oldAudioInCount == 0)
         {
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
             FloatVectorOperations::add(outBuf[0], inBuf0, frames);
             FloatVectorOperations::add(outBuf[1], inBuf1, frames);
 #else
@@ -1855,23 +1862,76 @@ void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint3
         {
             EnginePluginData& pluginData(pData->plugins[i]);
 
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
             float tmpMin, tmpMax;
 
-            FloatVectorOperations::findMinAndMax(inBuf0, frames, tmpMin, tmpMax);
-            pluginData.insPeak[0] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
+            if (oldAudioInCount > 0)
+            {
+                FloatVectorOperations::findMinAndMax(inBuf0, frames, tmpMin, tmpMax);
+                pluginData.insPeak[0] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
 
-            FloatVectorOperations::findMinAndMax(inBuf1, frames, tmpMin, tmpMax);
-            pluginData.insPeak[1] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
+                FloatVectorOperations::findMinAndMax(inBuf1, frames, tmpMin, tmpMax);
+                pluginData.insPeak[1] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
+            }
+            else
+            {
+                pluginData.insPeak[0] = 0.0f;
+                pluginData.insPeak[1] = 0.0f;
+            }
 
-            FloatVectorOperations::findMinAndMax(outBuf[0], frames, tmpMin, tmpMax);
-            pluginData.outsPeak[0] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
+            if (oldMidiOutCount > 0)
+            {
+                FloatVectorOperations::findMinAndMax(outBuf[0], frames, tmpMin, tmpMax);
+                pluginData.outsPeak[0] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
 
-            FloatVectorOperations::findMinAndMax(outBuf[1], frames, tmpMin, tmpMax);
-            pluginData.outsPeak[1] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
+                FloatVectorOperations::findMinAndMax(outBuf[1], frames, tmpMin, tmpMax);
+                pluginData.outsPeak[1] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
+            }
+            else
+            {
+                pluginData.outsPeak[0] = 0.0f;
+                pluginData.outsPeak[1] = 0.0f;
+            }
 #else
-            // TODO
-            (void)pluginData;
+            float peak1, peak2;
+
+            if (oldAudioInCount > 0)
+            {
+                peak1 = peak2 = 0.0f;
+
+                for (uint32_t k=0; k < frames; ++k)
+                {
+                    peak1  = carla_max<float>(peak1,  std::fabs(inBuf0[k]), 1.0f);
+                    peak2  = carla_max<float>(peak2,  std::fabs(inBuf1[k]), 1.0f);
+                }
+
+                pluginData.insPeak[0] = peak1;
+                pluginData.insPeak[1] = peak2;
+            }
+            else
+            {
+                pluginData.insPeak[0] = 0.0f;
+                pluginData.insPeak[1] = 0.0f;
+            }
+
+            if (oldMidiOutCount > 0)
+            {
+                peak1 = peak2 = 0.0f;
+
+                for (uint32_t k=0; k < frames; ++k)
+                {
+                    peak1 = carla_max<float>(peak1, std::fabs(outBuf[0][k]), 1.0f);
+                    peak2 = carla_max<float>(peak2, std::fabs(outBuf[1][k]), 1.0f);
+                }
+
+                pluginData.outsPeak[0] = peak1;
+                pluginData.outsPeak[1] = peak2;
+            }
+            else
+            {
+                pluginData.outsPeak[0] = 0.0f;
+                pluginData.outsPeak[1] = 0.0f;
+            }
 #endif
         }
 

@@ -236,7 +236,7 @@ static inline
 void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
 {
     if (xmlNode.isNull())
-        return saveState;
+        return;
 
     for (QDomNode node = xmlNode.firstChild(); ! node.isNull(); node = node.nextSibling())
     {

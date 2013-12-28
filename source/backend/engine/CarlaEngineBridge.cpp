@@ -15,7 +15,9 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifdef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE
+# error This file should not be compiled if not building bridge
+#endif
 
 #include "CarlaEngineInternal.hpp"
 #include "CarlaBackendUtils.hpp"
@@ -424,5 +426,3 @@ CarlaEngine* CarlaEngine::newBridge(const char* const audioBaseName, const char*
 }
 
 CARLA_BACKEND_END_NAMESPACE
-
-#endif // BUILD_BRIDGE

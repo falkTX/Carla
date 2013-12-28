@@ -8,8 +8,6 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
-
 BUILD_CXX_FLAGS += $(RTAUDIO_FLAGS)
 BUILD_CXX_FLAGS += $(RTMIDI_FLAGS)
 
@@ -22,12 +20,13 @@ OBJSp = \
 	CarlaEngineNative.cpp.o
 
 OBJS  = $(OBJSp) \
-	CarlaEngineBridge.cpp.o \
 	CarlaEngineJack.cpp.o \
 	CarlaEngineRtAudio.cpp.o
 
+# ifeq ($(HAVE_JUCE),true)
 # OBJS += \
 # 	CarlaEngineJuce.cpp.o
+# endif
 
 HEADERS = \
 	../CarlaBackend.h ../CarlaEngine.hpp ../CarlaPlugin.hpp \

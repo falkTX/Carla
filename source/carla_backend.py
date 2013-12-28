@@ -866,9 +866,10 @@ class EngineDriverDeviceInfo(Structure):
 
 # @see ParameterData
 PyParameterData = {
+    'type': PARAMETER_UNKNOWN,
+    'hints': 0x0,
     'index': PARAMETER_NULL,
     'rindex': -1,
-    'hints': 0x0,
     'midiCC': -1,
     'midiChannel': 0
 }

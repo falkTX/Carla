@@ -3294,7 +3294,9 @@ public:
             const uint32_t cvIndex(fCvOut.ports[i].param);
             const float    cvValue(fCvOut.ports[i].port->getBuffer()[0]);
 
+#if 0
             fCvOut.ports[i].port->writeBuffer(frames, timeOffset);
+#endif
             fParamBuffers[cvIndex] = cvValue;
         }
 
@@ -3327,7 +3329,7 @@ public:
         {
             if (CarlaEngineCVPort* const port = fCvIn.ports[i].port)
             {
-                port->setBufferSize(newBufferSize);
+                //port->setBufferSize(newBufferSize);
 
                 fDescriptor->connect_port(fHandle, fCvIn.ports[i].rindex, port->getBuffer());
 
@@ -3340,7 +3342,7 @@ public:
         {
             if (CarlaEngineCVPort* const port = fCvOut.ports[i].port)
             {
-                port->setBufferSize(newBufferSize);
+                //port->setBufferSize(newBufferSize);
 
                 fDescriptor->connect_port(fHandle, fCvOut.ports[i].rindex, port->getBuffer());
 

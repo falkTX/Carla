@@ -440,9 +440,7 @@ public:
     /*!
      * Initialize the port's internal buffer.
      */
-    virtual void initBuffer() override
-    {
-    }
+    virtual void initBuffer() override;
 
     /*!
      * Direct access to the port's audio buffer.
@@ -490,6 +488,8 @@ public:
      */
     virtual void initBuffer() override;
 
+#if 0
+    // TESTING: I should remove this
     /*!
      * Write buffer back into the engine.
      */
@@ -499,6 +499,7 @@ public:
      * Set a new buffer size.
      */
     void setBufferSize(const uint32_t bufferSize);
+#endif
 
     /*!
      * Direct access to the port's buffer.
@@ -1167,7 +1168,7 @@ private:
     static const char* const* getRtAudioApiDeviceNames(const unsigned int index);
     static const EngineDriverDeviceInfo* getRtAudioDeviceInfo(const unsigned int index, const char* const deviceName);
 
-# ifdef USE_JUCE
+# ifdef HAVE_JUCE
     static CarlaEngine*       newJuce(const AudioApi api);
     static size_t             getJuceApiCount();
     static const char*        getJuceApiName(const unsigned int index);

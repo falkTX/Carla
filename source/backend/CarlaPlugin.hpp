@@ -837,6 +837,7 @@ public:
     static CarlaPlugin* newGIG(const Initializer& init, const bool use16Outs);
     static CarlaPlugin* newSF2(const Initializer& init, const bool use16Outs);
     static CarlaPlugin* newSFZ(const Initializer& init, const bool use16Outs);
+    static CarlaPlugin* newJuce(const Initializer& init);
 #endif
 
     // -------------------------------------------------------------------

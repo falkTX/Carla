@@ -17,6 +17,8 @@
 
 #include "CarlaPluginInternal.hpp"
 
+#ifdef HAVE_JUCE
+
 #include "JuceHeader.h"
 
 using juce::VSTPluginFormat;
@@ -57,12 +59,17 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JucePlugin)
 };
 
-// -----------------------------------------------------------------------
+CARLA_BACKEND_END_NAMESPACE
 
-CarlaPlugin* CarlaPlugin::newCsound(const Initializer& init)
+#endif
+
+CARLA_BACKEND_START_NAMESPACE
+
+CarlaPlugin* CarlaPlugin::newJuce(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newCsound({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
+    carla_debug("CarlaPlugin::newJuce({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
 
+#ifdef HAVE_JUCE
     JucePlugin* const plugin(new JucePlugin(init.engine, init.id));
 
     //if (! plugin->init(init.filename, init.name, init.label))
@@ -81,6 +88,10 @@ CarlaPlugin* CarlaPlugin::newCsound(const Initializer& init)
     }
 
     return plugin;
+#else
+    init.engine->setLastError("Juce support not available");
+    return nullptr;
+#endif
 }
 
 CARLA_BACKEND_END_NAMESPACE

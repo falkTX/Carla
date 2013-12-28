@@ -80,15 +80,17 @@ endif
 # --------------------------------------------------------------
 # Check for required libs
 
-# liblo always required
 ifneq ($(shell pkg-config --exists liblo && echo true),true)
 $(error liblo missing, cannot continue)
 endif
 
-# Qt always required
-# ifneq ($(shell pkg-config --exists QtCore QtGui QtXml && echo true),true)
-# $(error Qt4 missing, cannot continue)
-# endif
+ifneq ($(shell pkg-config --exists QtCore && echo true),true)
+$(error QtCore missing, cannot continue)
+endif
+
+ifneq ($(shell pkg-config --exists QtXml && echo true),true)
+$(error QtXml missing, cannot continue)
+endif
 
 # --------------------------------------------------------------
 # Check for optional libs (required by backend or bridges)
@@ -101,8 +103,8 @@ HAVE_GTK2         = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3         = $(shell pkg-config --exists gtk+-3.0 && echo true)
 HAVE_OPENGL       = $(shell pkg-config --exists gl && echo true)
 HAVE_PULSEAUDIO   = $(shell pkg-config --exists libpulse-simple && echo true)
-HAVE_QT4          = $(shell pkg-config --exists QtCore QtGui QtXml && echo true)
-HAVE_QT5          = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets Qt5Xml && echo true)
+HAVE_QT4          = $(shell pkg-config --exists QtCore QtGui && echo true)
+HAVE_QT5          = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
 else
 HAVE_OPENGL       = true
 endif

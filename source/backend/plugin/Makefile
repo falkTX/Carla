@@ -8,8 +8,6 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
-
 ifeq ($(HAVE_FLUIDSYNTH),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags fluidsynth)
 endif
@@ -29,9 +27,10 @@ OBJS = \
 	DssiPlugin.cpp.o \
 	Lv2Plugin.cpp.o \
 	VstPlugin.cpp.o \
-	Vst3Plugin.cpp.o \
+	CsoundPlugin.cpp.o \
 	FluidSynthPlugin.cpp.o \
-	LinuxSamplerPlugin.cpp.o
+	LinuxSamplerPlugin.cpp.o \
+	JucePlugin.cpp.o
 
 HEADERS = \
 	../CarlaBackend.h ../CarlaEngine.hpp ../CarlaPlugin.hpp \

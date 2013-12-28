@@ -9,15 +9,18 @@ include ../../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I. -I.. -I../../includes -I../../modules -I../../utils
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
+
 BUILD_CXX_FLAGS += $(QTCORE_FLAGS)
+BUILD_CXX_FLAGS += $(QTXML_FLAGS)
 
 ifeq ($(HAVE_FFMPEG),true)
 BUILD_CXX_FLAGS += -DHAVE_FFMPEG
 endif
 
-ifeq ($(HAVE_JUCE),true)
+# ifeq ($(HAVE_JUCE),true)
 # BUILD_CXX_FLAGS += -DHAVE_JUCE
-endif
+# endif
 
 # --------------------------------------------------------------
 

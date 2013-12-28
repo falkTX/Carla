@@ -15,7 +15,9 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef BUILD_BRIDGE
+#ifdef BUILD_BRIDGE
+# error This file should not be compiled if building bridge
+#endif
 
 #include "CarlaEngineInternal.hpp"
 #include "CarlaStateUtils.hpp"
@@ -761,5 +763,3 @@ void carla_register_native_plugin_carla()
 CARLA_BACKEND_END_NAMESPACE
 
 // -----------------------------------------------------------------------
-
-#endif // ! BUILD_BRIDGE
