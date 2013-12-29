@@ -229,12 +229,19 @@ RTMIDI_FLAGS           += -D__WINDOWS_MM__
 endif
 
 # --------------------------------------------------------------
-# Set Qt4 tools
+# Set Qt tools
 
 ifeq ($(HAVE_QT4),true)
 MOC_QT4 ?= $(shell pkg-config --variable=moc_location QtCore)
 RCC_QT4 ?= $(shell pkg-config --variable=rcc_location QtCore)
 UIC_QT4 ?= $(shell pkg-config --variable=uic_location QtCore)
+endif
+
+# FIXME - use prefix /qt5/bin/moc or something
+ifeq ($(HAVE_QT5),true)
+MOC_QT5 ?= moc
+RCC_QT5 ?= rcc
+UIC_QT5 ?= uic
 endif
 
 # --------------------------------------------------------------

@@ -10,26 +10,27 @@ include ../../Makefile.mk
 
 BUILD_CXX_FLAGS += -I. -I../../includes -I../../utils
 
-QT5_CXX_FLAGS    = $(BUILD_CXX_FLAGS)
-QT5_CXX_FLAGS   += $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
-QT5_LINK_FLAGS  += $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets)
-
 ifeq ($(HAVE_QT4),true)
 QT4_CXX_FLAGS    = $(BUILD_CXX_FLAGS)
 QT4_CXX_FLAGS   += $(shell pkg-config --cflags QtCore QtGui)
 QT4_LINK_FLAGS  += $(shell pkg-config --libs QtCore QtGui)
+QT4_STYLES_DIR   = $(shell pkg-config --variable=libdir QtCore)/qt4/plugins/styles
 endif
 
-QT_STYLES_DIR    = $(shell pkg-config --variable=libdir Qt5Core)/qt5/plugins/styles
+ifeq ($(HAVE_QT5),true)
+QT5_CXX_FLAGS    = $(BUILD_CXX_FLAGS)
+QT5_CXX_FLAGS   += $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
+QT5_LINK_FLAGS  += $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets)
+QT5_STYLES_DIR   = $(shell pkg-config --variable=libdir Qt5Core)/qt5/plugins/styles
+endif
+
+ifeq ($(HAVE_QT4),true)
+SHARED_LINK_FLAGS = $(QT4_LINK_FLAGS)
+else
+SHARED_LINK_FLAGS = $(QT5_LINK_FLAGS)
+endif
 
 # --------------------------------------------------------------
-
-FILES = \
-	moc_CarlaStyle.cpp \
-	moc_CarlaStyleAnimations.cpp \
-	moc_CarlaStylePlugin.cpp \
-	moc_CarlaStylePrivate.cpp \
-	resources.cpp
 
 FILES_qt4 = \
 	moc_CarlaStyle.qt4.cpp \
@@ -38,18 +39,18 @@ FILES_qt4 = \
 	moc_CarlaStylePrivate.qt4.cpp \
 	resources.qt4.cpp
 
-# --------------------------------------------------------------
+FILES_qt5 = \
+	moc_CarlaStyle.qt5.cpp \
+	moc_CarlaStyleAnimations.qt5.cpp \
+	moc_CarlaStylePlugin.qt5.cpp \
+	moc_CarlaStylePrivate.qt5.cpp \
+	resources.qt5.cpp
 
-OBJS = \
-	CarlaStyle.cpp.o \
-	moc_CarlaStyle.cpp.o \
-	moc_CarlaStyleAnimations.cpp.o \
-	moc_CarlaStylePrivate.cpp.o \
-	resources.cpp.o
-
-OBJS_shared = $(OBJS) \
-	CarlaStylePlugin.cpp.o \
-	moc_CarlaStylePlugin.cpp.o
+ifeq ($(HAVE_QT4),true)
+FILES_shared = $(FILES_qt4)
+else
+FILES_shared = $(FILES_qt5)
+endif
 
 # --------------------------------------------------------------
 
@@ -60,33 +61,22 @@ OBJS_qt4 = \
 	moc_CarlaStylePrivate.qt4.cpp.o \
 	resources.qt4.cpp.o
 
-OBJS_posix32 = \
-	CarlaStyle.cpp.posix32.o \
-	moc_CarlaStyle.cpp.posix32.o \
-	moc_CarlaStyleAnimations.cpp.posix32.o \
-	moc_CarlaStylePrivate.cpp.posix32.o \
-	resources.cpp.posix32.o
+OBJS_qt5 = \
+	CarlaStyle.cpp.qt5.o \
+	moc_CarlaStyle.qt5.cpp.o \
+	moc_CarlaStyleAnimations.qt5.cpp.o \
+	moc_CarlaStylePrivate.qt5.cpp.o \
+	resources.qt5.cpp.o
 
-OBJS_posix64 = \
-	CarlaStyle.cpp.posix64.o \
-	moc_CarlaStyle.cpp.posix64.o \
-	moc_CarlaStyleAnimations.cpp.posix64.o \
-	moc_CarlaStylePrivate.cpp.posix64.o \
-	resources.cpp.posix64.o
-
-OBJS_win32 = \
-	CarlaStyle.cpp.win32.o \
-	moc_CarlaStyle.cpp.win32.o \
-	moc_CarlaStyleAnimations.cpp.win32.o \
-	moc_CarlaStylePrivate.cpp.win32.o \
-	resources.cpp.win32.o
-
-OBJS_win64 = \
-	CarlaStyle.cpp.win64.o \
-	moc_CarlaStyle.cpp.win64.o \
-	moc_CarlaStyleAnimations.cpp.win64.o \
-	moc_CarlaStylePrivate.cpp.win64.o \
-	resources.cpp.win64.o
+ifeq ($(HAVE_QT4),true)
+OBJS_shared += $(OBJS_qt4) \
+	CarlaStylePlugin.cpp.qt4.o \
+	moc_CarlaStylePlugin.qt4.cpp.o
+else
+OBJS_shared += $(OBJS_qt5) \
+	CarlaStylePlugin.cpp.qt5.o \
+	moc_CarlaStylePlugin.qt5.cpp.o
+endif
 
 # --------------------------------------------------------------
 
@@ -100,90 +90,62 @@ CARLASTYLE = styles/carlastyle.so
 endif
 endif
 
-all: ../theme.a $(CARLASTYLE)
+all: $(CARLASTYLE)
 
-qt4:     ../theme.qt4.a
-posix32: ../theme.posix32.a
-posix64: ../theme.posix64.a
-win32:   ../theme.win32.a
-win64:   ../theme.win64.a
+qt4: ../theme.qt4.a
+qt5: ../theme.qt5.a
 
 # --------------------------------------------------------------
-
-../theme.a: $(FILES) $(OBJS)
-	$(RM) $@
-	$(AR) crs $@ $(OBJS)
 
 ../theme.qt4.a: $(FILES_qt4) $(OBJS_qt4)
 	$(RM) $@
 	$(AR) crs $@ $(OBJS_qt4)
 
-../theme.posix32.a: $(FILES) $(OBJS_posix32)
+../theme.qt5.a: $(FILES_qt5) $(OBJS_qt5)
 	$(RM) $@
-	$(AR) crs $@ $(OBJS_posix32)
-
-../theme.posix64.a: $(FILES) $(OBJS_posix64)
-	$(RM) $@
-	$(AR) crs $@ $(OBJS_posix64)
-
-../theme.win32.a: $(FILES) $(OBJS_win32)
-	$(RM) $@
-	$(AR) crs $@ $(OBJS_win32)
-
-../theme.win64.a: $(FILES) $(OBJS_win64)
-	$(RM) $@
-	$(AR) crs $@ $(OBJS_win64)
+	$(AR) crs $@ $(OBJS_qt5)
 
 # --------------------------------------------------------------
 
-styles/carlastyle.dll: $(FILES) $(OBJS_shared)
-	$(CXX) $(OBJS_shared) -shared $(QT5_LINK_FLAGS) -o $@
+styles/carlastyle.dll: $(FILES_shared) $(OBJS_shared)
+	$(CXX) $(OBJS_shared) $(SHARED_LINK_FLAGS) -shared -o $@
 
-styles/carlastyle.dynlib: $(FILES) $(OBJS_shared)
-	$(CXX) $(OBJS_shared) -dynamiclib $(QT5_LINK_FLAGS) -o $@
+styles/carlastyle.dynlib: $(FILES_shared) $(OBJS_shared)
+	$(CXX) $(OBJS_shared) $(SHARED_LINK_FLAGS) -dynamiclib -o $@
 
-styles/carlastyle.so: $(FILES) $(OBJS_shared)
-	$(CXX) $(OBJS_shared) -shared $(QT5_LINK_FLAGS) -o $@
+styles/carlastyle.so: $(FILES_shared) $(OBJS_shared)
+	$(CXX) $(OBJS_shared) $(SHARED_LINK_FLAGS) -shared -o $@
 
 # --------------------------------------------------------------
 
 %.qt4.cpp.o: %.qt4.cpp CarlaStyle.hpp moc_CarlaStyle.qt4.cpp
 	$(CXX) $< $(QT4_CXX_FLAGS) -c -o $@
 
+%.qt5.cpp.o: %.qt5.cpp CarlaStyle.hpp moc_CarlaStyle.qt5.cpp
+	$(CXX) $< $(QT5_CXX_FLAGS) -c -o $@
+
 %.cpp.qt4.o: %.cpp CarlaStyle.hpp moc_CarlaStyle.qt4.cpp
 	$(CXX) $< $(QT4_CXX_FLAGS) -c -o $@
 
-%.cpp.posix32.o: %.cpp CarlaStyle.hpp moc_CarlaStyle.cpp
-	$(CXX) $< $(QT5_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
-
-%.cpp.posix64.o: %.cpp CarlaStyle.hpp moc_CarlaStyle.cpp
-	$(CXX) $< $(QT5_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
-
-%.cpp.win32.o: %.cpp CarlaStyle.hpp moc_CarlaStyle.cpp
-	$(CXX) $< $(QT5_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
-
-%.cpp.win64.o: %.cpp CarlaStyle.hpp moc_CarlaStyle.cpp
-	$(CXX) $< $(QT5_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
-
-%.cpp.o: %.cpp CarlaStyle.hpp moc_CarlaStyle.cpp
+%.cpp.qt5.o: %.cpp CarlaStyle.hpp moc_CarlaStyle.qt5.cpp
 	$(CXX) $< $(QT5_CXX_FLAGS) -c -o $@
 
 moc_%.qt4.cpp: %.hpp
 	$(MOC_QT4) $< -o $@
 
-moc_%.cpp: %.hpp
-	$(MOC) -Istyles $< -o $@
-
-resources.cpp: ../../../resources/resources-theme.qrc
-	$(RCC) $< -o $@
+moc_%.qt5.cpp: %.hpp
+	$(MOC_QT5) -Istyles $< -o $@
 
 resources.qt4.cpp: ../../../resources/resources-theme.qrc
 	$(RCC_QT4) $< -o $@
 
+resources.qt5.cpp: ../../../resources/resources-theme.qrc
+	$(RCC_QT5) $< -o $@
+
 # --------------------------------------------------------------
 
 clean:
-	$(RM) *.o ../theme*.a $(CARLASTYLE) $(FILES) $(FILES_qt4)
+	$(RM) *.o ../theme*.a $(CARLASTYLE) $(FILES_qt4) $(FILES_qt5)
 
 debug:
 	$(MAKE) DEBUG=true

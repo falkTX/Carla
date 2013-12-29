@@ -38,9 +38,9 @@ class CarlaApplication(object):
     def __init__(self, appName = "Carla2"):
         object.__init__(self)
 
-        if os.path.exists(os.path.join(CWD, "modules", "theme")):
-            libdir = os.path.join(os.path.join(CWD, "modules", "theme"))
-        else:
+        libdir = os.path.join(CWD, "modules", "theme")
+
+        if not os.path.exists(libdir):
             libdir = CWD
 
         QApplication.addLibraryPath(libdir)

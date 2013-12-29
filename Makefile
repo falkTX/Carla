@@ -14,8 +14,8 @@ DESTDIR =
 SED_PREFIX = $(shell echo $(PREFIX) | sed "s/\//\\\\\\\\\//g")
 
 LINK   = ln -sf
-PYUIC ?= pyuic5
-PYRCC ?= pyrcc5
+PYUIC ?= pyuic4 -w
+PYRCC ?= pyrcc4
 
 # --------------------------------------------------------------
 
