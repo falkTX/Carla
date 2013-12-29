@@ -1854,7 +1854,7 @@ private:
                 if (thisPortId == -1)
                     continue;
 
-                if (const char** connections = jackbridge_port_get_connections(jackPort))
+                if (const char** connections = jackbridge_port_get_all_connections(jackPort))
                 {
                     for (int j=0; connections[j] != nullptr; ++j)
                     {
@@ -1869,7 +1869,7 @@ private:
                     jackbridge_free(connections);
                 }
                 else
-                    carla_stderr("jack_port_get_connections failed for port %s", fullPortName);
+                    carla_stderr("jack_port_get_all_connections failed for port %s", fullPortName);
             }
 
             jackbridge_free(ports);

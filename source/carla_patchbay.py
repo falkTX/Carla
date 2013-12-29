@@ -38,10 +38,10 @@ from carla_widgets import *
 # Try Import OpenGL
 
 try:
-    try:
-        from PyQt5.QtOpenGL import QGLWidget
-    except:
-        from PyQt4.QtOpenGL import QGLWidget
+    #try:
+        #from PyQt5.QtOpenGL import QGLWidget
+    #except:
+    from PyQt4.QtOpenGL import QGLWidget
     hasGL = True
 except:
     hasGL = False

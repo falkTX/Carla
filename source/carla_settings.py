@@ -84,11 +84,11 @@ else:
     CARLA_DEFAULT_AUDIO_DRIVER = "JACK"
 
 if LINUX:
-    CARLA_DEFAULT_PROCESS_MODE   = PROCESS_MODE_MULTIPLE_CLIENTS
-    CARLA_DEFAULT_TRANSPORT_MODE = TRANSPORT_MODE_JACK
+    CARLA_DEFAULT_PROCESS_MODE   = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS
+    CARLA_DEFAULT_TRANSPORT_MODE = ENGINE_TRANSPORT_MODE_JACK
 else:
-    CARLA_DEFAULT_PROCESS_MODE   = PROCESS_MODE_CONTINUOUS_RACK
-    CARLA_DEFAULT_TRANSPORT_MODE = TRANSPORT_MODE_INTERNAL
+    CARLA_DEFAULT_PROCESS_MODE   = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+    CARLA_DEFAULT_TRANSPORT_MODE = ENGINE_TRANSPORT_MODE_INTERNAL
 
 # ------------------------------------------------------------------------------------------------------------
 # ...
@@ -104,10 +104,6 @@ class DriverSettingsW(QDialog):
         QDialog.__init__(self, parent)
         self.ui = ui_carla_settings_driver.Ui_DriverSettingsW()
         self.ui.setupUi(self)
-
-        if driverName == "JACK":
-            print("This dialog is not compatible with JACK")
-            return
 
         # -------------------------------------------------------------
         # Internal stuff
@@ -218,7 +214,7 @@ class CarlaSettingsW(QDialog):
 
         if Carla.host is not None:
             for i in range(Carla.host.get_engine_driver_count()):
-                self.ui.cb_engine_audio_driver.addItem(cString(Carla.host.get_engine_driver_name(i)))
+                self.ui.cb_engine_audio_driver.addItem(Carla.host.get_engine_driver_name(i))
         else:
             self.ui.tb_engine_driver_config.setEnabled(False)
 
@@ -324,11 +320,11 @@ class CarlaSettingsW(QDialog):
             self.ui.cb_engine_audio_driver.setCurrentIndex(-1)
 
         if audioDriver == "JACK":
-            processModeIndex = settings.value(CARLA_KEY_ENGINE_PROCESS_MODE, PROCESS_MODE_MULTIPLE_CLIENTS, type=int)
+            processModeIndex = settings.value(CARLA_KEY_ENGINE_PROCESS_MODE, ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, type=int)
             self.ui.cb_engine_process_mode_jack.setCurrentIndex(processModeIndex)
             self.ui.sw_engine_process_mode.setCurrentIndex(0)
         else:
-            processModeIndex  = settings.value(CARLA_KEY_ENGINE_PROCESS_MODE, PROCESS_MODE_CONTINUOUS_RACK, type=int)
+            processModeIndex  = settings.value(CARLA_KEY_ENGINE_PROCESS_MODE, ENGINE_PROCESS_MODE_CONTINUOUS_RACK, type=int)
             processModeIndex -= self.PROCESS_MODE_NON_JACK_PADDING
             self.ui.cb_engine_process_mode_other.setCurrentIndex(processModeIndex)
             self.ui.sw_engine_process_mode.setCurrentIndex(1)
@@ -517,10 +513,10 @@ class CarlaSettingsW(QDialog):
             self.ui.ch_engine_prefer_plugin_bridges.setChecked(CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES)
 
             if self.ui.cb_engine_audio_driver.currentText() == "JACK":
-                self.ui.cb_engine_process_mode_jack.setCurrentIndex(PROCESS_MODE_MULTIPLE_CLIENTS)
+                self.ui.cb_engine_process_mode_jack.setCurrentIndex(ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
                 self.ui.sw_engine_process_mode.setCurrentIndex(0) # show all modes
             else:
-                self.ui.cb_engine_process_mode_other.setCurrentIndex(PROCESS_MODE_CONTINUOUS_RACK-self.PROCESS_MODE_NON_JACK_PADDING)
+                self.ui.cb_engine_process_mode_other.setCurrentIndex(ENGINE_PROCESS_MODE_CONTINUOUS_RACK-self.PROCESS_MODE_NON_JACK_PADDING)
                 self.ui.sw_engine_process_mode.setCurrentIndex(1) # hide single+multi client modes
 
         elif self.ui.lw_page.currentRow() == self.TAB_INDEX_PATHS:

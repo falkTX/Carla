@@ -75,7 +75,7 @@ if __name__ == '__main__':
     Carla.isControl   = False
     Carla.isLocal     = True
     Carla.isPlugin    = False
-    Carla.processMode = PROCESS_MODE_CONTINUOUS_RACK
+    Carla.processMode = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
 
     initHost(appName, libPrefix)
 

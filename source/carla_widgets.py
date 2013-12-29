@@ -1055,6 +1055,9 @@ class PluginEdit(QDialog):
 
     @pyqtSlot(bool)
     def slot_optionChanged(self, clicked):
+        if Carla.host is None:
+            return
+
         sender = self.sender()
 
         if sender == self.ui.ch_fixed_buffer:
@@ -1082,52 +1085,67 @@ class PluginEdit(QDialog):
 
     @pyqtSlot(int)
     def slot_dryWetChanged(self, value):
-        Carla.host.set_drywet(self.fPluginId, float(value)/1000)
+        if Carla.host is not None:
+            Carla.host.set_drywet(self.fPluginId, float(value)/1000)
 
     @pyqtSlot(int)
     def slot_volumeChanged(self, value):
-        Carla.host.set_volume(self.fPluginId, float(value)/1000)
+        if Carla.host is not None:
+            Carla.host.set_volume(self.fPluginId, float(value)/1000)
 
     @pyqtSlot(int)
     def slot_balanceLeftChanged(self, value):
-        Carla.host.set_balance_left(self.fPluginId, float(value)/1000)
+        if Carla.host is not None:
+            Carla.host.set_balance_left(self.fPluginId, float(value)/1000)
 
     @pyqtSlot(int)
     def slot_balanceRightChanged(self, value):
-        Carla.host.set_balance_right(self.fPluginId, float(value)/1000)
+        if Carla.host is not None:
+            Carla.host.set_balance_right(self.fPluginId, float(value)/1000)
 
     @pyqtSlot(int)
     def slot_panningChanged(self, value):
-        Carla.host.set_panning(self.fPluginId, float(value)/1000)
+        if Carla.host is not None:
+            Carla.host.set_panning(self.fPluginId, float(value)/1000)
 
     @pyqtSlot(int)
     def slot_ctrlChannelChanged(self, value):
         self.fControlChannel = value-1
-        Carla.host.set_ctrl_channel(self.fPluginId, self.fControlChannel)
+
+        if Carla.host is not None:
+            Carla.host.set_ctrl_channel(self.fPluginId, self.fControlChannel)
+
         self.ui.keyboard.allNotesOff()
         self._updateCtrlMidiProgram()
 
     @pyqtSlot(int, float)
     def slot_parameterValueChanged(self, parameterId, value):
-        Carla.host.set_parameter_value(self.fPluginId, parameterId, value)
+        if Carla.host is not None:
+            Carla.host.set_parameter_value(self.fPluginId, parameterId, value)
 
     @pyqtSlot(int, int)
     def slot_parameterMidiControlChanged(self, parameterId, control):
-        Carla.host.set_parameter_midi_cc(self.fPluginId, parameterId, control)
+        if Carla.host is not None:
+            Carla.host.set_parameter_midi_cc(self.fPluginId, parameterId, control)
 
     @pyqtSlot(int, int)
     def slot_parameterMidiChannelChanged(self, parameterId, channel):
-        Carla.host.set_parameter_midi_channel(self.fPluginId, parameterId, channel-1)
+        if Carla.host is not None:
+            Carla.host.set_parameter_midi_channel(self.fPluginId, parameterId, channel-1)
 
     @pyqtSlot(int)
     def slot_programIndexChanged(self, index):
         self.fCurrentProgram = index
-        Carla.host.set_program(self.fPluginId, index)
+
+        if Carla.host is not None:
+            Carla.host.set_program(self.fPluginId, index)
 
     @pyqtSlot(int)
     def slot_midiProgramIndexChanged(self, index):
         self.fCurrentMidiProgram = index
-        Carla.host.set_midi_program(self.fPluginId, index)
+
+        if Carla.host is not None:
+            Carla.host.set_midi_program(self.fPluginId, index)
 
     @pyqtSlot(int)
     def slot_noteOn(self, note):

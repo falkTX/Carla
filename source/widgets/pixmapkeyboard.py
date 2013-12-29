@@ -19,13 +19,13 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-try:
-    from PyQt5.QtCore import pyqtSignal, qCritical, Qt, QPointF, QRectF, QSize
-    from PyQt5.QtGui import QFont, QPainter, QPixmap
-    from PyQt5.QtWidgets import QWidget
-except:
-    from PyQt4.QtCore import pyqtSignal, qCritical, Qt, QPointF, QRectF, QSize
-    from PyQt4.QtGui import QFont, QPainter, QPixmap, QWidget
+#try:
+    #from PyQt5.QtCore import pyqtSignal, qCritical, Qt, QPointF, QRectF, QSize
+    #from PyQt5.QtGui import QFont, QPainter, QPixmap
+    #from PyQt5.QtWidgets import QWidget
+#except:
+from PyQt4.QtCore import pyqtSignal, qCritical, Qt, QPointF, QRectF, QSize
+from PyQt4.QtGui import QFont, QPainter, QPixmap, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 

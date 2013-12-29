@@ -17,24 +17,24 @@
 # For a full copy of the GNU General Public License see the GPL.txt file
 
 # Imports (Global)
-try:
-    from PyQt5.QtCore import pyqtSignal, pyqtSlot, qDebug, qCritical, qFatal, qWarning, Qt, QObject
-    from PyQt5.QtCore import QAbstractAnimation, QLineF, QPointF, QRectF, QSizeF, QSettings, QTimer
-    from PyQt5.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath
-    from PyQt5.QtGui import QCursor, QFont, QFontMetrics
-    from PyQt5.QtSvg import QGraphicsSvgItem, QSvgRenderer
-    from PyQt5.QtWidgets import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem
-    from PyQt5.QtWidgets import QGraphicsColorizeEffect, QGraphicsDropShadowEffect
-    from PyQt5.QtWidgets import QInputDialog, QLineEdit, QMenu
-except:
-    from PyQt4.QtCore import pyqtSignal, pyqtSlot, qDebug, qCritical, qFatal, qWarning, Qt, QObject
-    from PyQt4.QtCore import QAbstractAnimation, QLineF, QPointF, QRectF, QSizeF, QSettings, QTimer
-    from PyQt4.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath
-    from PyQt4.QtGui import QCursor, QFont, QFontMetrics
-    from PyQt4.QtGui import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem
-    from PyQt4.QtGui import QGraphicsColorizeEffect, QGraphicsDropShadowEffect
-    from PyQt4.QtGui import QInputDialog, QLineEdit, QMenu
-    from PyQt4.QtSvg import QGraphicsSvgItem, QSvgRenderer
+#try:
+    #from PyQt5.QtCore import pyqtSignal, pyqtSlot, qDebug, qCritical, qFatal, qWarning, Qt, QObject
+    #from PyQt5.QtCore import QAbstractAnimation, QLineF, QPointF, QRectF, QSizeF, QSettings, QTimer
+    #from PyQt5.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath
+    #from PyQt5.QtGui import QCursor, QFont, QFontMetrics
+    #from PyQt5.QtSvg import QGraphicsSvgItem, QSvgRenderer
+    #from PyQt5.QtWidgets import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem
+    #from PyQt5.QtWidgets import QGraphicsColorizeEffect, QGraphicsDropShadowEffect
+    #from PyQt5.QtWidgets import QInputDialog, QLineEdit, QMenu
+#except:
+from PyQt4.QtCore import pyqtSignal, pyqtSlot, qDebug, qCritical, qFatal, qWarning, Qt, QObject
+from PyQt4.QtCore import QAbstractAnimation, QLineF, QPointF, QRectF, QSizeF, QSettings, QTimer
+from PyQt4.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath
+from PyQt4.QtGui import QCursor, QFont, QFontMetrics
+from PyQt4.QtGui import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem
+from PyQt4.QtGui import QGraphicsColorizeEffect, QGraphicsDropShadowEffect
+from PyQt4.QtGui import QInputDialog, QLineEdit, QMenu
+from PyQt4.QtSvg import QGraphicsSvgItem, QSvgRenderer
 
 # Imports (Theme)
 from patchcanvas_theme import *

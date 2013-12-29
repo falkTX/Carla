@@ -24,7 +24,7 @@
     #from PyQt5.QtGui import QPalette
     #from PyQt5.QtWidgets import QApplication, QFileSystemModel, QMainWindow
 #except:
-from PyQt4.QtCore import QModelIndex, QTimer
+from PyQt4.QtCore import qCritical, QModelIndex, QTimer
 from PyQt4.QtGui import QApplication, QFileSystemModel, QMainWindow, QPalette
 
 # ------------------------------------------------------------------------------------------------------------
@@ -220,7 +220,7 @@ class HostWindow(QMainWindow):
         # Set up GUI (right panel)
 
         self.fDirModel = QFileSystemModel(self)
-        self.fDirModel.setNameFilters(cString(Carla.host.get_supported_file_types()).split(";"))
+        self.fDirModel.setNameFilters(charPtrToString(Carla.host.get_supported_file_extensions()).split(";"))
         self.fDirModel.setRootPath(HOME)
 
         self.ui.fileTreeView.setModel(self.fDirModel)
@@ -357,33 +357,33 @@ class HostWindow(QMainWindow):
 
         if audioDriver == "JACK":
             #transportMode  = settings.value("Engine/TransportMode",       TRANSPORT_MODE_JACK,                 type=int)
-            transportMode   = TRANSPORT_MODE_JACK
+            transportMode   = ENGINE_TRANSPORT_MODE_JACK
         else:
-            transportMode   = TRANSPORT_MODE_INTERNAL
+            transportMode   = ENGINE_TRANSPORT_MODE_INTERNAL
             audioNumPeriods = settings.value("Engine/AudioBufferSize", CARLA_DEFAULT_AUDIO_NUM_PERIODS, type=int)
             audioBufferSize = settings.value("Engine/AudioBufferSize", CARLA_DEFAULT_AUDIO_BUFFER_SIZE, type=int)
             audioSampleRate = settings.value("Engine/AudioSampleRate", CARLA_DEFAULT_AUDIO_SAMPLE_RATE, type=int)
             audioDevice     = settings.value("Engine/AudioDevice",     "",                              type=str)
 
-            Carla.host.set_engine_option(OPTION_AUDIO_NUM_PERIODS, audioNumPeriods, "")
-            Carla.host.set_engine_option(OPTION_AUDIO_BUFFER_SIZE, audioBufferSize, "")
-            Carla.host.set_engine_option(OPTION_AUDIO_SAMPLE_RATE, audioSampleRate, "")
-            Carla.host.set_engine_option(OPTION_AUDIO_DEVICE,   0, audioDevice)
+            Carla.host.set_engine_option(ENGINE_OPTION_AUDIO_NUM_PERIODS, audioNumPeriods, "")
+            Carla.host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, audioBufferSize, "")
+            Carla.host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, audioSampleRate, "")
+            Carla.host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE,   0, audioDevice)
 
-        if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
+        if Carla.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
             forceStereo = True
-        elif Carla.processMode == PROCESS_MODE_MULTIPLE_CLIENTS and LADISH_APP_NAME:
+        elif Carla.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS and LADISH_APP_NAME:
             print("LADISH detected but using multiple clients (not allowed), forcing single client now")
-            Carla.processMode = PROCESS_MODE_SINGLE_CLIENT
+            Carla.processMode = ENGINE_PROCESS_MODE_SINGLE_CLIENT
 
-        Carla.host.set_engine_option(OPTION_FORCE_STEREO,          forceStereo,         "")
-        Carla.host.set_engine_option(OPTION_PREFER_PLUGIN_BRIDGES, preferPluginBridges, "")
-        Carla.host.set_engine_option(OPTION_PREFER_UI_BRIDGES,     preferUiBridges,     "")
-        Carla.host.set_engine_option(OPTION_UIS_ALWAYS_ON_TOP,     uisAlwaysOnTop,      "")
-        Carla.host.set_engine_option(OPTION_UI_BRIDGES_TIMEOUT,    uiBridgesTimeout,    "")
-        Carla.host.set_engine_option(OPTION_PROCESS_MODE,          Carla.processMode,   "")
-        Carla.host.set_engine_option(OPTION_MAX_PARAMETERS,        Carla.maxParameters, "")
-        Carla.host.set_engine_option(OPTION_TRANSPORT_MODE,        transportMode,       "")
+        Carla.host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,          forceStereo,         "")
+        Carla.host.set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, preferPluginBridges, "")
+        Carla.host.set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     preferUiBridges,     "")
+        Carla.host.set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     uisAlwaysOnTop,      "")
+        Carla.host.set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    uiBridgesTimeout,    "")
+        Carla.host.set_engine_option(ENGINE_OPTION_PROCESS_MODE,          Carla.processMode,   "")
+        Carla.host.set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        Carla.maxParameters, "")
+        Carla.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE,        transportMode,       "")
 
         return audioDriver
 
@@ -395,7 +395,7 @@ class HostWindow(QMainWindow):
                 #self.fFirstEngineInit = False
                 #return
 
-            audioError = cString(Carla.host.get_last_error())
+            audioError = Carla.host.get_last_error()
 
             if audioError:
                 QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s', possible reasons:\n%s" % (audioDriver, audioError)))
@@ -425,7 +425,7 @@ class HostWindow(QMainWindow):
             self.fContainer.removeAllPlugins()
 
         if Carla.host.is_engine_running() and not Carla.host.engine_close():
-            print(cString(Carla.host.get_last_error()))
+            print(Carla.host.get_last_error())
 
         self.fBufferSize = 0
         self.fSampleRate = 0.0
@@ -441,7 +441,7 @@ class HostWindow(QMainWindow):
     # -----------------------------------------------------------------
     # Internal stuff (plugins)
 
-    def getExtraStuff(self, plugin):
+    def getExtraPtr(self, plugin):
         ptype = plugin['type']
 
         if ptype == PLUGIN_LADSPA:
@@ -461,7 +461,7 @@ class HostWindow(QMainWindow):
                 addr = addressof(int1)
                 return cast(addr, INTPOINTER)
 
-        return c_nullptr
+        return None
 
     def maybeLoadRDFs(self):
         if not self.fLadspaRdfNeedsUpdate:
@@ -783,10 +783,10 @@ class HostWindow(QMainWindow):
         ptype    = dialog.fRetPlugin['type']
         filename = dialog.fRetPlugin['binary']
         label    = dialog.fRetPlugin['label']
-        extraStuff = self.getExtraStuff(dialog.fRetPlugin)
+        extraPtr = self.getExtraPtr(dialog.fRetPlugin)
 
-        if not Carla.host.add_plugin(btype, ptype, filename, None, label, c_nullptr):
-            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"), cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
+        if not Carla.host.add_plugin(btype, ptype, filename, None, label, extraPtr):
+            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"), charPtrToString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
             return
 
     @pyqtSlot()
@@ -895,7 +895,7 @@ class HostWindow(QMainWindow):
         if not Carla.host.load_filename(filename):
             CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
                              self.tr("Failed to load file"),
-                             cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
+                             Carla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
     # -----------------------------------------------------------------
 
@@ -1018,77 +1018,77 @@ def EngineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
     if pluginId < 0 or not Carla.gui:
         return
 
-    if action == CALLBACK_DEBUG:
-        Carla.gui.DebugCallback.emit(pluginId, value1, value2, value3, cString(valueStr))
-    elif action == CALLBACK_PLUGIN_ADDED:
+    if action == ENGINE_CALLBACK_DEBUG:
+        Carla.gui.DebugCallback.emit(pluginId, value1, value2, value3, charPtrToString(valueStr))
+    elif action == ENGINE_CALLBACK_PLUGIN_ADDED:
         Carla.gui.PluginAddedCallback.emit(pluginId)
-    elif action == CALLBACK_PLUGIN_REMOVED:
+    elif action == ENGINE_CALLBACK_PLUGIN_REMOVED:
         Carla.gui.PluginRemovedCallback.emit(pluginId)
-    elif action == CALLBACK_PLUGIN_RENAMED:
+    elif action == ENGINE_CALLBACK_PLUGIN_RENAMED:
         Carla.gui.PluginRenamedCallback.emit(pluginId, valueStr)
-    elif action == CALLBACK_PARAMETER_VALUE_CHANGED:
+    elif action == ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
         Carla.gui.ParameterValueChangedCallback.emit(pluginId, value1, value3)
-    elif action == CALLBACK_PARAMETER_DEFAULT_CHANGED:
+    elif action == ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
         Carla.gui.ParameterDefaultChangedCallback.emit(pluginId, value1, value3)
-    elif action == CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
+    elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
         Carla.gui.ParameterMidiChannelChangedCallback.emit(pluginId, value1, value2)
-    elif action == CALLBACK_PARAMETER_MIDI_CC_CHANGED:
+    elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
         Carla.gui.ParameterMidiCcChangedCallback.emit(pluginId, value1, value2)
-    elif action == CALLBACK_PROGRAM_CHANGED:
+    elif action == ENGINE_CALLBACK_PROGRAM_CHANGED:
         Carla.gui.ProgramChangedCallback.emit(pluginId, value1)
-    elif action == CALLBACK_MIDI_PROGRAM_CHANGED:
+    elif action == ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
         Carla.gui.MidiProgramChangedCallback.emit(pluginId, value1)
-    elif action == CALLBACK_NOTE_ON:
+    elif action == ENGINE_CALLBACK_NOTE_ON:
         Carla.gui.NoteOnCallback.emit(pluginId, value1, value2, value3)
-    elif action == CALLBACK_NOTE_OFF:
+    elif action == ENGINE_CALLBACK_NOTE_OFF:
         Carla.gui.NoteOffCallback.emit(pluginId, value1, value2)
-    elif action == CALLBACK_SHOW_GUI:
+    elif action == ENGINE_CALLBACK_UI_STATE_CHANGED:
         Carla.gui.ShowGuiCallback.emit(pluginId, value1)
-    elif action == CALLBACK_UPDATE:
+    elif action == ENGINE_CALLBACK_UPDATE:
         Carla.gui.UpdateCallback.emit(pluginId)
-    elif action == CALLBACK_RELOAD_INFO:
+    elif action == ENGINE_CALLBACK_RELOAD_INFO:
         Carla.gui.ReloadInfoCallback.emit(pluginId)
-    elif action == CALLBACK_RELOAD_PARAMETERS:
+    elif action == ENGINE_CALLBACK_RELOAD_PARAMETERS:
         Carla.gui.ReloadParametersCallback.emit(pluginId)
-    elif action == CALLBACK_RELOAD_PROGRAMS:
+    elif action == ENGINE_CALLBACK_RELOAD_PROGRAMS:
         Carla.gui.ReloadProgramsCallback.emit(pluginId)
-    elif action == CALLBACK_RELOAD_ALL:
+    elif action == ENGINE_CALLBACK_RELOAD_ALL:
         Carla.gui.ReloadAllCallback.emit(pluginId)
-    elif action == CALLBACK_PATCHBAY_CLIENT_ADDED:
-        Carla.gui.PatchbayClientAddedCallback.emit(value1, cString(valueStr))
-    elif action == CALLBACK_PATCHBAY_CLIENT_REMOVED:
-        Carla.gui.PatchbayClientRemovedCallback.emit(value1, cString(valueStr))
-    elif action == CALLBACK_PATCHBAY_CLIENT_RENAMED:
-        Carla.gui.PatchbayClientRenamedCallback.emit(value1, cString(valueStr))
-    elif action == CALLBACK_PATCHBAY_PORT_ADDED:
-        Carla.gui.PatchbayPortAddedCallback.emit(value1, value2, int(value3), cString(valueStr))
-    elif action == CALLBACK_PATCHBAY_PORT_REMOVED:
-        Carla.gui.PatchbayPortRemovedCallback.emit(value1, value2, cString(valueStr))
-    elif action == CALLBACK_PATCHBAY_PORT_RENAMED:
-        Carla.gui.PatchbayPortRenamedCallback.emit(value1, value2, cString(valueStr))
-    elif action == CALLBACK_PATCHBAY_CONNECTION_ADDED:
+    elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED:
+        Carla.gui.PatchbayClientAddedCallback.emit(value1, charPtrToString(valueStr))
+    elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED:
+        Carla.gui.PatchbayClientRemovedCallback.emit(value1, charPtrToString(valueStr))
+    elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED:
+        Carla.gui.PatchbayClientRenamedCallback.emit(value1, charPtrToString(valueStr))
+    elif action == ENGINE_CALLBACK_PATCHBAY_PORT_ADDED:
+        Carla.gui.PatchbayPortAddedCallback.emit(value1, value2, int(value3), charPtrToString(valueStr))
+    elif action == ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED:
+        Carla.gui.PatchbayPortRemovedCallback.emit(value1, value2, charPtrToString(valueStr))
+    elif action == ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED:
+        Carla.gui.PatchbayPortRenamedCallback.emit(value1, value2, charPtrToString(valueStr))
+    elif action == ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED:
         Carla.gui.PatchbayConnectionAddedCallback.emit(value1, value2, value3)
-    elif action == CALLBACK_PATCHBAY_CONNECTION_REMOVED:
+    elif action == ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED:
         Carla.gui.PatchbayConnectionRemovedCallback.emit(value1)
-    elif action == CALLBACK_PATCHBAY_ICON_CHANGED:
-        Carla.gui.PatchbayIconChangedCallback.emit(value1, cString(valueStr))
-    elif action == CALLBACK_BUFFER_SIZE_CHANGED:
+    #elif action == ENGINE_CALLBACK_PATCHBAY_ICON_CHANGED:
+        #Carla.gui.PatchbayIconChangedCallback.emit(value1, charPtrToString(valueStr))
+    elif action == ENGINE_CALLBACK_BUFFER_SIZE_CHANGED:
         Carla.gui.BufferSizeChangedCallback.emit(value1)
-    elif action == CALLBACK_SAMPLE_RATE_CHANGED:
+    elif action == ENGINE_CALLBACK_SAMPLE_RATE_CHANGED:
         Carla.gui.SampleRateChangedCallback.emit(value3)
-    elif action == CALLBACK_PROCESS_MODE_CHANGED:
+    elif action == ENGINE_CALLBACK_PROCESS_MODE_CHANGED:
         Carla.gui.ProcessModeChangedCallback.emit(value1)
-    elif action == CALLBACK_ENGINE_STARTED:
-        Carla.gui.EngineStartedCallback.emit(cString(valueStr))
-    elif action == CALLBACK_ENGINE_STOPPED:
+    elif action == ENGINE_CALLBACK_ENGINE_STARTED:
+        Carla.gui.EngineStartedCallback.emit(charPtrToString(valueStr))
+    elif action == ENGINE_CALLBACK_ENGINE_STOPPED:
         Carla.gui.EngineStoppedChangedCallback.emit()
-    elif action == CALLBACK_NSM_ANNOUNCE:
-        Carla.gui.NSM_AnnounceCallback.emit(cString(valueStr))
-    elif action == CALLBACK_NSM_OPEN:
-        Carla.gui.NSM_OpenCallback.emit(cString(valueStr))
-    elif action == CALLBACK_NSM_SAVE:
-        Carla.gui.NSM_SaveCallback.emit()
-    elif action == CALLBACK_ERROR:
-        Carla.gui.ErrorCallback.emit(cString(valueStr))
-    elif action == CALLBACK_QUIT:
+    #elif action == CALLBACK_NSM_ANNOUNCE:
+        #Carla.gui.NSM_AnnounceCallback.emit(charPtrToString(valueStr))
+    #elif action == CALLBACK_NSM_OPEN:
+        #Carla.gui.NSM_OpenCallback.emit(charPtrToString(valueStr))
+    #elif action == CALLBACK_NSM_SAVE:
+        #Carla.gui.NSM_SaveCallback.emit()
+    elif action == ENGINE_CALLBACK_ERROR:
+        Carla.gui.ErrorCallback.emit(charPtrToString(valueStr))
+    elif action == ENGINE_CALLBACK_QUIT:
         Carla.gui.QuitCallback.emit()
