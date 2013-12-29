@@ -167,39 +167,25 @@ struct EngineControlEvent {
     EngineControlEventType type; //!< Control-Event type.
     uint16_t param;              //!< Parameter Id, midi bank or midi program.
     float    value;              //!< Parameter value, normalized to 0.0f<->1.0f.
-
-    /*!
-     * Clear data.
-     */
-    void clear() noexcept
-    {
-        type  = kEngineControlEventTypeNull;
-        param = 0;
-        value = 0.0f;
-    }
 };
 
 /*!
  * Engine MIDI event.
  */
 struct EngineMidiEvent {
-    static const uint8_t kDataSize = 4; //!< Size of data
+    static const uint8_t kDataSize = 4; //!< Size of internal data
 
-    uint8_t port;            //!< Port offset (usually 0)
-    uint8_t size;            //!< Number of bytes used
-    uint8_t data[kDataSize]; //!< MIDI data, without channel bit
+    uint8_t port; //!< Port offset (usually 0)
+    uint8_t size; //!< Number of bytes used
 
     /*!
-     * Clear data.
+     * MIDI data, without channel bit.
+     * If size > kDataSize, dataExt is used.
      */
-    void clear() noexcept
-    {
-        port = 0;
-        size = 0;
-
-        for (uint8_t i=0; i < kDataSize; ++i)
-            data[i] = 0;
-    }
+    union {
+        uint8_t  data[kDataSize];
+        uint8_t* dataExt;
+    };
 };
 
 /*!
@@ -218,15 +204,7 @@ struct EngineEvent {
         EngineMidiEvent midi;
     };
 
-    /*!
-     * Clear data.
-     */
-    void clear() noexcept
-    {
-        type = kEngineEventTypeNull;
-        time = 0;
-        channel = 0;
-    }
+    void fillFromMidiData(const uint8_t size, uint8_t* const data);
 };
 
 /*!

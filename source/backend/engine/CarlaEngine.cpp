@@ -50,7 +50,102 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 // Fallback data
 
-static EngineEvent kFallbackEngineEvent;
+static const EngineEvent kFallbackEngineEvent = { kEngineEventTypeNull, 0, 0, { kEngineControlEventTypeNull, 0, 0.0f } };
+
+// -----------------------------------------------------------------------
+
+void EngineEvent::fillFromMidiData(const uint8_t size, uint8_t* const data)
+{
+    // get channel
+    channel = MIDI_GET_CHANNEL_FROM_DATA(data);
+
+    // get status
+    const uint8_t midiStatus(MIDI_GET_STATUS_FROM_DATA(data));
+
+    // remove channel bit from data
+    data[0] = midiStatus;
+
+    if (midiStatus == MIDI_STATUS_CONTROL_CHANGE)
+    {
+        type = kEngineEventTypeControl;
+
+        const uint8_t midiControl(data[1]);
+
+        if (MIDI_IS_CONTROL_BANK_SELECT(midiControl))
+        {
+            CARLA_SAFE_ASSERT_INT(size == 3, size);
+
+            const uint8_t midiBank(data[2]);
+
+            ctrl.type  = kEngineControlEventTypeMidiBank;
+            ctrl.param = midiBank;
+            ctrl.value = 0.0f;
+        }
+        else if (midiControl == MIDI_CONTROL_ALL_SOUND_OFF)
+        {
+            CARLA_SAFE_ASSERT_INT(size == 2, size);
+
+            ctrl.type  = kEngineControlEventTypeAllSoundOff;
+            ctrl.param = 0;
+            ctrl.value = 0.0f;
+        }
+        else if (midiControl == MIDI_CONTROL_ALL_NOTES_OFF)
+        {
+            CARLA_SAFE_ASSERT_INT(size == 2, size);
+
+            ctrl.type  = kEngineControlEventTypeAllNotesOff;
+            ctrl.param = 0;
+            ctrl.value = 0.0f;
+        }
+        else
+        {
+            CARLA_SAFE_ASSERT_INT2(size == 3, size, midiControl);
+
+            const uint8_t midiValue(data[2]);
+
+            ctrl.type  = kEngineControlEventTypeParameter;
+            ctrl.param = midiControl;
+            ctrl.value = float(midiValue)/127.0f;
+        }
+    }
+    else if (midiStatus == MIDI_STATUS_PROGRAM_CHANGE)
+    {
+        CARLA_SAFE_ASSERT_INT2(size == 2, size, data[1]);
+
+        type = kEngineEventTypeControl;
+
+        const uint8_t midiProgram(data[1]);
+
+        ctrl.type  = kEngineControlEventTypeMidiProgram;
+        ctrl.param = midiProgram;
+        ctrl.value = 0.0f;
+    }
+    else
+    {
+        type = kEngineEventTypeMidi;
+
+        midi.port = 0;
+        midi.size = size;
+
+        if (size > EngineMidiEvent::kDataSize)
+        {
+            midi.dataExt = data;
+            std::memset(midi.data, 0, sizeof(uint8_t)*EngineMidiEvent::kDataSize);
+        }
+        else
+        {
+            midi.data[0] = midiStatus;
+
+            uint8_t i=1;
+            for (; i < midi.size; ++i)
+                midi.data[i] = data[i];
+            for (; i < EngineMidiEvent::kDataSize; ++i)
+                midi.data[i] = 0;
+
+            midi.dataExt = nullptr;
+        }
+    }
+}
 
 // -----------------------------------------------------------------------
 // Carla Engine port (Abstract)
@@ -143,14 +238,6 @@ CarlaEngineEventPort::CarlaEngineEventPort(const CarlaEngine& engine, const bool
       fProcessMode(engine.getProccessMode())
 {
     carla_debug("CarlaEngineEventPort::CarlaEngineEventPort(%s)", bool2str(isInput));
-
-    static bool sFallbackEngineEventNeedsInit = true;
-
-    if (sFallbackEngineEventNeedsInit)
-    {
-        kFallbackEngineEvent.clear();
-        sFallbackEngineEventNeedsInit = false;
-    }
 
     if (fProcessMode == ENGINE_PROCESS_MODE_PATCHBAY)
         fBuffer = new EngineEvent[kEngineMaxInternalEventCount];
@@ -272,8 +359,11 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
 
         event.midi.data[0] = MIDI_GET_STATUS_FROM_DATA(data);
 
-        for (uint8_t j=1; j < size; ++j)
+        uint8_t j=1;
+        for (; j < size; ++j)
             event.midi.data[j] = data[j];
+        for (; j < EngineMidiEvent::kDataSize; ++j)
+            event.midi.data[j] = 0;
 
         return true;
     }

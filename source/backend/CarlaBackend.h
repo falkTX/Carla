@@ -1136,20 +1136,6 @@ typedef struct {
      */
     uint8_t midiChannel;
 
-#ifdef __cplusplus
-    /*!
-     * Clear data.
-     */
-    void clear() noexcept
-    {
-        type   = PARAMETER_UNKNOWN;
-        hints  = 0x0;
-        index  = PARAMETER_NULL;
-        rindex = -1;
-        midiCC =-1;
-        midiChannel = 0;
-    }
-#endif
 } ParameterData;
 
 /*!
@@ -1187,19 +1173,6 @@ typedef struct {
     float stepLarge;
 
 #ifdef __cplusplus
-    /*!
-     * Clear data.
-     */
-    void clear() noexcept
-    {
-        def  = 0.0f;
-        min  = 0.0f;
-        max  = 1.0f;
-        step = 0.01f;
-        stepSmall = 0.0001f;
-        stepLarge = 0.1f;
-    }
-
     /*!
      * Fix default value within range.
      */
@@ -1294,17 +1267,6 @@ typedef struct {
      */
     const char* name;
 
-#ifdef __cplusplus
-    /*!
-     * Clear data.
-     */
-    void clear() noexcept
-    {
-        bank    = 0;
-        program = 0;
-        name    = nullptr;
-    }
-#endif
 } MidiProgramData;
 
 /*!
@@ -1328,17 +1290,6 @@ typedef struct {
      */
     const char* value;
 
-#ifdef __cplusplus
-    /*!
-     * Clear data.
-     */
-    void clear() noexcept
-    {
-        type  = nullptr;
-        key   = nullptr;
-        value = nullptr;
-    }
-#endif
 } CustomData;
 
 /*!

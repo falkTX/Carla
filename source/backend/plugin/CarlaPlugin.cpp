@@ -29,10 +29,10 @@ CARLA_BACKEND_START_NAMESPACE
 // -------------------------------------------------------------------
 // Fallback data
 
-static ParameterData   kParameterDataNull;
-static ParameterRanges kParameterRangesNull;
-static MidiProgramData kMidiProgramDataNull;
-static CustomData      kCustomDataNull;
+static const ParameterData   kParameterDataNull   = { PARAMETER_UNKNOWN, 0x0, PARAMETER_NULL, -1, -1, 0 };
+static const ParameterRanges kParameterRangesNull = { 0.0f, 0.0f, 1.0f, 0.01f, 0.0001f, 0.1f };
+static const MidiProgramData kMidiProgramDataNull = { 0, 0, nullptr };
+static const CustomData      kCustomDataNull      = { nullptr, nullptr, nullptr };
 
 static bool gIsLoadingProject = false;
 
@@ -228,17 +228,6 @@ CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
     CARLA_ASSERT(id < engine->getMaxPluginNumber());
     CARLA_ASSERT(id == engine->getCurrentPluginCount());
     carla_debug("CarlaPlugin::CarlaPlugin(%p, %i)", engine, id);
-
-    static bool sFallbackDataNeedsInit = true;
-
-    if (sFallbackDataNeedsInit)
-    {
-        kParameterDataNull.clear();
-        kParameterRangesNull.clear();
-        kMidiProgramDataNull.clear();
-        kCustomDataNull.clear();
-        sFallbackDataNeedsInit = false;
-    }
 
     switch (engine->getProccessMode())
     {

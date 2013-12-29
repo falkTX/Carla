@@ -1240,9 +1240,9 @@ const ParameterData* carla_get_parameter_data(uint pluginId, uint32_t parameterI
 {
     carla_debug("carla_get_parameter_data(%i, %i)", pluginId, parameterId);
 
-    static ParameterData fallbackParamData;
+    static const ParameterData fallbackParameterData = { CB::PARAMETER_UNKNOWN, 0x0, CB::PARAMETER_NULL, -1, -1, 0 };
 
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &fallbackParamData);
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &fallbackParameterData);
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
     {
@@ -1250,18 +1250,18 @@ const ParameterData* carla_get_parameter_data(uint pluginId, uint32_t parameterI
             return &plugin->getParameterData(parameterId);
 
         carla_stderr2("carla_get_parameter_data(%i, %i) - parameterId out of bounds", pluginId, parameterId);
-        return &fallbackParamData;
+        return &fallbackParameterData;
     }
 
     carla_stderr2("carla_get_parameter_data(%i, %i) - could not find plugin", pluginId, parameterId);
-    return &fallbackParamData;
+    return &fallbackParameterData;
 }
 
 const ParameterRanges* carla_get_parameter_ranges(uint pluginId, uint32_t parameterId)
 {
     carla_debug("carla_get_parameter_ranges(%i, %i)", pluginId, parameterId);
 
-    static ParameterRanges fallbackParamRanges;
+    static const ParameterRanges fallbackParamRanges = { 0.0f, 0.0f, 1.0f, 0.01f, 0.0001f, 0.1f };
 
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &fallbackParamRanges);
 
@@ -1282,7 +1282,7 @@ const MidiProgramData* carla_get_midi_program_data(uint pluginId, uint32_t midiP
 {
     carla_debug("carla_get_midi_program_data(%i, %i)", pluginId, midiProgramId);
 
-    static MidiProgramData fallbackMidiProgData;
+    static const MidiProgramData fallbackMidiProgData = { 0, 0, nullptr };
 
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &fallbackMidiProgData);
 
@@ -1303,7 +1303,7 @@ const CustomData* carla_get_custom_data(uint pluginId, uint32_t customDataId)
 {
     carla_debug("carla_get_custom_data(%i, %i)", pluginId, customDataId);
 
-    static CustomData fallbackCustomData;
+    static const CustomData fallbackCustomData = { nullptr, nullptr, nullptr };
 
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &fallbackCustomData);
 

@@ -313,14 +313,6 @@ typedef struct _CarlaPortCountInfo {
      */
     uint32_t outs;
 
-#ifdef __cplusplus
-    /*!
-     * C++ constructor.
-     */
-    _CarlaPortCountInfo() noexcept
-        : ins(0),
-          outs(0) {}
-#endif
 } CarlaPortCountInfo;
 
 /*!

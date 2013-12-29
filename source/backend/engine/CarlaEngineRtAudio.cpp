@@ -887,15 +887,8 @@ protected:
 
             while (! fMidiInEvents.data.isEmpty())
             {
-                const RtMidiEvent& midiEvent(fMidiInEvents.data.getFirst(true));
-
+                RtMidiEvent& midiEvent(fMidiInEvents.data.getFirst(true));
                 EngineEvent& engineEvent(pData->bufEvents.in[engineEventIndex++]);
-                engineEvent.clear();
-
-                const uint8_t midiStatus  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
-                const uint8_t midiChannel = MIDI_GET_CHANNEL_FROM_DATA(midiEvent.data);
-
-                engineEvent.channel = midiChannel;
 
                 if (midiEvent.time < pData->timeInfo.frame)
                 {
@@ -909,59 +902,7 @@ protected:
                 else
                     engineEvent.time = midiEvent.time - pData->timeInfo.frame;
 
-                if (MIDI_IS_STATUS_CONTROL_CHANGE(midiStatus))
-                {
-                    const uint8_t midiControl = midiEvent.data[1];
-                    engineEvent.type          = kEngineEventTypeControl;
-
-                    if (MIDI_IS_CONTROL_BANK_SELECT(midiControl))
-                    {
-                        const uint8_t midiBank  = midiEvent.data[2];
-
-                        engineEvent.ctrl.type  = kEngineControlEventTypeMidiBank;
-                        engineEvent.ctrl.param = midiBank;
-                        engineEvent.ctrl.value = 0.0f;
-                    }
-                    else if (midiControl == MIDI_CONTROL_ALL_SOUND_OFF)
-                    {
-                        engineEvent.ctrl.type  = kEngineControlEventTypeAllSoundOff;
-                        engineEvent.ctrl.param = 0;
-                        engineEvent.ctrl.value = 0.0f;
-                    }
-                    else if (midiControl == MIDI_CONTROL_ALL_NOTES_OFF)
-                    {
-                        engineEvent.ctrl.type  = kEngineControlEventTypeAllNotesOff;
-                        engineEvent.ctrl.param = 0;
-                        engineEvent.ctrl.value = 0.0f;
-                    }
-                    else
-                    {
-                        const uint8_t midiValue = midiEvent.data[2];
-
-                        engineEvent.ctrl.type  = kEngineControlEventTypeParameter;
-                        engineEvent.ctrl.param = midiControl;
-                        engineEvent.ctrl.value = float(midiValue)/127.0f;
-                    }
-                }
-                else if (MIDI_IS_STATUS_PROGRAM_CHANGE(midiStatus))
-                {
-                    const uint8_t midiProgram = midiEvent.data[1];
-                    engineEvent.type          = kEngineEventTypeControl;
-
-                    engineEvent.ctrl.type  = kEngineControlEventTypeMidiProgram;
-                    engineEvent.ctrl.param = midiProgram;
-                    engineEvent.ctrl.value = 0.0f;
-                }
-                else
-                {
-                    engineEvent.type = kEngineEventTypeMidi;
-
-                    engineEvent.midi.data[0] = midiStatus;
-                    engineEvent.midi.data[1] = midiEvent.data[1];
-                    engineEvent.midi.data[2] = midiEvent.data[2];
-                    engineEvent.midi.data[3] = midiEvent.data[3];
-                    engineEvent.midi.size    = midiEvent.size;
-                }
+                engineEvent.fillFromMidiData(midiEvent.size, midiEvent.data);
 
                 if (engineEventIndex >= kEngineMaxInternalEventCount)
                     break;
@@ -1124,7 +1065,7 @@ protected:
         const size_t messageSize = message->size();
         static uint32_t lastTime = 0;
 
-        if (messageSize == 0 || messageSize > 4)
+        if (messageSize == 0 || messageSize > EngineMidiEvent::kDataSize)
             return;
 
         timeStamp /= 2;
@@ -1142,38 +1083,13 @@ protected:
         else
             lastTime = midiEvent.time;
 
-        if (messageSize == 1)
-        {
-            midiEvent.data[0] = message->at(0);
-            midiEvent.data[1] = 0;
-            midiEvent.data[2] = 0;
-            midiEvent.data[3] = 0;
-            midiEvent.size    = 1;
-        }
-        else if (messageSize == 2)
-        {
-            midiEvent.data[0] = message->at(0);
-            midiEvent.data[1] = message->at(1);
-            midiEvent.data[2] = 0;
-            midiEvent.data[3] = 0;
-            midiEvent.size    = 2;
-        }
-        else if (messageSize == 3)
-        {
-            midiEvent.data[0] = message->at(0);
-            midiEvent.data[1] = message->at(1);
-            midiEvent.data[2] = message->at(2);
-            midiEvent.data[3] = 0;
-            midiEvent.size    = 3;
-        }
-        else
-        {
-            midiEvent.data[0] = message->at(0);
-            midiEvent.data[1] = message->at(1);
-            midiEvent.data[2] = message->at(2);
-            midiEvent.data[3] = message->at(3);
-            midiEvent.size    = 4;
-        }
+        midiEvent.size = messageSize;
+
+        size_t i=0;
+        for (; i < messageSize; ++i)
+            midiEvent.data[i] = message->at(i);
+        for (; i < EngineMidiEvent::kDataSize; ++i)
+            midiEvent.data[i] = 0;
 
         fMidiInEvents.append(midiEvent);
     }
@@ -1337,8 +1253,8 @@ private:
 
     struct RtMidiEvent {
         uint32_t time;
-        unsigned char data[4];
-        unsigned char size;
+        uint8_t  size;
+        uint8_t  data[EngineMidiEvent::kDataSize];
     };
 
     struct RtMidiEvents {
