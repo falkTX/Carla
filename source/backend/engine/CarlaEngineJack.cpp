@@ -22,13 +22,13 @@
 #include "List.hpp"
 #include "jackbridge/JackBridge.hpp"
 
-#include <cmath>
-#include <QtCore/QStringList>
-
 #ifdef HAVE_JUCE
 # include "juce_audio_basics.h"
 using juce::FloatVectorOperations;
 #endif
+
+#include <cmath>
+#include <QtCore/QStringList>
 
 #define URI_CANVAS_ICON "http://kxstudio.sf.net/ns/canvas/icon"
 
@@ -1960,11 +1960,11 @@ private:
                 bool portIsCV    = (jackPortFlags & JackPortIsControlVoltage);
 
                 unsigned int canvasPortFlags = 0x0;
-                canvasPortFlags |= portIsInput ? PATCHBAY_PORT_IS_INPUT : PATCHBAY_PORT_IS_OUTPUT;
-                canvasPortFlags |= portIsAudio ? PATCHBAY_PORT_IS_AUDIO : PATCHBAY_PORT_IS_MIDI;
+                canvasPortFlags |= portIsInput ? PATCHBAY_PORT_IS_INPUT : 0x0;
+                canvasPortFlags |= portIsAudio ? PATCHBAY_PORT_TYPE_AUDIO : PATCHBAY_PORT_TYPE_MIDI;
 
                 if (portIsAudio && portIsCV)
-                    canvasPortFlags |= PATCHBAY_PORT_IS_CV;
+                    canvasPortFlags |= PATCHBAY_PORT_TYPE_CV;
 
                 PortNameToId portNameToId(groupId, fLastPortId++, portName, fullPortName);
                 fUsedPortNames.append(portNameToId);

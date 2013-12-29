@@ -22,9 +22,11 @@
 #include "CarlaEngineInternal.hpp"
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMIDI.h"
-#include "RtList.hpp"
 
-#include "juce_audio_basics.h"
+// #include "RtList.hpp"
+
+#include "juce_audio_devices.h"
+using namespace juce;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -33,12 +35,23 @@ CARLA_BACKEND_START_NAMESPACE
 #endif
 
 // -------------------------------------------------------------------------------------------------------------------
-// Juce Engine
 
 static const char** gRetNames = nullptr;
+static OwnedArray<AudioIODeviceType> gJuceDeviceTypes;
+
+static void initJuceDevices()
+{
+    static AudioDeviceManager manager;
+
+    if (gJuceDeviceTypes.size() == 0)
+        manager.createAudioDeviceTypes(gJuceDeviceTypes);
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+// Juce Engine
 
 class CarlaEngineJuce : public CarlaEngine/*,
-                        public juce::AudioIODeviceCallback*/
+                        public AudioIODeviceCallback*/
 {
 public:
     CarlaEngineJuce()
@@ -121,7 +134,7 @@ protected:
 private:
     //juce::AudioIODeviceType* fDeviceType;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJuce)
+    //JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJuce)
 };
 
 // -----------------------------------------
@@ -133,52 +146,136 @@ CarlaEngine* CarlaEngine::newJuce(const AudioApi /*api*/)
 
 size_t CarlaEngine::getJuceApiCount()
 {
-    return 0;
+    initJuceDevices();
+
+    return gJuceDeviceTypes.size();
 }
 
-const char* CarlaEngine::getJuceApiName(const unsigned int /*index*/)
+const char* CarlaEngine::getJuceApiName(const unsigned int index)
 {
-    return nullptr;
-}
+    initJuceDevices();
 
-const char* const* CarlaEngine::getJuceApiDeviceNames(const unsigned int /*index*/)
-{
-#if 0
-    juce::ScopedPointer<juce::AudioIODeviceType> deviceType;
-
-    switch(index)
-    {
-    case 0:
-        deviceType = juce::AudioIODeviceType::createAudioIODeviceType_JACK();
-        break;
-    default:
-        //setLastError("");
+    if ((int)index >= gJuceDeviceTypes.size())
         return nullptr;
-    }
+
+    AudioIODeviceType* const deviceType(gJuceDeviceTypes[index]);
 
     if (deviceType == nullptr)
-    {
-        //setLastError("");
         return nullptr;
-    }
+
+    return deviceType->getTypeName().toRawUTF8();
+}
+
+const char* const* CarlaEngine::getJuceApiDeviceNames(const unsigned int index)
+{
+    initJuceDevices();
+
+    if ((int)index >= gJuceDeviceTypes.size())
+        return nullptr;
+
+    AudioIODeviceType* const deviceType(gJuceDeviceTypes[index]);
+
+    if (deviceType == nullptr)
+        return nullptr;
 
     deviceType->scanForDevices();
 
-    const juce::StringArray devNames(deviceType->getDeviceNames());
-    const int devNameCount(devNames.size());
+    StringArray deviceNames(deviceType->getDeviceNames());
+    const int   deviceNameCount(deviceNames.size());
 
-    if (devNameCount <= 0)
+    if (deviceNameCount <= 0)
         return nullptr;
 
-    gRetNames = new const char*[devNameCount+1];
+    if (gRetNames != nullptr)
+    {
+        for (int i=0; gRetNames[i] != nullptr; ++i)
+            delete[] gRetNames[i];
+        delete[] gRetNames;
+    }
 
-    for (unsigned int i=0; i < devNameCount; ++i)
-        gRetNames[i] = carla_strdup(devNames[i].toRawUTF8());
+    gRetNames = new const char*[deviceNameCount+1];
 
-    gRetNames[devNameCount] = nullptr;
-#endif
+    for (int i=0; i < deviceNameCount; ++i)
+        gRetNames[i] = carla_strdup(deviceNames[i].toRawUTF8());
+
+    gRetNames[deviceNameCount] = nullptr;
 
     return gRetNames;
+}
+
+const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const unsigned int index, const char* const deviceName)
+{
+    initJuceDevices();
+
+    if ((int)index >= gJuceDeviceTypes.size())
+        return nullptr;
+
+    AudioIODeviceType* const deviceType(gJuceDeviceTypes[index]);
+
+    if (deviceType == nullptr)
+        return nullptr;
+
+    deviceType->scanForDevices();
+
+    ScopedPointer<AudioIODevice> device(deviceType->createDevice(deviceName, deviceName));
+
+    if (device == nullptr)
+        return nullptr;
+
+    static EngineDriverDeviceInfo devInfo = { 0x0, nullptr, nullptr };
+    static uint32_t dummyBufferSizes[11]  = { 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 0 };
+    static double   dummySampleRates[14]  = { 22050.0, 32000.0, 44100.0, 48000.0, 88200.0, 96000.0, 176400.0, 192000.0, 0.0 };
+
+    // reset
+    devInfo.hints = ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE | ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE;
+
+    // cleanup
+    if (devInfo.bufferSizes != nullptr && devInfo.bufferSizes != dummyBufferSizes)
+    {
+        delete[] devInfo.bufferSizes;
+        devInfo.bufferSizes = nullptr;
+    }
+
+    if (devInfo.sampleRates != nullptr && devInfo.sampleRates != dummySampleRates)
+    {
+        delete[] devInfo.sampleRates;
+        devInfo.sampleRates = nullptr;
+    }
+
+    if (device->hasControlPanel())
+        devInfo.hints |= ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL;
+
+    if (size_t bufferSizesCount = device->getNumBufferSizesAvailable())
+    {
+        uint32_t* const bufferSizes(new uint32_t[bufferSizesCount+1]);
+
+        for (size_t i=0; i < bufferSizesCount; ++i)
+            bufferSizes[i] = device->getBufferSizeSamples(i);
+        bufferSizes[bufferSizesCount] = 0;
+
+        devInfo.bufferSizes = bufferSizes;
+    }
+    else
+    {
+        devInfo.bufferSizes = dummyBufferSizes;
+    }
+
+    if (size_t sampleRatesCount = device->getNumSampleRates())
+    {
+        double* const sampleRates(new double[sampleRatesCount+1]);
+
+        for (size_t i=0; i < sampleRatesCount; ++i)
+            sampleRates[i] = device->getSampleRate(i);
+        sampleRates[sampleRatesCount] = 0.0;
+
+        devInfo.sampleRates = sampleRates;
+    }
+    else
+    {
+        devInfo.sampleRates = dummySampleRates;
+    }
+
+    return &devInfo;
 }
 
 // -----------------------------------------

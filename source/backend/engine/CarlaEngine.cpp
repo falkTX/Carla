@@ -30,10 +30,6 @@
 #include "CarlaStateUtils.hpp"
 #include "CarlaMIDI.h"
 
-#include <QtCore/QFile>
-#include <QtCore/QFileInfo>
-#include <QtCore/QTextStream>
-
 #ifdef HAVE_JUCE
 # include "juce_audio_basics.h"
 using juce::FloatVectorOperations;
@@ -41,15 +37,15 @@ using juce::FloatVectorOperations;
 # include <cmath>
 #endif
 
+#include <QtCore/QFile>
+#include <QtCore/QFileInfo>
+#include <QtCore/QTextStream>
+
 CARLA_BACKEND_START_NAMESPACE
 
 #if 0
 } // Fix editor indentation
 #endif
-
-// Engine helper macro, sets lastError and returns false/NULL
-#define CARLA_SAFE_ASSERT_RETURN_ERR(cond, err)  if (cond) pass(); else { carla_safe_assert(#cond, __FILE__, __LINE__); setLastError(err); return false; }
-#define CARLA_SAFE_ASSERT_RETURN_ERRN(cond, err) if (cond) pass(); else { carla_safe_assert(#cond, __FILE__, __LINE__); setLastError(err); return nullptr; }
 
 // -----------------------------------------------------------------------
 // Fallback data

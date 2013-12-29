@@ -18,9 +18,13 @@ ifeq ($(HAVE_FFMPEG),true)
 BUILD_CXX_FLAGS += -DHAVE_FFMPEG
 endif
 
-# ifeq ($(HAVE_JUCE),true)
-# BUILD_CXX_FLAGS += -DHAVE_JUCE
-# endif
+ifeq ($(HAVE_JUCE),true)
+BUILD_CXX_FLAGS += -DHAVE_JUCE
+endif
+
+ifeq ($(HAVE_OPENGL),true)
+BUILD_CXX_FLAGS += -DHAVE_OPENGL
+endif
 
 # --------------------------------------------------------------
 

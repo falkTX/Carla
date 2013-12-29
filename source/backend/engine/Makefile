@@ -23,10 +23,10 @@ OBJS  = $(OBJSp) \
 	CarlaEngineJack.cpp.o \
 	CarlaEngineRtAudio.cpp.o
 
-# ifeq ($(HAVE_JUCE),true)
-# OBJS += \
-# 	CarlaEngineJuce.cpp.o
-# endif
+ifeq ($(HAVE_JUCE),true)
+OBJS += \
+	CarlaEngineJuce.cpp.o
+endif
 
 HEADERS = \
 	../CarlaBackend.h ../CarlaEngine.hpp ../CarlaPlugin.hpp \

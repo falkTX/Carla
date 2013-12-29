@@ -1363,17 +1363,6 @@ typedef struct {
      */
     const double* sampleRates;
 
-#ifdef __cplusplus
-    /*!
-     * Clear data.
-     */
-    void clear() noexcept
-    {
-        hints = 0x0;
-        bufferSizes = nullptr;
-        sampleRates = nullptr;
-    }
-#endif
 } EngineDriverDeviceInfo;
 
 /** @} */

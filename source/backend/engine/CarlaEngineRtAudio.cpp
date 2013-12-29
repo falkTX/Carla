@@ -24,8 +24,7 @@
 #include "rtmidi/RtMidi.h"
 
 #ifdef USE_JUCE
-#include "juce_audio_basics.h"
-
+# include "juce_audio_basics.h"
 using juce::FloatVectorOperations;
 #endif
 
@@ -94,10 +93,6 @@ public:
           fAudio(api),
           fAudioBufIn(nullptr),
           fAudioBufOut(nullptr),
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-          fAudioBufRackIn{nullptr},
-          fAudioBufRackOut{nullptr},
-#endif
           fAudioCountIn(0),
           fAudioCountOut(0),
           fAudioIsInterleaved(false),
@@ -108,10 +103,8 @@ public:
     {
         carla_debug("CarlaEngineRtAudio::CarlaEngineRtAudio(%i)", api);
 
-#ifndef CARLA_PROPER_CPP11_SUPPORT
-        fAudioBufRackIn[0] = fAudioBufRackIn[1] = nullptr;
+        fAudioBufRackIn[0]  = fAudioBufRackIn[1]  = nullptr;
         fAudioBufRackOut[0] = fAudioBufRackOut[1] = nullptr;
-#endif
 
         // just to make sure
         pData->options.forceStereo   = true;
@@ -148,7 +141,7 @@ public:
         CARLA_ASSERT(fAudioCountIn == 0);
         CARLA_ASSERT(fAudioCountOut == 0);
         CARLA_ASSERT(! fAudioIsReady);
-        CARLA_ASSERT(clientName != nullptr);
+        CARLA_ASSERT(clientName != nullptr && clientName[0] != '\0');
         carla_debug("CarlaEngineRtAudio::init(\"%s\")", clientName);
 
         RtAudio::StreamParameters iParams, oParams;
@@ -396,13 +389,13 @@ public:
             return "OSS";
         case RtAudio::UNIX_JACK:
 #if defined(CARLA_OS_WIN)
-        return "JACK with WinMM";
+            return "JACK with WinMM";
 #elif defined(CARLA_OS_MAC)
-        return "JACK with CoreMidi";
+            return "JACK with CoreMidi";
 #elif defined(CARLA_OS_LINUX)
-        return "JACK with ALSA-MIDI";
+            return "JACK with ALSA-MIDI";
 #else
-        return "JACK (RtAudio)";
+            return "JACK (RtAudio)";
 #endif
         case RtAudio::MACOSX_CORE:
             return "CoreAudio";
@@ -1503,15 +1496,6 @@ const char* const* CarlaEngine::getRtAudioApiDeviceNames(const unsigned int inde
 
     RtAudio rtAudio(api);
 
-    if (gRetNames != nullptr)
-    {
-        int i=0;
-        while (gRetNames[i] != nullptr)
-            delete[] gRetNames[i++];
-        delete[] gRetNames;
-        gRetNames = nullptr;
-    }
-
     const unsigned int devCount(rtAudio.getDeviceCount());
 
     if (devCount == 0)
@@ -1528,6 +1512,13 @@ const char* const* CarlaEngine::getRtAudioApiDeviceNames(const unsigned int inde
     }
 
     const unsigned int realDevCount(devNames.count());
+
+    if (gRetNames != nullptr)
+    {
+        for (int i=0; gRetNames[i] != nullptr; ++i)
+            delete[] gRetNames[i];
+        delete[] gRetNames;
+    }
 
     gRetNames = new const char*[realDevCount+1];
 
@@ -1570,9 +1561,9 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const unsigned i
     if (i == devCount)
         return nullptr;
 
-    static EngineDriverDeviceInfo devInfo;
-    static uint32_t dummyBufferSizes[11] = { 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 0 };
-    static double   dummySampleRates[14] = { 22050.0, 32000.0, 44100.0, 48000.0, 88200.0, 96000.0, 176400.0, 192000.0, 0.0 };
+    static EngineDriverDeviceInfo devInfo = { 0x0, nullptr, nullptr };
+    static uint32_t dummyBufferSizes[11]  = { 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 0 };
+    static double   dummySampleRates[14]  = { 22050.0, 32000.0, 44100.0, 48000.0, 88200.0, 96000.0, 176400.0, 192000.0, 0.0 };
 
     // reset
     devInfo.hints = 0x0;
@@ -1587,7 +1578,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const unsigned i
 
     if (size_t sampleRatesCount = rtAudioDevInfo.sampleRates.size())
     {
-        double* sampleRates(new double[sampleRatesCount+1]);
+        double* const sampleRates(new double[sampleRatesCount+1]);
 
         for (size_t i=0; i < sampleRatesCount; ++i)
             sampleRates[i] = rtAudioDevInfo.sampleRates[i];
