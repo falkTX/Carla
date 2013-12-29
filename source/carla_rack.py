@@ -19,12 +19,12 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-try:
-    from PyQt5.QtCore import QSize, QTimer
-    from PyQt5.QtWidgets import QApplication, QListWidget, QListWidgetItem
-except:
-    from PyQt4.QtCore import QSize, QTimer
-    from PyQt4.QtGui import QApplication, QListWidget, QListWidgetItem
+#try:
+    #from PyQt5.QtCore import QSize, QTimer
+    #from PyQt5.QtWidgets import QApplication, QListWidget, QListWidgetItem
+#except:
+from PyQt4.QtCore import QSize, QTimer
+from PyQt4.QtGui import QApplication, QListWidget, QListWidgetItem
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)

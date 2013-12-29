@@ -19,10 +19,10 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-try:
-    from PyQt5.QtWidgets import QLabel, QTabWidget
-except:
-    from PyQt4.QtGui import QLabel, QTabWidget
+#try:
+    #from PyQt5.QtWidgets import QLabel, QTabWidget
+#except:
+from PyQt4.QtGui import QLabel, QTabWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)

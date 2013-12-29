@@ -15,7 +15,7 @@ SED_PREFIX = $(shell echo $(PREFIX) | sed "s/\//\\\\\\\\\//g")
 
 LINK   = ln -sf
 PYUIC ?= pyuic4 -w
-PYRCC ?= pyrcc4
+PYRCC ?= pyrcc4 -py3
 
 # --------------------------------------------------------------
 

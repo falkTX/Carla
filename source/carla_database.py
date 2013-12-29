@@ -22,12 +22,12 @@
 from copy import deepcopy
 from subprocess import Popen, PIPE
 
-try:
-    from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QThread, QSettings
-    from PyQt5.QtWidgets import QDialog, QTableWidgetItem
-except:
-    from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QThread, QSettings
-    from PyQt4.QtGui import QDialog, QTableWidgetItem
+#try:
+    #from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QThread, QSettings
+    #from PyQt5.QtWidgets import QDialog, QTableWidgetItem
+#except:
+from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QThread, QSettings
+from PyQt4.QtGui import QDialog, QTableWidgetItem
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -269,10 +269,10 @@ def checkPluginInternal(desc):
     pinfo['build']     = BINARY_NATIVE
     pinfo['type']      = PLUGIN_INTERNAL
     pinfo['hints']     = int(desc['hints'])
-    pinfo['name']      = cString(desc['name'])
-    pinfo['label']     = cString(desc['label'])
-    pinfo['maker']     = cString(desc['maker'])
-    pinfo['copyright'] = cString(desc['copyright'])
+    pinfo['name']      = charPtrToString(desc['name'])
+    pinfo['label']     = charPtrToString(desc['label'])
+    pinfo['maker']     = charPtrToString(desc['maker'])
+    pinfo['copyright'] = charPtrToString(desc['copyright'])
 
     pinfo['audio.ins']   = int(desc['audioIns'])
     pinfo['audio.outs']  = int(desc['audioOuts'])
@@ -1306,7 +1306,7 @@ class PluginDatabaseW(QDialog):
             isNative = bool(plugin['build'] == BINARY_NATIVE)
             isRtSafe = bool(plugin['hints'] & PLUGIN_IS_RTSAFE)
             isStereo = bool(aIns == 2 and aOuts == 2) or (isSynth and aOuts == 2)
-            hasGui   = bool(plugin['hints'] & PLUGIN_HAS_GUI)
+            hasGui   = bool(plugin['hints'] & PLUGIN_HAS_CUSTOM_UI)
 
             isBridged = bool(not isNative and plugin['build'] in nativeBins)
             isBridgedWine = bool(not isNative and plugin['build'] in wineBins)
@@ -1400,7 +1400,7 @@ class PluginDatabaseW(QDialog):
         self.ui.tableWidget.setItem(index, 6, QTableWidgetItem(str(plugin['parameters.ins'])))
         self.ui.tableWidget.setItem(index, 7, QTableWidgetItem(str(plugin['parameters.outs'])))
         self.ui.tableWidget.setItem(index, 8, QTableWidgetItem(str(plugin['programs.total'])))
-        self.ui.tableWidget.setItem(index, 9, QTableWidgetItem(self.tr("Yes") if (plugin['hints'] & PLUGIN_HAS_GUI) else self.tr("No")))
+        self.ui.tableWidget.setItem(index, 9, QTableWidgetItem(self.tr("Yes") if (plugin['hints'] & PLUGIN_HAS_CUSTOM_UI) else self.tr("No")))
         self.ui.tableWidget.setItem(index, 10, QTableWidgetItem(self.tr("Yes") if (plugin['hints'] & PLUGIN_IS_SYNTH) else self.tr("No")))
         self.ui.tableWidget.setItem(index, 11, QTableWidgetItem(bridgeText))
         self.ui.tableWidget.setItem(index, 12, QTableWidgetItem(ptype))

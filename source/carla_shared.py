@@ -22,14 +22,14 @@
 import os
 import sys
 
-try:
-    from PyQt5.QtCore import qFatal, qWarning
-    from PyQt5.QtGui import QIcon
-    from PyQt5.QtWidgets import QFileDialog, QMessageBox
-except:
-    from PyQt4.QtCore import qFatal, qWarning
-    from PyQt4.QtGui import QIcon
-    from PyQt4.QtGui import QFileDialog, QMessageBox
+#try:
+    #from PyQt5.QtCore import qFatal, qWarning
+    #from PyQt5.QtGui import QIcon
+    #from PyQt5.QtWidgets import QFileDialog, QMessageBox
+#except:
+from PyQt4.QtCore import qFatal, qWarning
+from PyQt4.QtGui import QIcon
+from PyQt4.QtGui import QFileDialog, QMessageBox
 
 # ------------------------------------------------------------------------------------------------------------
 # Import Signal

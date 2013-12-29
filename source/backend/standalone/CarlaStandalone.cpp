@@ -668,12 +668,20 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
 
     case CB::ENGINE_OPTION_PATH_BINARIES:
         CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-        gStandalone.engineOptions.binaryDir = valueStr;
+
+        if (gStandalone.engineOptions.binaryDir != nullptr)
+            delete[] gStandalone.engineOptions.binaryDir;
+
+        gStandalone.engineOptions.binaryDir = carla_strdup(valueStr);
         break;
 
     case CB::ENGINE_OPTION_PATH_RESOURCES:
         CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-        gStandalone.engineOptions.resourceDir = valueStr;
+
+        if (gStandalone.engineOptions.resourceDir != nullptr)
+            delete[] gStandalone.engineOptions.resourceDir;
+
+        gStandalone.engineOptions.resourceDir = carla_strdup(valueStr);
         break;
     }
 

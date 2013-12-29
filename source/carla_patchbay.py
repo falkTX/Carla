@@ -19,10 +19,10 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-try:
-    from PyQt5.QtWidgets import QGraphicsView
-except:
-    from PyQt4.QtGui import QGraphicsView
+#try:
+    #from PyQt5.QtWidgets import QGraphicsView
+#except:
+from PyQt4.QtGui import QGraphicsView
 
 #QPrinter, QPrintDialog
 #QImage
