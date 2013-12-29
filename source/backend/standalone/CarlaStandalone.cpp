@@ -837,7 +837,7 @@ const CarlaTransportInfo* carla_get_transport_info()
     retInfo.playing = timeInfo.playing;
     retInfo.frame   = timeInfo.frame;
 
-    if (timeInfo.valid & timeInfo.ValidBBT)
+    if (timeInfo.valid & CB::EngineTimeInfo::kValidBBT)
     {
         retInfo.bar  = timeInfo.bbt.bar;
         retInfo.beat = timeInfo.bbt.beat;

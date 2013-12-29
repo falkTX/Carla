@@ -183,21 +183,22 @@ struct EngineControlEvent {
  * Engine MIDI event.
  */
 struct EngineMidiEvent {
-    uint8_t port;    //!< Port offset (usually 0)
-    uint8_t size;    //!< Number of bytes used
-    uint8_t data[4]; //!< MIDI data, without channel bit
+    static const uint8_t kDataSize = 4; //!< Size of data
+
+    uint8_t port;            //!< Port offset (usually 0)
+    uint8_t size;            //!< Number of bytes used
+    uint8_t data[kDataSize]; //!< MIDI data, without channel bit
 
     /*!
      * Clear data.
      */
     void clear() noexcept
     {
-        port    = 0;
-        size    = 0;
-        data[0] = 0;
-        data[1] = 0;
-        data[2] = 0;
-        data[3] = 0;
+        port = 0;
+        size = 0;
+
+        for (uint8_t i=0; i < kDataSize; ++i)
+            data[i] = 0;
     }
 };
 
@@ -323,12 +324,12 @@ struct EngineTimeInfoBBT {
  * Engine Time information.
  */
 struct EngineTimeInfo {
-    static const uint32_t ValidBBT = 0x1;
+    static const uint kValidBBT = 0x1;
 
     bool playing;
     uint64_t frame;
     uint64_t usecs;
-    uint32_t valid;
+    uint     valid;
     EngineTimeInfoBBT bbt;
 
     EngineTimeInfo() noexcept
@@ -348,10 +349,10 @@ struct EngineTimeInfo {
     // quick operator, doesn't check all values
     bool operator==(const EngineTimeInfo& timeInfo) const noexcept
     {
-        if (timeInfo.playing != playing || timeInfo.frame != frame)
+        if (timeInfo.playing != playing || timeInfo.frame != frame || timeInfo.valid != valid)
             return false;
-        if (timeInfo.valid != valid)
-            return false;
+        if ((valid & kValidBBT) == 0)
+            return true;
         if (timeInfo.bbt.beatsPerMinute != bbt.beatsPerMinute)
             return false;
         return true;
@@ -488,6 +489,11 @@ public:
      */
     virtual void initBuffer() override;
 
+    /*!
+     * Set a new buffer size.
+     */
+    void setBufferSize(const uint32_t bufferSize);
+
 #if 0
     // TESTING: I should remove this
     /*!
@@ -495,10 +501,6 @@ public:
      */
     virtual void writeBuffer(const uint32_t frames, const uint32_t timeOffset);
 
-    /*!
-     * Set a new buffer size.
-     */
-    void setBufferSize(const uint32_t bufferSize);
 #endif
 
     /*!
@@ -512,6 +514,7 @@ public:
 #ifndef DOXYGEN
 protected:
     float* fBuffer;
+    const EngineProcessMode fProcessMode;
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineCVPort)
 #endif
@@ -584,14 +587,14 @@ public:
      * Arguments are the same as in the EngineMidiEvent struct.
      * \note You must only call this for output ports.
      */
-    virtual bool writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t* const data, const uint8_t size);
+    virtual bool writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t size, const uint8_t* const data);
 
     /*!
      * Write a MIDI event into the buffer, overloaded call.
      */
-    bool writeMidiEvent(const uint32_t time, const uint8_t* const data, const uint8_t size)
+    bool writeMidiEvent(const uint32_t time, const uint8_t size, const uint8_t* const data)
     {
-        return writeMidiEvent(time, MIDI_GET_CHANNEL_FROM_DATA(data), 0, data, size);
+        return writeMidiEvent(time, MIDI_GET_CHANNEL_FROM_DATA(data), 0, size, data);
     }
 
     /*!
@@ -599,12 +602,13 @@ public:
      */
     bool writeMidiEvent(const uint32_t time, const uint8_t channel, const EngineMidiEvent& midi)
     {
-        return writeMidiEvent(time, channel, midi.port, midi.data, midi.size);
+        return writeMidiEvent(time, channel, midi.port, midi.size, midi.data);
     }
 
 #ifndef DOXYGEN
 protected:
     EngineEvent* fBuffer;
+    const EngineProcessMode fProcessMode;
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineEventPort)
 #endif

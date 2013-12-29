@@ -2498,14 +2498,14 @@ public:
 
                 // BBT
                 case LV2_PORT_DESIGNATION_TIME_BAR:
-                    if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && fLastTimeInfo.bbt.bar != timeInfo.bbt.bar)
+                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && fLastTimeInfo.bbt.bar != timeInfo.bbt.bar)
                     {
                         fParamBuffers[k] = timeInfo.bbt.bar - 1;
                         doPostRt = true;
                     }
                     break;
                 case LV2_PORT_DESIGNATION_TIME_BAR_BEAT:
-                    if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && (fLastTimeInfo.bbt.tick != timeInfo.bbt.tick ||
+                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && (fLastTimeInfo.bbt.tick != timeInfo.bbt.tick ||
                                                                               fLastTimeInfo.bbt.ticksPerBeat != timeInfo.bbt.ticksPerBeat))
                     {
                         fParamBuffers[k] = timeInfo.bbt.beat - 1 + (double(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat);
@@ -2513,28 +2513,28 @@ public:
                     }
                     break;
                 case LV2_PORT_DESIGNATION_TIME_BEAT:
-                    if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && fLastTimeInfo.bbt.beat != timeInfo.bbt.beat)
+                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && fLastTimeInfo.bbt.beat != timeInfo.bbt.beat)
                     {
                         fParamBuffers[k] = timeInfo.bbt.beat - 1;
                         doPostRt = true;
                     }
                     break;
                 case LV2_PORT_DESIGNATION_TIME_BEAT_UNIT:
-                    if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && fLastTimeInfo.bbt.beatType != timeInfo.bbt.beatType)
+                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && fLastTimeInfo.bbt.beatType != timeInfo.bbt.beatType)
                     {
                         fParamBuffers[k] = timeInfo.bbt.beatType;
                         doPostRt = true;
                     }
                     break;
                 case LV2_PORT_DESIGNATION_TIME_BEATS_PER_BAR:
-                    if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && fLastTimeInfo.bbt.beatsPerBar != timeInfo.bbt.beatsPerBar)
+                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && fLastTimeInfo.bbt.beatsPerBar != timeInfo.bbt.beatsPerBar)
                     {
                         fParamBuffers[k] = timeInfo.bbt.beatsPerBar;
                         doPostRt = true;
                     }
                     break;
                 case LV2_PORT_DESIGNATION_TIME_BEATS_PER_MINUTE:
-                    if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && fLastTimeInfo.bbt.beatsPerMinute != timeInfo.bbt.beatsPerMinute)
+                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && fLastTimeInfo.bbt.beatsPerMinute != timeInfo.bbt.beatsPerMinute)
                     {
                         fParamBuffers[k] = timeInfo.bbt.beatsPerMinute;
                         doPostRt = true;
@@ -2561,7 +2561,7 @@ public:
                 lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_FRAME, 0);
                 lv2_atom_forge_long(&fAtomForge, timeInfo.frame);
 
-                if (timeInfo.valid & EngineTimeInfo::ValidBBT)
+                if (timeInfo.valid & EngineTimeInfo::kValidBBT)
                 {
                     lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BAR, 0);
                     lv2_atom_forge_long(&fAtomForge, timeInfo.bbt.bar - 1);
@@ -3000,7 +3000,7 @@ public:
                         break;
 
                     if (ev->body.type == CARLA_URI_MAP_ID_MIDI_EVENT && fEventsOut.ctrl->port != nullptr)
-                        fEventsOut.ctrl->port->writeMidiEvent(ev->time.frames, data, ev->body.size);
+                        fEventsOut.ctrl->port->writeMidiEvent(ev->time.frames, ev->body.size, data);
 
                     else if (ev->body.type == CARLA_URI_MAP_ID_ATOM_BLANK)
                         fAtomQueueOut.put(&ev->body, rindex);
@@ -3025,7 +3025,7 @@ public:
                         break;
 
                     if (ev->type == CARLA_URI_MAP_ID_MIDI_EVENT)
-                        fEventsOut.ctrl->port->writeMidiEvent(ev->frames, data, ev->size);
+                        fEventsOut.ctrl->port->writeMidiEvent(ev->frames, ev->size, data);
 
                     lv2_event_increment(&iter);
                 }
@@ -3043,7 +3043,7 @@ public:
                     if (eventData == nullptr || eventSize == 0)
                         break;
 
-                    fEventsOut.ctrl->port->writeMidiEvent(eventTime, eventData, eventSize);
+                    fEventsOut.ctrl->port->writeMidiEvent(eventTime, eventSize, eventData);
                     lv2midi_step(&state);
                 }
             }

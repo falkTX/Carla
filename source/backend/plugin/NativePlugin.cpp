@@ -1262,7 +1262,7 @@ public:
         fTimeInfo.frame   = timeInfo.frame;
         fTimeInfo.usecs   = timeInfo.usecs;
 
-        if (timeInfo.valid & EngineTimeInfo::ValidBBT)
+        if (timeInfo.valid & EngineTimeInfo::kValidBBT)
         {
             fTimeInfo.bbt.valid = true;
 
@@ -1640,9 +1640,9 @@ public:
                 const uint8_t port    = fMidiEvents[k].port;
 
                 if (pData->event.portOut != nullptr)
-                    pData->event.portOut->writeMidiEvent(fMidiEvents[k].time, channel, port, fMidiEvents[k].data, fMidiEvents[k].size);
+                    pData->event.portOut->writeMidiEvent(fMidiEvents[k].time, channel, port, fMidiEvents[k].size, fMidiEvents[k].data);
                 else if (port < fMidiOut.count)
-                    fMidiOut.ports[port]->writeMidiEvent(fMidiEvents[k].time, channel, port, fMidiEvents[k].data, fMidiEvents[k].size);
+                    fMidiOut.ports[port]->writeMidiEvent(fMidiEvents[k].time, channel, port, fMidiEvents[k].size, fMidiEvents[k].data);
             }
 
         } // End of Control and MIDI Output

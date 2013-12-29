@@ -1070,7 +1070,7 @@ public:
             fTimeInfo.flags |= kVstNanosValid;
         }
 
-        if (timeInfo.valid & EngineTimeInfo::ValidBBT)
+        if (timeInfo.valid & EngineTimeInfo::kValidBBT)
         {
             double ppqBar  = double(timeInfo.bbt.bar - 1) * timeInfo.bbt.beatsPerBar;
             double ppqBeat = double(timeInfo.bbt.beat - 1);
@@ -1436,7 +1436,7 @@ public:
                 midiData[1] = fMidiEvents[k].midiData[1];
                 midiData[2] = fMidiEvents[k].midiData[2];
 
-                pData->event.portOut->writeMidiEvent(fMidiEvents[k].deltaFrames, channel, 0, midiData, 3);
+                pData->event.portOut->writeMidiEvent(fMidiEvents[k].deltaFrames, channel, 0, 3, midiData);
             }
 
         } // End of Control and MIDI Output

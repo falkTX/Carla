@@ -95,23 +95,32 @@ void CarlaEngineAudioPort::initBuffer()
 
 CarlaEngineCVPort::CarlaEngineCVPort(const CarlaEngine& engine, const bool isInput)
     : CarlaEnginePort(engine, isInput),
-      fBuffer(new float[engine.getBufferSize()])
+      fBuffer(nullptr),
+      fProcessMode(engine.getProccessMode())
 {
     carla_debug("CarlaEngineCVPort::CarlaEngineCVPort(%s)", bool2str(isInput));
+
+    if (fProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+        fBuffer = new float[engine.getBufferSize()];
 }
 
 CarlaEngineCVPort::~CarlaEngineCVPort()
 {
-    CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
     carla_debug("CarlaEngineCVPort::~CarlaEngineCVPort()");
 
-    delete[] fBuffer;
-    fBuffer = nullptr;
+    if (fProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
+
+        delete[] fBuffer;
+        fBuffer = nullptr;
+    }
 }
 
 void CarlaEngineCVPort::initBuffer()
 {
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(fProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS,);
 
 #ifdef HAVE_JUCE
     FloatVectorOperations::clear(fBuffer, fEngine.getBufferSize());
@@ -120,27 +129,22 @@ void CarlaEngineCVPort::initBuffer()
 #endif
 }
 
-#if 0
-void CarlaEngineCVPort::writeBuffer(const uint32_t, const uint32_t)
-{
-    CARLA_SAFE_ASSERT_RETURN(! fIsInput,);
-}
-
 void CarlaEngineCVPort::setBufferSize(const uint32_t bufferSize)
 {
-    if (fBuffer != nullptr)
-        delete[] fBuffer;
+    CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(fProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS,);
 
+    delete[] fBuffer;
     fBuffer = new float[bufferSize];
 }
-#endif
 
 // -----------------------------------------------------------------------
 // Carla Engine Event port
 
 CarlaEngineEventPort::CarlaEngineEventPort(const CarlaEngine& engine, const bool isInput)
     : CarlaEnginePort(engine, isInput),
-      fBuffer(nullptr)
+      fBuffer(nullptr),
+      fProcessMode(engine.getProccessMode())
 {
     carla_debug("CarlaEngineEventPort::CarlaEngineEventPort(%s)", bool2str(isInput));
 
@@ -152,7 +156,7 @@ CarlaEngineEventPort::CarlaEngineEventPort(const CarlaEngine& engine, const bool
         sFallbackEngineEventNeedsInit = false;
     }
 
-    if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_PATCHBAY)
+    if (fProcessMode == ENGINE_PROCESS_MODE_PATCHBAY)
         fBuffer = new EngineEvent[kEngineMaxInternalEventCount];
 }
 
@@ -160,7 +164,7 @@ CarlaEngineEventPort::~CarlaEngineEventPort()
 {
     carla_debug("CarlaEngineEventPort::~CarlaEngineEventPort()");
 
-    if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_PATCHBAY)
+    if (fProcessMode == ENGINE_PROCESS_MODE_PATCHBAY)
     {
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
 
@@ -171,9 +175,9 @@ CarlaEngineEventPort::~CarlaEngineEventPort()
 
 void CarlaEngineEventPort::initBuffer()
 {
-    if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || fEngine.getProccessMode() == ENGINE_PROCESS_MODE_BRIDGE)
+    if (fProcessMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || fProcessMode == ENGINE_PROCESS_MODE_BRIDGE)
         fBuffer = fEngine.getInternalEventBuffer(fIsInput);
-    else if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_PATCHBAY && ! fIsInput)
+    else if (fProcessMode == ENGINE_PROCESS_MODE_PATCHBAY && ! fIsInput)
         carla_zeroStruct<EngineEvent>(fBuffer, kEngineMaxInternalEventCount);
 }
 
@@ -181,7 +185,7 @@ uint32_t CarlaEngineEventPort::getEventCount() const
 {
     CARLA_SAFE_ASSERT_RETURN(fIsInput, 0);
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, 0);
-    CARLA_SAFE_ASSERT_RETURN(fEngine.getProccessMode() != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fEngine.getProccessMode() != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, 0);
+    CARLA_SAFE_ASSERT_RETURN(fProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, 0);
 
     uint32_t i=0;
 
@@ -198,7 +202,7 @@ const EngineEvent& CarlaEngineEventPort::getEvent(const uint32_t index)
 {
     CARLA_SAFE_ASSERT_RETURN(fIsInput, kFallbackEngineEvent);
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, kFallbackEngineEvent);
-    CARLA_SAFE_ASSERT_RETURN(fEngine.getProccessMode() != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fEngine.getProccessMode() != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, kFallbackEngineEvent);
+    CARLA_SAFE_ASSERT_RETURN(fProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, kFallbackEngineEvent);
     CARLA_SAFE_ASSERT_RETURN(index < kEngineMaxInternalEventCount, kFallbackEngineEvent);
 
     return fBuffer[index];
@@ -213,7 +217,7 @@ bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
 {
     CARLA_SAFE_ASSERT_RETURN(! fIsInput, false);
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
-    CARLA_SAFE_ASSERT_RETURN(fEngine.getProccessMode() != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fEngine.getProccessMode() != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, false);
+    CARLA_SAFE_ASSERT_RETURN(fProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, false);
     CARLA_SAFE_ASSERT_RETURN(type != kEngineControlEventTypeNull, false);
     CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, false);
     CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.0f);
@@ -247,14 +251,14 @@ bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
     return false;
 }
 
-bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t* const data, const uint8_t size)
+bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t size, const uint8_t* const data)
 {
     CARLA_SAFE_ASSERT_RETURN(! fIsInput, false);
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
-    CARLA_SAFE_ASSERT_RETURN(fEngine.getProccessMode() != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fEngine.getProccessMode() != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, false);
+    CARLA_SAFE_ASSERT_RETURN(fProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, false);
     CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, false);
+    CARLA_SAFE_ASSERT_RETURN(size > 0 && size <= EngineMidiEvent::kDataSize, false);
     CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
-    CARLA_SAFE_ASSERT_RETURN(size > 0 && size <= 4, false);
 
     for (uint32_t i=0; i < kEngineMaxInternalEventCount; ++i)
     {
@@ -270,7 +274,7 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
         event.midi.port = port;
         event.midi.size = size;
 
-        event.midi.data[0] = MIDI_GET_CHANNEL_FROM_DATA(data);
+        event.midi.data[0] = MIDI_GET_STATUS_FROM_DATA(data);
 
         for (uint8_t j=1; j < size; ++j)
             event.midi.data[j] = data[j];

@@ -38,6 +38,8 @@ CARLA_BACKEND_START_NAMESPACE
 } // Fix editor indentation
 #endif
 
+class CarlaEngineJack;
+
 // -----------------------------------------------------------------------
 // Fallback data
 
@@ -71,7 +73,11 @@ public:
         carla_debug("CarlaEngineJackAudioPort::~CarlaEngineJackAudioPort()");
 
         if (fClient != nullptr && fPort != nullptr)
+        {
             jackbridge_port_unregister(fClient, fPort);
+            fClient = nullptr;
+            fPort   = nullptr;
+        }
     }
 
     void initBuffer() override
@@ -130,7 +136,11 @@ public:
         carla_debug("CarlaEngineJackCVPort::~CarlaEngineJackCVPort()");
 
         if (fClient != nullptr && fPort != nullptr)
+        {
             jackbridge_port_unregister(fClient, fPort);
+            fClient = nullptr;
+            fPort   = nullptr;
+        }
     }
 
     void initBuffer() override
@@ -140,39 +150,17 @@ public:
 
         const uint32_t bufferSize(fEngine.getBufferSize());
 
-        if (fIsInput)
-        {
-            float* const jackBuffer((float*)jackbridge_port_get_buffer(fPort, bufferSize));
-#ifdef HAVE_JUCE
-            FloatVectorOperations::copy(fBuffer, jackBuffer, bufferSize);
-#else
-            carla_copyFloat(fBuffer, jackBuffer, bufferSize);
-#endif
-        }
-        else
+        fBuffer = (float*)jackbridge_port_get_buffer(fPort, bufferSize);
+
+        if (! fIsInput)
         {
 #ifdef HAVE_JUCE
-            FloatVectorOperations::clear(fBuffer, bufferSize);
+           FloatVectorOperations::clear(fBuffer, bufferSize);
 #else
-            carla_zeroFloat(fBuffer, bufferSize);
+           carla_zeroFloat(fBuffer, bufferSize);
 #endif
         }
     }
-
-#if 0
-    void writeBuffer(const uint32_t frames, const uint32_t timeOffset) override
-    {
-        CARLA_SAFE_ASSERT_RETURN(! fIsInput,);
-
-        float* const jackBuffer((float*)jackbridge_port_get_buffer(fPort, fEngine.getBufferSize()));
-
-#ifdef HAVE_JUCE
-        FloatVectorOperations::copy(jackBuffer+timeOffset, fBuffer, frames);
-#else
-        carla_copyFloat(jackBuffer+timeOffset, fBuffer, frames);
-#endif
-    }
-#endif
 
 private:
     jack_client_t* fClient;
@@ -220,7 +208,11 @@ public:
         carla_debug("CarlaEngineJackEventPort::~CarlaEngineJackEventPort()");
 
         if (fClient != nullptr && fPort != nullptr)
+        {
             jackbridge_port_unregister(fClient, fPort);
+            fClient = nullptr;
+            fPort   = nullptr;
+        }
     }
 
     void initBuffer() override
@@ -263,10 +255,10 @@ public:
 
         if (! jackbridge_midi_event_get(&jackEvent, fJackBuffer, index))
             return kFallbackJackEngineEvent;
-        if (jackEvent.size == 0 || jackEvent.size > 4)
-            return kFallbackJackEngineEvent;
 
-        fRetEvent.clear();
+        CARLA_SAFE_ASSERT_RETURN(jackEvent.size > 0 && jackEvent.size <= EngineMidiEvent::kDataSize, kFallbackJackEngineEvent);
+        //if (jackEvent.size == 0 || jackEvent.size > EngineMidiEvent::kDataSize)
+        //    return kFallbackJackEngineEvent;
 
         const uint8_t midiStatus  = MIDI_GET_STATUS_FROM_DATA(jackEvent.buffer);
         const uint8_t midiChannel = MIDI_GET_CHANNEL_FROM_DATA(jackEvent.buffer);
@@ -276,13 +268,14 @@ public:
 
         if (midiStatus == MIDI_STATUS_CONTROL_CHANGE)
         {
-            CARLA_ASSERT(jackEvent.size == 2 || jackEvent.size == 3);
+            fRetEvent.type = kEngineEventTypeControl;
 
             const uint8_t midiControl = jackEvent.buffer[1];
-            fRetEvent.type            = kEngineEventTypeControl;
 
             if (MIDI_IS_CONTROL_BANK_SELECT(midiControl))
             {
+                CARLA_SAFE_ASSERT_INT(jackEvent.size == 3, jackEvent.size);
+
                 const uint8_t midiBank = jackEvent.buffer[2];
 
                 fRetEvent.ctrl.type  = kEngineControlEventTypeMidiBank;
@@ -291,19 +284,23 @@ public:
             }
             else if (midiControl == MIDI_CONTROL_ALL_SOUND_OFF)
             {
+                CARLA_SAFE_ASSERT_INT(jackEvent.size == 2, jackEvent.size);
+
                 fRetEvent.ctrl.type  = kEngineControlEventTypeAllSoundOff;
                 fRetEvent.ctrl.param = 0;
                 fRetEvent.ctrl.value = 0.0f;
             }
             else if (midiControl == MIDI_CONTROL_ALL_NOTES_OFF)
             {
+                CARLA_SAFE_ASSERT_INT(jackEvent.size == 2, jackEvent.size);
+
                 fRetEvent.ctrl.type  = kEngineControlEventTypeAllNotesOff;
                 fRetEvent.ctrl.param = 0;
                 fRetEvent.ctrl.value = 0.0f;
             }
             else
             {
-                CARLA_ASSERT(jackEvent.size == 3);
+                CARLA_SAFE_ASSERT_INT2(jackEvent.size == 3, jackEvent.size, midiControl);
 
                 const uint8_t midiValue = jackEvent.buffer[2];
 
@@ -316,8 +313,9 @@ public:
         {
             CARLA_SAFE_ASSERT_INT2(jackEvent.size == 2, jackEvent.size, jackEvent.buffer[1]);
 
+            fRetEvent.type = kEngineEventTypeControl;
+
             const uint8_t midiProgram = jackEvent.buffer[1];
-            fRetEvent.type            = kEngineEventTypeControl;
 
             fRetEvent.ctrl.type  = kEngineControlEventTypeMidiProgram;
             fRetEvent.ctrl.param = midiProgram;
@@ -327,13 +325,16 @@ public:
         {
             fRetEvent.type = kEngineEventTypeMidi;
 
-            fRetEvent.midi.port  = 0;
-            fRetEvent.midi.size  = static_cast<uint8_t>(jackEvent.size);
+            fRetEvent.midi.port = 0;
+            fRetEvent.midi.size = static_cast<uint8_t>(jackEvent.size);
 
             fRetEvent.midi.data[0] = midiStatus;
 
-            for (uint8_t i=1; i < fRetEvent.midi.size; ++i)
+            uint8_t i=1;
+            for (; i < fRetEvent.midi.size; ++i)
                 fRetEvent.midi.data[i] = jackEvent.buffer[i];
+            for (; i < EngineMidiEvent::kDataSize; ++i)
+                fRetEvent.midi.data[i] = 0;
         }
 
         return fRetEvent;
@@ -359,7 +360,7 @@ public:
         const float fixedValue(carla_fixValue<float>(0.0f, 1.0f, value));
 
         size_t size = 0;
-        jack_midi_data_t data[4] = { 0, 0, 0, 0 };
+        jack_midi_data_t data[3] = { 0, 0, 0 };
 
         switch (type)
         {
@@ -402,16 +403,16 @@ public:
         return jackbridge_midi_event_write(fJackBuffer, time, data, size);
     }
 
-    bool writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t* const data, const uint8_t size) override
+    bool writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t size, const uint8_t* const data) override
     {
         if (fPort == nullptr)
-            return CarlaEngineEventPort::writeMidiEvent(time, channel, port, data, size);
+            return CarlaEngineEventPort::writeMidiEvent(time, channel, port, size, data);
 
         CARLA_SAFE_ASSERT_RETURN(! fIsInput, false);
         CARLA_SAFE_ASSERT_RETURN(fJackBuffer != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, false);
-        CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(size > 0, false);
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
 
         jack_midi_data_t jdata[size];
         std::memset(jdata, 0, sizeof(jack_midi_data_t)*size);
@@ -1144,7 +1145,7 @@ protected:
 
             if (fTransportPos.valid & JackPositionBBT)
             {
-                pData->timeInfo.valid              = EngineTimeInfo::ValidBBT;
+                pData->timeInfo.valid              = EngineTimeInfo::kValidBBT;
                 pData->timeInfo.bbt.bar            = fTransportPos.bar;
                 pData->timeInfo.bbt.beat           = fTransportPos.beat;
                 pData->timeInfo.bbt.tick           = fTransportPos.tick;
