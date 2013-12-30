@@ -19,11 +19,6 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-#try:
-    #from PyQt5.QtCore import QRectF
-    #from PyQt5.QtGui import QPainter, QPixmap
-    #from PyQt5.QtWidgets import QPushButton
-#except:
 from PyQt4.QtCore import QRectF
 from PyQt4.QtGui import QPainter, QPixmap, QPushButton
 

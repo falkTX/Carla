@@ -19,11 +19,6 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-#try:
-    #from PyQt5.QtCore import QModelIndex, QTimer
-    #from PyQt5.QtGui import QPalette
-    #from PyQt5.QtWidgets import QApplication, QFileSystemModel, QMainWindow
-#except:
 from PyQt4.QtCore import qCritical, QModelIndex, QTimer
 from PyQt4.QtGui import QApplication, QFileSystemModel, QMainWindow, QPalette
 
