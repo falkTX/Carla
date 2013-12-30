@@ -105,40 +105,40 @@ class CarlaDummyW(object):
 class HostWindow(QMainWindow):
     # signals
     DebugCallback = pyqtSignal(int, int, int, float, str)
-    PluginAddedCallback = pyqtSignal(int)
+    PluginAddedCallback = pyqtSignal(int, str)
     PluginRemovedCallback = pyqtSignal(int)
     PluginRenamedCallback = pyqtSignal(int, str)
+    PluginUnavailableCallback = pyqtSignal(int, str)
     ParameterValueChangedCallback = pyqtSignal(int, int, float)
     ParameterDefaultChangedCallback = pyqtSignal(int, int, float)
-    ParameterMidiChannelChangedCallback = pyqtSignal(int, int, int)
     ParameterMidiCcChangedCallback = pyqtSignal(int, int, int)
+    ParameterMidiChannelChangedCallback = pyqtSignal(int, int, int)
     ProgramChangedCallback = pyqtSignal(int, int)
     MidiProgramChangedCallback = pyqtSignal(int, int)
+    UiStateChangedCallback = pyqtSignal(int, int)
     NoteOnCallback = pyqtSignal(int, int, int, int)
     NoteOffCallback = pyqtSignal(int, int, int)
-    ShowGuiCallback = pyqtSignal(int, int)
     UpdateCallback = pyqtSignal(int)
     ReloadInfoCallback = pyqtSignal(int)
     ReloadParametersCallback = pyqtSignal(int)
     ReloadProgramsCallback = pyqtSignal(int)
     ReloadAllCallback = pyqtSignal(int)
     PatchbayClientAddedCallback = pyqtSignal(int, str)
-    PatchbayClientRemovedCallback = pyqtSignal(int, str)
+    PatchbayClientRemovedCallback = pyqtSignal(int)
     PatchbayClientRenamedCallback = pyqtSignal(int, str)
+    PatchbayClientIconChangedCallback = pyqtSignal(int, str)
     PatchbayPortAddedCallback = pyqtSignal(int, int, int, str)
-    PatchbayPortRemovedCallback = pyqtSignal(int, int, str)
+    PatchbayPortRemovedCallback = pyqtSignal(int, int)
     PatchbayPortRenamedCallback = pyqtSignal(int, int, str)
     PatchbayConnectionAddedCallback = pyqtSignal(int, int, int)
-    PatchbayConnectionRemovedCallback = pyqtSignal(int)
-    PatchbayIconChangedCallback = pyqtSignal(int, str)
+    PatchbayConnectionRemovedCallback = pyqtSignal(int, int, int)
+    EngineStartedCallback = pyqtSignal(int, int, str)
+    EngineStoppedCallback = pyqtSignal()
+    ProcessModeChangedCallback = pyqtSignal(int)
+    TransportModeChangedCallback = pyqtSignal(int)
     BufferSizeChangedCallback = pyqtSignal(int)
     SampleRateChangedCallback = pyqtSignal(float)
-    ProcessModeChangedCallback = pyqtSignal(int)
-    EngineStartedCallback = pyqtSignal(str)
-    EngineStoppedChangedCallback = pyqtSignal()
-    NSM_AnnounceCallback = pyqtSignal(str)
-    NSM_OpenCallback = pyqtSignal(str)
-    NSM_SaveCallback = pyqtSignal()
+    InfoCallback = pyqtSignal(str)
     ErrorCallback = pyqtSignal(str)
     QuitCallback = pyqtSignal()
     SIGTERM = pyqtSignal()
@@ -175,7 +175,7 @@ class HostWindow(QMainWindow):
 
         self.fLastTransportFrame = 0
         self.fLastTransportState = False
-        self.fTextTransport = ""
+        self.fTransportText = ""
 
         self.fSavedSettings = {}
 
@@ -201,7 +201,6 @@ class HostWindow(QMainWindow):
             self.ui.act_file_new.setEnabled(False)
             self.ui.act_file_open.setEnabled(False)
             self.ui.act_engine_start.setEnabled(False)
-            self.ui.act_engine_stop.setEnabled(False)
             self.ui.menu_Engine.setEnabled(False)
         else:
             self.ui.act_engine_start.setEnabled(True)
@@ -220,7 +219,7 @@ class HostWindow(QMainWindow):
         # Set up GUI (right panel)
 
         self.fDirModel = QFileSystemModel(self)
-        self.fDirModel.setNameFilters(charPtrToString(Carla.host.get_supported_file_extensions()).split(";"))
+        self.fDirModel.setNameFilters(Carla.host.get_supported_file_extensions().split(";"))
         self.fDirModel.setRootPath(HOME)
 
         self.ui.fileTreeView.setModel(self.fDirModel)
@@ -282,8 +281,8 @@ class HostWindow(QMainWindow):
 
         if Carla.isPlugin:
             QTimer.singleShot(0, self.slot_engineStart)
-        elif NSM_URL:
-            Carla.host.nsm_ready()
+        #elif NSM_URL:
+            #Carla.host.nsm_ready()
 
     # -----------------------------------------------------------------
     # Called by containers

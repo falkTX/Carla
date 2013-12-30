@@ -442,20 +442,26 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 
     gStandalone.engine->setCallback(gStandalone.engineCallback, gStandalone.engineCallbackPtr);
 
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,                static_cast<int>(gStandalone.engineOptions.processMode),      nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,              static_cast<int>(gStandalone.engineOptions.transportMode),    nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_FORCE_STEREO,                gStandalone.engineOptions.forceStereo         ? 1 : 0,        nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_PLUGIN_BRIDGES,       gStandalone.engineOptions.preferPluginBridges ? 1 : 0,        nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_UI_BRIDGES,           gStandalone.engineOptions.preferUiBridges     ? 1 : 0,        nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_UIS_ALWAYS_ON_TOP,           gStandalone.engineOptions.uisAlwaysOnTop      ? 1 : 0,        nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_MAX_PARAMETERS,              static_cast<int>(gStandalone.engineOptions.maxParameters),    nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_UI_BRIDGES_TIMEOUT,          static_cast<int>(gStandalone.engineOptions.uiBridgesTimeout), nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_AUDIO_NUM_PERIODS,           static_cast<int>(gStandalone.engineOptions.audioNumPeriods),  nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_AUDIO_BUFFER_SIZE,           static_cast<int>(gStandalone.engineOptions.audioBufferSize),  nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_AUDIO_SAMPLE_RATE,           static_cast<int>(gStandalone.engineOptions.audioSampleRate),  nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_AUDIO_DEVICE,             0, (const char*)gStandalone.engineOptions.audioDevice);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,            0, (const char*)gStandalone.engineOptions.binaryDir);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,           0, (const char*)gStandalone.engineOptions.resourceDir);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,          static_cast<int>(gStandalone.engineOptions.processMode),      nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,        static_cast<int>(gStandalone.engineOptions.transportMode),    nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_FORCE_STEREO,          gStandalone.engineOptions.forceStereo         ? 1 : 0,        nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, gStandalone.engineOptions.preferPluginBridges ? 1 : 0,        nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_UI_BRIDGES,     gStandalone.engineOptions.preferUiBridges     ? 1 : 0,        nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     gStandalone.engineOptions.uisAlwaysOnTop      ? 1 : 0,        nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_MAX_PARAMETERS,        static_cast<int>(gStandalone.engineOptions.maxParameters),    nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    static_cast<int>(gStandalone.engineOptions.uiBridgesTimeout), nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_AUDIO_NUM_PERIODS,     static_cast<int>(gStandalone.engineOptions.audioNumPeriods),  nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_AUDIO_BUFFER_SIZE,     static_cast<int>(gStandalone.engineOptions.audioBufferSize),  nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_AUDIO_SAMPLE_RATE,     static_cast<int>(gStandalone.engineOptions.audioSampleRate),  nullptr);
+
+    if (gStandalone.engineOptions.audioDevice != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_AUDIO_DEVICE,   0, gStandalone.engineOptions.audioDevice);
+
+    if (gStandalone.engineOptions.binaryDir != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,  0, gStandalone.engineOptions.binaryDir);
+
+    if (gStandalone.engineOptions.resourceDir != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES, 0, gStandalone.engineOptions.resourceDir);
 
     if (gStandalone.engine->init(clientName))
     {
@@ -667,7 +673,7 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
         if (gStandalone.engineOptions.audioDevice != nullptr)
             delete[] gStandalone.engineOptions.audioDevice;
 
-        gStandalone.engineOptions.audioDevice = valueStr;
+        gStandalone.engineOptions.audioDevice = carla_strdup(valueStr);
         break;
 
     case CB::ENGINE_OPTION_PATH_BINARIES:

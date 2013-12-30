@@ -477,16 +477,14 @@ public:
      */
     void toLower() noexcept
     {
-#ifndef BUILD_ANSI_TEST
         // Using '+=' temporarily converts char into int
         static const char kCharDiff('a' - 'A');
 
         for (size_t i=0; i < fBufferLen; ++i)
         {
             if (fBuffer[i] >= 'A' && fBuffer[i] <= 'Z')
-                fBuffer[i] += kCharDiff;
+                fBuffer[i] = static_cast<char>(fBuffer[i] + kCharDiff);
         }
-#endif
     }
 
     /*
@@ -494,16 +492,14 @@ public:
      */
     void toUpper() noexcept
     {
-#ifndef BUILD_ANSI_TEST
         // Using '-=' temporarily converts char into int
         static const char kCharDiff('a' - 'A');
 
         for (size_t i=0; i < fBufferLen; ++i)
         {
             if (fBuffer[i] >= 'a' && fBuffer[i] <= 'z')
-                fBuffer[i] -= kCharDiff;
+                fBuffer[i] = static_cast<char>(fBuffer[i] - kCharDiff);
         }
-#endif
     }
 
     /*

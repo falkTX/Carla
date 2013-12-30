@@ -663,6 +663,11 @@ public:
     virtual void offlineModeChanged(const bool isOffline);
 
     /*!
+     * Lock the plugin's master mutex.
+     */
+    void lock();
+
+    /*!
      * Try to lock the plugin's master mutex.
      */
     bool tryLock();

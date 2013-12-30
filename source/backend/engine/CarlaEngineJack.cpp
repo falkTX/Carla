@@ -243,13 +243,14 @@ public:
     const EngineEvent& getEventUnchecked(const uint32_t index) override
     {
         jack_midi_event_t jackEvent;
-        carla_zeroStruct<jack_midi_event_t>(jackEvent);
 
         if (! jackbridge_midi_event_get(&jackEvent, fJackBuffer, index))
             return kFallbackJackEngineEvent;
 
+        CARLA_SAFE_ASSERT_RETURN(jackEvent.size <= 0xFF /* uint8_t max */, kFallbackJackEngineEvent);
+
         fRetEvent.time = jackEvent.time;
-        fRetEvent.fillFromMidiData(jackEvent.size, jackEvent.buffer);
+        fRetEvent.fillFromMidiData(static_cast<uint8_t>(jackEvent.size), jackEvent.buffer);
 
         return fRetEvent;
     }
@@ -271,45 +272,11 @@ public:
             CARLA_ASSERT(! MIDI_IS_CONTROL_BANK_SELECT(param));
         }
 
-        const float fixedValue(carla_fixValue<float>(0.0f, 1.0f, value));
+        uint8_t size    = 0;
+        uint8_t data[3] = { 0, 0, 0 };
 
-        size_t size = 0;
-        jack_midi_data_t data[3] = { 0, 0, 0 };
-
-        switch (type)
-        {
-        case kEngineControlEventTypeNull:
-            break;
-        case kEngineControlEventTypeParameter:
-            data[0] = MIDI_STATUS_CONTROL_CHANGE + channel;
-            data[1] = param;
-            data[2] = jack_midi_data_t(fixedValue * 127.0f);
-            size    = 3;
-            break;
-        case kEngineControlEventTypeMidiBank:
-            data[0] = MIDI_STATUS_CONTROL_CHANGE + channel;
-            data[1] = MIDI_CONTROL_BANK_SELECT;
-            data[2] = param;
-            size    = 3;
-            break;
-        case kEngineControlEventTypeMidiProgram:
-            data[0] = MIDI_STATUS_PROGRAM_CHANGE + channel;
-            data[1] = param;
-            size    = 2;
-            break;
-        case kEngineControlEventTypeAllSoundOff:
-            data[0] = MIDI_STATUS_CONTROL_CHANGE + channel;
-            data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
-            data[2] = 0;
-            size    = 3;
-            break;
-        case kEngineControlEventTypeAllNotesOff:
-            data[0] = MIDI_STATUS_CONTROL_CHANGE + channel;
-            data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
-            data[2] = 0;
-            size    = 3;
-            break;
-        }
+        EngineControlEvent ctrlEvent = { type, param, carla_fixValue<float>(0.0f, 1.0f, value) };
+        ctrlEvent.dumpToMidiData(channel, size, data);
 
         if (size == 0)
             return false;
@@ -330,8 +297,7 @@ public:
 
         jack_midi_data_t jdata[size];
 
-        jdata[0]  = MIDI_GET_STATUS_FROM_DATA(data);
-        jdata[0] += channel;
+        jdata[0] = static_cast<jack_midi_data_t>(MIDI_GET_STATUS_FROM_DATA(data) + channel);
 
         for (uint8_t i=1; i < size; ++i)
             jdata[i] = data[i];
@@ -1002,12 +968,12 @@ public:
             jackbridge_transport_stop(fClient);
     }
 
-    void transportRelocate(const uint32_t frame) override
+    void transportRelocate(const uint64_t frame) override
     {
         if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
             CarlaEngine::transportRelocate(frame);
         else if (fClient != nullptr)
-            jackbridge_transport_locate(fClient, frame);
+            jackbridge_transport_locate(fClient, static_cast<jack_nframes_t>(frame));
     }
 
     // -------------------------------------------------------------------
@@ -1172,10 +1138,12 @@ protected:
                     if (! jackbridge_midi_event_get(&jackEvent, eventIn, jackEventIndex))
                         continue;
 
+                    CARLA_SAFE_ASSERT_CONTINUE(jackEvent.size <= 0xFF /* uint8_t max */);
+
                     EngineEvent& engineEvent(pData->bufEvents.in[engineEventIndex++]);
 
                     engineEvent.time = jackEvent.time;
-                    engineEvent.fillFromMidiData(jackEvent.size, jackEvent.buffer);
+                    engineEvent.fillFromMidiData(static_cast<uint8_t>(jackEvent.size), jackEvent.buffer);
 
                     if (engineEventIndex >= kEngineMaxInternalEventCount)
                         break;
@@ -1205,49 +1173,7 @@ protected:
                     case kEngineEventTypeControl:
                     {
                         const EngineControlEvent& ctrlEvent(engineEvent.ctrl);
-
-                        switch (ctrlEvent.type)
-                        {
-                        case kEngineControlEventTypeNull:
-                            break;
-                        case kEngineControlEventTypeParameter:
-                            if (MIDI_IS_CONTROL_BANK_SELECT(ctrlEvent.param))
-                            {
-                                size    = 3;
-                                data[0] = MIDI_STATUS_CONTROL_CHANGE + engineEvent.channel;
-                                data[1] = MIDI_CONTROL_BANK_SELECT;
-                                data[2] = static_cast<uint8_t>(ctrlEvent.value);
-                            }
-                            else
-                            {
-                                size    = 3;
-                                data[0] = MIDI_STATUS_CONTROL_CHANGE + engineEvent.channel;
-                                data[1] = static_cast<uint8_t>(ctrlEvent.param);
-                                data[2] = uint8_t(ctrlEvent.value * 127.0f);
-                            }
-                            break;
-                        case kEngineControlEventTypeMidiBank:
-                            size    = 3;
-                            data[0] = MIDI_STATUS_CONTROL_CHANGE + engineEvent.channel;
-                            data[1] = MIDI_CONTROL_BANK_SELECT;
-                            data[2] = static_cast<uint8_t>(ctrlEvent.param);
-                            break;
-                        case kEngineControlEventTypeMidiProgram:
-                            size    = 2;
-                            data[0] = MIDI_STATUS_PROGRAM_CHANGE + engineEvent.channel;
-                            data[1] = static_cast<uint8_t>(ctrlEvent.param);
-                            break;
-                        case kEngineControlEventTypeAllSoundOff:
-                            size    = 2;
-                            data[0] = MIDI_STATUS_CONTROL_CHANGE + engineEvent.channel;
-                            data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
-                            break;
-                        case kEngineControlEventTypeAllNotesOff:
-                            size    = 2;
-                            data[0] = MIDI_STATUS_CONTROL_CHANGE + engineEvent.channel;
-                            data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
-                            break;
-                        }
+                        ctrlEvent.dumpToMidiData(engineEvent.channel, size, data);
                         break;
                     }
 
@@ -1382,7 +1308,7 @@ protected:
             PortNameToId portNameToId(groupId, fLastPortId++, portName, fullPortName);
             fUsedPortNames.append(portNameToId);
 
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, 0, groupId, portNameToId.portId, canvasPortFlags, portName);
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, groupId, portNameToId.portId, canvasPortFlags, 0.0f, portName);
         }
         else
         {
@@ -1433,7 +1359,7 @@ protected:
             ConnectionToId connectionToId(fLastConnectionId++, portIdA, portIdB);
             fUsedConnections.append(connectionToId);
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, connectionToId.id, portIdA, portIdB, nullptr);
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, portIdA, portIdB, 0.0f, nullptr);
         }
         else
         {
@@ -1824,7 +1750,7 @@ private:
                 PortNameToId portNameToId(groupId, fLastPortId++, portName, fullPortName);
                 fUsedPortNames.append(portNameToId);
 
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, 0, groupId, portNameToId.portId, canvasPortFlags, portName);
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, groupId, portNameToId.portId, canvasPortFlags, 0.0f, portName);
             }
 
 #if 0
@@ -1854,7 +1780,7 @@ private:
                 if (thisPortId == -1)
                     continue;
 
-                if (const char** connections = jackbridge_port_get_all_connections(jackPort))
+                if (const char** connections = jackbridge_port_get_all_connections(fClient, jackPort))
                 {
                     for (int j=0; connections[j] != nullptr; ++j)
                     {
@@ -1863,7 +1789,7 @@ private:
                         ConnectionToId connectionToId(fLastConnectionId++, thisPortId, targetPortId);
                         fUsedConnections.append(connectionToId);
 
-                        callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, connectionToId.id, thisPortId, targetPortId, nullptr);
+                        callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, thisPortId, targetPortId, 0.0f, nullptr);
                     }
 
                     jackbridge_free(connections);

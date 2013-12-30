@@ -8,7 +8,7 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I. -I.. -I../../includes -I../../modules -I../../utils
+BUILD_CXX_FLAGS += -I. -I.. -I../../includes -I../../utils -isystem ../../modules
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
 
 BUILD_CXX_FLAGS += $(QTCORE_FLAGS)

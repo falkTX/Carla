@@ -24,6 +24,11 @@
 
 #include "CarlaNative.hpp"
 
+#ifdef HAVE_JUCE
+# include "juce_audio_basics.h"
+using juce::FloatVectorOperations;
+#endif
+
 CARLA_BACKEND_START_NAMESPACE
 
 #if 0
@@ -140,27 +145,42 @@ private:
 };
 
 // -----------------------------------------------------------------------
+#endif
 
-class CarlaEngineNative : public PluginClass,
+class CarlaEngineNative : public NativePluginClass,
                           public CarlaEngine
 {
 public:
-    CarlaEngineNative(const HostDescriptor* const host)
-        : PluginClass(host),
+    CarlaEngineNative(const NativeHostDescriptor* const host, const bool isPatchbay)
+        : NativePluginClass(host),
           CarlaEngine(),
-          fIsRunning(true),
-          fThread(this)
+          fIsPatchbay(isPatchbay)
+          /*fIsRunning(true),
+          fThread(this)*/
     {
         carla_debug("CarlaEngineNative::CarlaEngineNative()");
 
         // set-up engine
-        fOptions.processMode   = PROCESS_MODE_CONTINUOUS_RACK;
-        fOptions.transportMode = TRANSPORT_MODE_PLUGIN;
-        fOptions.forceStereo   = true;
-        fOptions.preferPluginBridges = false;
-        fOptions.preferUiBridges = false;
-        init("Carla-Plugin");
+        if (fIsPatchbay)
+        {
+            pData->options.processMode         = ENGINE_PROCESS_MODE_PATCHBAY;
+            pData->options.transportMode       = ENGINE_TRANSPORT_MODE_PLUGIN;
+            pData->options.forceStereo         = false;
+            pData->options.preferPluginBridges = false;
+            pData->options.preferUiBridges     = false;
+            init("Carla-Patchbay");
+        }
+        else
+        {
+            pData->options.processMode         = ENGINE_PROCESS_MODE_CONTINUOUS_RACK;
+            pData->options.transportMode       = ENGINE_TRANSPORT_MODE_PLUGIN;
+            pData->options.forceStereo         = true;
+            pData->options.preferPluginBridges = false;
+            pData->options.preferUiBridges     = false;
+            init("Carla-Rack");
+        }
 
+#if 0
         // set control thread binary
         CarlaString threadBinary(getResourceDir());
         threadBinary += "/../";
@@ -175,13 +195,14 @@ public:
 //             carla_stdout("TESTING PLUG2 ERROR:\n%s", getLastError());
 //         if (! addPlugin(PLUGIN_INTERNAL, nullptr, "Ping Pong Pan", "PingPongPan"))
 //             carla_stdout("TESTING PLUG3 ERROR:\n%s", getLastError());
+#endif
     }
 
     ~CarlaEngineNative() override
     {
         carla_debug("CarlaEngineNative::~CarlaEngineNative()");
 
-        fIsRunning = false;
+        //fIsRunning = false;
 
         setAboutToClose();
         removeAllPlugins();
@@ -196,8 +217,8 @@ protected:
     {
         carla_debug("CarlaEngineNative::init(\"%s\")", clientName);
 
-        fBufferSize = PluginClass::getBufferSize();
-        fSampleRate = PluginClass::getSampleRate();
+        pData->bufferSize = NativePluginClass::getBufferSize();
+        pData->sampleRate = NativePluginClass::getSampleRate();
 
         CarlaEngine::init(clientName);
         return true;
@@ -213,7 +234,7 @@ protected:
 
     bool isRunning() const noexcept override
     {
-        return fIsRunning;
+        return false; //fIsRunning;
     }
 
     bool isOffline() const noexcept override
@@ -226,110 +247,125 @@ protected:
         return kEngineTypePlugin;
     }
 
+    const char* getCurrentDriverName() const noexcept override
+    {
+        return "Plugin";
+    }
+
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
     uint32_t getParameterCount() const override
     {
-        if (pData->curPluginCount == 0 || pData->plugins == nullptr)
-            return 0;
+        if (CarlaPlugin* const plugin = _getFirstPlugin())
+            return plugin->getParameterCount();
 
-        CarlaPlugin* const plugin(pData->plugins[0].plugin);
-
-        if (plugin == nullptr || ! plugin->isEnabled())
-            return 0;
-
-        return pData->plugins[0].plugin->getParameterCount();
+        return 0;
     }
 
-    const Parameter* getParameterInfo(const uint32_t index) const override
+    const NativeParameter* getParameterInfo(const uint32_t index) const override
     {
-        if (index >= getParameterCount())
-            return nullptr;
-
-        CarlaPlugin* const plugin(pData->plugins[0].plugin);
-
-        if (plugin == nullptr || ! plugin->isEnabled())
-            return nullptr;
-
-        static ::Parameter param;
-        static char strBufName[STR_MAX+1];
-        static char strBufUnit[STR_MAX+1];
-
-        const ParameterData& paramData(plugin->getParameterData(index));
-        const ParameterRanges& paramRanges(plugin->getParameterRanges(index));
-
-        plugin->getParameterName(index, strBufName);
-        plugin->getParameterUnit(index, strBufUnit);
-
-        unsigned int hints = 0x0;
-
-        if (paramData.hints & PARAMETER_IS_BOOLEAN)
-            hints |= ::PARAMETER_IS_BOOLEAN;
-        if (paramData.hints & PARAMETER_IS_INTEGER)
-            hints |= ::PARAMETER_IS_INTEGER;
-        if (paramData.hints & PARAMETER_IS_LOGARITHMIC)
-            hints |= ::PARAMETER_IS_LOGARITHMIC;
-        if (paramData.hints & PARAMETER_IS_AUTOMABLE)
-            hints |= ::PARAMETER_IS_AUTOMABLE;
-        if (paramData.hints & PARAMETER_USES_SAMPLERATE)
-            hints |= ::PARAMETER_USES_SAMPLE_RATE;
-        if (paramData.hints & PARAMETER_USES_SCALEPOINTS)
-            hints |= ::PARAMETER_USES_SCALEPOINTS;
-        if (paramData.hints & PARAMETER_USES_CUSTOM_TEXT)
-            hints |= ::PARAMETER_USES_CUSTOM_TEXT;
-
-        if (paramData.type == PARAMETER_INPUT || paramData.type == PARAMETER_OUTPUT)
+        if (CarlaPlugin* const plugin = _getFirstPlugin())
         {
-            if (paramData.hints & PARAMETER_IS_ENABLED)
-                hints |= ::PARAMETER_IS_ENABLED;
-            if (paramData.type == PARAMETER_OUTPUT)
-                hints |= ::PARAMETER_IS_OUTPUT;
+            if (plugin->getParameterCount() < index)
+            {
+                static NativeParameter param;
+                static char strBufName[STR_MAX+1];
+                static char strBufUnit[STR_MAX+1];
+
+                const ParameterData& paramData(plugin->getParameterData(index));
+                const ParameterRanges& paramRanges(plugin->getParameterRanges(index));
+
+                plugin->getParameterName(index, strBufName);
+                plugin->getParameterUnit(index, strBufUnit);
+
+                unsigned int hints = 0x0;
+
+                if (paramData.hints & PARAMETER_IS_BOOLEAN)
+                    hints |= ::PARAMETER_IS_BOOLEAN;
+                if (paramData.hints & PARAMETER_IS_INTEGER)
+                    hints |= ::PARAMETER_IS_INTEGER;
+                if (paramData.hints & PARAMETER_IS_LOGARITHMIC)
+                    hints |= ::PARAMETER_IS_LOGARITHMIC;
+                if (paramData.hints & PARAMETER_IS_AUTOMABLE)
+                    hints |= ::PARAMETER_IS_AUTOMABLE;
+                if (paramData.hints & PARAMETER_USES_SAMPLERATE)
+                    hints |= ::PARAMETER_USES_SAMPLE_RATE;
+                if (paramData.hints & PARAMETER_USES_SCALEPOINTS)
+                    hints |= ::PARAMETER_USES_SCALEPOINTS;
+                if (paramData.hints & PARAMETER_USES_CUSTOM_TEXT)
+                    hints |= ::PARAMETER_USES_CUSTOM_TEXT;
+
+                if (paramData.type == PARAMETER_INPUT || paramData.type == PARAMETER_OUTPUT)
+                {
+                    if (paramData.hints & PARAMETER_IS_ENABLED)
+                        hints |= ::PARAMETER_IS_ENABLED;
+                    if (paramData.type == PARAMETER_OUTPUT)
+                        hints |= ::PARAMETER_IS_OUTPUT;
+                }
+
+                param.hints = static_cast<NativeParameterHints>(hints);
+                param.name  = strBufName;
+                param.unit  = strBufUnit;
+                param.ranges.def = paramRanges.def;
+                param.ranges.min = paramRanges.min;
+                param.ranges.max = paramRanges.max;
+                param.ranges.step = paramRanges.step;
+                param.ranges.stepSmall = paramRanges.stepSmall;
+                param.ranges.stepLarge = paramRanges.stepLarge;
+                param.scalePointCount = 0; // TODO
+                param.scalePoints = nullptr;
+
+                return &param;
+            }
         }
 
-        param.hints = static_cast< ::ParameterHints>(hints);
-        param.name  = strBufName;
-        param.unit  = strBufUnit;
-        param.ranges.def = paramRanges.def;
-        param.ranges.min = paramRanges.min;
-        param.ranges.max = paramRanges.max;
-        param.ranges.step = paramRanges.step;
-        param.ranges.stepSmall = paramRanges.stepSmall;
-        param.ranges.stepLarge = paramRanges.stepLarge;
-        param.scalePointCount = 0; // TODO
-        param.scalePoints = nullptr;
-
-        return &param;
+        return nullptr;
     }
 
     float getParameterValue(const uint32_t index) const override
     {
-        if (index >= getParameterCount())
-            return 0.0f;
+        if (CarlaPlugin* const plugin = _getFirstPlugin())
+        {
+            if (plugin->getParameterCount() < index)
+                return plugin->getParameterValue(index);
+        }
 
-        CarlaPlugin* const plugin(pData->plugins[0].plugin);
-
-        if (plugin == nullptr || ! plugin->isEnabled())
-            return 0.0f;
-
-        return plugin->getParameterValue(index);
+        return 0.0f;
     }
 
-    const char* getParameterText(const uint32_t index, const float value) const override // FIXME - use value
+    const char* getParameterText(const uint32_t index, const float value) const override
     {
-        if (index >= getParameterCount())
-            return nullptr;
+        if (CarlaPlugin* const plugin = _getFirstPlugin())
+        {
+            if (plugin->getParameterCount() < index)
+            {
+                static char strBuf[STR_MAX+1];
+                carla_zeroChar(strBuf, STR_MAX+1);
 
-        CarlaPlugin* const plugin(pData->plugins[0].plugin);
+                float oldValue;
+                plugin->lock();
 
-        if (plugin == nullptr || ! plugin->isEnabled())
-            return nullptr;
+                oldValue = plugin->getParameterValue(index);
 
-        static char strBuf[STR_MAX+1];
+                if (oldValue != value)
+                {
+                    plugin->setParameterValue(index, value, false, false, false);
+                    plugin->getParameterText(index, strBuf);
+                    plugin->setParameterValue(index, oldValue, false, false, false);
+                }
+                else
+                {
+                    plugin->getParameterText(index, strBuf);
+                }
 
-        plugin->getParameterText(index, strBuf);
+                plugin->unlock();
 
-        return strBuf;
+                return strBuf;
+            }
+        }
+
+        return nullptr;
     }
 
     // -------------------------------------------------------------------
@@ -337,38 +373,33 @@ protected:
 
     uint32_t getMidiProgramCount() const override
     {
-        if (pData->curPluginCount == 0 || pData->plugins == nullptr)
-            return 0;
+        if (CarlaPlugin* const plugin = _getFirstPlugin())
+            return plugin->getMidiProgramCount();
 
-        CarlaPlugin* const plugin(pData->plugins[0].plugin);
-
-        if (plugin == nullptr || ! plugin->isEnabled())
-            return 0.0f;
-
-        return plugin->getMidiProgramCount();
+        return 0;
     }
 
-    const MidiProgram* getMidiProgramInfo(const uint32_t index) const override
+    const NativeMidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
-        if (index >= getMidiProgramCount())
-            return nullptr;
-
-        CarlaPlugin* const plugin(pData->plugins[0].plugin);
-
-        if (plugin == nullptr || ! plugin->isEnabled())
-            return nullptr;
-
-        static ::MidiProgram midiProg;
-
+        if (CarlaPlugin* const plugin = _getFirstPlugin())
         {
-            const MidiProgramData& midiProgData(plugin->getMidiProgramData(index));
+            if (plugin->getMidiProgramCount() < index)
+            {
+                static NativeMidiProgram midiProg;
 
-            midiProg.bank    = midiProgData.bank;
-            midiProg.program = midiProgData.program;
-            midiProg.name    = midiProgData.name;
+                {
+                    const MidiProgramData& midiProgData(plugin->getMidiProgramData(index));
+
+                    midiProg.bank    = midiProgData.bank;
+                    midiProg.program = midiProgData.program;
+                    midiProg.name    = midiProgData.name;
+                }
+
+                return &midiProg;
+            }
         }
 
-        return &midiProg;
+        return nullptr;
     }
 
     // -------------------------------------------------------------------
@@ -376,41 +407,25 @@ protected:
 
     void setParameterValue(const uint32_t index, const float value) override
     {
-        if (index >= getParameterCount())
-            return;
-
-        CarlaPlugin* const plugin(pData->plugins[0].plugin);
-
-        if (plugin == nullptr || ! plugin->isEnabled())
-            return;
-
-        plugin->setParameterValue(index, value, false, false, false);
+        if (CarlaPlugin* const plugin = _getFirstPlugin())
+        {
+            if (plugin->getParameterCount() < index)
+                plugin->setParameterValue(index, value, false, false, false);
+        }
     }
 
     void setMidiProgram(const uint8_t, const uint32_t bank, const uint32_t program) override
     {
-        if (pData->curPluginCount == 0 || pData->plugins == nullptr)
-            return;
-
-        CarlaPlugin* const plugin(pData->plugins[0].plugin);
-
-        if (plugin == nullptr || ! plugin->isEnabled())
-            return;
-
-        plugin->setMidiProgramById(bank, program, false, false, false);
+        if (CarlaPlugin* const plugin = _getFirstPlugin())
+            plugin->setMidiProgramById(bank, program, false, false, false);
     }
 
     void setCustomData(const char* const key, const char* const value) override
     {
-        CARLA_ASSERT(key != nullptr);
-        CARLA_ASSERT(value != nullptr);
-        return;
+        CARLA_SAFE_ASSERT_RETURN(key != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 
         // TODO
-
-        // unused
-        (void)key;
-        (void)value;
     }
 
     // -------------------------------------------------------------------
@@ -418,6 +433,7 @@ protected:
 
     void activate() override
     {
+#if 0
         for (uint32_t i=0; i < pData->curPluginCount; ++i)
         {
             CarlaPlugin* const plugin(pData->plugins[i].plugin);
@@ -427,10 +443,12 @@ protected:
 
             plugin->setActive(true, true, false);
         }
+#endif
     }
 
     void deactivate() override
     {
+#if 0
         for (uint32_t i=0; i < pData->curPluginCount; ++i)
         {
             CarlaPlugin* const plugin(pData->plugins[i].plugin);
@@ -440,46 +458,53 @@ protected:
 
             plugin->setActive(false, true, false);
         }
+#endif
 
         // just in case
         runPendingRtEvents();
     }
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const ::MidiEvent* const midiEvents, const uint32_t midiEventCount) override
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
-        if (pData->curPluginCount == 0)
+        if (pData->curPluginCount == 0 && ! fIsPatchbay)
         {
-            FloatVectorOperations::clear(outBuffer[0], frames);
-            FloatVectorOperations::clear(outBuffer[1], frames);
+#ifdef HAVE_JUCE
+            FloatVectorOperations::copy(outBuffer[0], inBuffer[0], frames);
+            FloatVectorOperations::copy(outBuffer[1], inBuffer[1], frames);
+#else
+            carla_copyFloat(outBuffer[0], inBuffer[0], frames);
+            carla_copyFloat(outBuffer[1], inBuffer[1], frames);
+#endif
             return runPendingRtEvents();;
         }
 
         // ---------------------------------------------------------------
         // Time Info
 
-        const ::TimeInfo* timeInfo(PluginClass::getTimeInfo());
+        const NativeTimeInfo* timeInfo(NativePluginClass::getTimeInfo());
 
-        fTimeInfo.playing = timeInfo->playing;
-        fTimeInfo.frame   = timeInfo->frame;
-        fTimeInfo.usecs   = timeInfo->usecs;
-        fTimeInfo.valid   = 0x0;
+        pData->timeInfo.playing = timeInfo->playing;
+        pData->timeInfo.frame   = timeInfo->frame;
+        pData->timeInfo.usecs   = timeInfo->usecs;
+        pData->timeInfo.valid   = 0x0;
 
         if (timeInfo->bbt.valid)
         {
-            fTimeInfo.valid |= EngineTimeInfo::ValidBBT;
+            pData->timeInfo.valid |= EngineTimeInfo::kValidBBT;
 
-            fTimeInfo.bbt.bar = timeInfo->bbt.bar;
-            fTimeInfo.bbt.beat = timeInfo->bbt.beat;
-            fTimeInfo.bbt.tick = timeInfo->bbt.tick;
-            fTimeInfo.bbt.barStartTick = timeInfo->bbt.barStartTick;
+            pData->timeInfo.bbt.bar = timeInfo->bbt.bar;
+            pData->timeInfo.bbt.beat = timeInfo->bbt.beat;
+            pData->timeInfo.bbt.tick = timeInfo->bbt.tick;
+            pData->timeInfo.bbt.barStartTick = timeInfo->bbt.barStartTick;
 
-            fTimeInfo.bbt.beatsPerBar = timeInfo->bbt.beatsPerBar;
-            fTimeInfo.bbt.beatType = timeInfo->bbt.beatType;
+            pData->timeInfo.bbt.beatsPerBar = timeInfo->bbt.beatsPerBar;
+            pData->timeInfo.bbt.beatType = timeInfo->bbt.beatType;
 
-            fTimeInfo.bbt.ticksPerBeat = timeInfo->bbt.ticksPerBeat;
-            fTimeInfo.bbt.beatsPerMinute = timeInfo->bbt.beatsPerMinute;
+            pData->timeInfo.bbt.ticksPerBeat = timeInfo->bbt.ticksPerBeat;
+            pData->timeInfo.bbt.beatsPerMinute = timeInfo->bbt.beatsPerMinute;
         }
 
+#if 0
         // ---------------------------------------------------------------
         // initialize input events
 
@@ -551,9 +576,16 @@ protected:
         // process
 
         processRack(inBuf, outBuf, frames);
+#endif
         runPendingRtEvents();
+        return;
+
+        // TODO
+        (void)midiEvents;
+        (void)midiEventCount;
     }
 
+#if 0
     // -------------------------------------------------------------------
     // Plugin UI calls
 
@@ -598,7 +630,9 @@ protected:
             break;
         }
     }
+#endif
 
+#if 0
     void uiSetParameterValue(const uint32_t index, const float value) override
     {
         if (index >= getParameterCount())
@@ -636,7 +670,9 @@ protected:
         (void)key;
         (void)value;
     }
+#endif
 
+#if 0
     // -------------------------------------------------------------------
     // Plugin state calls
 
@@ -723,43 +759,101 @@ protected:
             node = node.nextSibling();
         }
     }
+#endif
 
     // -------------------------------------------------------------------
 
+public:
+    static NativePluginHandle _instantiateRack(const NativeHostDescriptor* host)
+    {
+        return new CarlaEngineNative(host, false);
+    }
+
+    static NativePluginHandle _instantiatePatchbay(const NativeHostDescriptor* host)
+    {
+        return new CarlaEngineNative(host, true);
+    }
+
+    static void _cleanup(NativePluginHandle handle)
+    {
+        delete (CarlaEngineNative*)handle;
+    }
+
 private:
+    const bool fIsPatchbay; // rack if false
+#if 0
     bool fIsRunning;
     CarlaEngineNativeThread fThread;
+#endif
 
-    PluginClassEND(CarlaEngineNative)
+    CarlaPlugin* _getFirstPlugin() const noexcept
+    {
+        if (pData->curPluginCount == 0 || pData->plugins == nullptr)
+            return nullptr;
+
+        CarlaPlugin* const plugin(pData->plugins[0].plugin);
+
+        if (plugin == nullptr || ! plugin->isEnabled())
+            return nullptr;
+
+        return pData->plugins[0].plugin;
+    }
+
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineNative)
 };
 
 // -----------------------------------------------------------------------
 
-static const PluginDescriptor carlaDesc = {
+static const NativePluginDescriptor carlaRackDesc = {
     /* category  */ ::PLUGIN_CATEGORY_OTHER,
-    /* hints     */ static_cast< ::PluginHints>(::PLUGIN_IS_SYNTH|::PLUGIN_HAS_GUI|::PLUGIN_USES_SINGLE_THREAD|::PLUGIN_USES_STATE),
-    /* supports  */ static_cast<PluginSupports>(PLUGIN_SUPPORTS_EVERYTHING),
+    /* hints     */ static_cast<NativePluginHints>(::PLUGIN_IS_SYNTH|::PLUGIN_HAS_UI|::PLUGIN_NEEDS_FIXED_BUFFERS|::PLUGIN_NEEDS_SINGLE_THREAD|::PLUGIN_USES_STATE|::PLUGIN_USES_TIME),
+    /* supports  */ static_cast<NativePluginSupports>(::PLUGIN_SUPPORTS_EVERYTHING),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 1,
     /* midiOuts  */ 1,
     /* paramIns  */ 0,
     /* paramOuts */ 0,
-    /* name      */ "Carla-Plugin (TESTING)",
+    /* name      */ "Carla-Rack",
     /* label     */ "carla",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    PluginDescriptorFILL(CarlaEngineNative)
+    CarlaEngineNative::_instantiateRack,
+    CarlaEngineNative::_cleanup,
+    PluginDescriptorFILL2(CarlaEngineNative)
 };
-#endif
+
+static const NativePluginDescriptor carlaPatchbayDesc = {
+    /* category  */ ::PLUGIN_CATEGORY_OTHER,
+    /* hints     */ static_cast<NativePluginHints>(::PLUGIN_IS_SYNTH|::PLUGIN_HAS_UI|::PLUGIN_NEEDS_FIXED_BUFFERS|::PLUGIN_NEEDS_SINGLE_THREAD|::PLUGIN_USES_STATE|::PLUGIN_USES_TIME),
+    /* supports  */ static_cast<NativePluginSupports>(::PLUGIN_SUPPORTS_EVERYTHING),
+    /* audioIns  */ 2,
+    /* audioOuts */ 2,
+    /* midiIns   */ 1,
+    /* midiOuts  */ 1,
+    /* paramIns  */ 0,
+    /* paramOuts */ 0,
+    /* name      */ "Carla-Patchbay",
+    /* label     */ "carla",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    CarlaEngineNative::_instantiatePatchbay,
+    CarlaEngineNative::_cleanup,
+    PluginDescriptorFILL2(CarlaEngineNative)
+};
+
+// -----------------------------------------------------------------------
+
+CARLA_BACKEND_END_NAMESPACE
+
+// -----------------------------------------------------------------------
 
 CARLA_EXPORT
 void carla_register_native_plugin_carla()
 {
-    //carla_register_native_plugin(&carlaDesc);
+    CARLA_BACKEND_USE_NAMESPACE
+    carla_register_native_plugin(&carlaRackDesc);
+    carla_register_native_plugin(&carlaPatchbayDesc);
 }
-
-CARLA_BACKEND_END_NAMESPACE
 
 // -----------------------------------------------------------------------

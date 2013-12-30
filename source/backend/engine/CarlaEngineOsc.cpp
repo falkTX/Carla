@@ -415,7 +415,7 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP, const int argc, const lo
         std::free(port);
     }
 
-    for (unsigned short i=0, count=fEngine->getCurrentPluginCount(); i < count; ++i)
+    for (unsigned int i=0, count=fEngine->getCurrentPluginCount(); i < count; ++i)
     {
         CarlaPlugin* const plugin(fEngine->getPluginUnchecked(i));
 
@@ -551,7 +551,7 @@ int CarlaEngineOsc::handleMsgMidi(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
     // Fix bad note-off
     if (MIDI_IS_STATUS_NOTE_ON(status) && data[3] == 0)
-        status -= 0x10;
+        status = static_cast<uint8_t>(status - 0x10);
 
     if (MIDI_IS_STATUS_NOTE_OFF(status))
     {

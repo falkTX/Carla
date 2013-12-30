@@ -516,8 +516,7 @@ ENGINE_CALLBACK_PROGRAM_CHANGED = 9
 
 # The current MIDI program of a plugin has changed.
 # @param pluginId Plugin Id
-# @param value1   New MIDI bank
-# @param value2   New MIDI program
+# @param value1   New MIDI program index
 ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED = 10
 
 # A plugin's custom UI state has changed.
@@ -600,13 +599,15 @@ ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED = 24
 ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED = 25
 
 # A patchbay connection has been added.
-# @param value1 Output port Id
-# @param value2 Input port Id
+# @param pluginId Connection Id
+# @param value1   Output port Id
+# @param value2   Input port Id
 ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED = 26
 
 # A patchbay connection has been removed.
-# @param value1 Output port Id
-# @param value2 Input port Id
+# @param pluginId Connection Id
+# @param value1   Output port Id
+# @param value2   Input port Id
 ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED = 27
 
 # Engine started.

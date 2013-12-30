@@ -28,7 +28,7 @@
  */
 
 // -----------------------------------------------------------------------
-// Plugin Class
+// Native Plugin Class
 
 class NativePluginClass
 {
@@ -581,6 +581,9 @@ public:                                             \
 #define PluginDescriptorFILL(ClassName) \
     ClassName::_instantiate,            \
     ClassName::_cleanup,                \
+    PluginDescriptorFILL2(ClassName)
+
+#define PluginDescriptorFILL2(ClassName) \
     ClassName::_get_parameter_count,    \
     ClassName::_get_parameter_info,     \
     ClassName::_get_parameter_value,    \

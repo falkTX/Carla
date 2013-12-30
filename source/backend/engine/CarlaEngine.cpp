@@ -54,6 +54,57 @@ static const EngineEvent kFallbackEngineEvent = { kEngineEventTypeNull, 0, 0, { 
 
 // -----------------------------------------------------------------------
 
+void EngineControlEvent::dumpToMidiData(const uint8_t channel, uint8_t& size, uint8_t data[3]) const noexcept
+{
+    switch (type)
+    {
+    case kEngineControlEventTypeNull:
+        break;
+
+    case kEngineControlEventTypeParameter:
+        if (MIDI_IS_CONTROL_BANK_SELECT(param))
+        {
+            size    = 3;
+            data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + channel);
+            data[1] = MIDI_CONTROL_BANK_SELECT;
+            data[2] = static_cast<uint8_t>(value);
+        }
+        else
+        {
+            size    = 3;
+            data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + channel);
+            data[1] = static_cast<uint8_t>(param);
+            data[2] = uint8_t(value * 127.0f);
+        }
+        break;
+
+    case kEngineControlEventTypeMidiBank:
+        size    = 3;
+        data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + channel);
+        data[1] = MIDI_CONTROL_BANK_SELECT;
+        data[2] = static_cast<uint8_t>(param);
+        break;
+
+    case kEngineControlEventTypeMidiProgram:
+        size    = 2;
+        data[0] = static_cast<uint8_t>(MIDI_STATUS_PROGRAM_CHANGE + channel);
+        data[1] = static_cast<uint8_t>(param);
+        break;
+
+    case kEngineControlEventTypeAllSoundOff:
+        size    = 2;
+        data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + channel);
+        data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
+        break;
+
+    case kEngineControlEventTypeAllNotesOff:
+        size    = 2;
+        data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + channel);
+        data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
+        break;
+    }
+}
+
 void EngineEvent::fillFromMidiData(const uint8_t size, uint8_t* const data)
 {
     // get channel
@@ -1202,11 +1253,11 @@ const char* CarlaEngine::getUniquePluginName(const char* const name) const
 
                 if (n2 == '9')
                 {
-                    n2  = '0';
-                    n3 += 1;
+                    n2 = '0';
+                    n3 = static_cast<char>(n3 + 1);
                 }
                 else
-                    n2 += 1;
+                    n2 = static_cast<char>(n2 + 1);
 
                 sname[len-2] = n2;
                 sname[len-3] = n3;
@@ -1600,7 +1651,7 @@ void CarlaEngine::transportPause()
     pData->time.playing = false;
 }
 
-void CarlaEngine::transportRelocate(const uint32_t frame)
+void CarlaEngine::transportRelocate(const uint64_t frame)
 {
     pData->time.frame = frame;
 }
@@ -1632,10 +1683,8 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
 {
     carla_debug("CarlaEngine::setOption(%i:%s, %i, \"%s\")", option, EngineOption2Str(option), value, valueStr);
 
-#ifndef BUILD_BRIDGE
-    if (option >= ENGINE_OPTION_PROCESS_MODE && option < ENGINE_OPTION_PATH_RESOURCES && isRunning())
+    if (isRunning() && (option == ENGINE_OPTION_PROCESS_MODE || option == ENGINE_OPTION_AUDIO_NUM_PERIODS || option == ENGINE_OPTION_AUDIO_DEVICE))
         return carla_stderr("CarlaEngine::setOption(%s, %i, \"%s\") - Cannot set this option while engine is running!", EngineOption2Str(option), value, valueStr);
-#endif
 
     switch (option)
     {
@@ -1643,80 +1692,85 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         break;
 
     case ENGINE_OPTION_PROCESS_MODE:
-        if (value < ENGINE_PROCESS_MODE_SINGLE_CLIENT || value > ENGINE_PROCESS_MODE_PATCHBAY)
-            return carla_stderr("CarlaEngine::setOption(ENGINE_OPTION_PROCESS_MODE, %i, \"%s\") - invalid value", value, valueStr);
-
+        CARLA_SAFE_ASSERT_RETURN(value >= ENGINE_PROCESS_MODE_SINGLE_CLIENT && value < ENGINE_PROCESS_MODE_BRIDGE,);
         pData->options.processMode = static_cast<EngineProcessMode>(value);
         break;
 
     case ENGINE_OPTION_TRANSPORT_MODE:
-        if (value < ENGINE_TRANSPORT_MODE_INTERNAL || value > ENGINE_TRANSPORT_MODE_JACK)
-            return carla_stderr2("carla_set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, %i, \"%s\") - invalid value", value, valueStr);
-
+        CARLA_SAFE_ASSERT_RETURN(value >= ENGINE_TRANSPORT_MODE_INTERNAL && value < ENGINE_TRANSPORT_MODE_BRIDGE,);
         pData->options.transportMode = static_cast<EngineTransportMode>(value);
         break;
 
     case ENGINE_OPTION_FORCE_STEREO:
+        CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
         pData->options.forceStereo = (value != 0);
         break;
 
     case ENGINE_OPTION_PREFER_PLUGIN_BRIDGES:
+        CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
         pData->options.preferPluginBridges = (value != 0);
         break;
 
     case ENGINE_OPTION_PREFER_UI_BRIDGES:
+        CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
         pData->options.preferUiBridges = (value != 0);
         break;
 
     case ENGINE_OPTION_UIS_ALWAYS_ON_TOP:
+        CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
         pData->options.uisAlwaysOnTop = (value != 0);
         break;
 
     case ENGINE_OPTION_MAX_PARAMETERS:
-        if (value < 1)
-            return carla_stderr2("carla_set_engine_option(ENGINE_OPTION_MAX_PARAMETERS, %i, \"%s\") - invalid value", value, valueStr);
-
+        CARLA_SAFE_ASSERT_RETURN(value >= 0,);
         pData->options.maxParameters = static_cast<uint>(value);
         break;
 
     case ENGINE_OPTION_UI_BRIDGES_TIMEOUT:
-        if (value < 1)
-            return carla_stderr2("carla_set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT, %i, \"%s\") - invalid value", value, valueStr);
-
+        CARLA_SAFE_ASSERT_RETURN(value >= 0,);
         pData->options.uiBridgesTimeout = static_cast<uint>(value);
         break;
 
     case ENGINE_OPTION_AUDIO_NUM_PERIODS:
-        if (value < 2 || value > 3)
-            return carla_stderr2("carla_set_engine_option(ENGINE_OPTION_AUDIO_NUM_PERIODS, %i, \"%s\") - invalid value", value, valueStr);
-
+        CARLA_SAFE_ASSERT_RETURN(value >= 2 && value <= 3,);
         pData->options.audioNumPeriods = static_cast<uint>(value);
         break;
 
     case ENGINE_OPTION_AUDIO_BUFFER_SIZE:
-        if (value < 8)
-            return carla_stderr2("carla_set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, %i, \"%s\") - invalid value", value, valueStr);
-
+        CARLA_SAFE_ASSERT_RETURN(value >= 8,);
         pData->options.audioBufferSize = static_cast<uint>(value);
         break;
 
     case ENGINE_OPTION_AUDIO_SAMPLE_RATE:
-        if (value < 22050)
-            return carla_stderr2("carla_set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, %i, \"%s\") - invalid value", value, valueStr);
-
+        CARLA_SAFE_ASSERT_RETURN(value >= 22050,);
         pData->options.audioSampleRate = static_cast<uint>(value);
         break;
 
     case ENGINE_OPTION_AUDIO_DEVICE:
-        pData->options.audioDevice = valueStr;
+        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
+
+        if (pData->options.audioDevice != nullptr)
+            delete[] pData->options.audioDevice;
+
+        pData->options.audioDevice = carla_strdup(valueStr);
         break;
 
     case ENGINE_OPTION_PATH_BINARIES:
-        pData->options.binaryDir = valueStr;
+        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
+
+        if (pData->options.binaryDir != nullptr)
+            delete[] pData->options.binaryDir;
+
+        pData->options.binaryDir = carla_strdup(valueStr);
         break;
 
     case ENGINE_OPTION_PATH_RESOURCES:
-        pData->options.resourceDir = valueStr;
+        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
+
+        if (pData->options.resourceDir != nullptr)
+            delete[] pData->options.resourceDir;
+
+        pData->options.resourceDir = carla_strdup(valueStr);
         break;
     }
 }
@@ -1804,7 +1858,7 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
             plugin->sampleRateChanged(newSampleRate);
     }
 
-    callback(ENGINE_CALLBACK_SAMPLE_RATE_CHANGED, 0, 0, 0, newSampleRate, nullptr);
+    callback(ENGINE_CALLBACK_SAMPLE_RATE_CHANGED, 0, 0, 0, static_cast<float>(newSampleRate), nullptr);
 }
 
 void CarlaEngine::offlineModeChanged(const bool isOffline)

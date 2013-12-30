@@ -44,9 +44,11 @@ endif
 # --------------------------------------------------------------
 # Common build and link flags
 
-BASE_FLAGS = -Wall -Wextra -fPIC -DPIC -pipe -DREAL_BUILD
+BASE_FLAGS = -Wall -Wextra -Wcast-qual -Wconversion -Wlogical-op -Werror -fPIC -DPIC -pipe -DREAL_BUILD
 BASE_OPTS  = -O3 -ffast-math -mtune=generic -msse -msse2 -mfpmath=sse -fdata-sections -ffunction-sections
 LINK_OPTS  = -Wl,--gc-sections
+
+# -Waggregate-return -Wsign-conversion
 
 ifeq ($(RASPPI),true)
 # Raspberry-Pi optimization flags

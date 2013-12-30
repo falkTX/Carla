@@ -167,6 +167,8 @@ struct EngineControlEvent {
     EngineControlEventType type; //!< Control-Event type.
     uint16_t param;              //!< Parameter Id, midi bank or midi program.
     float    value;              //!< Parameter value, normalized to 0.0f<->1.0f.
+
+    void dumpToMidiData(const uint8_t channel, uint8_t& size, uint8_t data[3]) const noexcept;
 };
 
 /*!
@@ -977,7 +979,7 @@ public:
     /*!
      * Relocate the engine transport to \a frames.
      */
-    virtual void transportRelocate(const uint32_t frame);
+    virtual void transportRelocate(const uint64_t frame);
 
     // -------------------------------------------------------------------
     // Error handling
@@ -1145,14 +1147,14 @@ private:
     };
 
     static CarlaEngine*       newRtAudio(const AudioApi api);
-    static size_t             getRtAudioApiCount();
+    static unsigned int       getRtAudioApiCount();
     static const char*        getRtAudioApiName(const unsigned int index);
     static const char* const* getRtAudioApiDeviceNames(const unsigned int index);
     static const EngineDriverDeviceInfo* getRtAudioDeviceInfo(const unsigned int index, const char* const deviceName);
 
 # ifdef HAVE_JUCE
     static CarlaEngine*       newJuce(const AudioApi api);
-    static size_t             getJuceApiCount();
+    static unsigned int       getJuceApiCount();
     static const char*        getJuceApiName(const unsigned int index);
     static const char* const* getJuceApiDeviceNames(const unsigned int index);
     static const EngineDriverDeviceInfo* getJuceDeviceInfo(const unsigned int index, const char* const deviceName);

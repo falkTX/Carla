@@ -144,18 +144,18 @@ CarlaEngine* CarlaEngine::newJuce(const AudioApi /*api*/)
     return new CarlaEngineJuce();
 }
 
-size_t CarlaEngine::getJuceApiCount()
+unsigned int CarlaEngine::getJuceApiCount()
 {
     initJuceDevices();
 
-    return gJuceDeviceTypes.size();
+    return static_cast<unsigned int>(gJuceDeviceTypes.size());
 }
 
 const char* CarlaEngine::getJuceApiName(const unsigned int index)
 {
     initJuceDevices();
 
-    if ((int)index >= gJuceDeviceTypes.size())
+    if (static_cast<int>(index) >= gJuceDeviceTypes.size())
         return nullptr;
 
     AudioIODeviceType* const deviceType(gJuceDeviceTypes[index]);
@@ -170,7 +170,7 @@ const char* const* CarlaEngine::getJuceApiDeviceNames(const unsigned int index)
 {
     initJuceDevices();
 
-    if ((int)index >= gJuceDeviceTypes.size())
+    if (static_cast<int>(index) >= gJuceDeviceTypes.size())
         return nullptr;
 
     AudioIODeviceType* const deviceType(gJuceDeviceTypes[index]);
@@ -207,7 +207,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const unsigned int 
 {
     initJuceDevices();
 
-    if ((int)index >= gJuceDeviceTypes.size())
+    if (static_cast<int>(index) >= gJuceDeviceTypes.size())
         return nullptr;
 
     AudioIODeviceType* const deviceType(gJuceDeviceTypes[index]);
@@ -245,11 +245,11 @@ const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const unsigned int 
     if (device->hasControlPanel())
         devInfo.hints |= ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL;
 
-    if (size_t bufferSizesCount = device->getNumBufferSizesAvailable())
+    if (int bufferSizesCount = device->getNumBufferSizesAvailable())
     {
         uint32_t* const bufferSizes(new uint32_t[bufferSizesCount+1]);
 
-        for (size_t i=0; i < bufferSizesCount; ++i)
+        for (int i=0; i < bufferSizesCount; ++i)
             bufferSizes[i] = device->getBufferSizeSamples(i);
         bufferSizes[bufferSizesCount] = 0;
 
@@ -260,11 +260,11 @@ const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const unsigned int 
         devInfo.bufferSizes = dummyBufferSizes;
     }
 
-    if (size_t sampleRatesCount = device->getNumSampleRates())
+    if (int sampleRatesCount = device->getNumSampleRates())
     {
         double* const sampleRates(new double[sampleRatesCount+1]);
 
-        for (size_t i=0; i < sampleRatesCount; ++i)
+        for (int i=0; i < sampleRatesCount; ++i)
             sampleRates[i] = device->getSampleRate(i);
         sampleRates[sampleRatesCount] = 0.0;
 
