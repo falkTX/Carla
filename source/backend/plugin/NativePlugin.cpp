@@ -374,15 +374,13 @@ public:
         CarlaPlugin::getParameterName(parameterId, strBuf);
     }
 
-    void getParameterText(const uint32_t parameterId, char* const strBuf) const override
+    void getParameterText(const uint32_t parameterId, const float value, char* const strBuf) const override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_text != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_value != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
-
-        const float value(fDescriptor->get_parameter_value(fHandle, parameterId));
 
         if (const char* const text = fDescriptor->get_parameter_text(fHandle, parameterId, value))
         {
@@ -391,7 +389,7 @@ public:
         }
 
         carla_safe_assert("const char* const text = fDescriptor->get_parameter_text(fHandle, parameterId, value)", __FILE__, __LINE__);
-        CarlaPlugin::getParameterText(parameterId, strBuf);
+        CarlaPlugin::getParameterText(parameterId, value, strBuf);
     }
 
     void getParameterUnit(const uint32_t parameterId, char* const strBuf) const override
@@ -611,7 +609,7 @@ public:
 
         if (index >= 0)
         {
-            const uint8_t  channel = (pData->ctrlChannel >= 0 || pData->ctrlChannel < MAX_MIDI_CHANNELS) ? pData->ctrlChannel : 0;
+            const uint8_t  channel = (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS) ? pData->ctrlChannel : 0;
             const uint32_t bank    = pData->midiprog.data[index].bank;
             const uint32_t program = pData->midiprog.data[index].program;
 
@@ -659,7 +657,7 @@ public:
         if (fDescriptor->ui_set_midi_program != nullptr && pData->midiprog.current >= 0 && pData->midiprog.count > 0)
         {
             const uint32_t index   = pData->midiprog.current;
-            const uint8_t  channel = (pData->ctrlChannel >= 0 || pData->ctrlChannel < MAX_MIDI_CHANNELS) ? pData->ctrlChannel : 0;
+            const uint8_t  channel = (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS) ? pData->ctrlChannel : 0;
             const uint32_t bank    = pData->midiprog.data[index].bank;
             const uint32_t program = pData->midiprog.data[index].program;
 
@@ -965,7 +963,7 @@ public:
             }
             else
             {
-                pData->param.data[j].hints |= PARAMETER_IS_INPUT;
+                //pData->param.data[j].hints |= PARAMETER_IS_INPUT;
                 needsCtrlIn = true;
             }
 
@@ -1191,7 +1189,7 @@ public:
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
     {
-        uint32_t i, k;
+        uint32_t i/*, k*/;
 
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -1200,12 +1198,7 @@ public:
         {
             // disable any output sound
             for (i=0; i < pData->audioOut.count; ++i)
-            {
-#ifdef USE_JUCE
-                FloatVectorOperations::clear(outBuffer[i], frames);
-#else
-#endif
-            }
+                FLOAT_CLEAR(outBuffer[i], frames);
 
             return;
         }
@@ -1220,14 +1213,14 @@ public:
         {
             if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
-                for (k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; ++k)
+                for (uint8_t k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; ++k)
                 {
-                    fMidiEvents[k].data[0] = MIDI_STATUS_CONTROL_CHANGE + k;
+                    fMidiEvents[k].data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + k);
                     fMidiEvents[k].data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
                     fMidiEvents[k].data[2] = 0;
                     fMidiEvents[k].size    = 3;
 
-                    fMidiEvents[k+i].data[0] = MIDI_STATUS_CONTROL_CHANGE + k;
+                    fMidiEvents[k+i].data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + k);
                     fMidiEvents[k+i].data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
                     fMidiEvents[k+i].data[2] = 0;
                     fMidiEvents[k+i].size    = 3;
@@ -1237,9 +1230,9 @@ public:
             }
             else if (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
             {
-                for (k=0; k < MAX_MIDI_NOTE; ++k)
+                for (uint8_t k=0; k < MAX_MIDI_NOTE; ++k)
                 {
-                    fMidiEvents[k].data[0] = MIDI_STATUS_NOTE_OFF + pData->ctrlChannel;
+                    fMidiEvents[k].data[0] = static_cast<uint8_t>(MIDI_STATUS_NOTE_OFF + pData->ctrlChannel);
                     fMidiEvents[k].data[1] = k;
                     fMidiEvents[k].data[2] = 0;
                     fMidiEvents[k].size    = 3;
@@ -1298,11 +1291,10 @@ public:
 
                     CARLA_ASSERT(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
-                    fMidiEvents[fMidiEventCount].data[0]  = (note.velo > 0) ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF;
-                    fMidiEvents[fMidiEventCount].data[0] += note.channel;
-                    fMidiEvents[fMidiEventCount].data[1]  = note.note;
-                    fMidiEvents[fMidiEventCount].data[2]  = note.velo;
-                    fMidiEvents[fMidiEventCount].size     = 3;
+                    fMidiEvents[fMidiEventCount].data[0] = note.channel + (note.velo > 0) ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF;
+                    fMidiEvents[fMidiEventCount].data[1] = note.note;
+                    fMidiEvents[fMidiEventCount].data[2] = note.velo;
+                    fMidiEvents[fMidiEventCount].size    = 3;
 
                     fMidiEventCount += 1;
                 }
@@ -1425,13 +1417,13 @@ public:
 #endif
 
                         // Control plugin parameters
-                        for (k=0; k < pData->param.count; ++k)
+                        for (uint32_t k=0; k < pData->param.count; ++k)
                         {
                             if (pData->param.data[k].midiChannel != event.channel)
                                 continue;
                             if (pData->param.data[k].midiCC != ctrlEvent.param)
                                 continue;
-                            if ((pData->param.data[k].hints & PARAMETER_IS_INPUT) == 0)
+                            if (pData->param.data[k].type != PARAMETER_INPUT)
                                 continue;
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
@@ -1459,11 +1451,11 @@ public:
                             if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                                 continue;
 
-                            fMidiEvents[fMidiEventCount].port = 0;
-                            fMidiEvents[fMidiEventCount].time = sampleAccurate ? startTime : time;
-                            fMidiEvents[fMidiEventCount].data[0] = MIDI_STATUS_CONTROL_CHANGE + event.channel;
-                            fMidiEvents[fMidiEventCount].data[1] = ctrlEvent.param;
-                            fMidiEvents[fMidiEventCount].data[2] = ctrlEvent.value*127.0f;
+                            fMidiEvents[fMidiEventCount].port    = 0;
+                            fMidiEvents[fMidiEventCount].time    = sampleAccurate ? startTime : time;
+                            fMidiEvents[fMidiEventCount].data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + event.channel);
+                            fMidiEvents[fMidiEventCount].data[1] = static_cast<uint8_t>(ctrlEvent.param);
+                            fMidiEvents[fMidiEventCount].data[2] = uint8_t(ctrlEvent.value*127.0f);
                             fMidiEvents[fMidiEventCount].size    = 3;
 
                             fMidiEventCount += 1;
@@ -1482,7 +1474,7 @@ public:
                         {
                             const uint32_t nextProgramId(ctrlEvent.param);
 
-                            for (k=0; k < pData->midiprog.count; ++k)
+                            for (uint32_t k=0; k < pData->midiprog.count; ++k)
                             {
                                 if (pData->midiprog.data[k].bank == nextBankId && pData->midiprog.data[k].program == nextProgramId)
                                 {
@@ -1508,9 +1500,9 @@ public:
                             if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                                 continue;
 
-                            fMidiEvents[fMidiEventCount].port = 0;
-                            fMidiEvents[fMidiEventCount].time = sampleAccurate ? startTime : time;
-                            fMidiEvents[fMidiEventCount].data[0] = MIDI_STATUS_CONTROL_CHANGE + event.channel;
+                            fMidiEvents[fMidiEventCount].port    = 0;
+                            fMidiEvents[fMidiEventCount].time    = sampleAccurate ? startTime : time;
+                            fMidiEvents[fMidiEventCount].data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + event.channel);
                             fMidiEvents[fMidiEventCount].data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
                             fMidiEvents[fMidiEventCount].data[2] = 0;
                             fMidiEvents[fMidiEventCount].size    = 3;
@@ -1531,9 +1523,9 @@ public:
                             if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                                 continue;
 
-                            fMidiEvents[fMidiEventCount].port = 0;
-                            fMidiEvents[fMidiEventCount].time = sampleAccurate ? startTime : time;
-                            fMidiEvents[fMidiEventCount].data[0] = MIDI_STATUS_CONTROL_CHANGE + event.channel;
+                            fMidiEvents[fMidiEventCount].port    = 0;
+                            fMidiEvents[fMidiEventCount].time    = sampleAccurate ? startTime : time;
+                            fMidiEvents[fMidiEventCount].data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + event.channel);
                             fMidiEvents[fMidiEventCount].data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
                             fMidiEvents[fMidiEventCount].data[2] = 0;
                             fMidiEvents[fMidiEventCount].size    = 3;
@@ -1567,13 +1559,13 @@ public:
 
                     // Fix bad note-off
                     if (status == MIDI_STATUS_NOTE_ON && midiEvent.data[2] == 0)
-                        status -= 0x10;
+                        status = MIDI_STATUS_NOTE_OFF;
 
                     fMidiEvents[fMidiEventCount].port = 0;
                     fMidiEvents[fMidiEventCount].time = sampleAccurate ? startTime : time;
                     fMidiEvents[fMidiEventCount].size = midiEvent.size;
 
-                    fMidiEvents[fMidiEventCount].data[0] = status + channel;
+                    fMidiEvents[fMidiEventCount].data[0] = static_cast<uint8_t>(status + channel);
                     fMidiEvents[fMidiEventCount].data[1] = midiEvent.data[1];
                     fMidiEvents[fMidiEventCount].data[2] = midiEvent.data[2];
                     fMidiEvents[fMidiEventCount].data[3] = midiEvent.data[3];
@@ -1615,9 +1607,9 @@ public:
         {
             float value, curValue;
 
-            for (k=0; k < pData->param.count; ++k)
+            for (uint32_t k=0; k < pData->param.count; ++k)
             {
-                if (pData->param.data[k].hints & PARAMETER_IS_INPUT)
+                if (pData->param.data[k].type != PARAMETER_OUTPUT)
                     continue;
 
                 curValue = fDescriptor->get_parameter_value(fHandle, k);
@@ -1631,7 +1623,7 @@ public:
             }
 
             // reverse lookup MIDI events
-            for (k = (kPluginMaxMidiEvents*2)-1; k >= fMidiEventCount; --k)
+            for (uint32_t k = (kPluginMaxMidiEvents*2)-1; k >= fMidiEventCount; --k)
             {
                 if (fMidiEvents[k].data[0] == 0)
                     break;
@@ -1846,10 +1838,10 @@ public:
 
         if (fDescriptor != nullptr && fDescriptor->dispatcher != nullptr)
         {
-            fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, newSampleRate);
+            fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, float(newSampleRate));
 
             if (fHandle2 != nullptr)
-                fDescriptor->dispatcher(fHandle2, PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, newSampleRate);
+                fDescriptor->dispatcher(fHandle2, PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, float(newSampleRate));
         }
     }
 
@@ -2249,8 +2241,8 @@ public:
         {
             CARLA_ASSERT(fHost.uiName == nullptr);
 
-            char uiName[pData->name.length()+6+1];
-            std::strcpy(uiName, (const char*)pData->name);
+            char uiName[std::strlen(pData->name)+6+1];
+            std::strcpy(uiName, pData->name);
             std::strcat(uiName, " (GUI)");
 
             fHost.uiName = carla_strdup(uiName);
@@ -2305,9 +2297,9 @@ public:
             if (fDescriptor->supports & ::PLUGIN_SUPPORTS_ALL_SOUND_OFF)
                 pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
-            // load settings
-            pData->idStr  = "Native/";
-            pData->idStr += label;
+            // load settings TODO
+            pData->identifier = "Native/";
+            //pData->idStr += label;
             pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
 
             // ignore settings, we need this anyway
@@ -2431,13 +2423,11 @@ void carla_register_native_plugin(const NativePluginDescriptor* desc)
     NativePlugin::registerPlugin(desc);
 }
 
-#else // WANT_NATIVE
-# warning Building without Internal plugin support
-#endif
-
-CARLA_BACKEND_START_NAMESPACE
+#endif // WANT_NATIVE
 
 // -----------------------------------------------------------------------
+
+CARLA_BACKEND_START_NAMESPACE
 
 #ifdef WANT_NATIVE
 size_t CarlaPlugin::getNativePluginCount()
@@ -2483,3 +2473,5 @@ CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)
 }
 
 CARLA_BACKEND_END_NAMESPACE
+
+// -----------------------------------------------------------------------

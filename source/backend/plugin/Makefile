@@ -8,13 +8,13 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-ifeq ($(HAVE_FLUIDSYNTH),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags fluidsynth)
-endif
-
-ifeq ($(HAVE_LINUXSAMPLER),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags linuxsampler)
-endif
+# ifeq ($(HAVE_FLUIDSYNTH),true)
+# BUILD_CXX_FLAGS += $(shell pkg-config --cflags fluidsynth)
+# endif
+#
+# ifeq ($(HAVE_LINUXSAMPLER),true)
+# BUILD_CXX_FLAGS += $(shell pkg-config --cflags linuxsampler)
+# endif
 
 # --------------------------------------------------------------
 

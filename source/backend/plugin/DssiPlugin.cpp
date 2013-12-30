@@ -2018,9 +2018,7 @@ List<const char*> DssiPlugin::sMultiSynthList;
 
 CARLA_BACKEND_END_NAMESPACE
 
-#else // WANT_DSSI
-# warning Building without DSSI support
-#endif
+#endif // WANT_DSSI
 
 CARLA_BACKEND_START_NAMESPACE
 

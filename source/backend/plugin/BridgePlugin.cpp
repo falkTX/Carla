@@ -788,10 +788,9 @@ public:
                     CARLA_ASSERT(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
                     char data1, data2, data3;
-                    data1  = (note.velo > 0) ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF;
-                    data1 += note.channel;
-                    data2  = note.note;
-                    data3  = note.velo;
+                    data1 = static_cast<char>(note.channel + (note.velo > 0) ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF);
+                    data2 = note.note;
+                    data3 = note.velo;
 
                     fShmControl.writeOpcode(kPluginBridgeOpcodeMidiEvent);
                     fShmControl.writeLong(0);
@@ -891,7 +890,7 @@ public:
                                 continue;
                             if (pData->param.data[k].midiCC != ctrlEvent.param)
                                 continue;
-                            if ((pData->param.data[k].hints & PARAMETER_IS_INPUT) == 0)
+                            if (pData->param.data[k].type != PARAMETER_INPUT)
                                 continue;
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
@@ -919,9 +918,9 @@ public:
                             fShmControl.writeOpcode(kPluginBridgeOpcodeMidiEvent);
                             fShmControl.writeLong(event.time);
                             fShmControl.writeInt(3);
-                            fShmControl.writeChar(MIDI_STATUS_CONTROL_CHANGE + event.channel);
-                            fShmControl.writeChar(ctrlEvent.param);
-                            fShmControl.writeChar(ctrlEvent.value*127.0f);
+                            fShmControl.writeChar(static_cast<char>(MIDI_STATUS_CONTROL_CHANGE + event.channel));
+                            fShmControl.writeChar(static_cast<char>(ctrlEvent.param));
+                            fShmControl.writeChar(char(ctrlEvent.value*127.0f));
                         }
 
                         break;
@@ -997,10 +996,10 @@ public:
 
                     // Fix bad note-off
                     if (status == MIDI_STATUS_NOTE_ON && midiEvent.data[2] == 0)
-                        status -= 0x10;
+                        status = MIDI_STATUS_NOTE_OFF;
 
                     char data[4];
-                    data[0] = status + channel;
+                    data[0] = static_cast<char>(status + channel);
                     data[1] = midiEvent.data[1];
                     data[2] = midiEvent.data[2];
                     data[3] = midiEvent.data[3];
@@ -1188,7 +1187,7 @@ public:
     void sampleRateChanged(const double newSampleRate) override
     {
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetSampleRate);
-        fShmControl.writeFloat(newSampleRate);
+        fShmControl.writeFloat(float(newSampleRate));
         fShmControl.commitWrite();
     }
 
@@ -1360,8 +1359,8 @@ public:
             fInfo.maker = maker;
             fInfo.copyright = copyright;
 
-            if (pData->name.isEmpty())
-                pData->name = name;
+            if (pData->name == nullptr)
+                pData->name = carla_strdup(name);
 
             break;
         }
@@ -1400,16 +1399,16 @@ public:
             CARLA_ASSERT_INT2(index >= 0 && index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
             CARLA_ASSERT(rindex >= 0);
             CARLA_ASSERT(hints >= 0);
-            CARLA_ASSERT(channel >= 0 && channel < 16);
-            CARLA_ASSERT(cc >= -1);
+            CARLA_ASSERT(channel >= 0 && channel < MAX_MIDI_CHANNELS);
+            CARLA_ASSERT(cc >= -1 && cc < 0x5F);
 
             if (index >= 0 && static_cast<int32_t>(pData->param.count))
             {
                 pData->param.data[index].index   = index;
                 pData->param.data[index].rindex  = rindex;
                 pData->param.data[index].hints   = hints;
-                pData->param.data[index].midiChannel = channel;
-                pData->param.data[index].midiCC  = cc;
+                pData->param.data[index].midiChannel = static_cast<uint8_t>(channel);
+                pData->param.data[index].midiCC      = static_cast<int16_t>(cc);
             }
 
             break;
@@ -1708,7 +1707,7 @@ public:
         {
             char tmpFileBase[60];
 
-            std::srand(std::time(NULL));
+            std::srand(static_cast<uint>(std::time(nullptr)));
             std::sprintf(tmpFileBase, "/carla-bridge_shm_XXXXXX");
 
             fShmAudioPool.shm = shm_mkstemp(tmpFileBase);
@@ -1781,7 +1780,7 @@ public:
         fShmControl.writeInt(pData->engine->getBufferSize());
 
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetSampleRate);
-        fShmControl.writeFloat(pData->engine->getSampleRate());
+        fShmControl.writeFloat(float(pData->engine->getSampleRate()));
 
         fShmControl.commitWrite();
 
@@ -1822,7 +1821,7 @@ public:
         // ---------------------------------------------------------------
         // register client
 
-        if (pData->name.isEmpty())
+        if (pData->name == nullptr)
         {
             if (name != nullptr)
                 pData->name = pData->engine->getUniquePluginName(name);

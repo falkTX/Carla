@@ -1457,9 +1457,10 @@ class Host(object):
     # Get a plugin's parameter text (custom display of internal values).
     # @param pluginId    Plugin
     # @param parameterId Parameter index
+    # @param value       Parameter value
     # @see PARAMETER_USES_CUSTOM_TEXT
-    def get_parameter_text(self, pluginId, parameterId):
-        return charPtrToString(self.lib.carla_get_parameter_text(pluginId, parameterId))
+    def get_parameter_text(self, pluginId, parameterId, value):
+        return charPtrToString(self.lib.carla_get_parameter_text(pluginId, parameterId, value))
 
     # Get a plugin's program name.
     # @param pluginId  Plugin
@@ -1811,7 +1812,7 @@ class Host(object):
         self.lib.carla_get_custom_data_count.argtypes = [c_uint]
         self.lib.carla_get_custom_data_count.restype = c_uint32
 
-        self.lib.carla_get_parameter_text.argtypes = [c_uint, c_uint32]
+        self.lib.carla_get_parameter_text.argtypes = [c_uint, c_uint32, c_float]
         self.lib.carla_get_parameter_text.restype = c_char_p
 
         self.lib.carla_get_program_name.argtypes = [c_uint, c_uint32]

@@ -8,7 +8,7 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(RTAUDIO_FLAGS) -I. -Iinclude -I.. -I../../includes
+BUILD_CXX_FLAGS += $(RTAUDIO_FLAGS) -I. -Iinclude -I.. -I../../includes -w
 LINK_FLAGS      += $(RTAUDIO_LIBS) -L.. -ljackbridge
 
 OBJS = RtAudio.cpp.o

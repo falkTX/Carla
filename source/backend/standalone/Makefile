@@ -15,15 +15,15 @@ LINK_FLAGS += $(QTCORE_LIBS)
 LINK_FLAGS += $(QTXML_LIBS)
 LINK_FLAGS += $(RTMEMPOOL_LIBS)
 
-ifeq ($(HAVE_JUCE),true)
-LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
-LINK_FLAGS += $(JUCE_AUDIO_DEVICES_LIBS)
-LINK_FLAGS += $(JUCE_CORE_LIBS)
+# ifeq ($(HAVE_JUCE),true)
+# LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
+# LINK_FLAGS += $(JUCE_AUDIO_DEVICES_LIBS)
+# LINK_FLAGS += $(JUCE_CORE_LIBS)
 # LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
-LINK_FLAGS += $(JUCE_EVENTS_LIBS)
+# LINK_FLAGS += $(JUCE_EVENTS_LIBS)
 # LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
 # LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
-endif
+# endif
 
 # --------------------------------------------------------------
 # Engine
@@ -36,74 +36,74 @@ LINK_FLAGS += $(JACKBRIDGE_LIBS)
 # --------------------------------------------------------------
 # Plugin
 
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-LINK_FLAGS += $(LILV_LIBS)
-endif
-
-ifeq ($(HAVE_FLUIDSYNTH),true)
-LINK_FLAGS += $(shell pkg-config --libs fluidsynth)
-endif
-
-ifeq ($(HAVE_LINUXSAMPLER),true)
-LINK_FLAGS += $(shell pkg-config --libs linuxsampler)
-ifeq ($(WIN32),true)
-LINK_FLAGS += lrpcrt4
-endif
-endif
+# ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+# LINK_FLAGS += $(LILV_LIBS)
+# endif
+#
+# ifeq ($(HAVE_FLUIDSYNTH),true)
+# LINK_FLAGS += $(shell pkg-config --libs fluidsynth)
+# endif
+#
+# ifeq ($(HAVE_LINUXSAMPLER),true)
+# LINK_FLAGS += $(shell pkg-config --libs linuxsampler)
+# ifeq ($(WIN32),true)
+# LINK_FLAGS += lrpcrt4
+# endif
+# endif
 
 # --------------------------------------------------------------
 # Native
 
-ifeq ($(HAVE_OPENGL),true)
-LINK_FLAGS += $(DGL_LIBS)
-endif
-
-ifeq ($(HAVE_AF_DEPS),true)
-LINK_FLAGS += $(shell pkg-config --libs sndfile)
-ifeq ($(HAVE_FFMPEG),true)
-LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat libavutil)
-endif
-endif
-
-ifeq ($(HAVE_MF_DEPS),true)
-LINK_FLAGS += $(shell pkg-config --libs smf)
-endif
-
-ifeq ($(HAVE_ZYN_DEPS),true)
-LINK_FLAGS += $(shell pkg-config --libs fftw3 mxml zlib)
-ifeq ($(HAVE_ZYN_UI_DEPS),true)
-LINK_FLAGS += $(shell pkg-config --libs ntk_images ntk)
-endif
-endif
+# ifeq ($(HAVE_OPENGL),true)
+# LINK_FLAGS += $(DGL_LIBS)
+# endif
+#
+# ifeq ($(HAVE_AF_DEPS),true)
+# LINK_FLAGS += $(shell pkg-config --libs sndfile)
+# ifeq ($(HAVE_FFMPEG),true)
+# LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat libavutil)
+# endif
+# endif
+#
+# ifeq ($(HAVE_MF_DEPS),true)
+# LINK_FLAGS += $(shell pkg-config --libs smf)
+# endif
+#
+# ifeq ($(HAVE_ZYN_DEPS),true)
+# LINK_FLAGS += $(shell pkg-config --libs fftw3 mxml zlib)
+# ifeq ($(HAVE_ZYN_UI_DEPS),true)
+# LINK_FLAGS += $(shell pkg-config --libs ntk_images ntk)
+# endif
+# endif
 
 # --------------------------------------------------------------
 
 LIBS  = ../libcarla_engine.a
 LIBS += ../libcarla_plugin.a
 
-LIBS += ../../modules/carla_native.a
+# LIBS += ../../modules/carla_native.a
 LIBS += ../../modules/jackbridge.a
 LIBS += ../../modules/rtaudio.a
 LIBS += ../../modules/rtmidi.a
 LIBS += ../../modules/rtmempool.a
 
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-LIBS += ../../modules/lilv.a
-endif
+# ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+# LIBS += ../../modules/lilv.a
+# endif
 
-ifeq ($(HAVE_JUCE),true)
-LIBS += ../../modules/juce_audio_basics.a
-LIBS += ../../modules/juce_audio_devices.a
-LIBS += ../../modules/juce_core.a
+# ifeq ($(HAVE_JUCE),true)
+# LIBS += ../../modules/juce_audio_basics.a
+# LIBS += ../../modules/juce_audio_devices.a
+# LIBS += ../../modules/juce_core.a
 # LIBS += ../../modules/juce_data_structures.a
-LIBS += ../../modules/juce_events.a
+# LIBS += ../../modules/juce_events.a
 # LIBS += ../../modules/juce_graphics.a
 # LIBS += ../../modules/juce_gui_basics.a
-endif
+# endif
 
-ifeq ($(HAVE_OPENGL),true)
-LIBS += ../../modules/dgl.a
-endif
+# ifeq ($(HAVE_OPENGL),true)
+# LIBS += ../../modules/dgl.a
+# endif
 
 # --------------------------------------------------------------
 

@@ -17,7 +17,7 @@
 
 #include "CarlaPluginInternal.hpp"
 
-#define WANT_CSOUND 1
+//#define WANT_CSOUND 1
 #ifdef WANT_CSOUND
 
 //#include "CarlaVstUtils.hpp"

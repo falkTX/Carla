@@ -5449,9 +5449,7 @@ int CarlaEngineOsc::handleMsgLv2UridMap(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
 CARLA_BACKEND_END_NAMESPACE
 
-#else // WANT_LV2
-# warning Building without LV2 support
-#endif
+#endif // WANT_LV2
 
 CARLA_BACKEND_START_NAMESPACE
 

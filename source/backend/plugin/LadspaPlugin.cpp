@@ -149,7 +149,7 @@ public:
         if (fRdfDescriptor != nullptr && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
             const LADSPA_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
-            return port->ScalePointCount;
+            return static_cast<uint32_t>(port->ScalePointCount);
         }
 
         return 0;
@@ -165,7 +165,11 @@ public:
 
     unsigned int getOptionsAvailable() const override
     {
-        const bool isDssiVst = pData->filename.contains("dssi-vst", true);
+#ifdef __USE_GNU
+        const bool isDssiVst(strcasestr(pData->filename, "dssi-vst"));
+#else
+        const bool isDssiVst(std::strstr(pData->filename, "dssi-vst"));
+#endif
 
         unsigned int options = 0x0;
 
@@ -622,7 +626,7 @@ public:
 
                 if (LADSPA_IS_PORT_INPUT(portType))
                 {
-                    pData->param.data[j].hints |= PARAMETER_IS_INPUT;
+                    //pData->param.data[j].hints |= PARAMETER_IS_INPUT;
                     pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                     pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                     needsCtrlIn = true;
@@ -986,7 +990,7 @@ public:
                                 continue;
                             if (pData->param.data[k].midiCC != ctrlEvent.param)
                                 continue;
-                            if ((pData->param.data[k].hints & PARAMETER_IS_INPUT) == 0)
+                            if (pData->param.data[k].hints != PARAMETER_INPUT)
                                 continue;
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
@@ -1057,7 +1061,7 @@ public:
 
             for (uint32_t k=0; k < pData->param.count; ++k)
             {
-                if (pData->param.data[k].hints & PARAMETER_IS_INPUT)
+                if (pData->param.data[k].type != PARAMETER_OUTPUT)
                     continue;
 
                 pData->param.ranges[k].fixValue(fParamBuffers[k]);
@@ -1432,8 +1436,8 @@ public:
 
         pData->filename = filename;
 
-        CARLA_ASSERT(pData->name.isNotEmpty());
-        CARLA_ASSERT(pData->filename.isNotEmpty());
+        CARLA_ASSERT(pData->name != nullptr);
+        CARLA_ASSERT(pData->filename != nullptr);
 
         // ---------------------------------------------------------------
         // register client
@@ -1461,7 +1465,11 @@ public:
         // load plugin settings
 
         {
-            const bool isDssiVst = pData->filename.contains("dssi-vst", true);
+#ifdef __USE_GNU
+            const bool isDssiVst(strcasestr(pData->filename, "dssi-vst"));
+#else
+            const bool isDssiVst(std::strstr(pData->filename, "dssi-vst"));
+#endif
 
             // set default options
             pData->options = 0x0;
@@ -1472,13 +1480,13 @@ public:
             if (pData->engine->getOptions().forceStereo)
                 pData->options |= PLUGIN_OPTION_FORCE_STEREO;
 
-            // load settings
-            pData->idStr  = "LADSPA/";
-            pData->idStr += std::strrchr(filename, OS_SEP)+1;
-            pData->idStr += "/";
-            pData->idStr += CarlaString(getUniqueId());
-            pData->idStr += "/";
-            pData->idStr += label;
+            // load settings TODO
+            pData->identifier  = "LADSPA/";
+            //pData->idStr += std::strrchr(filename, OS_SEP)+1;
+            //pData->idStr += "/";
+            //pData->idStr += CarlaString(getUniqueId());
+            //pData->idStr += "/";
+            //pData->idStr += label;
             pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
 
             // ignore settings, we need this anyway
