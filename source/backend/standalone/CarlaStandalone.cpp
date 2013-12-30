@@ -1358,13 +1358,8 @@ const char* carla_get_chunk_data(uint pluginId)
 
             if (data != nullptr && dataSize > 0)
             {
-#if 0 //def HAVE_JUCE
-                juce::MemoryBlock memBlock(data, dataSize);
-                chunkData = memBlock.toBase64Encoding().toRawUTF8();
-#else
-                QByteArray chunk(QByteArray((char*)data, dataSize).toBase64());
-                chunkData = chunk.constData();
-#endif
+                chunkData = QByteArray((char*)data, dataSize).toBase64().constData();
+
                 return (const char*)chunkData;
             }
             else

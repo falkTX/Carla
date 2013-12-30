@@ -74,7 +74,7 @@ void CarlaPlugin::getCopyright(char* const) const noexcept {}
 void CarlaPlugin::getRealName(char* const)  const noexcept {}
 void CarlaPlugin::getParameterName(const uint32_t, char* const)   const {}
 void CarlaPlugin::getParameterSymbol(const uint32_t, char* const) const {}
-void CarlaPlugin::getParameterText(const uint32_t, char* const)   const {}
+void CarlaPlugin::getParameterText(const uint32_t, const float, char* const)   const {}
 void CarlaPlugin::getParameterUnit(const uint32_t, char* const)   const {}
 void CarlaPlugin::getParameterScalePointLabel(const uint32_t, const uint32_t, char* const) const {}
 void CarlaPlugin::getProgramName(const uint32_t, char* const)                              const {}

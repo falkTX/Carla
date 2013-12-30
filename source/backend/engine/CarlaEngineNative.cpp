@@ -24,11 +24,6 @@
 
 #include "CarlaNative.hpp"
 
-#ifdef HAVE_JUCE
-# include "juce_audio_basics.h"
-using juce::FloatVectorOperations;
-#endif
-
 CARLA_BACKEND_START_NAMESPACE
 
 #if 0
@@ -343,23 +338,7 @@ protected:
                 static char strBuf[STR_MAX+1];
                 carla_zeroChar(strBuf, STR_MAX+1);
 
-                float oldValue;
-                plugin->lock();
-
-                oldValue = plugin->getParameterValue(index);
-
-                if (oldValue != value)
-                {
-                    plugin->setParameterValue(index, value, false, false, false);
-                    plugin->getParameterText(index, strBuf);
-                    plugin->setParameterValue(index, oldValue, false, false, false);
-                }
-                else
-                {
-                    plugin->getParameterText(index, strBuf);
-                }
-
-                plugin->unlock();
+                plugin->getParameterText(index, value, strBuf);
 
                 return strBuf;
             }
@@ -468,13 +447,9 @@ protected:
     {
         if (pData->curPluginCount == 0 && ! fIsPatchbay)
         {
-#ifdef HAVE_JUCE
-            FloatVectorOperations::copy(outBuffer[0], inBuffer[0], frames);
-            FloatVectorOperations::copy(outBuffer[1], inBuffer[1], frames);
-#else
-            carla_copyFloat(outBuffer[0], inBuffer[0], frames);
-            carla_copyFloat(outBuffer[1], inBuffer[1], frames);
-#endif
+            FLOAT_COPY(outBuffer[0], inBuffer[0], frames);
+            FLOAT_COPY(outBuffer[1], inBuffer[1], frames);
+
             return runPendingRtEvents();;
         }
 
@@ -769,10 +744,12 @@ public:
         return new CarlaEngineNative(host, false);
     }
 
+#ifdef HAVE_JUCE
     static NativePluginHandle _instantiatePatchbay(const NativeHostDescriptor* host)
     {
         return new CarlaEngineNative(host, true);
     }
+#endif
 
     static void _cleanup(NativePluginHandle handle)
     {
@@ -823,6 +800,7 @@ static const NativePluginDescriptor carlaRackDesc = {
     PluginDescriptorFILL2(CarlaEngineNative)
 };
 
+#ifdef HAVE_JUCE
 static const NativePluginDescriptor carlaPatchbayDesc = {
     /* category  */ ::PLUGIN_CATEGORY_OTHER,
     /* hints     */ static_cast<NativePluginHints>(::PLUGIN_IS_SYNTH|::PLUGIN_HAS_UI|::PLUGIN_NEEDS_FIXED_BUFFERS|::PLUGIN_NEEDS_SINGLE_THREAD|::PLUGIN_USES_STATE|::PLUGIN_USES_TIME),
@@ -841,6 +819,7 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
     CarlaEngineNative::_cleanup,
     PluginDescriptorFILL2(CarlaEngineNative)
 };
+#endif
 
 // -----------------------------------------------------------------------
 
@@ -853,7 +832,9 @@ void carla_register_native_plugin_carla()
 {
     CARLA_BACKEND_USE_NAMESPACE
     carla_register_native_plugin(&carlaRackDesc);
+#ifdef HAVE_JUCE
     carla_register_native_plugin(&carlaPatchbayDesc);
+#endif
 }
 
 // -----------------------------------------------------------------------

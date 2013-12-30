@@ -18,11 +18,9 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaLibCounter.hpp"
 
-#ifdef USE_JUCE
-#include "juce_data_structures.h"
-
-using namespace juce;
-#endif
+#include <QtCore/QFile>
+#include <QtCore/QTextStream>
+#include <QtCore/QSettings>
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -109,92 +107,62 @@ void* CarlaPluginProtectedData::uiLibSymbol(const char* const symbol)
 
 void CarlaPluginProtectedData::saveSetting(const unsigned int option, const bool yesNo)
 {
-#ifdef USE_JUCE
-    PropertiesFile::Options opts;
-    opts.applicationName     = "common"; // TODO, (const char*)idStr
-    opts.filenameSuffix      = ".cfg";
-    opts.osxLibrarySubFolder = "Application Support";
+    CARLA_SAFE_ASSERT_RETURN(identifier != nullptr && identifier[0] != '\0',);
 
-#ifdef CARLA_OS_LINUX
-    opts.folderName = "config/falkTX/Carla/PluginSettings/";
-#else
-    opts.folderName = "falkTX\\Carla\\PluginSettings\\";
-#endif
-
-    ApplicationProperties appProps;
-    appProps.setStorageParameters(opts);
-
-    PropertiesFile* const props(appProps.getUserSettings());
-
-    CARLA_SAFE_ASSERT_RETURN(props != nullptr,);
+    QSettings settings("falkTX", "CarlaPluginSettings");
+    settings.beginGroup(identifier);
 
     switch (option)
     {
     case PLUGIN_OPTION_FIXED_BUFFERS:
-        props->setValue("FixedBuffers", yesNo);
+        settings.setValue("FixedBuffers", yesNo);
         break;
     case PLUGIN_OPTION_FORCE_STEREO:
-        props->setValue("ForceStereo", yesNo);
+        settings.setValue("ForceStereo", yesNo);
         break;
     case PLUGIN_OPTION_MAP_PROGRAM_CHANGES:
-        props->setValue("MapProgramChanges", yesNo);
+        settings.setValue("MapProgramChanges", yesNo);
         break;
     case PLUGIN_OPTION_USE_CHUNKS:
-        props->setValue("UseChunks", yesNo);
+        settings.setValue("UseChunks", yesNo);
         break;
     case PLUGIN_OPTION_SEND_CONTROL_CHANGES:
-        props->setValue("SendControlChanges", yesNo);
+        settings.setValue("SendControlChanges", yesNo);
         break;
     case PLUGIN_OPTION_SEND_CHANNEL_PRESSURE:
-        props->setValue("SendChannelPressure", yesNo);
+        settings.setValue("SendChannelPressure", yesNo);
         break;
     case PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH:
-        props->setValue("SendNoteAftertouch", yesNo);
+        settings.setValue("SendNoteAftertouch", yesNo);
         break;
     case PLUGIN_OPTION_SEND_PITCHBEND:
-        props->setValue("SendPitchbend", yesNo);
+        settings.setValue("SendPitchbend", yesNo);
         break;
     case PLUGIN_OPTION_SEND_ALL_SOUND_OFF:
-        props->setValue("SendAllSoundOff", yesNo);
+        settings.setValue("SendAllSoundOff", yesNo);
         break;
     default:
         break;
     }
 
-    appProps.saveIfNeeded();
-    appProps.closeFiles();
-#endif
+    settings.endGroup();
 }
 
 unsigned int CarlaPluginProtectedData::loadSettings(const unsigned int options, const unsigned int availOptions)
 {
-#ifdef USE_JUCE
-    PropertiesFile::Options opts;
-    opts.applicationName     = "common"; // TODO, (const char*)idStr
-    opts.filenameSuffix      = ".cfg";
-    opts.osxLibrarySubFolder = "Application Support";
+    CARLA_SAFE_ASSERT_RETURN(identifier != nullptr && identifier[0] != '\0',);
 
-#ifdef CARLA_OS_LINUX
-    opts.folderName = "config/falkTX/Carla/PluginSettings/";
-#else
-    opts.folderName = "falkTX\\Carla\\PluginSettings\\";
-#endif
-
-    ApplicationProperties appProps;
-    appProps.setStorageParameters(opts);
-
-    PropertiesFile* const props(appProps.getUserSettings());
-
-    CARLA_SAFE_ASSERT_RETURN(props != nullptr, options);
+    QSettings settings("falkTX", "CarlaPluginSettings");
+    settings.beginGroup(identifier);
 
     unsigned int newOptions = 0x0;
 
-    #define CHECK_AND_SET_OPTION(KEY, BIT)                              \
+    #define CHECK_AND_SET_OPTION(STR, BIT)                              \
     if ((availOptions & BIT) != 0 || BIT == PLUGIN_OPTION_FORCE_STEREO) \
     {                                                                   \
-        if (props->containsKey(KEY))                                    \
+        if (settings.contains(STR))                                     \
         {                                                               \
-            if (props->getBoolValue(KEY, bool(options & BIT)))          \
+            if (settings.value(STR, (options & BIT) != 0).toBool())     \
                 newOptions |= BIT;                                      \
         }                                                               \
         else if (options & BIT)                                         \
@@ -213,9 +181,9 @@ unsigned int CarlaPluginProtectedData::loadSettings(const unsigned int options, 
 
     #undef CHECK_AND_SET_OPTION
 
+    settings.endGroup();
+
     return newOptions;
-#endif
-    return 0x0;
 }
 
 // -------------------------------------------------------------------
@@ -254,7 +222,6 @@ CarlaPlugin::~CarlaPlugin()
 {
     carla_debug("CarlaPlugin::~CarlaPlugin()");
 
-    pData->cleanup();
     delete pData;
 }
 
@@ -378,7 +345,7 @@ const ParameterRanges& CarlaPlugin::getParameterRanges(const uint32_t parameterI
 bool CarlaPlugin::isParameterOutput(const uint32_t parameterId) const
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
-    return ((pData->param.data[parameterId].hints & PARAMETER_IS_INPUT) == 0);
+    return (pData->param.data[parameterId].type == PARAMETER_OUTPUT);
 }
 
 const MidiProgramData& CarlaPlugin::getMidiProgramData(const uint32_t index) const
@@ -545,7 +512,6 @@ const SaveState& CarlaPlugin::getSaveState()
     pData->saveState.ctrlChannel  = pData->ctrlChannel;
 #endif
 
-#ifdef USE_JUCE
     // ---------------------------------------------------------------
     // Chunk
 
@@ -556,14 +522,12 @@ const SaveState& CarlaPlugin::getSaveState()
 
         if (data != nullptr && dataSize > 0)
         {
-            MemoryBlock memBlock(data, dataSize);
-            pData->saveState.chunk = carla_strdup(memBlock.toBase64Encoding().toRawUTF8());
+            pData->saveState.chunk = carla_strdup(QByteArray((char*)data, dataSize).toBase64().constData());
 
             // Don't save anything else if using chunks
             return pData->saveState;
         }
     }
-#endif
 
     // ---------------------------------------------------------------
     // Current Program
@@ -1512,8 +1476,14 @@ void CarlaPlugin::offlineModeChanged(const bool)
 {
 }
 
-bool CarlaPlugin::tryLock()
+bool CarlaPlugin::tryLock(const bool forcedOffline)
 {
+    if (forcedOffline)
+    {
+        pData->masterMutex.lock();
+        return true;
+    }
+
     return pData->masterMutex.tryLock();
 }
 
@@ -1604,11 +1574,11 @@ void CarlaPlugin::registerToOscClient()
 
 #ifdef BUILD_BRIDGE
             pData->engine->oscSend_bridge_parameter_info(i, bufName, bufUnit);
-            pData->engine->oscSend_bridge_parameter_data(i, paramData.rindex, paramData.hints, paramData.midiChannel, paramData.midiCC);
+            pData->engine->oscSend_bridge_parameter_data(i, paramData.type, paramData.hints, paramData.rindex, paramData.midiChannel, paramData.midiCC);
             pData->engine->oscSend_bridge_parameter_ranges(i, paramRanges.def, paramRanges.min, paramRanges.max, paramRanges.step, paramRanges.stepSmall, paramRanges.stepLarge);
             pData->engine->oscSend_bridge_set_parameter_value(i, getParameterValue(i));
 #else
-            pData->engine->oscSend_control_set_parameter_data(pData->id, i,paramData.hints, bufName, bufUnit, getParameterValue(i));
+            pData->engine->oscSend_control_set_parameter_data(pData->id, i, paramData.type, paramData.hints, bufName, bufUnit, getParameterValue(i));
             pData->engine->oscSend_control_set_parameter_ranges(pData->id, i, paramRanges.min, paramRanges.max, paramRanges.def, paramRanges.step, paramRanges.stepSmall, paramRanges.stepLarge);
             pData->engine->oscSend_control_set_parameter_midi_cc(pData->id, i, paramData.midiCC);
             pData->engine->oscSend_control_set_parameter_midi_channel(pData->id, i, paramData.midiChannel);
@@ -2050,7 +2020,6 @@ CarlaEngineAudioPort* CarlaPlugin::getAudioOutPort(const uint32_t index) const n
 {
     return pData->audioOut.ports[index].port;
 }
-
 
 // -------------------------------------------------------------------
 // Scoped Disabler

@@ -328,7 +328,7 @@ public:
     /*!
      * Get the custom text of the parameter \a parameterId.
      */
-    virtual void getParameterText(const uint32_t parameterId, char* const strBuf) const;
+    virtual void getParameterText(const uint32_t parameterId, const float value, char* const strBuf) const;
 
     /*!
      * Get the unit of the parameter \a parameterId.
@@ -662,15 +662,18 @@ public:
      */
     virtual void offlineModeChanged(const bool isOffline);
 
+#if 0
     /*!
      * Lock the plugin's master mutex.
      */
     void lock();
+#endif
 
     /*!
      * Try to lock the plugin's master mutex.
+     * @param forcedOffline When true, always locks and returns true
      */
-    bool tryLock();
+    bool tryLock(const bool forcedOffline);
 
     /*!
      * Unlock the plugin's master mutex.

@@ -19,11 +19,6 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-#try:
-    #from PyQt5.QtCore import pyqtSignal, pyqtSlot, QByteArray, QSettings
-    #from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
-    #from PyQt5.QtWidgets import QDialog, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
-#except:
 from PyQt4.QtCore import pyqtSignal, pyqtSlot, QByteArray, QSettings
 from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
 from PyQt4.QtGui import QDialog, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
@@ -65,7 +60,7 @@ gFakePluginInfo = {
 }
 
 gFakeParamInfo = {
-    "hints": PARAMETER_IS_INPUT|PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE,
+    "hints": PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE,
     "name":  "Parameter Name",
     "unit":  "",
     "scalePoints": [],

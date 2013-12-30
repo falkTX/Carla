@@ -26,16 +26,30 @@
 #include "CarlaOscUtils.hpp"
 #include "CarlaStateUtils.hpp"
 #include "CarlaMutex.hpp"
-#include "CarlaMIDI.h"
 #include "RtList.hpp"
+
+#ifdef HAVE_JUCE
+# include "juce_audio_basics.h"
+using juce::FloatVectorOperations;
+#endif
 
 #include <cmath>
 
+// -----------------------------------------------------------------------
+
 #define CARLA_PROCESS_CONTINUE_CHECK if (! pData->enabled) { pData->engine->callback(ENGINE_CALLBACK_DEBUG, pData->id, 0, 0, 0.0f, "Processing while plugin is disabled!!"); return; }
 
-#ifdef USE_JUCE
-#include "juce_audio_basics.h"
-using juce::FloatVectorOperations;
+// -----------------------------------------------------------------------
+// Float operations
+
+#ifdef HAVE_JUCE
+# define FLOAT_ADD(bufDst, bufSrc, frames)  FloatVectorOperations::add(bufDst, bufSrc, frames)
+# define FLOAT_COPY(bufDst, bufSrc, frames) FloatVectorOperations::copy(bufDst, bufSrc, frames)
+# define FLOAT_CLEAR(buf, frames)           FloatVectorOperations::clear(buf, frames)
+#else
+# define FLOAT_ADD(bufDst, bufSrc, frames)  carla_addFloat(bufDst, bufSrc, frames)
+# define FLOAT_COPY(bufDst, bufSrc, frames) carla_copyFloat(bufDst, bufSrc, frames)
+# define FLOAT_CLEAR(buf, frames)           carla_zeroFloat(buf, frames)
 #endif
 
 CARLA_BACKEND_START_NAMESPACE
@@ -80,12 +94,12 @@ struct PluginPostRtEvent {
     int32_t value1;
     int32_t value2;
     float   value3;
+};
 
-    PluginPostRtEvent() noexcept
-        : type(kPluginPostRtEventNull),
-          value1(-1),
-          value2(-1),
-          value3(0.0f) {}
+struct ExternalMidiNote {
+    int8_t  channel; // invalid if -1
+    uint8_t note;    // 0 to 127
+    uint8_t velo;    // note-off if 0
 };
 
 // -----------------------------------------------------------------------
@@ -474,19 +488,6 @@ struct PluginMidiProgramData {
 
 // -----------------------------------------------------------------------
 
-struct ExternalMidiNote {
-    int8_t  channel; // invalid if -1
-    uint8_t note;
-    uint8_t velo; // note-off if 0
-
-    ExternalMidiNote() noexcept
-        : channel(-1),
-          note(0),
-          velo(0) {}
-};
-
-// -----------------------------------------------------------------------
-
 struct CarlaPluginProtectedData {
     CarlaEngine* const engine;
     CarlaEngineClient* client;
@@ -503,19 +504,19 @@ struct CarlaPluginProtectedData {
     void* uiLib;
 
     // misc
-    int8_t       ctrlChannel;
-    unsigned int extraHints;
-    int          patchbayClientId;
+    int8_t ctrlChannel;
+    uint   extraHints;
+    int    patchbayClientId;
 
     // latency
     uint32_t latency;
     float**  latencyBuffers;
 
     // data 1
-    CarlaString name;
-    CarlaString filename;
-    CarlaString iconName;
-    CarlaString idStr;
+    const char* name;
+    const char* filename;
+    const char* iconName;
+    const char* identifier; // used for save/restore settings per plugin
 
     // data 2
     PluginAudioData audioIn;
@@ -633,8 +634,8 @@ struct CarlaPluginProtectedData {
 #endif
     } osc;
 
-    CarlaPluginProtectedData(CarlaEngine* const eng, CarlaPlugin* const plug)
-        : engine(eng),
+    CarlaPluginProtectedData(CarlaEngine* const e, CarlaPlugin* const p)
+        : engine(e),
           client(nullptr),
           id(0),
           hints(0x0),
@@ -649,7 +650,11 @@ struct CarlaPluginProtectedData {
           patchbayClientId(0),
           latency(0),
           latencyBuffers(nullptr),
-          osc(eng, plug) {}
+          name(nullptr),
+          filename(nullptr),
+          iconName(nullptr),
+          identifier(nullptr),
+          osc(e, p) {}
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     CarlaPluginProtectedData() = delete;
@@ -658,20 +663,32 @@ struct CarlaPluginProtectedData {
 
     ~CarlaPluginProtectedData()
     {
-        CARLA_ASSERT(client == nullptr);
-        CARLA_ASSERT(! active);
-        CARLA_ASSERT(lib == nullptr);
-        CARLA_ASSERT(uiLib == nullptr);
-        CARLA_ASSERT(latency == 0);
-        CARLA_ASSERT(latencyBuffers == nullptr);
         CARLA_SAFE_ASSERT(! needsReset);
-    }
 
-    // -------------------------------------------------------------------
-    // Cleanup
+        if (name != nullptr)
+        {
+            delete[] name;
+            name = nullptr;
+        }
 
-    void cleanup()
-    {
+        if (filename != nullptr)
+        {
+            delete[] filename;
+            filename = nullptr;
+        }
+
+        if (iconName != nullptr)
+        {
+            delete[] iconName;
+            iconName = nullptr;
+        }
+
+        if (identifier != nullptr)
+        {
+            delete[] identifier;
+            identifier = nullptr;
+        }
+
         {
             // mutex MUST have been locked before
             const bool lockMaster(masterMutex.tryLock());
@@ -734,6 +751,8 @@ struct CarlaPluginProtectedData {
 
         if (lib != nullptr)
             libClose();
+
+        CARLA_ASSERT(uiLib == nullptr);
     }
 
     // -------------------------------------------------------------------

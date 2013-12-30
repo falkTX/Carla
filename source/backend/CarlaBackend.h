@@ -234,26 +234,20 @@ const unsigned int PLUGIN_OPTION_SEND_ALL_SOUND_OFF = 0x100;
  */
 
 /*!
- * Parameter is input.\n
- * When this hint is not set, parameter is assumed to be output.
- */
-const unsigned int PARAMETER_IS_INPUT = 0x001;
-
-/*!
  * Parameter value is boolean.
  * It's always at either minimum or maximum value.
  */
-const unsigned int PARAMETER_IS_BOOLEAN = 0x002;
+const unsigned int PARAMETER_IS_BOOLEAN = 0x001;
 
 /*!
  * Parameter value is integer.
  */
-const unsigned int PARAMETER_IS_INTEGER = 0x004;
+const unsigned int PARAMETER_IS_INTEGER = 0x002;
 
 /*!
  * Parameter value is logarithmic.
  */
-const unsigned int PARAMETER_IS_LOGARITHMIC = 0x008;
+const unsigned int PARAMETER_IS_LOGARITHMIC = 0x004;
 
 /*!
  * Parameter is enabled.

@@ -22,12 +22,8 @@
 #include "List.hpp"
 #include "jackbridge/JackBridge.hpp"
 
-#ifdef HAVE_JUCE
-# include "juce_audio_basics.h"
-using juce::FloatVectorOperations;
-#endif
-
 #include <cmath>
+
 #include <QtCore/QStringList>
 
 #define URI_CANVAS_ICON "http://kxstudio.sf.net/ns/canvas/icon"
@@ -90,13 +86,7 @@ public:
         fBuffer = (float*)jackbridge_port_get_buffer(fPort, bufferSize);
 
         if (! fIsInput)
-        {
-#ifdef HAVE_JUCE
-           FloatVectorOperations::clear(fBuffer, bufferSize);
-#else
-           carla_zeroFloat(fBuffer, bufferSize);
-#endif
-        }
+           FLOAT_CLEAR(fBuffer, bufferSize);
     }
 
 private:
@@ -153,13 +143,7 @@ public:
         fBuffer = (float*)jackbridge_port_get_buffer(fPort, bufferSize);
 
         if (! fIsInput)
-        {
-#ifdef HAVE_JUCE
-           FloatVectorOperations::clear(fBuffer, bufferSize);
-#else
-           carla_zeroFloat(fBuffer, bufferSize);
-#endif
-        }
+           FLOAT_CLEAR(fBuffer, bufferSize);
     }
 
 private:
@@ -1060,13 +1044,9 @@ protected:
                 float* const audioOut2 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut2], nframes);
                 void*  const eventOut  = jackbridge_port_get_buffer(fRackPorts[kRackPortEventOut], nframes);
 
-# ifdef HAVE_JUCE
-                FloatVectorOperations::copy(audioOut1, audioIn1, nframes);
-                FloatVectorOperations::copy(audioOut2, audioIn2, nframes);
-# else
-                carla_copyFloat(audioOut1, audioIn1, nframes);
-                carla_copyFloat(audioOut2, audioIn2, nframes);
-# endif
+                FLOAT_COPY(audioOut1, audioIn1, nframes);
+                FLOAT_COPY(audioOut2, audioIn2, nframes);
+
                 jackbridge_midi_clear_buffer(eventOut);
             }
 #endif
@@ -1077,7 +1057,7 @@ protected:
 #ifdef BUILD_BRIDGE
         CarlaPlugin* const plugin(pData->plugins[0].plugin);
 
-        if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock())
+        if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock(fFreewheel))
         {
             plugin->initBuffers();
             processPlugin(plugin, nframes);
@@ -1092,7 +1072,7 @@ protected:
             {
                 CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
-                if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock())
+                if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock(fFreewheel))
                 {
                     plugin->initBuffers();
                     processPlugin(plugin, nframes);
@@ -1983,15 +1963,18 @@ private:
     {
         CarlaPlugin* const plugin((CarlaPlugin*)arg);
 
-        if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock())
+        if (plugin != nullptr && plugin->isEnabled())
         {
             CarlaEngineJack* const engine((CarlaEngineJack*)plugin->getEngine());
             CARLA_SAFE_ASSERT_RETURN(engine != nullptr,0);
 
-            plugin->initBuffers();
-            engine->saveTransportInfo();
-            engine->processPlugin(plugin, nframes);
-            plugin->unlock();
+            if (plugin->tryLock(engine->fFreewheel))
+            {
+                plugin->initBuffers();
+                engine->saveTransportInfo();
+                engine->processPlugin(plugin, nframes);
+                plugin->unlock();
+            }
         }
 
         return 0;

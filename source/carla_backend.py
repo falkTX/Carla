@@ -222,18 +222,14 @@ PLUGIN_OPTION_SEND_ALL_SOUND_OFF = 0x100
 # Various parameter hints.
 # @see CarlaPlugin::getParameterData() and carla_get_parameter_data()
 
-# Parameter is input.
-# When this hint is not set, parameter is assumed to be output.
-PARAMETER_IS_INPUT = 0x001
-
 # Parameter value is boolean.
-PARAMETER_IS_BOOLEAN = 0x002
+PARAMETER_IS_BOOLEAN = 0x001
 
 # Parameter value is integer.
-PARAMETER_IS_INTEGER = 0x004
+PARAMETER_IS_INTEGER = 0x002
 
 # Parameter value is logarithmic.
-PARAMETER_IS_LOGARITHMIC = 0x008
+PARAMETER_IS_LOGARITHMIC = 0x004
 
 # Parameter is enabled.
 # It can be viewed, changed and stored.

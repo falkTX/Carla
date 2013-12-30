@@ -30,12 +30,7 @@
 #include "CarlaStateUtils.hpp"
 #include "CarlaMIDI.h"
 
-#ifdef HAVE_JUCE
-# include "juce_audio_basics.h"
-using juce::FloatVectorOperations;
-#else
-# include <cmath>
-#endif
+#include <cmath>
 
 #include <QtCore/QFile>
 #include <QtCore/QFileInfo>
@@ -264,11 +259,7 @@ void CarlaEngineCVPort::initBuffer()
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(fProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS,);
 
-#ifdef HAVE_JUCE
-    FloatVectorOperations::clear(fBuffer, fEngine.getBufferSize());
-#else
-    carla_zeroFloat(fBuffer, fEngine.getBufferSize());
-#endif
+    FLOAT_CLEAR(fBuffer, fEngine.getBufferSize());
 }
 
 void CarlaEngineCVPort::setBufferSize(const uint32_t bufferSize)
@@ -1909,23 +1900,13 @@ void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint3
     float inBuf1[frames];
     float* inBuf[2] = { inBuf0, inBuf1 };
 
-#ifdef HAVE_JUCE
     // initialize audio inputs
-    FloatVectorOperations::copy(inBuf0, inBufReal[0], frames);
-    FloatVectorOperations::copy(inBuf1, inBufReal[1], frames);
+    FLOAT_COPY(inBuf0, inBufReal[0], frames);
+    FLOAT_COPY(inBuf1, inBufReal[1], frames);
 
     // initialize audio outputs (zero)
-    FloatVectorOperations::clear(outBuf[0], frames);
-    FloatVectorOperations::clear(outBuf[1], frames);
-#else
-    // initialize audio inputs
-    carla_copyFloat(inBuf0, inBufReal[0], frames);
-    carla_copyFloat(inBuf1, inBufReal[1], frames);
-
-    // initialize audio outputs (zero)
-    carla_zeroFloat(outBuf[0], frames);
-    carla_zeroFloat(outBuf[1], frames);
-#endif
+    FLOAT_CLEAR(outBuf[0], frames);
+    FLOAT_CLEAR(outBuf[1], frames);
 
     // initialize event outputs (zero)
     carla_zeroStruct<EngineEvent>(pData->bufEvents.out, kEngineMaxInternalEventCount);
@@ -1935,33 +1916,25 @@ void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint3
     uint32_t oldAudioInCount = 0;
     uint32_t oldMidiOutCount = 0;
 
+    const bool forcedOffline(isOffline());
+
     // process plugins
     for (unsigned int i=0; i < pData->curPluginCount; ++i)
     {
         CarlaPlugin* const plugin = pData->plugins[i].plugin;
 
-        if (plugin == nullptr || ! plugin->isEnabled() || ! plugin->tryLock())
+        if (plugin == nullptr || ! plugin->isEnabled() || ! plugin->tryLock(forcedOffline))
             continue;
 
         if (processed)
         {
-#ifdef HAVE_JUCE
             // initialize audio inputs (from previous outputs)
-            FloatVectorOperations::copy(inBuf0, outBuf[0], frames);
-            FloatVectorOperations::copy(inBuf1, outBuf[1], frames);
+            FLOAT_COPY(inBuf0, outBuf[0], frames);
+            FLOAT_COPY(inBuf1, outBuf[1], frames);
 
             // initialize audio outputs (zero)
-            FloatVectorOperations::clear(outBuf[0], frames);
-            FloatVectorOperations::clear(outBuf[1], frames);
-#else
-            // initialize audio inputs (from previous outputs)
-            carla_copyFloat(inBuf0, outBuf[0], frames);
-            carla_copyFloat(inBuf1, outBuf[1], frames);
-
-            // initialize audio outputs (zero)
-            carla_zeroFloat(outBuf[0], frames);
-            carla_zeroFloat(outBuf[1], frames);
-#endif
+            FLOAT_CLEAR(outBuf[0], frames);
+            FLOAT_CLEAR(outBuf[1], frames);
 
             // if plugin has no midi out, add previous events
             if (oldMidiOutCount == 0 && pData->bufEvents.in[0].type != kEngineEventTypeNull)
@@ -1993,13 +1966,8 @@ void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint3
         // if plugin has no audio inputs, add input buffer
         if (oldAudioInCount == 0)
         {
-#ifdef HAVE_JUCE
-            FloatVectorOperations::add(outBuf[0], inBuf0, frames);
-            FloatVectorOperations::add(outBuf[1], inBuf1, frames);
-#else
-            carla_addFloat(outBuf[0], inBuf0, frames);
-            carla_addFloat(outBuf[1], inBuf1, frames);
-#endif
+            FLOAT_ADD(outBuf[0], inBuf0, frames);
+            FLOAT_ADD(outBuf[1], inBuf1, frames);
         }
 
         // set peaks
@@ -2099,350 +2067,7 @@ void CarlaEngine::processPatchbay(float** inBuf, float** outBuf, const uint32_t 
 // -----------------------------------------------------------------------
 // Bridge/Controller OSC stuff
 
-#ifndef BUILD_BRIDGE
-void CarlaEngine::oscSend_control_add_plugin_start(const int32_t pluginId, const char* const pluginName)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->maxPluginNumber),);
-    CARLA_SAFE_ASSERT_RETURN(pluginName != nullptr && pluginName[0] != '\0',);
-    carla_debug("CarlaEngine::oscSend_control_add_plugin_start(%i, \"%s\")", pluginId, pluginName);
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+18];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/add_plugin_start");
-        lo_send(pData->oscData->target, targetPath, "is", pluginId, pluginName);
-    }
-}
-
-void CarlaEngine::oscSend_control_add_plugin_end(const int32_t pluginId)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->maxPluginNumber),);
-    carla_debug("CarlaEngine::oscSend_control_add_plugin_end(%i)", pluginId);
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+16];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/add_plugin_end");
-        lo_send(pData->oscData->target, targetPath, "i", pluginId);
-    }
-}
-
-void CarlaEngine::oscSend_control_remove_plugin(const int32_t pluginId)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->curPluginCount),);
-    carla_debug("CarlaEngine::oscSend_control_remove_plugin(%i)", pluginId);
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+15];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/remove_plugin");
-        lo_send(pData->oscData->target, targetPath, "i", pluginId);
-    }
-}
-
-void CarlaEngine::oscSend_control_set_plugin_data(const int32_t pluginId, const int32_t type, const int32_t category, const int32_t hints, const char* const realName, const char* const label, const char* const maker, const char* const copyright, const int64_t uniqueId)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->maxPluginNumber),);
-    CARLA_SAFE_ASSERT_RETURN(type != PLUGIN_NONE,);
-    CARLA_SAFE_ASSERT_RETURN(realName != nullptr && realName[0] != '\0',);
-    CARLA_SAFE_ASSERT_RETURN(label != nullptr && label[0] != '\0',);
-    CARLA_SAFE_ASSERT_RETURN(maker != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(copyright != nullptr,);
-    carla_debug("CarlaEngine::oscSend_control_set_plugin_data(%i, %i, %i, %i, \"%s\", \"%s\", \"%s\", \"%s\", " P_INT64 ")", pluginId, type, category, hints, realName, label, maker, copyright, uniqueId);
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+17];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/set_plugin_data");
-        lo_send(pData->oscData->target, targetPath, "iiiissssh", pluginId, type, category, hints, realName, label, maker, copyright, uniqueId);
-    }
-}
-
-void CarlaEngine::oscSend_control_set_plugin_ports(const int32_t pluginId, const int32_t audioIns, const int32_t audioOuts, const int32_t midiIns, const int32_t midiOuts, const int32_t cIns, const int32_t cOuts)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->maxPluginNumber),);
-    carla_debug("CarlaEngine::oscSend_control_set_plugin_ports(%i, %i, %i, %i, %i, %i, %i)", pluginId, audioIns, audioOuts, midiIns, midiOuts, cIns, cOuts);
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+18];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/set_plugin_ports");
-        lo_send(pData->oscData->target, targetPath, "iiiiiii", pluginId, audioIns, audioOuts, midiIns, midiOuts, cIns, cOuts);
-    }
-}
-
-void CarlaEngine::oscSend_control_set_parameter_data(const int32_t pluginId, const int32_t index, const int32_t hints, const char* const name, const char* const unit, const float current)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->maxPluginNumber),);
-    CARLA_SAFE_ASSERT_RETURN(index >= 0,);
-    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
-    CARLA_SAFE_ASSERT_RETURN(unit != nullptr,);
-    carla_debug("CarlaEngine::oscSend_control_set_parameter_data(%i, %i, %i, %i, \"%s\", \"%s\", %f)", pluginId, index, hints, name, unit, current);
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+20];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/set_parameter_data");
-        lo_send(pData->oscData->target, targetPath, "iiissf", pluginId, index, hints, name, unit, current);
-    }
-}
-
-void CarlaEngine::oscSend_control_set_parameter_ranges(const int32_t pluginId, const int32_t index, const float min, const float max, const float def, const float step, const float stepSmall, const float stepLarge)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->maxPluginNumber),);
-    CARLA_SAFE_ASSERT_RETURN(index >= 0,);
-    CARLA_SAFE_ASSERT_RETURN(min < max,);
-    carla_debug("CarlaEngine::oscSend_control_set_parameter_ranges(%i, %i, %f, %f, %f, %f, %f, %f)", pluginId, index, min, max, def, step, stepSmall, stepLarge);
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+22];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/set_parameter_ranges");
-        lo_send(pData->oscData->target, targetPath, "iiffffff", pluginId, index, min, max, def, step, stepSmall, stepLarge);
-    }
-}
-
-void CarlaEngine::oscSend_control_set_parameter_midi_cc(const int32_t pluginId, const int32_t index, const int32_t cc)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->maxPluginNumber),);
-    CARLA_SAFE_ASSERT_RETURN(index >= 0,);
-    carla_debug("CarlaEngine::oscSend_control_set_parameter_midi_cc(%i, %i, %i)", pluginId, index, cc);
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+23];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/set_parameter_midi_cc");
-        lo_send(pData->oscData->target, targetPath, "iii", pluginId, index, cc);
-    }
-}
-
-void CarlaEngine::oscSend_control_set_parameter_midi_channel(const int32_t pluginId, const int32_t index, const int32_t channel)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->maxPluginNumber),);
-    CARLA_SAFE_ASSERT_RETURN(index >= 0,);
-    CARLA_SAFE_ASSERT_RETURN(channel >= 0 && channel < MAX_MIDI_CHANNELS,);
-    carla_debug("CarlaEngine::oscSend_control_set_parameter_midi_channel(%i, %i, %i)", pluginId, index, channel);
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+28];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/set_parameter_midi_channel");
-        lo_send(pData->oscData->target, targetPath, "iii", pluginId, index, channel);
-    }
-}
-
-void CarlaEngine::oscSend_control_set_parameter_value(const int32_t pluginId, const int32_t index, const float value)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->maxPluginNumber),);
-    carla_debug("CarlaEngine::oscSend_control_set_parameter_value(%i, %i:%s, %f)", pluginId, index, (index < 0) ? InternalParameterIndex2Str(static_cast<InternalParameterIndex>(index)) : "(none)", value);
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+21];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/set_parameter_value");
-        lo_send(pData->oscData->target, targetPath, "iif", pluginId, index, value);
-    }
-}
-
-void CarlaEngine::oscSend_control_set_default_value(const int32_t pluginId, const int32_t index, const float value)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->maxPluginNumber),);
-    CARLA_SAFE_ASSERT_RETURN(index >= 0,);
-    carla_debug("CarlaEngine::oscSend_control_set_default_value(%i, %i, %f)", pluginId, index, value);
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+19];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/set_default_value");
-        lo_send(pData->oscData->target, targetPath, "iif", pluginId, index, value);
-    }
-}
-
-void CarlaEngine::oscSend_control_set_program(const int32_t pluginId, const int32_t index)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->maxPluginNumber),);
-    carla_debug("CarlaEngine::oscSend_control_set_program(%i, %i)", pluginId, index);
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+13];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/set_program");
-        lo_send(pData->oscData->target, targetPath, "ii", pluginId, index);
-    }
-}
-
-void CarlaEngine::oscSend_control_set_program_count(const int32_t pluginId, const int32_t count)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->maxPluginNumber),);
-    CARLA_SAFE_ASSERT_RETURN(count >= 0,);
-    carla_debug("CarlaEngine::oscSend_control_set_program_count(%i, %i)", pluginId, count);
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+19];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/set_program_count");
-        lo_send(pData->oscData->target, targetPath, "ii", pluginId, count);
-    }
-}
-
-void CarlaEngine::oscSend_control_set_program_name(const int32_t pluginId, const int32_t index, const char* const name)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->maxPluginNumber),);
-    CARLA_SAFE_ASSERT_RETURN(index >= 0,);
-    CARLA_SAFE_ASSERT_RETURN(name != nullptr,);
-    carla_debug("CarlaEngine::oscSend_control_set_program_name(%i, %i, \"%s\")", pluginId, index, name);
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+18];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/set_program_name");
-        lo_send(pData->oscData->target, targetPath, "iis", pluginId, index, name);
-    }
-}
-
-void CarlaEngine::oscSend_control_set_midi_program(const int32_t pluginId, const int32_t index)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->maxPluginNumber),);
-    carla_debug("CarlaEngine::oscSend_control_set_midi_program(%i, %i)", pluginId, index);
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+18];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/set_midi_program");
-        lo_send(pData->oscData->target, targetPath, "ii", pluginId, index);
-    }
-}
-
-void CarlaEngine::oscSend_control_set_midi_program_count(const int32_t pluginId, const int32_t count)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->maxPluginNumber),);
-    CARLA_SAFE_ASSERT_RETURN(count >= 0,);
-    carla_debug("CarlaEngine::oscSend_control_set_midi_program_count(%i, %i)", pluginId, count);
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+24];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/set_midi_program_count");
-        lo_send(pData->oscData->target, targetPath, "ii", pluginId, count);
-    }
-}
-
-void CarlaEngine::oscSend_control_set_midi_program_data(const int32_t pluginId, const int32_t index, const int32_t bank, const int32_t program, const char* const name)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->maxPluginNumber),);
-    CARLA_SAFE_ASSERT_RETURN(index >= 0,);
-    CARLA_SAFE_ASSERT_RETURN(bank >= 0,);
-    CARLA_SAFE_ASSERT_RETURN(program >= 0,);
-    CARLA_SAFE_ASSERT_RETURN(name != nullptr,);
-    carla_debug("CarlaEngine::oscSend_control_set_midi_program_data(%i, %i, %i, %i, \"%s\")", pluginId, index, bank, program, name);
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+23];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/set_midi_program_data");
-        lo_send(pData->oscData->target, targetPath, "iiiis", pluginId, index, bank, program, name);
-    }
-}
-
-void CarlaEngine::oscSend_control_note_on(const int32_t pluginId, const int32_t channel, const int32_t note, const int32_t velo)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->curPluginCount),);
-    CARLA_SAFE_ASSERT_RETURN(channel >= 0 && channel < MAX_MIDI_CHANNELS,);
-    CARLA_SAFE_ASSERT_RETURN(note >= 0 && note < MAX_MIDI_NOTE,);
-    CARLA_SAFE_ASSERT_RETURN(velo > 0 && velo < MAX_MIDI_VALUE,);
-    carla_debug("CarlaEngine::oscSend_control_note_on(%i, %i, %i, %i)", pluginId, channel, note, velo);
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+9];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/note_on");
-        lo_send(pData->oscData->target, targetPath, "iiii", pluginId, channel, note, velo);
-    }
-}
-
-void CarlaEngine::oscSend_control_note_off(const int32_t pluginId, const int32_t channel, const int32_t note)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->curPluginCount),);
-    CARLA_SAFE_ASSERT_RETURN(channel >= 0 && channel < MAX_MIDI_CHANNELS,);
-    CARLA_SAFE_ASSERT_RETURN(note >= 0 && note < MAX_MIDI_NOTE,);
-    carla_debug("CarlaEngine::oscSend_control_note_off(%i, %i, %i)", pluginId, channel, note);
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+10];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/note_off");
-        lo_send(pData->oscData->target, targetPath, "iii", pluginId, channel, note);
-    }
-}
-
-void CarlaEngine::oscSend_control_set_peaks(const int32_t pluginId)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->curPluginCount),);
-
-    const EnginePluginData& epData(pData->plugins[pluginId]);
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+22];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/set_peaks");
-        lo_send(pData->oscData->target, targetPath, "iffff", pluginId, epData.insPeak[0], epData.insPeak[1], epData.outsPeak[0], epData.outsPeak[1]);
-    }
-}
-
-void CarlaEngine::oscSend_control_exit()
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    carla_debug("CarlaEngine::oscSend_control_exit()");
-
-    if (pData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(pData->oscData->path)+6];
-        std::strcpy(targetPath, pData->oscData->path);
-        std::strcat(targetPath, "/exit");
-        lo_send(pData->oscData->target, targetPath, "");
-    }
-}
-#else
+#ifdef BUILD_BRIDGE
 void CarlaEngine::oscSend_bridge_audio_count(const int32_t ins, const int32_t outs, const int32_t total)
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
@@ -2705,6 +2330,403 @@ void CarlaEngine::oscSend_bridge_set_chunk_data(const char* const chunkFile)
         std::strcpy(targetPath, pData->oscData->path);
         std::strcat(targetPath, "/bridge_set_chunk_data");
         lo_send(pData->oscData->target, targetPath, "s", chunkFile);
+    }
+}
+#else
+void CarlaEngine::oscSend_control_add_plugin_start(const uint pluginId, const char* const pluginName)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    CARLA_SAFE_ASSERT_RETURN(pluginName != nullptr && pluginName[0] != '\0',);
+    carla_debug("CarlaEngine::oscSend_control_add_plugin_start(%i, \"%s\")", pluginId, pluginName);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+18];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/add_plugin_start");
+        lo_send(pData->oscData->target, targetPath, "is", static_cast<int32_t>(pluginId), pluginName);
+    }
+}
+
+void CarlaEngine::oscSend_control_add_plugin_end(const uint pluginId)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    carla_debug("CarlaEngine::oscSend_control_add_plugin_end(%i)", pluginId);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+16];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/add_plugin_end");
+        lo_send(pData->oscData->target, targetPath, "i", static_cast<int32_t>(pluginId));
+    }
+}
+
+void CarlaEngine::oscSend_control_remove_plugin(const uint pluginId)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    carla_debug("CarlaEngine::oscSend_control_remove_plugin(%i)", pluginId);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+15];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/remove_plugin");
+        lo_send(pData->oscData->target, targetPath, "i", static_cast<int32_t>(pluginId));
+    }
+}
+
+void CarlaEngine::oscSend_control_set_plugin_info1(const uint pluginId, const PluginType type, const PluginCategory category, const uint hints, const long uniqueId)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    CARLA_SAFE_ASSERT_RETURN(type != PLUGIN_NONE,);
+    carla_debug("CarlaEngine::oscSend_control_set_plugin_data(%i, %i:%s, %i:%s, %X, %l)", pluginId, type, PluginType2Str(type), category, PluginCategory2Str(category), hints, uniqueId);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+18];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/set_plugin_info1");
+        lo_send(pData->oscData->target, targetPath, "iiiih", static_cast<int32_t>(pluginId), static_cast<int32_t>(type), static_cast<int32_t>(category), static_cast<int32_t>(hints), static_cast<int64_t>(uniqueId));
+    }
+}
+
+void CarlaEngine::oscSend_control_set_plugin_info2(const uint pluginId, const char* const realName, const char* const label, const char* const maker, const char* const copyright)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    CARLA_SAFE_ASSERT_RETURN(realName != nullptr && realName[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(label != nullptr && label[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(maker != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(copyright != nullptr,);
+    carla_debug("CarlaEngine::oscSend_control_set_plugin_data(%i, \"%s\", \"%s\", \"%s\", \"%s\")", pluginId, realName, label, maker, copyright);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+18];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/set_plugin_info2");
+        lo_send(pData->oscData->target, targetPath, "issss", static_cast<int32_t>(pluginId), realName, label, maker, copyright);
+    }
+}
+
+void CarlaEngine::oscSend_control_set_audio_count(const uint pluginId, const uint32_t ins, const uint32_t outs)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    carla_debug("CarlaEngine::oscSend_control_set_audio_count(%i, %i, %i)", pluginId, ins, outs);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+18];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/set_audio_count");
+        lo_send(pData->oscData->target, targetPath, "iii", static_cast<int32_t>(pluginId), static_cast<int32_t>(ins), static_cast<int32_t>(outs));
+    }
+}
+
+void CarlaEngine::oscSend_control_set_midi_count(const uint pluginId, const uint32_t ins, const uint32_t outs)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    carla_debug("CarlaEngine::oscSend_control_set_midi_count(%i, %i, %i)", pluginId, ins, outs);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+18];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/set_midi_count");
+        lo_send(pData->oscData->target, targetPath, "iii", static_cast<int32_t>(pluginId), static_cast<int32_t>(ins), static_cast<int32_t>(outs));
+    }
+}
+
+void CarlaEngine::oscSend_control_set_parameter_count(const uint pluginId, const uint32_t ins, const uint32_t outs)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    carla_debug("CarlaEngine::oscSend_control_set_parameter_count(%i, %i, %i)", pluginId, ins, outs);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+18];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/set_parameter_count");
+        lo_send(pData->oscData->target, targetPath, "iii", static_cast<int32_t>(pluginId), static_cast<int32_t>(ins), static_cast<int32_t>(outs));
+    }
+}
+
+void CarlaEngine::oscSend_control_set_program_count(const uint pluginId, const uint32_t count)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    carla_debug("CarlaEngine::oscSend_control_set_program_count(%i, %i)", pluginId, count);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+19];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/set_program_count");
+        lo_send(pData->oscData->target, targetPath, "ii", static_cast<int32_t>(pluginId), static_cast<int32_t>(count));
+    }
+}
+
+void CarlaEngine::oscSend_control_set_midi_program_count(const uint pluginId, const uint32_t count)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    carla_debug("CarlaEngine::oscSend_control_set_midi_program_count(%i, %i)", pluginId, count);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+24];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/set_midi_program_count");
+        lo_send(pData->oscData->target, targetPath, "ii", static_cast<int32_t>(pluginId), static_cast<int32_t>(count));
+    }
+}
+
+void CarlaEngine::oscSend_control_set_parameter_data(const uint pluginId, const uint32_t index, const ParameterType type, const uint hints, const char* const name, const char* const unit)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(unit != nullptr,);
+    carla_debug("CarlaEngine::oscSend_control_set_parameter_data(%i, %i, %i:%s, %X, \"%s\", \"%s\")", pluginId, index, type, ParameterType2Str(type), hints, name, unit);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+20];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/set_parameter_data");
+        lo_send(pData->oscData->target, targetPath, "iiiiss", static_cast<int32_t>(pluginId), static_cast<int32_t>(index), static_cast<int32_t>(type), static_cast<int32_t>(hints), name, unit);
+    }
+}
+
+void CarlaEngine::oscSend_control_set_parameter_ranges1(const uint pluginId, const uint32_t index, const float def, const float min, const float max)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    CARLA_SAFE_ASSERT_RETURN(def <= min && def >= max,);
+    CARLA_SAFE_ASSERT_RETURN(min < max,);
+    carla_debug("CarlaEngine::oscSend_control_set_parameter_ranges1(%i, %i, %f, %f, %f)", pluginId, index, def, min, max, def);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+23];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/set_parameter_ranges1");
+        lo_send(pData->oscData->target, targetPath, "iifff", static_cast<int32_t>(pluginId), static_cast<int32_t>(index), def, min, max);
+    }
+}
+
+void CarlaEngine::oscSend_control_set_parameter_ranges2(const uint pluginId, const uint32_t index, const float step, const float stepSmall, const float stepLarge)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    CARLA_SAFE_ASSERT_RETURN(step <= stepSmall && step >= stepLarge,);
+    CARLA_SAFE_ASSERT_RETURN(stepSmall <= stepLarge,);
+    carla_debug("CarlaEngine::oscSend_control_set_parameter_ranges2(%i, %i, %f, %f, %f)", pluginId, index, step, stepSmall, stepLarge);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+23];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/set_parameter_ranges");
+        lo_send(pData->oscData->target, targetPath, "iifff", static_cast<int32_t>(pluginId), static_cast<int32_t>(index), step, stepSmall, stepLarge);
+    }
+}
+
+void CarlaEngine::oscSend_control_set_parameter_midi_cc(const uint pluginId, const uint32_t index, const int16_t cc)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    CARLA_SAFE_ASSERT_RETURN(cc <= 0x5F,);
+    carla_debug("CarlaEngine::oscSend_control_set_parameter_midi_cc(%i, %i, %i)", pluginId, index, cc);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+23];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/set_parameter_midi_cc");
+        lo_send(pData->oscData->target, targetPath, "iii", static_cast<int32_t>(pluginId), static_cast<int32_t>(index), static_cast<int32_t>(cc));
+    }
+}
+
+void CarlaEngine::oscSend_control_set_parameter_midi_channel(const uint pluginId, const uint32_t index, const uint8_t channel)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
+    carla_debug("CarlaEngine::oscSend_control_set_parameter_midi_channel(%i, %i, %i)", pluginId, index, channel);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+28];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/set_parameter_midi_channel");
+        lo_send(pData->oscData->target, targetPath, "iii", static_cast<int32_t>(pluginId), static_cast<int32_t>(index), static_cast<int32_t>(channel));
+    }
+}
+
+void CarlaEngine::oscSend_control_set_parameter_value(const uint pluginId, const int32_t index, const float value)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    carla_debug("CarlaEngine::oscSend_control_set_parameter_value(%i, %i:%s, %f)", pluginId, index, (index < 0) ? InternalParameterIndex2Str(static_cast<InternalParameterIndex>(index)) : "(none)", value);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+21];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/set_parameter_value");
+        lo_send(pData->oscData->target, targetPath, "iif", static_cast<int32_t>(pluginId), index, value);
+    }
+}
+
+void CarlaEngine::oscSend_control_set_default_value(const uint pluginId, const uint32_t index, const float value)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    carla_debug("CarlaEngine::oscSend_control_set_default_value(%i, %i, %f)", pluginId, index, value);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+19];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/set_default_value");
+        lo_send(pData->oscData->target, targetPath, "iif", static_cast<int32_t>(pluginId), static_cast<int32_t>(index), value);
+    }
+}
+
+void CarlaEngine::oscSend_control_set_current_program(const uint pluginId, const int32_t index)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    carla_debug("CarlaEngine::oscSend_control_set_current_program(%i, %i)", pluginId, index);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+21];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/set_current_program");
+        lo_send(pData->oscData->target, targetPath, "ii", static_cast<int32_t>(pluginId), index);
+    }
+}
+
+void CarlaEngine::oscSend_control_set_current_midi_program(const uint pluginId, const int32_t index)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    carla_debug("CarlaEngine::oscSend_control_set_current_midi_program(%i, %i)", pluginId, index);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+26];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/set_current_midi_program");
+        lo_send(pData->oscData->target, targetPath, "ii", static_cast<int32_t>(pluginId), index);
+    }
+}
+
+void CarlaEngine::oscSend_control_set_program_name(const uint pluginId, const uint32_t index, const char* const name)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr,);
+    carla_debug("CarlaEngine::oscSend_control_set_program_name(%i, %i, \"%s\")", pluginId, index, name);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+18];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/set_program_name");
+        lo_send(pData->oscData->target, targetPath, "iis", static_cast<int32_t>(pluginId), static_cast<int32_t>(index), name);
+    }
+}
+
+void CarlaEngine::oscSend_control_set_midi_program_data(const uint pluginId, const uint32_t index, const uint32_t bank, const uint32_t program, const char* const name)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr,);
+    carla_debug("CarlaEngine::oscSend_control_set_midi_program_data(%i, %i, %i, %i, \"%s\")", pluginId, index, bank, program, name);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+23];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/set_midi_program_data");
+        lo_send(pData->oscData->target, targetPath, "iiiis", static_cast<int32_t>(pluginId), static_cast<int32_t>(index), static_cast<int32_t>(bank), static_cast<int32_t>(program), name);
+    }
+}
+
+void CarlaEngine::oscSend_control_note_on(const uint pluginId, const uint8_t channel, const uint8_t note, const uint8_t velo)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
+    CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
+    CARLA_SAFE_ASSERT_RETURN(velo < MAX_MIDI_VALUE,);
+    carla_debug("CarlaEngine::oscSend_control_note_on(%i, %i, %i, %i)", pluginId, channel, note, velo);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+9];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/note_on");
+        lo_send(pData->oscData->target, targetPath, "iiii", static_cast<int32_t>(pluginId), static_cast<int32_t>(channel), static_cast<int32_t>(note), static_cast<int32_t>(velo));
+    }
+}
+
+void CarlaEngine::oscSend_control_note_off(const uint pluginId, const uint8_t channel, const uint8_t note)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
+    CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
+    carla_debug("CarlaEngine::oscSend_control_note_off(%i, %i, %i)", pluginId, channel, note);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+10];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/note_off");
+        lo_send(pData->oscData->target, targetPath, "iii", static_cast<int32_t>(pluginId), static_cast<int32_t>(channel), static_cast<int32_t>(note));
+    }
+}
+
+void CarlaEngine::oscSend_control_set_peaks(const uint pluginId)
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+
+    // TODO - try and see if we can get peaks[4] ref
+    const EnginePluginData& epData(pData->plugins[pluginId]);
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+11];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/set_peaks");
+        lo_send(pData->oscData->target, targetPath, "iffff", static_cast<int32_t>(pluginId), epData.insPeak[0], epData.insPeak[1], epData.outsPeak[0], epData.outsPeak[1]);
+    }
+}
+
+void CarlaEngine::oscSend_control_exit()
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    carla_debug("CarlaEngine::oscSend_control_exit()");
+
+    if (pData->oscData->target != nullptr)
+    {
+        char targetPath[std::strlen(pData->oscData->path)+6];
+        std::strcpy(targetPath, pData->oscData->path);
+        std::strcat(targetPath, "/exit");
+        lo_send(pData->oscData->target, targetPath, "");
     }
 }
 #endif
