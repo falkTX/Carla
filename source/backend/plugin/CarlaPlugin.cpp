@@ -103,8 +103,6 @@ void* CarlaPluginProtectedData::uiLibSymbol(const char* const symbol)
 // -------------------------------------------------------------------
 // Settings functions, defined in CarlaPluginInternal.hpp
 
-// FIXME - this doesn't work!!
-
 void CarlaPluginProtectedData::saveSetting(const unsigned int option, const bool yesNo)
 {
     CARLA_SAFE_ASSERT_RETURN(identifier != nullptr && identifier[0] != '\0',);

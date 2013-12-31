@@ -66,8 +66,9 @@ CARLA_BACKEND_USE_NAMESPACE
 // --------------------------------------------------------------------------
 // Dummy values to test plugins with
 
-const uint32_t kBufferSize = 512;
-const double   kSampleRate = 44100.0;
+const uint32_t kBufferSize  = 512;
+const double   kSampleRate  = 44100.0;
+const float    kSampleRatef = 44100.0f;
 
 // --------------------------------------------------------------------------
 // Don't print ELF/EXE related errors since discovery can find multi-architecture binaries
@@ -579,9 +580,9 @@ void do_ladspa_check(void*& libHandle, const char* const filename, const bool in
 
                     if (LADSPA_IS_HINT_SAMPLE_RATE(portRangeHints.HintDescriptor))
                     {
-                        min *= kSampleRate;
-                        max *= kSampleRate;
-                        def *= kSampleRate;
+                        min *= kSampleRatef;
+                        max *= kSampleRatef;
+                        def *= kSampleRatef;
                     }
 
                     if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && (std::strcmp(portName, "latency") == 0 || std::strcmp(portName, "_latency") == 0))
@@ -857,9 +858,9 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
 
                     if (LADSPA_IS_HINT_SAMPLE_RATE(portRangeHints.HintDescriptor))
                     {
-                        min *= kSampleRate;
-                        max *= kSampleRate;
-                        def *= kSampleRate;
+                        min *= kSampleRatef;
+                        max *= kSampleRatef;
+                        def *= kSampleRatef;
                     }
 
                     if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && (std::strcmp(portName, "latency") == 0 || std::strcmp(portName, "_latency") == 0))

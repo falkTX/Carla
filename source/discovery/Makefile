@@ -13,59 +13,60 @@ BUILD_CXX_FLAGS += -I../backend -I../includes -I../modules -I../utils -Wno-multi
 BUILD_CXX_FLAGS += $(QTCORE_FLAGS)
 LINK_FLAGS      += $(QTCORE_LIBS)
 
-ifeq ($(HAVE_JUCE),true)
-BUILD_CXX_FLAGS += $(JUCE_CORE_FLAGS) $(JUCE_AUDIO_BASICS_FLAGS) -DHAVE_JUCE
-LINK_FLAGS      += $(JUCE_CORE_LIBS) $(JUCE_AUDIO_BASICS_LIBS)
-endif
+# ifeq ($(HAVE_JUCE),true)
+# BUILD_CXX_FLAGS += -DHAVE_JUCE
+# endif
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -DWANT_NATIVE
+# BUILD_CXX_FLAGS += -DWANT_NATIVE
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
-ifeq ($(CARLA_VESTIGE_HEADER),true)
-BUILD_CXX_FLAGS += -DVESTIGE_HEADER
-endif
-endif
-
-# --------------------------------------------------------------
-
-ifeq ($(HAVE_CSOUND),true)
-NATIVE_FLAGS += $(shell pkg-config --cflags --libs sndfile) -lcsound64 -DWANT_CSOUND
-endif
-
-ifeq ($(HAVE_FLUIDSYNTH),true)
-NATIVE_FLAGS += $(shell pkg-config --cflags --libs fluidsynth) -DWANT_FLUIDSYNTH
-endif
-
-ifeq ($(HAVE_LINUXSAMPLER),true)
-NATIVE_FLAGS += $(shell pkg-config --cflags --libs linuxsampler) -DWANT_LINUXSAMPLER
+BUILD_CXX_FLAGS += -DWANT_LADSPA
+# -DWANT_DSSI -DWANT_LV2 -DWANT_VST
+# ifeq ($(CARLA_VESTIGE_HEADER),true)
+# BUILD_CXX_FLAGS += -DVESTIGE_HEADER
+# endif
 endif
 
 # --------------------------------------------------------------
 
-ifeq ($(HAVE_JUCE),true)
-LIBS         += ../modules/juce_audio_basics.a
-LIBS_posix32 += ../modules/juce_audio_basics.posix32.a
-LIBS_posix64 += ../modules/juce_audio_basics.posix64.a
-LIBS_win32   += ../modules/juce_audio_basics.win32.a
-LIBS_win64   += ../modules/juce_audio_basics.win64.a
-LIBS         += ../modules/juce_core.a
-LIBS_posix32 += ../modules/juce_core.posix32.a
-LIBS_posix64 += ../modules/juce_core.posix64.a
-LIBS_win32   += ../modules/juce_core.win32.a
-LIBS_win64   += ../modules/juce_core.win64.a
-endif
+# ifeq ($(HAVE_CSOUND),true)
+# NATIVE_FLAGS += $(shell pkg-config --cflags --libs sndfile) -lcsound64 -DWANT_CSOUND
+# endif
+#
+# ifeq ($(HAVE_FLUIDSYNTH),true)
+# NATIVE_FLAGS += $(shell pkg-config --cflags --libs fluidsynth) -DWANT_FLUIDSYNTH
+# endif
+#
+# ifeq ($(HAVE_LINUXSAMPLER),true)
+# NATIVE_FLAGS += $(shell pkg-config --cflags --libs linuxsampler) -DWANT_LINUXSAMPLER
+# endif
 
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-LIBS         += ../modules/lilv.a
-LIBS_posix32 += ../modules/lilv.posix32.a
-LIBS_posix64 += ../modules/lilv.posix64.a
-LIBS_win32   += ../modules/lilv.win32.a
-LIBS_win64   += ../modules/lilv.win64.a
-LINK_FLAGS   += $(LILV_LIBS)
-endif
+# --------------------------------------------------------------
+
+# ifeq ($(HAVE_JUCE),true)
+# LIBS         += ../modules/juce_audio_basics.a
+# LIBS_posix32 += ../modules/juce_audio_basics.posix32.a
+# LIBS_posix64 += ../modules/juce_audio_basics.posix64.a
+# LIBS_win32   += ../modules/juce_audio_basics.win32.a
+# LIBS_win64   += ../modules/juce_audio_basics.win64.a
+# LIBS         += ../modules/juce_core.a
+# LIBS_posix32 += ../modules/juce_core.posix32.a
+# LIBS_posix64 += ../modules/juce_core.posix64.a
+# LIBS_win32   += ../modules/juce_core.win32.a
+# LIBS_win64   += ../modules/juce_core.win64.a
+# LINK_FLAGS   += $(JUCE_CORE_LIBS) $(JUCE_AUDIO_BASICS_LIBS)
+# endif
+
+# ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+# LIBS         += ../modules/lilv.a
+# LIBS_posix32 += ../modules/lilv.posix32.a
+# LIBS_posix64 += ../modules/lilv.posix64.a
+# LIBS_win32   += ../modules/lilv.win32.a
+# LIBS_win64   += ../modules/lilv.win64.a
+# LINK_FLAGS   += $(LILV_LIBS)
+# endif
 
 POSIX_BUILD_FLAGS = $(BUILD_CXX_FLAGS)
 POSIX_32BIT_FLAGS = $(32BIT_FLAGS) -L/usr/lib32 -L/usr/lib/i386-linux-gnu

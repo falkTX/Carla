@@ -490,10 +490,7 @@ public:
             pData->param.createNew(params);
 
             fParamBuffers = new float[params];
-#ifdef USE_JUCE
-            FloatVectorOperations::clear(fParamBuffers, params);
-#else
-#endif
+            FLOAT_CLEAR(fParamBuffers, params);
         }
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
@@ -626,7 +623,7 @@ public:
 
                 if (LADSPA_IS_PORT_INPUT(portType))
                 {
-                    //pData->param.data[j].hints |= PARAMETER_IS_INPUT;
+                    pData->param.data[j].type   = PARAMETER_INPUT;
                     pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                     pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                     needsCtrlIn = true;
@@ -642,8 +639,8 @@ public:
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
 
-                        //pData->param.data[j].type  = PARAMETER_LATENCY;
-                        pData->param.data[j].hints = 0;
+                        pData->param.data[j].type  = PARAMETER_SPECIAL;
+                        pData->param.data[j].hints = 0; // TODO PARAMETER_LATENCY
                     }
                     else if (std::strcmp(fDescriptor->PortNames[i], "_sample-rate") == 0)
                     {
@@ -652,11 +649,12 @@ public:
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
 
-                        //pData->param.data[j].type  = PARAMETER_SAMPLE_RATE;
-                        pData->param.data[j].hints = 0;
+                        pData->param.data[j].type  = PARAMETER_SPECIAL;
+                        pData->param.data[j].hints = 0; // TODO PARAMETER_SAMPLE_RATE
                     }
                     else
                     {
+                        pData->param.data[j].type   = PARAMETER_OUTPUT;
                         pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                         pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                         needsCtrlOut = true;
@@ -664,6 +662,7 @@ public:
                 }
                 else
                 {
+                    pData->param.data[j].type = PARAMETER_UNKNOWN;
                     carla_stderr2("WARNING - Got a broken Port (Control, but not input or output)");
                 }
 
@@ -765,6 +764,7 @@ public:
         {
             for (uint32_t i=0; i < pData->param.count; ++i)
             {
+                // TODO
                 //if (pData->param.data[i].type != PARAMETER_LATENCY)
                 //    continue;
 
@@ -858,12 +858,7 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-            {
-#ifdef USE_JUCE
-                FloatVectorOperations::clear(outBuffer[i], frames);
-#else
-#endif
-            }
+                FLOAT_CLEAR(outBuffer[i], frames);
 
             return;
         }
@@ -876,12 +871,7 @@ public:
             if (pData->latency > 0)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
-                {
-#ifdef USE_JUCE
-                    FloatVectorOperations::clear(pData->latencyBuffers[i], pData->latency);
-#else
-#endif
-                }
+                    FLOAT_CLEAR(pData->latencyBuffers[i], pData->latency);
             }
 
             pData->needsReset = false;
@@ -990,7 +980,7 @@ public:
                                 continue;
                             if (pData->param.data[k].midiCC != ctrlEvent.param)
                                 continue;
-                            if (pData->param.data[k].hints != PARAMETER_INPUT)
+                            if (pData->param.data[k].type != PARAMETER_INPUT)
                                 continue;
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
@@ -1113,20 +1103,10 @@ public:
         // Reset audio buffers
 
         for (uint32_t i=0; i < pData->audioIn.count; ++i)
-        {
-#ifdef USE_JUCE
-            FloatVectorOperations::copy(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
-#else
-#endif
-        }
+            FLOAT_COPY(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
 
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
-        {
-#ifdef USE_JUCE
-            FloatVectorOperations::clear(fAudioOutBuffers[i], frames);
-#else
-#endif
-        }
+            FLOAT_CLEAR(fAudioOutBuffers[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -1173,10 +1153,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-#ifdef USE_JUCE
-                        FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], frames);
-#else
-#endif
+                        FLOAT_COPY(oldBufLeft, fAudioOutBuffers[i], frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
