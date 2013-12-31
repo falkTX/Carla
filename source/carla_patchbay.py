@@ -157,7 +157,7 @@ class CarlaPatchbayW(QGraphicsView):
         parent.PatchbayPortRenamedCallback.connect(self.slot_handlePatchbayPortRenamedCallback)
         parent.PatchbayConnectionAddedCallback.connect(self.slot_handlePatchbayConnectionAddedCallback)
         parent.PatchbayConnectionRemovedCallback.connect(self.slot_handlePatchbayConnectionRemovedCallback)
-        parent.PatchbayIconChangedCallback.connect(self.slot_handlePatchbayIconChangedCallback)
+        #parent.PatchbayIconChangedCallback.connect(self.slot_handlePatchbayIconChangedCallback)
 
     # -----------------------------------------------------------------
 

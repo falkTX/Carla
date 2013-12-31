@@ -76,7 +76,7 @@ class CarlaMultiW(QTabWidget):
         parent.MidiProgramChangedCallback.connect(self.fRack.slot_handleMidiProgramChangedCallback)
         parent.NoteOnCallback.connect(self.fRack.slot_handleNoteOnCallback)
         parent.NoteOffCallback.connect(self.fRack.slot_handleNoteOffCallback)
-        parent.ShowGuiCallback.connect(self.fRack.slot_handleShowGuiCallback)
+        parent.UiStateChangedCallback.connect(self.fRack.slot_handleUiStateChangedCallback)
         parent.UpdateCallback.connect(self.fRack.slot_handleUpdateCallback)
         parent.ReloadInfoCallback.connect(self.fRack.slot_handleReloadInfoCallback)
         parent.ReloadParametersCallback.connect(self.fRack.slot_handleReloadParametersCallback)
@@ -90,7 +90,7 @@ class CarlaMultiW(QTabWidget):
         parent.PatchbayPortRenamedCallback.connect(self.fPatchbay.slot_handlePatchbayPortRenamedCallback)
         parent.PatchbayConnectionAddedCallback.connect(self.fPatchbay.slot_handlePatchbayConnectionAddedCallback)
         parent.PatchbayConnectionRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayConnectionRemovedCallback)
-        parent.PatchbayIconChangedCallback.connect(self.fPatchbay.slot_handlePatchbayIconChangedCallback)
+        #parent.PatchbayIconChangedCallback.connect(self.fPatchbay.slot_handlePatchbayIconChangedCallback)
 
     # -----------------------------------------------------------------
 

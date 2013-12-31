@@ -19,10 +19,6 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-#try:
-    #from PyQt5.QtCore import QSize, QTimer
-    #from PyQt5.QtWidgets import QApplication, QListWidget, QListWidgetItem
-#except:
 from PyQt4.QtCore import QSize, QTimer
 from PyQt4.QtGui import QApplication, QListWidget, QListWidgetItem
 
@@ -35,16 +31,16 @@ from carla_widgets import *
 # Rack widget item
 
 class CarlaRackItem(QListWidgetItem):
-    RackItemType = QListWidgetItem.UserType + 1
-    StaticHeight = 32
+    kRackItemType = QListWidgetItem.UserType + 1
+    kStaticHeight = 32
 
     def __init__(self, parent, pluginId):
-        QListWidgetItem.__init__(self, parent, self.RackItemType)
+        QListWidgetItem.__init__(self, parent, self.kRackItemType)
 
         self.fWidget = PluginWidget(parent, pluginId)
-        self.fWidget.setFixedHeight(self.StaticHeight)
+        self.fWidget.setFixedHeight(self.kStaticHeight)
 
-        self.setSizeHint(QSize(300, self.StaticHeight))
+        self.setSizeHint(QSize(300, self.kStaticHeight))
 
         parent.setItemWidget(self, self.fWidget)
 
@@ -117,9 +113,9 @@ class CarlaRackW(QListWidget):
         parent.ParameterMidiCcChangedCallback.connect(self.slot_handleParameterMidiCcChangedCallback)
         parent.ProgramChangedCallback.connect(self.slot_handleProgramChangedCallback)
         parent.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
+        parent.UiStateChangedCallback.connect(self.slot_handleUiStateChangedCallback)
         parent.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
         parent.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
-        parent.ShowGuiCallback.connect(self.slot_handleShowGuiCallback)
         parent.UpdateCallback.connect(self.slot_handleUpdateCallback)
         parent.ReloadInfoCallback.connect(self.slot_handleReloadInfoCallback)
         parent.ReloadParametersCallback.connect(self.slot_handleReloadParametersCallback)
@@ -361,17 +357,6 @@ class CarlaRackW(QListWidget):
         pitem.fWidget.setParameterDefault(index, value)
 
     @pyqtSlot(int, int, int)
-    def slot_handleParameterMidiChannelChangedCallback(self, pluginId, index, channel):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.fWidget.setParameterMidiChannel(index, channel)
-
-    @pyqtSlot(int, int, int)
     def slot_handleParameterMidiCcChangedCallback(self, pluginId, index, cc):
         if pluginId >= self.fPluginCount:
             return
@@ -381,6 +366,17 @@ class CarlaRackW(QListWidget):
             return
 
         pitem.fWidget.setParameterMidiControl(index, cc)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleParameterMidiChannelChangedCallback(self, pluginId, index, channel):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.fWidget.setParameterMidiChannel(index, channel)
 
     # -----------------------------------------------------------------
 
@@ -408,6 +404,27 @@ class CarlaRackW(QListWidget):
 
     # -----------------------------------------------------------------
 
+    @pyqtSlot(int, int)
+    def slot_handleUiStateChangedCallback(self, pluginId, state):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        if state == 0:
+            pitem.fWidget.ui.b_gui.setChecked(False)
+            pitem.fWidget.ui.b_gui.setEnabled(True)
+        elif state == 1:
+            pitem.fWidget.ui.b_gui.setChecked(True)
+            pitem.fWidget.ui.b_gui.setEnabled(True)
+        elif state == -1:
+            pitem.fWidget.ui.b_gui.setChecked(False)
+            pitem.fWidget.ui.b_gui.setEnabled(False)
+
+    # -----------------------------------------------------------------
+
     @pyqtSlot(int, int, int, int)
     def slot_handleNoteOnCallback(self, pluginId, channel, note, velo):
         if pluginId >= self.fPluginCount:
@@ -429,27 +446,6 @@ class CarlaRackW(QListWidget):
             return
 
         pitem.fWidget.sendNoteOff(channel, note)
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(int, int)
-    def slot_handleShowGuiCallback(self, pluginId, state):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        if state == 0:
-            pitem.fWidget.ui.b_gui.setChecked(False)
-            pitem.fWidget.ui.b_gui.setEnabled(True)
-        elif state == 1:
-            pitem.fWidget.ui.b_gui.setChecked(True)
-            pitem.fWidget.ui.b_gui.setEnabled(True)
-        elif state == -1:
-            pitem.fWidget.ui.b_gui.setChecked(False)
-            pitem.fWidget.ui.b_gui.setEnabled(False)
 
     # -----------------------------------------------------------------
 

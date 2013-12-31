@@ -22,11 +22,6 @@
 import os
 import sys
 
-#try:
-    #from PyQt5.QtCore import qFatal, qWarning
-    #from PyQt5.QtGui import QIcon
-    #from PyQt5.QtWidgets import QFileDialog, QMessageBox
-#except:
 from PyQt4.QtCore import qFatal, qWarning
 from PyQt4.QtGui import QIcon
 from PyQt4.QtGui import QFileDialog, QMessageBox
@@ -352,6 +347,10 @@ class CarlaObject(object):
         'isLocal',
         # bool, is plugin
         'isPlugin',
+        # current buffer size
+        'bufferSize',
+        # current sample rate
+        'sampleRate',
         # current process mode
         'processMode',
         # current transport mode
@@ -382,10 +381,11 @@ Carla.gui  = None
 Carla.isControl = False
 Carla.isLocal   = True
 Carla.isPlugin  = False
+Carla.bufferSize = 0
+Carla.sampleRate = 0.0
 Carla.processMode   = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS if LINUX else ENGINE_PROCESS_MODE_CONTINUOUS_RACK
 Carla.transportMode = ENGINE_TRANSPORT_MODE_JACK if LINUX else ENGINE_TRANSPORT_MODE_INTERNAL
 Carla.maxParameters = MAX_DEFAULT_PARAMETERS
-
 Carla.discovery_native  = ""
 Carla.discovery_posix32 = ""
 Carla.discovery_posix64 = ""

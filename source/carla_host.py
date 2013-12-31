@@ -149,15 +149,12 @@ class HostWindow(QMainWindow):
             self.fContainer = CarlaDummyW(self)
 
         # -------------------------------------------------------------
-        # Set callback
+        # Set callback, TODO put somewhere else
 
-        Carla.host.set_engine_callback(EngineCallback)
+        Carla.host.set_engine_callback(engineCallback)
 
         # -------------------------------------------------------------
         # Internal stuff
-
-        self.fBufferSize = 0
-        self.fSampleRate = 0.0
 
         self.fIdleTimerFast = 0
         self.fIdleTimerSlow = 0
@@ -171,6 +168,9 @@ class HostWindow(QMainWindow):
         self.fLastTransportFrame = 0
         self.fLastTransportState = False
         self.fTransportText = ""
+
+        # when true, call engineChanged() asap
+        self.fEngineChanged = False
 
         self.fSavedSettings = {}
 
@@ -258,13 +258,16 @@ class HostWindow(QMainWindow):
         self.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
         self.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
         self.PluginRenamedCallback.connect(self.slot_handlePluginRenamedCallback)
+
+        self.EngineStartedCallback.connect(self.slot_handleEngineStartedCallback)
+        self.EngineStoppedCallback.connect(self.slot_handleEngineStoppedCallback)
+
+        self.ProcessModeChangedCallback.connect(self.slot_handleProcessModeChangedCallback)
+        self.TransportModeChangedCallback.connect(self.slot_handleTransportModeChangedCallback)
         self.BufferSizeChangedCallback.connect(self.slot_handleBufferSizeChangedCallback)
         self.SampleRateChangedCallback.connect(self.slot_handleSampleRateChangedCallback)
-        self.EngineStartedCallback.connect(self.slot_handleEngineStartedCallback)
-        self.EngineStoppedChangedCallback.connect(self.slot_handleEngineStoppedCallback)
-        #self.NSM_AnnounceCallback.connect(self.slot_handleNSM_AnnounceCallback)
-        #self.NSM_OpenCallback.connect(self.slot_handleNSM_OpenCallback)
-        #self.NSM_SaveCallback.connect(self.slot_handleNSM_SaveCallback)
+
+        #self.InfoCallback.connect(self.slot_handleInfoCallback)
         #self.ErrorCallback.connect(self.slot_handleErrorCallback)
         #self.QuitCallback.connect(self.slot_handleQuitCallback)
 
@@ -276,8 +279,6 @@ class HostWindow(QMainWindow):
 
         if Carla.isPlugin:
             QTimer.singleShot(0, self.slot_engineStart)
-        #elif NSM_URL:
-            #Carla.host.nsm_ready()
 
     # -----------------------------------------------------------------
     # Called by containers
@@ -397,8 +398,8 @@ class HostWindow(QMainWindow):
                 QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s'" % audioDriver))
             return
 
-        self.fBufferSize = Carla.host.get_buffer_size()
-        self.fSampleRate = Carla.host.get_sample_rate()
+        #self.fBufferSize = Carla.host.get_buffer_size()
+        #self.fSampleRate = Carla.host.get_sample_rate()
 
         #self.fFirstEngineInit = False
 
@@ -421,8 +422,8 @@ class HostWindow(QMainWindow):
         if Carla.host.is_engine_running() and not Carla.host.engine_close():
             print(Carla.host.get_last_error())
 
-        self.fBufferSize = 0
-        self.fSampleRate = 0.0
+        #self.fBufferSize = 0
+        #self.fSampleRate = 0.0
 
         if self.fIdleTimerFast != 0:
             self.killTimer(self.fIdleTimerFast)
@@ -898,6 +899,8 @@ class HostWindow(QMainWindow):
         print("DEBUG:", pluginId, value1, value2, value3, valueStr)
         #self.ui.pte_log.appendPlainText(valueStr.replace("[30;1m", "DEBUG: ").replace("[31m", "ERROR: ").replace("[0m", "").replace("\n", ""))
 
+    # -----------------------------------------------------------------
+
     @pyqtSlot(int)
     def slot_handlePluginAddedCallback(self, pluginId):
         self.fContainer.addPlugin(pluginId, self.fIsProjectLoading)
@@ -916,22 +919,12 @@ class HostWindow(QMainWindow):
     def slot_handlePluginRenamedCallback(self, pluginId, newName):
         self.fContainer.renamePlugin(pluginId, newName)
 
-    @pyqtSlot(int)
-    def slot_handleBufferSizeChangedCallback(self, newBufferSize):
-        self.fBufferSize = newBufferSize
-        self.fContainer.engineChanged()
-
-    @pyqtSlot(float)
-    def slot_handleSampleRateChangedCallback(self, newSampleRate):
-        self.fSampleRate = newSampleRate
-        self.fContainer.engineChanged()
-
     # -----------------------------------------------------------------
 
     @pyqtSlot(str)
     def slot_handleEngineStartedCallback(self, driverName):
-        self.fBufferSize = Carla.host.get_buffer_size()
-        self.fSampleRate = Carla.host.get_sample_rate()
+        #self.fBufferSize = Carla.host.get_buffer_size()
+        #self.fSampleRate = Carla.host.get_sample_rate()
 
         if self.fIdleTimerFast == 0:
             self.fIdleTimerFast = self.startTimer(30) #self.fSavedSettings["Main/RefreshInterval"])
@@ -942,8 +935,8 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_handleEngineStoppedCallback(self):
-        self.fBufferSize = 0
-        self.fSampleRate = 0.0
+        #self.fBufferSize = 0
+        #self.fSampleRate = 0.0
 
         if self.fIdleTimerFast != 0:
             self.killTimer(self.fIdleTimerFast)
@@ -961,10 +954,28 @@ class HostWindow(QMainWindow):
 
     # -----------------------------------------------------------------
 
+    @pyqtSlot(int)
+    def slot_handleProcessModeChangedCallback(self, newProcessMode):
+        self.fEngineChanged = True
+
+    @pyqtSlot(int)
+    def slot_handleTransportModeChangedCallback(self, newTransportMode):
+        self.fEngineChanged = True
+
+    @pyqtSlot(int)
+    def slot_handleBufferSizeChangedCallback(self, newBufferSize):
+        self.fEngineChanged = True
+
+    @pyqtSlot(float)
+    def slot_handleSampleRateChangedCallback(self, newSampleRate):
+        self.fEngineChanged = True
+
+    # -----------------------------------------------------------------
+
     @pyqtSlot()
     def slot_handleSIGUSR1(self):
         print("Got SIGUSR1 -> Saving project now")
-        #QTimer.singleShot(0, self, SLOT("slot_fileSave)
+        QTimer.singleShot(0, self.slot_fileSave)
 
     @pyqtSlot()
     def slot_handleSIGTERM(self):
@@ -982,6 +993,10 @@ class HostWindow(QMainWindow):
             self.fContainer.idleFast()
 
         elif event.timerId() == self.fIdleTimerSlow:
+            if self.fEngineChanged:
+                self.fContainer.engineChanged()
+                self.fEngineChanged = False
+
             self.fContainer.idleSlow()
 
         QMainWindow.timerEvent(self, event)
@@ -1008,36 +1023,65 @@ class HostWindow(QMainWindow):
 # ------------------------------------------------------------------------------------------------------------
 # Engine callback
 
-def EngineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
-    if pluginId < 0 or not Carla.gui:
+def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
+    if action == ENGINE_CALLBACK_PROCESS_MODE_CHANGED:
+        Carla.processMode = value1
+        if Carla.gui is not None:
+            Carla.gui.ProcessModeChangedCallback.emit(value1)
         return
 
+    if action == ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED:
+        Carla.transportMode = value1
+        if Carla.gui is not None:
+            Carla.gui.TransportModeChangedCallback.emit(value1)
+        return
+
+    if action == ENGINE_CALLBACK_BUFFER_SIZE_CHANGED:
+        Carla.bufferSize = value1
+        if Carla.gui is not None:
+            Carla.gui.BufferSizeChangedCallback.emit(value1)
+        return
+
+    if action == ENGINE_CALLBACK_SAMPLE_RATE_CHANGED:
+        Carla.sampleRate = value1
+        if Carla.gui is not None:
+            Carla.gui.SampleRateChangedCallback.emit(value3)
+        return
+
+    if Carla.gui is None:
+        print("WARNING: Got engine callback but UI is not ready : ", pluginId, value1, value2, value3, valueStr)
+        return
+
+    valueStr = charPtrToString(valueStr)
+
     if action == ENGINE_CALLBACK_DEBUG:
-        Carla.gui.DebugCallback.emit(pluginId, value1, value2, value3, charPtrToString(valueStr))
+        Carla.gui.DebugCallback.emit(pluginId, value1, value2, value3, valueStr)
     elif action == ENGINE_CALLBACK_PLUGIN_ADDED:
-        Carla.gui.PluginAddedCallback.emit(pluginId)
+        Carla.gui.PluginAddedCallback.emit(pluginId, valueStr)
     elif action == ENGINE_CALLBACK_PLUGIN_REMOVED:
         Carla.gui.PluginRemovedCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_PLUGIN_RENAMED:
         Carla.gui.PluginRenamedCallback.emit(pluginId, valueStr)
+    elif action == ENGINE_CALLBACK_PLUGIN_UNAVAILABLE:
+        Carla.gui.PluginUnavailableCallback.emit(pluginId, valueStr)
     elif action == ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
         Carla.gui.ParameterValueChangedCallback.emit(pluginId, value1, value3)
     elif action == ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
         Carla.gui.ParameterDefaultChangedCallback.emit(pluginId, value1, value3)
-    elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
-        Carla.gui.ParameterMidiChannelChangedCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
         Carla.gui.ParameterMidiCcChangedCallback.emit(pluginId, value1, value2)
+    elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
+        Carla.gui.ParameterMidiChannelChangedCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_PROGRAM_CHANGED:
         Carla.gui.ProgramChangedCallback.emit(pluginId, value1)
     elif action == ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
         Carla.gui.MidiProgramChangedCallback.emit(pluginId, value1)
+    elif action == ENGINE_CALLBACK_UI_STATE_CHANGED:
+        Carla.gui.UiStateChangedCallback.emit(pluginId, value1)
     elif action == ENGINE_CALLBACK_NOTE_ON:
-        Carla.gui.NoteOnCallback.emit(pluginId, value1, value2, value3)
+        Carla.gui.NoteOnCallback.emit(pluginId, value1, value2, int(value3))
     elif action == ENGINE_CALLBACK_NOTE_OFF:
         Carla.gui.NoteOffCallback.emit(pluginId, value1, value2)
-    elif action == ENGINE_CALLBACK_UI_STATE_CHANGED:
-        Carla.gui.ShowGuiCallback.emit(pluginId, value1)
     elif action == ENGINE_CALLBACK_UPDATE:
         Carla.gui.UpdateCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_RELOAD_INFO:
@@ -1049,40 +1093,30 @@ def EngineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
     elif action == ENGINE_CALLBACK_RELOAD_ALL:
         Carla.gui.ReloadAllCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED:
-        Carla.gui.PatchbayClientAddedCallback.emit(value1, charPtrToString(valueStr))
+        Carla.gui.PatchbayClientAddedCallback.emit(pluginId, valueStr)
     elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED:
-        Carla.gui.PatchbayClientRemovedCallback.emit(value1, charPtrToString(valueStr))
+        Carla.gui.PatchbayClientRemovedCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED:
-        Carla.gui.PatchbayClientRenamedCallback.emit(value1, charPtrToString(valueStr))
+        Carla.gui.PatchbayClientRenamedCallback.emit(pluginId, valueStr)
+    elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_ICON_CHANGED:
+        Carla.gui.PatchbayClientIconChangedCallback.emit(value1, valueStr)
     elif action == ENGINE_CALLBACK_PATCHBAY_PORT_ADDED:
-        Carla.gui.PatchbayPortAddedCallback.emit(value1, value2, int(value3), charPtrToString(valueStr))
+        Carla.gui.PatchbayPortAddedCallback.emit(pluginId, value1, value2, valueStr)
     elif action == ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED:
-        Carla.gui.PatchbayPortRemovedCallback.emit(value1, value2, charPtrToString(valueStr))
+        Carla.gui.PatchbayPortRemovedCallback.emit(pluginId, value1)
     elif action == ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED:
-        Carla.gui.PatchbayPortRenamedCallback.emit(value1, value2, charPtrToString(valueStr))
+        Carla.gui.PatchbayPortRenamedCallback.emit(pluginId, value1, valueStr)
     elif action == ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED:
-        Carla.gui.PatchbayConnectionAddedCallback.emit(value1, value2, value3)
+        Carla.gui.PatchbayConnectionAddedCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED:
-        Carla.gui.PatchbayConnectionRemovedCallback.emit(value1)
-    #elif action == ENGINE_CALLBACK_PATCHBAY_ICON_CHANGED:
-        #Carla.gui.PatchbayIconChangedCallback.emit(value1, charPtrToString(valueStr))
-    elif action == ENGINE_CALLBACK_BUFFER_SIZE_CHANGED:
-        Carla.gui.BufferSizeChangedCallback.emit(value1)
-    elif action == ENGINE_CALLBACK_SAMPLE_RATE_CHANGED:
-        Carla.gui.SampleRateChangedCallback.emit(value3)
-    elif action == ENGINE_CALLBACK_PROCESS_MODE_CHANGED:
-        Carla.gui.ProcessModeChangedCallback.emit(value1)
+        Carla.gui.PatchbayConnectionRemovedCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_ENGINE_STARTED:
-        Carla.gui.EngineStartedCallback.emit(charPtrToString(valueStr))
+        Carla.gui.EngineStartedCallback.emit(value1, value2, valueStr)
     elif action == ENGINE_CALLBACK_ENGINE_STOPPED:
-        Carla.gui.EngineStoppedChangedCallback.emit()
-    #elif action == CALLBACK_NSM_ANNOUNCE:
-        #Carla.gui.NSM_AnnounceCallback.emit(charPtrToString(valueStr))
-    #elif action == CALLBACK_NSM_OPEN:
-        #Carla.gui.NSM_OpenCallback.emit(charPtrToString(valueStr))
-    #elif action == CALLBACK_NSM_SAVE:
-        #Carla.gui.NSM_SaveCallback.emit()
+        Carla.gui.EngineStoppedCallback.emit()
+    elif action == ENGINE_CALLBACK_INFO:
+        Carla.gui.InfoCallback.emit(valueStr)
     elif action == ENGINE_CALLBACK_ERROR:
-        Carla.gui.ErrorCallback.emit(charPtrToString(valueStr))
+        Carla.gui.ErrorCallback.emit(valueStr)
     elif action == ENGINE_CALLBACK_QUIT:
         Carla.gui.QuitCallback.emit()

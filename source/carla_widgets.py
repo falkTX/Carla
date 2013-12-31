@@ -349,7 +349,7 @@ class PluginParameter(QWidget):
 # Plugin Editor (Built-in)
 
 class PluginEdit(QDialog):
-    ParamsPerPage = 8
+    kParamsPerPage = 8
 
     def __init__(self, parent, pluginId):
         QDialog.__init__(self, Carla.gui)
@@ -702,7 +702,7 @@ class PluginEdit(QDialog):
 
                     paramInputList.append(parameter)
 
-                    if len(paramInputList) == self.ParamsPerPage:
+                    if len(paramInputList) == self.kParamsPerPage:
                         paramInputListFull.append((paramInputList, paramInputWidth))
                         paramInputList  = []
                         paramInputWidth = 0
@@ -715,7 +715,7 @@ class PluginEdit(QDialog):
 
                     paramOutputList.append(parameter)
 
-                    if len(paramOutputList) == self.ParamsPerPage:
+                    if len(paramOutputList) == self.kParamsPerPage:
                         paramOutputListFull.append((paramOutputList, paramOutputWidth))
                         paramOutputList  = []
                         paramOutputWidth = 0
