@@ -883,7 +883,7 @@ class HostWindow(QMainWindow):
     def slot_fileTreeDoubleClicked(self, modelIndex):
         filename = self.fDirModel.filePath(modelIndex)
 
-        if not Carla.host.load_filename(filename):
+        if not Carla.host.load_file(filename):
             CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
                              self.tr("Failed to load file"),
                              Carla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)

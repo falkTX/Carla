@@ -74,9 +74,9 @@ class CarlaMultiW(QTabWidget):
         parent.ParameterMidiCcChangedCallback.connect(self.fRack.slot_handleParameterMidiCcChangedCallback)
         parent.ProgramChangedCallback.connect(self.fRack.slot_handleProgramChangedCallback)
         parent.MidiProgramChangedCallback.connect(self.fRack.slot_handleMidiProgramChangedCallback)
+        parent.UiStateChangedCallback.connect(self.fRack.slot_handleUiStateChangedCallback)
         parent.NoteOnCallback.connect(self.fRack.slot_handleNoteOnCallback)
         parent.NoteOffCallback.connect(self.fRack.slot_handleNoteOffCallback)
-        parent.UiStateChangedCallback.connect(self.fRack.slot_handleUiStateChangedCallback)
         parent.UpdateCallback.connect(self.fRack.slot_handleUpdateCallback)
         parent.ReloadInfoCallback.connect(self.fRack.slot_handleReloadInfoCallback)
         parent.ReloadParametersCallback.connect(self.fRack.slot_handleReloadParametersCallback)
@@ -85,12 +85,12 @@ class CarlaMultiW(QTabWidget):
         parent.PatchbayClientAddedCallback.connect(self.fPatchbay.slot_handlePatchbayClientAddedCallback)
         parent.PatchbayClientRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayClientRemovedCallback)
         parent.PatchbayClientRenamedCallback.connect(self.fPatchbay.slot_handlePatchbayClientRenamedCallback)
+        #parent.PatchbayIconChangedCallback.connect(self.fPatchbay.slot_handlePatchbayIconChangedCallback)
         parent.PatchbayPortAddedCallback.connect(self.fPatchbay.slot_handlePatchbayPortAddedCallback)
         parent.PatchbayPortRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayPortRemovedCallback)
         parent.PatchbayPortRenamedCallback.connect(self.fPatchbay.slot_handlePatchbayPortRenamedCallback)
         parent.PatchbayConnectionAddedCallback.connect(self.fPatchbay.slot_handlePatchbayConnectionAddedCallback)
         parent.PatchbayConnectionRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayConnectionRemovedCallback)
-        #parent.PatchbayIconChangedCallback.connect(self.fPatchbay.slot_handlePatchbayIconChangedCallback)
 
     # -----------------------------------------------------------------
 
@@ -108,6 +108,9 @@ class CarlaMultiW(QTabWidget):
     def renamePlugin(self, pluginId, newName):
         self.fRack.renamePlugin(pluginId, newName)
         self.fPatchbay.renamePlugin(pluginId, newName)
+
+    def disablePlugin(self, pluginId, errorMsg):
+        pass
 
     def removeAllPlugins(self):
         self.fRack.removeAllPlugins()
@@ -176,7 +179,7 @@ class CarlaHostW(HostWindow):
         self.fInfoLabel.setText("Engine stopped")
 
     def engineChanged(self):
-        self.fInfoText = "Engine running | SampleRate: %g | BufferSize: %i" % (self.fSampleRate, self.fBufferSize)
+        self.fInfoText = "Engine running | SampleRate: %g | BufferSize: %i" % (Carla.sampleRate, Carla.bufferSize)
         self.fInfoLabel.setText("%s | %s" % (self.fInfoText, self.fTextTransport))
 
     # -----------------------------------------------------------------

@@ -19,9 +19,6 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-#try:
-    #from PyQt5.QtWidgets import QGraphicsView
-#except:
 from PyQt4.QtGui import QGraphicsView
 
 #QPrinter, QPrintDialog
@@ -38,9 +35,6 @@ from carla_widgets import *
 # Try Import OpenGL
 
 try:
-    #try:
-        #from PyQt5.QtOpenGL import QGLWidget
-    #except:
     from PyQt4.QtOpenGL import QGLWidget
     hasGL = True
 except:
@@ -353,6 +347,7 @@ class CarlaPatchbayW(QGraphicsView):
             return
 
         self.fParent.loadSettings(False)
+
         patchcanvas.clear()
 
         pOptions = patchcanvas.options_t()
@@ -371,7 +366,7 @@ class CarlaPatchbayW(QGraphicsView):
 
         patchcanvas.setOptions(pOptions)
         patchcanvas.setFeatures(pFeatures)
-        patchcanvas.init("Carla2", self.scene, CanvasCallback, False)
+        patchcanvas.init("Carla2", self.scene, canvasCallback, False)
 
         if Carla.host.is_engine_running():
             Carla.host.patchbay_refresh()
@@ -668,7 +663,7 @@ class CarlaPatchbayW(QGraphicsView):
 # ------------------------------------------------------------------------------------------------
 # Canvas callback
 
-def CanvasCallback(action, value1, value2, valueStr):
+def canvasCallback(action, value1, value2, valueStr):
     if action == patchcanvas.ACTION_GROUP_INFO:
         pass
 
@@ -696,10 +691,10 @@ def CanvasCallback(action, value1, value2, valueStr):
         portIdB = value2
 
         if not Carla.host.patchbay_connect(portIdA, portIdB):
-            print("Connection failed:", cString(Carla.host.get_last_error()))
+            print("Connection failed:", Carla.host.get_last_error())
 
     elif action == patchcanvas.ACTION_PORTS_DISCONNECT:
         connectionId = value1
 
         if not Carla.host.patchbay_disconnect(connectionId):
-            print("Disconnect failed:", cString(Carla.host.get_last_error()))
+            print("Disconnect failed:", Carla.host.get_last_error())
