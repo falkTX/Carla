@@ -54,7 +54,7 @@ CarlaPluginThread::CarlaPluginThread(CarlaBackend::CarlaEngine* const engine, Ca
       fPlugin(plugin),
       fMode(mode)
 {
-    carla_debug("CarlaPluginThread::CarlaPluginThread(plugin:\"%s\", engine:\"%s\", %s)", plugin->getName(), engine->getName(), PluginThreadMode2str(mode));
+    carla_debug("CarlaPluginThread::CarlaPluginThread(%p, %p, %s)", engine, plugin, PluginThreadMode2str(mode));
 
     //setPriority(5);
 }

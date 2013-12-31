@@ -117,14 +117,14 @@ def findFilenames(filePath, stype):
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Query
 
-PLUGIN_QUERY_API_VERSION = 2
+PLUGIN_QUERY_API_VERSION = 3
 
 PyPluginInfo = {
     'API': PLUGIN_QUERY_API_VERSION,
     'build': BINARY_NONE,
     'type': PLUGIN_NONE,
     'hints': 0x0,
-    'binary': "",
+    'filename': "",
     'name': "",
     'label': "",
     'maker': "",
@@ -177,8 +177,8 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
 
         if line == "carla-discovery::init::-----------":
             pinfo = deepcopy(PyPluginInfo)
-            pinfo['type']   = itype
-            pinfo['binary'] = filename
+            pinfo['type']     = itype
+            pinfo['filename'] = filename
 
         elif line == "carla-discovery::end::------------":
             if pinfo is not None:
@@ -1250,7 +1250,7 @@ class PluginDatabaseW(QDialog):
             self._reAddPlugins()
 
             if self.fRealParent:
-                self.fRealParent.loadRDFsNeeded()
+                self.fRealParent.setLoadRDFsNeeded()
 
     def _checkFilters(self):
         text = self.ui.lineEdit.text().lower()
@@ -1404,7 +1404,7 @@ class PluginDatabaseW(QDialog):
         self.ui.tableWidget.setItem(index, 10, QTableWidgetItem(self.tr("Yes") if (plugin['hints'] & PLUGIN_IS_SYNTH) else self.tr("No")))
         self.ui.tableWidget.setItem(index, 11, QTableWidgetItem(bridgeText))
         self.ui.tableWidget.setItem(index, 12, QTableWidgetItem(ptype))
-        self.ui.tableWidget.setItem(index, 13, QTableWidgetItem(str(plugin['binary'])))
+        self.ui.tableWidget.setItem(index, 13, QTableWidgetItem(str(plugin['filename'])))
         self.ui.tableWidget.item(index, 0).setData(Qt.UserRole, plugin)
 
         self.fLastTableIndex += 1

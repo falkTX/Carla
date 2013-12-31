@@ -444,7 +444,7 @@ public:
           fTransportState(JackTransportStopped),
           fFreewheel(false),
 #ifdef BUILD_BRIDGE
-          fHasQuit(false)
+          fIsRunning(false)
 #else
           fLastGroupId(0),
           fLastPortId(0),
@@ -527,7 +527,23 @@ public:
 
         carla_zeroStruct<jack_position_t>(fTransportPos);
 
-#ifndef BUILD_BRIDGE
+#ifdef BUILD_BRIDGE
+        if (pData->bufferSize == 0 || pData->sampleRate == 0.0)
+        {
+            // open temp client to get initial buffer-size and sample-rate values
+            if (jack_client_t* tmpClient = jackbridge_client_open(clientName, JackNullOption, nullptr))
+            {
+                pData->bufferSize = jackbridge_get_buffer_size(tmpClient);
+                pData->sampleRate = jackbridge_get_sample_rate(tmpClient);
+
+                jackbridge_client_close(tmpClient);
+            }
+        }
+
+        fIsRunning = true;
+
+        return CarlaEngine::init(clientName);
+#else
         fLastGroupId = 0;
         fLastPortId  = 0;
         fLastConnectionId = 0;
@@ -589,20 +605,6 @@ public:
             setLastError("Failed to create new JACK client");
 
         return false;
-#else
-        if (pData->bufferSize == 0 || pData->sampleRate == 0.0)
-        {
-            // open temp client to get initial buffer-size and sample-rate values
-            if (jack_client_t* tmpClient = jackbridge_client_open(clientName, JackNullOption, nullptr))
-            {
-                pData->bufferSize = jackbridge_get_buffer_size(tmpClient);
-                pData->sampleRate = jackbridge_get_sample_rate(tmpClient);
-
-                jackbridge_client_close(tmpClient);
-            }
-        }
-
-        return CarlaEngine::init(clientName);
 #endif
     }
 
@@ -612,8 +614,8 @@ public:
         CarlaEngine::close();
 
 #ifdef BUILD_BRIDGE
-        fClient  = nullptr;
-        fHasQuit = true;
+        fClient    = nullptr;
+        fIsRunning = false;
         return true;
 #else
         if (jackbridge_deactivate(fClient))
@@ -646,8 +648,9 @@ public:
         fUsedPortNames.clear();
         fUsedConnections.clear();
         fGroupIconsChanged.clear();
-#endif
+
         return false;
+#endif
     }
 
 #ifndef BUILD_BRIDGE
@@ -700,7 +703,7 @@ public:
     bool isRunning() const noexcept override
     {
 #ifdef BUILD_BRIDGE
-        return (fClient != nullptr || ! fHasQuit);
+        return (fClient != nullptr || fIsRunning);
 #else
         return (fClient != nullptr);
 #endif
@@ -931,7 +934,6 @@ public:
 
         return true;
     }
-#endif
 
     // -------------------------------------------------------------------
     // Transport
@@ -959,6 +961,7 @@ public:
         else if (fClient != nullptr)
             jackbridge_transport_locate(fClient, static_cast<jack_nframes_t>(frame));
     }
+#endif
 
     // -------------------------------------------------------------------
 
@@ -1435,7 +1438,7 @@ private:
     // -------------------------------------------------------------------
 
 #ifdef BUILD_BRIDGE
-    bool fHasQuit;
+    bool fIsRunning;
 #else
     enum RackPorts {
         kRackPortAudioIn1  = 0,

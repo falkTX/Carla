@@ -200,6 +200,9 @@ class CarlaPatchbayW(QGraphicsView):
 
         pitem.setName(newName)
 
+    def disablePlugin(self, pluginId, errorMsg):
+        pass
+
     def removeAllPlugins(self):
         for i in range(self.fPluginCount):
             pitem = self.fPluginList[i]

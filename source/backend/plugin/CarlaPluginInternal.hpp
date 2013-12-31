@@ -693,8 +693,8 @@ struct CarlaPluginProtectedData {
             // mutex MUST have been locked before
             const bool lockMaster(masterMutex.tryLock());
             const bool lockSingle(singleMutex.tryLock());
-            CARLA_ASSERT(! lockMaster);
-            CARLA_ASSERT(! lockSingle);
+            CARLA_SAFE_ASSERT(! lockMaster);
+            CARLA_SAFE_ASSERT(! lockSingle);
         }
 
         if (client != nullptr)
@@ -812,11 +812,7 @@ struct CarlaPluginProtectedData {
             for (uint32_t i=0; i < audioIn.count; ++i)
             {
                 latencyBuffers[i] = new float[latency];
-#ifdef USE_JUCE
-                FloatVectorOperations::clear(latencyBuffers[i], latency);
-#else
-                carla_zeroFloat(latencyBuffers[i], latency);
-#endif
+                FLOAT_CLEAR(latencyBuffers[i], latency);
             }
         }
     }
@@ -828,11 +824,7 @@ struct CarlaPluginProtectedData {
     {
         CARLA_SAFE_ASSERT_RETURN(type != kPluginPostRtEventNull,);
 
-        PluginPostRtEvent event;
-        event.type   = type;
-        event.value1 = value1;
-        event.value2 = value2;
-        event.value3 = value3;
+        PluginPostRtEvent event = { type, value1, value2, value3 };
 
         postRtEvents.appendRT(event);
     }

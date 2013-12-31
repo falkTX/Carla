@@ -9,36 +9,37 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 
 # TODO: remove in favour of juce gui stuff
-QT5_UI_FLAGS = $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
-QT5_UI_LIBS  = $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets)
+# QT5_UI_FLAGS = $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
+# QT5_UI_LIBS  = $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets)
 
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -DBUILD_BRIDGE
-BUILD_CXX_FLAGS += -I. -I../backend -I../includes -I../modules -I../modules/theme -I../utils
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
-LINK_FLAGS      += $(shell pkg-config --libs liblo)
+BUILD_CXX_FLAGS += -I. -I../backend -I../includes -I../utils -isystem ../modules -isystem ../modules/theme
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo) $(QTCORE_FLAGS)
+LINK_FLAGS      += $(shell pkg-config --libs liblo) $(QTCORE_LIBS)
 
 # --------------------------------------------------------------
 # Plugin bridges
 
-BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS) -DBUILD_BRIDGE_PLUGIN
+BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS) $(QTXML_FLAGS) -DBUILD_BRIDGE_PLUGIN
 BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin
-LINK_PLUGIN_FLAGS   = $(LINK_FLAGS) -lpthread
+LINK_PLUGIN_FLAGS   = $(LINK_FLAGS) $(QTXML_LIBS) -lpthread
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-BUILD_PLUGIN_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
-ifeq ($(CARLA_VESTIGE_HEADER),true)
-BUILD_PLUGIN_FLAGS += -DVESTIGE_HEADER
-endif
+BUILD_PLUGIN_FLAGS += -DWANT_LADSPA
+# -DWANT_DSSI -DWANT_LV2 -DWANT_VST
+# ifeq ($(CARLA_VESTIGE_HEADER),true)
+# BUILD_PLUGIN_FLAGS += -DVESTIGE_HEADER
+# endif
 endif
 
-LINK_PLUGIN_FLAGS  += $(JUCE_AUDIO_BASICS_LIBS)
-LINK_PLUGIN_FLAGS  += $(JUCE_CORE_LIBS)
-LINK_PLUGIN_FLAGS  += $(JUCE_DATA_STRUCTURES_LIBS)
-LINK_PLUGIN_FLAGS  += $(JUCE_EVENTS_LIBS)
-LINK_PLUGIN_FLAGS  += $(JUCE_GRAPHICS_LIBS)
-LINK_PLUGIN_FLAGS  += $(JUCE_GUI_BASICS_LIBS)
+# LINK_PLUGIN_FLAGS  += $(JUCE_AUDIO_BASICS_LIBS)
+# LINK_PLUGIN_FLAGS  += $(JUCE_CORE_LIBS)
+# LINK_PLUGIN_FLAGS  += $(JUCE_DATA_STRUCTURES_LIBS)
+# LINK_PLUGIN_FLAGS  += $(JUCE_EVENTS_LIBS)
+# LINK_PLUGIN_FLAGS  += $(JUCE_GRAPHICS_LIBS)
+# LINK_PLUGIN_FLAGS  += $(JUCE_GUI_BASICS_LIBS)
 
 # --------------------------------------------------------------
 # Plugin bridges (POSIX)
@@ -47,10 +48,6 @@ POSIX_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS)
 POSIX_32BIT_FLAGS = $(32BIT_FLAGS) -L/usr/lib32 -L/usr/lib/i386-linux-gnu
 POSIX_64BIT_FLAGS = $(64BIT_FLAGS) -L/usr/lib64 -L/usr/lib/x86_64-linux-gnu
 POSIX_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) -ldl
-
-ifneq ($(MACOS),true)
-POSIX_LINK_FLAGS += -lrt
-endif
 
 # --------------------------------------------------------------
 # Plugin bridges (Windows)
@@ -63,47 +60,48 @@ WIN_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) -L../modules
 # --------------------------------------------------------------
 # Plugin bridges (Native)
 
-NATIVE_BUILD_FLAGS  = $(POSIX_BUILD_FLAGS) -DWANT_NATIVE
+NATIVE_BUILD_FLAGS  = $(POSIX_BUILD_FLAGS)
+# -DWANT_NATIVE
 NATIVE_LINK_FLAGS   = $(POSIX_LINK_FLAGS)
 
-ifeq ($(HAVE_FLUIDSYNTH),true)
-NATIVE_BUILD_FLAGS += -DWANT_FLUIDSYNTH
-NATIVE_BUILD_FLAGS += $(shell pkg-config --cflags fluidsynth)
-NATIVE_LINK_FLAGS  += $(shell pkg-config --libs fluidsynth)
-endif
+# ifeq ($(HAVE_FLUIDSYNTH),true)
+# NATIVE_BUILD_FLAGS += -DWANT_FLUIDSYNTH
+# NATIVE_BUILD_FLAGS += $(shell pkg-config --cflags fluidsynth)
+# NATIVE_LINK_FLAGS  += $(shell pkg-config --libs fluidsynth)
+# endif
+#
+# ifeq ($(HAVE_LINUXSAMPLER),true)
+# NATIVE_BUILD_FLAGS += -DWANT_LINUXSAMPLER
+# NATIVE_BUILD_FLAGS += $(shell pkg-config --cflags linuxsampler)
+# NATIVE_LINK_FLAGS  += $(shell pkg-config --libs linuxsampler)
+# endif
 
-ifeq ($(HAVE_LINUXSAMPLER),true)
-NATIVE_BUILD_FLAGS += -DWANT_LINUXSAMPLER
-NATIVE_BUILD_FLAGS += $(shell pkg-config --cflags linuxsampler)
-NATIVE_LINK_FLAGS  += $(shell pkg-config --libs linuxsampler)
-endif
+# ifeq ($(HAVE_AF_DEPS),true)
+# NATIVE_BUILD_FLAGS += -DWANT_AUDIOFILE
+# NATIVE_LINK_FLAGS  += $(shell pkg-config --libs sndfile)
+# ifeq ($(HAVE_FFMPEG),true)
+# NATIVE_BUILD_FLAGS += -DHAVE_FFMPEG
+# NATIVE_LINK_FLAGS  += $(shell pkg-config --libs libavcodec libavformat libavutil)
+# endif
+# endif
+#
+# ifeq ($(HAVE_MF_DEPS),true)
+# NATIVE_BUILD_FLAGS += -DWANT_MIDIFILE
+# NATIVE_LINK_FLAGS  += $(shell pkg-config --libs smf)
+# endif
+#
+# ifeq ($(HAVE_OPENGL),true)
+# NATIVE_BUILD_FLAGS += -DWANT_OPENGL
+# NATIVE_LINK_FLAGS  += $(DGL_LIBS)
+# endif
 
-ifeq ($(HAVE_AF_DEPS),true)
-NATIVE_BUILD_FLAGS += -DWANT_AUDIOFILE
-NATIVE_LINK_FLAGS  += $(shell pkg-config --libs sndfile)
-ifeq ($(HAVE_FFMPEG),true)
-NATIVE_BUILD_FLAGS += -DHAVE_FFMPEG
-NATIVE_LINK_FLAGS  += $(shell pkg-config --libs libavcodec libavformat libavutil)
-endif
-endif
-
-ifeq ($(HAVE_MF_DEPS),true)
-NATIVE_BUILD_FLAGS += -DWANT_MIDIFILE
-NATIVE_LINK_FLAGS  += $(shell pkg-config --libs smf)
-endif
-
-ifeq ($(HAVE_OPENGL),true)
-NATIVE_BUILD_FLAGS += -DWANT_OPENGL
-NATIVE_LINK_FLAGS  += $(DGL_LIBS)
-endif
-
-ifeq ($(HAVE_ZYN_DEPS),true)
-NATIVE_BUILD_FLAGS += -DWANT_ZYNADDSUBFX
-NATIVE_LINK_FLAGS  += $(shell pkg-config --libs fftw3 mxml zlib)
-ifeq ($(HAVE_ZYN_UI_DEPS),true)
-NATIVE_LINK_FLAGS  += $(shell pkg-config --libs ntk_images ntk)
-endif
-endif
+# ifeq ($(HAVE_ZYN_DEPS),true)
+# NATIVE_BUILD_FLAGS += -DWANT_ZYNADDSUBFX
+# NATIVE_LINK_FLAGS  += $(shell pkg-config --libs fftw3 mxml zlib)
+# ifeq ($(HAVE_ZYN_UI_DEPS),true)
+# NATIVE_LINK_FLAGS  += $(shell pkg-config --libs ntk_images ntk)
+# endif
+# endif
 
 # --------------------------------------------------------------
 # UI bridges
@@ -153,23 +151,23 @@ LINK_UI_VST_X11_FLAGS    = $(LINK_UI_FLAGS) $(QT5_UI_LIBS)
 
 TARGETS  = native
 
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-ifeq ($(HAVE_GTK2),true)
-TARGETS += ui_lv2-gtk2
-endif
-ifeq ($(HAVE_GTK3),true)
-TARGETS += ui_lv2-gtk3
-endif
-ifeq ($(HAVE_QT4),true)
-TARGETS += ui_lv2-qt4
-else
-ifeq ($(HAVE_QT5),true)
-TARGETS += ui_lv2-qt5
-endif
-endif
-TARGETS += ui_lv2-x11
-TARGETS += ui_vst-x11
-endif
+# ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+# ifeq ($(HAVE_GTK2),true)
+# TARGETS += ui_lv2-gtk2
+# endif
+# ifeq ($(HAVE_GTK3),true)
+# TARGETS += ui_lv2-gtk3
+# endif
+# ifeq ($(HAVE_QT4),true)
+# TARGETS += ui_lv2-qt4
+# else
+# ifeq ($(HAVE_QT5),true)
+# TARGETS += ui_lv2-qt5
+# endif
+# endif
+# TARGETS += ui_lv2-x11
+# TARGETS += ui_vst-x11
+# endif
 
 ifeq ($(WIN32),true)
 TARGETS  = carla-bridge-win32.exe
@@ -394,24 +392,26 @@ OBJS_NATIVE += \
 
 # libs
 OBJS_NATIVE += \
-	../modules/carla_native.a \
-	../modules/juce_audio_basics.a \
-	../modules/juce_core.a \
-	../modules/juce_data_structures.a \
-	../modules/juce_events.a \
-	../modules/juce_graphics.a \
-	../modules/juce_gui_basics.a \
+	../modules/jackbridge.a \
 	../modules/rtmempool.a
 
-ifeq ($(HAVE_OPENGL),true)
-OBJS_NATIVE += \
-	../modules/dgl.a
-endif
+# 	../modules/carla_native.a \
+# 	../modules/juce_audio_basics.a \
+# 	../modules/juce_core.a \
+# 	../modules/juce_data_structures.a \
+# 	../modules/juce_events.a \
+# 	../modules/juce_graphics.a \
+# 	../modules/juce_gui_basics.a \
 
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-OBJS_NATIVE += \
-	../modules/lilv.a
-endif
+# ifeq ($(HAVE_OPENGL),true)
+# OBJS_NATIVE += \
+# 	../modules/dgl.a
+# endif
+
+# ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+# OBJS_NATIVE += \
+# 	../modules/lilv.a
+# endif
 
 carla-bridge-native: $(FILES) $(OBJS_NATIVE)
 	$(CXX) $(OBJS_NATIVE) $(NATIVE_LINK_FLAGS) -o $@

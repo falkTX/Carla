@@ -1411,10 +1411,7 @@ public:
         else
             pData->name = pData->engine->getUniquePluginName(fDescriptor->Label);
 
-        pData->filename = filename;
-
-        CARLA_ASSERT(pData->name != nullptr);
-        CARLA_ASSERT(pData->filename != nullptr);
+        pData->filename = carla_strdup(filename);
 
         // ---------------------------------------------------------------
         // register client
@@ -1457,13 +1454,14 @@ public:
             if (pData->engine->getOptions().forceStereo)
                 pData->options |= PLUGIN_OPTION_FORCE_STEREO;
 
-            // load settings TODO
-            pData->identifier  = "LADSPA/";
-            //pData->idStr += std::strrchr(filename, OS_SEP)+1;
-            //pData->idStr += "/";
-            //pData->idStr += CarlaString(getUniqueId());
-            //pData->idStr += "/";
-            //pData->idStr += label;
+            // set identifier string
+            CarlaString identifier("LADSPA/");
+            identifier += CarlaString(getUniqueId());
+            identifier += ",";
+            identifier += label;
+            pData->identifier = identifier.dup();
+
+            // load settings
             pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
 
             // ignore settings, we need this anyway

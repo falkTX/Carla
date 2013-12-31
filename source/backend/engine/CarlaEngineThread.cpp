@@ -92,7 +92,7 @@ void CarlaEngineThread::run()
                     if (oscRegisted)
                     {
 #ifdef BUILD_BRIDGE
-                        fEngine->oscSend_bridge_set_parameter_value(j, value);
+                        fEngine->oscSend_bridge_parameter_value(j, value);
 #else
                         fEngine->oscSend_control_set_parameter_value(i, j, value);
 #endif

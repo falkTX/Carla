@@ -124,9 +124,9 @@ struct CarlaBackendStandalone {
 #ifdef BUILD_BRIDGE
         engineOptions.processMode         = CB::ENGINE_PROCESS_MODE_BRIDGE;
         engineOptions.transportMode       = CB::ENGINE_TRANSPORT_MODE_BRIDGE;
-        engineOptions.forceStereo         = CB::ENGINE_OPTION_FORCE_STEREO          = false;
-        engineOptions.preferPluginBridges = CB::ENGINE_OPTION_PREFER_PLUGIN_BRIDGES = false;
-        engineOptions.preferUiBridges     = CB::ENGINE_OPTION_PREFER_UI_BRIDGES     = false;
+        engineOptions.forceStereo         = false;
+        engineOptions.preferPluginBridges = false;
+        engineOptions.preferUiBridges     = false;
 #endif
     }
 
@@ -442,8 +442,14 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 
     gStandalone.engine->setCallback(gStandalone.engineCallback, gStandalone.engineCallbackPtr);
 
+#ifdef BUILD_BRIDGE
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,          CB::ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS,                     nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,        CB::ENGINE_TRANSPORT_MODE_JACK,                               nullptr);
+#else
     gStandalone.engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,          static_cast<int>(gStandalone.engineOptions.processMode),      nullptr);
     gStandalone.engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,        static_cast<int>(gStandalone.engineOptions.transportMode),    nullptr);
+#endif
+
     gStandalone.engine->setOption(CB::ENGINE_OPTION_FORCE_STEREO,          gStandalone.engineOptions.forceStereo         ? 1 : 0,        nullptr);
     gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, gStandalone.engineOptions.preferPluginBridges ? 1 : 0,        nullptr);
     gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_UI_BRIDGES,     gStandalone.engineOptions.preferUiBridges     ? 1 : 0,        nullptr);

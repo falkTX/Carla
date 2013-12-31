@@ -34,12 +34,12 @@ public:
     CarlaMutex() noexcept
         : fTryLockWasCalled(false)
     {
-        pthread_mutexattr_t atts;
-        pthread_mutexattr_init(&atts);
-        pthread_mutexattr_settype(&atts, PTHREAD_MUTEX_RECURSIVE);
+        //pthread_mutexattr_t atts;
+        //pthread_mutexattr_init(&atts);
+        //pthread_mutexattr_settype(&atts, PTHREAD_MUTEX_RECURSIVE);
 
-        pthread_mutex_init(&fMutex, &atts);
-        pthread_mutexattr_destroy(&atts);
+        pthread_mutex_init(&fMutex, nullptr /*&atts*/);
+        //pthread_mutexattr_destroy(&atts);
     }
 
     /*

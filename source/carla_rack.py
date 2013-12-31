@@ -72,22 +72,22 @@ class CarlaRackW(QListWidget):
         #self.setMnimumWidth(800)
         self.setSortingEnabled(False)
 
-        #app  = QApplication.instance()
-        #pal1 = app.palette().base().color()
-        #pal2 = app.palette().button().color()
-        #col1 = "stop:0 rgb(%i, %i, %i)" % (pal1.red(), pal1.green(), pal1.blue())
-        #col2 = "stop:1 rgb(%i, %i, %i)" % (pal2.red(), pal2.green(), pal2.blue())
+        app  = QApplication.instance()
+        pal1 = app.palette().base().color()
+        pal2 = app.palette().button().color()
+        col1 = "stop:0 rgb(%i, %i, %i)" % (pal1.red(), pal1.green(), pal1.blue())
+        col2 = "stop:1 rgb(%i, %i, %i)" % (pal2.red(), pal2.green(), pal2.blue())
 
-        #self.setStyleSheet("""
-          #QListWidget {
-            #background-color: qlineargradient(spread:pad,
-                #x1:0.0, y1:0.0,
-                #x2:0.2, y2:1.0,
-                #%s,
-                #%s
-            #);
-          #}
-        #""" % (col1, col2))
+        self.setStyleSheet("""
+          QListWidget {
+            background-color: qlineargradient(spread:pad,
+                x1:0.0, y1:0.0,
+                x2:0.2, y2:1.0,
+                %s,
+                %s
+            );
+          }
+        """ % (col1, col2))
 
         # -------------------------------------------------------------
         # Connect actions to functions
@@ -168,6 +168,9 @@ class CarlaRackW(QListWidget):
 
         pitem.fWidget.ui.label_name.setText(newName)
         pitem.fWidget.ui.edit_dialog.setName(newName)
+
+    def disablePlugin(self, pluginId, errorMsg):
+        pass
 
     def removeAllPlugins(self):
         while (self.takeItem(0)):
@@ -504,11 +507,4 @@ class CarlaRackW(QListWidget):
 
         pitem.ui.edit_dialog.reloadAll()
 
-# ------------------------------------------------------------------------------------------------------------
-# TESTING
-
-#from PyQt5.QtWidgets import QApplication
-#app = QApplication(sys.argv)
-#gui = CarlaRackW(None)
-#gui.show()
-#app.exec_()
+    # -----------------------------------------------------------------

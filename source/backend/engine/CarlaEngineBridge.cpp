@@ -145,12 +145,12 @@ struct BridgeControl : public RingBufferControl {
 // -------------------------------------------------------------------
 
 class CarlaEngineBridge : public CarlaEngine,
-                          public juce::Thread
+                          public CarlaThread
 {
 public:
     CarlaEngineBridge(const char* const audioBaseName, const char* const controlBaseName)
         : CarlaEngine(),
-          juce::Thread("CarlaEngineBridge"),
+          CarlaThread("CarlaEngineBridge"),
           fIsRunning(false)
     {
         carla_debug("CarlaEngineBridge::CarlaEngineBridge()");
@@ -208,17 +208,15 @@ public:
 
         opcode = fShmControl.readOpcode();
         CARLA_ASSERT_INT(opcode == kPluginBridgeOpcodeSetBufferSize, opcode);
-        fBufferSize = fShmControl.readInt();
-        carla_stderr("BufferSize: %i", fBufferSize);
+        pData->bufferSize = fShmControl.readInt();
+        carla_stderr("BufferSize: %i", pData->bufferSize);
 
         opcode = fShmControl.readOpcode();
         CARLA_ASSERT_INT(opcode == kPluginBridgeOpcodeSetSampleRate, opcode);
-        fSampleRate = fShmControl.readFloat();
-        carla_stderr("SampleRate: %f", fSampleRate);
+        pData->sampleRate = fShmControl.readFloat();
+        carla_stderr("SampleRate: %f", pData->sampleRate);
 
-        fIsRunning = true;
-
-        startThread(10);
+        CarlaThread::start();
         CarlaEngine::init(clientName);
         return true;
     }
@@ -228,7 +226,7 @@ public:
         carla_debug("CarlaEnginePlugin::close()");
         CarlaEngine::close();
 
-        stopThread(6000);
+        CarlaThread::stop(6000);
 
         fShmControl.clear();
         fShmAudioPool.clear();
@@ -251,27 +249,34 @@ public:
         return kEngineTypeBridge;
     }
 
+    const char* getCurrentDriverName() const noexcept
+    {
+        return "Bridge";
+    }
+
     // -------------------------------------
     // CarlaThread virtual calls
 
     void run() override
     {
+        fIsRunning = true;
+
         // TODO - set RT permissions
         carla_debug("CarlaEngineBridge::run()");
 
-        while (! threadShouldExit())
+        while (! shouldExit())
         {
             if (! jackbridge_sem_timedwait(&fShmControl.data->runServer, 5))
             {
                 if (errno == ETIMEDOUT)
                 {
                     fIsRunning = false;
-                    signalThreadShouldExit();
+                    signalShouldExit();
                     return;
                 }
             }
 
-            while (fShmControl.dataAvailable())
+            while (fShmControl.isDataAvailable())
             {
                 const PluginBridgeOpcode opcode(fShmControl.readOpcode());
 
@@ -306,8 +311,8 @@ public:
 
                 case kPluginBridgeOpcodeSetParameter:
                 {
-                    const int   index(fShmControl.readInt());
-                    const float value(fShmControl.readFloat());
+                    //const int   index(fShmControl.readInt());
+                    //const float value(fShmControl.readFloat());
 
                     CarlaPlugin* const plugin(getPluginUnchecked(0));
 
@@ -322,7 +327,7 @@ public:
 
                 case kPluginBridgeOpcodeSetProgram:
                 {
-                    const int index(fShmControl.readInt());
+                    //const int index(fShmControl.readInt());
 
                     CarlaPlugin* const plugin(getPluginUnchecked(0));
 
@@ -337,7 +342,7 @@ public:
 
                 case kPluginBridgeOpcodeSetMidiProgram:
                 {
-                    const int index(fShmControl.readInt());
+                    //const int index(fShmControl.readInt());
 
                     CarlaPlugin* const plugin(getPluginUnchecked(0));
 
@@ -352,18 +357,18 @@ public:
 
                 case kPluginBridgeOpcodeMidiEvent:
                 {
-                    uint8_t data[4] = { 0 };
-                    const long time(fShmControl.readLong());
-                    const int  dataSize(fShmControl.readInt());
+                    //uint8_t data[4] = { 0 };
+                    //const long time(fShmControl.readLong());
+                    //const int  dataSize(fShmControl.readInt());
 
-                    CARLA_ASSERT_INT(dataSize >= 1 && dataSize <= 4, dataSize);
+                    //CARLA_ASSERT_INT(dataSize >= 1 && dataSize <= 4, dataSize);
 
-                    for (int i=0; i < dataSize && i < 4; ++i)
-                        data[i] = fShmControl.readChar();
+                    //for (int i=0; i < dataSize && i < 4; ++i)
+                    //    data[i] = fShmControl.readChar();
 
-                    CARLA_ASSERT(pData->bufEvents.in != nullptr);
+                    //CARLA_ASSERT(pData->bufEvents.in != nullptr);
 
-                    if (pData->bufEvents.in != nullptr)
+                    //if (pData->bufEvents.in != nullptr)
                     {
                         // TODO
                     }
@@ -376,7 +381,7 @@ public:
                     CARLA_ASSERT(fShmAudioPool.data != nullptr);
                     CarlaPlugin* const plugin(getPluginUnchecked(0));
 
-                    if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock())
+                    if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock(true)) // FIXME - always lock?
                     {
                         const uint32_t inCount(plugin->getAudioInCount());
                         const uint32_t outCount(plugin->getAudioOutCount());
@@ -385,19 +390,19 @@ public:
                         float* outBuffer[outCount];
 
                         for (uint32_t i=0; i < inCount; ++i)
-                            inBuffer[i] = fShmAudioPool.data + i*fBufferSize;
+                            inBuffer[i] = fShmAudioPool.data + i*pData->bufferSize;
                         for (uint32_t i=0; i < outCount; ++i)
-                            outBuffer[i] = fShmAudioPool.data + (i+inCount)*fBufferSize;
+                            outBuffer[i] = fShmAudioPool.data + (i+inCount)*pData->bufferSize;
 
                         plugin->initBuffers();
-                        plugin->process(inBuffer, outBuffer, fBufferSize);
+                        plugin->process(inBuffer, outBuffer, pData->bufferSize);
                         plugin->unlock();
                     }
                     break;
                 }
 
                 case kPluginBridgeOpcodeQuit:
-                    signalThreadShouldExit();
+                    signalShouldExit();
                     break;
                 }
             }
