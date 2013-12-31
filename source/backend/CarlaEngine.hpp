@@ -924,13 +924,13 @@ public:
      * TODO.
      * \a id must be either 1 or 2.
      */
-    float getInputPeak(const unsigned int pluginId, const unsigned short id) const;
+    float getInputPeak(const unsigned int pluginId, const bool isLeft) const;
 
     /*!
      * TODO.
      * \a id must be either 1 or 2.
      */
-    float getOutputPeak(const unsigned int pluginId, const unsigned short id) const;
+    float getOutputPeak(const unsigned int pluginId, const bool isLeft) const;
 
     // -------------------------------------------------------------------
     // Callback

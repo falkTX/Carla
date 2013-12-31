@@ -1573,22 +1573,18 @@ const EngineTimeInfo& CarlaEngine::getTimeInfo() const noexcept
 // -----------------------------------------------------------------------
 // Information (peaks)
 
-// FIXME
-
-float CarlaEngine::getInputPeak(const unsigned int pluginId, const unsigned short id) const
+float CarlaEngine::getInputPeak(const unsigned int pluginId, const bool isLeft) const
 {
     CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount, 0.0f);
-    CARLA_SAFE_ASSERT_RETURN(id == 1 || id == 2, 0.0f);
 
-    return pData->plugins[pluginId].insPeak[id-1];
+    return pData->plugins[pluginId].insPeak[isLeft ? 0 : 1];
 }
 
-float CarlaEngine::getOutputPeak(const unsigned int pluginId, const unsigned short id) const
+float CarlaEngine::getOutputPeak(const unsigned int pluginId, const bool isLeft) const
 {
     CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount, 0.0f);
-    CARLA_SAFE_ASSERT_RETURN(id == 1 || id == 2, 0.0f);
 
-    return pData->plugins[pluginId].outsPeak[id-1];
+    return pData->plugins[pluginId].outsPeak[isLeft ? 0 : 1];
 }
 
 // -----------------------------------------------------------------------
@@ -1993,7 +1989,7 @@ void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint3
                 pluginData.insPeak[1] = 0.0f;
             }
 
-            if (oldMidiOutCount > 0)
+            if (plugin->getAudioOutCount() > 0)
             {
                 FloatVectorOperations::findMinAndMax(outBuf[0], frames, tmpMin, tmpMax);
                 pluginData.outsPeak[0] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
@@ -2028,7 +2024,7 @@ void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint3
                 pluginData.insPeak[1] = 0.0f;
             }
 
-            if (oldMidiOutCount > 0)
+            if (plugin->getAudioOutCount() > 0)
             {
                 peak1 = peak2 = 0.0f;
 
