@@ -353,11 +353,13 @@ CARLA_EXPORT bool jackbridge_transport_reposition(jack_client_t* client, const j
 CARLA_EXPORT void jackbridge_transport_start(jack_client_t* client);
 CARLA_EXPORT void jackbridge_transport_stop(jack_client_t* client);
 
+#if 0
 CARLA_EXPORT bool jackbridge_custom_publish_data(jack_client_t* client, const char* key, const void* data, size_t size);
 CARLA_EXPORT bool jackbridge_custom_get_data(jack_client_t* client, const char* client_name, const char* key, void** data, size_t* size);
 CARLA_EXPORT bool jackbridge_custom_unpublish_data(jack_client_t* client, const char* key);
 CARLA_EXPORT bool jackbridge_custom_set_data_appearance_callback(jack_client_t* client, JackCustomDataAppearanceCallback callback, void* arg);
 CARLA_EXPORT const char** jackbridge_custom_get_keys(jack_client_t* client, const char* client_name);
+#endif
 
 CARLA_EXPORT bool jackbridge_sem_init(void* sem);
 CARLA_EXPORT bool jackbridge_sem_destroy(void* sem);

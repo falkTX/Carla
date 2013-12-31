@@ -560,8 +560,8 @@ public:
             pData->bufferSize = jackbridge_get_buffer_size(fClient);
             pData->sampleRate = jackbridge_get_sample_rate(fClient);
 
-            jackbridge_custom_publish_data(fClient, URI_CANVAS_ICON, "carla", 6);
-            jackbridge_custom_set_data_appearance_callback(fClient, carla_jack_custom_appearance_callback, this);
+            //jackbridge_custom_publish_data(fClient, URI_CANVAS_ICON, "carla", 6);
+            //jackbridge_custom_set_data_appearance_callback(fClient, carla_jack_custom_appearance_callback, this);
 
             jackbridge_set_buffer_size_callback(fClient, carla_jack_bufsize_callback, this);
             jackbridge_set_sample_rate_callback(fClient, carla_jack_srate_callback, this);
@@ -653,7 +653,7 @@ public:
 #endif
     }
 
-#ifndef BUILD_BRIDGE
+#if 0 //ndef BUILD_BRIDGE
     void idle() override
     {
         CarlaEngine::idle();
@@ -726,7 +726,7 @@ public:
 
     CarlaEngineClient* addClient(CarlaPlugin* const plugin) override
     {
-        const char* const iconName(plugin->getIconName());
+        //const char* const iconName(plugin->getIconName());
         jack_client_t* client = nullptr;
 
 #ifdef BUILD_BRIDGE
@@ -737,7 +737,7 @@ public:
         pData->bufferSize = jackbridge_get_buffer_size(client);
         pData->sampleRate = jackbridge_get_sample_rate(client);
 
-        jackbridge_custom_publish_data(client, URI_CANVAS_ICON, iconName, std::strlen(iconName)+1);
+        //jackbridge_custom_publish_data(client, URI_CANVAS_ICON, iconName, std::strlen(iconName)+1);
 
         jackbridge_set_buffer_size_callback(client, carla_jack_bufsize_callback, this);
         jackbridge_set_sample_rate_callback(client, carla_jack_srate_callback, this);
@@ -756,13 +756,12 @@ public:
 
             CARLA_SAFE_ASSERT_RETURN(client != nullptr, nullptr);
 
-            jackbridge_custom_publish_data(client, URI_CANVAS_ICON, iconName, std::strlen(iconName)+1);
+            //jackbridge_custom_publish_data(client, URI_CANVAS_ICON, iconName, std::strlen(iconName)+1);
 
             jackbridge_set_latency_callback(client, carla_jack_latency_callback_plugin, plugin);
             jackbridge_set_process_callback(client, carla_jack_process_callback_plugin, plugin);
         }
 #endif
-
         return new CarlaEngineJackClient(*this, client);
     }
 
@@ -813,8 +812,8 @@ public:
 
                 if (jack_client_t* jclient = jackbridge_client_open(name, JackNullOption, nullptr))
                 {
-                    const char* const iconName(plugin->getIconName());
-                    jackbridge_custom_publish_data(jclient, URI_CANVAS_ICON, iconName, std::strlen(iconName)+1);
+                    //const char* const iconName(plugin->getIconName());
+                    //jackbridge_custom_publish_data(jclient, URI_CANVAS_ICON, iconName, std::strlen(iconName)+1);
 
                     // close old client
                     plugin->setEnabled(false);
