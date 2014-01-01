@@ -474,7 +474,7 @@ public:
         fUsedGroupNames.clear();
         fUsedPortNames.clear();
         fUsedConnections.clear();
-        fGroupIconsChanged.clear();
+        //fGroupIconsChanged.clear();
 #endif
     }
 
@@ -551,7 +551,7 @@ public:
         fUsedGroupNames.clear();
         fUsedPortNames.clear();
         fUsedConnections.clear();
-        fGroupIconsChanged.clear();
+        //fGroupIconsChanged.clear();
 
         fClient = jackbridge_client_open(clientName, JackNullOption, nullptr);
 
@@ -647,7 +647,7 @@ public:
         fUsedGroupNames.clear();
         fUsedPortNames.clear();
         fUsedConnections.clear();
-        fGroupIconsChanged.clear();
+        //fGroupIconsChanged.clear();
 
         return false;
 #endif
@@ -927,7 +927,7 @@ public:
         fUsedGroupNames.clear();
         fUsedPortNames.clear();
         fUsedConnections.clear();
-        fGroupIconsChanged.clear();
+        //fGroupIconsChanged.clear();
 
         initJackPatchbay(jackbridge_get_client_name(fClient));
 
@@ -1201,6 +1201,7 @@ protected:
     }
 
 #ifndef BUILD_BRIDGE
+# if 0
     void handleCustomAppearanceCallback(const char* client_name, const char* key, jack_custom_change_t change)
     {
         if ((change == JackCustomAdded || change == JackCustomReplaced) && std::strcmp(key, URI_CANVAS_ICON) == 0)
@@ -1213,6 +1214,7 @@ protected:
             fGroupIconsChanged.append(groupId);
         }
     }
+# endif
 
     void handleJackClientRegistrationCallback(const char* const name, const bool reg)
     {
@@ -1227,7 +1229,7 @@ protected:
         GroupNameToId groupNameId(id, name);
         fUsedGroupNames.removeAll(groupNameId);
 
-        callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED, 0, id, 0, 0.0f, name);
+        callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED, id, 0, 0, 0.0f, nullptr);
     }
 
     void handleJackPortRegistrationCallback(const jack_port_id_t port, const bool reg)
@@ -1265,13 +1267,13 @@ protected:
 
                 if (jackPortFlags & JackPortIsPhysical)
                 {
-                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, groupName);
+                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, groupId, PATCHBAY_ICON_HARDWARE, 0, 0.0f, groupName);
                     // hardware
                 }
                 else
                 {
-                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, groupName);
-                    fGroupIconsChanged.append(groupId);
+                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, groupId, 0, 0, 0.0f, groupName);
+                    //fGroupIconsChanged.append(groupId);
                     // "application"
                 }
             }
@@ -1305,7 +1307,7 @@ protected:
             PortNameToId portNameId(groupId, portId, portName, fullPortName);
             fUsedPortNames.removeOne(portNameId);
 
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED, 0, groupId, portId, 0.0f, portName);
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED, groupId, portId, 0, 0.0f, nullptr);
         }
     }
 
@@ -1368,7 +1370,7 @@ protected:
             if (std::strcmp(groupNameToId.name, oldName) == 0)
             {
                 groupNameToId.rename(newName);
-                callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED, 0, groupNameToId.id, 0, 0.0f, newName);
+                callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED, groupNameToId.id, 0, 0, 0.0f, newName);
                 break;
             }
         }
@@ -1405,7 +1407,7 @@ protected:
             {
                 CARLA_ASSERT(portNameId.groupId == groupId);
                 portNameId.rename(portName, newName);
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED, 0, groupId, portNameId.portId, 0.0f, newName);
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED, groupId, portNameId.portId, 0, 0.0f, newName);
                 break;
             }
         }
@@ -1568,14 +1570,11 @@ private:
     List<GroupNameToId>  fUsedGroupNames;
     List<PortNameToId>   fUsedPortNames;
     List<ConnectionToId> fUsedConnections;
-    List<int>            fGroupIconsChanged;
+    //List<int>          fGroupIconsChanged;
 
     int getGroupId(const char* const name)
     {
-        CARLA_ASSERT(name != nullptr);
-
-        if (name == nullptr)
-            return -1;
+        CARLA_SAFE_ASSERT_RETURN(name != nullptr, -1);
 
         for (List<GroupNameToId>::Itenerator it = fUsedGroupNames.begin(); it.valid(); it.next())
         {
@@ -1590,12 +1589,9 @@ private:
 
     const char* getGroupName(const int groupId)
     {
-        CARLA_ASSERT(groupId >= 0);
-
         static const char fallback[1] = { '\0' };
 
-        if (groupId < 0)
-            return fallback;
+        CARLA_SAFE_ASSERT_RETURN(groupId >= 0, fallback);
 
         for (List<GroupNameToId>::Itenerator it = fUsedGroupNames.begin(); it.valid(); it.next())
         {
@@ -1610,10 +1606,7 @@ private:
 
     int getPortId(const char* const fullName)
     {
-        CARLA_ASSERT(fullName != nullptr);
-
-        if (fullName == nullptr)
-            return -1;
+        CARLA_SAFE_ASSERT_RETURN(fullName != nullptr, -1);
 
         for (List<PortNameToId>::Itenerator it = fUsedPortNames.begin(); it.valid(); it.next())
         {
@@ -1645,27 +1638,22 @@ private:
 
     void initJackPatchbay(const char* const ourName)
     {
-        CARLA_ASSERT(fLastGroupId == 0);
-        CARLA_ASSERT(fLastPortId == 0);
-        CARLA_ASSERT(fLastConnectionId == 0);
-        CARLA_ASSERT(ourName != nullptr);
-
-#ifdef HAVE_JUCE
-        using namespace juce;
+        CARLA_SAFE_ASSERT_RETURN(fLastGroupId == 0,);
+        CARLA_SAFE_ASSERT_RETURN(fLastPortId == 0,);
+        CARLA_SAFE_ASSERT_RETURN(fLastConnectionId == 0,);
+        CARLA_SAFE_ASSERT_RETURN(ourName != nullptr,);
 
         // query initial jack ports
-        StringArray parsedGroups;
+        QStringList parsedGroups;
 
         // our client
-        if (ourName != nullptr)
         {
-            parsedGroups.add(String(ourName));
+            parsedGroups.append(QString(ourName));
 
             GroupNameToId groupNameToId(fLastGroupId++, ourName);
             fUsedGroupNames.append(groupNameToId);
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupNameToId.id, 0, 0.0f, ourName);
-            // carla
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, groupNameToId.id, PATCHBAY_ICON_CARLA, 0, 0.0f, ourName);
         }
 
         if (const char** ports = jackbridge_get_ports(fClient, nullptr, nullptr, 0))
@@ -1683,10 +1671,13 @@ private:
 
                 int groupId = -1;
 
+                bool found;
                 CarlaString groupName(fullPortName);
-                groupName.truncate(groupName.rfind(portName)-1);
+                groupName.truncate(groupName.rfind(portName, &found)-1);
 
-                String qGroupName(groupName);
+                CARLA_ASSERT(found);
+
+                QString qGroupName((const char*)groupName);
 
                 if (parsedGroups.contains(qGroupName))
                 {
@@ -1696,37 +1687,55 @@ private:
                 else
                 {
                     groupId = fLastGroupId++;
-                    parsedGroups.add(qGroupName);
+                    parsedGroups.append(qGroupName);
 
                     GroupNameToId groupNameToId(groupId, groupName);
                     fUsedGroupNames.append(groupNameToId);
 
+                    PatchbayIcon groupIcon = PATCHBAY_ICON_APPLICATION;
+
+#if 0
                     void*  data = nullptr;
                     size_t dataSize = 0;
+#endif
 
                     if (jackPortFlags & JackPortIsPhysical)
                     {
-                        // "hardware"
+                        groupIcon = PATCHBAY_ICON_HARDWARE;
                     }
+#if 0
                     else if (jackbridge_custom_get_data(fClient, groupName, URI_CANVAS_ICON, &data, &dataSize) && data != nullptr && dataSize != 0)
                     {
-                        //const char* const icon((const char*)data);
-                        //CARLA_ASSERT(std::strlen(icon)+1 == dataSize);
-                        // icon
-                    }
+                        const char* const icon((const char*)data);
+                        CARLA_ASSERT(std::strlen(icon)+1 == dataSize);
 
-                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, groupName);
+                        if (std::strcmp(icon, "app") == 0 || std::strcmp(icon, "application") == 0)
+                            groupIcon = PATCHBAY_ICON_APPLICATION;
+                        else if (std::strcmp(icon, "hardware") == 0)
+                            groupIcon = PATCHBAY_ICON_HARDWARE;
+                        else if (std::strcmp(icon, "carla") == 0)
+                            groupIcon = PATCHBAY_ICON_CARLA;
+                        else if (std::strcmp(icon, "distrho") == 0)
+                            groupIcon = PATCHBAY_ICON_DISTRHO;
+                        else if (std::strcmp(icon, "file") == 0)
+                            groupIcon = PATCHBAY_ICON_FILE;
+                        else if (std::strcmp(icon, "plugin") == 0)
+                            groupIcon = PATCHBAY_ICON_PLUGIN;
+                    }
+#endif
+
+                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, groupId, groupIcon, 0, 0.0f, groupName);
                 }
 
                 bool portIsInput = (jackPortFlags & JackPortIsInput);
                 bool portIsAudio = (std::strcmp(jackbridge_port_type(jackPort), JACK_DEFAULT_AUDIO_TYPE) == 0);
-                bool portIsCV    = (jackPortFlags & JackPortIsControlVoltage);
+                bool portIsCV    = (portIsAudio && (jackPortFlags & JackPortIsControlVoltage) != 0);
 
                 unsigned int canvasPortFlags = 0x0;
                 canvasPortFlags |= portIsInput ? PATCHBAY_PORT_IS_INPUT : 0x0;
                 canvasPortFlags |= portIsAudio ? PATCHBAY_PORT_TYPE_AUDIO : PATCHBAY_PORT_TYPE_MIDI;
 
-                if (portIsAudio && portIsCV)
+                if (portIsCV)
                     canvasPortFlags |= PATCHBAY_PORT_TYPE_CV;
 
                 PortNameToId portNameToId(groupId, fLastPortId++, portName, fullPortName);
@@ -1735,32 +1744,16 @@ private:
                 callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, groupId, portNameToId.portId, canvasPortFlags, 0.0f, portName);
             }
 
-#if 0
-            jackbridge_free(ports);
-        }
-
-        // query connections, after all ports are in place
-        if (const char** ports = jackbridge_get_ports(fClient, nullptr, nullptr, JackPortIsOutput))
-        {
-#endif
+            // query connections, after all ports are in place
             for (int i=0; ports[i] != nullptr; ++i)
             {
                 jack_port_t* const jackPort(jackbridge_port_by_name(fClient, ports[i]));
                 const char*  const fullPortName(ports[i]);
 
-                CARLA_SAFE_ASSERT_CONTINUE(jackPort != nullptr);
-
-#if 1
-                const int jackPortFlags(jackbridge_port_flags(jackPort));
-
-                if (jackPortFlags & JackPortIsInput)
-                    continue;
-#endif
-
                 const int thisPortId(getPortId(fullPortName));
 
-                if (thisPortId == -1)
-                    continue;
+                CARLA_SAFE_ASSERT_CONTINUE(jackPort != nullptr);
+                CARLA_SAFE_ASSERT_CONTINUE(thisPortId != -1);
 
                 if (const char** connections = jackbridge_port_get_all_connections(fClient, jackPort))
                 {
@@ -1776,13 +1769,10 @@ private:
 
                     jackbridge_free(connections);
                 }
-                else
-                    carla_stderr("jack_port_get_all_connections failed for port %s", fullPortName);
             }
 
             jackbridge_free(ports);
         }
-#endif
     }
 #endif
 
@@ -1918,10 +1908,12 @@ private:
     }
 
 #ifndef BUILD_BRIDGE
+# if 0
     static void carla_jack_custom_appearance_callback(const char* client_name, const char* key, jack_custom_change_t change, void* arg)
     {
         handlePtr->handleCustomAppearanceCallback(client_name, key, change);
     }
+# endif
 
     static void carla_jack_client_registration_callback(const char* name, int reg, void* arg)
     {

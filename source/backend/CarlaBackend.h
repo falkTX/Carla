@@ -783,7 +783,9 @@ typedef enum {
     /*!
      * A patchbay client has been added.
      * @param pluginId Client Id
-     * @param valueStr Client name and icon, as "name:icon"
+     * @param value1   Client icon
+     * @param valueStr Client name
+     * @see PatchbayIcon
      */
     ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED = 19,
 
@@ -803,7 +805,8 @@ typedef enum {
     /*!
      * A patchbay client icon has changed.
      * @param pluginId Client Id
-     * @param valueStr New icon name
+     * @param value1   New icon
+     * @see PatchbayIcon
      */
     ENGINE_CALLBACK_PATCHBAY_CLIENT_ICON_CHANGED = 22,
 
@@ -1082,6 +1085,50 @@ typedef enum {
     ENGINE_TRANSPORT_MODE_BRIDGE = 3
 
 } EngineTransportMode;
+
+// ------------------------------------------------------------------------------------------------------------
+// Patchbay Icon
+
+/*!
+ * The icon of a patchbay client/group.
+ */
+enum PatchbayIcon {
+    /*!
+     * Generic application icon.\n
+     * Used for all non-plugin clients that don't have a specific icon.
+     */
+    PATCHBAY_ICON_APPLICATION = 0,
+
+    /*!
+     * Plugin icon.\n
+     * Used for all plugin clients that don't have a specific icon.
+     */
+    PATCHBAY_ICON_PLUGIN = 1,
+
+    /*!
+     * Hardware icon.\n
+     * Used for hardware (audio or MIDI) clients.
+     */
+    PATCHBAY_ICON_HARDWARE = 2,
+
+    /*!
+     * Carla icon.\n
+     * Used for the main app.
+     */
+    PATCHBAY_ICON_CARLA = 3,
+
+    /*!
+     * DISTRHO icon.\n
+     * Used for DISTRHO based plugins.
+     */
+    PATCHBAY_ICON_DISTRHO = 4,
+
+    /*!
+     * File icon.\n
+     * Used for file type plugins (like GIG and SF2).
+     */
+    PATCHBAY_ICON_FILE = 5
+};
 
 // ------------------------------------------------------------------------------------------------------------
 // Carla Backend API (C stuff)

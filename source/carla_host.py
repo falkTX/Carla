@@ -121,10 +121,10 @@ class HostWindow(QMainWindow):
     ReloadParametersCallback = pyqtSignal(int)
     ReloadProgramsCallback = pyqtSignal(int)
     ReloadAllCallback = pyqtSignal(int)
-    PatchbayClientAddedCallback = pyqtSignal(int, str)
+    PatchbayClientAddedCallback = pyqtSignal(int, int, str)
     PatchbayClientRemovedCallback = pyqtSignal(int)
     PatchbayClientRenamedCallback = pyqtSignal(int, str)
-    PatchbayClientIconChangedCallback = pyqtSignal(int, str)
+    PatchbayClientIconChangedCallback = pyqtSignal(int, int)
     PatchbayPortAddedCallback = pyqtSignal(int, int, int, str)
     PatchbayPortRemovedCallback = pyqtSignal(int, int)
     PatchbayPortRenamedCallback = pyqtSignal(int, int, str)
@@ -1107,13 +1107,13 @@ def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
     elif action == ENGINE_CALLBACK_RELOAD_ALL:
         Carla.gui.ReloadAllCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED:
-        Carla.gui.PatchbayClientAddedCallback.emit(pluginId, valueStr)
+        Carla.gui.PatchbayClientAddedCallback.emit(pluginId, value1, valueStr)
     elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED:
         Carla.gui.PatchbayClientRemovedCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED:
         Carla.gui.PatchbayClientRenamedCallback.emit(pluginId, valueStr)
     elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_ICON_CHANGED:
-        Carla.gui.PatchbayClientIconChangedCallback.emit(value1, valueStr)
+        Carla.gui.PatchbayClientIconChangedCallback.emit(pluginId, value1)
     elif action == ENGINE_CALLBACK_PATCHBAY_PORT_ADDED:
         Carla.gui.PatchbayPortAddedCallback.emit(pluginId, value1, value2, valueStr)
     elif action == ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED:

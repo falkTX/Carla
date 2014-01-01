@@ -396,8 +396,13 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
             qWarning("PatchCanvas::addGroup(%i, %s, %s, %s) - group already exists" % (group_id, group_name.encode(), split2str(split), icon2str(icon)))
             return
 
-    if split == SPLIT_UNDEF and features.handle_group_pos:
-        split = canvas.settings.value("CanvasPositions/%s_SPLIT" % group_name, split, type=int)
+    if split == SPLIT_UNDEF:
+        isHardware = bool(icon == ICON_HARDWARE)
+
+        if features.handle_group_pos:
+            split = canvas.settings.value("CanvasPositions/%s_SPLIT" % group_name, SPLIT_YES if isHardware else split, type=int)
+        elif isHardware:
+            split = SPLIT_YES
 
     group_box = CanvasBox(group_id, group_name, icon)
 

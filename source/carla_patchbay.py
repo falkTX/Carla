@@ -19,10 +19,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtGui import QGraphicsView
-
-#QPrinter, QPrintDialog
-#QImage
+from PyQt4.QtGui import QGraphicsView, QImage, QPrinter, QPrintDialog
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
@@ -80,7 +77,7 @@ class CarlaPatchbayW(QGraphicsView):
 
         patchcanvas.setOptions(pOptions)
         patchcanvas.setFeatures(pFeatures)
-        patchcanvas.init("Carla2", self.scene, CanvasCallback, False)
+        patchcanvas.init("Carla2", self.scene, canvasCallback, False)
 
         tryCanvasSize = parent.fSavedSettings[CARLA_KEY_CANVAS_SIZE].split("x")
 
@@ -135,9 +132,9 @@ class CarlaPatchbayW(QGraphicsView):
         parent.ParameterMidiCcChangedCallback.connect(self.slot_handleParameterMidiCcChangedCallback)
         parent.ProgramChangedCallback.connect(self.slot_handleProgramChangedCallback)
         parent.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
+        #parent.ShowGuiCallback.connect(self.slot_handleShowGuiCallback)
         parent.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
         parent.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
-        parent.ShowGuiCallback.connect(self.slot_handleShowGuiCallback)
         parent.UpdateCallback.connect(self.slot_handleUpdateCallback)
         parent.ReloadInfoCallback.connect(self.slot_handleReloadInfoCallback)
         parent.ReloadParametersCallback.connect(self.slot_handleReloadParametersCallback)
@@ -146,12 +143,12 @@ class CarlaPatchbayW(QGraphicsView):
         parent.PatchbayClientAddedCallback.connect(self.slot_handlePatchbayClientAddedCallback)
         parent.PatchbayClientRemovedCallback.connect(self.slot_handlePatchbayClientRemovedCallback)
         parent.PatchbayClientRenamedCallback.connect(self.slot_handlePatchbayClientRenamedCallback)
+        parent.PatchbayClientIconChangedCallback.connect(self.slot_handlePatchbayClientIconChangedCallback)
         parent.PatchbayPortAddedCallback.connect(self.slot_handlePatchbayPortAddedCallback)
         parent.PatchbayPortRemovedCallback.connect(self.slot_handlePatchbayPortRemovedCallback)
         parent.PatchbayPortRenamedCallback.connect(self.slot_handlePatchbayPortRenamedCallback)
         parent.PatchbayConnectionAddedCallback.connect(self.slot_handlePatchbayConnectionAddedCallback)
         parent.PatchbayConnectionRemovedCallback.connect(self.slot_handlePatchbayConnectionRemovedCallback)
-        #parent.PatchbayIconChangedCallback.connect(self.slot_handlePatchbayIconChangedCallback)
 
     # -----------------------------------------------------------------
 
@@ -531,12 +528,28 @@ class CarlaPatchbayW(QGraphicsView):
     # -----------------------------------------------------------------
 
     @pyqtSlot(int, int, str)
-    def slot_handlePatchbayClientAddedCallback(self, clientId, clientName):
-        patchcanvas.addGroup(clientId, clientName)
+    def slot_handlePatchbayClientAddedCallback(self, clientId, clientIcon, clientName):
+        pcSplit = patchcanvas.SPLIT_UNDEF
+        pcIcon  = patchcanvas.ICON_APPLICATION
+
+        print("------------------------------------------- new client with icon", clientIcon)
+
+        if clientIcon == PATCHBAY_ICON_PLUGIN:
+            pcIcon = patchcanvas.ICON_PLUGIN
+        if clientIcon == PATCHBAY_ICON_HARDWARE:
+            pcIcon = patchcanvas.ICON_HARDWARE
+        elif clientIcon == PATCHBAY_ICON_CARLA:
+            pass
+        elif clientIcon == PATCHBAY_ICON_DISTRHO:
+            pcIcon = patchcanvas.ICON_DISTRHO
+        elif clientIcon == PATCHBAY_ICON_FILE:
+            pcIcon = patchcanvas.ICON_FILE
+
+        patchcanvas.addGroup(clientId, clientName, pcSplit, pcIcon)
         #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 
-    @pyqtSlot(int, str)
-    def slot_handlePatchbayClientRemovedCallback(self, clientId, clientName):
+    @pyqtSlot(int)
+    def slot_handlePatchbayClientRemovedCallback(self, clientId):
         #if not self.fEngineStarted: return
         patchcanvas.removeGroup(clientId)
         #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
@@ -546,18 +559,22 @@ class CarlaPatchbayW(QGraphicsView):
         patchcanvas.renameGroup(clientId, newClientName)
         #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 
+    @pyqtSlot(int, str)
+    def slot_handlePatchbayClientIconChangedCallback(self, clientId, iconName):
+        patchcanvas.setGroupIcon(clientId, iconName)
+
     @pyqtSlot(int, int, int, str)
     def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portName):
         if (portFlags & PATCHBAY_PORT_IS_INPUT):
             portMode = patchcanvas.PORT_MODE_INPUT
-        elif (portFlags & PATCHBAY_PORT_IS_OUTPUT):
-            portMode = patchcanvas.PORT_MODE_OUTPUT
         else:
-            portMode = patchcanvas.PORT_MODE_NULL
+            portMode = patchcanvas.PORT_MODE_OUTPUT
 
-        if (portFlags & PATCHBAY_PORT_IS_AUDIO):
+        if (portFlags & PATCHBAY_PORT_TYPE_AUDIO):
             portType = patchcanvas.PORT_TYPE_AUDIO_JACK
-        elif (portFlags & PATCHBAY_PORT_IS_MIDI):
+        elif (portFlags & PATCHBAY_PORT_TYPE_CV):
+            portType = patchcanvas.PORT_TYPE_AUDIO_JACK # TODO
+        elif (portFlags & PATCHBAY_PORT_TYPE_MIDI):
             portType = patchcanvas.PORT_TYPE_MIDI_JACK
         else:
             portType = patchcanvas.PORT_TYPE_NULL
@@ -565,8 +582,8 @@ class CarlaPatchbayW(QGraphicsView):
         patchcanvas.addPort(clientId, portId, portName, portMode, portType)
         #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 
-    @pyqtSlot(int, int, str)
-    def slot_handlePatchbayPortRemovedCallback(self, groupId, portId, fullPortName):
+    @pyqtSlot(int, int)
+    def slot_handlePatchbayPortRemovedCallback(self, groupId, portId):
         #if not self.fEngineStarted: return
         patchcanvas.removePort(portId)
         #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
@@ -581,15 +598,11 @@ class CarlaPatchbayW(QGraphicsView):
         patchcanvas.connectPorts(connectionId, portOutId, portInId)
         #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 
-    @pyqtSlot(int)
-    def slot_handlePatchbayConnectionRemovedCallback(self, connectionId):
+    @pyqtSlot(int, int, int)
+    def slot_handlePatchbayConnectionRemovedCallback(self, connectionId, portOutId, portInId):
         #if not self.fEngineStarted: return
         patchcanvas.disconnectPorts(connectionId)
         #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
-
-    @pyqtSlot(int, int)
-    def slot_handlePatchbayIconChangedCallback(self, clientId, icon):
-        patchcanvas.setGroupIcon(clientId, icon)
 
     # -----------------------------------------------------------------
 
@@ -641,10 +654,9 @@ class CarlaPatchbayW(QGraphicsView):
         if newPath:
             self.scene.clearSelection()
 
-            # FIXME - must be a better way...
-            if newPath.endswith((".jpg", ".jpG", ".jPG", ".JPG", ".JPg", ".Jpg")):
+            if newPath.lower().endswith((".jpg",)):
                 imgFormat = "JPG"
-            elif newPath.endswith((".png", ".pnG", ".pNG", ".PNG", ".PNg", ".Png")):
+            elif newPath.lower().endswith((".png",)):
                 imgFormat = "PNG"
             else:
                 # File-dialog may not auto-add the extension

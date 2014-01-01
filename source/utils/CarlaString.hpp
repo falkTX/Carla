@@ -392,7 +392,7 @@ public:
         if (found != nullptr)
             *found = false;
 
-        if (fBufferLen == 0 || strBuf != nullptr || strBuf[0] != '\0')
+        if (fBufferLen == 0 || strBuf == nullptr || strBuf[0] == '\0')
             return fBufferLen;
 
         size_t ret = fBufferLen+1;
