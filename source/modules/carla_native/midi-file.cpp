@@ -109,7 +109,7 @@ protected:
         NativeMidiEvent midiEvent;
 
         midiEvent.port    = 0;
-        midiEvent.time    = event->time-timePosFrame;
+        midiEvent.time    = uint32_t(event->time-timePosFrame);
         midiEvent.size    = event->size;
         midiEvent.data[0] = event->data[0];
         midiEvent.data[1] = event->data[1];

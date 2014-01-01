@@ -21,14 +21,14 @@ BUILD_CXX_FLAGS += $(QTXML_FLAGS)
 # ifeq ($(HAVE_JUCE),true)
 # BUILD_CXX_FLAGS += -DHAVE_JUCE
 # endif
-#
-# ifeq ($(HAVE_OPENGL),true)
-# BUILD_CXX_FLAGS += -DHAVE_OPENGL
-# endif
+
+ifeq ($(HAVE_OPENGL),true)
+BUILD_CXX_FLAGS += -DHAVE_OPENGL
+endif
 
 # --------------------------------------------------------------
 
-# BUILD_CXX_FLAGS += -DWANT_NATIVE
+BUILD_CXX_FLAGS += -DWANT_NATIVE
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 BUILD_CXX_FLAGS += -DWANT_LADSPA
@@ -54,19 +54,19 @@ endif
 
 # --------------------------------------------------------------
 
-# ifeq ($(HAVE_AF_DEPS),true)
-# BUILD_CXX_FLAGS += -DWANT_AUDIOFILE
-# endif
-#
-# ifeq ($(HAVE_MF_DEPS),true)
-# BUILD_CXX_FLAGS += -DWANT_MIDIFILE
-# endif
-#
-# ifeq ($(HAVE_ZYN_DEPS),true)
-# BUILD_CXX_FLAGS += -DWANT_ZYNADDSUBFX
-# ifeq ($(HAVE_ZYN_UI_DEPS),true)
-# BUILD_CXX_FLAGS += -DWANT_ZYNADDSUBFX_UI
-# endif
-# endif
+ifeq ($(HAVE_AF_DEPS),true)
+BUILD_CXX_FLAGS += -DWANT_AUDIOFILE
+endif
+
+ifeq ($(HAVE_MF_DEPS),true)
+BUILD_CXX_FLAGS += -DWANT_MIDIFILE
+endif
+
+ifeq ($(HAVE_ZYN_DEPS),true)
+BUILD_CXX_FLAGS += -DWANT_ZYNADDSUBFX
+ifeq ($(HAVE_ZYN_UI_DEPS),true)
+BUILD_CXX_FLAGS += -DWANT_ZYNADDSUBFX_UI
+endif
+endif
 
 # --------------------------------------------------------------

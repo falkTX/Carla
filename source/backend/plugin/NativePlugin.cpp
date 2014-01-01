@@ -647,7 +647,7 @@ public:
         {
             for (List<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
             {
-                const CustomData& cData(*it);
+                const CustomData& cData(it.getConstValue());
 
                 if (std::strcmp(cData.type, CUSTOM_DATA_TYPE_STRING) == 0 && std::strcmp(cData.key, "midiPrograms") != 0)
                     fDescriptor->ui_set_custom_data(fHandle, cData.key, cData.value);
@@ -2189,7 +2189,7 @@ public:
 
         for (List<const NativePluginDescriptor*>::Itenerator it = sPluginDescriptors.begin(); it.valid(); it.next())
         {
-            fDescriptor = *it;
+            fDescriptor = it.getConstValue();
 
             CARLA_SAFE_ASSERT_BREAK(fDescriptor != nullptr);
 
@@ -2297,9 +2297,12 @@ public:
             if (fDescriptor->supports & ::PLUGIN_SUPPORTS_ALL_SOUND_OFF)
                 pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
-            // load settings TODO
-            pData->identifier = "Native/";
-            //pData->idStr += label;
+            // set identifier string
+            CarlaString identifier("Native/");
+            identifier += label;
+            pData->identifier = identifier.dup();
+
+            // load settings
             pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
 
             // ignore settings, we need this anyway

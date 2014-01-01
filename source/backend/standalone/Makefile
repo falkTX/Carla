@@ -54,34 +54,34 @@ LINK_FLAGS += $(JACKBRIDGE_LIBS)
 # --------------------------------------------------------------
 # Native
 
-# ifeq ($(HAVE_OPENGL),true)
-# LINK_FLAGS += $(DGL_LIBS)
-# endif
-#
-# ifeq ($(HAVE_AF_DEPS),true)
-# LINK_FLAGS += $(shell pkg-config --libs sndfile)
-# ifeq ($(HAVE_FFMPEG),true)
-# LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat libavutil)
-# endif
-# endif
-#
-# ifeq ($(HAVE_MF_DEPS),true)
-# LINK_FLAGS += $(shell pkg-config --libs smf)
-# endif
-#
-# ifeq ($(HAVE_ZYN_DEPS),true)
-# LINK_FLAGS += $(shell pkg-config --libs fftw3 mxml zlib)
-# ifeq ($(HAVE_ZYN_UI_DEPS),true)
-# LINK_FLAGS += $(shell pkg-config --libs ntk_images ntk)
-# endif
-# endif
+ifeq ($(HAVE_OPENGL),true)
+LINK_FLAGS += $(DGL_LIBS)
+endif
+
+ifeq ($(HAVE_AF_DEPS),true)
+LINK_FLAGS += $(shell pkg-config --libs sndfile)
+ifeq ($(HAVE_FFMPEG),true)
+LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat libavutil)
+endif
+endif
+
+ifeq ($(HAVE_MF_DEPS),true)
+LINK_FLAGS += $(shell pkg-config --libs smf)
+endif
+
+ifeq ($(HAVE_ZYN_DEPS),true)
+LINK_FLAGS += $(shell pkg-config --libs fftw3 mxml zlib)
+ifeq ($(HAVE_ZYN_UI_DEPS),true)
+LINK_FLAGS += $(shell pkg-config --libs ntk_images ntk)
+endif
+endif
 
 # --------------------------------------------------------------
 
 LIBS  = ../libcarla_engine.a
 LIBS += ../libcarla_plugin.a
 
-# LIBS += ../../modules/carla_native.a
+LIBS += ../../modules/carla_native.a
 LIBS += ../../modules/jackbridge.a
 LIBS += ../../modules/rtaudio.a
 LIBS += ../../modules/rtmidi.a
@@ -101,9 +101,9 @@ LIBS += ../../modules/rtmempool.a
 # LIBS += ../../modules/juce_gui_basics.a
 # endif
 
-# ifeq ($(HAVE_OPENGL),true)
-# LIBS += ../../modules/dgl.a
-# endif
+ifeq ($(HAVE_OPENGL),true)
+LIBS += ../../modules/dgl.a
+endif
 
 # --------------------------------------------------------------
 
