@@ -188,7 +188,7 @@ unsigned int CarlaPluginProtectedData::loadSettings(const unsigned int options, 
 // Constructor and destructor
 
 CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
-    : pData(new CarlaPluginProtectedData(engine, this))
+    : pData(new CarlaPluginProtectedData(engine, id, this))
 {
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
     CARLA_ASSERT(id < engine->getMaxPluginNumber());

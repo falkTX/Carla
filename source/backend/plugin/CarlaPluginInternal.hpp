@@ -634,10 +634,10 @@ struct CarlaPluginProtectedData {
 #endif
     } osc;
 
-    CarlaPluginProtectedData(CarlaEngine* const e, CarlaPlugin* const p)
-        : engine(e),
+    CarlaPluginProtectedData(CarlaEngine* const eng, const unsigned int idx, CarlaPlugin* const self)
+        : engine(eng),
           client(nullptr),
-          id(0),
+          id(idx),
           hints(0x0),
           options(0x0),
           active(false),
@@ -654,7 +654,7 @@ struct CarlaPluginProtectedData {
           filename(nullptr),
           iconName(nullptr),
           identifier(nullptr),
-          osc(e, p) {}
+          osc(eng, self) {}
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     CarlaPluginProtectedData() = delete;

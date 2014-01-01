@@ -313,7 +313,7 @@ class CarlaMiniW(HostWindow, ExternalUI):
             if not self.idleExternalUI():
                 self.d_uiQuit()
 
-        QWidget.timerEvent(self, event)
+        HostWindow.timerEvent(self, event)
 
     def closeEvent(self, event):
         self.closeExternalUI()

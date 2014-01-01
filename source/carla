@@ -235,8 +235,8 @@ class CarlaHostW(HostWindow):
     # -----------------------------------------------------------------
 
     def resizeEvent(self, event):
-        self.updateInfoLabelSize()
         HostWindow.resizeEvent(self, event)
+        self.updateInfoLabelSize()
 
     def timerEvent(self, event):
         HostWindow.timerEvent(self, event)
