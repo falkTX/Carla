@@ -30,7 +30,7 @@ class CarlaHostW(HostWindow):
         HostWindow.__init__(self, parent)
 
         self.fContainer = CarlaPatchbayW(self)
-        self.setupContainer(True)
+        self.setupContainer(True, self.fContainer.themeData)
 
 # ------------------------------------------------------------------------------------------------------------
 # Main

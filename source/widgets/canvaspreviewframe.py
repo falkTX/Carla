@@ -101,8 +101,8 @@ class CanvasPreviewFrame(QFrame):
     def setViewScale(self, scale):
         self.fScale = scale
 
-        #if self.fRealParent is not None:
-            #QTimer.singleShot(0, self.fRealParent.slot_miniCanvasCheckAll)
+        if self.fRealParent is not None:
+            QTimer.singleShot(0, self.fRealParent.slot_miniCanvasCheckAll)
 
     def setViewSize(self, width, height):
         self.fViewRect[iWidth]  = width  * self.fFakeWidth
@@ -205,7 +205,7 @@ class CanvasPreviewFrame(QFrame):
     def resizeEvent(self, event):
         self.fRenderSource = self.getRenderSource()
 
-        #if self.fRealParent is not None:
-            #QTimer.singleShot(0, self.fRealParent.slot_miniCanvasCheckAll)
+        if self.fRealParent is not None:
+            QTimer.singleShot(0, self.fRealParent.slot_miniCanvasCheckAll)
 
         QFrame.resizeEvent(self, event)

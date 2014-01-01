@@ -82,10 +82,11 @@ class CarlaMultiW(QTabWidget):
         parent.ReloadParametersCallback.connect(self.fRack.slot_handleReloadParametersCallback)
         parent.ReloadProgramsCallback.connect(self.fRack.slot_handleReloadProgramsCallback)
         parent.ReloadAllCallback.connect(self.fRack.slot_handleReloadAllCallback)
+
         parent.PatchbayClientAddedCallback.connect(self.fPatchbay.slot_handlePatchbayClientAddedCallback)
         parent.PatchbayClientRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayClientRemovedCallback)
         parent.PatchbayClientRenamedCallback.connect(self.fPatchbay.slot_handlePatchbayClientRenamedCallback)
-        #parent.PatchbayIconChangedCallback.connect(self.fPatchbay.slot_handlePatchbayIconChangedCallback)
+        parent.PatchbayClientIconChangedCallback.connect(self.fPatchbay.slot_handlePatchbayClientIconChangedCallback)
         parent.PatchbayPortAddedCallback.connect(self.fPatchbay.slot_handlePatchbayPortAddedCallback)
         parent.PatchbayPortRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayPortRemovedCallback)
         parent.PatchbayPortRenamedCallback.connect(self.fPatchbay.slot_handlePatchbayPortRenamedCallback)
@@ -107,10 +108,9 @@ class CarlaMultiW(QTabWidget):
 
     def renamePlugin(self, pluginId, newName):
         self.fRack.renamePlugin(pluginId, newName)
-        self.fPatchbay.renamePlugin(pluginId, newName)
 
     def disablePlugin(self, pluginId, errorMsg):
-        pass
+        self.fRack.disablePlugin(pluginId)
 
     def removeAllPlugins(self):
         self.fRack.removeAllPlugins()
@@ -141,9 +141,9 @@ class CarlaMultiW(QTabWidget):
     # -----------------------------------------------------------------
 
     def saveSettings(self, settings):
-        pass
         #self.fRack.saveSettings(settings)
-        #self.fPatchbay.saveSettings(settings)
+        self.fPatchbay.saveSettings(settings)
+        #self.fParent.saveSettings(settings)
 
 # ------------------------------------------------------------------------------------------------------------
 # Main Window
@@ -156,7 +156,7 @@ class CarlaHostW(HostWindow):
         # Set-up container
 
         self.fContainer = CarlaMultiW(self)
-        self.setupContainer(True)
+        self.setupContainer(True, self.fContainer.fPatchbay.themeData)
 
         # -------------------------------------------------------------
         # Set-up GUI stuff

@@ -19,6 +19,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
+from PyQt4.QtCore import QPointF, QTimer
 from PyQt4.QtGui import QGraphicsView, QImage, QPrinter, QPrintDialog
 
 # ------------------------------------------------------------------------------------------------------------
@@ -57,49 +58,41 @@ class CarlaPatchbayW(QGraphicsView):
         self.fPluginCount = 0
         self.fPluginList  = []
 
+        self.fCanvasWidth  = 0
+        self.fCanvasHeight = 0
+
+        # -------------------------------------------------------------
+        # Set-up Canvas Preview
+
+        self.fMiniCanvasPreview = self.fParent.ui.miniCanvasPreview
+        self.fMiniCanvasPreview.setRealParent(self)
+        self.fMovingViaMiniCanvas = False
+
         # -------------------------------------------------------------
         # Set-up Canvas
 
         self.scene = patchcanvas.PatchScene(self, self) # FIXME?
         self.setScene(self.scene)
         self.setRenderHint(QPainter.Antialiasing, bool(parent.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] == patchcanvas.ANTIALIASING_FULL))
+
         if parent.fSavedSettings[CARLA_KEY_CANVAS_USE_OPENGL] and hasGL:
             self.setViewport(QGLWidget(self))
             self.setRenderHint(QPainter.HighQualityAntialiasing, parent.fSavedSettings[CARLA_KEY_CANVAS_HQ_ANTIALIASING])
 
-        pOptions = patchcanvas.options_t()
-        pOptions.theme_name       = parent.fSavedSettings[CARLA_KEY_CANVAS_THEME]
-        pOptions.auto_hide_groups = parent.fSavedSettings[CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS]
-        pOptions.use_bezier_lines = parent.fSavedSettings[CARLA_KEY_CANVAS_USE_BEZIER_LINES]
-        pOptions.antialiasing     = parent.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING]
-        pOptions.eyecandy         = parent.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY]
+        self.setupCanvas()
 
-        pFeatures = patchcanvas.features_t()
-        pFeatures.group_info   = False
-        pFeatures.group_rename = False
-        pFeatures.port_info    = False
-        pFeatures.port_rename  = False
-        pFeatures.handle_group_pos = True
-
-        patchcanvas.setOptions(pOptions)
-        patchcanvas.setFeatures(pFeatures)
-        patchcanvas.init("Carla2", self.scene, canvasCallback, False)
-
-        tryCanvasSize = parent.fSavedSettings[CARLA_KEY_CANVAS_SIZE].split("x")
-
-        if len(tryCanvasSize) == 2 and tryCanvasSize[0].isdigit() and tryCanvasSize[1].isdigit():
-            canvasWidth  = int(tryCanvasSize[0])
-            canvasHeight = int(tryCanvasSize[1])
-        else:
-            canvasWidth  = CARLA_DEFAULT_CANVAS_SIZE_WIDTH
-            canvasHeight = CARLA_DEFAULT_CANVAS_SIZE_HEIGHT
-
-        patchcanvas.setCanvasSize(0, 0, canvasWidth, canvasHeight)
-        patchcanvas.setInitialPos(canvasWidth / 2, canvasHeight / 2)
-        self.setSceneRect(0, 0, canvasWidth, canvasHeight)
+        QTimer.singleShot(100, self.slot_restoreScrollbarValues)
 
         # -------------------------------------------------------------
         # Connect actions to functions
+
+        self.horizontalScrollBar().valueChanged.connect(self.slot_horizontalScrollBarChanged)
+        self.verticalScrollBar().valueChanged.connect(self.slot_verticalScrollBarChanged)
+
+        self.scene.scaleChanged.connect(self.slot_canvasScaleChanged)
+        self.scene.sceneGroupMoved.connect(self.slot_canvasItemMoved)
+
+        self.fMiniCanvasPreview.miniCanvasMoved.connect(self.slot_miniCanvasMoved)
 
         if not doSetup: return
 
@@ -123,14 +116,6 @@ class CarlaPatchbayW(QGraphicsView):
         parent.ui.act_canvas_save_image.triggered.connect(self.slot_canvasSaveImage)
 
         parent.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
-
-        #self.ui.miniCanvasPreview-miniCanvasMoved(double, double)"), SLOT("slot_miniCanvasMoved(double, double)"))
-
-        #self.ui.graphicsView.horizontalScrollBar()-valueChanged.connect(self.slot_horizontalScrollBarChanged)
-        #self.ui.graphicsView.verticalScrollBar()-valueChanged.connect(self.slot_verticalScrollBarChanged)
-
-        #self.scene-sceneGroupMoved(int, int, QPointF)"), SLOT("slot_canvasItemMoved(int, int, QPointF)"))
-        #self.scene-scaleChanged(double)"), SLOT("slot_canvasScaleChanged(double)"))
 
         parent.ParameterValueChangedCallback.connect(self.slot_handleParameterValueChangedCallback)
         parent.ParameterDefaultChangedCallback.connect(self.slot_handleParameterDefaultChangedCallback)
@@ -249,13 +234,115 @@ class CarlaPatchbayW(QGraphicsView):
     # -----------------------------------------------------------------
 
     def saveSettings(self, settings):
-        pass
+        settings.setValue("HorizontalScrollBarValue", self.horizontalScrollBar().value())
+        settings.setValue("VerticalScrollBarValue", self.verticalScrollBar().value())
 
     # -----------------------------------------------------------------
     # called by PluginEdit, ignored here
 
     def recheckPluginHints(self, hints):
         pass
+
+    # -----------------------------------------------------------------
+
+    def setupCanvas(self):
+        pOptions = patchcanvas.options_t()
+        pOptions.theme_name       = self.fParent.fSavedSettings[CARLA_KEY_CANVAS_THEME]
+        pOptions.auto_hide_groups = self.fParent.fSavedSettings[CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS]
+        pOptions.use_bezier_lines = self.fParent.fSavedSettings[CARLA_KEY_CANVAS_USE_BEZIER_LINES]
+        pOptions.antialiasing     = self.fParent.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING]
+        pOptions.eyecandy         = self.fParent.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY]
+
+        pFeatures = patchcanvas.features_t()
+        pFeatures.group_info   = False
+        pFeatures.group_rename = False
+        pFeatures.port_info    = False
+        pFeatures.port_rename  = False
+        pFeatures.handle_group_pos = True
+
+        patchcanvas.setOptions(pOptions)
+        patchcanvas.setFeatures(pFeatures)
+        patchcanvas.init("Carla2", self.scene, canvasCallback, False)
+
+        tryCanvasSize = self.fParent.fSavedSettings[CARLA_KEY_CANVAS_SIZE].split("x")
+
+        if len(tryCanvasSize) == 2 and tryCanvasSize[0].isdigit() and tryCanvasSize[1].isdigit():
+            self.fCanvasWidth  = int(tryCanvasSize[0])
+            self.fCanvasHeight = int(tryCanvasSize[1])
+        else:
+            self.fCanvasWidth  = CARLA_DEFAULT_CANVAS_SIZE_WIDTH
+            self.fCanvasHeight = CARLA_DEFAULT_CANVAS_SIZE_HEIGHT
+
+        patchcanvas.setCanvasSize(0, 0, self.fCanvasWidth, self.fCanvasHeight)
+        patchcanvas.setInitialPos(self.fCanvasWidth / 2, self.fCanvasHeight / 2)
+        self.setSceneRect(0, 0, self.fCanvasWidth, self.fCanvasHeight)
+
+        self.themeData = [self.fCanvasWidth, self.fCanvasHeight, patchcanvas.canvas.theme.canvas_bg, patchcanvas.canvas.theme.rubberband_brush, patchcanvas.canvas.theme.rubberband_pen.color()]
+
+    def updateCanvasInitialPos(self):
+        x = self.horizontalScrollBar().value() + self.width()/4
+        y = self.verticalScrollBar().value() + self.height()/4
+        patchcanvas.setInitialPos(x, y)
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot()
+    def slot_miniCanvasCheckAll(self):
+        self.slot_miniCanvasCheckSize()
+        self.slot_horizontalScrollBarChanged(self.horizontalScrollBar().value())
+        self.slot_verticalScrollBarChanged(self.verticalScrollBar().value())
+
+    @pyqtSlot()
+    def slot_miniCanvasCheckSize(self):
+        self.fMiniCanvasPreview.setViewSize(float(self.width()) / self.fCanvasWidth, float(self.height()) / self.fCanvasHeight)
+
+    @pyqtSlot(int)
+    def slot_horizontalScrollBarChanged(self, value):
+        if self.fMovingViaMiniCanvas: return
+
+        maximum = self.horizontalScrollBar().maximum()
+        if maximum == 0:
+            xp = 0
+        else:
+            xp = float(value) / maximum
+        self.fMiniCanvasPreview.setViewPosX(xp)
+        self.updateCanvasInitialPos()
+
+    @pyqtSlot(int)
+    def slot_verticalScrollBarChanged(self, value):
+        if self.fMovingViaMiniCanvas: return
+
+        maximum = self.verticalScrollBar().maximum()
+        if maximum == 0:
+            yp = 0
+        else:
+            yp = float(value) / maximum
+        self.fMiniCanvasPreview.setViewPosY(yp)
+        self.updateCanvasInitialPos()
+
+    @pyqtSlot()
+    def slot_restoreScrollbarValues(self):
+        settings = QSettings()
+        self.horizontalScrollBar().setValue(settings.value("HorizontalScrollBarValue", self.horizontalScrollBar().maximum()/2, type=int))
+        self.verticalScrollBar().setValue(settings.value("VerticalScrollBarValue", self.verticalScrollBar().maximum()/2, type=int))
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(float)
+    def slot_canvasScaleChanged(self, scale):
+        self.fMiniCanvasPreview.setViewScale(scale)
+
+    @pyqtSlot(int, int, QPointF)
+    def slot_canvasItemMoved(self, group_id, split_mode, pos):
+        self.fMiniCanvasPreview.update()
+
+    @pyqtSlot(float, float)
+    def slot_miniCanvasMoved(self, xp, yp):
+        self.fMovingViaMiniCanvas = True
+        self.horizontalScrollBar().setValue(xp * self.fCanvasWidth)
+        self.verticalScrollBar().setValue(yp * self.fCanvasHeight)
+        self.fMovingViaMiniCanvas = False
+        self.updateCanvasInitialPos()
 
     # -----------------------------------------------------------------
 
@@ -362,23 +449,8 @@ class CarlaPatchbayW(QGraphicsView):
 
         patchcanvas.clear()
 
-        pOptions = patchcanvas.options_t()
-        pOptions.theme_name       = self.fParent.fSavedSettings["Canvas/Theme"]
-        pOptions.auto_hide_groups = self.fParent.fSavedSettings["Canvas/AutoHideGroups"]
-        pOptions.use_bezier_lines = self.fParent.fSavedSettings["Canvas/UseBezierLines"]
-        pOptions.antialiasing     = self.fParent.fSavedSettings["Canvas/Antialiasing"]
-        pOptions.eyecandy         = self.fParent.fSavedSettings["Canvas/EyeCandy"]
-
-        pFeatures = patchcanvas.features_t()
-        pFeatures.group_info   = False
-        pFeatures.group_rename = False
-        pFeatures.port_info    = False
-        pFeatures.port_rename  = False
-        pFeatures.handle_group_pos = True
-
-        patchcanvas.setOptions(pOptions)
-        patchcanvas.setFeatures(pFeatures)
-        patchcanvas.init("Carla2", self.scene, canvasCallback, False)
+        self.setupCanvas()
+        self.fParent.updateContainer(self.themeData)
 
         if Carla.host.is_engine_running():
             Carla.host.patchbay_refresh()
@@ -553,22 +625,37 @@ class CarlaPatchbayW(QGraphicsView):
             pcIcon = patchcanvas.ICON_FILE
 
         patchcanvas.addGroup(clientId, clientName, pcSplit, pcIcon)
-        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+
+        QTimer.singleShot(0, self.fMiniCanvasPreview.update)
 
     @pyqtSlot(int)
     def slot_handlePatchbayClientRemovedCallback(self, clientId):
         #if not self.fEngineStarted: return
         patchcanvas.removeGroup(clientId)
-        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+        QTimer.singleShot(0, self.fMiniCanvasPreview.update)
 
     @pyqtSlot(int, str)
     def slot_handlePatchbayClientRenamedCallback(self, clientId, newClientName):
         patchcanvas.renameGroup(clientId, newClientName)
-        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+        QTimer.singleShot(0, self.fMiniCanvasPreview.update)
 
-    @pyqtSlot(int, str)
-    def slot_handlePatchbayClientIconChangedCallback(self, clientId, iconName):
-        patchcanvas.setGroupIcon(clientId, iconName)
+    @pyqtSlot(int, int)
+    def slot_handlePatchbayClientIconChangedCallback(self, clientId, clientIcon):
+        pcIcon = patchcanvas.ICON_APPLICATION
+
+        if clientIcon == PATCHBAY_ICON_PLUGIN:
+            pcIcon = patchcanvas.ICON_PLUGIN
+        if clientIcon == PATCHBAY_ICON_HARDWARE:
+            pcIcon = patchcanvas.ICON_HARDWARE
+        elif clientIcon == PATCHBAY_ICON_CARLA:
+            pass
+        elif clientIcon == PATCHBAY_ICON_DISTRHO:
+            pcIcon = patchcanvas.ICON_DISTRHO
+        elif clientIcon == PATCHBAY_ICON_FILE:
+            pcIcon = patchcanvas.ICON_FILE
+
+        patchcanvas.setGroupIcon(clientId, pcIcon)
+        QTimer.singleShot(0, self.fMiniCanvasPreview.update)
 
     @pyqtSlot(int, int, int, str)
     def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portName):
@@ -587,29 +674,29 @@ class CarlaPatchbayW(QGraphicsView):
             portType = patchcanvas.PORT_TYPE_NULL
 
         patchcanvas.addPort(clientId, portId, portName, portMode, portType)
-        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+        QTimer.singleShot(0, self.fMiniCanvasPreview.update)
 
     @pyqtSlot(int, int)
     def slot_handlePatchbayPortRemovedCallback(self, groupId, portId):
         #if not self.fEngineStarted: return
         patchcanvas.removePort(portId)
-        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+        QTimer.singleShot(0, self.fMiniCanvasPreview.update)
 
     @pyqtSlot(int, int, str)
     def slot_handlePatchbayPortRenamedCallback(self, groupId, portId, newPortName):
         patchcanvas.renamePort(portId, newPortName)
-        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+        QTimer.singleShot(0, self.fMiniCanvasPreview.update)
 
     @pyqtSlot(int, int, int)
     def slot_handlePatchbayConnectionAddedCallback(self, connectionId, portOutId, portInId):
         patchcanvas.connectPorts(connectionId, portOutId, portInId)
-        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+        QTimer.singleShot(0, self.fMiniCanvasPreview.update)
 
     @pyqtSlot(int, int, int)
     def slot_handlePatchbayConnectionRemovedCallback(self, connectionId, portOutId, portInId):
         #if not self.fEngineStarted: return
         patchcanvas.disconnectPorts(connectionId)
-        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+        QTimer.singleShot(0, self.fMiniCanvasPreview.update)
 
     # -----------------------------------------------------------------
 

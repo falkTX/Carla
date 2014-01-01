@@ -264,10 +264,10 @@ class HostWindow(QMainWindow):
         self.PluginRenamedCallback.connect(self.slot_handlePluginRenamedCallback)
         self.PluginUnavailableCallback.connect(self.slot_handlePluginUnavailableCallback)
 
-        # parameter (rack)
-        # program, midi-program, ui-state (rack)
-        # note on, off (rack)
-        # update, reload (rack)
+        # parameter (rack, patchbay)
+        # program, midi-program, ui-state (rack, patchbay)
+        # note on, off (rack, patchbay)
+        # update, reload (rack, patchbay)
         # patchbay
 
         self.EngineStartedCallback.connect(self.slot_handleEngineStartedCallback)
@@ -299,19 +299,22 @@ class HostWindow(QMainWindow):
         dialog = CarlaSettingsW(self, hasCanvas, hasCanvasGL)
         return dialog.exec_()
 
-    def setupContainer(self, showMiniCanvas):
+    def setupContainer(self, showMiniCanvas, canvasThemeData = []):
         if showMiniCanvas:
-            CARLA_DEFAULT_CANVAS_WIDTH  = 3100
-            CARLA_DEFAULT_CANVAS_HEIGHT = 2400
-            self.ui.miniCanvasPreview.setRealParent(self)
-            #self.ui.miniCanvasPreview.setViewTheme(patchcanvas.canvas.theme.canvas_bg, patchcanvas.canvas.theme.rubberband_brush, patchcanvas.canvas.theme.rubberband_pen.color())
-            self.ui.miniCanvasPreview.init(self.fContainer.scene, CARLA_DEFAULT_CANVAS_WIDTH, CARLA_DEFAULT_CANVAS_HEIGHT, self.fSavedSettings["UseCustomMiniCanvasPaint"])
+            canvasWidth, canvasHeight, canvasBg, canvasBrush, canvasPen = canvasThemeData
+            self.ui.miniCanvasPreview.setViewTheme(canvasBg, canvasBrush, canvasPen)
+            self.ui.miniCanvasPreview.init(self.fContainer.scene, canvasWidth, canvasHeight, self.fSavedSettings["UseCustomMiniCanvasPaint"])
         else:
-              self.ui.miniCanvasPreview.hide()
+            self.ui.miniCanvasPreview.hide()
 
         self.ui.mainwidget.hide()
-        self.ui.splitter.insertWidget(0, self.fContainer)
         del self.ui.mainwidget
+        self.ui.splitter.insertWidget(0, self.fContainer)
+
+    def updateContainer(self, canvasThemeData):
+        canvasWidth, canvasHeight, canvasBg, canvasBrush, canvasPen = canvasThemeData
+        self.ui.miniCanvasPreview.setViewTheme(canvasBg, canvasBrush, canvasPen)
+        self.ui.miniCanvasPreview.init(self.fContainer.scene, canvasWidth, canvasHeight, self.fSavedSettings["UseCustomMiniCanvasPaint"])
 
     # -----------------------------------------------------------------
     # Internal stuff (files)
@@ -545,7 +548,7 @@ class HostWindow(QMainWindow):
                 folder = diskFolders[i]
                 self.ui.cb_disk.addItem(os.path.basename(folder), folder)
 
-            if MACOS and not settings.value("Main/UseProTheme", True, type=bool):
+            if MACOS and not settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool):
                 self.setUnifiedTitleAndToolBarOnMac(True)
 
         # ---------------------------------------------
@@ -589,8 +592,8 @@ class HostWindow(QMainWindow):
         # TODO
 
         self.fSavedSettings = {
-            "Main/DefaultProjectFolder":       settings.value("Main/DefaultProjectFolder",       HOME, type=str),
-            "Main/RefreshInterval":            settings.value("Main/RefreshInterval",            50, type=int),
+            CARLA_KEY_MAIN_PROJECT_FOLDER:     settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER,     CARLA_DEFAULT_MAIN_PROJECT_FOLDER,     type=str),
+            CARLA_KEY_MAIN_REFRESH_INTERVAL:   settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL,   CARLA_DEFAULT_MAIN_REFRESH_INTERVAL,   type=int),
             CARLA_KEY_CANVAS_THEME:            settings.value(CARLA_KEY_CANVAS_THEME,            CARLA_DEFAULT_CANVAS_THEME,            type=str),
             CARLA_KEY_CANVAS_SIZE:             settings.value(CARLA_KEY_CANVAS_SIZE,             CARLA_DEFAULT_CANVAS_SIZE,             type=str),
             CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS: settings.value(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS, CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS, type=bool),
@@ -599,19 +602,19 @@ class HostWindow(QMainWindow):
             CARLA_KEY_CANVAS_USE_OPENGL:       settings.value(CARLA_KEY_CANVAS_USE_OPENGL,       CARLA_DEFAULT_CANVAS_USE_OPENGL,       type=bool),
             CARLA_KEY_CANVAS_ANTIALIASING:     settings.value(CARLA_KEY_CANVAS_ANTIALIASING,     CARLA_DEFAULT_CANVAS_ANTIALIASING,     type=int),
             CARLA_KEY_CANVAS_HQ_ANTIALIASING:  settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING,  CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING,  type=bool),
-            "UseCustomMiniCanvasPaint":       (settings.value("Main/UseProTheme", True, type=bool) and
-                                               settings.value("Main/ProThemeColor", "Black", type=str).lower() == "black")
+            "UseCustomMiniCanvasPaint":       (settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool) and
+                                               settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower() == "black")
         }
 
         # ---------------------------------------------
 
         if self.fIdleTimerFast != 0:
             self.killTimer(self.fIdleTimerFast)
-            self.fIdleTimerFast = self.startTimer(self.fSavedSettings["Main/RefreshInterval"])
+            self.fIdleTimerFast = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL])
 
         if self.fIdleTimerSlow != 0:
             self.killTimer(self.fIdleTimerSlow)
-            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings["Main/RefreshInterval"]*2)
+            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL]*2)
 
     def saveSettings(self):
         settings = QSettings()
@@ -619,8 +622,6 @@ class HostWindow(QMainWindow):
         settings.setValue("Geometry", self.saveGeometry())
         settings.setValue("SplitterState", self.ui.splitter.saveState())
         settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
-        #settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
-        #settings.setValue("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().value())
 
         diskFolders = []
 
@@ -655,7 +656,7 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_fileOpen(self):
         fileFilter  = self.tr("Carla Project File (*.carxp)")
-        filenameTry = QFileDialog.getOpenFileName(self, self.tr("Open Carla Project File"), self.fSavedSettings["Main/DefaultProjectFolder"], filter=fileFilter)[0]
+        filenameTry = QFileDialog.getOpenFileName(self, self.tr("Open Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)[0]
 
         if not filenameTry:
             return
@@ -684,7 +685,7 @@ class HostWindow(QMainWindow):
             return self.saveProjectNow()
 
         fileFilter  = self.tr("Carla Project File (*.carxp)")
-        filenameTry = QFileDialog.getSaveFileName(self, self.tr("Save Carla Project File"), self.fSavedSettings["Main/DefaultProjectFolder"], filter=fileFilter)[0]
+        filenameTry = QFileDialog.getSaveFileName(self, self.tr("Save Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)[0]
 
         if not filenameTry:
             return
@@ -931,9 +932,9 @@ class HostWindow(QMainWindow):
         self.slot_engineStart(False)
 
         if self.fIdleTimerFast == 0:
-            self.fIdleTimerFast = self.startTimer(self.fSavedSettings["Main/RefreshInterval"])
+            self.fIdleTimerFast = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL])
         if self.fIdleTimerSlow == 0:
-            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings["Main/RefreshInterval"]*2)
+            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL]*2)
 
     @pyqtSlot()
     def slot_handleEngineStoppedCallback(self):
