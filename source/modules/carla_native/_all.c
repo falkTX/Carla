@@ -28,11 +28,14 @@ extern void carla_register_native_plugin_nekofilter();
 
 // Simple plugins (C++)
 extern void carla_register_native_plugin_sunvoxfile();
-//extern void carla_register_native_plugin_vex_fx();
-//extern void carla_register_native_plugin_vex_synth();
 
 // Carla
 extern void carla_register_native_plugin_carla();
+
+#ifdef HAVE_JUCE
+extern void carla_register_native_plugin_vex_fx();
+extern void carla_register_native_plugin_vex_synth();
+#endif
 
 #ifdef WANT_AUDIOFILE
 // AudioFile
@@ -77,11 +80,13 @@ void carla_register_all_plugins()
 
     // Simple plugins (C++)
     //carla_register_native_plugin_sunvoxfile(); // unfinished
-    //carla_register_native_plugin_vex_fx();
-    //carla_register_native_plugin_vex_synth();
 
-    // Carla
-    //carla_register_native_plugin_carla(); // kinda unfinished
+    carla_register_native_plugin_carla();
+
+#ifdef HAVE_JUCE
+    carla_register_native_plugin_vex_fx();
+    carla_register_native_plugin_vex_synth();
+#endif
 
 #ifdef WANT_AUDIOFILE
     // AudioFile

@@ -78,11 +78,21 @@ OBJS += \
 	midi-transpose.c.o \
 	nekofilter.c.o
 
-# Simple plugins (C++)
-# OBJS += \
-# 	vex-fx.cpp.o \
-# 	vex-synth.cpp.o \
-# 	vex-src.cpp.o
+ifeq ($(HAVE_JUCE),true)
+OBJS += \
+	vex-fx.cpp.o \
+	vex-synth.cpp.o \
+	vex-src.cpp.o
+endif
+
+ifeq ($(HAVE_OPENGL),true)
+OBJS += \
+	distrho-3bandeq.cpp.o \
+	distrho-3bandsplitter.cpp.o \
+	distrho-pingpongpan.cpp.o
+# 	distrho-nekobi.cpp.o \
+# 	distrho-stereoenhancer.cpp.o
+endif
 
 # AudioFile
 ifeq ($(HAVE_AF_DEPS),true)
@@ -99,24 +109,8 @@ OBJS += \
 	midi-file.cpp.o
 endif
 
-# DISTRHO plugins (OpenGL)
-ifeq ($(HAVE_OPENGL),true)
-OBJS += \
-	distrho-3bandeq.cpp.o \
-	distrho-3bandsplitter.cpp.o \
-	distrho-pingpongpan.cpp.o
-# 	distrho-nekobi.cpp.o \
-# 	distrho-stereoenhancer.cpp.o
-endif
-
-# DISTRHO plugins (PyQt)
-# OBJS += \
-# 	distrho-bigmeter.cpp.o \
-# 	distrho-bigmeterM.cpp.o \
-# 	distrho-notes.cpp.o
-
-ifeq ($(HAVE_ZYN_DEPS),true)
 # ZynAddSubFX
+ifeq ($(HAVE_ZYN_DEPS),true)
 OBJS += \
 	zynaddsubfx-fx.cpp.o \
 	zynaddsubfx-synth.cpp.o \
@@ -242,7 +236,7 @@ midi-sequencer.cpp.o: midi-sequencer.cpp midi-base.hpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 vex-%.cpp.o: vex-%.cpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -w -c -o $@
 
 zynaddsubfx-%.cpp.o: zynaddsubfx-%.cpp $(CXXDEPS) $(ZYN_UI_FILES_H)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@

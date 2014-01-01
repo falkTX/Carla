@@ -515,14 +515,14 @@ private:
 
 // -----------------------------------------------------------------------
 
-class VexSynthPlugin : public PluginClass,
+class VexSynthPlugin : public NativePluginClass,
                        public VexEditorComponent::Callback
 {
 public:
     static const unsigned int kParamCount = 92;
 
-    VexSynthPlugin(const HostDescriptor* const host)
-        : PluginClass(host),
+    VexSynthPlugin(const NativeHostDescriptor* const host)
+        : NativePluginClass(host),
           fArp1(&fArpSet1),
           fArp2(&fArpSet2),
           fArp3(&fArpSet3),
@@ -615,10 +615,10 @@ protected:
         return kParamCount;
     }
 
-    const Parameter* getParameterInfo(const uint32_t index) const override
+    const NativeParameter* getParameterInfo(const uint32_t index) const override
     {
         static CarlaString tmpName;
-        static Parameter paramInfo;
+        static NativeParameter paramInfo;
 
         int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE;
 
@@ -744,7 +744,7 @@ protected:
             tmpName[4] = '0' + ((index-1+24) / 24);
 
             paramInfo.name  = (const char*)tmpName;
-            paramInfo.hints = static_cast<ParameterHints>(hints);
+            paramInfo.hints = static_cast<NativeParameterHints>(hints);
             return &paramInfo;
         }
 
@@ -845,7 +845,7 @@ protected:
             break;
         }
 
-        paramInfo.hints = static_cast<ParameterHints>(hints);
+        paramInfo.hints = static_cast<NativeParameterHints>(hints);
         return &paramInfo;
     }
 
@@ -896,10 +896,10 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(float**, float** outBuffer, const uint32_t frames, const MidiEvent* const midiEvents, const uint32_t midiEventCount) override
+    void process(float**, float** outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
         // Get time info
-        const TimeInfo* const timeInfo(getTimeInfo());
+        const NativeTimeInfo* const timeInfo(getTimeInfo());
 
         bool   timePlaying = false;
         double ppqPos      = 0.0;
@@ -927,7 +927,7 @@ protected:
 
         for (uint32_t i=0; i < midiEventCount; ++i)
         {
-            const MidiEvent* const midiEvent(&midiEvents[i]);
+            const NativeMidiEvent* const midiEvent(&midiEvents[i]);
             fMidiInBuffer.addEvent(MidiMessage(midiEvent->data, midiEvent->size), midiEvent->time);
         }
 
@@ -1212,10 +1212,10 @@ private:
 
 // -----------------------------------------------------------------------
 
-static const PluginDescriptor vexSynthDesc = {
+static const NativePluginDescriptor vexSynthDesc = {
     /* category  */ PLUGIN_CATEGORY_SYNTH,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_HAS_GUI|PLUGIN_NEEDS_UI_JUCE|PLUGIN_USES_STATE|PLUGIN_USES_TIME),
-    /* supports  */ static_cast<PluginSupports>(0x0),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_HAS_UI|PLUGIN_NEEDS_UI_JUCE|PLUGIN_USES_STATE|PLUGIN_USES_TIME),
+    /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 0,
     /* audioOuts */ 2,
     /* midiIns   */ 1,

@@ -1122,15 +1122,9 @@ protected:
     // -------------------------------------------------------------------
     // Engine initializers
 
-#ifdef BUILD_BRIDGE
-public:
-    static CarlaEngine* newBridge(const char* const audioBaseName, const char* const controlBaseName);
-#endif
-
 private:
     static CarlaEngine* newJack();
 
-#ifndef BUILD_BRIDGE
     enum AudioApi {
         AUDIO_API_NULL  = 0,
         // common
@@ -1152,19 +1146,19 @@ private:
     static const char* const* getRtAudioApiDeviceNames(const unsigned int index);
     static const EngineDriverDeviceInfo* getRtAudioDeviceInfo(const unsigned int index, const char* const deviceName);
 
-# ifdef HAVE_JUCE
     static CarlaEngine*       newJuce(const AudioApi api);
     static unsigned int       getJuceApiCount();
     static const char*        getJuceApiName(const unsigned int index);
     static const char* const* getJuceApiDeviceNames(const unsigned int index);
     static const EngineDriverDeviceInfo* getJuceDeviceInfo(const unsigned int index, const char* const deviceName);
-# endif
-#endif
+
+#ifdef BUILD_BRIDGE
+public:
+    static CarlaEngine* newBridge(const char* const audioBaseName, const char* const controlBaseName);
 
     // -------------------------------------------------------------------
     // Bridge/Controller OSC stuff
-public:
-#ifdef BUILD_BRIDGE
+
     void oscSend_bridge_plugin_info1(const PluginCategory category, const uint hints, const long uniqueId) const;
     void oscSend_bridge_plugin_info2(const char* const realName, const char* const label, const char* const maker, const char* const copyright) const;
     void oscSend_bridge_audio_count(const uint32_t ins, const uint32_t outs) const;
@@ -1188,6 +1182,7 @@ public:
     void oscSend_bridge_set_chunk_data(const char* const chunkFile) const;
     void oscSend_bridge_set_peaks() const;
 #else
+public:
     void oscSend_control_add_plugin_start(const uint pluginId, const char* const pluginName) const;
     void oscSend_control_add_plugin_end(const uint pluginId) const;
     void oscSend_control_remove_plugin(const uint pluginId) const;

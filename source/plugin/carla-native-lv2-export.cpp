@@ -99,7 +99,7 @@ const String nameToSymbol(const String& name, const uint32_t portIndex)
 
 // -----------------------------------------------------------------------
 
-void writeManifestFile()
+void writeManifestFile(PluginListManager& plm)
 {
     String text;
 
@@ -114,7 +114,7 @@ void writeManifestFile()
     // -------------------------------------------------------------------
     // Plugins
 
-    for (List<const NativePluginDescriptor*>::Itenerator it = sPluginDescsMgr.descs.begin(); it.valid(); it.next())
+    for (List<const NativePluginDescriptor*>::Itenerator it = plm.descs.begin(); it.valid(); it.next())
     {
         const NativePluginDescriptor* const& pluginDesc(it.getConstValue());
         const String label(pluginDesc->label);
@@ -562,9 +562,11 @@ void writePluginFile(const NativePluginDescriptor* const pluginDesc)
 
 int main()
 {
-    writeManifestFile();
+    PluginListManager& plm(PluginListManager::getInstance());
 
-    for (List<const NativePluginDescriptor*>::Itenerator it = sPluginDescsMgr.descs.begin(); it.valid(); it.next())
+    writeManifestFile(plm);
+
+    for (List<const NativePluginDescriptor*>::Itenerator it = plm.descs.begin(); it.valid(); it.next())
     {
         const NativePluginDescriptor* const& pluginDesc(it.getConstValue());
         writePluginFile(pluginDesc);

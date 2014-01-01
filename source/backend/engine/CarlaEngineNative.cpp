@@ -825,8 +825,6 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
 
 CARLA_BACKEND_END_NAMESPACE
 
-// -----------------------------------------------------------------------
-
 CARLA_EXPORT
 void carla_register_native_plugin_carla()
 {
@@ -836,5 +834,32 @@ void carla_register_native_plugin_carla()
     carla_register_native_plugin(&carlaPatchbayDesc);
 #endif
 }
+
+// -----------------------------------------------------------------------
+// Extra stuff for linking purposes
+
+#ifdef CARLA_PLUGIN_EXPORT
+
+CARLA_BACKEND_START_NAMESPACE
+
+CarlaEngine* CarlaEngine::newJack() { return nullptr; }
+
+CarlaEngine*       CarlaEngine::newRtAudio(const AudioApi) { return nullptr; }
+unsigned int       CarlaEngine::getRtAudioApiCount() { return 0; }
+const char*        CarlaEngine::getRtAudioApiName(const unsigned int) { return nullptr; }
+const char* const* CarlaEngine::getRtAudioApiDeviceNames(const unsigned int) { return nullptr; }
+const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const unsigned int, const char* const) { return nullptr; }
+
+# ifdef HAVE_JUCE
+CarlaEngine*       CarlaEngine::newJuce(const AudioApi) { return nullptr; }
+unsigned int       CarlaEngine::getJuceApiCount() { return 0; }
+const char*        CarlaEngine::getJuceApiName(const unsigned int) { return nullptr; }
+const char* const* CarlaEngine::getJuceApiDeviceNames(const unsigned int) { return nullptr; }
+const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const unsigned int, const char* const) { return nullptr; }
+# endif
+
+CARLA_BACKEND_END_NAMESPACE
+
+#endif
 
 // -----------------------------------------------------------------------

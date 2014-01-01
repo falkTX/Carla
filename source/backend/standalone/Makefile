@@ -15,22 +15,11 @@ LINK_FLAGS += $(QTCORE_LIBS)
 LINK_FLAGS += $(QTXML_LIBS)
 LINK_FLAGS += $(RTMEMPOOL_LIBS)
 
-# ifeq ($(HAVE_JUCE),true)
-# LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
-# LINK_FLAGS += $(JUCE_AUDIO_DEVICES_LIBS)
-# LINK_FLAGS += $(JUCE_CORE_LIBS)
-# LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
-# LINK_FLAGS += $(JUCE_EVENTS_LIBS)
-# LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
-# LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
-# endif
-
 # --------------------------------------------------------------
 # Engine
 
 LINK_FLAGS += $(RTAUDIO_LIBS)
 LINK_FLAGS += $(RTMIDI_LIBS)
-
 LINK_FLAGS += $(JACKBRIDGE_LIBS)
 
 # --------------------------------------------------------------
@@ -52,17 +41,31 @@ LINK_FLAGS += $(JACKBRIDGE_LIBS)
 # endif
 
 # --------------------------------------------------------------
-# Native
+# Coomon
+
+ifeq ($(HAVE_FFMPEG),true)
+LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat libavutil)
+endif
+
+ifeq ($(HAVE_JUCE),true)
+LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
+LINK_FLAGS += $(JUCE_AUDIO_DEVICES_LIBS)
+LINK_FLAGS += $(JUCE_CORE_LIBS)
+# LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
+LINK_FLAGS += $(JUCE_EVENTS_LIBS)
+# LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
+# LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
+endif
 
 ifeq ($(HAVE_OPENGL),true)
 LINK_FLAGS += $(DGL_LIBS)
 endif
 
+# --------------------------------------------------------------
+# Native
+
 ifeq ($(HAVE_AF_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs sndfile)
-ifeq ($(HAVE_FFMPEG),true)
-LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat libavutil)
-endif
 endif
 
 ifeq ($(HAVE_MF_DEPS),true)
@@ -78,7 +81,7 @@ endif
 
 # --------------------------------------------------------------
 
-LIBS  = ../libcarla_engine.a
+LIBS += ../libcarla_engine.a
 LIBS += ../libcarla_plugin.a
 
 LIBS += ../../modules/carla_native.a
@@ -91,24 +94,21 @@ LIBS += ../../modules/rtmempool.a
 # LIBS += ../../modules/lilv.a
 # endif
 
-# ifeq ($(HAVE_JUCE),true)
-# LIBS += ../../modules/juce_audio_basics.a
-# LIBS += ../../modules/juce_audio_devices.a
-# LIBS += ../../modules/juce_core.a
+ifeq ($(HAVE_JUCE),true)
+LIBS += ../../modules/juce_audio_basics.a
+LIBS += ../../modules/juce_audio_devices.a
+LIBS += ../../modules/juce_core.a
 # LIBS += ../../modules/juce_data_structures.a
-# LIBS += ../../modules/juce_events.a
+LIBS += ../../modules/juce_events.a
 # LIBS += ../../modules/juce_graphics.a
 # LIBS += ../../modules/juce_gui_basics.a
-# endif
+endif
 
 ifeq ($(HAVE_OPENGL),true)
 LIBS += ../../modules/dgl.a
 endif
 
 # --------------------------------------------------------------
-
-OBJS  = \
-     CarlaStandalone.cpp.o
 
 HEADERS = \
 	../CarlaBackend.h ../CarlaHost.h ../CarlaEngine.hpp ../CarlaPlugin.hpp ../../modules/CarlaNative.h
@@ -138,14 +138,14 @@ debug:
 %.cpp.o: %.cpp $(HEADERS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-../libcarla_standalone2.dll: $(OBJS) $(LIBS)
-	$(CXX) $^ $(LINK_FLAGS) -shared -Wl,--output-def,$@.def -o $@
+../libcarla_standalone2.dll: CarlaStandalone.cpp.o $(LIBS)
+	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group $(LINK_FLAGS) -shared -Wl,--output-def,$@.def -o $@
 
-../libcarla_standalone2.dylib: $(OBJS) $(LIBS)
-	$(CXX) $^ $(LINK_FLAGS) -dynamiclib -o $@
+../libcarla_standalone2.dylib: CarlaStandalone.cpp.o $(LIBS)
+	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group $(LINK_FLAGS) -dynamiclib -o $@
 
-../libcarla_standalone2.so: $(OBJS) $(LIBS)
-	$(CXX) $^ $(LINK_FLAGS) -shared -o $@
+../libcarla_standalone2.so: CarlaStandalone.cpp.o $(LIBS)
+	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group $(LINK_FLAGS) -shared -o $@
 
 # --------------------------------------------------------------
 

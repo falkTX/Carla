@@ -8,7 +8,7 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(JUCE_AUDIO_DEVICES_FLAGS) -I.
+BUILD_CXX_FLAGS += $(JUCE_AUDIO_DEVICES_FLAGS) -I. -w
 LINK_FLAGS      += $(JUCE_AUDIO_DEVICES_LIBS) -L.. -ljuce_events -ljuce_audio_formats -ljuce_audio_basics -ljuce_core
 
 ifeq ($(WIN32),true)

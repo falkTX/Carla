@@ -15,10 +15,33 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "CarlaEngine.hpp"
+#include "CarlaPlugin.hpp"
+#include "CarlaHost.h"
 #include "CarlaNative.h"
+
+#include "CarlaBackendUtils.hpp"
 #include "List.hpp"
 
-#include "lv2/lv2.h"
+// TODO: remove
+#ifndef CARLA_NATIVE_PLUGIN_LV2
+# define CARLA_NATIVE_PLUGIN_LV2
+#endif
+
+#ifdef CARLA_NATIVE_PLUGIN_LV2
+# include "lv2/lv2.h"
+#endif
+
+// -----------------------------------------------------------------------
+
+const char* carla_file_callback(FileCallbackOpcode action, bool isDir, const char* title, const char* filter)
+{
+    CARLA_SAFE_ASSERT_RETURN(title != nullptr && title[0] != '\0', nullptr);
+    CARLA_SAFE_ASSERT_RETURN(filter != nullptr && filter[0] != '\0', nullptr);
+    carla_debug("carla_file_callback(%i:%s, %s, \"%s\", \"%s\")", action, CarlaBackend::FileCallbackOpcode2Str(action), bool2str(isDir), title, filter);
+
+    return nullptr;
+}
 
 // -----------------------------------------------------------------------
 // Plugin List
@@ -26,38 +49,46 @@
 struct PluginListManager {
     PluginListManager()
     {
-        carla_register_all_plugins();
+        for (size_t i=0, count = CarlaBackend::CarlaPlugin::getNativePluginCount(); i < count; ++i)
+        {
+            const NativePluginDescriptor* const desc(CarlaBackend::CarlaPlugin::getNativePluginDescriptor(i));
+
+            carla_stderr2("PLM: %i/%i : %s", i+1, count, desc->name);
+
+#ifdef CARLA_NATIVE_PLUGIN_LV2
+            // LV2 MIDI Out and Open/Save are not implemented yet
+            if (desc->midiOuts > 0 || (desc->hints & PLUGIN_NEEDS_UI_OPEN_SAVE) != 0)
+               continue;
+#endif
+            descs.append(desc);
+        }
     }
 
     ~PluginListManager()
     {
+#ifdef CARLA_NATIVE_PLUGIN_LV2
         for (List<const LV2_Descriptor*>::Itenerator it = lv2Descs.begin(); it.valid(); it.next())
         {
             const LV2_Descriptor*& lv2Desc(it.getValue());
             delete[] lv2Desc->URI;
             delete lv2Desc;
         }
+        lv2Descs.clear();
+#endif
 
         descs.clear();
-        lv2Descs.clear();
     }
 
-    List<const NativePluginDescriptor*> descs;
-    List<const LV2_Descriptor*> lv2Descs;
-};
+    static PluginListManager& getInstance()
+    {
+        static PluginListManager plm;
+        return plm;
+    }
 
-static PluginListManager sPluginDescsMgr;
-
-// -----------------------------------------------------------------------
-
-void carla_register_native_plugin(const NativePluginDescriptor* desc)
-{
 #ifdef CARLA_NATIVE_PLUGIN_LV2
-    // LV2 MIDI Out and Open/Save are not implemented yet
-    if (desc->midiOuts > 0 || (desc->hints & PLUGIN_NEEDS_UI_OPEN_SAVE) != 0)
-        return;
+    List<const LV2_Descriptor*> lv2Descs;
 #endif
-    sPluginDescsMgr.descs.append(desc);
-}
+    List<const NativePluginDescriptor*> descs;
+};
 
 // -----------------------------------------------------------------------

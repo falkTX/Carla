@@ -324,7 +324,7 @@ public:
                     const uint8_t* const data((const uint8_t*)(event + 1));
 
                     fMidiEvents[fMidiEventCount].port = 0;
-                    fMidiEvents[fMidiEventCount].time = event->time.frames;
+                    fMidiEvents[fMidiEventCount].time = (uint32_t)event->time.frames;
                     fMidiEvents[fMidiEventCount].size = (uint8_t)event->body.size;
 
                     for (uint32_t i=0; i < event->body.size; ++i)
@@ -417,7 +417,7 @@ public:
 
                     fMidiEvents[fMidiEventCount].port = (uint8_t)i;
                     fMidiEvents[fMidiEventCount].size = (uint8_t)event->body.size;
-                    fMidiEvents[fMidiEventCount].time = event->time.frames;
+                    fMidiEvents[fMidiEventCount].time = (uint32_t)event->time.frames;
 
                     for (uint32_t j=0; j < event->body.size; ++j)
                         fMidiEvents[fMidiEventCount].data[j] = data[j];
@@ -1192,7 +1192,9 @@ static LV2_Handle lv2_instantiate(const LV2_Descriptor* lv2Descriptor, double sa
 
     carla_debug("lv2_instantiate() - looking up label \"%s\"", pluginLabel);
 
-    for (List<const NativePluginDescriptor*>::Itenerator it = sPluginDescsMgr.descs.begin(); it.valid(); it.next())
+    PluginListManager& plm(PluginListManager::getInstance());
+
+    for (List<const NativePluginDescriptor*>::Itenerator it = plm.descs.begin(); it.valid(); it.next())
     {
         const NativePluginDescriptor* const& tmpDesc(it.getConstValue());
 
@@ -1384,18 +1386,20 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
 {
     carla_debug("lv2_descriptor(%i)", index);
 
-    if (index >= sPluginDescsMgr.descs.count())
+    PluginListManager& plm(PluginListManager::getInstance());
+
+    if (index >= plm.descs.count())
     {
         carla_debug("lv2_descriptor(%i) - out of bounds", index);
         return nullptr;
     }
-    if (index < sPluginDescsMgr.lv2Descs.count())
+    if (index < plm.lv2Descs.count())
     {
         carla_debug("lv2_descriptor(%i) - found previously allocated", index);
-        return sPluginDescsMgr.lv2Descs.getAt(index);
+        return plm.lv2Descs.getAt(index);
     }
 
-    const NativePluginDescriptor*& pluginDesc(sPluginDescsMgr.descs.getAt(index));
+    const NativePluginDescriptor*& pluginDesc(plm.descs.getAt(index));
 
     CarlaString tmpURI;
 
@@ -1422,7 +1426,7 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
     /* extension_data */ lv2_extension_data
     });
 
-    sPluginDescsMgr.lv2Descs.append(lv2Desc);
+    plm.lv2Descs.append(lv2Desc);
 
     return lv2Desc;
 }
