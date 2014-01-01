@@ -190,7 +190,7 @@ nekoui_run(
     if (sscanf(port_value_str, "%f", &value) == 1)
     {
       //printf("port %d = %f\n", port, value);
-      control_ptr->host->ui_parameter_changed(control_ptr->host->handle, index, value);
+      control_ptr->host->ui_parameter_changed(control_ptr->host->handle, (uint32_t)index, value);
     }
     else
     {
@@ -337,7 +337,7 @@ static int clone_fn(void * context)
 
 #endif
 
-static bool do_fork(const char * argv[6], int* ret)
+static bool do_fork(char * argv[6], int* ret)
 {
   int ret2 = *ret = FORK();
 
@@ -351,7 +351,7 @@ static bool do_fork(const char * argv[6], int* ret)
     close(pipe2[0]);
 #endif
 
-    execvp(argv[0], (char **)argv);
+    execvp(argv[0], /*(char **)*/argv);
     fprintf(stderr, "exec of UI failed: %s\n", strerror(errno));
     return false;
   case -1:
@@ -375,7 +375,7 @@ nekoui_instantiate(
   char ui_send_pipe[100];
   int oldflags;
   FORK_TIME_MEASURE_VAR;
-  const char * argv[6];
+  char * argv[6];
   int ret;
   int i;
   char ch;
@@ -475,7 +475,7 @@ nekoui_instantiate(
   //printf("waiting UI start\n");
   i = 0;
 loop:
-  ret = read(control_ptr->recv_pipe, &ch, 1);
+  ret = (int)read(control_ptr->recv_pipe, &ch, 1);
   switch (ret)
   {
   case -1:
@@ -556,9 +556,9 @@ void nekoui_set_parameter_value(
 
   ign = write(control_ptr->send_pipe, "port_value\n", 11);
   len = sprintf(buf, "%u\n", (unsigned int)index);
-  ign = write(control_ptr->send_pipe, buf, len);
+  ign = write(control_ptr->send_pipe, buf, (size_t)len);
   len = sprintf(buf, "%.10f\n", value);
-  ign = write(control_ptr->send_pipe, buf, len);
+  ign = write(control_ptr->send_pipe, buf, (size_t)len);
   fsync(control_ptr->send_pipe);
 
   setlocale(LC_NUMERIC, locale);

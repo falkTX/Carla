@@ -73,7 +73,7 @@ nekofilter_instantiate(
   nekofilter_ptr->ui   = NULL;
 #endif
 
-  if (! filter_create(host->get_sample_rate(host->handle), BANDS_COUNT, &nekofilter_ptr->filter))
+  if (! filter_create((float)host->get_sample_rate(host->handle), BANDS_COUNT, &nekofilter_ptr->filter))
   {
     free(nekofilter_ptr);
     return NULL;
@@ -155,28 +155,20 @@ nekofilter_get_parameter_info(
   uint32_t index)
 {
   static NativeParameter param;
-  static bool first_init = true;
+  static char* name = NULL;
+  static char* unit = NULL;
   uint32_t band;
   char strBuf[32];
 
-  if (first_init)
+  if (name != NULL)
   {
-    first_init = false;
-    param.name = NULL;
-    param.unit = NULL;
+    free(name);
+    name = NULL;
   }
-  else
+  if (unit != NULL)
   {
-    if (param.name != NULL)
-    {
-      free((void*)param.name);
-      param.name = NULL;
-    }
-    if (param.unit != NULL)
-    {
-      free((void*)param.unit);
-      param.unit = NULL;
-    }
+    free(unit);
+    unit = NULL;
   }
 
   if (handle == NULL && index == 0xf00baa)
@@ -193,15 +185,15 @@ nekofilter_get_parameter_info(
   switch (index)
   {
   case GLOBAL_PARAMETER_ACTIVE:
+    name = strdup("Active");
     param.hints |= PARAMETER_IS_BOOLEAN;
-    param.name = strdup("Active");
     param.ranges.max = 1.0f;
     goto ready;
     break;
 
   case GLOBAL_PARAMETER_GAIN:
-    param.name = strdup("Gain");
-    param.unit = strdup("dB");
+    name = strdup("Gain");
+    unit = strdup("dB");
     param.ranges.min = -20.0f;
     param.ranges.max = 20.0f;
     goto ready;
@@ -219,16 +211,16 @@ nekofilter_get_parameter_info(
   {
   case BAND_PARAMETER_ACTIVE:
     strcat(strBuf, "Active");
+    name = strdup(strBuf);
     param.hints |= PARAMETER_IS_BOOLEAN;
-    param.name = strdup(strBuf);
     param.ranges.max = 1.0f;
     break;
 
   case BAND_PARAMETER_FREQUENCY:
     strcat(strBuf, "Frequency");
+    name = strdup(strBuf);
+    unit = strdup("Hz");
     param.hints |= PARAMETER_IS_LOGARITHMIC;
-    param.name = strdup(strBuf);
-    param.unit = strdup("Hz");
 
     switch (band)
     {
@@ -253,16 +245,16 @@ nekofilter_get_parameter_info(
 
   case BAND_PARAMETER_BANDWIDTH:
     strcat(strBuf, "Bandwidth");
+    name = strdup(strBuf);
     param.hints |= PARAMETER_IS_LOGARITHMIC;
-    param.name = strdup(strBuf);
     param.ranges.min = 0.125f;
     param.ranges.max = 8.0f;
     break;
 
   case BAND_PARAMETER_GAIN:
     strcat(strBuf, "Gain");
-    param.name = strdup(strBuf);
-    param.unit = strdup("dB");
+    name = strdup(strBuf);
+    unit = strdup("dB");
     param.ranges.min = -20.0f;
     param.ranges.max = 20.0f;
     break;
@@ -282,6 +274,9 @@ ready:
     param.ranges.stepSmall = range/1000.0f;
     param.ranges.stepLarge = range/10.0f;
   }
+
+  param.name = name;
+  param.unit = unit;
 
   return &param;
 }
