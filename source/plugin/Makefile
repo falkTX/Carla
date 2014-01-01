@@ -6,25 +6,25 @@
 
 include ../Makefile.mk
 
-BUILD_CXX_FLAGS += -I../includes -I../modules -I../utils
+BUILD_CXX_FLAGS += -I../includes -I../utils -isystem ../modules
 
 # --------------------------------------------------------------
 
-ifeq ($(HAVE_OPENGL),true)
-BUILD_CXX_FLAGS += -DWANT_OPENGL
-endif
-
-ifeq ($(HAVE_AF_DEPS),true)
-BUILD_CXX_FLAGS += -DWANT_AUDIOFILE
-endif
-
-ifeq ($(HAVE_MF_DEPS),true)
-BUILD_CXX_FLAGS += -DWANT_MIDIFILE
-endif
-
-ifeq ($(HAVE_ZYN_DEPS),true)
-BUILD_CXX_FLAGS += -DWANT_ZYNADDSUBFX
-endif
+# ifeq ($(HAVE_OPENGL),true)
+# BUILD_CXX_FLAGS += -DWANT_OPENGL
+# endif
+#
+# ifeq ($(HAVE_AF_DEPS),true)
+# BUILD_CXX_FLAGS += -DWANT_AUDIOFILE
+# endif
+#
+# ifeq ($(HAVE_MF_DEPS),true)
+# BUILD_CXX_FLAGS += -DWANT_MIDIFILE
+# endif
+#
+# ifeq ($(HAVE_ZYN_DEPS),true)
+# BUILD_CXX_FLAGS += -DWANT_ZYNADDSUBFX
+# endif
 
 # --------------------------------------------------------------
 # Common
@@ -45,61 +45,61 @@ endif
 # --------------------------------------------------------------
 # Native
 
-ifeq ($(HAVE_AF_DEPS),true)
-LINK_FLAGS += $(shell pkg-config --libs sndfile)
-ifeq ($(HAVE_FFMPEG),true)
-LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat libavutil)
-endif
-endif
-
-ifeq ($(HAVE_MF_DEPS),true)
-LINK_FLAGS += $(shell pkg-config --libs smf)
-endif
-
-ifeq ($(HAVE_ZYN_DEPS),true)
-LINK_FLAGS += $(shell pkg-config --libs fftw3 mxml zlib)
-ifeq ($(HAVE_ZYN_UI_DEPS),true)
-LINK_FLAGS += $(shell pkg-config --libs ntk_images ntk)
-endif
-endif
+# ifeq ($(HAVE_AF_DEPS),true)
+# LINK_FLAGS += $(shell pkg-config --libs sndfile)
+# ifeq ($(HAVE_FFMPEG),true)
+# LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat libavutil)
+# endif
+# endif
+#
+# ifeq ($(HAVE_MF_DEPS),true)
+# LINK_FLAGS += $(shell pkg-config --libs smf)
+# endif
+#
+# ifeq ($(HAVE_ZYN_DEPS),true)
+# LINK_FLAGS += $(shell pkg-config --libs fftw3 mxml zlib)
+# ifeq ($(HAVE_ZYN_UI_DEPS),true)
+# LINK_FLAGS += $(shell pkg-config --libs ntk_images ntk)
+# endif
+# endif
 
 # --------------------------------------------------------------
 # Libs
 
-LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
-LINK_FLAGS += $(JUCE_CORE_LIBS)
-LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
-LINK_FLAGS += $(JUCE_EVENTS_LIBS)
-LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
-LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
+# LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
+# LINK_FLAGS += $(JUCE_CORE_LIBS)
+# LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
+# LINK_FLAGS += $(JUCE_EVENTS_LIBS)
+# LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
+# LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
 LINK_FLAGS += $(RTMEMPOOL_LIBS)
 
-ifeq ($(HAVE_OPENGL),true)
-LINK_FLAGS += $(DGL_LIBS)
-endif
+# ifeq ($(HAVE_OPENGL),true)
+# LINK_FLAGS += $(DGL_LIBS)
+# endif
 
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-LINK_FLAGS += $(LILV_LIBS)
-endif
+# ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+# LINK_FLAGS += $(LILV_LIBS)
+# endif
 
 # --------------------------------------------------------------
 
 LIBS  = ../modules/carla_native.a
-LIBS += ../modules/juce_audio_basics.a
-LIBS += ../modules/juce_core.a
-LIBS += ../modules/juce_data_structures.a
-LIBS += ../modules/juce_events.a
-LIBS += ../modules/juce_graphics.a
-LIBS += ../modules/juce_gui_basics.a
+# LIBS += ../modules/juce_audio_basics.a
+# LIBS += ../modules/juce_core.a
+# LIBS += ../modules/juce_data_structures.a
+# LIBS += ../modules/juce_events.a
+# LIBS += ../modules/juce_graphics.a
+# LIBS += ../modules/juce_gui_basics.a
 LIBS += ../modules/rtmempool.a
 
-ifeq ($(HAVE_OPENGL),true)
-LIBS += ../modules/dgl.a
-endif
+# ifeq ($(HAVE_OPENGL),true)
+# LIBS += ../modules/dgl.a
+# endif
 
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-LIBS += ../modules/lilv.a
-endif
+# ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+# LIBS += ../modules/lilv.a
+# endif
 
 # --------------------------------------------------------------
 

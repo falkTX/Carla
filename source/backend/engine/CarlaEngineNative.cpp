@@ -456,7 +456,7 @@ protected:
         // ---------------------------------------------------------------
         // Time Info
 
-        const NativeTimeInfo* timeInfo(NativePluginClass::getTimeInfo());
+        const NativeTimeInfo* const timeInfo(NativePluginClass::getTimeInfo());
 
         pData->timeInfo.playing = timeInfo->playing;
         pData->timeInfo.frame   = timeInfo->frame;

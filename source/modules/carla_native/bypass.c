@@ -24,7 +24,10 @@
 static NativePluginHandle bypass_instantiate(const NativeHostDescriptor* host)
 {
     // dummy, return non-NULL
-    return (NativePluginHandle)host;
+    return (NativePluginHandle)0x1;
+
+    // unused
+    (void)host;
 }
 
 static void bypass_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)

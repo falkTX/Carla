@@ -120,7 +120,7 @@ static void midiTranspose_process(NativePluginHandle handle, float** inBuffer, f
             tmpEvent.port    = midiEvent->port;
             tmpEvent.time    = midiEvent->time;
             tmpEvent.data[0] = midiEvent->data[0];
-            tmpEvent.data[1] = newnote;
+            tmpEvent.data[1] = (uint8_t)newnote;
             tmpEvent.data[2] = midiEvent->data[2];
             tmpEvent.data[3] = midiEvent->data[3];
             tmpEvent.size    = midiEvent->size;

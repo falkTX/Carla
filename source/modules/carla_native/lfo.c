@@ -35,12 +35,12 @@ typedef enum {
 } LfoParams;
 
 typedef struct {
-    const NativeHostDescriptor* host;
-    int   mode;
-    float speed;
-    float multiplier;
-    float baseStart;
-    float value;
+    const  NativeHostDescriptor* host;
+    int    mode;
+    double speed;
+    float  multiplier;
+    float  baseStart;
+    float  value;
 } LfoHandle;
 
 // -----------------------------------------------------------------------
@@ -173,7 +173,7 @@ static float lfo_get_parameter_value(NativePluginHandle handle, uint32_t index)
     case PARAM_MODE:
         return (float)handlePtr->mode;
     case PARAM_SPEED:
-        return handlePtr->speed;
+        return (float)handlePtr->speed;
     case PARAM_MULTIPLIER:
         return handlePtr->multiplier;
     case PARAM_BASE_START:
@@ -215,42 +215,42 @@ static void lfo_process(NativePluginHandle handle, float** inBuffer, float** out
     if (! timeInfo->playing)
        return;
 
-    const float bpm        = timeInfo->bbt.valid ? timeInfo->bbt.beatsPerMinute : 120.0;
-    const float sampleRate = host->get_sample_rate(host->handle);
+    const double bpm        = timeInfo->bbt.valid ? timeInfo->bbt.beatsPerMinute : 120.0;
+    const double sampleRate = host->get_sample_rate(host->handle);
 
-    const float speedRate  = handlePtr->speed/(bpm/60.0f/sampleRate);
-    const uint  speedRatei = speedRate;
+    const double speedRate  = handlePtr->speed/(bpm/60.0/sampleRate);
+    const uint   speedRatei = (uint)speedRate;
 
-    float value = 0.0f;
+    double value = 0.0;
 
     switch (handlePtr->mode)
     {
     case 1: // Triangle
-        value = fabs(1.0f-(float)(timeInfo->frame % speedRatei)/(speedRate/2.0f));
+        value = fabs(1.0-(double)(timeInfo->frame % speedRatei)/(speedRate/2.0));
         break;
     case 2: // Sawtooth
-        value = (float)(timeInfo->frame % speedRatei)/speedRate;
+        value = (double)(timeInfo->frame % speedRatei)/speedRate;
         break;
     case 3: // Sawtooth (inverted)
-        value = 1.0f - (float)(timeInfo->frame % speedRatei)/speedRate;
+        value = 1.0 - (double)(timeInfo->frame % speedRatei)/speedRate;
         break;
     case 4: // Sine -- TODO!
-        value = 0.0f;
+        value = 0.0;
         break;
     case 5: // Square
-        value = (timeInfo->frame % speedRatei <= speedRatei/2) ? 1.0f : 0.0f;
+        value = (timeInfo->frame % speedRatei <= speedRatei/2) ? 1.0 : 0.0;
         break;
     }
 
     value *= handlePtr->multiplier;
     value += handlePtr->baseStart;
 
-    if (value <= 0.0f)
+    if (value <= 0.0)
         handlePtr->value = 0.0f;
-    else if (value >= 1.0f)
+    else if (value >= 1.0)
         handlePtr->value = 1.0f;
     else
-        handlePtr->value = value;
+        handlePtr->value = (float)value;
 
     return;
 
