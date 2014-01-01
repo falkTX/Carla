@@ -194,13 +194,13 @@ struct SaveState {
 
         for (StateParameterItenerator it = parameters.begin(); it.valid(); it.next())
         {
-            StateParameter* const stateParameter(*it);
+            StateParameter* const stateParameter(it.getValue());
             delete stateParameter;
         }
 
         for (StateCustomDataItenerator it = customData.begin(); it.valid(); it.next())
         {
-            StateCustomData* const stateCustomData(*it);
+            StateCustomData* const stateCustomData(it.getValue());
             delete stateCustomData;
         }
 
@@ -530,7 +530,7 @@ void fillXmlStringFromSaveState(QString& content, const SaveState& saveState)
 
     for (StateParameterItenerator it = saveState.parameters.begin(); it.valid(); it.next())
     {
-        StateParameter* const stateParameter(*it);
+        StateParameter* const stateParameter(it.getValue());
 
         QString parameter("\n""   <Parameter>\n");
 
@@ -577,7 +577,7 @@ void fillXmlStringFromSaveState(QString& content, const SaveState& saveState)
 
     for (StateCustomDataItenerator it = saveState.customData.begin(); it.valid(); it.next())
     {
-        StateCustomData* const stateCustomData(*it);
+        StateCustomData* const stateCustomData(it.getValue());
 
         QString customData("\n""   <CustomData>\n");
         customData += QString("    <Type>%1</Type>\n").arg(xmlSafeString(stateCustomData->type, true));

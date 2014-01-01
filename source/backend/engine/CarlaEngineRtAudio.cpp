@@ -331,7 +331,7 @@ public:
 
         for (List<MidiPort>::Itenerator it = fMidiIns.begin(); it.valid(); it.next())
         {
-            MidiPort& port(*it);
+            MidiPort& port(it.getValue());
             RtMidiIn* const midiInPort((RtMidiIn*)port.rtmidi);
 
             midiInPort->cancelCallback();
@@ -340,7 +340,7 @@ public:
 
         for (List<MidiPort>::Itenerator it = fMidiOuts.begin(); it.valid(); it.next())
         {
-            MidiPort& port(*it);
+            MidiPort& port(it.getValue());
             RtMidiOut* const midiOutPort((RtMidiOut*)port.rtmidi);
 
             delete midiOutPort;
@@ -538,7 +538,7 @@ public:
 
         for (List<ConnectionToId>::Itenerator it=fUsedConnections.begin(); it.valid(); it.next())
         {
-            const ConnectionToId& connection(*it);
+            const ConnectionToId& connection(it.getConstValue());
 
             if (connection.id == connectionId)
             {
@@ -551,7 +551,7 @@ public:
 
                     for (List<MidiPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
                     {
-                        MidiPort& midiPort(*it);
+                        MidiPort& midiPort(it.getValue());
 
                         if (midiPort.portId == portId)
                         {
@@ -570,7 +570,7 @@ public:
 
                     for (List<MidiPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
                     {
-                        MidiPort& midiPort(*it);
+                        MidiPort& midiPort(it.getValue());
 
                         if (midiPort.portId == portId)
                         {
@@ -721,7 +721,7 @@ public:
 
         for (List<uint>::Itenerator it = fConnectedAudioIns[0].begin(); it.valid(); it.next())
         {
-            const uint& port(*it);
+            const uint& port(it.getConstValue());
             CARLA_ASSERT(port < fAudioCountIn);
 
             ConnectionToId connectionToId;
@@ -737,7 +737,7 @@ public:
 
         for (List<uint>::Itenerator it = fConnectedAudioIns[1].begin(); it.valid(); it.next())
         {
-            const uint& port(*it);
+            const uint& port(it.getConstValue());
             CARLA_ASSERT(port < fAudioCountIn);
 
             ConnectionToId connectionToId;
@@ -753,7 +753,7 @@ public:
 
         for (List<uint>::Itenerator it = fConnectedAudioOuts[0].begin(); it.valid(); it.next())
         {
-            const uint& port(*it);
+            const uint& port(it.getConstValue());
             CARLA_ASSERT(port < fAudioCountOut);
 
             ConnectionToId connectionToId;
@@ -769,7 +769,7 @@ public:
 
         for (List<uint>::Itenerator it = fConnectedAudioOuts[1].begin(); it.valid(); it.next())
         {
-            const uint& port(*it);
+            const uint& port(it.getConstValue());
             CARLA_ASSERT(port < fAudioCountOut);
 
             ConnectionToId connectionToId;
@@ -787,7 +787,7 @@ public:
 
         for (List<MidiPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
         {
-            const MidiPort& midiPort(*it);
+            const MidiPort& midiPort(it.getConstValue());
 
             ConnectionToId connectionToId;
             connectionToId.id      = fLastConnectionId;
@@ -802,7 +802,7 @@ public:
 
         for (List<MidiPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
         {
-            const MidiPort& midiPort(*it);
+            const MidiPort& midiPort(it.getConstValue());
 
             ConnectionToId connectionToId;
             connectionToId.id      = fLastConnectionId;
@@ -911,7 +911,7 @@ protected:
 
             for (List<uint>::Itenerator it = fConnectedAudioIns[0].begin(); it.valid(); it.next())
             {
-                const uint& port(*it);
+                const uint& port(it.getConstValue());
                 CARLA_ASSERT(port < fAudioCountIn);
 
                 if (first)
@@ -939,7 +939,7 @@ protected:
 
             for (List<uint>::Itenerator it = fConnectedAudioIns[1].begin(); it.valid(); it.next())
             {
-                const uint& port(*it);
+                const uint& port(it.getConstValue());
                 CARLA_ASSERT(port < fAudioCountIn);
 
                 if (first)
@@ -965,7 +965,7 @@ protected:
         {
             for (List<uint>::Itenerator it = fConnectedAudioOuts[0].begin(); it.valid(); it.next())
             {
-                const uint& port(*it);
+                const uint& port(it.getConstValue());
                 CARLA_ASSERT(port < fAudioCountOut);
 
                 FLOAT_ADD(fAudioBufOut[port], fAudioBufRackOut[0], nframes);
@@ -976,7 +976,7 @@ protected:
         {
             for (List<uint>::Itenerator it = fConnectedAudioOuts[1].begin(); it.valid(); it.next())
             {
-                const uint& port(*it);
+                const uint& port(it.getConstValue());
                 CARLA_ASSERT(port < fAudioCountOut);
 
                 FLOAT_ADD(fAudioBufOut[port], fAudioBufRackOut[1], nframes);

@@ -118,7 +118,7 @@ ssize_t ad_read_mono_dbl(void *sf, struct adinfo *nfo, double* d, size_t len){
 		buf = (float*) realloc((void*)buf, bufsiz * sizeof(float));
 	}
 
-	len = ad_read(sf, buf, bufsiz);
+	len = (size_t)ad_read(sf, buf, bufsiz);
 
 	for (f=0;f< (len/chn);f++) {
 		double val=0.0;
@@ -127,7 +127,7 @@ ssize_t ad_read_mono_dbl(void *sf, struct adinfo *nfo, double* d, size_t len){
 		}
 		d[f]= val/chn;
 	}
-	return len/chn;
+	return (ssize_t)len/chn;
 }
 
 

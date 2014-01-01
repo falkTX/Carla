@@ -325,7 +325,7 @@ public:
 
                     fMidiEvents[fMidiEventCount].port = 0;
                     fMidiEvents[fMidiEventCount].time = event->time.frames;
-                    fMidiEvents[fMidiEventCount].size = event->body.size;
+                    fMidiEvents[fMidiEventCount].size = (uint8_t)event->body.size;
 
                     for (uint32_t i=0; i < event->body.size; ++i)
                         fMidiEvents[fMidiEventCount].data[i] = data[i];
@@ -336,7 +336,7 @@ public:
 
                 if (event->body.type == fUris.atomBlank)
                 {
-                    const LV2_Atom_Object* const obj((LV2_Atom_Object*)&event->body);
+                    const LV2_Atom_Object* const obj((const LV2_Atom_Object*)&event->body);
 
                     if (obj->body.otype != fUris.timePos)
                         continue;
@@ -415,9 +415,9 @@ public:
 
                     const uint8_t* const data((const uint8_t*)(event + 1));
 
-                    fMidiEvents[fMidiEventCount].port = i;
+                    fMidiEvents[fMidiEventCount].port = (uint8_t)i;
+                    fMidiEvents[fMidiEventCount].size = (uint8_t)event->body.size;
                     fMidiEvents[fMidiEventCount].time = event->time.frames;
-                    fMidiEvents[fMidiEventCount].size = event->body.size;
 
                     for (uint32_t j=0; j < event->body.size; ++j)
                         fMidiEvents[fMidiEventCount].data[j] = data[j];
@@ -482,7 +482,7 @@ public:
                     fSampleRate = *(const double*)options[i].value;
 
                     if (fDescriptor->dispatcher != nullptr)
-                        fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, fSampleRate);
+                        fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, (float)fSampleRate);
                 }
                 else
                     carla_stderr("Host changed sampleRate but with wrong value type");
@@ -1194,7 +1194,7 @@ static LV2_Handle lv2_instantiate(const LV2_Descriptor* lv2Descriptor, double sa
 
     for (List<const NativePluginDescriptor*>::Itenerator it = sPluginDescsMgr.descs.begin(); it.valid(); it.next())
     {
-        const NativePluginDescriptor*& tmpDesc(*it);
+        const NativePluginDescriptor* const& tmpDesc(it.getConstValue());
 
         if (std::strcmp(tmpDesc->label, pluginLabel) == 0)
         {

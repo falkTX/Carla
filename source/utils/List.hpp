@@ -71,10 +71,10 @@ public:
     class Itenerator {
     public:
         Itenerator(const k_list_head* queue)
-            : fData(nullptr),
-              fEntry(queue->next),
+            : fEntry(queue->next),
               fEntry2(fEntry->next),
-              fQueue(queue)
+              fQueue(queue),
+              fData(nullptr)
         {
             CARLA_ASSERT(fEntry != nullptr);
             CARLA_ASSERT(fEntry2 != nullptr);
@@ -92,18 +92,36 @@ public:
             fEntry2 = fEntry->next;
         }
 
-        T& operator*()
+        T& getValue()
         {
             fData = list_entry(fEntry, Data, siblings);
             CARLA_ASSERT(fData != nullptr);
             return fData->value;
         }
 
+        const T& getConstValue()
+        {
+            fConstData = list_entry_const(fEntry, Data, siblings);
+            CARLA_ASSERT(fConstData != nullptr);
+            return fConstData->value;
+        }
+
+#if 0
+        T& operator*() const
+        {
+            return getValue();
+        }
+#endif
+
     private:
-        Data* fData;
         k_list_head* fEntry;
         k_list_head* fEntry2;
         const k_list_head* const fQueue;
+
+        union {
+            Data* fData;
+            const Data* fConstData;
+        };
 
         friend class AbstractList;
     };
@@ -126,6 +144,35 @@ public:
                 {
                     data->~Data();
                     _deallocate(data);
+                }
+            }
+        }
+
+        _init();
+    }
+
+    // temporary fix for some const issue in midi-base.hpp
+    void clear_const()
+    {
+        if (fCount != 0)
+        {
+            k_list_head* entry;
+            k_list_head* entry2;
+
+            list_for_each_safe(entry, entry2, &fQueue)
+            {
+                if (const Data* data = list_entry_const(entry, Data, siblings))
+                {
+                    data->~Data();
+
+                    union CData {
+                        const Data* cdata;
+                        Data* data;
+                    };
+
+                    CData d;
+                    d.cdata = data;
+                    _deallocate(d.data);
                 }
             }
         }
@@ -249,17 +296,15 @@ public:
 
     void remove(Itenerator& it)
     {
-        CARLA_ASSERT(it.fEntry != nullptr);
-        CARLA_ASSERT(it.fData != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(it.fEntry != nullptr,);
 
-        if (it.fEntry != nullptr && it.fData != nullptr)
-        {
-            --fCount;
-            list_del(it.fEntry);
+        --fCount;
+        list_del(it.fEntry);
 
-            it.fData->~Data();
-            _deallocate(it.fData);
-        }
+        CARLA_SAFE_ASSERT_RETURN(it.fData != nullptr,);
+
+        it.fData->~Data();
+        _deallocate(it.fData);
     }
 
     bool removeOne(const T& value)

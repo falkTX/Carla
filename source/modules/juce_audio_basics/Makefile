@@ -8,7 +8,7 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(JUCE_AUDIO_BASICS_FLAGS) -I.
+BUILD_CXX_FLAGS += $(JUCE_AUDIO_BASICS_FLAGS) -I. -w
 LINK_FLAGS      += $(JUCE_AUDIO_BASICS_LIBS) -L.. -ljuce_core
 
 ifeq ($(MACOS),true)

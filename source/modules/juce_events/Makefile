@@ -8,7 +8,7 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(JUCE_EVENTS_FLAGS) -I.
+BUILD_CXX_FLAGS += $(JUCE_EVENTS_FLAGS) -I. -w
 LINK_FLAGS      += $(JUCE_EVENTS_LIBS) -L.. -ljuce_core
 
 ifeq ($(MACOS),true)

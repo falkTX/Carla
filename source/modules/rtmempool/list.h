@@ -53,6 +53,10 @@
     const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
     (type *)( (char *)__mptr - offsetof(type, member) );})
 
+#define container_of_const(ptr, type, member) ({            \
+    const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
+    (const type *)( (const char *)__mptr - offsetof(type, member) );})
+
 #define prefetch(x) (x = x)
 
 /*
@@ -303,9 +307,13 @@ static inline void list_splice_tail_init(struct list_head *list, struct list_hea
 #if defined(__GNUC__) && ! (defined(BUILD_ANSI_TEST) || defined(QTCREATOR_TEST))
 # define list_entry(ptr, type, member) \
     container_of(ptr, type, member)
+# define list_entry_const(ptr, type, member) \
+    container_of_const(ptr, type, member)
 #else
 # define list_entry(ptr, type, member) \
     ((type *)((char *)(ptr)-offsetof(type, member)))
+# define list_entry_const(ptr, type, member) \
+    ((const type *)((const char *)(ptr)-offsetof(type, member)))
 #endif
 
 /**

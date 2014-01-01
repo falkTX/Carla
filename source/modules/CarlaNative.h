@@ -146,9 +146,9 @@ typedef struct {
 
 typedef struct {
     uint8_t  port;
-    uint32_t time;
-    uint8_t  data[4];
+    uint64_t time;
     uint8_t  size;
+    uint8_t  data[4];
 } NativeMidiEvent;
 
 typedef struct {

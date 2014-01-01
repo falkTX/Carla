@@ -48,7 +48,7 @@ lv2_atom_pad_size(uint32_t size)
 static inline uint32_t
 lv2_atom_total_size(const LV2_Atom* atom)
 {
-	return sizeof(LV2_Atom) + atom->size;
+	return (uint32_t)sizeof(LV2_Atom) + atom->size;
 }
 
 /** Return true iff @p atom is null. */
@@ -208,7 +208,7 @@ lv2_atom_object_next(const LV2_Atom_Property_Body* i)
 	const LV2_Atom* const value = (const LV2_Atom*)(
 		(const uint8_t*)i + 2 * sizeof(uint32_t));
 	return (const LV2_Atom_Property_Body*)(
-		(const uint8_t*)i + lv2_atom_pad_size(sizeof(LV2_Atom_Property_Body)
+		(const uint8_t*)i + lv2_atom_pad_size((uint32_t)sizeof(LV2_Atom_Property_Body)
 		                                      + value->size));
 }
 

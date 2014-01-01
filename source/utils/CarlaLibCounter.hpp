@@ -37,7 +37,7 @@ public:
 
         for (List<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
         {
-            Lib& lib(*it);
+            Lib& lib(it.getValue());
             CARLA_ASSERT(lib.count > 0);
             CARLA_SAFE_ASSERT_CONTINUE(lib.filename != nullptr);
 
@@ -71,7 +71,7 @@ public:
 
         for (List<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
         {
-            Lib& lib(*it);
+            Lib& lib(it.getValue());
             CARLA_ASSERT(lib.count > 0);
             CARLA_SAFE_ASSERT_CONTINUE(lib.lib != nullptr);
 

@@ -50,7 +50,7 @@ ALL_C_FLAGS   += -DWANT_MIDIFILE
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
-ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS)
+ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS) -w
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags fftw3 mxml zlib)
 LINK_FLAGS    += $(shell pkg-config --libs fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
@@ -104,8 +104,8 @@ ifeq ($(HAVE_OPENGL),true)
 OBJS += \
 	distrho-3bandeq.cpp.o \
 	distrho-3bandsplitter.cpp.o \
-	distrho-nekobi.cpp.o \
 	distrho-pingpongpan.cpp.o
+# 	distrho-nekobi.cpp.o \
 # 	distrho-stereoenhancer.cpp.o
 endif
 

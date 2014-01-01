@@ -27,29 +27,23 @@
 #define MAX_PREALLOCATED_EVENT_COUNT 1000
 
 struct RawMidiEvent {
-    uint8_t  data[MAX_EVENT_DATA_SIZE];
+    uint64_t time;
     uint8_t  size;
-    uint32_t time;
+    uint8_t  data[MAX_EVENT_DATA_SIZE];
 
     RawMidiEvent()
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-        : data{0},
-          size(0),
-          time(0) {}
-#else
-        : size(0),
-          time(0)
+        : time(0),
+          size(0)
     {
         carla_fill<uint8_t>(data, MAX_EVENT_DATA_SIZE, 0);
     }
-#endif
 };
 
 class AbstractMidiPlayer
 {
 public:
     virtual ~AbstractMidiPlayer() {}
-    virtual void writeMidiEvent(const uint32_t timePosFrame, const RawMidiEvent* const event) = 0;
+    virtual void writeMidiEvent(const uint64_t timePosFrame, const RawMidiEvent* const event) = 0;
 };
 
 class MidiPattern
@@ -65,124 +59,124 @@ public:
 
     ~MidiPattern()
     {
-        fData.clear();
+        fData.clear_const();
     }
 
-    void addControl(const uint32_t time, const uint8_t channel, const uint8_t control, const uint8_t value)
+    void addControl(const uint64_t time, const uint8_t channel, const uint8_t control, const uint8_t value)
     {
         RawMidiEvent* ctrlEvent(new RawMidiEvent());
-        ctrlEvent->data[0] = MIDI_STATUS_CONTROL_CHANGE | (channel & 0x0F);
+        ctrlEvent->time    = time;
+        ctrlEvent->size    = 3;
+        ctrlEvent->data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (channel & 0x0F));
         ctrlEvent->data[1] = control;
         ctrlEvent->data[2] = value;
-        ctrlEvent->size    = 3;
-        ctrlEvent->time    = time;
 
         append(ctrlEvent);
     }
 
-    void addChannelPressure(const uint32_t time, const uint8_t channel, const uint8_t pressure)
+    void addChannelPressure(const uint64_t time, const uint8_t channel, const uint8_t pressure)
     {
         RawMidiEvent* pressureEvent(new RawMidiEvent());
-        pressureEvent->data[0] = MIDI_STATUS_CHANNEL_PRESSURE | (channel & 0x0F);
-        pressureEvent->data[1] = pressure;
-        pressureEvent->size    = 2;
         pressureEvent->time    = time;
+        pressureEvent->size    = 2;
+        pressureEvent->data[0] = uint8_t(MIDI_STATUS_CHANNEL_PRESSURE | (channel & 0x0F));
+        pressureEvent->data[1] = pressure;
 
         append(pressureEvent);
     }
 
-    void addNote(const uint32_t time, const uint8_t channel, const uint8_t pitch, const uint8_t velocity, const uint32_t duration)
+    void addNote(const uint64_t time, const uint8_t channel, const uint8_t pitch, const uint8_t velocity, const uint32_t duration)
     {
         addNoteOn(time, channel, pitch, velocity);
         addNoteOff(time+duration, channel, pitch, velocity);
     }
 
-    void addNoteOn(const uint32_t time, const uint8_t channel, const uint8_t pitch, const uint8_t velocity)
+    void addNoteOn(const uint64_t time, const uint8_t channel, const uint8_t pitch, const uint8_t velocity)
     {
         RawMidiEvent* noteOnEvent(new RawMidiEvent());
-        noteOnEvent->data[0] = MIDI_STATUS_NOTE_ON | (channel & 0x0F);
+        noteOnEvent->time    = time;
+        noteOnEvent->size    = 3;
+        noteOnEvent->data[0] = uint8_t(MIDI_STATUS_NOTE_ON | (channel & 0x0F));
         noteOnEvent->data[1] = pitch;
         noteOnEvent->data[2] = velocity;
-        noteOnEvent->size    = 3;
-        noteOnEvent->time    = time;
 
         append(noteOnEvent);
     }
 
-    void addNoteOff(const uint32_t time, const uint8_t channel, const uint8_t pitch, const uint8_t velocity = 0)
+    void addNoteOff(const uint64_t time, const uint8_t channel, const uint8_t pitch, const uint8_t velocity = 0)
     {
         RawMidiEvent* noteOffEvent(new RawMidiEvent());
-        noteOffEvent->data[0] = MIDI_STATUS_NOTE_OFF | (channel & 0x0F);
+        noteOffEvent->time    = time;
+        noteOffEvent->size    = 3;
+        noteOffEvent->data[0] = uint8_t(MIDI_STATUS_NOTE_OFF | (channel & 0x0F));
         noteOffEvent->data[1] = pitch;
         noteOffEvent->data[2] = velocity;
-        noteOffEvent->size    = 3;
-        noteOffEvent->time    = time;
 
         append(noteOffEvent);
     }
 
-    void addNoteAftertouch(const uint32_t time, const uint8_t channel, const uint8_t pitch, const uint8_t pressure)
+    void addNoteAftertouch(const uint64_t time, const uint8_t channel, const uint8_t pitch, const uint8_t pressure)
     {
         RawMidiEvent* noteAfterEvent(new RawMidiEvent());
-        noteAfterEvent->data[0] = MIDI_STATUS_POLYPHONIC_AFTERTOUCH | (channel & 0x0F);
+        noteAfterEvent->time    = time;
+        noteAfterEvent->size    = 3;
+        noteAfterEvent->data[0] = uint8_t(MIDI_STATUS_POLYPHONIC_AFTERTOUCH | (channel & 0x0F));
         noteAfterEvent->data[1] = pitch;
         noteAfterEvent->data[2] = pressure;
-        noteAfterEvent->size    = 3;
-        noteAfterEvent->time    = time;
 
         append(noteAfterEvent);
     }
 
-    void addProgram(const uint32_t time, const uint8_t channel, const uint8_t bank, const uint8_t program)
+    void addProgram(const uint64_t time, const uint8_t channel, const uint8_t bank, const uint8_t program)
     {
         RawMidiEvent* bankEvent(new RawMidiEvent());
-        bankEvent->data[0] = MIDI_STATUS_CONTROL_CHANGE | (channel & 0x0F);
+        bankEvent->time    = time;
+        bankEvent->size    = 3;
+        bankEvent->data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (channel & 0x0F));
         bankEvent->data[1] = MIDI_CONTROL_BANK_SELECT;
         bankEvent->data[2] = bank;
-        bankEvent->size    = 3;
-        bankEvent->time    = time;
 
         RawMidiEvent* programEvent(new RawMidiEvent());
-        programEvent->data[0] = MIDI_STATUS_PROGRAM_CHANGE | (channel & 0x0F);
-        programEvent->data[1] = program;
-        programEvent->size    = 2;
         programEvent->time    = time;
+        programEvent->size    = 2;
+        programEvent->data[0] = uint8_t(MIDI_STATUS_PROGRAM_CHANGE | (channel & 0x0F));
+        programEvent->data[1] = program;
 
         append(bankEvent);
         append(programEvent);
     }
 
-    void addPitchbend(const uint32_t time, const uint8_t channel, const uint8_t lsb, const uint8_t msb)
+    void addPitchbend(const uint64_t time, const uint8_t channel, const uint8_t lsb, const uint8_t msb)
     {
         RawMidiEvent* pressureEvent(new RawMidiEvent());
-        pressureEvent->data[0] = MIDI_STATUS_PITCH_WHEEL_CONTROL | (channel & 0x0F);
+        pressureEvent->time    = time;
+        pressureEvent->size    = 3;
+        pressureEvent->data[0] = uint8_t(MIDI_STATUS_PITCH_WHEEL_CONTROL | (channel & 0x0F));
         pressureEvent->data[1] = lsb;
         pressureEvent->data[2] = msb;
-        pressureEvent->size    = 3;
-        pressureEvent->time    = time;
 
         append(pressureEvent);
     }
 
-    void addRaw(const uint32_t time, const uint8_t* data, const uint8_t size)
+    void addRaw(const uint64_t time, const uint8_t* data, const uint8_t size)
     {
         RawMidiEvent* rawEvent(new RawMidiEvent());
-        rawEvent->size    = size;
-        rawEvent->time    = time;
+        rawEvent->time = time;
+        rawEvent->size = size;
 
         carla_copy<uint8_t>(rawEvent->data, data, size);
 
         append(rawEvent);
     }
 
-    void play(uint32_t timePosFrame, uint32_t frames)
+    void play(uint64_t timePosFrame, uint32_t frames)
     {
         if (! fMutex.tryLock())
             return;
 
         for (List<const RawMidiEvent*>::Itenerator it = fData.begin(); it.valid(); it.next())
         {
-            const RawMidiEvent* const rawMidiEvent(*it);
+            const RawMidiEvent* const rawMidiEvent(it.getConstValue());
 
             if (timePosFrame > rawMidiEvent->time)
                 continue;
@@ -198,7 +192,7 @@ public:
     void clear()
     {
         const CarlaMutex::ScopedLocker sl(fMutex);
-        fData.clear();
+        fData.clear_const();
     }
 
 private:
@@ -221,7 +215,7 @@ private:
 
         for (List<const RawMidiEvent*>::Itenerator it = fData.begin(); it.valid(); it.next())
         {
-            const RawMidiEvent* const oldEvent(*it);
+            const RawMidiEvent* const oldEvent(it.getConstValue());
 
             if (event->time >= oldEvent->time)
                 continue;

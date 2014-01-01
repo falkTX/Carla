@@ -33,7 +33,7 @@ struct PluginListManager {
     {
         for (List<const LV2_Descriptor*>::Itenerator it = lv2Descs.begin(); it.valid(); it.next())
         {
-            const LV2_Descriptor*& lv2Desc(*it);
+            const LV2_Descriptor*& lv2Desc(it.getValue());
             delete[] lv2Desc->URI;
             delete lv2Desc;
         }

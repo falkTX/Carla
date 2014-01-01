@@ -52,12 +52,12 @@ static int ad_info_sndfile(void *sf, struct adinfo *nfo) {
 	sndfile_audio_decoder *priv = (sndfile_audio_decoder*) sf;
 	if (!priv) return -1;
 	if (nfo) {
-		nfo->channels    = priv->sfinfo.channels;
+		nfo->channels    = (unsigned int)priv->sfinfo.channels;
 		nfo->frames      = priv->sfinfo.frames;
-		nfo->sample_rate = priv->sfinfo.samplerate;
+		nfo->sample_rate = (unsigned int)priv->sfinfo.samplerate;
 		nfo->length      = priv->sfinfo.samplerate ? (priv->sfinfo.frames * 1000) / priv->sfinfo.samplerate : 0;
 		nfo->bit_depth   = parse_bit_depth(priv->sfinfo.format);
-		nfo->bit_rate    = nfo->bit_depth * nfo->channels * nfo->sample_rate;
+		nfo->bit_rate    = nfo->bit_depth * priv->sfinfo.channels * priv->sfinfo.samplerate;
 		nfo->meta_data   = NULL;
 	}
 	return 0;
@@ -98,7 +98,7 @@ static int64_t ad_seek_sndfile(void *sf, int64_t pos) {
 static ssize_t ad_read_sndfile(void *sf, float* d, size_t len) {
 	sndfile_audio_decoder *priv = (sndfile_audio_decoder*) sf;
 	if (!priv) return -1;
-	return sf_read_float (priv->sffile, d, len);
+	return sf_read_float (priv->sffile, d, (sf_count_t)len);
 }
 
 static int ad_eval_sndfile(const char *f) { 

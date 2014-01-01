@@ -92,7 +92,7 @@ public:
 
         for (auto it = fPrograms.begin(); it.valid(); it.next())
         {
-            const ProgramInfo*& pInfo(*it);
+            const ProgramInfo* const& pInfo(it.getConstValue());
             delete pInfo;
         }
 

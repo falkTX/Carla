@@ -477,7 +477,6 @@ public:
      */
     void toLower() noexcept
     {
-        // Using '+=' temporarily converts char into int
         static const char kCharDiff('a' - 'A');
 
         for (size_t i=0; i < fBufferLen; ++i)
@@ -492,7 +491,6 @@ public:
      */
     void toUpper() noexcept
     {
-        // Using '-=' temporarily converts char into int
         static const char kCharDiff('a' - 'A');
 
         for (size_t i=0; i < fBufferLen; ++i)

@@ -75,7 +75,7 @@ protected:
 
             for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
             {
-                midiEvent.data[0] = MIDI_STATUS_CONTROL_CHANGE+i;
+                midiEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE+i);
                 NativePluginClass::writeMidiEvent(&midiEvent);
             }
 
@@ -104,17 +104,17 @@ protected:
     // -------------------------------------------------------------------
     // AbstractMidiPlayer calls
 
-    void writeMidiEvent(const uint32_t timePosFrame, const RawMidiEvent* const event) override
+    void writeMidiEvent(const uint64_t timePosFrame, const RawMidiEvent* const event) override
     {
         NativeMidiEvent midiEvent;
 
         midiEvent.port    = 0;
         midiEvent.time    = event->time-timePosFrame;
+        midiEvent.size    = event->size;
         midiEvent.data[0] = event->data[0];
         midiEvent.data[1] = event->data[1];
         midiEvent.data[2] = event->data[2];
         midiEvent.data[3] = event->data[3];
-        midiEvent.size    = event->size;
 
         NativePluginClass::writeMidiEvent(&midiEvent);
     }
@@ -145,10 +145,10 @@ private:
                 if (event->midi_buffer_length <= 0 || event->midi_buffer_length > MAX_EVENT_DATA_SIZE)
                     continue;
 
-                const uint32_t time(event->time_seconds*sampleRate);
+                const uint64_t time(uint64_t(event->time_seconds*sampleRate));
 
 #if 1
-                fMidiOut.addRaw(time, event->midi_buffer, event->midi_buffer_length);
+                fMidiOut.addRaw(time, event->midi_buffer, uint8_t(event->midi_buffer_length));
 #else
                 const uint8_t status  = MIDI_GET_STATUS_FROM_DATA(event->midi_buffer);
                 const uint8_t channel = MIDI_GET_CHANNEL_FROM_DATA(event->midi_buffer);

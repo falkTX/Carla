@@ -892,7 +892,7 @@ public:
 
         for (List<ConnectionToId>::Itenerator it = fUsedConnections.begin(); it.valid(); it.next())
         {
-            const ConnectionToId& connectionToId(*it);
+            const ConnectionToId& connectionToId(it.getConstValue());
 
             if (connectionToId.id == connectionId)
             {
@@ -1349,7 +1349,7 @@ protected:
         {
             for (List<ConnectionToId>::Itenerator it = fUsedConnections.begin(); it.valid(); it.next())
             {
-                const ConnectionToId& connectionToId(*it);
+                const ConnectionToId& connectionToId(it.getConstValue());
 
                 if (connectionToId.portOut == portIdA && connectionToId.portIn == portIdB)
                 {
@@ -1365,7 +1365,7 @@ protected:
     {
         for (List<GroupNameToId>::Itenerator it = fUsedGroupNames.begin(); it.valid(); it.next())
         {
-            GroupNameToId& groupNameToId(*it);
+            GroupNameToId& groupNameToId(it.getValue());
 
             if (std::strcmp(groupNameToId.name, oldName) == 0)
             {
@@ -1401,7 +1401,7 @@ protected:
 
         for (List<PortNameToId>::Itenerator it = fUsedPortNames.begin(); it.valid(); it.next())
         {
-            PortNameToId& portNameId(*it);
+            PortNameToId& portNameId(it.getValue());
 
             if (std::strcmp(portNameId.fullName, oldName) == 0)
             {
@@ -1578,7 +1578,7 @@ private:
 
         for (List<GroupNameToId>::Itenerator it = fUsedGroupNames.begin(); it.valid(); it.next())
         {
-            const GroupNameToId& groupNameId(*it);
+            const GroupNameToId& groupNameId(it.getConstValue());
 
             if (std::strcmp(groupNameId.name, name) == 0)
                 return groupNameId.id;
@@ -1595,7 +1595,7 @@ private:
 
         for (List<GroupNameToId>::Itenerator it = fUsedGroupNames.begin(); it.valid(); it.next())
         {
-            const GroupNameToId& groupNameId(*it);
+            const GroupNameToId& groupNameId(it.getConstValue());
 
             if (groupNameId.id == groupId)
                 return groupNameId.name;
@@ -1610,7 +1610,7 @@ private:
 
         for (List<PortNameToId>::Itenerator it = fUsedPortNames.begin(); it.valid(); it.next())
         {
-            const PortNameToId& portNameId(*it);
+            const PortNameToId& portNameId(it.getConstValue());
 
             if (std::strcmp(portNameId.fullName, fullName) == 0)
                 return portNameId.portId;
@@ -1623,7 +1623,7 @@ private:
     {
         for (List<PortNameToId>::Itenerator it = fUsedPortNames.begin(); it.valid(); it.next())
         {
-            const PortNameToId& portNameId(*it);
+            const PortNameToId& portNameId(it.getConstValue());
 
             if (portNameId.portId == portId)
             {

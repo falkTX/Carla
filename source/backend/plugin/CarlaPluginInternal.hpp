@@ -714,7 +714,7 @@ struct CarlaPluginProtectedData {
 
         for (List<CustomData>::Itenerator it = custom.begin(); it.valid(); it.next())
         {
-            CustomData& cData(*it);
+            CustomData& cData(it.getValue());
 
             if (cData.type != nullptr)
             {

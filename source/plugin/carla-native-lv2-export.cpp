@@ -116,7 +116,7 @@ void writeManifestFile()
 
     for (List<const NativePluginDescriptor*>::Itenerator it = sPluginDescsMgr.descs.begin(); it.valid(); it.next())
     {
-        const NativePluginDescriptor*& pluginDesc(*it);
+        const NativePluginDescriptor* const& pluginDesc(it.getConstValue());
         const String label(pluginDesc->label);
 
         if (label == "carla")
@@ -566,7 +566,7 @@ int main()
 
     for (List<const NativePluginDescriptor*>::Itenerator it = sPluginDescsMgr.descs.begin(); it.valid(); it.next())
     {
-        const NativePluginDescriptor*& pluginDesc(*it);
+        const NativePluginDescriptor* const& pluginDesc(it.getConstValue());
         writePluginFile(pluginDesc);
     }
 
