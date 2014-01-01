@@ -21,7 +21,7 @@
 #include "CarlaThread.hpp"
 
 #ifdef USE_JUCE
-#include "juce_audio_basics.h"
+# include "juce_audio_basics.h"
 using juce::FloatVectorOperations;
 #endif
 
@@ -33,22 +33,15 @@ typedef struct adinfo ADInfo;
 
 struct AudioFilePool {
     float*   buffer[2];
-    uint32_t startFrame;
+    uint64_t startFrame;
     uint32_t size;
 
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    AudioFilePool()
-        : buffer{nullptr},
-          startFrame(0),
-          size(0) {}
-#else
     AudioFilePool()
         : startFrame(0),
           size(0)
     {
         buffer[0] = buffer[1] = nullptr;
     }
-#endif
 
     ~AudioFilePool()
     {
@@ -115,7 +108,7 @@ class AbstractAudioPlayer
 {
 public:
     virtual ~AbstractAudioPlayer() {}
-    virtual uint32_t getLastFrame() const = 0;
+    virtual uint64_t getLastFrame() const = 0;
 };
 
 class AudioFileThread : public CarlaThread
@@ -139,7 +132,7 @@ public:
 
         ad_clear_nfo(&fFileNfo);
 
-        fPool.create(sampleRate);
+        fPool.create((uint32_t)sampleRate);
     }
 
     ~AudioFileThread() override
@@ -169,7 +162,7 @@ public:
 
     uint32_t getMaxFrame() const
     {
-        return fFileNfo.frames > 0 ? fFileNfo.frames : 0;
+        return fFileNfo.frames > 0 ? (uint32_t)fFileNfo.frames : 0;
     }
 
     void setNeedsRead()
@@ -378,9 +371,9 @@ protected:
     {
         while (! shouldExit())
         {
-            const uint32_t lastFrame(kPlayer->getLastFrame());
+            const uint64_t lastFrame(kPlayer->getLastFrame());
 
-            if (fNeedsRead || lastFrame < fPool.startFrame || (lastFrame - fPool.startFrame >= fPool.size*3/4 && lastFrame < fFileNfo.frames))
+            if (fNeedsRead || lastFrame < fPool.startFrame || (lastFrame - fPool.startFrame >= fPool.size*3/4 && lastFrame < (uint64_t)fFileNfo.frames))
                 readPoll();
             else
                 carla_msleep(50);

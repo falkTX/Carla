@@ -35,7 +35,7 @@ public:
           fMaxFrame(0),
           fThread(this, getSampleRate())
     {
-        fPool.create(getSampleRate());
+        fPool.create((uint32_t)getSampleRate());
     }
 
     ~AudioFilePlugin() override
@@ -44,7 +44,7 @@ public:
         fThread.stopNow();
     }
 
-    uint32_t getLastFrame() const override
+    uint64_t getLastFrame() const override
     {
         return fLastFrame;
     }
@@ -220,7 +220,7 @@ private:
     bool fLoopMode;
     bool fDoProcess;
 
-    uint32_t fLastFrame;
+    uint64_t fLastFrame;
     uint32_t fMaxFrame;
 
     AudioFilePool   fPool;
