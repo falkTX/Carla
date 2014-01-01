@@ -37,6 +37,12 @@ try:
 except:
     hasGL = False
 
+# ------------------------------------------------------------------------------------------------------------
+# Carla Canvas defaults
+
+CARLA_DEFAULT_CANVAS_SIZE_WIDTH  = 3100
+CARLA_DEFAULT_CANVAS_SIZE_HEIGHT = 2400
+
 # ------------------------------------------------------------------------------------------------
 # Patchbay widget
 
@@ -132,7 +138,6 @@ class CarlaPatchbayW(QGraphicsView):
         parent.ParameterMidiCcChangedCallback.connect(self.slot_handleParameterMidiCcChangedCallback)
         parent.ProgramChangedCallback.connect(self.slot_handleProgramChangedCallback)
         parent.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
-        #parent.ShowGuiCallback.connect(self.slot_handleShowGuiCallback)
         parent.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
         parent.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
         parent.UpdateCallback.connect(self.slot_handleUpdateCallback)
@@ -163,6 +168,9 @@ class CarlaPatchbayW(QGraphicsView):
         self.fPluginList.append(pitem)
         self.fPluginCount += 1
 
+        if not isProjectLoading:
+            Carla.host.set_active(pluginId, True)
+
     def removePlugin(self, pluginId):
         if pluginId >= self.fPluginCount:
             return
@@ -179,7 +187,8 @@ class CarlaPatchbayW(QGraphicsView):
 
         # push all plugins 1 slot back
         for i in range(pluginId, self.fPluginCount):
-            self.fPluginList[i].fPluginId = i # FIXME ?
+            pitem = self.fPluginList[i]
+            pitem.setId(i)
 
     def renamePlugin(self, pluginId, newName):
         if pluginId >= self.fPluginCount:
@@ -192,7 +201,12 @@ class CarlaPatchbayW(QGraphicsView):
         pitem.setName(newName)
 
     def disablePlugin(self, pluginId, errorMsg):
-        pass
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
 
     def removeAllPlugins(self):
         for i in range(self.fPluginCount):
@@ -238,6 +252,7 @@ class CarlaPatchbayW(QGraphicsView):
         pass
 
     # -----------------------------------------------------------------
+    # called by PluginEdit, ignored here
 
     def recheckPluginHints(self, hints):
         pass
@@ -270,7 +285,7 @@ class CarlaPatchbayW(QGraphicsView):
             if pitem is None:
                 break
 
-            if pitem.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME:
+            if pitem.getHints() & PLUGIN_CAN_VOLUME:
                 pitem.setParameterValue(PARAMETER_VOLUME, 1.0)
                 Carla.host.set_volume(i, 1.0)
 
@@ -284,7 +299,7 @@ class CarlaPatchbayW(QGraphicsView):
             if pitem is None:
                 break
 
-            if pitem.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME:
+            if pitem.getHints() & PLUGIN_CAN_VOLUME:
                 pitem.setParameterValue(PARAMETER_VOLUME, 0.0)
                 Carla.host.set_volume(i, 0.0)
 
@@ -298,7 +313,7 @@ class CarlaPatchbayW(QGraphicsView):
             if pitem is None:
                 break
 
-            if pitem.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET:
+            if pitem.getHints() & PLUGIN_CAN_DRYWET:
                 pitem.setParameterValue(PARAMETER_DRYWET, 1.0)
                 Carla.host.set_drywet(i, 1.0)
 
@@ -312,7 +327,7 @@ class CarlaPatchbayW(QGraphicsView):
             if pitem is None:
                 break
 
-            if pitem.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET:
+            if pitem.getHints() & PLUGIN_CAN_DRYWET:
                 pitem.setParameterValue(PARAMETER_DRYWET, 0.0)
                 Carla.host.set_drywet(i, 0.0)
 
@@ -326,15 +341,15 @@ class CarlaPatchbayW(QGraphicsView):
             if pitem is None:
                 break
 
-            if pitem.fPluginInfo['hints'] & PLUGIN_CAN_BALANCE:
+            if pitem.getHints() & PLUGIN_CAN_BALANCE:
                 pitem.setParameterValue(PARAMETER_BALANCE_LEFT, -1.0)
                 pitem.setParameterValue(PARAMETER_BALANCE_RIGHT, 1.0)
                 Carla.host.set_balance_left(i, -1.0)
                 Carla.host.set_balance_right(i, 1.0)
 
-            if pitem.fPluginInfo['hints'] & PLUGIN_CAN_PANNING:
-                pitem.setParameterValue(PARAMETER_PANNING, 1.0)
-                Carla.host.set_panning(i, 1.0)
+            if pitem.getHints() & PLUGIN_CAN_PANNING:
+                pitem.setParameterValue(PARAMETER_PANNING, 0.0)
+                Carla.host.set_panning(i, 0.0)
 
     # -----------------------------------------------------------------
 
@@ -393,17 +408,6 @@ class CarlaPatchbayW(QGraphicsView):
         pitem.setParameterDefault(index, value)
 
     @pyqtSlot(int, int, int)
-    def slot_handleParameterMidiChannelChangedCallback(self, pluginId, index, channel):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.setParameterMidiChannel(index, channel)
-
-    @pyqtSlot(int, int, int)
     def slot_handleParameterMidiCcChangedCallback(self, pluginId, index, cc):
         if pluginId >= self.fPluginCount:
             return
@@ -413,6 +417,17 @@ class CarlaPatchbayW(QGraphicsView):
             return
 
         pitem.setParameterMidiControl(index, cc)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleParameterMidiChannelChangedCallback(self, pluginId, index, channel):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.setParameterMidiChannel(index, channel)
 
     # -----------------------------------------------------------------
 
@@ -461,12 +476,6 @@ class CarlaPatchbayW(QGraphicsView):
             return
 
         pitem.sendNoteOff(channel, note)
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(int, int)
-    def slot_handleShowGuiCallback(self, pluginId, state):
-        pass
 
     # -----------------------------------------------------------------
 
@@ -531,8 +540,6 @@ class CarlaPatchbayW(QGraphicsView):
     def slot_handlePatchbayClientAddedCallback(self, clientId, clientIcon, clientName):
         pcSplit = patchcanvas.SPLIT_UNDEF
         pcIcon  = patchcanvas.ICON_APPLICATION
-
-        print("------------------------------------------- new client with icon", clientIcon)
 
         if clientIcon == PATCHBAY_ICON_PLUGIN:
             pcIcon = patchcanvas.ICON_PLUGIN

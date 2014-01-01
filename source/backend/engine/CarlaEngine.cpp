@@ -2243,6 +2243,7 @@ void CarlaEngine::oscSend_bridge_parameter_midi_channel(const uint32_t index, co
 void CarlaEngine::oscSend_bridge_parameter_value(const int32_t index, const float value) const
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(index != PARAMETER_NULL,);
     carla_debug("CarlaEngine::oscSend_bridge_parameter_value(%i, %f)", index, value);
 
     if (pData->oscData->target != nullptr)
@@ -2616,6 +2617,7 @@ void CarlaEngine::oscSend_control_set_parameter_value(const uint pluginId, const
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
+    CARLA_SAFE_ASSERT_RETURN(index != PARAMETER_NULL,);
     carla_debug("CarlaEngine::oscSend_control_set_parameter_value(%i, %i:%s, %f)", pluginId, index, (index < 0) ? InternalParameterIndex2Str(static_cast<InternalParameterIndex>(index)) : "(none)", value);
 
     if (pData->oscData->target != nullptr)

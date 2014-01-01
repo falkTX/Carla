@@ -474,7 +474,34 @@ class PluginEdit(QDialog):
             self.ui.b_load_state.setEnabled(False)
             self.ui.b_save_state.setEnabled(False)
 
-        # -------------------------------------------------------------
+    #------------------------------------------------------------------
+
+    def updateInfo(self):
+        # Update current program text
+        if self.ui.cb_programs.count() > 0:
+            pIndex = self.ui.cb_programs.currentIndex()
+            pName  = charPtrToString(Carla.host.get_program_name(self.fPluginId, pIndex))
+            #pName  = pName[:40] + (pName[40:] and "...")
+            self.ui.cb_programs.setItemText(pIndex, pName)
+
+        # Update current midi program text
+        if self.ui.cb_midi_programs.count() > 0:
+            mpIndex = self.ui.cb_midi_programs.currentIndex()
+            mpData  = Carla.host.get_midi_program_data(self.fPluginId, mpIndex)
+            mpBank  = int(mpData['bank'])
+            mpProg  = int(mpData['program'])
+            mpName  = charPtrToString(mpData['name'])
+            #mpName  = mpName[:40] + (mpName[40:] and "...")
+            self.ui.cb_midi_programs.setItemText(mpIndex, "%03i:%03i - %s" % (mpBank+1, mpProg+1, mpName))
+
+        # Update all parameter values
+        for paramType, paramId, paramWidget in self.fParameterList:
+            paramWidget.setValue(Carla.host.get_current_parameter_value(self.fPluginId, paramId), False)
+            paramWidget.update()
+
+        self.fParametersToUpdate = []
+
+    #------------------------------------------------------------------
 
     def reloadAll(self):
         if Carla.host is not None:
@@ -501,6 +528,8 @@ class PluginEdit(QDialog):
 
         if not self.ui.scrollArea.isEnabled():
             self.resize(self.width(), self.height()-self.ui.scrollArea.height())
+
+    #------------------------------------------------------------------
 
     def reloadInfo(self):
         if Carla.host is not None:
@@ -849,38 +878,25 @@ class PluginEdit(QDialog):
         if self.fPluginInfo['type'] == PLUGIN_LV2:
             self.ui.b_load_state.setEnabled(programCount > 0)
 
-    def updateInfo(self):
-        # Update current program text
-        if self.ui.cb_programs.count() > 0:
-            pIndex = self.ui.cb_programs.currentIndex()
-            pName  = charPtrToString(Carla.host.get_program_name(self.fPluginId, pIndex))
-            #pName  = pName[:40] + (pName[40:] and "...")
-            self.ui.cb_programs.setItemText(pIndex, pName)
-
-        # Update current midi program text
-        if self.ui.cb_midi_programs.count() > 0:
-            mpIndex = self.ui.cb_midi_programs.currentIndex()
-            mpData  = Carla.host.get_midi_program_data(self.fPluginId, mpIndex)
-            mpBank  = int(mpData['bank'])
-            mpProg  = int(mpData['program'])
-            mpName  = charPtrToString(mpData['name'])
-            #mpName  = mpName[:40] + (mpName[40:] and "...")
-            self.ui.cb_midi_programs.setItemText(mpIndex, "%03i:%03i - %s" % (mpBank+1, mpProg+1, mpName))
-
-        # Update all parameter values
-        for paramType, paramId, paramWidget in self.fParameterList:
-            paramWidget.setValue(Carla.host.get_current_parameter_value(self.fPluginId, paramId), False)
-            paramWidget.update()
-
-        self.fParametersToUpdate = []
+    #------------------------------------------------------------------
 
     def clearNotes(self):
          self.fPlayingNotes = []
          self.ui.keyboard.allNotesOff()
 
+    #------------------------------------------------------------------
+
+    def getHints(self):
+        return self.fPluginInfo['hints']
+
+    def setId(self, idx):
+        self.fPluginId = idx
+
     def setName(self, name):
         self.ui.label_plugin.setText("\n%s\n" % name)
         self.setWindowTitle(name)
+
+    #------------------------------------------------------------------
 
     def setParameterValue(self, parameterId, value):
         for paramItem in self.fParametersToUpdate:
@@ -918,6 +934,8 @@ class PluginEdit(QDialog):
         self.ui.cb_midi_programs.setCurrentIndex(index)
         self.ui.cb_midi_programs.blockSignals(False)
 
+    #------------------------------------------------------------------
+
     def sendNoteOn(self, channel, note):
         if self.fControlChannel == channel:
             self.ui.keyboard.sendNoteOn(note, False)
@@ -940,6 +958,8 @@ class PluginEdit(QDialog):
 
         return bool(len(self.fPlayingNotes) == 0)
 
+    #------------------------------------------------------------------
+
     def setVisible(self, yesNo):
         if yesNo:
             if not self.fGeometry.isNull():
@@ -948,6 +968,8 @@ class PluginEdit(QDialog):
             self.fGeometry = self.saveGeometry()
 
         QDialog.setVisible(self, yesNo)
+
+    #------------------------------------------------------------------
 
     def idleSlow(self):
         # Check Tab icons
@@ -982,10 +1004,10 @@ class PluginEdit(QDialog):
                 self.ui.dial_b_right.setValue(value * 1000)
                 self.ui.dial_b_right.blockSignals(False)
 
-            #elif index == PARAMETER_PANNING:
-                #self.ui.dial_pan.blockSignals(True)
-                #self.ui.dial_pan.setValue(value * 1000, True, False)
-                #self.ui.dial_pan.blockSignals(False)
+            elif index == PARAMETER_PANNING:
+                self.ui.dial_pan.blockSignals(True)
+                self.ui.dial_pan.setValue(value * 1000)
+                self.ui.dial_pan.blockSignals(False)
 
             elif index == PARAMETER_CTRL_CHANNEL:
                 self.fControlChannel = int(value)
@@ -1020,6 +1042,8 @@ class PluginEdit(QDialog):
             if paramType == PARAMETER_OUTPUT:
                 value = Carla.host.get_current_parameter_value(self.fPluginId, paramId)
                 paramWidget.setValue(value, False)
+
+    #------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_stateSave(self):
@@ -1071,6 +1095,8 @@ class PluginEdit(QDialog):
             self.fCurrentStateFilename = filenameTry
             Carla.host.load_plugin_state(self.fPluginId, self.fCurrentStateFilename)
 
+    #------------------------------------------------------------------
+
     @pyqtSlot(bool)
     def slot_optionChanged(self, clicked):
         if Carla.host is None:
@@ -1100,6 +1126,8 @@ class PluginEdit(QDialog):
             return
 
         Carla.host.set_option(self.fPluginId, option, clicked)
+
+    #------------------------------------------------------------------
 
     @pyqtSlot(int)
     def slot_dryWetChanged(self, value):
@@ -1136,6 +1164,8 @@ class PluginEdit(QDialog):
         self.ui.keyboard.allNotesOff()
         self._updateCtrlMidiProgram()
 
+    #------------------------------------------------------------------
+
     @pyqtSlot(int, float)
     def slot_parameterValueChanged(self, parameterId, value):
         if Carla.host is not None:
@@ -1151,6 +1181,8 @@ class PluginEdit(QDialog):
         if Carla.host is not None:
             Carla.host.set_parameter_midi_channel(self.fPluginId, parameterId, channel-1)
 
+    #------------------------------------------------------------------
+
     @pyqtSlot(int)
     def slot_programIndexChanged(self, index):
         self.fCurrentProgram = index
@@ -1165,6 +1197,8 @@ class PluginEdit(QDialog):
         if Carla.host is not None:
             Carla.host.set_midi_program(self.fPluginId, index)
 
+    #------------------------------------------------------------------
+
     @pyqtSlot(int)
     def slot_noteOn(self, note):
         if self.fControlChannel >= 0 and Carla.host is not None:
@@ -1175,35 +1209,39 @@ class PluginEdit(QDialog):
         if self.fControlChannel >= 0 and Carla.host is not None:
             Carla.host.send_midi_note(self.fPluginId, self.fControlChannel, note, 0)
 
+    #------------------------------------------------------------------
+
     @pyqtSlot()
     def slot_finished(self):
-        if self.fRealParent:
+        if self.fRealParent is not None:
             self.fRealParent.editClosed()
+
+    #------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_knobCustomMenu(self):
-        dialName = self.sender().objectName()
-        if dialName == "dial_drywet":
+        knobName = self.sender().objectName()
+        if knobName == "dial_drywet":
             minimum = 0
             maximum = 100
             default = 100
             label   = "Dry/Wet"
-        elif dialName == "dial_vol":
+        elif knobName == "dial_vol":
             minimum = 0
             maximum = 127
             default = 100
             label   = "Volume"
-        elif dialName == "dial_b_left":
+        elif knobName == "dial_b_left":
             minimum = -100
             maximum = 100
             default = -100
             label   = "Balance-Left"
-        elif dialName == "dial_b_right":
+        elif knobName == "dial_b_right":
             minimum = -100
             maximum = 100
             default = 100
             label   = "Balance-Right"
-        elif dialName == "dial_panning":
+        elif knobName == "dial_pan":
             minimum = -100
             maximum = 100
             default = 0
@@ -1256,8 +1294,10 @@ class PluginEdit(QDialog):
             self.ui.dial_b_left.setValue(value)
         elif label == "Balance-Right":
             self.ui.dial_b_right.setValue(value)
-        #elif label == "Panning":
-            #self.ui.dial_panning.setValue(value)
+        elif label == "Panning":
+            self.ui.dial_pan.setValue(value)
+
+    #------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_channelCustomMenu(self):
@@ -1285,6 +1325,8 @@ class PluginEdit(QDialog):
         elif actSel:
             selChannel = int(actSel.text())
             self.ui.sb_ctrl_channel.setValue(selChannel)
+
+    #------------------------------------------------------------------
 
     def _createParameterWidgets(self, paramType, paramListFull, tabPageName):
         i = 1
@@ -1336,6 +1378,8 @@ class PluginEdit(QDialog):
 
         if self.ui.cb_midi_programs.currentIndex() != mpIndex:
             self.setMidiProgram(mpIndex)
+
+    #------------------------------------------------------------------
 
     def showEvent(self, event):
         if not self.fScrollAreaSetup:
@@ -1478,7 +1522,7 @@ class PluginWidget(QFrame):
         self.ui.b_gui.clicked.connect(self.slot_guiClicked)
         self.ui.b_edit.clicked.connect(self.slot_editClicked)
 
-        # -------------------------------------------------------------
+    #------------------------------------------------------------------
 
     def idleFast(self):
         # Input peaks
@@ -1535,12 +1579,29 @@ class PluginWidget(QFrame):
         # Update edit dialog
         self.ui.edit_dialog.idleSlow()
 
+    #------------------------------------------------------------------
+
     def editClosed(self):
         self.ui.b_edit.setChecked(False)
 
     def recheckPluginHints(self, hints):
         self.fPluginInfo['hints'] = hints
         self.ui.b_gui.setEnabled(hints & PLUGIN_HAS_CUSTOM_UI)
+
+    #------------------------------------------------------------------
+
+    def getHints(self):
+        return self.fPluginInfo['hints']
+
+    def setId(self, idx):
+        self.fPluginId = idx
+        self.ui.edit_dialog.setId(idx)
+
+    def setName(self, name):
+        self.ui.label_name.setText(name)
+        self.ui.edit_dialog.setName(name)
+
+    #------------------------------------------------------------------
 
     def setActive(self, active, sendGui=False, sendCallback=True):
         if sendGui:      self.ui.b_enable.setChecked(active)
@@ -1549,6 +1610,39 @@ class PluginWidget(QFrame):
         if active:
             self.ui.edit_dialog.clearNotes()
             self.ui.led_midi.setChecked(False)
+
+    # called from rack, checks if param is possible first
+    def setInternalParameter(self, parameterId, value):
+        if parameterId <= PARAMETER_MAX or parameterId >= PARAMETER_NULL:
+            return
+
+        if parameterId == PARAMETER_ACTIVE:
+            return self.setActive(bool(value), True, True)
+
+        elif parameterId == PARAMETER_DRYWET:
+            if (self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET) == 0: return
+            Carla.host.set_drywet(self.fPluginId, value)
+
+        elif parameterId == PARAMETER_VOLUME:
+            if (self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME) == 0: return
+            Carla.host.set_volume(self.fPluginId, value)
+
+        elif parameterId == PARAMETER_BALANCE_LEFT:
+            if (self.fPluginInfo['hints'] & PLUGIN_CAN_BALANCE) == 0: return
+            Carla.host.set_balance_left(self.fPluginId, value)
+
+        elif parameterId == PARAMETER_BALANCE_RIGHT:
+            if (self.fPluginInfo['hints'] & PLUGIN_CAN_BALANCE) == 0: return
+            Carla.host.set_balance_right(self.fPluginId, value)
+
+        elif parameterId == PARAMETER_PANNING:
+            if (self.fPluginInfo['hints'] & PLUGIN_CAN_PANNING) == 0: return
+            Carla.host.set_panning(self.fPluginId, value)
+
+        elif parameterId == PARAMETER_CTRL_CHANNEL:
+            Carla.host.set_ctrl_channel(self.fPluginId, value)
+
+        self.ui.edit_dialog.setParameterValue(parameterId, value)
 
     def setParameterValue(self, parameterId, value):
         self.fParameterIconTimer = ICON_STATE_ON
@@ -1575,6 +1669,8 @@ class PluginWidget(QFrame):
         self.fParameterIconTimer = ICON_STATE_ON
         self.ui.edit_dialog.setMidiProgram(index)
 
+    #------------------------------------------------------------------
+
     def sendNoteOn(self, channel, note):
         if self.ui.edit_dialog.sendNoteOn(channel, note):
             self.ui.led_midi.setChecked(True)
@@ -1583,9 +1679,7 @@ class PluginWidget(QFrame):
         if self.ui.edit_dialog.sendNoteOff(channel, note):
             self.ui.led_midi.setChecked(False)
 
-    def setId(self, idx):
-        self.fPluginId = idx
-        self.ui.edit_dialog.fPluginId = idx
+    #------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_showCustomMenu(self):
@@ -1647,6 +1741,8 @@ class PluginWidget(QFrame):
                 CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
                                        Carla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
+    #------------------------------------------------------------------
+
     @pyqtSlot(bool)
     def slot_enableClicked(self, yesNo):
         self.setActive(yesNo, False, True)
@@ -1658,6 +1754,8 @@ class PluginWidget(QFrame):
     @pyqtSlot(bool)
     def slot_editClicked(self, show):
         self.ui.edit_dialog.setVisible(show)
+
+    #------------------------------------------------------------------
 
     def paintEvent(self, event):
         painter = QPainter(self)
