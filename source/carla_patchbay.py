@@ -709,7 +709,7 @@ class CarlaPatchbayW(QGraphicsView):
         patchcanvas.clear()
         if Carla.host.is_engine_running():
             Carla.host.patchbay_refresh()
-        #QTimer.singleShot(1000 if self.fSavedSettings['Canvas/EyeCandy'] else 0, self.ui.miniCanvasPreview, SLOT("update()"))
+        QTimer.singleShot(1000 if self.fParent.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY] else 0, self.fMiniCanvasPreview.update)
 
     @pyqtSlot()
     def slot_canvasZoomFit(self):
@@ -765,6 +765,12 @@ class CarlaPatchbayW(QGraphicsView):
             self.scene.render(painter)
             self.fExportImage.save(newPath, imgFormat, 100)
             painter.restore()
+
+    # -----------------------------------------------------------------
+
+    def resizeEvent(self, event):
+        QGraphicsView.resizeEvent(self, event)
+        self.slot_miniCanvasCheckSize()
 
 # ------------------------------------------------------------------------------------------------
 # Canvas callback

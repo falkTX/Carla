@@ -145,6 +145,18 @@ class CarlaMultiW(QTabWidget):
         self.fPatchbay.saveSettings(settings)
         #self.fParent.saveSettings(settings)
 
+    # -----------------------------------------------------------------
+
+    def fixCanvasPreviewSize(self):
+        self.fPatchbay.resize(self.fRack.size())
+        self.fPatchbay.slot_miniCanvasCheckSize()
+
+    def resizeEvent(self, event):
+        QTabWidget.resizeEvent(self, event)
+
+        if self.currentIndex() == 0:
+            self.fixCanvasPreviewSize()
+
 # ------------------------------------------------------------------------------------------------------------
 # Main Window
 
@@ -170,7 +182,7 @@ class CarlaHostW(HostWindow):
         self.ui.act_settings_show_toolbar.triggered.connect(self.slot_toolbarShown)
         self.ui.splitter.splitterMoved.connect(self.slot_splitterMoved)
 
-        QTimer.singleShot(0, self.slot_infoLabelInit)
+        QTimer.singleShot(0, self.slot_initWidgets)
 
     # -----------------------------------------------------------------
 
@@ -200,20 +212,25 @@ class CarlaHostW(HostWindow):
     # -----------------------------------------------------------------
 
     @pyqtSlot()
+    def slot_initWidgets(self):
+        tabBar = self.fContainer.tabBar()
+        x = tabBar.width()+20
+        y = tabBar.mapFromParent(self.ui.centralwidget.pos()).y() #+ tabBar.height()/4
+        self.fInfoLabel.move(x, y)
+        self.fInfoLabel.resize(self.fContainer.width()-x, tabBar.height())
+
+        # FIXME: Qt4 needs this so it properly creates & resizes the canvas
+        self.fContainer.setCurrentIndex(1)
+        self.fContainer.setCurrentIndex(0)
+        self.fContainer.fixCanvasPreviewSize()
+
+    @pyqtSlot()
     def slot_splitterMoved(self):
         self.updateInfoLabelSize()
 
     @pyqtSlot()
     def slot_toolbarShown(self):
         self.updateInfoLabelPos()
-
-    @pyqtSlot()
-    def slot_infoLabelInit(self):
-        tabBar = self.fContainer.tabBar()
-        x = tabBar.width()+20
-        y = tabBar.mapFromParent(self.ui.centralwidget.pos()).y() #+ tabBar.height()/4
-        self.fInfoLabel.move(x, y)
-        self.fInfoLabel.resize(self.fContainer.width()-x, tabBar.height())
 
     # -----------------------------------------------------------------
 
