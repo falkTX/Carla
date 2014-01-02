@@ -2209,24 +2209,24 @@ public:
         // set icon
 
         if (std::strcmp(fDescriptor->label, "audiofile") == 0)
-            pData->iconName = "file";
+            pData->iconName = carla_strdup("file");
         else if (std::strcmp(fDescriptor->label, "midifile") == 0)
-            pData->iconName = "file";
+            pData->iconName = carla_strdup("file");
         else if (std::strcmp(fDescriptor->label, "sunvoxfile") == 0)
-            pData->iconName = "file";
+            pData->iconName = carla_strdup("file");
 
         else if (std::strcmp(fDescriptor->label, "3BandEQ") == 0)
-            pData->iconName = "distrho";
+            pData->iconName = carla_strdup("distrho");
         else if (std::strcmp(fDescriptor->label, "3BandSplitter") == 0)
-            pData->iconName = "distrho";
+            pData->iconName = carla_strdup("distrho");
         else if (std::strcmp(fDescriptor->label, "Nekobi") == 0)
-            pData->iconName = "distrho";
+            pData->iconName = carla_strdup("distrho");
         else if (std::strcmp(fDescriptor->label, "Notes") == 0)
-            pData->iconName = "distrho";
+            pData->iconName = carla_strdup("distrho");
         else if (std::strcmp(fDescriptor->label, "PingPongPan") == 0)
-            pData->iconName = "distrho";
+            pData->iconName = carla_strdup("distrho");
         else if (std::strcmp(fDescriptor->label, "StereoEnhancer") == 0)
-            pData->iconName = "distrho";
+            pData->iconName = carla_strdup("distrho");
 
         // ---------------------------------------------------------------
         // get info
