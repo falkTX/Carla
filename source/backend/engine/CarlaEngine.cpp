@@ -100,16 +100,13 @@ void EngineControlEvent::dumpToMidiData(const uint8_t channel, uint8_t& size, ui
     }
 }
 
-void EngineEvent::fillFromMidiData(const uint8_t size, uint8_t* const data)
+void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data)
 {
     // get channel
     channel = MIDI_GET_CHANNEL_FROM_DATA(data);
 
     // get status
     const uint8_t midiStatus(MIDI_GET_STATUS_FROM_DATA(data));
-
-    // remove channel bit from data
-    data[0] = midiStatus;
 
     if (midiStatus == MIDI_STATUS_CONTROL_CHANGE)
     {
@@ -1448,7 +1445,7 @@ bool CarlaEngine::loadProject(const char* const filename)
 
             if (addPlugin(getPluginTypeFromString(saveState.type), saveState.binary, saveState.name, saveState.label, extraStuff))
             {
-                if (CarlaPlugin* plugin = getPlugin(pData->curPluginCount-1))
+                if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
                     plugin->loadSaveState(saveState);
             }
         }
@@ -1480,7 +1477,7 @@ bool CarlaEngine::saveProject(const char* const filename)
 
     for (unsigned int i=0; i < pData->curPluginCount; ++i)
     {
-        CarlaPlugin* const plugin = pData->plugins[i].plugin;
+        CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
         if (plugin != nullptr && plugin->isEnabled())
         {

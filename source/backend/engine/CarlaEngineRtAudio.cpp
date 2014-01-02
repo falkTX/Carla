@@ -865,7 +865,7 @@ protected:
         FLOAT_CLEAR(fAudioBufRackOut[1], nframes);
 
         // initialize input events
-        carla_zeroMem(pData->bufEvents.in, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
+        carla_zeroStruct<EngineEvent>(pData->bufEvents.in, kEngineMaxInternalEventCount);
 
         if (fMidiInEvents.mutex.tryLock())
         {
@@ -874,8 +874,8 @@ protected:
 
             while (! fMidiInEvents.data.isEmpty())
             {
-                RtMidiEvent& midiEvent(fMidiInEvents.data.getFirst(true));
-                EngineEvent& engineEvent(pData->bufEvents.in[engineEventIndex++]);
+                const RtMidiEvent& midiEvent(fMidiInEvents.data.getFirst(true));
+                EngineEvent&       engineEvent(pData->bufEvents.in[engineEventIndex++]);
 
                 if (midiEvent.time < pData->timeInfo.frame)
                 {

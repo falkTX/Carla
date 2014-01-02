@@ -454,6 +454,13 @@ struct PluginMidiProgramData {
 
         data  = new MidiProgramData[newCount];
         count = newCount;
+
+        for (uint32_t i=0; i < count; ++i)
+        {
+            data[i].bank    = 0;
+            data[i].program = 0;
+            data[i].name    = nullptr;
+        }
     }
 
     void clear()

@@ -2114,14 +2114,24 @@ protected:
             // TODO
             break;
         case ::HOST_OPCODE_UPDATE_PARAMETER:
+            // TODO
+            pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, -1, 0, 0.0f, nullptr);
             break;
         case ::HOST_OPCODE_UPDATE_MIDI_PROGRAM:
+            // TODO
+            pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, -1, 0, 0.0f, nullptr);
             break;
         case ::HOST_OPCODE_RELOAD_PARAMETERS:
+            reload(); // FIXME
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PARAMETERS, pData->id, -1, 0, 0.0f, nullptr);
             break;
         case ::HOST_OPCODE_RELOAD_MIDI_PROGRAMS:
+            reloadPrograms(false);
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, -1, 0, 0.0f, nullptr);
             break;
         case ::HOST_OPCODE_RELOAD_ALL:
+            reload();
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_ALL, pData->id, -1, 0, 0.0f, nullptr);
             break;
         case HOST_OPCODE_UI_UNAVAILABLE:
             pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, nullptr);

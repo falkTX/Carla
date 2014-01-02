@@ -24,12 +24,14 @@
 
 #include "CarlaNative.hpp"
 
+#include <QtCore/QProcess>
+#include <QtCore/QTextStream>
+
 CARLA_BACKEND_START_NAMESPACE
 
-#if 0
 // -----------------------------------------------------------------------
 
-class CarlaEngineNativeThread : public QThread
+class CarlaEngineNativeThread : public CarlaThread
 {
 public:
     enum UiState {
@@ -40,17 +42,16 @@ public:
     };
 
     CarlaEngineNativeThread(CarlaEngine* const engine)
-        : kEngine(engine),
-          fBinary("carla-control"),
-          fProcess(nullptr),
-          fUiState(UiNone)
+        : fEngine(engine),
+          fProcess(nullptr)/*,*/
+          //fUiState(UiNone)
     {
-        carla_debug("CarlaEngineNativeThread::CarlaEngineNativeThread(engine:\"%s\")", engine->getName());
+        carla_debug("CarlaEngineNativeThread::CarlaEngineNativeThread(%p)", engine);
     }
 
-    ~CarlaEngineNativeThread()
+    ~CarlaEngineNativeThread() override
     {
-        CARLA_ASSERT_INT(fUiState == UiNone, fUiState);
+        //CARLA_ASSERT_INT(fUiState == UiNone, fUiState);
         carla_debug("CarlaEngineNativeThread::~CarlaEngineNativeThread()");
 
         if (fProcess != nullptr)
@@ -60,6 +61,7 @@ public:
         }
     }
 
+#if 0
     void setOscData(const char* const binary)
     {
         fBinary = binary;
@@ -82,12 +84,14 @@ public:
         fProcess->kill();
         //fProcess->close();
     }
+#endif
 
 protected:
-    void run()
+    void run() override
     {
         carla_debug("CarlaEngineNativeThread::run() - binary:\"%s\"", (const char*)fBinary);
 
+#if 0
         if (fProcess == nullptr)
         {
             fProcess = new QProcess(nullptr);
@@ -126,32 +130,32 @@ protected:
             fUiState = UiCrashed;
             carla_stderr("CarlaEngineNativeThread::run() - GUI crashed while running");
         }
+#endif
     }
 
 private:
-    CarlaEngine* const kEngine;
+    CarlaEngine* const fEngine;
 
     CarlaString fBinary;
     QProcess*   fProcess;
 
-    UiState fUiState;
+//    UiState fUiState;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineNativeThread)
 };
 
 // -----------------------------------------------------------------------
-#endif
 
-class CarlaEngineNative : public NativePluginClass,
-                          public CarlaEngine
+class CarlaEngineNative : public CarlaEngine
 {
 public:
     CarlaEngineNative(const NativeHostDescriptor* const host, const bool isPatchbay)
-        : NativePluginClass(host),
-          CarlaEngine(),
-          fIsPatchbay(isPatchbay)
-          /*fIsRunning(true),
-          fThread(this)*/
+        : CarlaEngine(),
+          pHost(host),
+          fIsPatchbay(isPatchbay),
+          fIsActive(false),
+          fIsRunning(false),
+          fThread(this)
     {
         carla_debug("CarlaEngineNative::CarlaEngineNative()");
 
@@ -175,6 +179,10 @@ public:
             init("Carla-Rack");
         }
 
+        // TESTING
+        //if (! addPlugin(PLUGIN_INTERNAL, nullptr, "Ping Pong Pan", "PingPongPan"))
+        //    carla_stdout("TESTING PLUG3 ERROR:\n%s", getLastError());
+
 #if 0
         // set control thread binary
         CarlaString threadBinary(getResourceDir());
@@ -183,7 +191,6 @@ public:
 
         fThread.setOscData(threadBinary);
 
-        // TESTING
 //         if (! addPlugin(PLUGIN_INTERNAL, nullptr, "MIDI Transpose", "midiTranspose"))
 //             carla_stdout("TESTING PLUG1 ERROR:\n%s", getLastError());
 //         if (! addPlugin(PLUGIN_INTERNAL, nullptr, "ZynAddSubFX", "zynaddsubfx"))
@@ -195,12 +202,14 @@ public:
 
     ~CarlaEngineNative() override
     {
+        CARLA_ASSERT(! fIsActive);
         carla_debug("CarlaEngineNative::~CarlaEngineNative()");
 
-        //fIsRunning = false;
+        pData->aboutToClose = true;
+        fIsRunning = false;
 
-        setAboutToClose();
         removeAllPlugins();
+        runPendingRtEvents();
         close();
     }
 
@@ -212,29 +221,22 @@ protected:
     {
         carla_debug("CarlaEngineNative::init(\"%s\")", clientName);
 
-        pData->bufferSize = NativePluginClass::getBufferSize();
-        pData->sampleRate = NativePluginClass::getSampleRate();
+        pData->bufferSize = pHost->get_buffer_size(pHost->handle);
+        pData->sampleRate = pHost->get_sample_rate(pHost->handle);
 
+        fIsRunning = true;
         CarlaEngine::init(clientName);
         return true;
     }
 
-    bool close() override
-    {
-        carla_debug("CarlaEngineNative::close()");
-
-        runPendingRtEvents();
-        return CarlaEngine::close();
-    }
-
     bool isRunning() const noexcept override
     {
-        return false; //fIsRunning;
+        return fIsRunning;
     }
 
     bool isOffline() const noexcept override
     {
-        return false;
+        return pHost->is_offline(pHost->handle);
     }
 
     EngineType getType() const noexcept override
@@ -248,9 +250,23 @@ protected:
     }
 
     // -------------------------------------------------------------------
+
+    void bufferSizeChanged(const uint32_t newBufferSize)
+    {
+        pData->bufferSize = newBufferSize;
+        CarlaEngine::bufferSizeChanged(newBufferSize);
+    }
+
+    void sampleRateChanged(const double newSampleRate)
+    {
+        pData->sampleRate = newSampleRate;
+        CarlaEngine::sampleRateChanged(newSampleRate);
+    }
+
+    // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    uint32_t getParameterCount() const override
+    uint32_t getParameterCount() const
     {
         if (CarlaPlugin* const plugin = _getFirstPlugin())
             return plugin->getParameterCount();
@@ -258,11 +274,11 @@ protected:
         return 0;
     }
 
-    const NativeParameter* getParameterInfo(const uint32_t index) const override
+    const NativeParameter* getParameterInfo(const uint32_t index) const
     {
         if (CarlaPlugin* const plugin = _getFirstPlugin())
         {
-            if (plugin->getParameterCount() < index)
+            if (index < plugin->getParameterCount())
             {
                 static NativeParameter param;
                 static char strBufName[STR_MAX+1];
@@ -318,22 +334,22 @@ protected:
         return nullptr;
     }
 
-    float getParameterValue(const uint32_t index) const override
+    float getParameterValue(const uint32_t index) const
     {
         if (CarlaPlugin* const plugin = _getFirstPlugin())
         {
-            if (plugin->getParameterCount() < index)
+            if (index < plugin->getParameterCount())
                 return plugin->getParameterValue(index);
         }
 
         return 0.0f;
     }
 
-    const char* getParameterText(const uint32_t index, const float value) const override
+    const char* getParameterText(const uint32_t index, const float value) const
     {
         if (CarlaPlugin* const plugin = _getFirstPlugin())
         {
-            if (plugin->getParameterCount() < index)
+            if (index < plugin->getParameterCount())
             {
                 static char strBuf[STR_MAX+1];
                 carla_zeroChar(strBuf, STR_MAX+1);
@@ -350,19 +366,19 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    uint32_t getMidiProgramCount() const override
+    uint32_t getMidiProgramCount() const
     {
         if (CarlaPlugin* const plugin = _getFirstPlugin())
-            return plugin->getMidiProgramCount();
+           return plugin->getMidiProgramCount();
 
         return 0;
     }
 
-    const NativeMidiProgram* getMidiProgramInfo(const uint32_t index) const override
+    const NativeMidiProgram* getMidiProgramInfo(const uint32_t index) const
     {
         if (CarlaPlugin* const plugin = _getFirstPlugin())
         {
-            if (plugin->getMidiProgramCount() < index)
+            if (index < plugin->getMidiProgramCount())
             {
                 static NativeMidiProgram midiProg;
 
@@ -384,33 +400,25 @@ protected:
     // -------------------------------------------------------------------
     // Plugin state calls
 
-    void setParameterValue(const uint32_t index, const float value) override
+    void setParameterValue(const uint32_t index, const float value)
     {
         if (CarlaPlugin* const plugin = _getFirstPlugin())
         {
-            if (plugin->getParameterCount() < index)
+            if (index < plugin->getParameterCount())
                 plugin->setParameterValue(index, value, false, false, false);
         }
     }
 
-    void setMidiProgram(const uint8_t, const uint32_t bank, const uint32_t program) override
+    void setMidiProgram(const uint8_t, const uint32_t bank, const uint32_t program)
     {
         if (CarlaPlugin* const plugin = _getFirstPlugin())
             plugin->setMidiProgramById(bank, program, false, false, false);
     }
 
-    void setCustomData(const char* const key, const char* const value) override
-    {
-        CARLA_SAFE_ASSERT_RETURN(key != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
-
-        // TODO
-    }
-
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void activate() override
+    void activate()
     {
 #if 0
         for (uint32_t i=0; i < pData->curPluginCount; ++i)
@@ -423,10 +431,12 @@ protected:
             plugin->setActive(true, true, false);
         }
 #endif
+        fIsActive = true;
     }
 
-    void deactivate() override
+    void deactivate()
     {
+        fIsActive = false;
 #if 0
         for (uint32_t i=0; i < pData->curPluginCount; ++i)
         {
@@ -443,7 +453,7 @@ protected:
         runPendingRtEvents();
     }
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount)
     {
         if (pData->curPluginCount == 0 && ! fIsPatchbay)
         {
@@ -456,7 +466,7 @@ protected:
         // ---------------------------------------------------------------
         // Time Info
 
-        const NativeTimeInfo* const timeInfo(NativePluginClass::getTimeInfo());
+        const NativeTimeInfo* const timeInfo(pHost->get_time_info(pHost->handle));
 
         pData->timeInfo.playing = timeInfo->playing;
         pData->timeInfo.frame   = timeInfo->frame;
@@ -479,85 +489,105 @@ protected:
             pData->timeInfo.bbt.beatsPerMinute = timeInfo->bbt.beatsPerMinute;
         }
 
-#if 0
         // ---------------------------------------------------------------
-        // initialize input events
+        // initialize events
 
-        carla_zeroStruct<EngineEvent>(pData->bufEvents.in, INTERNAL_EVENT_COUNT);
+        carla_zeroStruct<EngineEvent>(pData->bufEvents.in,  kEngineMaxInternalEventCount);
+        carla_zeroStruct<EngineEvent>(pData->bufEvents.out, kEngineMaxInternalEventCount);
+
+        // ---------------------------------------------------------------
+        // events input (before processing)
+
         {
             uint32_t engineEventIndex = 0;
 
-            for (uint32_t i=0; i < midiEventCount && engineEventIndex < INTERNAL_EVENT_COUNT; ++i)
+            for (uint32_t i=0; i < midiEventCount && engineEventIndex < kEngineMaxInternalEventCount; ++i)
             {
-                const ::MidiEvent& midiEvent(midiEvents[i]);
+                const NativeMidiEvent& midiEvent(midiEvents[i]);
+                EngineEvent&           engineEvent(pData->bufEvents.in[engineEventIndex++]);
 
-                if (midiEvent.size > 4)
-                    continue;
+                engineEvent.time = midiEvent.time;
+                engineEvent.fillFromMidiData(midiEvent.size, midiEvent.data);
 
-                const uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
-                const uint8_t channel = MIDI_GET_CHANNEL_FROM_DATA(midiEvent.data);
-
-                // we don't want some events
-                if (status == MIDI_STATUS_PROGRAM_CHANGE)
-                    continue;
-
-                // handle note/sound off properly
-                if (status == MIDI_STATUS_CONTROL_CHANGE)
-                {
-                    const uint8_t control = midiEvent.data[1];
-
-                    if (MIDI_IS_CONTROL_BANK_SELECT(control))
-                        continue;
-
-                    if (control == MIDI_CONTROL_ALL_SOUND_OFF || control == MIDI_CONTROL_ALL_NOTES_OFF)
-                    {
-                        EngineEvent& engineEvent(pData->bufEvents.in[engineEventIndex++]);
-                        engineEvent.clear();
-
-                        engineEvent.type    = kEngineEventTypeControl;
-                        engineEvent.time    = midiEvent.time;
-                        engineEvent.channel = channel;
-
-                        engineEvent.ctrl.type  = (control == MIDI_CONTROL_ALL_SOUND_OFF) ? kEngineControlEventTypeAllSoundOff : kEngineControlEventTypeAllNotesOff;
-                        engineEvent.ctrl.param = 0;
-                        engineEvent.ctrl.value = 0.0f;
-
-                        continue;
-                    }
-                }
-
-                EngineEvent& engineEvent(pData->bufEvents.in[engineEventIndex++]);
-                engineEvent.clear();
-
-                engineEvent.type    = kEngineEventTypeMidi;
-                engineEvent.time    = midiEvent.time;
-                engineEvent.channel = channel;
-
-                engineEvent.midi.data[0] = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
-                engineEvent.midi.data[1] = midiEvent.data[1];
-                engineEvent.midi.data[2] = midiEvent.data[2];
-                engineEvent.midi.data[3] = midiEvent.data[3];
-                engineEvent.midi.size    = midiEvent.size;
+                if (engineEventIndex >= kEngineMaxInternalEventCount)
+                    break;
             }
         }
 
+        if (fIsPatchbay)
+        {
+            // -----------------------------------------------------------
+            // create audio buffers
+
+            float*   inBuf[2]    = { inBuffer[0], inBuffer[1] };
+            float*   outBuf[2]   = { outBuffer[0], outBuffer[1] };
+            uint32_t bufCount[2] = { 2, 2 };
+
+            // -----------------------------------------------------------
+            // process
+
+            processPatchbay(inBuf, outBuf, bufCount, frames);
+        }
+        else
+        {
+            // -----------------------------------------------------------
+            // create audio buffers
+
+            float* inBuf[2]  = { inBuffer[0], inBuffer[1] };
+            float* outBuf[2] = { outBuffer[0], outBuffer[1] };
+
+            // -----------------------------------------------------------
+            // process
+
+            processRack(inBuf, outBuf, frames);
+        }
+
         // ---------------------------------------------------------------
-        // create audio buffers
+        // events output (after processing)
 
-        float* inBuf[2]  = { inBuffer[0], inBuffer[1] };
-        float* outBuf[2] = { outBuffer[0], outBuffer[1] };
+        carla_zeroStruct<EngineEvent>(pData->bufEvents.in, kEngineMaxInternalEventCount);
 
-        // ---------------------------------------------------------------
-        // process
+        {
+            NativeMidiEvent midiEvent;
 
-        processRack(inBuf, outBuf, frames);
-#endif
+            for (uint32_t i=0; i < kEngineMaxInternalEventCount; ++i)
+            {
+                const EngineEvent& engineEvent(pData->bufEvents.out[i]);
+
+                if (engineEvent.type == kEngineEventTypeNull)
+                    break;
+
+                midiEvent.time = engineEvent.time;
+
+                if (engineEvent.type == CarlaBackend::kEngineEventTypeControl)
+                {
+                    midiEvent.port = 0;
+                    engineEvent.ctrl.dumpToMidiData(engineEvent.channel, midiEvent.size, midiEvent.data);
+                }
+                else if (engineEvent.type == kEngineEventTypeMidi)
+                {
+                    if (engineEvent.midi.size > 4 || engineEvent.midi.dataExt != nullptr)
+                        continue;
+
+                    midiEvent.port = engineEvent.midi.port;
+                    midiEvent.size = engineEvent.midi.size;
+
+                    midiEvent.data[0] = static_cast<uint8_t>(engineEvent.midi.data[0] + engineEvent.channel);
+
+                    for (uint8_t j=1; j < midiEvent.size; ++j)
+                        midiEvent.data[j] = engineEvent.midi.data[j];
+                }
+                else
+                {
+                    carla_stderr("Unknown event type...");
+                    continue;
+                }
+
+                pHost->write_midi_event(pHost->handle, &midiEvent);
+            }
+        }
+
         runPendingRtEvents();
-        return;
-
-        // TODO
-        (void)midiEvents;
-        (void)midiEventCount;
     }
 
 #if 0
@@ -632,33 +662,18 @@ protected:
         (void)bank;
         (void)program;
     }
-
-    void uiSetCustomData(const char* const key, const char* const value) override
-    {
-        CARLA_ASSERT(key != nullptr);
-        CARLA_ASSERT(value != nullptr);
-        return;
-
-        // TODO
-
-        // unused
-        (void)key;
-        (void)value;
-    }
 #endif
 
-#if 0
     // -------------------------------------------------------------------
     // Plugin state calls
 
-    char* getState() const override
+    char* getState() const
     {
         QString string;
         QTextStream out(&string);
-
         out << "<?xml version='1.0' encoding='UTF-8'?>\n";
         out << "<!DOCTYPE CARLA-PROJECT>\n";
-        out << "<CARLA-PROJECT VERSION='1.0'>\n";
+        out << "<CARLA-PROJECT VERSION='2.0'>\n";
 
         bool firstPlugin = true;
         char strBuf[STR_MAX+1];
@@ -672,9 +687,11 @@ protected:
                 if (! firstPlugin)
                     out << "\n";
 
+                strBuf[0] = '\0';
+
                 plugin->getRealName(strBuf);
 
-                if (*strBuf != 0)
+                if (strBuf[0] != '\0')
                     out << QString(" <!-- %1 -->\n").arg(xmlSafeString(strBuf, true));
 
                 QString content;
@@ -693,24 +710,24 @@ protected:
         return strdup(string.toUtf8().constData());
     }
 
-    void setState(const char* const data) override
+    void setState(const char* const data)
     {
         QDomDocument xml;
         xml.setContent(QString(data));
 
         QDomNode xmlNode(xml.documentElement());
 
-        if (xmlNode.toElement().tagName() != "CARLA-PROJECT")
+        if (xmlNode.toElement().tagName().compare("carla-project", Qt::CaseInsensitive) != 0)
         {
             carla_stderr2("Not a valid Carla project");
             return;
         }
 
-        QDomNode node(xmlNode.firstChild());
+        bool pluginsAdded = false;
 
-        while (! node.isNull())
+        for (QDomNode node = xmlNode.firstChild(); ! node.isNull(); node = node.nextSibling())
         {
-            if (node.toElement().tagName() == "Plugin")
+            if (node.toElement().tagName().compare("plugin", Qt::CaseInsensitive) == 0)
             {
                 SaveState saveState;
                 fillSaveStateFromXmlNode(saveState, node);
@@ -719,26 +736,36 @@ protected:
 
                 const void* extraStuff = nullptr;
 
-                // FIXME
-                //if (std::strcmp(saveState.type, "DSSI") == 0)
-                //    extraStuff = findDSSIGUI(saveState.binary, saveState.label);
+                // check if using GIG, SF2 or SFZ 16outs
+                static const char kUse16OutsSuffix[] = " (16 outs)";
+
+                if (CarlaString(saveState.label).endsWith(kUse16OutsSuffix))
+                {
+                    if (std::strcmp(saveState.type, "GIG") == 0 || std::strcmp(saveState.type, "SF2") == 0 || std::strcmp(saveState.type, "SFZ") == 0)
+                        extraStuff = (void*)0x1; // non-null
+                }
 
                 // TODO - proper find&load plugins
+
                 if (addPlugin(getPluginTypeFromString(saveState.type), saveState.binary, saveState.name, saveState.label, extraStuff))
                 {
-                    if (CarlaPlugin* plugin = getPlugin(pData->curPluginCount-1))
+                    if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
                         plugin->loadSaveState(saveState);
                 }
-            }
 
-            node = node.nextSibling();
+                pluginsAdded = true;
+            }
         }
+
+        if (pluginsAdded)
+            pHost->dispatcher(pHost->handle, HOST_OPCODE_RELOAD_ALL, 0, 0, nullptr, 0.0f);
     }
-#endif
 
     // -------------------------------------------------------------------
 
 public:
+    #define handlePtr ((CarlaEngineNative*)handle)
+
     static NativePluginHandle _instantiateRack(const NativeHostDescriptor* host)
     {
         return new CarlaEngineNative(host, false);
@@ -753,15 +780,110 @@ public:
 
     static void _cleanup(NativePluginHandle handle)
     {
-        delete (CarlaEngineNative*)handle;
+        delete handlePtr;
     }
 
+    static uint32_t _get_parameter_count(NativePluginHandle handle)
+    {
+        return handlePtr->getParameterCount();
+    }
+
+    static const NativeParameter* _get_parameter_info(NativePluginHandle handle, uint32_t index)
+    {
+        return handlePtr->getParameterInfo(index);
+    }
+
+    static float _get_parameter_value(NativePluginHandle handle, uint32_t index)
+    {
+        return handlePtr->getParameterValue(index);
+    }
+
+    static const char* _get_parameter_text(NativePluginHandle handle, uint32_t index, float value)
+    {
+        return handlePtr->getParameterText(index, value);
+    }
+
+    static uint32_t _get_midi_program_count(NativePluginHandle handle)
+    {
+        return handlePtr->getMidiProgramCount();
+    }
+
+    static const NativeMidiProgram* _get_midi_program_info(NativePluginHandle handle, uint32_t index)
+    {
+        return handlePtr->getMidiProgramInfo(index);
+    }
+
+    static void _set_parameter_value(NativePluginHandle handle, uint32_t index, float value)
+    {
+        handlePtr->setParameterValue(index, value);
+    }
+
+    static void _set_midi_program(NativePluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program)
+    {
+        handlePtr->setMidiProgram(channel, bank, program);
+    }
+
+    static void _activate(NativePluginHandle handle)
+    {
+        handlePtr->activate();
+    }
+
+    static void _deactivate(NativePluginHandle handle)
+    {
+        handlePtr->deactivate();
+    }
+
+    static void _process(NativePluginHandle handle, float** inBuffer, float** outBuffer, const uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
+    {
+        handlePtr->process(inBuffer, outBuffer, frames, midiEvents, midiEventCount);
+    }
+
+    static char* _get_state(NativePluginHandle handle)
+    {
+        return handlePtr->getState();
+    }
+
+    static void _set_state(NativePluginHandle handle, const char* data)
+    {
+        handlePtr->setState(data);
+    }
+
+    static intptr_t _dispatcher(NativePluginHandle handle, NativePluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
+    {
+        switch(opcode)
+        {
+        case PLUGIN_OPCODE_NULL:
+            return 0;
+        case PLUGIN_OPCODE_BUFFER_SIZE_CHANGED:
+            CARLA_SAFE_ASSERT_RETURN(value > 0, 0);
+            handlePtr->bufferSizeChanged(static_cast<uint32_t>(value));
+            return 0;
+        case PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
+            handlePtr->sampleRateChanged(static_cast<double>(opt));
+            return 0;
+        case PLUGIN_OPCODE_OFFLINE_CHANGED:
+            handlePtr->offlineModeChanged(value != 0);
+            return 0;
+        case PLUGIN_OPCODE_UI_NAME_CHANGED:
+            //handlePtr->uiNameChanged(static_cast<const char*>(ptr));
+            return 0;
+        }
+
+        return 0;
+
+        // unused
+        (void)index;
+        (void)ptr;
+    }
+
+    #undef handlePtr
+
 private:
+    const NativeHostDescriptor* const pHost;
+
     const bool fIsPatchbay; // rack if false
-#if 0
-    bool fIsRunning;
+    bool fIsActive, fIsRunning;
     CarlaEngineNativeThread fThread;
-#endif
 
     CarlaPlugin* _getFirstPlugin() const noexcept
     {
@@ -797,7 +919,26 @@ static const NativePluginDescriptor carlaRackDesc = {
     /* copyright */ "GNU GPL v2+",
     CarlaEngineNative::_instantiateRack,
     CarlaEngineNative::_cleanup,
-    PluginDescriptorFILL2(CarlaEngineNative)
+    CarlaEngineNative::_get_parameter_count,
+    CarlaEngineNative::_get_parameter_info,
+    CarlaEngineNative::_get_parameter_value,
+    CarlaEngineNative::_get_parameter_text,
+    CarlaEngineNative::_get_midi_program_count,
+    CarlaEngineNative::_get_midi_program_info,
+    CarlaEngineNative::_set_parameter_value,
+    CarlaEngineNative::_set_midi_program,
+    /* _set_custom_data        */ nullptr,
+    /* _ui_show                */ nullptr,
+    /* _ui_idle                */ nullptr,
+    /* _ui_set_parameter_value */ nullptr,
+    /* _ui_set_midi_program    */ nullptr,
+    /* _ui_set_custom_data     */ nullptr,
+    CarlaEngineNative::_activate,
+    CarlaEngineNative::_deactivate,
+    CarlaEngineNative::_process,
+    CarlaEngineNative::_get_state,
+    CarlaEngineNative::_set_state,
+    CarlaEngineNative::_dispatcher
 };
 
 #ifdef HAVE_JUCE
@@ -817,7 +958,26 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
     /* copyright */ "GNU GPL v2+",
     CarlaEngineNative::_instantiatePatchbay,
     CarlaEngineNative::_cleanup,
-    PluginDescriptorFILL2(CarlaEngineNative)
+    CarlaEngineNative::_get_parameter_count,
+    CarlaEngineNative::_get_parameter_info,
+    CarlaEngineNative::_get_parameter_value,
+    CarlaEngineNative::_get_parameter_text,
+    CarlaEngineNative::_get_midi_program_count,
+    CarlaEngineNative::_get_midi_program_info,
+    CarlaEngineNative::_set_parameter_value,
+    CarlaEngineNative::_set_midi_program,
+    /* _set_custom_data        */ nullptr,
+    /* _ui_show                */ nullptr,
+    /* _ui_idle                */ nullptr,
+    /* _ui_set_parameter_value */ nullptr,
+    /* _ui_set_midi_program    */ nullptr,
+    /* _ui_set_custom_data     */ nullptr,
+    CarlaEngineNative::_activate,
+    CarlaEngineNative::_deactivate,
+    CarlaEngineNative::_process,
+    CarlaEngineNative::_get_state,
+    CarlaEngineNative::_set_state,
+    CarlaEngineNative::_dispatcher
 };
 #endif
 

@@ -458,7 +458,7 @@ class CarlaRackW(QListWidget):
         if pitem is None:
             return
 
-        pitem.ui.edit_dialog.updateInfo()
+        pitem.widget.ui.edit_dialog.updateInfo()
 
     @pyqtSlot(int)
     def slot_handleReloadInfoCallback(self, pluginId):
@@ -469,7 +469,7 @@ class CarlaRackW(QListWidget):
         if pitem is None:
             return
 
-        pitem.ui.edit_dialog.reloadInfo()
+        pitem.widget.ui.edit_dialog.reloadInfo()
 
     @pyqtSlot(int)
     def slot_handleReloadParametersCallback(self, pluginId):
@@ -480,7 +480,7 @@ class CarlaRackW(QListWidget):
         if pitem is None:
             return
 
-        pitem.ui.edit_dialog.reloadParameters()
+        pitem.widget.ui.edit_dialog.reloadParameters()
 
     @pyqtSlot(int)
     def slot_handleReloadProgramsCallback(self, pluginId):
@@ -491,7 +491,7 @@ class CarlaRackW(QListWidget):
         if pitem is None:
             return
 
-        pitem.ui.edit_dialog.reloadPrograms()
+        pitem.widget.ui.edit_dialog.reloadPrograms()
 
     @pyqtSlot(int)
     def slot_handleReloadAllCallback(self, pluginId):
@@ -502,6 +502,6 @@ class CarlaRackW(QListWidget):
         if pitem is None:
             return
 
-        pitem.ui.edit_dialog.reloadAll()
+        pitem.widget.ui.edit_dialog.reloadAll()
 
     # -----------------------------------------------------------------

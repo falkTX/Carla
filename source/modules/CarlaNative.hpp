@@ -567,23 +567,20 @@ public:
 
 // -----------------------------------------------------------------------
 
-#define PluginClassEND(ClassName)                   \
-public:                                             \
+#define PluginClassEND(ClassName)                                            \
+public:                                                                      \
     static NativePluginHandle _instantiate(const NativeHostDescriptor* host) \
-    {                                               \
-        return new ClassName(host);                 \
-    }                                               \
-    static void _cleanup(NativePluginHandle handle) \
-    {                                               \
-        delete (ClassName*)handle;                  \
+    {                                                                        \
+        return (host != nullptr) ? new ClassName(host) : nullptr;            \
+    }                                                                        \
+    static void _cleanup(NativePluginHandle handle)                          \
+    {                                                                        \
+        delete (ClassName*)handle;                                           \
     }
 
 #define PluginDescriptorFILL(ClassName) \
     ClassName::_instantiate,            \
     ClassName::_cleanup,                \
-    PluginDescriptorFILL2(ClassName)
-
-#define PluginDescriptorFILL2(ClassName) \
     ClassName::_get_parameter_count,    \
     ClassName::_get_parameter_info,     \
     ClassName::_get_parameter_value,    \

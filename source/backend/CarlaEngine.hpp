@@ -185,8 +185,8 @@ struct EngineMidiEvent {
      * If size > kDataSize, dataExt is used.
      */
     union {
-        uint8_t  data[kDataSize];
-        uint8_t* dataExt;
+        uint8_t        data[kDataSize];
+        const uint8_t* dataExt;
     };
 };
 
@@ -206,7 +206,7 @@ struct EngineEvent {
         EngineMidiEvent midi;
     };
 
-    void fillFromMidiData(const uint8_t size, uint8_t* const data);
+    void fillFromMidiData(const uint8_t size, const uint8_t* const data);
 };
 
 /*!

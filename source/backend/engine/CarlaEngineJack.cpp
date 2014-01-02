@@ -1143,9 +1143,9 @@ protected:
                 {
                     const EngineEvent& engineEvent(pData->bufEvents.out[i]);
 
-                    uint8_t  size    = 0;
-                    uint8_t  data[3] = { 0, 0, 0 };
-                    uint8_t* dataPtr = data;
+                    uint8_t        size    = 0;
+                    uint8_t        data[3] = { 0, 0, 0 };
+                    const uint8_t* dataPtr = data;
 
                     switch (engineEvent.type)
                     {
