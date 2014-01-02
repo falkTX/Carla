@@ -151,7 +151,11 @@ debug:
 	$(MAKE) DEBUG=true
 
 install: $(CARLASTYLE) styles/carlastyle.json
-	install -d $(QT_STYLES_DIR)
-	install -m 644 $^ $(QT_STYLES_DIR)
+	install -d $(QT4_STYLES_DIR)
+	install -m 644 $^ $(QT4_STYLES_DIR)
+
+install-main: $(CARLASTYLE) styles/carlastyle.json
+	install -d $(STYLES_DIR)
+	install -m 644 $^ $(STYLES_DIR)
 
 # --------------------------------------------------------------

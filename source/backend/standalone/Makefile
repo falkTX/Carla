@@ -9,103 +9,85 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 # Common
 
-LINK_FLAGS += $(shell pkg-config --libs liblo)
+STATIC_LIBS  = ../carla_engine.a
+STATIC_LIBS += ../carla_plugin.a
+STATIC_LIBS += ../../modules/rtmempool.a
 
-LINK_FLAGS += $(QTCORE_LIBS)
-LINK_FLAGS += $(QTXML_LIBS)
-LINK_FLAGS += $(RTMEMPOOL_LIBS)
+LINK_FLAGS  += $(LIBLO_LIBS)
+LINK_FLAGS  += $(QTCORE_LIBS)
+LINK_FLAGS  += $(QTXML_LIBS)
+LINK_FLAGS  += $(RTMEMPOOL_LIBS)
 
 # --------------------------------------------------------------
 # Engine
 
-LINK_FLAGS += $(RTAUDIO_LIBS)
-LINK_FLAGS += $(RTMIDI_LIBS)
-LINK_FLAGS += $(JACKBRIDGE_LIBS)
+STATIC_LIBS += ../../modules/jackbridge.a
+STATIC_LIBS += ../../modules/rtaudio.a
+STATIC_LIBS += ../../modules/rtmidi.a
+
+LINK_FLAGS  += $(JACKBRIDGE_LIBS)
+LINK_FLAGS  += $(RTAUDIO_LIBS)
+LINK_FLAGS  += $(RTMIDI_LIBS)
 
 # --------------------------------------------------------------
 # Plugin
 
-# ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-# LINK_FLAGS += $(LILV_LIBS)
-# endif
-#
-# ifeq ($(HAVE_FLUIDSYNTH),true)
-# LINK_FLAGS += $(shell pkg-config --libs fluidsynth)
-# endif
-#
-# ifeq ($(HAVE_LINUXSAMPLER),true)
-# LINK_FLAGS += $(shell pkg-config --libs linuxsampler)
-# ifeq ($(WIN32),true)
-# LINK_FLAGS += lrpcrt4
-# endif
-# endif
-
-# --------------------------------------------------------------
-# Coomon
-
-ifeq ($(HAVE_FFMPEG),true)
-LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat libavutil)
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+STATIC_LIBS += ../../modules/lilv.a
+LINK_FLAGS  += $(LILV_LIBS)
 endif
 
-ifeq ($(HAVE_JUCE),true)
-LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
-LINK_FLAGS += $(JUCE_AUDIO_DEVICES_LIBS)
-LINK_FLAGS += $(JUCE_CORE_LIBS)
-# LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
-LINK_FLAGS += $(JUCE_EVENTS_LIBS)
-# LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
-# LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
-endif
-
-ifeq ($(HAVE_OPENGL),true)
-LINK_FLAGS += $(DGL_LIBS)
+ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
+LINK_FLAGS += $(FLUIDSYNTH_LIBS)
+LINK_FLAGS += $(LINUXSAMPLER_LIBS)
 endif
 
 # --------------------------------------------------------------
 # Native
 
+STATIC_LIBS += ../../modules/carla_native.a
+
 ifeq ($(HAVE_AF_DEPS),true)
-LINK_FLAGS += $(shell pkg-config --libs sndfile)
+LINK_FLAGS  += $(shell pkg-config --libs sndfile)
+ifeq ($(HAVE_FFMPEG),true)
+LINK_FLAGS  += $(shell pkg-config --libs libavcodec libavformat libavutil)
+endif
 endif
 
 ifeq ($(HAVE_MF_DEPS),true)
-LINK_FLAGS += $(shell pkg-config --libs smf)
+LINK_FLAGS  += $(shell pkg-config --libs smf)
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
-LINK_FLAGS += $(shell pkg-config --libs fftw3 mxml zlib)
+LINK_FLAGS  += $(shell pkg-config --libs fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
-LINK_FLAGS += $(shell pkg-config --libs ntk_images ntk)
+LINK_FLAGS  += $(shell pkg-config --libs ntk_images ntk)
 endif
 endif
 
 # --------------------------------------------------------------
-
-LIBS += ../libcarla_engine.a
-LIBS += ../libcarla_plugin.a
-
-LIBS += ../../modules/carla_native.a
-LIBS += ../../modules/jackbridge.a
-LIBS += ../../modules/rtaudio.a
-LIBS += ../../modules/rtmidi.a
-LIBS += ../../modules/rtmempool.a
-
-# ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-# LIBS += ../../modules/lilv.a
-# endif
+# Final
 
 ifeq ($(HAVE_JUCE),true)
-LIBS += ../../modules/juce_audio_basics.a
-LIBS += ../../modules/juce_audio_devices.a
-LIBS += ../../modules/juce_core.a
-# LIBS += ../../modules/juce_data_structures.a
-LIBS += ../../modules/juce_events.a
-# LIBS += ../../modules/juce_graphics.a
-# LIBS += ../../modules/juce_gui_basics.a
+STATIC_LIBS += ../../modules/juce_audio_basics.a
+STATIC_LIBS += ../../modules/juce_audio_devices.a
+STATIC_LIBS += ../../modules/juce_core.a
+STATIC_LIBS += ../../modules/juce_data_structures.a
+STATIC_LIBS += ../../modules/juce_events.a
+STATIC_LIBS += ../../modules/juce_graphics.a
+STATIC_LIBS += ../../modules/juce_gui_basics.a
+LINK_FLAGS  += $(JUCE_AUDIO_BASICS_LIBS)
+LINK_FLAGS  += $(JUCE_AUDIO_DEVICES_LIBS)
+LINK_FLAGS  += $(JUCE_CORE_LIBS)
+LINK_FLAGS  += $(JUCE_DATA_STRUCTURES_LIBS)
+LINK_FLAGS  += $(JUCE_EVENTS_LIBS)
+LINK_FLAGS  += $(JUCE_GRAPHICS_LIBS)
+LINK_FLAGS  += $(JUCE_GUI_BASICS_LIBS)
 endif
 
 ifeq ($(HAVE_OPENGL),true)
-LIBS += ../../modules/dgl.a
+STATIC_LIBS += ../../modules/dgl.a
+LINK_FLAGS  += $(DGL_LIBS)
 endif
 
 # --------------------------------------------------------------
@@ -138,14 +120,14 @@ debug:
 %.cpp.o: %.cpp $(HEADERS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-../libcarla_standalone2.dll: CarlaStandalone.cpp.o $(LIBS)
-	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group $(LINK_FLAGS) -shared -Wl,--output-def,$@.def -o $@
+../libcarla_standalone2.dll: CarlaStandalone.cpp.o $(STATIC_LIBS)
+	$(CXX) $< -Wl,--start-group $(STATIC_LIBS) -Wl,--end-group $(LINK_FLAGS) -shared -Wl,--output-def,$@.def -o $@
 
-../libcarla_standalone2.dylib: CarlaStandalone.cpp.o $(LIBS)
-	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group $(LINK_FLAGS) -dynamiclib -o $@
+../libcarla_standalone2.dylib: CarlaStandalone.cpp.o $(STATIC_LIBS)
+	$(CXX) $< -Wl,--start-group $(STATIC_LIBS) -Wl,--end-group $(LINK_FLAGS) -dynamiclib -o $@
 
-../libcarla_standalone2.so: CarlaStandalone.cpp.o $(LIBS)
-	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group $(LINK_FLAGS) -shared -o $@
+../libcarla_standalone2.so: CarlaStandalone.cpp.o $(STATIC_LIBS)
+	$(CXX) $< -Wl,--start-group $(STATIC_LIBS) -Wl,--end-group $(LINK_FLAGS) -shared -o $@
 
 # --------------------------------------------------------------
 

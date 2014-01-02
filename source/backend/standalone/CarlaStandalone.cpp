@@ -213,7 +213,7 @@ const char* carla_get_complete_license_text()
 
 #ifdef WANT_NATIVE
         // Internal plugins
-# ifdef WANT_OPENGL
+# ifdef HAVE_OPENGL
         text3 += "<li>DISTRHO Mini-Series plugin code, based on LOSER-dev suite by Michael Gruhn</li>";
 # endif
         text3 += "<li>NekoFilter plugin code, based on lv2fil by Nedko Arnaudov and Fons Adriaensen</li>";

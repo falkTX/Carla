@@ -25,8 +25,8 @@
 #include "zynaddsubfx/Effects/Phaser.h"
 #include "zynaddsubfx/Effects/Reverb.h"
 
-#ifdef USE_JUCE
-#include "juce_audio_basics.h"
+#ifdef HAVE_JUCE
+# include "juce_audio_basics.h"
 using juce::FloatVectorOperations;
 #endif
 
@@ -47,7 +47,7 @@ protected:
         const uint32_t bufferSize(getBufferSize());
         efxoutl = new float[bufferSize];
         efxoutr = new float[bufferSize];
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
         FloatVectorOperations::clear(efxoutl, bufferSize);
         FloatVectorOperations::clear(efxoutr, bufferSize);
 #else
@@ -139,7 +139,7 @@ protected:
     {
         fEffect->out(Stereo<float*>(inBuffer[0], inBuffer[1]));
 
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
         FloatVectorOperations::copy(outBuffer[0], efxoutl, frames);
         FloatVectorOperations::copy(outBuffer[1], efxoutr, frames);
 #else
@@ -155,7 +155,7 @@ protected:
         delete[] efxoutr;
         efxoutl = new float[bufferSize];
         efxoutr = new float[bufferSize];
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
         FloatVectorOperations::clear(efxoutl, bufferSize);
         FloatVectorOperations::clear(efxoutr, bufferSize);
 #else

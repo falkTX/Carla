@@ -141,14 +141,6 @@ doxygen:
 
 # --------------------------------------------------------------
 
-install-dev:
-	install -d $(DESTDIR)$(PREFIX)/include/carla/
-	install -d $(DESTDIR)$(PREFIX)/include/carla/includes/
-
-	install -m 644 source/backend/CarlaBackend.h  $(DESTDIR)$(PREFIX)/include/carla/
-	install -m 644 source/backend/CarlaHost.h     $(DESTDIR)$(PREFIX)/include/carla/
-	install -m 644 source/includes/CarlaDefines.h $(DESTDIR)$(PREFIX)/include/carla/includes/
-
 install:
 	# Create directories
 	install -d $(DESTDIR)$(PREFIX)/bin/
@@ -157,6 +149,9 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/nekofilter/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/zynaddsubfx/
 	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/
+	install -d $(DESTDIR)$(PREFIX)/lib/pkgconfig/
+	install -d $(DESTDIR)$(PREFIX)/include/carla/
+	install -d $(DESTDIR)$(PREFIX)/include/carla/includes/
 	install -d $(DESTDIR)$(PREFIX)/share/applications/
 	install -d $(DESTDIR)$(PREFIX)/share/carla/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
@@ -203,6 +198,9 @@ install:
 	# Install mime package
 	install -m 644 data/carla.xml $(DESTDIR)$(PREFIX)/share/mime/packages/
 
+	# Install pkgconfig file
+	install -m 644 data/carla-standalone.pc $(DESTDIR)$(PREFIX)/lib/pkgconfig/
+
 	# Install backend
 	install -m 644 \
 		source/backend/*.so \
@@ -230,11 +228,19 @@ install:
 		source/carla-rack \
 		$(DESTDIR)$(PREFIX)/share/carla/
 
+	# Install headers
+	install -m 644 source/backend/CarlaBackend.h  $(DESTDIR)$(PREFIX)/include/carla/
+	install -m 644 source/backend/CarlaHost.h     $(DESTDIR)$(PREFIX)/include/carla/
+	install -m 644 source/includes/CarlaDefines.h $(DESTDIR)$(PREFIX)/include/carla/includes/
+
 	# Install resources
 	install -m 644 source/modules/carla_native/resources/*-ui              $(DESTDIR)$(PREFIX)/lib/carla/resources/
 	install -m 644 source/modules/carla_native/resources/*.py              $(DESTDIR)$(PREFIX)/lib/carla/resources/
 	install -m 644 source/modules/carla_native/resources/nekofilter/*.png  $(DESTDIR)$(PREFIX)/lib/carla/resources/nekofilter/
 	install -m 644 source/modules/carla_native/resources/zynaddsubfx/*.png $(DESTDIR)$(PREFIX)/lib/carla/resources/zynaddsubfx/
+
+	# Install theme
+	$(MAKE) STYLES_DIR=$(DESTDIR)$(PREFIX)/lib/carla/styles install-main -C source/modules/theme
 
 	# Adjust PREFIX value in script files
 	sed -i "s/X-PREFIX-X/$(SED_PREFIX)/" \
@@ -244,7 +250,8 @@ install:
 		$(DESTDIR)$(PREFIX)/bin/carla-patchbay \
 		$(DESTDIR)$(PREFIX)/bin/carla-rack \
 		$(DESTDIR)$(PREFIX)/bin/carla-settings \
-		$(DESTDIR)$(PREFIX)/bin/carla-single
+		$(DESTDIR)$(PREFIX)/bin/carla-single \
+		$(DESTDIR)$(PREFIX)/lib/pkgconfig/carla-standalone.pc
 
 	# Set plugin resources
 	cd $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/ && \

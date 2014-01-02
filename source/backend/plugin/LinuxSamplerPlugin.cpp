@@ -512,7 +512,7 @@ public:
             // disable any output sound
             for (i=0; i < pData->audioOut.count; ++i)
             {
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
                 FloatVectorOperations::clear(outBuffer[i], frames);
 #else
 #endif
@@ -885,7 +885,7 @@ public:
                 {
                     if (i % 2 == 0)
                     {
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
                         FloatVectorOperations::copy(oldBufLeft, outBuffer[i], frames);
 #else
 #endif

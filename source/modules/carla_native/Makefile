@@ -8,47 +8,64 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_C_FLAGS   += -I. -I.. -I../../includes
-BUILD_CXX_FLAGS += -I. -I.. -I../../includes -I../../utils -I../distrho
+BUILD_C_FLAGS   += -I. -I../../includes -isystem ..
+BUILD_CXX_FLAGS += -I. -I../../includes -I../../utils -I../distrho -isystem ..
+
+# --------------------------------------------------------------
 
 LINK_FLAGS      += -L..
 ifeq ($(HAVE_OPENGL),true)
 LINK_FLAGS      += -ldgl $(DGL_LIBS)
 endif
+ifeq ($(HAVE_JUCE),true)
 LINK_FLAGS      += -ljuce_audio_basics $(JUCE_AUDIO_BASICS_LIBS)
 LINK_FLAGS      += -ljuce_core $(JUCE_CORE_LIBS)
 LINK_FLAGS      += -ljuce_data_structures $(JUCE_DATA_STRUCTURES_LIBS)
 LINK_FLAGS      += -ljuce_events $(JUCE_EVENTS_LIBS)
 LINK_FLAGS      += -ljuce_graphics $(JUCE_GRAPHICS_LIBS)
 LINK_FLAGS      += -ljuce_gui_basics $(JUCE_GUI_BASICS_LIBS)
+endif
 
 # --------------------------------------------------------------
 
-ALL_C_FLAGS    = $(BUILD_C_FLAGS)
+ALL_C_FLAGS  = $(BUILD_C_FLAGS)
 
-ifeq ($(HAVE_OPENGL),true)
-ALL_C_FLAGS   += -DWANT_OPENGL
+# AudioFile
+ifeq ($(HAVE_AF_DEPS),true)
+ALL_C_FLAGS += -DWANT_AUDIOFILE
 endif
 
+# MidiFile
+ifeq ($(HAVE_MF_DEPS),true)
+ALL_C_FLAGS += -DWANT_MIDIFILE
+endif
+
+# ZynAddSubFX
+ifeq ($(HAVE_ZYN_DEPS),true)
+ALL_C_FLAGS += -DWANT_ZYNADDSUBFX
+endif
+
+# --------------------------------------------------------------
+
+# AudioFile
 ifeq ($(HAVE_AF_DEPS),true)
 AF_C_FLAGS     = $(BUILD_C_FLAGS)
 AF_C_FLAGS    += $(shell pkg-config --cflags sndfile)
 LINK_FLAGS    += $(shell pkg-config --libs sndfile)
-ALL_C_FLAGS   += -DWANT_AUDIOFILE
 ifeq ($(HAVE_FFMPEG),true)
-AF_C_FLAGS    += -DHAVE_FFMPEG
 AF_C_FLAGS    += $(shell pkg-config --cflags libavcodec libavformat libavutil)
 LINK_FLAGS    += $(shell pkg-config --libs libavcodec libavformat libavutil)
 endif
 endif
 
+# MidiFile
 ifeq ($(HAVE_MF_DEPS),true)
 MF_CXX_FLAGS   = $(BUILD_CXX_FLAGS)
 MF_CXX_FLAGS  += $(shell pkg-config --cflags smf)
 LINK_FLAGS    += $(shell pkg-config --libs smf)
-ALL_C_FLAGS   += -DWANT_MIDIFILE
 endif
 
+# ZynAddSubFX
 ifeq ($(HAVE_ZYN_DEPS),true)
 ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS) -w
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags fftw3 mxml zlib)
@@ -58,8 +75,9 @@ ZYN_CXX_FLAGS += -DNTK_GUI -DWANT_ZYNADDSUBFX_UI
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags ntk_images ntk)
 LINK_FLAGS    += $(shell pkg-config --libs ntk_images ntk)
 endif
-ALL_C_FLAGS   += -DWANT_ZYNADDSUBFX
 endif
+
+# --------------------------------------------------------------
 
 # Implement carla_register_native_plugin
 LINK_FLAGS += -I.. _link.c
@@ -78,12 +96,16 @@ OBJS += \
 	midi-transpose.c.o \
 	nekofilter.c.o
 
+# --------------------------------------------------------------
+
 ifeq ($(HAVE_JUCE),true)
 OBJS += \
 	vex-fx.cpp.o \
 	vex-synth.cpp.o \
 	vex-src.cpp.o
 endif
+
+# --------------------------------------------------------------
 
 ifeq ($(HAVE_OPENGL),true)
 OBJS += \
@@ -94,6 +116,8 @@ OBJS += \
 # 	distrho-stereoenhancer.cpp.o
 endif
 
+# --------------------------------------------------------------
+
 # AudioFile
 ifeq ($(HAVE_AF_DEPS),true)
 OBJS += \
@@ -103,11 +127,15 @@ OBJS += \
 	audio_decoder/ad_soundfile.c.o
 endif
 
+# --------------------------------------------------------------
+
 # MidiFile
 ifeq ($(HAVE_MF_DEPS),true)
 OBJS += \
 	midi-file.cpp.o
 endif
+
+# --------------------------------------------------------------
 
 # ZynAddSubFX
 ifeq ($(HAVE_ZYN_DEPS),true)

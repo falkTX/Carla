@@ -34,12 +34,12 @@ BUILD_PLUGIN_FLAGS += -DWANT_LADSPA
 # endif
 endif
 
-# LINK_PLUGIN_FLAGS  += $(JUCE_AUDIO_BASICS_LIBS)
-# LINK_PLUGIN_FLAGS  += $(JUCE_CORE_LIBS)
-# LINK_PLUGIN_FLAGS  += $(JUCE_DATA_STRUCTURES_LIBS)
-# LINK_PLUGIN_FLAGS  += $(JUCE_EVENTS_LIBS)
-# LINK_PLUGIN_FLAGS  += $(JUCE_GRAPHICS_LIBS)
-# LINK_PLUGIN_FLAGS  += $(JUCE_GUI_BASICS_LIBS)
+LINK_PLUGIN_FLAGS  += $(JUCE_AUDIO_BASICS_LIBS)
+LINK_PLUGIN_FLAGS  += $(JUCE_CORE_LIBS)
+LINK_PLUGIN_FLAGS  += $(JUCE_DATA_STRUCTURES_LIBS)
+LINK_PLUGIN_FLAGS  += $(JUCE_EVENTS_LIBS)
+LINK_PLUGIN_FLAGS  += $(JUCE_GRAPHICS_LIBS)
+LINK_PLUGIN_FLAGS  += $(JUCE_GUI_BASICS_LIBS)
 
 # --------------------------------------------------------------
 # Plugin bridges (POSIX)
@@ -393,13 +393,13 @@ OBJS_NATIVE += \
 # libs
 OBJS_NATIVE += \
 	../modules/jackbridge.a \
+	../modules/juce_audio_basics.a \
+	../modules/juce_core.a \
+	../modules/juce_events.a \
 	../modules/rtmempool.a
 
 # 	../modules/carla_native.a \
-# 	../modules/juce_audio_basics.a \
-# 	../modules/juce_core.a \
 # 	../modules/juce_data_structures.a \
-# 	../modules/juce_events.a \
 # 	../modules/juce_graphics.a \
 # 	../modules/juce_gui_basics.a \
 

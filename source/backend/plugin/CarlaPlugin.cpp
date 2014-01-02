@@ -812,23 +812,23 @@ bool CarlaPlugin::saveStateToFile(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
     carla_debug("CarlaPlugin::saveStateToFile(\"%s\")", filename);
 
-#ifdef USE_JUCE
-    File file(filename);
+    QFile file(filename);
 
-    String content;
+    if (! file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return false;
+
+    QString content;
     fillXmlStringFromSaveState(content, getSaveState());
 
-    MemoryOutputStream out;
+    QTextStream out(&file);
     out << "<?xml version='1.0' encoding='UTF-8'?>\n";
     out << "<!DOCTYPE CARLA-PRESET>\n";
     out << "<CARLA-PRESET VERSION='2.0'>\n";
     out << content;
     out << "</CARLA-PRESET>\n";
 
-    return file.replaceWithData(out.getData(), out.getDataSize());
-#else
-    return false;
-#endif
+    file.close();
+    return true;
 }
 
 bool CarlaPlugin::loadStateFromFile(const char* const filename)
@@ -836,38 +836,28 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
     carla_debug("CarlaPlugin::loadStateFromFile(\"%s\")", filename);
 
-#ifdef USE_JUCE
-    File file(filename);
+    QFile file(filename);
 
-    XmlDocument xml(file);
+    if (! file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return false;
 
-    if (XmlElement* const xmlCheck = xml.getDocumentElement(true))
+    QDomDocument xml;
+    xml.setContent(file.readAll());
+    file.close();
+
+    QDomNode xmlNode(xml.documentElement());
+
+    if (xmlNode.toElement().tagName().compare("carla-preset", Qt::CaseInsensitive) == 0)
     {
-        if (xmlCheck->getTagName().equalsIgnoreCase("carla-preset"))
-        {
-            if (XmlElement* const xmlElem = xml.getDocumentElement(false))
-            {
-                pData->saveState.reset();
-                fillSaveStateFromXmlElement(pData->saveState, xmlElem);
-                loadSaveState(pData->saveState);
-
-                delete xmlElem;
-                delete xmlCheck;
-                return true;
-            }
-            else
-                pData->engine->setLastError("Failed to parse file");
-        }
-        else
-            pData->engine->setLastError("Invalid Carla preset file");
-
-        delete xmlCheck;
+        pData->engine->setLastError("Not a valid Carla preset file");
         return false;
     }
-#endif
 
-    pData->engine->setLastError("Not a valid file");
-    return false;
+    pData->saveState.reset();
+    fillSaveStateFromXmlNode(pData->saveState, xmlNode);
+    loadSaveState(pData->saveState);
+
+    return true;
 }
 
 // -------------------------------------------------------------------

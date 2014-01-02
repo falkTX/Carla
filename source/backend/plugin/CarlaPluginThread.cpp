@@ -20,11 +20,7 @@
 #include "CarlaPlugin.hpp"
 #include "CarlaEngine.hpp"
 
-#ifdef USE_JUCE
-using juce::ChildProcess;
-using juce::String;
-using juce::StringArray;
-#endif
+#include <QtCore/QProcess>
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -52,11 +48,21 @@ CarlaPluginThread::CarlaPluginThread(CarlaBackend::CarlaEngine* const engine, Ca
     : CarlaThread("CarlaPluginThread"),
       fEngine(engine),
       fPlugin(plugin),
-      fMode(mode)
+      fMode(mode),
+      fProcess(nullptr)
 {
     carla_debug("CarlaPluginThread::CarlaPluginThread(%p, %p, %s)", engine, plugin, PluginThreadMode2str(mode));
+}
 
-    //setPriority(5);
+CarlaPluginThread::~CarlaPluginThread()
+{
+    carla_debug("CarlaPluginThread::~CarlaPluginThread()");
+
+    if (fProcess != nullptr)
+    {
+       delete fProcess;
+       fProcess = nullptr;
+    }
 }
 
 void CarlaPluginThread::setMode(const CarlaPluginThread::Mode mode)
@@ -82,13 +88,35 @@ void CarlaPluginThread::run()
 {
     carla_debug("CarlaPluginThread::run()");
 
-#ifdef USE_JUCE
-    ChildProcess process;
+    if (fProcess == nullptr)
+    {
+       fProcess = new QProcess(nullptr);
+       fProcess->setProcessChannelMode(QProcess::ForwardedChannels);
+    }
+    else if (fProcess->state() == QProcess::Running)
+    {
+        carla_stderr("CarlaPluginThread::run() - already running, giving up...");
 
-    StringArray arguments;
-    arguments.add((const char*)fBinary);
+        switch (fMode)
+        {
+        case PLUGIN_THREAD_NULL:
+            break;
 
-    String name(fPlugin->getName());
+        case PLUGIN_THREAD_DSSI_GUI:
+        case PLUGIN_THREAD_LV2_GUI:
+        case PLUGIN_THREAD_VST_GUI:
+            fEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, fPlugin->getId(), -1, 0, 0.0f, nullptr);
+            fProcess->terminate();
+            return;
+
+        case PLUGIN_THREAD_BRIDGE:
+            break;
+        }
+    }
+
+    QString name(fPlugin->getName());
+    QStringList arguments;
+
     if (name.isEmpty())
         name = "(none)";
 
@@ -98,37 +126,37 @@ void CarlaPluginThread::run()
         break;
 
     case PLUGIN_THREAD_DSSI_GUI:
-        /* osc-url  */ arguments.add(String(fEngine->getOscServerPathUDP()) + "/" + String(fPlugin->getId()));
-        /* filename */ arguments.add(fPlugin->getFilename());
-        /* label    */ arguments.add((const char*)fLabel);
-        /* ui-title */ arguments.add(name + " (GUI)");
+        /* osc-url  */ arguments << QString("%1/%2").arg(fEngine->getOscServerPathUDP()).arg(fPlugin->getId());
+        /* filename */ arguments << fPlugin->getFilename();
+        /* label    */ arguments << (const char*)fLabel;
+        /* ui-title */ arguments << QString("%1 (GUI)").arg(fPlugin->getName());
         break;
 
     case PLUGIN_THREAD_LV2_GUI:
-        /* osc-url  */ arguments.add(String(fEngine->getOscServerPathTCP()) + "/" + String(fPlugin->getId()));
-        /* URI      */ arguments.add((const char*)fLabel);
-        /* ui-URI   */ arguments.add((const char*)fExtra1);
-        /* ui-title */ arguments.add(name + " (GUI)");
+        /* osc-url  */ arguments << QString("%1/%2").arg(fEngine->getOscServerPathTCP()).arg(fPlugin->getId());
+        /* URI      */ arguments << (const char*)fLabel;
+        /* ui-URI   */ arguments << (const char*)fExtra1;
+        /* ui-title */ arguments << QString("%1 (GUI)").arg(fPlugin->getName());
         break;
 
     case PLUGIN_THREAD_VST_GUI:
-        /* osc-url  */ arguments.add(String(fEngine->getOscServerPathTCP()) + "/" + String(fPlugin->getId()));
-        /* filename */ arguments.add(fPlugin->getFilename());
-        /* ui-title */ arguments.add(name + " (GUI)");
+        /* osc-url  */ arguments << QString("%1/%2").arg(fEngine->getOscServerPathTCP()).arg(fPlugin->getId());
+        /* filename */ arguments << fPlugin->getFilename();
+        /* ui-title */ arguments << QString("%1 (GUI)").arg(fPlugin->getName());
         break;
 
     case PLUGIN_THREAD_BRIDGE:
-        /* osc-url  */ arguments.add(String(fEngine->getOscServerPathTCP()) + "/" + String(fPlugin->getId()));
-        /* stype    */ arguments.add((const char*)fExtra1);
-        /* filename */ arguments.add(fPlugin->getFilename());
-        /* name     */ arguments.add(name);
-        /* label    */ arguments.add((const char*)fLabel);
-        /* SHM ids  */ arguments.add((const char*)fExtra2);
+        /* osc-url  */ arguments << QString("%1/%2").arg(fEngine->getOscServerPathTCP()).arg(fPlugin->getId());
+        /* stype    */ arguments << (const char*)fExtra1;
+        /* filename */ arguments << fPlugin->getFilename();
+        /* name     */ arguments << name;
+        /* label    */ arguments << (const char*)fLabel;
+        /* SHM ids  */ arguments << (const char*)fExtra2;
         break;
     }
 
-    if (! process.start(arguments))
-        return;
+    fProcess->start((const char*)fBinary, arguments);
+    fProcess->waitForStarted();
 
     switch (fMode)
     {
@@ -140,50 +168,88 @@ void CarlaPluginThread::run()
     case PLUGIN_THREAD_VST_GUI:
         if (fPlugin->waitForOscGuiShow())
         {
-            while (process.isRunning() && ! threadShouldExit())
-                sleep(1000);
+            //fProcess->waitForFinished(-1);
 
-            // we only get here is UI was closed or thread asked to exit
+            while (fProcess->state() != QProcess::NotRunning && ! shouldExit())
+                carla_sleep(1);
 
-            if (threadShouldExit())
+            // we only get here if UI was closed or thread asked to exit
+
+            if (fProcess->state() != QProcess::NotRunning && shouldExit())
             {
-                if (process.isRunning())
-                    process.kill();
+                fProcess->waitForFinished(fEngine->getOptions().uiBridgesTimeout);
+
+                if (fProcess->state() == QProcess::Running)
+                {
+                    carla_stdout("CarlaPluginThread::run() - UI refused to close, force kill now");
+                    fProcess->kill();
+                }
+                else
+                {
+                    carla_stdout("CarlaPluginThread::run() - UI auto-closed successfully");
+                }
+
+                fEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, fPlugin->getId(), 0, 0, 0.0f, nullptr);
+            }
+            else if (fProcess->exitCode() != 0 || fProcess->exitStatus() == QProcess::CrashExit)
+            {
+                carla_stderr("CarlaPluginThread::run() - UI crashed while running");
+                fEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, fPlugin->getId(), -1, 0, 0.0f, nullptr);
             }
             else
             {
-                fEngine->callback(CarlaBackend::CALLBACK_SHOW_GUI, fPlugin->getId(), 0, 0, 0.0f, nullptr);
+                carla_stdout("CarlaPluginThread::run() - UI closed cleanly");
+                fEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, fPlugin->getId(), 0, 0, 0.0f, nullptr);
             }
         }
         else
         {
-            if (process.isRunning() && ! process.waitForProcessToFinish(500))
-            {
-                process.kill();
+            fProcess->close();
+            CARLA_ASSERT(fProcess->state() == QProcess::NotRunning);
 
-                fEngine->callback(CarlaBackend::CALLBACK_SHOW_GUI, fPlugin->getId(), -1, 0, 0.0f, nullptr);
+            if (fProcess->exitCode() != 0 || fProcess->exitStatus() == QProcess::CrashExit)
+            {
                 carla_stderr("CarlaPluginThread::run() - GUI crashed while opening");
+                fEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, fPlugin->getId(), -1, 0, 0.0f, nullptr);
             }
             else
             {
-                fEngine->callback(CarlaBackend::CALLBACK_SHOW_GUI, fPlugin->getId(), 0, 0, 0.0f, nullptr);
-                carla_stderr("CarlaPluginThread::run() - GUI timeout");
+                carla_debug("CarlaPluginThread::run() - GUI timeout");
+                fEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, fPlugin->getId(), 0, 0, 0.0f, nullptr);
             }
         }
         break;
 
     case PLUGIN_THREAD_BRIDGE:
-        while (process.isRunning() && ! threadShouldExit())
-            sleep(1000);
+        //fProcess->waitForFinished(-1);
 
-        if (threadShouldExit())
+        while (fProcess->state() != QProcess::NotRunning && ! shouldExit())
+            carla_sleep(1);
+
+        // we only get here if bridge crashed or thread asked to exit
+
+        if (shouldExit())
         {
-            if (process.isRunning())
-                process.kill();
+            fProcess->waitForFinished(500);
+
+            if (fProcess->state() == QProcess::Running)
+                fProcess->close();
+        }
+        else
+        {
+            // forced quit, may have crashed
+            if (fProcess->exitCode() != 0 || fProcess->exitStatus() == QProcess::CrashExit)
+            {
+                carla_stderr("CarlaPluginThread::run() - bridge crashed");
+
+                CarlaString errorString("Plugin '" + CarlaString(fPlugin->getName()) + "' has crashed!\n"
+                                        "Saving now will lose its current settings.\n"
+                                        "Please remove this plugin, and not rely on it from this point.");
+                fEngine->callback(CarlaBackend::ENGINE_CALLBACK_ERROR, fPlugin->getId(), 0, 0, 0.0f, (const char*)errorString);
+            }
         }
         break;
     }
-#endif
 }
 
 CARLA_BACKEND_END_NAMESPACE

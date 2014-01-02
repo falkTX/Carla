@@ -281,6 +281,9 @@ if __name__ == '__main__':
         elif os.path.exists(argument):
             projectFilename = argument
 
+    if libPrefix is not None:
+        app.addLibraryPath(os.path.join(libPrefix, "lib", "carla"))
+
     # -------------------------------------------------------------
     # Init host backend
 

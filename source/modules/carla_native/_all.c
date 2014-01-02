@@ -47,7 +47,7 @@ extern void carla_register_native_plugin_audiofile();
 extern void carla_register_native_plugin_midifile();
 #endif
 
-#ifdef WANT_OPENGL
+#ifdef HAVE_OPENGL
 // DISTRHO plugins (OpenGL)
 extern void carla_register_native_plugin_3BandEQ();
 extern void carla_register_native_plugin_3BandSplitter();
@@ -98,7 +98,7 @@ void carla_register_all_plugins()
     carla_register_native_plugin_midifile();
 #endif
 
-#ifdef WANT_OPENGL
+#ifdef HAVE_OPENGL
     // DISTRHO plugins (OpenGL)
     carla_register_native_plugin_3BandEQ();
     carla_register_native_plugin_3BandSplitter();

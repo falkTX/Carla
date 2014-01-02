@@ -8,11 +8,6 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(RTAUDIO_FLAGS)
-BUILD_CXX_FLAGS += $(RTMIDI_FLAGS)
-
-# --------------------------------------------------------------
-
 OBJS = \
 	CarlaEngine.cpp.o \
 	CarlaEngineOsc.cpp.o \
@@ -35,8 +30,8 @@ HEADERS = \
 	../CarlaBackend.h ../CarlaEngine.hpp ../CarlaPlugin.hpp \
 	CarlaEngineInternal.hpp CarlaEngineOsc.hpp CarlaEngineThread.hpp
 
-TARGETa = ../libcarla_engine.a
-TARGETp = ../libcarla_engine_plugin.a
+TARGETa = ../carla_engine.a
+TARGETp = ../carla_engine_plugin.a
 
 # --------------------------------------------------------------
 
@@ -49,6 +44,9 @@ all: $(TARGETa) $(TARGETp)
 
 %.cpp.exp.o: %.cpp $(HEADERS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_EXPORT -c -o $@
+
+CarlaEngineRtAudio.cpp.o: CarlaEngineRtAudio.cpp $(HEADERS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) $(RTAUDIO_FLAGS) $(RTMIDI_FLAGS) -c -o $@
 
 $(TARGETa): $(OBJSa)
 	$(RM) $@

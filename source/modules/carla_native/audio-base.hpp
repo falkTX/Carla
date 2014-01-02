@@ -20,7 +20,7 @@
 
 #include "CarlaThread.hpp"
 
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
 # include "juce_audio_basics.h"
 using juce::FloatVectorOperations;
 #endif
@@ -94,7 +94,7 @@ struct AudioFilePool {
 
         startFrame = 0;
 
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
         FloatVectorOperations::clear(buffer[0], size);
         FloatVectorOperations::clear(buffer[1], size);
 #else
@@ -226,7 +226,7 @@ public:
         {
             pool.startFrame = fPool.startFrame;
 
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
             FloatVectorOperations::copy(pool.buffer[0], fPool.buffer[0], fPool.size);
             FloatVectorOperations::copy(pool.buffer[1], fPool.buffer[1], fPool.size);
 #else
@@ -283,8 +283,8 @@ public:
 
         float tmpData[tmpSize];
 
-#ifdef USE_JUCE
-        FloatVectorOperations::clear(tmpData, tmpSize);
+#ifdef HAVE_JUCE
+        FloatVectorOperations::clear(tmpData, int(tmpSize));
 #else
         carla_zeroFloat(tmpData, tmpSize);
 #endif

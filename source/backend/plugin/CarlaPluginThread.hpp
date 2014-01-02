@@ -21,6 +21,8 @@
 #include "CarlaBackend.h"
 #include "CarlaThread.hpp"
 
+class QProcess;
+
 CARLA_BACKEND_START_NAMESPACE
 
 #if 0
@@ -41,6 +43,7 @@ public:
     };
 
     CarlaPluginThread(CarlaEngine* const engine, CarlaPlugin* const plugin, const Mode mode = PLUGIN_THREAD_NULL);
+    ~CarlaPluginThread() override;
 
     void setMode(const CarlaPluginThread::Mode mode);
     void setOscData(const char* const binary, const char* const label, const char* const extra1="", const char* const extra2="");
@@ -57,6 +60,7 @@ private:
     CarlaString fLabel;
     CarlaString fExtra1;
     CarlaString fExtra2;
+    QProcess*   fProcess;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginThread)
 };

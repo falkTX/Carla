@@ -46,7 +46,7 @@ public:
     {
         carla_debug("FluidSynthPlugin::FluidSynthPlugin(%p, %i, %s)", engine, id,  bool2str(use16Outs));
 
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
         FloatVectorOperations::clear(fParamBuffers, FluidSynthParametersMax);
 #else
 #endif
@@ -993,7 +993,7 @@ public:
             // disable any output sound
             for (i=0; i < pData->audioOut.count; ++i)
             {
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
                 FloatVectorOperations::clear(outBuffer[i], frames);
 #else
 #endif
@@ -1371,7 +1371,7 @@ public:
         {
             for (i=0; i < pData->audioOut.count; ++i)
             {
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
                 FloatVectorOperations::clear(fAudio16Buffers[i], frames);
 #else
 #endif
@@ -1400,7 +1400,7 @@ public:
                 {
                     if (i % 2 == 0)
                     {
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
                         FloatVectorOperations::copy(oldBufLeft, outBuffer[i]+timeOffset, frames);
 #else
 #endif

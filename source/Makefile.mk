@@ -149,7 +149,43 @@ HAVE_JUCE = true
 endif
 
 # --------------------------------------------------------------
-# Set libs stuff
+# Set base stuff
+
+ifeq ($(HAVE_FFMPEG),true)
+BASE_FLAGS += -DHAVE_FFMPEG
+endif
+
+ifeq ($(HAVE_JUCE),true)
+BASE_FLAGS += -DHAVE_JUCE
+endif
+
+ifeq ($(HAVE_OPENGL),true)
+BASE_FLAGS += -DHAVE_OPENGL
+endif
+
+# --------------------------------------------------------------
+# Set libs stuff (part 1)
+
+LIBLO_FLAGS = $(shell pkg-config --cflags liblo)
+LIBLO_LIBS  = $(shell pkg-config --libs liblo)
+
+ifeq ($(HAVE_FLUIDSYNTH),true)
+FLUIDSYNTH_FLAGS = $(shell pkg-config --cflags fluidsynth)
+FLUIDSYNTH_LIBS  = $(shell pkg-config --libs fluidsynth)
+endif
+
+ifeq ($(HAVE_LINUXSAMPLER),true)
+LINUXSAMPLER_FLAGS = $(shell pkg-config --cflags linuxsampler)
+LINUXSAMPLER_LIBS  = $(shell pkg-config --libs linuxsampler)
+ifeq ($(WIN32),true)
+LINUXSAMPLER_LIBS += -lrpcrt4
+endif
+endif
+
+RTMEMPOOL_LIBS = -lpthread
+
+# --------------------------------------------------------------
+# Set libs stuff (part 2)
 
 RTAUDIO_FLAGS  = -DHAVE_GETTIMEOFDAY -D__UNIX_JACK__
 
@@ -157,8 +193,6 @@ ifeq ($(DEBUG),true)
 RTAUDIO_FLAGS += -D__RTAUDIO_DEBUG__
 RTMIDI_FLAGS  += -D__RTMIDI_DEBUG__
 endif
-
-RTMEMPOOL_LIBS = -lpthread
 
 ifeq ($(HAIKU),true)
 endif

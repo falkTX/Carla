@@ -10,10 +10,6 @@ BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils -isystem ../modules
 
 # --------------------------------------------------------------
 
-ifeq ($(HAVE_OPENGL),true)
-BUILD_CXX_FLAGS += -DWANT_OPENGL
-endif
-
 ifeq ($(HAVE_AF_DEPS),true)
 BUILD_CXX_FLAGS += -DWANT_AUDIOFILE
 endif
@@ -29,8 +25,7 @@ endif
 # --------------------------------------------------------------
 # Common
 
-LINK_FLAGS += $(shell pkg-config --libs liblo)
-
+LINK_FLAGS += $(LIBLO_LIBS)
 LINK_FLAGS += $(QTCORE_LIBS)
 LINK_FLAGS += $(QTXML_LIBS)
 LINK_FLAGS += $(RTMEMPOOL_LIBS)
@@ -43,9 +38,9 @@ LINK_FLAGS += $(JACKBRIDGE_LIBS)
 # --------------------------------------------------------------
 # Plugin
 
-# ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-# LINK_FLAGS += $(LILV_LIBS)
-# endif
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+LINK_FLAGS += $(LILV_LIBS)
+endif
 
 # ifeq ($(HAVE_FLUIDSYNTH),true)
 # LINK_FLAGS += $(shell pkg-config --libs fluidsynth)
@@ -61,17 +56,13 @@ LINK_FLAGS += $(JACKBRIDGE_LIBS)
 # --------------------------------------------------------------
 # Coomon
 
-ifeq ($(HAVE_FFMPEG),true)
-LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat libavutil)
-endif
-
 ifeq ($(HAVE_JUCE),true)
 LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
 LINK_FLAGS += $(JUCE_CORE_LIBS)
-# LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
+LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
 LINK_FLAGS += $(JUCE_EVENTS_LIBS)
-# LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
-# LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
+LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
+LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
 endif
 
 ifeq ($(HAVE_OPENGL),true)
@@ -83,6 +74,9 @@ endif
 
 ifeq ($(HAVE_AF_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs sndfile)
+ifeq ($(HAVE_FFMPEG),true)
+LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat libavutil)
+endif
 endif
 
 ifeq ($(HAVE_MF_DEPS),true)
@@ -99,25 +93,25 @@ endif
 # --------------------------------------------------------------
 # Libs
 
-LIBS += ../backend/libcarla_engine_plugin.a
-LIBS += ../backend/libcarla_plugin.a
+LIBS += ../backend/carla_engine_plugin.a
+LIBS += ../backend/carla_plugin.a
 
 LIBS += ../modules/carla_native.a
 LIBS += ../modules/jackbridge.a
 LIBS += ../modules/rtmempool.a
 
-# ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-# LIBS += ../modules/lilv.a
-# endif
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+LIBS += ../modules/lilv.a
+endif
 
 ifeq ($(HAVE_JUCE),true)
 LIBS += ../modules/juce_audio_basics.a
 # LIBS += ../modules/juce_audio_devices.a
 LIBS += ../modules/juce_core.a
-# LIBS += ../modules/juce_data_structures.a
+LIBS += ../modules/juce_data_structures.a
 LIBS += ../modules/juce_events.a
-# LIBS += ../modules/juce_graphics.a
-# LIBS += ../modules/juce_gui_basics.a
+LIBS += ../modules/juce_graphics.a
+LIBS += ../modules/juce_gui_basics.a
 endif
 
 ifeq ($(HAVE_OPENGL),true)

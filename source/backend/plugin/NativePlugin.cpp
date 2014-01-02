@@ -22,6 +22,8 @@
 #include "CarlaNative.h"
 #include "CarlaHost.h"
 
+#include <QtCore/QStringList>
+
 extern const char* carla_file_callback(FileCallbackOpcode action, bool isDir, const char* title, const char* filter);
 
 CARLA_BACKEND_START_NAMESPACE
@@ -43,19 +45,16 @@ struct NativePluginMidiData {
     ~NativePluginMidiData()
     {
         CARLA_ASSERT_INT(count == 0, count);
-        CARLA_ASSERT(ports == nullptr);
         CARLA_ASSERT(indexes == nullptr);
+        CARLA_ASSERT(ports == nullptr);
     }
 
     void createNew(const uint32_t newCount)
     {
-        CARLA_ASSERT_INT(count == 0, count);
-        CARLA_ASSERT(ports == nullptr);
-        CARLA_ASSERT(indexes == nullptr);
-        CARLA_ASSERT_INT(newCount > 0, newCount);
-
-        if (ports != nullptr || indexes != nullptr || newCount == 0)
-            return;
+        CARLA_SAFE_ASSERT_INT(count == 0, count);
+        CARLA_SAFE_ASSERT_RETURN(indexes == nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(ports == nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
         ports   = new CarlaEngineEventPort*[newCount];
         indexes = new uint32_t[newCount];
@@ -127,7 +126,7 @@ public:
         carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
 
         fHost.handle      = this;
-        fHost.resourceDir = carla_strdup((const char*)engine->getOptions().resourceDir);
+        fHost.resourceDir = carla_strdup(engine->getOptions().resourceDir);
         fHost.uiName      = nullptr;
 
         fHost.get_buffer_size        = carla_host_get_buffer_size;
@@ -251,6 +250,7 @@ public:
     unsigned int getOptionsAvailable() const override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, 0x0);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, 0);
 
         const bool hasMidiProgs(fDescriptor->get_midi_program_count != nullptr && fDescriptor->get_midi_program_count(fHandle) > 0);
 
@@ -546,12 +546,11 @@ public:
         }
         else if (std::strcmp(key, "midiPrograms") == 0 && fDescriptor->set_midi_program != nullptr)
         {
-#if 0 // TODO
             QStringList midiProgramList(QString(value).split(":", QString::SkipEmptyParts));
 
             if (midiProgramList.count() == MAX_MIDI_CHANNELS)
             {
-                uint i = 0;
+                uint8_t channel = 0;
                 foreach (const QString& midiProg, midiProgramList)
                 {
                     bool ok;
@@ -562,24 +561,23 @@ public:
                         const uint32_t bank    = pData->midiprog.data[index].bank;
                         const uint32_t program = pData->midiprog.data[index].program;
 
-                        fDescriptor->set_midi_program(fHandle, i, bank, program);
+                        fDescriptor->set_midi_program(fHandle, channel, bank, program);
 
                         if (fHandle2 != nullptr)
-                            fDescriptor->set_midi_program(fHandle2, i, bank, program);
+                            fDescriptor->set_midi_program(fHandle2, channel, bank, program);
 
-                        fCurMidiProgs[i] = index;
+                        fCurMidiProgs[channel] = index;
 
-                        if (pData->ctrlChannel == static_cast<int32_t>(i))
+                        if (pData->ctrlChannel == static_cast<int32_t>(channel))
                         {
                             pData->midiprog.current = index;
                             pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
                         }
                     }
 
-                    ++i;
+                    ++channel;
                 }
             }
-#endif
         }
         else
         {
@@ -959,11 +957,12 @@ public:
 
             if (paramInfo->hints & ::PARAMETER_IS_OUTPUT)
             {
+                pData->param.data[j].type = PARAMETER_OUTPUT;
                 needsCtrlOut = true;
             }
             else
             {
-                //pData->param.data[j].hints |= PARAMETER_IS_INPUT;
+                pData->param.data[j].type = PARAMETER_INPUT;
                 needsCtrlIn = true;
             }
 
@@ -1685,7 +1684,7 @@ public:
 
         for (i=0; i < pData->audioIn.count; ++i)
         {
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
             FloatVectorOperations::copy(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
 #else
 #endif
@@ -1693,7 +1692,7 @@ public:
 
         for (i=0; i < pData->audioOut.count; ++i)
         {
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
             FloatVectorOperations::clear(fAudioOutBuffers[i], frames);
 #else
 #endif
@@ -1755,7 +1754,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
                         FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], frames);
 #else
 #endif

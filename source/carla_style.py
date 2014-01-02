@@ -19,11 +19,6 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-#try:
-    #from PyQt5.QtCore import QSettings
-    #from PyQt5.QtGui import QColor, QPalette
-    #from PyQt5.QtWidgets import QApplication
-#except:
 from PyQt4.QtCore import QSettings
 from PyQt4.QtGui import QApplication, QColor, QPalette
 
@@ -40,10 +35,8 @@ class CarlaApplication(object):
 
         libdir = os.path.join(CWD, "modules", "theme")
 
-        if not os.path.exists(libdir):
-            libdir = CWD
-
-        QApplication.addLibraryPath(libdir)
+        if os.path.exists(libdir):
+            QApplication.addLibraryPath(libdir)
 
         self.fApp = QApplication(sys.argv)
         self.fApp.setApplicationName(appName)
@@ -175,7 +168,8 @@ class CarlaApplication(object):
         self.fPalBlue.setColor(QPalette.Active,   QPalette.LinkVisited, QColor(64, 128, 255))
         self.fPalBlue.setColor(QPalette.Inactive, QPalette.LinkVisited, QColor(64, 128, 255))
 
-        self.loadSettings()
+        if os.path.exists(libdir):
+            self.loadSettings()
 
     def loadSettings(self):
         settings = QSettings()
@@ -194,6 +188,13 @@ class CarlaApplication(object):
                 self.fApp.setPalette(self.fPalBlue)
 
         print("Using \"%s\" theme" % self.fApp.style().objectName())
+
+    def addLibraryPath(self, libdir):
+        if not os.path.exists(libdir):
+            return
+
+        QApplication.addLibraryPath(libdir)
+        self.loadSettings()
 
     def arguments(self):
         return self.fApp.arguments()

@@ -51,8 +51,8 @@
 #include <set>
 #include <string>
 
-#ifdef USE_JUCE
-#include "juce_audio_basics.h"
+#ifdef HAVE_JUCE
+# include "juce_audio_basics.h"
 using juce::FloatVectorOperations;
 #endif
 
@@ -625,7 +625,7 @@ protected:
     {
         if (pthread_mutex_trylock(&fMaster->mutex) != 0)
         {
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
             FloatVectorOperations::clear(outBuffer[0], frames);
             FloatVectorOperations::clear(outBuffer[1], frames);
 #else

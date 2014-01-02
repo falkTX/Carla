@@ -988,7 +988,7 @@ public:
             // disable any output sound
             for (i=0; i < pData->audioOut.count; ++i)
             {
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
                 FloatVectorOperations::clear(outBuffer[i], frames);
 #else
 #endif
@@ -1039,7 +1039,7 @@ public:
             {
                 for (i=0; i < pData->audioIn.count; ++i)
                 {
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
                     FloatVectorOperations::clear(pData->latencyBuffers[i], pData->latency);
 #else
 #endif
@@ -1519,7 +1519,7 @@ public:
         {
             for (i=0; i < pData->audioOut.count; ++i)
             {
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
                 FloatVectorOperations::clear(vstOutBuffer[i], frames);
 #else
 #endif
@@ -1568,7 +1568,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-#ifdef USE_JUCE
+#ifdef HAVE_JUCE
                         FloatVectorOperations::copy(oldBufLeft, outBuffer[i]+timeOffset, frames);
 #else
 #endif
