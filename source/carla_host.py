@@ -175,6 +175,9 @@ class HostWindow(QMainWindow):
         # when true, call engineChanged() asap
         self.fEngineChanged = False
 
+        # first attempt of auto-start engine doesn't show an error
+        self.fFirstEngineInit = True
+
         self.fSavedSettings = {}
 
         if LADISH_APP_NAME:
@@ -366,19 +369,19 @@ class HostWindow(QMainWindow):
         audioDriver         = settings.value("Engine/AudioDriver",         CARLA_DEFAULT_AUDIO_DRIVER,          type=str)
 
         if audioDriver == "JACK":
-            #transportMode  = settings.value("Engine/TransportMode",       TRANSPORT_MODE_JACK,                 type=int)
             transportMode   = ENGINE_TRANSPORT_MODE_JACK
         else:
             transportMode   = ENGINE_TRANSPORT_MODE_INTERNAL
-            audioNumPeriods = settings.value("Engine/AudioBufferSize", CARLA_DEFAULT_AUDIO_NUM_PERIODS, type=int)
-            audioBufferSize = settings.value("Engine/AudioBufferSize", CARLA_DEFAULT_AUDIO_BUFFER_SIZE, type=int)
-            audioSampleRate = settings.value("Engine/AudioSampleRate", CARLA_DEFAULT_AUDIO_SAMPLE_RATE, type=int)
-            audioDevice     = settings.value("Engine/AudioDevice",     "",                              type=str)
 
-            Carla.host.set_engine_option(ENGINE_OPTION_AUDIO_NUM_PERIODS, audioNumPeriods, "")
-            Carla.host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, audioBufferSize, "")
-            Carla.host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, audioSampleRate, "")
-            Carla.host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE,   0, audioDevice)
+        audioNumPeriods = settings.value("Engine/AudioBufferSize", CARLA_DEFAULT_AUDIO_NUM_PERIODS, type=int)
+        audioBufferSize = settings.value("Engine/AudioBufferSize", CARLA_DEFAULT_AUDIO_BUFFER_SIZE, type=int)
+        audioSampleRate = settings.value("Engine/AudioSampleRate", CARLA_DEFAULT_AUDIO_SAMPLE_RATE, type=int)
+        audioDevice     = settings.value("Engine/AudioDevice",     "",                              type=str)
+
+        Carla.host.set_engine_option(ENGINE_OPTION_AUDIO_NUM_PERIODS, audioNumPeriods, "")
+        Carla.host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, audioBufferSize, "")
+        Carla.host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, audioSampleRate, "")
+        Carla.host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE,   0, audioDevice)
 
         if Carla.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
             forceStereo = True
@@ -401,9 +404,9 @@ class HostWindow(QMainWindow):
         audioDriver = self.setEngineSettings()
 
         if not Carla.host.engine_init(audioDriver, self.fClientName):
-            #if self.fFirstEngineInit:
-                #self.fFirstEngineInit = False
-                #return
+            if self.fFirstEngineInit:
+                self.fFirstEngineInit = False
+                return
 
             audioError = Carla.host.get_last_error()
 
@@ -413,7 +416,7 @@ class HostWindow(QMainWindow):
                 QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s'" % audioDriver))
             return
 
-        #self.fFirstEngineInit = False
+        self.fFirstEngineInit = False
 
     def stopEngine(self):
         if self.fContainer.getPluginCount() > 0:
