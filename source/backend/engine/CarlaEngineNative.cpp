@@ -519,14 +519,14 @@ protected:
             // -----------------------------------------------------------
             // create audio buffers
 
-            float*   inBuf[2]    = { inBuffer[0], inBuffer[1] };
-            float*   outBuf[2]   = { outBuffer[0], outBuffer[1] };
-            uint32_t bufCount[2] = { 2, 2 };
+            //float*   inBuf[2]    = { inBuffer[0], inBuffer[1] };
+            //float*   outBuf[2]   = { outBuffer[0], outBuffer[1] };
+            //uint32_t bufCount[2] = { 2, 2 };
 
             // -----------------------------------------------------------
             // process
 
-            processPatchbay(inBuf, outBuf, bufCount, frames);
+            //pData->processPatchbay(inBuf, outBuf, bufCount, frames, isOffline());
         }
         else
         {
@@ -539,7 +539,7 @@ protected:
             // -----------------------------------------------------------
             // process
 
-            processRack(inBuf, outBuf, frames);
+            pData->processRack(inBuf, outBuf, frames, isOffline());
         }
 
         // ---------------------------------------------------------------

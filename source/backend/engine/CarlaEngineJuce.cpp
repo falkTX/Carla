@@ -21,7 +21,6 @@
 
 #include "CarlaEngineInternal.hpp"
 #include "CarlaBackendUtils.hpp"
-#include "CarlaMIDI.h"
 
 // #include "RtList.hpp"
 
@@ -51,32 +50,102 @@ static void initJuceDevices()
 // -------------------------------------------------------------------------------------------------------------------
 // Juce Engine
 
-class CarlaEngineJuce : public CarlaEngine/*,
-                        public AudioIODeviceCallback*/
+class CarlaEngineJuce : public CarlaEngine,
+                        public AudioIODeviceCallback
 {
 public:
-    CarlaEngineJuce()
-        : CarlaEngine()
+    CarlaEngineJuce(AudioIODeviceType* const devType)
+        : CarlaEngine(),
+          AudioIODeviceCallback(),
+          fDeviceType(devType)
     {
-        carla_debug("CarlaEngineJuce::CarlaEngineJuce()");
+        carla_debug("CarlaEngineJuce::CarlaEngineJuce(%p)", devType);
+
+        // just to make sure
+        pData->options.transportMode = ENGINE_TRANSPORT_MODE_INTERNAL;
     }
 
     ~CarlaEngineJuce() override
     {
+        carla_debug("CarlaEngineJuce::~CarlaEngineJuce()");
+
         if (gRetNames != nullptr)
         {
             delete[] gRetNames;
             gRetNames = nullptr;
         }
+
+        gJuceDeviceTypes.clear(true);
     }
 
     // -------------------------------------
 
     bool init(const char* const clientName) override
     {
+        CARLA_ASSERT(clientName != nullptr && clientName[0] != '\0');
         carla_debug("CarlaEngineJuce::init(\"%s\")", clientName);
 
+        if (pData->options.processMode != ENGINE_PROCESS_MODE_CONTINUOUS_RACK && pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
+        {
+            setLastError("Invalid process mode");
+            return false;
+        }
+
+        pData->bufAudio.usePatchbay = (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY);
+
+        String deviceName;
+
+        if (pData->options.audioDevice != nullptr && pData->options.audioDevice[0] != '\0')
+        {
+            deviceName = pData->options.audioDevice;
+        }
+        else
+        {
+            const int   defaultIndex(fDeviceType->getDefaultDeviceIndex(false));
+            StringArray deviceNames(fDeviceType->getDeviceNames());
+
+            if (defaultIndex >= 0 && defaultIndex < deviceNames.size())
+                deviceName = deviceNames[defaultIndex];
+        }
+
+        if (deviceName.isEmpty())
+        {
+            setLastError("something");
+            return false;
+        }
+
+        fDevice = fDeviceType->createDevice(deviceName, deviceName);
+
+        if (fDevice == nullptr)
+        {
+            setLastError("something 2");
+            return false;
+        }
+
+        BigInteger inputChannels;
+        BigInteger outputChannels;
+
+        String error = fDevice->open(inputChannels, outputChannels, pData->options.audioSampleRate, static_cast<int>(pData->options.audioBufferSize));
+
+        if (error.isNotEmpty())
+        {
+            fDevice = nullptr;
+            setLastError(error.toUTF8());
+            return false;
+        }
+
+        fDevice->start(this);
+
+        //getActiveOutputChannels();
+        //getActiveInputChannels();
+        pData->bufferSize = fDevice->getCurrentBufferSizeSamples();
+        pData->sampleRate = fDevice->getCurrentSampleRate();
+
+        pData->bufAudio.create(pData->bufferSize);
+
         CarlaEngine::init(clientName);
+        patchbayRefresh();
+
         return true;
     }
 
@@ -84,12 +153,29 @@ public:
     {
         carla_debug("CarlaEngineJuce::close()");
 
-        return CarlaEngine::close();
+        pData->bufAudio.isReady = false;
+
+        bool hasError = !CarlaEngine::close();
+
+        if (fDevice != nullptr)
+        {
+            if (fDevice->isPlaying())
+                fDevice->stop();
+
+            if (fDevice->isOpen())
+                fDevice->close();
+
+            fDevice = nullptr;
+        }
+
+        pData->bufAudio.clear();
+
+        return !hasError;
     }
 
     bool isRunning() const noexcept override
     {
-        return false;
+        return fDevice != nullptr && fDevice->isPlaying();
     }
 
     bool isOffline() const noexcept override
@@ -104,45 +190,341 @@ public:
 
     const char* getCurrentDriverName() const noexcept override
     {
-        return nullptr;
+        return fDeviceType->getTypeName().toRawUTF8();
+    }
+
+    // -------------------------------------------------------------------
+    // Patchbay
+
+    bool patchbayRefresh() override
+    {
+        CARLA_SAFE_ASSERT_RETURN(pData->bufAudio.isReady, false);
+
+        pData->bufAudio.initPatchbay();
+
+        if (pData->bufAudio.usePatchbay)
+        {
+            // not implemented yet
+            return false;
+        }
+
+        char strBuf[STR_MAX+1];
+
+        EngineRackBuffers* const rack(pData->bufAudio.rack);
+
+        // Main
+        {
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_CARLA, 0, 0, 0.0f, getName());
+
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_PORT_AUDIO_IN1,  PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, "audio-in1");
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_PORT_AUDIO_IN2,  PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, "audio-in2");
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_PORT_AUDIO_OUT1, PATCHBAY_PORT_TYPE_AUDIO,                        0.0f, "audio-out1");
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_PORT_AUDIO_OUT2, PATCHBAY_PORT_TYPE_AUDIO,                        0.0f, "audio-out2");
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_PORT_MIDI_IN,    PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT,  0.0f, "midi-in");
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_PORT_MIDI_OUT,   PATCHBAY_PORT_TYPE_MIDI,                         0.0f, "midi-out");
+        }
+
+        // Audio In
+        {
+            /*if (fDeviceName.isNotEmpty())
+                std::snprintf(strBuf, STR_MAX, "Capture (%s)", (const char*)fDeviceName);
+            else*/
+                std::strncpy(strBuf, "Capture", STR_MAX);
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_IN, 0, 0, 0.0f, strBuf);
+
+            /*for (unsigned int i=0; i < fAudioCountIn; ++i)
+            {
+                std::snprintf(strBuf, STR_MAX, "capture_%i", i+1);
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_IN, RACK_PATCHBAY_GROUP_AUDIO_IN*1000 + i, PATCHBAY_PORT_TYPE_AUDIO, 0.0f, strBuf);
+            }*/
+        }
+
+        // Audio Out
+        {
+            /*if (fDeviceName.isNotEmpty())
+                std::snprintf(strBuf, STR_MAX, "Playback (%s)", (const char*)fDeviceName);
+            else*/
+                std::strncpy(strBuf, "Playback", STR_MAX);
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_OUT, 0, 0, 0.0f, strBuf);
+
+            /*for (unsigned int i=0; i < fAudioCountOut; ++i)
+            {
+                std::snprintf(strBuf, STR_MAX, "playback_%i", i+1);
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_OUT, RACK_PATCHBAY_GROUP_AUDIO_OUT*1000 + i, PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, strBuf);
+            }*/
+        }
+
+#if 0 // midi-out not implemented yet
+        // MIDI In
+        {
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_MIDI_IN, 0, 0, 0.0f, "Readable MIDI ports");
+
+            for (unsigned int i=0, count=fDummyMidiIn.getPortCount(); i < count; ++i)
+            {
+                PortNameToId portNameToId;
+                portNameToId.portId = RACK_PATCHBAY_GROUP_MIDI_IN*1000 + i;
+                std::strncpy(portNameToId.name, fDummyMidiIn.getPortName(i).c_str(), STR_MAX);
+                fUsedMidiIns.append(portNameToId);
+
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_MIDI_IN, portNameToId.portId, PATCHBAY_PORT_TYPE_MIDI, 0.0f, portNameToId.name);
+            }
+        }
+
+        // MIDI Out
+        {
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, 0, RACK_PATCHBAY_GROUP_MIDI_OUT, 0, 0.0f, "Writable MIDI ports");
+
+            for (unsigned int i=0, count=fDummyMidiOut.getPortCount(); i < count; ++i)
+            {
+                PortNameToId portNameToId;
+                portNameToId.portId = RACK_PATCHBAY_GROUP_MIDI_OUT*1000 + i;
+                std::strncpy(portNameToId.name, fDummyMidiOut.getPortName(i).c_str(), STR_MAX);
+                fUsedMidiOuts.append(portNameToId);
+
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, 0, RACK_PATCHBAY_GROUP_MIDI_OUT, portNameToId.portId, PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT, portNameToId.name);
+            }
+        }
+#endif
+
+        // Connections
+        rack->connectLock.lock();
+
+        for (List<uint>::Itenerator it = rack->connectedIns[0].begin(); it.valid(); it.next())
+        {
+            const uint& port(it.getConstValue());
+            //CARLA_SAFE_ASSERT_CONTINUE(port < fAudioCountIn); // FIXME
+
+            ConnectionToId connectionToId;
+            connectionToId.id      = rack->lastConnectionId;
+            connectionToId.portOut = RACK_PATCHBAY_GROUP_AUDIO_IN*1000 + port;
+            connectionToId.portIn  = RACK_PATCHBAY_PORT_AUDIO_IN1;
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
+
+            rack->usedConnections.append(connectionToId);
+            rack->lastConnectionId++;
+        }
+
+        for (List<uint>::Itenerator it = rack->connectedIns[1].begin(); it.valid(); it.next())
+        {
+            const uint& port(it.getConstValue());
+            //CARLA_SAFE_ASSERT_CONTINUE(port < fAudioCountIn); // FIXME
+
+            ConnectionToId connectionToId;
+            connectionToId.id      = rack->lastConnectionId;
+            connectionToId.portOut = RACK_PATCHBAY_GROUP_AUDIO_IN*1000 + port;
+            connectionToId.portIn  = RACK_PATCHBAY_PORT_AUDIO_IN2;
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
+
+            rack->usedConnections.append(connectionToId);
+            rack->lastConnectionId++;
+        }
+
+        for (List<uint>::Itenerator it = rack->connectedOuts[0].begin(); it.valid(); it.next())
+        {
+            const uint& port(it.getConstValue());
+            //CARLA_SAFE_ASSERT_CONTINUE(port < fAudioCountOut); // FIXME
+
+            ConnectionToId connectionToId;
+            connectionToId.id      = rack->lastConnectionId;
+            connectionToId.portOut = RACK_PATCHBAY_PORT_AUDIO_OUT1;
+            connectionToId.portIn  = RACK_PATCHBAY_GROUP_AUDIO_OUT*1000 + port;
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
+
+            rack->usedConnections.append(connectionToId);
+            rack->lastConnectionId++;
+        }
+
+        for (List<uint>::Itenerator it = rack->connectedOuts[1].begin(); it.valid(); it.next())
+        {
+            const uint& port(it.getConstValue());
+            //CARLA_SAFE_ASSERT_CONTINUE(port < fAudioCountOut); // FIXME
+
+            ConnectionToId connectionToId;
+            connectionToId.id      = rack->lastConnectionId;
+            connectionToId.portOut = RACK_PATCHBAY_PORT_AUDIO_OUT2;
+            connectionToId.portIn  = RACK_PATCHBAY_GROUP_AUDIO_OUT*1000 + port;
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
+
+            rack->usedConnections.append(connectionToId);
+            rack->lastConnectionId++;
+        }
+
+        pData->bufAudio.rack->connectLock.unlock();
+
+#if 0
+        for (List<MidiPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
+        {
+            const MidiPort& midiPort(it.getConstValue());
+
+            ConnectionToId connectionToId;
+            connectionToId.id      = rack->lastConnectionId;
+            connectionToId.portOut = RACK_PATCHBAY_GROUP_MIDI_IN*1000 + midiPort.portId;
+            connectionToId.portIn  = RACK_PATCHBAY_PORT_MIDI_IN;
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
+
+            rack->usedConnections.append(connectionToId);
+            rack->lastConnectionId++;
+        }
+
+        for (List<MidiPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
+        {
+            const MidiPort& midiPort(it.getConstValue());
+
+            ConnectionToId connectionToId;
+            connectionToId.id      = rack->lastConnectionId;
+            connectionToId.portOut = RACK_PATCHBAY_PORT_MIDI_OUT;
+            connectionToId.portIn  = RACK_PATCHBAY_GROUP_MIDI_OUT*1000 + midiPort.portId;
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
+
+            rack->usedConnections.append(connectionToId);
+            rack->lastConnectionId++;
+        }
+#endif
+
+        return true;
     }
 
     // -------------------------------------------------------------------
 
 protected:
-//     void audioDeviceIOCallback (const float** inputChannelData,
-//                                 int numInputChannels,
-//                                 float** outputChannelData,
-//                                 int numOutputChannels,
-//                                 int numSamples)
-//     {
-//     }
-//
-//     void audioDeviceAboutToStart (juce::AudioIODevice* device)
-//     {
-//     }
-//
-//     void audioDeviceStopped()
-//     {
-//     }
-//
-//     void audioDeviceError (const juce::String& errorMessage)
-//     {
-//     }
+    void audioDeviceIOCallback(const float** inputChannelData, int numInputChannels, float** outputChannelData, int numOutputChannels, int numSamples) override
+    {
+        // assert juce buffers
+        CARLA_SAFE_ASSERT_RETURN(outputChannelData != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(numSamples == static_cast<int>(pData->bufferSize),);
+
+        if (numOutputChannels == 0 || ! pData->bufAudio.isReady)
+            return runPendingRtEvents();
+
+        // initialize input events
+        carla_zeroStruct<EngineEvent>(pData->bufEvents.in, kEngineMaxInternalEventCount);
+
+        // TODO - get events from juce
+
+        if (pData->bufAudio.usePatchbay)
+        {
+        }
+        else
+        {
+            pData->processRackFull(const_cast<float**>(inputChannelData), numInputChannels, outputChannelData, numOutputChannels, numSamples, false);
+        }
+
+        // output events
+        {
+            // TODO
+            //fMidiOutEvents...
+        }
+
+        runPendingRtEvents();
+        return;
+
+        // unused
+        (void)inputChannelData;
+        (void)numInputChannels;
+    }
+
+    void audioDeviceAboutToStart(AudioIODevice* /*device*/) override
+    {
+    }
+
+    void audioDeviceStopped() override
+    {
+    }
+
+    void audioDeviceError(const String& errorMessage) override
+    {
+        callback(ENGINE_CALLBACK_ERROR, 0, 0, 0, 0.0f, errorMessage.toRawUTF8());
+    }
+
+    // -------------------------------------------------------------------
+
+    bool connectRackMidiInPort(const int) override
+    {
+        return false;
+    }
+
+    bool connectRackMidiOutPort(const int) override
+    {
+        return false;
+    }
+
+    bool disconnectRackMidiInPort(const int) override
+    {
+        return false;
+    }
+
+    bool disconnectRackMidiOutPort(const int) override
+    {
+        return false;
+    }
 
     // -------------------------------------
 
 private:
-    //juce::AudioIODeviceType* fDeviceType;
+    ScopedPointer<AudioIODevice> fDevice;
+    AudioIODeviceType* const     fDeviceType;
 
-    //JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJuce)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJuce)
 };
 
 // -----------------------------------------
 
-CarlaEngine* CarlaEngine::newJuce(const AudioApi /*api*/)
+CarlaEngine* CarlaEngine::newJuce(const AudioApi api)
 {
-    return new CarlaEngineJuce();
+    initJuceDevices();
+
+    String juceApi;
+
+    switch (api)
+    {
+    case AUDIO_API_NULL:
+    case AUDIO_API_OSS:
+    case AUDIO_API_PULSE:
+        break;
+    case AUDIO_API_JACK:
+        juceApi = "JACK";
+        break;
+    case AUDIO_API_ALSA:
+        juceApi = "ALSA";
+        break;
+    case AUDIO_API_CORE:
+        juceApi = "CoreAudio";
+        break;
+    case AUDIO_API_ASIO:
+        juceApi = "ASIO";
+        break;
+    case AUDIO_API_DS:
+        juceApi = "DirectSound";
+        break;
+    }
+
+    if (juceApi.isEmpty())
+        return nullptr;
+
+    AudioIODeviceType* deviceType = nullptr;
+
+    for (int i=0, count=gJuceDeviceTypes.size(); i < count; ++i)
+    {
+        deviceType = gJuceDeviceTypes[i];
+
+        if (deviceType == nullptr || deviceType->getTypeName() == juceApi)
+            break;
+    }
+
+    if (deviceType == nullptr)
+        return nullptr;
+
+    deviceType->scanForDevices();
+
+    return new CarlaEngineJuce(deviceType);
 }
 
 unsigned int CarlaEngine::getJuceApiCount()

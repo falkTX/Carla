@@ -951,12 +951,12 @@ public:
     /*!
      * Connect patchbay ports \a portA and \a portB.
      */
-    virtual bool patchbayConnect(int portA, int portB);
+    virtual bool patchbayConnect(const int portA, const int portB);
 
     /*!
      * Disconnect patchbay connection \a connectionId.
      */
-    virtual bool patchbayDisconnect(int connectionId);
+    virtual bool patchbayDisconnect(const int connectionId);
 
     /*!
      * Force the engine to resend all patchbay clients, ports and connections again.
@@ -1104,27 +1104,19 @@ protected:
      */
     void setPluginPeaks(const unsigned int pluginId, float const inPeaks[2], float const outPeaks[2]) noexcept;
 
-#ifndef BUILD_BRIDGE
-    /*!
-     * Proccess audio buffer in rack mode.
-     * \note RT call
-     */
-    void processRack(float* inBuf[2], float* outBuf[2], const uint32_t frames);
+    // -------------------------------------------------------------------
 
-    /*!
-     * Proccess audio buffer in patchbay mode.
-     * In \a bufCount, [0]=inBufCount and [1]=outBufCount
-     * \note RT call
-     */
-    void processPatchbay(float** inBuf, float** outBuf, const uint32_t bufCount[2], const uint32_t frames);
-#endif
+    virtual bool connectRackMidiInPort(const int)     { return false; }
+    virtual bool connectRackMidiOutPort(const int)    { return false; }
+    virtual bool disconnectRackMidiInPort(const int)  { return false; }
+    virtual bool disconnectRackMidiOutPort(const int) { return false; }
 
     // -------------------------------------------------------------------
-    // Engine initializers
 
 private:
-    static CarlaEngine* newJack();
-
+    /*!
+     * Native audio APIs.
+     */
     enum AudioApi {
         AUDIO_API_NULL  = 0,
         // common
@@ -1140,12 +1132,20 @@ private:
         AUDIO_API_DS    = 7
     };
 
+    // -------------------------------------------------------------------
+    // Engine initializers
+
+    // jack
+    static CarlaEngine*       newJack();
+
+    // rtaudio
     static CarlaEngine*       newRtAudio(const AudioApi api);
     static unsigned int       getRtAudioApiCount();
     static const char*        getRtAudioApiName(const unsigned int index);
     static const char* const* getRtAudioApiDeviceNames(const unsigned int index);
     static const EngineDriverDeviceInfo* getRtAudioDeviceInfo(const unsigned int index, const char* const deviceName);
 
+    // juce
     static CarlaEngine*       newJuce(const AudioApi api);
     static unsigned int       getJuceApiCount();
     static const char*        getJuceApiName(const unsigned int index);

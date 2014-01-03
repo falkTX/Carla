@@ -23,6 +23,7 @@
  * - proper find&load plugins
  * - uncomment CarlaPlugin::newAU and newCSOUND
  * - something about the peaks?
+ * - patchbayDisconnect should return false sometimes
  */
 
 #include "CarlaEngineInternal.hpp"
@@ -189,6 +190,262 @@ void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data
         }
     }
 }
+
+// -----------------------------------------------------------------------
+
+#ifndef BUILD_BRIDGE
+void CarlaEngineProtectedData::processRack(float* inBufReal[2], float* outBuf[2], const uint32_t frames, const bool isOffline)
+{
+    CARLA_SAFE_ASSERT_RETURN(bufEvents.in != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(bufEvents.out != nullptr,);
+
+    // safe copy
+    float inBuf0[frames];
+    float inBuf1[frames];
+    float* inBuf[2] = { inBuf0, inBuf1 };
+
+    // initialize audio inputs
+    FLOAT_COPY(inBuf0, inBufReal[0], frames);
+    FLOAT_COPY(inBuf1, inBufReal[1], frames);
+
+    // initialize audio outputs (zero)
+    FLOAT_CLEAR(outBuf[0], frames);
+    FLOAT_CLEAR(outBuf[1], frames);
+
+    // initialize event outputs (zero)
+    carla_zeroStruct<EngineEvent>(bufEvents.out, kEngineMaxInternalEventCount);
+
+    bool processed = false;
+
+    uint32_t oldAudioInCount = 0;
+    uint32_t oldMidiOutCount = 0;
+
+    // process plugins
+    for (unsigned int i=0; i < curPluginCount; ++i)
+    {
+        CarlaPlugin* const plugin = plugins[i].plugin;
+
+        if (plugin == nullptr || ! plugin->isEnabled() || ! plugin->tryLock(isOffline))
+            continue;
+
+        if (processed)
+        {
+            // initialize audio inputs (from previous outputs)
+            FLOAT_COPY(inBuf0, outBuf[0], frames);
+            FLOAT_COPY(inBuf1, outBuf[1], frames);
+
+            // initialize audio outputs (zero)
+            FLOAT_CLEAR(outBuf[0], frames);
+            FLOAT_CLEAR(outBuf[1], frames);
+
+            // if plugin has no midi out, add previous events
+            if (oldMidiOutCount == 0 && bufEvents.in[0].type != kEngineEventTypeNull)
+            {
+                if (bufEvents.out[0].type != kEngineEventTypeNull)
+                {
+                    // TODO: carefully add to input, sorted events
+                }
+                // else nothing needed
+            }
+            else
+            {
+                // initialize event inputs from previous outputs
+                carla_copyStruct<EngineEvent>(bufEvents.in, bufEvents.out, kEngineMaxInternalEventCount);
+
+                // initialize event outputs (zero)
+                carla_zeroStruct<EngineEvent>(bufEvents.out, kEngineMaxInternalEventCount);
+            }
+        }
+
+        oldAudioInCount = plugin->getAudioInCount();
+        oldMidiOutCount = plugin->getMidiOutCount();
+
+        // process
+        plugin->initBuffers();
+        plugin->process(inBuf, outBuf, frames);
+        plugin->unlock();
+
+        // if plugin has no audio inputs, add input buffer
+        if (oldAudioInCount == 0)
+        {
+            FLOAT_ADD(outBuf[0], inBuf0, frames);
+            FLOAT_ADD(outBuf[1], inBuf1, frames);
+        }
+
+        // set peaks
+        {
+            EnginePluginData& pluginData(plugins[i]);
+
+#ifdef HAVE_JUCE
+            float tmpMin, tmpMax;
+
+            if (oldAudioInCount > 0)
+            {
+                FloatVectorOperations::findMinAndMax(inBuf0, frames, tmpMin, tmpMax);
+                pluginData.insPeak[0] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
+
+                FloatVectorOperations::findMinAndMax(inBuf1, frames, tmpMin, tmpMax);
+                pluginData.insPeak[1] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
+            }
+            else
+            {
+                pluginData.insPeak[0] = 0.0f;
+                pluginData.insPeak[1] = 0.0f;
+            }
+
+            if (plugin->getAudioOutCount() > 0)
+            {
+                FloatVectorOperations::findMinAndMax(outBuf[0], frames, tmpMin, tmpMax);
+                pluginData.outsPeak[0] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
+
+                FloatVectorOperations::findMinAndMax(outBuf[1], frames, tmpMin, tmpMax);
+                pluginData.outsPeak[1] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
+            }
+            else
+            {
+                pluginData.outsPeak[0] = 0.0f;
+                pluginData.outsPeak[1] = 0.0f;
+            }
+#else
+            float peak1, peak2;
+
+            if (oldAudioInCount > 0)
+            {
+                peak1 = peak2 = 0.0f;
+
+                for (uint32_t k=0; k < frames; ++k)
+                {
+                    peak1  = carla_max<float>(peak1, std::fabs(inBuf0[k]), 1.0f);
+                    peak2  = carla_max<float>(peak2, std::fabs(inBuf1[k]), 1.0f);
+                }
+
+                pluginData.insPeak[0] = peak1;
+                pluginData.insPeak[1] = peak2;
+            }
+            else
+            {
+                pluginData.insPeak[0] = 0.0f;
+                pluginData.insPeak[1] = 0.0f;
+            }
+
+            if (plugin->getAudioOutCount() > 0)
+            {
+                peak1 = peak2 = 0.0f;
+
+                for (uint32_t k=0; k < frames; ++k)
+                {
+                    peak1 = carla_max<float>(peak1, std::fabs(outBuf[0][k]), 1.0f);
+                    peak2 = carla_max<float>(peak2, std::fabs(outBuf[1][k]), 1.0f);
+                }
+
+                pluginData.outsPeak[0] = peak1;
+                pluginData.outsPeak[1] = peak2;
+            }
+            else
+            {
+                pluginData.outsPeak[0] = 0.0f;
+                pluginData.outsPeak[1] = 0.0f;
+            }
+#endif
+        }
+
+        processed = true;
+    }
+}
+
+void CarlaEngineProtectedData::processRackFull(float** const inBuf, const uint32_t inCount, float** const outBuf, const uint32_t outCount, const uint32_t nframes, const bool isOffline)
+{
+    EngineRackBuffers* const rack(bufAudio.rack);
+
+    const CarlaMutex::ScopedLocker sl(rack->connectLock);
+
+    // connect input buffers
+    if (rack->connectedIns[0].count() == 0)
+    {
+        FLOAT_CLEAR(rack->in[0], nframes);
+    }
+    else
+    {
+        bool first = true;
+
+        for (List<uint>::Itenerator it = rack->connectedIns[0].begin(); it.valid(); it.next())
+        {
+            const uint& port(it.getConstValue());
+            CARLA_SAFE_ASSERT_CONTINUE(port < inCount);
+
+            if (first)
+            {
+                FLOAT_COPY(rack->in[0], inBuf[port], nframes);
+                first = false;
+            }
+            else
+            {
+                FLOAT_ADD(rack->in[0], inBuf[port], nframes);
+            }
+        }
+
+        if (first)
+            FLOAT_CLEAR(rack->in[0], nframes);
+    }
+
+    if (rack->connectedIns[1].count() == 0)
+    {
+        FLOAT_CLEAR(rack->in[1], nframes);
+    }
+    else
+    {
+        bool first = true;
+
+        for (List<uint>::Itenerator it = rack->connectedIns[1].begin(); it.valid(); it.next())
+        {
+            const uint& port(it.getConstValue());
+            CARLA_SAFE_ASSERT_CONTINUE(port < inCount);
+
+            if (first)
+            {
+                FLOAT_COPY(rack->in[1], inBuf[port], nframes);
+                first = false;
+            }
+            else
+            {
+                FLOAT_ADD(rack->in[1], inBuf[port], nframes);
+            }
+        }
+
+        if (first)
+            FLOAT_CLEAR(rack->in[1], nframes);
+    }
+
+    FLOAT_CLEAR(rack->out[0], nframes);
+    FLOAT_CLEAR(rack->out[1], nframes);
+
+    // process
+    processRack(rack->in, rack->out, nframes, isOffline);
+
+    // connect output buffers
+    if (rack->connectedOuts[0].count() != 0)
+    {
+        for (List<uint>::Itenerator it = rack->connectedOuts[0].begin(); it.valid(); it.next())
+        {
+            const uint& port(it.getConstValue());
+            CARLA_SAFE_ASSERT_CONTINUE(port < outCount);
+
+            FLOAT_ADD(outBuf[port], rack->out[0], nframes);
+        }
+    }
+
+    if (rack->connectedOuts[1].count() != 0)
+    {
+        for (List<uint>::Itenerator it = rack->connectedOuts[1].begin(); it.valid(); it.next())
+        {
+            const uint& port(it.getConstValue());
+            CARLA_SAFE_ASSERT_CONTINUE(port < outCount);
+
+            FLOAT_ADD(outBuf[port], rack->out[1], nframes);
+        }
+    }
+}
+#endif
 
 // -----------------------------------------------------------------------
 // Carla Engine port (Abstract)
@@ -1606,16 +1863,187 @@ void CarlaEngine::setCallback(const EngineCallbackFunc func, void* const ptr)
 // -----------------------------------------------------------------------
 // Patchbay
 
-bool CarlaEngine::patchbayConnect(int, int)
+bool CarlaEngine::patchbayConnect(const int portA, const int portB)
 {
-    setLastError("Unsupported operation");
-    return false;
+    CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
+    CARLA_SAFE_ASSERT_RETURN(pData->bufAudio.isReady, false);
+    carla_debug("CarlaEngineRtAudio::patchbayConnect(%i, %i)", portA, portB);
+
+    if (pData->bufAudio.usePatchbay)
+    {
+        // not implemented yet
+        return false;
+    }
+
+    EngineRackBuffers* const rack(pData->bufAudio.rack);
+
+    CARLA_SAFE_ASSERT_RETURN_ERR(portA > RACK_PATCHBAY_PORT_MAX, "Invalid output port");
+    CARLA_SAFE_ASSERT_RETURN_ERR(portB > RACK_PATCHBAY_PORT_MAX, "Invalid input port");
+
+    // only allow connections between Carla and other ports
+    if (portA < 0 && portB < 0)
+    {
+        setLastError("Invalid connection (1)");
+        return false;
+    }
+    if (portA >= 0 && portB >= 0)
+    {
+        setLastError("Invalid connection (2)");
+        return false;
+    }
+
+    const int carlaPort  = (portA < 0) ? portA : portB;
+    const int targetPort = (carlaPort == portA) ? portB : portA;
+    bool makeConnection  = false;
+
+    switch (carlaPort)
+    {
+    case RACK_PATCHBAY_PORT_AUDIO_IN1:
+        CARLA_SAFE_ASSERT_BREAK(targetPort >= RACK_PATCHBAY_GROUP_AUDIO_IN*1000);
+        CARLA_SAFE_ASSERT_BREAK(targetPort <= RACK_PATCHBAY_GROUP_AUDIO_IN*1000+999);
+        rack->connectLock.lock();
+        rack->connectedIns[0].append(targetPort - RACK_PATCHBAY_GROUP_AUDIO_IN*1000);
+        rack->connectLock.unlock();
+        makeConnection = true;
+        break;
+
+    case RACK_PATCHBAY_PORT_AUDIO_IN2:
+        CARLA_SAFE_ASSERT_BREAK(targetPort >= RACK_PATCHBAY_GROUP_AUDIO_IN*1000);
+        CARLA_SAFE_ASSERT_BREAK(targetPort <= RACK_PATCHBAY_GROUP_AUDIO_IN*1000+999);
+        rack->connectLock.lock();
+        rack->connectedIns[1].append(targetPort - RACK_PATCHBAY_GROUP_AUDIO_IN*1000);
+        rack->connectLock.unlock();
+        makeConnection = true;
+        break;
+
+    case RACK_PATCHBAY_PORT_AUDIO_OUT1:
+        CARLA_SAFE_ASSERT_BREAK(targetPort >= RACK_PATCHBAY_GROUP_AUDIO_OUT*1000);
+        CARLA_SAFE_ASSERT_BREAK(targetPort <= RACK_PATCHBAY_GROUP_AUDIO_OUT*1000+999);
+        rack->connectLock.lock();
+        rack->connectedOuts[0].append(targetPort - RACK_PATCHBAY_GROUP_AUDIO_OUT*1000);
+        rack->connectLock.unlock();
+        makeConnection = true;
+        break;
+
+    case RACK_PATCHBAY_PORT_AUDIO_OUT2:
+        CARLA_SAFE_ASSERT_BREAK(targetPort >= RACK_PATCHBAY_GROUP_AUDIO_OUT*1000);
+        CARLA_SAFE_ASSERT_BREAK(targetPort <= RACK_PATCHBAY_GROUP_AUDIO_OUT*1000+999);
+        rack->connectLock.lock();
+        rack->connectedOuts[1].append(targetPort - RACK_PATCHBAY_GROUP_AUDIO_OUT*1000);
+        rack->connectLock.unlock();
+        makeConnection = true;
+        break;
+
+    case RACK_PATCHBAY_PORT_MIDI_IN:
+        CARLA_SAFE_ASSERT_BREAK(targetPort >= RACK_PATCHBAY_GROUP_MIDI_IN*1000);
+        CARLA_SAFE_ASSERT_BREAK(targetPort <= RACK_PATCHBAY_GROUP_MIDI_IN*1000+999);
+        makeConnection = connectRackMidiInPort(targetPort - RACK_PATCHBAY_GROUP_MIDI_IN*1000);
+        break;
+
+    case RACK_PATCHBAY_PORT_MIDI_OUT:
+        CARLA_SAFE_ASSERT_BREAK(targetPort >= RACK_PATCHBAY_GROUP_MIDI_OUT*1000);
+        CARLA_SAFE_ASSERT_BREAK(targetPort <= RACK_PATCHBAY_GROUP_MIDI_OUT*1000+999);
+        makeConnection = connectRackMidiOutPort(targetPort - RACK_PATCHBAY_GROUP_MIDI_OUT*1000);
+        break;
+    }
+
+    if (! makeConnection)
+    {
+        setLastError("Invalid connection (3)");
+        return false;
+    }
+
+    ConnectionToId connectionToId;
+    connectionToId.id      = rack->lastConnectionId;
+    connectionToId.portOut = portA;
+    connectionToId.portIn  = portB;
+
+    callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, portA, portB, 0.0f, nullptr);
+
+    rack->usedConnections.append(connectionToId);
+    rack->lastConnectionId++;
+
+    return true;
 }
 
-bool CarlaEngine::patchbayDisconnect(int)
+bool CarlaEngine::patchbayDisconnect(const int connectionId)
 {
-    setLastError("Unsupported operation");
-    return false;
+    CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
+    CARLA_SAFE_ASSERT_RETURN(pData->bufAudio.isReady, false);
+    carla_debug("CarlaEngineRtAudio::patchbayDisconnect(%i)", connectionId);
+
+    if (pData->bufAudio.usePatchbay)
+    {
+        // not implemented yet
+        return false;
+    }
+
+    EngineRackBuffers* const rack(pData->bufAudio.rack);
+
+    CARLA_SAFE_ASSERT_RETURN_ERR(rack->usedConnections.count() > 0, "No connections available");
+
+    for (List<ConnectionToId>::Itenerator it=rack->usedConnections.begin(); it.valid(); it.next())
+    {
+        const ConnectionToId& connection(it.getConstValue());
+
+        if (connection.id == connectionId)
+        {
+            const int targetPort((connection.portOut >= 0) ? connection.portOut : connection.portIn);
+            const int carlaPort((targetPort == connection.portOut) ? connection.portIn : connection.portOut);
+
+            if (targetPort >= RACK_PATCHBAY_GROUP_MIDI_OUT*1000)
+            {
+                const int portId(targetPort-RACK_PATCHBAY_GROUP_MIDI_OUT*1000);
+                disconnectRackMidiInPort(portId);
+            }
+            else if (targetPort >= RACK_PATCHBAY_GROUP_MIDI_IN*1000)
+            {
+                const int portId(targetPort-RACK_PATCHBAY_GROUP_MIDI_IN*1000);
+                disconnectRackMidiOutPort(portId);
+            }
+            else if (targetPort >= RACK_PATCHBAY_GROUP_AUDIO_OUT*1000)
+            {
+                CARLA_ASSERT(carlaPort == RACK_PATCHBAY_PORT_AUDIO_OUT1 || carlaPort == RACK_PATCHBAY_PORT_AUDIO_OUT2);
+
+                const int portId(targetPort-RACK_PATCHBAY_GROUP_AUDIO_OUT*1000);
+
+                rack->connectLock.lock();
+
+                if (carlaPort == RACK_PATCHBAY_PORT_AUDIO_OUT1)
+                    rack->connectedOuts[0].removeAll(portId);
+                else
+                    rack->connectedOuts[1].removeAll(portId);
+
+                rack->connectLock.unlock();
+            }
+            else if (targetPort >= RACK_PATCHBAY_GROUP_AUDIO_IN*1000)
+            {
+                CARLA_ASSERT(carlaPort == RACK_PATCHBAY_PORT_AUDIO_IN1 || carlaPort == RACK_PATCHBAY_PORT_AUDIO_IN2);
+
+                const int portId(targetPort-RACK_PATCHBAY_GROUP_AUDIO_IN*1000);
+
+                rack->connectLock.lock();
+
+                if (carlaPort == RACK_PATCHBAY_PORT_AUDIO_IN1)
+                    rack->connectedIns[0].removeAll(portId);
+                else
+                    rack->connectedIns[1].removeAll(portId);
+
+                rack->connectLock.unlock();
+            }
+            else
+            {
+                CARLA_ASSERT(false);
+            }
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connection.id, connection.portOut, connection.portIn, 0.0f, nullptr);
+
+            rack->usedConnections.remove(it);
+            break;
+        }
+    }
+
+    return true;
 }
 
 bool CarlaEngine::patchbayRefresh()
@@ -1883,181 +2311,6 @@ void CarlaEngine::setPluginPeaks(const unsigned int pluginId, float const inPeak
     pluginData.outsPeak[0] = outPeaks[0];
     pluginData.outsPeak[1] = outPeaks[1];
 }
-
-#ifndef BUILD_BRIDGE
-void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint32_t frames)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->bufEvents.in != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pData->bufEvents.out != nullptr,);
-
-    // safe copy
-    float inBuf0[frames];
-    float inBuf1[frames];
-    float* inBuf[2] = { inBuf0, inBuf1 };
-
-    // initialize audio inputs
-    FLOAT_COPY(inBuf0, inBufReal[0], frames);
-    FLOAT_COPY(inBuf1, inBufReal[1], frames);
-
-    // initialize audio outputs (zero)
-    FLOAT_CLEAR(outBuf[0], frames);
-    FLOAT_CLEAR(outBuf[1], frames);
-
-    // initialize event outputs (zero)
-    carla_zeroStruct<EngineEvent>(pData->bufEvents.out, kEngineMaxInternalEventCount);
-
-    bool processed = false;
-
-    uint32_t oldAudioInCount = 0;
-    uint32_t oldMidiOutCount = 0;
-
-    const bool forcedOffline(isOffline());
-
-    // process plugins
-    for (unsigned int i=0; i < pData->curPluginCount; ++i)
-    {
-        CarlaPlugin* const plugin = pData->plugins[i].plugin;
-
-        if (plugin == nullptr || ! plugin->isEnabled() || ! plugin->tryLock(forcedOffline))
-            continue;
-
-        if (processed)
-        {
-            // initialize audio inputs (from previous outputs)
-            FLOAT_COPY(inBuf0, outBuf[0], frames);
-            FLOAT_COPY(inBuf1, outBuf[1], frames);
-
-            // initialize audio outputs (zero)
-            FLOAT_CLEAR(outBuf[0], frames);
-            FLOAT_CLEAR(outBuf[1], frames);
-
-            // if plugin has no midi out, add previous events
-            if (oldMidiOutCount == 0 && pData->bufEvents.in[0].type != kEngineEventTypeNull)
-            {
-                if (pData->bufEvents.out[0].type != kEngineEventTypeNull)
-                {
-                    // TODO: carefully add to input, sorted events
-                }
-                // else nothing needed
-            }
-            else
-            {
-                // initialize event inputs from previous outputs
-                std::memcpy(pData->bufEvents.in, pData->bufEvents.out, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
-
-                // initialize event outputs (zero)
-                std::memset(pData->bufEvents.out, 0, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
-            }
-        }
-
-        oldAudioInCount = plugin->getAudioInCount();
-        oldMidiOutCount = plugin->getMidiOutCount();
-
-        // process
-        plugin->initBuffers();
-        plugin->process(inBuf, outBuf, frames);
-        plugin->unlock();
-
-        // if plugin has no audio inputs, add input buffer
-        if (oldAudioInCount == 0)
-        {
-            FLOAT_ADD(outBuf[0], inBuf0, frames);
-            FLOAT_ADD(outBuf[1], inBuf1, frames);
-        }
-
-        // set peaks
-        {
-            EnginePluginData& pluginData(pData->plugins[i]);
-
-#ifdef HAVE_JUCE
-            float tmpMin, tmpMax;
-
-            if (oldAudioInCount > 0)
-            {
-                FloatVectorOperations::findMinAndMax(inBuf0, frames, tmpMin, tmpMax);
-                pluginData.insPeak[0] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
-
-                FloatVectorOperations::findMinAndMax(inBuf1, frames, tmpMin, tmpMax);
-                pluginData.insPeak[1] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
-            }
-            else
-            {
-                pluginData.insPeak[0] = 0.0f;
-                pluginData.insPeak[1] = 0.0f;
-            }
-
-            if (plugin->getAudioOutCount() > 0)
-            {
-                FloatVectorOperations::findMinAndMax(outBuf[0], frames, tmpMin, tmpMax);
-                pluginData.outsPeak[0] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
-
-                FloatVectorOperations::findMinAndMax(outBuf[1], frames, tmpMin, tmpMax);
-                pluginData.outsPeak[1] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
-            }
-            else
-            {
-                pluginData.outsPeak[0] = 0.0f;
-                pluginData.outsPeak[1] = 0.0f;
-            }
-#else
-            float peak1, peak2;
-
-            if (oldAudioInCount > 0)
-            {
-                peak1 = peak2 = 0.0f;
-
-                for (uint32_t k=0; k < frames; ++k)
-                {
-                    peak1  = carla_max<float>(peak1,  std::fabs(inBuf0[k]), 1.0f);
-                    peak2  = carla_max<float>(peak2,  std::fabs(inBuf1[k]), 1.0f);
-                }
-
-                pluginData.insPeak[0] = peak1;
-                pluginData.insPeak[1] = peak2;
-            }
-            else
-            {
-                pluginData.insPeak[0] = 0.0f;
-                pluginData.insPeak[1] = 0.0f;
-            }
-
-            if (plugin->getAudioOutCount() > 0)
-            {
-                peak1 = peak2 = 0.0f;
-
-                for (uint32_t k=0; k < frames; ++k)
-                {
-                    peak1 = carla_max<float>(peak1, std::fabs(outBuf[0][k]), 1.0f);
-                    peak2 = carla_max<float>(peak2, std::fabs(outBuf[1][k]), 1.0f);
-                }
-
-                pluginData.outsPeak[0] = peak1;
-                pluginData.outsPeak[1] = peak2;
-            }
-            else
-            {
-                pluginData.outsPeak[0] = 0.0f;
-                pluginData.outsPeak[1] = 0.0f;
-            }
-#endif
-        }
-
-        processed = true;
-    }
-}
-
-void CarlaEngine::processPatchbay(float** inBuf, float** outBuf, const uint32_t bufCount[2], const uint32_t frames)
-{
-    // TODO
-    return;
-
-    // unused, for now
-    (void)inBuf;
-    (void)outBuf;
-    (void)bufCount;
-    (void)frames;
-}
-#endif
 
 // -----------------------------------------------------------------------
 // Bridge/Controller OSC stuff

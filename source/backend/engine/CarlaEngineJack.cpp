@@ -1133,7 +1133,7 @@ protected:
             }
 
             // process rack
-            processRack(inBuf, outBuf, nframes);
+            pData->processRack(inBuf, outBuf, nframes, fFreewheel);
 
             // output control
             {

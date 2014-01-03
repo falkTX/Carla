@@ -24,6 +24,7 @@
 #include "CarlaPlugin.hpp"
 
 #include "CarlaMutex.hpp"
+#include "List.hpp"
 
 #ifdef HAVE_JUCE
 # include "juce_audio_basics.h"
@@ -167,6 +168,137 @@ struct EnginePluginData {
 
 // -----------------------------------------------------------------------
 
+enum RackPatchbayGroupIds {
+    RACK_PATCHBAY_GROUP_CARLA     = -1,
+    RACK_PATCHBAY_GROUP_AUDIO_IN  = 0,
+    RACK_PATCHBAY_GROUP_AUDIO_OUT = 1,
+    RACK_PATCHBAY_GROUP_MIDI_IN   = 2,
+    RACK_PATCHBAY_GROUP_MIDI_OUT  = 3,
+    RACK_PATCHBAY_GROUP_MAX       = 4
+};
+
+enum RackPatchbayPortIds {
+    RACK_PATCHBAY_PORT_AUDIO_IN1  = -1,
+    RACK_PATCHBAY_PORT_AUDIO_IN2  = -2,
+    RACK_PATCHBAY_PORT_AUDIO_OUT1 = -3,
+    RACK_PATCHBAY_PORT_AUDIO_OUT2 = -4,
+    RACK_PATCHBAY_PORT_MIDI_IN    = -5,
+    RACK_PATCHBAY_PORT_MIDI_OUT   = -6,
+    RACK_PATCHBAY_PORT_MAX        = -7
+};
+
+struct PortNameToId {
+    int portId;
+    char name[STR_MAX+1];
+};
+
+struct ConnectionToId {
+    int id;
+    int portOut;
+    int portIn;
+};
+
+// -----------------------------------------------------------------------
+
+struct EngineRackBuffers {
+    float* in[2];
+    float* out[2];
+
+    // connections stuff
+    List<uint> connectedIns[2];
+    List<uint> connectedOuts[2];
+    CarlaMutex connectLock;
+
+    int lastConnectionId;
+    List<ConnectionToId> usedConnections;
+
+    EngineRackBuffers(const uint32_t bufferSize)
+        : lastConnectionId(0)
+    {
+        resize(bufferSize);
+    }
+
+    ~EngineRackBuffers()
+    {
+        clear();
+    }
+
+    void clear()
+    {
+        lastConnectionId = 0;
+
+        if (in[0] != nullptr)
+        {
+            delete[] in[0];
+            in[0] = nullptr;
+        }
+
+        if (in[1] != nullptr)
+        {
+            delete[] in[1];
+            in[1] = nullptr;
+        }
+
+        if (out[0] != nullptr)
+        {
+            delete[] out[0];
+            out[0] = nullptr;
+        }
+
+        if (out[1] != nullptr)
+        {
+            delete[] out[1];
+            out[1] = nullptr;
+        }
+
+        connectedIns[0].clear();
+        connectedIns[1].clear();
+        connectedOuts[0].clear();
+        connectedOuts[1].clear();
+        usedConnections.clear();
+    }
+
+    void resize(const uint32_t bufferSize)
+    {
+        if (bufferSize > 0)
+        {
+            in[0]  = new float[bufferSize];
+            in[1]  = new float[bufferSize];
+            out[0] = new float[bufferSize];
+            out[1] = new float[bufferSize];
+        }
+        else
+        {
+            in[0]  = nullptr;
+            in[1]  = nullptr;
+            out[0] = nullptr;
+            out[1] = nullptr;
+        }
+    }
+};
+
+struct EnginePatchbayBuffers {
+    EnginePatchbayBuffers(const uint32_t bufferSize)
+    {
+        resize(bufferSize);
+    }
+
+    ~EnginePatchbayBuffers()
+    {
+        clear();
+    }
+
+    void clear()
+    {
+    }
+
+    void resize(const uint32_t /*bufferSize*/)
+    {
+    }
+};
+
+// -----------------------------------------------------------------------
+
 struct CarlaEngineProtectedData {
     CarlaEngineOsc    osc;
     CarlaEngineThread thread;
@@ -191,6 +323,94 @@ struct CarlaEngineProtectedData {
     EngineTimeInfo timeInfo;
 
     EnginePluginData* plugins;
+
+#ifndef BUILD_BRIDGE
+    struct InternalAudio {
+        bool isReady;
+        bool usePatchbay;
+
+        union {
+            EngineRackBuffers*     rack;
+            EnginePatchbayBuffers* patchbay;
+        };
+
+        InternalAudio() noexcept
+            : isReady(false),
+              usePatchbay(false)
+        {
+            rack = nullptr;
+        }
+
+        ~InternalAudio()
+        {
+            CARLA_ASSERT(! isReady);
+            CARLA_ASSERT(rack == nullptr);
+        }
+
+        void initPatchbay()
+        {
+            if (usePatchbay)
+            {
+                CARLA_SAFE_ASSERT_RETURN(patchbay != nullptr,);
+            }
+            else
+            {
+                CARLA_SAFE_ASSERT_RETURN(rack != nullptr,);
+
+                rack->lastConnectionId = 0;
+                rack->usedConnections.clear();
+            }
+        }
+
+        void clear()
+        {
+            isReady = false;
+
+            if (usePatchbay)
+            {
+                CARLA_SAFE_ASSERT_RETURN(patchbay != nullptr,);
+                delete patchbay;
+                patchbay = nullptr;
+            }
+            else
+            {
+                CARLA_SAFE_ASSERT_RETURN(rack != nullptr,);
+                delete rack;
+                rack = nullptr;
+            }
+        }
+
+        void create(const uint32_t bufferSize)
+        {
+            if (usePatchbay)
+            {
+                CARLA_SAFE_ASSERT_RETURN(patchbay == nullptr,);
+                patchbay = new EnginePatchbayBuffers(bufferSize);
+            }
+            else
+            {
+                CARLA_SAFE_ASSERT_RETURN(rack == nullptr,);
+                rack = new EngineRackBuffers(bufferSize);
+            }
+
+            isReady = true;
+        }
+
+        void resize(const uint32_t bufferSize)
+        {
+            if (usePatchbay)
+            {
+                CARLA_SAFE_ASSERT_RETURN(patchbay != nullptr,);
+                patchbay->resize(bufferSize);
+            }
+            else
+            {
+                CARLA_SAFE_ASSERT_RETURN(rack != nullptr,);
+                rack->resize(bufferSize);
+            }
+        }
+    } bufAudio;
+#endif
 
     struct InternalEvents {
         EngineEvent* in;
@@ -345,6 +565,14 @@ struct CarlaEngineProtectedData {
         if (unlock)
             nextAction.mutex.unlock();
     }
+
+#ifndef BUILD_BRIDGE
+    // the base, where plugins run
+    void processRack(float* inBufReal[2], float* outBuf[2], const uint32_t nframes, const bool isOffline);
+
+    // extended, will call processRack() in the middle
+    void processRackFull(float** const inBuf, const uint32_t inCount, float** const outBuf, const uint32_t outCount, const uint32_t nframes, const bool isOffline);
+#endif
 
     class ScopedActionLock
     {
