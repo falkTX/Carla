@@ -88,10 +88,8 @@ public:
           fAudio(api),
           fAudioBufIn(nullptr),
           fAudioBufOut(nullptr),
-          fAudioCountIn(0),
-          fAudioCountOut(0),
           fAudioIsInterleaved(false),
-          fLastTime(0),
+          fLastEventTime(0),
           fDummyMidiIn(getMatchedAudioMidiAPi(api), "Carla"),
           fDummyMidiOut(getMatchedAudioMidiAPi(api), "Carla")
     {
@@ -105,8 +103,6 @@ public:
     {
         CARLA_ASSERT(fAudioBufIn == nullptr);
         CARLA_ASSERT(fAudioBufOut == nullptr);
-        CARLA_ASSERT(fAudioCountIn == 0);
-        CARLA_ASSERT(fAudioCountOut == 0);
         carla_debug("CarlaEngineRtAudio::~CarlaEngineRtAudio()");
 
         fUsedMidiIns.clear();
@@ -127,8 +123,6 @@ public:
     {
         CARLA_ASSERT(fAudioBufIn == nullptr);
         CARLA_ASSERT(fAudioBufOut == nullptr);
-        CARLA_ASSERT(fAudioCountIn == 0);
-        CARLA_ASSERT(fAudioCountOut == 0);
         CARLA_ASSERT(clientName != nullptr && clientName[0] != '\0');
         carla_debug("CarlaEngineRtAudio::init(\"%s\")", clientName);
 
@@ -215,30 +209,31 @@ public:
             return false;
         }
 
-        fAudioCountIn  = iParams.nChannels;
-        fAudioCountOut = oParams.nChannels;
         pData->bufferSize = bufferFrames;
         pData->sampleRate = fAudio.getStreamSampleRate();
 
-        CARLA_ASSERT(fAudioCountOut > 0);
+        pData->bufAudio.inCount  = iParams.nChannels;
+        pData->bufAudio.outCount = oParams.nChannels;
 
-        if (fAudioCountIn > 0)
+        CARLA_ASSERT(pData->bufAudio.outCount > 0);
+
+        if (pData->bufAudio.inCount > 0)
         {
-            fAudioBufIn  = new float*[fAudioCountIn];
+            fAudioBufIn  = new float*[pData->bufAudio.inCount];
 
-            for (uint i=0; i < fAudioCountIn; ++i)
+            for (uint i=0; i < pData->bufAudio.inCount; ++i)
                 fAudioBufIn[i] = new float[pData->bufferSize];
         }
 
-        if (fAudioCountOut > 0)
+        if (pData->bufAudio.outCount > 0)
         {
-            fAudioBufOut = new float*[fAudioCountOut];
+            fAudioBufOut = new float*[pData->bufAudio.outCount];
 
-            for (uint i=0; i < fAudioCountOut; ++i)
+            for (uint i=0; i < pData->bufAudio.outCount; ++i)
                 fAudioBufOut[i] = new float[pData->bufferSize];
         }
 
-        fLastTime = 0;
+        fLastEventTime = 0;
 
         pData->bufAudio.create(pData->bufferSize);
 
@@ -251,7 +246,6 @@ public:
     bool close() override
     {
         CARLA_ASSERT(fAudioBufOut != nullptr);
-        CARLA_ASSERT(fAudioCountOut > 0);
         carla_debug("CarlaEngineRtAudio::close()");
 
         pData->bufAudio.isReady = false;
@@ -290,9 +284,9 @@ public:
 
         if (fAudioBufIn != nullptr)
         {
-            CARLA_ASSERT(fAudioCountIn > 0);
+            CARLA_ASSERT(pData->bufAudio.inCount > 0);
 
-            for (uint i=0; i < fAudioCountIn; ++i)
+            for (uint i=0; i < pData->bufAudio.inCount; ++i)
                 delete[] fAudioBufIn[i];
 
             delete[] fAudioBufIn;
@@ -301,9 +295,9 @@ public:
 
         if (fAudioBufOut != nullptr)
         {
-            CARLA_ASSERT(fAudioCountOut > 0);
+            CARLA_ASSERT(pData->bufAudio.outCount > 0);
 
-            for (uint i=0; i < fAudioCountOut; ++i)
+            for (uint i=0; i < pData->bufAudio.outCount; ++i)
                 delete[] fAudioBufOut[i];
 
             delete[] fAudioBufOut;
@@ -311,9 +305,6 @@ public:
         }
 
         pData->bufAudio.clear();
-
-        fAudioCountIn  = 0;
-        fAudioCountOut = 0;
 
         fDeviceName.clear();
 
@@ -438,7 +429,7 @@ public:
 
             callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_IN, 0, 0, 0.0f, strBuf);
 
-            for (unsigned int i=0; i < fAudioCountIn; ++i)
+            for (unsigned int i=0; i < pData->bufAudio.inCount; ++i)
             {
                 std::snprintf(strBuf, STR_MAX, "capture_%i", i+1);
                 callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_IN, RACK_PATCHBAY_GROUP_AUDIO_IN*1000 + i, PATCHBAY_PORT_TYPE_AUDIO, 0.0f, strBuf);
@@ -454,7 +445,7 @@ public:
 
             callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_OUT, 0, 0, 0.0f, strBuf);
 
-            for (unsigned int i=0; i < fAudioCountOut; ++i)
+            for (unsigned int i=0; i < pData->bufAudio.outCount; ++i)
             {
                 std::snprintf(strBuf, STR_MAX, "playback_%i", i+1);
                 callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_OUT, RACK_PATCHBAY_GROUP_AUDIO_OUT*1000 + i, PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, strBuf);
@@ -499,7 +490,7 @@ public:
         for (List<uint>::Itenerator it = rack->connectedIns[0].begin(); it.valid(); it.next())
         {
             const uint& port(it.getConstValue());
-            CARLA_SAFE_ASSERT_CONTINUE(port < fAudioCountIn);
+            CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.inCount);
 
             ConnectionToId connectionToId;
             connectionToId.id      = rack->lastConnectionId;
@@ -515,7 +506,7 @@ public:
         for (List<uint>::Itenerator it = rack->connectedIns[1].begin(); it.valid(); it.next())
         {
             const uint& port(it.getConstValue());
-            CARLA_SAFE_ASSERT_CONTINUE(port < fAudioCountIn);
+            CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.inCount);
 
             ConnectionToId connectionToId;
             connectionToId.id      = rack->lastConnectionId;
@@ -531,7 +522,7 @@ public:
         for (List<uint>::Itenerator it = rack->connectedOuts[0].begin(); it.valid(); it.next())
         {
             const uint& port(it.getConstValue());
-            CARLA_SAFE_ASSERT_CONTINUE(port < fAudioCountOut);
+            CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.outCount);
 
             ConnectionToId connectionToId;
             connectionToId.id      = rack->lastConnectionId;
@@ -547,7 +538,7 @@ public:
         for (List<uint>::Itenerator it = rack->connectedOuts[1].begin(); it.valid(); it.next())
         {
             const uint& port(it.getConstValue());
-            CARLA_SAFE_ASSERT_CONTINUE(port < fAudioCountOut);
+            CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.outCount);
 
             ConnectionToId connectionToId;
             connectionToId.id      = rack->lastConnectionId;
@@ -608,28 +599,28 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(outputBuffer != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(nframes == pData->bufferSize,);
 
-        if (fAudioCountOut == 0 || ! pData->bufAudio.isReady)
+        if (pData->bufAudio.outCount == 0 || ! pData->bufAudio.isReady)
             return runPendingRtEvents();
 
         // initialize rtaudio input
         if (fAudioIsInterleaved)
         {
-            for (unsigned int i=0, j=0; i < nframes*fAudioCountIn; ++i)
+            for (unsigned int i=0, j=0, count=nframes*pData->bufAudio.inCount; i < count; ++i)
             {
-                fAudioBufIn[i/fAudioCountIn][j] = insPtr[i];
+                fAudioBufIn[i/pData->bufAudio.inCount][j] = insPtr[i];
 
-                if ((i+1) % fAudioCountIn == 0)
+                if ((i+1) % pData->bufAudio.inCount == 0)
                     j += 1;
             }
         }
         else
         {
-            for (unsigned int i=0; i < fAudioCountIn; ++i)
+            for (unsigned int i=0; i < pData->bufAudio.inCount; ++i)
                 FLOAT_COPY(fAudioBufIn[i], insPtr+(nframes*i), nframes);
         }
 
         // initialize rtaudio output
-        for (unsigned int i=0; i < fAudioCountOut; ++i)
+        for (unsigned int i=0; i < pData->bufAudio.outCount; ++i)
             FLOAT_CLEAR(fAudioBufOut[i], nframes);
 
         // initialize input events
@@ -671,23 +662,23 @@ protected:
         }
         else
         {
-            pData->processRackFull(fAudioBufIn, fAudioCountIn, fAudioBufOut, fAudioCountOut, nframes, false);
+            pData->processRackFull(fAudioBufIn, pData->bufAudio.inCount, fAudioBufOut, pData->bufAudio.outCount, nframes, false);
         }
 
         // output audio
         if (fAudioIsInterleaved)
         {
-            for (unsigned int i=0, j=0; i < nframes*fAudioCountOut; ++i)
+            for (unsigned int i=0, j=0; i < nframes*pData->bufAudio.outCount; ++i)
             {
-                outsPtr[i] = fAudioBufOut[i/fAudioCountOut][j];
+                outsPtr[i] = fAudioBufOut[i/pData->bufAudio.outCount][j];
 
-                if ((i+1) % fAudioCountOut == 0)
+                if ((i+1) % pData->bufAudio.outCount == 0)
                     j += 1;
             }
         }
         else
         {
-            for (unsigned int i=0; i < fAudioCountOut; ++i)
+            for (unsigned int i=0; i < pData->bufAudio.outCount; ++i)
                 FLOAT_COPY(outsPtr+(nframes*i), fAudioBufOut[i], nframes);
         }
 
@@ -890,12 +881,8 @@ private:
     float** fAudioBufOut;
 
     // useful info
-    uint fAudioCountIn;
-    uint fAudioCountOut;
-    bool fAudioIsInterleaved;
-
-    // used to calculate event frames
-    uint64_t fLastTime;
+    bool     fAudioIsInterleaved;
+    uint64_t fLastEventTime;
 
     // current device name
     CarlaString fDeviceName;

@@ -329,6 +329,9 @@ struct CarlaEngineProtectedData {
         bool isReady;
         bool usePatchbay;
 
+        uint inCount;
+        uint outCount;
+
         union {
             EngineRackBuffers*     rack;
             EnginePatchbayBuffers* patchbay;
@@ -336,7 +339,9 @@ struct CarlaEngineProtectedData {
 
         InternalAudio() noexcept
             : isReady(false),
-              usePatchbay(false)
+              usePatchbay(false),
+              inCount(0),
+              outCount(0)
         {
             rack = nullptr;
         }
@@ -364,7 +369,9 @@ struct CarlaEngineProtectedData {
 
         void clear()
         {
-            isReady = false;
+            isReady  = false;
+            inCount  = 0;
+            outCount = 0;
 
             if (usePatchbay)
             {

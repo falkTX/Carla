@@ -141,6 +141,9 @@ public:
         pData->bufferSize = fDevice->getCurrentBufferSizeSamples();
         pData->sampleRate = fDevice->getCurrentSampleRate();
 
+        //pData->bufAudio.inCount  = iParams.nChannels;
+        //pData->bufAudio.outCount = oParams.nChannels;
+
         pData->bufAudio.create(pData->bufferSize);
 
         CarlaEngine::init(clientName);
@@ -294,7 +297,7 @@ public:
         for (List<uint>::Itenerator it = rack->connectedIns[0].begin(); it.valid(); it.next())
         {
             const uint& port(it.getConstValue());
-            //CARLA_SAFE_ASSERT_CONTINUE(port < fAudioCountIn); // FIXME
+            CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.inCount);
 
             ConnectionToId connectionToId;
             connectionToId.id      = rack->lastConnectionId;
@@ -310,7 +313,7 @@ public:
         for (List<uint>::Itenerator it = rack->connectedIns[1].begin(); it.valid(); it.next())
         {
             const uint& port(it.getConstValue());
-            //CARLA_SAFE_ASSERT_CONTINUE(port < fAudioCountIn); // FIXME
+            CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.inCount);
 
             ConnectionToId connectionToId;
             connectionToId.id      = rack->lastConnectionId;
@@ -326,7 +329,7 @@ public:
         for (List<uint>::Itenerator it = rack->connectedOuts[0].begin(); it.valid(); it.next())
         {
             const uint& port(it.getConstValue());
-            //CARLA_SAFE_ASSERT_CONTINUE(port < fAudioCountOut); // FIXME
+            CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.outCount);
 
             ConnectionToId connectionToId;
             connectionToId.id      = rack->lastConnectionId;
@@ -342,7 +345,7 @@ public:
         for (List<uint>::Itenerator it = rack->connectedOuts[1].begin(); it.valid(); it.next())
         {
             const uint& port(it.getConstValue());
-            //CARLA_SAFE_ASSERT_CONTINUE(port < fAudioCountOut); // FIXME
+            CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.outCount);
 
             ConnectionToId connectionToId;
             connectionToId.id      = rack->lastConnectionId;
@@ -398,6 +401,8 @@ protected:
     void audioDeviceIOCallback(const float** inputChannelData, int numInputChannels, float** outputChannelData, int numOutputChannels, int numSamples) override
     {
         // assert juce buffers
+        CARLA_SAFE_ASSERT_RETURN(numInputChannels == pData->bufAudio.inCount,);
+        CARLA_SAFE_ASSERT_RETURN(numOutputChannels == pData->bufAudio.outCount,);
         CARLA_SAFE_ASSERT_RETURN(outputChannelData != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(numSamples == static_cast<int>(pData->bufferSize),);
 
