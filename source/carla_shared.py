@@ -315,6 +315,7 @@ CARLA_KEY_CANVAS_HQ_ANTIALIASING  = "Canvas/HQAntialiasing"  # bool
 CARLA_KEY_ENGINE_DRIVER_PREFIX         = "Engine/Driver-"
 CARLA_KEY_ENGINE_AUDIO_DRIVER          = "Engine/AudioDriver"         # str
 CARLA_KEY_ENGINE_PROCESS_MODE          = "Engine/ProcessMode"         # enum
+CARLA_KEY_ENGINE_TRANSPORT_MODE        = "Engine/TransportMode"       # enum
 CARLA_KEY_ENGINE_FORCE_STEREO          = "Engine/ForceStereo"         # bool
 CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES = "Engine/PreferPluginBridges" # bool
 CARLA_KEY_ENGINE_PREFER_UI_BRIDGES     = "Engine/PreferUiBridges"     # bool

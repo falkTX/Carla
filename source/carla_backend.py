@@ -99,14 +99,14 @@ def numPtrToList(numPtr):
         return []
 
     i       = 0
-    num     = numPtr[0].value
+    num     = numPtr[0] #.value
     numList = []
 
     while num not in (0, 0.0):
         numList.append(num)
 
         i += 1
-        num = numPtr[i].value
+        num = numPtr[i] #.value
 
     return numList
 
@@ -1216,7 +1216,7 @@ class Host(object):
     # @param index Driver index
     # @param name  Device name
     def get_engine_driver_device_info(self, index, name):
-        return structToDict(self.lib.carla_get_engine_driver_device_info(index, name).contents)
+        return structToDict(self.lib.carla_get_engine_driver_device_info(index, name.encode("utf-8")).contents)
 
     # Get how many internal plugins are available.
     def get_internal_plugin_count(self):

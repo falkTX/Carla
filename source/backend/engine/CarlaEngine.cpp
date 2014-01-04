@@ -870,24 +870,39 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
     if (std::strcmp(driverName, "JACK") == 0)
         return newJack();
 
-#ifndef BUILD_BRIDGE
     // common
     if (std::strncmp(driverName, "JACK ", 5) == 0)
         return newRtAudio(AUDIO_API_JACK);
 
     // linux
+#ifdef HAVE_JUCE
+    if (std::strcmp(driverName, "ALSA") == 0)
+        return newJuce(AUDIO_API_ALSA);
+#else
     if (std::strcmp(driverName, "ALSA") == 0)
         return newRtAudio(AUDIO_API_ALSA);
+#endif
     if (std::strcmp(driverName, "OSS") == 0)
         return newRtAudio(AUDIO_API_OSS);
     if (std::strcmp(driverName, "PulseAudio") == 0)
         return newRtAudio(AUDIO_API_PULSE);
 
     // macos
+#ifdef HAVE_JUCE
+    if (std::strcmp(driverName, "CoreAudio") == 0)
+        return newJuce(AUDIO_API_CORE);
+#else
     if (std::strcmp(driverName, "CoreAudio") == 0)
         return newRtAudio(AUDIO_API_CORE);
+#endif
 
     // windows
+#ifdef HAVE_JUCE
+    if (std::strcmp(driverName, "ASIO") == 0)
+        return newJuce(AUDIO_API_ASIO);
+    if (std::strcmp(driverName, "DirectSound") == 0)
+        return newJuce(AUDIO_API_DS);
+#else
     if (std::strcmp(driverName, "ASIO") == 0)
         return newRtAudio(AUDIO_API_ASIO);
     if (std::strcmp(driverName, "DirectSound") == 0)

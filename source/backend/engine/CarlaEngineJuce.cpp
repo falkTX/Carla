@@ -82,7 +82,7 @@ public:
 
     bool init(const char* const clientName) override
     {
-        CARLA_ASSERT(clientName != nullptr && clientName[0] != '\0');
+        CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0', false);
         carla_debug("CarlaEngineJuce::init(\"%s\")", clientName);
 
         if (pData->options.processMode != ENGINE_PROCESS_MODE_CONTINUOUS_RACK && pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
@@ -110,7 +110,7 @@ public:
 
         if (deviceName.isEmpty())
         {
-            setLastError("something");
+            setLastError("Audio device has not been selected yet and a default one is not available");
             return false;
         }
 
@@ -118,12 +118,18 @@ public:
 
         if (fDevice == nullptr)
         {
-            setLastError("something 2");
+            setLastError("Failed to create device");
             return false;
         }
 
+        StringArray inputNames(fDevice->getInputChannelNames());
+        StringArray outputNames(fDevice->getOutputChannelNames());
+
         BigInteger inputChannels;
+        inputChannels.setRange(0, inputNames.size(), true);
+
         BigInteger outputChannels;
+        outputChannels.setRange(0, outputNames.size(), true);
 
         String error = fDevice->open(inputChannels, outputChannels, pData->options.audioSampleRate, static_cast<int>(pData->options.audioBufferSize));
 
@@ -134,17 +140,17 @@ public:
             return false;
         }
 
-        fDevice->start(this);
-
-        //getActiveOutputChannels();
-        //getActiveInputChannels();
         pData->bufferSize = fDevice->getCurrentBufferSizeSamples();
         pData->sampleRate = fDevice->getCurrentSampleRate();
 
-        //pData->bufAudio.inCount  = iParams.nChannels;
-        //pData->bufAudio.outCount = oParams.nChannels;
+        pData->bufAudio.inCount  = inputChannels.countNumberOfSetBits();
+        pData->bufAudio.outCount = outputChannels.countNumberOfSetBits();
+
+        CARLA_ASSERT(pData->bufAudio.outCount > 0);
 
         pData->bufAudio.create(pData->bufferSize);
+
+        fDevice->start(this);
 
         CarlaEngine::init(clientName);
         patchbayRefresh();
@@ -212,6 +218,7 @@ public:
         }
 
         char strBuf[STR_MAX+1];
+        strBuf[STR_MAX] = '\0';
 
         EngineRackBuffers* const rack(pData->bufAudio.rack);
 
@@ -227,39 +234,59 @@ public:
             callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_PORT_MIDI_OUT,   PATCHBAY_PORT_TYPE_MIDI,                         0.0f, "midi-out");
         }
 
+        const String& deviceName(fDevice->getName());
+
         // Audio In
         {
-            /*if (fDeviceName.isNotEmpty())
-                std::snprintf(strBuf, STR_MAX, "Capture (%s)", (const char*)fDeviceName);
-            else*/
+            if (deviceName.isNotEmpty())
+                std::snprintf(strBuf, STR_MAX, "Capture (%s)", deviceName.toRawUTF8());
+            else
                 std::strncpy(strBuf, "Capture", STR_MAX);
 
             callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_IN, 0, 0, 0.0f, strBuf);
 
-            /*for (unsigned int i=0; i < fAudioCountIn; ++i)
+            StringArray inputNames(fDevice->getInputChannelNames());
+            CARLA_ASSERT(inputNames.size() == static_cast<int>(pData->bufAudio.inCount));
+
+            for (uint i=0; i < pData->bufAudio.inCount; ++i)
             {
-                std::snprintf(strBuf, STR_MAX, "capture_%i", i+1);
+                String inputName(inputNames[i]);
+
+                if (inputName.trim().isNotEmpty())
+                    std::snprintf(strBuf, STR_MAX, "%s", inputName.toRawUTF8());
+                else
+                    std::snprintf(strBuf, STR_MAX, "capture_%i", i+1);
+
                 callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_IN, RACK_PATCHBAY_GROUP_AUDIO_IN*1000 + i, PATCHBAY_PORT_TYPE_AUDIO, 0.0f, strBuf);
-            }*/
+            }
         }
 
         // Audio Out
         {
-            /*if (fDeviceName.isNotEmpty())
-                std::snprintf(strBuf, STR_MAX, "Playback (%s)", (const char*)fDeviceName);
-            else*/
+            if (deviceName.isNotEmpty())
+                std::snprintf(strBuf, STR_MAX, "Playback (%s)", deviceName.toRawUTF8());
+            else
                 std::strncpy(strBuf, "Playback", STR_MAX);
 
             callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_OUT, 0, 0, 0.0f, strBuf);
 
-            /*for (unsigned int i=0; i < fAudioCountOut; ++i)
+            StringArray outputNames(fDevice->getOutputChannelNames());
+            CARLA_ASSERT(outputNames.size() == static_cast<int>(pData->bufAudio.outCount));
+
+            for (uint i=0; i < pData->bufAudio.outCount; ++i)
             {
-                std::snprintf(strBuf, STR_MAX, "playback_%i", i+1);
+                String outputName(outputNames[i]);
+
+                if (outputName.trim().isNotEmpty())
+                    std::snprintf(strBuf, STR_MAX, "%s", outputName.toRawUTF8());
+                else
+                    std::snprintf(strBuf, STR_MAX, "playback_%i", i+1);
+
                 callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_OUT, RACK_PATCHBAY_GROUP_AUDIO_OUT*1000 + i, PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, strBuf);
-            }*/
+            }
         }
 
-#if 0 // midi-out not implemented yet
+#if 0 // midi implemented yet
         // MIDI In
         {
             callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_MIDI_IN, 0, 0, 0.0f, "Readable MIDI ports");
@@ -401,8 +428,8 @@ protected:
     void audioDeviceIOCallback(const float** inputChannelData, int numInputChannels, float** outputChannelData, int numOutputChannels, int numSamples) override
     {
         // assert juce buffers
-        CARLA_SAFE_ASSERT_RETURN(numInputChannels == pData->bufAudio.inCount,);
-        CARLA_SAFE_ASSERT_RETURN(numOutputChannels == pData->bufAudio.outCount,);
+        CARLA_SAFE_ASSERT_RETURN(numInputChannels == static_cast<int>(pData->bufAudio.inCount),);
+        CARLA_SAFE_ASSERT_RETURN(numOutputChannels == static_cast<int>(pData->bufAudio.outCount),);
         CARLA_SAFE_ASSERT_RETURN(outputChannelData != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(numSamples == static_cast<int>(pData->bufferSize),);
 
@@ -596,7 +623,10 @@ const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const unsigned int 
     initJuceDevices();
 
     if (static_cast<int>(index) >= gJuceDeviceTypes.size())
+    {
+        carla_stderr("here 001");
         return nullptr;
+    }
 
     AudioIODeviceType* const deviceType(gJuceDeviceTypes[index]);
 

@@ -112,17 +112,14 @@ class DriverSettingsW(QDialog):
         self.fDriverName  = driverName
         self.fDeviceNames = Carla.host.get_engine_driver_device_names(driverIndex) if Carla.host is not None else []
 
+        self.fBufferSizes = BUFFER_SIZE_LIST
+        self.fSampleRates = SAMPLE_RATE_LIST
+
         # -------------------------------------------------------------
         # Set-up GUI
 
         for name in self.fDeviceNames:
             self.ui.cb_device.addItem(name)
-
-        for bsize in BUFFER_SIZE_LIST:
-            self.ui.cb_buffersize.addItem(str(bsize))
-
-        for srate in SAMPLE_RATE_LIST:
-            self.ui.cb_samplerate.addItem(str(srate))
 
         # -------------------------------------------------------------
         # Load settings
@@ -133,6 +130,7 @@ class DriverSettingsW(QDialog):
         # Set-up connections
 
         self.accepted.connect(self.slot_saveSettings)
+        self.ui.cb_device.currentIndexChanged.connect(self.slot_updateDeviceInfo)
 
         # -------------------------------------------------------------
 
@@ -149,20 +147,27 @@ class DriverSettingsW(QDialog):
         else:
             self.ui.cb_device.setCurrentIndex(-1)
 
+        # fill combo-boxes first
+        self.slot_updateDeviceInfo()
+
         if 2 < audioNumPeriods < 3:
             self.ui.sb_numperiods.setValue(audioNumPeriods)
         else:
             self.ui.sb_numperiods.setValue(CARLA_DEFAULT_AUDIO_NUM_PERIODS)
 
-        if audioBufferSize and audioBufferSize in BUFFER_SIZE_LIST:
-            self.ui.cb_buffersize.setCurrentIndex(BUFFER_SIZE_LIST.index(audioBufferSize))
-        else:
+        if audioBufferSize and audioBufferSize in self.fBufferSizes:
+            self.ui.cb_buffersize.setCurrentIndex(self.fBufferSizes.index(audioBufferSize))
+        elif self.fBufferSizes == BUFFER_SIZE_LIST:
             self.ui.cb_buffersize.setCurrentIndex(BUFFER_SIZE_LIST.index(CARLA_DEFAULT_AUDIO_BUFFER_SIZE))
-
-        if audioSampleRate and audioSampleRate in SAMPLE_RATE_LIST:
-            self.ui.cb_samplerate.setCurrentIndex(SAMPLE_RATE_LIST.index(audioSampleRate))
         else:
+            self.ui.cb_buffersize.setCurrentIndex(len(self.fBufferSizes)/2)
+
+        if audioSampleRate and audioSampleRate in self.fSampleRates:
+            self.ui.cb_samplerate.setCurrentIndex(self.fSampleRates.index(audioSampleRate))
+        elif self.fSampleRates == SAMPLE_RATE_LIST:
             self.ui.cb_samplerate.setCurrentIndex(SAMPLE_RATE_LIST.index(CARLA_DEFAULT_AUDIO_SAMPLE_RATE))
+        else:
+            self.ui.cb_samplerate.setCurrentIndex(len(self.fSampleRates)/2)
 
     @pyqtSlot()
     def slot_saveSettings(self):
@@ -172,6 +177,28 @@ class DriverSettingsW(QDialog):
         settings.setValue("%s%s/NumPeriods" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.sb_numperiods.value())
         settings.setValue("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_buffersize.currentText())
         settings.setValue("%s%s/SampleRate" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_samplerate.currentText())
+
+    @pyqtSlot()
+    def slot_updateDeviceInfo(self):
+        deviceName = self.ui.cb_device.currentText()
+
+        self.ui.cb_buffersize.clear()
+        self.ui.cb_samplerate.clear()
+
+        if deviceName and Carla.host is not None:
+            driverDeviceInfo = Carla.host.get_engine_driver_device_info(self.fDriverIndex, deviceName)
+
+            self.fBufferSizes = numPtrToList(driverDeviceInfo['bufferSizes'])
+            self.fSampleRates = numPtrToList(driverDeviceInfo['sampleRates'])
+        else:
+            self.fBufferSizes = BUFFER_SIZE_LIST
+            self.fSampleRates = SAMPLE_RATE_LIST
+
+        for bsize in self.fBufferSizes:
+            self.ui.cb_buffersize.addItem(str(bsize))
+
+        for srate in self.fSampleRates:
+            self.ui.cb_samplerate.addItem(str(int(srate)))
 
     def done(self, r):
         QDialog.done(self, r)

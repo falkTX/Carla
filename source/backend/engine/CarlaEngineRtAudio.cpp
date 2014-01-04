@@ -37,7 +37,64 @@ static std::vector<RtAudio::Api> gRtAudioApis;
 static void initRtApis()
 {
     if (gRtAudioApis.size() == 0)
+    {
         RtAudio::getCompiledApi(gRtAudioApis);
+
+#ifdef HAVE_JUCE
+        // prefer juce to handle some APIs
+        std::vector<RtAudio::Api>::iterator it = std::find(gRtAudioApis.begin(), gRtAudioApis.end(), RtAudio::LINUX_ALSA);
+        if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);
+
+        it = std::find(gRtAudioApis.begin(), gRtAudioApis.end(), RtAudio::MACOSX_CORE);
+        if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);
+
+        it = std::find(gRtAudioApis.begin(), gRtAudioApis.end(), RtAudio::WINDOWS_ASIO);
+        if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);
+
+        it = std::find(gRtAudioApis.begin(), gRtAudioApis.end(), RtAudio::WINDOWS_DS);
+        if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);
+#endif
+
+        // in case rtaudio has no apis, add dummy one so that size() != 0
+        if (gRtAudioApis.size() == 0)
+            gRtAudioApis.push_back(RtAudio::RTAUDIO_DUMMY);
+    }
+}
+
+const char* getRtAudioApiName(const RtAudio::Api api)
+{
+    switch (api)
+    {
+    case RtAudio::UNSPECIFIED:
+        return "Unspecified";
+    case RtAudio::LINUX_ALSA:
+        return "ALSA";
+    case RtAudio::LINUX_PULSE:
+        return "PulseAudio";
+    case RtAudio::LINUX_OSS:
+        return "OSS";
+    case RtAudio::UNIX_JACK:
+#if defined(CARLA_OS_WIN)
+        return "JACK with WinMM";
+#elif defined(CARLA_OS_MAC)
+        return "JACK with CoreMidi";
+#elif defined(CARLA_OS_LINUX)
+        return "JACK with ALSA-MIDI";
+#else
+        return "JACK (RtAudio)";
+#endif
+    case RtAudio::MACOSX_CORE:
+        return "CoreAudio";
+    case RtAudio::WINDOWS_ASIO:
+        return "ASIO";
+    case RtAudio::WINDOWS_DS:
+        return "DirectSound";
+    case RtAudio::RTAUDIO_DUMMY:
+        return "Dummy";
+    }
+
+    carla_stderr("CarlaBackend::getRtAudioApiName(%i) - invalid API", api);
+    return nullptr;
 }
 
 RtMidi::Api getMatchedAudioMidiAPi(const RtAudio::Api rtApi)
@@ -88,7 +145,7 @@ public:
           fAudio(api),
           fAudioBufIn(nullptr),
           fAudioBufOut(nullptr),
-          fAudioIsInterleaved(false),
+          fIsAudioInterleaved(false),
           fLastEventTime(0),
           fDummyMidiIn(getMatchedAudioMidiAPi(api), "Carla"),
           fDummyMidiOut(getMatchedAudioMidiAPi(api), "Carla")
@@ -121,9 +178,9 @@ public:
 
     bool init(const char* const clientName) override
     {
-        CARLA_ASSERT(fAudioBufIn == nullptr);
-        CARLA_ASSERT(fAudioBufOut == nullptr);
-        CARLA_ASSERT(clientName != nullptr && clientName[0] != '\0');
+        CARLA_SAFE_ASSERT_RETURN(fAudioBufIn == nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fAudioBufOut == nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0', false);
         carla_debug("CarlaEngineRtAudio::init(\"%s\")", clientName);
 
         if (pData->options.processMode != ENGINE_PROCESS_MODE_CONTINUOUS_RACK && pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
@@ -168,8 +225,8 @@ public:
         {
             iParams.deviceId  = fAudio.getDefaultInputDevice();
             oParams.deviceId  = fAudio.getDefaultOutputDevice();
-            iParams.nChannels = 2;
-            oParams.nChannels = 2;
+            iParams.nChannels = fAudio.getDeviceInfo(iParams.deviceId).inputChannels;
+            oParams.nChannels = fAudio.getDeviceInfo(oParams.deviceId).outputChannels;
         }
 
         RtAudio::StreamOptions rtOptions;
@@ -180,32 +237,24 @@ public:
         if (fAudio.getCurrentApi() != RtAudio::LINUX_PULSE)
         {
             rtOptions.flags |= RTAUDIO_NONINTERLEAVED;
-            fAudioIsInterleaved = false;
+            fIsAudioInterleaved = false;
 
             if (fAudio.getCurrentApi() == RtAudio::LINUX_ALSA && ! deviceSet)
                 rtOptions.flags |= RTAUDIO_ALSA_USE_DEFAULT;
         }
         else
-            fAudioIsInterleaved = true;
+            fIsAudioInterleaved = true;
+
+        fLastEventTime = 0;
 
         unsigned int bufferFrames = pData->options.audioBufferSize;
 
         try {
             fAudio.openStream(&oParams, &iParams, RTAUDIO_FLOAT32, pData->options.audioSampleRate, &bufferFrames, carla_rtaudio_process_callback, this, &rtOptions);
         }
-        catch (RtError& e)
+        catch (const RtError& e)
         {
             setLastError(e.what());
-            return false;
-        }
-
-        try {
-            fAudio.startStream();
-        }
-        catch (RtError& e)
-        {
-            setLastError(e.what());
-            fAudio.closeStream();
             return false;
         }
 
@@ -219,7 +268,7 @@ public:
 
         if (pData->bufAudio.inCount > 0)
         {
-            fAudioBufIn  = new float*[pData->bufAudio.inCount];
+            fAudioBufIn = new float*[pData->bufAudio.inCount];
 
             for (uint i=0; i < pData->bufAudio.inCount; ++i)
                 fAudioBufIn[i] = new float[pData->bufferSize];
@@ -233,9 +282,17 @@ public:
                 fAudioBufOut[i] = new float[pData->bufferSize];
         }
 
-        fLastEventTime = 0;
-
         pData->bufAudio.create(pData->bufferSize);
+
+        try {
+            fAudio.startStream();
+        }
+        catch (const RtError& e)
+        {
+            setLastError(e.what());
+            fAudio.closeStream();
+            return false;
+        }
 
         CarlaEngine::init(clientName);
         patchbayRefresh();
@@ -252,40 +309,28 @@ public:
 
         bool hasError = !CarlaEngine::close();
 
-        if (fAudio.isStreamRunning())
-        {
-            try {
-                fAudio.stopStream();
-            }
-            catch (RtError& e)
-            {
-                if (! hasError)
-                {
-                    setLastError(e.what());
-                    hasError = true;
-                }
-            }
-        }
-
         if (fAudio.isStreamOpen())
         {
-            try {
-                fAudio.closeStream();
-            }
-            catch (RtError& e)
+            if (fAudio.isStreamRunning())
             {
-                if (! hasError)
+                try {
+                    fAudio.stopStream();
+                }
+                catch (const RtError& e)
                 {
-                    setLastError(e.what());
-                    hasError = true;
+                    if (! hasError)
+                    {
+                        setLastError(e.what());
+                        hasError = true;
+                    }
                 }
             }
+
+            fAudio.closeStream();
         }
 
         if (fAudioBufIn != nullptr)
         {
-            CARLA_ASSERT(pData->bufAudio.inCount > 0);
-
             for (uint i=0; i < pData->bufAudio.inCount; ++i)
                 delete[] fAudioBufIn[i];
 
@@ -295,8 +340,6 @@ public:
 
         if (fAudioBufOut != nullptr)
         {
-            CARLA_ASSERT(pData->bufAudio.outCount > 0);
-
             for (uint i=0; i < pData->bufAudio.outCount; ++i)
                 delete[] fAudioBufOut[i];
 
@@ -351,39 +394,7 @@ public:
 
     const char* getCurrentDriverName() const noexcept override
     {
-        const RtAudio::Api api(fAudio.getCurrentApi());
-
-        switch (api)
-        {
-        case RtAudio::UNSPECIFIED:
-            return "Unspecified";
-        case RtAudio::LINUX_ALSA:
-            return "ALSA";
-        case RtAudio::LINUX_PULSE:
-            return "PulseAudio";
-        case RtAudio::LINUX_OSS:
-            return "OSS";
-        case RtAudio::UNIX_JACK:
-#if defined(CARLA_OS_WIN)
-            return "JACK with WinMM";
-#elif defined(CARLA_OS_MAC)
-            return "JACK with CoreMidi";
-#elif defined(CARLA_OS_LINUX)
-            return "JACK with ALSA-MIDI";
-#else
-            return "JACK (RtAudio)";
-#endif
-        case RtAudio::MACOSX_CORE:
-            return "CoreAudio";
-        case RtAudio::WINDOWS_ASIO:
-            return "ASIO";
-        case RtAudio::WINDOWS_DS:
-            return "DirectSound";
-        case RtAudio::RTAUDIO_DUMMY:
-            return "Dummy";
-        }
-
-        return nullptr;
+        return CarlaBackend::getRtAudioApiName(fAudio.getCurrentApi());
     }
 
     // -------------------------------------------------------------------
@@ -405,6 +416,7 @@ public:
         }
 
         char strBuf[STR_MAX+1];
+        strBuf[STR_MAX] = '\0';
 
         EngineRackBuffers* const rack(pData->bufAudio.rack);
 
@@ -429,7 +441,7 @@ public:
 
             callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_IN, 0, 0, 0.0f, strBuf);
 
-            for (unsigned int i=0; i < pData->bufAudio.inCount; ++i)
+            for (uint i=0; i < pData->bufAudio.inCount; ++i)
             {
                 std::snprintf(strBuf, STR_MAX, "capture_%i", i+1);
                 callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_IN, RACK_PATCHBAY_GROUP_AUDIO_IN*1000 + i, PATCHBAY_PORT_TYPE_AUDIO, 0.0f, strBuf);
@@ -445,7 +457,7 @@ public:
 
             callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_OUT, 0, 0, 0.0f, strBuf);
 
-            for (unsigned int i=0; i < pData->bufAudio.outCount; ++i)
+            for (uint i=0; i < pData->bufAudio.outCount; ++i)
             {
                 std::snprintf(strBuf, STR_MAX, "playback_%i", i+1);
                 callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_OUT, RACK_PATCHBAY_GROUP_AUDIO_OUT*1000 + i, PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, strBuf);
@@ -603,7 +615,7 @@ protected:
             return runPendingRtEvents();
 
         // initialize rtaudio input
-        if (fAudioIsInterleaved)
+        if (fIsAudioInterleaved)
         {
             for (unsigned int i=0, j=0, count=nframes*pData->bufAudio.inCount; i < count; ++i)
             {
@@ -666,7 +678,7 @@ protected:
         }
 
         // output audio
-        if (fAudioIsInterleaved)
+        if (fIsAudioInterleaved)
         {
             for (unsigned int i=0, j=0; i < nframes*pData->bufAudio.outCount; ++i)
             {
@@ -716,10 +728,10 @@ protected:
         RtMidiEvent midiEvent;
         midiEvent.time = pData->timeInfo.frame + uint64_t(timeStamp * (double)pData->bufferSize);
 
-        if (midiEvent.time < fLastTime)
-            midiEvent.time = fLastTime;
+        if (midiEvent.time < fLastEventTime)
+            midiEvent.time = fLastEventTime;
         else
-            fLastTime = midiEvent.time;
+            fLastEventTime = midiEvent.time;
 
         midiEvent.size = static_cast<uint8_t>(messageSize);
 
@@ -881,7 +893,7 @@ private:
     float** fAudioBufOut;
 
     // useful info
-    bool     fAudioIsInterleaved;
+    bool     fIsAudioInterleaved;
     uint64_t fLastEventTime;
 
     // current device name
@@ -1019,39 +1031,7 @@ const char* CarlaEngine::getRtAudioApiName(const unsigned int index)
     if (index >= gRtAudioApis.size())
         return nullptr;
 
-    const RtAudio::Api& api(gRtAudioApis[index]);
-
-    switch (api)
-    {
-    case RtAudio::UNSPECIFIED:
-        return "Unspecified (RtAudio)";
-    case RtAudio::LINUX_ALSA:
-        return "ALSA (RtAudio)";
-    case RtAudio::LINUX_PULSE:
-        return "PulseAudio (RtAudio)";
-    case RtAudio::LINUX_OSS:
-        return "OSS (RtAudio)";
-    case RtAudio::UNIX_JACK:
-// #if defined(CARLA_OS_WIN)
-//         return "JACK with WinMM";
-// #elif defined(CARLA_OS_MAC)
-//         return "JACK with CoreMidi";
-// #elif defined(CARLA_OS_LINUX)
-//         return "JACK with ALSA-MIDI";
-// #else
-        return "JACK (RtAudio)";
-// #endif
-    case RtAudio::MACOSX_CORE:
-        return "CoreAudio (RtAudio)";
-    case RtAudio::WINDOWS_ASIO:
-        return "ASIO (RtAudio)";
-    case RtAudio::WINDOWS_DS:
-        return "DirectSound (RtAudio)";
-    case RtAudio::RTAUDIO_DUMMY:
-        return "Dummy (RtAudio)";
-    }
-
-    return nullptr;
+    return CarlaBackend::getRtAudioApiName(gRtAudioApis[index]);
 }
 
 const char* const* CarlaEngine::getRtAudioApiDeviceNames(const unsigned int index)
@@ -1104,8 +1084,13 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const unsigned i
 {
     initRtApis();
 
+    carla_stderr("here 000");
+
     if (index >= gRtAudioApis.size())
+    {
+        carla_stderr("here 001");
         return nullptr;
+    }
 
     const RtAudio::Api& api(gRtAudioApis[index]);
 
@@ -1114,7 +1099,10 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const unsigned i
     const unsigned int devCount(rtAudio.getDeviceCount());
 
     if (devCount == 0)
+    {
+        carla_stderr("here 002");
         return nullptr;
+    }
 
     unsigned int i;
     RtAudio::DeviceInfo rtAudioDevInfo;
@@ -1128,7 +1116,10 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const unsigned i
     }
 
     if (i == devCount)
+    {
+        carla_stderr("here 003");
         return nullptr;
+    }
 
     static EngineDriverDeviceInfo devInfo = { 0x0, nullptr, nullptr };
     static uint32_t dummyBufferSizes[11]  = { 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 0 };
@@ -1159,6 +1150,8 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const unsigned i
     {
         devInfo.sampleRates = dummySampleRates;
     }
+
+    carla_stderr("here 004");
 
     return &devInfo;
 }
