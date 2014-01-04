@@ -29,7 +29,6 @@ from PyQt4.QtGui import QDialog, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLa
 import ui_carla_about
 import ui_carla_edit
 import ui_carla_parameter
-import ui_carla_plugin
 
 from carla_shared import *
 
@@ -386,7 +385,8 @@ class PluginEdit(QDialog):
         self.fCurrentProgram = -1
         self.fCurrentMidiProgram = -1
         self.fCurrentStateFilename = None
-        self.fControlChannel = 0
+        self.fControlChannel  = 0
+        self.fFirstInit       = True
         self.fScrollAreaSetup = False
 
         self.fParameterCount = 0
@@ -529,6 +529,8 @@ class PluginEdit(QDialog):
         if not self.ui.scrollArea.isEnabled():
             self.resize(self.width(), self.height()-self.ui.scrollArea.height())
 
+        self.fFirstInit = False
+
     #------------------------------------------------------------------
 
     def reloadInfo(self):
@@ -661,7 +663,7 @@ class PluginEdit(QDialog):
         self.ui.scrollArea.setVisible(showKeyboard)
 
         # Force-Update parent for new hints
-        if self.fRealParent:
+        if self.fRealParent and not self.fFirstInit:
             self.fRealParent.recheckPluginHints(pluginHints)
 
     def reloadParameters(self):
@@ -893,6 +895,7 @@ class PluginEdit(QDialog):
         self.fPluginId = idx
 
     def setName(self, name):
+        self.fPluginInfo['name'] = name
         self.ui.label_plugin.setText("\n%s\n" % name)
         self.setWindowTitle(name)
 
@@ -1214,7 +1217,7 @@ class PluginEdit(QDialog):
     @pyqtSlot()
     def slot_finished(self):
         if self.fRealParent is not None:
-            self.fRealParent.editClosed()
+            self.fRealParent.editDialogChanged(False)
 
     #------------------------------------------------------------------
 
@@ -1395,412 +1398,6 @@ class PluginEdit(QDialog):
         self.close()
 
 # ------------------------------------------------------------------------------------------------------------
-# Plugin Widget
-
-class PluginWidget(QFrame):
-    def __init__(self, parent, pluginId):
-        QFrame.__init__(self, parent)
-        self.ui = ui_carla_plugin.Ui_PluginWidget()
-        self.ui.setupUi(self)
-
-        # -------------------------------------------------------------
-        # Internal stuff
-
-        self.fPluginId   = pluginId
-        self.fPluginInfo = Carla.host.get_plugin_info(self.fPluginId) if Carla.host is not None else gFakePluginInfo
-
-        self.fPluginInfo['filename']  = charPtrToString(self.fPluginInfo['filename'])
-        self.fPluginInfo['name']      = charPtrToString(self.fPluginInfo['name'])
-        self.fPluginInfo['label']     = charPtrToString(self.fPluginInfo['label'])
-        self.fPluginInfo['maker']     = charPtrToString(self.fPluginInfo['maker'])
-        self.fPluginInfo['copyright'] = charPtrToString(self.fPluginInfo['copyright'])
-        self.fPluginInfo['iconName']  = charPtrToString(self.fPluginInfo['iconName'])
-
-        if not Carla.isLocal:
-            self.fPluginInfo['hints'] &= ~PLUGIN_HAS_CUSTOM_UI
-
-        self.fLastGreenLedState = False
-        self.fLastBlueLedState  = False
-
-        self.fParameterIconTimer = ICON_STATE_NULL
-
-        if Carla.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK or Carla.host is None:
-            self.fPeaksInputCount  = 2
-            self.fPeaksOutputCount = 2
-
-        else:
-            audioCountInfo = Carla.host.get_audio_port_count_info(self.fPluginId)
-
-            self.fPeaksInputCount  = int(audioCountInfo['ins'])
-            self.fPeaksOutputCount = int(audioCountInfo['outs'])
-
-            if self.fPeaksInputCount > 2:
-                self.fPeaksInputCount = 2
-
-            if self.fPeaksOutputCount > 2:
-                self.fPeaksOutputCount = 2
-
-        if self.palette().window().color().lightness() > 100:
-            # Light background
-            labelColor = "333"
-            isLight = True
-
-            self.fColorTop    = QColor(60, 60, 60)
-            self.fColorBottom = QColor(47, 47, 47)
-            self.fColorSeprtr = QColor(70, 70, 70)
-
-        else:
-            # Dark background
-            labelColor = "BBB"
-            isLight = False
-
-            self.fColorTop    = QColor(60, 60, 60)
-            self.fColorBottom = QColor(47, 47, 47)
-            self.fColorSeprtr = QColor(70, 70, 70)
-
-        # -------------------------------------------------------------
-        # Set-up GUI
-
-        self.setStyleSheet("""
-        QLabel#label_name {
-            color: #%s;
-        }""" % labelColor)
-
-        if isLight:
-            self.ui.b_enable.setPixmaps(":/bitmaps/button_off2.png", ":/bitmaps/button_on2.png", ":/bitmaps/button_off2.png")
-            self.ui.b_edit.setPixmaps(":/bitmaps/button_edit2.png", ":/bitmaps/button_edit_down2.png", ":/bitmaps/button_edit_hover2.png")
-
-            if self.fPluginInfo['iconName'] == "distrho":
-                self.ui.b_gui.setPixmaps(":/bitmaps/button_distrho2.png", ":/bitmaps/button_distrho_down2.png", ":/bitmaps/button_distrho_hover2.png")
-            elif self.fPluginInfo['iconName'] == "file":
-                self.ui.b_gui.setPixmaps(":/bitmaps/button_file2.png", ":/bitmaps/button_file_down2.png", ":/bitmaps/button_file_hover2.png")
-            else:
-                self.ui.b_gui.setPixmaps(":/bitmaps/button_gui2.png", ":/bitmaps/button_gui_down2.png", ":/bitmaps/button_gui_hover2.png")
-        else:
-            self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
-            self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
-
-            if self.fPluginInfo['iconName'] == "distrho":
-                self.ui.b_gui.setPixmaps(":/bitmaps/button_distrho.png", ":/bitmaps/button_distrho_down.png", ":/bitmaps/button_distrho_hover.png")
-            elif self.fPluginInfo['iconName'] == "file":
-                self.ui.b_gui.setPixmaps(":/bitmaps/button_file.png", ":/bitmaps/button_file_down.png", ":/bitmaps/button_file_hover.png")
-            else:
-                self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
-
-        self.ui.led_control.setColor(self.ui.led_control.YELLOW)
-        self.ui.led_control.setEnabled(False)
-
-        self.ui.led_midi.setColor(self.ui.led_midi.RED)
-        self.ui.led_midi.setEnabled(False)
-
-        self.ui.led_audio_in.setColor(self.ui.led_audio_in.GREEN)
-        self.ui.led_audio_in.setEnabled(False)
-
-        self.ui.led_audio_out.setColor(self.ui.led_audio_out.BLUE)
-        self.ui.led_audio_out.setEnabled(False)
-
-        self.ui.peak_in.setColor(self.ui.peak_in.GREEN)
-        self.ui.peak_in.setChannels(self.fPeaksInputCount)
-        self.ui.peak_in.setOrientation(self.ui.peak_in.HORIZONTAL)
-
-        self.ui.peak_out.setColor(self.ui.peak_in.BLUE)
-        self.ui.peak_out.setChannels(self.fPeaksOutputCount)
-        self.ui.peak_out.setOrientation(self.ui.peak_out.HORIZONTAL)
-
-        self.ui.label_name.setText(self.fPluginInfo['name'])
-
-        self.ui.edit_dialog = PluginEdit(self, self.fPluginId)
-        self.ui.edit_dialog.hide()
-
-        self.setFixedHeight(32)
-
-        # -------------------------------------------------------------
-        # Set-up connections
-
-        self.customContextMenuRequested.connect(self.slot_showCustomMenu)
-        self.ui.b_enable.clicked.connect(self.slot_enableClicked)
-        self.ui.b_gui.clicked.connect(self.slot_guiClicked)
-        self.ui.b_edit.clicked.connect(self.slot_editClicked)
-
-    #------------------------------------------------------------------
-
-    def idleFast(self):
-        # Input peaks
-        if self.fPeaksInputCount > 0:
-            if self.fPeaksInputCount > 1:
-                peak1 = Carla.host.get_input_peak_value(self.fPluginId, 1)
-                peak2 = Carla.host.get_input_peak_value(self.fPluginId, 2)
-                ledState = bool(peak1 != 0.0 or peak2 != 0.0)
-
-                self.ui.peak_in.displayMeter(1, peak1)
-                self.ui.peak_in.displayMeter(2, peak2)
-
-            else:
-                peak = Carla.host.get_input_peak_value(self.fPluginId, 1)
-                ledState = bool(peak != 0.0)
-
-                self.ui.peak_in.displayMeter(1, peak)
-
-            if self.fLastGreenLedState != ledState:
-                self.fLastGreenLedState = ledState
-                self.ui.led_audio_in.setChecked(ledState)
-
-        # Output peaks
-        if self.fPeaksOutputCount > 0:
-            if self.fPeaksOutputCount > 1:
-                peak1 = Carla.host.get_output_peak_value(self.fPluginId, 1)
-                peak2 = Carla.host.get_output_peak_value(self.fPluginId, 2)
-                ledState = bool(peak1 != 0.0 or peak2 != 0.0)
-
-                self.ui.peak_out.displayMeter(1, peak1)
-                self.ui.peak_out.displayMeter(2, peak2)
-
-            else:
-                peak = Carla.host.get_output_peak_value(self.fPluginId, 1)
-                ledState = bool(peak != 0.0)
-
-                self.ui.peak_out.displayMeter(1, peak)
-
-            if self.fLastBlueLedState != ledState:
-                self.fLastBlueLedState = ledState
-                self.ui.led_audio_out.setChecked(ledState)
-
-    def idleSlow(self):
-        # Parameter Activity LED
-        if self.fParameterIconTimer == ICON_STATE_ON:
-            self.fParameterIconTimer = ICON_STATE_WAIT
-            self.ui.led_control.setChecked(True)
-        elif self.fParameterIconTimer == ICON_STATE_WAIT:
-            self.fParameterIconTimer = ICON_STATE_OFF
-        elif self.fParameterIconTimer == ICON_STATE_OFF:
-            self.fParameterIconTimer = ICON_STATE_NULL
-            self.ui.led_control.setChecked(False)
-
-        # Update edit dialog
-        self.ui.edit_dialog.idleSlow()
-
-    #------------------------------------------------------------------
-
-    def editClosed(self):
-        self.ui.b_edit.setChecked(False)
-
-    def recheckPluginHints(self, hints):
-        self.fPluginInfo['hints'] = hints
-        self.ui.b_gui.setEnabled(hints & PLUGIN_HAS_CUSTOM_UI)
-
-    #------------------------------------------------------------------
-
-    def getHints(self):
-        return self.fPluginInfo['hints']
-
-    def setId(self, idx):
-        self.fPluginId = idx
-        self.ui.edit_dialog.setId(idx)
-
-    def setName(self, name):
-        self.ui.label_name.setText(name)
-        self.ui.edit_dialog.setName(name)
-
-    #------------------------------------------------------------------
-
-    def setActive(self, active, sendGui=False, sendCallback=True):
-        if sendGui:      self.ui.b_enable.setChecked(active)
-        if sendCallback: Carla.host.set_active(self.fPluginId, active)
-
-        if active:
-            self.ui.edit_dialog.clearNotes()
-            self.ui.led_midi.setChecked(False)
-
-    # called from rack, checks if param is possible first
-    def setInternalParameter(self, parameterId, value):
-        if parameterId <= PARAMETER_MAX or parameterId >= PARAMETER_NULL:
-            return
-
-        if parameterId == PARAMETER_ACTIVE:
-            return self.setActive(bool(value), True, True)
-
-        elif parameterId == PARAMETER_DRYWET:
-            if (self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET) == 0: return
-            Carla.host.set_drywet(self.fPluginId, value)
-
-        elif parameterId == PARAMETER_VOLUME:
-            if (self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME) == 0: return
-            Carla.host.set_volume(self.fPluginId, value)
-
-        elif parameterId == PARAMETER_BALANCE_LEFT:
-            if (self.fPluginInfo['hints'] & PLUGIN_CAN_BALANCE) == 0: return
-            Carla.host.set_balance_left(self.fPluginId, value)
-
-        elif parameterId == PARAMETER_BALANCE_RIGHT:
-            if (self.fPluginInfo['hints'] & PLUGIN_CAN_BALANCE) == 0: return
-            Carla.host.set_balance_right(self.fPluginId, value)
-
-        elif parameterId == PARAMETER_PANNING:
-            if (self.fPluginInfo['hints'] & PLUGIN_CAN_PANNING) == 0: return
-            Carla.host.set_panning(self.fPluginId, value)
-
-        elif parameterId == PARAMETER_CTRL_CHANNEL:
-            Carla.host.set_ctrl_channel(self.fPluginId, value)
-
-        self.ui.edit_dialog.setParameterValue(parameterId, value)
-
-    def setParameterValue(self, parameterId, value):
-        self.fParameterIconTimer = ICON_STATE_ON
-
-        if parameterId == PARAMETER_ACTIVE:
-            return self.setActive(bool(value), True, False)
-
-        self.ui.edit_dialog.setParameterValue(parameterId, value)
-
-    def setParameterDefault(self, parameterId, value):
-        self.ui.edit_dialog.setParameterDefault(parameterId, value)
-
-    def setParameterMidiControl(self, parameterId, control):
-        self.ui.edit_dialog.setParameterMidiControl(parameterId, control)
-
-    def setParameterMidiChannel(self, parameterId, channel):
-        self.ui.edit_dialog.setParameterMidiChannel(parameterId, channel)
-
-    def setProgram(self, index):
-        self.fParameterIconTimer = ICON_STATE_ON
-        self.ui.edit_dialog.setProgram(index)
-
-    def setMidiProgram(self, index):
-        self.fParameterIconTimer = ICON_STATE_ON
-        self.ui.edit_dialog.setMidiProgram(index)
-
-    #------------------------------------------------------------------
-
-    def sendNoteOn(self, channel, note):
-        if self.ui.edit_dialog.sendNoteOn(channel, note):
-            self.ui.led_midi.setChecked(True)
-
-    def sendNoteOff(self, channel, note):
-        if self.ui.edit_dialog.sendNoteOff(channel, note):
-            self.ui.led_midi.setChecked(False)
-
-    #------------------------------------------------------------------
-
-    @pyqtSlot()
-    def slot_showCustomMenu(self):
-        menu = QMenu(self)
-
-        actActive = menu.addAction(self.tr("Disable") if self.ui.b_enable.isChecked() else self.tr("Enable"))
-        menu.addSeparator()
-
-        actGui = menu.addAction(self.tr("Show GUI"))
-        actGui.setCheckable(True)
-        actGui.setChecked(self.ui.b_gui.isChecked())
-        actGui.setEnabled(self.ui.b_gui.isEnabled())
-
-        actEdit = menu.addAction(self.tr("Edit"))
-        actEdit.setCheckable(True)
-        actEdit.setChecked(self.ui.b_edit.isChecked())
-
-        menu.addSeparator()
-        actClone  = menu.addAction(self.tr("Clone"))
-        actRename = menu.addAction(self.tr("Rename..."))
-        actRemove = menu.addAction(self.tr("Remove"))
-
-        actSel = menu.exec_(QCursor.pos())
-
-        if not actSel:
-            return
-
-        if actSel == actActive:
-            self.setActive(not self.ui.b_enable.isChecked(), True, True)
-        elif actSel == actGui:
-            self.ui.b_gui.click()
-        elif actSel == actEdit:
-            self.ui.b_edit.click()
-        elif actSel == actClone:
-            if not Carla.host.clone_plugin(self.fPluginId):
-                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
-                                       Carla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
-
-        elif actSel == actRename:
-            oldName    = self.fPluginInfo['name']
-            newNameTry = QInputDialog.getText(self, self.tr("Rename Plugin"), self.tr("New plugin name:"), QLineEdit.Normal, oldName)
-
-            if not (newNameTry[1] and newNameTry[0] and oldName != newNameTry[0]):
-                return
-
-            newName = newNameTry[0]
-
-            if Carla.host is None or Carla.host.rename_plugin(self.fPluginId, newName):
-                self.fPluginInfo['name'] = newName
-                self.ui.edit_dialog.fPluginInfo['name'] = newName
-                self.ui.edit_dialog.reloadInfo()
-                self.ui.label_name.setText(newName)
-            else:
-                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
-                                       Carla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
-
-        elif actSel == actRemove:
-            if not Carla.host.remove_plugin(self.fPluginId):
-                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
-                                       Carla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
-
-    #------------------------------------------------------------------
-
-    @pyqtSlot(bool)
-    def slot_enableClicked(self, yesNo):
-        self.setActive(yesNo, False, True)
-
-    @pyqtSlot(bool)
-    def slot_guiClicked(self, show):
-        Carla.host.show_custom_ui(self.fPluginId, show)
-
-    @pyqtSlot(bool)
-    def slot_editClicked(self, show):
-        self.ui.edit_dialog.setVisible(show)
-
-    #------------------------------------------------------------------
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.save()
-
-        areaX = self.ui.area_right.x()+7
-
-        painter.setPen(self.fColorSeprtr.lighter(110))
-        painter.setBrush(self.fColorBottom)
-        painter.setRenderHint(QPainter.Antialiasing, True)
-
-        # name -> leds arc
-        path = QPainterPath()
-        path.moveTo(areaX-20, self.height()-4)
-        path.cubicTo(areaX, self.height()-5, areaX-20, 4.75, areaX, 4.75)
-        path.lineTo(areaX, self.height()-5)
-        painter.drawPath(path)
-
-        painter.setPen(self.fColorSeprtr)
-        painter.setRenderHint(QPainter.Antialiasing, False)
-
-        # separator lines
-        painter.drawLine(0, self.height()-5, areaX-20, self.height()-5)
-        painter.drawLine(areaX, 4, self.width(), 4)
-
-        painter.setPen(self.fColorBottom)
-        painter.setBrush(self.fColorBottom)
-
-        # top, bottom and left lines
-        painter.drawLine(0, 0, self.width(), 0)
-        painter.drawRect(0, self.height()-4, areaX, 4)
-        painter.drawRoundedRect(areaX-20, self.height()-5, areaX, 5, 22, 22)
-        painter.drawLine(0, 0, 0, self.height())
-
-        # fill the rest
-        painter.drawRect(areaX-1, 5, self.width(), self.height())
-
-        # bottom 1px line
-        painter.setPen(self.fColorSeprtr)
-        painter.drawLine(0, self.height()-1, self.width(), self.height()-1)
-
-        painter.restore()
-        QFrame.paintEvent(self, event)
-
-# ------------------------------------------------------------------------------------------------------------
 # Main
 
 if __name__ == '__main__':
@@ -1811,7 +1408,6 @@ if __name__ == '__main__':
     #gui = CarlaAboutW(None)
     #gui = PluginParameter(None, gFakeParamInfo, 0, 0)
     gui = PluginEdit(None, 0)
-    #gui = PluginWidget(None, 0)
     gui.show()
 
     sys.exit(app.exec_())

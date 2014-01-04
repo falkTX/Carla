@@ -25,29 +25,26 @@ from PyQt4.QtGui import QApplication, QListWidget, QListWidgetItem
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
 
-from carla_widgets import *
+from carla_skin import *
 
 # ------------------------------------------------------------------------------------------------------------
 # Rack widget item
 
 class CarlaRackItem(QListWidgetItem):
     kRackItemType = QListWidgetItem.UserType + 1
-    kStaticHeight = 32
 
     def __init__(self, parent, pluginId):
         QListWidgetItem.__init__(self, parent, self.kRackItemType)
 
-        self.widget = PluginWidget(parent, pluginId)
-        self.widget.setFixedHeight(self.kStaticHeight)
-
-        self.setSizeHint(QSize(300, self.kStaticHeight))
+        self.widget = createPluginSlot(pluginId, parent)
+        self.setSizeHint(QSize(300, self.widget.getFixedHeight()))
 
         parent.setItemWidget(self, self.widget)
 
     # -----------------------------------------------------------------
 
     def close(self):
-        self.widget.ui.edit_dialog.close()
+        self.widget.fEditDialog.close()
 
     #def setId(self, idx):
         #self.widget.setId(idx)
@@ -411,17 +408,7 @@ class CarlaRackW(QListWidget):
         if pitem is None:
             return
 
-        # TODO
-
-        if state == 0:
-            pitem.widget.ui.b_gui.setChecked(False)
-            pitem.widget.ui.b_gui.setEnabled(True)
-        elif state == 1:
-            pitem.widget.ui.b_gui.setChecked(True)
-            pitem.widget.ui.b_gui.setEnabled(True)
-        elif state == -1:
-            pitem.widget.ui.b_gui.setChecked(False)
-            pitem.widget.ui.b_gui.setEnabled(False)
+        pitem.widget.customUiStateChanged(state)
 
     # -----------------------------------------------------------------
 
@@ -458,7 +445,7 @@ class CarlaRackW(QListWidget):
         if pitem is None:
             return
 
-        pitem.widget.ui.edit_dialog.updateInfo()
+        pitem.widget.fEditDialog.updateInfo()
 
     @pyqtSlot(int)
     def slot_handleReloadInfoCallback(self, pluginId):
@@ -469,7 +456,7 @@ class CarlaRackW(QListWidget):
         if pitem is None:
             return
 
-        pitem.widget.ui.edit_dialog.reloadInfo()
+        pitem.widget.fEditDialog.reloadInfo()
 
     @pyqtSlot(int)
     def slot_handleReloadParametersCallback(self, pluginId):
@@ -480,7 +467,7 @@ class CarlaRackW(QListWidget):
         if pitem is None:
             return
 
-        pitem.widget.ui.edit_dialog.reloadParameters()
+        pitem.widget.fEditDialog.reloadParameters()
 
     @pyqtSlot(int)
     def slot_handleReloadProgramsCallback(self, pluginId):
@@ -491,7 +478,7 @@ class CarlaRackW(QListWidget):
         if pitem is None:
             return
 
-        pitem.widget.ui.edit_dialog.reloadPrograms()
+        pitem.widget.fEditDialog.reloadPrograms()
 
     @pyqtSlot(int)
     def slot_handleReloadAllCallback(self, pluginId):
@@ -502,6 +489,6 @@ class CarlaRackW(QListWidget):
         if pitem is None:
             return
 
-        pitem.widget.ui.edit_dialog.reloadAll()
+        pitem.widget.fEditDialog.reloadAll()
 
     # -----------------------------------------------------------------
