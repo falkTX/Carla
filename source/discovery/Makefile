@@ -30,11 +30,11 @@ endif
 # ifeq ($(HAVE_CSOUND),true)
 # NATIVE_FLAGS += $(shell pkg-config --cflags --libs sndfile) -lcsound64 -DWANT_CSOUND
 # endif
-#
-# ifeq ($(HAVE_FLUIDSYNTH),true)
-# NATIVE_FLAGS += $(shell pkg-config --cflags --libs fluidsynth) -DWANT_FLUIDSYNTH
-# endif
-#
+
+ifeq ($(HAVE_FLUIDSYNTH),true)
+NATIVE_FLAGS += $(FLUIDSYNTH_FLAGS) $(FLUIDSYNTH_LIBS) -DWANT_FLUIDSYNTH
+endif
+
 # ifeq ($(HAVE_LINUXSAMPLER),true)
 # NATIVE_FLAGS += $(shell pkg-config --cflags --libs linuxsampler) -DWANT_LINUXSAMPLER
 # endif
