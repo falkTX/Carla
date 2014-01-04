@@ -357,27 +357,74 @@ class HostWindow(QMainWindow):
         # read settings
 
         # bool values
-        forceStereo         = settings.value(CARLA_KEY_ENGINE_FORCE_STEREO,          CARLA_DEFAULT_FORCE_STEREO,          type=bool)
-        preferPluginBridges = settings.value(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES, type=bool)
-        preferUiBridges     = settings.value(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES,     CARLA_DEFAULT_PREFER_UI_BRIDGES,     type=bool)
-        uisAlwaysOnTop      = settings.value(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP,     CARLA_DEFAULT_UIS_ALWAYS_ON_TOP,     type=bool)
+        try:
+            forceStereo = settings.value(CARLA_KEY_ENGINE_FORCE_STEREO, CARLA_DEFAULT_FORCE_STEREO, type=bool)
+        except:
+            forceStereo = CARLA_DEFAULT_FORCE_STEREO
+
+        try:
+            preferPluginBridges = settings.value(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES, type=bool)
+        except:
+            preferPluginBridges = CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES
+
+        try:
+            preferUiBridges = settings.value(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES, CARLA_DEFAULT_PREFER_UI_BRIDGES, type=bool)
+        except:
+            preferUiBridges = CARLA_DEFAULT_PREFER_UI_BRIDGES
+
+        try:
+            uisAlwaysOnTop = settings.value(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, CARLA_DEFAULT_UIS_ALWAYS_ON_TOP, type=bool)
+        except:
+            uisAlwaysOnTop = CARLA_DEFAULT_UIS_ALWAYS_ON_TOP
 
         # int values
-        maxParameters       = settings.value(CARLA_KEY_ENGINE_MAX_PARAMETERS,        CARLA_DEFAULT_MAX_PARAMETERS,        type=int)
-        uiBridgesTimeout    = settings.value(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT,    CARLA_DEFAULT_UI_BRIDGES_TIMEOUT,    type=int)
+        try:
+            maxParameters = settings.value(CARLA_KEY_ENGINE_MAX_PARAMETERS, CARLA_DEFAULT_MAX_PARAMETERS, type=int)
+        except:
+            maxParameters = CARLA_DEFAULT_MAX_PARAMETERS
+
+        try:
+            uiBridgesTimeout = settings.value(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT, CARLA_DEFAULT_UI_BRIDGES_TIMEOUT, type=int)
+        except:
+            uiBridgesTimeout = CARLA_DEFAULT_UI_BRIDGES_TIMEOUT
 
         # enums
-        processMode         = settings.value(CARLA_KEY_ENGINE_PROCESS_MODE,          CARLA_DEFAULT_PROCESS_MODE,          type=int)
-        transportMode       = settings.value(CARLA_KEY_ENGINE_TRANSPORT_MODE,        CARLA_DEFAULT_TRANSPORT_MODE,        type=int)
+        try:
+            processMode = settings.value(CARLA_KEY_ENGINE_PROCESS_MODE, CARLA_DEFAULT_PROCESS_MODE, type=int)
+        except:
+            processMode = CARLA_DEFAULT_PROCESS_MODE
+
+        try:
+            transportMode = settings.value(CARLA_KEY_ENGINE_TRANSPORT_MODE, CARLA_DEFAULT_TRANSPORT_MODE, type=int)
+        except:
+            transportMode = CARLA_DEFAULT_TRANSPORT_MODE
 
         # driver name
-        audioDriver         = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER,          CARLA_DEFAULT_AUDIO_DRIVER,          type=str)
+        try:
+            audioDriver = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER, type=str)
+        except:
+            audioDriver = CARLA_DEFAULT_AUDIO_DRIVER
 
         # driver options
-        audioDevice         = settings.value("%s%s/Device"     % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), "",                              type=str)
-        audioNumPeriods     = settings.value("%s%s/NumPeriods" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_NUM_PERIODS, type=int)
-        audioBufferSize     = settings.value("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_BUFFER_SIZE, type=int)
-        audioSampleRate     = settings.value("%s%s/SampleRate" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_SAMPLE_RATE, type=int)
+        try:
+            audioDevice = settings.value("%s%s/Device" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), "", type=str)
+        except:
+            audioDevice = ""
+
+        try:
+            audioNumPeriods = settings.value("%s%s/NumPeriods" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_NUM_PERIODS, type=int)
+        except:
+            audioNumPeriods = CARLA_DEFAULT_AUDIO_NUM_PERIODS
+
+        try:
+            audioBufferSize = settings.value("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_BUFFER_SIZE, type=int)
+        except:
+            audioBufferSize = CARLA_DEFAULT_AUDIO_BUFFER_SIZE
+
+        try:
+            audioSampleRate = settings.value("%s%s/SampleRate" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_SAMPLE_RATE, type=int)
+        except:
+            audioSampleRate = CARLA_DEFAULT_AUDIO_SAMPLE_RATE
 
         # -------------------------------------------------------------
         # fix things if needed

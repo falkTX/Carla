@@ -89,6 +89,8 @@ protected:
             while ((! shouldExit()) && msgMgr->runDispatchLoopUntil(250))
             {}
         }
+
+        fInitialised = false;
     }
 
 private:

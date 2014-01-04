@@ -17,11 +17,7 @@
     Normally, JUCE_DEBUG is set to 1 or 0 based on compiler and project settings,
     but if you define this value, you can override this to force it to be true or false.
 */
-#if DEBUG
- #define JUCE_FORCE_DEBUG 1
-#else
- #define JUCE_FORCE_DEBUG 0
-#endif
+#define JUCE_FORCE_DEBUG 0
 
 //=============================================================================
 /** Config: JUCE_LOG_ASSERTIONS

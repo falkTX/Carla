@@ -184,10 +184,8 @@ struct EngineMidiEvent {
      * MIDI data, without channel bit.
      * If size > kDataSize, dataExt is used.
      */
-    union {
-        uint8_t        data[kDataSize];
-        const uint8_t* dataExt;
-    };
+    uint8_t        data[kDataSize];
+    const uint8_t* dataExt;
 };
 
 /*!

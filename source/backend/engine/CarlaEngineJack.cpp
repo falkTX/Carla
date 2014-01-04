@@ -1343,7 +1343,7 @@ protected:
             ConnectionToId connectionToId(fLastConnectionId++, portIdA, portIdB);
             fUsedConnections.append(connectionToId);
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, portIdA, portIdB, 0.0f, nullptr);
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
         }
         else
         {
@@ -1353,7 +1353,7 @@ protected:
 
                 if (connectionToId.portOut == portIdA && connectionToId.portIn == portIdB)
                 {
-                    callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, 0, connectionToId.id, 0, 0.0f, nullptr);
+                    callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connectionToId.id, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
                     fUsedConnections.remove(it);
                     break;
                 }
@@ -1764,7 +1764,7 @@ private:
                         ConnectionToId connectionToId(fLastConnectionId++, thisPortId, targetPortId);
                         fUsedConnections.append(connectionToId);
 
-                        callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, thisPortId, targetPortId, 0.0f, nullptr);
+                        callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
                     }
 
                     jackbridge_free(connections);
