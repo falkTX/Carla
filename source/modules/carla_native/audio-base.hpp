@@ -299,7 +299,7 @@ public:
             // lock, and put data asap
             const CarlaMutex::ScopedLocker sl(fMutex);
 
-            for (; i < fPool.size && j < rv; ++j)
+            for (ssize_t size = (ssize_t)fPool.size; i < size && j < rv; ++j)
             {
                 if (fFileNfo.channels == 1)
                 {
@@ -353,7 +353,7 @@ public:
             else
 #endif
             {
-                for (; i < fPool.size; ++i)
+                for (ssize_t size = (ssize_t)fPool.size; i < size; ++i)
                 {
                     fPool.buffer[0][i] = 0.0f;
                     fPool.buffer[1][i] = 0.0f;
