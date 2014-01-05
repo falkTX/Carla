@@ -88,7 +88,8 @@ UIs = \
 	source/ui_carla_edit.py \
 	source/ui_carla_host.py \
 	source/ui_carla_parameter.py \
-	source/ui_carla_plugin.py \
+	source/ui_carla_plugin_default.py \
+	source/ui_carla_plugin_zynfx.py \
 	source/ui_carla_refresh.py \
 	source/ui_carla_settings.py \
 	source/ui_carla_settings_driver.py \

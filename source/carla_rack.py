@@ -36,7 +36,9 @@ class CarlaRackItem(QListWidgetItem):
     def __init__(self, parent, pluginId):
         QListWidgetItem.__init__(self, parent, self.kRackItemType)
 
-        self.widget = createPluginSlot(pluginId, parent)
+        self.widget = createPluginSlot(parent, pluginId)
+        self.widget.setFixedHeight(self.widget.getFixedHeight())
+
         self.setSizeHint(QSize(300, self.widget.getFixedHeight()))
 
         parent.setItemWidget(self, self.widget)

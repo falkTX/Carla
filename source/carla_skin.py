@@ -19,15 +19,16 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import pyqtSignal, pyqtSlot
 from PyQt4.QtGui import QFrame
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
-import ui_carla_plugin
+import ui_carla_plugin_default
+import ui_carla_plugin_zynfx
 
 from carla_widgets import *
+from pixmapdial import PixmapDial
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -226,7 +227,7 @@ class PluginSlot(QFrame):
 class PluginSlot_Default(PluginSlot):
     def __init__(self, parent, pluginId):
         PluginSlot.__init__(self, parent, pluginId)
-        self.ui = ui_carla_plugin.Ui_PluginWidget()
+        self.ui = ui_carla_plugin_default.Ui_PluginWidget()
         self.ui.setupUi(self)
 
         # -------------------------------------------------------------
@@ -305,8 +306,6 @@ class PluginSlot_Default(PluginSlot):
         self.ui.peak_out.setOrientation(self.ui.peak_out.HORIZONTAL)
 
         self.ui.label_name.setText(self.fPluginInfo['name'])
-
-        self.setFixedHeight(32)
 
         # -------------------------------------------------------------
         # Set-up connections
@@ -414,7 +413,7 @@ class PluginSlot_Default(PluginSlot):
     def slot_showCustomMenu(self):
         menu = QMenu(self)
 
-        actActive = menu.addAction(self.tr("Disable") if self.fIsEnabled else self.tr("Enable"))
+        actActive = menu.addAction(self.tr("Disable") if self.ui.b_enable.isChecked() else self.tr("Enable"))
         menu.addSeparator()
 
         actGui = menu.addAction(self.tr("Show GUI"))
@@ -473,7 +472,9 @@ class PluginSlot_Default(PluginSlot):
         painter = QPainter(self)
         painter.save()
 
-        areaX = self.ui.area_right.x()+7
+        areaX  = self.ui.area_right.x()+7
+        width  = self.width()
+        height = self.height()
 
         painter.setPen(self.fColorSeprtr.lighter(110))
         painter.setBrush(self.fColorBottom)
@@ -481,45 +482,203 @@ class PluginSlot_Default(PluginSlot):
 
         # name -> leds arc
         path = QPainterPath()
-        path.moveTo(areaX-20, self.height()-4)
-        path.cubicTo(areaX, self.height()-5, areaX-20, 4.75, areaX, 4.75)
-        path.lineTo(areaX, self.height()-5)
+        path.moveTo(areaX-20, height-4)
+        path.cubicTo(areaX, height-5, areaX-20, 4.75, areaX, 4.75)
+        path.lineTo(areaX, height-5)
         painter.drawPath(path)
 
         painter.setPen(self.fColorSeprtr)
         painter.setRenderHint(QPainter.Antialiasing, False)
 
         # separator lines
-        painter.drawLine(0, self.height()-5, areaX-20, self.height()-5)
-        painter.drawLine(areaX, 4, self.width(), 4)
+        painter.drawLine(0, height-5, areaX-20, height-5)
+        painter.drawLine(areaX, 4, width, 4)
 
         painter.setPen(self.fColorBottom)
         painter.setBrush(self.fColorBottom)
 
         # top, bottom and left lines
-        painter.drawLine(0, 0, self.width(), 0)
-        painter.drawRect(0, self.height()-4, areaX, 4)
-        painter.drawRoundedRect(areaX-20, self.height()-5, areaX, 5, 22, 22)
-        painter.drawLine(0, 0, 0, self.height())
+        painter.drawLine(0, 0, width, 0)
+        painter.drawRect(0, height-4, areaX, 4)
+        painter.drawRoundedRect(areaX-20, height-5, areaX, 5, 22, 22)
+        painter.drawLine(0, 0, 0, height)
 
         # fill the rest
-        painter.drawRect(areaX-1, 5, self.width(), self.height())
+        painter.drawRect(areaX-1, 5, width, height)
 
         # bottom 1px line
         painter.setPen(self.fColorSeprtr)
-        painter.drawLine(0, self.height()-1, self.width(), self.height()-1)
+        painter.drawLine(0, height-1, width, height-1)
 
         painter.restore()
         PluginSlot.paintEvent(self, event)
 
 # ------------------------------------------------------------------------------------------------------------
 
-def createPluginSlot(pluginId, parent):
+class PluginSlot_ZynFX(PluginSlot):
+    def __init__(self, parent, pluginId):
+        PluginSlot.__init__(self, parent, pluginId)
+        self.ui = ui_carla_plugin_zynfx.Ui_PluginWidget()
+        self.ui.setupUi(self)
+
+        # -------------------------------------------------------------
+        # Set-up GUI
+
+        self.setStyleSheet("""
+        QFrame#PluginWidget {
+            background-image: url(:/bitmaps/background_zynfx.png);
+            background-repeat: repeat-xy;
+        }""")
+
+        #background-position: top left;
+
+        self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
+        self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
+
+        self.ui.peak_in.setColor(self.ui.peak_in.GREEN)
+        self.ui.peak_in.setChannels(self.fPeaksInputCount)
+        self.ui.peak_in.setOrientation(self.ui.peak_in.VERTICAL)
+
+        self.ui.peak_out.setColor(self.ui.peak_in.BLUE)
+        self.ui.peak_out.setChannels(self.fPeaksOutputCount)
+        self.ui.peak_out.setOrientation(self.ui.peak_out.VERTICAL)
+
+        self.ui.label_name.setText(self.fPluginInfo['name'])
+
+        # -------------------------------------------------------------
+        # Set-up parameters
+
+        self.fParameterList = [] # index, widget
+
+        parameterCount = Carla.host.get_parameter_count(self.fPluginId)
+
+        index = 0
+        for i in range(parameterCount):
+            paramInfo   = Carla.host.get_parameter_info(self.fPluginId, i)
+            paramData   = Carla.host.get_parameter_data(self.fPluginId, i)
+            paramRanges = Carla.host.get_parameter_ranges(self.fPluginId, i)
+            paramValue  = Carla.host.get_current_parameter_value(self.fPluginId, i)
+
+            if paramData['type'] not in (PARAMETER_INPUT, PARAMETER_OUTPUT):
+                continue
+
+            widget = PixmapDial(self)
+            widget.setPixmap(5)
+            widget.setLabel(charPtrToString(paramInfo['name']))
+
+            widget.setMinimum(paramRanges['min']*100)
+            widget.setMaximum(paramRanges['max']*100)
+            widget.setValue(paramValue*100)
+
+            self.ui.container.layout().insertWidget(index, widget)
+            index += 1
+
+            self.fParameterList.append([i, widget])
+
+        # -------------------------------------------------------------
+        # Set-up MIDI programs
+
+        midiProgramCount = Carla.host.get_midi_program_count(self.fPluginId) if Carla.host is not None else 0
+
+        if midiProgramCount > 0:
+            self.ui.cb_presets.setEnabled(True)
+            self.ui.label_presets.setEnabled(True)
+
+            for i in range(midiProgramCount):
+                mpData = Carla.host.get_midi_program_data(self.fPluginId, i)
+                mpName = charPtrToString(mpData['name'])
+
+                self.ui.cb_presets.addItem(mpName)
+
+            self.fCurrentMidiProgram = Carla.host.get_current_midi_program_index(self.fPluginId)
+            self.ui.cb_presets.setCurrentIndex(self.fCurrentMidiProgram)
+
+        else:
+            self.fCurrentMidiProgram = -1
+            self.ui.cb_presets.setEnabled(False)
+            self.ui.label_presets.setEnabled(False)
+
+        # -------------------------------------------------------------
+        # Set-up connections
+
+        self.ui.b_enable.clicked.connect(self.slot_enableClicked)
+        self.ui.b_edit.clicked.connect(self.slot_showEditDialog)
+
+    #------------------------------------------------------------------
+
+    def getFixedHeight(self):
+        return 75
+
+    #------------------------------------------------------------------
+
+    def setName(self, name):
+        self.ui.label_name.setText(name)
+        PluginSlot.setName(self, name)
+
+    #------------------------------------------------------------------
+
+    def activeChanged(self, onOff):
+        self.ui.b_enable.setChecked(onOff)
+
+    def editDialogChanged(self, visible):
+        self.ui.b_edit.blockSignals(True)
+        self.ui.b_edit.setChecked(visible)
+        self.ui.b_edit.blockSignals(False)
+
+    #------------------------------------------------------------------
+
+    def idleFast(self):
+        # Input peaks
+        if self.fPeaksInputCount > 0:
+            if self.fPeaksInputCount > 1:
+                peak1 = Carla.host.get_input_peak_value(self.fPluginId, 1)
+                peak2 = Carla.host.get_input_peak_value(self.fPluginId, 2)
+                self.ui.peak_in.displayMeter(1, peak1)
+                self.ui.peak_in.displayMeter(2, peak2)
+            else:
+                peak = Carla.host.get_input_peak_value(self.fPluginId, 1)
+                self.ui.peak_in.displayMeter(1, peak)
+
+        # Output peaks
+        if self.fPeaksOutputCount > 0:
+            if self.fPeaksOutputCount > 1:
+                peak1 = Carla.host.get_output_peak_value(self.fPluginId, 1)
+                peak2 = Carla.host.get_output_peak_value(self.fPluginId, 2)
+                self.ui.peak_out.displayMeter(1, peak1)
+                self.ui.peak_out.displayMeter(2, peak2)
+            else:
+                peak = Carla.host.get_output_peak_value(self.fPluginId, 1)
+                self.ui.peak_out.displayMeter(1, peak)
+
+    #------------------------------------------------------------------
+
+    @pyqtSlot(bool)
+    def slot_enableClicked(self, yesNo):
+        self.setActive(yesNo, False, True)
+
+    #------------------------------------------------------------------
+
+    #def paintEvent(self, event):
+        #painter = QPainter(self)
+        #painter.save()
+
+        #painter.setPen(QColor(0, 0, 200))
+        #painter.setBrush(QColor(0, 0, 200))
+        #painter.drawRect(0, 0, self.width(), self.height())
+
+        #painter.restore()
+        #PluginSlot.paintEvent(self, event)
+
+# ------------------------------------------------------------------------------------------------------------
+
+def createPluginSlot(parent, pluginId):
     pluginInfo = Carla.host.get_plugin_info(pluginId)
     pluginInfo['label']    = charPtrToString(pluginInfo['label'])
     pluginInfo['maker']    = charPtrToString(pluginInfo['maker'])
     pluginInfo['iconName'] = charPtrToString(pluginInfo['iconName'])
 
+    #return PluginSlot(parent, pluginId)
     return PluginSlot_Default(parent, pluginId)
+    #return PluginSlot_ZynFX(parent, pluginId)
 
 # ------------------------------------------------------------------------------------------------------------

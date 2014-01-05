@@ -21,7 +21,7 @@
 
 from PyQt4.QtCore import pyqtSignal, pyqtSlot, QByteArray, QSettings
 from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
-from PyQt4.QtGui import QDialog, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
+from PyQt4.QtGui import QDialog, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -735,7 +735,7 @@ class PluginEdit(QDialog):
                 }
 
                 for j in range(paramInfo['scalePointCount']):
-                    scalePointInfo  = Carla.host.get_parameter_scalepoint_info(self.fPluginId, i, j)
+                    scalePointInfo = Carla.host.get_parameter_scalepoint_info(self.fPluginId, i, j)
 
                     parameter['scalePoints'].append({
                         'value': scalePointInfo['value'],

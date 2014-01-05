@@ -48,6 +48,7 @@
         <file>scalable/distrho.svg</file>
 
         <file>bitmaps/carla_about.png</file>
+        <file>bitmaps/background_zynfx.png</file>
         <file>bitmaps/button_distrho.png</file>
         <file>bitmaps/button_distrho2.png</file>
         <file>bitmaps/button_distrho_down.png</file>
@@ -82,6 +83,7 @@
         <file>bitmaps/dial_03d.png</file>
         <file>bitmaps/dial_04.png</file>
         <file>bitmaps/dial_04d.png</file>
+        <file>bitmaps/dial_05.png</file>
         <file>bitmaps/kbd_h_classic.png</file>
         <file>bitmaps/kbd_h_orange.png</file>
         <file>bitmaps/kbd_v_classic.png</file>
