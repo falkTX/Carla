@@ -44,6 +44,7 @@ const char* carla_file_callback(FileCallbackOpcode action, bool isDir, const cha
 
     // unused
     (void)action;
+    (void)isDir;
 }
 
 // -----------------------------------------------------------------------
