@@ -48,7 +48,14 @@
         <file>scalable/distrho.svg</file>
 
         <file>bitmaps/carla_about.png</file>
+        <file>bitmaps/background_calf.png</file>
         <file>bitmaps/background_zynfx.png</file>
+        <file>bitmaps/button_calf1.png</file>
+        <file>bitmaps/button_calf2.png</file>
+        <file>bitmaps/button_calf1_down.png</file>
+        <file>bitmaps/button_calf2_down.png</file>
+        <file>bitmaps/button_calf1_hover.png</file>
+        <file>bitmaps/button_calf2_hover.png</file>
         <file>bitmaps/button_distrho.png</file>
         <file>bitmaps/button_distrho2.png</file>
         <file>bitmaps/button_distrho_down.png</file>
@@ -94,6 +101,7 @@
         <file>bitmaps/led_green.png</file>
         <file>bitmaps/led_red.png</file>
         <file>bitmaps/led_yellow.png</file>
+        <file>bitmaps/logo_calf.png</file>
 
         <file>bitmaps/canvas/frame_node_header.png</file>
         <file>bitmaps/canvas/frame_port_bg.png</file>
