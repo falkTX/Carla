@@ -1352,7 +1352,7 @@ public:
             pData->hints = hints | PLUGIN_IS_BRIDGE;
 
             fInfo.category = static_cast<PluginCategory>(category);
-            fInfo.uniqueId = uniqueId;
+            fInfo.uniqueId = static_cast<long int>(uniqueId);
 
             fInfo.name  = name;
             fInfo.label = label;
