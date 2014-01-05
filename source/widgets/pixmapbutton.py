@@ -19,8 +19,8 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import QRectF
-from PyQt4.QtGui import QPainter, QPixmap, QPushButton
+from PyQt4.QtCore import QPointF, QRectF
+from PyQt4.QtGui import QColor, QFont, QPainter, QPixmap, QPushButton
 
 # ------------------------------------------------------------------------------------------------------------
 # Widget Class
@@ -36,6 +36,10 @@ class PixmapButton(QPushButton):
 
         self.fIsHovered = False
 
+        self.fTopText      = ""
+        self.fTopTextColor = QColor()
+        self.fTopTextFont  = QFont()
+
         self.setText("")
 
     def setPixmaps(self, normal, down, hover):
@@ -50,6 +54,11 @@ class PixmapButton(QPushButton):
 
         self.setMinimumSize(width, height)
         self.setMaximumSize(width, height)
+
+    def setTopText(self, text, color, font):
+        self.fTopText      = text
+        self.fTopTextColor = color
+        self.fTopTextFont  = font
 
     def enterEvent(self, event):
         self.fIsHovered = True
@@ -77,3 +86,13 @@ class PixmapButton(QPushButton):
 
         else:
             painter.drawPixmap(self.fPixmapRect, self.fPixmapNormal, self.fPixmapRect)
+
+        if not self.fTopText:
+            return
+
+        painter.save()
+        painter.setPen(self.fTopTextColor)
+        painter.setBrush(self.fTopTextColor)
+        painter.setFont(self.fTopTextFont)
+        painter.drawText(QPointF(10, 16), self.fTopText)
+        painter.restore()

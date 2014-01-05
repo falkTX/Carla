@@ -82,6 +82,7 @@
         <file>bitmaps/button_gui_hover2.png</file>
         <file>bitmaps/button_off.png</file>
         <file>bitmaps/button_on.png</file>
+
         <file>bitmaps/dial_01.png</file>
         <file>bitmaps/dial_01d.png</file>
         <file>bitmaps/dial_02.png</file>
@@ -92,15 +93,21 @@
         <file>bitmaps/dial_04d.png</file>
         <file>bitmaps/dial_05.png</file>
         <file>bitmaps/dial_05d.png</file>
+
         <file>bitmaps/kbd_h_classic.png</file>
         <file>bitmaps/kbd_h_orange.png</file>
         <file>bitmaps/kbd_v_classic.png</file>
         <file>bitmaps/kbd_v_orange.png</file>
+
         <file>bitmaps/led_off.png</file>
         <file>bitmaps/led_blue.png</file>
         <file>bitmaps/led_green.png</file>
         <file>bitmaps/led_red.png</file>
         <file>bitmaps/led_yellow.png</file>
+
+        <file>bitmaps/led_calf_off.png</file>
+        <file>bitmaps/led_calf_on.png</file>
+
         <file>bitmaps/logo_calf.png</file>
 
         <file>bitmaps/canvas/frame_node_header.png</file>

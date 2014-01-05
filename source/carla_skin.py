@@ -19,7 +19,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtGui import QFrame
+from PyQt4.QtGui import QFont, QFrame
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -559,6 +559,13 @@ class PluginSlot_Calf(PluginSlot):
 
         self.fIsActive = False
 
+        self.fButtonFont = QFont()
+        self.fButtonFont.setBold(False)
+        self.fButtonFont.setPointSize(9)
+
+        self.fButtonColorOn  = QColor( 18,  41,  87)
+        self.fButtonColorOff = QColor(150, 150, 150)
+
         # -------------------------------------------------------------
         # Set-up GUI
 
@@ -575,10 +582,18 @@ class PluginSlot_Calf(PluginSlot):
         self.ui.b_edit.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
         self.ui.b_remove.setPixmaps(":/bitmaps/button_calf1.png", ":/bitmaps/button_calf1_down.png", ":/bitmaps/button_calf1_hover.png")
 
-        self.ui.b_gui.setEnabled((self.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI) != 0)
+        self.ui.b_edit.setTopText(self.tr("Edit"), self.fButtonColorOn, self.fButtonFont)
+        self.ui.b_remove.setTopText(self.tr("Remove"), self.fButtonColorOn, self.fButtonFont)
 
-        self.ui.led_midi.setColor(self.ui.led_midi.RED)
-        self.ui.led_midi.setEnabled(False)
+        if self.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI:
+            self.ui.b_gui.setEnabled(True)
+            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOn, self.fButtonFont)
+        else:
+            self.ui.b_gui.setEnabled(False)
+            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOff, self.fButtonFont)
+
+        self.ui.led_midi.setColor(self.ui.led_midi.CALF)
+        #self.ui.led_midi.setEnabled(False)
 
         self.ui.peak_in.setColor(self.ui.peak_in.GREEN)
         self.ui.peak_in.setChannels(self.fPeaksInputCount)
@@ -606,12 +621,18 @@ class PluginSlot_Calf(PluginSlot):
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
-        return 80
+        return 75
 
     #------------------------------------------------------------------
 
     def recheckPluginHints(self, hints):
-        self.ui.b_gui.setEnabled(hints & PLUGIN_HAS_CUSTOM_UI)
+        if hints & PLUGIN_HAS_CUSTOM_UI:
+            self.ui.b_gui.setEnabled(True)
+            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOn, self.fButtonFont)
+        else:
+            self.ui.b_gui.setEnabled(False)
+            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOff, self.fButtonFont)
+
         PluginSlot.recheckPluginHints(self, hints)
 
     def setName(self, name):

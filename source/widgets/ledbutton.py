@@ -26,11 +26,14 @@ from PyQt4.QtGui import QPainter, QPixmap, QPushButton
 # Widget Class
 
 class LEDButton(QPushButton):
+    # normal
     OFF    = 0
     BLUE   = 1
     GREEN  = 2
     RED    = 3
     YELLOW = 4
+    # extra
+    CALF   = 5
 
     def __init__(self, parent):
         QPushButton.__init__(self, parent)
@@ -41,15 +44,20 @@ class LEDButton(QPushButton):
         self.setCheckable(True)
         self.setText("")
 
-        self.setColor(self.BLUE)
-
         self.fLastColor = self.OFF
         self.fPixmap.load(":/bitmaps/led_off.png")
 
+        self.setColor(self.BLUE)
+
     def setColor(self, color):
         self.fColor = color
-        size = 14
+        self._loadPixmapNow()
 
+        # Fix calf off
+        if color == self.CALF:
+            self.fPixmap.load(":/bitmaps/led_calf_off.png")
+
+        size = self.fPixmap.width()
         self.fPixmapRect = QRectF(0, 0, size, size)
 
         self.setMinimumSize(size, size)
@@ -58,6 +66,12 @@ class LEDButton(QPushButton):
     def paintEvent(self, event):
         painter = QPainter(self)
         event.accept()
+
+        self._loadPixmapNow()
+
+        painter.drawPixmap(self.fPixmapRect, self.fPixmap, self.fPixmapRect)
+
+    def _loadPixmapNow(self):
 
         if self.isChecked():
             if self.fLastColor != self.fColor:
@@ -71,13 +85,13 @@ class LEDButton(QPushButton):
                     self.fPixmap.load(":/bitmaps/led_red.png")
                 elif self.fColor == self.YELLOW:
                     self.fPixmap.load(":/bitmaps/led_yellow.png")
+                elif self.fColor == self.CALF:
+                    self.fPixmap.load(":/bitmaps/calf_on.png")
                 else:
                     return
 
                 self.fLastColor = self.fColor
 
         elif self.fLastColor != self.OFF:
-            self.fPixmap.load(":/bitmaps/led_off.png")
+            self.fPixmap.load(":/bitmaps/led_calf_off.png" if self.fColor == self.CALF else ":/bitmaps/led_off.png")
             self.fLastColor = self.OFF
-
-        painter.drawPixmap(self.fPixmapRect, self.fPixmap, self.fPixmapRect)
