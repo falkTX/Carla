@@ -28,7 +28,7 @@
 *.moc
 moc_*.cpp
 ui_*.h
-resources.cpp
+resources.*.cpp
 
 # Python files
 *.pyc
@@ -69,6 +69,7 @@ carla-native-lv2-export
 data/windows/Carla
 data/windows/CarlaControl
 source/plugin/carla-native.lv2/*.ttl
+source/tests/ansi-pedantic-test_*
 source/tests/ANSI
 source/tests/CarlaString
 source/tests/DGL1
