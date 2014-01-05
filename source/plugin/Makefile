@@ -178,6 +178,12 @@ carla-native.lv2/carla-native.so: carla-native-lv2.cpp.o $(LIBS)
 .FORCE:
 .PHONY: .FORCE
 
+../backend/carla_engine_plugin.a: .FORCE
+	$(MAKE) -C ../backend/engine ../carla_engine_plugin.a
+
+../backend/carla_plugin.a: .FORCE
+	$(MAKE) -C ../backend/plugin ../carla_plugin.a
+
 ../modules/%.a: .FORCE
 	$(MAKE) -C ../modules $*
 
