@@ -563,15 +563,13 @@ class PluginSlot_Calf(PluginSlot):
         # Set-up GUI
 
         self.setStyleSheet("""
-        * {
+        QLabel {
             color: black;
         }
         QFrame#PluginWidget {
             background-image: url(:/bitmaps/background_calf.png);
             background-repeat: repeat-xy;
         }""")
-
-        #self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
 
         self.ui.b_gui.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
         self.ui.b_edit.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
@@ -595,7 +593,6 @@ class PluginSlot_Calf(PluginSlot):
         # -------------------------------------------------------------
         # Set-up connections
 
-        #self.ui.b_enable.clicked.connect(self.slot_enableClicked)
         self.ui.b_gui.clicked.connect(self.slot_showCustomUi)
         self.ui.b_edit.clicked.connect(self.slot_showEditDialog)
         self.ui.b_remove.clicked.connect(self.slot_removePlugin)

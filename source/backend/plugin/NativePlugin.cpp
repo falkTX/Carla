@@ -1832,7 +1832,7 @@ public:
 
     void sampleRateChanged(const double newSampleRate) override
     {
-        CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
+        CARLA_ASSERT_INT(newSampleRate > 0.0, (int)newSampleRate);
         carla_debug("NativePlugin::sampleRateChanged(%g)", newSampleRate);
 
         if (fDescriptor != nullptr && fDescriptor->dispatcher != nullptr)
