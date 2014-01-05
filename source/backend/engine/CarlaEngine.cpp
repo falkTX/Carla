@@ -1875,6 +1875,7 @@ void CarlaEngine::setCallback(const EngineCallbackFunc func, void* const ptr)
     pData->callbackPtr = ptr;
 }
 
+#ifndef BUILD_BRIDGE
 // -----------------------------------------------------------------------
 // Patchbay
 
@@ -2066,6 +2067,7 @@ bool CarlaEngine::patchbayRefresh()
     setLastError("Unsupported operation");
     return false;
 }
+#endif
 
 // -----------------------------------------------------------------------
 // Transport

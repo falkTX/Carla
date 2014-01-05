@@ -943,6 +943,7 @@ public:
      */
     void setCallback(const EngineCallbackFunc func, void* const ptr);
 
+#ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------
     // Patchbay
 
@@ -960,6 +961,7 @@ public:
      * Force the engine to resend all patchbay clients, ports and connections again.
      */
     virtual bool patchbayRefresh();
+#endif
 
     // -------------------------------------------------------------------
     // Transport

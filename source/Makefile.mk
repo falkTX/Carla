@@ -62,7 +62,7 @@ LINK_OPTS   =
 else
 BASE_FLAGS += -DNDEBUG $(BASE_OPTS) -fvisibility=hidden
 CXXFLAGS   += -fvisibility-inlines-hidden
-LINK_OPTS  += -Wl,--strip-all
+# LINK_OPTS  += -Wl,--strip-all
 endif
 
 32BIT_FLAGS = -m32

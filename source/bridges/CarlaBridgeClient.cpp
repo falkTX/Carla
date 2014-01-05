@@ -36,9 +36,7 @@ CarlaBridgeClient::CarlaBridgeClient(const char* const uiTitle)
     , fUI(CarlaBridgeToolkit::createNew(this, uiTitle))
 #endif
 {
-#ifdef BUILD_BRIDGE_UI
-    CARLA_ASSERT(uiTitle != nullptr);
-#endif
+    CARLA_ASSERT(uiTitle != nullptr && uiTitle[0] != '\0');
     carla_debug("CarlaBridgeClient::CarlaBridgeClient(\"%s\")", uiTitle);
 }
 

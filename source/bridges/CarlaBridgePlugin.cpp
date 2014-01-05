@@ -277,6 +277,7 @@ public:
 
     void setChunkData(const char* const filePath)
     {
+        CARLA_SAFE_ASSERT_RETURN(filePath != nullptr && filePath[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
         carla_debug("CarlaPluginClient::setChunkData(\"%s\")", filePath);
 

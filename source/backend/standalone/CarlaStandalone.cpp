@@ -771,6 +771,7 @@ bool carla_save_project(const char* filename)
     return false;
 }
 
+#ifndef BUILD_BRIDGE
 // -------------------------------------------------------------------------------------------------------------------
 
 bool carla_patchbay_connect(int portIdA, int portIdB)
@@ -809,6 +810,7 @@ bool carla_patchbay_refresh()
     gStandalone.lastError = "Engine is not running";
     return false;
 }
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 

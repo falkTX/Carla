@@ -610,6 +610,7 @@ CARLA_EXPORT bool carla_load_project(const char* filename);
  */
 CARLA_EXPORT bool carla_save_project(const char* filename);
 
+#ifndef BUILD_BRIDGE
 /*!
  * Connect two patchbay ports.
  * @param portIdA Output port
@@ -629,6 +630,7 @@ CARLA_EXPORT bool carla_patchbay_disconnect(int connectionId);
  * Force the engine to resend all patchbay clients, ports and connections again.
  */
 CARLA_EXPORT bool carla_patchbay_refresh();
+#endif
 
 /*!
  * Start playback of the engine transport.

@@ -1175,6 +1175,9 @@ CarlaPlugin* CarlaPlugin::newGIG(const Initializer& init, const bool use16Outs)
 #else
     init.engine->setLastError("linuxsampler support not available");
     return nullptr;
+
+    // unused
+    (void)use16Outs;
 #endif
 }
 
@@ -1186,6 +1189,9 @@ CarlaPlugin* CarlaPlugin::newSFZ(const Initializer& init, const bool use16Outs)
 #else
     init.engine->setLastError("linuxsampler support not available");
     return nullptr;
+
+    // unused
+    (void)use16Outs;
 #endif
 }
 
