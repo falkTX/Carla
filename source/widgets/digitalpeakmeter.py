@@ -38,6 +38,7 @@ class DigitalPeakMeter(QWidget):
         QWidget.__init__(self, parent)
 
         self.fChannels    = 0
+        self.fDrawLines   = True
         self.fOrientation = self.VERTICAL
         self.fSmoothMultiplier = 1
 
@@ -92,6 +93,9 @@ class DigitalPeakMeter(QWidget):
             return qCritical("DigitalPeakMeter::setColor(%i) - invalid color" % color)
 
         self.setOrientation(self.fOrientation)
+
+    def setLinesEnabled(self, yesNo):
+        self.fDrawLines = yesNo
 
     def setOrientation(self, orientation):
         self.fOrientation = orientation
@@ -176,6 +180,9 @@ class DigitalPeakMeter(QWidget):
                 painter.drawRect(meterX, int(value), self.fSizeMeter, self.fHeight)
 
             meterX += self.fSizeMeter
+
+        if not self.fDrawLines:
+            return
 
         painter.setBrush(Qt.black)
 

@@ -1173,6 +1173,8 @@ class PluginEdit(QDialog):
     def slot_parameterValueChanged(self, parameterId, value):
         if Carla.host is not None:
             Carla.host.set_parameter_value(self.fPluginId, parameterId, value)
+        if self.fRealParent is not None:
+            self.fRealParent.parameterValueChanged(parameterId, value)
 
     @pyqtSlot(int, int)
     def slot_parameterMidiControlChanged(self, parameterId, control):
@@ -1192,6 +1194,8 @@ class PluginEdit(QDialog):
 
         if Carla.host is not None:
             Carla.host.set_program(self.fPluginId, index)
+        if self.fRealParent is not None:
+            self.fRealParent.programChanged(index)
 
     @pyqtSlot(int)
     def slot_midiProgramIndexChanged(self, index):
@@ -1199,6 +1203,8 @@ class PluginEdit(QDialog):
 
         if Carla.host is not None:
             Carla.host.set_midi_program(self.fPluginId, index)
+        if self.fRealParent is not None:
+            self.fRealParent.midiProgramChanged(index)
 
     #------------------------------------------------------------------
 
@@ -1206,11 +1212,15 @@ class PluginEdit(QDialog):
     def slot_noteOn(self, note):
         if self.fControlChannel >= 0 and Carla.host is not None:
             Carla.host.send_midi_note(self.fPluginId, self.fControlChannel, note, 100)
+        if self.fRealParent is not None:
+            self.fRealParent.notePressed(note)
 
     @pyqtSlot(int)
     def slot_noteOff(self, note):
         if self.fControlChannel >= 0 and Carla.host is not None:
             Carla.host.send_midi_note(self.fPluginId, self.fControlChannel, note, 0)
+        if self.fRealParent is not None:
+            self.fRealParent.noteReleased(note)
 
     #------------------------------------------------------------------
 

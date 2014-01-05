@@ -30,11 +30,12 @@ from math import floor
 
 class PixmapDial(QDial):
     # enum CustomPaint
-    CUSTOM_PAINT_NULL      = 0
-    CUSTOM_PAINT_CARLA_WET = 1
-    CUSTOM_PAINT_CARLA_VOL = 2
-    CUSTOM_PAINT_CARLA_L   = 3
-    CUSTOM_PAINT_CARLA_R   = 4
+    CUSTOM_PAINT_NULL        = 0
+    CUSTOM_PAINT_CARLA_WET   = 1
+    CUSTOM_PAINT_CARLA_VOL   = 2
+    CUSTOM_PAINT_CARLA_L     = 3
+    CUSTOM_PAINT_CARLA_R     = 4
+    CUSTOM_PAINT_NO_GRADIENT = 5
 
     # enum Orientation
     HORIZONTAL = 0
@@ -43,9 +44,10 @@ class PixmapDial(QDial):
     HOVER_MIN = 0
     HOVER_MAX = 9
 
-    def __init__(self, parent):
+    def __init__(self, parent, index=0):
         QDial.__init__(self, parent)
 
+        self.fIndex       = index
         self.fPixmap      = QPixmap(":/bitmaps/dial_01d.png")
         self.fPixmapNum   = "01"
         self.fCustomPaint = self.CUSTOM_PAINT_NULL
@@ -80,6 +82,9 @@ class PixmapDial(QDial):
 
         self.updateSizes()
 
+    def getIndex(self):
+        return self.fIndex
+
     def getSize(self):
         return self.fSize
 
@@ -94,6 +99,9 @@ class PixmapDial(QDial):
             self.updateSizes()
             self.update()
         QDial.setEnabled(self, enabled)
+
+    def setIndex(self, index):
+        self.fIndex = index
 
     def setLabel(self, label):
         self.fLabel = label
@@ -296,4 +304,3 @@ class PixmapDial(QDial):
     def resizeEvent(self, event):
         self.updateSizes()
         QDial.resizeEvent(self, event)
-

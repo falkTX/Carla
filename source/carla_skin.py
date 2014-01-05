@@ -195,6 +195,21 @@ class PluginSlot(QFrame):
     def midiActivityChanged(self, onOff):
         pass
 
+    def parameterValueChanged(self, parameterId, value):
+        pass
+
+    def programChanged(self, index):
+        pass
+
+    def midiProgramChanged(self, index):
+        pass
+
+    def notePressed(self, note):
+        pass
+
+    def noteReleased(self, note):
+        pass
+
     #------------------------------------------------------------------
 
     def idleFast(self):
@@ -211,6 +226,70 @@ class PluginSlot(QFrame):
             self.parameterActivityChanged(False)
 
         self.fEditDialog.idleSlow()
+
+    #------------------------------------------------------------------
+
+    def showDefaultMenu(self, isEnabled, bEdit = None, bGui = None):
+        menu = QMenu(self)
+
+        actActive = menu.addAction(self.tr("Disable") if isEnabled else self.tr("Enable"))
+        menu.addSeparator()
+
+        if bEdit is not None:
+            actEdit = menu.addAction(self.tr("Edit"))
+            actEdit.setCheckable(True)
+            actEdit.setChecked(bEdit.isChecked())
+        else:
+            actEdit = None
+
+        if bGui is not None:
+            actGui = menu.addAction(self.tr("Show Custom UI"))
+            actGui.setCheckable(True)
+            actGui.setChecked(bGui.isChecked())
+            actGui.setEnabled(bGui.isEnabled())
+        else:
+            actGui = None
+
+        menu.addSeparator()
+        actClone  = menu.addAction(self.tr("Clone"))
+        actRename = menu.addAction(self.tr("Rename..."))
+        actRemove = menu.addAction(self.tr("Remove"))
+
+        actSel = menu.exec_(QCursor.pos())
+
+        if not actSel:
+            return
+
+        if actSel == actActive:
+            self.setActive(not isEnabled, True, True)
+        elif actSel == actGui:
+            bGui.click()
+        elif actSel == actEdit:
+            bEdit.click()
+        elif actSel == actClone:
+            if Carla.host is not None and not Carla.host.clone_plugin(self.fPluginId):
+                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
+                                       Carla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+
+        elif actSel == actRename:
+            oldName    = self.fPluginInfo['name']
+            newNameTry = QInputDialog.getText(self, self.tr("Rename Plugin"), self.tr("New plugin name:"), QLineEdit.Normal, oldName)
+
+            if not (newNameTry[1] and newNameTry[0] and oldName != newNameTry[0]):
+                return
+
+            newName = newNameTry[0]
+
+            if Carla.host is None or Carla.host.rename_plugin(self.fPluginId, newName):
+                self.setName(newName)
+            else:
+                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
+                                       Carla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+
+        elif actSel == actRemove:
+            if Carla.host is not None and not Carla.host.remove_plugin(self.fPluginId):
+                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
+                                       Carla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
     #------------------------------------------------------------------
 
@@ -319,7 +398,7 @@ class PluginSlot_Default(PluginSlot):
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
-        return 32
+        return 48
 
     #------------------------------------------------------------------
 
@@ -334,7 +413,9 @@ class PluginSlot_Default(PluginSlot):
     #------------------------------------------------------------------
 
     def activeChanged(self, onOff):
+        self.ui.b_enable.blockSignals(True)
         self.ui.b_enable.setChecked(onOff)
+        self.ui.b_enable.blockSignals(False)
 
     def editDialogChanged(self, visible):
         self.ui.b_edit.blockSignals(True)
@@ -366,15 +447,15 @@ class PluginSlot_Default(PluginSlot):
         # Input peaks
         if self.fPeaksInputCount > 0:
             if self.fPeaksInputCount > 1:
-                peak1 = Carla.host.get_input_peak_value(self.fPluginId, 1)
-                peak2 = Carla.host.get_input_peak_value(self.fPluginId, 2)
+                peak1 = Carla.host.get_input_peak_value(self.fPluginId, True)
+                peak2 = Carla.host.get_input_peak_value(self.fPluginId, False)
                 ledState = bool(peak1 != 0.0 or peak2 != 0.0)
 
                 self.ui.peak_in.displayMeter(1, peak1)
                 self.ui.peak_in.displayMeter(2, peak2)
 
             else:
-                peak = Carla.host.get_input_peak_value(self.fPluginId, 1)
+                peak = Carla.host.get_input_peak_value(self.fPluginId, True)
                 ledState = bool(peak != 0.0)
 
                 self.ui.peak_in.displayMeter(1, peak)
@@ -386,15 +467,15 @@ class PluginSlot_Default(PluginSlot):
         # Output peaks
         if self.fPeaksOutputCount > 0:
             if self.fPeaksOutputCount > 1:
-                peak1 = Carla.host.get_output_peak_value(self.fPluginId, 1)
-                peak2 = Carla.host.get_output_peak_value(self.fPluginId, 2)
+                peak1 = Carla.host.get_output_peak_value(self.fPluginId, True)
+                peak2 = Carla.host.get_output_peak_value(self.fPluginId, False)
                 ledState = bool(peak1 != 0.0 or peak2 != 0.0)
 
                 self.ui.peak_out.displayMeter(1, peak1)
                 self.ui.peak_out.displayMeter(2, peak2)
 
             else:
-                peak = Carla.host.get_output_peak_value(self.fPluginId, 1)
+                peak = Carla.host.get_output_peak_value(self.fPluginId, True)
                 ledState = bool(peak != 0.0)
 
                 self.ui.peak_out.displayMeter(1, peak)
@@ -411,60 +492,7 @@ class PluginSlot_Default(PluginSlot):
 
     @pyqtSlot()
     def slot_showCustomMenu(self):
-        menu = QMenu(self)
-
-        actActive = menu.addAction(self.tr("Disable") if self.ui.b_enable.isChecked() else self.tr("Enable"))
-        menu.addSeparator()
-
-        actGui = menu.addAction(self.tr("Show GUI"))
-        actGui.setCheckable(True)
-        actGui.setChecked(self.ui.b_gui.isChecked())
-        actGui.setEnabled(self.ui.b_gui.isEnabled())
-
-        actEdit = menu.addAction(self.tr("Edit"))
-        actEdit.setCheckable(True)
-        actEdit.setChecked(self.ui.b_edit.isChecked())
-
-        menu.addSeparator()
-        actClone  = menu.addAction(self.tr("Clone"))
-        actRename = menu.addAction(self.tr("Rename..."))
-        actRemove = menu.addAction(self.tr("Remove"))
-
-        actSel = menu.exec_(QCursor.pos())
-
-        if not actSel:
-            return
-
-        if actSel == actActive:
-            self.setActive(not self.ui.b_enable.isChecked(), True, True)
-        elif actSel == actGui:
-            self.ui.b_gui.click()
-        elif actSel == actEdit:
-            self.ui.b_edit.click()
-        elif actSel == actClone:
-            if not Carla.host.clone_plugin(self.fPluginId):
-                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
-                                       Carla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
-
-        elif actSel == actRename:
-            oldName    = self.fPluginInfo['name']
-            newNameTry = QInputDialog.getText(self, self.tr("Rename Plugin"), self.tr("New plugin name:"), QLineEdit.Normal, oldName)
-
-            if not (newNameTry[1] and newNameTry[0] and oldName != newNameTry[0]):
-                return
-
-            newName = newNameTry[0]
-
-            if Carla.host is None or Carla.host.rename_plugin(self.fPluginId, newName):
-                self.setName(newName)
-            else:
-                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
-                                       Carla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
-
-        elif actSel == actRemove:
-            if not Carla.host.remove_plugin(self.fPluginId):
-                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
-                                       Carla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+        self.showDefaultMenu(self.ui.b_enable.isChecked(), self.ui.b_edit, self.ui.b_gui)
 
     #------------------------------------------------------------------
 
@@ -530,17 +558,17 @@ class PluginSlot_ZynFX(PluginSlot):
             background-repeat: repeat-xy;
         }""")
 
-        #background-position: top left;
-
         self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
         self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
 
         self.ui.peak_in.setColor(self.ui.peak_in.GREEN)
         self.ui.peak_in.setChannels(self.fPeaksInputCount)
+        self.ui.peak_in.setLinesEnabled(False)
         self.ui.peak_in.setOrientation(self.ui.peak_in.VERTICAL)
 
         self.ui.peak_out.setColor(self.ui.peak_in.BLUE)
         self.ui.peak_out.setChannels(self.fPeaksOutputCount)
+        self.ui.peak_out.setLinesEnabled(False)
         self.ui.peak_out.setOrientation(self.ui.peak_out.VERTICAL)
 
         self.ui.label_name.setText(self.fPluginInfo['name'])
@@ -559,16 +587,98 @@ class PluginSlot_ZynFX(PluginSlot):
             paramRanges = Carla.host.get_parameter_ranges(self.fPluginId, i)
             paramValue  = Carla.host.get_current_parameter_value(self.fPluginId, i)
 
-            if paramData['type'] not in (PARAMETER_INPUT, PARAMETER_OUTPUT):
+            if paramData['type'] != PARAMETER_INPUT:
                 continue
 
-            widget = PixmapDial(self)
-            widget.setPixmap(5)
-            widget.setLabel(charPtrToString(paramInfo['name']))
+            paramName = charPtrToString(paramInfo['name'])
+            paramLow  = paramName.lower()
 
-            widget.setMinimum(paramRanges['min']*100)
-            widget.setMaximum(paramRanges['max']*100)
-            widget.setValue(paramValue*100)
+            # real zyn fx plugins
+            if self.fPluginInfo['label'] == "zynAlienWah":
+                if   i == 0: paramName = "Freq"
+                elif i == 1: paramName = "Rnd"
+                elif i == 2: paramName = "L type" # combobox
+                elif i == 3: paramName = "St.df"
+                elif i == 5: paramName = "Fb"
+                elif i == 7: paramName = "L/R"
+
+            if self.fPluginInfo['label'] == "zynChorus":
+                if   i == 0: paramName = "Freq"
+                elif i == 1: paramName = "Rnd"
+                elif i == 2: paramName = "L type" # combobox
+                elif i == 3: paramName = "St.df"
+                elif i == 6: paramName = "Fb"
+                elif i == 7: paramName = "L/R"
+                elif i == 8: paramName = "Flngr" # button
+                elif i == 9: paramName = "Subst" # button
+
+            elif self.fPluginInfo['label'] == "zynDistortion":
+                if   i == 0: paramName = "LRc."
+                elif i == 4: paramName = "Neg." # button
+                elif i == 5: paramName = "LPF"
+                elif i == 6: paramName = "HPF"
+                elif i == 7: paramName = "St." # button
+                elif i == 8: paramName = "PF"  # button
+
+            elif self.fPluginInfo['label'] == "zynDynamicFilter":
+                if   i == 0: paramName = "Freq"
+                elif i == 1: paramName = "Rnd"
+                elif i == 2: paramName = "L type" # combobox
+                elif i == 3: paramName = "St.df"
+                elif i == 4: paramName = "LfoD"
+                elif i == 5: paramName = "A.S."
+                elif i == 6: paramName = "A.Inv." # button
+                elif i == 7: paramName = "A.M."
+
+            elif self.fPluginInfo['label'] == "zynEcho":
+                if   i == 1: paramName = "LRdl."
+                elif i == 2: paramName = "LRc."
+                elif i == 3: paramName = "Fb."
+                elif i == 4: paramName = "Damp"
+
+            elif self.fPluginInfo['label'] == "zynPhaser":
+                if   i ==  0: paramName = "Freq"
+                elif i ==  1: paramName = "Rnd"
+                elif i ==  2: paramName = "L type" # combobox
+                elif i ==  3: paramName = "St.df"
+                elif i ==  5: paramName = "Fb"
+                elif i ==  7: paramName = "L/R"
+                elif i ==  8: paramName = "Subst" # button
+                elif i ==  9: paramName = "Phase"
+                elif i == 11: paramName = "Dist"
+
+            elif self.fPluginInfo['label'] == "zynReverb":
+                if   i ==  2: paramName = "I.delfb"
+                elif i ==  5: paramName = "LPF"
+                elif i ==  6: paramName = "HPF"
+                elif i ==  9: paramName = "R.S."
+                elif i == 10: paramName = "I.del"
+
+            #elif paramLow.find("damp"):
+                #paramName = "Damp"
+            #elif paramLow.find("frequency"):
+                #paramName = "Freq"
+
+            # Cut generic names
+            #elif paramName == "Depth":      paramName = "Dpth"
+            #elif paramName == "Feedback":   paramName = "Fb"
+            #elif paramName == "L/R Cross": #paramName = "L/R"
+            #elif paramName == "Random":     paramName = "Rnd"
+
+            widget = PixmapDial(self, i)
+            widget.setPixmap(5)
+            widget.setLabel(paramName)
+            widget.setCustomPaint(PixmapDial.CUSTOM_PAINT_NO_GRADIENT)
+
+            widget.setSingleStep(paramRanges['step']*1000)
+            widget.setMinimum(paramRanges['min']*1000)
+            widget.setMaximum(paramRanges['max']*1000)
+            widget.setValue(paramValue*1000)
+
+            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
+                widget.setEnabled(False)
+
+            widget.valueChanged.connect(self.slot_parameterValueChanged)
 
             self.ui.container.layout().insertWidget(index, widget)
             index += 1
@@ -596,18 +706,23 @@ class PluginSlot_ZynFX(PluginSlot):
         else:
             self.fCurrentMidiProgram = -1
             self.ui.cb_presets.setEnabled(False)
+            self.ui.cb_presets.setVisible(False)
             self.ui.label_presets.setEnabled(False)
+            self.ui.label_presets.setVisible(False)
 
         # -------------------------------------------------------------
         # Set-up connections
 
         self.ui.b_enable.clicked.connect(self.slot_enableClicked)
         self.ui.b_edit.clicked.connect(self.slot_showEditDialog)
+        self.ui.cb_presets.currentIndexChanged.connect(self.slot_presetChanged)
+
+        self.customContextMenuRequested.connect(self.slot_showCustomMenu)
 
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
-        return 75
+        return 70
 
     #------------------------------------------------------------------
 
@@ -617,13 +732,40 @@ class PluginSlot_ZynFX(PluginSlot):
 
     #------------------------------------------------------------------
 
+    def setParameterValue(self, parameterId, value):
+        self.parameterValueChanged(parameterId, value)
+        PluginSlot.setParameterValue(self, parameterId, value)
+
+    def setMidiProgram(self, index):
+        self.midiProgramChanged(index)
+        PluginSlot.setMidiProgram(self, index)
+
+    #------------------------------------------------------------------
+
     def activeChanged(self, onOff):
+        self.ui.b_enable.blockSignals(True)
         self.ui.b_enable.setChecked(onOff)
+        self.ui.b_enable.blockSignals(False)
 
     def editDialogChanged(self, visible):
         self.ui.b_edit.blockSignals(True)
         self.ui.b_edit.setChecked(visible)
         self.ui.b_edit.blockSignals(False)
+
+    def parameterValueChanged(self, parameterId, value):
+        for paramIndex, paramWidget in self.fParameterList:
+            if paramIndex != parameterId:
+                continue
+
+            paramWidget.blockSignals(True)
+            paramWidget.setValue(value*1000)
+            paramWidget.blockSignals(False)
+            break
+
+    def midiProgramChanged(self, index):
+        self.ui.cb_presets.blockSignals(True)
+        self.ui.cb_presets.setCurrentIndex(index)
+        self.ui.cb_presets.blockSignals(False)
 
     #------------------------------------------------------------------
 
@@ -631,23 +773,23 @@ class PluginSlot_ZynFX(PluginSlot):
         # Input peaks
         if self.fPeaksInputCount > 0:
             if self.fPeaksInputCount > 1:
-                peak1 = Carla.host.get_input_peak_value(self.fPluginId, 1)
-                peak2 = Carla.host.get_input_peak_value(self.fPluginId, 2)
+                peak1 = Carla.host.get_input_peak_value(self.fPluginId, True)
+                peak2 = Carla.host.get_input_peak_value(self.fPluginId, False)
                 self.ui.peak_in.displayMeter(1, peak1)
                 self.ui.peak_in.displayMeter(2, peak2)
             else:
-                peak = Carla.host.get_input_peak_value(self.fPluginId, 1)
+                peak = Carla.host.get_input_peak_value(self.fPluginId, True)
                 self.ui.peak_in.displayMeter(1, peak)
 
         # Output peaks
         if self.fPeaksOutputCount > 0:
             if self.fPeaksOutputCount > 1:
-                peak1 = Carla.host.get_output_peak_value(self.fPluginId, 1)
-                peak2 = Carla.host.get_output_peak_value(self.fPluginId, 2)
+                peak1 = Carla.host.get_output_peak_value(self.fPluginId, True)
+                peak2 = Carla.host.get_output_peak_value(self.fPluginId, False)
                 self.ui.peak_out.displayMeter(1, peak1)
                 self.ui.peak_out.displayMeter(2, peak2)
             else:
-                peak = Carla.host.get_output_peak_value(self.fPluginId, 1)
+                peak = Carla.host.get_output_peak_value(self.fPluginId, True)
                 self.ui.peak_out.displayMeter(1, peak)
 
     #------------------------------------------------------------------
@@ -656,29 +798,35 @@ class PluginSlot_ZynFX(PluginSlot):
     def slot_enableClicked(self, yesNo):
         self.setActive(yesNo, False, True)
 
-    #------------------------------------------------------------------
+    @pyqtSlot(int)
+    def slot_parameterValueChanged(self, value):
+        index = self.sender().getIndex()
+        value = float(value)/1000.0
 
-    #def paintEvent(self, event):
-        #painter = QPainter(self)
-        #painter.save()
+        Carla.host.set_parameter_value(self.fPluginId, index, value)
+        PluginSlot.setParameterValue(self, index, value)
 
-        #painter.setPen(QColor(0, 0, 200))
-        #painter.setBrush(QColor(0, 0, 200))
-        #painter.drawRect(0, 0, self.width(), self.height())
+    @pyqtSlot(int)
+    def slot_presetChanged(self, index):
+        Carla.host.set_midi_program(self.fPluginId, index)
+        PluginSlot.setMidiProgram(self, index)
 
-        #painter.restore()
-        #PluginSlot.paintEvent(self, event)
+    @pyqtSlot()
+    def slot_showCustomMenu(self):
+        self.showDefaultMenu(self.ui.b_enable.isChecked(), self.ui.b_edit, None)
 
 # ------------------------------------------------------------------------------------------------------------
 
 def createPluginSlot(parent, pluginId):
-    pluginInfo = Carla.host.get_plugin_info(pluginId)
-    pluginInfo['label']    = charPtrToString(pluginInfo['label'])
-    pluginInfo['maker']    = charPtrToString(pluginInfo['maker'])
-    pluginInfo['iconName'] = charPtrToString(pluginInfo['iconName'])
+    pluginInfo  = Carla.host.get_plugin_info(pluginId)
+    pluginLabel = charPtrToString(pluginInfo['label'])
+    #pluginMaker = charPtrToString(pluginInfo['maker'])
+    #pluginIcon  = charPtrToString(pluginInfo['iconName'])
 
-    #return PluginSlot(parent, pluginId)
+    if pluginInfo['type'] == PLUGIN_INTERNAL:
+        if pluginLabel.startswith("zyn"):
+            return PluginSlot_ZynFX(parent, pluginId)
+
     return PluginSlot_Default(parent, pluginId)
-    #return PluginSlot_ZynFX(parent, pluginId)
 
 # ------------------------------------------------------------------------------------------------------------
