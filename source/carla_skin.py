@@ -563,7 +563,7 @@ class PluginSlot_Calf(PluginSlot):
         # Set-up GUI
 
         self.setStyleSheet("""
-        QLabel {
+        QLabel#label_name, QLabel#label_audio_in, QLabel#label_audio_out, QLabel#label_midi {
             color: black;
         }
         QFrame#PluginWidget {
@@ -588,6 +588,10 @@ class PluginSlot_Calf(PluginSlot):
         self.ui.peak_out.setChannels(self.fPeaksOutputCount)
         self.ui.peak_out.setOrientation(self.ui.peak_out.HORIZONTAL)
 
+        labelFont = self.ui.label_name.font()
+        labelFont.setBold(True)
+        labelFont.setPointSize(labelFont.pointSize()+3)
+        self.ui.label_name.setFont(labelFont)
         self.ui.label_name.setText(self.fPluginInfo['name'])
 
         # -------------------------------------------------------------
