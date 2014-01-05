@@ -42,10 +42,10 @@ ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 LINK_FLAGS += $(LILV_LIBS)
 endif
 
-# ifeq ($(HAVE_FLUIDSYNTH),true)
-# LINK_FLAGS += $(shell pkg-config --libs fluidsynth)
-# endif
-#
+ifeq ($(HAVE_FLUIDSYNTH),true)
+LINK_FLAGS += $(FLUIDSYNTH_LIBS)
+endif
+
 # ifeq ($(HAVE_LINUXSAMPLER),true)
 # LINK_FLAGS += $(shell pkg-config --libs linuxsampler)
 # ifeq ($(WIN32),true)

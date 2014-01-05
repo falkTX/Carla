@@ -41,6 +41,9 @@ const char* carla_file_callback(FileCallbackOpcode action, bool isDir, const cha
     carla_debug("carla_file_callback(%i:%s, %s, \"%s\", \"%s\")", action, CarlaBackend::FileCallbackOpcode2Str(action), bool2str(isDir), title, filter);
 
     return nullptr;
+
+    // unused
+    (void)action;
 }
 
 // -----------------------------------------------------------------------
