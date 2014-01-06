@@ -68,6 +68,9 @@ DGL: DGL.cpp ../modules/distrho/dgl/src/Window.cpp
 # 	./DGL
 # 	valgrind ./DGL
 
+LibOpenMain: LibOpenMain.cpp
+	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -ldl -o $@
+
 Print: Print.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
 # 	valgrind ./Print
