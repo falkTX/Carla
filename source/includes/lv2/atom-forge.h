@@ -1,5 +1,5 @@
 /*
-  Copyright 2008-2012 David Robillard <http://drobilla.net>
+  Copyright 2008-2013 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -184,8 +184,8 @@ lv2_atom_forge_pop(LV2_Atom_Forge* forge, LV2_Atom_Forge_Frame* frame)
 static inline bool
 lv2_atom_forge_top_is(LV2_Atom_Forge* forge, uint32_t type)
 {
-	return forge->stack &&
-		lv2_atom_forge_deref(forge, forge->stack->ref)->type == type;
+	return forge->stack && forge->stack->ref &&
+		(lv2_atom_forge_deref(forge, forge->stack->ref)->type == type);
 }
 
 /**
@@ -536,8 +536,8 @@ lv2_atom_forge_resource(LV2_Atom_Forge*       forge,
 		{ sizeof(LV2_Atom_Object) - sizeof(LV2_Atom), forge->Resource },
 		{ id, otype }
 	};
-	LV2_Atom_Forge_Ref out = lv2_atom_forge_write(forge, &a, sizeof(a));
-	return lv2_atom_forge_push(forge, frame, out);
+	return lv2_atom_forge_push(
+		forge, frame, lv2_atom_forge_write(forge, &a, sizeof(a)));
 }
 
 /**
@@ -553,8 +553,8 @@ lv2_atom_forge_blank(LV2_Atom_Forge*       forge,
 		{ sizeof(LV2_Atom_Object) - sizeof(LV2_Atom), forge->Blank },
 		{ id, otype }
 	};
-	LV2_Atom_Forge_Ref out = lv2_atom_forge_write(forge, &a, sizeof(a));
-	return lv2_atom_forge_push(forge, frame, out);
+	return lv2_atom_forge_push(
+		forge, frame, lv2_atom_forge_write(forge, &a, sizeof(a)));
 }
 
 /**
@@ -582,8 +582,8 @@ lv2_atom_forge_sequence_head(LV2_Atom_Forge*       forge,
 		{ sizeof(LV2_Atom_Sequence) - sizeof(LV2_Atom), forge->Sequence },
 		{ unit, 0 }
 	};
-	LV2_Atom_Forge_Ref out = lv2_atom_forge_write(forge, &a, sizeof(a));
-	return lv2_atom_forge_push(forge, frame, out);
+	return lv2_atom_forge_push(
+		forge, frame, lv2_atom_forge_write(forge, &a, sizeof(a)));
 }
 
 /**
