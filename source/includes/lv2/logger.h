@@ -1,5 +1,5 @@
 /*
-  Copyright 2012 David Robillard <http://drobilla.net>
+  Copyright 2012-2013 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -28,6 +28,7 @@
 #define LV2_ATOM_LOGGER_H
 
 #include <stdio.h>
+#include <string.h>
 
 #include "log.h"
 
