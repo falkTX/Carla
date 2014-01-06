@@ -1,5 +1,5 @@
 /*
-  Copyright 2008-2012 David Robillard <http://drobilla.net>
+  Copyright 2008-2013 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -143,7 +143,7 @@ lv2_atom_tuple_begin(const LV2_Atom_Tuple* tup)
 
 /** Return true iff @p i has reached the end of @p body. */
 static inline bool
-lv2_atom_tuple_is_end(const void* body, uint32_t size, LV2_Atom* i)
+lv2_atom_tuple_is_end(const void* body, uint32_t size, const LV2_Atom* i)
 {
 	return (const uint8_t*)i >= ((const uint8_t*)body + size);
 }
@@ -169,13 +169,13 @@ lv2_atom_tuple_next(const LV2_Atom* i)
    @endcode
 */
 #define LV2_ATOM_TUPLE_FOREACH(tuple, iter) \
-	for (LV2_Atom* (iter) = lv2_atom_tuple_begin(tuple); \
-	     !lv2_atom_tuple_is_end(LV2_ATOM_BODY(tuple), (tuple)->size, (iter)); \
+	for (const LV2_Atom* (iter) = lv2_atom_tuple_begin(tuple); \
+	     !lv2_atom_tuple_is_end(LV2_ATOM_BODY_CONST(tuple), (tuple)->size, (iter)); \
 	     (iter) = lv2_atom_tuple_next(iter))
 
 /** Like LV2_ATOM_TUPLE_FOREACH but for a headerless tuple body. */
 #define LV2_ATOM_TUPLE_BODY_FOREACH(body, size, iter) \
-	for (LV2_Atom* (iter) = (LV2_Atom*)body; \
+	for (const LV2_Atom* (iter) = (const LV2_Atom*)body; \
 	     !lv2_atom_tuple_is_end(body, size, (iter)); \
 	     (iter) = lv2_atom_tuple_next(iter))
 
