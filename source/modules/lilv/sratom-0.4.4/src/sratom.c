@@ -262,7 +262,7 @@ sratom_write(Sratom*         sratom,
 		const uint8_t* str = USTR(body);
 		if (path_is_absolute((const char*)str)) {
 			new_node = true;
-			object   = serd_node_new_file_uri(str, NULL, NULL, false);
+			object   = serd_node_new_file_uri(str, NULL, NULL, true);
 		} else {
 			SerdURI base_uri = SERD_URI_NULL;
 			if (!sratom->base_uri.buf ||
@@ -276,7 +276,7 @@ sratom_write(Sratom*         sratom,
 					serd_uri_parse(sratom->base_uri.buf, &base_uri);
 				}
 				new_node = true;
-				SerdNode rel = serd_node_new_file_uri(str, NULL, NULL, false);
+				SerdNode rel = serd_node_new_file_uri(str, NULL, NULL, true);
 				object = serd_node_new_uri_from_node(&rel, &base_uri, NULL);
 				serd_node_free(&rel);
 			}
@@ -424,6 +424,14 @@ sratom_write(Sratom*         sratom,
 	}
 
 	if (object.buf) {
+		SerdNode def_s = serd_node_from_string(SERD_BLANK, USTR("atom"));
+		SerdNode def_p = serd_node_from_string(SERD_URI, USTR(NS_RDF "value"));
+		if (!subject) {
+			subject = &def_s;
+		}
+		if (!predicate) {
+			predicate = &def_p;
+		}
 		sratom->write_statement(sratom->handle, flags, NULL,
 		                        subject, predicate, &object, &datatype, &language);
 	}
