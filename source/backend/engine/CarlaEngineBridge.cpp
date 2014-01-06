@@ -292,8 +292,9 @@ public:
 
                 case kPluginBridgeOpcodeSetAudioPool:
                 {
-                    const long poolSize(fShmControl.readLong());
-                    fShmAudioPool.data = (float*)carla_shm_map(fShmAudioPool.shm, poolSize);
+                    const int64_t poolSize(fShmControl.readLong());
+                    CARLA_SAFE_ASSERT_BREAK(poolSize > 0);
+                    fShmAudioPool.data = (float*)carla_shm_map(fShmAudioPool.shm, size_t(poolSize));
                     break;
                 }
 
