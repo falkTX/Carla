@@ -1,6 +1,6 @@
 /*
   LV2 UI Extension
-  Copyright 2009-2012 David Robillard <d@drobilla.net>
+  Copyright 2009-2013 David Robillard <d@drobilla.net>
   Copyright 2006-2011 Lars Luthman <lars.luthman@gmail.com>
 
   Permission to use, copy, modify, and/or distribute this software for any
@@ -53,6 +53,7 @@
 #define LV2_UI__resize           LV2_UI_PREFIX "resize"
 #define LV2_UI__touch            LV2_UI_PREFIX "touch"
 #define LV2_UI__ui               LV2_UI_PREFIX "ui"
+#define LV2_UI__updateRate       LV2_UI_PREFIX "updateRate"
 
 /**
    The index returned by LV2_UI_Port_Port::port_index() for unknown ports.
@@ -260,7 +261,7 @@ typedef struct _LV2UI_Port_Map {
 	/**
 	   Get the index for the port with the given @p symbol.
 
-	   @return The index of the port, or LV2_UI_INVALID_PORT_INDEX if no such
+	   @return The index of the port, or LV2UI_INVALID_PORT_INDEX if no such
 	   port is found.
 	*/
 	uint32_t (*port_index)(LV2UI_Feature_Handle handle, const char* symbol);
