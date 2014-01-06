@@ -123,7 +123,7 @@ typedef struct _LV2_URID_Unmap {
 } LV2_URID_Unmap;
 
 #ifdef __cplusplus
-} /* extern "C" */
+}  /* extern "C" */
 #endif
 
 #endif /* LV2_URID_H */
