@@ -215,7 +215,7 @@ bypass.c.o: bypass.c $(CDEPS)
 	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
 audio_decoder/%.c.o: audio_decoder/%.c
-	$(CC) $< $(AF_C_FLAGS) -c -o $@
+	$(CC) $< $(AF_C_FLAGS) -w -c -o $@
 
 lfo.c.o: lfo.c $(CDEPS)
 	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
