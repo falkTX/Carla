@@ -175,6 +175,7 @@ class CarlaHostW(HostWindow):
 
         self.fInfoText  = ""
         self.fInfoLabel = QLabel(self)
+        self.fInfoLabel.setAlignment(Qt.AlignRight|Qt.AlignVCenter)
         self.fInfoLabel.setText("Engine stopped")
 
         # -------------------------------------------------------------
@@ -196,28 +197,31 @@ class CarlaHostW(HostWindow):
 
     # -----------------------------------------------------------------
 
-    def updateInfoLabelPos(self):
+    def updateInfoLabelXandSize(self):
         tabBar = self.fContainer.tabBar()
-        y = tabBar.mapFromParent(self.ui.centralwidget.pos()).y() #+tabBar.height()/4
+        x = tabBar.width() + self.ui.tabUtils.width() + 20
+        self.fInfoLabel.move(x, self.fInfoLabel.y())
+        self.fInfoLabel.resize(self.fContainer.width()-tabBar.width()-20, self.fInfoLabel.height())
+
+    def updateInfoLabelY(self):
+        tabBar = self.fContainer.tabBar()
+        y = tabBar.mapFromParent(self.ui.centralwidget.pos()).y()
 
         if not self.ui.toolBar.isVisible():
             y -= self.ui.toolBar.height()
 
         self.fInfoLabel.move(self.fInfoLabel.x(), y)
 
-    def updateInfoLabelSize(self):
-        tabBar = self.fContainer.tabBar()
-        self.fInfoLabel.resize(self.fContainer.width()-tabBar.width()-20, self.fInfoLabel.height())
-
     # -----------------------------------------------------------------
 
     @pyqtSlot()
     def slot_initWidgets(self):
         tabBar = self.fContainer.tabBar()
-        x = tabBar.width()+20
-        y = tabBar.mapFromParent(self.ui.centralwidget.pos()).y() #+ tabBar.height()/4
+        x = tabBar.width() + self.ui.tabUtils.width() + 20
+        y = tabBar.mapFromParent(self.ui.centralwidget.pos()).y()
+
         self.fInfoLabel.move(x, y)
-        self.fInfoLabel.resize(self.fContainer.width()-x, tabBar.height())
+        self.fInfoLabel.resize(self.fContainer.width()-tabBar.width()-20, tabBar.height())
 
         # FIXME: Qt4 needs this so it properly creates & resizes the canvas
         self.fContainer.setCurrentIndex(1)
@@ -226,17 +230,17 @@ class CarlaHostW(HostWindow):
 
     @pyqtSlot()
     def slot_splitterMoved(self):
-        self.updateInfoLabelSize()
+        self.updateInfoLabelXandSize()
 
     @pyqtSlot()
     def slot_toolbarShown(self):
-        self.updateInfoLabelPos()
+        self.updateInfoLabelY()
 
     # -----------------------------------------------------------------
 
     def resizeEvent(self, event):
         HostWindow.resizeEvent(self, event)
-        self.updateInfoLabelSize()
+        self.updateInfoLabelXandSize()
 
     def timerEvent(self, event):
         HostWindow.timerEvent(self, event)

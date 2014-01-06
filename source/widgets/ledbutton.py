@@ -86,7 +86,7 @@ class LEDButton(QPushButton):
                 elif self.fColor == self.YELLOW:
                     self.fPixmap.load(":/bitmaps/led_yellow.png")
                 elif self.fColor == self.CALF:
-                    self.fPixmap.load(":/bitmaps/calf_on.png")
+                    self.fPixmap.load(":/bitmaps/led_calf_on.png")
                 else:
                     return
 

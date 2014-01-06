@@ -72,7 +72,7 @@ class CarlaRackW(QListWidget):
         # -------------------------------------------------------------
         # Set-up GUI stuff
 
-        #self.setMnimumWidth(800)
+        self.setMinimumWidth(591)
         self.setSortingEnabled(False)
 
         app  = QApplication.instance()

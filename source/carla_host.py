@@ -309,9 +309,7 @@ class HostWindow(QMainWindow):
         else:
             self.ui.miniCanvasPreview.hide()
 
-        self.ui.mainwidget.hide()
-        del self.ui.mainwidget
-        self.ui.splitter.insertWidget(0, self.fContainer)
+        self.ui.splitter.insertWidget(1, self.fContainer)
 
     def updateContainer(self, canvasThemeData):
         canvasWidth, canvasHeight, canvasBg, canvasBrush, canvasPen = canvasThemeData
