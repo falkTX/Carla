@@ -75,7 +75,8 @@ source/tests/CarlaString
 source/tests/DGL1
 source/tests/DGL2
 source/tests/Print
-source/tests/RtList
+source/tests/RtLinkedList
+source/tests/RtLinkedListGnu
 source/tests/Utils
 source/tests/Widgets
 

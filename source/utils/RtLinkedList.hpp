@@ -15,20 +15,20 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef RT_LIST_HPP_INCLUDED
-#define RT_LIST_HPP_INCLUDED
+#ifndef RT_LINKED_LIST_HPP_INCLUDED
+#define RT_LINKED_LIST_HPP_INCLUDED
 
-#include "List.hpp"
+#include "LinkedList.hpp"
 
 extern "C" {
 #include "rtmempool/rtmempool.h"
 }
 
 // -----------------------------------------------------------------------
-// Realtime safe list
+// Realtime safe linkedlist
 
 template<typename T>
-class RtList : public AbstractList<T>
+class RtLinkedList : public AbstractLinkedList<T>
 {
 public:
     // -------------------------------------------------------------------
@@ -39,7 +39,7 @@ public:
     public:
         Pool(const size_t minPreallocated, const size_t maxPreallocated)
             : fHandle(nullptr),
-              fDataSize(sizeof(typename AbstractList<T>::Data))
+              fDataSize(sizeof(typename AbstractLinkedList<T>::Data))
         {
             resize(minPreallocated, maxPreallocated);
         }
@@ -96,18 +96,16 @@ public:
     };
 
     // -------------------------------------------------------------------
-    // Now the actual rt-list code
+    // Now the actual rt-linkedlist code
 
-    RtList(Pool& memPool)
-        : fMemPool(memPool)
-    {
-    }
+    RtLinkedList(Pool& memPool)
+        : fMemPool(memPool) {}
 
     void append_sleepy(const T& value)
     {
-        if (typename AbstractList<T>::Data* const data = _allocate_sleepy())
+        if (typename AbstractLinkedList<T>::Data* const data = _allocate_sleepy())
         {
-            new(data)typename AbstractList<T>::Data();
+            new(data)typename AbstractLinkedList<T>::Data();
             data->value = value;
             list_add_tail(&data->siblings, &this->fQueue);
             ++(this->fCount);
@@ -116,9 +114,9 @@ public:
 
     void insert_sleepy(const T& value)
     {
-        if (typename AbstractList<T>::Data* const data = _allocate_sleepy())
+        if (typename AbstractLinkedList<T>::Data* const data = _allocate_sleepy())
         {
-            new(data)typename AbstractList<T>::Data();
+            new(data)typename AbstractLinkedList<T>::Data();
             data->value = value;
             list_add(&data->siblings, &this->fQueue);
             ++(this->fCount);
@@ -132,34 +130,34 @@ public:
         fMemPool.resize(minPreallocated, maxPreallocated);
     }
 
-    void spliceAppend(RtList& list, const bool init = true)
+    void spliceAppend(RtLinkedList& list, const bool init = true)
     {
         CARLA_ASSERT(fMemPool == list.fMemPool);
 
-        AbstractList<T>::spliceAppend(list, init);
+        AbstractLinkedList<T>::spliceAppend(list, init);
     }
 
-    void spliceInsert(RtList& list, const bool init = true)
+    void spliceInsert(RtLinkedList& list, const bool init = true)
     {
         CARLA_ASSERT(fMemPool == list.fMemPool);
 
-        AbstractList<T>::spliceInsert(list, init);
+        AbstractLinkedList<T>::spliceInsert(list, init);
     }
 
 private:
     Pool& fMemPool;
 
-    typename AbstractList<T>::Data* _allocate() override
+    typename AbstractLinkedList<T>::Data* _allocate() override
     {
-        return (typename AbstractList<T>::Data*)fMemPool.allocate_atomic();
+        return (typename AbstractLinkedList<T>::Data*)fMemPool.allocate_atomic();
     }
 
-    typename AbstractList<T>::Data* _allocate_sleepy()
+    typename AbstractLinkedList<T>::Data* _allocate_sleepy()
     {
-        return (typename AbstractList<T>::Data*)fMemPool.allocate_sleepy();
+        return (typename AbstractLinkedList<T>::Data*)fMemPool.allocate_sleepy();
     }
 
-    void _deallocate(typename AbstractList<T>::Data*& dataPtr) override
+    void _deallocate(typename AbstractLinkedList<T>::Data*& dataPtr) override
     {
         CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr,);
 
@@ -167,9 +165,9 @@ private:
         dataPtr = nullptr;
     }
 
-    LIST_DECLARATIONS(RtList)
+    LINKED_LIST_DECLARATIONS(RtLinkedList)
 };
 
 // -----------------------------------------------------------------------
 
-#endif // RT_LIST_HPP_INCLUDED
+#endif // RT_LINKED_LIST_HPP_INCLUDED

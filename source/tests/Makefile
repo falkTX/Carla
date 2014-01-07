@@ -75,9 +75,13 @@ Print: Print.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
 # 	valgrind ./Print
 
-RtList: RtList.cpp ../utils/RtList.hpp ../modules/rtmempool.a
+RtLinkedList: RtLinkedList.cpp ../utils/LinkedList.hpp ../utils/RtLinkedList.hpp ../modules/rtmempool.a
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -lpthread -o $@
-# 	valgrind ./RtList
+	valgrind ./RtLinkedList
+
+RtLinkedListGnu: RtLinkedList.cpp ../utils/LinkedList.hpp ../utils/RtLinkedList.hpp ../modules/rtmempool.a
+	$(CXX) $^ $(BUILD_CXX_FLAGS) -std=gnu++11 $(LINK_FLAGS) -lpthread -o $@
+	valgrind ./RtLinkedListGnu
 
 Utils: Utils.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(ANSI_CXX_FLAGS) -std=c++11 -Wzero-as-null-pointer-constant $(LINK_FLAGS) -ldl -lpthread -o $@

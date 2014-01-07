@@ -1,6 +1,6 @@
 /*
  * High-level, templated, C++ doubly-linked list
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef LIST_HPP_INCLUDED
-#define LIST_HPP_INCLUDED
+#ifndef LINKED_LIST_HPP_INCLUDED
+#define LINKED_LIST_HPP_INCLUDED
 
 #include "CarlaUtils.hpp"
 
@@ -28,26 +28,26 @@ extern "C" {
 
 // Declare non copyable and prevent heap allocation
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-# define LIST_DECLARATIONS(ClassName)                \
+# define LINKED_LIST_DECLARATIONS(ClassName)         \
     ClassName(ClassName&) = delete;                  \
     ClassName(const ClassName&) = delete;            \
     ClassName& operator=(const ClassName&) = delete; \
     static void* operator new(size_t) = delete;
 #else
-# define LIST_DECLARATIONS(ClassName) \
-    ClassName(ClassName&);            \
-    ClassName(const ClassName&);      \
+# define LINKED_LIST_DECLARATIONS(ClassName) \
+    ClassName(ClassName&);                   \
+    ClassName(const ClassName&);             \
     ClassName& operator=(const ClassName&);
 #endif
 
 typedef struct list_head k_list_head;
 
 // -----------------------------------------------------------------------
-// Abstract List class
+// Abstract Linked List class
 // _allocate() and _deallocate are virtual calls provided by subclasses
 
 template<typename T>
-class AbstractList
+class AbstractLinkedList
 {
 protected:
     struct Data {
@@ -55,26 +55,26 @@ protected:
         k_list_head siblings;
     };
 
-    AbstractList()
+    AbstractLinkedList()
         : fDataSize(sizeof(Data)),
           fCount(0)
     {
         _init();
     }
 
-    virtual ~AbstractList()
+public:
+    virtual ~AbstractLinkedList()
     {
         CARLA_ASSERT(fCount == 0);
     }
 
-public:
     class Itenerator {
     public:
         Itenerator(const k_list_head* queue)
-            : fEntry(queue->next),
+            : fData(nullptr),
+              fEntry(queue->next),
               fEntry2(fEntry->next),
-              fQueue(queue),
-              fData(nullptr)
+              fQueue(queue)
         {
             CARLA_ASSERT(fEntry != nullptr);
             CARLA_ASSERT(fEntry2 != nullptr);
@@ -99,31 +99,13 @@ public:
             return fData->value;
         }
 
-        const T& getConstValue()
-        {
-            fConstData = list_entry_const(fEntry, Data, siblings);
-            CARLA_ASSERT(fConstData != nullptr);
-            return fConstData->value;
-        }
-
-#if 0
-        T& operator*() const
-        {
-            return getValue();
-        }
-#endif
-
     private:
+        Data* fData;
         k_list_head* fEntry;
         k_list_head* fEntry2;
         const k_list_head* const fQueue;
 
-        union {
-            Data* fData;
-            const Data* fConstData;
-        };
-
-        friend class AbstractList;
+        friend class AbstractLinkedList;
     };
 
     Itenerator begin() const
@@ -144,35 +126,6 @@ public:
                 {
                     data->~Data();
                     _deallocate(data);
-                }
-            }
-        }
-
-        _init();
-    }
-
-    // temporary fix for some const issue in midi-base.hpp
-    void clear_const()
-    {
-        if (fCount != 0)
-        {
-            k_list_head* entry;
-            k_list_head* entry2;
-
-            list_for_each_safe(entry, entry2, &fQueue)
-            {
-                if (const Data* data = list_entry_const(entry, Data, siblings))
-                {
-                    data->~Data();
-
-                    union CData {
-                        const Data* cdata;
-                        Data* data;
-                    };
-
-                    CData d;
-                    d.cdata = data;
-                    _deallocate(d.data);
                 }
             }
         }
@@ -356,7 +309,7 @@ public:
         }
     }
 
-    void spliceAppend(AbstractList& list, const bool init = true)
+    void spliceAppend(AbstractLinkedList& list, const bool init = true)
     {
         if (init)
         {
@@ -371,7 +324,7 @@ public:
         }
     }
 
-    void spliceInsert(AbstractList& list, const bool init = true)
+    void spliceInsert(AbstractLinkedList& list, const bool init = true)
     {
         if (init)
         {
@@ -429,27 +382,25 @@ private:
         return fRetValue;
     }
 
-    LIST_DECLARATIONS(AbstractList)
+    LINKED_LIST_DECLARATIONS(AbstractLinkedList)
 };
 
 // -----------------------------------------------------------------------
-// List
+// LinkedList
 
 template<typename T>
-class List : public AbstractList<T>
+class LinkedList : public AbstractLinkedList<T>
 {
 public:
-    List()
-    {
-    }
+    LinkedList() {}
 
 private:
-    typename AbstractList<T>::Data* _allocate() override
+    typename AbstractLinkedList<T>::Data* _allocate() override
     {
-        return (typename AbstractList<T>::Data*)std::malloc(this->fDataSize);
+        return (typename AbstractLinkedList<T>::Data*)std::malloc(this->fDataSize);
     }
 
-    void _deallocate(typename AbstractList<T>::Data*& dataPtr) override
+    void _deallocate(typename AbstractLinkedList<T>::Data*& dataPtr) override
     {
         CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr,);
 
@@ -457,9 +408,9 @@ private:
         dataPtr = nullptr;
     }
 
-    LIST_DECLARATIONS(List)
+    LINKED_LIST_DECLARATIONS(LinkedList)
 };
 
 // -----------------------------------------------------------------------
 
-#endif // LIST_HPP_INCLUDED
+#endif // LINKED_LIST_HPP_INCLUDED

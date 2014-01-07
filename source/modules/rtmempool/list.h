@@ -50,7 +50,7 @@
  *
  */
 #define container_of(ptr, type, member) ({                  \
-    const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
+    typeof( ((type *)0)->member ) *__mptr = (ptr);          \
     (type *)( (char *)__mptr - offsetof(type, member) );})
 
 #define container_of_const(ptr, type, member) ({            \
@@ -304,7 +304,7 @@ static inline void list_splice_tail_init(struct list_head *list, struct list_hea
  * @type:   the type of the struct this is embedded in.
  * @member: the name of the list_struct within the struct.
  */
-#if defined(__GNUC__) && ! (defined(BUILD_ANSI_TEST) || defined(QTCREATOR_TEST))
+#if defined(__GNUC__) && ! defined(__STRICT_ANSI__)
 # define list_entry(ptr, type, member) \
     container_of(ptr, type, member)
 # define list_entry_const(ptr, type, member) \
