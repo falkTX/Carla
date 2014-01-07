@@ -666,6 +666,12 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
 
         const LADSPA_Descriptor* const ldescriptor(descriptor->LADSPA_Plugin);
 
+        if (ldescriptor == nullptr)
+        {
+            DISCOVERY_OUT("error", "DSSI plugin doesn't provide the LADSPA interface");
+            return;
+        }
+
         if (init && ldescriptor->instantiate != nullptr && ldescriptor->cleanup != nullptr)
         {
             LADSPA_Handle handle = ldescriptor->instantiate(ldescriptor, kSampleRate);
@@ -809,7 +815,7 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
 
             if (descriptor->get_program != nullptr && descriptor->select_program != nullptr)
             {
-                while (descriptor->get_program(handle, programs++))
+                while (descriptor->get_program(handle, programs++) != nullptr)
                     continue;
             }
 
