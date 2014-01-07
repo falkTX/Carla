@@ -1,7 +1,7 @@
 // lv2_atom_helpers.h
 //
 /****************************************************************************
-   Copyright (C) 2005-2012, rncbc aka Rui Nuno Capela. All rights reserved.
+   Copyright (C) 2005-2013, rncbc aka Rui Nuno Capela. All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -73,14 +73,13 @@ uint32_t lv2_atom_buffer_pad_size ( uint32_t size )
 static inline
 void lv2_atom_buffer_reset ( LV2_Atom_Buffer *buf, bool input )
 {
-	if (input)
+	if (input) {
 		buf->atoms.atom.size = sizeof(LV2_Atom_Sequence_Body);
-	else
+		buf->atoms.atom.type = buf->sequence_type;
+	} else {
 		buf->atoms.atom.size = buf->capacity;
-
-	buf->atoms.atom.type = buf->sequence_type;
-	buf->atoms.body.unit = 0;
-	buf->atoms.body.pad  = 0;
+		buf->atoms.atom.type = buf->chunk_type;
+	}
 }
 
 
@@ -88,12 +87,13 @@ void lv2_atom_buffer_reset ( LV2_Atom_Buffer *buf, bool input )
 //
 static inline
 LV2_Atom_Buffer *lv2_atom_buffer_new (
-	uint32_t capacity, uint32_t sequence_type, bool input )
+	uint32_t capacity, uint32_t chunk_type, uint32_t sequence_type, bool input )
 {
 	LV2_Atom_Buffer *buf = (LV2_Atom_Buffer *)
 		malloc(sizeof(LV2_Atom_Buffer) + sizeof(LV2_Atom_Sequence) + capacity);
 
 	buf->capacity = capacity;
+	buf->chunk_type = chunk_type;
 	buf->sequence_type = sequence_type;
 
 	lv2_atom_buffer_reset(buf, input);
@@ -116,7 +116,10 @@ void lv2_atom_buffer_free ( LV2_Atom_Buffer *buf )
 static inline
 uint32_t lv2_atom_buffer_get_size ( LV2_Atom_Buffer *buf )
 {
-	return buf->atoms.atom.size - sizeof(LV2_Atom_Sequence_Body);
+	if (buf->atoms.atom.type == buf->sequence_type)
+		return buf->atoms.atom.size - uint32_t(sizeof(LV2_Atom_Sequence_Body));
+	else
+		return 0;
 }
 
 
@@ -187,7 +190,7 @@ bool lv2_atom_buffer_increment ( LV2_Atom_Buffer_Iterator *iter )
 	LV2_Atom_Sequence *atoms = &buf->atoms;
 	uint32_t size = ((LV2_Atom_Event *) ((char *)
 		LV2_ATOM_CONTENTS(LV2_Atom_Sequence, atoms) + iter->offset))->body.size;
-	iter->offset += lv2_atom_buffer_pad_size(sizeof(LV2_Atom_Event) + size);
+	iter->offset += lv2_atom_buffer_pad_size(uint32_t(sizeof(LV2_Atom_Event)) + size);
 
 	return true;
 }
@@ -239,7 +242,7 @@ bool lv2_atom_buffer_write (
 
 	memcpy(LV2_ATOM_BODY(&ev->body), data, size);
 
-	size = lv2_atom_buffer_pad_size(sizeof(LV2_Atom_Event) + size);
+	size = lv2_atom_buffer_pad_size(uint32_t(sizeof(LV2_Atom_Event)) + size);
 	atoms->atom.size += size;
 	iter->offset += size;
 
