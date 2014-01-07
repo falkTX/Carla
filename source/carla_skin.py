@@ -593,7 +593,7 @@ class PluginSlot_Calf(PluginSlot):
             self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOff, self.fButtonFont)
 
         self.ui.led_midi.setColor(self.ui.led_midi.CALF)
-        #self.ui.led_midi.setEnabled(False)
+        self.ui.led_midi.setEnabled(False)
 
         self.ui.peak_in.setColor(self.ui.peak_in.GREEN)
         self.ui.peak_in.setChannels(self.fPeaksInputCount)
@@ -608,6 +608,24 @@ class PluginSlot_Calf(PluginSlot):
         labelFont.setPointSize(labelFont.pointSize()+3)
         self.ui.label_name.setFont(labelFont)
         self.ui.label_name.setText(self.fPluginInfo['name'])
+
+        audioCount = Carla.host.get_audio_port_count_info(self.fPluginId)
+        midiCount  = Carla.host.get_midi_port_count_info(self.fPluginId)
+
+        if audioCount['ins'] == 0:
+            self.ui.label_audio_in.hide()
+            self.ui.peak_in.hide()
+
+            if audioCount['outs'] > 0:
+                self.ui.peak_out.setMinimumWidth(200)
+
+        if audioCount['outs'] == 0:
+            self.ui.label_audio_out.hide()
+            self.ui.peak_out.hide()
+
+        if midiCount['ins'] == 0:
+            self.ui.label_midi.hide()
+            self.ui.led_midi.hide()
 
         # -------------------------------------------------------------
         # Set-up connections
