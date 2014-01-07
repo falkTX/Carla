@@ -312,7 +312,7 @@ public:
 
             if (pData->engine->isOffline())
             {
-                fEngineChannel->PrepareLoadInstrument((const char*)pData->filename, rIndex);
+                fEngineChannel->PrepareLoadInstrument(pData->filename, rIndex);
                 fEngineChannel->LoadInstrument();
             }
             else
@@ -1050,7 +1050,7 @@ public:
         fRealName = info.InstrumentName.c_str();
         fLabel    = info.Product.c_str();
         fMaker    = info.Artists.c_str();
-        pData->filename = filename;
+        pData->filename = carla_strdup(filename);
 
         if (kUses16Outs && ! fLabel.endsWith(" (16 outs)"))
             fLabel += " (16 outs)";
