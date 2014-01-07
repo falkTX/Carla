@@ -448,6 +448,53 @@ void CarlaEngineProtectedData::processRackFull(float** const inBuf, const uint32
 #endif
 
 // -----------------------------------------------------------------------
+
+CarlaPlugin* CarlaPlugin::newGIG(const Initializer& init, const bool use16Outs)
+{
+    carla_debug("CarlaPlugin::newGIG({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
+#ifdef WANT_LINUXSAMPLER
+    return newLinuxSampler(init, "GIG", use16Outs);
+#else
+    init.engine->setLastError("GIG support not available");
+    return nullptr;
+
+    // unused
+    (void)use16Outs;
+#endif
+}
+
+CarlaPlugin* CarlaPlugin::newSF2(const Initializer& init, const bool use16Outs)
+{
+    carla_debug("CarlaPlugin::newSF2({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
+// #if defined(WANT_FLUIDSYNTH)
+//     return newFluidSynth(init, use16Outs);
+// #el
+#if defined(WANT_LINUXSAMPLER)
+    return newLinuxSampler(init, "SF2", use16Outs);
+#else
+    init.engine->setLastError("SF2 support not available");
+    return nullptr;
+
+    // unused
+    (void)use16Outs;
+#endif
+}
+
+CarlaPlugin* CarlaPlugin::newSFZ(const Initializer& init, const bool use16Outs)
+{
+    carla_debug("CarlaPlugin::newSFZ({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
+#ifdef WANT_LINUXSAMPLER
+    return newLinuxSampler(init, "SFZ", use16Outs);
+#else
+    init.engine->setLastError("SFZ support not available");
+    return nullptr;
+
+    // unused
+    (void)use16Outs;
+#endif
+}
+
+// -----------------------------------------------------------------------
 // Carla Engine port (Abstract)
 
 CarlaEnginePort::CarlaEnginePort(const CarlaEngine& engine, const bool isInput)

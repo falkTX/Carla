@@ -67,9 +67,9 @@ CARLA_BACKEND_END_NAMESPACE
 
 CARLA_BACKEND_START_NAMESPACE
 
-CarlaPlugin* CarlaPlugin::newJuce(const Initializer& init)
+CarlaPlugin* CarlaPlugin::newJuce(const Initializer& init, const char* const format)
 {
-    carla_debug("CarlaPlugin::newJuce({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
+    carla_debug("CarlaPlugin::newJuce({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, format);
 
 #if 0 //def HAVE_JUCE
     JucePlugin* const plugin(new JucePlugin(init.engine, init.id));
@@ -93,6 +93,9 @@ CarlaPlugin* CarlaPlugin::newJuce(const Initializer& init)
 #else
     init.engine->setLastError("Juce support not available");
     return nullptr;
+
+    // unused
+    (void)format;
 #endif
 }
 

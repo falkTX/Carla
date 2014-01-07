@@ -1487,8 +1487,6 @@ private:
 
 CARLA_BACKEND_END_NAMESPACE
 
-#else // WANT_LADSPA
-# warning Building without LADSPA support
 #endif
 
 CARLA_BACKEND_START_NAMESPACE

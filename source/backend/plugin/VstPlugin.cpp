@@ -2540,6 +2540,9 @@ CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
     carla_debug("CarlaPlugin::newVST({%p, \"%s\", \"%s\"})", init.engine, init.filename, init.name);
 
 #ifdef WANT_VST
+# if defined(HAVE_JUCE) && ! defined(VESTIGE_HEADER)
+    return newJuce(init, "VST");
+# else
     VstPlugin* const plugin(new VstPlugin(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name))
@@ -2558,6 +2561,7 @@ CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
     }
 
     return plugin;
+# endif
 #else
     init.engine->setLastError("VST support not available");
     return nullptr;

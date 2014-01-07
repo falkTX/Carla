@@ -163,10 +163,10 @@ CARLA_BACKEND_START_NAMESPACE
 class LinuxSamplerPlugin : public CarlaPlugin
 {
 public:
-    LinuxSamplerPlugin(CarlaEngine* const engine, const unsigned int id, const bool isGIG, const bool use16Outs)
+    LinuxSamplerPlugin(CarlaEngine* const engine, const unsigned int id, const char* const format, const bool use16Outs)
         : CarlaPlugin(engine, id),
-          kIsGIG(isGIG),
-          kUses16Outs(use16Outs),
+          fFormat(carla_strdup(format)),
+          fUses16Outs(use16Outs),
           fSampler(new LinuxSampler::Sampler()),
           fSamplerChannel(nullptr),
           fEngine(nullptr),
@@ -216,6 +216,12 @@ public:
 
         fInstrumentIds.clear();
 
+        if (fFormat != nullptr)
+        {
+            delete[] fFormat;
+            fFormat = nullptr;
+        }
+
         clearBuffers();
     }
 
@@ -224,7 +230,7 @@ public:
 
     PluginType getType() const noexcept override
     {
-        return kIsGIG ? PLUGIN_GIG : PLUGIN_SFZ;
+        return getPluginTypeFromString(fFormat);
     }
 
     PluginCategory getCategory() const override
@@ -934,7 +940,7 @@ public:
 
     const void* getExtraStuff() const noexcept override
     {
-        return kUses16Outs ? (const void*)0x1 : nullptr;
+        return fUses16Outs ? (const void*)0x1 : nullptr;
     }
 
     bool init(const char* filename, const char* const name, const char* label)
@@ -985,10 +991,11 @@ public:
         // ---------------------------------------------------------------
         // Create the LinuxSampler Engine
 
-        const char* const stype = kIsGIG ? "gig" : "sfz";
+        CarlaString stype(fFormat);
+        stype.toLower();
 
         try {
-            fEngine = LinuxSampler::EngineFactory::Create(stype);
+            fEngine = LinuxSampler::EngineFactory::Create((const char*)stype);
         }
         catch (LinuxSampler::Exception& e)
         {
@@ -1052,7 +1059,7 @@ public:
         fMaker    = info.Artists.c_str();
         pData->filename = carla_strdup(filename);
 
-        if (kUses16Outs && ! fLabel.endsWith(" (16 outs)"))
+        if (fUses16Outs && ! fLabel.endsWith(" (16 outs)"))
             fLabel += " (16 outs)";
 
         if (name != nullptr)
@@ -1077,7 +1084,7 @@ public:
         // Init LinuxSampler stuff
 
         fSamplerChannel = fSampler->AddSamplerChannel();
-        fSamplerChannel->SetEngineType(stype);
+        fSamplerChannel->SetEngineType((const char*)stype);
         fSamplerChannel->SetAudioOutputDevice(fAudioOutputDevice);
 
         fEngineChannel = fSamplerChannel->GetEngineChannel();
@@ -1098,7 +1105,8 @@ public:
             pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
             // set identifier string
-            CarlaString identifier(kIsGIG ? "GIG/" : "SFZ/");
+            CarlaString identifier(fFormat);
+            identifier += "/";
 
             if (const char* const shortname = std::strrchr(filename, OS_SEP))
                 identifier += shortname+1;
@@ -1116,11 +1124,9 @@ public:
 
     // -------------------------------------------------------------------
 
-    static CarlaPlugin* newLinuxSampler(const Initializer& init, bool isGIG, const bool use16Outs);
-
 private:
-    const bool kIsGIG; // sfz if false
-    const bool kUses16Outs;
+    const char* fFormat;
+    const bool  fUses16Outs;
 
     CarlaString fRealName;
     CarlaString fLabel;
@@ -1142,17 +1148,24 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LinuxSamplerPlugin)
 };
 
-CarlaPlugin* LinuxSamplerPlugin::newLinuxSampler(const Initializer& init, const bool isGIG, const bool use16Outs)
-{
-    carla_debug("LinuxSamplerPlugin::newLinuxSampler({%p, \"%s\", \"%s\", \"%s\"}, %s, %s)", init.engine, init.filename, init.name, init.label, bool2str(isGIG), bool2str(use16Outs));
+CARLA_BACKEND_END_NAMESPACE
 
+#endif // WANT_LINUXSAMPLER
+
+CARLA_BACKEND_START_NAMESPACE
+
+CarlaPlugin* CarlaPlugin::newLinuxSampler(const Initializer& init, const char* const format, const bool use16Outs)
+{
+    carla_debug("LinuxSamplerPlugin::newLinuxSampler({%p, \"%s\", \"%s\", \"%s\"}, %s, %s)", init.engine, init.filename, init.name, init.label, format, bool2str(use16Outs));
+
+#ifdef WANT_FLUIDSYNTH
     if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && use16Outs)
     {
         init.engine->setLastError("Carla's rack mode can only work with Stereo modules, please choose the 2-channel only sample-library version");
         return nullptr;
     }
 
-    LinuxSamplerPlugin* const plugin(new LinuxSamplerPlugin(init.engine, init.id, isGIG, use16Outs));
+    LinuxSamplerPlugin* const plugin(new LinuxSamplerPlugin(init.engine, init.id, format, use16Outs));
 
     if (! plugin->init(init.filename, init.name, init.label))
     {
@@ -1163,38 +1176,12 @@ CarlaPlugin* LinuxSamplerPlugin::newLinuxSampler(const Initializer& init, const 
     plugin->reload();
 
     return plugin;
-}
-
-CARLA_BACKEND_END_NAMESPACE
-
-#endif // WANT_LINUXSAMPLER
-
-CARLA_BACKEND_START_NAMESPACE
-
-CarlaPlugin* CarlaPlugin::newGIG(const Initializer& init, const bool use16Outs)
-{
-    carla_debug("CarlaPlugin::newGIG({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
-#ifdef WANT_LINUXSAMPLER
-    return LinuxSamplerPlugin::newLinuxSampler(init, true, use16Outs);
 #else
     init.engine->setLastError("linuxsampler support not available");
     return nullptr;
 
     // unused
-    (void)use16Outs;
-#endif
-}
-
-CarlaPlugin* CarlaPlugin::newSFZ(const Initializer& init, const bool use16Outs)
-{
-    carla_debug("CarlaPlugin::newSFZ({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
-#ifdef WANT_LINUXSAMPLER
-    return LinuxSamplerPlugin::newLinuxSampler(init, false, use16Outs);
-#else
-    init.engine->setLastError("linuxsampler support not available");
-    return nullptr;
-
-    // unused
+    (void)format;
     (void)use16Outs;
 #endif
 }

@@ -1669,9 +1669,9 @@ CARLA_BACKEND_END_NAMESPACE
 
 CARLA_BACKEND_START_NAMESPACE
 
-CarlaPlugin* CarlaPlugin::newSF2(const Initializer& init, const bool use16Outs)
+CarlaPlugin* CarlaPlugin::newFluidSynth(const Initializer& init, const bool use16Outs)
 {
-    carla_debug("CarlaPlugin::newSF2({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
+    carla_debug("CarlaPlugin::newFluidSynth({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
 
 #ifdef WANT_FLUIDSYNTH
     if (! fluid_is_soundfont(init.filename))
