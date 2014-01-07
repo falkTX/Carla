@@ -74,7 +74,7 @@ public:
 
         if (fDescriptor != nullptr)
         {
-            if (pData->name.isNotEmpty() && fDssiDescriptor != nullptr && fDssiDescriptor->run_synth == nullptr && fDssiDescriptor->run_multiple_synths != nullptr)
+            if (pData->name != nullptr && fDssiDescriptor != nullptr && fDssiDescriptor->run_synth == nullptr && fDssiDescriptor->run_multiple_synths != nullptr)
                 removeUniqueMultiSynth(fDescriptor->Label);
 
             if (fDescriptor->cleanup != nullptr)
@@ -156,8 +156,13 @@ public:
 
     unsigned int getOptionsAvailable() const override
     {
-        const bool isAmSynth = pData->filename.contains("amsynth", true);
-        const bool isDssiVst = pData->filename.contains("dssi-vst", true);
+#ifdef __USE_GNU
+        const bool isAmSynth(strcasestr(pData->filename, "amsynth"));
+        const bool isDssiVst(strcasestr(pData->filename, "dssi-vst"));
+#else
+        const bool isAmSynth(std::strstr(pData->filename, "amsynth"));
+        const bool isDssiVst(std::strstr(pData->filename, "dssi-vst"));
+#endif
 
         unsigned int options = 0x0;
 
@@ -318,18 +323,12 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fHandle2 == nullptr,);
         CARLA_SAFE_ASSERT_RETURN(stringData != nullptr,);
 
-        // TODO
-#if 0
         QByteArray chunk(QByteArray::fromBase64(stringData));
 
-        CARLA_ASSERT(chunk.size() > 0);
+        CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0,);
 
-        if (chunk.size() > 0)
-        {
-            const ScopedSingleProcessLocker spl(this, true);
-            fDssiDescriptor->set_custom_data(fHandle, chunk.data(), chunk.size());
-        }
-#endif
+        const ScopedSingleProcessLocker spl(this, true);
+        fDssiDescriptor->set_custom_data(fHandle, chunk.data(), chunk.size());
     }
 
     void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
@@ -483,10 +482,7 @@ public:
             pData->param.createNew(params);
 
             fParamBuffers = new float[params];
-#ifdef HAVE_JUCE
-            FloatVectorOperations::clear(fParamBuffers, params);
-#else
-#endif
+            FLOAT_CLEAR(fParamBuffers, params);
         }
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
@@ -615,7 +611,7 @@ public:
 
                 if (LADSPA_IS_PORT_INPUT(portType))
                 {
-                    pData->param.data[j].hints |= PARAMETER_IS_INPUT;
+                    pData->param.data[j].type   = PARAMETER_INPUT;
                     pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                     pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                     needsCtrlIn = true;
@@ -643,8 +639,8 @@ public:
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
 
-                        //pData->param.data[j].type  = PARAMETER_LATENCY;
-                        pData->param.data[j].hints = 0;
+                        pData->param.data[j].type  = PARAMETER_SPECIAL;
+                        pData->param.data[j].hints = 0; // TODO PARAMETER_LATENCY
                     }
                     else if (std::strcmp(fDescriptor->PortNames[i], "_sample-rate") == 0)
                     {
@@ -653,11 +649,12 @@ public:
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
 
-                        //pData->param.data[j].type  = PARAMETER_SAMPLE_RATE;
-                        pData->param.data[j].hints = 0;
+                        pData->param.data[j].type  = PARAMETER_SPECIAL;
+                        pData->param.data[j].hints = 0; // TODO PARAMETER_SAMPLE_RATE
                     }
                     else
                     {
+                        pData->param.data[j].type   = PARAMETER_OUTPUT;
                         pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                         pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                         needsCtrlOut = true;
@@ -665,6 +662,7 @@ public:
                 }
                 else
                 {
+                    pData->param.data[j].type = PARAMETER_UNKNOWN;
                     carla_stderr2("WARNING - Got a broken Port (Control, but not input or output)");
                 }
 
@@ -954,13 +952,7 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-            {
-#ifdef HAVE_JUCE
-                FloatVectorOperations::clear(outBuffer[i], frames);
-#else
-#endif
-            }
-
+                FLOAT_CLEAR(outBuffer[i], frames);
             return;
         }
 
@@ -1003,12 +995,7 @@ public:
             if (pData->latency > 0)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
-                {
-#ifdef HAVE_JUCE
-                    FloatVectorOperations::clear(pData->latencyBuffers[i], pData->latency);
-#else
-#endif
-                }
+                    FLOAT_CLEAR(pData->latencyBuffers[i], pData->latency);
             }
 
             pData->needsReset = false;
@@ -1161,7 +1148,7 @@ public:
                                 continue;
                             if (pData->param.data[k].midiCC != ctrlEvent.param)
                                 continue;
-                            if ((pData->param.data[k].hints & PARAMETER_IS_INPUT) == 0)
+                            if (pData->param.data[k].type != PARAMETER_INPUT)
                                 continue;
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
@@ -1197,7 +1184,7 @@ public:
                             midiEvent.type = SND_SEQ_EVENT_CONTROLLER;
                             midiEvent.data.control.channel = event.channel;
                             midiEvent.data.control.param   = ctrlEvent.param;
-                            midiEvent.data.control.value   = ctrlEvent.value*127.0f;
+                            midiEvent.data.control.value   = int8_t(ctrlEvent.value*127.0f);
                         }
 
                         break;
@@ -1283,7 +1270,7 @@ public:
 
                     // Fix bad note-off (per DSSI spec)
                     if (MIDI_IS_STATUS_NOTE_ON(status) && engineEvent.data[2] == 0)
-                        status -= 0x10;
+                        status = MIDI_STATUS_NOTE_OFF;
 
                     snd_seq_event_t& midiEvent(fMidiEvents[midiEventCount]);
                     carla_zeroStruct<snd_seq_event_t>(midiEvent);
@@ -1409,14 +1396,16 @@ public:
 
             for (uint32_t k=0; k < pData->param.count; ++k)
             {
-                if (pData->param.data[k].hints & PARAMETER_IS_INPUT)
+                if (pData->param.data[k].type != PARAMETER_OUTPUT)
                     continue;
+
+                pData->param.ranges[k].fixValue(fParamBuffers[k]);
 
                 if (pData->param.data[k].midiCC > 0)
                 {
                     channel = pData->param.data[k].midiChannel;
                     param   = static_cast<uint16_t>(pData->param.data[k].midiCC);
-                    value   = pData->param.ranges[k].getFixedAndNormalizedValue(fParamBuffers[k]);
+                    value   = pData->param.ranges[k].getNormalizedValue(fParamBuffers[k]);
                     pData->event.portOut->writeControlEvent(0, channel, kEngineControlEventTypeParameter, param, value);
                 }
             }
@@ -1459,20 +1448,10 @@ public:
         // Reset audio buffers
 
         for (uint32_t i=0; i < pData->audioIn.count; ++i)
-        {
-#ifdef HAVE_JUCE
-            FloatVectorOperations::copy(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
-#else
-#endif
-        }
+            FLOAT_COPY(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
 
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
-        {
-#ifdef HAVE_JUCE
-            FloatVectorOperations::clear(fAudioOutBuffers[i], frames);
-#else
-#endif
-        }
+            FLOAT_CLEAR(fAudioOutBuffers[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -1537,10 +1516,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-#ifdef HAVE_JUCE
-                        FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], frames);
-#else
-#endif
+                        FLOAT_COPY(oldBufLeft, fAudioOutBuffers[i], frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
@@ -1655,7 +1631,7 @@ public:
 
     void sampleRateChanged(const double newSampleRate) override
     {
-        CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
+        CARLA_ASSERT_INT(newSampleRate > 0.0, (int)newSampleRate);
         carla_debug("DssiPlugin::sampleRateChanged(%g) - start", newSampleRate);
 
         // TODO
@@ -1865,10 +1841,7 @@ public:
         else
             pData->name = pData->engine->getUniquePluginName(fDescriptor->Label);
 
-        pData->filename = filename;
-
-        CARLA_ASSERT(pData->name.isNotEmpty());
-        CARLA_ASSERT(pData->filename.isNotEmpty());
+        pData->filename = carla_strdup(filename);
 
         // ---------------------------------------------------------------
         // register client
@@ -1909,18 +1882,23 @@ public:
         // ---------------------------------------------------------------
         // gui stuff
 
-        //if (const char* const guiFilename = find_dssi_ui(filename, fDescriptor->Label))
+        if (const char* const guiFilename = find_dssi_ui(filename, fDescriptor->Label))
         {
-            //pData->osc.thread.setOscData(guiFilename, fDescriptor->Label);
-            //fGuiFilename = guiFilename;
+            pData->osc.thread.setOscData(guiFilename, fDescriptor->Label);
+            fGuiFilename = guiFilename;
         }
 
         // ---------------------------------------------------------------
         // load plugin settings
 
         {
-            const bool isAmSynth = pData->filename.contains("amsynth", true);
-            const bool isDssiVst = pData->filename.contains("dssi-vst", true);
+#ifdef __USE_GNU
+            const bool isAmSynth(strcasestr(pData->filename, "amsynth"));
+            const bool isDssiVst(strcasestr(pData->filename, "dssi-vst"));
+#else
+            const bool isAmSynth(std::strstr(pData->filename, "amsynth"));
+            const bool isDssiVst(std::strstr(pData->filename, "dssi-vst"));
+#endif
 
             // set default options
             pData->options = 0x0;
@@ -1947,11 +1925,19 @@ public:
                     carla_stderr2("WARNING: Plugin can ONLY use run_multiple_synths!");
             }
 
+            // set identifier string
+            CarlaString identifier("DSSI/");
+
+            if (const char* const shortname = std::strrchr(filename, OS_SEP))
+            {
+                identifier += shortname+1;
+                identifier += ",";
+            }
+
+            identifier += label;
+            pData->identifier = identifier.dup();
+
             // load settings
-            pData->idStr  = "DSSI/";
-            pData->idStr += std::strrchr(filename, OS_SEP)+1;
-            pData->idStr += "/";
-            pData->idStr += label;
             pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
 
             // ignore settings, we need this anyway
@@ -1976,15 +1962,15 @@ private:
     float*  fParamBuffers;
     snd_seq_event_t fMidiEvents[kPluginMaxMidiEvents];
 
-    static List<const char*> sMultiSynthList;
+    static LinkedList<const char*> sMultiSynthList;
 
     static bool addUniqueMultiSynth(const char* const label)
     {
         CARLA_SAFE_ASSERT_RETURN(label != nullptr, true);
 
-        for (List<const char*>::Itenerator it = sMultiSynthList.begin(); it.valid(); it.next())
+        for (LinkedList<const char*>::Itenerator it = sMultiSynthList.begin(); it.valid(); it.next())
         {
-            const char*& itLabel(*it);
+            const char*& itLabel(it.getValue());
 
             if (std::strcmp(label, itLabel) == 0)
                 return false;
@@ -1998,9 +1984,9 @@ private:
     {
         CARLA_SAFE_ASSERT_RETURN(label != nullptr,);
 
-        for (List<const char*>::Itenerator it = sMultiSynthList.begin(); it.valid(); it.next())
+        for (LinkedList<const char*>::Itenerator it = sMultiSynthList.begin(); it.valid(); it.next())
         {
-            const char*& itLabel(*it);
+            const char*& itLabel(it.getValue());
 
             if (std::strcmp(label, itLabel) == 0)
             {
@@ -2014,7 +2000,7 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DssiPlugin)
 };
 
-List<const char*> DssiPlugin::sMultiSynthList;
+LinkedList<const char*> DssiPlugin::sMultiSynthList;
 
 CARLA_BACKEND_END_NAMESPACE
 

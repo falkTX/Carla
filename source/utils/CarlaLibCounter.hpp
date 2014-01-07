@@ -20,7 +20,7 @@
 
 #include "CarlaLibUtils.hpp"
 #include "CarlaMutex.hpp"
-#include "List.hpp"
+#include "LinkedList.hpp"
 
 // -----------------------------------------------------------------------
 
@@ -35,7 +35,7 @@ public:
 
         const CarlaMutex::ScopedLocker sl(fMutex);
 
-        for (List<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
+        for (LinkedList<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
         {
             Lib& lib(it.getValue());
             CARLA_ASSERT(lib.count > 0);
@@ -69,7 +69,7 @@ public:
 
         const CarlaMutex::ScopedLocker sl(fMutex);
 
-        for (List<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
+        for (LinkedList<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
         {
             Lib& lib(it.getValue());
             CARLA_ASSERT(lib.count > 0);
@@ -106,8 +106,8 @@ private:
         int count;
     };
 
-    List<Lib>  fLibs;
     CarlaMutex fMutex;
+    LinkedList<Lib> fLibs;
 };
 
 // -----------------------------------------------------------------------

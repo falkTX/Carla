@@ -20,7 +20,7 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMIDI.h"
-#include "List.hpp"
+#include "LinkedList.hpp"
 
 #include <QtXml/QDomNode>
 
@@ -93,11 +93,11 @@ struct StateCustomData {
     CARLA_DECLARE_NON_COPY_STRUCT(StateCustomData)
 };
 
-typedef List<StateParameter*> StateParameterList;
-typedef List<StateCustomData*> StateCustomDataList;
+typedef LinkedList<StateParameter*> StateParameterList;
+typedef LinkedList<StateCustomData*> StateCustomDataList;
 
-typedef List<StateParameter*>::Itenerator StateParameterItenerator;
-typedef List<StateCustomData*>::Itenerator StateCustomDataItenerator;
+typedef LinkedList<StateParameter*>::Itenerator StateParameterItenerator;
+typedef LinkedList<StateCustomData*>::Itenerator StateCustomDataItenerator;
 
 struct SaveState {
     const char* type;

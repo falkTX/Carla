@@ -141,6 +141,7 @@ enum Lv2PluginGuiType {
     PLUGIN_UI_EXTERNAL
 };
 
+#if 0
 struct Lv2EventData {
     uint32_t type;
     uint32_t rindex;
@@ -5408,6 +5409,7 @@ private:
 };
 
 // -------------------------------------------------------------------------------------------------------------------
+#endif
 
 #define lv2PluginPtr ((Lv2Plugin*)plugin)
 
@@ -5417,7 +5419,7 @@ int CarlaEngineOsc::handleMsgLv2AtomTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     carla_debug("CarlaOsc::handleMsgLv2AtomTransfer()");
 
     const int32_t portIndex   = argv[0]->i;
-    const char* const atomBuf = (const char*)&argv[1]->s;
+    //const char* const atomBuf = (const char*)&argv[1]->s;
 
     if (portIndex < 0)
         return 0;
@@ -5428,6 +5430,9 @@ int CarlaEngineOsc::handleMsgLv2AtomTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 //     LV2_Atom* const atom = (LV2_Atom*)chunk.data();
 //     lv2PluginPtr->handleTransferAtom(portIndex, atom);
     return 0;
+
+    // unused for now
+    (void)plugin;
 }
 
 int CarlaEngineOsc::handleMsgLv2UridMap(CARLA_ENGINE_OSC_HANDLE_ARGS2)
@@ -5436,13 +5441,16 @@ int CarlaEngineOsc::handleMsgLv2UridMap(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     carla_debug("CarlaOsc::handleMsgLv2EventTransfer()");
 
     const int32_t urid    = argv[0]->i;
-    const char* const uri = (const char*)&argv[1]->s;
+    //const char* const uri = (const char*)&argv[1]->s;
 
     if (urid <= 0)
         return 0;
 
-    lv2PluginPtr->handleUridMap(urid, uri);
+    //lv2PluginPtr->handleUridMap(urid, uri);
     return 0;
+
+    // unused for now
+    (void)plugin;
 }
 
 #undef lv2PluginPtr
@@ -5457,7 +5465,7 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newLV2({%p, \"%s\", \"%s\"})", init.engine, init.name, init.label);
 
-#ifdef WANT_LV2
+#if 0 //def WANT_LV2
     Lv2Plugin* const plugin(new Lv2Plugin(init.engine, init.id));
 
     if (! plugin->init(init.name, init.label))

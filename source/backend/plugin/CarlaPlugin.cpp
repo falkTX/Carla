@@ -582,9 +582,9 @@ const SaveState& CarlaPlugin::getSaveState()
     // ---------------------------------------------------------------
     // Custom Data
 
-    for (List<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
+    for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
     {
-        const CustomData& cData(it.getConstValue());
+        const CustomData& cData(it.getValue());
 
         StateCustomData* stateCustomData(new StateCustomData());
 
@@ -609,9 +609,9 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------
     // Part 1 - PRE-set custom data (only that which reload programs)
 
-    for (List<StateCustomData*>::Itenerator it = saveState.customData.begin(); it.valid(); it.next())
+    for (LinkedList<StateCustomData*>::Itenerator it = saveState.customData.begin(); it.valid(); it.next())
     {
-        const StateCustomData* const stateCustomData(it.getConstValue());
+        const StateCustomData* const stateCustomData(it.getValue());
         const char* const key(stateCustomData->key);
 
         bool wantData = false;
@@ -667,7 +667,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------
     // Part 4a - get plugin parameter symbols
 
-    List<ParamSymbol*> paramSymbols;
+    LinkedList<ParamSymbol*> paramSymbols;
 
     if (getType() == PLUGIN_LADSPA || getType() == PLUGIN_LV2)
     {
@@ -689,7 +689,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
 
     const float sampleRate(static_cast<float>(pData->engine->getSampleRate()));
 
-    for (List<StateParameter*>::Itenerator it = saveState.parameters.begin(); it.valid(); it.next())
+    for (LinkedList<StateParameter*>::Itenerator it = saveState.parameters.begin(); it.valid(); it.next())
     {
         StateParameter* const stateParameter(it.getValue());
 
@@ -700,7 +700,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
             // Try to set by symbol, otherwise use index
             if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
             {
-                for (List<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
+                for (LinkedList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
                 {
                     ParamSymbol* const paramSymbol(it.getValue());
 
@@ -721,7 +721,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
             // Symbol only
             if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
             {
-                for (List<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
+                for (LinkedList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
                 {
                     ParamSymbol* const paramSymbol(it.getValue());
 
@@ -762,7 +762,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------
     // Part 4c - clear
 
-    for (List<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
+    for (LinkedList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
     {
         ParamSymbol* const paramSymbol(it.getValue());
         delete paramSymbol;
@@ -773,9 +773,9 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------
     // Part 5 - set custom data
 
-    for (List<StateCustomData*>::Itenerator it = saveState.customData.begin(); it.valid(); it.next())
+    for (LinkedList<StateCustomData*>::Itenerator it = saveState.customData.begin(); it.valid(); it.next())
     {
-        const StateCustomData* const stateCustomData(it.getConstValue());
+        const StateCustomData* const stateCustomData(it.getValue());
         const char* const key(stateCustomData->key);
 
         if (getType() == PLUGIN_DSSI && (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0))
@@ -1226,7 +1226,7 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
         return;
 
     // Check if we already have this key
-    for (List<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
+    for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
     {
         CustomData& cData(it.getValue());
 
@@ -1682,9 +1682,9 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
 
     osc_send_sample_rate(pData->osc.data, static_cast<float>(pData->engine->getSampleRate()));
 
-    for (List<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
+    for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
     {
-        const CustomData& cData(it.getConstValue());
+        const CustomData& cData(it.getValue());
 
         CARLA_ASSERT(cData.type != nullptr);
         CARLA_ASSERT(cData.key != nullptr);

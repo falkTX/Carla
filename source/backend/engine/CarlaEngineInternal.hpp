@@ -24,7 +24,7 @@
 #include "CarlaPlugin.hpp"
 
 #include "CarlaMutex.hpp"
-#include "List.hpp"
+#include "LinkedList.hpp"
 
 #ifdef HAVE_JUCE
 # include "juce_audio_basics.h"
@@ -205,12 +205,12 @@ struct EngineRackBuffers {
     float* out[2];
 
     // connections stuff
-    List<uint> connectedIns[2];
-    List<uint> connectedOuts[2];
+    LinkedList<uint> connectedIns[2];
+    LinkedList<uint> connectedOuts[2];
     CarlaMutex connectLock;
 
     int lastConnectionId;
-    List<ConnectionToId> usedConnections;
+    LinkedList<ConnectionToId> usedConnections;
 
     EngineRackBuffers(const uint32_t bufferSize)
         : lastConnectionId(0)

@@ -22,7 +22,7 @@
 #include "CarlaEngineInternal.hpp"
 #include "CarlaBackendUtils.hpp"
 
-// #include "RtList.hpp"
+// #include "RtLinkedList.hpp"
 
 #include "juce_audio_devices.h"
 
@@ -321,9 +321,9 @@ public:
         // Connections
         rack->connectLock.lock();
 
-        for (List<uint>::Itenerator it = rack->connectedIns[0].begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = rack->connectedIns[0].begin(); it.valid(); it.next())
         {
-            const uint& port(it.getConstValue());
+            const uint& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.inCount);
 
             ConnectionToId connectionToId;
@@ -337,9 +337,9 @@ public:
             rack->lastConnectionId++;
         }
 
-        for (List<uint>::Itenerator it = rack->connectedIns[1].begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = rack->connectedIns[1].begin(); it.valid(); it.next())
         {
-            const uint& port(it.getConstValue());
+            const uint& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.inCount);
 
             ConnectionToId connectionToId;
@@ -353,9 +353,9 @@ public:
             rack->lastConnectionId++;
         }
 
-        for (List<uint>::Itenerator it = rack->connectedOuts[0].begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = rack->connectedOuts[0].begin(); it.valid(); it.next())
         {
-            const uint& port(it.getConstValue());
+            const uint& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.outCount);
 
             ConnectionToId connectionToId;
@@ -369,9 +369,9 @@ public:
             rack->lastConnectionId++;
         }
 
-        for (List<uint>::Itenerator it = rack->connectedOuts[1].begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = rack->connectedOuts[1].begin(); it.valid(); it.next())
         {
-            const uint& port(it.getConstValue());
+            const uint& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.outCount);
 
             ConnectionToId connectionToId;
@@ -388,9 +388,9 @@ public:
         pData->bufAudio.rack->connectLock.unlock();
 
 #if 0
-        for (List<MidiPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
+        for (LinkedList<MidiPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
         {
-            const MidiPort& midiPort(it.getConstValue());
+            const MidiPort& midiPort(it.getValue());
 
             ConnectionToId connectionToId;
             connectionToId.id      = rack->lastConnectionId;
@@ -403,9 +403,9 @@ public:
             rack->lastConnectionId++;
         }
 
-        for (List<MidiPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
+        for (LinkedList<MidiPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
         {
-            const MidiPort& midiPort(it.getConstValue());
+            const MidiPort& midiPort(it.getValue());
 
             ConnectionToId connectionToId;
             connectionToId.id      = rack->lastConnectionId;

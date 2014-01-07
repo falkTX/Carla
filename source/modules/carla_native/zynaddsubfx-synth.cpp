@@ -22,7 +22,7 @@
 #include "CarlaNative.hpp"
 #include "CarlaMIDI.h"
 #include "CarlaThread.hpp"
-#include "List.hpp"
+#include "LinkedList.hpp"
 
 #include "zynaddsubfx/DSP/FFTwrapper.h"
 #include "zynaddsubfx/Misc/Master.h"
@@ -92,7 +92,7 @@ public:
 
         for (auto it = fPrograms.begin(); it.valid(); it.next())
         {
-            const ProgramInfo* const& pInfo(it.getConstValue());
+            const ProgramInfo* const& pInfo(it.getValue());
             delete pInfo;
         }
 
@@ -219,7 +219,7 @@ private:
 
     bool fInitiated;
     NativeMidiProgram fRetProgram;
-    List<const ProgramInfo*> fPrograms;
+    LinkedList<const ProgramInfo*> fPrograms;
 
     CARLA_DECLARE_NON_COPY_CLASS(ZynAddSubFxPrograms)
 };

@@ -71,7 +71,7 @@ public:
 
     uint SampleRate() override
     {
-        return fEngine->getSampleRate();
+        return (uint)fEngine->getSampleRate();
     }
 
     String Driver() override
@@ -126,7 +126,7 @@ public:
 
     MidiInputPort* CreateMidiPort() override
     {
-        return new MidiInputPortPlugin(this, Ports.size());
+        return new MidiInputPortPlugin(this, (int)Ports.size());
     }
 
     // -------------------------------------------------------------------
@@ -163,7 +163,7 @@ CARLA_BACKEND_START_NAMESPACE
 class LinuxSamplerPlugin : public CarlaPlugin
 {
 public:
-    LinuxSamplerPlugin(CarlaEngine* const engine, const unsigned short id, const bool isGIG, const bool use16Outs)
+    LinuxSamplerPlugin(CarlaEngine* const engine, const unsigned int id, const bool isGIG, const bool use16Outs)
         : CarlaPlugin(engine, id),
           kIsGIG(isGIG),
           kUses16Outs(use16Outs),
@@ -434,13 +434,10 @@ public:
         pData->midiprog.clear();
 
         // Query new programs
-        uint32_t i, count = fInstrumentIds.size();
+        uint32_t i, count = (uint32_t)fInstrumentIds.size();
 
         // sound kits must always have at least 1 midi-program
-        CARLA_ASSERT(count > 0);
-
-        if (count == 0)
-            return;
+        CARLA_SAFE_ASSERT_RETURN(count > 0,);
 
         pData->midiprog.createNew(count);
 
@@ -536,8 +533,8 @@ public:
             }
             else if (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
             {
-                for (k=0; k < MAX_MIDI_NOTE; ++k)
-                    fMidiInputPort->DispatchNoteOff(k, 0, pData->ctrlChannel);
+                for (uint8_t i=0; i < MAX_MIDI_NOTE; ++i)
+                    fMidiInputPort->DispatchNoteOff(i, 0, (uint)pData->ctrlChannel);
             }
 
             pData->needsReset = false;
@@ -632,21 +629,21 @@ public:
                         {
                             float value;
 
-                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) > 0)
+                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
                                 value = ctrlEvent.value;
                                 setDryWet(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
                             }
 
-                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) > 0)
+                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
                             }
 
-                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) > 0)
+                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
                             {
                                 float left, right;
                                 value = ctrlEvent.value/0.5f - 1.0f;
@@ -682,12 +679,12 @@ public:
                                 continue;
                             if (pData->param.data[k].midiCC != ctrlEvent.param)
                                 continue;
-                            if ((pData->param.data[k].hints & PARAMETER_IS_INPUT) == 0)
+                            if (pData->param.data[k].hints != PARAMETER_INPUT)
                                 continue;
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
 
-                            double value;
+                            float value;
 
                             if (pData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
                             {
@@ -707,7 +704,7 @@ public:
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
-                            fMidiInputPort->DispatchControlChange(ctrlEvent.param, ctrlEvent.value*127.0f, event.channel, sampleAccurate ? startTime : time);
+                            fMidiInputPort->DispatchControlChange(uint8_t(ctrlEvent.param), uint8_t(ctrlEvent.value*127.0f), event.channel, int32_t(sampleAccurate ? startTime : time));
                         }
 
                         break;
@@ -768,7 +765,7 @@ public:
 
                     // Fix bad note-off (per DSSI spec)
                     if (MIDI_IS_STATUS_NOTE_ON(status) && midiEvent.data[2] == 0)
-                        status -= 0x10;
+                        status = MIDI_STATUS_NOTE_OFF;
 
                     int32_t fragmentPos = sampleAccurate ? startTime : time;
 
@@ -1100,10 +1097,17 @@ public:
             pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
             pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
+            // set identifier string
+            CarlaString identifier(kIsGIG ? "GIG/" : "SFZ/");
+
+            if (const char* const shortname = std::strrchr(filename, OS_SEP))
+                identifier += shortname+1;
+            else
+                identifier += label;
+
+            pData->identifier = identifier.dup();
+
             // load settings
-            pData->idStr  = kIsGIG ? "GIG" : "SFZ";
-            pData->idStr += "/";
-            pData->idStr += label;
             pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
         }
 

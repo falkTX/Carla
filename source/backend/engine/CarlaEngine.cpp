@@ -368,9 +368,9 @@ void CarlaEngineProtectedData::processRackFull(float** const inBuf, const uint32
     {
         bool first = true;
 
-        for (List<uint>::Itenerator it = rack->connectedIns[0].begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = rack->connectedIns[0].begin(); it.valid(); it.next())
         {
-            const uint& port(it.getConstValue());
+            const uint& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port < inCount);
 
             if (first)
@@ -396,9 +396,9 @@ void CarlaEngineProtectedData::processRackFull(float** const inBuf, const uint32
     {
         bool first = true;
 
-        for (List<uint>::Itenerator it = rack->connectedIns[1].begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = rack->connectedIns[1].begin(); it.valid(); it.next())
         {
-            const uint& port(it.getConstValue());
+            const uint& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port < inCount);
 
             if (first)
@@ -425,9 +425,9 @@ void CarlaEngineProtectedData::processRackFull(float** const inBuf, const uint32
     // connect output buffers
     if (rack->connectedOuts[0].count() != 0)
     {
-        for (List<uint>::Itenerator it = rack->connectedOuts[0].begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = rack->connectedOuts[0].begin(); it.valid(); it.next())
         {
-            const uint& port(it.getConstValue());
+            const uint& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port < outCount);
 
             FLOAT_ADD(outBuf[port], rack->out[0], nframes);
@@ -436,9 +436,9 @@ void CarlaEngineProtectedData::processRackFull(float** const inBuf, const uint32
 
     if (rack->connectedOuts[1].count() != 0)
     {
-        for (List<uint>::Itenerator it = rack->connectedOuts[1].begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = rack->connectedOuts[1].begin(); it.valid(); it.next())
         {
-            const uint& port(it.getConstValue());
+            const uint& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port < outCount);
 
             FLOAT_ADD(outBuf[port], rack->out[1], nframes);
@@ -601,9 +601,8 @@ bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
     CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, false);
     CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.0f);
 
-    if (type == kEngineControlEventTypeParameter)
-    {
-        CARLA_ASSERT(! MIDI_IS_CONTROL_BANK_SELECT(param));
+    if (type == kEngineControlEventTypeParameter) {
+        CARLA_SAFE_ASSERT(! MIDI_IS_CONTROL_BANK_SELECT(param));
     }
 
     const float fixedValue(carla_fixValue<float>(0.0f, 1.0f, value));
@@ -1998,9 +1997,9 @@ bool CarlaEngine::patchbayDisconnect(const int connectionId)
 
     CARLA_SAFE_ASSERT_RETURN_ERR(rack->usedConnections.count() > 0, "No connections available");
 
-    for (List<ConnectionToId>::Itenerator it=rack->usedConnections.begin(); it.valid(); it.next())
+    for (LinkedList<ConnectionToId>::Itenerator it=rack->usedConnections.begin(); it.valid(); it.next())
     {
-        const ConnectionToId& connection(it.getConstValue());
+        const ConnectionToId& connection(it.getValue());
 
         if (connection.id == connectionId)
         {
@@ -2019,7 +2018,7 @@ bool CarlaEngine::patchbayDisconnect(const int connectionId)
             }
             else if (targetPort >= RACK_PATCHBAY_GROUP_AUDIO_OUT*1000)
             {
-                CARLA_ASSERT(carlaPort == RACK_PATCHBAY_PORT_AUDIO_OUT1 || carlaPort == RACK_PATCHBAY_PORT_AUDIO_OUT2);
+                CARLA_SAFE_ASSERT_RETURN(carlaPort == RACK_PATCHBAY_PORT_AUDIO_OUT1 || carlaPort == RACK_PATCHBAY_PORT_AUDIO_OUT2, false);
 
                 const int portId(targetPort-RACK_PATCHBAY_GROUP_AUDIO_OUT*1000);
 
@@ -2034,7 +2033,7 @@ bool CarlaEngine::patchbayDisconnect(const int connectionId)
             }
             else if (targetPort >= RACK_PATCHBAY_GROUP_AUDIO_IN*1000)
             {
-                CARLA_ASSERT(carlaPort == RACK_PATCHBAY_PORT_AUDIO_IN1 || carlaPort == RACK_PATCHBAY_PORT_AUDIO_IN2);
+                CARLA_SAFE_ASSERT_RETURN(carlaPort == RACK_PATCHBAY_PORT_AUDIO_IN1 || carlaPort == RACK_PATCHBAY_PORT_AUDIO_IN2, false);
 
                 const int portId(targetPort-RACK_PATCHBAY_GROUP_AUDIO_IN*1000);
 
@@ -2049,7 +2048,7 @@ bool CarlaEngine::patchbayDisconnect(const int connectionId)
             }
             else
             {
-                CARLA_ASSERT(false);
+                CARLA_SAFE_ASSERT_RETURN(false, false);
             }
 
             callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connection.id, connection.portOut, connection.portIn, 0.0f, nullptr);

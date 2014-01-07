@@ -21,12 +21,7 @@
 #include "CarlaNative.h"
 
 #include "CarlaBackendUtils.hpp"
-#include "List.hpp"
-
-// TODO: remove
-#ifndef CARLA_NATIVE_PLUGIN_LV2
-# define CARLA_NATIVE_PLUGIN_LV2
-#endif
+#include "LinkedList.hpp"
 
 #ifdef CARLA_NATIVE_PLUGIN_LV2
 # include "lv2/lv2.h"
@@ -71,7 +66,7 @@ struct PluginListManager {
     ~PluginListManager()
     {
 #ifdef CARLA_NATIVE_PLUGIN_LV2
-        for (List<const LV2_Descriptor*>::Itenerator it = lv2Descs.begin(); it.valid(); it.next())
+        for (LinkedList<const LV2_Descriptor*>::Itenerator it = lv2Descs.begin(); it.valid(); it.next())
         {
             const LV2_Descriptor*& lv2Desc(it.getValue());
             delete[] lv2Desc->URI;
@@ -90,9 +85,9 @@ struct PluginListManager {
     }
 
 #ifdef CARLA_NATIVE_PLUGIN_LV2
-    List<const LV2_Descriptor*> lv2Descs;
+    LinkedList<const LV2_Descriptor*> lv2Descs;
 #endif
-    List<const NativePluginDescriptor*> descs;
+    LinkedList<const NativePluginDescriptor*> descs;
 };
 
 // -----------------------------------------------------------------------

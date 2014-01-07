@@ -26,7 +26,7 @@
 #include "CarlaOscUtils.hpp"
 #include "CarlaStateUtils.hpp"
 #include "CarlaMutex.hpp"
-#include "RtList.hpp"
+#include "RtLinkedList.hpp"
 
 #ifdef HAVE_JUCE
 # include "juce_audio_basics.h"
@@ -532,7 +532,7 @@ struct CarlaPluginProtectedData {
     PluginParameterData param;
     PluginProgramData prog;
     PluginMidiProgramData midiprog;
-    List<CustomData> custom;
+    LinkedList<CustomData> custom;
 
     SaveState saveState;
 
@@ -541,8 +541,8 @@ struct CarlaPluginProtectedData {
 
     struct ExternalNotes {
         CarlaMutex mutex;
-        RtList<ExternalMidiNote>::Pool dataPool;
-        RtList<ExternalMidiNote> data;
+        RtLinkedList<ExternalMidiNote>::Pool dataPool;
+        RtLinkedList<ExternalMidiNote> data;
 
         ExternalNotes()
             : dataPool(32, 152),
@@ -568,9 +568,9 @@ struct CarlaPluginProtectedData {
 
     struct PostRtEvents {
         CarlaMutex mutex;
-        RtList<PluginPostRtEvent>::Pool dataPool;
-        RtList<PluginPostRtEvent> data;
-        RtList<PluginPostRtEvent> dataPendingRT;
+        RtLinkedList<PluginPostRtEvent>::Pool dataPool;
+        RtLinkedList<PluginPostRtEvent> data;
+        RtLinkedList<PluginPostRtEvent> dataPendingRT;
 
         PostRtEvents()
             : dataPool(128, 128),
@@ -719,7 +719,7 @@ struct CarlaPluginProtectedData {
             client = nullptr;
         }
 
-        for (List<CustomData>::Itenerator it = custom.begin(); it.valid(); it.next())
+        for (LinkedList<CustomData>::Itenerator it = custom.begin(); it.valid(); it.next())
         {
             CustomData& cData(it.getValue());
 

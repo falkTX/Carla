@@ -20,7 +20,7 @@
 
 #include "CarlaMIDI.h"
 #include "CarlaMutex.hpp"
-#include "List.hpp"
+#include "LinkedList.hpp"
 
 #define MAX_EVENT_DATA_SIZE          4
 #define MIN_PREALLOCATED_EVENT_COUNT 100
@@ -59,7 +59,7 @@ public:
 
     ~MidiPattern()
     {
-        fData.clear_const();
+        fData.clear();
     }
 
     void addControl(const uint64_t time, const uint8_t channel, const uint8_t control, const uint8_t value)
@@ -174,9 +174,9 @@ public:
         if (! fMutex.tryLock())
             return;
 
-        for (List<const RawMidiEvent*>::Itenerator it = fData.begin(); it.valid(); it.next())
+        for (LinkedList<const RawMidiEvent*>::Itenerator it = fData.begin(); it.valid(); it.next())
         {
-            const RawMidiEvent* const rawMidiEvent(it.getConstValue());
+            const RawMidiEvent* const rawMidiEvent(it.getValue());
 
             if (timePosFrame > rawMidiEvent->time)
                 continue;
@@ -192,7 +192,7 @@ public:
     void clear()
     {
         const CarlaMutex::ScopedLocker sl(fMutex);
-        fData.clear_const();
+        fData.clear();
     }
 
 private:
@@ -202,7 +202,7 @@ private:
     uint32_t fDuration;  // unused
 
     CarlaMutex fMutex;
-    List<const RawMidiEvent*> fData;
+    LinkedList<const RawMidiEvent*> fData;
 
     void append(const RawMidiEvent* const event)
     {
@@ -213,9 +213,9 @@ private:
             return;
         }
 
-        for (List<const RawMidiEvent*>::Itenerator it = fData.begin(); it.valid(); it.next())
+        for (LinkedList<const RawMidiEvent*>::Itenerator it = fData.begin(); it.valid(); it.next())
         {
-            const RawMidiEvent* const oldEvent(it.getConstValue());
+            const RawMidiEvent* const oldEvent(it.getValue());
 
             if (event->time >= oldEvent->time)
                 continue;

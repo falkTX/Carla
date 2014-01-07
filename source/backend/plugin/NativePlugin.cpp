@@ -643,9 +643,9 @@ public:
 
         if (fDescriptor->ui_set_custom_data != nullptr)
         {
-            for (List<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
+            for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
             {
-                const CustomData& cData(it.getConstValue());
+                const CustomData& cData(it.getValue());
 
                 if (std::strcmp(cData.type, CUSTOM_DATA_TYPE_STRING) == 0 && std::strcmp(cData.key, "midiPrograms") != 0)
                     fDescriptor->ui_set_custom_data(fHandle, cData.key, cData.value);
@@ -2196,9 +2196,9 @@ public:
         // ---------------------------------------------------------------
         // get descriptor that matches label
 
-        for (List<const NativePluginDescriptor*>::Itenerator it = sPluginDescriptors.begin(); it.valid(); it.next())
+        for (LinkedList<const NativePluginDescriptor*>::Itenerator it = sPluginDescriptors.begin(); it.valid(); it.next())
         {
-            fDescriptor = it.getConstValue();
+            fDescriptor = it.getValue();
 
             CARLA_SAFE_ASSERT_BREAK(fDescriptor != nullptr);
 
@@ -2357,7 +2357,7 @@ private:
 
     NativeTimeInfo fTimeInfo;
 
-    static List<const NativePluginDescriptor*> sPluginDescriptors;
+    static LinkedList<const NativePluginDescriptor*> sPluginDescriptors;
 
     // -------------------------------------------------------------------
 
@@ -2423,7 +2423,7 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NativePlugin)
 };
 
-List<const NativePluginDescriptor*> NativePlugin::sPluginDescriptors;
+LinkedList<const NativePluginDescriptor*> NativePlugin::sPluginDescriptors;
 
 static const NativePlugin::ScopedInitializer _si;
 

@@ -17,8 +17,8 @@
 
 #include "CarlaEngineInternal.hpp"
 #include "CarlaBackendUtils.hpp"
-#include "CarlaMIDI.h"
-#include "RtList.hpp"
+
+#include "RtLinkedList.hpp"
 
 #include "rtaudio/RtAudio.h"
 #include "rtmidi/RtMidi.h"
@@ -351,7 +351,7 @@ public:
 
         fDeviceName.clear();
 
-        for (List<MidiPort>::Itenerator it = fMidiIns.begin(); it.valid(); it.next())
+        for (LinkedList<MidiPort>::Itenerator it = fMidiIns.begin(); it.valid(); it.next())
         {
             MidiPort& port(it.getValue());
             RtMidiIn* const midiInPort((RtMidiIn*)port.rtmidi);
@@ -360,7 +360,7 @@ public:
             delete midiInPort;
         }
 
-        for (List<MidiPort>::Itenerator it = fMidiOuts.begin(); it.valid(); it.next())
+        for (LinkedList<MidiPort>::Itenerator it = fMidiOuts.begin(); it.valid(); it.next())
         {
             MidiPort& port(it.getValue());
             RtMidiOut* const midiOutPort((RtMidiOut*)port.rtmidi);
@@ -499,9 +499,9 @@ public:
         // Connections
         rack->connectLock.lock();
 
-        for (List<uint>::Itenerator it = rack->connectedIns[0].begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = rack->connectedIns[0].begin(); it.valid(); it.next())
         {
-            const uint& port(it.getConstValue());
+            const uint& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.inCount);
 
             ConnectionToId connectionToId;
@@ -515,9 +515,9 @@ public:
             rack->lastConnectionId++;
         }
 
-        for (List<uint>::Itenerator it = rack->connectedIns[1].begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = rack->connectedIns[1].begin(); it.valid(); it.next())
         {
-            const uint& port(it.getConstValue());
+            const uint& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.inCount);
 
             ConnectionToId connectionToId;
@@ -531,9 +531,9 @@ public:
             rack->lastConnectionId++;
         }
 
-        for (List<uint>::Itenerator it = rack->connectedOuts[0].begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = rack->connectedOuts[0].begin(); it.valid(); it.next())
         {
-            const uint& port(it.getConstValue());
+            const uint& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.outCount);
 
             ConnectionToId connectionToId;
@@ -547,9 +547,9 @@ public:
             rack->lastConnectionId++;
         }
 
-        for (List<uint>::Itenerator it = rack->connectedOuts[1].begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = rack->connectedOuts[1].begin(); it.valid(); it.next())
         {
-            const uint& port(it.getConstValue());
+            const uint& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.outCount);
 
             ConnectionToId connectionToId;
@@ -565,9 +565,9 @@ public:
 
         pData->bufAudio.rack->connectLock.unlock();
 
-        for (List<MidiPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
+        for (LinkedList<MidiPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
         {
-            const MidiPort& midiPort(it.getConstValue());
+            const MidiPort& midiPort(it.getValue());
 
             ConnectionToId connectionToId;
             connectionToId.id      = rack->lastConnectionId;
@@ -580,9 +580,9 @@ public:
             rack->lastConnectionId++;
         }
 
-        for (List<MidiPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
+        for (LinkedList<MidiPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
         {
-            const MidiPort& midiPort(it.getConstValue());
+            const MidiPort& midiPort(it.getValue());
 
             ConnectionToId connectionToId;
             connectionToId.id      = rack->lastConnectionId;
@@ -839,7 +839,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(static_cast<size_t>(portId) < fUsedMidiIns.count(), false);
         carla_debug("CarlaEngineRtAudio::connectRackMidiInPort(%i)", portId);
 
-        for (List<MidiPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
+        for (LinkedList<MidiPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
         {
             MidiPort& midiPort(it.getValue());
 
@@ -864,7 +864,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(static_cast<size_t>(portId) < fUsedMidiOuts.count(), false);
         carla_debug("CarlaEngineRtAudio::disconnectRackMidiOutPort(%i)", portId);
 
-        for (List<MidiPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
+        for (LinkedList<MidiPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
         {
             MidiPort& midiPort(it.getValue());
 
@@ -903,16 +903,16 @@ private:
     RtMidiIn  fDummyMidiIn;
     RtMidiOut fDummyMidiOut;
 
-    List<PortNameToId> fUsedMidiIns;
-    List<PortNameToId> fUsedMidiOuts;
+    LinkedList<PortNameToId> fUsedMidiIns;
+    LinkedList<PortNameToId> fUsedMidiOuts;
 
     struct MidiPort {
         RtMidi* rtmidi;
         int portId;
     };
 
-    List<MidiPort> fMidiIns;
-    List<MidiPort> fMidiOuts;
+    LinkedList<MidiPort> fMidiIns;
+    LinkedList<MidiPort> fMidiOuts;
 
     struct RtMidiEvent {
         uint64_t time; // needs to compare to internal time
@@ -922,9 +922,9 @@ private:
 
     struct RtMidiEvents {
         CarlaMutex mutex;
-        RtList<RtMidiEvent>::Pool dataPool;
-        RtList<RtMidiEvent> data;
-        RtList<RtMidiEvent> dataPending;
+        RtLinkedList<RtMidiEvent>::Pool dataPool;
+        RtLinkedList<RtMidiEvent> data;
+        RtLinkedList<RtMidiEvent> dataPending;
 
         RtMidiEvents()
             : dataPool(512, 512),
@@ -1050,7 +1050,7 @@ const char* const* CarlaEngine::getRtAudioApiDeviceNames(const unsigned int inde
     if (devCount == 0)
         return nullptr;
 
-    List<const char*> devNames;
+    LinkedList<const char*> devNames;
 
     for (unsigned int i=0; i < devCount; ++i)
     {

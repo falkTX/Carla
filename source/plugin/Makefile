@@ -46,12 +46,9 @@ ifeq ($(HAVE_FLUIDSYNTH),true)
 LINK_FLAGS += $(FLUIDSYNTH_LIBS)
 endif
 
-# ifeq ($(HAVE_LINUXSAMPLER),true)
-# LINK_FLAGS += $(shell pkg-config --libs linuxsampler)
-# ifeq ($(WIN32),true)
-# LINK_FLAGS += lrpcrt4
-# endif
-# endif
+ifeq ($(HAVE_LINUXSAMPLER),true)
+LINK_FLAGS += $(LINUXSAMPLER_LIBS)
+endif
 
 # --------------------------------------------------------------
 # Coomon

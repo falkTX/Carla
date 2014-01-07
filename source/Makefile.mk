@@ -175,7 +175,7 @@ FLUIDSYNTH_LIBS  = $(shell pkg-config --libs fluidsynth)
 endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
-LINUXSAMPLER_FLAGS = $(shell pkg-config --cflags linuxsampler)
+LINUXSAMPLER_FLAGS = $(shell pkg-config --cflags linuxsampler) -Wno-unused-parameter
 LINUXSAMPLER_LIBS  = $(shell pkg-config --libs linuxsampler)
 ifeq ($(WIN32),true)
 LINUXSAMPLER_LIBS += -lrpcrt4

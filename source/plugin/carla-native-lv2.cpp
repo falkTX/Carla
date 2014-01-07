@@ -1194,9 +1194,9 @@ static LV2_Handle lv2_instantiate(const LV2_Descriptor* lv2Descriptor, double sa
 
     PluginListManager& plm(PluginListManager::getInstance());
 
-    for (List<const NativePluginDescriptor*>::Itenerator it = plm.descs.begin(); it.valid(); it.next())
+    for (LinkedList<const NativePluginDescriptor*>::Itenerator it = plm.descs.begin(); it.valid(); it.next())
     {
-        const NativePluginDescriptor* const& tmpDesc(it.getConstValue());
+        const NativePluginDescriptor* const& tmpDesc(it.getValue());
 
         if (std::strcmp(tmpDesc->label, pluginLabel) == 0)
         {
