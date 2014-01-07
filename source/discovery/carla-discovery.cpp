@@ -361,7 +361,7 @@ public:
         }
     }
 
-    static void outputInfo(const LinuxSampler::InstrumentManager::instrument_info_t* const info, const int programs, const char* const basename = nullptr)
+    static void outputInfo(const LinuxSampler::InstrumentManager::instrument_info_t* const info, const size_t programs, const char* const basename = nullptr)
     {
         DISCOVERY_OUT("init", "-----------");
 
@@ -976,9 +976,9 @@ void do_lv2_check(const char* const bundle, const bool init)
     // Get all plugin URIs in this bundle
     QStringList URIs;
 
-    LILV_FOREACH(plugins, i, lilvPlugins)
+    LILV_FOREACH(plugins, it, lilvPlugins)
     {
-        Lilv::Plugin lilvPlugin(lilv_plugins_get(lilvPlugins, i));
+        Lilv::Plugin lilvPlugin(lilv_plugins_get(lilvPlugins, it));
 
         if (const char* const uri = lilvPlugin.get_uri().as_string())
             URIs.append(QString(uri));
@@ -1033,7 +1033,7 @@ void do_lv2_check(const char* const bundle, const bool init)
 
             for (uint32_t j=0; j < rdfDescriptor->PortCount && supported; ++j)
             {
-                const LV2_RDF_Port* const rdfPort = &rdfDescriptor->Ports[j];
+                const LV2_RDF_Port* const rdfPort(&rdfDescriptor->Ports[j]);
 
                 if (is_lv2_port_supported(rdfPort->Types))
                 {
@@ -1049,7 +1049,7 @@ void do_lv2_check(const char* const bundle, const bool init)
 
             for (uint32_t j=0; j < rdfDescriptor->FeatureCount && supported; ++j)
             {
-                const LV2_RDF_Feature* const rdfFeature = &rdfDescriptor->Features[j];
+                const LV2_RDF_Feature* const rdfFeature(&rdfDescriptor->Features[j]);
 
                 if (is_lv2_feature_supported(rdfFeature->URI))
                 {
@@ -1081,7 +1081,7 @@ void do_lv2_check(const char* const bundle, const bool init)
 
         for (uint32_t j=0; j < rdfDescriptor->FeatureCount; ++j)
         {
-            const LV2_RDF_Feature* const rdfFeature = &rdfDescriptor->Features[j];
+            const LV2_RDF_Feature* const rdfFeature(&rdfDescriptor->Features[j]);
 
             if (std::strcmp(rdfFeature->URI, LV2_CORE__hardRTCapable) == 0)
                 hints |= PLUGIN_IS_RTSAFE;
@@ -1089,7 +1089,7 @@ void do_lv2_check(const char* const bundle, const bool init)
 
         for (uint32_t j=0; j < rdfDescriptor->PortCount; ++j)
         {
-            const LV2_RDF_Port* const rdfPort = &rdfDescriptor->Ports[j];
+            const LV2_RDF_Port* const rdfPort(&rdfDescriptor->Ports[j]);
 
             if (LV2_IS_PORT_AUDIO(rdfPort->Types))
             {

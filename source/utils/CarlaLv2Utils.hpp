@@ -23,13 +23,13 @@
 #include "lv2/lv2.h"
 #include "lv2/atom.h"
 #include "lv2/atom-forge.h"
-#include "lv2/atom-helpers.h"
+//#include "lv2/atom-helpers.h"
 #include "lv2/atom-util.h"
 #include "lv2/buf-size.h"
 #include "lv2/data-access.h"
 // dynmanifest
 #include "lv2/event.h"
-#include "lv2/event-helpers.h"
+//#include "lv2/event-helpers.h"
 #include "lv2/instance-access.h"
 #include "lv2/log.h"
 // logger
@@ -51,7 +51,7 @@
 #include "lv2/worker.h"
 
 #include "lv2/lv2-miditype.h"
-#include "lv2/lv2-midifunctions.h"
+//#include "lv2/lv2-midifunctions.h"
 #include "lv2/lv2_external_ui.h"
 #include "lv2/lv2_programs.h"
 #include "lv2/lv2_rtmempool.h"
@@ -61,7 +61,6 @@
 #include "lilv/lilvmm.hpp"
 #include "sratom/sratom.h"
 
-#include <QtCore/QMap>
 #include <QtCore/QStringList>
 
 // -----------------------------------------------------------------------
@@ -324,19 +323,7 @@ public:
           dct_replaces       (new_uri(NS_dct "replaces")),
           doap_license       (new_uri(NS_doap "license")),
           rdf_type           (new_uri(NS_rdf "type")),
-          rdfs_label         (new_uri(NS_rdfs "label"))
-    {
-        fNeedsInit = true;
-    }
-
-    void init()
-    {
-        if (! fNeedsInit)
-            return;
-
-        fNeedsInit = false;
-        Lilv::World::load_all();
-    }
+          rdfs_label         (new_uri(NS_rdfs "label")) {}
 
     static Lv2WorldClass& getInstance()
     {
@@ -344,11 +331,17 @@ public:
         return lv2World;
     }
 
-    const LilvPlugin* getPlugin(const LV2_URI uri)
+    const LilvPlugin* getPlugin(const LV2_URI uri) /*const*/
     {
-        CARLA_SAFE_ASSERT_RETURN(uri != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', nullptr);
 
-        static const Lilv::Plugins lilvPlugins(Lilv::World::get_all_plugins());
+        const LilvPlugins* const cPlugins(lilv_world_get_all_plugins(this->me));
+
+        if (cPlugins == nullptr)
+        {
+            carla_stderr("Lv2WorldClass::getPlugin(\"%s\") - Failed to get plugins from world", uri);
+            return nullptr;
+        }
 
         LilvNode* const uriNode(Lilv::World::new_uri(uri));
 
@@ -358,22 +351,22 @@ public:
             return nullptr;
         }
 
-        if (const LilvPlugin* const cPlugin = lilv_plugins_get_by_uri(lilvPlugins.me, uriNode))
-        {
-            lilv_node_free(uriNode);
-            return cPlugin;
-        }
-        else
+        const LilvPlugin* const cPlugin(lilv_plugins_get_by_uri(cPlugins, uriNode));
+        lilv_node_free(uriNode);
+
+        if (cPlugin == nullptr)
         {
             carla_stderr("Lv2WorldClass::getPlugin(\"%s\") - Failed to get plugin", uri);
-            lilv_node_free(uriNode);
             return nullptr;
         }
+
+        return cPlugin;
     }
 
-    const LilvState* getState(const LV2_URI uri, const LV2_URID_Map* const uridMap)
+    const LilvState* getState(const LV2_URI uri, const LV2_URID_Map* const uridMap) /*const*/
     {
-        CARLA_SAFE_ASSERT_RETURN(uri != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', nullptr);
+        CARLA_SAFE_ASSERT_RETURN(uridMap != nullptr, nullptr);
 
         LilvNode* const uriNode(Lilv::World::new_uri(uri));
 
@@ -383,21 +376,17 @@ public:
             return nullptr;
         }
 
-        if (const LilvState* cState = lilv_state_new_from_world(this->me, uridMap, uriNode))
-        {
-            lilv_node_free(uriNode);
-            return cState;
-        }
-        else
+        const LilvState* const cState(lilv_state_new_from_world(this->me, uridMap, uriNode));
+        lilv_node_free(uriNode);
+
+        if (cState == nullptr)
         {
             carla_stderr("Lv2WorldClass::getState(\"%s\", %p) - Failed to get state", uri, uridMap);
-            lilv_node_free(uriNode);
             return nullptr;
         }
-    }
 
-private:
-    bool fNeedsInit;
+        return cState;
+    }
 
     CARLA_PREVENT_HEAP_ALLOCATION
 };
@@ -408,7 +397,7 @@ private:
 static inline
 const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
 {
-    CARLA_SAFE_ASSERT_RETURN(uri != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', nullptr);
 
     Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
 
@@ -544,15 +533,6 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
 
             if (replaceNode.is_uri())
             {
-#if 0//def HAVE_JUCE
-                const juce::String replaceURI(replaceNode.as_uri());
-
-                if (replaceURI.startsWith("urn:"))
-                {
-                    if (int uniqueId = replaceURI.getTrailingIntValue())
-                        rdfDescriptor->UniqueID = (unsigned long)uniqueId;
-                }
-#else
                 const QString replaceURI(replaceNode.as_uri());
 
                 if (replaceURI.startsWith("urn:"))
@@ -565,7 +545,6 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
                     if (ok && uniqueId != 0)
                         rdfDescriptor->UniqueID = uniqueId;
                 }
-#endif
             }
         }
     }
@@ -578,10 +557,10 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
         rdfDescriptor->PortCount = lilvPlugin.get_num_ports();
         rdfDescriptor->Ports = new LV2_RDF_Port[rdfDescriptor->PortCount];
 
-        for (uint32_t j = 0; j < rdfDescriptor->PortCount; ++j)
+        for (uint32_t i = 0; i < rdfDescriptor->PortCount; ++i)
         {
-            Lilv::Port lilvPort(lilvPlugin.get_port_by_index(j));
-            LV2_RDF_Port* const rdfPort(&rdfDescriptor->Ports[j]);
+            Lilv::Port lilvPort(lilvPlugin.get_port_by_index(i));
+            LV2_RDF_Port* const rdfPort(&rdfDescriptor->Ports[i]);
 
             // -----------------------------------------------------------
             // Set Port Information
@@ -947,7 +926,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
                         else if (std::strcmp(unitUnit, LV2_UNITS__semitone12TET) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_SEMITONE;
                         else
-                            carla_stderr("lv2_rdf_new(\"%s\") - got unknown unit type '%s'", uri, unitUnit);
+                            carla_stderr("lv2_rdf_new(\"%s\") - got unknown unit unit '%s'", uri, unitUnit);
                     }
                 }
 
@@ -996,11 +975,11 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
                 rdfPort->ScalePoints = new LV2_RDF_PortScalePoint[rdfPort->ScalePointCount];
 
                 uint32_t h = 0;
-                LILV_FOREACH(scale_points, j, lilvScalePoints)
+                LILV_FOREACH(scale_points, it, lilvScalePoints)
                 {
-                    CARLA_ASSERT(h < rdfPort->ScalePointCount);
+                    CARLA_SAFE_ASSERT_BREAK(h < rdfPort->ScalePointCount);
 
-                    Lilv::ScalePoint lilvScalePoint(lilvScalePoints.get(j));
+                    Lilv::ScalePoint lilvScalePoint(lilvScalePoints.get(it));
                     LV2_RDF_PortScalePoint* const rdfScalePoint(&rdfPort->ScalePoints[h++]);
 
                     if (const char* const label = Lilv::Node(lilvScalePoint.get_label()).as_string())
@@ -1022,59 +1001,36 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
         if (presetNodes.size() > 0)
         {
             // create a list of preset URIs (for checking appliesTo, sorting and unique-ness)
-#if 0//def HAVE_JUCE
-            juce::StringArray presetListURIs;
-#else
             QStringList presetListURIs;
-#endif
 
-            LILV_FOREACH(nodes, j, presetNodes)
+            LILV_FOREACH(nodes, it, presetNodes)
             {
-                Lilv::Node presetNode(presetNodes.get(j));
+                Lilv::Node presetNode(presetNodes.get(it));
                 // FIXME - check appliesTo?
 
-#if 0//def HAVE_JUCE
-                juce::String presetURI(presetNode.as_uri());
-
-                if (presetURI.trim().isNotEmpty())
-                    presetListURIs.addIfNotAlreadyThere(presetURI);
-#else
                 QString presetURI(presetNode.as_uri());
 
                 if (! (presetURI.trimmed().isEmpty() || presetListURIs.contains(presetURI)))
                     presetListURIs.append(presetURI);
-#endif
             }
 
-#if 0//def HAVE_JUCE
-            presetListURIs.sort(false);
-#else
             presetListURIs.sort();
-#endif
 
             // create presets with unique URIs
-#if 0//def HAVE_JUCE
-            rdfDescriptor->PresetCount = static_cast<uint32_t>(presetListURIs.size());
-#else
             rdfDescriptor->PresetCount = static_cast<uint32_t>(presetListURIs.count());
-#endif
             rdfDescriptor->Presets = new LV2_RDF_Preset[rdfDescriptor->PresetCount];
 
             // set preset data
-            LILV_FOREACH(nodes, j, presetNodes)
+            LILV_FOREACH(nodes, it, presetNodes)
             {
-                Lilv::Node presetNode(presetNodes.get(j));
+                Lilv::Node presetNode(presetNodes.get(it));
 
                 if (lv2World.load_resource(presetNode) == -1)
                     continue;
 
                 if (const char* const presetURI = presetNode.as_uri())
                 {
-#if 0//def HAVE_JUCE
-                    const int index(presetListURIs.indexOf(juce::String(presetURI)));
-#else
                     const int index(presetListURIs.indexOf(QString(presetURI)));
-#endif
                     CARLA_SAFE_ASSERT_CONTINUE(index >= 0);
 
                     LV2_RDF_Preset* const rdfPreset(&rdfDescriptor->Presets[index]);
@@ -1110,11 +1066,11 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
             rdfDescriptor->Features = new LV2_RDF_Feature[rdfDescriptor->FeatureCount];
 
             uint32_t h = 0;
-            LILV_FOREACH(nodes, j, lilvFeatureNodes)
+            LILV_FOREACH(nodes, it, lilvFeatureNodes)
             {
-                CARLA_ASSERT(h < rdfDescriptor->FeatureCount);
+                CARLA_SAFE_ASSERT_BREAK(h < rdfDescriptor->FeatureCount);
 
-                Lilv::Node lilvFeatureNode(lilvFeatureNodes.get(j));
+                Lilv::Node lilvFeatureNode(lilvFeatureNodes.get(it));
                 LV2_RDF_Feature* const rdfFeature(&rdfDescriptor->Features[h++]);
 
                 rdfFeature->Type = lilvFeatureNodesR.contains(lilvFeatureNode) ? LV2_FEATURE_REQUIRED : LV2_FEATURE_OPTIONAL;
@@ -1136,11 +1092,11 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
             rdfDescriptor->Extensions = new LV2_URI[rdfDescriptor->ExtensionCount];
 
             uint32_t h = 0;
-            LILV_FOREACH(nodes, j, lilvExtensionDataNodes)
+            LILV_FOREACH(nodes, it, lilvExtensionDataNodes)
             {
-                CARLA_ASSERT(h < rdfDescriptor->ExtensionCount);
+                CARLA_SAFE_ASSERT_BREAK(h < rdfDescriptor->ExtensionCount);
 
-                Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(j));
+                Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(it));
                 LV2_URI* const rdfExtension(&rdfDescriptor->Extensions[h++]);
 
                 if (const char* const extURI = lilvExtensionDataNode.as_uri())
@@ -1160,11 +1116,11 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
             rdfDescriptor->UIs = new LV2_RDF_UI[rdfDescriptor->UICount];
 
             uint32_t h = 0;
-            LILV_FOREACH(uis, j, lilvUIs)
+            LILV_FOREACH(uis, it, lilvUIs)
             {
-                CARLA_ASSERT(h < rdfDescriptor->UICount);
+                CARLA_SAFE_ASSERT_BREAK(h < rdfDescriptor->UICount);
 
-                Lilv::UI lilvUI(lilvUIs.get(j));
+                Lilv::UI lilvUI(lilvUIs.get(it));
                 LV2_RDF_UI* const rdfUI(&rdfDescriptor->UIs[h++]);
 
                 // -------------------------------------------------------
@@ -1216,13 +1172,13 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
                         rdfUI->FeatureCount = lilvFeatureNodes.size();
                         rdfUI->Features = new LV2_RDF_Feature[rdfUI->FeatureCount];
 
-                        uint32_t x = 0;
-                        LILV_FOREACH(nodes, k, lilvFeatureNodes)
+                        uint32_t h2 = 0;
+                        LILV_FOREACH(nodes, it2, lilvFeatureNodes)
                         {
-                            CARLA_ASSERT(x < rdfUI->FeatureCount);
+                            CARLA_SAFE_ASSERT_BREAK(h2 < rdfUI->FeatureCount);
 
-                            Lilv::Node lilvFeatureNode(lilvFeatureNodes.get(k));
-                            LV2_RDF_Feature* const rdfFeature(&rdfUI->Features[x++]);
+                            Lilv::Node lilvFeatureNode(lilvFeatureNodes.get(it2));
+                            LV2_RDF_Feature* const rdfFeature(&rdfUI->Features[h2++]);
 
                             rdfFeature->Type = lilvFeatureNodesR.contains(lilvFeatureNode) ? LV2_FEATURE_REQUIRED : LV2_FEATURE_OPTIONAL;
 
@@ -1242,13 +1198,13 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
                         rdfUI->ExtensionCount = lilvExtensionDataNodes.size();
                         rdfUI->Extensions = new LV2_URI[rdfUI->ExtensionCount];
 
-                        uint32_t x = 0;
-                        LILV_FOREACH(nodes, k, lilvExtensionDataNodes)
+                        uint32_t h2 = 0;
+                        LILV_FOREACH(nodes, it2, lilvExtensionDataNodes)
                         {
-                            CARLA_ASSERT(x < rdfUI->ExtensionCount);
+                            CARLA_SAFE_ASSERT_BREAK(h2 < rdfUI->ExtensionCount);
 
-                            Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(k));
-                            LV2_URI* const rdfExtension(&rdfUI->Extensions[x++]);
+                            Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(it));
+                            LV2_URI* const rdfExtension(&rdfUI->Extensions[h2++]);
 
                             if (const char* const extURI = lilvExtensionDataNode.as_uri())
                                 *rdfExtension = carla_strdup(extURI);
