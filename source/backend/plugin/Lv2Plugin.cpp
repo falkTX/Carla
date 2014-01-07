@@ -136,12 +136,10 @@ const uint32_t kFeatureCount              = 31;
 enum Lv2PluginGuiType {
     PLUGIN_UI_NULL,
     PLUGIN_UI_OSC,
-    PLUGIN_UI_QT,
     PLUGIN_UI_PARENT,
     PLUGIN_UI_EXTERNAL
 };
 
-#if 0
 struct Lv2EventData {
     uint32_t type;
     uint32_t rindex;
@@ -167,51 +165,41 @@ struct Lv2EventData {
             port = nullptr;
         }
 
+        const ScopedValueSetter<uint32_t> zeroType(type, type, 0x0);
+
         if (type & CARLA_EVENT_DATA_ATOM)
         {
-            CARLA_ASSERT(atom != nullptr);
+            CARLA_SAFE_ASSERT_RETURN(atom != nullptr,);
 
-            if (atom != nullptr)
-            {
-                std::free(atom);
-                atom = nullptr;
-            }
+            std::free(atom);
+            atom = nullptr;
         }
         else if (type & CARLA_EVENT_DATA_EVENT)
         {
-            CARLA_ASSERT(event != nullptr);
+            CARLA_SAFE_ASSERT_RETURN(event != nullptr,);
 
-            if (event != nullptr)
-            {
-                std::free(event);
-                event = nullptr;
-            }
+            std::free(event);
+            event = nullptr;
         }
         else if (type & CARLA_EVENT_DATA_MIDI_LL)
         {
-            CARLA_ASSERT(midi != nullptr && midi->data != nullptr);
+            CARLA_SAFE_ASSERT_RETURN(midi != nullptr,)
+            CARLA_SAFE_ASSERT_RETURN(midi->data != nullptr,);
 
-            if (midi != nullptr)
-            {
-                if (midi->data != nullptr)
-                {
-                    delete[] midi->data;
-                    midi->data = nullptr;
-                }
+            delete[] midi->data;
+            midi->data = nullptr;
 
-                delete midi;
-                midi = nullptr;
-            }
+            delete midi;
+            midi = nullptr;
         }
 
         CARLA_ASSERT(_ptr == nullptr);
-
-        type = 0x0;
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(Lv2EventData)
 };
 
+#if 0
 struct Lv2PluginEventData {
     uint32_t count;
     Lv2EventData* data;
