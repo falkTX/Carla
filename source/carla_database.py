@@ -22,10 +22,6 @@
 from copy import deepcopy
 from subprocess import Popen, PIPE
 
-#try:
-    #from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QThread, QSettings
-    #from PyQt5.QtWidgets import QDialog, QTableWidgetItem
-#except:
 from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QThread, QSettings
 from PyQt4.QtGui import QDialog, QTableWidgetItem
 
@@ -169,10 +165,23 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
     plugins = []
     fakeLabel = os.path.basename(filename).rsplit(".", 1)[0]
 
-    while gDiscoveryProcess.poll() is None:
+    while True:
         try:
-            line = gDiscoveryProcess.stdout.readline().decode("utf-8", errors="ignore").strip()
+            line = gDiscoveryProcess.stdout.readline().decode("utf-8", errors="ignore")
         except:
+            print("ERROR: discovery readline failed")
+            break
+
+        # line is valid, strip it
+        if line:
+            line = line.strip()
+
+        # line is invalid, try poll() again
+        elif gDiscoveryProcess.poll() is None:
+            continue
+
+        # line is invalid and poll() failed, stop here
+        else:
             break
 
         if line == "carla-discovery::init::-----------":
@@ -205,7 +214,7 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
             try:
                 prop, value = line.replace("carla-discovery::", "").split("::", 1)
             except:
-               continue
+                continue
 
             if prop == "name":
                 pinfo['name'] = value if value else fakeLabel

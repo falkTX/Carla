@@ -1804,14 +1804,6 @@ int main(int argc, char* argv[])
 
     if (openLib)
     {
-        handle = lib_open(filename);
-
-        if (handle == nullptr)
-        {
-            print_lib_error(filename);
-            return 1;
-        }
-
         if (filenameStr.contains("fluidsynth", true))
         {
             DISCOVERY_OUT("info", "skipping fluidsynth based plugin");
@@ -1821,6 +1813,14 @@ int main(int argc, char* argv[])
         {
             DISCOVERY_OUT("info", "skipping linuxsampler based plugin");
             return 0;
+        }
+
+        handle = lib_open(filename);
+
+        if (handle == nullptr)
+        {
+            print_lib_error(filename);
+            return 1;
         }
     }
 
