@@ -48,13 +48,15 @@ static const float kVolumeMin = 0.0f;        // -inf dB
 class AudioOutputDevicePlugin : public AudioOutputDevice
 {
 public:
-    AudioOutputDevicePlugin(const CarlaEngine* const engine, const CarlaPlugin* const plugin)
+    AudioOutputDevicePlugin(const CarlaEngine* const engine, const CarlaPlugin* const plugin, const bool uses16Outs)
         : AudioOutputDevice(std::map<String, DeviceCreationParameter*>()),
           fEngine(engine),
           fPlugin(plugin)
     {
         CARLA_ASSERT(engine != nullptr);
         CARLA_ASSERT(plugin != nullptr);
+
+        AcquireChannels(uses16Outs ? 32 : 2);
     }
 
     ~AudioOutputDevicePlugin() override {}
@@ -183,18 +185,18 @@ public:
           fMaker(nullptr),
           fRealName(nullptr),
           fEngine(nullptr),
+          fAudioOutputDevice(nullptr),
           fMidiInputDevice(nullptr),
           fMidiInputPort(nullptr),
           fInstrument(nullptr)
     {
         carla_debug("LinuxSamplerPlugin::LinuxSamplerPlugin(%p, %i, %s, %s)", engine, id, format, bool2str(use16Outs));
 
-        for (int i=0; i < 16; ++i)
+        for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
         {
-            fCurMidiProgs[0]       = 0;
-            fSamplerChannels[i]    = nullptr;
-            fEngineChannels[i]     = nullptr;
-            fAudioOutputDevices[i] = nullptr;
+            fCurMidiProgs[0]    = 0;
+            fSamplerChannels[i] = nullptr;
+            fEngineChannels[i]  = nullptr;
         }
     }
 
@@ -220,7 +222,7 @@ public:
             {
                 if (fMidiInputPort != nullptr)
                 {
-                    for (int i=0; i < 16; ++i)
+                    for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
                     {
                         if (fSamplerChannels[i] != nullptr)
                         {
@@ -233,19 +235,7 @@ public:
 
                             fSampler.RemoveSamplerChannel(fSamplerChannels[i]);
                             fSamplerChannels[i] = nullptr;
-
-                            if (fAudioOutputDevices[i] != nullptr && fUses16Outs)
-                            {
-                                delete fAudioOutputDevices[i];
-                                fAudioOutputDevices[i] = nullptr;
-                            }
                         }
-                    }
-
-                    if (fAudioOutputDevices[0] != nullptr)
-                    {
-                        delete fAudioOutputDevices[0];
-                        fAudioOutputDevices[0] = nullptr;
                     }
 
                     delete fMidiInputPort;
@@ -254,6 +244,12 @@ public:
 
                 delete fMidiInputDevice;
                 fMidiInputDevice = nullptr;
+            }
+
+            if (fAudioOutputDevice != nullptr)
+            {
+                delete fAudioOutputDevice;
+                fAudioOutputDevice = nullptr;
             }
 
             fInstrument = nullptr;
@@ -420,12 +416,12 @@ public:
                         const uint32_t program = pData->midiprog.data[index].program;
                         const uint32_t rIndex  = bank*128 + program;
 
-                        if (pData->engine->isOffline())
+                        /*if (pData->engine->isOffline())
                         {
                             fEngineChannels[i]->PrepareLoadInstrument(pData->filename, rIndex);
                             fEngineChannels[i]->LoadInstrument();
                         }
-                        else
+                        else*/
                         {
                             fInstrument->LoadInstrumentInBackground(fInstrumentIds[rIndex], fEngineChannels[i]);
                         }
@@ -463,12 +459,12 @@ public:
 
             const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
-            if (pData->engine->isOffline())
+            /*if (pData->engine->isOffline())
             {
                 engineChannel->PrepareLoadInstrument(pData->filename, rIndex);
                 engineChannel->LoadInstrument();
             }
-            else
+            else*/
             {
                 fInstrument->LoadInstrumentInBackground(fInstrumentIds[rIndex], engineChannel);
             }
@@ -668,12 +664,13 @@ public:
 
         if (init)
         {
-            for (int i=0; i < 16; ++i)
+            for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
             {
                 CARLA_SAFE_ASSERT_CONTINUE(fEngineChannels[i] != nullptr);
 
-                fEngineChannels[i]->PrepareLoadInstrument(pData->filename, 0);
-                fEngineChannels[i]->LoadInstrument();
+                /*fEngineChannels[i]->PrepareLoadInstrument(pData->filename, 0);
+                fEngineChannels[i]->LoadInstrument();*/
+                fInstrument->LoadInstrumentInBackground(fInstrumentIds[0], fEngineChannels[i]);
                 fCurMidiProgs[i] = 0;
             }
 
@@ -691,7 +688,7 @@ public:
 #if 0
     void activate() override
     {
-        for (int i=0; i < 16; ++i)
+        for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
         {
             if (fAudioOutputDevices[i] != nullptr)
                 fAudioOutputDevices[i]->Play();
@@ -700,7 +697,7 @@ public:
 
     void deactivate() override
     {
-        for (int i=0; i < 16; ++i)
+        for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
         {
             if (fAudioOutputDevices[i] != nullptr)
                 fAudioOutputDevices[i]->Stop();
@@ -928,12 +925,12 @@ public:
                                 {
                                     LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[pData->ctrlChannel]);
 
-                                    if (pData->engine->isOffline())
+                                    /*if (pData->engine->isOffline())
                                     {
                                         engineChannel->PrepareLoadInstrument(pData->filename, rIndex);
                                         engineChannel->LoadInstrument();
                                     }
-                                    else
+                                    else*/
                                     {
                                         fInstrument->LoadInstrumentInBackground(fInstrumentIds[rIndex], engineChannel);
                                     }
@@ -992,12 +989,19 @@ public:
                     if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
                         continue;
 
-                    fMidiInputPort->DispatchRaw(const_cast<uint8_t*>(midiEvent.data), sampleAccurate ? startTime : time);
+                    // put back channel in data
+                    uint8_t data[EngineMidiEvent::kDataSize];
+                    std::memcpy(data, event.midi.data, EngineMidiEvent::kDataSize);
+
+                    if (status < 0xF0 && channel < MAX_MIDI_CHANNELS)
+                        data[0] = uint8_t(data[0] + channel);
+
+                    fMidiInputPort->DispatchRaw(data, sampleAccurate ? startTime : time);
 
                     if (status == MIDI_STATUS_NOTE_ON)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, data[1], data[2]);
                     else if (status == MIDI_STATUS_NOTE_OFF)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, channel, midiEvent.data[1], 0.0f);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, channel,data[1], 0.0f);
 
                     break;
                 }
@@ -1038,24 +1042,13 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
 
-        if (fUses16Outs)
+        for (uint32_t i=0; i < pData->audioOut.count; ++i)
         {
-            for (int i=0; i < 16; ++i)
-            {
-                if (fAudioOutputDevices[i] != nullptr)
-                {
-                    fAudioOutputDevices[i]->Channel(0)->SetBuffer(outBuffer[i*2  ] + timeOffset);
-                    fAudioOutputDevices[i]->Channel(1)->SetBuffer(outBuffer[i*2+1] + timeOffset);
-                    fAudioOutputDevices[i]->Render(frames);
-                }
-            }
+            if (LinuxSampler::AudioChannel* const outDev = fAudioOutputDevice->Channel(i))
+                outDev->SetBuffer(outBuffer[i] + timeOffset);
         }
-        else
-        {
-            fAudioOutputDevices[0]->Channel(0)->SetBuffer(outBuffer[0] + timeOffset);
-            fAudioOutputDevices[0]->Channel(1)->SetBuffer(outBuffer[1] + timeOffset);
-            fAudioOutputDevices[0]->Render(frames);
-        }
+
+        fAudioOutputDevice->Render(frames);
 
 #ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
@@ -1112,16 +1105,18 @@ public:
         return true;
     }
 
-    void bufferSizeChanged(const uint32_t newBufferSize) override
+    void bufferSizeChanged(const uint32_t) override
     {
-        // TODO
-        (void)newBufferSize;
+        CARLA_SAFE_ASSERT_RETURN(fAudioOutputDevice != nullptr,);
+
+        fAudioOutputDevice->ReconnectAll();
     }
 
-    void sampleRateChanged(const double newSampleRate) override
+    void sampleRateChanged(const double) override
     {
-        // TODO
-        (void)newSampleRate;
+        CARLA_SAFE_ASSERT_RETURN(fAudioOutputDevice != nullptr,);
+
+        fAudioOutputDevice->ReconnectAll();
     }
 
     // -------------------------------------------------------------------
@@ -1185,37 +1180,35 @@ public:
         // ---------------------------------------------------------------
         // Init LinuxSampler stuff
 
+        fAudioOutputDevice = new LinuxSampler::AudioOutputDevicePlugin(pData->engine, this, fUses16Outs);
+
         fMidiInputDevice = new LinuxSampler::MidiInputDevicePlugin(&fSampler);
         fMidiInputPort   = fMidiInputDevice->CreateMidiPortPlugin();
 
-        // always needs at least 1 output device
-        fAudioOutputDevices[0] = new LinuxSampler::AudioOutputDevicePlugin(pData->engine, this);
-
-        for (int i=0; i < 16; ++i)
+        for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
         {
-            LinuxSampler::AudioOutputDevicePlugin* outputDevice;
-
-            if (fUses16Outs)
-            {
-                fAudioOutputDevices[i] = new LinuxSampler::AudioOutputDevicePlugin(pData->engine, this);
-                outputDevice = fAudioOutputDevices[i];
-            }
-            else
-            {
-                outputDevice = fAudioOutputDevices[0];
-            }
-
             fSamplerChannels[i] = fSampler.AddSamplerChannel();
             CARLA_SAFE_ASSERT_CONTINUE(fSamplerChannels[i] != nullptr);
 
             fSamplerChannels[i]->SetEngineType(ctype);
-            fSamplerChannels[i]->SetAudioOutputDevice(outputDevice);
+            fSamplerChannels[i]->SetAudioOutputDevice(fAudioOutputDevice);
 
             fEngineChannels[i] = fSamplerChannels[i]->GetEngineChannel();
             CARLA_SAFE_ASSERT_CONTINUE(fEngineChannels[i] != nullptr);
 
-            fEngineChannels[i]->Connect(outputDevice);
+            fEngineChannels[i]->Connect(fAudioOutputDevice);
             fEngineChannels[i]->Volume(LinuxSampler::kVolumeMax);
+
+            if (fUses16Outs)
+            {
+                fEngineChannels[i]->SetOutputChannel(0, i*2);
+                fEngineChannels[i]->SetOutputChannel(1, i*2 +1);
+            }
+            else
+            {
+                fEngineChannels[i]->SetOutputChannel(0, 0);
+                fEngineChannels[i]->SetOutputChannel(1, 1);
+            }
 
             fMidiInputPort->Connect(fEngineChannels[i], static_cast<LinuxSampler::midi_chan_t>(i));
         }
@@ -1331,15 +1324,15 @@ private:
     const char* fMaker;
     const char* fRealName;
 
-    int32_t fCurMidiProgs[16];
+    int32_t fCurMidiProgs[MAX_MIDI_CHANNELS];
 
     LinuxSampler::Sampler fSampler;
     LinuxSampler::Engine* fEngine;
 
-    LinuxSampler::SamplerChannel* fSamplerChannels[16];
-    LinuxSampler::EngineChannel*  fEngineChannels[16];
+    LinuxSampler::SamplerChannel* fSamplerChannels[MAX_MIDI_CHANNELS];
+    LinuxSampler::EngineChannel*  fEngineChannels[MAX_MIDI_CHANNELS];
 
-    LinuxSampler::AudioOutputDevicePlugin* fAudioOutputDevices[16];
+    LinuxSampler::AudioOutputDevicePlugin* fAudioOutputDevice;
     LinuxSampler::MidiInputDevicePlugin*   fMidiInputDevice;
     LinuxSampler::MidiInputPortPlugin*     fMidiInputPort;
 
