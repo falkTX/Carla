@@ -1053,7 +1053,7 @@ public:
     }
 
     // -------------------------------------------------------------------
-    // Set gui stuff
+    // Set ui stuff
 
     void showCustomUI(const bool yesNo) override
     {
@@ -4123,17 +4123,10 @@ protected:
 public:
     bool init(const char* const name, const char* const uri)
     {
-        CARLA_ASSERT(pData->engine != nullptr);
-        CARLA_ASSERT(pData->client == nullptr);
-        CARLA_ASSERT(uri != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
         // ---------------------------------------------------------------
         // first checks
-
-        if (pData->engine == nullptr)
-        {
-            return false;
-        }
 
         if (pData->client != nullptr)
         {
@@ -4141,7 +4134,7 @@ public:
             return false;
         }
 
-        if (uri == nullptr)
+        if (uri == nullptr || uri[0] == '\0')
         {
             pData->engine->setLastError("null uri");
             return false;
@@ -4403,7 +4396,7 @@ public:
         // ---------------------------------------------------------------
         // get info
 
-        if (name != nullptr)
+        if (name != nullptr && name[0] != '\0')
             pData->name = pData->engine->getUniquePluginName(name);
         else
             pData->name = pData->engine->getUniquePluginName(fRdfDescriptor->Name);

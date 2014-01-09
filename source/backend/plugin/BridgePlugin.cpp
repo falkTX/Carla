@@ -576,7 +576,7 @@ public:
 #endif
 
     // -------------------------------------------------------------------
-    // Set gui stuff
+    // Set ui stuff
 
     void showCustomUI(const bool yesNo) override
     {
@@ -1676,16 +1676,10 @@ public:
 
     bool init(const char* const filename, const char* const name, const char* const label, const char* const bridgeBinary)
     {
-        CARLA_ASSERT(pData->engine != nullptr);
-        CARLA_ASSERT(pData->client == nullptr);
+        CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
         // ---------------------------------------------------------------
         // first checks
-
-        if (pData->engine == nullptr)
-        {
-            return false;
-        }
 
         if (pData->client != nullptr)
         {
@@ -1696,7 +1690,7 @@ public:
         // ---------------------------------------------------------------
         // set info
 
-        if (name != nullptr)
+        if (name != nullptr && name[0] != '\0')
             pData->name = pData->engine->getUniquePluginName(name);
 
         pData->filename = filename;
@@ -1823,9 +1817,9 @@ public:
 
         if (pData->name == nullptr)
         {
-            if (name != nullptr)
+            if (name != nullptr && name[0] != '\0')
                 pData->name = pData->engine->getUniquePluginName(name);
-            else if (label != nullptr)
+            else if (label != nullptr && label[0] != '\0')
                 pData->name = pData->engine->getUniquePluginName(label);
             else
                 pData->name = pData->engine->getUniquePluginName("unknown");

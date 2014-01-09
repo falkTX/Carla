@@ -177,8 +177,11 @@ class LinuxSamplerPlugin : public CarlaPlugin
 public:
     LinuxSamplerPlugin(CarlaEngine* const engine, const unsigned int id, const char* const format, const bool use16Outs)
         : CarlaPlugin(engine, id),
-          fFormat(carla_strdup(format)),
           fUses16Outs(use16Outs),
+          fFormat(carla_strdup(format)),
+          fRealName(nullptr),
+          fLabel(nullptr),
+          fMaker(nullptr),
           fEngine(nullptr),
           fMidiInputDevice(nullptr),
           fMidiInputPort(nullptr),
@@ -261,6 +264,24 @@ public:
             fFormat = nullptr;
         }
 
+        if (fRealName != nullptr)
+        {
+            delete[] fRealName;
+            fRealName = nullptr;
+        }
+
+        if (fLabel != nullptr)
+        {
+            delete[] fLabel;
+            fLabel = nullptr;
+        }
+
+        if (fMaker != nullptr)
+        {
+            delete[] fMaker;
+            fMaker = nullptr;
+        }
+
         clearBuffers();
     }
 
@@ -296,6 +317,7 @@ public:
 
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+        options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
         options |= PLUGIN_OPTION_SEND_PITCHBEND;
         options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
@@ -304,12 +326,18 @@ public:
 
     void getLabel(char* const strBuf) const override
     {
-        std::strncpy(strBuf, (const char*)fLabel, STR_MAX);
+        if (fLabel != nullptr)
+            std::strncpy(strBuf, fLabel, STR_MAX);
+        else
+            CarlaPlugin::getLabel(strBuf);
     }
 
     void getMaker(char* const strBuf) const override
     {
-        std::strncpy(strBuf, (const char*)fMaker, STR_MAX);
+        if (fMaker != nullptr)
+            std::strncpy(strBuf, fMaker, STR_MAX);
+        else
+            CarlaPlugin::getMaker(strBuf);
     }
 
     void getCopyright(char* const strBuf) const override
@@ -319,7 +347,10 @@ public:
 
     void getRealName(char* const strBuf) const override
     {
-        std::strncpy(strBuf, (const char*)fRealName, STR_MAX);
+        if (fRealName != nullptr)
+            std::strncpy(strBuf, fRealName, STR_MAX);
+        else
+            CarlaPlugin::getRealName(strBuf);
     }
 
     // -------------------------------------------------------------------
@@ -355,7 +386,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr && value[0] != '\0',);
-        carla_debug("DssiPlugin::setCustomData(%s, \"%s\", \"%s\", %s)", type, key, value, bool2str(sendGui));
+        carla_debug("LinuxSamplerPlugin::setCustomData(%s, \"%s\", \"%s\", %s)", type, key, value, bool2str(sendGui));
 
         if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) != 0)
             return carla_stderr2("LinuxSamplerPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
@@ -373,6 +404,8 @@ public:
             uint i = 0;
             foreach (const QString& midiProg, midiProgramList)
             {
+                CARLA_SAFE_ASSERT_BREAK(i < MAX_MIDI_CHANNELS);
+
                 bool ok;
                 uint index = midiProg.toUInt(&ok);
 
@@ -426,7 +459,7 @@ public:
             const uint32_t program = pData->midiprog.data[index].program;
             const uint32_t rIndex  = bank*128 + program;
 
-            LinuxSampler::EngineChannel* const engineChannel(fUses16Outs ? fEngineChannels[pData->ctrlChannel] : fEngineChannels[0]);
+            LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[pData->ctrlChannel]);
 
             const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
@@ -445,6 +478,11 @@ public:
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
     }
+
+    // -------------------------------------------------------------------
+    // Set ui stuff
+
+    // nothing
 
     // -------------------------------------------------------------------
     // Plugin state
@@ -470,7 +508,7 @@ public:
 
         pData->audioOut.createNew(aOuts);
 
-        const int   portNameSize = pData->engine->getMaxPortNameSize();
+        const int portNameSize(pData->engine->getMaxPortNameSize());
         CarlaString portName;
 
         // ---------------------------------------
@@ -478,7 +516,7 @@ public:
 
         if (fUses16Outs)
         {
-            for (uint32_t i=0; i < 32; ++i)
+            for (int i=0; i < 32; ++i)
             {
                 portName.clear();
 
@@ -551,7 +589,7 @@ public:
                 portName += ":";
             }
 
-            portName += "event-in";
+            portName += "events-in";
             portName.truncate(portNameSize);
 
             pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
@@ -589,16 +627,17 @@ public:
         pData->midiprog.clear();
 
         // Query new programs
-        uint32_t i, count = (uint32_t)fInstrumentIds.size();
+        uint32_t count = uint32_t(fInstrumentIds.size());
 
         // sound kits must always have at least 1 midi-program
         CARLA_SAFE_ASSERT_RETURN(count > 0,);
 
         pData->midiprog.createNew(count);
 
+        // Update data
         LinuxSampler::InstrumentManager::instrument_info_t info;
 
-        for (i=0; i < pData->midiprog.count; ++i)
+        for (uint32_t i=0; i < pData->midiprog.count; ++i)
         {
             pData->midiprog.data[i].bank    = i / 128;
             pData->midiprog.data[i].program = i % 128;
@@ -620,7 +659,7 @@ public:
         {
             pData->engine->oscSend_control_set_midi_program_count(pData->id, count);
 
-            for (i=0; i < count; ++i)
+            for (uint32_t i=0; i < count; ++i)
                 pData->engine->oscSend_control_set_midi_program_data(pData->id, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
         }
 #endif
@@ -647,6 +686,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
+#if 0
     void activate() override
     {
         for (int i=0; i < 16; ++i)
@@ -664,18 +704,17 @@ public:
                 fAudioOutputDevices[i]->Stop();
         }
     }
+#endif
 
     void process(float** const, float** const outBuffer, const uint32_t frames) override
     {
-        uint32_t i, k;
-
         // --------------------------------------------------------------------------------------------------------
         // Check if active
 
         if (! pData->active)
         {
             // disable any output sound
-            for (i=0; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
                 FLOAT_CLEAR(outBuffer[i], frames);
             return;
         }
@@ -687,16 +726,16 @@ public:
         {
             if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
-                for (k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; ++k)
+                for (uint i=0; i < MAX_MIDI_CHANNELS; ++i)
                 {
-                    fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_NOTES_OFF, 0, k);
-                    fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_SOUND_OFF, 0, k);
+                    fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_NOTES_OFF, 0, i);
+                    fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_SOUND_OFF, 0, i);
                 }
             }
             else if (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
             {
                 for (uint8_t i=0; i < MAX_MIDI_NOTE; ++i)
-                    fMidiInputPort->DispatchNoteOff(i, 0, (uint)pData->ctrlChannel);
+                    fMidiInputPort->DispatchNoteOff(i, 0, uint(pData->ctrlChannel));
             }
 
             pData->needsReset = false;
@@ -715,12 +754,12 @@ public:
                 {
                     const ExternalMidiNote& note(pData->extNotes.data.getFirst(true));
 
-                    CARLA_ASSERT(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
+                    CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
                     if (note.velo > 0)
-                        fMidiInputPort->DispatchNoteOn(note.note, note.velo, note.channel, 0);
+                        fMidiInputPort->DispatchNoteOn(note.note, note.velo, note.channel);
                     else
-                        fMidiInputPort->DispatchNoteOff(note.note, note.velo, note.channel, 0);
+                        fMidiInputPort->DispatchNoteOff(note.note, note.velo, note.channel);
                 }
 
                 pData->extNotes.mutex.unlock();
@@ -736,21 +775,20 @@ public:
             uint32_t time, nEvents = pData->event.portIn->getEventCount();
             uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
-            uint32_t nextBankId = 0;
 
-            if (pData->midiprog.current >= 0 && pData->midiprog.count > 0)
-                nextBankId = pData->midiprog.data[pData->midiprog.current].bank;
+            uint32_t nextBankIds[MAX_MIDI_CHANNELS] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 0, 0, 0, 0, 0, 0 };
 
-            for (i=0; i < nEvents; ++i)
+            if (pData->midiprog.current >= 0 && pData->midiprog.count > 0 && pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
+                nextBankIds[pData->ctrlChannel] = pData->midiprog.data[pData->midiprog.current].bank;
+
+            for (uint32_t i=0; i < nEvents; ++i)
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 
                 time = event.time;
 
-                if (time >= frames)
-                    continue;
-
-                CARLA_ASSERT_INT2(time >= timeOffset, time, timeOffset);
+                CARLA_SAFE_ASSERT_CONTINUE(time < frames);
+                CARLA_SAFE_ASSERT_BREAK(time >= timeOffset);
 
                 if (time > timeOffset && sampleAccurate)
                 {
@@ -759,10 +797,8 @@ public:
                         startTime  = 0;
                         timeOffset = time;
 
-                        if (pData->midiprog.current >= 0 && pData->midiprog.count > 0)
-                            nextBankId = pData->midiprog.data[pData->midiprog.current].bank;
-                        else
-                            nextBankId = 0;
+                        if (pData->midiprog.current >= 0 && pData->midiprog.count > 0 && pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
+                            nextBankIds[pData->ctrlChannel] = pData->midiprog.data[pData->midiprog.current].bank;
                     }
                     else
                         startTime += timeOffset;
@@ -835,7 +871,7 @@ public:
 #endif
 
                         // Control plugin parameters
-                        for (k=0; k < pData->param.count; ++k)
+                        for (uint32_t k=0; k < pData->param.count; ++k)
                         {
                             if (pData->param.data[k].midiChannel != event.channel)
                                 continue;
@@ -873,21 +909,38 @@ public:
                     }
 
                     case kEngineControlEventTypeMidiBank:
-                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
-                            nextBankId = ctrlEvent.param;
+                        if (event.channel < MAX_MIDI_CHANNELS && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                            nextBankIds[event.channel] = ctrlEvent.param;
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
-                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        if (event.channel < MAX_MIDI_CHANNELS && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
                         {
-                            const uint32_t nextProgramId = ctrlEvent.param;
+                            const uint32_t bankId(nextBankIds[event.channel]);
+                            const uint32_t progId(ctrlEvent.param);
+                            const uint32_t rIndex = bankId*128 + progId;
 
-                            for (k=0; k < pData->midiprog.count; ++k)
+                            for (uint32_t k=0; k < pData->midiprog.count; ++k)
                             {
-                                if (pData->midiprog.data[k].bank == nextBankId && pData->midiprog.data[k].program == nextProgramId)
+                                if (pData->midiprog.data[k].bank == bankId && pData->midiprog.data[k].program == progId)
                                 {
-                                    setMidiProgram(k, false, false, false);
-                                    pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
+                                    LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[pData->ctrlChannel]);
+
+                                    if (pData->engine->isOffline())
+                                    {
+                                        engineChannel->PrepareLoadInstrument(pData->filename, rIndex);
+                                        engineChannel->LoadInstrument();
+                                    }
+                                    else
+                                    {
+                                        fInstrument->LoadInstrumentInBackground(fInstrumentIds[rIndex], engineChannel);
+                                    }
+
+                                    fCurMidiProgs[event.channel] = k;
+
+                                    if (event.channel == pData->ctrlChannel)
+                                        pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
+
                                     break;
                                 }
                             }
@@ -914,7 +967,6 @@ public:
                         }
                         break;
                     }
-
                     break;
                 }
 
@@ -925,7 +977,7 @@ public:
                     uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
                     uint8_t channel = event.channel;
 
-                    // Fix bad note-off (per DSSI spec)
+                    // Fix bad note-off
                     if (MIDI_IS_STATUS_NOTE_ON(status) && midiEvent.data[2] == 0)
                         status = MIDI_STATUS_NOTE_OFF;
 
@@ -970,10 +1022,11 @@ public:
                     }
                     else if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) != 0)
                     {
-                        const uint8_t lsb = midiEvent.data[1];
-                        const uint8_t msb = midiEvent.data[2];
+                        const uint8_t lsb   = midiEvent.data[1];
+                        const uint8_t msb   = midiEvent.data[2];
+                        const int     value = ((msb << 7) | lsb) - 8192;
 
-                        fMidiInputPort->DispatchPitchbend(((msb << 7) | lsb) - 8192, channel, fragmentPos);
+                        fMidiInputPort->DispatchPitchbend(value, channel, fragmentPos);
                     }
 
                     break;
@@ -991,15 +1044,8 @@ public:
 
     bool processSingle(float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
     {
-        CARLA_ASSERT(outBuffer != nullptr);
-        CARLA_ASSERT(frames > 0);
-
-        if (outBuffer == nullptr)
-            return false;
-        if (frames == 0)
-            return false;
-
-        uint32_t i, k;
+        CARLA_SAFE_ASSERT_RETURN(outBuffer != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
@@ -1010,9 +1056,9 @@ public:
         }
         else if (! pData->singleMutex.tryLock())
         {
-            for (i=0; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
-                for (k=0; k < frames; ++k)
+                for (uint32_t k=0; k < frames; ++k)
                     outBuffer[i][k+timeOffset] = 0.0f;
             }
 
@@ -1051,7 +1097,7 @@ public:
 
             float oldBufLeft[doBalance ? frames : 1];
 
-            for (i=0; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
                 // Balance
                 if (doBalance)
@@ -1062,7 +1108,7 @@ public:
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (pData->postProc.balanceRight + 1.0f)/2.0f;
 
-                    for (k=0; k < frames; ++k)
+                    for (uint32_t k=0; k < frames; ++k)
                     {
                         if (i % 2 == 0)
                         {
@@ -1082,7 +1128,7 @@ public:
                 // Volume
                 if (doVolume)
                 {
-                    for (k=0; k < frames; ++k)
+                    for (uint32_t k=0; k < frames; ++k)
                         outBuffer[i][k+timeOffset] *= pData->postProc.volume;
                 }
             }
@@ -1096,6 +1142,18 @@ public:
         return true;
     }
 
+    void bufferSizeChanged(const uint32_t newBufferSize) override
+    {
+        // TODO
+        (void)newBufferSize;
+    }
+
+    void sampleRateChanged(const double newSampleRate) override
+    {
+        // TODO
+        (void)newSampleRate;
+    }
+
     // -------------------------------------------------------------------
     // Plugin buffers
 
@@ -1105,7 +1163,9 @@ public:
 
     const void* getExtraStuff() const noexcept override
     {
-        return fUses16Outs ? (const void*)0x1 : nullptr;
+        static const char xtrue[]  = "true";
+        static const char xfalse[] = "false";
+        return fUses16Outs ? xtrue : xfalse;
     }
 
     bool init(const char* filename, const char* const name, const char* label)
@@ -1233,19 +1293,21 @@ public:
             return false;
         }
 
-        fRealName = info.InstrumentName.c_str();
-        fLabel    = info.Product.c_str();
-        fMaker    = info.Artists.c_str();
+        CarlaString label2(label);
+
+        if (fUses16Outs && ! label2.endsWith(" (16 outs)"))
+            label2 += " (16 outs)";
+
+        fRealName = carla_strdup(info.InstrumentName.c_str());
+        fLabel    = label2.dup();
+        fMaker    = carla_strdup(info.Artists.c_str());
 
         pData->filename = carla_strdup(filename);
 
-        if (fUses16Outs && ! fLabel.endsWith(" (16 outs)"))
-            fLabel += " (16 outs)";
-
-        if (name != nullptr)
+        if (name != nullptr && name[0] != '\0')
             pData->name = pData->engine->getUniquePluginName(name);
         else
-            pData->name = pData->engine->getUniquePluginName((const char*)fRealName);
+            pData->name = pData->engine->getUniquePluginName(fRealName);
 
         // ---------------------------------------------------------------
         // Register client
@@ -1293,14 +1355,13 @@ public:
     // -------------------------------------------------------------------
 
 private:
-    const char* fFormat;
     const bool  fUses16Outs;
+    const char* fFormat;
+    const char* fRealName;
+    const char* fLabel;
+    const char* fMaker;
 
     int32_t fCurMidiProgs[16];
-
-    CarlaString fRealName;
-    CarlaString fLabel;
-    CarlaString fMaker;
 
     LinuxSampler::Sampler fSampler;
     LinuxSampler::Engine* fEngine;

@@ -355,7 +355,7 @@ public:
     }
 
     // -------------------------------------------------------------------
-    // Set gui stuff
+    // Set ui stuff
 
     void showCustomUI(const bool yesNo) override
     {
@@ -1756,13 +1756,10 @@ public:
 
     bool init(const char* const filename, const char* const name, const char* const label)
     {
+        CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
+
         // ---------------------------------------------------------------
         // first checks
-
-        if (pData->engine == nullptr)
-        {
-            return false;
-        }
 
         if (pData->client != nullptr)
         {
@@ -1834,9 +1831,9 @@ public:
         // ---------------------------------------------------------------
         // get info
 
-        if (name != nullptr)
+        if (name != nullptr && name[0] != '\0')
             pData->name = pData->engine->getUniquePluginName(name);
-        else if (fDescriptor->Name != nullptr)
+        else if (fDescriptor->Name != nullptr && fDescriptor->Name[0] != '\0')
             pData->name = pData->engine->getUniquePluginName(fDescriptor->Name);
         else
             pData->name = pData->engine->getUniquePluginName(fDescriptor->Label);

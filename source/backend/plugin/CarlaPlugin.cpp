@@ -1402,7 +1402,7 @@ void CarlaPlugin::setMidiProgramById(const uint32_t bank, const uint32_t program
 }
 
 // -------------------------------------------------------------------
-// Set gui stuff
+// Set ui stuff
 
 void CarlaPlugin::showCustomUI(const bool yesNo)
 {

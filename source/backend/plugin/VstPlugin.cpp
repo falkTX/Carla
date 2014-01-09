@@ -361,7 +361,7 @@ public:
     }
 
     // -------------------------------------------------------------------
-    // Set gui stuff
+    // Set ui stuff
 
     void showCustomUI(const bool yesNo) override
     {
@@ -2139,17 +2139,10 @@ protected:
 public:
     bool init(const char* const filename, const char* const name)
     {
-        CARLA_ASSERT(pData->engine != nullptr);
-        CARLA_ASSERT(pData->client == nullptr);
-        CARLA_ASSERT(filename != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
         // ---------------------------------------------------------------
         // first checks
-
-        if (pData->engine == nullptr)
-        {
-            return false;
-        }
 
         if (pData->client != nullptr)
         {
@@ -2157,7 +2150,7 @@ public:
             return false;
         }
 
-        if (filename == nullptr)
+        if (filename == nullptr || filename[0] == '\0')
         {
             pData->engine->setLastError("null filename");
             return false;
@@ -2218,7 +2211,7 @@ public:
         // ---------------------------------------------------------------
         // get info
 
-        if (name != nullptr)
+        if (name != nullptr && name[0] != '\0')
         {
             pData->name = pData->engine->getUniquePluginName(name);
         }
@@ -2231,10 +2224,13 @@ public:
             {
                 pData->name = pData->engine->getUniquePluginName(strBuf);
             }
+            else if (const char* const shortname = std::strrchr(filename, OS_SEP))
+            {
+                pData->name = pData->engine->getUniquePluginName(shortname+1);
+            }
             else
             {
-                const char* const label = std::strrchr(filename, OS_SEP)+1;
-                pData->name = pData->engine->getUniquePluginName(label);
+                pData->name = pData->engine->getUniquePluginName("unknown");
             }
         }
 

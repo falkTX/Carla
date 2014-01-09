@@ -387,7 +387,7 @@ public:
     }
 
     // -------------------------------------------------------------------
-    // Set gui stuff
+    // Set ui stuff
 
     // nothing
 
@@ -1399,11 +1399,11 @@ public:
         if (is_ladspa_rdf_descriptor_valid(rdfDescriptor, fDescriptor))
             fRdfDescriptor = ladspa_rdf_dup(rdfDescriptor);
 
-        if (name != nullptr)
+        if (name != nullptr && name[0] != '\0')
             pData->name = pData->engine->getUniquePluginName(name);
-        else if (fRdfDescriptor != nullptr && fRdfDescriptor->Title != nullptr)
+        else if (fRdfDescriptor != nullptr && fRdfDescriptor->Title != nullptr && fRdfDescriptor->Title[0] != '\0')
             pData->name = pData->engine->getUniquePluginName(fRdfDescriptor->Title);
-        else if (fDescriptor->Name != nullptr)
+        else if (fDescriptor->Name != nullptr && fDescriptor->Name[0] != '\0')
             pData->name = pData->engine->getUniquePluginName(fDescriptor->Name);
         else
             pData->name = pData->engine->getUniquePluginName(fDescriptor->Label);
