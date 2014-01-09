@@ -466,10 +466,9 @@ CarlaPlugin* CarlaPlugin::newGIG(const Initializer& init, const bool use16Outs)
 CarlaPlugin* CarlaPlugin::newSF2(const Initializer& init, const bool use16Outs)
 {
     carla_debug("CarlaPlugin::newSF2({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
-// #if defined(WANT_FLUIDSYNTH)
-//     return newFluidSynth(init, use16Outs);
-// #el
-#if defined(WANT_LINUXSAMPLER)
+#if defined(WANT_FLUIDSYNTH)
+    return newFluidSynth(init, use16Outs);
+#elif defined(WANT_LINUXSAMPLER)
     return newLinuxSampler(init, "SF2", use16Outs);
 #else
     init.engine->setLastError("SF2 support not available");
