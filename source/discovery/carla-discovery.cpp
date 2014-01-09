@@ -336,7 +336,10 @@ public:
         }
 
         if (ids.size() == 0)
+        {
+            DISCOVERY_OUT("error", "Failed to find any instruments");
             return;
+        }
 
         InstrumentManager::instrument_info_t info;
 
