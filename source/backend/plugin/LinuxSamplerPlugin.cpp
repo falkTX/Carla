@@ -234,12 +234,18 @@ public:
                             fSampler.RemoveSamplerChannel(fSamplerChannels[i]);
                             fSamplerChannels[i] = nullptr;
 
-                            if (fAudioOutputDevices[i] != nullptr)
+                            if (fAudioOutputDevices[i] != nullptr && fUses16Outs)
                             {
                                 delete fAudioOutputDevices[i];
                                 fAudioOutputDevices[i] = nullptr;
                             }
                         }
+                    }
+
+                    if (fAudioOutputDevices[0] != nullptr)
+                    {
+                        delete fAudioOutputDevices[0];
+                        fAudioOutputDevices[0] = nullptr;
                     }
 
                     delete fMidiInputPort;
