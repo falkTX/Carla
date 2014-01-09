@@ -887,7 +887,9 @@ public:
         pData->hints  = 0x0;
         pData->hints |= PLUGIN_IS_SYNTH;
         pData->hints |= PLUGIN_CAN_VOLUME;
-        pData->hints |= PLUGIN_CAN_BALANCE;
+
+        if (! fUses16Outs)
+            pData->hints |= PLUGIN_CAN_BALANCE;
 
         // extra plugin hints
         pData->extraHints  = 0x0;
@@ -1585,8 +1587,8 @@ public:
         if (fUses16Outs && ! label2.endsWith(" (16 outs)"))
             label2 += " (16 outs)";
 
-        pData->filename = carla_strdup(filename);
         fLabel          = label2.dup();
+        pData->filename = carla_strdup(filename);
 
         if (name != nullptr && name[0] != '\0')
             pData->name = pData->engine->getUniquePluginName(name);
@@ -1613,7 +1615,6 @@ public:
 
             pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
             pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-            pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
             pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
             pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
@@ -1680,15 +1681,15 @@ CarlaPlugin* CarlaPlugin::newFluidSynth(const Initializer& init, const bool use1
     carla_debug("CarlaPlugin::newFluidSynth({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
 
 #ifdef WANT_FLUIDSYNTH
-    if (! fluid_is_soundfont(init.filename))
-    {
-        init.engine->setLastError("Requested file is not a valid SoundFont");
-        return nullptr;
-    }
-
     if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && use16Outs)
     {
         init.engine->setLastError("Carla's rack mode can only work with Stereo modules, please choose the 2-channel only SoundFont version");
+        return nullptr;
+    }
+
+    if (! fluid_is_soundfont(init.filename))
+    {
+        init.engine->setLastError("Requested file is not a valid SoundFont");
         return nullptr;
     }
 

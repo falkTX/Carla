@@ -179,9 +179,9 @@ public:
         : CarlaPlugin(engine, id),
           fUses16Outs(use16Outs),
           fFormat(carla_strdup(format)),
-          fRealName(nullptr),
           fLabel(nullptr),
           fMaker(nullptr),
+          fRealName(nullptr),
           fEngine(nullptr),
           fMidiInputDevice(nullptr),
           fMidiInputPort(nullptr),
@@ -264,12 +264,6 @@ public:
             fFormat = nullptr;
         }
 
-        if (fRealName != nullptr)
-        {
-            delete[] fRealName;
-            fRealName = nullptr;
-        }
-
         if (fLabel != nullptr)
         {
             delete[] fLabel;
@@ -280,6 +274,12 @@ public:
         {
             delete[] fMaker;
             fMaker = nullptr;
+        }
+
+        if (fRealName != nullptr)
+        {
+            delete[] fRealName;
+            fRealName = nullptr;
         }
 
         clearBuffers();
@@ -601,7 +601,9 @@ public:
         pData->hints  = 0x0;
         pData->hints |= PLUGIN_IS_SYNTH;
         pData->hints |= PLUGIN_CAN_VOLUME;
-        pData->hints |= PLUGIN_CAN_BALANCE;
+
+        if (! fUses16Outs)
+            pData->hints |= PLUGIN_CAN_BALANCE;
 
         // extra plugin hints
         pData->extraHints  = 0x0;
@@ -981,53 +983,21 @@ public:
                     if (MIDI_IS_STATUS_NOTE_ON(status) && midiEvent.data[2] == 0)
                         status = MIDI_STATUS_NOTE_OFF;
 
-                    int32_t fragmentPos = sampleAccurate ? startTime : time;
+                    if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
+                        continue;
 
-                    if (MIDI_IS_STATUS_NOTE_OFF(status))
-                    {
-                        const uint8_t note = midiEvent.data[1];
+                    fMidiInputPort->DispatchRaw(const_cast<uint8_t*>(midiEvent.data), sampleAccurate ? startTime : time);
 
-                        fMidiInputPort->DispatchNoteOff(note, 0, channel, fragmentPos);
-
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, channel, note, 0.0f);
-                    }
-                    else if (MIDI_IS_STATUS_NOTE_ON(status))
-                    {
-                        const uint8_t note = midiEvent.data[1];
-                        const uint8_t velo = midiEvent.data[2];
-
-                        fMidiInputPort->DispatchNoteOn(note, velo, channel, fragmentPos);
-
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, note, velo);
-                    }
-                    else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) != 0)
-                    {
-                        //const uint8_t note     = midiEvent.data[1];
-                        //const uint8_t pressure = midiEvent.data[2];
-
-                        // unsupported
-                    }
-                    else if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0)
-                    {
-                        const uint8_t control = midiEvent.data[1];
-                        const uint8_t value   = midiEvent.data[2];
-
-                        fMidiInputPort->DispatchControlChange(control, value, channel, fragmentPos);
-                    }
-                    else if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) != 0)
-                    {
-                        //const uint8_t pressure = midiEvent.data[1];
-
-                        // unsupported
-                    }
-                    else if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) != 0)
-                    {
-                        const uint8_t lsb   = midiEvent.data[1];
-                        const uint8_t msb   = midiEvent.data[2];
-                        const int     value = ((msb << 7) | lsb) - 8192;
-
-                        fMidiInputPort->DispatchPitchbend(value, channel, fragmentPos);
-                    }
+                    if (status == MIDI_STATUS_NOTE_ON)
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
+                    else if (status == MIDI_STATUS_NOTE_OFF)
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, channel, midiEvent.data[1], 0.0f);
 
                     break;
                 }
@@ -1168,7 +1138,7 @@ public:
         return fUses16Outs ? xtrue : xfalse;
     }
 
-    bool init(const char* filename, const char* const name, const char* label)
+    bool init(const char* const filename, const char* const name, const char* const label)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -1181,13 +1151,13 @@ public:
             return false;
         }
 
-        if (filename == nullptr)
+        if (filename == nullptr || filename[0] == '\0')
         {
             pData->engine->setLastError("null filename");
             return false;
         }
 
-        if (label == nullptr)
+        if (label == nullptr || label[0] == '\0')
         {
             pData->engine->setLastError("null label");
             return false;
@@ -1298,28 +1268,27 @@ public:
         if (fUses16Outs && ! label2.endsWith(" (16 outs)"))
             label2 += " (16 outs)";
 
-        fRealName = carla_strdup(info.InstrumentName.c_str());
         fLabel    = label2.dup();
         fMaker    = carla_strdup(info.Artists.c_str());
+        fRealName = carla_strdup(info.InstrumentName.c_str());
 
         pData->filename = carla_strdup(filename);
 
         if (name != nullptr && name[0] != '\0')
             pData->name = pData->engine->getUniquePluginName(name);
-        else
+        else if (fRealName[0] != '\0')
             pData->name = pData->engine->getUniquePluginName(fRealName);
+        else
+            pData->name = pData->engine->getUniquePluginName(label);
 
         // ---------------------------------------------------------------
-        // Register client
+        // register client
 
         pData->client = pData->engine->addClient(this);
 
         if (pData->client == nullptr || ! pData->client->isOk())
         {
             pData->engine->setLastError("Failed to register plugin client");
-            LinuxSampler::EngineFactory::Destroy(fEngine);
-            fInstrument = nullptr;
-            fEngine = nullptr;
             return false;
         }
 
@@ -1331,6 +1300,7 @@ public:
             pData->options = 0x0;
 
             pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+            pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
             pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
             pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
@@ -1357,9 +1327,9 @@ public:
 private:
     const bool  fUses16Outs;
     const char* fFormat;
-    const char* fRealName;
     const char* fLabel;
     const char* fMaker;
+    const char* fRealName;
 
     int32_t fCurMidiProgs[16];
 
