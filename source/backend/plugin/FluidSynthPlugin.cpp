@@ -21,6 +21,8 @@
 
 #include <fluidsynth.h>
 
+#include <QtCore/QStringList>
+
 #if (FLUIDSYNTH_VERSION_MAJOR >= 1 && FLUIDSYNTH_VERSION_MINOR >= 1 && FLUIDSYNTH_VERSION_MICRO >= 4)
 # define FLUIDSYNTH_VERSION_NEW_API
 #endif
@@ -38,7 +40,7 @@ class FluidSynthPlugin : public CarlaPlugin
 public:
     FluidSynthPlugin(CarlaEngine* const engine, const unsigned int id, const bool use16Outs)
         : CarlaPlugin(engine, id),
-          kUses16Outs(use16Outs),
+          fUses16Outs(use16Outs),
           fSettings(nullptr),
           fSynth(nullptr),
           fSynthId(-1),
@@ -434,45 +436,48 @@ public:
     void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
     {
         CARLA_SAFE_ASSERT_RETURN(fSynth != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(type != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(key != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
-        carla_debug("DssiPlugin::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
+        CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(value != nullptr && value[0] != '\0',);
+        carla_debug("FluidSynthPlugin::setCustomData(%s, \"%s\", \"%s\", %s)", type, key, value, bool2str(sendGui));
 
         if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) != 0)
-            return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
+            return carla_stderr2("FluidSynthPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
         if (std::strcmp(key, "midiPrograms") != 0)
-            return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
+            return carla_stderr2("FluidSynthPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
-//         QStringList midiProgramList(QString(value).split(":", QString::SkipEmptyParts));
-//
-//         if (midiProgramList.count() == MAX_MIDI_CHANNELS)
-//         {
-//             uint i = 0;
-//             foreach (const QString& midiProg, midiProgramList)
-//             {
-//                 bool ok;
-//                 uint index = midiProg.toUInt(&ok);
-//
-//                 if (ok && index < pData->midiprog.count)
-//                 {
-//                     const uint32_t bank    = pData->midiprog.data[index].bank;
-//                     const uint32_t program = pData->midiprog.data[index].program;
-//
-//                     fluid_synth_program_select(fSynth, i, fSynthId, bank, program);
-//                     fCurMidiProgs[i] = index;
-//
-//                     if (pData->ctrlChannel == static_cast<int32_t>(i))
-//                     {
-//                         pData->midiprog.current = index;
-//                         pData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
-//                     }
-//                 }
-//
-//                 ++i;
-//             }
-//         }
+        if (! fUses16Outs)
+            return CarlaPlugin::setCustomData(type, key, value, sendGui);
+
+        QStringList midiProgramList(QString(value).split(":", QString::SkipEmptyParts));
+
+        if (midiProgramList.count() == MAX_MIDI_CHANNELS)
+        {
+            uint i = 0;
+            foreach (const QString& midiProg, midiProgramList)
+            {
+                bool ok;
+                uint index = midiProg.toUInt(&ok);
+
+                if (ok && index < pData->midiprog.count)
+                {
+                    const uint32_t bank    = pData->midiprog.data[index].bank;
+                    const uint32_t program = pData->midiprog.data[index].program;
+
+                    fluid_synth_program_select(fSynth, i, fSynthId, bank, program);
+                    fCurMidiProgs[i] = index;
+
+                    if (pData->ctrlChannel == static_cast<int32_t>(i))
+                    {
+                        pData->midiprog.current = index;
+                        pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
+                    }
+                }
+
+                ++i;
+            }
+        }
 
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
@@ -496,6 +501,7 @@ public:
             const uint32_t program = pData->midiprog.data[index].program;
 
             //const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+
             fluid_synth_program_select(fSynth, pData->ctrlChannel, fSynthId, bank, program);
             fCurMidiProgs[pData->ctrlChannel] = index;
         }
@@ -528,7 +534,7 @@ public:
         clearBuffers();
 
         uint32_t aOuts, params, j;
-        aOuts  = kUses16Outs ? 32 : 2;
+        aOuts  = fUses16Outs ? 32 : 2;
         params = FluidSynthParametersMax;
 
         pData->audioOut.createNew(aOuts);
@@ -540,7 +546,7 @@ public:
         // ---------------------------------------
         // Audio Outputs
 
-        if (kUses16Outs)
+        if (fUses16Outs)
         {
             for (j=0; j < 32; ++j)
             {
@@ -879,7 +885,9 @@ public:
         // extra plugin hints
         pData->extraHints  = 0x0;
         pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_IN;
-        pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
+
+        if (! fUses16Outs)
+            pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
 
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
@@ -1385,15 +1393,10 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Fill plugin buffers and Run plugin
 
-        if (kUses16Outs)
+        if (fUses16Outs)
         {
             for (i=0; i < pData->audioOut.count; ++i)
-            {
-#ifdef HAVE_JUCE
-                FloatVectorOperations::clear(fAudio16Buffers[i], frames);
-#else
-#endif
-            }
+                FLOAT_CLEAR(fAudio16Buffers[i], frames);
 
             fluid_synth_process(fSynth, frames, 0, nullptr, pData->audioOut.count, fAudio16Buffers);
         }
@@ -1405,7 +1408,7 @@ public:
         // Post-processing (volume and balance)
 
         {
-            // note - balance not possible with kUses16Outs, so we can safely skip fAudioOutBuffers
+            // note - balance not possible with fUses16Outs, so we can safely skip fAudioOutBuffers
             const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) > 0 && pData->postProc.volume != 1.0f;
             const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) > 0 && (pData->postProc.balanceLeft != -1.0f || pData->postProc.balanceRight != 1.0f);
 
@@ -1417,12 +1420,7 @@ public:
                 if (doBalance)
                 {
                     if (i % 2 == 0)
-                    {
-#ifdef HAVE_JUCE
-                        FloatVectorOperations::copy(oldBufLeft, outBuffer[i]+timeOffset, frames);
-#else
-#endif
-                    }
+                        FLOAT_COPY(oldBufLeft, outBuffer[i]+timeOffset, frames);
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (pData->postProc.balanceRight + 1.0f)/2.0f;
@@ -1445,7 +1443,7 @@ public:
                 }
 
                 // Volume
-                if (kUses16Outs)
+                if (fUses16Outs)
                 {
                     for (k=0; k < frames; ++k)
                         outBuffer[i][k+timeOffset] = fAudio16Buffers[i][k] * pData->postProc.volume;
@@ -1459,7 +1457,7 @@ public:
 
         } // End of Post-processing
 #else
-        if (kUses16Outs)
+        if (fUses16Outs)
         {
             for (i=0; i < pData->audioOut.count; ++i)
             {
@@ -1477,7 +1475,7 @@ public:
 
     void bufferSizeChanged(const uint32_t newBufferSize) override
     {
-        if (! kUses16Outs)
+        if (! fUses16Outs)
             return;
 
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
@@ -1519,7 +1517,7 @@ public:
 
     const void* getExtraStuff() const noexcept override
     {
-        return kUses16Outs ? (const void*)0x1 : nullptr;
+        return fUses16Outs ? (const void*)0x1 : nullptr;
     }
 
     bool init(const char* const filename, const char* const name, const char* const label)
@@ -1576,7 +1574,7 @@ public:
 
         CarlaString label2(label);
 
-        if (kUses16Outs && ! label2.endsWith(" (16 outs)"))
+        if (fUses16Outs && ! label2.endsWith(" (16 outs)"))
             label2 += " (16 outs)";
 
         pData->filename = carla_strdup(filename);
@@ -1647,7 +1645,7 @@ private:
         FluidSynthParametersMax  = 14
     };
 
-    const bool kUses16Outs;
+    const bool fUses16Outs;
 
     fluid_settings_t* fSettings;
     fluid_synth_t* fSynth;

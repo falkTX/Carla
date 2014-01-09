@@ -1334,13 +1334,10 @@ public:
 
     bool init(const char* const filename, const char* const name, const char* const label, const LADSPA_RDF_Descriptor* const rdfDescriptor)
     {
+        CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
+
         // ---------------------------------------------------------------
         // first checks
-
-        if (pData->engine == nullptr)
-        {
-            return false;
-        }
 
         if (pData->client != nullptr)
         {
