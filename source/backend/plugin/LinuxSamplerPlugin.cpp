@@ -466,7 +466,7 @@ public:
         clearBuffers();
 
         uint32_t aOuts;
-        aOuts = fUses16Outs ? 16 : 2;
+        aOuts = fUses16Outs ? 32 : 2;
 
         pData->audioOut.createNew(aOuts);
 
