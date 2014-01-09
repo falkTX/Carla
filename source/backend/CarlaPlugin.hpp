@@ -576,7 +576,7 @@ public:
      * \param sendCallback Send message change to registered callback
      * \param block Block the audio callback
      */
-    virtual void setProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback);
+    virtual void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback);
 
     /*!
      * Change the current MIDI plugin program to \a index.
@@ -590,7 +590,7 @@ public:
      * \param sendCallback Send message change to registered callback
      * \param block Block the audio callback
      */
-    virtual void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback);
+    virtual void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback);
 
     /*!
      * This is an overloaded call to setMidiProgram().\n

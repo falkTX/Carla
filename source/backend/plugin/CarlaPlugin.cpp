@@ -1267,37 +1267,31 @@ void CarlaPlugin::setChunkData(const char* const stringData)
     (void)stringData;
 }
 
-void CarlaPlugin::setProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
+void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
 {
-    CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(pData->prog.count));
+    CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
 #ifdef BUILD_BRIDGE
-    if (! gIsLoadingProject)
-    {
+    if (! gIsLoadingProject) {
         CARLA_ASSERT(! sendGui); // this should never happen
     }
 #endif
 
-    if (index > static_cast<int32_t>(pData->prog.count))
-        return;
-
-    const int32_t fixedIndex(carla_fixValue<int32_t>(-1, pData->prog.count, index));
-
-    pData->prog.current = fixedIndex;
+    pData->prog.current = index;
 
 #ifndef BUILD_BRIDGE
     if (sendOsc)
-        pData->engine->oscSend_control_set_current_program(pData->id, fixedIndex);
+        pData->engine->oscSend_control_set_current_program(pData->id, index);
 #endif
 
     if (sendCallback)
-        pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED, pData->id, fixedIndex, 0, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
 
     // Change default parameter values
-    if (fixedIndex >= 0)
+    if (index >= 0)
     {
 #ifndef BUILD_BRIDGE
         if (sendGui)
-            uiProgramChange(fixedIndex);
+            uiProgramChange(index);
 #endif
 
         if (getType() == PLUGIN_GIG || getType() == PLUGIN_SF2 || getType() == PLUGIN_SFZ)
@@ -1330,36 +1324,30 @@ void CarlaPlugin::setProgram(int32_t index, const bool sendGui, const bool sendO
 #endif
 }
 
-void CarlaPlugin::setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
+void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
 {
-    CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count));
+    CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
 #ifdef BUILD_BRIDGE
-    if (! gIsLoadingProject)
-    {
+    if (! gIsLoadingProject) {
         CARLA_ASSERT(! sendGui); // this should never happen
     }
 #endif
 
-    if (index > static_cast<int32_t>(pData->midiprog.count))
-        return;
-
-    const int32_t fixedIndex(carla_fixValue<int32_t>(-1, pData->midiprog.count, index));
-
-    pData->midiprog.current = fixedIndex;
+    pData->midiprog.current = index;
 
 #ifndef BUILD_BRIDGE
     if (sendOsc)
-        pData->engine->oscSend_control_set_current_midi_program(pData->id, fixedIndex);
+        pData->engine->oscSend_control_set_current_midi_program(pData->id, index);
 #endif
 
     if (sendCallback)
-        pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, pData->id, fixedIndex, 0, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
 
-    if (fixedIndex >= 0)
+    if (index >= 0)
     {
 #ifndef BUILD_BRIDGE
         if (sendGui)
-            uiMidiProgramChange(fixedIndex);
+            uiMidiProgramChange(index);
 #endif
 
         if (getType() == PLUGIN_GIG || getType() == PLUGIN_SF2 || getType() == PLUGIN_SFZ)

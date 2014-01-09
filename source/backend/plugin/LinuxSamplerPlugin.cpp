@@ -394,66 +394,60 @@ public:
         if (std::strcmp(key, "midiPrograms") != 0)
             return carla_stderr2("LinuxSamplerPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
-        if (! fUses16Outs)
-            return CarlaPlugin::setCustomData(type, key, value, sendGui);
-
-        QStringList midiProgramList(QString(value).split(":", QString::SkipEmptyParts));
-
-        if (midiProgramList.count() == MAX_MIDI_CHANNELS)
+        if (fUses16Outs)
         {
-            uint i = 0;
-            foreach (const QString& midiProg, midiProgramList)
+            QStringList midiProgramList(QString(value).split(":", QString::SkipEmptyParts));
+
+            if (midiProgramList.count() == MAX_MIDI_CHANNELS)
             {
-                CARLA_SAFE_ASSERT_BREAK(i < MAX_MIDI_CHANNELS);
-
-                bool ok;
-                uint index = midiProg.toUInt(&ok);
-
-                if (ok && index < pData->midiprog.count)
+                uint i = 0;
+                foreach (const QString& midiProg, midiProgramList)
                 {
-                    const uint32_t bank    = pData->midiprog.data[index].bank;
-                    const uint32_t program = pData->midiprog.data[index].program;
-                    const uint32_t rIndex  = bank*128 + program;
+                    CARLA_SAFE_ASSERT_BREAK(i < MAX_MIDI_CHANNELS);
 
-                    if (pData->engine->isOffline())
+                    bool ok;
+                    uint index = midiProg.toUInt(&ok);
+
+                    if (ok && index < pData->midiprog.count)
                     {
-                        fEngineChannels[i]->PrepareLoadInstrument(pData->filename, rIndex);
-                        fEngineChannels[i]->LoadInstrument();
-                    }
-                    else
-                    {
-                        fInstrument->LoadInstrumentInBackground(fInstrumentIds[rIndex], fEngineChannels[i]);
+                        const uint32_t bank    = pData->midiprog.data[index].bank;
+                        const uint32_t program = pData->midiprog.data[index].program;
+                        const uint32_t rIndex  = bank*128 + program;
+
+                        if (pData->engine->isOffline())
+                        {
+                            fEngineChannels[i]->PrepareLoadInstrument(pData->filename, rIndex);
+                            fEngineChannels[i]->LoadInstrument();
+                        }
+                        else
+                        {
+                            fInstrument->LoadInstrumentInBackground(fInstrumentIds[rIndex], fEngineChannels[i]);
+                        }
+
+                        fCurMidiProgs[i] = index;
+
+                        if (pData->ctrlChannel == static_cast<int32_t>(i))
+                        {
+                            pData->midiprog.current = index;
+                            pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
+                        }
                     }
 
-                    fCurMidiProgs[i] = index;
-
-                    if (pData->ctrlChannel == static_cast<int32_t>(i))
-                    {
-                        pData->midiprog.current = index;
-                        pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
-                    }
+                    ++i;
                 }
 
-                ++i;
+                CARLA_SAFE_ASSERT(i == MAX_MIDI_CHANNELS);
             }
         }
 
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
 
-    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
-        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count));
+        CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
 
-        if (index < -1)
-            index = -1;
-        else if (index > static_cast<int32_t>(pData->midiprog.count))
-            return;
-
-        if (pData->ctrlChannel < 0 || pData->ctrlChannel >= MAX_MIDI_CHANNELS)
-            return;
-
-        if (index >= 0)
+        if (index >= 0 && pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
         {
             const uint32_t bank    = pData->midiprog.data[index].bank;
             const uint32_t program = pData->midiprog.data[index].program;
