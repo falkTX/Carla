@@ -477,14 +477,9 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
-        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(pData->prog.count));
-
-        if (index < -1)
-            index = -1;
-        else if (index > static_cast<int32_t>(pData->prog.count))
-            return;
+        CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
 
         const bool doLock(sendGui || sendOsc || sendCallback);
 
@@ -503,14 +498,9 @@ public:
         CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
     }
 
-    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
-        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count));
-
-        if (index < -1)
-            index = -1;
-        else if (index > static_cast<int32_t>(pData->midiprog.count))
-            return;
+        CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
 
         const bool doLock(sendGui || sendOsc || sendCallback);
 

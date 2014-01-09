@@ -1349,11 +1349,8 @@ CARLA_BACKEND_END_NAMESPACE
 
 CARLA_BACKEND_START_NAMESPACE
 
-CarlaPlugin* CarlaPlugin::newLinuxSampler(const Initializer& init, const char* const format, const bool /*use16Outs*/)
+CarlaPlugin* CarlaPlugin::newLinuxSampler(const Initializer& init, const char* const format, const bool use16Outs)
 {
-    // TESTING
-    const bool use16Outs = true;
-
     carla_debug("LinuxSamplerPlugin::newLinuxSampler({%p, \"%s\", \"%s\", \"%s\"}, %s, %s)", init.engine, init.filename, init.name, init.label, format, bool2str(use16Outs));
 
 #ifdef WANT_LINUXSAMPLER

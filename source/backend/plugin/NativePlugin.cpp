@@ -596,14 +596,15 @@ public:
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
 
-    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
 
+        // TODO, put into check below
         if ((pData->hints & PLUGIN_IS_SYNTH) != 0 && (pData->ctrlChannel < 0 || pData->ctrlChannel >= MAX_MIDI_CHANNELS))
-           return;
+           return CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
 
         if (index >= 0)
         {

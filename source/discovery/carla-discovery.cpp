@@ -363,26 +363,56 @@ public:
 
     static void outputInfo(const LinuxSampler::InstrumentManager::instrument_info_t* const info, const size_t programs, const char* const basename = nullptr)
     {
-        DISCOVERY_OUT("init", "-----------");
+        CarlaString name;
+        const char* label;
 
         if (info != nullptr)
         {
-            DISCOVERY_OUT("name", info->InstrumentName);
-            DISCOVERY_OUT("label", info->Product);
+            name  = info->InstrumentName.c_str();
+            label = info->Product.c_str();
+        }
+        else
+        {
+            name  = basename;
+            label = basename;
+        }
+
+        // 2 channels
+        DISCOVERY_OUT("init", "-----------");
+        DISCOVERY_OUT("name", (const char*)name);
+        DISCOVERY_OUT("label", label);
+
+        if (info != nullptr)
+        {
             DISCOVERY_OUT("maker", info->Artists);
             DISCOVERY_OUT("copyright", info->Artists);
-        }
-        else if (basename != nullptr && basename[0] != '\0')
-        {
-            DISCOVERY_OUT("name", basename);
-            DISCOVERY_OUT("label", basename);
         }
 
         DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
         DISCOVERY_OUT("audio.outs", 2);
         DISCOVERY_OUT("midi.ins", 1);
-        //DISCOVERY_OUT("parameters.ins", 13); // defined in Carla, TODO
-        //DISCOVERY_OUT("parameters.outs", 1);
+        DISCOVERY_OUT("programs", programs);
+        DISCOVERY_OUT("build", BINARY_NATIVE);
+        DISCOVERY_OUT("end", "------------");
+
+        if (name.isEmpty())
+            return;
+        name += " (16 outputs)";
+
+        // 16 channels
+        DISCOVERY_OUT("init", "-----------");
+        DISCOVERY_OUT("name", (const char*)name);
+        DISCOVERY_OUT("label", label);
+
+        if (info != nullptr)
+        {
+            DISCOVERY_OUT("maker", info->Artists);
+            DISCOVERY_OUT("copyright", info->Artists);
+        }
+
+        DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
+        DISCOVERY_OUT("audio.outs", 2);
+        DISCOVERY_OUT("midi.ins", 1);
         DISCOVERY_OUT("programs", programs);
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("end", "------------");
@@ -1660,8 +1690,13 @@ void do_fluidsynth_check(const char* const filename, const bool init)
         delete_fluid_settings(f_settings);
     }
 
-    // FIXME
-    CarlaString name(std::strrchr(filename, OS_SEP)+1);
+    CarlaString name;
+
+    if (const char* const shortname = std::strrchr(filename, OS_SEP))
+        name = shortname+1;
+    else
+        name = filename;
+
     name.truncate(name.rfind('.'));
 
     CarlaString label(name);
@@ -1670,8 +1705,6 @@ void do_fluidsynth_check(const char* const filename, const bool init)
     DISCOVERY_OUT("init", "-----------");
     DISCOVERY_OUT("name", (const char*)name);
     DISCOVERY_OUT("label", (const char*)label);
-    DISCOVERY_OUT("maker", "");
-    DISCOVERY_OUT("copyright", "");
     DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
     DISCOVERY_OUT("audio.outs", 2);
     DISCOVERY_OUT("midi.ins", 1);
@@ -1682,14 +1715,13 @@ void do_fluidsynth_check(const char* const filename, const bool init)
     DISCOVERY_OUT("end", "------------");
 
     // 16 channels
-    if (name.isNotEmpty())
-        name += " (16 outputs)";
+    if (name.isEmpty())
+        return;
+    name += " (16 outputs)";
 
     DISCOVERY_OUT("init", "-----------");
-    DISCOVERY_OUT("name", "");
     DISCOVERY_OUT("name", (const char*)name);
     DISCOVERY_OUT("label", (const char*)label);
-    DISCOVERY_OUT("copyright", "");
     DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
     DISCOVERY_OUT("audio.outs", 32);
     DISCOVERY_OUT("midi.ins", 1);

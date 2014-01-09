@@ -331,7 +331,7 @@ public:
         fDssiDescriptor->set_custom_data(fHandle, chunk.data(), chunk.size());
     }
 
-    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor->select_program != nullptr,);

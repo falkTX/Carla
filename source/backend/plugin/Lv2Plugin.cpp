@@ -996,16 +996,11 @@ public:
         }
     }
 
-    void setProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
-        CARLA_ASSERT(fRdfDescriptor != nullptr);
-        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(fRdfDescriptor->PresetCount));
-        CARLA_ASSERT(sendGui || sendOsc || sendCallback); // never call this from RT
-
-        if (index < -1)
-            index = -1;
-        else if (index > static_cast<int32_t>(fRdfDescriptor->PresetCount))
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(fRdfDescriptor->PresetCount),);
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,); // never call this from RT
 
         if (index >= 0 && index < static_cast<int32_t>(fRdfDescriptor->PresetCount))
         {
@@ -1025,16 +1020,11 @@ public:
         CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
     }
 
-    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
-        CARLA_ASSERT(fHandle != nullptr);
-        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count));
-
-        if (index < -1)
-            index = -1;
-        else if (index > static_cast<int32_t>(pData->midiprog.count))
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
 
         if (index >= 0 && fExt.programs != nullptr && fExt.programs->select_program != nullptr)
         {
