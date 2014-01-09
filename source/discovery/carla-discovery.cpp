@@ -398,7 +398,7 @@ public:
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("end", "------------");
 
-        if (name.isEmpty())
+        if (name.isEmpty() || programs <= 1)
             return;
         name += " (16 outputs)";
 
@@ -1718,7 +1718,7 @@ void do_fluidsynth_check(const char* const filename, const bool init)
     DISCOVERY_OUT("end", "------------");
 
     // 16 channels
-    if (name.isEmpty())
+    if (name.isEmpty() || programs <= 1)
         return;
     name += " (16 outputs)";
 
