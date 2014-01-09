@@ -1163,12 +1163,6 @@ public:
 
         for (int i=0; i < 16; ++i)
         {
-            fSamplerChannels[i] = fSampler.AddSamplerChannel();
-            CARLA_SAFE_ASSERT_CONTINUE(fSamplerChannels[i] != nullptr);
-
-            fEngineChannels[i] = fSamplerChannels[i]->GetEngineChannel();
-            CARLA_SAFE_ASSERT_CONTINUE(fEngineChannels[i] != nullptr);
-
             LinuxSampler::AudioOutputDevicePlugin* outputDevice;
 
             if (fUses16Outs)
@@ -1181,8 +1175,14 @@ public:
                 outputDevice = fAudioOutputDevices[0];
             }
 
+            fSamplerChannels[i] = fSampler.AddSamplerChannel();
+            CARLA_SAFE_ASSERT_CONTINUE(fSamplerChannels[i] != nullptr);
+
             fSamplerChannels[i]->SetEngineType(ctype);
             fSamplerChannels[i]->SetAudioOutputDevice(outputDevice);
+
+            fEngineChannels[i] = fSamplerChannels[i]->GetEngineChannel();
+            CARLA_SAFE_ASSERT_CONTINUE(fEngineChannels[i] != nullptr);
 
             fEngineChannels[i]->Connect(outputDevice);
             fEngineChannels[i]->Volume(LinuxSampler::kVolumeMax);
