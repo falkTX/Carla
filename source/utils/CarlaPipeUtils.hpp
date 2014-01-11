@@ -40,8 +40,8 @@ protected:
     CarlaPipeServer()
         : fPipeRecv(-1),
           fPipeSend(-1),
-          fPid(-1),
-          fReading(false)
+          fIsReading(false),
+          fPid(-1)
     {
         carla_debug("CarlaPipeServer::CarlaPipeServer()");
 
@@ -100,17 +100,17 @@ public:
             return false;
         }
 
-        char uiPipeRecv[100+1];
-        char uiPipeSend[100+1];
+        char pipeRecv[100+1];
+        char pipeSend[100+1];
 
-        std::snprintf(uiPipeRecv, 100, "%d", pipe1[0]); // [0] means reading end
-        std::snprintf(uiPipeSend, 100, "%d", pipe2[1]); // [1] means writting end
+        std::snprintf(pipeRecv, 100, "%d", pipe1[0]); // [0] means reading end
+        std::snprintf(pipeSend, 100, "%d", pipe2[1]); // [1] means writting end
 
-        uiPipeRecv[100] = '\0';
-        uiPipeSend[100] = '\0';
+        pipeRecv[100] = '\0';
+        pipeSend[100] = '\0';
 
-        argv[3] = uiPipeRecv; // reading end
-        argv[4] = uiPipeSend; // writting end
+        argv[3] = pipeRecv; // reading end
+        argv[4] = pipeSend; // writting end
 
         //----------------------------------------------------------------
         // fork
@@ -265,9 +265,9 @@ public:
                 setlocale(LC_NUMERIC, "POSIX");
             }
 
-            fReading = true;
+            fIsReading = true;
             msgReceived(msg);
-            fReading = false;
+            fIsReading = false;
 
             delete[] msg;
         }
@@ -283,7 +283,7 @@ public:
 
     bool readNextLineAsBool(bool& value)
     {
-        CARLA_SAFE_ASSERT_RETURN(fReading, false);
+        CARLA_SAFE_ASSERT_RETURN(fIsReading, false);
 
         if (const char* const msg = readline())
         {
@@ -297,7 +297,7 @@ public:
 
     bool readNextLineAsInt(int& value)
     {
-        CARLA_SAFE_ASSERT_RETURN(fReading, false);
+        CARLA_SAFE_ASSERT_RETURN(fIsReading, false);
 
         if (const char* const msg = readline())
         {
@@ -311,7 +311,7 @@ public:
 
     bool readNextLineAsFloat(float& value)
     {
-        CARLA_SAFE_ASSERT_RETURN(fReading, false);
+        CARLA_SAFE_ASSERT_RETURN(fIsReading, false);
 
         if (const char* const msg = readline())
         {
@@ -325,7 +325,7 @@ public:
 
     bool readNextLineAsString(const char*& value)
     {
-        CARLA_SAFE_ASSERT_RETURN(fReading, false);
+        CARLA_SAFE_ASSERT_RETURN(fIsReading, false);
 
         if (const char* const msg = readline())
         {
@@ -405,10 +405,10 @@ protected:
     // -------------------------------------------------------------------
 
 private:
-    int fPipeRecv; // the pipe end that is used for receiving messages from UI
-    int fPipeSend; // the pipe end that is used for sending messages to UI
+    int   fPipeRecv; // the pipe end that is used for receiving messages from UI
+    int   fPipeSend; // the pipe end that is used for sending messages to UI
+    bool  fIsReading;
     pid_t fPid;
-    bool  fReading;
 
     char        fTmpBuf[0xff+1];
     CarlaString fTmpStr;
