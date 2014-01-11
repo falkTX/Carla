@@ -337,7 +337,7 @@ static int clone_fn(void * context)
 
 #endif
 
-static bool do_fork(char * argv[6], int* ret)
+static bool do_fork(char * argv[6], int* ret /*, int pipe1[2], int pipe2[2]*/)
 {
   int ret2 = *ret = FORK();
 
@@ -353,9 +353,11 @@ static bool do_fork(char * argv[6], int* ret)
 
     execvp(argv[0], /*(char **)*/argv);
     fprintf(stderr, "exec of UI failed: %s\n", strerror(errno));
+    _exit(0);
     return false;
   case -1:
     fprintf(stderr, "fork() failed to create new process for plugin UI\n");
+    _exit(0);
     return false;
   }
 
@@ -452,7 +454,7 @@ nekoui_instantiate(
   fprintf(stderr, "clone2() exec not implemented yet\n");
   goto fail_free_control;
 #else
-  if (! do_fork(argv, &ret))
+  if (! do_fork(argv, &ret /*, pipe1, pipe2*/))
       goto fail_free_control;
 #endif
 

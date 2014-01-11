@@ -204,3 +204,6 @@ class CarlaApplication(object):
 
     def getApp(self):
         return self.fApp
+
+    def quit(self):
+        self.fApp.quit()

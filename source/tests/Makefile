@@ -34,7 +34,7 @@ PEDANTIC_CXX_FLAGS += -isystem /opt/kxstudio/include
 # --------------------------------------------------------------
 
 # TARGETS  = ansi-pedantic-test_c ansi-pedantic-test_c99 ansi-pedantic-test_cxx ansi-pedantic-test_cxx11
-TARGETS += CarlaString Print RtLinkedList RtLinkedListGnu Utils
+TARGETS += CarlaString PipeServer Print RtLinkedList RtLinkedListGnu Utils
 
 all: $(TARGETS)
 
@@ -56,23 +56,27 @@ ansi-pedantic-test_cxx11: ansi-pedantic-test.c ../backend/Carla*.h
 
 CarlaString: CarlaString.cpp ../utils/CarlaString.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
-	valgrind ./CarlaString
+	valgrind ./$@
+
+PipeServer: PipeServer.cpp ../utils/CarlaPipeUtils.hpp
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
+# 	valgrind ./$@
 
 Print: Print.cpp ../utils/CarlaUtils.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
-	valgrind ./Print
+	valgrind ./$@
 
 RtLinkedList: RtLinkedList.cpp ../utils/LinkedList.hpp ../utils/RtLinkedList.hpp ../modules/rtmempool.a
 	$(CXX) $< ../modules/rtmempool.a $(PEDANTIC_CXX_FLAGS) -lpthread -o $@
-	valgrind ./RtLinkedList
+	valgrind ./$@
 
 RtLinkedListGnu: RtLinkedList.cpp ../utils/LinkedList.hpp ../utils/RtLinkedList.hpp ../modules/rtmempool.a
 	$(CXX) $< ../modules/rtmempool.a $(GNU_CXX_FLAGS) -lpthread -o $@
-	valgrind ./RtLinkedListGnu
+	valgrind ./$@
 
 Utils: Utils.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -ldl -lpthread -o $@
-	valgrind ./Utils
+	valgrind ./$@
 
 # --------------------------------------------------------------
 

@@ -22,18 +22,17 @@
 from numpy import rint
 from sys import argv, exit
 
-try:
-    from PyQt5.QtCore import pyqtSlot
-    from PyQt5.QtWidgets import QApplication, QGridLayout, QLabel, QPushButton, QTextEdit, QWidget
-except:
-    from PyQt4.QtCore import pyqtSlot
-    from PyQt4.QtGui import QApplication, QGridLayout, QLabel, QPushButton, QTextEdit, QWidget
+from PyQt4.QtCore import pyqtSlot
+from PyQt4.QtGui import QApplication, QGridLayout, QLabel, QPushButton, QTextEdit, QWidget
 
 # -----------------------------------------------------------------------
 # Imports (ExternalUI)
 
+from carla_style import CarlaApplication
 from externalui import ExternalUI
 from paramspinbox import ParamSpinBox
+
+import resources_rc
 
 # -----------------------------------------------------------------------
 # External UI
@@ -229,7 +228,7 @@ class DistrhoUINotes(QWidget, ExternalUI):
 
 #--------------- main ------------------
 if __name__ == '__main__':
-    app = QApplication(argv)
+    app = CarlaApplication()
     #app...
     gui = DistrhoUINotes()
     exit(app.exec_())

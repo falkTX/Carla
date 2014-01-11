@@ -467,7 +467,7 @@ private:
         return nullptr;
     }
 
-    static bool fork_exec(const char* const argv[5], int* const retp) noexcept
+    static bool fork_exec(const char* const argv[5], int* const retp)
     {
         const pid_t ret = *retp = vfork();
 
@@ -475,10 +475,12 @@ private:
         {
         case 0: /* child process */
             execlp(argv[0], argv[0], argv[1], argv[2], argv[3], argv[4], nullptr);
-            carla_stderr2("vfork exec failed: %s", std::strerror(errno));
+            carla_stderr2("exec failed: %s", std::strerror(errno));
+            _exit(0);
             return false;
         case -1: /* error */
-            carla_stderr2("vfork() failed: %s", std::strerror(errno));
+            carla_stderr2("fork() failed: %s", std::strerror(errno));
+            _exit(0);
             return false;
         }
 
