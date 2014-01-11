@@ -40,14 +40,14 @@ struct RingBuffer {
 class RingBufferControl
 {
 public:
-    RingBufferControl(RingBuffer* const ringBuf)
+    RingBufferControl(RingBuffer* const ringBuf) noexcept
         : fRingBuf(ringBuf)
     {
         if (ringBuf != nullptr)
             clear();
     }
 
-    void clear()
+    void clear() noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fRingBuf != nullptr,);
 
@@ -58,10 +58,10 @@ public:
         carla_zeroChar(fRingBuf->buf, RING_BUFFER_SIZE);
     }
 
-    void setRingBuffer(RingBuffer* const ringBuf, const bool reset)
+    void setRingBuffer(RingBuffer* const ringBuf, const bool reset) noexcept
     {
-        CARLA_ASSERT(ringBuf != nullptr);
-        CARLA_ASSERT(ringBuf != fRingBuf);
+        CARLA_SAFE_ASSERT_RETURN(ringBuf != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(ringBuf != fRingBuf,);
 
         fRingBuf = ringBuf;
 
@@ -71,7 +71,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool commitWrite()
+    bool commitWrite() noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fRingBuf != nullptr, false);
 
@@ -88,7 +88,7 @@ public:
         }
     }
 
-    bool isDataAvailable() const
+    bool isDataAvailable() const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fRingBuf != nullptr, false);
 

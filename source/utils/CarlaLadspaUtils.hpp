@@ -88,7 +88,7 @@ const LADSPA_RDF_Descriptor* ladspa_rdf_dup(const LADSPA_RDF_Descriptor* const o
 // Check if 2 ports match types
 
 static inline
-bool is_ladspa_port_good(const LADSPA_PortDescriptor port1, const LADSPA_PortDescriptor port2)
+bool is_ladspa_port_good(const LADSPA_PortDescriptor port1, const LADSPA_PortDescriptor port2) noexcept
 {
     if (port1 == 0x0 || port2 == 0x0)
         return false;
@@ -107,7 +107,7 @@ bool is_ladspa_port_good(const LADSPA_PortDescriptor port1, const LADSPA_PortDes
 // Check if rdf data matches descriptor
 
 static inline
-bool is_ladspa_rdf_descriptor_valid(const LADSPA_RDF_Descriptor* const rdfDescriptor, const LADSPA_Descriptor* const descriptor)
+bool is_ladspa_rdf_descriptor_valid(const LADSPA_RDF_Descriptor* const rdfDescriptor, const LADSPA_Descriptor* const descriptor) noexcept
 {
     if (rdfDescriptor == nullptr || descriptor == nullptr)
         return false;
@@ -140,7 +140,7 @@ bool is_ladspa_rdf_descriptor_valid(const LADSPA_RDF_Descriptor* const rdfDescri
 // Get default control port value
 
 static inline
-LADSPA_Data get_default_ladspa_port_value(const LADSPA_PortRangeHintDescriptor hintDescriptor, const LADSPA_Data min, const LADSPA_Data max)
+LADSPA_Data get_default_ladspa_port_value(const LADSPA_PortRangeHintDescriptor hintDescriptor, const LADSPA_Data min, const LADSPA_Data max) noexcept
 {
     if (LADSPA_IS_HINT_HAS_DEFAULT(hintDescriptor))
     {

@@ -70,7 +70,7 @@ int main()
     assert(! str.isEmpty());
     assert(! str.contains("6"));
     assert(! str.isDigit(2));
-    assert(! str.isDigit(-1));
+    assert(! str.isDigit((size_t)-1)); // test out of bounds
 
     // negative number
     str = CarlaString(-51);
@@ -85,7 +85,7 @@ int main()
     assert(! str.isEmpty());
     assert(! str.contains("6"));
     assert(! str.isDigit(0));
-    assert(! str.isDigit(-1));
+    assert(! str.isDigit((size_t)-1)); // test out of bounds
 
     // small operations
     str += "ah";

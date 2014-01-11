@@ -243,7 +243,7 @@ public:
     /*
      * Check if the string starts with the character 'c'.
      */
-    bool startsWith(const char c) const
+    bool startsWith(const char c) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(c != '\0', false);
 
@@ -253,7 +253,7 @@ public:
     /*
      * Check if the string starts with the string 'prefix'.
      */
-    bool startsWith(const char* const prefix) const
+    bool startsWith(const char* const prefix) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(prefix != nullptr, false);
 
@@ -268,7 +268,7 @@ public:
     /*
      * Check if the string ends with the character 'c'.
      */
-    bool endsWith(const char c) const
+    bool endsWith(const char c) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(c != '\0', false);
 
@@ -278,7 +278,7 @@ public:
     /*
      * Check if the string ends with the string 'suffix'.
      */
-    bool endsWith(const char* const suffix) const
+    bool endsWith(const char* const suffix) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(suffix != nullptr, false);
 
@@ -322,7 +322,7 @@ public:
      * Find the first occurrence of string 'strBuf' in the string.
      * Returns "length()" if the string is not found.
      */
-    size_t find(const char* const strBuf, bool* const found = nullptr) const
+    size_t find(const char* const strBuf, bool* const found = nullptr) const noexcept
     {
         if (fBufferLen == 0 || strBuf == nullptr || strBuf[0] == '\0')
         {
@@ -387,7 +387,7 @@ public:
      * Find the last occurrence of string 'strBuf' in the string.
      * Returns "length()" if the string is not found.
      */
-    size_t rfind(const char* const strBuf, bool* const found = nullptr) const
+    size_t rfind(const char* const strBuf, bool* const found = nullptr) const noexcept
     {
         if (found != nullptr)
             *found = false;
@@ -427,7 +427,7 @@ public:
     /*
      * Replace all occurrences of character 'before' with character 'after'.
      */
-    void replace(const char before, const char after)
+    void replace(const char before, const char after) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(before != '\0' && after != '\0',);
 
@@ -513,7 +513,7 @@ public:
     /*
      * Direct access to the string buffer.
      */
-    const char* getBuffer() const
+    const char* getBuffer() const noexcept
     {
         return fBuffer;
     }
@@ -537,22 +537,22 @@ public:
         return rfallback;
     }
 
-    bool operator==(const char* const strBuf) const
+    bool operator==(const char* const strBuf) const noexcept
     {
         return (strBuf != nullptr && std::strcmp(fBuffer, strBuf) == 0);
     }
 
-    bool operator==(const CarlaString& str) const
+    bool operator==(const CarlaString& str) const noexcept
     {
         return operator==(str.fBuffer);
     }
 
-    bool operator!=(const char* const strBuf) const
+    bool operator!=(const char* const strBuf) const noexcept
     {
         return !operator==(strBuf);
     }
 
-    bool operator!=(const CarlaString& str) const
+    bool operator!=(const CarlaString& str) const noexcept
     {
         return !operator==(str.fBuffer);
     }

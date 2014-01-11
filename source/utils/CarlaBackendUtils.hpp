@@ -27,7 +27,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 
 static inline
-const char* PluginOption2Str(const unsigned int option)
+const char* PluginOption2Str(const unsigned int option) noexcept
 {
     switch (option)
     {
@@ -58,7 +58,7 @@ const char* PluginOption2Str(const unsigned int option)
 // -----------------------------------------------------------------------
 
 static inline
-const char* BinaryType2Str(const BinaryType type)
+const char* BinaryType2Str(const BinaryType type) noexcept
 {
     switch (type)
     {
@@ -81,7 +81,7 @@ const char* BinaryType2Str(const BinaryType type)
 }
 
 static inline
-const char* PluginType2Str(const PluginType type)
+const char* PluginType2Str(const PluginType type) noexcept
 {
     switch (type)
     {
@@ -99,14 +99,14 @@ const char* PluginType2Str(const PluginType type)
         return "PLUGIN_VST";
     case PLUGIN_AU:
         return "PLUGIN_AU";
-    case PLUGIN_CSOUND:
-        return "PLUGIN_CSOUND";
-    case PLUGIN_GIG:
-        return "PLUGIN_GIG";
-    case PLUGIN_SF2:
-        return "PLUGIN_SF2";
-    case PLUGIN_SFZ:
-        return "PLUGIN_SFZ";
+    case PLUGIN_FILE_CSD:
+        return "PLUGIN_FILE_CSD";
+    case PLUGIN_FILE_GIG:
+        return "PLUGIN_FILE_GIG";
+    case PLUGIN_FILE_SF2:
+        return "PLUGIN_FILE_SF2";
+    case PLUGIN_FILE_SFZ:
+        return "PLUGIN_FILE_SFZ";
     }
 
     carla_stderr("CarlaBackend::PluginType2Str(%i) - invalid type", type);
@@ -114,7 +114,7 @@ const char* PluginType2Str(const PluginType type)
 }
 
 static inline
-const char* PluginCategory2Str(const PluginCategory category)
+const char* PluginCategory2Str(const PluginCategory category) noexcept
 {
     switch (category)
     {
@@ -145,7 +145,7 @@ const char* PluginCategory2Str(const PluginCategory category)
 }
 
 static inline
-const char* ParameterType2Str(const ParameterType type)
+const char* ParameterType2Str(const ParameterType type) noexcept
 {
     switch (type)
     {
@@ -164,7 +164,7 @@ const char* ParameterType2Str(const ParameterType type)
 }
 
 static inline
-const char* InternalParameterIndex2Str(const InternalParameterIndex index)
+const char* InternalParameterIndex2Str(const InternalParameterIndex index) noexcept
 {
     switch (index)
     {
@@ -193,7 +193,7 @@ const char* InternalParameterIndex2Str(const InternalParameterIndex index)
 }
 
 static inline
-const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode)
+const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode) noexcept
 {
     switch (opcode)
     {
@@ -278,7 +278,7 @@ const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode)
 }
 
 static inline
-const char* EngineOption2Str(const EngineOption option)
+const char* EngineOption2Str(const EngineOption option) noexcept
 {
     switch (option)
     {
@@ -319,7 +319,7 @@ const char* EngineOption2Str(const EngineOption option)
 }
 
 static inline
-const char* EngineProcessMode2Str(const EngineProcessMode mode)
+const char* EngineProcessMode2Str(const EngineProcessMode mode) noexcept
 {
     switch (mode)
     {
@@ -340,7 +340,7 @@ const char* EngineProcessMode2Str(const EngineProcessMode mode)
 }
 
 static inline
-const char* EngineTransportMode2Str(const EngineTransportMode mode)
+const char* EngineTransportMode2Str(const EngineTransportMode mode) noexcept
 {
     switch (mode)
     {
@@ -361,7 +361,7 @@ const char* EngineTransportMode2Str(const EngineTransportMode mode)
 // -----------------------------------------------------------------------
 
 static inline
-const char* FileCallbackOpcode2Str(const FileCallbackOpcode opcode)
+const char* FileCallbackOpcode2Str(const FileCallbackOpcode opcode) noexcept
 {
     switch (opcode)
     {
@@ -380,7 +380,7 @@ const char* FileCallbackOpcode2Str(const FileCallbackOpcode opcode)
 // -----------------------------------------------------------------------
 
 static inline
-const char* getPluginTypeAsString(const PluginType type)
+const char* getPluginTypeAsString(const PluginType type) noexcept
 {
     carla_debug("CarlaBackend::getPluginTypeAsString(%i:%s)", type, PluginType2Str(type));
 
@@ -400,13 +400,13 @@ const char* getPluginTypeAsString(const PluginType type)
         return "VST";
     case PLUGIN_AU:
         return "AU";
-    case PLUGIN_CSOUND:
-        return "CSOUND";
-    case PLUGIN_GIG:
+    case PLUGIN_FILE_CSD:
+        return "CSD";
+    case PLUGIN_FILE_GIG:
         return "GIG";
-    case PLUGIN_SF2:
+    case PLUGIN_FILE_SF2:
         return "SF2";
-    case PLUGIN_SFZ:
+    case PLUGIN_FILE_SFZ:
         return "SFZ";
     }
 
@@ -437,14 +437,14 @@ PluginType getPluginTypeFromString(const char* const ctype)
         return PLUGIN_VST;
     if (stype == "au")
         return PLUGIN_AU;
-    if (stype == "csound")
-        return PLUGIN_CSOUND;
+    if (stype == "csd")
+        return PLUGIN_FILE_CSD;
     if (stype == "gig")
-        return PLUGIN_GIG;
+        return PLUGIN_FILE_GIG;
     if (stype == "sf2")
-        return PLUGIN_SF2;
+        return PLUGIN_FILE_SF2;
     if (stype == "sfz")
-        return PLUGIN_SFZ;
+        return PLUGIN_FILE_SFZ;
 
     carla_stderr("CarlaBackend::getPluginTypeFromString(\"%s\") - invalid string type", ctype);
     return PLUGIN_NONE;

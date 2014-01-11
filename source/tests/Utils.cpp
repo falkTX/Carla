@@ -22,25 +22,25 @@
 // #include "CarlaDssiUtils.hpp"
 #include "CarlaJuceUtils.hpp"
 #include "CarlaLadspaUtils.hpp"
-#include "CarlaLibUtils.hpp"
+// #include "CarlaLibUtils.hpp"
 // #include "CarlaLv2Utils.hpp"
 #include "CarlaOscUtils.hpp"
-#include "CarlaPipeUtils.hpp"
-#include "CarlaShmUtils.hpp"
+// #include "CarlaPipeUtils.hpp"
+// #include "CarlaShmUtils.hpp"
 // #include "CarlaStateUtils.hpp"
-#include "CarlaVstUtils.hpp"
+// #include "CarlaVstUtils.hpp"
 
-#include "CarlaLibCounter.hpp"
-//#include "CarlaLogThread.hpp"
-#include "CarlaMutex.hpp"
-#include "CarlaRingBuffer.hpp"
-#include "CarlaString.hpp"
-#include "CarlaThread.hpp"
-#include "List.hpp"
-#include "Lv2AtomQueue.hpp"
-#include "RtList.hpp"
+// #include "CarlaLibCounter.hpp"
+// #include "CarlaLogThread.hpp"
+// #include "CarlaMutex.hpp"
+// #include "CarlaRingBuffer.hpp"
+// #include "CarlaString.hpp"
+// #include "CarlaThread.hpp"
+// #include "List.hpp"
+// #include "Lv2AtomQueue.hpp"
+// #include "RtList.hpp"
 
-//#include "JucePluginWindow.hpp"
+// #include "JucePluginWindow.hpp"
 
 struct MyStruct {
     char pad[100];
@@ -63,6 +63,7 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MyLeakCheckedClass)
 };
 
+#if 0
 class MyThread : public CarlaThread
 {
 public:
@@ -101,6 +102,7 @@ protected:
 private:
     CarlaMutex* const fMu;
 };
+#endif
 
 int main()
 {
@@ -175,9 +177,18 @@ int main()
 
     // math/memory functions
     {
-        carla_min<int32_t>(0, -5, 8);
-        carla_max<int32_t>(0, -5, 8);
-        carla_fixValue<float>(0.0f, 1.0f, 1.1f);
+        assert(carla_min<int32_t>(0, -5, 8) == 8);
+        assert(carla_max<int32_t>(0, -5, 8) == 0);
+        assert(carla_fixValue<float>(0.0f, 1.0f, 1.1f) == 1.0f);
+
+        int v1 = 6;
+        int v2 = 8;
+        const int v3 = 9;
+        assert(v1 == 6 && v2 == 8 && v3 == 9);
+        carla_copy<int>(&v1, &v2, 1);
+        assert(v1 == 8 && v2 == 8 && v3 == 9);
+        carla_copy<int>(&v2, &v3, 1);
+        assert(v1 == 8 && v2 == 9 && v3 == 9);
 
         float fl[5];
         carla_fill(fl, 5, 1.11f);
@@ -224,6 +235,8 @@ int main()
 
         char ch[500];
         carla_zeroChar(ch, 500);
+        for (int i=0; i<500; ++i)
+            assert(ch[i] == '\0');
     }
 
     {
@@ -242,6 +255,7 @@ int main()
         delete b;
     }
 
+#if 0
     // Mutex
     {
         CarlaMutex m;
@@ -281,6 +295,7 @@ int main()
         m.unlock();
         t.stop(-1);
     }
+#endif
 
     return 0;
 }

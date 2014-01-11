@@ -85,7 +85,7 @@ struct BridgeShmControl {
 // -----------------------------------------------------------------------
 
 static inline
-const char* PluginBridgeInfoType2str(const PluginBridgeInfoType type)
+const char* PluginBridgeInfoType2str(const PluginBridgeInfoType type) noexcept
 {
     switch (type)
     {
@@ -136,7 +136,7 @@ const char* PluginBridgeInfoType2str(const PluginBridgeInfoType type)
 }
 
 static inline
-const char* PluginBridgeOpcode2str(const PluginBridgeOpcode opcode)
+const char* PluginBridgeOpcode2str(const PluginBridgeOpcode opcode) noexcept
 {
     switch (opcode)
     {
