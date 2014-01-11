@@ -9,16 +9,8 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I. -I../backend -I../includes -I../modules -I../modules/distrho -I../utils
-BUILD_CXX_FLAGS += -std=c++11 -Wzero-as-null-pointer-constant
+BUILD_CXX_FLAGS += -std=c++11 -std=gnu++11 -Wzero-as-null-pointer-constant
 BUILD_CXX_FLAGS += -isystem /opt/kxstudio/include
-# BUILD_CXX_FLAGS += -isystem /usr/include/qt5
-# BUILD_CXX_FLAGS += -I/opt/mingw32/include
-
-# --------------------------------------------------------------
-
-# ANSI_CXX_FLAGS  += -ansi -pedantic -pedantic-errors -Wunused-parameter -Wuninitialized -Wno-vla
-# ANSI_CXX_FLAGS  += -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Waggregate-return
-# ANSI_CXX_FLAGS  += -std=c++11 -Wzero-as-null-pointer-constant
 
 # --------------------------------------------------------------
 

@@ -26,9 +26,6 @@ AR  ?= ar
 RM  ?= rm -f
 CC  ?= gcc
 CXX ?= g++
-MOC ?= moc
-RCC ?= rcc
-UIC ?= uic
 
 # --------------------------------------------------------------
 # Fallback to Linux if no other OS defined
@@ -46,7 +43,7 @@ endif
 
 BASE_FLAGS = -Wall -Wextra -Wcast-qual -Wconversion -Wlogical-op -Werror -fPIC -DPIC -pipe -DREAL_BUILD
 BASE_OPTS  = -O3 -ffast-math -mtune=generic -msse -msse2 -mfpmath=sse -fdata-sections -ffunction-sections
-LINK_OPTS  = -Wl,--gc-sections
+LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,--gc-sections
 
 # -Waggregate-return -Wsign-conversion
 
@@ -62,19 +59,19 @@ LINK_OPTS   =
 else
 BASE_FLAGS += -DNDEBUG $(BASE_OPTS) -fvisibility=hidden
 CXXFLAGS   += -fvisibility-inlines-hidden
-# LINK_OPTS  += -Wl,--strip-all
+LINK_OPTS  += -Wl,-O1 -Wl,--strip-all
 endif
 
 32BIT_FLAGS = -m32
 64BIT_FLAGS = -m64
 
-BUILD_C_FLAGS   = $(BASE_FLAGS) -std=gnu99 $(CFLAGS)
-BUILD_CXX_FLAGS = $(BASE_FLAGS) -std=gnu++0x $(CXXFLAGS)
+BUILD_C_FLAGS   = $(BASE_FLAGS) -std=c99 -std=gnu99 $(CFLAGS)
+BUILD_CXX_FLAGS = $(BASE_FLAGS) -std=c++0x -std=gnu++0x $(CXXFLAGS)
 LINK_FLAGS      = $(LINK_OPTS) -Wl,--no-undefined $(LDFLAGS)
 
 ifeq ($(MACOS),true)
 # No C++11 support; force 32bit per default
-BUILD_C_FLAGS   = $(BASE_FLAGS) $(32BIT_FLAGS) -std=gnu99 $(CFLAGS)
+BUILD_C_FLAGS  += $(32BIT_FLAGS)
 BUILD_CXX_FLAGS = $(BASE_FLAGS) $(32BIT_FLAGS) $(CXXFLAGS)
 LINK_FLAGS      = $(32BIT_FLAGS) $(LDFLAGS)
 endif
@@ -168,6 +165,11 @@ endif
 
 LIBLO_FLAGS = $(shell pkg-config --cflags liblo)
 LIBLO_LIBS  = $(shell pkg-config --libs liblo)
+
+ifeq ($(HAVE_CSOUND),true)
+CSOUND_FLAGS = $(shell pkg-config --cflags sndfile) -DUSE_DOUBLE=1
+CSOUND_LIBS  = $(shell pkg-config --libs sndfile) -lcsound64
+endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 FLUIDSYNTH_FLAGS = $(shell pkg-config --cflags fluidsynth)
@@ -273,11 +275,10 @@ RCC_QT4 ?= $(shell pkg-config --variable=rcc_location QtCore)
 UIC_QT4 ?= $(shell pkg-config --variable=uic_location QtCore)
 endif
 
-# FIXME - use prefix /qt5/bin/moc or something
 ifeq ($(HAVE_QT5),true)
-MOC_QT5 ?= moc
-RCC_QT5 ?= rcc
-UIC_QT5 ?= uic
+MOC_QT5 ?= $(shell pkg-config --variable=libdir Qt5Core)/qt5/bin/moc
+RCC_QT5 ?= $(shell pkg-config --variable=libdir Qt5Core)/qt5/bin/rcc
+UIC_QT5 ?= $(shell pkg-config --variable=libdir Qt5Core)/qt5/bin/uic
 endif
 
 # --------------------------------------------------------------

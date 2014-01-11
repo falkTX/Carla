@@ -89,12 +89,6 @@ int main(int argc, char* argv[])
             printf("%s\n", carla_get_last_error());
         }
 
-        while (carla_is_engine_running())
-        {
-            carla_engine_idle();
-            sleep(1);
-        }
-
         carla_engine_close();
     }
 

@@ -351,17 +351,17 @@ PLUGIN_VST = 5
 # @note MacOS only
 PLUGIN_AU = 6
 
-# Csound file.
-PLUGIN_CSOUND = 7
+# Single CSD file (Csound).
+PLUGIN_FILE_CSD = 7
 
-# GIG file.
-PLUGIN_GIG = 8
+# Single GIG file.
+PLUGIN_FILE_GIG = 8
 
-# SF2 file (also known as SoundFont).
-PLUGIN_SF2 = 9
+# Single SF2 file (SoundFont).
+PLUGIN_FILE_SF2 = 9
 
-# SFZ file.
-PLUGIN_SFZ = 10
+# Single SFZ file.
+PLUGIN_FILE_SFZ = 10
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Category
