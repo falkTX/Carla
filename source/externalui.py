@@ -192,7 +192,11 @@ class ExternalUI(object):
                 elif isinstance(line, float):
                     line2 = "%.10f" % line
                 else:
-                    return
+                    try:
+                        line2 = str(line)
+                    except:
+                        print("unknown data type to send:", type(line2))
+                        return
 
             self.fPipeSend.write(line2 + "\n")
             self.fPipeSend.flush()

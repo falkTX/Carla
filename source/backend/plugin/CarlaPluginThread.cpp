@@ -115,10 +115,11 @@ void CarlaPluginThread::run()
     }
 
     QString name(fPlugin->getName());
-    QStringList arguments;
 
     if (name.isEmpty())
         name = "(none)";
+
+    QStringList arguments;
 
     switch (fMode)
     {

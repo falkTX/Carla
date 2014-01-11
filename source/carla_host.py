@@ -154,7 +154,8 @@ class HostWindow(QMainWindow):
         # -------------------------------------------------------------
         # Set callback, TODO put somewhere else
 
-        Carla.host.set_engine_callback(engineCallback)
+        if Carla.host is not None:
+            Carla.host.set_engine_callback(engineCallback)
 
         # -------------------------------------------------------------
         # Internal stuff
@@ -220,8 +221,10 @@ class HostWindow(QMainWindow):
         # Set up GUI (right panel)
 
         self.fDirModel = QFileSystemModel(self)
-        self.fDirModel.setNameFilters(Carla.host.get_supported_file_extensions().split(";"))
         self.fDirModel.setRootPath(HOME)
+
+        if Carla.host is not None:
+            self.fDirModel.setNameFilters(Carla.host.get_supported_file_extensions().split(";"))
 
         self.ui.fileTreeView.setModel(self.fDirModel)
         self.ui.fileTreeView.setRootIndex(self.fDirModel.index(HOME))
@@ -508,9 +511,9 @@ class HostWindow(QMainWindow):
                 if rdfItem.UniqueID == uniqueId:
                     return pointer(rdfItem)
 
-        elif ptype in (PLUGIN_GIG, PLUGIN_SF2):
+        elif ptype in (PLUGIN_FILE_GIG, PLUGIN_FILE_SF2):
             if plugin['name'].lower().endswith(" (16 outputs)"):
-                return c_char_p("true")
+                return c_char_p("true".encode("utf-8"))
 
         return None
 
@@ -1061,9 +1064,9 @@ class HostWindow(QMainWindow):
 
     def timerEvent(self, event):
         if event.timerId() == self.fIdleTimerFast:
-            if not Carla.isPlugin:
-                Carla.host.engine_idle()
-                self.refreshTransport()
+            #if not Carla.isPlugin:
+            Carla.host.engine_idle()
+            self.refreshTransport()
 
             self.fContainer.idleFast()
 

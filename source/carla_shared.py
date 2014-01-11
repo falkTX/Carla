@@ -524,7 +524,9 @@ def initHost(appName, libPrefix = None, failError = True):
         Carla.discovery_posix32 = findTool("discovery", "carla-discovery-posix32")
         Carla.discovery_posix64 = findTool("discovery", "carla-discovery-posix64")
 
-    if not libfilename:
+    # -------------------------------------------------------------
+
+    if not (libfilename or Carla.isPlugin):
         if failError:
             QMessageBox.critical(None, "Error", "Failed to find the carla library, cannot continue")
             sys.exit(1)
@@ -533,7 +535,8 @@ def initHost(appName, libPrefix = None, failError = True):
     # -------------------------------------------------------------
     # Init host
 
-    Carla.host = Host(libfilename)
+    if Carla.host is None:
+        Carla.host = Host(libfilename)
 
     # -------------------------------------------------------------
     # Set binary path

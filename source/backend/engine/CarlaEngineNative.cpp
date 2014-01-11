@@ -20,18 +20,18 @@
 #endif
 
 #include "CarlaEngineInternal.hpp"
+#include "CarlaPipeUtils.hpp"
 #include "CarlaStateUtils.hpp"
 
 #include "CarlaNative.hpp"
 
-#include <QtCore/QProcess>
 #include <QtCore/QTextStream>
 
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
 
-class CarlaEngineNativeThread : public CarlaThread
+class CarlaEngineNativeUI : public CarlaPipeServer
 {
 public:
     enum UiState {
@@ -41,107 +41,110 @@ public:
         UiCrashed
     };
 
-    CarlaEngineNativeThread(CarlaEngine* const engine)
+    CarlaEngineNativeUI(CarlaEngine* const engine)
         : fEngine(engine),
-          fProcess(nullptr)/*,*/
-          //fUiState(UiNone)
+          fUiState(UiNone)
     {
-        carla_debug("CarlaEngineNativeThread::CarlaEngineNativeThread(%p)", engine);
+        carla_debug("CarlaEngineNativeUI::CarlaEngineNativeUI(%p)", engine);
     }
 
-    ~CarlaEngineNativeThread() override
+    ~CarlaEngineNativeUI() override
     {
-        //CARLA_ASSERT_INT(fUiState == UiNone, fUiState);
-        carla_debug("CarlaEngineNativeThread::~CarlaEngineNativeThread()");
-
-        if (fProcess != nullptr)
-        {
-            delete fProcess;
-            fProcess = nullptr;
-        }
+        CARLA_ASSERT_INT(fUiState == UiNone, fUiState);
+        carla_debug("CarlaEngineNativeUI::~CarlaEngineNativeUI()");
     }
 
-#if 0
-    void setOscData(const char* const binary)
+    void setData(const char* const filename, const double sampleRate, const char* const uiTitle)
     {
-        fBinary = binary;
+        fFilename   = filename;
+        fSampleRate = CarlaString(sampleRate);
+        fUiTitle    = uiTitle;
     }
 
-    UiState getUiState()
+    UiState getAndResetUiState() noexcept
     {
-        const UiState state(fUiState);
+        const UiState uiState(fUiState);
         fUiState = UiNone;
-
-        return state;
+        return uiState;
     }
 
-    void stop()
+    void start()
     {
-        if (fProcess == nullptr)
-            return;
-
-        fUiState = UiNone;
-        fProcess->kill();
-        //fProcess->close();
+        CarlaPipeServer::start(fFilename, fSampleRate, fUiTitle);
+        writeMsg("show\n", 5);
     }
-#endif
 
 protected:
-    void run() override
+    void msgReceived(const char* const msg) override
     {
-        carla_debug("CarlaEngineNativeThread::run() - binary:\"%s\"", (const char*)fBinary);
+        /*
+         * TODO:
+         * load_file load_project save_project patchbay_connect patchbay_disconnect patchbay_refresh
+         * transport_play transport_pause transport_relocate
+         * *add_plugin* remove_plugin remove_all_plugins rename_plugin clone_plugin replace_plugin switch_plugins
+         * load_plugin_state save_plugin_state
+         * set_option *set_active* set_drywet set_volume set_balance_left set_balance_right set_panning set_ctrl_channel
+         * set_parameter_value set_parameter_midi_channel set_parameter_midi_cc set_program set_midi_program set_custom_data set_chunk_data
+         * prepare_for_save send_midi_note show_custom_ui
+         */
 
-#if 0
-        if (fProcess == nullptr)
+        if (std::strcmp(msg, "exiting") == 0)
         {
-            fProcess = new QProcess(nullptr);
-            fProcess->setProcessChannelMode(QProcess::ForwardedChannels);
-        }
-        else if (fProcess->state() == QProcess::Running)
-        {
-            carla_stderr("CarlaEngineNativeThread::run() - already running, giving up...");
-
-            fUiState = UiCrashed;
-            fProcess->terminate();
-            //kEngine->callback(CarlaBackend::CALLBACK_SHOW_GUI, kPlugin->id(), -1, 0, 0.0f, nullptr);
-            // TODO: tell master to hide UI
-            return;
-        }
-
-        QStringList arguments;
-        arguments << kEngine->getOscServerPathTCP();
-
-        fProcess->start((const char*)fBinary, arguments);
-        fProcess->waitForStarted();
-
-        fUiState = UiShow;
-
-        fProcess->waitForFinished(-1);
-
-        if (fProcess->exitCode() == 0)
-        {
-            // Hide
+            waitChildClose();
             fUiState = UiHide;
-            carla_stdout("CarlaEngineNativeThread::run() - GUI closed");
+        }
+        else if (std::strcmp(msg, "set_engine_option") == 0)
+        {
+            int option, value;
+            const char* valueStr;
+
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(option),);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(value),);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(valueStr),);
+
+            fEngine->setOption((EngineOption)option, value, valueStr);
+        }
+        else if (std::strcmp(msg, "add_plugin") == 0)
+        {
+            int btype, ptype;
+            const char* filename;
+            const char* name;
+            const char* label;
+
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(btype),);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(ptype),);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename),);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(name),);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(label),);
+
+            fEngine->addPlugin((BinaryType)btype, (PluginType)ptype, filename, name, label);
+        }
+        else if (std::strcmp(msg, "set_active") == 0)
+        {
+            int pluginId;
+            bool onOff;
+
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(pluginId),);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(onOff),);
+
+            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+                plugin->setActive(onOff, true, false);
         }
         else
         {
-            // Kill
-            fUiState = UiCrashed;
-            carla_stderr("CarlaEngineNativeThread::run() - GUI crashed while running");
+            carla_stderr("msgReceived : %s", msg);
         }
-#endif
     }
 
 private:
     CarlaEngine* const fEngine;
 
-    CarlaString fBinary;
-    QProcess*   fProcess;
+    CarlaString fFilename;
+    CarlaString fSampleRate;
+    CarlaString fUiTitle;
+    UiState     fUiState;
 
-//    UiState fUiState;
-
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineNativeThread)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineNativeUI)
 };
 
 // -----------------------------------------------------------------------
@@ -155,7 +158,7 @@ public:
           fIsPatchbay(isPatchbay),
           fIsActive(false),
           fIsRunning(false),
-          fThread(this)
+          fUiServer(this)
     {
         carla_debug("CarlaEngineNative::CarlaEngineNative()");
 
@@ -179,25 +182,7 @@ public:
             init("Carla-Rack");
         }
 
-        // TESTING
-        //if (! addPlugin(PLUGIN_INTERNAL, nullptr, "Ping Pong Pan", "PingPongPan"))
-        //    carla_stdout("TESTING PLUG3 ERROR:\n%s", getLastError());
-
-#if 0
-        // set control thread binary
-        CarlaString threadBinary(getResourceDir());
-        threadBinary += "/../";
-        threadBinary += "carla_control.py";
-
-        fThread.setOscData(threadBinary);
-
-//         if (! addPlugin(PLUGIN_INTERNAL, nullptr, "MIDI Transpose", "midiTranspose"))
-//             carla_stdout("TESTING PLUG1 ERROR:\n%s", getLastError());
-//         if (! addPlugin(PLUGIN_INTERNAL, nullptr, "ZynAddSubFX", "zynaddsubfx"))
-//             carla_stdout("TESTING PLUG2 ERROR:\n%s", getLastError());
-//         if (! addPlugin(PLUGIN_INTERNAL, nullptr, "Ping Pong Pan", "PingPongPan"))
-//             carla_stdout("TESTING PLUG3 ERROR:\n%s", getLastError());
-#endif
+        setCallback(_ui_server_callback, this);
     }
 
     ~CarlaEngineNative() override
@@ -261,6 +246,32 @@ protected:
     {
         pData->sampleRate = newSampleRate;
         CarlaEngine::sampleRateChanged(newSampleRate);
+    }
+
+    // -------------------------------------------------------------------
+
+    void uiServerCallback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr)
+    {
+        if (! fIsRunning)
+            return;
+
+        char strBuf[STR_MAX+1];
+        std::sprintf(strBuf, "ENGINE_CALLBACK_%i\n", int(action));
+        fUiServer.writeMsg(strBuf);
+
+        std::sprintf(strBuf, "%u\n", pluginId);
+        fUiServer.writeMsg(strBuf);
+
+        std::sprintf(strBuf, "%i\n", value1);
+        fUiServer.writeMsg(strBuf);
+
+        std::sprintf(strBuf, "%i\n", value2);
+        fUiServer.writeMsg(strBuf);
+
+        std::sprintf(strBuf, "%f\n", value3);
+        fUiServer.writeMsg(strBuf);
+
+        fUiServer.writeAndFixMsg(valueStr);
     }
 
     // -------------------------------------------------------------------
@@ -590,79 +601,40 @@ protected:
         runPendingRtEvents();
     }
 
-#if 0
     // -------------------------------------------------------------------
     // Plugin UI calls
 
-    void uiShow(const bool show) override
+    void uiShow(const bool show)
     {
         if (show)
         {
-            fThread.start();
+            fUiServer.setData("/home/falktx/FOSS/GIT-mine/Carla/source/carla-plugin", pData->sampleRate, pHost->uiName);
+            fUiServer.start();
         }
         else
         {
-#if 0
-            for (uint32_t i=0; i < pData->curPluginCount; ++i)
-            {
-                CarlaPlugin* const plugin(pData->plugins[i].plugin);
-
-                if (plugin == nullptr || ! plugin->enabled())
-                    continue;
-
-                plugin->showGui(false);
-            }
-#endif
-
-            fThread.stop();
+            fUiServer.stop();
         }
     }
 
-    void uiIdle() override
+    void uiIdle()
     {
         CarlaEngine::idle();
+        fUiServer.idle();
 
-        switch(fThread.getUiState())
+        switch (fUiServer.getAndResetUiState())
         {
-        case CarlaEngineNativeThread::UiNone:
-        case CarlaEngineNativeThread::UiShow:
+        case CarlaEngineNativeUI::UiNone:
+        case CarlaEngineNativeUI::UiShow:
             break;
-        case CarlaEngineNativeThread::UiCrashed:
-            hostUiUnavailable();
+        case CarlaEngineNativeUI::UiCrashed:
+            pHost->dispatcher(pHost->handle, HOST_OPCODE_UI_UNAVAILABLE, 0, 0, nullptr, 0.0f);
             break;
-        case CarlaEngineNativeThread::UiHide:
-            uiClosed();
+        case CarlaEngineNativeUI::UiHide:
+            pHost->ui_closed(pHost->handle);
             break;
         }
     }
-#endif
-
-#if 0
-    void uiSetParameterValue(const uint32_t index, const float value) override
-    {
-        if (index >= getParameterCount())
-            return;
-
-        CarlaPlugin* const plugin(pData->plugins[0].plugin);
-
-        if (plugin == nullptr || ! plugin->isEnabled())
-            return;
-
-        plugin->uiParameterChange(index, value);
-    }
-
-    void uiSetMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program) override
-    {
-        return;
-
-        // TODO
-
-        // unused
-        (void)channel;
-        (void)bank;
-        (void)program;
-    }
-#endif
 
     // -------------------------------------------------------------------
     // Plugin state calls
@@ -823,6 +795,16 @@ public:
         handlePtr->setMidiProgram(channel, bank, program);
     }
 
+    static void _ui_show(NativePluginHandle handle, bool show)
+    {
+        handlePtr->uiShow(show);
+    }
+
+    static void _ui_idle(NativePluginHandle handle)
+    {
+        handlePtr->uiIdle();
+    }
+
     static void _activate(NativePluginHandle handle)
     {
         handlePtr->activate();
@@ -876,6 +858,15 @@ public:
         (void)ptr;
     }
 
+    // -------------------------------------------------------------------
+
+    static void _ui_server_callback(void* handle, EngineCallbackOpcode action, uint pluginId, int value1, int value2, float value3, const char* valueStr)
+    {
+        handlePtr->uiServerCallback(action, pluginId, value1, value2, value3, valueStr);
+    }
+
+    // -------------------------------------------------------------------
+
     #undef handlePtr
 
 private:
@@ -883,7 +874,7 @@ private:
 
     const bool fIsPatchbay; // rack if false
     bool fIsActive, fIsRunning;
-    CarlaEngineNativeThread fThread;
+    CarlaEngineNativeUI fUiServer;
 
     CarlaPlugin* _getFirstPlugin() const noexcept
     {
@@ -928,8 +919,8 @@ static const NativePluginDescriptor carlaRackDesc = {
     CarlaEngineNative::_set_parameter_value,
     CarlaEngineNative::_set_midi_program,
     /* _set_custom_data        */ nullptr,
-    /* _ui_show                */ nullptr,
-    /* _ui_idle                */ nullptr,
+    CarlaEngineNative::_ui_show,
+    CarlaEngineNative::_ui_idle,
     /* _ui_set_parameter_value */ nullptr,
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
@@ -967,8 +958,8 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
     CarlaEngineNative::_set_parameter_value,
     CarlaEngineNative::_set_midi_program,
     /* _set_custom_data        */ nullptr,
-    /* _ui_show                */ nullptr,
-    /* _ui_idle                */ nullptr,
+    CarlaEngineNative::_ui_show,
+    CarlaEngineNative::_ui_idle,
     /* _ui_set_parameter_value */ nullptr,
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,

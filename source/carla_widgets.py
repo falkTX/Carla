@@ -560,13 +560,13 @@ class PluginEdit(QDialog):
             self.ui.le_type.setText("VST")
         elif pluginType == PLUGIN_AU:
             self.ui.le_type.setText("AU")
-        elif pluginType == PLUGIN_CSOUND:
-            self.ui.le_type.setText("CSOUND")
-        elif pluginType == PLUGIN_GIG:
+        elif pluginType == PLUGIN_FILE_CSD:
+            self.ui.le_type.setText("CSD")
+        elif pluginType == PLUGIN_FILE_GIG:
             self.ui.le_type.setText("GIG")
-        elif pluginType == PLUGIN_SF2:
+        elif pluginType == PLUGIN_FILE_SF2:
             self.ui.le_type.setText("SF2")
-        elif pluginType == PLUGIN_SFZ:
+        elif pluginType == PLUGIN_FILE_SFZ:
             self.ui.le_type.setText("SFZ")
         else:
             self.ui.le_type.setText(self.tr("Unknown"))
