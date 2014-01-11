@@ -1908,16 +1908,16 @@ int main(int argc, char* argv[])
         do_au_check(handle, doInit);
 #endif
         break;
-    case PLUGIN_CSOUND:
+    case PLUGIN_FILE_CSD:
         do_csound_check(filename, doInit);
         break;
-    case PLUGIN_GIG:
+    case PLUGIN_FILE_GIG:
         do_linuxsampler_check(filename, "gig", doInit);
         break;
-    case PLUGIN_SF2:
+    case PLUGIN_FILE_SF2:
         do_fluidsynth_check(filename, doInit);
         break;
-    case PLUGIN_SFZ:
+    case PLUGIN_FILE_SFZ:
         do_linuxsampler_check(filename, "sfz", doInit);
         break;
     default:

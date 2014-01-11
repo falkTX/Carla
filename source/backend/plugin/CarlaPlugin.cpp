@@ -601,7 +601,7 @@ const SaveState& CarlaPlugin::getSaveState()
 void CarlaPlugin::loadSaveState(const SaveState& saveState)
 {
     char strBuf[STR_MAX+1];
-    const bool usesMultiProgs(getType() == PLUGIN_SF2 || (getType() == PLUGIN_INTERNAL && getCategory() == PLUGIN_CATEGORY_SYNTH));
+    const bool usesMultiProgs(getType() == PLUGIN_FILE_GIG || getType() == PLUGIN_FILE_SF2 || (getType() == PLUGIN_INTERNAL && getCategory() == PLUGIN_CATEGORY_SYNTH));
 
     gIsLoadingProject = true;
     ScopedValueSetter<bool>(gIsLoadingProject, false);
@@ -1294,7 +1294,7 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
             uiProgramChange(index);
 #endif
 
-        if (getType() == PLUGIN_GIG || getType() == PLUGIN_SF2 || getType() == PLUGIN_SFZ)
+        if (getType() == PLUGIN_FILE_CSD || getType() == PLUGIN_FILE_GIG || getType() == PLUGIN_FILE_SF2 || getType() == PLUGIN_FILE_SFZ)
             return;
 
         for (uint32_t i=0; i < pData->param.count; ++i)
@@ -1350,7 +1350,7 @@ void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const 
             uiMidiProgramChange(index);
 #endif
 
-        if (getType() == PLUGIN_GIG || getType() == PLUGIN_SF2 || getType() == PLUGIN_SFZ)
+        if (getType() == PLUGIN_FILE_CSD || getType() == PLUGIN_FILE_GIG || getType() == PLUGIN_FILE_SF2 || getType() == PLUGIN_FILE_SFZ)
             return;
 
         for (uint32_t i=0; i < pData->param.count; ++i)

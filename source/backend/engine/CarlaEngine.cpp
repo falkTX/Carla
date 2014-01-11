@@ -1261,23 +1261,23 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             break;
 
         case PLUGIN_AU:
-            //plugin = CarlaPlugin::newAU(init);
+            plugin = CarlaPlugin::newAU(init);
             break;
 
-        case PLUGIN_CSOUND:
-            //plugin = CarlaPlugin::newCSOUND(init);
+        case PLUGIN_FILE_CSD:
+            plugin = CarlaPlugin::newCsound(init);
             break;
 
-        case PLUGIN_GIG:
-            plugin = CarlaPlugin::newGIG(init, (extra != nullptr));
+        case PLUGIN_FILE_GIG:
+            plugin = CarlaPlugin::newGIG(init, (extra != nullptr && std::strcmp((const char*)extra, "true")));
             break;
 
-        case PLUGIN_SF2:
-            plugin = CarlaPlugin::newSF2(init, (extra != nullptr));
+        case PLUGIN_FILE_SF2:
+            plugin = CarlaPlugin::newSF2(init, (extra != nullptr && std::strcmp((const char*)extra, "true")));
             break;
 
-        case PLUGIN_SFZ:
-            plugin = CarlaPlugin::newSFZ(init, (extra != nullptr));
+        case PLUGIN_FILE_SFZ:
+            plugin = CarlaPlugin::newSFZ(init, (extra != nullptr && std::strcmp((const char*)extra, "true")));
             break;
         }
     }
@@ -1614,22 +1614,22 @@ bool CarlaEngine::loadFile(const char* const filename)
 
     // -------------------------------------------------------------------
 
-    if (extension == "carxp" || extension ==  "carxs")
+    if (extension == "carxp" || extension == "carxs")
         return loadProject(filename);
 
     // -------------------------------------------------------------------
 
     if (extension == "csd")
-        return addPlugin(PLUGIN_CSOUND, filename, baseName, baseName);
+        return addPlugin(PLUGIN_FILE_CSD, filename, baseName, baseName);
 
     if (extension == "gig")
-        return addPlugin(PLUGIN_GIG, filename, baseName, baseName);
+        return addPlugin(PLUGIN_FILE_GIG, filename, baseName, baseName);
 
     if (extension == "sf2")
-        return addPlugin(PLUGIN_SF2, filename, baseName, baseName);
+        return addPlugin(PLUGIN_FILE_SF2, filename, baseName, baseName);
 
     if (extension == "sfz")
-        return addPlugin(PLUGIN_SFZ, filename, baseName, baseName);
+        return addPlugin(PLUGIN_FILE_SFZ, filename, baseName, baseName);
 
     // -------------------------------------------------------------------
 
@@ -1754,8 +1754,8 @@ bool CarlaEngine::loadProject(const char* const filename)
 
             if (CarlaString(saveState.label).endsWith(kUse16OutsSuffix))
             {
-                if (std::strcmp(saveState.type, "GIG") == 0 || std::strcmp(saveState.type, "SF2") == 0 || std::strcmp(saveState.type, "SFZ") == 0)
-                    extraStuff = (void*)0x1; // non-null
+                if (std::strcmp(saveState.type, "GIG") == 0 || std::strcmp(saveState.type, "SF2") == 0)
+                    extraStuff = "true";
             }
 
             // TODO - proper find&load plugins

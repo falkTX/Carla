@@ -17,6 +17,7 @@ OBJS = \
 	DssiPlugin.cpp.o \
 	Lv2Plugin.cpp.o \
 	VstPlugin.cpp.o \
+	AuPlugin.cpp.o \
 	CsoundPlugin.cpp.o \
 	FluidSynthPlugin.cpp.o \
 	LinuxSamplerPlugin.cpp.o \

@@ -384,6 +384,7 @@ OBJS_NATIVE += \
 	../backend/plugin/VstPlugin__native.o \
 	../backend/plugin/AuPlugin__native.o \
 	../backend/plugin/JucePlugin__native.o \
+	../backend/plugin/CsoundPlugin__native.o \
 	../backend/plugin/FluidSynthPlugin__native.o \
 	../backend/plugin/LinuxSamplerPlugin__native.o
 

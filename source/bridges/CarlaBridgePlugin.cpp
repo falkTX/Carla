@@ -546,13 +546,13 @@ int main(int argc, char* argv[])
 
     const void* extraStuff = nullptr;
 
-    if (itype == CarlaBackend::PLUGIN_GIG || itype == CarlaBackend::PLUGIN_SF2 || itype == CarlaBackend::PLUGIN_SFZ)
+    if (itype == CarlaBackend::PLUGIN_FILE_GIG || itype == CarlaBackend::PLUGIN_FILE_SF2)
     {
         if (label == nullptr)
             label = clientName;
 
         if (std::strstr(label, " (16 outs)") == 0)
-            extraStuff = (const void*)label; // dummy non-null pointer
+            extraStuff = "true";
     }
 
     // ---------------------------------------------------------------------

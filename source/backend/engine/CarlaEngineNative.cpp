@@ -741,8 +741,8 @@ protected:
 
                 if (CarlaString(saveState.label).endsWith(kUse16OutsSuffix))
                 {
-                    if (std::strcmp(saveState.type, "GIG") == 0 || std::strcmp(saveState.type, "SF2") == 0 || std::strcmp(saveState.type, "SFZ") == 0)
-                        extraStuff = (void*)0x1; // non-null
+                    if (std::strcmp(saveState.type, "GIG") == 0 || std::strcmp(saveState.type, "SF2") == 0)
+                        extraStuff = "true";
                 }
 
                 // TODO - proper find&load plugins

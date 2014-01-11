@@ -508,13 +508,9 @@ class HostWindow(QMainWindow):
                 if rdfItem.UniqueID == uniqueId:
                     return pointer(rdfItem)
 
-        elif ptype in (PLUGIN_GIG, PLUGIN_SF2, PLUGIN_SFZ):
+        elif ptype in (PLUGIN_GIG, PLUGIN_SF2):
             if plugin['name'].lower().endswith(" (16 outputs)"):
-                # return a dummy non-null pointer
-                INTPOINTER = POINTER(c_int)
-                int1 = c_int(0x1)
-                addr = addressof(int1)
-                return cast(addr, INTPOINTER)
+                return c_char_p("true")
 
         return None
 
