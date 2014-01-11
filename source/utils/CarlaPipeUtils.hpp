@@ -1,7 +1,7 @@
 /*
  * Carla Pipe utils based on lv2fil UI code
  * Copyright (C) 2009 Nedko Arnaudov <nedko@arnaudov.name>
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,10 +19,6 @@
 #ifndef CARLA_PIPE_UTILS_HPP_INCLUDED
 #define CARLA_PIPE_UTILS_HPP_INCLUDED
 
-#define WAIT_START_TIMEOUT  3000 /* ms */
-#define WAIT_ZOMBIE_TIMEOUT 3000 /* ms */
-#define WAIT_STEP 100            /* ms */
-
 #include "CarlaUtils.hpp"
 #include "CarlaString.hpp"
 
@@ -32,6 +28,10 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/wait.h>
+
+#define WAIT_START_TIMEOUT  3000 /* ms */
+#define WAIT_ZOMBIE_TIMEOUT 3000 /* ms */
+#define WAIT_STEP 100            /* ms */
 
 // -----------------------------------------------------------------------
 
@@ -45,6 +45,8 @@ protected:
           fReading(false)
     {
         carla_debug("CarlaPipeServer::CarlaPipeServer()");
+
+        fTmpBuf[0xff] = '\0';
     }
 
     // -------------------------------------------------------------------
@@ -57,12 +59,12 @@ public:
         stop();
     }
 
-    void start(const char* const filename, const char* const arg1, const char* const arg2)
+    bool start(const char* const filename, const char* const arg1, const char* const arg2)
     {
-        CARLA_SAFE_ASSERT_RETURN(filename != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(arg1 != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(arg2 != nullptr,);
-        carla_debug("CarlaPipeServer::start(\"%s\", \"%s\", \"%s\"", filename, arg1, arg2);
+        CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
+        CARLA_SAFE_ASSERT_RETURN(arg1 != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(arg2 != nullptr, false);
+        carla_debug("CarlaPipeServer::start(\"%s\", \"%s\", \"%s\")", filename, arg1, arg2);
 
         //----------------------------------------------------------------
 
@@ -85,23 +87,25 @@ public:
         int pipe1[2]; // written by host process, read by plugin UI process
         int pipe2[2]; // written by plugin UI process, read by host process
 
-        if (pipe(pipe1) != 0)
+        if (::pipe(pipe1) != 0)
         {
             fail("pipe1 creation failed");
-            return;
+            return false;
         }
 
-        if (pipe(pipe2) != 0)
+        if (::pipe(pipe2) != 0)
         {
+            ::close(pipe1[0]);
+            ::close(pipe1[1]);
             fail("pipe2 creation failed");
-            return;
+            return false;
         }
 
         char uiPipeRecv[100+1];
         char uiPipeSend[100+1];
 
-        std::snprintf(uiPipeRecv, 100, "%d", pipe1[0]); /* [0] means reading end */
-        std::snprintf(uiPipeSend, 100, "%d", pipe2[1]); /* [1] means writting end */
+        std::snprintf(uiPipeRecv, 100, "%d", pipe1[0]); // [0] means reading end
+        std::snprintf(uiPipeSend, 100, "%d", pipe2[1]); // [1] means writting end
 
         uiPipeRecv[100] = '\0';
         uiPipeSend[100] = '\0';
@@ -116,92 +120,130 @@ public:
 
         if ((! fork_exec(argv, &ret)) || ret == -1)
         {
-            close(pipe1[0]);
-            close(pipe1[1]);
-            close(pipe2[0]);
-            close(pipe2[1]);
+            ::close(pipe1[0]);
+            ::close(pipe1[1]);
+            ::close(pipe2[0]);
+            ::close(pipe2[1]);
             fail("fork_exec() failed");
-            return;
+            return false;
         }
 
         fPid = ret;
 
-        /* fork duplicated the handles, close pipe ends that are used by the child process */
-        close(pipe1[0]);
-        close(pipe2[1]);
+        // fork duplicated the handles, close pipe ends that are used by the child process
+        ::close(pipe1[0]);
+        ::close(pipe2[1]);
 
-        fPipeSend = pipe1[1]; /* [1] means writting end */
-        fPipeRecv = pipe2[0]; /* [0] means reading end */
+        fPipeSend = pipe1[1]; // [1] means writting end
+        fPipeRecv = pipe2[0]; // [0] means reading end
 
-        fcntl(fPipeRecv, F_SETFL, fcntl(fPipeRecv, F_GETFL) | O_NONBLOCK);
+        // set non-block
+        try {
+            ret = fcntl(fPipeRecv, F_SETFL, fcntl(fPipeRecv, F_GETFL) | O_NONBLOCK);
+        } catch (...) {
+            ret = -1;
+            fail("failed to set pipe as non-block");
+        }
 
         //----------------------------------------------------------------
         // wait a while for child process to confirm it is alive
 
-        char ch;
-
-        for (int i=0; ;)
+        if (ret != -1)
         {
-            ssize_t ret2 = read(fPipeRecv, &ch, 1);
+            char ch;
+            ssize_t ret2;
 
-            switch (ret2)
+            for (int i=0; ;)
             {
-            case -1:
-                if (errno == EAGAIN)
-                {
-                    if (i < WAIT_START_TIMEOUT / WAIT_STEP)
-                    {
-                        carla_msleep(WAIT_STEP);
-                        i++;
-                        continue;
-                    }
-
-                    carla_stderr("we have waited for child with pid %d to appear for %.1f seconds and we are giving up", (int)fPid, (float)WAIT_START_TIMEOUT / 1000.0f);
+                try {
+                    ret2 = ::read(fPipeRecv, &ch, 1);
                 }
-                else
-                    carla_stderr("read() failed: %s", strerror(errno));
-                break;
+                catch (...) {
+                    fail("failed to read from pipe");
+                    break;
+                }
 
-            case 1:
-                if (ch == '\n')
-                    // success
-                    return;
+                switch (ret2)
+                {
+                case -1:
+                    if (errno == EAGAIN)
+                    {
+                        if (i < WAIT_START_TIMEOUT / WAIT_STEP)
+                        {
+                            carla_msleep(WAIT_STEP);
+                            ++i;
+                            continue;
+                        }
+                        carla_stderr("we have waited for child with pid %d to appear for %.1f seconds and we are giving up", (int)fPid, (float)WAIT_START_TIMEOUT / 1000.0f);
+                    }
+                    else
+                        carla_stderr("read() failed: %s", std::strerror(errno));
+                    break;
 
-                carla_stderr("read() wrong first char '%c'", ch);
-                break;
+                case 1:
+                    if (ch == '\n') {
+                        // success
+                        return true;
+                    }
+                    carla_stderr("read() has wrong first char '%c'", ch);
+                    break;
 
-            default:
-                carla_stderr("read() returned %d", ret2);
+                default:
+                    carla_stderr("read() returned %i", int(ret2));
+                    break;
+                }
+
                 break;
             }
 
-            break;
+            carla_stderr("force killing misbehaved child %i (start)", int(fPid));
         }
-
-        carla_stderr("force killing misbehaved child %d (start)", (int)fPid);
 
         if (kill(fPid, SIGKILL) == -1)
         {
             carla_stderr("kill() failed: %s (start)\n", strerror(errno));
         }
 
-        /* wait a while child to exit, we dont like zombie processes */
+        // wait a while child to exit, we dont like zombie processes
         wait_child(fPid);
+
+        // close pipes
+        try {
+            ::close(fPipeRecv);
+        } catch (...) {}
+
+        try {
+            ::close(fPipeSend);
+        } catch (...) {}
+
+        fPipeRecv = -1;
+        fPipeSend = -1;
+        fPid = -1;
+
+        return false;
     }
 
-    void stop()
+    void stop() noexcept
     {
         carla_debug("CarlaPipeServer::stop()");
 
         if (fPipeSend == -1 || fPipeRecv == -1 || fPid == -1)
             return;
 
-        write(fPipeSend, "quit\n", 5);
+        try {
+            ::write(fPipeSend, "quit\n", 5);
+        } catch (...) {}
 
         waitChildClose();
 
-        close(fPipeRecv);
-        close(fPipeSend);
+        try {
+            ::close(fPipeRecv);
+        } catch (...) {}
+
+        try {
+            ::close(fPipeSend);
+        } catch (...) {}
+
         fPipeRecv = -1;
         fPipeSend = -1;
         fPid = -1;
@@ -209,18 +251,18 @@ public:
 
     void idle()
     {
-        char* locale = nullptr;
+        const char* locale = nullptr;
 
         for (;;)
         {
-            char* const msg = readline();
+            const char* const msg(readline());
 
             if (msg == nullptr)
                 break;
 
             if (locale == nullptr)
             {
-                locale = strdup(setlocale(LC_NUMERIC, nullptr));
+                locale = carla_strdup(setlocale(LC_NUMERIC, nullptr));
                 setlocale(LC_NUMERIC, "POSIX");
             }
 
@@ -228,13 +270,13 @@ public:
             msgReceived(msg);
             fReading = false;
 
-            std::free(msg);
+            delete[] msg;
         }
 
         if (locale != nullptr)
         {
             setlocale(LC_NUMERIC, locale);
-            std::free(locale);
+            delete[] locale;
         }
     }
 
@@ -242,13 +284,12 @@ public:
 
     bool readNextLineAsBool(bool& value)
     {
-        if (! fReading)
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(fReading, false);
 
-        if (char* const msg = readline())
+        if (const char* const msg = readline())
         {
             value = (std::strcmp(msg, "true") == 0);
-            std::free(msg);
+            delete[] msg;
             return true;
         }
 
@@ -257,13 +298,12 @@ public:
 
     bool readNextLineAsInt(int& value)
     {
-        if (! fReading)
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(fReading, false);
 
-        if (char* const msg = readline())
+        if (const char* const msg = readline())
         {
             value = std::atoi(msg);
-            std::free(msg);
+            delete[] msg;
             return true;
         }
 
@@ -272,25 +312,23 @@ public:
 
     bool readNextLineAsFloat(float& value)
     {
-        if (! fReading)
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(fReading, false);
 
-        if (char* const msg = readline())
+        if (const char* const msg = readline())
         {
-            bool ret = (std::sscanf(msg, "%f", &value) == 1);
-            std::free(msg);
+            const bool ret(std::sscanf(msg, "%f", &value) == 1);
+            delete[] msg;
             return ret;
         }
 
         return false;
     }
 
-    bool readNextLineAsString(char*& value)
+    bool readNextLineAsString(const char*& value)
     {
-        if (! fReading)
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(fReading, false);
 
-        if (char* const msg = readline())
+        if (const char* const msg = readline())
         {
             value = msg;
             return true;
@@ -299,40 +337,54 @@ public:
         return false;
     }
 
-    void writeMsg(const char* const msg)
+    // -------------------------------------------------------------------
+
+    void writeMsg(const char* const msg) const noexcept
     {
-        ::write(fPipeSend, msg, std::strlen(msg));
+        CARLA_SAFE_ASSERT_RETURN(fPipeSend != -1,);
+
+        try {
+            ::write(fPipeSend, msg, std::strlen(msg));
+        } catch (...) {}
     }
 
-    void writeMsg(const char* const msg, size_t size)
+    void writeMsg(const char* const msg, size_t size) const noexcept
     {
-        ::write(fPipeSend, msg, size);
+        CARLA_SAFE_ASSERT_RETURN(fPipeSend != -1,);
+
+        try {
+            ::write(fPipeSend, msg, size);
+        } catch (...) {}
     }
 
     void writeAndFixMsg(const char* const msg)
     {
-        const size_t size = std::strlen(msg);
+        CARLA_SAFE_ASSERT_RETURN(fPipeSend != -1,);
 
-        char smsg[size+1];
-        std::strcpy(smsg, msg);
+        const size_t size(std::strlen(msg));
 
-        smsg[size-1] = '\n';
-        smsg[size]   = '\0';
+        char fixedMsg[size+1];
+        std::strcpy(fixedMsg, msg);
 
-        for (size_t i=0; i<size; ++i)
+        for (size_t i=0; i < size; ++i)
         {
-            if (smsg[i] == '\n')
-                smsg[i] = '\r';
+            if (fixedMsg[i] == '\n')
+                fixedMsg[i] = '\r';
         }
 
-        ::write(fPipeSend, smsg, size+1);
+        fixedMsg[size-1] = '\n';
+        fixedMsg[size]   = '\0';
+
+        try {
+            ::write(fPipeSend, fixedMsg, size);
+        } catch (...) {}
     }
 
     void waitChildClose()
     {
         if (! wait_child(fPid))
         {
-            carla_stderr2("force killing misbehaved child %d (exit)", (int)fPid);
+            carla_stderr2("force killing misbehaved child %i (exit)", int(fPid));
 
             if (kill(fPid, SIGKILL) == -1)
                 carla_stderr2("kill() failed: %s (exit)", strerror(errno));
@@ -358,24 +410,28 @@ private:
     int fPipeSend; // the pipe end that is used for sending messages to UI
     pid_t fPid;
     bool  fReading;
-    CarlaString fTempBuf;
+
+    char        fTmpBuf[0xff+1];
+    CarlaString fTmpStr;
 
     // -------------------------------------------------------------------
 
-    char* readline()
+    const char* readline()
     {
-        char ch;
+        char    ch;
+        char*   ptr = fTmpBuf;
         ssize_t ret;
 
-        char buf[0xff+1];
-        char* ptr = buf;
+        fTmpStr.clear();
 
-        fTempBuf.clear();
-        buf[0xff] = '\0';
-
-        for (int i=0;; ++i)
+        for (int i=0; i < 0xff; ++i)
         {
-            ret = read(fPipeRecv, &ch, 1);
+            try {
+                ret = read(fPipeRecv, &ch, 1);
+            }
+            catch (...) {
+                break;
+            }
 
             if (ret == 1 && ch != '\n')
             {
@@ -387,22 +443,22 @@ private:
                 if (i+1 == 0xff)
                 {
                     i = 0;
-                    ptr = buf;
-                    fTempBuf += buf;
+                    ptr = fTmpBuf;
+                    fTmpStr += fTmpBuf;
                 }
 
                 continue;
             }
 
-            if (fTempBuf.isNotEmpty() || ptr != buf)
+            if (fTmpStr.isNotEmpty() || ptr != fTmpBuf)
             {
-                if (ptr != buf)
+                if (ptr != fTmpBuf)
                 {
                     *ptr = '\0';
-                    fTempBuf += buf;
+                    fTmpStr += fTmpBuf;
                 }
 
-                return strdup((const char*)fTempBuf);
+                return fTmpStr.dup();
             }
 
             break;
@@ -411,15 +467,15 @@ private:
         return nullptr;
     }
 
-    static bool fork_exec(const char* const argv[5], int* const retp)
+    static bool fork_exec(const char* const argv[5], int* const retp) noexcept
     {
-        pid_t ret = *retp = vfork();
+        const pid_t ret = *retp = vfork();
 
         switch (ret)
         {
         case 0: /* child process */
             execlp(argv[0], argv[0], argv[1], argv[2], argv[3], argv[4], nullptr);
-            carla_stderr2("exec of UI failed: %s", std::strerror(errno));
+            carla_stderr2("vfork exec failed: %s", std::strerror(errno));
             return false;
         case -1: /* error */
             carla_stderr2("vfork() failed: %s", std::strerror(errno));
@@ -431,18 +487,22 @@ private:
 
     static bool wait_child(const pid_t pid)
     {
-        pid_t ret;
-        int i;
-
         if (pid == -1)
         {
             carla_stderr2("Can't wait for pid -1");
             return false;
         }
 
-        for (i = 0; i < WAIT_ZOMBIE_TIMEOUT / WAIT_STEP; ++i)
+        pid_t ret;
+
+        for (int i=0, maxTime=WAIT_ZOMBIE_TIMEOUT/WAIT_STEP; i < maxTime; ++i)
         {
-            ret = waitpid(pid, nullptr, WNOHANG);
+            try {
+                ret = ::waitpid(pid, nullptr, WNOHANG);
+            }
+            catch (...) {
+                break;
+            }
 
             if (ret != 0)
             {
@@ -451,19 +511,18 @@ private:
 
                 if (ret == -1)
                 {
-                    carla_stderr2("waitpid(%d) failed: %s", (int)pid, strerror(errno));
+                    carla_stderr2("waitpid(%i) failed: %s", int(pid), std::strerror(errno));
                     return false;
                 }
 
-                carla_stderr2("we have waited for child pid %d to exit but we got pid %d instead", (int)pid, (int)ret);
-
+                carla_stderr2("we waited for child pid %i to exit but we got pid %i instead", int(pid), int(ret));
                 return false;
             }
 
             carla_msleep(WAIT_STEP); /* wait 100 ms */
         }
 
-        carla_stderr2("we have waited for child with pid %d to exit for %.1f seconds and we are giving up", (int)pid, (float)WAIT_START_TIMEOUT / 1000.0f);
+        carla_stderr2("we waited for child with pid %i to exit for %.1f seconds and we are giving up", int(pid), float(WAIT_START_TIMEOUT)/1000.0f);
         return false;
     }
 };

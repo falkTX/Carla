@@ -1,6 +1,6 @@
 /*
- * Carla Tests
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Carla Utility Tests
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -25,7 +25,7 @@
 // #include "CarlaLibUtils.hpp"
 // #include "CarlaLv2Utils.hpp"
 #include "CarlaOscUtils.hpp"
-// #include "CarlaPipeUtils.hpp"
+#include "CarlaPipeUtils.hpp"
 // #include "CarlaShmUtils.hpp"
 // #include "CarlaStateUtils.hpp"
 // #include "CarlaVstUtils.hpp"
@@ -52,8 +52,8 @@ struct MyStruct {
 class MyLeakCheckedClass
 {
 public:
-    MyLeakCheckedClass() {}
-    ~MyLeakCheckedClass() {}
+    MyLeakCheckedClass() noexcept {}
+    ~MyLeakCheckedClass() noexcept {}
 private:
     char pad[100];
     int i;
