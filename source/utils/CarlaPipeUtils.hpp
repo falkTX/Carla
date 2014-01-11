@@ -26,7 +26,6 @@
 #include <clocale>
 
 #include <fcntl.h>
-#include <signal.h>
 #include <sys/wait.h>
 
 #define WAIT_START_TIMEOUT  3000 /* ms */
