@@ -1,6 +1,6 @@
 /*
- * Carla Tests
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * CarlaString Tests
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -27,6 +27,7 @@ int main()
     assert(str.isEmpty());
     assert(str.contains(""));
     assert(str.contains("\0"));
+    assert(str.isEmpty() == !str.isNotEmpty());
     assert(! str.isNotEmpty());
     assert(! str.contains(" "));
     assert(! str.isDigit(0));
@@ -35,6 +36,7 @@ int main()
     str = "5";
     assert(str.length() == 1);
     assert(str.length() == std::strlen("5"));
+    assert(str.isEmpty() == !str.isNotEmpty());
     assert(str.isNotEmpty());
     assert(str.contains(""));
     assert(str.contains("5"));
@@ -147,10 +149,27 @@ int main()
     str2  = "test2";
     str2 += ".0";
 
+    // startsWith, contains and endsWith
     CarlaString str3("1.23_  ?test2.0 final");
+    assert(str3.startsWith('1'));
+    assert(str3.startsWith("1"));
+    assert(str3.startsWith("1.23_ "));
+    assert(str3.contains("1"));
+    assert(str3.contains("?test"));
+    assert(str3.contains("final"));
+    assert(! str3.contains("\n"));
+    assert(! str3.contains("\t"));
+    assert(str3.endsWith('l'));
+    assert(str3.endsWith("l"));
+    assert(str3.endsWith(" final"));
 
     CarlaString str4 = "" + str1 + str2 + " final";
+    assert(str4.contains(str1));
+    assert(str4.contains(str2));
+    assert(str4.startsWith(str1));
+    assert(! str4.startsWith(str2));
 
+    // length and content
     assert(str3 == "1.23_  ?test2.0 final");
     assert(str3 == str4);
     assert(str3.length() == str4.length());
@@ -159,6 +178,64 @@ int main()
     CarlaString str5 = "ola " + str + " " + CarlaString(6);
     assert(str5 == "ola _51ah0x910_ 6");
     assert(str5.length() == std::strlen("ola _51ah0x910_ 6"));
+
+    // find, rfind
+    bool found;
+    assert(str5.find('o', &found) == 0);
+    assert(found);
+    assert(str5.find('l', &found) == 1);
+    assert(found);
+    assert(str5.find('5', &found) == 5);
+    assert(found);
+    assert(str5.find('6', &found) == str5.length()-1);
+    assert(found);
+
+    assert(str5.rfind('6', &found) == str5.length()-1);
+    assert(found);
+    assert(str5.rfind(' ', &found) == str5.length()-2);
+    assert(found);
+    assert(str5.rfind('x', &found) == 10);
+    assert(found);
+
+    assert(str5.find('\0', &found) == str5.length());
+    assert(! found);
+    assert(str5.find('Z', &found) == str5.length());
+    assert(! found);
+    assert(str5.rfind('A', &found) == str5.length());
+    assert(! found);
+
+    assert(str5.find("o", &found) == 0);
+    assert(found);
+    assert(str5.find("ola", &found) == 0);
+    assert(found);
+    assert(str5.find("la", &found) == 1);
+    assert(found);
+    assert(str5.find(" ", &found) == 3);
+    assert(found);
+    assert(str5.find("6", &found) == str5.length()-1);
+    assert(found);
+    assert(str5.find(" 6", &found) == str5.length()-2);
+    assert(found);
+
+    assert(str5.rfind("6", &found) == str5.length()-1);
+    assert(found);
+    assert(str5.rfind(" ", &found) == str5.length()-2);
+    assert(found);
+    assert(str5.rfind(" 6", &found) == str5.length()-2);
+    assert(found);
+    assert(str5.rfind("ola", &found) == 0);
+    assert(found);
+    assert(str5.rfind("la ", &found) == 1);
+    assert(found);
+
+    assert(str5.find("", &found) == str5.length());
+    assert(! found);
+    assert(str5.find("Zoom", &found) == str5.length());
+    assert(! found);
+    assert(str5.rfind("", &found) == str5.length());
+    assert(! found);
+    assert(str5.rfind("haha!", &found) == str5.length());
+    assert(! found);
 
     printf("FINAL: \"%s\"\n", (const char*)str5);
 

@@ -23,8 +23,9 @@ ANSI_FLAGS += -L../backend -lcarla_standalone2
 
 # --------------------------------------------------------------
 
-TARGETS  = ansi-pedantic-test_c ansi-pedantic-test_c99 ansi-pedantic-test_cxx ansi-pedantic-test_cxx11
-# TARGETS += CarlaString Print RtList Utils
+# TARGETS  = ansi-pedantic-test_c ansi-pedantic-test_c99 ansi-pedantic-test_cxx ansi-pedantic-test_cxx11
+TARGETS += CarlaString
+# Print RtList Utils
 
 all: $(TARGETS)
 
@@ -46,7 +47,7 @@ ansi-pedantic-test_cxx11: ansi-pedantic-test.c ../backend/Carla*.h
 
 CarlaString: CarlaString.cpp ../utils/CarlaString.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
-# 	valgrind ./CarlaString
+	valgrind ./CarlaString
 
 DISTRHO: DISTRHO.cpp ../modules/distrho/*.hpp ../modules/distrho/src/*.cpp
 	$(CXX) $< ../modules/dgl.a $(BUILD_CXX_FLAGS) -I../modules/distrho -I../modules/carla_native/nekobi $(LINK_FLAGS) $(DGL_LIBS) -lpthread -o $@

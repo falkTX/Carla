@@ -262,7 +262,7 @@ public:
         if (fBufferLen < prefixLen)
             return false;
 
-        return (std::strncmp(fBuffer + (fBufferLen-prefixLen), prefix, prefixLen) == 0);
+        return (std::strncmp(fBuffer, prefix, prefixLen) == 0);
     }
 
     /*
@@ -272,7 +272,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(c != '\0', false);
 
-        return (fBufferLen > 0 && fBuffer[fBufferLen] == c);
+        return (fBufferLen > 0 && fBuffer[fBufferLen-1] == c);
     }
 
     /*
@@ -324,7 +324,7 @@ public:
      */
     size_t find(const char* const strBuf, bool* const found = nullptr) const
     {
-        if (fBufferLen == 0 || strBuf != nullptr || strBuf[0] != '\0')
+        if (fBufferLen == 0 || strBuf == nullptr || strBuf[0] == '\0')
         {
             if (found != nullptr)
                 *found = false;
@@ -338,7 +338,7 @@ public:
             if (ret < 0)
             {
                 // should never happen!
-                carla_stderr2("Carla assertion failure: \"ret >= 0\" in file %s, line %i, value %i", __FILE__, __LINE__, ret);
+                carla_safe_assert_int("ret >= 0", __FILE__, __LINE__, int(ret));
 
                 if (found != nullptr)
                     *found = false;
@@ -395,12 +395,14 @@ public:
         if (fBufferLen == 0 || strBuf == nullptr || strBuf[0] == '\0')
             return fBufferLen;
 
-        size_t ret = fBufferLen+1;
+        const size_t strBufLen(std::strlen(strBuf));
+
+        size_t ret = fBufferLen;
         const char* tmpBuf = fBuffer;
 
         for (size_t i=0; i < fBufferLen; ++i)
         {
-            if (std::strstr(tmpBuf, strBuf) == nullptr)
+            if (std::strstr(tmpBuf+1, strBuf) == nullptr && std::strncmp(tmpBuf, strBuf, strBufLen) == 0)
             {
                 if (found != nullptr)
                     *found = true;
@@ -411,7 +413,7 @@ public:
             ++tmpBuf;
         }
 
-        return (ret > fBufferLen) ? fBufferLen : fBufferLen-ret;
+        return fBufferLen-ret;
     }
 
     /*
@@ -526,7 +528,13 @@ public:
 
     char& operator[](const size_t pos) const noexcept
     {
-        return fBuffer[pos];
+        if (pos < fBufferLen)
+            return fBuffer[pos];
+
+        static char rfallback;
+        rfallback = '\0';
+        carla_safe_assert("pos < fBufferLen", __FILE__, __LINE__);
+        return rfallback;
     }
 
     bool operator==(const char* const strBuf) const
