@@ -1476,15 +1476,15 @@ void do_juce_check(const char* const filename, const char* const stype, const bo
 
     if (stype == nullptr)
         return;
-#if JUCE_PLUGINHOST_AU && JUCE_MAC
+#if JUCE_PLUGINHOST_AU && JUCE_MAC && 0 // FIXME later
     else if (std::strcmp(stype, "au") == 0)
         pluginFormat = new AudioUnitPluginFormat();
 #endif
-#if JUCE_PLUGINHOST_LADSPA && JUCE_LINUX
+#if JUCE_PLUGINHOST_LADSPA && JUCE_LINUX && 0 // FIXME later
     else if (std::strcmp(stype, "ladspa") == 0)
         pluginFormat = new LADSPAPluginFormat();
 #endif
-#if JUCE_PLUGINHOST_VST
+#if JUCE_PLUGINHOST_VST && 0 // FIXME later
     else if (std::strcmp(stype, "vst") == 0)
         pluginFormat = new VSTPluginFormat();
 #endif
@@ -1498,11 +1498,11 @@ void do_juce_check(const char* const filename, const char* const stype, const bo
     OwnedArray<PluginDescription> results;
     pluginFormat->findAllTypesForFile(results, filename);
 
-    for (auto it = results.begin(), end = results.end(); it != end; ++it)
+    for (PluginDescription **it = results.begin(), **end = results.end(); it != end; ++it)
     {
         static int iv=0;
         carla_stderr2("LOOKING FOR PLUGIN %i", iv++);
-        PluginDescription* desc(*it);
+        PluginDescription* const desc(*it);
 
         int hints = 0x0;
         int audioIns = desc->numInputChannels;
@@ -1955,9 +1955,12 @@ bool arrayContainsPlugin(const OwnedArray<PluginDescription>& list, const Plugin
 #include "juce_audio_processors/format/juce_AudioPluginFormat.cpp"
 #include "juce_audio_processors/processors/juce_AudioProcessor.cpp"
 #include "juce_audio_processors/processors/juce_PluginDescription.cpp"
-#include "juce_audio_processors/format_types/juce_AudioUnitPluginFormat.mm"
-#include "juce_audio_processors/format_types/juce_LADSPAPluginFormat.cpp"
-#include "juce_audio_processors/format_types/juce_VSTPluginFormat.cpp"
+
+#ifndef CARLA_OS_MAC // FIXME later
+# include "juce_audio_processors/format_types/juce_AudioUnitPluginFormat.mm"
+# include "juce_audio_processors/format_types/juce_LADSPAPluginFormat.cpp"
+# include "juce_audio_processors/format_types/juce_VSTPluginFormat.cpp"
+#endif
 }
 #endif
 

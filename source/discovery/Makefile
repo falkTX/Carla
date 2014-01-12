@@ -74,7 +74,11 @@ WIN_32BIT_FLAGS   = $(32BIT_FLAGS)
 WIN_64BIT_FLAGS   = $(64BIT_FLAGS)
 WIN_LINK_FLAGS    = $(LINK_FLAGS)
 
+ifeq ($(MACOS),true)
+OBJS = carla-discovery.mm.o
+else
 OBJS = carla-discovery.cpp
+endif
 
 # --------------------------------------------------------------
 
@@ -90,6 +94,9 @@ win32:   carla-discovery-win32.exe
 win64:   carla-discovery-win64.exe
 
 # --------------------------------------------------------------
+
+carla-discovery.mm.o: carla-discovery.mm carla-discovery.cpp
+	$(CXX) $< $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) -objc++ -c -o $@
 
 carla-discovery-native: $(OBJS) $(LIBS)
 	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) $(POSIX_LINK_FLAGS) -o $@
