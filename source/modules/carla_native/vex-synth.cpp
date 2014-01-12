@@ -741,7 +741,13 @@ protected:
                 break;
             }
 
+#ifndef CARLA_OS_MAC
             tmpName[4] = '0' + ((index-1+24) / 24);
+#else
+            // MacOS has a problem with this
+            char* tmpBuf(const_cast<char*>(tmpName.getBuffer()));
+            tmpBuf[4] = '0' + ((index-1+24) / 24);
+#endif
 
             paramInfo.name  = (const char*)tmpName;
             paramInfo.hints = static_cast<NativeParameterHints>(hints);

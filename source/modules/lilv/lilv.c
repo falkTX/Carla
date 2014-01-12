@@ -19,6 +19,7 @@
 #include "src/lib.c"
 #include "src/node.c"
 #include "src/plugin.c"
+#undef USTR
 #include "src/pluginclass.c"
 #include "src/port.c"
 #include "src/query.c"

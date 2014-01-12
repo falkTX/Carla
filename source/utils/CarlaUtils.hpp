@@ -411,14 +411,13 @@ inline float
 /*
  * Clear a char array.
  */
-template<typename C = char>
 static inline
-void carla_zeroChar(C* const data, const size_t numChars) noexcept
+void carla_zeroChar(char* const data, const size_t numChars) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(numChars > 0,);
 
-    std::memset(data, 0, numChars*sizeof(C));
+    std::memset(data, 0, numChars*sizeof(char));
 }
 
 /*

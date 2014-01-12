@@ -110,7 +110,7 @@ qt5: ../theme.qt5.a
 styles/carlastyle.dll: $(FILES_shared) $(OBJS_shared)
 	$(CXX) $(OBJS_shared) $(SHARED_LINK_FLAGS) -shared -o $@
 
-styles/carlastyle.dynlib: $(FILES_shared) $(OBJS_shared)
+styles/carlastyle.dylib: $(FILES_shared) $(OBJS_shared)
 	$(CXX) $(OBJS_shared) $(SHARED_LINK_FLAGS) -dynamiclib -o $@
 
 styles/carlastyle.so: $(FILES_shared) $(OBJS_shared)

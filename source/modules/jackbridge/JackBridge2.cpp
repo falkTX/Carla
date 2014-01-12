@@ -18,6 +18,10 @@
 
 #include "JackBridge.hpp"
 
+#ifdef CARLA_OS_MAC
+# include <unistd.h>
+#endif
+
 #ifndef JACKBRIDGE_HPP_INCLUDED
 // don't include the whole JACK API in this file
 CARLA_EXPORT bool jackbridge_sem_init(void* sem);
