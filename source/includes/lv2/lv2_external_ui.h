@@ -73,17 +73,19 @@ typedef struct _LV2_External_UI_Widget {
  */
 typedef struct _LV2_External_UI_Host {
   /**
-   * Callback that plugin UI will call
-   * when UI (GUI window) is closed by user.
+   * Callback that plugin UI will call when UI (GUI window) is closed by user.
    * This callback will be called during execution of LV2_External_UI_Widget::run()
    * (i.e. not from background thread).
    *
-   * After this callback is called, UI is defunct. Host must call
-   * LV2UI_Descriptor::cleanup(). If host wants to make the UI visible
-   * again UI must be reinstantiated.
+   * After this callback is called, UI is defunct. Host must call LV2UI_Descriptor::cleanup().
+   * If host wants to make the UI visible again, the UI must be reinstantiated.
+   *
+   * @note When using the depreated URI LV2_EXTERNAL_UI_DEPRECATED_URI,
+   *       some hosts will not call LV2UI_Descriptor::cleanup() as they should,
+   *       and may call show() again without re-initialization.
    *
    * @param controller Host context associated with plugin UI, as
-   * supplied to LV2UI_Descriptor::instantiate()
+   *                   supplied to LV2UI_Descriptor::instantiate().
    */
   void (*ui_closed)(LV2UI_Controller controller);
 
