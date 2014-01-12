@@ -240,7 +240,7 @@ ifeq ($(MACOS),true)
 DGL_LIBS                = -framework OpenGL -framework Cocoa
 JACKBRIDGE_LIBS         = -ldl -lpthread
 JUCE_AUDIO_BASICS_LIBS  = -framework Accelerate
-JUCE_AUDIO_DEVICES_LIBS = -framework CoreAudio -framework CoreMIDI -framework DiscRecording
+JUCE_AUDIO_DEVICES_LIBS = -framework AudioToolbox -framework CoreAudio -framework CoreMIDI -framework DiscRecording
 JUCE_AUDIO_FORMATS_LIBS = -framework CoreAudio -framework CoreMIDI -framework QuartzCore -framework AudioToolbox
 JUCE_CORE_LIBS          = -framework Cocoa -framework IOKit
 JUCE_GRAPHICS_LIBS      = -framework Cocoa -framework QuartzCore

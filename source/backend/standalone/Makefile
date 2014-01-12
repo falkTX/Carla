@@ -124,7 +124,7 @@ debug:
 	$(CXX) $< -Wl,--start-group $(STATIC_LIBS) -Wl,--end-group $(LINK_FLAGS) -shared -Wl,--output-def,$@.def -o $@
 
 ../libcarla_standalone2.dylib: CarlaStandalone.cpp.o $(STATIC_LIBS)
-	$(CXX) $< -Wl,--start-group $(STATIC_LIBS) -Wl,--end-group $(LINK_FLAGS) -dynamiclib -o $@
+	$(CXX) $< $(STATIC_LIBS) $(LINK_FLAGS) -dynamiclib -o $@
 
 ../libcarla_standalone2.so: CarlaStandalone.cpp.o $(STATIC_LIBS)
 	$(CXX) $< -Wl,--start-group $(STATIC_LIBS) -Wl,--end-group $(LINK_FLAGS) -shared -o $@

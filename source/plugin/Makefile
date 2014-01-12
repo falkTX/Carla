@@ -165,7 +165,7 @@ carla-native.lv2/carla-native.dll: carla-native-lv2.cpp.o $(LIBS)
 	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group -shared $(LINK_FLAGS) -o $@
 
 carla-native.lv2/carla-native.dylib: carla-native-lv2.cpp.o $(LIBS)
-	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group -dynamiclib $(LINK_FLAGS) -o $@
+	$(CXX) $< $(LIBS) -dynamiclib $(LINK_FLAGS) -o $@
 
 carla-native.lv2/carla-native.so: carla-native-lv2.cpp.o $(LIBS)
 	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group -shared $(LINK_FLAGS) -o $@

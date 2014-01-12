@@ -31,13 +31,13 @@ const float referenceFontSize = 1024.0f;
 
 #if JUCE_CORETEXT_AVAILABLE
 
-#if JUCE_MAC && MAC_OS_X_VERSION_MAX_ALLOWED == MAC_OS_X_VERSION_10_5
+//#if JUCE_MAC && MAC_OS_X_VERSION_MAX_ALLOWED == MAC_OS_X_VERSION_10_5
 extern "C"
 {
     void CTRunGetAdvances (CTRunRef, CFRange, CGSize buffer[]);
     const CGSize* CTRunGetAdvancesPtr (CTRunRef);
 }
-#endif
+//#endif
 
 static CTFontRef getCTFontFromTypeface (const Font& f);
 
@@ -626,7 +626,7 @@ StringArray Font::findAllTypefaceNames()
 {
     StringArray names;
 
-   #if MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_5 && ! JUCE_IOS
+   #if 0 //MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_5 && ! JUCE_IOS
     // CTFontManager only exists on OS X 10.6 and later, it does not exist on iOS
     CFArrayRef fontFamilyArray = CTFontManagerCopyAvailableFontFamilyNames();
 

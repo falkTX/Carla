@@ -1415,7 +1415,7 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
 
     carla_debug("lv2_descriptor(%i) - not found, allocating new with uri \"%s\"", index, (const char*)tmpURI);
 
-    const LV2_Descriptor* const lv2Desc(new const LV2_Descriptor{
+    const LV2_Descriptor lv2DescTmp = {
     /* URI            */ carla_strdup(tmpURI),
     /* instantiate    */ lv2_instantiate,
     /* connect_port   */ lv2_connect_port,
@@ -1424,7 +1424,10 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
     /* deactivate     */ lv2_deactivate,
     /* cleanup        */ lv2_cleanup,
     /* extension_data */ lv2_extension_data
-    });
+    };
+
+    LV2_Descriptor* const lv2Desc(new LV2_Descriptor);
+    std::memcpy(lv2Desc, &lv2DescTmp, sizeof(LV2_Descriptor));
 
     plm.lv2Descs.append(lv2Desc);
 
