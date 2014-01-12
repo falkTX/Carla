@@ -235,7 +235,8 @@ public:
             return;
 
         try {
-            ::write(fPipeSend, "quit\n", 5);
+            ssize_t ignore = ::write(fPipeSend, "quit\n", 5);
+            (void)ignore;
         } catch (...) {}
 
         waitChildClose();
@@ -362,7 +363,8 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fPipeSend != -1,);
 
         try {
-            ::write(fPipeSend, msg, std::strlen(msg));
+            ssize_t ignore = ::write(fPipeSend, msg, std::strlen(msg));
+            (void)ignore;
         } catch (...) {}
     }
 
@@ -371,7 +373,8 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fPipeSend != -1,);
 
         try {
-            ::write(fPipeSend, msg, size);
+            ssize_t ignore = ::write(fPipeSend, msg, size);
+            (void)ignore;
         } catch (...) {}
     }
 
@@ -412,7 +415,8 @@ public:
         }
 
         try {
-            ::write(fPipeSend, fixedMsg, size+1);
+            ssize_t ignore = ::write(fPipeSend, fixedMsg, size+1);
+            (void)ignore;
         } catch (...) {}
     }
 
