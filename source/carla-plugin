@@ -93,6 +93,9 @@ class PluginHost(object):
     def _set_pluginInfo(self, pluginId, info):
         self.fPluginsInfo[pluginId].pluginInfo = info
 
+    def _set_pluginName(self, pluginId, name):
+        self.fPluginsInfo[pluginId].pluginInfo['name'] = name
+
     def _set_pluginRealName(self, pluginId, realName):
         self.fPluginsInfo[pluginId].pluginRealName = realName
 
@@ -155,7 +158,7 @@ class PluginHost(object):
         if paramIndex < self.fPluginsInfo[pluginId].parameterCount:
             self.fPluginsInfo[pluginId].parameterValueS[paramIndex] = value
 
-    def _set_parameterDefaultValue(self, pluginId, paramIndex, value):
+    def _set_parameterDefault(self, pluginId, paramIndex, value):
         if paramIndex < self.fPluginsInfo[pluginId].parameterCount:
             self.fPluginsInfo[pluginId].parameterRangeS[paramIndex]['def'] = value
 
@@ -555,6 +558,11 @@ class CarlaMiniW(HostWindow, ExternalUI):
                 in1, in2, out1, out2 = [float(i) for i in self.fPipeRecv.readline().strip().split(":")]
                 Carla.host._set_peaks(pluginId, in1, in2, out1, out2)
 
+            elif msg.startswith("PARAMVAL_"):
+                pluginId, paramId = [int(i) for i in msg.replace("PARAMVAL_", "").split(":")]
+                paramValue = float(self.fPipeRecv.readline().strip())
+                Carla.host._set_parameterValueS(pluginId, paramId, paramValue)
+
             elif msg.startswith("ENGINE_CALLBACK_"):
                 action   = int(msg.replace("ENGINE_CALLBACK_", ""))
                 pluginId = int(self.fPipeRecv.readline().strip())
@@ -562,15 +570,33 @@ class CarlaMiniW(HostWindow, ExternalUI):
                 value2   = int(self.fPipeRecv.readline().strip())
                 value3   = float(self.fPipeRecv.readline().strip())
                 valueStr = self.fPipeRecv.readline().strip().replace("\r", "\n")
+
+                if action == ENGINE_CALLBACK_PLUGIN_RENAMED:
+                    Carla.host._set_pluginName(pluginId, valueStr)
+                elif action == ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
+                    Carla.host._set_parameterValueS(pluginId, value1, value3)
+                elif action == ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
+                    Carla.host._set_parameterDefault(pluginId, value1, value3)
+                elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
+                    Carla.host._set_parameterMidiCC(pluginId, value1, value2)
+                elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
+                    Carla.host._set_parameterMidiChannel(pluginId, value1, value2)
+                elif action == ENGINE_CALLBACK_PROGRAM_CHANGED:
+                    Carla.host._set_currentProgram(pluginId, value1)
+                elif action == ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
+                    Carla.host._set_currentMidiProgram(pluginId, value1)
+
                 engineCallback(None, action, pluginId, value1, value2, value3, valueStr)
 
             elif msg.startswith("PLUGIN_INFO_"):
                 pluginId = int(msg.replace("PLUGIN_INFO_", ""))
                 Carla.host._add(pluginId)
 
-                type_, category, hints, uniqueId = [int(i) for i in self.fPipeRecv.readline().strip().split(":")]
-                realName  = self.fPipeRecv.readline().strip().replace("\r", "\n")
+                type_, category, hints, uniqueId, optsAvail, optsEnabled = [int(i) for i in self.fPipeRecv.readline().strip().split(":")]
+                filename  = self.fPipeRecv.readline().strip().replace("\r", "\n")
                 name      = self.fPipeRecv.readline().strip().replace("\r", "\n")
+                iconName  = self.fPipeRecv.readline().strip().replace("\r", "\n")
+                realName  = self.fPipeRecv.readline().strip().replace("\r", "\n")
                 label     = self.fPipeRecv.readline().strip().replace("\r", "\n")
                 maker     = self.fPipeRecv.readline().strip().replace("\r", "\n")
                 copyright = self.fPipeRecv.readline().strip().replace("\r", "\n")
@@ -579,39 +605,35 @@ class CarlaMiniW(HostWindow, ExternalUI):
                     'type': type_,
                     'category': category,
                     'hints': hints,
-                    'optionsAvailable': 0x0, # TODO
-                    'optionsEnabled': 0x0, # TODO
-                    'filename': "", # TODO
+                    'optionsAvailable': optsAvail,
+                    'optionsEnabled': optsEnabled,
+                    'filename': filename,
                     'name':  name,
                     'label': label,
                     'maker': maker,
                     'copyright': copyright,
-                    'iconName': None, # TODO
+                    'iconName': iconName,
                     'patchbayClientId': 0,
                     'uniqueId': uniqueId
                 }
-
                 Carla.host._set_pluginInfo(pluginId, pinfo)
                 Carla.host._set_pluginRealName(pluginId, realName)
 
             elif msg.startswith("AUDIO_COUNT_"):
-                pluginId = int(msg.replace("AUDIO_COUNT_", ""))
-                ins, outs = [int(i) for i in self.fPipeRecv.readline().strip().split(":")]
+                pluginId, ins, outs = [int(i) for i in msg.replace("AUDIO_COUNT_", "").split(":")]
                 Carla.host._set_audioCountInfo(pluginId, {'ins': ins, 'outs': outs})
 
             elif msg.startswith("MIDI_COUNT_"):
-                pluginId = int(msg.replace("MIDI_COUNT_", ""))
-                ins, outs = [int(i) for i in self.fPipeRecv.readline().strip().split(":")]
+                pluginId, ins, outs = [int(i) for i in msg.replace("MIDI_COUNT_", "").split(":")]
                 Carla.host._set_midiCountInfo(pluginId, {'ins': ins, 'outs': outs})
 
             elif msg.startswith("PARAMETER_COUNT_"):
-                pluginId = int(msg.replace("PARAMETER_COUNT_", ""))
-                ins, outs, count = [int(i) for i in self.fPipeRecv.readline().strip().split(":")]
+                pluginId, ins, outs, count = [int(i) for i in msg.replace("PARAMETER_COUNT_", "").split(":")]
                 Carla.host._set_parameterCountInfo(pluginId, count, {'ins': ins, 'outs': outs})
 
             elif msg.startswith("PARAMETER_DATA_"):
                 pluginId, paramId = [int(i) for i in msg.replace("PARAMETER_DATA_", "").split(":")]
-                paramType, paramHints = [int(i) for i in self.fPipeRecv.readline().strip().split(":")]
+                paramType, paramHints, midiChannel, midiCC = [int(i) for i in self.fPipeRecv.readline().strip().split(":")]
                 paramName = self.fPipeRecv.readline().strip().replace("\r", "\n")
                 paramUnit = self.fPipeRecv.readline().strip().replace("\r", "\n")
 
@@ -628,16 +650,10 @@ class CarlaMiniW(HostWindow, ExternalUI):
                     'hints': paramHints,
                     'index': paramId,
                     'rindex': -1,
-                    'midiCC': -1,
-                    'midiChannel': 0
+                    'midiCC': midiCC,
+                    'midiChannel': midiChannel
                 }
                 Carla.host._set_parameterDataS(pluginId, paramId, paramData)
-
-            elif msg.startswith("PARAMETER_MIDI_STUFF_"):
-                pluginId, paramId = [int(i) for i in msg.replace("PARAMETER_MIDI_STUFF_", "").split(":")]
-                midiChannel, midiCC = [int(i) for i in self.fPipeRecv.readline().strip().split(":")]
-                Carla.host._set_parameterMidiChannel(pluginId, paramId, midiChannel)
-                Carla.host._set_parameterMidiCC(pluginId, paramId, midiCC)
 
             elif msg.startswith("PARAMETER_RANGES_"):
                 pluginId, paramId = [int(i) for i in msg.replace("PARAMETER_RANGES_", "").split(":")]
@@ -653,10 +669,26 @@ class CarlaMiniW(HostWindow, ExternalUI):
                 }
                 Carla.host._set_parameterRangeS(pluginId, paramId, paramRanges)
 
-            elif msg.startswith("PARAMETER_VALUE_"):
-                pluginId, paramId = [int(i) for i in msg.replace("PARAMETER_VALUE_", "").split(":")]
-                paramValue = float(self.fPipeRecv.readline().strip())
-                Carla.host._set_parameterValueS(pluginId, paramId, paramValue)
+            elif msg.startswith("PROGRAM_COUNT_"):
+                pluginId, count, current = [int(i) for i in msg.replace("PROGRAM_COUNT_", "").split(":")]
+                Carla.host._set_programCount(pluginId, count)
+                Carla.host._set_currentProgram(pluginId, current)
+
+            elif msg.startswith("PROGRAM_NAME_"):
+                pluginId, progId = [int(i) for i in msg.replace("PROGRAM_NAME_", "").split(":")]
+                progName = self.fPipeRecv.readline().strip().replace("\r", "\n")
+                Carla.host._set_programNameS(pluginId, progId, progName)
+
+            elif msg.startswith("MIDI_PROGRAM_COUNT_"):
+                pluginId, count, current = [int(i) for i in msg.replace("MIDI_PROGRAM_COUNT_", "").split(":")]
+                Carla.host._set_midiProgramCount(pluginId, count)
+                Carla.host._set_currentMidiProgram(pluginId, current)
+
+            elif msg.startswith("MIDI_PROGRAM_DATA_"):
+                pluginId, midiProgId = [int(i) for i in msg.replace("MIDI_PROGRAM_DATA_", "").split(":")]
+                bank, program = [int(i) for i in self.fPipeRecv.readline().strip().split(":")]
+                name = self.fPipeRecv.readline().strip().replace("\r", "\n")
+                Carla.host._set_midiProgramDataS(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
 
             elif msg == "show":
                 self.d_uiShow()

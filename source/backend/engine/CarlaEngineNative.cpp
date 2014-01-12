@@ -518,6 +518,8 @@ public:
     {
         carla_debug("CarlaEngineNative::CarlaEngineNative()");
 
+        fTmpBuf[STR_MAX] = '\0';
+
         // set-up engine
         if (fIsPatchbay)
         {
@@ -592,6 +594,19 @@ protected:
 
     // -------------------------------------------------------------------
 
+    const char* renamePlugin(const unsigned int id, const char* const newName) override
+    {
+        if (const char* const retName = CarlaEngine::renamePlugin(id, newName))
+        {
+            uiServerCallback(ENGINE_CALLBACK_PLUGIN_RENAMED, id, 0, 0, 0.0f, retName);
+            return retName;
+        }
+
+        return nullptr;
+    }
+
+    // -------------------------------------------------------------------
+
     void bufferSizeChanged(const uint32_t newBufferSize)
     {
         pData->bufferSize = newBufferSize;
@@ -606,117 +621,200 @@ protected:
 
     // -------------------------------------------------------------------
 
+    void uiServerSendPluginInfo(CarlaPlugin* const plugin)
+    {
+        const uint pluginId(plugin->getId());
+
+        std::sprintf(fTmpBuf, "PLUGIN_INFO_%i\n", pluginId);
+        fUiServer.writeMsg(fTmpBuf);
+
+        std::sprintf(fTmpBuf, "%i:%i:%i:%li:%i:%i\n", plugin->getType(), plugin->getCategory(), plugin->getHints(), plugin->getUniqueId(), plugin->getOptionsAvailable(), plugin->getOptionsEnabled());
+        fUiServer.writeMsg(fTmpBuf);
+
+        if (const char* const filename = plugin->getFilename())
+        {
+            std::sprintf(fTmpBuf, "%s", filename);
+            fUiServer.writeAndFixMsg(fTmpBuf);
+        }
+        else
+            fUiServer.writeMsg("\n");
+
+        if (const char* const name = plugin->getName())
+        {
+            std::sprintf(fTmpBuf, "%s", name);
+            fUiServer.writeAndFixMsg(fTmpBuf);
+        }
+        else
+            fUiServer.writeMsg("\n");
+
+        if (const char* const iconName = plugin->getIconName())
+        {
+            std::sprintf(fTmpBuf, "%s", iconName);
+            fUiServer.writeAndFixMsg(fTmpBuf);
+        }
+        else
+            fUiServer.writeMsg("\n");
+
+        plugin->getRealName(fTmpBuf);
+        fUiServer.writeAndFixMsg(fTmpBuf);
+
+        plugin->getLabel(fTmpBuf);
+        fUiServer.writeAndFixMsg(fTmpBuf);
+
+        plugin->getMaker(fTmpBuf);
+        fUiServer.writeAndFixMsg(fTmpBuf);
+
+        plugin->getCopyright(fTmpBuf);
+        fUiServer.writeAndFixMsg(fTmpBuf);
+
+        std::sprintf(fTmpBuf, "AUDIO_COUNT_%i:%i:%i\n", pluginId, plugin->getAudioInCount(), plugin->getAudioOutCount());
+        fUiServer.writeMsg(fTmpBuf);
+
+        std::sprintf(fTmpBuf, "MIDI_COUNT_%i:%i:%i\n", pluginId, plugin->getMidiInCount(), plugin->getMidiOutCount());
+        fUiServer.writeMsg(fTmpBuf);
+    }
+
+    void uiServerSendPluginParameters(CarlaPlugin* const plugin)
+    {
+        const uint pluginId(plugin->getId());
+
+        uint32_t ins, outs, count;
+        plugin->getParameterCountInfo(ins, outs);
+        count = plugin->getParameterCount();
+        std::sprintf(fTmpBuf, "PARAMETER_COUNT_%i:%i:%i:%i\n", pluginId, ins, outs, count);
+        fUiServer.writeMsg(fTmpBuf);
+
+        for (uint32_t i=0; i<count; ++i)
+        {
+            const ParameterData& paramData(plugin->getParameterData(i));
+            const ParameterRanges& paramRanges(plugin->getParameterRanges(i));
+
+            std::sprintf(fTmpBuf, "PARAMETER_DATA_%i:%i\n", pluginId, i);
+            fUiServer.writeMsg(fTmpBuf);
+            std::sprintf(fTmpBuf, "%i:%i:%i:%i\n", paramData.type, paramData.hints, paramData.midiChannel, paramData.midiCC);
+            fUiServer.writeMsg(fTmpBuf);
+            plugin->getParameterName(i, fTmpBuf);
+            fUiServer.writeAndFixMsg(fTmpBuf);
+            plugin->getParameterUnit(i, fTmpBuf);
+            fUiServer.writeAndFixMsg(fTmpBuf);
+
+            std::sprintf(fTmpBuf, "PARAMETER_RANGES_%i:%i\n", pluginId, i);
+            fUiServer.writeMsg(fTmpBuf);
+            std::sprintf(fTmpBuf, "%f:%f:%f:%f:%f:%f\n", paramRanges.def, paramRanges.min, paramRanges.max, paramRanges.step, paramRanges.stepSmall, paramRanges.stepLarge);
+            fUiServer.writeMsg(fTmpBuf);
+
+            std::sprintf(fTmpBuf, "PARAMVAL_%i:%i\n", pluginId, i);
+            fUiServer.writeMsg(fTmpBuf);
+            std::sprintf(fTmpBuf, "%f\n", plugin->getParameterValue(i));
+            fUiServer.writeMsg(fTmpBuf);
+        }
+    }
+
+    void uiServerSendPluginPrograms(CarlaPlugin* const plugin)
+    {
+        const uint pluginId(plugin->getId());
+
+        uint32_t count = plugin->getProgramCount();
+        std::sprintf(fTmpBuf, "PROGRAM_COUNT_%i:%i:%i\n", pluginId, count, plugin->getCurrentProgram());
+        fUiServer.writeMsg(fTmpBuf);
+
+        for (uint32_t i=0; i<count; ++i)
+        {
+            std::sprintf(fTmpBuf, "PROGRAM_NAME_%i:%i\n", pluginId, i);
+            fUiServer.writeMsg(fTmpBuf);
+            plugin->getProgramName(i, fTmpBuf);
+            fUiServer.writeAndFixMsg(fTmpBuf);
+        }
+
+        count = plugin->getMidiProgramCount();
+        std::sprintf(fTmpBuf, "MIDI_PROGRAM_COUNT_%i:%i:%i\n", pluginId, count, plugin->getCurrentMidiProgram());
+        fUiServer.writeMsg(fTmpBuf);
+
+        for (uint32_t i=0; i<count; ++i)
+        {
+            std::sprintf(fTmpBuf, "MIDI_PROGRAM_DATA_%i:%i\n", pluginId, i);
+            fUiServer.writeMsg(fTmpBuf);
+
+            const MidiProgramData& mpData(plugin->getMidiProgramData(i));
+            std::sprintf(fTmpBuf, "%i:%i\n", mpData.bank, mpData.program);
+            fUiServer.writeMsg(fTmpBuf);
+            std::sprintf(fTmpBuf, "%s", mpData.name);
+            fUiServer.writeAndFixMsg(fTmpBuf);
+        }
+    }
+
     void uiServerCallback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr)
     {
         if (! fIsRunning)
             return;
+        if (! fUiServer.isOk())
+            return;
 
-        char strBuf[STR_MAX+1];
+        CarlaPlugin* plugin;
 
         switch (action)
         {
-        case ENGINE_CALLBACK_PLUGIN_ADDED:
-            if (CarlaPlugin* const plugin = getPlugin(pluginId))
+        case ENGINE_CALLBACK_RELOAD_INFO:
+            plugin = getPlugin(pluginId);
+
+            if (plugin != nullptr && plugin->isEnabled())
             {
                 CARLA_SAFE_ASSERT_BREAK(plugin->getId() == pluginId);
-
-                std::sprintf(strBuf, "PLUGIN_INFO_%i\n", pluginId);
-                fUiServer.writeMsg(strBuf);
-                std::sprintf(strBuf, "%i:%i:%i:%li\n", plugin->getType(), plugin->getCategory(), plugin->getHints(), plugin->getUniqueId());
-                fUiServer.writeMsg(strBuf);
-                plugin->getRealName(strBuf);
-                fUiServer.writeAndFixMsg(strBuf);
-                std::sprintf(strBuf, "%s", plugin->getName());
-                fUiServer.writeAndFixMsg(strBuf);
-                plugin->getLabel(strBuf);
-                fUiServer.writeAndFixMsg(strBuf);
-                plugin->getMaker(strBuf);
-                fUiServer.writeAndFixMsg(strBuf);
-                plugin->getCopyright(strBuf);
-                fUiServer.writeAndFixMsg(strBuf);
-
-                std::sprintf(strBuf, "AUDIO_COUNT_%i\n", pluginId);
-                fUiServer.writeMsg(strBuf);
-                std::sprintf(strBuf, "%i:%i\n", plugin->getAudioInCount(), plugin->getAudioOutCount());
-                fUiServer.writeMsg(strBuf);
-
-                std::sprintf(strBuf, "MIDI_COUNT_%i\n", pluginId);
-                fUiServer.writeMsg(strBuf);
-                std::sprintf(strBuf, "%i:%i\n", plugin->getMidiInCount(), plugin->getMidiOutCount());
-                fUiServer.writeMsg(strBuf);
-
-                uint32_t ins, outs, count;
-                std::sprintf(strBuf, "PARAMETER_COUNT_%i\n", pluginId);
-                fUiServer.writeMsg(strBuf);
-                plugin->getParameterCountInfo(ins, outs);
-                count = plugin->getParameterCount();
-                std::sprintf(strBuf, "%i:%i:%i\n", ins, outs, count);
-                fUiServer.writeMsg(strBuf);
-
-                for (uint32_t i=0; i<count; ++i)
-                {
-                    const ParameterData& paramData(plugin->getParameterData(i));
-                    const ParameterRanges& paramRanges(plugin->getParameterRanges(i));
-
-                    std::sprintf(strBuf, "PARAMETER_DATA_%i:%i\n", pluginId, i);
-                    fUiServer.writeMsg(strBuf);
-                    std::sprintf(strBuf, "%i:%i\n", paramData.type, paramData.hints);
-                    fUiServer.writeMsg(strBuf);
-                    plugin->getParameterName(i, strBuf);
-                    fUiServer.writeAndFixMsg(strBuf);
-                    plugin->getParameterUnit(i, strBuf);
-                    fUiServer.writeAndFixMsg(strBuf);
-
-                    std::sprintf(strBuf, "PARAMETER_MIDI_STUFF_%i:%i\n", pluginId, i);
-                    fUiServer.writeMsg(strBuf);
-                    std::sprintf(strBuf, "%i:%i\n", paramData.midiChannel, paramData.midiCC);
-                    fUiServer.writeMsg(strBuf);
-
-                    std::sprintf(strBuf, "PARAMETER_RANGES_%i:%i\n", pluginId, i);
-                    fUiServer.writeMsg(strBuf);
-                    std::sprintf(strBuf, "%f:%f:%f:%f:%f:%f\n", paramRanges.def, paramRanges.min, paramRanges.max, paramRanges.step, paramRanges.stepSmall, paramRanges.stepLarge);
-                    fUiServer.writeMsg(strBuf);
-
-                    std::sprintf(strBuf, "PARAMETER_VALUE_%i:%i\n", pluginId, i);
-                    fUiServer.writeMsg(strBuf);
-                    std::sprintf(strBuf, "%f\n", plugin->getParameterValue(i));
-                    fUiServer.writeMsg(strBuf);
-                }
+                uiServerSendPluginInfo(plugin);
             }
             break;
 
-        case ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
-            std::sprintf(strBuf, "PARAMETER_VALUE_%i:%i\n", pluginId, value1);
-            fUiServer.writeMsg(strBuf);
-            std::sprintf(strBuf, "%f\n", value3);
-            fUiServer.writeMsg(strBuf);
+        case ENGINE_CALLBACK_RELOAD_PARAMETERS:
+            plugin = getPlugin(pluginId);
+
+            if (plugin != nullptr && plugin->isEnabled())
+            {
+                CARLA_SAFE_ASSERT_BREAK(plugin->getId() == pluginId);
+                uiServerSendPluginParameters(plugin);
+            }
             break;
 
-        case ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
-            std::sprintf(strBuf, "PARAMETER_DEFAULT_%i:%i\n", pluginId, value1);
-            fUiServer.writeMsg(strBuf);
-            std::sprintf(strBuf, "%f\n", value3);
-            fUiServer.writeMsg(strBuf);
+        case ENGINE_CALLBACK_RELOAD_PROGRAMS:
+            plugin = getPlugin(pluginId);
+
+            if (plugin != nullptr && plugin->isEnabled())
+            {
+                CARLA_SAFE_ASSERT_BREAK(plugin->getId() == pluginId);
+                uiServerSendPluginPrograms(plugin);
+            }
+            break;
+
+        case ENGINE_CALLBACK_RELOAD_ALL:
+        case ENGINE_CALLBACK_PLUGIN_ADDED:
+            plugin = getPlugin(pluginId);
+
+            if (plugin != nullptr && plugin->isEnabled())
+            {
+                CARLA_SAFE_ASSERT_BREAK(plugin->getId() == pluginId);
+                uiServerSendPluginInfo(plugin);
+                uiServerSendPluginParameters(plugin);
+                uiServerSendPluginPrograms(plugin);
+            }
             break;
 
         default:
             break;
         }
 
-        std::sprintf(strBuf, "ENGINE_CALLBACK_%i\n", int(action));
-        fUiServer.writeMsg(strBuf);
+        std::sprintf(fTmpBuf, "ENGINE_CALLBACK_%i\n", int(action));
+        fUiServer.writeMsg(fTmpBuf);
 
-        std::sprintf(strBuf, "%u\n", pluginId);
-        fUiServer.writeMsg(strBuf);
+        std::sprintf(fTmpBuf, "%u\n", pluginId);
+        fUiServer.writeMsg(fTmpBuf);
 
-        std::sprintf(strBuf, "%i\n", value1);
-        fUiServer.writeMsg(strBuf);
+        std::sprintf(fTmpBuf, "%i\n", value1);
+        fUiServer.writeMsg(fTmpBuf);
 
-        std::sprintf(strBuf, "%i\n", value2);
-        fUiServer.writeMsg(strBuf);
+        std::sprintf(fTmpBuf, "%i\n", value2);
+        fUiServer.writeMsg(fTmpBuf);
 
-        std::sprintf(strBuf, "%f\n", value3);
-        fUiServer.writeMsg(strBuf);
+        std::sprintf(fTmpBuf, "%f\n", value3);
+        fUiServer.writeMsg(fTmpBuf);
 
         fUiServer.writeAndFixMsg(valueStr);
     }
@@ -1057,6 +1155,16 @@ protected:
         {
             fUiServer.setData("/home/falktx/FOSS/GIT-mine/Carla/source/carla-plugin", pData->sampleRate, pHost->uiName);
             fUiServer.start();
+
+            for (uint i=0; i < pData->curPluginCount; ++i)
+            {
+                CarlaPlugin* const plugin(pData->plugins[i].plugin);
+
+                if (plugin != nullptr && plugin->isEnabled())
+                {
+                    uiServerCallback(ENGINE_CALLBACK_PLUGIN_ADDED, i, 0, 0, 0.0f, plugin->getName());
+                }
+            }
         }
         else
         {
@@ -1069,17 +1177,30 @@ protected:
         CarlaEngine::idle();
         fUiServer.idle();
 
-        char strBuf[STR_MAX+1];
+        if (! fUiServer.isOk())
+            return;
 
         for (uint i=0; i < pData->curPluginCount; ++i)
         {
             const EnginePluginData& plugData(pData->plugins[i]);
+            const CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
-            std::sprintf(strBuf, "PEAKS_%i\n", i);
-            fUiServer.writeMsg(strBuf);
+            std::sprintf(fTmpBuf, "PEAKS_%i\n", i);
+            fUiServer.writeMsg(fTmpBuf);
 
-            std::sprintf(strBuf, "%f:%f:%f:%f\n", plugData.insPeak[0], plugData.insPeak[1], plugData.outsPeak[0], plugData.outsPeak[1]);
-            fUiServer.writeMsg(strBuf);
+            std::sprintf(fTmpBuf, "%f:%f:%f:%f\n", plugData.insPeak[0], plugData.insPeak[1], plugData.outsPeak[0], plugData.outsPeak[1]);
+            fUiServer.writeMsg(fTmpBuf);
+
+            for (uint32_t j=0, count=plugin->getParameterCount(); j < count; ++j)
+            {
+                if (plugin->isParameterOutput(j))
+                    continue;
+
+                std::sprintf(fTmpBuf, "PARAMVAL_%i:%i\n", i, j);
+                fUiServer.writeMsg(fTmpBuf);
+                std::sprintf(fTmpBuf, "%f\n", plugin->getParameterValue(j));
+                fUiServer.writeMsg(fTmpBuf);
+            }
         }
 
         switch (fUiServer.getAndResetUiState())
@@ -1155,7 +1276,7 @@ protected:
             return;
         }
 
-        bool pluginsAdded = false;
+        //bool pluginsAdded = false;
 
         for (QDomNode node = xmlNode.firstChild(); ! node.isNull(); node = node.nextSibling())
         {
@@ -1185,12 +1306,12 @@ protected:
                         plugin->loadSaveState(saveState);
                 }
 
-                pluginsAdded = true;
+                //pluginsAdded = true;
             }
         }
 
-        if (pluginsAdded)
-            pHost->dispatcher(pHost->handle, HOST_OPCODE_RELOAD_ALL, 0, 0, nullptr, 0.0f);
+        //if (pluginsAdded)
+        //    pHost->dispatcher(pHost->handle, HOST_OPCODE_RELOAD_ALL, 0, 0, nullptr, 0.0f);
     }
 
     // -------------------------------------------------------------------
@@ -1336,7 +1457,7 @@ private:
     bool fIsActive, fIsRunning;
     CarlaEngineNativeUI fUiServer;
 
-    CarlaMutex fWriteLock;
+    char fTmpBuf[STR_MAX+1];
 
     CarlaPlugin* _getFirstPlugin() const noexcept
     {

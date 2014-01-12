@@ -58,6 +58,11 @@ public:
         stop();
     }
 
+    bool isOk() const noexcept
+    {
+        return (fPipeRecv != -1 && fPipeSend != -1 && fPid != -1);
+    }
+
     bool start(const char* const filename, const char* const arg1, const char* const arg2)
     {
         CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
