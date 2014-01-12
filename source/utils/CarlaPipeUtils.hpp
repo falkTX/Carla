@@ -309,6 +309,20 @@ public:
         return false;
     }
 
+    bool readNextLineAsLong(long& value)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fIsReading, false);
+
+        if (const char* const msg = readline())
+        {
+            value = std::atol(msg);
+            delete[] msg;
+            return true;
+        }
+
+        return false;
+    }
+
     bool readNextLineAsFloat(float& value)
     {
         CARLA_SAFE_ASSERT_RETURN(fIsReading, false);
@@ -360,22 +374,40 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fPipeSend != -1,);
 
-        const size_t size(std::strlen(msg));
+        const size_t size(msg != nullptr ? std::strlen(msg) : 0);
 
-        char fixedMsg[size+1];
-        std::strcpy(fixedMsg, msg);
+        char fixedMsg[size+2];
 
-        for (size_t i=0; i < size; ++i)
+        if (size > 0)
         {
-            if (fixedMsg[i] == '\n')
-                fixedMsg[i] = '\r';
+            std::strcpy(fixedMsg, msg);
+
+            for (size_t i=0; i < size; ++i)
+            {
+                if (fixedMsg[i] == '\n')
+                    fixedMsg[i] = '\r';
+            }
+
+            if (fixedMsg[size+1] == '\r')
+            {
+                fixedMsg[size-1] = '\n';
+                fixedMsg[size]   = '\0';
+                fixedMsg[size+1] = '\0';
+            }
+            else
+            {
+                fixedMsg[size]   = '\n';
+                fixedMsg[size+1] = '\0';
+            }
+        }
+        else
+        {
+            fixedMsg[0] = '\n';
+            fixedMsg[1] = '\0';
         }
 
-        fixedMsg[size-1] = '\n';
-        fixedMsg[size]   = '\0';
-
         try {
-            ::write(fPipeSend, fixedMsg, size);
+            ::write(fPipeSend, fixedMsg, size+1);
         } catch (...) {}
     }
 

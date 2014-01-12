@@ -182,7 +182,9 @@ class ExternalUI(object):
             return
 
         for line in lines:
-            if isinstance(line, str):
+            if line is None:
+                line2 = "(null)"
+            elif isinstance(line, str):
                 line2 = line.replace("\n", "\r")
             else:
                 if isinstance(line, bool):
@@ -192,11 +194,8 @@ class ExternalUI(object):
                 elif isinstance(line, float):
                     line2 = "%.10f" % line
                 else:
-                    try:
-                        line2 = str(line)
-                    except:
-                        print("unknown data type to send:", type(line2))
-                        return
+                    print("unknown data type to send:", type(line))
+                    return
 
             self.fPipeSend.write(line2 + "\n")
             self.fPipeSend.flush()
