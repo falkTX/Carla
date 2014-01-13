@@ -719,26 +719,27 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_fileOpen(self):
         fileFilter  = self.tr("Carla Project File (*.carxp)")
-        filenameTry = QFileDialog.getOpenFileName(self, self.tr("Open Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)[0]
+        filenameTry = QFileDialog.getOpenFileName(self, self.tr("Open Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)
 
         if not filenameTry:
             return
+        filename = filenameTry if isinstance(filenameTry, str) else filenameTry[0]
 
         newFile = True
 
         if self.fContainer.getPluginCount() > 0:
             ask = QMessageBox.question(self, self.tr("Question"), self.tr("There are some plugins loaded, do you want to remove them now?"),
                                                                           QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            newFile = ask == QMessageBox.Yes
+            newFile = (ask == QMessageBox.Yes)
 
         if newFile:
             self.fContainer.removeAllPlugins()
-            self.fProjectFilename = filenameTry
+            self.fProjectFilename = filename
             self.setProperWindowTitle()
             self.loadProjectNow()
         else:
             filenameOld = self.fProjectFilename
-            self.fProjectFilename = filenameTry
+            self.fProjectFilename = filename
             self.loadProjectNow()
             self.fProjectFilename = filenameOld
 
@@ -748,16 +749,17 @@ class HostWindow(QMainWindow):
             return self.saveProjectNow()
 
         fileFilter  = self.tr("Carla Project File (*.carxp)")
-        filenameTry = QFileDialog.getSaveFileName(self, self.tr("Save Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)[0]
+        filenameTry = QFileDialog.getSaveFileName(self, self.tr("Save Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)
 
         if not filenameTry:
             return
+        filename = filenameTry if isinstance(filenameTry, str) else filenameTry[0]
 
-        if not filenameTry.endswith(".carxp"):
-            filenameTry += ".carxp"
+        if not filename.endswith(".carxp"):
+            filename += ".carxp"
 
-        if self.fProjectFilename != filenameTry:
-            self.fProjectFilename = filenameTry
+        if self.fProjectFilename != filename:
+            self.fProjectFilename = filename
             self.setProperWindowTitle()
 
         self.saveProjectNow()

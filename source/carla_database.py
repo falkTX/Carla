@@ -315,16 +315,16 @@ def checkPluginAU(filename, tool):
     return runCarlaDiscovery(PLUGIN_AU, "AU", filename, tool)
 
 def checkPluginCSOUND(filename, tool):
-    return runCarlaDiscovery(PLUGIN_CSOUND, "CSOUND", filename, tool)
+    return runCarlaDiscovery(PLUGIN_FILE_CSOUND, "CSOUND", filename, tool)
 
 def checkPluginGIG(filename, tool):
-    return runCarlaDiscovery(PLUGIN_GIG, "GIG", filename, tool)
+    return runCarlaDiscovery(PLUGIN_FILE_GIG, "GIG", filename, tool)
 
 def checkPluginSF2(filename, tool):
-    return runCarlaDiscovery(PLUGIN_SF2, "SF2", filename, tool)
+    return runCarlaDiscovery(PLUGIN_FILE_SF2, "SF2", filename, tool)
 
 def checkPluginSFZ(filename, tool):
-    return runCarlaDiscovery(PLUGIN_SFZ, "SFZ", filename, tool)
+    return runCarlaDiscovery(PLUGIN_FILE_SFZ, "SFZ", filename, tool)
 
 # ------------------------------------------------------------------------------------------------------------
 # Separate Thread for Plugin Search
