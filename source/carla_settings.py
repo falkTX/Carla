@@ -19,11 +19,6 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-#try:
-    #from PyQt5.QtCore import pyqtSlot, QByteArray, QSettings
-    #from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
-    #from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
-#except:
 from PyQt4.QtCore import pyqtSlot, QByteArray, QSettings
 from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
 from PyQt4.QtGui import QDialog, QDialogButtonBox, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget

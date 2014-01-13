@@ -46,7 +46,7 @@ from carla_backend import *
 # Platform specific stuff
 
 if MACOS:
-    from PyQt5.QtGui import qt_mac_set_menubar_icons
+    from PyQt4.QtGui import qt_mac_set_menubar_icons
     qt_mac_set_menubar_icons(False)
 elif WINDOWS:
     WINDIR = os.getenv("WINDIR")

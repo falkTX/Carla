@@ -19,9 +19,6 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-#try:
-    #from PyQt5.QtWidgets import QLabel, QTabWidget
-#except:
 from PyQt4.QtGui import QLabel, QTabWidget
 
 # ------------------------------------------------------------------------------------------------------------
@@ -177,6 +174,10 @@ class CarlaHostW(HostWindow):
         self.fInfoLabel = QLabel(self)
         self.fInfoLabel.setAlignment(Qt.AlignRight|Qt.AlignVCenter)
         self.fInfoLabel.setText("Engine stopped")
+
+        if MACOS and False: # TODO: check if NOT using pro theme
+            self.fInfoLabel.hide()
+            self.setUnifiedTitleAndToolBarOnMac(True)
 
         # -------------------------------------------------------------
 

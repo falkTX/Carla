@@ -152,7 +152,11 @@ carla-native-lv2-export.cpp.o: carla-native-lv2-export.cpp carla-native-base.cpp
 # --------------------------------------------------------------
 
 carla-native-lv2-export: carla-native-lv2-export.cpp.o $(LIBS)
+ifneq ($(MACOS),true)
 	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group $(LINK_FLAGS) -o $@
+else
+	$(CXX) $< $(LIBS) $(LINK_FLAGS) -o $@
+endif
 	./carla-native-lv2-export
 
 carla-native-lv2-export.exe: carla-native-lv2-export.cpp.o $(LIBS)
