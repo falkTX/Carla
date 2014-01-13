@@ -1,6 +1,6 @@
 /*
  * Carla Mutex
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -34,12 +34,7 @@ public:
     CarlaMutex() noexcept
         : fTryLockWasCalled(false)
     {
-        //pthread_mutexattr_t atts;
-        //pthread_mutexattr_init(&atts);
-        //pthread_mutexattr_settype(&atts, PTHREAD_MUTEX_RECURSIVE);
-
-        pthread_mutex_init(&fMutex, nullptr /*&atts*/);
-        //pthread_mutexattr_destroy(&atts);
+        pthread_mutex_init(&fMutex, nullptr);
     }
 
     /*

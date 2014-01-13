@@ -1,6 +1,6 @@
 /*
  * Carla common utils
- * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -325,8 +325,7 @@ void carla_copy(T* dataDst, T* dataSrc, const size_t size) noexcept
     CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
-    for (size_t i=0; i < size; ++i)
-        *dataDst++ = *dataSrc++;
+    std::memcpy(dataDst, dataSrc, size*sizeof(T));
 }
 
 /*
@@ -340,8 +339,7 @@ void carla_copy(T* dataDst, const T* dataSrc, const size_t size) noexcept
     CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
-    for (size_t i=0; i < size; ++i)
-        *dataDst++ = *dataSrc++;
+    std::memcpy(dataDst, dataSrc, size*sizeof(T));
 }
 
 /*
@@ -354,8 +352,15 @@ void carla_fill(T* data, const size_t size, const T v) noexcept
     CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
-    for (size_t i=0; i < size; ++i)
-        *data++ = v;
+    if (v == 0)
+    {
+        std::memset(data, 0, size*sizeof(T));
+    }
+    else
+    {
+        for (size_t i=0; i < size; ++i)
+            *data++ = v;
+    }
 }
 
 // -----------------------------------------------------------------------

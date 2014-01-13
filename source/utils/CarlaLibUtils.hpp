@@ -1,6 +1,6 @@
 /*
  * Carla library utils
- * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -34,7 +34,7 @@
 static inline
 void* lib_open(const char* const filename)
 {
-    CARLA_SAFE_ASSERT_RETURN(filename != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', nullptr);
 
 #ifdef CARLA_OS_WIN
     return (void*)LoadLibraryA(filename);
@@ -67,7 +67,7 @@ static inline
 void* lib_symbol(void* const lib, const char* const symbol)
 {
     CARLA_SAFE_ASSERT_RETURN(lib != nullptr, nullptr);
-    CARLA_SAFE_ASSERT_RETURN(symbol != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(symbol != nullptr && symbol[0] != '\0', nullptr);
 
 #ifdef CARLA_OS_WIN
     return (void*)GetProcAddress((HMODULE)lib, symbol);
@@ -82,7 +82,7 @@ void* lib_symbol(void* const lib, const char* const symbol)
 static inline
 const char* lib_error(const char* const filename)
 {
-    CARLA_SAFE_ASSERT_RETURN(filename != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', nullptr);
 
 #ifdef CARLA_OS_WIN
     static char libError[2048+1];

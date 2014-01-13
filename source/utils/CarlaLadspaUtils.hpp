@@ -140,7 +140,7 @@ bool is_ladspa_rdf_descriptor_valid(const LADSPA_RDF_Descriptor* const rdfDescri
 // Get default control port value
 
 static inline
-LADSPA_Data get_default_ladspa_port_value(const LADSPA_PortRangeHintDescriptor hintDescriptor, const LADSPA_Data min, const LADSPA_Data max) noexcept
+LADSPA_Data get_default_ladspa_port_value(const LADSPA_PortRangeHintDescriptor hintDescriptor, const LADSPA_Data min, const LADSPA_Data max)
 {
     if (LADSPA_IS_HINT_HAS_DEFAULT(hintDescriptor))
     {
