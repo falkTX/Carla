@@ -470,7 +470,7 @@ public:
 
         if (dllModule != INVALID_HANDLE_VALUE)
         {
-            if (HRSRC res = FindResource (dllModule, MAKEINTRESOURCE (resID), type.toWideCharPointer()))
+            if (HRSRC res = FindResource (dllModule, MAKEINTRESOURCE (resID), type.toRawUTF8()))
             {
                 if (HGLOBAL hGlob = LoadResource (dllModule, res))
                 {
@@ -841,7 +841,7 @@ public:
         if (initialised || effect == nullptr)
             return;
 
-       #if JUCE_WINDOWS
+       #if JUCE_WINDOWS && ! defined(JUCE_PLUGIN_HOST_NO_UI)
         // On Windows it's highly advisable to create your plugins using the message thread,
         // because many plugins need a chance to create HWNDs that will get their
         // messages delivered by the main message thread, and that's not possible from

@@ -15,6 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "CarlaDefines.h"
 #include "CarlaNative.h"
 
 // Simple plugins
@@ -29,8 +30,9 @@ extern void carla_register_native_plugin_nekofilter();
 // Simple plugins (C++)
 extern void carla_register_native_plugin_sunvoxfile();
 
-// Carla
+#ifndef CARLA_OS_WIN
 extern void carla_register_native_plugin_carla();
+#endif
 
 #ifdef HAVE_JUCE
 extern void carla_register_native_plugin_vex_fx();
@@ -81,7 +83,9 @@ void carla_register_all_plugins()
     // Simple plugins (C++)
     //carla_register_native_plugin_sunvoxfile(); // unfinished
 
+#ifndef CARLA_OS_WIN
     carla_register_native_plugin_carla();
+#endif
 
 #ifdef HAVE_JUCE
     carla_register_native_plugin_vex_fx();

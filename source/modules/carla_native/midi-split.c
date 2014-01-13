@@ -55,8 +55,8 @@ static void midiSplit_process(NativePluginHandle handle, float** inBuffer, float
     {
         const NativeMidiEvent* const midiEvent = &midiEvents[i];
 
-        const uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent->data);
-        const uint8_t channel = MIDI_GET_CHANNEL_FROM_DATA(midiEvent->data);
+        const uint8_t status  = (uint8_t)MIDI_GET_STATUS_FROM_DATA(midiEvent->data);
+        const uint8_t channel = (uint8_t)MIDI_GET_CHANNEL_FROM_DATA(midiEvent->data);
 
         if (channel >= MAX_MIDI_CHANNELS)
             continue;

@@ -14,7 +14,6 @@ OBJS = \
 	CarlaEngineThread.cpp.o
 
 OBJSa = $(OBJS) \
-	CarlaEngineNative.cpp.o \
 	CarlaEngineJack.cpp.o \
 	CarlaEngineRtAudio.cpp.o
 
@@ -23,15 +22,22 @@ OBJSa += \
 	CarlaEngineJuce.cpp.o
 endif
 
-OBJSp = $(OBJS) \
+ifneq ($(WIN32),true)
+OBJSa += \
+	CarlaEngineNative.cpp.o
+OBJSp  = $(OBJS) \
 	CarlaEngineNative.cpp.exp.o
+endif
 
 HEADERS = \
 	../CarlaBackend.h ../CarlaEngine.hpp ../CarlaPlugin.hpp \
 	CarlaEngineInternal.hpp CarlaEngineOsc.hpp CarlaEngineThread.hpp
 
 TARGETa = ../carla_engine.a
+
+ifneq ($(WIN32),true)
 TARGETp = ../carla_engine_plugin.a
+endif
 
 # --------------------------------------------------------------
 
@@ -59,7 +65,7 @@ $(TARGETp): $(OBJSp)
 # --------------------------------------------------------------
 
 clean:
-	$(RM) $(OBJS) $(OBJSp) $(TARGET) $(TARGETp)
+	$(RM) *.o $(OBJSp) $(TARGET) $(TARGETp)
 
 debug:
 	$(MAKE) DEBUG=true

@@ -972,7 +972,7 @@ public:
                 {
                     const EngineMidiEvent& midiEvent(event.midi);
 
-                    uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
+                    uint8_t status  = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
                     uint8_t channel = event.channel;
 
                     if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)

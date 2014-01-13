@@ -110,7 +110,7 @@ endif
 all: $(TARGET)
 
 clean:
-	$(RM) $(OBJS) $(TARGET)
+	$(RM) *.o $(TARGET)
 
 debug:
 	$(MAKE) DEBUG=true
@@ -121,7 +121,7 @@ debug:
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 ../libcarla_standalone2.dll: CarlaStandalone.cpp.o $(STATIC_LIBS)
-	$(CXX) $< -Wl,--start-group $(STATIC_LIBS) -Wl,--end-group $(LINK_FLAGS) -shared -Wl,--output-def,$@.def -o $@
+	$(CXX) $< -Wl,--start-group $(STATIC_LIBS) -Wl,--end-group $(LINK_FLAGS) $(EXTRA_LIBS) -shared -Wl,--output-def,$@.def -o $@
 
 ../libcarla_standalone2.dylib: CarlaStandalone.cpp.o $(STATIC_LIBS)
 	$(CXX) $< $(STATIC_LIBS) $(LINK_FLAGS) -dynamiclib -o $@

@@ -84,13 +84,21 @@ public:
 
         fShouldExit = false;
 
-        if (pthread_create(const_cast<pthread_t*>(&fHandle), nullptr, _entryPoint, this) == 0)
+        pthread_t threadId;
+
+        if (pthread_create(&threadId, nullptr, _entryPoint, this) == 0)
         {
 #if (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012
             if (fName.isNotEmpty())
-                pthread_setname_np(fHandle, fName.getBuffer());
+                pthread_setname_np(threadId, fName.getBuffer());
 #endif
-            pthread_detach(fHandle);
+            pthread_detach(threadId);
+
+#ifdef CARLA_OS_WIN
+            *(const_cast<pthread_t*>(&fHandle)) = threadId;
+#else
+            fHandle = threadId;
+#endif
 
             // wait for thread to start
             fLock.lock();
@@ -136,8 +144,10 @@ public:
                 // should never happen!
                 carla_stderr2("Carla assertion failure: \"! isRunning()\" in file %s, line %i", __FILE__, __LINE__);
 
-                pthread_cancel(fHandle);
+                pthread_t threadId = *(const_cast<pthread_t*>(&fHandle));
                 _init();
+
+                pthread_cancel(threadId);
                 return false;
             }
         }
@@ -154,10 +164,10 @@ public:
     }
 
 private:
-    CarlaMutex          fLock;       // Thread lock
-    const CarlaString   fName;       // Thread name
-    volatile pthread_t  fHandle;     // Handle for this thread
-    volatile bool       fShouldExit; // true if thread should exit
+    CarlaMutex         fLock;       // Thread lock
+    const CarlaString  fName;       // Thread name
+    volatile pthread_t fHandle;     // Handle for this thread
+    volatile bool      fShouldExit; // true if thread should exit
 
     void _init() noexcept
     {

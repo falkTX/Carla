@@ -172,6 +172,8 @@ class CarlaApplication(object):
             self.loadSettings()
 
     def loadSettings(self):
+        if WINDOWS: return
+
         settings = QSettings()
 
         useProTheme = settings.value("Main/UseProTheme", True, type=bool)

@@ -41,7 +41,7 @@ endif
 # --------------------------------------------------------------
 # Common build and link flags
 
-BASE_FLAGS = -Wall -Wextra -Wcast-qual -Wconversion -fPIC -DPIC -pipe -DREAL_BUILD
+BASE_FLAGS = -Wall -Wextra -Wcast-qual -Wconversion -pipe -DREAL_BUILD
 BASE_OPTS  = -O3 -ffast-math -mtune=generic -msse -msse2 -mfpmath=sse -fdata-sections -ffunction-sections
 LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,--gc-sections
 
@@ -49,6 +49,10 @@ LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,--gc-sections
 
 ifneq ($(MACOS),true)
 BASE_FLAGS += -Wlogical-op -Werror
+endif
+
+ifneq ($(WIN32),true)
+BASE_FLAGS += -fPIC -DPIC
 endif
 
 ifeq ($(RASPPI),true)
@@ -188,9 +192,6 @@ endif
 ifeq ($(HAVE_LINUXSAMPLER),true)
 LINUXSAMPLER_FLAGS = $(shell pkg-config --cflags linuxsampler) -Wno-unused-parameter
 LINUXSAMPLER_LIBS  = $(shell pkg-config --libs linuxsampler)
-ifeq ($(WIN32),true)
-LINUXSAMPLER_LIBS += -lrpcrt4
-endif
 endif
 
 RTMEMPOOL_LIBS = -lpthread
@@ -261,7 +262,7 @@ JUCE_GRAPHICS_LIBS      = -lgdi32
 JUCE_GUI_BASICS_LIBS    = -lgdi32 -limm32 -lcomdlg32 -lole32
 LILV_LIBS               = -lm
 RTAUDIO_FLAGS          += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__
-RTAUDIO_LIBS           += -lpthread
+RTAUDIO_LIBS           += -ldsound -lpthread
 RTMIDI_FLAGS           += -D__WINDOWS_MM__
 endif
 

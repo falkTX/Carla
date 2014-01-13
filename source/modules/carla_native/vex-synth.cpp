@@ -741,10 +741,10 @@ protected:
                 break;
             }
 
-#ifndef CARLA_OS_MAC
+#ifdef CARLA_OS_LINUX
+            // there seems to be a problem with this...
             tmpName[4] = '0' + ((index-1+24) / 24);
 #else
-            // MacOS has a problem with this
             char* tmpBuf(const_cast<char*>(tmpName.getBuffer()));
             tmpBuf[4] = '0' + ((index-1+24) / 24);
 #endif

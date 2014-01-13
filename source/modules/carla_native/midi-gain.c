@@ -181,7 +181,7 @@ static void midiGain_process(NativePluginHandle handle, float** inBuffer, float*
     {
         const NativeMidiEvent* const midiEvent = &midiEvents[i];
 
-        const uint8_t status = MIDI_GET_STATUS_FROM_DATA(midiEvent->data);
+        const uint8_t status = (uint8_t)MIDI_GET_STATUS_FROM_DATA(midiEvent->data);
 
         if (midiEvent->size == 3 && ((applyNotes      && (status == MIDI_STATUS_NOTE_OFF || status == MIDI_STATUS_NOTE_ON)) ||
                                      (applyAftertouch &&  status == MIDI_STATUS_POLYPHONIC_AFTERTOUCH) ||

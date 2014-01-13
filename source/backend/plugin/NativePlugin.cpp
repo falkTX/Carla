@@ -608,7 +608,7 @@ public:
 
         if (index >= 0)
         {
-            const uint8_t  channel = (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS) ? pData->ctrlChannel : 0;
+            const uint8_t  channel = uint8_t((pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS) ? pData->ctrlChannel : 0);
             const uint32_t bank    = pData->midiprog.data[index].bank;
             const uint32_t program = pData->midiprog.data[index].program;
 
@@ -656,7 +656,7 @@ public:
         if (fDescriptor->ui_set_midi_program != nullptr && pData->midiprog.current >= 0 && pData->midiprog.count > 0)
         {
             const uint32_t index   = pData->midiprog.current;
-            const uint8_t  channel = (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS) ? pData->ctrlChannel : 0;
+            const uint8_t  channel = uint8_t((pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS) ? pData->ctrlChannel : 0);
             const uint32_t bank    = pData->midiprog.data[index].bank;
             const uint32_t program = pData->midiprog.data[index].program;
 
@@ -1545,7 +1545,7 @@ public:
 
                     const EngineMidiEvent& midiEvent(event.midi);
 
-                    uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
+                    uint8_t status  = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
                     uint8_t channel = event.channel;
 
                     if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
@@ -1628,7 +1628,7 @@ public:
                 if (fMidiEvents[k].data[0] == 0)
                     break;
 
-                const uint8_t channel = MIDI_GET_CHANNEL_FROM_DATA(fMidiEvents[k].data);
+                const uint8_t channel = uint8_t(MIDI_GET_CHANNEL_FROM_DATA(fMidiEvents[k].data));
                 const uint8_t port    = fMidiEvents[k].port;
 
                 if (pData->event.portOut != nullptr)

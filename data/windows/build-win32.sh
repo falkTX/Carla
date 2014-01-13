@@ -25,9 +25,10 @@ export WINDRES=$MINGW-windres
 
 export CFLAGS="-DPTW32_STATIC_LIB -I$MINGW_PATH/include"
 export CXXFLAGS="-DPTW32_STATIC_LIB -DFLUIDSYNTH_NOT_A_DLL -I$MINGW_PATH/include"
-export EXTRA_LIBS1="-lglib-2.0 -lgthread-2.0 -lgig -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -ldsound -lrpcrt4"
+export EXTRA_LIBS1="-lglib-2.0 -lgthread-2.0 -lgig -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -ldsound -lole32 -lrpcrt4 -lws2_32"
 export EXTRA_LIBS2="$MINGW_PATH/lib/qt4/plugins/imageformats/libqsvg.a"
 
+export WINEARCH=win32
 export WINEPREFIX=~/.winepy3
 export PYTHON_EXE="C:\\\\Python33\\\\python.exe"
 

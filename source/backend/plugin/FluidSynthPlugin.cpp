@@ -1279,7 +1279,7 @@ public:
                 {
                     const EngineMidiEvent& midiEvent(event.midi);
 
-                    uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
+                    uint8_t status  = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
                     uint8_t channel = event.channel;
 
                     // Fix bad note-off

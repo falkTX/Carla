@@ -51,7 +51,7 @@ $(TARGET): $(OBJS)
 # --------------------------------------------------------------
 
 clean:
-	$(RM) $(OBJS) $(TARGET)
+	$(RM) *.o $(TARGET)
 
 debug:
 	$(MAKE) DEBUG=true

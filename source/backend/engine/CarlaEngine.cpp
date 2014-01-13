@@ -46,7 +46,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 // Fallback data
 
-static const EngineEvent kFallbackEngineEvent = { kEngineEventTypeNull, 0, 0, { kEngineControlEventTypeNull, 0, 0.0f } };
+static const EngineEvent kFallbackEngineEvent = { kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, 0.0f }} };
 
 // -----------------------------------------------------------------------
 
@@ -104,10 +104,10 @@ void EngineControlEvent::dumpToMidiData(const uint8_t channel, uint8_t& size, ui
 void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data)
 {
     // get channel
-    channel = MIDI_GET_CHANNEL_FROM_DATA(data);
+    channel = uint8_t(MIDI_GET_CHANNEL_FROM_DATA(data));
 
     // get status
-    const uint8_t midiStatus(MIDI_GET_STATUS_FROM_DATA(data));
+    const uint8_t midiStatus(uint8_t(MIDI_GET_STATUS_FROM_DATA(data)));
 
     if (midiStatus == MIDI_STATUS_CONTROL_CHANGE)
     {
@@ -698,7 +698,7 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
         event.midi.port = port;
         event.midi.size = size;
 
-        event.midi.data[0] = MIDI_GET_STATUS_FROM_DATA(data);
+        event.midi.data[0] = uint8_t(MIDI_GET_STATUS_FROM_DATA(data));
 
         uint8_t j=1;
         for (; j < size; ++j)

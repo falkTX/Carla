@@ -261,8 +261,8 @@ class CarlaSettingsW(QDialog):
                 self.ui.cb_canvas_use_opengl.setEnabled(False)
 
         if WINDOWS:
-            self.ui.group_theme.setEnabled(False)
-            self.ui.ch_theme_pro.setChecked(False)
+            self.ui.group_main_theme.setEnabled(False)
+            self.ui.ch_main_theme_pro.setChecked(False)
 
         if not MACOS:
             self.ui.cb_paths.removeItem(self.ui.cb_paths.findText("AU"))

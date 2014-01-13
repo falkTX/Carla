@@ -572,7 +572,7 @@ public:
      */
     bool writeMidiEvent(const uint32_t time, const uint8_t size, const uint8_t* const data)
     {
-        return writeMidiEvent(time, MIDI_GET_CHANNEL_FROM_DATA(data), 0, size, data);
+        return writeMidiEvent(time, uint8_t(MIDI_GET_CHANNEL_FROM_DATA(data)), 0, size, data);
     }
 
     /*!

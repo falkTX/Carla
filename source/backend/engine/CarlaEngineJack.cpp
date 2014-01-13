@@ -37,7 +37,7 @@ class CarlaEngineJack;
 // -----------------------------------------------------------------------
 // Fallback data
 
-static const EngineEvent kFallbackJackEngineEvent = { kEngineEventTypeNull, 0, 0, { kEngineControlEventTypeNull, 0, 0.0f } };
+static const EngineEvent kFallbackJackEngineEvent = { kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, 0.0f }} };
 
 // -----------------------------------------------------------------------
 // Carla Engine JACK-Audio port

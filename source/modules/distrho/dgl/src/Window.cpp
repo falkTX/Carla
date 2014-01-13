@@ -436,7 +436,7 @@ public:
 
 #if DGL_OS_WINDOWS
         // Center this window
-        PuglInternals* const parentImpl = fParent->fView->impl;
+        PuglInternals* const parentImpl = fModal.parent->fView->impl;
 
         RECT curRect;
         RECT parentRect;

@@ -107,7 +107,7 @@ static void midiTranspose_process(NativePluginHandle handle, float** inBuffer, f
     {
         const NativeMidiEvent* const midiEvent = &midiEvents[i];
 
-        const uint8_t status = MIDI_GET_STATUS_FROM_DATA(midiEvent->data);
+        const uint8_t status = (uint8_t)MIDI_GET_STATUS_FROM_DATA(midiEvent->data);
 
         if (status == MIDI_STATUS_NOTE_OFF || status == MIDI_STATUS_NOTE_ON)
         {

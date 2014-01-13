@@ -973,7 +973,7 @@ public:
                 {
                     const EngineMidiEvent& midiEvent(event.midi);
 
-                    uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
+                    uint8_t status  = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
                     uint8_t channel = event.channel;
 
                     // Fix bad note-off
@@ -1105,6 +1105,7 @@ public:
         return true;
     }
 
+#ifndef CARLA_OS_WIN // FIXME, need to update linuxsampler win32 build
     void bufferSizeChanged(const uint32_t) override
     {
         CARLA_SAFE_ASSERT_RETURN(fAudioOutputDevice != nullptr,);
@@ -1118,6 +1119,7 @@ public:
 
         fAudioOutputDevice->ReconnectAll();
     }
+#endif
 
     // -------------------------------------------------------------------
     // Plugin buffers
@@ -1367,19 +1369,19 @@ CarlaPlugin* CarlaPlugin::newLinuxSampler(const Initializer& init, const char* c
         if (! file.exists())
         {
             init.engine->setLastError("Requested file does not exist");
-            return false;
+            return nullptr;
         }
 
         if (! file.isFile())
         {
             init.engine->setLastError("Requested file is not valid");
-            return false;
+            return nullptr;
         }
 
         if (! file.isReadable())
         {
             init.engine->setLastError("Requested file is not readable");
-            return false;
+            return nullptr;
         }
     }
 
