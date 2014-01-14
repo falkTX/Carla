@@ -329,7 +329,7 @@ public:
             jackbridge_client_close(fClient);
     }
 
-    void activate() override
+    void activate() noexcept override
     {
         carla_debug("CarlaEngineJackClient::activate()");
 
@@ -337,13 +337,15 @@ public:
         {
             CARLA_SAFE_ASSERT_RETURN(fClient != nullptr && ! fActive,);
 
-            jackbridge_activate(fClient);
+            try {
+                jackbridge_activate(fClient);
+            } catch(...) {}
         }
 
         CarlaEngineClient::activate();
     }
 
-    void deactivate() override
+    void deactivate() noexcept override
     {
         carla_debug("CarlaEngineJackClient::deactivate()");
 
@@ -351,7 +353,9 @@ public:
         {
             CARLA_SAFE_ASSERT_RETURN(fClient != nullptr && fActive,);
 
-            jackbridge_deactivate(fClient);
+            try {
+                jackbridge_deactivate(fClient);
+            } catch(...) {}
         }
 
         CarlaEngineClient::deactivate();
@@ -922,28 +926,43 @@ public:
     // -------------------------------------------------------------------
     // Transport
 
-    void transportPlay() override
+    void transportPlay() noexcept override
     {
         if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
-            CarlaEngine::transportPlay();
-        else if (fClient != nullptr)
-            jackbridge_transport_start(fClient);
+            return CarlaEngine::transportPlay();
+
+        if (fClient != nullptr)
+        {
+            try {
+                jackbridge_transport_start(fClient);
+            } catch(...) {}
+        }
     }
 
-    void transportPause() override
+    void transportPause() noexcept override
     {
         if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
-            CarlaEngine::transportPause();
-        else if (fClient != nullptr)
-            jackbridge_transport_stop(fClient);
+            return CarlaEngine::transportPause();
+
+        if (fClient != nullptr)
+        {
+            try {
+                jackbridge_transport_stop(fClient);
+            } catch(...) {}
+        }
     }
 
-    void transportRelocate(const uint64_t frame) override
+    void transportRelocate(const uint64_t frame) noexcept override
     {
         if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
-            CarlaEngine::transportRelocate(frame);
-        else if (fClient != nullptr)
-            jackbridge_transport_locate(fClient, static_cast<jack_nframes_t>(frame));
+            return CarlaEngine::transportRelocate(frame);
+
+        if (fClient != nullptr)
+        {
+            try {
+                jackbridge_transport_locate(fClient, static_cast<jack_nframes_t>(frame));
+            } catch(...) {}
+        }
     }
 #endif
 

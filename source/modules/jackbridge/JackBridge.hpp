@@ -361,9 +361,9 @@ CARLA_EXPORT bool jackbridge_custom_set_data_appearance_callback(jack_client_t* 
 CARLA_EXPORT const char** jackbridge_custom_get_keys(jack_client_t* client, const char* client_name);
 #endif
 
-CARLA_EXPORT bool jackbridge_sem_init(void* sem);
-CARLA_EXPORT bool jackbridge_sem_destroy(void* sem);
-CARLA_EXPORT bool jackbridge_sem_post(void* sem);
+CARLA_EXPORT bool jackbridge_sem_init(void* sem) noexcept;
+CARLA_EXPORT bool jackbridge_sem_destroy(void* sem) noexcept;
+CARLA_EXPORT bool jackbridge_sem_post(void* sem) noexcept;
 CARLA_EXPORT bool jackbridge_sem_timedwait(void* sem, int secs);
 
 #endif // JACKBRIDGE_HPP_INCLUDED

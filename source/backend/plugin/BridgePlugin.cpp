@@ -212,17 +212,14 @@ struct BridgeControl : public RingBufferControl {
 
     bool waitForServer()
     {
-        CARLA_ASSERT(data != nullptr);
-
-        if (data == nullptr)
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
 
         jackbridge_sem_post(&data->runServer);
 
         return jackbridge_sem_timedwait(&data->runClient, 5);
     }
 
-    void writeOpcode(const PluginBridgeOpcode opcode)
+    void writeOpcode(const PluginBridgeOpcode opcode) noexcept
     {
         writeInt(static_cast<int>(opcode));
     }
@@ -320,7 +317,7 @@ public:
         return fPluginType;
     }
 
-    PluginCategory getCategory() const override
+    PluginCategory getCategory() const noexcept override
     {
         return fInfo.category;
     }
@@ -346,7 +343,7 @@ public:
     // -------------------------------------------------------------------
     // Information (current data)
 
-    int32_t getChunkData(void** const dataPtr) const override
+    int32_t getChunkData(void** const dataPtr) const noexcept override
     {
         CARLA_ASSERT(pData->options & PLUGIN_OPTION_USE_CHUNKS);
         CARLA_ASSERT(dataPtr != nullptr);
@@ -365,7 +362,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getOptionsAvailable() const override
+    unsigned int getOptionsAvailable() const noexcept override
     {
         unsigned int options = 0x0;
 
@@ -380,41 +377,41 @@ public:
         return options;
     }
 
-    float getParameterValue(const uint32_t parameterId) const override
+    float getParameterValue(const uint32_t parameterId) const noexcept override
     {
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
 
         return fParams[parameterId].value;
     }
 
-    void getLabel(char* const strBuf) const override
+    void getLabel(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, (const char*)fInfo.label, STR_MAX);
     }
 
-    void getMaker(char* const strBuf) const override
+    void getMaker(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, (const char*)fInfo.maker, STR_MAX);
     }
 
-    void getCopyright(char* const strBuf) const override
+    void getCopyright(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, (const char*)fInfo.copyright, STR_MAX);
     }
 
-    void getRealName(char* const strBuf) const override
+    void getRealName(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, (const char*)fInfo.name, STR_MAX);
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf) const override
+    void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
         CARLA_ASSERT(parameterId < pData->param.count);
 
         std::strncpy(strBuf, (const char*)fParams[parameterId].name, STR_MAX);
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf) const override
+    void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
         CARLA_ASSERT(parameterId < pData->param.count);
 
@@ -452,7 +449,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
-    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
         CARLA_ASSERT(parameterId < pData->param.count);
 
@@ -477,7 +474,7 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
 
@@ -498,7 +495,7 @@ public:
         CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
     }
 
-    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
 
@@ -709,24 +706,30 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
-    void activate() override
+    void activate() noexcept override
     {
         // already locked before
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetParameter);
         fShmControl.writeInt(PARAMETER_ACTIVE);
         fShmControl.writeFloat(1.0f);
         fShmControl.commitWrite();
-        waitForServer();
+
+        try {
+            waitForServer();
+        } catch(...) {}
     }
 
-    void deactivate() override
+    void deactivate() noexcept override
     {
         // already locked before
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetParameter);
         fShmControl.writeInt(PARAMETER_ACTIVE);
         fShmControl.writeFloat(0.0f);
         fShmControl.commitWrite();
-        waitForServer();
+
+        try {
+            waitForServer();
+        } catch(...) {}
     }
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override

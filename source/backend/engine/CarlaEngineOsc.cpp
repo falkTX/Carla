@@ -28,7 +28,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 #ifndef BUILD_BRIDGE
 // -------------------------------------------------------------------
-// Bridge Helper, defined in CarlaPlugin.cpp
+// Bridge Helper, defined in BridgePlugin.cpp
 
 extern int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeInfoType type,
                                        const int argc, const lo_arg* const* const argv, const char* const types);
@@ -41,31 +41,31 @@ CarlaEngineOsc::CarlaEngineOsc(CarlaEngine* const engine)
       fServerTCP(nullptr),
       fServerUDP(nullptr)
 {
-    carla_debug("CarlaEngineOsc::CarlaEngineOsc(%p)", engine);
     CARLA_ASSERT(engine != nullptr);
+    carla_debug("CarlaEngineOsc::CarlaEngineOsc(%p)", engine);
 }
 
 CarlaEngineOsc::~CarlaEngineOsc()
 {
-    carla_debug("CarlaEngineOsc::~CarlaEngineOsc()");
     CARLA_ASSERT(fName.isEmpty());
     CARLA_ASSERT(fServerPathTCP.isEmpty());
     CARLA_ASSERT(fServerPathUDP.isEmpty());
     CARLA_ASSERT(fServerTCP == nullptr);
     CARLA_ASSERT(fServerUDP == nullptr);
+    carla_debug("CarlaEngineOsc::~CarlaEngineOsc()");
 }
 
 // -----------------------------------------------------------------------
 
 void CarlaEngineOsc::init(const char* const name)
 {
+    CARLA_SAFE_ASSERT_RETURN(fName.isEmpty(),);
+    CARLA_SAFE_ASSERT_RETURN(fServerPathTCP.isEmpty(),);
+    CARLA_SAFE_ASSERT_RETURN(fServerPathUDP.isEmpty(),);
+    CARLA_SAFE_ASSERT_RETURN(fServerTCP == nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(fServerUDP == nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
     carla_debug("CarlaEngineOsc::init(\"%s\")", name);
-    CARLA_ASSERT(fName.isEmpty());
-    CARLA_ASSERT(fServerPathTCP.isEmpty());
-    CARLA_ASSERT(fServerPathUDP.isEmpty());
-    CARLA_ASSERT(fServerTCP == nullptr);
-    CARLA_ASSERT(fServerUDP == nullptr);
-    CARLA_ASSERT(name != nullptr);
 
     fName = name;
     fName.toBasic();
@@ -99,13 +99,13 @@ void CarlaEngineOsc::init(const char* const name)
     }
 
     CARLA_ASSERT(fName.isNotEmpty());
-    CARLA_ASSERT(fServerPathTCP.isNotEmpty());
-    CARLA_ASSERT(fServerPathUDP.isNotEmpty());
-    CARLA_ASSERT(fServerTCP != nullptr);
-    CARLA_ASSERT(fServerUDP != nullptr);
+    CARLA_SAFE_ASSERT(fServerPathTCP.isNotEmpty());
+    CARLA_SAFE_ASSERT(fServerPathUDP.isNotEmpty());
+    CARLA_SAFE_ASSERT(fServerTCP != nullptr);
+    CARLA_SAFE_ASSERT(fServerUDP != nullptr);
 }
 
-void CarlaEngineOsc::idle()
+void CarlaEngineOsc::idle() const
 {
     if (fServerTCP != nullptr)
     {
@@ -120,12 +120,12 @@ void CarlaEngineOsc::idle()
 
 void CarlaEngineOsc::close()
 {
-    carla_debug("CarlaEngineOsc::close()");
     CARLA_ASSERT(fName.isNotEmpty());
-    CARLA_ASSERT(fServerPathTCP.isNotEmpty());
-    CARLA_ASSERT(fServerPathUDP.isNotEmpty());
-    CARLA_ASSERT(fServerTCP != nullptr);
-    CARLA_ASSERT(fServerUDP != nullptr);
+    CARLA_SAFE_ASSERT(fServerPathTCP.isNotEmpty());
+    CARLA_SAFE_ASSERT(fServerPathUDP.isNotEmpty());
+    CARLA_SAFE_ASSERT(fServerTCP != nullptr);
+    CARLA_SAFE_ASSERT(fServerUDP != nullptr);
+    carla_debug("CarlaEngineOsc::close()");
 
     fName.clear();
 
@@ -149,12 +149,6 @@ void CarlaEngineOsc::close()
 #ifndef BUILD_BRIDGE
     fControlData.free();
 #endif
-
-    CARLA_ASSERT(fName.isEmpty());
-    CARLA_ASSERT(fServerPathTCP.isEmpty());
-    CARLA_ASSERT(fServerPathUDP.isEmpty());
-    CARLA_ASSERT(fServerTCP == nullptr);
-    CARLA_ASSERT(fServerUDP == nullptr);
 }
 
 // -----------------------------------------------------------------------
@@ -166,24 +160,19 @@ bool isDigit(const char c)
 
 int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg)
 {
-    CARLA_ASSERT(fName.isNotEmpty());
-    CARLA_ASSERT(fServerPathTCP.isNotEmpty());
-    CARLA_ASSERT(fServerPathUDP.isNotEmpty());
-    CARLA_ASSERT(fServerTCP != nullptr);
-    CARLA_ASSERT(fServerUDP != nullptr);
-    CARLA_ASSERT(path != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(fName.isNotEmpty(), 1);
+    CARLA_SAFE_ASSERT_RETURN(path != nullptr && path[0] != '\0', 1);
     carla_debug("CarlaEngineOsc::handleMessage(%s, \"%s\", %i, %p, \"%s\", %p)", bool2str(isTCP), path, argc, argv, types, msg);
 
-    if (path == nullptr)
+    if (isTCP)
     {
-        carla_stderr("CarlaEngineOsc::handleMessage() - got invalid path");
-        return 1;
+        CARLA_SAFE_ASSERT_RETURN(fServerPathTCP.isNotEmpty(), 1);
+        CARLA_SAFE_ASSERT_RETURN(fServerTCP != nullptr, 1);
     }
-
-    if (fName.isEmpty())
+    else
     {
-        carla_stderr("CarlaEngineOsc::handleMessage(%s, \"%s\", ...) - received message but client is offline", bool2str(isTCP), path);
-        return 1;
+        CARLA_SAFE_ASSERT_RETURN(fServerPathUDP.isNotEmpty(), 1);
+        CARLA_SAFE_ASSERT_RETURN(fServerUDP != nullptr, 1);
     }
 
 #ifndef BUILD_BRIDGE
@@ -199,18 +188,16 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     }
 #endif
 
-    const size_t nameSize = fName.length();
+    const size_t nameSize(fName.length());
 
     // Check if message is for this client
-    if (std::strlen(path) <= nameSize || std::strncmp(path+1, (const char*)fName, nameSize) != 0)
+    if (std::strlen(path) <= nameSize || std::strncmp(path+1, fName.getBuffer(), nameSize) != 0)
     {
-        carla_stderr("CarlaEngineOsc::handleMessage() - message not for this client -> '%s' != '/%s/'", path, (const char*)fName);
+        carla_stderr("CarlaEngineOsc::handleMessage() - message not for this client -> '%s' != '/%s/'", path, fName.getBuffer());
         return 1;
     }
 
-    // Get plugin id from message
-    // eg, /carla/23/method
-
+    // Get plugin id from path, "/carla/23/method" -> 23
     unsigned int pluginId = 0;
     size_t offset;
 
@@ -220,7 +207,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         {
             if (isDigit(path[nameSize+5]))
             {
-                carla_stderr2("CarlaEngineOsc::handleMessage() - invalid plugin id, over 999? (value: \"%s\")", path+nameSize+1);
+                carla_stderr2("CarlaEngineOsc::handleMessage() - invalid plugin id, over 999? (value: \"%s\")", path+(nameSize+1));
                 return 1;
             }
             else if (isDigit(path[nameSize+4]))
@@ -259,7 +246,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     }
 
     // Get plugin
-    CarlaPlugin* const plugin = fEngine->getPluginUnchecked(pluginId);
+    CarlaPlugin* const plugin(fEngine->getPluginUnchecked(pluginId));
 
     if (plugin == nullptr || plugin->getId() != pluginId)
     {
@@ -268,7 +255,8 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     }
 
     // Get method from path, "/Carla/i/method" -> "method"
-    char method[32] = { 0 };
+    char method[32];
+    carla_zeroChar(method, 32);
     std::strncpy(method, path + (nameSize + offset), 31);
 
     if (method[0] == '\0')
@@ -280,7 +268,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     // Common OSC methods (DSSI and bridge UIs)
     if (std::strcmp(method, "update") == 0)
     {
-        const lo_address source = lo_message_get_source(msg);
+        const lo_address source(lo_message_get_source(msg));
         return handleMsgUpdate(plugin, argc, argv, types, source);
     }
     if (std::strcmp(method, "configure") == 0)
@@ -324,7 +312,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         return handleMsgNoteOff(plugin, argc, argv, types);
 
     // Plugin Bridges
-    if ((plugin->getHints() & PLUGIN_IS_BRIDGE) > 0 && std::strlen(method) > 11 && std::strncmp(method, "bridge_", 7) == 0)
+    if ((plugin->getHints() & PLUGIN_IS_BRIDGE) != 0 && std::strlen(method) > 11 && std::strncmp(method, "bridge_", 7) == 0)
     {
         if (std::strcmp(method+7, "audio_count") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeAudioCount, argc, argv, types);

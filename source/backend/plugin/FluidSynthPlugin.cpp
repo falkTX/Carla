@@ -131,7 +131,7 @@ public:
         return PLUGIN_FILE_SF2;
     }
 
-    PluginCategory getCategory() const override
+    PluginCategory getCategory() const noexcept override
     {
         return PLUGIN_CATEGORY_SYNTH;
     }
@@ -139,7 +139,7 @@ public:
     // -------------------------------------------------------------------
     // Information (count)
 
-    uint32_t getParameterScalePointCount(const uint32_t parameterId) const override
+    uint32_t getParameterScalePointCount(const uint32_t parameterId) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0);
 
@@ -162,7 +162,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getOptionsAvailable() const override
+    unsigned int getOptionsAvailable() const noexcept override
     {
         unsigned int options = 0x0;
 
@@ -175,14 +175,14 @@ public:
         return options;
     }
 
-    float getParameterValue(const uint32_t parameterId) const override
+    float getParameterValue(const uint32_t parameterId) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
 
         return fParamBuffers[parameterId];
     }
 
-    float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) const override
+    float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
         CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId), 0.0f);
@@ -218,7 +218,7 @@ public:
         }
     }
 
-    void getLabel(char* const strBuf) const override
+    void getLabel(char* const strBuf) const noexcept override
     {
         if (fLabel != nullptr)
             std::strncpy(strBuf, fLabel, STR_MAX);
@@ -226,22 +226,22 @@ public:
             CarlaPlugin::getLabel(strBuf);
     }
 
-    void getMaker(char* const strBuf) const override
+    void getMaker(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, "FluidSynth SF2 engine", STR_MAX);
     }
 
-    void getCopyright(char* const strBuf) const override
+    void getCopyright(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, "GNU GPL v2+", STR_MAX);
     }
 
-    void getRealName(char* const strBuf) const override
+    void getRealName(char* const strBuf) const noexcept override
     {
         getLabel(strBuf);
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf) const override
+    void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
@@ -295,7 +295,7 @@ public:
         }
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf) const override
+    void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
@@ -313,7 +313,7 @@ public:
         }
     }
 
-    void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const override
+    void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
         CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId),);
@@ -368,7 +368,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (internal stuff)
 
-    void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) override
+    void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept override
     {
         if (channel < MAX_MIDI_CHANNELS)
             pData->midiprog.current = fCurMidiProgs[channel];
@@ -379,7 +379,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
-    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
@@ -392,18 +392,24 @@ public:
             switch (parameterId)
             {
             case FluidSynthReverbOnOff:
-                fluid_synth_set_reverb_on(fSynth, (fixedValue > 0.5f) ? 1 : 0);
+                try {
+                    fluid_synth_set_reverb_on(fSynth, (fixedValue > 0.5f) ? 1 : 0);
+                } catch(...) {}
                 break;
 
             case FluidSynthReverbRoomSize:
             case FluidSynthReverbDamp:
             case FluidSynthReverbLevel:
             case FluidSynthReverbWidth:
-                fluid_synth_set_reverb(fSynth, fParamBuffers[FluidSynthReverbRoomSize], fParamBuffers[FluidSynthReverbDamp], fParamBuffers[FluidSynthReverbWidth], fParamBuffers[FluidSynthReverbLevel]);
+                try {
+                    fluid_synth_set_reverb(fSynth, fParamBuffers[FluidSynthReverbRoomSize], fParamBuffers[FluidSynthReverbDamp], fParamBuffers[FluidSynthReverbWidth], fParamBuffers[FluidSynthReverbLevel]);
+                } catch(...) {}
                 break;
 
             case FluidSynthChorusOnOff:
-                fluid_synth_set_chorus_on(fSynth, (value > 0.5f) ? 1 : 0);
+                try {
+                    fluid_synth_set_chorus_on(fSynth, (value > 0.5f) ? 1 : 0);
+                } catch(...) {}
                 break;
 
             case FluidSynthChorusNr:
@@ -411,16 +417,27 @@ public:
             case FluidSynthChorusSpeedHz:
             case FluidSynthChorusDepthMs:
             case FluidSynthChorusType:
-                fluid_synth_set_chorus(fSynth, (int)fParamBuffers[FluidSynthChorusNr], fParamBuffers[FluidSynthChorusLevel], fParamBuffers[FluidSynthChorusSpeedHz], fParamBuffers[FluidSynthChorusDepthMs], (int)fParamBuffers[FluidSynthChorusType]);
+                try {
+                    fluid_synth_set_chorus(fSynth, (int)fParamBuffers[FluidSynthChorusNr], fParamBuffers[FluidSynthChorusLevel], fParamBuffers[FluidSynthChorusSpeedHz], fParamBuffers[FluidSynthChorusDepthMs], (int)fParamBuffers[FluidSynthChorusType]);
+                } catch(...) {}
                 break;
 
             case FluidSynthPolyphony:
-                fluid_synth_set_polyphony(fSynth, (int)value);
+                try {
+                    fluid_synth_set_polyphony(fSynth, (int)value);
+                } catch(...) {}
                 break;
 
             case FluidSynthInterpolation:
                 for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
-                    fluid_synth_set_interp_method(fSynth, i, (int)value);
+                {
+                    try {
+                        fluid_synth_set_interp_method(fSynth, i, (int)value);
+                    }
+                    catch(...) {
+                        break;
+                    }
+                }
                 break;
 
             default:
@@ -484,7 +501,7 @@ public:
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
 
-    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fSynth != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
@@ -496,7 +513,10 @@ public:
 
             //const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
-            fluid_synth_program_select(fSynth, pData->ctrlChannel, fSynthId, bank, program);
+            try {
+                fluid_synth_program_select(fSynth, pData->ctrlChannel, fSynthId, bank, program);
+            } catch(...) {}
+
             fCurMidiProgs[pData->ctrlChannel] = index;
         }
 

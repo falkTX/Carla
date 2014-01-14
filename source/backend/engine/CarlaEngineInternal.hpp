@@ -61,7 +61,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 
 static inline
-const char* EngineType2Str(const EngineType type)
+const char* EngineType2Str(const EngineType type) noexcept
 {
     switch (type)
     {
@@ -84,7 +84,7 @@ const char* EngineType2Str(const EngineType type)
 }
 
 static inline
-const char* EnginePortType2Str(const EnginePortType type)
+const char* EnginePortType2Str(const EnginePortType type) noexcept
 {
     switch (type)
     {
@@ -103,7 +103,7 @@ const char* EnginePortType2Str(const EnginePortType type)
 }
 
 static inline
-const char* EngineEventType2Str(const EngineEventType type)
+const char* EngineEventType2Str(const EngineEventType type) noexcept
 {
     switch (type)
     {
@@ -120,7 +120,7 @@ const char* EngineEventType2Str(const EngineEventType type)
 }
 
 static inline
-const char* EngineControlEventType2Str(const EngineControlEventType type)
+const char* EngineControlEventType2Str(const EngineControlEventType type) noexcept
 {
     switch (type)
     {
@@ -158,10 +158,10 @@ struct EnginePluginData {
     float insPeak[2];
     float outsPeak[2];
 
-    void clear()
+    void clear() noexcept
     {
         plugin = nullptr;
-        insPeak[0]  = insPeak[1]  = 0.0f;
+        insPeak[0] = insPeak[1] = 0.0f;
         outsPeak[0] = outsPeak[1] = 0.0f;
     }
 };
@@ -346,13 +346,13 @@ struct CarlaEngineProtectedData {
             rack = nullptr;
         }
 
-        ~InternalAudio()
+        ~InternalAudio() noexcept
         {
             CARLA_ASSERT(! isReady);
             CARLA_ASSERT(rack == nullptr);
         }
 
-        void initPatchbay()
+        void initPatchbay() noexcept
         {
             if (usePatchbay)
             {
@@ -427,7 +427,7 @@ struct CarlaEngineProtectedData {
             : in(nullptr),
               out(nullptr) {}
 
-        ~InternalEvents()
+        ~InternalEvents() noexcept
         {
             CARLA_ASSERT(in == nullptr);
             CARLA_ASSERT(out == nullptr);
@@ -454,7 +454,7 @@ struct CarlaEngineProtectedData {
               pluginId(0),
               value(0) {}
 
-        ~NextAction()
+        ~NextAction() noexcept
         {
             CARLA_ASSERT(opcode == kEnginePostActionNull);
         }
@@ -486,7 +486,7 @@ struct CarlaEngineProtectedData {
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaEngineProtectedData)
 #endif
 
-    ~CarlaEngineProtectedData()
+    ~CarlaEngineProtectedData() noexcept
     {
         CARLA_ASSERT(curPluginCount == 0);
         CARLA_ASSERT(maxPluginNumber == 0);
@@ -494,10 +494,10 @@ struct CarlaEngineProtectedData {
         CARLA_ASSERT(plugins == nullptr);
     }
 
-    void doPluginRemove()
+    void doPluginRemove() noexcept
     {
-        CARLA_ASSERT(curPluginCount > 0);
-        CARLA_ASSERT(nextAction.pluginId < curPluginCount);
+        CARLA_SAFE_ASSERT_RETURN(curPluginCount > 0,);
+        CARLA_SAFE_ASSERT_RETURN(nextAction.pluginId < curPluginCount,);
         --curPluginCount;
 
         // move all plugins 1 spot backwards
@@ -526,17 +526,17 @@ struct CarlaEngineProtectedData {
         plugins[id].outsPeak[1] = 0.0f;
     }
 
-    void doPluginsSwitch()
+    void doPluginsSwitch() noexcept
     {
-        CARLA_ASSERT(curPluginCount >= 2);
+        CARLA_SAFE_ASSERT_RETURN(curPluginCount >= 2,);
 
         const unsigned int idA(nextAction.pluginId);
         const unsigned int idB(nextAction.value);
 
-        CARLA_ASSERT(idA < curPluginCount);
-        CARLA_ASSERT(idB < curPluginCount);
-        CARLA_ASSERT(plugins[idA].plugin != nullptr);
-        CARLA_ASSERT(plugins[idB].plugin != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(idA < curPluginCount,);
+        CARLA_SAFE_ASSERT_RETURN(idB < curPluginCount,);
+        CARLA_SAFE_ASSERT_RETURN(plugins[idA].plugin != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(plugins[idB].plugin != nullptr,);
 
 #if 0
         std::swap(plugins[idA].plugin, plugins[idB].plugin);
@@ -584,12 +584,12 @@ struct CarlaEngineProtectedData {
     class ScopedActionLock
     {
     public:
-        ScopedActionLock(CarlaEngineProtectedData* const data, const EnginePostAction action, const unsigned int pluginId, const unsigned int value, const bool lockWait)
+        ScopedActionLock(CarlaEngineProtectedData* const data, const EnginePostAction action, const unsigned int pluginId, const unsigned int value, const bool lockWait) noexcept
             : fData(data)
         {
             fData->nextAction.mutex.lock();
 
-            CARLA_ASSERT(fData->nextAction.opcode == kEnginePostActionNull);
+            CARLA_SAFE_ASSERT_RETURN(fData->nextAction.opcode == kEnginePostActionNull,);
 
             fData->nextAction.opcode   = action;
             fData->nextAction.pluginId = pluginId;

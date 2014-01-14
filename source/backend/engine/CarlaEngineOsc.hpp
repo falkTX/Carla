@@ -61,7 +61,7 @@ public:
     ~CarlaEngineOsc();
 
     void init(const char* const name);
-    void idle();
+    void idle() const;
     void close();
 
     // -------------------------------------------------------------------
