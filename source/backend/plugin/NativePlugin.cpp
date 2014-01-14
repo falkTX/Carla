@@ -771,7 +771,7 @@ public:
 
         if (params > 0)
         {
-            pData->param.createNew(params);
+            pData->param.createNew(params, true);
         }
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
@@ -893,11 +893,12 @@ public:
 
             CARLA_SAFE_ASSERT_CONTINUE(paramInfo != nullptr);
 
+            pData->param.data[j].type   = PARAMETER_UNKNOWN;
+            pData->param.data[j].hints  = 0x0;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
-            pData->param.data[j].hints  = 0x0;
-            pData->param.data[j].midiChannel = 0;
             pData->param.data[j].midiCC = -1;
+            pData->param.data[j].midiChannel = 0;
 
             float min, max, def, step, stepSmall, stepLarge;
 

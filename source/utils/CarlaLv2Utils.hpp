@@ -1245,7 +1245,10 @@ bool is_lv2_port_supported(const LV2_Property types)
 static inline
 bool is_lv2_feature_supported(const LV2_URI uri)
 {
-    CARLA_SAFE_ASSERT_RETURN(uri != nullptr, false);
+    CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', false);
+
+    // TODO
+    return false;
 
 #ifndef BRIDGE_LV2
     if (std::strcmp(uri, LV2_CORE__hardRTCapable) == 0)

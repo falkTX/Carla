@@ -29,6 +29,9 @@ extern "C" {
 #include "rtmempool/rtmempool-lv2.h"
 }
 
+#include <QtCore/QDir>
+#include <QtCore/QUrl>
+
 // -----------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
@@ -280,16 +283,19 @@ struct Lv2PluginEventData {
 };
 
 struct Lv2PluginOptions {
+    enum OptIndex {
+        MaxBlockLenth = 0,
+        MinBlockLenth,
+        SequenceSize,
+        SampleRate,
+        Null
+    };
+
     int maxBufferSize;
     int minBufferSize;
     int sequenceSize;
     double sampleRate;
-    LV2_Options_Option optMaxBlockLenth;
-    LV2_Options_Option optMinBlockLenth;
-    LV2_Options_Option optSequenceSize;
-    LV2_Options_Option optSampleRate;
-    LV2_Options_Option optNull;
-    LV2_Options_Option* opts[5];
+    LV2_Options_Option opts[5];
 
     Lv2PluginOptions()
         : maxBufferSize(0),
@@ -297,6 +303,7 @@ struct Lv2PluginOptions {
           sequenceSize(MAX_EVENT_BUFFER),
           sampleRate(0.0)
     {
+        LV2_Options_Option& optMaxBlockLenth(opts[MaxBlockLenth]);
         optMaxBlockLenth.context = LV2_OPTIONS_INSTANCE;
         optMaxBlockLenth.subject = 0;
         optMaxBlockLenth.key     = CARLA_URI_MAP_ID_BUF_MAX_LENGTH;
@@ -304,6 +311,7 @@ struct Lv2PluginOptions {
         optMaxBlockLenth.type    = CARLA_URI_MAP_ID_ATOM_INT;
         optMaxBlockLenth.value   = &maxBufferSize;
 
+        LV2_Options_Option& optMinBlockLenth(opts[MinBlockLenth]);
         optMinBlockLenth.context = LV2_OPTIONS_INSTANCE;
         optMinBlockLenth.subject = 0;
         optMinBlockLenth.key     = CARLA_URI_MAP_ID_BUF_MIN_LENGTH;
@@ -311,6 +319,7 @@ struct Lv2PluginOptions {
         optMinBlockLenth.type    = CARLA_URI_MAP_ID_ATOM_INT;
         optMinBlockLenth.value   = &minBufferSize;
 
+        LV2_Options_Option& optSequenceSize(opts[SequenceSize]);
         optSequenceSize.context = LV2_OPTIONS_INSTANCE;
         optSequenceSize.subject = 0;
         optSequenceSize.key     = CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE;
@@ -318,6 +327,7 @@ struct Lv2PluginOptions {
         optSequenceSize.type    = CARLA_URI_MAP_ID_ATOM_INT;
         optSequenceSize.value   = &sequenceSize;
 
+        LV2_Options_Option& optSampleRate(opts[SampleRate]);
         optSampleRate.context = LV2_OPTIONS_INSTANCE;
         optSampleRate.subject = 0;
         optSampleRate.key     = CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE;
@@ -325,18 +335,13 @@ struct Lv2PluginOptions {
         optSampleRate.type    = CARLA_URI_MAP_ID_ATOM_DOUBLE;
         optSampleRate.value   = &sampleRate;
 
+        LV2_Options_Option& optNull(opts[Null]);
         optNull.context = LV2_OPTIONS_INSTANCE;
         optNull.subject = 0;
         optNull.key     = CARLA_URI_MAP_ID_NULL;
         optNull.size    = 0;
         optNull.type    = CARLA_URI_MAP_ID_NULL;
         optNull.value   = nullptr;
-
-        opts[0] = &optMaxBlockLenth;
-        opts[1] = &optMinBlockLenth;
-        opts[2] = &optSequenceSize;
-        opts[3] = &optSampleRate;
-        opts[4] = &optNull;
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(Lv2PluginOptions)
@@ -352,9 +357,6 @@ public:
         : CarlaPlugin(engine, id),
           fHandle(nullptr),
           fHandle2(nullptr),
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-          fFeatures{nullptr},
-#endif
           fDescriptor(nullptr),
           fRdfDescriptor(nullptr),
           fAudioInBuffers(nullptr),
@@ -363,9 +365,7 @@ public:
     {
         carla_debug("Lv2Plugin::Lv2Plugin(%p, %i)", engine, id);
 
-#ifndef CARLA_PROPER_CPP11_SUPPORT
         carla_fill<LV2_Feature*>(fFeatures, kFeatureCount+1, nullptr);
-#endif
 
         pData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_LV2_GUI);
 
@@ -1441,7 +1441,7 @@ public:
 
         if (params > 0)
         {
-            pData->param.createNew(params+cvIns+cvOuts);
+            pData->param.createNew(params+cvIns+cvOuts, true);
 
             fParamBuffers = new float[params+cvIns+cvOuts];
             FLOAT_CLEAR(fParamBuffers, params+cvIns+cvOuts);
@@ -1857,11 +1857,12 @@ public:
                 const LV2_RDF_PortPoints portPoints(fRdfDescriptor->Ports[i].Points);
 
                 j = iCtrl++;
+                pData->param.data[j].type   = PARAMETER_UNKNOWN;
+                pData->param.data[j].hints  = 0x0;
                 pData->param.data[j].index  = j;
                 pData->param.data[j].rindex = i;
-                pData->param.data[j].hints  = 0x0;
-                pData->param.data[j].midiChannel = 0;
                 pData->param.data[j].midiCC = -1;
+                pData->param.data[j].midiChannel = 0;
 
                 float min, max, def, step, stepSmall, stepLarge;
 
@@ -2019,6 +2020,7 @@ public:
                     }
                     else
                     {
+                        pData->param.data[j].type   = PARAMETER_OUTPUT;
                         pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                         pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                         needsCtrlOut = true;
@@ -2026,6 +2028,7 @@ public:
                 }
                 else
                 {
+                    pData->param.data[j].type = PARAMETER_UNKNOWN;
                     carla_stderr2("WARNING - Got a broken Port (Control, but not input or output)");
                 }
 
@@ -3164,20 +3167,10 @@ public:
         // Reset audio buffers
 
         for (i=0; i < pData->audioIn.count; ++i)
-        {
-#ifdef HAVE_JUCE
-            FloatVectorOperations::copy(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
-#else
-#endif
-        }
+            FLOAT_COPY(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
 
         for (i=0; i < pData->audioOut.count; ++i)
-        {
-#ifdef HAVE_JUCE
-            FloatVectorOperations::clear(fAudioOutBuffers[i], frames);
-#else
-#endif
-        }
+            FLOAT_CLEAR(fAudioOutBuffers[i], frames);
 
 #if 0
         // --------------------------------------------------------------------------------------------------------
@@ -3261,10 +3254,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-#ifdef HAVE_JUCE
-                        FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], frames);
-#else
-#endif
+                        FLOAT_COPY(oldBufLeft, fAudioOutBuffers[i], frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
@@ -4175,7 +4165,7 @@ protected:
     // -------------------------------------------------------------------
 
 public:
-    bool init(const char* const name, const char* const uri)
+    bool init(const char* const bundle, const char* const name, const char* const uri)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -4188,6 +4178,12 @@ public:
             return false;
         }
 
+        if (bundle == nullptr || bundle[0] == '\0')
+        {
+            pData->engine->setLastError("null bundle");
+            return false;
+        }
+
         if (uri == nullptr || uri[0] == '\0')
         {
             pData->engine->setLastError("null uri");
@@ -4197,8 +4193,16 @@ public:
         // ---------------------------------------------------------------
         // get plugin from lv2_rdf (lilv)
 
-        //Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
-        //lv2World.getPlugin(uri);
+        Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
+
+        // Convert bundle filename to URI
+        QString qBundle(QUrl::fromLocalFile(bundle).toString());
+        if (! qBundle.endsWith(OS_SEP_STR))
+            qBundle += OS_SEP_STR;
+
+        // Load bundle
+        Lilv::Node lilvBundle(lv2World.new_uri(qBundle.toUtf8().constData()));
+        lv2World.load_bundle(lilvBundle);
 
         fRdfDescriptor = lv2_rdf_new(uri, true);
 
@@ -5516,7 +5520,7 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
 #ifdef WANT_LV2
     Lv2Plugin* const plugin(new Lv2Plugin(init.engine, init.id));
 
-    if (! plugin->init(init.name, init.label))
+    if (! plugin->init(init.filename, init.name, init.label))
     {
         delete plugin;
         return nullptr;

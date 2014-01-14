@@ -532,7 +532,7 @@ public:
         params = FluidSynthParametersMax;
 
         pData->audioOut.createNew(aOuts);
-        pData->param.createNew(params);
+        pData->param.createNew(params, false);
 
         const int portNameSize(pData->engine->getMaxPortNameSize());
         CarlaString portName;

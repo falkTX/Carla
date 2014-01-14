@@ -303,28 +303,40 @@ struct PluginEventData {
 
 // -----------------------------------------------------------------------
 
+enum SpecialParameterType {
+    PARAMETER_SPECIAL_NULL          = 0,
+    PARAMETER_SPECIAL_LATENCY       = 1,
+    PARAMETER_SPECIAL_SAMPLE_RATE   = 2,
+    PARAMETER_SPECIAL_LV2_FREEWHEEL = 3,
+    PARAMETER_SPECIAL_LV2_TIME      = 4
+};
+
 struct PluginParameterData {
     uint32_t count;
     ParameterData* data;
     ParameterRanges* ranges;
+    SpecialParameterType* special;
 
     PluginParameterData() noexcept
         : count(0),
           data(nullptr),
-          ranges(nullptr) {}
+          ranges(nullptr),
+          special(nullptr) {}
 
     ~PluginParameterData()
     {
         CARLA_ASSERT_INT(count == 0, count);
         CARLA_ASSERT(data == nullptr);
         CARLA_ASSERT(ranges == nullptr);
+        CARLA_ASSERT(special == nullptr);
     }
 
-    void createNew(const uint32_t newCount)
+    void createNew(const uint32_t newCount, const bool withSpecial)
     {
         CARLA_ASSERT_INT(count == 0, count);
         CARLA_ASSERT(data == nullptr);
         CARLA_ASSERT(ranges == nullptr);
+        CARLA_ASSERT(special == nullptr);
         CARLA_ASSERT_INT(newCount > 0, newCount);
 
         if (data != nullptr || ranges != nullptr || newCount == 0)
@@ -333,6 +345,9 @@ struct PluginParameterData {
         data   = new ParameterData[newCount];
         ranges = new ParameterRanges[newCount];
         count  = newCount;
+
+        if (withSpecial)
+            special = new SpecialParameterType[newCount];
     }
 
     void clear()
@@ -347,6 +362,12 @@ struct PluginParameterData {
         {
             delete[] ranges;
             ranges = nullptr;
+        }
+
+        if (special != nullptr)
+        {
+            delete[] special;
+            special = nullptr;
         }
 
         count = 0;

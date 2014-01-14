@@ -487,7 +487,7 @@ public:
 
         if (params > 0)
         {
-            pData->param.createNew(params);
+            pData->param.createNew(params, true);
 
             fParamBuffers = new float[params];
             FLOAT_CLEAR(fParamBuffers, params);
@@ -549,11 +549,13 @@ public:
             else if (LADSPA_IS_PORT_CONTROL(portType))
             {
                 j = iCtrl++;
+                pData->param.data[j].type   = PARAMETER_UNKNOWN;
+                pData->param.data[j].hints  = 0x0;
                 pData->param.data[j].index  = j;
                 pData->param.data[j].rindex = i;
-                pData->param.data[j].hints  = 0x0;
-                pData->param.data[j].midiChannel = 0;
                 pData->param.data[j].midiCC = -1;
+                pData->param.data[j].midiChannel = 0;
+                pData->param.special[j] = PARAMETER_SPECIAL_NULL;
 
                 float min, max, def, step, stepSmall, stepLarge;
 
@@ -639,8 +641,8 @@ public:
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
 
-                        pData->param.data[j].type  = PARAMETER_SPECIAL;
-                        pData->param.data[j].hints = 0; // TODO PARAMETER_LATENCY
+                        pData->param.data[j].type = PARAMETER_SPECIAL;
+                        pData->param.special[j]   = PARAMETER_SPECIAL_LATENCY;
                     }
                     else if (std::strcmp(fDescriptor->PortNames[i], "_sample-rate") == 0)
                     {
@@ -649,8 +651,8 @@ public:
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
 
-                        pData->param.data[j].type  = PARAMETER_SPECIAL;
-                        pData->param.data[j].hints = 0; // TODO PARAMETER_SAMPLE_RATE
+                        pData->param.data[j].type = PARAMETER_SPECIAL;
+                        pData->param.special[j]   = PARAMETER_SPECIAL_SAMPLE_RATE;
                     }
                     else
                     {
@@ -662,7 +664,6 @@ public:
                 }
                 else
                 {
-                    pData->param.data[j].type = PARAMETER_UNKNOWN;
                     carla_stderr2("WARNING - Got a broken Port (Control, but not input or output)");
                 }
 
@@ -764,9 +765,8 @@ public:
         {
             for (uint32_t i=0; i < pData->param.count; ++i)
             {
-                // TODO
-                //if (pData->param.data[i].type != PARAMETER_LATENCY)
-                //    continue;
+                if (pData->param.special[i] != PARAMETER_SPECIAL_LATENCY)
+                   continue;
 
                 // we need to pre-run the plugin so it can update its latency control-port
 

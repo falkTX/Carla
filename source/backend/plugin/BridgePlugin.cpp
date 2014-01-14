@@ -1277,7 +1277,7 @@ public:
 
             if (count > 0)
             {
-                pData->param.createNew(count);
+                pData->param.createNew(count, false);
                 fParams = new BridgeParamInfo[count];
             }
 

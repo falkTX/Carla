@@ -479,7 +479,7 @@ public:
 
         if (params > 0)
         {
-            pData->param.createNew(params);
+            pData->param.createNew(params, true);
 
             fParamBuffers = new float[params];
             FLOAT_CLEAR(fParamBuffers, params);
@@ -540,11 +540,12 @@ public:
             else if (LADSPA_IS_PORT_CONTROL(portType))
             {
                 j = iCtrl++;
+                pData->param.data[j].type   = PARAMETER_UNKNOWN;
+                pData->param.data[j].hints  = 0x0;
                 pData->param.data[j].index  = j;
                 pData->param.data[j].rindex = i;
-                pData->param.data[j].hints  = 0x0;
-                pData->param.data[j].midiChannel = 0;
                 pData->param.data[j].midiCC = -1;
+                pData->param.data[j].midiChannel = 0;
 
                 float min, max, def, step, stepSmall, stepLarge;
 
