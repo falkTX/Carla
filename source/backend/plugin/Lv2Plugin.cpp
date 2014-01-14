@@ -37,18 +37,23 @@ CARLA_BACKEND_START_NAMESPACE
 }
 #endif
 
+#if 0
 const unsigned int MAX_EVENT_BUFFER = 8192; // 0x2000
+#endif
 
+#if 0
 // Extra Plugin Hints
 const unsigned int PLUGIN_HAS_EXTENSION_OPTIONS  = 0x1000;
 const unsigned int PLUGIN_HAS_EXTENSION_PROGRAMS = 0x2000;
 const unsigned int PLUGIN_HAS_EXTENSION_STATE    = 0x4000;
 const unsigned int PLUGIN_HAS_EXTENSION_WORKER   = 0x8000;
+#endif
 
 // Extra Parameter Hints
 const unsigned int PARAMETER_IS_STRICT_BOUNDS = 0x1000;
 const unsigned int PARAMETER_IS_TRIGGER       = 0x2000;
 
+#if 0
 // LV2 Event Data/Types
 const unsigned int CARLA_EVENT_DATA_ATOM    = 0x01;
 const unsigned int CARLA_EVENT_DATA_EVENT   = 0x02;
@@ -56,7 +61,9 @@ const unsigned int CARLA_EVENT_DATA_MIDI_LL = 0x04;
 const unsigned int CARLA_EVENT_TYPE_MESSAGE = 0x10; // unused
 const unsigned int CARLA_EVENT_TYPE_MIDI    = 0x20;
 const unsigned int CARLA_EVENT_TYPE_TIME    = 0x40;
+#endif
 
+#if 0
 // LV2 URI Map Ids
 const uint32_t CARLA_URI_MAP_ID_NULL                   =  0;
 const uint32_t CARLA_URI_MAP_ID_ATOM_BLANK             =  1;
@@ -98,7 +105,9 @@ const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 36;
 const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 37;
 const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 38;
 const uint32_t CARLA_URI_MAP_ID_COUNT                  = 39;
+#endif
 
+#if 0
 // LV2 Feature Ids
 const uint32_t kFeatureIdBufSizeBounded   =  0;
 const uint32_t kFeatureIdBufSizeFixed     =  1;
@@ -131,15 +140,19 @@ const uint32_t kFeatureIdUiResize         = 27;
 const uint32_t kFeatureIdUiTouch          = 28;
 const uint32_t kFeatureIdExternalUi       = 29;
 const uint32_t kFeatureIdExternalUiOld    = 30;
-const uint32_t kFeatureCount              = 31;
+#endif
+const uint32_t kFeatureCount              = 0 /*31*/;
 
+#if 0
 enum Lv2PluginGuiType {
     PLUGIN_UI_NULL,
     PLUGIN_UI_OSC,
     PLUGIN_UI_PARENT,
     PLUGIN_UI_EXTERNAL
 };
+#endif
 
+#if 0
 struct Lv2EventData {
     uint32_t type;
     uint32_t rindex;
@@ -199,7 +212,6 @@ struct Lv2EventData {
     CARLA_DECLARE_NON_COPY_STRUCT(Lv2EventData)
 };
 
-#if 0
 struct Lv2PluginEventData {
     uint32_t count;
     Lv2EventData* data;
@@ -329,11 +341,11 @@ struct Lv2PluginOptions {
 
     CARLA_DECLARE_NON_COPY_STRUCT(Lv2PluginOptions)
 };
+#endif
 
 // -----------------------------------------------------
 
-class Lv2Plugin : public CarlaPlugin/*,
-                  public CarlaPluginGui::Callback*/
+class Lv2Plugin : public CarlaPlugin
 {
 public:
     Lv2Plugin(CarlaEngine* const engine, const unsigned int id)
@@ -357,6 +369,7 @@ public:
 
         pData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_LV2_GUI);
 
+#if 0
         for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; ++i)
             fCustomURIDs.append(nullptr);
 
@@ -377,12 +390,14 @@ public:
         fAtomForge.URI      = CARLA_URI_MAP_ID_ATOM_URI;
         fAtomForge.URID     = CARLA_URI_MAP_ID_ATOM_URID;
         fAtomForge.Vector   = CARLA_URI_MAP_ID_ATOM_VECTOR;
+#endif
     }
 
     ~Lv2Plugin() override
     {
         carla_debug("Lv2Plugin::~Lv2Plugin()");
 
+#if 0
         // close UI
         if (fUi.type != PLUGIN_UI_NULL)
         {
@@ -419,6 +434,7 @@ public:
 
             fUi.rdfDescriptor = nullptr;
         }
+#endif
 
         pData->singleMutex.lock();
         pData->masterMutex.lock();
@@ -453,6 +469,7 @@ public:
             fRdfDescriptor = nullptr;
         }
 
+#if 0
         if (fFeatures[kFeatureIdEvent] != nullptr && fFeatures[kFeatureIdEvent]->data != nullptr)
             delete (LV2_Event_Feature*)fFeatures[kFeatureIdEvent]->data;
 
@@ -482,7 +499,9 @@ public:
 
         if (fFeatures[kFeatureIdWorker] != nullptr && fFeatures[kFeatureIdWorker]->data != nullptr)
             delete (LV2_Worker_Schedule*)fFeatures[kFeatureIdWorker]->data;
+#endif
 
+#if 0
         for (uint32_t i=0; i < kFeatureCount; ++i)
         {
             if (fFeatures[i] != nullptr)
@@ -504,6 +523,7 @@ public:
         }
 
         fCustomURIDs.clear();
+#endif
 
         clearBuffers();
     }
@@ -876,6 +896,7 @@ public:
         CarlaPlugin::getParameterScalePointLabel(parameterId, scalePointId, strBuf);
     }
 
+#if 0
     // -------------------------------------------------------------------
     // Set data (state)
 
@@ -914,6 +935,7 @@ public:
             //uiHost->plugin_human_id = carla_strdup(guiTitle.toUtf8().constData());
         }
     }
+#endif
 
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
@@ -948,6 +970,7 @@ public:
 
         CarlaPlugin::setCustomData(type, key, value, sendGui);
 
+#if 0
         // FIXME - we should only call this once, after all data is stored
 
         if (fExt.state != nullptr)
@@ -985,6 +1008,7 @@ public:
                 break;
             }
         }
+#endif
 
         if (sendGui)
         {
@@ -996,6 +1020,7 @@ public:
         }
     }
 
+#if 0
     void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
@@ -1041,7 +1066,9 @@ public:
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
     }
+#endif
 
+#if 0
     // -------------------------------------------------------------------
     // Set ui stuff
 
@@ -1256,6 +1283,7 @@ public:
 
         CarlaPlugin::idle();
     }
+#endif
 
     // -------------------------------------------------------------------
     // Plugin state
@@ -1283,7 +1311,7 @@ public:
 
         uint32_t aIns, aOuts, cvIns, cvOuts, params, j;
         aIns = aOuts = cvIns = cvOuts = params = 0;
-        List<unsigned int> evIns, evOuts;
+        LinkedList<unsigned int> evIns, evOuts;
 
         bool forcedStereoIn, forcedStereoOut;
         forcedStereoIn = forcedStereoOut = false;
@@ -1309,6 +1337,7 @@ public:
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
                     cvOuts += 1;
             }
+#if 0
             else if (LV2_IS_PORT_ATOM_SEQUENCE(portTypes))
             {
                 if (LV2_IS_PORT_INPUT(portTypes))
@@ -1330,10 +1359,12 @@ public:
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
                     evOuts.append(CARLA_EVENT_DATA_MIDI_LL);
             }
+#endif
             else if (LV2_IS_PORT_CONTROL(portTypes))
                 params += 1;
         }
 
+#if 0
         // check extensions
         fExt.options  = nullptr;
         fExt.programs = nullptr;
@@ -1354,8 +1385,9 @@ public:
             if (pData->extraHints & PLUGIN_HAS_EXTENSION_WORKER)
                 fExt.worker = (const LV2_Worker_Interface*)fDescriptor->extension_data(LV2_WORKER__interface);
         }
+#endif
 
-        if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && (aIns == 1 || aOuts == 1) && fExt.state == nullptr && fExt.worker == nullptr)
+        if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && (aIns == 1 || aOuts == 1) /*&& fExt.state == nullptr && fExt.worker == nullptr*/)
         {
             if (fHandle2 == nullptr)
                 fHandle2 = fDescriptor->instantiate(fDescriptor, sampleRate, fRdfDescriptor->Bundle, fFeatures);
@@ -1397,13 +1429,13 @@ public:
 
         if (cvIns > 0)
         {
-            fCvIn.createNew(cvIns);
+            //fCvIn.createNew(cvIns);
             needsCtrlIn = true;
         }
 
         if (cvOuts > 0)
         {
-            fCvOut.createNew(cvOuts);
+            //fCvOut.createNew(cvOuts);
             needsCtrlOut = true;
         }
 
@@ -1412,12 +1444,10 @@ public:
             pData->param.createNew(params+cvIns+cvOuts);
 
             fParamBuffers = new float[params+cvIns+cvOuts];
-#ifdef HAVE_JUCE
-            FloatVectorOperations::clear(fParamBuffers, params+cvIns+cvOuts);
-#else
-#endif
+            FLOAT_CLEAR(fParamBuffers, params+cvIns+cvOuts);
         }
 
+#if 0
         if (evIns.count() > 0)
         {
             const size_t count(evIns.count());
@@ -1481,11 +1511,12 @@ public:
                 }
             }
         }
+#endif
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
         CarlaString portName;
 
-        for (uint32_t i=0, iAudioIn=0, iAudioOut=0, iCvIn=0, iCvOut=0, iEvIn=0, iEvOut=0, iCtrl=0; i < portCount; ++i)
+        for (uint32_t i=0, iAudioIn=0, iAudioOut=0, /*iCvIn=0, iCvOut=0, iEvIn=0, iEvOut=0,*/ iCtrl=0; i < portCount; ++i)
         {
             const LV2_Property portTypes(fRdfDescriptor->Ports[i].Types);
 
@@ -1534,6 +1565,7 @@ public:
                 else
                     carla_stderr("WARNING - Got a broken Port (Audio, but not input or output)");
             }
+#if 0
             else if (LV2_IS_PORT_CV(portTypes))
             {
                 if (LV2_IS_PORT_INPUT(portTypes))
@@ -1817,6 +1849,7 @@ public:
                 else
                     carla_stderr("WARNING - Got a broken Port (MIDI, but not input or output)");
             }
+#endif
             else if (LV2_IS_PORT_CONTROL(portTypes))
             {
                 const LV2_Property portProps(fRdfDescriptor->Ports[i].Properties);
@@ -1937,7 +1970,7 @@ public:
                     }
                     else
                     {
-                        pData->param.data[j].hints |= PARAMETER_IS_INPUT;
+                        pData->param.data[j].type   = PARAMETER_INPUT;
                         pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                         pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                         needsCtrlIn = true;
@@ -1948,8 +1981,8 @@ public:
 
                     if (LV2_IS_PORT_MIDI_MAP_CC(portMidiMap.Type))
                     {
-                        if (! MIDI_IS_CONTROL_BANK_SELECT(portMidiMap.Number))
-                            pData->param.data[j].midiCC = portMidiMap.Number;
+                        if (portMidiMap.Number < 0x5F && ! MIDI_IS_CONTROL_BANK_SELECT(portMidiMap.Number))
+                            pData->param.data[j].midiCC = int16_t(portMidiMap.Number);
                     }
                 }
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
@@ -2077,11 +2110,13 @@ public:
             pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
         }
 
+#if 0
         if (fEventsIn.ctrl != nullptr && fEventsIn.ctrl->port == nullptr)
             fEventsIn.ctrl->port = pData->event.portIn;
 
         if (fEventsOut.ctrl != nullptr && fEventsOut.ctrl->port == nullptr)
             fEventsOut.ctrl->port = pData->event.portOut;
+#endif
 
         if (forcedStereoIn || forcedStereoOut)
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
@@ -2094,6 +2129,7 @@ public:
         if (isRealtimeSafe())
             pData->hints |= PLUGIN_IS_RTSAFE;
 
+#if 0
         if (fUi.type != PLUGIN_UI_NULL)
         {
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
@@ -2101,6 +2137,7 @@ public:
             if (fUi.type == PLUGIN_UI_QT || fUi.type == PLUGIN_UI_PARENT)
                 pData->hints |= PLUGIN_NEEDS_SINGLE_THREAD;
         }
+#endif
 
         //if (LV2_IS_GENERATOR(fRdfDescriptor->Type[0], fRdfDescriptor->Type[1]))
         //    pData->hints |= PLUGIN_IS_SYNTH;
@@ -2117,6 +2154,7 @@ public:
         // extra plugin hints
         pData->extraHints &= ~PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
 
+#if 0
         if (fExt.state != nullptr || fExt.worker != nullptr)
         {
             if ((aIns == 0 || aIns == 2) && (aOuts == 0 || aOuts == 2) && evIns.count() <= 1 && evOuts.count() <= 1)
@@ -2127,6 +2165,7 @@ public:
             if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0) && evIns.count() <= 1 && evOuts.count() <= 1)
                 pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
         }
+#endif
 
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
@@ -2140,6 +2179,7 @@ public:
         carla_debug("Lv2Plugin::reload() - end");
     }
 
+#if 0
     void reloadPrograms(const bool init) override
     {
         carla_debug("Lv2Plugin::reloadPrograms(%s)", bool2str(init));
@@ -2262,6 +2302,7 @@ public:
             pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0f, nullptr);
         }
     }
+#endif
 
     // -------------------------------------------------------------------
     // Plugin processing
@@ -2279,7 +2320,7 @@ public:
                 fDescriptor->activate(fHandle2);
         }
 
-        fFirstActive = true;
+        //fFirstActive = true;
     }
 
     void deactivate() override
@@ -2307,16 +2348,11 @@ public:
         {
             // disable any output sound
             for (i=0; i < pData->audioOut.count; ++i)
-            {
-#ifdef HAVE_JUCE
-                FloatVectorOperations::clear(outBuffer[i], frames);
-#else
-#endif
-            }
-
+                FLOAT_CLEAR(outBuffer[i], frames);
             return;
         }
 
+#if 0
         // --------------------------------------------------------------------------------------------------------
         // Handle events from different APIs
 
@@ -2363,12 +2399,14 @@ public:
         }
 
         CARLA_PROCESS_CONTINUE_CHECK;
+#endif
 
         // --------------------------------------------------------------------------------------------------------
         // Check if needs reset
 
         if (pData->needsReset)
         {
+#if 0
             uint8_t midiData[3] = { 0 };
 
             if (fEventsIn.ctrl != nullptr && (fEventsIn.ctrl->type & CARLA_EVENT_TYPE_MIDI) != 0)
@@ -2422,7 +2460,7 @@ public:
                     }
                 }
             }
-
+#endif
             //if (pData->latency > 0)
             {
                 //for (i=0; i < pData->audioIn.count; ++i)
@@ -2434,6 +2472,7 @@ public:
             CARLA_PROCESS_CONTINUE_CHECK;
         }
 
+#if 0
         // --------------------------------------------------------------------------------------------------------
         // TimeInfo
 
@@ -2568,7 +2607,9 @@ public:
 
             CARLA_PROCESS_CONTINUE_CHECK;
         }
+#endif
 
+#if 0
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
@@ -2949,11 +2990,13 @@ public:
         // Plugin processing (no events)
 
         else
+#endif
         {
             processSingle(inBuffer, outBuffer, frames, 0);
 
         } // End of Plugin processing (no events)
 
+#if 0
         CARLA_PROCESS_CONTINUE_CHECK;
 
         // --------------------------------------------------------------------------------------------------------
@@ -3027,6 +3070,7 @@ public:
                 }
             }
         }
+#endif
 
         // --------------------------------------------------------------------------------------------------------
         // Control Output
@@ -3039,7 +3083,7 @@ public:
 
             for (k=0; k < pData->param.count; ++k)
             {
-                if (pData->param.data[k].hints & PARAMETER_IS_INPUT)
+                if (pData->param.data[k].type != PARAMETER_OUTPUT)
                     continue;
 
                 if (pData->param.data[k].hints & PARAMETER_IS_STRICT_BOUNDS)
@@ -3071,7 +3115,7 @@ public:
         }
 #endif
 
-        fFirstActive = false;
+        //fFirstActive = false;
 
         // --------------------------------------------------------------------------------------------------------
     }
@@ -3135,6 +3179,7 @@ public:
 #endif
         }
 
+#if 0
         // --------------------------------------------------------------------------------------------------------
         // Set CV input buffers
 
@@ -3149,6 +3194,7 @@ public:
                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(cvIndex), 0, cvValue);
             }
         }
+#endif
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -3163,7 +3209,7 @@ public:
 
         for (k=0; k < pData->param.count; ++k)
         {
-            if ((pData->param.data[k].hints & PARAMETER_IS_INPUT) == 0)
+            if (pData->param.data[k].type != PARAMETER_INPUT)
                 continue;
 
             if (pData->param.data[k].hints & PARAMETER_IS_TRIGGER)
@@ -3265,6 +3311,7 @@ public:
         }
 #endif
 
+#if 0
         // --------------------------------------------------------------------------------------------------------
         // Set CV output buffers
 
@@ -3278,6 +3325,7 @@ public:
 #endif
             fParamBuffers[cvIndex] = cvValue;
         }
+#endif
 
         // --------------------------------------------------------------------------------------------------------
 
@@ -3304,6 +3352,7 @@ public:
             fAudioOutBuffers[i] = new float[newBufferSize];
         }
 
+#if 0
         for (uint32_t i=0; i < fCvIn.count; ++i)
         {
             if (CarlaEngineCVPort* const port = fCvIn.ports[i].port)
@@ -3329,6 +3378,7 @@ public:
                     fDescriptor->connect_port(fHandle2, fCvOut.ports[i].rindex, port->getBuffer());
             }
         }
+#endif
 
         if (fHandle2 == nullptr)
         {
@@ -3367,6 +3417,7 @@ public:
             }
         }
 
+#if 0
         if (fLv2Options.maxBufferSize != static_cast<int>(newBufferSize) || (fLv2Options.minBufferSize > 1 && fLv2Options.minBufferSize != static_cast<int>(newBufferSize)))
         {
             fLv2Options.maxBufferSize = newBufferSize;
@@ -3380,6 +3431,7 @@ public:
                 fExt.options->set(fHandle, &fLv2Options.optMaxBlockLenth);
             }
         }
+#endif
 
         carla_debug("Lv2Plugin::bufferSizeChanged(%i) - end", newBufferSize);
     }
@@ -3389,6 +3441,7 @@ public:
         CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
         carla_debug("Lv2Plugin::sampleRateChanged(%g) - start", newSampleRate);
 
+#if 0
         if (fLv2Options.sampleRate != newSampleRate)
         {
             fLv2Options.sampleRate = newSampleRate;
@@ -3396,12 +3449,13 @@ public:
             if (fExt.options != nullptr && fExt.options->set != nullptr)
                 fExt.options->set(fHandle, &fLv2Options.optSampleRate);
         }
+#endif
 
         for (uint32_t k=0; k < pData->param.count; ++k)
         {
             //if (pData->param.data[k].type == PARAMETER_SAMPLE_RATE)
             {
-                fParamBuffers[k] = newSampleRate;
+                fParamBuffers[k] = float(newSampleRate);
                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 1, fParamBuffers[k]);
             }
         }
@@ -3426,10 +3480,12 @@ public:
 
     void initBuffers() override
     {
+#if 0
         fEventsIn.initBuffers();
         fEventsOut.initBuffers();
         fCvIn.initBuffers();
         fCvOut.initBuffers();
+#endif
 
         CarlaPlugin::initBuffers();
     }
@@ -3474,16 +3530,19 @@ public:
             fParamBuffers = nullptr;
         }
 
+#if 0
         fEventsIn.clear();
         fEventsOut.clear();
         fCvIn.clear();
         fCvOut.clear();
+#endif
 
         CarlaPlugin::clearBuffers();
 
         carla_debug("Lv2Plugin::clearBuffers() - end");
     }
 
+#if 0
     // -------------------------------------------------------------------
     // Post-poned UI Stuff
 
@@ -3606,6 +3665,7 @@ public:
             }
         }
     }
+#endif
 
     // -------------------------------------------------------------------
 
@@ -3616,6 +3676,7 @@ protected:
 //         pData->engine->callback(CALLBACK_SHOW_GUI, pData->id, 0, 0, 0.0f, nullptr);
 //     }
 
+#if 0
     // -------------------------------------------------------------------
 
     LV2_URID getCustomURID(const char* const uri)
@@ -3986,6 +4047,7 @@ protected:
             }
         }
     }
+#endif
 
     // -------------------------------------------------------------------
 
@@ -4019,7 +4081,7 @@ protected:
 
     const char* getUiBridgePath(const LV2_Property type) const
     {
-        const EngineOptions& options(pData->engine->getOptions());
+        //const EngineOptions& options(pData->engine->getOptions());
 
         switch (type)
         {
@@ -4057,6 +4119,7 @@ protected:
         return true;
     }
 
+#if 0
     bool isUiResizable() const
     {
         for (uint32_t i=0; i < fUi.rdfDescriptor->FeatureCount; ++i)
@@ -4107,6 +4170,7 @@ protected:
             }
         }
     }
+#endif
 
     // -------------------------------------------------------------------
 
@@ -4133,8 +4197,8 @@ public:
         // ---------------------------------------------------------------
         // get plugin from lv2_rdf (lilv)
 
-        Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
-        lv2World.init();
+        //Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
+        //lv2World.getPlugin(uri);
 
         fRdfDescriptor = lv2_rdf_new(uri, true);
 
@@ -4153,6 +4217,7 @@ public:
             return false;
         }
 
+#if 0
         // ---------------------------------------------------------------
         // initialize options
 
@@ -4268,6 +4333,7 @@ public:
         // check if it's possible to use non-fixed buffer size
         if (! needsFixedBuffer())
             fFeatures[kFeatureIdBufSizeFixed]->URI = LV2_BUF_SIZE__boundedBlockLength;
+#endif
 
         // ---------------------------------------------------------------
         // get DLL main entry
@@ -4362,6 +4428,7 @@ public:
             }
         }
 
+#if 0
         // Check extensions
         for (uint32_t i=0; i < fRdfDescriptor->ExtensionCount; ++i)
         {
@@ -4376,6 +4443,7 @@ public:
             else
                 carla_stdout("Plugin has non-supported extension: '%s'", fRdfDescriptor->Extensions[i]);
         }
+#endif
 
         if (! canContinue)
         {
@@ -4436,9 +4504,11 @@ public:
                 pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
             }
 
+            // set identifier string
+            CarlaString identifier("V2/");
+            identifier += uri;
+
             // load settings
-            pData->idStr  = "LV2/";
-            pData->idStr += uri;
             pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
 
             // ignore settings, we need this anyway
@@ -4452,6 +4522,7 @@ public:
         if (fRdfDescriptor->UICount == 0)
             return true;
 
+#if 0
         // -----------------------------------------------------------
         // find more appropriate ui
 
@@ -4788,10 +4859,12 @@ public:
             fFeatures[kFeatureIdExternalUiOld]->URI  = LV2_EXTERNAL_UI_DEPRECATED_URI;
             fFeatures[kFeatureIdExternalUiOld]->data = uiExternalHostFt;
         }
+#endif
 
         return true;
     }
 
+#if 0
     // -------------------------------------------------------------------
 
     void handleTransferAtom(const uint32_t portIndex, const LV2_Atom* const atom)
@@ -4815,6 +4888,7 @@ public:
 
         fCustomURIDs.append(carla_strdup(uri));
     }
+#endif
 
     // -------------------------------------------------------------------
 
@@ -4829,6 +4903,7 @@ private:
     float** fAudioOutBuffers;
     float*  fParamBuffers;
 
+#if 0
     Lv2AtomQueue   fAtomQueueIn;
     Lv2AtomQueue   fAtomQueueOut;
     LV2_Atom_Forge fAtomForge;
@@ -4839,7 +4914,7 @@ private:
     Lv2PluginEventData fEventsOut;
     Lv2PluginOptions   fLv2Options;
 
-    List<const char*> fCustomURIDs;
+    LinkedList<const char*> fCustomURIDs;
 
     bool fFirstActive; // first process() call after activate()
     EngineTimeInfo fLastTimeInfo;
@@ -4884,7 +4959,9 @@ private:
         }
 
     } fUi;
+#endif
 
+#if 0
     // -------------------------------------------------------------------
     // Event Feature
 
@@ -5373,6 +5450,7 @@ private:
 
         ((Lv2Plugin*)user_data)->handleLilvSetPortValue(port_symbol, value, size, type);
     }
+#endif
 
     // -------------------------------------------------------------------
 
@@ -5380,7 +5458,6 @@ private:
 };
 
 // -------------------------------------------------------------------------------------------------------------------
-#endif
 
 #define lv2PluginPtr ((Lv2Plugin*)plugin)
 
@@ -5436,7 +5513,7 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newLV2({%p, \"%s\", \"%s\"})", init.engine, init.name, init.label);
 
-#if 0 //def WANT_LV2
+#ifdef WANT_LV2
     Lv2Plugin* const plugin(new Lv2Plugin(init.engine, init.id));
 
     if (! plugin->init(init.name, init.label))
