@@ -1062,7 +1062,8 @@ bool CarlaEngine::close()
     pData->nextAction.ready();
 
 #ifndef BUILD_BRIDGE
-    oscSend_control_exit();
+    if (pData->osc.isControlRegistered())
+        oscSend_control_exit();
 #endif
     pData->osc.close();
     pData->oscData = nullptr;

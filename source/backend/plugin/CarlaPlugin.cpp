@@ -943,7 +943,7 @@ void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool se
 #ifndef BUILD_BRIDGE
     const float value(active ? 1.0f : 0.0f);
 
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_ACTIVE, value);
 
     if (sendCallback)
@@ -969,7 +969,7 @@ void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool se
 
     pData->postProc.dryWet = fixedValue;
 
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_DRYWET, fixedValue);
 
     if (sendCallback)
@@ -987,7 +987,7 @@ void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool se
 
     pData->postProc.volume = fixedValue;
 
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_VOLUME, fixedValue);
 
     if (sendCallback)
@@ -1005,7 +1005,7 @@ void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bo
 
     pData->postProc.balanceLeft = fixedValue;
 
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_BALANCE_LEFT, fixedValue);
 
     if (sendCallback)
@@ -1023,7 +1023,7 @@ void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const b
 
     pData->postProc.balanceRight = fixedValue;
 
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_BALANCE_RIGHT, fixedValue);
 
     if (sendCallback)
@@ -1041,7 +1041,7 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
 
     pData->postProc.panning = fixedValue;
 
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_PANNING, fixedValue);
 
     if (sendCallback)
@@ -1064,7 +1064,7 @@ void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const
 #ifndef BUILD_BRIDGE
     const float ctrlf(channel);
 
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_CTRL_CHANNEL, ctrlf);
 
     if (sendCallback)
@@ -1098,7 +1098,7 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
     if (sendGui)
         uiParameterChange(parameterId, value);
 
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, parameterId, value);
 #endif
 
@@ -1163,7 +1163,7 @@ void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, uint8_t ch
     pData->param.data[parameterId].midiChannel = channel;
 
 #ifndef BUILD_BRIDGE
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_midi_channel(pData->id, parameterId, channel);
 
     if (sendCallback)
@@ -1192,7 +1192,7 @@ void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, int16_t cc, con
     pData->param.data[parameterId].midiCC = cc;
 
 #ifndef BUILD_BRIDGE
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_midi_cc(pData->id, parameterId, cc);
 
     if (sendCallback)
@@ -1298,7 +1298,9 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
     pData->prog.current = index;
 
 #ifndef BUILD_BRIDGE
-    if (sendOsc)
+    const bool reallySendOsc(sendOsc && pData->engine->isOscControlRegistered());
+
+    if (reallySendOsc)
         pData->engine->oscSend_control_set_current_program(pData->id, index);
 #endif
 
@@ -1322,13 +1324,16 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
 
             pData->param.ranges[i].def = value;
 
-            if (sendOsc || sendCallback)
-            {
 #ifndef BUILD_BRIDGE
+            if (reallySendOsc)
+            {
                 pData->engine->oscSend_control_set_default_value(pData->id, i, value);
                 pData->engine->oscSend_control_set_parameter_value(pData->id, i, value);
+            }
 #endif
 
+            if (sendCallback)
+            {
                 pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, i, 0, value, nullptr);
                 pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, i, 0, value, nullptr);
             }
@@ -1340,6 +1345,7 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
 
     // unused
     (void)sendGui;
+    (void)sendOsc;
 #endif
 }
 
@@ -1355,7 +1361,9 @@ void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const 
     pData->midiprog.current = index;
 
 #ifndef BUILD_BRIDGE
-    if (sendOsc)
+    const bool reallySendOsc(sendOsc && pData->engine->isOscControlRegistered());
+
+    if (reallySendOsc)
         pData->engine->oscSend_control_set_current_midi_program(pData->id, index);
 #endif
 
@@ -1378,13 +1386,16 @@ void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const 
 
             pData->param.ranges[i].def = value;
 
-            if (sendOsc || sendCallback)
-            {
 #ifndef BUILD_BRIDGE
+            if (reallySendOsc)
+            {
                 pData->engine->oscSend_control_set_default_value(pData->id, i, value);
                 pData->engine->oscSend_control_set_parameter_value(pData->id, i, value);
+            }
 #endif
 
+            if (sendCallback)
+            {
                 pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, i, 0, value, nullptr);
                 pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, i, 0, value, nullptr);
             }
@@ -1396,6 +1407,7 @@ void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const 
 
     // unused
     (void)sendGui;
+    (void)sendOsc;
 #endif
 }
 
@@ -1775,7 +1787,7 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
             uiNoteOff(channel, note);
     }
 
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
     {
         if (velo > 0)
             pData->engine->oscSend_control_note_on(pData->id, channel, note, velo);
