@@ -251,7 +251,8 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
             elif prop == "build":
                 if value.isdigit(): pinfo['build'] = int(value)
             elif prop == "uri":
-                if value: pinfo['label'] = value
+                if value:
+                    pinfo['label'] = value
                 else:
                     # cannot use empty URIs
                     del pinfo
@@ -314,16 +315,16 @@ def checkPluginVST(filename, tool, isWine=False):
 def checkPluginAU(filename, tool):
     return runCarlaDiscovery(PLUGIN_AU, "AU", filename, tool)
 
-def checkPluginCSOUND(filename, tool):
-    return runCarlaDiscovery(PLUGIN_FILE_CSOUND, "CSOUND", filename, tool)
+def checkFileCSD(filename, tool):
+    return runCarlaDiscovery(PLUGIN_FILE_CSD, "CSD", filename, tool)
 
-def checkPluginGIG(filename, tool):
+def checkFileGIG(filename, tool):
     return runCarlaDiscovery(PLUGIN_FILE_GIG, "GIG", filename, tool)
 
-def checkPluginSF2(filename, tool):
+def checkFileSF2(filename, tool):
     return runCarlaDiscovery(PLUGIN_FILE_SF2, "SF2", filename, tool)
 
-def checkPluginSFZ(filename, tool):
+def checkFileSFZ(filename, tool):
     return runCarlaDiscovery(PLUGIN_FILE_SFZ, "SFZ", filename, tool)
 
 # ------------------------------------------------------------------------------------------------------------
@@ -348,7 +349,7 @@ class SearchPluginsThread(QThread):
         self.fCheckLV2    = False
         self.fCheckVST    = False
         self.fCheckAU     = False
-        self.fCheckCSOUND = False
+        self.fCheckCSD    = False
         self.fCheckGIG    = False
         self.fCheckSF2    = False
         self.fCheckSFZ    = False
@@ -382,13 +383,13 @@ class SearchPluginsThread(QThread):
         self.fCheckWin32   = win32
         self.fCheckWin64   = win64
 
-    def setSearchPluginTypes(self, ladspa, dssi, lv2, vst, au, csound, gig, sf2, sfz):
+    def setSearchPluginTypes(self, ladspa, dssi, lv2, vst, au, csd, gig, sf2, sfz):
         self.fCheckLADSPA = ladspa
         self.fCheckDSSI   = dssi
         self.fCheckLV2    = lv2
         self.fCheckVST    = vst
         self.fCheckAU     = au and MACOS
-        self.fCheckCSOUND = csound
+        self.fCheckCSD    = csd
         self.fCheckGIG    = gig
         self.fCheckSF2    = sf2
         self.fCheckSFZ    = sfz
