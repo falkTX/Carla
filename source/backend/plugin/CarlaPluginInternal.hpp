@@ -786,81 +786,19 @@ struct CarlaPluginProtectedData {
     // -------------------------------------------------------------------
     // Buffer functions
 
-    void clearBuffers()
-    {
-        if (latencyBuffers != nullptr)
-        {
-            CARLA_ASSERT(audioIn.count > 0);
+    void clearBuffers();
 
-            for (uint32_t i=0; i < audioIn.count; ++i)
-            {
-                CARLA_SAFE_ASSERT_CONTINUE(latencyBuffers[i] != nullptr);
-
-                delete[] latencyBuffers[i];
-                latencyBuffers[i] = nullptr;
-            }
-
-            delete[] latencyBuffers;
-            latencyBuffers = nullptr;
-            latency = 0;
-        }
-        else
-        {
-            CARLA_ASSERT(latency == 0);
-        }
-
-        audioIn.clear();
-        audioOut.clear();
-        param.clear();
-        event.clear();
-    }
-
-    void recreateLatencyBuffers()
-    {
-        if (latencyBuffers != nullptr)
-        {
-            CARLA_ASSERT(audioIn.count > 0);
-
-            for (uint32_t i=0; i < audioIn.count; ++i)
-            {
-                CARLA_SAFE_ASSERT_CONTINUE(latencyBuffers[i] != nullptr);
-
-                delete[] latencyBuffers[i];
-                latencyBuffers[i] = nullptr;
-            }
-
-            delete[] latencyBuffers;
-            latencyBuffers = nullptr;
-        }
-
-        if (audioIn.count > 0 && latency > 0)
-        {
-            latencyBuffers = new float*[audioIn.count];
-
-            for (uint32_t i=0; i < audioIn.count; ++i)
-            {
-                latencyBuffers[i] = new float[latency];
-                FLOAT_CLEAR(latencyBuffers[i], latency);
-            }
-        }
-    }
+    void recreateLatencyBuffers();
 
     // -------------------------------------------------------------------
     // Post-poned events
 
-    void postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const float value3)
-    {
-        CARLA_SAFE_ASSERT_RETURN(type != kPluginPostRtEventNull,);
-
-        PluginPostRtEvent event = { type, value1, value2, value3 };
-
-        postRtEvents.appendRT(event);
-    }
+    void postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const float value3);
 
     // -------------------------------------------------------------------
     // Library functions, see CarlaPlugin.cpp
 
-    void libError(const char* const filename);
+    const char* libError(const char* const filename);
 
     bool  libOpen(const char* const filename);
     bool  libClose();

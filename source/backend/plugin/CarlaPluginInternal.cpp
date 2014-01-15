@@ -106,9 +106,9 @@ void CarlaPluginProtectedData::postponeRtEvent(const PluginPostRtEventType type,
 
 static LibCounter sLibCounter;
 
-void* CarlaPluginProtectedData::libError(const char* const filename)
+const char* CarlaPluginProtectedData::libError(const char* const filename)
 {
-    lib_error(lib, filename);
+    return lib_error(filename);
 }
 
 bool CarlaPluginProtectedData::libOpen(const char* const filename)

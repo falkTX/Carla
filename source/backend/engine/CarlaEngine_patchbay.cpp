@@ -146,7 +146,7 @@ EnginePatchbayBuffers::~EnginePatchbayBuffers()
     clear();
 }
 
-void clear()
+void EnginePatchbayBuffers::clear()
 {
 }
 

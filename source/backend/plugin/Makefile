@@ -10,6 +10,7 @@ include ../Makefile.mk
 
 OBJS = \
 	CarlaPlugin.cpp.o \
+	CarlaPluginInternal.cpp.o \
 	CarlaPluginThread.cpp.o \
 	BridgePlugin.cpp.o \
 	NativePlugin.cpp.o \
