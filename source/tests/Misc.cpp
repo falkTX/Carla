@@ -109,14 +109,14 @@ void testControlEventDump()
     assert(data[1] == MAX_MIDI_VALUE-1);
 
     // test regular all-sound-off event
-    e.type  = kEngineControlEventTypeAllSoundOff;
+    e.type = kEngineControlEventTypeAllSoundOff;
     e.dumpToMidiData(0, size, data);
     assert(size == 2);
     assert(data[0] == MIDI_STATUS_CONTROL_CHANGE);
     assert(data[1] == MIDI_CONTROL_ALL_SOUND_OFF);
 
     // test regular all-notes-off event
-    e.type  = kEngineControlEventTypeAllNotesOff;
+    e.type = kEngineControlEventTypeAllNotesOff;
     e.dumpToMidiData(0, size, data);
     assert(size == 2);
     assert(data[0] == MIDI_STATUS_CONTROL_CHANGE);
@@ -137,8 +137,118 @@ void testControlEventDump()
     assert(MIDI_GET_CHANNEL_FROM_DATA(data) == 15);
 }
 
+void testEventMidiFill()
+{
+    uint8_t size;
+    uint8_t data[25];
+
+    //EngineControlEvent c;
+    EngineEvent e;
+    e.time = 0;
+
+    // test safety first
+    e.fillFromMidiData(0, data);
+    assert(e.type == kEngineEventTypeNull);
+    assert(e.channel == 0);
+    e.fillFromMidiData(50, nullptr);
+    assert(e.type == kEngineEventTypeNull);
+    assert(e.channel == 0);
+
+    // test bad midi event
+    size = 3;
+    data[0] = 0x45;
+    data[1] = 100;
+    data[2] = 100;
+    e.fillFromMidiData(size, data);
+    assert(e.type == kEngineEventTypeNull);
+    assert(e.channel == 0);
+
+    // test simple midi event
+    size = 3;
+    data[0] = 0x82; // MIDI_STATUS_NOTE_OFF + 2
+    data[1] = 127;
+    data[2] = 127;
+    e.fillFromMidiData(size, data);
+    assert(e.type == kEngineEventTypeMidi);
+    assert(e.channel == 2);
+    assert(e.midi.size == size);
+    assert(e.midi.dataExt == nullptr);
+    assert(e.midi.data[0] == 0x80); // without channel bit
+    assert(e.midi.data[1] == data[1]);
+    assert(e.midi.data[2] == data[2]);
+
+    // test sysex midi event
+    size = 11;
+    data[ 0] = 0xF0;
+    data[ 1] = 0x41;
+    data[ 2] = 0x10;
+    data[ 3] = 0x42;
+    data[ 4] = 0x12;
+    data[ 5] = 0x40;
+    data[ 6] = 0x00;
+    data[ 7] = 0x7F;
+    data[ 8] = 0x00;
+    data[ 9] = 0x41;
+    data[10] = 0xF7;
+    e.fillFromMidiData(size, data);
+    assert(e.type == kEngineEventTypeMidi);
+    assert(e.channel == 0);
+    assert(e.midi.size == size);
+    assert(e.midi.dataExt == data);
+    assert(e.midi.data[0] == 0);
+    assert(e.midi.data[1] == 0);
+    assert(e.midi.data[2] == 0);
+    assert(e.midi.data[3] == 0);
+
+    // test all-sound-off event
+    size = 2;
+    data[0] = 0xB5; // MIDI_STATUS_CONTROL_CHANGE + 5
+    data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
+    e.fillFromMidiData(size, data);
+    assert(e.type == kEngineEventTypeControl);
+    assert(e.channel == 5);
+    assert(e.ctrl.type == kEngineControlEventTypeAllSoundOff);
+    assert(e.ctrl.param == 0);
+    assert(e.ctrl.value == 0.0f);
+
+    // test all-notes-off event
+    size = 2;
+    data[0] = 0xBF; // MIDI_STATUS_CONTROL_CHANGE + 15
+    data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
+    e.fillFromMidiData(size, data);
+    assert(e.type == kEngineEventTypeControl);
+    assert(e.channel == 15);
+    assert(e.ctrl.type == kEngineControlEventTypeAllNotesOff);
+    assert(e.ctrl.param == 0);
+    assert(e.ctrl.value == 0.0f);
+
+    // test midi-bank event
+    size = 3;
+    data[0] = 0xB1; // MIDI_STATUS_CONTROL_CHANGE + 1
+    data[1] = MIDI_CONTROL_BANK_SELECT;
+    data[2] = 123;
+    e.fillFromMidiData(size, data);
+    assert(e.type == kEngineEventTypeControl);
+    assert(e.channel == 1);
+    assert(e.ctrl.type == kEngineControlEventTypeMidiBank);
+    assert(e.ctrl.param == 123);
+    assert(e.ctrl.value == 0.0f);
+
+    // test midi-program event
+    size = 2;
+    data[0] = MIDI_STATUS_PROGRAM_CHANGE;
+    data[1] = 77;
+    e.fillFromMidiData(size, data);
+    assert(e.type == kEngineEventTypeControl);
+    assert(e.channel == 0);
+    assert(e.ctrl.type == kEngineControlEventTypeMidiProgram);
+    assert(e.ctrl.param == 77);
+    assert(e.ctrl.value == 0.0f);
+}
+
 int main()
 {
     testControlEventDump();
+    testEventMidiFill();
     return 0;
 }

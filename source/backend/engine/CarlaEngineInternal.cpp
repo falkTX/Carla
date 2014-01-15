@@ -100,6 +100,13 @@ void EngineControlEvent::dumpToMidiData(const uint8_t channel, uint8_t& size, ui
 
 void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data) noexcept
 {
+    if (size == 0 || data == nullptr || data[0] < MIDI_STATUS_NOTE_OFF)
+    {
+        type    = kEngineEventTypeNull;
+        channel = 0;
+        return;
+    }
+
     // get channel
     channel = uint8_t(MIDI_GET_CHANNEL_FROM_DATA(data));
 
@@ -142,7 +149,7 @@ void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data
         {
             CARLA_SAFE_ASSERT_INT2(size == 3, size, midiControl);
 
-            const uint8_t midiValue(data[2]);
+            const uint8_t midiValue(carla_fixValue<uint8_t>(0, 127, data[2])); // ensures 0.0<->1.0 value range
 
             ctrl.type  = kEngineControlEventTypeParameter;
             ctrl.param = midiControl;
