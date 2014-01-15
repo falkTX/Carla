@@ -16,11 +16,9 @@
  */
 
 #include "CarlaPluginInternal.hpp"
-#include "CarlaLibCounter.hpp"
 
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>
-#include <QtCore/QSettings>
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -59,129 +57,50 @@ struct ParamSymbol {
 #endif
 };
 
-// -------------------------------------------------------------------
-// Library functions, defined in CarlaPluginInternal.hpp
+// -----------------------------------------------------------------------
 
-static LibCounter sLibCounter;
-
-bool CarlaPluginProtectedData::libOpen(const char* const filename)
+CarlaPlugin* CarlaPlugin::newGIG(const Initializer& init, const bool use16Outs)
 {
-    lib = sLibCounter.open(filename);
-    return (lib != nullptr);
+    carla_debug("CarlaPlugin::newGIG({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
+#ifdef WANT_LINUXSAMPLER
+    return newLinuxSampler(init, "GIG", use16Outs);
+#else
+    init.engine->setLastError("GIG support not available");
+    return nullptr;
+
+    // unused
+    (void)use16Outs;
+#endif
 }
 
-bool CarlaPluginProtectedData::libClose()
+CarlaPlugin* CarlaPlugin::newSF2(const Initializer& init, const bool use16Outs)
 {
-    const bool ret = sLibCounter.close(lib);
-    lib = nullptr;
-    return ret;
+    carla_debug("CarlaPlugin::newSF2({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
+#if defined(WANT_FLUIDSYNTH)
+    return newFluidSynth(init, use16Outs);
+#elif defined(WANT_LINUXSAMPLER)
+    return newLinuxSampler(init, "SF2", use16Outs);
+#else
+    init.engine->setLastError("SF2 support not available");
+    return nullptr;
+
+    // unused
+    (void)use16Outs;
+#endif
 }
 
-void* CarlaPluginProtectedData::libSymbol(const char* const symbol)
+CarlaPlugin* CarlaPlugin::newSFZ(const Initializer& init, const bool use16Outs)
 {
-    return lib_symbol(lib, symbol);
-}
+    carla_debug("CarlaPlugin::newSFZ({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
+#ifdef WANT_LINUXSAMPLER
+    return newLinuxSampler(init, "SFZ", use16Outs);
+#else
+    init.engine->setLastError("SFZ support not available");
+    return nullptr;
 
-bool CarlaPluginProtectedData::uiLibOpen(const char* const filename)
-{
-    uiLib = sLibCounter.open(filename);
-    return (uiLib != nullptr);
-}
-
-bool CarlaPluginProtectedData::uiLibClose()
-{
-    const bool ret = sLibCounter.close(uiLib);
-    uiLib = nullptr;
-    return ret;
-}
-
-void* CarlaPluginProtectedData::uiLibSymbol(const char* const symbol)
-{
-    return lib_symbol(uiLib, symbol);
-}
-
-// -------------------------------------------------------------------
-// Settings functions, defined in CarlaPluginInternal.hpp
-
-void CarlaPluginProtectedData::saveSetting(const unsigned int option, const bool yesNo)
-{
-    CARLA_SAFE_ASSERT_RETURN(identifier != nullptr && identifier[0] != '\0',);
-
-    QSettings settings("falkTX", "CarlaPluginSettings");
-    settings.beginGroup(identifier);
-
-    switch (option)
-    {
-    case PLUGIN_OPTION_FIXED_BUFFERS:
-        settings.setValue("FixedBuffers", yesNo);
-        break;
-    case PLUGIN_OPTION_FORCE_STEREO:
-        settings.setValue("ForceStereo", yesNo);
-        break;
-    case PLUGIN_OPTION_MAP_PROGRAM_CHANGES:
-        settings.setValue("MapProgramChanges", yesNo);
-        break;
-    case PLUGIN_OPTION_USE_CHUNKS:
-        settings.setValue("UseChunks", yesNo);
-        break;
-    case PLUGIN_OPTION_SEND_CONTROL_CHANGES:
-        settings.setValue("SendControlChanges", yesNo);
-        break;
-    case PLUGIN_OPTION_SEND_CHANNEL_PRESSURE:
-        settings.setValue("SendChannelPressure", yesNo);
-        break;
-    case PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH:
-        settings.setValue("SendNoteAftertouch", yesNo);
-        break;
-    case PLUGIN_OPTION_SEND_PITCHBEND:
-        settings.setValue("SendPitchbend", yesNo);
-        break;
-    case PLUGIN_OPTION_SEND_ALL_SOUND_OFF:
-        settings.setValue("SendAllSoundOff", yesNo);
-        break;
-    default:
-        break;
-    }
-
-    settings.endGroup();
-}
-
-unsigned int CarlaPluginProtectedData::loadSettings(const unsigned int options, const unsigned int availOptions)
-{
-    CARLA_SAFE_ASSERT_RETURN(identifier != nullptr && identifier[0] != '\0', 0x0);
-
-    QSettings settings("falkTX", "CarlaPluginSettings");
-    settings.beginGroup(identifier);
-
-    unsigned int newOptions = 0x0;
-
-    #define CHECK_AND_SET_OPTION(STR, BIT)                              \
-    if ((availOptions & BIT) != 0 || BIT == PLUGIN_OPTION_FORCE_STEREO) \
-    {                                                                   \
-        if (settings.contains(STR))                                     \
-        {                                                               \
-            if (settings.value(STR, (options & BIT) != 0).toBool())     \
-                newOptions |= BIT;                                      \
-        }                                                               \
-        else if (options & BIT)                                         \
-            newOptions |= BIT;                                          \
-    }
-
-    CHECK_AND_SET_OPTION("FixedBuffers", PLUGIN_OPTION_FIXED_BUFFERS);
-    CHECK_AND_SET_OPTION("ForceStereo", PLUGIN_OPTION_FORCE_STEREO);
-    CHECK_AND_SET_OPTION("MapProgramChanges", PLUGIN_OPTION_MAP_PROGRAM_CHANGES);
-    CHECK_AND_SET_OPTION("UseChunks", PLUGIN_OPTION_USE_CHUNKS);
-    CHECK_AND_SET_OPTION("SendControlChanges", PLUGIN_OPTION_SEND_CONTROL_CHANGES);
-    CHECK_AND_SET_OPTION("SendChannelPressure", PLUGIN_OPTION_SEND_CHANNEL_PRESSURE);
-    CHECK_AND_SET_OPTION("SendNoteAftertouch", PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH);
-    CHECK_AND_SET_OPTION("SendPitchbend", PLUGIN_OPTION_SEND_PITCHBEND);
-    CHECK_AND_SET_OPTION("SendAllSoundOff", PLUGIN_OPTION_SEND_ALL_SOUND_OFF);
-
-    #undef CHECK_AND_SET_OPTION
-
-    settings.endGroup();
-
-    return newOptions;
+    // unused
+    (void)use16Outs;
+#endif
 }
 
 // -------------------------------------------------------------------

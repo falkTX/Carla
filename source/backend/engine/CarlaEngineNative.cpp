@@ -1,6 +1,6 @@
 /*
- * Carla Plugin Engine (Native)
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Carla Plugin Host
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -25,10 +25,16 @@
 #endif
 
 #include "CarlaEngineInternal.hpp"
+#include "CarlaPlugin.hpp"
+
+#include "CarlaNative.hpp"
 #include "CarlaPipeUtils.hpp"
 #include "CarlaStateUtils.hpp"
 
-#include "CarlaNative.hpp"
+#ifdef HAVE_JUCE
+# include "juce_audio_basics.h"
+using juce::FloatVectorOperations;
+#endif
 
 #include <QtCore/QTextStream>
 
@@ -1053,8 +1059,8 @@ protected:
         // ---------------------------------------------------------------
         // initialize events
 
-        carla_zeroStruct<EngineEvent>(pData->bufEvents.in,  kEngineMaxInternalEventCount);
-        carla_zeroStruct<EngineEvent>(pData->bufEvents.out, kEngineMaxInternalEventCount);
+        carla_zeroStruct<EngineEvent>(pData->bufEvents.in,  EngineEvent::kMaxInternalCount);
+        carla_zeroStruct<EngineEvent>(pData->bufEvents.out, EngineEvent::kMaxInternalCount);
 
         // ---------------------------------------------------------------
         // events input (before processing)
@@ -1062,7 +1068,7 @@ protected:
         {
             uint32_t engineEventIndex = 0;
 
-            for (uint32_t i=0; i < midiEventCount && engineEventIndex < kEngineMaxInternalEventCount; ++i)
+            for (uint32_t i=0; i < midiEventCount && engineEventIndex < EngineEvent::kMaxInternalCount; ++i)
             {
                 const NativeMidiEvent& midiEvent(midiEvents[i]);
                 EngineEvent&           engineEvent(pData->bufEvents.in[engineEventIndex++]);
@@ -1070,7 +1076,7 @@ protected:
                 engineEvent.time = midiEvent.time;
                 engineEvent.fillFromMidiData(midiEvent.size, midiEvent.data);
 
-                if (engineEventIndex >= kEngineMaxInternalEventCount)
+                if (engineEventIndex >= EngineEvent::kMaxInternalCount)
                     break;
             }
         }
@@ -1106,12 +1112,12 @@ protected:
         // ---------------------------------------------------------------
         // events output (after processing)
 
-        carla_zeroStruct<EngineEvent>(pData->bufEvents.in, kEngineMaxInternalEventCount);
+        carla_zeroStruct<EngineEvent>(pData->bufEvents.in, EngineEvent::kMaxInternalCount);
 
         {
             NativeMidiEvent midiEvent;
 
-            for (uint32_t i=0; i < kEngineMaxInternalEventCount; ++i)
+            for (uint32_t i=0; i < EngineEvent::kMaxInternalCount; ++i)
             {
                 const EngineEvent& engineEvent(pData->bufEvents.out[i]);
 

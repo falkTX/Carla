@@ -20,7 +20,6 @@
 #ifdef WANT_LADSPA
 
 #include "CarlaLadspaUtils.hpp"
-#include "CarlaLibUtils.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 

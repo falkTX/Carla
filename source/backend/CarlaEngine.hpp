@@ -1,6 +1,6 @@
 /*
- * Carla Engine API
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Carla Plugin Host
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,7 +19,6 @@
 #define CARLA_ENGINE_HPP_INCLUDED
 
 #include "CarlaBackend.h"
-#include "CarlaMIDI.h"
 
 #ifdef BUILD_BRIDGE
 struct CarlaOscData;
@@ -168,6 +167,9 @@ struct EngineControlEvent {
     uint16_t param;              //!< Parameter Id, midi bank or midi program.
     float    value;              //!< Parameter value, normalized to 0.0f<->1.0f.
 
+    /*!
+     * Dump control event as MIDI data.
+     */
     void dumpToMidiData(const uint8_t channel, uint8_t& size, uint8_t data[3]) const noexcept;
 };
 
@@ -192,6 +194,8 @@ struct EngineMidiEvent {
  * Engine event.
  */
 struct EngineEvent {
+    static const ushort kMaxInternalCount = 512; //!< Maximum pre-allocated events for rack and bridge modes
+
     EngineEventType type; //!< Event Type; either Control or MIDI
     uint32_t time;        //!< Time offset in frames
     uint8_t  channel;     //!< Channel, used for MIDI-related events
@@ -204,7 +208,10 @@ struct EngineEvent {
         EngineMidiEvent midi;
     };
 
-    void fillFromMidiData(const uint8_t size, const uint8_t* const data);
+    /*!
+     * Fill event from MIDI data.
+     */
+    void fillFromMidiData(const uint8_t size, const uint8_t* const data) noexcept;
 };
 
 /*!
@@ -229,47 +236,10 @@ struct EngineOptions {
     const char* binaryDir;
     const char* resourceDir;
 
-    EngineOptions()
-#ifdef CARLA_OS_LINUX
-        : processMode(ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS),
-          transportMode(ENGINE_TRANSPORT_MODE_JACK),
-#else
-        : processMode(ENGINE_PROCESS_MODE_CONTINUOUS_RACK),
-          transportMode(ENGINE_TRANSPORT_MODE_INTERNAL),
+#ifndef DOXYGEN
+    EngineOptions() noexcept;
+    ~EngineOptions();
 #endif
-          forceStereo(false),
-          preferPluginBridges(false),
-          preferUiBridges(true),
-          uisAlwaysOnTop(true),
-          maxParameters(MAX_DEFAULT_PARAMETERS),
-          uiBridgesTimeout(4000),
-          audioNumPeriods(2),
-          audioBufferSize(512),
-          audioSampleRate(44100),
-          audioDevice(nullptr),
-          binaryDir(nullptr),
-          resourceDir(nullptr) {}
-
-    ~EngineOptions()
-    {
-        if (audioDevice != nullptr)
-        {
-            delete[] audioDevice;
-            audioDevice = nullptr;
-        }
-
-        if (binaryDir != nullptr)
-        {
-            delete[] binaryDir;
-            binaryDir = nullptr;
-        }
-
-        if (resourceDir != nullptr)
-        {
-            delete[] resourceDir;
-            resourceDir = nullptr;
-        }
-    }
 };
 
 /*!
@@ -287,15 +257,9 @@ struct EngineTimeInfoBBT {
     double ticksPerBeat;
     double beatsPerMinute;
 
-    EngineTimeInfoBBT() noexcept
-        : bar(0),
-          beat(0),
-          tick(0),
-          barStartTick(0.0),
-          beatsPerBar(0.0f),
-          beatType(0.0f),
-          ticksPerBeat(0.0),
-          beatsPerMinute(0.0) {}
+#ifndef DOXYGEN
+    EngineTimeInfoBBT() noexcept;
+#endif
 };
 
 /*!
@@ -310,36 +274,18 @@ struct EngineTimeInfo {
     uint     valid;
     EngineTimeInfoBBT bbt;
 
-    EngineTimeInfo() noexcept
-        : playing(false),
-          frame(0),
-          usecs(0),
-          valid(0x0) {}
+    /*!
+     * Clear.
+     */
+    void clear() noexcept;
 
-    void clear() noexcept
-    {
-        playing = false;
-        frame   = 0;
-        usecs   = 0;
-        valid   = 0x0;
-    }
+#ifndef DOXYGEN
+    EngineTimeInfo() noexcept;
 
     // quick operator, doesn't check all values
-    bool operator==(const EngineTimeInfo& timeInfo) const noexcept
-    {
-        if (timeInfo.playing != playing || timeInfo.frame != frame || timeInfo.valid != valid)
-            return false;
-        if ((valid & kValidBBT) == 0)
-            return true;
-        if (timeInfo.bbt.beatsPerMinute != bbt.beatsPerMinute)
-            return false;
-        return true;
-    }
-
-    bool operator!=(const EngineTimeInfo& timeInfo) const noexcept
-    {
-        return !operator==(timeInfo);
-    }
+    bool operator==(const EngineTimeInfo& timeInfo) const noexcept;
+    bool operator!=(const EngineTimeInfo& timeInfo) const noexcept;
+#endif
 };
 
 // -----------------------------------------------------------------------
@@ -532,18 +478,18 @@ public:
      * Get the number of events present in the buffer.
      * \note You must only call this for input ports.
      */
-    virtual uint32_t getEventCount() const;
+    virtual uint32_t getEventCount() const noexcept;
 
     /*!
      * Get the event at \a index.
      * \note You must only call this for input ports.
      */
-    virtual const EngineEvent& getEvent(const uint32_t index);
+    virtual const EngineEvent& getEvent(const uint32_t index) noexcept;
 
     /*!
      * Get the event at \a index, faster unchecked version.
      */
-    virtual const EngineEvent& getEventUnchecked(const uint32_t index);
+    virtual const EngineEvent& getEventUnchecked(const uint32_t index) noexcept;
 
     /*!
      * Write a control event into the buffer.\n
@@ -555,10 +501,7 @@ public:
     /*!
      * Write a control event into the buffer, overloaded call.
      */
-    bool writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEvent& ctrl)
-    {
-        return writeControlEvent(time, channel, ctrl.type, ctrl.param, ctrl.value);
-    }
+    bool writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEvent& ctrl);
 
     /*!
      * Write a MIDI event into the buffer.\n
@@ -570,18 +513,12 @@ public:
     /*!
      * Write a MIDI event into the buffer, overloaded call.
      */
-    bool writeMidiEvent(const uint32_t time, const uint8_t size, const uint8_t* const data)
-    {
-        return writeMidiEvent(time, uint8_t(MIDI_GET_CHANNEL_FROM_DATA(data)), 0, size, data);
-    }
+    bool writeMidiEvent(const uint32_t time, const uint8_t size, const uint8_t* const data);
 
     /*!
      * Write a MIDI event into the buffer, overloaded call.
      */
-    bool writeMidiEvent(const uint32_t time, const uint8_t channel, const EngineMidiEvent& midi)
-    {
-        return writeMidiEvent(time, channel, midi.port, midi.size, midi.data);
-    }
+    bool writeMidiEvent(const uint32_t time, const uint8_t channel, const EngineMidiEvent& midi);
 
 #ifndef DOXYGEN
 protected:
@@ -1103,11 +1040,22 @@ protected:
     void setPluginPeaks(const unsigned int pluginId, float const inPeaks[2], float const outPeaks[2]) noexcept;
 
     // -------------------------------------------------------------------
+    // Patchbay stuff
 
+    /*!
+     * Called from patchbayRefresh() after all rack ports are in place.
+     */
+    void handleRackConnectionsRefresh();
+
+    /*!
+     * Virtual functions for handling MIDI ports in the rack patchbay.
+     */
     virtual bool connectRackMidiInPort(const int)     { return false; }
     virtual bool connectRackMidiOutPort(const int)    { return false; }
     virtual bool disconnectRackMidiInPort(const int)  { return false; }
     virtual bool disconnectRackMidiOutPort(const int) { return false; }
+    virtual uint getMidiConnectionsCount(const bool)  { return 0; }
+    virtual uint getMidiConnectionPortId(const uint)  { return 0; }
 
     // -------------------------------------------------------------------
 
@@ -1133,17 +1081,17 @@ private:
     // -------------------------------------------------------------------
     // Engine initializers
 
-    // jack
+    // JACK
     static CarlaEngine*       newJack();
 
-    // rtaudio
+    // RtAudio
     static CarlaEngine*       newRtAudio(const AudioApi api);
     static unsigned int       getRtAudioApiCount();
     static const char*        getRtAudioApiName(const unsigned int index);
     static const char* const* getRtAudioApiDeviceNames(const unsigned int index);
     static const EngineDriverDeviceInfo* getRtAudioDeviceInfo(const unsigned int index, const char* const deviceName);
 
-    // juce
+    // Juce
     static CarlaEngine*       newJuce(const AudioApi api);
     static unsigned int       getJuceApiCount();
     static const char*        getJuceApiName(const unsigned int index);
@@ -1152,6 +1100,7 @@ private:
 
 #ifdef BUILD_BRIDGE
 public:
+    // Bridge
     static CarlaEngine* newBridge(const char* const audioBaseName, const char* const controlBaseName);
 
     // -------------------------------------------------------------------

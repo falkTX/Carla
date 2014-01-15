@@ -10,6 +10,11 @@ include ../Makefile.mk
 
 OBJS = \
 	CarlaEngine.cpp.o \
+	CarlaEngine_data.cpp.o \
+	CarlaEngine_internal.cpp.o \
+	CarlaEngine_osc.cpp.o \
+	CarlaEngine_patchbay.cpp.o \
+	CarlaEngine_ports.cpp.o \
 	CarlaEngineOsc.cpp.o \
 	CarlaEngineThread.cpp.o
 

@@ -1,6 +1,6 @@
 /*
- * Carla Engine
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Carla Plugin Host
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,15 +21,8 @@
 #include "CarlaEngine.hpp"
 #include "CarlaEngineOsc.hpp"
 #include "CarlaEngineThread.hpp"
-#include "CarlaPlugin.hpp"
 
 #include "CarlaMutex.hpp"
-#include "LinkedList.hpp"
-
-#ifdef HAVE_JUCE
-# include "juce_audio_basics.h"
-using juce::FloatVectorOperations;
-#endif
 
 // -----------------------------------------------------------------------
 // Engine helper macro, sets lastError and returns false/NULL
@@ -57,114 +50,6 @@ CARLA_BACKEND_START_NAMESPACE
 #if 0
 } // Fix editor indentation
 #endif
-
-// -----------------------------------------------------------------------
-
-static inline
-const char* EngineType2Str(const EngineType type) noexcept
-{
-    switch (type)
-    {
-    case kEngineTypeNull:
-        return "kEngineTypeNull";
-    case kEngineTypeJack:
-        return "kEngineTypeJack";
-    case kEngineTypeJuce:
-        return "kEngineTypeJuce";
-    case kEngineTypeRtAudio:
-        return "kEngineTypeRtAudio";
-    case kEngineTypePlugin:
-        return "kEngineTypePlugin";
-    case kEngineTypeBridge:
-        return "kEngineTypeBridge";
-    }
-
-    carla_stderr("CarlaBackend::EngineType2Str(%i) - invalid type", type);
-    return nullptr;
-}
-
-static inline
-const char* EnginePortType2Str(const EnginePortType type) noexcept
-{
-    switch (type)
-    {
-    case kEnginePortTypeNull:
-        return "kEnginePortTypeNull";
-    case kEnginePortTypeAudio:
-        return "kEnginePortTypeAudio";
-    case kEnginePortTypeCV:
-        return "kEnginePortTypeCV";
-    case kEnginePortTypeEvent:
-        return "kEnginePortTypeEvent";
-    }
-
-    carla_stderr("CarlaBackend::EnginePortType2Str(%i) - invalid type", type);
-    return nullptr;
-}
-
-static inline
-const char* EngineEventType2Str(const EngineEventType type) noexcept
-{
-    switch (type)
-    {
-    case kEngineEventTypeNull:
-        return "kEngineEventTypeNull";
-    case kEngineEventTypeControl:
-        return "kEngineEventTypeControl";
-    case kEngineEventTypeMidi:
-        return "kEngineEventTypeMidi";
-    }
-
-    carla_stderr("CarlaBackend::EngineEventType2Str(%i) - invalid type", type);
-    return nullptr;
-}
-
-static inline
-const char* EngineControlEventType2Str(const EngineControlEventType type) noexcept
-{
-    switch (type)
-    {
-    case kEngineControlEventTypeNull:
-        return "kEngineNullEvent";
-    case kEngineControlEventTypeParameter:
-        return "kEngineControlEventTypeParameter";
-    case kEngineControlEventTypeMidiBank:
-        return "kEngineControlEventTypeMidiBank";
-    case kEngineControlEventTypeMidiProgram:
-        return "kEngineControlEventTypeMidiProgram";
-    case kEngineControlEventTypeAllSoundOff:
-        return "kEngineControlEventTypeAllSoundOff";
-    case kEngineControlEventTypeAllNotesOff:
-        return "kEngineControlEventTypeAllNotesOff";
-    }
-
-    carla_stderr("CarlaBackend::EngineControlEventType2Str(%i) - invalid type", type);
-    return nullptr;
-}
-
-// -----------------------------------------------------------------------
-
-const unsigned short kEngineMaxInternalEventCount = 512;
-
-enum EnginePostAction {
-    kEnginePostActionNull,
-    kEnginePostActionZeroCount,
-    kEnginePostActionRemovePlugin,
-    kEnginePostActionSwitchPlugins
-};
-
-struct EnginePluginData {
-    CarlaPlugin* plugin;
-    float insPeak[2];
-    float outsPeak[2];
-
-    void clear() noexcept
-    {
-        plugin = nullptr;
-        insPeak[0] = insPeak[1] = 0.0f;
-        outsPeak[0] = outsPeak[1] = 0.0f;
-    }
-};
 
 // -----------------------------------------------------------------------
 
@@ -200,101 +85,77 @@ struct ConnectionToId {
 
 // -----------------------------------------------------------------------
 
-struct EngineRackBuffers {
-    float* in[2];
-    float* out[2];
+struct EngineRackBuffers;
+struct EnginePatchbayBuffers;
 
-    // connections stuff
-    LinkedList<uint> connectedIns[2];
-    LinkedList<uint> connectedOuts[2];
-    CarlaMutex connectLock;
+struct InternalAudio {
+    bool isReady;
+    bool usePatchbay;
 
-    int lastConnectionId;
-    LinkedList<ConnectionToId> usedConnections;
+    uint inCount;
+    uint outCount;
 
-    EngineRackBuffers(const uint32_t bufferSize)
-        : lastConnectionId(0)
-    {
-        resize(bufferSize);
-    }
+    union {
+        EngineRackBuffers*     rack;
+        EnginePatchbayBuffers* patchbay;
+    };
 
-    ~EngineRackBuffers()
-    {
-        clear();
-    }
-
-    void clear()
-    {
-        lastConnectionId = 0;
-
-        if (in[0] != nullptr)
-        {
-            delete[] in[0];
-            in[0] = nullptr;
-        }
-
-        if (in[1] != nullptr)
-        {
-            delete[] in[1];
-            in[1] = nullptr;
-        }
-
-        if (out[0] != nullptr)
-        {
-            delete[] out[0];
-            out[0] = nullptr;
-        }
-
-        if (out[1] != nullptr)
-        {
-            delete[] out[1];
-            out[1] = nullptr;
-        }
-
-        connectedIns[0].clear();
-        connectedIns[1].clear();
-        connectedOuts[0].clear();
-        connectedOuts[1].clear();
-        usedConnections.clear();
-    }
-
-    void resize(const uint32_t bufferSize)
-    {
-        if (bufferSize > 0)
-        {
-            in[0]  = new float[bufferSize];
-            in[1]  = new float[bufferSize];
-            out[0] = new float[bufferSize];
-            out[1] = new float[bufferSize];
-        }
-        else
-        {
-            in[0]  = nullptr;
-            in[1]  = nullptr;
-            out[0] = nullptr;
-            out[1] = nullptr;
-        }
-    }
+    InternalAudio() noexcept;
+    ~InternalAudio() noexcept;
+    void initPatchbay() noexcept;
+    void clear();
+    void create(const uint32_t bufferSize);
+    void resize(const uint32_t bufferSize);
 };
 
-struct EnginePatchbayBuffers {
-    EnginePatchbayBuffers(const uint32_t bufferSize)
-    {
-        resize(bufferSize);
-    }
+// -----------------------------------------------------------------------
 
-    ~EnginePatchbayBuffers()
-    {
-        clear();
-    }
+struct InternalEvents {
+    EngineEvent* in;
+    EngineEvent* out;
 
-    void clear()
-    {
-    }
+    InternalEvents() noexcept;
+    ~InternalEvents() noexcept;
+    void allocateEvents();
+};
 
-    void resize(const uint32_t /*bufferSize*/)
-    {
-    }
+// -----------------------------------------------------------------------
+
+struct InternalTime {
+    bool playing;
+    uint64_t frame;
+
+    InternalTime() noexcept;
+};
+
+// -----------------------------------------------------------------------
+
+enum EnginePostAction {
+    kEnginePostActionNull,
+    kEnginePostActionZeroCount,
+    kEnginePostActionRemovePlugin,
+    kEnginePostActionSwitchPlugins
+};
+
+struct NextAction {
+    EnginePostAction opcode;
+    unsigned int pluginId;
+    unsigned int value;
+    CarlaMutex   mutex;
+
+    NextAction() noexcept;
+    ~NextAction() noexcept;
+    void ready() noexcept;
+};
+
+// -----------------------------------------------------------------------
+
+struct EnginePluginData {
+    CarlaPlugin* plugin;
+    float insPeak[2];
+    float outsPeak[2];
+
+    void clear() noexcept;
 };
 
 // -----------------------------------------------------------------------
@@ -325,253 +186,18 @@ struct CarlaEngineProtectedData {
     EnginePluginData* plugins;
 
 #ifndef BUILD_BRIDGE
-    struct InternalAudio {
-        bool isReady;
-        bool usePatchbay;
-
-        uint inCount;
-        uint outCount;
-
-        union {
-            EngineRackBuffers*     rack;
-            EnginePatchbayBuffers* patchbay;
-        };
-
-        InternalAudio() noexcept
-            : isReady(false),
-              usePatchbay(false),
-              inCount(0),
-              outCount(0)
-        {
-            rack = nullptr;
-        }
-
-        ~InternalAudio() noexcept
-        {
-            CARLA_ASSERT(! isReady);
-            CARLA_ASSERT(rack == nullptr);
-        }
-
-        void initPatchbay() noexcept
-        {
-            if (usePatchbay)
-            {
-                CARLA_SAFE_ASSERT_RETURN(patchbay != nullptr,);
-            }
-            else
-            {
-                CARLA_SAFE_ASSERT_RETURN(rack != nullptr,);
-
-                rack->lastConnectionId = 0;
-                rack->usedConnections.clear();
-            }
-        }
-
-        void clear()
-        {
-            isReady  = false;
-            inCount  = 0;
-            outCount = 0;
-
-            if (usePatchbay)
-            {
-                CARLA_SAFE_ASSERT_RETURN(patchbay != nullptr,);
-                delete patchbay;
-                patchbay = nullptr;
-            }
-            else
-            {
-                CARLA_SAFE_ASSERT_RETURN(rack != nullptr,);
-                delete rack;
-                rack = nullptr;
-            }
-        }
-
-        void create(const uint32_t bufferSize)
-        {
-            if (usePatchbay)
-            {
-                CARLA_SAFE_ASSERT_RETURN(patchbay == nullptr,);
-                patchbay = new EnginePatchbayBuffers(bufferSize);
-            }
-            else
-            {
-                CARLA_SAFE_ASSERT_RETURN(rack == nullptr,);
-                rack = new EngineRackBuffers(bufferSize);
-            }
-
-            isReady = true;
-        }
-
-        void resize(const uint32_t bufferSize)
-        {
-            if (usePatchbay)
-            {
-                CARLA_SAFE_ASSERT_RETURN(patchbay != nullptr,);
-                patchbay->resize(bufferSize);
-            }
-            else
-            {
-                CARLA_SAFE_ASSERT_RETURN(rack != nullptr,);
-                rack->resize(bufferSize);
-            }
-        }
-    } bufAudio;
+    InternalAudio  bufAudio;
 #endif
+    InternalEvents bufEvents;
+    InternalTime   time;
+    NextAction     nextAction;
 
-    struct InternalEvents {
-        EngineEvent* in;
-        EngineEvent* out;
+    CarlaEngineProtectedData(CarlaEngine* const engine);
+    ~CarlaEngineProtectedData() noexcept;
 
-        InternalEvents() noexcept
-            : in(nullptr),
-              out(nullptr) {}
-
-        ~InternalEvents() noexcept
-        {
-            CARLA_ASSERT(in == nullptr);
-            CARLA_ASSERT(out == nullptr);
-        }
-    } bufEvents;
-
-    struct InternalTime {
-        bool playing;
-        uint64_t frame;
-
-        InternalTime() noexcept
-            : playing(false),
-              frame(0) {}
-    } time;
-
-    struct NextAction {
-        EnginePostAction opcode;
-        unsigned int pluginId;
-        unsigned int value;
-        CarlaMutex   mutex;
-
-        NextAction() noexcept
-            : opcode(kEnginePostActionNull),
-              pluginId(0),
-              value(0) {}
-
-        ~NextAction() noexcept
-        {
-            CARLA_ASSERT(opcode == kEnginePostActionNull);
-        }
-
-        void ready() noexcept
-        {
-            mutex.lock();
-            mutex.unlock();
-        }
-    } nextAction;
-
-    CarlaEngineProtectedData(CarlaEngine* const engine)
-        : osc(engine),
-          thread(engine),
-          oscData(nullptr),
-          callback(nullptr),
-          callbackPtr(nullptr),
-          hints(0x0),
-          bufferSize(0),
-          sampleRate(0.0),
-          aboutToClose(false),
-          curPluginCount(0),
-          maxPluginNumber(0),
-          nextPluginId(0),
-          plugins(nullptr) {}
-
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    CarlaEngineProtectedData() = delete;
-    CARLA_DECLARE_NON_COPY_STRUCT(CarlaEngineProtectedData)
-#endif
-
-    ~CarlaEngineProtectedData() noexcept
-    {
-        CARLA_ASSERT(curPluginCount == 0);
-        CARLA_ASSERT(maxPluginNumber == 0);
-        CARLA_ASSERT(nextPluginId == 0);
-        CARLA_ASSERT(plugins == nullptr);
-    }
-
-    void doPluginRemove() noexcept
-    {
-        CARLA_SAFE_ASSERT_RETURN(curPluginCount > 0,);
-        CARLA_SAFE_ASSERT_RETURN(nextAction.pluginId < curPluginCount,);
-        --curPluginCount;
-
-        // move all plugins 1 spot backwards
-        for (unsigned int i=nextAction.pluginId; i < curPluginCount; ++i)
-        {
-            CarlaPlugin* const plugin(plugins[i+1].plugin);
-
-            CARLA_SAFE_ASSERT_BREAK(plugin != nullptr);
-
-            plugin->setId(i);
-
-            plugins[i].plugin      = plugin;
-            plugins[i].insPeak[0]  = 0.0f;
-            plugins[i].insPeak[1]  = 0.0f;
-            plugins[i].outsPeak[0] = 0.0f;
-            plugins[i].outsPeak[1] = 0.0f;
-        }
-
-        const unsigned int id(curPluginCount);
-
-        // reset last plugin (now removed)
-        plugins[id].plugin      = nullptr;
-        plugins[id].insPeak[0]  = 0.0f;
-        plugins[id].insPeak[1]  = 0.0f;
-        plugins[id].outsPeak[0] = 0.0f;
-        plugins[id].outsPeak[1] = 0.0f;
-    }
-
-    void doPluginsSwitch() noexcept
-    {
-        CARLA_SAFE_ASSERT_RETURN(curPluginCount >= 2,);
-
-        const unsigned int idA(nextAction.pluginId);
-        const unsigned int idB(nextAction.value);
-
-        CARLA_SAFE_ASSERT_RETURN(idA < curPluginCount,);
-        CARLA_SAFE_ASSERT_RETURN(idB < curPluginCount,);
-        CARLA_SAFE_ASSERT_RETURN(plugins[idA].plugin != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(plugins[idB].plugin != nullptr,);
-
-#if 0
-        std::swap(plugins[idA].plugin, plugins[idB].plugin);
-#else
-        CarlaPlugin* const tmp(plugins[idA].plugin);
-
-        plugins[idA].plugin = plugins[idB].plugin;
-        plugins[idB].plugin = tmp;
-#endif
-    }
-
-    void doNextPluginAction(const bool unlock) noexcept
-    {
-        switch (nextAction.opcode)
-        {
-        case kEnginePostActionNull:
-            break;
-        case kEnginePostActionZeroCount:
-            curPluginCount = 0;
-            break;
-        case kEnginePostActionRemovePlugin:
-            doPluginRemove();
-            break;
-        case kEnginePostActionSwitchPlugins:
-            doPluginsSwitch();
-            break;
-        }
-
-        nextAction.opcode   = kEnginePostActionNull;
-        nextAction.pluginId = 0;
-        nextAction.value    = 0;
-
-        if (unlock)
-            nextAction.mutex.unlock();
-    }
+    void doPluginRemove() noexcept;
+    void doPluginsSwitch() noexcept;
+    void doNextPluginAction(const bool unlock) noexcept;
 
 #ifndef BUILD_BRIDGE
     // the base, where plugins run
@@ -584,38 +210,20 @@ struct CarlaEngineProtectedData {
     class ScopedActionLock
     {
     public:
-        ScopedActionLock(CarlaEngineProtectedData* const data, const EnginePostAction action, const unsigned int pluginId, const unsigned int value, const bool lockWait) noexcept
-            : fData(data)
-        {
-            fData->nextAction.mutex.lock();
-
-            CARLA_SAFE_ASSERT_RETURN(fData->nextAction.opcode == kEnginePostActionNull,);
-
-            fData->nextAction.opcode   = action;
-            fData->nextAction.pluginId = pluginId;
-            fData->nextAction.value    = value;
-
-            if (lockWait)
-            {
-                // block wait for unlock on processing side
-                carla_stdout("ScopedPluginAction(%i) - blocking START", pluginId);
-                fData->nextAction.mutex.lock();
-                carla_stdout("ScopedPluginAction(%i) - blocking DONE", pluginId);
-            }
-            else
-            {
-                fData->doNextPluginAction(false);
-            }
-        }
-
-        ~ScopedActionLock() noexcept
-        {
-            fData->nextAction.mutex.unlock();
-        }
+        ScopedActionLock(CarlaEngineProtectedData* const data, const EnginePostAction action, const unsigned int pluginId, const unsigned int value, const bool lockWait) noexcept;
+        ~ScopedActionLock() noexcept;
 
     private:
         CarlaEngineProtectedData* const fData;
+
+        CARLA_PREVENT_HEAP_ALLOCATION
+        CARLA_DECLARE_NON_COPY_CLASS(ScopedActionLock)
     };
+
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+    CarlaEngineProtectedData() = delete;
+    CARLA_DECLARE_NON_COPY_STRUCT(CarlaEngineProtectedData)
+#endif
 };
 
 // -----------------------------------------------------------------------

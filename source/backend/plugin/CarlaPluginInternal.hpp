@@ -860,6 +860,8 @@ struct CarlaPluginProtectedData {
     // -------------------------------------------------------------------
     // Library functions, see CarlaPlugin.cpp
 
+    void libError(const char* const filename);
+
     bool  libOpen(const char* const filename);
     bool  libClose();
     void* libSymbol(const char* const symbol);

@@ -1,6 +1,6 @@
 ﻿/*
- * Carla JACK Engine
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Carla Plugin Host
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -16,11 +16,21 @@
  */
 
 #include "CarlaEngineInternal.hpp"
+#include "CarlaPlugin.hpp"
+
 #include "CarlaBackendUtils.hpp"
+#include "CarlaEngineUtils.hpp"
+#include "CarlaMIDI.h"
+#include "LinkedList.hpp"
 
 #include "jackbridge/JackBridge.hpp"
 
 #include <cmath>
+
+#ifdef HAVE_JUCE
+# include "juce_audio_basics.h"
+using juce::FloatVectorOperations;
+#endif
 
 #include <QtCore/QStringList>
 
@@ -200,7 +210,7 @@ public:
             jackbridge_midi_clear_buffer(fJackBuffer);
     }
 
-    uint32_t getEventCount() const override
+    uint32_t getEventCount() const noexcept override
     {
         if (fPort == nullptr)
             return CarlaEngineEventPort::getEventCount();
@@ -211,7 +221,7 @@ public:
         return jackbridge_midi_get_event_count(fJackBuffer);
     }
 
-    const EngineEvent& getEvent(const uint32_t index) override
+    const EngineEvent& getEvent(const uint32_t index) noexcept override
     {
         if (fPort == nullptr)
             return CarlaEngineEventPort::getEvent(index);
@@ -222,7 +232,7 @@ public:
         return getEventUnchecked(index);
     }
 
-    const EngineEvent& getEventUnchecked(const uint32_t index) override
+    const EngineEvent& getEventUnchecked(const uint32_t index) noexcept override
     {
         jack_midi_event_t jackEvent;
 
@@ -1112,7 +1122,7 @@ protected:
             float* outBuf[2] = { audioOut1, audioOut2 };
 
             // initialize input events
-            carla_zeroStruct<EngineEvent>(pData->bufEvents.in, kEngineMaxInternalEventCount);
+            carla_zeroStruct<EngineEvent>(pData->bufEvents.in, EngineEvent::kMaxInternalCount);
             {
                 uint32_t engineEventIndex = 0;
 
@@ -1131,7 +1141,7 @@ protected:
                     engineEvent.time = jackEvent.time;
                     engineEvent.fillFromMidiData(static_cast<uint8_t>(jackEvent.size), jackEvent.buffer);
 
-                    if (engineEventIndex >= kEngineMaxInternalEventCount)
+                    if (engineEventIndex >= EngineEvent::kMaxInternalCount)
                         break;
                 }
             }
@@ -1143,7 +1153,7 @@ protected:
             {
                 jackbridge_midi_clear_buffer(eventOut);
 
-                for (unsigned short i=0; i < kEngineMaxInternalEventCount; ++i)
+                for (unsigned short i=0; i < EngineEvent::kMaxInternalCount; ++i)
                 {
                     const EngineEvent& engineEvent(pData->bufEvents.out[i]);
 

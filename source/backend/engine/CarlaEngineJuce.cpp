@@ -1,6 +1,6 @@
 /*
- * Carla Juce Engine
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Carla Plugin Host
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -220,7 +220,7 @@ public:
         char strBuf[STR_MAX+1];
         strBuf[STR_MAX] = '\0';
 
-        EngineRackBuffers* const rack(pData->bufAudio.rack);
+        //EngineRackBuffers* const rack(pData->bufAudio.rack);
 
         // Main
         {
@@ -318,6 +318,7 @@ public:
         }
 #endif
 
+#if 0
         // Connections
         rack->connectLock.lock();
 
@@ -418,6 +419,7 @@ public:
             rack->lastConnectionId++;
         }
 #endif
+#endif
 
         return true;
     }
@@ -437,7 +439,7 @@ protected:
             return runPendingRtEvents();
 
         // initialize input events
-        carla_zeroStruct<EngineEvent>(pData->bufEvents.in, kEngineMaxInternalEventCount);
+        carla_zeroStruct<EngineEvent>(pData->bufEvents.in, EngineEvent::kMaxInternalCount);
 
         // TODO - get events from juce
 

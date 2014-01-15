@@ -1,6 +1,6 @@
 ﻿/*
- * Carla Plugin API
- * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+ * Carla Plugin Host
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,9 +23,7 @@
 // Avoid including extra libs here
 typedef void* lo_address;
 typedef struct _NativePluginDescriptor NativePluginDescriptor;
-//#ifndef LADSPA_RDF_HPP_INCLUDED
 struct LADSPA_RDF_Descriptor;
-//#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
