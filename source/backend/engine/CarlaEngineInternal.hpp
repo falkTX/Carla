@@ -23,6 +23,7 @@
 #include "CarlaEngineThread.hpp"
 
 #include "CarlaMutex.hpp"
+#include "LinkedList.hpp"
 
 // -----------------------------------------------------------------------
 // Engine helper macro, sets lastError and returns false/NULL

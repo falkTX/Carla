@@ -23,6 +23,7 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBridgeUtils.hpp"
+#include "CarlaMIDI.h"
 
 //#include "juce_core.h"
 

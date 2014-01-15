@@ -29,6 +29,7 @@
 #include "CarlaPlugin.hpp"
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaEngineUtils.hpp"
 #include "CarlaStateUtils.hpp"
 
 #include <cmath>

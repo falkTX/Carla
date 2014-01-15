@@ -59,9 +59,9 @@ struct ParamSymbol {
 
 // -----------------------------------------------------------------------
 
-CarlaPlugin* CarlaPlugin::newGIG(const Initializer& init, const bool use16Outs)
+CarlaPlugin* CarlaPlugin::newFileGIG(const Initializer& init, const bool use16Outs)
 {
-    carla_debug("CarlaPlugin::newGIG({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
+    carla_debug("CarlaPlugin::newFileGIG({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
 #ifdef WANT_LINUXSAMPLER
     return newLinuxSampler(init, "GIG", use16Outs);
 #else
@@ -73,9 +73,9 @@ CarlaPlugin* CarlaPlugin::newGIG(const Initializer& init, const bool use16Outs)
 #endif
 }
 
-CarlaPlugin* CarlaPlugin::newSF2(const Initializer& init, const bool use16Outs)
+CarlaPlugin* CarlaPlugin::newFileSF2(const Initializer& init, const bool use16Outs)
 {
-    carla_debug("CarlaPlugin::newSF2({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
+    carla_debug("CarlaPlugin::newFileSF2({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
 #if defined(WANT_FLUIDSYNTH)
     return newFluidSynth(init, use16Outs);
 #elif defined(WANT_LINUXSAMPLER)
@@ -89,17 +89,14 @@ CarlaPlugin* CarlaPlugin::newSF2(const Initializer& init, const bool use16Outs)
 #endif
 }
 
-CarlaPlugin* CarlaPlugin::newSFZ(const Initializer& init, const bool use16Outs)
+CarlaPlugin* CarlaPlugin::newFileSFZ(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newSFZ({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
+    carla_debug("CarlaPlugin::newFileSFZ({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
 #ifdef WANT_LINUXSAMPLER
-    return newLinuxSampler(init, "SFZ", use16Outs);
+    return newLinuxSampler(init, "SFZ", false);
 #else
     init.engine->setLastError("SFZ support not available");
     return nullptr;
-
-    // unused
-    (void)use16Outs;
 #endif
 }
 

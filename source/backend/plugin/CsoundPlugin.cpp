@@ -79,6 +79,8 @@ CARLA_BACKEND_END_NAMESPACE
 
 #endif
 
+// -----------------------------------------------------------------------
+
 CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newCsound(const Initializer& init)
@@ -110,4 +112,12 @@ CarlaPlugin* CarlaPlugin::newCsound(const Initializer& init)
 #endif
 }
 
+CarlaPlugin* CarlaPlugin::newFileCSD(const Initializer& init)
+{
+    carla_debug("CarlaPlugin::newFileCSD({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
+    return newCsound(init);
+}
+
 CARLA_BACKEND_END_NAMESPACE
+
+// -----------------------------------------------------------------------

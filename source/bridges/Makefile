@@ -368,6 +368,7 @@ OBJS_NATIVE  = CarlaBridgePlugin__native.o \
 # carla-engine
 OBJS_NATIVE += \
 	../backend/engine/CarlaEngine__native.o \
+	../backend/engine/CarlaEngineInternal__native.o \
 	../backend/engine/CarlaEngineOsc__native.o \
 	../backend/engine/CarlaEngineThread__native.o \
 	../backend/engine/CarlaEngineJack__native.o \
@@ -376,6 +377,7 @@ OBJS_NATIVE += \
 # carla-plugin
 OBJS_NATIVE += \
 	../backend/plugin/CarlaPlugin__native.o \
+	../backend/plugin/CarlaPluginInternal__native.o \
 	../backend/plugin/CarlaPluginThread__native.o \
 	../backend/plugin/NativePlugin__native.o \
 	../backend/plugin/LadspaPlugin__native.o \
@@ -383,8 +385,8 @@ OBJS_NATIVE += \
 	../backend/plugin/Lv2Plugin__native.o \
 	../backend/plugin/VstPlugin__native.o \
 	../backend/plugin/AuPlugin__native.o \
-	../backend/plugin/JucePlugin__native.o \
 	../backend/plugin/CsoundPlugin__native.o \
+	../backend/plugin/JucePlugin__native.o \
 	../backend/plugin/FluidSynthPlugin__native.o \
 	../backend/plugin/LinuxSamplerPlugin__native.o
 

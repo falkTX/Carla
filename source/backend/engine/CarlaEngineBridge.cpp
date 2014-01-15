@@ -20,11 +20,12 @@
 #endif
 
 #include "CarlaEngineInternal.hpp"
-#include "CarlaBackendUtils.hpp"
-#include "CarlaMIDI.h"
+#include "CarlaPlugin.hpp"
 
+#include "CarlaBackendUtils.hpp"
 #include "CarlaBridgeUtils.hpp"
 #include "CarlaShmUtils.hpp"
+#include "CarlaMIDI.h"
 
 #include "jackbridge/JackBridge.hpp"
 
