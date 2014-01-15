@@ -52,6 +52,7 @@ CARLA_BACKEND_START_NAMESPACE
 #endif
 
 // -----------------------------------------------------------------------
+// Rack Patchbay stuff
 
 enum RackPatchbayGroupIds {
     RACK_PATCHBAY_GROUP_CARLA     = -1,
@@ -84,9 +85,39 @@ struct ConnectionToId {
 };
 
 // -----------------------------------------------------------------------
+// EngineRackBuffers
 
-struct EngineRackBuffers;
-struct EnginePatchbayBuffers;
+struct EngineRackBuffers {
+    float* in[2];
+    float* out[2];
+
+    // connections stuff
+    LinkedList<uint> connectedIns[2];
+    LinkedList<uint> connectedOuts[2];
+    CarlaMutex connectLock;
+
+    int lastConnectionId;
+    LinkedList<ConnectionToId> usedConnections;
+
+    EngineRackBuffers(const uint32_t bufferSize);
+    ~EngineRackBuffers();
+    void clear();
+    void resize(const uint32_t bufferSize);
+};
+
+// -----------------------------------------------------------------------
+// EnginePatchbayBuffers
+
+struct EnginePatchbayBuffers {
+    // TODO
+    EnginePatchbayBuffers(const uint32_t bufferSize);
+    ~EnginePatchbayBuffers();
+    void clear();
+    void resize(const uint32_t bufferSize);
+};
+
+// -----------------------------------------------------------------------
+// InternalAudio
 
 struct InternalAudio {
     bool isReady;
@@ -109,6 +140,7 @@ struct InternalAudio {
 };
 
 // -----------------------------------------------------------------------
+// InternalEvents
 
 struct InternalEvents {
     EngineEvent* in;
@@ -120,6 +152,7 @@ struct InternalEvents {
 };
 
 // -----------------------------------------------------------------------
+// InternalTime
 
 struct InternalTime {
     bool playing;
@@ -129,6 +162,7 @@ struct InternalTime {
 };
 
 // -----------------------------------------------------------------------
+// NextAction
 
 enum EnginePostAction {
     kEnginePostActionNull,
@@ -149,6 +183,7 @@ struct NextAction {
 };
 
 // -----------------------------------------------------------------------
+// EnginePluginData
 
 struct EnginePluginData {
     CarlaPlugin* plugin;
@@ -159,6 +194,7 @@ struct EnginePluginData {
 };
 
 // -----------------------------------------------------------------------
+// CarlaEngineProtectedData
 
 struct CarlaEngineProtectedData {
     CarlaEngineOsc    osc;

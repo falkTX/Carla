@@ -15,9 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaEngineThread.hpp"
-
 #include "CarlaEngine.hpp"
+#include "CarlaEngineThread.hpp"
 #include "CarlaPlugin.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
