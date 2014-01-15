@@ -34,7 +34,7 @@ PEDANTIC_CXX_FLAGS += -isystem /opt/kxstudio/include
 # --------------------------------------------------------------
 
 TARGETS  = ansi-pedantic-test_c ansi-pedantic-test_c99 ansi-pedantic-test_cxx ansi-pedantic-test_cxx11
-TARGETS += CarlaString PipeServer Print RtLinkedList RtLinkedListGnu Utils
+TARGETS += CarlaString EngineEvents PipeServer Print RtLinkedList RtLinkedListGnu Utils
 
 all: $(TARGETS)
 
@@ -58,13 +58,13 @@ CarlaString: CarlaString.cpp ../utils/CarlaString.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
 	valgrind ./$@
 
+EngineEvents: EngineEvents.cpp
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -L../backend -lcarla_standalone2 -o $@
+	env LD_LIBRARY_PATH=../backend valgrind ./$@
+
 PipeServer: PipeServer.cpp ../utils/CarlaPipeUtils.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
 # 	valgrind ./$@
-
-Misc: Misc.cpp
-	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -L../backend -lcarla_standalone2 -o $@
-	env LD_LIBRARY_PATH=../backend valgrind ./$@
 
 Print: Print.cpp ../utils/CarlaUtils.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
