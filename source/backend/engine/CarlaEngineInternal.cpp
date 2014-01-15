@@ -40,50 +40,56 @@ CARLA_BACKEND_START_NAMESPACE
 
 void EngineControlEvent::dumpToMidiData(const uint8_t channel, uint8_t& size, uint8_t data[3]) const noexcept
 {
+    size = 0;
+
     switch (type)
     {
     case kEngineControlEventTypeNull:
         break;
 
     case kEngineControlEventTypeParameter:
-        if (MIDI_IS_CONTROL_BANK_SELECT(param))
+        if (param >= MAX_MIDI_VALUE)
+        {
+            // out of bounds. do nothing
+        }
+        else if (MIDI_IS_CONTROL_BANK_SELECT(param))
         {
             size    = 3;
-            data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + channel);
+            data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE | (channel & MIDI_CHANNEL_BIT));
             data[1] = MIDI_CONTROL_BANK_SELECT;
-            data[2] = static_cast<uint8_t>(value);
+            data[2] = uint8_t(carla_fixValue<float>(0.0f, float(MAX_MIDI_VALUE-1), value));
         }
         else
         {
             size    = 3;
-            data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + channel);
+            data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE | (channel & MIDI_CHANNEL_BIT));
             data[1] = static_cast<uint8_t>(param);
-            data[2] = uint8_t(value * 127.0f);
+            data[2] = uint8_t(carla_fixValue<float>(0.0f, 1.0f, value) * float(MAX_MIDI_VALUE-1));
         }
         break;
 
     case kEngineControlEventTypeMidiBank:
         size    = 3;
-        data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + channel);
+        data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE | (channel & MIDI_CHANNEL_BIT));
         data[1] = MIDI_CONTROL_BANK_SELECT;
-        data[2] = static_cast<uint8_t>(param);
+        data[2] = uint8_t(carla_fixValue<uint16_t>(0, MAX_MIDI_VALUE-1, param));
         break;
 
     case kEngineControlEventTypeMidiProgram:
         size    = 2;
-        data[0] = static_cast<uint8_t>(MIDI_STATUS_PROGRAM_CHANGE + channel);
-        data[1] = static_cast<uint8_t>(param);
+        data[0] = static_cast<uint8_t>(MIDI_STATUS_PROGRAM_CHANGE | (channel & MIDI_CHANNEL_BIT));
+        data[1] = uint8_t(carla_fixValue<uint16_t>(0, MAX_MIDI_VALUE-1, param));
         break;
 
     case kEngineControlEventTypeAllSoundOff:
         size    = 2;
-        data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + channel);
+        data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE | (channel & MIDI_CHANNEL_BIT));
         data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
         break;
 
     case kEngineControlEventTypeAllNotesOff:
         size    = 2;
-        data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + channel);
+        data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE | (channel & MIDI_CHANNEL_BIT));
         data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
         break;
     }

@@ -18,7 +18,7 @@ BASE_FLAGS += -isystem ../modules
 ANSI_FLAGS  = $(BASE_FLAGS) -DBUILD_ANSI_TEST
 ANSI_FLAGS += -ansi -pedantic -pedantic-errors -Waggregate-return
 ANSI_FLAGS += -I../backend -I../includes
-# ANSI_FLAGS += -L../backend -lcarla_standalone2
+ANSI_FLAGS += -L../backend -lcarla_standalone2
 
 # --------------------------------------------------------------
 
@@ -33,7 +33,7 @@ PEDANTIC_CXX_FLAGS += -isystem /opt/kxstudio/include
 
 # --------------------------------------------------------------
 
-# TARGETS  = ansi-pedantic-test_c ansi-pedantic-test_c99 ansi-pedantic-test_cxx ansi-pedantic-test_cxx11
+TARGETS  = ansi-pedantic-test_c ansi-pedantic-test_c99 ansi-pedantic-test_cxx ansi-pedantic-test_cxx11
 TARGETS += CarlaString PipeServer Print RtLinkedList RtLinkedListGnu Utils
 
 all: $(TARGETS)
@@ -61,6 +61,10 @@ CarlaString: CarlaString.cpp ../utils/CarlaString.hpp
 PipeServer: PipeServer.cpp ../utils/CarlaPipeUtils.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
 # 	valgrind ./$@
+
+Misc: Misc.cpp
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -L../backend -lcarla_standalone2 -o $@
+	env LD_LIBRARY_PATH=../backend valgrind ./$@
 
 Print: Print.cpp ../utils/CarlaUtils.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
