@@ -16,6 +16,7 @@
  */
 
 #include "CarlaPluginInternal.hpp"
+#include "CarlaEngine.hpp"
 
 //#define WANT_CSOUND 1
 #ifdef WANT_CSOUND

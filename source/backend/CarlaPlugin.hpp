@@ -20,16 +20,22 @@
 
 #include "CarlaBackend.h"
 
+// -----------------------------------------------------------------------
 // Avoid including extra libs here
+
 typedef void* lo_address;
 typedef struct _NativePluginDescriptor NativePluginDescriptor;
 struct LADSPA_RDF_Descriptor;
+
+// -----------------------------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
 
 #if 0
 } /* Fix editor indentation */
 #endif
+
+// -----------------------------------------------------------------------
 
 /*!
  * @defgroup CarlaPluginAPI Carla Plugin API
@@ -898,6 +904,8 @@ protected:
 };
 
 /**@}*/
+
+// -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
 

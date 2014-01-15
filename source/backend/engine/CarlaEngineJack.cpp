@@ -1122,7 +1122,7 @@ protected:
             float* outBuf[2] = { audioOut1, audioOut2 };
 
             // initialize input events
-            carla_zeroStruct<EngineEvent>(pData->bufEvents.in, EngineEvent::kMaxInternalCount);
+            carla_zeroStruct<EngineEvent>(pData->bufEvents.in, kMaxEngineEventInternalCount);
             {
                 uint32_t engineEventIndex = 0;
 
@@ -1141,7 +1141,7 @@ protected:
                     engineEvent.time = jackEvent.time;
                     engineEvent.fillFromMidiData(static_cast<uint8_t>(jackEvent.size), jackEvent.buffer);
 
-                    if (engineEventIndex >= EngineEvent::kMaxInternalCount)
+                    if (engineEventIndex >= kMaxEngineEventInternalCount)
                         break;
                 }
             }
@@ -1153,7 +1153,7 @@ protected:
             {
                 jackbridge_midi_clear_buffer(eventOut);
 
-                for (unsigned short i=0; i < EngineEvent::kMaxInternalCount; ++i)
+                for (unsigned short i=0; i < kMaxEngineEventInternalCount; ++i)
                 {
                     const EngineEvent& engineEvent(pData->bufEvents.out[i]);
 

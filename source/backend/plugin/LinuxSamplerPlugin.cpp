@@ -22,6 +22,7 @@
  * - use CARLA_SAFE_ASSERT_RETURN with err
  */
 #include "CarlaPluginInternal.hpp"
+#include "CarlaEngine.hpp"
 
 #ifdef WANT_LINUXSAMPLER
 

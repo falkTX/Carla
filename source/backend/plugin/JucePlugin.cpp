@@ -16,6 +16,7 @@
  */
 
 #include "CarlaPluginInternal.hpp"
+#include "CarlaEngine.hpp"
 
 #ifdef HAVE_JUCE
 

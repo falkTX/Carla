@@ -17,7 +17,6 @@
 
 #include "CarlaEngineInternal.hpp"
 #include "CarlaPlugin.hpp"
-
 #include "CarlaMIDI.h"
 
 #ifndef HAVE_JUCE
@@ -377,7 +376,7 @@ void EnginePatchbayBuffers::resize(const uint32_t /*bufferSize*/)
 // -----------------------------------------------------------------------
 // InternalAudio
 
-InternalAudio::InternalAudio() noexcept
+EngineInternalAudio::EngineInternalAudio() noexcept
     : isReady(false),
       usePatchbay(false),
       inCount(0),
@@ -386,17 +385,19 @@ InternalAudio::InternalAudio() noexcept
     rack = nullptr;
 }
 
-InternalAudio::~InternalAudio() noexcept
+EngineInternalAudio::~EngineInternalAudio() noexcept
 {
     CARLA_ASSERT(! isReady);
     CARLA_ASSERT(rack == nullptr);
 }
 
-void InternalAudio::initPatchbay() noexcept
+void EngineInternalAudio::initPatchbay() noexcept
 {
     if (usePatchbay)
     {
         CARLA_SAFE_ASSERT_RETURN(patchbay != nullptr,);
+
+        // TODO
     }
     else
     {
@@ -407,7 +408,7 @@ void InternalAudio::initPatchbay() noexcept
     }
 }
 
-void InternalAudio::clear()
+void EngineInternalAudio::clear()
 {
     isReady  = false;
     inCount  = 0;
@@ -427,7 +428,7 @@ void InternalAudio::clear()
     }
 }
 
-void InternalAudio::create(const uint32_t bufferSize)
+void EngineInternalAudio::create(const uint32_t bufferSize)
 {
     if (usePatchbay)
     {
@@ -443,7 +444,7 @@ void InternalAudio::create(const uint32_t bufferSize)
     isReady = true;
 }
 
-void InternalAudio::resize(const uint32_t bufferSize)
+void EngineInternalAudio::resize(const uint32_t bufferSize)
 {
     if (usePatchbay)
     {
@@ -460,11 +461,11 @@ void InternalAudio::resize(const uint32_t bufferSize)
 // -----------------------------------------------------------------------
 // InternalEvents
 
-InternalEvents::InternalEvents() noexcept
+EngineInternalEvents::EngineInternalEvents() noexcept
     : in(nullptr),
       out(nullptr) {}
 
-InternalEvents::~InternalEvents() noexcept
+EngineInternalEvents::~EngineInternalEvents() noexcept
 {
     CARLA_ASSERT(in == nullptr);
     CARLA_ASSERT(out == nullptr);
@@ -473,24 +474,24 @@ InternalEvents::~InternalEvents() noexcept
 // -----------------------------------------------------------------------
 // InternalTime
 
-InternalTime::InternalTime() noexcept
+EngineInternalTime::EngineInternalTime() noexcept
     : playing(false),
       frame(0) {}
 
 // -----------------------------------------------------------------------
 // NextAction
 
-NextAction::NextAction() noexcept
+EngineNextAction::EngineNextAction() noexcept
     : opcode(kEnginePostActionNull),
       pluginId(0),
       value(0) {}
 
-NextAction::~NextAction() noexcept
+EngineNextAction::~EngineNextAction() noexcept
 {
     CARLA_ASSERT(opcode == kEnginePostActionNull);
 }
 
-void NextAction::ready() noexcept
+void EngineNextAction::ready() noexcept
 {
     mutex.lock();
     mutex.unlock();
@@ -635,7 +636,7 @@ void CarlaEngineProtectedData::processRack(float* inBufReal[2], float* outBuf[2]
     FLOAT_CLEAR(outBuf[1], frames);
 
     // initialize event outputs (zero)
-    carla_zeroStruct<EngineEvent>(bufEvents.out, EngineEvent::kMaxInternalCount);
+    carla_zeroStruct<EngineEvent>(bufEvents.out, kMaxEngineEventInternalCount);
 
     bool processed = false;
 
@@ -672,10 +673,10 @@ void CarlaEngineProtectedData::processRack(float* inBufReal[2], float* outBuf[2]
             else
             {
                 // initialize event inputs from previous outputs
-                carla_copyStruct<EngineEvent>(bufEvents.in, bufEvents.out, EngineEvent::kMaxInternalCount);
+                carla_copyStruct<EngineEvent>(bufEvents.in, bufEvents.out, kMaxEngineEventInternalCount);
 
                 // initialize event outputs (zero)
-                carla_zeroStruct<EngineEvent>(bufEvents.out, EngineEvent::kMaxInternalCount);
+                carla_zeroStruct<EngineEvent>(bufEvents.out, kMaxEngineEventInternalCount);
             }
         }
 

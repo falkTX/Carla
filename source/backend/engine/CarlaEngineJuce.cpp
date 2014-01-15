@@ -439,7 +439,7 @@ protected:
             return runPendingRtEvents();
 
         // initialize input events
-        carla_zeroStruct<EngineEvent>(pData->bufEvents.in, EngineEvent::kMaxInternalCount);
+        carla_zeroStruct<EngineEvent>(pData->bufEvents.in, kMaxEngineEventInternalCount);
 
         // TODO - get events from juce
 

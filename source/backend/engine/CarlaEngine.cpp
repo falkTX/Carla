@@ -32,9 +32,9 @@
 #include "CarlaEngineUtils.hpp"
 #include "CarlaStateUtils.hpp"
 
-#include <cmath>
-
-#ifdef HAVE_JUCE
+#ifndef HAVE_JUCE
+# include <cmath>
+#else
 # include "juce_audio_basics.h"
 using juce::FloatVectorOperations;
 #endif
@@ -145,7 +145,7 @@ CarlaEngineEventPort::CarlaEngineEventPort(const CarlaEngine& engine, const bool
     carla_debug("CarlaEngineEventPort::CarlaEngineEventPort(%s)", bool2str(isInput));
 
     if (fProcessMode == ENGINE_PROCESS_MODE_PATCHBAY)
-        fBuffer = new EngineEvent[EngineEvent::kMaxInternalCount];
+        fBuffer = new EngineEvent[kMaxEngineEventInternalCount];
 }
 
 CarlaEngineEventPort::~CarlaEngineEventPort()
@@ -166,7 +166,7 @@ void CarlaEngineEventPort::initBuffer()
     if (fProcessMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || fProcessMode == ENGINE_PROCESS_MODE_BRIDGE)
         fBuffer = fEngine.getInternalEventBuffer(fIsInput);
     else if (fProcessMode == ENGINE_PROCESS_MODE_PATCHBAY && ! fIsInput)
-        carla_zeroStruct<EngineEvent>(fBuffer, EngineEvent::kMaxInternalCount);
+        carla_zeroStruct<EngineEvent>(fBuffer, kMaxEngineEventInternalCount);
 }
 
 uint32_t CarlaEngineEventPort::getEventCount() const noexcept
@@ -177,7 +177,7 @@ uint32_t CarlaEngineEventPort::getEventCount() const noexcept
 
     uint32_t i=0;
 
-    for (; i < EngineEvent::kMaxInternalCount; ++i)
+    for (; i < kMaxEngineEventInternalCount; ++i)
     {
         if (fBuffer[i].type == kEngineEventTypeNull)
             break;
@@ -191,7 +191,7 @@ const EngineEvent& CarlaEngineEventPort::getEvent(const uint32_t index) noexcept
     CARLA_SAFE_ASSERT_RETURN(fIsInput, kFallbackEngineEvent);
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, kFallbackEngineEvent);
     CARLA_SAFE_ASSERT_RETURN(fProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, kFallbackEngineEvent);
-    CARLA_SAFE_ASSERT_RETURN(index < EngineEvent::kMaxInternalCount, kFallbackEngineEvent);
+    CARLA_SAFE_ASSERT_RETURN(index < kMaxEngineEventInternalCount, kFallbackEngineEvent);
 
     return fBuffer[index];
 }
@@ -216,7 +216,7 @@ bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
 
     const float fixedValue(carla_fixValue<float>(0.0f, 1.0f, value));
 
-    for (uint32_t i=0; i < EngineEvent::kMaxInternalCount; ++i)
+    for (uint32_t i=0; i < kMaxEngineEventInternalCount; ++i)
     {
         if (fBuffer[i].type != kEngineEventTypeNull)
             continue;
@@ -252,7 +252,7 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
     CARLA_SAFE_ASSERT_RETURN(size > 0 && size <= EngineMidiEvent::kDataSize, false);
     CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
 
-    for (uint32_t i=0; i < EngineEvent::kMaxInternalCount; ++i)
+    for (uint32_t i=0; i < kMaxEngineEventInternalCount; ++i)
     {
         if (fBuffer[i].type != kEngineEventTypeNull)
             continue;
@@ -586,8 +586,8 @@ bool CarlaEngine::init(const char* const clientName)
 
     case ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
         pData->maxPluginNumber = MAX_RACK_PLUGINS;
-        pData->bufEvents.in    = new EngineEvent[EngineEvent::kMaxInternalCount];
-        pData->bufEvents.out   = new EngineEvent[EngineEvent::kMaxInternalCount];
+        pData->bufEvents.in    = new EngineEvent[kMaxEngineEventInternalCount];
+        pData->bufEvents.out   = new EngineEvent[kMaxEngineEventInternalCount];
         break;
 
     case ENGINE_PROCESS_MODE_PATCHBAY:
@@ -596,8 +596,8 @@ bool CarlaEngine::init(const char* const clientName)
 
     case ENGINE_PROCESS_MODE_BRIDGE:
         pData->maxPluginNumber = 1;
-        pData->bufEvents.in    = new EngineEvent[EngineEvent::kMaxInternalCount];
-        pData->bufEvents.out   = new EngineEvent[EngineEvent::kMaxInternalCount];
+        pData->bufEvents.in    = new EngineEvent[kMaxEngineEventInternalCount];
+        pData->bufEvents.out   = new EngineEvent[kMaxEngineEventInternalCount];
         break;
     }
 

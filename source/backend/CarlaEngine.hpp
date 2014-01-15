@@ -24,11 +24,15 @@
 struct CarlaOscData;
 #endif
 
+// -----------------------------------------------------------------------
+
 CARLA_BACKEND_START_NAMESPACE
 
 #if 0
 } /* Fix editor indentation */
 #endif
+
+// -----------------------------------------------------------------------
 
 /*!
  * @defgroup CarlaEngineAPI Carla Engine API
@@ -159,6 +163,8 @@ enum EngineControlEventType {
     kEngineControlEventTypeAllNotesOff = 5
 };
 
+// -----------------------------------------------------------------------
+
 /*!
  * Engine control event.
  */
@@ -194,8 +200,6 @@ struct EngineMidiEvent {
  * Engine event.
  */
 struct EngineEvent {
-    static const ushort kMaxInternalCount = 512; //!< Maximum pre-allocated events for rack and bridge modes
-
     EngineEventType type; //!< Event Type; either Control or MIDI
     uint32_t time;        //!< Time offset in frames
     uint8_t  channel;     //!< Channel, used for MIDI-related events
@@ -213,6 +217,8 @@ struct EngineEvent {
      */
     void fillFromMidiData(const uint8_t size, const uint8_t* const data) noexcept;
 };
+
+// -----------------------------------------------------------------------
 
 /*!
  * Engine options.
@@ -1043,19 +1049,12 @@ protected:
     // Patchbay stuff
 
     /*!
-     * Called from patchbayRefresh() after all rack ports are in place.
-     */
-    void handleRackConnectionsRefresh();
-
-    /*!
      * Virtual functions for handling MIDI ports in the rack patchbay.
      */
     virtual bool connectRackMidiInPort(const int)     { return false; }
     virtual bool connectRackMidiOutPort(const int)    { return false; }
     virtual bool disconnectRackMidiInPort(const int)  { return false; }
     virtual bool disconnectRackMidiOutPort(const int) { return false; }
-    virtual uint getMidiConnectionsCount(const bool)  { return 0; }
-    virtual uint getMidiConnectionPortId(const uint)  { return 0; }
 
     // -------------------------------------------------------------------
 
@@ -1161,6 +1160,8 @@ public:
 };
 
 /**@}*/
+
+// -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
 

@@ -16,6 +16,7 @@
  */
 
 #include "CarlaPluginInternal.hpp"
+#include "CarlaEngine.hpp"
 
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>

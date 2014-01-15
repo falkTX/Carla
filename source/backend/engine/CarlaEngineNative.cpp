@@ -1059,8 +1059,8 @@ protected:
         // ---------------------------------------------------------------
         // initialize events
 
-        carla_zeroStruct<EngineEvent>(pData->bufEvents.in,  EngineEvent::kMaxInternalCount);
-        carla_zeroStruct<EngineEvent>(pData->bufEvents.out, EngineEvent::kMaxInternalCount);
+        carla_zeroStruct<EngineEvent>(pData->bufEvents.in,  kMaxEngineEventInternalCount);
+        carla_zeroStruct<EngineEvent>(pData->bufEvents.out, kMaxEngineEventInternalCount);
 
         // ---------------------------------------------------------------
         // events input (before processing)
@@ -1068,7 +1068,7 @@ protected:
         {
             uint32_t engineEventIndex = 0;
 
-            for (uint32_t i=0; i < midiEventCount && engineEventIndex < EngineEvent::kMaxInternalCount; ++i)
+            for (uint32_t i=0; i < midiEventCount && engineEventIndex < kMaxEngineEventInternalCount; ++i)
             {
                 const NativeMidiEvent& midiEvent(midiEvents[i]);
                 EngineEvent&           engineEvent(pData->bufEvents.in[engineEventIndex++]);
@@ -1076,7 +1076,7 @@ protected:
                 engineEvent.time = midiEvent.time;
                 engineEvent.fillFromMidiData(midiEvent.size, midiEvent.data);
 
-                if (engineEventIndex >= EngineEvent::kMaxInternalCount)
+                if (engineEventIndex >= kMaxEngineEventInternalCount)
                     break;
             }
         }
@@ -1112,12 +1112,12 @@ protected:
         // ---------------------------------------------------------------
         // events output (after processing)
 
-        carla_zeroStruct<EngineEvent>(pData->bufEvents.in, EngineEvent::kMaxInternalCount);
+        carla_zeroStruct<EngineEvent>(pData->bufEvents.in, kMaxEngineEventInternalCount);
 
         {
             NativeMidiEvent midiEvent;
 
-            for (uint32_t i=0; i < EngineEvent::kMaxInternalCount; ++i)
+            for (uint32_t i=0; i < kMaxEngineEventInternalCount; ++i)
             {
                 const EngineEvent& engineEvent(pData->bufEvents.out[i]);
 

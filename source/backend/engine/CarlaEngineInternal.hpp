@@ -53,6 +53,11 @@ CARLA_BACKEND_START_NAMESPACE
 #endif
 
 // -----------------------------------------------------------------------
+// Maximum pre-allocated events for rack and bridge modes
+
+const unsigned short kMaxEngineEventInternalCount = 512;
+
+// -----------------------------------------------------------------------
 // Rack Patchbay stuff
 
 enum RackPatchbayGroupIds {
@@ -104,6 +109,8 @@ struct EngineRackBuffers {
     ~EngineRackBuffers();
     void clear();
     void resize(const uint32_t bufferSize);
+
+    CARLA_DECLARE_NON_COPY_STRUCT(EngineRackBuffers)
 };
 
 // -----------------------------------------------------------------------
@@ -115,12 +122,14 @@ struct EnginePatchbayBuffers {
     ~EnginePatchbayBuffers();
     void clear();
     void resize(const uint32_t bufferSize);
+
+    CARLA_DECLARE_NON_COPY_STRUCT(EnginePatchbayBuffers)
 };
 
 // -----------------------------------------------------------------------
 // InternalAudio
 
-struct InternalAudio {
+struct EngineInternalAudio {
     bool isReady;
     bool usePatchbay;
 
@@ -132,34 +141,39 @@ struct InternalAudio {
         EnginePatchbayBuffers* patchbay;
     };
 
-    InternalAudio() noexcept;
-    ~InternalAudio() noexcept;
+    EngineInternalAudio() noexcept;
+    ~EngineInternalAudio() noexcept;
     void initPatchbay() noexcept;
     void clear();
     void create(const uint32_t bufferSize);
     void resize(const uint32_t bufferSize);
+
+    CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalAudio)
 };
 
 // -----------------------------------------------------------------------
 // InternalEvents
 
-struct InternalEvents {
+struct EngineInternalEvents {
     EngineEvent* in;
     EngineEvent* out;
 
-    InternalEvents() noexcept;
-    ~InternalEvents() noexcept;
-    void allocateEvents();
+    EngineInternalEvents() noexcept;
+    ~EngineInternalEvents() noexcept;
+
+    CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalEvents)
 };
 
 // -----------------------------------------------------------------------
 // InternalTime
 
-struct InternalTime {
+struct EngineInternalTime {
     bool playing;
     uint64_t frame;
 
-    InternalTime() noexcept;
+    EngineInternalTime() noexcept;
+
+    CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalTime)
 };
 
 // -----------------------------------------------------------------------
@@ -172,15 +186,17 @@ enum EnginePostAction {
     kEnginePostActionSwitchPlugins
 };
 
-struct NextAction {
+struct EngineNextAction {
     EnginePostAction opcode;
     unsigned int pluginId;
     unsigned int value;
     CarlaMutex   mutex;
 
-    NextAction() noexcept;
-    ~NextAction() noexcept;
+    EngineNextAction() noexcept;
+    ~EngineNextAction() noexcept;
     void ready() noexcept;
+
+    CARLA_DECLARE_NON_COPY_STRUCT(EngineNextAction)
 };
 
 // -----------------------------------------------------------------------
@@ -223,18 +239,24 @@ struct CarlaEngineProtectedData {
     EnginePluginData* plugins;
 
 #ifndef BUILD_BRIDGE
-    InternalAudio  bufAudio;
+    EngineInternalAudio  bufAudio;
 #endif
-    InternalEvents bufEvents;
-    InternalTime   time;
-    NextAction     nextAction;
+    EngineInternalEvents bufEvents;
+    EngineInternalTime   time;
+    EngineNextAction     nextAction;
+
+    // -------------------------------------------------------------------
 
     CarlaEngineProtectedData(CarlaEngine* const engine);
     ~CarlaEngineProtectedData() noexcept;
 
+    // -------------------------------------------------------------------
+
     void doPluginRemove() noexcept;
     void doPluginsSwitch() noexcept;
     void doNextPluginAction(const bool unlock) noexcept;
+
+    // -------------------------------------------------------------------
 
 #ifndef BUILD_BRIDGE
     // the base, where plugins run
@@ -243,6 +265,8 @@ struct CarlaEngineProtectedData {
     // extended, will call processRack() in the middle
     void processRackFull(float** const inBuf, const uint32_t inCount, float** const outBuf, const uint32_t outCount, const uint32_t nframes, const bool isOffline);
 #endif
+
+    // -------------------------------------------------------------------
 
     class ScopedActionLock
     {
@@ -256,6 +280,8 @@ struct CarlaEngineProtectedData {
         CARLA_PREVENT_HEAP_ALLOCATION
         CARLA_DECLARE_NON_COPY_CLASS(ScopedActionLock)
     };
+
+    // -------------------------------------------------------------------
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     CarlaEngineProtectedData() = delete;

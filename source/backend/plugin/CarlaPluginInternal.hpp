@@ -20,20 +20,19 @@
 
 #include "CarlaPlugin.hpp"
 #include "CarlaPluginThread.hpp"
-#include "CarlaEngine.hpp"
 
-#include "CarlaBackendUtils.hpp"
 #include "CarlaOscUtils.hpp"
 #include "CarlaStateUtils.hpp"
+
 #include "CarlaMutex.hpp"
 #include "RtLinkedList.hpp"
+
+#include <cmath>
 
 #ifdef HAVE_JUCE
 # include "juce_audio_basics.h"
 using juce::FloatVectorOperations;
 #endif
-
-#include <cmath>
 
 // -----------------------------------------------------------------------
 
@@ -52,6 +51,8 @@ using juce::FloatVectorOperations;
 # define FLOAT_CLEAR(buf, frames)           carla_zeroFloat(buf, frames)
 #endif
 
+// -----------------------------------------------------------------------
+
 CARLA_BACKEND_START_NAMESPACE
 
 #if 0
@@ -59,8 +60,20 @@ CARLA_BACKEND_START_NAMESPACE
 #endif
 
 // -----------------------------------------------------------------------
+// Forward declarations of CarlaEngine classes
+
+class CarlaEngineAudioPort;
+class CarlaEngineCVPort;
+class CarlaEngineEventPort;
+class CarlaEngineClient;
+
+// -----------------------------------------------------------------------
+// Maximum pre-allocated events for some plugin types
 
 const unsigned short kPluginMaxMidiEvents = 512;
+
+// -----------------------------------------------------------------------
+// Extra plugin hints, hidden from backend
 
 const unsigned int PLUGIN_EXTRA_HINT_HAS_MIDI_IN   = 0x01;
 const unsigned int PLUGIN_EXTRA_HINT_HAS_MIDI_OUT  = 0x02;
@@ -96,6 +109,8 @@ struct PluginPostRtEvent {
     float   value3;
 };
 
+// -----------------------------------------------------------------------
+
 struct ExternalMidiNote {
     int8_t  channel; // invalid if -1
     uint8_t note;    // 0 to 127
@@ -108,14 +123,8 @@ struct PluginAudioPort {
     uint32_t rindex;
     CarlaEngineAudioPort* port;
 
-    PluginAudioPort() noexcept
-        : rindex(0),
-          port(nullptr) {}
-
-    ~PluginAudioPort()
-    {
-        CARLA_ASSERT(port == nullptr);
-    }
+    PluginAudioPort() noexcept;
+    ~PluginAudioPort();
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginAudioPort)
 };
@@ -124,57 +133,11 @@ struct PluginAudioData {
     uint32_t count;
     PluginAudioPort* ports;
 
-    PluginAudioData() noexcept
-        : count(0),
-          ports(nullptr) {}
-
-    ~PluginAudioData()
-    {
-        CARLA_ASSERT_INT(count == 0, count);
-        CARLA_ASSERT(ports == nullptr);
-    }
-
-    void createNew(const uint32_t newCount)
-    {
-        CARLA_ASSERT_INT(count == 0, count);
-        CARLA_ASSERT(ports == nullptr);
-        CARLA_ASSERT_INT(newCount > 0, newCount);
-
-        if (ports != nullptr || newCount == 0)
-            return;
-
-        ports = new PluginAudioPort[newCount];
-        count = newCount;
-    }
-
-    void clear()
-    {
-        if (ports != nullptr)
-        {
-            for (uint32_t i=0; i < count; ++i)
-            {
-                if (ports[i].port != nullptr)
-                {
-                    delete ports[i].port;
-                    ports[i].port = nullptr;
-                }
-            }
-
-            delete[] ports;
-            ports = nullptr;
-        }
-
-        count = 0;
-    }
-
-    void initBuffers()
-    {
-        for (uint32_t i=0; i < count; ++i)
-        {
-            if (ports[i].port != nullptr)
-                ports[i].port->initBuffer();
-        }
-    }
+    PluginAudioData() noexcept;
+    ~PluginAudioData();
+    void createNew(const uint32_t newCount);
+    void clear();
+    void initBuffers();
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginAudioData)
 };
@@ -186,15 +149,8 @@ struct PluginCVPort {
     uint32_t param;
     CarlaEngineCVPort* port;
 
-    PluginCVPort() noexcept
-        : rindex(0),
-          param(0),
-          port(nullptr) {}
-
-    ~PluginCVPort()
-    {
-        CARLA_ASSERT(port == nullptr);
-    }
+    PluginCVPort() noexcept;
+    ~PluginCVPort();
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginCVPort)
 };
@@ -203,57 +159,11 @@ struct PluginCVData {
     uint32_t count;
     PluginCVPort* ports;
 
-    PluginCVData() noexcept
-        : count(0),
-          ports(nullptr) {}
-
-    ~PluginCVData()
-    {
-        CARLA_ASSERT_INT(count == 0, count);
-        CARLA_ASSERT(ports == nullptr);
-    }
-
-    void createNew(const uint32_t newCount)
-    {
-        CARLA_ASSERT_INT(count == 0, count);
-        CARLA_ASSERT(ports == nullptr);
-        CARLA_ASSERT_INT(newCount > 0, newCount);
-
-        if (ports != nullptr || newCount == 0)
-            return;
-
-        ports = new PluginCVPort[newCount];
-        count = newCount;
-    }
-
-    void clear()
-    {
-        if (ports != nullptr)
-        {
-            for (uint32_t i=0; i < count; ++i)
-            {
-                if (ports[i].port != nullptr)
-                {
-                    delete ports[i].port;
-                    ports[i].port = nullptr;
-                }
-            }
-
-            delete[] ports;
-            ports = nullptr;
-        }
-
-        count = 0;
-    }
-
-    void initBuffers()
-    {
-        for (uint32_t i=0; i < count; ++i)
-        {
-            if (ports[i].port != nullptr)
-                ports[i].port->initBuffer();
-        }
-    }
+    PluginCVData() noexcept;
+    ~PluginCVData();
+    void createNew(const uint32_t newCount);
+    void clear();
+    void initBuffers();
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginCVData)
 };
@@ -264,39 +174,10 @@ struct PluginEventData {
     CarlaEngineEventPort* portIn;
     CarlaEngineEventPort* portOut;
 
-    PluginEventData() noexcept
-        : portIn(nullptr),
-          portOut(nullptr) {}
-
-    ~PluginEventData()
-    {
-        CARLA_ASSERT(portIn == nullptr);
-        CARLA_ASSERT(portOut == nullptr);
-    }
-
-    void clear()
-    {
-        if (portIn != nullptr)
-        {
-            delete portIn;
-            portIn = nullptr;
-        }
-
-        if (portOut != nullptr)
-        {
-            delete portOut;
-            portOut = nullptr;
-        }
-    }
-
-    void initBuffers()
-    {
-        if (portIn != nullptr)
-            portIn->initBuffer();
-
-        if (portOut != nullptr)
-            portOut->initBuffer();
-    }
+    PluginEventData() noexcept;
+    ~PluginEventData();
+    void clear();
+    void initBuffers();
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginEventData)
 };
@@ -317,67 +198,11 @@ struct PluginParameterData {
     ParameterRanges* ranges;
     SpecialParameterType* special;
 
-    PluginParameterData() noexcept
-        : count(0),
-          data(nullptr),
-          ranges(nullptr),
-          special(nullptr) {}
-
-    ~PluginParameterData()
-    {
-        CARLA_ASSERT_INT(count == 0, count);
-        CARLA_ASSERT(data == nullptr);
-        CARLA_ASSERT(ranges == nullptr);
-        CARLA_ASSERT(special == nullptr);
-    }
-
-    void createNew(const uint32_t newCount, const bool withSpecial)
-    {
-        CARLA_ASSERT_INT(count == 0, count);
-        CARLA_ASSERT(data == nullptr);
-        CARLA_ASSERT(ranges == nullptr);
-        CARLA_ASSERT(special == nullptr);
-        CARLA_ASSERT_INT(newCount > 0, newCount);
-
-        if (data != nullptr || ranges != nullptr || newCount == 0)
-            return;
-
-        data   = new ParameterData[newCount];
-        ranges = new ParameterRanges[newCount];
-        count  = newCount;
-
-        if (withSpecial)
-            special = new SpecialParameterType[newCount];
-    }
-
-    void clear()
-    {
-        if (data != nullptr)
-        {
-            delete[] data;
-            data = nullptr;
-        }
-
-        if (ranges != nullptr)
-        {
-            delete[] ranges;
-            ranges = nullptr;
-        }
-
-        if (special != nullptr)
-        {
-            delete[] special;
-            special = nullptr;
-        }
-
-        count = 0;
-    }
-
-    float getFixedValue(const uint32_t parameterId, const float& value) const
-    {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < count, 0.0f);
-        return ranges[parameterId].getFixedValue(value);
-    }
+    PluginParameterData() noexcept;
+    ~PluginParameterData();
+    void createNew(const uint32_t newCount, const bool withSpecial);
+    void clear();
+    float getFixedValue(const uint32_t parameterId, const float& value) const;
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginParameterData)
 };
@@ -391,55 +216,10 @@ struct PluginProgramData {
     int32_t  current;
     ProgramName* names;
 
-    PluginProgramData() noexcept
-        : count(0),
-          current(-1),
-          names(nullptr) {}
-
-    ~PluginProgramData()
-    {
-        CARLA_ASSERT_INT(count == 0, count);
-        CARLA_ASSERT_INT(current == -1, current);
-        CARLA_ASSERT(names == nullptr);
-    }
-
-    void createNew(const uint32_t newCount)
-    {
-        CARLA_ASSERT_INT(count == 0, count);
-        CARLA_ASSERT_INT(current == -1, current);
-        CARLA_ASSERT(names == nullptr);
-        CARLA_ASSERT_INT(newCount > 0, newCount);
-
-        if (names != nullptr || newCount == 0)
-            return;
-
-        names = new ProgramName[newCount];
-        count = newCount;
-
-        for (uint32_t i=0; i < newCount; ++i)
-            names[i] = nullptr;
-    }
-
-    void clear()
-    {
-        if (names != nullptr)
-        {
-            for (uint32_t i=0; i < count; ++i)
-            {
-                if (names[i] != nullptr)
-                {
-                    delete[] names[i];
-                    names[i] = nullptr;
-                }
-            }
-
-            delete[] names;
-            names = nullptr;
-        }
-
-        count = 0;
-        current = -1;
-    }
+    PluginProgramData() noexcept;
+    ~PluginProgramData();
+    void createNew(const uint32_t newCount);
+    void clear();
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginProgramData)
 };
@@ -451,65 +231,11 @@ struct PluginMidiProgramData {
     int32_t  current;
     MidiProgramData* data;
 
-    PluginMidiProgramData() noexcept
-        : count(0),
-          current(-1),
-          data(nullptr) {}
-
-    ~PluginMidiProgramData()
-    {
-        CARLA_ASSERT_INT(count == 0, count);
-        CARLA_ASSERT_INT(current == -1, current);
-        CARLA_ASSERT(data == nullptr);
-    }
-
-    void createNew(const uint32_t newCount)
-    {
-        CARLA_ASSERT_INT(count == 0, count);
-        CARLA_ASSERT_INT(current == -1, current);
-        CARLA_ASSERT(data == nullptr);
-        CARLA_ASSERT_INT(newCount > 0, newCount);
-
-        if (data != nullptr || newCount == 0)
-            return;
-
-        data  = new MidiProgramData[newCount];
-        count = newCount;
-
-        for (uint32_t i=0; i < count; ++i)
-        {
-            data[i].bank    = 0;
-            data[i].program = 0;
-            data[i].name    = nullptr;
-        }
-    }
-
-    void clear()
-    {
-        if (data != nullptr)
-        {
-            for (uint32_t i=0; i < count; ++i)
-            {
-                if (data[i].name != nullptr)
-                {
-                    delete[] data[i].name;
-                    data[i].name = nullptr;
-                }
-            }
-
-            delete[] data;
-            data = nullptr;
-        }
-
-        count = 0;
-        current = -1;
-    }
-
-    const MidiProgramData& getCurrent() const
-    {
-        CARLA_ASSERT_INT2(current >= 0 && current < static_cast<int32_t>(count), current, count);
-        return data[current];
-    }
+    PluginMidiProgramData() noexcept;
+    ~PluginMidiProgramData();
+    void createNew(const uint32_t newCount);
+    void clear();
+    const MidiProgramData& getCurrent() const noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginMidiProgramData)
 };
@@ -565,23 +291,9 @@ struct CarlaPluginProtectedData {
         RtLinkedList<ExternalMidiNote>::Pool dataPool;
         RtLinkedList<ExternalMidiNote> data;
 
-        ExternalNotes()
-            : dataPool(32, 152),
-              data(dataPool) {}
-
-        ~ExternalNotes()
-        {
-            mutex.lock();
-            data.clear();
-            mutex.unlock();
-        }
-
-        void append(const ExternalMidiNote& note)
-        {
-            mutex.lock();
-            data.append_sleepy(note);
-            mutex.unlock();
-        }
+        ExternalNotes();
+        ~ExternalNotes();
+        void append(const ExternalMidiNote& note);
 
         CARLA_DECLARE_NON_COPY_STRUCT(ExternalNotes)
 
@@ -593,37 +305,11 @@ struct CarlaPluginProtectedData {
         RtLinkedList<PluginPostRtEvent> data;
         RtLinkedList<PluginPostRtEvent> dataPendingRT;
 
-        PostRtEvents()
-            : dataPool(128, 128),
-              data(dataPool),
-              dataPendingRT(dataPool) {}
-
-        ~PostRtEvents()
-        {
-            clear();
-        }
-
-        void appendRT(const PluginPostRtEvent& event)
-        {
-            dataPendingRT.append(event);
-        }
-
-        void trySplice()
-        {
-            if (mutex.tryLock())
-            {
-                dataPendingRT.spliceAppend(data);
-                mutex.unlock();
-            }
-        }
-
-        void clear()
-        {
-            mutex.lock();
-            data.clear();
-            dataPendingRT.clear();
-            mutex.unlock();
-        }
+        PostRtEvents();
+        ~PostRtEvents();
+        void appendRT(const PluginPostRtEvent& event);
+        void trySplice();
+        void clear();
 
         CARLA_DECLARE_NON_COPY_STRUCT(PostRtEvents)
 
@@ -637,12 +323,7 @@ struct CarlaPluginProtectedData {
         float balanceRight;
         float panning;
 
-        PostProc() noexcept
-            : dryWet(1.0f),
-              volume(1.0f),
-              balanceLeft(-1.0f),
-              balanceRight(1.0f),
-              panning(0.0f) {}
+        PostProc() noexcept;
 
         CARLA_DECLARE_NON_COPY_STRUCT(PostProc)
 
@@ -653,8 +334,7 @@ struct CarlaPluginProtectedData {
         CarlaOscData data;
         CarlaPluginThread thread;
 
-        OSC(CarlaEngine* const engine, CarlaPlugin* const plugin)
-            : thread(engine, plugin) {}
+        OSC(CarlaEngine* const engine, CarlaPlugin* const plugin);
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
         OSC() = delete;
@@ -662,126 +342,8 @@ struct CarlaPluginProtectedData {
 #endif
     } osc;
 
-    CarlaPluginProtectedData(CarlaEngine* const eng, const unsigned int idx, CarlaPlugin* const self)
-        : engine(eng),
-          client(nullptr),
-          id(idx),
-          hints(0x0),
-          options(0x0),
-          active(false),
-          enabled(false),
-          needsReset(false),
-          lib(nullptr),
-          uiLib(nullptr),
-          ctrlChannel(0),
-          extraHints(0x0),
-          patchbayClientId(0),
-          latency(0),
-          latencyBuffers(nullptr),
-          name(nullptr),
-          filename(nullptr),
-          iconName(nullptr),
-          identifier(nullptr),
-          osc(eng, self) {}
-
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    CarlaPluginProtectedData() = delete;
-    CARLA_DECLARE_NON_COPY_STRUCT(CarlaPluginProtectedData)
-#endif
-
-    ~CarlaPluginProtectedData()
-    {
-        CARLA_SAFE_ASSERT(! needsReset);
-
-        if (name != nullptr)
-        {
-            delete[] name;
-            name = nullptr;
-        }
-
-        if (filename != nullptr)
-        {
-            delete[] filename;
-            filename = nullptr;
-        }
-
-        if (iconName != nullptr)
-        {
-            delete[] iconName;
-            iconName = nullptr;
-        }
-
-        if (identifier != nullptr)
-        {
-            delete[] identifier;
-            identifier = nullptr;
-        }
-
-        {
-            // mutex MUST have been locked before
-            const bool lockMaster(masterMutex.tryLock());
-            const bool lockSingle(singleMutex.tryLock());
-            CARLA_SAFE_ASSERT(! lockMaster);
-            CARLA_SAFE_ASSERT(! lockSingle);
-        }
-
-        if (client != nullptr)
-        {
-            if (client->isActive())
-            {
-                // must not happen
-                carla_safe_assert("client->isActive()", __FILE__, __LINE__);
-                client->deactivate();
-            }
-
-            clearBuffers();
-
-            delete client;
-            client = nullptr;
-        }
-
-        for (LinkedList<CustomData>::Itenerator it = custom.begin(); it.valid(); it.next())
-        {
-            CustomData& cData(it.getValue());
-
-            if (cData.type != nullptr)
-            {
-                delete[] cData.type;
-                cData.type = nullptr;
-            }
-            else
-                carla_safe_assert("cData.type != nullptr", __FILE__, __LINE__);
-
-            if (cData.key != nullptr)
-            {
-                delete[] cData.key;
-                cData.key = nullptr;
-            }
-            else
-                carla_safe_assert("cData.key != nullptr", __FILE__, __LINE__);
-
-            if (cData.value != nullptr)
-            {
-                delete[] cData.value;
-                cData.value = nullptr;
-            }
-            else
-                carla_safe_assert("cData.value != nullptr", __FILE__, __LINE__);
-        }
-
-        prog.clear();
-        midiprog.clear();
-        custom.clear();
-
-        // MUST have been locked before
-        masterMutex.unlock();
-        singleMutex.unlock();
-
-        if (lib != nullptr)
-            libClose();
-
-        CARLA_ASSERT(uiLib == nullptr);
-    }
+    CarlaPluginProtectedData(CarlaEngine* const eng, const unsigned int idx, CarlaPlugin* const self);
+    ~CarlaPluginProtectedData();
 
     // -------------------------------------------------------------------
     // Buffer functions
@@ -811,8 +373,15 @@ struct CarlaPluginProtectedData {
     // -------------------------------------------------------------------
     // Settings functions, see CarlaPlugin.cpp
 
-    void         saveSetting(const unsigned int option, const bool yesNo);
-    unsigned int loadSettings(const unsigned int options, const unsigned int availOptions);
+    void saveSetting(const uint option, const bool yesNo);
+    uint loadSettings(const uint options, const uint availOptions);
+
+    // -------------------------------------------------------------------
+
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+    CarlaPluginProtectedData() = delete;
+    CARLA_DECLARE_NON_COPY_STRUCT(CarlaPluginProtectedData)
+#endif
 };
 
 CARLA_BACKEND_END_NAMESPACE

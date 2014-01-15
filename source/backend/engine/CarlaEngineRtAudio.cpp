@@ -643,7 +643,7 @@ protected:
             FLOAT_CLEAR(fAudioBufOut[i], nframes);
 
         // initialize input events
-        carla_zeroStruct<EngineEvent>(pData->bufEvents.in, EngineEvent::kMaxInternalCount);
+        carla_zeroStruct<EngineEvent>(pData->bufEvents.in, kMaxEngineEventInternalCount);
 
         if (fMidiInEvents.mutex.tryLock())
         {
@@ -669,7 +669,7 @@ protected:
 
                 engineEvent.fillFromMidiData(midiEvent.size, midiEvent.data);
 
-                if (engineEventIndex >= EngineEvent::kMaxInternalCount)
+                if (engineEventIndex >= kMaxEngineEventInternalCount)
                     break;
             }
 
