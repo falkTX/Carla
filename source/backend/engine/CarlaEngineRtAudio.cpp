@@ -1,6 +1,6 @@
 /*
- * Carla RtAudio Engine
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Carla Plugin Host
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -22,6 +22,11 @@
 
 #include "rtaudio/RtAudio.h"
 #include "rtmidi/RtMidi.h"
+
+#ifdef HAVE_JUCE
+# include "juce_audio_basics.h"
+using juce::FloatVectorOperations;
+#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -418,7 +423,7 @@ public:
         char strBuf[STR_MAX+1];
         strBuf[STR_MAX] = '\0';
 
-        EngineRackBuffers* const rack(pData->bufAudio.rack);
+        //EngineRackBuffers* const rack(pData->bufAudio.rack);
 
         // Main
         {
@@ -496,6 +501,7 @@ public:
         }
 #endif
 
+#if 0
         // Connections
         rack->connectLock.lock();
 
@@ -594,6 +600,7 @@ public:
             rack->usedConnections.append(connectionToId);
             rack->lastConnectionId++;
         }
+#endif
 
         return true;
     }
@@ -636,7 +643,7 @@ protected:
             FLOAT_CLEAR(fAudioBufOut[i], nframes);
 
         // initialize input events
-        carla_zeroStruct<EngineEvent>(pData->bufEvents.in, kEngineMaxInternalEventCount);
+        carla_zeroStruct<EngineEvent>(pData->bufEvents.in, kMaxEngineEventInternalCount);
 
         if (fMidiInEvents.mutex.tryLock())
         {
@@ -662,7 +669,7 @@ protected:
 
                 engineEvent.fillFromMidiData(midiEvent.size, midiEvent.data);
 
-                if (engineEventIndex >= kEngineMaxInternalEventCount)
+                if (engineEventIndex >= kMaxEngineEventInternalCount)
                     break;
             }
 

@@ -22,6 +22,7 @@
  * - use CARLA_SAFE_ASSERT_RETURN with err
  */
 #include "CarlaPluginInternal.hpp"
+#include "CarlaEngine.hpp"
 
 #ifdef WANT_LINUXSAMPLER
 
@@ -295,7 +296,7 @@ public:
         return getPluginTypeFromString(fFormat);
     }
 
-    PluginCategory getCategory() const override
+    PluginCategory getCategory() const noexcept override
     {
         return PLUGIN_CATEGORY_SYNTH;
     }
@@ -313,7 +314,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getOptionsAvailable() const override
+    unsigned int getOptionsAvailable() const noexcept override
     {
         unsigned int options = 0x0;
 
@@ -326,7 +327,7 @@ public:
         return options;
     }
 
-    void getLabel(char* const strBuf) const override
+    void getLabel(char* const strBuf) const noexcept override
     {
         if (fLabel != nullptr)
             std::strncpy(strBuf, fLabel, STR_MAX);
@@ -334,7 +335,7 @@ public:
             CarlaPlugin::getLabel(strBuf);
     }
 
-    void getMaker(char* const strBuf) const override
+    void getMaker(char* const strBuf) const noexcept override
     {
         if (fMaker != nullptr)
             std::strncpy(strBuf, fMaker, STR_MAX);
@@ -342,12 +343,12 @@ public:
             CarlaPlugin::getMaker(strBuf);
     }
 
-    void getCopyright(char* const strBuf) const override
+    void getCopyright(char* const strBuf) const noexcept override
     {
         getMaker(strBuf);
     }
 
-    void getRealName(char* const strBuf) const override
+    void getRealName(char* const strBuf) const noexcept override
     {
         if (fRealName != nullptr)
             std::strncpy(strBuf, fRealName, STR_MAX);
@@ -372,7 +373,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (internal stuff)
 
-    void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) override
+    void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept override
     {
         if (channel < MAX_MIDI_CHANNELS)
             pData->midiprog.current = fCurMidiProgs[channel];
@@ -445,7 +446,7 @@ public:
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
 
-    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
 
@@ -466,7 +467,9 @@ public:
             }
             else*/
             {
-                fInstrument->LoadInstrumentInBackground(fInstrumentIds[rIndex], engineChannel);
+                try {
+                    fInstrument->LoadInstrumentInBackground(fInstrumentIds[rIndex], engineChannel);
+                } catch(...) {}
             }
 
             fCurMidiProgs[pData->ctrlChannel] = index;

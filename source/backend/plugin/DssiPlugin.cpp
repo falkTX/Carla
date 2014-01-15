@@ -16,6 +16,7 @@
  */
 
 #include "CarlaPluginInternal.hpp"
+#include "CarlaEngine.hpp"
 
 #ifdef WANT_DSSI
 
@@ -108,17 +109,17 @@ public:
         return PLUGIN_DSSI;
     }
 
-    PluginCategory getCategory() const override
+    PluginCategory getCategory() const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr, PLUGIN_CATEGORY_NONE);
 
         if (pData->audioIn.count == 0 && pData->audioOut.count > 0 && (fDssiDescriptor->run_synth != nullptr || fDssiDescriptor->run_multiple_synths != nullptr))
             return PLUGIN_CATEGORY_SYNTH;
 
-        return getPluginCategoryFromName(pData->name);
+        return CarlaPlugin::getCategory();
     }
 
-    long getUniqueId() const override
+    long getUniqueId() const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, 0);
 
@@ -133,7 +134,7 @@ public:
     // -------------------------------------------------------------------
     // Information (current data)
 
-    int32_t getChunkData(void** const dataPtr) const override
+    int32_t getChunkData(void** const dataPtr) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fUsesCustomData, 0);
         CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS, 0);
@@ -143,18 +144,20 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fHandle2 == nullptr, 0);
         CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
 
+        int ret = 0;
         unsigned long dataSize = 0;
 
-        if (fDssiDescriptor->get_custom_data(fHandle, dataPtr, &dataSize) != 0)
-            return static_cast<int32_t>(dataSize);
+        try {
+            ret = fDssiDescriptor->get_custom_data(fHandle, dataPtr, &dataSize);
+        } catch(...) {}
 
-        return 0;
+        return (ret != 0) ? static_cast<int32_t>(dataSize) : 0;
     }
 
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getOptionsAvailable() const override
+    unsigned int getOptionsAvailable() const noexcept override
     {
 #ifdef __USE_GNU
         const bool isAmSynth(strcasestr(pData->filename, "amsynth"));
@@ -196,7 +199,7 @@ public:
         return options;
     }
 
-    float getParameterValue(const uint32_t parameterId) const override
+    float getParameterValue(const uint32_t parameterId) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr, 0.0f);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
@@ -204,7 +207,7 @@ public:
         return fParamBuffers[parameterId];
     }
 
-    void getLabel(char* const strBuf) const override
+    void getLabel(char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
@@ -214,7 +217,7 @@ public:
             CarlaPlugin::getLabel(strBuf);
     }
 
-    void getMaker(char* const strBuf) const override
+    void getMaker(char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
@@ -224,7 +227,7 @@ public:
             CarlaPlugin::getMaker(strBuf);
     }
 
-    void getCopyright(char* const strBuf) const override
+    void getCopyright(char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
@@ -234,7 +237,7 @@ public:
             CarlaPlugin::getCopyright(strBuf);
     }
 
-    void getRealName(char* const strBuf) const override
+    void getRealName(char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
@@ -244,7 +247,7 @@ public:
             CarlaPlugin::getRealName(strBuf);
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf) const override
+    void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
@@ -270,7 +273,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
-    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
@@ -331,7 +334,7 @@ public:
         fDssiDescriptor->set_custom_data(fHandle, chunk.data(), chunk.size());
     }
 
-    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor->select_program != nullptr,);
@@ -345,10 +348,16 @@ public:
 
             const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
-            fDssiDescriptor->select_program(fHandle, bank, program);
+            try {
+                fDssiDescriptor->select_program(fHandle, bank, program);
+            } catch(...) {}
 
             if (fHandle2 != nullptr)
-                fDssiDescriptor->select_program(fHandle2, bank, program);
+            {
+                try {
+                    fDssiDescriptor->select_program(fHandle2, bank, program);
+                } catch(...) {}
+            }
         }
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
@@ -916,31 +925,43 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
-    void activate() override
+    void activate() noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
 
         if (fDescriptor->activate != nullptr)
         {
-            fDescriptor->activate(fHandle);
+            try {
+                fDescriptor->activate(fHandle);
+            } catch(...) {}
 
             if (fHandle2 != nullptr)
-                fDescriptor->activate(fHandle2);
+            {
+                try {
+                    fDescriptor->activate(fHandle2);
+                } catch(...) {}
+            }
         }
     }
 
-    void deactivate() override
+    void deactivate() noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
 
         if (fDescriptor->deactivate != nullptr)
         {
-            fDescriptor->deactivate(fHandle);
+            try {
+                fDescriptor->deactivate(fHandle);
+            } catch(...) {}
 
             if (fHandle2 != nullptr)
-                fDescriptor->deactivate(fHandle2);
+            {
+                try {
+                    fDescriptor->deactivate(fHandle2);
+                } catch(...) {}
+            }
         }
     }
 
@@ -1692,7 +1713,7 @@ public:
     // -------------------------------------------------------------------
     // Post-poned UI Stuff
 
-    void uiParameterChange(const uint32_t index, const float value) override
+    void uiParameterChange(const uint32_t index, const float value) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(index < pData->param.count,);
 
@@ -1702,7 +1723,7 @@ public:
         osc_send_control(pData->osc.data, pData->param.data[index].rindex, value);
     }
 
-    void uiMidiProgramChange(const uint32_t index) override
+    void uiMidiProgramChange(const uint32_t index) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count,);
 
@@ -1712,7 +1733,7 @@ public:
         osc_send_program(pData->osc.data, pData->midiprog.data[index].bank, pData->midiprog.data[index].program);
     }
 
-    void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) override
+    void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
         CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
@@ -1731,7 +1752,7 @@ public:
 #endif
     }
 
-    void uiNoteOff(const uint8_t channel, const uint8_t note) override
+    void uiNoteOff(const uint8_t channel, const uint8_t note) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
         CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);

@@ -24,26 +24,26 @@
 
 #ifndef JACKBRIDGE_HPP_INCLUDED
 // don't include the whole JACK API in this file
-CARLA_EXPORT bool jackbridge_sem_init(void* sem);
-CARLA_EXPORT bool jackbridge_sem_destroy(void* sem);
-CARLA_EXPORT bool jackbridge_sem_post(void* sem);
+CARLA_EXPORT bool jackbridge_sem_init(void* sem) noexcept;
+CARLA_EXPORT bool jackbridge_sem_destroy(void* sem) noexcept;
+CARLA_EXPORT bool jackbridge_sem_post(void* sem) noexcept;
 CARLA_EXPORT bool jackbridge_sem_timedwait(void* sem, int secs);
 #endif
 
 // -----------------------------------------------------------------------------
 
 #if JACKBRIDGE_DUMMY
-bool jackbridge_sem_init(void*)
+bool jackbridge_sem_init(void*) noexcept
 {
     return false;
 }
 
-bool jackbridge_sem_destroy(void*)
+bool jackbridge_sem_destroy(void*) noexcept
 {
     return false;
 }
 
-bool jackbridge_sem_post(void*)
+bool jackbridge_sem_post(void*) noexcept
 {
     return false;
 }
@@ -58,17 +58,17 @@ bool jackbridge_sem_timedwait(void*, int)
 #include <sys/types.h>
 #include <semaphore.h>
 
-bool jackbridge_sem_init(void* sem)
+bool jackbridge_sem_init(void* sem) noexcept
 {
     return (sem_init((sem_t*)sem, 1, 0) == 0);
 }
 
-bool jackbridge_sem_destroy(void* sem)
+bool jackbridge_sem_destroy(void* sem) noexcept
 {
     return (sem_destroy((sem_t*)sem) == 0);
 }
 
-bool jackbridge_sem_post(void* sem)
+bool jackbridge_sem_post(void* sem) noexcept
 {
     return (sem_post((sem_t*)sem) == 0);
 }

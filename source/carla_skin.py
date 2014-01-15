@@ -548,6 +548,27 @@ class PluginSlot_Default(PluginSlot):
 
 # ------------------------------------------------------------------------------------------------------------
 
+class PluginSlot_Pixmap(PluginSlot_Default):
+    def __init__(self, parent, pluginId):
+        PluginSlot_Default.__init__(self, parent, pluginId)
+
+        # -------------------------------------------------------------
+        # Set-up GUI
+
+        self.setStyleSheet("""
+        QFrame#PluginWidget {
+            background-image: url(:/bitmaps/background_calf.png);
+            background-repeat: repeat-xy;
+        }""")
+
+    #------------------------------------------------------------------
+
+    def paintEvent(self, event):
+        # skip parent paiting
+        PluginSlot.paintEvent(self, event)
+
+# ------------------------------------------------------------------------------------------------------------
+
 class PluginSlot_Calf(PluginSlot):
     def __init__(self, parent, pluginId):
         PluginSlot.__init__(self, parent, pluginId)
@@ -1008,6 +1029,7 @@ def createPluginSlot(parent, pluginId):
     if pluginName.split(" ", 1)[0].lower() == "calf":
         return PluginSlot_Calf(parent, pluginId)
 
+    #return PluginSlot_Pixmap(parent, pluginId)
     return PluginSlot_Default(parent, pluginId)
 
 # ------------------------------------------------------------------------------------------------------------

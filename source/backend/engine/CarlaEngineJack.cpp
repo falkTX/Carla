@@ -1,6 +1,6 @@
 ﻿/*
- * Carla JACK Engine
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Carla Plugin Host
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -16,11 +16,21 @@
  */
 
 #include "CarlaEngineInternal.hpp"
+#include "CarlaPlugin.hpp"
+
 #include "CarlaBackendUtils.hpp"
+#include "CarlaEngineUtils.hpp"
+#include "CarlaMIDI.h"
+#include "LinkedList.hpp"
 
 #include "jackbridge/JackBridge.hpp"
 
 #include <cmath>
+
+#ifdef HAVE_JUCE
+# include "juce_audio_basics.h"
+using juce::FloatVectorOperations;
+#endif
 
 #include <QtCore/QStringList>
 
@@ -200,7 +210,7 @@ public:
             jackbridge_midi_clear_buffer(fJackBuffer);
     }
 
-    uint32_t getEventCount() const override
+    uint32_t getEventCount() const noexcept override
     {
         if (fPort == nullptr)
             return CarlaEngineEventPort::getEventCount();
@@ -211,7 +221,7 @@ public:
         return jackbridge_midi_get_event_count(fJackBuffer);
     }
 
-    const EngineEvent& getEvent(const uint32_t index) override
+    const EngineEvent& getEvent(const uint32_t index) noexcept override
     {
         if (fPort == nullptr)
             return CarlaEngineEventPort::getEvent(index);
@@ -222,7 +232,7 @@ public:
         return getEventUnchecked(index);
     }
 
-    const EngineEvent& getEventUnchecked(const uint32_t index) override
+    const EngineEvent& getEventUnchecked(const uint32_t index) noexcept override
     {
         jack_midi_event_t jackEvent;
 
@@ -329,7 +339,7 @@ public:
             jackbridge_client_close(fClient);
     }
 
-    void activate() override
+    void activate() noexcept override
     {
         carla_debug("CarlaEngineJackClient::activate()");
 
@@ -337,13 +347,15 @@ public:
         {
             CARLA_SAFE_ASSERT_RETURN(fClient != nullptr && ! fActive,);
 
-            jackbridge_activate(fClient);
+            try {
+                jackbridge_activate(fClient);
+            } catch(...) {}
         }
 
         CarlaEngineClient::activate();
     }
 
-    void deactivate() override
+    void deactivate() noexcept override
     {
         carla_debug("CarlaEngineJackClient::deactivate()");
 
@@ -351,7 +363,9 @@ public:
         {
             CARLA_SAFE_ASSERT_RETURN(fClient != nullptr && fActive,);
 
-            jackbridge_deactivate(fClient);
+            try {
+                jackbridge_deactivate(fClient);
+            } catch(...) {}
         }
 
         CarlaEngineClient::deactivate();
@@ -922,28 +936,43 @@ public:
     // -------------------------------------------------------------------
     // Transport
 
-    void transportPlay() override
+    void transportPlay() noexcept override
     {
         if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
-            CarlaEngine::transportPlay();
-        else if (fClient != nullptr)
-            jackbridge_transport_start(fClient);
+            return CarlaEngine::transportPlay();
+
+        if (fClient != nullptr)
+        {
+            try {
+                jackbridge_transport_start(fClient);
+            } catch(...) {}
+        }
     }
 
-    void transportPause() override
+    void transportPause() noexcept override
     {
         if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
-            CarlaEngine::transportPause();
-        else if (fClient != nullptr)
-            jackbridge_transport_stop(fClient);
+            return CarlaEngine::transportPause();
+
+        if (fClient != nullptr)
+        {
+            try {
+                jackbridge_transport_stop(fClient);
+            } catch(...) {}
+        }
     }
 
-    void transportRelocate(const uint64_t frame) override
+    void transportRelocate(const uint64_t frame) noexcept override
     {
         if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
-            CarlaEngine::transportRelocate(frame);
-        else if (fClient != nullptr)
-            jackbridge_transport_locate(fClient, static_cast<jack_nframes_t>(frame));
+            return CarlaEngine::transportRelocate(frame);
+
+        if (fClient != nullptr)
+        {
+            try {
+                jackbridge_transport_locate(fClient, static_cast<jack_nframes_t>(frame));
+            } catch(...) {}
+        }
     }
 #endif
 
@@ -1093,7 +1122,7 @@ protected:
             float* outBuf[2] = { audioOut1, audioOut2 };
 
             // initialize input events
-            carla_zeroStruct<EngineEvent>(pData->bufEvents.in, kEngineMaxInternalEventCount);
+            carla_zeroStruct<EngineEvent>(pData->bufEvents.in, kMaxEngineEventInternalCount);
             {
                 uint32_t engineEventIndex = 0;
 
@@ -1112,7 +1141,7 @@ protected:
                     engineEvent.time = jackEvent.time;
                     engineEvent.fillFromMidiData(static_cast<uint8_t>(jackEvent.size), jackEvent.buffer);
 
-                    if (engineEventIndex >= kEngineMaxInternalEventCount)
+                    if (engineEventIndex >= kMaxEngineEventInternalCount)
                         break;
                 }
             }
@@ -1124,7 +1153,7 @@ protected:
             {
                 jackbridge_midi_clear_buffer(eventOut);
 
-                for (unsigned short i=0; i < kEngineMaxInternalEventCount; ++i)
+                for (unsigned short i=0; i < kMaxEngineEventInternalCount; ++i)
                 {
                     const EngineEvent& engineEvent(pData->bufEvents.out[i]);
 

@@ -70,15 +70,13 @@ data/windows/Carla
 data/windows/CarlaControl
 source/plugin/carla-native.lv2/*.ttl
 source/tests/ansi-pedantic-test_*
-source/tests/ANSI
 source/tests/CarlaString
-source/tests/DGL1
-source/tests/DGL2
+source/tests/EngineEvents
+source/tests/PipeServer
 source/tests/Print
 source/tests/RtLinkedList
 source/tests/RtLinkedListGnu
 source/tests/Utils
-source/tests/Widgets
 
 # Docs
 doc/CarlaBackend/

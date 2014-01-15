@@ -1,6 +1,6 @@
 /*
- * Carla Engine OSC
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Carla Plugin Host
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -61,7 +61,7 @@ public:
     ~CarlaEngineOsc();
 
     void init(const char* const name);
-    void idle();
+    void idle() const;
     void close();
 
     // -------------------------------------------------------------------

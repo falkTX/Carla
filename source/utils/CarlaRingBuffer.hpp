@@ -21,9 +21,9 @@
 
 #include "CarlaUtils.hpp"
 
-#ifndef RING_BUFFER_SIZE
-# define RING_BUFFER_SIZE 2048
-#endif
+//#ifndef RING_BUFFER_SIZE
+#define RING_BUFFER_SIZE 2048
+//#endif
 
 // -----------------------------------------------------------------------
 // RingBuffer struct
@@ -97,28 +97,28 @@ public:
 
     // -------------------------------------------------------------------
 
-    char readChar()
+    char readChar() noexcept
     {
         char c = '\0';
         tryRead(&c, sizeof(char));
         return c;
     }
 
-    int32_t readInt()
+    int32_t readInt() noexcept
     {
         int32_t i = 0;
         tryRead(&i, sizeof(int32_t));
         return i;
     }
 
-    int64_t readLong()
+    int64_t readLong() noexcept
     {
         int64_t l = 0;
         tryRead(&l, sizeof(int64_t));
         return l;
     }
 
-    float readFloat()
+    float readFloat() noexcept
     {
         float f = 0.0f;
         tryRead(&f, sizeof(float));
@@ -127,22 +127,22 @@ public:
 
     // -------------------------------------------------------------------
 
-    void writeChar(const char value)
+    void writeChar(const char value) noexcept
     {
         tryWrite(&value, sizeof(char));
     }
 
-    void writeInt(const int32_t value)
+    void writeInt(const int32_t value) noexcept
     {
         tryWrite(&value, sizeof(int32_t));
     }
 
-    void writeLong(const int64_t value)
+    void writeLong(const int64_t value) noexcept
     {
         tryWrite(&value, sizeof(int64_t));
     }
 
-    void writeFloat(const float value)
+    void writeFloat(const float value) noexcept
     {
         tryWrite(&value, sizeof(float));
     }
@@ -150,7 +150,7 @@ public:
     // -------------------------------------------------------------------
 
 protected:
-    void tryRead(void* const buf, const size_t size)
+    void tryRead(void* const buf, const size_t size) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fRingBuf != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(buf != nullptr,);
@@ -194,7 +194,7 @@ protected:
         fRingBuf->tail = static_cast<int32_t>(readto);
     }
 
-    void tryWrite(const void* const buf, const size_t size)
+    void tryWrite(const void* const buf, const size_t size) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fRingBuf != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(buf != nullptr,);

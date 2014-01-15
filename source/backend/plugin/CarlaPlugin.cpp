@@ -16,11 +16,10 @@
  */
 
 #include "CarlaPluginInternal.hpp"
-#include "CarlaLibCounter.hpp"
+#include "CarlaEngine.hpp"
 
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>
-#include <QtCore/QSettings>
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -59,129 +58,47 @@ struct ParamSymbol {
 #endif
 };
 
-// -------------------------------------------------------------------
-// Library functions, defined in CarlaPluginInternal.hpp
+// -----------------------------------------------------------------------
 
-static LibCounter sLibCounter;
-
-bool CarlaPluginProtectedData::libOpen(const char* const filename)
+CarlaPlugin* CarlaPlugin::newFileGIG(const Initializer& init, const bool use16Outs)
 {
-    lib = sLibCounter.open(filename);
-    return (lib != nullptr);
+    carla_debug("CarlaPlugin::newFileGIG({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
+#ifdef WANT_LINUXSAMPLER
+    return newLinuxSampler(init, "GIG", use16Outs);
+#else
+    init.engine->setLastError("GIG support not available");
+    return nullptr;
+
+    // unused
+    (void)use16Outs;
+#endif
 }
 
-bool CarlaPluginProtectedData::libClose()
+CarlaPlugin* CarlaPlugin::newFileSF2(const Initializer& init, const bool use16Outs)
 {
-    const bool ret = sLibCounter.close(lib);
-    lib = nullptr;
-    return ret;
+    carla_debug("CarlaPlugin::newFileSF2({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
+#if defined(WANT_FLUIDSYNTH)
+    return newFluidSynth(init, use16Outs);
+#elif defined(WANT_LINUXSAMPLER)
+    return newLinuxSampler(init, "SF2", use16Outs);
+#else
+    init.engine->setLastError("SF2 support not available");
+    return nullptr;
+
+    // unused
+    (void)use16Outs;
+#endif
 }
 
-void* CarlaPluginProtectedData::libSymbol(const char* const symbol)
+CarlaPlugin* CarlaPlugin::newFileSFZ(const Initializer& init)
 {
-    return lib_symbol(lib, symbol);
-}
-
-bool CarlaPluginProtectedData::uiLibOpen(const char* const filename)
-{
-    uiLib = sLibCounter.open(filename);
-    return (uiLib != nullptr);
-}
-
-bool CarlaPluginProtectedData::uiLibClose()
-{
-    const bool ret = sLibCounter.close(uiLib);
-    uiLib = nullptr;
-    return ret;
-}
-
-void* CarlaPluginProtectedData::uiLibSymbol(const char* const symbol)
-{
-    return lib_symbol(uiLib, symbol);
-}
-
-// -------------------------------------------------------------------
-// Settings functions, defined in CarlaPluginInternal.hpp
-
-void CarlaPluginProtectedData::saveSetting(const unsigned int option, const bool yesNo)
-{
-    CARLA_SAFE_ASSERT_RETURN(identifier != nullptr && identifier[0] != '\0',);
-
-    QSettings settings("falkTX", "CarlaPluginSettings");
-    settings.beginGroup(identifier);
-
-    switch (option)
-    {
-    case PLUGIN_OPTION_FIXED_BUFFERS:
-        settings.setValue("FixedBuffers", yesNo);
-        break;
-    case PLUGIN_OPTION_FORCE_STEREO:
-        settings.setValue("ForceStereo", yesNo);
-        break;
-    case PLUGIN_OPTION_MAP_PROGRAM_CHANGES:
-        settings.setValue("MapProgramChanges", yesNo);
-        break;
-    case PLUGIN_OPTION_USE_CHUNKS:
-        settings.setValue("UseChunks", yesNo);
-        break;
-    case PLUGIN_OPTION_SEND_CONTROL_CHANGES:
-        settings.setValue("SendControlChanges", yesNo);
-        break;
-    case PLUGIN_OPTION_SEND_CHANNEL_PRESSURE:
-        settings.setValue("SendChannelPressure", yesNo);
-        break;
-    case PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH:
-        settings.setValue("SendNoteAftertouch", yesNo);
-        break;
-    case PLUGIN_OPTION_SEND_PITCHBEND:
-        settings.setValue("SendPitchbend", yesNo);
-        break;
-    case PLUGIN_OPTION_SEND_ALL_SOUND_OFF:
-        settings.setValue("SendAllSoundOff", yesNo);
-        break;
-    default:
-        break;
-    }
-
-    settings.endGroup();
-}
-
-unsigned int CarlaPluginProtectedData::loadSettings(const unsigned int options, const unsigned int availOptions)
-{
-    CARLA_SAFE_ASSERT_RETURN(identifier != nullptr && identifier[0] != '\0', 0x0);
-
-    QSettings settings("falkTX", "CarlaPluginSettings");
-    settings.beginGroup(identifier);
-
-    unsigned int newOptions = 0x0;
-
-    #define CHECK_AND_SET_OPTION(STR, BIT)                              \
-    if ((availOptions & BIT) != 0 || BIT == PLUGIN_OPTION_FORCE_STEREO) \
-    {                                                                   \
-        if (settings.contains(STR))                                     \
-        {                                                               \
-            if (settings.value(STR, (options & BIT) != 0).toBool())     \
-                newOptions |= BIT;                                      \
-        }                                                               \
-        else if (options & BIT)                                         \
-            newOptions |= BIT;                                          \
-    }
-
-    CHECK_AND_SET_OPTION("FixedBuffers", PLUGIN_OPTION_FIXED_BUFFERS);
-    CHECK_AND_SET_OPTION("ForceStereo", PLUGIN_OPTION_FORCE_STEREO);
-    CHECK_AND_SET_OPTION("MapProgramChanges", PLUGIN_OPTION_MAP_PROGRAM_CHANGES);
-    CHECK_AND_SET_OPTION("UseChunks", PLUGIN_OPTION_USE_CHUNKS);
-    CHECK_AND_SET_OPTION("SendControlChanges", PLUGIN_OPTION_SEND_CONTROL_CHANGES);
-    CHECK_AND_SET_OPTION("SendChannelPressure", PLUGIN_OPTION_SEND_CHANNEL_PRESSURE);
-    CHECK_AND_SET_OPTION("SendNoteAftertouch", PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH);
-    CHECK_AND_SET_OPTION("SendPitchbend", PLUGIN_OPTION_SEND_PITCHBEND);
-    CHECK_AND_SET_OPTION("SendAllSoundOff", PLUGIN_OPTION_SEND_ALL_SOUND_OFF);
-
-    #undef CHECK_AND_SET_OPTION
-
-    settings.endGroup();
-
-    return newOptions;
+    carla_debug("CarlaPlugin::newFileSFZ({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
+#ifdef WANT_LINUXSAMPLER
+    return newLinuxSampler(init, "SFZ", false);
+#else
+    init.engine->setLastError("SFZ support not available");
+    return nullptr;
+#endif
 }
 
 // -------------------------------------------------------------------
@@ -261,6 +178,22 @@ const char* CarlaPlugin::getIconName() const noexcept
     return pData->iconName;
 }
 
+PluginCategory CarlaPlugin::getCategory() const noexcept
+{
+    PluginCategory category = PLUGIN_CATEGORY_NONE;
+
+    try {
+        category = getPluginCategoryFromName(pData->name);
+    } catch(...) {}
+
+    return category;
+}
+
+long CarlaPlugin::getUniqueId() const noexcept
+{
+    return 0;
+}
+
 uint32_t CarlaPlugin::getLatencyInFrames() const noexcept
 {
     return pData->latency;
@@ -294,7 +227,7 @@ uint32_t CarlaPlugin::getParameterCount() const noexcept
     return pData->param.count;
 }
 
-uint32_t CarlaPlugin::getParameterScalePointCount(const uint32_t parameterId) const
+uint32_t CarlaPlugin::getParameterScalePointCount(const uint32_t parameterId) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0);
     return 0;
@@ -328,37 +261,37 @@ int32_t CarlaPlugin::getCurrentMidiProgram() const noexcept
     return pData->midiprog.current;
 }
 
-const ParameterData& CarlaPlugin::getParameterData(const uint32_t parameterId) const
+const ParameterData& CarlaPlugin::getParameterData(const uint32_t parameterId) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, kParameterDataNull);
     return pData->param.data[parameterId];
 }
 
-const ParameterRanges& CarlaPlugin::getParameterRanges(const uint32_t parameterId) const
+const ParameterRanges& CarlaPlugin::getParameterRanges(const uint32_t parameterId) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, kParameterRangesNull);
     return pData->param.ranges[parameterId];
 }
 
-bool CarlaPlugin::isParameterOutput(const uint32_t parameterId) const
+bool CarlaPlugin::isParameterOutput(const uint32_t parameterId) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
     return (pData->param.data[parameterId].type == PARAMETER_OUTPUT);
 }
 
-const MidiProgramData& CarlaPlugin::getMidiProgramData(const uint32_t index) const
+const MidiProgramData& CarlaPlugin::getMidiProgramData(const uint32_t index) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count, kMidiProgramDataNull);
     return pData->midiprog.data[index];
 }
 
-const CustomData& CarlaPlugin::getCustomData(const uint32_t index) const
+const CustomData& CarlaPlugin::getCustomData(const uint32_t index) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(index < pData->custom.count(), kCustomDataNull);
     return pData->custom.getAt(index);
 }
 
-int32_t CarlaPlugin::getChunkData(void** const dataPtr) const
+int32_t CarlaPlugin::getChunkData(void** const dataPtr) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
     CARLA_ASSERT(false); // this should never happen
@@ -368,20 +301,20 @@ int32_t CarlaPlugin::getChunkData(void** const dataPtr) const
 // -------------------------------------------------------------------
 // Information (per-plugin data)
 
-unsigned int CarlaPlugin::getOptionsAvailable() const
+unsigned int CarlaPlugin::getOptionsAvailable() const noexcept
 {
     CARLA_ASSERT(false); // this should never happen
     return 0x0;
 }
 
-float CarlaPlugin::getParameterValue(const uint32_t parameterId) const
+float CarlaPlugin::getParameterValue(const uint32_t parameterId) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(), 0.0f);
     CARLA_ASSERT(false); // this should never happen
     return 0.0f;
 }
 
-float CarlaPlugin::getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) const
+float CarlaPlugin::getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(), 0.0f);
     CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId), 0.0f);
@@ -389,53 +322,53 @@ float CarlaPlugin::getParameterScalePointValue(const uint32_t parameterId, const
     return 0.0f;
 }
 
-void CarlaPlugin::getLabel(char* const strBuf) const
+void CarlaPlugin::getLabel(char* const strBuf) const noexcept
 {
     strBuf[0] = '\0';
 }
 
-void CarlaPlugin::getMaker(char* const strBuf) const
+void CarlaPlugin::getMaker(char* const strBuf) const noexcept
 {
     strBuf[0] = '\0';
 }
 
-void CarlaPlugin::getCopyright(char* const strBuf) const
+void CarlaPlugin::getCopyright(char* const strBuf) const noexcept
 {
     strBuf[0] = '\0';
 }
 
-void CarlaPlugin::getRealName(char* const strBuf) const
+void CarlaPlugin::getRealName(char* const strBuf) const noexcept
 {
     strBuf[0] = '\0';
 }
 
-void CarlaPlugin::getParameterName(const uint32_t parameterId, char* const strBuf) const
-{
-    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
-    CARLA_ASSERT(false); // this should never happen
-    strBuf[0] = '\0';
-}
-
-void CarlaPlugin::getParameterSymbol(const uint32_t parameterId, char* const strBuf) const
-{
-    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
-    strBuf[0] = '\0';
-}
-
-void CarlaPlugin::getParameterText(const uint32_t parameterId, const float, char* const strBuf) const
+void CarlaPlugin::getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
     CARLA_ASSERT(false); // this should never happen
     strBuf[0] = '\0';
 }
 
-void CarlaPlugin::getParameterUnit(const uint32_t parameterId, char* const strBuf) const
+void CarlaPlugin::getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
     strBuf[0] = '\0';
 }
 
-void CarlaPlugin::getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const
+void CarlaPlugin::getParameterText(const uint32_t parameterId, const float, char* const strBuf) const noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
+    CARLA_ASSERT(false); // this should never happen
+    strBuf[0] = '\0';
+}
+
+void CarlaPlugin::getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
+    strBuf[0] = '\0';
+}
+
+void CarlaPlugin::getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
     CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId),);
@@ -443,14 +376,14 @@ void CarlaPlugin::getParameterScalePointLabel(const uint32_t parameterId, const 
     strBuf[0] = '\0';
 }
 
-void CarlaPlugin::getProgramName(const uint32_t index, char* const strBuf) const
+void CarlaPlugin::getProgramName(const uint32_t index, char* const strBuf) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(index < pData->prog.count,);
     CARLA_SAFE_ASSERT_RETURN(pData->prog.names[index] != nullptr,);
     std::strncpy(strBuf, pData->prog.names[index], STR_MAX);
 }
 
-void CarlaPlugin::getMidiProgramName(const uint32_t index, char* const strBuf) const
+void CarlaPlugin::getMidiProgramName(const uint32_t index, char* const strBuf) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count,);
     CARLA_SAFE_ASSERT_RETURN(pData->midiprog.data[index].name != nullptr,);
@@ -872,7 +805,10 @@ void CarlaPlugin::setName(const char* const newName)
 {
     CARLA_ASSERT(newName != nullptr && newName[0] != '\0');
 
-    pData->name = newName;
+    if (pData->name != nullptr)
+        delete[] pData->name;
+
+    pData->name = carla_strdup(newName);
 }
 
 void CarlaPlugin::setOption(const unsigned int option, const bool yesNo)
@@ -887,7 +823,7 @@ void CarlaPlugin::setOption(const unsigned int option, const bool yesNo)
     pData->saveSetting(option, yesNo);
 }
 
-void CarlaPlugin::setEnabled(const bool yesNo)
+void CarlaPlugin::setEnabled(const bool yesNo) noexcept
 {
     if (pData->enabled == yesNo)
         return;
@@ -901,7 +837,7 @@ void CarlaPlugin::setEnabled(const bool yesNo)
 // -------------------------------------------------------------------
 // Set data (internal stuff)
 
-void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool sendCallback)
+void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool sendCallback) noexcept
 {
 #ifndef BUILD_BRIDGE
     CARLA_ASSERT(sendOsc || sendCallback); // never call this from RT
@@ -924,7 +860,7 @@ void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool se
 #ifndef BUILD_BRIDGE
     const float value(active ? 1.0f : 0.0f);
 
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_ACTIVE, value);
 
     if (sendCallback)
@@ -939,7 +875,7 @@ void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool se
 }
 
 #ifndef BUILD_BRIDGE
-void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool sendCallback)
+void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool sendCallback) noexcept
 {
     CARLA_ASSERT(value >= 0.0f && value <= 1.0f);
 
@@ -950,14 +886,14 @@ void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool se
 
     pData->postProc.dryWet = fixedValue;
 
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_DRYWET, fixedValue);
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_DRYWET, 0, fixedValue, nullptr);
 }
 
-void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool sendCallback)
+void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool sendCallback) noexcept
 {
     CARLA_ASSERT(value >= 0.0f && value <= 1.27f);
 
@@ -968,14 +904,14 @@ void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool se
 
     pData->postProc.volume = fixedValue;
 
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_VOLUME, fixedValue);
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_VOLUME, 0, fixedValue, nullptr);
 }
 
-void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bool sendCallback)
+void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bool sendCallback) noexcept
 {
     CARLA_ASSERT(value >= -1.0f && value <= 1.0f);
 
@@ -986,14 +922,14 @@ void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bo
 
     pData->postProc.balanceLeft = fixedValue;
 
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_BALANCE_LEFT, fixedValue);
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_BALANCE_LEFT, 0, fixedValue, nullptr);
 }
 
-void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const bool sendCallback)
+void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const bool sendCallback) noexcept
 {
     CARLA_ASSERT(value >= -1.0f && value <= 1.0f);
 
@@ -1004,14 +940,14 @@ void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const b
 
     pData->postProc.balanceRight = fixedValue;
 
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_BALANCE_RIGHT, fixedValue);
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_BALANCE_RIGHT, 0, fixedValue, nullptr);
 }
 
-void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool sendCallback)
+void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool sendCallback) noexcept
 {
     CARLA_ASSERT(value >= -1.0f && value <= 1.0f);
 
@@ -1022,7 +958,7 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
 
     pData->postProc.panning = fixedValue;
 
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_PANNING, fixedValue);
 
     if (sendCallback)
@@ -1030,7 +966,7 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
 }
 #endif
 
-void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback)
+void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept
 {
 #ifndef BUILD_BRIDGE
     CARLA_ASSERT(sendOsc || sendCallback); // never call this from RT
@@ -1045,7 +981,7 @@ void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const
 #ifndef BUILD_BRIDGE
     const float ctrlf(channel);
 
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_CTRL_CHANNEL, ctrlf);
 
     if (sendCallback)
@@ -1065,7 +1001,7 @@ void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const
 // -------------------------------------------------------------------
 // Set data (plugin-specific stuff)
 
-void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback)
+void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
 {
     CARLA_ASSERT(parameterId < pData->param.count);
 #ifdef BUILD_BRIDGE
@@ -1079,7 +1015,7 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
     if (sendGui)
         uiParameterChange(parameterId, value);
 
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, parameterId, value);
 #endif
 
@@ -1095,7 +1031,7 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
 #endif
 }
 
-void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback)
+void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
 {
     CARLA_ASSERT(rindex > PARAMETER_MAX && rindex != PARAMETER_NULL);
 
@@ -1132,7 +1068,7 @@ void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float
     }
 }
 
-void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, uint8_t channel, const bool sendOsc, const bool sendCallback)
+void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, uint8_t channel, const bool sendOsc, const bool sendCallback) noexcept
 {
     CARLA_ASSERT(sendOsc || sendCallback); // never call this from RT
     CARLA_ASSERT(parameterId < pData->param.count);
@@ -1144,7 +1080,7 @@ void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, uint8_t ch
     pData->param.data[parameterId].midiChannel = channel;
 
 #ifndef BUILD_BRIDGE
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_midi_channel(pData->id, parameterId, channel);
 
     if (sendCallback)
@@ -1161,7 +1097,7 @@ void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, uint8_t ch
 #endif
 }
 
-void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, int16_t cc, const bool sendOsc, const bool sendCallback)
+void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, int16_t cc, const bool sendOsc, const bool sendCallback) noexcept
 {
     CARLA_ASSERT(sendOsc || sendCallback); // never call this from RT
     CARLA_ASSERT(parameterId < pData->param.count);
@@ -1173,7 +1109,7 @@ void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, int16_t cc, con
     pData->param.data[parameterId].midiCC = cc;
 
 #ifndef BUILD_BRIDGE
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_midi_cc(pData->id, parameterId, cc);
 
     if (sendCallback)
@@ -1267,7 +1203,7 @@ void CarlaPlugin::setChunkData(const char* const stringData)
     (void)stringData;
 }
 
-void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
+void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
 #ifdef BUILD_BRIDGE
@@ -1279,7 +1215,9 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
     pData->prog.current = index;
 
 #ifndef BUILD_BRIDGE
-    if (sendOsc)
+    const bool reallySendOsc(sendOsc && pData->engine->isOscControlRegistered());
+
+    if (reallySendOsc)
         pData->engine->oscSend_control_set_current_program(pData->id, index);
 #endif
 
@@ -1303,13 +1241,16 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
 
             pData->param.ranges[i].def = value;
 
-            if (sendOsc || sendCallback)
-            {
 #ifndef BUILD_BRIDGE
+            if (reallySendOsc)
+            {
                 pData->engine->oscSend_control_set_default_value(pData->id, i, value);
                 pData->engine->oscSend_control_set_parameter_value(pData->id, i, value);
+            }
 #endif
 
+            if (sendCallback)
+            {
                 pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, i, 0, value, nullptr);
                 pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, i, 0, value, nullptr);
             }
@@ -1321,10 +1262,11 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
 
     // unused
     (void)sendGui;
+    (void)sendOsc;
 #endif
 }
 
-void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
+void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
 #ifdef BUILD_BRIDGE
@@ -1336,7 +1278,9 @@ void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const 
     pData->midiprog.current = index;
 
 #ifndef BUILD_BRIDGE
-    if (sendOsc)
+    const bool reallySendOsc(sendOsc && pData->engine->isOscControlRegistered());
+
+    if (reallySendOsc)
         pData->engine->oscSend_control_set_current_midi_program(pData->id, index);
 #endif
 
@@ -1359,13 +1303,16 @@ void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const 
 
             pData->param.ranges[i].def = value;
 
-            if (sendOsc || sendCallback)
-            {
 #ifndef BUILD_BRIDGE
+            if (reallySendOsc)
+            {
                 pData->engine->oscSend_control_set_default_value(pData->id, i, value);
                 pData->engine->oscSend_control_set_parameter_value(pData->id, i, value);
+            }
 #endif
 
+            if (sendCallback)
+            {
                 pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, i, 0, value, nullptr);
                 pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, i, 0, value, nullptr);
             }
@@ -1377,10 +1324,11 @@ void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const 
 
     // unused
     (void)sendGui;
+    (void)sendOsc;
 #endif
 }
 
-void CarlaPlugin::setMidiProgramById(const uint32_t bank, const uint32_t program, const bool sendGui, const bool sendOsc, const bool sendCallback)
+void CarlaPlugin::setMidiProgramById(const uint32_t bank, const uint32_t program, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
 {
     for (uint32_t i=0; i < pData->midiprog.count; ++i)
     {
@@ -1391,15 +1339,6 @@ void CarlaPlugin::setMidiProgramById(const uint32_t bank, const uint32_t program
 
 // -------------------------------------------------------------------
 // Set ui stuff
-
-void CarlaPlugin::showCustomUI(const bool yesNo)
-{
-    CARLA_ASSERT(false);
-    return;
-
-    // unused
-    (void)yesNo;
-}
 
 void CarlaPlugin::idle()
 {
@@ -1420,6 +1359,15 @@ void CarlaPlugin::idle()
     }
 }
 
+void CarlaPlugin::showCustomUI(const bool yesNo)
+{
+    CARLA_ASSERT(false);
+    return;
+
+    // unused
+    (void)yesNo;
+}
+
 // -------------------------------------------------------------------
 // Plugin state
 
@@ -1430,12 +1378,12 @@ void CarlaPlugin::reloadPrograms(const bool)
 // -------------------------------------------------------------------
 // Plugin processing
 
-void CarlaPlugin::activate()
+void CarlaPlugin::activate() noexcept
 {
     CARLA_ASSERT(! pData->active);
 }
 
-void CarlaPlugin::deactivate()
+void CarlaPlugin::deactivate() noexcept
 {
     CARLA_ASSERT(pData->active);
 }
@@ -1452,7 +1400,7 @@ void CarlaPlugin::offlineModeChanged(const bool)
 {
 }
 
-bool CarlaPlugin::tryLock(const bool forcedOffline)
+bool CarlaPlugin::tryLock(const bool forcedOffline) noexcept
 {
     if (forcedOffline)
     {
@@ -1463,7 +1411,7 @@ bool CarlaPlugin::tryLock(const bool forcedOffline)
     return pData->masterMutex.tryLock();
 }
 
-void CarlaPlugin::unlock()
+void CarlaPlugin::unlock() noexcept
 {
     pData->masterMutex.unlock();
 }
@@ -1486,7 +1434,7 @@ void CarlaPlugin::clearBuffers()
 // -------------------------------------------------------------------
 // OSC stuff
 
-void CarlaPlugin::registerToOscClient()
+void CarlaPlugin::registerToOscClient() noexcept
 {
 #ifdef BUILD_BRIDGE
     if (! pData->engine->isOscBridgeRegistered())
@@ -1756,7 +1704,7 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
             uiNoteOff(channel, note);
     }
 
-    if (sendOsc)
+    if (sendOsc && pData->engine->isOscControlRegistered())
     {
         if (velo > 0)
             pData->engine->oscSend_control_note_on(pData->id, channel, note, velo);
@@ -1947,7 +1895,7 @@ void CarlaPlugin::postRtEventsRun()
 // -------------------------------------------------------------------
 // Post-poned UI Stuff
 
-void CarlaPlugin::uiParameterChange(const uint32_t index, const float value)
+void CarlaPlugin::uiParameterChange(const uint32_t index, const float value) noexcept
 {
     CARLA_ASSERT(index < getParameterCount());
     return;
@@ -1957,7 +1905,7 @@ void CarlaPlugin::uiParameterChange(const uint32_t index, const float value)
     (void)value;
 }
 
-void CarlaPlugin::uiProgramChange(const uint32_t index)
+void CarlaPlugin::uiProgramChange(const uint32_t index) noexcept
 {
     CARLA_ASSERT(index < getProgramCount());
     return;
@@ -1966,7 +1914,7 @@ void CarlaPlugin::uiProgramChange(const uint32_t index)
     (void)index;
 }
 
-void CarlaPlugin::uiMidiProgramChange(const uint32_t index)
+void CarlaPlugin::uiMidiProgramChange(const uint32_t index) noexcept
 {
     CARLA_ASSERT(index < getMidiProgramCount());
     return;
@@ -1975,7 +1923,7 @@ void CarlaPlugin::uiMidiProgramChange(const uint32_t index)
     (void)index;
 }
 
-void CarlaPlugin::uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo)
+void CarlaPlugin::uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) noexcept
 {
     CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
     CARLA_ASSERT(note < MAX_MIDI_NOTE);
@@ -1988,7 +1936,7 @@ void CarlaPlugin::uiNoteOn(const uint8_t channel, const uint8_t note, const uint
     (void)velo;
 }
 
-void CarlaPlugin::uiNoteOff(const uint8_t channel, const uint8_t note)
+void CarlaPlugin::uiNoteOff(const uint8_t channel, const uint8_t note) noexcept
 {
     CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
     CARLA_ASSERT(note < MAX_MIDI_NOTE);
@@ -2027,7 +1975,7 @@ CarlaEngineAudioPort* CarlaPlugin::getAudioOutPort(const uint32_t index) const n
 // -------------------------------------------------------------------
 // Scoped Disabler
 
-CarlaPlugin::ScopedDisabler::ScopedDisabler(CarlaPlugin* const plugin)
+CarlaPlugin::ScopedDisabler::ScopedDisabler(CarlaPlugin* const plugin) noexcept
     : fPlugin(plugin)
 {
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
@@ -2044,7 +1992,7 @@ CarlaPlugin::ScopedDisabler::ScopedDisabler(CarlaPlugin* const plugin)
         plugin->pData->client->deactivate();
 }
 
-CarlaPlugin::ScopedDisabler::~ScopedDisabler()
+CarlaPlugin::ScopedDisabler::~ScopedDisabler() noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(fPlugin->pData != nullptr,);
@@ -2059,7 +2007,7 @@ CarlaPlugin::ScopedDisabler::~ScopedDisabler()
 // -------------------------------------------------------------------
 // Scoped Process Locker
 
-CarlaPlugin::ScopedSingleProcessLocker::ScopedSingleProcessLocker(CarlaPlugin* const plugin, const bool block)
+CarlaPlugin::ScopedSingleProcessLocker::ScopedSingleProcessLocker(CarlaPlugin* const plugin, const bool block) noexcept
     : fPlugin(plugin),
       fBlock(block)
 {
@@ -2073,7 +2021,7 @@ CarlaPlugin::ScopedSingleProcessLocker::ScopedSingleProcessLocker(CarlaPlugin* c
     plugin->pData->singleMutex.lock();
 }
 
-CarlaPlugin::ScopedSingleProcessLocker::~ScopedSingleProcessLocker()
+CarlaPlugin::ScopedSingleProcessLocker::~ScopedSingleProcessLocker() noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(fPlugin->pData != nullptr,);
@@ -2089,24 +2037,6 @@ CarlaPlugin::ScopedSingleProcessLocker::~ScopedSingleProcessLocker()
 
     fPlugin->pData->singleMutex.unlock();
 }
-
-// #ifdef BUILD_BRIDGE
-// CarlaPlugin* newFailAsBridge(const CarlaPlugin::Initializer& init)
-// {
-//     init.engine->setLastError("Can't use this in plugin bridges");
-//     return nullptr;
-// }
-//
-// CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)          { return newFailAsBridge(init); }
-// CarlaPlugin* CarlaPlugin::newGIG(const Initializer& init, const bool) { return newFailAsBridge(init); }
-// CarlaPlugin* CarlaPlugin::newSF2(const Initializer& init, const bool) { return newFailAsBridge(init); }
-// CarlaPlugin* CarlaPlugin::newSFZ(const Initializer& init, const bool) { return newFailAsBridge(init); }
-//
-// # ifdef WANT_NATIVE
-// size_t                  CarlaPlugin::getNativePluginCount()                  { return 0;       }
-// const PluginDescriptor* CarlaPlugin::getNativePluginDescriptor(const size_t) { return nullptr; }
-// # endif
-// #endif
 
 // -------------------------------------------------------------------
 

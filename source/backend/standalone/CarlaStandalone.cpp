@@ -19,6 +19,7 @@
 // Check carla_stderr2("Engine is not running"); <= prepend func name and args
 
 #include "CarlaHost.h"
+#include "CarlaMIDI.h"
 #include "CarlaNative.h"
 
 #include "CarlaEngine.hpp"

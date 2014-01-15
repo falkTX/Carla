@@ -1,6 +1,6 @@
 /*
- * Carla Engine Thread
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Carla Plugin Host
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,9 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaEngineThread.hpp"
-
 #include "CarlaEngine.hpp"
+#include "CarlaEngineThread.hpp"
 #include "CarlaPlugin.hpp"
 
 CARLA_BACKEND_START_NAMESPACE

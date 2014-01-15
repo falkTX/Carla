@@ -16,11 +16,11 @@
  */
 
 #include "CarlaPluginInternal.hpp"
+#include "CarlaEngine.hpp"
 
 #ifdef WANT_LADSPA
 
 #include "CarlaLadspaUtils.hpp"
-#include "CarlaLibUtils.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -92,7 +92,7 @@ public:
         return PLUGIN_LADSPA;
     }
 
-    PluginCategory getCategory() const override
+    PluginCategory getCategory() const noexcept override
     {
         if (fRdfDescriptor != nullptr)
         {
@@ -127,10 +127,10 @@ public:
                 return PLUGIN_CATEGORY_SYNTH;
         }
 
-        return getPluginCategoryFromName(pData->name);
+        return CarlaPlugin::getCategory();
     }
 
-    long getUniqueId() const override
+    long getUniqueId() const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, 0);
 
@@ -140,7 +140,7 @@ public:
     // -------------------------------------------------------------------
     // Information (count)
 
-    uint32_t getParameterScalePointCount(const uint32_t parameterId) const override
+    uint32_t getParameterScalePointCount(const uint32_t parameterId) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0);
 
@@ -163,7 +163,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getOptionsAvailable() const override
+    unsigned int getOptionsAvailable() const noexcept override
     {
 #ifdef __USE_GNU
         const bool isDssiVst(strcasestr(pData->filename, "dssi-vst"));
@@ -189,7 +189,7 @@ public:
         return options;
     }
 
-    float getParameterValue(const uint32_t parameterId) const override
+    float getParameterValue(const uint32_t parameterId) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr, 0.0f);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
@@ -197,7 +197,7 @@ public:
         return fParamBuffers[parameterId];
     }
 
-    float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) const override
+    float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, 0.0f);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
@@ -219,7 +219,7 @@ public:
         return 0.0f;
     }
 
-    void getLabel(char* const strBuf) const override
+    void getLabel(char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
@@ -229,7 +229,7 @@ public:
             CarlaPlugin::getLabel(strBuf);
     }
 
-    void getMaker(char* const strBuf) const override
+    void getMaker(char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
@@ -241,7 +241,7 @@ public:
             CarlaPlugin::getMaker(strBuf);
     }
 
-    void getCopyright(char* const strBuf) const override
+    void getCopyright(char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
@@ -251,7 +251,7 @@ public:
             CarlaPlugin::getCopyright(strBuf);
     }
 
-    void getRealName(char* const strBuf) const override
+    void getRealName(char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
@@ -263,7 +263,7 @@ public:
             CarlaPlugin::getRealName(strBuf);
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf) const override
+    void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
@@ -276,7 +276,7 @@ public:
             CarlaPlugin::getParameterName(parameterId, strBuf);
     }
 
-    void getParameterSymbol(const uint32_t parameterId, char* const strBuf) const override
+    void getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
@@ -296,7 +296,7 @@ public:
         CarlaPlugin::getParameterSymbol(parameterId, strBuf);
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf) const override
+    void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
@@ -335,7 +335,7 @@ public:
         CarlaPlugin::getParameterUnit(parameterId, strBuf);
     }
 
-    void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const override
+    void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
@@ -375,7 +375,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
-    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
@@ -821,31 +821,43 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
-    void activate() override
+    void activate() noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
 
         if (fDescriptor->activate != nullptr)
         {
-            fDescriptor->activate(fHandle);
+            try {
+                fDescriptor->activate(fHandle);
+            } catch(...) {}
 
             if (fHandle2 != nullptr)
-                fDescriptor->activate(fHandle2);
+            {
+                try {
+                    fDescriptor->activate(fHandle2);
+                } catch(...) {}
+            }
         }
     }
 
-    void deactivate() override
+    void deactivate() noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
 
         if (fDescriptor->deactivate != nullptr)
         {
-            fDescriptor->deactivate(fHandle);
+            try {
+                fDescriptor->deactivate(fHandle);
+            } catch(...) {}
 
             if (fHandle2 != nullptr)
-                fDescriptor->deactivate(fHandle2);
+            {
+                try {
+                    fDescriptor->deactivate(fHandle2);
+                } catch(...) {}
+            }
         }
     }
 
@@ -1362,7 +1374,7 @@ public:
 
         if (! pData->libOpen(filename))
         {
-            pData->engine->setLastError(lib_error(filename));
+            pData->engine->setLastError(pData->libError(filename));
             return false;
         }
 

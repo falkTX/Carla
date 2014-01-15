@@ -1,6 +1,6 @@
 ﻿/*
- * Carla Engine Bridge
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Carla Plugin Host
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,11 +20,12 @@
 #endif
 
 #include "CarlaEngineInternal.hpp"
-#include "CarlaBackendUtils.hpp"
-#include "CarlaMIDI.h"
+#include "CarlaPlugin.hpp"
 
+#include "CarlaBackendUtils.hpp"
 #include "CarlaBridgeUtils.hpp"
 #include "CarlaShmUtils.hpp"
+#include "CarlaMIDI.h"
 
 #include "jackbridge/JackBridge.hpp"
 

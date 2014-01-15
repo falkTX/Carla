@@ -70,7 +70,7 @@ public:
 
     class Itenerator {
     public:
-        Itenerator(const k_list_head* queue)
+        Itenerator(const k_list_head* queue) noexcept
             : fData(nullptr),
               fEntry(queue->next),
               fEntry2(fEntry->next),
@@ -92,7 +92,7 @@ public:
             fEntry2 = fEntry->next;
         }
 
-        T& getValue()
+        T& getValue() noexcept
         {
             fData = list_entry(fEntry, Data, siblings);
             CARLA_ASSERT(fData != nullptr);
@@ -108,7 +108,7 @@ public:
         friend class AbstractLinkedList;
     };
 
-    Itenerator begin() const
+    Itenerator begin() const noexcept
     {
         return Itenerator(&fQueue);
     }
@@ -199,7 +199,33 @@ public:
         return false;
     }
 
-    T& getAt(const size_t index, const bool remove = false)
+    T& getAt(const size_t index) noexcept
+    {
+        if (fCount == 0 || index >= fCount)
+            return fRetValue;
+
+        size_t i = 0;
+        Data* data = nullptr;
+        k_list_head* entry;
+        k_list_head* entry2;
+
+        list_for_each_safe(entry, entry2, &fQueue)
+        {
+            if (index != i++)
+                continue;
+
+            data = list_entry(entry, Data, siblings);
+
+            if (data != nullptr)
+                fRetValue = data->value;
+
+            break;
+        }
+
+        return fRetValue;
+    }
+
+    T& getAt(const size_t index, const bool remove)
     {
         if (fCount == 0 || index >= fCount)
             return fRetValue;
@@ -309,7 +335,7 @@ public:
         }
     }
 
-    void spliceAppend(AbstractLinkedList& list, const bool init = true)
+    void spliceAppend(AbstractLinkedList& list, const bool init = true) noexcept
     {
         if (init)
         {
@@ -324,7 +350,7 @@ public:
         }
     }
 
-    void spliceInsert(AbstractLinkedList& list, const bool init = true)
+    void spliceInsert(AbstractLinkedList& list, const bool init = true) noexcept
     {
         if (init)
         {
