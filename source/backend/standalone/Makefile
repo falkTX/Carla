@@ -6,67 +6,23 @@
 
 include ../Makefile.mk
 
-# --------------------------------------------------------------
-# Common
-
-STATIC_LIBS  = ../carla_engine.a
-STATIC_LIBS += ../carla_plugin.a
-STATIC_LIBS += ../../modules/rtmempool.a
+# ----------------------------------------------------------------------------------------------------------------------------
+# Base
 
 LINK_FLAGS  += $(LIBLO_LIBS)
 LINK_FLAGS  += $(QTCORE_LIBS)
 LINK_FLAGS  += $(QTXML_LIBS)
-LINK_FLAGS  += $(RTMEMPOOL_LIBS)
 
-# --------------------------------------------------------------
-# Engine
+# ----------------------------------------------------------------------------------------------------------------------------
+# Common
 
+STATIC_LIBS  = ../carla_engine.a
+STATIC_LIBS += ../carla_plugin.a
 STATIC_LIBS += ../../modules/jackbridge.a
-STATIC_LIBS += ../../modules/rtaudio.a
-STATIC_LIBS += ../../modules/rtmidi.a
+STATIC_LIBS += ../../modules/rtmempool.a
 
 LINK_FLAGS  += $(JACKBRIDGE_LIBS)
-LINK_FLAGS  += $(RTAUDIO_LIBS)
-LINK_FLAGS  += $(RTMIDI_LIBS)
-
-# --------------------------------------------------------------
-# Plugin
-
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-STATIC_LIBS += ../../modules/lilv.a
-LINK_FLAGS  += $(LILV_LIBS)
-endif
-
-ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
-LINK_FLAGS += $(FLUIDSYNTH_LIBS)
-LINK_FLAGS += $(LINUXSAMPLER_LIBS)
-endif
-
-# --------------------------------------------------------------
-# Native
-
-STATIC_LIBS += ../../modules/carla_native.a
-
-ifeq ($(HAVE_AF_DEPS),true)
-LINK_FLAGS  += $(shell pkg-config --libs sndfile)
-ifeq ($(HAVE_FFMPEG),true)
-LINK_FLAGS  += $(shell pkg-config --libs libavcodec libavformat libavutil)
-endif
-endif
-
-ifeq ($(HAVE_MF_DEPS),true)
-LINK_FLAGS  += $(shell pkg-config --libs smf)
-endif
-
-ifeq ($(HAVE_ZYN_DEPS),true)
-LINK_FLAGS  += $(shell pkg-config --libs fftw3 mxml zlib)
-ifeq ($(HAVE_ZYN_UI_DEPS),true)
-LINK_FLAGS  += $(shell pkg-config --libs ntk_images ntk)
-endif
-endif
-
-# --------------------------------------------------------------
-# Final
+LINK_FLAGS  += $(RTMEMPOOL_LIBS)
 
 ifeq ($(HAVE_JUCE),true)
 STATIC_LIBS += ../../modules/juce_audio_basics.a
@@ -90,10 +46,52 @@ STATIC_LIBS += ../../modules/dgl.a
 LINK_FLAGS  += $(DGL_LIBS)
 endif
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
+# Engine
 
-HEADERS = \
-	../CarlaBackend.h ../CarlaHost.h ../CarlaEngine.hpp ../CarlaPlugin.hpp ../../modules/CarlaNative.h
+STATIC_LIBS += ../../modules/rtaudio.a
+STATIC_LIBS += ../../modules/rtmidi.a
+
+LINK_FLAGS  += $(RTAUDIO_LIBS)
+LINK_FLAGS  += $(RTMIDI_LIBS)
+
+# ----------------------------------------------------------------------------------------------------------------------------
+# Plugin
+
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+STATIC_LIBS += ../../modules/lilv.a
+LINK_FLAGS  += $(LILV_LIBS)
+endif
+
+ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
+LINK_FLAGS += $(FLUIDSYNTH_LIBS)
+LINK_FLAGS += $(LINUXSAMPLER_LIBS)
+endif
+
+# ----------------------------------------------------------------------------------------------------------------------------
+# Native
+
+STATIC_LIBS += ../../modules/carla_native.a
+
+ifeq ($(HAVE_AF_DEPS),true)
+LINK_FLAGS  += $(shell pkg-config --libs sndfile)
+ifeq ($(HAVE_FFMPEG),true)
+LINK_FLAGS  += $(shell pkg-config --libs libavcodec libavformat libavutil)
+endif
+endif
+
+ifeq ($(HAVE_MF_DEPS),true)
+LINK_FLAGS  += $(shell pkg-config --libs smf)
+endif
+
+ifeq ($(HAVE_ZYN_DEPS),true)
+LINK_FLAGS  += $(shell pkg-config --libs fftw3 mxml zlib)
+ifeq ($(HAVE_ZYN_UI_DEPS),true)
+LINK_FLAGS  += $(shell pkg-config --libs ntk_images ntk)
+endif
+endif
+
+# ----------------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(WIN32),true)
 TARGET = ../libcarla_standalone2.dll
@@ -105,7 +103,7 @@ TARGET = ../libcarla_standalone2.so
 endif
 endif
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 all: $(TARGET)
 
@@ -115,10 +113,7 @@ clean:
 debug:
 	$(MAKE) DEBUG=true
 
-# --------------------------------------------------------------
-
-%.cpp.o: %.cpp $(HEADERS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+# ----------------------------------------------------------------------------------------------------------------------------
 
 ../libcarla_standalone2.dll: CarlaStandalone.cpp.o $(STATIC_LIBS)
 	$(CXX) $< -Wl,--start-group $(STATIC_LIBS) -Wl,--end-group $(LINK_FLAGS) $(EXTRA_LIBS) -shared -Wl,--output-def,$@.def -o $@
@@ -129,7 +124,12 @@ debug:
 ../libcarla_standalone2.so: CarlaStandalone.cpp.o $(STATIC_LIBS)
 	$(CXX) $< -Wl,--start-group $(STATIC_LIBS) -Wl,--end-group $(LINK_FLAGS) -shared -o $@
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
+
+CarlaStandalone.cpp.o: CarlaStandalone.cpp $(CARLA_HOST_H) $(CARLA_MIDI_H) $(CARLA_NATIVE_H) $(CARLA_ENGINE_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_THREAD_HPP)
+	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
+
+# ----------------------------------------------------------------------------------------------------------------------------
 
 .FORCE:
 .PHONY: .FORCE
@@ -140,4 +140,4 @@ debug:
 ../../modules/%.a: .FORCE
 	$(MAKE) -C ../../modules $*
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------

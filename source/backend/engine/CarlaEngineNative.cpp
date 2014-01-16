@@ -1608,6 +1608,8 @@ const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const unsigned int,
 
 CARLA_BACKEND_END_NAMESPACE
 
+#include "CarlaStateUtils.cpp"
+
 #endif
 
 // -----------------------------------------------------------------------

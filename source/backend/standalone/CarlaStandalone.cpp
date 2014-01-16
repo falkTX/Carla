@@ -1924,6 +1924,8 @@ const char* carla_get_host_osc_url_udp()
 
 // -------------------------------------------------------------------------------------------------------------------
 
+#include "CarlaStateUtils.cpp"
+
 #if 0
 int main(int argc, char* argv[])
 {
