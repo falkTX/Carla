@@ -27,6 +27,8 @@
 #include "CarlaMutex.hpp"
 #include "RtLinkedList.hpp"
 
+#include "CarlaMIDI.h"
+
 #include <cmath>
 
 #ifdef HAVE_JUCE

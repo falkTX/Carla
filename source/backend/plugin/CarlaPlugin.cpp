@@ -18,8 +18,12 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
+#include "CarlaBackendUtils.hpp"
+#include "CarlaMIDI.h"
+
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>
+#include <QtXml/QDomNode>
 
 CARLA_BACKEND_START_NAMESPACE
 

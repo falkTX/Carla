@@ -32,6 +32,8 @@
 #include "CarlaEngineUtils.hpp"
 #include "CarlaStateUtils.hpp"
 
+#include "CarlaMIDI.h"
+
 #ifndef HAVE_JUCE
 # include <cmath>
 #else
@@ -42,6 +44,7 @@ using juce::FloatVectorOperations;
 #include <QtCore/QFile>
 #include <QtCore/QFileInfo>
 #include <QtCore/QTextStream>
+#include <QtXml/QDomNode>
 
 // -----------------------------------------------------------------------
 
@@ -1414,8 +1417,8 @@ bool CarlaEngine::saveProject(const char* const filename)
 
             plugin->getRealName(strBuf);
 
-            if (strBuf[0] != '\0')
-                out << QString(" <!-- %1 -->\n").arg(xmlSafeString(strBuf, true));
+            //if (strBuf[0] != '\0')
+            //    out << QString(" <!-- %1 -->\n").arg(xmlSafeString(strBuf, true));
 
             QString content;
             fillXmlStringFromSaveState(content, plugin->getSaveState());

@@ -21,7 +21,6 @@
 #ifdef WANT_LV2
 
 #include "CarlaLv2Utils.hpp"
-#include "CarlaLibUtils.hpp"
 #include "Lv2AtomQueue.hpp"
 
 #include "../engine/CarlaEngineOsc.hpp"
@@ -1408,7 +1407,7 @@ public:
 
         if (! pData->libOpen(fRdfDescriptor->Binary))
         {
-            pData->engine->setLastError(lib_error(fRdfDescriptor->Binary));
+            pData->engine->setLastError(pData->libError(fRdfDescriptor->Binary));
             return false;
         }
 

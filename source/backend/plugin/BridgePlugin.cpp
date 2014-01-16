@@ -20,6 +20,7 @@
 
 #ifndef BUILD_BRIDGE
 
+#include "CarlaBackendUtils.hpp"
 #include "CarlaBridgeUtils.hpp"
 #include "CarlaShmUtils.hpp"
 

@@ -21,7 +21,6 @@
 #ifdef WANT_VST
 
 #include "CarlaVstUtils.hpp"
-#include "CarlaLibUtils.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -2157,7 +2156,7 @@ public:
 
         if (! pData->libOpen(filename))
         {
-            pData->engine->setLastError(lib_error(filename));
+            pData->engine->setLastError(pData->libError(filename));
             return false;
         }
 

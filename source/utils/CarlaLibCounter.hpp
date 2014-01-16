@@ -31,7 +31,7 @@ public:
 
     void* open(const char* const filename)
     {
-        CARLA_SAFE_ASSERT_RETURN(filename != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', nullptr);
 
         const CarlaMutex::ScopedLocker sl(fMutex);
 

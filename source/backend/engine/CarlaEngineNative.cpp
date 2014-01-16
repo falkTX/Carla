@@ -27,9 +27,11 @@
 #include "CarlaEngineInternal.hpp"
 #include "CarlaPlugin.hpp"
 
-#include "CarlaNative.hpp"
+#include "CarlaBackendUtils.hpp"
 #include "CarlaPipeUtils.hpp"
 #include "CarlaStateUtils.hpp"
+
+#include "CarlaNative.hpp"
 
 #ifdef HAVE_JUCE
 # include "juce_audio_basics.h"
@@ -37,6 +39,7 @@ using juce::FloatVectorOperations;
 #endif
 
 #include <QtCore/QTextStream>
+#include <QtXml/QDomNode>
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -1255,8 +1258,8 @@ protected:
 
                 plugin->getRealName(strBuf);
 
-                if (strBuf[0] != '\0')
-                    out << QString(" <!-- %1 -->\n").arg(xmlSafeString(strBuf, true));
+                //if (strBuf[0] != '\0')
+                //    out << QString(" <!-- %1 -->\n").arg(xmlSafeString(strBuf, true));
 
                 QString content;
                 fillXmlStringFromSaveState(content, plugin->getSaveState());

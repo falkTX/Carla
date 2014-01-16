@@ -23,6 +23,8 @@
 #include "CarlaNative.h"
 #include "CarlaHost.h"
 
+#include "CarlaMIDI.h"
+
 #include <QtCore/QStringList>
 
 extern const char* carla_file_callback(FileCallbackOpcode action, bool isDir, const char* title, const char* filter);
