@@ -21,7 +21,6 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaEngineUtils.hpp"
 #include "CarlaMIDI.h"
-#include "LinkedList.hpp"
 
 #include "jackbridge/JackBridge.hpp"
 
