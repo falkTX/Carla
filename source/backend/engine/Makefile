@@ -30,10 +30,6 @@ OBJSp  = $(OBJS) \
 	CarlaEngineNative.cpp.exp.o
 endif
 
-HEADERS = \
-	../CarlaBackend.h ../CarlaEngine.hpp ../CarlaPlugin.hpp \
-	CarlaEngineInternal.hpp CarlaEngineOsc.hpp CarlaEngineThread.hpp
-
 TARGETa = ../carla_engine.a
 
 ifneq ($(WIN32),true)
@@ -46,11 +42,8 @@ all: $(TARGETa) $(TARGETp)
 
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp $(HEADERS)
+CarlaEngine.cpp.o: CarlaEngine.cpp $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_ENGINE_UTILS_HPP) $(CARLA_STATE_UTILS_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-%.cpp.exp.o: %.cpp $(HEADERS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_EXPORT -c -o $@
 
 CarlaEngineRtAudio.cpp.o: CarlaEngineRtAudio.cpp $(HEADERS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(RTAUDIO_FLAGS) $(RTMIDI_FLAGS) -c -o $@
@@ -72,3 +65,11 @@ debug:
 	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------
+
+CARLA_ENGINE_INTERNAL_HPP = CarlaEngineInternal.hpp CarlaEngineOsc.hpp CarlaEngineThread.hpp $(CARLA_ENGINE_HPP) $(CARLA_MUTEX_HPP) $(LINKED_LIST_HPP)
+
+# %.cpp.o: %.cpp $(HEADERS)
+# 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+#
+# %.cpp.exp.o: %.cpp $(HEADERS)
+# 	$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_EXPORT -c -o $@

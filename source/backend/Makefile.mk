@@ -58,3 +58,23 @@ endif
 endif
 
 # --------------------------------------------------------------
+
+CARLA_BACKEND_H  = ../CarlaBackend.h $(CARLA_DEFINES_H)
+CARLA_HOST_H     = ../CarlaHost.h $(CARLA_BACKEND_H)
+CARLA_ENGINE_HPP = ../CarlaEngine.hpp $(CARLA_BACKEND_H)
+CARLA_PLUGIN_HPP = ../CarlaPlugin.hpp $(CARLA_BACKEND_H)
+
+CARLA_DEFINES_H = ../../includes/CarlaDefines.h
+CARLA_MIDI_H    = ../../includes/CarlaMIDI.h
+
+CARLA_UTILS_HPP         = ../../utils/CarlaUtils.hpp $(CARLA_DEFINES_H)
+CARLA_BACKEND_UTILS_HPP = ../../utils/CarlaBackendUtils.hpp $(CARLA_BACKEND_H) $(CARLA_HOST_H) $(CARLA_STRING_HPP)
+CARLA_ENGINE_UTILS_HPP  = ../../utils/CarlaEngineUtils.hpp $(CARLA_ENGINE_HPP) $(CARLA_UTILS_HPP)
+CARLA_JUCE_UTILS_HPP    = ../../utils/CarlaJuceUtils.hpp $(CARLA_UTILS_HPP)
+CARLA_STATE_UTILS_HPP   = ../../utils/CarlaStateUtils.hpp $(CARLA_BACKEND_UTILS_HPP) $(CARLA_MIDI_H) $(LINKED_LIST_HPP)
+
+CARLA_MUTEX_HPP      = ../../utils/CarlaMutex.hpp $(CARLA_UTILS_HPP)
+CARLA_STRING_HPP     = ../../utils/CarlaString.hpp $(CARLA_JUCE_UTILS_HPP)
+CARLA_THREAD_HPP     = ../../utils/CarlaThread.hpp $(CARLA_MUTEX_HPP) $(CARLA_STRING_HPP)
+
+LINKED_LIST_HPP      = ../../utils/LinkedList.hpp $(CARLA_UTILS_HPP)
