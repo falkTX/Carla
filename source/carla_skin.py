@@ -1023,7 +1023,7 @@ def createPluginSlot(parent, pluginId):
     #pluginIcon  = charPtrToString(pluginInfo['iconName'])
 
     if pluginInfo['type'] == PLUGIN_INTERNAL:
-        if pluginLabel.startswith("zyn"):
+        if pluginLabel.startswith("zyn") and pluginInfo['category'] != PLUGIN_CATEGORY_SYNTH:
             return PluginSlot_ZynFX(parent, pluginId)
 
     if pluginName.split(" ", 1)[0].lower() == "calf":
