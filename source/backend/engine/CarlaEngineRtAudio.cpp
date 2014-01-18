@@ -423,7 +423,7 @@ public:
         char strBuf[STR_MAX+1];
         strBuf[STR_MAX] = '\0';
 
-        //EngineRackBuffers* const rack(pData->bufAudio.rack);
+        EngineRackBuffers* const rack(pData->bufAudio.rack);
 
         // Main
         {
@@ -501,7 +501,6 @@ public:
         }
 #endif
 
-#if 0
         // Connections
         rack->connectLock.lock();
 
@@ -600,7 +599,6 @@ public:
             rack->usedConnections.append(connectionToId);
             rack->lastConnectionId++;
         }
-#endif
 
         return true;
     }
@@ -1091,13 +1089,8 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const unsigned i
 {
     initRtApis();
 
-    carla_stderr("here 000");
-
     if (index >= gRtAudioApis.size())
-    {
-        carla_stderr("here 001");
         return nullptr;
-    }
 
     const RtAudio::Api& api(gRtAudioApis[index]);
 
@@ -1106,10 +1099,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const unsigned i
     const unsigned int devCount(rtAudio.getDeviceCount());
 
     if (devCount == 0)
-    {
-        carla_stderr("here 002");
         return nullptr;
-    }
 
     unsigned int i;
     RtAudio::DeviceInfo rtAudioDevInfo;
@@ -1123,10 +1113,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const unsigned i
     }
 
     if (i == devCount)
-    {
-        carla_stderr("here 003");
         return nullptr;
-    }
 
     static EngineDriverDeviceInfo devInfo = { 0x0, nullptr, nullptr };
     static uint32_t dummyBufferSizes[11]  = { 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 0 };
@@ -1157,8 +1144,6 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const unsigned i
     {
         devInfo.sampleRates = dummySampleRates;
     }
-
-    carla_stderr("here 004");
 
     return &devInfo;
 }

@@ -58,6 +58,17 @@ CarlaString: CarlaString.cpp ../utils/CarlaString.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
 	valgrind ./$@
 
+Engine: Engine.cpp
+	$(CXX) $< \
+	../backend/standalone/CarlaStandalone.cpp.o \
+	-Wl,--start-group \
+	../backend/carla_engine.a ../backend/carla_plugin.a ../modules/carla_native.a \
+	../modules/dgl.a ../modules/jackbridge.a ../modules/lilv.a ../modules/rtmempool.a ../modules/rtaudio.a ../modules/rtmidi.a \
+	-Wl,--end-group \
+	$(PEDANTIC_CXX_FLAGS) $(shell pkg-config --libs alsa libpulse-simple liblo QtCore QtXml fluidsynth linuxsampler x11 gl smf fftw3 mxml zlib ntk_images ntk) -o $@
+	env LD_LIBRARY_PATH=../backend valgrind --leak-check=full ./$@
+# 	../modules/juce_audio_basics.a ../modules/juce_core.a \
+
 EngineEvents: EngineEvents.cpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -L../backend -lcarla_standalone2 -o $@
 	env LD_LIBRARY_PATH=../backend valgrind ./$@

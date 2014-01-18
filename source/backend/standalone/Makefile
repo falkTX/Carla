@@ -63,6 +63,10 @@ STATIC_LIBS += ../../modules/lilv.a
 LINK_FLAGS  += $(LILV_LIBS)
 endif
 
+ifeq ($(CARLA_CSOUND_SUPPORT),true)
+LINK_FLAGS  += $(CSOUND_LIBS)
+endif
+
 ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
 LINK_FLAGS += $(FLUIDSYNTH_LIBS)
 LINK_FLAGS += $(LINUXSAMPLER_LIBS)

@@ -142,7 +142,8 @@ HAVE_JUCE = false
 endif
 
 ifeq ($(LINUX),true)
-HAVE_JUCE = $(shell pkg-config --exists x11 xinerama xext xcursor freetype2 && echo true)
+HAVE_JUCE = "false"
+# $(shell pkg-config --exists x11 xinerama xext xcursor freetype2 && echo true)
 endif
 
 ifeq ($(MACOS),true)

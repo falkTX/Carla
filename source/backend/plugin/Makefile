@@ -83,7 +83,7 @@ AuPlugin.cpp.o: AuPlugin.cpp $(CARLA_PLUGIN_HPP) $(CARLA_ENGINE_HPP) $(CARLA_UTI
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 CsoundPlugin.cpp.o: CsoundPlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) $(CSOUND_FLAGS) -c -o $@
 
 JucePlugin.cpp.o: JucePlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@

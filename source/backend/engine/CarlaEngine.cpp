@@ -639,6 +639,11 @@ bool CarlaEngine::close()
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data (err #9)");
     carla_debug("CarlaEngine::close()");
 
+    pData->aboutToClose = true;
+
+    if (pData->curPluginCount != 0)
+        removeAllPlugins();
+
     pData->thread.stop(500);
     pData->nextAction.ready();
 
@@ -649,7 +654,6 @@ bool CarlaEngine::close()
     pData->osc.close();
     pData->oscData = nullptr;
 
-    pData->aboutToClose = true;
     pData->curPluginCount = 0;
     pData->maxPluginNumber = 0;
     pData->nextPluginId = 0;
@@ -1113,8 +1117,6 @@ CarlaPlugin* CarlaEngine::getPluginUnchecked(const unsigned int id) const noexce
 
 const char* CarlaEngine::getUniquePluginName(const char* const name) const
 {
-    CARLA_SAFE_ASSERT_RETURN(pData->plugins != nullptr, nullptr);
-    CARLA_SAFE_ASSERT_RETURN(pData->maxPluginNumber != 0, nullptr);
     CARLA_SAFE_ASSERT_RETURN(pData->nextAction.opcode == kEnginePostActionNull, nullptr);
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', nullptr);
     carla_debug("CarlaEngine::getUniquePluginName(\"%s\")", name);
@@ -1128,7 +1130,12 @@ const char* CarlaEngine::getUniquePluginName(const char* const name) const
         return sname.dup();
     }
 
-    sname.truncate(getMaxClientNameSize()-5-1); // 5 = strlen(" (10)")
+    const size_t maxNameSize(carla_min<uint>(getMaxClientNameSize(), 0xff, 6) - 6); // 6 = strlen(" (10)") + 1
+
+    if (maxNameSize == 0 || ! isRunning())
+        return sname.dup();
+
+    sname.truncate(maxNameSize);
     sname.replace(':', '.'); // ':' is used in JACK1 to split client/port names
 
     for (unsigned short i=0; i < pData->curPluginCount; ++i)
@@ -1440,57 +1447,36 @@ bool CarlaEngine::saveProject(const char* const filename)
 // -----------------------------------------------------------------------
 // Information (base)
 
-/*!
-  * Get the current engine driver hints.
-  */
 unsigned int CarlaEngine::getHints() const noexcept
 {
     return pData->hints;
 }
 
-/*!
-  * Get the current buffer size.
-  */
 uint32_t CarlaEngine::getBufferSize() const noexcept
 {
     return pData->bufferSize;
 }
 
-/*!
-  * Get the current sample rate.
-  */
 double CarlaEngine::getSampleRate() const noexcept
 {
     return pData->sampleRate;
 }
 
-/*!
-  * Get the current engine name.
-  */
 const char* CarlaEngine::getName() const noexcept
 {
-    return (const char*)pData->name;
+    return pData->name.getBuffer();
 }
 
-/*!
-  * Get the current engine proccess mode.
-  */
 EngineProcessMode CarlaEngine::getProccessMode() const noexcept
 {
     return pData->options.processMode;
 }
 
-/*!
-  * Get the current engine options (read-only).
-  */
 const EngineOptions& CarlaEngine::getOptions() const noexcept
 {
     return pData->options;
 }
 
-/*!
-  * Get the current Time information (read-only).
-  */
 const EngineTimeInfo& CarlaEngine::getTimeInfo() const noexcept
 {
     return pData->timeInfo;
