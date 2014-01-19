@@ -14,8 +14,14 @@ DESTDIR =
 SED_PREFIX = $(shell echo $(PREFIX) | sed "s/\//\\\\\\\\\//g")
 
 LINK   = ln -sf
+
+ifneq ($(MACOS),true)
 PYUIC ?= pyuic4 -w
 PYRCC ?= pyrcc4 -py3
+else
+PYUIC ?= pyuic4-3.3 -w
+PYRCC ?= pyrcc4-3.3 -py3
+endif
 
 # --------------------------------------------------------------
 

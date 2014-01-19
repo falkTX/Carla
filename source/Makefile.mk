@@ -11,7 +11,7 @@
 CARLA_PLUGIN_SUPPORT = true
 
 # Support for csound files (version 6)
-CARLA_CSOUND_SUPPORT = true
+CARLA_CSOUND_SUPPORT = false # not ready yet
 
 # Support for GIG, SF2 and SFZ sample banks (through fluidsynth and linuxsampler)
 CARLA_SAMPLERS_SUPPORT = true
