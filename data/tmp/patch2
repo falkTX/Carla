@@ -1,0 +1,102 @@
+diff --git a/Makefile b/Makefile
+index 8780b89..c5af30b 100644
+--- a/Makefile
++++ b/Makefile
+@@ -30,7 +30,11 @@ all: CXX RES UI WIDGETS
+ # --------------------------------------------------------------
+ # C++ code (native)
+ 
++ifeq ($(HAVE_JUCE),true)
+ CXX: backend bridges discovery plugin theme
++else
++CXX: backend bridges discovery theme
++endif
+ 
+ backend:
+ 	$(MAKE) -C source/backend
+diff --git a/source/bridges/CarlaBridgePlugin.cpp b/source/bridges/CarlaBridgePlugin.cpp
+index 48984d7..f1b6438 100644
+--- a/source/bridges/CarlaBridgePlugin.cpp
++++ b/source/bridges/CarlaBridgePlugin.cpp
+@@ -49,7 +49,7 @@ BOOL WINAPI winSignalHandler(DWORD dwCtrlType)
+ 
+     return FALSE;
+ }
+-#else
++#elif defined(CARLA_OS_LINUX)
+ static void closeSignalHandler(int)
+ {
+     gCloseNow = true;
+@@ -64,7 +64,7 @@ void initSignalHandler()
+ {
+ #ifdef CARLA_OS_WIN
+     SetConsoleCtrlHandler(winSignalHandler, TRUE);
+-#elif defined(CARLA_OS_LINUX) || defined(CARLA_OS_HAIKU)
++#elif defined(CARLA_OS_LINUX)
+     struct sigaction sint;
+     struct sigaction sterm;
+     struct sigaction susr1;
+diff --git a/source/bridges/Makefile b/source/bridges/Makefile
+index 4c33b81..1144657 100644
+--- a/source/bridges/Makefile
++++ b/source/bridges/Makefile
+@@ -24,7 +24,11 @@ LINK_FLAGS      += $(shell pkg-config --libs liblo) $(QTCORE_LIBS)
+ 
+ BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS) $(QTXML_FLAGS) -DBUILD_BRIDGE_PLUGIN
+ BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin
+-LINK_PLUGIN_FLAGS   = $(LINK_FLAGS) $(QTXML_LIBS) -lpthread
++LINK_PLUGIN_FLAGS   = $(LINK_FLAGS) $(QTXML_LIBS)
++
++ifneq ($(HAIKU),true)
++LINK_PLUGIN_FLAGS  += -lpthread
++endif
+ 
+ ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+ BUILD_PLUGIN_FLAGS += -DWANT_LADSPA
+@@ -47,7 +51,11 @@ LINK_PLUGIN_FLAGS  += $(JUCE_GUI_BASICS_LIBS)
+ POSIX_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS)
+ POSIX_32BIT_FLAGS = $(32BIT_FLAGS) -L/usr/lib32 -L/usr/lib/i386-linux-gnu
+ POSIX_64BIT_FLAGS = $(64BIT_FLAGS) -L/usr/lib64 -L/usr/lib/x86_64-linux-gnu
+-POSIX_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) -ldl
++POSIX_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS)
++
++ifneq ($(HAIKU),true)
++POSIX_LINK_FLAGS += -ldl
++endif
+ 
+ # --------------------------------------------------------------
+ # Plugin bridges (Windows)
+@@ -397,10 +405,14 @@ OBJS_NATIVE += \
+ # libs
+ OBJS_NATIVE += \
+ 	../modules/jackbridge.a \
++	../modules/rtmempool.a
++
++ifeq ($(HAVE_JUCE),true)
++OBJS_NATIVE += \
+ 	../modules/juce_audio_basics.a \
+ 	../modules/juce_core.a \
+-	../modules/juce_events.a \
+-	../modules/rtmempool.a
++	../modules/juce_events.a
++endif
+ 
+ # 	../modules/carla_native.a \
+ # 	../modules/juce_data_structures.a \
+diff --git a/source/discovery/Makefile b/source/discovery/Makefile
+index b8f88f1..bf2fbf4 100644
+--- a/source/discovery/Makefile
++++ b/source/discovery/Makefile
+@@ -67,7 +67,11 @@ endif
+ POSIX_BUILD_FLAGS = $(BUILD_CXX_FLAGS)
+ POSIX_32BIT_FLAGS = $(32BIT_FLAGS) -L/usr/lib32 -L/usr/lib/i386-linux-gnu
+ POSIX_64BIT_FLAGS = $(64BIT_FLAGS) -L/usr/lib64 -L/usr/lib/x86_64-linux-gnu
+-POSIX_LINK_FLAGS  = $(LINK_FLAGS) -ldl
++POSIX_LINK_FLAGS  = $(LINK_FLAGS)
++
++ifneq ($(HAIKU),true)
++POSIX_LINK_FLAGS += -ldl
++endif
+ 
+ WIN_BUILD_FLAGS   = $(BUILD_CXX_FLAGS)
+ WIN_32BIT_FLAGS   = $(32BIT_FLAGS)
