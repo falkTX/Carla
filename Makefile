@@ -30,7 +30,11 @@ all: CXX RES UI WIDGETS
 # --------------------------------------------------------------
 # C++ code (native)
 
+ifeq ($(HAVE_JUCE),true)
 CXX: backend bridges discovery plugin theme
+else
+CXX: backend bridges discovery theme
+endif
 
 backend:
 	$(MAKE) -C source/backend

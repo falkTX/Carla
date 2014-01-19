@@ -49,7 +49,7 @@ BOOL WINAPI winSignalHandler(DWORD dwCtrlType)
 
     return FALSE;
 }
-#else
+#elif defined(CARLA_OS_LINUX)
 static void closeSignalHandler(int)
 {
     gCloseNow = true;
@@ -64,7 +64,7 @@ void initSignalHandler()
 {
 #ifdef CARLA_OS_WIN
     SetConsoleCtrlHandler(winSignalHandler, TRUE);
-#elif defined(CARLA_OS_LINUX) || defined(CARLA_OS_HAIKU)
+#elif defined(CARLA_OS_LINUX)
     struct sigaction sint;
     struct sigaction sterm;
     struct sigaction susr1;

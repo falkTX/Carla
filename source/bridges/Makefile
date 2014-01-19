@@ -24,7 +24,11 @@ LINK_FLAGS      += $(shell pkg-config --libs liblo) $(QTCORE_LIBS)
 
 BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS) $(QTXML_FLAGS) -DBUILD_BRIDGE_PLUGIN
 BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin
-LINK_PLUGIN_FLAGS   = $(LINK_FLAGS) $(QTXML_LIBS) -lpthread
+LINK_PLUGIN_FLAGS   = $(LINK_FLAGS) $(QTXML_LIBS)
+
+ifneq ($(HAIKU),true)
+LINK_PLUGIN_FLAGS  += -lpthread
+endif
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 BUILD_PLUGIN_FLAGS += -DWANT_LADSPA
@@ -47,7 +51,11 @@ LINK_PLUGIN_FLAGS  += $(JUCE_GUI_BASICS_LIBS)
 POSIX_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS)
 POSIX_32BIT_FLAGS = $(32BIT_FLAGS) -L/usr/lib32 -L/usr/lib/i386-linux-gnu
 POSIX_64BIT_FLAGS = $(64BIT_FLAGS) -L/usr/lib64 -L/usr/lib/x86_64-linux-gnu
-POSIX_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) -ldl
+POSIX_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS)
+
+ifneq ($(HAIKU),true)
+POSIX_LINK_FLAGS += -ldl
+endif
 
 # --------------------------------------------------------------
 # Plugin bridges (Windows)
@@ -397,10 +405,14 @@ OBJS_NATIVE += \
 # libs
 OBJS_NATIVE += \
 	../modules/jackbridge.a \
+	../modules/rtmempool.a
+
+ifeq ($(HAVE_JUCE),true)
+OBJS_NATIVE += \
 	../modules/juce_audio_basics.a \
 	../modules/juce_core.a \
-	../modules/juce_events.a \
-	../modules/rtmempool.a
+	../modules/juce_events.a
+endif
 
 # 	../modules/carla_native.a \
 # 	../modules/juce_data_structures.a \
