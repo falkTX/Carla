@@ -284,14 +284,21 @@ uninstall:
 
 # --------------------------------------------------------------
 
+ifneq ($(HAIKU),true)
 ANS_NO=\033[31m NO \033[0m
 ANS_YES=\033[32m YES \033[0m
 mS=\033[33m[
 mZ=\033[30;1m[
 mE=]\033[0m
+tS=\033[36m
+tE=\033[0m
+else
+ANS_NO=" NO "
+ANS_YES=" YES "
+endif
 
 features:
-	@echo "\033[36m---> Engine drivers: \033[0m"
+	@echo "$(tS)---> Engine driver $(tE)"
 	@echo "JACK:       $(ANS_YES)"
 ifeq ($(LINUX),true)
 ifeq ($(HAVE_ALSA),true)
@@ -322,7 +329,7 @@ else
 endif
 	@echo ""
 
-	@echo "\033[36m---> Plugin formats: \033[0m"
+	@echo "$(tS)---> Plugin formats: $(tE)"
 	@echo "Internal:$(ANS_YES)"
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 	@echo "LADSPA:  $(ANS_YES)"
@@ -344,7 +351,7 @@ endif
 	@echo ""
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-	@echo "\033[36m---> LV2 UI toolkit support: \033[0m"
+	@echo "$(tS)---> LV2 UI toolkit support: $(tE)"
 	@echo "External:$(ANS_YES) (direct+bridge)"
 ifeq ($(LINUX),true)
 ifeq ($(HAVE_GTK2),true)
@@ -388,7 +395,7 @@ endif
 	@echo ""
 endif
 
-	@echo "\033[36m---> File formats: \033[0m"
+	@echo "$(tS)---> File formats: $(tE)"
 ifeq ($(CARLA_CSOUND_SUPPORT),true)
 	@echo "CSD:$(ANS_YES)"
 else
@@ -417,7 +424,7 @@ else
 endif
 	@echo ""
 
-	@echo "\033[36m---> Internal plugins: \033[0m"
+	@echo "$(tS)---> Internal plugins: $(tE)"
 ifeq ($(HAVE_AF_DEPS),true)
 ifeq ($(HAVE_FFMPEG),true)
 	@echo "AudioFile:  $(ANS_YES) (with ffmpeg)"

@@ -20,6 +20,12 @@
 
 #include "CarlaJuceUtils.hpp"
 
+#ifdef CARLA_OS_HAIKU
+namespace std {
+	using ::snprintf;
+}
+#endif
+
 // -----------------------------------------------------------------------
 // CarlaString class
 

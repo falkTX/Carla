@@ -113,7 +113,11 @@ HAVE_GTK3         = $(shell pkg-config --exists gtk+-3.0 && echo true)
 HAVE_OPENGL       = $(shell pkg-config --exists gl && echo true)
 HAVE_PULSEAUDIO   = $(shell pkg-config --exists libpulse-simple && echo true)
 else
+ifeq ($(HAIKU),true)
+HAVE_OPENGL       = false
+else
 HAVE_OPENGL       = true
+endif
 endif
 
 ifeq ($(CARLA_CSOUND_SUPPORT),true)
@@ -142,7 +146,7 @@ HAVE_JUCE = false
 endif
 
 ifeq ($(LINUX),true)
-HAVE_JUCE = "false"
+HAVE_JUCE = false
 # $(shell pkg-config --exists x11 xinerama xext xcursor freetype2 && echo true)
 endif
 
@@ -208,6 +212,7 @@ RTMIDI_FLAGS  += -D__RTMIDI_DEBUG__
 endif
 
 ifeq ($(HAIKU),true)
+RTMEMPOOL_LIBS =
 endif
 
 ifeq ($(LINUX),true)
