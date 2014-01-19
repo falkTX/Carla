@@ -265,7 +265,7 @@ public:
         uint8_t size    = 0;
         uint8_t data[3] = { 0, 0, 0 };
 
-        EngineControlEvent ctrlEvent = { type, param, carla_fixValue<float>(0.0f, 1.0f, value) };
+        EngineControlEvent ctrlEvent = { type, param, value };
         ctrlEvent.dumpToMidiData(channel, size, data);
 
         if (size == 0)

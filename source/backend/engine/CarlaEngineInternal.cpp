@@ -387,8 +387,8 @@ EngineInternalAudio::EngineInternalAudio() noexcept
 
 EngineInternalAudio::~EngineInternalAudio() noexcept
 {
-    CARLA_ASSERT(! isReady);
-    CARLA_ASSERT(rack == nullptr);
+    CARLA_SAFE_ASSERT(! isReady);
+    CARLA_SAFE_ASSERT(rack == nullptr);
 }
 
 void EngineInternalAudio::initPatchbay() noexcept
@@ -527,10 +527,10 @@ CarlaEngineProtectedData::CarlaEngineProtectedData(CarlaEngine* const engine)
 
 CarlaEngineProtectedData::~CarlaEngineProtectedData() noexcept
 {
-    CARLA_ASSERT(curPluginCount == 0);
-    CARLA_ASSERT(maxPluginNumber == 0);
-    CARLA_ASSERT(nextPluginId == 0);
-    CARLA_ASSERT(plugins == nullptr);
+    CARLA_SAFE_ASSERT(curPluginCount == 0);
+    CARLA_SAFE_ASSERT(maxPluginNumber == 0);
+    CARLA_SAFE_ASSERT(nextPluginId == 0);
+    CARLA_SAFE_ASSERT(plugins == nullptr);
 }
 
 // -----------------------------------------------------------------------
