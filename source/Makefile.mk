@@ -10,8 +10,8 @@
 # Support for LADSPA, DSSI, LV2, VST and AU plugins
 CARLA_PLUGIN_SUPPORT = true
 
-# Support for csound files (version 6)
-CARLA_CSOUND_SUPPORT = false # not ready yet
+# Support for csound files (version 6, not ready yet)
+CARLA_CSOUND_SUPPORT = false
 
 # Support for GIG, SF2 and SFZ sample banks (through fluidsynth and linuxsampler)
 CARLA_SAMPLERS_SUPPORT = true
@@ -103,21 +103,15 @@ endif
 # Check for optional libs (required by backend or bridges)
 
 HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil && pkg-config --max-version=1.9 libavcodec && echo true)
+HAVE_GTK2         = $(shell pkg-config --exists gtk+-2.0 && echo true)
+HAVE_GTK3         = $(shell pkg-config --exists gtk+-3.0 && echo true)
 HAVE_QT4          = $(shell pkg-config --exists QtCore QtGui && echo true)
 HAVE_QT5          = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
+HAVE_X11          = $(shell pkg-config --exists x11 && echo true)
 
 ifeq ($(LINUX),true)
 HAVE_ALSA         = $(shell pkg-config --exists alsa && echo true)
-HAVE_GTK2         = $(shell pkg-config --exists gtk+-2.0 && echo true)
-HAVE_GTK3         = $(shell pkg-config --exists gtk+-3.0 && echo true)
-HAVE_OPENGL       = $(shell pkg-config --exists gl && echo true)
 HAVE_PULSEAUDIO   = $(shell pkg-config --exists libpulse-simple && echo true)
-else
-ifeq ($(HAIKU),true)
-HAVE_OPENGL       = false
-else
-HAVE_OPENGL       = true
-endif
 endif
 
 ifeq ($(CARLA_CSOUND_SUPPORT),true)
@@ -139,6 +133,25 @@ HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
 HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk_images ntk && echo true)
 
 # --------------------------------------------------------------
+# Check for dgl support
+
+ifeq ($(HAIKU),true)
+HAVE_DGL = false
+endif
+
+ifeq ($(LINUX),true)
+HAVE_DGL = $(shell pkg-config --exists gl x11 && echo true)
+endif
+
+ifeq ($(MACOS),true)
+HAVE_DGL = true
+endif
+
+ifeq ($(WIN32),true)
+HAVE_DGL = true
+endif
+
+# --------------------------------------------------------------
 # Check for juce support
 
 ifeq ($(HAIKU),true)
@@ -146,8 +159,7 @@ HAVE_JUCE = false
 endif
 
 ifeq ($(LINUX),true)
-HAVE_JUCE = false
-# $(shell pkg-config --exists x11 xinerama xext xcursor freetype2 && echo true)
+HAVE_JUCE = $(shell pkg-config --exists x11 xinerama xext xcursor freetype2 && echo true)
 endif
 
 ifeq ($(MACOS),true)
@@ -161,16 +173,16 @@ endif
 # --------------------------------------------------------------
 # Set base stuff
 
+ifeq ($(HAVE_DGL),true)
+BASE_FLAGS += -DHAVE_DGL
+endif
+
 ifeq ($(HAVE_FFMPEG),true)
 BASE_FLAGS += -DHAVE_FFMPEG
 endif
 
 ifeq ($(HAVE_JUCE),true)
 BASE_FLAGS += -DHAVE_JUCE
-endif
-
-ifeq ($(HAVE_OPENGL),true)
-BASE_FLAGS += -DHAVE_OPENGL
 endif
 
 # --------------------------------------------------------------
@@ -199,7 +211,9 @@ LINUXSAMPLER_FLAGS = $(shell pkg-config --cflags linuxsampler) -Wno-unused-param
 LINUXSAMPLER_LIBS  = $(shell pkg-config --libs linuxsampler)
 endif
 
+ifneq ($(HAIKU),true)
 RTMEMPOOL_LIBS = -lpthread
+endif
 
 # --------------------------------------------------------------
 # Set libs stuff (part 2)
@@ -209,10 +223,6 @@ RTAUDIO_FLAGS  = -DHAVE_GETTIMEOFDAY -D__UNIX_JACK__
 ifeq ($(DEBUG),true)
 RTAUDIO_FLAGS += -D__RTAUDIO_DEBUG__
 RTMIDI_FLAGS  += -D__RTMIDI_DEBUG__
-endif
-
-ifeq ($(HAIKU),true)
-RTMEMPOOL_LIBS =
 endif
 
 ifeq ($(LINUX),true)
