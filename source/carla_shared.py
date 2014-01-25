@@ -555,7 +555,7 @@ def initHost(appName, libPrefix = None, failError = True):
     # -------------------------------------------------------------
     # Set resource path
 
-    localResources  = os.path.join(libfolder, "..", "modules", "carla_native", "resources")
+    localResources  = os.path.join(libfolder, "..", "modules", "daz", "resources")
     systemResources = os.path.join(libfolder, "resources")
 
     if os.path.exists(localResources):

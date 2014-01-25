@@ -8,8 +8,8 @@ all:
 
 # --------------------------------------------------------------
 
-carla_native:
-	$(MAKE) -C carla_native
+daz:
+	$(MAKE) -C daz
 
 # --------------------------------------------------------------
 
@@ -166,7 +166,7 @@ lib%.so:
 
 clean:
 	rm -f *.a *.def *.dll *.dylib *.so
-	$(MAKE) clean -C carla_native
+	$(MAKE) clean -C daz
 	$(MAKE) clean -C distrho/dgl
 	$(MAKE) clean -C jackbridge
 	$(MAKE) clean -C juce_audio_basics
@@ -188,7 +188,7 @@ clean:
 # --------------------------------------------------------------
 
 .PHONY: \
-	carla_native jackbridge lilv rtaudio rtmidi rtmempool stk theme \
+	daz jackbridge lilv rtaudio rtmidi rtmempool stk theme \
 	juce_audio_basics juce_audio_devices juce_audio_formats juce_audio_processors juce_core juce_data_structures juce_events juce_graphics juce_gui_basics
 
 # --------------------------------------------------------------

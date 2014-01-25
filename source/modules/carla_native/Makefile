@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
-# Makefile for carla_native #
-# ------------------------- #
+# Makefile for daz #
+# ---------------- #
 # Created by falkTX
 #
 
@@ -187,21 +187,21 @@ endif
 
 # --------------------------------------------------------------
 
-all: ../carla_native.a
+all: ../daz.a
 
 # --------------------------------------------------------------
 
-../carla_native.a: $(OBJS)
+../daz.a: $(OBJS)
 	$(RM) $@
 	$(AR) crs $@ $^
 
-../libcarla_native.dll: $(OBJS)
+../libdaz.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-../libcarla_native.dylib: $(OBJS)
+../libdaz.dylib: $(OBJS)
 	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
 
-../libcarla_native.so: $(OBJS)
+../libdaz.so: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
@@ -284,7 +284,7 @@ zynaddsubfx/UI/%.h: zynaddsubfx/UI/%.fl
 # --------------------------------------------------------------
 
 clean:
-	$(RM) $(OBJS) ../carla_native*.a ../libcarla_native.*
+	$(RM) $(OBJS) ../daz*.a ../libdaz.*
 	$(RM) $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
 
 debug:

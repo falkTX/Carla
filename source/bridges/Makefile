@@ -414,7 +414,7 @@ OBJS_NATIVE += \
 	../modules/juce_events.a
 endif
 
-# 	../modules/carla_native.a \
+# 	../modules/daz.a \
 # 	../modules/juce_data_structures.a \
 # 	../modules/juce_graphics.a \
 # 	../modules/juce_gui_basics.a \
