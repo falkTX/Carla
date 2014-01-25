@@ -75,7 +75,7 @@ endif
 # ----------------------------------------------------------------------------------------------------------------------------
 # Native
 
-STATIC_LIBS += ../../modules/daz.a
+STATIC_LIBS += ../../modules/daz-plugins.a
 
 ifeq ($(HAVE_AF_DEPS),true)
 LINK_FLAGS  += $(shell pkg-config --libs sndfile)

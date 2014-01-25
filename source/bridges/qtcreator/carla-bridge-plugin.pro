@@ -135,7 +135,7 @@ INCLUDEPATH = .. \
 # -----------------------------------------------------------
 
 LIBS  = -ldl -lpthread -lrt
-LIBS += ../../modules/daz.a
+LIBS += ../../modules/daz-plugins.a
 LIBS += ../../modules/juce_audio_basics.a
 LIBS += ../../modules/juce_core.a
 LIBS += ../../modules/juce_data_structures.a

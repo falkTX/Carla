@@ -8,8 +8,8 @@ all:
 
 # --------------------------------------------------------------
 
-daz:
-	$(MAKE) -C daz
+daz-plugins:
+	$(MAKE) -C daz-plugins
 
 # --------------------------------------------------------------
 
@@ -166,7 +166,7 @@ lib%.so:
 
 clean:
 	rm -f *.a *.def *.dll *.dylib *.so
-	$(MAKE) clean -C daz
+	$(MAKE) clean -C daz-plugins
 	$(MAKE) clean -C distrho/dgl
 	$(MAKE) clean -C jackbridge
 	$(MAKE) clean -C juce_audio_basics
@@ -188,7 +188,7 @@ clean:
 # --------------------------------------------------------------
 
 .PHONY: \
-	daz jackbridge lilv rtaudio rtmidi rtmempool stk theme \
+	daz-plugins jackbridge lilv rtaudio rtmidi rtmempool stk theme \
 	juce_audio_basics juce_audio_devices juce_audio_formats juce_audio_processors juce_core juce_data_structures juce_events juce_graphics juce_gui_basics
 
 # --------------------------------------------------------------
