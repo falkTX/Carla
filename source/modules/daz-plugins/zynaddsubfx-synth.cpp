@@ -297,6 +297,10 @@ public:
         synth = new SYNTH_T();
         synth->buffersize = host->get_buffer_size(host->handle);
         synth->samplerate = host->get_sample_rate(host->handle);
+
+        if (synth->buffersize > 32)
+            synth->buffersize = 32;
+
         synth->alias();
 
         config.init();
