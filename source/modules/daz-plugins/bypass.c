@@ -1,6 +1,6 @@
 /*
- * Carla Native Plugins
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Carla Internal Plugins
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,48 +15,60 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaNative.h"
+#include "daz/daz-plugin.h"
 
 #include <string.h>
 
 // -----------------------------------------------------------------------
+// Implemented by Carla
 
-static NativePluginHandle bypass_instantiate(const NativeHostDescriptor* host)
+extern void carla_register_daz_plugin(const PluginDescriptor* desc);
+
+// -----------------------------------------------------------------------
+
+static const char* bypass_metadata[] = {
+    "api",       "1", // FIXME: should be a macro
+    "features",  PLUGIN_FEATURE_BUFFER_SIZE_CHANGES PLUGIN_FEATURE_SAMPLE_RATE_CHANGES DAZ_TERMINATOR,
+    "audioIns",  "1",
+    "audioOuts", "1",
+    "midiIns",   "0",
+    "midiOuts",  "0",
+    "paramIns",  "0",
+    "paramOuts", "0",
+    "author",    "falkTX",
+    "name",      "ByPass",
+    "label",     "bypass",
+    "copyright", "GNU GPL v2+",
+    "version",   "1.0.0",
+    NULL
+};
+
+// -----------------------------------------------------------------------
+
+static PluginHandle bypass_instantiate(const PluginHostDescriptor* host)
 {
     // dummy, return non-NULL
-    return (NativePluginHandle)0x1;
+    return (PluginHandle)0x1;
 
     // unused
     (void)host;
 }
 
-static void bypass_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
+static void bypass_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const Event* events, uint32_t eventCount)
 {
     memcpy(outBuffer[0], inBuffer[0], sizeof(float)*frames);
     return;
 
     // unused
     (void)handle;
-    (void)midiEvents;
-    (void)midiEventCount;
+    (void)events;
+    (void)eventCount;
 }
 
 // -----------------------------------------------------------------------
 
-static const NativePluginDescriptor bypassDesc = {
-    .category  = PLUGIN_CATEGORY_NONE,
-    .hints     = PLUGIN_IS_RTSAFE,
-    .supports  = 0x0,
-    .audioIns  = 1,
-    .audioOuts = 1,
-    .midiIns   = 0,
-    .midiOuts  = 0,
-    .paramIns  = 0,
-    .paramOuts = 0,
-    .name      = "ByPass",
-    .label     = "bypass",
-    .maker     = "falkTX",
-    .copyright = "GNU GPL v2+",
+static const PluginDescriptor bypassDesc = {
+    .metadata = bypass_metadata,
 
     .instantiate = bypass_instantiate,
     .cleanup     = NULL,
@@ -69,32 +81,24 @@ static const NativePluginDescriptor bypassDesc = {
     .get_midi_program_count = NULL,
     .get_midi_program_info  = NULL,
 
-    .set_parameter_value = NULL,
-    .set_midi_program    = NULL,
-    .set_custom_data     = NULL,
+    .idle = NULL,
+    .non_rt_event = NULL,
 
-    .ui_show = NULL,
-    .ui_idle = NULL,
-
-    .ui_set_parameter_value = NULL,
-    .ui_set_midi_program    = NULL,
-    .ui_set_custom_data     = NULL,
+    .get_state = NULL,
+    .set_state = NULL,
 
     .activate   = NULL,
     .deactivate = NULL,
     .process    = bypass_process,
-
-    .get_state = NULL,
-    .set_state = NULL,
 
     .dispatcher = NULL
 };
 
 // -----------------------------------------------------------------------
 
-void carla_register_native_plugin_bypass()
+void carla_register_daz_plugin_bypass()
 {
-    carla_register_native_plugin(&bypassDesc);
+    carla_register_daz_plugin(&bypassDesc);
 }
 
 // -----------------------------------------------------------------------

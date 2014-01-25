@@ -186,9 +186,13 @@ void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     hostDesc.ui_save_file = nullptr;
     hostDesc.dispatcher   = host_dispatcher;
 
-    NativePluginHandle pluginHandle = pluginDesc->instantiate(&hostDesc);
+    NativePluginHandle pluginHandle = nullptr;
 
-    CARLA_SAFE_ASSERT_RETURN(pluginHandle != nullptr,)
+    if (! pluginLabel.startsWithIgnoreCase("carla-"))
+    {
+        pluginHandle = pluginDesc->instantiate(&hostDesc);
+        CARLA_SAFE_ASSERT_RETURN(pluginHandle != nullptr,)
+    }
 
     // -------------------------------------------------------------------
     // Header
@@ -449,7 +453,7 @@ void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     // -------------------------------------------------------------------
     // Parameters
 
-    const uint32_t paramCount(pluginDesc->get_parameter_count != nullptr ? pluginDesc->get_parameter_count(pluginHandle) : 0);
+    const uint32_t paramCount((pluginHandle != nullptr && pluginDesc->get_parameter_count != nullptr) ? pluginDesc->get_parameter_count(pluginHandle) : 0);
 
     if (paramCount > 0)
     {
@@ -554,7 +558,7 @@ void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     // -------------------------------------------------------------------
     // Cleanup plugin
 
-    if (pluginDesc->cleanup != nullptr)
+    if (pluginHandle != nullptr && pluginDesc->cleanup != nullptr)
         pluginDesc->cleanup(pluginHandle);
 }
 

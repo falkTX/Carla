@@ -16,11 +16,12 @@
  */
 
 #include "CarlaDefines.h"
-#include "CarlaNative.h"
 
 // Simple plugins
-extern void carla_register_native_plugin_bypass();
-extern void carla_register_native_plugin_lfo();
+extern void carla_register_daz_plugin_bypass();
+extern void carla_register_daz_plugin_lfo();
+
+// Simple plugins
 extern void carla_register_native_plugin_midiGain();
 extern void carla_register_native_plugin_midiSplit();
 extern void carla_register_native_plugin_midiThrough();
@@ -71,9 +72,13 @@ extern void carla_register_native_plugin_zynaddsubfx_synth();
 
 void carla_register_all_plugins()
 {
+#if 0
     // Simple plugins
-    carla_register_native_plugin_bypass();
-    carla_register_native_plugin_lfo();
+    carla_register_daz_plugin_bypass();
+    carla_register_daz_plugin_lfo();
+#endif
+
+    // Simple plugins
     carla_register_native_plugin_midiGain();
     carla_register_native_plugin_midiSplit();
     carla_register_native_plugin_midiThrough();
