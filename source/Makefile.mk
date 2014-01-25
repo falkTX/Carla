@@ -45,10 +45,15 @@ BASE_FLAGS = -Wall -Wextra -Wcast-qual -Wconversion -pipe -DREAL_BUILD
 BASE_OPTS  = -O3 -ffast-math -mtune=generic -msse -msse2 -mfpmath=sse -fdata-sections -ffunction-sections
 LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,--gc-sections
 
+# -Wcast-align -Wredundant-decls -Wshadow -Wstrict-prototypes -Wmissing-prototypes
+# -Wmissing-declarations -Wstrict-overflow -Wundef -Wwrite-strings -fstrict-overflow -Wsuggest-attribute=noreturn -Wunsafe-loop-optimizations
+# -Wnon-virtual-dtor -Woverloaded-virtual 
+# -Werror
+
 # -Waggregate-return -Wsign-conversion
 
 ifneq ($(MACOS),true)
-BASE_FLAGS += -Wlogical-op -Werror
+BASE_FLAGS += -Wlogical-op
 endif
 
 ifneq ($(WIN32),true)
