@@ -305,10 +305,10 @@ class CarlaEnginePort
 protected:
     /*!
      * The constructor.\n
-     * Param \a isInput defines wherever this is an input port or not (output otherwise).\n
+     * Param \a isInputPort defines wherever this is an input port or not (output otherwise).\n
      * Input/output and process mode are constant for the lifetime of the port.
      */
-    CarlaEnginePort(const CarlaEngine& engine, const bool isInput);
+    CarlaEnginePort(const CarlaEngine& engine, const bool isInputPort);
 
 public:
     /*!
@@ -353,7 +353,7 @@ public:
      * The constructor.\n
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
-    CarlaEngineAudioPort(const CarlaEngine& engine, const bool isInput);
+    CarlaEngineAudioPort(const CarlaEngine& engine, const bool isInputPort);
 
     /*!
      * The destructor.
@@ -399,7 +399,7 @@ public:
      * The constructor.\n
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
-    CarlaEngineCVPort(const CarlaEngine& engine, const bool isInput);
+    CarlaEngineCVPort(const CarlaEngine& engine, const bool isInputPort);
 
     /*!
      * The destructor.
@@ -460,7 +460,7 @@ public:
      * The constructor.\n
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
-    CarlaEngineEventPort(const CarlaEngine& engine, const bool isInput);
+    CarlaEngineEventPort(const CarlaEngine& engine, const bool isInputPort);
 
     /*!
      * The destructor.

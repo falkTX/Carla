@@ -62,11 +62,11 @@ static const EngineEvent kFallbackEngineEvent = { kEngineEventTypeNull, 0, 0, {{
 // -----------------------------------------------------------------------
 // Carla Engine port (Abstract)
 
-CarlaEnginePort::CarlaEnginePort(const CarlaEngine& engine, const bool isInput)
+CarlaEnginePort::CarlaEnginePort(const CarlaEngine& engine, const bool isInputPort)
     : fEngine(engine),
-      fIsInput(isInput)
+      fIsInput(isInputPort)
 {
-    carla_debug("CarlaEnginePort::CarlaEnginePort(%s)", bool2str(isInput));
+    carla_debug("CarlaEnginePort::CarlaEnginePort(%s)", bool2str(isInputPort));
 }
 
 CarlaEnginePort::~CarlaEnginePort()
@@ -77,11 +77,11 @@ CarlaEnginePort::~CarlaEnginePort()
 // -----------------------------------------------------------------------
 // Carla Engine Audio port
 
-CarlaEngineAudioPort::CarlaEngineAudioPort(const CarlaEngine& engine, const bool isInput)
-    : CarlaEnginePort(engine, isInput),
+CarlaEngineAudioPort::CarlaEngineAudioPort(const CarlaEngine& engine, const bool isInputPort)
+    : CarlaEnginePort(engine, isInputPort),
       fBuffer(nullptr)
 {
-    carla_debug("CarlaEngineAudioPort::CarlaEngineAudioPort(%s)", bool2str(isInput));
+    carla_debug("CarlaEngineAudioPort::CarlaEngineAudioPort(%s)", bool2str(isInputPort));
 }
 
 CarlaEngineAudioPort::~CarlaEngineAudioPort()
@@ -96,12 +96,12 @@ void CarlaEngineAudioPort::initBuffer()
 // -----------------------------------------------------------------------
 // Carla Engine CV port
 
-CarlaEngineCVPort::CarlaEngineCVPort(const CarlaEngine& engine, const bool isInput)
-    : CarlaEnginePort(engine, isInput),
+CarlaEngineCVPort::CarlaEngineCVPort(const CarlaEngine& engine, const bool isInputPort)
+    : CarlaEnginePort(engine, isInputPort),
       fBuffer(nullptr),
       fProcessMode(engine.getProccessMode())
 {
-    carla_debug("CarlaEngineCVPort::CarlaEngineCVPort(%s)", bool2str(isInput));
+    carla_debug("CarlaEngineCVPort::CarlaEngineCVPort(%s)", bool2str(isInputPort));
 
     if (fProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         fBuffer = new float[engine.getBufferSize()];
@@ -140,12 +140,12 @@ void CarlaEngineCVPort::setBufferSize(const uint32_t bufferSize)
 // -----------------------------------------------------------------------
 // Carla Engine Event port
 
-CarlaEngineEventPort::CarlaEngineEventPort(const CarlaEngine& engine, const bool isInput)
-    : CarlaEnginePort(engine, isInput),
+CarlaEngineEventPort::CarlaEngineEventPort(const CarlaEngine& engine, const bool isInputPort)
+    : CarlaEnginePort(engine, isInputPort),
       fBuffer(nullptr),
       fProcessMode(engine.getProccessMode())
 {
-    carla_debug("CarlaEngineEventPort::CarlaEngineEventPort(%s)", bool2str(isInput));
+    carla_debug("CarlaEngineEventPort::CarlaEngineEventPort(%s)", bool2str(isInputPort));
 
     if (fProcessMode == ENGINE_PROCESS_MODE_PATCHBAY)
         fBuffer = new EngineEvent[kMaxEngineEventInternalCount];
@@ -741,7 +741,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
         CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins[id].plugin == nullptr, "Invalid engine internal data (err #13)");
     }
 
-    CarlaPlugin::Initializer init = {
+    CarlaPlugin::Initializer initializer = {
         this,
         id,
         filename,
@@ -830,70 +830,70 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
         case PLUGIN_INTERNAL:
             if (std::strcmp(label, "Csound") == 0)
             {
-                plugin = CarlaPlugin::newCsound(init);
+                plugin = CarlaPlugin::newCsound(initializer);
             }
             else if (std::strcmp(label, "FluidSynth") == 0)
             {
                 use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true"));
-                plugin = CarlaPlugin::newFluidSynth(init, use16Outs);
+                plugin = CarlaPlugin::newFluidSynth(initializer, use16Outs);
             }
             else if (std::strcmp(label, "LinuxSampler (GIG)") == 0)
             {
                 use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true"));
-                plugin = CarlaPlugin::newLinuxSampler(init, "GIG", use16Outs);
+                plugin = CarlaPlugin::newLinuxSampler(initializer, "GIG", use16Outs);
             }
             else if (std::strcmp(label, "LinuxSampler (SF2)") == 0)
             {
                 use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true"));
-                plugin = CarlaPlugin::newLinuxSampler(init, "SF2", use16Outs);
+                plugin = CarlaPlugin::newLinuxSampler(initializer, "SF2", use16Outs);
             }
             else if (std::strcmp(label, "LinuxSampler (SFZ)") == 0)
             {
                 use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true"));
-                plugin = CarlaPlugin::newLinuxSampler(init, "SFZ", use16Outs);
+                plugin = CarlaPlugin::newLinuxSampler(initializer, "SFZ", use16Outs);
             }
             else
             {
-                plugin = CarlaPlugin::newNative(init);
+                plugin = CarlaPlugin::newNative(initializer);
             }
             break;
 
         case PLUGIN_LADSPA:
-            plugin = CarlaPlugin::newLADSPA(init, (const LADSPA_RDF_Descriptor*)extra);
+            plugin = CarlaPlugin::newLADSPA(initializer, (const LADSPA_RDF_Descriptor*)extra);
             break;
 
         case PLUGIN_DSSI:
-            plugin = CarlaPlugin::newDSSI(init);
+            plugin = CarlaPlugin::newDSSI(initializer);
             break;
 
         case PLUGIN_LV2:
-            plugin = CarlaPlugin::newLV2(init);
+            plugin = CarlaPlugin::newLV2(initializer);
             break;
 
         case PLUGIN_VST:
-            plugin = CarlaPlugin::newVST(init);
+            plugin = CarlaPlugin::newVST(initializer);
             break;
 
         case PLUGIN_AU:
-            plugin = CarlaPlugin::newAU(init);
+            plugin = CarlaPlugin::newAU(initializer);
             break;
 
         case PLUGIN_FILE_CSD:
-            plugin = CarlaPlugin::newFileCSD(init);
+            plugin = CarlaPlugin::newFileCSD(initializer);
             break;
 
         case PLUGIN_FILE_GIG:
             use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true"));
-            plugin = CarlaPlugin::newFileGIG(init, use16Outs);
+            plugin = CarlaPlugin::newFileGIG(initializer, use16Outs);
             break;
 
         case PLUGIN_FILE_SF2:
             use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true"));
-            plugin = CarlaPlugin::newFileSF2(init, use16Outs);
+            plugin = CarlaPlugin::newFileSF2(initializer, use16Outs);
             break;
 
         case PLUGIN_FILE_SFZ:
-            plugin = CarlaPlugin::newFileSFZ(init);
+            plugin = CarlaPlugin::newFileSFZ(initializer);
             break;
         }
     }
@@ -1941,16 +1941,16 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
     callback(ENGINE_CALLBACK_SAMPLE_RATE_CHANGED, 0, 0, 0, static_cast<float>(newSampleRate), nullptr);
 }
 
-void CarlaEngine::offlineModeChanged(const bool isOffline)
+void CarlaEngine::offlineModeChanged(const bool isOfflineNow)
 {
-    carla_debug("CarlaEngine::offlineModeChanged(%s)", bool2str(isOffline));
+    carla_debug("CarlaEngine::offlineModeChanged(%s)", bool2str(isOfflineNow));
 
     for (unsigned int i=0; i < pData->curPluginCount; ++i)
     {
         CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
         if (plugin != nullptr && plugin->isEnabled())
-            plugin->offlineModeChanged(isOffline);
+            plugin->offlineModeChanged(isOfflineNow);
     }
 }
 

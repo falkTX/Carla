@@ -560,7 +560,7 @@ public:
     ~CarlaEngineNative() override
     {
         CARLA_ASSERT(! fIsActive);
-        carla_debug("CarlaEngineNative::~CarlaEngineNative()");
+        carla_debug("CarlaEngineNative::~CarlaEngineNative() - START");
 
         pData->aboutToClose = true;
         fIsRunning = false;
@@ -568,6 +568,8 @@ public:
         removeAllPlugins();
         runPendingRtEvents();
         close();
+
+        carla_debug("CarlaEngineNative::~CarlaEngineNative() - END");
     }
 
 protected:

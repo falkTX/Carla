@@ -154,6 +154,7 @@ void CarlaEngineOsc::close()
 
 // -----------------------------------------------------------------------
 
+bool isDigit(const char c);
 bool isDigit(const char c)
 {
     return (c >= '0' && c <= '9');

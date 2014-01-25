@@ -225,7 +225,7 @@ public:
         return fRetValue;
     }
 
-    T& getAt(const size_t index, const bool remove)
+    T& getAt(const size_t index, const bool removeObj)
     {
         if (fCount == 0 || index >= fCount)
             return fRetValue;
@@ -245,7 +245,7 @@ public:
             if (data != nullptr)
                 fRetValue = data->value;
 
-            if (remove)
+            if (removeObj)
             {
                 --fCount;
                 list_del(entry);
@@ -263,14 +263,14 @@ public:
         return fRetValue;
     }
 
-    T& getFirst(const bool remove = false)
+    T& getFirst(const bool removeObj = false)
     {
-        return _getFirstOrLast(true, remove);
+        return _getFirstOrLast(true, removeObj);
     }
 
-    T& getLast(const bool remove = false)
+    T& getLast(const bool removeObj = false)
     {
-        return _getFirstOrLast(false, remove);
+        return _getFirstOrLast(false, removeObj);
     }
 
     void remove(Itenerator& it)
@@ -382,7 +382,7 @@ private:
         INIT_LIST_HEAD(&fQueue);
     }
 
-    T& _getFirstOrLast(const bool first, const bool remove)
+    T& _getFirstOrLast(const bool first, const bool removeObj)
     {
         if (fCount == 0)
             return fRetValue;
@@ -393,7 +393,7 @@ private:
         if (data != nullptr)
             fRetValue = data->value;
 
-        if (remove)
+        if (removeObj)
         {
             --fCount;
             list_del(entry);

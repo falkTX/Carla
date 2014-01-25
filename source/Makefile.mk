@@ -45,9 +45,20 @@ BASE_FLAGS = -Wall -Wextra -Wcast-qual -Wconversion -pipe -DREAL_BUILD
 BASE_OPTS  = -O3 -ffast-math -mtune=generic -msse -msse2 -mfpmath=sse -fdata-sections -ffunction-sections
 LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,--gc-sections
 
+ifeq ($(TESTBUILD),true)
+# TODO: check which ones are valid on OSX
+BASE_FLAGS += -Wcast-align -Wredundant-decls -Wshadow
+BASE_FLAGS += -Wmissing-declarations -Wstrict-overflow -Wundef -Wwrite-strings -fstrict-overflow -Wsuggest-attribute=noreturn -Wunsafe-loop-optimizations
+BASE_FLAGS += -Werror
+CFLAGS     += -isystem /opt/kxstudio/include
+CFLAGS     += -Wstrict-prototypes -Wmissing-prototypes
+CXXFLAGS   += -isystem /opt/kxstudio/include
+CXXFLAGS   += -Wnon-virtual-dtor -Woverloaded-virtual
+endif
+
 # -Wcast-align -Wredundant-decls -Wshadow -Wstrict-prototypes -Wmissing-prototypes
 # -Wmissing-declarations -Wstrict-overflow -Wundef -Wwrite-strings -fstrict-overflow -Wsuggest-attribute=noreturn -Wunsafe-loop-optimizations
-# -Wnon-virtual-dtor -Woverloaded-virtual 
+# -Wnon-virtual-dtor -Woverloaded-virtual
 # -Werror
 
 # -Waggregate-return -Wsign-conversion
