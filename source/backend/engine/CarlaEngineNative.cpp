@@ -1169,7 +1169,12 @@ protected:
     {
         if (show)
         {
-            fUiServer.setData("/home/falktx/FOSS/GIT-mine/Carla/source/carla-plugin", pData->sampleRate, pHost->uiName);
+            CarlaString path(pHost->resourceDir);
+            path += "/carla-plugin";
+
+            carla_stdout("Trying to start carla-plugin using \"%s\"", path.getBuffer());
+
+            fUiServer.setData(path.getBuffer(), pData->sampleRate, pHost->uiName);
             fUiServer.start();
 
             for (uint i=0; i < pData->curPluginCount; ++i)
