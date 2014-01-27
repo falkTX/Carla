@@ -1536,7 +1536,7 @@ static const NativePluginDescriptor carlaRackDesc = {
     CarlaEngineNative::_dispatcher
 };
 
-#ifdef HAVE_JUCE
+#if 0 //def HAVE_JUCE
 static const NativePluginDescriptor carlaPatchbayDesc = {
     /* category  */ ::PLUGIN_CATEGORY_OTHER,
     /* hints     */ static_cast<NativePluginHints>(::PLUGIN_IS_SYNTH|::PLUGIN_HAS_UI|::PLUGIN_NEEDS_FIXED_BUFFERS|::PLUGIN_NEEDS_SINGLE_THREAD|::PLUGIN_USES_STATE|::PLUGIN_USES_TIME),
@@ -1585,7 +1585,7 @@ void carla_register_native_plugin_carla()
 {
     CARLA_BACKEND_USE_NAMESPACE
     carla_register_native_plugin(&carlaRackDesc);
-#ifdef HAVE_JUCE
+#if 0 //def HAVE_JUCE
     carla_register_native_plugin(&carlaPatchbayDesc);
 #endif
 }
