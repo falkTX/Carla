@@ -52,31 +52,31 @@ $(TARGET): $(OBJS)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-CarlaPlugin.cpp.o: CarlaPlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_BACKEND_UTILS_HPP)
+CarlaPlugin.cpp.o: CarlaPlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_MATH_UTILS_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) $(QTXML_FLAGS) -c -o $@
 
-CarlaPluginInternal.cpp.o: CarlaPluginInternal.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_LIB_COUNTER_HPP)
+CarlaPluginInternal.cpp.o: CarlaPluginInternal.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_LIB_COUNTER_HPP) $(CARLA_MATH_UTILS_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
 
 CarlaPluginThread.cpp.o: CarlaPluginThread.cpp $(CARLA_PLUGIN_HPP) $(CARLA_PLUGIN_THREAD_HPP) $(CARLA_ENGINE_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
 
-NativePlugin.cpp.o: NativePlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_NATIVE_H) $(CARLA_HOST_H)
+NativePlugin.cpp.o: NativePlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_NATIVE_H) $(CARLA_HOST_H)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
 
-BridgePlugin.cpp.o: BridgePlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_BRIDGE_UTILS_HPP) $(CARLA_SHM_UTILS_HPP) $(JACK_BRIDGE_HPP)
+BridgePlugin.cpp.o: BridgePlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_BRIDGE_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_SHM_UTILS_HPP) $(JACK_BRIDGE_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-LadspaPlugin.cpp.o: LadspaPlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_LADSPA_UTILS_HPP)
+LadspaPlugin.cpp.o: LadspaPlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_LADSPA_UTILS_HPP) $(CARLA_MATH_UTILS_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-DssiPlugin.cpp.o: DssiPlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_DSSI_UTILS_HPP)
+DssiPlugin.cpp.o: DssiPlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_DSSI_UTILS_HPP) $(CARLA_MATH_UTILS_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@ # FIXME
 
-Lv2Plugin.cpp.o: Lv2Plugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_LV2_UTILS_HPP) $(LV2_ATOM_QUEUE_HPP) $(CARLA_ENGINE_OSC_HPP)
+Lv2Plugin.cpp.o: Lv2Plugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_LV2_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(LV2_ATOM_QUEUE_HPP) $(CARLA_ENGINE_OSC_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@ # FIXME
 
-VstPlugin.cpp.o: VstPlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_VST_UTILS_HPP)
+VstPlugin.cpp.o: VstPlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_VST_UTILS_HPP) $(CARLA_MATH_UTILS_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 AuPlugin.cpp.o: AuPlugin.cpp $(CARLA_PLUGIN_HPP) $(CARLA_ENGINE_HPP) $(CARLA_UTILS_HPP)
@@ -88,10 +88,10 @@ CsoundPlugin.cpp.o: CsoundPlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE
 JucePlugin.cpp.o: JucePlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-FluidSynthPlugin.cpp.o: FluidSynthPlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP)
+FluidSynthPlugin.cpp.o: FluidSynthPlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_MATH_UTILS_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(FLUIDSYNTH_FLAGS) $(QTCORE_FLAGS) -c -o $@
 
-LinuxSamplerPlugin.cpp.o: LinuxSamplerPlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_BACKEND_UTILS_HPP)
+LinuxSamplerPlugin.cpp.o: LinuxSamplerPlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_MATH_UTILS_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(LINUXSAMPLER_FLAGS) $(QTCORE_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------

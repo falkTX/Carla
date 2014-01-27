@@ -128,13 +128,8 @@ protected:
             //carla_stderr("P: no process");
             fLastFrame = timePos->frame;
 
-#ifdef HAVE_JUCE
-            FloatVectorOperations::clear(out1, frames);
-            FloatVectorOperations::clear(out2, frames);
-#else
-            carla_zeroFloat(out1, frames);
-            carla_zeroFloat(out2, frames);
-#endif
+            FLOAT_CLEAR(out1, frames);
+            FLOAT_CLEAR(out2, frames);
             return;
         }
 
@@ -147,13 +142,8 @@ protected:
             if (timePos->frame == 0 && fLastFrame > 0)
                 fThread.setNeedsRead();
 
-#ifdef HAVE_JUCE
-            FloatVectorOperations::clear(out1, frames);
-            FloatVectorOperations::clear(out2, frames);
-#else
-            carla_zeroFloat(out1, frames);
-            carla_zeroFloat(out2, frames);
-#endif
+            FLOAT_CLEAR(out1, frames);
+            FLOAT_CLEAR(out2, frames);
             return;
         }
 
@@ -168,13 +158,8 @@ protected:
             if (timePos->frame + frames < fPool.startFrame)
                 fThread.setNeedsRead();
 
-#ifdef HAVE_JUCE
-            FloatVectorOperations::clear(out1, frames);
-            FloatVectorOperations::clear(out2, frames);
-#else
-            carla_zeroFloat(out1, frames);
-            carla_zeroFloat(out2, frames);
-#endif
+            FLOAT_CLEAR(out1, frames);
+            FLOAT_CLEAR(out2, frames);
             return;
         }
 

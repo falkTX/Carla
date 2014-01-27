@@ -816,11 +816,13 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
         if (midiIns > 0 && audioIns == 0 && audioOuts > 0)
             hints |= PLUGIN_IS_SYNTH;
 
+#if 0 // FIXME
         if (const char* const ui = find_dssi_ui(filename, ldescriptor->Label))
         {
             hints |= PLUGIN_HAS_CUSTOM_UI;
             delete[] ui;
         }
+#endif
 
         if (init)
         {

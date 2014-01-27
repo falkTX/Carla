@@ -20,16 +20,10 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaEngineUtils.hpp"
+#include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 
 #include "jackbridge/JackBridge.hpp"
-
-#include <cmath>
-
-#ifdef HAVE_JUCE
-# include "juce_audio_basics.h"
-using juce::FloatVectorOperations;
-#endif
 
 #include <QtCore/QStringList>
 

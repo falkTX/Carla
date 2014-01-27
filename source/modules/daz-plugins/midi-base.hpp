@@ -22,6 +22,8 @@
 #include "CarlaMutex.hpp"
 #include "LinkedList.hpp"
 
+#include "CarlaMathUtils.hpp"
+
 #define MAX_EVENT_DATA_SIZE          4
 #define MIN_PREALLOCATED_EVENT_COUNT 100
 #define MAX_PREALLOCATED_EVENT_COUNT 1000

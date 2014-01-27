@@ -21,6 +21,7 @@
 #ifdef WANT_VST
 
 #include "CarlaVstUtils.hpp"
+#include "CarlaMathUtils.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -982,13 +983,7 @@ public:
         {
             // disable any output sound
             for (i=0; i < pData->audioOut.count; ++i)
-            {
-#ifdef HAVE_JUCE
-                FloatVectorOperations::clear(outBuffer[i], frames);
-#else
-#endif
-            }
-
+                FLOAT_CLEAR(outBuffer[i], frames);
             return;
         }
 
@@ -1033,12 +1028,7 @@ public:
             if (pData->latency > 0)
             {
                 for (i=0; i < pData->audioIn.count; ++i)
-                {
-#ifdef HAVE_JUCE
-                    FloatVectorOperations::clear(pData->latencyBuffers[i], pData->latency);
-#else
-#endif
-                }
+                    FLOAT_CLEAR(pData->latencyBuffers[i], pData->latency);
             }
 
             pData->needsReset = false;
@@ -1513,12 +1503,7 @@ public:
         else
         {
             for (i=0; i < pData->audioOut.count; ++i)
-            {
-#ifdef HAVE_JUCE
-                FloatVectorOperations::clear(vstOutBuffer[i], frames);
-#else
-#endif
-            }
+                FLOAT_CLEAR(vstOutBuffer[i], frames);
 
 #if ! VST_FORCE_DEPRECATED
             fEffect->process(fEffect,
@@ -1563,10 +1548,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-#ifdef HAVE_JUCE
-                        FloatVectorOperations::copy(oldBufLeft, outBuffer[i]+timeOffset, frames);
-#else
-#endif
+                        FLOAT_COPY(oldBufLeft, outBuffer[i]+timeOffset, frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;

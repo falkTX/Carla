@@ -20,6 +20,8 @@
 
 #ifdef WANT_FLUIDSYNTH
 
+#include "CarlaMathUtils.hpp"
+
 #include <fluidsynth.h>
 
 #include <QtCore/QStringList>

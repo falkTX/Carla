@@ -27,6 +27,7 @@
 #ifdef WANT_LINUXSAMPLER
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaMathUtils.hpp"
 
 #include "linuxsampler/EngineFactory.h"
 #include <linuxsampler/Sampler.h>

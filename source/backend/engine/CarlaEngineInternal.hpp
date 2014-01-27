@@ -32,19 +32,6 @@
 #define CARLA_SAFE_ASSERT_RETURN_ERRN(cond, err) if (cond) pass(); else { carla_safe_assert(#cond, __FILE__, __LINE__); setLastError(err); return nullptr; }
 
 // -----------------------------------------------------------------------
-// Float operations
-
-#ifdef HAVE_JUCE
-# define FLOAT_ADD(bufDst, bufSrc, frames)  FloatVectorOperations::add(bufDst, bufSrc, frames)
-# define FLOAT_COPY(bufDst, bufSrc, frames) FloatVectorOperations::copy(bufDst, bufSrc, frames)
-# define FLOAT_CLEAR(buf, frames)           FloatVectorOperations::clear(buf, frames)
-#else
-# define FLOAT_ADD(bufDst, bufSrc, frames)  carla_addFloat(bufDst, bufSrc, frames)
-# define FLOAT_COPY(bufDst, bufSrc, frames) carla_copyFloat(bufDst, bufSrc, frames)
-# define FLOAT_CLEAR(buf, frames)           carla_zeroFloat(buf, frames)
-#endif
-
-// -----------------------------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
 

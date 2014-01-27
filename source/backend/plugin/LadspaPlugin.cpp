@@ -21,6 +21,7 @@
 #ifdef WANT_LADSPA
 
 #include "CarlaLadspaUtils.hpp"
+#include "CarlaMathUtils.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -1200,7 +1201,7 @@ public:
             if (pData->latency > 0 && pData->latency < frames)
             {
                 for (i=0; i < pData->audioIn.count; ++i)
-                    FloatVectorOperations::copy(pData->latencyBuffers[i], inBuffer[i] + (frames - pData->latency), pData->latency);
+                    FLOAT_COPY(pData->latencyBuffers[i], inBuffer[i] + (frames - pData->latency), pData->latency);
             }
 #endif
         } // End of Post-processing

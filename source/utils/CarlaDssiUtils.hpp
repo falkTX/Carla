@@ -21,14 +21,17 @@
 #include "CarlaLadspaUtils.hpp"
 #include "dssi/dssi.h"
 
-#include <QtCore/QDir>
-#include <QtCore/QFileInfo>
-#include <QtCore/QStringList>
+// TODO - put this in a cpp file
+
+//#include <QtCore/QDir>
+//#include <QtCore/QFileInfo>
+//#include <QtCore/QStringList>
 
 // -----------------------------------------------------------------------
 
-static inline
-const char* find_dssi_ui(const char* const filename, const char* const label)
+//static inline
+const char* find_dssi_ui(const char* const filename, const char* const label);
+#if 0
 {
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', nullptr);
     CARLA_SAFE_ASSERT_RETURN(label    != nullptr && label[0]    != '\0', nullptr);
@@ -61,6 +64,7 @@ const char* find_dssi_ui(const char* const filename, const char* const label)
 
     return carla_strdup(guiFilename.toUtf8().constData());
 }
+#endif
 
 // -----------------------------------------------------------------------
 

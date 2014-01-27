@@ -82,6 +82,7 @@ CARLA_BACKEND_UTILS_HPP = ../../utils/CarlaBackendUtils.hpp $(CARLA_BACKEND_H) $
 CARLA_BRIDGE_UTILS_HPP  = ../../utils/CarlaBridgeUtils.hpp $(CARLA_RING_BUFFER_HPP)
 CARLA_ENGINE_UTILS_HPP  = ../../utils/CarlaEngineUtils.hpp $(CARLA_ENGINE_HPP) $(CARLA_UTILS_HPP)
 CARLA_LIB_COUNTER_HPP   = ../../utils/CarlaLibCounter.hpp $(CARLA_LIB_UTILS_HPP) $(CARLA_MUTEX_HPP) $(LINKED_LIST_HPP)
+CARLA_MATH_UTILS_HPP    = ../../utils/CarlaMathUtils.hpp $(CARLA_UTILS_HPP)
 CARLA_PIPE_UTILS_HPP    = ../../utils/CarlaPipeUtils.hpp $(CARLA_STRING_HPP)
 CARLA_SHM_UTILS_HPP     = ../../utils/CarlaShmUtils.hpp $(CARLA_UTILS_HPP)
 CARLA_STATE_UTILS_HPP   = ../../utils/CarlaStateUtils.hpp $(CARLA_BACKEND_UTILS_HPP) $(CARLA_MIDI_H) $(LINKED_LIST_HPP)

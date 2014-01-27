@@ -28,15 +28,11 @@
 #include "CarlaPlugin.hpp"
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaMathUtils.hpp"
 #include "CarlaPipeUtils.hpp"
 #include "CarlaStateUtils.hpp"
 
 #include "CarlaNative.hpp"
-
-#ifdef HAVE_JUCE
-# include "juce_audio_basics.h"
-using juce::FloatVectorOperations;
-#endif
 
 #include <QtCore/QTextStream>
 #include <QtXml/QDomNode>

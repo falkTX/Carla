@@ -21,6 +21,8 @@
 #ifdef WANT_LV2
 
 #include "CarlaLv2Utils.hpp"
+#include "CarlaMathUtils.hpp"
+
 #include "Lv2AtomQueue.hpp"
 
 #include "../engine/CarlaEngineOsc.hpp"

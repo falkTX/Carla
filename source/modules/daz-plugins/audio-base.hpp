@@ -20,10 +20,7 @@
 
 #include "CarlaThread.hpp"
 
-#ifdef HAVE_JUCE
-# include "juce_audio_basics.h"
-using juce::FloatVectorOperations;
-#endif
+#include "CarlaMathUtils.hpp"
 
 extern "C" {
 #include "audio_decoder/ad.h"
@@ -94,13 +91,8 @@ struct AudioFilePool {
 
         startFrame = 0;
 
-#ifdef HAVE_JUCE
-        FloatVectorOperations::clear(buffer[0], size);
-        FloatVectorOperations::clear(buffer[1], size);
-#else
-        carla_zeroFloat(buffer[0], size);
-        carla_zeroFloat(buffer[1], size);
-#endif
+        FLOAT_CLEAR(buffer[0], size);
+        FLOAT_CLEAR(buffer[1], size);
     }
 };
 
@@ -226,13 +218,8 @@ public:
         {
             pool.startFrame = fPool.startFrame;
 
-#ifdef HAVE_JUCE
-            FloatVectorOperations::copy(pool.buffer[0], fPool.buffer[0], fPool.size);
-            FloatVectorOperations::copy(pool.buffer[1], fPool.buffer[1], fPool.size);
-#else
-            carla_copyFloat(pool.buffer[0], fPool.buffer[0], fPool.size);
-            carla_copyFloat(pool.buffer[1], fPool.buffer[1], fPool.size);
-#endif
+            FLOAT_COPY(pool.buffer[0], fPool.buffer[0], fPool.size);
+            FLOAT_COPY(pool.buffer[1], fPool.buffer[1], fPool.size);
         }
 
         fMutex.unlock();
@@ -282,12 +269,7 @@ public:
         const size_t tmpSize = fPool.size * fFileNfo.channels;
 
         float tmpData[tmpSize];
-
-#ifdef HAVE_JUCE
-        FloatVectorOperations::clear(tmpData, int(tmpSize));
-#else
-        carla_zeroFloat(tmpData, tmpSize);
-#endif
+        FLOAT_CLEAR(tmpData, int(tmpSize));
 
         {
             carla_stderr("R: poll data - reading at %li:%02li", readFrame/44100/60, (readFrame/44100) % 60);

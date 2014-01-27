@@ -17,16 +17,12 @@
 
 #include "CarlaEngineInternal.hpp"
 #include "CarlaBackendUtils.hpp"
+#include "CarlaMathUtils.hpp"
 
 #include "RtLinkedList.hpp"
 
 #include "rtaudio/RtAudio.h"
 #include "rtmidi/RtMidi.h"
-
-#ifdef HAVE_JUCE
-# include "juce_audio_basics.h"
-using juce::FloatVectorOperations;
-#endif
 
 CARLA_BACKEND_START_NAMESPACE
 

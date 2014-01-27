@@ -29,29 +29,9 @@
 
 #include "CarlaMIDI.h"
 
-#include <cmath>
-
-#ifdef HAVE_JUCE
-# include "juce_audio_basics.h"
-using juce::FloatVectorOperations;
-#endif
-
 // -----------------------------------------------------------------------
 
 #define CARLA_PROCESS_CONTINUE_CHECK if (! pData->enabled) { pData->engine->callback(ENGINE_CALLBACK_DEBUG, pData->id, 0, 0, 0.0f, "Processing while plugin is disabled!!"); return; }
-
-// -----------------------------------------------------------------------
-// Float operations
-
-#ifdef HAVE_JUCE
-# define FLOAT_ADD(bufDst, bufSrc, frames)  FloatVectorOperations::add(bufDst, bufSrc, frames)
-# define FLOAT_COPY(bufDst, bufSrc, frames) FloatVectorOperations::copy(bufDst, bufSrc, frames)
-# define FLOAT_CLEAR(buf, frames)           FloatVectorOperations::clear(buf, frames)
-#else
-# define FLOAT_ADD(bufDst, bufSrc, frames)  carla_addFloat(bufDst, bufSrc, frames)
-# define FLOAT_COPY(bufDst, bufSrc, frames) carla_copyFloat(bufDst, bufSrc, frames)
-# define FLOAT_CLEAR(buf, frames)           carla_zeroFloat(buf, frames)
-#endif
 
 // -----------------------------------------------------------------------
 

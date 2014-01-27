@@ -19,12 +19,7 @@
 #include "CarlaPlugin.hpp"
 #include "CarlaMIDI.h"
 
-#ifndef HAVE_JUCE
-# include <cmath>
-#else
-# include "juce_audio_basics.h"
-using juce::FloatVectorOperations;
-#endif
+#include "CarlaMathUtils.hpp"
 
 // -----------------------------------------------------------------------
 

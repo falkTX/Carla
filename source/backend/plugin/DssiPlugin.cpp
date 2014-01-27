@@ -21,6 +21,47 @@
 #ifdef WANT_DSSI
 
 #include "CarlaDssiUtils.hpp"
+#include "CarlaMathUtils.hpp"
+
+// TODO - put this in a cpp file
+
+#include <QtCore/QDir>
+#include <QtCore/QFileInfo>
+#include <QtCore/QStringList>
+
+const char* find_dssi_ui(const char* const filename, const char* const label)
+{
+    CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', nullptr);
+    CARLA_SAFE_ASSERT_RETURN(label    != nullptr && label[0]    != '\0', nullptr);
+    carla_debug("find_dssi_ui(\"%s\", \"%s\")", filename, label);
+
+    QString guiFilename;
+    QString pluginDir(filename);
+    pluginDir.resize(pluginDir.lastIndexOf("."));
+
+    QString checkLabel(label);
+    QString checkSName(QFileInfo(pluginDir).baseName());
+
+    if (! checkLabel.endsWith("_")) checkLabel += "_";
+    if (! checkSName.endsWith("_")) checkSName += "_";
+
+    QStringList guiFiles(QDir(pluginDir).entryList());
+
+    foreach (const QString& gui, guiFiles)
+    {
+        if (gui.startsWith(checkLabel) || gui.startsWith(checkSName))
+        {
+            QFileInfo finalname(pluginDir + QDir::separator() + gui);
+            guiFilename = finalname.absoluteFilePath();
+            break;
+        }
+    }
+
+    if (guiFilename.isEmpty())
+        return nullptr;
+
+    return carla_strdup(guiFilename.toUtf8().constData());
+}
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -1572,7 +1613,7 @@ public:
             if (pData->latency > 0 && pData->latency < frames)
             {
                 for (i=0; i < pData->audioIn.count; ++i)
-                    FloatVectorOperations::copy(pData->latencyBuffers[i], inBuffer[i] + (frames - pData->latency), pData->latency);
+                    FLOAT_COPY(pData->latencyBuffers[i], inBuffer[i] + (frames - pData->latency), pData->latency);
             }
 #endif
         } // End of Post-processing

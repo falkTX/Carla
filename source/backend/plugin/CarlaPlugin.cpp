@@ -19,7 +19,7 @@
 #include "CarlaEngine.hpp"
 
 #include "CarlaBackendUtils.hpp"
-#include "CarlaMIDI.h"
+#include "CarlaMathUtils.hpp"
 
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>

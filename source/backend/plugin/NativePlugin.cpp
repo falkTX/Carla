@@ -20,10 +20,10 @@
 
 #ifdef WANT_NATIVE
 
+#include "CarlaMathUtils.hpp"
+
 #include "CarlaNative.h"
 #include "CarlaHost.h"
-
-#include "CarlaMIDI.h"
 
 #include <QtCore/QStringList>
 
@@ -1715,20 +1715,10 @@ public:
         // Reset audio buffers
 
         for (i=0; i < pData->audioIn.count; ++i)
-        {
-#ifdef HAVE_JUCE
-            FloatVectorOperations::copy(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
-#else
-#endif
-        }
+            FLOAT_COPY(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
 
         for (i=0; i < pData->audioOut.count; ++i)
-        {
-#ifdef HAVE_JUCE
-            FloatVectorOperations::clear(fAudioOutBuffers[i], frames);
-#else
-#endif
-        }
+            FLOAT_CLEAR(fAudioOutBuffers[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -1786,10 +1776,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-#ifdef HAVE_JUCE
-                        FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], frames);
-#else
-#endif
+                        FLOAT_COPY(oldBufLeft, fAudioOutBuffers[i], frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;

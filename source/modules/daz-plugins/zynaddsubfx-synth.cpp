@@ -24,6 +24,8 @@
 #include "CarlaThread.hpp"
 #include "LinkedList.hpp"
 
+#include "CarlaMathUtils.hpp"
+
 #include "zynaddsubfx/DSP/FFTwrapper.h"
 #include "zynaddsubfx/Misc/Master.h"
 #include "zynaddsubfx/Misc/Part.h"
@@ -50,11 +52,6 @@
 #include <ctime>
 #include <set>
 #include <string>
-
-#ifdef HAVE_JUCE
-# include "juce_audio_basics.h"
-using juce::FloatVectorOperations;
-#endif
 
 #ifdef WANT_ZYNADDSUBFX_UI
 static Fl_Tiled_Image* gModuleBackdrop = nullptr;
@@ -629,13 +626,8 @@ protected:
     {
         if (pthread_mutex_trylock(&fMaster->mutex) != 0)
         {
-#ifdef HAVE_JUCE
-            FloatVectorOperations::clear(outBuffer[0], frames);
-            FloatVectorOperations::clear(outBuffer[1], frames);
-#else
-            carla_zeroFloat(outBuffer[0], frames);
-            carla_zeroFloat(outBuffer[1], frames);
-#endif
+            FLOAT_CLEAR(outBuffer[0], frames);
+            FLOAT_CLEAR(outBuffer[1], frames);
             return;
         }
 

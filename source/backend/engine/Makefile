@@ -66,10 +66,10 @@ $(TARGETp): $(OBJSp)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-CarlaEngine.cpp.o: CarlaEngine.cpp $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_ENGINE_UTILS_HPP) $(CARLA_STATE_UTILS_HPP) $(CARLA_MIDI_H)
+CarlaEngine.cpp.o: CarlaEngine.cpp $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_ENGINE_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_STATE_UTILS_HPP) $(CARLA_MIDI_H)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) $(QTXML_FLAGS) -c -o $@
 
-CarlaEngineInternal.cpp.o: CarlaEngineInternal.cpp $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_MIDI_H)
+CarlaEngineInternal.cpp.o: CarlaEngineInternal.cpp $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_MIDI_H) $(CARLA_MATH_UTILS_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 CarlaEngineOsc.cpp.o: CarlaEngineOsc.cpp $(CARLA_ENGINE_HPP) $(CARLA_ENGINE_OSC_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BRIDGE_UTILS_HPP) $(CARLA_MIDI_H)
@@ -78,19 +78,19 @@ CarlaEngineOsc.cpp.o: CarlaEngineOsc.cpp $(CARLA_ENGINE_HPP) $(CARLA_ENGINE_OSC_
 CarlaEngineThread.cpp.o: CarlaEngineThread.cpp $(CARLA_ENGINE_HPP) $(CARLA_ENGINE_THREAD_HPP) $(CARLA_PLUGIN_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-CarlaEngineJack.cpp.o: CarlaEngineJack.cpp $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_ENGINE_UTILS_HPP) $(CARLA_MIDI_H) $(JACK_BRIDGE_HPP)
+CarlaEngineJack.cpp.o: CarlaEngineJack.cpp $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_ENGINE_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_MIDI_H) $(JACK_BRIDGE_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
 
-CarlaEngineRtAudio.cpp.o: CarlaEngineRtAudio.cpp $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_BACKEND_UTILS_HPP) $(RT_LINKED_LIST_HPP) $(RTAUDIO_HPP) $(RTMIDI_HPP)
+CarlaEngineRtAudio.cpp.o: CarlaEngineRtAudio.cpp $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(RT_LINKED_LIST_HPP) $(RTAUDIO_HPP) $(RTMIDI_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(RTAUDIO_FLAGS) $(RTMIDI_FLAGS) -c -o $@
 
 CarlaEngineJuce.cpp.o: CarlaEngineJuce.cpp $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_BACKEND_UTILS_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-CarlaEngineNative.cpp.o: CarlaEngineNative.cpp $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_PIPE_UTILS_HPP) $(CARLA_STATE_UTILS_HPP) $(CARLA_NATIVE_HPP)
+CarlaEngineNative.cpp.o: CarlaEngineNative.cpp $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_PIPE_UTILS_HPP) $(CARLA_STATE_UTILS_HPP) $(CARLA_NATIVE_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) $(QTXML_FLAGS) -c -o $@
 
-CarlaEngineNative.cpp.exp.o: CarlaEngineNative.cpp $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_PIPE_UTILS_HPP) $(CARLA_STATE_UTILS_HPP) $(CARLA_NATIVE_HPP)
+CarlaEngineNative.cpp.exp.o: CarlaEngineNative.cpp $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_PIPE_UTILS_HPP) $(CARLA_STATE_UTILS_HPP) $(CARLA_NATIVE_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) $(QTXML_FLAGS) -DCARLA_PLUGIN_EXPORT -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------

@@ -18,6 +18,7 @@
 #include "CarlaStateUtils.hpp"
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 
 #include <QtCore/QString>

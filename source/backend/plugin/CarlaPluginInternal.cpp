@@ -19,6 +19,7 @@
 #include "CarlaEngine.hpp"
 
 #include "CarlaLibCounter.hpp"
+#include "CarlaMathUtils.hpp"
 
 #include <QtCore/QSettings>
 

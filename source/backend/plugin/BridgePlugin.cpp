@@ -22,6 +22,7 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBridgeUtils.hpp"
+#include "CarlaMathUtils.hpp"
 #include "CarlaShmUtils.hpp"
 
 #include "jackbridge/JackBridge.hpp"
@@ -745,14 +746,7 @@ public:
         {
             // disable any output sound
             for (i=0; i < pData->audioOut.count; ++i)
-            {
-#ifdef HAVE_JUCE
-                FloatVectorOperations::clear(outBuffer[i], frames);
-#else
-                carla_zeroFloat(outBuffer[i], frames);
-#endif
-            }
-
+                FLOAT_CLEAR(outBuffer[i], frames);
             return;
         }
 
@@ -1055,13 +1049,7 @@ public:
         else if (! pData->singleMutex.tryLock())
         {
             for (i=0; i < pData->audioOut.count; ++i)
-            {
-#ifdef HAVE_JUCE
-                FloatVectorOperations::clear(outBuffer[i], frames);
-#else
-#endif
-            }
-
+                FLOAT_CLEAR(outBuffer[i], frames);
             return false;
         }
 
@@ -1069,12 +1057,7 @@ public:
         // Reset audio buffers
 
         for (i=0; i < fInfo.aIns; ++i)
-        {
-#ifdef HAVE_JUCE
-            FloatVectorOperations::copy(fShmAudioPool.data + (i * frames), inBuffer[i], frames);
-#else
-#endif
-        }
+            FLOAT_COPY(fShmAudioPool.data + (i * frames), inBuffer[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -1089,12 +1072,7 @@ public:
         }
 
         for (i=0; i < fInfo.aOuts; ++i)
-        {
-#ifdef HAVE_JUCE
-            FloatVectorOperations::copy(outBuffer[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), frames);
-#else
-#endif
-        }
+            FLOAT_COPY(outBuffer[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), frames);
 
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
@@ -1127,10 +1105,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-#ifdef HAVE_JUCE
-                        FloatVectorOperations::copy(oldBufLeft, outBuffer[i], frames);
-#else
-#endif
+                        FLOAT_COPY(oldBufLeft, outBuffer[i], frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;

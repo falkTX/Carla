@@ -30,16 +30,10 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaEngineUtils.hpp"
+#include "CarlaMathUtils.hpp"
 #include "CarlaStateUtils.hpp"
 
 #include "CarlaMIDI.h"
-
-#ifndef HAVE_JUCE
-# include <cmath>
-#else
-# include "juce_audio_basics.h"
-using juce::FloatVectorOperations;
-#endif
 
 #include <QtCore/QFile>
 #include <QtCore/QFileInfo>
