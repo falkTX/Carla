@@ -1,0 +1,117 @@
+--- GIT-other/pugl/pugl/pugl_osx.m	2014-01-27 21:32:59.399032199 +0000
++++ GIT-mine/DPF/dgl/src/pugl/pugl_osx.m	2014-01-27 22:43:50.754197989 +0000
+@@ -36,6 +36,7 @@
+                      defer:(BOOL)flag;
+ - (void) setPuglview:(PuglView*)view;
+ - (BOOL) windowShouldClose:(id)sender;
++- (BOOL) canBecomeKeyWindow:(id)sender;
+ @end
+ 
+ @implementation PuglWindow
+@@ -70,9 +71,14 @@
+ 	return YES;
+ }
+ 
++- (BOOL) canBecomeKeyWindow:(id)sender
++{
++	return NO;
++}
++
+ @end
+ 
+-static void
++void
+ puglDisplay(PuglView* view)
+ {
+ 	if (view->displayFunc) {
+@@ -95,13 +101,16 @@
+            depthBits:(int)numDepthBits;
+ - (void) reshape;
+ - (void) drawRect:(NSRect)rect;
++- (void) mouseEntered:(NSEvent*)event;
++- (void) mouseExited:(NSEvent*)event;
+ - (void) mouseMoved:(NSEvent*)event;
+ - (void) mouseDragged:(NSEvent*)event;
++- (void) rightMouseDragged:(NSEvent*)event;
+ - (void) mouseDown:(NSEvent*)event;
+ - (void) mouseUp:(NSEvent*)event;
+-- (void) rightMouseDragged:(NSEvent*)event;
+ - (void) rightMouseDown:(NSEvent*)event;
+ - (void) rightMouseUp:(NSEvent*)event;
++- (void) scrollWheel:(NSEvent*)event;
+ - (void) keyDown:(NSEvent*)event;
+ - (void) keyUp:(NSEvent*)event;
+ - (void) flagsChanged:(NSEvent*)event;
+@@ -170,7 +179,7 @@
+ 
+ - (void) drawRect:(NSRect)rect
+ {
+-	display(puglview);
++	puglDisplay(puglview);
+ 	glFlush();
+ 	glSwapAPPLE();
+ }
+@@ -182,6 +191,10 @@
+ 
+ 	view->event_timestamp_ms = fmod([ev timestamp] * 1000.0, UINT32_MAX);
+ 
++	double ts = [ev timestamp] * 1000.0;
++	ts = (uint32)ts % 500000;  //ridiculously large vals won't fit
++	view->event_timestamp_ms = ts;
++
+ 	unsigned mods = 0;
+ 	mods |= (modifierFlags & NSShiftKeyMask)     ? PUGL_MOD_SHIFT : 0;
+ 	mods |= (modifierFlags & NSControlKeyMask)   ? PUGL_MOD_CTRL  : 0;
+@@ -332,6 +345,7 @@
+ struct PuglInternalsImpl {
+ 	PuglOpenGLView* glview;
+ 	id              window;
++	bool            isEmbed;
+ };
+ 
+ PuglView*
+@@ -367,6 +381,7 @@
+ 
+ 	impl->glview       = [PuglOpenGLView new];
+ 	impl->window     = window;
++	impl->isEmbed = (parent != 0);
+ 	impl->glview->puglview = view;
+ 
+ 	[window setContentView:impl->glview];
+@@ -396,6 +411,36 @@
+ PuglStatus
+ puglProcessEvents(PuglView* view)
+ {
++	if (! view->impl->isEmbed)
++	{
++		NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
++		NSEvent* event;
++
++		static const NSUInteger eventMask = (NSLeftMouseDownMask | NSLeftMouseUpMask |
++		                                     NSRightMouseDownMask | NSRightMouseUpMask |
++		                                     NSMouseMovedMask |
++		                                     NSLeftMouseDraggedMask | NSRightMouseDraggedMask |
++		                                     NSMouseEnteredMask | NSMouseExitedMask |
++		                                     NSKeyDownMask | NSKeyUpMask |
++		                                     NSFlagsChangedMask |
++		                                     NSCursorUpdateMask | NSScrollWheelMask);
++
++		for (;;) {
++			event = [view->impl->window
++				  nextEventMatchingMask:eventMask
++					      untilDate:[NSDate distantPast]
++						 inMode:NSEventTrackingRunLoopMode
++						dequeue:YES];
++
++			if (event == nil)
++				break;
++
++			[view->impl->window sendEvent: event];
++		}
++
++		[pool release];
++	}
++
+ 	[view->impl->glview setNeedsDisplay: YES];
+ 
+ 	return PUGL_SUCCESS;

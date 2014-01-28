@@ -139,12 +139,36 @@ struct MidiEvent {
 struct TimePos {
     bool playing;
     uint64_t frame;
-    double bpm;
+
+    struct BeatBarTick {
+        bool valid;
+
+        int32_t bar;  /*!< current bar */
+        int32_t beat; /*!< current beat-within-bar */
+        int32_t tick; /*!< current tick-within-beat */
+        double barStartTick;
+
+        float beatsPerBar; /*!< time signature "numerator" */
+        float beatType;    /*!< time signature "denominator" */
+
+        double ticksPerBeat;
+        double beatsPerMinute;
+
+        BeatBarTick() noexcept
+            : valid(false),
+              bar(0),
+              beat(0),
+              tick(0),
+              barStartTick(0.0),
+              beatsPerBar(0.0f),
+              beatType(0.0f),
+              ticksPerBeat(0.0),
+              beatsPerMinute(0.0) {}
+    } bbt;
 
     TimePos() noexcept
         : playing(false),
-          frame(0),
-          bpm(120.0) {}
+          frame(0) {}
 };
 
 // -----------------------------------------------------------------------

@@ -89,8 +89,10 @@
 #endif
 
 #ifndef PROPER_CPP11_SUPPORT
+# ifndef __clang__
+#  define noexcept throw()
+# endif
 # define override
-# define noexcept throw()
 # define nullptr (0)
 #endif
 

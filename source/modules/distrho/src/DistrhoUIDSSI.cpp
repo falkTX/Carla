@@ -16,9 +16,6 @@
 
 #include "DistrhoUIInternal.hpp"
 
-#include "dgl/App.hpp"
-#include "dgl/Window.hpp"
-
 #include <lo/lo.h>
 
 START_NAMESPACE_DISTRHO

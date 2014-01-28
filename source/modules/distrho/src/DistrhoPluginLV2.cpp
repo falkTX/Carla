@@ -38,7 +38,7 @@
 #endif
 
 #if DISTRHO_PLUGIN_WANT_STATE
-# warning LV2 State still TODO
+# warning LV2 State still TODO (working but needs final testing)
 #endif
 #if DISTRHO_PLUGIN_WANT_TIMEPOS
 # warning LV2 TimePos still TODO
@@ -60,6 +60,9 @@ public:
         : fPortControls(nullptr),
           fLastControlValues(nullptr),
 #if DISTRHO_LV2_USE_EVENTS_IN || DISTRHO_LV2_USE_EVENTS_OUT
+# if DISTRHO_PLUGIN_WANT_TIMEPOS
+          fLastTimeSpeed(0.0f),
+# endif
           fURIDs(uridMap),
 #endif
           fUridMap(uridMap),
@@ -79,9 +82,8 @@ public:
         fPortAudioOuts = nullptr;
 #endif
 
+        if (const uint32_t count = fPlugin.getParameterCount())
         {
-            const uint32_t count(fPlugin.getParameterCount());
-
             fPortControls      = new float*[count];
             fLastControlValues = new float[count];
 
@@ -90,6 +92,11 @@ public:
                 fPortControls[i] = nullptr;
                 fLastControlValues[i] = fPlugin.getParameterValue(i);
             }
+        }
+        else
+        {
+            fPortControls      = nullptr;
+            fLastControlValues = nullptr;
         }
 
 #if DISTRHO_LV2_USE_EVENTS_IN
@@ -225,6 +232,9 @@ public:
 # if DISTRHO_PLUGIN_IS_SYNTH
         uint32_t midiEventCount = 0;
 # endif
+# if DISTRHO_PLUGIN_WANT_TIMEPOS
+        bool needsFrameIncrement = true;
+# endif
         LV2_ATOM_SEQUENCE_FOREACH(fPortEventsIn, event)
         {
             if (event == nullptr)
@@ -254,9 +264,118 @@ public:
             }
 # endif
 # if DISTRHO_PLUGIN_WANT_TIMEPOS
-            if (event->body.type == fURIDs.timePosition)
+            if (event->body.type == fURIDs.atomBlank)
             {
-                // TODO
+                const LV2_Atom_Object* const obj((const LV2_Atom_Object*)&event->body);
+
+                if (obj->body.otype != fURIDs.timePosition)
+                    continue;
+
+                LV2_Atom* bar     = nullptr;
+                LV2_Atom* barBeat = nullptr;
+                LV2_Atom* beat     = nullptr;
+                LV2_Atom* beatUnit = nullptr;
+                LV2_Atom* beatsPerBar = nullptr;
+                LV2_Atom* beatsPerMinute = nullptr;
+                LV2_Atom* frame = nullptr;
+                LV2_Atom* speed = nullptr;
+
+                lv2_atom_object_get(obj,
+                                    fURIDs.timeBar, &bar,
+                                    fURIDs.timeBarBeat, &barBeat,
+                                    fURIDs.timeBeat, &beat,
+                                    fURIDs.timeBeatUnit, &beatUnit,
+                                    fURIDs.timeBeatsPerBar, &beatsPerBar,
+                                    fURIDs.timeBeatsPerMinute, &beatsPerMinute,
+                                    fURIDs.timeFrame, &frame,
+                                    fURIDs.timeSpeed, &speed,
+                                    nullptr);
+
+                // TODO:
+                // - tick
+                // - barStartTick
+                // - ticksPerBeat
+
+                if (bar != nullptr)
+                {
+                     if (bar->type == fURIDs.atomDouble)
+                        fTimePos.bbt.bar = ((LV2_Atom_Double*)bar)->body + 1.0f;
+                    else if (bar->type == fURIDs.atomFloat)
+                        fTimePos.bbt.bar = ((LV2_Atom_Float*)bar)->body + 1.0f;
+                    else if (bar->type == fURIDs.atomInt)
+                        fTimePos.bbt.bar = ((LV2_Atom_Int*)bar)->body + 1;
+                    else if (bar->type == fURIDs.atomLong)
+                        fTimePos.bbt.bar = ((LV2_Atom_Long*)bar)->body + 1;
+                }
+
+                /*if (barBeat != nullptr && barBeat->type == fURIDs.atomFloat)
+                {
+                }*/
+
+                if (beat != nullptr)
+                {
+                     if (beat->type == fURIDs.atomDouble)
+                        fTimePos.bbt.beat = ((LV2_Atom_Double*)beat)->body + 1.0f;
+                    else if (beat->type == fURIDs.atomFloat)
+                        fTimePos.bbt.beat = ((LV2_Atom_Float*)beat)->body + 1.0f;
+                    else if (beat->type == fURIDs.atomInt)
+                        fTimePos.bbt.beat = ((LV2_Atom_Int*)beat)->body + 1;
+                    else if (beat->type == fURIDs.atomLong)
+                        fTimePos.bbt.beat = ((LV2_Atom_Long*)beat)->body + 1;
+                }
+
+                if (beatUnit != nullptr)
+                {
+                    if (beatUnit->type == fURIDs.atomDouble)
+                        fTimePos.bbt.beatType = ((LV2_Atom_Double*)beatUnit)->body;
+                    else if (beatUnit->type == fURIDs.atomFloat)
+                        fTimePos.bbt.beatType = ((LV2_Atom_Float*)beatUnit)->body;
+                    else if (beatUnit->type == fURIDs.atomInt)
+                        fTimePos.bbt.beatType = ((LV2_Atom_Int*)beatUnit)->body;
+                    else if (beatUnit->type == fURIDs.atomLong)
+                        fTimePos.bbt.beatType = ((LV2_Atom_Long*)beatUnit)->body;
+                }
+
+                if (beatsPerBar != nullptr)
+                {
+                    if (beatsPerBar->type == fURIDs.atomDouble)
+                        fTimePos.bbt.beatsPerBar = ((LV2_Atom_Double*)beatsPerBar)->body;
+                    else if (beatsPerBar->type == fURIDs.atomFloat)
+                        fTimePos.bbt.beatsPerBar = ((LV2_Atom_Float*)beatsPerBar)->body;
+                    else if (beatsPerBar->type == fURIDs.atomInt)
+                        fTimePos.bbt.beatsPerBar = ((LV2_Atom_Int*)beatsPerBar)->body;
+                    else if (beatsPerBar->type == fURIDs.atomLong)
+                        fTimePos.bbt.beatsPerBar = ((LV2_Atom_Long*)beatsPerBar)->body;
+                }
+
+                if (beatsPerMinute != nullptr)
+                {
+                    if (beatsPerMinute->type == fURIDs.atomDouble)
+                        fTimePos.bbt.beatsPerMinute = ((LV2_Atom_Double*)beatsPerMinute)->body;
+                    else if (beatsPerMinute->type == fURIDs.atomFloat)
+                        fTimePos.bbt.beatsPerMinute = ((LV2_Atom_Float*)beatsPerMinute)->body;
+                    else if (beatsPerMinute->type == fURIDs.atomInt)
+                        fTimePos.bbt.beatsPerMinute = ((LV2_Atom_Int*)beatsPerMinute)->body;
+                    else if (beatsPerMinute->type == fURIDs.atomLong)
+                        fTimePos.bbt.beatsPerMinute = ((LV2_Atom_Long*)beatsPerMinute)->body;
+                }
+
+                if (frame != nullptr && frame->type == fURIDs.atomLong)
+                {
+                    fTimePos.frame = ((LV2_Atom_Long*)frame)->body;
+                    needsFrameIncrement = false;
+                }
+
+                if (speed != nullptr && speed->type == fURIDs.atomFloat)
+                {
+                    fLastTimeSpeed = ((LV2_Atom_Float*)speed)->body;
+                    fTimePos.playing = (fLastTimeSpeed == 1.0f);
+                }
+
+                if ((! fTimePos.bbt.valid) && beatsPerMinute != nullptr && beatsPerBar != nullptr && beatUnit != nullptr)
+                    fTimePos.bbt.valid = true;
+
+                continue;
             }
 # endif
 # if (DISTRHO_PLUGIN_WANT_STATE && DISTRHO_PLUGIN_HAS_UI)
@@ -264,10 +383,18 @@ public:
             {
                 const void* const data((const void*)(event + 1));
                 fWorker->schedule_work(fWorker->handle, event->body.size, data);
+
+                continue;
             }
 # endif
         }
 #endif
+
+# if DISTRHO_PLUGIN_WANT_TIMEPOS
+        if (needsFrameIncrement && fLastTimeSpeed != 0.0f)
+            fTimePos.frame += fLastTimeSpeed*sampleCount;
+        fPlugin.setTimePos(fTimePos);
+# endif
 
 #if DISTRHO_PLUGIN_IS_SYNTH
         fPlugin.run(fPortAudioIns, fPortAudioOuts, sampleCount, fMidiEvents, midiEventCount);
@@ -459,20 +586,50 @@ private:
 #if DISTRHO_PLUGIN_IS_SYNTH
     MidiEvent fMidiEvents[kMaxMidiEvents];
 #endif
+#if DISTRHO_PLUGIN_WANT_TIMEPOS
+    TimePos fTimePos;
+    float   fLastTimeSpeed;
+#endif
 
     // LV2 URIDs
 #if DISTRHO_LV2_USE_EVENTS_IN || DISTRHO_LV2_USE_EVENTS_OUT
     struct URIDs {
+        LV2_URID atomBlank;
+        LV2_URID atomDouble;
+        LV2_URID atomFloat;
+        LV2_URID atomInt;
+        LV2_URID atomLong;
         LV2_URID atomString;
         LV2_URID distrhoState;
         LV2_URID midiEvent;
         LV2_URID timePosition;
+        LV2_URID timeBar;
+        LV2_URID timeBarBeat;
+        LV2_URID timeBeat;
+        LV2_URID timeBeatUnit;
+        LV2_URID timeBeatsPerBar;
+        LV2_URID timeBeatsPerMinute;
+        LV2_URID timeFrame;
+        LV2_URID timeSpeed;
 
         URIDs(const LV2_URID_Map* const uridMap)
-            : atomString(uridMap->map(uridMap->handle, LV2_ATOM__String)),
+            : atomBlank(uridMap->map(uridMap->handle, LV2_ATOM__Blank)),
+              atomDouble(uridMap->map(uridMap->handle, LV2_ATOM__Double)),
+              atomFloat(uridMap->map(uridMap->handle, LV2_ATOM__Float)),
+              atomInt(uridMap->map(uridMap->handle, LV2_ATOM__Int)),
+              atomLong(uridMap->map(uridMap->handle, LV2_ATOM__Long)),
+              atomString(uridMap->map(uridMap->handle, LV2_ATOM__String)),
               distrhoState(uridMap->map(uridMap->handle, "urn:distrho:keyValueState")),
               midiEvent(uridMap->map(uridMap->handle, LV2_MIDI__MidiEvent)),
-              timePosition(uridMap->map(uridMap->handle, LV2_TIME__Position)) {}
+              timePosition(uridMap->map(uridMap->handle, LV2_TIME__Position)),
+              timeBar(uridMap->map(uridMap->handle, LV2_TIME__bar)),
+              timeBarBeat(uridMap->map(uridMap->handle, LV2_TIME__barBeat)),
+              timeBeat(uridMap->map(uridMap->handle, LV2_TIME__beat)),
+              timeBeatUnit(uridMap->map(uridMap->handle, LV2_TIME__beatUnit)),
+              timeBeatsPerBar(uridMap->map(uridMap->handle, LV2_TIME__beatsPerBar)),
+              timeBeatsPerMinute(uridMap->map(uridMap->handle, LV2_TIME__beatsPerMinute)),
+              timeFrame(uridMap->map(uridMap->handle, LV2_TIME__frame)),
+              timeSpeed(uridMap->map(uridMap->handle, LV2_TIME__speed)) {}
     } fURIDs;
 #endif
 
@@ -563,6 +720,8 @@ static LV2_Handle lv2_instantiate(const LV2_Descriptor*, double sampleRate, cons
     }
 #endif
 
+    d_lastBufferSize = 0;
+
     for (int i=0; options[i].key != 0; ++i)
     {
         if (options[i].key == uridMap->map(uridMap->handle, LV2_BUF_SIZE__maxBlockLength))
@@ -577,7 +736,10 @@ static LV2_Handle lv2_instantiate(const LV2_Descriptor*, double sampleRate, cons
     }
 
     if (d_lastBufferSize == 0)
+    {
+        d_stderr("Host does not provide maxBlockLength option");
         d_lastBufferSize = 2048;
+    }
 
     d_lastSampleRate = sampleRate;
 

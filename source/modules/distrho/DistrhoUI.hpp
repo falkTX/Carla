@@ -19,7 +19,7 @@
 
 #include "DistrhoUtils.hpp"
 
-#include "dgl/Widget.hpp"
+#include "../dgl/Widget.hpp"
 
 START_NAMESPACE_DISTRHO
 

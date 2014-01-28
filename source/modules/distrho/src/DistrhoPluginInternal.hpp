@@ -279,14 +279,10 @@ public:
 #endif
 
 #if DISTRHO_PLUGIN_WANT_TIMEPOS
-    void setTimePos(const bool playing, const uint64_t frame, const double bpm)
+    void setTimePos(const TimePos& timePos)
     {
         if (fData != nullptr)
-        {
-            fData->timePos.playing = playing;
-            fData->timePos.frame   = frame;
-            fData->timePos.bpm     = bpm;
-        }
+            std::memcpy(&fData->timePos, &timePos, sizeof(TimePos));
     }
 #endif
 

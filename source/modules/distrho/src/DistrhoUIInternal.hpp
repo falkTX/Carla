@@ -19,8 +19,8 @@
 
 #include "../DistrhoUI.hpp"
 
-#include "../dgl/App.hpp"
-#include "../dgl/Window.hpp"
+#include "../../dgl/App.hpp"
+#include "../../dgl/Window.hpp"
 
 START_NAMESPACE_DISTRHO
 

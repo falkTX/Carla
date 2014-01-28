@@ -477,7 +477,7 @@ public:
         for (size_t i=0; i < fBufferLen; ++i)
         {
             if (fBuffer[i] >= 'A' && fBuffer[i] <= 'Z')
-                fBuffer[i] = static_cast<char>(fBuffer[i] + kCharDiff);
+                fBuffer[i] += kCharDiff;
         }
     }
 
@@ -491,7 +491,7 @@ public:
         for (size_t i=0; i < fBufferLen; ++i)
         {
             if (fBuffer[i] >= 'a' && fBuffer[i] <= 'z')
-                fBuffer[i] = static_cast<char>(fBuffer[i] - kCharDiff);
+                fBuffer[i] -= kCharDiff;
         }
     }
 

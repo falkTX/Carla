@@ -45,6 +45,7 @@
 #define effCanBeAutomated 26
 #define effGetProgramNameIndexed 29
 #define effGetPlugCategory 35
+#define effIdle 53
 #define kPlugCategEffect 1
 #define kPlugCategSynth 2
 #define kVstVersion 2400
@@ -53,6 +54,13 @@ struct ERect {
 };
 #else
 # include "vst/aeffectx.h"
+#endif
+
+#if DISTRHO_PLUGIN_WANT_STATE
+# warning VST State still TODO (working but needs final testing)
+#endif
+#if DISTRHO_PLUGIN_WANT_TIMEPOS
+# warning VST TimePos still TODO
 #endif
 
 typedef std::map<d_string,d_string> StringMap;
@@ -437,6 +445,11 @@ public:
         case effEditOpen:
             if (fVstUi == nullptr)
             {
+# if DISTRHO_OS_MAC && ! defined(__LP64__)
+                if ((fEffect->dispatcher(fEffect, effCanDo, 0, 0, (void*)"hasCockosViewAsConfig", 0.0f) & 0xffff0000) != 0xbeef0000)
+                    return 0;
+# endif
+
                 d_lastUiSampleRate = fAudioMaster(fEffect, audioMasterGetSampleRate, 0, 0, nullptr, 0.0f);
 
                 fVstUi = new UIVst(fAudioMaster, fEffect, &fPlugin, this, (intptr_t)ptr);
@@ -478,6 +491,7 @@ public:
             break;
 
         case effEditIdle:
+        case effIdle:
             if (fVstUi != nullptr)
                 fVstUi->idle();
             break;
@@ -657,7 +671,15 @@ public:
     {
 #if DISTRHO_PLUGIN_WANT_TIMEPOS
         if (const VstTimeInfo* const timeInfo = (const VstTimeInfo*)fEffect->dispatcher(fEffect, audioMasterGetTime, 0, kVstTempoValid, nullptr, 0.0f))
-            fPlugin.setTimePos((timeInfo->flags & kVstTransportPlaying) != 0, timeInfo->samplePos, timeInfo->tempo);
+        {
+            fTimePos.playing = (timeInfo->flags & kVstTransportPlaying);
+            fTimePos.frame   = timeInfo->samplePos;
+
+            // TODO: BBT
+            // timeInfo->tempo etc
+
+            fPlugin.setTimePos(fTimePos);
+        }
 #endif
 
 #if DISTRHO_PLUGIN_IS_SYNTH
@@ -681,14 +703,20 @@ private:
     PluginExporter fPlugin;
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
+    // Current state
     int32_t fCurProgram;
 #endif
 
+    // Temporary data
 #if DISTRHO_PLUGIN_IS_SYNTH
     uint32_t  fMidiEventCount;
     MidiEvent fMidiEvents[kMaxMidiEvents];
 #endif
+#if DISTRHO_PLUGIN_WANT_TIMEPOS
+    TimePos fTimePos;
+#endif
 
+    // UI stuff
 #if DISTRHO_PLUGIN_HAS_UI
     UIVst* fVstUi;
     ERect  fVstRect;
