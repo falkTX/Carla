@@ -19,9 +19,9 @@
 
 #include "DistrhoUI.hpp"
 
-#include "dgl/ImageAboutWindow.hpp"
-#include "dgl/ImageButton.hpp"
-#include "dgl/ImageKnob.hpp"
+#include "ImageAboutWindow.hpp"
+#include "ImageButton.hpp"
+#include "ImageKnob.hpp"
 
 #include "DistrhoArtworkPingPongPan.hpp"
 #include "DistrhoPluginPingPongPan.hpp"

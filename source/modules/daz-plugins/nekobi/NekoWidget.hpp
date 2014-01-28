@@ -18,12 +18,12 @@
 #ifndef NEKO_WIDGET_HPP_INCLUDED
 #define NEKO_WIDGET_HPP_INCLUDED
 
-#include "dgl/Image.hpp"
-#include "dgl/Widget.hpp"
+#include "DistrhoArtworkNekobi.hpp"
+
+#include "Image.hpp"
+#include "Widget.hpp"
 
 #include <cstdlib> // rand
-
-#include "DistrhoArtworkNekobi.hpp"
 
 using DGL::Image;
 

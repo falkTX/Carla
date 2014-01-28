@@ -20,10 +20,10 @@
 
 #include "DistrhoUI.hpp"
 
-#include "dgl/ImageAboutWindow.hpp"
-#include "dgl/ImageButton.hpp"
-#include "dgl/ImageKnob.hpp"
-#include "dgl/ImageSlider.hpp"
+#include "ImageAboutWindow.hpp"
+#include "ImageButton.hpp"
+#include "ImageKnob.hpp"
+#include "ImageSlider.hpp"
 
 #include "DistrhoArtworkNekobi.hpp"
 #include "DistrhoPluginNekobi.hpp"
