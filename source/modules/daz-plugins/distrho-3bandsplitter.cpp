@@ -16,6 +16,7 @@
  */
 
 #include "CarlaNative.hpp"
+#include "CarlaMathUtils.hpp"
 
 // Plugin Code
 #include "3bandsplitter/DistrhoArtwork3BandSplitter.cpp"

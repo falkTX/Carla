@@ -16,6 +16,7 @@
  */
 
 #include "CarlaNative.hpp"
+#include "CarlaMathUtils.hpp"
 
 // Plugin Code
 #include "nekobi/DistrhoArtworkNekobi.cpp"
