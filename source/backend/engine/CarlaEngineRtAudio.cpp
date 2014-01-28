@@ -445,7 +445,7 @@ public:
             for (uint i=0; i < pData->bufAudio.inCount; ++i)
             {
                 std::snprintf(strBuf, STR_MAX, "capture_%i", i+1);
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_IN, RACK_PATCHBAY_GROUP_AUDIO_IN*1000 + i, PATCHBAY_PORT_TYPE_AUDIO, 0.0f, strBuf);
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_IN, int(RACK_PATCHBAY_GROUP_AUDIO_IN*1000 + i), int(PATCHBAY_PORT_TYPE_AUDIO), 0.0f, strBuf);
             }
         }
 
@@ -461,7 +461,7 @@ public:
             for (uint i=0; i < pData->bufAudio.outCount; ++i)
             {
                 std::snprintf(strBuf, STR_MAX, "playback_%i", i+1);
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_OUT, RACK_PATCHBAY_GROUP_AUDIO_OUT*1000 + i, PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, strBuf);
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_OUT, int(RACK_PATCHBAY_GROUP_AUDIO_OUT*1000 + i), int(PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT), 0.0f, strBuf);
             }
         }
 
@@ -469,11 +469,12 @@ public:
         {
             callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_MIDI_IN, 0, 0, 0.0f, "Readable MIDI ports");
 
-            for (unsigned int i=0, count=fDummyMidiIn.getPortCount(); i < count; ++i)
+            for (uint i=0, count=fDummyMidiIn.getPortCount(); i < count; ++i)
             {
                 PortNameToId portNameToId;
-                portNameToId.portId = RACK_PATCHBAY_GROUP_MIDI_IN*1000 + i;
+                portNameToId.portId = int(RACK_PATCHBAY_GROUP_MIDI_IN*1000 + i);
                 std::strncpy(portNameToId.name, fDummyMidiIn.getPortName(i).c_str(), STR_MAX);
+                portNameToId.name[STR_MAX] = '\0';
                 fUsedMidiIns.append(portNameToId);
 
                 callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_MIDI_IN, portNameToId.portId, PATCHBAY_PORT_TYPE_MIDI, 0.0f, portNameToId.name);
@@ -488,8 +489,9 @@ public:
             for (unsigned int i=0, count=fDummyMidiOut.getPortCount(); i < count; ++i)
             {
                 PortNameToId portNameToId;
-                portNameToId.portId = RACK_PATCHBAY_GROUP_MIDI_OUT*1000 + i;
+                portNameToId.portId = int(RACK_PATCHBAY_GROUP_MIDI_OUT*1000 + i);
                 std::strncpy(portNameToId.name, fDummyMidiOut.getPortName(i).c_str(), STR_MAX);
+                portNameToId.name[STR_MAX] = '\0';
                 fUsedMidiOuts.append(portNameToId);
 
                 callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, 0, RACK_PATCHBAY_GROUP_MIDI_OUT, portNameToId.portId, PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT, portNameToId.name);
@@ -754,27 +756,29 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(static_cast<size_t>(portId) < fUsedMidiIns.count(), false);
         carla_debug("CarlaEngineRtAudio::connectRackMidiInPort(%i)", portId);
 
-        const char* const portName(fUsedMidiIns.getAt(portId).name);
+        const char* const portName(fUsedMidiIns.getAt(static_cast<size_t>(portId)).name);
 
         char newPortName[STR_MAX+1];
         std::snprintf(newPortName, STR_MAX, "%s:in-%i", (const char*)getName(), portId+1);
 
-        int rtMidiPortIndex = -1;
+        bool found = false;
+        uint rtMidiPortIndex;
 
         RtMidiIn* const rtMidiIn(new RtMidiIn(getMatchedAudioMidiAPi(fAudio.getCurrentApi()), newPortName, 512));
         rtMidiIn->ignoreTypes();
         rtMidiIn->setCallback(carla_rtmidi_callback, this);
 
-        for (unsigned int i=0, count=rtMidiIn->getPortCount(); i < count; ++i)
+        for (uint i=0, count=rtMidiIn->getPortCount(); i < count; ++i)
         {
             if (rtMidiIn->getPortName(i) == portName)
             {
+                found = true;
                 rtMidiPortIndex = i;
                 break;
             }
         }
 
-        if (rtMidiPortIndex == -1)
+        if (! found)
         {
             delete rtMidiIn;
             return false;
@@ -798,25 +802,27 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(static_cast<size_t>(portId) < fUsedMidiOuts.count(), false);
         carla_debug("CarlaEngineRtAudio::connectRackMidiOutPort(%i)", portId);
 
-        const char* const portName(fUsedMidiOuts.getAt(portId).name);
+        const char* const portName(fUsedMidiOuts.getAt(static_cast<size_t>(portId)).name);
 
         char newPortName[STR_MAX+1];
         std::snprintf(newPortName, STR_MAX, "%s:out-%i", (const char*)getName(), portId+1);
 
-        int rtMidiPortIndex = -1;
+        bool found = false;
+        uint rtMidiPortIndex;
 
         RtMidiOut* const rtMidiOut(new RtMidiOut(getMatchedAudioMidiAPi(fAudio.getCurrentApi()), newPortName));
 
-        for (unsigned int i=0, count=rtMidiOut->getPortCount(); i < count; ++i)
+        for (uint i=0, count=rtMidiOut->getPortCount(); i < count; ++i)
         {
             if (rtMidiOut->getPortName(i) == portName)
             {
+                found = true;
                 rtMidiPortIndex = i;
                 break;
             }
         }
 
-        if (rtMidiPortIndex == -1)
+        if (! found)
         {
             delete rtMidiOut;
             return false;

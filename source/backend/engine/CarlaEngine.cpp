@@ -83,7 +83,7 @@ CarlaEngineAudioPort::~CarlaEngineAudioPort()
     carla_debug("CarlaEngineAudioPort::~CarlaEngineAudioPort()");
 }
 
-void CarlaEngineAudioPort::initBuffer()
+void CarlaEngineAudioPort::initBuffer() noexcept
 {
 }
 
@@ -114,7 +114,7 @@ CarlaEngineCVPort::~CarlaEngineCVPort()
     }
 }
 
-void CarlaEngineCVPort::initBuffer()
+void CarlaEngineCVPort::initBuffer() noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(fProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS,);
@@ -158,7 +158,7 @@ CarlaEngineEventPort::~CarlaEngineEventPort()
     }
 }
 
-void CarlaEngineEventPort::initBuffer()
+void CarlaEngineEventPort::initBuffer() noexcept
 {
     if (fProcessMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || fProcessMode == ENGINE_PROCESS_MODE_BRIDGE)
         fBuffer = fEngine.getInternalEventBuffer(fIsInput);
@@ -183,7 +183,7 @@ uint32_t CarlaEngineEventPort::getEventCount() const noexcept
     return i;
 }
 
-const EngineEvent& CarlaEngineEventPort::getEvent(const uint32_t index) noexcept
+const EngineEvent& CarlaEngineEventPort::getEvent(const uint32_t index) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fIsInput, kFallbackEngineEvent);
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, kFallbackEngineEvent);
@@ -193,12 +193,12 @@ const EngineEvent& CarlaEngineEventPort::getEvent(const uint32_t index) noexcept
     return fBuffer[index];
 }
 
-const EngineEvent& CarlaEngineEventPort::getEventUnchecked(const uint32_t index) noexcept
+const EngineEvent& CarlaEngineEventPort::getEventUnchecked(const uint32_t index) const noexcept
 {
     return fBuffer[index];
 }
 
-bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value)
+bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(! fIsInput, false);
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
@@ -211,6 +211,7 @@ bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
         CARLA_SAFE_ASSERT(! MIDI_IS_CONTROL_BANK_SELECT(param));
     }
 
+    // FIXME? should not fix range if midi-program
     const float fixedValue(carla_fixValue<float>(0.0f, 1.0f, value));
 
     for (uint32_t i=0; i < kMaxEngineEventInternalCount; ++i)
@@ -235,12 +236,12 @@ bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
     return false;
 }
 
-bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEvent& ctrl)
+bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEvent& ctrl) noexcept
 {
     return writeControlEvent(time, channel, ctrl.type, ctrl.param, ctrl.value);
 }
 
-bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t size, const uint8_t* const data)
+bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t size, const uint8_t* const data) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(! fIsInput, false);
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
@@ -278,12 +279,12 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
     return false;
 }
 
-bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t size, const uint8_t* const data)
+bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t size, const uint8_t* const data) noexcept
 {
     return writeMidiEvent(time, uint8_t(MIDI_GET_CHANNEL_FROM_DATA(data)), 0, size, data);
 }
 
-bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t channel, const EngineMidiEvent& midi)
+bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t channel, const EngineMidiEvent& midi) noexcept
 {
     return writeMidiEvent(time, channel, midi.port, midi.size, midi.data);
 }
@@ -1615,8 +1616,7 @@ bool CarlaEngine::patchbayConnect(const int portA, const int portB)
     connectionToId.portOut = portA;
     connectionToId.portIn  = portB;
 
-    CARLA_SAFE_ASSERT(rack->lastConnectionId >= 0);
-    callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, static_cast<uint>(rack->lastConnectionId), portA, portB, 0.0f, nullptr);
+    callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, portA, portB, 0.0f, nullptr);
 
     rack->usedConnections.append(connectionToId);
     rack->lastConnectionId++;
@@ -1624,7 +1624,7 @@ bool CarlaEngine::patchbayConnect(const int portA, const int portB)
     return true;
 }
 
-bool CarlaEngine::patchbayDisconnect(const int connectionId)
+bool CarlaEngine::patchbayDisconnect(const uint connectionId)
 {
     CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
     CARLA_SAFE_ASSERT_RETURN(pData->bufAudio.isReady, false);
@@ -1694,8 +1694,7 @@ bool CarlaEngine::patchbayDisconnect(const int connectionId)
                 CARLA_SAFE_ASSERT_RETURN(false, false);
             }
 
-            CARLA_SAFE_ASSERT(connection.id >= 0);
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, static_cast<uint>(connection.id), connection.portOut, connection.portIn, 0.0f, nullptr);
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connection.id, connection.portOut, connection.portIn, 0.0f, nullptr);
 
             rack->usedConnections.remove(it);
             break;

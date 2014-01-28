@@ -41,11 +41,11 @@ static bool gIsLoadingProject = false;
 // ParamSymbol struct, needed for CarlaPlugin::loadSaveState()
 
 struct ParamSymbol {
-    uint32_t index;
+    int32_t index;
     const char* symbol;
 
     ParamSymbol(uint32_t i, const char* s)
-        : index(i),
+        : index(static_cast<int32_t>(i)),
           symbol(carla_strdup(s)) {}
 
     ~ParamSymbol()
@@ -480,8 +480,8 @@ const SaveState& CarlaPlugin::getSaveState()
     {
         const MidiProgramData& mpData(pData->midiprog.getCurrent());
 
-        pData->saveState.currentMidiBank    = mpData.bank;
-        pData->saveState.currentMidiProgram = mpData.program;
+        pData->saveState.currentMidiBank    = static_cast<int32_t>(mpData.bank);
+        pData->saveState.currentMidiProgram = static_cast<int32_t>(mpData.program);
     }
 
     // ---------------------------------------------------------------
@@ -496,7 +496,7 @@ const SaveState& CarlaPlugin::getSaveState()
         if (paramData.type != PARAMETER_INPUT || (paramData.hints & PARAMETER_IS_ENABLED) == 0)
             continue;
 
-        StateParameter* stateParameter(new StateParameter());
+        StateParameter* const stateParameter(new StateParameter());
 
         stateParameter->index  = paramData.index;
         stateParameter->midiCC = paramData.midiCC;
@@ -584,7 +584,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
 
                 if (strBuf[0] != '\0' && std::strcmp(saveState.currentProgramName, strBuf) == 0)
                 {
-                    programId = i;
+                    programId = static_cast<int32_t>(i);
                     break;
                 }
             }
@@ -599,7 +599,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // Part 3 - set midi program
 
     if (saveState.currentMidiBank >= 0 && saveState.currentMidiProgram >= 0 && ! usesMultiProgs)
-        setMidiProgramById(saveState.currentMidiBank, saveState.currentMidiProgram, true, true, true);
+        setMidiProgramById(static_cast<uint32_t>(saveState.currentMidiBank), static_cast<uint32_t>(saveState.currentMidiProgram), true, true, true);
 
     // ---------------------------------------------------------------
     // Part 4a - get plugin parameter symbols
@@ -686,10 +686,10 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
             if (pData->param.data[index].hints & PARAMETER_USES_SAMPLERATE)
                 stateParameter->value *= sampleRate;
 
-            setParameterValue(index, stateParameter->value, true, true, true);
+            setParameterValue(static_cast<uint32_t>(index), stateParameter->value, true, true, true);
 #ifndef BUILD_BRIDGE
-            setParameterMidiCC(index, stateParameter->midiCC, true, true);
-            setParameterMidiChannel(index, stateParameter->midiChannel, true, true);
+            setParameterMidiCC(static_cast<uint32_t>(index), stateParameter->midiCC, true, true);
+            setParameterMidiChannel(static_cast<uint32_t>(index), stateParameter->midiChannel, true, true);
 #endif
         }
         else
@@ -1020,11 +1020,11 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
         uiParameterChange(parameterId, value);
 
     if (sendOsc && pData->engine->isOscControlRegistered())
-        pData->engine->oscSend_control_set_parameter_value(pData->id, parameterId, value);
+        pData->engine->oscSend_control_set_parameter_value(pData->id, static_cast<int32_t>(parameterId), value);
 #endif
 
     if (sendCallback)
-        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, parameterId, 0, value, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, static_cast<int>(parameterId), 0, value, nullptr);
 
 #ifdef BUILD_BRIDGE
     return;
@@ -1088,7 +1088,7 @@ void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, uint8_t ch
         pData->engine->oscSend_control_set_parameter_midi_channel(pData->id, parameterId, channel);
 
     if (sendCallback)
-        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED, pData->id, parameterId, channel, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED, pData->id, static_cast<int>(parameterId), channel, 0.0f, nullptr);
 
     if (pData->hints & PLUGIN_IS_BRIDGE)
         {} // TODO
@@ -1117,7 +1117,7 @@ void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, int16_t cc, con
         pData->engine->oscSend_control_set_parameter_midi_cc(pData->id, parameterId, cc);
 
     if (sendCallback)
-        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED, pData->id, parameterId, cc, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED, pData->id, static_cast<int>(parameterId), cc, 0.0f, nullptr);
 
     if (pData->hints & PLUGIN_IS_BRIDGE)
         {} // TODO
@@ -1233,7 +1233,7 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
     {
 #ifndef BUILD_BRIDGE
         if (sendGui)
-            uiProgramChange(index);
+            uiProgramChange(static_cast<uint32_t>(index));
 #endif
 
         if (getType() == PLUGIN_FILE_CSD || getType() == PLUGIN_FILE_GIG || getType() == PLUGIN_FILE_SF2 || getType() == PLUGIN_FILE_SFZ)
@@ -1248,15 +1248,15 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
 #ifndef BUILD_BRIDGE
             if (reallySendOsc)
             {
+                pData->engine->oscSend_control_set_parameter_value(pData->id, static_cast<int32_t>(i), value);
                 pData->engine->oscSend_control_set_default_value(pData->id, i, value);
-                pData->engine->oscSend_control_set_parameter_value(pData->id, i, value);
             }
 #endif
 
             if (sendCallback)
             {
-                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, i, 0, value, nullptr);
-                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, i, 0, value, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, static_cast<int>(i), 0, value, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, static_cast<int>(i), 0, value, nullptr);
             }
         }
     }
@@ -1295,7 +1295,7 @@ void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const 
     {
 #ifndef BUILD_BRIDGE
         if (sendGui)
-            uiMidiProgramChange(index);
+            uiMidiProgramChange(static_cast<uint32_t>(index));
 #endif
 
         if (getType() == PLUGIN_FILE_CSD || getType() == PLUGIN_FILE_GIG || getType() == PLUGIN_FILE_SF2 || getType() == PLUGIN_FILE_SFZ)
@@ -1310,15 +1310,15 @@ void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const 
 #ifndef BUILD_BRIDGE
             if (reallySendOsc)
             {
+                pData->engine->oscSend_control_set_parameter_value(pData->id, static_cast<int32_t>(i), value);
                 pData->engine->oscSend_control_set_default_value(pData->id, i, value);
-                pData->engine->oscSend_control_set_parameter_value(pData->id, i, value);
             }
 #endif
 
             if (sendCallback)
             {
-                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, i, 0, value, nullptr);
-                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, i, 0, value, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, static_cast<int>(i), 0, value, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, static_cast<int>(i), 0, value, nullptr);
             }
         }
     }
@@ -1337,7 +1337,7 @@ void CarlaPlugin::setMidiProgramById(const uint32_t bank, const uint32_t program
     for (uint32_t i=0; i < pData->midiprog.count; ++i)
     {
         if (pData->midiprog.data[i].bank == bank && pData->midiprog.data[i].program == program)
-            return setMidiProgram(i, sendGui, sendOsc, sendCallback);
+            return setMidiProgram(static_cast<int32_t>(i), sendGui, sendOsc, sendCallback);
     }
 }
 
@@ -1516,7 +1516,7 @@ void CarlaPlugin::registerToOscClient() noexcept
             pData->engine->oscSend_control_set_parameter_data(pData->id, i, paramData.type, paramData.hints, bufName, bufUnit);
             pData->engine->oscSend_control_set_parameter_ranges1(pData->id, i, paramRanges.def, paramRanges.min, paramRanges.max);
             pData->engine->oscSend_control_set_parameter_ranges2(pData->id, i, paramRanges.step, paramRanges.stepSmall, paramRanges.stepLarge);
-            pData->engine->oscSend_control_set_parameter_value(pData->id, i, getParameterValue(i));
+            pData->engine->oscSend_control_set_parameter_value(pData->id, static_cast<int32_t>(i), getParameterValue(i));
             pData->engine->oscSend_control_set_parameter_midi_cc(pData->id, i, paramData.midiCC);
             pData->engine->oscSend_control_set_parameter_midi_channel(pData->id, i, paramData.midiChannel);
 #endif
@@ -1635,7 +1635,7 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
     }
 
     if (pData->prog.current >= 0)
-        osc_send_program(pData->osc.data, pData->prog.current);
+        osc_send_program(pData->osc.data, static_cast<uint32_t>(pData->prog.current));
 
     if (pData->midiprog.current >= 0)
     {
@@ -1694,7 +1694,7 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
         return;
 
     ExternalMidiNote extNote;
-    extNote.channel = channel;
+    extNote.channel = static_cast<int8_t>(channel);
     extNote.note    = note;
     extNote.velo    = velo;
 
@@ -1764,7 +1764,7 @@ void CarlaPlugin::postRtEventsRun()
         case kPluginPostRtEventParameterChange:
             // Update UI
             if (event.value1 >= 0)
-                uiParameterChange(event.value1, event.value3);
+                uiParameterChange(static_cast<uint32_t>(event.value1), event.value3);
 
 #ifndef BUILD_BRIDGE
             if (event.value2 != 1)
@@ -1782,7 +1782,7 @@ void CarlaPlugin::postRtEventsRun()
         case kPluginPostRtEventProgramChange:
             // Update UI
             if (event.value1 >= 0)
-                uiProgramChange(event.value1);
+                uiProgramChange(static_cast<uint32_t>(event.value1));
 
 #ifndef BUILD_BRIDGE
             // Update OSC control client
@@ -1798,16 +1798,16 @@ void CarlaPlugin::postRtEventsRun()
 
                 for (uint32_t j=0; j < pData->param.count; ++j)
                 {
-                    const float value(getParameterValue(j));
+                    const float paramValue(getParameterValue(j));
 
                     if (sendOsc)
                     {
-                        pData->engine->oscSend_control_set_parameter_value(pData->id, j, value);
+                        pData->engine->oscSend_control_set_parameter_value(pData->id, static_cast<int32_t>(j), paramValue);
                         pData->engine->oscSend_control_set_default_value(pData->id, j, pData->param.ranges[j].def);
                     }
 
-                    pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, j, 0, value, nullptr);
-                    pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, j, 0, pData->param.ranges[j].def, nullptr);
+                    pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, static_cast<int>(j), 0, paramValue, nullptr);
+                    pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, static_cast<int>(j), 0, pData->param.ranges[j].def, nullptr);
                 }
             }
 #endif
@@ -1816,7 +1816,7 @@ void CarlaPlugin::postRtEventsRun()
         case kPluginPostRtEventMidiProgramChange:
             // Update UI
             if (event.value1 >= 0)
-                uiMidiProgramChange(event.value1);
+                uiMidiProgramChange(static_cast<uint32_t>(event.value1));
 
 #ifndef BUILD_BRIDGE
             // Update OSC control client
@@ -1832,16 +1832,16 @@ void CarlaPlugin::postRtEventsRun()
 
                 for (uint32_t j=0; j < pData->param.count; ++j)
                 {
-                    const float value(getParameterValue(j));
+                    const float paramValue(getParameterValue(j));
 
                     if (sendOsc)
                     {
-                        pData->engine->oscSend_control_set_parameter_value(pData->id, j, value);
+                        pData->engine->oscSend_control_set_parameter_value(pData->id, static_cast<int32_t>(j), paramValue);
                         pData->engine->oscSend_control_set_default_value(pData->id, j, pData->param.ranges[j].def);
                     }
 
-                    pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, j, 0, value, nullptr);
-                    pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, j, 0, pData->param.ranges[j].def, nullptr);
+                    pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, static_cast<int>(j), 0, paramValue, nullptr);
+                    pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, static_cast<int>(j), 0, pData->param.ranges[j].def, nullptr);
                 }
             }
 #endif
@@ -1849,9 +1849,9 @@ void CarlaPlugin::postRtEventsRun()
 
         case kPluginPostRtEventNoteOn:
         {
-            CARLA_SAFE_ASSERT_BREAK(event.value1 < MAX_MIDI_CHANNELS);
-            CARLA_SAFE_ASSERT_BREAK(event.value2 < MAX_MIDI_NOTE);
-            CARLA_SAFE_ASSERT_BREAK(event.value3 < MAX_MIDI_VALUE);
+            CARLA_SAFE_ASSERT_BREAK(event.value1 >= 0 && event.value1 < MAX_MIDI_CHANNELS);
+            CARLA_SAFE_ASSERT_BREAK(event.value2 >= 0 && event.value2 < MAX_MIDI_NOTE);
+            CARLA_SAFE_ASSERT_BREAK(event.value3 >= 0 && event.value3 < MAX_MIDI_VALUE);
 
             const uint8_t channel  = static_cast<uint8_t>(event.value1);
             const uint8_t note     = static_cast<uint8_t>(event.value2);
@@ -1873,11 +1873,11 @@ void CarlaPlugin::postRtEventsRun()
 
         case kPluginPostRtEventNoteOff:
         {
-            CARLA_SAFE_ASSERT_BREAK(event.value1 < MAX_MIDI_CHANNELS);
-            CARLA_SAFE_ASSERT_BREAK(event.value2 < MAX_MIDI_NOTE);
+            CARLA_SAFE_ASSERT_BREAK(event.value1 >= 0 && event.value1 < MAX_MIDI_CHANNELS);
+            CARLA_SAFE_ASSERT_BREAK(event.value2 >= 0 && event.value2 < MAX_MIDI_NOTE);
 
-            const uint8_t channel  = static_cast<uint8_t>(event.value1);
-            const uint8_t note     = static_cast<uint8_t>(event.value2);
+            const uint8_t channel = static_cast<uint8_t>(event.value1);
+            const uint8_t note    = static_cast<uint8_t>(event.value2);
 
             // Update UI
             uiNoteOff(channel, note);

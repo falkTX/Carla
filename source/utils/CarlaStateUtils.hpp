@@ -34,7 +34,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 
 struct StateParameter {
-    uint32_t    index;
+    int32_t     index;
     const char* name;
     const char* symbol;
     float       value;

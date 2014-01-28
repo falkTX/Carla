@@ -27,8 +27,6 @@
 
 #include <QtCore/QStringList>
 
-extern const char* carla_file_callback(FileCallbackOpcode action, bool isDir, const char* title, const char* filter);
-
 CARLA_BACKEND_START_NAMESPACE
 
 #if 0
@@ -2081,12 +2079,12 @@ protected:
 
     const char* handleUiOpenFile(const bool isDir, const char* const title, const char* const filter)
     {
-        return carla_file_callback(FILE_CALLBACK_OPEN, isDir, title, filter);
+        return carla_standalone_file_callback(FILE_CALLBACK_OPEN, isDir, title, filter);
     }
 
     const char* handleUiSaveFile(const bool isDir, const char* const title, const char* const filter)
     {
-        return carla_file_callback(FILE_CALLBACK_SAVE, isDir, title, filter);
+        return carla_standalone_file_callback(FILE_CALLBACK_SAVE, isDir, title, filter);
     }
 
     intptr_t handleDispatcher(const NativeHostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)

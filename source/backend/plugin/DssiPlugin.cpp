@@ -98,7 +98,7 @@ public:
         {
             showCustomUI(false);
 
-            pData->osc.thread.stop(pData->engine->getOptions().uiBridgesTimeout * 2);
+            pData->osc.thread.stop(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
         }
 
         pData->singleMutex.lock();
@@ -163,7 +163,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, 0);
 
-        return fDescriptor->UniqueID;
+        return static_cast<long>(fDescriptor->UniqueID);
     }
 
     // -------------------------------------------------------------------
@@ -371,7 +371,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0,);
 
         const ScopedSingleProcessLocker spl(this, true);
-        fDssiDescriptor->set_custom_data(fHandle, chunk.data(), chunk.size());
+        fDssiDescriptor->set_custom_data(fHandle, chunk.data(), static_cast<ulong>(chunk.size()));
     }
 
     void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
@@ -421,7 +421,7 @@ public:
                 pData->osc.data.free();
             }
 
-            pData->osc.thread.stop(pData->engine->getOptions().uiBridgesTimeout);
+            pData->osc.thread.stop(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
         }
     }
 
@@ -449,7 +449,7 @@ public:
         const float sampleRate(static_cast<float>(pData->engine->getSampleRate()));
         const uint32_t portCount(static_cast<uint32_t>(fDescriptor->PortCount));
 
-        uint32_t aIns, aOuts, mIns, params, j;
+        uint32_t aIns, aOuts, mIns, params;
         aIns = aOuts = mIns = params = 0;
 
         bool forcedStereoIn, forcedStereoOut;
@@ -559,7 +559,7 @@ public:
 
                 if (LADSPA_IS_PORT_INPUT(portType))
                 {
-                    j = iAudioIn++;
+                    uint32_t j = iAudioIn++;
                     pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
                     pData->audioIn.ports[j].rindex = i;
 
@@ -572,7 +572,7 @@ public:
                 }
                 else if (LADSPA_IS_PORT_OUTPUT(portType))
                 {
-                    j = iAudioOut++;
+                    uint32_t j = iAudioOut++;
                     pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
                     pData->audioOut.ports[j].rindex = i;
 
@@ -588,11 +588,11 @@ public:
             }
             else if (LADSPA_IS_PORT_CONTROL(portType))
             {
-                j = iCtrl++;
+                uint32_t j = iCtrl++;
                 pData->param.data[j].type   = PARAMETER_UNKNOWN;
                 pData->param.data[j].hints  = 0x0;
-                pData->param.data[j].index  = j;
-                pData->param.data[j].rindex = i;
+                pData->param.data[j].index  = static_cast<int32_t>(j);
+                pData->param.data[j].rindex = static_cast<int32_t>(i);
                 pData->param.data[j].midiCC = -1;
                 pData->param.data[j].midiChannel = 0;
 
@@ -824,7 +824,7 @@ public:
                 float tmpIn[aIns][2];
                 float tmpOut[aOuts][2];
 
-                for (j=0; j < aIns; ++j)
+                for (uint32_t j=0; j < aIns; ++j)
                 {
                     tmpIn[j][0] = 0.0f;
                     tmpIn[j][1] = 0.0f;
@@ -832,7 +832,7 @@ public:
                     fDescriptor->connect_port(fHandle, pData->audioIn.ports[j].rindex, tmpIn[j]);
                 }
 
-                for (j=0; j < aOuts; ++j)
+                for (uint32_t j=0; j < aOuts; ++j)
                 {
                     tmpOut[j][0] = 0.0f;
                     tmpOut[j][1] = 0.0f;
@@ -873,26 +873,26 @@ public:
     void reloadPrograms(const bool doInit) override
     {
         carla_debug("DssiPlugin::reloadPrograms(%s)", bool2str(doInit));
-        uint32_t i, oldCount  = pData->midiprog.count;
-        const int32_t current = pData->midiprog.current;
+        const uint32_t oldCount = pData->midiprog.count;
+        const int32_t  current  = pData->midiprog.current;
 
         // Delete old programs
         pData->midiprog.clear();
 
         // Query new programs
-        uint32_t count = 0;
+        uint32_t newCount = 0;
         if (fDssiDescriptor->get_program != nullptr && fDssiDescriptor->select_program != nullptr)
         {
-            while (fDssiDescriptor->get_program(fHandle, count))
-                count++;
+            while (fDssiDescriptor->get_program(fHandle, newCount))
+                newCount++;
         }
 
-        if (count > 0)
+        if (newCount > 0)
         {
-            pData->midiprog.createNew(count);
+            pData->midiprog.createNew(newCount);
 
             // Update data
-            for (i=0; i < count; ++i)
+            for (uint32_t i=0; i < newCount; ++i)
             {
                 const DSSI_Program_Descriptor* const pdesc(fDssiDescriptor->get_program(fHandle, i));
                 CARLA_ASSERT(pdesc != nullptr);
@@ -908,16 +908,16 @@ public:
         // Update OSC Names
         if (pData->engine->isOscControlRegistered())
         {
-            pData->engine->oscSend_control_set_midi_program_count(pData->id, count);
+            pData->engine->oscSend_control_set_midi_program_count(pData->id, newCount);
 
-            for (i=0; i < count; ++i)
+            for (uint32_t i=0; i < newCount; ++i)
                 pData->engine->oscSend_control_set_midi_program_data(pData->id, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
         }
 #endif
 
         if (doInit)
         {
-            if (count > 0)
+            if (newCount > 0)
                 setMidiProgram(0, false, false, false);
         }
         else
@@ -925,25 +925,25 @@ public:
             // Check if current program is invalid
             bool programChanged = false;
 
-            if (count == oldCount+1)
+            if (newCount == oldCount+1)
             {
                 // one midi program added, probably created by user
-                pData->midiprog.current = oldCount;
+                pData->midiprog.current = static_cast<int32_t>(oldCount);
                 programChanged = true;
             }
-            else if (current < 0 && count > 0)
+            else if (current < 0 && newCount > 0)
             {
                 // programs exist now, but not before
                 pData->midiprog.current = 0;
                 programChanged = true;
             }
-            else if (current >= 0 && count == 0)
+            else if (current >= 0 && newCount == 0)
             {
                 // programs existed before, but not anymore
                 pData->midiprog.current = -1;
                 programChanged = true;
             }
-            else if (current >= static_cast<int32_t>(count))
+            else if (current >= static_cast<int32_t>(newCount))
             {
                 // current midi program > count
                 pData->midiprog.current = 0;
@@ -1049,7 +1049,7 @@ public:
                 for (unsigned char i=0; i < MAX_MIDI_NOTE; ++i)
                 {
                     fMidiEvents[i].type = SND_SEQ_EVENT_NOTEOFF;
-                    fMidiEvents[i].data.note.channel = pData->ctrlChannel;
+                    fMidiEvents[i].data.note.channel = static_cast<uchar>(pData->ctrlChannel);
                     fMidiEvents[i].data.note.note    = i;
                 }
             }
@@ -1085,7 +1085,7 @@ public:
                     carla_zeroStruct<snd_seq_event_t>(midiEvent);
 
                     midiEvent.type               = (note.velo > 0) ? SND_SEQ_EVENT_NOTEON : SND_SEQ_EVENT_NOTEOFF;
-                    midiEvent.data.note.channel  = note.channel;
+                    midiEvent.data.note.channel  = static_cast<uchar>(note.channel);
                     midiEvent.data.note.note     = note.note;
                     midiEvent.data.note.velocity = note.velo;
                 }
@@ -1266,8 +1266,9 @@ public:
                             {
                                 if (pData->midiprog.data[k].bank == nextBankId && pData->midiprog.data[k].program == nextProgramId)
                                 {
-                                    setMidiProgram(k, false, false, false);
-                                    pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
+                                    const int32_t index(static_cast<int32_t>(k));
+                                    setMidiProgram(index, false, false, false);
+                                    pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, index, 0, 0.0f);
                                     break;
                                 }
                             }

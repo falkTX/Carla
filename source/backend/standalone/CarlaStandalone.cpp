@@ -719,11 +719,11 @@ void carla_set_file_callback(FileCallbackFunc func, void* ptr)
     gStandalone.fileCallbackPtr = ptr;
 }
 
-const char* carla_file_callback(FileCallbackOpcode action, bool isDir, const char* title, const char* filter)
+const char* carla_standalone_file_callback(FileCallbackOpcode action, bool isDir, const char* title, const char* filter)
 {
     CARLA_SAFE_ASSERT_RETURN(title != nullptr && title[0] != '\0', nullptr);
     CARLA_SAFE_ASSERT_RETURN(filter != nullptr && filter[0] != '\0', nullptr);
-    carla_debug("carla_file_callback(%i:%s, %s, \"%s\", \"%s\")", action, CB::FileCallbackOpcode2Str(action), bool2str(isDir), title, filter);
+    carla_debug("carla_standalone_file_callback(%i:%s, %s, \"%s\", \"%s\")", action, CB::FileCallbackOpcode2Str(action), bool2str(isDir), title, filter);
 
     if (gStandalone.fileCallback == nullptr)
         return nullptr;
@@ -788,7 +788,7 @@ bool carla_patchbay_connect(int portIdA, int portIdB)
     return false;
 }
 
-bool carla_patchbay_disconnect(int connectionId)
+bool carla_patchbay_disconnect(uint connectionId)
 {
     carla_debug("carla_patchbay_disconnect(%i)", connectionId);
 

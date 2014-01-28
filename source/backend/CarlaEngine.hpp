@@ -324,7 +324,7 @@ public:
     /*!
      * Initialize the port's internal buffer.
      */
-    virtual void initBuffer() = 0;
+    virtual void initBuffer() noexcept = 0;
 
     /*!
      * Check if this port is an input.
@@ -371,7 +371,7 @@ public:
     /*!
      * Initialize the port's internal buffer.
      */
-    virtual void initBuffer() override;
+    virtual void initBuffer() noexcept override;
 
     /*!
      * Direct access to the port's audio buffer.
@@ -417,7 +417,7 @@ public:
     /*!
      * Initialize the port's internal buffer for \a engine.
      */
-    virtual void initBuffer() override;
+    virtual void initBuffer() noexcept override;
 
     /*!
      * Set a new buffer size.
@@ -430,7 +430,6 @@ public:
      * Write buffer back into the engine.
      */
     virtual void writeBuffer(const uint32_t frames, const uint32_t timeOffset);
-
 #endif
 
     /*!
@@ -478,7 +477,7 @@ public:
     /*!
      * Initialize the port's internal buffer for \a engine.
      */
-    virtual void initBuffer() override;
+    virtual void initBuffer() noexcept override;
 
     /*!
      * Get the number of events present in the buffer.
@@ -490,41 +489,41 @@ public:
      * Get the event at \a index.
      * \note You must only call this for input ports.
      */
-    virtual const EngineEvent& getEvent(const uint32_t index) noexcept;
+    virtual const EngineEvent& getEvent(const uint32_t index) const noexcept;
 
     /*!
      * Get the event at \a index, faster unchecked version.
      */
-    virtual const EngineEvent& getEventUnchecked(const uint32_t index) noexcept;
+    virtual const EngineEvent& getEventUnchecked(const uint32_t index) const noexcept;
 
     /*!
      * Write a control event into the buffer.\n
      * Arguments are the same as in the EngineControlEvent struct.
      * \note You must only call this for output ports.
      */
-    virtual bool writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value = 0.0f);
+    virtual bool writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value = 0.0f) noexcept;
 
     /*!
      * Write a control event into the buffer, overloaded call.
      */
-    bool writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEvent& ctrl);
+    bool writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEvent& ctrl) noexcept;
 
     /*!
      * Write a MIDI event into the buffer.\n
      * Arguments are the same as in the EngineMidiEvent struct.
      * \note You must only call this for output ports.
      */
-    virtual bool writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t size, const uint8_t* const data);
+    virtual bool writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t size, const uint8_t* const data) noexcept;
 
     /*!
      * Write a MIDI event into the buffer, overloaded call.
      */
-    bool writeMidiEvent(const uint32_t time, const uint8_t size, const uint8_t* const data);
+    bool writeMidiEvent(const uint32_t time, const uint8_t size, const uint8_t* const data) noexcept;
 
     /*!
      * Write a MIDI event into the buffer, overloaded call.
      */
-    bool writeMidiEvent(const uint32_t time, const uint8_t channel, const EngineMidiEvent& midi);
+    bool writeMidiEvent(const uint32_t time, const uint8_t channel, const EngineMidiEvent& midi) noexcept;
 
 #ifndef DOXYGEN
 protected:
@@ -896,7 +895,7 @@ public:
     /*!
      * Disconnect patchbay connection \a connectionId.
      */
-    virtual bool patchbayDisconnect(const int connectionId);
+    virtual bool patchbayDisconnect(const uint connectionId);
 
     /*!
      * Force the engine to resend all patchbay clients, ports and connections again.

@@ -72,9 +72,9 @@ struct PortNameToId {
 };
 
 struct ConnectionToId {
-    int id;
-    int portOut;
-    int portIn;
+    uint id;
+    int  portOut;
+    int  portIn;
 };
 
 // -----------------------------------------------------------------------
@@ -89,7 +89,7 @@ struct EngineRackBuffers {
     LinkedList<int> connectedOuts[2];
     CarlaMutex connectLock;
 
-    int lastConnectionId;
+    uint lastConnectionId;
     LinkedList<ConnectionToId> usedConnections;
 
     EngineRackBuffers(const uint32_t bufferSize);

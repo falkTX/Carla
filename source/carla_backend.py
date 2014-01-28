@@ -1750,7 +1750,7 @@ class Host(object):
         self.lib.carla_patchbay_connect.argtypes = [c_int, c_int]
         self.lib.carla_patchbay_connect.restype = c_bool
 
-        self.lib.carla_patchbay_disconnect.argtypes = [c_int]
+        self.lib.carla_patchbay_disconnect.argtypes = [c_uint]
         self.lib.carla_patchbay_disconnect.restype = c_bool
 
         self.lib.carla_patchbay_refresh.argtypes = None

@@ -315,6 +315,25 @@ public:
         return false;
     }
 
+    bool readNextLineAsUInt(uint& value)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fIsReading, false);
+
+        if (const char* const msg = readline())
+        {
+            int tmp = std::atoi(msg);
+            delete[] msg;
+
+            if (tmp >= 0)
+            {
+                value = static_cast<uint>(tmp);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     bool readNextLineAsLong(long& value)
     {
         CARLA_SAFE_ASSERT_RETURN(fIsReading, false);

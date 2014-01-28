@@ -30,7 +30,7 @@ CARLA_BACKEND_START_NAMESPACE
 // StateParameter
 
 StateParameter::StateParameter() noexcept
-    : index(0),
+    : index(-1),
       name(nullptr),
       symbol(nullptr),
       value(0.0f),
@@ -169,7 +169,7 @@ void SaveState::reset()
 // -----------------------------------------------------------------------
 // xmlSafeString
 
-QString xmlSafeString(const QString& string, const bool toXml)
+static QString xmlSafeString(const QString& string, const bool toXml)
 {
     QString newString(string);
 
@@ -179,7 +179,7 @@ QString xmlSafeString(const QString& string, const bool toXml)
         return newString.replace("&amp;","&").replace("&lt;","<").replace("&gt;",">").replace("&apos;","'").replace("&quot;","\"");
 }
 
-const char* xmlSafeStringCharDup(const QString& string, const bool toXml)
+static const char* xmlSafeStringCharDup(const QString& string, const bool toXml)
 {
     return carla_strdup(xmlSafeString(string, toXml).toUtf8().constData());
 }
@@ -334,8 +334,8 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
                         if (pTag.compare("index", Qt::CaseInsensitive) == 0)
                         {
                             bool ok;
-                            const uint index(pText.toUInt(&ok));
-                            if (ok) stateParameter->index = index;
+                            const int index(pText.toInt(&ok));
+                            if (ok && index >= 0) stateParameter->index = index;
                         }
                         else if (pTag.compare("name", Qt::CaseInsensitive) == 0)
                         {

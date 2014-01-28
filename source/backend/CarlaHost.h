@@ -624,7 +624,7 @@ CARLA_EXPORT bool carla_patchbay_connect(int portIdA, int portIdB);
  * @param connectionId Connection Id
  * @see ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED
  */
-CARLA_EXPORT bool carla_patchbay_disconnect(int connectionId);
+CARLA_EXPORT bool carla_patchbay_disconnect(uint connectionId);
 
 /*!
  * Force the engine to resend all patchbay clients, ports and connections again.
@@ -1075,5 +1075,10 @@ CARLA_EXPORT const char* carla_get_host_osc_url_tcp();
 CARLA_EXPORT const char* carla_get_host_osc_url_udp();
 
 /** @} */
+
+/*!
+ * Implemented in standalone.
+ */
+extern const char* carla_standalone_file_callback(FileCallbackOpcode action, bool isDir, const char* title, const char* filter);
 
 #endif /* CARLA_HOST_H_INCLUDED */

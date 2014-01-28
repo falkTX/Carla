@@ -135,7 +135,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, 0);
 
-        return fDescriptor->UniqueID;
+        return static_cast<long>(fDescriptor->UniqueID);
     }
 
     // -------------------------------------------------------------------
@@ -415,7 +415,7 @@ public:
         const float sampleRate(static_cast<float>(pData->engine->getSampleRate()));
         const uint32_t portCount(static_cast<uint32_t>(fDescriptor->PortCount));
 
-        uint32_t aIns, aOuts, params, j;
+        uint32_t aIns, aOuts, params;
         aIns = aOuts = params = 0;
 
         bool forcedStereoIn, forcedStereoOut;
@@ -520,7 +520,7 @@ public:
 
                 if (LADSPA_IS_PORT_INPUT(portType))
                 {
-                    j = iAudioIn++;
+                    uint32_t j = iAudioIn++;
                     pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
                     pData->audioIn.ports[j].rindex = i;
 
@@ -533,7 +533,7 @@ public:
                 }
                 else if (LADSPA_IS_PORT_OUTPUT(portType))
                 {
-                    j = iAudioOut++;
+                    uint32_t j = iAudioOut++;
                     pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
                     pData->audioOut.ports[j].rindex = i;
 
@@ -549,11 +549,11 @@ public:
             }
             else if (LADSPA_IS_PORT_CONTROL(portType))
             {
-                j = iCtrl++;
+                uint32_t j = iCtrl++;
                 pData->param.data[j].type   = PARAMETER_UNKNOWN;
                 pData->param.data[j].hints  = 0x0;
-                pData->param.data[j].index  = j;
-                pData->param.data[j].rindex = i;
+                pData->param.data[j].index  = static_cast<int32_t>(j);
+                pData->param.data[j].rindex = static_cast<int32_t>(i);
                 pData->param.data[j].midiCC = -1;
                 pData->param.data[j].midiChannel = 0;
                 pData->param.special[j] = PARAMETER_SPECIAL_NULL;
@@ -774,7 +774,7 @@ public:
                 float tmpIn[aIns][2];
                 float tmpOut[aOuts][2];
 
-                for (j=0; j < aIns; ++j)
+                for (uint32_t j=0; j < aIns; ++j)
                 {
                     tmpIn[j][0] = 0.0f;
                     tmpIn[j][1] = 0.0f;
@@ -782,7 +782,7 @@ public:
                     fDescriptor->connect_port(fHandle, pData->audioIn.ports[j].rindex, tmpIn[j]);
                 }
 
-                for (j=0; j < aOuts; ++j)
+                for (uint32_t j=0; j < aOuts; ++j)
                 {
                     tmpOut[j][0] = 0.0f;
                     tmpOut[j][1] = 0.0f;

@@ -80,7 +80,7 @@ public:
         }
     }
 
-    void initBuffer() override
+    void initBuffer() noexcept override
     {
         if (fPort == nullptr)
             return CarlaEngineAudioPort::initBuffer();
@@ -140,7 +140,7 @@ public:
         }
     }
 
-    void initBuffer() override
+    void initBuffer() noexcept override
     {
         if (fPort == nullptr)
             return CarlaEngineCVPort::initBuffer();
@@ -198,7 +198,7 @@ public:
         }
     }
 
-    void initBuffer() override
+    void initBuffer() noexcept override
     {
         if (fPort == nullptr)
             return CarlaEngineEventPort::initBuffer();
@@ -220,7 +220,7 @@ public:
         return jackbridge_midi_get_event_count(fJackBuffer);
     }
 
-    const EngineEvent& getEvent(const uint32_t index) noexcept override
+    const EngineEvent& getEvent(const uint32_t index) const noexcept override
     {
         if (fPort == nullptr)
             return CarlaEngineEventPort::getEvent(index);
@@ -231,7 +231,7 @@ public:
         return getEventUnchecked(index);
     }
 
-    const EngineEvent& getEventUnchecked(const uint32_t index) noexcept override
+    const EngineEvent& getEventUnchecked(const uint32_t index) const noexcept override
     {
         jack_midi_event_t jackEvent;
 
@@ -246,7 +246,7 @@ public:
         return fRetEvent;
     }
 
-    bool writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value) override
+    bool writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value) noexcept override
     {
         if (fPort == nullptr)
             return CarlaEngineEventPort::writeControlEvent(time, channel, type, param, value);
@@ -274,7 +274,7 @@ public:
         return jackbridge_midi_event_write(fJackBuffer, time, data, size);
     }
 
-    bool writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t size, const uint8_t* const data) override
+    bool writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t size, const uint8_t* const data) noexcept override
     {
         if (fPort == nullptr)
             return CarlaEngineEventPort::writeMidiEvent(time, channel, port, size, data);
@@ -298,9 +298,9 @@ public:
 private:
     jack_client_t* fClient;
     jack_port_t*   fPort;
+    void*          fJackBuffer;
 
-    void*       fJackBuffer;
-    EngineEvent fRetEvent;
+    mutable EngineEvent fRetEvent;
 
     friend class CarlaEngineJack;
 
@@ -890,7 +890,7 @@ public:
         return true;
     }
 
-    bool patchbayDisconnect(int connectionId) override
+    bool patchbayDisconnect(uint connectionId) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
 
@@ -1360,7 +1360,7 @@ protected:
             connectionToId.setData(fLastConnectionId++, portIdA, portIdB);
             fUsedConnections.append(connectionToId);
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, static_cast<uint>(connectionToId.id), connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
         }
         else
         {
@@ -1549,18 +1549,18 @@ private:
     };
 
     struct ConnectionToId {
-        int id;
-        int portOut;
-        int portIn;
+        uint id;
+        int  portOut;
+        int  portIn;
 
         void clear() noexcept
         {
-            id      = -1;
+            id      = 0;
             portOut = -1;
             portIn  = -1;
         }
 
-        void setData(const int i, const int out, const int in) noexcept
+        void setData(const uint i, const int out, const int in) noexcept
         {
             id      = i;
             portOut = out;
@@ -1584,9 +1584,9 @@ private:
         }
     };
 
-    int fLastGroupId;
-    int fLastPortId;
-    int fLastConnectionId;
+    int  fLastGroupId;
+    int  fLastPortId;
+    uint fLastConnectionId;
 
     LinkedList<GroupNameToId>  fUsedGroupNames;
     LinkedList<PortNameToId>   fUsedPortNames;
@@ -1798,7 +1798,7 @@ private:
                         connectionToId.setData(fLastConnectionId++, thisPortId, targetPortId);
                         fUsedConnections.append(connectionToId);
 
-                        callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, static_cast<uint>(connectionToId.id), connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
+                        callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
                     }
 
                     jackbridge_free(connections);

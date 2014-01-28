@@ -66,7 +66,8 @@ endif
 ifneq ($(MACOS),true)
 BASE_FLAGS += -Wlogical-op
 ifeq ($(TESTBUILD),true)
-BASE_FLAGS += -Wmissing-declarations -Wsign-conversion -Wsuggest-attribute=noreturn
+BASE_FLAGS += -Wmissing-declarations -Wsign-conversion
+# -Wsuggest-attribute=noreturn
 endif
 endif
 

@@ -23,7 +23,7 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
-const char* PluginThreadMode2str(const CarlaPluginThread::Mode mode)
+static const char* PluginThreadMode2str(const CarlaPluginThread::Mode mode)
 {
     switch (mode)
     {
@@ -177,7 +177,7 @@ void CarlaPluginThread::run()
 
             if (fProcess->state() != QProcess::NotRunning && shouldExit())
             {
-                fProcess->waitForFinished(fEngine->getOptions().uiBridgesTimeout);
+                fProcess->waitForFinished(static_cast<int>(fEngine->getOptions().uiBridgesTimeout));
 
                 if (fProcess->state() == QProcess::Running)
                 {
