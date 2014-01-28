@@ -12,7 +12,7 @@ BUILD_CXX_FLAGS += $(JUCE_AUDIO_BASICS_FLAGS) -I. -w
 LINK_FLAGS      += $(JUCE_AUDIO_BASICS_LIBS) -L.. -ljuce_core
 
 ifeq ($(MACOS),true)
-BUILD_CXX_FLAGS += -objc++
+BUILD_CXX_FLAGS += -ObjC++
 OBJS         = juce_audio_basics.mm.o
 OBJS_posix32 = juce_audio_basics.mm.posix32.o
 OBJS_posix64 = juce_audio_basics.mm.posix64.o

@@ -14,10 +14,10 @@ daz-plugins:
 # --------------------------------------------------------------
 
 dgl:
-	$(MAKE) -C distrho/dgl
+	$(MAKE) -C dgl
 
 dgl_%:
-	$(MAKE) -C distrho/dgl $*
+	$(MAKE) -C dgl $*
 
 # --------------------------------------------------------------
 
@@ -167,7 +167,7 @@ lib%.so:
 clean:
 	rm -f *.a *.def *.dll *.dylib *.so
 	$(MAKE) clean -C daz-plugins
-	$(MAKE) clean -C distrho/dgl
+	$(MAKE) clean -C dgl
 	$(MAKE) clean -C jackbridge
 	$(MAKE) clean -C juce_audio_basics
 	$(MAKE) clean -C juce_audio_devices
@@ -188,7 +188,7 @@ clean:
 # --------------------------------------------------------------
 
 .PHONY: \
-	daz-plugins jackbridge lilv rtaudio rtmidi rtmempool stk theme \
+	daz-plugins dgl jackbridge lilv rtaudio rtmidi rtmempool stk theme \
 	juce_audio_basics juce_audio_devices juce_audio_formats juce_audio_processors juce_core juce_data_structures juce_events juce_graphics juce_gui_basics
 
 # --------------------------------------------------------------

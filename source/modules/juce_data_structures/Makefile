@@ -12,7 +12,7 @@ BUILD_CXX_FLAGS += $(JUCE_DATA_STRUCTURES_FLAGS) -I. -w
 LINK_FLAGS      += $(JUCE_DATA_STRUCTURES_LIBS) -L.. -ljuce_events -ljuce_core
 
 ifeq ($(MACOS),true)
-BUILD_CXX_FLAGS += -objc++
+BUILD_CXX_FLAGS += -ObjC++
 OBJS         = juce_data_structures.mm.o
 OBJS_posix32 = juce_data_structures.mm.posix32.o
 OBJS_posix64 = juce_data_structures.mm.posix64.o

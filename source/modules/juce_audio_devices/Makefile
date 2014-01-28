@@ -16,7 +16,7 @@ BUILD_CXX_FLAGS += -I../../includes/asio
 endif
 
 ifeq ($(MACOS),true)
-BUILD_CXX_FLAGS += -objc++
+BUILD_CXX_FLAGS += -ObjC++
 OBJS         = juce_audio_devices.mm.o
 OBJS_posix32 = juce_audio_devices.mm.posix32.o
 OBJS_posix64 = juce_audio_devices.mm.posix64.o
