@@ -1086,9 +1086,9 @@ public:
         carla_debug("NativePlugin::reload() - end");
     }
 
-    void reloadPrograms(const bool init) override
+    void reloadPrograms(const bool doInit) override
     {
-        carla_debug("NativePlugin::reloadPrograms(%s)", bool2str(init));
+        carla_debug("NativePlugin::reloadPrograms(%s)", bool2str(doInit));
         uint32_t i, oldCount  = pData->midiprog.count;
         const int32_t current = pData->midiprog.current;
 
@@ -1128,7 +1128,7 @@ public:
         }
 #endif
 
-        if (init)
+        if (doInit)
         {
             if (count > 0)
                 setMidiProgram(0, false, false, false);
@@ -1220,15 +1220,13 @@ public:
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
     {
-        uint32_t i/*, k*/;
-
         // --------------------------------------------------------------------------------------------------------
         // Check if active
 
         if (! pData->active)
         {
             // disable any output sound
-            for (i=0; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
                 FLOAT_CLEAR(outBuffer[i], frames);
 
             return;
@@ -1348,7 +1346,7 @@ public:
             if (pData->midiprog.current >= 0 && pData->midiprog.count > 0)
                 nextBankId = pData->midiprog.data[pData->midiprog.current].bank;
 
-            for (i=0; i < nEvents; ++i)
+            for (uint32_t i=0; i < nEvents; ++i)
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 

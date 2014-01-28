@@ -1182,11 +1182,11 @@ public:
 
     // -------------------------------------------------------------------
 
-    int setOscPluginBridgeInfo(const PluginBridgeInfoType type, const int argc, const lo_arg* const* const argv, const char* const types)
+    int setOscPluginBridgeInfo(const PluginBridgeInfoType infoType, const int argc, const lo_arg* const* const argv, const char* const types)
     {
-        carla_debug("setOscPluginBridgeInfo(%s, %i, %p, \"%s\")", PluginBridgeInfoType2str(type), argc, argv, types);
+        carla_debug("setOscPluginBridgeInfo(%s, %i, %p, \"%s\")", PluginBridgeInfoType2str(infoType), argc, argv, types);
 
-        switch (type)
+        switch (infoType)
         {
         case kPluginBridgeAudioCount:
         {

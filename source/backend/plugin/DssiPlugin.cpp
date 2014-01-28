@@ -870,9 +870,9 @@ public:
         carla_debug("DssiPlugin::reload() - end");
     }
 
-    void reloadPrograms(const bool init) override
+    void reloadPrograms(const bool doInit) override
     {
-        carla_debug("DssiPlugin::reloadPrograms(%s)", bool2str(init));
+        carla_debug("DssiPlugin::reloadPrograms(%s)", bool2str(doInit));
         uint32_t i, oldCount  = pData->midiprog.count;
         const int32_t current = pData->midiprog.current;
 
@@ -915,7 +915,7 @@ public:
         }
 #endif
 
-        if (init)
+        if (doInit)
         {
             if (count > 0)
                 setMidiProgram(0, false, false, false);

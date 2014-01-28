@@ -48,12 +48,12 @@ const unsigned short kMaxEngineEventInternalCount = 512;
 // Rack Patchbay stuff
 
 enum RackPatchbayGroupIds {
-    RACK_PATCHBAY_GROUP_CARLA     = -1,
-    RACK_PATCHBAY_GROUP_AUDIO_IN  = 0,
-    RACK_PATCHBAY_GROUP_AUDIO_OUT = 1,
-    RACK_PATCHBAY_GROUP_MIDI_IN   = 2,
-    RACK_PATCHBAY_GROUP_MIDI_OUT  = 3,
-    RACK_PATCHBAY_GROUP_MAX       = 4
+    RACK_PATCHBAY_GROUP_CARLA     = 0,
+    RACK_PATCHBAY_GROUP_AUDIO_IN  = 1,
+    RACK_PATCHBAY_GROUP_AUDIO_OUT = 2,
+    RACK_PATCHBAY_GROUP_MIDI_IN   = 3,
+    RACK_PATCHBAY_GROUP_MIDI_OUT  = 4,
+    RACK_PATCHBAY_GROUP_MAX       = 5
 };
 
 enum RackPatchbayPortIds {

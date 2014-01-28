@@ -48,12 +48,12 @@ static const EngineEvent kFallbackJackEngineEvent = { kEngineEventTypeNull, 0, 0
 class CarlaEngineJackAudioPort : public CarlaEngineAudioPort
 {
 public:
-    CarlaEngineJackAudioPort(const CarlaEngine& engine, const bool isInput, jack_client_t* const client, jack_port_t* const port)
-        : CarlaEngineAudioPort(engine, isInput),
+    CarlaEngineJackAudioPort(const CarlaEngine& engine, const bool isInputPort, jack_client_t* const client, jack_port_t* const port)
+        : CarlaEngineAudioPort(engine, isInputPort),
           fClient(client),
           fPort(port)
     {
-        carla_debug("CarlaEngineJackAudioPort::CarlaEngineJackAudioPort(%s, %p, %p)", bool2str(isInput), client, port);
+        carla_debug("CarlaEngineJackAudioPort::CarlaEngineJackAudioPort(%s, %p, %p)", bool2str(isInputPort), client, port);
 
         if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
@@ -105,12 +105,12 @@ private:
 class CarlaEngineJackCVPort : public CarlaEngineCVPort
 {
 public:
-    CarlaEngineJackCVPort(const CarlaEngine& engine, const bool isInput, jack_client_t* const client, jack_port_t* const port)
-        : CarlaEngineCVPort(engine, isInput),
+    CarlaEngineJackCVPort(const CarlaEngine& engine, const bool isInputPort, jack_client_t* const client, jack_port_t* const port)
+        : CarlaEngineCVPort(engine, isInputPort),
           fClient(client),
           fPort(port)
     {
-        carla_debug("CarlaEngineJackCVPort::CarlaEngineJackCVPort(%s, %p, %p)", bool2str(isInput), client, port);
+        carla_debug("CarlaEngineJackCVPort::CarlaEngineJackCVPort(%s, %p, %p)", bool2str(isInputPort), client, port);
 
         if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
@@ -162,13 +162,13 @@ private:
 class CarlaEngineJackEventPort : public CarlaEngineEventPort
 {
 public:
-    CarlaEngineJackEventPort(const CarlaEngine& engine, const bool isInput, jack_client_t* const client, jack_port_t* const port)
-        : CarlaEngineEventPort(engine, isInput),
+    CarlaEngineJackEventPort(const CarlaEngine& engine, const bool isInputPort, jack_client_t* const client, jack_port_t* const port)
+        : CarlaEngineEventPort(engine, isInputPort),
           fClient(client),
           fPort(port),
           fJackBuffer(nullptr)
     {
-        carla_debug("CarlaEngineJackEventPort::CarlaEngineJackEventPort(%s, %p, %p)", bool2str(isInput), client, port);
+        carla_debug("CarlaEngineJackEventPort::CarlaEngineJackEventPort(%s, %p, %p)", bool2str(isInputPort), client, port);
 
         if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
@@ -1235,8 +1235,9 @@ protected:
         if (id == -1)
             return;
 
-        GroupNameToId groupNameId(id, name);
-        fUsedGroupNames.removeAll(groupNameId);
+        GroupNameToId groupNameToId;
+        groupNameToId.setData(id, name);
+        fUsedGroupNames.removeAll(groupNameToId);
 
         callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED, id, 0, 0, 0.0f, nullptr);
     }
@@ -1264,7 +1265,8 @@ protected:
             {
                 groupId = fLastGroupId++;
 
-                GroupNameToId groupNameToId(groupId, groupName);
+                GroupNameToId groupNameToId;
+                groupNameToId.setData(groupId, groupName);
                 fUsedGroupNames.append(groupNameToId);
 
                 if (jackPortFlags & JackPortIsPhysical)
@@ -1291,7 +1293,8 @@ protected:
             if (portIsAudio && portIsCV)
                 canvasPortFlags |= PATCHBAY_PORT_TYPE_CV;
 
-            PortNameToId portNameToId(groupId, fLastPortId++, portName, fullPortName);
+            PortNameToId portNameToId;
+            portNameToId.setData(groupId, fLastPortId++, portName, fullPortName);
             fUsedPortNames.append(portNameToId);
 
             callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, groupId, portNameToId.portId, canvasPortFlags, 0.0f, portName);
@@ -1303,8 +1306,9 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(groupId != -1,);
             CARLA_SAFE_ASSERT_RETURN(portId != -1,);
 
-            PortNameToId portNameId(groupId, portId, portName, fullPortName);
-            fUsedPortNames.removeOne(portNameId);
+            PortNameToId portNameToId;
+            portNameToId.setData(groupId, portId, portName, fullPortName);
+            fUsedPortNames.removeOne(portNameToId);
 
             callback(ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED, groupId, portId, 0, 0.0f, nullptr);
         }
@@ -1330,7 +1334,8 @@ protected:
 
         if (connect)
         {
-            ConnectionToId connectionToId(fLastConnectionId++, portIdA, portIdB);
+            ConnectionToId connectionToId;
+            connectionToId.setData(fLastConnectionId++, portIdA, portIdB);
             fUsedConnections.append(connectionToId);
 
             callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
@@ -1439,32 +1444,36 @@ private:
         int  id;
         char name[STR_MAX+1];
 
-        GroupNameToId()
+        void clear() noexcept
         {
             id = -1;
             name[0] = '\0';
         }
 
-        GroupNameToId(const int id, const char name[])
+        void setData(const int i, const char n[]) noexcept
         {
-            this->id = id;
-            std::strncpy(this->name, name, STR_MAX);
-            this->name[STR_MAX] = '\0';
+            id = i;
+            rename(n);
         }
 
-        void rename(const char name[])
+        void rename(const char n[]) noexcept
         {
-            std::strncpy(this->name, name, STR_MAX);
-            this->name[STR_MAX] = '\0';
+            std::strncpy(name, n, STR_MAX);
+            name[STR_MAX] = '\0';
         }
 
-        bool operator==(const GroupNameToId& groupNameId)
+        bool operator==(const GroupNameToId& groupNameId) const noexcept
         {
             if (groupNameId.id != id)
                 return false;
             if (std::strcmp(groupNameId.name, name) != 0)
                 return false;
             return true;
+        }
+
+        bool operator!=(const GroupNameToId& groupNameId) const noexcept
+        {
+            return !operator==(groupNameId);
         }
     };
 
@@ -1474,33 +1483,31 @@ private:
         char name[STR_MAX+1];
         char fullName[STR_MAX+1]; // unique
 
-        PortNameToId()
+        void clear() noexcept
         {
             groupId = -1;
             portId  = -1;
-            name[0] = '\0';
+            name[0]     = '\0';
             fullName[0] = '\0';
         }
 
-        PortNameToId(const int groupId, const int portId, const char name[], const char fullName[])
+        void setData(const int gId, const int pId, const char n[], const char fn[]) noexcept
         {
-            this->groupId = groupId;
-            this->portId  = portId;
-            std::strncpy(this->name, name, STR_MAX);
-            this->name[STR_MAX] = '\0';
-            std::strncpy(this->fullName, fullName, STR_MAX);
-            this->fullName[STR_MAX] = '\0';
+            groupId = gId;
+            portId  = pId;
+            rename(n, fn);
         }
 
-        void rename(const char name[], const char fullName[])
+        void rename(const char n[], const char fn[]) noexcept
         {
-            std::strncpy(this->name, name, STR_MAX);
-            this->name[STR_MAX] = '\0';
-            std::strncpy(this->fullName, fullName, STR_MAX);
-            this->fullName[STR_MAX] = '\0';
+            std::strncpy(name, n, STR_MAX);
+            name[STR_MAX] = '\0';
+
+            std::strncpy(fullName, fn, STR_MAX);
+            fullName[STR_MAX] = '\0';
         }
 
-        bool operator==(const PortNameToId& portNameId)
+        bool operator==(const PortNameToId& portNameId) noexcept
         {
             if (portNameId.groupId != groupId)
                 return false;
@@ -1512,6 +1519,11 @@ private:
                 return false;
             return true;
         }
+
+        bool operator!=(const PortNameToId& portNameId) noexcept
+        {
+            return !operator==(portNameId);
+        }
     };
 
     struct ConnectionToId {
@@ -1519,21 +1531,21 @@ private:
         int portOut;
         int portIn;
 
-        ConnectionToId()
+        void clear() noexcept
         {
-            id = -1;
+            id      = -1;
             portOut = -1;
             portIn  = -1;
         }
 
-        ConnectionToId(const int id, const int portOut, const int portIn)
+        void setData(const int i, const int out, const int in) noexcept
         {
-            this->id = id;
-            this->portOut = portOut;
-            this->portIn  = portIn;
+            id      = i;
+            portOut = out;
+            portIn  = in;
         }
 
-        bool operator==(const ConnectionToId& connectionId)
+        bool operator==(const ConnectionToId& connectionId) const noexcept
         {
             if (connectionId.id != id)
                 return false;
@@ -1542,6 +1554,11 @@ private:
             if (connectionId.portIn != portIn)
                 return false;
             return true;
+        }
+
+        bool operator!=(const ConnectionToId& connectionId) const noexcept
+        {
+            return !operator==(connectionId);
         }
     };
 
@@ -1632,7 +1649,8 @@ private:
         {
             parsedGroups.append(QString(ourName));
 
-            GroupNameToId groupNameToId(fLastGroupId++, ourName);
+            GroupNameToId groupNameToId;
+            groupNameToId.setData(fLastGroupId++, ourName);
             fUsedGroupNames.append(groupNameToId);
 
             callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, groupNameToId.id, PATCHBAY_ICON_CARLA, 0, 0.0f, ourName);
@@ -1671,7 +1689,8 @@ private:
                     groupId = fLastGroupId++;
                     parsedGroups.append(qGroupName);
 
-                    GroupNameToId groupNameToId(groupId, groupName);
+                    GroupNameToId groupNameToId;
+                    groupNameToId.setData(groupId, groupName);
                     fUsedGroupNames.append(groupNameToId);
 
                     PatchbayIcon groupIcon = PATCHBAY_ICON_APPLICATION;
@@ -1720,7 +1739,8 @@ private:
                 if (portIsCV)
                     canvasPortFlags |= PATCHBAY_PORT_TYPE_CV;
 
-                PortNameToId portNameToId(groupId, fLastPortId++, portName, fullPortName);
+                PortNameToId portNameToId;
+                portNameToId.setData(groupId, fLastPortId++, portName, fullPortName);
                 fUsedPortNames.append(portNameToId);
 
                 callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, groupId, portNameToId.portId, canvasPortFlags, 0.0f, portName);
@@ -1743,7 +1763,8 @@ private:
                     {
                         const int targetPortId(getPortId(connections[j]));
 
-                        ConnectionToId connectionToId(fLastConnectionId++, thisPortId, targetPortId);
+                        ConnectionToId connectionToId;
+                        connectionToId.setData(fLastConnectionId++, thisPortId, targetPortId);
                         fUsedConnections.append(connectionToId);
 
                         callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);

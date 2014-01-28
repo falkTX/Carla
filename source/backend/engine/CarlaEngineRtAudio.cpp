@@ -500,10 +500,10 @@ public:
         // Connections
         rack->connectLock.lock();
 
-        for (LinkedList<uint>::Itenerator it = rack->connectedIns[0].begin(); it.valid(); it.next())
+        for (LinkedList<int>::Itenerator it = rack->connectedIns[0].begin(); it.valid(); it.next())
         {
-            const uint& port(it.getValue());
-            CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.inCount);
+            const int& port(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(pData->bufAudio.inCount));
 
             ConnectionToId connectionToId;
             connectionToId.id      = rack->lastConnectionId;
@@ -516,10 +516,10 @@ public:
             rack->lastConnectionId++;
         }
 
-        for (LinkedList<uint>::Itenerator it = rack->connectedIns[1].begin(); it.valid(); it.next())
+        for (LinkedList<int>::Itenerator it = rack->connectedIns[1].begin(); it.valid(); it.next())
         {
-            const uint& port(it.getValue());
-            CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.inCount);
+            const int& port(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(pData->bufAudio.inCount));
 
             ConnectionToId connectionToId;
             connectionToId.id      = rack->lastConnectionId;
@@ -532,10 +532,10 @@ public:
             rack->lastConnectionId++;
         }
 
-        for (LinkedList<uint>::Itenerator it = rack->connectedOuts[0].begin(); it.valid(); it.next())
+        for (LinkedList<int>::Itenerator it = rack->connectedOuts[0].begin(); it.valid(); it.next())
         {
-            const uint& port(it.getValue());
-            CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.outCount);
+            const int& port(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(pData->bufAudio.outCount));
 
             ConnectionToId connectionToId;
             connectionToId.id      = rack->lastConnectionId;
@@ -548,10 +548,10 @@ public:
             rack->lastConnectionId++;
         }
 
-        for (LinkedList<uint>::Itenerator it = rack->connectedOuts[1].begin(); it.valid(); it.next())
+        for (LinkedList<int>::Itenerator it = rack->connectedOuts[1].begin(); it.valid(); it.next())
         {
-            const uint& port(it.getValue());
-            CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.outCount);
+            const int& port(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(pData->bufAudio.outCount));
 
             ConnectionToId connectionToId;
             connectionToId.id      = rack->lastConnectionId;
@@ -1130,8 +1130,8 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const unsigned i
     {
         double* const sampleRates(new double[sampleRatesCount+1]);
 
-        for (size_t i=0; i < sampleRatesCount; ++i)
-            sampleRates[i] = rtAudioDevInfo.sampleRates[i];
+        for (size_t j=0; j < sampleRatesCount; ++j)
+            sampleRates[j] = rtAudioDevInfo.sampleRates[j];
         sampleRates[sampleRatesCount] = 0.0;
 
         devInfo.sampleRates = sampleRates;

@@ -646,9 +646,9 @@ void CarlaPluginProtectedData::postponeRtEvent(const PluginPostRtEventType type,
 {
     CARLA_SAFE_ASSERT_RETURN(type != kPluginPostRtEventNull,);
 
-    PluginPostRtEvent event = { type, value1, value2, value3 };
+    PluginPostRtEvent rtEvent = { type, value1, value2, value3 };
 
-    postRtEvents.appendRT(event);
+    postRtEvents.appendRT(rtEvent);
 }
 
 // -----------------------------------------------------------------------
@@ -656,14 +656,14 @@ void CarlaPluginProtectedData::postponeRtEvent(const PluginPostRtEventType type,
 
 static LibCounter sLibCounter;
 
-const char* CarlaPluginProtectedData::libError(const char* const filename)
+const char* CarlaPluginProtectedData::libError(const char* const fname)
 {
-    return lib_error(filename);
+    return lib_error(fname);
 }
 
-bool CarlaPluginProtectedData::libOpen(const char* const filename)
+bool CarlaPluginProtectedData::libOpen(const char* const fname)
 {
-    lib = sLibCounter.open(filename);
+    lib = sLibCounter.open(fname);
     return (lib != nullptr);
 }
 
@@ -679,9 +679,9 @@ void* CarlaPluginProtectedData::libSymbol(const char* const symbol)
     return lib_symbol(lib, symbol);
 }
 
-bool CarlaPluginProtectedData::uiLibOpen(const char* const filename)
+bool CarlaPluginProtectedData::uiLibOpen(const char* const fname)
 {
-    uiLib = sLibCounter.open(filename);
+    uiLib = sLibCounter.open(fname);
     return (uiLib != nullptr);
 }
 
@@ -743,7 +743,7 @@ void CarlaPluginProtectedData::saveSetting(const uint option, const bool yesNo)
     settings.endGroup();
 }
 
-uint CarlaPluginProtectedData::loadSettings(const uint options, const uint availOptions)
+uint CarlaPluginProtectedData::loadSettings(const uint curOptions, const uint availOptions)
 {
     CARLA_SAFE_ASSERT_RETURN(identifier != nullptr && identifier[0] != '\0', 0x0);
 
@@ -757,10 +757,10 @@ uint CarlaPluginProtectedData::loadSettings(const uint options, const uint avail
     {                                                                   \
         if (settings.contains(STR))                                     \
         {                                                               \
-            if (settings.value(STR, (options & BIT) != 0).toBool())     \
+            if (settings.value(STR, (curOptions & BIT) != 0).toBool())  \
                 newOptions |= BIT;                                      \
         }                                                               \
-        else if (options & BIT)                                         \
+        else if (curOptions & BIT)                                      \
             newOptions |= BIT;                                          \
     }
 

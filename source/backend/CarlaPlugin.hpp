@@ -625,7 +625,7 @@ public:
     /*!
      * Reload the plugin's programs state.
      */
-    virtual void reloadPrograms(const bool init);
+    virtual void reloadPrograms(const bool doInit);
 
     // -------------------------------------------------------------------
     // Plugin processing

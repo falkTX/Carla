@@ -637,9 +637,9 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
             // Try to set by symbol, otherwise use index
             if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
             {
-                for (LinkedList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
+                for (LinkedList<ParamSymbol*>::Itenerator it2 = paramSymbols.begin(); it2.valid(); it2.next())
                 {
-                    ParamSymbol* const paramSymbol(it.getValue());
+                    ParamSymbol* const paramSymbol(it2.getValue());
 
                     if (std::strcmp(stateParameter->symbol, paramSymbol->symbol) == 0)
                     {
@@ -658,9 +658,9 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
             // Symbol only
             if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
             {
-                for (LinkedList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
+                for (LinkedList<ParamSymbol*>::Itenerator it2 = paramSymbols.begin(); it2.valid(); it2.next())
                 {
-                    ParamSymbol* const paramSymbol(it.getValue());
+                    ParamSymbol* const paramSymbol(it2.getValue());
 
                     if (std::strcmp(stateParameter->symbol, paramSymbol->symbol) == 0)
                     {

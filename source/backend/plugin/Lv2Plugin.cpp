@@ -1447,13 +1447,13 @@ public:
         bool canContinue = true;
 
         // Check supported ports
-        for (uint32_t i=0; i < fRdfDescriptor->PortCount; ++i)
+        for (uint32_t j=0; j < fRdfDescriptor->PortCount; ++j)
         {
-            const LV2_Property portTypes(fRdfDescriptor->Ports[i].Types);
+            const LV2_Property portTypes(fRdfDescriptor->Ports[j].Types);
 
             if (! is_lv2_port_supported(portTypes))
             {
-                if (! LV2_IS_PORT_OPTIONAL(fRdfDescriptor->Ports[i].Properties))
+                if (! LV2_IS_PORT_OPTIONAL(fRdfDescriptor->Ports[j].Properties))
                 {
                     pData->engine->setLastError("Plugin requires a port type that is not currently supported");
                     canContinue = false;
@@ -1463,11 +1463,11 @@ public:
         }
 
         // Check supported features
-        for (uint32_t i=0; i < fRdfDescriptor->FeatureCount && canContinue; ++i)
+        for (uint32_t j=0; j < fRdfDescriptor->FeatureCount && canContinue; ++j)
         {
-            if (LV2_IS_FEATURE_REQUIRED(fRdfDescriptor->Features[i].Type) && ! is_lv2_feature_supported(fRdfDescriptor->Features[i].URI))
+            if (LV2_IS_FEATURE_REQUIRED(fRdfDescriptor->Features[j].Type) && ! is_lv2_feature_supported(fRdfDescriptor->Features[j].URI))
             {
-//                 QString msg(QString("Plugin requires a feature that is not supported:\n%1").arg(fRdfDescriptor->Features[i].URI));
+//                 QString msg(QString("Plugin requires a feature that is not supported:\n%1").arg(fRdfDescriptor->Features[j].URI));
 //                 pData->engine->setLastError(msg.toUtf8().constData());
                 canContinue = false;
                 break;

@@ -56,6 +56,15 @@ typedef struct _RtMemPool
 } RtMemPool;
 
 // ------------------------------------------------------------------------------------------------
+// additional function prototypes
+
+void rtsafe_memory_pool_sleepy(RtMemPool* poolPtr);
+
+bool rtsafe_memory_pool_create2(RtMemPool_Handle* handlePtr, const char* poolName,
+                                size_t dataSize, size_t minPreallocated, size_t maxPreallocated,
+                                int enforceThreadSafety);
+
+// ------------------------------------------------------------------------------------------------
 // adjust unused list size
 
 void rtsafe_memory_pool_sleepy(RtMemPool* poolPtr)
@@ -140,7 +149,7 @@ bool rtsafe_memory_pool_create2(RtMemPool_Handle* handlePtr,
                                 size_t dataSize,
                                 size_t minPreallocated,
                                 size_t maxPreallocated,
-                                bool enforceThreadSafety)
+                                int enforceThreadSafety)
 {
     assert(minPreallocated <= maxPreallocated);
     assert(poolName == NULL || strlen(poolName) < RTSAFE_MEMORY_POOL_NAME_MAX);
@@ -173,9 +182,9 @@ bool rtsafe_memory_pool_create2(RtMemPool_Handle* handlePtr,
     INIT_LIST_HEAD(&poolPtr->unused);
     poolPtr->unusedCount = 0;
 
-    poolPtr->enforceThreadSafety = enforceThreadSafety;
+    poolPtr->enforceThreadSafety = (enforceThreadSafety != 0);
 
-    if (enforceThreadSafety)
+    if (poolPtr->enforceThreadSafety)
     {
         if (pthread_mutex_init(&poolPtr->mutex, NULL) != 0)
         {
@@ -203,7 +212,7 @@ bool rtsafe_memory_pool_create(RtMemPool_Handle* handlePtr,
                                size_t minPreallocated,
                                size_t maxPreallocated)
 {
-    return rtsafe_memory_pool_create2(handlePtr, poolName, dataSize, minPreallocated, maxPreallocated, false);
+    return rtsafe_memory_pool_create2(handlePtr, poolName, dataSize, minPreallocated, maxPreallocated, 0);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -214,7 +223,7 @@ bool rtsafe_memory_pool_create_safe(RtMemPool_Handle* handlePtr,
                                     size_t minPreallocated,
                                     size_t maxPreallocated)
 {
-    return rtsafe_memory_pool_create2(handlePtr, poolName, dataSize, minPreallocated, maxPreallocated, true);
+    return rtsafe_memory_pool_create2(handlePtr, poolName, dataSize, minPreallocated, maxPreallocated, 1);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -366,7 +375,7 @@ void rtsafe_memory_pool_deallocate(RtMemPool_Handle handle, void* memoryPtr)
 }
 
 #ifdef WANT_LV2
-# include "lv2/lv2_rtmempool.h"
+# include "rtmempool-lv2.h"
 
 void lv2_rtmempool_init(LV2_RtMemPool_Pool* poolPtr)
 {
