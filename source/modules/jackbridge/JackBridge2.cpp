@@ -32,7 +32,7 @@ CARLA_EXPORT bool jackbridge_sem_timedwait(void* sem, int secs);
 
 // -----------------------------------------------------------------------------
 
-#if JACKBRIDGE_DUMMY
+#ifdef JACKBRIDGE_DUMMY
 bool jackbridge_sem_init(void*) noexcept
 {
     return false;
