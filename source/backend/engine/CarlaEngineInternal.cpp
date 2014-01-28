@@ -699,10 +699,10 @@ void CarlaEngineProtectedData::processRack(float* inBufReal[2], float* outBuf[2]
 
             if (oldAudioInCount > 0)
             {
-                FloatVectorOperations::findMinAndMax(inBuf0, frames, tmpMin, tmpMax);
+                FloatVectorOperations::findMinAndMax(inBuf0, static_cast<int>(frames), tmpMin, tmpMax);
                 pluginData.insPeak[0] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
 
-                FloatVectorOperations::findMinAndMax(inBuf1, frames, tmpMin, tmpMax);
+                FloatVectorOperations::findMinAndMax(inBuf1, static_cast<int>(frames), tmpMin, tmpMax);
                 pluginData.insPeak[1] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
             }
             else
@@ -713,10 +713,10 @@ void CarlaEngineProtectedData::processRack(float* inBufReal[2], float* outBuf[2]
 
             if (plugin->getAudioOutCount() > 0)
             {
-                FloatVectorOperations::findMinAndMax(outBuf[0], frames, tmpMin, tmpMax);
+                FloatVectorOperations::findMinAndMax(outBuf[0], static_cast<int>(frames), tmpMin, tmpMax);
                 pluginData.outsPeak[0] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
 
-                FloatVectorOperations::findMinAndMax(outBuf[1], frames, tmpMin, tmpMax);
+                FloatVectorOperations::findMinAndMax(outBuf[1], static_cast<int>(frames), tmpMin, tmpMax);
                 pluginData.outsPeak[1] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
             }
             else
@@ -786,10 +786,10 @@ void CarlaEngineProtectedData::processRackFull(float** const inBuf, const uint32
     {
         bool first = true;
 
-        for (LinkedList<uint>::Itenerator it = rack->connectedIns[0].begin(); it.valid(); it.next())
+        for (LinkedList<int>::Itenerator it = rack->connectedIns[0].begin(); it.valid(); it.next())
         {
-            const uint& port(it.getValue());
-            CARLA_SAFE_ASSERT_CONTINUE(port < inCount);
+            const int& port(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(inCount));
 
             if (first)
             {
@@ -814,10 +814,10 @@ void CarlaEngineProtectedData::processRackFull(float** const inBuf, const uint32
     {
         bool first = true;
 
-        for (LinkedList<uint>::Itenerator it = rack->connectedIns[1].begin(); it.valid(); it.next())
+        for (LinkedList<int>::Itenerator it = rack->connectedIns[1].begin(); it.valid(); it.next())
         {
-            const uint& port(it.getValue());
-            CARLA_SAFE_ASSERT_CONTINUE(port < inCount);
+            const int& port(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(inCount));
 
             if (first)
             {
@@ -843,10 +843,10 @@ void CarlaEngineProtectedData::processRackFull(float** const inBuf, const uint32
     // connect output buffers
     if (rack->connectedOuts[0].count() != 0)
     {
-        for (LinkedList<uint>::Itenerator it = rack->connectedOuts[0].begin(); it.valid(); it.next())
+        for (LinkedList<int>::Itenerator it = rack->connectedOuts[0].begin(); it.valid(); it.next())
         {
-            const uint& port(it.getValue());
-            CARLA_SAFE_ASSERT_CONTINUE(port < outCount);
+            const int& port(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(outCount));
 
             FLOAT_ADD(outBuf[port], rack->out[0], nframes);
         }
@@ -854,10 +854,10 @@ void CarlaEngineProtectedData::processRackFull(float** const inBuf, const uint32
 
     if (rack->connectedOuts[1].count() != 0)
     {
-        for (LinkedList<uint>::Itenerator it = rack->connectedOuts[1].begin(); it.valid(); it.next())
+        for (LinkedList<int>::Itenerator it = rack->connectedOuts[1].begin(); it.valid(); it.next())
         {
-            const uint& port(it.getValue());
-            CARLA_SAFE_ASSERT_CONTINUE(port < outCount);
+            const int& port(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(outCount));
 
             FLOAT_ADD(outBuf[port], rack->out[1], nframes);
         }

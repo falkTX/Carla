@@ -88,7 +88,7 @@ public:
 
         if (pthread_create(&threadId, nullptr, _entryPoint, this) == 0)
         {
-#if (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012
+#if defined(__GLIBC__) && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012
             if (fName.isNotEmpty())
                 pthread_setname_np(threadId, fName.getBuffer());
 #endif

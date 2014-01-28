@@ -41,30 +41,33 @@ endif
 # --------------------------------------------------------------
 # Common build and link flags
 
-BASE_FLAGS = -Wall -Wextra -Wcast-qual -Wconversion -pipe -DREAL_BUILD
+BASE_FLAGS = -Wall -Wextra -pipe -DREAL_BUILD
 BASE_OPTS  = -O3 -ffast-math -mtune=generic -msse -msse2 -mfpmath=sse -fdata-sections -ffunction-sections
 LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,--gc-sections
 
 ifeq ($(TESTBUILD),true)
-# TODO: check which ones are valid on OSX
-BASE_FLAGS += -Wcast-align -Wredundant-decls -Wshadow
-BASE_FLAGS += -Wmissing-declarations -Wstrict-overflow -Wundef -Wwrite-strings -fstrict-overflow -Wsuggest-attribute=noreturn -Wunsafe-loop-optimizations
-BASE_FLAGS += -Werror
-CFLAGS     += -isystem /opt/kxstudio/include
-CFLAGS     += -Wstrict-prototypes -Wmissing-prototypes
-CXXFLAGS   += -isystem /opt/kxstudio/include
+BASE_FLAGS += -Werror -Wcast-align -Wcast-qual -Wconversion -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wundef -Wunsafe-loop-optimizations -Wwrite-strings
+CFLAGS     += -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes
 CXXFLAGS   += -Wnon-virtual-dtor -Woverloaded-virtual
+ifeq ($(LINUX),true)
+CFLAGS     += -isystem /opt/kxstudio/include
+CXXFLAGS   += -isystem /opt/kxstudio/include
 endif
-
-# -Wcast-align -Wredundant-decls -Wshadow -Wstrict-prototypes -Wmissing-prototypes
-# -Wmissing-declarations -Wstrict-overflow -Wundef -Wwrite-strings -fstrict-overflow -Wsuggest-attribute=noreturn -Wunsafe-loop-optimizations
-# -Wnon-virtual-dtor -Woverloaded-virtual
-# -Werror
-
-# -Waggregate-return -Wsign-conversion
+ifeq ($(MACOS),true)
+CFLAGS     += -isystem /opt/local/include/
+CXXFLAGS   += -isystem /opt/local/include/
+endif
+ifeq ($(WIN32),true)
+CFLAGS     += -isystem /opt/mingw32/include
+CXXFLAGS   += -isystem /opt/mingw32/include -isystem /opt/mingw32/include/qt4
+endif
+endif
 
 ifneq ($(MACOS),true)
 BASE_FLAGS += -Wlogical-op
+ifeq ($(TESTBUILD),true)
+BASE_FLAGS += -Wmissing-declarations -Wsign-conversion -Wsuggest-attribute=noreturn
+endif
 endif
 
 ifneq ($(WIN32),true)

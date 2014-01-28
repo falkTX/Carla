@@ -31,9 +31,9 @@ using juce::FloatVectorOperations;
 // Float operations
 
 #ifdef HAVE_JUCE
-# define FLOAT_ADD(bufDst, bufSrc, frames)  FloatVectorOperations::add(bufDst, bufSrc, frames)
-# define FLOAT_COPY(bufDst, bufSrc, frames) FloatVectorOperations::copy(bufDst, bufSrc, frames)
-# define FLOAT_CLEAR(buf, frames)           FloatVectorOperations::clear(buf, frames)
+# define FLOAT_ADD(bufDst, bufSrc, frames)  FloatVectorOperations::add(bufDst, bufSrc, static_cast<int>(frames))
+# define FLOAT_COPY(bufDst, bufSrc, frames) FloatVectorOperations::copy(bufDst, bufSrc, static_cast<int>(frames))
+# define FLOAT_CLEAR(buf, frames)           FloatVectorOperations::clear(buf, static_cast<int>(frames))
 #else
 # define FLOAT_ADD(bufDst, bufSrc, frames)  carla_addFloat(bufDst, bufSrc, frames)
 # define FLOAT_COPY(bufDst, bufSrc, frames) carla_copyFloat(bufDst, bufSrc, frames)

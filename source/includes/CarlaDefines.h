@@ -91,7 +91,7 @@
 # define P_INTPTR  "%i"
 # define P_UINTPTR "%x"
 # define P_SIZE    "%u"
-#elif __WORDSIZE == 64
+#elif defined(__WORDSIZE) && __WORDSIZE == 64
 # define P_INT64   "%li"
 # define P_INTPTR  "%li"
 # define P_UINTPTR "%lx"

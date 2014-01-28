@@ -1615,7 +1615,8 @@ bool CarlaEngine::patchbayConnect(const int portA, const int portB)
     connectionToId.portOut = portA;
     connectionToId.portIn  = portB;
 
-    callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, portA, portB, 0.0f, nullptr);
+    CARLA_SAFE_ASSERT(rack->lastConnectionId >= 0);
+    callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, static_cast<uint>(rack->lastConnectionId), portA, portB, 0.0f, nullptr);
 
     rack->usedConnections.append(connectionToId);
     rack->lastConnectionId++;
@@ -1693,7 +1694,8 @@ bool CarlaEngine::patchbayDisconnect(const int connectionId)
                 CARLA_SAFE_ASSERT_RETURN(false, false);
             }
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connection.id, connection.portOut, connection.portIn, 0.0f, nullptr);
+            CARLA_SAFE_ASSERT(connection.id >= 0);
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, static_cast<uint>(connection.id), connection.portOut, connection.portIn, 0.0f, nullptr);
 
             rack->usedConnections.remove(it);
             break;
@@ -1917,7 +1919,7 @@ void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
             plugin->bufferSizeChanged(newBufferSize);
     }
 
-    callback(ENGINE_CALLBACK_BUFFER_SIZE_CHANGED, 0, newBufferSize, 0, 0.0f, nullptr);
+    callback(ENGINE_CALLBACK_BUFFER_SIZE_CHANGED, 0, static_cast<int>(newBufferSize), 0, 0.0f, nullptr);
 }
 
 void CarlaEngine::sampleRateChanged(const double newSampleRate)
