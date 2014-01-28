@@ -41,7 +41,7 @@ LINK_FLAGS  += $(JUCE_GRAPHICS_LIBS)
 LINK_FLAGS  += $(JUCE_GUI_BASICS_LIBS)
 endif
 
-ifeq ($(HAVE_OPENGL),true)
+ifeq ($(HAVE_DGL),true)
 STATIC_LIBS += ../../modules/dgl.a
 LINK_FLAGS  += $(DGL_LIBS)
 endif

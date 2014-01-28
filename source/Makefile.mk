@@ -242,7 +242,7 @@ RTMIDI_FLAGS  += -D__RTMIDI_DEBUG__
 endif
 
 ifeq ($(LINUX),true)
-ifeq ($(HAVE_OPENGL),true)
+ifeq ($(HAVE_DGL),true)
 DGL_FLAGS                = $(shell pkg-config --cflags gl x11)
 DGL_LIBS                 = $(shell pkg-config --libs gl x11)
 endif

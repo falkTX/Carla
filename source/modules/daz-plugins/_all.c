@@ -107,7 +107,7 @@ void carla_register_all_plugins()
     carla_register_native_plugin_midifile();
 #endif
 
-#ifdef HAVE_OPENGL
+#ifdef HAVE_DGL
     // DISTRHO plugins (OpenGL)
     carla_register_native_plugin_3BandEQ();
     carla_register_native_plugin_3BandSplitter();

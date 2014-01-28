@@ -2215,6 +2215,8 @@ public:
 
             CARLA_SAFE_ASSERT_BREAK(fDescriptor != nullptr);
 
+            carla_debug("Check vs \"%s\"", fDescriptor->label);
+
             if (fDescriptor->label != nullptr && std::strcmp(fDescriptor->label, label) == 0)
                 break;
 

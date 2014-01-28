@@ -107,7 +107,7 @@ endif
 
 # --------------------------------------------------------------
 
-ifeq ($(HAVE_OPENGL),true)
+ifeq ($(HAVE_DGL),true)
 OBJS += \
 	distrho-3bandeq.cpp.o \
 	distrho-3bandsplitter.cpp.o \
@@ -234,28 +234,28 @@ audio-file.cpp.o: audio-file.cpp audio-base.hpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 distrho-3bandeq.cpp.o: distrho-3bandeq.cpp 3bandeq/*.cpp 3bandeq/*.h 3bandeq/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -I3bandeq -DDISTRHO_NAMESPACE=DISTRHO_3BandEQ -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -I3bandeq -DDISTRHO_NAMESPACE=DISTRHO_3BandEQ -c -o $@
 
 distrho-3bandsplitter.cpp.o: distrho-3bandsplitter.cpp 3bandsplitter/*.cpp 3bandsplitter/*.h 3bandsplitter/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -I3bandsplitter -DDISTRHO_NAMESPACE=DISTRHO_3BandSplitter -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -I3bandsplitter -DDISTRHO_NAMESPACE=DISTRHO_3BandSplitter -c -o $@
 
 distrho-nekobi.cpp.o: distrho-nekobi.cpp nekobi/*.cpp nekobi/*.h nekobi/*.hpp nekobi/nekobee-src/*.c nekobi/nekobee-src/*.h distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -Inekobi -DDISTRHO_NAMESPACE=DISTRHO_Nekobi -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Inekobi -DDISTRHO_NAMESPACE=DISTRHO_Nekobi -c -o $@
 
 distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/*.cpp pingpongpan/*.h pingpongpan/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -Ipingpongpan -DDISTRHO_NAMESPACE=DISTRHO_PingPongPan -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Ipingpongpan -DDISTRHO_NAMESPACE=DISTRHO_PingPongPan -c -o $@
 
 distrho-stereoenhancer.cpp.o: distrho-stereoenhancer.cpp stereoenhancer/*.cpp stereoenhancer/*.h stereoenhancer/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -Istereoenhancer -DDISTRHO_NAMESPACE=DISTRHO_StereoEnhancer -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Istereoenhancer -DDISTRHO_NAMESPACE=DISTRHO_StereoEnhancer -c -o $@
 
 distrho-bigmeter.cpp.o: distrho-bigmeter.cpp bigmeter/*.cpp bigmeter/*.h bigmeter/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -Ibigmeter -DDISTRHO_NAMESPACE=DISTRHO_BigMeter -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Ibigmeter -DDISTRHO_NAMESPACE=DISTRHO_BigMeter -c -o $@
 
 distrho-bigmeterM.cpp.o: distrho-bigmeterM.cpp bigmeterM/*.cpp bigmeterM/*.h bigmeterM/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -IbigmeterM -DDISTRHO_NAMESPACE=DISTRHO_BigMeterM -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -IbigmeterM -DDISTRHO_NAMESPACE=DISTRHO_BigMeterM -c -o $@
 
 distrho-notes.cpp.o: distrho-notes.cpp notes/*.cpp notes/*.h notes/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -Inotes -DDISTRHO_NAMESPACE=DISTRHO_Notes -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Inotes -DDISTRHO_NAMESPACE=DISTRHO_Notes -c -o $@
 
 midi-file.cpp.o: midi-file.cpp midi-base.hpp $(CXXDEPS)
 	$(CXX) $< $(MF_CXX_FLAGS) -c -o $@
