@@ -62,7 +62,7 @@ static void initRtApis()
     }
 }
 
-const char* getRtAudioApiName(const RtAudio::Api api)
+static const char* getRtAudioApiName(const RtAudio::Api api)
 {
     switch (api)
     {
@@ -98,7 +98,7 @@ const char* getRtAudioApiName(const RtAudio::Api api)
     return nullptr;
 }
 
-RtMidi::Api getMatchedAudioMidiAPi(const RtAudio::Api rtApi)
+static RtMidi::Api getMatchedAudioMidiAPi(const RtAudio::Api rtApi)
 {
     switch (rtApi)
     {

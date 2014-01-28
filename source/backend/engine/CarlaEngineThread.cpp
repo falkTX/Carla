@@ -55,13 +55,12 @@ void CarlaEngineThread::run()
         oscRegisted = fEngine->isOscControlRegistered();
 #endif
 
-        for (unsigned int i=0, count = fEngine->getCurrentPluginCount(); i < count; ++i)
+        for (uint i=0, count = fEngine->getCurrentPluginCount(); i < count; ++i)
         {
             CarlaPlugin* const plugin(fEngine->getPluginUnchecked(i));
 
             CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr && plugin->isEnabled());
-
-            CARLA_SAFE_ASSERT_INT2(i == plugin->getId(), i, plugin->getId());
+            CARLA_SAFE_ASSERT_UINT2(i == plugin->getId(), i, plugin->getId());
 
             needsSingleThread = (plugin->getHints() & PLUGIN_NEEDS_SINGLE_THREAD);
 
@@ -93,7 +92,7 @@ void CarlaEngineThread::run()
 #ifdef BUILD_BRIDGE
                         fEngine->oscSend_bridge_parameter_value(j, value);
 #else
-                        fEngine->oscSend_control_set_parameter_value(i, j, value);
+                        fEngine->oscSend_control_set_parameter_value(i, static_cast<int32_t>(j), value);
 #endif
                     }
                 }

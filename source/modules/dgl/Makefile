@@ -8,8 +8,8 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_C_FLAGS   += $(DGL_FLAGS) -I. -w
-BUILD_CXX_FLAGS += $(DGL_FLAGS) -I. -w
+BUILD_C_FLAGS   += $(DGL_FLAGS) -I.
+BUILD_CXX_FLAGS += $(DGL_FLAGS) -I.
 LINK_FLAGS      += $(DGL_LIBS)
 
 OBJS = \

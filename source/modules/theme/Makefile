@@ -8,7 +8,7 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I. -I../../includes -I../../utils -w
+BUILD_CXX_FLAGS += -I. -I../../includes -I../../utils
 
 ifeq ($(HAVE_QT4),true)
 QT4_CXX_FLAGS    = $(BUILD_CXX_FLAGS)

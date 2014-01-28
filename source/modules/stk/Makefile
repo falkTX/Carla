@@ -12,7 +12,7 @@ BUILD_CXX_FLAGS += $(STK_FLAGS) -I.
 LINK_FLAGS      += $(STK_LIBS)
 
 ifeq ($(MACOS),true)
-BUILD_CXX_FLAGS += -objc++
+BUILD_CXX_FLAGS += -ObjC++
 OBJS         = stk.mm.o
 OBJS_posix32 = stk.mm.posix32.o
 OBJS_posix64 = stk.mm.posix64.o

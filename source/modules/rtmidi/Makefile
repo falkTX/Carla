@@ -8,7 +8,7 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(RTMIDI_FLAGS) -I. -Iinclude -I.. -I../../includes -w
+BUILD_CXX_FLAGS += $(RTMIDI_FLAGS) -I. -Iinclude -I.. -I../../includes
 LINK_FLAGS      += $(RTMIDI_LIBS)
 
 OBJS = RtMidi.cpp.o

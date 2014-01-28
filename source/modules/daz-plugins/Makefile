@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 # Makefile for daz-plugins #
-# ---------------- #
+# ------------------------ #
 # Created by falkTX
 #
 
@@ -14,7 +14,7 @@ BUILD_CXX_FLAGS += -I. -I../../includes -I../../utils -I../distrho -isystem ..
 # --------------------------------------------------------------
 
 LINK_FLAGS      += -L..
-ifeq ($(HAVE_OPENGL),true)
+ifeq ($(HAVE_DGL),true)
 LINK_FLAGS      += -ldgl $(DGL_LIBS)
 endif
 ifeq ($(HAVE_JUCE),true)
@@ -67,7 +67,7 @@ endif
 
 # ZynAddSubFX
 ifeq ($(HAVE_ZYN_DEPS),true)
-ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS) -w
+ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS)
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags fftw3 mxml zlib)
 LINK_FLAGS    += $(shell pkg-config --libs fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
@@ -264,7 +264,7 @@ midi-sequencer.cpp.o: midi-sequencer.cpp midi-base.hpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 vex-%.cpp.o: vex-%.cpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) -w -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 zynaddsubfx-%.cpp.o: zynaddsubfx-%.cpp $(CXXDEPS) $(ZYN_UI_FILES_H)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@

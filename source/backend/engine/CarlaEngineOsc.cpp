@@ -200,7 +200,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     }
 
     // Get plugin id from path, "/carla/23/method" -> 23
-    unsigned int pluginId = 0;
+    uint pluginId = 0;
     size_t offset;
 
     if (isDigit(path[nameSize+2]))
@@ -216,23 +216,23 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
             {
                 // 3 digits, /xyz/method
                 offset    = 6;
-                pluginId += (path[nameSize+2]-'0')*100;
-                pluginId += (path[nameSize+3]-'0')*10;
-                pluginId += (path[nameSize+4]-'0');
+                pluginId += uint(path[nameSize+2]-'0')*100;
+                pluginId += uint(path[nameSize+3]-'0')*10;
+                pluginId += uint(path[nameSize+4]-'0');
             }
             else
             {
                 // 2 digits, /xy/method
                 offset    = 5;
-                pluginId += (path[nameSize+2]-'0')*10;
-                pluginId += (path[nameSize+3]-'0');
+                pluginId += uint(path[nameSize+2]-'0')*10;
+                pluginId += uint(path[nameSize+3]-'0');
             }
         }
         else
         {
             // single digit, /x/method
             offset    = 4;
-            pluginId += path[nameSize+2]-'0';
+            pluginId += uint(path[nameSize+2]-'0');
         }
     }
     else

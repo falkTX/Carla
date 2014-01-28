@@ -58,6 +58,9 @@ public:
         if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             CARLA_ASSERT(client != nullptr && port != nullptr);
+
+            if (jack_uuid_t uuid = jackbridge_port_uuid(port))
+                jackbridge_set_property(client, uuid, "urn:jack:IsControlVoltage", "NO", "text/plain");
         }
         else
         {
@@ -115,6 +118,9 @@ public:
         if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             CARLA_ASSERT(client != nullptr && port != nullptr);
+
+            if (jack_uuid_t uuid = jackbridge_port_uuid(port))
+                jackbridge_set_property(client, uuid, "urn:jack:IsControlVoltage", "YES", "text/plain");
         }
         else
         {
@@ -402,12 +408,18 @@ public:
                 port = jackbridge_port_register(fClient, name, JACK_DEFAULT_AUDIO_TYPE, isInput ? JackPortIsInput : JackPortIsOutput, 0);
                 break;
             case kEnginePortTypeCV:
-                port = jackbridge_port_register(fClient, name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsControlVoltage | (isInput ? JackPortIsInput : JackPortIsOutput), 0);
+                port = jackbridge_port_register(fClient, name, JACK_DEFAULT_AUDIO_TYPE, isInput ? JackPortIsInput : JackPortIsOutput, 0);
                 break;
             case kEnginePortTypeEvent:
                 port = jackbridge_port_register(fClient, name, JACK_DEFAULT_MIDI_TYPE, isInput ? JackPortIsInput : JackPortIsOutput, 0);
                 break;
             }
+        }
+
+        if (port == nullptr)
+        {
+            carla_stderr("CarlaEngineJackClient::addPort(%s, \"%s\", %s) - failed to create JACK port", EnginePortType2Str(portType), name, bool2str(isInput));
+            return nullptr;
         }
 
         // Create Engine port
@@ -1232,14 +1244,14 @@ protected:
 
         const int id(getGroupId(name)); // also checks name nullness
 
-        if (id == -1)
+        if (id < 0)
             return;
 
         GroupNameToId groupNameToId;
         groupNameToId.setData(id, name);
         fUsedGroupNames.removeAll(groupNameToId);
 
-        callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED, id, 0, 0, 0.0f, nullptr);
+        callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED, static_cast<uint>(id), 0, 0, 0.0f, nullptr);
     }
 
     void handleJackPortRegistrationCallback(const jack_port_id_t port, const bool reg)
@@ -1261,9 +1273,10 @@ protected:
         {
             const int jackPortFlags(jackbridge_port_flags(jackPort));
 
-            if (groupId == -1)
+            if (groupId < 0)
             {
                 groupId = fLastGroupId++;
+                CARLA_SAFE_ASSERT_RETURN(groupId >= 0,);
 
                 GroupNameToId groupNameToId;
                 groupNameToId.setData(groupId, groupName);
@@ -1271,12 +1284,12 @@ protected:
 
                 if (jackPortFlags & JackPortIsPhysical)
                 {
-                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, groupId, PATCHBAY_ICON_HARDWARE, 0, 0.0f, groupName);
+                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, static_cast<uint>(groupId), PATCHBAY_ICON_HARDWARE, 0, 0.0f, groupName);
                     // hardware
                 }
                 else
                 {
-                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, groupId, 0, 0, 0.0f, groupName);
+                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, static_cast<uint>(groupId), 0, 0, 0.0f, groupName);
                     //fGroupIconsChanged.append(groupId);
                     // "application"
                 }
@@ -1284,7 +1297,16 @@ protected:
 
             bool portIsInput = (jackPortFlags & JackPortIsInput);
             bool portIsAudio = (std::strcmp(jackbridge_port_type(jackPort), JACK_DEFAULT_AUDIO_TYPE) == 0);
-            bool portIsCV    = (jackPortFlags & JackPortIsControlVoltage);
+            bool portIsCV    = false;
+
+            if (jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
+            {
+                char* value = nullptr;
+                char* type  = nullptr;
+
+                if (jackbridge_get_property(uuid, "urn:jack:IsControlVoltage", &value, &type) && value != nullptr && type != nullptr && std::strcmp(type, "text/plain") == 0)
+                    portIsCV = (std::strcmp(value, "YES") == 0);
+            }
 
             unsigned int canvasPortFlags = 0x0;
             canvasPortFlags |= portIsInput ? PATCHBAY_PORT_IS_INPUT : 0x0;
@@ -1297,20 +1319,20 @@ protected:
             portNameToId.setData(groupId, fLastPortId++, portName, fullPortName);
             fUsedPortNames.append(portNameToId);
 
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, groupId, portNameToId.portId, canvasPortFlags, 0.0f, portName);
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, static_cast<uint>(groupId), portNameToId.portId, static_cast<int>(canvasPortFlags), 0.0f, portName);
         }
         else
         {
             const int portId(getPortId(fullPortName));
 
-            CARLA_SAFE_ASSERT_RETURN(groupId != -1,);
-            CARLA_SAFE_ASSERT_RETURN(portId != -1,);
+            CARLA_SAFE_ASSERT_RETURN(groupId >= 0,);
+            CARLA_SAFE_ASSERT_RETURN(portId >= 0,);
 
             PortNameToId portNameToId;
             portNameToId.setData(groupId, portId, portName, fullPortName);
             fUsedPortNames.removeOne(portNameToId);
 
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED, groupId, portId, 0, 0.0f, nullptr);
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED, static_cast<uint>(groupId), portId, 0, 0.0f, nullptr);
         }
     }
 
@@ -1338,7 +1360,7 @@ protected:
             connectionToId.setData(fLastConnectionId++, portIdA, portIdB);
             fUsedConnections.append(connectionToId);
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, static_cast<uint>(connectionToId.id), connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
         }
         else
         {
@@ -1348,7 +1370,7 @@ protected:
 
                 if (connectionToId.portOut == portIdA && connectionToId.portIn == portIdB)
                 {
-                    callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connectionToId.id, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
+                    callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, static_cast<uint>(connectionToId.id), connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
                     fUsedConnections.remove(it);
                     break;
                 }
@@ -1365,7 +1387,7 @@ protected:
             if (std::strcmp(groupNameToId.name, oldName) == 0)
             {
                 groupNameToId.rename(newName);
-                callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED, groupNameToId.id, 0, 0, 0.0f, newName);
+                callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED, static_cast<uint>(groupNameToId.id), 0, 0, 0.0f, newName);
                 break;
             }
         }
@@ -1384,7 +1406,7 @@ protected:
 
         const int groupId(getGroupId(groupName));
 
-        CARLA_SAFE_ASSERT_RETURN(groupId != -1,);
+        CARLA_SAFE_ASSERT_RETURN(groupId >= 0,);
 
         for (LinkedList<PortNameToId>::Itenerator it = fUsedPortNames.begin(); it.valid(); it.next())
         {
@@ -1394,7 +1416,7 @@ protected:
             {
                 CARLA_SAFE_ASSERT(portNameId.groupId == groupId);
                 portNameId.rename(portName, newName);
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED, groupId, portNameId.portId, 0, 0.0f, newName);
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED, static_cast<uint>(groupId), portNameId.portId, 0, 0.0f, newName);
                 break;
             }
         }
@@ -1653,7 +1675,7 @@ private:
             groupNameToId.setData(fLastGroupId++, ourName);
             fUsedGroupNames.append(groupNameToId);
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, groupNameToId.id, PATCHBAY_ICON_CARLA, 0, 0.0f, ourName);
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, 0 /* our client */, PATCHBAY_ICON_CARLA, 0, 0.0f, ourName);
         }
 
         if (const char** ports = jackbridge_get_ports(fClient, nullptr, nullptr, 0))
@@ -1682,7 +1704,7 @@ private:
                 if (parsedGroups.contains(qGroupName))
                 {
                     groupId = getGroupId(groupName);
-                    CARLA_SAFE_ASSERT(groupId != -1);
+                    CARLA_SAFE_ASSERT(groupId >= 0);
                 }
                 else
                 {
@@ -1725,12 +1747,21 @@ private:
                     }
 #endif
 
-                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, groupId, groupIcon, 0, 0.0f, groupName);
+                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, static_cast<uint>(groupId), groupIcon, 0, 0.0f, groupName);
                 }
 
                 bool portIsInput = (jackPortFlags & JackPortIsInput);
                 bool portIsAudio = (std::strcmp(jackbridge_port_type(jackPort), JACK_DEFAULT_AUDIO_TYPE) == 0);
-                bool portIsCV    = (portIsAudio && (jackPortFlags & JackPortIsControlVoltage) != 0);
+                bool portIsCV    = false;
+
+                if (jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
+                {
+                    char* value = nullptr;
+                    char* type  = nullptr;
+
+                    if (jackbridge_get_property(uuid, "urn:jack:IsControlVoltage", &value, &type) && value != nullptr && type != nullptr && std::strcmp(type, "text/plain") == 0)
+                        portIsCV = (std::strcmp(value, "YES") == 0);
+                }
 
                 unsigned int canvasPortFlags = 0x0;
                 canvasPortFlags |= portIsInput ? PATCHBAY_PORT_IS_INPUT : 0x0;
@@ -1743,7 +1774,7 @@ private:
                 portNameToId.setData(groupId, fLastPortId++, portName, fullPortName);
                 fUsedPortNames.append(portNameToId);
 
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, groupId, portNameToId.portId, canvasPortFlags, 0.0f, portName);
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, static_cast<uint>(groupId), portNameToId.portId, static_cast<int>(canvasPortFlags), 0.0f, portName);
             }
 
             // query connections, after all ports are in place
@@ -1767,7 +1798,7 @@ private:
                         connectionToId.setData(fLastConnectionId++, thisPortId, targetPortId);
                         fUsedConnections.append(connectionToId);
 
-                        callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
+                        callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, static_cast<uint>(connectionToId.id), connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
                     }
 
                     jackbridge_free(connections);
