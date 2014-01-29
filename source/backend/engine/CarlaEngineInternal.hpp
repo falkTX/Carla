@@ -96,6 +96,7 @@ struct EngineRackBuffers {
     ~EngineRackBuffers();
     void clear();
     void resize(const uint32_t bufferSize);
+    const char* const* getConnections() const;
 
     CARLA_DECLARE_NON_COPY_STRUCT(EngineRackBuffers)
 };
@@ -109,6 +110,7 @@ struct EnginePatchbayBuffers {
     ~EnginePatchbayBuffers();
     void clear();
     void resize(const uint32_t bufferSize);
+    const char* const* getConnections() const;
 
     CARLA_DECLARE_NON_COPY_STRUCT(EnginePatchbayBuffers)
 };

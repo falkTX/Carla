@@ -1055,6 +1055,12 @@ protected:
     virtual bool disconnectRackMidiInPort(const int)  { return false; }
     virtual bool disconnectRackMidiOutPort(const int) { return false; }
 
+    /*!
+     * Virtual functions for handling patchbay state.
+     */
+    virtual const char* const* getPatchbayConnections() const;
+    virtual void restorePatchbayConnection(const char* const sourcePort, const char* const targetPort);
+
     // -------------------------------------------------------------------
 
 private:

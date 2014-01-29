@@ -1352,6 +1352,7 @@ bool CarlaEngine::loadProject(const char* const filename)
         return false;
     }
 
+    // handle plugins first
     for (QDomNode node = xmlNode.firstChild(); ! node.isNull(); node = node.nextSibling())
     {
         if (isPreset || node.toElement().tagName().compare("plugin", Qt::CaseInsensitive) == 0)
@@ -1382,7 +1383,40 @@ bool CarlaEngine::loadProject(const char* const filename)
         }
 
         if (isPreset)
+            return true;
+    }
+
+    // now connections
+    for (QDomNode node = xmlNode.firstChild(); ! node.isNull(); node = node.nextSibling())
+    {
+        if (node.toElement().tagName().compare("patchbay", Qt::CaseInsensitive) == 0)
+        {
+            CarlaString sourcePort, targetPort;
+
+            for (QDomNode patchNode = node.firstChild(); ! patchNode.isNull(); patchNode = patchNode.nextSibling())
+            {
+                sourcePort.clear();
+                targetPort.clear();
+
+                if (patchNode.toElement().tagName().compare("connection", Qt::CaseInsensitive) != 0)
+                    continue;
+
+                for (QDomNode connNode = patchNode.firstChild(); ! connNode.isNull(); connNode = connNode.nextSibling())
+                {
+                    const QString tag(connNode.toElement().tagName());
+                    const QString text(connNode.toElement().text().trimmed());
+
+                    if (tag.compare("source", Qt::CaseInsensitive) == 0)
+                        sourcePort = text.toUtf8().constData();
+                    else if (tag.compare("target", Qt::CaseInsensitive) == 0)
+                        targetPort = text.toUtf8().constData();
+                }
+
+                if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
+                    restorePatchbayConnection(sourcePort.getBuffer(), targetPort.getBuffer());
+            }
             break;
+        }
     }
 
     return true;
@@ -1431,6 +1465,30 @@ bool CarlaEngine::saveProject(const char* const filename)
 
             firstPlugin = false;
         }
+    }
+
+    if (const char* const* patchbayConns = getPatchbayConnections())
+    {
+        out << " <Patchbay>\n";
+
+        for (int i=0; patchbayConns[i] != nullptr && patchbayConns[i+1] != nullptr; ++i, ++i )
+        {
+            const char* const connSource(patchbayConns[i]);
+            const char* const connTarget(patchbayConns[i+1]);
+
+            CARLA_SAFE_ASSERT_CONTINUE(connSource != nullptr && connSource[0] != '\0');
+            CARLA_SAFE_ASSERT_CONTINUE(connTarget != nullptr && connTarget[0] != '\0');
+
+            out << "  <Connection>\n";
+            out << "   <Source>" << connSource << "</Source>\n";
+            out << "   <Target>" << connTarget << "</Target>\n";
+            out << "  </Connection>\n";
+
+            delete[] connSource;
+            delete[] connTarget;
+        }
+
+        out << " </Patchbay>\n";
     }
 
     out << "</CARLA-PROJECT>\n";
@@ -1646,24 +1704,28 @@ bool CarlaEngine::patchbayDisconnect(const uint connectionId)
 
         if (connection.id == connectionId)
         {
-            const int targetPort((connection.portOut >= 0) ? connection.portOut : connection.portIn);
-            const int carlaPort((targetPort == connection.portOut) ? connection.portIn : connection.portOut);
+            const int otherPort((connection.portOut >= 0) ? connection.portOut : connection.portIn);
+            const int carlaPort((otherPort == connection.portOut) ? connection.portIn : connection.portOut);
 
-            if (targetPort >= RACK_PATCHBAY_GROUP_MIDI_OUT*1000)
+            if (otherPort >= RACK_PATCHBAY_GROUP_MIDI_OUT*1000)
             {
-                const int portId(targetPort-RACK_PATCHBAY_GROUP_MIDI_OUT*1000);
+                CARLA_SAFE_ASSERT_RETURN(carlaPort == RACK_PATCHBAY_PORT_MIDI_IN, false);
+
+                const int portId(otherPort-RACK_PATCHBAY_GROUP_MIDI_OUT*1000);
                 disconnectRackMidiInPort(portId);
             }
-            else if (targetPort >= RACK_PATCHBAY_GROUP_MIDI_IN*1000)
+            else if (otherPort >= RACK_PATCHBAY_GROUP_MIDI_IN*1000)
             {
-                const int portId(targetPort-RACK_PATCHBAY_GROUP_MIDI_IN*1000);
+                CARLA_SAFE_ASSERT_RETURN(carlaPort == RACK_PATCHBAY_PORT_MIDI_OUT, false);
+
+                const int portId(otherPort-RACK_PATCHBAY_GROUP_MIDI_IN*1000);
                 disconnectRackMidiOutPort(portId);
             }
-            else if (targetPort >= RACK_PATCHBAY_GROUP_AUDIO_OUT*1000)
+            else if (otherPort >= RACK_PATCHBAY_GROUP_AUDIO_OUT*1000)
             {
                 CARLA_SAFE_ASSERT_RETURN(carlaPort == RACK_PATCHBAY_PORT_AUDIO_OUT1 || carlaPort == RACK_PATCHBAY_PORT_AUDIO_OUT2, false);
 
-                const int portId(targetPort-RACK_PATCHBAY_GROUP_AUDIO_OUT*1000);
+                const int portId(otherPort-RACK_PATCHBAY_GROUP_AUDIO_OUT*1000);
 
                 rack->connectLock.lock();
 
@@ -1674,11 +1736,11 @@ bool CarlaEngine::patchbayDisconnect(const uint connectionId)
 
                 rack->connectLock.unlock();
             }
-            else if (targetPort >= RACK_PATCHBAY_GROUP_AUDIO_IN*1000)
+            else if (otherPort >= RACK_PATCHBAY_GROUP_AUDIO_IN*1000)
             {
                 CARLA_SAFE_ASSERT_RETURN(carlaPort == RACK_PATCHBAY_PORT_AUDIO_IN1 || carlaPort == RACK_PATCHBAY_PORT_AUDIO_IN2, false);
 
-                const int portId(targetPort-RACK_PATCHBAY_GROUP_AUDIO_IN*1000);
+                const int portId(otherPort-RACK_PATCHBAY_GROUP_AUDIO_IN*1000);
 
                 rack->connectLock.lock();
 
@@ -1697,11 +1759,12 @@ bool CarlaEngine::patchbayDisconnect(const uint connectionId)
             callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connection.id, connection.portOut, connection.portIn, 0.0f, nullptr);
 
             rack->usedConnections.remove(it);
-            break;
+            return true;
         }
     }
 
-    return true;
+    setLastError("Failed to find connection");
+    return false;
 }
 
 bool CarlaEngine::patchbayRefresh()
@@ -1971,6 +2034,88 @@ void CarlaEngine::setPluginPeaks(const unsigned int pluginId, float const inPeak
     pluginData.insPeak[1]  = inPeaks[1];
     pluginData.outsPeak[0] = outPeaks[0];
     pluginData.outsPeak[1] = outPeaks[1];
+}
+
+// -----------------------------------------------------------------------
+// Patchbay stuff
+
+const char* const* CarlaEngine::getPatchbayConnections() const
+{
+    carla_debug("CarlaEngine::getPatchbayConnections()");
+
+    if (pData->bufAudio.usePatchbay)
+    {
+        CARLA_SAFE_ASSERT_RETURN(pData->bufAudio.patchbay != nullptr, nullptr);
+        return pData->bufAudio.patchbay->getConnections();
+    }
+    else
+    {
+        CARLA_SAFE_ASSERT_RETURN(pData->bufAudio.rack != nullptr, nullptr);
+        return pData->bufAudio.rack->getConnections();
+    }
+}
+
+static int getCarlaPortIdFromName(const char* const shortname) noexcept
+{
+    if (std::strcmp(shortname, "AudioIn1") == 0)
+        return RACK_PATCHBAY_PORT_AUDIO_IN1;
+    if (std::strcmp(shortname, "AudioIn2") == 0)
+        return RACK_PATCHBAY_PORT_AUDIO_IN2;
+    if (std::strcmp(shortname, "AudioOut1") == 0)
+        return RACK_PATCHBAY_PORT_AUDIO_OUT1;
+    if (std::strcmp(shortname, "AudioOut2") == 0)
+        return RACK_PATCHBAY_PORT_AUDIO_OUT2;
+    if (std::strcmp(shortname, "MidiIn") == 0)
+        return RACK_PATCHBAY_PORT_MIDI_IN;
+    if (std::strcmp(shortname, "MidiOut") == 0)
+        return RACK_PATCHBAY_PORT_MIDI_OUT;
+    return RACK_PATCHBAY_PORT_MAX;
+}
+
+void CarlaEngine::restorePatchbayConnection(const char* const connSource, const char* const connTarget)
+{
+    carla_debug("CarlaEngine::restorePatchbayConnection(\"%s\", \"%s\")", connSource, connTarget);
+
+    CARLA_SAFE_ASSERT_RETURN(connSource != nullptr && connSource[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(connTarget != nullptr && connTarget[0] != '\0',);
+
+    if (pData->bufAudio.usePatchbay)
+    {
+        // TODO
+    }
+    else
+    {
+        int sourcePort, targetPort;
+
+        if (std::strncmp(connSource, "Carla:", 6) == 0)
+            sourcePort = getCarlaPortIdFromName(connSource+6);
+        else if (std::strncmp(connSource, "AudioIn:", 8) == 0)
+            sourcePort = std::atoi(connSource+8) + RACK_PATCHBAY_GROUP_AUDIO_IN*1000 - 1;
+        else if (std::strncmp(connSource, "AudioOut:", 9) == 0)
+            sourcePort = std::atoi(connSource+9) + RACK_PATCHBAY_GROUP_AUDIO_OUT*1000 - 1;
+        else if (std::strncmp(connSource, "MidiIn:", 7) == 0)
+            sourcePort = std::atoi(connSource+7) + RACK_PATCHBAY_GROUP_MIDI_IN*1000 - 1;
+        else if (std::strncmp(connSource, "MidiOut:", 8) == 0)
+            sourcePort = std::atoi(connSource+8) + RACK_PATCHBAY_GROUP_MIDI_OUT*1000 - 1;
+        else
+            sourcePort = RACK_PATCHBAY_PORT_MAX;
+
+        if (std::strncmp(connTarget, "Carla:", 6) == 0)
+            targetPort = getCarlaPortIdFromName(connTarget+6);
+        else if (std::strncmp(connTarget, "AudioIn:", 8) == 0)
+            targetPort = std::atoi(connTarget+8) + RACK_PATCHBAY_GROUP_AUDIO_IN*1000 - 1;
+        else if (std::strncmp(connTarget, "AudioOut:", 9) == 0)
+            targetPort = std::atoi(connTarget+9) + RACK_PATCHBAY_GROUP_AUDIO_OUT*1000 - 1;
+        else if (std::strncmp(connTarget, "MidiIn:", 7) == 0)
+            targetPort = std::atoi(connTarget+7) + RACK_PATCHBAY_GROUP_MIDI_IN*1000 - 1;
+        else if (std::strncmp(connTarget, "MidiOut:", 8) == 0)
+            targetPort = std::atoi(connTarget+8) + RACK_PATCHBAY_GROUP_MIDI_OUT*1000 - 1;
+        else
+            targetPort = RACK_PATCHBAY_PORT_MAX;
+
+        if (sourcePort != RACK_PATCHBAY_PORT_MAX && targetPort != RACK_PATCHBAY_PORT_MAX)
+            patchbayConnect(targetPort, sourcePort);
+    }
 }
 
 // -----------------------------------------------------------------------
