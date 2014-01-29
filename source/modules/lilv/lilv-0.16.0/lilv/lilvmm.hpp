@@ -302,19 +302,19 @@ struct World {
 	inline World() : me(lilv_world_new()) {}
 	inline ~World() { lilv_world_free(me); }
 
-	inline LilvNode* new_uri(const char* uri) {
+	inline LilvNode* new_uri(const char* uri) const {
 		return lilv_new_uri(me, uri);
 	}
-	inline LilvNode* new_string(const char* str) {
+	inline LilvNode* new_string(const char* str) const {
 		return lilv_new_string(me, str);
 	}
-	inline LilvNode* new_int(int val) {
+	inline LilvNode* new_int(int val) const {
 		return lilv_new_int(me, val);
 	}
-	inline LilvNode* new_float(float val) {
+	inline LilvNode* new_float(float val) const {
 		return lilv_new_float(me, val);
 	}
-	inline LilvNode* new_bool(bool val) {
+	inline LilvNode* new_bool(bool val) const {
 		return lilv_new_bool(me, val);
 	}
 	inline Nodes find_nodes(const LilvNode* subject,

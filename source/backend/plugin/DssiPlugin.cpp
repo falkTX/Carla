@@ -574,8 +574,6 @@ public:
 
                 if (min > max)
                     max = min;
-                else if (max < min)
-                    min = max;
 
                 if (max - min == 0.0f)
                 {
@@ -1421,7 +1419,6 @@ public:
                     pData->event.portOut->writeControlEvent(0, channel, kEngineControlEventTypeParameter, param, value);
                 }
             }
-
         } // End of Control Output
     }
 
@@ -1957,6 +1954,8 @@ public:
         return true;
     }
 
+    // -------------------------------------------------------------------
+
 private:
     LADSPA_Handle fHandle;
     LADSPA_Handle fHandle2;
@@ -2015,6 +2014,8 @@ CARLA_BACKEND_END_NAMESPACE
 
 #endif // WANT_DSSI
 
+// -------------------------------------------------------------------------------------------------------------------
+
 CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init)
@@ -2047,3 +2048,5 @@ CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init)
 }
 
 CARLA_BACKEND_END_NAMESPACE
+
+// -------------------------------------------------------------------------------------------------------------------

@@ -331,7 +331,7 @@ public:
         return lv2World;
     }
 
-    const LilvPlugin* getPlugin(const LV2_URI uri) /*const*/
+    const LilvPlugin* getPlugin(const LV2_URI uri) const
     {
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', nullptr);
 
@@ -363,7 +363,7 @@ public:
         return cPlugin;
     }
 
-    const LilvState* getState(const LV2_URI uri, const LV2_URID_Map* const uridMap) /*const*/
+    const LilvState* getState(const LV2_URI uri, const LV2_URID_Map* const uridMap) const
     {
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', nullptr);
         CARLA_SAFE_ASSERT_RETURN(uridMap != nullptr, nullptr);
@@ -1254,7 +1254,6 @@ bool is_lv2_feature_supported(const LV2_URI uri)
     // TODO
     return false;
 
-#ifndef BRIDGE_LV2
     if (std::strcmp(uri, LV2_CORE__hardRTCapable) == 0)
         return true;
     if (std::strcmp(uri, LV2_CORE__inPlaceBroken) == 0)
@@ -1269,35 +1268,28 @@ bool is_lv2_feature_supported(const LV2_URI uri)
         return true;
     if (std::strcmp(uri, LV2_EVENT_URI) == 0)
         return true;
-#endif
     if (std::strcmp(uri, LV2_LOG__log) == 0)
         return true;
     if (std::strcmp(uri, LV2_OPTIONS__options) == 0)
         return true;
     if (std::strcmp(uri, LV2_PROGRAMS__Host) == 0)
         return true;
-#ifndef BRIDGE_LV2
     if (std::strcmp(uri, LV2_RTSAFE_MEMORY_POOL__Pool) == 0)
         return true;
-#endif
     if (std::strcmp(uri, LV2_STATE__makePath) == 0)
         return true;
     if (std::strcmp(uri, LV2_STATE__mapPath) == 0)
         return true;
-#ifndef BRIDGE_LV2
     if (std::strcmp(uri, LV2_PORT_PROPS__supportsStrictBounds) == 0)
         return true;
-#endif
     if (std::strcmp(uri, LV2_URI_MAP_URI) == 0)
         return true;
     if (std::strcmp(uri, LV2_URID__map) == 0)
         return true;
     if (std::strcmp(uri, LV2_URID__unmap) == 0)
         return true;
-#ifndef BRIDGE_LV2
     if (std::strcmp(uri, LV2_WORKER__schedule) == 0)
-        return false; // TODO
-#endif
+        return true;
     return false;
 }
 
@@ -1307,7 +1299,10 @@ bool is_lv2_feature_supported(const LV2_URI uri)
 static inline
 bool is_lv2_ui_feature_supported(const LV2_URI uri)
 {
-    CARLA_SAFE_ASSERT_RETURN(uri != nullptr, false);
+    CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', false);
+
+    // TODO
+    return false;
 
     if (is_lv2_feature_supported(uri))
         return true;

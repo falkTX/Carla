@@ -17,7 +17,7 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaLibUtils.hpp"
-#include "CarlaString.hpp"
+#include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 
 #ifdef HAVE_JUCE
@@ -1109,14 +1109,14 @@ static void do_lv2_check(const char* const bundle, const bool init)
             }
         }
 
-        int hints = 0x0;
+        uint hints = 0x0;
         int audioIns = 0;
         int audioOuts = 0;
         int midiIns = 0;
         int midiOuts = 0;
         int parametersIns = 0;
         int parametersOuts = 0;
-        int programs = rdfDescriptor->PresetCount;
+        uint programs = rdfDescriptor->PresetCount;
 
         for (uint32_t j=0; j < rdfDescriptor->FeatureCount; ++j)
         {
@@ -1172,7 +1172,7 @@ static void do_lv2_check(const char* const bundle, const bool init)
             }
         }
 
-        if (rdfDescriptor->Type[1] & LV2_PLUGIN_INSTRUMENT)
+        if (LV2_IS_GENERATOR(rdfDescriptor->Type[0], rdfDescriptor->Type[1]))
             hints |= PLUGIN_IS_SYNTH;
 
         if (rdfDescriptor->UICount > 0)

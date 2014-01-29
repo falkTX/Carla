@@ -158,7 +158,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, 0);
 
-        return fRdfDescriptor->UniqueID;
+        return static_cast<long>(fRdfDescriptor->UniqueID);
     }
 
     // -------------------------------------------------------------------
@@ -207,8 +207,8 @@ public:
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            const LV2_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
-            return port.ScalePointCount;
+            const LV2_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
+            return port->ScalePointCount;
         }
 
         return 0;
@@ -224,7 +224,7 @@ public:
 
     unsigned int getOptionsAvailable() const noexcept override
     {
-        const uint32_t hasMidiIn(getMidiInCount() > 0);
+        const bool hasMidiIn(getMidiInCount() > 0);
 
         unsigned int options = 0x0;
 
@@ -274,12 +274,12 @@ public:
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            const LV2_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
+            const LV2_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
 
-            if (scalePointId < port.ScalePointCount)
+            if (scalePointId < port->ScalePointCount)
             {
-                const LV2_RDF_PortScalePoint& portScalePoint(port.ScalePoints[scalePointId]);
-                return portScalePoint.Value;
+                const LV2_RDF_PortScalePoint* const portScalePoint(&port->ScalePoints[scalePointId]);
+                return portScalePoint->Value;
             }
         }
 
@@ -291,10 +291,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor->URI != nullptr,);
 
-        if (fRdfDescriptor->URI != nullptr)
-            std::strncpy(strBuf, fRdfDescriptor->URI, STR_MAX);
-        else
-            CarlaPlugin::getLabel(strBuf);
+        std::strncpy(strBuf, fRdfDescriptor->URI, STR_MAX);
     }
 
     void getMaker(char* const strBuf) const noexcept override
@@ -362,16 +359,17 @@ public:
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            const LV2_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
+            const LV2_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
 
-            if (LV2_HAVE_PORT_UNIT_SYMBOL(port.Unit.Hints) && port.Unit.Symbol != nullptr)
+            if (LV2_HAVE_PORT_UNIT_SYMBOL(port->Unit.Hints) && port->Unit.Symbol != nullptr)
             {
-                std::strncpy(strBuf, port.Unit.Symbol, STR_MAX);
+                std::strncpy(strBuf, port->Unit.Symbol, STR_MAX);
                 return;
             }
-            else if (LV2_HAVE_PORT_UNIT_UNIT(port.Unit.Hints))
+
+            if (LV2_HAVE_PORT_UNIT_UNIT(port->Unit.Hints))
             {
-                switch (port.Unit.Unit)
+                switch (port->Unit.Unit)
                 {
                 case LV2_PORT_UNIT_BAR:
                     std::strncpy(strBuf, "bars", STR_MAX);
@@ -462,15 +460,15 @@ public:
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            const LV2_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
+            const LV2_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
 
-            if (scalePointId < port.ScalePointCount)
+            if (scalePointId < port->ScalePointCount)
             {
-                const LV2_RDF_PortScalePoint& portScalePoint(port.ScalePoints[scalePointId]);
+                const LV2_RDF_PortScalePoint* const portScalePoint(&port->ScalePoints[scalePointId]);
 
-                if (portScalePoint.Label != nullptr)
+                if (portScalePoint->Label != nullptr)
                 {
-                    std::strncpy(strBuf, portScalePoint.Label, STR_MAX);
+                    std::strncpy(strBuf, portScalePoint->Label, STR_MAX);
                     return;
                 }
             }
@@ -480,10 +478,21 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // Set data (state)
+
+    // nothing
+
+    // -------------------------------------------------------------------
+    // Set data (internal stuff)
+
+    // nothing
+
+    // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
     void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
+        CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
@@ -491,6 +500,11 @@ public:
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
+
+    // -------------------------------------------------------------------
+    // Set ui stuff
+
+    // nothing
 
     // -------------------------------------------------------------------
     // Plugin state
@@ -514,9 +528,9 @@ public:
         clearBuffers();
 
         const float sampleRate(static_cast<float>(pData->engine->getSampleRate()));
-        const uint32_t portCount(static_cast<uint32_t>(fRdfDescriptor->PortCount));
+        const uint32_t portCount(fRdfDescriptor->PortCount);
 
-        uint32_t aIns, aOuts, params, j;
+        uint32_t aIns, aOuts, params;
         aIns = aOuts = params = 0;
 
         bool forcedStereoIn, forcedStereoOut;
@@ -525,19 +539,22 @@ public:
         bool needsCtrlIn, needsCtrlOut;
         needsCtrlIn = needsCtrlOut = false;
 
-        for (uint32_t i=0; i < portCount; ++i)
+        if (portCount > 0)
         {
-            const LV2_Property portTypes(fRdfDescriptor->Ports[i].Types);
-
-            if (LV2_IS_PORT_AUDIO(portTypes))
+            for (uint32_t i=0; i < portCount; ++i)
             {
-                if (LV2_IS_PORT_INPUT(portTypes))
-                    aIns += 1;
-                else if (LV2_IS_PORT_OUTPUT(portTypes))
-                    aOuts += 1;
+                const LV2_Property portTypes(fRdfDescriptor->Ports[i].Types);
+
+                if (LV2_IS_PORT_AUDIO(portTypes))
+                {
+                    if (LV2_IS_PORT_INPUT(portTypes))
+                        aIns += 1;
+                    else if (LV2_IS_PORT_OUTPUT(portTypes))
+                        aOuts += 1;
+                }
+                else if (LV2_IS_PORT_CONTROL(portTypes))
+                    params += 1;
             }
-            else if (LV2_IS_PORT_CONTROL(portTypes))
-                params += 1;
         }
 
         if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && (aIns == 1 || aOuts == 1) /*&& fExt.state == nullptr && fExt.worker == nullptr*/)
@@ -613,7 +630,7 @@ public:
             {
                 if (LV2_IS_PORT_INPUT(portTypes))
                 {
-                    j = iAudioIn++;
+                    uint32_t j = iAudioIn++;
                     pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
                     pData->audioIn.ports[j].rindex = i;
 
@@ -626,7 +643,7 @@ public:
                 }
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
                 {
-                    j = iAudioOut++;
+                    uint32_t j = iAudioOut++;
                     pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
                     pData->audioOut.ports[j].rindex = i;
 
@@ -638,7 +655,7 @@ public:
                     }
                 }
                 else
-                    carla_stderr("WARNING - Got a broken Port (Audio, but not input or output)");
+                    carla_stderr2("WARNING - Got a broken Port (Audio, but not input or output)");
             }
             else if (LV2_IS_PORT_CONTROL(portTypes))
             {
@@ -646,13 +663,14 @@ public:
                 const LV2_Property portDesignation(fRdfDescriptor->Ports[i].Designation);
                 const LV2_RDF_PortPoints portPoints(fRdfDescriptor->Ports[i].Points);
 
-                j = iCtrl++;
+                uint32_t j = iCtrl++;
                 pData->param.data[j].type   = PARAMETER_UNKNOWN;
                 pData->param.data[j].hints  = 0x0;
-                pData->param.data[j].index  = j;
-                pData->param.data[j].rindex = i;
+                pData->param.data[j].index  = static_cast<int32_t>(j);
+                pData->param.data[j].rindex = static_cast<int32_t>(i);
                 pData->param.data[j].midiCC = -1;
                 pData->param.data[j].midiChannel = 0;
+                pData->param.special[j] = PARAMETER_SPECIAL_NULL;
 
                 float min, max, def, step, stepSmall, stepLarge;
 
@@ -670,8 +688,6 @@ public:
 
                 if (min > max)
                     max = min;
-                else if (max < min)
-                    min = max;
 
                 // stupid hack for ir.lv2 (broken plugin)
                 if (std::strcmp(fRdfDescriptor->URI, "http://factorial.hu/plugins/lv2/ir") == 0 && std::strncmp(fRdfDescriptor->Ports[i].Name, "FileHash", 8) == 0)
@@ -743,21 +759,17 @@ public:
                     }
                     else if (LV2_IS_PORT_DESIGNATION_SAMPLE_RATE(portDesignation))
                     {
-                        def = sampleRate;
-                        step = 1.0f;
-                        stepSmall = 1.0f;
-                        stepLarge = 1.0f;
-
-                        //pData->param.data[j].type  = PARAMETER_SAMPLE_RATE;
-                        pData->param.data[j].hints = 0x0;
+                        carla_stderr("Plugin has sample-rate input port, this is not supported!");
                     }
                     else if (LV2_IS_PORT_DESIGNATION_FREEWHEELING(portDesignation))
                     {
-                        //pData->param.data[j].type = PARAMETER_LV2_FREEWHEEL;
+                        pData->param.data[j].type = PARAMETER_SPECIAL;
+                        pData->param.special[j]   = PARAMETER_SPECIAL_LV2_FREEWHEEL;
                     }
                     else if (LV2_IS_PORT_DESIGNATION_TIME(portDesignation))
                     {
-                        //pData->param.data[j].type = PARAMETER_LV2_TIME;
+                        pData->param.data[j].type = PARAMETER_SPECIAL;
+                        pData->param.special[j]   = PARAMETER_SPECIAL_LV2_TIME;
                     }
                     else
                     {
@@ -787,8 +799,8 @@ public:
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
 
-                        //pData->param.data[j].type  = PARAMETER_LATENCY;
-                        pData->param.data[j].hints = 0x0;
+                        pData->param.data[j].type = PARAMETER_SPECIAL;
+                        pData->param.special[j]   = PARAMETER_SPECIAL_LATENCY;
                     }
                     else if (LV2_IS_PORT_DESIGNATION_SAMPLE_RATE(portDesignation))
                     {
@@ -797,8 +809,8 @@ public:
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
 
-                        //pData->param.data[j].type  = PARAMETER_SAMPLE_RATE;
-                        pData->param.data[j].hints = 0x0;
+                        pData->param.data[j].type = PARAMETER_SPECIAL;
+                        pData->param.special[j]   = PARAMETER_SPECIAL_SAMPLE_RATE;
                     }
                     else if (LV2_IS_PORT_DESIGNATION_FREEWHEELING(portDesignation))
                     {
@@ -806,7 +818,7 @@ public:
                     }
                     else if (LV2_IS_PORT_DESIGNATION_TIME(portDesignation))
                     {
-                        //pData->param.data[j].type = PARAMETER_LV2_TIME;
+                        carla_stderr("Plugin has time output port, this is not supported!");
                     }
                     else
                     {
@@ -818,14 +830,10 @@ public:
                 }
                 else
                 {
-                    pData->param.data[j].type = PARAMETER_UNKNOWN;
                     carla_stderr2("WARNING - Got a broken Port (Control, but not input or output)");
                 }
 
                 // extra parameter hints
-                if (LV2_IS_PORT_ENUMERATION(portProps))
-                    pData->param.data[j].hints |= PARAMETER_USES_SCALEPOINTS;
-
                 if (LV2_IS_PORT_LOGARITHMIC(portProps))
                     pData->param.data[j].hints |= PARAMETER_IS_LOGARITHMIC;
 
@@ -835,11 +843,12 @@ public:
                 if (LV2_IS_PORT_STRICT_BOUNDS(portProps))
                     pData->param.data[j].hints |= PARAMETER_IS_STRICT_BOUNDS;
 
+                if (LV2_IS_PORT_ENUMERATION(portProps))
+                    pData->param.data[j].hints |= PARAMETER_USES_SCALEPOINTS;
+
                 // check if parameter is not enabled or automable
                 if (LV2_IS_PORT_NOT_ON_GUI(portProps))
-                {
                     pData->param.data[j].hints &= ~(PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE);
-                }
                 else if (LV2_IS_PORT_CAUSES_ARTIFACTS(portProps) || LV2_IS_PORT_EXPENSIVE(portProps) || LV2_IS_PORT_NOT_AUTOMATIC(portProps))
                     pData->param.data[j].hints &= ~PARAMETER_IS_AUTOMABLE;
 
@@ -850,11 +859,11 @@ public:
                 pData->param.ranges[j].stepSmall = stepSmall;
                 pData->param.ranges[j].stepLarge = stepLarge;
 
-                // Start parameters in their default values
-                //if (pData->param.data[j].type != PARAMETER_LV2_FREEWHEEL)
+                // Start parameters in their default values (except freewheel, which is off by default)
+                if (pData->param.data[j].type != PARAMETER_SPECIAL && pData->param.special[j] != PARAMETER_SPECIAL_LV2_FREEWHEEL)
                     fParamBuffers[j] = def;
-                //else
-                //    fParamBuffers[j] = min;
+                else
+                    fParamBuffers[j] = min;
 
                 fDescriptor->connect_port(fHandle, i, &fParamBuffers[j]);
 
@@ -927,10 +936,16 @@ public:
             pData->hints |= PLUGIN_CAN_BALANCE;
 
         // extra plugin hints
-        pData->extraHints &= ~PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
+        pData->extraHints = 0x0;
+
+        if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0))
+            pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK; // FIXME
 
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
+
+        // check latency
+        // TODO
 
         if (pData->active)
             activate();
@@ -983,17 +998,29 @@ public:
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
     {
-        uint32_t i, k;
-
         // --------------------------------------------------------------------------------------------------------
         // Check if active
 
         if (! pData->active)
         {
             // disable any output sound
-            for (i=0; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
                 FLOAT_CLEAR(outBuffer[i], frames);
             return;
+        }
+
+        // --------------------------------------------------------------------------------------------------------
+        // Check if needs reset
+
+        if (pData->needsReset)
+        {
+            if (pData->latency > 0)
+            {
+                for (uint32_t i=0; i < pData->audioIn.count; ++i)
+                    FLOAT_CLEAR(pData->latencyBuffers[i], pData->latency);
+            }
+
+            pData->needsReset = false;
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -1004,6 +1031,8 @@ public:
 
         } // End of Plugin processing (no events)
 
+        CARLA_PROCESS_CONTINUE_CHECK;
+
         // --------------------------------------------------------------------------------------------------------
         // Control Output
 
@@ -1013,13 +1042,12 @@ public:
             uint16_t param;
             float    value;
 
-            for (k=0; k < pData->param.count; ++k)
+            for (uint32_t k=0; k < pData->param.count; ++k)
             {
                 if (pData->param.data[k].type != PARAMETER_OUTPUT)
                     continue;
 
-                if (pData->param.data[k].hints & PARAMETER_IS_STRICT_BOUNDS)
-                    pData->param.ranges[k].fixValue(fParamBuffers[k]);
+                pData->param.ranges[k].fixValue(fParamBuffers[k]);
 
                 if (pData->param.data[k].midiCC > 0)
                 {
@@ -1029,12 +1057,7 @@ public:
                     pData->event.portOut->writeControlEvent(0, channel, kEngineControlEventTypeParameter, param, value);
                 }
             }
-
         } // End of Control Output
-
-        CARLA_PROCESS_CONTINUE_CHECK;
-
-        // --------------------------------------------------------------------------------------------------------
     }
 
     bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
@@ -1050,8 +1073,6 @@ public:
             CARLA_SAFE_ASSERT_RETURN(outBuffer != nullptr, false);
         }
 
-        uint32_t i, k;
-
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
 
@@ -1061,9 +1082,9 @@ public:
         }
         else if (! pData->singleMutex.tryLock())
         {
-            for (i=0; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
-                for (k=0; k < frames; ++k)
+                for (uint32_t k=0; k < frames; ++k)
                     outBuffer[i][k+timeOffset] = 0.0f;
             }
 
@@ -1073,10 +1094,10 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Reset audio buffers
 
-        for (i=0; i < pData->audioIn.count; ++i)
+        for (uint32_t i=0; i < pData->audioIn.count; ++i)
             FLOAT_COPY(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
 
-        for (i=0; i < pData->audioOut.count; ++i)
+        for (uint32_t i=0; i < pData->audioOut.count; ++i)
             FLOAT_CLEAR(fAudioOutBuffers[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
@@ -1088,9 +1109,9 @@ public:
             fDescriptor->run(fHandle2, frames);
 
         // --------------------------------------------------------------------------------------------------------
-        // Special Parameters
+        // Handle trigger parameters
 
-        for (k=0; k < pData->param.count; ++k)
+        for (uint32_t k=0; k < pData->param.count; ++k)
         {
             if (pData->param.data[k].type != PARAMETER_INPUT)
                 continue;
@@ -1118,12 +1139,12 @@ public:
             bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];
 
-            for (i=0; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
                 // Dry/Wet
                 if (doDryWet)
                 {
-                    for (k=0; k < frames; ++k)
+                    for (uint32_t k=0; k < frames; ++k)
                     {
                         // TODO
                         //if (k < pData->latency && pData->latency < frames)
@@ -1150,7 +1171,7 @@ public:
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (pData->postProc.balanceRight + 1.0f)/2.0f;
 
-                    for (k=0; k < frames; ++k)
+                    for (uint32_t k=0; k < frames; ++k)
                     {
                         if (isPair)
                         {
@@ -1169,15 +1190,15 @@ public:
 
                 // Volume (and buffer copy)
                 {
-                    for (k=0; k < frames; ++k)
+                    for (uint32_t k=0; k < frames; ++k)
                         outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k] * pData->postProc.volume;
                 }
             }
         } // End of Post-processing
-#else
-        for (i=0; i < pData->audioOut.count; ++i)
+#else // BUILD_BRIDGE
+        for (uint32_t i=0; i < pData->audioOut.count; ++i)
         {
-            for (k=0; k < frames; ++k)
+            for (uint32_t k=0; k < frames; ++k)
                 outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k];
         }
 #endif
@@ -1249,18 +1270,11 @@ public:
 
     void sampleRateChanged(const double newSampleRate) override
     {
-        CARLA_ASSERT_INT(newSampleRate > 0.0, int(newSampleRate));
+        CARLA_ASSERT_INT(newSampleRate > 0.0, (int)newSampleRate);
         carla_debug("Lv2Plugin::sampleRateChanged(%g) - start", newSampleRate);
 
-        for (uint32_t k=0; k < pData->param.count; ++k)
-        {
-            if (pData->param.data[k].type == PARAMETER_INPUT && pData->param.special[k] == PARAMETER_SPECIAL_SAMPLE_RATE)
-            {
-                fParamBuffers[k] = float(newSampleRate);
-                pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 1, fParamBuffers[k]);
-                break;
-            }
-        }
+        // TODO
+        (void)newSampleRate;
 
         carla_debug("Lv2Plugin::sampleRateChanged(%g) - end", newSampleRate);
     }
@@ -1269,7 +1283,7 @@ public:
     {
         for (uint32_t k=0; k < pData->param.count; ++k)
         {
-            if (pData->param.data[k].type == PARAMETER_INPUT && pData->param.special[k] == PARAMETER_SPECIAL_LV2_FREEWHEEL)
+            if (pData->param.data[k].type == PARAMETER_SPECIAL && pData->param.special[k] == PARAMETER_SPECIAL_LV2_FREEWHEEL)
             {
                 fParamBuffers[k] = isOffline ? pData->param.ranges[k].max : pData->param.ranges[k].min;
                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 1, fParamBuffers[k]);
@@ -1328,9 +1342,9 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool isRealtimeSafe() const
+    bool isRealtimeSafe() const noexcept
     {
-        CARLA_ASSERT(fRdfDescriptor != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, false);
 
         for (uint32_t i=0; i < fRdfDescriptor->FeatureCount; ++i)
         {
@@ -1341,9 +1355,9 @@ public:
         return false;
     }
 
-    bool needsFixedBuffer() const
+    bool needsFixedBuffer() const noexcept
     {
-        CARLA_ASSERT(fRdfDescriptor != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, false);
 
         for (uint32_t i=0; i < fRdfDescriptor->FeatureCount; ++i)
         {
@@ -1534,7 +1548,7 @@ public:
             }
 
             // set identifier string
-            CarlaString identifier("V2/");
+            CarlaString identifier("LV2/");
             identifier += uri;
 
             // load settings

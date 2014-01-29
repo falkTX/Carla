@@ -40,7 +40,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "atom.h"
+#include "atom-util.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,15 +57,6 @@ struct _LV2_Atom_Buffer
 	LV2_Atom_Sequence atoms;
 
 } LV2_Atom_Buffer;
-
-
-// Pad a size to 64 bits (for LV2 atom:Sequence event sizes).
-//
-static inline
-uint32_t lv2_atom_buffer_pad_size ( uint32_t size )
-{
-	return (size + 7) & (~7);
-}
 
 
 // Clear and initialize an existing LV2 atom:Sequenece buffer.
@@ -163,7 +154,7 @@ bool lv2_atom_buffer_end (
 	LV2_Atom_Buffer_Iterator *iter, LV2_Atom_Buffer *buf )
 {
 	iter->buf = buf;
-	iter->offset = lv2_atom_buffer_pad_size(lv2_atom_buffer_get_size(buf));
+	iter->offset = lv2_atom_pad_size(lv2_atom_buffer_get_size(buf));
 
 	return (iter->offset < buf->capacity - sizeof(LV2_Atom_Event));
 }
@@ -190,7 +181,7 @@ bool lv2_atom_buffer_increment ( LV2_Atom_Buffer_Iterator *iter )
 	LV2_Atom_Sequence *atoms = &buf->atoms;
 	uint32_t size = ((LV2_Atom_Event *) ((char *)
 		LV2_ATOM_CONTENTS(LV2_Atom_Sequence, atoms) + iter->offset))->body.size;
-	iter->offset += lv2_atom_buffer_pad_size(uint32_t(sizeof(LV2_Atom_Event)) + size);
+	iter->offset += lv2_atom_pad_size(uint32_t(sizeof(LV2_Atom_Event)) + size);
 
 	return true;
 }
@@ -242,7 +233,7 @@ bool lv2_atom_buffer_write (
 
 	memcpy(LV2_ATOM_BODY(&ev->body), data, size);
 
-	size = lv2_atom_buffer_pad_size(uint32_t(sizeof(LV2_Atom_Event)) + size);
+	size = lv2_atom_pad_size(uint32_t(sizeof(LV2_Atom_Event)) + size);
 	atoms->atom.size += size;
 	iter->offset += size;
 

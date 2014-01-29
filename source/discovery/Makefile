@@ -22,8 +22,7 @@ LINK_FLAGS      += $(QTCORE_LIBS)
 BUILD_CXX_FLAGS += -DWANT_NATIVE
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI
-# -DWANT_LV2
+BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2
 # -DWANT_VST
 # ifeq ($(CARLA_VESTIGE_HEADER),true)
 # BUILD_CXX_FLAGS += -DVESTIGE_HEADER
@@ -100,9 +99,6 @@ win32:   carla-discovery-win32.exe
 win64:   carla-discovery-win64.exe
 
 # --------------------------------------------------------------
-
-carla-discovery.mm.o: carla-discovery.mm carla-discovery.cpp
-	$(CXX) $< $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) -objc++ -c -o $@
 
 carla-discovery-native: $(OBJS) $(LIBS)
 	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) $(POSIX_LINK_FLAGS) -o $@
