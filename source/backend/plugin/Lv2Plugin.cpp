@@ -1,6 +1,6 @@
 /*
  * Carla LV2 Plugin
- * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -22,7 +22,6 @@
 
 #include "CarlaLv2Utils.hpp"
 #include "CarlaMathUtils.hpp"
-
 #include "Lv2AtomQueue.hpp"
 
 #include "../engine/CarlaEngineOsc.hpp"
@@ -42,6 +41,9 @@ CARLA_BACKEND_START_NAMESPACE
 }
 #endif
 
+// Maximum default buffer size
+const unsigned int MAX_DEFAULT_BUFFER_SIZE = 8192; // 0x2000
+
 // Extra Plugin Hints
 const unsigned int PLUGIN_HAS_EXTENSION_OPTIONS  = 0x1000;
 const unsigned int PLUGIN_HAS_EXTENSION_PROGRAMS = 0x2000;
@@ -51,6 +53,14 @@ const unsigned int PLUGIN_HAS_EXTENSION_WORKER   = 0x8000;
 // Extra Parameter Hints
 const unsigned int PARAMETER_IS_STRICT_BOUNDS = 0x1000;
 const unsigned int PARAMETER_IS_TRIGGER       = 0x2000;
+
+// LV2 Event Data/Types
+const unsigned int CARLA_EVENT_DATA_ATOM    = 0x01;
+const unsigned int CARLA_EVENT_DATA_EVENT   = 0x02;
+const unsigned int CARLA_EVENT_DATA_MIDI_LL = 0x04;
+const unsigned int CARLA_EVENT_TYPE_MESSAGE = 0x10; // unused
+const unsigned int CARLA_EVENT_TYPE_MIDI    = 0x20;
+const unsigned int CARLA_EVENT_TYPE_TIME    = 0x40;
 
 // LV2 URI Map Ids
 const uint32_t CARLA_URI_MAP_ID_NULL                   =  0;
@@ -114,7 +124,20 @@ const uint32_t kFeatureIdUridMap          = 15;
 const uint32_t kFeatureIdUridUnmap        = 16;
 const uint32_t kFeatureIdWorker           = 17;
 const uint32_t kFeatureCountPlugin        = 18;
-const uint32_t kFeatureCountAll           = 19;
+const uint32_t kFeatureIdUiDataAccess     = 18;
+const uint32_t kFeatureIdUiInstanceAccess = 19;
+const uint32_t kFeatureIdUiIdle           = 20;
+const uint32_t kFeatureIdUiFixedSize      = 21;
+const uint32_t kFeatureIdUiMakeResident   = 22;
+const uint32_t kFeatureIdUiNoUserResize   = 23;
+const uint32_t kFeatureIdUiParent         = 24;
+const uint32_t kFeatureIdUiPortMap        = 25;
+const uint32_t kFeatureIdUiPortSubscribe  = 26;
+const uint32_t kFeatureIdUiResize         = 27;
+const uint32_t kFeatureIdUiTouch          = 28;
+const uint32_t kFeatureIdExternalUi       = 29;
+const uint32_t kFeatureIdExternalUiOld    = 30;
+const uint32_t kFeatureCountAll           = 31;
 
 // -----------------------------------------------------
 
@@ -122,21 +145,21 @@ struct Lv2PluginOptions {
     enum OptIndex {
         MaxBlockLenth = 0,
         MinBlockLenth,
-        //SequenceSize,
+        SequenceSize,
         SampleRate,
         Null
     };
 
     int maxBufferSize;
     int minBufferSize;
-    //int sequenceSize;
+    int sequenceSize;
     double sampleRate;
     LV2_Options_Option opts[5];
 
     Lv2PluginOptions()
         : maxBufferSize(0),
           minBufferSize(0),
-          //sequenceSize(MAX_EVENT_BUFFER),
+          sequenceSize(MAX_DEFAULT_BUFFER_SIZE),
           sampleRate(0.0)
     {
         LV2_Options_Option& optMaxBlockLenth(opts[MaxBlockLenth]);
@@ -155,7 +178,6 @@ struct Lv2PluginOptions {
         optMinBlockLenth.type    = CARLA_URI_MAP_ID_ATOM_INT;
         optMinBlockLenth.value   = &minBufferSize;
 
-#if 0
         LV2_Options_Option& optSequenceSize(opts[SequenceSize]);
         optSequenceSize.context = LV2_OPTIONS_INSTANCE;
         optSequenceSize.subject = 0;
@@ -163,7 +185,6 @@ struct Lv2PluginOptions {
         optSequenceSize.size    = sizeof(int);
         optSequenceSize.type    = CARLA_URI_MAP_ID_ATOM_INT;
         optSequenceSize.value   = &sequenceSize;
-#endif
 
         LV2_Options_Option& optSampleRate(opts[SampleRate]);
         optSampleRate.context = LV2_OPTIONS_INSTANCE;
@@ -669,12 +690,38 @@ public:
     // -------------------------------------------------------------------
     // Set data (state)
 
-    // nothing
+    void prepareForSave() override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
+
+        if (fExt.state != nullptr && fExt.state->save != nullptr)
+        {
+            fExt.state->save(fHandle, carla_lv2_state_store, this, LV2_STATE_IS_POD, fFeatures);
+
+            if (fHandle2 != nullptr)
+                fExt.state->save(fHandle2, carla_lv2_state_store, this, LV2_STATE_IS_POD, fFeatures);
+        }
+    }
 
     // -------------------------------------------------------------------
     // Set data (internal stuff)
 
-    // nothing
+    void setName(const char* const newName) override
+    {
+        CarlaPlugin::setName(newName);
+
+        QString guiTitle(QString("%1 (GUI)").arg(pData->name));
+
+        if (fFeatures[kFeatureIdExternalUi] != nullptr && fFeatures[kFeatureIdExternalUi]->data != nullptr)
+        {
+            LV2_External_UI_Host* const uiHost((LV2_External_UI_Host*)fFeatures[kFeatureIdExternalUi]->data);
+
+            if (uiHost->plugin_human_id != nullptr)
+                delete[] uiHost->plugin_human_id;
+
+            uiHost->plugin_human_id = carla_strdup(guiTitle.toUtf8().constData());
+        }
+    }
 
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
@@ -719,8 +766,9 @@ public:
         const float sampleRate(static_cast<float>(pData->engine->getSampleRate()));
         const uint32_t portCount(fRdfDescriptor->PortCount);
 
-        uint32_t aIns, aOuts, params;
-        aIns = aOuts = params = 0;
+        uint32_t aIns, aOuts, cvIns, cvOuts, params;
+        aIns = aOuts = cvIns = cvOuts = params = 0;
+        LinkedList<unsigned int> evIns, evOuts;
 
         bool forcedStereoIn, forcedStereoOut;
         forcedStereoIn = forcedStereoOut = false;
@@ -728,22 +776,47 @@ public:
         bool needsCtrlIn, needsCtrlOut;
         needsCtrlIn = needsCtrlOut = false;
 
-        if (portCount > 0)
+        for (uint32_t i=0; i < portCount; ++i)
         {
-            for (uint32_t i=0; i < portCount; ++i)
-            {
-                const LV2_Property portTypes(fRdfDescriptor->Ports[i].Types);
+            const LV2_Property portTypes(fRdfDescriptor->Ports[i].Types);
 
-                if (LV2_IS_PORT_AUDIO(portTypes))
-                {
-                    if (LV2_IS_PORT_INPUT(portTypes))
-                        aIns += 1;
-                    else if (LV2_IS_PORT_OUTPUT(portTypes))
-                        aOuts += 1;
-                }
-                else if (LV2_IS_PORT_CONTROL(portTypes))
-                    params += 1;
+            if (LV2_IS_PORT_AUDIO(portTypes))
+            {
+                if (LV2_IS_PORT_INPUT(portTypes))
+                    aIns += 1;
+                else if (LV2_IS_PORT_OUTPUT(portTypes))
+                    aOuts += 1;
             }
+            else if (LV2_IS_PORT_CV(portTypes))
+            {
+                if (LV2_IS_PORT_INPUT(portTypes))
+                    cvIns += 1;
+                else if (LV2_IS_PORT_OUTPUT(portTypes))
+                    cvOuts += 1;
+            }
+            else if (LV2_IS_PORT_ATOM_SEQUENCE(portTypes))
+            {
+                if (LV2_IS_PORT_INPUT(portTypes))
+                    evIns.append(CARLA_EVENT_DATA_ATOM);
+                else if (LV2_IS_PORT_OUTPUT(portTypes))
+                    evOuts.append(CARLA_EVENT_DATA_ATOM);
+            }
+            else if (LV2_IS_PORT_EVENT(portTypes))
+            {
+                if (LV2_IS_PORT_INPUT(portTypes))
+                    evIns.append(CARLA_EVENT_DATA_EVENT);
+                else if (LV2_IS_PORT_OUTPUT(portTypes))
+                    evOuts.append(CARLA_EVENT_DATA_EVENT);
+            }
+            else if (LV2_IS_PORT_MIDI_LL(portTypes))
+            {
+                if (LV2_IS_PORT_INPUT(portTypes))
+                    evIns.append(CARLA_EVENT_DATA_MIDI_LL);
+                else if (LV2_IS_PORT_OUTPUT(portTypes))
+                    evOuts.append(CARLA_EVENT_DATA_MIDI_LL);
+            }
+            else if (LV2_IS_PORT_CONTROL(portTypes))
+                params += 1;
         }
 
         recheckExtensions();
@@ -791,7 +864,6 @@ public:
         if (params > 0)
         {
             pData->param.createNew(params, true);
-
             fParamBuffers = new float[params];
             FLOAT_CLEAR(fParamBuffers, params);
         }
@@ -1145,6 +1217,9 @@ public:
 
         // check latency
         // TODO
+
+        evIns.clear();
+        evOuts.clear();
 
         if (pData->active)
             activate();
@@ -1701,21 +1776,131 @@ public:
 
     // -------------------------------------------------------------------
 
-    LV2_Worker_Status handleWorkerSchedule(const uint32_t size, const void* const data)
+    LV2_State_Status handleStateStore(const uint32_t key, const void* const value, const size_t size, const uint32_t type, const uint32_t flags)
     {
-        carla_stdout("Lv2Plugin::handleWorkerSchedule(%i, %p)", size, data);
+        CARLA_SAFE_ASSERT_RETURN(key != CARLA_URI_MAP_ID_NULL, LV2_STATE_ERR_NO_PROPERTY);
+        CARLA_SAFE_ASSERT_RETURN(value != nullptr, LV2_STATE_ERR_NO_PROPERTY);
+        CARLA_SAFE_ASSERT_RETURN(size > 0, LV2_STATE_ERR_NO_PROPERTY);
+        CARLA_SAFE_ASSERT_RETURN(type != CARLA_URI_MAP_ID_NULL, LV2_STATE_ERR_BAD_TYPE);
+        CARLA_SAFE_ASSERT_RETURN(flags & LV2_STATE_IS_POD, LV2_STATE_ERR_BAD_FLAGS);
+        carla_debug("Lv2Plugin::handleStateStore(%i, %p, " P_SIZE ", %i, %i)", key, value, size, type, flags);
 
-#if 0
-        if (fExt.worker == nullptr || fExt.worker->work == nullptr)
+        const char* const skey(carla_lv2_urid_unmap(this, key));
+        const char* const stype(carla_lv2_urid_unmap(this, type));
+
+        CARLA_SAFE_ASSERT_RETURN(skey != nullptr, LV2_STATE_ERR_BAD_TYPE);
+        CARLA_SAFE_ASSERT_RETURN(stype != nullptr, LV2_STATE_ERR_BAD_TYPE);
+
+        // Check if we already have this key
+        for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
         {
-            carla_stderr("Lv2Plugin::handleWorkerSchedule(%i, %p) - plugin has no worker", size, data);
-            return LV2_WORKER_ERR_UNKNOWN;
+            CustomData& data(it.getValue());
+
+            if (std::strcmp(data.key, skey) == 0)
+            {
+                // found it
+                if (data.value != nullptr)
+                    delete[] data.value;
+
+                if (type == CARLA_URI_MAP_ID_ATOM_STRING || type == CARLA_URI_MAP_ID_ATOM_PATH)
+                    data.value = carla_strdup((const char*)value);
+                else
+                    data.value = carla_strdup(QByteArray((const char*)value, static_cast<int>(size)).toBase64().constData());
+
+                return LV2_STATE_SUCCESS;
+            }
         }
 
-        //if (kData->engine->isOffline())
-        fExt.worker->work(fHandle, carla_lv2_worker_respond, this, size, data);
+        // Otherwise store it
+        CustomData newData;
+        newData.type = carla_strdup(stype);
+        newData.key  = carla_strdup(skey);
+
+        if (type == CARLA_URI_MAP_ID_ATOM_STRING || type == CARLA_URI_MAP_ID_ATOM_PATH)
+            newData.value = carla_strdup((const char*)value);
+        else
+            newData.value = carla_strdup(QByteArray((const char*)value, static_cast<int>(size)).toBase64().constData());
+
+        pData->custom.append(newData);
+
+        return LV2_STATE_SUCCESS;
+    }
+
+    const void* handleStateRetrieve(const uint32_t key, size_t* const size, uint32_t* const type, uint32_t* const flags)
+    {
+        CARLA_SAFE_ASSERT_RETURN(key != CARLA_URI_MAP_ID_NULL, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(size != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(type != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(flags != nullptr, nullptr);
+        carla_debug("Lv2Plugin::handleStateRetrieve(%i, %p, %p, %p)", key, size, type, flags);
+
+        const char* const skey(carla_lv2_urid_unmap(this, key));
+
+        CARLA_SAFE_ASSERT_RETURN(skey != nullptr, nullptr);
+
+        const char* stype = nullptr;
+        const char* stringData = nullptr;
+
+        for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
+        {
+            const CustomData& data(it.getValue());
+
+            if (std::strcmp(data.key, skey) == 0)
+            {
+                stype      = data.type;
+                stringData = data.value;
+                break;
+            }
+        }
+
+        CARLA_SAFE_ASSERT_RETURN(stype != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(stringData != nullptr, nullptr);
+
+        *type  = carla_lv2_urid_map(this, stype);
+        *flags = LV2_STATE_IS_POD;
+
+        if (*type == CARLA_URI_MAP_ID_ATOM_STRING || *type == CARLA_URI_MAP_ID_ATOM_PATH)
+        {
+            *size = std::strlen(stringData);
+            return stringData;
+        }
+        else
+        {
+            static QByteArray chunk; // FIXME
+            chunk = QByteArray::fromBase64(stringData);
+            CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0, nullptr);
+            *size = static_cast<size_t>(chunk.size());
+            return chunk.constData();
+        }
+    }
+
+    // -------------------------------------------------------------------
+
+    LV2_Worker_Status handleWorkerSchedule(const uint32_t size, const void* const data)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fExt.worker != nullptr && fExt.worker->work != nullptr, LV2_WORKER_ERR_UNKNOWN);
+        carla_stdout("Lv2Plugin::handleWorkerSchedule(%i, %p)", size, data);
+
+        //if (pData->engine->isOffline())
+            fExt.worker->work(fHandle, carla_lv2_worker_respond, this, size, data);
         //else
-        //    postponeEvent(PluginPostEventCustom, size, 0, 0.0, data);
+        //   postponeEvent(PluginPostEventCustom, size, 0, 0.0, data);
+
+        return LV2_WORKER_SUCCESS;
+    }
+
+    LV2_Worker_Status handleWorkerRespond(const uint32_t size, const void* const data)
+    {
+        carla_stdout("Lv2Plugin::handleWorkerRespond(%i, %p)", size, data);
+
+#if 0
+        LV2_Atom_Worker workerAtom;
+        workerAtom.atom.type = CARLA_URI_MAP_ID_ATOM_WORKER;
+        workerAtom.atom.size = sizeof(LV2_Atom_Worker_Body);
+        workerAtom.body.size = size;
+        workerAtom.body.data = data;
+
+        atomQueueIn.put(0, (const LV2_Atom*)&workerAtom);
 #endif
 
         return LV2_WORKER_SUCCESS;
@@ -2267,6 +2452,22 @@ private:
         return strdup(dir.absolutePath().toUtf8().constData());
     }
 
+    static LV2_State_Status carla_lv2_state_store(LV2_State_Handle handle, uint32_t key, const void* value, size_t size, uint32_t type, uint32_t flags)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, LV2_STATE_ERR_UNKNOWN);
+        carla_debug("carla_lv2_state_store(%p, %i, %p, " P_SIZE ", %i, %i)", handle, key, value, size, type, flags);
+
+        return ((Lv2Plugin*)handle)->handleStateStore(key, value, size, type, flags);
+    }
+
+    static const void* carla_lv2_state_retrieve(LV2_State_Handle handle, uint32_t key, size_t* size, uint32_t* type, uint32_t* flags)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
+        carla_debug("carla_lv2_state_retrieve(%p, %i, %p, %p, %p)", handle, key, size, type, flags);
+
+        return ((Lv2Plugin*)handle)->handleStateRetrieve(key, size, type, flags);
+    }
+
     // -------------------------------------------------------------------
     // URI-Map Feature
 
@@ -2485,6 +2686,14 @@ private:
         return ((Lv2Plugin*)handle)->handleWorkerSchedule(size, data);
     }
 
+    static LV2_Worker_Status carla_lv2_worker_respond(LV2_Worker_Respond_Handle handle, uint32_t size, const void* data)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, LV2_WORKER_ERR_UNKNOWN);
+        carla_debug("carla_lv2_worker_respond(%p, %i, %p)", handle, size, data);
+
+        return ((Lv2Plugin*)handle)->handleWorkerRespond(size, data);
+    }
+
     // -------------------------------------------------------------------
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Lv2Plugin)
@@ -2502,8 +2711,7 @@ int CarlaEngineOsc::handleMsgLv2AtomTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     const int32_t portIndex   = argv[0]->i;
     const char* const atomBuf = (const char*)&argv[1]->s;
 
-    if (portIndex < 0)
-        return 0;
+    CARLA_SAFE_ASSERT_RETURN(portIndex >= 0, 0);
 
     QByteArray chunk(QByteArray::fromBase64(atomBuf));
 
@@ -2522,8 +2730,7 @@ int CarlaEngineOsc::handleMsgLv2UridMap(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     const int32_t urid    = argv[0]->i;
     const char* const uri = (const char*)&argv[1]->s;
 
-    if (urid <= 0)
-        return 0;
+    CARLA_SAFE_ASSERT_RETURN(urid > 0, 0);
 
     lv2PluginPtr->handleUridMap(static_cast<LV2_URID>(urid), uri);
     return 0;
