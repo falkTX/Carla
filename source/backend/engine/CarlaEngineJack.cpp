@@ -982,6 +982,73 @@ public:
 #endif
 
     // -------------------------------------------------------------------
+    // Patchbay stuff
+
+    const char* const* getPatchbayConnections() const override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, nullptr);
+        carla_debug("CarlaEngineJack::getPatchbayConnections()");
+
+        LinkedList<const char*> connList;
+
+        if (const char** ports = jackbridge_get_ports(fClient, nullptr, nullptr, 0))
+        {
+            for (int i=0; ports[i] != nullptr; ++i)
+            {
+                jack_port_t* const jackPort(jackbridge_port_by_name(fClient, ports[i]));
+                const char*  const fullPortName(ports[i]);
+
+                CARLA_SAFE_ASSERT_CONTINUE(jackPort != nullptr);
+
+                if (const char** connections = jackbridge_port_get_all_connections(fClient, jackPort))
+                {
+                    for (int j=0; connections[j] != nullptr; ++j)
+                    {
+                        connList.append(carla_strdup(fullPortName));
+                        connList.append(carla_strdup(connections[j]));
+                    }
+
+                    jackbridge_free(connections);
+                }
+            }
+
+            jackbridge_free(ports);
+        }
+
+        const size_t connCount(connList.count());
+
+        if (connCount == 0)
+            return nullptr;
+
+        const char** const retConns = new const char*[connCount+1];
+
+        for (size_t i=0; i < connCount; ++i)
+            retConns[i] = connList.getAt(i);
+
+        retConns[connCount] = nullptr;
+        connList.clear();
+
+        return retConns;
+    }
+
+    void restorePatchbayConnection(const char* const connSource, const char* const connTarget) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fClient != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(connSource != nullptr && connSource[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(connTarget != nullptr && connTarget[0] != '\0',);
+        carla_debug("CarlaEngineJack::restorePatchbayConnection(\"%s\", \"%s\")", connSource, connTarget);
+
+        if (jack_port_t* const port = jackbridge_port_by_name(fClient, connTarget))
+        {
+            if (jackbridge_port_by_name(fClient, connSource) == nullptr)
+                return;
+
+            if (! jackbridge_port_connected_to(port, connSource))
+                jackbridge_connect(fClient, connTarget, connSource);
+        }
+    }
+
+    // -------------------------------------------------------------------
 
 protected:
     void handleJackBufferSizeCallback(const uint32_t newBufferSize)

@@ -1469,6 +1469,9 @@ bool CarlaEngine::saveProject(const char* const filename)
 
     if (const char* const* patchbayConns = getPatchbayConnections())
     {
+        if (! firstPlugin)
+            out << "\n";
+
         out << " <Patchbay>\n";
 
         for (int i=0; patchbayConns[i] != nullptr && patchbayConns[i+1] != nullptr; ++i, ++i )
@@ -2074,10 +2077,9 @@ static int getCarlaPortIdFromName(const char* const shortname) noexcept
 
 void CarlaEngine::restorePatchbayConnection(const char* const connSource, const char* const connTarget)
 {
-    carla_debug("CarlaEngine::restorePatchbayConnection(\"%s\", \"%s\")", connSource, connTarget);
-
     CARLA_SAFE_ASSERT_RETURN(connSource != nullptr && connSource[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(connTarget != nullptr && connTarget[0] != '\0',);
+    carla_debug("CarlaEngine::restorePatchbayConnection(\"%s\", \"%s\")", connSource, connTarget);
 
     if (pData->bufAudio.usePatchbay)
     {
