@@ -991,7 +991,7 @@ public:
 
         LinkedList<const char*> connList;
 
-        if (const char** ports = jackbridge_get_ports(fClient, nullptr, nullptr, 0))
+        if (const char** ports = jackbridge_get_ports(fClient, nullptr, nullptr, JackPortIsOutput))
         {
             for (int i=0; ports[i] != nullptr; ++i)
             {
@@ -1038,13 +1038,13 @@ public:
         CARLA_SAFE_ASSERT_RETURN(connTarget != nullptr && connTarget[0] != '\0',);
         carla_debug("CarlaEngineJack::restorePatchbayConnection(\"%s\", \"%s\")", connSource, connTarget);
 
-        if (jack_port_t* const port = jackbridge_port_by_name(fClient, connTarget))
+        if (jack_port_t* const port = jackbridge_port_by_name(fClient, connSource))
         {
-            if (jackbridge_port_by_name(fClient, connSource) == nullptr)
+            if (jackbridge_port_by_name(fClient, connTarget) == nullptr)
                 return;
 
-            if (! jackbridge_port_connected_to(port, connSource))
-                jackbridge_connect(fClient, connTarget, connSource);
+            if (! jackbridge_port_connected_to(port, connTarget))
+                jackbridge_connect(fClient, connSource, connTarget);
         }
     }
 
