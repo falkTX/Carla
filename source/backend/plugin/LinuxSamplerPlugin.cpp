@@ -122,8 +122,8 @@ private:
 class MidiInputPortPlugin : public MidiInputPort
 {
 public:
-    MidiInputPortPlugin(MidiInputDevice* const device, const int portNumber)
-        : MidiInputPort(device, portNumber)
+    MidiInputPortPlugin(MidiInputDevice* const device, const int portNum)
+        : MidiInputPort(device, portNum)
     {
     }
 
@@ -412,9 +412,9 @@ public:
                     CARLA_SAFE_ASSERT_BREAK(i < MAX_MIDI_CHANNELS);
 
                     bool ok;
-                    uint index = midiProg.toUInt(&ok);
+                    int index = midiProg.toInt(&ok);
 
-                    if (ok && index < pData->midiprog.count)
+                    if (ok && index >= 0 && index < static_cast<int>(pData->midiprog.count))
                     {
                         const uint32_t bank    = pData->midiprog.data[index].bank;
                         const uint32_t program = pData->midiprog.data[index].program;
@@ -510,7 +510,7 @@ public:
 
         pData->audioOut.createNew(aOuts);
 
-        const int portNameSize(pData->engine->getMaxPortNameSize());
+        const uint portNameSize(pData->engine->getMaxPortNameSize());
         CarlaString portName;
 
         // ---------------------------------------
@@ -518,7 +518,7 @@ public:
 
         if (fUses16Outs)
         {
-            for (int i=0; i < 32; ++i)
+            for (uint32_t i=0; i < 32; ++i)
             {
                 portName.clear();
 
@@ -623,9 +623,9 @@ public:
         carla_debug("LinuxSamplerPlugin::reload() - end");
     }
 
-    void reloadPrograms(bool init) override
+    void reloadPrograms(bool doInit) override
     {
-        carla_debug("LinuxSamplerPlugin::reloadPrograms(%s)", bool2str(init));
+        carla_debug("LinuxSamplerPlugin::reloadPrograms(%s)", bool2str(doInit));
 
         // Delete old programs
         pData->midiprog.clear();
@@ -668,7 +668,7 @@ public:
         }
 #endif
 
-        if (init)
+        if (doInit)
         {
             for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
             {
@@ -762,9 +762,9 @@ public:
                     CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
                     if (note.velo > 0)
-                        fMidiInputPort->DispatchNoteOn(note.note, note.velo, note.channel);
+                        fMidiInputPort->DispatchNoteOn(note.note, note.velo, static_cast<uint>(note.channel));
                     else
-                        fMidiInputPort->DispatchNoteOff(note.note, note.velo, note.channel);
+                        fMidiInputPort->DispatchNoteOff(note.note, note.velo, static_cast<uint>(note.channel));
                 }
 
                 pData->extNotes.mutex.unlock();
@@ -777,7 +777,7 @@ public:
             bool allNotesOffSent = false;
             bool sampleAccurate  = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
-            uint32_t time, nEvents = pData->event.portIn->getEventCount();
+            uint32_t nEvents = pData->event.portIn->getEventCount();
             uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
 
@@ -790,17 +790,15 @@ public:
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 
-                time = event.time;
+                CARLA_SAFE_ASSERT_CONTINUE(event.time < frames);
+                CARLA_SAFE_ASSERT_BREAK(event.time >= timeOffset);
 
-                CARLA_SAFE_ASSERT_CONTINUE(time < frames);
-                CARLA_SAFE_ASSERT_BREAK(time >= timeOffset);
-
-                if (time > timeOffset && sampleAccurate)
+                if (event.time > timeOffset && sampleAccurate)
                 {
-                    if (processSingle(outBuffer, time - timeOffset, timeOffset))
+                    if (processSingle(outBuffer, event.time - timeOffset, timeOffset))
                     {
                         startTime  = 0;
-                        timeOffset = time;
+                        timeOffset = event.time;
 
                         if (pData->midiprog.current >= 0 && pData->midiprog.count > 0 && pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
                             nextBankIds[pData->ctrlChannel] = pData->midiprog.data[pData->midiprog.current].bank;
@@ -907,7 +905,7 @@ public:
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
-                            fMidiInputPort->DispatchControlChange(uint8_t(ctrlEvent.param), uint8_t(ctrlEvent.value*127.0f), event.channel, int32_t(sampleAccurate ? startTime : time));
+                            fMidiInputPort->DispatchControlChange(uint8_t(ctrlEvent.param), uint8_t(ctrlEvent.value*127.0f), event.channel, static_cast<int32_t>(sampleAccurate ? startTime : event.time));
                         }
 
                         break;
@@ -941,10 +939,10 @@ public:
                                         fInstrument->LoadInstrumentInBackground(fInstrumentIds[rIndex], engineChannel);
                                     }
 
-                                    fCurMidiProgs[event.channel] = k;
+                                    fCurMidiProgs[event.channel] = static_cast<int32_t>(k);
 
                                     if (event.channel == pData->ctrlChannel)
-                                        pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
+                                        pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, static_cast<int32_t>(k), 0, 0.0f);
 
                                     break;
                                 }
@@ -955,7 +953,7 @@ public:
                     case kEngineControlEventTypeAllSoundOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-                            fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_SOUND_OFF, 0, event.channel, sampleAccurate ? startTime : time);
+                            fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_SOUND_OFF, 0, event.channel, static_cast<int32_t>(sampleAccurate ? startTime : event.time));
                         }
                         break;
 
@@ -968,7 +966,7 @@ public:
                                 sendMidiAllNotesOffToCallback();
                             }
 
-                            fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_NOTES_OFF, 0, event.channel, sampleAccurate ? startTime : time);
+                            fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_NOTES_OFF, 0, event.channel, static_cast<int32_t>(sampleAccurate ? startTime : event.time));
                         }
                         break;
                     }
@@ -1002,7 +1000,7 @@ public:
                     if (status < 0xF0 && channel < MAX_MIDI_CHANNELS)
                         data[0] = uint8_t(data[0] + channel);
 
-                    fMidiInputPort->DispatchRaw(data, sampleAccurate ? startTime : time);
+                    fMidiInputPort->DispatchRaw(data, static_cast<int32_t>(sampleAccurate ? startTime : event.time));
 
                     if (status == MIDI_STATUS_NOTE_ON)
                         pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, data[1], data[2]);
@@ -1193,7 +1191,7 @@ public:
         fMidiInputDevice = new LinuxSampler::MidiInputDevicePlugin(&fSampler);
         fMidiInputPort   = fMidiInputDevice->CreateMidiPortPlugin();
 
-        for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
+        for (uint i=0; i < MAX_MIDI_CHANNELS; ++i)
         {
             fSamplerChannels[i] = fSampler.AddSamplerChannel();
             CARLA_SAFE_ASSERT_CONTINUE(fSamplerChannels[i] != nullptr);

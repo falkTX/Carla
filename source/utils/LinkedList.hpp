@@ -199,7 +199,7 @@ public:
         return false;
     }
 
-    T& getAt(const size_t index) noexcept
+    T& getAt(const size_t index) const noexcept
     {
         if (fCount == 0 || index >= fCount)
             return fRetValue;
@@ -374,7 +374,7 @@ protected:
     virtual void  _deallocate(Data*& dataPtr) = 0;
 
 private:
-    T fRetValue;
+    mutable T fRetValue;
 
     void _init() noexcept
     {

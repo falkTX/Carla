@@ -564,9 +564,9 @@ public:
                 foreach (const QString& midiProg, midiProgramList)
                 {
                     bool ok;
-                    const uint index(midiProg.toUInt(&ok));
+                    const int index(midiProg.toInt(&ok));
 
-                    if (ok && index < pData->midiprog.count)
+                    if (ok && index >= 0 && index < static_cast<int>(pData->midiprog.count))
                     {
                         const uint32_t bank    = pData->midiprog.data[index].bank;
                         const uint32_t program = pData->midiprog.data[index].program;
@@ -671,7 +671,7 @@ public:
 
         if (fDescriptor->ui_set_midi_program != nullptr && pData->midiprog.current >= 0 && pData->midiprog.count > 0)
         {
-            const uint32_t index   = pData->midiprog.current;
+            const int32_t  index   = pData->midiprog.current;
             const uint8_t  channel = uint8_t((pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS) ? pData->ctrlChannel : 0);
             const uint32_t bank    = pData->midiprog.data[index].bank;
             const uint32_t program = pData->midiprog.data[index].program;
@@ -911,10 +911,11 @@ public:
 
             pData->param.data[j].type   = PARAMETER_UNKNOWN;
             pData->param.data[j].hints  = 0x0;
-            pData->param.data[j].index  = j;
-            pData->param.data[j].rindex = j;
+            pData->param.data[j].index  = static_cast<int32_t>(j);
+            pData->param.data[j].rindex = static_cast<int32_t>(j);
             pData->param.data[j].midiCC = -1;
             pData->param.data[j].midiChannel = 0;
+            pData->param.special[j] = PARAMETER_SPECIAL_NULL;
 
             float min, max, def, step, stepSmall, stepLarge;
 
@@ -1139,7 +1140,7 @@ public:
             if (count == oldCount+1)
             {
                 // one midi program added, probably created by user
-                pData->midiprog.current = oldCount;
+                pData->midiprog.current = static_cast<int32_t>(oldCount);
                 programChanged = true;
             }
             else if (current < 0 && count > 0)
@@ -1510,10 +1511,10 @@ public:
                                     if (fHandle2 != nullptr)
                                         fDescriptor->set_midi_program(fHandle2, event.channel, nextBankId, nextProgramId);
 
-                                    fCurMidiProgs[event.channel] = k;
+                                    fCurMidiProgs[event.channel] = static_cast<int32_t>(k);
 
                                     if (event.channel == pData->ctrlChannel)
-                                        pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
+                                        pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, static_cast<int32_t>(k), 0, 0.0f);
 
                                     break;
                                 }
@@ -1645,7 +1646,7 @@ public:
                 if (pData->param.data[k].midiCC > 0)
                 {
                     value = pData->param.ranges[k].getNormalizedValue(curValue);
-                    pData->event.portOut->writeControlEvent(0, pData->param.data[k].midiChannel, kEngineControlEventTypeParameter, pData->param.data[k].midiCC, value);
+                    pData->event.portOut->writeControlEvent(0, pData->param.data[k].midiChannel, kEngineControlEventTypeParameter, static_cast<uint16_t>(pData->param.data[k].midiCC), value);
                 }
             }
 

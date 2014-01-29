@@ -42,6 +42,12 @@ CARLA_BACKEND_START_NAMESPACE
 }
 #endif
 
+// Extra Plugin Hints
+const unsigned int PLUGIN_HAS_EXTENSION_OPTIONS  = 0x1000;
+const unsigned int PLUGIN_HAS_EXTENSION_PROGRAMS = 0x2000;
+const unsigned int PLUGIN_HAS_EXTENSION_STATE    = 0x4000;
+const unsigned int PLUGIN_HAS_EXTENSION_WORKER   = 0x8000;
+
 // Extra Parameter Hints
 const unsigned int PARAMETER_IS_STRICT_BOUNDS = 0x1000;
 const unsigned int PARAMETER_IS_TRIGGER       = 0x2000;
@@ -740,7 +746,9 @@ public:
             }
         }
 
-        if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && (aIns == 1 || aOuts == 1) /*&& fExt.state == nullptr && fExt.worker == nullptr*/)
+        recheckExtensions();
+
+        if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && (aIns == 1 || aOuts == 1) && fExt.state == nullptr && fExt.worker == nullptr)
         {
             if (fHandle2 == nullptr)
                 fHandle2 = fDescriptor->instantiate(fDescriptor, sampleRate, fRdfDescriptor->Bundle, fFeatures);
@@ -1121,8 +1129,16 @@ public:
         // extra plugin hints
         pData->extraHints = 0x0;
 
-        if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0))
-            pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK; // FIXME
+        if (fExt.state != nullptr || fExt.worker != nullptr)
+        {
+            if ((aIns == 0 || aIns == 2) && (aOuts == 0 || aOuts == 2) /*&& evIns.count() <= 1 && evOuts.count() <= 1*/)
+                pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
+        }
+        else
+        {
+            if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0) /*&& evIns.count() <= 1 && evOuts.count() <= 1*/)
+                pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
+        }
 
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
@@ -1576,6 +1592,46 @@ public:
         return false;
     }
 
+    void recheckExtensions()
+    {
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
+
+        fExt.options  = nullptr;
+        fExt.programs = nullptr;
+        fExt.state    = nullptr;
+        fExt.worker   = nullptr;
+
+        for (uint32_t i=0; i < fRdfDescriptor->ExtensionCount; ++i)
+        {
+            if (std::strcmp(fRdfDescriptor->Extensions[i], LV2_OPTIONS__interface) == 0)
+                pData->hints |= PLUGIN_HAS_EXTENSION_OPTIONS;
+            else if (std::strcmp(fRdfDescriptor->Extensions[i], LV2_PROGRAMS__Interface) == 0)
+                pData->hints |= PLUGIN_HAS_EXTENSION_PROGRAMS;
+            else if (std::strcmp(fRdfDescriptor->Extensions[i], LV2_STATE__interface) == 0)
+                pData->hints |= PLUGIN_HAS_EXTENSION_STATE;
+            else if (std::strcmp(fRdfDescriptor->Extensions[i], LV2_WORKER__interface) == 0)
+                pData->hints |= PLUGIN_HAS_EXTENSION_WORKER;
+            else
+                carla_stdout("Plugin has non-supported extension: '%s'", fRdfDescriptor->Extensions[i]);
+        }
+
+        if (fDescriptor->extension_data != nullptr)
+        {
+            if (pData->hints & PLUGIN_HAS_EXTENSION_OPTIONS)
+                fExt.options = (const LV2_Options_Interface*)fDescriptor->extension_data(LV2_OPTIONS__interface);
+
+            if (pData->hints & PLUGIN_HAS_EXTENSION_PROGRAMS)
+                fExt.programs = (const LV2_Programs_Interface*)fDescriptor->extension_data(LV2_PROGRAMS__Interface);
+
+            if (pData->hints & PLUGIN_HAS_EXTENSION_STATE)
+                fExt.state = (const LV2_State_Interface*)fDescriptor->extension_data(LV2_STATE__interface);
+
+            if (pData->hints & PLUGIN_HAS_EXTENSION_WORKER)
+                fExt.worker = (const LV2_Worker_Interface*)fDescriptor->extension_data(LV2_WORKER__interface);
+        }
+
+    }
+
     // -------------------------------------------------------------------
 
     LV2_URID getCustomURID(const char* const uri)
@@ -1602,7 +1658,7 @@ public:
         return urid;
     }
 
-    const char* getCustomURIDString(const LV2_URID urid)
+    const char* getCustomURIDString(const LV2_URID urid) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL, nullptr);
         CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.count(), nullptr);
@@ -1624,25 +1680,23 @@ public:
             return reloadPrograms(false);
         }
 
-#if 0
         if (index < static_cast<int32_t>(pData->midiprog.count) && fExt.programs != nullptr && fExt.programs->get_program != nullptr)
         {
-            if (const LV2_Program_Descriptor* progDesc = fExt.programs->get_program(fHandle, index))
+            if (const LV2_Program_Descriptor* const progDesc = fExt.programs->get_program(fHandle, static_cast<uint32_t>(index)))
             {
-                CARLA_ASSERT(progDesc->name != nullptr);
+                CARLA_SAFE_ASSERT_RETURN(progDesc->name != nullptr,);
 
-                if (kData->midiprog.data[index].name != nullptr)
-                    delete[] kData->midiprog.data[index].name;
+                if (pData->midiprog.data[index].name != nullptr)
+                    delete[] pData->midiprog.data[index].name;
 
-                kData->midiprog.data[index].name = carla_strdup(progDesc->name ? progDesc->name : "");
+                pData->midiprog.data[index].name = carla_strdup(progDesc->name);
 
-                if (index == kData->midiprog.current)
-                    kData->engine->callback(CALLBACK_UPDATE, fId, 0, 0, 0.0, nullptr);
+                if (index == pData->midiprog.current)
+                    pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0, nullptr);
                 else
-                    kData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0, nullptr);
+                    pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0, nullptr);
             }
         }
-#endif
     }
 
     // -------------------------------------------------------------------
@@ -1998,6 +2052,27 @@ public:
 
     // -------------------------------------------------------------------
 
+    void handleTransferAtom(const uint32_t portIndex, const LV2_Atom* const atom)
+    {
+        CARLA_SAFE_ASSERT_RETURN(atom != nullptr,);
+        carla_debug("Lv2Plugin::handleTransferAtom(%i, %p)", portIndex, atom);
+
+        //fAtomQueueIn.put(portIndex, atom);
+        return; (void)portIndex;
+    }
+
+    void handleUridMap(const LV2_URID urid, const char* const uri)
+    {
+        CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(urid == fCustomURIDs.count(),);
+        carla_debug("Lv2Plugin::handleUridMap(%i, \"%s\")", urid, uri);
+
+        fCustomURIDs.append(carla_strdup(uri));
+    }
+
+    // -------------------------------------------------------------------
+
 private:
     LV2_Handle   fHandle;
     LV2_Handle   fHandle2;
@@ -2012,6 +2087,53 @@ private:
     Lv2PluginOptions fLv2Options;
 
     LinkedList<const char*> fCustomURIDs;
+
+    struct Extensions {
+        const LV2_Options_Interface* options;
+        const LV2_State_Interface* state;
+        const LV2_Worker_Interface* worker;
+        const LV2_Programs_Interface* programs;
+        const LV2UI_Idle_Interface* uiidle;
+        const LV2_Programs_UI_Interface* uiprograms;
+
+        Extensions()
+            : options(nullptr),
+              state(nullptr),
+              worker(nullptr),
+              programs(nullptr),
+              uiidle(nullptr),
+              uiprograms(nullptr) {}
+    } fExt;
+
+    struct UI {
+        enum Type {
+            TYPE_NULL,
+            TYPE_EMBED,
+            TYPE_EXTERNAL,
+            TYPE_OSC
+        };
+
+        Type type;
+        LV2UI_Handle handle;
+        LV2UI_Widget widget;
+        const LV2UI_Descriptor* descriptor;
+        const LV2_RDF_UI*       rdfDescriptor;
+
+        UI()
+            : type(TYPE_NULL),
+              handle(nullptr),
+              widget(nullptr),
+              descriptor(nullptr),
+              rdfDescriptor(nullptr) {}
+
+        ~UI()
+        {
+            CARLA_ASSERT(handle == nullptr);
+            CARLA_ASSERT(widget == nullptr);
+            CARLA_ASSERT(descriptor == nullptr);
+            CARLA_ASSERT(rdfDescriptor == nullptr);
+        }
+    } fUi;
 
     // -------------------------------------------------------------------
     // Event Feature
@@ -2041,6 +2163,7 @@ private:
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, 0);
         CARLA_SAFE_ASSERT_RETURN(type != CARLA_URI_MAP_ID_NULL, 0);
+        CARLA_SAFE_ASSERT_RETURN(fmt != nullptr, 0);
 
 #ifndef DEBUG
         if (type == CARLA_URI_MAP_ID_LOG_TRACE)
@@ -2059,6 +2182,7 @@ private:
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, 0);
         CARLA_SAFE_ASSERT_RETURN(type != CARLA_URI_MAP_ID_NULL, 0);
+        CARLA_SAFE_ASSERT_RETURN(fmt != nullptr, 0);
 
 #ifndef DEBUG
         if (type == CARLA_URI_MAP_ID_LOG_TRACE)
@@ -2375,11 +2499,19 @@ int CarlaEngineOsc::handleMsgLv2AtomTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "is");
     carla_debug("CarlaOsc::handleMsgLv2AtomTransfer()");
 
-    return 0;
+    const int32_t portIndex   = argv[0]->i;
+    const char* const atomBuf = (const char*)&argv[1]->s;
 
-    // unused for now
-    (void)argv;
-    (void)plugin;
+    if (portIndex < 0)
+        return 0;
+
+    QByteArray chunk(QByteArray::fromBase64(atomBuf));
+
+    CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0, 0);
+
+    const LV2_Atom* const atom((const LV2_Atom*)chunk.constData());
+    lv2PluginPtr->handleTransferAtom(static_cast<uint32_t>(portIndex), atom);
+    return 0;
 }
 
 int CarlaEngineOsc::handleMsgLv2UridMap(CARLA_ENGINE_OSC_HANDLE_ARGS2)
@@ -2387,11 +2519,14 @@ int CarlaEngineOsc::handleMsgLv2UridMap(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "is");
     carla_debug("CarlaOsc::handleMsgLv2EventTransfer()");
 
-    return 0;
+    const int32_t urid    = argv[0]->i;
+    const char* const uri = (const char*)&argv[1]->s;
 
-    // unused for now
-    (void)argv;
-    (void)plugin;
+    if (urid <= 0)
+        return 0;
+
+    lv2PluginPtr->handleUridMap(static_cast<LV2_URID>(urid), uri);
+    return 0;
 }
 
 #undef lv2PluginPtr
