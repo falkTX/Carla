@@ -1732,7 +1732,7 @@ void CarlaPlugin::sendMidiAllNotesOffToCallback()
     postEvent.value2 = 0;
     postEvent.value3 = 0.0f;
 
-    for (unsigned short i=0; i < MAX_MIDI_NOTE; ++i)
+    for (int32_t i=0; i < MAX_MIDI_NOTE; ++i)
     {
         postEvent.value2 = i;
         pData->postRtEvents.appendRT(postEvent);

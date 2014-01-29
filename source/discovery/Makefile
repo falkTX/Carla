@@ -10,6 +10,10 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils -isystem ../modules -Wno-multichar
 
+ifeq ($(MACOS),true)
+BUILD_CXX_FLAGS += -ObjC++
+endif
+
 BUILD_CXX_FLAGS += $(QTCORE_FLAGS)
 LINK_FLAGS      += $(QTCORE_LIBS)
 
@@ -18,7 +22,8 @@ LINK_FLAGS      += $(QTCORE_LIBS)
 BUILD_CXX_FLAGS += -DWANT_NATIVE
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2
+BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI
+# -DWANT_LV2
 # -DWANT_VST
 # ifeq ($(CARLA_VESTIGE_HEADER),true)
 # BUILD_CXX_FLAGS += -DVESTIGE_HEADER
@@ -78,11 +83,8 @@ WIN_32BIT_FLAGS   = $(32BIT_FLAGS)
 WIN_64BIT_FLAGS   = $(64BIT_FLAGS)
 WIN_LINK_FLAGS    = $(LINK_FLAGS) $(EXTRA_LIBS)
 
-ifeq ($(MACOS),true)
-OBJS = carla-discovery.mm.o
-else
 OBJS = carla-discovery.cpp
-endif
+
 
 # --------------------------------------------------------------
 

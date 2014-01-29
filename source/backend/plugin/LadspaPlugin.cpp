@@ -550,7 +550,6 @@ public:
             else if (LADSPA_IS_PORT_CONTROL(portType))
             {
                 uint32_t j = iCtrl++;
-                pData->param.data[j].type   = PARAMETER_UNKNOWN;
                 pData->param.data[j].hints  = 0x0;
                 pData->param.data[j].index  = static_cast<int32_t>(j);
                 pData->param.data[j].rindex = static_cast<int32_t>(i);
@@ -645,16 +644,6 @@ public:
                         pData->param.data[j].type = PARAMETER_SPECIAL;
                         pData->param.special[j]   = PARAMETER_SPECIAL_LATENCY;
                     }
-                    else if (std::strcmp(fDescriptor->PortNames[i], "_sample-rate") == 0)
-                    {
-                        def = sampleRate;
-                        step = 1.0f;
-                        stepSmall = 1.0f;
-                        stepLarge = 1.0f;
-
-                        pData->param.data[j].type = PARAMETER_SPECIAL;
-                        pData->param.special[j]   = PARAMETER_SPECIAL_SAMPLE_RATE;
-                    }
                     else
                     {
                         pData->param.data[j].type   = PARAMETER_OUTPUT;
@@ -665,6 +654,7 @@ public:
                 }
                 else
                 {
+                    pData->param.data[j].type = PARAMETER_UNKNOWN;
                     carla_stderr2("WARNING - Got a broken Port (Control, but not input or output)");
                 }
 
@@ -872,7 +862,6 @@ public:
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
                 FLOAT_CLEAR(outBuffer[i], frames);
-
             return;
         }
 
@@ -900,34 +889,30 @@ public:
 
             bool isSampleAccurate  = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
-            uint32_t time, numEvents = pData->event.portIn->getEventCount();
+            uint32_t numEvents  = pData->event.portIn->getEventCount();
             uint32_t timeOffset = 0;
 
             for (uint32_t i=0; i < numEvents; ++i)
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 
-                time = event.time;
-
-                if (time >= frames)
+                if (event.time >= frames)
                     continue;
 
-                CARLA_ASSERT_INT2(time >= timeOffset, time, timeOffset);
+                CARLA_ASSERT_INT2(event.time >= timeOffset, event.time, timeOffset);
 
-                if (time > timeOffset && isSampleAccurate)
+                if (isSampleAccurate && event.time > timeOffset)
                 {
-                    if (processSingle(inBuffer, outBuffer, time - timeOffset, timeOffset))
-                        timeOffset = time;
+                    if (processSingle(inBuffer, outBuffer, event.time - timeOffset, timeOffset))
+                        timeOffset = event.time;
                 }
 
-                // Control change
                 switch (event.type)
                 {
                 case kEngineEventTypeNull:
                     break;
 
-                case kEngineEventTypeControl:
-                {
+                case kEngineEventTypeControl: {
                     const EngineControlEvent& ctrlEvent(event.ctrl);
 
                     switch (ctrlEvent.type)
@@ -935,8 +920,7 @@ public:
                     case kEngineControlEventTypeNull:
                         break;
 
-                    case kEngineControlEventTypeParameter:
-                    {
+                    case kEngineControlEventTypeParameter: {
 #ifndef BUILD_BRIDGE
                         // Control backend stuff
                         if (event.channel == pData->ctrlChannel)
@@ -948,6 +932,7 @@ public:
                                 value = ctrlEvent.value;
                                 setDryWet(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
+                                break;
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
@@ -955,6 +940,7 @@ public:
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
+                                break;
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
@@ -982,6 +968,7 @@ public:
                                 setBalanceRight(right, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
+                                break;
                             }
                         }
 #endif
@@ -1014,25 +1001,24 @@ public:
 
                             setParameterValue(k, value, false, false, false);
                             pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
+                            break;
                         }
 
                         break;
-                    }
+                    } // case kEngineControlEventTypeParameter
 
                     case kEngineControlEventTypeMidiBank:
                     case kEngineControlEventTypeMidiProgram:
                     case kEngineControlEventTypeAllSoundOff:
                     case kEngineControlEventTypeAllNotesOff:
                         break;
-                    }
-
+                    } // switch (ctrlEvent.type)
                     break;
-                }
+                } // case kEngineEventTypeControl
 
                 case kEngineEventTypeMidi:
-                    // ignored in LADSPA
                     break;
-                }
+                } // switch (event.type)
             }
 
             pData->postRtEvents.trySplice();

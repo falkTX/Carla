@@ -1924,6 +1924,10 @@ const char* carla_get_host_osc_url_udp()
 
 // -------------------------------------------------------------------------------------------------------------------
 
+#ifdef WANT_DSSI
+# include "CarlaDssiUtils.cpp"
+#endif
+
 #include "CarlaStateUtils.cpp"
 
 #if 0

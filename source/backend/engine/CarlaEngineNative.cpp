@@ -1613,6 +1613,10 @@ const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const unsigned int,
 
 CARLA_BACKEND_END_NAMESPACE
 
+#ifdef WANT_DSSI
+# include "CarlaDssiUtils.cpp"
+#endif
+
 #include "CarlaStateUtils.cpp"
 
 #endif

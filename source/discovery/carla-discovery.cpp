@@ -66,14 +66,14 @@ CARLA_BACKEND_USE_NAMESPACE
 // --------------------------------------------------------------------------
 // Dummy values to test plugins with
 
-const uint32_t kBufferSize  = 512;
-const double   kSampleRate  = 44100.0;
-const float    kSampleRatef = 44100.0f;
+static const uint32_t kBufferSize  = 512;
+static const double   kSampleRate  = 44100.0;
+static const float    kSampleRatef = 44100.0f;
 
 // --------------------------------------------------------------------------
 // Don't print ELF/EXE related errors since discovery can find multi-architecture binaries
 
-void print_lib_error(const char* const filename)
+static void print_lib_error(const char* const filename)
 {
     const char* const error(lib_error(filename));
 
@@ -86,22 +86,22 @@ void print_lib_error(const char* const filename)
 // VST stuff
 
 // Check if plugin is currently processing
-bool gVstIsProcessing = false;
+static bool gVstIsProcessing = false;
 
 // Check if plugin needs idle
-bool gVstNeedsIdle = false;
+static bool gVstNeedsIdle = false;
 
 // Check if plugin wants midi
-bool gVstWantsMidi = false;
+static bool gVstWantsMidi = false;
 
 // Check if plugin wants time
-bool gVstWantsTime = false;
+static bool gVstWantsTime = false;
 
 // Current uniqueId for VST shell plugins
-intptr_t gVstCurrentUniqueId = 0;
+static intptr_t gVstCurrentUniqueId = 0;
 
 // Supported Carla features
-intptr_t vstHostCanDo(const char* const feature)
+static intptr_t vstHostCanDo(const char* const feature)
 {
     carla_debug("vstHostCanDo(\"%s\")", feature);
 
@@ -153,7 +153,7 @@ intptr_t vstHostCanDo(const char* const feature)
 }
 
 // Host-side callback
-intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
+static intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
 {
     carla_debug("vstHostCallback(%p, %i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
 
@@ -431,7 +431,7 @@ private:
 
 // ------------------------------ Plugin Checks -----------------------------
 
-void do_ladspa_check(void*& libHandle, const char* const filename, const bool init)
+static void do_ladspa_check(void*& libHandle, const char* const filename, const bool init)
 {
 #ifdef WANT_LADSPA
     LADSPA_Descriptor_Function descFn = (LADSPA_Descriptor_Function)lib_symbol(libHandle, "ladspa_descriptor");
@@ -508,7 +508,7 @@ void do_ladspa_check(void*& libHandle, const char* const filename, const bool in
             DISCOVERY_OUT("warning", "Plugin '" << descriptor->Name << "' is not hard real-time capable");
         }
 
-        int hints = 0x0;
+        uint hints = 0x0;
         int audioIns = 0;
         int audioOuts = 0;
         int audioTotal = 0;
@@ -675,7 +675,7 @@ void do_ladspa_check(void*& libHandle, const char* const filename, const bool in
 #endif
 }
 
-void do_dssi_check(void*& libHandle, const char* const filename, const bool init)
+static void do_dssi_check(void*& libHandle, const char* const filename, const bool init)
 {
 #ifdef WANT_DSSI
     DSSI_Descriptor_Function descFn = (DSSI_Descriptor_Function)lib_symbol(libHandle, "dssi_descriptor");
@@ -726,7 +726,7 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
                 return;
             }
 
-            DSSI_Descriptor_Function descFn = (DSSI_Descriptor_Function)lib_symbol(libHandle, "dssi_descriptor");
+            descFn = (DSSI_Descriptor_Function)lib_symbol(libHandle, "dssi_descriptor");
 
             if (descFn == nullptr)
             {
@@ -772,7 +772,7 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
             DISCOVERY_OUT("warning", "Plugin '" << ldescriptor->Name << "' is not hard real-time capable");
         }
 
-        int hints = 0x0;
+        uint hints = 0x0;
         int audioIns = 0;
         int audioOuts = 0;
         int audioTotal = 0;
@@ -780,7 +780,7 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
         int parametersIns = 0;
         int parametersOuts = 0;
         int parametersTotal = 0;
-        int programs = 0;
+        ulong programs = 0;
 
         if (LADSPA_IS_HARD_RT_CAPABLE(ldescriptor->Properties))
             hints |= PLUGIN_IS_RTSAFE;
@@ -816,13 +816,11 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
         if (midiIns > 0 && audioIns == 0 && audioOuts > 0)
             hints |= PLUGIN_IS_SYNTH;
 
-#if 0 // FIXME
         if (const char* const ui = find_dssi_ui(filename, ldescriptor->Label))
         {
             hints |= PLUGIN_HAS_CUSTOM_UI;
             delete[] ui;
         }
-#endif
 
         if (init)
         {
@@ -850,8 +848,8 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
 
             if (descriptor->get_program != nullptr && descriptor->select_program != nullptr)
             {
-                while (descriptor->get_program(handle, programs++) != nullptr)
-                    continue;
+                for (; descriptor->get_program(handle, programs) != nullptr;)
+                    ++programs;
             }
 
             LADSPA_Data bufferAudio[kBufferSize][audioTotal];
@@ -997,7 +995,7 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
 #endif
 }
 
-void do_lv2_check(const char* const bundle, const bool init)
+static void do_lv2_check(const char* const bundle, const bool init)
 {
 #ifdef WANT_LV2
     Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
@@ -1212,7 +1210,7 @@ void do_lv2_check(const char* const bundle, const bool init)
 #endif
 }
 
-void do_vst_check(void*& libHandle, const bool init)
+static void do_vst_check(void*& libHandle, const bool init)
 {
 #ifdef WANT_VST
     VST_Function vstFn = (VST_Function)lib_symbol(libHandle, "VSTPluginMain");
@@ -1456,7 +1454,7 @@ void do_vst_check(void*& libHandle, const bool init)
 #endif
 }
 
-void do_au_check(void*& libHandle, const bool init)
+static void do_au_check(void*& libHandle, const bool init)
 {
 #if 0 //def WANT_AU
 #else
@@ -1470,7 +1468,7 @@ void do_au_check(void*& libHandle, const bool init)
 };
 
 #ifdef HAVE_JUCE
-void do_juce_check(const char* const filename, const char* const stype, const bool init)
+static void do_juce_check(const char* const filename, const char* const stype, const bool init)
 {
     using namespace juce;
 
@@ -1556,7 +1554,7 @@ void do_juce_check(const char* const filename, const char* const stype, const bo
 }
 #endif
 
-void do_csound_check(const char* const filename, const bool init)
+static void do_csound_check(const char* const filename, const bool init)
 {
 #ifdef WANT_CSOUND
     Csound csound;
@@ -1659,7 +1657,7 @@ void do_csound_check(const char* const filename, const bool init)
 #endif
 }
 
-void do_fluidsynth_check(const char* const filename, const bool init)
+static void do_fluidsynth_check(const char* const filename, const bool init)
 {
 #ifdef WANT_FLUIDSYNTH
     if (! fluid_is_soundfont(filename))
@@ -1685,7 +1683,7 @@ void do_fluidsynth_check(const char* const filename, const bool init)
         fluid_sfont_t* f_sfont;
         fluid_preset_t f_preset;
 
-        f_sfont = fluid_synth_get_sfont_by_id(f_synth, f_id);
+        f_sfont = fluid_synth_get_sfont_by_id(f_synth, static_cast<uint>(f_id));
 
         f_sfont->iteration_start(f_sfont);
         while (f_sfont->iteration_next(f_sfont, &f_preset))
@@ -1745,7 +1743,7 @@ void do_fluidsynth_check(const char* const filename, const bool init)
 #endif
 }
 
-void do_linuxsampler_check(const char* const filename, const char* const stype, const bool init)
+static void do_linuxsampler_check(const char* const filename, const char* const stype, const bool init)
 {
 #ifdef WANT_LINUXSAMPLER
     const QFileInfo file(filename);
@@ -1931,6 +1929,13 @@ int main(int argc, char* argv[])
 
     return 0;
 }
+
+// --------------------------------------------------------------------------
+// Extras
+
+#ifdef WANT_DSSI
+# include "CarlaDssiUtils.cpp"
+#endif
 
 #ifdef HAVE_JUCE
 // --------------------------------------------------------------------------

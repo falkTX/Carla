@@ -120,39 +120,6 @@ $(error QtXml missing, cannot continue)
 endif
 
 # --------------------------------------------------------------
-# Check for optional libs (required by backend or bridges)
-
-HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil && pkg-config --max-version=1.9 libavcodec && echo true)
-HAVE_GTK2         = $(shell pkg-config --exists gtk+-2.0 && echo true)
-HAVE_GTK3         = $(shell pkg-config --exists gtk+-3.0 && echo true)
-HAVE_QT4          = $(shell pkg-config --exists QtCore QtGui && echo true)
-HAVE_QT5          = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
-HAVE_X11          = $(shell pkg-config --exists x11 && echo true)
-
-ifeq ($(LINUX),true)
-HAVE_ALSA         = $(shell pkg-config --exists alsa && echo true)
-HAVE_PULSEAUDIO   = $(shell pkg-config --exists libpulse-simple && echo true)
-endif
-
-ifeq ($(CARLA_CSOUND_SUPPORT),true)
-# FIXME ?
-HAVE_CSOUND       = $(shell pkg-config --exists sndfile && echo true)
-endif
-
-ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
-HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)
-HAVE_LINUXSAMPLER = $(shell pkg-config --exists linuxsampler && echo true)
-endif
-
-# --------------------------------------------------------------
-# Check for optional libs (needed by internal plugins)
-
-HAVE_AF_DEPS      = $(shell pkg-config --exists sndfile && echo true)
-HAVE_MF_DEPS      = $(shell pkg-config --exists smf && echo true)
-HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
-HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk_images ntk && echo true)
-
-# --------------------------------------------------------------
 # Check for dgl support
 
 ifeq ($(HAIKU),true)
@@ -189,6 +156,40 @@ endif
 ifeq ($(WIN32),true)
 HAVE_JUCE = true
 endif
+
+# --------------------------------------------------------------
+# Check for optional libs (required by backend or bridges)
+
+HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil && pkg-config --max-version=1.9 libavcodec && echo true)
+HAVE_GTK2         = $(shell pkg-config --exists gtk+-2.0 && echo true)
+HAVE_GTK3         = $(shell pkg-config --exists gtk+-3.0 && echo true)
+HAVE_QT4          = $(shell pkg-config --exists QtCore QtGui && echo true)
+HAVE_QT5          = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
+HAVE_X11          = $(shell pkg-config --exists x11 && echo true)
+
+ifeq ($(LINUX),true)
+HAVE_ALSA         = $(shell pkg-config --exists alsa && echo true)
+HAVE_PULSEAUDIO   = $(shell pkg-config --exists libpulse-simple && echo true)
+endif
+
+ifeq ($(CARLA_CSOUND_SUPPORT),true)
+ifeq ($(HAVE_JUCE),true)
+HAVE_CSOUND       = $(shell pkg-config --exists sndfile && echo true)
+endif
+endif
+
+ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
+HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)
+HAVE_LINUXSAMPLER = $(shell pkg-config --exists linuxsampler && echo true)
+endif
+
+# --------------------------------------------------------------
+# Check for optional libs (needed by internal plugins)
+
+HAVE_AF_DEPS      = $(shell pkg-config --exists sndfile && echo true)
+HAVE_MF_DEPS      = $(shell pkg-config --exists smf && echo true)
+HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
+HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk_images ntk && echo true)
 
 # --------------------------------------------------------------
 # Set base stuff
