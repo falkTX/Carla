@@ -82,8 +82,23 @@ WIN_32BIT_FLAGS   = $(32BIT_FLAGS)
 WIN_64BIT_FLAGS   = $(64BIT_FLAGS)
 WIN_LINK_FLAGS    = $(LINK_FLAGS) $(EXTRA_LIBS)
 
-OBJS = carla-discovery.cpp
+# --------------------------------------------------------------
 
+DEPS  = ../includes/CarlaDefines.h
+DEPS += ../includes/CarlaMIDI.h
+DEPS += ../backend/CarlaBackend.h
+DEPS += ../utils/CarlaString.hpp
+DEPS += ../utils/CarlaUtils.hpp
+DEPS += ../utils/CarlaBackendUtils.hpp
+DEPS += ../utils/CarlaJuceUtils.hpp
+DEPS += ../utils/CarlaLibUtils.hpp
+DEPS += ../utils/CarlaMathUtils.hpp
+DEPS += ../utils/CarlaLadspaUtils.hpp
+DEPS += ../utils/CarlaDssiUtils.hpp
+DEPS += ../utils/CarlaLv2Utils.hpp
+DEPS += ../utils/CarlaVstUtils.hpp
+
+OBJS = carla-discovery.cpp
 
 # --------------------------------------------------------------
 
@@ -100,23 +115,23 @@ win64:   carla-discovery-win64.exe
 
 # --------------------------------------------------------------
 
-carla-discovery-native: $(OBJS) $(LIBS)
-	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) $(POSIX_LINK_FLAGS) -o $@
+carla-discovery-native: $(OBJS) $(DEPS) $(LIBS)
+	$(CXX) $< $(LIBS) $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) $(POSIX_LINK_FLAGS) -o $@
 
-carla-discovery-native.exe: $(OBJS) $(LIBS)
-	$(CXX) $^ $(WIN_BUILD_FLAGS) $(NATIVE_FLAGS) $(WIN_LINK_FLAGS) -o $@
+carla-discovery-native.exe: $(OBJS) $(DEPS) $(LIBS)
+	$(CXX) $< $(LIBS) $(WIN_BUILD_FLAGS) $(NATIVE_FLAGS) $(WIN_LINK_FLAGS) -o $@
 
-carla-discovery-posix32: $(OBJS) $(LIBS_posix32)
-	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@
+carla-discovery-posix32: $(OBJS) $(DEPS) $(LIBS_posix32)
+	$(CXX) $< $(LIBS_posix32) $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@
 
-carla-discovery-posix64: $(OBJS) $(LIBS_posix64)
-	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@
+carla-discovery-posix64: $(OBJS) $(DEPS) $(LIBS_posix64)
+	$(CXX) $< $(LIBS_posix64) $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@
 
-carla-discovery-win32.exe: $(OBJS) $(LIBS_win32)
-	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@
+carla-discovery-win32.exe: $(OBJS) $(DEPS) $(LIBS_win32)
+	$(CXX) $< $(LIBS_win32) $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@
 
-carla-discovery-win64.exe: $(OBJS) $(LIBS_win64)
-	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@
+carla-discovery-win64.exe: $(OBJS) $(DEPS) $(LIBS_win64)
+	$(CXX) $< $(LIBS_win64) $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
 

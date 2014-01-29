@@ -218,7 +218,7 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
                 {
                     saveState.label = xmlSafeStringCharDup(text, false);
                 }
-                else if (tag.compare("binary", Qt::CaseInsensitive) == 0 || tag.compare("filename", Qt::CaseInsensitive) == 0)
+                else if (tag.compare("binary", Qt::CaseInsensitive) == 0 || tag.compare("bundle", Qt::CaseInsensitive) == 0 || tag.compare("filename", Qt::CaseInsensitive) == 0)
                 {
                     saveState.binary = xmlSafeStringCharDup(text, false);
                 }
@@ -433,6 +433,7 @@ void fillXmlStringFromSaveState(QString& content, const SaveState& saveState)
             info += QString("   <Label>%1</Label>\n").arg(xmlSafeString(saveState.label, true));
             break;
         case PLUGIN_LV2:
+            info += QString("   <Bundle>%1</Bundle>\n").arg(xmlSafeString(saveState.binary, true));
             info += QString("   <URI>%1</URI>\n").arg(xmlSafeString(saveState.label, true));
             break;
         case PLUGIN_VST:

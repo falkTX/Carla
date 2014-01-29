@@ -46,8 +46,136 @@ CARLA_BACKEND_START_NAMESPACE
 const unsigned int PARAMETER_IS_STRICT_BOUNDS = 0x1000;
 const unsigned int PARAMETER_IS_TRIGGER       = 0x2000;
 
+// LV2 URI Map Ids
+const uint32_t CARLA_URI_MAP_ID_NULL                   =  0;
+const uint32_t CARLA_URI_MAP_ID_ATOM_BLANK             =  1;
+const uint32_t CARLA_URI_MAP_ID_ATOM_BOOL              =  2;
+const uint32_t CARLA_URI_MAP_ID_ATOM_CHUNK             =  3;
+const uint32_t CARLA_URI_MAP_ID_ATOM_DOUBLE            =  4;
+const uint32_t CARLA_URI_MAP_ID_ATOM_FLOAT             =  5;
+const uint32_t CARLA_URI_MAP_ID_ATOM_INT               =  6;
+const uint32_t CARLA_URI_MAP_ID_ATOM_LITERAL           =  7;
+const uint32_t CARLA_URI_MAP_ID_ATOM_LONG              =  8;
+const uint32_t CARLA_URI_MAP_ID_ATOM_PATH              =  9;
+const uint32_t CARLA_URI_MAP_ID_ATOM_PROPERTY          = 10;
+const uint32_t CARLA_URI_MAP_ID_ATOM_RESOURCE          = 11;
+const uint32_t CARLA_URI_MAP_ID_ATOM_SEQUENCE          = 12;
+const uint32_t CARLA_URI_MAP_ID_ATOM_STRING            = 13;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TUPLE             = 14;
+const uint32_t CARLA_URI_MAP_ID_ATOM_URI               = 15;
+const uint32_t CARLA_URI_MAP_ID_ATOM_URID              = 16;
+const uint32_t CARLA_URI_MAP_ID_ATOM_VECTOR            = 17;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM     = 18;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT    = 19;
+const uint32_t CARLA_URI_MAP_ID_BUF_MAX_LENGTH         = 20;
+const uint32_t CARLA_URI_MAP_ID_BUF_MIN_LENGTH         = 21;
+const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE      = 22;
+const uint32_t CARLA_URI_MAP_ID_LOG_ERROR              = 23;
+const uint32_t CARLA_URI_MAP_ID_LOG_NOTE               = 24;
+const uint32_t CARLA_URI_MAP_ID_LOG_TRACE              = 25;
+const uint32_t CARLA_URI_MAP_ID_LOG_WARNING            = 26;
+const uint32_t CARLA_URI_MAP_ID_TIME_POSITION          = 27; // base type
+const uint32_t CARLA_URI_MAP_ID_TIME_BAR               = 28; // values
+const uint32_t CARLA_URI_MAP_ID_TIME_BAR_BEAT          = 29;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEAT              = 30;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEAT_UNIT         = 31;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR     = 32;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE  = 33;
+const uint32_t CARLA_URI_MAP_ID_TIME_FRAME             = 34;
+const uint32_t CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND = 35;
+const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 36;
+const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 37;
+const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 38;
+const uint32_t CARLA_URI_MAP_ID_COUNT                  = 39;
+
 // LV2 Feature Ids
-const uint32_t kFeatureCount = 0;
+const uint32_t kFeatureIdBufSizeBounded   =  0;
+const uint32_t kFeatureIdBufSizeFixed     =  1;
+const uint32_t kFeatureIdBufSizePowerOf2  =  2;
+const uint32_t kFeatureIdEvent            =  3;
+const uint32_t kFeatureIdHardRtCapable    =  4;
+const uint32_t kFeatureIdInPlaceBroken    =  5;
+const uint32_t kFeatureIdIsLive           =  6;
+const uint32_t kFeatureIdLogs             =  7;
+const uint32_t kFeatureIdOptions          =  8;
+const uint32_t kFeatureIdPrograms         =  9;
+const uint32_t kFeatureIdRtMemPool        = 10;
+const uint32_t kFeatureIdStateMakePath    = 11;
+const uint32_t kFeatureIdStateMapPath     = 12;
+const uint32_t kFeatureIdStrictBounds     = 13;
+const uint32_t kFeatureIdUriMap           = 14;
+const uint32_t kFeatureIdUridMap          = 15;
+const uint32_t kFeatureIdUridUnmap        = 16;
+const uint32_t kFeatureIdWorker           = 17;
+const uint32_t kFeatureCountPlugin        = 18;
+const uint32_t kFeatureCountAll           = 19;
+
+// -----------------------------------------------------
+
+struct Lv2PluginOptions {
+    enum OptIndex {
+        MaxBlockLenth = 0,
+        MinBlockLenth,
+        //SequenceSize,
+        SampleRate,
+        Null
+    };
+
+    int maxBufferSize;
+    int minBufferSize;
+    //int sequenceSize;
+    double sampleRate;
+    LV2_Options_Option opts[5];
+
+    Lv2PluginOptions()
+        : maxBufferSize(0),
+          minBufferSize(0),
+          //sequenceSize(MAX_EVENT_BUFFER),
+          sampleRate(0.0)
+    {
+        LV2_Options_Option& optMaxBlockLenth(opts[MaxBlockLenth]);
+        optMaxBlockLenth.context = LV2_OPTIONS_INSTANCE;
+        optMaxBlockLenth.subject = 0;
+        optMaxBlockLenth.key     = CARLA_URI_MAP_ID_BUF_MAX_LENGTH;
+        optMaxBlockLenth.size    = sizeof(int);
+        optMaxBlockLenth.type    = CARLA_URI_MAP_ID_ATOM_INT;
+        optMaxBlockLenth.value   = &maxBufferSize;
+
+        LV2_Options_Option& optMinBlockLenth(opts[MinBlockLenth]);
+        optMinBlockLenth.context = LV2_OPTIONS_INSTANCE;
+        optMinBlockLenth.subject = 0;
+        optMinBlockLenth.key     = CARLA_URI_MAP_ID_BUF_MIN_LENGTH;
+        optMinBlockLenth.size    = sizeof(int);
+        optMinBlockLenth.type    = CARLA_URI_MAP_ID_ATOM_INT;
+        optMinBlockLenth.value   = &minBufferSize;
+
+#if 0
+        LV2_Options_Option& optSequenceSize(opts[SequenceSize]);
+        optSequenceSize.context = LV2_OPTIONS_INSTANCE;
+        optSequenceSize.subject = 0;
+        optSequenceSize.key     = CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE;
+        optSequenceSize.size    = sizeof(int);
+        optSequenceSize.type    = CARLA_URI_MAP_ID_ATOM_INT;
+        optSequenceSize.value   = &sequenceSize;
+#endif
+
+        LV2_Options_Option& optSampleRate(opts[SampleRate]);
+        optSampleRate.context = LV2_OPTIONS_INSTANCE;
+        optSampleRate.subject = 0;
+        optSampleRate.key     = CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE;
+        optSampleRate.size    = sizeof(double);
+        optSampleRate.type    = CARLA_URI_MAP_ID_ATOM_DOUBLE;
+        optSampleRate.value   = &sampleRate;
+
+        LV2_Options_Option& optNull(opts[Null]);
+        optNull.context = LV2_OPTIONS_INSTANCE;
+        optNull.subject = 0;
+        optNull.key     = CARLA_URI_MAP_ID_NULL;
+        optNull.size    = 0;
+        optNull.type    = CARLA_URI_MAP_ID_NULL;
+        optNull.value   = nullptr;
+    }
+};
 
 // -----------------------------------------------------
 
@@ -66,7 +194,10 @@ public:
     {
         carla_debug("Lv2Plugin::Lv2Plugin(%p, %i)", engine, id);
 
-        carla_fill<LV2_Feature*>(fFeatures, kFeatureCount+1, nullptr);
+        carla_fill<LV2_Feature*>(fFeatures, kFeatureCountAll+1, nullptr);
+
+        for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; ++i)
+            fCustomURIDs.append(nullptr);
 
         pData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_LV2_GUI);
     }
@@ -107,6 +238,58 @@ public:
             delete fRdfDescriptor;
             fRdfDescriptor = nullptr;
         }
+
+        if (fFeatures[kFeatureIdEvent] != nullptr && fFeatures[kFeatureIdEvent]->data != nullptr)
+            delete (LV2_Event_Feature*)fFeatures[kFeatureIdEvent]->data;
+
+        if (fFeatures[kFeatureIdLogs] != nullptr && fFeatures[kFeatureIdLogs]->data != nullptr)
+            delete (LV2_Log_Log*)fFeatures[kFeatureIdLogs]->data;
+
+        if (fFeatures[kFeatureIdStateMakePath] != nullptr && fFeatures[kFeatureIdStateMakePath]->data != nullptr)
+            delete (LV2_State_Make_Path*)fFeatures[kFeatureIdStateMakePath]->data;
+
+        if (fFeatures[kFeatureIdStateMapPath] != nullptr && fFeatures[kFeatureIdStateMapPath]->data != nullptr)
+            delete (LV2_State_Map_Path*)fFeatures[kFeatureIdStateMapPath]->data;
+
+        if (fFeatures[kFeatureIdPrograms] != nullptr && fFeatures[kFeatureIdPrograms]->data != nullptr)
+            delete (LV2_Programs_Host*)fFeatures[kFeatureIdPrograms]->data;
+
+        if (fFeatures[kFeatureIdRtMemPool] != nullptr && fFeatures[kFeatureIdRtMemPool]->data != nullptr)
+            delete (LV2_RtMemPool_Pool*)fFeatures[kFeatureIdRtMemPool]->data;
+
+        if (fFeatures[kFeatureIdUriMap] != nullptr && fFeatures[kFeatureIdUriMap]->data != nullptr)
+            delete (LV2_URI_Map_Feature*)fFeatures[kFeatureIdUriMap]->data;
+
+        if (fFeatures[kFeatureIdUridMap] != nullptr && fFeatures[kFeatureIdUridMap]->data != nullptr)
+            delete (LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data;
+
+        if (fFeatures[kFeatureIdUridUnmap] != nullptr && fFeatures[kFeatureIdUridUnmap]->data != nullptr)
+            delete (LV2_URID_Unmap*)fFeatures[kFeatureIdUridUnmap]->data;
+
+        if (fFeatures[kFeatureIdWorker] != nullptr && fFeatures[kFeatureIdWorker]->data != nullptr)
+            delete (LV2_Worker_Schedule*)fFeatures[kFeatureIdWorker]->data;
+
+        for (uint32_t i=0; i < kFeatureCountAll; ++i)
+        {
+            if (fFeatures[i] != nullptr)
+            {
+                delete fFeatures[i];
+                fFeatures[i] = nullptr;
+            }
+        }
+
+        for (LinkedList<const char*>::Itenerator it = fCustomURIDs.begin(); it.valid(); it.next())
+        {
+            const char*& uri(it.getValue());
+
+            if (uri != nullptr)
+            {
+                delete[] uri;
+                uri = nullptr;
+            }
+        }
+
+        fCustomURIDs.clear();
 
         clearBuffers();
     }
@@ -1265,6 +1448,24 @@ public:
             }
         }
 
+        const int newBufferSizeInt(static_cast<int>(newBufferSize));
+
+        if (fLv2Options.maxBufferSize != newBufferSizeInt || (fLv2Options.minBufferSize != 1 && fLv2Options.minBufferSize != newBufferSizeInt))
+        {
+            fLv2Options.maxBufferSize = newBufferSizeInt;
+
+            if (fLv2Options.minBufferSize != 1)
+                fLv2Options.minBufferSize = newBufferSizeInt;
+
+#if 0
+            if (fExt.options != nullptr && fExt.options->set != nullptr)
+            {
+                fExt.options->set(fHandle, &fLv2Options.opts[Lv2PluginOptions::MaxBlockLenth]);
+                fExt.options->set(fHandle, &fLv2Options.opts[Lv2PluginOptions::MinBlockLenth]);
+            }
+#endif
+        }
+
         carla_debug("Lv2Plugin::bufferSizeChanged(%i) - end", newBufferSize);
     }
 
@@ -1273,8 +1474,15 @@ public:
         CARLA_ASSERT_INT(newSampleRate > 0.0, (int)newSampleRate);
         carla_debug("Lv2Plugin::sampleRateChanged(%g) - start", newSampleRate);
 
-        // TODO
-        (void)newSampleRate;
+        if (fLv2Options.sampleRate != newSampleRate)
+        {
+            fLv2Options.sampleRate = newSampleRate;
+
+#if 0
+            if (fExt.options != nullptr && fExt.options->set != nullptr)
+                fExt.options->set(fHandle, &fLv2Options.opts[Lv2PluginOptions::SampleRate]);
+#endif
+        }
 
         carla_debug("Lv2Plugin::sampleRateChanged(%g) - end", newSampleRate);
     }
@@ -1370,6 +1578,97 @@ public:
 
     // -------------------------------------------------------------------
 
+    LV2_URID getCustomURID(const char* const uri)
+    {
+        CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', CARLA_URI_MAP_ID_NULL);
+        carla_debug("Lv2Plugin::getCustomURID(\"%s\")", uri);
+
+        for (size_t i=0; i < fCustomURIDs.count(); ++i)
+        {
+            const char*& thisUri(fCustomURIDs.getAt(i));
+            if (thisUri != nullptr && std::strcmp(thisUri, uri) == 0)
+                return static_cast<LV2_URID>(i);
+        }
+
+        const LV2_URID urid(static_cast<LV2_URID>(fCustomURIDs.count()));
+
+        fCustomURIDs.append(carla_strdup(uri));
+
+#if 0
+        if (fUi.type == PLUGIN_UI_OSC && kData->osc.data.target != nullptr)
+            osc_send_lv2_urid_map(&kData->osc.data, urid, uri);
+#endif
+
+        return urid;
+    }
+
+    const char* getCustomURIDString(const LV2_URID urid)
+    {
+        CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.count(), nullptr);
+        carla_debug("Lv2Plugin::getCustomURIString(%i)", urid);
+
+        return fCustomURIDs.getAt(urid);
+    }
+
+    // -------------------------------------------------------------------
+
+    void handleProgramChanged(const int32_t index)
+    {
+        CARLA_SAFE_ASSERT_RETURN(index >= -1,);
+        carla_debug("Lv2Plugin::handleProgramChanged(%i)", index);
+
+        if (index == -1)
+        {
+            const ScopedSingleProcessLocker spl(this, true);
+            return reloadPrograms(false);
+        }
+
+#if 0
+        if (index < static_cast<int32_t>(pData->midiprog.count) && fExt.programs != nullptr && fExt.programs->get_program != nullptr)
+        {
+            if (const LV2_Program_Descriptor* progDesc = fExt.programs->get_program(fHandle, index))
+            {
+                CARLA_ASSERT(progDesc->name != nullptr);
+
+                if (kData->midiprog.data[index].name != nullptr)
+                    delete[] kData->midiprog.data[index].name;
+
+                kData->midiprog.data[index].name = carla_strdup(progDesc->name ? progDesc->name : "");
+
+                if (index == kData->midiprog.current)
+                    kData->engine->callback(CALLBACK_UPDATE, fId, 0, 0, 0.0, nullptr);
+                else
+                    kData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0, nullptr);
+            }
+        }
+#endif
+    }
+
+    // -------------------------------------------------------------------
+
+    LV2_Worker_Status handleWorkerSchedule(const uint32_t size, const void* const data)
+    {
+        carla_stdout("Lv2Plugin::handleWorkerSchedule(%i, %p)", size, data);
+
+#if 0
+        if (fExt.worker == nullptr || fExt.worker->work == nullptr)
+        {
+            carla_stderr("Lv2Plugin::handleWorkerSchedule(%i, %p) - plugin has no worker", size, data);
+            return LV2_WORKER_ERR_UNKNOWN;
+        }
+
+        //if (kData->engine->isOffline())
+        fExt.worker->work(fHandle, carla_lv2_worker_respond, this, size, data);
+        //else
+        //    postponeEvent(PluginPostEventCustom, size, 0, 0.0, data);
+#endif
+
+        return LV2_WORKER_SUCCESS;
+    }
+
+    // -------------------------------------------------------------------
+
 public:
     bool init(const char* const bundle, const char* const name, const char* const uri)
     {
@@ -1444,7 +1743,6 @@ public:
         uint32_t i = 0;
         while ((fDescriptor = descFn(i++)))
         {
-            carla_debug("LV2 Init @%i => '%s' vs '%s'", i, fDescriptor->URI, uri);
             if (std::strcmp(fDescriptor->URI, uri) == 0)
                 break;
         }
@@ -1479,12 +1777,18 @@ public:
         // Check supported features
         for (uint32_t j=0; j < fRdfDescriptor->FeatureCount && canContinue; ++j)
         {
-            if (LV2_IS_FEATURE_REQUIRED(fRdfDescriptor->Features[j].Type) && ! is_lv2_feature_supported(fRdfDescriptor->Features[j].URI))
+            if (! is_lv2_feature_supported(fRdfDescriptor->Features[j].URI))
             {
-//                 QString msg(QString("Plugin requires a feature that is not supported:\n%1").arg(fRdfDescriptor->Features[j].URI));
-//                 pData->engine->setLastError(msg.toUtf8().constData());
-                canContinue = false;
-                break;
+                QString msg(QString("Plugin wants a feature that is not supported:\n%1").arg(fRdfDescriptor->Features[j].URI));
+
+                if (LV2_IS_FEATURE_REQUIRED(fRdfDescriptor->Features[j].Type))
+                {
+                    canContinue = false;
+                    pData->engine->setLastError(msg.toUtf8().constData());
+                    break;
+                }
+                else
+                    carla_stderr("%s", msg.toUtf8().constData());
             }
         }
 
@@ -1502,6 +1806,8 @@ public:
         else
             pData->name = pData->engine->getUniquePluginName(fRdfDescriptor->Name);
 
+        pData->filename = carla_strdup(bundle);
+
         // ---------------------------------------------------------------
         // register client
 
@@ -1512,6 +1818,126 @@ public:
             pData->engine->setLastError("Failed to register plugin client");
             return false;
         }
+
+        // ---------------------------------------------------------------
+        // initialize options
+
+        fLv2Options.minBufferSize = 1;
+        fLv2Options.maxBufferSize = static_cast<int>(pData->engine->getBufferSize());
+        fLv2Options.sampleRate    = pData->engine->getSampleRate();
+
+        // ---------------------------------------------------------------
+        // initialize features (part 1)
+
+        LV2_Event_Feature* const eventFt = new LV2_Event_Feature;
+        eventFt->callback_data           = this;
+        eventFt->lv2_event_ref           = carla_lv2_event_ref;
+        eventFt->lv2_event_unref         = carla_lv2_event_unref;
+
+        LV2_Log_Log* const logFt         = new LV2_Log_Log;
+        logFt->handle                    = this;
+        logFt->printf                    = carla_lv2_log_printf;
+        logFt->vprintf                   = carla_lv2_log_vprintf;
+
+        LV2_State_Make_Path* const stateMakePathFt = new LV2_State_Make_Path;
+        stateMakePathFt->handle                    = this;
+        stateMakePathFt->path                      = carla_lv2_state_make_path;
+
+        LV2_State_Map_Path* const stateMapPathFt   = new LV2_State_Map_Path;
+        stateMapPathFt->handle                     = this;
+        stateMapPathFt->abstract_path              = carla_lv2_state_map_abstract_path;
+        stateMapPathFt->absolute_path              = carla_lv2_state_map_absolute_path;
+
+        LV2_Programs_Host* const programsFt   = new LV2_Programs_Host;
+        programsFt->handle                    = this;
+        programsFt->program_changed           = carla_lv2_program_changed;
+
+        LV2_RtMemPool_Pool* const rtMemPoolFt = new LV2_RtMemPool_Pool;
+        lv2_rtmempool_init(rtMemPoolFt);
+
+        LV2_URI_Map_Feature* const uriMapFt = new LV2_URI_Map_Feature;
+        uriMapFt->callback_data             = this;
+        uriMapFt->uri_to_id                 = carla_lv2_uri_to_id;
+
+        LV2_URID_Map* const uridMapFt       = new LV2_URID_Map;
+        uridMapFt->handle                   = this;
+        uridMapFt->map                      = carla_lv2_urid_map;
+
+        LV2_URID_Unmap* const uridUnmapFt   = new LV2_URID_Unmap;
+        uridUnmapFt->handle                 = this;
+        uridUnmapFt->unmap                  = carla_lv2_urid_unmap;
+
+        LV2_Worker_Schedule* const workerFt = new LV2_Worker_Schedule;
+        workerFt->handle                    = this;
+        workerFt->schedule_work             = carla_lv2_worker_schedule;
+
+        // ---------------------------------------------------------------
+        // initialize features (part 2)
+
+        for (uint32_t j=0; j < kFeatureCountPlugin; ++j)
+            fFeatures[j] = new LV2_Feature;
+
+        fFeatures[kFeatureIdBufSizeBounded]->URI   = LV2_BUF_SIZE__boundedBlockLength;
+        fFeatures[kFeatureIdBufSizeBounded]->data  = nullptr;
+
+        fFeatures[kFeatureIdBufSizeFixed]->URI     = LV2_BUF_SIZE__fixedBlockLength;
+        fFeatures[kFeatureIdBufSizeFixed]->data    = nullptr;
+
+        fFeatures[kFeatureIdBufSizePowerOf2]->URI  = LV2_BUF_SIZE__powerOf2BlockLength;
+        fFeatures[kFeatureIdBufSizePowerOf2]->data = nullptr;
+
+        fFeatures[kFeatureIdEvent]->URI          = LV2_EVENT_URI;
+        fFeatures[kFeatureIdEvent]->data         = eventFt;
+
+        fFeatures[kFeatureIdHardRtCapable]->URI  = LV2_CORE__hardRTCapable;
+        fFeatures[kFeatureIdHardRtCapable]->data = nullptr;
+
+        fFeatures[kFeatureIdInPlaceBroken]->URI  = LV2_CORE__inPlaceBroken;
+        fFeatures[kFeatureIdInPlaceBroken]->data = nullptr;
+
+        fFeatures[kFeatureIdIsLive]->URI         = LV2_CORE__isLive;
+        fFeatures[kFeatureIdIsLive]->data        = nullptr;
+
+        fFeatures[kFeatureIdLogs]->URI       = LV2_LOG__log;
+        fFeatures[kFeatureIdLogs]->data      = logFt;
+
+        fFeatures[kFeatureIdOptions]->URI    = LV2_OPTIONS__options;
+        fFeatures[kFeatureIdOptions]->data   = fLv2Options.opts;
+
+        fFeatures[kFeatureIdPrograms]->URI   = LV2_PROGRAMS__Host;
+        fFeatures[kFeatureIdPrograms]->data  = programsFt;
+
+        fFeatures[kFeatureIdRtMemPool]->URI  = LV2_RTSAFE_MEMORY_POOL__Pool;
+        fFeatures[kFeatureIdRtMemPool]->data = rtMemPoolFt;
+
+        fFeatures[kFeatureIdStateMakePath]->URI  = LV2_STATE__makePath;
+        fFeatures[kFeatureIdStateMakePath]->data = stateMakePathFt;
+
+        fFeatures[kFeatureIdStateMapPath]->URI   = LV2_STATE__mapPath;
+        fFeatures[kFeatureIdStateMapPath]->data  = stateMapPathFt;
+
+        fFeatures[kFeatureIdStrictBounds]->URI   = LV2_PORT_PROPS__supportsStrictBounds;
+        fFeatures[kFeatureIdStrictBounds]->data  = nullptr;
+
+        fFeatures[kFeatureIdUriMap]->URI     = LV2_URI_MAP_URI;
+        fFeatures[kFeatureIdUriMap]->data    = uriMapFt;
+
+        fFeatures[kFeatureIdUridMap]->URI    = LV2_URID__map;
+        fFeatures[kFeatureIdUridMap]->data   = uridMapFt;
+
+        fFeatures[kFeatureIdUridUnmap]->URI  = LV2_URID__unmap;
+        fFeatures[kFeatureIdUridUnmap]->data = uridUnmapFt;
+
+        fFeatures[kFeatureIdWorker]->URI     = LV2_WORKER__schedule;
+        fFeatures[kFeatureIdWorker]->data    = workerFt;
+
+        // if a fixed buffer is not needed, skip its feature
+        if (! needsFixedBuffer())
+            fFeatures[kFeatureIdBufSizeFixed]->URI = LV2_BUF_SIZE__boundedBlockLength;
+
+        // if power of 2 is not possible, skip its feature FIXME
+        //if (fLv2Options.maxBufferSize)
+        //    fFeatures[kFeatureIdBufSizePowerOf2]->URI = LV2_BUF_SIZE__boundedBlockLength;
 
         // ---------------------------------------------------------------
         // initialize plugin
@@ -1565,6 +1991,8 @@ public:
         if (fRdfDescriptor->UICount == 0)
             return true;
 
+        // ---------------------------------------------------------------
+
         return true;
     }
 
@@ -1573,13 +2001,365 @@ public:
 private:
     LV2_Handle   fHandle;
     LV2_Handle   fHandle2;
-    LV2_Feature* fFeatures[kFeatureCount+1];
+    LV2_Feature* fFeatures[kFeatureCountAll+1];
     const LV2_Descriptor*     fDescriptor;
     const LV2_RDF_Descriptor* fRdfDescriptor;
 
     float** fAudioInBuffers;
     float** fAudioOutBuffers;
     float*  fParamBuffers;
+
+    Lv2PluginOptions fLv2Options;
+
+    LinkedList<const char*> fCustomURIDs;
+
+    // -------------------------------------------------------------------
+    // Event Feature
+
+    static uint32_t carla_lv2_event_ref(LV2_Event_Callback_Data callback_data, LV2_Event* event)
+    {
+        CARLA_SAFE_ASSERT_RETURN(callback_data != nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(event != nullptr, 0);
+        carla_debug("carla_lv2_event_ref(%p, %p)", callback_data, event);
+
+        return 0;
+    }
+
+    static uint32_t carla_lv2_event_unref(LV2_Event_Callback_Data callback_data, LV2_Event* event)
+    {
+        CARLA_SAFE_ASSERT_RETURN(callback_data != nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(event != nullptr, 0);
+        carla_debug("carla_lv2_event_unref(%p, %p)", callback_data, event);
+
+        return 0;
+    }
+
+    // -------------------------------------------------------------------
+    // Logs Feature
+
+    static int carla_lv2_log_printf(LV2_Log_Handle handle, LV2_URID type, const char* fmt, ...)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(type != CARLA_URI_MAP_ID_NULL, 0);
+
+#ifndef DEBUG
+        if (type == CARLA_URI_MAP_ID_LOG_TRACE)
+            return 0;
+#endif
+
+        va_list args;
+        va_start(args, fmt);
+        const int ret(carla_lv2_log_vprintf(handle, type, fmt, args));
+        va_end(args);
+
+        return ret;
+    }
+
+    static int carla_lv2_log_vprintf(LV2_Log_Handle handle, LV2_URID type, const char* fmt, va_list ap)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(type != CARLA_URI_MAP_ID_NULL, 0);
+
+#ifndef DEBUG
+        if (type == CARLA_URI_MAP_ID_LOG_TRACE)
+            return 0;
+#endif
+
+        int ret = 0;
+
+        switch (type)
+        {
+        case CARLA_URI_MAP_ID_LOG_ERROR:
+            std::fprintf(stderr, "\x1b[31m");
+            ret = std::vfprintf(stderr, fmt, ap);
+            std::fprintf(stderr, "\x1b[0m");
+            break;
+
+        case CARLA_URI_MAP_ID_LOG_NOTE:
+            ret = std::vfprintf(stdout, fmt, ap);
+            break;
+
+        case CARLA_URI_MAP_ID_LOG_TRACE:
+#ifdef DEBUG
+            std::fprintf(stdout, "\x1b[30;1m");
+            ret = std::vfprintf(stdout, fmt, ap);
+            std::fprintf(stdout, "\x1b[0m");
+#endif
+            break;
+
+        case CARLA_URI_MAP_ID_LOG_WARNING:
+            ret = std::vfprintf(stderr, fmt, ap);
+            break;
+
+        default:
+            break;
+        }
+
+        return ret;
+    }
+
+    // -------------------------------------------------------------------
+    // Programs Feature
+
+    static void carla_lv2_program_changed(LV2_Programs_Handle handle, int32_t index)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
+        carla_debug("carla_lv2_program_changed(%p, %i)", handle, index);
+
+        ((Lv2Plugin*)handle)->handleProgramChanged(index);
+    }
+
+    // -------------------------------------------------------------------
+    // State Feature
+
+    static char* carla_lv2_state_make_path(LV2_State_Make_Path_Handle handle, const char* path)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(path != nullptr && path[0] != '\0', nullptr);
+        carla_debug("carla_lv2_state_make_path(%p, \"%s\")", handle, path);
+
+        QDir dir;
+        dir.mkpath(path);
+        return strdup(path);
+    }
+
+    static char* carla_lv2_state_map_abstract_path(LV2_State_Map_Path_Handle handle, const char* absolute_path)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr && absolute_path[0] != '\0', nullptr);
+        carla_debug("carla_lv2_state_map_abstract_path(%p, \"%s\")", handle, absolute_path);
+
+        QDir dir(absolute_path);
+        return strdup(dir.canonicalPath().toUtf8().constData());
+    }
+
+    static char* carla_lv2_state_map_absolute_path(LV2_State_Map_Path_Handle handle, const char* abstract_path)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr && abstract_path[0] != '\0', nullptr);
+        carla_debug("carla_lv2_state_map_absolute_path(%p, \"%s\")", handle, abstract_path);
+
+        QDir dir(abstract_path);
+        return strdup(dir.absolutePath().toUtf8().constData());
+    }
+
+    // -------------------------------------------------------------------
+    // URI-Map Feature
+
+    static uint32_t carla_lv2_uri_to_id(LV2_URI_Map_Callback_Data data, const char* map, const char* uri)
+    {
+        carla_debug("carla_lv2_uri_to_id(%p, \"%s\", \"%s\")", data, map, uri);
+        return carla_lv2_urid_map((LV2_URID_Map_Handle*)data, uri);
+
+        // unused
+        (void)map;
+    }
+
+    // -------------------------------------------------------------------
+    // URID Feature
+
+    static LV2_URID carla_lv2_urid_map(LV2_URID_Map_Handle handle, const char* uri)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, CARLA_URI_MAP_ID_NULL);
+        CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', CARLA_URI_MAP_ID_NULL);
+        carla_debug("carla_lv2_urid_map(%p, \"%s\")", handle, uri);
+
+        // Atom types
+        if (std::strcmp(uri, LV2_ATOM__Blank) == 0)
+            return CARLA_URI_MAP_ID_ATOM_BLANK;
+        if (std::strcmp(uri, LV2_ATOM__Bool) == 0)
+            return CARLA_URI_MAP_ID_ATOM_BOOL;
+        if (std::strcmp(uri, LV2_ATOM__Chunk) == 0)
+            return CARLA_URI_MAP_ID_ATOM_CHUNK;
+        if (std::strcmp(uri, LV2_ATOM__Double) == 0)
+            return CARLA_URI_MAP_ID_ATOM_DOUBLE;
+        if (std::strcmp(uri, LV2_ATOM__Float) == 0)
+            return CARLA_URI_MAP_ID_ATOM_FLOAT;
+        if (std::strcmp(uri, LV2_ATOM__Int) == 0)
+            return CARLA_URI_MAP_ID_ATOM_INT;
+        if (std::strcmp(uri, LV2_ATOM__Literal) == 0)
+            return CARLA_URI_MAP_ID_ATOM_LITERAL;
+        if (std::strcmp(uri, LV2_ATOM__Long) == 0)
+            return CARLA_URI_MAP_ID_ATOM_LONG;
+        if (std::strcmp(uri, LV2_ATOM__Path) == 0)
+            return CARLA_URI_MAP_ID_ATOM_PATH;
+        if (std::strcmp(uri, LV2_ATOM__Property) == 0)
+            return CARLA_URI_MAP_ID_ATOM_PROPERTY;
+        if (std::strcmp(uri, LV2_ATOM__Resource) == 0)
+            return CARLA_URI_MAP_ID_ATOM_RESOURCE;
+        if (std::strcmp(uri, LV2_ATOM__Sequence) == 0)
+            return CARLA_URI_MAP_ID_ATOM_SEQUENCE;
+        if (std::strcmp(uri, LV2_ATOM__String) == 0)
+            return CARLA_URI_MAP_ID_ATOM_STRING;
+        if (std::strcmp(uri, LV2_ATOM__Tuple) == 0)
+            return CARLA_URI_MAP_ID_ATOM_TUPLE;
+        if (std::strcmp(uri, LV2_ATOM__URI) == 0)
+            return CARLA_URI_MAP_ID_ATOM_URI;
+        if (std::strcmp(uri, LV2_ATOM__URID) == 0)
+            return CARLA_URI_MAP_ID_ATOM_URID;
+        if (std::strcmp(uri, LV2_ATOM__Vector) == 0)
+            return CARLA_URI_MAP_ID_ATOM_VECTOR;
+        if (std::strcmp(uri, LV2_ATOM__atomTransfer) == 0)
+            return CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM;
+        if (std::strcmp(uri, LV2_ATOM__eventTransfer) == 0)
+            return CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT;
+
+        // BufSize types
+        if (std::strcmp(uri, LV2_BUF_SIZE__maxBlockLength) == 0)
+            return CARLA_URI_MAP_ID_BUF_MAX_LENGTH;
+        if (std::strcmp(uri, LV2_BUF_SIZE__minBlockLength) == 0)
+            return CARLA_URI_MAP_ID_BUF_MIN_LENGTH;
+        if (std::strcmp(uri, LV2_BUF_SIZE__sequenceSize) == 0)
+            return CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE;
+
+        // Log types
+        if (std::strcmp(uri, LV2_LOG__Error) == 0)
+            return CARLA_URI_MAP_ID_LOG_ERROR;
+        if (std::strcmp(uri, LV2_LOG__Note) == 0)
+            return CARLA_URI_MAP_ID_LOG_NOTE;
+        if (std::strcmp(uri, LV2_LOG__Trace) == 0)
+            return CARLA_URI_MAP_ID_LOG_TRACE;
+        if (std::strcmp(uri, LV2_LOG__Warning) == 0)
+            return CARLA_URI_MAP_ID_LOG_WARNING;
+
+        // Time types
+        if (std::strcmp(uri, LV2_TIME__Position) == 0)
+            return CARLA_URI_MAP_ID_TIME_POSITION;
+        if (std::strcmp(uri, LV2_TIME__bar) == 0)
+            return CARLA_URI_MAP_ID_TIME_BAR;
+        if (std::strcmp(uri, LV2_TIME__barBeat) == 0)
+            return CARLA_URI_MAP_ID_TIME_BAR_BEAT;
+        if (std::strcmp(uri, LV2_TIME__beat) == 0)
+            return CARLA_URI_MAP_ID_TIME_BEAT;
+        if (std::strcmp(uri, LV2_TIME__beatUnit) == 0)
+            return CARLA_URI_MAP_ID_TIME_BEAT_UNIT;
+        if (std::strcmp(uri, LV2_TIME__beatsPerBar) == 0)
+            return CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR;
+        if (std::strcmp(uri, LV2_TIME__beatsPerMinute) == 0)
+            return CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE;
+        if (std::strcmp(uri, LV2_TIME__frame) == 0)
+            return CARLA_URI_MAP_ID_TIME_FRAME;
+        if (std::strcmp(uri, LV2_TIME__framesPerSecond) == 0)
+            return CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND;
+        if (std::strcmp(uri, LV2_TIME__speed) == 0)
+            return CARLA_URI_MAP_ID_TIME_SPEED;
+
+        // Others
+        if (std::strcmp(uri, LV2_MIDI__MidiEvent) == 0)
+            return CARLA_URI_MAP_ID_MIDI_EVENT;
+        if (std::strcmp(uri, LV2_PARAMETERS__sampleRate) == 0)
+            return CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE;
+
+        // Custom types
+        return ((Lv2Plugin*)handle)->getCustomURID(uri);
+    }
+
+    static const char* carla_lv2_urid_unmap(LV2_URID_Map_Handle handle, LV2_URID urid)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL, nullptr);
+        carla_debug("carla_lv2_urid_unmap(%p, %i)", handle, urid);
+
+        // Atom types
+        if (urid == CARLA_URI_MAP_ID_ATOM_BLANK)
+            return LV2_ATOM__Blank;
+        if (urid == CARLA_URI_MAP_ID_ATOM_BOOL)
+            return LV2_ATOM__Bool;
+        if (urid == CARLA_URI_MAP_ID_ATOM_CHUNK)
+            return LV2_ATOM__Chunk;
+        if (urid == CARLA_URI_MAP_ID_ATOM_DOUBLE)
+            return LV2_ATOM__Double;
+        if (urid == CARLA_URI_MAP_ID_ATOM_FLOAT)
+            return LV2_ATOM__Float;
+        if (urid == CARLA_URI_MAP_ID_ATOM_INT)
+            return LV2_ATOM__Int;
+        if (urid == CARLA_URI_MAP_ID_ATOM_LITERAL)
+            return LV2_ATOM__Literal;
+        if (urid == CARLA_URI_MAP_ID_ATOM_LONG)
+            return LV2_ATOM__Long;
+        if (urid == CARLA_URI_MAP_ID_ATOM_PATH)
+            return LV2_ATOM__Path;
+        if (urid == CARLA_URI_MAP_ID_ATOM_PROPERTY)
+            return LV2_ATOM__Property;
+        if (urid == CARLA_URI_MAP_ID_ATOM_RESOURCE)
+            return LV2_ATOM__Resource;
+        if (urid == CARLA_URI_MAP_ID_ATOM_SEQUENCE)
+            return LV2_ATOM__Sequence;
+        if (urid == CARLA_URI_MAP_ID_ATOM_STRING)
+            return LV2_ATOM__String;
+        if (urid == CARLA_URI_MAP_ID_ATOM_TUPLE)
+            return LV2_ATOM__Tuple;
+        if (urid == CARLA_URI_MAP_ID_ATOM_URI)
+            return LV2_ATOM__URI;
+        if (urid == CARLA_URI_MAP_ID_ATOM_URID)
+            return LV2_ATOM__URID;
+        if (urid == CARLA_URI_MAP_ID_ATOM_VECTOR)
+            return LV2_ATOM__Vector;
+        if (urid == CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM)
+            return LV2_ATOM__atomTransfer;
+        if (urid == CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)
+            return LV2_ATOM__eventTransfer;
+
+        // BufSize types
+        if (urid == CARLA_URI_MAP_ID_BUF_MAX_LENGTH)
+            return LV2_BUF_SIZE__maxBlockLength;
+        if (urid == CARLA_URI_MAP_ID_BUF_MIN_LENGTH)
+            return LV2_BUF_SIZE__minBlockLength;
+        if (urid == CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE)
+            return LV2_BUF_SIZE__sequenceSize;
+
+        // Log types
+        if (urid == CARLA_URI_MAP_ID_LOG_ERROR)
+            return LV2_LOG__Error;
+        if (urid == CARLA_URI_MAP_ID_LOG_NOTE)
+            return LV2_LOG__Note;
+        if (urid == CARLA_URI_MAP_ID_LOG_TRACE)
+            return LV2_LOG__Trace;
+        if (urid == CARLA_URI_MAP_ID_LOG_WARNING)
+            return LV2_LOG__Warning;
+
+        // Time types
+        if (urid == CARLA_URI_MAP_ID_TIME_POSITION)
+            return LV2_TIME__Position;
+        if (urid == CARLA_URI_MAP_ID_TIME_BAR)
+            return LV2_TIME__bar;
+        if (urid == CARLA_URI_MAP_ID_TIME_BAR_BEAT)
+            return LV2_TIME__barBeat;
+        if (urid == CARLA_URI_MAP_ID_TIME_BEAT)
+            return LV2_TIME__beat;
+        if (urid == CARLA_URI_MAP_ID_TIME_BEAT_UNIT)
+            return LV2_TIME__beatUnit;
+        if (urid == CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR)
+            return LV2_TIME__beatsPerBar;
+        if (urid == CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE)
+            return LV2_TIME__beatsPerMinute;
+        if (urid == CARLA_URI_MAP_ID_TIME_FRAME)
+            return LV2_TIME__frame;
+        if (urid == CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND)
+            return LV2_TIME__framesPerSecond;
+        if (urid == CARLA_URI_MAP_ID_TIME_SPEED)
+            return LV2_TIME__speed;
+
+        // Others
+        if (urid == CARLA_URI_MAP_ID_MIDI_EVENT)
+            return LV2_MIDI__MidiEvent;
+        if (urid == CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE)
+            return LV2_PARAMETERS__sampleRate;
+
+        // Custom types
+        return ((Lv2Plugin*)handle)->getCustomURIDString(urid);
+    }
+
+    // -------------------------------------------------------------------
+    // Worker Feature
+
+    static LV2_Worker_Status carla_lv2_worker_schedule(LV2_Worker_Schedule_Handle handle, uint32_t size, const void* data)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, LV2_WORKER_ERR_UNKNOWN);
+        carla_debug("carla_lv2_worker_schedule(%p, %i, %p)", handle, size, data);
+
+        return ((Lv2Plugin*)handle)->handleWorkerSchedule(size, data);
+    }
 
     // -------------------------------------------------------------------
 

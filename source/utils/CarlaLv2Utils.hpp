@@ -1081,6 +1081,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool /*fillPreset
 
                 if (const char* const featureURI = lilvFeatureNode.as_uri())
                     rdfFeature->URI = carla_strdup(featureURI);
+                else
+                    rdfFeature->URI = nullptr;
             }
         }
     }
@@ -1103,8 +1105,15 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool /*fillPreset
                 Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(it));
                 LV2_URI* const rdfExtension(&rdfDescriptor->Extensions[h++]);
 
-                if (const char* const extURI = lilvExtensionDataNode.as_uri())
-                    *rdfExtension = carla_strdup(extURI);
+                if (lilvExtensionDataNode.is_uri())
+                {
+                    if (const char* const extURI = lilvExtensionDataNode.as_uri())
+                    {
+                        *rdfExtension = carla_strdup(extURI);
+                        continue;
+                    }
+                }
+                *rdfExtension = nullptr;
             }
         }
     }
@@ -1187,7 +1196,9 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool /*fillPreset
                             rdfFeature->Type = lilvFeatureNodesR.contains(lilvFeatureNode) ? LV2_FEATURE_REQUIRED : LV2_FEATURE_OPTIONAL;
 
                             if (const char* const featureURI = lilvFeatureNode.as_uri())
-                                rdfFeature->URI  = carla_strdup(featureURI);
+                                rdfFeature->URI = carla_strdup(featureURI);
+                            else
+                                rdfFeature->URI = nullptr;
                         }
                     }
                 }
@@ -1210,8 +1221,15 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool /*fillPreset
                             Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(it));
                             LV2_URI* const rdfExtension(&rdfUI->Extensions[h2++]);
 
-                            if (const char* const extURI = lilvExtensionDataNode.as_uri())
-                                *rdfExtension = carla_strdup(extURI);
+                            if (lilvExtensionDataNode.is_uri())
+                            {
+                                if (const char* const extURI = lilvExtensionDataNode.as_uri())
+                                {
+                                    *rdfExtension = carla_strdup(extURI);
+                                    continue;
+                                }
+                            }
+                            *rdfExtension = nullptr;
                         }
                     }
                 }
@@ -1251,20 +1269,17 @@ bool is_lv2_feature_supported(const LV2_URI uri)
 {
     CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', false);
 
-    // TODO
-    return false;
-
-    if (std::strcmp(uri, LV2_CORE__hardRTCapable) == 0)
-        return true;
-    if (std::strcmp(uri, LV2_CORE__inPlaceBroken) == 0)
-        return true;
-    if (std::strcmp(uri, LV2_CORE__isLive) == 0)
-        return true;
     if (std::strcmp(uri, LV2_BUF_SIZE__boundedBlockLength) == 0)
         return true;
     if (std::strcmp(uri, LV2_BUF_SIZE__fixedBlockLength) == 0)
         return true;
     if (std::strcmp(uri, LV2_BUF_SIZE__powerOf2BlockLength) == 0)
+        return true;
+    if (std::strcmp(uri, LV2_CORE__hardRTCapable) == 0)
+        return true;
+    if (std::strcmp(uri, LV2_CORE__inPlaceBroken) == 0)
+        return true;
+    if (std::strcmp(uri, LV2_CORE__isLive) == 0)
         return true;
     if (std::strcmp(uri, LV2_EVENT_URI) == 0)
         return true;
@@ -1300,9 +1315,6 @@ static inline
 bool is_lv2_ui_feature_supported(const LV2_URI uri)
 {
     CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', false);
-
-    // TODO
-    return false;
 
     if (is_lv2_feature_supported(uri))
         return true;

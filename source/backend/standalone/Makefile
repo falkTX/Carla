@@ -130,7 +130,7 @@ debug:
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-CarlaStandalone.cpp.o: CarlaStandalone.cpp $(CARLA_HOST_H) $(CARLA_MIDI_H) $(CARLA_NATIVE_H) $(CARLA_ENGINE_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_THREAD_HPP)
+CarlaStandalone.cpp.o: CarlaStandalone.cpp $(CARLA_HOST_H) $(CARLA_MIDI_H) $(CARLA_NATIVE_H) $(CARLA_ENGINE_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_THREAD_HPP) $(CARLA_STATE_UTILS_CPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
