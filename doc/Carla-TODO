@@ -3,14 +3,12 @@
 # ----------------------------------------------------------------------------
 # in short
 
-1. move backend from Qt to Juce (80% done)
-2. move frontend from PyQt4 to PyQt5, rewrite to share widget code (60% done)
-3. allow to use old Qt code (except graphics) for non-Juce-supported OSes (BSD, Haiku, Solaris, etc)
-4. custom "plugin slots" skins, ala Reaper (also define set of keys for a new LV2 extension)
-5. internal patchbay processing mode (needs #1)
-6. Carla as an LV2 plugin (needs #5)
+2. move frontend from PyQt4 to PyQt5, rewrite to share widget code (80% done)
+4. custom "plugin slots" skins, ala Reaper (also define set of keys for a new LV2 extension, 40% done)
+5. internal patchbay processing mode
+6. Carla as an LV2 plugin (75% done)
 7. direct support for csound files (as plugins, inspired by 'cabbage')
-8. OSX builds (needs #1 and #2)
+8. OSX builds (needs #2)
 
 Ideas for later:
 
@@ -26,29 +24,24 @@ Ideas for later:
 GENERAL:
  - finalize Juce backend move
  - finalize PyQt5 move
- - add back old Qt code for when Juce is not available (or disabled by user)
  - add direct program access on ui-dialogs (needed for standalone bridges), maybe add extra buttons too (reset plugin, fix ui size)
  - implement midi-learn (new dialog)
  - custom skins for plugin slots, design for 8 types + instruments (gig, sf2, sfz)
  - custom skins for internal plugins
  - implement favorite plugins, add in new tab near file-browser
  - blender style canvas theme
- - make it possible to run forced (and only) rack or patchbay mode
  - make it possible to use backend as fake standalone app (using pipes) instead of a shared library
- - create startup scripts for carla-rack, carla-patchbay, carla-settings, etc
  - smarter carla-single script (LV2 must only need URI for example, and ignore all other hints)
  - alternate, simpler UI for mobile and/or VST version
 
 ENGINE:
  - allow to change position of plugins (up/down)
  - allow to add plugins when engine is stopped
- - save&restore canvas connections (optional, must not be used under SM)
  - complete RtAudio+RtMidi support (only MIDI out missing + save&restore)
  - complete Juce engine driver support
  - implement Haiku Media support (based from JACK?, LATER)
  - implement latency in continuous-rack mode
  - implement internal patchbay mode (once Juce move is complete)
- - engine as internal plugin
  - internal patchbay mode, based on Juce graph code
  - handle sample-rate changes in JACK (made possible by switch-master)
  - add MIDI-bank change type (GM, GS, XG and MMA). See fluidsynth docs
@@ -77,7 +70,6 @@ LV2:
  - no in-process UI support if juce disabled
  - revisit all extensions
  - option to set lv2 preset folder
- - only load LV2 bundles on request, never load full LV2 world
 
 VST: (non-Juce build)
  - no UI support
@@ -85,23 +77,21 @@ VST: (non-Juce build)
 
 FluidSynth:
  - per-channel volume control
- - proper buffer-size/sample-rate change
+ - proper buffer-size/sample-rate change (needs testing)
 
 LinuxSampler:
- - multi-program
- - 16outs (depends on multi-program)
- - proper buffer-size/sample-rate change
+ - per-channel volume pan&control
+ - proper buffer-size/sample-rate change (needs testing)
 
 # ----------------------------------------------------------------------------
 # current work
 
 BACKEND:
- - cleanup API, document everything properly (tested with doxygen)
- - apply API docs to python code as well (TODO: use proper predefined pydoc style)
+ - bring back lv2 and vst
 
 FRONTEND:
  - fix things to new cleanup API
- - share code as much as possible
+ - more skins
 
 OTHER:
  - create tests for all utils code
