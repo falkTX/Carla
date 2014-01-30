@@ -141,6 +141,134 @@ const uint32_t kFeatureCountAll           = 31;
 
 // -----------------------------------------------------
 
+struct Lv2EventData {
+    uint32_t type;
+    uint32_t rindex;
+    CarlaEngineEventPort* port;
+    union {
+        LV2_Atom_Buffer* atom;
+        LV2_Event_Buffer* event;
+        LV2_MIDI* midi;
+        void* _ptr; // value checking
+    };
+
+    Lv2EventData()
+        : type(0x0),
+          rindex(0),
+          port(nullptr),
+          _ptr(nullptr) {}
+
+    ~Lv2EventData()
+    {
+        if (port != nullptr)
+        {
+            delete port;
+            port = nullptr;
+        }
+
+        const ScopedValueSetter<uint32_t> zeroType(type, type, 0x0);
+
+        if (type & CARLA_EVENT_DATA_ATOM)
+        {
+            CARLA_SAFE_ASSERT_RETURN(atom != nullptr,);
+
+            std::free(atom);
+            atom = nullptr;
+        }
+        else if (type & CARLA_EVENT_DATA_EVENT)
+        {
+            CARLA_SAFE_ASSERT_RETURN(event != nullptr,);
+
+            std::free(event);
+            event = nullptr;
+        }
+        else if (type & CARLA_EVENT_DATA_MIDI_LL)
+        {
+            CARLA_SAFE_ASSERT_RETURN(midi != nullptr,)
+            CARLA_SAFE_ASSERT_RETURN(midi->data != nullptr,);
+
+            delete[] midi->data;
+            midi->data = nullptr;
+
+            delete midi;
+            midi = nullptr;
+        }
+
+        CARLA_ASSERT(_ptr == nullptr);
+    }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(Lv2EventData)
+};
+
+struct Lv2PluginEventData {
+    uint32_t count;
+    Lv2EventData* data;
+    Lv2EventData* ctrl; // default port, either this->data[x] or pData->portIn/Out
+    uint32_t ctrlIndex;
+
+    Lv2PluginEventData()
+        : count(0),
+          data(nullptr),
+          ctrl(nullptr),
+          ctrlIndex(0) {}
+
+    ~Lv2PluginEventData()
+    {
+        CARLA_ASSERT_INT(count == 0, count);
+        CARLA_ASSERT(data == nullptr);
+        CARLA_ASSERT(ctrl == nullptr);
+        CARLA_ASSERT_INT(ctrlIndex == 0, ctrlIndex);
+    }
+
+    void createNew(const uint32_t newCount)
+    {
+        CARLA_SAFE_ASSERT_INT(count == 0, count);
+        CARLA_SAFE_ASSERT_INT(ctrlIndex == 0, ctrlIndex);
+        CARLA_SAFE_ASSERT_RETURN(data == nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(ctrl == nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
+
+        if (data != nullptr || newCount == 0)
+            return;
+
+        data  = new Lv2EventData[newCount];
+        count = newCount;
+    }
+
+    void clear()
+    {
+        if (data != nullptr)
+        {
+            for (uint32_t i=0; i < count; ++i)
+            {
+                if (data[i].port != nullptr && ctrl != nullptr && data[i].port == ctrl->port)
+                    data[i].port = nullptr;
+            }
+
+            delete[] data;
+            data = nullptr;
+        }
+
+        count = 0;
+
+        ctrl      = nullptr;
+        ctrlIndex = 0;
+    }
+
+    void initBuffers() const noexcept
+    {
+        for (uint32_t i=0; i < count; ++i)
+        {
+            if (data[i].port != nullptr && (ctrl == nullptr || data[i].port != ctrl->port))
+                data[i].port->initBuffer();
+        }
+    }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(Lv2PluginEventData)
+};
+
+// -----------------------------------------------------
+
 struct Lv2PluginOptions {
     enum OptIndex {
         MaxBlockLenth = 0,
@@ -226,6 +354,26 @@ public:
 
         for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; ++i)
             fCustomURIDs.append(nullptr);
+
+#if 0
+        fAtomForge.Blank    = CARLA_URI_MAP_ID_ATOM_BLANK;
+        fAtomForge.Bool     = CARLA_URI_MAP_ID_ATOM_BOOL;
+        fAtomForge.Chunk    = CARLA_URI_MAP_ID_ATOM_CHUNK;
+        fAtomForge.Double   = CARLA_URI_MAP_ID_ATOM_DOUBLE;
+        fAtomForge.Float    = CARLA_URI_MAP_ID_ATOM_FLOAT;
+        fAtomForge.Int      = CARLA_URI_MAP_ID_ATOM_INT;
+        fAtomForge.Literal  = CARLA_URI_MAP_ID_ATOM_LITERAL;
+        fAtomForge.Long     = CARLA_URI_MAP_ID_ATOM_LONG;
+        fAtomForge.Path     = CARLA_URI_MAP_ID_ATOM_PATH;
+        fAtomForge.Property = CARLA_URI_MAP_ID_ATOM_PROPERTY;
+        fAtomForge.Resource = CARLA_URI_MAP_ID_ATOM_RESOURCE;
+        fAtomForge.Sequence = CARLA_URI_MAP_ID_ATOM_SEQUENCE;
+        fAtomForge.String   = CARLA_URI_MAP_ID_ATOM_STRING;
+        fAtomForge.Tuple    = CARLA_URI_MAP_ID_ATOM_TUPLE;
+        fAtomForge.URI      = CARLA_URI_MAP_ID_ATOM_URI;
+        fAtomForge.URID     = CARLA_URI_MAP_ID_ATOM_URID;
+        fAtomForge.Vector   = CARLA_URI_MAP_ID_ATOM_VECTOR;
+#endif
 
         pData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_LV2_GUI);
     }
@@ -750,6 +898,11 @@ public:
 
         QString guiTitle(QString("%1 (GUI)").arg(pData->name));
 
+#if 0
+        if (pData->gui != nullptr)
+            pData->gui->setWindowTitle(guiTitle);
+#endif
+
         if (fFeatures[kFeatureIdExternalUi] != nullptr && fFeatures[kFeatureIdExternalUi]->data != nullptr)
         {
             LV2_External_UI_Host* const uiHost((LV2_External_UI_Host*)fFeatures[kFeatureIdExternalUi]->data);
@@ -774,6 +927,130 @@ public:
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
+
+#if 0
+    void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
+    {
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
+        CARLA_ASSERT(type != nullptr);
+        CARLA_ASSERT(key != nullptr);
+        CARLA_ASSERT(value != nullptr);
+        carla_debug("Lv2Plugin::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
+
+        if (type == nullptr)
+            return carla_stderr2("Lv2Plugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is invalid", type, key, value, bool2str(sendGui));
+
+        if (key == nullptr)
+            return carla_stderr2("Lv2Plugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - key is null", type, key, value, bool2str(sendGui));
+
+        if (value == nullptr)
+            return carla_stderr2("Lv2Plugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - value is null", type, key, value, bool2str(sendGui));
+
+        CarlaPlugin::setCustomData(type, key, value, sendGui);
+
+        // FIXME - we should only call this once, after all data is stored
+
+        if (fExt.state != nullptr)
+        {
+            LV2_State_Status status;
+
+            {
+                const ScopedSingleProcessLocker spl(this, true);
+
+                status = fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
+
+                if (fHandle2 != nullptr)
+                    fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
+            }
+
+            switch (status)
+            {
+            case LV2_STATE_SUCCESS:
+                carla_debug("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - success", type, key, bool2str(sendGui));
+                break;
+            case LV2_STATE_ERR_UNKNOWN:
+                carla_stderr("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - unknown error", type, key, bool2str(sendGui));
+                break;
+            case LV2_STATE_ERR_BAD_TYPE:
+                carla_stderr("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - error, bad type", type, key, bool2str(sendGui));
+                break;
+            case LV2_STATE_ERR_BAD_FLAGS:
+                carla_stderr("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - error, bad flags", type, key, bool2str(sendGui));
+                break;
+            case LV2_STATE_ERR_NO_FEATURE:
+                carla_stderr("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - error, missing feature", type, key, bool2str(sendGui));
+                break;
+            case LV2_STATE_ERR_NO_PROPERTY:
+                carla_stderr("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - error, missing property", type, key, bool2str(sendGui));
+                break;
+            }
+        }
+
+        if (sendGui)
+        {
+            //CustomData cdata;
+            //cdata.type  = type;
+            //cdata.key   = key;
+            //cdata.value = value;
+            //uiTransferCustomData(&cdata);
+        }
+    }
+
+    void setProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    {
+        CARLA_ASSERT(fRdfDescriptor != nullptr);
+        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(fRdfDescriptor->PresetCount));
+        CARLA_ASSERT(sendGui || sendOsc || sendCallback); // never call this from RT
+
+        if (index < -1)
+            index = -1;
+        else if (index > static_cast<int32_t>(fRdfDescriptor->PresetCount))
+            return;
+
+        if (index >= 0 && index < static_cast<int32_t>(fRdfDescriptor->PresetCount))
+        {
+            if (const LilvState* state = gLv2World.getState(fRdfDescriptor->Presets[index].URI, (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
+            {
+                const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+
+                lilv_state_restore(state, fExt.state, fHandle, carla_lilv_set_port_value, this, 0, fFeatures);
+
+                if (fHandle2 != nullptr)
+                    lilv_state_restore(state, fExt.state, fHandle2, carla_lilv_set_port_value, this, 0, fFeatures);
+            }
+        }
+
+        CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
+    }
+
+    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    {
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
+        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count));
+
+        if (index < -1)
+            index = -1;
+        else if (index > static_cast<int32_t>(pData->midiprog.count))
+            return;
+
+        if (index >= 0 && fExt.programs != nullptr && fExt.programs->select_program != nullptr)
+        {
+            const uint32_t bank(pData->midiprog.data[index].bank);
+            const uint32_t program(pData->midiprog.data[index].program);
+
+            const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+
+            fExt.programs->select_program(fHandle, bank, program);
+
+            if (fHandle2 != nullptr)
+                fExt.programs->select_program(fHandle2, bank, program);
+        }
+
+        CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
+    }
+#endif
 
     // -------------------------------------------------------------------
     // Set ui stuff
@@ -864,11 +1141,109 @@ public:
         }
         else // means TYPE_EMBED
         {
+#if 0
+            if (yesNo)
+            {
+                if (pData->gui == nullptr)
+                {
+                    // TODO
+                    CarlaPluginGui::Options guiOptions;
+                    guiOptions.parented  = (fUi.type == PLUGIN_UI_PARENT);
+                    guiOptions.resizable = isUiResizable();
+
+                    pData->gui = new CarlaPluginGui(pData->engine, this, guiOptions, pData->guiGeometry);
+                }
+
+                if (fUi.type == PLUGIN_UI_PARENT)
+                {
+                    fFeatures[kFeatureIdUiParent]->data = pData->gui->getContainerWinId();
+                    fFeatures[kFeatureIdUiParent]->URI  = LV2_UI__parent;
+                }
+
+                if (fUi.handle == nullptr)
+                {
+                    fUi.widget = nullptr;
+                    fUi.handle = fUi.descriptor->instantiate(fUi.descriptor, fRdfDescriptor->URI, fUi.rdfDescriptor->Bundle,
+                                                             carla_lv2_ui_write_function, this, &fUi.widget, fFeatures);
+                }
+
+                CARLA_ASSERT(fUi.handle != nullptr);
+                CARLA_ASSERT(fUi.type == PLUGIN_UI_PARENT || fUi.widget != nullptr);
+
+                if (fUi.handle == nullptr || (fUi.type != PLUGIN_UI_PARENT && fUi.widget == nullptr))
+                {
+                    fUi.handle = nullptr;
+                    fUi.widget = nullptr;
+
+                    pData->guiGeometry = pData->gui->saveGeometry();
+                    pData->gui->close();
+                    delete pData->gui;
+                    pData->gui = nullptr;
+
+                    pData->engine->callback(CALLBACK_ERROR, fId, 0, 0, 0.0f, "Plugin refused to open its own UI");
+                    pData->engine->callback(CALLBACK_SHOW_GUI, fId, -1, 0, 0.0f, nullptr);
+                    return;
+                }
+
+                if (fUi.type == PLUGIN_UI_QT)
+                    pData->gui->setWidget((QWidget*)fUi.widget);
+
+                updateUi();
+
+                pData->gui->setWindowTitle(QString("%1 (GUI)").arg(pData->name));
+                pData->gui->show();
+            }
+            else
+            {
+                fUi.descriptor->cleanup(fUi.handle);
+                fUi.handle = nullptr;
+                fUi.widget = nullptr;
+
+                if (pData->gui != nullptr)
+                {
+                    pData->guiGeometry = pData->gui->saveGeometry();
+                    pData->gui->close();
+                    delete pData->gui;
+                    pData->gui = nullptr;
+                }
+            }
+#endif
         }
     }
 
     void idle() override
     {
+#if 0
+        if (! fAtomQueueOut.isEmpty())
+        {
+            Lv2AtomQueue tmpQueue;
+            tmpQueue.copyDataFrom(&fAtomQueueOut);
+
+            uint32_t portIndex;
+            const LV2_Atom* atom;
+            const bool hasPortEvent(fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->port_event != nullptr);
+
+            while (tmpQueue.get(&portIndex, &atom))
+            {
+                //carla_stdout("OUTPUT message IN GUI REMOVED FROM BUFFER");
+
+                if (fUi.type == PLUGIN_UI_OSC)
+                {
+                    if (pData->osc.data.target != nullptr)
+                    {
+                        QByteArray chunk((const char*)atom, lv2_atom_total_size(atom));
+                        osc_send_lv2_atom_transfer(&pData->osc.data, portIndex, chunk.toBase64().constData());
+                    }
+                }
+                else if (fUi.type != PLUGIN_UI_NULL)
+                {
+                    if (hasPortEvent)
+                        fUi.descriptor->port_event(fUi.handle, portIndex, lv2_atom_total_size(atom), CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, atom);
+                }
+            }
+        }
+#endif
+
         if (fUi.handle != nullptr && fUi.descriptor != nullptr)
         {
             if (fUi.type == UI::TYPE_EXTERNAL && fUi.widget != nullptr)
@@ -1010,10 +1385,76 @@ public:
             FLOAT_CLEAR(fParamBuffers, params);
         }
 
+#if 0
+        if (evIns.count() > 0)
+        {
+            const size_t count(evIns.count());
+
+            fEventsIn.createNew(count);
+
+            for (j=0; j < count; ++j)
+            {
+                const uint32_t& type(evIns.getAt(j));
+
+                if (type == CARLA_EVENT_DATA_ATOM)
+                {
+                    fEventsIn.data[j].type = CARLA_EVENT_DATA_ATOM;
+                    fEventsIn.data[j].atom = lv2_atom_buffer_new(MAX_DEFAULT_BUFFER_SIZE, CARLA_URI_MAP_ID_ATOM_SEQUENCE, true);
+                }
+                else if (type == CARLA_EVENT_DATA_EVENT)
+                {
+                    fEventsIn.data[j].type  = CARLA_EVENT_DATA_EVENT;
+                    fEventsIn.data[j].event = lv2_event_buffer_new(MAX_DEFAULT_BUFFER_SIZE, LV2_EVENT_AUDIO_STAMP);
+                }
+                else if (type == CARLA_EVENT_DATA_MIDI_LL)
+                {
+                    fEventsIn.data[j].type = CARLA_EVENT_DATA_MIDI_LL;
+                    fEventsIn.data[j].midi = new LV2_MIDI;
+                    fEventsIn.data[j].midi->event_count = 0;
+                    fEventsIn.data[j].midi->capacity    = MAX_DEFAULT_BUFFER_SIZE;
+                    fEventsIn.data[j].midi->size        = 0;
+                    fEventsIn.data[j].midi->data        = new unsigned char[MAX_DEFAULT_BUFFER_SIZE];
+                }
+            }
+        }
+
+        if (evOuts.count() > 0)
+        {
+            const size_t count(evOuts.count());
+
+            fEventsOut.createNew(count);
+
+            for (j=0; j < count; ++j)
+            {
+                const uint32_t& type(evOuts.getAt(j));
+
+                if (type == CARLA_EVENT_DATA_ATOM)
+                {
+                    fEventsOut.data[j].type = CARLA_EVENT_DATA_ATOM;
+                    fEventsOut.data[j].atom = lv2_atom_buffer_new(MAX_DEFAULT_BUFFER_SIZE, CARLA_URI_MAP_ID_ATOM_SEQUENCE, false);
+                }
+                else if (type == CARLA_EVENT_DATA_EVENT)
+                {
+                    fEventsOut.data[j].type  = CARLA_EVENT_DATA_EVENT;
+                    fEventsOut.data[j].event = lv2_event_buffer_new(MAX_DEFAULT_BUFFER_SIZE, LV2_EVENT_AUDIO_STAMP);
+                }
+                else if (type == CARLA_EVENT_DATA_MIDI_LL)
+                {
+                    fEventsOut.data[j].type = CARLA_EVENT_DATA_MIDI_LL;
+                    fEventsOut.data[j].midi = new LV2_MIDI;
+                    fEventsOut.data[j].midi->event_count = 0;
+                    fEventsOut.data[j].midi->capacity    = MAX_DEFAULT_BUFFER_SIZE;
+                    fEventsOut.data[j].midi->size        = 0;
+                    fEventsOut.data[j].midi->data        = new unsigned char[MAX_DEFAULT_BUFFER_SIZE];
+                }
+            }
+        }
+#endif
+
         const uint portNameSize(pData->engine->getMaxPortNameSize());
         CarlaString portName;
 
-        for (uint32_t i=0, iAudioIn=0, iAudioOut=0, iCtrl=0; i < portCount; ++i)
+        for (uint32_t i=0, iAudioIn=0, iAudioOut=0, /*iEvIn=0, iEvOut=0,*/ iCtrl=0; i < portCount; ++i)
         {
             const LV2_Property portTypes(fRdfDescriptor->Ports[i].Types);
 
@@ -1062,6 +1503,251 @@ public:
                 else
                     carla_stderr2("WARNING - Got a broken Port (Audio, but not input or output)");
             }
+#if 0
+            else if (LV2_IS_PORT_CV(portTypes))
+            {
+                if (LV2_IS_PORT_INPUT(portTypes))
+                {
+                    carla_stderr("WARNING - CV Ports are not supported yet");
+                }
+                else if (LV2_IS_PORT_OUTPUT(portTypes))
+                {
+                    carla_stderr("WARNING - CV Ports are not supported yet");
+                }
+                else
+                    carla_stderr("WARNING - Got a broken Port (CV, but not input or output)");
+
+                fDescriptor->connect_port(fHandle, i, nullptr);
+
+                if (fHandle2 != nullptr)
+                    fDescriptor->connect_port(fHandle2, i, nullptr);
+            }
+            else if (LV2_IS_PORT_ATOM_SEQUENCE(portTypes))
+            {
+                if (LV2_IS_PORT_INPUT(portTypes))
+                {
+                    uint32_t j = iEvIn++;
+
+                    fDescriptor->connect_port(fHandle, i, &fEventsIn.data[j].atom->atoms);
+
+                    if (fHandle2 != nullptr)
+                        fDescriptor->connect_port(fHandle2, i, &fEventsIn.data[j].atom->atoms);
+
+                    fEventsIn.data[j].rindex = i;
+
+                    if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
+                        fEventsIn.data[j].type |= CARLA_EVENT_TYPE_MIDI;
+                    if (portTypes & LV2_PORT_DATA_PATCH_MESSAGE)
+                        fEventsIn.data[j].type |= CARLA_EVENT_TYPE_MESSAGE;
+                    if (portTypes & LV2_PORT_DATA_TIME_POSITION)
+                        fEventsIn.data[j].type |= CARLA_EVENT_TYPE_TIME;
+
+                    if (evIns.count() == 1)
+                    {
+                        fEventsIn.ctrl = &fEventsIn.data[j];
+                        fEventsIn.ctrlIndex = j;
+
+                        if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
+                            needsCtrlIn = true;
+                    }
+                    else
+                    {
+                        if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
+                            fEventsIn.data[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+
+                        if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
+                        {
+                            fEventsIn.ctrl = &fEventsIn.data[j];
+                            fEventsIn.ctrlIndex = j;
+                        }
+                    }
+                }
+                else if (LV2_IS_PORT_OUTPUT(portTypes))
+                {
+                    uint32_t j = iEvOut++;
+
+                    fDescriptor->connect_port(fHandle, i, &fEventsOut.data[j].atom->atoms);
+
+                    if (fHandle2 != nullptr)
+                        fDescriptor->connect_port(fHandle2, i, &fEventsOut.data[j].atom->atoms);
+
+                    fEventsOut.data[j].rindex = i;
+
+                    if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
+                        fEventsOut.data[j].type |= CARLA_EVENT_TYPE_MIDI;
+                    if (portTypes & LV2_PORT_DATA_PATCH_MESSAGE)
+                        fEventsOut.data[j].type |= CARLA_EVENT_TYPE_MESSAGE;
+                    if (portTypes & LV2_PORT_DATA_TIME_POSITION)
+                        fEventsOut.data[j].type |= CARLA_EVENT_TYPE_TIME;
+
+                    if (evOuts.count() == 1)
+                    {
+                        fEventsOut.ctrl = &fEventsOut.data[j];
+                        fEventsOut.ctrlIndex = j;
+
+                        if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
+                            needsCtrlOut = true;
+                    }
+                    else
+                    {
+                        if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
+                            fEventsOut.data[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
+
+                        if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
+                        {
+                            fEventsOut.ctrl = &fEventsOut.data[j];
+                            fEventsOut.ctrlIndex = j;
+                        }
+                    }
+                }
+                else
+                    carla_stderr2("WARNING - Got a broken Port (Atom-Sequence, but not input or output)");
+            }
+            else if (LV2_IS_PORT_EVENT(portTypes))
+            {
+                if (LV2_IS_PORT_INPUT(portTypes))
+                {
+                    uint32_t j = iEvIn++;
+
+                    fDescriptor->connect_port(fHandle, i, fEventsIn.data[j].event);
+
+                    if (fHandle2 != nullptr)
+                        fDescriptor->connect_port(fHandle2, i, fEventsIn.data[j].event);
+
+                    fEventsIn.data[j].rindex = i;
+
+                    if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
+                        fEventsIn.data[j].type |= CARLA_EVENT_TYPE_MIDI;
+                    if (portTypes & LV2_PORT_DATA_PATCH_MESSAGE)
+                        fEventsIn.data[j].type |= CARLA_EVENT_TYPE_MESSAGE;
+                    if (portTypes & LV2_PORT_DATA_TIME_POSITION)
+                        fEventsIn.data[j].type |= CARLA_EVENT_TYPE_TIME;
+
+                    if (evIns.count() == 1)
+                    {
+                        fEventsIn.ctrl = &fEventsIn.data[j];
+                        fEventsIn.ctrlIndex = j;
+
+                        if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
+                            needsCtrlIn = true;
+                    }
+                    else
+                    {
+                        if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
+                            fEventsIn.data[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+
+                        if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
+                        {
+                            fEventsIn.ctrl = &fEventsIn.data[j];
+                            fEventsIn.ctrlIndex = j;
+                        }
+                    }
+                }
+                else if (LV2_IS_PORT_OUTPUT(portTypes))
+                {
+                    uint32_t j = iEvOut++;
+
+                    fDescriptor->connect_port(fHandle, i, fEventsOut.data[j].event);
+
+                    if (fHandle2 != nullptr)
+                        fDescriptor->connect_port(fHandle2, i, fEventsOut.data[j].event);
+
+                    fEventsOut.data[j].rindex = i;
+
+                    if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
+                        fEventsOut.data[j].type |= CARLA_EVENT_TYPE_MIDI;
+                    if (portTypes & LV2_PORT_DATA_PATCH_MESSAGE)
+                        fEventsOut.data[j].type |= CARLA_EVENT_TYPE_MESSAGE;
+                    if (portTypes & LV2_PORT_DATA_TIME_POSITION)
+                        fEventsOut.data[j].type |= CARLA_EVENT_TYPE_TIME;
+
+                    if (evOuts.count() == 1)
+                    {
+                        fEventsOut.ctrl = &fEventsOut.data[j];
+                        fEventsOut.ctrlIndex = j;
+
+                        if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
+                            needsCtrlOut = true;
+                    }
+                    else
+                    {
+                        if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
+                            fEventsOut.data[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
+
+                        if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
+                        {
+                            fEventsOut.ctrl = &fEventsOut.data[j];
+                            fEventsOut.ctrlIndex = j;
+                        }
+                    }
+                }
+                else
+                    carla_stderr2("WARNING - Got a broken Port (Event, but not input or output)");
+            }
+            else if (LV2_IS_PORT_MIDI_LL(portTypes))
+            {
+                if (LV2_IS_PORT_INPUT(portTypes))
+                {
+                    uint32_t j = iEvIn++;
+
+                    fDescriptor->connect_port(fHandle, i, fEventsIn.data[j].midi);
+
+                    if (fHandle2 != nullptr)
+                        fDescriptor->connect_port(fHandle2, i, fEventsIn.data[j].midi);
+
+                    fEventsIn.data[j].type  |= CARLA_EVENT_TYPE_MIDI;
+                    fEventsIn.data[j].rindex = i;
+
+                    if (evIns.count() == 1)
+                    {
+                        needsCtrlIn = true;
+                        fEventsIn.ctrl = &fEventsIn.data[j];
+                        fEventsIn.ctrlIndex = j;
+                    }
+                    else
+                    {
+                        fEventsIn.data[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+
+                        if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
+                        {
+                            fEventsIn.ctrl = &fEventsIn.data[j];
+                            fEventsIn.ctrlIndex = j;
+                        }
+                    }
+                }
+                else if (LV2_IS_PORT_OUTPUT(portTypes))
+                {
+                    uint32_t j = iEvOut++;
+
+                    fDescriptor->connect_port(fHandle, i, fEventsOut.data[j].midi);
+
+                    if (fHandle2 != nullptr)
+                        fDescriptor->connect_port(fHandle2, i, fEventsOut.data[j].midi);
+
+                    fEventsOut.data[j].type  |= CARLA_EVENT_TYPE_MIDI;
+                    fEventsOut.data[j].rindex = i;
+
+                    if (evOuts.count() == 1)
+                    {
+                        needsCtrlOut = true;
+                        fEventsOut.ctrl = &fEventsOut.data[j];
+                        fEventsOut.ctrlIndex = j;
+                    }
+                    else
+                    {
+                        fEventsOut.data[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
+
+                        if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
+                        {
+                            fEventsOut.ctrl = &fEventsOut.data[j];
+                            fEventsOut.ctrlIndex = j;
+                        }
+                    }
+                }
+                else
+                    carla_stderr2("WARNING - Got a broken Port (MIDI, but not input or output)");
+            }
+#endif
             else if (LV2_IS_PORT_CONTROL(portTypes))
             {
                 const LV2_Property portProps(fRdfDescriptor->Ports[i].Properties);
@@ -1317,6 +2003,14 @@ public:
             pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
         }
 
+#if 0
+        if (fEventsIn.ctrl != nullptr && fEventsIn.ctrl->port == nullptr)
+            fEventsIn.ctrl->port = pData->event.portIn;
+
+        if (fEventsOut.ctrl != nullptr && fEventsOut.ctrl->port == nullptr)
+            fEventsOut.ctrl->port = pData->event.portOut;
+#endif
+
         if (forcedStereoIn || forcedStereoOut)
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
         else
@@ -1377,6 +2071,129 @@ public:
         carla_debug("Lv2Plugin::reload() - end");
     }
 
+#if 0
+    void reloadPrograms(const bool init) override
+    {
+        carla_debug("DssiPlugin::reloadPrograms(%s)", bool2str(init));
+        uint32_t i, oldCount  = pData->midiprog.count;
+        const int32_t current = pData->midiprog.current;
+
+        // special LV2 programs handling
+        if (init)
+        {
+            pData->prog.clear();
+
+            const uint32_t count(fRdfDescriptor->PresetCount);
+
+            if (count > 0)
+            {
+                pData->prog.createNew(count);
+
+                for (i=0; i < count; ++i)
+                    pData->prog.names[i] = carla_strdup(fRdfDescriptor->Presets[i].Label);
+            }
+        }
+
+        // Delete old programs
+        pData->midiprog.clear();
+
+        // Query new programs
+        uint32_t count = 0;
+        if (fExt.programs != nullptr && fExt.programs->get_program != nullptr && fExt.programs->select_program != nullptr)
+        {
+            while (fExt.programs->get_program(fHandle, count))
+                ++count;
+        }
+
+        if (count > 0)
+        {
+            pData->midiprog.createNew(count);
+
+            // Update data
+            for (i=0; i < count; ++i)
+            {
+                const LV2_Program_Descriptor* const pdesc(fExt.programs->get_program(fHandle, i));
+                CARLA_ASSERT(pdesc != nullptr);
+                CARLA_ASSERT(pdesc->name != nullptr);
+
+                pData->midiprog.data[i].bank    = pdesc->bank;
+                pData->midiprog.data[i].program = pdesc->program;
+                pData->midiprog.data[i].name    = carla_strdup(pdesc->name);
+            }
+        }
+
+#ifndef BUILD_BRIDGE
+        // Update OSC Names
+        if (pData->engine->isOscControlRegistered())
+        {
+            pData->engine->osc_send_control_set_midi_program_count(fId, count);
+
+            for (i=0; i < count; ++i)
+                pData->engine->osc_send_control_set_midi_program_data(fId, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
+        }
+#endif
+
+        if (init)
+        {
+            if (count > 0)
+            {
+                setMidiProgram(0, false, false, false);
+            }
+            else
+            {
+                // load default state
+                if (const LilvState* state = gLv2World.getState(fDescriptor->URI, (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
+                {
+                    lilv_state_restore(state, fExt.state, fHandle, carla_lilv_set_port_value, this, 0, fFeatures);
+
+                    if (fHandle2 != nullptr)
+                        lilv_state_restore(state, fExt.state, fHandle2, carla_lilv_set_port_value, this, 0, fFeatures);
+                }
+            }
+        }
+        else
+        {
+            // Check if current program is invalid
+            bool programChanged = false;
+
+            if (count == oldCount+1)
+            {
+                // one midi program added, probably created by user
+                pData->midiprog.current = oldCount;
+                programChanged = true;
+            }
+            else if (current < 0 && count > 0)
+            {
+                // programs exist now, but not before
+                pData->midiprog.current = 0;
+                programChanged = true;
+            }
+            else if (current >= 0 && count == 0)
+            {
+                // programs existed before, but not anymore
+                pData->midiprog.current = -1;
+                programChanged = true;
+            }
+            else if (current >= static_cast<int32_t>(count))
+            {
+                // current midi program > count
+                pData->midiprog.current = 0;
+                programChanged = true;
+            }
+            else
+            {
+                // no change
+                pData->midiprog.current = current;
+            }
+
+            if (programChanged)
+                setMidiProgram(pData->midiprog.current, true, true, true);
+
+            pData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
+        }
+    }
+#endif
+
     // -------------------------------------------------------------------
     // Plugin processing
 
@@ -1435,11 +2252,116 @@ public:
             return;
         }
 
+#if 0
+        // --------------------------------------------------------------------------------------------------------
+        // Handle events from different APIs
+
+        LV2_Atom_Buffer_Iterator evInAtomIters[fEventsIn.count];
+        LV2_Event_Iterator       evInEventIters[fEventsIn.count];
+        LV2_MIDIState            evInMidiStates[fEventsIn.count];
+
+        for (i=0; i < fEventsIn.count; ++i)
+        {
+            if (fEventsIn.data[i].type & CARLA_EVENT_DATA_ATOM)
+            {
+                lv2_atom_buffer_reset(fEventsIn.data[i].atom, true);
+                lv2_atom_buffer_begin(&evInAtomIters[i], fEventsIn.data[i].atom);
+            }
+            else if (fEventsIn.data[i].type & CARLA_EVENT_DATA_EVENT)
+            {
+                lv2_event_buffer_reset(fEventsIn.data[i].event, LV2_EVENT_AUDIO_STAMP, fEventsIn.data[i].event->data);
+                lv2_event_begin(&evInEventIters[i], fEventsIn.data[i].event);
+            }
+            else if (fEventsIn.data[i].type & CARLA_EVENT_DATA_MIDI_LL)
+            {
+                fEventsIn.data[i].midi->event_count = 0;
+                fEventsIn.data[i].midi->size        = 0;
+                evInMidiStates[i].midi = fEventsIn.data[i].midi;
+                evInMidiStates[i].frame_count = frames;
+                evInMidiStates[i].position    = 0;
+            }
+        }
+
+        for (i=0; i < fEventsOut.count; ++i)
+        {
+            if (fEventsOut.data[i].type & CARLA_EVENT_DATA_ATOM)
+            {
+                lv2_atom_buffer_reset(fEventsOut.data[i].atom, false);
+            }
+            else if (fEventsOut.data[i].type & CARLA_EVENT_DATA_EVENT)
+            {
+                lv2_event_buffer_reset(fEventsOut.data[i].event, LV2_EVENT_AUDIO_STAMP, fEventsOut.data[i].event->data);
+            }
+            else if (fEventsOut.data[i].type & CARLA_EVENT_DATA_MIDI_LL)
+            {
+                // not needed
+            }
+        }
+
+        CARLA_PROCESS_CONTINUE_CHECK;
+#endif
+
         // --------------------------------------------------------------------------------------------------------
         // Check if needs reset
 
         if (pData->needsReset)
         {
+#if 0
+            uint8_t midiData[3] = { 0 };
+
+            if (fEventsIn.ctrl != nullptr && (fEventsIn.ctrl->type & CARLA_EVENT_TYPE_MIDI) != 0)
+            {
+                k = fEventsIn.ctrlIndex;
+
+                if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                {
+                    for (i=0; i < MAX_MIDI_CHANNELS; ++i)
+                    {
+                        midiData[0] = MIDI_STATUS_CONTROL_CHANGE + i;
+                        midiData[1] = MIDI_CONTROL_ALL_NOTES_OFF;
+
+                        if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
+                            lv2_atom_buffer_write(&evInAtomIters[k], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                        else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
+                            lv2_event_write(&evInEventIters[k], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                        else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
+                            lv2midi_put_event(&evInMidiStates[k], 0, 3, midiData);
+
+                        midiData[0] = MIDI_STATUS_CONTROL_CHANGE + i;
+                        midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
+
+                        if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
+                            lv2_atom_buffer_write(&evInAtomIters[k], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                        else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
+                            lv2_event_write(&evInEventIters[k], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                        else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
+                            lv2midi_put_event(&evInMidiStates[k], 0, 3, midiData);
+                    }
+                }
+                else if (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
+                {
+                    for (k=0; k < MAX_MIDI_NOTE; ++k)
+                    {
+                        midiData[0] = MIDI_STATUS_NOTE_OFF + pData->ctrlChannel;
+                        midiData[1] = k;
+
+                        if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
+                            lv2_atom_buffer_write(&evInAtomIters[k], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                        else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
+                            lv2_event_write(&evInEventIters[k], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                        else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
+                            lv2midi_put_event(&evInMidiStates[k], 0, 3, midiData);
+                    }
+                }
+            }
+#endif
+
             if (pData->latency > 0)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
@@ -1542,6 +2464,45 @@ public:
                     pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 1, fParamBuffers[k]);
             }
 
+#if 0
+            for (i = 0; i < fEventsIn.count; ++i)
+            {
+                if ((fEventsIn.data[i].type & CARLA_EVENT_DATA_ATOM) == 0 || (fEventsIn.data[i].type & CARLA_EVENT_TYPE_TIME) == 0)
+                    continue;
+
+                uint8_t timeInfoBuf[256] = { 0 };
+                lv2_atom_forge_set_buffer(&fAtomForge, timeInfoBuf, sizeof(timeInfoBuf));
+
+                LV2_Atom_Forge_Frame forgeFrame;
+                lv2_atom_forge_blank(&fAtomForge, &forgeFrame, 1, CARLA_URI_MAP_ID_TIME_POSITION);
+                lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_SPEED, 0);
+                lv2_atom_forge_float(&fAtomForge, timeInfo.playing ? 1.0f : 0.0f);
+                lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_FRAME, 0);
+                lv2_atom_forge_long(&fAtomForge, timeInfo.frame);
+
+                if (timeInfo.valid & EngineTimeInfo::ValidBBT)
+                {
+                    lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BAR, 0);
+                    lv2_atom_forge_long(&fAtomForge, timeInfo.bbt.bar - 1);
+                    lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BAR_BEAT, 0);
+                    lv2_atom_forge_float(&fAtomForge, timeInfo.bbt.beat - 1 + (double(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat));
+                    lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEAT, 0);
+                    lv2_atom_forge_long(&fAtomForge, timeInfo.bbt.beat -1);
+                    lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEAT_UNIT, 0);
+                    lv2_atom_forge_float(&fAtomForge, timeInfo.bbt.beatType);
+                    lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR, 0);
+                    lv2_atom_forge_float(&fAtomForge, timeInfo.bbt.beatsPerBar);
+                    lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE, 0);
+                    lv2_atom_forge_float(&fAtomForge, timeInfo.bbt.beatsPerMinute);
+                }
+
+                LV2_Atom* const atom((LV2_Atom*)timeInfoBuf);
+                lv2_atom_buffer_write(&evInAtomIters[i], 0, 0, atom->type, atom->size, LV2NV_ATOM_BODY_CONST(atom));
+
+                CARLA_ASSERT(atom->size < 256);
+            }
+#endif
+
             pData->postRtEvents.trySplice();
 
             carla_copyStruct<EngineTimeInfo>(fLastTimeInfo, timeInfo);
@@ -1549,15 +2510,472 @@ public:
             CARLA_PROCESS_CONTINUE_CHECK;
         }
 
+#if 0
+        // --------------------------------------------------------------------------------------------------------
+        // Event Input and Processing
+
+        if (fEventsIn.ctrl != nullptr)
+        {
+            // ----------------------------------------------------------------------------------------------------
+            // Message Input
+
+#if 0
+            if (fAtomQueueIn.tryLock())
+            {
+                if (! fAtomQueueIn.isEmpty())
+                {
+                    uint32_t portIndex;
+                    const LV2_Atom* atom;
+
+                    k = fEventsIn.ctrlIndex;
+
+                    while (fAtomQueueIn.get(&portIndex, &atom))
+                    {
+                        carla_debug("Event input message sent to plugin DSP, type %i:\"%s\", size:%i/%i",
+                                    atom->type, carla_lv2_urid_unmap(this, atom->type),
+                                    atom->size, lv2_atom_total_size(atom)
+                                    );
+
+                        if (! lv2_atom_buffer_write(&evInAtomIters[k], 0, 0, atom->type, atom->size, LV2NV_ATOM_BODY_CONST(atom)))
+                        {
+                            carla_stdout("Event input buffer full, 1 message lost");
+                            break;
+                        }
+                    }
+                }
+
+                fAtomQueueIn.unlock();
+            }
+#endif
+
+#if 0
+            // ----------------------------------------------------------------------------------------------------
+            // MIDI Input (External)
+
+            if (pData->extNotes.mutex.tryLock())
+            {
+                if ((fEventsIn.ctrl->type & CARLA_EVENT_TYPE_MIDI) == 0)
+                {
+                    // does not handle MIDI
+                    pData->extNotes.data.clear();
+                }
+                else
+                {
+                    k = fEventsIn.ctrlIndex;
+
+                    while (! pData->extNotes.data.isEmpty())
+                    {
+                        const ExternalMidiNote& note(pData->extNotes.data.getFirst(true));
+
+                        CARLA_ASSERT(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
+
+                        uint8_t midiEvent[3];
+                        midiEvent[0]  = (note.velo > 0) ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF;
+                        midiEvent[0] += note.channel;
+                        midiEvent[1]  = note.note;
+                        midiEvent[2]  = note.velo;
+
+                        if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
+                            lv2_atom_buffer_write(&evInAtomIters[k], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiEvent);
+
+                        else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
+                            lv2_event_write(&evInEventIters[k], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiEvent);
+
+                        else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
+                            lv2midi_put_event(&evInMidiStates[k], 0, 3, midiEvent);
+                    }
+                }
+
+                pData->extNotes.mutex.unlock();
+
+            } // End of MIDI Input (External)
+#endif
+
+            // ----------------------------------------------------------------------------------------------------
+            // Event Input (System)
+
+            bool allNotesOffSent = false;
+            bool sampleAccurate  = (pData->options & PLUGIN_OPTION_FIXED_BUFFER) == 0;
+
+            uint32_t time, nEvents = (fEventsIn.ctrl->port != nullptr) ? fEventsIn.ctrl->port->getEventCount() : 0;
+            uint32_t startTime  = 0;
+            uint32_t timeOffset = 0;
+            uint32_t nextBankId = 0;
+
+            if (pData->midiprog.current >= 0 && pData->midiprog.count > 0)
+                nextBankId = pData->midiprog.data[pData->midiprog.current].bank;
+
+            for (i=0; i < nEvents; ++i)
+            {
+                const EngineEvent& event(fEventsIn.ctrl->port->getEvent(i));
+
+                time = event.time;
+
+                if (time >= frames)
+                    continue;
+
+                CARLA_ASSERT_INT2(time >= timeOffset, time, timeOffset);
+
+                if (time > timeOffset && sampleAccurate)
+                {
+                    if (processSingle(inBuffer, outBuffer, time - timeOffset, timeOffset))
+                    {
+                        startTime  = 0;
+                        timeOffset = time;
+
+                        if (pData->midiprog.current >= 0 && pData->midiprog.count > 0)
+                            nextBankId = pData->midiprog.data[pData->midiprog.current].bank;
+                        else
+                            nextBankId = 0;
+
+                        // reset iters
+                        k = fEventsIn.ctrlIndex;
+
+                        if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
+                        {
+                            lv2_atom_buffer_reset(fEventsIn.data[k].atom, true);
+                            lv2_atom_buffer_begin(&evInAtomIters[k], fEventsIn.data[k].atom);
+                        }
+                        else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
+                        {
+                            lv2_event_buffer_reset(fEventsIn.data[k].event, LV2_EVENT_AUDIO_STAMP, fEventsIn.data[k].event->data);
+                            lv2_event_begin(&evInEventIters[k], fEventsIn.data[k].event);
+                        }
+                        else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
+                        {
+                            fEventsIn.data[k].midi->event_count = 0;
+                            fEventsIn.data[k].midi->size        = 0;
+                            evInMidiStates[k].position = time;
+                        }
+                    }
+                    else
+                        startTime += timeOffset;
+                }
+
+                // Control change
+                switch (event.type)
+                {
+                case kEngineEventTypeNull:
+                    break;
+
+                case kEngineEventTypeControl:
+                {
+                    const EngineControlEvent& ctrlEvent(event.ctrl);
+
+                    switch (ctrlEvent.type)
+                    {
+                    case kEngineControlEventTypeNull:
+                        break;
+
+                    case kEngineControlEventTypeParameter:
+                    {
+#ifndef BUILD_BRIDGE
+                        // Control backend stuff
+                        if (event.channel == pData->ctrlChannel)
+                        {
+                            float value;
+
+                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) > 0)
+                            {
+                                value = ctrlEvent.value;
+                                setDryWet(value, false, false);
+                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
+                            }
+
+                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) > 0)
+                            {
+                                value = ctrlEvent.value*127.0f/100.0f;
+                                setVolume(value, false, false);
+                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
+                            }
+
+                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) > 0)
+                            {
+                                float left, right;
+                                value = ctrlEvent.value/0.5f - 1.0f;
+
+                                if (value < 0.0f)
+                                {
+                                    left  = -1.0f;
+                                    right = (value*2.0f)+1.0f;
+                                }
+                                else if (value > 0.0f)
+                                {
+                                    left  = (value*2.0f)-1.0f;
+                                    right = 1.0f;
+                                }
+                                else
+                                {
+                                    left  = -1.0f;
+                                    right = 1.0f;
+                                }
+
+                                setBalanceLeft(left, false, false);
+                                setBalanceRight(right, false, false);
+                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
+                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
+                            }
+                        }
+#endif
+
+                        // Control plugin parameters
+                        for (k=0; k < pData->param.count; ++k)
+                        {
+                            if (pData->param.data[k].midiChannel != event.channel)
+                                continue;
+                            if (pData->param.data[k].midiCC != ctrlEvent.param)
+                                continue;
+                            if (pData->param.data[k].type != PARAMETER_INPUT)
+                                continue;
+                            if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
+                                continue;
+
+                            float value;
+
+                            if (pData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
+                            {
+                                value = (ctrlEvent.value < 0.5f) ? pData->param.ranges[k].min : pData->param.ranges[k].max;
+                            }
+                            else
+                            {
+                                value = pData->param.ranges[k].unnormalizeValue(ctrlEvent.value);
+
+                                if (pData->param.data[k].hints & PARAMETER_IS_INTEGER)
+                                    value = std::rint(value);
+                            }
+
+                            setParameterValue(k, value, false, false, false);
+                            postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
+                        }
+
+                        if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
+                        {
+                            uint8_t midiData[3];
+                            midiData[0] = MIDI_STATUS_CONTROL_CHANGE + i;
+                            midiData[1] = ctrlEvent.param;
+                            midiData[2] = ctrlEvent.value*127.0f;
+
+                            if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
+                                lv2_atom_buffer_write(&evInAtomIters[fEventsIn.ctrlIndex], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                            else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
+                                lv2_event_write(&evInEventIters[fEventsIn.ctrlIndex], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                            else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
+                                lv2midi_put_event(&evInMidiStates[fEventsIn.ctrlIndex], 0, 3, midiData);
+                        }
+
+                        break;
+                    }
+
+                    case kEngineControlEventTypeMidiBank:
+                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                            nextBankId = ctrlEvent.param;
+                        break;
+
+                    case kEngineControlEventTypeMidiProgram:
+                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        {
+                            const uint32_t nextProgramId = ctrlEvent.param;
+
+                            for (k=0; k < pData->midiprog.count; ++k)
+                            {
+                                if (pData->midiprog.data[k].bank == nextBankId && pData->midiprog.data[k].program == nextProgramId)
+                                {
+                                    setMidiProgram(k, false, false, false);
+                                    postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+
+                    case kEngineControlEventTypeAllSoundOff:
+                        if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        {
+                            const uint32_t mtime(sampleAccurate ? startTime : time);
+
+                            uint8_t midiData[3];
+                            midiData[0] = MIDI_STATUS_CONTROL_CHANGE + i;
+                            midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
+                            midiData[2] = 0;
+
+                            if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
+                                lv2_atom_buffer_write(&evInAtomIters[fEventsIn.ctrlIndex], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                            else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
+                                lv2_event_write(&evInEventIters[fEventsIn.ctrlIndex], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                            else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
+                                lv2midi_put_event(&evInMidiStates[fEventsIn.ctrlIndex], mtime, 3, midiData);
+                        }
+                        break;
+
+                    case kEngineControlEventTypeAllNotesOff:
+                        if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        {
+                            if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
+                            {
+                                allNotesOffSent = true;
+                                sendMidiAllNotesOffToCallback();
+                            }
+
+                            const uint32_t mtime(sampleAccurate ? startTime : time);
+
+                            uint8_t midiData[3];
+                            midiData[0] = MIDI_STATUS_CONTROL_CHANGE + i;
+                            midiData[1] = MIDI_CONTROL_ALL_NOTES_OFF;
+                            midiData[2] = 0;
+
+                            if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
+                                lv2_atom_buffer_write(&evInAtomIters[fEventsIn.ctrlIndex], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                            else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
+                                lv2_event_write(&evInEventIters[fEventsIn.ctrlIndex], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                            else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
+                                lv2midi_put_event(&evInMidiStates[fEventsIn.ctrlIndex], mtime, 3, midiData);
+                        }
+                        break;
+                    }
+
+                    break;
+                }
+
+                case kEngineEventTypeMidi:
+                {
+                    const EngineMidiEvent& midiEvent(event.midi);
+
+                    uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
+                    uint8_t channel = event.channel;
+                    uint32_t mtime  = sampleAccurate ? startTime : time;
+
+                    if (MIDI_IS_STATUS_AFTERTOUCH(status) && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
+                        continue;
+
+                    // Fix bad note-off
+                    if (status == MIDI_STATUS_NOTE_ON && midiEvent.data[2] == 0)
+                        status -= 0x10;
+
+                    k = fEventsIn.ctrlIndex;
+
+                    if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
+                        lv2_atom_buffer_write(&evInAtomIters[k], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, midiEvent.size, midiEvent.data);
+
+                    else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
+                        lv2_event_write(&evInEventIters[k], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, midiEvent.size, midiEvent.data);
+
+                    else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
+                        lv2midi_put_event(&evInMidiStates[k], mtime, midiEvent.size, midiEvent.data);
+
+                    if (status == MIDI_STATUS_NOTE_ON)
+                        postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
+                    else if (status == MIDI_STATUS_NOTE_OFF)
+                        postponeRtEvent(kPluginPostRtEventNoteOff, channel, midiEvent.data[1], 0.0f);
+
+                    break;
+                }
+                }
+            }
+
+            pData->postRtEvents.trySplice();
+
+            if (frames > timeOffset)
+                processSingle(inBuffer, outBuffer, frames - timeOffset, timeOffset);
+
+        } // End of Event Input and Processing
+
         // --------------------------------------------------------------------------------------------------------
         // Plugin processing (no events)
 
+        else
+#endif
         {
             processSingle(inBuffer, outBuffer, frames, 0);
 
         } // End of Plugin processing (no events)
 
         CARLA_PROCESS_CONTINUE_CHECK;
+
+#if 0
+        // --------------------------------------------------------------------------------------------------------
+        // MIDI Output
+
+        if (fEventsOut.ctrl != nullptr)
+        {
+            if (fEventsOut.ctrl->type & CARLA_EVENT_DATA_ATOM)
+            {
+                const uint32_t rindex(fEventsOut.ctrl->rindex);
+                const LV2_Atom_Event* ev;
+                LV2_Atom_Buffer_Iterator iter;
+
+                uint8_t* data;
+                lv2_atom_buffer_begin(&iter, fEventsOut.ctrl->atom);
+
+                while (true)
+                {
+                    data = nullptr;
+                    ev = lv2_atom_buffer_get(&iter, &data);
+
+                    if (ev == nullptr || data == nullptr)
+                        break;
+
+                    if (ev->body.type == CARLA_URI_MAP_ID_MIDI_EVENT && fEventsOut.ctrl->port != nullptr)
+                        fEventsOut.ctrl->port->writeMidiEvent(ev->time.frames, data, ev->body.size);
+
+                    else if (ev->body.type == CARLA_URI_MAP_ID_ATOM_BLANK)
+                        fAtomQueueOut.put(rindex, &ev->body);
+
+                    lv2_atom_buffer_increment(&iter);
+                }
+            }
+            else if ((fEventsOut.ctrl->type & CARLA_EVENT_DATA_EVENT) != 0 && fEventsOut.ctrl->port != nullptr)
+            {
+                const LV2_Event* ev;
+                LV2_Event_Iterator iter;
+
+                uint8_t* data;
+                lv2_event_begin(&iter, fEventsOut.ctrl->event);
+
+                while (true)
+                {
+                    data = nullptr;
+                    ev = lv2_event_get(&iter, &data);
+
+                    if (ev == nullptr || data == nullptr)
+                        break;
+
+                    if (ev->type == CARLA_URI_MAP_ID_MIDI_EVENT)
+                        fEventsOut.ctrl->port->writeMidiEvent(ev->frames, data, ev->size);
+
+                    lv2_event_increment(&iter);
+                }
+            }
+            else if ((fEventsOut.ctrl->type & CARLA_EVENT_DATA_MIDI_LL) != 0 && fEventsOut.ctrl->port != nullptr)
+            {
+                LV2_MIDIState state = { fEventsOut.ctrl->midi, frames, 0 };
+
+                uint32_t eventSize;
+                double   eventTime;
+                unsigned char* eventData;
+
+                while (lv2midi_get_event(&state, &eventTime, &eventSize, &eventData) < frames)
+                {
+                    if (eventData == nullptr || eventSize == 0)
+                        break;
+
+                    fEventsOut.ctrl->port->writeMidiEvent(eventTime, eventData, eventSize);
+                    lv2midi_step(&state);
+                }
+            }
+        }
+#endif
 
         // --------------------------------------------------------------------------------------------------------
         // Control Output
@@ -1871,8 +3289,10 @@ public:
 
     void initBuffers() override
     {
-        //fEventsIn.initBuffers(pData->engine);
-        //fEventsOut.initBuffers(pData->engine);
+#if 0
+        fEventsIn.initBuffers(pData->engine);
+        fEventsOut.initBuffers(pData->engine);
+#endif
 
         CarlaPlugin::initBuffers();
     }
@@ -1917,8 +3337,10 @@ public:
             fParamBuffers = nullptr;
         }
 
-        //fEventsIn.clear();
-        //fEventsOut.clear();
+#if 0
+        fEventsIn.clear();
+        fEventsOut.clear();
+#endif
 
         CarlaPlugin::clearBuffers();
 
@@ -1992,7 +3414,7 @@ public:
                 midiEv.event.time.frames = 0;
                 midiEv.event.body.type   = CARLA_URI_MAP_ID_MIDI_EVENT;
                 midiEv.event.body.size   = 3;
-                midiEv.data[0] = MIDI_STATUS_NOTE_OFF + channel;
+                midiEv.data[0] = static_cast<uint8_t>(MIDI_STATUS_NOTE_ON + channel);
                 midiEv.data[1] = note;
                 midiEv.data[2] = velo;
 
@@ -2027,7 +3449,7 @@ public:
                 midiEv.event.time.frames = 0;
                 midiEv.event.body.type   = CARLA_URI_MAP_ID_MIDI_EVENT;
                 midiEv.event.body.size   = 3;
-                midiEv.data[0] = MIDI_STATUS_NOTE_OFF + channel;
+                midiEv.data[0] = static_cast<uint8_t>(MIDI_STATUS_NOTE_OFF + channel);
                 midiEv.data[1] = note;
                 midiEv.data[2] = 0;
 
@@ -2517,7 +3939,9 @@ public:
 
         case CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM:
         case CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT:
-            //fAtomQueueIn.put(rindex, (const LV2_Atom*)buffer);
+#if 0
+            fAtomQueueIn.put(rindex, (const LV2_Atom*)buffer);
+#endif
             break;
 
         default:
@@ -3035,7 +4459,7 @@ public:
         if (iFinal == eQt4 || iFinal == eQt5 || iFinal == eGtk2 || iFinal == eGtk3 || iFinal == eCocoa || iFinal == eWindows || iFinal == eX11 || iFinal == eExt)
         {
             // -----------------------------------------------------------
-            // initialize ui bridge
+            // initialize osc-bridge
 
             if (const char* const bridgeBinary = getUiBridgeBinary(uiType))
             {
@@ -3210,7 +4634,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(atom != nullptr,);
         carla_debug("Lv2Plugin::handleTransferAtom(%i, %p)", portIndex, atom);
 
-        //fAtomQueueIn.put(portIndex, atom);
+#if 0
+        fAtomQueueIn.put(portIndex, atom);
+#endif
         return; (void)portIndex;
     }
 
@@ -3237,7 +4663,15 @@ private:
     float** fAudioOutBuffers;
     float*  fParamBuffers;
 
-    Lv2PluginOptions fLv2Options;
+#if 0
+    Lv2AtomQueue   fAtomQueueIn;
+    Lv2AtomQueue   fAtomQueueOut;
+    LV2_Atom_Forge fAtomForge;
+
+    Lv2PluginEventData fEventsIn;
+    Lv2PluginEventData fEventsOut;
+#endif
+    Lv2PluginOptions   fLv2Options;
 
     LinkedList<const char*> fCustomURIDs;
 

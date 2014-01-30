@@ -106,6 +106,8 @@ struct NativePluginMidiData {
     CARLA_DECLARE_NON_COPY_STRUCT(NativePluginMidiData)
 };
 
+// -----------------------------------------------------
+
 class NativePlugin : public CarlaPlugin
 {
 public:
