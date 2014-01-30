@@ -41,7 +41,7 @@
 #include "lv2/port-groups.h"
 #include "lv2/port-props.h"
 #include "lv2/presets.h"
-// resize-port
+#include "lv2/resize-port.h"
 #include "lv2/state.h"
 #include "lv2/time.h"
 #include "lv2/ui.h"
@@ -1288,6 +1288,8 @@ bool is_lv2_feature_supported(const LV2_URI uri)
     if (std::strcmp(uri, LV2_OPTIONS__options) == 0)
         return true;
     if (std::strcmp(uri, LV2_PROGRAMS__Host) == 0)
+        return true;
+    if (std::strcmp(uri, LV2_RESIZE_PORT__resize) == 0)
         return true;
     if (std::strcmp(uri, LV2_RTSAFE_MEMORY_POOL__Pool) == 0)
         return true;

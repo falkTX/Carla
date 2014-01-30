@@ -116,30 +116,31 @@ const uint32_t kFeatureIdIsLive           =  6;
 const uint32_t kFeatureIdLogs             =  7;
 const uint32_t kFeatureIdOptions          =  8;
 const uint32_t kFeatureIdPrograms         =  9;
-const uint32_t kFeatureIdRtMemPool        = 10;
-const uint32_t kFeatureIdRtMemPoolOld     = 11;
-const uint32_t kFeatureIdStateMakePath    = 12;
-const uint32_t kFeatureIdStateMapPath     = 13;
-const uint32_t kFeatureIdStrictBounds     = 14;
-const uint32_t kFeatureIdUriMap           = 15;
-const uint32_t kFeatureIdUridMap          = 16;
-const uint32_t kFeatureIdUridUnmap        = 17;
-const uint32_t kFeatureIdWorker           = 18;
-const uint32_t kFeatureCountPlugin        = 19;
-const uint32_t kFeatureIdUiDataAccess     = 19;
-const uint32_t kFeatureIdUiInstanceAccess = 20;
-const uint32_t kFeatureIdUiIdle           = 21;
-const uint32_t kFeatureIdUiFixedSize      = 22;
-const uint32_t kFeatureIdUiMakeResident   = 23;
-const uint32_t kFeatureIdUiNoUserResize   = 24;
-const uint32_t kFeatureIdUiParent         = 25;
-const uint32_t kFeatureIdUiPortMap        = 26;
-const uint32_t kFeatureIdUiPortSubscribe  = 27;
-const uint32_t kFeatureIdUiResize         = 28;
-const uint32_t kFeatureIdUiTouch          = 29;
-const uint32_t kFeatureIdExternalUi       = 30;
-const uint32_t kFeatureIdExternalUiOld    = 31;
-const uint32_t kFeatureCountAll           = 32;
+const uint32_t kFeatureIdResizePort       = 10;
+const uint32_t kFeatureIdRtMemPool        = 11;
+const uint32_t kFeatureIdRtMemPoolOld     = 12;
+const uint32_t kFeatureIdStateMakePath    = 13;
+const uint32_t kFeatureIdStateMapPath     = 14;
+const uint32_t kFeatureIdStrictBounds     = 15;
+const uint32_t kFeatureIdUriMap           = 16;
+const uint32_t kFeatureIdUridMap          = 17;
+const uint32_t kFeatureIdUridUnmap        = 18;
+const uint32_t kFeatureIdWorker           = 19;
+const uint32_t kFeatureCountPlugin        = 20;
+const uint32_t kFeatureIdUiDataAccess     = 20;
+const uint32_t kFeatureIdUiInstanceAccess = 21;
+const uint32_t kFeatureIdUiIdle           = 22;
+const uint32_t kFeatureIdUiFixedSize      = 23;
+const uint32_t kFeatureIdUiMakeResident   = 24;
+const uint32_t kFeatureIdUiNoUserResize   = 25;
+const uint32_t kFeatureIdUiParent         = 26;
+const uint32_t kFeatureIdUiPortMap        = 27;
+const uint32_t kFeatureIdUiPortSubscribe  = 28;
+const uint32_t kFeatureIdUiResize         = 29;
+const uint32_t kFeatureIdUiTouch          = 30;
+const uint32_t kFeatureIdExternalUi       = 31;
+const uint32_t kFeatureIdExternalUiOld    = 32;
+const uint32_t kFeatureCountAll           = 33;
 
 // -----------------------------------------------------
 
@@ -459,6 +460,9 @@ public:
 
         if (fFeatures[kFeatureIdPrograms] != nullptr && fFeatures[kFeatureIdPrograms]->data != nullptr)
             delete (LV2_Programs_Host*)fFeatures[kFeatureIdPrograms]->data;
+
+        if (fFeatures[kFeatureIdResizePort] != nullptr && fFeatures[kFeatureIdResizePort]->data != nullptr)
+            delete (LV2_Resize_Port_Resize*)fFeatures[kFeatureIdResizePort]->data;
 
         if (fFeatures[kFeatureIdRtMemPool] != nullptr && fFeatures[kFeatureIdRtMemPool]->data != nullptr)
             delete (LV2_RtMemPool_Pool*)fFeatures[kFeatureIdRtMemPool]->data;
@@ -3756,6 +3760,18 @@ public:
 
     // -------------------------------------------------------------------
 
+    LV2_Resize_Port_Status handleResizePort(const uint32_t index, const size_t size)
+    {
+        CARLA_SAFE_ASSERT_RETURN(size > 0, LV2_RESIZE_PORT_ERR_UNKNOWN);
+        carla_debug("Lv2Plugin::handleResizePort(%i, " P_SIZE ")", index, size);
+
+        // TODO
+        return LV2_RESIZE_PORT_ERR_NO_SPACE;
+        (void)index;
+    }
+
+    // -------------------------------------------------------------------
+
     LV2_State_Status handleStateStore(const uint32_t key, const void* const value, const size_t size, const uint32_t type, const uint32_t flags)
     {
         CARLA_SAFE_ASSERT_RETURN(key != CARLA_URI_MAP_ID_NULL, LV2_STATE_ERR_NO_PROPERTY);
@@ -4193,6 +4209,10 @@ public:
         programsFt->handle                    = this;
         programsFt->program_changed           = carla_lv2_program_changed;
 
+        LV2_Resize_Port_Resize* const rsPortFt = new LV2_Resize_Port_Resize;
+        rsPortFt->data                         = this;
+        rsPortFt->resize                       = carla_lv2_resize_port;
+
         LV2_RtMemPool_Pool* const rtMemPoolFt = new LV2_RtMemPool_Pool;
         lv2_rtmempool_init(rtMemPoolFt);
 
@@ -4250,6 +4270,8 @@ public:
 
         fFeatures[kFeatureIdPrograms]->URI   = LV2_PROGRAMS__Host;
         fFeatures[kFeatureIdPrograms]->data  = programsFt;
+
+        //kFeatureIdResizePort
 
         fFeatures[kFeatureIdRtMemPool]->URI  = LV2_RTSAFE_MEMORY_POOL__Pool;
         fFeatures[kFeatureIdRtMemPool]->data = rtMemPoolFt;
@@ -4837,6 +4859,17 @@ private:
         carla_debug("carla_lv2_program_changed(%p, %i)", handle, index);
 
         ((Lv2Plugin*)handle)->handleProgramChanged(index);
+    }
+
+    // -------------------------------------------------------------------
+    // Resize Port Feature
+
+    static LV2_Resize_Port_Status carla_lv2_resize_port(LV2_Resize_Port_Feature_Data data, uint32_t index, size_t size)
+    {
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr, LV2_RESIZE_PORT_ERR_UNKNOWN);
+        carla_debug("carla_lv2_program_changed(%p, %i, " P_SIZE ")", data, index, size);
+
+        return ((Lv2Plugin*)data)->handleResizePort(index, size);
     }
 
     // -------------------------------------------------------------------
