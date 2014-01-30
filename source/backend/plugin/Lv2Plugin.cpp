@@ -4391,8 +4391,7 @@ public:
 #ifdef BUILD_BRIDGE
         const bool preferUiBridges(false);
 #else
-        //const bool preferUiBridges(pData->engine->getOptions().preferUiBridges && (pData->hints & PLUGIN_IS_BRIDGE) == 0);
-        const bool preferUiBridges(false);
+        const bool preferUiBridges(pData->engine->getOptions().preferUiBridges && (pData->hints & PLUGIN_IS_BRIDGE) == 0);
 #endif
 
         for (uint32_t i=0; i < fRdfDescriptor->UICount; ++i)
