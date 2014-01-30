@@ -322,7 +322,7 @@ void carla_zeroStruct(T* const structure, const size_t count) noexcept
  */
 template <typename T>
 static inline
-void carla_copyStruct(T& struct1, T& struct2) noexcept
+void carla_copyStruct(T& struct1, const T& struct2) noexcept
 {
     std::memcpy(&struct1, &struct2, sizeof(T));
 }

@@ -217,7 +217,8 @@ public:
           fRdfDescriptor(nullptr),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
-          fParamBuffers(nullptr)
+          fParamBuffers(nullptr),
+          fFirstActive(true)
     {
         carla_debug("Lv2Plugin::Lv2Plugin(%p, %i)", engine, id);
 
@@ -927,7 +928,6 @@ public:
                 const LV2_RDF_PortPoints portPoints(fRdfDescriptor->Ports[i].Points);
 
                 uint32_t j = iCtrl++;
-                pData->param.data[j].type   = PARAMETER_UNKNOWN;
                 pData->param.data[j].hints  = 0x0;
                 pData->param.data[j].index  = static_cast<int32_t>(j);
                 pData->param.data[j].rindex = static_cast<int32_t>(i);
@@ -1016,27 +1016,30 @@ public:
 
                 if (LV2_IS_PORT_INPUT(portTypes))
                 {
+                    pData->param.data[j].type = PARAMETER_INPUT;
+
                     if (LV2_IS_PORT_DESIGNATION_LATENCY(portDesignation))
                     {
                         carla_stderr("Plugin has latency input port, this should not happen!");
                     }
                     else if (LV2_IS_PORT_DESIGNATION_SAMPLE_RATE(portDesignation))
                     {
-                        carla_stderr("Plugin has sample-rate input port, this is not supported!");
+                        def = sampleRate;
+                        step = 1.0f;
+                        stepSmall = 1.0f;
+                        stepLarge = 1.0f;
+                        pData->param.special[j] = PARAMETER_SPECIAL_SAMPLE_RATE;
                     }
                     else if (LV2_IS_PORT_DESIGNATION_FREEWHEELING(portDesignation))
                     {
-                        pData->param.data[j].type = PARAMETER_SPECIAL;
-                        pData->param.special[j]   = PARAMETER_SPECIAL_LV2_FREEWHEEL;
+                        pData->param.special[j] = PARAMETER_SPECIAL_LV2_FREEWHEEL;
                     }
                     else if (LV2_IS_PORT_DESIGNATION_TIME(portDesignation))
                     {
-                        pData->param.data[j].type = PARAMETER_SPECIAL;
-                        pData->param.special[j]   = PARAMETER_SPECIAL_LV2_TIME;
+                        pData->param.special[j] = PARAMETER_SPECIAL_LV2_TIME;
                     }
                     else
                     {
-                        pData->param.data[j].type   = PARAMETER_INPUT;
                         pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                         pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                         needsCtrlIn = true;
@@ -1053,6 +1056,8 @@ public:
                 }
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
                 {
+                    pData->param.data[j].type = PARAMETER_OUTPUT;
+
                     if (LV2_IS_PORT_DESIGNATION_LATENCY(portDesignation))
                     {
                         min = 0.0f;
@@ -1061,9 +1066,7 @@ public:
                         step = 1.0f;
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
-
-                        pData->param.data[j].type = PARAMETER_SPECIAL;
-                        pData->param.special[j]   = PARAMETER_SPECIAL_LATENCY;
+                        pData->param.special[j] = PARAMETER_SPECIAL_LATENCY;
                     }
                     else if (LV2_IS_PORT_DESIGNATION_SAMPLE_RATE(portDesignation))
                     {
@@ -1071,9 +1074,7 @@ public:
                         step = 1.0f;
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
-
-                        pData->param.data[j].type = PARAMETER_SPECIAL;
-                        pData->param.special[j]   = PARAMETER_SPECIAL_SAMPLE_RATE;
+                        pData->param.special[j] = PARAMETER_SPECIAL_SAMPLE_RATE;
                     }
                     else if (LV2_IS_PORT_DESIGNATION_FREEWHEELING(portDesignation))
                     {
@@ -1081,11 +1082,10 @@ public:
                     }
                     else if (LV2_IS_PORT_DESIGNATION_TIME(portDesignation))
                     {
-                        carla_stderr("Plugin has time output port, this is not supported!");
+                        pData->param.special[j] = PARAMETER_SPECIAL_LV2_TIME;
                     }
                     else
                     {
-                        pData->param.data[j].type   = PARAMETER_OUTPUT;
                         pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                         pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                         needsCtrlOut = true;
@@ -1093,6 +1093,7 @@ public:
                 }
                 else
                 {
+                    pData->param.data[j].type = PARAMETER_UNKNOWN;
                     carla_stderr2("WARNING - Got a broken Port (Control, but not input or output)");
                 }
 
@@ -1123,10 +1124,10 @@ public:
                 pData->param.ranges[j].stepLarge = stepLarge;
 
                 // Start parameters in their default values (except freewheel, which is off by default)
-                if (pData->param.data[j].type != PARAMETER_SPECIAL && pData->param.special[j] != PARAMETER_SPECIAL_LV2_FREEWHEEL)
-                    fParamBuffers[j] = def;
-                else
+                if (pData->param.data[j].type == PARAMETER_INPUT && pData->param.special[j] == PARAMETER_SPECIAL_LV2_FREEWHEEL)
                     fParamBuffers[j] = min;
+                else
+                    fParamBuffers[j] = def;
 
                 fDescriptor->connect_port(fHandle, i, &fParamBuffers[j]);
 
@@ -1203,12 +1204,12 @@ public:
 
         if (fExt.state != nullptr || fExt.worker != nullptr)
         {
-            if ((aIns == 0 || aIns == 2) && (aOuts == 0 || aOuts == 2) /*&& evIns.count() <= 1 && evOuts.count() <= 1*/)
+            if ((aIns == 0 || aIns == 2) && (aOuts == 0 || aOuts == 2) && evIns.count() <= 1 && evOuts.count() <= 1)
                 pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
         }
         else
         {
-            if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0) /*&& evIns.count() <= 1 && evOuts.count() <= 1*/)
+            if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0) && evIns.count() <= 1 && evOuts.count() <= 1)
                 pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
         }
 
@@ -1248,6 +1249,8 @@ public:
                 } catch(...) {}
             }
         }
+
+        fFirstActive = true;
     }
 
     void deactivate() noexcept override
@@ -1298,6 +1301,106 @@ public:
         }
 
         // --------------------------------------------------------------------------------------------------------
+        // TimeInfo
+
+        const EngineTimeInfo& timeInfo(pData->engine->getTimeInfo());
+
+        if (fFirstActive || fLastTimeInfo != timeInfo)
+        {
+            bool doPostRt;
+            int32_t rindex;
+
+            // update input ports
+            for (uint32_t k=0; k < pData->param.count; ++k)
+            {
+                if (pData->param.data[k].type != PARAMETER_INPUT)
+                    continue;
+                if (pData->param.special[k] != PARAMETER_SPECIAL_LV2_TIME)
+                    continue;
+
+                doPostRt = false;
+                rindex = pData->param.data[k].rindex;
+
+                CARLA_SAFE_ASSERT_CONTINUE(rindex >= 0 && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount));
+
+                switch (fRdfDescriptor->Ports[rindex].Designation)
+                {
+                // Non-BBT
+                case LV2_PORT_DESIGNATION_TIME_SPEED:
+                    if (fLastTimeInfo.playing != timeInfo.playing)
+                    {
+                        fParamBuffers[k] = timeInfo.playing ? 1.0f : 0.0f;
+                        doPostRt = true;
+                    }
+                    break;
+                case LV2_PORT_DESIGNATION_TIME_FRAME:
+                    if (fLastTimeInfo.frame != timeInfo.frame)
+                    {
+                        fParamBuffers[k] = float(timeInfo.frame);
+                        doPostRt = true;
+                    }
+                    break;
+                case LV2_PORT_DESIGNATION_TIME_FRAMES_PER_SECOND:
+                    break;
+
+                // BBT
+                case LV2_PORT_DESIGNATION_TIME_BAR:
+                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && fLastTimeInfo.bbt.bar != timeInfo.bbt.bar)
+                    {
+                        fParamBuffers[k] = float(timeInfo.bbt.bar - 1);
+                        doPostRt = true;
+                    }
+                    break;
+                case LV2_PORT_DESIGNATION_TIME_BAR_BEAT:
+                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && (fLastTimeInfo.bbt.tick != timeInfo.bbt.tick ||
+                                                                              fLastTimeInfo.bbt.ticksPerBeat != timeInfo.bbt.ticksPerBeat))
+                    {
+                        fParamBuffers[k] = float(double(timeInfo.bbt.beat) - 1.0 + (double(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat));
+                        doPostRt = true;
+                    }
+                    break;
+                case LV2_PORT_DESIGNATION_TIME_BEAT:
+                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && fLastTimeInfo.bbt.beat != timeInfo.bbt.beat)
+                    {
+                        fParamBuffers[k] = float(timeInfo.bbt.beat - 1);
+                        doPostRt = true;
+                    }
+                    break;
+                case LV2_PORT_DESIGNATION_TIME_BEAT_UNIT:
+                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && fLastTimeInfo.bbt.beatType != timeInfo.bbt.beatType)
+                    {
+                        fParamBuffers[k] = timeInfo.bbt.beatType;
+                        doPostRt = true;
+                    }
+                    break;
+                case LV2_PORT_DESIGNATION_TIME_BEATS_PER_BAR:
+                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && fLastTimeInfo.bbt.beatsPerBar != timeInfo.bbt.beatsPerBar)
+                    {
+                        fParamBuffers[k] = timeInfo.bbt.beatsPerBar;
+                        doPostRt = true;
+                    }
+                    break;
+                case LV2_PORT_DESIGNATION_TIME_BEATS_PER_MINUTE:
+                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && fLastTimeInfo.bbt.beatsPerMinute != timeInfo.bbt.beatsPerMinute)
+                    {
+                        fParamBuffers[k] = float(timeInfo.bbt.beatsPerMinute);
+                        doPostRt = true;
+                    }
+                    break;
+                }
+
+                if (doPostRt)
+                    pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 1, fParamBuffers[k]);
+            }
+
+            pData->postRtEvents.trySplice();
+
+            carla_copyStruct<EngineTimeInfo>(fLastTimeInfo, timeInfo);
+
+            CARLA_PROCESS_CONTINUE_CHECK;
+        }
+
+        // --------------------------------------------------------------------------------------------------------
         // Plugin processing (no events)
 
         {
@@ -1332,6 +1435,23 @@ public:
                 }
             }
         } // End of Control Output
+
+        CARLA_PROCESS_CONTINUE_CHECK;
+
+        // --------------------------------------------------------------------------------------------------------
+        // Final work
+
+        if (fExt.worker != nullptr && fExt.worker->end_run != nullptr)
+        {
+            fExt.worker->end_run(fHandle);
+
+            if (fHandle2 != nullptr)
+                fExt.worker->end_run(fHandle2);
+        }
+
+        fFirstActive = false;
+
+        // --------------------------------------------------------------------------------------------------------
     }
 
     bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
@@ -1548,13 +1668,11 @@ public:
             if (fLv2Options.minBufferSize != 1)
                 fLv2Options.minBufferSize = newBufferSizeInt;
 
-#if 0
             if (fExt.options != nullptr && fExt.options->set != nullptr)
             {
                 fExt.options->set(fHandle, &fLv2Options.opts[Lv2PluginOptions::MaxBlockLenth]);
                 fExt.options->set(fHandle, &fLv2Options.opts[Lv2PluginOptions::MinBlockLenth]);
             }
-#endif
         }
 
         carla_debug("Lv2Plugin::bufferSizeChanged(%i) - end", newBufferSize);
@@ -1562,17 +1680,25 @@ public:
 
     void sampleRateChanged(const double newSampleRate) override
     {
-        CARLA_ASSERT_INT(newSampleRate > 0.0, (int)newSampleRate);
+        CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
         carla_debug("Lv2Plugin::sampleRateChanged(%g) - start", newSampleRate);
 
         if (fLv2Options.sampleRate != newSampleRate)
         {
             fLv2Options.sampleRate = newSampleRate;
 
-#if 0
             if (fExt.options != nullptr && fExt.options->set != nullptr)
                 fExt.options->set(fHandle, &fLv2Options.opts[Lv2PluginOptions::SampleRate]);
-#endif
+        }
+
+        for (uint32_t k=0; k < pData->param.count; ++k)
+        {
+            if (pData->param.data[k].type == PARAMETER_INPUT && pData->param.special[k] == PARAMETER_SPECIAL_SAMPLE_RATE)
+            {
+                fParamBuffers[k] = static_cast<float>(newSampleRate);
+                pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 1, fParamBuffers[k]);
+                break;
+            }
         }
 
         carla_debug("Lv2Plugin::sampleRateChanged(%g) - end", newSampleRate);
@@ -1582,7 +1708,7 @@ public:
     {
         for (uint32_t k=0; k < pData->param.count; ++k)
         {
-            if (pData->param.data[k].type == PARAMETER_SPECIAL && pData->param.special[k] == PARAMETER_SPECIAL_LV2_FREEWHEEL)
+            if (pData->param.data[k].type == PARAMETER_INPUT && pData->param.special[k] == PARAMETER_SPECIAL_LV2_FREEWHEEL)
             {
                 fParamBuffers[k] = isOffline ? pData->param.ranges[k].max : pData->param.ranges[k].min;
                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 1, fParamBuffers[k]);
@@ -1593,6 +1719,14 @@ public:
 
     // -------------------------------------------------------------------
     // Plugin buffers
+
+    void initBuffers() override
+    {
+        //fEventsIn.initBuffers(pData->engine);
+        //fEventsOut.initBuffers(pData->engine);
+
+        CarlaPlugin::initBuffers();
+    }
 
     void clearBuffers() override
     {
@@ -1634,6 +1768,9 @@ public:
             fParamBuffers = nullptr;
         }
 
+        //fEventsIn.clear();
+        //fEventsOut.clear();
+
         CarlaPlugin::clearBuffers();
 
         carla_debug("Lv2Plugin::clearBuffers() - end");
@@ -1666,6 +1803,42 @@ public:
 
         return false;
     }
+
+    // -------------------------------------------------------------------
+
+    bool isUiBridgeable(const uint32_t uiId) const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(uiId < fRdfDescriptor->UICount, false);
+
+        const LV2_RDF_UI* const rdfUi(&fRdfDescriptor->UIs[uiId]);
+
+        for (uint32_t i=0; i < rdfUi->FeatureCount; ++i)
+        {
+            if (std::strcmp(rdfUi->Features[i].URI, LV2_INSTANCE_ACCESS_URI) == 0)
+                return false;
+            if (std::strcmp(rdfUi->Features[i].URI, LV2_DATA_ACCESS_URI) == 0)
+                return false;
+        }
+
+        return true;
+    }
+
+    bool isUiResizable() const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(fUi.rdfDescriptor != nullptr, false);
+
+        for (uint32_t i=0; i < fUi.rdfDescriptor->FeatureCount; ++i)
+        {
+            if (std::strcmp(fUi.rdfDescriptor->Features[i].URI, LV2_UI__fixedSize) == 0)
+                return false;
+            if (std::strcmp(fUi.rdfDescriptor->Features[i].URI, LV2_UI__noUserResize) == 0)
+                return false;
+        }
+
+        return true;
+    }
+
+    // -------------------------------------------------------------------
 
     void recheckExtensions()
     {
@@ -1703,8 +1876,62 @@ public:
 
             if (pData->hints & PLUGIN_HAS_EXTENSION_WORKER)
                 fExt.worker = (const LV2_Worker_Interface*)fDescriptor->extension_data(LV2_WORKER__interface);
+
+            // check if invalid
+            if (fExt.options != nullptr && fExt.options->get == nullptr  && fExt.options->set == nullptr)
+                fExt.options = nullptr;
+
+            if (fExt.programs != nullptr && (fExt.programs->get_program == nullptr || fExt.programs->select_program == nullptr))
+                fExt.programs = nullptr;
+
+            if (fExt.state != nullptr && (fExt.state->save == nullptr || fExt.state->restore == nullptr))
+                fExt.state = nullptr;
+
+            if (fExt.worker != nullptr && fExt.worker->work == nullptr)
+                fExt.worker = nullptr;
+        }
+    }
+
+    // -------------------------------------------------------------------
+
+    void updateUi()
+    {
+        CARLA_SAFE_ASSERT_RETURN(fUi.handle != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fUi.descriptor != nullptr,);
+
+        fExt.uiidle = nullptr;
+        fExt.uiprograms = nullptr;
+
+        if (fUi.descriptor->extension_data != nullptr)
+        {
+            fExt.uiidle     = (const LV2UI_Idle_Interface*)fUi.descriptor->extension_data(LV2_UI__idleInterface);
+            fExt.uiprograms = (const LV2_Programs_UI_Interface*)fUi.descriptor->extension_data(LV2_PROGRAMS__UIInterface);
+
+            // check if invalid
+            if (fExt.uiidle != nullptr && fExt.uiidle->idle == nullptr)
+                fExt.uiidle = nullptr;
+
+            if (fExt.uiprograms != nullptr && fExt.uiprograms->select_program == nullptr)
+                fExt.uiprograms = nullptr;
         }
 
+        // update midi program
+        if (fExt.uiprograms != nullptr && pData->midiprog.count > 0 && pData->midiprog.current >= 0)
+        {
+            const MidiProgramData& curData(pData->midiprog.getCurrent());
+            fExt.uiprograms->select_program(fUi.handle, curData.bank, curData.program);
+        }
+
+        // update control ports
+        if (fUi.descriptor->port_event != nullptr)
+        {
+            float value;
+            for (uint32_t i=0; i < pData->param.count; ++i)
+            {
+                value = getParameterValue(i);
+                fUi.descriptor->port_event(fUi.handle, static_cast<uint32_t>(pData->param.data[i].rindex), sizeof(float), CARLA_URI_MAP_ID_NULL, &value);
+            }
+        }
     }
 
     // -------------------------------------------------------------------
@@ -2272,6 +2499,9 @@ private:
     Lv2PluginOptions fLv2Options;
 
     LinkedList<const char*> fCustomURIDs;
+
+    bool fFirstActive; // first process() call after activate()
+    EngineTimeInfo fLastTimeInfo;
 
     struct Extensions {
         const LV2_Options_Interface* options;

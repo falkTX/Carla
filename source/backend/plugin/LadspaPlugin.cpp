@@ -630,6 +630,8 @@ public:
                 }
                 else if (LADSPA_IS_PORT_OUTPUT(portType))
                 {
+                    pData->param.data[j].type = PARAMETER_OUTPUT;
+
                     if (std::strcmp(fDescriptor->PortNames[i], "latency") == 0 || std::strcmp(fDescriptor->PortNames[i], "_latency") == 0)
                     {
                         min = 0.0f;
@@ -638,13 +640,10 @@ public:
                         step = 1.0f;
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
-
-                        pData->param.data[j].type = PARAMETER_SPECIAL;
-                        pData->param.special[j]   = PARAMETER_SPECIAL_LATENCY;
+                        pData->param.special[j] = PARAMETER_SPECIAL_LATENCY;
                     }
                     else
                     {
-                        pData->param.data[j].type   = PARAMETER_OUTPUT;
                         pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                         pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                         needsCtrlOut = true;
