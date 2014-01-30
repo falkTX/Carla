@@ -73,37 +73,38 @@ const uint32_t CARLA_URI_MAP_ID_ATOM_INT               =  6;
 const uint32_t CARLA_URI_MAP_ID_ATOM_LITERAL           =  7;
 const uint32_t CARLA_URI_MAP_ID_ATOM_LONG              =  8;
 const uint32_t CARLA_URI_MAP_ID_ATOM_PATH              =  9;
-const uint32_t CARLA_URI_MAP_ID_ATOM_PROPERTY          = 10;
-const uint32_t CARLA_URI_MAP_ID_ATOM_RESOURCE          = 11;
-const uint32_t CARLA_URI_MAP_ID_ATOM_SEQUENCE          = 12;
-const uint32_t CARLA_URI_MAP_ID_ATOM_STRING            = 13;
-const uint32_t CARLA_URI_MAP_ID_ATOM_TUPLE             = 14;
-const uint32_t CARLA_URI_MAP_ID_ATOM_URI               = 15;
-const uint32_t CARLA_URI_MAP_ID_ATOM_URID              = 16;
-const uint32_t CARLA_URI_MAP_ID_ATOM_VECTOR            = 17;
-const uint32_t CARLA_URI_MAP_ID_ATOM_WORKER            = 18; // custom
-const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM     = 19;
-const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT    = 20;
-const uint32_t CARLA_URI_MAP_ID_BUF_MAX_LENGTH         = 21;
-const uint32_t CARLA_URI_MAP_ID_BUF_MIN_LENGTH         = 22;
-const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE      = 23;
-const uint32_t CARLA_URI_MAP_ID_LOG_ERROR              = 24;
-const uint32_t CARLA_URI_MAP_ID_LOG_NOTE               = 25;
-const uint32_t CARLA_URI_MAP_ID_LOG_TRACE              = 26;
-const uint32_t CARLA_URI_MAP_ID_LOG_WARNING            = 27;
-const uint32_t CARLA_URI_MAP_ID_TIME_POSITION          = 28; // base type
-const uint32_t CARLA_URI_MAP_ID_TIME_BAR               = 29; // values
-const uint32_t CARLA_URI_MAP_ID_TIME_BAR_BEAT          = 30;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEAT              = 31;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEAT_UNIT         = 32;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR     = 33;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE  = 34;
-const uint32_t CARLA_URI_MAP_ID_TIME_FRAME             = 35;
-const uint32_t CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND = 36;
-const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 37;
-const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 38;
-const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 39;
-const uint32_t CARLA_URI_MAP_ID_COUNT                  = 39; // FIXME later
+const uint32_t CARLA_URI_MAP_ID_ATOM_OBJECT            = 10;
+const uint32_t CARLA_URI_MAP_ID_ATOM_PROPERTY          = 11;
+const uint32_t CARLA_URI_MAP_ID_ATOM_RESOURCE          = 12;
+const uint32_t CARLA_URI_MAP_ID_ATOM_SEQUENCE          = 13;
+const uint32_t CARLA_URI_MAP_ID_ATOM_STRING            = 14;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TUPLE             = 15;
+const uint32_t CARLA_URI_MAP_ID_ATOM_URI               = 16;
+const uint32_t CARLA_URI_MAP_ID_ATOM_URID              = 17;
+const uint32_t CARLA_URI_MAP_ID_ATOM_VECTOR            = 18;
+const uint32_t CARLA_URI_MAP_ID_ATOM_WORKER            = 19; // custom
+const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM     = 20;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT    = 21;
+const uint32_t CARLA_URI_MAP_ID_BUF_MAX_LENGTH         = 22;
+const uint32_t CARLA_URI_MAP_ID_BUF_MIN_LENGTH         = 23;
+const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE      = 24;
+const uint32_t CARLA_URI_MAP_ID_LOG_ERROR              = 25;
+const uint32_t CARLA_URI_MAP_ID_LOG_NOTE               = 26;
+const uint32_t CARLA_URI_MAP_ID_LOG_TRACE              = 27;
+const uint32_t CARLA_URI_MAP_ID_LOG_WARNING            = 28;
+const uint32_t CARLA_URI_MAP_ID_TIME_POSITION          = 29; // base type
+const uint32_t CARLA_URI_MAP_ID_TIME_BAR               = 30; // values
+const uint32_t CARLA_URI_MAP_ID_TIME_BAR_BEAT          = 31;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEAT              = 32;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEAT_UNIT         = 33;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR     = 34;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE  = 35;
+const uint32_t CARLA_URI_MAP_ID_TIME_FRAME             = 36;
+const uint32_t CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND = 37;
+const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 38;
+const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 39;
+const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 40;
+const uint32_t CARLA_URI_MAP_ID_COUNT                  = 41;
 
 // LV2 Feature Ids
 const uint32_t kFeatureIdBufSizeBounded   =  0;
@@ -351,6 +352,10 @@ public:
         for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; ++i)
             fCustomURIDs.append(nullptr);
 
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
         fAtomForge.Blank    = CARLA_URI_MAP_ID_ATOM_BLANK;
         fAtomForge.Bool     = CARLA_URI_MAP_ID_ATOM_BOOL;
         fAtomForge.Chunk    = CARLA_URI_MAP_ID_ATOM_CHUNK;
@@ -359,6 +364,7 @@ public:
         fAtomForge.Int      = CARLA_URI_MAP_ID_ATOM_INT;
         fAtomForge.Literal  = CARLA_URI_MAP_ID_ATOM_LITERAL;
         fAtomForge.Long     = CARLA_URI_MAP_ID_ATOM_LONG;
+        fAtomForge.Object   = CARLA_URI_MAP_ID_ATOM_OBJECT;
         fAtomForge.Path     = CARLA_URI_MAP_ID_ATOM_PATH;
         fAtomForge.Property = CARLA_URI_MAP_ID_ATOM_PROPERTY;
         fAtomForge.Resource = CARLA_URI_MAP_ID_ATOM_RESOURCE;
@@ -368,6 +374,9 @@ public:
         fAtomForge.URI      = CARLA_URI_MAP_ID_ATOM_URI;
         fAtomForge.URID     = CARLA_URI_MAP_ID_ATOM_URID;
         fAtomForge.Vector   = CARLA_URI_MAP_ID_ATOM_VECTOR;
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+#    pragma GCC diagnostic pop
+#endif
 
         pData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_LV2_GUI);
     }
@@ -2467,8 +2476,9 @@ public:
                 uint8_t timeInfoBuf[256];
                 lv2_atom_forge_set_buffer(&fAtomForge, timeInfoBuf, sizeof(timeInfoBuf));
 
-                LV2_Atom_Forge_Frame forgeFrame;
-                lv2_atom_forge_blank(&fAtomForge, &forgeFrame, 1, CARLA_URI_MAP_ID_TIME_POSITION);
+                // TODO
+                //LV2_Atom_Forge_Frame forgeFrame;
+                //lv2_atom_forge_blank(&fAtomForge, &forgeFrame, 1, CARLA_URI_MAP_ID_TIME_POSITION);
                 lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_SPEED, 0);
                 lv2_atom_forge_float(&fAtomForge, timeInfo.playing ? 1.0f : 0.0f);
                 lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_FRAME, 0);
@@ -4973,6 +4983,8 @@ private:
             return CARLA_URI_MAP_ID_ATOM_LITERAL;
         if (std::strcmp(uri, LV2_ATOM__Long) == 0)
             return CARLA_URI_MAP_ID_ATOM_LONG;
+        if (std::strcmp(uri, LV2_ATOM__Object) == 0)
+            return CARLA_URI_MAP_ID_ATOM_OBJECT;
         if (std::strcmp(uri, LV2_ATOM__Path) == 0)
             return CARLA_URI_MAP_ID_ATOM_PATH;
         if (std::strcmp(uri, LV2_ATOM__Property) == 0)
@@ -5069,6 +5081,8 @@ private:
             return LV2_ATOM__Literal;
         if (urid == CARLA_URI_MAP_ID_ATOM_LONG)
             return LV2_ATOM__Long;
+        if (urid == CARLA_URI_MAP_ID_ATOM_OBJECT)
+            return LV2_ATOM__Object;
         if (urid == CARLA_URI_MAP_ID_ATOM_PATH)
             return LV2_ATOM__Path;
         if (urid == CARLA_URI_MAP_ID_ATOM_PROPERTY)
