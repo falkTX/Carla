@@ -19,8 +19,8 @@
 
 #include <stdint.h>
 
-#include "lv2/lv2plug.in/ns/lv2core/lv2.h"
-#include "lv2/lv2plug.in/ns/ext/urid/urid.h"
+#include "lv2.h"
+#include "urid.h"
 
 #define LV2_MORPH_URI    "http://lv2plug.in/ns/ext/morph"
 #define LV2_MORPH_PREFIX LV2_MORPH_URI "#"
