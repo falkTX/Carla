@@ -1016,7 +1016,7 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
 #endif
 
 #ifndef BUILD_BRIDGE
-    if (sendGui)
+    if (sendGui && (pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0)
         uiParameterChange(parameterId, value);
 
     if (sendOsc && pData->engine->isOscControlRegistered())
@@ -1232,7 +1232,7 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
     if (index >= 0)
     {
 #ifndef BUILD_BRIDGE
-        if (sendGui)
+        if (sendGui && (pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0)
             uiProgramChange(static_cast<uint32_t>(index));
 #endif
 
@@ -1294,7 +1294,7 @@ void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const 
     if (index >= 0)
     {
 #ifndef BUILD_BRIDGE
-        if (sendGui)
+        if (sendGui && (pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0)
             uiMidiProgramChange(static_cast<uint32_t>(index));
 #endif
 
@@ -1700,7 +1700,7 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
 
     pData->extNotes.append(extNote);
 
-    if (sendGui)
+    if (sendGui && (pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0)
     {
         if (velo > 0)
             uiNoteOn(channel, note, velo);

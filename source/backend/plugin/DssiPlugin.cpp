@@ -1183,7 +1183,7 @@ public:
                         }
 
                         // check if event is already handled
-                        if (k == pData->param.count)
+                        if (k != pData->param.count)
                             break;
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
