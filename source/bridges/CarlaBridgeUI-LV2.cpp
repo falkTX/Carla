@@ -18,18 +18,13 @@
 #include "CarlaBridgeClient.hpp"
 #include "CarlaLv2Utils.hpp"
 #include "CarlaMIDI.h"
-#include "RtList.hpp"
+#include "LinkedList.hpp"
 
 #include <QtCore/QDir>
 
 extern "C" {
 #include "rtmempool/rtmempool-lv2.h"
 }
-
-// -----------------------------------------------------
-// Our LV2 World class object
-
-Lv2WorldClass gLv2World;
 
 // -----------------------------------------------------
 
@@ -330,9 +325,9 @@ public:
             }
         }
 
-        for (NonRtList<const char*>::Itenerator it = fCustomURIDs.begin(); it.valid(); it.next())
+        for (LinkedList<const char*>::Itenerator it = fCustomURIDs.begin(); it.valid(); it.next())
         {
-            const char*& uri(*it);
+            const char*& uri(it.getValue());
 
             if (uri != nullptr)
             {
@@ -357,7 +352,9 @@ public:
         // -----------------------------------------------------------------
         // get plugin from lv2_rdf (lilv)
 
-        gLv2World.init();
+        Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
+
+        lv2World.load_all(); // FIXME
         fRdfDescriptor = lv2_rdf_new(pluginURI, false);
 
         if (fRdfDescriptor == nullptr)
@@ -376,13 +373,19 @@ public:
         }
 
         if (fRdfUiDescriptor == nullptr)
+        {
+            carla_stderr("Failed to find requested UI");
             return false;
+        }
 
         // -----------------------------------------------------------------
         // open DLL
 
         if (! uiLibOpen(fRdfUiDescriptor->Binary))
+        {
+            carla_stderr("Failed to load UI binary, error was:\n%s", uiLibError());
             return false;
+        }
 
         // -----------------------------------------------------------------
         // get DLL main entry
@@ -403,7 +406,10 @@ public:
         }
 
         if (fDescriptor == nullptr)
+        {
+            carla_stderr("Failed to find UI descriptor");
             return false;
+        }
 
         // -----------------------------------------------------------
         // initialize UI
@@ -415,7 +421,10 @@ public:
         fHandle = fDescriptor->instantiate(fDescriptor, pluginURI, fRdfUiDescriptor->Bundle, carla_lv2_ui_write_function, this, &fWidget, fFeatures);
 
         if (fHandle == nullptr)
+        {
+            carla_stderr("Failed to init UI");
             return false;
+        }
 
         // -----------------------------------------------------------
         // check if not resizable
@@ -689,7 +698,7 @@ private:
     Lv2PluginOptions          fOptions;
 
     bool fIsResizable;
-    NonRtList<const char*> fCustomURIDs;
+    LinkedList<const char*> fCustomURIDs;
 
     struct Extensions {
         const LV2_Options_Interface* options;
@@ -1180,7 +1189,6 @@ int main(int argc, char* argv[])
     }
     else
     {
-        carla_stderr("Failed to load LV2 UI");
         ret = 1;
     }
 

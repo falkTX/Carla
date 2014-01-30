@@ -44,7 +44,7 @@ void CarlaEngineThread::run()
     CARLA_ASSERT(fEngine->isRunning());
     carla_debug("CarlaEngineThread::run()");
 
-    bool oscRegisted, needsSingleThread;
+    bool hasUi, oscRegisted, needsSingleThread;
     float value;
 
     for (; fEngine->isRunning() && ! shouldExit();)
@@ -62,6 +62,7 @@ void CarlaEngineThread::run()
             CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr && plugin->isEnabled());
             CARLA_SAFE_ASSERT_UINT2(i == plugin->getId(), i, plugin->getId());
 
+            hasUi             = (plugin->getHints() & PLUGIN_HAS_CUSTOM_UI);
             needsSingleThread = (plugin->getHints() & PLUGIN_NEEDS_SINGLE_THREAD);
 
             // -----------------------------------------------------------
@@ -72,28 +73,31 @@ void CarlaEngineThread::run()
                 if (! needsSingleThread)
                     plugin->postRtEventsRun();
 
-                // -------------------------------------------------------
-                // Update parameter outputs
-
-                for (uint32_t j=0, pcount=plugin->getParameterCount(); j < pcount; ++j)
+                if (hasUi || oscRegisted)
                 {
-                    if (! plugin->isParameterOutput(j))
-                        continue;
+                    // ---------------------------------------------------
+                    // Update parameter outputs
 
-                    value = plugin->getParameterValue(j);
-
-                    // Update UI
-                    if (! needsSingleThread)
-                        plugin->uiParameterChange(j, value);
-
-                    // Update OSC engine client
-                    if (oscRegisted)
+                    for (uint32_t j=0, pcount=plugin->getParameterCount(); j < pcount; ++j)
                     {
+                        if (! plugin->isParameterOutput(j))
+                            continue;
+
+                        value = plugin->getParameterValue(j);
+
+                        // Update UI
+                        if (hasUi && ! needsSingleThread)
+                            plugin->uiParameterChange(j, value);
+
+                        // Update OSC engine client
+                        if (oscRegisted)
+                        {
 #ifdef BUILD_BRIDGE
-                        fEngine->oscSend_bridge_parameter_value(j, value);
+                            fEngine->oscSend_bridge_parameter_value(j, value);
 #else
-                        fEngine->oscSend_control_set_parameter_value(i, static_cast<int32_t>(j), value);
+                            fEngine->oscSend_control_set_parameter_value(i, static_cast<int32_t>(j), value);
 #endif
+                        }
                     }
                 }
 

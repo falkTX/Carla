@@ -372,6 +372,7 @@ public:
     {
         if (yesNo)
         {
+            pData->osc.data.free();
             pData->osc.thread.start();
         }
         else

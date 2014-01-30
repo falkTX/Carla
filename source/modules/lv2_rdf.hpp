@@ -212,18 +212,16 @@ typedef uint32_t LV2_Property;
 #define LV2_UI_GTK3                      2
 #define LV2_UI_QT4                       3
 #define LV2_UI_QT5                       4
-#define LV2_UI_NTK                       5
-#define LV2_UI_COCOA                     6
-#define LV2_UI_WINDOWS                   7
-#define LV2_UI_X11                       8
-#define LV2_UI_EXTERNAL                  9
-#define LV2_UI_OLD_EXTERNAL              10
+#define LV2_UI_COCOA                     5
+#define LV2_UI_WINDOWS                   6
+#define LV2_UI_X11                       7
+#define LV2_UI_EXTERNAL                  8
+#define LV2_UI_OLD_EXTERNAL              9
 
 #define LV2_IS_UI_GTK2(x)                ((x) == LV2_UI_GTK2)
 #define LV2_IS_UI_GTK3(x)                ((x) == LV2_UI_GTK3)
 #define LV2_IS_UI_QT4(x)                 ((x) == LV2_UI_QT4)
 #define LV2_IS_UI_QT5(x)                 ((x) == LV2_UI_QT5)
-#define LV2_IS_UI_NTK(x)                 ((x) == LV2_UI_NTK)
 #define LV2_IS_UI_COCOA(x)               ((x) == LV2_UI_COCOA)
 #define LV2_IS_UI_WINDOWS(x)             ((x) == LV2_UI_WINDOWS)
 #define LV2_IS_UI_X11(x)                 ((x) == LV2_UI_X11)

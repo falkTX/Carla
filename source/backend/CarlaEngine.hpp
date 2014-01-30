@@ -1044,6 +1044,7 @@ protected:
      */
     void setPluginPeaks(const unsigned int pluginId, float const inPeaks[2], float const outPeaks[2]) noexcept;
 
+#ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------
     // Patchbay stuff
 
@@ -1060,6 +1061,7 @@ protected:
      */
     virtual const char* const* getPatchbayConnections() const;
     virtual void restorePatchbayConnection(const char* const sourcePort, const char* const targetPort);
+#endif
 
     // -------------------------------------------------------------------
 

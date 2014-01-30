@@ -1386,6 +1386,7 @@ bool CarlaEngine::loadProject(const char* const filename)
             return true;
     }
 
+#ifndef BUILD_BRIDGE
     // now connections
     for (QDomNode node = xmlNode.firstChild(); ! node.isNull(); node = node.nextSibling())
     {
@@ -1418,6 +1419,7 @@ bool CarlaEngine::loadProject(const char* const filename)
             break;
         }
     }
+#endif
 
     return true;
 }
@@ -1467,6 +1469,7 @@ bool CarlaEngine::saveProject(const char* const filename)
         }
     }
 
+#ifndef BUILD_BRIDGE
     if (const char* const* patchbayConns = getPatchbayConnections())
     {
         if (! firstPlugin)
@@ -1493,6 +1496,7 @@ bool CarlaEngine::saveProject(const char* const filename)
 
         out << " </Patchbay>\n";
     }
+#endif
 
     out << "</CARLA-PROJECT>\n";
 
@@ -2039,6 +2043,7 @@ void CarlaEngine::setPluginPeaks(const unsigned int pluginId, float const inPeak
     pluginData.outsPeak[1] = outPeaks[1];
 }
 
+#ifndef BUILD_BRIDGE
 // -----------------------------------------------------------------------
 // Patchbay stuff
 
@@ -2119,6 +2124,7 @@ void CarlaEngine::restorePatchbayConnection(const char* const connSource, const 
             patchbayConnect(targetPort, sourcePort);
     }
 }
+#endif
 
 // -----------------------------------------------------------------------
 // Bridge/Controller OSC stuff

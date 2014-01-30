@@ -234,6 +234,43 @@ public:
     {
         carla_debug("Lv2Plugin::~Lv2Plugin()");
 
+        // close UI
+        if (fUi.type != UI::TYPE_NULL)
+        {
+            showCustomUI(false);
+
+            if (fUi.type == UI::TYPE_OSC)
+            {
+                pData->osc.thread.stop(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
+            }
+            else
+            {
+                if (fFeatures[kFeatureIdUiDataAccess] != nullptr && fFeatures[kFeatureIdUiDataAccess]->data != nullptr)
+                    delete (LV2_Extension_Data_Feature*)fFeatures[kFeatureIdUiDataAccess]->data;
+
+                if (fFeatures[kFeatureIdUiPortMap] != nullptr && fFeatures[kFeatureIdUiPortMap]->data != nullptr)
+                    delete (LV2UI_Port_Map*)fFeatures[kFeatureIdUiPortMap]->data;
+
+                if (fFeatures[kFeatureIdUiResize] != nullptr && fFeatures[kFeatureIdUiResize]->data != nullptr)
+                    delete (LV2UI_Resize*)fFeatures[kFeatureIdUiResize]->data;
+
+                if (fFeatures[kFeatureIdExternalUi] != nullptr && fFeatures[kFeatureIdExternalUi]->data != nullptr)
+                {
+                    const LV2_External_UI_Host* const uiHost((const LV2_External_UI_Host*)fFeatures[kFeatureIdExternalUi]->data);
+
+                    if (uiHost->plugin_human_id != nullptr)
+                        delete[] uiHost->plugin_human_id;
+
+                    delete uiHost;
+                }
+
+                fUi.descriptor = nullptr;
+                pData->uiLibClose();
+            }
+
+            fUi.rdfDescriptor = nullptr;
+        }
+
         pData->singleMutex.lock();
         pData->masterMutex.lock();
 
@@ -741,7 +778,111 @@ public:
     // -------------------------------------------------------------------
     // Set ui stuff
 
-    // nothing
+    void showCustomUI(const bool yesNo) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fUi.type != UI::TYPE_NULL,);
+
+        if (fUi.type == UI::TYPE_OSC)
+        {
+            if (yesNo)
+            {
+                pData->osc.data.free();
+                pData->osc.thread.start();
+            }
+            else
+            {
+                if (pData->osc.data.target != nullptr)
+                {
+                    osc_send_hide(pData->osc.data);
+                    osc_send_quit(pData->osc.data);
+                    pData->osc.data.free();
+                }
+
+                pData->osc.thread.stop(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
+            }
+            return;
+        }
+
+        // take some precautions
+        CARLA_SAFE_ASSERT_RETURN(fUi.descriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fUi.rdfDescriptor != nullptr,);
+
+        if (yesNo)
+        {
+            CARLA_SAFE_ASSERT_RETURN(fUi.descriptor->instantiate != nullptr,);
+            CARLA_SAFE_ASSERT_RETURN(fUi.descriptor->cleanup != nullptr,);
+        }
+        else
+        {
+            if (fUi.handle == nullptr)
+                return;
+        }
+
+        if (fUi.type == UI::TYPE_EXTERNAL)
+        {
+            if (yesNo)
+            {
+                if (fUi.handle == nullptr)
+                {
+                    fUi.widget = nullptr;
+                    fUi.handle = fUi.descriptor->instantiate(fUi.descriptor, fRdfDescriptor->URI, fUi.rdfDescriptor->Bundle,
+                                                             carla_lv2_ui_write_function, this, &fUi.widget, fFeatures);
+                }
+
+                CARLA_SAFE_ASSERT(fUi.handle != nullptr);
+                CARLA_SAFE_ASSERT(fUi.widget != nullptr);
+
+                if (fUi.handle == nullptr || fUi.widget == nullptr)
+                {
+                    fUi.widget = nullptr;
+
+                    if (fUi.handle != nullptr)
+                    {
+                        fUi.descriptor->cleanup(fUi.handle);
+                        fUi.handle = nullptr;
+                    }
+
+                    pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, "Plugin refused to open its own UI");
+                    return;
+                }
+
+                updateUi();
+
+                LV2_EXTERNAL_UI_SHOW((LV2_External_UI_Widget*)fUi.widget);
+            }
+            else
+            {
+                CARLA_SAFE_ASSERT(fUi.widget != nullptr);
+
+                if (fUi.widget != nullptr)
+                    LV2_EXTERNAL_UI_HIDE((LV2_External_UI_Widget*)fUi.widget);
+
+                fUi.descriptor->cleanup(fUi.handle);
+                fUi.handle = nullptr;
+                fUi.widget = nullptr;
+            }
+        }
+        else // means TYPE_EMBED
+        {
+        }
+    }
+
+    void idle() override
+    {
+        if (fUi.handle != nullptr && fUi.descriptor != nullptr)
+        {
+            if (fUi.type == UI::TYPE_EXTERNAL && fUi.widget != nullptr)
+                LV2_EXTERNAL_UI_RUN((LV2_External_UI_Widget*)fUi.widget);
+
+            if (fExt.uiidle != nullptr && fExt.uiidle->idle(fUi.handle) != 0)
+            {
+                showCustomUI(false);
+                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+            }
+        }
+
+        CarlaPlugin::idle();
+    }
 
     // -------------------------------------------------------------------
     // Plugin state
@@ -1186,6 +1327,14 @@ public:
 
         if (isRealtimeSafe())
             pData->hints |= PLUGIN_IS_RTSAFE;
+
+        if (fUi.type != UI::TYPE_NULL)
+        {
+            pData->hints |= PLUGIN_HAS_CUSTOM_UI;
+
+            if (fUi.type == UI::TYPE_EMBED)
+                pData->hints |= PLUGIN_NEEDS_SINGLE_THREAD;
+        }
 
         if (LV2_IS_GENERATOR(fRdfDescriptor->Type[0], fRdfDescriptor->Type[1]))
             pData->hints |= PLUGIN_IS_SYNTH;
@@ -1777,6 +1926,118 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // Post-poned UI Stuff
+
+    void uiParameterChange(const uint32_t index, const float value) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fUi.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(index < pData->param.count,);
+
+        if (fUi.type == UI::TYPE_OSC)
+        {
+            if (pData->osc.data.target != nullptr)
+                osc_send_control(pData->osc.data, pData->param.data[index].rindex, value);
+        }
+        else
+        {
+            if (fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->port_event != nullptr)
+            {
+                CARLA_SAFE_ASSERT_RETURN(pData->param.data[index].rindex >= 0,);
+                fUi.descriptor->port_event(fUi.handle, static_cast<uint32_t>(pData->param.data[index].rindex), sizeof(float), 0, &value);
+            }
+        }
+    }
+
+    void uiMidiProgramChange(const uint32_t index) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fUi.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count,);
+
+        if (fUi.type == UI::TYPE_OSC)
+        {
+            if (pData->osc.data.target != nullptr)
+                osc_send_midi_program(pData->osc.data, pData->midiprog.data[index].bank, pData->midiprog.data[index].program);
+        }
+        else
+        {
+            if (fExt.uiprograms != nullptr && fExt.uiprograms->select_program != nullptr)
+                fExt.uiprograms->select_program(fUi.handle, pData->midiprog.data[index].bank, pData->midiprog.data[index].program);
+        }
+    }
+
+    void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fUi.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
+        CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
+        CARLA_SAFE_ASSERT_RETURN(velo > 0 && velo < MAX_MIDI_VALUE,);
+
+        if (fUi.type == UI::TYPE_OSC)
+        {
+            if (pData->osc.data.target != nullptr)
+            {
+                uint8_t midiData[4] = { 0 };
+                midiData[1] = static_cast<uint8_t>(MIDI_STATUS_NOTE_ON + channel);
+                midiData[2] = note;
+                midiData[3] = velo;
+                osc_send_midi(pData->osc.data, midiData);
+            }
+        }
+        else
+        {
+#if 0
+            if (fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->port_event != nullptr && fEventsIn.ctrl != nullptr)
+            {
+                LV2_Atom_MidiEvent midiEv;
+                midiEv.event.time.frames = 0;
+                midiEv.event.body.type   = CARLA_URI_MAP_ID_MIDI_EVENT;
+                midiEv.event.body.size   = 3;
+                midiEv.data[0] = MIDI_STATUS_NOTE_OFF + channel;
+                midiEv.data[1] = note;
+                midiEv.data[2] = velo;
+
+                fUi.descriptor->port_event(fUi.handle, fEventsIn.ctrl->rindex, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
+            }
+#endif
+        }
+    }
+
+    void uiNoteOff(const uint8_t channel, const uint8_t note) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fUi.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
+        CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
+
+        if (fUi.type == UI::TYPE_OSC)
+        {
+            if (pData->osc.data.target != nullptr)
+            {
+                uint8_t midiData[4] = { 0 };
+                midiData[1] = static_cast<uint8_t>(MIDI_STATUS_NOTE_OFF + channel);
+                midiData[2] = note;
+                osc_send_midi(pData->osc.data, midiData);
+            }
+        }
+        else
+        {
+#if 0
+            if (fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->port_event != nullptr && fEventsIn.ctrl != nullptr)
+            {
+                LV2_Atom_MidiEvent midiEv;
+                midiEv.event.time.frames = 0;
+                midiEv.event.body.type   = CARLA_URI_MAP_ID_MIDI_EVENT;
+                midiEv.event.body.size   = 3;
+                midiEv.data[0] = MIDI_STATUS_NOTE_OFF + channel;
+                midiEv.data[1] = note;
+                midiEv.data[2] = 0;
+
+                fUi.descriptor->port_event(fUi.handle, fEventsIn.ctrl->rindex, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
+            }
+#endif
+        }
+    }
+
+    // -------------------------------------------------------------------
 
     bool isRealtimeSafe() const noexcept
     {
@@ -1812,6 +2073,9 @@ public:
 
         const LV2_RDF_UI* const rdfUi(&fRdfDescriptor->UIs[uiId]);
 
+        if (std::strstr(rdfUi->URI, "http://calf.sourceforge.net/plugins/gui/") != nullptr)
+            return false;
+
         for (uint32_t i=0; i < rdfUi->FeatureCount; ++i)
         {
             if (std::strcmp(rdfUi->Features[i].URI, LV2_INSTANCE_ACCESS_URI) == 0)
@@ -1838,11 +2102,66 @@ public:
         return true;
     }
 
+    const char* getUiBridgeBinary(const LV2_Property type) const
+    {
+        CarlaString bridgeBinary(pData->engine->getOptions().binaryDir);
+
+        if (bridgeBinary.isEmpty())
+            return nullptr;
+
+        // test for local build
+        if (bridgeBinary.endsWith("/source/backend/"))
+            bridgeBinary += "../bridges/";
+
+        switch (type)
+        {
+        case LV2_UI_GTK2:
+            bridgeBinary += "carla-bridge-lv2-gtk2";
+            break;
+        case LV2_UI_GTK3:
+            bridgeBinary += "carla-bridge-lv2-gtk3";
+            break;
+        case LV2_UI_QT4:
+            bridgeBinary += "carla-bridge-lv2-qt4";
+            break;
+        case LV2_UI_QT5:
+            bridgeBinary += "carla-bridge-lv2-qt5";
+            break;
+        case LV2_UI_COCOA:
+            bridgeBinary += "carla-bridge-lv2-cocoa";
+            break;
+        case LV2_UI_WINDOWS:
+            bridgeBinary += "carla-bridge-lv2-windows";
+            break;
+        case LV2_UI_X11:
+            bridgeBinary += "carla-bridge-lv2-x11";
+            break;
+        case LV2_UI_EXTERNAL:
+        case LV2_UI_OLD_EXTERNAL:
+            bridgeBinary += "carla-bridge-lv2-external";
+            break;
+        default:
+            return nullptr;
+        }
+
+#ifdef CARLA_OS_WIN
+        bridgeBinary += ".exe";
+#endif
+
+        QFile file(bridgeBinary.getBuffer());
+
+        if (! file.exists())
+            return nullptr;
+
+        return bridgeBinary.dup();
+    }
+
     // -------------------------------------------------------------------
 
     void recheckExtensions()
     {
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
+        carla_debug("Lv2Plugin::recheckExtensions()");
 
         fExt.options  = nullptr;
         fExt.programs = nullptr;
@@ -1898,6 +2217,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fUi.handle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fUi.descriptor != nullptr,);
+        carla_debug("Lv2Plugin::updateUi()");
 
         fExt.uiidle = nullptr;
         fExt.uiprograms = nullptr;
@@ -1952,10 +2272,8 @@ public:
 
         fCustomURIDs.append(carla_strdup(uri));
 
-#if 0
-        if (fUi.type == PLUGIN_UI_OSC && kData->osc.data.target != nullptr)
-            osc_send_lv2_urid_map(&kData->osc.data, urid, uri);
-#endif
+        if (fUi.type == UI::TYPE_OSC && pData->osc.data.target != nullptr)
+            osc_send_lv2_urid_map(pData->osc.data, urid, uri);
 
         return urid;
     }
@@ -2010,7 +2328,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(size > 0, LV2_STATE_ERR_NO_PROPERTY);
         CARLA_SAFE_ASSERT_RETURN(type != CARLA_URI_MAP_ID_NULL, LV2_STATE_ERR_BAD_TYPE);
         CARLA_SAFE_ASSERT_RETURN(flags & LV2_STATE_IS_POD, LV2_STATE_ERR_BAD_FLAGS);
-        carla_debug("Lv2Plugin::handleStateStore(%i, %p, " P_SIZE ", %i, %i)", key, value, size, type, flags);
+        carla_debug("Lv2Plugin::handleStateStore(%i:\"%s\", %p, " P_SIZE ", %i:\"%s\", %i)", key, carla_lv2_urid_unmap(this, key), value, size, type, carla_lv2_urid_unmap(this, type), flags);
 
         const char* const skey(carla_lv2_urid_unmap(this, key));
         const char* const stype(carla_lv2_urid_unmap(this, type));
@@ -2131,6 +2449,126 @@ public:
 #endif
 
         return LV2_WORKER_SUCCESS;
+    }
+
+    // -------------------------------------------------------------------
+
+    void handleExternalUiClosed()
+    {
+        CARLA_SAFE_ASSERT_RETURN(fUi.type == UI::TYPE_EXTERNAL,);
+        carla_debug("Lv2Plugin::handleExternalUiClosed()");
+
+        if (fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->cleanup != nullptr)
+            fUi.descriptor->cleanup(fUi.handle);
+
+        fUi.handle = nullptr;
+        fUi.widget = nullptr;
+        pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+    }
+
+    // -------------------------------------------------------------------
+
+    uint32_t handleUiPortMap(const char* const symbol) const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(symbol != nullptr && symbol[0] != '\0', LV2UI_INVALID_PORT_INDEX);
+        carla_debug("Lv2Plugin::handleUiPortMap(\"%s\")", symbol);
+
+        for (uint32_t i=0; i < fRdfDescriptor->PortCount; ++i)
+        {
+            if (std::strcmp(fRdfDescriptor->Ports[i].Symbol, symbol) == 0)
+                return i;
+        }
+
+        return LV2UI_INVALID_PORT_INDEX;
+    }
+
+    int handleUiResize(const int width, const int height)
+    {
+        CARLA_SAFE_ASSERT_RETURN(width > 0, 1);
+        CARLA_SAFE_ASSERT_RETURN(height > 0, 1);
+        carla_debug("Lv2Plugin::handleUiResize(%i, %i)", width, height);
+
+        return 0;
+    }
+
+    void handleUiWrite(const uint32_t rindex, const uint32_t bufferSize, const uint32_t format, const void* const buffer)
+    {
+        CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(bufferSize > 0,);
+        carla_debug("Lv2Plugin::handleUiWrite(%i, %i, %i:\"%s\", %p)", rindex, bufferSize, format, carla_lv2_urid_unmap(this, format), buffer);
+
+        switch (format)
+        {
+        case 0:
+            CARLA_SAFE_ASSERT_RETURN(bufferSize == sizeof(float),);
+
+            for (uint32_t i=0; i < pData->param.count; ++i)
+            {
+                if (pData->param.data[i].rindex == static_cast<int32_t>(rindex))
+                {
+                    const float value(*(const float*)buffer);
+
+                    if (fParamBuffers[i] != value)
+                        setParameterValue(i, value, false, true, true);
+                    break;
+                }
+            }
+            break;
+
+        case CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM:
+        case CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT:
+            //fAtomQueueIn.put(rindex, (const LV2_Atom*)buffer);
+            break;
+
+        default:
+            carla_stdout("Lv2Plugin::handleUiWrite(%i, %i, %i:\"%s\", %p) - unknown format", rindex, bufferSize, format, carla_lv2_urid_unmap(this, format), buffer);
+            break;
+        }
+    }
+
+    // -------------------------------------------------------------------
+
+    void handleLilvSetPortValue(const char* const portSymbol, const void* const value, const uint32_t size, const uint32_t type)
+    {
+        CARLA_SAFE_ASSERT_RETURN(portSymbol != nullptr && portSymbol[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(size > 0,);
+        CARLA_SAFE_ASSERT_RETURN(type != CARLA_URI_MAP_ID_NULL,);
+        carla_debug("Lv2Plugin::handleLilvSetPortValue(\"%s\", %p, %i, %i:\"%s\")", portSymbol, value, size, type, carla_lv2_urid_unmap(this, type));
+
+        int32_t rindex = -1;
+
+        for (uint32_t i=0; i < fRdfDescriptor->PortCount; ++i)
+        {
+            if (std::strcmp(fRdfDescriptor->Ports[i].Symbol, portSymbol) == 0)
+            {
+                rindex = static_cast<int32_t>(i);
+                break;
+            }
+        }
+
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0,);
+
+        switch (type)
+        {
+        case CARLA_URI_MAP_ID_ATOM_FLOAT:
+              CARLA_SAFE_ASSERT_RETURN(size == sizeof(float),);
+
+              for (uint32_t i=0; i < pData->param.count; ++i)
+              {
+                  if (pData->param.data[i].rindex == rindex)
+                  {
+                      const float valuef(*(const float*)value);
+                      setParameterValue(i, valuef, true, true, true);
+                      break;
+                  }
+              }
+              break;
+
+        default:
+            carla_stdout("Lv2Plugin::handleLilvSetPortValue(\"%s\", %p, %i, %i:\"%s\") - unknown type", portSymbol, value, size, type, carla_lv2_urid_unmap(this, type));
+            break;
+        }
     }
 
     // -------------------------------------------------------------------
@@ -2454,12 +2892,315 @@ public:
         // ---------------------------------------------------------------
         // gui stuff
 
-        if (fRdfDescriptor->UICount == 0)
-            return true;
-
-        // ---------------------------------------------------------------
+        if (fRdfDescriptor->UICount != 0)
+            initUi();
 
         return true;
+    }
+
+    // -------------------------------------------------------------------
+
+    void initUi()
+    {
+        // ---------------------------------------------------------------
+        // find more appropriate ui
+
+        int eQt4, eQt5, eGtk2, eGtk3, eCocoa, eWindows, eX11, eExt, iCocoa, iWindows, iX11, iExt, iFinal;
+        eQt4 = eQt5 = eGtk2 = eGtk3 = eCocoa = eWindows = eX11 = eExt = iCocoa = iWindows = iX11 = iExt = iFinal = -1;
+
+#ifdef BUILD_BRIDGE
+        const bool preferUiBridges(false);
+#else
+        const bool preferUiBridges(pData->engine->getOptions().preferUiBridges && (pData->hints & PLUGIN_IS_BRIDGE) == 0);
+#endif
+
+        for (uint32_t i=0; i < fRdfDescriptor->UICount; ++i)
+        {
+            CARLA_SAFE_ASSERT_CONTINUE(fRdfDescriptor->UIs[i].URI != nullptr);
+
+            const int ii(static_cast<int>(i));
+
+            switch (fRdfDescriptor->UIs[i].Type)
+            {
+            case LV2_UI_QT4:
+                if (isUiBridgeable(i))
+                    eQt4 = ii;
+                break;
+            case LV2_UI_QT5:
+                if (isUiBridgeable(i))
+                    eQt5 = ii;
+                break;
+            case LV2_UI_GTK2:
+                if (isUiBridgeable(i))
+                    eGtk2 = ii;
+                break;
+            case LV2_UI_GTK3:
+                if (isUiBridgeable(i))
+                    eGtk3 = ii;
+                break;
+#if defined(CARLA_OS_HAIKU)
+#elif defined(CARLA_OS_MAC)
+            case LV2_UI_COCOA:
+                if (isUiBridgeable(i) && preferUiBridges)
+                    eCocoa = ii;
+                iCocoa = ii;
+                break;
+#elif defined(CARLA_OS_WIN)
+            case LV2_UI_WINDOWS:
+                if (isUiBridgeable(i) && preferUiBridges)
+                    eWindows = ii;
+                iWindows = ii;
+                break;
+#else
+            case LV2_UI_X11:
+                if (isUiBridgeable(i) && preferUiBridges)
+                    eX11 = ii;
+                iX11 = ii;
+                break;
+#endif
+            case LV2_UI_EXTERNAL:
+            case LV2_UI_OLD_EXTERNAL:
+                if (isUiBridgeable(i))
+                    eExt = ii;
+                iExt = ii;
+                break;
+            default:
+                break;
+            }
+        }
+
+        if (eQt4 >= 0)
+            iFinal = eQt4;
+        else if (eQt5 >= 0)
+            iFinal = eQt5;
+        else if (eGtk2 >= 0)
+            iFinal = eGtk2;
+        else if (eGtk3 >= 0)
+            iFinal = eGtk3;
+        else if (eCocoa >= 0)
+            iFinal = eCocoa;
+        else if (eWindows >= 0)
+            iFinal = eWindows;
+        else if (eX11 >= 0)
+            iFinal = eX11;
+        //else if (eExt >= 0) // TODO
+        //    iFinal = eExt;
+        else if (iCocoa >= 0)
+            iFinal = iCocoa;
+        else if (iWindows >= 0)
+            iFinal = iWindows;
+        else if (iX11 >= 0)
+            iFinal = iX11;
+        else if (iExt >= 0)
+            iFinal = iExt;
+
+        if (iFinal < 0)
+        {
+            carla_stderr("Failed to find an appropriate LV2 UI for this plugin");
+            return;
+        }
+
+        fUi.rdfDescriptor = &fRdfDescriptor->UIs[iFinal];
+
+        // ---------------------------------------------------------------
+        // check supported ui features
+
+        bool canContinue = true;
+
+        for (uint32_t i=0; i < fUi.rdfDescriptor->FeatureCount; ++i)
+        {
+            if (! is_lv2_ui_feature_supported(fUi.rdfDescriptor->Features[i].URI))
+            {
+                carla_stderr("Plugin UI requires a feature that is not supported:\n%s", fUi.rdfDescriptor->Features[i].URI);
+
+                if (LV2_IS_FEATURE_REQUIRED(fUi.rdfDescriptor->Features[i].Type))
+                {
+                    canContinue = false;
+                    break;
+                }
+            }
+        }
+
+        if (! canContinue)
+        {
+            fUi.rdfDescriptor = nullptr;
+            return;
+        }
+
+        // ---------------------------------------------------------------
+        // initialize ui according to type
+
+        const LV2_Property uiType(fUi.rdfDescriptor->Type);
+
+        if (iFinal == eQt4 || iFinal == eQt5 || iFinal == eGtk2 || iFinal == eGtk3 || iFinal == eCocoa || iFinal == eWindows || iFinal == eX11 || iFinal == eExt)
+        {
+            // -----------------------------------------------------------
+            // initialize ui bridge
+
+            if (const char* const bridgeBinary = getUiBridgeBinary(uiType))
+            {
+                carla_stdout("Will use OSC-Bridge UI, binary: \"%s\"", bridgeBinary);
+                fUi.type = UI::TYPE_OSC;
+                pData->osc.thread.setOscData(bridgeBinary, fDescriptor->URI, fUi.rdfDescriptor->URI);
+                delete[] bridgeBinary;
+                return;
+            }
+        }
+
+        // ---------------------------------------------------------------
+        // open UI DLL
+
+        if (! pData->uiLibOpen(fUi.rdfDescriptor->Binary))
+        {
+            carla_stderr2("Could not load UI library, error was:\n%s", pData->libError(fUi.rdfDescriptor->Binary));
+            fUi.rdfDescriptor = nullptr;
+            return;
+        }
+
+        // ---------------------------------------------------------------
+        // get UI DLL main entry
+
+        LV2UI_DescriptorFunction uiDescFn = (LV2UI_DescriptorFunction)pData->uiLibSymbol("lv2ui_descriptor");
+
+        if (uiDescFn == nullptr)
+        {
+            carla_stderr2("Could not find the LV2UI Descriptor in the UI library");
+            pData->uiLibClose();
+            fUi.rdfDescriptor = nullptr;
+            return;
+        }
+
+        // ---------------------------------------------------------------
+        // get UI descriptor that matches UI URI
+
+        uint32_t i = 0;
+        while ((fUi.descriptor = uiDescFn(i++)))
+        {
+            if (std::strcmp(fUi.descriptor->URI, fUi.rdfDescriptor->URI) == 0)
+                break;
+        }
+
+        if (fUi.descriptor == nullptr)
+        {
+            carla_stderr2("Could not find the requested GUI in the plugin UI library");
+            pData->uiLibClose();
+            fUi.rdfDescriptor = nullptr;
+            return;
+        }
+
+        // ---------------------------------------------------------------
+        // check if ui is usable
+
+        switch (uiType)
+        {
+        case LV2_UI_QT4:
+            carla_stdout("Will use LV2 Qt4 UI, NOT!");
+            break;
+        case LV2_UI_QT5:
+            carla_stdout("Will use LV2 Qt5 UI, NOT!");
+            break;
+        case LV2_UI_GTK2:
+            carla_stdout("Will use LV2 Gtk2 UI, NOT!");
+            break;
+        case LV2_UI_GTK3:
+            carla_stdout("Will use LV2 Gtk3 UI, NOT!");
+            break;
+#if defined(CARLA_OS_HAIKU)
+#elif defined(CARLA_OS_MAC)
+        case LV2_UI_COCOA:
+            carla_stdout("Will use LV2 Cocoa UI");
+            fUi.type = UI::TYPE_EMBED;
+            break;
+#elif defined(CARLA_OS_WIN)
+        case LV2_UI_WINDOWS:
+            carla_stdout("Will use LV2 Windows UI");
+            fUi.type = UI::TYPE_EMBED;
+            break;
+#else
+        case LV2_UI_X11:
+            carla_stdout("Will use LV2 X11 UI");
+            fUi.type = UI::TYPE_EMBED;
+            break;
+#endif
+        case LV2_UI_EXTERNAL:
+        case LV2_UI_OLD_EXTERNAL:
+            carla_stdout("Will use LV2 External UI");
+            fUi.type = UI::TYPE_EXTERNAL;
+            break;
+        }
+
+        if (fUi.type == UI::TYPE_NULL)
+        {
+            pData->uiLibClose();
+            fUi.descriptor = nullptr;
+            fUi.rdfDescriptor = nullptr;
+            return;
+        }
+
+        // ---------------------------------------------------------------
+        // initialize ui features (part 1)
+
+        QString guiTitle(QString("%1 (GUI)").arg(pData->name));
+
+        LV2_Extension_Data_Feature* const uiDataFt = new LV2_Extension_Data_Feature;
+        uiDataFt->data_access                      = fDescriptor->extension_data;
+
+        LV2UI_Port_Map* const uiPortMapFt = new LV2UI_Port_Map;
+        uiPortMapFt->handle               = this;
+        uiPortMapFt->port_index           = carla_lv2_ui_port_map;
+
+        LV2UI_Resize* const uiResizeFt    = new LV2UI_Resize;
+        uiResizeFt->handle                = this;
+        uiResizeFt->ui_resize             = carla_lv2_ui_resize;
+
+        LV2_External_UI_Host* const uiExternalHostFt = new LV2_External_UI_Host;
+        uiExternalHostFt->ui_closed                  = carla_lv2_external_ui_closed;
+        uiExternalHostFt->plugin_human_id            = carla_strdup(guiTitle.toUtf8().constData());
+
+        // ---------------------------------------------------------------
+        // initialize ui features (part 2)
+
+        for (uint32_t j=kFeatureCountPlugin; j < kFeatureCountAll; ++j)
+            fFeatures[j] = new LV2_Feature;
+
+        fFeatures[kFeatureIdUiDataAccess]->URI      = LV2_DATA_ACCESS_URI;
+        fFeatures[kFeatureIdUiDataAccess]->data     = uiDataFt;
+
+        fFeatures[kFeatureIdUiInstanceAccess]->URI  = LV2_INSTANCE_ACCESS_URI;
+        fFeatures[kFeatureIdUiInstanceAccess]->data = fHandle;
+
+        fFeatures[kFeatureIdUiIdle]->URI           = LV2_UI__idle;
+        fFeatures[kFeatureIdUiIdle]->data          = nullptr;
+
+        fFeatures[kFeatureIdUiFixedSize]->URI      = LV2_UI__fixedSize;
+        fFeatures[kFeatureIdUiFixedSize]->data     = nullptr;
+
+        fFeatures[kFeatureIdUiMakeResident]->URI   = LV2_UI__makeResident;
+        fFeatures[kFeatureIdUiMakeResident]->data  = nullptr;
+
+        fFeatures[kFeatureIdUiNoUserResize]->URI   = LV2_UI__noUserResize;
+        fFeatures[kFeatureIdUiNoUserResize]->data  = nullptr;
+
+        fFeatures[kFeatureIdUiParent]->URI         = LV2_UI__parent;
+        fFeatures[kFeatureIdUiParent]->data        = nullptr;
+
+        fFeatures[kFeatureIdUiPortMap]->URI        = LV2_UI__portMap;
+        fFeatures[kFeatureIdUiPortMap]->data       = uiPortMapFt;
+
+        fFeatures[kFeatureIdUiPortSubscribe]->URI  = LV2_UI__portSubscribe;
+        fFeatures[kFeatureIdUiPortSubscribe]->data = nullptr;
+
+        fFeatures[kFeatureIdUiResize]->URI       = LV2_UI__resize;
+        fFeatures[kFeatureIdUiResize]->data      = uiResizeFt;
+
+        fFeatures[kFeatureIdUiTouch]->URI        = LV2_UI__touch;
+        fFeatures[kFeatureIdUiTouch]->data       = nullptr;
+
+        fFeatures[kFeatureIdExternalUi]->URI     = LV2_EXTERNAL_UI__Host;
+        fFeatures[kFeatureIdExternalUi]->data    = uiExternalHostFt;
+
+        fFeatures[kFeatureIdExternalUiOld]->URI  = LV2_EXTERNAL_UI_DEPRECATED_URI;
+        fFeatures[kFeatureIdExternalUiOld]->data = uiExternalHostFt;
     }
 
     // -------------------------------------------------------------------
@@ -2922,6 +3663,61 @@ private:
         carla_debug("carla_lv2_worker_respond(%p, %i, %p)", handle, size, data);
 
         return ((Lv2Plugin*)handle)->handleWorkerRespond(size, data);
+    }
+
+    // -------------------------------------------------------------------
+    // External UI Feature
+
+    static void carla_lv2_external_ui_closed(LV2UI_Controller controller)
+    {
+        CARLA_SAFE_ASSERT_RETURN(controller != nullptr,);
+        carla_debug("carla_lv2_external_ui_closed(%p)", controller);
+
+        ((Lv2Plugin*)controller)->handleExternalUiClosed();
+    }
+
+    // -------------------------------------------------------------------
+    // UI Port-Map Feature
+
+    static uint32_t carla_lv2_ui_port_map(LV2UI_Feature_Handle handle, const char* symbol)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, LV2UI_INVALID_PORT_INDEX);
+        carla_debug("carla_lv2_ui_port_map(%p, \"%s\")", handle, symbol);
+
+        return ((Lv2Plugin*)handle)->handleUiPortMap(symbol);
+    }
+
+    // -------------------------------------------------------------------
+    // UI Resize Feature
+
+    static int carla_lv2_ui_resize(LV2UI_Feature_Handle handle, int width, int height)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, 1);
+        carla_debug("carla_lv2_ui_resize(%p, %i, %i)", handle, width, height);
+
+        return ((Lv2Plugin*)handle)->handleUiResize(width, height);
+    }
+
+    // -------------------------------------------------------------------
+    // UI Extension
+
+    static void carla_lv2_ui_write_function(LV2UI_Controller controller, uint32_t port_index, uint32_t buffer_size, uint32_t format, const void* buffer)
+    {
+        CARLA_SAFE_ASSERT_RETURN(controller != nullptr,);
+        carla_debug("carla_lv2_ui_write_function(%p, %i, %i, %i, %p)", controller, port_index, buffer_size, format, buffer);
+
+        ((Lv2Plugin*)controller)->handleUiWrite(port_index, buffer_size, format, buffer);
+    }
+
+    // -------------------------------------------------------------------
+    // Lilv State
+
+    static void carla_lilv_set_port_value(const char* port_symbol, void* user_data, const void* value, uint32_t size, uint32_t type)
+    {
+        CARLA_SAFE_ASSERT_RETURN(user_data != nullptr,);
+        carla_debug("carla_lilv_set_port_value(\"%s\", %p, %p, %i, %i", port_symbol, user_data, value, size, type);
+
+        ((Lv2Plugin*)user_data)->handleLilvSetPortValue(port_symbol, value, size, type);
     }
 
     // -------------------------------------------------------------------

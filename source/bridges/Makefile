@@ -31,8 +31,8 @@ LINK_PLUGIN_FLAGS  += -lpthread
 endif
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-BUILD_PLUGIN_FLAGS += -DWANT_LADSPA
-# -DWANT_DSSI -DWANT_LV2 -DWANT_VST
+BUILD_PLUGIN_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2
+# -DWANT_VST
 # ifeq ($(CARLA_VESTIGE_HEADER),true)
 # BUILD_PLUGIN_FLAGS += -DVESTIGE_HEADER
 # endif
@@ -125,11 +125,11 @@ ifeq ($(CARLA_VESTIGE_HEADER),true)
 BUILD_UI_VST_FLAGS += -DVESTIGE_HEADER
 endif
 
-BUILD_UI_LV2_GTK2_FLAGS  = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK2 -DBRIDGE_LV2_GTK2 $(shell pkg-config --cflags gtk+-2.0 Qt5Core)
-LINK_UI_LV2_GTK2_FLAGS   = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-2.0 Qt5Core)
+BUILD_UI_LV2_GTK2_FLAGS  = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK2 -DBRIDGE_LV2_GTK2 $(shell pkg-config --cflags gtk+-2.0 QtCore)
+LINK_UI_LV2_GTK2_FLAGS   = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-2.0 QtCore)
 
-BUILD_UI_LV2_GTK3_FLAGS  = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK3 -DBRIDGE_LV2_GTK3 $(shell pkg-config --cflags gtk+-3.0 Qt5Core)
-LINK_UI_LV2_GTK3_FLAGS   = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-3.0 Qt5Core)
+BUILD_UI_LV2_GTK3_FLAGS  = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK3 -DBRIDGE_LV2_GTK3 $(shell pkg-config --cflags gtk+-3.0 QtCore)
+LINK_UI_LV2_GTK3_FLAGS   = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-3.0 QtCore)
 
 BUILD_UI_LV2_QT4_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT4 -DBRIDGE_LV2_QT4 $(shell pkg-config --cflags QtCore QtGui)
 LINK_UI_LV2_QT4_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs QtCore QtGui)
@@ -159,23 +159,23 @@ LINK_UI_VST_X11_FLAGS    = $(LINK_UI_FLAGS) $(QT5_UI_LIBS)
 
 TARGETS  = native
 
-# ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-# ifeq ($(HAVE_GTK2),true)
-# TARGETS += ui_lv2-gtk2
-# endif
-# ifeq ($(HAVE_GTK3),true)
-# TARGETS += ui_lv2-gtk3
-# endif
-# ifeq ($(HAVE_QT4),true)
-# TARGETS += ui_lv2-qt4
-# else
-# ifeq ($(HAVE_QT5),true)
-# TARGETS += ui_lv2-qt5
-# endif
-# endif
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+ifeq ($(HAVE_GTK2),true)
+TARGETS += ui_lv2-gtk2
+endif
+ifeq ($(HAVE_GTK3),true)
+TARGETS += ui_lv2-gtk3
+endif
+ifeq ($(HAVE_QT4),true)
+TARGETS += ui_lv2-qt4
+else
+ifeq ($(HAVE_QT5),true)
+TARGETS += ui_lv2-qt5
+endif
+endif
 # TARGETS += ui_lv2-x11
 # TARGETS += ui_vst-x11
-# endif
+endif
 
 ifeq ($(WIN32),true)
 TARGETS  = carla-bridge-win32.exe
@@ -424,10 +424,10 @@ endif
 # 	../modules/dgl.a
 # endif
 
-# ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-# OBJS_NATIVE += \
-# 	../modules/lilv.a
-# endif
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+OBJS_NATIVE += \
+	../modules/lilv.a
+endif
 
 carla-bridge-native: $(FILES) $(OBJS_NATIVE)
 	$(CXX) $(OBJS_NATIVE) $(NATIVE_LINK_FLAGS) -o $@
