@@ -46,7 +46,7 @@ BASE_OPTS  = -O3 -ffast-math -mtune=generic -msse -msse2 -mfpmath=sse -fdata-sec
 LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,--gc-sections
 
 ifeq ($(TESTBUILD),true)
-BASE_FLAGS += -Werror -Wcast-align -Wcast-qual -Wconversion -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wundef -Wunsafe-loop-optimizations -Wwrite-strings
+BASE_FLAGS += -Werror -Wcast-align -Wcast-qual -Wconversion -Wformat-security -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wundef -Wunsafe-loop-optimizations -Wwrite-strings
 CFLAGS     += -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes
 CXXFLAGS   += -Wnon-virtual-dtor -Woverloaded-virtual
 ifeq ($(LINUX),true)
