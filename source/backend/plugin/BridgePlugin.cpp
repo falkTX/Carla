@@ -58,7 +58,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------
 
-shm_t shm_mkstemp(char* const fileBase)
+static shm_t shm_mkstemp(char* const fileBase)
 {
     static const char charSet[] = "abcdefghijklmnopqrstuvwxyz"
                                   "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -151,13 +151,13 @@ struct BridgeAudioPool {
     }
 };
 
-struct BridgeControl : public RingBufferControlTemplate<StackRingBuffer> {
+struct BridgeControl : public RingBufferControl<StackRingBuffer> {
     CarlaString filename;
     BridgeShmControl* data;
     shm_t shm;
 
     BridgeControl()
-        : RingBufferControlTemplate(nullptr),
+        : RingBufferControl(nullptr),
           data(nullptr)
     {
         carla_shm_init(shm);

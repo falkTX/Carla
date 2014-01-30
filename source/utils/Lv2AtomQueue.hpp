@@ -25,11 +25,11 @@
 
 // -----------------------------------------------------------------------
 
-class Lv2AtomRingBufferControl : public RingBufferControlTemplate<HeapRingBuffer>
+class Lv2AtomRingBufferControl : public RingBufferControl<HeapRingBuffer>
 {
 public:
     Lv2AtomRingBufferControl()
-        : RingBufferControlTemplate(nullptr),
+        : RingBufferControl(nullptr),
           fIsDummy(false)
     {
         fBuffer.size = 0;
