@@ -355,7 +355,6 @@ public:
         for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; ++i)
             fCustomURIDs.append(nullptr);
 
-#if 0
         fAtomForge.Blank    = CARLA_URI_MAP_ID_ATOM_BLANK;
         fAtomForge.Bool     = CARLA_URI_MAP_ID_ATOM_BOOL;
         fAtomForge.Chunk    = CARLA_URI_MAP_ID_ATOM_CHUNK;
@@ -373,7 +372,6 @@ public:
         fAtomForge.URI      = CARLA_URI_MAP_ID_ATOM_URI;
         fAtomForge.URID     = CARLA_URI_MAP_ID_ATOM_URID;
         fAtomForge.Vector   = CARLA_URI_MAP_ID_ATOM_VECTOR;
-#endif
 
         pData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_LV2_GUI);
     }
@@ -2003,13 +2001,11 @@ public:
             pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
         }
 
-#if 0
         if (fEventsIn.ctrl != nullptr && fEventsIn.ctrl->port == nullptr)
             fEventsIn.ctrl->port = pData->event.portIn;
 
         if (fEventsOut.ctrl != nullptr && fEventsOut.ctrl->port == nullptr)
             fEventsOut.ctrl->port = pData->event.portOut;
-#endif
 
         if (forcedStereoIn || forcedStereoOut)
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
@@ -2480,7 +2476,7 @@ public:
                 lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_FRAME, 0);
                 lv2_atom_forge_long(&fAtomForge, timeInfo.frame);
 
-                if (timeInfo.valid & EngineTimeInfo::ValidBBT)
+                if (timeInfo.valid & EngineTimeInfo::kValidBBT)
                 {
                     lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BAR, 0);
                     lv2_atom_forge_long(&fAtomForge, timeInfo.bbt.bar - 1);
@@ -3289,10 +3285,8 @@ public:
 
     void initBuffers() override
     {
-#if 0
-        fEventsIn.initBuffers(pData->engine);
-        fEventsOut.initBuffers(pData->engine);
-#endif
+        fEventsIn.initBuffers();
+        fEventsOut.initBuffers();
 
         CarlaPlugin::initBuffers();
     }
@@ -3337,10 +3331,8 @@ public:
             fParamBuffers = nullptr;
         }
 
-#if 0
         fEventsIn.clear();
         fEventsOut.clear();
-#endif
 
         CarlaPlugin::clearBuffers();
 
@@ -3407,7 +3399,6 @@ public:
         }
         else
         {
-#if 0
             if (fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->port_event != nullptr && fEventsIn.ctrl != nullptr)
             {
                 LV2_Atom_MidiEvent midiEv;
@@ -3420,7 +3411,6 @@ public:
 
                 fUi.descriptor->port_event(fUi.handle, fEventsIn.ctrl->rindex, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
             }
-#endif
         }
     }
 
@@ -3442,7 +3432,6 @@ public:
         }
         else
         {
-#if 0
             if (fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->port_event != nullptr && fEventsIn.ctrl != nullptr)
             {
                 LV2_Atom_MidiEvent midiEv;
@@ -3455,7 +3444,6 @@ public:
 
                 fUi.descriptor->port_event(fUi.handle, fEventsIn.ctrl->rindex, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
             }
-#endif
         }
     }
 
@@ -4666,11 +4654,11 @@ private:
 #if 0
     Lv2AtomQueue   fAtomQueueIn;
     Lv2AtomQueue   fAtomQueueOut;
+#endif
     LV2_Atom_Forge fAtomForge;
 
     Lv2PluginEventData fEventsIn;
     Lv2PluginEventData fEventsOut;
-#endif
     Lv2PluginOptions   fLv2Options;
 
     LinkedList<const char*> fCustomURIDs;
