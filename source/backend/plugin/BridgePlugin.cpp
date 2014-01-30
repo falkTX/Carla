@@ -151,13 +151,13 @@ struct BridgeAudioPool {
     }
 };
 
-struct BridgeControl : public RingBufferControl {
+struct BridgeControl : public RingBufferControlTemplate<StackRingBuffer> {
     CarlaString filename;
     BridgeShmControl* data;
     shm_t shm;
 
     BridgeControl()
-        : RingBufferControl(nullptr),
+        : RingBufferControlTemplate(nullptr),
           data(nullptr)
     {
         carla_shm_init(shm);

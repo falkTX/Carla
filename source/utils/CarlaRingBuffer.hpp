@@ -1,6 +1,5 @@
 /*
- * Carla Ring Buffer based on dssi-vst code
- * Copyright (C) 2004-2010 Chris Cannam <cannam@all-day-breakfast.com>
+ * Carla Ring Buffer
  * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -21,26 +20,45 @@
 
 #include "CarlaUtils.hpp"
 
-//#ifndef RING_BUFFER_SIZE
-#define RING_BUFFER_SIZE 2048
-//#endif
-
 // -----------------------------------------------------------------------
-// RingBuffer struct
+// RingBuffer structs
 
-struct RingBuffer {
+struct HeapRingBuffer {
+    uint32_t size;
+    int32_t  head, tail, written;
+    bool     invalidateCommit;
+    char*    buf;
+
+    HeapRingBuffer& operator=(const HeapRingBuffer& rb)
+    {
+        CARLA_SAFE_ASSERT_RETURN(size == rb.size, *this);
+
+        size = rb.size;
+        head = rb.head;
+        tail = rb.tail;
+        written = rb.written;
+        invalidateCommit = rb.invalidateCommit;
+        std::memcpy(buf, rb.buf, size);
+
+        return *this;
+    }
+};
+
+struct StackRingBuffer {
+    static const uint32_t size = 2048;
     int32_t head, tail, written;
     bool    invalidateCommit;
-    char    buf[RING_BUFFER_SIZE];
+    char    buf[size];
 };
 
 // -----------------------------------------------------------------------
-// RingBufferControl class
+// RingBufferControl templated class
 
-class RingBufferControl
+template <class RingBufferStruct>
+class RingBufferControlTemplate
 {
 public:
-    RingBufferControl(RingBuffer* const ringBuf) noexcept
+    RingBufferControlTemplate(RingBufferStruct* const ringBuf) noexcept
         : fRingBuf(ringBuf)
     {
         if (ringBuf != nullptr)
@@ -55,10 +73,12 @@ public:
         fRingBuf->tail = 0;
         fRingBuf->written = 0;
         fRingBuf->invalidateCommit = false;
-        carla_zeroChar(fRingBuf->buf, RING_BUFFER_SIZE);
+
+        if (fRingBuf->size > 0)
+            carla_zeroChar(fRingBuf->buf, fRingBuf->size);
     }
 
-    void setRingBuffer(RingBuffer* const ringBuf, const bool reset) noexcept
+    void setRingBuffer(RingBufferStruct* const ringBuf, const bool reset) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(ringBuf != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(ringBuf != fRingBuf,);
@@ -155,6 +175,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fRingBuf != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(buf != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(size != 0,);
+        CARLA_SAFE_ASSERT_RETURN(size < fRingBuf->size,);
 
         // this should not happen
         CARLA_ASSERT(fRingBuf->head >= 0);
@@ -169,7 +190,7 @@ protected:
 
         const size_t head(static_cast<size_t>(fRingBuf->head));
         const size_t tail(static_cast<size_t>(fRingBuf->tail));
-        const size_t wrap((head < tail) ? RING_BUFFER_SIZE : 0);
+        const size_t wrap((head < tail) ? fRingBuf->size : 0);
 
         if (head - tail + wrap < size)
         {
@@ -179,10 +200,10 @@ protected:
 
         size_t readto = tail + size;
 
-        if (readto >= RING_BUFFER_SIZE)
+        if (readto >= fRingBuf->size)
         {
-            readto -= RING_BUFFER_SIZE;
-            const size_t firstpart(RING_BUFFER_SIZE - tail);
+            readto -= fRingBuf->size;
+            const size_t firstpart(fRingBuf->size - tail);
             std::memcpy(charbuf, fRingBuf->buf + tail, firstpart);
             std::memcpy(charbuf + firstpart, fRingBuf->buf, readto);
         }
@@ -199,6 +220,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fRingBuf != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(buf != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(size != 0,);
+        CARLA_SAFE_ASSERT_RETURN(size < fRingBuf->size,);
 
         // this should not happen
         CARLA_ASSERT(fRingBuf->head >= 0);
@@ -209,7 +231,7 @@ protected:
 
         const size_t tail(static_cast<size_t>(fRingBuf->tail));
         const size_t wrtn(static_cast<size_t>(fRingBuf->written));
-        const size_t wrap((tail <= wrtn) ? RING_BUFFER_SIZE : 0);
+        const size_t wrap((tail <= wrtn) ? fRingBuf->size : 0);
 
         if (tail - wrtn + wrap <= size)
         {
@@ -220,10 +242,10 @@ protected:
 
         size_t writeto = wrtn + size;
 
-        if (writeto >= RING_BUFFER_SIZE)
+        if (writeto >= fRingBuf->size)
         {
-            writeto -= RING_BUFFER_SIZE;
-            const size_t firstpart(RING_BUFFER_SIZE - wrtn);
+            writeto -= fRingBuf->size;
+            const size_t firstpart(fRingBuf->size - wrtn);
             std::memcpy(fRingBuf->buf + wrtn, charbuf, firstpart);
             std::memcpy(fRingBuf->buf, charbuf + firstpart, writeto);
         }
@@ -236,10 +258,10 @@ protected:
     }
 
 private:
-    RingBuffer* fRingBuf;
+    RingBufferStruct* fRingBuf;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(RingBufferControl)
+    CARLA_DECLARE_NON_COPY_CLASS(RingBufferControlTemplate)
 };
 
 // -----------------------------------------------------------------------
