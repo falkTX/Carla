@@ -50,7 +50,7 @@ extern "C" {
 static inline uint16_t
 lv2_event_pad_size(uint16_t size)
 {
-	return (size + 7) & (~7);
+	return (uint16_t)((uint16_t)(size + 7) & (~7));
 }
 
 
@@ -130,7 +130,7 @@ lv2_event_increment(LV2_Event_Iterator* iter)
 	LV2_Event* const ev = (LV2_Event*)(
 			(uint8_t*)iter->buf->data + iter->offset);
 
-	iter->offset += lv2_event_pad_size(sizeof(LV2_Event) + ev->size);
+	iter->offset += lv2_event_pad_size((uint16_t)(sizeof(LV2_Event) + ev->size));
 
 	return true;
 }
@@ -190,7 +190,7 @@ lv2_event_write(LV2_Event_Iterator* iter,
 	memcpy((uint8_t*)ev + sizeof(LV2_Event), data, size);
 	++iter->buf->event_count;
 
-	size = lv2_event_pad_size(sizeof(LV2_Event) + size);
+	size = lv2_event_pad_size((uint16_t)(sizeof(LV2_Event) + size));
 	iter->buf->size += size;
 	iter->offset    += size;
 
@@ -220,7 +220,7 @@ lv2_event_reserve(LV2_Event_Iterator* iter,
 	ev->size = size;
 	++iter->buf->event_count;
 
-	size = lv2_event_pad_size(sizeof(LV2_Event) + size);
+	size = lv2_event_pad_size((uint16_t)(sizeof(LV2_Event) + size));
 	iter->buf->size += size;
 	iter->offset    += size;
 
@@ -248,7 +248,7 @@ lv2_event_write_event(LV2_Event_Iterator* iter,
 	memcpy((uint8_t*)write_ev + sizeof(LV2_Event), data, ev->size);
 	++iter->buf->event_count;
 
-	const uint16_t size = lv2_event_pad_size(sizeof(LV2_Event) + ev->size);
+	const uint16_t size = lv2_event_pad_size((uint16_t)(sizeof(LV2_Event) + ev->size));
 	iter->buf->size += size;
 	iter->offset    += size;
 

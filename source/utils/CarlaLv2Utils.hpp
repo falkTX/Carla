@@ -29,7 +29,7 @@
 #include "lv2/data-access.h"
 // dynmanifest
 #include "lv2/event.h"
-//#include "lv2/event-helpers.h"
+#include "lv2/event-helpers.h"
 #include "lv2/instance-access.h"
 #include "lv2/log.h"
 // logger
@@ -51,7 +51,7 @@
 #include "lv2/worker.h"
 
 #include "lv2/lv2-miditype.h"
-//#include "lv2/lv2-midifunctions.h"
+#include "lv2/lv2-midifunctions.h"
 #include "lv2/lv2_external_ui.h"
 #include "lv2/lv2_programs.h"
 #include "lv2/lv2_rtmempool.h"

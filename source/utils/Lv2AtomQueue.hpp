@@ -144,7 +144,7 @@ public:
 
     bool isEmpty() const noexcept
     {
-        return !fRingBufferCtrl.isDataAvailable();
+        return (fRingBufferCtrl.fBuffer.buf == nullptr || !fRingBufferCtrl.isDataAvailable());
     }
 
     // must have been locked before
