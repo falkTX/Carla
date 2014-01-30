@@ -183,6 +183,7 @@ public:
     Lilv::Node ui_x11;
     Lilv::Node ui_external;
     Lilv::Node ui_externalOld;
+    Lilv::Node ui_externalOld2;
 
     // Misc
     Lilv::Node atom_bufferType;
@@ -302,6 +303,7 @@ public:
           ui_x11             (new_uri(LV2_UI__X11UI)),
           ui_external        (new_uri(LV2_EXTERNAL_UI__Widget)),
           ui_externalOld     (new_uri(LV2_EXTERNAL_UI_DEPRECATED_URI)),
+          ui_externalOld2    (new_uri("http://nedko.arnaudov.name/lv2/external_ui/")),
 
           atom_bufferType    (new_uri(LV2_ATOM__bufferType)),
           atom_sequence      (new_uri(LV2_ATOM__Sequence)),
@@ -1177,6 +1179,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool /*fillPreset
                     rdfUI->Type = LV2_UI_EXTERNAL;
                 else if (lilvUI.is_a(lv2World.ui_externalOld))
                     rdfUI->Type = LV2_UI_OLD_EXTERNAL;
+                else if (lilvUI.is_a(lv2World.ui_externalOld2))
+                    pass();
                 else
                     carla_stderr("lv2_rdf_new(\"%s\") - UI '%s' is of unknown type", uri, lilvUI.get_uri().as_uri());
 
@@ -1271,7 +1275,7 @@ bool is_lv2_port_supported(const LV2_Property types)
     if (LV2_IS_PORT_AUDIO(types))
         return true;
     if (LV2_IS_PORT_CV(types))
-        return false; // TODO
+        return true;
     if (LV2_IS_PORT_ATOM_SEQUENCE(types))
         return true;
     if (LV2_IS_PORT_EVENT(types))
