@@ -388,6 +388,8 @@ struct LV2_RDF_Port {
     LV2_RDF_PortPoints Points;
     LV2_RDF_PortUnit Unit;
 
+    uint32_t MinimumSize;
+
     uint32_t ScalePointCount;
     LV2_RDF_PortScalePoint* ScalePoints;
 
@@ -397,6 +399,7 @@ struct LV2_RDF_Port {
           Designation(0),
           Name(nullptr),
           Symbol(nullptr),
+          MinimumSize(0),
           ScalePointCount(0),
           ScalePoints(nullptr) {}
 

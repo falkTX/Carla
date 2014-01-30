@@ -29,7 +29,8 @@ class Lv2AtomRingBufferControl : public RingBufferControlTemplate<HeapRingBuffer
 {
 public:
     Lv2AtomRingBufferControl()
-        : RingBufferControlTemplate(nullptr)
+        : RingBufferControlTemplate(nullptr),
+          fIsDummy(false)
     {
         fBuffer.size = 0;
         fBuffer.buf  = nullptr;
@@ -37,8 +38,11 @@ public:
 
     ~Lv2AtomRingBufferControl()
     {
-        if (fBuffer.buf != nullptr)
+        if (fBuffer.buf != nullptr && ! fIsDummy)
+        {
             delete[] fBuffer.buf;
+            fBuffer.buf = nullptr;
+        }
     }
 
     // -------------------------------------------------------------------
@@ -47,7 +51,8 @@ public:
     {
         if (fBuffer.buf != nullptr)
         {
-            delete[] fBuffer.buf;
+            if (! fIsDummy)
+                delete[] fBuffer.buf;
             fBuffer.buf = nullptr;
         }
 
@@ -71,8 +76,11 @@ public:
         fBuffer.tail = rb.tail;
         fBuffer.written = rb.written;
         fBuffer.invalidateCommit = rb.invalidateCommit;
+        fIsDummy = true;
 
         std::memcpy(dumpBuf, rb.buf, rb.size);
+
+        setRingBuffer(&fBuffer, false);
     }
 
     // -------------------------------------------------------------------
@@ -125,8 +133,9 @@ public:
 
 private:
     HeapRingBuffer fBuffer;
+    bool fIsDummy;
 
-    static const size_t kMaxDataSize = 2048;
+    static const size_t kMaxDataSize = 8192;
 
     struct RetAtom {
         LV2_Atom atom;

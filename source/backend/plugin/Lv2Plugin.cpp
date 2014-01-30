@@ -103,7 +103,7 @@ const uint32_t CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND = 36;
 const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 37;
 const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 38;
 const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 39;
-const uint32_t CARLA_URI_MAP_ID_COUNT                  = 40;
+const uint32_t CARLA_URI_MAP_ID_COUNT                  = 39; // FIXME later
 
 // LV2 Feature Ids
 const uint32_t kFeatureIdBufSizeBounded   =  0;
@@ -1222,6 +1222,7 @@ public:
 
             Lv2AtomQueue tmpQueue;
             tmpQueue.copyAndDumpDataFromQueue(fAtomQueueOut, dumpBuf);
+            CARLA_SAFE_ASSERT(! tmpQueue.isEmpty());
 
             uint32_t portIndex;
             const LV2_Atom* atom;
@@ -1229,8 +1230,6 @@ public:
 
             for (; tmpQueue.get(&atom, &portIndex);)
             {
-                carla_stdout("OUTPUT message IN GUI REMOVED FROM BUFFER");
-
                 if (atom->type == CARLA_URI_MAP_ID_ATOM_WORKER)
                 {
                     CARLA_SAFE_ASSERT_CONTINUE(fExt.worker != nullptr && fExt.worker->work != nullptr);
@@ -1294,6 +1293,8 @@ public:
         uint32_t aIns, aOuts, cvIns, cvOuts, params;
         aIns = aOuts = cvIns = cvOuts = params = 0;
         LinkedList<unsigned int> evIns, evOuts;
+
+        const uint32_t eventBufferSize(static_cast<uint32_t>(fLv2Options.sequenceSize));
 
         bool forcedStereoIn, forcedStereoOut;
         forcedStereoIn = forcedStereoOut = false;
@@ -1392,9 +1393,6 @@ public:
             fParamBuffers = new float[params];
             FLOAT_CLEAR(fParamBuffers, params);
         }
-
-        const uint32_t eventBufferSize(MAX_DEFAULT_BUFFER_SIZE);
-        fLv2Options.sequenceSize = static_cast<int>(eventBufferSize);
 
         if (const uint32_t count = static_cast<uint32_t>(evIns.count()))
         {
@@ -4183,6 +4181,21 @@ public:
         fLv2Options.maxBufferSize = static_cast<int>(pData->engine->getBufferSize());
         fLv2Options.sampleRate    = pData->engine->getSampleRate();
 
+        uint32_t eventBufferSize = MAX_DEFAULT_BUFFER_SIZE;
+
+        for (uint32_t j=0; j < fRdfDescriptor->PortCount; ++j)
+        {
+            const LV2_Property portTypes(fRdfDescriptor->Ports[j].Types);
+
+            if (LV2_IS_PORT_ATOM_SEQUENCE(portTypes) || LV2_IS_PORT_EVENT(portTypes) || LV2_IS_PORT_MIDI_LL(portTypes))
+            {
+                if (fRdfDescriptor->Ports[j].MinimumSize > eventBufferSize)
+                    eventBufferSize = fRdfDescriptor->Ports[j].MinimumSize;
+            }
+        }
+
+        fLv2Options.sequenceSize = static_cast<int>(eventBufferSize);
+
         // ---------------------------------------------------------------
         // initialize features (part 1)
 
@@ -4271,7 +4284,8 @@ public:
         fFeatures[kFeatureIdPrograms]->URI   = LV2_PROGRAMS__Host;
         fFeatures[kFeatureIdPrograms]->data  = programsFt;
 
-        //kFeatureIdResizePort
+        fFeatures[kFeatureIdResizePort]->URI   = LV2_RESIZE_PORT__resize;
+        fFeatures[kFeatureIdResizePort]->data  = rsPortFt;
 
         fFeatures[kFeatureIdRtMemPool]->URI  = LV2_RTSAFE_MEMORY_POOL__Pool;
         fFeatures[kFeatureIdRtMemPool]->data = rtMemPoolFt;

@@ -61,7 +61,7 @@
 #include "lilv/lilvmm.hpp"
 #include "sratom/sratom.h"
 
-//#include <QtCore/QStringList>
+#include <QtCore/QStringList>
 
 // -----------------------------------------------------------------------
 // Define namespaces and missing prefixes
@@ -197,6 +197,9 @@ public:
     Lilv::Node value_minimum;
     Lilv::Node value_maximum;
 
+    Lilv::Node rz_asLargeAs;
+    Lilv::Node rz_minSize;
+
     // Port Data Types
     Lilv::Node midi_event;
     Lilv::Node patch_message;
@@ -311,6 +314,9 @@ public:
           value_default      (new_uri(LV2_CORE__default)),
           value_minimum      (new_uri(LV2_CORE__minimum)),
           value_maximum      (new_uri(LV2_CORE__maximum)),
+
+          rz_asLargeAs       (new_uri(LV2_RESIZE_PORT__asLargeAs)),
+          rz_minSize         (new_uri(LV2_RESIZE_PORT__minimumSize)),
 
           midi_event         (new_uri(LV2_MIDI__MidiEvent)),
           patch_message      (new_uri(LV2_PATCH__Message)),
@@ -522,7 +528,6 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool /*fillPreset
         }
     }
 
-#if 0
     // -------------------------------------------------------------------
     // Set Plugin UniqueID
     {
@@ -549,7 +554,6 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool /*fillPreset
             }
         }
     }
-#endif
 
     // -------------------------------------------------------------------
     // Set Plugin Ports
@@ -963,6 +967,22 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool /*fillPreset
                         rdfPort->Unit.Hints |= LV2_PORT_UNIT_SYMBOL;
                         rdfPort->Unit.Symbol = carla_strdup(unitSymbol);
                     }
+                }
+            }
+
+            // -----------------------------------------------------------
+            // Set Port Minimum Size
+            {
+                Lilv::Nodes minimumSizeNodes(lilvPort.get_value(lv2World.rz_minSize));
+
+                if (minimumSizeNodes.size() > 0)
+                {
+                    const int minimumSize(minimumSizeNodes.get_first().as_int());
+
+                    if (minimumSize > 0)
+                        rdfPort->MinimumSize = static_cast<uint32_t>(minimumSize);
+                    else
+                        carla_safe_assert_int("minimumSize > 0", __FILE__, __LINE__, minimumSize);
                 }
             }
 
