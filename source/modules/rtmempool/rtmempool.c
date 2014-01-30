@@ -56,18 +56,9 @@ typedef struct _RtMemPool
 } RtMemPool;
 
 // ------------------------------------------------------------------------------------------------
-// additional function prototypes
-
-void rtsafe_memory_pool_sleepy(RtMemPool* poolPtr);
-
-bool rtsafe_memory_pool_create2(RtMemPool_Handle* handlePtr, const char* poolName,
-                                size_t dataSize, size_t minPreallocated, size_t maxPreallocated,
-                                int enforceThreadSafety);
-
-// ------------------------------------------------------------------------------------------------
 // adjust unused list size
 
-void rtsafe_memory_pool_sleepy(RtMemPool* poolPtr)
+static void rtsafe_memory_pool_sleepy(RtMemPool* poolPtr)
 {
     k_list_head* nodePtr;
     unsigned int count;
@@ -144,12 +135,12 @@ void rtsafe_memory_pool_sleepy(RtMemPool* poolPtr)
 
 // ------------------------------------------------------------------------------------------------
 
-bool rtsafe_memory_pool_create2(RtMemPool_Handle* handlePtr,
-                                const char* poolName,
-                                size_t dataSize,
-                                size_t minPreallocated,
-                                size_t maxPreallocated,
-                                int enforceThreadSafety)
+static bool rtsafe_memory_pool_create2(RtMemPool_Handle* handlePtr,
+                                       const char* poolName,
+                                       size_t dataSize,
+                                       size_t minPreallocated,
+                                       size_t maxPreallocated,
+                                       int enforceThreadSafety)
 {
     assert(minPreallocated <= maxPreallocated);
     assert(poolName == NULL || strlen(poolName) < RTSAFE_MEMORY_POOL_NAME_MAX);
@@ -202,6 +193,13 @@ bool rtsafe_memory_pool_create2(RtMemPool_Handle* handlePtr,
     *handlePtr = (RtMemPool_Handle)poolPtr;
 
     return true;
+}
+
+// ------------------------------------------------------------------------------------------------
+
+static unsigned char rtsafe_memory_pool_create_old(const char* poolName, size_t dataSize, size_t minPreallocated, size_t maxPreallocated, RtMemPool_Handle* handlePtr)
+{
+    return rtsafe_memory_pool_create2(handlePtr, poolName, dataSize, minPreallocated, maxPreallocated, 0);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -380,6 +378,15 @@ void rtsafe_memory_pool_deallocate(RtMemPool_Handle handle, void* memoryPtr)
 void lv2_rtmempool_init(LV2_RtMemPool_Pool* poolPtr)
 {
     poolPtr->create  = rtsafe_memory_pool_create;
+    poolPtr->destroy = rtsafe_memory_pool_destroy;
+    poolPtr->allocate_atomic = rtsafe_memory_pool_allocate_atomic;
+    poolPtr->allocate_sleepy = rtsafe_memory_pool_allocate_sleepy;
+    poolPtr->deallocate = rtsafe_memory_pool_deallocate;
+}
+
+void lv2_rtmempool_init_deprecated(LV2_RtMemPool_Pool_Deprecated* poolPtr)
+{
+    poolPtr->create  = rtsafe_memory_pool_create_old;
     poolPtr->destroy = rtsafe_memory_pool_destroy;
     poolPtr->allocate_atomic = rtsafe_memory_pool_allocate_atomic;
     poolPtr->allocate_sleepy = rtsafe_memory_pool_allocate_sleepy;

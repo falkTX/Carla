@@ -27,6 +27,9 @@
 /** max size of memory pool name, in chars, including terminating zero char */
 #define LV2_RTSAFE_MEMORY_POOL_NAME_MAX 128
 
+/** This extension used to be defined by a different URI */
+#define LV2_RTSAFE_MEMORY_POOL_DEPRECATED_URI "http://home.gna.org/lv2dynparam/rtmempool/v1"
+
 #ifdef __cplusplus
 extern "C" {
 #else
@@ -97,6 +100,17 @@ typedef struct _LV2_RtMemPool_Pool {
                      void * memory_ptr);
 
 } LV2_RtMemPool_Pool;
+
+/**
+ * Deprecated feature for backwards compatibility.
+ */
+typedef struct _LV2_RtMemPool_Pool_Deprecated {
+  unsigned char (*create)(const char*,size_t,size_t,size_t,LV2_RtMemPool_Handle*);
+  void  (*destroy)(LV2_RtMemPool_Handle);
+  void* (*allocate_atomic)(LV2_RtMemPool_Handle);
+  void* (*allocate_sleepy)(LV2_RtMemPool_Handle);
+  void  (*deallocate)(LV2_RtMemPool_Handle,void*);
+} LV2_RtMemPool_Pool_Deprecated;
 
 #ifdef __cplusplus
 } /* extern "C" */

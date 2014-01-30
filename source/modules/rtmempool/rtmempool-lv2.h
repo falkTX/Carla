@@ -28,4 +28,6 @@
  */
 void lv2_rtmempool_init(LV2_RtMemPool_Pool* poolPtr);
 
+void lv2_rtmempool_init_deprecated(LV2_RtMemPool_Pool_Deprecated* poolPtr);
+
 #endif // __RTMEMPOOL_LV2_H__

@@ -116,28 +116,29 @@ const uint32_t kFeatureIdLogs             =  7;
 const uint32_t kFeatureIdOptions          =  8;
 const uint32_t kFeatureIdPrograms         =  9;
 const uint32_t kFeatureIdRtMemPool        = 10;
-const uint32_t kFeatureIdStateMakePath    = 11;
-const uint32_t kFeatureIdStateMapPath     = 12;
-const uint32_t kFeatureIdStrictBounds     = 13;
-const uint32_t kFeatureIdUriMap           = 14;
-const uint32_t kFeatureIdUridMap          = 15;
-const uint32_t kFeatureIdUridUnmap        = 16;
-const uint32_t kFeatureIdWorker           = 17;
-const uint32_t kFeatureCountPlugin        = 18;
-const uint32_t kFeatureIdUiDataAccess     = 18;
-const uint32_t kFeatureIdUiInstanceAccess = 19;
-const uint32_t kFeatureIdUiIdle           = 20;
-const uint32_t kFeatureIdUiFixedSize      = 21;
-const uint32_t kFeatureIdUiMakeResident   = 22;
-const uint32_t kFeatureIdUiNoUserResize   = 23;
-const uint32_t kFeatureIdUiParent         = 24;
-const uint32_t kFeatureIdUiPortMap        = 25;
-const uint32_t kFeatureIdUiPortSubscribe  = 26;
-const uint32_t kFeatureIdUiResize         = 27;
-const uint32_t kFeatureIdUiTouch          = 28;
-const uint32_t kFeatureIdExternalUi       = 29;
-const uint32_t kFeatureIdExternalUiOld    = 30;
-const uint32_t kFeatureCountAll           = 31;
+const uint32_t kFeatureIdRtMemPoolOld     = 11;
+const uint32_t kFeatureIdStateMakePath    = 12;
+const uint32_t kFeatureIdStateMapPath     = 13;
+const uint32_t kFeatureIdStrictBounds     = 14;
+const uint32_t kFeatureIdUriMap           = 15;
+const uint32_t kFeatureIdUridMap          = 16;
+const uint32_t kFeatureIdUridUnmap        = 17;
+const uint32_t kFeatureIdWorker           = 18;
+const uint32_t kFeatureCountPlugin        = 19;
+const uint32_t kFeatureIdUiDataAccess     = 19;
+const uint32_t kFeatureIdUiInstanceAccess = 20;
+const uint32_t kFeatureIdUiIdle           = 21;
+const uint32_t kFeatureIdUiFixedSize      = 22;
+const uint32_t kFeatureIdUiMakeResident   = 23;
+const uint32_t kFeatureIdUiNoUserResize   = 24;
+const uint32_t kFeatureIdUiParent         = 25;
+const uint32_t kFeatureIdUiPortMap        = 26;
+const uint32_t kFeatureIdUiPortSubscribe  = 27;
+const uint32_t kFeatureIdUiResize         = 28;
+const uint32_t kFeatureIdUiTouch          = 29;
+const uint32_t kFeatureIdExternalUi       = 30;
+const uint32_t kFeatureIdExternalUiOld    = 31;
+const uint32_t kFeatureCountAll           = 32;
 
 // -----------------------------------------------------
 
@@ -460,6 +461,9 @@ public:
 
         if (fFeatures[kFeatureIdRtMemPool] != nullptr && fFeatures[kFeatureIdRtMemPool]->data != nullptr)
             delete (LV2_RtMemPool_Pool*)fFeatures[kFeatureIdRtMemPool]->data;
+
+        if (fFeatures[kFeatureIdRtMemPoolOld] != nullptr && fFeatures[kFeatureIdRtMemPoolOld]->data != nullptr)
+            delete (LV2_RtMemPool_Pool_Deprecated*)fFeatures[kFeatureIdRtMemPoolOld]->data;
 
         if (fFeatures[kFeatureIdUriMap] != nullptr && fFeatures[kFeatureIdUriMap]->data != nullptr)
             delete (LV2_URI_Map_Feature*)fFeatures[kFeatureIdUriMap]->data;
@@ -4161,6 +4165,9 @@ public:
         LV2_RtMemPool_Pool* const rtMemPoolFt = new LV2_RtMemPool_Pool;
         lv2_rtmempool_init(rtMemPoolFt);
 
+        LV2_RtMemPool_Pool_Deprecated* const rtMemPoolOldFt = new LV2_RtMemPool_Pool_Deprecated;
+        lv2_rtmempool_init_deprecated(rtMemPoolOldFt);
+
         LV2_URI_Map_Feature* const uriMapFt = new LV2_URI_Map_Feature;
         uriMapFt->callback_data             = this;
         uriMapFt->uri_to_id                 = carla_lv2_uri_to_id;
@@ -4215,6 +4222,9 @@ public:
 
         fFeatures[kFeatureIdRtMemPool]->URI  = LV2_RTSAFE_MEMORY_POOL__Pool;
         fFeatures[kFeatureIdRtMemPool]->data = rtMemPoolFt;
+
+        fFeatures[kFeatureIdRtMemPoolOld]->URI  = LV2_RTSAFE_MEMORY_POOL_DEPRECATED_URI;
+        fFeatures[kFeatureIdRtMemPoolOld]->data = rtMemPoolOldFt;
 
         fFeatures[kFeatureIdStateMakePath]->URI  = LV2_STATE__makePath;
         fFeatures[kFeatureIdStateMakePath]->data = stateMakePathFt;
