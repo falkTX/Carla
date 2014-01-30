@@ -41,7 +41,7 @@ extern "C" {
 static inline uint32_t
 lv2_atom_pad_size(uint32_t size)
 {
-	return (uint32_t)((int32_t)(size + 7) & (~7));
+	return (size + 7U) & (~7U);
 }
 
 /** Return the total size of @p atom, including the header. */
@@ -99,7 +99,6 @@ lv2_atom_sequence_is_end(const LV2_Atom_Sequence_Body* body,
 static inline const LV2_Atom_Event*
 lv2_atom_sequence_next(const LV2_Atom_Event* i)
 {
-	if (!i) return NULL;
 	return (const LV2_Atom_Event*)((const uint8_t*)i
 	                               + sizeof(LV2_Atom_Event)
 	                               + lv2_atom_pad_size(i->body.size));
@@ -208,8 +207,8 @@ lv2_atom_object_next(const LV2_Atom_Property_Body* i)
 	const LV2_Atom* const value = (const LV2_Atom*)(
 		(const uint8_t*)i + 2 * sizeof(uint32_t));
 	return (const LV2_Atom_Property_Body*)(
-		(const uint8_t*)i + lv2_atom_pad_size((uint32_t)sizeof(LV2_Atom_Property_Body)
-		                                      + value->size));
+		(const uint8_t*)i + lv2_atom_pad_size(
+			(uint32_t)sizeof(LV2_Atom_Property_Body) + value->size));
 }
 
 /**
