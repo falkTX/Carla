@@ -35,12 +35,24 @@ public:
         fBuffer.buf  = nullptr;
     }
 
+    ~Lv2AtomRingBufferControl()
+    {
+        if (fBuffer.buf != nullptr)
+            delete[] fBuffer.buf;
+    }
+
     // -------------------------------------------------------------------
 
     void createBuffer(const uint32_t size)
     {
         if (fBuffer.buf != nullptr)
+        {
             delete[] fBuffer.buf;
+            fBuffer.buf = nullptr;
+        }
+
+        // shouldn't really happen please...
+        CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
         fBuffer.size = size;
         fBuffer.buf  = new char[size];
@@ -98,6 +110,14 @@ public:
         tryWrite(atom,       sizeof(LV2_Atom));
         tryWrite(&portIndex, sizeof(int32_t));
         tryWrite(LV2_ATOM_BODY_CONST(atom), atom->size);
+        return commitWrite();
+    }
+
+    bool writeAtomChunk(const LV2_Atom* const atom, const void* const data, const int32_t portIndex) noexcept
+    {
+        tryWrite(atom,       sizeof(LV2_Atom));
+        tryWrite(&portIndex, sizeof(int32_t));
+        tryWrite(data,       atom->size);
         return commitWrite();
     }
 
@@ -172,6 +192,17 @@ public:
         const CarlaMutex::ScopedLocker sl(fMutex);
 
         return fRingBufferCtrl.writeAtom(atom, static_cast<int32_t>(portIndex));
+    }
+
+    // must NOT been locked, we do that here
+    bool putChunk(const LV2_Atom* const atom, const void* const data, const uint32_t portIndex)
+    {
+        CARLA_SAFE_ASSERT_RETURN(atom != nullptr && atom->size > 0, false);
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
+
+        const CarlaMutex::ScopedLocker sl(fMutex);
+
+        return fRingBufferCtrl.writeAtomChunk(atom, data, static_cast<int32_t>(portIndex));
     }
 
     // -------------------------------------------------------------------

@@ -81,28 +81,29 @@ const uint32_t CARLA_URI_MAP_ID_ATOM_TUPLE             = 14;
 const uint32_t CARLA_URI_MAP_ID_ATOM_URI               = 15;
 const uint32_t CARLA_URI_MAP_ID_ATOM_URID              = 16;
 const uint32_t CARLA_URI_MAP_ID_ATOM_VECTOR            = 17;
-const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM     = 18;
-const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT    = 19;
-const uint32_t CARLA_URI_MAP_ID_BUF_MAX_LENGTH         = 20;
-const uint32_t CARLA_URI_MAP_ID_BUF_MIN_LENGTH         = 21;
-const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE      = 22;
-const uint32_t CARLA_URI_MAP_ID_LOG_ERROR              = 23;
-const uint32_t CARLA_URI_MAP_ID_LOG_NOTE               = 24;
-const uint32_t CARLA_URI_MAP_ID_LOG_TRACE              = 25;
-const uint32_t CARLA_URI_MAP_ID_LOG_WARNING            = 26;
-const uint32_t CARLA_URI_MAP_ID_TIME_POSITION          = 27; // base type
-const uint32_t CARLA_URI_MAP_ID_TIME_BAR               = 28; // values
-const uint32_t CARLA_URI_MAP_ID_TIME_BAR_BEAT          = 29;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEAT              = 30;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEAT_UNIT         = 31;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR     = 32;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE  = 33;
-const uint32_t CARLA_URI_MAP_ID_TIME_FRAME             = 34;
-const uint32_t CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND = 35;
-const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 36;
-const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 37;
-const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 38;
-const uint32_t CARLA_URI_MAP_ID_COUNT                  = 39;
+const uint32_t CARLA_URI_MAP_ID_ATOM_WORKER            = 18; // custom
+const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM     = 19;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT    = 20;
+const uint32_t CARLA_URI_MAP_ID_BUF_MAX_LENGTH         = 21;
+const uint32_t CARLA_URI_MAP_ID_BUF_MIN_LENGTH         = 22;
+const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE      = 23;
+const uint32_t CARLA_URI_MAP_ID_LOG_ERROR              = 24;
+const uint32_t CARLA_URI_MAP_ID_LOG_NOTE               = 25;
+const uint32_t CARLA_URI_MAP_ID_LOG_TRACE              = 26;
+const uint32_t CARLA_URI_MAP_ID_LOG_WARNING            = 27;
+const uint32_t CARLA_URI_MAP_ID_TIME_POSITION          = 28; // base type
+const uint32_t CARLA_URI_MAP_ID_TIME_BAR               = 29; // values
+const uint32_t CARLA_URI_MAP_ID_TIME_BAR_BEAT          = 30;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEAT              = 31;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEAT_UNIT         = 32;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR     = 33;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE  = 34;
+const uint32_t CARLA_URI_MAP_ID_TIME_FRAME             = 35;
+const uint32_t CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND = 36;
+const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 37;
+const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 38;
+const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 39;
+const uint32_t CARLA_URI_MAP_ID_COUNT                  = 40;
 
 // LV2 Feature Ids
 const uint32_t kFeatureIdBufSizeBounded   =  0;
@@ -1226,7 +1227,12 @@ public:
             {
                 carla_stdout("OUTPUT message IN GUI REMOVED FROM BUFFER");
 
-                if (fUi.type == UI::TYPE_OSC)
+                if (atom->type == CARLA_URI_MAP_ID_ATOM_WORKER)
+                {
+                    CARLA_SAFE_ASSERT_CONTINUE(fExt.worker != nullptr && fExt.worker->work != nullptr);
+                    fExt.worker->work(fHandle, carla_lv2_worker_respond, this, atom->size, LV2_ATOM_BODY_CONST(atom));
+                }
+                else if (fUi.type == UI::TYPE_OSC)
                 {
                     if (pData->osc.data.target != nullptr)
                     {
@@ -1383,6 +1389,9 @@ public:
             FLOAT_CLEAR(fParamBuffers, params);
         }
 
+        const uint32_t eventBufferSize(MAX_DEFAULT_BUFFER_SIZE);
+        fLv2Options.sequenceSize = static_cast<int>(eventBufferSize);
+
         if (const uint32_t count = static_cast<uint32_t>(evIns.count()))
         {
             fEventsIn.createNew(count);
@@ -1394,18 +1403,18 @@ public:
                 if (type == CARLA_EVENT_DATA_ATOM)
                 {
                     fEventsIn.data[i].type = CARLA_EVENT_DATA_ATOM;
-                    fEventsIn.data[i].atom = lv2_atom_buffer_new(MAX_DEFAULT_BUFFER_SIZE, CARLA_URI_MAP_ID_NULL, CARLA_URI_MAP_ID_ATOM_SEQUENCE, true);
+                    fEventsIn.data[i].atom = lv2_atom_buffer_new(eventBufferSize, CARLA_URI_MAP_ID_NULL, CARLA_URI_MAP_ID_ATOM_SEQUENCE, true);
                 }
                 else if (type == CARLA_EVENT_DATA_EVENT)
                 {
                     fEventsIn.data[i].type  = CARLA_EVENT_DATA_EVENT;
-                    fEventsIn.data[i].event = lv2_event_buffer_new(MAX_DEFAULT_BUFFER_SIZE, LV2_EVENT_AUDIO_STAMP);
+                    fEventsIn.data[i].event = lv2_event_buffer_new(eventBufferSize, LV2_EVENT_AUDIO_STAMP);
                 }
                 else if (type == CARLA_EVENT_DATA_MIDI_LL)
                 {
                     fEventsIn.data[i].type = CARLA_EVENT_DATA_MIDI_LL;
-                    fEventsIn.data[i].midi.capacity = MAX_DEFAULT_BUFFER_SIZE;
-                    fEventsIn.data[i].midi.data     = new unsigned char[MAX_DEFAULT_BUFFER_SIZE];
+                    fEventsIn.data[i].midi.capacity = eventBufferSize;
+                    fEventsIn.data[i].midi.data     = new unsigned char[eventBufferSize];
                 }
             }
         }
@@ -1421,18 +1430,18 @@ public:
                 if (type == CARLA_EVENT_DATA_ATOM)
                 {
                     fEventsOut.data[i].type = CARLA_EVENT_DATA_ATOM;
-                    fEventsOut.data[i].atom = lv2_atom_buffer_new(MAX_DEFAULT_BUFFER_SIZE, CARLA_URI_MAP_ID_NULL, CARLA_URI_MAP_ID_ATOM_SEQUENCE, false);
+                    fEventsOut.data[i].atom = lv2_atom_buffer_new(eventBufferSize, CARLA_URI_MAP_ID_NULL, CARLA_URI_MAP_ID_ATOM_SEQUENCE, false);
                 }
                 else if (type == CARLA_EVENT_DATA_EVENT)
                 {
                     fEventsOut.data[i].type  = CARLA_EVENT_DATA_EVENT;
-                    fEventsOut.data[i].event = lv2_event_buffer_new(MAX_DEFAULT_BUFFER_SIZE, LV2_EVENT_AUDIO_STAMP);
+                    fEventsOut.data[i].event = lv2_event_buffer_new(eventBufferSize, LV2_EVENT_AUDIO_STAMP);
                 }
                 else if (type == CARLA_EVENT_DATA_MIDI_LL)
                 {
                     fEventsOut.data[i].type = CARLA_EVENT_DATA_MIDI_LL;
-                    fEventsOut.data[i].midi.capacity = MAX_DEFAULT_BUFFER_SIZE;
-                    fEventsOut.data[i].midi.data     = new unsigned char[MAX_DEFAULT_BUFFER_SIZE];
+                    fEventsOut.data[i].midi.capacity = eventBufferSize;
+                    fEventsOut.data[i].midi.data     = new unsigned char[eventBufferSize];
                 }
             }
         }
@@ -1987,6 +1996,12 @@ public:
             pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
         }
 
+        if (fExt.worker != nullptr || (fUi.type != UI::TYPE_NULL && fEventsIn.count > 0 && (fEventsIn.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
+            fAtomQueueIn.createBuffer(eventBufferSize);
+
+        if (fExt.worker != nullptr || (fUi.type != UI::TYPE_NULL && fEventsOut.count > 0 && (fEventsOut.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
+            fAtomQueueOut.createBuffer(eventBufferSize);
+
         if (fEventsIn.ctrl != nullptr && fEventsIn.ctrl->port == nullptr)
             fEventsIn.ctrl->port = pData->event.portIn;
 
@@ -2509,10 +2524,15 @@ public:
                                     atom->type, carla_lv2_urid_unmap(this, atom->type),
                                     atom->size, lv2_atom_total_size(atom));
 
-                        if (! lv2_atom_buffer_write(&evInAtomIters[j], 0, 0, atom->type, atom->size, LV2_ATOM_BODY_CONST(atom)))
+                        if (atom->type == CARLA_URI_MAP_ID_ATOM_WORKER)
+                        {
+                            CARLA_SAFE_ASSERT_CONTINUE(fExt.worker != nullptr && fExt.worker->work_response != nullptr);
+                            fExt.worker->work_response(fHandle, atom->size, LV2_ATOM_BODY_CONST(atom));
+                        }
+                        else if (! lv2_atom_buffer_write(&evInAtomIters[j], 0, 0, atom->type, atom->size, LV2_ATOM_BODY_CONST(atom)))
                         {
                             carla_stdout("Event input buffer full, at least 1 message lost");
-                            break;
+                            continue;
                         }
                     }
                 }
@@ -3334,6 +3354,17 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // OSC stuff
+
+    void updateOscData(const lo_address& source, const char* const url) override
+    {
+        CarlaPlugin::updateOscData(source, url);
+
+        for (size_t i=CARLA_URI_MAP_ID_COUNT, count=fCustomURIDs.count(); i < count; ++i)
+            osc_send_lv2_urid_map(pData->osc.data, static_cast<uint32_t>(i), fCustomURIDs.getAt(i));
+    }
+
+    // -------------------------------------------------------------------
     // Post-poned UI Stuff
 
     void uiParameterChange(const uint32_t index, const float value) noexcept override
@@ -3828,31 +3859,31 @@ public:
     LV2_Worker_Status handleWorkerSchedule(const uint32_t size, const void* const data)
     {
         CARLA_SAFE_ASSERT_RETURN(fExt.worker != nullptr && fExt.worker->work != nullptr, LV2_WORKER_ERR_UNKNOWN);
+        CARLA_SAFE_ASSERT_RETURN(fEventsIn.ctrl != nullptr, LV2_WORKER_ERR_UNKNOWN);
         carla_stdout("Lv2Plugin::handleWorkerSchedule(%i, %p)", size, data);
 
-        //if (pData->engine->isOffline())
+        if (pData->engine->isOffline())
+        {
             fExt.worker->work(fHandle, carla_lv2_worker_respond, this, size, data);
-        //else
-        //   postponeEvent(PluginPostEventCustom, size, 0, 0.0, data);
+            return LV2_WORKER_SUCCESS;
+        }
 
-        return LV2_WORKER_SUCCESS;
+        LV2_Atom atom;
+        atom.size = size;
+        atom.type = CARLA_URI_MAP_ID_ATOM_WORKER;
+
+        return fAtomQueueOut.putChunk(&atom, data, fEventsIn.ctrl->rindex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
     }
 
     LV2_Worker_Status handleWorkerRespond(const uint32_t size, const void* const data)
     {
         carla_stdout("Lv2Plugin::handleWorkerRespond(%i, %p)", size, data);
 
-#if 0
-        LV2_Atom_Worker workerAtom;
-        workerAtom.atom.type = CARLA_URI_MAP_ID_ATOM_WORKER;
-        workerAtom.atom.size = sizeof(LV2_Atom_Worker_Body);
-        workerAtom.body.size = size;
-        workerAtom.body.data = data;
+        LV2_Atom atom;
+        atom.size = size;
+        atom.type = CARLA_URI_MAP_ID_ATOM_WORKER;
 
-        atomQueueIn.put(0, (const LV2_Atom*)&workerAtom);
-#endif
-
-        return LV2_WORKER_SUCCESS;
+        return fAtomQueueIn.putChunk(&atom, data, fEventsIn.ctrl->rindex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
     }
 
     // -------------------------------------------------------------------
@@ -4292,6 +4323,7 @@ public:
             // set identifier string
             CarlaString identifier("LV2/");
             identifier += uri;
+            pData->identifier = identifier.dup();
 
             // load settings
             pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
@@ -4323,7 +4355,8 @@ public:
 #ifdef BUILD_BRIDGE
         const bool preferUiBridges(false);
 #else
-        const bool preferUiBridges(pData->engine->getOptions().preferUiBridges && (pData->hints & PLUGIN_IS_BRIDGE) == 0);
+        //const bool preferUiBridges(pData->engine->getOptions().preferUiBridges && (pData->hints & PLUGIN_IS_BRIDGE) == 0);
+        const bool preferUiBridges(false);
 #endif
 
         for (uint32_t i=0; i < fRdfDescriptor->UICount; ++i)
@@ -4629,8 +4662,8 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL,);
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0',);
+        carla_debug("Lv2Plugin::handleUridMap(%i v " P_SIZE ", \"%s\")", urid, fCustomURIDs.count(), uri);
         CARLA_SAFE_ASSERT_RETURN(urid == fCustomURIDs.count(),);
-        carla_debug("Lv2Plugin::handleUridMap(%i, \"%s\")", urid, uri);
 
         fCustomURIDs.append(carla_strdup(uri));
     }
@@ -5008,6 +5041,8 @@ private:
             return LV2_ATOM__URID;
         if (urid == CARLA_URI_MAP_ID_ATOM_VECTOR)
             return LV2_ATOM__Vector;
+        if (urid == CARLA_URI_MAP_ID_ATOM_WORKER)
+            return nullptr; // custom
         if (urid == CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM)
             return LV2_ATOM__atomTransfer;
         if (urid == CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)
@@ -5168,7 +5203,7 @@ int CarlaEngineOsc::handleMsgLv2AtomTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 int CarlaEngineOsc::handleMsgLv2UridMap(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "is");
-    carla_debug("CarlaOsc::handleMsgLv2EventTransfer()");
+    carla_debug("CarlaOsc::handleMsgLv2UridMap()");
 
     const int32_t urid    = argv[0]->i;
     const char* const uri = (const char*)&argv[1]->s;
