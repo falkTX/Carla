@@ -16,6 +16,7 @@
  */
 
 #include "CarlaPluginUi.hpp"
+#include "CarlaHost.h"
 
 #ifdef HAVE_X11
 # include <X11/Xatom.h>
@@ -54,6 +55,9 @@ public:
 
         Atom wmDelete = XInternAtom(fDisplay, "WM_DELETE_WINDOW", True);
         XSetWMProtocols(fDisplay, fWindow, &wmDelete, 1);
+
+        if (const uintptr_t transientId = carla_standalone_get_transient_win_id())
+            setTransientWinId(transientId);
     }
 
     ~X11PluginUi() override
@@ -167,6 +171,85 @@ private:
     Window   fWindow;
 };
 #endif
+
+// -----------------------------------------------------
+
+bool CarlaPluginUi::tryTransientWinIdMatch(const char* const uiTitle, const uintptr_t winId)
+{
+    CARLA_SAFE_ASSERT_RETURN(uiTitle != nullptr && uiTitle[0] != '\0', true);
+    CARLA_SAFE_ASSERT_RETURN(winId != 0, true);
+
+#if defined(CARLA_OS_MAC)
+#elif defined(CARLA_OS_WIN)
+#elif defined(HAVE_X11)
+    struct ScopedDisplay {
+        Display* display;
+        ScopedDisplay() : display(XOpenDisplay(0)) {}
+        ~ScopedDisplay() { if (display!=nullptr) XCloseDisplay(display); }
+    };
+    struct ScopedFreeData {
+        uchar* data;
+        ScopedFreeData(uchar* d) : data(d) {}
+        ~ScopedFreeData() { XFree(data); }
+    };
+
+    const ScopedDisplay sd;
+    CARLA_SAFE_ASSERT_RETURN(sd.display != nullptr, true);
+
+    Atom _ncl = XInternAtom(sd.display, "_NET_CLIENT_LIST" , True);
+    Atom _nwn = XInternAtom(sd.display, "_NET_WM_NAME", False);
+    Atom utf8 = XInternAtom(sd.display, "UTF8_STRING", False);
+
+    Atom actualType;
+    int actualFormat;
+    unsigned long numWindows, bytesAfter;
+    unsigned char* data = nullptr;
+
+    int status = XGetWindowProperty(sd.display, DefaultRootWindow(sd.display), _ncl, 0L, (~0L), False, AnyPropertyType, &actualType, &actualFormat, &numWindows, &bytesAfter, &data);
+
+    CARLA_SAFE_ASSERT_RETURN(data != nullptr, true);
+    const ScopedFreeData sfd(data);
+
+    CARLA_SAFE_ASSERT_RETURN(status == Success, true);
+    CARLA_SAFE_ASSERT_RETURN(actualFormat == 32, true);
+    CARLA_SAFE_ASSERT_RETURN(numWindows != 0, true);
+
+    Window* windows = (Window*)data;
+    Window  lastGoodWindow = 0;
+
+    for (ulong i = 0; i < numWindows; i++)
+    {
+        const Window window(windows[i]);
+        CARLA_SAFE_ASSERT_CONTINUE(window != 0);
+
+        unsigned long nameSize;
+        unsigned char* nameData = nullptr;
+
+        status = XGetWindowProperty(sd.display, window, _nwn, 0L, (~0L), False, utf8, &actualType, &actualFormat, &nameSize, &bytesAfter, &nameData);
+
+        if (nameData == nullptr)
+            continue;
+
+        const ScopedFreeData sfd2(nameData);
+
+        CARLA_SAFE_ASSERT_CONTINUE(status == Success);
+        CARLA_SAFE_ASSERT_CONTINUE(nameSize != 0);
+
+        if (std::strcmp((const char*)nameData, uiTitle) == 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(lastGoodWindow == 0,  true);
+            lastGoodWindow = window;
+        }
+    }
+
+    if (lastGoodWindow == 0)
+        return false;
+
+    XSetTransientForHint(sd.display, lastGoodWindow, (Window)winId);
+    XFlush(sd.display);
+    return true;
+#endif
+}
 
 // -----------------------------------------------------
 
