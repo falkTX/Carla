@@ -30,8 +30,9 @@
 class X11PluginUi : public CarlaPluginUi
 {
 public:
-    X11PluginUi() noexcept
-        : fDisplay(nullptr),
+    X11PluginUi(CloseCallback* cb) noexcept
+        : CarlaPluginUi(cb),
+          fDisplay(nullptr),
           fWindow(0)
      {
         fDisplay = XOpenDisplay(0);
@@ -90,6 +91,23 @@ public:
 
     void idle() override
     {
+        for (XEvent event; XPending(fDisplay) > 0;)
+        {
+            XNextEvent(fDisplay, &event);
+
+            switch (event.type)
+            {
+            case ClientMessage:
+                if (std::strcmp(XGetAtomName(fDisplay, event.xclient.message_type), "WM_PROTOCOLS") == 0)
+                {
+                    CARLA_SAFE_ASSERT_BREAK(fCallback != nullptr);
+                    fCallback->handlePluginUiClosed();
+                }
+                break;
+            default:
+                break;
+            }
+        }
     }
 
     void focus() override
@@ -145,23 +163,23 @@ private:
 // -----------------------------------------------------
 
 #ifdef CARLA_OS_MAC
-CarlaPluginUi* CarlaPluginUi::newCocoa()
+CarlaPluginUi* CarlaPluginUi::newCocoa(CloseCallback* cb)
 {
-    return new CocoaPluginUi();
+    return new CocoaPluginUi(cb);
 }
 #endif
 
 #ifdef CARLA_OS_WIN
-CarlaPluginUi* CarlaPluginUi::newWindows()
+CarlaPluginUi* CarlaPluginUi::newWindows(CloseCallback* cb)
 {
-    return new WindowsPluginUi();
+    return new WindowsPluginUi(cb);
 }
 #endif
 
 #ifdef HAVE_X11
-CarlaPluginUi* CarlaPluginUi::newX11()
+CarlaPluginUi* CarlaPluginUi::newX11(CloseCallback* cb)
 {
-    return new X11PluginUi();
+    return new X11PluginUi(cb);
 }
 #endif
 

@@ -331,7 +331,8 @@ struct Lv2PluginOptions {
 
 // -----------------------------------------------------
 
-class Lv2Plugin : public CarlaPlugin
+class Lv2Plugin : public CarlaPlugin,
+                         CarlaPluginUi::CloseCallback
 {
 public:
     Lv2Plugin(CarlaEngine* const engine, const unsigned int id)
@@ -1127,7 +1128,7 @@ public:
 
                 case LV2_UI_COCOA:
 #ifdef CARLA_OS_MAC
-                    fUi.window = CarlaPluginUi::newCocoa();
+                    fUi.window = CarlaPluginUi::newCocoa(this);
 #else
                     msg = "UI is for MacOS only";
 #endif
@@ -1135,7 +1136,7 @@ public:
 
                 case LV2_UI_WINDOWS:
 #ifdef CARLA_OS_WIN
-                    fUi.window = CarlaPluginUi::newWindows();
+                    fUi.window = CarlaPluginUi::newWindows(this);
 #else
                     msg = "UI is for Windows only";
 #endif
@@ -1143,7 +1144,7 @@ public:
 
                 case LV2_UI_X11:
 #ifdef HAVE_X11
-                    fUi.window = CarlaPluginUi::newX11();
+                    fUi.window = CarlaPluginUi::newX11(this);
 #else
                     msg = "UI is only for systems with X11";
 #endif
@@ -1262,7 +1263,9 @@ public:
 
         if (fUi.handle != nullptr && fUi.descriptor != nullptr)
         {
-            if (fUi.type == UI::TYPE_EXTERNAL && fUi.widget != nullptr)
+            if (fUi.type == UI::TYPE_EMBED && fUi.window != nullptr)
+                fUi.window->idle();
+            else if (fUi.type == UI::TYPE_EXTERNAL && fUi.widget != nullptr)
                 LV2_EXTERNAL_UI_RUN((LV2_External_UI_Widget*)fUi.widget);
 
             if (fExt.uiidle != nullptr && fExt.uiidle->idle(fUi.handle) != 0)
@@ -4025,6 +4028,22 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fUi.type == UI::TYPE_EXTERNAL,);
         carla_debug("Lv2Plugin::handleExternalUiClosed()");
+
+        if (fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->cleanup != nullptr)
+            fUi.descriptor->cleanup(fUi.handle);
+
+        fUi.handle = nullptr;
+        fUi.widget = nullptr;
+        pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+    }
+
+    void handlePluginUiClosed() override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fUi.type == UI::TYPE_EMBED,);
+        CARLA_SAFE_ASSERT_RETURN(fUi.window != nullptr,);
+        carla_debug("Lv2Plugin::handleExternalUiClosed()");
+
+        fUi.window->hide();
 
         if (fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->cleanup != nullptr)
             fUi.descriptor->cleanup(fUi.handle);

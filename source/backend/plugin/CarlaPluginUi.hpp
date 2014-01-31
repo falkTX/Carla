@@ -24,9 +24,13 @@
 
 class CarlaPluginUi
 {
-protected:
-    CarlaPluginUi() noexcept {}
 public:
+    class CloseCallback {
+    public:
+        virtual ~CloseCallback() {}
+        virtual void handlePluginUiClosed() = 0;
+    };
+
     virtual ~CarlaPluginUi() {}
     virtual void show() = 0;
     virtual void hide() = 0;
@@ -37,14 +41,18 @@ public:
     virtual void* getPtr() const noexcept = 0;
 
 #ifdef CARLA_OS_MAC
-    static CarlaPluginUi* newCocoa();
+    static CarlaPluginUi* newCocoa(CloseCallback*);
 #endif
 #ifdef CARLA_OS_WIN
-    static CarlaPluginUi* newWindows();
+    static CarlaPluginUi* newWindows(CloseCallback*);
 #endif
 #ifdef HAVE_X11
-    static CarlaPluginUi* newX11();
+    static CarlaPluginUi* newX11(CloseCallback*);
 #endif
+
+protected:
+    CloseCallback* fCallback;
+    CarlaPluginUi(CloseCallback* cb) noexcept : fCallback(cb) {}
 };
 
 // -----------------------------------------------------
