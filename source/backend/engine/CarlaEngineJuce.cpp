@@ -140,11 +140,11 @@ public:
             return false;
         }
 
-        pData->bufferSize = fDevice->getCurrentBufferSizeSamples();
+        pData->bufferSize = static_cast<uint32_t>(fDevice->getCurrentBufferSizeSamples());
         pData->sampleRate = fDevice->getCurrentSampleRate();
 
-        pData->bufAudio.inCount  = inputChannels.countNumberOfSetBits();
-        pData->bufAudio.outCount = outputChannels.countNumberOfSetBits();
+        pData->bufAudio.inCount  = static_cast<uint32_t>(inputChannels.countNumberOfSetBits());
+        pData->bufAudio.outCount = static_cast<uint32_t>(outputChannels.countNumberOfSetBits());
 
         CARLA_ASSERT(pData->bufAudio.outCount > 0);
 
@@ -250,14 +250,14 @@ public:
 
             for (uint i=0; i < pData->bufAudio.inCount; ++i)
             {
-                String inputName(inputNames[i]);
+                String inputName(inputNames[static_cast<int>(i)]);
 
                 if (inputName.trim().isNotEmpty())
                     std::snprintf(strBuf, STR_MAX, "%s", inputName.toRawUTF8());
                 else
                     std::snprintf(strBuf, STR_MAX, "capture_%i", i+1);
 
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_IN, RACK_PATCHBAY_GROUP_AUDIO_IN*1000 + i, PATCHBAY_PORT_TYPE_AUDIO, 0.0f, strBuf);
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_IN, static_cast<int>(RACK_PATCHBAY_GROUP_AUDIO_IN*1000 + i), PATCHBAY_PORT_TYPE_AUDIO, 0.0f, strBuf);
             }
         }
 
@@ -275,14 +275,14 @@ public:
 
             for (uint i=0; i < pData->bufAudio.outCount; ++i)
             {
-                String outputName(outputNames[i]);
+                String outputName(outputNames[static_cast<int>(i)]);
 
                 if (outputName.trim().isNotEmpty())
                     std::snprintf(strBuf, STR_MAX, "%s", outputName.toRawUTF8());
                 else
                     std::snprintf(strBuf, STR_MAX, "playback_%i", i+1);
 
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_OUT, RACK_PATCHBAY_GROUP_AUDIO_OUT*1000 + i, PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, strBuf);
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_OUT, static_cast<int>(RACK_PATCHBAY_GROUP_AUDIO_OUT*1000 + i), PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, strBuf);
             }
         }
 
@@ -448,7 +448,9 @@ protected:
         }
         else
         {
-            pData->processRackFull(const_cast<float**>(inputChannelData), numInputChannels, outputChannelData, numOutputChannels, numSamples, false);
+            pData->processRackFull(const_cast<float**>(inputChannelData), static_cast<uint32_t>(numInputChannels),
+                                                       outputChannelData, static_cast<uint32_t>(numOutputChannels),
+                                   static_cast<uint32_t>(numSamples), false);
         }
 
         // output events
@@ -575,7 +577,7 @@ const char* CarlaEngine::getJuceApiName(const unsigned int index)
     if (static_cast<int>(index) >= gJuceDeviceTypes.size())
         return nullptr;
 
-    AudioIODeviceType* const deviceType(gJuceDeviceTypes[index]);
+    AudioIODeviceType* const deviceType(gJuceDeviceTypes[static_cast<int>(index)]);
 
     if (deviceType == nullptr)
         return nullptr;
@@ -590,7 +592,7 @@ const char* const* CarlaEngine::getJuceApiDeviceNames(const unsigned int index)
     if (static_cast<int>(index) >= gJuceDeviceTypes.size())
         return nullptr;
 
-    AudioIODeviceType* const deviceType(gJuceDeviceTypes[index]);
+    AudioIODeviceType* const deviceType(gJuceDeviceTypes[static_cast<int>(index)]);
 
     if (deviceType == nullptr)
         return nullptr;
@@ -630,7 +632,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const unsigned int 
         return nullptr;
     }
 
-    AudioIODeviceType* const deviceType(gJuceDeviceTypes[index]);
+    AudioIODeviceType* const deviceType(gJuceDeviceTypes[static_cast<int>(index)]);
 
     if (deviceType == nullptr)
         return nullptr;
@@ -670,7 +672,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const unsigned int 
         uint32_t* const bufferSizes(new uint32_t[bufferSizesCount+1]);
 
         for (int i=0; i < bufferSizesCount; ++i)
-            bufferSizes[i] = device->getBufferSizeSamples(i);
+            bufferSizes[i] = static_cast<uint32_t>(device->getBufferSizeSamples(i));
         bufferSizes[bufferSizesCount] = 0;
 
         devInfo.bufferSizes = bufferSizes;

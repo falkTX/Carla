@@ -20,6 +20,10 @@
 
 #ifdef WANT_LV2
 
+#ifdef HAVE_JUCE
+# include "juce_gui_basics.h"
+#endif
+
 #include "CarlaLv2Utils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "Lv2AtomQueue.hpp"
