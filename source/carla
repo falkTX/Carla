@@ -303,11 +303,8 @@ if __name__ == '__main__':
 
     Carla.gui = CarlaHostW()
 
-    # test
-    win = Carla.gui.winId()
-
-    if win:
-        os.environ["CARLA_TRANSIENT_WINDOW"] = str(win)
+    # set our gui as transient for all plugins UIs
+    Carla.host.set_engine_option(ENGINE_OPTION_DEBUG, -1729, str(Carla.gui.winId()))
 
     # -------------------------------------------------------------
     # Load project file if set

@@ -1079,6 +1079,7 @@ CARLA_EXPORT const char* carla_get_host_osc_url_udp();
 /*!
  * Implemented in standalone.
  */
+extern ulong carla_standalone_get_transient_win_id();
 extern const char* carla_standalone_file_callback(FileCallbackOpcode action, bool isDir, const char* title, const char* filter);
 
 #endif /* CARLA_HOST_H_INCLUDED */

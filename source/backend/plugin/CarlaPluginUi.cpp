@@ -149,6 +149,14 @@ public:
         XStoreName(fDisplay, fWindow, title);
     }
 
+    void setTransientWinId(const uintptr_t winId) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+
+        XSetTransientForHint(fDisplay, fWindow, (Window)winId);
+    }
+
     void* getPtr() const noexcept
     {
         return (void*)fWindow;

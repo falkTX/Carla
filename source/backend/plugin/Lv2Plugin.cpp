@@ -24,6 +24,8 @@
 #include "CarlaMathUtils.hpp"
 
 #include "CarlaLv2Utils.hpp"
+
+#include "CarlaHost.h"
 #include "CarlaPluginUi.hpp"
 #include "Lv2AtomQueue.hpp"
 
@@ -1157,6 +1159,9 @@ public:
 
                 if (fUi.window == nullptr)
                     return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, msg);
+
+                if (const uintptr_t transientId = carla_standalone_get_transient_win_id())
+                    fUi.window->setTransientWinId(transientId);
 
                 fUi.window->setTitle(fUi.title);
 

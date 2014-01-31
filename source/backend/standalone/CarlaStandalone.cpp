@@ -114,6 +114,15 @@ struct CarlaBackendStandalone {
 static CarlaBackendStandalone gStandalone;
 
 // -------------------------------------------------------------------------------------------------------------------
+
+static ulong gTransientWinId = 0;
+
+ulong carla_standalone_get_transient_win_id()
+{
+    return gTransientWinId;
+}
+
+// -------------------------------------------------------------------------------------------------------------------
 // API
 
 const char* carla_get_complete_license_text()
@@ -571,6 +580,13 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
     switch (option)
     {
     case CB::ENGINE_OPTION_DEBUG:
+        if (value == -1729)
+        {
+            CARLA_SAFE_ASSERT_BREAK(valueStr != nullptr && valueStr[0] != '\0');
+            const long winId(std::atol(valueStr));
+            CARLA_SAFE_ASSERT_BREAK(winId != 0);
+            gTransientWinId = static_cast<ulong>(winId);
+        }
         break;
 
     case CB::ENGINE_OPTION_PROCESS_MODE:
