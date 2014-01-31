@@ -2092,7 +2092,7 @@ private:
 
     static bool addUniqueMultiSynth(const char* const label)
     {
-        CARLA_SAFE_ASSERT_RETURN(label != nullptr, true);
+        CARLA_SAFE_ASSERT_RETURN(label != nullptr && label[0] != '\0', false);
 
         for (LinkedList<const char*>::Itenerator it = sMultiSynthList.begin(); it.valid(); it.next())
         {
@@ -2108,17 +2108,17 @@ private:
 
     static void removeUniqueMultiSynth(const char* const label)
     {
-        CARLA_SAFE_ASSERT_RETURN(label != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(label != nullptr && label[0] != '\0',);
 
         for (LinkedList<const char*>::Itenerator it = sMultiSynthList.begin(); it.valid(); it.next())
         {
-            const char*& itLabel(it.getValue());
+            const char* const itLabel(it.getValue());
 
             if (std::strcmp(label, itLabel) == 0)
             {
                 sMultiSynthList.remove(it);
                 delete[] itLabel;
-                return;
+                break;
             }
         }
     }

@@ -24,6 +24,7 @@
 #include "CarlaMathUtils.hpp"
 
 #include "CarlaLv2Utils.hpp"
+#include "CarlaPluginUi.hpp"
 #include "Lv2AtomQueue.hpp"
 
 #include "../engine/CarlaEngineOsc.hpp"
@@ -34,11 +35,6 @@ extern "C" {
 
 #include <QtCore/QDir>
 #include <QtCore/QUrl>
-
-#ifdef HAVE_DGL
-# include "dgl/App.hpp"
-# include "dgl/Window.hpp"
-#endif
 
 // -----------------------------------------------------
 
@@ -422,6 +418,12 @@ public:
             {
                 delete[] fUi.title;
                 fUi.title = nullptr;
+            }
+
+            if (fUi.window != nullptr)
+            {
+                delete fUi.window;
+                fUi.window = nullptr;
             }
 
             fUi.rdfDescriptor = nullptr;
@@ -918,7 +920,8 @@ public:
         delete[] fUi.title;
         fUi.title = carla_strdup(guiTitle.toUtf8().constData());
 
-        fUi.glWindow.setTitle(fUi.title);
+        if (fUi.window != nullptr)
+            fUi.window->setTitle(fUi.title);
 
         if (fFeatures[kFeatureIdExternalUi] != nullptr && fFeatures[kFeatureIdExternalUi]->data != nullptr)
             ((LV2_External_UI_Host*)fFeatures[kFeatureIdExternalUi]->data)->plugin_human_id = fUi.title;
@@ -1109,6 +1112,64 @@ public:
         {
             if (fUi.handle == nullptr)
             {
+                const char* msg = nullptr;
+
+                switch (fUi.rdfDescriptor->Type)
+                {
+                case LV2_UI_GTK2:
+                case LV2_UI_GTK3:
+                case LV2_UI_QT4:
+                case LV2_UI_QT5:
+                case LV2_UI_EXTERNAL:
+                case LV2_UI_OLD_EXTERNAL:
+                    msg = "Invalid UI type";
+                    break;
+
+                case LV2_UI_COCOA:
+#ifdef CARLA_OS_MAC
+                    fUi.window = CarlaPluginUi::newCocoa();
+#else
+                    msg = "UI is for MacOS only";
+#endif
+                    break;
+
+                case LV2_UI_WINDOWS:
+#ifdef CARLA_OS_WIN
+                    fUi.window = CarlaPluginUi::newWindows();
+#else
+                    msg = "UI is for Windows only";
+#endif
+                    break;
+
+                case LV2_UI_X11:
+#ifdef HAVE_X11
+                    fUi.window = CarlaPluginUi::newX11();
+#else
+                    msg = "UI is only for systems with X11";
+#endif
+                    break;
+
+                default:
+                    msg = "Unknown UI type";
+                    break;
+                }
+
+                if (fUi.window == nullptr)
+                    return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, msg);
+
+                fUi.window->setTitle(fUi.title);
+
+#if 0
+                if (const char* const win = getenv("CARLA_TRANSIENT_WINDOW"))
+                {
+                    const long winl = std::atol(win);
+                    carla_stderr2("got transient, %s vs %li", win, winl);
+                    fUi.window->setTransient(winl);
+                }
+#endif
+
+                fFeatures[kFeatureIdUiParent]->data = fUi.window->getPtr();
+
                 fUi.widget = nullptr;
                 fUi.handle = fUi.descriptor->instantiate(fUi.descriptor, fRdfDescriptor->URI, fUi.rdfDescriptor->Bundle,
                                                           carla_lv2_ui_write_function, this, &fUi.widget, fFeatures);
@@ -1127,14 +1188,15 @@ public:
                     fUi.handle = nullptr;
                 }
 
-                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, "Plugin refused to open its own UI");
-                return;
+                return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, "Plugin refused to open its own UI");
             }
 
             updateUi();
 
             if (fUi.type == UI::TYPE_EMBED)
-                fUi.glWindow.show();
+            {
+                fUi.window->show();
+            }
             else
                 LV2_EXTERNAL_UI_SHOW((LV2_External_UI_Widget*)fUi.widget);
         }
@@ -1142,7 +1204,10 @@ public:
         {
             if (fUi.type == UI::TYPE_EMBED)
             {
-                fUi.glWindow.hide();
+                CARLA_SAFE_ASSERT(fUi.window != nullptr);
+
+                if (fUi.window != nullptr)
+                    fUi.window->hide();
             }
             else
             {
@@ -1155,9 +1220,6 @@ public:
             fUi.descriptor->cleanup(fUi.handle);
             fUi.handle = nullptr;
             fUi.widget = nullptr;
-
-            if (fUi.type == UI::TYPE_EMBED)
-                fUi.glWindow.close();
         }
     }
 
@@ -3990,11 +4052,12 @@ public:
 
     int handleUiResize(const int width, const int height)
     {
+        CARLA_SAFE_ASSERT_RETURN(fUi.window != nullptr, 1);
         CARLA_SAFE_ASSERT_RETURN(width > 0, 1);
         CARLA_SAFE_ASSERT_RETURN(height > 0, 1);
         carla_debug("Lv2Plugin::handleUiResize(%i, %i)", width, height);
 
-        fUi.glWindow.setSize(static_cast<uint>(width), static_cast<uint>(height));
+        fUi.window->setSize(static_cast<uint>(width), static_cast<uint>(height), true);
 
         return 0;
     }
@@ -4682,16 +4745,6 @@ public:
         QString guiTitle(QString("%1 (GL GUI)").arg(pData->name));
         fUi.title = carla_strdup(guiTitle.toUtf8().constData());
 
-        fUi.glWindow.setResizable(isUiResizable());
-        fUi.glWindow.setTitle(fUi.title);
-
-        if (const char* const win = getenv("CARLA_TRANSIENT_WINDOW"))
-        {
-            const long winl = std::atol(win);
-            carla_stderr2("got transient, %s vs %li", win, winl);
-            fUi.glWindow.setTransient(winl);
-        }
-
         // ---------------------------------------------------------------
         // initialize ui features (part 1)
 
@@ -4735,7 +4788,7 @@ public:
         fFeatures[kFeatureIdUiNoUserResize]->data  = nullptr;
 
         fFeatures[kFeatureIdUiParent]->URI         = LV2_UI__parent;
-        fFeatures[kFeatureIdUiParent]->data        = (void*)fUi.glWindow.getWindowId();
+        fFeatures[kFeatureIdUiParent]->data        = nullptr;
 
         fFeatures[kFeatureIdUiPortMap]->URI        = LV2_UI__portMap;
         fFeatures[kFeatureIdUiPortMap]->data       = uiPortMapFt;
@@ -4839,8 +4892,7 @@ private:
         const LV2_RDF_UI*       rdfDescriptor;
 
         const char* title;
-        DGL::App glApp;
-        DGL::Window glWindow;
+        CarlaPluginUi* window;
 
         UI()
             : type(TYPE_NULL),
@@ -4849,8 +4901,7 @@ private:
               descriptor(nullptr),
               rdfDescriptor(nullptr),
               title(nullptr),
-              glApp(),
-              glWindow(glApp) {}
+              window(nullptr) {}
 
         ~UI()
         {
@@ -4859,6 +4910,7 @@ private:
             CARLA_ASSERT(descriptor == nullptr);
             CARLA_ASSERT(rdfDescriptor == nullptr);
             CARLA_ASSERT(title == nullptr);
+            CARLA_ASSERT(window == nullptr);
         }
     } fUi;
 

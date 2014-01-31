@@ -206,6 +206,10 @@ ifeq ($(HAVE_JUCE),true)
 BASE_FLAGS += -DHAVE_JUCE
 endif
 
+ifeq ($(HAVE_X11),true)
+BASE_FLAGS += -DHAVE_X11
+endif
+
 # --------------------------------------------------------------
 # Set libs stuff (part 1)
 

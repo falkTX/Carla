@@ -9,6 +9,7 @@ include ../Makefile.mk
 # ----------------------------------------------------------------------------------------------------------------------------
 
 CARLA_ENGINE_OSC_HPP      = ../engine/CarlaEngineOsc.hpp $(CARLA_BACKEND_H) $(CARLA_OSC_UTILS_HPP) $(CARLA_STRING_HPP)
+CARLA_PLUGIN_UI_HPP       = CarlaPluginUi.hpp $(CARLA_UTILS_HPP)
 CARLA_PLUGIN_THREAD_HPP   = CarlaPluginThread.hpp $(CARLA_BACKEND_H) $(CARLA_THREAD_HPP)
 CARLA_PLUGIN_INTERNAL_HPP = CarlaPluginInternal.hpp $(CARLA_PLUGIN_HPP) $(CARLA_PLUGIN_THREAD_HPP) $(CARLA_OSC_UTILS_HPP) $(CARLA_STATE_UTILS_HPP) $(CARLA_MUTEX_HPP) $(RT_LINKED_LIST_HPP) $(CARLA_MIDI_H)
 
@@ -18,6 +19,7 @@ OBJS = \
 	CarlaPlugin.cpp.o \
 	CarlaPluginInternal.cpp.o \
 	CarlaPluginThread.cpp.o \
+	CarlaPluginUi.cpp.o \
 	NativePlugin.cpp.o \
 	BridgePlugin.cpp.o \
 	LadspaPlugin.cpp.o \
@@ -61,6 +63,9 @@ CarlaPluginInternal.cpp.o: CarlaPluginInternal.cpp $(CARLA_PLUGIN_INTERNAL_HPP) 
 CarlaPluginThread.cpp.o: CarlaPluginThread.cpp $(CARLA_PLUGIN_HPP) $(CARLA_PLUGIN_THREAD_HPP) $(CARLA_ENGINE_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
 
+CarlaPluginUi.cpp.o: CarlaPluginUi.cpp $(CARLA_PLUGIN_UI_HPP) $(CARLA_UTILS_HPP)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
 NativePlugin.cpp.o: NativePlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_NATIVE_H) $(CARLA_HOST_H)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
 
@@ -73,7 +78,7 @@ LadspaPlugin.cpp.o: LadspaPlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE
 DssiPlugin.cpp.o: DssiPlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_DSSI_UTILS_HPP) $(CARLA_MATH_UTILS_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
 
-Lv2Plugin.cpp.o: Lv2Plugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_LV2_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(LV2_ATOM_QUEUE_HPP) $(CARLA_ENGINE_OSC_HPP)
+Lv2Plugin.cpp.o: Lv2Plugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_LV2_UTILS_HPP) $(CARLA_PLUGIN_UI_HPP) $(LV2_ATOM_QUEUE_HPP) $(CARLA_ENGINE_OSC_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
 
 VstPlugin.cpp.o: VstPlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_VST_UTILS_HPP) $(CARLA_MATH_UTILS_HPP)
