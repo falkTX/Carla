@@ -47,8 +47,7 @@ public:
           fUiFilename(nullptr),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
-          fParamBuffers(nullptr),
-          fTransientTryCounter(0)
+          fParamBuffers(nullptr)
     {
         carla_debug("DssiPlugin::DssiPlugin(%p, %i)", engine, id);
 
@@ -381,7 +380,7 @@ public:
         }
         else
         {
-            fTransientTryCounter = 0;
+            pData->transientTryCounter = 0;
 
             if (pData->osc.data.target != nullptr)
             {
@@ -398,18 +397,18 @@ public:
     {
         CarlaPlugin::idle();
 
-        if (fTransientTryCounter == 0)
+        if (pData->transientTryCounter == 0)
             return;
-        if (++fTransientTryCounter % 10 != 0)
+        if (++pData->transientTryCounter % 10 != 0)
             return;
-        if (fTransientTryCounter >= 200)
+        if (pData->transientTryCounter >= 200)
             return;
 
         carla_stdout("Trying to get window...");
 
         QString uiTitle(QString("%1 (GUI)").arg(pData->name));
         if (CarlaPluginUi::tryTransientWinIdMatch(pData->osc.thread.getPid(), uiTitle.toUtf8().constData(), carla_standalone_get_transient_win_id()))
-            fTransientTryCounter = 0;
+            pData->transientTryCounter = 0;
     }
 
     // -------------------------------------------------------------------
@@ -1729,7 +1728,7 @@ public:
         CarlaPlugin::updateOscData(source, url);
 
         if (carla_standalone_get_transient_win_id() != 0)
-            fTransientTryCounter = 1;
+            pData->transientTryCounter = 1;
     }
 
     // -------------------------------------------------------------------
@@ -2004,9 +2003,6 @@ private:
     float** fAudioOutBuffers;
     float*  fParamBuffers;
     snd_seq_event_t fMidiEvents[kPluginMaxMidiEvents];
-
-    // used to try and set transient hint for external windows
-    uint fTransientTryCounter;
 
     // -------------------------------------------------------------------
 

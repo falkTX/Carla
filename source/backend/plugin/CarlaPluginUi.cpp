@@ -176,7 +176,6 @@ private:
 
 bool CarlaPluginUi::tryTransientWinIdMatch(const ulong pid, const char* const uiTitle, const uintptr_t winId)
 {
-    CARLA_SAFE_ASSERT_RETURN(pid != 0, true);
     CARLA_SAFE_ASSERT_RETURN(uiTitle != nullptr && uiTitle[0] != '\0', true);
     CARLA_SAFE_ASSERT_RETURN(winId != 0, true);
 
@@ -227,25 +226,30 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const ulong pid, const char* const ui
         // ------------------------------------------------
         // try using pid
 
-        unsigned long pidSize;
-        unsigned char* pidData = nullptr;
-
-        status = XGetWindowProperty(sd.display, window, _nwp, 0L, (~0L), False, XA_CARDINAL, &actualType, &actualFormat, &pidSize, &bytesAfter, &pidData);
-
-        if (pidData != nullptr)
+        if (pid != 0)
         {
-            const ScopedFreeData sfd2(pidData);
+            unsigned long pidSize;
+            unsigned char* pidData = nullptr;
 
-            CARLA_SAFE_ASSERT_CONTINUE(status == Success);
-            CARLA_SAFE_ASSERT_CONTINUE(pidSize != 0);
+            status = XGetWindowProperty(sd.display, window, _nwp, 0L, (~0L), False, XA_CARDINAL, &actualType, &actualFormat, &pidSize, &bytesAfter, &pidData);
 
-            if (*(ulong*)pidData == pid)
+            if (pidData != nullptr)
             {
-                CARLA_SAFE_ASSERT_RETURN(lastGoodWindow == window || lastGoodWindow == 0,  true);
-                lastGoodWindow = window;
-                carla_stdout("Match found using pid");
+                const ScopedFreeData sfd2(pidData);
+
+                CARLA_SAFE_ASSERT_CONTINUE(status == Success);
+                CARLA_SAFE_ASSERT_CONTINUE(pidSize != 0);
+
+                if (*(ulong*)pidData == pid)
+                {
+                    CARLA_SAFE_ASSERT_RETURN(lastGoodWindow == window || lastGoodWindow == 0,  true);
+                    lastGoodWindow = window;
+                    carla_stdout("Match found using pid");
+                    break;
+                }
             }
         }
+
         // ------------------------------------------------
         // try using name
 
@@ -261,7 +265,7 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const ulong pid, const char* const ui
             CARLA_SAFE_ASSERT_CONTINUE(status == Success);
             CARLA_SAFE_ASSERT_CONTINUE(nameSize != 0);
 
-            if (std::strcmp((const char*)nameData, uiTitle) == 0)
+            if (std::strstr((const char*)nameData, uiTitle) != nullptr)
             {
                 CARLA_SAFE_ASSERT_RETURN(lastGoodWindow == window || lastGoodWindow == 0,  true);
                 lastGoodWindow = window;

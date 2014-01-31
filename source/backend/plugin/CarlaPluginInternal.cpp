@@ -466,6 +466,7 @@ CarlaPluginProtectedData::CarlaPluginProtectedData(CarlaEngine* const eng, const
       ctrlChannel(0),
       extraHints(0x0),
       patchbayClientId(0),
+      transientTryCounter(0),
       latency(0),
       latencyBuffers(nullptr),
       name(nullptr),
@@ -477,6 +478,7 @@ CarlaPluginProtectedData::CarlaPluginProtectedData(CarlaEngine* const eng, const
 CarlaPluginProtectedData::~CarlaPluginProtectedData()
 {
     CARLA_SAFE_ASSERT(! needsReset);
+    CARLA_SAFE_ASSERT(transientTryCounter == 0);
 
     if (name != nullptr)
     {

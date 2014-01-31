@@ -243,6 +243,7 @@ struct CarlaPluginProtectedData {
     int8_t ctrlChannel;
     uint   extraHints;
     int    patchbayClientId;
+    uint   transientTryCounter;
 
     // latency
     uint32_t latency;
