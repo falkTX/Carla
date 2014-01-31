@@ -225,9 +225,6 @@ struct Lv2PluginEventData {
         CARLA_SAFE_ASSERT_RETURN(ctrl == nullptr,);
         CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
-        if (data != nullptr || newCount == 0)
-            return;
-
         data  = new Lv2EventData[newCount];
         count = newCount;
     }
@@ -342,6 +339,8 @@ public:
           fRdfDescriptor(nullptr),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
+          fCvInBuffers(nullptr),
+          fCvOutBuffers(nullptr),
           fParamBuffers(nullptr),
           fFirstActive(true)
     {
@@ -1396,6 +1395,24 @@ public:
                 fAudioOutBuffers[i] = nullptr;
         }
 
+        if (cvIns > 0)
+        {
+            fCvIn.createNew(cvIns);
+            fCvInBuffers = new float*[cvIns];
+
+            for (uint32_t i=0; i < cvIns; ++i)
+                fCvInBuffers[i] = nullptr;
+        }
+
+        if (cvOuts > 0)
+        {
+            fCvOut.createNew(cvOuts);
+            fCvOutBuffers = new float*[cvOuts];
+
+            for (uint32_t i=0; i < cvOuts; ++i)
+                fCvOutBuffers[i] = nullptr;
+        }
+
         if (params > 0)
         {
             pData->param.createNew(params, true);
@@ -1460,7 +1477,7 @@ public:
         const uint portNameSize(pData->engine->getMaxPortNameSize());
         CarlaString portName;
 
-        for (uint32_t i=0, iAudioIn=0, iAudioOut=0, iEvIn=0, iEvOut=0, iCtrl=0; i < portCount; ++i)
+        for (uint32_t i=0, iAudioIn=0, iAudioOut=0, iCvIn=0, iCvOut=0, iEvIn=0, iEvOut=0, iCtrl=0; i < portCount; ++i)
         {
             const LV2_Property portTypes(fRdfDescriptor->Ports[i].Types);
 
@@ -1513,19 +1530,18 @@ public:
             {
                 if (LV2_IS_PORT_INPUT(portTypes))
                 {
-                    carla_stderr("WARNING - CV Ports are not supported yet");
+                    uint32_t j = iCvIn++;
+                    fCvIn.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true);
+                    fCvIn.ports[j].rindex = i;
                 }
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
                 {
-                    carla_stderr("WARNING - CV Ports are not supported yet");
+                    uint32_t j = iCvOut++;
+                    fCvOut.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, false);
+                    fCvOut.ports[j].rindex = i;
                 }
                 else
                     carla_stderr("WARNING - Got a broken Port (CV, but not input or output)");
-
-                fDescriptor->connect_port(fHandle, i, nullptr);
-
-                if (fHandle2 != nullptr)
-                    fDescriptor->connect_port(fHandle2, i, nullptr);
             }
             else if (LV2_IS_PORT_ATOM_SEQUENCE(portTypes))
             {
@@ -2513,6 +2529,24 @@ public:
         }
 
         // --------------------------------------------------------------------------------------------------------
+        // CV ports
+
+        float* cvInBuf[fCvIn.count /*> 0 ? fCvIn.count : 1*/];
+        float* cvOutBuf[fCvOut.count /*> 0 ? fCvOut.count : 1*/];
+
+        for (uint32_t i=0; i < fCvIn.count; ++i)
+        {
+            CARLA_SAFE_ASSERT_CONTINUE(fCvIn.ports[i].port != nullptr);
+            cvInBuf[i] = fCvIn.ports[i].port->getBuffer();
+        }
+
+        for (uint32_t i=0; i < fCvOut.count; ++i)
+        {
+            CARLA_SAFE_ASSERT_CONTINUE(fCvOut.ports[i].port != nullptr);
+            cvOutBuf[i] = fCvOut.ports[i].port->getBuffer();
+        }
+
+        // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
         if (fEventsIn.ctrl != nullptr)
@@ -2618,7 +2652,7 @@ public:
 
                 if (isSampleAccurate && event.time > timeOffset)
                 {
-                    if (processSingle(inBuffer, outBuffer, event.time - timeOffset, timeOffset))
+                    if (processSingle(inBuffer, outBuffer, cvInBuf, cvOutBuf, event.time - timeOffset, timeOffset))
                     {
                         startTime  = 0;
                         timeOffset = event.time;
@@ -2893,7 +2927,7 @@ public:
             pData->postRtEvents.trySplice();
 
             if (frames > timeOffset)
-                processSingle(inBuffer, outBuffer, frames - timeOffset, timeOffset);
+                processSingle(inBuffer, outBuffer, cvInBuf, cvOutBuf, frames - timeOffset, timeOffset);
 
         } // End of Event Input and Processing
 
@@ -2902,7 +2936,7 @@ public:
 
         else
         {
-            processSingle(inBuffer, outBuffer, frames, 0);
+            processSingle(inBuffer, outBuffer, cvInBuf, cvOutBuf, frames, 0);
 
         } // End of Plugin processing (no events)
 
@@ -3042,17 +3076,25 @@ public:
         // --------------------------------------------------------------------------------------------------------
     }
 
-    bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
+    bool processSingle(float** const audioInBuf, float** const audioOutBuf, float** const cvInBuf, float** const cvOutBuf, const uint32_t frames, const uint32_t timeOffset)
     {
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 
         if (pData->audioIn.count > 0)
         {
-            CARLA_SAFE_ASSERT_RETURN(inBuffer != nullptr, false);
+            CARLA_SAFE_ASSERT_RETURN(audioInBuf != nullptr, false);
         }
         if (pData->audioOut.count > 0)
         {
-            CARLA_SAFE_ASSERT_RETURN(outBuffer != nullptr, false);
+            CARLA_SAFE_ASSERT_RETURN(audioOutBuf != nullptr, false);
+        }
+        if (fCvIn.count > 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(cvInBuf != nullptr, false);
+        }
+        if (fCvOut.count > 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(cvOutBuf != nullptr, false);
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -3067,20 +3109,29 @@ public:
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
                 for (uint32_t k=0; k < frames; ++k)
-                    outBuffer[i][k+timeOffset] = 0.0f;
+                    audioOutBuf[i][k+timeOffset] = 0.0f;
             }
 
             return false;
         }
 
         // --------------------------------------------------------------------------------------------------------
-        // Reset audio buffers
+        // Set audio buffers
 
         for (uint32_t i=0; i < pData->audioIn.count; ++i)
-            FLOAT_COPY(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
+            FLOAT_COPY(fAudioInBuffers[i], audioInBuf[i]+timeOffset, frames);
 
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
             FLOAT_CLEAR(fAudioOutBuffers[i], frames);
+
+        // --------------------------------------------------------------------------------------------------------
+        // Set CV buffers
+
+        for (uint32_t i=0; i < fCvIn.count; ++i)
+            FLOAT_COPY(fCvInBuffers[i], cvInBuf[i]+timeOffset, frames);
+
+        for (uint32_t i=0; i < fCvOut.count; ++i)
+            FLOAT_CLEAR(fCvOutBuffers[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -3173,7 +3224,7 @@ public:
                 // Volume (and buffer copy)
                 {
                     for (uint32_t k=0; k < frames; ++k)
-                        outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k] * pData->postProc.volume;
+                        audioOutBuf[i][k+timeOffset] = fAudioOutBuffers[i][k] * pData->postProc.volume;
                 }
             }
         } // End of Post-processing
@@ -3181,7 +3232,7 @@ public:
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
         {
             for (uint32_t k=0; k < frames; ++k)
-                outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k];
+                audioOutBuf[i][k+timeOffset] = fAudioOutBuffers[i][k];
         }
 #endif
 
@@ -3247,6 +3298,30 @@ public:
             }
         }
 
+        for (uint32_t i=0; i < fCvIn.count; ++i)
+        {
+            if (fCvInBuffers[i] != nullptr)
+                delete[] fCvInBuffers[i];
+            fCvInBuffers[i] = new float[newBufferSize];
+
+            fDescriptor->connect_port(fHandle, fCvIn.ports[i].rindex, fCvInBuffers[i]);
+
+            if (fHandle2 != nullptr)
+                fDescriptor->connect_port(fHandle2, fCvIn.ports[i].rindex, fCvInBuffers[i]);
+        }
+
+        for (uint32_t i=0; i < fCvOut.count; ++i)
+        {
+            if (fCvOutBuffers[i] != nullptr)
+                delete[] fCvOutBuffers[i];
+            fCvOutBuffers[i] = new float[newBufferSize];
+
+            fDescriptor->connect_port(fHandle, fCvOut.ports[i].rindex, fCvOutBuffers[i]);
+
+            if (fHandle2 != nullptr)
+                fDescriptor->connect_port(fHandle2, fCvOut.ports[i].rindex, fCvOutBuffers[i]);
+        }
+
         const int newBufferSizeInt(static_cast<int>(newBufferSize));
 
         if (fLv2Options.maxBufferSize != newBufferSizeInt || (fLv2Options.minBufferSize != 1 && fLv2Options.minBufferSize != newBufferSizeInt))
@@ -3310,6 +3385,8 @@ public:
 
     void initBuffers() override
     {
+        fCvIn.initBuffers();
+        fCvOut.initBuffers();
         fEventsIn.initBuffers();
         fEventsOut.initBuffers();
 
@@ -3350,12 +3427,44 @@ public:
             fAudioOutBuffers = nullptr;
         }
 
+        if (fCvInBuffers != nullptr)
+        {
+            for (uint32_t i=0; i < fCvIn.count; ++i)
+            {
+                if (fCvInBuffers[i] != nullptr)
+                {
+                    delete[] fCvInBuffers[i];
+                    fCvInBuffers[i] = nullptr;
+                }
+            }
+
+            delete[] fCvInBuffers;
+            fCvInBuffers = nullptr;
+        }
+
+        if (fCvOutBuffers != nullptr)
+        {
+            for (uint32_t i=0; i < fCvOut.count; ++i)
+            {
+                if (fCvOutBuffers[i] != nullptr)
+                {
+                    delete[] fCvOutBuffers[i];
+                    fCvOutBuffers[i] = nullptr;
+                }
+            }
+
+            delete[] fCvOutBuffers;
+            fCvOutBuffers = nullptr;
+        }
+
         if (fParamBuffers != nullptr)
         {
             delete[] fParamBuffers;
             fParamBuffers = nullptr;
         }
 
+        fCvIn.clear();
+        fCvOut.clear();
         fEventsIn.clear();
         fEventsOut.clear();
 
@@ -4723,11 +4832,16 @@ private:
 
     float** fAudioInBuffers;
     float** fAudioOutBuffers;
+    float** fCvInBuffers;
+    float** fCvOutBuffers;
     float*  fParamBuffers;
 
     Lv2AtomQueue   fAtomQueueIn;
     Lv2AtomQueue   fAtomQueueOut;
     LV2_Atom_Forge fAtomForge;
+
+    PluginCVData fCvIn;
+    PluginCVData fCvOut;
 
     Lv2PluginEventData fEventsIn;
     Lv2PluginEventData fEventsOut;

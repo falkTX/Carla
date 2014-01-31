@@ -64,11 +64,8 @@ PluginAudioData::~PluginAudioData()
 void PluginAudioData::createNew(const uint32_t newCount)
 {
     CARLA_ASSERT_INT(count == 0, count);
-    CARLA_ASSERT(ports == nullptr);
-    CARLA_ASSERT_INT(newCount > 0, newCount);
-
-    if (ports != nullptr || newCount == 0)
-        return;
+    CARLA_SAFE_ASSERT_RETURN(ports == nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
     ports = new PluginAudioPort[newCount];
     count = newCount;
@@ -132,11 +129,8 @@ PluginCVData::~PluginCVData()
 void PluginCVData::createNew(const uint32_t newCount)
 {
     CARLA_ASSERT_INT(count == 0, count);
-    CARLA_ASSERT(ports == nullptr);
-    CARLA_ASSERT_INT(newCount > 0, newCount);
-
-    if (ports != nullptr || newCount == 0)
-        return;
+    CARLA_SAFE_ASSERT_RETURN(ports == nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
     ports = new PluginCVPort[newCount];
     count = newCount;
@@ -228,13 +222,10 @@ PluginParameterData::~PluginParameterData()
 void PluginParameterData::createNew(const uint32_t newCount, const bool withSpecial)
 {
     CARLA_ASSERT_INT(count == 0, count);
-    CARLA_ASSERT(data == nullptr);
-    CARLA_ASSERT(ranges == nullptr);
-    CARLA_ASSERT(special == nullptr);
-    CARLA_ASSERT_INT(newCount > 0, newCount);
-
-    if (data != nullptr || ranges != nullptr || newCount == 0)
-        return;
+    CARLA_SAFE_ASSERT_RETURN(data == nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(ranges == nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(special == nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
     data   = new ParameterData[newCount];
     ranges = new ParameterRanges[newCount];
