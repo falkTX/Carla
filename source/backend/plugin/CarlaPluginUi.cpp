@@ -277,13 +277,13 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const ulong pid, const char* const ui
     if (lastGoodWindow == 0)
         return false;
 
-    Atom _nwt = XInternAtom(sd.display ,"_NET_WM_WINDOW_TYPE", True);
-    Atom _nwd = XInternAtom(sd.display, "_NET_WM_WINDOW_TYPE_DIALOG", True);
+    Atom _nwt = XInternAtom(sd.display ,"_NET_WM_STATE", True);
+    Atom _nws[2];
+    _nws[0] = XInternAtom(sd.display, "_NET_WM_STATE_SKIP_TASKBAR", True);
+    _nws[1] = XInternAtom(sd.display, "_NET_WM_STATE_SKIP_PAGER", True);
 
-    XUnmapWindow(sd.display, lastGoodWindow);
-    XChangeProperty(sd.display, lastGoodWindow, _nwt, XA_ATOM, 32, PropModeReplace, (uchar*)&_nwd, 1);
+    XChangeProperty(sd.display, lastGoodWindow, _nwt, XA_ATOM, 32, PropModeAppend, (uchar*)_nws, 2);
     XSetTransientForHint(sd.display, lastGoodWindow, (Window)winId);
-    XMapWindow(sd.display, lastGoodWindow);
     XFlush(sd.display);
     return true;
 #endif
