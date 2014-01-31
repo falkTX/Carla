@@ -35,6 +35,9 @@ uri_to_path(const char* uri) {
 #define LILV_WRAP0(RT, prefix, name) \
 	inline RT name() { return lilv_ ## prefix ## _ ## name (me); }
 
+#define LILV_WRAP0_CONST(RT, prefix, name) \
+	inline RT name() const { return lilv_ ## prefix ## _ ## name (me); }
+
 #define LILV_WRAP0_VOID(prefix, name) \
 	inline void name() { lilv_ ## prefix ## _ ## name(me); }
 
@@ -74,20 +77,20 @@ struct Node {
 
 	LILV_WRAP_CONVERSION(LilvNode);
 
-	LILV_WRAP0(char*,       node, get_turtle_token);
-	LILV_WRAP0(bool,        node, is_uri);
-	LILV_WRAP0(const char*, node, as_uri);
-	LILV_WRAP0(bool,        node, is_blank);
-	LILV_WRAP0(const char*, node, as_blank);
-	LILV_WRAP0(bool,        node, is_literal);
-	LILV_WRAP0(bool,        node, is_string);
-	LILV_WRAP0(const char*, node, as_string);
-	LILV_WRAP0(bool,        node, is_float);
-	LILV_WRAP0(float,       node, as_float);
-	LILV_WRAP0(bool,        node, is_int);
-	LILV_WRAP0(int,         node, as_int);
-	LILV_WRAP0(bool,        node, is_bool);
-	LILV_WRAP0(bool,        node, as_bool);
+	LILV_WRAP0_CONST(char*,       node, get_turtle_token);
+	LILV_WRAP0_CONST(bool,        node, is_uri);
+	LILV_WRAP0_CONST(const char*, node, as_uri);
+	LILV_WRAP0_CONST(bool,        node, is_blank);
+	LILV_WRAP0_CONST(const char*, node, as_blank);
+	LILV_WRAP0_CONST(bool,        node, is_literal);
+	LILV_WRAP0_CONST(bool,        node, is_string);
+	LILV_WRAP0_CONST(const char*, node, as_string);
+	LILV_WRAP0_CONST(bool,        node, is_float);
+	LILV_WRAP0_CONST(float,       node, as_float);
+	LILV_WRAP0_CONST(bool,        node, is_int);
+	LILV_WRAP0_CONST(int,         node, as_int);
+	LILV_WRAP0_CONST(bool,        node, is_bool);
+	LILV_WRAP0_CONST(bool,        node, as_bool);
 
 	LilvNode* me;
 };

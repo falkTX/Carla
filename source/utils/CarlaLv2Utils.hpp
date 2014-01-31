@@ -78,7 +78,6 @@
 #define LV2_MIDI_LL__MidiPort "http://ll-plugins.nongnu.org/lv2/ext/MidiPort"
 
 #define LV2_UI__Qt5UI         LV2_UI_PREFIX "Qt5UI"
-#define LV2_UI__idle          LV2_UI_PREFIX "idle"
 #define LV2_UI__makeResident  LV2_UI_PREFIX "makeResident"
 
 // -----------------------------------------------------------------------
@@ -610,32 +609,37 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool /*fillPreset
 
                     Lilv::Nodes bufferTypeNodes(lilvPort.get_value(lv2World.atom_bufferType));
 
-                    if (bufferTypeNodes.contains(lv2World.atom_sequence))
-                        rdfPort->Types |= LV2_PORT_ATOM_SEQUENCE;
-                    else
-                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses an unknown atom buffer type", uri, rdfPort->Name);
+                    for (LilvIter* it = lilv_nodes_begin(bufferTypeNodes.me); ! lilv_nodes_is_end(bufferTypeNodes.me, it); it = lilv_nodes_next(bufferTypeNodes.me, it))
+                    {
+                        const Lilv::Node node(lilv_nodes_get(bufferTypeNodes.me, it));
+                        CARLA_SAFE_ASSERT_CONTINUE(node.is_uri());
+
+                        if (node.equals(lv2World.atom_sequence))
+                            rdfPort->Types |= LV2_PORT_ATOM_SEQUENCE;
+                        else
+                            carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses an unknown atom buffer type '%s'", uri, rdfPort->Name, node.as_uri());
+                    }
 
                     Lilv::Nodes supportNodes(lilvPort.get_value(lv2World.atom_supports));
-                    bool supported = false;
 
-                    if (supportNodes.contains(lv2World.midi_event))
+                    for (LilvIter* it = lilv_nodes_begin(supportNodes.me); ! lilv_nodes_is_end(supportNodes.me, it); it = lilv_nodes_next(supportNodes.me, it))
                     {
-                        rdfPort->Types |= LV2_PORT_DATA_MIDI_EVENT;
-                        supported = true;
-                    }
-                    if (supportNodes.contains(lv2World.patch_message))
-                    {
-                        rdfPort->Types |= LV2_PORT_DATA_PATCH_MESSAGE;
-                        supported = true;
-                    }
-                    if (supportNodes.contains(lv2World.time_position))
-                    {
-                        rdfPort->Types |= LV2_PORT_DATA_TIME_POSITION;
-                        supported = true;
-                    }
+                        const Lilv::Node node(lilv_nodes_get(supportNodes.me, it));
+                        CARLA_SAFE_ASSERT_CONTINUE(node.is_uri());
 
-                    if (! supported)
-                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' is of atom type but has unsupported data", uri, rdfPort->Name);
+                        if (node.equals(lv2World.midi_event))
+                            rdfPort->Types |= LV2_PORT_DATA_MIDI_EVENT;
+
+                        else if (node.equals(lv2World.patch_message))
+                            rdfPort->Types |= LV2_PORT_DATA_PATCH_MESSAGE;
+
+                        else if (node.equals(lv2World.time_position))
+                            rdfPort->Types |= LV2_PORT_DATA_TIME_POSITION;
+
+                        // something new we don't support yet?
+                        else if (std::strstr(node.as_uri(), "lv2plug.in/") != nullptr)
+                            carla_stderr("lv2_rdf_new(\"%s\") - port '%s' is of atom type but has unsupported data '%s'", uri, rdfPort->Name, node.as_uri());
+                    }
                 }
                 else if (lilvPort.is_a(lv2World.port_event))
                 {
@@ -1354,7 +1358,7 @@ bool is_lv2_ui_feature_supported(const LV2_URI uri)
 #endif
     if (std::strcmp(uri, LV2_UI__fixedSize) == 0)
         return true;
-    if (std::strcmp(uri, LV2_UI__idle) == 0)
+    if (std::strcmp(uri, LV2_UI__idleInterface) == 0)
         return true;
     if (std::strcmp(uri, LV2_UI__makeResident) == 0)
         return true;

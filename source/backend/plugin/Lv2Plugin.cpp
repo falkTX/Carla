@@ -130,7 +130,7 @@ const uint32_t kFeatureIdWorker           = 19;
 const uint32_t kFeatureCountPlugin        = 20;
 const uint32_t kFeatureIdUiDataAccess     = 20;
 const uint32_t kFeatureIdUiInstanceAccess = 21;
-const uint32_t kFeatureIdUiIdle           = 22;
+const uint32_t kFeatureIdUiIdleInterface  = 22;
 const uint32_t kFeatureIdUiFixedSize      = 23;
 const uint32_t kFeatureIdUiMakeResident   = 24;
 const uint32_t kFeatureIdUiNoUserResize   = 25;
@@ -4658,8 +4658,8 @@ public:
         fFeatures[kFeatureIdUiInstanceAccess]->URI  = LV2_INSTANCE_ACCESS_URI;
         fFeatures[kFeatureIdUiInstanceAccess]->data = fHandle;
 
-        fFeatures[kFeatureIdUiIdle]->URI           = LV2_UI__idle;
-        fFeatures[kFeatureIdUiIdle]->data          = nullptr;
+        fFeatures[kFeatureIdUiIdleInterface]->URI  = LV2_UI__idleInterface;
+        fFeatures[kFeatureIdUiIdleInterface]->data = nullptr;
 
         fFeatures[kFeatureIdUiFixedSize]->URI      = LV2_UI__fixedSize;
         fFeatures[kFeatureIdUiFixedSize]->data     = nullptr;
