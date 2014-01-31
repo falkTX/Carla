@@ -916,7 +916,7 @@ public:
         if (fUi.title == nullptr)
             return;
 
-        QString guiTitle(QString("%1 (GL GUI)").arg(pData->name));
+        QString guiTitle(QString("%1 (GUI)").arg(pData->name));
 
         delete[] fUi.title;
         fUi.title = carla_strdup(guiTitle.toUtf8().constData());
@@ -2569,10 +2569,6 @@ public:
 
                     for (; fAtomQueueIn.get(&atom, &portIndex);)
                     {
-                        carla_debug("Event input message sent to plugin DSP, type %i:\"%s\", size:%i/%i",
-                                    atom->type, carla_lv2_urid_unmap(this, atom->type),
-                                    atom->size, lv2_atom_total_size(atom));
-
                         if (atom->type == CARLA_URI_MAP_ID_ATOM_WORKER)
                         {
                             CARLA_SAFE_ASSERT_CONTINUE(fExt.worker != nullptr && fExt.worker->work_response != nullptr);
@@ -4085,11 +4081,11 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(bufferSize > 0,);
-        carla_debug("Lv2Plugin::handleUiWrite(%i, %i, %i:\"%s\", %p)", rindex, bufferSize, format, carla_lv2_urid_unmap(this, format), buffer);
+        carla_debug("Lv2Plugin::handleUiWrite(%i, %i, %i, %p)", rindex, bufferSize, format, buffer);
 
         switch (format)
         {
-        case 0:
+        case CARLA_URI_MAP_ID_NULL:
             CARLA_SAFE_ASSERT_RETURN(bufferSize == sizeof(float),);
 
             for (uint32_t i=0; i < pData->param.count; ++i)
@@ -4126,7 +4122,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(size > 0,);
         CARLA_SAFE_ASSERT_RETURN(type != CARLA_URI_MAP_ID_NULL,);
-        carla_debug("Lv2Plugin::handleLilvSetPortValue(\"%s\", %p, %i, %i:\"%s\")", portSymbol, value, size, type, carla_lv2_urid_unmap(this, type));
+        carla_debug("Lv2Plugin::handleLilvSetPortValue(\"%s\", %p, %i, %i)", portSymbol, value, size, type);
 
         int32_t rindex = -1;
 
@@ -4761,7 +4757,7 @@ public:
         // ---------------------------------------------------------------
         // initialize ui data
 
-        QString guiTitle(QString("%1 (GL GUI)").arg(pData->name));
+        QString guiTitle(QString("%1 (GUI)").arg(pData->name));
         fUi.title = carla_strdup(guiTitle.toUtf8().constData());
 
         // ---------------------------------------------------------------
