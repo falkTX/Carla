@@ -160,12 +160,12 @@ LINK_UI_VST_X11_FLAGS    = $(LINK_UI_FLAGS) $(QT5_UI_LIBS)
 TARGETS  = native
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-ifeq ($(HAVE_GTK2),true)
-TARGETS += ui_lv2-gtk2
-endif
-ifeq ($(HAVE_GTK3),true)
-TARGETS += ui_lv2-gtk3
-endif
+# ifeq ($(HAVE_GTK2),true)
+# TARGETS += ui_lv2-gtk2
+# endif
+# ifeq ($(HAVE_GTK3),true)
+# TARGETS += ui_lv2-gtk3
+# endif
 ifeq ($(HAVE_QT4),true)
 TARGETS += ui_lv2-qt4
 else
@@ -387,6 +387,7 @@ OBJS_NATIVE += \
 	../backend/plugin/CarlaPlugin__native.o \
 	../backend/plugin/CarlaPluginInternal__native.o \
 	../backend/plugin/CarlaPluginThread__native.o \
+	../backend/plugin/CarlaPluginUi__native.o \
 	../backend/plugin/NativePlugin__native.o \
 	../backend/plugin/LadspaPlugin__native.o \
 	../backend/plugin/DssiPlugin__native.o \

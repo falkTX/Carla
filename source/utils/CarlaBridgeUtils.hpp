@@ -79,7 +79,7 @@ struct BridgeShmControl {
         void* runClient;
         char _padClient[32];
     };
-    StackRingBuffer ringBuffer;
+    StackPackedRingBuffer ringBuffer;
 } POST_PACKED_STRUCTURE;
 
 // -----------------------------------------------------------------------

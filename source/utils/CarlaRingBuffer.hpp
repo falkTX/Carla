@@ -51,6 +51,14 @@ struct StackRingBuffer {
     char    buf[size];
 };
 
+PRE_PACKED_STRUCTURE
+struct StackPackedRingBuffer {
+    static const uint32_t size = 2048;
+    int32_t head, tail, written;
+    bool    invalidateCommit;
+    char    buf[size];
+} POST_PACKED_STRUCTURE;
+
 // -----------------------------------------------------------------------
 // RingBufferControl templated class
 

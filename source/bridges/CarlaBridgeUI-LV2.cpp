@@ -273,7 +273,7 @@ public:
         fFeatures[kFeatureIdUridUnmap]->URI  = LV2_URID__unmap;
         fFeatures[kFeatureIdUridUnmap]->data = uridUnmapFt;
 
-        fFeatures[kFeatureIdUiIdle]->URI           = LV2_UI__idle;
+        fFeatures[kFeatureIdUiIdle]->URI           = LV2_UI__idleInterface;
         fFeatures[kFeatureIdUiIdle]->data          = nullptr;
 
         fFeatures[kFeatureIdUiFixedSize]->URI      = LV2_UI__fixedSize;
