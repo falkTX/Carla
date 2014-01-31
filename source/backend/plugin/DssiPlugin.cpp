@@ -24,12 +24,20 @@
 #include "CarlaMathUtils.hpp"
 
 #include <QtCore/QByteArray>
+#include <QtCore/QString>
+
+#ifdef CARLA_OS_LINUX
+# include <X11/Xlib.h>
+#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
 #if 0
 }
 #endif
+
+// TESTING
+static bool uiStarted = false;
 
 class DssiPlugin : public CarlaPlugin
 {
@@ -374,6 +382,7 @@ public:
         {
             pData->osc.data.free();
             pData->osc.thread.start();
+            uiStarted = true;
         }
         else
         {
@@ -386,6 +395,115 @@ public:
 
             pData->osc.thread.stop(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
         }
+    }
+
+    void idle() override
+    {
+        CarlaPlugin::idle();
+
+#ifdef CARLA_OS_LINUX
+        if (! uiStarted)
+            return;
+
+        // TESTING
+        static int counter = 0;
+
+        if (++counter != 100)
+            return;
+
+        if (const char* const win = getenv("CARLA_TRANSIENT_WINDOW"))
+        {
+            const long winl = std::atol(win);
+            carla_stderr2("got transient, %s vs %li", win, winl);
+
+            QString targetName(QString("%1 (GUI)").arg(pData->name));
+
+            Display* display = XOpenDisplay(0);
+            //int      screen  = DefaultScreen(display);
+            Window lastWindow = 0;
+
+#if 0
+            Window root, parent;
+            Window* children = nullptr;
+            uint num = 0;
+            int status = XQueryTree(display, DefaultRootWindow(display), &root, &parent, &children, &num);
+
+            carla_stdout("HERE001 %i, %i", status, num);
+
+            for (uint i = 0; i < num; i++)
+            {
+                Window w = children[i];
+
+                carla_stdout("Scanned client window: %lu", w);
+
+                char* name = nullptr;
+                status = XFetchName(display, w, &name);
+
+                if (name != nullptr)
+                {
+                    XFree(name);
+                    carla_stdout("Found: %ul %s", w, name);
+                }
+            }
+#else
+            Atom a = XInternAtom(display, "_NET_CLIENT_LIST" , true);
+
+            Atom actualType;
+            int actualFormat;
+            unsigned long numItems, bytesAfter;
+            unsigned char* data = nullptr;
+
+            int status = XGetWindowProperty(display, DefaultRootWindow(display), a, 0L, (~0L), False, AnyPropertyType, &actualType, &actualFormat, &numItems, &bytesAfter, &data);
+            carla_stdout("FOUND %i WINDOWS", numItems);
+
+            if (status >= Success && numItems)
+            {
+                // success - we have data: Format should always be 32:
+                CARLA_SAFE_ASSERT_RETURN(actualFormat == 32,);
+
+                // cast to proper format, and iterate through values:
+                Window* array = (Window*)data;
+
+                for (uint32_t k = 0; k < numItems; k++)
+                {
+                    // get window Id:
+                    Window w = array[k];
+
+                    carla_stdout("Found at %i: %li", k+1, w);
+
+#if 1
+                    if (w == 0)
+                       continue;
+
+                    Atom name = XInternAtom(display, "_NET_WM_NAME", False);
+//                     Atom utf8 = XInternAtom(display, "UTF8_STRING", False);
+
+                    unsigned long numNames;
+                    unsigned char* namesData = nullptr;
+
+                    status = XGetWindowProperty(display, w, name, 0L, (~0L), False, AnyPropertyType/*utf8*/, &actualType, &actualFormat, &numNames, &bytesAfter, &namesData);
+                    //if (status >= Success)
+                    {
+                        carla_stdout("Found at %i: %ul %ul %s", k+1, w, numNames, (const char*)namesData);
+                    }
+
+                    lastWindow = w;
+
+                    XFree(namesData);
+#endif
+                }
+
+                XFree(data);
+            }
+
+            if (lastWindow != 0)
+            {
+                XSetTransientForHint(display, lastWindow, (Window)winl);
+                XFlush(display);
+            }
+#endif
+        }
+#endif
     }
 
     // -------------------------------------------------------------------

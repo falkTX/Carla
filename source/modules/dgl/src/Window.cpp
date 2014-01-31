@@ -210,6 +210,17 @@ public:
         DBG("Success!\n");
     }
 
+    // TESTING
+    void setTransient(const intptr_t win)
+    {
+#if DGL_OS_LINUX
+        XSetTransientForHint(xDisplay, xWindow, (::Window)win);
+        XFlush(xDisplay);
+#else
+        return; (void)win;
+#endif
+    }
+
     // -------------------------------------------------------------------
 
     void close()
@@ -778,6 +789,11 @@ Window::Window(App& app, intptr_t parentId)
 Window::~Window()
 {
     delete pData;
+}
+
+void Window::setTransient(const intptr_t win)
+{
+    pData->setTransient(win);
 }
 
 void Window::show()

@@ -20,12 +20,10 @@
 
 #ifdef WANT_LV2
 
-#ifdef HAVE_JUCE
-# include "juce_gui_basics.h"
-#endif
+// need this first for juce headers
+#include "CarlaMathUtils.hpp"
 
 #include "CarlaLv2Utils.hpp"
-#include "CarlaMathUtils.hpp"
 #include "Lv2AtomQueue.hpp"
 
 #include "../engine/CarlaEngineOsc.hpp"
@@ -36,6 +34,11 @@ extern "C" {
 
 #include <QtCore/QDir>
 #include <QtCore/QUrl>
+
+#ifdef HAVE_DGL
+# include "dgl/App.hpp"
+# include "dgl/Window.hpp"
+#endif
 
 // -----------------------------------------------------
 
@@ -409,17 +412,16 @@ public:
                     delete (LV2UI_Resize*)fFeatures[kFeatureIdUiResize]->data;
 
                 if (fFeatures[kFeatureIdExternalUi] != nullptr && fFeatures[kFeatureIdExternalUi]->data != nullptr)
-                {
-                    const LV2_External_UI_Host* const uiHost((const LV2_External_UI_Host*)fFeatures[kFeatureIdExternalUi]->data);
-
-                    if (uiHost->plugin_human_id != nullptr)
-                        delete[] uiHost->plugin_human_id;
-
-                    delete uiHost;
-                }
+                    delete (LV2_External_UI_Host*)fFeatures[kFeatureIdExternalUi]->data;
 
                 fUi.descriptor = nullptr;
                 pData->uiLibClose();
+            }
+
+            if (fUi.title != nullptr)
+            {
+                delete[] fUi.title;
+                fUi.title = nullptr;
             }
 
             fUi.rdfDescriptor = nullptr;
@@ -908,22 +910,18 @@ public:
     {
         CarlaPlugin::setName(newName);
 
-        QString guiTitle(QString("%1 (GUI)").arg(pData->name));
+        if (fUi.title == nullptr)
+            return;
 
-#if 0
-        if (pData->gui != nullptr)
-            pData->gui->setWindowTitle(guiTitle);
-#endif
+        QString guiTitle(QString("%1 (GL GUI)").arg(pData->name));
+
+        delete[] fUi.title;
+        fUi.title = carla_strdup(guiTitle.toUtf8().constData());
+
+        fUi.glWindow.setTitle(fUi.title);
 
         if (fFeatures[kFeatureIdExternalUi] != nullptr && fFeatures[kFeatureIdExternalUi]->data != nullptr)
-        {
-            LV2_External_UI_Host* const uiHost((LV2_External_UI_Host*)fFeatures[kFeatureIdExternalUi]->data);
-
-            if (uiHost->plugin_human_id != nullptr)
-                delete[] uiHost->plugin_human_id;
-
-            uiHost->plugin_human_id = carla_strdup(guiTitle.toUtf8().constData());
-        }
+            ((LV2_External_UI_Host*)fFeatures[kFeatureIdExternalUi]->data)->plugin_human_id = fUi.title;
     }
 
     // -------------------------------------------------------------------
@@ -1107,37 +1105,44 @@ public:
                 return;
         }
 
-        if (fUi.type == UI::TYPE_EXTERNAL)
+        if (yesNo)
         {
-            if (yesNo)
+            if (fUi.handle == nullptr)
             {
-                if (fUi.handle == nullptr)
+                fUi.widget = nullptr;
+                fUi.handle = fUi.descriptor->instantiate(fUi.descriptor, fRdfDescriptor->URI, fUi.rdfDescriptor->Bundle,
+                                                          carla_lv2_ui_write_function, this, &fUi.widget, fFeatures);
+            }
+
+            CARLA_SAFE_ASSERT(fUi.handle != nullptr);
+            CARLA_SAFE_ASSERT(fUi.type != UI::TYPE_EXTERNAL || fUi.widget != nullptr);
+
+            if (fUi.handle == nullptr || (fUi.type == UI::TYPE_EXTERNAL && fUi.widget == nullptr))
+            {
+                fUi.widget = nullptr;
+
+                if (fUi.handle != nullptr)
                 {
-                    fUi.widget = nullptr;
-                    fUi.handle = fUi.descriptor->instantiate(fUi.descriptor, fRdfDescriptor->URI, fUi.rdfDescriptor->Bundle,
-                                                             carla_lv2_ui_write_function, this, &fUi.widget, fFeatures);
+                    fUi.descriptor->cleanup(fUi.handle);
+                    fUi.handle = nullptr;
                 }
 
-                CARLA_SAFE_ASSERT(fUi.handle != nullptr);
-                CARLA_SAFE_ASSERT(fUi.widget != nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, "Plugin refused to open its own UI");
+                return;
+            }
 
-                if (fUi.handle == nullptr || fUi.widget == nullptr)
-                {
-                    fUi.widget = nullptr;
+            updateUi();
 
-                    if (fUi.handle != nullptr)
-                    {
-                        fUi.descriptor->cleanup(fUi.handle);
-                        fUi.handle = nullptr;
-                    }
-
-                    pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, "Plugin refused to open its own UI");
-                    return;
-                }
-
-                updateUi();
-
+            if (fUi.type == UI::TYPE_EMBED)
+                fUi.glWindow.show();
+            else
                 LV2_EXTERNAL_UI_SHOW((LV2_External_UI_Widget*)fUi.widget);
+        }
+        else
+        {
+            if (fUi.type == UI::TYPE_EMBED)
+            {
+                fUi.glWindow.hide();
             }
             else
             {
@@ -1145,89 +1150,19 @@ public:
 
                 if (fUi.widget != nullptr)
                     LV2_EXTERNAL_UI_HIDE((LV2_External_UI_Widget*)fUi.widget);
-
-                fUi.descriptor->cleanup(fUi.handle);
-                fUi.handle = nullptr;
-                fUi.widget = nullptr;
             }
-        }
-        else // means TYPE_EMBED
-        {
-#if 0
-            if (yesNo)
-            {
-                if (pData->gui == nullptr)
-                {
-                    // TODO
-                    CarlaPluginGui::Options guiOptions;
-                    guiOptions.parented  = (fUi.type == PLUGIN_UI_PARENT);
-                    guiOptions.resizable = isUiResizable();
 
-                    pData->gui = new CarlaPluginGui(pData->engine, this, guiOptions, pData->guiGeometry);
-                }
+            fUi.descriptor->cleanup(fUi.handle);
+            fUi.handle = nullptr;
+            fUi.widget = nullptr;
 
-                if (fUi.type == PLUGIN_UI_PARENT)
-                {
-                    fFeatures[kFeatureIdUiParent]->data = pData->gui->getContainerWinId();
-                    fFeatures[kFeatureIdUiParent]->URI  = LV2_UI__parent;
-                }
-
-                if (fUi.handle == nullptr)
-                {
-                    fUi.widget = nullptr;
-                    fUi.handle = fUi.descriptor->instantiate(fUi.descriptor, fRdfDescriptor->URI, fUi.rdfDescriptor->Bundle,
-                                                             carla_lv2_ui_write_function, this, &fUi.widget, fFeatures);
-                }
-
-                CARLA_ASSERT(fUi.handle != nullptr);
-                CARLA_ASSERT(fUi.type == PLUGIN_UI_PARENT || fUi.widget != nullptr);
-
-                if (fUi.handle == nullptr || (fUi.type != PLUGIN_UI_PARENT && fUi.widget == nullptr))
-                {
-                    fUi.handle = nullptr;
-                    fUi.widget = nullptr;
-
-                    pData->guiGeometry = pData->gui->saveGeometry();
-                    pData->gui->close();
-                    delete pData->gui;
-                    pData->gui = nullptr;
-
-                    pData->engine->callback(CALLBACK_ERROR, fId, 0, 0, 0.0f, "Plugin refused to open its own UI");
-                    pData->engine->callback(CALLBACK_SHOW_GUI, fId, -1, 0, 0.0f, nullptr);
-                    return;
-                }
-
-                if (fUi.type == PLUGIN_UI_QT)
-                    pData->gui->setWidget((QWidget*)fUi.widget);
-
-                updateUi();
-
-                pData->gui->setWindowTitle(QString("%1 (GUI)").arg(pData->name));
-                pData->gui->show();
-            }
-            else
-            {
-                fUi.descriptor->cleanup(fUi.handle);
-                fUi.handle = nullptr;
-                fUi.widget = nullptr;
-
-                if (pData->gui != nullptr)
-                {
-                    pData->guiGeometry = pData->gui->saveGeometry();
-                    pData->gui->close();
-                    delete pData->gui;
-                    pData->gui = nullptr;
-                }
-            }
-#endif
+            if (fUi.type == UI::TYPE_EMBED)
+                fUi.glWindow.close();
         }
     }
 
     void idle() override
     {
-        if (fUi.type == UI::TYPE_NULL)
-            return CarlaPlugin::idle();
-
         if (! fAtomQueueOut.isEmpty())
         {
             char dumpBuf[fAtomQueueOut.getSize()];
@@ -4059,6 +3994,8 @@ public:
         CARLA_SAFE_ASSERT_RETURN(height > 0, 1);
         carla_debug("Lv2Plugin::handleUiResize(%i, %i)", width, height);
 
+        fUi.glWindow.setSize(static_cast<uint>(width), static_cast<uint>(height));
+
         return 0;
     }
 
@@ -4740,9 +4677,23 @@ public:
         }
 
         // ---------------------------------------------------------------
-        // initialize ui features (part 1)
+        // initialize ui data
 
-        QString guiTitle(QString("%1 (GUI)").arg(pData->name));
+        QString guiTitle(QString("%1 (GL GUI)").arg(pData->name));
+        fUi.title = carla_strdup(guiTitle.toUtf8().constData());
+
+        fUi.glWindow.setResizable(isUiResizable());
+        fUi.glWindow.setTitle(fUi.title);
+
+        if (const char* const win = getenv("CARLA_TRANSIENT_WINDOW"))
+        {
+            const long winl = std::atol(win);
+            carla_stderr2("got transient, %s vs %li", win, winl);
+            fUi.glWindow.setTransient(winl);
+        }
+
+        // ---------------------------------------------------------------
+        // initialize ui features (part 1)
 
         LV2_Extension_Data_Feature* const uiDataFt = new LV2_Extension_Data_Feature;
         uiDataFt->data_access                      = fDescriptor->extension_data;
@@ -4757,7 +4708,7 @@ public:
 
         LV2_External_UI_Host* const uiExternalHostFt = new LV2_External_UI_Host;
         uiExternalHostFt->ui_closed                  = carla_lv2_external_ui_closed;
-        uiExternalHostFt->plugin_human_id            = carla_strdup(guiTitle.toUtf8().constData());
+        uiExternalHostFt->plugin_human_id            = fUi.title;
 
         // ---------------------------------------------------------------
         // initialize ui features (part 2)
@@ -4784,7 +4735,7 @@ public:
         fFeatures[kFeatureIdUiNoUserResize]->data  = nullptr;
 
         fFeatures[kFeatureIdUiParent]->URI         = LV2_UI__parent;
-        fFeatures[kFeatureIdUiParent]->data        = nullptr;
+        fFeatures[kFeatureIdUiParent]->data        = (void*)fUi.glWindow.getWindowId();
 
         fFeatures[kFeatureIdUiPortMap]->URI        = LV2_UI__portMap;
         fFeatures[kFeatureIdUiPortMap]->data       = uiPortMapFt;
@@ -4887,12 +4838,19 @@ private:
         const LV2UI_Descriptor* descriptor;
         const LV2_RDF_UI*       rdfDescriptor;
 
+        const char* title;
+        DGL::App glApp;
+        DGL::Window glWindow;
+
         UI()
             : type(TYPE_NULL),
               handle(nullptr),
               widget(nullptr),
               descriptor(nullptr),
-              rdfDescriptor(nullptr) {}
+              rdfDescriptor(nullptr),
+              title(nullptr),
+              glApp(),
+              glWindow(glApp) {}
 
         ~UI()
         {
@@ -4900,6 +4858,7 @@ private:
             CARLA_ASSERT(widget == nullptr);
             CARLA_ASSERT(descriptor == nullptr);
             CARLA_ASSERT(rdfDescriptor == nullptr);
+            CARLA_ASSERT(title == nullptr);
         }
     } fUi;
 

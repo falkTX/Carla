@@ -303,6 +303,12 @@ if __name__ == '__main__':
 
     Carla.gui = CarlaHostW()
 
+    # test
+    win = Carla.gui.winId()
+
+    if win:
+        os.environ["CARLA_TRANSIENT_WINDOW"] = str(win)
+
     # -------------------------------------------------------------
     # Load project file if set
 

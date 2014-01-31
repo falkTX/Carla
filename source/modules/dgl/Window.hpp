@@ -40,6 +40,8 @@ public:
     Window(App& app, intptr_t parentId);
     virtual ~Window();
 
+    void setTransient(const intptr_t win);
+
     void show();
     void hide();
     void close();
