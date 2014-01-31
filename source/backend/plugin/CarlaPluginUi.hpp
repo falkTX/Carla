@@ -41,7 +41,7 @@ public:
     virtual void setTransientWinId(const uintptr_t winId) = 0;
     virtual void* getPtr() const noexcept = 0;
 
-    static bool tryTransientWinIdMatch(const char* const uiTitle, const uintptr_t winId);
+    static bool tryTransientWinIdMatch(const ulong pid, const char* const uiTitle, const uintptr_t winId);
 
 #ifdef CARLA_OS_MAC
     static CarlaPluginUi* newCocoa(CloseCallback*);

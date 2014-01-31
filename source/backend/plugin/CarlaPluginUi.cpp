@@ -135,10 +135,10 @@ public:
         carla_zeroStruct<XSizeHints>(sizeHints);
 
         sizeHints.flags      = PMinSize|PMaxSize;
-        sizeHints.min_width  = width;
-        sizeHints.min_height = height;
-        sizeHints.max_width  = width;
-        sizeHints.max_height = height;
+        sizeHints.min_width  = static_cast<int>(width);
+        sizeHints.min_height = static_cast<int>(height);
+        sizeHints.max_width  = static_cast<int>(width);
+        sizeHints.max_height = static_cast<int>(height);
         XSetNormalHints(fDisplay, fWindow, &sizeHints);
 
         if (forceUpdate)
@@ -174,8 +174,9 @@ private:
 
 // -----------------------------------------------------
 
-bool CarlaPluginUi::tryTransientWinIdMatch(const char* const uiTitle, const uintptr_t winId)
+bool CarlaPluginUi::tryTransientWinIdMatch(const ulong pid, const char* const uiTitle, const uintptr_t winId)
 {
+    CARLA_SAFE_ASSERT_RETURN(pid != 0, true);
     CARLA_SAFE_ASSERT_RETURN(uiTitle != nullptr && uiTitle[0] != '\0', true);
     CARLA_SAFE_ASSERT_RETURN(winId != 0, true);
 
@@ -197,8 +198,9 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const char* const uiTitle, const uint
     CARLA_SAFE_ASSERT_RETURN(sd.display != nullptr, true);
 
     Atom _ncl = XInternAtom(sd.display, "_NET_CLIENT_LIST" , True);
-    Atom _nwn = XInternAtom(sd.display, "_NET_WM_NAME", False);
-    Atom utf8 = XInternAtom(sd.display, "UTF8_STRING", False);
+    Atom _nwn = XInternAtom(sd.display, "_NET_WM_NAME", True);
+    Atom _nwp = XInternAtom(sd.display, "_NET_WM_PID", True);
+    Atom utf8 = XInternAtom(sd.display, "UTF8_STRING", True);
 
     Atom actualType;
     int actualFormat;
@@ -222,23 +224,49 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const char* const uiTitle, const uint
         const Window window(windows[i]);
         CARLA_SAFE_ASSERT_CONTINUE(window != 0);
 
+        // ------------------------------------------------
+        // try using pid
+
+        unsigned long pidSize;
+        unsigned char* pidData = nullptr;
+
+        status = XGetWindowProperty(sd.display, window, _nwp, 0L, (~0L), False, XA_CARDINAL, &actualType, &actualFormat, &pidSize, &bytesAfter, &pidData);
+
+        if (pidData != nullptr)
+        {
+            const ScopedFreeData sfd2(pidData);
+
+            CARLA_SAFE_ASSERT_CONTINUE(status == Success);
+            CARLA_SAFE_ASSERT_CONTINUE(pidSize != 0);
+
+            if (*(ulong*)pidData == pid)
+            {
+                CARLA_SAFE_ASSERT_RETURN(lastGoodWindow == window || lastGoodWindow == 0,  true);
+                lastGoodWindow = window;
+                carla_stdout("Match found using pid");
+            }
+        }
+        // ------------------------------------------------
+        // try using name
+
         unsigned long nameSize;
         unsigned char* nameData = nullptr;
 
         status = XGetWindowProperty(sd.display, window, _nwn, 0L, (~0L), False, utf8, &actualType, &actualFormat, &nameSize, &bytesAfter, &nameData);
 
-        if (nameData == nullptr)
-            continue;
-
-        const ScopedFreeData sfd2(nameData);
-
-        CARLA_SAFE_ASSERT_CONTINUE(status == Success);
-        CARLA_SAFE_ASSERT_CONTINUE(nameSize != 0);
-
-        if (std::strcmp((const char*)nameData, uiTitle) == 0)
+        if (nameData != nullptr)
         {
-            CARLA_SAFE_ASSERT_RETURN(lastGoodWindow == 0,  true);
-            lastGoodWindow = window;
+            const ScopedFreeData sfd2(nameData);
+
+            CARLA_SAFE_ASSERT_CONTINUE(status == Success);
+            CARLA_SAFE_ASSERT_CONTINUE(nameSize != 0);
+
+            if (std::strcmp((const char*)nameData, uiTitle) == 0)
+            {
+                CARLA_SAFE_ASSERT_RETURN(lastGoodWindow == window || lastGoodWindow == 0,  true);
+                lastGoodWindow = window;
+                carla_stdout("Match found using name");
+            }
         }
     }
 

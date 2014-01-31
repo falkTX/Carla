@@ -408,7 +408,7 @@ public:
         carla_stdout("Trying to get window...");
 
         QString uiTitle(QString("%1 (GUI)").arg(pData->name));
-        if (CarlaPluginUi::tryTransientWinIdMatch(uiTitle.toUtf8().constData(), carla_standalone_get_transient_win_id()))
+        if (CarlaPluginUi::tryTransientWinIdMatch(pData->osc.thread.getPid(), uiTitle.toUtf8().constData(), carla_standalone_get_transient_win_id()))
             fTransientTryCounter = 0;
     }
 
