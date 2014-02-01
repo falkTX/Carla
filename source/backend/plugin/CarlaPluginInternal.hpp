@@ -332,7 +332,6 @@ struct CarlaPluginProtectedData {
     // Buffer functions
 
     void clearBuffers();
-
     void recreateLatencyBuffers();
 
     // -------------------------------------------------------------------
@@ -341,7 +340,7 @@ struct CarlaPluginProtectedData {
     void postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const float value3);
 
     // -------------------------------------------------------------------
-    // Library functions, see CarlaPlugin.cpp
+    // Library functions
 
     const char* libError(const char* const filename);
 
@@ -354,10 +353,15 @@ struct CarlaPluginProtectedData {
     void* uiLibSymbol(const char* const symbol);
 
     // -------------------------------------------------------------------
-    // Settings functions, see CarlaPlugin.cpp
+    // Settings functions
 
     void saveSetting(const uint option, const bool yesNo);
     uint loadSettings(const uint options, const uint availOptions);
+
+    // -------------------------------------------------------------------
+    // Misc
+
+    void tryTransient();
 
     // -------------------------------------------------------------------
 

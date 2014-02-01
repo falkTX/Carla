@@ -29,8 +29,6 @@
 
 #include "../engine/CarlaEngineOsc.hpp"
 
-#include "CarlaHost.h"
-
 extern "C" {
 #include "rtmempool/rtmempool-lv2.h"
 }
@@ -1201,9 +1199,7 @@ public:
             else
             {
                 LV2_EXTERNAL_UI_SHOW((LV2_External_UI_Widget*)fUi.widget);
-
-                if (carla_standalone_get_transient_win_id() != 0)
-                    pData->transientTryCounter = 1;
+                pData->tryTransient();
             }
         }
         else
@@ -1269,28 +1265,9 @@ public:
         if (fUi.handle != nullptr && fUi.descriptor != nullptr)
         {
             if (fUi.type == UI::TYPE_EMBED && fUi.window != nullptr)
-            {
                 fUi.window->idle();
-            }
-            else if ((fUi.type == UI::TYPE_EXTERNAL && fUi.widget != nullptr) ||
-                     (fUi.type == UI::TYPE_OSC && pData->osc.data.target != nullptr))
-            {
-                if (fUi.type == UI::TYPE_EXTERNAL && fUi.widget != nullptr)
-                    LV2_EXTERNAL_UI_RUN((LV2_External_UI_Widget*)fUi.widget);
-
-                if (pData->transientTryCounter == 0)
-                    return;
-                if (++pData->transientTryCounter % 10 != 0)
-                    return;
-                if (pData->transientTryCounter >= 200)
-                    return;
-
-                carla_stdout("Trying to get window...");
-
-                QString uiTitle(QString("%1 (GUI)").arg(pData->name));
-                if (CarlaPluginUi::tryTransientWinIdMatch((fUi.type == UI::TYPE_OSC) ? pData->osc.thread.getPid() : 0, uiTitle.toUtf8().constData(), carla_standalone_get_transient_win_id()))
-                    pData->transientTryCounter = 0;
-            }
+            else if (fUi.type == UI::TYPE_EXTERNAL && fUi.widget != nullptr)
+                LV2_EXTERNAL_UI_RUN((LV2_External_UI_Widget*)fUi.widget);
 
             if (fExt.uiidle != nullptr && fExt.uiidle->idle(fUi.handle) != 0)
             {
@@ -3506,9 +3483,6 @@ public:
 
         for (size_t i=CARLA_URI_MAP_ID_COUNT, count=fCustomURIDs.count(); i < count; ++i)
             osc_send_lv2_urid_map(pData->osc.data, static_cast<uint32_t>(i), fCustomURIDs.getAt(i));
-
-        if (carla_standalone_get_transient_win_id() != 0)
-            pData->transientTryCounter = 1;
     }
 
     // -------------------------------------------------------------------

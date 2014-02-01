@@ -22,17 +22,19 @@
 
 #include "CarlaDssiUtils.hpp"
 #include "CarlaMathUtils.hpp"
-#include "CarlaPluginUi.hpp"
-#include "CarlaHost.h"
 
 #include <QtCore/QByteArray>
 #include <QtCore/QString>
+
+// -----------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
 
 #if 0
 }
 #endif
+
+// -----------------------------------------------------
 
 class DssiPlugin : public CarlaPlugin
 {
@@ -391,24 +393,6 @@ public:
 
             pData->osc.thread.stop(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
         }
-    }
-
-    void idle() override
-    {
-        CarlaPlugin::idle();
-
-        if (pData->transientTryCounter == 0)
-            return;
-        if (++pData->transientTryCounter % 10 != 0)
-            return;
-        if (pData->transientTryCounter >= 200)
-            return;
-
-        carla_stdout("Trying to get window...");
-
-        QString uiTitle(QString("%1 (GUI)").arg(pData->name));
-        if (CarlaPluginUi::tryTransientWinIdMatch(pData->osc.thread.getPid(), uiTitle.toUtf8().constData(), carla_standalone_get_transient_win_id()))
-            pData->transientTryCounter = 0;
     }
 
     // -------------------------------------------------------------------
@@ -868,8 +852,8 @@ public:
             for (uint32_t i=0; i < newCount; ++i)
             {
                 const DSSI_Program_Descriptor* const pdesc(fDssiDescriptor->get_program(fHandle, i));
-                CARLA_ASSERT(pdesc != nullptr);
-                CARLA_ASSERT(pdesc->Name != nullptr);
+                CARLA_SAFE_ASSERT_CONTINUE(pdesc != nullptr);
+                CARLA_SAFE_ASSERT(pdesc->Name != nullptr);
 
                 pData->midiprog.data[i].bank    = static_cast<uint32_t>(pdesc->Bank);
                 pData->midiprog.data[i].program = static_cast<uint32_t>(pdesc->Program);
@@ -1718,17 +1702,6 @@ public:
         CarlaPlugin::clearBuffers();
 
         carla_debug("DssiPlugin::clearBuffers() - end");
-    }
-
-    // -------------------------------------------------------------------
-    // OSC stuff
-
-    void updateOscData(const lo_address& source, const char* const url) override
-    {
-        CarlaPlugin::updateOscData(source, url);
-
-        if (carla_standalone_get_transient_win_id() != 0)
-            pData->transientTryCounter = 1;
     }
 
     // -------------------------------------------------------------------

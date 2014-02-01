@@ -654,8 +654,7 @@ class PluginEdit(QDialog):
         self.ui.ch_send_all_sound_off.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
         self.ui.ch_send_all_sound_off.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
 
-        if self.fPluginInfo['type'] != PLUGIN_VST:
-            self.ui.sw_programs.setCurrentIndex(1)
+        self.ui.sw_programs.setCurrentIndex(0 if self.fPluginInfo['type'] == PLUGIN_VST else 1)
 
         # Show/hide keyboard
         showKeyboard = (self.fPluginInfo['category'] == PLUGIN_CATEGORY_SYNTH or midiCountInfo['ins'] > 0 < midiCountInfo['outs'])

@@ -20,6 +20,7 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
+#include "CarlaPluginUi.hpp"
 
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>
@@ -61,6 +62,14 @@ struct ParamSymbol {
     CARLA_DECLARE_NON_COPY_STRUCT(ParamSymbol)
 #endif
 };
+
+// -----------------------------------------------------------------------
+
+void CarlaPluginProtectedData::tryTransient()
+{
+    if (carla_standalone_get_transient_win_id() != 0)
+        transientTryCounter = 1;
+}
 
 // -----------------------------------------------------------------------
 
@@ -1361,6 +1370,19 @@ void CarlaPlugin::idle()
                 uiParameterChange(i, getParameterValue(i));
         }
     }
+
+    if (pData->transientTryCounter == 0)
+        return;
+    if (++pData->transientTryCounter % 10 != 0)
+        return;
+    if (pData->transientTryCounter >= 200)
+        return;
+
+    carla_stdout("Trying to get window...");
+
+    QString uiTitle(QString("%1 (GUI)").arg(pData->name));
+    if (CarlaPluginUi::tryTransientWinIdMatch(pData->osc.data.target != nullptr ? pData->osc.thread.getPid() : 0, uiTitle.toUtf8().constData(), carla_standalone_get_transient_win_id()))
+        pData->transientTryCounter = 0;
 }
 
 void CarlaPlugin::showCustomUI(const bool yesNo)
@@ -1649,6 +1671,9 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
 
     for (uint32_t i=0; i < pData->param.count; ++i)
         osc_send_control(pData->osc.data, pData->param.data[i].rindex, getParameterValue(i));
+
+    if ((pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0 && carla_standalone_get_transient_win_id() != 0)
+        pData->transientTryCounter = 1;
 
     carla_stdout("CarlaPlugin::updateOscData() - done");
 }
