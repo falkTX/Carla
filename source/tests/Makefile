@@ -95,7 +95,7 @@ Utils: Utils.cpp ../utils/*.hpp
 
 # --------------------------------------------------------------
 
-Rewire.exe: Rewire-src.c.o Rewire.cpp.o
+Rewire.exe: Rewire.cpp.o
 	$(CXX) $^ -lversion -o $@
 
 Rewire-src.c.o: Rewire-src.c

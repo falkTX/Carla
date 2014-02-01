@@ -15,248 +15,158 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaString.hpp"
-
-#include "rewire/ReWireAPI.h"
-#include "rewire/ReWirePanelAPI.h"
+#include "CarlaLibUtils.hpp"
 
 // -----------------------------------------------------------------------
 
-// remove this
-namespace ReWire {
-extern "C" {
-typedef const char* TReWireFileSpec;
-}
-}
+typedef void (*Fn_RWDEFCloseDevice)();
+typedef void (*Fn_RWDEFDriveAudio)(void* ins, void* outs);
+typedef void (*Fn_RWDEFGetDeviceInfo)(void* info);
+typedef void (*Fn_RWDEFGetDeviceNameAndVersion)(long* version, char* name);
+typedef void (*Fn_RWDEFGetEventBusInfo)(ushort index, void* info);
+typedef void (*Fn_RWDEFGetEventChannelInfo)(void* v1, void* v2);
+typedef void (*Fn_RWDEFGetEventControllerInfo)(void* v1, ushort index, void* v2);
+typedef void (*Fn_RWDEFGetEventInfo)(void* info);
+typedef void (*Fn_RWDEFGetEventNoteInfo)(void* v1, ushort index, void* v2);
+typedef void (*Fn_RWDEFIdle)();
+typedef char (*Fn_RWDEFIsCloseOK)();
+typedef char (*Fn_RWDEFIsPanelAppLaunched)();
+typedef int  (*Fn_RWDEFLaunchPanelApp)();
+typedef int  (*Fn_RWDEFOpenDevice)(void* info);
+typedef int  (*Fn_RWDEFQuitPanelApp)();
+typedef void (*Fn_RWDEFSetAudioInfo)(void* info);
 
-// static ReWire::TReWireFileSpec kDeviceSpec = "/home/falktx/.wine32/drive_c/Program Files/Image-Line/FL Studio 11/System/Plugin/ReWire/FLReWire.dll";
-//static ReWire::TReWireFileSpec kDeviceSpec = "C:\\Program Files\\Waves\\ReWire\\WavesReWireDevice.dll";
+// -----------------------------------------------------------------------------
 
-static const ReWire::TReWireFileSpec kDeviceSpec = "C:\\Program Files\\AudioGL\\AudioGL.dll";
-static const char* const             kDeviceName = "AudioGL";
-static const char* const             kSinature   = "Ahem";
+struct RewireBridge {
+    void* lib;
 
-// -----------------------------------------------------------------------
-// try to figure this out...
+    Fn_RWDEFCloseDevice RWDEFCloseDevice;
+    Fn_RWDEFDriveAudio RWDEFDriveAudio;
+    Fn_RWDEFGetDeviceInfo RWDEFGetDeviceInfo;
+    Fn_RWDEFGetDeviceNameAndVersion RWDEFGetDeviceNameAndVersion;
+    Fn_RWDEFGetEventBusInfo RWDEFGetEventBusInfo;
+    Fn_RWDEFGetEventChannelInfo RWDEFGetEventChannelInfo;
+    Fn_RWDEFGetEventControllerInfo RWDEFGetEventControllerInfo;
+    Fn_RWDEFGetEventInfo RWDEFGetEventInfo;
+    Fn_RWDEFGetEventNoteInfo RWDEFGetEventNoteInfo;
+    Fn_RWDEFIdle RWDEFIdle;
+    Fn_RWDEFIsCloseOK RWDEFIsCloseOK;
+    Fn_RWDEFIsPanelAppLaunched RWDEFIsPanelAppLaunched;
+    Fn_RWDEFLaunchPanelApp RWDEFLaunchPanelApp;
+    Fn_RWDEFOpenDevice RWDEFOpenDevice;
+    Fn_RWDEFQuitPanelApp RWDEFQuitPanelApp;
+    Fn_RWDEFSetAudioInfo RWDEFSetAudioInfo;
 
-using namespace ReWire;
-
-// RWM2OpenImp
-
-typedef ReWireError (*TRWM2OpenProc)(void); //long reWireLibVersion
-typedef ReWireError (*TRWM2CloseProc)(void);
-
-static const char kRWM2OpenProcName[] = "RWM2OpenImp";
-static const char kRWM2CloseProcName[] = "RWM2CloseImp";
-
-static TRWM2OpenProc gRWM2OpenProc = NULL;
-static TRWM2CloseProc gRWM2CloseProc = NULL;
-
-// -----------------------------------------------------------------------
-
-class RewireThing
-{
-public:
-    RewireThing()
-        : fIsOpen(false),
-          fIsRegistered(false),
-          fIsLoaded(false),
-          fHandle(0)
+    RewireBridge(const char* const filename)
+        : lib(nullptr),
+          RWDEFCloseDevice(nullptr),
+          RWDEFDriveAudio(nullptr),
+          RWDEFGetDeviceInfo(nullptr),
+          RWDEFGetDeviceNameAndVersion(nullptr),
+          RWDEFGetEventBusInfo(nullptr),
+          RWDEFGetEventChannelInfo(nullptr),
+          RWDEFGetEventControllerInfo(nullptr),
+          RWDEFGetEventInfo(nullptr),
+          RWDEFGetEventNoteInfo(nullptr),
+          RWDEFIdle(nullptr),
+          RWDEFIsCloseOK(nullptr),
+          RWDEFIsPanelAppLaunched(nullptr),
+          RWDEFLaunchPanelApp(nullptr),
+          RWDEFOpenDevice(nullptr),
+          RWDEFQuitPanelApp(nullptr),
+          RWDEFSetAudioInfo(nullptr)
     {
-    }
+        lib = lib_open(filename);
 
-    ~RewireThing()
-    {
-        close();
-    }
-
-    bool open()
-    {
-        CARLA_SAFE_ASSERT_RETURN(! fIsOpen, true);
-
-        const ReWire::ReWireError result(ReWire::RWPOpen());
-
-        if (result == ReWire::kReWireError_NoError)
+        if (lib == nullptr)
         {
-            fIsOpen = true;
-            carla_stderr("rewire open ok");
-        }
-        else
-        {
-            carla_stderr2("rewire open failed %i", result);
-        }
-
-        // get func pointers
-        gRWM2OpenProc = (TRWM2OpenProc)ReWireFindReWireSharedLibraryFunction(kRWM2OpenProcName);
-        gRWM2CloseProc = (TRWM2CloseProc)ReWireFindReWireSharedLibraryFunction(kRWM2CloseProcName);
-
-        CARLA_SAFE_ASSERT_RETURN(gRWM2OpenProc != nullptr, true);
-        CARLA_SAFE_ASSERT_RETURN(gRWM2CloseProc != nullptr, true);
-
-        return fIsOpen;
-    }
-
-    bool start()
-    {
-        ReWire::ReWireError result = (gRWM2OpenProc)();
-
-        if (result == ReWire::kReWireError_NoError)
-        {
-            fIsLoaded = true;
-            carla_stderr("rewire load app ok");
-        }
-        else
-        {
-            carla_stderr2("rewire load app failed %i", result);
-        }
-
-        return true;
-    }
-
-#if 0
-    bool start()
-    {
-        char isRunningFlag = 0;
-        ReWire::ReWireError result = ReWire::RWPIsReWireMixerAppRunning(&isRunningFlag);
-
-        if (isRunningFlag == 0)
-        {
-            carla_stderr("rewire mixer is NOT running");
-
-            result = ReWire::RWPRegisterDevice(kDeviceSpec);
-
-            if (result == ReWire::kReWireError_NoError)
-            {
-                fIsRegistered = true;
-                carla_stderr("rewire register ok");
-            }
-            else if (result == ReWire::kReWireError_AlreadyExists)
-            {
-                fIsRegistered = true;
-                carla_stderr("rewire register already in place");
-            }
-            else
-            {
-                carla_stderr2("rewire register failed %i", result);
-            }
-        }
-        else
-        {
-            carla_stderr("rewire mixer is running");
-        }
-
-        result = ReWire::RWPLoadDevice(kDeviceName);
-
-        if (result == ReWire::kReWireError_NoError)
-        {
-            fIsLoaded = true;
-            carla_stderr("rewire load device ok");
-        }
-        else
-        {
-            carla_stderr2("rewire load device failed %i", result);
-        }
-
-        result = ReWire::RWPComConnect(kSinature, &fHandle);
-
-        if (result == ReWire::kReWireError_NoError)
-        {
-            carla_stderr("rewire connect ok | %i", fHandle);
-        }
-        else
-        {
-            carla_stderr2("rewire connect failed %i | %i", result, fHandle);
-        }
-
-        return false;
-    }
-#endif
-
-    void close()
-    {
-        if (! fIsOpen)
-        {
-            CARLA_SAFE_ASSERT(! fIsLoaded);
-            CARLA_SAFE_ASSERT(fHandle == 0);
+            fprintf(stderr, "Failed to load DLL, reason:\n%s\n", lib_error(filename));
             return;
         }
-
-        if (fIsLoaded)
-        {
-            const ReWire::ReWireError result((gRWM2CloseProc)());
-            fIsLoaded = false;
-
-            if (result == ReWire::kReWireError_NoError)
-                carla_stderr("rewire unload app ok");
-            else
-                carla_stderr2("rewire unload app failed %i", result);
-        }
-
-#if 0
-        if (fHandle != 0)
-        {
-            const ReWire::ReWireError result(ReWire::RWPComDisconnect(fHandle));
-            fHandle = 0;
-
-            if (result == ReWire::kReWireError_NoError)
-                carla_stderr("rewire disconnect ok");
-            else
-                carla_stderr2("rewire disconnect failed %i", result);
-        }
-
-        if (fIsLoaded)
-        {
-            const ReWire::ReWireError result(ReWire::RWPUnloadDevice(kDeviceName));
-            fIsLoaded = false;
-
-            if (result == ReWire::kReWireError_NoError)
-                carla_stderr("rewire unload device ok");
-            else
-                carla_stderr2("rewire unload device failed %i", result);
-        }
-
-        if (fIsRegistered)
-        {
-            const ReWire::ReWireError result(ReWire::RWPUnregisterDevice(kDeviceSpec));
-            fIsRegistered = false;
-
-            if (result == ReWire::kReWireError_NoError)
-                carla_stderr("rewire unregister ok");
-            else
-                carla_stderr2("rewire unregister failed %i", result);
-        }
-#endif
-
-        const ReWire::ReWireError result(ReWire::RWPClose());
-
-        if (result == ReWire::kReWireError_NoError)
-            carla_stderr("rewire close ok");
         else
-            carla_stderr2("rewire close failed %i", result);
+        {
+            fprintf(stdout, "loaded sucessfully!\n");
+        }
 
-        fIsOpen = false;
+        #define JOIN(a, b) a ## b
+        #define LIB_SYMBOL(NAME) NAME = (Fn_##NAME)lib_symbol(lib, #NAME);
+
+        LIB_SYMBOL(RWDEFCloseDevice)
+        LIB_SYMBOL(RWDEFDriveAudio)
+        LIB_SYMBOL(RWDEFGetDeviceInfo)
+        LIB_SYMBOL(RWDEFGetDeviceNameAndVersion)
+        LIB_SYMBOL(RWDEFGetEventBusInfo)
+        LIB_SYMBOL(RWDEFGetEventChannelInfo)
+        LIB_SYMBOL(RWDEFGetEventControllerInfo)
+        LIB_SYMBOL(RWDEFGetEventInfo)
+        LIB_SYMBOL(RWDEFGetEventNoteInfo)
+        LIB_SYMBOL(RWDEFIdle)
+        LIB_SYMBOL(RWDEFIsCloseOK)
+        LIB_SYMBOL(RWDEFIsPanelAppLaunched)
+        LIB_SYMBOL(RWDEFLaunchPanelApp)
+        LIB_SYMBOL(RWDEFOpenDevice)
+        LIB_SYMBOL(RWDEFQuitPanelApp)
+        LIB_SYMBOL(RWDEFSetAudioInfo)
+
+        #undef JOIN
+        #undef LIB_SYMBOL
     }
 
-private:
-    bool fIsOpen;
-    bool fIsRegistered;
-    bool fIsLoaded;
-    ReWire::TRWPPortHandle fHandle;
+    ~RewireBridge()
+    {
+        if (lib != nullptr)
+        {
+            lib_close(lib);
+            lib = nullptr;
+        }
+    }
 };
 
 // -----------------------------------------------------------------------
 
 int main(/*int argc, char* argv[]*/)
 {
-    RewireThing re;
+    //static const char* const filename = "C:\\Program Files\\Waves\\ReWire\\WavesReWireDevice.dll";
+    static const char* const filename = "C:\\Program Files\\AudioGL\\AudioGL.dll";
 
-    if (! re.open())
-        return 1;
+    RewireBridge bridge(filename);
 
-    re.start();
-    re.close();
+    struct OpenInfo {
+        ulong size1; // ??
+        ulong size2; // 12
+        long sampleRate;
+        long bufferSize;
+    };
+    OpenInfo info;
+    info.size1 = sizeof(OpenInfo);
+    info.size2 = 12;
+    info.sampleRate = 44100;
+    info.bufferSize = 512;
+
+    (bridge.RWDEFOpenDevice)(&info);
+
+    long version;
+    char name[256];
+    carla_zeroChar(name, 256);
+    (bridge.RWDEFGetDeviceNameAndVersion)(&version, name);
+
+    carla_stdout("Ok, this is the info:");
+    carla_stdout("\tVersion: %i", version);
+    carla_stdout("\tName:    \"%s\"", name);
+
+    carla_stdout("Starting panel...");
+    (bridge.RWDEFLaunchPanelApp)();
+
+    for (int i=0; i<500; ++i)
+    //for (; (bridge.RWDEFIsPanelAppLaunched)() != 0;)
+    {
+        (bridge.RWDEFIdle)();
+        carla_msleep(20);
+    }
+
+    (bridge.RWDEFQuitPanelApp)();
+    (bridge.RWDEFCloseDevice)();
 
     return 0;
 }
-
-// -----------------------------------------------------------------------
