@@ -36,6 +36,7 @@ extern "C" {
 }
 
 #include <QtCore/QDir>
+#include <QtCore/QFile>
 #include <QtCore/QUrl>
 
 // -----------------------------------------------------

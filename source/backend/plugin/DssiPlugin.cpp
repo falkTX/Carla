@@ -1663,7 +1663,7 @@ public:
 
     void sampleRateChanged(const double newSampleRate) override
     {
-        CARLA_ASSERT_INT(newSampleRate > 0.0, (int)newSampleRate);
+        CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
         carla_debug("DssiPlugin::sampleRateChanged(%g) - start", newSampleRate);
 
         // TODO
@@ -1764,8 +1764,9 @@ public:
             return;
 
 #if 0
-        uint8_t midiData[4] = { 0 };
-        midiData[1] = MIDI_STATUS_NOTE_ON + channel;
+        uint8_t midiData[4];
+        midiData[0] = 0;
+        midiData[1] = static_cast<uint8_t>(MIDI_STATUS_NOTE_ON + channel);
         midiData[2] = note;
         midiData[3] = velo;
 
@@ -1782,9 +1783,11 @@ public:
             return;
 
 #if 0
-        uint8_t midiData[4] = { 0 };
-        midiData[1] = MIDI_STATUS_NOTE_OFF + channel;
+        uint8_t midiData[4];
+        midiData[0] = 0;
+        midiData[1] = static_cast<uint8_t>(MIDI_STATUS_NOTE_OFF + channel);
         midiData[2] = note;
+        midiData[3] = 0;
 
         osc_send_midi(pData->osc.data, midiData);
 #endif

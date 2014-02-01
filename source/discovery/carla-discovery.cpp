@@ -1293,7 +1293,7 @@ static void do_vst_check(void*& libHandle, const bool init)
         else
             cProduct.clear();
 
-        int hints = 0x0;
+        uint hints = 0x0;
         int audioIns = effect->numInputs;
         int audioOuts = effect->numOutputs;
         int midiIns = 0;
@@ -1365,13 +1365,13 @@ static void do_vst_check(void*& libHandle, const bool init)
 
             midiEvents[0].type = kVstMidiType;
             midiEvents[0].byteSize = sizeof(VstMidiEvent);
-            midiEvents[0].midiData[0] = MIDI_STATUS_NOTE_ON;
+            midiEvents[0].midiData[0] = char(MIDI_STATUS_NOTE_ON);
             midiEvents[0].midiData[1] = 64;
             midiEvents[0].midiData[2] = 100;
 
             midiEvents[1].type = kVstMidiType;
             midiEvents[1].byteSize = sizeof(VstMidiEvent);
-            midiEvents[1].midiData[0] = MIDI_STATUS_NOTE_OFF;
+            midiEvents[1].midiData[0] = char(MIDI_STATUS_NOTE_OFF);
             midiEvents[1].midiData[1] = 64;
             midiEvents[1].deltaFrames = kBufferSize/2;
 
