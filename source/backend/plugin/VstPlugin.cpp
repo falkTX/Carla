@@ -21,6 +21,7 @@
 #ifdef WANT_VST
 
 #include "CarlaVstUtils.hpp"
+#include "CarlaPluginUi.hpp"
 #include "CarlaMathUtils.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
@@ -39,8 +40,8 @@ const unsigned int PLUGIN_USES_OLD_VSTSDK       = 0x4000; //!< VST Plugin uses a
 const unsigned int PLUGIN_WANTS_MIDI_INPUT      = 0x8000; //!< VST Plugin wants MIDI input
 /**@}*/
 
-class VstPlugin : public CarlaPlugin/*,
-                  public CarlaPluginGui::Callback*/
+class VstPlugin : public CarlaPlugin,
+                         CarlaPluginUi::CloseCallback
 {
 public:
     VstPlugin(CarlaEngine* const engine, const unsigned int id)
@@ -97,11 +98,13 @@ public:
             pData->active = false;
         }
 
+#if 0
         if (fEffect != nullptr)
         {
             dispatcher(effClose, 0, 0, nullptr, 0.0f);
             fEffect = nullptr;
         }
+#endif
 
         // make plugin invalid
         fUnique2 += 1;
@@ -123,6 +126,7 @@ public:
         return PLUGIN_VST;
     }
 
+#if 0
     PluginCategory getCategory() const override
     {
         CARLA_ASSERT(fEffect != nullptr);
@@ -157,6 +161,7 @@ public:
 
         return fEffect->uniqueID;
     }
+#endif
 
     // -------------------------------------------------------------------
     // Information (count)
@@ -166,6 +171,7 @@ public:
     // -------------------------------------------------------------------
     // Information (current data)
 
+#if 0
     int32_t getChunkData(void** const dataPtr) const override
     {
         CARLA_ASSERT(pData->options & PLUGIN_OPTION_USE_CHUNKS);
@@ -174,10 +180,12 @@ public:
 
         return dispatcher(effGetChunk, 0 /* bank */, 0, dataPtr, 0.0f);
     }
+#endif
 
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
+#if 0
     unsigned int getOptionsAvailable() const override
     {
         CARLA_ASSERT(fEffect != nullptr);
@@ -214,7 +222,9 @@ public:
 
         return fEffect->getParameter(fEffect, parameterId);
     }
+#endif
 
+#if 0
     void getLabel(char* const strBuf) const override
     {
         CARLA_ASSERT(fEffect != nullptr);
@@ -276,6 +286,7 @@ public:
         strBuf[0] = '\0';
         dispatcher(effGetParamLabel, parameterId, 0, strBuf, 0.0f);
     }
+#endif
 
     // -------------------------------------------------------------------
     // Set data (state)
@@ -285,6 +296,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (internal stuff)
 
+#if 0
     void setName(const char* const newName) override
     {
         CarlaPlugin::setName(newName);
@@ -292,10 +304,12 @@ public:
         //if (pData->gui != nullptr)
         //    pData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)pData->name));
     }
+#endif
 
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
+#if 0
     void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_ASSERT(fEffect != nullptr);
@@ -355,10 +369,12 @@ public:
 
         CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
     }
+#endif
 
     // -------------------------------------------------------------------
     // Set ui stuff
 
+#if 0
     void showCustomUI(const bool yesNo) override
     {
         if (fGui.isVisible == yesNo)
@@ -463,7 +479,9 @@ public:
 
         fGui.isVisible = yesNo;
     }
+#endif
 
+#if 0
     void idle() override
     {
 #ifdef VESTIGE_HEADER
@@ -484,6 +502,7 @@ public:
 
         CarlaPlugin::idle();
     }
+#endif
 
     // -------------------------------------------------------------------
     // Plugin state
@@ -494,6 +513,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
         carla_debug("VstPlugin::reload() - start");
 
+#if 0
         const EngineProcessMode processMode(pData->engine->getProccessMode());
 
         // Safely disable plugin for reload
@@ -857,10 +877,12 @@ public:
 
         if (pData->active)
             activate();
+#endif
 
         carla_debug("VstPlugin::reload() - end");
     }
 
+#if 0
     void reloadPrograms(const bool init) override
     {
         carla_debug("VstPlugin::reloadPrograms(%s)", bool2str(init));
@@ -956,10 +978,12 @@ public:
             pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0f, nullptr);
         }
     }
+#endif
 
     // -------------------------------------------------------------------
     // Plugin processing
 
+#if 0
     void activate() override
     {
         dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
@@ -971,9 +995,12 @@ public:
         dispatcher(effStopProcess, 0, 0, nullptr, 0.0f);
         dispatcher(effMainsChanged, 0, 0, nullptr, 0.0f);
     }
+#endif
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
     {
+        (void)inBuffer; (void)outBuffer; (void)frames;
+#if 0
         uint32_t i, k;
 
         // --------------------------------------------------------------------------------------------------------
@@ -1425,8 +1452,10 @@ public:
             }
 
         } // End of Control and MIDI Output
+#endif
     }
 
+#if 0
     bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
     {
         CARLA_ASSERT(frames > 0);
@@ -1587,7 +1616,9 @@ public:
         pData->singleMutex.unlock();
         return true;
     }
+#endif
 
+#if 0
     void bufferSizeChanged(const uint32_t newBufferSize) override
     {
         CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
@@ -1621,6 +1652,7 @@ public:
         if (pData->active)
             activate();
     }
+#endif
 
     // -------------------------------------------------------------------
     // Plugin buffers
@@ -1630,6 +1662,7 @@ public:
     // -------------------------------------------------------------------
     // Post-poned UI Stuff
 
+#if 0
     void uiParameterChange(const uint32_t index, const float value) override
     {
         CARLA_ASSERT(index < pData->param.count);
@@ -1703,16 +1736,25 @@ public:
 
         osc_send_midi(pData->osc.data, midiData);
     }
+#endif
 
     // -------------------------------------------------------------------
 
 protected:
-//     void guiClosedCallback() override
-//     {
-//         showGui(false);
-//         pData->engine->callback(CALLBACK_SHOW_GUI, pData->id, 0, 0, 0.0f, nullptr);
-//     }
+    void handlePluginUiClosed() override
+    {
+        //CARLA_SAFE_ASSERT_RETURN(fUi.type == UI::TYPE_EMBED,);
+        //CARLA_SAFE_ASSERT_RETURN(fUi.window != nullptr,);
+        carla_debug("Lv2Plugin::handleExternalUiClosed()");
 
+        //fUi.window->hide();
+
+        //showGui(false);
+
+        pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+    }
+
+#if 0
     intptr_t dispatcher(int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt) const
     {
 #if defined(DEBUG) && ! defined(CARLA_OS_WIN)
@@ -1723,7 +1765,9 @@ protected:
 
         return (fEffect != nullptr) ? fEffect->dispatcher(fEffect, opcode, index, value, ptr, opt) : 0;
     }
+#endif
 
+#if 0
     intptr_t handleAudioMasterCallback(const int32_t opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
     {
 #if 0
@@ -2110,6 +2154,7 @@ protected:
 
         return ret;
     }
+#endif
 
     // -------------------------------------------------------------------
 
@@ -2183,6 +2228,7 @@ public:
         fEffect->resvd1 = ToVstPtr<VstPlugin>(this);
 #endif
 
+#if 0
         dispatcher(effOpen, 0, 0, nullptr, 0.0f);
 
         // ---------------------------------------------------------------
@@ -2298,6 +2344,7 @@ public:
             if (getMidiInCount() > 0)
                 pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
         }
+#endif
 
         return true;
     }
@@ -2401,6 +2448,7 @@ private:
             carla_debug("carla_vst_audioMasterCallback(%p, %02i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
 #endif
 
+#if 0
         switch (opcode)
         {
         case audioMasterVersion:
@@ -2495,6 +2543,8 @@ private:
         }
 
         return (self != nullptr) ? self->handleAudioMasterCallback(opcode, index, value, ptr, opt) : 0;
+#endif
+        return 0;
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VstPlugin)
