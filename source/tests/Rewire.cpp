@@ -19,22 +19,95 @@
 
 // -----------------------------------------------------------------------
 
+struct OpenInfo {
+    ulong size1; // ??
+    ulong size2; // 12
+    long sampleRate;
+    long bufferSize;
+};
+
+struct DevInfo {
+    ulong size; // 8288
+    char name[32];
+    long channelCount; // max limited to 255
+    char channelNames[256][32];
+    unsigned long defaultChannels[8];
+    unsigned long stereoPairs[4];
+    unsigned long eventBufferSize;
+    long version;
+};
+
+struct AudioInfo {
+    ulong size; // 12
+    long sampleRate;
+    long bufferSize;
+};
+
+struct BusInfo {
+    ulong size; // 40
+    ulong channel;
+    char name[32];
+};
+
+struct EventInfo {
+    ulong size; // 36
+    ulong bus[32];
+};
+
+struct Event { // 24
+    ushort type;
+    uchar d1, d2;
+    ulong s1, s2, s3, s4, s5;
+};
+
+struct EventBuffer {
+    ulong size1; // 20
+    ulong size2; // 24
+    ulong count;
+    ulong maxCount;
+    Event* buf;
+};
+
+struct AudioInInfo {
+    ulong size; // 1116
+    EventBuffer evBuf;
+    unsigned long channels[8];
+    float* audioBuf[256];
+    long tickStart;
+    ulong frames;
+    ulong playMode;
+    ulong tempo; // bpm
+    ulong signNumerator;
+    ulong signDenominator;
+    long loopStartPos;
+    long loopEndPos;
+    ulong loopOn;
+} ReWireDriveParams;
+
+struct AudioOutInfo {
+    ulong size; // 56
+    EventBuffer evBuf;
+    ulong channels[8];
+};
+
+// -----------------------------------------------------------------------
+
 typedef void (*Fn_RWDEFCloseDevice)();
-typedef void (*Fn_RWDEFDriveAudio)(void* ins, void* outs);
-typedef void (*Fn_RWDEFGetDeviceInfo)(void* info);
+typedef void (*Fn_RWDEFDriveAudio)(AudioInInfo* in, AudioOutInfo* out);
+typedef void (*Fn_RWDEFGetDeviceInfo)(DevInfo* info);
 typedef void (*Fn_RWDEFGetDeviceNameAndVersion)(long* version, char* name);
-typedef void (*Fn_RWDEFGetEventBusInfo)(ushort index, void* info);
+typedef void (*Fn_RWDEFGetEventBusInfo)(ushort index, BusInfo* info);
 typedef void (*Fn_RWDEFGetEventChannelInfo)(void* v1, void* v2);
 typedef void (*Fn_RWDEFGetEventControllerInfo)(void* v1, ushort index, void* v2);
-typedef void (*Fn_RWDEFGetEventInfo)(void* info);
+typedef void (*Fn_RWDEFGetEventInfo)(EventInfo* info);
 typedef void (*Fn_RWDEFGetEventNoteInfo)(void* v1, ushort index, void* v2);
 typedef void (*Fn_RWDEFIdle)();
 typedef char (*Fn_RWDEFIsCloseOK)();
 typedef char (*Fn_RWDEFIsPanelAppLaunched)();
 typedef int  (*Fn_RWDEFLaunchPanelApp)();
-typedef int  (*Fn_RWDEFOpenDevice)(void* info);
+typedef int  (*Fn_RWDEFOpenDevice)(OpenInfo* info);
 typedef int  (*Fn_RWDEFQuitPanelApp)();
-typedef void (*Fn_RWDEFSetAudioInfo)(void* info);
+typedef void (*Fn_RWDEFSetAudioInfo)(AudioInfo* info);
 
 // -----------------------------------------------------------------------------
 
@@ -127,17 +200,25 @@ struct RewireBridge {
 
 int main(/*int argc, char* argv[]*/)
 {
-    //static const char* const filename = "C:\\Program Files\\Waves\\ReWire\\WavesReWireDevice.dll";
-    static const char* const filename = "C:\\Program Files\\AudioGL\\AudioGL.dll";
+    static const char* const filename = "C:\\Program Files\\Waves\\ReWire\\WavesReWireDevice.dll";
+//     static const char* const filename = "C:\\Program Files\\AudioGL\\AudioGL.dll";
 
     RewireBridge bridge(filename);
 
-    struct OpenInfo {
-        ulong size1; // ??
-        ulong size2; // 12
-        long sampleRate;
-        long bufferSize;
-    };
+    DevInfo devInfo;
+    carla_zeroStruct<DevInfo>(devInfo);
+    devInfo.size = 8288;
+
+    (bridge.RWDEFGetDeviceInfo)(&devInfo);
+
+    carla_stdout("Ok, this is the info:");
+    carla_stdout("\tVersion:  %i", devInfo.version);
+    carla_stdout("\tName:     \"%s\"", devInfo.name);
+    carla_stdout("\tChannels: %l", devInfo.channelCount);
+
+    for (long i=0; i < devInfo.channelCount; ++i)
+        carla_stdout("\t\t#%i: \"%s\"", i+1, devInfo.channelNames[i]);
+
     OpenInfo info;
     info.size1 = sizeof(OpenInfo);
     info.size2 = 12;
@@ -146,15 +227,7 @@ int main(/*int argc, char* argv[]*/)
 
     (bridge.RWDEFOpenDevice)(&info);
 
-    long version;
-    char name[256];
-    carla_zeroChar(name, 256);
-    (bridge.RWDEFGetDeviceNameAndVersion)(&version, name);
-
-    carla_stdout("Ok, this is the info:");
-    carla_stdout("\tVersion: %i", version);
-    carla_stdout("\tName:    \"%s\"", name);
-
+#if 0
     carla_stdout("Starting panel...");
     (bridge.RWDEFLaunchPanelApp)();
 
@@ -166,6 +239,11 @@ int main(/*int argc, char* argv[]*/)
     }
 
     (bridge.RWDEFQuitPanelApp)();
+#endif
+
+    for (; (bridge.RWDEFIsCloseOK)() == 0;)
+        carla_msleep(10);
+
     (bridge.RWDEFCloseDevice)();
 
     return 0;

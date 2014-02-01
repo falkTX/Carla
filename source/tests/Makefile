@@ -98,11 +98,8 @@ Utils: Utils.cpp ../utils/*.hpp
 Rewire.exe: Rewire.cpp.o
 	$(CXX) $^ -lversion -o $@
 
-Rewire-src.c.o: Rewire-src.c
-	$(CC) $< -Wall -Wextra -DDEBUG -O0 -g -I../includes -c -o $@
-
 Rewire.cpp.o: Rewire.cpp
-	$(CXX) $< -Wall -Wextra -DREAL_BUILD -DDEBUG -O0 -g -I../includes -I../utils -c -o $@
+	$(CXX) $< -Wall -Wextra -DREAL_BUILD -DDEBUG -O0 -g -I../includes -I../utils -std=c++11 -c -o $@
 
 # --------------------------------------------------------------
 
