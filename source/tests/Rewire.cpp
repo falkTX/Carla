@@ -17,6 +17,7 @@
 
 #include "CarlaString.hpp"
 
+#include "rewire/ReWireAPI.h"
 #include "rewire/ReWirePanelAPI.h"
 
 // -----------------------------------------------------------------------
@@ -28,7 +29,28 @@ typedef const char* TReWireFileSpec;
 }
 }
 
-ReWire::TReWireFileSpec kDeviceSpec = "/home/falktx/.wine32/drive_c/Program Files/Image-Line/FL Studio 11/System/Plugin/ReWire/FLReWire.dll";
+// static ReWire::TReWireFileSpec kDeviceSpec = "/home/falktx/.wine32/drive_c/Program Files/Image-Line/FL Studio 11/System/Plugin/ReWire/FLReWire.dll";
+//static ReWire::TReWireFileSpec kDeviceSpec = "C:\\Program Files\\Waves\\ReWire\\WavesReWireDevice.dll";
+
+static const ReWire::TReWireFileSpec kDeviceSpec = "C:\\Program Files\\AudioGL\\AudioGL.dll";
+static const char* const             kDeviceName = "AudioGL";
+static const char* const             kSinature   = "Ahem";
+
+// -----------------------------------------------------------------------
+// try to figure this out...
+
+using namespace ReWire;
+
+// RWM2OpenImp
+
+typedef ReWireError (*TRWM2OpenProc)(void); //long reWireLibVersion
+typedef ReWireError (*TRWM2CloseProc)(void);
+
+static const char kRWM2OpenProcName[] = "RWM2OpenImp";
+static const char kRWM2CloseProcName[] = "RWM2CloseImp";
+
+static TRWM2OpenProc gRWM2OpenProc = NULL;
+static TRWM2CloseProc gRWM2CloseProc = NULL;
 
 // -----------------------------------------------------------------------
 
@@ -41,7 +63,6 @@ public:
           fIsLoaded(false),
           fHandle(0)
     {
-        fDevName = "";
     }
 
     ~RewireThing()
@@ -62,12 +83,37 @@ public:
         }
         else
         {
-            carla_stderr2("rewire open failed");
+            carla_stderr2("rewire open failed %i", result);
         }
+
+        // get func pointers
+        gRWM2OpenProc = (TRWM2OpenProc)ReWireFindReWireSharedLibraryFunction(kRWM2OpenProcName);
+        gRWM2CloseProc = (TRWM2CloseProc)ReWireFindReWireSharedLibraryFunction(kRWM2CloseProcName);
+
+        CARLA_SAFE_ASSERT_RETURN(gRWM2OpenProc != nullptr, true);
+        CARLA_SAFE_ASSERT_RETURN(gRWM2CloseProc != nullptr, true);
 
         return fIsOpen;
     }
 
+    bool start()
+    {
+        ReWire::ReWireError result = (gRWM2OpenProc)();
+
+        if (result == ReWire::kReWireError_NoError)
+        {
+            fIsLoaded = true;
+            carla_stderr("rewire load app ok");
+        }
+        else
+        {
+            carla_stderr2("rewire load app failed %i", result);
+        }
+
+        return true;
+    }
+
+#if 0
     bool start()
     {
         char isRunningFlag = 0;
@@ -99,8 +145,32 @@ public:
             carla_stderr("rewire mixer is running");
         }
 
+        result = ReWire::RWPLoadDevice(kDeviceName);
+
+        if (result == ReWire::kReWireError_NoError)
+        {
+            fIsLoaded = true;
+            carla_stderr("rewire load device ok");
+        }
+        else
+        {
+            carla_stderr2("rewire load device failed %i", result);
+        }
+
+        result = ReWire::RWPComConnect(kSinature, &fHandle);
+
+        if (result == ReWire::kReWireError_NoError)
+        {
+            carla_stderr("rewire connect ok | %i", fHandle);
+        }
+        else
+        {
+            carla_stderr2("rewire connect failed %i | %i", result, fHandle);
+        }
+
         return false;
     }
+#endif
 
     void close()
     {
@@ -111,6 +181,18 @@ public:
             return;
         }
 
+        if (fIsLoaded)
+        {
+            const ReWire::ReWireError result((gRWM2CloseProc)());
+            fIsLoaded = false;
+
+            if (result == ReWire::kReWireError_NoError)
+                carla_stderr("rewire unload app ok");
+            else
+                carla_stderr2("rewire unload app failed %i", result);
+        }
+
+#if 0
         if (fHandle != 0)
         {
             const ReWire::ReWireError result(ReWire::RWPComDisconnect(fHandle));
@@ -119,18 +201,18 @@ public:
             if (result == ReWire::kReWireError_NoError)
                 carla_stderr("rewire disconnect ok");
             else
-                carla_stderr2("rewire disconnect failed");
+                carla_stderr2("rewire disconnect failed %i", result);
         }
 
         if (fIsLoaded)
         {
-            const ReWire::ReWireError result(ReWire::RWPUnloadDevice(fDevName.getBuffer()));
+            const ReWire::ReWireError result(ReWire::RWPUnloadDevice(kDeviceName));
             fIsLoaded = false;
 
             if (result == ReWire::kReWireError_NoError)
-                carla_stderr("rewire unload ok");
+                carla_stderr("rewire unload device ok");
             else
-                carla_stderr2("rewire unload failed");
+                carla_stderr2("rewire unload device failed %i", result);
         }
 
         if (fIsRegistered)
@@ -141,15 +223,16 @@ public:
             if (result == ReWire::kReWireError_NoError)
                 carla_stderr("rewire unregister ok");
             else
-                carla_stderr2("rewire unregister failed");
+                carla_stderr2("rewire unregister failed %i", result);
         }
+#endif
 
         const ReWire::ReWireError result(ReWire::RWPClose());
 
         if (result == ReWire::kReWireError_NoError)
             carla_stderr("rewire close ok");
         else
-            carla_stderr2("rewire close failed");
+            carla_stderr2("rewire close failed %i", result);
 
         fIsOpen = false;
     }
@@ -159,8 +242,6 @@ private:
     bool fIsRegistered;
     bool fIsLoaded;
     ReWire::TRWPPortHandle fHandle;
-
-    CarlaString fDevName;
 };
 
 // -----------------------------------------------------------------------
