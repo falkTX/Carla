@@ -573,6 +573,9 @@ class CarlaPatchbayW(QFrame):
 
         pitem.sendNoteOn(channel, note)
 
+        if pluginId in self.fSelectedPlugins:
+            self.fKeys.keyboard.sendNoteOn(note, False)
+
     @pyqtSlot(int, int, int)
     def slot_handleNoteOffCallback(self, pluginId, channel, note):
         if pluginId >= self.fPluginCount:
@@ -583,6 +586,9 @@ class CarlaPatchbayW(QFrame):
             return
 
         pitem.sendNoteOff(channel, note)
+
+        if pluginId in self.fSelectedPlugins:
+            self.fKeys.keyboard.sendNoteOff(note, False)
 
     # -----------------------------------------------------------------
 
