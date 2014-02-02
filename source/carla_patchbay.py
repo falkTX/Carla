@@ -264,6 +264,16 @@ class CarlaPatchbayW(QFrame):
         settings.setValue("HorizontalScrollBarValue", self.fView.horizontalScrollBar().value())
         settings.setValue("VerticalScrollBarValue", self.fView.verticalScrollBar().value())
 
+    def showEditDialog(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.show()
+
     # -----------------------------------------------------------------
     # called by PluginEdit, ignored here
 
@@ -890,7 +900,7 @@ def canvasCallback(action, value1, value2, valueStr):
     elif action == patchcanvas.ACTION_PLUGIN_EDIT:
         pluginId = value1
 
-        # TODO
+        Carla.gui.fContainer.showEditDialog(pluginId)
 
     elif action == patchcanvas.ACTION_PLUGIN_RENAME:
         pluginId = value1

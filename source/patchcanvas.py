@@ -2451,9 +2451,6 @@ class CanvasBox(QGraphicsItem):
             act_p_rename = menu.addAction("&Rename...")
             act_p_remove = menu.addAction("Re&move")
 
-            # TODO
-            act_p_edit.setVisible(False)
-
             if not self.m_plugin_ui:
                 act_p_ui.setVisible(False)
 
@@ -2475,7 +2472,10 @@ class CanvasBox(QGraphicsItem):
 
         act_selected = menu.exec_(event.screenPos())
 
-        if act_selected == act_x_disc_all:
+        if act_selected is None:
+            pass
+
+        elif act_selected == act_x_disc_all:
             for port_id in port_con_list:
                 canvas.callback(ACTION_PORTS_DISCONNECT, port_id, 0, "")
 

@@ -147,6 +147,9 @@ class CarlaMultiW(QTabWidget):
         self.fPatchbay.saveSettings(settings)
         #self.fParent.saveSettings(settings)
 
+    def showEditDialog(self, pluginId):
+        self.fRack.showEditDialog(pluginId)
+
     # -----------------------------------------------------------------
 
     def fixCanvasPreviewSize(self):

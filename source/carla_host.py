@@ -97,6 +97,9 @@ class CarlaDummyW(object):
     def saveSettings(self, settings):
         pass
 
+    def showEditDialog(self, pluginId):
+        pass
+
 # ------------------------------------------------------------------------------------------------------------
 # Host Window
 

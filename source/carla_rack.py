@@ -232,6 +232,16 @@ class CarlaRackW(QListWidget):
     def saveSettings(self, settings):
         pass
 
+    def showEditDialog(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.widget.slot_showEditDialog(True)
+
     # -----------------------------------------------------------------
 
     @pyqtSlot()
