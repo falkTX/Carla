@@ -93,7 +93,7 @@ public:
     }
 
 protected:
-    bool isUpdateNeeded() const override
+    virtual bool isUpdateNeeded() const
     {
         return currentTime() > _delay;
     }
