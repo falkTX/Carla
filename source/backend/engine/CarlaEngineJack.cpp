@@ -1721,7 +1721,7 @@ private:
 
     bool findPluginIdAndIcon(const char* const clientName, int& pluginId, PatchbayIcon& icon)
     {
-        carla_debug("CarlaEngineJack::findPluginIdAndIcon(\"%s\", ...)");
+        carla_debug("CarlaEngineJack::findPluginIdAndIcon(\"%s\", ...)", clientName);
 
         for (uint i=0; i < pData->curPluginCount; ++i)
         {
@@ -1738,7 +1738,7 @@ private:
 
             if (std::strcmp(clientName, thisClientName) == 0)
             {
-                carla_stdout("CarlaEngineJack::findPluginIdAndIcon(\"%s\", ...) - found plugin, yes!!!");
+                carla_stdout("CarlaEngineJack::findPluginIdAndIcon(\"%s\", ...) - found plugin, yes!!!", clientName);
 
                 pluginId = static_cast<int>(i);
 
@@ -1760,7 +1760,7 @@ private:
                 return true;
             }
         }
-        carla_stdout("CarlaEngineJack::findPluginIdAndIcon(\"%s\", ...) - nothing here...");
+        carla_stdout("CarlaEngineJack::findPluginIdAndIcon(\"%s\", ...) - nothing here...", clientName);
         return false;
     }
 
