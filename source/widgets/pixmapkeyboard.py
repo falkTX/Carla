@@ -19,7 +19,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import pyqtSignal, qCritical, Qt, QPointF, QRectF, QSize
+from PyQt4.QtCore import pyqtSignal, pyqtSlot, qCritical, Qt, QPointF, QRectF, QTimer, QSize
 from PyQt4.QtGui import QColor, QFont, QPainter, QPixmap, QScrollArea, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
@@ -466,7 +466,15 @@ class PixmapKeyboardHArea(QScrollArea):
 
         self.setFixedHeight(self.keyboard.height() + self.horizontalScrollBar().height()/2 + 1)
         self.setWidget(self.keyboard)
-        self.ensureVisible(self.keyboard.width()/2-self.width()/2, 0)
 
-        #self.setEnabled(False)
-        #self.keyboard.setEnabled(False)
+        self.setEnabled(False)
+
+        QTimer.singleShot(0, self.slot_initScrollbarValue)
+
+    def setEnabled(self, yesNo):
+        self.keyboard.setEnabled(yesNo)
+        QScrollArea.setEnabled(self, yesNo)
+
+    @pyqtSlot()
+    def slot_initScrollbarValue(self):
+        self.horizontalScrollBar().setValue(self.horizontalScrollBar().maximum()/2)
