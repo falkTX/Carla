@@ -136,6 +136,7 @@ class CarlaMultiW(QTabWidget):
 
     def idleFast(self):
         self.fRack.idleFast()
+        self.fPatchbay.idleFast()
 
     def idleSlow(self):
         self.fRack.idleSlow()

@@ -48,7 +48,7 @@ class DigitalPeakMeter(QWidget):
         self.setChannels(0)
         self.setColor(self.GREEN)
 
-    def displayMeter(self, meter, level):
+    def displayMeter(self, meter, level, forced = False):
         if meter <= 0 or meter > self.fChannels:
             return qCritical("DigitalPeakMeter::displayMeter(%i, %f) - invalid meter number" % (meter, level))
         if not isinstance(level, float):
@@ -56,7 +56,7 @@ class DigitalPeakMeter(QWidget):
 
         i = meter - 1
 
-        if self.fSmoothMultiplier > 0:
+        if self.fSmoothMultiplier > 0 and not forced:
             level = (self.fLastValueData[i] * self.fSmoothMultiplier + level) / float(self.fSmoothMultiplier + 1)
 
         if level < 0.001:

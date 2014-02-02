@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla patchbay widget code
-# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
 # Imports (Global)
 
 from PyQt4.QtCore import QPointF, QTimer
-from PyQt4.QtGui import QFrame, QGraphicsView, QImage, QPrinter, QPrintDialog, QVBoxLayout
+from PyQt4.QtGui import QFrame, QGraphicsView, QGridLayout, QImage, QPrinter, QPrintDialog
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
@@ -28,6 +28,7 @@ from PyQt4.QtGui import QFrame, QGraphicsView, QImage, QPrinter, QPrintDialog, Q
 import patchcanvas
 
 from carla_widgets import *
+from digitalpeakmeter import DigitalPeakMeter
 from pixmapkeyboard import PixmapKeyboardHArea
 
 # ------------------------------------------------------------------------------------------------------------
@@ -52,7 +53,7 @@ class CarlaPatchbayW(QFrame):
     def __init__(self, parent, doSetup = True, onlyPatchbay = True):
         QFrame.__init__(self, parent)
 
-        self.fLayout = QVBoxLayout(self)
+        self.fLayout = QGridLayout(self)
         self.fLayout.setContentsMargins(0, 0, 0, 0)
         self.fLayout.setSpacing(1)
         self.setLayout(self.fLayout)
@@ -60,8 +61,24 @@ class CarlaPatchbayW(QFrame):
         self.fView = QGraphicsView(self)
         self.fKeys = PixmapKeyboardHArea(self)
 
-        self.fLayout.addWidget(self.fView)
-        self.fLayout.addWidget(self.fKeys)
+        self.fPeaksIn  = DigitalPeakMeter(self)
+        self.fPeaksOut = DigitalPeakMeter(self)
+        self.fPeaksCleared = True
+
+        self.fPeaksIn.setColor(DigitalPeakMeter.BLUE)
+        self.fPeaksIn.setChannels(2)
+        self.fPeaksIn.setOrientation(DigitalPeakMeter.VERTICAL)
+        self.fPeaksIn.setFixedWidth(25)
+
+        self.fPeaksOut.setColor(DigitalPeakMeter.GREEN)
+        self.fPeaksOut.setChannels(2)
+        self.fPeaksOut.setOrientation(DigitalPeakMeter.VERTICAL)
+        self.fPeaksOut.setFixedWidth(25)
+
+        self.fLayout.addWidget(self.fPeaksIn, 0, 0)
+        self.fLayout.addWidget(self.fView, 0, 1)
+        self.fLayout.addWidget(self.fPeaksOut, 0, 2)
+        self.fLayout.addWidget(self.fKeys, 1, 0, 1, 0)
 
         # -------------------------------------------------------------
         # Internal stuff
@@ -247,7 +264,23 @@ class CarlaPatchbayW(QFrame):
     # -----------------------------------------------------------------
 
     def idleFast(self):
-        pass
+        for pluginId in self.fSelectedPlugins:
+            self.fPeaksCleared = False
+            if self.fPeaksIn.isVisible():
+                self.fPeaksIn.displayMeter(1, Carla.host.get_input_peak_value(pluginId, True))
+                self.fPeaksIn.displayMeter(2, Carla.host.get_input_peak_value(pluginId, False))
+            if self.fPeaksOut.isVisible():
+                self.fPeaksOut.displayMeter(1, Carla.host.get_output_peak_value(pluginId, True))
+                self.fPeaksOut.displayMeter(2, Carla.host.get_output_peak_value(pluginId, False))
+            return
+        if self.fPeaksCleared:
+            return
+
+        self.fPeaksCleared = True
+        self.fPeaksIn.displayMeter(1, 0.0, True)
+        self.fPeaksIn.displayMeter(2, 0.0, True)
+        self.fPeaksOut.displayMeter(1, 0.0, True)
+        self.fPeaksOut.displayMeter(2, 0.0, True)
 
     def idleSlow(self):
         for i in range(self.fPluginCount):
