@@ -1211,6 +1211,9 @@ class PatchScene(QGraphicsScene):
                     group_item = item
                 elif item.type() == CanvasPortType:
                     group_item = item.parentItem()
+                #elif item.type() in (CanvasLineType, CanvasBezierLineType, CanvasLineMovType, CanvasBezierLineMovType):
+                    #plugin_list = []
+                    #break
 
                 if group_item is not None and group_item.m_plugin_id >= 0:
                     plugin_list.append(group_item.m_plugin_id)
