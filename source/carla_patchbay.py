@@ -339,8 +339,8 @@ class CarlaPatchbayW(QGraphicsView):
     @pyqtSlot(float, float)
     def slot_miniCanvasMoved(self, xp, yp):
         self.fMovingViaMiniCanvas = True
-        self.horizontalScrollBar().setValue(xp * self.fCanvasWidth)
-        self.verticalScrollBar().setValue(yp * self.fCanvasHeight)
+        self.horizontalScrollBar().setValue(xp * self.horizontalScrollBar().maximum())
+        self.verticalScrollBar().setValue(yp * self.verticalScrollBar().maximum())
         self.fMovingViaMiniCanvas = False
         self.updateCanvasInitialPos()
 
@@ -451,6 +451,7 @@ class CarlaPatchbayW(QGraphicsView):
 
         self.setupCanvas()
         self.fParent.updateContainer(self.themeData)
+        self.slot_miniCanvasCheckAll()
 
         if Carla.host.is_engine_running():
             Carla.host.patchbay_refresh()

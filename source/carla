@@ -148,6 +148,14 @@ class CarlaMultiW(QTabWidget):
         self.fPatchbay.resize(self.fRack.size())
         self.fPatchbay.slot_miniCanvasCheckSize()
 
+    #def paintEvent(self, event):
+        #QTabWidget.paintEvent(self, event)
+
+        #painter = QPainter(self)
+        #painter.setBrush(QColor(36, 36, 36))
+        #painter.setPen(QColor(62, 62, 62))
+        #painter.drawRect(1, self.height()/2, self.width()-3, self.height()-self.height()/2-1)
+
     def resizeEvent(self, event):
         QTabWidget.resizeEvent(self, event)
 
