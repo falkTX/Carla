@@ -836,7 +836,28 @@ def canvasCallback(action, value1, value2, valueStr):
         if not Carla.host.patchbay_disconnect(connectionId):
             print("Disconnect failed:", Carla.host.get_last_error())
 
+    elif action == patchcanvas.ACTION_PLUGIN_CLONE:
+        pluginId = value1
+
+        Carla.host.clone_plugin(pluginId)
+
+    elif action == patchcanvas.ACTION_PLUGIN_EDIT:
+        pluginId = value1
+
+        # TODO
+
+    elif action == patchcanvas.ACTION_PLUGIN_RENAME:
+        pluginId = value1
+        newName  = valueStr
+
+        Carla.host.rename_plugin(pluginId, newName)
+
     elif action == patchcanvas.ACTION_PLUGIN_REMOVE:
         pluginId = value1
 
         Carla.host.remove_plugin(pluginId)
+
+    elif action == patchcanvas.ACTION_PLUGIN_SHOW_UI:
+        pluginId = value1
+
+        Carla.host.show_custom_ui(pluginId, True)

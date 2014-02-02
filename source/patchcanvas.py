@@ -45,15 +45,19 @@ PORT_TYPE_MIDI_A2J   = 3
 PORT_TYPE_MIDI_ALSA  = 4
 
 # Callback Action
-ACTION_GROUP_INFO       = 0 # group_id, N, N
-ACTION_GROUP_RENAME     = 1 # group_id, N, new_name
-ACTION_GROUP_SPLIT      = 2 # group_id, N, N
-ACTION_GROUP_JOIN       = 3 # group_id, N, N
-ACTION_PORT_INFO        = 4 # port_id, N, N
-ACTION_PORT_RENAME      = 5 # port_id, N, new_name
-ACTION_PORTS_CONNECT    = 6 # out_id, in_id, N
-ACTION_PORTS_DISCONNECT = 7 # conn_id, N, N
-ACTION_PLUGIN_REMOVE    = 8 # plugin_id, N, N
+ACTION_GROUP_INFO       =  0 # group_id, N, N
+ACTION_GROUP_RENAME     =  1 # group_id, N, new_name
+ACTION_GROUP_SPLIT      =  2 # group_id, N, N
+ACTION_GROUP_JOIN       =  3 # group_id, N, N
+ACTION_PORT_INFO        =  4 # port_id, N, N
+ACTION_PORT_RENAME      =  5 # port_id, N, new_name
+ACTION_PORTS_CONNECT    =  6 # out_id, in_id, N
+ACTION_PORTS_DISCONNECT =  7 # conn_id, N, N
+ACTION_PLUGIN_CLONE     =  8 # plugin_id, N, N
+ACTION_PLUGIN_EDIT      =  9 # plugin_id, N, N
+ACTION_PLUGIN_RENAME    = 10 # plugin_id, N, N
+ACTION_PLUGIN_REMOVE    = 11 # plugin_id, N, N
+ACTION_PLUGIN_SHOW_UI   = 12 # plugin_id, N, new_name
 
 # Icon
 ICON_APPLICATION = 0
@@ -2411,6 +2415,25 @@ class CanvasBox(QGraphicsItem):
         if not (features.group_info and features.group_rename):
             act_x_sep1.setVisible(False)
 
+        if self.m_plugin_id >= 0:
+            menu.addSeparator()
+            act_p_edit = menu.addAction("&Edit")
+            act_p_ui   = menu.addAction("&Show Custom UI")
+            menu.addSeparator()
+            act_p_clone  = menu.addAction("&Clone")
+            act_p_rename = menu.addAction("&Rename...")
+            act_p_remove = menu.addAction("Re&move")
+
+            # TODO
+            act_p_edit.setVisible(False)
+
+            if not self.m_plugin_ui:
+                act_p_ui.setVisible(False)
+
+        else:
+            act_p_edit  = act_p_ui = None
+            act_p_clone = act_p_rename = act_p_remove = None
+
         haveIns = haveOuts = False
         for port in canvas.port_list:
             if port.port_id in self.m_port_list_ids:
@@ -2442,6 +2465,23 @@ class CanvasBox(QGraphicsItem):
                 canvas.callback(ACTION_GROUP_JOIN, self.m_group_id, 0, "")
             else:
                 canvas.callback(ACTION_GROUP_SPLIT, self.m_group_id, 0, "")
+
+        elif act_selected == act_p_edit:
+            canvas.callback(ACTION_PLUGIN_EDIT, self.m_plugin_id, 0, "")
+
+        elif act_selected == act_p_ui:
+            canvas.callback(ACTION_PLUGIN_SHOW_UI, self.m_plugin_id, 0, "")
+
+        elif act_selected == act_p_clone:
+            canvas.callback(ACTION_PLUGIN_CLONE, self.m_plugin_id, 0, "")
+
+        elif act_selected == act_p_rename:
+            new_name_try = QInputDialog.getText(None, "Rename Plugin", "New name:", QLineEdit.Normal, self.m_group_name)
+            if new_name_try[1] and new_name_try[0]: # 1 - bool ok, 0 - return text
+                canvas.callback(ACTION_PLUGIN_RENAME, self.m_plugin_id, 0, new_name_try[0])
+
+        elif act_selected == act_p_remove:
+            canvas.callback(ACTION_PLUGIN_REMOVE, self.m_plugin_id, 0, "")
 
         event.accept()
 
