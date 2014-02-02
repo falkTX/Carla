@@ -23,7 +23,7 @@
 #include <unistd.h>
 #include <math.h>
 
-#include "audio_decoder/ad_plugin.h"
+#include "ad_plugin.h"
 
 #ifdef HAVE_FFMPEG
 
@@ -215,16 +215,24 @@ static ssize_t ad_read_ffmpeg(void *sf, float* d, size_t len) {
 
       /* decode all chunks in packet */
       int data_size= AVCODEC_MAX_AUDIO_FRAME_SIZE;
-#if 0 // TODO  ffcompat.h -- this works but is not optimal (channels may not be planar/interleaved)
-      AVFrame avf; // TODO statically allocate
+
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(54, 0, 0)
+      /* This works but is not optimal (channels may not be planar/interleaved) */
+      AVFrame avf; // TODO statically allocate as poart of priv->..
       memset(&avf, 0, sizeof(AVFrame)); // not sure if that is needed
       int got_frame = 0;
-ret = avcodec_decode_audio4(priv->codecContext, &avf, &got_frame, &priv->packet);
+      ret = avcodec_decode_audio4(priv->codecContext, &avf, &got_frame, &priv->packet);
       data_size = avf.linesize[0];
       memcpy(priv->m_tmpBuffer, avf.data[0], avf.linesize[0] * sizeof(uint8_t));
-#else // this was deprecated in LIBAVCODEC_VERSION_MAJOR 53
-      ret = avcodec_decode_audio3(priv->codecContext, 
+#elif LIBAVUTIL_VERSION_INT > AV_VERSION_INT(49, 15, 0) && LIBAVCODEC_VERSION_INT > AV_VERSION_INT(52, 20, 1) // ??
+      // this was deprecated in LIBAVCODEC_VERSION_MAJOR 53
+      ret = avcodec_decode_audio3(priv->codecContext,
           priv->m_tmpBuffer, &data_size, &priv->packet);
+#else
+			int len = priv->packet.size;
+			uint8_t *ptr = priv->packet.data;
+      ret = avcodec_decode_audio2(priv->codecContext,
+          priv->m_tmpBuffer, &data_size, ptr, len);
 #endif
 
       if (ret < 0 || ret > priv->pkt_len) {

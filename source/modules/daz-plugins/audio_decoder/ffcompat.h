@@ -1,6 +1,6 @@
 /* ffmpeg compatibility wrappers
  *
- * Copyright 2012 Robin Gareus <robin@gareus.org>
+ * Copyright 2012,2013 Robin Gareus <robin@gareus.org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,15 +26,27 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef FFCOMPAT_H
+#define FFCOMPAT_H
+
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libavutil/avutil.h>
+
+#ifndef AVCODEC_MAX_AUDIO_FRAME_SIZE
+#define AVCODEC_MAX_AUDIO_FRAME_SIZE 192000
+#endif
+
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(50, 0, 0)
+#define AVMEDIA_TYPE_AUDIO CODEC_TYPE_AUDIO
+#endif
 
 #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(53, 2, 0)
 static inline int avformat_open_input(AVFormatContext **ps, const char *filename, void *fmt, void **options)
 {
 	return av_open_input_file(ps, filename, NULL, 0, NULL);
 }
-#endif
+#endif /* avformat < 53.2.0 */
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(53, 5, 0)
 static inline AVCodecContext *
@@ -79,3 +91,5 @@ avformat_close_input(AVFormatContext **s)
 }
 
 #endif /* < 53.5.0 */
+
+#endif /* FFCOMPAT_H */
