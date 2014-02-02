@@ -103,6 +103,7 @@ class CarlaPatchbayW(QFrame):
 
         self.scene.scaleChanged.connect(self.slot_canvasScaleChanged)
         self.scene.sceneGroupMoved.connect(self.slot_canvasItemMoved)
+        self.scene.pluginSelected.connect(self.slot_canvasPluginSelected)
 
         self.fMiniCanvasPreview.miniCanvasMoved.connect(self.slot_miniCanvasMoved)
 
@@ -347,6 +348,10 @@ class CarlaPatchbayW(QFrame):
     @pyqtSlot(int, int, QPointF)
     def slot_canvasItemMoved(self, group_id, split_mode, pos):
         self.fMiniCanvasPreview.update()
+
+    @pyqtSlot(list)
+    def slot_canvasPluginSelected(self, pluginList):
+        self.fKeys.setEnabled(len(pluginList) != 0)
 
     @pyqtSlot(float, float)
     def slot_miniCanvasMoved(self, xp, yp):

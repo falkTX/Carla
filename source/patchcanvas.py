@@ -1096,6 +1096,7 @@ def CanvasRemoveItemFX(item):
 class PatchScene(QGraphicsScene):
     scaleChanged    = pyqtSignal(float)
     sceneGroupMoved = pyqtSignal(int, int, QPointF)
+    pluginSelected  = pyqtSignal(list)
 
     def __init__(self, parent, view):
         QGraphicsScene.__init__(self, parent)
@@ -1109,6 +1110,8 @@ class PatchScene(QGraphicsScene):
         self.m_view = view
         if not self.m_view:
             qFatal("PatchCanvas::PatchScene() - invalid view")
+
+        self.selectionChanged.connect(self.slot_selectionChanged)
 
     def addRubberBand(self):
         self.m_rubberband = self.addRect(QRectF(0, 0, 0, 0))
@@ -1189,6 +1192,30 @@ class PatchScene(QGraphicsScene):
     def zoom_reset(self):
         self.m_view.resetTransform()
         self.scaleChanged.emit(1.0)
+
+    @pyqtSlot()
+    def slot_selectionChanged(self):
+        items_list = self.selectedItems()
+
+        if len(items_list) == 0:
+            self.pluginSelected.emit([])
+            return
+
+        plugin_list = []
+
+        for item in items_list:
+            if item and item.isVisible():
+                group_item = None
+
+                if item.type() == CanvasBoxType:
+                    group_item = item
+                elif item.type() == CanvasPortType:
+                    group_item = item.parentItem()
+
+                if group_item is not None and group_item.m_plugin_id >= 0:
+                    plugin_list.append(group_item.m_plugin_id)
+
+        self.pluginSelected.emit(plugin_list)
 
     def keyPressEvent(self, event):
         if not self.m_view:
