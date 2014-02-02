@@ -49,7 +49,7 @@ CARLA_DEFAULT_CANVAS_SIZE_HEIGHT = 2400
 # Patchbay widget
 
 class CarlaPatchbayW(QFrame):
-    def __init__(self, parent, doSetup = True):
+    def __init__(self, parent, doSetup = True, onlyPatchbay = True):
         QFrame.__init__(self, parent)
 
         self.fLayout = QVBoxLayout(self)
@@ -69,6 +69,8 @@ class CarlaPatchbayW(QFrame):
         self.fParent      = parent
         self.fPluginCount = 0
         self.fPluginList  = []
+
+        self.fIsOnlyPatchbay  = onlyPatchbay
         self.fSelectedPlugins = []
 
         self.fCanvasWidth  = 0
@@ -165,6 +167,10 @@ class CarlaPatchbayW(QFrame):
     # -----------------------------------------------------------------
 
     def addPlugin(self, pluginId, isProjectLoading):
+        if not self.fIsOnlyPatchbay:
+            self.fPluginCount += 1
+            return
+
         pitem = PluginEdit(self, pluginId)
 
         self.fPluginList.append(pitem)
@@ -174,6 +180,10 @@ class CarlaPatchbayW(QFrame):
             Carla.host.set_active(pluginId, True)
 
     def removePlugin(self, pluginId):
+        if not self.fIsOnlyPatchbay:
+            self.fPluginCount -= 1
+            return
+
         if pluginId >= self.fPluginCount:
             return
 
@@ -564,6 +574,11 @@ class CarlaPatchbayW(QFrame):
 
     @pyqtSlot(int, int, int, int)
     def slot_handleNoteOnCallback(self, pluginId, channel, note, velo):
+        if pluginId in self.fSelectedPlugins:
+            self.fKeys.keyboard.sendNoteOn(note, False)
+
+        if not self.fIsOnlyPatchbay:
+            return
         if pluginId >= self.fPluginCount:
             return
 
@@ -573,11 +588,13 @@ class CarlaPatchbayW(QFrame):
 
         pitem.sendNoteOn(channel, note)
 
-        if pluginId in self.fSelectedPlugins:
-            self.fKeys.keyboard.sendNoteOn(note, False)
-
     @pyqtSlot(int, int, int)
     def slot_handleNoteOffCallback(self, pluginId, channel, note):
+        if pluginId in self.fSelectedPlugins:
+            self.fKeys.keyboard.sendNoteOff(note, False)
+
+        if not self.fIsOnlyPatchbay:
+            return
         if pluginId >= self.fPluginCount:
             return
 
@@ -586,9 +603,6 @@ class CarlaPatchbayW(QFrame):
             return
 
         pitem.sendNoteOff(channel, note)
-
-        if pluginId in self.fSelectedPlugins:
-            self.fKeys.keyboard.sendNoteOff(note, False)
 
     # -----------------------------------------------------------------
 
@@ -671,15 +685,11 @@ class CarlaPatchbayW(QFrame):
 
         if pluginId < 0:
             return
-        if pluginId >= self.getPluginCount():
-            print("sorry, can't map this plugin to canvas client", pluginId, self.getPluginCount())
+        if pluginId >= self.fPluginCount:
+            print("sorry, can't map this plugin to canvas client", pluginId, self.fPluginCount)
             return
 
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(pitem.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI))
+        patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(Carla.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI))
 
     @pyqtSlot(int)
     def slot_handlePatchbayClientRemovedCallback(self, clientId):
@@ -712,15 +722,11 @@ class CarlaPatchbayW(QFrame):
 
         if pluginId < 0:
             return
-        if pluginId >= self.getPluginCount():
+        if pluginId >= self.fPluginCount:
             print("sorry, can't map this plugin to canvas client", pluginId, self.getPluginCount())
             return
 
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(pitem.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI))
+        patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(Carla.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI))
 
     @pyqtSlot(int, int, int, str)
     def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portName):

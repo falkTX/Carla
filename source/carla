@@ -36,7 +36,7 @@ class CarlaMultiW(QTabWidget):
         QTabWidget.__init__(self, parent)
 
         self.fRack     = CarlaRackW(parent, False)
-        self.fPatchbay = CarlaPatchbayW(parent, False)
+        self.fPatchbay = CarlaPatchbayW(parent, False, False)
         self.fParent   = parent
         self.fUseCustomPaint = False
 
@@ -74,7 +74,9 @@ class CarlaMultiW(QTabWidget):
         parent.MidiProgramChangedCallback.connect(self.fRack.slot_handleMidiProgramChangedCallback)
         parent.UiStateChangedCallback.connect(self.fRack.slot_handleUiStateChangedCallback)
         parent.NoteOnCallback.connect(self.fRack.slot_handleNoteOnCallback)
+        parent.NoteOnCallback.connect(self.fPatchbay.slot_handleNoteOnCallback)
         parent.NoteOffCallback.connect(self.fRack.slot_handleNoteOffCallback)
+        parent.NoteOffCallback.connect(self.fPatchbay.slot_handleNoteOffCallback)
         parent.UpdateCallback.connect(self.fRack.slot_handleUpdateCallback)
         parent.ReloadInfoCallback.connect(self.fRack.slot_handleReloadInfoCallback)
         parent.ReloadParametersCallback.connect(self.fRack.slot_handleReloadParametersCallback)
@@ -100,9 +102,11 @@ class CarlaMultiW(QTabWidget):
 
     def addPlugin(self, pluginId, isProjectLoading):
         self.fRack.addPlugin(pluginId, isProjectLoading)
+        self.fPatchbay.addPlugin(pluginId, isProjectLoading)
 
     def removePlugin(self, pluginId):
         self.fRack.removePlugin(pluginId)
+        self.fPatchbay.removePlugin(pluginId)
 
     def renamePlugin(self, pluginId, newName):
         self.fRack.renamePlugin(pluginId, newName)
