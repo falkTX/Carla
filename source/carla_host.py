@@ -308,7 +308,7 @@ class HostWindow(QMainWindow):
         if showMiniCanvas:
             canvasWidth, canvasHeight, canvasBg, canvasBrush, canvasPen = canvasThemeData
             self.ui.miniCanvasPreview.setViewTheme(canvasBg, canvasBrush, canvasPen)
-            self.ui.miniCanvasPreview.init(self.fContainer.scene, canvasWidth, canvasHeight, self.fSavedSettings["UseCustomMiniCanvasPaint"])
+            self.ui.miniCanvasPreview.init(self.fContainer.scene, canvasWidth, canvasHeight, self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING])
         else:
             self.ui.miniCanvasPreview.hide()
 
@@ -317,7 +317,7 @@ class HostWindow(QMainWindow):
     def updateContainer(self, canvasThemeData):
         canvasWidth, canvasHeight, canvasBg, canvasBrush, canvasPen = canvasThemeData
         self.ui.miniCanvasPreview.setViewTheme(canvasBg, canvasBrush, canvasPen)
-        self.ui.miniCanvasPreview.init(self.fContainer.scene, canvasWidth, canvasHeight, self.fSavedSettings["UseCustomMiniCanvasPaint"])
+        self.ui.miniCanvasPreview.init(self.fContainer.scene, canvasWidth, canvasHeight, self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING])
 
     # -----------------------------------------------------------------
     # Internal stuff (files)
@@ -597,10 +597,10 @@ class HostWindow(QMainWindow):
             self.ui.act_settings_show_toolbar.setChecked(showToolbar)
             self.ui.toolBar.setVisible(showToolbar)
 
-            #if settings.contains("SplitterState"):
-                #self.ui.splitter.restoreState(settings.value("SplitterState", ""))
-            #else:
-            self.ui.splitter.setSizes([99999, 210])
+            if settings.contains("SplitterState"):
+                self.ui.splitter.restoreState(settings.value("SplitterState", ""))
+            else:
+                self.ui.splitter.setSizes([210, 99999])
 
             diskFolders = toList(settings.value("DiskFolders", [HOME]))
 
@@ -665,7 +665,7 @@ class HostWindow(QMainWindow):
             CARLA_KEY_CANVAS_USE_OPENGL:       settings.value(CARLA_KEY_CANVAS_USE_OPENGL,       CARLA_DEFAULT_CANVAS_USE_OPENGL,       type=bool),
             CARLA_KEY_CANVAS_ANTIALIASING:     settings.value(CARLA_KEY_CANVAS_ANTIALIASING,     CARLA_DEFAULT_CANVAS_ANTIALIASING,     type=int),
             CARLA_KEY_CANVAS_HQ_ANTIALIASING:  settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING,  CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING,  type=bool),
-            "UseCustomMiniCanvasPaint":       (settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool) and
+            CARLA_KEY_CUSTOM_PAINTING:        (settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool) and
                                                settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower() == "black")
         }
 

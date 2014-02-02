@@ -158,10 +158,8 @@ class CanvasPreviewFrame(QFrame):
             painter.setPen(QColor(62, 62, 62))
             painter.drawRect(2, 2, self.width()-4, self.height()-3)
 
-            #painter.setBrush(self.fViewBg)
-            #painter.setPen(self.fViewBg)
-            painter.setBrush(QColor(62, 62, 255))
-            painter.setPen(QColor(62, 62, 255))
+            painter.setBrush(self.fViewBg)
+            painter.setPen(self.fViewBg)
             painter.drawRect(3, 3, self.width()-6, self.height()-6)
         else:
             painter.setBrush(self.fViewBg)

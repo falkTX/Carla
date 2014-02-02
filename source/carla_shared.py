@@ -311,6 +311,7 @@ CARLA_KEY_CANVAS_EYE_CANDY        = "Canvas/EyeCandy"        # enum
 CARLA_KEY_CANVAS_USE_OPENGL       = "Canvas/UseOpenGL"       # bool
 CARLA_KEY_CANVAS_ANTIALIASING     = "Canvas/Antialiasing"    # enum
 CARLA_KEY_CANVAS_HQ_ANTIALIASING  = "Canvas/HQAntialiasing"  # bool
+CARLA_KEY_CUSTOM_PAINTING         = "UseCustomPainting"      # bool
 
 CARLA_KEY_ENGINE_DRIVER_PREFIX         = "Engine/Driver-"
 CARLA_KEY_ENGINE_AUDIO_DRIVER          = "Engine/AudioDriver"         # str

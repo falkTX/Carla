@@ -38,6 +38,7 @@ class CarlaMultiW(QTabWidget):
         self.fRack     = CarlaRackW(parent, False)
         self.fPatchbay = CarlaPatchbayW(parent, False)
         self.fParent   = parent
+        self.fUseCustomPaint = False
 
         self.addTab(self.fRack, "Plugins")
         self.addTab(self.fPatchbay, "Patchbay")
@@ -148,13 +149,21 @@ class CarlaMultiW(QTabWidget):
         self.fPatchbay.resize(self.fRack.size())
         self.fPatchbay.slot_miniCanvasCheckSize()
 
-    #def paintEvent(self, event):
-        #QTabWidget.paintEvent(self, event)
+    def setUseCustomPaint(self, useCustomPaint):
+        if self.fUseCustomPaint != useCustomPaint:
+            self.fUseCustomPaint = useCustomPaint
+            self.update()
 
-        #painter = QPainter(self)
-        #painter.setBrush(QColor(36, 36, 36))
-        #painter.setPen(QColor(62, 62, 62))
-        #painter.drawRect(1, self.height()/2, self.width()-3, self.height()-self.height()/2-1)
+    def paintEvent(self, event):
+        QTabWidget.paintEvent(self, event)
+
+        if not self.fUseCustomPaint:
+            return
+
+        painter = QPainter(self)
+        painter.setBrush(QColor(36, 36, 36))
+        painter.setPen(QColor(62, 62, 62))
+        painter.drawRect(1, self.height()/2, self.width()-3, self.height()-self.height()/2-1)
 
     def resizeEvent(self, event):
         QTabWidget.resizeEvent(self, event)
@@ -174,6 +183,8 @@ class CarlaHostW(HostWindow):
 
         self.fContainer = CarlaMultiW(self)
         self.setupContainer(True, self.fContainer.fPatchbay.themeData)
+
+        self.fContainer.setUseCustomPaint(self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING])
 
         # -------------------------------------------------------------
         # Set-up GUI stuff

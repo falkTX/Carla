@@ -39,7 +39,7 @@ if __name__ == '__main__':
     # -------------------------------------------------------------
     # App initialization
 
-    app = CarlaApplication()
+    app = CarlaApplication("Carla2-Rack")
 
     # -------------------------------------------------------------
     # Set-up custom signal handling
