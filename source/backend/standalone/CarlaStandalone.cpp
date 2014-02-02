@@ -993,7 +993,6 @@ const CarlaPluginInfo* carla_get_plugin_info(uint pluginId)
     info.filename         = nullptr;
     info.name             = nullptr;
     info.iconName         = nullptr;
-    info.patchbayClientId = 0;
     info.uniqueId         = 0;
 
     // cleanup
@@ -1037,7 +1036,6 @@ const CarlaPluginInfo* carla_get_plugin_info(uint pluginId)
 
         info.optionsAvailable = plugin->getOptionsAvailable();
         info.optionsEnabled   = plugin->getOptionsEnabled();
-        info.patchbayClientId = plugin->getPatchbayClientId();
 
         plugin->getLabel(strBufLabel);
         info.label = carla_strdup(strBufLabel);

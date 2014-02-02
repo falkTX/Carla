@@ -784,6 +784,7 @@ typedef enum {
      * A patchbay client has been added.
      * @param pluginId Client Id
      * @param value1   Client icon
+     * @param value2   Plugin Id (-1 if not a plugin)
      * @param valueStr Client name
      * @see PatchbayIcon
      */

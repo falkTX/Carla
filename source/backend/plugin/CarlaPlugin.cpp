@@ -171,11 +171,6 @@ unsigned int CarlaPlugin::getOptionsEnabled() const noexcept
     return pData->options;
 }
 
-unsigned int CarlaPlugin::getPatchbayClientId() const noexcept
-{
-    return pData->patchbayClientId;
-}
-
 bool CarlaPlugin::isEnabled() const noexcept
 {
     return pData->enabled;

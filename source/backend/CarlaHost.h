@@ -156,12 +156,6 @@ typedef struct _CarlaPluginInfo {
     const char* iconName;
 
     /*!
-     * Patchbay client Id for this plugin.\n
-     * When 0, Id is considered invalid or unused.
-     */
-    int patchbayClientId;
-
-    /*!
      * Plugin unique Id.\n
      * This Id is dependant on the plugin type and may sometimes be 0.
      */
@@ -183,7 +177,6 @@ typedef struct _CarlaPluginInfo {
           maker(nullptr),
           copyright(nullptr),
           iconName(nullptr),
-          patchbayClientId(0),
           uniqueId(0) {}
 
     /*!

@@ -559,6 +559,7 @@ ENGINE_CALLBACK_RELOAD_ALL = 18
 # A patchbay client has been added.
 # @param pluginId Client Id
 # @param value1   Client icon
+# @param value2   Plugin Id (-1 if not a plugin)
 # @param valueStr Client name
 # @see PatchbayIcon
 ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED = 19
@@ -1001,10 +1002,6 @@ class CarlaPluginInfo(Structure):
         # Default is "plugin".
         ("iconName", c_char_p),
 
-        # Patchbay client Id for this plugin.
-        # When 0, Id is considered invalid or unused.
-        ("patchbayClientId", c_int),
-
         # Plugin unique Id.
         # This Id is dependant on the plugin type and may sometimes be 0.
         ("uniqueId", c_long)
@@ -1133,7 +1130,6 @@ PyCarlaPluginInfo = {
     'maker': None,
     'copyright': None,
     'iconName': None,
-    'patchbayClientId': 0,
     'uniqueId': 0
 }
 

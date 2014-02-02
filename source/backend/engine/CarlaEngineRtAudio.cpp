@@ -423,7 +423,7 @@ public:
 
         // Main
         {
-            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_CARLA, 0, 0, 0.0f, getName());
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_CARLA, PATCHBAY_ICON_CARLA, -1, 0.0f, getName());
 
             callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_PORT_AUDIO_IN1,  PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, "audio-in1");
             callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_PORT_AUDIO_IN2,  PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, "audio-in2");
@@ -440,7 +440,7 @@ public:
             else
                 std::strncpy(strBuf, "Capture", STR_MAX);
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_IN, 0, 0, 0.0f, strBuf);
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_IN, PATCHBAY_ICON_HARDWARE, -1, 0.0f, strBuf);
 
             for (uint i=0; i < pData->bufAudio.inCount; ++i)
             {
@@ -456,7 +456,7 @@ public:
             else
                 std::strncpy(strBuf, "Playback", STR_MAX);
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_OUT, 0, 0, 0.0f, strBuf);
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_OUT, PATCHBAY_ICON_HARDWARE, -1, 0.0f, strBuf);
 
             for (uint i=0; i < pData->bufAudio.outCount; ++i)
             {
@@ -467,7 +467,7 @@ public:
 
         // MIDI In
         {
-            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_MIDI_IN, 0, 0, 0.0f, "Readable MIDI ports");
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_MIDI_IN, PATCHBAY_ICON_HARDWARE, -1, 0.0f, "Readable MIDI ports");
 
             for (uint i=0, count=fDummyMidiIn.getPortCount(); i < count; ++i)
             {
@@ -484,7 +484,7 @@ public:
 #if 0 // midi-out not implemented yet
         // MIDI Out
         {
-            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, 0, RACK_PATCHBAY_GROUP_MIDI_OUT, 0, 0.0f, "Writable MIDI ports");
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_MIDI_OUT, PATCHBAY_ICON_HARDWARE, -1, 0.0f, "Writable MIDI ports");
 
             for (unsigned int i=0, count=fDummyMidiOut.getPortCount(); i < count; ++i)
             {

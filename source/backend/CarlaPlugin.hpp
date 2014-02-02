@@ -123,12 +123,6 @@ public:
     unsigned int getOptionsEnabled() const noexcept;
 
     /*!
-     * Get the plugin's patchbay client id.\n
-     * Id 0 means no client.
-     */
-    unsigned int getPatchbayClientId() const noexcept;
-
-    /*!
      * Check if the plugin is enabled.\n
      * When a plugin is disabled, it will never be processed or managed in any way.
      *

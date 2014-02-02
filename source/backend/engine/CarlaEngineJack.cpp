@@ -1349,17 +1349,12 @@ protected:
                 groupNameToId.setData(groupId, groupName);
                 fUsedGroupNames.append(groupNameToId);
 
-                if (jackPortFlags & JackPortIsPhysical)
-                {
-                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, static_cast<uint>(groupId), PATCHBAY_ICON_HARDWARE, 0, 0.0f, groupName);
-                    // hardware
-                }
-                else
-                {
-                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, static_cast<uint>(groupId), 0, 0, 0.0f, groupName);
-                    //fGroupIconsChanged.append(groupId);
-                    // "application"
-                }
+                int pluginId = -1;
+                PatchbayIcon icon = (jackPortFlags & JackPortIsPhysical) ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION;
+
+                findPluginIdAndIcon(groupName.getBuffer(), pluginId, icon);
+
+                callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, static_cast<uint>(groupId), icon, pluginId, 0.0f, groupName);
             }
 
             bool portIsInput = (jackPortFlags & JackPortIsInput);
@@ -1724,6 +1719,51 @@ private:
         nameBuf[0] = '\0';
     }
 
+    bool findPluginIdAndIcon(const char* const clientName, int& pluginId, PatchbayIcon& icon)
+    {
+        carla_debug("CarlaEngineJack::findPluginIdAndIcon(\"%s\", ...)");
+
+        for (uint i=0; i < pData->curPluginCount; ++i)
+        {
+            CarlaPlugin* const plugin(pData->plugins[i].plugin);
+
+            if (plugin == nullptr || ! plugin->isEnabled())
+                continue;
+
+            const CarlaEngineJackClient* const engClient((const CarlaEngineJackClient*)plugin->getEngineClient());
+            CARLA_SAFE_ASSERT_CONTINUE(engClient != nullptr && engClient->fClient != nullptr);
+
+            const char* const thisClientName(jackbridge_get_client_name(engClient->fClient));
+            CARLA_SAFE_ASSERT_CONTINUE(thisClientName != nullptr && thisClientName[0] != '\0');
+
+            if (std::strcmp(clientName, thisClientName) == 0)
+            {
+                carla_stdout("CarlaEngineJack::findPluginIdAndIcon(\"%s\", ...) - found plugin, yes!!!");
+
+                pluginId = static_cast<int>(i);
+
+                if (const char* const pluginIcon = plugin->getIconName())
+                {
+                    if (std::strcmp(pluginIcon, "app") == 0 || std::strcmp(pluginIcon, "application") == 0)
+                        icon = PATCHBAY_ICON_APPLICATION;
+                    else if (std::strcmp(pluginIcon, "plugin") == 0)
+                        icon = PATCHBAY_ICON_PLUGIN;
+                    else if (std::strcmp(pluginIcon, "hardware") == 0)
+                        icon = PATCHBAY_ICON_HARDWARE;
+                    else if (std::strcmp(pluginIcon, "carla") == 0)
+                        icon = PATCHBAY_ICON_CARLA;
+                    else if (std::strcmp(pluginIcon, "distrho") == 0)
+                        icon = PATCHBAY_ICON_DISTRHO;
+                    else if (std::strcmp(pluginIcon, "file") == 0)
+                        icon = PATCHBAY_ICON_FILE;
+                }
+                return true;
+            }
+        }
+        carla_stdout("CarlaEngineJack::findPluginIdAndIcon(\"%s\", ...) - nothing here...");
+        return false;
+    }
+
     void initJackPatchbay(const char* const ourName)
     {
         CARLA_SAFE_ASSERT_RETURN(fLastGroupId == 0,);
@@ -1742,7 +1782,7 @@ private:
             groupNameToId.setData(fLastGroupId++, ourName);
             fUsedGroupNames.append(groupNameToId);
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, 0 /* our client */, PATCHBAY_ICON_CARLA, 0, 0.0f, ourName);
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, 0 /* our client */, PATCHBAY_ICON_CARLA, -1, 0.0f, ourName);
         }
 
         if (const char** ports = jackbridge_get_ports(fClient, nullptr, nullptr, 0))
@@ -1782,39 +1822,12 @@ private:
                     groupNameToId.setData(groupId, groupName);
                     fUsedGroupNames.append(groupNameToId);
 
-                    PatchbayIcon groupIcon = PATCHBAY_ICON_APPLICATION;
+                    int pluginId = -1;
+                    PatchbayIcon icon = (jackPortFlags & JackPortIsPhysical) ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION;
 
-#if 0
-                    void*  data = nullptr;
-                    size_t dataSize = 0;
-#endif
+                    findPluginIdAndIcon(groupName.getBuffer(), pluginId, icon);
 
-                    if (jackPortFlags & JackPortIsPhysical)
-                    {
-                        groupIcon = PATCHBAY_ICON_HARDWARE;
-                    }
-#if 0
-                    else if (jackbridge_custom_get_data(fClient, groupName, URI_CANVAS_ICON, &data, &dataSize) && data != nullptr && dataSize != 0)
-                    {
-                        const char* const icon((const char*)data);
-                        CARLA_ASSERT(std::strlen(icon)+1 == dataSize);
-
-                        if (std::strcmp(icon, "app") == 0 || std::strcmp(icon, "application") == 0)
-                            groupIcon = PATCHBAY_ICON_APPLICATION;
-                        else if (std::strcmp(icon, "hardware") == 0)
-                            groupIcon = PATCHBAY_ICON_HARDWARE;
-                        else if (std::strcmp(icon, "carla") == 0)
-                            groupIcon = PATCHBAY_ICON_CARLA;
-                        else if (std::strcmp(icon, "distrho") == 0)
-                            groupIcon = PATCHBAY_ICON_DISTRHO;
-                        else if (std::strcmp(icon, "file") == 0)
-                            groupIcon = PATCHBAY_ICON_FILE;
-                        else if (std::strcmp(icon, "plugin") == 0)
-                            groupIcon = PATCHBAY_ICON_PLUGIN;
-                    }
-#endif
-
-                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, static_cast<uint>(groupId), groupIcon, 0, 0.0f, groupName);
+                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, static_cast<uint>(groupId), icon, pluginId, 0.0f, groupName);
                 }
 
                 bool portIsInput = (jackPortFlags & JackPortIsInput);
