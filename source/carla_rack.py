@@ -229,6 +229,9 @@ class CarlaRackW(QListWidget):
 
     # -----------------------------------------------------------------
 
+    def projectLoaded(self):
+        pass
+
     def saveSettings(self, settings):
         pass
 

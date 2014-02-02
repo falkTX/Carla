@@ -260,6 +260,9 @@ class CarlaPatchbayW(QFrame):
 
     # -----------------------------------------------------------------
 
+    def projectLoaded(self):
+        QTimer.singleShot(1000, self.slot_canvasRefresh)
+
     def saveSettings(self, settings):
         settings.setValue("HorizontalScrollBarValue", self.fView.horizontalScrollBar().value())
         settings.setValue("VerticalScrollBarValue", self.fView.verticalScrollBar().value())

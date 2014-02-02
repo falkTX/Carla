@@ -94,6 +94,9 @@ class CarlaDummyW(object):
 
     # -----------------------------------------------------------------
 
+    def projectLoaded(self):
+        pass
+
     def saveSettings(self, settings):
         pass
 
@@ -332,6 +335,8 @@ class HostWindow(QMainWindow):
         self.fIsProjectLoading = True
         Carla.host.load_project(self.fProjectFilename)
         self.fIsProjectLoading = False
+
+        self.fContainer.projectLoaded()
 
     @pyqtSlot()
     def slot_loadProjectNow(self):
