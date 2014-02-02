@@ -378,6 +378,7 @@ class CarlaPatchbayW(QFrame):
 
     @pyqtSlot(list)
     def slot_canvasPluginSelected(self, pluginList):
+        self.fKeys.keyboard.allNotesOff(False)
         self.fKeys.setEnabled(len(pluginList) != 0)
         self.fSelectedPlugins = pluginList
 
