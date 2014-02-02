@@ -490,7 +490,7 @@ public:
         fUsedGroupNames.clear();
         fUsedPortNames.clear();
         fUsedConnections.clear();
-        //fGroupIconsChanged.clear();
+        fNewPlugins.clear();
 #endif
     }
 
@@ -567,7 +567,7 @@ public:
         fUsedGroupNames.clear();
         fUsedPortNames.clear();
         fUsedConnections.clear();
-        //fGroupIconsChanged.clear();
+        fNewPlugins.clear();
 
         fClient = jackbridge_client_open(clientName, JackNullOption, nullptr);
 
@@ -663,7 +663,7 @@ public:
         fUsedGroupNames.clear();
         fUsedPortNames.clear();
         fUsedConnections.clear();
-        //fGroupIconsChanged.clear();
+        fNewPlugins.clear();
 
         return false;
 #endif
@@ -931,7 +931,7 @@ public:
         fUsedGroupNames.clear();
         fUsedPortNames.clear();
         fUsedConnections.clear();
-        //fGroupIconsChanged.clear();
+        fNewPlugins.clear();
 
         initJackPatchbay(jackbridge_get_client_name(fClient));
 
@@ -1289,21 +1289,6 @@ protected:
 #endif
 
 #ifndef BUILD_BRIDGE
-# if 0
-    void handleCustomAppearanceCallback(const char* client_name, const char* key, jack_custom_change_t change)
-    {
-        if ((change == JackCustomAdded || change == JackCustomReplaced) && std::strcmp(key, URI_CANVAS_ICON) == 0)
-        {
-            const int groupId (getGroupId(client_name));
-
-            if (groupId == -1)
-                return;
-
-            fGroupIconsChanged.append(groupId);
-        }
-    }
-# endif
-
     void handleJackClientRegistrationCallback(const char* const name, const bool reg)
     {
         // do nothing on client registration, wait for first port
@@ -1489,10 +1474,13 @@ protected:
     {
         for (unsigned int i=0; i < pData->curPluginCount; ++i)
         {
-            //CarlaPlugin* const plugin(pData->plugins[i].plugin);
+            CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
-            //if (plugin)
-            //    plugin->x_client = nullptr;
+            if (plugin != nullptr)
+            {
+                if (CarlaEngineJackClient* const client = (CarlaEngineJackClient*)plugin->getEngineClient())
+                    client->fClient = nullptr;
+            }
         }
 
         fClient = nullptr;
@@ -1653,7 +1641,7 @@ private:
     LinkedList<GroupNameToId>  fUsedGroupNames;
     LinkedList<PortNameToId>   fUsedPortNames;
     LinkedList<ConnectionToId> fUsedConnections;
-    //LinkedList<int>          fGroupIconsChanged;
+    LinkedList<uint>           fNewPlugins;
 
     int getGroupId(const char* const name)
     {
@@ -2022,13 +2010,6 @@ private:
 #endif
 
 #ifndef BUILD_BRIDGE
-# if 0
-    static void carla_jack_custom_appearance_callback(const char* client_name, const char* key, jack_custom_change_t change, void* arg)
-    {
-        handlePtr->handleCustomAppearanceCallback(client_name, key, change);
-    }
-# endif
-
     static void carla_jack_client_registration_callback(const char* name, int reg, void* arg)
     {
         handlePtr->handleJackClientRegistrationCallback(name, (reg != 0));
