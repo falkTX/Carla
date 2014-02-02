@@ -1037,6 +1037,7 @@ const CarlaPluginInfo* carla_get_plugin_info(uint pluginId)
 
         info.optionsAvailable = plugin->getOptionsAvailable();
         info.optionsEnabled   = plugin->getOptionsEnabled();
+        info.patchbayClientId = plugin->getPatchbayClientId();
 
         plugin->getLabel(strBufLabel);
         info.label = carla_strdup(strBufLabel);
