@@ -51,10 +51,6 @@ public:
         connect(this, SIGNAL(finished()), SLOT(deleteLater()));
     }
 
-    ~CarlaStyleAnimation() override
-    {
-    }
-
     QObject* target() const
     {
         return parent();
@@ -97,7 +93,7 @@ public:
     }
 
 protected:
-    virtual bool isUpdateNeeded() const
+    bool isUpdateNeeded() const override
     {
         return currentTime() > _delay;
     }
