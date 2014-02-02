@@ -133,7 +133,7 @@ class CarlaPatchbayW(QGraphicsView):
         parent.PatchbayClientAddedCallback.connect(self.slot_handlePatchbayClientAddedCallback)
         parent.PatchbayClientRemovedCallback.connect(self.slot_handlePatchbayClientRemovedCallback)
         parent.PatchbayClientRenamedCallback.connect(self.slot_handlePatchbayClientRenamedCallback)
-        parent.PatchbayClientIconChangedCallback.connect(self.slot_handlePatchbayClientIconChangedCallback)
+        parent.PatchbayClientDataChangedCallback.connect(self.slot_handlePatchbayClientDataChangedCallback)
         parent.PatchbayPortAddedCallback.connect(self.slot_handlePatchbayPortAddedCallback)
         parent.PatchbayPortRemovedCallback.connect(self.slot_handlePatchbayPortRemovedCallback)
         parent.PatchbayPortRenamedCallback.connect(self.slot_handlePatchbayPortRenamedCallback)
@@ -640,8 +640,8 @@ class CarlaPatchbayW(QGraphicsView):
         patchcanvas.renameGroup(clientId, newClientName)
         QTimer.singleShot(0, self.fMiniCanvasPreview.update)
 
-    @pyqtSlot(int, int)
-    def slot_handlePatchbayClientIconChangedCallback(self, clientId, clientIcon):
+    @pyqtSlot(int, int, int)
+    def slot_handlePatchbayClientDataChangedCallback(self, clientId, clientIcon, pluginId):
         pcIcon = patchcanvas.ICON_APPLICATION
 
         if clientIcon == PATCHBAY_ICON_PLUGIN:

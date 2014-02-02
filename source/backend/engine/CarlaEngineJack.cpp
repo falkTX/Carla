@@ -490,7 +490,7 @@ public:
         fUsedGroupNames.clear();
         fUsedPortNames.clear();
         fUsedConnections.clear();
-        fNewPlugins.clear();
+        fNewGroups.clear();
 #endif
     }
 
@@ -567,7 +567,7 @@ public:
         fUsedGroupNames.clear();
         fUsedPortNames.clear();
         fUsedConnections.clear();
-        fNewPlugins.clear();
+        fNewGroups.clear();
 
         fClient = jackbridge_client_open(clientName, JackNullOption, nullptr);
 
@@ -575,9 +575,6 @@ public:
         {
             pData->bufferSize = jackbridge_get_buffer_size(fClient);
             pData->sampleRate = jackbridge_get_sample_rate(fClient);
-
-            //jackbridge_custom_publish_data(fClient, URI_CANVAS_ICON, "carla", 6);
-            //jackbridge_custom_set_data_appearance_callback(fClient, carla_jack_custom_appearance_callback, this);
 
             jackbridge_set_buffer_size_callback(fClient, carla_jack_bufsize_callback, this);
             jackbridge_set_sample_rate_callback(fClient, carla_jack_srate_callback, this);
@@ -663,58 +660,37 @@ public:
         fUsedGroupNames.clear();
         fUsedPortNames.clear();
         fUsedConnections.clear();
-        fNewPlugins.clear();
+        fNewGroups.clear();
 
         return false;
 #endif
     }
 
-#if 0 //ndef BUILD_BRIDGE
     void idle() override
     {
         CarlaEngine::idle();
 
-        if (fGroupIconsChanged.count() == 0)
+        if (fNewGroups.count() == 0)
             return;
 
-        static bool checkIcons = false;
+        LinkedList<int> newPlugins;
+        fNewGroups.spliceInsert(newPlugins, true);
 
-        if (! checkIcons)
+        for (LinkedList<int>::Itenerator it = newPlugins.begin(); it.valid(); it.next())
         {
-            checkIcons = true; // check them next time
-            return;
-        }
-
-        checkIcons = false;
-
-        void*  data;
-        size_t dataSize;
-
-        List<int> groupIconsCopy;
-        fGroupIconsChanged.spliceAppend(groupIconsCopy, true);
-
-        for (List<int>::Itenerator it = groupIconsCopy.begin(); it.valid(); it.next())
-        {
-            const int& groupId(*it);
+            const int groupId(it.getValue());
             const char* const groupName(getGroupName(groupId));
+            CARLA_SAFE_ASSERT_CONTINUE(groupId > 0 && groupName != nullptr && groupName[0] != '\0');
 
-            data = nullptr;
-            dataSize = 0;
+            int pluginId = -1;
+            PatchbayIcon icon = PATCHBAY_ICON_PLUGIN;
 
-            if (jackbridge_custom_get_data(fClient, groupName, URI_CANVAS_ICON, &data, &dataSize) && data != nullptr && dataSize != 0)
-            {
-                const char* const icon((const char*)data);
-                CARLA_ASSERT(std::strlen(icon)+1 == dataSize);
-
-                callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ICON_CHANGED, 0, groupId, 0, 0.0f, icon);
-
-                jackbridge_free(data);
-            }
+            if (findPluginIdAndIcon(groupName, pluginId, icon))
+                callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED, static_cast<uint>(groupId), icon, pluginId, 0.0f, nullptr);
         }
 
-        groupIconsCopy.clear();
+        newPlugins.clear();
     }
-#endif
 
     bool isRunning() const noexcept override
     {
@@ -742,7 +718,6 @@ public:
 
     CarlaEngineClient* addClient(CarlaPlugin* const plugin) override
     {
-        //const char* const iconName(plugin->getIconName());
         jack_client_t* client = nullptr;
 
 #ifdef BUILD_BRIDGE
@@ -752,8 +727,6 @@ public:
 
         pData->bufferSize = jackbridge_get_buffer_size(client);
         pData->sampleRate = jackbridge_get_sample_rate(client);
-
-        //jackbridge_custom_publish_data(client, URI_CANVAS_ICON, iconName, std::strlen(iconName)+1);
 
         jackbridge_set_buffer_size_callback(client, carla_jack_bufsize_callback, this);
         jackbridge_set_sample_rate_callback(client, carla_jack_srate_callback, this);
@@ -771,8 +744,6 @@ public:
             client = jackbridge_client_open(plugin->getName(), JackNullOption, nullptr);
 
             CARLA_SAFE_ASSERT_RETURN(client != nullptr, nullptr);
-
-            //jackbridge_custom_publish_data(client, URI_CANVAS_ICON, iconName, std::strlen(iconName)+1);
 
             //jackbridge_set_latency_callback(client, carla_jack_latency_callback_plugin, plugin);
             jackbridge_set_process_callback(client, carla_jack_process_callback_plugin, plugin);
@@ -822,9 +793,6 @@ public:
 
                 if (jack_client_t* const jclient = jackbridge_client_open(name, JackNullOption, nullptr))
                 {
-                    //const char* const iconName(plugin->getIconName());
-                    //jackbridge_custom_publish_data(jclient, URI_CANVAS_ICON, iconName, std::strlen(iconName)+1);
-
                     // close old client
                     plugin->setEnabled(false);
 
@@ -931,7 +899,7 @@ public:
         fUsedGroupNames.clear();
         fUsedPortNames.clear();
         fUsedConnections.clear();
-        fNewPlugins.clear();
+        fNewGroups.clear();
 
         initJackPatchbay(jackbridge_get_client_name(fClient));
 
@@ -1334,12 +1302,11 @@ protected:
                 groupNameToId.setData(groupId, groupName);
                 fUsedGroupNames.append(groupNameToId);
 
-                int pluginId = -1;
                 PatchbayIcon icon = (jackPortFlags & JackPortIsPhysical) ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION;
 
-                findPluginIdAndIcon(groupName.getBuffer(), pluginId, icon);
+                callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, static_cast<uint>(groupId), icon, -1, 0.0f, groupName);
 
-                callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, static_cast<uint>(groupId), icon, pluginId, 0.0f, groupName);
+                fNewGroups.append(groupId);
             }
 
             bool portIsInput = (jackPortFlags & JackPortIsInput);
@@ -1641,7 +1608,7 @@ private:
     LinkedList<GroupNameToId>  fUsedGroupNames;
     LinkedList<PortNameToId>   fUsedPortNames;
     LinkedList<ConnectionToId> fUsedConnections;
-    LinkedList<uint>           fNewPlugins;
+    LinkedList<int>            fNewGroups;
 
     int getGroupId(const char* const name)
     {

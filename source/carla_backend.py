@@ -573,11 +573,12 @@ ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED = 20
 # @param valueStr New client name
 ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED = 21
 
-# A patchbay client icon has changed.
+# A patchbay client data has changed.
 # @param pluginId Client Id
 # @param value1   New icon
+# @param value2   New plugin Id (-1 if not a plugin)
 # @see PatchbayIcon
-ENGINE_CALLBACK_PATCHBAY_CLIENT_ICON_CHANGED = 22
+ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED = 22
 
 # A patchbay port has been added.
 # @param pluginId Client Id
