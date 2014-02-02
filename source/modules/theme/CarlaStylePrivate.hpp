@@ -150,7 +150,7 @@ private:
 private slots:
     void _removeAnimation()
     {
-        if (QObject* animation = fStyle->sender())
+        if (QObject* const animation = fStyle->sender())
            fAnimations.remove(animation->parent());
     }
 };
