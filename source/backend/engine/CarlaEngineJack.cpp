@@ -1696,6 +1696,7 @@ private:
                 carla_stdout("CarlaEngineJack::findPluginIdAndIcon(\"%s\", ...) - found plugin, yes!!!", clientName);
 
                 pluginId = static_cast<int>(i);
+                icon = PATCHBAY_ICON_PLUGIN;
 
                 if (const char* const pluginIcon = plugin->getIconName())
                 {

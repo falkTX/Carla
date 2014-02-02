@@ -609,8 +609,8 @@ class CarlaPatchbayW(QGraphicsView):
 
     # -----------------------------------------------------------------
 
-    @pyqtSlot(int, int, str)
-    def slot_handlePatchbayClientAddedCallback(self, clientId, clientIcon, clientName):
+    @pyqtSlot(int, int, int, str)
+    def slot_handlePatchbayClientAddedCallback(self, clientId, clientIcon, pluginId, clientName):
         pcSplit = patchcanvas.SPLIT_UNDEF
         pcIcon  = patchcanvas.ICON_APPLICATION
 
@@ -628,6 +628,18 @@ class CarlaPatchbayW(QGraphicsView):
         patchcanvas.addGroup(clientId, clientName, pcSplit, pcIcon)
 
         QTimer.singleShot(0, self.fMiniCanvasPreview.update)
+
+        if pluginId < 0:
+            return
+        if pluginId >= self.getPluginCount():
+            print("sorry, can't map this plugin to canvas client", pluginId, self.getPluginCount())
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(pitem.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI))
 
     @pyqtSlot(int)
     def slot_handlePatchbayClientRemovedCallback(self, clientId):
@@ -657,6 +669,18 @@ class CarlaPatchbayW(QGraphicsView):
 
         patchcanvas.setGroupIcon(clientId, pcIcon)
         QTimer.singleShot(0, self.fMiniCanvasPreview.update)
+
+        if pluginId < 0:
+            return
+        if pluginId >= self.getPluginCount():
+            print("sorry, can't map this plugin to canvas client", pluginId, self.getPluginCount())
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(pitem.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI))
 
     @pyqtSlot(int, int, int, str)
     def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portName):

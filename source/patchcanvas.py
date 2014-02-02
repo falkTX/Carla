@@ -257,11 +257,17 @@ def port_type2str(port_type):
         return "PORT_TYPE_???"
 
 def icon2str(icon):
-    if icon == ICON_HARDWARE:
-        return "ICON_HARDWARE"
-    elif ICON_APPLICATION:
+    if icon == ICON_APPLICATION:
         return "ICON_APPLICATION"
-    elif ICON_LADISH_ROOM:
+    elif icon == ICON_HARDWARE:
+        return "ICON_HARDWARE"
+    elif icon == ICON_DISTRHO:
+        return "ICON_DISTRHO"
+    elif icon == ICON_FILE:
+        return "ICON_FILE"
+    elif icon == ICON_PLUGIN:
+        return "ICON_PLUGIN"
+    elif icon == ICON_LADISH_ROOM:
         return "ICON_LADISH_ROOM"
     else:
         return "ICON_???"
@@ -719,6 +725,22 @@ def setGroupIcon(group_id, icon):
             return
 
     qCritical("PatchCanvas::setGroupIcon(%i, %s) - unable to find group to change icon" % (group_id, icon2str(icon)))
+
+def setGroupAsPlugin(group_id, plugin_id, hasUi):
+    if canvas.debug:
+        qDebug("PatchCanvas::setGroupAsPlugin(%i, %i, %s)" % (group_id, plugin_id, bool2str(hasUi)))
+
+    for group in canvas.group_list:
+        if group.group_id == group_id:
+            group.widgets[0].setAsPlugin(plugin_id, hasUi)
+
+            if group.split and group.widgets[1]:
+                group.widgets[1].setAsPlugin(plugin_id, hasUi)
+
+            QTimer.singleShot(0, canvas.scene.update)
+            return
+
+    qCritical("PatchCanvas::setGroupAsPlugin(%i, %i, %s) - unable to find group to set as plugin" % (group_id, plugin_id, bool2str(hasUi)))
 
 def addPort(group_id, port_id, port_name, port_mode, port_type):
     if canvas.debug:
@@ -2047,6 +2069,9 @@ class CanvasBox(QGraphicsItem):
 
     def getPortList(self):
         return self.m_port_list_ids
+
+    def setAsPlugin(self, plugin_id, hasUi):
+        print("GOT CANVAS AS PLUGIN!!!")
 
     def setIcon(self, icon):
         if self.icon_svg:
