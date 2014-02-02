@@ -69,6 +69,7 @@ class CarlaPatchbayW(QFrame):
         self.fParent      = parent
         self.fPluginCount = 0
         self.fPluginList  = []
+        self.fSelectedPlugins = []
 
         self.fCanvasWidth  = 0
         self.fCanvasHeight = 0
@@ -106,6 +107,9 @@ class CarlaPatchbayW(QFrame):
         self.scene.pluginSelected.connect(self.slot_canvasPluginSelected)
 
         self.fMiniCanvasPreview.miniCanvasMoved.connect(self.slot_miniCanvasMoved)
+
+        self.fKeys.keyboard.noteOn.connect(self.slot_noteOn)
+        self.fKeys.keyboard.noteOff.connect(self.slot_noteOff)
 
         if not doSetup: return
 
@@ -352,6 +356,7 @@ class CarlaPatchbayW(QFrame):
     @pyqtSlot(list)
     def slot_canvasPluginSelected(self, pluginList):
         self.fKeys.setEnabled(len(pluginList) != 0)
+        self.fSelectedPlugins = pluginList
 
     @pyqtSlot(float, float)
     def slot_miniCanvasMoved(self, xp, yp):
@@ -360,6 +365,18 @@ class CarlaPatchbayW(QFrame):
         self.fView.verticalScrollBar().setValue(yp * self.fView.verticalScrollBar().maximum())
         self.fMovingViaMiniCanvas = False
         self.updateCanvasInitialPos()
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(int)
+    def slot_noteOn(self, note):
+        for pluginId in self.fSelectedPlugins:
+            Carla.host.send_midi_note(pluginId, 0, note, 100)
+
+    @pyqtSlot(int)
+    def slot_noteOff(self, note):
+        for pluginId in self.fSelectedPlugins:
+            Carla.host.send_midi_note(pluginId, 0, note, 0)
 
     # -----------------------------------------------------------------
 
