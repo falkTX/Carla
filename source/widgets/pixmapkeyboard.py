@@ -20,7 +20,7 @@
 # Imports (Global)
 
 from PyQt4.QtCore import pyqtSignal, qCritical, Qt, QPointF, QRectF, QSize
-from PyQt4.QtGui import QFont, QPainter, QPixmap, QWidget
+from PyQt4.QtGui import QColor, QFont, QPainter, QPixmap, QScrollArea, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -307,6 +307,12 @@ class PixmapKeyboard(QWidget):
             source = QRectF(0, 0, self.fWidth, self.fHeight)
             painter.drawPixmap(target, self.fPixmap, source)
 
+        if not self.isEnabled():
+            painter.setBrush(QColor(0, 0, 0, 150))
+            painter.setPen(QColor(0, 0, 0, 150))
+            painter.drawRect(0, 0, self.width(), self.height())
+            return
+
         # -------------------------------------------------------------
         # Paint (white) pressed keys
 
@@ -444,3 +450,23 @@ class PixmapKeyboard(QWidget):
     def _getRectFromMidiNote(self, note):
         baseNote = note % 12
         return self.fMidiMap.get(str(baseNote))
+
+# ------------------------------------------------------------------------------------------------------------
+# Horizontal scroll area for keyboard
+
+class PixmapKeyboardHArea(QScrollArea):
+    def __init__(self, parent):
+        QScrollArea.__init__(self, parent)
+
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        self.keyboard = PixmapKeyboard(self)
+        self.keyboard.setOctaves(10)
+
+        self.setFixedHeight(self.keyboard.height() + self.horizontalScrollBar().height()/2 + 1)
+        self.setWidget(self.keyboard)
+        self.ensureVisible(self.keyboard.width()/2-self.width()/2, 0)
+
+        #self.setEnabled(False)
+        #self.keyboard.setEnabled(False)

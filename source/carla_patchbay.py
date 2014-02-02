@@ -20,7 +20,7 @@
 # Imports (Global)
 
 from PyQt4.QtCore import QPointF, QTimer
-from PyQt4.QtGui import QGraphicsView, QImage, QPrinter, QPrintDialog
+from PyQt4.QtGui import QFrame, QGraphicsView, QImage, QPrinter, QPrintDialog, QVBoxLayout
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
@@ -28,6 +28,7 @@ from PyQt4.QtGui import QGraphicsView, QImage, QPrinter, QPrintDialog
 import patchcanvas
 
 from carla_widgets import *
+from pixmapkeyboard import PixmapKeyboardHArea
 
 # ------------------------------------------------------------------------------------------------------------
 # Try Import OpenGL
@@ -47,9 +48,20 @@ CARLA_DEFAULT_CANVAS_SIZE_HEIGHT = 2400
 # ------------------------------------------------------------------------------------------------
 # Patchbay widget
 
-class CarlaPatchbayW(QGraphicsView):
+class CarlaPatchbayW(QFrame):
     def __init__(self, parent, doSetup = True):
-        QGraphicsView.__init__(self, parent)
+        QFrame.__init__(self, parent)
+
+        self.fLayout = QVBoxLayout(self)
+        self.fLayout.setContentsMargins(0, 0, 0, 0)
+        self.fLayout.setSpacing(1)
+        self.setLayout(self.fLayout)
+
+        self.fView = QGraphicsView(self)
+        self.fKeys = PixmapKeyboardHArea(self)
+
+        self.fLayout.addWidget(self.fView)
+        self.fLayout.addWidget(self.fKeys)
 
         # -------------------------------------------------------------
         # Internal stuff
@@ -71,13 +83,13 @@ class CarlaPatchbayW(QGraphicsView):
         # -------------------------------------------------------------
         # Set-up Canvas
 
-        self.scene = patchcanvas.PatchScene(self, self) # FIXME?
-        self.setScene(self.scene)
-        self.setRenderHint(QPainter.Antialiasing, bool(parent.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] == patchcanvas.ANTIALIASING_FULL))
+        self.scene = patchcanvas.PatchScene(self, self.fView)
+        self.fView.setScene(self.scene)
+        self.fView.setRenderHint(QPainter.Antialiasing, bool(parent.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] == patchcanvas.ANTIALIASING_FULL))
 
         if parent.fSavedSettings[CARLA_KEY_CANVAS_USE_OPENGL] and hasGL:
-            self.setViewport(QGLWidget(self))
-            self.setRenderHint(QPainter.HighQualityAntialiasing, parent.fSavedSettings[CARLA_KEY_CANVAS_HQ_ANTIALIASING])
+            self.fView.setViewport(QGLWidget(self))
+            self.fView.setRenderHint(QPainter.HighQualityAntialiasing, parent.fSavedSettings[CARLA_KEY_CANVAS_HQ_ANTIALIASING])
 
         self.setupCanvas()
 
@@ -86,8 +98,8 @@ class CarlaPatchbayW(QGraphicsView):
         # -------------------------------------------------------------
         # Connect actions to functions
 
-        self.horizontalScrollBar().valueChanged.connect(self.slot_horizontalScrollBarChanged)
-        self.verticalScrollBar().valueChanged.connect(self.slot_verticalScrollBarChanged)
+        self.fView.horizontalScrollBar().valueChanged.connect(self.slot_horizontalScrollBarChanged)
+        self.fView.verticalScrollBar().valueChanged.connect(self.slot_verticalScrollBarChanged)
 
         self.scene.scaleChanged.connect(self.slot_canvasScaleChanged)
         self.scene.sceneGroupMoved.connect(self.slot_canvasItemMoved)
@@ -234,8 +246,8 @@ class CarlaPatchbayW(QGraphicsView):
     # -----------------------------------------------------------------
 
     def saveSettings(self, settings):
-        settings.setValue("HorizontalScrollBarValue", self.horizontalScrollBar().value())
-        settings.setValue("VerticalScrollBarValue", self.verticalScrollBar().value())
+        settings.setValue("HorizontalScrollBarValue", self.fView.horizontalScrollBar().value())
+        settings.setValue("VerticalScrollBarValue", self.fView.verticalScrollBar().value())
 
     # -----------------------------------------------------------------
     # called by PluginEdit, ignored here
@@ -275,13 +287,13 @@ class CarlaPatchbayW(QGraphicsView):
 
         patchcanvas.setCanvasSize(0, 0, self.fCanvasWidth, self.fCanvasHeight)
         patchcanvas.setInitialPos(self.fCanvasWidth / 2, self.fCanvasHeight / 2)
-        self.setSceneRect(0, 0, self.fCanvasWidth, self.fCanvasHeight)
+        self.fView.setSceneRect(0, 0, self.fCanvasWidth, self.fCanvasHeight)
 
         self.themeData = [self.fCanvasWidth, self.fCanvasHeight, patchcanvas.canvas.theme.canvas_bg, patchcanvas.canvas.theme.rubberband_brush, patchcanvas.canvas.theme.rubberband_pen.color()]
 
     def updateCanvasInitialPos(self):
-        x = self.horizontalScrollBar().value() + self.width()/4
-        y = self.verticalScrollBar().value() + self.height()/4
+        x = self.fView.horizontalScrollBar().value() + self.width()/4
+        y = self.fView.verticalScrollBar().value() + self.height()/4
         patchcanvas.setInitialPos(x, y)
 
     # -----------------------------------------------------------------
@@ -289,8 +301,8 @@ class CarlaPatchbayW(QGraphicsView):
     @pyqtSlot()
     def slot_miniCanvasCheckAll(self):
         self.slot_miniCanvasCheckSize()
-        self.slot_horizontalScrollBarChanged(self.horizontalScrollBar().value())
-        self.slot_verticalScrollBarChanged(self.verticalScrollBar().value())
+        self.slot_horizontalScrollBarChanged(self.fView.horizontalScrollBar().value())
+        self.slot_verticalScrollBarChanged(self.fView.verticalScrollBar().value())
 
     @pyqtSlot()
     def slot_miniCanvasCheckSize(self):
@@ -300,7 +312,7 @@ class CarlaPatchbayW(QGraphicsView):
     def slot_horizontalScrollBarChanged(self, value):
         if self.fMovingViaMiniCanvas: return
 
-        maximum = self.horizontalScrollBar().maximum()
+        maximum = self.fView.horizontalScrollBar().maximum()
         if maximum == 0:
             xp = 0
         else:
@@ -312,7 +324,7 @@ class CarlaPatchbayW(QGraphicsView):
     def slot_verticalScrollBarChanged(self, value):
         if self.fMovingViaMiniCanvas: return
 
-        maximum = self.verticalScrollBar().maximum()
+        maximum = self.fView.verticalScrollBar().maximum()
         if maximum == 0:
             yp = 0
         else:
@@ -323,8 +335,8 @@ class CarlaPatchbayW(QGraphicsView):
     @pyqtSlot()
     def slot_restoreScrollbarValues(self):
         settings = QSettings()
-        self.horizontalScrollBar().setValue(settings.value("HorizontalScrollBarValue", self.horizontalScrollBar().maximum()/2, type=int))
-        self.verticalScrollBar().setValue(settings.value("VerticalScrollBarValue", self.verticalScrollBar().maximum()/2, type=int))
+        self.fView.horizontalScrollBar().setValue(settings.value("HorizontalScrollBarValue", self.fView.horizontalScrollBar().maximum()/2, type=int))
+        self.fView.verticalScrollBar().setValue(settings.value("VerticalScrollBarValue", self.fView.verticalScrollBar().maximum()/2, type=int))
 
     # -----------------------------------------------------------------
 
@@ -339,8 +351,8 @@ class CarlaPatchbayW(QGraphicsView):
     @pyqtSlot(float, float)
     def slot_miniCanvasMoved(self, xp, yp):
         self.fMovingViaMiniCanvas = True
-        self.horizontalScrollBar().setValue(xp * self.horizontalScrollBar().maximum())
-        self.verticalScrollBar().setValue(yp * self.verticalScrollBar().maximum())
+        self.fView.horizontalScrollBar().setValue(xp * self.fView.horizontalScrollBar().maximum())
+        self.fView.verticalScrollBar().setValue(yp * self.fView.verticalScrollBar().maximum())
         self.fMovingViaMiniCanvas = False
         self.updateCanvasInitialPos()
 
@@ -794,7 +806,7 @@ class CarlaPatchbayW(QGraphicsView):
     # -----------------------------------------------------------------
 
     def resizeEvent(self, event):
-        QGraphicsView.resizeEvent(self, event)
+        QFrame.resizeEvent(self, event)
         self.slot_miniCanvasCheckSize()
 
 # ------------------------------------------------------------------------------------------------
