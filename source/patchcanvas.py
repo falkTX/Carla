@@ -53,6 +53,7 @@ ACTION_PORT_INFO        = 4 # port_id, N, N
 ACTION_PORT_RENAME      = 5 # port_id, N, new_name
 ACTION_PORTS_CONNECT    = 6 # out_id, in_id, N
 ACTION_PORTS_DISCONNECT = 7 # conn_id, N, N
+ACTION_PLUGIN_REMOVE    = 8 # plugin_id, N, N
 
 # Icon
 ICON_APPLICATION = 0
@@ -736,8 +737,6 @@ def setGroupAsPlugin(group_id, plugin_id, hasUi):
 
             if group.split and group.widgets[1]:
                 group.widgets[1].setAsPlugin(plugin_id, hasUi)
-
-            QTimer.singleShot(0, canvas.scene.update)
             return
 
     qCritical("PatchCanvas::setGroupAsPlugin(%i, %i, %s) - unable to find group to set as plugin" % (group_id, plugin_id, bool2str(hasUi)))
@@ -2008,6 +2007,10 @@ class CanvasBox(QGraphicsItem):
         self.m_group_id   = group_id
         self.m_group_name = group_name
 
+        # plugin Id, < 0 if invalid
+        self.m_plugin_id = -1
+        self.m_plugin_ui = False
+
         # Base Variables
         self.p_width  = 50
         self.p_height = canvas.theme.box_header_height + canvas.theme.box_header_spacing + 1
@@ -2048,6 +2051,8 @@ class CanvasBox(QGraphicsItem):
         if options.auto_hide_groups:
             self.setVisible(False)
 
+        self.setFlag(QGraphicsItem.ItemIsFocusable, True)
+
         self.updatePositions()
 
         canvas.scene.addItem(self)
@@ -2071,7 +2076,8 @@ class CanvasBox(QGraphicsItem):
         return self.m_port_list_ids
 
     def setAsPlugin(self, plugin_id, hasUi):
-        print("GOT CANVAS AS PLUGIN!!!")
+        self.m_plugin_id = plugin_id
+        self.m_plugin_ui = hasUi
 
     def setIcon(self, icon):
         if self.icon_svg:
@@ -2438,6 +2444,12 @@ class CanvasBox(QGraphicsItem):
                 canvas.callback(ACTION_GROUP_SPLIT, self.m_group_id, 0, "")
 
         event.accept()
+
+    def keyPressEvent(self, event):
+        if self.m_plugin_id >= 0 and event.key() == Qt.Key_Delete:
+            canvas.callback(ACTION_PLUGIN_REMOVE, self.m_plugin_id, 0, "")
+            return event.accept()
+        QGraphicsItem.keyPressEvent(self, event)
 
     def mousePressEvent(self, event):
         canvas.last_z_value += 1

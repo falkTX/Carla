@@ -835,3 +835,8 @@ def canvasCallback(action, value1, value2, valueStr):
 
         if not Carla.host.patchbay_disconnect(connectionId):
             print("Disconnect failed:", Carla.host.get_last_error())
+
+    elif action == patchcanvas.ACTION_PLUGIN_REMOVE:
+        pluginId = value1
+
+        Carla.host.remove_plugin(pluginId)
