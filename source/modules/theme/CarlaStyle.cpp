@@ -18,7 +18,6 @@
 #include "CarlaStylePrivate.hpp"
 
 #include <QtCore/qmath.h>
-#include <QtCore/QSettings>
 #include <QtCore/QStringBuilder>
 
 #include <QtGui/QPainter>
