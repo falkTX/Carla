@@ -2491,6 +2491,12 @@ class CanvasBox(QGraphicsItem):
             return event.accept()
         QGraphicsItem.keyPressEvent(self, event)
 
+    def mouseDoubleClickEvent(self, event):
+        if self.m_plugin_id >= 0:
+            canvas.callback(ACTION_PLUGIN_SHOW_UI if self.m_plugin_ui else ACTION_PLUGIN_EDIT, self.m_plugin_id, 0, "")
+            return event.accept()
+        QGraphicsItem.mouseDoubleClickEvent(self, event)
+
     def mousePressEvent(self, event):
         canvas.last_z_value += 1
         self.setZValue(canvas.last_z_value)
