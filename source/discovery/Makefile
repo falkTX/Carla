@@ -8,7 +8,8 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils -isystem ../modules -Wno-multichar
+BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils -isystem ../modules
+#-Wno-multichar
 
 ifeq ($(MACOS),true)
 BUILD_CXX_FLAGS += -ObjC++
