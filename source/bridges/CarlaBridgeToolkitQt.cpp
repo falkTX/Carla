@@ -195,7 +195,7 @@ public:
         else
             kClient->sendOscUpdate();
 
-        fMsgTimer = startTimer(50);
+        fMsgTimer = startTimer(30);
 
         // First idle
         handleTimeout();

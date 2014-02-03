@@ -3,16 +3,16 @@
 # ----------------------------------------------------------------------------
 # in short
 
-2. move frontend from PyQt4 to PyQt5, rewrite to share widget code (80% done)
-4. custom "plugin slots" skins, ala Reaper (also define set of keys for a new LV2 extension, 40% done)
+4. custom "plugin slots" skins, ala Reason (also define set of keys for a new LV2 extension, 40% done)
 5. internal patchbay processing mode
 6. Carla as an LV2 plugin (75% done)
 7. direct support for csound files (as plugins, inspired by 'cabbage')
-8. OSX builds (needs #2)
+8. OSX builds
 
 Ideas for later:
 
- 9. Carla as VST plugin (will have to be a custom UI)
+9a. Carla plugin working as X11 embed
+9b. Carla as VST plugin (needs #9a)
 10. easier canvas connections by using smart key shortcuts
 11. Mobile version (using Android Patchfield for example)
 12. Mobile OSC Control app
@@ -23,7 +23,7 @@ Ideas for later:
 
 GENERAL:
  - finalize Juce backend move
- - finalize PyQt5 move
+ - finalize PyQt5 move (just a few corrections now)
  - add direct program access on ui-dialogs (needed for standalone bridges), maybe add extra buttons too (reset plugin, fix ui size)
  - implement midi-learn (new dialog)
  - custom skins for plugin slots, design for 8 types + instruments (gig, sf2, sfz)
@@ -65,15 +65,8 @@ DSSI:
  - custom chunk-data extension, publish on kx website when complete
 
 LV2:
- - complete lv2-worker support
- - handle in-process graphics via Juce
- - no in-process UI support if juce disabled
  - revisit all extensions
- - option to set lv2 preset folder
-
-VST: (non-Juce build)
- - no UI support
- - simplify code (because of no Juce)
+ - option to set lv2 preset folder?
 
 FluidSynth:
  - per-channel volume control
@@ -85,9 +78,6 @@ LinuxSampler:
 
 # ----------------------------------------------------------------------------
 # current work
-
-BACKEND:
- - bring back lv2 and vst
 
 FRONTEND:
  - fix things to new cleanup API

@@ -59,7 +59,7 @@ void CarlaBridgeOsc::init(const char* const url)
 
     fServer = lo_server_new_with_proto(nullptr, LO_TCP, osc_error_handler);
 
-    CARLA_SAFE_ASSERT_RETURN(fServer == nullptr,)
+    CARLA_SAFE_ASSERT_RETURN(fServer != nullptr,)
 
     {
         char* const host = lo_url_get_hostname(url);

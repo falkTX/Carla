@@ -123,7 +123,7 @@ public:
         else
             kClient->sendOscUpdate();
 
-        g_timeout_add(50, gtk_ui_timeout, this);
+        g_timeout_add(30, gtk_ui_timeout, this);
         g_signal_connect(fWindow, "destroy", G_CALLBACK(gtk_ui_destroy), this);
 
         // First idle
