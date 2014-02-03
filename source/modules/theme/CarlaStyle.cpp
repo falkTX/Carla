@@ -3428,6 +3428,16 @@ QSize CarlaStyle::sizeFromContents(ContentsType type, const QStyleOption* option
     return newSize;
 }
 
+void CarlaStyle::polish(QApplication* app)
+{
+    QCommonStyle::polish(app);
+}
+
+void CarlaStyle::polish(QPalette& pal)
+{
+    QCommonStyle::polish(pal);
+}
+
 /*!
   \reimp
 */
@@ -3446,6 +3456,12 @@ void CarlaStyle::polish(QWidget *widget)
             ) {
         widget->setAttribute(Qt::WA_Hover, true);
     }
+}
+
+
+void CarlaStyle::unpolish(QApplication* app)
+{
+    QCommonStyle::unpolish(app);
 }
 
 /*!

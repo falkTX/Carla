@@ -52,7 +52,10 @@ public:
                   QStyleHintReturn* returnData = nullptr) const override;
     void drawItemText(QPainter *painter, const QRect& rect, int flags, const QPalette& pal, bool enabled, const QString& text,
                       QPalette::ColorRole textRole = QPalette::NoRole) const override;
+    void polish(QApplication* app) override;
+    void polish(QPalette& pal) override;
     void polish(QWidget* widget) override;
+    void unpolish(QApplication* app) override;
     void unpolish(QWidget* widget) override;
 
 private:
