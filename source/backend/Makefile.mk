@@ -78,7 +78,7 @@ LINKED_LIST_HPP       = ../../utils/LinkedList.hpp $(CARLA_UTILS_HPP)
 RT_LINKED_LIST_HPP    = ../../utils/RtLinkedList.hpp $(LINKED_LIST_HPP)
 
 CARLA_BACKEND_UTILS_HPP = ../../utils/CarlaBackendUtils.hpp $(CARLA_BACKEND_H) $(CARLA_HOST_H) $(CARLA_STRING_HPP)
-CARLA_BRIDGE_UTILS_HPP  = ../../utils/CarlaBridgeUtils.hpp $(CARLA_RING_BUFFER_HPP)
+CARLA_BRIDGE_UTILS_HPP  = ../../utils/CarlaBridgeUtils.hpp $(CARLA_BACKEND_H) $(CARLA_RING_BUFFER_HPP)
 CARLA_ENGINE_UTILS_HPP  = ../../utils/CarlaEngineUtils.hpp $(CARLA_ENGINE_HPP) $(CARLA_UTILS_HPP)
 CARLA_LIB_COUNTER_HPP   = ../../utils/CarlaLibCounter.hpp $(CARLA_LIB_UTILS_HPP) $(CARLA_MUTEX_HPP) $(LINKED_LIST_HPP)
 CARLA_MATH_UTILS_HPP    = ../../utils/CarlaMathUtils.hpp $(CARLA_UTILS_HPP)

@@ -793,7 +793,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
 
     if (btype != BINARY_NATIVE || (pData->options.preferPluginBridges && bridgeBinary.isNotEmpty()))
     {
-        if (bridgeBinary != nullptr)
+        if (bridgeBinary.isNotEmpty())
         {
             plugin = CarlaPlugin::newBridge(initializer, btype, ptype, bridgeBinary.getBuffer());
         }
@@ -2315,7 +2315,6 @@ void CarlaEngine::oscSend_bridge_parameter_value(const uint32_t index, const flo
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->path != nullptr && pData->oscData->path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->target != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(index != PARAMETER_NULL,);
     carla_debug("CarlaEngine::oscSend_bridge_parameter_value(%i, %f)", index, value);
 
     char targetPath[std::strlen(pData->oscData->path)+24];

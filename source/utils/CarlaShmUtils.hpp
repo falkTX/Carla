@@ -1,6 +1,6 @@
 /*
  * Carla shared memory utils
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -26,6 +26,12 @@ struct shm_t { HANDLE shm; HANDLE map; };
 # include <fcntl.h>
 # include <sys/mman.h>
 typedef int shm_t;
+#endif
+
+#ifdef CARLA_OS_WIN
+static shm_t gNullCarlaShm = { nullptr, nullptr };
+#else
+static shm_t gNullCarlaShm = -1;
 #endif
 
 // -----------------------------------------------------------------------
@@ -56,7 +62,7 @@ void carla_shm_init(shm_t& shm)
 static inline
 shm_t carla_shm_create(const char* const name)
 {
-    CARLA_ASSERT(name != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', gNullShm);
 
     shm_t ret;
     ret.shm = nullptr; // TODO
@@ -68,7 +74,7 @@ shm_t carla_shm_create(const char* const name)
 static inline
 shm_t carla_shm_attach(const char* const name)
 {
-    CARLA_ASSERT(name != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', gNullShm);
 
     shm_t ret;
     ret.shm = CreateFileA(name, GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
@@ -80,7 +86,7 @@ shm_t carla_shm_attach(const char* const name)
 static inline
 shm_t carla_shm_attach_linux(const char* const name)
 {
-    CARLA_ASSERT(name != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', gNullShm);
 
     char shmName[std::strlen(name)+10];
     std::strcpy(shmName, "/dev/shm/");
@@ -96,7 +102,7 @@ shm_t carla_shm_attach_linux(const char* const name)
 static inline
 shm_t carla_shm_create(const char* const name)
 {
-    CARLA_ASSERT(name != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', -1);
 
     return shm_open(name, O_RDWR|O_CREAT|O_EXCL, 0600);
 }
@@ -104,7 +110,7 @@ shm_t carla_shm_create(const char* const name)
 static inline
 shm_t carla_shm_attach(const char* const name)
 {
-    CARLA_ASSERT(name != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', -1);
 
     return shm_open(name, O_RDWR, 0);
 }
@@ -113,10 +119,10 @@ shm_t carla_shm_attach(const char* const name)
 static inline
 void carla_shm_close(shm_t& shm)
 {
-    CARLA_ASSERT(carla_is_shm_valid(shm));
+    CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm),);
 
 #ifdef CARLA_OS_WIN
-    CARLA_ASSERT(shm.map == nullptr);
+    CARLA_SAFE_ASSERT_RETURN(shm.map == nullptr,);
 
     CloseHandle(shm.shm);
     shm.shm = nullptr;
@@ -129,11 +135,11 @@ void carla_shm_close(shm_t& shm)
 static inline
 void* carla_shm_map(shm_t& shm, const size_t size)
 {
-    CARLA_ASSERT(carla_is_shm_valid(shm));
-    CARLA_ASSERT(size > 0);
+    CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm), nullptr);
+    CARLA_SAFE_ASSERT_RETURN(size > 0, nullptr);
 
 #ifdef CARLA_OS_WIN
-    CARLA_ASSERT(shm.map == nullptr);
+    CARLA_SAFE_ASSERT_RETURN(shm.map == nullptr, nullptr);
 
     HANDLE map = CreateFileMapping(shm.shm, NULL, PAGE_READWRITE, size, size, NULL);
 
@@ -162,12 +168,12 @@ void* carla_shm_map(shm_t& shm, const size_t size)
 static inline
 void carla_shm_unmap(shm_t& shm, void* const ptr, const size_t size)
 {
-    CARLA_ASSERT(carla_is_shm_valid(shm));
-    CARLA_ASSERT(ptr != nullptr);
-    CARLA_ASSERT(size > 0);
+    CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm),);
+    CARLA_SAFE_ASSERT_RETURN(ptr != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
 #ifdef CARLA_OS_WIN
-    CARLA_ASSERT(shm.map != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(shm.map != nullptr,);
 
     UnmapViewOfFile(ptr);
     CloseHandle(shm.map);

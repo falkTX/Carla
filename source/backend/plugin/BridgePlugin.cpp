@@ -57,42 +57,34 @@
 CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------
+// call carla_shm_create with for a XXXXXX temp filename
 
 static shm_t shm_mkstemp(char* const fileBase)
 {
+    CARLA_SAFE_ASSERT_RETURN(fileBase != nullptr, gNullCarlaShm);
+
+    const size_t fileBaseLen(std::strlen(fileBase));
+
+    CARLA_SAFE_ASSERT_RETURN(fileBaseLen > 6, gNullCarlaShm);
+    CARLA_SAFE_ASSERT_RETURN(std::strcmp(fileBase + fileBaseLen - 6, "XXXXXX") == 0, gNullCarlaShm);
+
     static const char charSet[] = "abcdefghijklmnopqrstuvwxyz"
                                   "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                   "0123456789";
+    static const int charSetLen = static_cast<int>(sizeof(charSet) - 1); // -1 to avoid trailing '\0'
 
-    const size_t fileBaseLen((fileBase != nullptr) ? std::strlen(fileBase) : 0);
-
-    shm_t fakeShm;
-    carla_shm_init(fakeShm);
-
-    if (fileBaseLen < 6)
-    {
-        errno = EINVAL;
-        return fakeShm;
-    }
-
-    if (std::strcmp(fileBase + fileBaseLen - 6, "XXXXXX") != 0)
-    {
-        errno = EINVAL;
-        return fakeShm;
-    }
-
+    // try until getting a valid shm or an error occurs
     for (;;)
     {
         for (size_t c = fileBaseLen - 6; c < fileBaseLen; ++c)
-        {
-            // Note the -1 to avoid the trailing '\0' in charSet.
-            fileBase[c] = charSet[std::rand() % (sizeof(charSet) - 1)];
-        }
+            fileBase[c] = charSet[std::rand() % charSetLen];
 
-        shm_t shm = carla_shm_create(fileBase);
+        const shm_t shm = carla_shm_create(fileBase);
 
-        if (carla_is_shm_valid(shm) || errno != EEXIST)
+        if (carla_is_shm_valid(shm))
             return shm;
+        if (errno != EEXIST)
+            return gNullCarlaShm;
     }
 }
 
@@ -133,7 +125,6 @@ struct BridgeAudioPool {
         }
 
         size = 0;
-
         carla_shm_close(shm);
     }
 
@@ -224,7 +215,7 @@ struct BridgeControl : public RingBufferControl<StackPackedRingBuffer> {
 
     void writeOpcode(const PluginBridgeOpcode opcode) noexcept
     {
-        writeInt(static_cast<int>(opcode));
+        writeInt(static_cast<int32_t>(opcode));
     }
 };
 
@@ -465,7 +456,7 @@ public:
             pData->singleMutex.lock();
 
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetParameter);
-        fShmControl.writeInt(parameterId);
+        fShmControl.writeInt(static_cast<int32_t>(parameterId));
         fShmControl.writeFloat(value);
 
         if (doLock)
@@ -737,15 +728,13 @@ public:
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
     {
-        uint32_t i, k;
-
         // --------------------------------------------------------------------------------------------------------
         // Check if active
 
         if (! pData->active)
         {
             // disable any output sound
-            for (i=0; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
                 FLOAT_CLEAR(outBuffer[i], frames);
             return;
         }
@@ -770,16 +759,16 @@ public:
 
             if (pData->extNotes.mutex.tryLock())
             {
-                while (! pData->extNotes.data.isEmpty())
+                for (; ! pData->extNotes.data.isEmpty();)
                 {
                     const ExternalMidiNote& note(pData->extNotes.data.getFirst(true));
 
-                    CARLA_ASSERT(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
+                    CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
                     char data1, data2, data3;
                     data1 = static_cast<char>(note.channel + (note.velo > 0) ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF);
-                    data2 = note.note;
-                    data3 = note.velo;
+                    data2 = static_cast<char>(note.note);
+                    data3 = static_cast<char>(note.velo);
 
                     fShmControl.writeOpcode(kPluginBridgeOpcodeMidiEvent);
                     fShmControl.writeLong(0);
@@ -798,13 +787,15 @@ public:
 
             bool allNotesOffSent = false;
 
-            uint32_t nEvents = pData->event.portIn->getEventCount();
-            uint32_t nextBankId = 0;
+            uint32_t numEvents = pData->event.portIn->getEventCount();
+            uint32_t nextBankId;
 
             if (pData->midiprog.current >= 0 && pData->midiprog.count > 0)
                 nextBankId = pData->midiprog.data[pData->midiprog.current].bank;
+            else
+                nextBankId = 0;
 
-            for (i=0; i < nEvents; ++i)
+            for (uint32_t i=0; i < numEvents; ++i)
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 
@@ -814,8 +805,7 @@ public:
                 case kEngineEventTypeNull:
                     break;
 
-                case kEngineEventTypeControl:
-                {
+                case kEngineEventTypeControl: {
                     const EngineControlEvent& ctrlEvent = event.ctrl;
 
                     switch (ctrlEvent.type)
@@ -830,21 +820,23 @@ public:
                         {
                             float value;
 
-                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) > 0)
+                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
                                 value = ctrlEvent.value;
                                 setDryWet(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
+                                break;
                             }
 
-                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) > 0)
+                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
+                                break;
                             }
 
-                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) > 0)
+                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
                             {
                                 float left, right;
                                 value = ctrlEvent.value/0.5f - 1.0f;
@@ -869,10 +861,12 @@ public:
                                 setBalanceRight(right, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
+                                break;
                             }
                         }
 
                         // Control plugin parameters
+                        uint32_t k;
                         for (k=0; k < pData->param.count; ++k)
                         {
                             if (pData->param.data[k].midiChannel != event.channel)
@@ -900,7 +894,12 @@ public:
 
                             setParameterValue(k, value, false, false, false);
                             pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
+                                break;
                         }
+
+                        // check if event is already handled
+                        if (k != pData->param.count)
+                            break;
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
@@ -913,7 +912,7 @@ public:
                         }
 
                         break;
-                    }
+                    } // case kEngineControlEventTypeParameter
 
                     case kEngineControlEventTypeMidiBank:
                         if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
@@ -927,12 +926,13 @@ public:
 
                             if (pData->midiprog.count > 0)
                             {
-                                for (k=0; k < pData->midiprog.count; ++k)
+                                for (uint32_t k=0; k < pData->midiprog.count; ++k)
                                 {
                                     if (pData->midiprog.data[k].bank == nextBankId && pData->midiprog.data[k].program == nextProgramId)
                                     {
-                                        setMidiProgram(k, false, false, false);
-                                        pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
+                                        const int32_t index(static_cast<int32_t>(k));
+                                        setMidiProgram(index, false, false, false);
+                                        pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, index, 0, 0.0f);
                                         break;
                                     }
                                 }
@@ -962,10 +962,9 @@ public:
                             // TODO
                         }
                         break;
-                    }
-
+                    } // switch (ctrlEvent.type)
                     break;
-                }
+                } // case kEngineEventTypeControl
 
                 case kEngineEventTypeMidi:
                 {
@@ -974,24 +973,23 @@ public:
                     uint8_t status  = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
                     uint8_t channel = event.channel;
 
-                    if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
-                        continue;
-                    if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
-                        continue;
-                    if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
-                        continue;
-                    if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
-                        continue;
-
-                    // Fix bad note-off
-                    if (status == MIDI_STATUS_NOTE_ON && midiEvent.data[2] == 0)
+                    if (MIDI_IS_STATUS_NOTE_ON(status) && midiEvent.data[2] == 0)
                         status = MIDI_STATUS_NOTE_OFF;
 
-                    char data[4];
+                    if (status == MIDI_STATUS_CHANNEL_PRESSURE && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
+                        continue;
+                    if (status == MIDI_STATUS_CONTROL_CHANGE && (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
+                        continue;
+                    if (status == MIDI_STATUS_POLYPHONIC_AFTERTOUCH && (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
+                        continue;
+                    if (status == MIDI_STATUS_PITCH_WHEEL_CONTROL && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
+                        continue;
+
+                    char data[EngineMidiEvent::kDataSize];
                     data[0] = static_cast<char>(status + channel);
-                    data[1] = midiEvent.data[1];
-                    data[2] = midiEvent.data[2];
-                    data[3] = midiEvent.data[3];
+
+                    for (uint8_t j=0; j < EngineMidiEvent::kDataSize; ++i)
+                        data[j] = static_cast<char>(midiEvent.data[j]);
 
                     fShmControl.writeOpcode(kPluginBridgeOpcodeMidiEvent);
                     fShmControl.writeLong(event.time);
@@ -1019,25 +1017,16 @@ public:
 
     bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames)
     {
-        CARLA_ASSERT(frames > 0);
-
-        if (frames == 0)
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 
         if (pData->audioIn.count > 0)
         {
-            CARLA_ASSERT(inBuffer != nullptr);
-            if (inBuffer == nullptr)
-                return false;
+            CARLA_SAFE_ASSERT_RETURN(inBuffer != nullptr, false);
         }
         if (pData->audioOut.count > 0)
         {
-            CARLA_ASSERT(outBuffer != nullptr);
-            if (outBuffer == nullptr)
-                return false;
+            CARLA_SAFE_ASSERT_RETURN(outBuffer != nullptr, false);
         }
-
-        uint32_t i, k;
 
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
@@ -1048,7 +1037,7 @@ public:
         }
         else if (! pData->singleMutex.tryLock())
         {
-            for (i=0; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
                 FLOAT_CLEAR(outBuffer[i], frames);
             return false;
         }
@@ -1056,7 +1045,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Reset audio buffers
 
-        for (i=0; i < fInfo.aIns; ++i)
+        for (uint32_t i=0; i < fInfo.aIns; ++i)
             FLOAT_COPY(fShmAudioPool.data + (i * frames), inBuffer[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
@@ -1071,7 +1060,7 @@ public:
             return true;
         }
 
-        for (i=0; i < fInfo.aOuts; ++i)
+        for (uint32_t i=0; i < fInfo.aOuts; ++i)
             FLOAT_COPY(outBuffer[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), frames);
 
         // --------------------------------------------------------------------------------------------------------
@@ -1085,12 +1074,12 @@ public:
             bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];
 
-            for (i=0; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
                 // Dry/Wet
                 if (doDryWet)
                 {
-                    for (k=0; k < frames; ++k)
+                    for (uint32_t k=0; k < frames; ++k)
                     {
                         bufValue        = inBuffer[(pData->audioIn.count == 1) ? 0 : i][k];
                         outBuffer[i][k] = (outBuffer[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
@@ -1111,7 +1100,7 @@ public:
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (pData->postProc.balanceRight + 1.0f)/2.0f;
 
-                    for (k=0; k < frames; ++k)
+                    for (uint32_t k=0; k < frames; ++k)
                     {
                         if (isPair)
                         {
@@ -1128,10 +1117,10 @@ public:
                     }
                 }
 
-                // Volume
+                // Volume (and buffer copy)
                 if (doVolume)
                 {
-                    for (k=0; k < frames; ++k)
+                    for (uint32_t k=0; k < frames; ++k)
                         outBuffer[i][k] *= pData->postProc.volume;
                 }
             }
@@ -1149,15 +1138,14 @@ public:
         resizeAudioPool(newBufferSize);
 
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetBufferSize);
-        fShmControl.writeInt(newBufferSize);
+        fShmControl.writeInt(static_cast<int32_t>(newBufferSize));
         fShmControl.commitWrite();
-
     }
 
     void sampleRateChanged(const double newSampleRate) override
     {
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetSampleRate);
-        fShmControl.writeFloat(float(newSampleRate));
+        fShmControl.writeFloat(static_cast<float>(newSampleRate));
         fShmControl.commitWrite();
     }
 
@@ -1188,59 +1176,86 @@ public:
 
         switch (infoType)
         {
-        case kPluginBridgeAudioCount:
-        {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(3, "iii");
-
-            const int32_t aIns   = argv[0]->i;
-            const int32_t aOuts  = argv[1]->i;
-            const int32_t aTotal = argv[2]->i;
-
-            CARLA_ASSERT(aIns >= 0);
-            CARLA_ASSERT(aOuts >= 0);
-            CARLA_ASSERT(aIns + aOuts == aTotal);
-
-            fInfo.aIns  = aIns;
-            fInfo.aOuts = aOuts;
-
+        case kPluginBridgeNull:
             break;
 
-            // unused
-            (void)aTotal;
-        }
+        case kPluginBridgePluginInfo1: {
+            CARLA_BRIDGE_CHECK_OSC_TYPES(3, "iih");
 
-        case kPluginBridgeMidiCount:
-        {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(3, "iii");
+            const int32_t category  = argv[0]->i;
+            const int32_t hints     = argv[1]->i;
+            const int64_t uniqueId  = argv[2]->h;
 
-            const int32_t mIns   = argv[0]->i;
-            const int32_t mOuts  = argv[1]->i;
-            const int32_t mTotal = argv[2]->i;
+            CARLA_SAFE_ASSERT_BREAK(category >= 0);
+            CARLA_SAFE_ASSERT_BREAK(hints >= 0);
 
-            CARLA_ASSERT(mIns >= 0);
-            CARLA_ASSERT(mOuts >= 0);
-            CARLA_ASSERT(mIns + mOuts == mTotal);
+            pData->hints  = static_cast<uint>(hints);
+            pData->hints |= PLUGIN_IS_BRIDGE;
 
-            fInfo.mIns  = mIns;
-            fInfo.mOuts = mOuts;
-
+            fInfo.category = static_cast<PluginCategory>(category);
+            fInfo.uniqueId = static_cast<long>(uniqueId);
             break;
-
-            // unused
-            (void)mTotal;
         }
 
-        case kPluginBridgeParameterCount:
-        {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(3, "iii");
+        case kPluginBridgePluginInfo2: {
+            CARLA_BRIDGE_CHECK_OSC_TYPES(4, "ssss");
 
-            const int32_t pIns   = argv[0]->i;
-            const int32_t pOuts  = argv[1]->i;
-            const int32_t pTotal = argv[2]->i;
+            const char* const realName  = (const char*)&argv[0]->s;
+            const char* const label     = (const char*)&argv[1]->s;
+            const char* const maker     = (const char*)&argv[2]->s;
+            const char* const copyright = (const char*)&argv[3]->s;
 
-            CARLA_ASSERT(pIns >= 0);
-            CARLA_ASSERT(pOuts >= 0);
-            CARLA_ASSERT(pIns + pOuts <= pTotal);
+            CARLA_SAFE_ASSERT_BREAK(realName != nullptr);
+            CARLA_SAFE_ASSERT_BREAK(label != nullptr);
+            CARLA_SAFE_ASSERT_BREAK(maker != nullptr);
+            CARLA_SAFE_ASSERT_BREAK(copyright != nullptr);
+
+            fInfo.name  = realName;
+            fInfo.label = label;
+            fInfo.maker = maker;
+            fInfo.copyright = copyright;
+
+            if (pData->name == nullptr)
+                pData->name = carla_strdup(realName);
+            break;
+        }
+
+        case kPluginBridgeAudioCount: {
+            CARLA_BRIDGE_CHECK_OSC_TYPES(2, "ii");
+
+            const int32_t ins  = argv[0]->i;
+            const int32_t outs = argv[1]->i;
+
+            CARLA_SAFE_ASSERT_BREAK(ins >= 0);
+            CARLA_SAFE_ASSERT_BREAK(outs >= 0);
+
+            fInfo.aIns  = static_cast<uint32_t>(ins);
+            fInfo.aOuts = static_cast<uint32_t>(outs);
+            break;
+        }
+
+        case kPluginBridgeMidiCount: {
+            CARLA_BRIDGE_CHECK_OSC_TYPES(2, "ii");
+
+            const int32_t ins  = argv[0]->i;
+            const int32_t outs = argv[1]->i;
+
+            CARLA_SAFE_ASSERT_BREAK(ins >= 0);
+            CARLA_SAFE_ASSERT_BREAK(outs >= 0);
+
+            fInfo.mIns  = static_cast<uint32_t>(ins);
+            fInfo.mOuts = static_cast<uint32_t>(outs);
+            break;
+        }
+
+        case kPluginBridgeParameterCount: {
+            CARLA_BRIDGE_CHECK_OSC_TYPES(2, "ii");
+
+            const int32_t ins  = argv[0]->i;
+            const int32_t outs = argv[1]->i;
+
+            CARLA_SAFE_ASSERT_BREAK(ins >= 0);
+            CARLA_SAFE_ASSERT_BREAK(outs >= 0);
 
             // delete old data
             pData->param.clear();
@@ -1251,171 +1266,223 @@ public:
                 fParams = nullptr;
             }
 
-            CARLA_SAFE_ASSERT_INT2(pTotal < static_cast<int32_t>(pData->engine->getOptions().maxParameters), pTotal, pData->engine->getOptions().maxParameters);
+            CARLA_SAFE_ASSERT_INT2(ins+outs < static_cast<int32_t>(pData->engine->getOptions().maxParameters), ins+outs, pData->engine->getOptions().maxParameters);
 
-            const int32_t count(carla_min<int32_t>(pTotal, pData->engine->getOptions().maxParameters, 0));
+            const uint32_t count(static_cast<uint32_t>(carla_min<int32_t>(ins+outs, static_cast<int32_t>(pData->engine->getOptions().maxParameters), 0)));
 
             if (count > 0)
             {
                 pData->param.createNew(count, false);
                 fParams = new BridgeParamInfo[count];
             }
-
             break;
-
-            // unused
-            (void)pIns;
-            (void)pOuts;
         }
 
-        case kPluginBridgeProgramCount:
-        {
+        case kPluginBridgeProgramCount: {
             CARLA_BRIDGE_CHECK_OSC_TYPES(1, "i");
 
             const int32_t count = argv[0]->i;
 
-            CARLA_ASSERT(count >= 0);
+            CARLA_SAFE_ASSERT_BREAK(count >= 0);
 
             pData->prog.clear();
 
             if (count > 0)
-                pData->prog.createNew(count);
+                pData->prog.createNew(static_cast<uint32_t>(count));
 
             break;
         }
 
-        case kPluginBridgeMidiProgramCount:
-        {
+        case kPluginBridgeMidiProgramCount: {
             CARLA_BRIDGE_CHECK_OSC_TYPES(1, "i");
 
             const int32_t count = argv[0]->i;
 
-            CARLA_ASSERT(count >= 0);
+            CARLA_SAFE_ASSERT_BREAK(count >= 0);
 
             pData->midiprog.clear();
 
             if (count > 0)
-                pData->midiprog.createNew(count);
-
-            break;
-        }
-
-        case kPluginBridgePluginInfo:
-        {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(7, "iissssh");
-
-            const int32_t category  = argv[0]->i;
-            const int32_t hints     = argv[1]->i;
-            const char* const name  = (const char*)&argv[2]->s;
-            const char* const label = (const char*)&argv[3]->s;
-            const char* const maker = (const char*)&argv[4]->s;
-            const char* const copyright = (const char*)&argv[5]->s;
-            const int64_t uniqueId      = argv[6]->h;
-
-            CARLA_ASSERT(category >= 0);
-            CARLA_ASSERT(hints >= 0);
-            CARLA_ASSERT(name != nullptr);
-            CARLA_ASSERT(label != nullptr);
-            CARLA_ASSERT(maker != nullptr);
-            CARLA_ASSERT(copyright != nullptr);
-
-            pData->hints = hints | PLUGIN_IS_BRIDGE;
-
-            fInfo.category = static_cast<PluginCategory>(category);
-            fInfo.uniqueId = static_cast<long int>(uniqueId);
-
-            fInfo.name  = name;
-            fInfo.label = label;
-            fInfo.maker = maker;
-            fInfo.copyright = copyright;
-
-            if (pData->name == nullptr)
-                pData->name = carla_strdup(name);
-
-            break;
-        }
-
-        case kPluginBridgeParameterInfo:
-        {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(3, "iss");
-
-            const int32_t index    = argv[0]->i;
-            const char* const name = (const char*)&argv[1]->s;
-            const char* const unit = (const char*)&argv[2]->s;
-
-            CARLA_ASSERT_INT2(index >= 0 && index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
-            CARLA_ASSERT(name != nullptr);
-            CARLA_ASSERT(unit != nullptr);
-
-            if (index >= 0 && static_cast<int32_t>(pData->param.count))
-            {
-                fParams[index].name = name;
-                fParams[index].unit = unit;
-            }
-
+                pData->midiprog.createNew(static_cast<uint32_t>(count));
             break;
         }
 
         case kPluginBridgeParameterData:
         {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(5, "iiiii");
+            CARLA_BRIDGE_CHECK_OSC_TYPES(6, "iiiiss");
 
-            const int32_t index   = argv[0]->i;
-            const int32_t rindex  = argv[2]->i;
-            const int32_t hints   = argv[3]->i;
-            const int32_t channel = argv[4]->i;
-            const int32_t cc      = argv[5]->i;
+            const int32_t index    = argv[0]->i;
+            const int32_t rindex   = argv[1]->i;
+            const int32_t type     = argv[2]->i;
+            const int32_t hints    = argv[3]->i;
+            const char* const name = (const char*)&argv[4]->s;
+            const char* const unit = (const char*)&argv[5]->s;
 
-            CARLA_ASSERT_INT2(index >= 0 && index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
-            CARLA_ASSERT(rindex >= 0);
-            CARLA_ASSERT(hints >= 0);
-            CARLA_ASSERT(channel >= 0 && channel < MAX_MIDI_CHANNELS);
-            CARLA_ASSERT(cc >= -1 && cc < 0x5F);
+            CARLA_SAFE_ASSERT_BREAK(index >= 0);
+            CARLA_SAFE_ASSERT_BREAK(rindex >= 0);
+            CARLA_SAFE_ASSERT_BREAK(type >= 0);
+            CARLA_SAFE_ASSERT_BREAK(hints >= 0);
+            CARLA_SAFE_ASSERT_BREAK(name != nullptr);
+            CARLA_SAFE_ASSERT_BREAK(unit != nullptr);
 
-            if (index >= 0 && static_cast<int32_t>(pData->param.count))
+            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
+
+            if (index < static_cast<int32_t>(pData->param.count))
             {
                 pData->param.data[index].index   = index;
                 pData->param.data[index].rindex  = rindex;
-                pData->param.data[index].hints   = hints;
-                pData->param.data[index].midiChannel = static_cast<uint8_t>(channel);
-                pData->param.data[index].midiCC      = static_cast<int16_t>(cc);
+                pData->param.data[index].hints   = static_cast<uint>(hints);
+                fParams[index].name = name;
+                fParams[index].unit = unit;
             }
-
             break;
         }
 
-        case kPluginBridgeParameterRanges:
+        case kPluginBridgeParameterRanges1:
         {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(7, "iffffff");
+            CARLA_BRIDGE_CHECK_OSC_TYPES(4, "ifff");
 
             const int32_t index = argv[0]->i;
             const float def     = argv[1]->f;
             const float min     = argv[2]->f;
             const float max     = argv[3]->f;
-            const float step    = argv[4]->f;
-            const float stepSmall = argv[5]->f;
-            const float stepLarge = argv[6]->f;
 
-            CARLA_ASSERT_INT2(index >= 0 && index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
-            CARLA_ASSERT(min < max);
-            CARLA_ASSERT(def >= min);
-            CARLA_ASSERT(def <= max);
+            CARLA_SAFE_ASSERT_BREAK(index >= 0);
+            CARLA_SAFE_ASSERT_BREAK(min < max);
+            CARLA_SAFE_ASSERT_BREAK(def >= min);
+            CARLA_SAFE_ASSERT_BREAK(def <= max);
 
-            if (index >= 0 && static_cast<int32_t>(pData->param.count))
+            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
+
+            if (index < static_cast<int32_t>(pData->param.count))
             {
-                pData->param.ranges[index].def  = def;
-                pData->param.ranges[index].min  = min;
-                pData->param.ranges[index].max  = max;
-                pData->param.ranges[index].step = step;
-                pData->param.ranges[index].stepSmall = stepSmall;
-                pData->param.ranges[index].stepLarge = stepLarge;
+                pData->param.ranges[index].def = def;
+                pData->param.ranges[index].min = min;
+                pData->param.ranges[index].max = max;
             }
-
             break;
         }
 
-        case kPluginBridgeProgramInfo:
+        case kPluginBridgeParameterRanges2:
         {
+            CARLA_BRIDGE_CHECK_OSC_TYPES(4, "ifff");
+
+            const int32_t index   = argv[0]->i;
+            const float step      = argv[1]->f;
+            const float stepSmall = argv[2]->f;
+            const float stepLarge = argv[3]->f;
+
+            CARLA_SAFE_ASSERT_BREAK(index >= 0);
+
+            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
+
+            if (index < static_cast<int32_t>(pData->param.count))
+            {
+                pData->param.ranges[index].step      = step;
+                pData->param.ranges[index].stepSmall = stepSmall;
+                pData->param.ranges[index].stepLarge = stepLarge;
+            }
+            break;
+        }
+
+        case kPluginBridgeParameterMidiCC: {
+            CARLA_BRIDGE_CHECK_OSC_TYPES(2, "ii");
+
+            const int32_t index = argv[0]->i;
+            const int32_t cc    = argv[1]->i;
+
+            CARLA_SAFE_ASSERT_BREAK(index >= 0);
+            CARLA_SAFE_ASSERT_BREAK(cc >= -1 && cc < 0x5F);
+
+            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
+
+            if (index < static_cast<int32_t>(pData->param.count))
+                pData->param.data[index].midiCC = static_cast<int16_t>(cc);
+            break;
+        }
+
+        case kPluginBridgeParameterMidiChannel: {
+            CARLA_BRIDGE_CHECK_OSC_TYPES(2, "ii");
+
+            const int32_t index   = argv[0]->i;
+            const int32_t channel = argv[0]->i;
+
+            CARLA_SAFE_ASSERT_BREAK(index >= 0);
+            CARLA_SAFE_ASSERT_BREAK(channel >= 0 && channel < MAX_MIDI_CHANNELS);
+
+            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
+
+            if (index < static_cast<int32_t>(pData->param.count))
+                pData->param.data[index].midiChannel = static_cast<uint8_t>(channel);
+            break;
+        }
+
+        case kPluginBridgeParameterValue:
+        {
+            CARLA_BRIDGE_CHECK_OSC_TYPES(2, "if");
+
+            const int32_t index = argv[0]->i;
+            const float   value = argv[1]->f;
+
+            CARLA_SAFE_ASSERT_BREAK(index >= 0);
+
+            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
+
+            if (index < static_cast<int32_t>(pData->param.count))
+            {
+                const uint32_t uindex(static_cast<uint32_t>(index));
+                const float fixedValue(pData->param.getFixedValue(uindex, value));
+                fParams[uindex].value = fixedValue;
+
+                CarlaPlugin::setParameterValue(uindex, fixedValue, false, true, true);
+            }
+            break;
+        }
+
+        case kPluginBridgeDefaultValue:
+        {
+            CARLA_BRIDGE_CHECK_OSC_TYPES(2, "if");
+
+            const int32_t index = argv[0]->i;
+            const float   value = argv[1]->f;
+
+            CARLA_SAFE_ASSERT_BREAK(index >= 0);
+
+            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
+
+            if (index < static_cast<int32_t>(pData->param.count))
+                pData->param.ranges[index].def = value;
+            break;
+        }
+
+        case kPluginBridgeCurrentProgram: {
+#if 0
+            CARLA_BRIDGE_CHECK_OSC_TYPES(1, "i");
+
+            const int32_t index = argv[0]->i;
+
+            CARLA_ASSERT_INT2(index >= 0 && index < static_cast<int32_t>(pData->prog.count), index, pData->prog.count);
+
+            setProgram(index, false, true, true);
+#endif
+            break;
+        }
+
+        case kPluginBridgeCurrentMidiProgram: {
+#if 0
+            CARLA_BRIDGE_CHECK_OSC_TYPES(1, "i");
+
+            const int32_t index = argv[0]->i;
+
+            CARLA_ASSERT_INT2(index < static_cast<int32_t>(pData->midiprog.count), index, pData->midiprog.count);
+
+            setMidiProgram(index, false, true, true);
+#endif
+            break;
+        }
+
+        case kPluginBridgeProgramName: {
+#if 0
             CARLA_BRIDGE_CHECK_OSC_TYPES(2, "is");
 
             const int32_t index    = argv[0]->i;
@@ -1431,12 +1498,12 @@ public:
 
                 pData->prog.names[index] = carla_strdup(name);
             }
-
+#endif
             break;
         }
 
-        case kPluginBridgeMidiProgramInfo:
-        {
+        case kPluginBridgeMidiProgramData: {
+#if 0
             CARLA_BRIDGE_CHECK_OSC_TYPES(4, "iiis");
 
             const int32_t index    = argv[0]->i;
@@ -1458,12 +1525,12 @@ public:
                 pData->midiprog.data[index].program = program;
                 pData->midiprog.data[index].name    = carla_strdup(name);
             }
-
+#endif
             break;
         }
 
-        case kPluginBridgeConfigure:
-        {
+        case kPluginBridgeConfigure: {
+#if 0
             CARLA_BRIDGE_CHECK_OSC_TYPES(2, "ss");
 
             const char* const key   = (const char*)&argv[0]->s;
@@ -1479,73 +1546,12 @@ public:
                 pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
             else if (std::strcmp(key, CARLA_BRIDGE_MSG_SAVED) == 0)
                 fSaved = true;
-
+#endif
             break;
         }
 
-        case kPluginBridgeSetParameterValue:
-        {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(2, "if");
-
-            const int32_t index = argv[0]->i;
-            const float   value = argv[1]->f;
-
-            CARLA_ASSERT_INT2(index >= 0 && index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
-
-            if (index >= 0 && static_cast<int32_t>(pData->param.count))
-            {
-                const float fixedValue(pData->param.getFixedValue(index, value));
-                fParams[index].value = fixedValue;
-
-                CarlaPlugin::setParameterValue(index, fixedValue, false, true, true);
-            }
-
-            break;
-        }
-
-        case kPluginBridgeSetDefaultValue:
-        {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(2, "if");
-
-            const int32_t index = argv[0]->i;
-            const float   value = argv[1]->f;
-
-            CARLA_ASSERT_INT2(index >= 0 && index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
-
-            if (index >= 0 && static_cast<int32_t>(pData->param.count))
-                pData->param.ranges[index].def = value;
-
-            break;
-        }
-
-        case kPluginBridgeSetProgram:
-        {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(1, "i");
-
-            const int32_t index = argv[0]->i;
-
-            CARLA_ASSERT_INT2(index >= 0 && index < static_cast<int32_t>(pData->prog.count), index, pData->prog.count);
-
-            setProgram(index, false, true, true);
-
-            break;
-        }
-
-        case kPluginBridgeSetMidiProgram:
-        {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(1, "i");
-
-            const int32_t index = argv[0]->i;
-
-            CARLA_ASSERT_INT2(index < static_cast<int32_t>(pData->midiprog.count), index, pData->midiprog.count);
-
-            setMidiProgram(index, false, true, true);
-
-            break;
-        }
-
-        case kPluginBridgeSetCustomData:
-        {
+        case kPluginBridgeSetCustomData: {
+#if 0
             CARLA_BRIDGE_CHECK_OSC_TYPES(3, "sss");
 
             const char* const type  = (const char*)&argv[0]->s;
@@ -1557,12 +1563,11 @@ public:
             CARLA_ASSERT(value != nullptr);
 
             setCustomData(type, key, value, false);
-
+#endif
             break;
         }
 
-        case kPluginBridgeSetChunkData:
-        {
+        case kPluginBridgeSetChunkData: {
             CARLA_BRIDGE_CHECK_OSC_TYPES(1, "s");
 #if 0
             const char* const chunkFileChar = (const char*)&argv[0]->s;
@@ -1612,14 +1617,11 @@ public:
             break;
         }
 
-        case kPluginBridgeUpdateNow:
-        {
+        case kPluginBridgeUpdate:
             fInitiated = true;
             break;
-        }
 
-        case kPluginBridgeError:
-        {
+        case kPluginBridgeError: {
             CARLA_BRIDGE_CHECK_OSC_TYPES(1, "s");
 
             const char* const error = (const char*)&argv[0]->s;
@@ -1641,7 +1643,7 @@ public:
 
     const void* getExtraStuff() const noexcept override
     {
-        return fBridgeBinary.isNotEmpty() ? (const char*)fBridgeBinary : nullptr;
+        return fBridgeBinary.isNotEmpty() ? fBridgeBinary.getBuffer() : nullptr;
     }
 
     bool init(const char* const filename, const char* const name, const char* const label, const char* const bridgeBinary)
@@ -1741,7 +1743,7 @@ public:
 
         // initial values
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetBufferSize);
-        fShmControl.writeInt(pData->engine->getBufferSize());
+        fShmControl.writeInt(static_cast<int32_t>(pData->engine->getBufferSize()));
 
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetSampleRate);
         fShmControl.writeFloat(float(pData->engine->getSampleRate()));
@@ -1847,7 +1849,7 @@ private:
         fShmAudioPool.resize(bufferSize, fInfo.aIns+fInfo.aOuts);
 
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetAudioPool);
-        fShmControl.writeLong(fShmAudioPool.size);
+        fShmControl.writeLong(static_cast<int64_t>(fShmAudioPool.size));
         fShmControl.commitWrite();
 
         waitForServer();
@@ -1872,6 +1874,8 @@ CARLA_BACKEND_END_NAMESPACE
 
 #endif // ! BUILD_BRIDGE
 
+// -------------------------------------------------------------------------------------------------------------------
+
 CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, PluginType ptype, const char* const bridgeBinary)
@@ -1879,7 +1883,7 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
     carla_debug("CarlaPlugin::newBridge({%p, \"%s\", \"%s\", \"%s\"}, %s, %s, \"%s\")", init.engine, init.filename, init.name, init.label, BinaryType2Str(btype), PluginType2Str(ptype), bridgeBinary);
 
 #ifndef BUILD_BRIDGE
-    if (bridgeBinary == nullptr)
+    if (bridgeBinary == nullptr || bridgeBinary[0] == '\0')
     {
         init.engine->setLastError("Bridge not possible, bridge-binary not found");
         return nullptr;
@@ -1913,10 +1917,13 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 }
 
 #ifndef BUILD_BRIDGE
-// -------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------
 // Bridge Helper
 
 #define bridgePlugin ((BridgePlugin*)plugin)
+
+extern int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeInfoType type,
+                                       const int argc, const lo_arg* const* const argv, const char* const types);
 
 int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeInfoType type,
                                 const int argc, const lo_arg* const* const argv, const char* const types)
@@ -1930,3 +1937,5 @@ int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeInf
 #endif
 
 CARLA_BACKEND_END_NAMESPACE
+
+// -------------------------------------------------------------------------------------------------------------------
