@@ -16,7 +16,6 @@
  */
 
 /* TODO:
- * - add more checks to oscSend_* stuff
  * - complete processRack(): carefully add to input, sorted events
  * - implement processPatchbay()
  * - implement oscSend_control_switch_plugins()
@@ -35,6 +34,7 @@
 
 #include "CarlaMIDI.h"
 
+#include <QtCore/QDir>
 #include <QtCore/QFile>
 #include <QtCore/QFileInfo>
 #include <QtCore/QTextStream>
@@ -746,38 +746,56 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
 
     CarlaPlugin* plugin = nullptr;
 
-#if 0 //ndef BUILD_BRIDGE
-    const char* bridgeBinary;
+#ifndef BUILD_BRIDGE
+    CarlaString bridgeBinary(pData->options.binaryDir);
 
-    switch (btype)
+    if (bridgeBinary.isNotEmpty())
     {
-    case BINARY_POSIX32:
-        bridgeBinary = pData->options.bridge_posix32.isNotEmpty() ? (const char*)pData->options.bridge_posix32 : nullptr;
-        break;
-    case BINARY_POSIX64:
-        bridgeBinary = pData->options.bridge_posix64.isNotEmpty() ? (const char*)pData->options.bridge_posix64 : nullptr;
-        break;
-    case BINARY_WIN32:
-        bridgeBinary = pData->options.bridge_win32.isNotEmpty() ? (const char*)pData->options.bridge_win32 : nullptr;
-        break;
-    case BINARY_WIN64:
-        bridgeBinary = pData->options.bridge_win64.isNotEmpty() ? (const char*)pData->options.bridge_win64 : nullptr;
-        break;
-    default:
-        bridgeBinary = nullptr;
-        break;
-    }
-
-# ifndef CARLA_OS_WIN
-    if (btype == BINARY_NATIVE && pData->options.bridge_native.isNotEmpty())
-       bridgeBinary = (const char*)pData->options.bridge_native;
+# ifdef CARLA_OS_LINUX
+        // test for local build
+        if (bridgeBinary.endsWith("/source/backend/"))
+            bridgeBinary += "../bridges/";
 # endif
 
-    if (btype != BINARY_NATIVE || (pData->options.preferPluginBridges && bridgeBinary != nullptr))
+# ifndef CARLA_OS_WIN
+        if (btype == BINARY_NATIVE)
+        {
+            bridgeBinary += "carla-bridge-native";
+        }
+        else
+# endif
+        {
+            switch (btype)
+            {
+            case BINARY_POSIX32:
+                bridgeBinary += "carla-bridge-posix32";
+                break;
+            case BINARY_POSIX64:
+                bridgeBinary += "carla-bridge-posix64";
+                break;
+            case BINARY_WIN32:
+                bridgeBinary += "carla-bridge-win32.exe";
+                break;
+            case BINARY_WIN64:
+                bridgeBinary += "carla-bridge-win64.exe";
+                break;
+            default:
+                bridgeBinary.clear();
+                break;
+            }
+        }
+
+        QFile file(bridgeBinary.getBuffer());
+
+        if (! file.exists())
+            bridgeBinary.clear();
+    }
+
+    if (btype != BINARY_NATIVE || (pData->options.preferPluginBridges && bridgeBinary.isNotEmpty()))
     {
         if (bridgeBinary != nullptr)
         {
-            plugin = CarlaPlugin::newBridge(init, btype, ptype, bridgeBinary);
+            plugin = CarlaPlugin::newBridge(initializer, btype, ptype, bridgeBinary.getBuffer());
         }
 # ifdef CARLA_OS_LINUX
         else if (btype == BINARY_WIN32)
@@ -812,7 +830,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
         }
     }
     else
-#endif // BUILD_BRIDGE
+#endif // ! BUILD_BRIDGE
     {
         bool use16Outs;
         setLastError("Invalid or unsupported plugin type");
@@ -829,22 +847,22 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             }
             else if (std::strcmp(label, "FluidSynth") == 0)
             {
-                use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true"));
+                use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
                 plugin = CarlaPlugin::newFluidSynth(initializer, use16Outs);
             }
             else if (std::strcmp(label, "LinuxSampler (GIG)") == 0)
             {
-                use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true"));
+                use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
                 plugin = CarlaPlugin::newLinuxSampler(initializer, "GIG", use16Outs);
             }
             else if (std::strcmp(label, "LinuxSampler (SF2)") == 0)
             {
-                use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true"));
+                use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
                 plugin = CarlaPlugin::newLinuxSampler(initializer, "SF2", use16Outs);
             }
             else if (std::strcmp(label, "LinuxSampler (SFZ)") == 0)
             {
-                use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true"));
+                use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
                 plugin = CarlaPlugin::newLinuxSampler(initializer, "SFZ", use16Outs);
             }
             else
@@ -878,12 +896,12 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             break;
 
         case PLUGIN_FILE_GIG:
-            use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true"));
+            use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
             plugin = CarlaPlugin::newFileGIG(initializer, use16Outs);
             break;
 
         case PLUGIN_FILE_SF2:
-            use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true"));
+            use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
             plugin = CarlaPlugin::newFileSF2(initializer, use16Outs);
             break;
 
@@ -2170,7 +2188,7 @@ void CarlaEngine::oscSend_bridge_audio_count(const uint32_t ins, const uint32_t 
     char targetPath[std::strlen(pData->oscData->path)+20];
     std::strcpy(targetPath, pData->oscData->path);
     std::strcat(targetPath, "/bridge_audio_count");
-    try_lo_send(pData->oscData->target, targetPath, "iii", static_cast<int32_t>(ins), static_cast<int32_t>(outs));
+    try_lo_send(pData->oscData->target, targetPath, "ii", static_cast<int32_t>(ins), static_cast<int32_t>(outs));
 }
 
 void CarlaEngine::oscSend_bridge_midi_count(const uint32_t ins, const uint32_t outs) const noexcept
@@ -2206,7 +2224,7 @@ void CarlaEngine::oscSend_bridge_program_count(const uint32_t count) const noexc
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->target != nullptr,);
     carla_debug("CarlaEngine::oscSend_bridge_program_count(%i)", count);
 
-    char targetPath[std::strlen(pData->oscData->path)+22];
+    char targetPath[std::strlen(pData->oscData->path)+23];
     std::strcpy(targetPath, pData->oscData->path);
     std::strcat(targetPath, "/bridge_program_count");
     try_lo_send(pData->oscData->target, targetPath, "i", static_cast<int32_t>(count));
@@ -2292,7 +2310,7 @@ void CarlaEngine::oscSend_bridge_parameter_midi_channel(const uint32_t index, co
     try_lo_send(pData->oscData->target, targetPath, "ii", static_cast<int32_t>(index), static_cast<int32_t>(channel));
 }
 
-void CarlaEngine::oscSend_bridge_parameter_value(const int32_t index, const float value) const noexcept
+void CarlaEngine::oscSend_bridge_parameter_value(const uint32_t index, const float value) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->path != nullptr && pData->oscData->path[0] != '\0',);
@@ -2303,7 +2321,7 @@ void CarlaEngine::oscSend_bridge_parameter_value(const int32_t index, const floa
     char targetPath[std::strlen(pData->oscData->path)+24];
     std::strcpy(targetPath, pData->oscData->path);
     std::strcat(targetPath, "/bridge_parameter_value");
-    try_lo_send(pData->oscData->target, targetPath, "if", index, value);
+    try_lo_send(pData->oscData->target, targetPath, "if", static_cast<int32_t>(index), value);
 }
 
 void CarlaEngine::oscSend_bridge_default_value(const uint32_t index, const float value) const noexcept
@@ -2326,7 +2344,7 @@ void CarlaEngine::oscSend_bridge_current_program(const int32_t index) const noex
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->target != nullptr,);
     carla_debug("CarlaEngine::oscSend_bridge_current_program(%i)", index);
 
-    char targetPath[std::strlen(pData->oscData->path)+20];
+    char targetPath[std::strlen(pData->oscData->path)+24];
     std::strcpy(targetPath, pData->oscData->path);
     std::strcat(targetPath, "/bridge_current_program");
     try_lo_send(pData->oscData->target, targetPath, "i", index);
@@ -2339,7 +2357,7 @@ void CarlaEngine::oscSend_bridge_current_midi_program(const int32_t index) const
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->target != nullptr,);
     carla_debug("CarlaEngine::oscSend_bridge_current_midi_program(%i)", index);
 
-    char targetPath[std::strlen(pData->oscData->path)+25];
+    char targetPath[std::strlen(pData->oscData->path)+30];
     std::strcpy(targetPath, pData->oscData->path);
     std::strcat(targetPath, "/bridge_current_midi_program");
     try_lo_send(pData->oscData->target, targetPath, "i", index);
@@ -2392,6 +2410,9 @@ void CarlaEngine::oscSend_bridge_set_custom_data(const char* const type, const c
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->path != nullptr && pData->oscData->path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->target != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
     carla_debug("CarlaEngine::oscSend_bridge_set_custom_data(\"%s\", \"%s\", \"%s\")", type, key, value);
 
     char targetPath[std::strlen(pData->oscData->path)+24];
@@ -2413,9 +2434,6 @@ void CarlaEngine::oscSend_bridge_set_chunk_data(const char* const chunkFile) con
     std::strcat(targetPath, "/bridge_set_chunk_data");
     try_lo_send(pData->oscData->target, targetPath, "s", chunkFile);
 }
-
-// TODO?
-//void oscSend_bridge_set_peaks() const;
 
 #else
 void CarlaEngine::oscSend_control_add_plugin_start(const uint pluginId, const char* const pluginName) const noexcept

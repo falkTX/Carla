@@ -1124,7 +1124,7 @@ public:
     void oscSend_bridge_parameter_ranges2(const uint32_t index, const float step, const float stepSmall, const float stepLarge) const noexcept;
     void oscSend_bridge_parameter_midi_cc(const uint32_t index, const int16_t cc) const noexcept;
     void oscSend_bridge_parameter_midi_channel(const uint32_t index, const uint8_t channel) const noexcept;
-    void oscSend_bridge_parameter_value(const int32_t index, const float value) const noexcept; // may be used for internal params (< 0)
+    void oscSend_bridge_parameter_value(const uint32_t index, const float value) const noexcept;
     void oscSend_bridge_default_value(const uint32_t index, const float value) const noexcept;
     void oscSend_bridge_current_program(const int32_t index) const noexcept;
     void oscSend_bridge_current_midi_program(const int32_t index) const noexcept;

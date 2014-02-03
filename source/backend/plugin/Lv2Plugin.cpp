@@ -3681,9 +3681,11 @@ public:
         if (bridgeBinary.isEmpty())
             return nullptr;
 
+#ifdef CARLA_OS_LINUX
         // test for local build
         if (bridgeBinary.endsWith("/source/backend/"))
             bridgeBinary += "../bridges/";
+#endif
 
         switch (type)
         {

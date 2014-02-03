@@ -23,26 +23,30 @@
 // -----------------------------------------------------------------------
 
 enum PluginBridgeInfoType {
-    kPluginBridgeAudioCount = 0,
-    kPluginBridgeMidiCount,
-    kPluginBridgeParameterCount,
-    kPluginBridgeProgramCount,
-    kPluginBridgeMidiProgramCount,
-    kPluginBridgePluginInfo,
-    kPluginBridgeParameterInfo,
-    kPluginBridgeParameterData,
-    kPluginBridgeParameterRanges,
-    kPluginBridgeProgramInfo,
-    kPluginBridgeMidiProgramInfo,
-    kPluginBridgeConfigure,
-    kPluginBridgeSetParameterValue,
-    kPluginBridgeSetDefaultValue,
-    kPluginBridgeSetProgram,
-    kPluginBridgeSetMidiProgram,
-    kPluginBridgeSetCustomData,
-    kPluginBridgeSetChunkData,
-    kPluginBridgeUpdateNow,
-    kPluginBridgeError
+    kPluginBridgeNull = 0,
+    kPluginBridgePluginInfo1,          // uuh    => category, hints, uniqueId
+    kPluginBridgePluginInfo2,          // ssss   => realName, label, maker, copyright
+    kPluginBridgeAudioCount,           // uu     => ins, outs
+    kPluginBridgeMidiCount,            // uu     => ins, outs
+    kPluginBridgeParameterCount,       // uu     => ins, outs
+    kPluginBridgeProgramCount,         // u      => count
+    kPluginBridgeMidiProgramCount,     // u      => count
+    kPluginBridgeParameterData,        // uiuuss => index, rindex, type, hints, name, unit
+    kPluginBridgeParameterRanges1,     // ufff   => index, def, min, max
+    kPluginBridgeParameterRanges2,     // ufff   => index, step, stepSmall, stepLarge
+    kPluginBridgeParameterMidiCC,      // ui     => index, cc
+    kPluginBridgeParameterMidiChannel, // uu     => index, channel
+    kPluginBridgeParameterValue,       // uf     => index, value
+    kPluginBridgeDefaultValue,         // uf     => index, value
+    kPluginBridgeCurrentProgram,       // i      => index
+    kPluginBridgeCurrentMidiProgram,   // i      => index
+    kPluginBridgeProgramName,          // us     => index, name
+    kPluginBridgeMidiProgramData,      // uuus   => index, bank, program, name
+    kPluginBridgeConfigure,            // ss     => key, value
+    kPluginBridgeSetCustomData,        // sss    => type, key, value
+    kPluginBridgeSetChunkData,         // s      => chunkFile
+    kPluginBridgeUpdate,               //
+    kPluginBridgeError                 //
 };
 
 enum PluginBridgeOpcode {
@@ -89,6 +93,12 @@ const char* PluginBridgeInfoType2str(const PluginBridgeInfoType type) noexcept
 {
     switch (type)
     {
+    case kPluginBridgeNull:
+        return "kPluginBridgeNull";
+    case kPluginBridgePluginInfo1:
+        return "kPluginBridgePluginInfo1";
+    case kPluginBridgePluginInfo2:
+        return "kPluginBridgePluginInfo2";
     case kPluginBridgeAudioCount:
         return "kPluginBridgeAudioCount";
     case kPluginBridgeMidiCount:
@@ -99,34 +109,36 @@ const char* PluginBridgeInfoType2str(const PluginBridgeInfoType type) noexcept
         return "kPluginBridgeProgramCount";
     case kPluginBridgeMidiProgramCount:
         return "kPluginBridgeMidiProgramCount";
-    case kPluginBridgePluginInfo:
-        return "kPluginBridgePluginInfo";
-    case kPluginBridgeParameterInfo:
-        return "kPluginBridgeParameterInfo";
     case kPluginBridgeParameterData:
         return "kPluginBridgeParameterData";
-    case kPluginBridgeParameterRanges:
-        return "kPluginBridgeParameterRanges";
-    case kPluginBridgeProgramInfo:
-        return "kPluginBridgeProgramInfo";
-    case kPluginBridgeMidiProgramInfo:
-        return "kPluginBridgeMidiProgramInfo";
+    case kPluginBridgeParameterRanges1:
+        return "kPluginBridgeParameterRanges1";
+    case kPluginBridgeParameterRanges2:
+        return "kPluginBridgeParameterRanges2";
+    case kPluginBridgeParameterMidiCC:
+        return "kPluginBridgeParameterMidiCC";
+    case kPluginBridgeParameterMidiChannel:
+        return "kPluginBridgeParameterMidiChannel";
+    case kPluginBridgeParameterValue:
+        return "kPluginBridgeParameterValue";
+    case kPluginBridgeDefaultValue:
+        return "kPluginBridgeDefaultValue";
+    case kPluginBridgeCurrentProgram:
+        return "kPluginBridgeCurrentProgram";
+    case kPluginBridgeCurrentMidiProgram:
+        return "kPluginBridgeCurrentMidiProgram";
+    case kPluginBridgeProgramName:
+        return "kPluginBridgeProgramName";
+    case kPluginBridgeMidiProgramData:
+        return "kPluginBridgeMidiProgramData";
     case kPluginBridgeConfigure:
         return "kPluginBridgeConfigure";
-    case kPluginBridgeSetParameterValue:
-        return "kPluginBridgeSetParameterValue";
-    case kPluginBridgeSetDefaultValue:
-        return "kPluginBridgeSetDefaultValue";
-    case kPluginBridgeSetProgram:
-        return "kPluginBridgeSetProgram";
-    case kPluginBridgeSetMidiProgram:
-        return "kPluginBridgeSetMidiProgram";
     case kPluginBridgeSetCustomData:
         return "kPluginBridgeSetCustomData";
     case kPluginBridgeSetChunkData:
         return "kPluginBridgeSetChunkData";
-    case kPluginBridgeUpdateNow:
-        return "kPluginBridgeUpdateNow";
+    case kPluginBridgeUpdate:
+        return "kPluginBridgeUpdate";
     case kPluginBridgeError:
         return "kPluginBridgeError";
     }
