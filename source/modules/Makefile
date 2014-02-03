@@ -128,11 +128,11 @@ stk_%:
 theme:
 	$(MAKE) -C theme
 
-theme_%:
-	$(MAKE) -C theme $*
-
 theme.qt4:
 	$(MAKE) -C theme qt4
+
+theme.qt5:
+	$(MAKE) -C theme qt5
 
 # --------------------------------------------------------------
 

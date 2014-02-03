@@ -363,7 +363,7 @@ private slots:
 };
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-# include "CarlaBridgeToolkitQt.moc"
+# include "CarlaBridgeToolkitQt5.moc"
 #else
 # include "CarlaBridgeToolkitQt4.moc"
 #endif
@@ -380,7 +380,7 @@ CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeClient* const clien
 CARLA_BRIDGE_END_NAMESPACE
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-# include "resources.cpp"
+# include "resources.qt5.cpp"
 #else
 # include "resources.qt4.cpp"
 #endif
