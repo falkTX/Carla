@@ -1324,7 +1324,6 @@ public:
             CARLA_SAFE_ASSERT_BREAK(hints >= 0);
             CARLA_SAFE_ASSERT_BREAK(name != nullptr);
             CARLA_SAFE_ASSERT_BREAK(unit != nullptr);
-
             CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
 
             if (index < static_cast<int32_t>(pData->param.count))
@@ -1351,7 +1350,6 @@ public:
             CARLA_SAFE_ASSERT_BREAK(min < max);
             CARLA_SAFE_ASSERT_BREAK(def >= min);
             CARLA_SAFE_ASSERT_BREAK(def <= max);
-
             CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
 
             if (index < static_cast<int32_t>(pData->param.count))
@@ -1373,7 +1371,6 @@ public:
             const float stepLarge = argv[3]->f;
 
             CARLA_SAFE_ASSERT_BREAK(index >= 0);
-
             CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
 
             if (index < static_cast<int32_t>(pData->param.count))
@@ -1393,7 +1390,6 @@ public:
 
             CARLA_SAFE_ASSERT_BREAK(index >= 0);
             CARLA_SAFE_ASSERT_BREAK(cc >= -1 && cc < 0x5F);
-
             CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
 
             if (index < static_cast<int32_t>(pData->param.count))
@@ -1409,7 +1405,6 @@ public:
 
             CARLA_SAFE_ASSERT_BREAK(index >= 0);
             CARLA_SAFE_ASSERT_BREAK(channel >= 0 && channel < MAX_MIDI_CHANNELS);
-
             CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
 
             if (index < static_cast<int32_t>(pData->param.count))
@@ -1425,7 +1420,6 @@ public:
             const float   value = argv[1]->f;
 
             CARLA_SAFE_ASSERT_BREAK(index >= 0);
-
             CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
 
             if (index < static_cast<int32_t>(pData->param.count))
@@ -1447,7 +1441,6 @@ public:
             const float   value = argv[1]->f;
 
             CARLA_SAFE_ASSERT_BREAK(index >= 0);
-
             CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
 
             if (index < static_cast<int32_t>(pData->param.count))
@@ -1456,54 +1449,49 @@ public:
         }
 
         case kPluginBridgeCurrentProgram: {
-#if 0
             CARLA_BRIDGE_CHECK_OSC_TYPES(1, "i");
 
             const int32_t index = argv[0]->i;
 
-            CARLA_ASSERT_INT2(index >= 0 && index < static_cast<int32_t>(pData->prog.count), index, pData->prog.count);
+            CARLA_SAFE_ASSERT_BREAK(index >= -1);
+            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->prog.count), index, pData->prog.count);
 
-            setProgram(index, false, true, true);
-#endif
+            CarlaPlugin::setProgram(index, false, true, true);
             break;
         }
 
         case kPluginBridgeCurrentMidiProgram: {
-#if 0
             CARLA_BRIDGE_CHECK_OSC_TYPES(1, "i");
 
             const int32_t index = argv[0]->i;
 
-            CARLA_ASSERT_INT2(index < static_cast<int32_t>(pData->midiprog.count), index, pData->midiprog.count);
+            CARLA_SAFE_ASSERT_BREAK(index >= -1);
+            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->midiprog.count), index, pData->midiprog.count);
 
-            setMidiProgram(index, false, true, true);
-#endif
+            CarlaPlugin::setMidiProgram(index, false, true, true);
             break;
         }
 
         case kPluginBridgeProgramName: {
-#if 0
             CARLA_BRIDGE_CHECK_OSC_TYPES(2, "is");
 
             const int32_t index    = argv[0]->i;
             const char* const name = (const char*)&argv[1]->s;
 
-            CARLA_ASSERT_INT2(index >= 0 && index < static_cast<int32_t>(pData->prog.count), index, pData->prog.count);
-            CARLA_ASSERT(name != nullptr);
+            CARLA_SAFE_ASSERT_BREAK(index >= 0);
+            CARLA_SAFE_ASSERT_BREAK(name != nullptr);
+            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->prog.count), index, pData->prog.count);
 
-            if (index >= 0 && index < static_cast<int32_t>(pData->prog.count))
+            if (index < static_cast<int32_t>(pData->prog.count))
             {
                 if (pData->prog.names[index] != nullptr)
                     delete[] pData->prog.names[index];
-
                 pData->prog.names[index] = carla_strdup(name);
             }
-#endif
             break;
         }
 
         case kPluginBridgeMidiProgramData: {
-#if 0
             CARLA_BRIDGE_CHECK_OSC_TYPES(4, "iiis");
 
             const int32_t index    = argv[0]->i;
@@ -1511,59 +1499,51 @@ public:
             const int32_t program  = argv[2]->i;
             const char* const name = (const char*)&argv[3]->s;
 
-            CARLA_ASSERT_INT2(index < static_cast<int32_t>(pData->midiprog.count), index, pData->midiprog.count);
-            CARLA_ASSERT(bank >= 0);
-            CARLA_ASSERT(program >= 0 && program < 128);
-            CARLA_ASSERT(name != nullptr);
+            CARLA_SAFE_ASSERT_BREAK(index >= 0);
+            CARLA_SAFE_ASSERT_BREAK(bank >= 0);
+            CARLA_SAFE_ASSERT_BREAK(program >= 0);
+            CARLA_SAFE_ASSERT_BREAK(name != nullptr);
+            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->midiprog.count), index, pData->midiprog.count);
 
-            if (index >= 0 && index < static_cast<int32_t>(pData->midiprog.count))
+            if (index < static_cast<int32_t>(pData->midiprog.count))
             {
                 if (pData->midiprog.data[index].name != nullptr)
                     delete[] pData->midiprog.data[index].name;
-
-                pData->midiprog.data[index].bank    = bank;
-                pData->midiprog.data[index].program = program;
+                pData->midiprog.data[index].bank    = static_cast<uint32_t>(bank);
+                pData->midiprog.data[index].program = static_cast<uint32_t>(program);
                 pData->midiprog.data[index].name    = carla_strdup(name);
             }
-#endif
             break;
         }
 
         case kPluginBridgeConfigure: {
-#if 0
             CARLA_BRIDGE_CHECK_OSC_TYPES(2, "ss");
 
             const char* const key   = (const char*)&argv[0]->s;
             const char* const value = (const char*)&argv[1]->s;
 
-            CARLA_ASSERT(key != nullptr);
-            CARLA_ASSERT(value != nullptr);
-
-            if (key == nullptr || value == nullptr)
-                break;
+            CARLA_SAFE_ASSERT_BREAK(key != nullptr);
+            CARLA_SAFE_ASSERT_BREAK(value != nullptr);
 
             if (std::strcmp(key, CARLA_BRIDGE_MSG_HIDE_GUI) == 0)
                 pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
             else if (std::strcmp(key, CARLA_BRIDGE_MSG_SAVED) == 0)
                 fSaved = true;
-#endif
             break;
         }
 
         case kPluginBridgeSetCustomData: {
-#if 0
             CARLA_BRIDGE_CHECK_OSC_TYPES(3, "sss");
 
             const char* const type  = (const char*)&argv[0]->s;
             const char* const key   = (const char*)&argv[1]->s;
             const char* const value = (const char*)&argv[2]->s;
 
-            CARLA_ASSERT(type != nullptr);
-            CARLA_ASSERT(key != nullptr);
-            CARLA_ASSERT(value != nullptr);
+            CARLA_SAFE_ASSERT_BREAK(type != nullptr);
+            CARLA_SAFE_ASSERT_BREAK(key != nullptr);
+            CARLA_SAFE_ASSERT_BREAK(value != nullptr);
 
-            setCustomData(type, key, value, false);
-#endif
+            CarlaPlugin::setCustomData(type, key, value, false);
             break;
         }
 

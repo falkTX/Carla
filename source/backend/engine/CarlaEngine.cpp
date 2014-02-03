@@ -216,10 +216,10 @@ bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
 
     for (uint32_t i=0; i < kMaxEngineEventInternalCount; ++i)
     {
-        if (fBuffer[i].type != kEngineEventTypeNull)
-            continue;
-
         EngineEvent& event(fBuffer[i]);
+
+        if (event.type != kEngineEventTypeNull)
+            continue;
 
         event.type    = kEngineEventTypeControl;
         event.time    = time;
@@ -252,10 +252,10 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
 
     for (uint32_t i=0; i < kMaxEngineEventInternalCount; ++i)
     {
-        if (fBuffer[i].type != kEngineEventTypeNull)
-            continue;
-
         EngineEvent& event(fBuffer[i]);
+
+        if (event.type != kEngineEventTypeNull)
+            continue;
 
         event.type    = kEngineEventTypeMidi;
         event.time    = time;

@@ -291,98 +291,97 @@ public:
                 case kPluginBridgeOpcodeNull:
                     break;
 
-                case kPluginBridgeOpcodeSetAudioPool:
-                {
+                case kPluginBridgeOpcodeSetAudioPool: {
                     const int64_t poolSize(fShmControl.readLong());
                     CARLA_SAFE_ASSERT_BREAK(poolSize > 0);
                     fShmAudioPool.data = (float*)carla_shm_map(fShmAudioPool.shm, size_t(poolSize));
                     break;
                 }
 
-                case kPluginBridgeOpcodeSetBufferSize:
-                {
+                case kPluginBridgeOpcodeSetBufferSize: {
                     const uint32_t bufferSize(fShmControl.readUInt());
                     bufferSizeChanged(bufferSize);
                     break;
                 }
 
-                case kPluginBridgeOpcodeSetSampleRate:
-                {
+                case kPluginBridgeOpcodeSetSampleRate: {
                     const float sampleRate(fShmControl.readFloat());
                     sampleRateChanged(sampleRate);
                     break;
                 }
 
-                case kPluginBridgeOpcodeSetParameter:
-                {
-                    //const int   index(fShmControl.readInt());
-                    //const float value(fShmControl.readFloat());
+                case kPluginBridgeOpcodeSetParameter: {
+                    const int32_t index(fShmControl.readInt());
+                    const float   value(fShmControl.readFloat());
 
                     CarlaPlugin* const plugin(getPluginUnchecked(0));
 
                     if (plugin != nullptr && plugin->isEnabled())
                     {
-                        //plugin->setParameterValueByRealIndex(index, value, false, false, false);
-                        //plugin->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, value);
-                    }
+                        plugin->setParameterValueByRealIndex(index, value, false, false, false);
 
+                        //if (index >= 0)
+                        //    plugin->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, value);
+                    }
                     break;
                 }
 
-                case kPluginBridgeOpcodeSetProgram:
-                {
-                    //const int index(fShmControl.readInt());
+                case kPluginBridgeOpcodeSetProgram: {
+                    const int32_t index(fShmControl.readInt());
+                    CARLA_SAFE_ASSERT_BREAK(index >= 0);
 
                     CarlaPlugin* const plugin(getPluginUnchecked(0));
 
                     if (plugin != nullptr && plugin->isEnabled())
                     {
-                        //plugin->setProgram(index, false, false, false);
+                        plugin->setProgram(index, false, false, false);
                         //plugin->postponeRtEvent(kPluginPostRtEventProgramChange, index, 0, 0.0f);
                     }
-
                     break;
                 }
 
-                case kPluginBridgeOpcodeSetMidiProgram:
-                {
-                    //const int index(fShmControl.readInt());
+                case kPluginBridgeOpcodeSetMidiProgram: {
+                    const int32_t index(fShmControl.readInt());
+                    CARLA_SAFE_ASSERT_BREAK(index >= 0);
 
                     CarlaPlugin* const plugin(getPluginUnchecked(0));
 
                     if (plugin != nullptr && plugin->isEnabled())
                     {
-                        //plugin->setMidiProgram(index, false, false, false);
+                        plugin->setMidiProgram(index, false, false, false);
                         //plugin->postponeRtEvent(kPluginPostRtEventMidiProgramChange, index, 0, 0.0f);
                     }
 
                     break;
                 }
 
-                case kPluginBridgeOpcodeMidiEvent:
-                {
-                    //uint8_t data[4] = { 0 };
-                    //const long time(fShmControl.readLong());
-                    //const int  dataSize(fShmControl.readInt());
+                case kPluginBridgeOpcodeMidiEvent: {
+                    const int64_t time(fShmControl.readLong());
+                    const int32_t size(fShmControl.readInt());
+                    CARLA_SAFE_ASSERT_BREAK(time >= 0);
+                    CARLA_SAFE_ASSERT_BREAK(size > 0 && size <= 4);
 
-                    //CARLA_ASSERT_INT(dataSize >= 1 && dataSize <= 4, dataSize);
+                    uint8_t data[size];
 
-                    //for (int i=0; i < dataSize && i < 4; ++i)
-                    //    data[i] = fShmControl.readChar();
+                    for (int32_t i=0; i < size; ++i)
+                        data[i] = static_cast<uint8_t>(fShmControl.readChar());
 
-                    //CARLA_ASSERT(pData->bufEvents.in != nullptr);
+                    CARLA_SAFE_ASSERT_BREAK(pData->bufEvents.in != nullptr);
 
-                    //if (pData->bufEvents.in != nullptr)
+                    for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
                     {
-                        // TODO
-                    }
+                        EngineEvent& event(pData->bufEvents.in[i]);
 
+                        if (event.type != kEngineEventTypeNull)
+                            continue;
+
+                        event.fillFromMidiData(static_cast<uint8_t>(size), data);
+                    }
                     break;
                 }
 
-                case kPluginBridgeOpcodeProcess:
-                {
-                    CARLA_ASSERT(fShmAudioPool.data != nullptr);
+                case kPluginBridgeOpcodeProcess: {
+                    CARLA_SAFE_ASSERT_BREAK(fShmAudioPool.data != nullptr);
                     CarlaPlugin* const plugin(getPluginUnchecked(0));
 
                     if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock(true)) // FIXME - always lock?
@@ -402,6 +401,12 @@ public:
                         plugin->process(inBuffer, outBuffer, pData->bufferSize);
                         plugin->unlock();
                     }
+
+                    // clear buffer
+                    CARLA_SAFE_ASSERT_BREAK(pData->bufEvents.in != nullptr);
+
+                    if (pData->bufEvents.in[0].type != kEngineEventTypeNull)
+                        carla_zeroStruct<EngineEvent>(pData->bufEvents.in, kMaxEngineEventInternalCount);
                     break;
                 }
 
