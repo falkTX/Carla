@@ -194,7 +194,7 @@ public:
 
     void exec()
     {
-        while (! gCloseNow)
+        for (; ! gCloseNow;)
         {
             idle();
             carla_msleep(30);
@@ -251,7 +251,7 @@ public:
         fEngine->oscSend_bridge_configure(CARLA_BRIDGE_MSG_SAVED, "");
     }
 
-    void setParameterMidiChannel(const int32_t index, const uint8_t channel)
+    void setParameterMidiChannel(const uint32_t index, const uint8_t channel)
     {
         CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
         carla_debug("CarlaPluginClient::setParameterMidiChannel(%i, %i)", index, channel);
@@ -259,7 +259,7 @@ public:
         fPlugin->setParameterMidiChannel(index, channel, false, false);
     }
 
-    void setParameterMidiCC(const int32_t index, const int16_t cc)
+    void setParameterMidiCC(const uint32_t index, const int16_t cc)
     {
         CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
         carla_debug("CarlaPluginClient::setParameterMidiCC(%i, %i)", index, cc);
@@ -366,7 +366,9 @@ int CarlaBridgeOsc::handleMsgShow()
 {
     carla_debug("CarlaBridgeOsc::handleMsgShow()");
 
-    carla_show_custom_ui(0, true);
+    if (carla_get_plugin_info(0)->hints & CarlaBackend::PLUGIN_HAS_CUSTOM_UI)
+        carla_show_custom_ui(0, true);
+
     return 0;
 }
 
@@ -374,7 +376,9 @@ int CarlaBridgeOsc::handleMsgHide()
 {
     carla_debug("CarlaBridgeOsc::handleMsgHide()");
 
-    carla_show_custom_ui(0, false);
+    if (carla_get_plugin_info(0)->hints & CarlaBackend::PLUGIN_HAS_CUSTOM_UI)
+        carla_show_custom_ui(0, false);
+
     return 0;
 }
 

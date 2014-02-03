@@ -209,7 +209,7 @@ public:
 
         opcode = fShmControl.readOpcode();
         CARLA_ASSERT_INT(opcode == kPluginBridgeOpcodeSetBufferSize, opcode);
-        pData->bufferSize = fShmControl.readInt();
+        pData->bufferSize = fShmControl.readUInt();
         carla_stderr("BufferSize: %i", pData->bufferSize);
 
         opcode = fShmControl.readOpcode();
@@ -301,7 +301,7 @@ public:
 
                 case kPluginBridgeOpcodeSetBufferSize:
                 {
-                    const int bufferSize(fShmControl.readInt());
+                    const uint32_t bufferSize(fShmControl.readUInt());
                     bufferSizeChanged(bufferSize);
                     break;
                 }

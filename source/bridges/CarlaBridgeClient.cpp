@@ -190,7 +190,7 @@ void CarlaBridgeClient::sendOscControl(const int32_t index, const float value) c
         osc_send_control(fOscData, index, value);
 }
 
-void CarlaBridgeClient::sendOscProgram(const int32_t index) const
+void CarlaBridgeClient::sendOscProgram(const uint32_t index) const
 {
     carla_debug("CarlaBridgeClient::sendOscProgram(%i)", index);
 
@@ -198,7 +198,7 @@ void CarlaBridgeClient::sendOscProgram(const int32_t index) const
         osc_send_program(fOscData, index);
 }
 
-void CarlaBridgeClient::sendOscMidiProgram(const int32_t index) const
+void CarlaBridgeClient::sendOscMidiProgram(const uint32_t index) const
 {
     carla_debug("CarlaBridgeClient::sendOscMidiProgram(%i)", index);
 

@@ -90,8 +90,8 @@ public:
 protected:
     void sendOscConfigure(const char* const key, const char* const value) const;
     void sendOscControl(const int32_t index, const float value) const;
-    void sendOscProgram(const int32_t index) const;
-    void sendOscMidiProgram(const int32_t index) const;
+    void sendOscProgram(const uint32_t index) const;
+    void sendOscMidiProgram(const uint32_t index) const;
     void sendOscMidi(const uint8_t midiBuf[4]) const;
     void sendOscExiting() const;
 

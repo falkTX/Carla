@@ -139,6 +139,13 @@ public:
         return i;
     }
 
+    uint32_t readUInt() noexcept
+    {
+        int32_t i = -1;
+        tryRead(&i, sizeof(int32_t));
+        return (i >= 0) ? static_cast<uint32_t>(i) : 0;
+    }
+
     int64_t readLong() noexcept
     {
         int64_t l = 0;

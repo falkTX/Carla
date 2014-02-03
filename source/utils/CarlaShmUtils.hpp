@@ -102,7 +102,7 @@ shm_t carla_shm_attach_linux(const char* const name)
 static inline
 shm_t carla_shm_create(const char* const name)
 {
-    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', -1);
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', gNullCarlaShm);
 
     return shm_open(name, O_RDWR|O_CREAT|O_EXCL, 0600);
 }
@@ -110,7 +110,7 @@ shm_t carla_shm_create(const char* const name)
 static inline
 shm_t carla_shm_attach(const char* const name)
 {
-    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', -1);
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', gNullCarlaShm);
 
     return shm_open(name, O_RDWR, 0);
 }

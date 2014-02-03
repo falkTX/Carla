@@ -1665,7 +1665,7 @@ public:
         if (name != nullptr && name[0] != '\0')
             pData->name = pData->engine->getUniquePluginName(name);
 
-        pData->filename = filename;
+        pData->filename = carla_strdup(filename);
         fBridgeBinary = bridgeBinary;
 
         // ---------------------------------------------------------------
