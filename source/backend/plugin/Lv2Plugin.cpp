@@ -16,7 +16,7 @@
  */
 
 // testing macros
-#define LV2_UIS_ONLY_BRIDGES
+//#define LV2_UIS_ONLY_BRIDGES
 //#define LV2_UIS_ONLY_INPROCESS
 
 #include "CarlaPluginInternal.hpp"
