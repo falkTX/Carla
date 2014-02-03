@@ -15,6 +15,10 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+// testing macros
+#define LV2_UIS_ONLY_BRIDGES
+//#define LV2_UIS_ONLY_INPROCESS
+
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
@@ -422,11 +426,13 @@ public:
                 fUi.title = nullptr;
             }
 
+#ifndef LV2_UIS_ONLY_BRIDGES
             if (fUi.window != nullptr)
             {
                 delete fUi.window;
                 fUi.window = nullptr;
             }
+#endif
 
             fUi.rdfDescriptor = nullptr;
         }
@@ -917,13 +923,15 @@ public:
         if (fUi.title == nullptr)
             return;
 
-        QString guiTitle(QString("%1 (GUI)").arg(pData->name));
+        QString guiTitle(QString("%1 (InProc GUI)").arg(pData->name));
 
         delete[] fUi.title;
         fUi.title = carla_strdup(guiTitle.toUtf8().constData());
 
+#ifndef LV2_UIS_ONLY_BRIDGES
         if (fUi.window != nullptr)
             fUi.window->setTitle(fUi.title);
+#endif
 
         if (fFeatures[kFeatureIdExternalUi] != nullptr && fFeatures[kFeatureIdExternalUi]->data != nullptr)
             ((LV2_External_UI_Host*)fFeatures[kFeatureIdExternalUi]->data)->plugin_human_id = fUi.title;
@@ -1117,6 +1125,7 @@ public:
         {
             if (fUi.handle == nullptr)
             {
+#ifndef LV2_UIS_ONLY_BRIDGES
                 if (fUi.type == UI::TYPE_EMBED)
                 {
                     const char* msg = nullptr;
@@ -1133,27 +1142,27 @@ public:
                         break;
 
                     case LV2_UI_COCOA:
-#ifdef CARLA_OS_MAC
+# ifdef CARLA_OS_MAC
                         fUi.window = CarlaPluginUi::newCocoa(this);
-#else
+# else
                         msg = "UI is for MacOS only";
-#endif
+# endif
                         break;
 
                     case LV2_UI_WINDOWS:
-#ifdef CARLA_OS_WIN
+# ifdef CARLA_OS_WIN
                         fUi.window = CarlaPluginUi::newWindows(this);
-#else
+# else
                         msg = "UI is for Windows only";
-#endif
+# endif
                         break;
 
                     case LV2_UI_X11:
-#ifdef HAVE_X11
+# ifdef HAVE_X11
                         fUi.window = CarlaPluginUi::newX11(this);
-#else
+# else
                         msg = "UI is only for systems with X11";
-#endif
+# endif
                         break;
 
                     default:
@@ -1168,6 +1177,7 @@ public:
 
                     fFeatures[kFeatureIdUiParent]->data = fUi.window->getPtr();
                 }
+#endif
 
                 fUi.widget = nullptr;
                 fUi.handle = fUi.descriptor->instantiate(fUi.descriptor, fRdfDescriptor->URI, fUi.rdfDescriptor->Bundle,
@@ -1192,11 +1202,13 @@ public:
 
             updateUi();
 
+#ifndef LV2_UIS_ONLY_BRIDGES
             if (fUi.type == UI::TYPE_EMBED)
             {
                 fUi.window->show();
             }
             else
+#endif
             {
                 LV2_EXTERNAL_UI_SHOW((LV2_External_UI_Widget*)fUi.widget);
                 pData->tryTransient();
@@ -1204,6 +1216,7 @@ public:
         }
         else
         {
+#ifndef LV2_UIS_ONLY_BRIDGES
             if (fUi.type == UI::TYPE_EMBED)
             {
                 CARLA_SAFE_ASSERT(fUi.window != nullptr);
@@ -1212,6 +1225,7 @@ public:
                     fUi.window->hide();
             }
             else
+#endif
             {
                 CARLA_SAFE_ASSERT(fUi.widget != nullptr);
 
@@ -1264,16 +1278,18 @@ public:
 
         if (fUi.handle != nullptr && fUi.descriptor != nullptr)
         {
-            if (fUi.type == UI::TYPE_EMBED && fUi.window != nullptr)
-                fUi.window->idle();
-            else if (fUi.type == UI::TYPE_EXTERNAL && fUi.widget != nullptr)
+            if (fUi.type == UI::TYPE_EXTERNAL && fUi.widget != nullptr)
                 LV2_EXTERNAL_UI_RUN((LV2_External_UI_Widget*)fUi.widget);
+#ifndef LV2_UIS_ONLY_BRIDGES
+            else if (fUi.type == UI::TYPE_EMBED && fUi.window != nullptr)
+                fUi.window->idle();
 
             if (fExt.uiidle != nullptr && fExt.uiidle->idle(fUi.handle) != 0)
             {
                 showCustomUI(false);
                 pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
             }
+#endif
         }
 
         CarlaPlugin::idle();
@@ -4526,8 +4542,10 @@ public:
         int eQt4, eQt5, eGtk2, eGtk3, eCocoa, eWindows, eX11, eExt, iCocoa, iWindows, iX11, iExt, iFinal;
         eQt4 = eQt5 = eGtk2 = eGtk3 = eCocoa = eWindows = eX11 = eExt = iCocoa = iWindows = iX11 = iExt = iFinal = -1;
 
-#ifdef BUILD_BRIDGE
+#if defined(BUILD_BRIDGE)
         const bool preferUiBridges(false);
+#elif defined(LV2_UIS_ONLY_BRIDGES)
+        const bool preferUiBridges(true);
 #else
         const bool preferUiBridges(pData->engine->getOptions().preferUiBridges && (pData->hints & PLUGIN_IS_BRIDGE) == 0);
 #endif
@@ -4561,19 +4579,25 @@ public:
             case LV2_UI_COCOA:
                 if (isUiBridgeable(i) && preferUiBridges)
                     eCocoa = ii;
+# ifndef LV2_UIS_ONLY_BRIDGES
                 iCocoa = ii;
+# endif
                 break;
 #elif defined(CARLA_OS_WIN)
             case LV2_UI_WINDOWS:
                 if (isUiBridgeable(i) && preferUiBridges)
                     eWindows = ii;
+# ifndef LV2_UIS_ONLY_BRIDGES
                 iWindows = ii;
+# endif
                 break;
 #else
             case LV2_UI_X11:
                 if (isUiBridgeable(i) && preferUiBridges)
                     eX11 = ii;
+# ifndef LV2_UIS_ONLY_BRIDGES
                 iX11 = ii;
+# endif
                 break;
 #endif
             case LV2_UI_EXTERNAL:
@@ -4603,12 +4627,14 @@ public:
             iFinal = eX11;
         //else if (eExt >= 0) // TODO
         //    iFinal = eExt;
+#ifndef LV2_UIS_ONLY_BRIDGES
         else if (iCocoa >= 0)
             iFinal = iCocoa;
         else if (iWindows >= 0)
             iFinal = iWindows;
         else if (iX11 >= 0)
             iFinal = iX11;
+#endif
         else if (iExt >= 0)
             iFinal = iExt;
 
@@ -4664,6 +4690,12 @@ public:
                 return;
             }
         }
+
+#ifdef LV2_UIS_ONLY_BRIDGES
+        carla_stderr2("Failed to get an UI working, canBridge:%s", bool2str(isUiBridgeable(static_cast<uint32_t>(iFinal))));
+        fUi.rdfDescriptor = nullptr;
+        return;
+#endif
 
         // ---------------------------------------------------------------
         // open UI DLL
@@ -4758,7 +4790,7 @@ public:
         // ---------------------------------------------------------------
         // initialize ui data
 
-        QString guiTitle(QString("%1 (GUI)").arg(pData->name));
+        QString guiTitle(QString("%1 (InProc GUI)").arg(pData->name));
         fUi.title = carla_strdup(guiTitle.toUtf8().constData());
 
         // ---------------------------------------------------------------
