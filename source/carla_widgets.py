@@ -712,6 +712,8 @@ class PluginEdit(QDialog):
 
                 if paramData['type'] not in (PARAMETER_INPUT, PARAMETER_OUTPUT):
                     continue
+                if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
+                    continue
 
                 parameter = {
                     'type':  paramData['type'],
