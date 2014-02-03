@@ -458,3 +458,13 @@ const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const unsigned int,
 CARLA_BACKEND_END_NAMESPACE
 
 // -----------------------------------------------------------------------
+
+#if defined(CARLA_OS_WIN) && ! defined(__WINE__)
+extern "C" __declspec (dllexport)
+#else
+extern "C" __attribute__ ((visibility("default")))
+#endif
+void carla_register_native_plugin_carla();
+void carla_register_native_plugin_carla(){}
+
+// -----------------------------------------------------------------------

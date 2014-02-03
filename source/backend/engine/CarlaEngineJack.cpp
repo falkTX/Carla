@@ -666,6 +666,7 @@ public:
 #endif
     }
 
+#ifndef BUILD_BRIDGE
     void idle() override
     {
         CarlaEngine::idle();
@@ -691,6 +692,7 @@ public:
 
         newPlugins.clear();
     }
+#endif
 
     bool isRunning() const noexcept override
     {

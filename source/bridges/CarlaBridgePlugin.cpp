@@ -39,14 +39,13 @@ static volatile bool gCloseNow = false;
 static volatile bool gSaveNow  = false;
 
 #ifdef CARLA_OS_WIN
-BOOL WINAPI winSignalHandler(DWORD dwCtrlType)
+static BOOL WINAPI winSignalHandler(DWORD dwCtrlType)
 {
     if (dwCtrlType == CTRL_C_EVENT)
     {
         gCloseNow = true;
         return TRUE;
     }
-
     return FALSE;
 }
 #elif defined(CARLA_OS_LINUX)
@@ -60,7 +59,7 @@ static void saveSignalHandler(int)
 }
 #endif
 
-void initSignalHandler()
+static void initSignalHandler()
 {
 #ifdef CARLA_OS_WIN
     SetConsoleCtrlHandler(winSignalHandler, TRUE);

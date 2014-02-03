@@ -7,6 +7,7 @@
 include ../Makefile.mk
 
 # --------------------------------------------------------------
+# Common
 
 BUILD_CXX_FLAGS += -DBUILD_BRIDGE
 BUILD_CXX_FLAGS += -I. -I../backend -I../includes -I../utils -isystem ../modules
@@ -16,95 +17,110 @@ LINK_FLAGS      += $(LIBLO_LIBS)
 # --------------------------------------------------------------
 # Plugin bridges
 
-# BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS) $(QTXML_FLAGS) -DBUILD_BRIDGE_PLUGIN
-# BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin
-# LINK_PLUGIN_FLAGS   = $(LINK_FLAGS) $(QTXML_LIBS)
-#
-# ifneq ($(HAIKU),true)
-# LINK_PLUGIN_FLAGS  += -lpthread
-# endif
+BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS) -DBUILD_BRIDGE_PLUGIN
+BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin
+BUILD_PLUGIN_FLAGS += $(QTCORE_FLAGS) $(QTXML_FLAGS)
 
-# ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-# BUILD_PLUGIN_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
-# ifeq ($(CARLA_VESTIGE_HEADER),true)
-# BUILD_PLUGIN_FLAGS += -DVESTIGE_HEADER
-# endif
-# endif
-#
-# ifeq ($(HAVE_JUCE),true)
-# LINK_PLUGIN_FLAGS  += $(JUCE_AUDIO_BASICS_LIBS)
-# LINK_PLUGIN_FLAGS  += $(JUCE_CORE_LIBS)
-# LINK_PLUGIN_FLAGS  += $(JUCE_DATA_STRUCTURES_LIBS)
-# LINK_PLUGIN_FLAGS  += $(JUCE_EVENTS_LIBS)
-# LINK_PLUGIN_FLAGS  += $(JUCE_GRAPHICS_LIBS)
-# LINK_PLUGIN_FLAGS  += $(JUCE_GUI_BASICS_LIBS)
-# endif
+LINK_PLUGIN_FLAGS   = $(LINK_FLAGS)
+LINK_PLUGIN_FLAGS  += $(QTCORE_LIBS) $(QTXML_LIBS)
+
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+BUILD_PLUGIN_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
+ifeq ($(CARLA_VESTIGE_HEADER),true)
+BUILD_PLUGIN_FLAGS += -DVESTIGE_HEADER
+endif
+endif
+
+ifeq ($(HAVE_JUCE),true)
+LINK_PLUGIN_FLAGS  += $(JUCE_AUDIO_BASICS_LIBS)
+LINK_PLUGIN_FLAGS  += $(JUCE_CORE_LIBS)
+endif
 
 # --------------------------------------------------------------
 # Plugin bridges (POSIX)
 
-# POSIX_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS)
-# POSIX_32BIT_FLAGS = $(32BIT_FLAGS) -L/usr/lib32 -L/usr/lib/i386-linux-gnu
-# POSIX_64BIT_FLAGS = $(64BIT_FLAGS) -L/usr/lib64 -L/usr/lib/x86_64-linux-gnu
-# POSIX_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS)
-#
-# ifneq ($(HAIKU),true)
-# POSIX_LINK_FLAGS += -ldl
-# endif
+POSIX_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS)
+POSIX_32BIT_FLAGS = $(32BIT_FLAGS)
+POSIX_64BIT_FLAGS = $(64BIT_FLAGS)
+POSIX_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS)
+
+ifneq ($(HAIKU),true)
+POSIX_LINK_FLAGS += -ldl -lpthread
+endif
+
+ifeq ($(LINUX),true)
+POSIX_32BIT_FLAGS += -L/usr/lib32 -L/usr/lib/i386-linux-gnu
+POSIX_64BIT_FLAGS += -L/usr/lib64 -L/usr/lib/x86_64-linux-gnu
+endif
 
 # --------------------------------------------------------------
 # Plugin bridges (Windows)
 
-# WIN_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS) -DJACKBRIDGE_EXPORT
-# WIN_32BIT_FLAGS = $(32BIT_FLAGS)
-# WIN_64BIT_FLAGS = $(64BIT_FLAGS)
-# WIN_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) -L../modules
+WIN_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS) -DJACKBRIDGE_EXPORT
+WIN_32BIT_FLAGS = $(32BIT_FLAGS)
+WIN_64BIT_FLAGS = $(64BIT_FLAGS)
+WIN_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) -L../modules
 
 # --------------------------------------------------------------
 # Plugin bridges (Native)
 
-# NATIVE_BUILD_FLAGS  = $(POSIX_BUILD_FLAGS)
-# -DWANT_NATIVE
-# NATIVE_LINK_FLAGS   = $(POSIX_LINK_FLAGS)
+NATIVE_BUILD_FLAGS  = $(POSIX_BUILD_FLAGS) -DWANT_NATIVE
+NATIVE_LINK_FLAGS   = $(POSIX_LINK_FLAGS)
 
-# ifeq ($(HAVE_FLUIDSYNTH),true)
-# NATIVE_BUILD_FLAGS += -DWANT_FLUIDSYNTH
-# NATIVE_BUILD_FLAGS += $(FLUIDSYNTH_FLAGS)
-# NATIVE_LINK_FLAGS  += $(FLUIDSYNTH_LIBS)
-# endif
-#
-# ifeq ($(HAVE_LINUXSAMPLER),true)
-# NATIVE_BUILD_FLAGS += -DWANT_LINUXSAMPLER
-# NATIVE_BUILD_FLAGS += $(LINUXSAMPLER_FLAGS)
-# NATIVE_LINK_FLAGS  += $(LINUXSAMPLER_LIBS)
-# endif
+ifeq ($(HAVE_DGL),true)
+NATIVE_LINK_FLAGS  += $(DGL_LIBS)
+endif
 
-# ifeq ($(HAVE_AF_DEPS),true)
-# NATIVE_BUILD_FLAGS += -DWANT_AUDIOFILE
-# NATIVE_LINK_FLAGS  += $(shell pkg-config --libs sndfile)
-# ifeq ($(HAVE_FFMPEG),true)
-# NATIVE_BUILD_FLAGS += -DHAVE_FFMPEG
-# NATIVE_LINK_FLAGS  += $(shell pkg-config --libs libavcodec libavformat libavutil)
-# endif
-# endif
-#
-# ifeq ($(HAVE_MF_DEPS),true)
-# NATIVE_BUILD_FLAGS += -DWANT_MIDIFILE
-# NATIVE_LINK_FLAGS  += $(shell pkg-config --libs smf)
-# endif
-#
-# ifeq ($(HAVE_OPENGL),true)
-# NATIVE_BUILD_FLAGS += -DWANT_OPENGL
-# NATIVE_LINK_FLAGS  += $(DGL_LIBS)
+ifeq ($(HAVE_JUCE),true)
+LINK_PLUGIN_FLAGS  += $(JUCE_DATA_STRUCTURES_LIBS)
+LINK_PLUGIN_FLAGS  += $(JUCE_EVENTS_LIBS)
+LINK_PLUGIN_FLAGS  += $(JUCE_GRAPHICS_LIBS)
+LINK_PLUGIN_FLAGS  += $(JUCE_GUI_BASICS_LIBS)
+endif
+
+# ifeq ($(HAVE_CSOUND),true)
+# NATIVE_BUILD_FLAGS += -DWANT_CSOUND
+# NATIVE_BUILD_FLAGS += $(CSOUND_FLAGS)
+# NATIVE_LINK_FLAGS  += $(CSOUND_LIBS)
 # endif
 
-# ifeq ($(HAVE_ZYN_DEPS),true)
-# NATIVE_BUILD_FLAGS += -DWANT_ZYNADDSUBFX
-# NATIVE_LINK_FLAGS  += $(shell pkg-config --libs fftw3 mxml zlib)
-# ifeq ($(HAVE_ZYN_UI_DEPS),true)
-# NATIVE_LINK_FLAGS  += $(shell pkg-config --libs ntk_images ntk)
-# endif
-# endif
+ifeq ($(HAVE_FLUIDSYNTH),true)
+NATIVE_BUILD_FLAGS += -DWANT_FLUIDSYNTH
+NATIVE_BUILD_FLAGS += $(FLUIDSYNTH_FLAGS)
+NATIVE_LINK_FLAGS  += $(FLUIDSYNTH_LIBS)
+endif
+
+ifeq ($(HAVE_LINUXSAMPLER),true)
+NATIVE_BUILD_FLAGS += -DWANT_LINUXSAMPLER
+NATIVE_BUILD_FLAGS += $(LINUXSAMPLER_FLAGS)
+NATIVE_LINK_FLAGS  += $(LINUXSAMPLER_LIBS)
+endif
+
+ifeq ($(HAVE_AF_DEPS),true)
+NATIVE_BUILD_FLAGS += -DWANT_AUDIOFILE
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs sndfile)
+ifeq ($(HAVE_FFMPEG),true)
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs libavcodec libavformat libavutil)
+endif
+endif
+
+ifeq ($(HAVE_MF_DEPS),true)
+NATIVE_BUILD_FLAGS += -DWANT_MIDIFILE
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs smf)
+endif
+
+ifeq ($(HAVE_ZYN_DEPS),true)
+NATIVE_BUILD_FLAGS += -DWANT_ZYNADDSUBFX
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs fftw3 mxml zlib)
+ifeq ($(HAVE_ZYN_UI_DEPS),true)
+NATIVE_LINK_FLAGS  += -DWANT_ZYNADDSUBFX_UI
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs ntk_images ntk)
+endif
+endif
+
+# --------------------------------------------------------------
+
+TARGETS = native
 
 # --------------------------------------------------------------
 # UI bridges
@@ -308,7 +324,7 @@ carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS) ../modules/theme.qt
 # carla-bridge-lv2-cocoa: $(OBJS_UI_LV2_COCOA) $(OBJS_UI_LV2_LIBS)
 # 	$(CXX) $^ $(LINK_UI_LV2_COCOA_FLAGS) -o $@
 #
-# %__lv2-cocoa.o: %.cpp CarlaBridgeToolkitQt.moc resources.cpp
+# %__lv2-cocoa.o: %.cpp
 # 	$(CXX) $< $(BUILD_UI_LV2_COCOA_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
@@ -321,7 +337,7 @@ carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS) ../modules/theme.qt
 # carla-bridge-lv2-windows.exe: $(OBJS_UI_LV2_WIN32) $(OBJS_UI_LV2_LIBS)
 # 	$(CXX) $^ $(LINK_UI_LV2_WIN32_FLAGS) -o $@
 #
-# %__lv2-windows.o: %.cpp CarlaBridgeToolkitQt.moc resources.cpp
+# %__lv2-windows.o: %.cpp
 # 	$(CXX) $< $(BUILD_UI_LV2_WIN32_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
@@ -334,7 +350,7 @@ carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS) ../modules/theme.qt
 # carla-bridge-lv2-x11: $(OBJS_UI_LV2_X11) $(OBJS_UI_LV2_LIBS)
 # 	$(CXX) $^ $(LINK_UI_LV2_X11_FLAGS) -o $@
 #
-# %__lv2-x11.o: %.cpp CarlaBridgeToolkitQt.moc resources.cpp
+# %__lv2-x11.o: %.cpp
 # 	$(CXX) $< $(BUILD_UI_LV2_X11_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
@@ -347,7 +363,7 @@ carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS) ../modules/theme.qt
 # carla-bridge-vst-mac: $(OBJS_UI_VST_MAC) $(OBJS_UI_VST_LIBS) ../modules/theme.a
 # 	$(CXX) $^ $(LINK_UI_VST_MAC_FLAGS) -o $@
 #
-# %__vst-mac.o: %.cpp CarlaBridgeToolkitQt.moc resources.cpp
+# %__vst-mac.o: %.cpp
 # 	$(CXX) $< $(BUILD_UI_VST_MAC_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
@@ -360,7 +376,7 @@ carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS) ../modules/theme.qt
 # carla-bridge-vst-hwnd.exe: $(OBJS_UI_VST_HWND) $(OBJS_UI_VST_LIBS) ../modules/theme.a
 # 	$(CXX) $^ $(LINK_UI_VST_HWND_FLAGS) -o $@
 #
-# %__vst-hwnd.o: %.cpp CarlaBridgeToolkitQt.moc resources.cpp
+# %__vst-hwnd.o: %.cpp
 # 	$(CXX) $< $(BUILD_UI_VST_HWND_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
@@ -373,77 +389,76 @@ carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS) ../modules/theme.qt
 # carla-bridge-vst-x11: $(OBJS_UI_VST_X11) $(OBJS_UI_VST_LIBS) ../modules/theme.a
 # 	$(CXX) $^ $(LINK_UI_VST_X11_FLAGS) -o $@
 #
-# %__vst-x11.o: %.cpp CarlaBridgeToolkitQt.moc resources.cpp
+# %__vst-x11.o: %.cpp
 # 	$(CXX) $< $(BUILD_UI_VST_X11_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
 # native
 
-# OBJS_NATIVE  = CarlaBridgePlugin__native.o \
-# 	CarlaBridgeClient__native.o CarlaBridgeOsc__native.o
-#
-# # carla-engine
-# OBJS_NATIVE += \
-# 	../backend/engine/CarlaEngine__native.o \
-# 	../backend/engine/CarlaEngineInternal__native.o \
-# 	../backend/engine/CarlaEngineOsc__native.o \
-# 	../backend/engine/CarlaEngineThread__native.o \
-# 	../backend/engine/CarlaEngineJack__native.o \
-# 	../backend/engine/CarlaEngineBridge__native.o
-#
-# # carla-plugin
-# OBJS_NATIVE += \
-# 	../backend/plugin/CarlaPlugin__native.o \
-# 	../backend/plugin/CarlaPluginInternal__native.o \
-# 	../backend/plugin/CarlaPluginThread__native.o \
-# 	../backend/plugin/CarlaPluginUi__native.o \
-# 	../backend/plugin/NativePlugin__native.o \
-# 	../backend/plugin/LadspaPlugin__native.o \
-# 	../backend/plugin/DssiPlugin__native.o \
-# 	../backend/plugin/Lv2Plugin__native.o \
-# 	../backend/plugin/VstPlugin__native.o \
-# 	../backend/plugin/AuPlugin__native.o \
-# 	../backend/plugin/CsoundPlugin__native.o \
-# 	../backend/plugin/JucePlugin__native.o \
-# 	../backend/plugin/FluidSynthPlugin__native.o \
-# 	../backend/plugin/LinuxSamplerPlugin__native.o
-#
-# # carla-standalone
-# OBJS_NATIVE += \
-# 	../backend/standalone/CarlaStandalone__native.o
-#
-# # libs
-# OBJS_NATIVE += \
-# 	../modules/jackbridge.a \
-# 	../modules/rtmempool.a
-#
-# ifeq ($(HAVE_JUCE),true)
-# OBJS_NATIVE += \
-# 	../modules/juce_audio_basics.a \
-# 	../modules/juce_core.a \
-# 	../modules/juce_events.a
-# endif
+OBJS_NATIVE  = CarlaBridgePlugin__native.o \
+	CarlaBridgeClient__native.o CarlaBridgeOsc__native.o
 
-# 	../modules/daz-plugins.a \
-# 	../modules/juce_data_structures.a \
-# 	../modules/juce_graphics.a \
-# 	../modules/juce_gui_basics.a \
+# carla-engine
+OBJS_NATIVE += \
+	../backend/engine/CarlaEngine__native.o \
+	../backend/engine/CarlaEngineInternal__native.o \
+	../backend/engine/CarlaEngineOsc__native.o \
+	../backend/engine/CarlaEngineThread__native.o \
+	../backend/engine/CarlaEngineJack__native.o \
+	../backend/engine/CarlaEngineBridge__native.o
 
-# ifeq ($(HAVE_OPENGL),true)
-# OBJS_NATIVE += \
-# 	../modules/dgl.a
-# endif
+# carla-plugin
+OBJS_NATIVE += \
+	../backend/plugin/CarlaPlugin__native.o \
+	../backend/plugin/CarlaPluginInternal__native.o \
+	../backend/plugin/CarlaPluginThread__native.o \
+	../backend/plugin/CarlaPluginUi__native.o \
+	../backend/plugin/NativePlugin__native.o \
+	../backend/plugin/LadspaPlugin__native.o \
+	../backend/plugin/DssiPlugin__native.o \
+	../backend/plugin/Lv2Plugin__native.o \
+	../backend/plugin/VstPlugin__native.o \
+	../backend/plugin/AuPlugin__native.o \
+	../backend/plugin/CsoundPlugin__native.o \
+	../backend/plugin/JucePlugin__native.o \
+	../backend/plugin/FluidSynthPlugin__native.o \
+	../backend/plugin/LinuxSamplerPlugin__native.o
 
-# ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-# OBJS_NATIVE += \
-# 	../modules/lilv.a
-# endif
-#
-# carla-bridge-native: $(FILES) $(OBJS_NATIVE)
-# 	$(CXX) $(OBJS_NATIVE) $(NATIVE_LINK_FLAGS) -o $@
-#
-# %__native.o: %.cpp
-# 	$(CXX) $< $(NATIVE_BUILD_FLAGS) -c -o $@
+# carla-standalone
+OBJS_NATIVE += \
+	../backend/standalone/CarlaStandalone__native.o
+
+# libs
+LIBS_NATIVE = \
+	../modules/daz-plugins.a \
+	../modules/jackbridge.a \
+	../modules/rtmempool.a
+
+ifeq ($(HAVE_DGL),true)
+LIBS_NATIVE += \
+	../modules/dgl.a
+endif
+
+ifeq ($(HAVE_JUCE),true)
+LIBS_NATIVE += \
+	../modules/juce_audio_basics.a \
+	../modules/juce_core.a \
+	../modules/juce_events.a \
+	../modules/juce_data_structures.a \
+	../modules/juce_graphics.a \
+	../modules/juce_gui_basics.a
+endif
+
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+LIBS_NATIVE += \
+	../modules/lilv.a
+endif
+
+carla-bridge-native: $(OBJS_NATIVE) $(LIBS_NATIVE)
+	$(CXX) $(OBJS_NATIVE) -Wl,--start-group $(LIBS_NATIVE) -Wl,--end-group $(NATIVE_LINK_FLAGS) -o $@
+
+%__native.o: %.cpp
+	$(CXX) $< $(NATIVE_BUILD_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
 # posix32
@@ -481,7 +496,7 @@ carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS) ../modules/theme.qt
 # 	../modules/lilv.posix32.a \
 # 	../modules/rtmempool.posix32.a
 #
-# carla-bridge-posix32: $(FILES) $(OBJS_POSIX32)
+# carla-bridge-posix32: $(OBJS_POSIX32)
 # 	$(CXX) $(OBJS_POSIX32) $(POSIX_LINK_FLAGS) $(POSIX_32BIT_FLAGS) -o $@
 #
 # %__posix32.o: %.cpp
@@ -523,7 +538,7 @@ carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS) ../modules/theme.qt
 # 	../modules/lilv.posix64.a \
 # 	../modules/rtmempool.posix64.a
 
-# carla-bridge-posix64: $(FILES) $(OBJS_POSIX64)
+# carla-bridge-posix64: $(OBJS_POSIX64)
 # 	$(CXX) $(OBJS_POSIX64) $(POSIX_LINK_FLAGS) $(POSIX_64BIT_FLAGS) -o $@
 #
 # %__posix64.o: %.cpp
@@ -566,7 +581,7 @@ carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS) ../modules/theme.qt
 # 	../modules/lilv.win32.a \
 # 	../modules/rtmempool.win32.a
 
-# carla-bridge-win32.exe: $(FILES) $(OBJS_WIN32) ../modules/jackbridge-win32.dll
+# carla-bridge-win32.exe: $(OBJS_WIN32) ../modules/jackbridge-win32.dll
 # 	$(CXX) $(OBJS_WIN32) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win32 -o $@
 #
 # %__win32.o: %.cpp
@@ -608,7 +623,7 @@ carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS) ../modules/theme.qt
 # 	../modules/lilv.win64.a \
 # 	../modules/rtmempool.win64.a
 #
-# carla-bridge-win64.exe: $(FILES) $(OBJS_WIN64) ../modules/jackbridge-win64.dll
+# carla-bridge-win64.exe: $(OBJS_WIN64) ../modules/jackbridge-win64.dll
 # 	$(CXX) $(OBJS_WIN64) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win64 -o $@
 #
 # %__win64.o: %.cpp
@@ -622,7 +637,7 @@ clean:
 	rm -f carla-bridge-lv2-gtk2 carla-bridge-lv2-gtk3 carla-bridge-lv2-qt4 carla-bridge-lv2-qt5 carla-bridge-lv2-cocoa carla-bridge-lv2-x11
 	rm -f carla-bridge-vst-carbon carla-bridge-vst-cocoa carla-bridge-vst-x11
 	rm -f carla-bridge-native carla-bridge-posix32 carla-bridge-posix64
-# 	rm -f $(OBJS_NATIVE)
+	rm -f $(OBJS_NATIVE)
 # 	rm -f $(OBJS_POSIX32)
 # 	rm -f $(OBJS_POSIX64)
 # 	rm -f $(OBJS_WIN32)
@@ -639,8 +654,8 @@ doxygen: carla_bridge.doxygen
 .FORCE:
 .PHONY: .FORCE
 
-../modules/juce_core.%.a: .FORCE
-	$(MAKE) -C ../modules juce_core_$*
+# ../modules/juce_core.%.a: .FORCE
+# 	$(MAKE) -C ../modules juce_core_$*
 
 ../modules/lilv.%.a: .FORCE
 	$(MAKE) -C ../modules lilv_$*
