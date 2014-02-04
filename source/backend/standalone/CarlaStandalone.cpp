@@ -420,10 +420,10 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     if (gStandalone.engineOptions.audioDevice != nullptr)
         gStandalone.engine->setOption(CB::ENGINE_OPTION_AUDIO_DEVICE,   0, gStandalone.engineOptions.audioDevice);
 
-    if (gStandalone.engineOptions.binaryDir != nullptr)
+    if (gStandalone.engineOptions.binaryDir != nullptr && gStandalone.engineOptions.binaryDir[0] != '\0')
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,  0, gStandalone.engineOptions.binaryDir);
 
-    if (gStandalone.engineOptions.resourceDir != nullptr)
+    if (gStandalone.engineOptions.resourceDir != nullptr && gStandalone.engineOptions.resourceDir[0] != '\0')
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES, 0, gStandalone.engineOptions.resourceDir);
 
     if (gStandalone.engineOptions.frontendWinId != 0)

@@ -71,12 +71,12 @@ win64:
 	$(MAKE) -C source/discovery win64
 
 wine32:
-	$(MAKE) -C source/libs jackbridge-wine32
-	$(LINK) ../libs/jackbridge-win32.dll.so source/bridges/jackbridge-win32.dll
+	$(MAKE) -C source/modules jackbridge-wine32
+	$(LINK) ../modules/jackbridge-win32.dll.so source/bridges/jackbridge-win32.dll
 
 wine64:
-	$(MAKE) -C source/libs jackbridge-wine64
-	$(LINK) ../libs/jackbridge-win64.dll.so source/bridges/jackbridge-win64.dll
+	$(MAKE) -C source/modules jackbridge-wine64
+	$(LINK) ../modules/jackbridge-win64.dll.so source/bridges/jackbridge-win64.dll
 
 # --------------------------------------------------------------
 # Resources
