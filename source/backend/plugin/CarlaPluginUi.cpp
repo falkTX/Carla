@@ -180,7 +180,11 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const ulong pid, const char* const ui
     CARLA_SAFE_ASSERT_RETURN(winId != 0, true);
 
 #if defined(CARLA_OS_MAC)
+    return true;
+    (void)pid;
 #elif defined(CARLA_OS_WIN)
+    return true;
+    (void)pid;
 #elif defined(HAVE_X11)
     struct ScopedDisplay {
         Display* display;
@@ -286,6 +290,9 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const ulong pid, const char* const ui
     XSetTransientForHint(sd.display, lastGoodWindow, (Window)winId);
     XFlush(sd.display);
     return true;
+#else
+    return true;
+    (void)pid;
 #endif
 }
 

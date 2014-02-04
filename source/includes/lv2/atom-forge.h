@@ -302,7 +302,7 @@ lv2_atom_forge_raw(LV2_Atom_Forge* forge, const void* data, uint32_t size)
 	if (forge->sink) {
 		out = forge->sink(forge->handle, data, size);
 	} else {
-		out = (LV2_Atom_Forge_Ref)forge->buf + forge->offset;
+		out = (LV2_Atom_Forge_Ref)(forge->buf + forge->offset);
 		uint8_t* mem = forge->buf + forge->offset;
 		if (forge->offset + size > forge->size) {
 			return 0;
