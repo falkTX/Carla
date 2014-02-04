@@ -146,6 +146,12 @@ debug:
 .FORCE:
 .PHONY: .FORCE
 
+../modules/juce_audio_basics.%.a: .FORCE
+	$(MAKE) -C ../modules juce_audio_basics_$*
+
+../modules/juce_core.%.a: .FORCE
+	$(MAKE) -C ../modules juce_core_$*
+
 ../modules/lilv.%.a: .FORCE
 	$(MAKE) -C ../modules lilv_$*
 

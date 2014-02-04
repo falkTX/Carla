@@ -1315,10 +1315,10 @@ protected:
             bool portIsAudio = (std::strcmp(jackbridge_port_type(jackPort), JACK_DEFAULT_AUDIO_TYPE) == 0);
             bool portIsCV    = false;
 
-            if (jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
+            //if (jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
             {
-                char* value = nullptr;
-                char* type  = nullptr;
+                //char* value = nullptr;
+                //char* type  = nullptr;
 
                 //if (jackbridge_get_property(uuid, "urn:jack:IsControlVoltage", &value, &type) && value != nullptr && type != nullptr && std::strcmp(type, "text/plain") == 0)
                 //    portIsCV = (std::strcmp(value, "YES") == 0);
@@ -1792,10 +1792,10 @@ private:
                 bool portIsAudio = (std::strcmp(jackbridge_port_type(jackPort), JACK_DEFAULT_AUDIO_TYPE) == 0);
                 bool portIsCV    = false;
 
-                if (jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
+                //if (jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
                 {
-                    char* value = nullptr;
-                    char* type  = nullptr;
+                    //char* value = nullptr;
+                    //char* type  = nullptr;
 
                     //if (jackbridge_get_property(uuid, "urn:jack:IsControlVoltage", &value, &type) && value != nullptr && type != nullptr && std::strcmp(type, "text/plain") == 0)
                     //    portIsCV = (std::strcmp(value, "YES") == 0);
