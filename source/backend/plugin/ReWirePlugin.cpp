@@ -213,7 +213,8 @@ struct RewireBridge {
             return -1;
 
         #define JOIN(a, b) a ## b
-        #define LIB_SYMBOL(NAME) NAME = (Fn_##NAME)lib_symbol(lib, #NAME); if (NAME == nullptr) cleanup(); return -2;
+        #define LIB_SYMBOL(NAME) NAME = (Fn_##NAME)lib_symbol(lib, #NAME);
+        //if (NAME == nullptr) cleanup(); return -2;
 
         LIB_SYMBOL(RWDEFCloseDevice)
         LIB_SYMBOL(RWDEFDriveAudio)
@@ -473,11 +474,24 @@ public:
 
     void idle() override
     {
+        CARLA_SAFE_ASSERT_RETURN(fRw.lib != nullptr,);
+
+        fRw.RWDEFIdle();
+
         // check if panel has been closed
         if (fIsPanelLaunched && ! fRw.RWDEFIsPanelAppLaunched())
         {
-            fIsPanelLaunched = true;
-            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+            // FIXME
+            //fIsPanelLaunched = true;
+            //pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+//             static int counter = 0;
+//
+//             if (counter % 1000)
+//             {
+//                 carla_stdout("Panel is closed?");
+//             }
+//
+//             ++counter;
         }
 
         CarlaPlugin::idle();

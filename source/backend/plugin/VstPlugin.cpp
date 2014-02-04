@@ -1716,7 +1716,7 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, 0);
 #ifdef DEBUG
-        if (opcode != effEditIdle && opcode != effProcessEvents)
+        if (opcode != effIdle && opcode != effEditIdle && opcode != effProcessEvents)
         carla_debug("VstPlugin::dispatcher(%02i:%s, %i, " P_INTPTR ", %p, %f)", opcode, vstEffectOpcode2str(opcode), index, value, ptr, opt);
 #endif
 

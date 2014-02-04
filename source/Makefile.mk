@@ -71,7 +71,9 @@ BASE_FLAGS += -Wmissing-declarations -Wsign-conversion
 endif
 endif
 
-ifneq ($(WIN32),true)
+ifeq ($(WIN32),true)
+BASE_FLAGS += -msse -msse2
+else
 BASE_FLAGS += -fPIC -DPIC
 endif
 

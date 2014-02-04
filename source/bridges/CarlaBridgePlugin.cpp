@@ -35,6 +35,7 @@
 
 // -------------------------------------------------------------------------
 
+static bool gIsInitiated = false;
 static volatile bool gCloseNow = false;
 static volatile bool gSaveNow  = false;
 
@@ -161,8 +162,8 @@ public:
             //if (! File::isAbsolutePath((const char*)fProjFileName))
             //    fProjFileName = File::getCurrentWorkingDirectory().getChildFile((const char*)fProjFileName).getFullPathName().toRawUTF8();
 
-            if (! fPlugin->loadStateFromFile(fProjFileName))
-                carla_stderr("Plugin preset load failed, error was:\n%s", fEngine->getLastError());
+            //if (! fPlugin->loadStateFromFile(fProjFileName))
+            //    carla_stderr("Plugin preset load failed, error was:\n%s", fEngine->getLastError());
         }
     }
 
@@ -325,7 +326,7 @@ protected:
         case ENGINE_CALLBACK_UI_STATE_CHANGED:
             if (! isOscControlRegistered())
             {
-                if (value1 != 1)
+                if (value1 != 1 && gIsInitiated)
                     gCloseNow = true;
             }
             else
@@ -605,6 +606,7 @@ int main(int argc, char* argv[])
         }
 
         client.ready(!useOsc);
+        gIsInitiated = true;
         client.exec();
 
         carla_set_engine_about_to_close();
