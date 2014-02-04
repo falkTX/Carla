@@ -140,20 +140,20 @@ void CarlaPluginThread::run()
         break;
 
     case PLUGIN_THREAD_LV2_GUI:
-        /* osc-url  */ arguments << QString("%1/%2").arg(fEngine->getOscServerPathTCP()).arg(fPlugin->getId());
+        /* osc-url  */ arguments << QString("%1/%2").arg(fEngine->getOscServerPathUDP()).arg(fPlugin->getId());
         /* URI      */ arguments << (const char*)fLabel;
         /* ui-URI   */ arguments << (const char*)fExtra1;
         /* ui-title */ arguments << QString("%1 (GUI)").arg(fPlugin->getName());
         break;
 
     case PLUGIN_THREAD_VST_GUI:
-        /* osc-url  */ arguments << QString("%1/%2").arg(fEngine->getOscServerPathTCP()).arg(fPlugin->getId());
+        /* osc-url  */ arguments << QString("%1/%2").arg(fEngine->getOscServerPathUDP()).arg(fPlugin->getId());
         /* filename */ arguments << fPlugin->getFilename();
         /* ui-title */ arguments << QString("%1 (GUI)").arg(fPlugin->getName());
         break;
 
     case PLUGIN_THREAD_BRIDGE:
-        /* osc-url  */ arguments << QString("%1/%2").arg(fEngine->getOscServerPathTCP()).arg(fPlugin->getId());
+        /* osc-url  */ arguments << QString("%1/%2").arg(fEngine->getOscServerPathUDP()).arg(fPlugin->getId());
         /* stype    */ arguments << (const char*)fExtra1;
         /* filename */ arguments << fPlugin->getFilename();
         /* name     */ arguments << name;

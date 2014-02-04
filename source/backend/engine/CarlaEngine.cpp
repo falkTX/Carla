@@ -1147,7 +1147,6 @@ const char* CarlaEngine::getUniquePluginName(const char* const name) const
     CARLA_SAFE_ASSERT_RETURN(pData->nextAction.opcode == kEnginePostActionNull, nullptr);
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', nullptr);
     carla_debug("CarlaEngine::getUniquePluginName(\"%s\")", name);
-    CARLA_ENGINE_THREAD_SAFE_SECTION
 
     CarlaString sname;
     sname = name;

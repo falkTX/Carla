@@ -62,7 +62,11 @@ void CarlaBridgeOsc::init(const char* const url)
     fName += CarlaString(std::rand() % 99999);
 #endif
 
-    fServer = lo_server_new_with_proto(nullptr, LO_TCP, osc_error_handler);
+#ifdef BUILD_BRIDGE_UI
+    fServer = lo_server_new_with_proto(nullptr, LO_UDP, osc_error_handler);
+#else
+    fServer = lo_server_thread_new_with_proto(nullptr, LO_UDP, osc_error_handler);
+#endif
 
     CARLA_SAFE_ASSERT_RETURN(fServer != nullptr,)
 
@@ -70,31 +74,32 @@ void CarlaBridgeOsc::init(const char* const url)
         char* const host = lo_url_get_hostname(url);
         char* const port = lo_url_get_port(url);
         fControlData.path   = carla_strdup_free(lo_url_get_path(url));
-        fControlData.target = lo_address_new_with_proto(LO_TCP, host, port);
+        fControlData.target = lo_address_new_with_proto(LO_UDP, host, port);
 
         std::free(host);
         std::free(port);
     }
 
+#ifdef BUILD_BRIDGE_UI
     if (char* const tmpServerPath = lo_server_get_url(fServer))
+#else
+    if (char* const tmpServerPath = lo_server_thread_get_url(fServer))
+#endif
     {
         fServerPath  = tmpServerPath;
         fServerPath += fName;
         std::free(tmpServerPath);
     }
 
+#ifdef BUILD_BRIDGE_UI
     lo_server_add_method(fServer, nullptr, nullptr, osc_message_handler, this);
+#else
+    lo_server_thread_add_method(fServer, nullptr, nullptr, osc_message_handler, this);
+    lo_server_thread_start(fServer);
+#endif
 
     CARLA_ASSERT(fName.isNotEmpty());
     CARLA_ASSERT(fServerPath.isNotEmpty());
-}
-
-void CarlaBridgeOsc::idle() const
-{
-    if (fServer == nullptr)
-        return;
-
-    for (; lo_server_recv_noblock(fServer, 0) != 0;) {}
 }
 
 void CarlaBridgeOsc::close()
@@ -109,8 +114,14 @@ void CarlaBridgeOsc::close()
 
     if (fServer != nullptr)
     {
+#ifdef BUILD_BRIDGE_UI
         lo_server_del_method(fServer, nullptr, nullptr);
         lo_server_free(fServer);
+#else
+        lo_server_thread_del_method(fServer, nullptr, nullptr);
+        lo_server_thread_del_method(fServer, nullptr, nullptr);
+        lo_server_thread_free(fServer);
+#endif
         fServer = nullptr;
     }
 
@@ -121,6 +132,16 @@ void CarlaBridgeOsc::close()
     CARLA_ASSERT(fServerPath.isEmpty());
     CARLA_ASSERT(fServer == nullptr);
 }
+
+#ifdef BUILD_BRIDGE_UI
+void CarlaBridgeOsc::idle() const
+{
+    if (fServer == nullptr)
+        return;
+
+    for (; lo_server_recv_noblock(fServer, 0) != 0;) {}
+}
+#endif
 
 // -----------------------------------------------------------------------
 

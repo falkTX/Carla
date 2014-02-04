@@ -173,7 +173,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
 
         carla_engine_idle();
-        CarlaBridgeClient::oscIdle();
+        //CarlaBridgeClient::oscIdle();
 
         if (gSaveNow)
         {
@@ -591,8 +591,10 @@ int main(int argc, char* argv[])
     {
         if (useOsc)
         {
+            carla_stdout("HERE 001");
             client.sendOscUpdate();
             client.sendOscBridgeUpdate();
+            carla_stdout("HERE 002");
         }
         else
         {
@@ -604,13 +606,17 @@ int main(int argc, char* argv[])
                     carla_show_custom_ui(0, true);
             }
         }
+        carla_stdout("HERE 003");
 
         client.ready(!useOsc);
         gIsInitiated = true;
+        carla_stdout("HERE 004");
         client.exec();
+        carla_stdout("HERE 005");
 
         carla_set_engine_about_to_close();
         carla_remove_plugin(0);
+        carla_stdout("HERE 006");
 
         ret = 0;
     }
@@ -624,12 +630,17 @@ int main(int argc, char* argv[])
 
         ret = 1;
     }
+    carla_stdout("HERE 007");
 
     // ---------------------------------------------------------------------
     // Close OSC
 
     if (useOsc)
+    {
+        carla_stdout("HERE 008");
         client.oscClose();
+        carla_stdout("HERE 009");
+    }
 
     return ret;
 }

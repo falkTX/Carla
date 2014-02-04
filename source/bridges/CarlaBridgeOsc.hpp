@@ -60,8 +60,11 @@ public:
     ~CarlaBridgeOsc();
 
     void init(const char* const url);
-    void idle() const;
     void close();
+
+#ifdef BUILD_BRIDGE_UI
+    void idle() const;
+#endif
 
     // -------------------------------------------------------------------
 
@@ -88,7 +91,11 @@ private:
     CarlaOscData fControlData;
     CarlaString  fName;
     CarlaString  fServerPath;
+#ifdef BUILD_BRIDGE_UI
     lo_server    fServer;
+#else
+    lo_server_thread fServer;
+#endif
 
     // -------------------------------------------------------------------
 

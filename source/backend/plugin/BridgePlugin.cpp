@@ -269,11 +269,13 @@ public:
             pData->active = false;
         }
 
-        if (pData->osc.thread.isRunning() && ! fTimedOut)
+        if (pData->osc.thread.isRunning())
         {
             fShmControl.writeOpcode(kPluginBridgeOpcodeQuit);
             fShmControl.commitWrite();
-            fShmControl.waitForServer(3);
+
+            if (! fTimedOut)
+                fShmControl.waitForServer(3);
         }
 
         if (pData->osc.data.target != nullptr)
@@ -716,7 +718,12 @@ public:
         } catch(...) {}
 
         if (! timedOut)
+        {
+            carla_stdout("woohoo! activate was successful!");
             fTimedOut = false;
+        }
+        else
+            carla_stdout("beh! activate failed!");
     }
 
     void deactivate() noexcept override
@@ -733,8 +740,9 @@ public:
             timedOut = waitForServer();
         } catch(...) {}
 
-        if (! timedOut)
-            fTimedOut = false;
+        (void)timedOut;
+        //if (! timedOut)
+        //    fTimedOut = false;
     }
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
@@ -1229,7 +1237,7 @@ public:
             fInfo.copyright = copyright;
 
             if (pData->name == nullptr)
-                pData->name = carla_strdup(realName);
+                pData->name = pData->engine->getUniquePluginName(realName);
             break;
         }
 

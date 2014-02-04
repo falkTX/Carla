@@ -83,7 +83,8 @@ void CarlaEngineOsc::init(const char* const name)
         }
 
         lo_server_thread_add_method(fServerTCP, nullptr, nullptr, osc_message_handler_TCP, this);
-        lo_server_thread_start(fServerTCP);
+        int ret = lo_server_thread_start(fServerTCP);
+        CARLA_SAFE_ASSERT(ret == 0);
     }
 
     fServerUDP = lo_server_thread_new_with_proto(nullptr, LO_UDP, osc_error_handler_UDP);
@@ -98,7 +99,8 @@ void CarlaEngineOsc::init(const char* const name)
         }
 
         lo_server_thread_add_method(fServerUDP, nullptr, nullptr, osc_message_handler_UDP, this);
-        lo_server_thread_start(fServerUDP);
+        int ret = lo_server_thread_start(fServerUDP);
+        CARLA_SAFE_ASSERT(ret == 0);
     }
 
     CARLA_ASSERT(fName.isNotEmpty());
