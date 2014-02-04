@@ -376,6 +376,7 @@ public:
                             continue;
 
                         event.fillFromMidiData(static_cast<uint8_t>(size), data);
+                        break;
                     }
                     break;
                 }
