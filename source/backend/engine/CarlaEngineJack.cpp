@@ -537,6 +537,7 @@ public:
     bool init(const char* const clientName) override
     {
         carla_debug("CarlaEngineJack::init(\"%s\")", clientName);
+        CARLA_ENGINE_THREAD_SAFE_SECTION
 
         fFreewheel      = false;
         fTransportState = JackTransportStopped;
@@ -624,6 +625,8 @@ public:
     bool close() override
     {
         carla_debug("CarlaEngineJack::close()");
+        CARLA_ENGINE_THREAD_SAFE_SECTION
+
         CarlaEngine::close();
 
 #ifdef BUILD_BRIDGE
@@ -669,6 +672,8 @@ public:
 #ifndef BUILD_BRIDGE
     void idle() override
     {
+        CARLA_ENGINE_THREAD_SAFE_SECTION
+
         CarlaEngine::idle();
 
         if (fNewGroups.count() == 0)
@@ -720,6 +725,8 @@ public:
 
     CarlaEngineClient* addClient(CarlaPlugin* const plugin) override
     {
+        CARLA_ENGINE_THREAD_SAFE_SECTION
+
         jack_client_t* client = nullptr;
 
 #ifdef BUILD_BRIDGE
@@ -762,6 +769,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(id < pData->curPluginCount, nullptr);
         CARLA_SAFE_ASSERT_RETURN(pData->plugins != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(newName != nullptr && newName[0] != '\0', nullptr);
+        CARLA_ENGINE_THREAD_SAFE_SECTION
 
         CarlaPlugin* const plugin(pData->plugins[id].plugin);
 
@@ -841,6 +849,7 @@ public:
     bool patchbayConnect(int portA, int portB) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
+        CARLA_ENGINE_THREAD_SAFE_SECTION
 
         if (fClient == nullptr)
         {
@@ -865,6 +874,7 @@ public:
     bool patchbayDisconnect(uint connectionId) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
+        CARLA_ENGINE_THREAD_SAFE_SECTION
 
         for (LinkedList<ConnectionToId>::Itenerator it = fUsedConnections.begin(); it.valid(); it.next())
         {
@@ -895,6 +905,7 @@ public:
     bool patchbayRefresh() override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
+        CARLA_ENGINE_THREAD_SAFE_SECTION
 
         fLastGroupId = 0;
         fLastPortId  = 0;

@@ -142,5 +142,113 @@ private:
 };
 
 // -----------------------------------------------------------------------
+// CarlaCriticalSection class
+
+class CarlaCriticalSection
+{
+public:
+    /*
+     * Constructor.
+     */
+    CarlaCriticalSection() noexcept
+    {
+#ifdef CARLA_OS_WIN
+        InitializeCriticalSection(&fSection);
+#else
+        fCounter = 0;
+        fOwnerThread = 0;
+        pthread_mutex_init(&fMutex, nullptr);
+#endif
+    }
+
+    /*
+     * Destructor.
+     */
+    ~CarlaCriticalSection() noexcept
+    {
+#ifdef CARLA_OS_WIN
+        DeleteCriticalSection(&fSection);
+#else
+        pthread_mutex_destroy(&fMutex);
+#endif
+    }
+
+    /*
+     * Enter section.
+     */
+    void enter() noexcept
+    {
+#ifdef CARLA_OS_WIN
+        EnterCriticalSection(&fSection);
+#else
+        const pthread_t thisThread(pthread_self());
+
+        if (fOwnerThread == thisThread)
+        {
+            ++fCounter;
+        }
+        else
+        {
+            pthread_mutex_lock(&fMutex);
+            fOwnerThread = thisThread;
+            fCounter = 0;
+        }
+#endif
+    }
+
+    /*
+     * Leave section.
+     */
+    void leave() noexcept
+    {
+#ifdef CARLA_OS_WIN
+        LeaveCriticalSection(&fSection);
+#else
+        if (--fCounter < 0)
+        {
+            fOwnerThread = 0;
+            pthread_mutex_unlock(&fMutex);
+        }
+#endif
+    }
+
+    /*
+     * Helper class to enter&leave during a function scope.
+     */
+    class Scope
+    {
+    public:
+        Scope(CarlaCriticalSection& cs) noexcept
+            : fSection(cs)
+        {
+            fSection.enter();
+        }
+
+        ~Scope() noexcept
+        {
+            fSection.leave();
+        }
+
+    private:
+        CarlaCriticalSection& fSection;
+
+        CARLA_PREVENT_HEAP_ALLOCATION
+        CARLA_DECLARE_NON_COPY_CLASS(Scope)
+    };
+
+private:
+#ifdef CARLA_OS_WIN
+    CRITICAL_SECTION fSection;
+#else
+    int             fCounter;
+    pthread_t       fOwnerThread;
+    pthread_mutex_t fMutex;
+#endif
+
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaCriticalSection)
+};
+
+// -----------------------------------------------------------------------
 
 #endif // CARLA_MUTEX_HPP_INCLUDED
