@@ -277,7 +277,7 @@ public:
                 }
             }
 
-            while (fShmControl.isDataAvailable())
+            for (; fShmControl.isDataAvailable();)
             {
                 const PluginBridgeOpcode opcode(fShmControl.readOpcode());
 
@@ -416,8 +416,8 @@ public:
                 }
             }
 
-            if (jackbridge_sem_post(&fShmControl.data->runClient) != 0)
-                pass(); //carla_stderr2("Could not post to semaphore");
+            if (! jackbridge_sem_post(&fShmControl.data->runClient))
+                carla_stderr2("Could not post to semaphore");
         }
 
         fIsRunning = false;

@@ -46,7 +46,7 @@ enum PluginBridgeInfoType {
     kPluginBridgeConfigure,            // ss     => key, value
     kPluginBridgeSetCustomData,        // sss    => type, key, value
     kPluginBridgeSetChunkData,         // s      => chunkFile
-    kPluginBridgeUpdate,               //
+    kPluginBridgeUpdateNow,            //
     kPluginBridgeError                 //
 };
 
@@ -138,8 +138,8 @@ const char* PluginBridgeInfoType2str(const PluginBridgeInfoType type) noexcept
         return "kPluginBridgeSetCustomData";
     case kPluginBridgeSetChunkData:
         return "kPluginBridgeSetChunkData";
-    case kPluginBridgeUpdate:
-        return "kPluginBridgeUpdate";
+    case kPluginBridgeUpdateNow:
+        return "kPluginBridgeUpdateNow";
     case kPluginBridgeError:
         return "kPluginBridgeError";
     }

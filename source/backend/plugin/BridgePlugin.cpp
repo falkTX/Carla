@@ -204,13 +204,13 @@ struct BridgeControl : public RingBufferControl<StackPackedRingBuffer> {
         setRingBuffer(nullptr, false);
     }
 
-    bool waitForServer()
+    bool waitForServer(const int secs)
     {
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
 
         jackbridge_sem_post(&data->runServer);
 
-        return jackbridge_sem_timedwait(&data->runClient, 5);
+        return jackbridge_sem_timedwait(&data->runClient, secs);
     }
 
     void writeOpcode(const PluginBridgeOpcode opcode) noexcept
@@ -243,6 +243,7 @@ public:
           fInitError(false),
           fSaved(false),
           fNeedsSemDestroy(false),
+          fTimedOut(false),
           fParams(nullptr)
     {
         carla_debug("BridgePlugin::BridgePlugin(%p, %i, %s, %s)", engine, id, BinaryType2Str(btype), PluginType2Str(ptype));
@@ -268,11 +269,11 @@ public:
             pData->active = false;
         }
 
-        if (pData->osc.thread.isRunning())
+        if (pData->osc.thread.isRunning() && ! fTimedOut)
         {
             fShmControl.writeOpcode(kPluginBridgeOpcodeQuit);
             fShmControl.commitWrite();
-            fShmControl.waitForServer();
+            fShmControl.waitForServer(3);
         }
 
         if (pData->osc.data.target != nullptr)
@@ -282,7 +283,7 @@ public:
         }
 
         pData->osc.data.free();
-        pData->osc.thread.stop(6000);
+        pData->osc.thread.stop(3000);
 
         if (fNeedsSemDestroy)
         {
@@ -708,9 +709,14 @@ public:
         fShmControl.writeFloat(1.0f);
         fShmControl.commitWrite();
 
+        bool timedOut = true;
+
         try {
-            waitForServer();
+            timedOut = waitForServer();
         } catch(...) {}
+
+        if (! timedOut)
+            fTimedOut = false;
     }
 
     void deactivate() noexcept override
@@ -721,9 +727,14 @@ public:
         fShmControl.writeFloat(0.0f);
         fShmControl.commitWrite();
 
+        bool timedOut = true;
+
         try {
-            waitForServer();
+            timedOut = waitForServer();
         } catch(...) {}
+
+        if (! timedOut)
+            fTimedOut = false;
     }
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
@@ -731,7 +742,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Check if active
 
-        if (! pData->active)
+        if (fTimedOut || ! pData->active)
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
@@ -1045,6 +1056,8 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Reset audio buffers
 
+        //std::memset(fShmAudioPool.data, 0, fShmAudioPool.size);
+
         for (uint32_t i=0; i < fInfo.aIns; ++i)
             FLOAT_COPY(fShmAudioPool.data + (i * frames), inBuffer[i], frames);
 
@@ -1054,7 +1067,7 @@ public:
         fShmControl.writeOpcode(kPluginBridgeOpcodeProcess);
         fShmControl.commitWrite();
 
-        if (! waitForServer())
+        if (! waitForServer(2))
         {
             pData->singleMutex.unlock();
             return true;
@@ -1597,7 +1610,7 @@ public:
             break;
         }
 
-        case kPluginBridgeUpdate:
+        case kPluginBridgeUpdateNow:
             fInitiated = true;
             break;
 
@@ -1796,6 +1809,7 @@ private:
     bool fInitError;
     bool fSaved;
     bool fNeedsSemDestroy;
+    bool fTimedOut;
 
     CarlaString fBridgeBinary;
 
@@ -1835,12 +1849,14 @@ private:
         waitForServer();
     }
 
-    bool waitForServer()
+    bool waitForServer(const int secs = 5)
     {
-        if (! fShmControl.waitForServer())
+        CARLA_SAFE_ASSERT_RETURN(! fTimedOut, false);
+
+        if (! fShmControl.waitForServer(secs))
         {
-            carla_stderr("waitForServer() timeout");
-            pData->active = false; // TODO
+            carla_stderr("waitForServer() timeout here");
+            fTimedOut = true;
             return false;
         }
 

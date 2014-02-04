@@ -443,7 +443,9 @@ endif
 ifeq ($(HAVE_JUCE),true)
 LIBS_NATIVE += \
 	../modules/juce_audio_basics.a \
+	../modules/juce_audio_processors.a \
 	../modules/juce_core.a \
+	../modules/juce_data_structures.a \
 	../modules/juce_events.a \
 	../modules/juce_data_structures.a \
 	../modules/juce_graphics.a \
@@ -503,6 +505,17 @@ LIBS_POSIX32 = \
 	../modules/lilv.posix32.a \
 	../modules/rtmempool.posix32.a
 
+ifeq ($(HAVE_JUCE),true)
+LIBS_POSIX32 += \
+	../modules/juce_audio_basics.posix32.a \
+	../modules/juce_audio_processors.posix32.a \
+	../modules/juce_core.posix32.a \
+	../modules/juce_data_structures.posix32.a \
+	../modules/juce_events.posix32.a \
+	../modules/juce_graphics.posix32.a \
+	../modules/juce_gui_basics.posix32.a
+endif
+
 carla-bridge-posix32: $(OBJS_POSIX32) $(LIBS_POSIX32)
 	$(CXX) $(OBJS_POSIX32) -Wl,--start-group $(LIBS_POSIX32) -Wl,--end-group $(POSIX_LINK_FLAGS) $(POSIX_32BIT_FLAGS) -o $@
 
@@ -550,6 +563,17 @@ OBJS_POSIX64 += \
 LIBS_POSIX64 = \
 	../modules/lilv.posix64.a \
 	../modules/rtmempool.posix64.a
+
+ifeq ($(HAVE_JUCE),true)
+LIBS_POSIX64 += \
+	../modules/juce_audio_basics.posix64.a \
+	../modules/juce_audio_processors.posix64.a \
+	../modules/juce_core.posix64.a \
+	../modules/juce_data_structures.posix64.a \
+	../modules/juce_events.posix64.a \
+	../modules/juce_graphics.posix64.a \
+	../modules/juce_gui_basics.posix64.a
+endif
 
 carla-bridge-posix64: $(OBJS_POSIX64) $(LIBS_POSIX64)
 	$(CXX) $(OBJS_POSIX64) -Wl,--start-group $(LIBS_POSIX64) -Wl,--end-group $(POSIX_LINK_FLAGS) $(POSIX_64BIT_FLAGS) -o $@
@@ -658,8 +682,19 @@ LIBS_WIN64 = \
 	../modules/lilv.win64.a \
 	../modules/rtmempool.win64.a
 
+ifeq ($(HAVE_JUCE),true)
+LIBS_WIN64 += \
+	../modules/juce_audio_basics.win64.a \
+	../modules/juce_audio_processors.win64.a \
+	../modules/juce_core.win64.a \
+	../modules/juce_data_structures.win64.a \
+	../modules/juce_events.win64.a \
+	../modules/juce_graphics.win64.a \
+	../modules/juce_gui_basics.win64.a
+endif
+
 carla-bridge-win64.exe: $(OBJS_WIN64) $(LIBS_WIN64) ../modules/jackbridge-win64.dll
-	$(CXX) $(OBJS_WIN64) -Wl,--start-group $(LIBS_WIN32) -Wl,--end-group $(WIN_LINK_FLAGS) $(WIN_64BIT_FLAGS) -ljackbridge-win64 -o $@
+	$(CXX) $(OBJS_WIN64) -Wl,--start-group $(LIBS_WIN64) -Wl,--end-group $(WIN_LINK_FLAGS) $(WIN_64BIT_FLAGS) -ljackbridge-win64 -o $@
 
 %__win64.o: %.cpp
 	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) -c -o $@

@@ -360,8 +360,8 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeSetCustomData, argc, argv, types);
         if (std::strcmp(bmethod, "set_chunk_data") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeSetChunkData, argc, argv, types);
-        if (std::strcmp(bmethod, "update") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeUpdate, argc, argv, types);
+        if (std::strcmp(bmethod, "update_now") == 0)
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeUpdateNow, argc, argv, types);
         if (std::strcmp(bmethod, "error") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeError, argc, argv, types);
     }

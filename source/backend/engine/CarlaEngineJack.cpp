@@ -749,6 +749,7 @@ public:
 
             //jackbridge_set_latency_callback(client, carla_jack_latency_callback_plugin, plugin);
             jackbridge_set_process_callback(client, carla_jack_process_callback_plugin, plugin);
+            jackbridge_on_shutdown(fClient, carla_jack_shutdown_callback_plugin, plugin);
         }
 #endif
         return new CarlaEngineJackClient(*this, client);
@@ -810,6 +811,7 @@ public:
 
                     jackbridge_set_process_callback(jclient, carla_jack_process_callback_plugin, plugin);
                     //jackbridge_set_latency_callback(jclient, carla_jack_latency_callback_plugin, plugin);
+                    jackbridge_on_shutdown(jclient, carla_jack_shutdown_callback_plugin, plugin);
 
                     client->fClient = jclient;
                 }
@@ -2058,6 +2060,19 @@ private:
         }
     }
 # endif
+
+    static void carla_jack_shutdown_callback_plugin(void* arg)
+    {
+        CarlaPlugin* const plugin((CarlaPlugin*)arg);
+
+        if (plugin != nullptr)
+        {
+            CarlaEngineJackClient* const engineClient((CarlaEngineJackClient*)plugin->getEngineClient());
+            CARLA_SAFE_ASSERT_RETURN(engineClient != nullptr,);
+
+            engineClient->fClient = nullptr;
+        }
+    }
 #endif
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJack)

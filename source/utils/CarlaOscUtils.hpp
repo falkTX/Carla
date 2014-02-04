@@ -259,9 +259,9 @@ void osc_send_bridge_update(const CarlaOscData& oscData, const char* const url) 
     CARLA_SAFE_ASSERT_RETURN(url != nullptr && url[0] != '\0',);
     carla_debug("osc_send_bridge_update(path:\"%s\", \"%s\")", oscData.path, url);
 
-    char targetPath[std::strlen(oscData.path)+15];
+    char targetPath[std::strlen(oscData.path)+19];
     std::strcpy(targetPath, oscData.path);
-    std::strcat(targetPath, "/bridge_update");
+    std::strcat(targetPath, "/bridge_update_now");
     try_lo_send(oscData.target, targetPath, "s", url);
 }
 

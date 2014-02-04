@@ -35,7 +35,7 @@ public:
     JucePlugin(CarlaEngine* const engine, const uint id)
         : CarlaPlugin(engine, id),
           fInstance(nullptr),
-          fAudioBuffer(0, 0)
+          fAudioBuffer(1, 0)
     {
         carla_debug("JucePlugin::JucePlugin(%p, %i)", engine, id);
 
@@ -457,7 +457,7 @@ public:
         // plugin hints
         pData->hints = 0x0;
 
-        if (fDesc.category.compareIgnoreCase("synth"))
+        if (fDesc.isInstrument)
            pData->hints |= PLUGIN_IS_SYNTH;
 
         if (fInstance->hasEditor())
@@ -668,24 +668,38 @@ public:
             return false;
         }
 
-#if 0
         if (label == nullptr || label[0] == '\0')
         {
             pData->engine->setLastError("null label");
             return false;
         }
-#else
-        (void)label;
+
+        // ---------------------------------------------------------------
+        // fix path for wine usage
+
+        String jfilename(filename);
+
+#ifdef CARLA_OS_WIN
+        if (jfilename.startsWith("/"))
+        {
+            jfilename.replace("/", "\\");
+            jfilename = "Z:" + jfilename;
+        }
 #endif
 
         //fDesc.name = fDesc.descriptiveName = label;
         //fDesc.pluginFormatName = "VST";
-        fDesc.uid = 0;
-        fDesc.fileOrIdentifier = filename;
+        fDesc.uid = 0; // TODO - set uid for shell plugins
+        fDesc.fileOrIdentifier = jfilename;
 
-        // TODO - set uid for shell plugins
+        fInstance = fFormat.createInstanceFromDescription(fDesc, 44100, 512);
 
-        fInstance = fFormat.createInstanceFromDescription(fDesc, pData->engine->getSampleRate(), static_cast<int>(pData->engine->getBufferSize()));
+        if (fInstance == nullptr)
+        {
+            pData->engine->setLastError("Plugin failed to initialize");
+            return false;
+        }
+
         fInstance->fillInPluginDescription(fDesc);
 
         // ---------------------------------------------------------------

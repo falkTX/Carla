@@ -2471,7 +2471,6 @@ void CarlaEngine::oscSend_bridge_set_chunk_data(const char* const chunkFile) con
     std::strcat(targetPath, "/bridge_set_chunk_data");
     try_lo_send(pData->oscData->target, targetPath, "s", chunkFile);
 }
-
 #else
 void CarlaEngine::oscSend_control_add_plugin_start(const uint pluginId, const char* const pluginName) const noexcept
 {
