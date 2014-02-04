@@ -984,11 +984,6 @@ public:
 #endif
 
     /*!
-     * Idle OSC.
-     */
-    void idleOsc() const noexcept;
-
-    /*!
      * Get OSC TCP server path.
      */
     const char* getOscServerPathTCP() const noexcept;

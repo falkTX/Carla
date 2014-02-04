@@ -8,7 +8,7 @@ include ../Makefile.mk
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-CARLA_ENGINE_OSC_HPP      = CarlaEngineOsc.hpp $(CARLA_BACKEND_H) $(CARLA_OSC_UTILS_HPP) $(CARLA_STRING_HPP)
+CARLA_ENGINE_OSC_HPP      = CarlaEngineOsc.hpp $(CARLA_BACKEND_H) $(CARLA_OSC_UTILS_HPP) $(CARLA_MUTEX_HPP) $(CARLA_STRING_HPP)
 CARLA_ENGINE_THREAD_HPP   = CarlaEngineThread.hpp $(CARLA_BACKEND_H) $(CARLA_THREAD_HPP)
 CARLA_ENGINE_INTERNAL_HPP = CarlaEngineInternal.hpp $(CARLA_ENGINE_OSC_HPP) $(CARLA_ENGINE_THREAD_HPP) $(CARLA_ENGINE_HPP) $(CARLA_MUTEX_HPP) $(LINKED_LIST_HPP)
 

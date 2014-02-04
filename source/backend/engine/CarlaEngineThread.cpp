@@ -111,8 +111,7 @@ void CarlaEngineThread::run()
             }
         }
 
-        fEngine->idleOsc();
-        carla_msleep(oscRegisted ? 30 : 50);
+        carla_msleep(25);
     }
 }
 

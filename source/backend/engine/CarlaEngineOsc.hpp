@@ -20,6 +20,7 @@
 
 #include "CarlaBackend.h"
 #include "CarlaOscUtils.hpp"
+#include "CarlaMutex.hpp"
 #include "CarlaString.hpp"
 
 #define CARLA_ENGINE_OSC_HANDLE_ARGS1 CarlaPlugin* const plugin
@@ -61,7 +62,6 @@ public:
     ~CarlaEngineOsc();
 
     void init(const char* const name);
-    void idle() const;
     void close();
 
     // -------------------------------------------------------------------
@@ -99,8 +99,10 @@ private:
 
     CarlaString fServerPathTCP;
     CarlaString fServerPathUDP;
-    lo_server   fServerTCP;
-    lo_server   fServerUDP;
+    lo_server_thread fServerTCP;
+    lo_server_thread fServerUDP;
+
+    CarlaCriticalSection _cs;
 
 #ifndef BUILD_BRIDGE
     CarlaOscData fControlData; // for carla-control

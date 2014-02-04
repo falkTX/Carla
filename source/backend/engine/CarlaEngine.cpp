@@ -1601,7 +1601,6 @@ float CarlaEngine::getOutputPeak(const unsigned int pluginId, const bool isLeft)
 void CarlaEngine::callback(const EngineCallbackOpcode action, const unsigned int pluginId, const int value1, const int value2, const float value3, const char* const valueStr) noexcept
 {
     carla_debug("CarlaEngine::callback(%s, %i, %i, %i, %f, \"%s\")", EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
-    CARLA_ENGINE_THREAD_SAFE_SECTION
 
     if (pData->callback != nullptr)
     {
@@ -2012,13 +2011,6 @@ bool CarlaEngine::isOscControlRegistered() const noexcept
     return pData->osc.isControlRegistered();
 }
 #endif
-
-void CarlaEngine::idleOsc() const noexcept
-{
-    try {
-        pData->osc.idle();
-    } catch(...) {}
-}
 
 const char* CarlaEngine::getOscServerPathTCP() const noexcept
 {
