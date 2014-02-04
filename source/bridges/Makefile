@@ -724,11 +724,8 @@ doxygen: carla_bridge.doxygen
 .FORCE:
 .PHONY: .FORCE
 
-../modules/jackbridge-win32.dll: .FORCE
-	$(MAKE) -C ../modules jackbridge-win32e
-
-../modules/jackbridge-win64.dll: .FORCE
-	$(MAKE) -C ../modules jackbridge-win64e
+../modules/jackbridge-%.dll: .FORCE
+	$(MAKE) -C ../modules jackbridge-$*e
 
 ../modules/juce_audio_basics.%.a: .FORCE
 	$(MAKE) -C ../modules juce_audio_basics_$*

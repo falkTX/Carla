@@ -139,6 +139,22 @@ theme.qt5:
 jackbridge:
 	$(MAKE) -C jackbridge
 
+# --------------------------------------------------------------
+
+jackbridge-posix32:
+	$(MAKE) -C jackbridge posix32
+
+jackbridge-posix64:
+	$(MAKE) -C jackbridge posix64
+
+jackbridge-posix32e:
+	$(MAKE) -C jackbridge posix32e
+
+jackbridge-posix64e:
+	$(MAKE) -C jackbridge posix64e
+
+# --------------------------------------------------------------
+
 jackbridge-win32:
 	$(MAKE) -C jackbridge win32
 

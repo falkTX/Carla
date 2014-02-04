@@ -263,25 +263,19 @@ public:
         fIsRunning = true;
 
         // TODO - set RT permissions
-        carla_stderr("CarlaEngineBridge::run()");
+        carla_debug("CarlaEngineBridge::run()");
 
         for (; ! shouldExit();)
         {
-            carla_stderr("running loop");
             if (! jackbridge_sem_timedwait(&fShmControl.data->runServer, 5))
             {
                 if (errno == ETIMEDOUT)
                 {
-                    carla_stderr("running loop - QUIT TIMED OUT");
                     fIsRunning = false;
                     signalShouldExit();
                     return;
                 }
-                else
-                    carla_stderr("running loop - OTHER ERROR : %s", std::strerror(errno));
             }
-            else
-                carla_stderr("running loop - ALL FINE, WE GOT EVENTS!!!");
 
             for (; fShmControl.isDataAvailable();)
             {
