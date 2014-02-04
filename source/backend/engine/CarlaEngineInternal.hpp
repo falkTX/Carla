@@ -34,7 +34,11 @@
 // -----------------------------------------------------------------------
 // Global action lock for UI operations, used for osc only
 
-#define CARLA_ENGINE_THREAD_SAFE_SECTION const CarlaCriticalSection::Scope _ccsl(pData->_cs);
+#ifndef BUILD_BRIDGE
+# define CARLA_ENGINE_THREAD_SAFE_SECTION const CarlaCriticalSection::Scope _ccsl(pData->_cs);
+#else
+# define CARLA_ENGINE_THREAD_SAFE_SECTION
+#endif
 
 // -----------------------------------------------------------------------
 
@@ -242,7 +246,9 @@ struct CarlaEngineProtectedData {
     EngineInternalTime   time;
     EngineNextAction     nextAction;
 
+#ifndef BUILD_BRIDGE
     CarlaCriticalSection _cs; // for handling requests from multiple threads
+#endif
 
     // -------------------------------------------------------------------
 

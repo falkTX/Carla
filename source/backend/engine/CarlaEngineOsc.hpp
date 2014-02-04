@@ -102,10 +102,9 @@ private:
     lo_server_thread fServerTCP;
     lo_server_thread fServerUDP;
 
-    CarlaCriticalSection _cs;
-
 #ifndef BUILD_BRIDGE
     CarlaOscData fControlData; // for carla-control
+    CarlaCriticalSection _cs;
 #endif
 
     // -------------------------------------------------------------------

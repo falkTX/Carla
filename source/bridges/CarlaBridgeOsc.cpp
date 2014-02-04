@@ -51,12 +51,15 @@ void CarlaBridgeOsc::init(const char* const url)
     CARLA_ASSERT(url != nullptr);
     carla_debug("CarlaBridgeOsc::init(\"%s\")", url);
 
+    std::srand((uint)(uintptr_t)this);
+    std::srand((uint)(uintptr_t)&url);
+
 #ifdef BUILD_BRIDGE_PLUGIN
-    fName  = "carla/bridge-plugin-";
-    fName += CarlaString(std::rand() % 9999);
+    fName  = "plug-";
+    fName += CarlaString(std::rand() % 99999);
 #else
-    fName  = "carla/bridge-ui-";
-    fName += CarlaString(std::rand() % 9999);
+    fName  = "ui-";
+    fName += CarlaString(std::rand() % 99999);
 #endif
 
     fServer = lo_server_new_with_proto(nullptr, LO_TCP, osc_error_handler);
