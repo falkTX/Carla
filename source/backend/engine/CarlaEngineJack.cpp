@@ -960,7 +960,7 @@ public:
 
         LinkedList<const char*> connList;
 
-        if (const char** ports = jackbridge_get_ports(fClient, nullptr, nullptr, JackPortIsOutput))
+        if (const char** const ports = jackbridge_get_ports(fClient, nullptr, nullptr, JackPortIsOutput))
         {
             for (int i=0; ports[i] != nullptr; ++i)
             {
@@ -1743,7 +1743,7 @@ private:
             callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, 0 /* our client */, PATCHBAY_ICON_CARLA, -1, 0.0f, ourName);
         }
 
-        if (const char** ports = jackbridge_get_ports(fClient, nullptr, nullptr, 0))
+        if (const char** const ports = jackbridge_get_ports(fClient, nullptr, nullptr, 0))
         {
             for (int i=0; ports[i] != nullptr; ++i)
             {
@@ -1815,7 +1815,12 @@ private:
                 callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, static_cast<uint>(groupId), portNameToId.portId, static_cast<int>(canvasPortFlags), 0.0f, portName);
             }
 
-            // query connections, after all ports are in place
+            jackbridge_free(ports);
+        }
+
+        // query connections, after all ports are in place
+        if (const char** const ports = jackbridge_get_ports(fClient, nullptr, nullptr, JackPortIsOutput))
+        {
             for (int i=0; ports[i] != nullptr; ++i)
             {
                 jack_port_t* const jackPort(jackbridge_port_by_name(fClient, ports[i]));
