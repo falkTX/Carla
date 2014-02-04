@@ -560,6 +560,8 @@ class PluginEdit(QDialog):
             self.ui.le_type.setText("VST")
         elif pluginType == PLUGIN_AU:
             self.ui.le_type.setText("AU")
+        elif pluginType == PLUGIN_REWIRE:
+            self.ui.le_type.setText("ReWire")
         elif pluginType == PLUGIN_FILE_CSD:
             self.ui.le_type.setText("CSD")
         elif pluginType == PLUGIN_FILE_GIG:

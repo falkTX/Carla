@@ -419,6 +419,7 @@ OBJS_NATIVE += \
 	../backend/plugin/Lv2Plugin__native.o \
 	../backend/plugin/VstPlugin__native.o \
 	../backend/plugin/AuPlugin__native.o \
+	../backend/plugin/ReWirePlugin__native.o \
 	../backend/plugin/CsoundPlugin__native.o \
 	../backend/plugin/JucePlugin__native.o \
 	../backend/plugin/FluidSynthPlugin__native.o \
@@ -463,171 +464,200 @@ carla-bridge-native: $(OBJS_NATIVE) $(LIBS_NATIVE)
 # --------------------------------------------------------------
 # posix32
 
-# OBJS_POSIX32  = CarlaBridgePlugin__posix32.o \
-# 	CarlaBridgeClient__posix32.o CarlaBridgeOsc__posix32.o
-#
-# # carla-engine
-# OBJS_POSIX32 += \
-# 	../backend/engine/CarlaEngine__posix32.o \
-# 	../backend/engine/CarlaEngineOsc__posix32.o \
-# 	../backend/engine/CarlaEngineThread__posix32.o \
-# 	../backend/engine/CarlaEngineJack__posix32.o \
-# 	../backend/engine/CarlaEngineBridge__posix32.o
-#
-# # carla-plugin
-# OBJS_POSIX32 += \
-# 	../backend/plugin/CarlaPlugin__posix32.o \
-# 	../backend/plugin/CarlaPluginThread__posix32.o \
-# 	../backend/plugin/NativePlugin__posix32.o \
-# 	../backend/plugin/LadspaPlugin__posix32.o \
-# 	../backend/plugin/DssiPlugin__posix32.o \
-# 	../backend/plugin/Lv2Plugin__posix32.o \
-# 	../backend/plugin/VstPlugin__posix32.o \
-# 	../backend/plugin/Vst3Plugin__posix32.o \
-# 	../backend/plugin/FluidSynthPlugin__posix32.o \
-# 	../backend/plugin/LinuxSamplerPlugin__posix32.o
+OBJS_POSIX32  = CarlaBridgePlugin__posix32.o \
+	CarlaBridgeClient__posix32.o CarlaBridgeOsc__posix32.o
+
+# carla-engine
+OBJS_POSIX32 += \
+	../backend/engine/CarlaEngine__posix32.o \
+	../backend/engine/CarlaEngineInternal__posix32.o \
+	../backend/engine/CarlaEngineOsc__posix32.o \
+	../backend/engine/CarlaEngineThread__posix32.o \
+	../backend/engine/CarlaEngineJack__posix32.o \
+	../backend/engine/CarlaEngineBridge__posix32.o
+
+# carla-plugin
+OBJS_POSIX32 += \
+	../backend/plugin/CarlaPlugin__posix32.o \
+	../backend/plugin/CarlaPluginInternal__posix32.o \
+	../backend/plugin/CarlaPluginThread__posix32.o \
+	../backend/plugin/CarlaPluginUi__posix32.o \
+	../backend/plugin/NativePlugin__posix32.o \
+	../backend/plugin/LadspaPlugin__posix32.o \
+	../backend/plugin/DssiPlugin__posix32.o \
+	../backend/plugin/Lv2Plugin__posix32.o \
+	../backend/plugin/VstPlugin__posix32.o \
+	../backend/plugin/AuPlugin__posix32.o \
+	../backend/plugin/ReWirePlugin__posix32.o \
+	../backend/plugin/CsoundPlugin__posix32.o \
+	../backend/plugin/JucePlugin__posix32.o \
+	../backend/plugin/FluidSynthPlugin__posix32.o \
+	../backend/plugin/LinuxSamplerPlugin__posix32.o
 
 # carla-standalone
-# OBJS_POSIX32 += \
-# 	../backend/standalone/CarlaStandalone__posix32.o
-#
-# # libs
-# OBJS_POSIX32 += \
-# 	../modules/lilv.posix32.a \
-# 	../modules/rtmempool.posix32.a
-#
-# carla-bridge-posix32: $(OBJS_POSIX32)
-# 	$(CXX) $(OBJS_POSIX32) $(POSIX_LINK_FLAGS) $(POSIX_32BIT_FLAGS) -o $@
-#
-# %__posix32.o: %.cpp
-# 	$(CXX) $< $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) -c -o $@
+OBJS_POSIX32 += \
+	../backend/standalone/CarlaStandalone__posix32.o
+
+# libs
+LIBS_POSIX32 = \
+	../modules/lilv.posix32.a \
+	../modules/rtmempool.posix32.a
+
+carla-bridge-posix32: $(OBJS_POSIX32) $(LIBS_POSIX32)
+	$(CXX) $(OBJS_POSIX32) -Wl,--start-group $(LIBS_POSIX32) -Wl,--end-group $(POSIX_LINK_FLAGS) $(POSIX_32BIT_FLAGS) -o $@
+
+%__posix32.o: %.cpp
+	$(CXX) $< $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
 # posix64
 
-# OBJS_POSIX64  = CarlaBridgePlugin__posix64.o \
-# 	CarlaBridgeClient__posix64.o CarlaBridgeOsc__posix64.o
-#
-# # carla-engine
-# OBJS_POSIX64 += \
-# 	../backend/engine/CarlaEngine__posix64.o \
-# 	../backend/engine/CarlaEngineOsc__posix64.o \
-# 	../backend/engine/CarlaEngineThread__posix64.o \
-# 	../backend/engine/CarlaEngineJack__posix64.o \
-# 	../backend/engine/CarlaEngineBridge__posix64.o
-#
-# # carla-plugin
-# OBJS_POSIX64 += \
-# 	../backend/plugin/CarlaPlugin__posix64.o \
-# 	../backend/plugin/CarlaPluginThread__posix64.o \
-# 	../backend/plugin/NativePlugin__posix64.o \
-# 	../backend/plugin/LadspaPlugin__posix64.o \
-# 	../backend/plugin/DssiPlugin__posix64.o \
-# 	../backend/plugin/Lv2Plugin__posix64.o \
-# 	../backend/plugin/VstPlugin__posix64.o \
-# 	../backend/plugin/Vst3Plugin__posix64.o \
-# 	../backend/plugin/FluidSynthPlugin__posix64.o \
-# 	../backend/plugin/LinuxSamplerPlugin__posix64.o
+OBJS_POSIX64  = CarlaBridgePlugin__posix64.o \
+	CarlaBridgeClient__posix64.o CarlaBridgeOsc__posix64.o
+
+# carla-engine
+OBJS_POSIX64 += \
+	../backend/engine/CarlaEngine__posix64.o \
+	../backend/engine/CarlaEngineInternal__posix64.o \
+	../backend/engine/CarlaEngineOsc__posix64.o \
+	../backend/engine/CarlaEngineThread__posix64.o \
+	../backend/engine/CarlaEngineJack__posix64.o \
+	../backend/engine/CarlaEngineBridge__posix64.o
+
+# carla-plugin
+OBJS_POSIX64 += \
+	../backend/plugin/CarlaPlugin__posix64.o \
+	../backend/plugin/CarlaPluginInternal__posix64.o \
+	../backend/plugin/CarlaPluginThread__posix64.o \
+	../backend/plugin/CarlaPluginUi__posix64.o \
+	../backend/plugin/NativePlugin__posix64.o \
+	../backend/plugin/LadspaPlugin__posix64.o \
+	../backend/plugin/DssiPlugin__posix64.o \
+	../backend/plugin/Lv2Plugin__posix64.o \
+	../backend/plugin/VstPlugin__posix64.o \
+	../backend/plugin/AuPlugin__posix32.o \
+	../backend/plugin/ReWirePlugin__posix64.o \
+	../backend/plugin/CsoundPlugin__posix64.o \
+	../backend/plugin/JucePlugin__posix64.o \
+	../backend/plugin/FluidSynthPlugin__posix64.o \
+	../backend/plugin/LinuxSamplerPlugin__posix64.o
 
 # carla-standalone
-# OBJS_POSIX64 += \
-# 	../backend/standalone/CarlaStandalone__posix64.o
-#
-# # libs
-# OBJS_POSIX64 += \
-# 	../modules/lilv.posix64.a \
-# 	../modules/rtmempool.posix64.a
+OBJS_POSIX64 += \
+	../backend/standalone/CarlaStandalone__posix64.o
 
-# carla-bridge-posix64: $(OBJS_POSIX64)
-# 	$(CXX) $(OBJS_POSIX64) $(POSIX_LINK_FLAGS) $(POSIX_64BIT_FLAGS) -o $@
-#
-# %__posix64.o: %.cpp
-# 	$(CXX) $< $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) -c -o $@
+# libs
+LIBS_POSIX64 = \
+	../modules/lilv.posix64.a \
+	../modules/rtmempool.posix64.a
+
+carla-bridge-posix64: $(OBJS_POSIX64) $(LIBS_POSIX64)
+	$(CXX) $(OBJS_POSIX64) -Wl,--start-group $(LIBS_POSIX64) -Wl,--end-group $(POSIX_LINK_FLAGS) $(POSIX_64BIT_FLAGS) -o $@
+
+%__posix64.o: %.cpp
+	$(CXX) $< $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
 # win32
 
-# OBJS_WIN32  = CarlaBridgePlugin__win32.o \
-# 	CarlaBridgeClient__win32.o CarlaBridgeOsc__win32.o
-#
-# # carla-engine
-# OBJS_WIN32 += \
-# 	../backend/engine/CarlaEngine__win32.o \
-# 	../backend/engine/CarlaEngineOsc__win32.o \
-# 	../backend/engine/CarlaEngineThread__win32.o \
-# 	../backend/engine/CarlaEngineBridge__win32.o \
-# 	../backend/engine/CarlaEngineJack__win32.o
-#
-# # carla-plugin
-# OBJS_WIN32 += \
-# 	../backend/plugin/CarlaPlugin__win32.o \
-# 	../backend/plugin/CarlaPluginThread__win32.o \
-# 	../backend/plugin/NativePlugin__win32.o \
-# 	../backend/plugin/LadspaPlugin__win32.o \
-# 	../backend/plugin/DssiPlugin__win32.o \
-# 	../backend/plugin/Lv2Plugin__win32.o \
-# 	../backend/plugin/VstPlugin__win32.o \
-# 	../backend/plugin/Vst3Plugin__win32.o \
-# 	../backend/plugin/FluidSynthPlugin__win32.o \
-# 	../backend/plugin/LinuxSamplerPlugin__win32.o
+OBJS_WIN32  = CarlaBridgePlugin__win32.o \
+	CarlaBridgeClient__win32.o CarlaBridgeOsc__win32.o
+
+# carla-engine
+OBJS_WIN32 += \
+	../backend/engine/CarlaEngine__win32.o \
+	../backend/engine/CarlaEngineInternal__win32.o \
+	../backend/engine/CarlaEngineOsc__win32.o \
+	../backend/engine/CarlaEngineThread__win32.o \
+	../backend/engine/CarlaEngineBridge__win32.o \
+	../backend/engine/CarlaEngineJack__win32.o
+
+# carla-plugin
+OBJS_WIN32 += \
+	../backend/plugin/CarlaPlugin__win32.o \
+	../backend/plugin/CarlaPluginInternal__win32.o \
+	../backend/plugin/CarlaPluginThread__win32.o \
+	../backend/plugin/CarlaPluginUi__win32.o \
+	../backend/plugin/NativePlugin__win32.o \
+	../backend/plugin/LadspaPlugin__win32.o \
+	../backend/plugin/DssiPlugin__win32.o \
+	../backend/plugin/Lv2Plugin__win32.o \
+	../backend/plugin/VstPlugin__win32.o \
+	../backend/plugin/AuPlugin__win32.o \
+	../backend/plugin/ReWirePlugin__win32.o \
+	../backend/plugin/CsoundPlugin__win32.o \
+	../backend/plugin/JucePlugin__win32.o \
+	../backend/plugin/FluidSynthPlugin__win32.o \
+	../backend/plugin/LinuxSamplerPlugin__win32.o
 
 # carla-standalone
-# OBJS_WIN32 += \
-# 	../backend/standalone/CarlaStandalone__win32.o
-#
-# # libs
-# OBJS_WIN32 += \
-# 	../modules/juce_core.win32.a \
-# 	../modules/lilv.win32.a \
-# 	../modules/rtmempool.win32.a
+OBJS_WIN32 += \
+	../backend/standalone/CarlaStandalone__win32.o
 
-# carla-bridge-win32.exe: $(OBJS_WIN32) ../modules/jackbridge-win32.dll
-# 	$(CXX) $(OBJS_WIN32) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win32 -o $@
-#
-# %__win32.o: %.cpp
-# 	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) -c -o $@
+# libs
+LIBS_WIN32 = \
+	../modules/lilv.win32.a \
+	../modules/rtmempool.win32.a
+
+ifeq ($(HAVE_JUCE),true)
+LIBS_WIN32 += \
+	../modules/juce_audio_basics.win32.a \
+	../modules/juce_core.win32.a
+endif
+
+carla-bridge-win32.exe: $(OBJS_WIN32) $(LIBS_WIN32) ../modules/jackbridge-win32.dll
+	$(CXX) $(OBJS_WIN32) -Wl,--start-group $(LIBS_WIN32) -Wl,--end-group $(WIN_LINK_FLAGS) $(WIN_32BIT_FLAGS) -ljackbridge-win32 -o $@
+
+%__win32.o: %.cpp
+	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
 # win64
 
-# OBJS_WIN64  = CarlaBridgePlugin__win64.o \
-# 	CarlaBridgeClient__win64.o CarlaBridgeOsc__win64.o
-#
-# # carla-engine
-# OBJS_WIN64 += \
-# 	../backend/engine/CarlaEngine__win64.o \
-# 	../backend/engine/CarlaEngineOsc__win64.o \
-# 	../backend/engine/CarlaEngineThread__win64.o \
-# 	../backend/engine/CarlaEngineBridge__win64.o \
-# 	../backend/engine/CarlaEngineJack__win64.o
-#
-# # carla-plugin
-# OBJS_WIN64 += \
-# 	../backend/plugin/CarlaPlugin__win64.o \
-# 	../backend/plugin/CarlaPluginThread__win64.o \
-# 	../backend/plugin/NativePlugin__win64.o \
-# 	../backend/plugin/LadspaPlugin__win64.o \
-# 	../backend/plugin/DssiPlugin__win64.o \
-# 	../backend/plugin/Lv2Plugin__win64.o \
-# 	../backend/plugin/VstPlugin__win64.o \
-# 	../backend/plugin/Vst3Plugin__win64.o \
-# 	../backend/plugin/FluidSynthPlugin__win64.o \
-# 	../backend/plugin/LinuxSamplerPlugin__win64.o
-#
-# # carla-standalone
-# OBJS_WIN64 += \
-# 	../backend/standalone/CarlaStandalone__win64.o
-#
-# # libs
-# OBJS_WIN64 += \
-# 	../modules/lilv.win64.a \
-# 	../modules/rtmempool.win64.a
-#
-# carla-bridge-win64.exe: $(OBJS_WIN64) ../modules/jackbridge-win64.dll
-# 	$(CXX) $(OBJS_WIN64) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win64 -o $@
-#
-# %__win64.o: %.cpp
-# 	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) -c -o $@
+OBJS_WIN64  = CarlaBridgePlugin__win64.o \
+	CarlaBridgeClient__win64.o CarlaBridgeOsc__win64.o
+
+# carla-engine
+OBJS_WIN64 += \
+	../backend/engine/CarlaEngine__win64.o \
+	../backend/engine/CarlaEngineInternal__win64.o \
+	../backend/engine/CarlaEngineOsc__win64.o \
+	../backend/engine/CarlaEngineThread__win64.o \
+	../backend/engine/CarlaEngineBridge__win64.o \
+	../backend/engine/CarlaEngineJack__win64.o
+
+# carla-plugin
+OBJS_WIN64 += \
+	../backend/plugin/CarlaPlugin__win64.o \
+	../backend/plugin/CarlaPluginInternal__win64.o \
+	../backend/plugin/CarlaPluginThread__win64.o \
+	../backend/plugin/CarlaPluginUi__win64.o \
+	../backend/plugin/NativePlugin__win64.o \
+	../backend/plugin/LadspaPlugin__win64.o \
+	../backend/plugin/DssiPlugin__win64.o \
+	../backend/plugin/Lv2Plugin__win64.o \
+	../backend/plugin/VstPlugin__win64.o \
+	../backend/plugin/AuPlugin__win64.o \
+	../backend/plugin/ReWirePlugin__win64.o \
+	../backend/plugin/CsoundPlugin__win64.o \
+	../backend/plugin/JucePlugin__win64.o \
+	../backend/plugin/FluidSynthPlugin__win64.o \
+	../backend/plugin/LinuxSamplerPlugin__win64.o
+
+# carla-standalone
+OBJS_WIN64 += \
+	../backend/standalone/CarlaStandalone__win64.o
+
+# libs
+LIBS_WIN64 = \
+	../modules/lilv.win64.a \
+	../modules/rtmempool.win64.a
+
+carla-bridge-win64.exe: $(OBJS_WIN64) $(LIBS_WIN64) ../modules/jackbridge-win64.dll
+	$(CXX) $(OBJS_WIN64) -Wl,--start-group $(LIBS_WIN32) -Wl,--end-group $(WIN_LINK_FLAGS) $(WIN_64BIT_FLAGS) -ljackbridge-win64 -o $@
+
+%__win64.o: %.cpp
+	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
 
@@ -638,10 +668,10 @@ clean:
 	rm -f carla-bridge-vst-carbon carla-bridge-vst-cocoa carla-bridge-vst-x11
 	rm -f carla-bridge-native carla-bridge-posix32 carla-bridge-posix64
 	rm -f $(OBJS_NATIVE)
-# 	rm -f $(OBJS_POSIX32)
-# 	rm -f $(OBJS_POSIX64)
-# 	rm -f $(OBJS_WIN32)
-# 	rm -f $(OBJS_WIN64)
+	rm -f $(OBJS_POSIX32)
+	rm -f $(OBJS_POSIX64)
+	rm -f $(OBJS_WIN32)
+	rm -f $(OBJS_WIN64)
 
 debug:
 	$(MAKE) DEBUG=true
@@ -654,8 +684,17 @@ doxygen: carla_bridge.doxygen
 .FORCE:
 .PHONY: .FORCE
 
-# ../modules/juce_core.%.a: .FORCE
-# 	$(MAKE) -C ../modules juce_core_$*
+../modules/jackbridge-win32.dll: .FORCE
+	$(MAKE) -C ../modules jackbridge-win32e
+
+../modules/jackbridge-win64.dll: .FORCE
+	$(MAKE) -C ../modules jackbridge-win64e
+
+../modules/juce_audio_basics.%.a: .FORCE
+	$(MAKE) -C ../modules juce_audio_basics_$*
+
+../modules/juce_core.%.a: .FORCE
+	$(MAKE) -C ../modules juce_core_$*
 
 ../modules/lilv.%.a: .FORCE
 	$(MAKE) -C ../modules lilv_$*

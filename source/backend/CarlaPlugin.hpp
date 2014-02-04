@@ -840,6 +840,7 @@ public:
     static CarlaPlugin* newLV2(const Initializer& init);
     static CarlaPlugin* newVST(const Initializer& init);
     static CarlaPlugin* newAU(const Initializer& init);
+    static CarlaPlugin* newReWire(const Initializer& init);
 
     static CarlaPlugin* newCsound(const Initializer& init);
     static CarlaPlugin* newJuce(const Initializer& init, const char* const format);

@@ -445,6 +445,9 @@ void fillXmlStringFromSaveState(QString& content, const SaveState& saveState)
             info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
             info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueID);
             break;
+        case PLUGIN_REWIRE:
+            info += QString("   <Label>%1</Label>\n").arg(xmlSafeString(saveState.label, true));
+            break;
         case PLUGIN_FILE_CSD:
         case PLUGIN_FILE_GIG:
         case PLUGIN_FILE_SF2:

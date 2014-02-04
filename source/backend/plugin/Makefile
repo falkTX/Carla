@@ -27,6 +27,7 @@ OBJS = \
 	Lv2Plugin.cpp.o \
 	VstPlugin.cpp.o \
 	AuPlugin.cpp.o \
+	ReWirePlugin.cpp.o \
 	CsoundPlugin.cpp.o \
 	JucePlugin.cpp.o \
 	FluidSynthPlugin.cpp.o \
@@ -85,6 +86,9 @@ VstPlugin.cpp.o: VstPlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) 
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
 
 AuPlugin.cpp.o: AuPlugin.cpp $(CARLA_PLUGIN_HPP) $(CARLA_ENGINE_HPP) $(CARLA_UTILS_HPP)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+ReWirePlugin.cpp.o: ReWirePlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_LIB_UTILS_HPP) $(CARLA_MATH_UTILS_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 CsoundPlugin.cpp.o: CsoundPlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP)

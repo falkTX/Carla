@@ -294,14 +294,18 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const ulong pid, const char* const ui
 #ifdef CARLA_OS_MAC
 CarlaPluginUi* CarlaPluginUi::newCocoa(CloseCallback* cb)
 {
-    return new CocoaPluginUi(cb);
+    //return new CocoaPluginUi(cb);
+    return nullptr;
+    (void)cb;
 }
 #endif
 
 #ifdef CARLA_OS_WIN
 CarlaPluginUi* CarlaPluginUi::newWindows(CloseCallback* cb)
 {
-    return new WindowsPluginUi(cb);
+    //return new WindowsPluginUi(cb);
+    return nullptr;
+    (void)cb;
 }
 #endif
 

@@ -17,7 +17,9 @@ OBJS         = JackBridge1.cpp.o         JackBridge2.cpp.o
 OBJS_posix32 = JackBridge1.cpp.posix32.o JackBridge2.cpp.posix32.o
 OBJS_posix64 = JackBridge1.cpp.posix64.o JackBridge2.cpp.posix64.o
 OBJS_win32   = JackBridge1.cpp.win32.o   JackBridge2.cpp.win32.o
+OBJS_win32e  = JackBridge1.cpp.win32e.o  JackBridge2.cpp.win32e.o
 OBJS_win64   = JackBridge1.cpp.win64.o   JackBridge2.cpp.win64.o
+OBJS_win64e  = JackBridge1.cpp.win64e.o  JackBridge2.cpp.win64e.o
 
 # --------------------------------------------------------------
 
@@ -27,6 +29,8 @@ posix32: ../jackbridge.posix32.a
 posix64: ../jackbridge.posix64.a
 win32:   ../jackbridge.win32.a
 win64:   ../jackbridge.win64.a
+win32e:  ../jackbridge-win32.dll
+win64e:  ../jackbridge-win64.dll
 
 # --------------------------------------------------------------
 
@@ -53,6 +57,12 @@ win64:   ../jackbridge.win64.a
 ../libjackbridge.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
+../jackbridge-win32.dll: $(OBJS_win32e)
+	$(CXX) $^ -shared $(LINK_FLAGS) -Wl,--output-def,$@.def,--out-implib,$@.a -o $@
+
+../jackbridge-win64.dll: $(OBJS_win64e)
+	$(CXX) $^ -shared $(LINK_FLAGS) -Wl,--output-def,$@.def,--out-implib,$@.a -o $@
+
 ../libjackbridge.dylib: $(OBJS)
 	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
 
@@ -60,9 +70,6 @@ win64:   ../jackbridge.win64.a
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
-
-%.cpp.o: %.cpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 %.posix32.o: %
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
@@ -75,6 +82,15 @@ win64:   ../jackbridge.win64.a
 
 %.win64.o: %
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+
+%.win32e.o: %
+	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -DJACKBRIDGE_DUMMY=1 -DJACKBRIDGE_EXPORT -w -c -o $@
+
+%.win64e.o: %
+	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -DJACKBRIDGE_DUMMY=1 -DJACKBRIDGE_EXPORT -w -c -o $@
+
+%.cpp.o: %.cpp
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
 

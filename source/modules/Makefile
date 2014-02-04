@@ -142,11 +142,17 @@ jackbridge:
 jackbridge-win32:
 	$(MAKE) -C jackbridge win32
 
+jackbridge-win32e:
+	$(MAKE) -C jackbridge win32e
+
 jackbridge-win64:
 	$(MAKE) -C jackbridge win64
 
 jackbridge-wine32:
 	$(MAKE) -C jackbridge wine32
+
+jackbridge-win64e:
+	$(MAKE) -C jackbridge win64e
 
 jackbridge-wine64:
 	$(MAKE) -C jackbridge wine64

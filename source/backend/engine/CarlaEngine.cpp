@@ -891,6 +891,10 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             plugin = CarlaPlugin::newAU(initializer);
             break;
 
+        case PLUGIN_REWIRE:
+            plugin = CarlaPlugin::newReWire(initializer);
+            break;
+
         case PLUGIN_FILE_CSD:
             plugin = CarlaPlugin::newFileCSD(initializer);
             break;

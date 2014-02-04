@@ -464,24 +464,30 @@ typedef enum {
     PLUGIN_AU = 6,
 
     /*!
+     * ReWire plugin.
+     * @note Windows and MacOS only
+     */
+    PLUGIN_REWIRE = 7,
+
+    /*!
      * Single CSD file (Csound).
      */
-    PLUGIN_FILE_CSD = 7,
+    PLUGIN_FILE_CSD = 8,
 
     /*!
      * Single GIG file.
      */
-    PLUGIN_FILE_GIG = 8,
+    PLUGIN_FILE_GIG = 9,
 
     /*!
      * Single SF2 file (SoundFont).
      */
-    PLUGIN_FILE_SF2 = 9,
+    PLUGIN_FILE_SF2 = 10,
 
     /*!
      * Single SFZ file.
      */
-    PLUGIN_FILE_SFZ = 10
+    PLUGIN_FILE_SFZ = 11
 
 } PluginType;
 
