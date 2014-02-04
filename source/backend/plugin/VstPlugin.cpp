@@ -647,7 +647,7 @@ public:
                     max = 1.0f;
                 }
 
-                if (dispatcher(effVendorSpecific, kVstParameterUsesIntStep, j, nullptr, 0.0f) >= 0xbeef)
+                if (dispatcher(effVendorSpecific, kVstParameterUsesIntStep, static_cast<int32_t>(j), nullptr, 0.0f) >= 0xbeef)
                 {
                     step = 1.0f;
                     stepSmall = 1.0f;
@@ -841,7 +841,7 @@ public:
             int32_t initialDelay = *(int32_t*)empty3Ptr;
             pData->latency = (initialDelay > 0) ? static_cast<uint32_t>(initialDelay) : 0;
 #else
-            pData->latency = fEffect->initialDelay;
+            pData->latency = (fEffect->initialDelay > 0) ? static_cast<uint32_t>(fEffect->initialDelay) : 0;
 #endif
 
             pData->client->setLatency(pData->latency);
@@ -1366,7 +1366,7 @@ public:
 
                     const EngineMidiEvent& midiEvent(event.midi);
 
-                    uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
+                    uint8_t status  = static_cast<uint8_t>(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
                     uint8_t channel = event.channel;
 
                     // Fix bad note-off (per VST spec)
@@ -1435,7 +1435,7 @@ public:
                 CARLA_SAFE_ASSERT_CONTINUE(fMidiEvents[k].midiData[0] > 0);
 
                 const uint8_t status(static_cast<uint8_t>(fMidiEvents[k].midiData[0]));
-                const uint8_t channel(status < MIDI_STATUS_BIT ? status & MIDI_STATUS_BIT : 0);
+                const uint8_t channel(static_cast<uint8_t>(status < MIDI_STATUS_BIT ? status & MIDI_STATUS_BIT : 0));
 
                 uint8_t midiData[3];
                 midiData[0] = static_cast<uint8_t>(fMidiEvents[k].midiData[0]);
@@ -1604,9 +1604,9 @@ public:
             deactivate();
 
 #if ! VST_FORCE_DEPRECATED
-        dispatcher(effSetBlockSizeAndSampleRate, 0, newBufferSize, nullptr, static_cast<float>(pData->engine->getSampleRate()));
+        dispatcher(effSetBlockSizeAndSampleRate, 0, static_cast<int32_t>(newBufferSize), nullptr, static_cast<float>(pData->engine->getSampleRate()));
 #endif
-        dispatcher(effSetBlockSize, 0, newBufferSize, nullptr, 0.0f);
+        dispatcher(effSetBlockSize, 0, static_cast<int32_t>(newBufferSize), nullptr, 0.0f);
 
         if (pData->active)
             activate();
@@ -1621,7 +1621,7 @@ public:
             deactivate();
 
 #if ! VST_FORCE_DEPRECATED
-        dispatcher(effSetBlockSizeAndSampleRate, 0, pData->engine->getBufferSize(), nullptr, static_cast<float>(newSampleRate));
+        dispatcher(effSetBlockSizeAndSampleRate, 0, static_cast<int32_t>(pData->engine->getBufferSize()), nullptr, static_cast<float>(newSampleRate));
 #endif
         dispatcher(effSetSampleRate, 0, 0, nullptr, static_cast<float>(newSampleRate));
 
@@ -2183,10 +2183,10 @@ public:
         // initialize plugin (part 2)
 
 #if ! VST_FORCE_DEPRECATED
-        dispatcher(effSetBlockSizeAndSampleRate, 0, pData->engine->getBufferSize(), nullptr, static_cast<float>(pData->engine->getSampleRate()));
+        dispatcher(effSetBlockSizeAndSampleRate, 0, static_cast<int32_t>(pData->engine->getBufferSize()), nullptr, static_cast<float>(pData->engine->getSampleRate()));
 #endif
         dispatcher(effSetSampleRate, 0, 0, nullptr, static_cast<float>(pData->engine->getSampleRate()));
-        dispatcher(effSetBlockSize, 0, pData->engine->getBufferSize(), nullptr, 0.0f);
+        dispatcher(effSetBlockSize, 0, static_cast<int32_t>(pData->engine->getBufferSize()), nullptr, 0.0f);
         dispatcher(effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
 
         if (dispatcher(effGetVstVersion, 0, 0, nullptr, 0.0f) < kVstVersion)

@@ -39,6 +39,17 @@ endif
 endif
 
 # --------------------------------------------------------------
+# Use the real VSTSDK in MacOS and Windows
+
+ifeq ($(MACOS),true)
+CARLA_VESTIGE_HEADER = false
+endif
+
+ifeq ($(WIN32),true)
+CARLA_VESTIGE_HEADER = false
+endif
+
+# --------------------------------------------------------------
 # Common build and link flags
 
 BASE_FLAGS = -Wall -Wextra -pipe -DREAL_BUILD
