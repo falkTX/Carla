@@ -59,8 +59,8 @@ public:
         {
             CARLA_ASSERT(client != nullptr && port != nullptr);
 
-            if (jack_uuid_t uuid = jackbridge_port_uuid(port))
-                jackbridge_set_property(client, uuid, "urn:jack:IsControlVoltage", "NO", "text/plain");
+            //if (jack_uuid_t uuid = jackbridge_port_uuid(port))
+            //    jackbridge_set_property(client, uuid, "urn:jack:IsControlVoltage", "NO", "text/plain");
         }
         else
         {
@@ -119,8 +119,8 @@ public:
         {
             CARLA_ASSERT(client != nullptr && port != nullptr);
 
-            if (jack_uuid_t uuid = jackbridge_port_uuid(port))
-                jackbridge_set_property(client, uuid, "urn:jack:IsControlVoltage", "YES", "text/plain");
+            //if (jack_uuid_t uuid = jackbridge_port_uuid(port))
+            //    jackbridge_set_property(client, uuid, "urn:jack:IsControlVoltage", "YES", "text/plain");
         }
         else
         {
@@ -1320,8 +1320,8 @@ protected:
                 char* value = nullptr;
                 char* type  = nullptr;
 
-                if (jackbridge_get_property(uuid, "urn:jack:IsControlVoltage", &value, &type) && value != nullptr && type != nullptr && std::strcmp(type, "text/plain") == 0)
-                    portIsCV = (std::strcmp(value, "YES") == 0);
+                //if (jackbridge_get_property(uuid, "urn:jack:IsControlVoltage", &value, &type) && value != nullptr && type != nullptr && std::strcmp(type, "text/plain") == 0)
+                //    portIsCV = (std::strcmp(value, "YES") == 0);
             }
 
             unsigned int canvasPortFlags = 0x0;
@@ -1797,8 +1797,8 @@ private:
                     char* value = nullptr;
                     char* type  = nullptr;
 
-                    if (jackbridge_get_property(uuid, "urn:jack:IsControlVoltage", &value, &type) && value != nullptr && type != nullptr && std::strcmp(type, "text/plain") == 0)
-                        portIsCV = (std::strcmp(value, "YES") == 0);
+                    //if (jackbridge_get_property(uuid, "urn:jack:IsControlVoltage", &value, &type) && value != nullptr && type != nullptr && std::strcmp(type, "text/plain") == 0)
+                    //    portIsCV = (std::strcmp(value, "YES") == 0);
                 }
 
                 unsigned int canvasPortFlags = 0x0;
