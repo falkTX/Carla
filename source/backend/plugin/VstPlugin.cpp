@@ -241,10 +241,7 @@ public:
 
     void getCopyright(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
-
-        strBuf[0] = '\0';
-        dispatcher(effGetVendorString, 0, 0, strBuf, 0.0f);
+        getMaker(strBuf);
     }
 
     void getRealName(char* const strBuf) const noexcept override
@@ -2459,7 +2456,7 @@ CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
     carla_debug("CarlaPlugin::newVST({%p, \"%s\", \"%s\"})", init.engine, init.filename, init.name);
 
 #ifdef WANT_VST
-# if defined(HAVE_JUCE) && ! defined(VESTIGE_HEADER)
+# if 1 //defined(HAVE_JUCE) && ! defined(VESTIGE_HEADER)
     return newJuce(init, "VST");
 # else
     VstPlugin* const plugin(new VstPlugin(init.engine, init.id));

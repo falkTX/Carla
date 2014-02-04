@@ -30,10 +30,6 @@
 
 #include <QtCore/QByteArray>
 
-#ifdef BUILD_BRIDGE
-# undef HAVE_JUCE
-#endif
-
 #ifdef HAVE_JUCE
 # include "juce_gui_basics.h"
 using juce::initialiseJuce_GUI;

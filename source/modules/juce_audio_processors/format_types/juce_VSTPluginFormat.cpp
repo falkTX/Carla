@@ -470,7 +470,7 @@ public:
 
         if (dllModule != INVALID_HANDLE_VALUE)
         {
-            if (HRSRC res = FindResource (dllModule, MAKEINTRESOURCE (resID), type.toRawUTF8()))
+            if (HRSRC res = FindResource (dllModule, MAKEINTRESOURCE (resID), (LPCWSTR)type.toRawUTF8()))
             {
                 if (HGLOBAL hGlob = LoadResource (dllModule, res))
                 {

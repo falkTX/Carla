@@ -602,7 +602,12 @@ LIBS_WIN32 = \
 ifeq ($(HAVE_JUCE),true)
 LIBS_WIN32 += \
 	../modules/juce_audio_basics.win32.a \
-	../modules/juce_core.win32.a
+	../modules/juce_audio_processors.win32.a \
+	../modules/juce_core.win32.a \
+	../modules/juce_data_structures.win32.a \
+	../modules/juce_events.win32.a \
+	../modules/juce_graphics.win32.a \
+	../modules/juce_gui_basics.win32.a
 endif
 
 carla-bridge-win32.exe: $(OBJS_WIN32) $(LIBS_WIN32) ../modules/jackbridge-win32.dll
@@ -693,8 +698,23 @@ doxygen: carla_bridge.doxygen
 ../modules/juce_audio_basics.%.a: .FORCE
 	$(MAKE) -C ../modules juce_audio_basics_$*
 
+../modules/juce_audio_processors.%.a: .FORCE
+	$(MAKE) -C ../modules juce_audio_processors_$*
+
 ../modules/juce_core.%.a: .FORCE
 	$(MAKE) -C ../modules juce_core_$*
+
+../modules/juce_data_structures.%.a: .FORCE
+	$(MAKE) -C ../modules juce_data_structures_$*
+
+../modules/juce_events.%.a: .FORCE
+	$(MAKE) -C ../modules juce_events_$*
+
+../modules/juce_graphics.%.a: .FORCE
+	$(MAKE) -C ../modules juce_graphics_$*
+
+../modules/juce_gui_basics.%.a: .FORCE
+	$(MAKE) -C ../modules juce_gui_basics_$*
 
 ../modules/lilv.%.a: .FORCE
 	$(MAKE) -C ../modules lilv_$*

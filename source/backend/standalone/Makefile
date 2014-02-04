@@ -27,6 +27,7 @@ LINK_FLAGS  += $(RTMEMPOOL_LIBS)
 ifeq ($(HAVE_JUCE),true)
 STATIC_LIBS += ../../modules/juce_audio_basics.a
 STATIC_LIBS += ../../modules/juce_audio_devices.a
+STATIC_LIBS += ../../modules/juce_audio_processors.a
 STATIC_LIBS += ../../modules/juce_core.a
 STATIC_LIBS += ../../modules/juce_data_structures.a
 STATIC_LIBS += ../../modules/juce_events.a
