@@ -52,9 +52,11 @@ void CarlaBridgeOsc::init(const char* const url)
     carla_debug("CarlaBridgeOsc::init(\"%s\")", url);
 
 #ifdef BUILD_BRIDGE_PLUGIN
-    fName = "carla-bridge-plugin";
+    fName  = "carla/bridge-plugin-";
+    fName += CarlaString(std::rand() % 9999);
 #else
-    fName = "carla-bridge-ui";
+    fName  = "carla/bridge-ui-";
+    fName += CarlaString(std::rand() % 9999);
 #endif
 
     fServer = lo_server_new_with_proto(nullptr, LO_TCP, osc_error_handler);
