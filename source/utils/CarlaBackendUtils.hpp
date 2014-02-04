@@ -314,6 +314,8 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_PATH_BINARIES";
     case ENGINE_OPTION_PATH_RESOURCES:
         return "ENGINE_OPTION_PATH_RESOURCES";
+    case ENGINE_OPTION_FRONTEND_WIN_ID:
+        return "ENGINE_OPTION_FRONTEND_WIN_ID";
     }
 
     carla_stderr("CarlaBackend::EngineOption2Str(%i) - invalid option", option);

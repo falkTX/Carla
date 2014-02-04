@@ -31,12 +31,12 @@
 class X11PluginUi : public CarlaPluginUi
 {
 public:
-    X11PluginUi(CloseCallback* cb) noexcept
-        : CarlaPluginUi(cb),
+    X11PluginUi(CloseCallback* const cb, const uintptr_t parentId) noexcept
+        : CarlaPluginUi(cb, parentId),
           fDisplay(nullptr),
           fWindow(0)
      {
-        fDisplay = XOpenDisplay(0);
+        fDisplay = XOpenDisplay(nullptr);
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);
 
         const int screen = DefaultScreen(fDisplay);
@@ -56,8 +56,8 @@ public:
         Atom wmDelete = XInternAtom(fDisplay, "WM_DELETE_WINDOW", True);
         XSetWMProtocols(fDisplay, fWindow, &wmDelete, 1);
 
-        if (const uintptr_t transientId = carla_standalone_get_transient_win_id())
-            setTransientWinId(transientId);
+        if (parentId != 0)
+            setTransientWinId(parentId);
     }
 
     ~X11PluginUi() override
@@ -292,27 +292,27 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const ulong pid, const char* const ui
 // -----------------------------------------------------
 
 #ifdef CARLA_OS_MAC
-CarlaPluginUi* CarlaPluginUi::newCocoa(CloseCallback* cb)
+CarlaPluginUi* CarlaPluginUi::newCocoa(CloseCallback* cb, uintptr_t)
 {
-    //return new CocoaPluginUi(cb);
+    //return new CocoaPluginUi(cb, parentId);
     return nullptr;
     (void)cb;
 }
 #endif
 
 #ifdef CARLA_OS_WIN
-CarlaPluginUi* CarlaPluginUi::newWindows(CloseCallback* cb)
+CarlaPluginUi* CarlaPluginUi::newWindows(CloseCallback* cb, uintptr_t)
 {
-    //return new WindowsPluginUi(cb);
+    //return new WindowsPluginUi(cb, parentId);
     return nullptr;
     (void)cb;
 }
 #endif
 
 #ifdef HAVE_X11
-CarlaPluginUi* CarlaPluginUi::newX11(CloseCallback* cb)
+CarlaPluginUi* CarlaPluginUi::newX11(CloseCallback* cb, uintptr_t parentId)
 {
-    return new X11PluginUi(cb);
+    return new X11PluginUi(cb, parentId);
 }
 #endif
 

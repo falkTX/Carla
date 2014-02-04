@@ -67,7 +67,7 @@ struct ParamSymbol {
 
 void CarlaPluginProtectedData::tryTransient()
 {
-    if (carla_standalone_get_transient_win_id() != 0)
+    if (engine->getOptions().frontendWinId != 0)
         transientTryCounter = 1;
 }
 
@@ -1381,7 +1381,7 @@ void CarlaPlugin::idle()
     carla_stdout("Trying to get window...");
 
     QString uiTitle(QString("%1 (GUI)").arg(pData->name));
-    if (CarlaPluginUi::tryTransientWinIdMatch(pData->osc.data.target != nullptr ? pData->osc.thread.getPid() : 0, uiTitle.toUtf8().constData(), carla_standalone_get_transient_win_id()))
+    if (CarlaPluginUi::tryTransientWinIdMatch(pData->osc.data.target != nullptr ? pData->osc.thread.getPid() : 0, uiTitle.toUtf8().constData(), pData->engine->getOptions().frontendWinId))
         pData->transientTryCounter = 0;
 }
 
@@ -1672,7 +1672,7 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
     for (uint32_t i=0; i < pData->param.count; ++i)
         osc_send_control(pData->osc.data, pData->param.data[i].rindex, getParameterValue(i));
 
-    if ((pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0 && carla_standalone_get_transient_win_id() != 0)
+    if ((pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0 && pData->engine->getOptions().frontendWinId != 0)
         pData->transientTryCounter = 1;
 
     carla_stdout("CarlaPlugin::updateOscData() - done");

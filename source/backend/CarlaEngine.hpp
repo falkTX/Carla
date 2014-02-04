@@ -242,6 +242,8 @@ struct EngineOptions {
     const char* binaryDir;
     const char* resourceDir;
 
+    uintptr_t frontendWinId;
+
 #ifndef DOXYGEN
     EngineOptions() noexcept;
     ~EngineOptions();
@@ -874,14 +876,29 @@ public:
     // Callback
 
     /*!
-     * TODO.
+     * Run the main engine callback, if set.
+     * May be called by plugins.
      */
     void callback(const EngineCallbackOpcode action, const unsigned int pluginId, const int value1, const int value2, const float value3, const char* const valueStr) noexcept;
 
     /*!
-     * TODO.
+     * Set the main engine callback.
      */
     void setCallback(const EngineCallbackFunc func, void* const ptr) noexcept;
+
+    // -------------------------------------------------------------------
+    // Callback
+
+    /*!
+     * Run the file callback, if set.
+     * May be called by plugins.
+     */
+    const char* runFileCallback(const FileCallbackOpcode action, const bool isDir, const char* const title, const char* const filter) noexcept;
+
+    /*!
+     * Set the file callback.
+     */
+    void setFileCallback(const FileCallbackFunc func, void* const ptr) noexcept;
 
 #ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------

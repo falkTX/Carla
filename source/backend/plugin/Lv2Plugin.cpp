@@ -1129,6 +1129,7 @@ public:
                 if (fUi.type == UI::TYPE_EMBED)
                 {
                     const char* msg = nullptr;
+                    const uintptr_t frontendWinId(pData->engine->getOptions().frontendWinId);
 
                     switch (fUi.rdfDescriptor->Type)
                     {
@@ -1143,7 +1144,7 @@ public:
 
                     case LV2_UI_COCOA:
 # ifdef CARLA_OS_MAC
-                        fUi.window = CarlaPluginUi::newCocoa(this);
+                        fUi.window = CarlaPluginUi::newCocoa(this, frontendWinId);
 # else
                         msg = "UI is for MacOS only";
 # endif
@@ -1151,7 +1152,7 @@ public:
 
                     case LV2_UI_WINDOWS:
 # ifdef CARLA_OS_WIN
-                        fUi.window = CarlaPluginUi::newWindows(this);
+                        fUi.window = CarlaPluginUi::newWindows(this, frontendWinId);
 # else
                         msg = "UI is for Windows only";
 # endif
@@ -1159,7 +1160,7 @@ public:
 
                     case LV2_UI_X11:
 # ifdef HAVE_X11
-                        fUi.window = CarlaPluginUi::newX11(this);
+                        fUi.window = CarlaPluginUi::newX11(this, frontendWinId);
 # else
                         msg = "UI is only for systems with X11";
 # endif

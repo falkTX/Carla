@@ -1604,6 +1604,33 @@ void CarlaEngine::setCallback(const EngineCallbackFunc func, void* const ptr) no
     pData->callbackPtr = ptr;
 }
 
+// -----------------------------------------------------------------------
+// File Callback
+
+const char* CarlaEngine::runFileCallback(const FileCallbackOpcode action, const bool isDir, const char* const title, const char* const filter) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(title != nullptr && title[0] != '\0', nullptr);
+    CARLA_SAFE_ASSERT_RETURN(filter != nullptr && filter[0] != '\0', nullptr);
+    carla_debug("CarlaEngine::runFileCallback(%i:%s, %s, \"%s\", \"%s\")", action, FileCallbackOpcode2Str(action), bool2str(isDir), title, filter);
+
+    const char* ret = nullptr;
+
+    if (pData->fileCallback != nullptr)
+    {
+        try {
+            ret = pData->fileCallback(pData->fileCallbackPtr, action, isDir, title, filter);
+        } catch(...) {}
+    }
+
+    return ret;
+}
+
+void CarlaEngine::setFileCallback(const FileCallbackFunc func, void* const ptr) noexcept
+{
+    pData->fileCallback    = func;
+    pData->fileCallbackPtr = ptr;
+}
+
 #ifndef BUILD_BRIDGE
 // -----------------------------------------------------------------------
 // Patchbay
@@ -1936,6 +1963,13 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
             delete[] pData->options.resourceDir;
 
         pData->options.resourceDir = carla_strdup(valueStr);
+        break;
+
+    case ENGINE_OPTION_FRONTEND_WIN_ID:
+        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
+        const long winId(std::atol(valueStr));
+        CARLA_SAFE_ASSERT_RETURN(winId >= 0,);
+        pData->options.frontendWinId = static_cast<uintptr_t>(winId);
         break;
     }
 }

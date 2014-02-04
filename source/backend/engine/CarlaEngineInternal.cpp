@@ -211,7 +211,8 @@ EngineOptions::EngineOptions() noexcept
       audioSampleRate(44100),
       audioDevice(nullptr),
       binaryDir(nullptr),
-      resourceDir(nullptr) {}
+      resourceDir(nullptr),
+      frontendWinId(0) {}
 
 EngineOptions::~EngineOptions()
 {
@@ -597,6 +598,8 @@ CarlaEngineProtectedData::CarlaEngineProtectedData(CarlaEngine* const engine)
       oscData(nullptr),
       callback(nullptr),
       callbackPtr(nullptr),
+      fileCallback(nullptr),
+      fileCallbackPtr(nullptr),
       hints(0x0),
       bufferSize(0),
       sampleRate(0.0),

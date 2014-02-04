@@ -44,18 +44,18 @@ public:
     static bool tryTransientWinIdMatch(const ulong pid, const char* const uiTitle, const uintptr_t winId);
 
 #ifdef CARLA_OS_MAC
-    static CarlaPluginUi* newCocoa(CloseCallback*);
+    static CarlaPluginUi* newCocoa(CloseCallback*, uintptr_t);
 #endif
 #ifdef CARLA_OS_WIN
-    static CarlaPluginUi* newWindows(CloseCallback*);
+    static CarlaPluginUi* newWindows(CloseCallback*, uintptr_t);
 #endif
 #ifdef HAVE_X11
-    static CarlaPluginUi* newX11(CloseCallback*);
+    static CarlaPluginUi* newX11(CloseCallback*, uintptr_t);
 #endif
 
 protected:
     CloseCallback* fCallback;
-    CarlaPluginUi(CloseCallback* cb) noexcept : fCallback(cb) {}
+    CarlaPluginUi(CloseCallback* const cb, const uintptr_t) noexcept : fCallback(cb) {}
 };
 
 // -----------------------------------------------------

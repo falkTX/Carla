@@ -742,9 +742,18 @@ if __name__ == '__main__':
 
     initHost("Carla-Plugin")
 
+    # set our gui as parent for all plugins UIs
+    Carla.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, str(Carla.gui.winId()))
+
+    # simulate an engire started callback
     engineCallback(None, ENGINE_CALLBACK_ENGINE_STARTED, 0, ENGINE_PROCESS_MODE_CONTINUOUS_RACK, ENGINE_TRANSPORT_MODE_PLUGIN, 0.0, "Plugin")
 
     # -------------------------------------------------------------
     # App-Loop
 
-    sys.exit(app.exec_())
+    ret = app.exec_()
+
+    # disable parenting
+    Carla.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, "0")
+
+    sys.exit(ret)

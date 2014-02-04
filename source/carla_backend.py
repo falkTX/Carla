@@ -726,6 +726,9 @@ ENGINE_OPTION_PATH_BINARIES = 13
 # @note Must be set for some internal plugins to work
 ENGINE_OPTION_PATH_RESOURCES = 14
 
+# Set frontend winId, used to define as parent window for plugin UIs.
+ENGINE_OPTION_FRONTEND_WIN_ID = 15
+
 # ------------------------------------------------------------------------------------------------------------
 # Engine Process Mode
 # Engine process mode.
@@ -768,6 +771,22 @@ ENGINE_TRANSPORT_MODE_PLUGIN = 2
 ENGINE_TRANSPORT_MODE_BRIDGE = 3
 
 # ------------------------------------------------------------------------------------------------------------
+# File Callback Opcode
+# File callback opcodes.
+# Front-ends must always block-wait for user input.
+# @see FileCallbackFunc and carla_set_file_callback()
+
+# Debug.
+# This opcode is undefined and used only for testing purposes.
+FILE_CALLBACK_DEBUG = 0
+
+# Open file or folder.
+FILE_CALLBACK_OPEN = 1
+
+# Save file or folder.
+FILE_CALLBACK_SAVE = 2
+
+# ------------------------------------------------------------------------------------------------------------
 # Patchbay Icon
 # The icon of a patchbay client/group.
 
@@ -802,6 +821,10 @@ PATCHBAY_ICON_FILE = 5
 # Front-ends must never block indefinitely during a callback.
 # @see EngineCallbackOpcode and carla_set_engine_callback()
 EngineCallbackFunc = CFUNCTYPE(None, c_void_p, c_enum, c_uint, c_int, c_int, c_float, c_char_p)
+
+# File callback function.
+# @see FileCallbackOpcode
+FileCallbackFunc = CFUNCTYPE(c_char_p, c_void_p, c_enum, c_bool, c_char_p, c_char_p)
 
 # Parameter data.
 class ParameterData(Structure):
@@ -940,27 +963,7 @@ PyEngineDriverDeviceInfo = {
 }
 
 # ------------------------------------------------------------------------------------------------------------
-# File Callback Opcode
-# File callback opcodes.
-# Front-ends must always block-wait for user input.
-# @see FileCallbackFunc and carla_set_file_callback()
-
-# Debug.
-# This opcode is undefined and used only for testing purposes.
-FILE_CALLBACK_DEBUG = 0
-
-# Open file or folder.
-FILE_CALLBACK_OPEN = 1
-
-# Save file or folder.
-FILE_CALLBACK_SAVE = 2
-
-# ------------------------------------------------------------------------------------------------------------
 # Carla Host API (C stuff)
-
-# File callback function.
-# @see FileCallbackOpcode
-FileCallbackFunc = CFUNCTYPE(c_char_p, c_void_p, c_enum, c_bool, c_char_p, c_char_p)
 
 # Information about a loaded plugin.
 # @see carla_get_plugin_info()

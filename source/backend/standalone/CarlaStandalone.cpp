@@ -118,15 +118,6 @@ struct CarlaBackendStandalone {
 static CarlaBackendStandalone gStandalone;
 
 // -------------------------------------------------------------------------------------------------------------------
-
-static ulong gTransientWinId = 0;
-
-ulong carla_standalone_get_transient_win_id()
-{
-    return gTransientWinId;
-}
-
-// -------------------------------------------------------------------------------------------------------------------
 // API
 
 const char* carla_get_complete_license_text()
@@ -406,6 +397,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     }
 
     gStandalone.engine->setCallback(gStandalone.engineCallback, gStandalone.engineCallbackPtr);
+    gStandalone.engine->setFileCallback(gStandalone.fileCallback, gStandalone.fileCallbackPtr);
 
 #ifdef BUILD_BRIDGE
     gStandalone.engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,          CB::ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS,                     nullptr);
@@ -433,6 +425,15 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 
     if (gStandalone.engineOptions.resourceDir != nullptr)
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES, 0, gStandalone.engineOptions.resourceDir);
+
+    if (gStandalone.engineOptions.frontendWinId != 0)
+    {
+        char strBuf[STR_MAX+1];
+        std::sprintf(strBuf, P_INTPTR, gStandalone.engineOptions.frontendWinId);
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_FRONTEND_WIN_ID, 0, strBuf);
+    }
+    else
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_FRONTEND_WIN_ID, 0, "0");
 
     if (gStandalone.engine->init(clientName))
     {
@@ -476,6 +477,7 @@ bool carla_engine_init_bridge(const char audioBaseName[6+1], const char controlB
     }
 
     gStandalone.engine->setCallback(gStandalone.engineCallback, gStandalone.engineCallbackPtr);
+    gStandalone.engine->setFileCallback(gStandalone.fileCallback, gStandalone.fileCallbackPtr);
 
     // forced options for bridge mode
     gStandalone.engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,          CB::ENGINE_PROCESS_MODE_BRIDGE,   nullptr);
@@ -490,6 +492,7 @@ bool carla_engine_init_bridge(const char audioBaseName[6+1], const char controlB
     gStandalone.engine->setOption(CB::ENGINE_OPTION_UI_BRIDGES_TIMEOUT,          static_cast<int>(gStandalone.engineOptions.uiBridgesTimeout), nullptr);
     gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,            0, (const char*)gStandalone.engineOptions.binaryDir);
     gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,           0, (const char*)gStandalone.engineOptions.resourceDir);
+    // frontend winId here
 
     if (gStandalone.engine->init(clientName))
     {
@@ -584,13 +587,6 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
     switch (option)
     {
     case CB::ENGINE_OPTION_DEBUG:
-        if (value == -1729)
-        {
-            CARLA_SAFE_ASSERT_BREAK(valueStr != nullptr && valueStr[0] != '\0');
-            const long winId(std::atol(valueStr));
-            CARLA_SAFE_ASSERT_BREAK(winId != 0);
-            gTransientWinId = static_cast<ulong>(winId);
-        }
         break;
 
     case CB::ENGINE_OPTION_PROCESS_MODE:
@@ -674,6 +670,13 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
 
         gStandalone.engineOptions.resourceDir = carla_strdup(valueStr);
         break;
+
+    case CB::ENGINE_OPTION_FRONTEND_WIN_ID:
+        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
+        const long winId(std::atol(valueStr));
+        CARLA_SAFE_ASSERT_RETURN(winId >= 0,);
+        gStandalone.engineOptions.frontendWinId = static_cast<uintptr_t>(winId);
+        break;
     }
 
     if (gStandalone.engine != nullptr)
@@ -681,26 +684,15 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
 }
 #endif
 
-// -------------------------------------------------------------------------------------------------------------------
-
 void carla_set_file_callback(FileCallbackFunc func, void* ptr)
 {
     carla_debug("carla_set_file_callback(%p, %p)", func, ptr);
 
     gStandalone.fileCallback    = func;
     gStandalone.fileCallbackPtr = ptr;
-}
 
-const char* carla_standalone_file_callback(FileCallbackOpcode action, bool isDir, const char* title, const char* filter)
-{
-    CARLA_SAFE_ASSERT_RETURN(title != nullptr && title[0] != '\0', nullptr);
-    CARLA_SAFE_ASSERT_RETURN(filter != nullptr && filter[0] != '\0', nullptr);
-    carla_debug("carla_standalone_file_callback(%i:%s, %s, \"%s\", \"%s\")", action, CB::FileCallbackOpcode2Str(action), bool2str(isDir), title, filter);
-
-    if (gStandalone.fileCallback == nullptr)
-        return nullptr;
-
-    return gStandalone.fileCallback(gStandalone.fileCallbackPtr, action, isDir, title, filter);
+    if (gStandalone.engine != nullptr)
+        gStandalone.engine->setFileCallback(func, ptr);
 }
 
 // -------------------------------------------------------------------------------------------------------------------

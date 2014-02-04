@@ -414,21 +414,22 @@ public:
             if (fUi.window == nullptr)
             {
                 const char* msg = nullptr;
+                const uintptr_t frontendWinId(pData->engine->getOptions().frontendWinId);
 
 #if defined(CARLA_OS_LINUX)
 # ifdef HAVE_X11
-                fUi.window = CarlaPluginUi::newX11(this);
+                fUi.window = CarlaPluginUi::newX11(this, frontendWinId);
 # else
                 msg = "UI is only for systems with X11";
 # endif
 #elif defined(CARLA_OS_MAC)
 # ifdef __LP64__
-                fUi.window = CarlaPluginUi::newCocoa(this);
+                fUi.window = CarlaPluginUi::newCocoa(this, frontendWinId);
 # else
-                fUi.window = CarlaPluginUi::newCarbon(this);
+                fUi.window = CarlaPluginUi::newCarbon(this, frontendWinId);
 # endif
 #elif defined(CARLA_OS_WIN)
-                fUi.window = CarlaPluginUi::newWindows(this);
+                fUi.window = CarlaPluginUi::newWindows(this, frontendWinId);
 #else
                 msg = "Unknown UI type";
 #endif

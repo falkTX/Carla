@@ -211,6 +211,9 @@ struct CarlaEngineProtectedData {
     EngineCallbackFunc callback;
     void*              callbackPtr;
 
+    FileCallbackFunc fileCallback;
+    void*            fileCallbackPtr;
+
     unsigned int hints;
     uint32_t     bufferSize;
     double       sampleRate;

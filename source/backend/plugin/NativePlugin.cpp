@@ -23,7 +23,6 @@
 #include "CarlaMathUtils.hpp"
 
 #include "CarlaNative.h"
-#include "CarlaHost.h"
 
 #include <QtCore/QStringList>
 
@@ -2082,12 +2081,12 @@ protected:
 
     const char* handleUiOpenFile(const bool isDir, const char* const title, const char* const filter)
     {
-        return carla_standalone_file_callback(FILE_CALLBACK_OPEN, isDir, title, filter);
+        return pData->engine->runFileCallback(FILE_CALLBACK_OPEN, isDir, title, filter);
     }
 
     const char* handleUiSaveFile(const bool isDir, const char* const title, const char* const filter)
     {
-        return carla_standalone_file_callback(FILE_CALLBACK_SAVE, isDir, title, filter);
+        return pData->engine->runFileCallback(FILE_CALLBACK_SAVE, isDir, title, filter);
     }
 
     intptr_t handleDispatcher(const NativeHostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)

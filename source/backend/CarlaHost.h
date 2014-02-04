@@ -29,7 +29,9 @@ using CarlaBackend::EngineCallbackOpcode;
 using CarlaBackend::EngineOption;
 using CarlaBackend::EngineProcessMode;
 using CarlaBackend::EngineTransportMode;
+using CarlaBackend::FileCallbackOpcode;
 using CarlaBackend::EngineCallbackFunc;
+using CarlaBackend::FileCallbackFunc;
 using CarlaBackend::ParameterData;
 using CarlaBackend::ParameterRanges;
 using CarlaBackend::MidiProgramData;
@@ -52,40 +54,7 @@ using CarlaBackend::CarlaPlugin;
  */
 
 /* ------------------------------------------------------------------------------------------------------------
- * File Callback Opcode */
-
-/*!
- * File callback opcodes.\n
- * Front-ends must always block-wait for user input.
- * @see FileCallbackFunc and carla_set_file_callback()
- */
-typedef enum {
-    /*!
-     * Debug.\n
-     * This opcode is undefined and used only for testing purposes.
-     */
-    FILE_CALLBACK_DEBUG = 0,
-
-    /*!
-     * Open file or folder.
-     */
-    FILE_CALLBACK_OPEN = 1,
-
-    /*!
-     * Save file or folder.
-     */
-    FILE_CALLBACK_SAVE = 2
-
-} FileCallbackOpcode;
-
-/* ------------------------------------------------------------------------------------------------------------
  * Carla Host API (C stuff) */
-
-/*!
- * File callback function.
- * @see FileCallbackOpcode
- */
-typedef const char* (*FileCallbackFunc)(void* ptr, FileCallbackOpcode action, bool isDir, const char* title, const char* filter);
 
 /*!
  * Information about a loaded plugin.
@@ -1068,11 +1037,5 @@ CARLA_EXPORT const char* carla_get_host_osc_url_tcp();
 CARLA_EXPORT const char* carla_get_host_osc_url_udp();
 
 /** @} */
-
-/*!
- * Implemented in standalone.
- */
-extern ulong carla_standalone_get_transient_win_id();
-extern const char* carla_standalone_file_callback(FileCallbackOpcode action, bool isDir, const char* title, const char* filter);
 
 #endif /* CARLA_HOST_H_INCLUDED */

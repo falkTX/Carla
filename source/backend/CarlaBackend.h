@@ -1021,7 +1021,12 @@ typedef enum {
      * Default unset.
      * @note Must be set for some internal plugins to work
      */
-    ENGINE_OPTION_PATH_RESOURCES = 14
+    ENGINE_OPTION_PATH_RESOURCES = 14,
+
+    /*!
+     * Set frontend winId, used to define as parent window for plugin UIs.
+     */
+    ENGINE_OPTION_FRONTEND_WIN_ID = 15
 
 } EngineOption;
 
@@ -1095,6 +1100,33 @@ typedef enum {
 } EngineTransportMode;
 
 /* ------------------------------------------------------------------------------------------------------------
+ * File Callback Opcode */
+
+/*!
+ * File callback opcodes.\n
+ * Front-ends must always block-wait for user input.
+ * @see FileCallbackFunc, CarlaEngine::setFileCallback() and carla_set_file_callback()
+ */
+typedef enum {
+    /*!
+     * Debug.\n
+     * This opcode is undefined and used only for testing purposes.
+     */
+    FILE_CALLBACK_DEBUG = 0,
+
+    /*!
+     * Open file or folder.
+     */
+    FILE_CALLBACK_OPEN = 1,
+
+    /*!
+     * Save file or folder.
+     */
+    FILE_CALLBACK_SAVE = 2
+
+} FileCallbackOpcode;
+
+/* ------------------------------------------------------------------------------------------------------------
  * Patchbay Icon */
 
 /*!
@@ -1147,6 +1179,12 @@ enum PatchbayIcon {
  * @see EngineCallbackOpcode, CarlaEngine::setCallback() and carla_set_engine_callback()
  */
 typedef void (*EngineCallbackFunc)(void* ptr, EngineCallbackOpcode action, uint pluginId, int value1, int value2, float value3, const char* valueStr);
+
+/*!
+ * File callback function.
+ * @see FileCallbackOpcode
+ */
+typedef const char* (*FileCallbackFunc)(void* ptr, FileCallbackOpcode action, bool isDir, const char* title, const char* filter);
 
 /*!
  * Parameter data.
