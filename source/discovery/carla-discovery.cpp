@@ -24,11 +24,10 @@
 
 #ifdef HAVE_JUCE
 # define JUCE_PLUGIN_HOST_NO_UI
-# undef VESTIGE_HEADER
-//# undef WANT_VST
-# undef WANT_AU
-# include "juce_core.h"
 # include "juce_audio_processors.h"
+# ifndef VESTIGE_HEADER
+#  undef WANT_VST
+# endif
 #else
 # undef WANT_CSOUND
 #endif
@@ -1456,19 +1455,6 @@ static void do_vst_check(void*& libHandle, const bool init)
 #endif
 }
 
-static void do_au_check(void*& libHandle, const bool init)
-{
-#if 0 //def WANT_AU
-#else
-    DISCOVERY_OUT("error", "AU support not available");
-    return;
-
-    // unused
-    (void)libHandle;
-    (void)init;
-#endif
-};
-
 #ifdef HAVE_JUCE
 static void do_juce_check(const char* const filename, const char* const stype, const bool init)
 {
@@ -1478,16 +1464,20 @@ static void do_juce_check(const char* const filename, const char* const stype, c
 
     if (stype == nullptr)
         return;
-#if JUCE_PLUGINHOST_AU && JUCE_MAC && 0 // FIXME later
-    else if (std::strcmp(stype, "au") == 0)
+#if JUCE_PLUGINHOST_AU && defined(JUCE_MAC)
+    else if (std::strcmp(stype, "AU") == 0)
         pluginFormat = new AudioUnitPluginFormat();
 #endif
-#if JUCE_PLUGINHOST_LADSPA && JUCE_LINUX && 0 // FIXME later
-    else if (std::strcmp(stype, "ladspa") == 0)
+#if JUCE_PLUGINHOST_LADSPA && defined(JUCE_LINUX)
+    else if (std::strcmp(stype, "LADSPA") == 0)
         pluginFormat = new LADSPAPluginFormat();
 #endif
-#if JUCE_PLUGINHOST_VST && 0 // FIXME later
-    else if (std::strcmp(stype, "vst") == 0)
+#if JUCE_PLUGINHOST_VST // && ! defined(VESTIGE_HEADER)
+    else if (std::strcmp(stype, "VST") == 0)
+        pluginFormat = new VSTPluginFormat();
+#endif
+#if JUCE_PLUGINHOST_VST3
+    else if (std::strcmp(stype, "VST3") == 0)
         pluginFormat = new VSTPluginFormat();
 #endif
 
@@ -1823,6 +1813,17 @@ int main(int argc, char* argv[])
     CarlaString filenameStr(filename);
     filenameStr.toLower();
 
+    if (filenameStr.contains("fluidsynth", true))
+    {
+        DISCOVERY_OUT("info", "skipping fluidsynth based plugin");
+        return 0;
+    }
+    if (filenameStr.contains("linuxsampler", true) || filenameStr.endsWith("ls16.so"))
+    {
+        DISCOVERY_OUT("info", "skipping linuxsampler based plugin");
+        return 0;
+    }
+
     bool openLib = false;
     void* handle = nullptr;
 
@@ -1830,9 +1831,8 @@ int main(int argc, char* argv[])
     {
     case PLUGIN_LADSPA:
     case PLUGIN_DSSI:
-    case PLUGIN_VST:
 #ifndef HAVE_JUCE
-    case PLUGIN_AU:
+    case PLUGIN_VST:
 #endif
         openLib = true;
     default:
@@ -1841,17 +1841,6 @@ int main(int argc, char* argv[])
 
     if (openLib)
     {
-        if (filenameStr.contains("fluidsynth", true))
-        {
-            DISCOVERY_OUT("info", "skipping fluidsynth based plugin");
-            return 0;
-        }
-        if (filenameStr.contains("linuxsampler", true) || filenameStr.endsWith("ls16.so"))
-        {
-            DISCOVERY_OUT("info", "skipping linuxsampler based plugin");
-            return 0;
-        }
-
         handle = lib_open(filename);
 
         if (handle == nullptr)
@@ -1897,17 +1886,24 @@ int main(int argc, char* argv[])
         do_lv2_check(filename, doInit);
         break;
     case PLUGIN_VST:
-//#ifdef HAVE_JUCE
-//        do_juce_check(filename, "vst", doInit);
-//#else
+#if defined(HAVE_JUCE) && ! defined(VESTIGE_HEADER)
+        do_juce_check(filename, "VST", doInit);
+#else
         do_vst_check(handle, doInit);
-//#endif
+#endif
+        break;
+    case PLUGIN_VST3:
+#ifdef HAVE_JUCE
+        do_juce_check(filename, "VST3", doInit);
+#else
+        DISCOVERY_OUT("error", "VST3 support not available");
+#endif
         break;
     case PLUGIN_AU:
 #ifdef HAVE_JUCE
-        do_juce_check(filename, "au", doInit);
+        do_juce_check(filename, "AU", doInit);
 #else
-        do_au_check(handle, doInit);
+        DISCOVERY_OUT("error", "AU support not available");
 #endif
         break;
     case PLUGIN_FILE_CSD:
@@ -1957,7 +1953,6 @@ bool arrayContainsPlugin(const OwnedArray<PluginDescription>& list, const Plugin
         if (list.getUnchecked(i)->isDuplicateOf(desc))
             return true;
     }
-
     return false;
 }
 
