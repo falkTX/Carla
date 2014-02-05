@@ -24,7 +24,6 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBridgeUtils.hpp"
-#include "CarlaShmUtils.hpp"
 #include "CarlaMIDI.h"
 
 #include "jackbridge/JackBridge.hpp"
@@ -40,15 +39,23 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------
 
+template<typename T>
+bool jackbridge_shm_map2(char* shm, T*& value)
+{
+    value = (T*)jackbridge_shm_map(shm, sizeof(T));
+    return (value != nullptr);
+}
+
 struct BridgeAudioPool {
     CarlaString filename;
     float* data;
-    shm_t shm;
+    char shm[32];
 
     BridgeAudioPool()
         : data(nullptr)
     {
-        carla_shm_init(shm);
+        carla_zeroChar(shm, 32);
+        jackbridge_shm_init(shm);
     }
 
     ~BridgeAudioPool()
@@ -61,14 +68,9 @@ struct BridgeAudioPool {
 
     bool attach()
     {
-#ifdef CARLA_OS_WIN
-        // TESTING!
-        shm = carla_shm_attach_linux((const char*)filename);
-#else
-        shm = carla_shm_attach((const char*)filename);
-#endif
+        jackbridge_shm_attach(shm, filename.getBuffer());
 
-        return carla_is_shm_valid(shm);
+        return jackbridge_shm_is_valid(shm);
     }
 
     void clear()
@@ -77,21 +79,22 @@ struct BridgeAudioPool {
 
         data = nullptr;
 
-        if (carla_is_shm_valid(shm))
-            carla_shm_close(shm);
+        if (jackbridge_shm_is_valid(shm))
+            jackbridge_shm_close(shm);
     }
 };
 
-struct BridgeControl : public RingBufferControl<StackPackedRingBuffer> {
+struct BridgeControl : public RingBufferControl<StackRingBuffer> {
     CarlaString filename;
     BridgeShmControl* data;
-    shm_t shm;
+    char shm[32];
 
     BridgeControl()
         : RingBufferControl(nullptr),
           data(nullptr)
     {
-        carla_shm_init(shm);
+        carla_zeroChar(shm, 32);
+        jackbridge_shm_init(shm);
     }
 
     ~BridgeControl()
@@ -104,14 +107,9 @@ struct BridgeControl : public RingBufferControl<StackPackedRingBuffer> {
 
     bool attach()
     {
-#ifdef CARLA_OS_WIN
-        // TESTING!
-        shm = carla_shm_attach_linux((const char*)filename);
-#else
-        shm = carla_shm_attach((const char*)filename);
-#endif
+        jackbridge_shm_attach(shm, filename.getBuffer());
 
-        return carla_is_shm_valid(shm);
+        return jackbridge_shm_is_valid(shm);
     }
 
     void clear()
@@ -120,15 +118,15 @@ struct BridgeControl : public RingBufferControl<StackPackedRingBuffer> {
 
         data = nullptr;
 
-        if (carla_is_shm_valid(shm))
-            carla_shm_close(shm);
+        if (jackbridge_shm_is_valid(shm))
+            jackbridge_shm_close(shm);
     }
 
     bool mapData()
     {
         CARLA_ASSERT(data == nullptr);
 
-        if (carla_shm_map<BridgeShmControl>(shm, data))
+        if (jackbridge_shm_map2<BridgeShmControl>(shm, data))
         {
             setRingBuffer(&data->ringBuffer, false);
             return true;
@@ -208,12 +206,18 @@ public:
         PluginBridgeOpcode opcode;
 
         opcode = fShmControl.readOpcode();
-        CARLA_ASSERT_INT(opcode == kPluginBridgeOpcodeSetBufferSize, opcode);
+        CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeOpcodeNull, opcode);
+        const uint32_t structSize = fShmControl.readUInt();
+        CARLA_SAFE_ASSERT_INT2(structSize == sizeof(BridgeShmControl), structSize, sizeof(BridgeShmControl));
+        carla_stderr("Struct Size: %i", structSize);
+
+        opcode = fShmControl.readOpcode();
+        CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeOpcodeSetBufferSize, opcode);
         pData->bufferSize = fShmControl.readUInt();
         carla_stderr("BufferSize: %i", pData->bufferSize);
 
         opcode = fShmControl.readOpcode();
-        CARLA_ASSERT_INT(opcode == kPluginBridgeOpcodeSetSampleRate, opcode);
+        CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeOpcodeSetSampleRate, opcode);
         pData->sampleRate = fShmControl.readFloat();
         carla_stderr("SampleRate: %f", pData->sampleRate);
 
@@ -294,7 +298,7 @@ public:
                 case kPluginBridgeOpcodeSetAudioPool: {
                     const int64_t poolSize(fShmControl.readLong());
                     CARLA_SAFE_ASSERT_BREAK(poolSize > 0);
-                    fShmAudioPool.data = (float*)carla_shm_map(fShmAudioPool.shm, size_t(poolSize));
+                    fShmAudioPool.data = (float*)jackbridge_shm_map(fShmAudioPool.shm, size_t(poolSize));
                     break;
                 }
 

@@ -25,10 +25,20 @@
 #include "CarlaBridgeUtils.hpp"
 #include "CarlaMIDI.h"
 
-//#include "juce_core.h"
-
 #ifdef CARLA_OS_UNIX
 # include <signal.h>
+#endif
+
+// #ifdef BUILD_BRIDGE
+// # undef HAVE_JUCE
+// #endif
+
+#ifdef HAVE_JUCE
+# include "juce_gui_basics.h"
+using juce::JUCEApplication;
+using juce::JUCEApplicationBase;
+using juce::String;
+using juce::Timer;
 #endif
 
 //using juce::File;
@@ -91,6 +101,57 @@ static void initSignalHandler()
 
 // -------------------------------------------------------------------------
 
+#ifdef HAVE_JUCE
+static CarlaBridge::CarlaBridgeClient* gBridgeClient = nullptr;
+
+class CarlaJuceApp : public JUCEApplication,
+                            Timer
+{
+public:
+    CarlaJuceApp()  {}
+    ~CarlaJuceApp() {}
+
+    void initialise(const String&) override
+    {
+        startTimer(30);
+    }
+
+    void shutdown() override
+    {
+        gCloseNow = true;
+        stopTimer();
+    }
+
+    const String getApplicationName() override
+    {
+        return "CarlaPlugin";
+    }
+
+    const String getApplicationVersion() override
+    {
+        return CARLA_VERSION_STRING;
+    }
+
+    void timerCallback() override
+    {
+        carla_engine_idle();
+
+        if (gBridgeClient != nullptr)
+            gBridgeClient->oscIdle();
+
+        if (gCloseNow)
+        {
+            quit();
+            gCloseNow = false;
+        }
+    }
+};
+
+static JUCEApplicationBase* juce_CreateApplication() { return new CarlaJuceApp(); }
+#endif
+
+// -------------------------------------------------------------------------
+
 CARLA_BRIDGE_START_NAMESPACE
 
 #if 0
@@ -135,6 +196,10 @@ public:
     {
         carla_debug("CarlaPluginClient::~CarlaPluginClient()");
 
+#ifdef HAVE_JUCE
+        gBridgeClient = nullptr;
+#endif
+
         carla_engine_close();
     }
 
@@ -167,13 +232,14 @@ public:
         }
     }
 
+#ifndef HAVE_JUCE
     void idle()
     {
         CARLA_SAFE_ASSERT_RETURN(fEngine != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
 
         carla_engine_idle();
-        //CarlaBridgeClient::oscIdle();
+        CarlaBridgeClient::oscIdle();
 
         if (gSaveNow)
         {
@@ -192,14 +258,22 @@ public:
             // close something?
         }
     }
+#endif
 
-    void exec()
+    void exec(int argc, char* argv[])
     {
+#ifdef HAVE_JUCE
+        gBridgeClient = this;
+        JUCEApplicationBase::createInstance = &juce_CreateApplication;
+        JUCEApplicationBase::main(JUCE_MAIN_FUNCTION_ARGS);
+#else
         for (; ! gCloseNow;)
         {
             idle();
-            carla_msleep(30);
+            carla_msleep(24);
         }
+#endif
+        return; (void)argc; (void)argv;
     }
 
     // ---------------------------------------------------------------------
@@ -367,6 +441,10 @@ int CarlaBridgeOsc::handleMsgShow()
 {
     carla_debug("CarlaBridgeOsc::handleMsgShow()");
 
+#ifdef HAVE_JUCE
+    const juce::MessageManagerLock mmLock;
+#endif
+
     if (carla_get_plugin_info(0)->hints & CarlaBackend::PLUGIN_HAS_CUSTOM_UI)
         carla_show_custom_ui(0, true);
 
@@ -376,6 +454,10 @@ int CarlaBridgeOsc::handleMsgShow()
 int CarlaBridgeOsc::handleMsgHide()
 {
     carla_debug("CarlaBridgeOsc::handleMsgHide()");
+
+#ifdef HAVE_JUCE
+    const juce::MessageManagerLock mmLock;
+#endif
 
     if (carla_get_plugin_info(0)->hints & CarlaBackend::PLUGIN_HAS_CUSTOM_UI)
         carla_show_custom_ui(0, false);
@@ -607,7 +689,7 @@ int main(int argc, char* argv[])
 
         client.ready(!useOsc);
         gIsInitiated = true;
-        client.exec();
+        client.exec(argc, argv);
 
         carla_set_engine_about_to_close();
         carla_remove_plugin(0);

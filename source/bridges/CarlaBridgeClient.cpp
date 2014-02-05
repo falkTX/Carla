@@ -123,21 +123,23 @@ void CarlaBridgeClient::oscInit(const char* const url)
     fOsc.init(url);
 }
 
+bool CarlaBridgeClient::oscIdle() const
+{
+    fOsc.idle();
+
+#ifdef BUILD_BRIDGE_UI
+    return ! fUI.quit;
+#else
+    return true;
+#endif
+}
+
 void CarlaBridgeClient::oscClose()
 {
     carla_debug("CarlaBridgeClient::oscClose()");
 
     fOsc.close();
 }
-
-#ifdef BUILD_BRIDGE_UI
-bool CarlaBridgeClient::oscIdle() const
-{
-    fOsc.idle();
-
-    return ! fUI.quit;
-}
-#endif
 
 bool CarlaBridgeClient::isOscControlRegistered() const noexcept
 {

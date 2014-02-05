@@ -74,11 +74,8 @@ public:
     // osc stuff
 
     void oscInit(const char* const url);
-    void oscClose();
-
-#ifdef BUILD_BRIDGE_UI
     bool oscIdle() const;
-#endif
+    void oscClose();
 
     bool isOscControlRegistered() const noexcept;
     void sendOscUpdate() const;

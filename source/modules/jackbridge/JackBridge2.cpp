@@ -17,10 +17,7 @@
 #include "CarlaDefines.h"
 
 #include "JackBridge.hpp"
-
-#ifdef CARLA_OS_MAC
-# include <unistd.h>
-#endif
+#include "CarlaShmUtils.hpp"
 
 #ifndef JACKBRIDGE_HPP_INCLUDED
 // don't include the whole JACK API in this file
@@ -28,6 +25,12 @@ CARLA_EXPORT bool jackbridge_sem_init(void* sem) noexcept;
 CARLA_EXPORT bool jackbridge_sem_destroy(void* sem) noexcept;
 CARLA_EXPORT bool jackbridge_sem_post(void* sem) noexcept;
 CARLA_EXPORT bool jackbridge_sem_timedwait(void* sem, int secs);
+
+CARLA_EXPORT bool  jackbridge_shm_is_valid(char* shm);
+CARLA_EXPORT void  jackbridge_shm_init(char* shm);
+CARLA_EXPORT void  jackbridge_shm_attach(char* shm, const char* name);
+CARLA_EXPORT void  jackbridge_shm_close(char* shm);
+CARLA_EXPORT void* jackbridge_shm_map(char* shm, size_t size);
 #endif
 
 // -----------------------------------------------------------------------------
@@ -52,6 +55,28 @@ bool jackbridge_sem_timedwait(void*, int)
 {
     return false;
 }
+
+bool jackbridge_shm_is_valid(char*)
+{
+    return false;
+}
+
+void jackbridge_shm_init(char*)
+{
+}
+
+void jackbridge_shm_attach(char*, const char*)
+{
+}
+
+void jackbridge_shm_close(char*)
+{
+}
+
+void* jackbridge_shm_map(char*, size_t)
+{
+    return nullptr;
+}
 #else //JACKBRIDGE_DUMMY
 #include <ctime>
 #include <sys/time.h>
@@ -60,17 +85,17 @@ bool jackbridge_sem_timedwait(void*, int)
 
 bool jackbridge_sem_init(void* sem) noexcept
 {
-    return (sem_init((sem_t*)sem, 1, 0) == 0);
+    return sem_init((sem_t*)sem, 1, 0) == 0;
 }
 
 bool jackbridge_sem_destroy(void* sem) noexcept
 {
-    return (sem_destroy((sem_t*)sem) == 0);
+    return sem_destroy((sem_t*)sem) == 0;
 }
 
 bool jackbridge_sem_post(void* sem) noexcept
 {
-    return (sem_post((sem_t*)sem) == 0);
+    return sem_post((sem_t*)sem) == 0;
 }
 
 bool jackbridge_sem_timedwait(void* sem, int secs)
@@ -94,6 +119,37 @@ bool jackbridge_sem_timedwait(void* sem, int secs)
         return (sem_timedwait((sem_t*)sem, &timeout) == 0);
 # endif
 }
-#endif // JACKBRIDGE_DUMMY
+
+bool jackbridge_shm_is_valid(char* shm)
+{
+    shm_t* t = (shm_t*)shm;
+    return carla_is_shm_valid(*t);
+}
+
+void jackbridge_shm_init(char* shm)
+{
+    shm_t* t = (shm_t*)shm;
+    carla_shm_init(*t);
+}
+
+void jackbridge_shm_attach(char* shm, const char* name)
+{
+    shm_t* t = (shm_t*)shm;
+    *t = carla_shm_attach(name);
+}
+
+void  jackbridge_shm_close(char* shm)
+{
+    shm_t* t = (shm_t*)shm;
+    carla_shm_close(*t);
+}
+
+void* jackbridge_shm_map(char* shm, size_t size)
+{
+    shm_t* t = (shm_t*)shm;
+    return carla_shm_map(*t, size);
+}
+
+#endif // ! JACKBRIDGE_DUMMY
 
 // -----------------------------------------------------------------------------

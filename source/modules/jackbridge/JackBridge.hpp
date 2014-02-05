@@ -378,4 +378,10 @@ CARLA_EXPORT bool jackbridge_sem_destroy(void* sem) noexcept;
 CARLA_EXPORT bool jackbridge_sem_post(void* sem) noexcept;
 CARLA_EXPORT bool jackbridge_sem_timedwait(void* sem, int secs);
 
+CARLA_EXPORT bool  jackbridge_shm_is_valid(char* shm);
+CARLA_EXPORT void  jackbridge_shm_init(char* shm);
+CARLA_EXPORT void  jackbridge_shm_attach(char* shm, const char* name);
+CARLA_EXPORT void  jackbridge_shm_close(char* shm);
+CARLA_EXPORT void* jackbridge_shm_map(char* shm, size_t size);
+
 #endif // JACKBRIDGE_HPP_INCLUDED

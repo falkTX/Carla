@@ -82,22 +82,6 @@ shm_t carla_shm_attach(const char* const name)
 
     return ret;
 }
-
-static inline
-shm_t carla_shm_attach_linux(const char* const name)
-{
-    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', gNullCarlaShm);
-
-    char shmName[std::strlen(name)+10];
-    std::strcpy(shmName, "/dev/shm/");
-    std::strcat(shmName, name);
-
-    shm_t ret;
-    ret.shm = CreateFileA(shmName, GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
-    ret.map = nullptr;
-
-    return ret;
-}
 #else
 static inline
 shm_t carla_shm_create(const char* const name)

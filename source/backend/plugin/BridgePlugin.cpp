@@ -142,7 +142,7 @@ struct BridgeAudioPool {
     }
 };
 
-struct BridgeControl : public RingBufferControl<StackPackedRingBuffer> {
+struct BridgeControl : public RingBufferControl<StackRingBuffer> {
     CarlaString filename;
     BridgeShmControl* data;
     shm_t shm;
@@ -718,12 +718,7 @@ public:
         } catch(...) {}
 
         if (! timedOut)
-        {
-            carla_stdout("woohoo! activate was successful!");
             fTimedOut = false;
-        }
-        else
-            carla_stdout("beh! activate failed!");
     }
 
     void deactivate() noexcept override
@@ -740,9 +735,8 @@ public:
             timedOut = waitForServer();
         } catch(...) {}
 
-        (void)timedOut;
-        //if (! timedOut)
-        //    fTimedOut = false;
+        if (! timedOut)
+            fTimedOut = false;
     }
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
@@ -1743,6 +1737,9 @@ public:
         }
 
         // initial values
+        fShmControl.writeOpcode(kPluginBridgeOpcodeNull);
+        fShmControl.writeInt(static_cast<int32_t>(sizeof(BridgeShmControl)));
+
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetBufferSize);
         fShmControl.writeInt(static_cast<int32_t>(pData->engine->getBufferSize()));
 
