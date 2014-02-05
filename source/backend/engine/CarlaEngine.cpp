@@ -795,7 +795,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             bridgeBinary.clear();
     }
 
-    if (btype != BINARY_NATIVE || (pData->options.preferPluginBridges && bridgeBinary.isNotEmpty()))
+    if (ptype != PLUGIN_INTERNAL && ptype != PLUGIN_JACK && (btype != BINARY_NATIVE || (pData->options.preferPluginBridges && bridgeBinary.isNotEmpty())))
     {
         if (bridgeBinary.isNotEmpty())
         {
@@ -891,8 +891,18 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             plugin = CarlaPlugin::newVST(initializer);
             break;
 
+        case PLUGIN_VST3:
+            plugin = CarlaPlugin::newVST3(initializer);
+            break;
+
         case PLUGIN_AU:
             plugin = CarlaPlugin::newAU(initializer);
+            break;
+
+        case PLUGIN_JACK:
+#ifndef BUILD_BRIDGE
+            plugin = CarlaPlugin::newJACK(initializer);
+#endif
             break;
 
         case PLUGIN_REWIRE:

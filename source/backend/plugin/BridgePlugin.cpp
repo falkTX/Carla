@@ -1661,7 +1661,9 @@ public:
             pData->name = pData->engine->getUniquePluginName(name);
 
         pData->filename = carla_strdup(filename);
-        fBridgeBinary = bridgeBinary;
+
+        if (bridgeBinary != nullptr)
+            fBridgeBinary = bridgeBinary;
 
         // ---------------------------------------------------------------
         // SHM Audio Pool
@@ -1914,6 +1916,35 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 
     // unused
     (void)bridgeBinary;
+#endif
+}
+
+CarlaPlugin* CarlaPlugin::newJACK(const Initializer& init)
+{
+    carla_debug("CarlaPlugin::newJACK({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
+
+#ifndef BUILD_BRIDGE
+    BridgePlugin* const plugin(new BridgePlugin(init.engine, init.id, BINARY_NATIVE, PLUGIN_JACK));
+
+    if (! plugin->init(init.filename, init.name, init.label, nullptr))
+    {
+        delete plugin;
+        return nullptr;
+    }
+
+    plugin->reload();
+
+    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
+    {
+        init.engine->setLastError("Carla's rack mode can only work with Stereo bridged apps, sorry!");
+        delete plugin;
+        return nullptr;
+    }
+
+    return plugin;
+#else
+    init.engine->setLastError("JACK app bridge support not available");
+    return nullptr;
 #endif
 }
 

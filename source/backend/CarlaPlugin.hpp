@@ -839,7 +839,9 @@ public:
     static CarlaPlugin* newDSSI(const Initializer& init);
     static CarlaPlugin* newLV2(const Initializer& init);
     static CarlaPlugin* newVST(const Initializer& init);
+    static CarlaPlugin* newVST3(const Initializer& init);
     static CarlaPlugin* newAU(const Initializer& init);
+    static CarlaPlugin* newJACK(const Initializer& init);
     static CarlaPlugin* newReWire(const Initializer& init);
 
     static CarlaPlugin* newCsound(const Initializer& init);

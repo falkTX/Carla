@@ -583,7 +583,9 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Setup args
 
-    const bool useBridge = (argc == 7);
+    const char* const shmIds(std::getenv("ENGINE_BRIDGE_SHM_IDS"));
+
+    const bool useBridge = (shmIds != nullptr);
     const bool useOsc    = (std::strcmp(oscUrl, "null") != 0 && std::strcmp(oscUrl, "(null)") != 0 && std::strcmp(oscUrl, "NULL") != 0);
 
     if (std::strcmp(name, "(none)") == 0)
@@ -597,9 +599,9 @@ int main(int argc, char* argv[])
 
     if (useBridge)
     {
-        CARLA_SAFE_ASSERT_RETURN(std::strlen(argv[6]) == 6*2, 1);
-        std::strncpy(bridgeBaseAudioName,   argv[6],   6);
-        std::strncpy(bridgeBaseControlName, argv[6]+6, 6);
+        CARLA_SAFE_ASSERT_RETURN(std::strlen(shmIds) == 6*2, 1);
+        std::strncpy(bridgeBaseAudioName,   shmIds,   6);
+        std::strncpy(bridgeBaseControlName, shmIds+6, 6);
         bridgeBaseAudioName[6]   = '\0';
         bridgeBaseControlName[6] = '\0';
     }

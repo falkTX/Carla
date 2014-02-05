@@ -126,6 +126,35 @@ void CarlaPluginThread::run()
         name = "(none)";
 
     QStringList arguments;
+    QProcessEnvironment env(QProcessEnvironment::systemEnvironment());
+    const EngineOptions& options(fEngine->getOptions());
+
+    char strBuf[STR_MAX+1];
+    env.insert("ENGINE_OPTION_UIS_ALWAYS_ON_TOP", options.uisAlwaysOnTop ? "true" : "false");
+
+    if (options.maxParameters != 0)
+    {
+        std::sprintf(strBuf, "%u", options.maxParameters);
+        env.insert("ENGINE_OPTION_MAX_PARAMETERS", strBuf);
+    }
+
+    if (options.uiBridgesTimeout != 0)
+    {
+        std::sprintf(strBuf, "%u", options.uiBridgesTimeout);
+        env.insert("ENGINE_OPTION_UI_BRIDGES_TIMEOUT", strBuf);
+    }
+
+    if (options.frontendWinId != 0)
+    {
+        std::sprintf(strBuf, P_INTPTR, options.frontendWinId);
+        env.insert("ENGINE_OPTION_FRONTEND_WIN_ID", strBuf);
+    }
+
+    if (options.binaryDir != nullptr)
+        env.insert("ENGINE_OPTION_PATH_BINARIES", options.binaryDir);
+
+    if (options.resourceDir != nullptr)
+        env.insert("ENGINE_OPTION_PATH_RESOURCES", options.resourceDir);
 
     switch (fMode)
     {
@@ -153,14 +182,24 @@ void CarlaPluginThread::run()
         break;
 
     case PLUGIN_THREAD_BRIDGE:
-        /* osc-url  */ arguments << QString("%1/%2").arg(fEngine->getOscServerPathUDP()).arg(fPlugin->getId());
-        /* stype    */ arguments << (const char*)fExtra1;
-        /* filename */ arguments << fPlugin->getFilename();
-        /* name     */ arguments << name;
-        /* label    */ arguments << (const char*)fLabel;
-        /* SHM ids  */ arguments << (const char*)fExtra2;
+        env.insert("ENGINE_BRIDGE_SHM_IDS", fExtra2.getBuffer());
+
+        if (fPlugin->getType() != PLUGIN_JACK)
+        {
+            /* osc-url  */ arguments << QString("%1/%2").arg(fEngine->getOscServerPathUDP()).arg(fPlugin->getId());
+            /* stype    */ arguments << (const char*)fExtra1;
+            /* filename */ arguments << fPlugin->getFilename();
+            /* name     */ arguments << name;
+            /* label    */ arguments << (const char*)fLabel;
+        }
+        else
+        {
+            /* filename */ arguments << fPlugin->getFilename();
+        }
         break;
     }
+
+    fProcess->setProcessEnvironment(env);
 
     fProcess->start((const char*)fBinary, arguments);
     fProcess->waitForStarted();

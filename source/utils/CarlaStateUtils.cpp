@@ -440,10 +440,18 @@ void fillXmlStringFromSaveState(QString& content, const SaveState& saveState)
             info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
             info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueID);
             break;
+        case PLUGIN_VST3:
+            // TODO?
+            info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
+            info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueID);
+            break;
         case PLUGIN_AU:
             // TODO?
             info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
             info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueID);
+            break;
+        case PLUGIN_JACK:
+            info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
             break;
         case PLUGIN_REWIRE:
             info += QString("   <Label>%1</Label>\n").arg(xmlSafeString(saveState.label, true));

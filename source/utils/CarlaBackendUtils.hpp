@@ -97,8 +97,12 @@ const char* PluginType2Str(const PluginType type) noexcept
         return "PLUGIN_LV2";
     case PLUGIN_VST:
         return "PLUGIN_VST";
+    case PLUGIN_VST3:
+        return "PLUGIN_VST3";
     case PLUGIN_AU:
         return "PLUGIN_AU";
+    case PLUGIN_JACK:
+        return "PLUGIN_JACK";
     case PLUGIN_REWIRE:
         return "PLUGIN_REWIRE";
     case PLUGIN_FILE_CSD:
@@ -402,8 +406,12 @@ const char* getPluginTypeAsString(const PluginType type) noexcept
         return "LV2";
     case PLUGIN_VST:
         return "VST";
+    case PLUGIN_VST3:
+        return "VST3";
     case PLUGIN_AU:
         return "AU";
+    case PLUGIN_JACK:
+        return "JACK";
     case PLUGIN_REWIRE:
         return "ReWire";
     case PLUGIN_FILE_CSD:
@@ -441,8 +449,12 @@ PluginType getPluginTypeFromString(const char* const ctype)
         return PLUGIN_LV2;
     if (stype == "vst")
         return PLUGIN_VST;
+    if (stype == "vst3")
+        return PLUGIN_VST3;
     if (stype == "au")
         return PLUGIN_AU;
+    if (stype == "jack")
+        return PLUGIN_JACK;
     if (stype == "rewire")
         return PLUGIN_REWIRE;
     if (stype == "csd")

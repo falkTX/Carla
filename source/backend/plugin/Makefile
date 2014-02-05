@@ -26,6 +26,7 @@ OBJS = \
 	DssiPlugin.cpp.o \
 	Lv2Plugin.cpp.o \
 	VstPlugin.cpp.o \
+	Vst3Plugin.cpp.o \
 	AuPlugin.cpp.o \
 	ReWirePlugin.cpp.o \
 	CsoundPlugin.cpp.o \
@@ -84,6 +85,9 @@ Lv2Plugin.cpp.o: Lv2Plugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) 
 
 VstPlugin.cpp.o: VstPlugin.cpp $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_VST_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_PLUGIN_UI_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
+
+Vst3Plugin.cpp.o: Vst3Plugin.cpp $(CARLA_PLUGIN_HPP) $(CARLA_ENGINE_HPP) $(CARLA_UTILS_HPP)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 AuPlugin.cpp.o: AuPlugin.cpp $(CARLA_PLUGIN_HPP) $(CARLA_ENGINE_HPP) $(CARLA_UTILS_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@

@@ -347,25 +347,31 @@ PLUGIN_LV2 = 4
 # VST plugin.
 PLUGIN_VST = 5
 
+# VST3 plugin.
+PLUGIN_VST3 = 6
+
 # AU plugin.
 # @note MacOS only
-PLUGIN_AU = 6
+PLUGIN_AU = 7
+
+# JACK plugin.
+PLUGIN_JACK = 8
 
 # ReWire plugin.
 # @note Windows and MacOS only
-PLUGIN_REWIRE = 7
+PLUGIN_REWIRE = 9
 
 # Single CSD file (Csound).
-PLUGIN_FILE_CSD = 8
+PLUGIN_FILE_CSD = 10
 
 # Single GIG file.
-PLUGIN_FILE_GIG = 9
+PLUGIN_FILE_GIG = 11
 
 # Single SF2 file (SoundFont).
-PLUGIN_FILE_SF2 = 10
+PLUGIN_FILE_SF2 = 12
 
 # Single SFZ file.
-PLUGIN_FILE_SFZ = 11
+PLUGIN_FILE_SFZ = 13
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Category

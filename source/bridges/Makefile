@@ -416,6 +416,7 @@ OBJS_PLUGIN = \
 	../backend/plugin/DssiPlugin__native.o \
 	../backend/plugin/Lv2Plugin__native.o \
 	../backend/plugin/VstPlugin__native.o \
+	../backend/plugin/Vst3Plugin__native.o \
 	../backend/plugin/AuPlugin__native.o \
 	../backend/plugin/ReWirePlugin__native.o \
 	../backend/plugin/CsoundPlugin__native.o \
@@ -479,6 +480,7 @@ OBJS_NATIVE += \
 	../backend/plugin/DssiPlugin__native.o \
 	../backend/plugin/Lv2Plugin__native.o \
 	../backend/plugin/VstPlugin__native.o \
+	../backend/plugin/Vst3Plugin__native.o \
 	../backend/plugin/AuPlugin__native.o \
 	../backend/plugin/ReWirePlugin__native.o \
 	../backend/plugin/CsoundPlugin__native.o \
