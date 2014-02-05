@@ -232,16 +232,24 @@ Font Graphics::getCurrentFont() const
 void Graphics::drawSingleLineText (const String& text, const int startX, const int baselineY,
                                    Justification justification) const
 {
-    if (text.isNotEmpty()
-         && startX < context.getClipBounds().getRight())
+    if (text.isNotEmpty())
     {
-        GlyphArrangement arr;
-        arr.addLineOfText (context.getFont(), text, (float) startX, (float) baselineY);
-
         // Don't pass any vertical placement flags to this method - they'll be ignored.
         jassert (justification.getOnlyVerticalFlags() == 0);
 
         const int flags = justification.getOnlyHorizontalFlags();
+
+        if (flags == Justification::right)
+        {
+            if (startX < context.getClipBounds().getX())
+                return;
+        }
+        else if (flags == Justification::left)
+            if (startX > context.getClipBounds().getRight())
+                return;
+
+        GlyphArrangement arr;
+        arr.addLineOfText (context.getFont(), text, (float) startX, (float) baselineY);
 
         if (flags != Justification::left)
         {
@@ -256,16 +264,6 @@ void Graphics::drawSingleLineText (const String& text, const int startX, const i
         {
             arr.draw (*this);
         }
-    }
-}
-
-void Graphics::drawTextAsPath (const String& text, const AffineTransform& transform) const
-{
-    if (text.isNotEmpty())
-    {
-        GlyphArrangement arr;
-        arr.addLineOfText (context.getFont(), text, 0.0f, 0.0f);
-        arr.draw (*this, transform);
     }
 }
 
@@ -453,6 +451,11 @@ void Graphics::drawEllipse (float x, float y, float width, float height, float l
     Path p;
     p.addEllipse (x, y, width, height);
     strokePath (p, PathStrokeType (lineThickness));
+}
+
+void Graphics::drawEllipse (const Rectangle<float>& area, float lineThickness) const
+{
+    drawEllipse (area.getX(), area.getY(), area.getWidth(), area.getHeight(), lineThickness);
 }
 
 void Graphics::fillRoundedRectangle (float x, float y, float width, float height, float cornerSize) const

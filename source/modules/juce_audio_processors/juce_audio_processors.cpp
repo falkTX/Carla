@@ -37,7 +37,7 @@
 
 #include "../juce_core/native/juce_BasicNativeHeaders.h"
 #include "juce_audio_processors.h"
-//#include "../juce_gui_extra/juce_gui_extra.h"
+#include "../juce_gui_extra/juce_gui_extra.h"
 
 //==============================================================================
 #if JUCE_MAC
@@ -71,6 +71,36 @@ static inline bool arrayContainsPlugin (const OwnedArray<PluginDescription>& lis
     return false;
 }
 
+#if JUCE_MAC
+struct AutoResizingNSViewComponent  : public NSViewComponent,
+                                      private AsyncUpdater
+{
+    AutoResizingNSViewComponent() : recursive (false) {}
+
+    void childBoundsChanged (Component*) override
+    {
+        if (recursive)
+        {
+            triggerAsyncUpdate();
+        }
+        else
+        {
+            recursive = true;
+            resizeToFitView();
+            recursive = true;
+        }
+    }
+
+    void handleAsyncUpdate() override               { resizeToFitView(); }
+
+    bool recursive;
+};
+#endif
+
+#if JUCE_CLANG
+ #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 #include "format/juce_AudioPluginFormat.cpp"
 #include "format/juce_AudioPluginFormatManager.cpp"
 #include "processors/juce_AudioProcessor.cpp"
@@ -80,6 +110,7 @@ static inline bool arrayContainsPlugin (const OwnedArray<PluginDescription>& lis
 #include "processors/juce_PluginDescription.cpp"
 #include "format_types/juce_LADSPAPluginFormat.cpp"
 #include "format_types/juce_VSTPluginFormat.cpp"
+#include "format_types/juce_VST3PluginFormat.cpp"
 #include "format_types/juce_AudioUnitPluginFormat.mm"
 #include "scanning/juce_KnownPluginList.cpp"
 #include "scanning/juce_PluginDirectoryScanner.cpp"

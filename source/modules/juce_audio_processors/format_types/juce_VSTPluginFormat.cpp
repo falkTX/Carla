@@ -191,11 +191,7 @@ class IdleCallRecursionPreventer
 {
 public:
     IdleCallRecursionPreventer()
-#ifndef JUCE_PLUGIN_HOST_NO_UI
         : isMessageThread (MessageManager::getInstance()->isThisTheMessageThread())
-#else
-        : isMessageThread (false)
-#endif
     {
         if (isMessageThread)
             ++insideVSTCallback;
@@ -241,7 +237,7 @@ static void* NewCFMFromMachO (void* const machofp) noexcept
 #endif
 
 //==============================================================================
-#if JUCE_LINUX && ! defined(JUCE_PLUGIN_HOST_NO_UI)
+#if JUCE_LINUX
 
 extern Display* display;
 extern XContext windowHandleXContext;
@@ -470,7 +466,7 @@ public:
 
         if (dllModule != INVALID_HANDLE_VALUE)
         {
-            if (HRSRC res = FindResource (dllModule, MAKEINTRESOURCE (resID), (LPCWSTR)type.toRawUTF8()))
+            if (HRSRC res = FindResource (dllModule, MAKEINTRESOURCE (resID), type.toWideCharPointer()))
             {
                 if (HGLOBAL hGlob = LoadResource (dllModule, res))
                 {
@@ -714,18 +710,15 @@ static const int defaultVSTBlockSizeValue = 512;
 
 //==============================================================================
 //==============================================================================
-#ifndef JUCE_PLUGIN_HOST_NO_UI
 class VSTPluginInstance     : public AudioPluginInstance,
                               private Timer,
                               private AsyncUpdater
-#else
-class VSTPluginInstance     : public AudioPluginInstance
-#endif
 {
 public:
     VSTPluginInstance (const ModuleHandle::Ptr& module_)
         : effect (nullptr),
           module (module_),
+          usesCocoaNSView (false),
           name (module_->pluginName),
           wantsMidiMessages (false),
           initialised (false),
@@ -790,10 +783,8 @@ public:
                 UseResFile (module->resFileId);
            #endif
 
-           #ifndef JUCE_PLUGIN_HOST_NO_UI
             // Must delete any editors before deleting the plugin instance!
             jassert (getActiveEditor() == 0);
-           #endif
 
             _fpreset(); // some dodgy plugs fuck around with this
 
@@ -841,7 +832,7 @@ public:
         if (initialised || effect == nullptr)
             return;
 
-       #if JUCE_WINDOWS && ! defined(JUCE_PLUGIN_HOST_NO_UI)
+       #if JUCE_WINDOWS
         // On Windows it's highly advisable to create your plugins using the message thread,
         // because many plugins need a chance to create HWNDs that will get their
         // messages delivered by the main message thread, and that's not possible from
@@ -849,7 +840,7 @@ public:
         jassert (MessageManager::getInstance()->isThisTheMessageThread());
        #endif
 
-        JUCE_VST_LOG ("Initialising VST: " + module->pluginName);
+        JUCE_VST_LOG ("Initialising VST: " + module->pluginName + " (" + getVersion() + ")");
         initialised = true;
 
         setPlayConfigDetails (effect->numInputs, effect->numOutputs,
@@ -880,6 +871,10 @@ public:
             updateStoredProgramNames();
 
         wantsMidiMessages = dispatch (effCanDo, 0, 0, (void*) "receiveVstMidiEvent", 0) > 0;
+
+       #if JUCE_MAC && JUCE_SUPPORT_CARBON
+        usesCocoaNSView = (dispatch (effCanDo, 0, 0, (void*) "hasCockosViewAsConfig", 0) & 0xffff0000) == 0xbeef0000;
+       #endif
 
         setLatencySamples (effect->initialDelay);
     }
@@ -1098,9 +1093,7 @@ public:
 
     //==============================================================================
     bool hasEditor() const override                  { return effect != nullptr && (effect->flags & effFlagsHasEditor) != 0; }
-#ifndef JUCE_PLUGIN_HOST_NO_UI
     AudioProcessorEditor* createEditor() override;
-#endif
 
     //==============================================================================
     const String getInputChannelName (int index) const override
@@ -1249,7 +1242,6 @@ public:
     void setCurrentProgramStateInformation (const void* data, int size) override { loadFromFXBFile (data, size); }
 
     //==============================================================================
-#ifndef JUCE_PLUGIN_HOST_NO_UI
     void timerCallback() override
     {
         if (dispatch (effIdle, 0, 0, 0, 0) == 0)
@@ -1261,7 +1253,6 @@ public:
         // indicates that something about the plugin has changed..
         updateHostDisplay();
     }
-#endif
 
     VstIntPtr handleCallback (VstInt32 opcode, VstInt32 index, VstIntPtr value, void* ptr, float opt)
     {
@@ -1279,7 +1270,6 @@ public:
             #pragma warning (pop)
            #endif
 
-#ifndef JUCE_PLUGIN_HOST_NO_UI
             case audioMasterIdle:
                 if (insideVSTCallback == 0 && MessageManager::getInstance()->isThisTheMessageThread())
                 {
@@ -1308,7 +1298,6 @@ public:
             case audioMasterUpdateDisplay:      triggerAsyncUpdate(); break;
             case audioMasterIOChanged:          setLatencySamples (effect->initialDelay); break;
             case audioMasterNeedIdle:           startTimer (50); break;
-#endif
 
             case audioMasterGetSampleRate:      return (VstIntPtr) (getSampleRate() > 0 ? getSampleRate() : defaultVSTSampleRateValue);
             case audioMasterGetBlockSize:       return (VstIntPtr) (getBlockSize() > 0  ? getBlockSize()  : defaultVSTBlockSizeValue);
@@ -1394,12 +1383,10 @@ public:
             case audioMasterGetVendorString:
             case audioMasterGetProductString:
             {
-                String hostName ("Carla");
+                String hostName ("Juce VST Host");
 
-#ifndef JUCE_PLUGIN_HOST_NO_UI
                 if (JUCEApplicationBase* app = JUCEApplicationBase::getInstance())
                     hostName = app->getApplicationName();
-#endif
 
                 hostName.copyToUTF8 ((char*) ptr, (size_t) jmin (kVstMaxVendorStrLen, kVstMaxProductStrLen) - 1);
                 break;
@@ -1677,6 +1664,7 @@ public:
     ModuleHandle::Ptr module;
 
     ScopedPointer<VSTPluginFormat::ExtraFunctions> extraFunctions;
+    bool usesCocoaNSView;
 
 private:
     String name;
@@ -1849,16 +1837,21 @@ private:
             int versionBits[32];
             int n = 0;
 
-            while (v != 0)
-            {
-                versionBits [n++] = v % 10;
-                v /= 10;
-            }
+            for (int vv = v; vv != 0; vv /= 10)
+                versionBits [n++] = vv % 10;
 
-            s << 'V';
+            if (n > 4) // if the number ends up silly, it's probably encoded as hex instead of decimal..
+            {
+                n = 0;
+
+                for (int vv = v; vv != 0; vv >>= 8)
+                    versionBits [n++] = vv & 255;
+            }
 
             while (n > 1 && versionBits [n - 1] == 0)
                 --n;
+
+            s << 'V';
 
             while (n > 0)
             {
@@ -1900,7 +1893,6 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VSTPluginInstance)
 };
 
-#ifndef JUCE_PLUGIN_HOST_NO_UI
 //==============================================================================
 static Array <VSTPluginWindow*> activeVSTWindows;
 
@@ -1912,7 +1904,6 @@ class VSTPluginWindow   : public AudioProcessorEditor,
                           public Timer
 {
 public:
-    //==============================================================================
     VSTPluginWindow (VSTPluginInstance& plug)
         : AudioProcessorEditor (&plug),
          #if ! JUCE_MAC
@@ -1926,18 +1917,27 @@ public:
           alreadyInside (false)
     {
        #if JUCE_WINDOWS
-        sizeCheckCount = 0;
         pluginHWND = 0;
+        sizeCheckCount = 0;
+
        #elif JUCE_LINUX
         pluginWindow = None;
         pluginProc = None;
-       #elif JUCE_MAC && JUCE_SUPPORT_CARBON
-        addAndMakeVisible (innerWrapper = new InnerWrapperComponent (*this));
+
        #elif JUCE_MAC
-        addAndMakeVisible (innerWrapper = new NSViewComponent());
-        NSView* innerView = [[NSView alloc] init];
-        innerWrapper->setView (innerView);
-        [innerView release];
+        #if JUCE_SUPPORT_CARBON
+        if (! plug.usesCocoaNSView)
+        {
+            addAndMakeVisible (carbonWrapper = new CarbonWrapperComponent (*this));
+        }
+        else
+        #endif
+        {
+            addAndMakeVisible (cocoaWrapper = new AutoResizingNSViewComponent());
+            NSView* innerView = [[NSView alloc] init];
+            cocoaWrapper->setView (innerView);
+            [innerView release];
+        }
        #endif
 
         activeVSTWindows.add (this);
@@ -1952,7 +1952,10 @@ public:
         closePluginWindow();
 
        #if JUCE_MAC
-        innerWrapper = nullptr;
+        #if JUCE_SUPPORT_CARBON
+        carbonWrapper = nullptr;
+        #endif
+        cocoaWrapper = nullptr;
        #endif
 
         activeVSTWindows.removeFirstMatchingValue (this);
@@ -2007,20 +2010,28 @@ public:
     }
    #endif
 
-   #if JUCE_MAC && ! JUCE_SUPPORT_CARBON
+   #if JUCE_MAC
     void visibilityChanged() override
     {
-        if (isVisible())
-            openPluginWindow();
-        else
-            closePluginWindow();
+        if (cocoaWrapper != nullptr)
+        {
+            if (isVisible())
+                openPluginWindow ((NSView*) cocoaWrapper->getView());
+            else
+                closePluginWindow();
+        }
     }
 
     void childBoundsChanged (Component*) override
     {
-        if (innerWrapper != nullptr)
-            setSize (innerWrapper->getWidth(),
-                     innerWrapper->getHeight());
+        if (cocoaWrapper != nullptr)
+        {
+            int w = cocoaWrapper->getWidth();
+            int h = cocoaWrapper->getHeight();
+
+            if (w != getWidth() || h != getHeight())
+                setSize (w, h);
+        }
     }
    #endif
 
@@ -2152,15 +2163,8 @@ private:
 
     //==============================================================================
 #if JUCE_MAC
-   #if JUCE_SUPPORT_CARBON
-    void openPluginWindow (WindowRef parentWindow)
+    void openPluginWindow (void* parentWindow)
     {
-   #else
-    void openPluginWindow()
-    {
-        NSView* parentWindow = (NSView*) innerWrapper->getView();
-   #endif
-
         if (isOpen || parentWindow == 0)
             return;
 
@@ -2372,9 +2376,9 @@ private:
     {
         for (int i = activeVSTWindows.size(); --i >= 0;)
         {
-            const VSTPluginWindow* const w = activeVSTWindows.getUnchecked (i);
+            Component::SafePointer<VSTPluginWindow> w (activeVSTWindows[i]);
 
-            if (w->pluginHWND == hW)
+            if (w != nullptr && w->pluginHWND == hW)
             {
                 if (message == WM_CHAR
                     || message == WM_KEYDOWN
@@ -2387,9 +2391,10 @@ private:
                                  message, wParam, lParam);
                 }
 
-                return CallWindowProc ((WNDPROC) w->originalWndProc,
-                                       (HWND) w->pluginHWND,
-                                       message, wParam, lParam);
+                if (w != nullptr) // (may have been deleted in SendMessage callback)
+                    return CallWindowProc ((WNDPROC) w->originalWndProc,
+                                           (HWND) w->pluginHWND,
+                                           message, wParam, lParam);
             }
         }
 
@@ -2514,17 +2519,17 @@ private:
     //==============================================================================
 #if JUCE_MAC
    #if JUCE_SUPPORT_CARBON
-    class InnerWrapperComponent   : public CarbonViewWrapperComponent
+    class CarbonWrapperComponent   : public CarbonViewWrapperComponent
     {
     public:
-        InnerWrapperComponent (VSTPluginWindow& w)
+        CarbonWrapperComponent (VSTPluginWindow& w)
             : owner (w), alreadyInside (false)
         {
             keepPluginWindowWhenHidden = w.shouldAvoidDeletingWindow();
             setRepaintsChildHIViewWhenCreated (w.shouldRepaintCarbonWindowWhenCreated());
         }
 
-        ~InnerWrapperComponent()
+        ~CarbonWrapperComponent()
         {
             deleteWindow();
         }
@@ -2588,35 +2593,36 @@ private:
         VSTPluginWindow& owner;
         bool alreadyInside;
 
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (InnerWrapperComponent)
+        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CarbonWrapperComponent)
     };
 
-    friend class InnerWrapperComponent;
-    ScopedPointer<InnerWrapperComponent> innerWrapper;
-
-   #else
-    ScopedPointer<NSViewComponent> innerWrapper;
+    friend class CarbonWrapperComponent;
+    ScopedPointer<CarbonWrapperComponent> carbonWrapper;
    #endif
+
+    ScopedPointer<NSViewComponent> cocoaWrapper;
 
     void resized() override
     {
-        if (innerWrapper != nullptr)
-            innerWrapper->setSize (getWidth(), getHeight());
+       #if JUCE_SUPPORT_CARBON
+        if (carbonWrapper != nullptr)
+            carbonWrapper->setSize (getWidth(), getHeight());
+       #endif
+
+        if (cocoaWrapper != nullptr)
+            cocoaWrapper->setSize (getWidth(), getHeight());
     }
 #endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VSTPluginWindow)
 };
-#endif
 
-#ifndef JUCE_PLUGIN_HOST_NO_UI
 //==============================================================================
 AudioProcessorEditor* VSTPluginInstance::createEditor()
 {
     return hasEditor() ? new VSTPluginWindow (*this)
                        : nullptr;
 }
-#endif
 
 //==============================================================================
 // entry point for all callbacks from the plugin
@@ -2654,7 +2660,7 @@ static VSTPluginInstance* createAndUpdateDesc (VSTPluginFormat& format, PluginDe
     return nullptr;
 }
 
-void VSTPluginFormat::findAllTypesForFile (OwnedArray <PluginDescription>& results,
+void VSTPluginFormat::findAllTypesForFile (OwnedArray<PluginDescription>& results,
                                            const String& fileOrIdentifier)
 {
     if (! fileMightContainThisPluginType (fileOrIdentifier))
@@ -2688,14 +2694,17 @@ void VSTPluginFormat::findAllTypesForFile (OwnedArray <PluginDescription>& resul
                 break;
 
             desc.uid = uid;
+            desc.name = shellEffectName;
+
+            aboutToScanVSTShellPlugin (desc);
 
             ScopedPointer<VSTPluginInstance> shellInstance (createAndUpdateDesc (*this, desc));
 
             if (shellInstance != nullptr)
             {
                 jassert (desc.uid == uid);
-                desc.name = shellEffectName;
                 desc.hasSharedContainer = true;
+                desc.name = shellEffectName;
 
                 if (! arrayContainsPlugin (results, desc))
                     results.add (new PluginDescription (desc));
@@ -2741,7 +2750,7 @@ AudioPluginInstance* VSTPluginFormat::createInstanceFromDescription (const Plugi
 
 bool VSTPluginFormat::fileMightContainThisPluginType (const String& fileOrIdentifier)
 {
-    const File f (fileOrIdentifier);
+    const File f (File::createFileWithoutCheckingPath (fileOrIdentifier));
 
   #if JUCE_MAC
     if (f.isDirectory() && f.hasFileExtension (".vst"))
@@ -2897,5 +2906,7 @@ VSTPluginFormat::VstIntPtr JUCE_CALLTYPE VSTPluginFormat::dispatcher (AudioPlugi
 
     return 0;
 }
+
+void VSTPluginFormat::aboutToScanVSTShellPlugin (const PluginDescription&) {}
 
 #endif

@@ -378,6 +378,16 @@ public:
         return fullScreen;
     }
 
+    bool isKioskMode() const override
+    {
+       #if defined (MAC_OS_X_VERSION_10_7) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
+        if (hasNativeTitleBar() && ([window styleMask] & NSFullScreenWindowMask) != 0)
+            return true;
+       #endif
+
+        return ComponentPeer::isKioskMode();
+    }
+
     bool contains (Point<int> localPos, bool trueIfInAChildWindow) const override
     {
         NSRect frameRect = [view frame];
@@ -598,8 +608,8 @@ public:
                 if ([ev hasPreciseScrollingDeltas])
                 {
                     const float scale = 0.5f / 256.0f;
-                    wheel.deltaX = [ev scrollingDeltaX] * scale;
-                    wheel.deltaY = [ev scrollingDeltaY] * scale;
+                    wheel.deltaX = scale * (float) [ev scrollingDeltaX];
+                    wheel.deltaY = scale * (float) [ev scrollingDeltaY];
                     wheel.isSmooth = true;
                 }
             }
@@ -618,8 +628,8 @@ public:
         if (wheel.deltaX == 0 && wheel.deltaY == 0)
         {
             const float scale = 10.0f / 256.0f;
-            wheel.deltaX = [ev deltaX] * scale;
-            wheel.deltaY = [ev deltaY] * scale;
+            wheel.deltaX = scale * (float) [ev deltaX];
+            wheel.deltaY = scale * (float) [ev deltaY];
         }
 
         handleMouseWheel (0, getMousePos (ev, view), getMouseTime (ev), wheel);
@@ -628,7 +638,7 @@ public:
     void redirectMagnify (NSEvent* ev)
     {
        #if defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
-        const float invScale = 1.0f - [ev magnification];
+        const float invScale = 1.0f - (float) [ev magnification];
 
         if (invScale != 0.0f)
             handleMagnifyGesture (0, getMousePos (ev, view), getMouseTime (ev), 1.0f / invScale);
@@ -766,7 +776,7 @@ public:
        #if defined (MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
         NSScreen* screen = [[view window] screen];
         if ([screen respondsToSelector: @selector (backingScaleFactor)])
-            displayScale = screen.backingScaleFactor;
+            displayScale = (float) screen.backingScaleFactor;
        #endif
 
        #if USE_COREGRAPHICS_RENDERING
@@ -1452,7 +1462,7 @@ private:
             if (target != nullptr)
                 [(NSView*) self interpretKeyEvents: [NSArray arrayWithObject: ev]];
             else
-                owner->stringBeingComposed = String::empty;
+                owner->stringBeingComposed.clear();
 
             if ((! owner->textWasInserted) && (owner == nullptr || ! owner->redirectKeyDown (ev)))
             {
@@ -1490,7 +1500,7 @@ private:
                 }
             }
 
-            owner->stringBeingComposed = String::empty;
+            owner->stringBeingComposed.clear();
         }
     }
 
@@ -1525,7 +1535,7 @@ private:
                     owner->textWasInserted = true;
                 }
 
-                owner->stringBeingComposed = String::empty;
+                owner->stringBeingComposed.clear();
             }
         }
     }

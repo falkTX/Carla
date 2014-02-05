@@ -78,8 +78,8 @@ public:
                            const Slider::SliderStyle, Slider&) override;
 
     int getSliderThumbRadius (Slider&) override;
-    Button* createSliderButton (bool isIncrement) override;
-    ImageEffectFilter* getSliderEffect() override;
+    Button* createSliderButton (Slider&, bool isIncrement) override;
+    ImageEffectFilter* getSliderEffect (Slider&) override;
 
     //==============================================================================
     void drawCornerResizer (Graphics&, int w, int h, bool isMouseOver, bool isMouseDragging) override;
@@ -98,4 +98,4 @@ private:
 };
 
 
-#endif   // JUCE_LOOKANDFEEL_H_INCLUDED
+#endif   // JUCE_LOOKANDFEEL_V1_H_INCLUDED

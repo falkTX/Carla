@@ -47,16 +47,22 @@ public:
     bool areLinesDrawnForTreeView (TreeView&) override;
     int getTreeViewIndentSize (TreeView&) override;
 
-    void drawComboBox (Graphics& g, int width, int height, bool isButtonDown,
+    Button* createDocumentWindowButton (int buttonType) override;
+
+    void drawComboBox (Graphics&, int width, int height, bool isButtonDown,
                        int buttonX, int buttonY, int buttonW, int buttonH, ComboBox& box) override;
 
-    void drawKeymapChangeButton (Graphics& g, int width, int height, Button& button, const String& keyDescription) override;
+    void drawKeymapChangeButton (Graphics&, int width, int height, Button& button, const String& keyDescription) override;
 
-    void drawPopupMenuBackground (Graphics& g, int width, int height) override;
+    void drawPopupMenuBackground (Graphics&, int width, int height) override;
+    void drawMenuBarBackground (Graphics&, int width, int height, bool, MenuBarComponent&) override;
 
     int getTabButtonOverlap (int tabDepth) override;
     int getTabButtonSpaceAroundImage() override;
     void drawTabButton (TabBarButton&, Graphics&, bool isMouseOver, bool isMouseDown) override;
+    void drawTabAreaBehindFrontButton (TabbedButtonBar& bar, Graphics& g, int w, int h) override;
+
+    void drawTextEditorOutline (Graphics&, int width, int height, TextEditor&) override;
 
     void drawStretchableLayoutResizerBar (Graphics&, int w, int h, bool isVerticalBar, bool isMouseOver, bool isMouseDragging) override;
 
@@ -65,8 +71,19 @@ public:
     void drawScrollbar (Graphics&, ScrollBar&, int x, int y, int width, int height, bool isScrollbarVertical,
                         int thumbStartPosition, int thumbSize, bool isMouseOver, bool isMouseDown) override;
 
+    void drawLinearSlider (Graphics&, int x, int y, int width, int height,
+                           float sliderPos, float minSliderPos, float maxSliderPos,
+                           const Slider::SliderStyle, Slider&) override;
+
+    void drawLinearSliderBackground (Graphics&, int x, int y, int width, int height,
+                                     float sliderPos, float minSliderPos, float maxSliderPos,
+                                     const Slider::SliderStyle, Slider&) override;
+
     void drawConcertinaPanelHeader (Graphics&, const Rectangle<int>& area, bool isMouseOver, bool isMouseDown,
                                     ConcertinaPanel&, Component&) override;
+
+    Path getTickShape (float height) override;
+    Path getCrossShape (float height) override;
 
     static void createTabTextLayout (const TabBarButton& button, float length, float depth, Colour colour, TextLayout&);
 
@@ -76,4 +93,4 @@ private:
 };
 
 
-#endif   // JUCE_LOOKANDFEEL_H_INCLUDED
+#endif   // JUCE_LOOKANDFEEL_V3_H_INCLUDED

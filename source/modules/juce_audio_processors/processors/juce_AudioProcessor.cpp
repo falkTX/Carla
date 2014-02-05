@@ -44,11 +44,9 @@ AudioProcessor::AudioProcessor()
 
 AudioProcessor::~AudioProcessor()
 {
-#ifndef JUCE_PLUGIN_HOST_NO_UI
     // ooh, nasty - the editor should have been deleted before the filter
     // that it refers to is deleted..
     jassert (activeEditor == nullptr);
-#endif
 
    #if JUCE_DEBUG
     // This will fail if you've called beginParameterChangeGesture() for one
@@ -203,7 +201,7 @@ void AudioProcessor::updateHostDisplay()
             l->audioProcessorChanged (this);
 }
 
-String AudioProcessor::getParameterLabel (int) const        { return String::empty; }
+String AudioProcessor::getParameterLabel (int) const        { return String(); }
 bool AudioProcessor::isParameterAutomatable (int) const     { return true; }
 bool AudioProcessor::isMetaParameter (int) const            { return false; }
 
@@ -216,7 +214,6 @@ void AudioProcessor::suspendProcessing (const bool shouldBeSuspended)
 void AudioProcessor::reset() {}
 void AudioProcessor::processBlockBypassed (AudioSampleBuffer&, MidiBuffer&) {}
 
-#ifndef JUCE_PLUGIN_HOST_NO_UI
 //==============================================================================
 void AudioProcessor::editorBeingDeleted (AudioProcessorEditor* const editor) noexcept
 {
@@ -247,7 +244,6 @@ AudioProcessorEditor* AudioProcessor::createEditorIfNeeded()
 
     return ed;
 }
-#endif
 
 //==============================================================================
 void AudioProcessor::getCurrentProgramStateInformation (juce::MemoryBlock& destData)
@@ -270,7 +266,7 @@ void AudioProcessor::copyXmlToBinary (const XmlElement& xml, juce::MemoryBlock& 
         MemoryOutputStream out (destData, false);
         out.writeInt (magicXmlNumber);
         out.writeInt (0);
-        xml.writeToStream (out, String::empty, true, false);
+        xml.writeToStream (out, String(), true, false);
         out.writeByte (0);
     }
 

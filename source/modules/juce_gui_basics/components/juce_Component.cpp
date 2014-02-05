@@ -174,6 +174,22 @@ private:
 };
 
 //==============================================================================
+struct FocusRestorer
+{
+    FocusRestorer()  : lastFocus (Component::getCurrentlyFocusedComponent()) {}
+
+    ~FocusRestorer()
+    {
+        if (lastFocus != nullptr && ! lastFocus->isCurrentlyBlockedByAnotherModalComponent())
+            lastFocus->grabKeyboardFocus();
+    }
+
+    WeakReference<Component> lastFocus;
+
+    JUCE_DECLARE_NON_COPYABLE (FocusRestorer)
+};
+
+//==============================================================================
 struct ScalingHelpers
 {
     template <typename PointOrRect>
@@ -1443,25 +1459,25 @@ Component* Component::getComponentAt (const int x, const int y)
 }
 
 //==============================================================================
-void Component::addChildComponent (Component* const child, int zOrder)
+void Component::addChildComponent (Component& child, int zOrder)
 {
     // if component methods are being called from threads other than the message
     // thread, you'll need to use a MessageManagerLock object to make sure it's thread-safe.
     CHECK_MESSAGE_MANAGER_IS_LOCKED_OR_OFFSCREEN
 
-    if (child != nullptr && child->parentComponent != this)
+    if (child.parentComponent != this)
     {
-        if (child->parentComponent != nullptr)
-            child->parentComponent->removeChildComponent (child);
+        if (child.parentComponent != nullptr)
+            child.parentComponent->removeChildComponent (&child);
         else
-            child->removeFromDesktop();
+            child.removeFromDesktop();
 
-        child->parentComponent = this;
+        child.parentComponent = this;
 
-        if (child->isVisible())
-            child->repaintParent();
+        if (child.isVisible())
+            child.repaintParent();
 
-        if (! child->isAlwaysOnTop())
+        if (! child.isAlwaysOnTop())
         {
             if (zOrder < 0 || zOrder > childComponentList.size())
                 zOrder = childComponentList.size();
@@ -1475,20 +1491,29 @@ void Component::addChildComponent (Component* const child, int zOrder)
             }
         }
 
-        childComponentList.insert (zOrder, child);
+        childComponentList.insert (zOrder, &child);
 
-        child->internalHierarchyChanged();
+        child.internalHierarchyChanged();
         internalChildrenChanged();
     }
+}
+
+void Component::addAndMakeVisible (Component& child, int zOrder)
+{
+    child.setVisible (true);
+    addChildComponent (child, zOrder);
+}
+
+void Component::addChildComponent (Component* const child, int zOrder)
+{
+    if (child != nullptr)
+        addChildComponent (*child, zOrder);
 }
 
 void Component::addAndMakeVisible (Component* const child, int zOrder)
 {
     if (child != nullptr)
-    {
-        child->setVisible (true);
-        addChildComponent (child, zOrder);
-    }
+        addAndMakeVisible (*child, zOrder);
 }
 
 void Component::addChildAndSetID (Component* const child, const String& childID)
@@ -2023,7 +2048,8 @@ void Component::paintEntireComponent (Graphics& g, const bool ignoreAlphaLevel)
                            scaledBounds.getWidth(), scaledBounds.getHeight(), ! flags.opaqueFlag);
         {
             Graphics g2 (effectImage);
-            g2.addTransform (AffineTransform::scale (scale));
+            g2.addTransform (AffineTransform::scale (scaledBounds.getWidth()  / (float) getWidth(),
+                                                     scaledBounds.getHeight() / (float) getHeight()));
             paintComponentAndChildren (g2);
         }
 
@@ -2058,7 +2084,7 @@ void Component::setPaintingIsUnclipped (const bool shouldPaintWithoutClipping) n
 
 //==============================================================================
 Image Component::createComponentSnapshot (const Rectangle<int>& areaToGrab,
-                                          const bool clipImageToComponentBounds)
+                                          bool clipImageToComponentBounds, float scaleFactor)
 {
     Rectangle<int> r (areaToGrab);
 
@@ -2068,14 +2094,21 @@ Image Component::createComponentSnapshot (const Rectangle<int>& areaToGrab,
     if (r.isEmpty())
         return Image();
 
-    Image componentImage (flags.opaqueFlag ? Image::RGB : Image::ARGB,
-                          r.getWidth(), r.getHeight(), true);
+    const int w = roundToInt (scaleFactor * r.getWidth());
+    const int h = roundToInt (scaleFactor * r.getHeight());
 
-    Graphics imageContext (componentImage);
-    imageContext.setOrigin (-r.getPosition());
-    paintEntireComponent (imageContext, true);
+    Image image (flags.opaqueFlag ? Image::RGB : Image::ARGB, w, h, true);
 
-    return componentImage;
+    Graphics g (image);
+
+    if (w != getWidth() || h != getHeight())
+        g.addTransform (AffineTransform::scale (w / (float) r.getWidth(),
+                                                h / (float) r.getHeight()));
+    g.setOrigin (-r.getPosition());
+
+    paintEntireComponent (g, true);
+
+    return image;
 }
 
 void Component::setComponentEffect (ImageEffectFilter* const newEffect)
@@ -2271,7 +2304,10 @@ void Component::addComponentListener (ComponentListener* const newListener)
 {
     // if component methods are being called from threads other than the message
     // thread, you'll need to use a MessageManagerLock object to make sure it's thread-safe.
-    CHECK_MESSAGE_MANAGER_IS_LOCKED
+    #if JUCE_DEBUG || JUCE_LOG_ASSERTIONS
+    if (getParentComponent() != nullptr)
+        CHECK_MESSAGE_MANAGER_IS_LOCKED;
+    #endif
 
     componentListeners.add (newListener);
 }

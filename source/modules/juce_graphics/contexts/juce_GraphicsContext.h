@@ -104,7 +104,7 @@ public:
         Note there's also a setFont (float, int) method to quickly change the size and
         style of the current font.
 
-        @see drawSingleLineText, drawMultiLineText, drawTextAsPath, drawText, drawFittedText
+        @see drawSingleLineText, drawMultiLineText, drawText, drawFittedText
     */
     void setFont (const Font& newFont);
 
@@ -145,17 +145,6 @@ public:
     void drawMultiLineText (const String& text,
                             int startX, int baselineY,
                             int maximumLineWidth) const;
-
-    /** Renders a string of text as a vector path.
-
-        This allows a string to be transformed with an arbitrary AffineTransform and
-        rendered using the current colour/brush. It's much slower than the normal text methods
-        but more accurate.
-
-        @see setFont
-    */
-    void drawTextAsPath (const String& text,
-                         const AffineTransform& transform) const;
 
     /** Draws a line of text within a specified rectangle.
 
@@ -362,6 +351,11 @@ public:
     */
     void drawEllipse (float x, float y, float width, float height,
                       float lineThickness) const;
+
+    /** Draws an elliptical stroke using the current colour or brush.
+        @see fillEllipse, Path::addEllipse
+    */
+    void drawEllipse (const Rectangle<float>& area, float lineThickness) const;
 
     //==============================================================================
     /** Draws a line between two points.

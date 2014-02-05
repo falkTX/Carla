@@ -34,14 +34,13 @@ public:
     DragImageComponent (const Image& im,
                         const var& desc,
                         Component* const sourceComponent,
-                        Component* const mouseDragSource_,
-                        DragAndDropContainer& owner_,
-                        Point<int> imageOffset_)
+                        Component* const mouseSource,
+                        DragAndDropContainer& ddc,
+                        Point<int> offset)
         : sourceDetails (desc, sourceComponent, Point<int>()),
-          image (im),
-          owner (owner_),
-          mouseDragSource (mouseDragSource_),
-          imageOffset (imageOffset_),
+          image (im), owner (ddc),
+          mouseDragSource (mouseSource),
+          imageOffset (offset),
           hasCheckedForExternalDrag (false)
     {
         setSize (im.getWidth(), im.getHeight());
@@ -155,10 +154,14 @@ public:
             else if (now > lastTimeOverTarget + RelativeTime::milliseconds (700))
                 checkForExternalDrag (details, screenPos);
         }
+
+        forceMouseCursorUpdate();
     }
 
     void timerCallback() override
     {
+        forceMouseCursorUpdate();
+
         if (sourceDetails.sourceComponent == nullptr)
         {
             delete this;
@@ -172,14 +175,40 @@ public:
         }
     }
 
-private:
+    bool keyPressed (const KeyPress& key) override
+    {
+        if (key == KeyPress::escapeKey)
+        {
+            dismissWithAnimation (true);
+            delete this;
+            return true;
+        }
+
+        return false;
+    }
+
+    bool canModalEventBeSentToComponent (const Component* targetComponent) override
+    {
+        return targetComponent == mouseDragSource;
+    }
+
+    // (overridden to avoid beeps when dragging)
+    void inputAttemptWhenModal() override {}
+
     DragAndDropTarget::SourceDetails sourceDetails;
+
+private:
     Image image;
     DragAndDropContainer& owner;
     WeakReference<Component> mouseDragSource, currentlyOverComp;
     const Point<int> imageOffset;
     bool hasCheckedForExternalDrag;
     Time lastTimeOverTarget;
+
+    void forceMouseCursorUpdate()
+    {
+        Desktop::getInstance().getMainMouseSource().forceMouseCursorUpdate();
+    }
 
     DragAndDropTarget* getCurrentlyOver() const noexcept
     {
@@ -374,8 +403,6 @@ void DragAndDropContainer::startDragging (const var& sourceDescription,
         dragImageComponent = new DragImageComponent (dragImage, sourceDescription, sourceComponent,
                                                      draggingSource->getComponentUnderMouse(), *this, imageOffset);
 
-        currentDragDesc = sourceDescription;
-
         if (allowDraggingToExternalWindows)
         {
             if (! Desktop::canUseSemiTransparentWindows())
@@ -400,6 +427,7 @@ void DragAndDropContainer::startDragging (const var& sourceDescription,
 
         static_cast <DragImageComponent*> (dragImageComponent.get())->updateLocation (false, lastMouseDown);
         dragImageComponent->setVisible (true);
+        dragImageComponent->enterModalState();
 
        #if JUCE_WINDOWS
         // Under heavy load, the layered window's paint callback can often be lost by the OS,
@@ -417,7 +445,7 @@ bool DragAndDropContainer::isDragAndDropActive() const
 
 var DragAndDropContainer::getCurrentDragDescription() const
 {
-    return dragImageComponent != nullptr ? currentDragDesc
+    return dragImageComponent != nullptr ? dragImageComponent->sourceDetails.description
                                          : var();
 }
 

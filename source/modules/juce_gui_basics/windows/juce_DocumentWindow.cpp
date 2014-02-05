@@ -190,14 +190,11 @@ void DocumentWindow::paint (Graphics& g)
 
     if (resizableBorder == nullptr)
     {
+        RectangleList<int> border (getLocalBounds());
+        border.subtract (getBorderThickness().subtractedFrom (getLocalBounds()));
+
         g.setColour (getBackgroundColour().overlaidWith (Colour (0x80000000)));
-
-        const BorderSize<int> border (getBorderThickness());
-
-        g.fillRect (0, 0, getWidth(), border.getTop());
-        g.fillRect (0, border.getTop(), border.getLeft(), getHeight() - border.getTopAndBottom());
-        g.fillRect (getWidth() - border.getRight(), border.getTop(), border.getRight(), getHeight() - border.getTopAndBottom());
-        g.fillRect (0, getHeight() - border.getBottom(), getWidth(), border.getBottom());
+        g.fillRectList (border);
     }
 
     const Rectangle<int> titleBarArea (getTitleBarArea());
@@ -252,17 +249,17 @@ void DocumentWindow::resized()
 
 BorderSize<int> DocumentWindow::getBorderThickness()
 {
-    return BorderSize<int> ((isFullScreen() || isUsingNativeTitleBar())
-                                ? 0 : (resizableBorder != nullptr ? 4 : 1));
+    return ResizableWindow::getBorderThickness();
 }
 
 BorderSize<int> DocumentWindow::getContentComponentBorder()
 {
     BorderSize<int> border (getBorderThickness());
 
-    border.setTop (border.getTop()
-                    + (isUsingNativeTitleBar() ? 0 : titleBarHeight)
-                    + (menuBar != nullptr ? menuBarHeight : 0));
+    if (! isKioskMode())
+        border.setTop (border.getTop()
+                        + (isUsingNativeTitleBar() ? 0 : titleBarHeight)
+                        + (menuBar != nullptr ? menuBarHeight : 0));
 
     return border;
 }
@@ -275,6 +272,9 @@ int DocumentWindow::getTitleBarHeight() const
 Rectangle<int> DocumentWindow::getTitleBarArea()
 {
     const BorderSize<int> border (getBorderThickness());
+
+    if (isKioskMode())
+        return Rectangle<int>();
 
     return Rectangle<int> (border.getLeft(), border.getTop(),
                            getWidth() - border.getLeftAndRight(), getTitleBarHeight());

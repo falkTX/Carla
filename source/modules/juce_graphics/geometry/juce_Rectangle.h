@@ -190,13 +190,17 @@ public:
     Rectangle withZeroOrigin() const noexcept                               { return Rectangle (w, h); }
 
     /** Returns a rectangle which has the same position and height as this one, but with a different width. */
-    Rectangle withWidth (ValueType newWidth) const noexcept           { return Rectangle (pos.x, pos.y, newWidth, h); }
+    Rectangle withWidth (ValueType newWidth) const noexcept                 { return Rectangle (pos.x, pos.y, newWidth, h); }
 
     /** Returns a rectangle which has the same position and width as this one, but with a different height. */
-    Rectangle withHeight (ValueType newHeight) const noexcept         { return Rectangle (pos.x, pos.y, w, newHeight); }
+    Rectangle withHeight (ValueType newHeight) const noexcept               { return Rectangle (pos.x, pos.y, w, newHeight); }
 
-    /** Returns a rectangle with the same position as this one, but a new size. */
-    Rectangle withSize (ValueType newWidth, const ValueType newHeight) const noexcept         { return Rectangle (pos.x, pos.y, newWidth, newHeight); }
+    /** Returns a rectangle with the same top-left position as this one, but a new size. */
+    Rectangle withSize (ValueType newWidth, ValueType newHeight) const noexcept               { return Rectangle (pos.x, pos.y, newWidth, newHeight); }
+
+    /** Returns a rectangle with the same centre position as this one, but a new size. */
+    Rectangle withSizeKeepingCentre (ValueType newWidth, ValueType newHeight) const noexcept  { return Rectangle (pos.x + (w - newWidth)  / (ValueType) 2,
+                                                                                                                  pos.y + (h - newHeight) / (ValueType) 2, newWidth, newHeight); }
 
     /** Moves the x position, adjusting the width so that the right-hand edge remains in the same place.
         If the x is moved to be on the right of the current right-hand edge, the width will be set to zero.
@@ -563,6 +567,16 @@ public:
             && other.w > ValueType() && other.h > ValueType();
     }
 
+    /** Returns true if any part of the given line lies inside this rectangle. */
+    bool intersects (const Line<ValueType>& line) const noexcept
+    {
+        return contains (line.getStart()) || contains (line.getEnd())
+                || line.intersects (Line<ValueType> (getTopLeft(),     getTopRight()))
+                || line.intersects (Line<ValueType> (getTopRight(),    getBottomRight()))
+                || line.intersects (Line<ValueType> (getBottomRight(), getBottomLeft()))
+                || line.intersects (Line<ValueType> (getBottomLeft(),  getTopLeft()));
+    }
+
     /** Returns the region that is the overlap between this and another rectangle.
         If the two rectangles don't overlap, the rectangle returned will be empty.
     */
@@ -855,7 +869,7 @@ public:
     static Rectangle fromString (StringRef stringVersion)
     {
         StringArray toks;
-        toks.addTokens (stringVersion.text.findEndOfWhitespace(), ",; \t\r\n", String::empty);
+        toks.addTokens (stringVersion.text.findEndOfWhitespace(), ",; \t\r\n", "");
 
         return Rectangle (parseIntAfterSpace (toks[0]),
                           parseIntAfterSpace (toks[1]),

@@ -41,14 +41,17 @@ public:
     /** Creates a RectanglePlacement object using a combination of flags from the Flags enum. */
     inline RectanglePlacement (int placementFlags) noexcept  : flags (placementFlags) {}
 
+    /** Creates a default RectanglePlacement object, which is equivalent to using the 'centred' flag. */
+    inline RectanglePlacement() noexcept                     : flags (centred) {}
+
     /** Creates a copy of another RectanglePlacement object. */
-    RectanglePlacement (const RectanglePlacement& other) noexcept;
+    RectanglePlacement (const RectanglePlacement&) noexcept;
 
     /** Copies another RectanglePlacement object. */
-    RectanglePlacement& operator= (const RectanglePlacement& other) noexcept;
+    RectanglePlacement& operator= (const RectanglePlacement&) noexcept;
 
-    bool operator== (const RectanglePlacement& other) const noexcept;
-    bool operator!= (const RectanglePlacement& other) const noexcept;
+    bool operator== (const RectanglePlacement&) const noexcept;
+    bool operator!= (const RectanglePlacement&) const noexcept;
 
     //==============================================================================
     /** Flag values that can be combined and used in the constructor. */

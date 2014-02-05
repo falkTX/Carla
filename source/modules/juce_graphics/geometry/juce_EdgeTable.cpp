@@ -332,57 +332,51 @@ void EdgeTable::sanitiseLevels (const bool useNonZeroWinding) noexcept
         if (num > 0)
         {
             LineItem* items = reinterpret_cast<LineItem*> (lineStart + 1);
+            LineItem* const itemsEnd = items + num;
 
             // sort the X coords
-            std::sort (items, items + num);
+            std::sort (items, itemsEnd);
 
-            // merge duplicate X coords
-            for (int i = 0; i < num - 1; ++i)
-            {
-                if (items[i].x == items[i + 1].x)
-                {
-                    items[i].level += items[i + 1].level;
-                    memmove (items + i + 1, items + i + 2, (size_t) (num - i - 2) * sizeof (LineItem));
-                    --num;
-                    --lineStart[0];
-                    --i;
-                }
-            }
-
+            const LineItem* src = items;
+            int correctedNum = num;
             int level = 0;
 
-            if (useNonZeroWinding)
+            while (src < itemsEnd)
             {
-                while (--num > 0)
-                {
-                    level += items->level;
-                    int corrected = std::abs (level);
-                    if (corrected >> 8)
-                        corrected = 255;
+                level += src->level;
+                const int x = src->x;
+                ++src;
 
-                    items->level = corrected;
-                    ++items;
-                }
-            }
-            else
-            {
-                while (--num > 0)
+                while (src < itemsEnd && src->x == x)
                 {
-                    level += items->level;
-                    int corrected = std::abs (level);
-                    if (corrected >> 8)
+                    level += src->level;
+                    ++src;
+                    --correctedNum;
+                }
+
+                int corrected = std::abs (level);
+
+                if (corrected >> 8)
+                {
+                    if (useNonZeroWinding)
+                    {
+                        corrected = 255;
+                    }
+                    else
                     {
                         corrected &= 511;
                         if (corrected >> 8)
                             corrected = 511 - corrected;
                     }
-
-                    items->level = corrected;
-                    ++items;
                 }
+
+                items->x = x;
+                items->level = corrected;
+                ++items;
             }
 
-            items->level = 0; // force the last level to 0, just in case something went wrong in creating the table
+            lineStart[0] = correctedNum;
+            (items - 1)->level = 0; // force the last level to 0, just in case something went wrong in creating the table
         }
 
         lineStart += lineStrideElements;
@@ -451,12 +445,12 @@ void EdgeTable::addEdgePointPair (int x1, int x2, int y, int winding)
         line = table + lineStrideElements * y;
     }
 
-    line[0] += 2;
-    int n = numPoints << 1;
-    line [n + 1] = x1;
-    line [n + 2] = winding;
-    line [n + 3] = x2;
-    line [n + 4] = -winding;
+    line[0] = numPoints + 2;
+    line += numPoints << 1;
+    line[1] = x1;
+    line[2] = winding;
+    line[3] = x2;
+    line[4] = -winding;
 }
 
 void EdgeTable::translate (float dx, const int dy) noexcept
@@ -476,6 +470,25 @@ void EdgeTable::translate (float dx, const int dy) noexcept
         {
             *line += intDx;
             line += 2;
+        }
+    }
+}
+
+void EdgeTable::multiplyLevels (float amount)
+{
+    int* lineStart = table;
+    const int multiplier = (int) (amount * 256.0f);
+
+    for (int y = 0; y < bounds.getHeight(); ++y)
+    {
+        int numPoints = lineStart[0];
+        LineItem* item = reinterpret_cast<LineItem*> (lineStart + 1);
+        lineStart += lineStrideElements;
+
+        while (--numPoints > 0)
+        {
+            item->level = jmin (255, (item->level * multiplier) >> 8);
+            ++item;
         }
     }
 }

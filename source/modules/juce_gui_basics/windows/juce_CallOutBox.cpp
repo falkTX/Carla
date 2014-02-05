@@ -25,7 +25,7 @@
 CallOutBox::CallOutBox (Component& c, const Rectangle<int>& area, Component* const parent)
     : borderSpace (20), arrowSize (16.0f), content (c)
 {
-    addAndMakeVisible (&content);
+    addAndMakeVisible (content);
 
     if (parent != nullptr)
     {
@@ -77,9 +77,7 @@ public:
     JUCE_DECLARE_NON_COPYABLE (CallOutBoxCallback)
 };
 
-CallOutBox& CallOutBox::launchAsynchronously (Component* content,
-                                              const Rectangle<int>& area,
-                                              Component* parent)
+CallOutBox& CallOutBox::launchAsynchronously (Component* content, const Rectangle<int>& area, Component* parent)
 {
     jassert (content != nullptr); // must be a valid content component!
 
@@ -170,8 +168,8 @@ void CallOutBox::updatePosition (const Rectangle<int>& newAreaToPointTo, const R
 
     const int hw = newBounds.getWidth() / 2;
     const int hh = newBounds.getHeight() / 2;
-    const float hwReduced = (float) (hw - borderSpace * 3);
-    const float hhReduced = (float) (hh - borderSpace * 3);
+    const float hwReduced = (float) (hw - borderSpace * 2);
+    const float hhReduced = (float) (hh - borderSpace * 2);
     const float arrowIndent = borderSpace - arrowSize;
 
     Point<float> targets[4] = { Point<float> ((float) targetArea.getCentreX(), (float) targetArea.getBottom()),
@@ -197,7 +195,7 @@ void CallOutBox::updatePosition (const Rectangle<int>& newAreaToPointTo, const R
         const Point<float> centre (constrainedLine.findNearestPointTo (targetCentre));
         float distanceFromCentre = centre.getDistanceFrom (targets[i]);
 
-        if (! (centrePointArea.contains (lines[i].getStart()) || centrePointArea.contains (lines[i].getEnd())))
+        if (! centrePointArea.intersects (lines[i]))
             distanceFromCentre += 1000.0f;
 
         if (distanceFromCentre < nearest)

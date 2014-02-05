@@ -35,6 +35,8 @@
 // and your header search path must make it accessible to the module's files.
 #include "AppConfig.h"
 
+#define NS_FORMAT_FUNCTION(F,A) // To avoid spurious warnings from GCC
+
 #include "../juce_core/native/juce_BasicNativeHeaders.h"
 #include "juce_gui_basics.h"
 
@@ -173,13 +175,11 @@ extern bool juce_areThereAnyAlwaysOnTopWindows();
 #include "filebrowser/juce_FileBrowserComponent.cpp"
 #include "filebrowser/juce_FileChooser.cpp"
 #include "filebrowser/juce_FileChooserDialogBox.cpp"
-#include "filebrowser/juce_FileFilter.cpp"
 #include "filebrowser/juce_FileListComponent.cpp"
 #include "filebrowser/juce_FilenameComponent.cpp"
 #include "filebrowser/juce_FileSearchPathListComponent.cpp"
 #include "filebrowser/juce_FileTreeComponent.cpp"
 #include "filebrowser/juce_ImagePreviewComponent.cpp"
-#include "filebrowser/juce_WildcardFileFilter.cpp"
 #include "layout/juce_ComponentAnimator.cpp"
 #include "layout/juce_ComponentBoundsConstrainer.cpp"
 #include "layout/juce_ComponentBuilder.cpp"
