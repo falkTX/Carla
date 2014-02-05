@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef CARLA_JUCE_AUDIO_BASICS_H_INCLUDED
-#define CARLA_JUCE_AUDIO_BASICS_H_INCLUDED
+#ifndef CARLA_JUCE_AUDIO_PROCESSORS_H_INCLUDED
+#define CARLA_JUCE_AUDIO_PROCESSORS_H_INCLUDED
 
 #include "juce_gui_basics.h"
 #include "juce_audio_basics.h"
@@ -24,4 +24,4 @@
 #include "juce_audio_processors/AppConfig.h"
 #include "juce_audio_processors/juce_audio_processors.h"
 
-#endif // CARLA_JUCE_AUDIO_BASICS_H_INCLUDED
+#endif // CARLA_JUCE_AUDIO_PROCESSORS_H_INCLUDED

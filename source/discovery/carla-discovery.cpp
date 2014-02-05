@@ -15,8 +15,6 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#undef HAVE_JUCE // FIXME
-
 #include "CarlaBackendUtils.hpp"
 #include "CarlaLibUtils.hpp"
 #include "CarlaMathUtils.hpp"
@@ -1464,22 +1462,39 @@ static void do_juce_check(const char* const filename, const char* const stype, c
 
     if (stype == nullptr)
         return;
-#if JUCE_PLUGINHOST_AU && defined(JUCE_MAC)
-    else if (std::strcmp(stype, "AU") == 0)
-        pluginFormat = new AudioUnitPluginFormat();
-#endif
-#if JUCE_PLUGINHOST_LADSPA && defined(JUCE_LINUX)
+
     else if (std::strcmp(stype, "LADSPA") == 0)
+    {
+#if defined(WANT_LADSPA) && JUCE_PLUGINHOST_LADSPA && defined(JUCE_LINUX)
         pluginFormat = new LADSPAPluginFormat();
+#else
+        DISCOVERY_OUT("error", "LADSPA support not available");
 #endif
-#if JUCE_PLUGINHOST_VST // && ! defined(VESTIGE_HEADER)
+    }
     else if (std::strcmp(stype, "VST") == 0)
+    {
+#if defined(WANT_VST) && JUCE_PLUGINHOST_VST && ! defined(VESTIGE_HEADER)
         pluginFormat = new VSTPluginFormat();
+#else
+        DISCOVERY_OUT("error", "VST support not available");
 #endif
-#if JUCE_PLUGINHOST_VST3
+    }
     else if (std::strcmp(stype, "VST3") == 0)
+    {
+#if defined(WANT_VST3) && JUCE_PLUGINHOST_VST3
         pluginFormat = new VSTPluginFormat();
+#else
+        DISCOVERY_OUT("error", "VST3 support not available");
 #endif
+    }
+    else if (std::strcmp(stype, "AU") == 0)
+    {
+#if defined(WANT_AU) && JUCE_PLUGINHOST_AU && defined(JUCE_MAC)
+        pluginFormat = new AudioUnitPluginFormat();
+#else
+        DISCOVERY_OUT("error", "AU support not available");
+#endif
+    }
 
     if (pluginFormat == nullptr)
     {
@@ -1496,7 +1511,7 @@ static void do_juce_check(const char* const filename, const char* const stype, c
         carla_stderr2("LOOKING FOR PLUGIN %i", iv++);
         PluginDescription* const desc(*it);
 
-        int hints = 0x0;
+        uint hints = 0x0;
         int audioIns = desc->numInputChannels;
         int audioOuts = desc->numOutputChannels;
         int midiIns = 0;
@@ -1960,10 +1975,17 @@ bool arrayContainsPlugin(const OwnedArray<PluginDescription>& list, const Plugin
 #include "juce_audio_processors/processors/juce_AudioProcessor.cpp"
 #include "juce_audio_processors/processors/juce_PluginDescription.cpp"
 
-#ifndef CARLA_OS_MAC // FIXME later
-# include "juce_audio_processors/format_types/juce_AudioUnitPluginFormat.mm"
+#ifdef WANT_LADSPA
 # include "juce_audio_processors/format_types/juce_LADSPAPluginFormat.cpp"
+#endif
+#if defined(WANT_VST) && ! defined(VESTIGE_HEADER)
 # include "juce_audio_processors/format_types/juce_VSTPluginFormat.cpp"
+#endif
+#ifdef WANT_VST3
+# include "juce_audio_processors/format_types/juce_VST3PluginFormat.cpp"
+#endif
+#ifdef WANT_AU
+# include "juce_audio_processors/format_types/juce_AudioUnitPluginFormat.mm"
 #endif
 }
 #endif
