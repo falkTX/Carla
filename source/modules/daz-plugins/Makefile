@@ -100,6 +100,7 @@ OBJS += \
 
 ifeq ($(HAVE_JUCE),true)
 OBJS += \
+	juce-patchbay.cpp.o \
 	vex-fx.cpp.o \
 	vex-synth.cpp.o \
 	vex-src.cpp.o
@@ -256,6 +257,9 @@ distrho-bigmeterM.cpp.o: distrho-bigmeterM.cpp bigmeterM/*.cpp bigmeterM/*.h big
 
 distrho-notes.cpp.o: distrho-notes.cpp notes/*.cpp notes/*.h notes/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Inotes -DDISTRHO_NAMESPACE=DISTRHO_Notes -c -o $@
+
+juce-patchbay.cpp.o: juce-patchbay.cpp
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 midi-file.cpp.o: midi-file.cpp midi-base.hpp $(CXXDEPS)
 	$(CXX) $< $(MF_CXX_FLAGS) -c -o $@

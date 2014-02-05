@@ -93,6 +93,14 @@ juce_gui_basics_%:
 
 # --------------------------------------------------------------
 
+juce_gui_extra:
+	$(MAKE) -C juce_gui_extra
+
+juce_gui_extra_%:
+	$(MAKE) -C juce_gui_extra $*
+
+# --------------------------------------------------------------
+
 lilv:
 	$(MAKE) -C lilv
 
@@ -211,6 +219,6 @@ clean:
 
 .PHONY: \
 	daz-plugins dgl jackbridge lilv rtaudio rtmidi rtmempool stk theme \
-	juce_audio_basics juce_audio_devices juce_audio_formats juce_audio_processors juce_core juce_data_structures juce_events juce_graphics juce_gui_basics
+	juce_audio_basics juce_audio_devices juce_audio_formats juce_audio_processors juce_core juce_data_structures juce_events juce_graphics juce_gui_basics juce_gui_extra
 
 # --------------------------------------------------------------

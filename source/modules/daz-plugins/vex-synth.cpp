@@ -1019,8 +1019,6 @@ protected:
 
     void uiShow(const bool show) override
     {
-        MessageManagerLock mmLock;
-
         if (show)
         {
             if (fWindow == nullptr)

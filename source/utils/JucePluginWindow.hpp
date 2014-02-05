@@ -24,11 +24,11 @@
 
 namespace juce {
 
-class PluginWindow : public DocumentWindow
+class JucePluginWindow : public DocumentWindow
 {
 public:
-    PluginWindow()
-        : DocumentWindow("PluginWindow", Colour(50, 50, 200), DocumentWindow::closeButton, false),
+    JucePluginWindow()
+        : DocumentWindow("JucePluginWindow", Colour(50, 50, 200), DocumentWindow::closeButton, false),
           fClosed(false)
     {
         setVisible(false);
@@ -38,12 +38,16 @@ public:
         setUsingNativeTitleBar(true);
     }
 
-    void show(Component* const comp)
+    void show(Component* const comp, const bool useContentOwned = false)
     {
         fClosed = false;
 
         centreWithSize(comp->getWidth(), comp->getHeight());
-        setContentNonOwned(comp, true);
+
+        if (useContentOwned)
+            setContentOwned(comp, false);
+        else
+            setContentNonOwned(comp, true);
 
         if (! isOnDesktop())
             addToDesktop();
@@ -75,12 +79,13 @@ protected:
 private:
     volatile bool fClosed;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginWindow)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JucePluginWindow)
 };
 
 } // namespace juce
 
-typedef juce::PluginWindow JucePluginWindow;
+using juce::JucePluginWindow;
+//typedef juce::PluginWindow JucePluginWindow;
 
 // -----------------------------------------------------------------------
 

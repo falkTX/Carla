@@ -25,6 +25,8 @@
 
 #include "juce_audio_processors.h"
 
+// TODO - use setPlayConfigDetails
+
 using namespace juce;
 
 CARLA_BACKEND_START_NAMESPACE

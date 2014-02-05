@@ -36,6 +36,7 @@ extern void carla_register_native_plugin_carla();
 #endif
 
 #ifdef HAVE_JUCE
+extern void carla_register_native_plugin_jucePatchbay();
 extern void carla_register_native_plugin_vex_fx();
 extern void carla_register_native_plugin_vex_synth();
 #endif
@@ -93,6 +94,7 @@ void carla_register_all_plugins()
 #endif
 
 #ifdef HAVE_JUCE
+    carla_register_native_plugin_jucePatchbay();
     carla_register_native_plugin_vex_fx();
     carla_register_native_plugin_vex_synth();
 #endif
