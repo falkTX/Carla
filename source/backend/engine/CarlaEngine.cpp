@@ -900,9 +900,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             break;
 
         case PLUGIN_JACK:
-#ifndef BUILD_BRIDGE
             plugin = CarlaPlugin::newJACK(initializer);
-#endif
             break;
 
         case PLUGIN_REWIRE:

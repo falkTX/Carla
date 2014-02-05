@@ -183,7 +183,7 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
         return 0; // unused
 #endif
 
-#ifdef BUILD_BRIDGE_PLUGIN
+#if defined(BUILD_BRIDGE_PLUGIN) && ! defined(BRIDGE_JACK)
     // Plugin methods
     if (std::strcmp(method, "plugin_save_now") == 0)
         return handleMsgPluginSaveNow();

@@ -17,19 +17,22 @@
 
 #include "CarlaEngine.hpp"
 #include "CarlaHost.h"
-#include "CarlaUtils.hpp"
+
+#include "CarlaBackendUtils.hpp"
+#include "CarlaThread.hpp"
+
+#include "../CarlaBridgeClient.hpp"
+
+#include "../backend/plugin/CarlaPluginInternal.hpp"
+#include "CarlaMathUtils.hpp"
 
 #include "jackbridge/JackBridge.hpp"
-
-//#include "CarlaEngine.hpp"
-//#include "CarlaPlugin.hpp"
-//#include "CarlaBackendUtils.hpp"
-//#include "CarlaBridgeUtils.hpp"
-//#include "CarlaMIDI.h"
 
 // -------------------------------------------------------------------------------------------------------------------
 
 struct _jack_client {
+    bool isActive;
+
     JackShutdownCallback shutdown_cb;
     void*                shutdown_ptr;
 
@@ -43,6 +46,7 @@ struct _jack_client {
 
     void clear()
     {
+        isActive     = false;
         shutdown_cb  = nullptr;
         shutdown_ptr = nullptr;
         process_cb   = nullptr;
@@ -55,11 +59,13 @@ static jack_client_t gJackClient;
 // -------------------------------------------------------------------------------------------------------------------
 
 struct _jack_port {
-    bool used;
-    char name[128+1];
+    bool  used;
+    char  name[128+1];
+    void* buffer;
 
     _jack_port()
-        : used(false) {}
+        : used(false),
+          buffer(nullptr) {}
 };
 
 // system ports
@@ -78,6 +84,127 @@ static jack_port_t gPortMidiOut;   // 9
 
 // -------------------------------------------------------------------------------------------------------------------
 
+CARLA_BRIDGE_START_NAMESPACE
+
+class JackBridgeClient : public CarlaBridgeClient,
+                                CarlaThread
+{
+public:
+    JackBridgeClient()
+        : CarlaBridgeClient(nullptr),
+          fEngine(nullptr)
+    {
+        carla_debug("JackBridgeClient::JackBridgeClient()");
+
+        carla_set_engine_callback(callback, this);
+
+        const char* const shmIds(std::getenv("ENGINE_BRIDGE_SHM_IDS"));
+        CARLA_SAFE_ASSERT_RETURN(shmIds != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(std::strlen(shmIds) == 6*2,);
+
+        char bridgeBaseAudioName[6+1];
+        char bridgeBaseControlName[6+1];
+
+        std::strncpy(bridgeBaseAudioName,   shmIds,   6);
+        std::strncpy(bridgeBaseControlName, shmIds+6, 6);
+        bridgeBaseAudioName[6]   = '\0';
+        bridgeBaseControlName[6] = '\0';
+
+        const char* const clientName(std::getenv("ENGINE_BRIDGE_CLIENT_NAME"));
+        CARLA_SAFE_ASSERT_RETURN(clientName != nullptr,);
+
+        const char* const oscUrl(std::getenv("ENGINE_BRIDGE_OSC_URL"));
+        CARLA_SAFE_ASSERT_RETURN(oscUrl != nullptr,);
+
+        if (! carla_engine_init_bridge(bridgeBaseAudioName, bridgeBaseControlName, clientName))
+            return;
+
+        fEngine = carla_get_engine();
+        CARLA_SAFE_ASSERT_RETURN(fEngine != nullptr,);
+
+        CarlaBridgeClient::oscInit(oscUrl);
+        fEngine->setOscBridgeData(&fOscData);
+
+        carla_add_plugin(CarlaBackend::BINARY_NATIVE, CarlaBackend::PLUGIN_JACK, "bridge", clientName, clientName, nullptr);
+
+        sendOscUpdate();
+        sendOscBridgeUpdate();
+    }
+
+    ~JackBridgeClient() override
+    {
+        carla_debug("JackBridgeClient::~JackBridgeClient()");
+        oscClose();
+        carla_engine_close();
+    }
+
+    bool isOk() const noexcept
+    {
+        return (fEngine != nullptr);
+    }
+
+protected:
+    void handleCallback(const CarlaBackend::EngineCallbackOpcode /*action*/, const uint /*pluginId*/, const int /*value1*/, const int /*value2*/, const float /*value3*/, const char* const /*valueStr*/)
+    {
+        CARLA_BACKEND_USE_NAMESPACE;
+    }
+
+    void run()
+    {
+        for (; carla_is_engine_running();)
+        {
+            carla_engine_idle();
+            CarlaBridgeClient::oscIdle();
+            carla_msleep(30);
+        }
+    }
+
+private:
+    const CarlaBackend::CarlaEngine* fEngine;
+
+    static void callback(void* ptr, CarlaBackend::EngineCallbackOpcode action, uint pluginId, int value1, int value2, float value3, const char* valueStr)
+    {
+        carla_debug("CarlaPluginClient::callback(%p, %i:%s, %i, %i, %i, %f, \"%s\")", ptr, action, CarlaBackend::EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
+        CARLA_SAFE_ASSERT_RETURN(ptr != nullptr,);
+
+        return ((JackBridgeClient*)ptr)->handleCallback(action, pluginId, value1, value2, value3, valueStr);
+    }
+};
+
+// -------------------------------------------------------------------------
+
+int CarlaBridgeOsc::handleMsgShow()
+{
+    carla_debug("CarlaBridgeOsc::handleMsgShow()");
+
+    return 0;
+}
+
+int CarlaBridgeOsc::handleMsgHide()
+{
+    carla_debug("CarlaBridgeOsc::handleMsgHide()");
+
+    return 0;
+}
+
+int CarlaBridgeOsc::handleMsgQuit()
+{
+    carla_debug("CarlaBridgeOsc::handleMsgQuit()");
+
+    if (gJackClient.shutdown_cb != nullptr)
+        gJackClient.shutdown_cb(gJackClient.shutdown_ptr);
+
+    carla_engine_close();
+
+    std::exit(0);
+
+    return 0;
+}
+
+CARLA_BRIDGE_END_NAMESPACE
+
+// -------------------------------------------------------------------------------------------------------------------
+
 CARLA_EXPORT jack_client_t* jack_client_open(const char* client_name, jack_options_t options, jack_status_t* status, ...);
 CARLA_EXPORT int jack_client_close(jack_client_t* client);
 
@@ -92,6 +219,7 @@ CARLA_EXPORT jack_nframes_t jack_get_sample_rate(jack_client_t* client);
 CARLA_EXPORT jack_nframes_t jack_get_buffer_size(jack_client_t* client);
 
 CARLA_EXPORT jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, const char* port_type, unsigned long flags, unsigned long buffer_size);
+CARLA_EXPORT void* jack_port_get_buffer(jack_port_t* port, jack_nframes_t frames);
 
 CARLA_EXPORT const char* jack_port_name(const jack_port_t* port);
 
@@ -121,6 +249,8 @@ jack_info_callback  sInfoCallback  = nullptr;
 
 jack_client_t* jack_client_open(const char* client_name, jack_options_t /*options*/, jack_status_t* status, ...)
 {
+    carla_stderr2("JACKBRIDGE CLIENT OPEN HERE");
+
     if (carla_is_engine_running())
     {
         if (status != nullptr)
@@ -128,7 +258,9 @@ jack_client_t* jack_client_open(const char* client_name, jack_options_t /*option
         return nullptr;
     }
 
-    if (! carla_engine_init("JACK", client_name))
+    static CarlaBridge::JackBridgeClient bridge;
+
+    if (! bridge.isOk())
     {
         if (status != nullptr)
             *status = JackServerFailed;
@@ -153,6 +285,8 @@ jack_client_t* jack_client_open(const char* client_name, jack_options_t /*option
 int jack_client_close(jack_client_t* client)
 {
     CARLA_SAFE_ASSERT_RETURN(client == &gJackClient, -1);
+
+    carla_stderr2("JACKBRIDGE CLIENT CLOSE HERE");
 
     if (! carla_is_engine_running())
         return -1;
@@ -191,6 +325,7 @@ int jack_activate(jack_client_t* client)
 {
     CARLA_SAFE_ASSERT_RETURN(client == &gJackClient, -1);
 
+    gJackClient.isActive = true;
     return 0;
 }
 
@@ -198,13 +333,13 @@ int jack_deactivate(jack_client_t* client)
 {
     CARLA_SAFE_ASSERT_RETURN(client == &gJackClient, -1);
 
+    gJackClient.isActive = false;
     return 0;
 }
 
 int jack_is_realtime(jack_client_t* client)
 {
     CARLA_SAFE_ASSERT_RETURN(client == &gJackClient, 0);
-
     return 1;
 }
 
@@ -213,14 +348,12 @@ int jack_is_realtime(jack_client_t* client)
 jack_nframes_t jack_get_sample_rate(jack_client_t* client)
 {
     CARLA_SAFE_ASSERT_RETURN(client == &gJackClient, 0);
-
     return static_cast<uint32_t>(carla_get_sample_rate());
 }
 
 jack_nframes_t jack_get_buffer_size(jack_client_t* client)
 {
     CARLA_SAFE_ASSERT_RETURN(client == &gJackClient, 0);
-
     return carla_get_buffer_size();
 }
 
@@ -285,6 +418,11 @@ jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, co
     }
 
     return nullptr;
+}
+
+void* jack_port_get_buffer(jack_port_t* port, jack_nframes_t frames)
+{
+    return port->buffer;
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -478,5 +616,385 @@ void jack_free(void* ptr)
 
 CARLA_EXPORT void carla_register_all_plugins();
 void carla_register_all_plugins() {}
+
+// -------------------------------------------------------------------------------------------------------------------
+
+CARLA_BACKEND_START_NAMESPACE
+
+class JackPlugin : public CarlaPlugin
+{
+public:
+    JackPlugin(CarlaEngine* const engine, const uint id)
+        : CarlaPlugin(engine, id)
+    {
+        carla_debug("JackPlugin::JackPlugin(%p, %i)", engine, id);
+    }
+
+    ~JackPlugin() override
+    {
+        carla_debug("JackPlugin::~JackPlugin()");
+
+        pData->singleMutex.lock();
+        pData->masterMutex.lock();
+
+        if (pData->client != nullptr && pData->client->isActive())
+            pData->client->deactivate();
+
+        if (pData->active)
+        {
+            deactivate();
+            pData->active = false;
+        }
+
+        clearBuffers();
+    }
+
+    void clearBuffers() override
+    {
+        pData->audioIn.count = 0;
+        pData->audioOut.count = 0;
+    }
+
+    // -------------------------------------------------------------------
+    // Information (base)
+
+    PluginType getType() const noexcept override
+    {
+        return PLUGIN_JACK;
+    }
+
+    PluginCategory getCategory() const noexcept override
+    {
+        return PLUGIN_CATEGORY_NONE;
+    }
+
+    void getLabel(char* const strBuf) const noexcept override
+    {
+        std::strncpy(strBuf, "zita-rev1", STR_MAX);
+    }
+
+    void getRealName(char* const strBuf) const noexcept override
+    {
+        std::strncpy(strBuf, "zita-rev1", STR_MAX);
+    }
+
+    // -------------------------------------------------------------------
+    // Information (count)
+
+    // nothing
+
+    // -------------------------------------------------------------------
+    // Information (current data)
+
+    // nothing
+
+    // -------------------------------------------------------------------
+    // Information (per-plugin data)
+
+    unsigned int getOptionsAvailable() const noexcept override
+    {
+        unsigned int options = 0x0;
+
+        //options |= PLUGIN_OPTION_FIXED_BUFFERS;
+        options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        //options |= PLUGIN_OPTION_USE_CHUNKS;
+
+        {
+            options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+            options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+            options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+            options |= PLUGIN_OPTION_SEND_PITCHBEND;
+            options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+        }
+
+        return options;
+    }
+
+    // -------------------------------------------------------------------
+    // Set data (state)
+
+    // nothing
+
+    // -------------------------------------------------------------------
+    // Set data (internal stuff)
+
+    // -------------------------------------------------------------------
+    // Set data (plugin-specific stuff)
+
+    // -------------------------------------------------------------------
+    // Set ui stuff
+
+    // -------------------------------------------------------------------
+    // Plugin state
+
+    void reload() override
+    {
+        CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
+        carla_stderr2("JackPlugin::reload() - start");
+
+        //const EngineProcessMode processMode(pData->engine->getProccessMode());
+
+        // Safely disable plugin for reload
+        const ScopedDisabler sd(this);
+
+        if (pData->active)
+            deactivate();
+
+        clearBuffers();
+
+        pData->audioIn.count = 2;
+        pData->audioOut.count = 2;
+
+        bufferSizeChanged(pData->engine->getBufferSize());
+        //reloadPrograms(true);
+
+        if (pData->active)
+            activate();
+
+        carla_stderr2("JackPlugin::reload() - end");
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin processing
+
+    void activate() noexcept override
+    {
+    }
+
+    void deactivate() noexcept override
+    {
+    }
+
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
+    {
+        carla_stderr2("JackPlugin::process");
+        // --------------------------------------------------------------------------------------------------------
+        // Check if active
+
+        if (! (gJackClient.isActive && pData->active))
+        {
+            // disable any output sound
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
+                FLOAT_CLEAR(outBuffer[i], static_cast<int>(frames));
+            carla_stderr2("JackPlugin::process disabled");
+            return;
+        }
+        carla_stderr2("JackPlugin::working");
+
+        // --------------------------------------------------------------------------------------------------------
+        // Check if needs reset
+
+        if (pData->needsReset)
+        {
+            pData->needsReset = false;
+        }
+
+        processSingle(inBuffer, outBuffer, frames);
+    }
+
+    bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames)
+    {
+        CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
+
+        if (pData->audioIn.count > 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(inBuffer != nullptr, false);
+        }
+        if (pData->audioOut.count > 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(outBuffer != nullptr, false);
+        }
+
+        // --------------------------------------------------------------------------------------------------------
+        // Try lock, silence otherwise
+
+        if (pData->engine->isOffline())
+        {
+            pData->singleMutex.lock();
+        }
+        else if (! pData->singleMutex.tryLock())
+        {
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
+                FLOAT_CLEAR(outBuffer[i], frames);
+            return false;
+        }
+
+        // --------------------------------------------------------------------------------------------------------
+        // Set audio in buffers
+
+        if (pData->audioIn.count == 2)
+        {
+            gPortAudioIn1.buffer = inBuffer[0];
+            gPortAudioIn2.buffer = inBuffer[1];
+        }
+        else if (pData->audioIn.count == 1)
+        {
+            gPortAudioIn1.buffer = inBuffer[0];
+        }
+
+        if (pData->audioOut.count == 2)
+        {
+            gPortAudioOut1.buffer = outBuffer[0];
+            gPortAudioOut2.buffer = outBuffer[1];
+        }
+        else if (pData->audioOut.count == 1)
+        {
+            gPortAudioOut1.buffer = outBuffer[0];
+        }
+
+        // --------------------------------------------------------------------------------------------------------
+        // Run plugin
+
+        //if (gJackClient.process_cb != nullptr)
+        //    gJackClient.process_cb(frames, gJackClient.process_ptr);
+
+        // --------------------------------------------------------------------------------------------------------
+        // Set audio out buffers
+
+        //for (uint32_t i=0; i < pData->audioOut.count; ++i)
+        //    FloatVectorOperations::copy(outBuffer[i], fAudioBuffer.getSampleData(static_cast<int>(i)), static_cast<int>(frames));
+
+        // --------------------------------------------------------------------------------------------------------
+
+        pData->singleMutex.unlock();
+        return true;
+    }
+
+    void bufferSizeChanged(const uint32_t newBufferSize) override
+    {
+        CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
+        carla_debug("VstPlugin::bufferSizeChanged(%i)", newBufferSize);
+    }
+
+    void sampleRateChanged(const double newSampleRate) override
+    {
+        CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
+        carla_debug("VstPlugin::sampleRateChanged(%g)", newSampleRate);
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin buffers
+
+    // nothing
+
+    // -------------------------------------------------------------------
+    // Post-poned UI Stuff
+
+    // nothing
+
+    // -------------------------------------------------------------------
+
+protected:
+    // TODO
+
+    // -------------------------------------------------------------------
+
+public:
+    bool init(const char* const filename, const char* const name, const char* const label)
+    {
+        CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
+
+        // ---------------------------------------------------------------
+        // first checks
+
+        if (pData->client != nullptr)
+        {
+            pData->engine->setLastError("Plugin client is already registered");
+            return false;
+        }
+
+        if (filename == nullptr || filename[0] == '\0')
+        {
+            pData->engine->setLastError("null filename");
+            return false;
+        }
+
+        if (label == nullptr || label[0] == '\0')
+        {
+            pData->engine->setLastError("null label");
+            return false;
+        }
+
+        // ---------------------------------------------------------------
+        // get info
+
+        if (name != nullptr && name[0] != '\0')
+            pData->name = pData->engine->getUniquePluginName(name);
+        else
+            pData->name = pData->engine->getUniquePluginName("test");
+
+        pData->filename = carla_strdup(filename);
+
+        // ---------------------------------------------------------------
+        // register client
+
+        pData->client = pData->engine->addClient(this);
+
+        if (pData->client == nullptr || ! pData->client->isOk())
+        {
+            pData->engine->setLastError("Failed to register plugin client");
+            return false;
+        }
+
+        // ---------------------------------------------------------------
+        // load plugin settings
+
+        {
+            // set default options
+            pData->options = 0x0;
+
+            //pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+            //pData->options |= PLUGIN_OPTION_USE_CHUNKS;
+
+            //if (fInstance->acceptsMidi())
+            {
+                pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+                pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+                pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+                pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+            }
+
+            // set identifier string
+            CarlaString identifier("JACK/");
+            //identifier += juceId.toRawUTF8();
+            pData->identifier = identifier.dup();
+
+            // load settings
+            pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
+        }
+
+        return true;
+    }
+
+private:
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JackPlugin)
+};
+
+CarlaPlugin* CarlaPlugin::newJACK(const Initializer& init)
+{
+    carla_debug("CarlaPlugin::newJACK({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
+
+    JackPlugin* const plugin(new JackPlugin(init.engine, init.id));
+
+    if (! plugin->init(init.filename, init.name, init.label))
+    {
+        delete plugin;
+        return nullptr;
+    }
+
+    plugin->reload();
+
+//     if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
+//     {
+//         init.engine->setLastError("Carla's rack mode can only work with Stereo bridged apps, sorry!");
+//         delete plugin;
+//         return nullptr;
+//     }
+
+    return plugin;
+}
+
+CARLA_BACKEND_END_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------

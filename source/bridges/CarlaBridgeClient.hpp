@@ -157,6 +157,7 @@ private:
     } fUI;
 #else
     friend class CarlaPluginClient;
+    friend class JackBridgeClient;
 #endif
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeClient)

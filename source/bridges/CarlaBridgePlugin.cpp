@@ -29,10 +29,6 @@
 # include <signal.h>
 #endif
 
-// #ifdef BUILD_BRIDGE
-// # undef HAVE_JUCE
-// #endif
-
 #ifdef HAVE_JUCE
 # include "juce_gui_basics.h"
 using juce::JUCEApplication;
@@ -40,8 +36,6 @@ using juce::JUCEApplicationBase;
 using juce::String;
 using juce::Timer;
 #endif
-
-//using juce::File;
 
 // -------------------------------------------------------------------------
 
@@ -163,13 +157,13 @@ CARLA_BRIDGE_START_NAMESPACE
 class CarlaPluginClient : public CarlaBridgeClient
 {
 public:
-    CarlaPluginClient(const bool useBridge, const char* const driverName, const char* audioBaseName, const char* controlBaseName)
+    CarlaPluginClient(const bool useBridge, const char* const clientName, const char* audioBaseName, const char* controlBaseName)
         : CarlaBridgeClient(nullptr),
           fPlugin(nullptr),
           fEngine(nullptr)
     {
-        CARLA_ASSERT(driverName != nullptr && driverName[0] != '\0');
-        carla_debug("CarlaPluginClient::CarlaPluginClient(%s, \"%s\", %s, %s)", bool2str(useBridge), driverName, audioBaseName, controlBaseName);
+        CARLA_ASSERT(clientName != nullptr && clientName[0] != '\0');
+        carla_debug("CarlaPluginClient::CarlaPluginClient(%s, \"%s\", %s, %s)", bool2str(useBridge), clientName, audioBaseName, controlBaseName);
 
         carla_set_engine_callback(callback, this);
 
@@ -185,9 +179,9 @@ public:
 #endif
 
         if (useBridge)
-            carla_engine_init_bridge(audioBaseName, controlBaseName, driverName);
+            carla_engine_init_bridge(audioBaseName, controlBaseName, clientName);
         else
-            carla_engine_init("JACK", driverName);
+            carla_engine_init("JACK", clientName);
 
         fEngine = carla_get_engine();
     }
@@ -552,9 +546,14 @@ int CarlaBridgeOsc::handleMsgPluginSetCustomData(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     return 0;
 }
 
+CARLA_BRIDGE_END_NAMESPACE
+
 // -------------------------------------------------------------------------
 
-CARLA_BRIDGE_END_NAMESPACE
+CarlaPlugin* CarlaPlugin::newJACK(const CarlaPlugin::Initializer&)
+{
+    return nullptr;
+}
 
 // -------------------------------------------------------------------------
 
@@ -647,7 +646,7 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Init plugin client
 
-    CarlaPluginClient client(useBridge, (const char*)clientName, bridgeBaseAudioName, bridgeBaseControlName);
+    CarlaPluginClient client(useBridge, clientName.getBuffer(), bridgeBaseAudioName, bridgeBaseControlName);
 
     if (! client.isOk())
     {

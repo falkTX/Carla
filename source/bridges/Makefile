@@ -401,6 +401,8 @@ carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS) ../modules/theme.qt
 
 OBJS_PLUGIN = \
 	jackplugin/CarlaJackPlugin__plugin.o \
+	CarlaBridgeClient__plugin.o \
+	CarlaBridgeOsc__plugin.o \
 	../backend/engine/CarlaEngine__native.o \
 	../backend/engine/CarlaEngineInternal__native.o \
 	../backend/engine/CarlaEngineOsc__native.o \
@@ -450,7 +452,7 @@ jackplugin/libjack.so.0: $(OBJS_PLUGIN) $(LIBS_PLUGIN)
 	$(CXX) $(OBJS_PLUGIN) -Wl,--start-group $(LIBS_PLUGIN) -Wl,--end-group $(NATIVE_LINK_FLAGS) -shared -o $@
 
 %__plugin.o: %.cpp
-	$(CXX) $< $(NATIVE_BUILD_FLAGS) -DJACKBRIDGE_EXPORT -c -o $@
+	$(CXX) $< $(NATIVE_BUILD_FLAGS) -DBRIDGE_JACK -DJACKBRIDGE_EXPORT -c -o $@
 
 #  $(NATIVE_LINK_FLAGS)
 
@@ -552,6 +554,7 @@ OBJS_POSIX32 += \
 	../backend/plugin/DssiPlugin__posix32.o \
 	../backend/plugin/Lv2Plugin__posix32.o \
 	../backend/plugin/VstPlugin__posix32.o \
+	../backend/plugin/Vst3Plugin__posix32.o \
 	../backend/plugin/AuPlugin__posix32.o \
 	../backend/plugin/ReWirePlugin__posix32.o \
 	../backend/plugin/CsoundPlugin__posix32.o \
@@ -611,6 +614,7 @@ OBJS_POSIX64 += \
 	../backend/plugin/DssiPlugin__posix64.o \
 	../backend/plugin/Lv2Plugin__posix64.o \
 	../backend/plugin/VstPlugin__posix64.o \
+	../backend/plugin/Vst3Plugin__posix64.o \
 	../backend/plugin/AuPlugin__posix32.o \
 	../backend/plugin/ReWirePlugin__posix64.o \
 	../backend/plugin/CsoundPlugin__posix64.o \
@@ -670,6 +674,7 @@ OBJS_WIN32 += \
 	../backend/plugin/DssiPlugin__win32.o \
 	../backend/plugin/Lv2Plugin__win32.o \
 	../backend/plugin/VstPlugin__win32.o \
+	../backend/plugin/Vst3Plugin__win32.o \
 	../backend/plugin/AuPlugin__win32.o \
 	../backend/plugin/ReWirePlugin__win32.o \
 	../backend/plugin/CsoundPlugin__win32.o \
@@ -729,6 +734,7 @@ OBJS_WIN64 += \
 	../backend/plugin/DssiPlugin__win64.o \
 	../backend/plugin/Lv2Plugin__win64.o \
 	../backend/plugin/VstPlugin__win64.o \
+	../backend/plugin/Vst3Plugin__win64.o \
 	../backend/plugin/AuPlugin__win64.o \
 	../backend/plugin/ReWirePlugin__win64.o \
 	../backend/plugin/CsoundPlugin__win64.o \

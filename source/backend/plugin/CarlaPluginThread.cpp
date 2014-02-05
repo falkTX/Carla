@@ -19,6 +19,7 @@
 #include "CarlaPluginThread.hpp"
 #include "CarlaEngine.hpp"
 
+#include <QtCore/QDebug>
 #include <QtCore/QProcess>
 
 CARLA_BACKEND_START_NAMESPACE
@@ -183,6 +184,8 @@ void CarlaPluginThread::run()
 
     case PLUGIN_THREAD_BRIDGE:
         env.insert("ENGINE_BRIDGE_SHM_IDS", fExtra2.getBuffer());
+        env.insert("ENGINE_BRIDGE_CLIENT_NAME", name);
+        env.insert("ENGINE_BRIDGE_OSC_URL", QString("%1/%2").arg(fEngine->getOscServerPathUDP()).arg(fPlugin->getId()));
 
         if (fPlugin->getType() != PLUGIN_JACK)
         {
@@ -194,12 +197,17 @@ void CarlaPluginThread::run()
         }
         else
         {
-            /* filename */ arguments << fPlugin->getFilename();
+            env.insert("LD_LIBRARY_PATH", "/home/falktx/FOSS/GIT-mine/Carla/source/bridges/jackplugin/");
+            carla_stdout("JACK app bridge here, filename: %s", fPlugin->getFilename());
+            fBinary = fPlugin->getFilename();
         }
         break;
     }
 
     fProcess->setProcessEnvironment(env);
+
+    carla_stdout("starting app..");
+    qWarning() << arguments;
 
     fProcess->start((const char*)fBinary, arguments);
     fProcess->waitForStarted();
@@ -296,6 +304,8 @@ void CarlaPluginThread::run()
         }
         break;
     }
+
+    carla_stdout("app finished");
 }
 
 CARLA_BACKEND_END_NAMESPACE
