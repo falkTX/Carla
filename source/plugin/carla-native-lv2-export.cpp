@@ -36,9 +36,9 @@
 
 #include <fstream>
 
-#if JUCE_WINDOWS
+#if defined(CARLA_OS_WIN)
 # define PLUGIN_EXT ".dll"
-#elif JUCE_MAC
+#elif defined(JUCE_MAC)
 # define PLUGIN_EXT ".dylib"
 #else
 # define PLUGIN_EXT ".so"
@@ -53,7 +53,7 @@ using juce::juce_wchar;
 
 static StringArray gUsedSymbols;
 
-const String nameToSymbol(const String& name, const uint32_t portIndex)
+static const String nameToSymbol(const String& name, const uint32_t portIndex)
 {
     String symbol, trimmedName = name.trim().toLowerCase();
 
@@ -99,7 +99,7 @@ const String nameToSymbol(const String& name, const uint32_t portIndex)
 
 // -----------------------------------------------------------------------
 
-void writeManifestFile(PluginListManager& plm)
+static void writeManifestFile(PluginListManager& plm)
 {
     String text;
 
@@ -154,7 +154,7 @@ static double   host_getSampleRate(NativeHostHandle) { return 44100.0; }
 static bool     host_isOffline(NativeHostHandle)     { return true;    }
 static intptr_t host_dispatcher(NativeHostHandle, NativeHostDispatcherOpcode, int32_t, intptr_t, void*, float) { return 0; }
 
-void writePluginFile(const NativePluginDescriptor* const pluginDesc)
+static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
 {
     const String pluginLabel(pluginDesc->label);
     const String pluginFile("carla-native.lv2/" + pluginLabel + ".ttl");

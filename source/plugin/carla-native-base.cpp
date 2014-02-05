@@ -28,26 +28,6 @@
 #endif
 
 // -----------------------------------------------------------------------
-
-ulong carla_standalone_get_transient_win_id()
-{
-    return 0;
-}
-
-const char* carla_standalone_file_callback(FileCallbackOpcode action, bool isDir, const char* title, const char* filter)
-{
-    CARLA_SAFE_ASSERT_RETURN(title != nullptr && title[0] != '\0', nullptr);
-    CARLA_SAFE_ASSERT_RETURN(filter != nullptr && filter[0] != '\0', nullptr);
-    carla_debug("carla_file_callback(%i:%s, %s, \"%s\", \"%s\")", action, CarlaBackend::FileCallbackOpcode2Str(action), bool2str(isDir), title, filter);
-
-    return nullptr;
-
-    // unused
-    (void)action;
-    (void)isDir;
-}
-
-// -----------------------------------------------------------------------
 // Plugin List
 
 struct PluginListManager {

@@ -103,7 +103,7 @@ endif
 
 ifeq ($(HAVE_JUCE),true)
 LIBS += ../modules/juce_audio_basics.a
-# LIBS += ../modules/juce_audio_devices.a
+LIBS += ../modules/juce_audio_processors.a
 LIBS += ../modules/juce_core.a
 LIBS += ../modules/juce_data_structures.a
 LIBS += ../modules/juce_events.a
