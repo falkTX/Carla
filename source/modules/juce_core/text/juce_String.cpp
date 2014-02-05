@@ -259,6 +259,12 @@ void String::swapWith (String& other) noexcept
     std::swap (text, other.text);
 }
 
+void String::clear() noexcept
+{
+    StringHolder::release (text);
+    text = &(emptyString.text);
+}
+
 String& String::operator= (const String& other) noexcept
 {
     StringHolder::retain (other.text);
@@ -307,6 +313,10 @@ String::String (const char* const t)
         you use UTF-8 with escape characters in your source code to represent extended characters,
         because there's no other way to represent these strings in a way that isn't dependent on
         the compiler, source code editor and platform.
+
+        Note that the Introjucer has a handy string literal generator utility that will convert
+        any unicode string to a valid C++ string literal, creating ascii escape sequences that will
+        work in any compiler.
     */
     jassert (t == nullptr || CharPointer_ASCII::isValidString (t, std::numeric_limits<int>::max()));
 }
@@ -326,6 +336,10 @@ String::String (const char* const t, const size_t maxChars)
         you use UTF-8 with escape characters in your source code to represent extended characters,
         because there's no other way to represent these strings in a way that isn't dependent on
         the compiler, source code editor and platform.
+
+        Note that the Introjucer has a handy string literal generator utility that will convert
+        any unicode string to a valid C++ string literal, creating ascii escape sequences that will
+        work in any compiler.
     */
     jassert (t == nullptr || CharPointer_ASCII::isValidString (t, (int) maxChars));
 }
@@ -419,7 +433,8 @@ namespace NumberToStringConverters
     {
         explicit StackArrayStream (char* d)
         {
-            imbue (std::locale::classic());
+            static const std::locale classicLocale (std::locale::classic());
+            imbue (classicLocale);
             setp (d, d + charsNeededForDouble);
         }
 
@@ -684,23 +699,28 @@ String& String::operator+= (const juce_wchar ch)
 String& String::operator+= (const int number)
 {
     char buffer [16];
-    char* const end = buffer + numElementsInArray (buffer);
-    char* const start = NumberToStringConverters::numberToString (end, number);
+    char* end = buffer + numElementsInArray (buffer);
+    char* start = NumberToStringConverters::numberToString (end, number);
 
-    const int numExtraChars = (int) (end - start);
+   #if (JUCE_STRING_UTF_TYPE == 8)
+    appendCharPointer (CharPointerType (start), CharPointerType (end));
+   #else
+    appendCharPointer (CharPointer_ASCII (start), CharPointer_ASCII (end));
+   #endif
+    return *this;
+}
 
-    if (numExtraChars > 0)
-    {
-        const size_t byteOffsetOfNull = getByteOffsetOfEnd();
-        const size_t newBytesNeeded = sizeof (CharPointerType::CharType) + byteOffsetOfNull
-                                        + sizeof (CharPointerType::CharType) * (size_t) numExtraChars;
+String& String::operator+= (int64 number)
+{
+    char buffer [32];
+    char* end = buffer + numElementsInArray (buffer);
+    char* start = NumberToStringConverters::numberToString (end, number);
 
-        text = StringHolder::makeUniqueWithByteSize (text, newBytesNeeded);
-
-        CharPointerType newEnd (addBytesToPointer (text.getAddress(), (int) byteOffsetOfNull));
-        newEnd.writeWithCharLimit (CharPointer_ASCII (start), numExtraChars);
-    }
-
+   #if (JUCE_STRING_UTF_TYPE == 8)
+    appendCharPointer (CharPointerType (start), CharPointerType (end));
+   #else
+    appendCharPointer (CharPointer_ASCII (start), CharPointer_ASCII (end));
+   #endif
     return *this;
 }
 
@@ -737,6 +757,7 @@ JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const long number)       
 JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const int64 number)          { return s1 += String (number); }
 JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const float number)          { return s1 += String (number); }
 JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const double number)         { return s1 += String (number); }
+JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const uint64 number)         { return s1 += String (number); }
 
 JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const String& text)
 {
@@ -2192,6 +2213,10 @@ public:
             s2 << ((int) 4) << ((short) 5) << "678" << L"9" << '0';
             s2 += "xyz";
             expect (s2 == "1234567890xyz");
+            s2 += (int) 123;
+            expect (s2 == "1234567890xyz123");
+            s2 += (int64) 123;
+            expect (s2 == "1234567890xyz123123");
 
             beginTest ("Numeric conversions");
             expect (String::empty.getIntValue() == 0);
@@ -2387,6 +2412,28 @@ public:
             toks.addTokens ("x,'y,z',", ";,", "'");
             expectEquals (toks.size(), 3);
             expectEquals (toks.joinIntoString ("-"), String ("x-'y,z'-"));
+        }
+
+        {
+            beginTest ("var");
+
+            var v1 = 0;
+            var v2 = 0.1;
+            var v3 = "0.1";
+            var v4 = (int64) 0;
+            var v5 = 0.0;
+            expect (! v2.equals (v1));
+            expect (! v1.equals (v2));
+            expect (v2.equals (v3));
+            expect (v3.equals (v2));
+            expect (! v3.equals (v1));
+            expect (! v1.equals (v3));
+            expect (v1.equals (v4));
+            expect (v4.equals (v1));
+            expect (v5.equals (v4));
+            expect (v4.equals (v5));
+            expect (! v2.equals (v4));
+            expect (! v4.equals (v2));
         }
     }
 };

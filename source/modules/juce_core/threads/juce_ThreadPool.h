@@ -210,7 +210,7 @@ public:
         will wait for it to finish.
 
         If the timeout period expires before the job finishes running, then the job will be
-        left in the pool and this will return false. It returns true if the job is sucessfully
+        left in the pool and this will return false. It returns true if the job is successfully
         stopped and removed.
 
         @param job                  the job to remove
@@ -247,7 +247,7 @@ public:
     /** Returns one of the jobs in the queue.
 
         Note that this can be a very volatile list as jobs might be continuously getting shifted
-        around in the list, and this method may return 0 if the index is currently out-of-range.
+        around in the list, and this method may return nullptr if the index is currently out-of-range.
     */
     ThreadPoolJob* getJob (int index) const;
 

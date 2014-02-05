@@ -90,15 +90,6 @@ struct JavascriptEngine::RootObject   : public DynamicObject
         return ExpPtr (tb.parseExpression())->getResult (Scope (nullptr, this, this));
     }
 
-    var invoke (Identifier function, const var::NativeFunctionArgs& args)
-    {
-        if (const var* m = getProperties().getVarPointer (function))
-            if (FunctionObject* fo = dynamic_cast<FunctionObject*> (m->getObject()))
-                return fo->invoke (Scope (nullptr, this, this), args);
-
-        return var::undefined();
-    }
-
     //==============================================================================
     static bool areTypeEqual (const var& a, const var& b)
     {
@@ -191,6 +182,32 @@ struct JavascriptEngine::RootObject   : public DynamicObject
                                      : var::undefined();
         }
 
+        bool findAndInvokeMethod (Identifier function, const var::NativeFunctionArgs& args, var& result) const
+        {
+            const NamedValueSet& props = scope->getProperties();
+
+            DynamicObject* target = args.thisObject.getDynamicObject();
+
+            if (target == nullptr || target == scope)
+            {
+                if (const var* m = props.getVarPointer (function))
+                {
+                    if (FunctionObject* fo = dynamic_cast<FunctionObject*> (m->getObject()))
+                    {
+                        result = fo->invoke (*this, args);
+                        return true;
+                    }
+                }
+            }
+
+            for (int i = 0; i < props.size(); ++i)
+                if (DynamicObject* o = props.getValueAt (i).getDynamicObject())
+                    if (Scope (this, root, o).findAndInvokeMethod (function, args, result))
+                        return true;
+
+            return false;
+        }
+
         void checkTimeOut (const CodeLocation& location) const
         {
             if (Time::getCurrentTime() > root->timeout)
@@ -281,11 +298,10 @@ struct JavascriptEngine::RootObject   : public DynamicObject
 
                 if (r == returnWasHit)   return r;
                 if (r == breakWasHit)    break;
-                if (r == continueWasHit) continue;
 
                 iterator->perform (s, nullptr);
 
-                if (isDoLoop && ! condition->getResult (s))
+                if (isDoLoop && r != continueWasHit && ! condition->getResult (s))
                     break;
             }
 
@@ -656,14 +672,13 @@ struct JavascriptEngine::RootObject   : public DynamicObject
 
         var getResult (const Scope& s) const override
         {
-            var function (object->getResult (s));
-
             if (DotOperator* dot = dynamic_cast<DotOperator*> (object.get()))
             {
                 var thisObject (dot->parent->getResult (s));
                 return invokeFunction (s, s.findFunctionCall (location, thisObject, dot->child), thisObject);
             }
 
+            var function (object->getResult (s));
             return invokeFunction (s, function, var (s.scope));
         }
 
@@ -763,7 +778,7 @@ struct JavascriptEngine::RootObject   : public DynamicObject
 
         void writeAsJSON (OutputStream& out, int /*indentLevel*/, bool /*allOnOneLine*/) override
         {
-            out << "function" << functionCode;
+            out << "function " << functionCode;
         }
 
         var invoke (const Scope& s, const var::NativeFunctionArgs& args) const
@@ -773,9 +788,9 @@ struct JavascriptEngine::RootObject   : public DynamicObject
             static const Identifier thisIdent ("this");
             functionRoot->setProperty (thisIdent, args.thisObject);
 
-            const int numArgs = jmin (parameters.size(), args.numArguments);
-            for (int i = 0; i < numArgs; ++i)
-                functionRoot->setProperty (parameters.getReference(i), args.arguments[i]);
+            for (int i = 0; i < parameters.size(); ++i)
+                functionRoot->setProperty (parameters.getReference(i),
+                                           i < args.numArguments ? args.arguments[i] : var::undefined());
 
             var result;
             body->perform (Scope (&s, s.root, functionRoot), &result);
@@ -1228,7 +1243,7 @@ struct JavascriptEngine::RootObject   : public DynamicObject
             if (matchIf (TokenTypes::openParen))        return parseSuffixes (matchCloseParen (parseExpression()));
             if (matchIf (TokenTypes::true_))            return parseSuffixes (new LiteralValue (location, (int) 1));
             if (matchIf (TokenTypes::false_))           return parseSuffixes (new LiteralValue (location, (int) 0));
-            if (matchIf (TokenTypes::null_))            return parseSuffixes (new LiteralValue (location, var::null));
+            if (matchIf (TokenTypes::null_))            return parseSuffixes (new LiteralValue (location, var()));
             if (matchIf (TokenTypes::undefined))        return parseSuffixes (new Expression (location));
 
             if (currentType == TokenTypes::literal)
@@ -1674,18 +1689,20 @@ var JavascriptEngine::evaluate (const String& code, Result* result)
 
 var JavascriptEngine::callFunction (Identifier function, const var::NativeFunctionArgs& args, Result* result)
 {
+    var returnVal (var::undefined());
+
     try
     {
         prepareTimeout();
         if (result != nullptr) *result = Result::ok();
-        return root->invoke (function, args);
+        RootObject::Scope (nullptr, root, root).findAndInvokeMethod (function, args, returnVal);
     }
     catch (String& error)
     {
         if (result != nullptr) *result = Result::fail (error);
     }
 
-    return var::undefined();
+    return returnVal;
 }
 
 #if JUCE_MSVC

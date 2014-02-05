@@ -1,9 +1,12 @@
 #!/bin/bash
 
+set -e
+
 JUCE_MODULES_DIR="/home/falktx/Personal/FOSS/GIT/DISTRHO/libs/juce/source/modules/"
 CARLA_MODULES_DIR="/home/falktx/Personal/FOSS/GIT/Carla/source/modules"
 
-MODULES=("juce_audio_basics juce_audio_devices juce_audio_formats juce_audio_processors juce_core juce_data_structures juce_events juce_graphics juce_gui_basics")
+# MODULES=("juce_audio_basics juce_audio_devices juce_audio_formats juce_audio_processors juce_core juce_data_structures juce_events juce_graphics juce_gui_basics")
+MODULES=("juce_core")
 
 for M in $MODULES; do
   echo $M;

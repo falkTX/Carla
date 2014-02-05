@@ -93,7 +93,7 @@ namespace WindowsFileHelpers
         if (SHGetSpecialFolderPath (0, path, type, FALSE))
             return File (String (path));
 
-        return File::nonexistent;
+        return File();
     }
 
     File getModuleFileName (HINSTANCE moduleHandle)
@@ -542,7 +542,7 @@ File JUCE_CALLTYPE File::getSpecialLocation (const SpecialLocationType type)
 
         default:
             jassertfalse; // unknown type?
-            return File::nonexistent;
+            return File();
     }
 
     return WindowsFileHelpers::getSpecialFolderPath (csidlType);
@@ -629,6 +629,8 @@ bool File::createLink (const String& description, const File& linkFileToCreate) 
 
     ComSmartPtr<IShellLink> shellLink;
     ComSmartPtr<IPersistFile> persistFile;
+
+    CoInitialize (0);
 
     return SUCCEEDED (shellLink.CoCreateInstance (CLSID_ShellLink))
         && SUCCEEDED (shellLink->SetPath (getFullPathName().toWideCharPointer()))

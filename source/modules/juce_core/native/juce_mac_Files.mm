@@ -257,7 +257,7 @@ File File::getSpecialLocation (const SpecialLocationType type)
             return File (resultPath.convertToPrecomposedUnicode());
     }
 
-    return File::nonexistent;
+    return File();
 }
 
 //==============================================================================
@@ -271,7 +271,7 @@ String File::getVersion() const
                     return nsStringToJuce (name);
     }
 
-    return String::empty;
+    return String();
 }
 
 //==============================================================================
@@ -356,7 +356,7 @@ public:
                     return false;
 
                 [enumerator skipDescendents];
-                filenameFound = nsStringToJuce (file);
+                filenameFound = nsStringToJuce (file).convertToPrecomposedUnicode();
 
                 if (wildcardUTF8 == nullptr)
                     wildcardUTF8 = wildCard.toUTF8();
