@@ -667,12 +667,13 @@ const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const unsigned int 
     if (device->hasControlPanel())
         devInfo.hints |= ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL;
 
-    if (int bufferSizesCount = device->getNumBufferSizesAvailable())
+    Array<int> juceBufferSizes = device->getAvailableBufferSizes();
+    if (int bufferSizesCount = juceBufferSizes.size())
     {
         uint32_t* const bufferSizes(new uint32_t[bufferSizesCount+1]);
 
         for (int i=0; i < bufferSizesCount; ++i)
-            bufferSizes[i] = static_cast<uint32_t>(device->getBufferSizeSamples(i));
+            bufferSizes[i] = static_cast<uint32_t>(juceBufferSizes[i]);
         bufferSizes[bufferSizesCount] = 0;
 
         devInfo.bufferSizes = bufferSizes;
@@ -682,12 +683,13 @@ const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const unsigned int 
         devInfo.bufferSizes = dummyBufferSizes;
     }
 
-    if (int sampleRatesCount = device->getNumSampleRates())
+    Array<double> juceSampleRates = device->getAvailableSampleRates();
+    if (int sampleRatesCount = juceSampleRates.size())
     {
         double* const sampleRates(new double[sampleRatesCount+1]);
 
         for (int i=0; i < sampleRatesCount; ++i)
-            sampleRates[i] = device->getSampleRate(i);
+            sampleRates[i] = juceSampleRates[i];
         sampleRates[sampleRatesCount] = 0.0;
 
         devInfo.sampleRates = sampleRates;
