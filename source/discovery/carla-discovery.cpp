@@ -15,17 +15,16 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+// if using juce, don't build UI stuff
+#define JUCE_PLUGIN_HOST_NO_UI
+
 #include "CarlaBackendUtils.hpp"
 #include "CarlaLibUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 
 #ifdef HAVE_JUCE
-# define JUCE_PLUGIN_HOST_NO_UI
 # include "juce_audio_processors.h"
-# ifndef VESTIGE_HEADER
-#  undef WANT_VST
-# endif
 #else
 # undef WANT_CSOUND
 #endif
@@ -80,7 +79,7 @@ static void print_lib_error(const char* const filename)
         DISCOVERY_OUT("error", error);
 }
 
-#ifdef WANT_VST
+#if defined(WANT_VST) && (defined(VESTIGE_HEADER) || ! defined(HAVE_JUCE))
 // --------------------------------------------------------------------------
 // VST stuff
 
@@ -138,9 +137,9 @@ static intptr_t vstHostCanDo(const char* const feature)
     if (std::strcmp(feature, "startStopProcess") == 0)
         return 1;
     if (std::strcmp(feature, "supportShell") == 0)
-        return -1; // FIXME
+        return 1;
     if (std::strcmp(feature, "shellCategory") == 0)
-        return -1; // FIXME
+        return 1;
 
     // non-official features found in some plugins:
     // "asyncProcessing"
@@ -1211,7 +1210,7 @@ static void do_lv2_check(const char* const bundle, const bool init)
 
 static void do_vst_check(void*& libHandle, const bool init)
 {
-#ifdef WANT_VST
+#if defined(WANT_VST) && (defined(VESTIGE_HEADER) || ! defined(HAVE_JUCE))
     VST_Function vstFn = (VST_Function)lib_symbol(libHandle, "VSTPluginMain");
 
     if (vstFn == nullptr)
@@ -1941,6 +1940,11 @@ int main(int argc, char* argv[])
         lib_close(handle);
 
     return 0;
+
+#if defined(WANT_VST) && defined(HAVE_JUCE) && ! defined(VESTIGE_HEADER)
+    // unused func
+    do_vst_check(handle, doInit);
+#endif
 }
 
 // --------------------------------------------------------------------------

@@ -366,11 +366,13 @@ public:
     */
     virtual bool hasEditor() const = 0;
 
+#ifndef JUCE_PLUGIN_HOST_NO_UI
     //==============================================================================
     /** Returns the active editor, if there is one.
         Bear in mind this can return nullptr, even if an editor has previously been opened.
     */
     AudioProcessorEditor* getActiveEditor() const noexcept             { return activeEditor; }
+#endif
 
     /** Returns the active editor, or if there isn't one, it will create one.
         This may call createEditor() internally to create the component.
@@ -656,7 +658,9 @@ protected:
 
 private:
     Array<AudioProcessorListener*> listeners;
+#ifndef JUCE_PLUGIN_HOST_NO_UI
     Component::SafePointer<AudioProcessorEditor> activeEditor;
+#endif
     double sampleRate;
     int blockSize, numInputChannels, numOutputChannels, latencySamples;
     bool suspended, nonRealtime;
