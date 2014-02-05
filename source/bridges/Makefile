@@ -120,7 +120,7 @@ endif
 
 # --------------------------------------------------------------
 
-TARGETS = native
+TARGETS = jackplugin native
 
 # --------------------------------------------------------------
 # UI bridges
@@ -227,6 +227,10 @@ ui_vst-carbon: carla-bridge-vst-carbon
 ui_vst-cocoa:  carla-bridge-vst-cocoa
 ui_vst-hwnd:   carla-bridge-vst-hwnd.exe
 ui_vst-x11:    carla-bridge-vst-x11
+
+# --------------------------------------------------------------
+
+jackplugin: jackplugin/libjack.so.0
 
 # --------------------------------------------------------------
 
@@ -391,6 +395,63 @@ carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS) ../modules/theme.qt
 #
 # %__vst-x11.o: %.cpp
 # 	$(CXX) $< $(BUILD_UI_VST_X11_FLAGS) -c -o $@
+
+# --------------------------------------------------------------
+# native
+
+OBJS_PLUGIN = \
+	jackplugin/CarlaJackPlugin__plugin.o \
+	../backend/engine/CarlaEngine__native.o \
+	../backend/engine/CarlaEngineInternal__native.o \
+	../backend/engine/CarlaEngineOsc__native.o \
+	../backend/engine/CarlaEngineThread__native.o \
+	../backend/engine/CarlaEngineJack__native.o \
+	../backend/engine/CarlaEngineBridge__native.o \
+	../backend/plugin/CarlaPlugin__native.o \
+	../backend/plugin/CarlaPluginInternal__native.o \
+	../backend/plugin/CarlaPluginThread__native.o \
+	../backend/plugin/CarlaPluginUi__native.o \
+	../backend/plugin/NativePlugin__native.o \
+	../backend/plugin/LadspaPlugin__native.o \
+	../backend/plugin/DssiPlugin__native.o \
+	../backend/plugin/Lv2Plugin__native.o \
+	../backend/plugin/VstPlugin__native.o \
+	../backend/plugin/AuPlugin__native.o \
+	../backend/plugin/ReWirePlugin__native.o \
+	../backend/plugin/CsoundPlugin__native.o \
+	../backend/plugin/JucePlugin__native.o \
+	../backend/plugin/FluidSynthPlugin__native.o \
+	../backend/plugin/LinuxSamplerPlugin__native.o \
+	../backend/standalone/CarlaStandalone__native.o
+
+LIBS_PLUGIN = \
+	../modules/jackbridge.a \
+	../modules/rtmempool.a
+
+ifeq ($(HAVE_JUCE),true)
+LIBS_PLUGIN += \
+	../modules/juce_audio_basics.a \
+	../modules/juce_audio_processors.a \
+	../modules/juce_core.a \
+	../modules/juce_data_structures.a \
+	../modules/juce_events.a \
+	../modules/juce_data_structures.a \
+	../modules/juce_graphics.a \
+	../modules/juce_gui_basics.a
+endif
+
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+LIBS_PLUGIN += \
+	../modules/lilv.a
+endif
+
+jackplugin/libjack.so.0: $(OBJS_PLUGIN) $(LIBS_PLUGIN)
+	$(CXX) $(OBJS_PLUGIN) -Wl,--start-group $(LIBS_PLUGIN) -Wl,--end-group $(NATIVE_LINK_FLAGS) -shared -o $@
+
+%__plugin.o: %.cpp
+	$(CXX) $< $(NATIVE_BUILD_FLAGS) -DJACKBRIDGE_EXPORT -c -o $@
+
+#  $(NATIVE_LINK_FLAGS)
 
 # --------------------------------------------------------------
 # native
