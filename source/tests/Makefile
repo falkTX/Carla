@@ -62,7 +62,7 @@ Engine: Engine.cpp
 	$(CXX) $< \
 	../backend/standalone/CarlaStandalone.cpp.o \
 	-Wl,--start-group \
-	../backend/carla_engine.a ../backend/carla_plugin.a ../modules/daz-plugins.a \
+	../backend/carla_engine.a ../backend/carla_plugin.a ../modules/native-plugins.a \
 	../modules/dgl.a ../modules/jackbridge.a ../modules/lilv.a ../modules/rtmempool.a ../modules/rtaudio.a ../modules/rtmidi.a \
 	-Wl,--end-group \
 	$(PEDANTIC_CXX_FLAGS) $(shell pkg-config --libs alsa libpulse-simple liblo QtCore QtXml fluidsynth linuxsampler x11 gl smf fftw3 mxml zlib ntk_images ntk) -o $@
@@ -117,11 +117,11 @@ debug:
 # --------------------------------------------------------------
 
 DISTRHO: DISTRHO.cpp ../modules/distrho/*.hpp ../modules/distrho/src/*.cpp
-	$(CXX) $< ../modules/dgl.a $(PEDANTIC_CXX_FLAGS) -I../modules/distrho -I../modules/daz-plugins/nekobi $(LINK_FLAGS) $(DGL_LIBS) -lpthread -o $@
+	$(CXX) $< ../modules/dgl.a $(PEDANTIC_CXX_FLAGS) -I../modules/distrho -I../modules/native-plugins/nekobi $(LINK_FLAGS) $(DGL_LIBS) -lpthread -o $@
 	./DISTRHO
 
 DISTRHO.so: DISTRHO.cpp ../modules/distrho/*.hpp ../modules/distrho/src/*.cpp
-	$(CXX) $< ../modules/dgl.a $(PEDANTIC_CXX_FLAGS) -I../modules/distrho -I../modules/daz-plugins/nekobi -DSHARED_DLL $(LINK_FLAGS) $(DGL_LIBS) -lpthread -shared -Wl,--no-undefined -o $@
+	$(CXX) $< ../modules/dgl.a $(PEDANTIC_CXX_FLAGS) -I../modules/distrho -I../modules/native-plugins/nekobi -DSHARED_DLL $(LINK_FLAGS) $(DGL_LIBS) -lpthread -shared -Wl,--no-undefined -o $@
 
 DGL: DGL.cpp ../modules/distrho/dgl/src/Window.cpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) $(LINK_FLAGS) $(DGL_LIBS) -o $@

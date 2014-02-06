@@ -8,11 +8,6 @@ all:
 
 # --------------------------------------------------------------
 
-daz-plugins:
-	$(MAKE) -C daz-plugins
-
-# --------------------------------------------------------------
-
 dgl:
 	$(MAKE) -C dgl
 
@@ -109,6 +104,11 @@ lilv_%:
 
 # --------------------------------------------------------------
 
+native-plugins:
+	$(MAKE) -C native-plugins
+
+# --------------------------------------------------------------
+
 rtaudio:
 	$(MAKE) -C rtaudio
 
@@ -196,7 +196,7 @@ lib%.so:
 
 clean:
 	rm -f *.a *.def *.dll *.dylib *.so
-	$(MAKE) clean -C daz-plugins
+	$(MAKE) clean -C native-plugins
 	$(MAKE) clean -C dgl
 	$(MAKE) clean -C jackbridge
 	$(MAKE) clean -C juce_audio_basics
@@ -218,7 +218,7 @@ clean:
 # --------------------------------------------------------------
 
 .PHONY: \
-	daz-plugins dgl jackbridge lilv rtaudio rtmidi rtmempool stk theme \
+	dgl jackbridge lilv native-plugins rtaudio rtmidi rtmempool stk theme \
 	juce_audio_basics juce_audio_devices juce_audio_formats juce_audio_processors juce_core juce_data_structures juce_events juce_graphics juce_gui_basics juce_gui_extra
 
 # --------------------------------------------------------------

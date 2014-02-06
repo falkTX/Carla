@@ -94,7 +94,7 @@ endif
 LIBS += ../backend/carla_engine_plugin.a
 LIBS += ../backend/carla_plugin.a
 
-LIBS += ../modules/daz-plugins.a
+LIBS += ../modules/native-plugins.a
 LIBS += ../modules/jackbridge.a
 LIBS += ../modules/rtmempool.a
 

@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
-# Makefile for daz-plugins #
-# ------------------------ #
+# Makefile for native-plugins #
+# --------------------------- #
 # Created by falkTX
 #
 
@@ -188,21 +188,21 @@ endif
 
 # --------------------------------------------------------------
 
-all: ../daz-plugins.a
+all: ../native-plugins.a
 
 # --------------------------------------------------------------
 
-../daz-plugins.a: $(OBJS)
+../native-plugins.a: $(OBJS)
 	$(RM) $@
 	$(AR) crs $@ $^
 
-../libdaz-plugins.dll: $(OBJS)
+../libnative-plugins.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-../libdaz-plugins.dylib: $(OBJS)
+../libnative-plugins.dylib: $(OBJS)
 	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
 
-../libdaz-plugins.so: $(OBJS)
+../libnative-plugins.so: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
@@ -288,7 +288,7 @@ zynaddsubfx/UI/%.h: zynaddsubfx/UI/%.fl
 # --------------------------------------------------------------
 
 clean:
-	$(RM) $(OBJS) ../daz-plugins*.a ../libdaz-plugins.*
+	$(RM) $(OBJS) ../native-plugins*.a ../libnative-plugins.*
 	$(RM) $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
 
 debug:

@@ -497,7 +497,7 @@ OBJS_NATIVE += \
 
 # libs
 LIBS_NATIVE = \
-	../modules/daz-plugins.a \
+	../modules/native-plugins.a \
 	../modules/jackbridge.a \
 	../modules/rtmempool.a
 

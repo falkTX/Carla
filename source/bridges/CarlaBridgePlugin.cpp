@@ -172,10 +172,10 @@ public:
 
         if (curDir.getChildFile("resources").exists())
             carla_set_engine_option(CarlaBackend::OPTION_PATH_RESOURCES, 0, curDir.getChildFile("resources").getFullPathName().toRawUTF8());
-        else if (curDir.getChildFile("../../modules/daz-plugins/resources").exists())
-            carla_set_engine_option(CarlaBackend::OPTION_PATH_RESOURCES, 0, curDir.getChildFile("../../modules/daz-plugins/resources").getFullPathName().toRawUTF8());
+        else if (curDir.getChildFile("../../modules/native-plugins/resources").exists())
+            carla_set_engine_option(CarlaBackend::OPTION_PATH_RESOURCES, 0, curDir.getChildFile("../../modules/native-plugins/resources").getFullPathName().toRawUTF8());
         else
-            carla_set_engine_option(CarlaBackend::OPTION_PATH_RESOURCES, 0, curDir.getChildFile("../modules/daz-plugins/resources").getFullPathName().toRawUTF8());
+            carla_set_engine_option(CarlaBackend::OPTION_PATH_RESOURCES, 0, curDir.getChildFile("../modules/native-plugins/resources").getFullPathName().toRawUTF8());
 #endif
 
         if (useBridge)
