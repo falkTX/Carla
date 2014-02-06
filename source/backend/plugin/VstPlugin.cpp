@@ -18,6 +18,12 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
+#if defined(CARLA_OS_LINUX) || defined(VESTIGE_HEADER)
+# define USE_JUCE_FOR_VST 0
+#else
+# define USE_JUCE_FOR_VST 1
+#endif
+
 #ifdef WANT_VST
 
 #include "CarlaVstUtils.hpp"
@@ -2456,7 +2462,7 @@ CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
     carla_debug("CarlaPlugin::newVST({%p, \"%s\", \"%s\"})", init.engine, init.filename, init.name);
 
 #ifdef WANT_VST
-# if 1 //defined(HAVE_JUCE) && ! defined(VESTIGE_HEADER)
+# if defined(HAVE_JUCE) && USE_JUCE_FOR_VST
     return newJuce(init, "VST");
 # else
     VstPlugin* const plugin(new VstPlugin(init.engine, init.id));
