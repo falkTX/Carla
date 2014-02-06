@@ -655,7 +655,7 @@ protected:
     // -------------------------------------------------------------------
 
 public:
-    bool init(const char* const filename, const char* const name, const char* const label)
+    bool init(const char* const filename, const char* const name, const char* const label, const char* const format)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -698,15 +698,18 @@ public:
 #endif
 
         //fDesc.name = fDesc.descriptiveName = label;
-        //fDesc.pluginFormatName = "VST";
         fDesc.uid = 0; // TODO - set uid for shell plugins
         fDesc.fileOrIdentifier = jfilename;
+        fDesc.pluginFormatName = format;
 
-        fInstance = fFormat.createInstanceFromDescription(fDesc, 44100, 512);
+        fFormatManager.addDefaultFormats();
+
+        String error;
+        fInstance = fFormatManager.createPluginInstance(fDesc, 44100, 512, error);
 
         if (fInstance == nullptr)
         {
-            pData->engine->setLastError("Plugin failed to initialize");
+            pData->engine->setLastError(error.toRawUTF8());
             return false;
         }
 
@@ -768,8 +771,8 @@ public:
 
 private:
     PluginDescription    fDesc;
-    VSTPluginFormat      fFormat;
     AudioPluginInstance* fInstance;
+    AudioPluginFormatManager fFormatManager;
 
     AudioSampleBuffer fAudioBuffer;
     MidiBuffer        fMidiBuffer;
@@ -794,7 +797,7 @@ CarlaPlugin* CarlaPlugin::newJuce(const Initializer& init, const char* const for
 #ifdef HAVE_JUCE
     JucePlugin* const plugin(new JucePlugin(init.engine, init.id));
 
-    if (! plugin->init(init.filename, init.name, init.label))
+    if (! plugin->init(init.filename, init.name, init.label, format))
     {
         delete plugin;
         return nullptr;

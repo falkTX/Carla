@@ -1639,7 +1639,10 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
 
 #ifndef BUILD_BRIDGE
     if (pData->hints & PLUGIN_IS_BRIDGE)
+    {
+        carla_stdout("CarlaPlugin::updateOscData() - done");
         return;
+    }
 #endif
 
     osc_send_sample_rate(pData->osc.data, static_cast<float>(pData->engine->getSampleRate()));

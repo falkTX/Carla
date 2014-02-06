@@ -565,9 +565,18 @@ public:
     void showCustomUI(const bool yesNo) override
     {
         if (yesNo)
+        {
             osc_send_show(pData->osc.data);
+
+            if (pData->engine->getOptions().frontendWinId != 0)
+                pData->transientTryCounter = 1;
+        }
         else
+        {
+            pData->transientTryCounter = 0;
+
             osc_send_hide(pData->osc.data);
+        }
     }
 
     void idle() override

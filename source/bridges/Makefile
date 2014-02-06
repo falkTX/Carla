@@ -440,7 +440,8 @@ LIBS_PLUGIN += \
 	../modules/juce_events.a \
 	../modules/juce_data_structures.a \
 	../modules/juce_graphics.a \
-	../modules/juce_gui_basics.a
+	../modules/juce_gui_basics.a \
+	../modules/juce_gui_extra.a
 endif
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
@@ -514,7 +515,8 @@ LIBS_NATIVE += \
 	../modules/juce_events.a \
 	../modules/juce_data_structures.a \
 	../modules/juce_graphics.a \
-	../modules/juce_gui_basics.a
+	../modules/juce_gui_basics.a \
+	../modules/juce_gui_extra.a
 endif
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)

@@ -53,6 +53,10 @@ endif
 # --------------------------------------------------------------
 # Coomon
 
+ifeq ($(HAVE_DGL),true)
+LINK_FLAGS += $(DGL_LIBS)
+endif
+
 ifeq ($(HAVE_JUCE),true)
 LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
 LINK_FLAGS += $(JUCE_CORE_LIBS)
@@ -60,10 +64,7 @@ LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
 LINK_FLAGS += $(JUCE_EVENTS_LIBS)
 LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
 LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
-endif
-
-ifeq ($(HAVE_DGL),true)
-LINK_FLAGS += $(DGL_LIBS)
+LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
 endif
 
 # --------------------------------------------------------------
@@ -109,6 +110,7 @@ LIBS += ../modules/juce_data_structures.a
 LIBS += ../modules/juce_events.a
 LIBS += ../modules/juce_graphics.a
 LIBS += ../modules/juce_gui_basics.a
+LIBS += ../modules/juce_gui_extra.a
 endif
 
 ifeq ($(HAVE_DGL),true)
