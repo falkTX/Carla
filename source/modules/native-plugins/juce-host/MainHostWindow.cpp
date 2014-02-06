@@ -405,6 +405,11 @@ GraphDocumentComponent* MainHostWindow::getGraphEditor() const
     return dynamic_cast <GraphDocumentComponent*> (getContentComponent());
 }
 
+MidiKeyboardState* MainHostWindow::getMidiState() noexcept
+{
+    return getGraphEditor()->getMidiState();
+}
+
 bool MainHostWindow::wasClosedByUser() const noexcept
 {
     return closed;

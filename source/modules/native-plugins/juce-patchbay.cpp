@@ -36,8 +36,10 @@ class JucePatchbayPlugin : public NativePluginClass
 public:
     JucePatchbayPlugin(const NativeHostDescriptor* const host)
         : NativePluginClass(host),
-          graph(formatManager),
-          fAudioBuffer(1, 0)
+          fFormatManager(),
+          fGraph(fFormatManager),
+          fAudioBuffer(1, 0),
+          fMidiKeyState(nullptr)
     {
         PropertiesFile::Options options;
         options.applicationName     = "Juce Audio Plugin Host";
@@ -47,11 +49,11 @@ public:
         fAppProperties = new ApplicationProperties();
         fAppProperties->setStorageParameters(options);
 
-        formatManager.addDefaultFormats();
-        formatManager.addFormat(new InternalPluginFormat());
-        graph.ready(fAppProperties);
+        fFormatManager.addDefaultFormats();
+        fFormatManager.addFormat(new InternalPluginFormat());
+        fGraph.ready(fAppProperties);
 
-        graph.getGraph().setPlayConfigDetails(2, 2, getSampleRate(), static_cast<int>(getBufferSize()));
+        fGraph.getGraph().setPlayConfigDetails(2, 2, getSampleRate(), static_cast<int>(getBufferSize()));
 
         fMidiBuffer.ensureSize(512*2);
         fMidiBuffer.clear();
@@ -59,7 +61,7 @@ public:
 
     ~JucePatchbayPlugin() override
     {
-        graph.clear();
+        fGraph.clear();
         fAppProperties = nullptr;
     }
 
@@ -69,14 +71,21 @@ protected:
 
     void activate() override
     {
-        graph.getGraph().prepareToPlay(getSampleRate(), static_cast<int>(getBufferSize()));
+        fGraph.getGraph().prepareToPlay(getSampleRate(), static_cast<int>(getBufferSize()));
 
         fAudioBuffer.setSize(2, static_cast<int>(getBufferSize()));
+
+        {
+            const ScopedLock csl(fMidiKeyMutex);
+
+            if (fMidiKeyState != nullptr)
+                fMidiKeyState->reset();
+        }
     }
 
     void deactivate() override
     {
-        graph.getGraph().releaseResources();
+        fGraph.getGraph().releaseResources();
     }
 
     void process(float** inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
@@ -92,7 +101,14 @@ protected:
             fMidiBuffer.addEvent(midiEvent->data, midiEvent->size, midiEvent->time);
         }
 
-        graph.getGraph().processBlock(fAudioBuffer, fMidiBuffer);
+        {
+            const ScopedLock csl(fMidiKeyMutex);
+
+            if (fMidiKeyState != nullptr)
+                fMidiKeyState->processNextMidiBuffer(fMidiBuffer, 0, static_cast<int>(frames), true);
+        }
+
+        fGraph.getGraph().processBlock(fAudioBuffer, fMidiBuffer);
 
         MidiBuffer::Iterator outBufferIterator(fMidiBuffer);
         const uint8_t* midiData;
@@ -129,13 +145,21 @@ protected:
         {
             if (fWindow == nullptr)
             {
-                fWindow = new MainHostWindow(formatManager, graph, *fAppProperties);
+                fWindow = new MainHostWindow(fFormatManager, fGraph, *fAppProperties);
                 fWindow->setName(getUiName());
+            }
+            {
+                const ScopedLock csl(fMidiKeyMutex);
+                fMidiKeyState = fWindow->getMidiState();
             }
             fWindow->toFront(true);
         }
         else if (fWindow != nullptr)
         {
+            {
+                const ScopedLock csl(fMidiKeyMutex);
+                fMidiKeyState = nullptr;
+            }
             fWindow->setVisible(false);
             fWindow = nullptr;
         }
@@ -158,7 +182,7 @@ protected:
 
     char* getState() const override
     {
-        ScopedPointer<XmlElement> xml(graph.createXml());
+        ScopedPointer<XmlElement> xml(fGraph.createXml());
 
         MemoryOutputStream stream;
         xml->writeToStream(stream, String::empty);
@@ -175,7 +199,7 @@ protected:
         ScopedPointer<XmlElement> xml(doc.getDocumentElement());
 
         if (xml != nullptr && xml->hasTagName("FILTERGRAPH"))
-            graph.restoreFromXml(*xml);
+            fGraph.restoreFromXml(*xml);
     }
 
     // -------------------------------------------------------------------
@@ -193,14 +217,17 @@ protected:
     }
 
 private:
-    AudioPluginFormatManager formatManager;
-    FilterGraph graph;
+    AudioPluginFormatManager fFormatManager;
+    FilterGraph fGraph;
 
     AudioSampleBuffer fAudioBuffer;
     MidiBuffer        fMidiBuffer;
 
     ScopedPointer<ApplicationProperties> fAppProperties;
     ScopedPointer<MainHostWindow> fWindow;
+
+    MidiKeyboardState* fMidiKeyState;
+    CriticalSection fMidiKeyMutex;
 
     PluginClassEND(JucePatchbayPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JucePatchbayPlugin)
@@ -210,7 +237,7 @@ private:
 
 static const NativePluginDescriptor jucePatchbayDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_SYNTH|PLUGIN_HAS_UI|PLUGIN_NEEDS_FIXED_BUFFERS|/*PLUGIN_NEEDS_SINGLE_THREAD|*/PLUGIN_NEEDS_UI_JUCE|PLUGIN_USES_STATE|PLUGIN_USES_TIME),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_SYNTH|PLUGIN_HAS_UI|PLUGIN_NEEDS_FIXED_BUFFERS|PLUGIN_NEEDS_UI_JUCE|PLUGIN_USES_STATE|PLUGIN_USES_TIME),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,

@@ -138,6 +138,7 @@ public:
 
     //==============================================================================
     void closeAllCurrentlyOpenWindows();
+    MidiKeyboardState* getMidiState() noexcept;
 
 private:
     //==============================================================================

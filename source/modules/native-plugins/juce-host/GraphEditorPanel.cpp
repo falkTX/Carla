@@ -1084,8 +1084,6 @@ GraphDocumentComponent::GraphDocumentComponent (FilterGraph& g)
 {
     addAndMakeVisible (graphPanel = new GraphEditorPanel (graph));
 
-    //keyState.addListener (&graphPlayer.getMidiMessageCollector());
-
     addAndMakeVisible (keyboardComp = new MidiKeyboardComponent (keyState,
                                                                  MidiKeyboardComponent::horizontalKeyboard));
 
@@ -1101,8 +1099,6 @@ GraphDocumentComponent::~GraphDocumentComponent()
     graph.setPanel(nullptr);
 
     deleteAllChildren();
-
-    //keyState.removeListener (&graphPlayer.getMidiMessageCollector());
 }
 
 void GraphDocumentComponent::resized()
@@ -1123,4 +1119,9 @@ void GraphDocumentComponent::createNewPlugin (const PluginDescription* desc, int
 void GraphDocumentComponent::closeAllCurrentlyOpenWindows()
 {
     graphPanel->closeAllCurrentlyOpenWindows();
+}
+
+MidiKeyboardState* GraphDocumentComponent::getMidiState() noexcept
+{
+    return &keyState;
 }

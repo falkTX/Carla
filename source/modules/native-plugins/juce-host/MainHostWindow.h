@@ -76,6 +76,7 @@ public:
     const PluginDescription* getChosenType (const int menuID) const;
 
     GraphDocumentComponent* getGraphEditor() const;
+    MidiKeyboardState* getMidiState() noexcept;
 
     bool wasClosedByUser() const noexcept;
 
