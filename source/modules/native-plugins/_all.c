@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -18,8 +18,8 @@
 #include "CarlaDefines.h"
 
 // Simple plugins
-extern void carla_register_daz_plugin_bypass();
-extern void carla_register_daz_plugin_lfo();
+extern void carla_register_native_plugin_bypass();
+extern void carla_register_native_plugin_lfo();
 
 // Simple plugins
 extern void carla_register_native_plugin_midiGain();
@@ -73,11 +73,9 @@ extern void carla_register_native_plugin_zynaddsubfx_synth();
 
 void carla_register_all_plugins()
 {
-#if 0
     // Simple plugins
-    carla_register_daz_plugin_bypass();
-    carla_register_daz_plugin_lfo();
-#endif
+    carla_register_native_plugin_bypass();
+    carla_register_native_plugin_lfo();
 
     // Simple plugins
     carla_register_native_plugin_midiGain();
