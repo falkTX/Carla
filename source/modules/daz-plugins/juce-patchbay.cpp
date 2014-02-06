@@ -45,7 +45,7 @@ public:
         options.osxLibrarySubFolder = "Preferences";
 
         fAppProperties = new ApplicationProperties();
-        fAppProperties->setStorageParameters (options);
+        fAppProperties->setStorageParameters(options);
 
         formatManager.addDefaultFormats();
         formatManager.addFormat(new InternalPluginFormat());
@@ -123,6 +123,8 @@ protected:
 
     void uiShow(const bool show) override
     {
+        const MessageManagerLock mmLock;
+
         if (show)
         {
             if (fWindow == nullptr)
@@ -172,7 +174,7 @@ protected:
         XmlDocument doc(sdata);
         ScopedPointer<XmlElement> xml(doc.getDocumentElement());
 
-        if (xml != nullptr && xml->hasTagName ("FILTERGRAPH"))
+        if (xml != nullptr && xml->hasTagName("FILTERGRAPH"))
             graph.restoreFromXml(*xml);
     }
 
@@ -183,8 +185,11 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(uiName != nullptr,);
 
-        if (fWindow != nullptr)
-            fWindow->setName(uiName);
+        if (fWindow == nullptr)
+            return;
+
+        const MessageManagerLock mmLock;
+        fWindow->setName(uiName);
     }
 
 private:

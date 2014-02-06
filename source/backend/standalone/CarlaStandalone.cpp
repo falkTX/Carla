@@ -44,6 +44,66 @@ using juce::MessageManager;
 namespace CB = CarlaBackend;
 using CB::EngineOptions;
 
+#if defined(HAVE_JUCE) && defined(CARLA_OS_LINUX)
+using juce::Thread;
+
+// -----------------------------------------------------------------------
+// Juce Message Thread
+
+class JuceMessageThread : public Thread
+{
+public:
+    JuceMessageThread()
+      : Thread("JuceMessageThread"),
+        fInitialised(false)
+    {
+    }
+
+    ~JuceMessageThread() override
+    {
+        stop();
+    }
+
+    void start()
+    {
+        CARLA_SAFE_ASSERT_RETURN(! fInitialised,);
+
+        fInitialised = false;
+
+        startThread();
+
+        while (! fInitialised)
+            carla_msleep(1);
+    }
+
+    void stop()
+    {
+        if (! fInitialised)
+            return;
+
+        stopThread(-1);
+    }
+
+protected:
+    void run() override
+    {
+        fInitialised = true;
+
+        if (MessageManager* const msgMgr = MessageManager::getInstance())
+        {
+            msgMgr->setCurrentThreadAsMessageThread();
+
+            for (; (! threadShouldExit()) && msgMgr->runDispatchLoopUntil(250);) {}
+        }
+
+        fInitialised = false;
+    }
+
+private:
+    volatile bool fInitialised;
+};
+#endif
+
 // -------------------------------------------------------------------------------------------------------------------
 // Single, standalone engine
 
@@ -57,6 +117,10 @@ struct CarlaBackendStandalone {
     void*            fileCallbackPtr;
 
     CarlaString lastError;
+
+#if defined(HAVE_JUCE) && defined(CARLA_OS_LINUX)
+    JuceMessageThread juceMsgThread;
+#endif
 
     CarlaBackendStandalone()
         : engine(nullptr),
@@ -88,11 +152,29 @@ struct CarlaBackendStandalone {
         JUCE_AUTORELEASEPOOL
         {
             initialiseJuce_GUI();
+# ifdef CARLA_OS_LINUX
+            juceMsgThread.start();
+# else
             if (MessageManager* const msgMgr = MessageManager::getInstance())
                 msgMgr->setCurrentThreadAsMessageThread();
+# endif
         }
     }
 
+    void close()
+    {
+        JUCE_AUTORELEASEPOOL
+        {
+# ifdef CARLA_OS_LINUX
+            juceMsgThread.stop();
+# else
+            MessageManager::deleteInstance();
+# endif
+            shutdownJuce_GUI();
+        }
+    }
+
+# ifndef CARLA_OS_LINUX
     void idle()
     {
         JUCE_AUTORELEASEPOOL
@@ -101,15 +183,7 @@ struct CarlaBackendStandalone {
                 msgMgr->runDispatchLoopUntil(5);
         }
     }
-
-    void close()
-    {
-        JUCE_AUTORELEASEPOOL
-        {
-            MessageManager::deleteInstance();
-            shutdownJuce_GUI();
-        }
-    }
+# endif
 #endif
 
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaBackendStandalone)
@@ -545,7 +619,7 @@ void carla_engine_idle()
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
 
-#ifdef HAVE_JUCE
+#if defined(HAVE_JUCE) && ! defined(CARLA_OS_LINUX)
     gStandalone.idle();
 #endif
     gStandalone.engine->idle();

@@ -94,7 +94,7 @@ private:
     ApplicationProperties& appProperties;
     LookAndFeel_V3 lookAndFeel;
 
-    bool closed;
+    volatile bool closed;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainHostWindow)
 };

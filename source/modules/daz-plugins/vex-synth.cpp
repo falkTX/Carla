@@ -1019,6 +1019,8 @@ protected:
 
     void uiShow(const bool show) override
     {
+        const MessageManagerLock mmLock;
+
         if (show)
         {
             if (fWindow == nullptr)
@@ -1140,7 +1142,7 @@ protected:
         if (fWindow == nullptr)
             return;
 
-        MessageManagerLock mmLock;
+        const MessageManagerLock mmLock;
         fWindow->setName(uiName);
     }
 
