@@ -226,6 +226,10 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
 
+#ifdef CARLA_OS_LINUX
+        const MessageManagerLock mmLock;
+#endif
+
         if (yesNo)
         {
             if (fWindow == nullptr)
@@ -675,6 +679,10 @@ public:
             pData->engine->setLastError("null label");
             return false;
         }
+
+#ifdef CARLA_OS_LINUX
+        const MessageManagerLock mmLock;
+#endif
 
         // ---------------------------------------------------------------
         // fix path for wine usage
