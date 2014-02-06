@@ -1,6 +1,6 @@
 /*
  * Carla Plugin discovery
- * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -79,7 +79,7 @@ static void print_lib_error(const char* const filename)
         DISCOVERY_OUT("error", error);
 }
 
-#if defined(WANT_VST) && (defined(VESTIGE_HEADER) || ! defined(HAVE_JUCE))
+#ifdef WANT_VST
 // --------------------------------------------------------------------------
 // VST stuff
 
@@ -1210,7 +1210,7 @@ static void do_lv2_check(const char* const bundle, const bool init)
 
 static void do_vst_check(void*& libHandle, const bool init)
 {
-#if defined(WANT_VST) && (defined(VESTIGE_HEADER) || ! defined(HAVE_JUCE))
+#ifdef WANT_VST
     VST_Function vstFn = (VST_Function)lib_symbol(libHandle, "VSTPluginMain");
 
     if (vstFn == nullptr)
@@ -1472,7 +1472,7 @@ static void do_juce_check(const char* const filename, const char* const stype, c
     }
     else if (std::strcmp(stype, "VST") == 0)
     {
-#if defined(WANT_VST) && JUCE_PLUGINHOST_VST && ! defined(VESTIGE_HEADER)
+#if defined(WANT_VST) && JUCE_PLUGINHOST_VST
         pluginFormat = new VSTPluginFormat();
 #else
         DISCOVERY_OUT("error", "VST support not available");
@@ -1845,9 +1845,7 @@ int main(int argc, char* argv[])
     {
     case PLUGIN_LADSPA:
     case PLUGIN_DSSI:
-#ifndef HAVE_JUCE
     case PLUGIN_VST:
-#endif
         openLib = true;
     default:
         break;
@@ -1900,11 +1898,7 @@ int main(int argc, char* argv[])
         do_lv2_check(filename, doInit);
         break;
     case PLUGIN_VST:
-#if defined(HAVE_JUCE) && ! defined(VESTIGE_HEADER)
-        do_juce_check(filename, "VST", doInit);
-#else
         do_vst_check(handle, doInit);
-#endif
         break;
     case PLUGIN_VST3:
 #ifdef HAVE_JUCE
@@ -1940,11 +1934,6 @@ int main(int argc, char* argv[])
         lib_close(handle);
 
     return 0;
-
-#if defined(WANT_VST) && defined(HAVE_JUCE) && ! defined(VESTIGE_HEADER)
-    // unused func
-    do_vst_check(handle, doInit);
-#endif
 }
 
 // --------------------------------------------------------------------------
@@ -1982,7 +1971,7 @@ bool arrayContainsPlugin(const OwnedArray<PluginDescription>& list, const Plugin
 #ifdef WANT_LADSPA
 # include "juce_audio_processors/format_types/juce_LADSPAPluginFormat.cpp"
 #endif
-#if defined(WANT_VST) && ! defined(VESTIGE_HEADER)
+#ifdef WANT_VST
 # include "juce_audio_processors/format_types/juce_VSTPluginFormat.cpp"
 #endif
 #ifdef WANT_VST3
