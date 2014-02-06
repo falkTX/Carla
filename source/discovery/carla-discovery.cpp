@@ -1470,14 +1470,14 @@ static void do_juce_check(const char* const filename, const char* const stype, c
         DISCOVERY_OUT("error", "LADSPA support not available");
 #endif
     }
-    else if (std::strcmp(stype, "VST") == 0)
+    /*else if (std::strcmp(stype, "VST") == 0)
     {
 #if defined(WANT_VST) && JUCE_PLUGINHOST_VST
         pluginFormat = new VSTPluginFormat();
 #else
         DISCOVERY_OUT("error", "VST support not available");
 #endif
-    }
+    }*/
     else if (std::strcmp(stype, "VST3") == 0)
     {
 #if defined(WANT_VST3) && JUCE_PLUGINHOST_VST3
@@ -1971,7 +1971,7 @@ bool arrayContainsPlugin(const OwnedArray<PluginDescription>& list, const Plugin
 #ifdef WANT_LADSPA
 # include "juce_audio_processors/format_types/juce_LADSPAPluginFormat.cpp"
 #endif
-#ifdef WANT_VST
+#if 0 //def WANT_VST
 # include "juce_audio_processors/format_types/juce_VSTPluginFormat.cpp"
 #endif
 #ifdef WANT_VST3
