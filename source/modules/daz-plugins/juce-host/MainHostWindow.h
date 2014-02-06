@@ -36,7 +36,6 @@ namespace CommandIDs
     static const int save                   = 0x30001;
     static const int saveAs                 = 0x30002;
     static const int showPluginListEditor   = 0x30100;
-    static const int aboutBox               = 0x30200;
 }
 
 //==============================================================================

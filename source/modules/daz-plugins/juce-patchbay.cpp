@@ -59,6 +59,7 @@ public:
 
     ~JucePatchbayPlugin() override
     {
+        graph.clear();
         fAppProperties = nullptr;
     }
 
@@ -112,6 +113,7 @@ protected:
             std::memcpy(tmpEvent.data, midiData, sizeof(uint8_t)*tmpEvent.size);
             writeMidiEvent(&tmpEvent);
         }
+
         FloatVectorOperations::copy(outBuffer[0], fAudioBuffer.getSampleData(0), static_cast<int>(frames));
         FloatVectorOperations::copy(outBuffer[1], fAudioBuffer.getSampleData(1), static_cast<int>(frames));
     }
@@ -149,6 +151,42 @@ protected:
         }
     }
 
+    // -------------------------------------------------------------------
+    // Plugin state calls
+
+    char* getState() const override
+    {
+        ScopedPointer<XmlElement> xml(graph.createXml());
+
+        MemoryOutputStream stream;
+        xml->writeToStream(stream, String::empty);
+
+        return strdup(stream.toUTF8().toRawUTF8());
+    }
+
+    void setState(const char* const data) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+
+        String sdata(data);
+        XmlDocument doc(sdata);
+        ScopedPointer<XmlElement> xml(doc.getDocumentElement());
+
+        if (xml != nullptr && xml->hasTagName ("FILTERGRAPH"))
+            graph.restoreFromXml(*xml);
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin dispatcher calls
+
+    void uiNameChanged(const char* const uiName) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(uiName != nullptr,);
+
+        if (fWindow != nullptr)
+            fWindow->setName(uiName);
+    }
+
 private:
     AudioPluginFormatManager formatManager;
     FilterGraph graph;
@@ -167,7 +205,7 @@ private:
 
 static const NativePluginDescriptor jucePatchbayDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_SYNTH|PLUGIN_HAS_UI/*|PLUGIN_USES_STATE*/),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_SYNTH|PLUGIN_HAS_UI|PLUGIN_NEEDS_FIXED_BUFFERS|/*PLUGIN_NEEDS_SINGLE_THREAD|*/PLUGIN_NEEDS_UI_JUCE|PLUGIN_USES_STATE|PLUGIN_USES_TIME),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,

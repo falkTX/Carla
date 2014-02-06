@@ -210,9 +210,6 @@ PopupMenu MainHostWindow::getMenuForIndex (int topLevelMenuIndex, const String& 
         sortTypeMenu.addItem (203, "List plugins by manufacturer",       true, pluginSortMethod == KnownPluginList::sortByManufacturer);
         sortTypeMenu.addItem (204, "List plugins based on the directory structure", true, pluginSortMethod == KnownPluginList::sortByFileSystemLocation);
         menu.addSubMenu ("Plugin menu type", sortTypeMenu);
-
-        menu.addSeparator();
-        menu.addCommandItem (&commandManager, CommandIDs::aboutBox);
     }
 
     return menu;
@@ -294,8 +291,7 @@ void MainHostWindow::getAllCommands (Array <CommandID>& commands)
     const CommandID ids[] = { CommandIDs::open,
                               CommandIDs::save,
                               CommandIDs::saveAs,
-                              CommandIDs::showPluginListEditor,
-                              CommandIDs::aboutBox
+                              CommandIDs::showPluginListEditor
                             };
 
     commands.addArray (ids, numElementsInArray (ids));
@@ -333,10 +329,6 @@ void MainHostWindow::getCommandInfo (const CommandID commandID, ApplicationComma
         result.addDefaultKeypress ('p', ModifierKeys::commandModifier);
         break;
 
-    case CommandIDs::aboutBox:
-        result.setInfo ("About...", String::empty, category, 0);
-        break;
-
     default:
         break;
     }
@@ -369,10 +361,6 @@ bool MainHostWindow::perform (const InvocationInfo& info)
             pluginListWindow = new PluginListWindow (*this, formatManager);
 
         pluginListWindow->toFront (true);
-        break;
-
-    case CommandIDs::aboutBox:
-        // TODO
         break;
 
     default:
