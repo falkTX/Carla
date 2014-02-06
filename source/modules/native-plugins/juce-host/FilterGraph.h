@@ -81,6 +81,7 @@ public:
                            uint32 destFilterUID, int destFilterChannel);
 
     void clear();
+    void clearKeepingInternals();
 
 
     //==============================================================================

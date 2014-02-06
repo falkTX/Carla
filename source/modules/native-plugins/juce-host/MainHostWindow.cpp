@@ -92,9 +92,6 @@ MainHostWindow::MainHostWindow (AudioPluginFormatManager& fm, FilterGraph& graph
 
     setVisible (true);
 
-    InternalPluginFormat internalFormat;
-    internalFormat.getAllTypes (internalTypes);
-
     ScopedPointer<XmlElement> savedPluginList (appProperties.getUserSettings()->getXmlValue ("pluginList"));
 
     if (savedPluginList != nullptr)
@@ -222,7 +219,7 @@ void MainHostWindow::menuItemSelected (int menuItemID, int /*topLevelMenuIndex*/
     if (menuItemID == 250)
     {
         if (graphEditor != nullptr)
-            graphEditor->graph.clear();
+            graphEditor->graph.clearKeepingInternals();
     }
     else if (menuItemID >= 100 && menuItemID < 200)
     {
@@ -263,19 +260,11 @@ void MainHostWindow::createPlugin (const PluginDescription* desc, int x, int y)
 
 void MainHostWindow::addPluginsToMenu (PopupMenu& m) const
 {
-    for (int i = 0; i < internalTypes.size(); ++i)
-        m.addItem (i + 1, internalTypes.getUnchecked(i)->name);
-
-    m.addSeparator();
-
     knownPluginList.addToMenu (m, pluginSortMethod);
 }
 
 const PluginDescription* MainHostWindow::getChosenType (const int menuID) const
 {
-    if (menuID >= 1 && menuID < 1 + internalTypes.size())
-        return internalTypes [menuID - 1];
-
     return knownPluginList.getType (knownPluginList.getIndexChosenByMenu (menuID));
 }
 

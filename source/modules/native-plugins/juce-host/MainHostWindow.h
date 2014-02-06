@@ -83,7 +83,6 @@ private:
     //==============================================================================
     AudioPluginFormatManager& formatManager;
 
-    OwnedArray <PluginDescription> internalTypes;
     KnownPluginList knownPluginList;
     KnownPluginList::SortMethod pluginSortMethod;
 

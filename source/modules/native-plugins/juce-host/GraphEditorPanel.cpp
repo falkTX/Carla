@@ -1084,9 +1084,6 @@ GraphDocumentComponent::GraphDocumentComponent (FilterGraph& g)
 {
     addAndMakeVisible (graphPanel = new GraphEditorPanel (graph));
 
-    // listen for audio/midi count change
-    //deviceManager->addChangeListener (graphPanel);
-
     //keyState.addListener (&graphPlayer.getMidiMessageCollector());
 
     addAndMakeVisible (keyboardComp = new MidiKeyboardComponent (keyState,
@@ -1102,9 +1099,6 @@ GraphDocumentComponent::GraphDocumentComponent (FilterGraph& g)
 GraphDocumentComponent::~GraphDocumentComponent()
 {
     graph.setPanel(nullptr);
-
-    // listen for audio/midi count change
-    //deviceManager->removeChangeListener (graphPanel);
 
     deleteAllChildren();
 
