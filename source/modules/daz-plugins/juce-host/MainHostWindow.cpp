@@ -22,7 +22,6 @@
   ==============================================================================
 */
 
-#include "juce_gui_basics.h"
 #include "MainHostWindow.h"
 #include "InternalFilters.h"
 
@@ -36,25 +35,27 @@ public:
                           DocumentWindow::minimiseButton | DocumentWindow::closeButton),
           owner (owner_)
     {
-        const File deadMansPedalFile (getAppProperties().getUserSettings()
-                                        ->getFile().getSiblingFile ("RecentlyCrashedPluginsList"));
+        const File deadMansPedalFile (owner.appProperties.getUserSettings()
+                                              ->getFile().getSiblingFile ("RecentlyCrashedPluginsList"));
 
         setContentOwned (new PluginListComponent (formatManager,
                                                   owner.knownPluginList,
                                                   deadMansPedalFile,
-                                                  getAppProperties().getUserSettings()), true);
+                                                  owner.appProperties.getUserSettings()), true);
 
+        setOpaque (true);
         setResizable (true, false);
         setResizeLimits (300, 400, 800, 1500);
         setTopLeftPosition (60, 60);
 
-        restoreWindowStateFromString (getAppProperties().getUserSettings()->getValue ("listWindowPos"));
+        restoreWindowStateFromString (owner.appProperties.getUserSettings()->getValue ("listWindowPos"));
+        setUsingNativeTitleBar (true);
         setVisible (true);
     }
 
     ~PluginListWindow()
     {
-        getAppProperties().getUserSettings()->setValue ("listWindowPos", getWindowStateAsString());
+        owner.appProperties.getUserSettings()->setValue ("listWindowPos", getWindowStateAsString());
 
         clearContentComponent();
     }
@@ -71,44 +72,42 @@ private:
 };
 
 //==============================================================================
-MainHostWindow::MainHostWindow()
-    : DocumentWindow (JUCEApplication::getInstance()->getApplicationName(), Colours::lightgrey,
-                      DocumentWindow::allButtons)
+MainHostWindow::MainHostWindow (AudioPluginFormatManager& fm, FilterGraph& graph, ApplicationProperties& ap)
+    : DocumentWindow ("Juce Patchbay", Colours::lightgrey, DocumentWindow::allButtons),
+      formatManager (fm),
+      appProperties (ap),
+      closed (false)
 {
-    formatManager.addDefaultFormats();
-    formatManager.addFormat (new InternalPluginFormat());
+    LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
 
-    ScopedPointer<XmlElement> savedAudioState (getAppProperties().getUserSettings()
-                                                   ->getXmlValue ("audioDeviceState"));
-
-    //deviceManager.initialise (256, 256, savedAudioState, true);
-
+    setOpaque (true);
     setResizable (true, false);
     setResizeLimits (500, 400, 10000, 10000);
     centreWithSize (800, 600);
 
-    //setContentOwned (new GraphDocumentComponent (formatManager, &deviceManager), false);
+    setContentOwned (new GraphDocumentComponent (graph), false);
+    setUsingNativeTitleBar (true);
 
-    restoreWindowStateFromString (getAppProperties().getUserSettings()->getValue ("mainWindowPos"));
+    restoreWindowStateFromString (appProperties.getUserSettings()->getValue ("mainWindowPos"));
 
     setVisible (true);
 
     InternalPluginFormat internalFormat;
     internalFormat.getAllTypes (internalTypes);
 
-    ScopedPointer<XmlElement> savedPluginList (getAppProperties().getUserSettings()->getXmlValue ("pluginList"));
+    ScopedPointer<XmlElement> savedPluginList (appProperties.getUserSettings()->getXmlValue ("pluginList"));
 
     if (savedPluginList != nullptr)
         knownPluginList.recreateFromXml (*savedPluginList);
 
-    pluginSortMethod = (KnownPluginList::SortMethod) getAppProperties().getUserSettings()
+    pluginSortMethod = (KnownPluginList::SortMethod) appProperties.getUserSettings()
                             ->getIntValue ("pluginSortMethod", KnownPluginList::sortByManufacturer);
 
     knownPluginList.addChangeListener (this);
 
-    addKeyListener (getCommandManager().getKeyMappings());
+    addKeyListener (commandManager.getKeyMappings());
 
-    Process::setPriority (Process::HighPriority);
+    //Process::setPriority (Process::HighPriority);
 
    #if JUCE_MAC
     setMacMainMenu (this);
@@ -116,7 +115,10 @@ MainHostWindow::MainHostWindow()
     setMenuBar (this);
    #endif
 
-    getCommandManager().setFirstCommandTarget (this);
+    commandManager.setFirstCommandTarget (this);
+    commandManager.registerAllCommandsForTarget (this);
+
+    menuItemsChanged();
 }
 
 MainHostWindow::~MainHostWindow()
@@ -131,27 +133,17 @@ MainHostWindow::~MainHostWindow()
 
     knownPluginList.removeChangeListener (this);
 
-    getAppProperties().getUserSettings()->setValue ("mainWindowPos", getWindowStateAsString());
+    appProperties.getUserSettings()->setValue ("mainWindowPos", getWindowStateAsString());
     clearContentComponent();
+
+    LookAndFeel::setDefaultLookAndFeel (nullptr);
 }
 
 void MainHostWindow::closeButtonPressed()
 {
-    tryToQuitApplication();
-}
+    getGraphEditor()->closeAllCurrentlyOpenWindows();
 
-bool MainHostWindow::tryToQuitApplication()
-{
-    PluginWindow::closeAllCurrentlyOpenWindows();
-
-    if (getGraphEditor() == nullptr
-         || getGraphEditor()->graph.saveIfNeededAndUserAgrees() == FileBasedDocument::savedOk)
-    {
-        JUCEApplication::quit();
-        return true;
-    }
-
-    return false;
+    closed = true;
 }
 
 void MainHostWindow::changeListenerCallback (ChangeBroadcaster*)
@@ -164,8 +156,8 @@ void MainHostWindow::changeListenerCallback (ChangeBroadcaster*)
 
     if (savedPluginList != nullptr)
     {
-        getAppProperties().getUserSettings()->setValue ("pluginList", savedPluginList);
-        getAppProperties().saveIfNeeded();
+        appProperties.getUserSettings()->setValue ("pluginList", savedPluginList);
+        appProperties.saveIfNeeded();
     }
 }
 
@@ -183,20 +175,18 @@ PopupMenu MainHostWindow::getMenuForIndex (int topLevelMenuIndex, const String& 
     if (topLevelMenuIndex == 0)
     {
         // "File" menu
-        menu.addCommandItem (&getCommandManager(), CommandIDs::open);
+        menu.addCommandItem (&commandManager, CommandIDs::open);
 
         RecentlyOpenedFilesList recentFiles;
-        recentFiles.restoreFromString (getAppProperties().getUserSettings()
+        recentFiles.restoreFromString (appProperties.getUserSettings()
                                             ->getValue ("recentFilterGraphFiles"));
 
         PopupMenu recentFilesMenu;
         recentFiles.createPopupMenuItems (recentFilesMenu, 100, true, true);
         menu.addSubMenu ("Open recent file", recentFilesMenu);
 
-        menu.addCommandItem (&getCommandManager(), CommandIDs::save);
-        menu.addCommandItem (&getCommandManager(), CommandIDs::saveAs);
-        menu.addSeparator();
-        menu.addCommandItem (&getCommandManager(), StandardApplicationCommandIDs::quit);
+        menu.addCommandItem (&commandManager, CommandIDs::save);
+        menu.addCommandItem (&commandManager, CommandIDs::saveAs);
     }
     else if (topLevelMenuIndex == 1)
     {
@@ -211,7 +201,7 @@ PopupMenu MainHostWindow::getMenuForIndex (int topLevelMenuIndex, const String& 
     {
         // "Options" menu
 
-        menu.addCommandItem (&getCommandManager(), CommandIDs::showPluginListEditor);
+        menu.addCommandItem (&commandManager, CommandIDs::showPluginListEditor);
 
         PopupMenu sortTypeMenu;
         sortTypeMenu.addItem (200, "List plugins in default order",      true, pluginSortMethod == KnownPluginList::defaultOrder);
@@ -222,7 +212,7 @@ PopupMenu MainHostWindow::getMenuForIndex (int topLevelMenuIndex, const String& 
         menu.addSubMenu ("Plugin menu type", sortTypeMenu);
 
         menu.addSeparator();
-        menu.addCommandItem (&getCommandManager(), CommandIDs::aboutBox);
+        menu.addCommandItem (&commandManager, CommandIDs::aboutBox);
     }
 
     return menu;
@@ -240,7 +230,7 @@ void MainHostWindow::menuItemSelected (int menuItemID, int /*topLevelMenuIndex*/
     else if (menuItemID >= 100 && menuItemID < 200)
     {
         RecentlyOpenedFilesList recentFiles;
-        recentFiles.restoreFromString (getAppProperties().getUserSettings()
+        recentFiles.restoreFromString (appProperties.getUserSettings()
                                             ->getValue ("recentFilterGraphFiles"));
 
         if (graphEditor != nullptr && graphEditor->graph.saveIfNeededAndUserAgrees() == FileBasedDocument::savedOk)
@@ -254,7 +244,7 @@ void MainHostWindow::menuItemSelected (int menuItemID, int /*topLevelMenuIndex*/
         else if (menuItemID == 203)     pluginSortMethod = KnownPluginList::sortByManufacturer;
         else if (menuItemID == 204)     pluginSortMethod = KnownPluginList::sortByFileSystemLocation;
 
-        getAppProperties().getUserSettings()->setValue ("pluginSortMethod", (int) pluginSortMethod);
+        appProperties.getUserSettings()->setValue ("pluginSortMethod", (int) pluginSortMethod);
 
         menuItemsChanged();
     }
@@ -436,4 +426,9 @@ void MainHostWindow::filesDropped (const StringArray& files, int x, int y)
 GraphDocumentComponent* MainHostWindow::getGraphEditor() const
 {
     return dynamic_cast <GraphDocumentComponent*> (getContentComponent());
+}
+
+bool MainHostWindow::wasClosedByUser() const noexcept
+{
+    return closed;
 }

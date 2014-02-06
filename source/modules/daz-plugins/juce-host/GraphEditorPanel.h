@@ -30,6 +30,39 @@
 class FilterComponent;
 class ConnectorComponent;
 class PinComponent;
+class GraphEditorPanel;
+
+
+//==============================================================================
+/** A desktop window containing a plugin's UI. */
+class PluginWindow  : public DocumentWindow
+{
+public:
+    enum WindowFormatType
+    {
+        Normal = 0,
+        Generic,
+        Programs,
+        Parameters
+    };
+
+    PluginWindow (GraphEditorPanel* const panel, Component* pluginEditor, AudioProcessorGraph::Node*, WindowFormatType);
+    ~PluginWindow();
+
+    void moved() override;
+    void closeButtonPressed() override;
+
+private:
+    AudioProcessorGraph::Node* owner;
+    WindowFormatType type;
+
+    float getDesktopScaleFactor() const override     { return 1.0f; }
+
+    GraphEditorPanel* const panel;
+    friend class GraphEditorPanel;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginWindow)
+};
 
 
 //==============================================================================
@@ -64,6 +97,15 @@ public:
     void endDraggingConnector (const MouseEvent& e);
 
     //==============================================================================
+
+    Array <PluginWindow*> activePluginWindows;
+
+    PluginWindow* getWindowFor (AudioProcessorGraph::Node*, PluginWindow::WindowFormatType);
+
+    void closeCurrentlyOpenWindowsFor (const uint32 nodeId);
+    void closeAllCurrentlyOpenWindows();
+
+    //==============================================================================
 private:
     FilterGraph& graph;
     ScopedPointer<ConnectorComponent> draggingConnector;
@@ -94,6 +136,9 @@ public:
     //==============================================================================
     void resized();
 
+    //==============================================================================
+    void closeAllCurrentlyOpenWindows();
+
 private:
     //==============================================================================
     MidiKeyboardState keyState;
@@ -103,39 +148,6 @@ private:
     Component* statusBar;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphDocumentComponent)
-};
-
-//==============================================================================
-/** A desktop window containing a plugin's UI. */
-class PluginWindow  : public DocumentWindow
-{
-public:
-    enum WindowFormatType
-    {
-        Normal = 0,
-        Generic,
-        Programs,
-        Parameters
-    };
-
-    PluginWindow (Component* pluginEditor, AudioProcessorGraph::Node*, WindowFormatType);
-    ~PluginWindow();
-
-    static PluginWindow* getWindowFor (AudioProcessorGraph::Node*, WindowFormatType);
-
-    static void closeCurrentlyOpenWindowsFor (const uint32 nodeId);
-    static void closeAllCurrentlyOpenWindows();
-
-    void moved() override;
-    void closeButtonPressed() override;
-
-private:
-    AudioProcessorGraph::Node* owner;
-    WindowFormatType type;
-
-    float getDesktopScaleFactor() const override     { return 1.0f; }
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginWindow)
 };
 
 #endif   // __GRAPHEDITORPANEL_JUCEHEADER__

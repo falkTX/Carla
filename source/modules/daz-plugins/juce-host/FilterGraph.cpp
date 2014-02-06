@@ -22,10 +22,9 @@
   ==============================================================================
 */
 
-//#include "MainHostWindow.h"
 #include "FilterGraph.h"
 #include "InternalFilters.h"
-//#include "GraphEditorPanel.h"
+#include "GraphEditorPanel.h"
 
 
 //==============================================================================
@@ -36,7 +35,7 @@ FilterGraph::FilterGraph (AudioPluginFormatManager& formatManager_)
                          filenameWildcard,
                          "Load a filter graph",
                          "Save a filter graph"),
-      formatManager (formatManager_), lastUID (0)
+      formatManager (formatManager_), lastUID (0), appProperties (nullptr), panel (nullptr)
 {
     setChangedFlag (false);
 }
@@ -46,13 +45,21 @@ FilterGraph::~FilterGraph()
     graph.clear();
 }
 
-void FilterGraph::ready()
+void FilterGraph::ready(ApplicationProperties* ap)
 {
+    appProperties = ap;
+
     InternalPluginFormat internalFormat;
 
     addFilter (internalFormat.getDescriptionFor (InternalPluginFormat::audioInputFilter),  0.5f,  0.1f);
     addFilter (internalFormat.getDescriptionFor (InternalPluginFormat::midiInputFilter),   0.25f, 0.1f);
     addFilter (internalFormat.getDescriptionFor (InternalPluginFormat::audioOutputFilter), 0.5f,  0.9f);
+    addFilter (internalFormat.getDescriptionFor (InternalPluginFormat::midiOutputFilter),  0.25f, 0.9f);
+}
+
+void FilterGraph::setPanel(GraphEditorPanel* p)
+{
+    panel = p;
 }
 
 uint32 FilterGraph::getNextUID() noexcept
@@ -104,7 +111,8 @@ void FilterGraph::addFilter (const PluginDescription* desc, double x, double y)
 
 void FilterGraph::removeFilter (const uint32 id)
 {
-    //PluginWindow::closeCurrentlyOpenWindowsFor (id);
+    if (panel != nullptr)
+        panel->closeCurrentlyOpenWindowsFor (id);
 
     if (graph.removeNode (id))
         changed();
@@ -199,7 +207,8 @@ void FilterGraph::removeConnection (uint32 sourceFilterUID, int sourceFilterChan
 
 void FilterGraph::clear()
 {
-    //PluginWindow::closeAllCurrentlyOpenWindows();
+    if (panel != nullptr)
+        panel->closeAllCurrentlyOpenWindows();
 
     graph.clear();
     changed();
@@ -238,11 +247,29 @@ Result FilterGraph::saveDocument (const File& file)
 
 File FilterGraph::getLastDocumentOpened()
 {
-    return File();
+    if (appProperties == nullptr)
+        return File();
+
+    RecentlyOpenedFilesList recentFiles;
+    recentFiles.restoreFromString (appProperties->getUserSettings()
+                                     ->getValue ("recentFilterGraphFiles"));
+
+    return recentFiles.getFile (0);
 }
 
-void FilterGraph::setLastDocumentOpened (const File&)
+void FilterGraph::setLastDocumentOpened (const File& file)
 {
+    if (appProperties == nullptr)
+        return;
+
+    RecentlyOpenedFilesList recentFiles;
+    recentFiles.restoreFromString (appProperties->getUserSettings()
+                                     ->getValue ("recentFilterGraphFiles"));
+
+    recentFiles.addFile (file);
+
+    appProperties->getUserSettings()
+      ->setValue ("recentFilterGraphFiles", recentFiles.toString());
 }
 
 //==============================================================================

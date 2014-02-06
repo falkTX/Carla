@@ -20,8 +20,6 @@
 #include "juce_audio_processors.h"
 #include "juce_gui_extra.h"
 
-#include "JucePluginWindow.hpp"
-
 using namespace juce;
 
 // -----------------------------------------------------------------------
@@ -29,6 +27,7 @@ using namespace juce;
 #include "juce-host/FilterGraph.h"
 #include "juce-host/InternalFilters.h"
 #include "juce-host/GraphEditorPanel.h"
+#include "juce-host/MainHostWindow.h"
 
 // -----------------------------------------------------------------------
 
@@ -40,9 +39,17 @@ public:
           graph(formatManager),
           fAudioBuffer(1, 0)
     {
+        PropertiesFile::Options options;
+        options.applicationName     = "Juce Audio Plugin Host";
+        options.filenameSuffix      = "settings";
+        options.osxLibrarySubFolder = "Preferences";
+
+        fAppProperties = new ApplicationProperties();
+        fAppProperties->setStorageParameters (options);
+
         formatManager.addDefaultFormats();
         formatManager.addFormat(new InternalPluginFormat());
-        graph.ready();
+        graph.ready(fAppProperties);
 
         graph.getGraph().setPlayConfigDetails(2, 2, getSampleRate(), static_cast<int>(getBufferSize()));
 
@@ -52,6 +59,7 @@ public:
 
     ~JucePatchbayPlugin() override
     {
+        fAppProperties = nullptr;
     }
 
 protected:
@@ -70,13 +78,40 @@ protected:
         graph.getGraph().releaseResources();
     }
 
-    void process(float** inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
+    void process(float** inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
         fAudioBuffer.copyFrom(0, 0, inBuffer[0], static_cast<int>(frames));
         fAudioBuffer.copyFrom(1, 0, inBuffer[1], static_cast<int>(frames));
 
+        fMidiBuffer.clear();
+
+        for (uint32_t i=0; i < midiEventCount; ++i)
+        {
+            const NativeMidiEvent* const midiEvent(&midiEvents[i]);
+            fMidiBuffer.addEvent(midiEvent->data, midiEvent->size, midiEvent->time);
+        }
+
         graph.getGraph().processBlock(fAudioBuffer, fMidiBuffer);
 
+        MidiBuffer::Iterator outBufferIterator(fMidiBuffer);
+        const uint8_t* midiData;
+        int numBytes;
+        int sampleNumber;
+
+        NativeMidiEvent tmpEvent;
+        tmpEvent.port = 0;
+
+        for (; outBufferIterator.getNextEvent(midiData, numBytes, sampleNumber);)
+        {
+            if (numBytes <= 0 || numBytes > 4)
+                continue;
+
+            tmpEvent.size = numBytes;
+            tmpEvent.time = sampleNumber;
+
+            std::memcpy(tmpEvent.data, midiData, sizeof(uint8_t)*tmpEvent.size);
+            writeMidiEvent(&tmpEvent);
+        }
         FloatVectorOperations::copy(outBuffer[0], fAudioBuffer.getSampleData(0), static_cast<int>(frames));
         FloatVectorOperations::copy(outBuffer[1], fAudioBuffer.getSampleData(1), static_cast<int>(frames));
     }
@@ -90,24 +125,14 @@ protected:
         {
             if (fWindow == nullptr)
             {
-                fWindow = new JucePluginWindow();
+                fWindow = new MainHostWindow(formatManager, graph, *fAppProperties);
                 fWindow->setName(getUiName());
-                fWindow->setResizable(true, false);
             }
-
-            if (fComponent == nullptr)
-            {
-                fComponent = new GraphDocumentComponent(graph);
-                fComponent->setSize(300, 300);
-            }
-
-            fWindow->show(fComponent);
+            fWindow->toFront(true);
         }
         else if (fWindow != nullptr)
         {
-            fWindow->hide();
-
-            fComponent = nullptr;
+            fWindow->setVisible(false);
             fWindow = nullptr;
         }
     }
@@ -131,12 +156,8 @@ private:
     AudioSampleBuffer fAudioBuffer;
     MidiBuffer        fMidiBuffer;
 
-    ScopedPointer<GraphDocumentComponent> fComponent;
-    ScopedPointer<JucePluginWindow> fWindow;
-
-    //OwnedArray <PluginDescription> internalTypes;
-    //KnownPluginList knownPluginList;
-    //KnownPluginList::SortMethod pluginSortMethod;
+    ScopedPointer<ApplicationProperties> fAppProperties;
+    ScopedPointer<MainHostWindow> fWindow;
 
     PluginClassEND(JucePatchbayPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JucePatchbayPlugin)
@@ -177,5 +198,6 @@ void carla_register_native_plugin_jucePatchbay()
 #include "juce-host/FilterGraph.cpp"
 #include "juce-host/InternalFilters.cpp"
 #include "juce-host/GraphEditorPanel.cpp"
+#include "juce-host/MainHostWindow.cpp"
 
 // -----------------------------------------------------------------------

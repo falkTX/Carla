@@ -36,7 +36,7 @@ namespace CommandIDs
     static const int save                   = 0x30001;
     static const int saveAs                 = 0x30002;
     static const int showPluginListEditor   = 0x30100;
-    static const int aboutBox               = 0x30300;
+    static const int aboutBox               = 0x30200;
 }
 
 //==============================================================================
@@ -50,7 +50,7 @@ class MainHostWindow    : public DocumentWindow,
 {
 public:
     //==============================================================================
-    MainHostWindow();
+    MainHostWindow (AudioPluginFormatManager& formatManager, FilterGraph& graph, ApplicationProperties& appProperties);
     ~MainHostWindow();
 
     //==============================================================================
@@ -71,8 +71,6 @@ public:
     void getCommandInfo (CommandID commandID, ApplicationCommandInfo& result);
     bool perform (const InvocationInfo& info);
 
-    bool tryToQuitApplication();
-
     void createPlugin (const PluginDescription* desc, int x, int y);
 
     void addPluginsToMenu (PopupMenu& m) const;
@@ -80,10 +78,11 @@ public:
 
     GraphDocumentComponent* getGraphEditor() const;
 
+    bool wasClosedByUser() const noexcept;
+
 private:
     //==============================================================================
-    //AudioDeviceManager deviceManager;
-    AudioPluginFormatManager formatManager;
+    AudioPluginFormatManager& formatManager;
 
     OwnedArray <PluginDescription> internalTypes;
     KnownPluginList knownPluginList;
@@ -91,6 +90,12 @@ private:
 
     class PluginListWindow;
     ScopedPointer <PluginListWindow> pluginListWindow;
+
+    ApplicationCommandManager commandManager;
+    ApplicationProperties& appProperties;
+    LookAndFeel_V3 lookAndFeel;
+
+    bool closed;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainHostWindow)
 };

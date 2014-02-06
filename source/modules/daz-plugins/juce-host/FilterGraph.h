@@ -27,6 +27,7 @@
 
 class FilterInGraph;
 class FilterGraph;
+class GraphEditorPanel;
 
 const char* const filenameSuffix = ".filtergraph";
 const char* const filenameWildcard = "*.filtergraph";
@@ -41,7 +42,8 @@ public:
     //==============================================================================
     FilterGraph (AudioPluginFormatManager& formatManager);
     ~FilterGraph();
-    void ready();
+    void ready(ApplicationProperties* appProperties);
+    void setPanel(GraphEditorPanel* panel);
 
     //==============================================================================
     AudioProcessorGraph& getGraph() noexcept         { return graph; }
@@ -106,6 +108,9 @@ private:
     uint32 getNextUID() noexcept;
 
     void createNodeFromXml (const XmlElement& xml);
+
+    ApplicationProperties* appProperties;
+    GraphEditorPanel* panel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FilterGraph)
 };

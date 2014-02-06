@@ -22,53 +22,31 @@
   ==============================================================================
 */
 
-#include "juce_gui_basics.h"
 #include "GraphEditorPanel.h"
 #include "InternalFilters.h"
-//#include "MainHostWindow.h"
 
 
 //==============================================================================
-class PluginWindow;
-static Array <PluginWindow*> activePluginWindows;
-
-PluginWindow::PluginWindow (Component* const pluginEditor,
+PluginWindow::PluginWindow (GraphEditorPanel* const p,
+                            Component* const pluginEditor,
                             AudioProcessorGraph::Node* const o,
                             WindowFormatType t)
     : DocumentWindow (pluginEditor->getName(), Colours::lightblue,
                       DocumentWindow::minimiseButton | DocumentWindow::closeButton),
       owner (o),
-      type (t)
+      type (t),
+      panel (p)
 {
     setSize (400, 300);
 
     setContentOwned (pluginEditor, true);
+    setUsingNativeTitleBar (true);
 
     setTopLeftPosition (owner->properties.getWithDefault ("uiLastX", Random::getSystemRandom().nextInt (500)),
                         owner->properties.getWithDefault ("uiLastY", Random::getSystemRandom().nextInt (500)));
     setVisible (true);
 
-    activePluginWindows.add (this);
-}
-
-void PluginWindow::closeCurrentlyOpenWindowsFor (const uint32 nodeId)
-{
-    for (int i = activePluginWindows.size(); --i >= 0;)
-        if (activePluginWindows.getUnchecked(i)->owner->nodeId == nodeId)
-            delete activePluginWindows.getUnchecked (i);
-}
-
-void PluginWindow::closeAllCurrentlyOpenWindows()
-{
-    if (activePluginWindows.size() > 0)
-    {
-        for (int i = activePluginWindows.size(); --i >= 0;)
-            delete activePluginWindows.getUnchecked (i);
-
-        Component dummyModalComp;
-        dummyModalComp.enterModalState();
-        MessageManager::getInstance()->runDispatchLoopUntil (50);
-    }
+    panel->activePluginWindows.add (this);
 }
 
 //==============================================================================
@@ -149,50 +127,9 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProgramAudioProcessorEditor)
 };
 
-//==============================================================================
-PluginWindow* PluginWindow::getWindowFor (AudioProcessorGraph::Node* const node,
-                                          WindowFormatType type)
-{
-    jassert (node != nullptr);
-
-    for (int i = activePluginWindows.size(); --i >= 0;)
-        if (activePluginWindows.getUnchecked(i)->owner == node
-             && activePluginWindows.getUnchecked(i)->type == type)
-            return activePluginWindows.getUnchecked(i);
-
-    AudioProcessor* processor = node->getProcessor();
-    AudioProcessorEditor* ui = nullptr;
-
-    if (type == Normal)
-    {
-        ui = processor->createEditorIfNeeded();
-
-        if (ui == nullptr)
-            type = Generic;
-    }
-
-    if (ui == nullptr)
-    {
-        if (type == Generic || type == Parameters)
-            ui = new GenericAudioProcessorEditor (processor);
-        else if (type == Programs)
-            ui = new ProgramAudioProcessorEditor (processor);
-    }
-
-    if (ui != nullptr)
-    {
-        if (AudioPluginInstance* const plugin = dynamic_cast<AudioPluginInstance*> (processor))
-            ui->setName (plugin->getName());
-
-        return new PluginWindow (ui, node, type);
-    }
-
-    return nullptr;
-}
-
 PluginWindow::~PluginWindow()
 {
-    activePluginWindows.removeFirstMatchingValue (this);
+    panel->activePluginWindows.removeFirstMatchingValue (this);
     clearContentComponent();
 }
 
@@ -372,7 +309,7 @@ public:
                             default: break;
                         };
 
-                        if (PluginWindow* const w = PluginWindow::getWindowFor (f, type))
+                        if (PluginWindow* const w = getGraphPanel()->getWindowFor (f, type))
                             w->toFront (true);
                     }
                 }
@@ -402,7 +339,7 @@ public:
         if (e.mouseWasClicked() && e.getNumberOfClicks() == 2)
         {
             if (const AudioProcessorGraph::Node::Ptr f = graph.getNodeForId (filterID))
-                if (PluginWindow* const w = PluginWindow::getWindowFor (f, PluginWindow::Normal))
+                if (PluginWindow* const w = getGraphPanel()->getWindowFor (f, PluginWindow::Normal))
                     w->toFront (true);
         }
         else if (! e.mouseWasClicked())
@@ -814,7 +751,6 @@ void GraphEditorPanel::mouseDown (const MouseEvent& e)
 {
     if (e.mods.isPopupMenu())
     {
-#if 0
         PopupMenu m;
 
         if (MainHostWindow* const mainWindow = findParentComponentOfClass<MainHostWindow>())
@@ -825,7 +761,6 @@ void GraphEditorPanel::mouseDown (const MouseEvent& e)
 
             createNewPlugin (mainWindow->getChosenType (r), e.x, e.y);
         }
-#endif
     }
 }
 
@@ -1041,6 +976,67 @@ void GraphEditorPanel::endDraggingConnector (const MouseEvent& e)
     }
 }
 
+//==============================================================================
+PluginWindow* GraphEditorPanel::getWindowFor (AudioProcessorGraph::Node* const node,
+                                              PluginWindow::WindowFormatType type)
+{
+    jassert (node != nullptr);
+
+    for (int i = activePluginWindows.size(); --i >= 0;)
+        if (activePluginWindows.getUnchecked(i)->owner == node
+             && activePluginWindows.getUnchecked(i)->type == type)
+            return activePluginWindows.getUnchecked(i);
+
+    AudioProcessor* processor = node->getProcessor();
+    AudioProcessorEditor* ui = nullptr;
+
+    if (type == PluginWindow::Normal)
+    {
+        ui = processor->createEditorIfNeeded();
+
+        if (ui == nullptr)
+            type = PluginWindow::Generic;
+    }
+
+    if (ui == nullptr)
+    {
+        if (type == PluginWindow::Generic || type == PluginWindow::Parameters)
+            ui = new GenericAudioProcessorEditor (processor);
+        else if (type == PluginWindow::Programs)
+            ui = new ProgramAudioProcessorEditor (processor);
+    }
+
+    if (ui != nullptr)
+    {
+        if (AudioPluginInstance* const plugin = dynamic_cast<AudioPluginInstance*> (processor))
+            ui->setName (plugin->getName());
+
+        return new PluginWindow (this, ui, node, type);
+    }
+
+    return nullptr;
+}
+
+void GraphEditorPanel::closeCurrentlyOpenWindowsFor (const uint32 nodeId)
+{
+    for (int i = activePluginWindows.size(); --i >= 0;)
+        if (activePluginWindows.getUnchecked(i)->owner->nodeId == nodeId)
+            delete activePluginWindows.getUnchecked (i);
+}
+
+void GraphEditorPanel::closeAllCurrentlyOpenWindows()
+{
+    if (activePluginWindows.size() > 0)
+    {
+        for (int i = activePluginWindows.size(); --i >= 0;)
+            delete activePluginWindows.getUnchecked (i);
+
+        Component dummyModalComp;
+        dummyModalComp.enterModalState();
+        MessageManager::getInstance()->runDispatchLoopUntil (50);
+    }
+}
+
 
 //==============================================================================
 class TooltipBar   : public Component,
@@ -1088,6 +1084,7 @@ GraphDocumentComponent::GraphDocumentComponent (FilterGraph& g)
 {
     addAndMakeVisible (graphPanel = new GraphEditorPanel (graph));
 
+    // listen for audio/midi count change
     //deviceManager->addChangeListener (graphPanel);
 
     //keyState.addListener (&graphPlayer.getMidiMessageCollector());
@@ -1098,10 +1095,15 @@ GraphDocumentComponent::GraphDocumentComponent (FilterGraph& g)
     addAndMakeVisible (statusBar = new TooltipBar());
 
     graphPanel->updateComponents();
+
+    graph.setPanel(graphPanel);
 }
 
 GraphDocumentComponent::~GraphDocumentComponent()
 {
+    graph.setPanel(nullptr);
+
+    // listen for audio/midi count change
     //deviceManager->removeChangeListener (graphPanel);
 
     deleteAllChildren();
@@ -1122,4 +1124,9 @@ void GraphDocumentComponent::resized()
 void GraphDocumentComponent::createNewPlugin (const PluginDescription* desc, int x, int y)
 {
     graphPanel->createNewPlugin (desc, x, y);
+}
+
+void GraphDocumentComponent::closeAllCurrentlyOpenWindows()
+{
+    graphPanel->closeAllCurrentlyOpenWindows();
 }

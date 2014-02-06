@@ -312,7 +312,7 @@ protected:
         NativeMidiEvent tmpEvent;
         tmpEvent.port = 0;
 
-        while (outBufferIterator.getNextEvent(midiData, numBytes, sampleNumber))
+        for (; outBufferIterator.getNextEvent(midiData, numBytes, sampleNumber);)
         {
             if (numBytes <= 0 || numBytes > 4)
                 continue;
