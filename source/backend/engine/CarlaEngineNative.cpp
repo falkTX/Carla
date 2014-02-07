@@ -197,13 +197,19 @@ protected:
                 name = nullptr;
             }
 
-            fEngine->addPlugin((BinaryType)btype, (PluginType)ptype, filename, name, label);
+            const bool ok = fEngine->addPlugin((BinaryType)btype, (PluginType)ptype, filename, name, label);
 
             if (filename != nullptr)
                 delete[] filename;
             if (name != nullptr)
                 delete[] name;
             delete[] label;
+
+            if (! ok)
+            {
+                writeMsg("error\n", 6);
+                writeAndFixMsg(fEngine->getLastError());
+            }
         }
         else if (std::strcmp(msg, "remove_plugin") == 0)
         {
@@ -549,6 +555,16 @@ public:
             pData->options.preferUiBridges     = false;
             init("Carla-Rack");
         }
+
+        if (pData->options.resourceDir != nullptr)
+            delete[] pData->options.resourceDir;
+        if (pData->options.binaryDir != nullptr)
+            delete[] pData->options.binaryDir;
+
+        pData->options.resourceDir = carla_strdup(pHost->resourceDir);
+
+        // FIXME
+        pData->options.binaryDir = carla_strdup("/usr/lib/carla");
 
         setCallback(_ui_server_callback, this);
     }

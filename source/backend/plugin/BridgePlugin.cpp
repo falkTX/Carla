@@ -702,6 +702,18 @@ public:
             pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
         }
 
+        // extra plugin hints
+        pData->extraHints = 0x0;
+
+        if (fInfo.mIns > 0)
+            pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_IN;
+
+        if (fInfo.mOuts > 0)
+            pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_OUT;
+
+        if (fInfo.aIns <= 2 && fInfo.aOuts <= 2 && (fInfo.aIns == fInfo.aOuts || fInfo.aIns == 0 || fInfo.aOuts == 0))
+            pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
+
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
 
@@ -1424,7 +1436,7 @@ public:
             CARLA_BRIDGE_CHECK_OSC_TYPES(2, "ii");
 
             const int32_t index   = argv[0]->i;
-            const int32_t channel = argv[0]->i;
+            const int32_t channel = argv[1]->i;
 
             CARLA_SAFE_ASSERT_BREAK(index >= 0);
             CARLA_SAFE_ASSERT_BREAK(channel >= 0 && channel < MAX_MIDI_CHANNELS);
@@ -1781,9 +1793,6 @@ public:
 
         if (fInitError || ! fInitiated)
         {
-            // unregister so it gets handled properly
-            pData->engine->registerEnginePlugin(pData->id, nullptr);
-
             pData->osc.thread.stop(6000);
 
             if (! fInitError)
@@ -1936,6 +1945,7 @@ CarlaPlugin* CarlaPlugin::newJACK(const Initializer& init)
 
     if (! plugin->init(init.filename, init.name, init.label, nullptr))
     {
+        init.engine->registerEnginePlugin(init.id, nullptr);
         delete plugin;
         return nullptr;
     }
@@ -1944,6 +1954,7 @@ CarlaPlugin* CarlaPlugin::newJACK(const Initializer& init)
 
     if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
     {
+        init.engine->registerEnginePlugin(init.id, nullptr);
         init.engine->setLastError("Carla's rack mode can only work with Stereo bridged apps, sorry!");
         delete plugin;
         return nullptr;

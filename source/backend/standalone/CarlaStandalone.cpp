@@ -576,7 +576,7 @@ bool carla_engine_init_bridge(const char audioBaseName[6+1], const char controlB
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,       0, resourceDir);
 
     if (const char* const frontendWinId = std::getenv("ENGINE_OPTION_FRONTEND_WIN_ID"))
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,        0, frontendWinId);
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_FRONTEND_WIN_ID,      0, frontendWinId);
 
     if (gStandalone.engine->init(clientName))
     {

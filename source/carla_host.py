@@ -1058,11 +1058,11 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot(str)
     def slot_handleInfoCallback(self, info):
-        pass
+        QMessageBox.information(self, "Information", info)
 
     @pyqtSlot(str)
     def slot_handleErrorCallback(self, error):
-        pass
+        QMessageBox.critical(self, "Error", error)
 
     @pyqtSlot()
     def slot_handleQuitCallback(self):

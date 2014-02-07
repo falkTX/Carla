@@ -143,31 +143,31 @@ class PluginHost(object):
             self.fPluginsInfo[pluginId].midiProgramDataS.append(PyMidiProgramData)
 
     def _set_parameterInfoS(self, pluginId, paramIndex, info):
-        if paramIndex < self.fPluginsInfo[pluginId].parameterCount:
+        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
             self.fPluginsInfo[pluginId].parameterInfoS[paramIndex] = info
 
     def _set_parameterDataS(self, pluginId, paramIndex, data):
-        if paramIndex < self.fPluginsInfo[pluginId].parameterCount:
+        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
             self.fPluginsInfo[pluginId].parameterDataS[paramIndex] = data
 
     def _set_parameterRangeS(self, pluginId, paramIndex, ranges):
-        if paramIndex < self.fPluginsInfo[pluginId].parameterCount:
+        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
             self.fPluginsInfo[pluginId].parameterRangeS[paramIndex] = ranges
 
     def _set_parameterValueS(self, pluginId, paramIndex, value):
-        if paramIndex < self.fPluginsInfo[pluginId].parameterCount:
+        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
             self.fPluginsInfo[pluginId].parameterValueS[paramIndex] = value
 
     def _set_parameterDefault(self, pluginId, paramIndex, value):
-        if paramIndex < self.fPluginsInfo[pluginId].parameterCount:
+        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
             self.fPluginsInfo[pluginId].parameterRangeS[paramIndex]['def'] = value
 
     def _set_parameterMidiChannel(self, pluginId, paramIndex, channel):
-        if paramIndex < self.fPluginsInfo[pluginId].parameterCount:
+        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
             self.fPluginsInfo[pluginId].parameterDataS[paramIndex]['midiChannel'] = channel
 
     def _set_parameterMidiCC(self, pluginId, paramIndex, cc):
-        if paramIndex < self.fPluginsInfo[pluginId].parameterCount:
+        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
             self.fPluginsInfo[pluginId].parameterDataS[paramIndex]['midiCC'] = cc
 
     def _set_currentProgram(self, pluginId, pIndex):
@@ -689,6 +689,10 @@ class CarlaMiniW(HostWindow, ExternalUI):
                 bank, program = [int(i) for i in self.fPipeRecv.readline().strip().split(":")]
                 name = self.fPipeRecv.readline().strip().replace("\r", "\n")
                 Carla.host._set_midiProgramDataS(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
+
+            elif msg == "error":
+                error = self.fPipeRecv.readline().strip().replace("\r", "\n")
+                engineCallback(None, ENGINE_CALLBACK_ERROR, 0, 0, 0, 0.0, error)
 
             elif msg == "show":
                 self.d_uiShow()

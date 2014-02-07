@@ -2311,7 +2311,7 @@ void CarlaEngine::oscSend_bridge_parameter_data(const uint32_t index, const int3
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->path != nullptr && pData->oscData->path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->target != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(unit != nullptr,);
     carla_debug("CarlaEngine::oscSend_bridge_parameter_data(%i, %i, %i:%s, %X, \"%s\", \"%s\")", index, rindex, type, ParameterType2Str(type), hints, name, unit);
 
@@ -2430,6 +2430,7 @@ void CarlaEngine::oscSend_bridge_program_name(const uint32_t index, const char* 
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->path != nullptr && pData->oscData->path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->target != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr,);
     carla_debug("CarlaEngine::oscSend_bridge_program_name(%i, \"%s\")", index, name);
 
     char targetPath[std::strlen(pData->oscData->path)+21];

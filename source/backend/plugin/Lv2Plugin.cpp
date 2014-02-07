@@ -2504,7 +2504,7 @@ public:
                 lv2_atom_forge_set_buffer(&fAtomForge, timeInfoBuf, sizeof(timeInfoBuf));
 
                 LV2_Atom_Forge_Frame forgeFrame;
-                lv2_atom_forge_object(&fAtomForge, &forgeFrame, 1, CARLA_URI_MAP_ID_TIME_POSITION);
+                lv2_atom_forge_object(&fAtomForge, &forgeFrame, CARLA_URI_MAP_ID_NULL, CARLA_URI_MAP_ID_TIME_POSITION);
 
                 lv2_atom_forge_key(&fAtomForge, CARLA_URI_MAP_ID_TIME_SPEED);
                 lv2_atom_forge_float(&fAtomForge, timeInfo.playing ? 1.0f : 0.0f);
@@ -2538,10 +2538,11 @@ public:
                 LV2_Atom* const atom((LV2_Atom*)timeInfoBuf);
                 CARLA_SAFE_ASSERT_BREAK(atom->size < 256);
 
-                lv2_atom_buffer_write(&evInAtomIters[i], 0, 0, atom->type, atom->size, LV2_ATOM_BODY_CONST(atom));
-
-                // send deprecated blank object as well
+                // send only deprecated blank object for now
                 lv2_atom_buffer_write(&evInAtomIters[i], 0, 0, CARLA_URI_MAP_ID_ATOM_BLANK, atom->size, LV2_ATOM_BODY_CONST(atom));
+
+                // for atom:object
+                //lv2_atom_buffer_write(&evInAtomIters[i], 0, 0, atom->type, atom->size, LV2_ATOM_BODY_CONST(atom));
             }
 
             pData->postRtEvents.trySplice();
