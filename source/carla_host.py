@@ -459,9 +459,11 @@ class HostWindow(QMainWindow):
         # apply to engine
 
         Carla.host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,          forceStereo,         "")
-        Carla.host.set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, preferPluginBridges, "")
-        Carla.host.set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     preferUiBridges,     "")
         Carla.host.set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     uisAlwaysOnTop,      "")
+
+        if not Carla.isPlugin:
+            Carla.host.set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, preferPluginBridges, "")
+            Carla.host.set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     preferUiBridges,     "")
 
         Carla.host.set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        maxParameters,       "")
         Carla.host.set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    uiBridgesTimeout,    "")
