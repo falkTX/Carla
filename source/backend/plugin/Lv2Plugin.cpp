@@ -2505,8 +2505,10 @@ public:
 
                 LV2_Atom_Forge_Frame forgeFrame;
                 lv2_atom_forge_object(&fAtomForge, &forgeFrame, 1, CARLA_URI_MAP_ID_TIME_POSITION);
+
                 lv2_atom_forge_key(&fAtomForge, CARLA_URI_MAP_ID_TIME_SPEED);
                 lv2_atom_forge_float(&fAtomForge, timeInfo.playing ? 1.0f : 0.0f);
+
                 lv2_atom_forge_key(&fAtomForge, CARLA_URI_MAP_ID_TIME_FRAME);
                 lv2_atom_forge_long(&fAtomForge, static_cast<int64_t>(timeInfo.frame));
 
@@ -2514,14 +2516,19 @@ public:
                 {
                     lv2_atom_forge_key(&fAtomForge, CARLA_URI_MAP_ID_TIME_BAR);
                     lv2_atom_forge_long(&fAtomForge, timeInfo.bbt.bar - 1);
+
                     lv2_atom_forge_key(&fAtomForge, CARLA_URI_MAP_ID_TIME_BAR_BEAT);
                     lv2_atom_forge_float(&fAtomForge, static_cast<float>(static_cast<double>(timeInfo.bbt.beat) - 1.0 + (static_cast<double>(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat)));
+
                     lv2_atom_forge_key(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEAT);
                     lv2_atom_forge_double(&fAtomForge, timeInfo.bbt.beat -1);
+
                     lv2_atom_forge_key(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEAT_UNIT);
                     lv2_atom_forge_int(&fAtomForge, static_cast<int32_t>(timeInfo.bbt.beatType));
+
                     lv2_atom_forge_key(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR);
                     lv2_atom_forge_float(&fAtomForge, timeInfo.bbt.beatsPerBar);
+
                     lv2_atom_forge_key(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE);
                     lv2_atom_forge_float(&fAtomForge, static_cast<float>(timeInfo.bbt.beatsPerMinute));
                 }
