@@ -1969,7 +1969,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         break;
 
     case ENGINE_OPTION_AUDIO_DEVICE:
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr,);
 
         if (pData->options.audioDevice != nullptr)
             delete[] pData->options.audioDevice;

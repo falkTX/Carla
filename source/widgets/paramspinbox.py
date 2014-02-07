@@ -295,43 +295,49 @@ class ParamSpinBox(QAbstractSpinBox):
         self.fScalePoints     = scalePoints
         self.fHaveScalePoints = useScalePoints
 
-        if useScalePoints:
-            # Hide ProgressBar and create a ComboBox
-            self.fBar.close()
-            self.fBox = QComboBox(self)
-            self.fBox.setContextMenuPolicy(Qt.NoContextMenu)
-            self.fBox.show()
-            self.slot_updateProgressBarGeometry()
+        if not useScalePoints:
+            return
 
-            # Add items, sorted
-            boxItemValues = []
+        # Hide ProgressBar and create a ComboBox
+        self.fBar.close()
+        self.fBox = QComboBox(self)
+        self.fBox.setContextMenuPolicy(Qt.NoContextMenu)
+        self.fBox.show()
+        self.slot_updateProgressBarGeometry()
 
-            for scalePoint in scalePoints:
-                value = scalePoint['value']
+        # Add items, sorted
+        boxItemValues = []
+
+        for scalePoint in scalePoints:
+            value = scalePoint['value']
+
+            if self.fStep == 1.0:
+                label = "%i - %s" % (int(value), scalePoint['label'])
+            else:
                 label = "%f - %s" % (value, scalePoint['label'])
 
-                if len(boxItemValues) == 0:
+            if len(boxItemValues) == 0:
+                self.fBox.addItem(label)
+                boxItemValues.append(value)
+
+            else:
+                if value < boxItemValues[0]:
+                    self.fBox.insertItem(0, label)
+                    boxItemValues.insert(0, value)
+                elif value > boxItemValues[-1]:
                     self.fBox.addItem(label)
                     boxItemValues.append(value)
-
                 else:
-                    if value < boxItemValues[0]:
-                        self.fBox.insertItem(0, label)
-                        boxItemValues.insert(0, value)
-                    elif value > boxItemValues[-1]:
-                        self.fBox.addItem(label)
-                        boxItemValues.append(value)
-                    else:
-                        for index in range(len(boxItemValues)):
-                            if value >= boxItemValues[index]:
-                                self.fBox.insertItem(index+1, label)
-                                boxItemValues.insert(index+1, value)
-                                break
+                    for index in range(len(boxItemValues)):
+                        if value >= boxItemValues[index]:
+                            self.fBox.insertItem(index+1, label)
+                            boxItemValues.insert(index+1, value)
+                            break
 
-            if self.fValue != None:
-                self._setScalePointValue(self.fValue)
+        if self.fValue != None:
+            self._setScalePointValue(self.fValue)
 
-            self.fBox.currentIndexChanged['QString'].connect(self.slot_comboBoxIndexChanged)
+        self.fBox.currentIndexChanged['QString'].connect(self.slot_comboBoxIndexChanged)
 
     def stepBy(self, steps):
         if steps == 0 or self.fValue is None:
