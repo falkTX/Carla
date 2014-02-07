@@ -142,7 +142,7 @@ class CarlaAboutW(QDialog):
 
             self.ui.l_ladspa.setText(self.tr("Everything! (Including LRDF)"))
             self.ui.l_dssi.setText(self.tr("Everything! (Including CustomData/Chunks)"))
-            self.ui.l_lv2.setText(self.tr("About 95&#37; complete (using custom extensions)<br/>"
+            self.ui.l_lv2.setText(self.tr("About 90&#37; complete (using custom extensions)<br/>"
                                           "Implemented Feature/Extensions:"
                                           "<ul>"
                                           "<li>http://lv2plug.in/ns/ext/atom</li>"

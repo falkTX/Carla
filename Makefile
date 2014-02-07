@@ -247,11 +247,11 @@ install:
 	install -m 644 source/includes/CarlaDefines.h $(DESTDIR)$(PREFIX)/include/carla/includes/
 
 	# Install resources
-	install -m 755 source/modules/daz-plugins/resources/carla-plugin      $(DESTDIR)$(PREFIX)/lib/carla/resources/
-	install -m 755 source/modules/daz-plugins/resources/*-ui              $(DESTDIR)$(PREFIX)/lib/carla/resources/
-	install -m 644 source/modules/daz-plugins/resources/*.py              $(DESTDIR)$(PREFIX)/lib/carla/resources/
-	install -m 644 source/modules/daz-plugins/resources/nekofilter/*.png  $(DESTDIR)$(PREFIX)/lib/carla/resources/nekofilter/
-	install -m 644 source/modules/daz-plugins/resources/zynaddsubfx/*.png $(DESTDIR)$(PREFIX)/lib/carla/resources/zynaddsubfx/
+	install -m 755 source/modules/native-plugins/resources/carla-plugin      $(DESTDIR)$(PREFIX)/lib/carla/resources/
+	install -m 755 source/modules/native-plugins/resources/*-ui              $(DESTDIR)$(PREFIX)/lib/carla/resources/
+	install -m 644 source/modules/native-plugins/resources/*.py              $(DESTDIR)$(PREFIX)/lib/carla/resources/
+	install -m 644 source/modules/native-plugins/resources/nekofilter/*.png  $(DESTDIR)$(PREFIX)/lib/carla/resources/nekofilter/
+	install -m 644 source/modules/native-plugins/resources/zynaddsubfx/*.png $(DESTDIR)$(PREFIX)/lib/carla/resources/zynaddsubfx/
 
 	# Install theme
 	$(MAKE) STYLES_DIR=$(DESTDIR)$(PREFIX)/lib/carla/styles install-main -C source/modules/theme

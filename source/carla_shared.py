@@ -556,7 +556,7 @@ def initHost(appName, libPrefix = None, failError = True):
     # -------------------------------------------------------------
     # Set resource path
 
-    localResources  = os.path.join(libfolder, "..", "modules", "daz-plugins", "resources")
+    localResources  = os.path.join(libfolder, "..", "modules", "native-plugins", "resources")
     systemResources = os.path.join(libfolder, "resources")
 
     if os.path.exists(localResources):

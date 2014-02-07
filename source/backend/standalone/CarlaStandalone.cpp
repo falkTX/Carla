@@ -560,13 +560,23 @@ bool carla_engine_init_bridge(const char audioBaseName[6+1], const char controlB
     gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, false, nullptr);
     gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_UI_BRIDGES,     false, nullptr);
 
-    // TODO: get these from environment
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_UIS_ALWAYS_ON_TOP,           gStandalone.engineOptions.uisAlwaysOnTop      ? 1 : 0,        nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_MAX_PARAMETERS,              static_cast<int>(gStandalone.engineOptions.maxParameters),    nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_UI_BRIDGES_TIMEOUT,          static_cast<int>(gStandalone.engineOptions.uiBridgesTimeout), nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,            0, (const char*)gStandalone.engineOptions.binaryDir);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,           0, (const char*)gStandalone.engineOptions.resourceDir);
-    // frontend winId here
+    if (const char* const uisAlwaysOnTop = std::getenv("ENGINE_OPTION_UIS_ALWAYS_ON_TOP"))
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_UIS_ALWAYS_ON_TOP,      (std::strcmp(uisAlwaysOnTop, "true") == 0) ? 1 : 0, nullptr);
+
+    if (const char* const maxParameters = std::getenv("ENGINE_OPTION_MAX_PARAMETERS"))
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_MAX_PARAMETERS,          std::atoi(maxParameters), nullptr);
+
+    if (const char* const uiBridgesTimeout = std::getenv("ENGINE_OPTION_UI_BRIDGES_TIMEOUT"))
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_UI_BRIDGES_TIMEOUT,      std::atoi(uiBridgesTimeout), nullptr);
+
+    if (const char* const binaryDir = std::getenv("ENGINE_OPTION_PATH_BINARIES"))
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,        0, binaryDir);
+
+    if (const char* const resourceDir = std::getenv("ENGINE_OPTION_PATH_RESOURCES"))
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,       0, resourceDir);
+
+    if (const char* const frontendWinId = std::getenv("ENGINE_OPTION_FRONTEND_WIN_ID"))
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,        0, frontendWinId);
 
     if (gStandalone.engine->init(clientName))
     {

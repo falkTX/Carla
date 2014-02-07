@@ -167,17 +167,6 @@ public:
 
         carla_set_engine_callback(callback, this);
 
-#if 0
-        File curDir(File::getSpecialLocation(File::currentApplicationFile).getParentDirectory());
-
-        if (curDir.getChildFile("resources").exists())
-            carla_set_engine_option(CarlaBackend::OPTION_PATH_RESOURCES, 0, curDir.getChildFile("resources").getFullPathName().toRawUTF8());
-        else if (curDir.getChildFile("../../modules/native-plugins/resources").exists())
-            carla_set_engine_option(CarlaBackend::OPTION_PATH_RESOURCES, 0, curDir.getChildFile("../../modules/native-plugins/resources").getFullPathName().toRawUTF8());
-        else
-            carla_set_engine_option(CarlaBackend::OPTION_PATH_RESOURCES, 0, curDir.getChildFile("../modules/native-plugins/resources").getFullPathName().toRawUTF8());
-#endif
-
         if (useBridge)
             carla_engine_init_bridge(audioBaseName, controlBaseName, clientName);
         else
