@@ -37,9 +37,9 @@ struct PluginListManager {
         {
             const NativePluginDescriptor* const desc(CarlaBackend::CarlaPlugin::getNativePluginDescriptor(i));
 
-#if 0 //def CARLA_NATIVE_PLUGIN_LV2 // TESTING!!!
-            // LV2 MIDI Out and Open/Save are not implemented yet
-            if (desc->midiOuts > 0 || (desc->hints & PLUGIN_NEEDS_UI_OPEN_SAVE) != 0)
+#ifdef CARLA_NATIVE_PLUGIN_LV2
+            // Open/Save are not implemented yet
+            if (desc->hints & PLUGIN_NEEDS_UI_OPEN_SAVE)
                continue;
 #endif
             descs.append(desc);
