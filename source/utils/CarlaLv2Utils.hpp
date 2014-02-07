@@ -402,7 +402,7 @@ public:
 // Create new RDF object (using lilv)
 
 static inline
-const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool /*fillPresets*/)
+const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
 {
     CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', nullptr);
 
@@ -1019,7 +1019,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool /*fillPreset
         }
     }
 
-#if 0
+#if 1
     // -------------------------------------------------------------------
     // Set Plugin Presets
 

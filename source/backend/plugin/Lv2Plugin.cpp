@@ -951,40 +951,37 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-#if 0
     void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
-        CARLA_ASSERT(fHandle != nullptr);
-        CARLA_ASSERT(type != nullptr);
-        CARLA_ASSERT(key != nullptr);
-        CARLA_ASSERT(value != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
         carla_debug("Lv2Plugin::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
 
-        if (type == nullptr)
-            return carla_stderr2("Lv2Plugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is invalid", type, key, value, bool2str(sendGui));
-
-        if (key == nullptr)
-            return carla_stderr2("Lv2Plugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - key is null", type, key, value, bool2str(sendGui));
-
-        if (value == nullptr)
-            return carla_stderr2("Lv2Plugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - value is null", type, key, value, bool2str(sendGui));
-
-        CarlaPlugin::setCustomData(type, key, value, sendGui);
-
-        // FIXME - we should only call this once, after all data is stored
-
-        if (fExt.state != nullptr)
+        // we should only call state restore once
+        // so inject this in CarlaPlugin::loadSaveState
+        if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) == 0 && std::strcmp(key, "CarlaLoadLv2StateNow") == 0 && std::strcmp(value, "true") == 0)
         {
-            LV2_State_Status status;
+            if (fExt.state == nullptr)
+                return;
+
+            LV2_State_Status status = LV2_STATE_ERR_UNKNOWN;
 
             {
                 const ScopedSingleProcessLocker spl(this, true);
 
-                status = fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
+                try {
+                    status = fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
+                } catch(...) {}
 
                 if (fHandle2 != nullptr)
-                    fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
+                {
+                    try {
+                        fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
+                    } catch(...) {}
+                }
             }
 
             switch (status)
@@ -1008,32 +1005,20 @@ public:
                 carla_stderr("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - error, missing property", type, key, bool2str(sendGui));
                 break;
             }
+            return;
         }
 
-        if (sendGui)
-        {
-            //CustomData cdata;
-            //cdata.type  = type;
-            //cdata.key   = key;
-            //cdata.value = value;
-            //uiTransferCustomData(&cdata);
-        }
+        CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
 
-    void setProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
-        CARLA_ASSERT(fRdfDescriptor != nullptr);
-        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(fRdfDescriptor->PresetCount));
-        CARLA_ASSERT(sendGui || sendOsc || sendCallback); // never call this from RT
-
-        if (index < -1)
-            index = -1;
-        else if (index > static_cast<int32_t>(fRdfDescriptor->PresetCount))
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
 
         if (index >= 0 && index < static_cast<int32_t>(fRdfDescriptor->PresetCount))
         {
-            if (const LilvState* state = gLv2World.getState(fRdfDescriptor->Presets[index].URI, (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
+            if (const LilvState* state = Lv2WorldClass::getInstance().getState(fRdfDescriptor->Presets[index].URI, (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
             {
                 const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
@@ -1047,16 +1032,10 @@ public:
         CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
     }
 
-    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
-        CARLA_ASSERT(fHandle != nullptr);
-        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count));
-
-        if (index < -1)
-            index = -1;
-        else if (index > static_cast<int32_t>(pData->midiprog.count))
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
 
         if (index >= 0 && fExt.programs != nullptr && fExt.programs->select_program != nullptr)
         {
@@ -1065,15 +1044,20 @@ public:
 
             const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
-            fExt.programs->select_program(fHandle, bank, program);
+            try {
+                fExt.programs->select_program(fHandle, bank, program);
+            } catch(...) {}
 
             if (fHandle2 != nullptr)
-                fExt.programs->select_program(fHandle2, bank, program);
+            {
+                try {
+                    fExt.programs->select_program(fHandle2, bank, program);
+                } catch(...) {}
+            }
         }
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
     }
-#endif
 
     // -------------------------------------------------------------------
     // Set ui stuff
@@ -2117,25 +2101,24 @@ public:
         carla_debug("Lv2Plugin::reload() - end");
     }
 
-#if 0
-    void reloadPrograms(const bool init) override
+    void reloadPrograms(const bool doInit) override
     {
-        carla_debug("DssiPlugin::reloadPrograms(%s)", bool2str(init));
-        uint32_t i, oldCount  = pData->midiprog.count;
-        const int32_t current = pData->midiprog.current;
+        carla_debug("DssiPlugin::reloadPrograms(%s)", bool2str(doInit));
+        const uint32_t oldCount = pData->midiprog.count;
+        const int32_t  current  = pData->midiprog.current;
 
         // special LV2 programs handling
-        if (init)
+        if (doInit)
         {
             pData->prog.clear();
 
-            const uint32_t count(fRdfDescriptor->PresetCount);
+            const uint32_t presetCount(fRdfDescriptor->PresetCount);
 
-            if (count > 0)
+            if (presetCount > 0)
             {
-                pData->prog.createNew(count);
+                pData->prog.createNew(presetCount);
 
-                for (i=0; i < count; ++i)
+                for (uint32_t i=0; i < presetCount; ++i)
                     pData->prog.names[i] = carla_strdup(fRdfDescriptor->Presets[i].Label);
             }
         }
@@ -2144,23 +2127,23 @@ public:
         pData->midiprog.clear();
 
         // Query new programs
-        uint32_t count = 0;
+        uint32_t newCount = 0;
         if (fExt.programs != nullptr && fExt.programs->get_program != nullptr && fExt.programs->select_program != nullptr)
         {
-            while (fExt.programs->get_program(fHandle, count))
-                ++count;
+            for (; fExt.programs->get_program(fHandle, newCount);)
+                ++newCount;
         }
 
-        if (count > 0)
+        if (newCount > 0)
         {
-            pData->midiprog.createNew(count);
+            pData->midiprog.createNew(newCount);
 
             // Update data
-            for (i=0; i < count; ++i)
+            for (uint32_t i=0; i < newCount; ++i)
             {
                 const LV2_Program_Descriptor* const pdesc(fExt.programs->get_program(fHandle, i));
-                CARLA_ASSERT(pdesc != nullptr);
-                CARLA_ASSERT(pdesc->name != nullptr);
+                CARLA_SAFE_ASSERT_CONTINUE(pdesc != nullptr);
+                CARLA_SAFE_ASSERT(pdesc->name != nullptr);
 
                 pData->midiprog.data[i].bank    = pdesc->bank;
                 pData->midiprog.data[i].program = pdesc->program;
@@ -2172,23 +2155,23 @@ public:
         // Update OSC Names
         if (pData->engine->isOscControlRegistered())
         {
-            pData->engine->osc_send_control_set_midi_program_count(fId, count);
+            pData->engine->oscSend_control_set_midi_program_count(pData->id, newCount);
 
-            for (i=0; i < count; ++i)
-                pData->engine->osc_send_control_set_midi_program_data(fId, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
+            for (uint32_t i=0; i < newCount; ++i)
+                pData->engine->oscSend_control_set_midi_program_data(pData->id, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
         }
 #endif
 
-        if (init)
+        if (doInit)
         {
-            if (count > 0)
+            if (newCount > 0)
             {
                 setMidiProgram(0, false, false, false);
             }
             else
             {
                 // load default state
-                if (const LilvState* state = gLv2World.getState(fDescriptor->URI, (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
+                if (const LilvState* state = Lv2WorldClass::getInstance().getState(fDescriptor->URI, (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
                 {
                     lilv_state_restore(state, fExt.state, fHandle, carla_lilv_set_port_value, this, 0, fFeatures);
 
@@ -2202,25 +2185,25 @@ public:
             // Check if current program is invalid
             bool programChanged = false;
 
-            if (count == oldCount+1)
+            if (newCount == oldCount+1)
             {
                 // one midi program added, probably created by user
-                pData->midiprog.current = oldCount;
+                pData->midiprog.current = static_cast<int32_t>(oldCount);
                 programChanged = true;
             }
-            else if (current < 0 && count > 0)
+            else if (current < 0 && newCount > 0)
             {
                 // programs exist now, but not before
                 pData->midiprog.current = 0;
                 programChanged = true;
             }
-            else if (current >= 0 && count == 0)
+            else if (current >= 0 && newCount == 0)
             {
                 // programs existed before, but not anymore
                 pData->midiprog.current = -1;
                 programChanged = true;
             }
-            else if (current >= static_cast<int32_t>(count))
+            else if (current >= static_cast<int32_t>(newCount))
             {
                 // current midi program > count
                 pData->midiprog.current = 0;
@@ -2235,10 +2218,9 @@ public:
             if (programChanged)
                 setMidiProgram(pData->midiprog.current, true, true, true);
 
-            pData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0f, nullptr);
         }
     }
-#endif
 
     // -------------------------------------------------------------------
     // Plugin processing
@@ -3644,6 +3626,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(uiId < fRdfDescriptor->UICount, false);
 
+#ifndef LV2_UIS_ONLY_INPROCESS
         const LV2_RDF_UI* const rdfUi(&fRdfDescriptor->UIs[uiId]);
 
         if (std::strstr(rdfUi->URI, "http://calf.sourceforge.net/plugins/gui/") != nullptr)
@@ -3658,6 +3641,9 @@ public:
         }
 
         return true;
+#else
+        return false;
+#endif
     }
 
     bool isUiResizable() const noexcept

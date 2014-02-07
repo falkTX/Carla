@@ -733,6 +733,12 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     }
 
     // ---------------------------------------------------------------
+    // Part 5x - set lv2 state
+
+    if (getType() == PLUGIN_LV2)
+        setCustomData(CUSTOM_DATA_TYPE_STRING, "CarlaLoadLv2StateNow", "true", true);
+
+    // ---------------------------------------------------------------
     // Part 6 - set chunk
 
     if (saveState.chunk != nullptr && (pData->options & PLUGIN_OPTION_USE_CHUNKS) != 0)
@@ -1141,24 +1147,17 @@ void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, int16_t cc, con
 
 void CarlaPlugin::setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui)
 {
-    CARLA_ASSERT(type != nullptr);
-    CARLA_ASSERT(key != nullptr);
-    CARLA_ASSERT(value != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 #ifdef BUILD_BRIDGE
-    if (! gIsLoadingProject)
-    {
-        CARLA_ASSERT(! sendGui); // this should never happen
+    if (! gIsLoadingProject) {
+        CARLA_SAFE_ASSERT_RETURN(! sendGui,); // this should never happen
     }
+#else
+    // unused
+    (void)sendGui;
 #endif
-
-    if (type == nullptr)
-        return carla_stderr2("CarlaPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is null", type, key, value, bool2str(sendGui));
-
-    if (key == nullptr)
-        return carla_stderr2("CarlaPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - key is null", type, key, value, bool2str(sendGui));
-
-    if (value == nullptr)
-        return carla_stderr2("CarlaPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - value is null", type, key, value, bool2str(sendGui));
 
     bool saveData = true;
 
@@ -1179,14 +1178,9 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
     {
         CustomData& cData(it.getValue());
 
-        CARLA_ASSERT(cData.type != nullptr);
-        CARLA_ASSERT(cData.key != nullptr);
-        CARLA_ASSERT(cData.value != nullptr);
-
-        if (cData.type == nullptr)
-            return;
-        if (cData.key == nullptr)
-            return;
+        CARLA_SAFE_ASSERT_RETURN(cData.type != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(cData.key != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(cData.value != nullptr,);
 
         if (std::strcmp(cData.key, key) == 0)
         {

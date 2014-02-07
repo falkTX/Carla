@@ -568,8 +568,7 @@ public:
         {
             osc_send_show(pData->osc.data);
 
-            if (pData->engine->getOptions().frontendWinId != 0)
-                pData->transientTryCounter = 1;
+            pData->tryTransient();
         }
         else
         {

@@ -25,8 +25,6 @@
 
 #include "juce_audio_processors.h"
 
-// TODO - use setPlayConfigDetails
-
 using namespace juce;
 
 CARLA_BACKEND_START_NAMESPACE
@@ -492,6 +490,8 @@ public:
 
         if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0))
             pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
+
+        fInstance->setPlayConfigDetails(static_cast<int>(aIns), static_cast<int>(aOuts), pData->engine->getSampleRate(), static_cast<int>(pData->engine->getBufferSize()));
 
         bufferSizeChanged(pData->engine->getBufferSize());
         //reloadPrograms(true);

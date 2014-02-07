@@ -305,10 +305,16 @@ public:
 
         if (fDssiDescriptor->configure != nullptr)
         {
-            fDssiDescriptor->configure(fHandle, key, value);
+            try {
+                fDssiDescriptor->configure(fHandle, key, value);
+            } catch(...) {}
 
             if (fHandle2 != nullptr)
-                fDssiDescriptor->configure(fHandle2, key, value);
+            {
+                try {
+                    fDssiDescriptor->configure(fHandle2, key, value);
+                } catch(...) {}
+            }
         }
 
         if (sendGui && pData->osc.data.target != nullptr)
@@ -338,7 +344,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0,);
 
         const ScopedSingleProcessLocker spl(this, true);
-        fDssiDescriptor->set_custom_data(fHandle, chunk.data(), static_cast<ulong>(chunk.size()));
+
+        try {
+            fDssiDescriptor->set_custom_data(fHandle, chunk.data(), static_cast<ulong>(chunk.size()));
+        } catch(...) {}
     }
 
     void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
@@ -350,8 +359,8 @@ public:
 
         if (index >= 0)
         {
-            const uint32_t bank    = pData->midiprog.data[index].bank;
-            const uint32_t program = pData->midiprog.data[index].program;
+            const uint32_t bank(pData->midiprog.data[index].bank);
+            const uint32_t program(pData->midiprog.data[index].program);
 
             const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
