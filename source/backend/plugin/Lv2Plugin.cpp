@@ -2533,10 +2533,15 @@ public:
                     lv2_atom_forge_float(&fAtomForge, static_cast<float>(timeInfo.bbt.beatsPerMinute));
                 }
 
+                lv2_atom_forge_pop(&fAtomForge, &forgeFrame);
+
                 LV2_Atom* const atom((LV2_Atom*)timeInfoBuf);
+                CARLA_SAFE_ASSERT_BREAK(atom->size < 256);
+
                 lv2_atom_buffer_write(&evInAtomIters[i], 0, 0, atom->type, atom->size, LV2_ATOM_BODY_CONST(atom));
 
-                CARLA_ASSERT(atom->size < 256);
+                // send deprecated blank object as well
+                lv2_atom_buffer_write(&evInAtomIters[i], 0, 0, CARLA_URI_MAP_ID_ATOM_BLANK, atom->size, LV2_ATOM_BODY_CONST(atom));
             }
 
             pData->postRtEvents.trySplice();
@@ -4123,7 +4128,8 @@ public:
 
         case CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM:
         case CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT:
-            CARLA_SAFE_ASSERT_RETURN(((const LV2_Atom*)buffer)->size == bufferSize,);
+            // plugins sometimes fails on this, not good...
+            CARLA_SAFE_ASSERT_INT2(((const LV2_Atom*)buffer)->size == bufferSize, ((const LV2_Atom*)buffer)->size, bufferSize);
 
             fAtomQueueIn.put((const LV2_Atom*)buffer, rindex);
             break;

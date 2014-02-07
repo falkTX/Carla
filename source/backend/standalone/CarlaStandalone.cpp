@@ -73,7 +73,7 @@ public:
         startThread();
 
         while (! fInitialised)
-            carla_msleep(1);
+            Thread::sleep(1);
     }
 
     void stop()

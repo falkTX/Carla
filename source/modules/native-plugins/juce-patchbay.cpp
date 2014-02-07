@@ -90,9 +90,6 @@ protected:
 
     void process(float** inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
-        fAudioBuffer.copyFrom(0, 0, inBuffer[0], static_cast<int>(frames));
-        fAudioBuffer.copyFrom(1, 0, inBuffer[1], static_cast<int>(frames));
-
         fMidiBuffer.clear();
 
         for (uint32_t i=0; i < midiEventCount; ++i)
@@ -108,7 +105,11 @@ protected:
                 fMidiKeyState->processNextMidiBuffer(fMidiBuffer, 0, static_cast<int>(frames), true);
         }
 
-        fGraph.getGraph().processBlock(fAudioBuffer, fMidiBuffer);
+        FloatVectorOperations::copy(outBuffer[0], inBuffer[0], static_cast<int>(frames));
+        FloatVectorOperations::copy(outBuffer[1], inBuffer[1], static_cast<int>(frames));
+        AudioSampleBuffer audioBuf(outBuffer, 2, static_cast<int>(frames));
+
+        fGraph.getGraph().processBlock(audioBuf, fMidiBuffer);
 
         MidiBuffer::Iterator outBufferIterator(fMidiBuffer);
         const uint8_t* midiData;
@@ -129,9 +130,6 @@ protected:
             std::memcpy(tmpEvent.data, midiData, sizeof(uint8_t)*tmpEvent.size);
             writeMidiEvent(&tmpEvent);
         }
-
-        FloatVectorOperations::copy(outBuffer[0], fAudioBuffer.getSampleData(0), static_cast<int>(frames));
-        FloatVectorOperations::copy(outBuffer[1], fAudioBuffer.getSampleData(1), static_cast<int>(frames));
     }
 
     // -------------------------------------------------------------------

@@ -1434,11 +1434,12 @@ public:
             {
                 if (fMidiEvents[k].type == 0)
                     break;
-                CARLA_SAFE_ASSERT_CONTINUE(fMidiEvents[k].deltaFrames > 0);
-                CARLA_SAFE_ASSERT_CONTINUE(fMidiEvents[k].midiData[0] > 0);
+
+                CARLA_SAFE_ASSERT_CONTINUE(fMidiEvents[k].deltaFrames >= 0);
+                CARLA_SAFE_ASSERT_CONTINUE(fMidiEvents[k].midiData[0] != 0);
 
                 const uint8_t status(static_cast<uint8_t>(fMidiEvents[k].midiData[0]));
-                const uint8_t channel(static_cast<uint8_t>(status < MIDI_STATUS_BIT ? status & MIDI_STATUS_BIT : 0));
+                const uint8_t channel(static_cast<uint8_t>(status < MIDI_STATUS_BIT ? status & MIDI_CHANNEL_BIT : 0));
 
                 uint8_t midiData[3];
                 midiData[0] = static_cast<uint8_t>(fMidiEvents[k].midiData[0]);
