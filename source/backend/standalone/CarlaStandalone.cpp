@@ -719,7 +719,7 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
         break;
 
     case CB::ENGINE_OPTION_AUDIO_DEVICE:
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr,);
 
         if (gStandalone.engineOptions.audioDevice != nullptr)
             delete[] gStandalone.engineOptions.audioDevice;

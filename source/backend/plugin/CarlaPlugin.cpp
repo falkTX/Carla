@@ -735,7 +735,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------
     // Part 5x - set lv2 state
 
-    if (getType() == PLUGIN_LV2)
+    if (getType() == PLUGIN_LV2 && pData->custom.count() > 0)
         setCustomData(CUSTOM_DATA_TYPE_STRING, "CarlaLoadLv2StateNow", "true", true);
 
     // ---------------------------------------------------------------
@@ -1694,8 +1694,11 @@ bool CarlaPlugin::waitForOscGuiShow()
             osc_send_show(pData->osc.data);
             return true;
         }
-        else
+
+        if (pData->osc.thread.isRunning())
             carla_msleep(100);
+        else
+            return false;
     }
 
     carla_stdout("CarlaPlugin::waitForOscGuiShow() - Timeout while waiting for UI to respond (waited %u msecs)", oscUiTimeout);

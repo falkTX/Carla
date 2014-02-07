@@ -242,19 +242,13 @@ void CarlaPluginThread::run()
                 {
                     carla_stdout("CarlaPluginThread::run() - UI auto-closed successfully");
                 }
-
-                fEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, fPlugin->getId(), 0, 0, 0.0f, nullptr);
             }
             else if (fProcess->exitCode() != 0 || fProcess->exitStatus() == QProcess::CrashExit)
-            {
                 carla_stderr("CarlaPluginThread::run() - UI crashed while running");
-                fEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, fPlugin->getId(), -1, 0, 0.0f, nullptr);
-            }
             else
-            {
                 carla_stdout("CarlaPluginThread::run() - UI closed cleanly");
-                fEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, fPlugin->getId(), 0, 0, 0.0f, nullptr);
-            }
+
+            fEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, fPlugin->getId(), 0, 0, 0.0f, nullptr);
         }
         else
         {

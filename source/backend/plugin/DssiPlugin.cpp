@@ -462,7 +462,11 @@ public:
         if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && (aIns == 1 || aOuts == 1))
         {
             if (fHandle2 == nullptr)
-                fHandle2 = fDescriptor->instantiate(fDescriptor, (unsigned long)sampleRate);
+            {
+                try {
+                    fHandle2 = fDescriptor->instantiate(fDescriptor, (unsigned long)sampleRate);
+                } catch(...) {}
+            }
 
             if (fHandle2 != nullptr)
             {
@@ -1882,7 +1886,9 @@ public:
         // ---------------------------------------------------------------
         // initialize plugin
 
-        fHandle = fDescriptor->instantiate(fDescriptor, (unsigned long)pData->engine->getSampleRate());
+        try {
+            fHandle = fDescriptor->instantiate(fDescriptor, (unsigned long)pData->engine->getSampleRate());
+        } catch(...) {}
 
         if (fHandle == nullptr)
         {
