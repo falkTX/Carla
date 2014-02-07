@@ -230,8 +230,7 @@ lv2_atom_forge_is_blank(const LV2_Atom_Forge*       forge,
 #    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 	return (type == forge->Blank ||
-	        (type == forge->Object &&
-	         ((const LV2_Atom_Object_Body*)body)->id == 0));
+	        (type == forge->Object && body->id == 0));
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #    pragma GCC diagnostic pop
 #endif
@@ -302,7 +301,7 @@ lv2_atom_forge_raw(LV2_Atom_Forge* forge, const void* data, uint32_t size)
 	if (forge->sink) {
 		out = forge->sink(forge->handle, data, size);
 	} else {
-		out = (LV2_Atom_Forge_Ref)(forge->buf + forge->offset);
+		out = (LV2_Atom_Forge_Ref)forge->buf + forge->offset;
 		uint8_t* mem = forge->buf + forge->offset;
 		if (forge->offset + size > forge->size) {
 			return 0;
@@ -583,7 +582,7 @@ lv2_atom_forge_object(LV2_Atom_Forge*       forge,
                       LV2_URID              otype)
 {
 	const LV2_Atom_Object a = {
-		{ (uint32_t)(sizeof(LV2_Atom_Object) - sizeof(LV2_Atom)), forge->Object },
+		{ (uint32_t)sizeof(LV2_Atom_Object_Body), forge->Object },
 		{ id, otype }
 	};
 	return lv2_atom_forge_push(
@@ -591,10 +590,10 @@ lv2_atom_forge_object(LV2_Atom_Forge*       forge,
 }
 
 /**
-   The same as lv2_atom_forge_resource(), but for object:Resource.
+   The same as lv2_atom_forge_object(), but for object:Resource.
 
    This function is deprecated and should not be used in new code.
-   Use lv2_atom_forge_resource() directly instead.
+   Use lv2_atom_forge_object() directly instead.
 */
 LV2_ATOM_FORGE_DEPRECATED
 static inline LV2_Atom_Forge_Ref
@@ -608,7 +607,7 @@ lv2_atom_forge_resource(LV2_Atom_Forge*       forge,
 #    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 	const LV2_Atom_Object a = {
-		{ (uint32_t)(sizeof(LV2_Atom_Object) - sizeof(LV2_Atom)), forge->Resource },
+		{ (uint32_t)sizeof(LV2_Atom_Object_Body), forge->Resource },
 		{ id, otype }
 	};
 	return lv2_atom_forge_push(
@@ -619,10 +618,10 @@ lv2_atom_forge_resource(LV2_Atom_Forge*       forge,
 }
 
 /**
-   The same as lv2_atom_forge_resource(), but for object:Blank.
+   The same as lv2_atom_forge_object(), but for object:Blank.
 
    This function is deprecated and should not be used in new code.
-   Use lv2_atom_forge_resource() directly instead.
+   Use lv2_atom_forge_object() directly instead.
 */
 LV2_ATOM_FORGE_DEPRECATED
 static inline LV2_Atom_Forge_Ref
@@ -636,7 +635,7 @@ lv2_atom_forge_blank(LV2_Atom_Forge*       forge,
 #    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 	const LV2_Atom_Object a = {
-		{ (uint32_t)(sizeof(LV2_Atom_Object) - sizeof(LV2_Atom)), forge->Blank },
+		{ (uint32_t)sizeof(LV2_Atom_Object_Body), forge->Blank },
 		{ id, otype }
 	};
 	return lv2_atom_forge_push(
@@ -683,7 +682,7 @@ lv2_atom_forge_sequence_head(LV2_Atom_Forge*       forge,
                              uint32_t              unit)
 {
 	const LV2_Atom_Sequence a = {
-		{ (uint32_t)(sizeof(LV2_Atom_Sequence) - sizeof(LV2_Atom)), forge->Sequence },
+		{ (uint32_t)sizeof(LV2_Atom_Sequence_Body), forge->Sequence },
 		{ unit, 0 }
 	};
 	return lv2_atom_forge_push(
