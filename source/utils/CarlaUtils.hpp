@@ -259,6 +259,27 @@ const char* carla_strdup_free(char* const strBuf)
 // memory functions
 
 /*
+ * Fill an array with a fixed value.
+ */
+template<typename T>
+static inline
+void carla_fill(T* data, const size_t size, const T v) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(size > 0,);
+
+    if (v == 0)
+    {
+        std::memset(data, 0, size*sizeof(T));
+    }
+    else
+    {
+        for (size_t i=0; i < size; ++i)
+            *data++ = v;
+    }
+}
+
+/*
  * Clear a char array.
  */
 static inline

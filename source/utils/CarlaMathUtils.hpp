@@ -137,27 +137,6 @@ void carla_copy(T* dataDst, const T* dataSrc, const size_t size) noexcept
     std::memcpy(dataDst, dataSrc, size*sizeof(T));
 }
 
-/*
- * Fill an array with a fixed value.
- */
-template<typename T>
-static inline
-void carla_fill(T* data, const size_t size, const T v) noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(size > 0,);
-
-    if (v == 0)
-    {
-        std::memset(data, 0, size*sizeof(T));
-    }
-    else
-    {
-        for (size_t i=0; i < size; ++i)
-            *data++ = v;
-    }
-}
-
 // -----------------------------------------------------------------------
 // math functions (extended)
 
