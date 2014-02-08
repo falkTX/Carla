@@ -31,7 +31,7 @@ public:
     class IdleCallback
     {
     public:
-        ~IdleCallback() {}
+        virtual ~IdleCallback() {}
         virtual void idleCallback() = 0;
     };
 

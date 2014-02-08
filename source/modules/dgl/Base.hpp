@@ -54,7 +54,7 @@
 #define END_NAMESPACE_DGL }
 #define USE_NAMESPACE_DGL using namespace DGL_NAMESPACE;
 
-#if DGL_OS_MAC
+#ifdef DGL_OS_MAC
 # include <OpenGL/gl.h>
 #else
 # include <GL/gl.h>

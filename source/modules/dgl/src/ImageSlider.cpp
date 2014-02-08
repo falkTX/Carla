@@ -163,11 +163,11 @@ void ImageSlider::onDisplay()
     if (fStartPos.getX() == fEndPos.getX())
     {
         x = fStartPos.getX();
-        y = fEndPos.getY() - normValue*(fEndPos.getY()-fStartPos.getY());
+        y = fEndPos.getY() - static_cast<int>(normValue*static_cast<float>(fEndPos.getY()-fStartPos.getY()));
     }
     else if (fStartPos.getY() == fEndPos.getY())
     {
-        x = fEndPos.getX() - normValue*(fEndPos.getX()-fStartPos.getX());
+        x = fEndPos.getX() - static_cast<int>(normValue*static_cast<float>(fEndPos.getX()-fStartPos.getX()));
         y = fStartPos.getY();
     }
     else

@@ -24,16 +24,16 @@
 
 #include "pugl/pugl.h"
 
-#if DGL_OS_WINDOWS
+#if defined(DGL_OS_WINDOWS)
 # include "pugl/pugl_win.cpp"
-#elif DGL_OS_MAC
+#elif defined(DGL_OS_MAC)
 # include "pugl/pugl_osx_extended.h"
 extern "C" {
 struct PuglViewImpl {
     int width;
     int height;
 };}
-#elif DGL_OS_LINUX
+#elif defined(DGL_OS_LINUX)
 extern "C" {
 # include "pugl/pugl_x11.c"
 }
@@ -75,9 +75,9 @@ public:
           fVisible(false),
           fResizable(true),
           fUsingEmbed(false),
-#if DGL_OS_WINDOWS
+#if defined(DGL_OS_WINDOWS)
           hwnd(0)
-#elif DGL_OS_LINUX
+#elif defined(DGL_OS_LINUX)
           xDisplay(nullptr),
           xWindow(0)
 #else
@@ -97,9 +97,9 @@ public:
           fResizable(true),
           fUsingEmbed(false),
           fModal(parent.pData),
-#if DGL_OS_WINDOWS
+#if defined(DGL_OS_WINDOWS)
           hwnd(0)
-#elif DGL_OS_LINUX
+#elif defined(DGL_OS_LINUX)
           xDisplay(nullptr),
           xWindow(0)
 #else
@@ -109,7 +109,7 @@ public:
         DBG("Creating window with parent..."); DBGF;
         init();
 
-#if DGL_OS_LINUX
+#ifdef DGL_OS_LINUX
         const PuglInternals* const parentImpl(parent.pData->fView->impl);
 
         XSetTransientForHint(xDisplay, xWindow, parentImpl->win);
@@ -124,9 +124,9 @@ public:
           fVisible(parentId != 0),
           fResizable(parentId == 0),
           fUsingEmbed(parentId != 0),
-#if DGL_OS_WINDOWS
+#if defined(DGL_OS_WINDOWS)
           hwnd(0)
-#elif DGL_OS_LINUX
+#elif defined(DGL_OS_LINUX)
           xDisplay(nullptr),
           xWindow(0)
 #else
@@ -170,11 +170,11 @@ public:
         puglSetReshapeFunc(fView, onReshapeCallback);
         puglSetCloseFunc(fView, onCloseCallback);
 
-#if DGL_OS_WINDOWS
+#if defined(DGL_OS_WINDOWS)
         PuglInternals* impl = fView->impl;
         hwnd = impl->hwnd;
         assert(hwnd != 0);
-#elif DGL_OS_LINUX
+#elif defined(DGL_OS_LINUX)
         PuglInternals* impl = fView->impl;
         xDisplay = impl->display;
         xWindow  = impl->win;
@@ -208,9 +208,9 @@ public:
             fView = nullptr;
         }
 
-#if DGL_OS_WINDOWS
+#if defined(DGL_OS_WINDOWS)
           hwnd = 0;
-#elif DGL_OS_LINUX
+#elif defined(DGL_OS_LINUX)
           xDisplay = nullptr;
           xWindow  = 0;
 #endif
@@ -263,13 +263,13 @@ public:
     void focus()
     {
         DBG("Window focus\n");
-#if DGL_OS_WINDOWS
+#if defined(DGL_OS_WINDOWS)
         SetForegroundWindow(hwnd);
         SetActiveWindow(hwnd);
         SetFocus(hwnd);
-#elif DGL_OS_MAC
+#elif defined(DGL_OS_MAC)
         puglImplFocus(fView);
-#elif DGL_OS_LINUX
+#elif defined(DGL_OS_LINUX)
         XRaiseWindow(xDisplay, xWindow);
         XSetInputFocus(xDisplay, xWindow, RevertToPointerRoot, CurrentTime);
         XFlush(xDisplay);
@@ -307,18 +307,18 @@ public:
         fVisible = yesNo;
 
         if (yesNo && fFirstInit)
-            setSize(fView->width, fView->height, true);
+            setSize(static_cast<unsigned int>(fView->width), static_cast<unsigned int>(fView->height), true);
 
-#if DGL_OS_WINDOWS
+#if defined(DGL_OS_WINDOWS)
         if (yesNo)
             ShowWindow(hwnd, fFirstInit ? SW_SHOWNORMAL : SW_RESTORE);
         else
             ShowWindow(hwnd, SW_HIDE);
 
         UpdateWindow(hwnd);
-#elif DGL_OS_MAC
+#elif defined(DGL_OS_MAC)
         puglImplSetVisible(fView, yesNo);
-#elif DGL_OS_LINUX
+#elif defined(DGL_OS_LINUX)
         if (yesNo)
             XMapRaised(xDisplay, xWindow);
         else
@@ -363,7 +363,7 @@ public:
 
         fResizable = yesNo;
 
-        setSize(fView->width, fView->height, true);
+        setSize(static_cast<unsigned int>(fView->width), static_cast<unsigned int>(fView->height), true);
     }
 
     // -------------------------------------------------------------------
@@ -397,12 +397,12 @@ public:
             return;
         }
 
-        fView->width  = width;
-        fView->height = height;
+        fView->width  = static_cast<int>(width);
+        fView->height = static_cast<int>(height);
 
         DBGp("Window setSize called %s\n", forced ? "(forced)" : "(not forced)");
 
-#if DGL_OS_WINDOWS
+#if defined(DGL_OS_WINDOWS)
         int winFlags = WS_POPUPWINDOW | WS_CAPTION;
 
         if (fResizable)
@@ -415,9 +415,9 @@ public:
 
         if (! forced)
             UpdateWindow(hwnd);
-#elif DGL_OS_MAC
+#elif defined(DGL_OS_MAC)
         puglImplSetSize(fView, width, height, forced);
-#elif DGL_OS_LINUX
+#elif defined(DGL_OS_LINUX)
         XResizeWindow(xDisplay, xWindow, width, height);
 
         if (! fResizable)
@@ -426,10 +426,10 @@ public:
             memset(&sizeHints, 0, sizeof(sizeHints));
 
             sizeHints.flags      = PMinSize|PMaxSize;
-            sizeHints.min_width  = width;
-            sizeHints.min_height = height;
-            sizeHints.max_width  = width;
-            sizeHints.max_height = height;
+            sizeHints.min_width  = static_cast<int>(width);
+            sizeHints.min_height = static_cast<int>(height);
+            sizeHints.max_width  = static_cast<int>(width);
+            sizeHints.max_height = static_cast<int>(height);
 
             XSetNormalHints(xDisplay, xWindow, &sizeHints);
         }
@@ -447,11 +447,11 @@ public:
     {
         DBGp("Window setTitle \"%s\"\n", title);
 
-#if DGL_OS_WINDOWS
+#if defined(DGL_OS_WINDOWS)
         SetWindowTextA(hwnd, title);
-#elif DGL_OS_MAC
+#elif defined(DGL_OS_MAC)
         puglImplSetTitle(fView, title);
-#elif DGL_OS_LINUX
+#elif defined(DGL_OS_LINUX)
         XStoreName(xDisplay, xWindow, title);
 #endif
     }
@@ -512,7 +512,7 @@ public:
         fModal.enabled = true;
         fModal.parent->fModal.childFocus = this;
 
-#if DGL_OS_WINDOWS
+#ifdef DGL_OS_WINDOWS
         // Center this window
         PuglInternals* const parentImpl = fModal.parent->fView->impl;
 
@@ -708,9 +708,9 @@ private:
         }
     } fModal;
 
-#if DGL_OS_WINDOWS
+#if defined(DGL_OS_WINDOWS)
     HWND     hwnd;
-#elif DGL_OS_LINUX
+#elif defined(DGL_OS_LINUX)
     Display* xDisplay;
     ::Window xWindow;
 #else

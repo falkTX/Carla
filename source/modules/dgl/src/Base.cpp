@@ -16,7 +16,7 @@
 
 #include "../Base.hpp"
 
-#if DGL_OS_WINDOWS
+#ifdef DGL_OS_WINDOWS
 # include <windows.h>
 #else
 # include <unistd.h>

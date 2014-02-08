@@ -26,7 +26,7 @@ ImageAboutWindow::ImageAboutWindow(App& app, Window& parent, const Image& image)
       fImgBackground(image)
 {
     Window::setResizable(false);
-    Window::setSize(image.getWidth(), image.getHeight());
+    Window::setSize(static_cast<unsigned int>(image.getWidth()), static_cast<unsigned int>(image.getHeight()));
     Window::setTitle("About");
 }
 
@@ -36,14 +36,14 @@ ImageAboutWindow::ImageAboutWindow(Widget* widget, const Image& image)
       fImgBackground(image)
 {
     Window::setResizable(false);
-    Window::setSize(image.getWidth(), image.getHeight());
+    Window::setSize(static_cast<unsigned int>(image.getWidth()), static_cast<unsigned int>(image.getHeight()));
     Window::setTitle("About");
 }
 
 void ImageAboutWindow::setImage(const Image& image)
 {
     fImgBackground = image;
-    Window::setSize(image.getWidth(), image.getHeight());
+    Window::setSize(static_cast<unsigned int>(image.getWidth()), static_cast<unsigned int>(image.getHeight()));
 }
 
 void ImageAboutWindow::onDisplay()
