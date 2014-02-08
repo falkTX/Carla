@@ -49,6 +49,7 @@ public:
 
     void setOrientation(Orientation orientation);
     void setRange(float min, float max);
+    void setStep(float step);
     void setValue(float value, bool sendCallback = false);
     void setRotationAngle(int angle);
 
@@ -65,7 +66,9 @@ private:
     Image fImage;
     float fMinimum;
     float fMaximum;
+    float fStep;
     float fValue;
+    float fValueTmp;
     Orientation fOrientation;
 
     int  fRotationAngle;

@@ -16,6 +16,8 @@
 
 #include "../ImageSlider.hpp"
 
+#include <cmath>
+
 START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
@@ -25,8 +27,9 @@ ImageSlider::ImageSlider(Window& parent, const Image& image)
       fImage(image),
       fMinimum(0.0f),
       fMaximum(1.0f),
+      fStep(0.0f),
       fValue(0.5f),
-      fIsSwitch(false),
+      fValueTmp(fValue),
       fDragging(false),
       fStartedX(0),
       fStartedY(0),
@@ -40,8 +43,9 @@ ImageSlider::ImageSlider(Widget* widget, const Image& image)
       fImage(image),
       fMinimum(0.0f),
       fMaximum(1.0f),
+      fStep(0.0f),
       fValue(0.5f),
-      fIsSwitch(false),
+      fValueTmp(fValue),
       fDragging(false),
       fStartedX(0),
       fStartedY(0),
@@ -55,8 +59,9 @@ ImageSlider::ImageSlider(const ImageSlider& imageSlider)
       fImage(imageSlider.fImage),
       fMinimum(imageSlider.fMinimum),
       fMaximum(imageSlider.fMaximum),
+      fStep(imageSlider.fStep),
       fValue(imageSlider.fValue),
-      fIsSwitch(imageSlider.fIsSwitch),
+      fValueTmp(fValue),
       fDragging(false),
       fStartedX(0),
       fStartedY(0),
@@ -118,25 +123,25 @@ void ImageSlider::setRange(float min, float max)
     fMaximum = max;
 }
 
+void ImageSlider::setStep(float step)
+{
+    fStep = step;
+}
+
 void ImageSlider::setValue(float value, bool sendCallback)
 {
     if (fValue == value)
         return;
 
     fValue = value;
+
+    if (fStep == 0.0f)
+        fValueTmp = value;
+
     repaint();
 
     if (sendCallback && fCallback != nullptr)
         fCallback->imageSliderValueChanged(this, fValue);
-}
-
-void ImageSlider::setIsSwitch(bool yesNo)
-{
-    if (fIsSwitch == yesNo)
-        return;
-
-    fIsSwitch = yesNo;
-    repaint();
 }
 
 void ImageSlider::setCallback(Callback* callback)
@@ -198,21 +203,23 @@ bool ImageSlider::onMouse(int button, bool press, int x, int y)
 
         float value;
 
-        if (fIsSwitch)
-        {
-            if (vper < 0.5f)
-                value = fMaximum;
-            else
-                value = fMinimum;
-        }
-        else
-        {
-            value = fMaximum - vper * (fMaximum - fMinimum);
+        value = fMaximum - vper * (fMaximum - fMinimum);
 
-            if (value < fMinimum)
-                value = fMinimum;
-            else if (value > fMaximum)
-                value = fMaximum;
+        if (value < fMinimum)
+        {
+            value = fMinimum;
+            fValueTmp = value;
+        }
+        else if (value > fMaximum)
+        {
+            value = fMaximum;
+            fValueTmp = value;
+        }
+        else if (fStep != 0.0f)
+        {
+            fValueTmp = value;
+            const float rest = std::fmod(value, fStep);
+            value = value - rest + (rest > fStep/2.0f ? fStep : 0.0f);
         }
 
         fDragging = true;
@@ -262,21 +269,23 @@ bool ImageSlider::onMotion(int x, int y)
 
         float value;
 
-        if (fIsSwitch)
-        {
-            if (vper < 0.5f)
-                value = fMaximum;
-            else
-                value = fMinimum;
-        }
-        else
-        {
-            value = fMaximum - vper * (fMaximum - fMinimum);
+        value = fMaximum - vper * (fMaximum - fMinimum);
 
-            if (value < fMinimum)
-                value = fMinimum;
-            else if (value > fMaximum)
-                value = fMaximum;
+        if (value < fMinimum)
+        {
+            value = fMinimum;
+            fValueTmp = value;
+        }
+        else if (value > fMaximum)
+        {
+            value = fMaximum;
+            fValueTmp = value;
+        }
+        else if (fStep != 0.0f)
+        {
+            fValueTmp = value;
+            const float rest = std::fmod(value, fStep);
+            value = value - rest + (rest > fStep/2.0f ? fStep : 0.0f);
         }
 
         setValue(value, true);

@@ -119,11 +119,11 @@ public:
     PrivateData(App& app, Window* const self, const intptr_t parentId)
         : fApp(app),
           fSelf(self),
-          fView(puglCreate(parentId, "Window", 100, 100, true, true)),
+          fView(puglCreate(parentId, "Window", 100, 100, (parentId == 0), (parentId != 0))),
           fFirstInit(true),
-          fVisible(true),
-          fResizable(false),
-          fUsingEmbed(true),
+          fVisible(parentId != 0),
+          fResizable(parentId == 0),
+          fUsingEmbed(parentId != 0),
 #if DGL_OS_WINDOWS
           hwnd(0)
 #elif DGL_OS_LINUX
@@ -133,12 +133,20 @@ public:
           _dummy('\0')
 #endif
     {
-        DBG("Creating embedded window..."); DBGF;
+        if (parentId != 0) {
+            DBG("Creating embedded window..."); DBGF;
+        } else {
+            DBG("Creating window without parent..."); DBGF;
+        }
+
         init();
 
-        DBG("NOTE: Embed window is always visible and non-resizable\n");
-        fApp._oneShown();
-        fFirstInit = false;
+        if (parentId != 0)
+        {
+            DBG("NOTE: Embed window is always visible and non-resizable\n");
+            fApp._oneShown();
+            fFirstInit = false;
+        }
     }
 
     void init()
@@ -208,17 +216,6 @@ public:
 #endif
 
         DBG("Success!\n");
-    }
-
-    // TESTING
-    void setTransient(const intptr_t win)
-    {
-#if DGL_OS_LINUX
-        XSetTransientForHint(xDisplay, xWindow, (::Window)win);
-        XFlush(xDisplay);
-#else
-        return; (void)win;
-#endif
     }
 
     // -------------------------------------------------------------------
@@ -789,11 +786,6 @@ Window::Window(App& app, intptr_t parentId)
 Window::~Window()
 {
     delete pData;
-}
-
-void Window::setTransient(const intptr_t win)
-{
-    pData->setTransient(win);
 }
 
 void Window::show()

@@ -48,8 +48,8 @@ public:
     void setEndPos(int x, int y);
 
     void setRange(float min, float max);
+    void setStep(float step);
     void setValue(float value, bool sendCallback = false);
-    void setIsSwitch(bool yesNo);
 
     void setCallback(Callback* callback);
 
@@ -62,9 +62,10 @@ private:
     Image fImage;
     float fMinimum;
     float fMaximum;
+    float fStep;
     float fValue;
+    float fValueTmp;
 
-    bool fIsSwitch;
     bool fDragging;
     int  fStartedX;
     int  fStartedY;
