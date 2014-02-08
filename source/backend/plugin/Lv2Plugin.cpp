@@ -1459,6 +1459,11 @@ public:
                 }
             }
         }
+        else
+        {
+            fEventsIn.createNew(1);
+            fEventsIn.ctrl = &fEventsIn.data[0];
+        }
 
         if (const uint32_t count = static_cast<uint32_t>(evOuts.count()))
         {
