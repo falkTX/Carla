@@ -23,11 +23,15 @@
 #include "CarlaLadspaUtils.hpp"
 #include "CarlaMathUtils.hpp"
 
+// -----------------------------------------------------
+
 CARLA_BACKEND_START_NAMESPACE
 
 #if 0
 }
 #endif
+
+// -----------------------------------------------------
 
 class LadspaPlugin : public CarlaPlugin
 {

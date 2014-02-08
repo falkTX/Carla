@@ -24,7 +24,6 @@
 #include "CarlaMathUtils.hpp"
 
 #include <QtCore/QByteArray>
-#include <QtCore/QString>
 
 // -----------------------------------------------------
 

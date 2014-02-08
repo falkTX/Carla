@@ -8,7 +8,7 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(JUCE_AUDIO_PROCESSORS_FLAGS) -I. -I../../includes/vst -I../../includes/vst3 -w
+BUILD_CXX_FLAGS += $(JUCE_AUDIO_PROCESSORS_FLAGS) -I. -I../../includes/ladspa -I../../includes/vst -I../../includes/vst3 -w
 LINK_FLAGS      += $(JUCE_AUDIO_PROCESSORS_LIBS) -L.. -ljuce_audio_basics -ljuce_gui_basics -ljuce_graphics -ljuce_data_structures -ljuce_events -ljuce_core
 
 ifeq ($(MACOS),true)
