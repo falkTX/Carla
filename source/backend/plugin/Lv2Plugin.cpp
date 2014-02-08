@@ -598,7 +598,7 @@ public:
             const LV2_Property portTypes(fRdfDescriptor->Ports[i].Types);
 
             if (LV2_IS_PORT_INPUT(portTypes) && LV2_PORT_SUPPORTS_MIDI_EVENT(portTypes))
-                count += 1;
+                ++count;
         }
 
         return count;
@@ -615,7 +615,7 @@ public:
             const LV2_Property portTypes(fRdfDescriptor->Ports[i].Types);
 
             if (LV2_IS_PORT_OUTPUT(portTypes) && LV2_PORT_SUPPORTS_MIDI_EVENT(portTypes))
-                count += 1;
+                ++count;
         }
 
         return count;

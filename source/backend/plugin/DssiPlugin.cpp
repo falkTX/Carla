@@ -1952,7 +1952,7 @@ public:
                 pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
                 if (fDssiDescriptor->run_synth == nullptr)
-                    carla_stderr2("WARNING: Plugin can ONLY use run_multiple_synths!");
+                    carla_stderr("WARNING: Plugin can ONLY use run_multiple_synths!");
             }
 
             // set identifier string

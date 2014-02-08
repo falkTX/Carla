@@ -1271,7 +1271,7 @@ public:
 
     void sampleRateChanged(const double newSampleRate) override
     {
-        CARLA_ASSERT_INT(newSampleRate > 0.0, (int)newSampleRate);
+        CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
         carla_debug("LadspaPlugin::sampleRateChanged(%g) - start", newSampleRate);
 
         // TODO
