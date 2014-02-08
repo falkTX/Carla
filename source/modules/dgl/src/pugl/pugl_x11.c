@@ -123,7 +123,7 @@ puglCreate(PuglNativeWindow parent,
 
 	impl->win = XCreateWindow(
 		impl->display, xParent,
-		0, 0, view->width, view->height, 0, vi->depth, InputOutput, vi->visual,
+		0, 0, (unsigned int)view->width, (unsigned int)view->height, 0, vi->depth, InputOutput, vi->visual,
 		CWBorderPixel | CWColormap | CWEventMask, &attr);
 
 	XSizeHints sizeHints;
@@ -247,9 +247,9 @@ keySymToSpecial(KeySym sym)
 }
 
 static void
-setModifiers(PuglView* view, unsigned xstate, unsigned xtime)
+setModifiers(PuglView* view, unsigned xstate, unsigned long xtime)
 {
-	view->event_timestamp_ms = xtime;
+	view->event_timestamp_ms = (uint32_t)xtime;
 
 	view->mods = 0;
 	view->mods |= (xstate & ShiftMask)   ? PUGL_MOD_SHIFT  : 0;
@@ -275,7 +275,7 @@ dispatchKey(PuglView* view, XEvent* event, bool press)
 	if (special && view->specialFunc) {
 		view->specialFunc(view, press, special);
 	} else if (!special && view->keyboardFunc) {
-		view->keyboardFunc(view, press, str[0]);
+		view->keyboardFunc(view, press, (uint32_t)str[0]);
 	}
 }
 
@@ -332,7 +332,7 @@ puglProcessEvents(PuglView* view)
 			if (view->mouseFunc &&
 			    (event.xbutton.button < 4 || event.xbutton.button > 7)) {
 				view->mouseFunc(view,
-				                event.xbutton.button, event.type == ButtonPress,
+				                (int)event.xbutton.button, event.type == ButtonPress,
 				                event.xbutton.x, event.xbutton.y);
 			}
 			break;
@@ -393,5 +393,5 @@ puglPostRedisplay(PuglView* view)
 PuglNativeWindow
 puglGetNativeWindow(PuglView* view)
 {
-	return view->impl->win;
+	return (PuglNativeWindow)view->impl->win;
 }
