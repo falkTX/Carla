@@ -1632,7 +1632,7 @@ void CarlaEngine::setCallback(const EngineCallbackFunc func, void* const ptr) no
 const char* CarlaEngine::runFileCallback(const FileCallbackOpcode action, const bool isDir, const char* const title, const char* const filter) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(title != nullptr && title[0] != '\0', nullptr);
-    CARLA_SAFE_ASSERT_RETURN(filter != nullptr && filter[0] != '\0', nullptr);
+    CARLA_SAFE_ASSERT_RETURN(filter != nullptr, nullptr);
     carla_debug("CarlaEngine::runFileCallback(%i:%s, %s, \"%s\", \"%s\")", action, FileCallbackOpcode2Str(action), bool2str(isDir), title, filter);
     CARLA_ENGINE_THREAD_SAFE_SECTION
 

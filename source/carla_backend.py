@@ -29,9 +29,10 @@ from sys import platform, maxsize
 kIs64bit = bool(architecture()[0] == "64bit" and maxsize > 2**32)
 
 # ------------------------------------------------------------------------------------------------------------
-# Define enum type (integer)
+# Define custom types
 
 c_enum = c_int
+c_uintptr = c_uint64 if kIs64bit else c_uint32
 
 # ------------------------------------------------------------------------------------------------------------
 # Set Platform

@@ -163,6 +163,8 @@ class HostWindow(QMainWindow):
         if Carla.host is not None:
             Carla.host.set_engine_callback(engineCallback)
 
+        Carla.host.set_file_callback(fileCallback)
+
         # -------------------------------------------------------------
         # Internal stuff
 
@@ -1218,3 +1220,26 @@ def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
         Carla.gui.ErrorCallback.emit(valueStr)
     elif action == ENGINE_CALLBACK_QUIT:
         Carla.gui.QuitCallback.emit()
+
+# ------------------------------------------------------------------------------------------------------------
+# File callback
+
+def fileCallback(ptr, action, isDir, title, filter):
+    if Carla.gui is None:
+        return None
+
+    ret = ""
+
+    if action == FILE_CALLBACK_DEBUG:
+        pass
+    elif action == FILE_CALLBACK_OPEN:
+        ret = QFileDialog.getOpenFileName(Carla.gui, charPtrToString(title), "", charPtrToString(filter) ) #, QFileDialog.ShowDirsOnly if isDir else 0x0)
+    elif action == FILE_CALLBACK_SAVE:
+        ret = QFileDialog.getSaveFileName(Carla.gui, charPtrToString(title), "", charPtrToString(filter), QFileDialog.ShowDirsOnly if isDir else 0x0)
+
+    if not ret:
+        return None
+
+    Carla.gui._fileRet = c_char_p(ret.encode("utf-8"))
+    retval = cast(byref(Carla.gui._fileRet), POINTER(c_uintptr))
+    return retval.contents.value
