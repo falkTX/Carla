@@ -926,7 +926,7 @@ public:
         if (fUi.title == nullptr)
             return;
 
-        QString guiTitle(QString("%1 (InProc GUI)").arg(pData->name));
+        QString guiTitle(QString("%1 (GUI)").arg(pData->name));
 
         delete[] fUi.title;
         fUi.title = carla_strdup(guiTitle.toUtf8().constData());
@@ -4824,7 +4824,7 @@ public:
         // ---------------------------------------------------------------
         // initialize ui data
 
-        QString guiTitle(QString("%1 (InProc GUI)").arg(pData->name));
+        QString guiTitle(QString("%1 (GUI)").arg(pData->name));
         fUi.title = carla_strdup(guiTitle.toUtf8().constData());
 
         // ---------------------------------------------------------------

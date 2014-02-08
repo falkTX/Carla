@@ -566,7 +566,7 @@ CarlaPluginProtectedData::~CarlaPluginProtectedData()
     if (lib != nullptr)
         libClose();
 
-    CARLA_ASSERT(uiLib == nullptr);
+    CARLA_SAFE_ASSERT(uiLib == nullptr);
 }
 
 // -----------------------------------------------------------------------
@@ -576,7 +576,7 @@ void CarlaPluginProtectedData::clearBuffers()
 {
     if (latencyBuffers != nullptr)
     {
-        CARLA_ASSERT(audioIn.count > 0);
+        CARLA_SAFE_ASSERT(audioIn.count > 0);
 
         for (uint32_t i=0; i < audioIn.count; ++i)
         {
@@ -592,7 +592,7 @@ void CarlaPluginProtectedData::clearBuffers()
     }
     else
     {
-        CARLA_ASSERT(latency == 0);
+        CARLA_SAFE_ASSERT(latency == 0);
     }
 
     audioIn.clear();
