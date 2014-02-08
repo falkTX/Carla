@@ -1477,6 +1477,11 @@ public:
                 }
             }
         }
+        else
+        {
+            fEventsIn.createNew(1);
+            fEventsIn.ctrl = &fEventsIn.data[0];
+        }
 
         if (evOuts.count() > 0)
         {
