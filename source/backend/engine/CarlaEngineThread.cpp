@@ -41,7 +41,7 @@ CarlaEngineThread::~CarlaEngineThread()
 void CarlaEngineThread::run()
 {
     CARLA_SAFE_ASSERT_RETURN(fEngine != nullptr,);
-    CARLA_ASSERT(fEngine->isRunning());
+    CARLA_SAFE_ASSERT(fEngine->isRunning());
     carla_debug("CarlaEngineThread::run()");
 
     bool hasUi, oscRegisted, needsSingleThread;
@@ -102,7 +102,7 @@ void CarlaEngineThread::run()
                 }
 
 #ifndef BUILD_BRIDGE
-                // ---------------------------------------------------
+                // -------------------------------------------------------
                 // Update OSC control client peaks
 
                 if (oscRegisted)
@@ -110,6 +110,13 @@ void CarlaEngineThread::run()
 #endif
             }
         }
+
+#ifdef BUILD_BRIDGE
+        // ---------------------------------------------------------------
+        // Send pong
+
+        fEngine->oscSend_bridge_pong();
+#endif
 
         carla_msleep(25);
     }

@@ -928,7 +928,10 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     }
 
     if (plugin == nullptr)
+    {
+        pData->plugins[id].plugin = oldPlugin;
         return false;
+    }
 
     plugin->registerToOscClient();
 
@@ -2496,6 +2499,19 @@ void CarlaEngine::oscSend_bridge_set_chunk_data(const char* const chunkFile) con
     std::strcpy(targetPath, pData->oscData->path);
     std::strcat(targetPath, "/bridge_set_chunk_data");
     try_lo_send(pData->oscData->target, targetPath, "s", chunkFile);
+}
+
+void CarlaEngine::oscSend_bridge_pong() const noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData->path != nullptr && pData->oscData->path[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData->target != nullptr,);
+    //carla_debug("CarlaEngine::oscSend_pong()");
+
+    char targetPath[std::strlen(pData->oscData->path)+13];
+    std::strcpy(targetPath, pData->oscData->path);
+    std::strcat(targetPath, "/bridge_pong");
+    try_lo_send(pData->oscData->target, targetPath, "");
 }
 #else
 void CarlaEngine::oscSend_control_add_plugin_start(const uint pluginId, const char* const pluginName) const noexcept

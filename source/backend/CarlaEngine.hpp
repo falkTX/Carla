@@ -1146,6 +1146,7 @@ public:
     void oscSend_bridge_set_custom_data(const char* const type, const char* const key, const char* const value) const noexcept;
     void oscSend_bridge_set_chunk_data(const char* const chunkFile) const noexcept;
     void oscSend_bridge_set_peaks() const noexcept;
+    void oscSend_bridge_pong() const noexcept;
 #else
 public:
     void oscSend_control_add_plugin_start(const uint pluginId, const char* const pluginName) const noexcept;

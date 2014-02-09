@@ -31,6 +31,8 @@
 #include <cmath>
 #include <ctime>
 
+#include <QtCore/QString>
+
 #define CARLA_BRIDGE_CHECK_OSC_TYPES(/* argc, types, */ argcToCompare, typesToCompare)                                       \
     /* check argument count */                                                                                               \
     if (argc != argcToCompare)                                                                                               \
@@ -221,8 +223,8 @@ struct BridgeControl : public RingBufferControl<StackRingBuffer> {
 
 struct BridgeParamInfo {
     float value;
-    CarlaString name;
-    CarlaString unit;
+    QString name;
+    QString unit;
 
     BridgeParamInfo()
         : value(0.0f) {}
@@ -244,6 +246,7 @@ public:
           fSaved(false),
           fNeedsSemDestroy(false),
           fTimedOut(false),
+          fLastPongCounter(-1),
           fParams(nullptr)
     {
         carla_debug("BridgePlugin::BridgePlugin(%p, %i, %s, %s)", engine, id, BinaryType2Str(btype), PluginType2Str(ptype));
@@ -383,36 +386,36 @@ public:
 
     void getLabel(char* const strBuf) const noexcept override
     {
-        std::strncpy(strBuf, (const char*)fInfo.label, STR_MAX);
+        std::strncpy(strBuf, fInfo.label.getBuffer(), STR_MAX);
     }
 
     void getMaker(char* const strBuf) const noexcept override
     {
-        std::strncpy(strBuf, (const char*)fInfo.maker, STR_MAX);
+        std::strncpy(strBuf, fInfo.maker.getBuffer(), STR_MAX);
     }
 
     void getCopyright(char* const strBuf) const noexcept override
     {
-        std::strncpy(strBuf, (const char*)fInfo.copyright, STR_MAX);
+        std::strncpy(strBuf, fInfo.copyright.getBuffer(), STR_MAX);
     }
 
     void getRealName(char* const strBuf) const noexcept override
     {
-        std::strncpy(strBuf, (const char*)fInfo.name, STR_MAX);
+        std::strncpy(strBuf, fInfo.name.getBuffer(), STR_MAX);
     }
 
     void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
         CARLA_ASSERT(parameterId < pData->param.count);
 
-        std::strncpy(strBuf, (const char*)fParams[parameterId].name, STR_MAX);
+        std::strncpy(strBuf, fParams[parameterId].name.toUtf8().constData(), STR_MAX);
     }
 
     void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
         CARLA_ASSERT(parameterId < pData->param.count);
 
-        std::strncpy(strBuf, (const char*)fParams[parameterId].unit, STR_MAX);
+        std::strncpy(strBuf, fParams[parameterId].unit.toUtf8().constData(), STR_MAX);
     }
 
     // -------------------------------------------------------------------
@@ -1211,15 +1214,17 @@ public:
 
         switch (infoType)
         {
-        case kPluginBridgeNull:
+        case kPluginBridgePong:
+            if (fLastPongCounter > 0)
+                fLastPongCounter = 0;
             break;
 
         case kPluginBridgePluginInfo1: {
             CARLA_BRIDGE_CHECK_OSC_TYPES(3, "iih");
 
-            const int32_t category  = argv[0]->i;
-            const int32_t hints     = argv[1]->i;
-            const int64_t uniqueId  = argv[2]->h;
+            const int32_t category = argv[0]->i;
+            const int32_t hints    = argv[1]->i;
+            const int64_t uniqueId = argv[2]->h;
 
             CARLA_SAFE_ASSERT_BREAK(category >= 0);
             CARLA_SAFE_ASSERT_BREAK(hints >= 0);
@@ -1301,7 +1306,7 @@ public:
                 fParams = nullptr;
             }
 
-            CARLA_SAFE_ASSERT_INT2(ins+outs < static_cast<int32_t>(pData->engine->getOptions().maxParameters), ins+outs, pData->engine->getOptions().maxParameters);
+            CARLA_SAFE_ASSERT_INT2(ins+outs <= static_cast<int32_t>(pData->engine->getOptions().maxParameters), ins+outs, pData->engine->getOptions().maxParameters);
 
             const uint32_t count(static_cast<uint32_t>(carla_min<int32_t>(ins+outs, static_cast<int32_t>(pData->engine->getOptions().maxParameters), 0)));
 
@@ -1784,12 +1789,17 @@ public:
             pData->osc.thread.start();
         }
 
-        for (int i=0; i < 200; ++i)
+        fInitiated = false;
+        fLastPongCounter = 0;
+
+        for (; fLastPongCounter < 100; ++fLastPongCounter)
         {
             if (fInitiated || ! pData->osc.thread.isRunning())
                 break;
             carla_msleep(50);
         }
+
+        fLastPongCounter = -1;
 
         if (fInitError || ! fInitiated)
         {
@@ -1834,6 +1844,8 @@ private:
     bool fSaved;
     bool fNeedsSemDestroy;
     bool fTimedOut;
+
+    volatile int32_t fLastPongCounter;
 
     CarlaString fBridgeBinary;
 
@@ -1945,7 +1957,6 @@ CarlaPlugin* CarlaPlugin::newJACK(const Initializer& init)
 
     if (! plugin->init(init.filename, init.name, init.label, nullptr))
     {
-        init.engine->registerEnginePlugin(init.id, nullptr);
         delete plugin;
         return nullptr;
     }
@@ -1954,7 +1965,6 @@ CarlaPlugin* CarlaPlugin::newJACK(const Initializer& init)
 
     if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
     {
-        init.engine->registerEnginePlugin(init.id, nullptr);
         init.engine->setLastError("Carla's rack mode can only work with Stereo bridged apps, sorry!");
         delete plugin;
         return nullptr;

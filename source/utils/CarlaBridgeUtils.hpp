@@ -24,7 +24,7 @@
 // -----------------------------------------------------------------------
 
 enum PluginBridgeInfoType {
-    kPluginBridgeNull = 0,
+    kPluginBridgePong = 0,
     kPluginBridgePluginInfo1,          // uuh    => category, hints, uniqueId
     kPluginBridgePluginInfo2,          // ssss   => realName, label, maker, copyright
     kPluginBridgeAudioCount,           // uu     => ins, outs
@@ -94,8 +94,8 @@ const char* PluginBridgeInfoType2str(const PluginBridgeInfoType type) noexcept
 {
     switch (type)
     {
-    case kPluginBridgeNull:
-        return "kPluginBridgeNull";
+    case kPluginBridgePong:
+        return "kPluginBridgePong";
     case kPluginBridgePluginInfo1:
         return "kPluginBridgePluginInfo1";
     case kPluginBridgePluginInfo2:

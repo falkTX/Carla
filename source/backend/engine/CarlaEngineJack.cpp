@@ -1708,8 +1708,6 @@ private:
 
             if (std::strcmp(clientName, thisClientName) == 0)
             {
-                carla_stdout("CarlaEngineJack::findPluginIdAndIcon(\"%s\", ...) - found plugin, yes!!!", clientName);
-
                 pluginId = static_cast<int>(i);
                 icon = PATCHBAY_ICON_PLUGIN;
 
@@ -1731,7 +1729,6 @@ private:
                 return true;
             }
         }
-        carla_stdout("CarlaEngineJack::findPluginIdAndIcon(\"%s\", ...) - nothing here...", clientName);
         return false;
     }
 

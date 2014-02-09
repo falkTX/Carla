@@ -147,8 +147,7 @@ void CarlaEngineOsc::close()
 
 // -----------------------------------------------------------------------
 
-bool isDigit(const char c);
-bool isDigit(const char c)
+static bool isDigit(const char c)
 {
     return (c >= '0' && c <= '9');
 }
@@ -310,10 +309,12 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         return handleMsgNoteOff(plugin, argc, argv, types);
 
     // Plugin Bridges
-    if ((plugin->getHints() & PLUGIN_IS_BRIDGE) != 0 && std::strlen(method) > 11 && std::strncmp(method, "bridge_", 7) == 0)
+    if ((plugin->getHints() & PLUGIN_IS_BRIDGE) != 0 && std::strlen(method) >= 11 && std::strncmp(method, "bridge_", 7) == 0)
     {
         const char* const bmethod(method+7);
 
+        if (std::strcmp(bmethod, "pong") == 0)
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgePong, argc, argv, types);
         if (std::strcmp(bmethod, "plugin_info1") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgePluginInfo1, argc, argv, types);
         if (std::strcmp(bmethod, "plugin_info2") == 0)

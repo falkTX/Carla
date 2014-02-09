@@ -198,7 +198,7 @@ public:
         if (fWindow != nullptr)
         {
             String uiName(pData->name);
-            uiName += " (JUCE GUI)";
+            uiName += " (GUI)";
             fWindow->setName(uiName);
         }
     }
@@ -233,7 +233,7 @@ public:
             if (fWindow == nullptr)
             {
                 String uiName(pData->name);
-                uiName += " (JUCE GUI)";
+                uiName += " (GUI)";
 
                 fWindow = new JucePluginWindow();
                 fWindow->setName(uiName);
