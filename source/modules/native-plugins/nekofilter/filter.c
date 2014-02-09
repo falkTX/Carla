@@ -34,9 +34,9 @@ static float exp2ap(float x)
     int i;
 
     i = (int)(floor(x));
-    x -= (float)i;
+    x -= i;
 //    return ldexp(1 + x * (0.66 + 0.34 * x), i);
-    return ldexpf(1.0f + x * (0.6930f + x * (0.2416f + x * (0.0517f + x * 0.0137f))), i);
+    return ldexp(1 + x * (0.6930 + x * (0.2416 + x * (0.0517 + x * 0.0137))), i);
 }
 
 struct param_sect
@@ -70,9 +70,9 @@ param_sect_proc(
   s1 = sect_ptr->s1;
   s2 = sect_ptr->s2;
   a = sect_ptr->a;
-  d1 = 0.0f;
-  d2 = 0.0f;
-  da = 0.0f;
+  d1 = 0;
+  d2 = 0;
+  da = 0;
 
   if (f != sect_ptr->f)
   {
@@ -80,7 +80,7 @@ param_sect_proc(
     else if (f > 2.0f * sect_ptr->f) f = 2.0f * sect_ptr->f;
     sect_ptr->f = f;
     sect_ptr->s1 = -cosf(6.283185f * f);
-    d1 = (sect_ptr->s1 - s1) / (float)k;
+    d1 = (sect_ptr->s1 - s1) / k;
     u2 = true;
   }
 
@@ -90,7 +90,7 @@ param_sect_proc(
     else if (g > 2.0f * sect_ptr->g) g = 2.0f * sect_ptr->g;
     sect_ptr->g = g;
     sect_ptr->a = 0.5f * (g - 1.0f);
-    da = (sect_ptr->a - a) / (float)k;
+    da = (sect_ptr->a - a) / k;
     u2 = true;
   }
 
@@ -106,7 +106,7 @@ param_sect_proc(
   {
     b *= 7 * f / sqrtf(g);
     sect_ptr->s2 = (1 - b) / (1 + b);
-    d2 = (sect_ptr->s2 - s2) / (float)k;
+    d2 = (sect_ptr->s2 - s2) / k;
   }
 
   while (k--)
@@ -240,22 +240,22 @@ filter_run(
   float sfreq[filter_ptr->bands_count];
   float sband[filter_ptr->bands_count];
   float sgain[filter_ptr->bands_count];
-  int bands_count;
+  float bands_count;
 
-  bands_count = (int)filter_ptr->bands_count;
+  bands_count = filter_ptr->bands_count;
 
-  fgain = exp2ap(0.1661f * *filter_ptr->global_parameters[GLOBAL_PARAMETER_GAIN]);
+  fgain = exp2ap(0.1661 * *filter_ptr->global_parameters[GLOBAL_PARAMETER_GAIN]);
 
   for (j = 0; j < bands_count; ++j)
   {
     t = *filter_ptr->band_parameters[BAND_PARAMETERS_COUNT * j + BAND_PARAMETER_FREQUENCY] / filter_ptr->sample_rate;
-    if (t < 0.0002f)
+    if (t < 0.0002)
     {
-      t = 0.0002f;
+      t = 0.0002;
     }
-    else if (t > 0.4998f)
+    else if (t > 0.4998)
     {
-      t = 0.4998f;
+      t = 0.4998;
     }
     sfreq[j] = t;
 
@@ -263,32 +263,32 @@ filter_run(
 
     if (*filter_ptr->band_parameters[BAND_PARAMETERS_COUNT * j + BAND_PARAMETER_ACTIVE] > 0.0)
     {
-      sgain[j] = exp2ap(0.1661f * *filter_ptr->band_parameters[BAND_PARAMETERS_COUNT * j + BAND_PARAMETER_GAIN]);
+      sgain[j] = exp2ap(0.1661 * *filter_ptr->band_parameters[BAND_PARAMETERS_COUNT * j + BAND_PARAMETER_GAIN]);
     }
     else
     {
-      sgain[j] = 1.0f;
+      sgain[j] = 1.0;
     }
   }
 
   while (samples_count)
   {
-    k = (samples_count > 48) ? 32 : (int)samples_count;
+    k = (samples_count > 48) ? 32 : samples_count;
 
     t = fgain;
     g = filter_ptr->gain;
 
-    if (t > 1.25f * g)
+    if (t > 1.25 * g)
     {
-      t = 1.25f * g;
+      t = 1.25 * g;
     }
-    else if (t < 0.80f * g)
+    else if (t < 0.80 * g)
     {
-      t = 0.80f * g;
+      t = 0.80 * g;
     }
 
     filter_ptr->gain = t;
-    d = (t - g) / (float)k;
+    d = (t - g) / k;
     for (i = 0; i < k; ++i)
     {
       g += d;
@@ -301,7 +301,7 @@ filter_run(
     }
 
     j = filter_ptr->fade;
-    g = (float)(j / 16.0);
+    g = j / 16.0;
     p = 0;
 
     if (*filter_ptr->global_parameters[GLOBAL_PARAMETER_ACTIVE] > 0.0)
@@ -331,11 +331,11 @@ filter_run(
 
     if (p)
     {
-      memcpy(output_buffer, p, (size_t)k * sizeof(float));
+      memcpy(output_buffer, p, k * sizeof(float));
     }
     else
     {
-      d = (float)((j / 16.0 - g) / k);
+      d = (j / 16.0 - g) / k;
       for (i = 0; i < k; ++i)
       {
         g += d;
@@ -345,6 +345,6 @@ filter_run(
 
     input_buffer += k;
     output_buffer += k;
-    samples_count -= (unsigned long)k;
+    samples_count -= k;
   }
 }
