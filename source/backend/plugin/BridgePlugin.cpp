@@ -146,6 +146,7 @@ struct BridgeAudioPool {
 
 struct BridgeControl : public RingBufferControl<StackRingBuffer> {
     CarlaString filename;
+    CarlaCriticalSection lock;
     BridgeShmControl* data;
     shm_t shm;
 
@@ -456,20 +457,12 @@ public:
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
         fParams[parameterId].value = fixedValue;
 
-        const bool doLock(sendGui || sendOsc || sendCallback);
-
-        if (doLock)
-            pData->singleMutex.lock();
+        const CarlaCriticalSection::Scope _cs(fShmControl.lock);
 
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetParameter);
         fShmControl.writeInt(static_cast<int32_t>(parameterId));
         fShmControl.writeFloat(value);
-
-        if (doLock)
-        {
-            fShmControl.commitWrite();
-            pData->singleMutex.unlock();
-        }
+        fShmControl.commitWrite();
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
@@ -478,19 +471,11 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
 
-        const bool doLock(sendGui || sendOsc || sendCallback);
-
-        if (doLock)
-            pData->singleMutex.lock();
+        const CarlaCriticalSection::Scope _cs(fShmControl.lock);
 
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetProgram);
         fShmControl.writeInt(index);
-
-        if (doLock)
-        {
-            fShmControl.commitWrite();
-            pData->singleMutex.unlock();
-        }
+        fShmControl.commitWrite();
 
         CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
     }
@@ -499,19 +484,11 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
 
-        const bool doLock(sendGui || sendOsc || sendCallback);
-
-        if (doLock)
-            pData->singleMutex.lock();
+        const CarlaCriticalSection::Scope _cs(fShmControl.lock);
 
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetMidiProgram);
         fShmControl.writeInt(index);
-
-        if (doLock)
-        {
-            fShmControl.commitWrite();
-            pData->singleMutex.unlock();
-        }
+        fShmControl.commitWrite();
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
     }
@@ -728,11 +705,14 @@ public:
 
     void activate() noexcept override
     {
-        // already locked before
-        fShmControl.writeOpcode(kPluginBridgeOpcodeSetParameter);
-        fShmControl.writeInt(PARAMETER_ACTIVE);
-        fShmControl.writeFloat(1.0f);
-        fShmControl.commitWrite();
+        {
+            const CarlaCriticalSection::Scope _cs(fShmControl.lock);
+
+            fShmControl.writeOpcode(kPluginBridgeOpcodeSetParameter);
+            fShmControl.writeInt(PARAMETER_ACTIVE);
+            fShmControl.writeFloat(1.0f);
+            fShmControl.commitWrite();
+        }
 
         bool timedOut = true;
 
@@ -746,11 +726,14 @@ public:
 
     void deactivate() noexcept override
     {
-        // already locked before
-        fShmControl.writeOpcode(kPluginBridgeOpcodeSetParameter);
-        fShmControl.writeInt(PARAMETER_ACTIVE);
-        fShmControl.writeFloat(0.0f);
-        fShmControl.commitWrite();
+        {
+            const CarlaCriticalSection::Scope _cs(fShmControl.lock);
+
+            fShmControl.writeOpcode(kPluginBridgeOpcodeSetParameter);
+            fShmControl.writeInt(PARAMETER_ACTIVE);
+            fShmControl.writeFloat(0.0f);
+            fShmControl.commitWrite();
+        }
 
         bool timedOut = true;
 
@@ -806,12 +789,15 @@ public:
                     data2 = static_cast<char>(note.note);
                     data3 = static_cast<char>(note.velo);
 
+                    const CarlaCriticalSection::Scope _cs(fShmControl.lock);
+
                     fShmControl.writeOpcode(kPluginBridgeOpcodeMidiEvent);
                     fShmControl.writeLong(0);
                     fShmControl.writeInt(3);
                     fShmControl.writeChar(data1);
                     fShmControl.writeChar(data2);
                     fShmControl.writeChar(data3);
+                    fShmControl.commitWrite();
                 }
 
                 pData->extNotes.mutex.unlock();
@@ -939,12 +925,15 @@ public:
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
+                            const CarlaCriticalSection::Scope _cs(fShmControl.lock);
+
                             fShmControl.writeOpcode(kPluginBridgeOpcodeMidiEvent);
                             fShmControl.writeLong(event.time);
                             fShmControl.writeInt(3);
                             fShmControl.writeChar(static_cast<char>(MIDI_STATUS_CONTROL_CHANGE + event.channel));
                             fShmControl.writeChar(static_cast<char>(ctrlEvent.param));
                             fShmControl.writeChar(char(ctrlEvent.value*127.0f));
+                            fShmControl.commitWrite();
                         }
 
                         break;
@@ -1006,6 +995,9 @@ public:
                 {
                     const EngineMidiEvent& midiEvent(event.midi);
 
+                    if (midiEvent.size == 0 || midiEvent.size > 4)
+                        continue;
+
                     uint8_t status  = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
                     uint8_t channel = event.channel;
 
@@ -1021,18 +1013,24 @@ public:
                     if (status == MIDI_STATUS_PITCH_WHEEL_CONTROL && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
                         continue;
 
-                    char data[EngineMidiEvent::kDataSize];
+                    char data[4];
                     data[0] = static_cast<char>(status + channel);
 
-                    for (uint8_t j=0; j < EngineMidiEvent::kDataSize; ++i)
+                    for (uint8_t j=0; j < 4; ++j)
                         data[j] = static_cast<char>(midiEvent.data[j]);
 
-                    fShmControl.writeOpcode(kPluginBridgeOpcodeMidiEvent);
-                    fShmControl.writeLong(event.time);
-                    fShmControl.writeInt(midiEvent.size);
+                    {
+                          const CarlaCriticalSection::Scope _cs(fShmControl.lock);
 
-                    for (uint8_t j=0; j < midiEvent.size && j < 4; ++j)
-                        fShmControl.writeChar(data[j]);
+                          fShmControl.writeOpcode(kPluginBridgeOpcodeMidiEvent);
+                          fShmControl.writeLong(event.time);
+                          fShmControl.writeInt(midiEvent.size);
+
+                          for (uint8_t j=0; j < midiEvent.size; ++j)
+                              fShmControl.writeChar(data[j]);
+
+                          fShmControl.commitWrite();
+                    }
 
                     if (status == MIDI_STATUS_NOTE_ON)
                         pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
@@ -1089,8 +1087,12 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
 
-        fShmControl.writeOpcode(kPluginBridgeOpcodeProcess);
-        fShmControl.commitWrite();
+        {
+            const CarlaCriticalSection::Scope _cs(fShmControl.lock);
+
+            fShmControl.writeOpcode(kPluginBridgeOpcodeProcess);
+            fShmControl.commitWrite();
+        }
 
         if (! waitForServer(2))
         {
@@ -1173,6 +1175,8 @@ public:
 
     void bufferSizeChanged(const uint32_t newBufferSize) override
     {
+        const CarlaCriticalSection::Scope _cs(fShmControl.lock);
+
         resizeAudioPool(newBufferSize);
 
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetBufferSize);
@@ -1182,6 +1186,8 @@ public:
 
     void sampleRateChanged(const double newSampleRate) override
     {
+        const CarlaCriticalSection::Scope _cs(fShmControl.lock);
+
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetSampleRate);
         fShmControl.writeFloat(static_cast<float>(newSampleRate));
         fShmControl.commitWrite();

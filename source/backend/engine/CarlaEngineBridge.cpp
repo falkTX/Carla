@@ -285,8 +285,7 @@ public:
             {
                 const PluginBridgeOpcode opcode(fShmControl.readOpcode());
 
-                if (opcode != kPluginBridgeOpcodeProcess)
-                {
+                if (opcode != kPluginBridgeOpcodeProcess) {
                     carla_debug("CarlaEngineBridge::run() - got opcode: %s", PluginBridgeOpcode2str(opcode));
                 }
 

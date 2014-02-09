@@ -45,7 +45,7 @@ struct HeapRingBuffer {
 };
 
 struct StackRingBuffer {
-    static const uint32_t size = 2048;
+    static const uint32_t size = 4096;
     int32_t head, tail, written;
     bool    invalidateCommit;
     char    buf[size];
@@ -53,7 +53,7 @@ struct StackRingBuffer {
 
 PRE_PACKED_STRUCTURE
 struct StackPackedRingBuffer {
-    static const uint32_t size = 2048;
+    static const uint32_t size = 4096;
     int32_t head, tail, written;
     bool    invalidateCommit;
     char    buf[size];
