@@ -81,22 +81,10 @@ endif
 STATIC_LIBS += ../../modules/native-plugins.a
 
 ifeq ($(HAVE_AF_DEPS),true)
-LINK_FLAGS  += $(shell pkg-config --libs sndfile)
-ifeq ($(HAVE_FFMPEG),true)
-LINK_FLAGS  += $(shell pkg-config --libs libavcodec libavformat libavutil)
-endif
+STATIC_LIBS += ../../modules/audio_decoder.a
 endif
 
-ifeq ($(HAVE_MF_DEPS),true)
-LINK_FLAGS  += $(shell pkg-config --libs smf)
-endif
-
-ifeq ($(HAVE_ZYN_DEPS),true)
-LINK_FLAGS  += $(shell pkg-config --libs fftw3 mxml zlib)
-ifeq ($(HAVE_ZYN_UI_DEPS),true)
-LINK_FLAGS  += $(shell pkg-config --libs ntk_images ntk)
-endif
-endif
+LINK_FLAGS  += $(NATIVE_PLUGINS_LIBS)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

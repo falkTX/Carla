@@ -8,6 +8,14 @@ all:
 
 # --------------------------------------------------------------
 
+audio_decoder:
+	$(MAKE) -C audio_decoder
+
+audio_decoder_%:
+	$(MAKE) -C audio_decoder $*
+
+# --------------------------------------------------------------
+
 dgl:
 	$(MAKE) -C dgl
 
@@ -218,7 +226,7 @@ clean:
 # --------------------------------------------------------------
 
 .PHONY: \
-	dgl jackbridge lilv native-plugins rtaudio rtmidi rtmempool stk theme \
+	audio_decoder dgl jackbridge lilv native-plugins rtaudio rtmidi rtmempool stk theme \
 	juce_audio_basics juce_audio_devices juce_audio_formats juce_audio_processors juce_core juce_data_structures juce_events juce_graphics juce_gui_basics juce_gui_extra
 
 # --------------------------------------------------------------

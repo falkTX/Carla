@@ -8,8 +8,14 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_C_FLAGS += $(AUDIO_DECODER_FLAGS)
+BUILD_C_FLAGS += $(AUDIO_DECODER_FLAGS) -I..
 LINK_FLAGS    += $(AUDIO_DECODER_LIBS)
+
+OBJS         = ad_ffmpeg.c.o         ad_plugin.c.o         ad_soundfile.c.o
+OBJS_posix32 = ad_ffmpeg.c.posix32.o ad_plugin.c.posix32.o ad_soundfile.c.posix32.o
+OBJS_posix64 = ad_ffmpeg.c.posix64.o ad_plugin.c.posix64.o ad_soundfile.c.posix64.o
+OBJS_win32   = ad_ffmpeg.c.win32.o   ad_plugin.c.win32.o   ad_soundfile.c.win32.o
+OBJS_win64   = ad_ffmpeg.c.win64.o   ad_plugin.c.win64.o   ad_soundfile.c.win64.o
 
 # --------------------------------------------------------------
 
@@ -53,45 +59,20 @@ win64:   ../audio_decoder.win64.a
 
 # --------------------------------------------------------------
 
-serd.c.o: serd.c
-	$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) -c -o $@
+%.c.o: %.c
+	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
-sord.c.o: sord.c
-	$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src -c -o $@
+%.c.posix32.o: %.c
+	$(CC) $< $(BUILD_C_FLAGS) $(32BIT_FLAGS) -c -o $@
 
-sratom.c.o: sratom.c
-	$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) -c -o $@
+%.c.posix64.o: %.c
+	$(CC) $< $(BUILD_C_FLAGS) $(64BIT_FLAGS) -c -o $@
 
-audio_decoder.c.o: audio_decoder.c
-	$(CC) $< $(BUILD_C_FLAGS) -Iaudio_decoder-$(LILV_VERSION) -Iaudio_decoder-$(LILV_VERSION)/src -c -o $@
+%.c.win32.o: %.c
+	$(CC) $< $(BUILD_C_FLAGS) $(32BIT_FLAGS) -c -o $@
 
-# --------------------------------------------------------------
-
-serd.c.%32.o: serd.c
-	$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) $(32BIT_FLAGS) -c -o $@
-
-sord.c.%32.o: sord.c
-	$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src $(32BIT_FLAGS) -c -o $@
-
-sratom.c.%32.o: sratom.c
-	$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) $(32BIT_FLAGS) -c -o $@
-
-audio_decoder.c.%32.o: audio_decoder.c
-	$(CC) $< $(BUILD_C_FLAGS) -Iaudio_decoder-$(LILV_VERSION) -Iaudio_decoder-$(LILV_VERSION)/src $(32BIT_FLAGS) -c -o $@
-
-# --------------------------------------------------------------
-
-serd.c.%64.o: serd.c
-	$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) $(64BIT_FLAGS) -c -o $@
-
-sord.c.%64.o: sord.c
-	$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src $(64BIT_FLAGS) -c -o $@
-
-sratom.c.%64.o: sratom.c
-	$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) $(64BIT_FLAGS) -c -o $@
-
-audio_decoder.c.%64.o: audio_decoder.c
-	$(CC) $< $(BUILD_C_FLAGS) -Iaudio_decoder-$(LILV_VERSION) -Iaudio_decoder-$(LILV_VERSION)/src $(64BIT_FLAGS) -c -o $@
+%.c.win64.o: %.c
+	$(CC) $< $(BUILD_C_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
 

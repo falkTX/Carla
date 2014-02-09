@@ -84,8 +84,8 @@ void carla_register_all_plugins()
     carla_register_native_plugin_carla();
 
     // External-UI plugins
-    carla_register_native_plugin_bigmeter();
-    carla_register_native_plugin_notes();
+    //carla_register_native_plugin_bigmeter();
+    //carla_register_native_plugin_notes();
 #endif
 
     // DISTRHO plugins
@@ -93,7 +93,7 @@ void carla_register_all_plugins()
     carla_register_native_plugin_3bandsplitter();
     carla_register_native_plugin_nekobi();
     carla_register_native_plugin_pingpongpan();
-    carla_register_native_plugin_stereoenhancer();
+    //carla_register_native_plugin_stereoenhancer();
 
 #ifdef HAVE_JUCE
     // JUCE based plugins
@@ -113,7 +113,7 @@ void carla_register_all_plugins()
 #endif
 
     // SunVox File
-    carla_register_native_plugin_sunvoxfile();
+    //carla_register_native_plugin_sunvoxfile();
 
 #ifdef WANT_ZYNADDSUBFX
     // ZynAddSubFX
