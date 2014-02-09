@@ -244,7 +244,7 @@ static const NativePluginDescriptor jucepatchbayDesc = {
     /* paramIns  */ 0,
     /* paramOuts */ 0,
     /* name      */ "Juce Patchbay",
-    /* label     */ "jucePatchbay",
+    /* label     */ "jucepatchbay",
     /* maker     */ "falkTX, Raw Material Software Ltd.",
     /* copyright */ "GNU GPL v2+",
     PluginDescriptorFILL(JucePatchbayPlugin)
