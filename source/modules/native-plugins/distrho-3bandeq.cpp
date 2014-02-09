@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,22 +15,21 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaNative.hpp"
-#include "CarlaMathUtils.hpp"
-
 // Plugin Code
 #include "3bandeq/DistrhoArtwork3BandEQ.cpp"
 #include "3bandeq/DistrhoPlugin3BandEQ.cpp"
 #include "3bandeq/DistrhoUI3BandEQ.cpp"
 
-// Carla DISTRHO Plugin
-#include "distrho/DistrhoPluginCarla.cpp"
+// DISTRHO Code
+#define DISTRHO_PLUGIN_TARGET_CARLA
+#include "DistrhoPluginMain.cpp"
+#include "DistrhoUIMain.cpp"
 
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
-static const NativePluginDescriptor tBandEqDesc = {
+static const NativePluginDescriptor _3bandeqDesc = {
     /* category  */ PLUGIN_CATEGORY_EQ,
     /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_UI),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
@@ -41,7 +40,7 @@ static const NativePluginDescriptor tBandEqDesc = {
     /* paramIns  */ DistrhoPlugin3BandEQ::paramCount,
     /* paramOuts */ 0,
     /* name      */ DISTRHO_PLUGIN_NAME,
-    /* label     */ "3BandEQ",
+    /* label     */ "3bandeq",
     /* maker     */ "falkTX",
     /* copyright */ "LGPL",
     PluginDescriptorFILL(PluginCarla)
@@ -52,10 +51,10 @@ END_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 
 CARLA_EXPORT
-void carla_register_native_plugin_3BandEQ()
+void carla_register_native_plugin_3bandeq()
 {
     USE_NAMESPACE_DISTRHO
-    carla_register_native_plugin(&tBandEqDesc);
+    carla_register_native_plugin(&_3bandeqDesc);
 }
 
 // -----------------------------------------------------------------------

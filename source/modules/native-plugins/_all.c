@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,50 +20,47 @@
 // Simple plugins
 extern void carla_register_native_plugin_bypass();
 extern void carla_register_native_plugin_lfo();
-
-// Simple plugins
-extern void carla_register_native_plugin_midiGain();
-extern void carla_register_native_plugin_midiSplit();
-extern void carla_register_native_plugin_midiThrough();
-extern void carla_register_native_plugin_midiTranspose();
+extern void carla_register_native_plugin_midigain();
+extern void carla_register_native_plugin_midisplit();
+extern void carla_register_native_plugin_midithrough();
+extern void carla_register_native_plugin_miditranspose();
 extern void carla_register_native_plugin_nekofilter();
 
-// Simple plugins (C++)
-extern void carla_register_native_plugin_sunvoxfile();
-
 #ifndef CARLA_OS_WIN
+// Carla
 extern void carla_register_native_plugin_carla();
+
+// External-UI plugins
+extern void carla_register_native_plugin_bigmeter();
+extern void carla_register_native_plugin_notes();
 #endif
 
+// DISTRHO plugins
+extern void carla_register_native_plugin_3bandeq();
+extern void carla_register_native_plugin_3bandsplitter();
+extern void carla_register_native_plugin_nekobi();
+extern void carla_register_native_plugin_pingpongpan();
+extern void carla_register_native_plugin_stereoenhancer();
+
 #ifdef HAVE_JUCE
-extern void carla_register_native_plugin_jucePatchbay();
+// JUCE based plugins
+extern void carla_register_native_plugin_jucepatchbay();
 extern void carla_register_native_plugin_vex_fx();
 extern void carla_register_native_plugin_vex_synth();
 #endif
 
 #ifdef WANT_AUDIOFILE
-// AudioFile
+// Audio File
 extern void carla_register_native_plugin_audiofile();
 #endif
 
 #ifdef WANT_MIDIFILE
-// MidiFile
+// MIDI File
 extern void carla_register_native_plugin_midifile();
 #endif
 
-#ifdef HAVE_DGL
-// DISTRHO plugins (OpenGL)
-extern void carla_register_native_plugin_3BandEQ();
-extern void carla_register_native_plugin_3BandSplitter();
-extern void carla_register_native_plugin_Nekobi();
-extern void carla_register_native_plugin_PingPongPan();
-extern void carla_register_native_plugin_StereoEnhancer();
-#endif
-
-// DISTRHO plugins (PyQt)
-// extern void carla_register_native_plugin_BigMeter();
-// extern void carla_register_native_plugin_BigMeterM();
-// extern void carla_register_native_plugin_Notes();
+// SunVox File
+extern void carla_register_native_plugin_sunvoxfile();
 
 #ifdef WANT_ZYNADDSUBFX
 // ZynAddSubFX
@@ -76,50 +73,47 @@ void carla_register_all_plugins()
     // Simple plugins
     carla_register_native_plugin_bypass();
     carla_register_native_plugin_lfo();
-
-    // Simple plugins
-    carla_register_native_plugin_midiGain();
-    carla_register_native_plugin_midiSplit();
-    carla_register_native_plugin_midiThrough();
-    carla_register_native_plugin_midiTranspose();
+    carla_register_native_plugin_midigain();
+    carla_register_native_plugin_midisplit();
+    carla_register_native_plugin_midithrough();
+    carla_register_native_plugin_miditranspose();
     carla_register_native_plugin_nekofilter();
 
-    // Simple plugins (C++)
-    //carla_register_native_plugin_sunvoxfile(); // unfinished
-
 #ifndef CARLA_OS_WIN
+    // Carla
     carla_register_native_plugin_carla();
+
+    // External-UI plugins
+    carla_register_native_plugin_bigmeter();
+    carla_register_native_plugin_notes();
 #endif
 
+    // DISTRHO plugins
+    carla_register_native_plugin_3bandeq();
+    carla_register_native_plugin_3bandsplitter();
+    carla_register_native_plugin_nekobi();
+    carla_register_native_plugin_pingpongpan();
+    carla_register_native_plugin_stereoenhancer();
+
 #ifdef HAVE_JUCE
-    carla_register_native_plugin_jucePatchbay();
+    // JUCE based plugins
+    carla_register_native_plugin_jucepatchbay();
     carla_register_native_plugin_vex_fx();
     carla_register_native_plugin_vex_synth();
 #endif
 
 #ifdef WANT_AUDIOFILE
-    // AudioFile
+    // Audio File
     carla_register_native_plugin_audiofile();
 #endif
 
 #ifdef WANT_MIDIFILE
-    // MidiFile
+    // MIDI File
     carla_register_native_plugin_midifile();
 #endif
 
-#ifdef HAVE_DGL
-    // DISTRHO plugins (OpenGL)
-    carla_register_native_plugin_3BandEQ();
-    carla_register_native_plugin_3BandSplitter();
-    //carla_register_native_plugin_Nekobi();
-    carla_register_native_plugin_PingPongPan();
-    //carla_register_native_plugin_StereoEnhancer(); // unfinished
-#endif
-
-    // DISTRHO plugins (PyQt)
-//     carla_register_native_plugin_BigMeter();
-//     carla_register_native_plugin_BigMeterM();
-//     carla_register_native_plugin_Notes();
+    // SunVox File
+    carla_register_native_plugin_sunvoxfile();
 
 #ifdef WANT_ZYNADDSUBFX
     // ZynAddSubFX

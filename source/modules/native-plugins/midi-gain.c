@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -41,7 +41,7 @@ typedef struct {
 
 // -----------------------------------------------------------------------
 
-static NativePluginHandle midiGain_instantiate(const NativeHostDescriptor* host)
+static NativePluginHandle midigain_instantiate(const NativeHostDescriptor* host)
 {
     MidiGainHandle* const handle = (MidiGainHandle*)malloc(sizeof(MidiGainHandle));
 
@@ -58,12 +58,12 @@ static NativePluginHandle midiGain_instantiate(const NativeHostDescriptor* host)
 
 #define handlePtr ((MidiGainHandle*)handle)
 
-static void midiGain_cleanup(NativePluginHandle handle)
+static void midigain_cleanup(NativePluginHandle handle)
 {
     free(handlePtr);
 }
 
-static uint32_t midiGain_get_parameter_count(NativePluginHandle handle)
+static uint32_t midigain_get_parameter_count(NativePluginHandle handle)
 {
     return PARAM_COUNT;
 
@@ -71,7 +71,7 @@ static uint32_t midiGain_get_parameter_count(NativePluginHandle handle)
     (void)handle;
 }
 
-const NativeParameter* midiGain_get_parameter_info(NativePluginHandle handle, uint32_t index)
+const NativeParameter* midigain_get_parameter_info(NativePluginHandle handle, uint32_t index)
 {
     if (index > PARAM_COUNT)
         return NULL;
@@ -132,7 +132,7 @@ const NativeParameter* midiGain_get_parameter_info(NativePluginHandle handle, ui
     (void)handle;
 }
 
-static float midiGain_get_parameter_value(NativePluginHandle handle, uint32_t index)
+static float midigain_get_parameter_value(NativePluginHandle handle, uint32_t index)
 {
     switch (index)
     {
@@ -149,7 +149,7 @@ static float midiGain_get_parameter_value(NativePluginHandle handle, uint32_t in
     }
 }
 
-static void midiGain_set_parameter_value(NativePluginHandle handle, uint32_t index, float value)
+static void midigain_set_parameter_value(NativePluginHandle handle, uint32_t index, float value)
 {
     switch (index)
     {
@@ -168,7 +168,7 @@ static void midiGain_set_parameter_value(NativePluginHandle handle, uint32_t ind
     }
 }
 
-static void midiGain_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
+static void midigain_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
     const NativeHostDescriptor* const host = handlePtr->host;
     const float gain           = handlePtr->gain;
@@ -193,7 +193,7 @@ static void midiGain_process(NativePluginHandle handle, float** inBuffer, float*
 
             if (value <= 0.0f)
                 tmpEvent.data[2] = 0;
-            else if (value >= 1.27f)
+            else if (value >= 127.0f)
                 tmpEvent.data[2] = 127;
             else
                 tmpEvent.data[2] = (uint8_t)value;
@@ -214,7 +214,7 @@ static void midiGain_process(NativePluginHandle handle, float** inBuffer, float*
 
 // -----------------------------------------------------------------------
 
-static const NativePluginDescriptor midiGainDesc = {
+static const NativePluginDescriptor midigainDesc = {
     .category  = PLUGIN_CATEGORY_UTILITY,
     .hints     = PLUGIN_IS_RTSAFE,
     .supports  = PLUGIN_SUPPORTS_EVERYTHING,
@@ -225,22 +225,22 @@ static const NativePluginDescriptor midiGainDesc = {
     .paramIns  = 0,
     .paramOuts = 0,
     .name      = "MIDI Gain",
-    .label     = "midiGain",
+    .label     = "midigain",
     .maker     = "falkTX",
     .copyright = "GNU GPL v2+",
 
-    .instantiate = midiGain_instantiate,
-    .cleanup     = midiGain_cleanup,
+    .instantiate = midigain_instantiate,
+    .cleanup     = midigain_cleanup,
 
-    .get_parameter_count = midiGain_get_parameter_count,
-    .get_parameter_info  = midiGain_get_parameter_info,
-    .get_parameter_value = midiGain_get_parameter_value,
+    .get_parameter_count = midigain_get_parameter_count,
+    .get_parameter_info  = midigain_get_parameter_info,
+    .get_parameter_value = midigain_get_parameter_value,
     .get_parameter_text  = NULL,
 
     .get_midi_program_count = NULL,
     .get_midi_program_info  = NULL,
 
-    .set_parameter_value = midiGain_set_parameter_value,
+    .set_parameter_value = midigain_set_parameter_value,
     .set_midi_program    = NULL,
     .set_custom_data     = NULL,
 
@@ -253,7 +253,7 @@ static const NativePluginDescriptor midiGainDesc = {
 
     .activate   = NULL,
     .deactivate = NULL,
-    .process    = midiGain_process,
+    .process    = midigain_process,
 
     .get_state = NULL,
     .set_state = NULL,
@@ -263,9 +263,9 @@ static const NativePluginDescriptor midiGainDesc = {
 
 // -----------------------------------------------------------------------
 
-void carla_register_native_plugin_midiGain()
+void carla_register_native_plugin_midigain()
 {
-    carla_register_native_plugin(&midiGainDesc);
+    carla_register_native_plugin(&midigainDesc);
 }
 
 // -----------------------------------------------------------------------

@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,16 +15,15 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaNative.hpp"
-#include "CarlaMathUtils.hpp"
-
 // Plugin Code
 #include "nekobi/DistrhoArtworkNekobi.cpp"
 #include "nekobi/DistrhoPluginNekobi.cpp"
 #include "nekobi/DistrhoUINekobi.cpp"
 
-// Carla DISTRHO Plugin
-#include "distrho/DistrhoPluginCarla.cpp"
+// DISTRHO Code
+#define DISTRHO_PLUGIN_TARGET_CARLA
+#include "DistrhoPluginMain.cpp"
+#include "DistrhoUIMain.cpp"
 
 START_NAMESPACE_DISTRHO
 
@@ -41,7 +40,7 @@ static const NativePluginDescriptor nekobiDesc = {
     /* paramIns  */ DistrhoPluginNekobi::paramCount,
     /* paramOuts */ 0,
     /* name      */ DISTRHO_PLUGIN_NAME,
-    /* label     */ "Nekobi",
+    /* label     */ "nekobi",
     /* maker     */ "falkTX",
     /* copyright */ "GPL v2+",
     PluginDescriptorFILL(PluginCarla)
@@ -52,7 +51,7 @@ END_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 
 CARLA_EXPORT
-void carla_register_native_plugin_Nekobi()
+void carla_register_native_plugin_nekobi()
 {
     USE_NAMESPACE_DISTRHO
     carla_register_native_plugin(&nekobiDesc);

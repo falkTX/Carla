@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -28,7 +28,7 @@ typedef struct {
 
 // -----------------------------------------------------------------------
 
-static NativePluginHandle midiSplit_instantiate(const NativeHostDescriptor* host)
+static NativePluginHandle midisplit_instantiate(const NativeHostDescriptor* host)
 {
     MidiSplitHandle* const handle = (MidiSplitHandle*)malloc(sizeof(MidiSplitHandle));
 
@@ -41,12 +41,12 @@ static NativePluginHandle midiSplit_instantiate(const NativeHostDescriptor* host
 
 #define handlePtr ((MidiSplitHandle*)handle)
 
-static void midiSplit_cleanup(NativePluginHandle handle)
+static void midisplit_cleanup(NativePluginHandle handle)
 {
     free(handlePtr);
 }
 
-static void midiSplit_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
+static void midisplit_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
     const NativeHostDescriptor* const host = handlePtr->host;
     NativeMidiEvent tmpEvent;
@@ -84,7 +84,7 @@ static void midiSplit_process(NativePluginHandle handle, float** inBuffer, float
 
 // -----------------------------------------------------------------------
 
-static const NativePluginDescriptor midiSplitDesc = {
+static const NativePluginDescriptor midisplitDesc = {
     .category  = PLUGIN_CATEGORY_UTILITY,
     .hints     = PLUGIN_IS_RTSAFE,
     .supports  = PLUGIN_SUPPORTS_EVERYTHING,
@@ -95,12 +95,12 @@ static const NativePluginDescriptor midiSplitDesc = {
     .paramIns  = 0,
     .paramOuts = 0,
     .name      = "MIDI Split",
-    .label     = "midiSplit",
+    .label     = "midisplit",
     .maker     = "falkTX",
     .copyright = "GNU GPL v2+",
 
-    .instantiate = midiSplit_instantiate,
-    .cleanup     = midiSplit_cleanup,
+    .instantiate = midisplit_instantiate,
+    .cleanup     = midisplit_cleanup,
 
     .get_parameter_count = NULL,
     .get_parameter_info  = NULL,
@@ -123,7 +123,7 @@ static const NativePluginDescriptor midiSplitDesc = {
 
     .activate   = NULL,
     .deactivate = NULL,
-    .process    = midiSplit_process,
+    .process    = midisplit_process,
 
     .get_state = NULL,
     .set_state = NULL,
@@ -133,9 +133,9 @@ static const NativePluginDescriptor midiSplitDesc = {
 
 // -----------------------------------------------------------------------
 
-void carla_register_native_plugin_midiSplit()
+void carla_register_native_plugin_midisplit()
 {
-    carla_register_native_plugin(&midiSplitDesc);
+    carla_register_native_plugin(&midisplitDesc);
 }
 
 // -----------------------------------------------------------------------

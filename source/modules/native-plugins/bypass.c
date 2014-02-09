@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -53,7 +53,7 @@ static const NativePluginDescriptor bypassDesc = {
     .midiOuts  = 0,
     .paramIns  = 0,
     .paramOuts = 0,
-    .name      = "ByPass",
+    .name      = "Bypass",
     .label     = "bypass",
     .maker     = "falkTX",
     .copyright = "GNU GPL v2+",

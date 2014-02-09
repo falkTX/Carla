@@ -179,9 +179,9 @@ void carla_sleep(const unsigned int secs)
     CARLA_SAFE_ASSERT_RETURN(secs > 0,);
 
 #ifdef CARLA_OS_WIN
-    Sleep(secs * 1000);
+    ::Sleep(secs * 1000);
 #else
-    sleep(secs);
+    ::sleep(secs);
 #endif
 }
 
@@ -194,9 +194,9 @@ void carla_msleep(const unsigned int msecs)
     CARLA_SAFE_ASSERT_RETURN(msecs > 0,);
 
 #ifdef CARLA_OS_WIN
-    Sleep(msecs);
+    ::Sleep(msecs);
 #else
-    usleep(msecs * 1000);
+    ::usleep(msecs * 1000);
 #endif
 }
 
@@ -213,9 +213,9 @@ void carla_setenv(const char* const key, const char* const value) noexcept
     CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 
 #ifdef CARLA_OS_WIN
-    SetEnvironmentVariableA(key, value);
+    ::SetEnvironmentVariableA(key, value);
 #else
-    setenv(key, value, 1);
+    ::setenv(key, value, 1);
 #endif
 }
 

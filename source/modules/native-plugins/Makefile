@@ -12,21 +12,7 @@ BUILD_C_FLAGS   += -I. -I../../includes -isystem ..
 BUILD_CXX_FLAGS += -I. -I../../includes -I../../utils -I../distrho -isystem ..
 
 # --------------------------------------------------------------
-
-LINK_FLAGS      += -L..
-ifeq ($(HAVE_DGL),true)
-LINK_FLAGS      += -ldgl $(DGL_LIBS)
-endif
-ifeq ($(HAVE_JUCE),true)
-LINK_FLAGS      += -ljuce_audio_basics $(JUCE_AUDIO_BASICS_LIBS)
-LINK_FLAGS      += -ljuce_core $(JUCE_CORE_LIBS)
-LINK_FLAGS      += -ljuce_data_structures $(JUCE_DATA_STRUCTURES_LIBS)
-LINK_FLAGS      += -ljuce_events $(JUCE_EVENTS_LIBS)
-LINK_FLAGS      += -ljuce_graphics $(JUCE_GRAPHICS_LIBS)
-LINK_FLAGS      += -ljuce_gui_basics $(JUCE_GUI_BASICS_LIBS)
-endif
-
-# --------------------------------------------------------------
+# Flags for _all.c
 
 ALL_C_FLAGS  = $(BUILD_C_FLAGS)
 
@@ -46,47 +32,33 @@ ALL_C_FLAGS += -DWANT_ZYNADDSUBFX
 endif
 
 # --------------------------------------------------------------
+# Flags for MidiFile
 
-# AudioFile
-ifeq ($(HAVE_AF_DEPS),true)
-AF_C_FLAGS     = $(BUILD_C_FLAGS)
-AF_C_FLAGS    += $(shell pkg-config --cflags sndfile)
-LINK_FLAGS    += $(shell pkg-config --libs sndfile)
-ifeq ($(HAVE_FFMPEG),true)
-AF_C_FLAGS    += $(shell pkg-config --cflags libavcodec libavformat libavutil)
-LINK_FLAGS    += $(shell pkg-config --libs libavcodec libavformat libavutil)
-endif
-endif
-
-# MidiFile
 ifeq ($(HAVE_MF_DEPS),true)
-MF_CXX_FLAGS   = $(BUILD_CXX_FLAGS)
-MF_CXX_FLAGS  += $(shell pkg-config --cflags smf)
-LINK_FLAGS    += $(shell pkg-config --libs smf)
+MF_CXX_FLAGS  = $(BUILD_CXX_FLAGS)
+MF_CXX_FLAGS += $(shell pkg-config --cflags smf)
 endif
 
-# ZynAddSubFX
+# --------------------------------------------------------------
+# Flags for ZynAddSubFX
+
 ifeq ($(HAVE_ZYN_DEPS),true)
 ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS)
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags fftw3 mxml zlib)
-LINK_FLAGS    += $(shell pkg-config --libs fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 ZYN_CXX_FLAGS += -DNTK_GUI -DWANT_ZYNADDSUBFX_UI
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags ntk_images ntk)
-LINK_FLAGS    += $(shell pkg-config --libs ntk_images ntk)
 endif
 endif
 
 # --------------------------------------------------------------
-
-# Implement carla_register_native_plugin
-LINK_FLAGS += -I.. _link.c
-
-# --------------------------------------------------------------
+# Set objects
 
 OBJS = _all.c.o
 
-# Simple plugins (C)
+# --------------------------------------------------------------
+# Simple plugins
+
 OBJS += \
 	bypass.c.o \
 	lfo.c.o \
@@ -96,9 +68,29 @@ OBJS += \
 	midi-transpose.c.o \
 	nekofilter.c.o
 
+ifeq ($(_ignore_WIN32__),true)
 # --------------------------------------------------------------
+# External-UI plugins
+
+OBJS += \
+	ext-bigmeter.cpp.o \
+	ext-notes.cpp.o
+endif
+
+# --------------------------------------------------------------
+# DISTRHO plugins
+
+OBJS += \
+	distrho-3bandeq.cpp.o \
+	distrho-3bandsplitter.cpp.o \
+	distrho-pingpongpan.cpp.o \
+	distrho-nekobi.cpp.o
+#	distrho-stereoenhancer.cpp.o
 
 ifeq ($(HAVE_JUCE),true)
+# --------------------------------------------------------------
+# JUCE based plugins
+
 OBJS += \
 	juce-patchbay.cpp.o \
 	vex-fx.cpp.o \
@@ -107,38 +99,22 @@ OBJS += \
 endif
 
 # --------------------------------------------------------------
-
-ifeq ($(HAVE_DGL),true)
-OBJS += \
-	distrho-3bandeq.cpp.o \
-	distrho-3bandsplitter.cpp.o \
-	distrho-pingpongpan.cpp.o
-# 	distrho-nekobi.cpp.o \
-# 	distrho-stereoenhancer.cpp.o
-endif
-
-# --------------------------------------------------------------
-
 # AudioFile
+
 ifeq ($(HAVE_AF_DEPS),true)
-OBJS += \
-	audio-file.cpp.o \
-	audio_decoder/ad_ffmpeg.c.o \
-	audio_decoder/ad_plugin.c.o \
-	audio_decoder/ad_soundfile.c.o
+OBJS += audio-file.cpp.o
 endif
 
 # --------------------------------------------------------------
-
 # MidiFile
+
 ifeq ($(HAVE_MF_DEPS),true)
-OBJS += \
-	midi-file.cpp.o
+OBJS += midi-file.cpp.o
 endif
 
 # --------------------------------------------------------------
-
 # ZynAddSubFX
+
 ifeq ($(HAVE_ZYN_DEPS),true)
 OBJS += \
 	zynaddsubfx-fx.cpp.o \
@@ -215,9 +191,6 @@ _all.c.o: _all.c $(CDEPS)
 bypass.c.o: bypass.c $(CDEPS)
 	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
-audio_decoder/%.c.o: audio_decoder/%.c
-	$(CC) $< $(AF_C_FLAGS) -w -c -o $@
-
 lfo.c.o: lfo.c $(CDEPS)
 	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
@@ -234,29 +207,20 @@ CXXDEPS = ../CarlaNative.h ../CarlaNative.hpp
 audio-file.cpp.o: audio-file.cpp audio-base.hpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-distrho-3bandeq.cpp.o: distrho-3bandeq.cpp 3bandeq/*.cpp 3bandeq/*.h 3bandeq/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
+distrho-3bandeq.cpp.o: distrho-3bandeq.cpp 3bandeq/*.cpp 3bandeq/*.h 3bandeq/*.hpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -I3bandeq -DDISTRHO_NAMESPACE=DISTRHO_3BandEQ -c -o $@
 
-distrho-3bandsplitter.cpp.o: distrho-3bandsplitter.cpp 3bandsplitter/*.cpp 3bandsplitter/*.h 3bandsplitter/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
+distrho-3bandsplitter.cpp.o: distrho-3bandsplitter.cpp 3bandsplitter/*.cpp 3bandsplitter/*.h 3bandsplitter/*.hpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -I3bandsplitter -DDISTRHO_NAMESPACE=DISTRHO_3BandSplitter -c -o $@
 
-distrho-nekobi.cpp.o: distrho-nekobi.cpp nekobi/*.cpp nekobi/*.h nekobi/*.hpp nekobi/nekobee-src/*.c nekobi/nekobee-src/*.h distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
+distrho-nekobi.cpp.o: distrho-nekobi.cpp nekobi/*.cpp nekobi/*.h nekobi/*.hpp nekobi/nekobee-src/*.c nekobi/nekobee-src/*.h $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Inekobi -DDISTRHO_NAMESPACE=DISTRHO_Nekobi -c -o $@
 
-distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/*.cpp pingpongpan/*.h pingpongpan/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
+distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/*.cpp pingpongpan/*.h pingpongpan/*.hpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Ipingpongpan -DDISTRHO_NAMESPACE=DISTRHO_PingPongPan -c -o $@
 
-distrho-stereoenhancer.cpp.o: distrho-stereoenhancer.cpp stereoenhancer/*.cpp stereoenhancer/*.h stereoenhancer/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
+distrho-stereoenhancer.cpp.o: distrho-stereoenhancer.cpp stereoenhancer/*.cpp stereoenhancer/*.h stereoenhancer/*.hpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Istereoenhancer -DDISTRHO_NAMESPACE=DISTRHO_StereoEnhancer -c -o $@
-
-distrho-bigmeter.cpp.o: distrho-bigmeter.cpp bigmeter/*.cpp bigmeter/*.h bigmeter/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Ibigmeter -DDISTRHO_NAMESPACE=DISTRHO_BigMeter -c -o $@
-
-distrho-bigmeterM.cpp.o: distrho-bigmeterM.cpp bigmeterM/*.cpp bigmeterM/*.h bigmeterM/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -IbigmeterM -DDISTRHO_NAMESPACE=DISTRHO_BigMeterM -c -o $@
-
-distrho-notes.cpp.o: distrho-notes.cpp notes/*.cpp notes/*.h notes/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Inotes -DDISTRHO_NAMESPACE=DISTRHO_Notes -c -o $@
 
 juce-patchbay.cpp.o: juce-patchbay.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@

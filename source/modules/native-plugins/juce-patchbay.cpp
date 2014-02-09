@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -24,10 +24,10 @@ using namespace juce;
 
 // -----------------------------------------------------------------------
 
-#include "juce-host/FilterGraph.h"
-#include "juce-host/InternalFilters.h"
-#include "juce-host/GraphEditorPanel.h"
-#include "juce-host/MainHostWindow.h"
+#include "jucepluginhost/FilterGraph.h"
+#include "jucepluginhost/InternalFilters.h"
+#include "jucepluginhost/GraphEditorPanel.h"
+#include "jucepluginhost/MainHostWindow.h"
 
 // -----------------------------------------------------------------------
 
@@ -233,9 +233,9 @@ private:
 
 // -----------------------------------------------------------------------
 
-static const NativePluginDescriptor jucePatchbayDesc = {
+static const NativePluginDescriptor jucepatchbayDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_SYNTH|PLUGIN_HAS_UI|PLUGIN_NEEDS_FIXED_BUFFERS|PLUGIN_NEEDS_UI_JUCE|PLUGIN_USES_STATE|PLUGIN_USES_TIME),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_SYNTH|PLUGIN_HAS_UI|PLUGIN_NEEDS_FIXED_BUFFERS|PLUGIN_NEEDS_UI_JUCE|PLUGIN_USES_STATE/*|PLUGIN_USES_TIME*/),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -253,19 +253,19 @@ static const NativePluginDescriptor jucePatchbayDesc = {
 // -----------------------------------------------------------------------
 
 CARLA_EXPORT
-void carla_register_native_plugin_jucePatchbay()
+void carla_register_native_plugin_jucepatchbay()
 {
-    carla_register_native_plugin(&jucePatchbayDesc);
+    carla_register_native_plugin(&jucepatchbayDesc);
 }
 
 // -----------------------------------------------------------------------
 
-#include "juce-host/juce_MidiKeyboardComponent.h"
-#include "juce-host/juce_MidiKeyboardComponent.cpp"
+#include "jucepluginhost/juce_MidiKeyboardComponent.h"
+#include "jucepluginhost/juce_MidiKeyboardComponent.cpp"
 
-#include "juce-host/FilterGraph.cpp"
-#include "juce-host/InternalFilters.cpp"
-#include "juce-host/GraphEditorPanel.cpp"
-#include "juce-host/MainHostWindow.cpp"
+#include "jucepluginhost/FilterGraph.cpp"
+#include "jucepluginhost/InternalFilters.cpp"
+#include "jucepluginhost/GraphEditorPanel.cpp"
+#include "jucepluginhost/MainHostWindow.cpp"
 
 // -----------------------------------------------------------------------

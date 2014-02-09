@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -28,7 +28,7 @@ typedef struct {
 
 // -----------------------------------------------------------------------
 
-static NativePluginHandle midiThrough_instantiate(const NativeHostDescriptor* host)
+static NativePluginHandle midithrough_instantiate(const NativeHostDescriptor* host)
 {
     MidiThroughHandle* const handle = (MidiThroughHandle*)malloc(sizeof(MidiThroughHandle));
 
@@ -41,12 +41,12 @@ static NativePluginHandle midiThrough_instantiate(const NativeHostDescriptor* ho
 
 #define handlePtr ((MidiThroughHandle*)handle)
 
-static void midiThrough_cleanup(NativePluginHandle handle)
+static void midithrough_cleanup(NativePluginHandle handle)
 {
     free(handlePtr);
 }
 
-static void midiThrough_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
+static void midithrough_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
     const NativeHostDescriptor* const host = handlePtr->host;
 
@@ -65,7 +65,7 @@ static void midiThrough_process(NativePluginHandle handle, float** inBuffer, flo
 
 // -----------------------------------------------------------------------
 
-static const NativePluginDescriptor midiThroughDesc = {
+static const NativePluginDescriptor midithroughDesc = {
     .category  = PLUGIN_CATEGORY_UTILITY,
     .hints     = PLUGIN_IS_RTSAFE,
     .supports  = PLUGIN_SUPPORTS_EVERYTHING,
@@ -76,12 +76,12 @@ static const NativePluginDescriptor midiThroughDesc = {
     .paramIns  = 0,
     .paramOuts = 0,
     .name      = "MIDI Through",
-    .label     = "midiThrough",
+    .label     = "midithrough",
     .maker     = "falkTX",
     .copyright = "GNU GPL v2+",
 
-    .instantiate = midiThrough_instantiate,
-    .cleanup     = midiThrough_cleanup,
+    .instantiate = midithrough_instantiate,
+    .cleanup     = midithrough_cleanup,
 
     .get_parameter_count = NULL,
     .get_parameter_info  = NULL,
@@ -104,7 +104,7 @@ static const NativePluginDescriptor midiThroughDesc = {
 
     .activate   = NULL,
     .deactivate = NULL,
-    .process    = midiThrough_process,
+    .process    = midithrough_process,
 
     .get_state = NULL,
     .set_state = NULL,
@@ -114,9 +114,9 @@ static const NativePluginDescriptor midiThroughDesc = {
 
 // -----------------------------------------------------------------------
 
-void carla_register_native_plugin_midiThrough()
+void carla_register_native_plugin_midithrough()
 {
-    carla_register_native_plugin(&midiThroughDesc);
+    carla_register_native_plugin(&midithroughDesc);
 }
 
 // -----------------------------------------------------------------------

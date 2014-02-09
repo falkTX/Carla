@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Toolkit (DPT)
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -16,7 +16,9 @@
 
 #include "src/DistrhoPlugin.cpp"
 
-#if (defined(DISTRHO_PLUGIN_TARGET_LADSPA) || defined(DISTRHO_PLUGIN_TARGET_DSSI))
+#if defined(DISTRHO_PLUGIN_TARGET_CARLA)
+# include "src/DistrhoPluginCarla.cpp"
+#elif (defined(DISTRHO_PLUGIN_TARGET_LADSPA) || defined(DISTRHO_PLUGIN_TARGET_DSSI))
 # include "src/DistrhoPluginLADSPA+DSSI.cpp"
 #elif defined(DISTRHO_PLUGIN_TARGET_LV2)
 # include "src/DistrhoPluginLV2.cpp"

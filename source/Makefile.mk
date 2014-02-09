@@ -256,6 +256,15 @@ endif
 # --------------------------------------------------------------
 # Set libs stuff (part 2)
 
+ifeq ($(HAVE_AF_DEPS),true)
+AUDIO_DECODER_FLAGS  = $(shell pkg-config --cflags sndfile)
+AUDIO_DECODER_LIBS   = $(shell pkg-config --libs sndfile)
+ifeq ($(HAVE_FFMPEG),true)
+AUDIO_DECODER_FLAGS += $(shell pkg-config --cflags libavcodec libavformat libavutil)
+AUDIO_DECODER_LIBS  += $(shell pkg-config --libs libavcodec libavformat libavutil)
+endif
+endif
+
 RTAUDIO_FLAGS  = -DHAVE_GETTIMEOFDAY -D__UNIX_JACK__
 
 ifeq ($(DEBUG),true)
@@ -318,6 +327,23 @@ LILV_LIBS               = -lm
 RTAUDIO_FLAGS          += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__
 RTAUDIO_LIBS           += -ldsound -lpthread
 RTMIDI_FLAGS           += -D__WINDOWS_MM__
+endif
+
+# --------------------------------------------------------------
+# Set libs stuff (part 3)
+
+NATIVE_PLUGINS_LIBS  = $(AUDIO_DECODER_LIBS)
+NATIVE_PLUGINS_LIBS += $(DGL_LIBS)
+
+ifeq ($(HAVE_MF_DEPS),true)
+NATIVE_PLUGINS_LIBS += $(shell pkg-config --libs smf)
+endif
+
+ifeq ($(HAVE_ZYN_DEPS),true)
+NATIVE_PLUGINS_LIBS += $(shell pkg-config --libs fftw3 mxml zlib)
+ifeq ($(HAVE_ZYN_UI_DEPS),true)
+NATIVE_PLUGINS_LIBS += $(shell pkg-config --libs ntk_images ntk)
+endif
 endif
 
 # --------------------------------------------------------------

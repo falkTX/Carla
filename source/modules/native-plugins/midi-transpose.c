@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -29,7 +29,7 @@ typedef struct {
 
 // -----------------------------------------------------------------------
 
-static NativePluginHandle midiTranspose_instantiate(const NativeHostDescriptor* host)
+static NativePluginHandle miditranspose_instantiate(const NativeHostDescriptor* host)
 {
     MidiTransposeHandle* const handle = (MidiTransposeHandle*)malloc(sizeof(MidiTransposeHandle));
 
@@ -43,12 +43,12 @@ static NativePluginHandle midiTranspose_instantiate(const NativeHostDescriptor* 
 
 #define handlePtr ((MidiTransposeHandle*)handle)
 
-static void midiTranspose_cleanup(NativePluginHandle handle)
+static void miditranspose_cleanup(NativePluginHandle handle)
 {
     free(handlePtr);
 }
 
-static uint32_t midiTranspose_get_parameter_count(NativePluginHandle handle)
+static uint32_t miditranspose_get_parameter_count(NativePluginHandle handle)
 {
     return 1;
 
@@ -56,7 +56,7 @@ static uint32_t midiTranspose_get_parameter_count(NativePluginHandle handle)
     (void)handle;
 }
 
-const NativeParameter* midiTranspose_get_parameter_info(NativePluginHandle handle, uint32_t index)
+const NativeParameter* miditranspose_get_parameter_info(NativePluginHandle handle, uint32_t index)
 {
     if (index != 0)
         return NULL;
@@ -81,7 +81,7 @@ const NativeParameter* midiTranspose_get_parameter_info(NativePluginHandle handl
     (void)handle;
 }
 
-static float midiTranspose_get_parameter_value(NativePluginHandle handle, uint32_t index)
+static float miditranspose_get_parameter_value(NativePluginHandle handle, uint32_t index)
 {
     if (index != 0)
         return 0.0f;
@@ -89,7 +89,7 @@ static float midiTranspose_get_parameter_value(NativePluginHandle handle, uint32
     return (float)handlePtr->octaves;
 }
 
-static void midiTranspose_set_parameter_value(NativePluginHandle handle, uint32_t index, float value)
+static void miditranspose_set_parameter_value(NativePluginHandle handle, uint32_t index, float value)
 {
     if (index != 0)
         return;
@@ -97,7 +97,7 @@ static void midiTranspose_set_parameter_value(NativePluginHandle handle, uint32_
     handlePtr->octaves = (int)value;
 }
 
-static void midiTranspose_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
+static void miditranspose_process(NativePluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
     const NativeHostDescriptor* const host = handlePtr->host;
     const int octaves = handlePtr->octaves;
@@ -143,7 +143,7 @@ static void midiTranspose_process(NativePluginHandle handle, float** inBuffer, f
 
 // -----------------------------------------------------------------------
 
-static const NativePluginDescriptor midiTransposeDesc = {
+static const NativePluginDescriptor miditransposeDesc = {
     .category  = PLUGIN_CATEGORY_UTILITY,
     .hints     = PLUGIN_IS_RTSAFE,
     .supports  = PLUGIN_SUPPORTS_EVERYTHING,
@@ -154,22 +154,22 @@ static const NativePluginDescriptor midiTransposeDesc = {
     .paramIns  = 1,
     .paramOuts = 0,
     .name      = "MIDI Transpose",
-    .label     = "midiTranspose",
+    .label     = "miditranspose",
     .maker     = "falkTX",
     .copyright = "GNU GPL v2+",
 
-    .instantiate = midiTranspose_instantiate,
-    .cleanup     = midiTranspose_cleanup,
+    .instantiate = miditranspose_instantiate,
+    .cleanup     = miditranspose_cleanup,
 
-    .get_parameter_count = midiTranspose_get_parameter_count,
-    .get_parameter_info  = midiTranspose_get_parameter_info,
-    .get_parameter_value = midiTranspose_get_parameter_value,
+    .get_parameter_count = miditranspose_get_parameter_count,
+    .get_parameter_info  = miditranspose_get_parameter_info,
+    .get_parameter_value = miditranspose_get_parameter_value,
     .get_parameter_text  = NULL,
 
     .get_midi_program_count = NULL,
     .get_midi_program_info  = NULL,
 
-    .set_parameter_value = midiTranspose_set_parameter_value,
+    .set_parameter_value = miditranspose_set_parameter_value,
     .set_midi_program    = NULL,
     .set_custom_data     = NULL,
 
@@ -182,7 +182,7 @@ static const NativePluginDescriptor midiTransposeDesc = {
 
     .activate   = NULL,
     .deactivate = NULL,
-    .process    = midiTranspose_process,
+    .process    = miditranspose_process,
 
     .get_state = NULL,
     .set_state = NULL,
@@ -192,9 +192,9 @@ static const NativePluginDescriptor midiTransposeDesc = {
 
 // -----------------------------------------------------------------------
 
-void carla_register_native_plugin_midiTranspose()
+void carla_register_native_plugin_miditranspose()
 {
-    carla_register_native_plugin(&midiTransposeDesc);
+    carla_register_native_plugin(&miditransposeDesc);
 }
 
 // -----------------------------------------------------------------------
