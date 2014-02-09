@@ -24,7 +24,8 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
-static const char* PluginThreadMode2str(const CarlaPluginThread::Mode mode)
+static inline
+const char* PluginThreadMode2str(const CarlaPluginThread::Mode mode)
 {
     switch (mode)
     {

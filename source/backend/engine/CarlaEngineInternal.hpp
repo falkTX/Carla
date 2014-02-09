@@ -94,9 +94,11 @@ struct EngineRackBuffers {
     float* out[2];
 
     // connections stuff
-    LinkedList<int> connectedIns[2];
-    LinkedList<int> connectedOuts[2];
-    CarlaMutex connectLock;
+    LinkedList<int> connectedIn1;
+    LinkedList<int> connectedIn2;
+    LinkedList<int> connectedOut1;
+    LinkedList<int> connectedOut2;
+    CarlaCriticalSection connectLock;
 
     uint lastConnectionId;
     LinkedList<ConnectionToId> usedConnections;

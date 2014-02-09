@@ -40,6 +40,10 @@ CarlaBridgeClient::CarlaBridgeClient(const char* const uiTitle)
     CARLA_ASSERT(uiTitle != nullptr && uiTitle[0] != '\0');
 #endif
     carla_debug("CarlaBridgeClient::CarlaBridgeClient(\"%s\")", uiTitle);
+
+#ifndef BUILD_BRIDGE_UI
+    return; (void)uiTitle; // unused
+#endif
 }
 
 CarlaBridgeClient::~CarlaBridgeClient()

@@ -1699,36 +1699,36 @@ bool CarlaEngine::patchbayConnect(const int portA, const int portB)
     case RACK_PATCHBAY_PORT_AUDIO_IN1:
         CARLA_SAFE_ASSERT_BREAK(targetPort >= RACK_PATCHBAY_GROUP_AUDIO_IN*1000);
         CARLA_SAFE_ASSERT_BREAK(targetPort <= RACK_PATCHBAY_GROUP_AUDIO_IN*1000+999);
-        rack->connectLock.lock();
-        rack->connectedIns[0].append(targetPort - RACK_PATCHBAY_GROUP_AUDIO_IN*1000);
-        rack->connectLock.unlock();
+        rack->connectLock.enter();
+        rack->connectedIn1.append(targetPort - RACK_PATCHBAY_GROUP_AUDIO_IN*1000);
+        rack->connectLock.leave();
         makeConnection = true;
         break;
 
     case RACK_PATCHBAY_PORT_AUDIO_IN2:
         CARLA_SAFE_ASSERT_BREAK(targetPort >= RACK_PATCHBAY_GROUP_AUDIO_IN*1000);
         CARLA_SAFE_ASSERT_BREAK(targetPort <= RACK_PATCHBAY_GROUP_AUDIO_IN*1000+999);
-        rack->connectLock.lock();
-        rack->connectedIns[1].append(targetPort - RACK_PATCHBAY_GROUP_AUDIO_IN*1000);
-        rack->connectLock.unlock();
+        rack->connectLock.enter();
+        rack->connectedIn2.append(targetPort - RACK_PATCHBAY_GROUP_AUDIO_IN*1000);
+        rack->connectLock.leave();
         makeConnection = true;
         break;
 
     case RACK_PATCHBAY_PORT_AUDIO_OUT1:
         CARLA_SAFE_ASSERT_BREAK(targetPort >= RACK_PATCHBAY_GROUP_AUDIO_OUT*1000);
         CARLA_SAFE_ASSERT_BREAK(targetPort <= RACK_PATCHBAY_GROUP_AUDIO_OUT*1000+999);
-        rack->connectLock.lock();
-        rack->connectedOuts[0].append(targetPort - RACK_PATCHBAY_GROUP_AUDIO_OUT*1000);
-        rack->connectLock.unlock();
+        rack->connectLock.enter();
+        rack->connectedOut1.append(targetPort - RACK_PATCHBAY_GROUP_AUDIO_OUT*1000);
+        rack->connectLock.leave();
         makeConnection = true;
         break;
 
     case RACK_PATCHBAY_PORT_AUDIO_OUT2:
         CARLA_SAFE_ASSERT_BREAK(targetPort >= RACK_PATCHBAY_GROUP_AUDIO_OUT*1000);
         CARLA_SAFE_ASSERT_BREAK(targetPort <= RACK_PATCHBAY_GROUP_AUDIO_OUT*1000+999);
-        rack->connectLock.lock();
-        rack->connectedOuts[1].append(targetPort - RACK_PATCHBAY_GROUP_AUDIO_OUT*1000);
-        rack->connectLock.unlock();
+        rack->connectLock.enter();
+        rack->connectedOut2.append(targetPort - RACK_PATCHBAY_GROUP_AUDIO_OUT*1000);
+        rack->connectLock.leave();
         makeConnection = true;
         break;
 
@@ -1810,14 +1810,14 @@ bool CarlaEngine::patchbayDisconnect(const uint connectionId)
 
                 const int portId(otherPort-RACK_PATCHBAY_GROUP_AUDIO_OUT*1000);
 
-                rack->connectLock.lock();
+                rack->connectLock.enter();
 
                 if (carlaPort == RACK_PATCHBAY_PORT_AUDIO_OUT1)
-                    rack->connectedOuts[0].removeAll(portId);
+                    rack->connectedOut1.removeAll(portId);
                 else
-                    rack->connectedOuts[1].removeAll(portId);
+                    rack->connectedOut2.removeAll(portId);
 
-                rack->connectLock.unlock();
+                rack->connectLock.leave();
             }
             else if (otherPort >= RACK_PATCHBAY_GROUP_AUDIO_IN*1000)
             {
@@ -1825,14 +1825,14 @@ bool CarlaEngine::patchbayDisconnect(const uint connectionId)
 
                 const int portId(otherPort-RACK_PATCHBAY_GROUP_AUDIO_IN*1000);
 
-                rack->connectLock.lock();
+                rack->connectLock.enter();
 
                 if (carlaPort == RACK_PATCHBAY_PORT_AUDIO_IN1)
-                    rack->connectedIns[0].removeAll(portId);
+                    rack->connectedIn1.removeAll(portId);
                 else
-                    rack->connectedIns[1].removeAll(portId);
+                    rack->connectedIn2.removeAll(portId);
 
-                rack->connectLock.unlock();
+                rack->connectLock.leave();
             }
             else
             {

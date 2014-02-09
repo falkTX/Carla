@@ -517,6 +517,7 @@ public:
         clearBuffers();
 
         uint32_t aIns, aOuts, mIns, mOuts, params;
+        aIns = aOuts = 0;
 
         bool needsCtrlIn, needsCtrlOut;
         needsCtrlIn = needsCtrlOut = false;

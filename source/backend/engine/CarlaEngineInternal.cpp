@@ -323,10 +323,10 @@ void EngineRackBuffers::clear()
         out[1] = nullptr;
     }
 
-    connectedIns[0].clear();
-    connectedIns[1].clear();
-    connectedOuts[0].clear();
-    connectedOuts[1].clear();
+    connectedIn1.clear();
+    connectedIn2.clear();
+    connectedOut1.clear();
+    connectedOut2.clear();
     usedConnections.clear();
 }
 
@@ -864,10 +864,10 @@ void CarlaEngineProtectedData::processRackFull(float** const inBuf, const uint32
 {
     EngineRackBuffers* const rack(bufAudio.rack);
 
-    const CarlaMutex::ScopedLocker sl(rack->connectLock);
+    const CarlaCriticalSection::Scope _cs2(rack->connectLock);
 
     // connect input buffers
-    if (rack->connectedIns[0].count() == 0)
+    if (rack->connectedIn1.count() == 0)
     {
         FLOAT_CLEAR(rack->in[0], nframes);
     }
@@ -875,7 +875,7 @@ void CarlaEngineProtectedData::processRackFull(float** const inBuf, const uint32
     {
         bool first = true;
 
-        for (LinkedList<int>::Itenerator it = rack->connectedIns[0].begin(); it.valid(); it.next())
+        for (LinkedList<int>::Itenerator it = rack->connectedIn1.begin(); it.valid(); it.next())
         {
             const int& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(inCount));
@@ -895,7 +895,7 @@ void CarlaEngineProtectedData::processRackFull(float** const inBuf, const uint32
             FLOAT_CLEAR(rack->in[0], nframes);
     }
 
-    if (rack->connectedIns[1].count() == 0)
+    if (rack->connectedIn2.count() == 0)
     {
         FLOAT_CLEAR(rack->in[1], nframes);
     }
@@ -903,7 +903,7 @@ void CarlaEngineProtectedData::processRackFull(float** const inBuf, const uint32
     {
         bool first = true;
 
-        for (LinkedList<int>::Itenerator it = rack->connectedIns[1].begin(); it.valid(); it.next())
+        for (LinkedList<int>::Itenerator it = rack->connectedIn2.begin(); it.valid(); it.next())
         {
             const int& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(inCount));
@@ -930,9 +930,9 @@ void CarlaEngineProtectedData::processRackFull(float** const inBuf, const uint32
     processRack(rack->in, rack->out, nframes, isOffline);
 
     // connect output buffers
-    if (rack->connectedOuts[0].count() != 0)
+    if (rack->connectedOut1.count() != 0)
     {
-        for (LinkedList<int>::Itenerator it = rack->connectedOuts[0].begin(); it.valid(); it.next())
+        for (LinkedList<int>::Itenerator it = rack->connectedOut1.begin(); it.valid(); it.next())
         {
             const int& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(outCount));
@@ -941,9 +941,9 @@ void CarlaEngineProtectedData::processRackFull(float** const inBuf, const uint32
         }
     }
 
-    if (rack->connectedOuts[1].count() != 0)
+    if (rack->connectedOut2.count() != 0)
     {
-        for (LinkedList<int>::Itenerator it = rack->connectedOuts[1].begin(); it.valid(); it.next())
+        for (LinkedList<int>::Itenerator it = rack->connectedOut2.begin(); it.valid(); it.next())
         {
             const int& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(outCount));

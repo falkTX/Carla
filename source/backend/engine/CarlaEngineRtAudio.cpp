@@ -500,9 +500,9 @@ public:
 #endif
 
         // Connections
-        rack->connectLock.lock();
+        rack->connectLock.enter();
 
-        for (LinkedList<int>::Itenerator it = rack->connectedIns[0].begin(); it.valid(); it.next())
+        for (LinkedList<int>::Itenerator it = rack->connectedIn1.begin(); it.valid(); it.next())
         {
             const int& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(pData->bufAudio.inCount));
@@ -518,7 +518,7 @@ public:
             rack->lastConnectionId++;
         }
 
-        for (LinkedList<int>::Itenerator it = rack->connectedIns[1].begin(); it.valid(); it.next())
+        for (LinkedList<int>::Itenerator it = rack->connectedIn2.begin(); it.valid(); it.next())
         {
             const int& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(pData->bufAudio.inCount));
@@ -534,7 +534,7 @@ public:
             rack->lastConnectionId++;
         }
 
-        for (LinkedList<int>::Itenerator it = rack->connectedOuts[0].begin(); it.valid(); it.next())
+        for (LinkedList<int>::Itenerator it = rack->connectedOut1.begin(); it.valid(); it.next())
         {
             const int& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(pData->bufAudio.outCount));
@@ -550,7 +550,7 @@ public:
             rack->lastConnectionId++;
         }
 
-        for (LinkedList<int>::Itenerator it = rack->connectedOuts[1].begin(); it.valid(); it.next())
+        for (LinkedList<int>::Itenerator it = rack->connectedOut2.begin(); it.valid(); it.next())
         {
             const int& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(pData->bufAudio.outCount));
@@ -566,7 +566,7 @@ public:
             rack->lastConnectionId++;
         }
 
-        pData->bufAudio.rack->connectLock.unlock();
+        pData->bufAudio.rack->connectLock.leave();
 
         for (LinkedList<MidiPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
         {
