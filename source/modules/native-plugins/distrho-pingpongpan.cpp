@@ -41,7 +41,7 @@ static const NativePluginDescriptor pingpongpanDesc = {
     /* paramOuts */ 0,
     /* name      */ DISTRHO_PLUGIN_NAME,
     /* label     */ "pingpongpan",
-    /* maker     */ "falkTX",
+    /* maker     */ "falkTX, Michael Gruhn",
     /* copyright */ "LGPL",
     PluginDescriptorFILL(PluginCarla)
 };

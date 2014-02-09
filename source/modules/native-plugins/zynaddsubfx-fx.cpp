@@ -1332,8 +1332,8 @@ static const NativePluginDescriptor fxAlienWahDesc = {
     /* paramIns  */ 11-2,
     /* paramOuts */ 0,
     /* name      */ "ZynAlienWah",
-    /* label     */ "zynAlienWah",
-    /* maker     */ "falkTX",
+    /* label     */ "zynalienwah",
+    /* maker     */ "falkTX, Mark McCurry, Nasca Octavian Paul",
     /* copyright */ "GNU GPL v2+",
     PluginDescriptorFILL(FxAlienWahPlugin)
 };
@@ -1349,8 +1349,8 @@ static const NativePluginDescriptor fxChorusDesc = {
     /* paramIns  */ 12-2,
     /* paramOuts */ 0,
     /* name      */ "ZynChorus",
-    /* label     */ "zynChorus",
-    /* maker     */ "falkTX",
+    /* label     */ "zynchorus",
+    /* maker     */ "falkTX, Mark McCurry, Nasca Octavian Paul",
     /* copyright */ "GNU GPL v2+",
     PluginDescriptorFILL(FxChorusPlugin)
 };
@@ -1366,8 +1366,8 @@ static const NativePluginDescriptor fxDistortionDesc = {
     /* paramIns  */ 11-2,
     /* paramOuts */ 0,
     /* name      */ "ZynDistortion",
-    /* label     */ "zynDistortion",
-    /* maker     */ "falkTX",
+    /* label     */ "zyndistortion",
+    /* maker     */ "falkTX, Mark McCurry, Nasca Octavian Paul",
     /* copyright */ "GNU GPL v2+",
     PluginDescriptorFILL(FxDistortionPlugin)
 };
@@ -1383,8 +1383,8 @@ static const NativePluginDescriptor fxDynamicFilterDesc = {
     /* paramIns  */ 10-2,
     /* paramOuts */ 0,
     /* name      */ "ZynDynamicFilter",
-    /* label     */ "zynDynamicFilter",
-    /* maker     */ "falkTX",
+    /* label     */ "zyndynamicfilter",
+    /* maker     */ "falkTX, Mark McCurry, Nasca Octavian Paul",
     /* copyright */ "GNU GPL v2+",
     PluginDescriptorFILL(FxDynamicFilterPlugin)
 };
@@ -1400,8 +1400,8 @@ static const NativePluginDescriptor fxEchoDesc = {
     /* paramIns  */ 7-2,
     /* paramOuts */ 0,
     /* name      */ "ZynEcho",
-    /* label     */ "zynEcho",
-    /* maker     */ "falkTX",
+    /* label     */ "zynecho",
+    /* maker     */ "falkTX, Mark McCurry, Nasca Octavian Paul",
     /* copyright */ "GNU GPL v2+",
     PluginDescriptorFILL(FxEchoPlugin)
 };
@@ -1417,8 +1417,8 @@ static const NativePluginDescriptor fxPhaserDesc = {
     /* paramIns  */ 15-2,
     /* paramOuts */ 0,
     /* name      */ "ZynPhaser",
-    /* label     */ "zynPhaser",
-    /* maker     */ "falkTX",
+    /* label     */ "zynphaser",
+    /* maker     */ "falkTX, Mark McCurry, Nasca Octavian Paul",
     /* copyright */ "GNU GPL v2+",
     PluginDescriptorFILL(FxPhaserPlugin)
 };
@@ -1434,8 +1434,8 @@ static const NativePluginDescriptor fxReverbDesc = {
     /* paramIns  */ 13-2,
     /* paramOuts */ 0,
     /* name      */ "ZynReverb",
-    /* label     */ "zynReverb",
-    /* maker     */ "falkTX",
+    /* label     */ "zynreverb",
+    /* maker     */ "falkTX, Mark McCurry, Nasca Octavian Paul",
     /* copyright */ "GNU GPL v2+",
     PluginDescriptorFILL(FxReverbPlugin)
 };

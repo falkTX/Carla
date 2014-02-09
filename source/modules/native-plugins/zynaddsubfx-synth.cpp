@@ -802,7 +802,7 @@ static const NativePluginDescriptor zynaddsubfxDesc = {
     /* paramOuts */ 0,
     /* name      */ "ZynAddSubFX",
     /* label     */ "zynaddsubfx",
-    /* maker     */ "falkTX",
+    /* maker     */ "falkTX, Mark McCurry, Nasca Octavian Paul",
     /* copyright */ "GNU GPL v2+",
     PluginDescriptorFILL(ZynAddSubFxPlugin)
 };

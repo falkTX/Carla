@@ -829,8 +829,8 @@ static const NativePluginDescriptor vexArpDesc = {
     /* paramIns  */ VexArpPlugin::kParamCount,
     /* paramOuts */ 0,
     /* name      */ "VexArp",
-    /* label     */ "vexArp",
-    /* maker     */ "falkTX",
+    /* label     */ "vexarp",
+    /* maker     */ "falkTX, Lucio Asnaghi, rockhardbuns",
     /* copyright */ "GNU GPL v2+",
     PluginDescriptorFILL(VexArpPlugin)
 };
@@ -846,8 +846,8 @@ static const NativePluginDescriptor vexChorusDesc = {
     /* paramIns  */ VexChorusPlugin::kParamCount,
     /* paramOuts */ 0,
     /* name      */ "VexChorus",
-    /* label     */ "vexChorus",
-    /* maker     */ "falkTX",
+    /* label     */ "vexchorus",
+    /* maker     */ "falkTX, Lucio Asnaghi, rockhardbuns",
     /* copyright */ "GNU GPL v2+",
     PluginDescriptorFILL(VexChorusPlugin)
 };
@@ -863,8 +863,8 @@ static const NativePluginDescriptor vexDelayDesc = {
     /* paramIns  */ VexDelayPlugin::kParamCount,
     /* paramOuts */ 0,
     /* name      */ "VexDelay",
-    /* label     */ "vexDelay",
-    /* maker     */ "falkTX",
+    /* label     */ "vexdelay",
+    /* maker     */ "falkTX, Lucio Asnaghi, rockhardbuns",
     /* copyright */ "GNU GPL v2+",
     PluginDescriptorFILL(VexDelayPlugin)
 };
@@ -880,8 +880,8 @@ static const NativePluginDescriptor vexReverbDesc = {
     /* paramIns  */ VexReverbPlugin::kParamCount,
     /* paramOuts */ 0,
     /* name      */ "VexReverb",
-    /* label     */ "vexReverb",
-    /* maker     */ "falkTX",
+    /* label     */ "vexreverb",
+    /* maker     */ "falkTX, Lucio Asnaghi, rockhardbuns",
     /* copyright */ "GNU GPL v2+",
     PluginDescriptorFILL(VexReverbPlugin)
 };

@@ -41,7 +41,7 @@ static const NativePluginDescriptor nekobiDesc = {
     /* paramOuts */ 0,
     /* name      */ DISTRHO_PLUGIN_NAME,
     /* label     */ "nekobi",
-    /* maker     */ "falkTX",
+    /* maker     */ "falkTX, Sean Bolton and others",
     /* copyright */ "GPL v2+",
     PluginDescriptorFILL(PluginCarla)
 };

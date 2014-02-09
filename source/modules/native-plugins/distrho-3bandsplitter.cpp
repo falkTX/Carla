@@ -41,7 +41,7 @@ static const NativePluginDescriptor _3bandsplitterDesc = {
     /* paramOuts */ 0,
     /* name      */ DISTRHO_PLUGIN_NAME,
     /* label     */ "3BandSplitter",
-    /* maker     */ "falkTX",
+    /* maker     */ "falkTX, Michael Gruhn",
     /* copyright */ "LGPL",
     PluginDescriptorFILL(PluginCarla)
 };

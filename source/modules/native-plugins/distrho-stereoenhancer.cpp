@@ -41,7 +41,7 @@ static const NativePluginDescriptor stereoenhancerDesc = {
     /* paramOuts */ 0,
     /* name      */ DISTRHO_PLUGIN_NAME,
     /* label     */ "stereoenhancer",
-    /* maker     */ "falkTX",
+    /* maker     */ "falkTX, Michael Gruhn",
     /* copyright */ "LGPL",
     PluginDescriptorFILL(PluginCarla)
 };

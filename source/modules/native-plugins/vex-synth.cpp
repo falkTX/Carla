@@ -1218,7 +1218,7 @@ private:
 
 // -----------------------------------------------------------------------
 
-static const NativePluginDescriptor vexSynthDesc = {
+static const NativePluginDescriptor vexsynthDesc = {
     /* category  */ PLUGIN_CATEGORY_SYNTH,
     /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_SYNTH|PLUGIN_HAS_UI|PLUGIN_NEEDS_UI_JUCE|PLUGIN_USES_STATE|PLUGIN_USES_TIME),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
@@ -1229,8 +1229,8 @@ static const NativePluginDescriptor vexSynthDesc = {
     /* paramIns  */ VexSynthPlugin::kParamCount,
     /* paramOuts */ 0,
     /* name      */ "VexSynth",
-    /* label     */ "vexSynth",
-    /* maker     */ "falkTX",
+    /* label     */ "vexsynth",
+    /* maker     */ "falkTX, Lucio Asnaghi, rockhardbuns",
     /* copyright */ "GNU GPL v2+",
     PluginDescriptorFILL(VexSynthPlugin)
 };
@@ -1240,7 +1240,7 @@ static const NativePluginDescriptor vexSynthDesc = {
 CARLA_EXPORT
 void carla_register_native_plugin_vex_synth()
 {
-    carla_register_native_plugin(&vexSynthDesc);
+    carla_register_native_plugin(&vexsynthDesc);
 }
 
 // -----------------------------------------------------------------------

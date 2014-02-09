@@ -232,7 +232,7 @@ private:
 
 // -----------------------------------------------------------------------
 
-static const NativePluginDescriptor midiSequencerDesc = {
+static const NativePluginDescriptor midisequencerDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
     /* hints     */ PLUGIN_IS_RTSAFE/*|PLUGIN_HAS_GUI*/,
     /* supports  */ static_cast<NativePluginSupports>(0x0),
@@ -243,7 +243,7 @@ static const NativePluginDescriptor midiSequencerDesc = {
     /* paramIns  */ 0,
     /* paramOuts */ 0,
     /* name      */ "MIDI Sequencer",
-    /* label     */ "midiSequencer",
+    /* label     */ "midisequencer",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
     PluginDescriptorFILL(MidiSequencerPlugin)
@@ -252,7 +252,7 @@ static const NativePluginDescriptor midiSequencerDesc = {
 // -----------------------------------------------------------------------
 
 CARLA_EXPORT
-void carla_register_native_plugin_midiSequencer()
+void carla_register_native_plugin_midisequencer()
 {
     carla_register_native_plugin(&midiSequencerDesc);
 }
