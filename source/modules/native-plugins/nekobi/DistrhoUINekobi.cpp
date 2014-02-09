@@ -43,8 +43,8 @@ DistrhoUINekobi::DistrhoUINekobi()
     fSliderWaveform->setStartPos(133, 40);
     fSliderWaveform->setEndPos(133, 60);
     fSliderWaveform->setRange(0.0f, 1.0f);
+    fSliderWaveform->setStep(1.0f);
     fSliderWaveform->setValue(0.0f);
-    fSliderWaveform->setIsSwitch(true);
     fSliderWaveform->setCallback(this);
 
     // knobs
