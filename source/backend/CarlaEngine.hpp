@@ -741,15 +741,12 @@ public:
     /*!
      * Add new plugin.
      */
-    bool addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, const void* const extra = nullptr);
+    bool addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const void* const extra);
 
     /*!
      * Add new plugin, using native binary type.
      */
-    bool addPlugin(const PluginType ptype, const char* const filename, const char* const name, const char* const label, const void* const extra = nullptr)
-    {
-        return addPlugin(BINARY_NATIVE, ptype, filename, name, label, extra);
-    }
+    bool addPlugin(const PluginType ptype, const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const void* const extra);
 
     /*!
      * Remove plugin with id \a id.
@@ -1124,7 +1121,7 @@ public:
     // -------------------------------------------------------------------
     // Bridge/Controller OSC stuff
 
-    void oscSend_bridge_plugin_info1(const PluginCategory category, const uint hints, const long uniqueId) const noexcept;
+    void oscSend_bridge_plugin_info1(const PluginCategory category, const uint hints, const int64_t uniqueId) const noexcept;
     void oscSend_bridge_plugin_info2(const char* const realName, const char* const label, const char* const maker, const char* const copyright) const noexcept;
     void oscSend_bridge_audio_count(const uint32_t ins, const uint32_t outs) const noexcept;
     void oscSend_bridge_midi_count(const uint32_t ins, const uint32_t outs) const noexcept;
@@ -1152,7 +1149,7 @@ public:
     void oscSend_control_add_plugin_start(const uint pluginId, const char* const pluginName) const noexcept;
     void oscSend_control_add_plugin_end(const uint pluginId) const noexcept;
     void oscSend_control_remove_plugin(const uint pluginId) const noexcept;
-    void oscSend_control_set_plugin_info1(const uint pluginId, const PluginType type, const PluginCategory category, const uint hints, const long uniqueId) const noexcept;
+    void oscSend_control_set_plugin_info1(const uint pluginId, const PluginType type, const PluginCategory category, const uint hints, const int64_t uniqueId) const noexcept;
     void oscSend_control_set_plugin_info2(const uint pluginId, const char* const realName, const char* const label, const char* const maker, const char* const copyright) const noexcept;
     void oscSend_control_set_audio_count(const uint pluginId, const uint32_t ins, const uint32_t outs) const noexcept;
     void oscSend_control_set_midi_count(const uint pluginId, const uint32_t ins, const uint32_t outs) const noexcept;

@@ -1019,7 +1019,7 @@ class CarlaPluginInfo(Structure):
 
         # Plugin unique Id.
         # This Id is dependant on the plugin type and may sometimes be 0.
-        ("uniqueId", c_long)
+        ("uniqueId", c_int64)
     ]
 
 # Information about an internal Carla plugin.
@@ -1349,12 +1349,13 @@ class Host(object):
     # @param filename Filename, if applicable
     # @param name     Name of the plugin, can be NULL
     # @param label    Plugin label, if applicable
+    # @param uniqueId Plugin unique Id, if applicable
     # @param extraPtr Extra pointer, defined per plugin type
-    def add_plugin(self, btype, ptype, filename, name, label, extraPtr):
+    def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr):
         cfilename = filename.encode("utf-8") if filename else None
         cname     = name.encode("utf-8") if name else None
         clabel    = label.encode("utf-8") if label else None
-        return bool(self.lib.carla_add_plugin(btype, ptype, cfilename, cname, clabel, cast(extraPtr, c_void_p)))
+        return bool(self.lib.carla_add_plugin(btype, ptype, cfilename, cname, clabel, uniqueId, cast(extraPtr, c_void_p)))
 
     # Remove a plugin.
     # @param pluginId Plugin to remove.
@@ -1782,7 +1783,7 @@ class Host(object):
         self.lib.carla_get_transport_info.argtypes = None
         self.lib.carla_get_transport_info.restype = POINTER(CarlaTransportInfo)
 
-        self.lib.carla_add_plugin.argtypes = [c_enum, c_enum, c_char_p, c_char_p, c_char_p, c_void_p]
+        self.lib.carla_add_plugin.argtypes = [c_enum, c_enum, c_char_p, c_char_p, c_char_p, c_int64, c_void_p]
         self.lib.carla_add_plugin.restype = c_bool
 
         self.lib.carla_remove_plugin.argtypes = [c_uint]

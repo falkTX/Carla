@@ -1067,7 +1067,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newReWire(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newReWire({%p, \"%s\", \"%s\"})", init.engine, init.filename, init.name);
+    carla_debug("CarlaPlugin::newReWire({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.uniqueId);
 
 #ifdef WANT_REWIRE
     ReWirePlugin* const plugin(new ReWirePlugin(init.engine, init.id));

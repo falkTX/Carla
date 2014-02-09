@@ -202,7 +202,7 @@ PluginCategory CarlaPlugin::getCategory() const noexcept
     return category;
 }
 
-long CarlaPlugin::getUniqueId() const noexcept
+int64_t CarlaPlugin::getUniqueId() const noexcept
 {
     return 0;
 }
@@ -440,7 +440,7 @@ const SaveState& CarlaPlugin::getSaveState()
     pData->saveState.name     = carla_strdup(pData->name);
     pData->saveState.label    = carla_strdup(strBuf);
     pData->saveState.binary   = carla_strdup(pData->filename);
-    pData->saveState.uniqueID = getUniqueId();
+    pData->saveState.uniqueId = getUniqueId();
 
     // ---------------------------------------------------------------
     // Internals

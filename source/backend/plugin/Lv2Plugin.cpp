@@ -577,11 +577,11 @@ public:
         return CarlaPlugin::getCategory();
     }
 
-    long getUniqueId() const noexcept override
+    int64_t getUniqueId() const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, 0);
 
-        return static_cast<long>(fRdfDescriptor->UniqueID);
+        return static_cast<int64_t>(fRdfDescriptor->UniqueID);
     }
 
     // -------------------------------------------------------------------
@@ -2820,16 +2820,17 @@ public:
                             midiData[1] = static_cast<uint8_t>(ctrlEvent.param);
                             midiData[2] = uint8_t(ctrlEvent.value*127.0f);
 
+                            const uint32_t mtime(isSampleAccurate ? startTime : event.time);
+
                             if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
-                                lv2_atom_buffer_write(&evInAtomIters[fEventsIn.ctrlIndex], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+                                lv2_atom_buffer_write(&evInAtomIters[fEventsIn.ctrlIndex], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
 
                             else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
-                                lv2_event_write(&evInEventIters[fEventsIn.ctrlIndex], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+                                lv2_event_write(&evInEventIters[fEventsIn.ctrlIndex], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
 
                             else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
-                                lv2midi_put_event(&evInMidiStates[fEventsIn.ctrlIndex], 0.0, 3, midiData);
+                                lv2midi_put_event(&evInMidiStates[fEventsIn.ctrlIndex], mtime, 3, midiData);
                         }
-
                         break;
                     } // case kEngineControlEventTypeParameter
 
@@ -5517,7 +5518,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newLV2({%p, \"%s\", \"%s\"})", init.engine, init.name, init.label);
+    carla_debug("CarlaPlugin::newLV2({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.name, init.label, init.uniqueId);
 
 #ifdef WANT_LV2
     Lv2Plugin* const plugin(new Lv2Plugin(init.engine, init.id));

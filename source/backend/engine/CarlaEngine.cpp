@@ -704,7 +704,7 @@ CarlaEngineClient* CarlaEngine::addClient(CarlaPlugin* const)
 // -----------------------------------------------------------------------
 // Plugin management
 
-bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, const void* const extra)
+bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const void* const extra)
 {
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data (err #10)");
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextPluginId <= pData->maxPluginNumber, "Invalid engine internal data (err #11)");
@@ -712,7 +712,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     CARLA_SAFE_ASSERT_RETURN_ERR(btype != BINARY_NONE, "Invalid plugin params (err #1)");
     CARLA_SAFE_ASSERT_RETURN_ERR(ptype != PLUGIN_NONE, "Invalid plugin params (err #2)");
     CARLA_SAFE_ASSERT_RETURN_ERR((filename != nullptr && filename[0] != '\0') || (label != nullptr && label[0] != '\0'), "Invalid plugin params (err #3)");
-    carla_debug("CarlaEngine::addPlugin(%i:%s, %i:%s, \"%s\", \"%s\", \"%s\", %p)", btype, BinaryType2Str(btype), ptype, PluginType2Str(ptype), filename, name, label, extra);
+    carla_debug("CarlaEngine::addPlugin(%i:%s, %i:%s, \"%s\", \"%s\", \"%s\", " P_INT64 ", %p)", btype, BinaryType2Str(btype), ptype, PluginType2Str(ptype), filename, name, label, uniqueId, extra);
     CARLA_ENGINE_THREAD_SAFE_SECTION
 
     unsigned int id;
@@ -745,7 +745,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
         id,
         filename,
         name,
-        label
+        label,
+        uniqueId
     };
 
     CarlaPlugin* plugin = nullptr;
@@ -815,7 +816,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
                 id,
                 "/usr/lib/dssi/dssi-vst.so",
                 name,
-                (const char*)label2
+                (const char*)label2,
+                uniqueId
             };
 
             char* const oldVstPath(getenv("VST_PATH"));
@@ -956,6 +958,11 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     return true;
 }
 
+bool CarlaEngine::addPlugin(const PluginType ptype, const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const void* const extra)
+{
+    return addPlugin(BINARY_NATIVE, ptype, filename, name, label, uniqueId, extra);
+}
+
 bool CarlaEngine::removePlugin(const unsigned int id)
 {
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data (err #14)");
@@ -1072,7 +1079,7 @@ bool CarlaEngine::clonePlugin(const unsigned int id)
 
     const unsigned int pluginCountBefore(pData->curPluginCount);
 
-    if (! addPlugin(plugin->getBinaryType(), plugin->getType(), plugin->getFilename(), plugin->getName(), label, plugin->getExtraStuff()))
+    if (! addPlugin(plugin->getBinaryType(), plugin->getType(), plugin->getFilename(), plugin->getName(), label, plugin->getUniqueId(), plugin->getExtraStuff()))
         return false;
 
     CARLA_ASSERT(pluginCountBefore+1 == pData->curPluginCount);
@@ -1278,23 +1285,23 @@ bool CarlaEngine::loadFile(const char* const filename)
     // -------------------------------------------------------------------
 
     if (extension == "csd")
-        return addPlugin(PLUGIN_FILE_CSD, filename, baseName, baseName);
+        return addPlugin(PLUGIN_FILE_CSD, filename, baseName, baseName, 0, nullptr);
 
     if (extension == "gig")
-        return addPlugin(PLUGIN_FILE_GIG, filename, baseName, baseName);
+        return addPlugin(PLUGIN_FILE_GIG, filename, baseName, baseName, 0, nullptr);
 
     if (extension == "sf2")
-        return addPlugin(PLUGIN_FILE_SF2, filename, baseName, baseName);
+        return addPlugin(PLUGIN_FILE_SF2, filename, baseName, baseName, 0, nullptr);
 
     if (extension == "sfz")
-        return addPlugin(PLUGIN_FILE_SFZ, filename, baseName, baseName);
+        return addPlugin(PLUGIN_FILE_SFZ, filename, baseName, baseName, 0, nullptr);
 
     // -------------------------------------------------------------------
 
     if (extension == "aiff" || extension == "flac" || extension == "oga" || extension == "ogg" || extension == "w64" || extension == "wav")
     {
 #ifdef WANT_AUDIOFILE
-        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "audiofile"))
+        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "audiofile", 0, nullptr))
         {
             if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
                 plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "file", filename, true);
@@ -1312,7 +1319,7 @@ bool CarlaEngine::loadFile(const char* const filename)
     {
 #ifdef WANT_AUDIOFILE
 # ifdef HAVE_FFMPEG
-        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "audiofile"))
+        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "audiofile", 0, nullptr))
         {
             if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
                 plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "file", filename, true);
@@ -1334,7 +1341,7 @@ bool CarlaEngine::loadFile(const char* const filename)
     if (extension == "mid" || extension == "midi")
     {
 #ifdef WANT_MIDIFILE
-        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "midifile"))
+        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "midifile", 0, nullptr))
         {
             if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
                 plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "file", filename, true);
@@ -1353,7 +1360,7 @@ bool CarlaEngine::loadFile(const char* const filename)
     if (extension == "xmz" || extension == "xiz")
     {
 #ifdef WANT_ZYNADDSUBFX
-        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "zynaddsubfx"))
+        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "zynaddsubfx", 0, nullptr))
         {
             if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
                 plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, (extension == "xmz") ? "CarlaAlternateFile1" : "CarlaAlternateFile2", filename, true);
@@ -1412,15 +1419,17 @@ bool CarlaEngine::loadProject(const char* const filename)
             // check if using GIG, SF2 or SFZ 16outs
             static const char kUse16OutsSuffix[] = " (16 outs)";
 
+            const PluginType ptype(getPluginTypeFromString(saveState.type));
+
             if (CarlaString(saveState.label).endsWith(kUse16OutsSuffix))
             {
-                if (std::strcmp(saveState.type, "GIG") == 0 || std::strcmp(saveState.type, "SF2") == 0)
+                if (ptype == PLUGIN_FILE_GIG || ptype == PLUGIN_FILE_SF2)
                     extraStuff = "true";
             }
 
             // TODO - proper find&load plugins
 
-            if (addPlugin(getPluginTypeFromString(saveState.type), saveState.binary, saveState.name, saveState.label, extraStuff))
+            if (addPlugin(ptype, saveState.binary, saveState.name, saveState.label, saveState.uniqueId, extraStuff))
             {
                 if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
                     plugin->loadSaveState(saveState);
@@ -2214,17 +2223,17 @@ void CarlaEngine::restorePatchbayConnection(const char* const connSource, const 
 // Bridge/Controller OSC stuff
 
 #ifdef BUILD_BRIDGE
-void CarlaEngine::oscSend_bridge_plugin_info1(const PluginCategory category, const uint hints, const long uniqueId) const noexcept
+void CarlaEngine::oscSend_bridge_plugin_info1(const PluginCategory category, const uint hints, const int64_t uniqueId) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->path != nullptr && pData->oscData->path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->target != nullptr,);
-    carla_debug("CarlaEngine::oscSend_bridge_plugin_info1(%i:%s, %X, %l)", category, PluginCategory2Str(category), hints, uniqueId);
+    carla_debug("CarlaEngine::oscSend_bridge_plugin_info1(%i:%s, %X, " P_INT64 ")", category, PluginCategory2Str(category), hints, uniqueId);
 
     char targetPath[std::strlen(pData->oscData->path)+21];
     std::strcpy(targetPath, pData->oscData->path);
     std::strcat(targetPath, "/bridge_plugin_info1");
-    try_lo_send(pData->oscData->target, targetPath, "iih", static_cast<int32_t>(category), static_cast<int32_t>(hints), static_cast<int64_t>(uniqueId));
+    try_lo_send(pData->oscData->target, targetPath, "iih", static_cast<int32_t>(category), static_cast<int32_t>(hints), uniqueId);
 }
 
 void CarlaEngine::oscSend_bridge_plugin_info2(const char* const realName, const char* const label, const char* const maker, const char* const copyright) const noexcept
@@ -2557,14 +2566,14 @@ void CarlaEngine::oscSend_control_remove_plugin(const uint pluginId) const noexc
     try_lo_send(pData->oscData->target, targetPath, "i", static_cast<int32_t>(pluginId));
 }
 
-void CarlaEngine::oscSend_control_set_plugin_info1(const uint pluginId, const PluginType type, const PluginCategory category, const uint hints, const long uniqueId) const noexcept
+void CarlaEngine::oscSend_control_set_plugin_info1(const uint pluginId, const PluginType type, const PluginCategory category, const uint hints, const int64_t uniqueId) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->path != nullptr && pData->oscData->path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->target != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
     CARLA_SAFE_ASSERT_RETURN(type != PLUGIN_NONE,);
-    carla_debug("CarlaEngine::oscSend_control_set_plugin_data(%i, %i:%s, %i:%s, %X, %l)", pluginId, type, PluginType2Str(type), category, PluginCategory2Str(category), hints, uniqueId);
+    carla_debug("CarlaEngine::oscSend_control_set_plugin_data(%i, %i:%s, %i:%s, %X, " P_INT64 ")", pluginId, type, PluginType2Str(type), category, PluginCategory2Str(category), hints, uniqueId);
 
     char targetPath[std::strlen(pData->oscData->path)+18];
     std::strcpy(targetPath, pData->oscData->path);

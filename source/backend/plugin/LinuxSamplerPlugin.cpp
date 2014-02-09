@@ -1356,7 +1356,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newLinuxSampler(const Initializer& init, const char* const format, const bool use16Outs)
 {
-    carla_debug("LinuxSamplerPlugin::newLinuxSampler({%p, \"%s\", \"%s\", \"%s\"}, %s, %s)", init.engine, init.filename, init.name, init.label, format, bool2str(use16Outs));
+    carla_debug("LinuxSamplerPlugin::newLinuxSampler({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "}, %s, %s)", init.engine, init.filename, init.name, init.label, init.uniqueId, format, bool2str(use16Outs));
 
 #ifdef WANT_LINUXSAMPLER
     if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && use16Outs)

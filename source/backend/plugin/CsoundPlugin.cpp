@@ -86,7 +86,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newCsound(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newCsound(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
+    carla_debug("CarlaPlugin::newCsound({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.label, init.uniqueId);
 
 #ifdef WANT_CSOUND
     CsoundPlugin* const plugin(new CsoundPlugin(init.engine, init.id));

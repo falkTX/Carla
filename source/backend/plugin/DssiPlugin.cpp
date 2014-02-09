@@ -125,11 +125,11 @@ public:
         return CarlaPlugin::getCategory();
     }
 
-    long getUniqueId() const noexcept override
+    int64_t getUniqueId() const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, 0);
 
-        return static_cast<long>(fDescriptor->UniqueID);
+        return static_cast<int64_t>(fDescriptor->UniqueID);
     }
 
     // -------------------------------------------------------------------
@@ -1220,7 +1220,6 @@ public:
                             midiEvent.data.control.param   = ctrlEvent.param;
                             midiEvent.data.control.value   = int8_t(ctrlEvent.value*127.0f);
                         }
-
                         break;
                     } // case kEngineControlEventTypeParameter
 
@@ -2046,7 +2045,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newDSSI({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
+    carla_debug("CarlaPlugin::newDSSI({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.label, init.uniqueId);
 
 #ifdef WANT_DSSI
     DssiPlugin* const plugin(new DssiPlugin(init.engine, init.id));

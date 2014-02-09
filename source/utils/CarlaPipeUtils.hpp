@@ -301,7 +301,7 @@ public:
         return false;
     }
 
-    bool readNextLineAsInt(int& value)
+    bool readNextLineAsInt(int32_t& value)
     {
         CARLA_SAFE_ASSERT_RETURN(fIsReading, false);
 
@@ -315,18 +315,18 @@ public:
         return false;
     }
 
-    bool readNextLineAsUInt(uint& value)
+    bool readNextLineAsUInt(uint32_t& value)
     {
         CARLA_SAFE_ASSERT_RETURN(fIsReading, false);
 
         if (const char* const msg = readline())
         {
-            int tmp = std::atoi(msg);
+            int32_t tmp = std::atoi(msg);
             delete[] msg;
 
             if (tmp >= 0)
             {
-                value = static_cast<uint>(tmp);
+                value = static_cast<uint32_t>(tmp);
                 return true;
             }
         }
@@ -334,7 +334,7 @@ public:
         return false;
     }
 
-    bool readNextLineAsLong(long& value)
+    bool readNextLineAsLong(int64_t& value)
     {
         CARLA_SAFE_ASSERT_RETURN(fIsReading, false);
 
@@ -343,6 +343,25 @@ public:
             value = std::atol(msg);
             delete[] msg;
             return true;
+        }
+
+        return false;
+    }
+
+    bool readNextLineAsULong(uint64_t& value)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fIsReading, false);
+
+        if (const char* const msg = readline())
+        {
+            int64_t tmp = std::atol(msg);
+            delete[] msg;
+
+            if (tmp >= 0)
+            {
+                value = static_cast<uint64_t>(tmp);
+                return true;
+            }
         }
 
         return false;

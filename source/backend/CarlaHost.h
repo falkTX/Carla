@@ -128,7 +128,7 @@ typedef struct _CarlaPluginInfo {
      * Plugin unique Id.\n
      * This Id is dependant on the plugin type and may sometimes be 0.
      */
-    long uniqueId;
+    int64_t uniqueId;
 
 #ifdef __cplusplus
     /*!
@@ -628,9 +628,10 @@ CARLA_EXPORT const CarlaTransportInfo* carla_get_transport_info();
  * @param filename Filename, if applicable
  * @param name     Name of the plugin, can be NULL
  * @param label    Plugin label, if applicable
+ * @param uniqueId Plugin unique Id, if applicable
  * @param extraPtr Extra pointer, defined per plugin type
  */
-CARLA_EXPORT bool carla_add_plugin(BinaryType btype, PluginType ptype, const char* filename, const char* name, const char* label, const void* extraPtr);
+CARLA_EXPORT bool carla_add_plugin(BinaryType btype, PluginType ptype, const char* filename, const char* name, const char* label, int64_t uniqueId, const void* extraPtr);
 
 /*!
  * Remove one plugin.

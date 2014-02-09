@@ -166,14 +166,14 @@ void CarlaPluginThread::run()
     case PLUGIN_THREAD_DSSI_GUI:
         /* osc-url  */ arguments << QString("%1/%2").arg(fEngine->getOscServerPathUDP()).arg(fPlugin->getId());
         /* filename */ arguments << fPlugin->getFilename();
-        /* label    */ arguments << (const char*)fLabel;
+        /* label    */ arguments << fLabel.getBuffer();
         /* ui-title */ arguments << QString("%1 (GUI)").arg(fPlugin->getName());
         break;
 
     case PLUGIN_THREAD_LV2_GUI:
         /* osc-url  */ arguments << QString("%1/%2").arg(fEngine->getOscServerPathUDP()).arg(fPlugin->getId());
-        /* URI      */ arguments << (const char*)fLabel;
-        /* ui-URI   */ arguments << (const char*)fExtra1;
+        /* URI      */ arguments << fLabel.getBuffer();
+        /* ui-URI   */ arguments << fExtra1.getBuffer();
         /* ui-title */ arguments << QString("%1 (GUI)").arg(fPlugin->getName());
         break;
 
@@ -191,10 +191,11 @@ void CarlaPluginThread::run()
         if (fPlugin->getType() != PLUGIN_JACK)
         {
             /* osc-url  */ arguments << QString("%1/%2").arg(fEngine->getOscServerPathUDP()).arg(fPlugin->getId());
-            /* stype    */ arguments << (const char*)fExtra1;
+            /* stype    */ arguments << fExtra1.getBuffer();
             /* filename */ arguments << fPlugin->getFilename();
             /* name     */ arguments << name;
-            /* label    */ arguments << (const char*)fLabel;
+            /* label    */ arguments << fLabel.getBuffer();
+            /* uniqueId */ arguments << QString("%1").arg(fPlugin->getUniqueId());
         }
         else
         {

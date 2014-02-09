@@ -86,7 +86,7 @@ SaveState::SaveState() noexcept
       name(nullptr),
       label(nullptr),
       binary(nullptr),
-      uniqueID(0),
+      uniqueId(0),
       active(false),
       dryWet(1.0f),
       volume(1.0f),
@@ -138,7 +138,7 @@ void SaveState::reset()
         chunk = nullptr;
     }
 
-    uniqueID = 0;
+    uniqueId = 0;
     active = false;
     dryWet = 1.0f;
     volume = 1.0f;
@@ -225,8 +225,8 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
                 else if (tag.compare("uniqueid", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
-                    const long uniqueID(text.toLong(&ok));
-                    if (ok) saveState.uniqueID = uniqueID;
+                    const qlonglong uniqueId(text.toLongLong(&ok));
+                    if (ok) saveState.uniqueId = static_cast<int64_t>(uniqueId);
                 }
             }
         }
@@ -426,7 +426,7 @@ void fillXmlStringFromSaveState(QString& content, const SaveState& saveState)
         case PLUGIN_LADSPA:
             info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
             info += QString("   <Label>%1</Label>\n").arg(xmlSafeString(saveState.label, true));
-            info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueID);
+            info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueId);
             break;
         case PLUGIN_DSSI:
             info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
@@ -438,17 +438,17 @@ void fillXmlStringFromSaveState(QString& content, const SaveState& saveState)
             break;
         case PLUGIN_VST:
             info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
-            info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueID);
+            info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueId);
             break;
         case PLUGIN_VST3:
             // TODO?
             info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
-            info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueID);
+            info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueId);
             break;
         case PLUGIN_AU:
             // TODO?
             info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
-            info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueID);
+            info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueId);
             break;
         case PLUGIN_JACK:
             info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));

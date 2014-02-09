@@ -860,9 +860,10 @@ class HostWindow(QMainWindow):
         ptype    = dialog.fRetPlugin['type']
         filename = dialog.fRetPlugin['filename']
         label    = dialog.fRetPlugin['label']
+        uniqueId = dialog.fRetPlugin['uniqueId']
         extraPtr = self.getExtraPtr(dialog.fRetPlugin)
 
-        if not Carla.host.add_plugin(btype, ptype, filename, None, label, extraPtr):
+        if not Carla.host.add_plugin(btype, ptype, filename, None, label, uniqueId, extraPtr):
             CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"), charPtrToString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
             return
 

@@ -128,6 +128,32 @@ public:
     }
 
     /*
+     * Long long integer.
+     */
+    explicit CarlaString(const long long int value)
+    {
+        char strBuf[0xff+1];
+        carla_zeroChar(strBuf, 0xff+1);
+        std::snprintf(strBuf, 0xff, "%lld", value);
+
+        _init();
+        _dup(strBuf);
+    }
+
+    /*
+     * Long long unsigned integer, possibly hexadecimal.
+     */
+    explicit CarlaString(const unsigned long long int value, const bool hexadecimal = false)
+    {
+        char strBuf[0xff+1];
+        carla_zeroChar(strBuf, 0xff+1);
+        std::snprintf(strBuf, 0xff, hexadecimal ? "0x%llx" : "%llu", value);
+
+        _init();
+        _dup(strBuf);
+    }
+
+    /*
      * Single-precision floating point number.
      */
     explicit CarlaString(const float value)

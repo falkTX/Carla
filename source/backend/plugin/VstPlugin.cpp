@@ -162,11 +162,11 @@ public:
         return CarlaPlugin::getCategory();
     }
 
-    long getUniqueId() const noexcept override
+    int64_t getUniqueId() const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, 0);
 
-        return static_cast<long>(fEffect->uniqueID);
+        return static_cast<int64_t>(fEffect->uniqueID);
     }
 
     // -------------------------------------------------------------------
@@ -2081,7 +2081,7 @@ protected:
     // -------------------------------------------------------------------
 
 public:
-    bool init(const char* const filename, const char* const name)
+    bool init(const char* const filename, const char* const name, const int64_t uniqueId)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -2270,6 +2270,9 @@ public:
         }
 
         return true;
+
+        // unused
+        (void)uniqueId;
     }
 
 private:
@@ -2463,7 +2466,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newVST({%p, \"%s\", \"%s\"})", init.engine, init.filename, init.name);
+    carla_debug("CarlaPlugin::newVST({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.uniqueId);
 
 #ifdef WANT_VST
 # if defined(HAVE_JUCE) && USE_JUCE_FOR_VST
@@ -2471,7 +2474,7 @@ CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
 # else
     VstPlugin* const plugin(new VstPlugin(init.engine, init.id));
 
-    if (! plugin->init(init.filename, init.name))
+    if (! plugin->init(init.filename, init.name, init.uniqueId))
     {
         delete plugin;
         return nullptr;

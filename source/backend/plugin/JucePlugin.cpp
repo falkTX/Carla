@@ -97,7 +97,7 @@ public:
         return category;
     }
 
-    long getUniqueId() const noexcept override
+    int64_t getUniqueId() const noexcept override
     {
         return fDesc.uid;
     }
@@ -121,7 +121,6 @@ public:
 
         unsigned int options = 0x0;
 
-        //options |= PLUGIN_OPTION_FIXED_BUFFERS;
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         //options |= PLUGIN_OPTION_USE_CHUNKS;
 
@@ -545,13 +544,279 @@ public:
             pData->needsReset = false;
         }
 
-        uint32_t l=0;
-        for (; l < pData->audioIn.count; ++l)
-            fAudioBuffer.clear(static_cast<int>(l), 0, static_cast<int>(frames));
-        for (; l < pData->audioOut.count; ++l)
-            fAudioBuffer.clear(static_cast<int>(l), 0, static_cast<int>(frames));
+        // --------------------------------------------------------------------------------------------------------
+        // TimeInfo
+
+        // TODO
+
+        // --------------------------------------------------------------------------------------------------------
+        // Event Input
+
+        fMidiBuffer.clear();
+
+        if (pData->event.portIn != nullptr)
+        {
+            // ----------------------------------------------------------------------------------------------------
+            // MIDI Input (External)
+
+            if (pData->extNotes.mutex.tryLock())
+            {
+                for (; ! pData->extNotes.data.isEmpty();)
+                {
+                    const ExternalMidiNote& note(pData->extNotes.data.getFirst(true));
+
+                    CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
+
+                    uint8_t midiEvent[3];
+                    midiEvent[0] = static_cast<uint8_t>(note.channel + (note.velo > 0) ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF);
+                    midiEvent[1] = note.note;
+                    midiEvent[2] = note.velo;
+
+                    fMidiBuffer.addEvent(midiEvent, 3, 0);
+                }
+
+                pData->extNotes.mutex.unlock();
+
+            } // End of MIDI Input (External)
+
+            // ----------------------------------------------------------------------------------------------------
+            // Event Input (System)
+
+            bool allNotesOffSent  = false;
+
+            uint32_t numEvents  = pData->event.portIn->getEventCount();
+            uint32_t nextBankId;
+
+            if (pData->midiprog.current >= 0 && pData->midiprog.count > 0)
+                nextBankId = pData->midiprog.data[pData->midiprog.current].bank;
+            else
+                nextBankId = 0;
+
+            for (uint32_t i=0; i < numEvents; ++i)
+            {
+                const EngineEvent& event(pData->event.portIn->getEvent(i));
+
+                if (event.time >= frames)
+                    continue;
+
+                switch (event.type)
+                {
+                case kEngineEventTypeNull:
+                    break;
+
+                case kEngineEventTypeControl: {
+                    const EngineControlEvent& ctrlEvent(event.ctrl);
+
+                    switch (ctrlEvent.type)
+                    {
+                    case kEngineControlEventTypeNull:
+                        break;
+
+                    case kEngineControlEventTypeParameter: {
+#ifndef BUILD_BRIDGE
+                        // Control backend stuff
+                        if (event.channel == pData->ctrlChannel)
+                        {
+                            float value;
+
+                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
+                            {
+                                value = ctrlEvent.value;
+                                setDryWet(value, false, false);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
+                                break;
+                            }
+
+                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
+                            {
+                                value = ctrlEvent.value*127.0f/100.0f;
+                                setVolume(value, false, false);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
+                                break;
+                            }
+
+                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
+                            {
+                                float left, right;
+                                value = ctrlEvent.value/0.5f - 1.0f;
+
+                                if (value < 0.0f)
+                                {
+                                    left  = -1.0f;
+                                    right = (value*2.0f)+1.0f;
+                                }
+                                else if (value > 0.0f)
+                                {
+                                    left  = (value*2.0f)-1.0f;
+                                    right = 1.0f;
+                                }
+                                else
+                                {
+                                    left  = -1.0f;
+                                    right = 1.0f;
+                                }
+
+                                setBalanceLeft(left, false, false);
+                                setBalanceRight(right, false, false);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
+                                break;
+                            }
+                        }
+#endif
+
+                        // Control plugin parameters
+                        uint32_t k;
+                        for (k=0; k < pData->param.count; ++k)
+                        {
+                            if (pData->param.data[k].midiChannel != event.channel)
+                                continue;
+                            if (pData->param.data[k].midiCC != ctrlEvent.param)
+                                continue;
+                            if (pData->param.data[k].type != PARAMETER_INPUT)
+                                continue;
+                            if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
+                                continue;
+
+                            float value;
+
+                            if (pData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
+                            {
+                                value = (ctrlEvent.value < 0.5f) ? pData->param.ranges[k].min : pData->param.ranges[k].max;
+                            }
+                            else
+                            {
+                                value = pData->param.ranges[k].getUnnormalizedValue(ctrlEvent.value);
+
+                                if (pData->param.data[k].hints & PARAMETER_IS_INTEGER)
+                                    value = std::rint(value);
+                            }
+
+                            setParameterValue(k, value, false, false, false);
+                            pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
+                            break;
+                        }
+
+                        // check if event is already handled
+                        if (k != pData->param.count)
+                            break;
+
+                        if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
+                        {
+                            uint8_t midiData[3];
+                            midiData[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + i);
+                            midiData[1] = static_cast<uint8_t>(ctrlEvent.param);
+                            midiData[2] = uint8_t(ctrlEvent.value*127.0f);
+
+                            fMidiBuffer.addEvent(midiData, 3, static_cast<int>(event.time));
+                        }
+                        break;
+                    } // case kEngineControlEventTypeParameter
+
+                    case kEngineControlEventTypeMidiBank:
+                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                            nextBankId = ctrlEvent.param;
+                        break;
+
+                    case kEngineControlEventTypeMidiProgram:
+                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        {
+                            const uint32_t nextProgramId = ctrlEvent.param;
+
+                            for (uint32_t k=0; k < pData->midiprog.count; ++k)
+                            {
+                                if (pData->midiprog.data[k].bank == nextBankId && pData->midiprog.data[k].program == nextProgramId)
+                                {
+                                    const int32_t index(static_cast<int32_t>(k));
+                                    setMidiProgram(index, false, false, false);
+                                    pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, index, 0, 0.0f);
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+
+                    case kEngineControlEventTypeAllSoundOff:
+                        if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        {
+                            uint8_t midiData[3];
+                            midiData[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + i);
+                            midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
+                            midiData[2] = 0;
+
+                            fMidiBuffer.addEvent(midiData, 3, static_cast<int>(event.time));
+                        }
+                        break;
+
+                    case kEngineControlEventTypeAllNotesOff:
+                        if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        {
+                            if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
+                            {
+                                allNotesOffSent = true;
+                                sendMidiAllNotesOffToCallback();
+                            }
+
+                            uint8_t midiData[3];
+                            midiData[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + i);
+                            midiData[1] = MIDI_CONTROL_ALL_NOTES_OFF;
+                            midiData[2] = 0;
+
+                            fMidiBuffer.addEvent(midiData, 3, static_cast<int>(event.time));
+                        }
+                        break;
+                    } // switch (ctrlEvent.type)
+                    break;
+                } // case kEngineEventTypeControl
+
+                case kEngineEventTypeMidi:
+                {
+                    const EngineMidiEvent& midiEvent(event.midi);
+
+                    uint8_t status  = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
+                    uint8_t channel = event.channel;
+
+                    // Fix bad note-off
+                    if (MIDI_IS_STATUS_NOTE_ON(status) && midiEvent.data[2] == 0)
+                        status = MIDI_STATUS_NOTE_OFF;
+
+                    if (status == MIDI_STATUS_CHANNEL_PRESSURE && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
+                        continue;
+                    if (status == MIDI_STATUS_CONTROL_CHANGE && (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
+                        continue;
+                    if (status == MIDI_STATUS_POLYPHONIC_AFTERTOUCH && (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
+                        continue;
+                    if (status == MIDI_STATUS_PITCH_WHEEL_CONTROL && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
+                        continue;
+
+                    fMidiBuffer.addEvent(midiEvent.data, midiEvent.size, static_cast<int>(event.time));
+
+                    if (status == MIDI_STATUS_NOTE_ON)
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
+                    else if (status == MIDI_STATUS_NOTE_OFF)
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, channel, midiEvent.data[1], 0.0f);
+
+                    break;
+                } // case kEngineEventTypeMidi
+                } // switch (event.type)
+            }
+
+            pData->postRtEvents.trySplice();
+
+        } // End of Event Input
+
+        // --------------------------------------------------------------------------------------------------------
+        // Process
 
         processSingle(inBuffer, outBuffer, frames);
+
+        // --------------------------------------------------------------------------------------------------------
+        // MIDI Output
+
+        if (pData->event.portOut != nullptr)
+        {
+            // TODO
+        }
     }
 
     bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames)
@@ -577,22 +842,15 @@ public:
         else if (! pData->singleMutex.tryLock())
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-            {
-                for (uint32_t k=0; k < frames; ++k)
-                    outBuffer[i][k/*+timeOffset*/] = 0.0f;
-            }
-
+                FloatVectorOperations::clear(outBuffer[i], static_cast<int>(frames));
             return false;
         }
 
         // --------------------------------------------------------------------------------------------------------
         // Set audio in buffers
 
-        uint32_t l;
-        for (l=0; l < pData->audioIn.count; ++l)
-            fAudioBuffer.copyFrom(static_cast<int>(l), 0, inBuffer[l], static_cast<int>(frames));
-        //for (l=0; l < pData->audioOut.count; ++l)
-        //    fAudioBuffer.clear(static_cast<int>(l), 0, static_cast<int>(frames));
+        for (uint32_t i=0; i < pData->audioIn.count; ++i)
+            fAudioBuffer.copyFrom(static_cast<int>(i), 0, inBuffer[i], static_cast<int>(frames));
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -655,7 +913,7 @@ protected:
     // -------------------------------------------------------------------
 
 public:
-    bool init(const char* const filename, const char* const name, const char* const label, const char* const format)
+    bool init(const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const char* const format)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -680,6 +938,12 @@ public:
             return false;
         }
 
+        if (format == nullptr || format[0] == '\0')
+        {
+            pData->engine->setLastError("null format");
+            return false;
+        }
+
 #ifdef CARLA_OS_LINUX
         const MessageManagerLock mmLock;
 #endif
@@ -698,7 +962,7 @@ public:
 #endif
 
         //fDesc.name = fDesc.descriptiveName = label;
-        fDesc.uid = 0; // TODO - set uid for shell plugins
+        fDesc.uid = static_cast<int>(uniqueId);
         fDesc.fileOrIdentifier = jfilename;
         fDesc.pluginFormatName = format;
 
@@ -743,7 +1007,7 @@ public:
             // set default options
             pData->options = 0x0;
 
-            //pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+            pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
             pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
             //pData->options |= PLUGIN_OPTION_USE_CHUNKS;
 
@@ -764,6 +1028,9 @@ public:
 
             // load settings
             pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
+
+            // ignore settings, we need this anyway
+            pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
         }
 
         return true;
@@ -776,6 +1043,8 @@ private:
 
     AudioSampleBuffer fAudioBuffer;
     MidiBuffer        fMidiBuffer;
+
+    const char* fUniqueId;
 
     ScopedPointer<JucePluginWindow> fWindow;
 
@@ -792,12 +1061,12 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newJuce(const Initializer& init, const char* const format)
 {
-    carla_debug("CarlaPlugin::newJuce({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, format);
+    carla_debug("CarlaPlugin::newJuce({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "}, %s)", init.engine, init.filename, init.name, init.label, init.uniqueId, format);
 
 #ifdef HAVE_JUCE
     JucePlugin* const plugin(new JucePlugin(init.engine, init.id));
 
-    if (! plugin->init(init.filename, init.name, init.label, format))
+    if (! plugin->init(init.filename, init.name, init.label, init.uniqueId, format))
     {
         delete plugin;
         return nullptr;

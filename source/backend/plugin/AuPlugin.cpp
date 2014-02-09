@@ -23,7 +23,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newAU(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newAU({%p, \"%s\", \"%s\"})", init.engine, init.filename, init.name);
+    carla_debug("CarlaPlugin::newAU({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.uniqueId);
 
 #if defined(WANT_AU) && defined(HAVE_JUCE)
     return newJuce(init, "AU");

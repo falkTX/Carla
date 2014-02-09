@@ -1950,7 +1950,7 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 
 CarlaPlugin* CarlaPlugin::newJACK(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newJACK({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
+    carla_debug("CarlaPlugin::newJACK({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.label, init.uniqueId);
 
 #ifndef BUILD_BRIDGE
     BridgePlugin* const plugin(new BridgePlugin(init.engine, init.id, BINARY_NATIVE, PLUGIN_JACK));

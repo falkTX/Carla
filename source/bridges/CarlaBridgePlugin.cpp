@@ -553,9 +553,9 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Check argument count
 
-    if (argc != 6 && argc != 7)
+    if (argc != 7)
     {
-        carla_stdout("usage: %s <osc-url|\"null\"> <type> <filename> <name|\"(none)\"> <label>", argv[0]);
+        carla_stdout("usage: %s <osc-url|\"null\"> <type> <filename> <name|\"(none)\"> <label> <uniqueId>", argv[0]);
         return 1;
     }
 
@@ -567,6 +567,7 @@ int main(int argc, char* argv[])
     const char* const filename = argv[3];
     const char*       name     = argv[4];
     const char*       label    = argv[5];
+    const int64_t     uniqueId = static_cast<int64_t>(std::atol(argv[6]));
 
     // ---------------------------------------------------------------------
     // Setup args
@@ -659,7 +660,7 @@ int main(int argc, char* argv[])
 
     int ret;
 
-    if (carla_add_plugin(CarlaBackend::BINARY_NATIVE, itype, filename, name, label, extraStuff))
+    if (carla_add_plugin(CarlaBackend::BINARY_NATIVE, itype, filename, name, label, uniqueId, extraStuff))
     {
         if (useOsc)
         {

@@ -135,11 +135,11 @@ public:
         return CarlaPlugin::getCategory();
     }
 
-    long getUniqueId() const noexcept override
+    int64_t getUniqueId() const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, 0);
 
-        return static_cast<long>(fDescriptor->UniqueID);
+        return static_cast<int64_t>(fDescriptor->UniqueID);
     }
 
     // -------------------------------------------------------------------
@@ -1499,7 +1499,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newLADSPA(const Initializer& init, const LADSPA_RDF_Descriptor* const rdfDescriptor)
 {
-    carla_debug("CarlaPlugin::newLADSPA({%p, \"%s\", \"%s\", \"%s\"}, %p)", init.engine, init.filename, init.name, init.label, rdfDescriptor);
+    carla_debug("CarlaPlugin::newLADSPA({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "}, %p)", init.engine, init.filename, init.name, init.label, init.uniqueId, rdfDescriptor);
 
 #ifdef WANT_LADSPA
     LadspaPlugin* const plugin(new LadspaPlugin(init.engine, init.id));

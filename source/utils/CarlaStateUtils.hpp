@@ -69,7 +69,7 @@ struct SaveState {
     const char* name;
     const char* label;
     const char* binary;
-    long        uniqueID;
+    int64_t     uniqueId;
 
     bool  active;
     float dryWet;

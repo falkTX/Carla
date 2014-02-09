@@ -158,7 +158,7 @@ public:
      * Get the plugin's native unique Id.\n
      * May return 0 on plugin types that don't support Ids.
      */
-    virtual long getUniqueId() const noexcept;
+    virtual int64_t getUniqueId() const noexcept;
 
     /*!
      * Get the plugin's latency, in sample frames.
@@ -827,6 +827,7 @@ public:
         const char* const filename;
         const char* const name;
         const char* const label;
+        const int64_t uniqueId;
     };
 
     static size_t getNativePluginCount() noexcept;
