@@ -136,6 +136,23 @@ static RtMidi::Api getMatchedAudioMidiAPi(const RtAudio::Api rtApi)
 }
 
 // -------------------------------------------------------------------------------------------------------------------
+// Cleanup
+
+static struct RtAudioCleanup {
+    RtAudioCleanup() {}
+    ~RtAudioCleanup()
+    {
+        if (gRetNames != nullptr)
+        {
+            delete[] gRetNames;
+            gRetNames = nullptr;
+        }
+
+        gRtAudioApis.clear();
+    }
+} sRtAudioCleanup;
+
+// -------------------------------------------------------------------------------------------------------------------
 // RtAudio Engine
 
 class CarlaEngineRtAudio : public CarlaEngine
@@ -165,14 +182,6 @@ public:
 
         fUsedMidiIns.clear();
         fUsedMidiOuts.clear();
-
-        if (gRetNames != nullptr)
-        {
-            delete[] gRetNames;
-            gRetNames = nullptr;
-        }
-
-        gRtAudioApis.clear();
     }
 
     // -------------------------------------

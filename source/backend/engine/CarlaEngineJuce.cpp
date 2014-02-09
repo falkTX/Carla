@@ -48,6 +48,23 @@ static void initJuceDevices()
 }
 
 // -------------------------------------------------------------------------------------------------------------------
+// Cleanup
+
+static struct JuceCleanup {
+    JuceCleanup() {}
+    ~JuceCleanup()
+    {
+        if (gRetNames != nullptr)
+        {
+            delete[] gRetNames;
+            gRetNames = nullptr;
+        }
+
+        gJuceDeviceTypes.clear(true);
+    }
+} sJuceCleanup;
+
+// -------------------------------------------------------------------------------------------------------------------
 // Juce Engine
 
 class CarlaEngineJuce : public CarlaEngine,
@@ -68,14 +85,6 @@ public:
     ~CarlaEngineJuce() override
     {
         carla_debug("CarlaEngineJuce::~CarlaEngineJuce()");
-
-        if (gRetNames != nullptr)
-        {
-            delete[] gRetNames;
-            gRetNames = nullptr;
-        }
-
-        gJuceDeviceTypes.clear(true);
     }
 
     // -------------------------------------
