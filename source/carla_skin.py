@@ -19,7 +19,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtGui import QFont, QFrame
+from PyQt4.QtGui import QFont, QFrame, QPushButton
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -116,8 +116,13 @@ class AbstractPluginSlot(QFrame):
             self.b_gui.clicked.connect(self.slot_showCustomUi)
             self.b_gui.setEnabled(bool(self.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI))
 
-        if self.b_edit is not None:
-            self.b_edit.clicked.connect(self.slot_showEditDialog)
+        if self.b_edit is None:
+            # Edit dialog *must* be available
+            self.b_edit = QPushButton(self)
+            self.b_edit.setCheckable(True)
+            self.b_edit.hide()
+
+        self.b_edit.clicked.connect(self.slot_showEditDialog)
 
         if self.b_remove is not None:
             self.b_remove.clicked.connect(self.slot_removePlugin)
@@ -762,6 +767,8 @@ class PluginSlot_Zita(AbstractPluginSlot):
         # -------------------------------------------------------------
         # Set-up GUI
 
+        self.setMinimumWidth(640)
+
         self.setStyleSheet("""
         QFrame#PluginWidget {
             background-color: #404040;
@@ -1063,6 +1070,8 @@ def createPluginSlot(parent, pluginId):
     pluginInfo  = Carla.host.get_plugin_info(pluginId)
     pluginName  = Carla.host.get_real_plugin_name(pluginId)
     pluginLabel = charPtrToString(pluginInfo['label'])
+    uniqueId    = int(pluginInfo['uniqueId'])
+
     #pluginMaker = charPtrToString(pluginInfo['maker'])
     #pluginIcon  = charPtrToString(pluginInfo['iconName'])
 
@@ -1071,7 +1080,7 @@ def createPluginSlot(parent, pluginId):
             return PluginSlot_ZynFX(parent, pluginId)
 
     if pluginInfo['type'] == PLUGIN_LADSPA:
-        if pluginLabel == "zita-reverb" or pluginLabel == "zita-reverb-amb":
+        if (pluginLabel == "zita-reverb" and uniqueId == 3701) or (pluginLabel == "zita-reverb-amb" and uniqueId == 3702):
             return PluginSlot_Zita(parent, pluginId)
 
     if pluginName.split(" ", 1)[0].lower() == "calf":

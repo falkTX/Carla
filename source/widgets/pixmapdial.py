@@ -289,15 +289,15 @@ class PixmapDial(QDial):
 
             # Custom knobs (Zita)
             elif self.fCustomPaint == self.CUSTOM_PAINT_ZITA:
-                a = value * pi * 3 / 2 + 4.0
-                r = 11.0
-                x = 11.5
-                y = 11.5
+                a = value * pi * 1.5 - 2.35
+                r = 10.0
+                x = 10.5
+                y = 10.5
                 x += r * sin(a)
                 y -= r * cos(a)
                 painter.setBrush(Qt.black)
                 painter.setPen(QPen(Qt.black, 2))
-                painter.drawLine(QPointF(r, r), QPointF(x, y))
+                painter.drawLine(QPointF(11.0, 11.0), QPointF(x, y))
 
             # Custom knobs
             else:

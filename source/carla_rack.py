@@ -72,7 +72,7 @@ class CarlaRackW(QListWidget):
         # -------------------------------------------------------------
         # Set-up GUI stuff
 
-        self.setMinimumWidth(591)
+        self.setMinimumWidth(640) # required by zita, 591 was old value
         self.setSortingEnabled(False)
 
         app  = QApplication.instance()
