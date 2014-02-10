@@ -333,7 +333,10 @@ class CarlaPatchbayW(QFrame):
         pitem.show()
 
     # -----------------------------------------------------------------
-    # called by PluginEdit, ignored here
+    # called by PluginEdit to plugin skin parent, ignored here
+
+    def editDialogChanged(self, visible):
+        pass
 
     def recheckPluginHints(self, hints):
         pass
