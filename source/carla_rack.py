@@ -353,7 +353,7 @@ class CarlaRackW(QListWidget):
         if pitem is None:
             return
 
-        pitem.widget.setParameterValue(index, value)
+        pitem.widget.setParameterValue(index, value, True)
 
     @pyqtSlot(int, int, float)
     def slot_handleParameterDefaultChangedCallback(self, pluginId, index, value):
@@ -399,7 +399,7 @@ class CarlaRackW(QListWidget):
         if pitem is None:
             return
 
-        pitem.widget.setProgram(index)
+        pitem.widget.setProgram(index, True)
 
     @pyqtSlot(int, int)
     def slot_handleMidiProgramChangedCallback(self, pluginId, index):
@@ -410,7 +410,7 @@ class CarlaRackW(QListWidget):
         if pitem is None:
             return
 
-        pitem.widget.setMidiProgram(index)
+        pitem.widget.setMidiProgram(index, True)
 
     # -----------------------------------------------------------------
 

@@ -64,6 +64,7 @@ class AbstractPluginSlot(QFrame):
         self.fLastBlueLedState  = False
 
         self.fParameterIconTimer = ICON_STATE_NULL
+        self.fParameterList      = [] # index, widget
 
         if Carla.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK or Carla.host is None:
             self.fPeaksInputCount  = 2
@@ -93,6 +94,8 @@ class AbstractPluginSlot(QFrame):
         self.b_gui    = None
         self.b_edit   = None
         self.b_remove = None
+
+        self.cb_presets = None
 
         self.label_name    = None
         self.led_control   = None
@@ -147,6 +150,10 @@ class AbstractPluginSlot(QFrame):
             self.peak_out.setColor(self.peak_in.BLUE)
             self.peak_out.setChannels(self.fPeaksOutputCount)
             self.peak_out.setOrientation(self.peak_out.HORIZONTAL)
+
+        for paramIndex, paramWidget in self.fParameterList:
+            paramWidget.valueChanged.connect(self.slot_parameterValueChanged)
+            paramWidget.setValue(Carla.host.get_current_parameter_value(self.fPluginId, paramIndex) * 1000)
 
     #------------------------------------------------------------------
 
@@ -221,13 +228,16 @@ class AbstractPluginSlot(QFrame):
 
     #------------------------------------------------------------------
 
-    def setParameterValue(self, parameterId, value):
+    def setParameterValue(self, parameterId, value, sendCallback):
         self.fParameterIconTimer = ICON_STATE_ON
 
         if parameterId == PARAMETER_ACTIVE:
             return self.setActive(bool(value), True, False)
 
         self.fEditDialog.setParameterValue(parameterId, value)
+
+        if sendCallback:
+            self.parameterValueChanged(parameterId, value)
 
     def setParameterDefault(self, parameterId, value):
         self.fEditDialog.setParameterDefault(parameterId, value)
@@ -240,13 +250,19 @@ class AbstractPluginSlot(QFrame):
 
     #------------------------------------------------------------------
 
-    def setProgram(self, index):
+    def setProgram(self, index, sendCallback):
         self.fParameterIconTimer = ICON_STATE_ON
         self.fEditDialog.setProgram(index)
 
-    def setMidiProgram(self, index):
+        if sendCallback:
+            self.programChanged(index)
+
+    def setMidiProgram(self, index, sendCallback):
         self.fParameterIconTimer = ICON_STATE_ON
         self.fEditDialog.setMidiProgram(index)
+
+        if sendCallback:
+            self.midiProgramChanged(index)
 
     #------------------------------------------------------------------
 
@@ -307,13 +323,30 @@ class AbstractPluginSlot(QFrame):
         self.led_midi.setChecked(onOff)
 
     def parameterValueChanged(self, parameterId, value):
-        pass
+        for paramIndex, paramWidget in self.fParameterList:
+            if paramIndex != parameterId:
+                continue
+
+            paramWidget.blockSignals(True)
+            paramWidget.setValue(value*1000)
+            paramWidget.blockSignals(False)
+            break
 
     def programChanged(self, index):
-        pass
+        if self.cb_presets is None:
+            return
+
+        self.cb_presets.blockSignals(True)
+        self.cb_presets.setCurrentIndex(index)
+        self.cb_presets.blockSignals(False)
 
     def midiProgramChanged(self, index):
-        pass
+        if self.cb_presets is None:
+            return
+
+        self.cb_presets.blockSignals(True)
+        self.cb_presets.setCurrentIndex(index)
+        self.cb_presets.blockSignals(False)
 
     def notePressed(self, note):
         pass
@@ -382,7 +415,7 @@ class AbstractPluginSlot(QFrame):
 
     #------------------------------------------------------------------
 
-    def showDefaultMenu(self, isEnabled, bEdit = None, bGui = None):
+    def showDefaultCustomMenu(self, isEnabled, bEdit = None, bGui = None):
         menu = QMenu(self)
 
         actActive = menu.addAction(self.tr("Disable") if isEnabled else self.tr("Enable"))
@@ -452,7 +485,7 @@ class AbstractPluginSlot(QFrame):
 
     @pyqtSlot()
     def slot_showDefaultCustomMenu(self):
-        self.showDefaultMenu(self.fIsActive, self.b_edit, self.b_gui)
+        self.showDefaultCustomMenu(self.fIsActive, self.b_edit, self.b_gui)
 
     #------------------------------------------------------------------
 
@@ -467,6 +500,26 @@ class AbstractPluginSlot(QFrame):
     @pyqtSlot()
     def slot_removePlugin(self):
         Carla.host.remove_plugin(self.fPluginId)
+
+    #------------------------------------------------------------------
+
+    @pyqtSlot(int)
+    def slot_parameterValueChanged(self, value):
+        index = self.sender().getIndex()
+        value = float(value)/1000.0
+
+        Carla.host.set_parameter_value(self.fPluginId, index, value)
+        self.setParameterValue(index, value, False)
+
+    @pyqtSlot(int)
+    def slot_programChanged(self, index):
+        Carla.host.set_program(self.fPluginId, index)
+        self.setProgram(index, False)
+
+    @pyqtSlot(int)
+    def slot_midiProgramChanged(self, index):
+        Carla.host.set_midi_program(self.fPluginId, index)
+        self.setMidiProgram(index, False)
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -595,46 +648,6 @@ class PluginSlot_Default(AbstractPluginSlot):
         painter.drawLine(0, height-1, width, height-1)
 
         painter.restore()
-        AbstractPluginSlot.paintEvent(self, event)
-
-# ------------------------------------------------------------------------------------------------------------
-
-class PluginSlot_Pixmap(PluginSlot_Default):
-    def __init__(self, parent, pluginId):
-        PluginSlot_Default.__init__(self, parent, pluginId)
-
-        # -------------------------------------------------------------
-        # Set-up GUI
-
-        self.setStyleSheet("""
-        QFrame#PluginWidget {
-            background-image: url(:/bitmaps/background_zynfx.png);
-            background-repeat: repeat-xy;
-        }""")
-
-        #if (self.pinfo['category'] == PLUGIN_CATEGORY_SYNTH):
-          #self.set_plugin_widget_color(PALETTE_COLOR_WHITE)
-        #elif (self.pinfo['category'] == PLUGIN_CATEGORY_DELAY):
-          #self.set_plugin_widget_color(PALETTE_COLOR_ORANGE)
-        #elif (self.pinfo['category'] == PLUGIN_CATEGORY_EQ):
-          #self.set_plugin_widget_color(PALETTE_COLOR_GREEN)
-        #elif (self.pinfo['category'] == PLUGIN_CATEGORY_FILTER):
-          #self.set_plugin_widget_color(PALETTE_COLOR_BLUE)
-        #elif (self.pinfo['category'] == PLUGIN_CATEGORY_DYNAMICS):
-          #self.set_plugin_widget_color(PALETTE_COLOR_PINK)
-        #elif (self.pinfo['category'] == PLUGIN_CATEGORY_MODULATOR):
-          #self.set_plugin_widget_color(PALETTE_COLOR_RED)
-        #elif (self.pinfo['category'] == PLUGIN_CATEGORY_UTILITY):
-          #self.set_plugin_widget_color(PALETTE_COLOR_YELLOW)
-        #elif (self.pinfo['category'] == PLUGIN_CATEGORY_OUTRO):
-          #self.set_plugin_widget_color(PALETTE_COLOR_BROWN)
-        #else:
-          #self.set_plugin_widget_color(PALETTE_COLOR_NONE)
-
-    #------------------------------------------------------------------
-
-    def paintEvent(self, event):
-        # skip parent paiting
         AbstractPluginSlot.paintEvent(self, event)
 
 # ------------------------------------------------------------------------------------------------------------
@@ -776,42 +789,73 @@ class PluginSlot_Zita(AbstractPluginSlot):
         self.fKnobDelay = PixmapDial(self, 0)
         self.fKnobDelay.setPixmap(6)
         self.fKnobDelay.setCustomPaint(PixmapDial.CUSTOM_PAINT_ZITA)
+        self.fKnobDelay.setMinimum(0.02*1000)
+        self.fKnobDelay.setMaximum(0.10*1000)
 
         self.fKnobXover = PixmapDial(self, 1)
         self.fKnobXover.setPixmap(6)
         self.fKnobXover.setCustomPaint(PixmapDial.CUSTOM_PAINT_ZITA)
+        self.fKnobXover.setMinimum(50*1000)
+        self.fKnobXover.setMaximum(1000*1000)
 
         self.fKnobRtLow = PixmapDial(self, 2)
         self.fKnobRtLow.setPixmap(6)
         self.fKnobRtLow.setCustomPaint(PixmapDial.CUSTOM_PAINT_ZITA)
+        self.fKnobRtLow.setMinimum(1*1000)
+        self.fKnobRtLow.setMaximum(8*1000)
 
         self.fKnobRtMid = PixmapDial(self, 3)
         self.fKnobRtMid.setPixmap(6)
         self.fKnobRtMid.setCustomPaint(PixmapDial.CUSTOM_PAINT_ZITA)
+        self.fKnobRtMid.setMinimum(1*1000)
+        self.fKnobRtMid.setMaximum(8*1000)
 
         self.fKnobDamping = PixmapDial(self, 4)
         self.fKnobDamping.setPixmap(6)
         self.fKnobDamping.setCustomPaint(PixmapDial.CUSTOM_PAINT_ZITA)
+        self.fKnobDamping.setMinimum(1500*1000)
+        self.fKnobDamping.setMaximum(24000*1000)
 
         self.fKnobEq1Freq = PixmapDial(self, 5)
         self.fKnobEq1Freq.setPixmap(6)
         self.fKnobEq1Freq.setCustomPaint(PixmapDial.CUSTOM_PAINT_ZITA)
+        self.fKnobEq1Freq.setMinimum(40*1000)
+        self.fKnobEq1Freq.setMaximum(10000*1000)
 
         self.fKnobEq1Gain = PixmapDial(self, 6)
         self.fKnobEq1Gain.setPixmap(6)
         self.fKnobEq1Gain.setCustomPaint(PixmapDial.CUSTOM_PAINT_ZITA)
+        self.fKnobEq1Gain.setMinimum(-20*1000)
+        self.fKnobEq1Gain.setMaximum(20*1000)
 
         self.fKnobEq2Freq = PixmapDial(self, 7)
         self.fKnobEq2Freq.setPixmap(6)
         self.fKnobEq2Freq.setCustomPaint(PixmapDial.CUSTOM_PAINT_ZITA)
+        self.fKnobEq2Freq.setMinimum(40*1000)
+        self.fKnobEq2Freq.setMaximum(10000*1000)
 
         self.fKnobEq2Gain = PixmapDial(self, 8)
         self.fKnobEq2Gain.setPixmap(6)
         self.fKnobEq2Gain.setCustomPaint(PixmapDial.CUSTOM_PAINT_ZITA)
+        self.fKnobEq2Gain.setMinimum(-20*1000)
+        self.fKnobEq2Gain.setMaximum(20*1000)
 
         self.fKnobMix = PixmapDial(self, 9)
         self.fKnobMix.setPixmap(6)
         self.fKnobMix.setCustomPaint(PixmapDial.CUSTOM_PAINT_ZITA)
+        self.fKnobMix.setMinimum(0.0*1000)
+        self.fKnobMix.setMaximum(1.0*1000)
+
+        self.fParameterList.append([0, self.fKnobDelay])
+        self.fParameterList.append([1, self.fKnobXover])
+        self.fParameterList.append([2, self.fKnobRtLow])
+        self.fParameterList.append([3, self.fKnobRtMid])
+        self.fParameterList.append([4, self.fKnobDamping])
+        self.fParameterList.append([5, self.fKnobEq1Freq])
+        self.fParameterList.append([6, self.fKnobEq1Gain])
+        self.fParameterList.append([7, self.fKnobEq2Freq])
+        self.fParameterList.append([8, self.fKnobEq2Gain])
+        self.fParameterList.append([9, self.fKnobMix])
 
         # -------------------------------------------------------------
 
@@ -860,8 +904,6 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
         # -------------------------------------------------------------
         # Set-up parameters
 
-        self.fParameterList = [] # index, widget
-
         parameterCount = Carla.host.get_parameter_count(self.fPluginId) if Carla.host is not None else 0
 
         index = 0
@@ -869,7 +911,6 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
             paramInfo   = Carla.host.get_parameter_info(self.fPluginId, i)
             paramData   = Carla.host.get_parameter_data(self.fPluginId, i)
             paramRanges = Carla.host.get_parameter_ranges(self.fPluginId, i)
-            paramValue  = Carla.host.get_current_parameter_value(self.fPluginId, i)
 
             if paramData['type'] != PARAMETER_INPUT:
                 continue
@@ -957,12 +998,9 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
             widget.setSingleStep(paramRanges['step']*1000)
             widget.setMinimum(paramRanges['min']*1000)
             widget.setMaximum(paramRanges['max']*1000)
-            widget.setValue(paramValue*1000)
 
             if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
                 widget.setEnabled(False)
-
-            widget.valueChanged.connect(self.slot_parameterValueChanged)
 
             self.ui.container.layout().insertWidget(index, widget)
             index += 1
@@ -999,6 +1037,8 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
         self.b_enable = self.ui.b_enable
         self.b_edit   = self.ui.b_edit
 
+        self.cb_presets = self.ui.cb_presets
+
         self.label_name = self.ui.label_name
 
         self.peak_in  = self.ui.peak_in
@@ -1010,54 +1050,12 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
         self.peak_out.setOrientation(self.peak_out.VERTICAL)
 
         self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
-        self.ui.cb_presets.currentIndexChanged.connect(self.slot_presetChanged)
+        self.ui.cb_presets.currentIndexChanged.connect(self.slot_midiProgramChanged)
 
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
         return 70
-
-    #------------------------------------------------------------------
-
-    def setParameterValue(self, parameterId, value):
-        self.parameterValueChanged(parameterId, value)
-        AbstractPluginSlot.setParameterValue(self, parameterId, value)
-
-    def setMidiProgram(self, index):
-        self.midiProgramChanged(index)
-        AbstractPluginSlot.setMidiProgram(self, index)
-
-    #------------------------------------------------------------------
-
-    def parameterValueChanged(self, parameterId, value):
-        for paramIndex, paramWidget in self.fParameterList:
-            if paramIndex != parameterId:
-                continue
-
-            paramWidget.blockSignals(True)
-            paramWidget.setValue(value*1000)
-            paramWidget.blockSignals(False)
-            break
-
-    def midiProgramChanged(self, index):
-        self.ui.cb_presets.blockSignals(True)
-        self.ui.cb_presets.setCurrentIndex(index)
-        self.ui.cb_presets.blockSignals(False)
-
-    #------------------------------------------------------------------
-
-    @pyqtSlot(int)
-    def slot_parameterValueChanged(self, value):
-        index = self.sender().getIndex()
-        value = float(value)/1000.0
-
-        Carla.host.set_parameter_value(self.fPluginId, index, value)
-        AbstractPluginSlot.setParameterValue(self, index, value)
-
-    @pyqtSlot(int)
-    def slot_presetChanged(self, index):
-        Carla.host.set_midi_program(self.fPluginId, index)
-        AbstractPluginSlot.setMidiProgram(self, index)
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -1096,3 +1094,22 @@ if __name__ == '__main__':
     gui.show()
 
     app.exec_()
+
+#if (self.pinfo['category'] == PLUGIN_CATEGORY_SYNTH):
+#self.set_plugin_widget_color(PALETTE_COLOR_WHITE)
+#elif (self.pinfo['category'] == PLUGIN_CATEGORY_DELAY):
+#self.set_plugin_widget_color(PALETTE_COLOR_ORANGE)
+#elif (self.pinfo['category'] == PLUGIN_CATEGORY_EQ):
+#self.set_plugin_widget_color(PALETTE_COLOR_GREEN)
+#elif (self.pinfo['category'] == PLUGIN_CATEGORY_FILTER):
+#self.set_plugin_widget_color(PALETTE_COLOR_BLUE)
+#elif (self.pinfo['category'] == PLUGIN_CATEGORY_DYNAMICS):
+#self.set_plugin_widget_color(PALETTE_COLOR_PINK)
+#elif (self.pinfo['category'] == PLUGIN_CATEGORY_MODULATOR):
+#self.set_plugin_widget_color(PALETTE_COLOR_RED)
+#elif (self.pinfo['category'] == PLUGIN_CATEGORY_UTILITY):
+#self.set_plugin_widget_color(PALETTE_COLOR_YELLOW)
+#elif (self.pinfo['category'] == PLUGIN_CATEGORY_OUTRO):
+#self.set_plugin_widget_color(PALETTE_COLOR_BROWN)
+#else:
+#self.set_plugin_widget_color(PALETTE_COLOR_NONE)
