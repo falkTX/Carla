@@ -734,6 +734,8 @@ class PluginSlot_Calf(AbstractPluginSlot):
 
         self.ready()
 
+        self.ui.led_midi.setColor(self.ui.led_midi.CALF)
+
         self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
 
     #------------------------------------------------------------------
