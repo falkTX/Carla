@@ -1,5 +1,7 @@
-The pixmaps in this folder were taken from the following projects:
+The pixmaps in this folder were made by falkTX and nieee, with the exception of:
 
 dial_01  - TAL Plugins
 dial_02  - TAL Plugins
-kbd_*    - FL Studio
+dial_05  - Guitarix
+kbd_*    - Image-Line
+*calf*   - Calf Studiogear

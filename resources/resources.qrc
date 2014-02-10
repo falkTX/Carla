@@ -45,7 +45,6 @@
 
         <file>scalable/carla.svg</file>
         <file>scalable/carla-control.svg</file>
-        <file>scalable/distrho.svg</file>
 
         <file>bitmaps/carla_about.png</file>
         <file>bitmaps/background_calf.png</file>
@@ -94,10 +93,8 @@
         <file>bitmaps/dial_05.png</file>
         <file>bitmaps/dial_05d.png</file>
 
-        <file>bitmaps/kbd_h_classic.png</file>
-        <file>bitmaps/kbd_h_orange.png</file>
-        <file>bitmaps/kbd_v_classic.png</file>
-        <file>bitmaps/kbd_v_orange.png</file>
+        <file>bitmaps/kbd_h_dark.png</file>
+        <file>bitmaps/kbd_v_dark.png</file>
 
         <file>bitmaps/led_off.png</file>
         <file>bitmaps/led_blue.png</file>
