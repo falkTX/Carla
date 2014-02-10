@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla plugin/slot skin code
-# Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -32,13 +32,14 @@ from carla_widgets import *
 from pixmapdial import PixmapDial
 
 # ------------------------------------------------------------------------------------------------------------
+# Abstract plugin slot
 
-class PluginSlot(QFrame):
+class AbstractPluginSlot(QFrame):
     def __init__(self, parent, pluginId):
         QFrame.__init__(self, parent)
 
         # -------------------------------------------------------------
-        # Internal stuff
+        # Get plugin info
 
         self.fPluginId   = pluginId
         self.fPluginInfo = Carla.host.get_plugin_info(self.fPluginId) if Carla.host is not None else gFakePluginInfo
@@ -50,15 +51,22 @@ class PluginSlot(QFrame):
         self.fPluginInfo['copyright'] = charPtrToString(self.fPluginInfo['copyright'])
         self.fPluginInfo['iconName']  = charPtrToString(self.fPluginInfo['iconName'])
 
-        self.fParameterIconTimer = ICON_STATE_NULL
-
         if not Carla.isLocal:
             self.fPluginInfo['hints'] &= ~PLUGIN_HAS_CUSTOM_UI
+
+        # -------------------------------------------------------------
+        # Internal stuff
+
+        self.fIsActive = False
+
+        self.fLastGreenLedState = False
+        self.fLastBlueLedState  = False
+
+        self.fParameterIconTimer = ICON_STATE_NULL
 
         if Carla.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK or Carla.host is None:
             self.fPeaksInputCount  = 2
             self.fPeaksOutputCount = 2
-
         else:
             audioCountInfo = Carla.host.get_audio_port_count_info(self.fPluginId)
 
@@ -77,6 +85,68 @@ class PluginSlot(QFrame):
         self.fEditDialog = PluginEdit(self, self.fPluginId)
         self.fEditDialog.hide()
 
+        # -------------------------------------------------------------
+        # Set-up common widgets (as none)
+
+        self.b_enable = None
+        self.b_gui    = None
+        self.b_edit   = None
+        self.b_remove = None
+
+        self.label_name    = None
+        self.led_control   = None
+        self.led_midi      = None
+        self.led_audio_in  = None
+        self.led_audio_out = None
+
+        self.peak_in  = None
+        self.peak_out = None
+
+    #------------------------------------------------------------------
+
+    def ready(self):
+        if self.b_enable is not None:
+            self.b_enable.clicked.connect(self.slot_enableClicked)
+
+        if self.b_gui is not None:
+            self.b_gui.clicked.connect(self.slot_showCustomUi)
+            self.b_gui.setEnabled(bool(self.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI))
+
+        if self.b_edit is not None:
+            self.b_edit.clicked.connect(self.slot_showEditDialog)
+
+        if self.b_remove is not None:
+            self.b_remove.clicked.connect(self.slot_removePlugin)
+
+        if self.label_name is not None:
+            self.label_name.setText(self.fPluginInfo['name'])
+
+        if self.led_control is not None:
+            self.led_control.setColor(self.led_control.YELLOW)
+            self.led_control.setEnabled(False)
+
+        if self.led_midi is not None:
+            self.led_midi.setColor(self.led_midi.RED)
+            self.led_midi.setEnabled(False)
+
+        if self.led_audio_in is not None:
+            self.led_audio_in.setColor(self.led_audio_in.GREEN)
+            self.led_audio_in.setEnabled(False)
+
+        if self.led_audio_out is not None:
+            self.led_audio_out.setColor(self.led_audio_out.BLUE)
+            self.led_audio_out.setEnabled(False)
+
+        if self.peak_in is not None:
+            self.peak_in.setColor(self.peak_in.GREEN)
+            self.peak_in.setChannels(self.fPeaksInputCount)
+            self.peak_in.setOrientation(self.peak_in.HORIZONTAL)
+
+        if self.peak_out is not None:
+            self.peak_out.setColor(self.peak_in.BLUE)
+            self.peak_out.setChannels(self.fPeaksOutputCount)
+            self.peak_out.setOrientation(self.peak_out.HORIZONTAL)
+
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
@@ -90,6 +160,9 @@ class PluginSlot(QFrame):
     def recheckPluginHints(self, hints):
         self.fPluginInfo['hints'] = hints
 
+        if self.b_gui is not None:
+            self.b_gui.setEnabled(bool(hints & PLUGIN_HAS_CUSTOM_UI))
+
     def setId(self, idx):
         self.fPluginId = idx
         self.fEditDialog.setId(idx)
@@ -97,9 +170,14 @@ class PluginSlot(QFrame):
     def setName(self, name):
         self.fEditDialog.setName(name)
 
+        if self.label_name is not None:
+            self.label_name.setText(name)
+
     #------------------------------------------------------------------
 
     def setActive(self, active, sendGui=False, sendCallback=True):
+        self.fIsActive = active
+
         if sendGui:      self.activeChanged(active)
         if sendCallback: Carla.host.set_active(self.fPluginId, active)
 
@@ -112,7 +190,7 @@ class PluginSlot(QFrame):
         if parameterId <= PARAMETER_MAX or parameterId >= PARAMETER_NULL:
             return
 
-        if parameterId == PARAMETER_ACTIVE:
+        elif parameterId == PARAMETER_ACTIVE:
             return self.setActive(bool(value), True, True)
 
         elif parameterId == PARAMETER_DRYWET:
@@ -182,19 +260,50 @@ class PluginSlot(QFrame):
     #------------------------------------------------------------------
 
     def activeChanged(self, onOff):
-        pass
+        self.fIsActive = onOff
+
+        if self.b_enable is None:
+            return
+
+        self.b_enable.blockSignals(True)
+        self.b_enable.setChecked(onOff)
+        self.b_enable.blockSignals(False)
 
     def editDialogChanged(self, visible):
-        pass
+        if self.b_edit is None:
+            return
+
+        self.b_edit.blockSignals(True)
+        self.b_edit.setChecked(visible)
+        self.b_edit.blockSignals(False)
 
     def customUiStateChanged(self, state):
-        pass
+        if self.b_gui is None:
+            return
+
+        self.b_gui.blockSignals(True)
+        if state == 0:
+            self.b_gui.setChecked(False)
+            self.b_gui.setEnabled(True)
+        elif state == 1:
+            self.b_gui.setChecked(True)
+            self.b_gui.setEnabled(True)
+        elif state == -1:
+            self.b_gui.setChecked(False)
+            self.b_gui.setEnabled(False)
+        self.b_gui.blockSignals(False)
 
     def parameterActivityChanged(self, onOff):
-        pass
+        if self.led_control is None:
+            return
+
+        self.led_control.setChecked(onOff)
 
     def midiActivityChanged(self, onOff):
-        pass
+        if self.led_midi is None:
+            return
+
+        self.led_midi.setChecked(onOff)
 
     def parameterValueChanged(self, parameterId, value):
         pass
@@ -214,7 +323,49 @@ class PluginSlot(QFrame):
     #------------------------------------------------------------------
 
     def idleFast(self):
-        pass
+        # Input peaks
+        if self.fPeaksInputCount > 0:
+            if self.fPeaksInputCount > 1:
+                peak1 = Carla.host.get_input_peak_value(self.fPluginId, True)
+                peak2 = Carla.host.get_input_peak_value(self.fPluginId, False)
+                ledState = bool(peak1 != 0.0 or peak2 != 0.0)
+
+                if self.peak_in is not None:
+                    self.peak_in.displayMeter(1, peak1)
+                    self.peak_in.displayMeter(2, peak2)
+
+            else:
+                peak = Carla.host.get_input_peak_value(self.fPluginId, True)
+                ledState = bool(peak != 0.0)
+
+                if self.peak_in is not None:
+                    self.peak_in.displayMeter(1, peak)
+
+            if self.fLastGreenLedState != ledState and self.led_audio_in is not None:
+                self.fLastGreenLedState = ledState
+                self.led_audio_in.setChecked(ledState)
+
+        # Output peaks
+        if self.fPeaksOutputCount > 0:
+            if self.fPeaksOutputCount > 1:
+                peak1 = Carla.host.get_output_peak_value(self.fPluginId, True)
+                peak2 = Carla.host.get_output_peak_value(self.fPluginId, False)
+                ledState = bool(peak1 != 0.0 or peak2 != 0.0)
+
+                if self.peak_out is not None:
+                    self.peak_out.displayMeter(1, peak1)
+                    self.peak_out.displayMeter(2, peak2)
+
+            else:
+                peak = Carla.host.get_output_peak_value(self.fPluginId, True)
+                ledState = bool(peak != 0.0)
+
+                if self.peak_out is not None:
+                    self.peak_out.displayMeter(1, peak)
+
+            if self.fLastBlueLedState != ledState and self.led_audio_out is not None:
+                self.fLastBlueLedState = ledState
+                self.led_audio_out.setChecked(ledState)
 
     def idleSlow(self):
         if self.fParameterIconTimer == ICON_STATE_ON:
@@ -295,6 +446,16 @@ class PluginSlot(QFrame):
     #------------------------------------------------------------------
 
     @pyqtSlot(bool)
+    def slot_enableClicked(self, yesNo):
+        self.setActive(yesNo, False, True)
+
+    @pyqtSlot()
+    def slot_showDefaultCustomMenu(self):
+        self.showDefaultMenu(self.fIsActive, self.b_edit, self.b_gui)
+
+    #------------------------------------------------------------------
+
+    @pyqtSlot(bool)
     def slot_showCustomUi(self, show):
         Carla.host.show_custom_ui(self.fPluginId, show)
 
@@ -308,17 +469,14 @@ class PluginSlot(QFrame):
 
 # ------------------------------------------------------------------------------------------------------------
 
-class PluginSlot_Default(PluginSlot):
+class PluginSlot_Default(AbstractPluginSlot):
     def __init__(self, parent, pluginId):
-        PluginSlot.__init__(self, parent, pluginId)
+        AbstractPluginSlot.__init__(self, parent, pluginId)
         self.ui = ui_carla_plugin_default.Ui_PluginWidget()
         self.ui.setupUi(self)
 
         # -------------------------------------------------------------
         # Internal stuff
-
-        self.fLastGreenLedState = False
-        self.fLastBlueLedState  = False
 
         if self.palette().window().color().lightness() > 100:
             # Light background
@@ -367,137 +525,29 @@ class PluginSlot_Default(PluginSlot):
             else:
                 self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
 
-        self.ui.b_gui.setEnabled((self.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI) != 0)
-
-        self.ui.led_control.setColor(self.ui.led_control.YELLOW)
-        self.ui.led_control.setEnabled(False)
-
-        self.ui.led_midi.setColor(self.ui.led_midi.RED)
-        self.ui.led_midi.setEnabled(False)
-
-        self.ui.led_audio_in.setColor(self.ui.led_audio_in.GREEN)
-        self.ui.led_audio_in.setEnabled(False)
-
-        self.ui.led_audio_out.setColor(self.ui.led_audio_out.BLUE)
-        self.ui.led_audio_out.setEnabled(False)
-
-        self.ui.peak_in.setColor(self.ui.peak_in.GREEN)
-        self.ui.peak_in.setChannels(self.fPeaksInputCount)
-        self.ui.peak_in.setOrientation(self.ui.peak_in.HORIZONTAL)
-
-        self.ui.peak_out.setColor(self.ui.peak_in.BLUE)
-        self.ui.peak_out.setChannels(self.fPeaksOutputCount)
-        self.ui.peak_out.setOrientation(self.ui.peak_out.HORIZONTAL)
-
-        self.ui.label_name.setText(self.fPluginInfo['name'])
-
         # -------------------------------------------------------------
-        # Set-up connections
 
-        self.ui.b_enable.clicked.connect(self.slot_enableClicked)
-        self.ui.b_gui.clicked.connect(self.slot_showCustomUi)
-        self.ui.b_edit.clicked.connect(self.slot_showEditDialog)
+        self.b_enable = self.ui.b_enable
+        self.b_gui    = self.ui.b_gui
+        self.b_edit   = self.ui.b_edit
 
-        self.customContextMenuRequested.connect(self.slot_showCustomMenu)
+        self.label_name    = self.ui.label_name
+        self.led_control   = self.ui.led_control
+        self.led_midi      = self.ui.led_midi
+        self.led_audio_in  = self.ui.led_audio_in
+        self.led_audio_out = self.ui.led_audio_out
+
+        self.peak_in  = self.ui.peak_in
+        self.peak_out = self.ui.peak_out
+
+        self.ready()
+
+        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
 
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
         return 48
-
-    #------------------------------------------------------------------
-
-    def recheckPluginHints(self, hints):
-        self.ui.b_gui.setEnabled(hints & PLUGIN_HAS_CUSTOM_UI)
-        PluginSlot.recheckPluginHints(self, hints)
-
-    def setName(self, name):
-        self.ui.label_name.setText(name)
-        PluginSlot.setName(self, name)
-
-    #------------------------------------------------------------------
-
-    def activeChanged(self, onOff):
-        self.ui.b_enable.blockSignals(True)
-        self.ui.b_enable.setChecked(onOff)
-        self.ui.b_enable.blockSignals(False)
-
-    def editDialogChanged(self, visible):
-        self.ui.b_edit.blockSignals(True)
-        self.ui.b_edit.setChecked(visible)
-        self.ui.b_edit.blockSignals(False)
-
-    def customUiStateChanged(self, state):
-        self.ui.b_gui.blockSignals(True)
-        if state == 0:
-            self.ui.b_gui.setChecked(False)
-            self.ui.b_gui.setEnabled(True)
-        elif state == 1:
-            self.ui.b_gui.setChecked(True)
-            self.ui.b_gui.setEnabled(True)
-        elif state == -1:
-            self.ui.b_gui.setChecked(False)
-            self.ui.b_gui.setEnabled(False)
-        self.ui.b_gui.blockSignals(False)
-
-    def parameterActivityChanged(self, onOff):
-        self.ui.led_control.setChecked(onOff)
-
-    def midiActivityChanged(self, onOff):
-        self.ui.led_midi.setChecked(onOff)
-
-    #------------------------------------------------------------------
-
-    def idleFast(self):
-        # Input peaks
-        if self.fPeaksInputCount > 0:
-            if self.fPeaksInputCount > 1:
-                peak1 = Carla.host.get_input_peak_value(self.fPluginId, True)
-                peak2 = Carla.host.get_input_peak_value(self.fPluginId, False)
-                ledState = bool(peak1 != 0.0 or peak2 != 0.0)
-
-                self.ui.peak_in.displayMeter(1, peak1)
-                self.ui.peak_in.displayMeter(2, peak2)
-
-            else:
-                peak = Carla.host.get_input_peak_value(self.fPluginId, True)
-                ledState = bool(peak != 0.0)
-
-                self.ui.peak_in.displayMeter(1, peak)
-
-            if self.fLastGreenLedState != ledState:
-                self.fLastGreenLedState = ledState
-                self.ui.led_audio_in.setChecked(ledState)
-
-        # Output peaks
-        if self.fPeaksOutputCount > 0:
-            if self.fPeaksOutputCount > 1:
-                peak1 = Carla.host.get_output_peak_value(self.fPluginId, True)
-                peak2 = Carla.host.get_output_peak_value(self.fPluginId, False)
-                ledState = bool(peak1 != 0.0 or peak2 != 0.0)
-
-                self.ui.peak_out.displayMeter(1, peak1)
-                self.ui.peak_out.displayMeter(2, peak2)
-
-            else:
-                peak = Carla.host.get_output_peak_value(self.fPluginId, True)
-                ledState = bool(peak != 0.0)
-
-                self.ui.peak_out.displayMeter(1, peak)
-
-            if self.fLastBlueLedState != ledState:
-                self.fLastBlueLedState = ledState
-                self.ui.led_audio_out.setChecked(ledState)
-
-    #------------------------------------------------------------------
-
-    @pyqtSlot(bool)
-    def slot_enableClicked(self, yesNo):
-        self.setActive(yesNo, False, True)
-
-    @pyqtSlot()
-    def slot_showCustomMenu(self):
-        self.showDefaultMenu(self.ui.b_enable.isChecked(), self.ui.b_edit, self.ui.b_gui)
 
     #------------------------------------------------------------------
 
@@ -544,7 +594,7 @@ class PluginSlot_Default(PluginSlot):
         painter.drawLine(0, height-1, width, height-1)
 
         painter.restore()
-        PluginSlot.paintEvent(self, event)
+        AbstractPluginSlot.paintEvent(self, event)
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -557,7 +607,7 @@ class PluginSlot_Pixmap(PluginSlot_Default):
 
         self.setStyleSheet("""
         QFrame#PluginWidget {
-            background-image: url(:/bitmaps/background_calf.png);
+            background-image: url(:/bitmaps/background_zynfx.png);
             background-repeat: repeat-xy;
         }""")
 
@@ -565,20 +615,18 @@ class PluginSlot_Pixmap(PluginSlot_Default):
 
     def paintEvent(self, event):
         # skip parent paiting
-        PluginSlot.paintEvent(self, event)
+        AbstractPluginSlot.paintEvent(self, event)
 
 # ------------------------------------------------------------------------------------------------------------
 
-class PluginSlot_Calf(PluginSlot):
+class PluginSlot_Calf(AbstractPluginSlot):
     def __init__(self, parent, pluginId):
-        PluginSlot.__init__(self, parent, pluginId)
+        AbstractPluginSlot.__init__(self, parent, pluginId)
         self.ui = ui_carla_plugin_calf.Ui_PluginWidget()
         self.ui.setupUi(self)
 
         # -------------------------------------------------------------
         # Internal stuff
-
-        self.fIsActive = False
 
         self.fButtonFont = QFont()
         self.fButtonFont.setBold(False)
@@ -607,31 +655,17 @@ class PluginSlot_Calf(PluginSlot):
         self.ui.b_remove.setTopText(self.tr("Remove"), self.fButtonColorOn, self.fButtonFont)
 
         if self.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI:
-            self.ui.b_gui.setEnabled(True)
             self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOn, self.fButtonFont)
         else:
-            self.ui.b_gui.setEnabled(False)
             self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOff, self.fButtonFont)
-
-        self.ui.led_midi.setColor(self.ui.led_midi.CALF)
-        self.ui.led_midi.setEnabled(False)
-
-        self.ui.peak_in.setColor(self.ui.peak_in.GREEN)
-        self.ui.peak_in.setChannels(self.fPeaksInputCount)
-        self.ui.peak_in.setOrientation(self.ui.peak_in.HORIZONTAL)
-
-        self.ui.peak_out.setColor(self.ui.peak_in.BLUE)
-        self.ui.peak_out.setChannels(self.fPeaksOutputCount)
-        self.ui.peak_out.setOrientation(self.ui.peak_out.HORIZONTAL)
 
         labelFont = self.ui.label_name.font()
         labelFont.setBold(True)
         labelFont.setPointSize(labelFont.pointSize()+3)
         self.ui.label_name.setFont(labelFont)
-        self.ui.label_name.setText(self.fPluginInfo['name'])
 
-        audioCount = Carla.host.get_audio_port_count_info(self.fPluginId)
-        midiCount  = Carla.host.get_midi_port_count_info(self.fPluginId)
+        audioCount = Carla.host.get_audio_port_count_info(self.fPluginId) if Carla.host is not None else {'ins': 2, 'outs': 2 }
+        midiCount  = Carla.host.get_midi_port_count_info(self.fPluginId) if Carla.host is not None else {'ins': 1, 'outs': 0 }
 
         if audioCount['ins'] == 0:
             self.ui.label_audio_in.hide()
@@ -649,13 +683,20 @@ class PluginSlot_Calf(PluginSlot):
             self.ui.led_midi.hide()
 
         # -------------------------------------------------------------
-        # Set-up connections
 
-        self.ui.b_gui.clicked.connect(self.slot_showCustomUi)
-        self.ui.b_edit.clicked.connect(self.slot_showEditDialog)
-        self.ui.b_remove.clicked.connect(self.slot_removePlugin)
+        self.b_gui    = self.ui.b_gui
+        self.b_edit   = self.ui.b_edit
+        self.b_remove = self.ui.b_remove
 
-        self.customContextMenuRequested.connect(self.slot_showCustomMenu)
+        self.label_name    = self.ui.label_name
+        self.led_midi      = self.ui.led_midi
+
+        self.peak_in  = self.ui.peak_in
+        self.peak_out = self.ui.peak_out
+
+        self.ready()
+
+        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
 
     #------------------------------------------------------------------
 
@@ -666,84 +707,17 @@ class PluginSlot_Calf(PluginSlot):
 
     def recheckPluginHints(self, hints):
         if hints & PLUGIN_HAS_CUSTOM_UI:
-            self.ui.b_gui.setEnabled(True)
             self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOn, self.fButtonFont)
         else:
-            self.ui.b_gui.setEnabled(False)
             self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOff, self.fButtonFont)
 
-        PluginSlot.recheckPluginHints(self, hints)
-
-    def setName(self, name):
-        self.ui.label_name.setText(name)
-        PluginSlot.setName(self, name)
-
-    #------------------------------------------------------------------
-
-    def activeChanged(self, onOff):
-        self.fIsActive = onOff
-
-    def editDialogChanged(self, visible):
-        self.ui.b_edit.blockSignals(True)
-        self.ui.b_edit.setChecked(visible)
-        self.ui.b_edit.blockSignals(False)
-
-    def customUiStateChanged(self, state):
-        self.ui.b_gui.blockSignals(True)
-        if state == 0:
-            self.ui.b_gui.setChecked(False)
-            self.ui.b_gui.setEnabled(True)
-        elif state == 1:
-            self.ui.b_gui.setChecked(True)
-            self.ui.b_gui.setEnabled(True)
-        elif state == -1:
-            self.ui.b_gui.setChecked(False)
-            self.ui.b_gui.setEnabled(False)
-        self.ui.b_gui.blockSignals(False)
-
-    def midiActivityChanged(self, onOff):
-        self.ui.led_midi.setChecked(onOff)
-
-    #------------------------------------------------------------------
-
-    def idleFast(self):
-        # Input peaks
-        if self.fPeaksInputCount > 0:
-            if self.fPeaksInputCount > 1:
-                peak1 = Carla.host.get_input_peak_value(self.fPluginId, True)
-                peak2 = Carla.host.get_input_peak_value(self.fPluginId, False)
-                self.ui.peak_in.displayMeter(1, peak1)
-                self.ui.peak_in.displayMeter(2, peak2)
-            else:
-                peak = Carla.host.get_input_peak_value(self.fPluginId, True)
-                self.ui.peak_in.displayMeter(1, peak)
-
-        # Output peaks
-        if self.fPeaksOutputCount > 0:
-            if self.fPeaksOutputCount > 1:
-                peak1 = Carla.host.get_output_peak_value(self.fPluginId, True)
-                peak2 = Carla.host.get_output_peak_value(self.fPluginId, False)
-                self.ui.peak_out.displayMeter(1, peak1)
-                self.ui.peak_out.displayMeter(2, peak2)
-            else:
-                peak = Carla.host.get_output_peak_value(self.fPluginId, True)
-                self.ui.peak_out.displayMeter(1, peak)
-
-    #------------------------------------------------------------------
-
-    @pyqtSlot(bool)
-    def slot_enableClicked(self, yesNo):
-        self.fIsActive = yesNo
-
-    @pyqtSlot()
-    def slot_showCustomMenu(self):
-        self.showDefaultMenu(self.fIsActive, self.ui.b_edit, self.ui.b_gui)
+        AbstractPluginSlot.recheckPluginHints(self, hints)
 
 # ------------------------------------------------------------------------------------------------------------
 
-class PluginSlot_ZynFX(PluginSlot):
+class PluginSlot_ZynFX(AbstractPluginSlot):
     def __init__(self, parent, pluginId):
-        PluginSlot.__init__(self, parent, pluginId)
+        AbstractPluginSlot.__init__(self, parent, pluginId)
         self.ui = ui_carla_plugin_zynfx.Ui_PluginWidget()
         self.ui.setupUi(self)
 
@@ -759,24 +733,12 @@ class PluginSlot_ZynFX(PluginSlot):
         self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
         self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
 
-        self.ui.peak_in.setColor(self.ui.peak_in.GREEN)
-        self.ui.peak_in.setChannels(self.fPeaksInputCount)
-        self.ui.peak_in.setLinesEnabled(False)
-        self.ui.peak_in.setOrientation(self.ui.peak_in.VERTICAL)
-
-        self.ui.peak_out.setColor(self.ui.peak_in.BLUE)
-        self.ui.peak_out.setChannels(self.fPeaksOutputCount)
-        self.ui.peak_out.setLinesEnabled(False)
-        self.ui.peak_out.setOrientation(self.ui.peak_out.VERTICAL)
-
-        self.ui.label_name.setText(self.fPluginInfo['name'])
-
         # -------------------------------------------------------------
         # Set-up parameters
 
         self.fParameterList = [] # index, widget
 
-        parameterCount = Carla.host.get_parameter_count(self.fPluginId)
+        parameterCount = Carla.host.get_parameter_count(self.fPluginId) if Carla.host is not None else 0
 
         index = 0
         for i in range(parameterCount):
@@ -909,13 +871,22 @@ class PluginSlot_ZynFX(PluginSlot):
             self.ui.label_presets.setVisible(False)
 
         # -------------------------------------------------------------
-        # Set-up connections
 
-        self.ui.b_enable.clicked.connect(self.slot_enableClicked)
-        self.ui.b_edit.clicked.connect(self.slot_showEditDialog)
+        self.b_enable = self.ui.b_enable
+        self.b_edit   = self.ui.b_edit
+
+        self.label_name = self.ui.label_name
+
+        self.peak_in  = self.ui.peak_in
+        self.peak_out = self.ui.peak_out
+
+        self.ready()
+
+        self.peak_in.setOrientation(self.peak_in.VERTICAL)
+        self.peak_out.setOrientation(self.peak_out.VERTICAL)
+
+        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
         self.ui.cb_presets.currentIndexChanged.connect(self.slot_presetChanged)
-
-        self.customContextMenuRequested.connect(self.slot_showCustomMenu)
 
     #------------------------------------------------------------------
 
@@ -924,31 +895,15 @@ class PluginSlot_ZynFX(PluginSlot):
 
     #------------------------------------------------------------------
 
-    def setName(self, name):
-        self.ui.label_name.setText(name)
-        PluginSlot.setName(self, name)
-
-    #------------------------------------------------------------------
-
     def setParameterValue(self, parameterId, value):
         self.parameterValueChanged(parameterId, value)
-        PluginSlot.setParameterValue(self, parameterId, value)
+        AbstractPluginSlot.setParameterValue(self, parameterId, value)
 
     def setMidiProgram(self, index):
         self.midiProgramChanged(index)
-        PluginSlot.setMidiProgram(self, index)
+        AbstractPluginSlot.setMidiProgram(self, index)
 
     #------------------------------------------------------------------
-
-    def activeChanged(self, onOff):
-        self.ui.b_enable.blockSignals(True)
-        self.ui.b_enable.setChecked(onOff)
-        self.ui.b_enable.blockSignals(False)
-
-    def editDialogChanged(self, visible):
-        self.ui.b_edit.blockSignals(True)
-        self.ui.b_edit.setChecked(visible)
-        self.ui.b_edit.blockSignals(False)
 
     def parameterValueChanged(self, parameterId, value):
         for paramIndex, paramWidget in self.fParameterList:
@@ -967,51 +922,18 @@ class PluginSlot_ZynFX(PluginSlot):
 
     #------------------------------------------------------------------
 
-    def idleFast(self):
-        # Input peaks
-        if self.fPeaksInputCount > 0:
-            if self.fPeaksInputCount > 1:
-                peak1 = Carla.host.get_input_peak_value(self.fPluginId, True)
-                peak2 = Carla.host.get_input_peak_value(self.fPluginId, False)
-                self.ui.peak_in.displayMeter(1, peak1)
-                self.ui.peak_in.displayMeter(2, peak2)
-            else:
-                peak = Carla.host.get_input_peak_value(self.fPluginId, True)
-                self.ui.peak_in.displayMeter(1, peak)
-
-        # Output peaks
-        if self.fPeaksOutputCount > 0:
-            if self.fPeaksOutputCount > 1:
-                peak1 = Carla.host.get_output_peak_value(self.fPluginId, True)
-                peak2 = Carla.host.get_output_peak_value(self.fPluginId, False)
-                self.ui.peak_out.displayMeter(1, peak1)
-                self.ui.peak_out.displayMeter(2, peak2)
-            else:
-                peak = Carla.host.get_output_peak_value(self.fPluginId, True)
-                self.ui.peak_out.displayMeter(1, peak)
-
-    #------------------------------------------------------------------
-
-    @pyqtSlot(bool)
-    def slot_enableClicked(self, yesNo):
-        self.setActive(yesNo, False, True)
-
     @pyqtSlot(int)
     def slot_parameterValueChanged(self, value):
         index = self.sender().getIndex()
         value = float(value)/1000.0
 
         Carla.host.set_parameter_value(self.fPluginId, index, value)
-        PluginSlot.setParameterValue(self, index, value)
+        AbstractPluginSlot.setParameterValue(self, index, value)
 
     @pyqtSlot(int)
     def slot_presetChanged(self, index):
         Carla.host.set_midi_program(self.fPluginId, index)
-        PluginSlot.setMidiProgram(self, index)
-
-    @pyqtSlot()
-    def slot_showCustomMenu(self):
-        self.showDefaultMenu(self.ui.b_enable.isChecked(), self.ui.b_edit, None)
+        AbstractPluginSlot.setMidiProgram(self, index)
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -1033,3 +955,16 @@ def createPluginSlot(parent, pluginId):
     return PluginSlot_Default(parent, pluginId)
 
 # ------------------------------------------------------------------------------------------------------------
+# Main Testing
+
+if __name__ == '__main__':
+    from carla_style import CarlaApplication
+    import resources_rc
+
+    app = CarlaApplication("Carla-Skins")
+    gui = PluginSlot_Pixmap(None, 0)
+    #gui = PluginSlot_Calf(None, 0)
+    #gui = PluginSlot_ZynFX(None, 0)
+    gui.show()
+
+    app.exec_()
