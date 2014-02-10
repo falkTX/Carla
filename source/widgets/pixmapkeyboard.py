@@ -222,8 +222,6 @@ class PixmapKeyboard(QWidget):
         else:
             note = -1
 
-        print(keyPos, note, octave)
-
         if note != -1:
             note += octave * 12
 

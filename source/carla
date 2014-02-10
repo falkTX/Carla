@@ -147,9 +147,7 @@ class CarlaMultiW(QTabWidget):
         self.fPatchbay.projectLoaded()
 
     def saveSettings(self, settings):
-        #self.fRack.saveSettings(settings)
         self.fPatchbay.saveSettings(settings)
-        #self.fParent.saveSettings(settings)
 
     def showEditDialog(self, pluginId):
         self.fRack.showEditDialog(pluginId)

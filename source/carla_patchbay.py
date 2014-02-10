@@ -118,6 +118,9 @@ class CarlaPatchbayW(QFrame):
         # -------------------------------------------------------------
         # Connect actions to functions
 
+        parent.ui.act_settings_show_meters.toggled.connect(self.slot_showCanvasMeters)
+        parent.ui.act_settings_show_keyboard.toggled.connect(self.slot_showCanvasKeyboard)
+
         self.fView.horizontalScrollBar().valueChanged.connect(self.slot_horizontalScrollBarChanged)
         self.fView.verticalScrollBar().valueChanged.connect(self.slot_verticalScrollBarChanged)
 
@@ -129,6 +132,23 @@ class CarlaPatchbayW(QFrame):
 
         self.fKeys.keyboard.noteOn.connect(self.slot_noteOn)
         self.fKeys.keyboard.noteOff.connect(self.slot_noteOff)
+
+        # -------------------------------------------------------------
+        # Load Settings
+
+        settings = QSettings()
+
+        showMeters = settings.value("ShowMeters", False, type=bool)
+        self.fParent.ui.act_settings_show_meters.setChecked(showMeters)
+        self.fPeaksIn.setVisible(showMeters)
+        self.fPeaksOut.setVisible(showMeters)
+
+        showKeyboard = settings.value("ShowKeyboard", True, type=bool)
+        self.fParent.ui.act_settings_show_keyboard.setChecked(showKeyboard)
+        self.fKeys.setVisible(showKeyboard)
+
+        # -------------------------------------------------------------
+        # Connect actions to functions (part 2)
 
         if not doSetup: return
 
@@ -297,6 +317,8 @@ class CarlaPatchbayW(QFrame):
         QTimer.singleShot(1000, self.slot_canvasRefresh)
 
     def saveSettings(self, settings):
+        settings.setValue("ShowMeters", self.fPeaksIn.isVisible())
+        settings.setValue("ShowKeyboard", self.fKeys.isVisible())
         settings.setValue("HorizontalScrollBarValue", self.fView.horizontalScrollBar().value())
         settings.setValue("VerticalScrollBarValue", self.fView.verticalScrollBar().value())
 
@@ -356,6 +378,17 @@ class CarlaPatchbayW(QFrame):
         x = self.fView.horizontalScrollBar().value() + self.width()/4
         y = self.fView.verticalScrollBar().value() + self.height()/4
         patchcanvas.setInitialPos(x, y)
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(bool)
+    def slot_showCanvasMeters(self, yesNo):
+        self.fPeaksIn.setVisible(yesNo)
+        self.fPeaksOut.setVisible(yesNo)
+
+    @pyqtSlot(bool)
+    def slot_showCanvasKeyboard(self, yesNo):
+        self.fKeys.setVisible(yesNo)
 
     # -----------------------------------------------------------------
 

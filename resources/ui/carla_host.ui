@@ -180,7 +180,7 @@
      <x>0</x>
      <y>0</y>
      <width>688</width>
-     <height>17</height>
+     <height>19</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -260,6 +260,8 @@
      <string>&amp;Settings</string>
     </property>
     <addaction name="act_settings_show_toolbar"/>
+    <addaction name="act_settings_show_meters"/>
+    <addaction name="act_settings_show_keyboard"/>
     <addaction name="separator"/>
     <addaction name="act_settings_configure"/>
    </widget>
@@ -631,6 +633,22 @@
   <action name="act_help_about_qt">
    <property name="text">
     <string>About &amp;Qt</string>
+   </property>
+  </action>
+  <action name="act_settings_show_meters">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Canvas &amp;Meters</string>
+   </property>
+  </action>
+  <action name="act_settings_show_keyboard">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Canvas &amp;Keyboard</string>
    </property>
   </action>
  </widget>
