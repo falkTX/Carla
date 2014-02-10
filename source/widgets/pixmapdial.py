@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Pixmap Dial, a custom Qt4 widget
-# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -23,7 +23,7 @@ from PyQt4.QtCore import Qt, QPointF, QRectF, QTimer, QSize
 from PyQt4.QtGui import QColor, QConicalGradient, QFont, QFontMetrics
 from PyQt4.QtGui import QDial, QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
 
-from math import floor
+from math import cos, floor, pi, sin
 
 # ------------------------------------------------------------------------------------------------------------
 # Widget Class
@@ -35,7 +35,8 @@ class PixmapDial(QDial):
     CUSTOM_PAINT_CARLA_VOL   = 2
     CUSTOM_PAINT_CARLA_L     = 3
     CUSTOM_PAINT_CARLA_R     = 4
-    CUSTOM_PAINT_NO_GRADIENT = 5
+    CUSTOM_PAINT_ZITA        = 5
+    CUSTOM_PAINT_NO_GRADIENT = 6
 
     # enum Orientation
     HORIZONTAL = 0
@@ -285,6 +286,18 @@ class PixmapDial(QDial):
 
                 painter.setPen(QPen(color, 2))
                 painter.drawArc(3.5, 4.5, 22.0, 22.0, startAngle, spanAngle)
+
+            # Custom knobs (Zita)
+            elif self.fCustomPaint == self.CUSTOM_PAINT_ZITA:
+                a = value * pi * 3 / 2 + 4.0
+                r = 11.0
+                x = 11.5
+                y = 11.5
+                x += r * sin(a)
+                y -= r * cos(a)
+                painter.setBrush(Qt.black)
+                painter.setPen(QPen(Qt.black, 2))
+                painter.drawLine(QPointF(r, r), QPointF(x, y))
 
             # Custom knobs
             else:

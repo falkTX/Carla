@@ -26,6 +26,7 @@ from PyQt4.QtGui import QFont, QFrame
 
 import ui_carla_plugin_default
 import ui_carla_plugin_calf
+import ui_carla_plugin_zita
 import ui_carla_plugin_zynfx
 
 from carla_widgets import *
@@ -611,6 +612,25 @@ class PluginSlot_Pixmap(PluginSlot_Default):
             background-repeat: repeat-xy;
         }""")
 
+        #if (self.pinfo['category'] == PLUGIN_CATEGORY_SYNTH):
+          #self.set_plugin_widget_color(PALETTE_COLOR_WHITE)
+        #elif (self.pinfo['category'] == PLUGIN_CATEGORY_DELAY):
+          #self.set_plugin_widget_color(PALETTE_COLOR_ORANGE)
+        #elif (self.pinfo['category'] == PLUGIN_CATEGORY_EQ):
+          #self.set_plugin_widget_color(PALETTE_COLOR_GREEN)
+        #elif (self.pinfo['category'] == PLUGIN_CATEGORY_FILTER):
+          #self.set_plugin_widget_color(PALETTE_COLOR_BLUE)
+        #elif (self.pinfo['category'] == PLUGIN_CATEGORY_DYNAMICS):
+          #self.set_plugin_widget_color(PALETTE_COLOR_PINK)
+        #elif (self.pinfo['category'] == PLUGIN_CATEGORY_MODULATOR):
+          #self.set_plugin_widget_color(PALETTE_COLOR_RED)
+        #elif (self.pinfo['category'] == PLUGIN_CATEGORY_UTILITY):
+          #self.set_plugin_widget_color(PALETTE_COLOR_YELLOW)
+        #elif (self.pinfo['category'] == PLUGIN_CATEGORY_OUTRO):
+          #self.set_plugin_widget_color(PALETTE_COLOR_BROWN)
+        #else:
+          #self.set_plugin_widget_color(PALETTE_COLOR_NONE)
+
     #------------------------------------------------------------------
 
     def paintEvent(self, event):
@@ -712,6 +732,110 @@ class PluginSlot_Calf(AbstractPluginSlot):
             self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOff, self.fButtonFont)
 
         AbstractPluginSlot.recheckPluginHints(self, hints)
+
+# ------------------------------------------------------------------------------------------------------------
+
+class PluginSlot_Zita(AbstractPluginSlot):
+    def __init__(self, parent, pluginId):
+        AbstractPluginSlot.__init__(self, parent, pluginId)
+        self.ui = ui_carla_plugin_zita.Ui_PluginWidget()
+        self.ui.setupUi(self)
+
+        # -------------------------------------------------------------
+        # Internal stuff
+
+        audioCount = Carla.host.get_audio_port_count_info(self.fPluginId) if Carla.host is not None else {'ins': 2, 'outs': 2 }
+
+        # -------------------------------------------------------------
+        # Set-up GUI
+
+        self.setStyleSheet("""
+        QFrame#PluginWidget {
+            background-color: #404040;
+        }
+        QWidget#w_revsect {
+            background-image: url(:/bitmaps/zita/revsect.png);
+        }
+        QWidget#w_eq1sect {
+            background-image: url(:/bitmaps/zita/eq1sect.png);
+        }
+        QWidget#w_eq2sect {
+            background-image: url(:/bitmaps/zita/eq2sect.png);
+        }
+        QWidget#w_ambmixsect {
+            background-image: url(:/bitmaps/zita/%s.png);
+        }
+        QWidget#w_redzita {
+            background-image: url(:/bitmaps/zita/redzita.png);
+        }
+        """ % ("mixsect" if audioCount['outs'] == 2 else "ambsect"))
+
+        # -------------------------------------------------------------
+        # Set-up Knobs
+
+        self.fKnobDelay = PixmapDial(self, 0)
+        self.fKnobDelay.setPixmap(6)
+        self.fKnobDelay.setCustomPaint(PixmapDial.CUSTOM_PAINT_ZITA)
+
+        self.fKnobXover = PixmapDial(self, 1)
+        self.fKnobXover.setPixmap(6)
+        self.fKnobXover.setCustomPaint(PixmapDial.CUSTOM_PAINT_ZITA)
+
+        self.fKnobRtLow = PixmapDial(self, 2)
+        self.fKnobRtLow.setPixmap(6)
+        self.fKnobRtLow.setCustomPaint(PixmapDial.CUSTOM_PAINT_ZITA)
+
+        self.fKnobRtMid = PixmapDial(self, 3)
+        self.fKnobRtMid.setPixmap(6)
+        self.fKnobRtMid.setCustomPaint(PixmapDial.CUSTOM_PAINT_ZITA)
+
+        self.fKnobDamping = PixmapDial(self, 4)
+        self.fKnobDamping.setPixmap(6)
+        self.fKnobDamping.setCustomPaint(PixmapDial.CUSTOM_PAINT_ZITA)
+
+        self.fKnobEq1Freq = PixmapDial(self, 5)
+        self.fKnobEq1Freq.setPixmap(6)
+        self.fKnobEq1Freq.setCustomPaint(PixmapDial.CUSTOM_PAINT_ZITA)
+
+        self.fKnobEq1Gain = PixmapDial(self, 6)
+        self.fKnobEq1Gain.setPixmap(6)
+        self.fKnobEq1Gain.setCustomPaint(PixmapDial.CUSTOM_PAINT_ZITA)
+
+        self.fKnobEq2Freq = PixmapDial(self, 7)
+        self.fKnobEq2Freq.setPixmap(6)
+        self.fKnobEq2Freq.setCustomPaint(PixmapDial.CUSTOM_PAINT_ZITA)
+
+        self.fKnobEq2Gain = PixmapDial(self, 8)
+        self.fKnobEq2Gain.setPixmap(6)
+        self.fKnobEq2Gain.setCustomPaint(PixmapDial.CUSTOM_PAINT_ZITA)
+
+        self.fKnobMix = PixmapDial(self, 9)
+        self.fKnobMix.setPixmap(6)
+        self.fKnobMix.setCustomPaint(PixmapDial.CUSTOM_PAINT_ZITA)
+
+        # -------------------------------------------------------------
+
+        self.ready()
+
+        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
+
+    #------------------------------------------------------------------
+
+    def getFixedHeight(self):
+        return 75
+
+    def resizeEvent(self, event):
+        self.fKnobDelay.move(self.ui.w_revsect.x()+31, 33)
+        self.fKnobXover.move(self.ui.w_revsect.x()+93, 18)
+        self.fKnobRtLow.move(self.ui.w_revsect.x()+148, 18)
+        self.fKnobRtMid.move(self.ui.w_revsect.x()+208, 18)
+        self.fKnobDamping.move(self.ui.w_revsect.x()+268, 18)
+        self.fKnobEq1Freq.move(self.ui.w_eq1sect.x()+20, 33)
+        self.fKnobEq1Gain.move(self.ui.w_eq1sect.x()+69, 18)
+        self.fKnobEq2Freq.move(self.ui.w_eq2sect.x()+20, 33)
+        self.fKnobEq2Gain.move(self.ui.w_eq2sect.x()+69, 18)
+        self.fKnobMix.move(self.ui.w_ambmixsect.x()+24, 33)
+        AbstractPluginSlot.resizeEvent(self, event)
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -947,6 +1071,10 @@ def createPluginSlot(parent, pluginId):
     if pluginInfo['type'] == PLUGIN_INTERNAL:
         if pluginLabel.startswith("zyn") and pluginInfo['category'] != PLUGIN_CATEGORY_SYNTH:
             return PluginSlot_ZynFX(parent, pluginId)
+
+    if pluginInfo['type'] == PLUGIN_LADSPA:
+        if pluginLabel == "zita-reverb" or pluginLabel == "zita-reverb-amb":
+            return PluginSlot_Zita(parent, pluginId)
 
     if pluginName.split(" ", 1)[0].lower() == "calf":
         return PluginSlot_Calf(parent, pluginId)

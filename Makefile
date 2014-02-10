@@ -100,6 +100,7 @@ UIs = \
 	source/ui_carla_parameter.py \
 	source/ui_carla_plugin_default.py \
 	source/ui_carla_plugin_calf.py \
+	source/ui_carla_plugin_zita.py \
 	source/ui_carla_plugin_zynfx.py \
 	source/ui_carla_refresh.py \
 	source/ui_carla_settings.py \

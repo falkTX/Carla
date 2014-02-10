@@ -92,6 +92,8 @@
         <file>bitmaps/dial_04d.png</file>
         <file>bitmaps/dial_05.png</file>
         <file>bitmaps/dial_05d.png</file>
+        <file>bitmaps/dial_06.png</file>
+        <file>bitmaps/dial_06d.png</file>
 
         <file>bitmaps/kbd_h_dark.png</file>
         <file>bitmaps/kbd_v_dark.png</file>
@@ -112,6 +114,13 @@
 
         <file>bitmaps/style/arrow.png</file>
         <file>bitmaps/style/groupbox.png</file>
+
+        <file>bitmaps/zita/ambsect.png</file>
+        <file>bitmaps/zita/eq1sect.png</file>
+        <file>bitmaps/zita/eq2sect.png</file>
+        <file>bitmaps/zita/mixsect.png</file>
+        <file>bitmaps/zita/redzita.png</file>
+        <file>bitmaps/zita/revsect.png</file>
 
         <file>scalable/pb_generic.svg</file>
         <file>scalable/pb_hardware.svg</file>
