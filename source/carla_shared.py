@@ -622,6 +622,38 @@ def getAndSetPath(self_, currentPath, lineEdit):
     return newPath
 
 # ------------------------------------------------------------------------------------------------------------
+# Get plugin type as string
+
+def getPluginTypeAsString(ptype):
+    if ptype == PLUGIN_INTERNAL:
+        return "Internal"
+    if ptype == PLUGIN_LADSPA:
+        return "LADSPA"
+    if ptype == PLUGIN_DSSI:
+        return "DSSI"
+    if ptype == PLUGIN_LV2:
+        return "LV2"
+    if ptype == PLUGIN_VST:
+        return "VST"
+    if ptype == PLUGIN_VST3:
+        return "VST3"
+    if ptype == PLUGIN_AU:
+        return "AU"
+    if ptype == PLUGIN_JACK:
+        return "JACK"
+    if ptype == PLUGIN_REWIRE:
+        return "ReWire"
+    if ptype == PLUGIN_FILE_CSD:
+        return "CSD"
+    if ptype == PLUGIN_FILE_GIG:
+        return "GIG"
+    if ptype == PLUGIN_FILE_SF2:
+        return "SF2"
+    if ptype == PLUGIN_FILE_SFZ:
+        return "SFZ"
+    return "Unknown"
+
+# ------------------------------------------------------------------------------------------------------------
 # Custom MessageBox
 
 def CustomMessageBox(self_, icon, title, text, extraText="", buttons=QMessageBox.Yes|QMessageBox.No, defButton=QMessageBox.No):

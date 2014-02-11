@@ -19,7 +19,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import QSize, QTimer
+from PyQt4.QtCore import Qt, QSize, QTimer
 from PyQt4.QtGui import QApplication, QListWidget, QListWidgetItem
 
 # ------------------------------------------------------------------------------------------------------------
@@ -39,6 +39,7 @@ class CarlaRackItem(QListWidgetItem):
         self.widget = createPluginSlot(parent, pluginId)
         self.widget.setFixedHeight(self.widget.getFixedHeight())
 
+        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled) # Qt.ItemIsDragEnabled|Qt.ItemIsDropEnabled
         self.setSizeHint(QSize(300, self.widget.getFixedHeight()))
 
         parent.setItemWidget(self, self.widget)
@@ -55,6 +56,20 @@ class CarlaRackItem(QListWidgetItem):
         #self.widget.ui.label_name.setText(newName)
         #self.widget.ui.edit_dialog.setName(newName)
 
+    # -----------------------------------------------------------------
+
+    #def paintEvent(self, event):
+        #painter = QPainter(self)
+        #painter.save()
+
+        #painter.setPen(QPen(Qt.black, 3))
+        #painter.setBrush(Qt.black)
+        #painter.drawRect(0, 0, self.width(), self.height())
+        #painter.drawLine(0, self.height()-4, self.width(), self.height()-4)
+
+        #painter.restore()
+        #QListWidgetItem.paintEvent(self, event)
+
 # ------------------------------------------------------------------------------------------------------------
 # Rack widget
 
@@ -69,28 +84,33 @@ class CarlaRackW(QListWidget):
         self.fPluginCount = 0
         self.fPluginList  = []
 
+        self.fCurrentRow = -1
+        self.fLastSelectedItem = None
+
         # -------------------------------------------------------------
         # Set-up GUI stuff
 
-        self.setMinimumWidth(640) # required by zita, 591 was old value
+        self.setMinimumWidth(644) # required by zita, 591 was old value
         self.setSortingEnabled(False)
 
-        app  = QApplication.instance()
-        pal1 = app.palette().base().color()
-        pal2 = app.palette().button().color()
-        col1 = "stop:0 rgb(%i, %i, %i)" % (pal1.red(), pal1.green(), pal1.blue())
-        col2 = "stop:1 rgb(%i, %i, %i)" % (pal2.red(), pal2.green(), pal2.blue())
+        self.currentRowChanged.connect(self.slot_currentRowChanged)
 
-        self.setStyleSheet("""
-          QListWidget {
-            background-color: qlineargradient(spread:pad,
-                x1:0.0, y1:0.0,
-                x2:0.2, y2:1.0,
-                %s,
-                %s
-            );
-          }
-        """ % (col1, col2))
+        #app  = QApplication.instance()
+        #pal1 = app.palette().base().color()
+        #pal2 = app.palette().button().color()
+        #col1 = "stop:0 rgb(%i, %i, %i)" % (pal1.red(), pal1.green(), pal1.blue())
+        #col2 = "stop:1 rgb(%i, %i, %i)" % (pal2.red(), pal2.green(), pal2.blue())
+
+        #self.setStyleSheet("""
+          #QListWidget {
+            #background-color: qlineargradient(spread:pad,
+                #x1:0.0, y1:0.0,
+                #x2:0.2, y2:1.0,
+                #%s,
+                #%s
+            #);
+          #}
+        #""" % (col1, col2))
 
         # -------------------------------------------------------------
         # Connect actions to functions
@@ -505,5 +525,21 @@ class CarlaRackW(QListWidget):
             return
 
         pitem.widget.fEditDialog.reloadAll()
+
+    # -----------------------------------------------------------------
+
+    def slot_currentRowChanged(self, row):
+        self.fCurrentRow = row
+
+        if self.fLastSelectedItem is not None:
+            self.fLastSelectedItem.setSelected(False)
+
+        if row < 0 or row >= self.fPluginCount or self.fPluginList[row] is None:
+            self.fLastSelectedItem = None
+            return
+
+        pitem = self.fPluginList[row]
+        pitem.widget.setSelected(True)
+        self.fLastSelectedItem = pitem.widget
 
     # -----------------------------------------------------------------

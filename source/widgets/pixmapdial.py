@@ -35,8 +35,9 @@ class PixmapDial(QDial):
     CUSTOM_PAINT_CARLA_VOL   = 2
     CUSTOM_PAINT_CARLA_L     = 3
     CUSTOM_PAINT_CARLA_R     = 4
-    CUSTOM_PAINT_ZITA        = 5
-    CUSTOM_PAINT_NO_GRADIENT = 6
+    CUSTOM_PAINT_COLOR       = 5
+    CUSTOM_PAINT_ZITA        = 6
+    CUSTOM_PAINT_NO_GRADIENT = 7
 
     # enum Orientation
     HORIZONTAL = 0
@@ -51,6 +52,8 @@ class PixmapDial(QDial):
         self.fIndex       = index
         self.fPixmap      = QPixmap(":/bitmaps/dial_01d.png")
         self.fPixmapNum   = "01"
+
+        self.fCustomColor = QColor(0, 0, 0)
         self.fCustomPaint = self.CUSTOM_PAINT_NULL
 
         self.fIsHovered = False
@@ -89,10 +92,14 @@ class PixmapDial(QDial):
     def getSize(self):
         return self.fSize
 
+    def setCustomColor(self, color):
+        self.fCustomColor = color
+        #self.update()
+
     def setCustomPaint(self, paint):
         self.fCustomPaint = paint
         self.fLabelPos.setY(self.fSize + self.fLabelHeight/2)
-        self.update()
+        #self.update()
 
     def setEnabled(self, enabled):
         if self.isEnabled() != enabled:
@@ -121,7 +128,7 @@ class PixmapDial(QDial):
         self.fLabelGradient.setFinalStop(0, self.fSize + self.fLabelHeight + 5)
 
         self.fLabelGradientRect = QRectF(float(self.fSize)/8.0, float(self.fSize)/2.0, float(self.fSize*6)/8.0, self.fSize+self.fLabelHeight+5)
-        self.update()
+        #self.update()
 
     def setPixmap(self, pixmapId):
         self.fPixmapNum = "%02i" % pixmapId
@@ -133,7 +140,7 @@ class PixmapDial(QDial):
             self.fOrientation = self.VERTICAL
 
         self.updateSizes()
-        self.update()
+        #self.update()
 
     def minimumSizeHint(self):
         return QSize(self.fSize, self.fSize)
@@ -215,8 +222,8 @@ class PixmapDial(QDial):
             # Custom knobs (Dry/Wet and Volume)
             if self.fCustomPaint in (self.CUSTOM_PAINT_CARLA_WET, self.CUSTOM_PAINT_CARLA_VOL):
                 # knob color
-                colorGreen = QColor(0x5D, 0xE7, 0x3D, 191 + self.fHoverStep*7)
-                colorBlue  = QColor(0x3E, 0xB8, 0xBE, 191 + self.fHoverStep*7)
+                colorGreen = QColor(0x5D, 0xE7, 0x3D).lighter(100 + self.fHoverStep*6)
+                colorBlue  = QColor(0x3E, 0xB8, 0xBE).lighter(100 + self.fHoverStep*6)
 
                 # draw small circle
                 ballRect = QRectF(8.0, 8.0, 15.0, 15.0)
@@ -259,7 +266,7 @@ class PixmapDial(QDial):
             # Custom knobs (L and R)
             elif self.fCustomPaint in (self.CUSTOM_PAINT_CARLA_L, self.CUSTOM_PAINT_CARLA_R):
                 # knob color
-                color = QColor(0xAD + self.fHoverStep*5, 0xD5 + self.fHoverStep*4, 0x4B + self.fHoverStep*5)
+                color = QColor(0xAD, 0xD5, 0x48).lighter(100 + self.fHoverStep*6)
 
                 # draw small circle
                 ballRect = QRectF(7.0, 8.0, 11.0, 12.0)
@@ -286,6 +293,31 @@ class PixmapDial(QDial):
 
                 painter.setPen(QPen(color, 2))
                 painter.drawArc(3.5, 4.5, 22.0, 22.0, startAngle, spanAngle)
+
+            # Custom knobs (Color)
+            elif self.fCustomPaint == self.CUSTOM_PAINT_COLOR:
+                # knob color
+                color = self.fCustomColor.lighter(100 + self.fHoverStep*6)
+
+                # draw small circle
+                ballRect = QRectF(8.0, 8.0, 15.0, 15.0)
+                ballPath = QPainterPath()
+                ballPath.addEllipse(ballRect)
+                tmpValue  = (0.375 + 0.75*value)
+                ballValue = tmpValue - floor(tmpValue)
+                ballPoint = ballPath.pointAtPercent(ballValue)
+
+                # draw arc
+                startAngle = 216*16
+                spanAngle  = -252*16*value
+
+                painter.setBrush(color)
+                painter.setPen(QPen(color, 0))
+                painter.drawEllipse(QRectF(ballPoint.x(), ballPoint.y(), 2.2, 2.2))
+
+                painter.setBrush(color)
+                painter.setPen(QPen(color, 3))
+                painter.drawArc(4.0, 4.0, 26.0, 26.0, startAngle, spanAngle)
 
             # Custom knobs (Zita)
             elif self.fCustomPaint == self.CUSTOM_PAINT_ZITA:

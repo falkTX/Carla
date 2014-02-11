@@ -19,12 +19,14 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtGui import QFont, QFrame, QPushButton
+from PyQt4.QtCore import Qt
+from PyQt4.QtGui import QFont, QFrame, QPen, QPushButton
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
 import ui_carla_plugin_default
+import ui_carla_plugin_basic_fx
 import ui_carla_plugin_calf
 import ui_carla_plugin_zita
 import ui_carla_plugin_zynfx
@@ -59,6 +61,7 @@ class AbstractPluginSlot(QFrame):
         # Internal stuff
 
         self.fIsActive = False
+        self.fIsSelected = False
 
         self.fLastGreenLedState = False
         self.fLastBlueLedState  = False
@@ -97,7 +100,9 @@ class AbstractPluginSlot(QFrame):
 
         self.cb_presets = None
 
-        self.label_name    = None
+        self.label_name = None
+        self.label_type = None
+
         self.led_control   = None
         self.led_midi      = None
         self.led_audio_in  = None
@@ -130,6 +135,9 @@ class AbstractPluginSlot(QFrame):
         if self.label_name is not None:
             self.label_name.setText(self.fPluginInfo['name'])
 
+        if self.label_type is not None:
+            self.label_type.setText(getPluginTypeAsString(self.fPluginInfo['type']))
+
         if self.led_control is not None:
             self.led_control.setColor(self.led_control.YELLOW)
             self.led_control.setEnabled(False)
@@ -158,7 +166,9 @@ class AbstractPluginSlot(QFrame):
 
         for paramIndex, paramWidget in self.fParameterList:
             paramWidget.valueChanged.connect(self.slot_parameterValueChanged)
-            paramWidget.setValue(Carla.host.get_current_parameter_value(self.fPluginId, paramIndex) * 1000)
+
+            if paramIndex >= 0 and Carla.host is not None:
+                paramWidget.setValue(Carla.host.get_current_parameter_value(self.fPluginId, paramIndex) * 1000)
 
     #------------------------------------------------------------------
 
@@ -185,6 +195,13 @@ class AbstractPluginSlot(QFrame):
 
         if self.label_name is not None:
             self.label_name.setText(name)
+
+    def setSelected(self, yesNo):
+        if self.fIsSelected == yesNo:
+            return
+
+        self.fIsSelected = yesNo
+        self.update()
 
     #------------------------------------------------------------------
 
@@ -420,6 +437,18 @@ class AbstractPluginSlot(QFrame):
 
     #------------------------------------------------------------------
 
+    def drawOutline(self):
+        painter = QPainter(self)
+
+        if self.fIsSelected:
+            painter.setPen(QPen(Qt.cyan, 4))
+            painter.setBrush(Qt.transparent)
+            painter.drawRect(0, 0, self.width(), self.height())
+        else:
+            painter.setPen(QPen(Qt.black, 1))
+            painter.setBrush(Qt.black)
+            painter.drawLine(0, self.height()-1, self.width(), self.height()-1)
+
     def showDefaultCustomMenu(self, isEnabled, bEdit = None, bGui = None):
         menu = QMenu(self)
 
@@ -513,8 +542,11 @@ class AbstractPluginSlot(QFrame):
         index = self.sender().getIndex()
         value = float(value)/1000.0
 
-        Carla.host.set_parameter_value(self.fPluginId, index, value)
-        self.setParameterValue(index, value, False)
+        if index < 0:
+            self.setInternalParameter(index, value)
+        else:
+            Carla.host.set_parameter_value(self.fPluginId, index, value)
+            self.setParameterValue(index, value, False)
 
     @pyqtSlot(int)
     def slot_programChanged(self, index):
@@ -525,6 +557,12 @@ class AbstractPluginSlot(QFrame):
     def slot_midiProgramChanged(self, index):
         Carla.host.set_midi_program(self.fPluginId, index)
         self.setMidiProgram(index, False)
+
+    #------------------------------------------------------------------
+
+    def paintEvent(self, event):
+        self.drawOutline()
+        QFrame.paintEvent(self, event)
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -606,7 +644,7 @@ class PluginSlot_Default(AbstractPluginSlot):
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
-        return 48
+        return 36
 
     #------------------------------------------------------------------
 
@@ -657,6 +695,166 @@ class PluginSlot_Default(AbstractPluginSlot):
 
 # ------------------------------------------------------------------------------------------------------------
 
+class PluginSlot_BasicFX(AbstractPluginSlot):
+    def __init__(self, parent, pluginId):
+        AbstractPluginSlot.__init__(self, parent, pluginId)
+        self.ui = ui_carla_plugin_basic_fx.Ui_PluginWidget()
+        self.ui.setupUi(self)
+
+        # -------------------------------------------------------------
+        # Set-up GUI
+
+        labelFont = QFont()
+        labelFont.setBold(True)
+        labelFont.setPointSize(9)
+
+        self.ui.label_name.setFont(labelFont)
+        self.ui.label_type.setFont(labelFont)
+
+        r = 40
+        g = 40
+        b = 40
+
+        if self.fPluginInfo['category'] == PLUGIN_CATEGORY_MODULATOR:
+            r += 10
+        elif self.fPluginInfo['category'] == PLUGIN_CATEGORY_EQ:
+            g += 10
+        elif self.fPluginInfo['category'] == PLUGIN_CATEGORY_FILTER:
+            b += 10
+        elif self.fPluginInfo['category'] == PLUGIN_CATEGORY_DELAY:
+            r += 15
+            b -= 15
+        elif self.fPluginInfo['category'] == PLUGIN_CATEGORY_DISTORTION:
+            g += 10
+            b += 10
+        elif self.fPluginInfo['category'] == PLUGIN_CATEGORY_DYNAMICS:
+            r += 10
+            b += 10
+        elif self.fPluginInfo['category'] == PLUGIN_CATEGORY_UTILITY:
+            r += 10
+            g += 10
+
+        self.setStyleSheet("""
+        QFrame#PluginWidget {
+            background-color: rgb(%i, %i, %i);
+            background-image: url(:/bitmaps/background_noise1.png);
+            background-repeat: repeat-xy;
+        }""" % (r, g, b))
+
+        self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
+        self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
+
+        if self.fPluginInfo['iconName'] == "distrho":
+            self.ui.b_gui.setPixmaps(":/bitmaps/button_distrho.png", ":/bitmaps/button_distrho_down.png", ":/bitmaps/button_distrho_hover.png")
+        elif self.fPluginInfo['iconName'] == "file":
+            self.ui.b_gui.setPixmaps(":/bitmaps/button_file.png", ":/bitmaps/button_file_down.png", ":/bitmaps/button_file_hover.png")
+        else:
+            self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
+
+        # -------------------------------------------------------------
+        # Set-up parameters
+
+        parameterCount = Carla.host.get_parameter_count(self.fPluginId) if Carla.host is not None else 0
+
+        index = 0
+        for i in range(min(parameterCount, 8)):
+            paramInfo   = Carla.host.get_parameter_info(self.fPluginId, i)
+            paramData   = Carla.host.get_parameter_data(self.fPluginId, i)
+            paramRanges = Carla.host.get_parameter_ranges(self.fPluginId, i)
+
+            if paramData['type'] != PARAMETER_INPUT:
+                continue
+
+            paramName = charPtrToString(paramInfo['name']).split("/", 1)[0].split(" (", 1)[0].strip()
+            paramLow  = paramName.lower()
+
+            if "Bandwidth" in paramName:
+                paramName = paramName.replace("Bandwidth", "Bw")
+            elif "Frequency" in paramName:
+                paramName = paramName.replace("Frequency", "Freq")
+            elif "Output" in paramName:
+                paramName = paramName.replace("Output", "Out")
+            elif paramLow == "threshold":
+                paramName = "Thres"
+
+            if len(paramName) > 9:
+                paramName = paramName[:9]
+
+            #if self.fPluginInfo['category'] == PLUGIN_CATEGORY_FILTER:
+                #_r =  55 + float(i)/8*200
+                #_g = 255 - float(i)/8*200
+                #_b = 127 - r*2
+            #elif self.fPluginInfo['category'] == PLUGIN_CATEGORY_DELAY:
+                #_r = 127
+                #_g =  55 + float(i)/8*200
+                #_b = 255 - float(i)/8*200
+            #elif r < b < g:
+                #_r =  55 + float(i)/8*200
+                #_g = 127
+                #_b = 255 - float(i)/8*200
+            #else:
+            _r = 255 - float(i)/8*200
+            _g =  55 + float(i)/8*200
+            _b =  (r-40)*4
+
+            #if _r < 140: _r = 140
+            #if _g < 140: _g = 140
+            #if _b < 140: _b = 140
+
+            widget = PixmapDial(self, i)
+            widget.setPixmap(3)
+            widget.setLabel(paramName)
+            widget.setCustomColor(QColor(_r, _g, _b))
+            widget.setCustomPaint(PixmapDial.CUSTOM_PAINT_COLOR)
+
+            widget.setSingleStep(paramRanges['step']*1000)
+            widget.setMinimum(paramRanges['min']*1000)
+            widget.setMaximum(paramRanges['max']*1000)
+
+            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
+                widget.setEnabled(False)
+
+            self.ui.w_knobs.layout().insertWidget(index, widget)
+            index += 1
+
+            self.fParameterList.append([i, widget])
+
+        self.ui.dial_drywet.setIndex(PARAMETER_DRYWET)
+        self.ui.dial_drywet.setPixmap(3)
+        self.ui.dial_drywet.setLabel("Dry/Wet")
+        self.ui.dial_drywet.setCustomPaint(PixmapDial.CUSTOM_PAINT_CARLA_WET)
+
+        self.ui.dial_vol.setIndex(PARAMETER_VOLUME)
+        self.ui.dial_vol.setPixmap(3)
+        self.ui.dial_vol.setLabel("Volume")
+        self.ui.dial_vol.setCustomPaint(PixmapDial.CUSTOM_PAINT_CARLA_VOL)
+
+        self.fParameterList.append([PARAMETER_DRYWET, self.ui.dial_drywet])
+        self.fParameterList.append([PARAMETER_VOLUME, self.ui.dial_vol])
+
+        # -------------------------------------------------------------
+
+        self.b_enable = self.ui.b_enable
+        self.b_gui    = self.ui.b_gui
+        self.b_edit   = self.ui.b_edit
+
+        self.label_name = self.ui.label_name
+        self.label_type = self.ui.label_type
+
+        self.peak_in  = self.ui.peak_in
+        self.peak_out = self.ui.peak_out
+
+        self.ready()
+
+        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
+
+    #------------------------------------------------------------------
+
+    def getFixedHeight(self):
+        return 79
+
+# ------------------------------------------------------------------------------------------------------------
+
 class PluginSlot_Calf(AbstractPluginSlot):
     def __init__(self, parent, pluginId):
         AbstractPluginSlot.__init__(self, parent, pluginId)
@@ -677,13 +875,15 @@ class PluginSlot_Calf(AbstractPluginSlot):
         # Set-up GUI
 
         self.setStyleSheet("""
-        QLabel#label_name, QLabel#label_audio_in, QLabel#label_audio_out, QLabel#label_midi {
-            color: black;
-        }
-        QFrame#PluginWidget {
-            background-image: url(:/bitmaps/background_calf.png);
-            background-repeat: repeat-xy;
-        }""")
+          QLabel#label_name, QLabel#label_audio_in, QLabel#label_audio_out, QLabel#label_midi {
+              color: black;
+          }
+          QFrame#PluginWidget {
+              background-image: url(:/bitmaps/background_calf.png);
+              background-repeat: repeat-xy;
+              border: 2px;
+          }
+        """)
 
         self.ui.b_gui.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
         self.ui.b_edit.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
@@ -741,7 +941,7 @@ class PluginSlot_Calf(AbstractPluginSlot):
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
-        return 75
+        return 70
 
     #------------------------------------------------------------------
 
@@ -772,24 +972,25 @@ class PluginSlot_ZitaRev(AbstractPluginSlot):
         self.setMinimumWidth(640)
 
         self.setStyleSheet("""
-        QFrame#PluginWidget {
-            background-color: #404040;
-        }
-        QWidget#w_revsect {
-            background-image: url(:/bitmaps/zita-rev/revsect.png);
-        }
-        QWidget#w_eq1sect {
-            background-image: url(:/bitmaps/zita-rev/eq1sect.png);
-        }
-        QWidget#w_eq2sect {
-            background-image: url(:/bitmaps/zita-rev/eq2sect.png);
-        }
-        QWidget#w_ambmixsect {
-            background-image: url(:/bitmaps/zita-rev/%s.png);
-        }
-        QWidget#w_redzita {
-            background-image: url(:/bitmaps/zita-rev/redzita.png);
-        }
+          QFrame#PluginWidget {
+              background-color: #404040;
+              border: 2px solid transparent;
+          }
+          QWidget#w_revsect {
+              background-image: url(:/bitmaps/zita-rev/revsect.png);
+          }
+          QWidget#w_eq1sect {
+              background-image: url(:/bitmaps/zita-rev/eq1sect.png);
+          }
+          QWidget#w_eq2sect {
+              background-image: url(:/bitmaps/zita-rev/eq2sect.png);
+          }
+          QWidget#w_ambmixsect {
+              background-image: url(:/bitmaps/zita-rev/%s.png);
+          }
+          QWidget#w_redzita {
+              background-image: url(:/bitmaps/zita-rev/redzita.png);
+          }
         """ % ("mixsect" if audioCount['outs'] == 2 else "ambsect"))
 
         # -------------------------------------------------------------
@@ -875,19 +1076,25 @@ class PluginSlot_ZitaRev(AbstractPluginSlot):
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
-        return 75
+        return 79
+
+    #------------------------------------------------------------------
+
+    def paintEvent(self, event):
+        AbstractPluginSlot.paintEvent(self, event)
+        self.drawOutline()
 
     def resizeEvent(self, event):
-        self.fKnobDelay.move(self.ui.w_revsect.x()+31, 33)
-        self.fKnobXover.move(self.ui.w_revsect.x()+93, 18)
-        self.fKnobRtLow.move(self.ui.w_revsect.x()+148, 18)
-        self.fKnobRtMid.move(self.ui.w_revsect.x()+208, 18)
-        self.fKnobDamping.move(self.ui.w_revsect.x()+268, 18)
-        self.fKnobEq1Freq.move(self.ui.w_eq1sect.x()+20, 33)
-        self.fKnobEq1Gain.move(self.ui.w_eq1sect.x()+69, 18)
-        self.fKnobEq2Freq.move(self.ui.w_eq2sect.x()+20, 33)
-        self.fKnobEq2Gain.move(self.ui.w_eq2sect.x()+69, 18)
-        self.fKnobMix.move(self.ui.w_ambmixsect.x()+24, 33)
+        self.fKnobDelay.move(self.ui.w_revsect.x()+31, self.ui.w_revsect.y()+33)
+        self.fKnobXover.move(self.ui.w_revsect.x()+93, self.ui.w_revsect.y()+18)
+        self.fKnobRtLow.move(self.ui.w_revsect.x()+148, self.ui.w_revsect.y()+18)
+        self.fKnobRtMid.move(self.ui.w_revsect.x()+208, self.ui.w_revsect.y()+18)
+        self.fKnobDamping.move(self.ui.w_revsect.x()+268, self.ui.w_revsect.y()+18)
+        self.fKnobEq1Freq.move(self.ui.w_eq1sect.x()+20, self.ui.w_eq1sect.y()+33)
+        self.fKnobEq1Gain.move(self.ui.w_eq1sect.x()+69, self.ui.w_eq1sect.y()+18)
+        self.fKnobEq2Freq.move(self.ui.w_eq2sect.x()+20, self.ui.w_eq2sect.y()+33)
+        self.fKnobEq2Gain.move(self.ui.w_eq2sect.x()+69, self.ui.w_eq2sect.y()+18)
+        self.fKnobMix.move(self.ui.w_ambmixsect.x()+24, self.ui.w_ambmixsect.y()+33)
         AbstractPluginSlot.resizeEvent(self, event)
 
 # ------------------------------------------------------------------------------------------------------------
@@ -902,10 +1109,12 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
         # Set-up GUI
 
         self.setStyleSheet("""
-        QFrame#PluginWidget {
-            background-image: url(:/bitmaps/background_zynfx.png);
-            background-repeat: repeat-xy;
-        }""")
+          QFrame#PluginWidget {
+              background-image: url(:/bitmaps/background_zynfx.png);
+              background-repeat: repeat-xy;
+              border: 2px;
+          }
+        """)
 
         self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
         self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
@@ -1088,7 +1297,7 @@ def createPluginSlot(parent, pluginId):
     if pluginName.split(" ", 1)[0].lower() == "calf":
         return PluginSlot_Calf(parent, pluginId)
 
-    #return PluginSlot_Pixmap(parent, pluginId)
+    return PluginSlot_BasicFX(parent, pluginId)
     return PluginSlot_Default(parent, pluginId)
 
 # ------------------------------------------------------------------------------------------------------------
@@ -1099,27 +1308,12 @@ if __name__ == '__main__':
     import resources_rc
 
     app = CarlaApplication("Carla-Skins")
+    #gui = PluginSlot_BasicFX(None, 0)
     #gui = PluginSlot_Calf(None, 0)
+    #gui = PluginSlot_Default(None, 0)
+    #gui = PluginSlot_ZitaRev(None, 0)
     gui = PluginSlot_ZynFX(None, 0)
+    gui.setSelected(True)
     gui.show()
 
     app.exec_()
-
-#if (self.pinfo['category'] == PLUGIN_CATEGORY_SYNTH):
-#self.set_plugin_widget_color(PALETTE_COLOR_WHITE)
-#elif (self.pinfo['category'] == PLUGIN_CATEGORY_DELAY):
-#self.set_plugin_widget_color(PALETTE_COLOR_ORANGE)
-#elif (self.pinfo['category'] == PLUGIN_CATEGORY_EQ):
-#self.set_plugin_widget_color(PALETTE_COLOR_GREEN)
-#elif (self.pinfo['category'] == PLUGIN_CATEGORY_FILTER):
-#self.set_plugin_widget_color(PALETTE_COLOR_BLUE)
-#elif (self.pinfo['category'] == PLUGIN_CATEGORY_DYNAMICS):
-#self.set_plugin_widget_color(PALETTE_COLOR_PINK)
-#elif (self.pinfo['category'] == PLUGIN_CATEGORY_MODULATOR):
-#self.set_plugin_widget_color(PALETTE_COLOR_RED)
-#elif (self.pinfo['category'] == PLUGIN_CATEGORY_UTILITY):
-#self.set_plugin_widget_color(PALETTE_COLOR_YELLOW)
-#elif (self.pinfo['category'] == PLUGIN_CATEGORY_OUTRO):
-#self.set_plugin_widget_color(PALETTE_COLOR_BROWN)
-#else:
-#self.set_plugin_widget_color(PALETTE_COLOR_NONE)

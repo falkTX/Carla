@@ -1511,7 +1511,9 @@ protected:
             }
         }
 
+#ifndef BUILD_BRIDGE
         carla_fill<jack_port_t*>(fRackPorts, kRackPortCount, nullptr);
+#endif
 
         fClient = nullptr;
         callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);

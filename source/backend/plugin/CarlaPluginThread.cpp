@@ -258,15 +258,11 @@ void CarlaPluginThread::run()
             CARLA_ASSERT(fProcess->state() == QProcess::NotRunning);
 
             if (fProcess->exitCode() != 0 || fProcess->exitStatus() == QProcess::CrashExit)
-            {
                 carla_stderr("CarlaPluginThread::run() - GUI crashed while opening");
-                fEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, fPlugin->getId(), -1, 0, 0.0f, nullptr);
-            }
             else
-            {
-                carla_debug("CarlaPluginThread::run() - GUI timeout");
-                fEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, fPlugin->getId(), 0, 0, 0.0f, nullptr);
-            }
+                carla_stdout("CarlaPluginThread::run() - GUI timeout");
+
+            fEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, fPlugin->getId(), 0, 0, 0.0f, nullptr);
         }
         break;
 

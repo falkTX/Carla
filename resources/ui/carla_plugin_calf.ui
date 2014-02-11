@@ -279,14 +279,14 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>PixmapButton</class>
-   <extends>QPushButton</extends>
-   <header>pixmapbutton.h</header>
-  </customwidget>
-  <customwidget>
    <class>LEDButton</class>
    <extends>QPushButton</extends>
    <header>ledbutton.h</header>
+  </customwidget>
+  <customwidget>
+   <class>PixmapButton</class>
+   <extends>QPushButton</extends>
+   <header>pixmapbutton.h</header>
   </customwidget>
  </customwidgets>
  <resources>

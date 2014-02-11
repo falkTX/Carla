@@ -549,33 +549,9 @@ class PluginEdit(QDialog):
             midiCountInfo  = gFakePortCountInfo
             paramCountInfo = gFakePortCountInfo
 
-        pluginType  = self.fPluginInfo['type']
         pluginHints = self.fPluginInfo['hints']
 
-        if pluginType == PLUGIN_INTERNAL:
-            self.ui.le_type.setText(self.tr("Internal"))
-        elif pluginType == PLUGIN_LADSPA:
-            self.ui.le_type.setText("LADSPA")
-        elif pluginType == PLUGIN_DSSI:
-            self.ui.le_type.setText("DSSI")
-        elif pluginType == PLUGIN_LV2:
-            self.ui.le_type.setText("LV2")
-        elif pluginType == PLUGIN_VST:
-            self.ui.le_type.setText("VST")
-        elif pluginType == PLUGIN_AU:
-            self.ui.le_type.setText("AU")
-        elif pluginType == PLUGIN_REWIRE:
-            self.ui.le_type.setText("ReWire")
-        elif pluginType == PLUGIN_FILE_CSD:
-            self.ui.le_type.setText("CSD")
-        elif pluginType == PLUGIN_FILE_GIG:
-            self.ui.le_type.setText("GIG")
-        elif pluginType == PLUGIN_FILE_SF2:
-            self.ui.le_type.setText("SF2")
-        elif pluginType == PLUGIN_FILE_SFZ:
-            self.ui.le_type.setText("SFZ")
-        else:
-            self.ui.le_type.setText(self.tr("Unknown"))
+        self.ui.le_type.setText(getPluginTypeAsString(self.fPluginInfo['type']))
 
         if pluginName:
             self.ui.label_name.setEnabled(True)

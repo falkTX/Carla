@@ -98,6 +98,7 @@ UIs = \
 	source/ui_carla_edit.py \
 	source/ui_carla_host.py \
 	source/ui_carla_parameter.py \
+	source/ui_carla_plugin_basic_fx.py \
 	source/ui_carla_plugin_default.py \
 	source/ui_carla_plugin_calf.py \
 	source/ui_carla_plugin_zita.py \
