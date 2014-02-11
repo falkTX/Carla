@@ -31,6 +31,7 @@ import ui_carla_edit
 import ui_carla_parameter
 
 from carla_shared import *
+from pixmapkeyboard import PixmapKeyboardHArea
 
 # ------------------------------------------------------------------------------------------------------------
 # Carla GUI defines
@@ -388,7 +389,6 @@ class PluginEdit(QDialog):
         self.fCurrentStateFilename = None
         self.fControlChannel  = 0
         self.fFirstInit       = True
-        self.fScrollAreaSetup = False
 
         self.fParameterCount = 0
         self.fParameterList  = []     # (type, id, widget)
@@ -424,12 +424,15 @@ class PluginEdit(QDialog):
         self.ui.dial_pan.setPixmap(4)
         self.ui.dial_pan.setLabel("Pan")
 
+        self.ui.scrollArea = PixmapKeyboardHArea(self)
+        self.layout().addWidget(self.ui.scrollArea)
+
+        self.ui.keyboard = self.ui.scrollArea.keyboard
         self.ui.keyboard.setMode(self.ui.keyboard.HORIZONTAL)
         self.ui.keyboard.setOctaves(10)
 
         self.ui.sb_ctrl_channel.setValue(self.fControlChannel+1)
 
-        self.ui.scrollArea.ensureVisible(self.ui.keyboard.width() / 3, 0)
         self.ui.scrollArea.setEnabled(False)
         self.ui.scrollArea.setVisible(False)
 
@@ -1397,15 +1400,6 @@ class PluginEdit(QDialog):
             self.setMidiProgram(mpIndex)
 
     #------------------------------------------------------------------
-
-    def showEvent(self, event):
-        if not self.fScrollAreaSetup:
-            self.fScrollAreaSetup = True
-            minHeight = self.ui.scrollArea.height()+2
-            self.ui.scrollArea.setMinimumHeight(minHeight)
-            self.ui.scrollArea.setMaximumHeight(minHeight)
-
-        QDialog.showEvent(self, event)
 
     def done(self, r):
         QDialog.done(self, r)

@@ -449,11 +449,10 @@ class PixmapKeyboardHArea(QScrollArea):
 
         self.keyboard = PixmapKeyboard(self)
         self.keyboard.setOctaves(10)
-
-        self.setFixedHeight(self.keyboard.height() + self.horizontalScrollBar().height()/2 + 2)
         self.setWidget(self.keyboard)
 
         self.setEnabled(False)
+        self.setFixedHeight(self.keyboard.height() + self.horizontalScrollBar().height()/2 + 2)
 
         QTimer.singleShot(0, self.slot_initScrollbarValue)
 
