@@ -115,12 +115,12 @@
         <file>bitmaps/style/arrow.png</file>
         <file>bitmaps/style/groupbox.png</file>
 
-        <file>bitmaps/zita/ambsect.png</file>
-        <file>bitmaps/zita/eq1sect.png</file>
-        <file>bitmaps/zita/eq2sect.png</file>
-        <file>bitmaps/zita/mixsect.png</file>
-        <file>bitmaps/zita/redzita.png</file>
-        <file>bitmaps/zita/revsect.png</file>
+        <file>bitmaps/zita-rev/ambsect.png</file>
+        <file>bitmaps/zita-rev/eq1sect.png</file>
+        <file>bitmaps/zita-rev/eq2sect.png</file>
+        <file>bitmaps/zita-rev/mixsect.png</file>
+        <file>bitmaps/zita-rev/redzita.png</file>
+        <file>bitmaps/zita-rev/revsect.png</file>
 
         <file>scalable/pb_generic.svg</file>
         <file>scalable/pb_hardware.svg</file>

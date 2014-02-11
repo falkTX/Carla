@@ -667,8 +667,8 @@ class PluginSlot_Calf(AbstractPluginSlot):
         # Internal stuff
 
         self.fButtonFont = QFont()
-        self.fButtonFont.setBold(False)
-        self.fButtonFont.setPointSize(9)
+        #self.fButtonFont.setBold(False)
+        self.fButtonFont.setPointSize(8)
 
         self.fButtonColorOn  = QColor( 18,  41,  87)
         self.fButtonColorOff = QColor(150, 150, 150)
@@ -755,7 +755,7 @@ class PluginSlot_Calf(AbstractPluginSlot):
 
 # ------------------------------------------------------------------------------------------------------------
 
-class PluginSlot_Zita(AbstractPluginSlot):
+class PluginSlot_ZitaRev(AbstractPluginSlot):
     def __init__(self, parent, pluginId):
         AbstractPluginSlot.__init__(self, parent, pluginId)
         self.ui = ui_carla_plugin_zita.Ui_PluginWidget()
@@ -776,19 +776,19 @@ class PluginSlot_Zita(AbstractPluginSlot):
             background-color: #404040;
         }
         QWidget#w_revsect {
-            background-image: url(:/bitmaps/zita/revsect.png);
+            background-image: url(:/bitmaps/zita-rev/revsect.png);
         }
         QWidget#w_eq1sect {
-            background-image: url(:/bitmaps/zita/eq1sect.png);
+            background-image: url(:/bitmaps/zita-rev/eq1sect.png);
         }
         QWidget#w_eq2sect {
-            background-image: url(:/bitmaps/zita/eq2sect.png);
+            background-image: url(:/bitmaps/zita-rev/eq2sect.png);
         }
         QWidget#w_ambmixsect {
-            background-image: url(:/bitmaps/zita/%s.png);
+            background-image: url(:/bitmaps/zita-rev/%s.png);
         }
         QWidget#w_redzita {
-            background-image: url(:/bitmaps/zita/redzita.png);
+            background-image: url(:/bitmaps/zita-rev/redzita.png);
         }
         """ % ("mixsect" if audioCount['outs'] == 2 else "ambsect"))
 
@@ -1083,7 +1083,7 @@ def createPluginSlot(parent, pluginId):
 
     if pluginInfo['type'] == PLUGIN_LADSPA:
         if (pluginLabel == "zita-reverb" and uniqueId == 3701) or (pluginLabel == "zita-reverb-amb" and uniqueId == 3702):
-            return PluginSlot_Zita(parent, pluginId)
+            return PluginSlot_ZitaRev(parent, pluginId)
 
     if pluginName.split(" ", 1)[0].lower() == "calf":
         return PluginSlot_Calf(parent, pluginId)
@@ -1099,9 +1099,8 @@ if __name__ == '__main__':
     import resources_rc
 
     app = CarlaApplication("Carla-Skins")
-    gui = PluginSlot_Pixmap(None, 0)
     #gui = PluginSlot_Calf(None, 0)
-    #gui = PluginSlot_ZynFX(None, 0)
+    gui = PluginSlot_ZynFX(None, 0)
     gui.show()
 
     app.exec_()
