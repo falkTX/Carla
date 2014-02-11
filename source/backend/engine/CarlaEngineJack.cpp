@@ -98,6 +98,7 @@ private:
     jack_port_t*   fPort;
 
     friend class CarlaEngineJack;
+    friend class CarlaEngineJackClient;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackAudioPort)
 };
@@ -158,6 +159,7 @@ private:
     jack_port_t*   fPort;
 
     friend class CarlaEngineJack;
+    friend class CarlaEngineJackClient;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackCVPort)
 };
@@ -303,6 +305,7 @@ private:
     mutable EngineEvent fRetEvent;
 
     friend class CarlaEngineJack;
+    friend class CarlaEngineJackClient;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackEventPort)
 };
@@ -336,6 +339,10 @@ public:
 
         if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS && fClient != nullptr)
             jackbridge_client_close(fClient);
+
+        fAudioPorts.clear();
+        fCVPorts.clear();
+        fEventPorts.clear();
     }
 
     void activate() noexcept override
@@ -427,21 +434,60 @@ public:
         {
         case kEnginePortTypeNull:
             break;
-        case kEnginePortTypeAudio:
-            return new CarlaEngineJackAudioPort(fEngine, isInput, fClient, port);
-        case kEnginePortTypeCV:
-            return new CarlaEngineJackCVPort(fEngine, isInput, fClient, port);
-        case kEnginePortTypeEvent:
-            return new CarlaEngineJackEventPort(fEngine, isInput, fClient, port);
+        case kEnginePortTypeAudio: {
+            CarlaEngineJackAudioPort* const enginePort(new CarlaEngineJackAudioPort(fEngine, isInput, fClient, port));
+            fAudioPorts.append(enginePort);
+            return enginePort;
+        }
+        case kEnginePortTypeCV: {
+            CarlaEngineJackCVPort* const enginePort(new CarlaEngineJackCVPort(fEngine, isInput, fClient, port));
+            fCVPorts.append(enginePort);
+            return enginePort;
+        }
+        case kEnginePortTypeEvent: {
+            CarlaEngineJackEventPort* const enginePort(new CarlaEngineJackEventPort(fEngine, isInput, fClient, port));
+            fEventPorts.append(enginePort);
+            return enginePort;
+        }
         }
 
         carla_stderr("CarlaEngineJackClient::addPort(%s, \"%s\", %s) - invalid type", EnginePortType2Str(portType), name, bool2str(isInput));
         return nullptr;
     }
 
+    void invalidate()
+    {
+        for (LinkedList<CarlaEngineJackAudioPort*>::Itenerator it = fAudioPorts.begin(); it.valid(); it.next())
+        {
+            CarlaEngineJackAudioPort* const port(it.getValue());
+            port->fClient = nullptr;
+            port->fPort   = nullptr;
+        }
+
+        for (LinkedList<CarlaEngineJackCVPort*>::Itenerator it = fCVPorts.begin(); it.valid(); it.next())
+        {
+            CarlaEngineJackCVPort* const port(it.getValue());
+            port->fClient = nullptr;
+            port->fPort   = nullptr;
+        }
+
+        for (LinkedList<CarlaEngineJackEventPort*>::Itenerator it = fEventPorts.begin(); it.valid(); it.next())
+        {
+            CarlaEngineJackEventPort* const port(it.getValue());
+            port->fClient = nullptr;
+            port->fPort   = nullptr;
+        }
+
+        fClient = nullptr;
+    }
+
 private:
     jack_client_t* fClient;
     const bool     fUseClient;
+
+    LinkedList<CarlaEngineJackAudioPort*> fAudioPorts;
+    LinkedList<CarlaEngineJackCVPort*>    fCVPorts;
+    LinkedList<CarlaEngineJackEventPort*> fEventPorts;
 
     friend class CarlaEngineJack;
 
@@ -636,7 +682,7 @@ public:
 #else
         if (jackbridge_deactivate(fClient))
         {
-            if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+            if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && fRackPorts[0] != nullptr)
             {
                 jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioIn1]);
                 jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioIn2]);
@@ -1465,6 +1511,8 @@ protected:
             }
         }
 
+        carla_fill<jack_port_t*>(fRackPorts, kRackPortCount, nullptr);
+
         fClient = nullptr;
         callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
     }
@@ -2073,12 +2121,19 @@ private:
     {
         CarlaPlugin* const plugin((CarlaPlugin*)arg);
 
-        if (plugin != nullptr)
+        if (plugin != nullptr /*&& plugin->isEnabled()*/)
         {
+            CarlaEngine* const engine(plugin->getEngine());
+            CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
+
             CarlaEngineJackClient* const engineClient((CarlaEngineJackClient*)plugin->getEngineClient());
             CARLA_SAFE_ASSERT_RETURN(engineClient != nullptr,);
 
-            engineClient->fClient = nullptr;
+            plugin->tryLock(true);
+            engineClient->invalidate();
+            plugin->unlock();
+
+            engine->callback(ENGINE_CALLBACK_PLUGIN_UNAVAILABLE, plugin->getId(), 0, 0, 0.0f, "Killed by JACK");
         }
     }
 #endif

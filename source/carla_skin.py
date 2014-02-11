@@ -928,7 +928,7 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
             paramLow  = paramName.lower()
 
             # real zyn fx plugins
-            if self.fPluginInfo['label'] == "zynAlienWah":
+            if self.fPluginInfo['label'] == "zynalienwah":
                 if   i == 0: paramName = "Freq"
                 elif i == 1: paramName = "Rnd"
                 elif i == 2: paramName = "L type" # combobox
@@ -936,7 +936,7 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
                 elif i == 5: paramName = "Fb"
                 elif i == 7: paramName = "L/R"
 
-            if self.fPluginInfo['label'] == "zynChorus":
+            if self.fPluginInfo['label'] == "zynchorus":
                 if   i == 0: paramName = "Freq"
                 elif i == 1: paramName = "Rnd"
                 elif i == 2: paramName = "L type" # combobox
@@ -946,7 +946,7 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
                 elif i == 8: paramName = "Flngr" # button
                 elif i == 9: paramName = "Subst" # button
 
-            elif self.fPluginInfo['label'] == "zynDistortion":
+            elif self.fPluginInfo['label'] == "zyndistortion":
                 if   i == 0: paramName = "LRc."
                 elif i == 4: paramName = "Neg." # button
                 elif i == 5: paramName = "LPF"
@@ -954,7 +954,7 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
                 elif i == 7: paramName = "St." # button
                 elif i == 8: paramName = "PF"  # button
 
-            elif self.fPluginInfo['label'] == "zynDynamicFilter":
+            elif self.fPluginInfo['label'] == "zyndynamicfilter":
                 if   i == 0: paramName = "Freq"
                 elif i == 1: paramName = "Rnd"
                 elif i == 2: paramName = "L type" # combobox
@@ -964,13 +964,13 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
                 elif i == 6: paramName = "A.Inv." # button
                 elif i == 7: paramName = "A.M."
 
-            elif self.fPluginInfo['label'] == "zynEcho":
+            elif self.fPluginInfo['label'] == "zynecho":
                 if   i == 1: paramName = "LRdl."
                 elif i == 2: paramName = "LRc."
                 elif i == 3: paramName = "Fb."
                 elif i == 4: paramName = "Damp"
 
-            elif self.fPluginInfo['label'] == "zynPhaser":
+            elif self.fPluginInfo['label'] == "zynphaser":
                 if   i ==  0: paramName = "Freq"
                 elif i ==  1: paramName = "Rnd"
                 elif i ==  2: paramName = "L type" # combobox
@@ -981,7 +981,7 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
                 elif i ==  9: paramName = "Phase"
                 elif i == 11: paramName = "Dist"
 
-            elif self.fPluginInfo['label'] == "zynReverb":
+            elif self.fPluginInfo['label'] == "zynreverb":
                 if   i ==  2: paramName = "I.delfb"
                 elif i ==  5: paramName = "LPF"
                 elif i ==  6: paramName = "HPF"
@@ -1081,7 +1081,7 @@ def createPluginSlot(parent, pluginId):
         if pluginLabel.startswith("zyn") and pluginInfo['category'] != PLUGIN_CATEGORY_SYNTH:
             return PluginSlot_ZynFX(parent, pluginId)
 
-    if pluginInfo['type'] == PLUGIN_LADSPA:
+    elif pluginInfo['type'] == PLUGIN_LADSPA:
         if (pluginLabel == "zita-reverb" and uniqueId == 3701) or (pluginLabel == "zita-reverb-amb" and uniqueId == 3702):
             return PluginSlot_ZitaRev(parent, pluginId)
 
