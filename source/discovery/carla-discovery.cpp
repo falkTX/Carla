@@ -1638,10 +1638,10 @@ static void do_csound_check(const char* const filename, const bool init)
     csound.Reset();
 
     DISCOVERY_OUT("init", "-----------");
-//     DISCOVERY_OUT("name", name.getBuffer());
-//     DISCOVERY_OUT("label", label.getBuffer());
-//     DISCOVERY_OUT("maker", "");
-//     DISCOVERY_OUT("copyright", "");
+    //DISCOVERY_OUT("name", name.getBuffer());
+    //DISCOVERY_OUT("label", label.getBuffer());
+    //DISCOVERY_OUT("maker", "");
+    //DISCOVERY_OUT("copyright", "");
     DISCOVERY_OUT("hints", hints);
     DISCOVERY_OUT("audio.ins", audioIns);
     DISCOVERY_OUT("audio.outs", audioOuts);
