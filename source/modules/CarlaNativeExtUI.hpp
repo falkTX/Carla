@@ -165,13 +165,6 @@ protected:
             delete[] key;
             delete[] value;
         }
-        else if (std::strcmp(msg, "exiting") == 0)
-        {
-            waitChildClose();
-            fUiState = UiHide;
-
-            uiClosed();
-        }
         else
         {
             carla_stderr("msgReceived : %s", msg);

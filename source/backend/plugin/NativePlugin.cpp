@@ -1928,57 +1928,43 @@ public:
     // -------------------------------------------------------------------
     // Post-poned UI Stuff
 
-    void uiParameterChange(const uint32_t index, const float /*value*/) noexcept override
+    void uiParameterChange(const uint32_t index, const float value) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
-        CARLA_ASSERT(index < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(index < pData->param.count,);
 
         if (! fIsUiVisible)
             return;
-        if (fDescriptor == nullptr || fHandle == nullptr)
-            return;
-        if (index >= pData->param.count)
-            return;
 
-        //if (fDescriptor->ui_set_parameter_value != nullptr)
-        //    fDescriptor->ui_set_parameter_value(fHandle, index, value);
+        if (fDescriptor->ui_set_parameter_value != nullptr)
+            fDescriptor->ui_set_parameter_value(fHandle, index, value);
     }
 
     void uiMidiProgramChange(const uint32_t index) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
-        CARLA_ASSERT(index < pData->midiprog.count);
+        CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count,);
 
         if (! fIsUiVisible)
-            return;
-        if (fDescriptor == nullptr || fHandle == nullptr)
             return;
         if (index >= pData->midiprog.count)
             return;
 
-        //if (fDescriptor->ui_set_midi_program != nullptr) // TODO
-        //    fDescriptor->ui_set_midi_program(fHandle, 0, pData->midiprog.data[index].bank, pData->midiprog.data[index].program);
+        if (fDescriptor->ui_set_midi_program != nullptr)
+            fDescriptor->ui_set_midi_program(fHandle, 0, pData->midiprog.data[index].bank, pData->midiprog.data[index].program);
     }
 
     void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
-        CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
-        CARLA_ASSERT(note < MAX_MIDI_NOTE);
-        CARLA_ASSERT(velo > 0 && velo < MAX_MIDI_VALUE);
+        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
+        CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
+        CARLA_SAFE_ASSERT_RETURN(velo > 0 && velo < MAX_MIDI_VALUE,);
 
         if (! fIsUiVisible)
-            return;
-        if (fDescriptor == nullptr || fHandle == nullptr)
-            return;
-        if (channel >= MAX_MIDI_CHANNELS)
-            return;
-        if (note >= MAX_MIDI_NOTE)
-            return;
-        if (velo >= MAX_MIDI_VALUE)
             return;
 
         // TODO
@@ -1988,16 +1974,12 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
-        CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
-        CARLA_ASSERT(note < MAX_MIDI_NOTE);
+        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
+        CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
 
         if (! fIsUiVisible)
             return;
         if (fDescriptor == nullptr || fHandle == nullptr)
-            return;
-        if (channel >= MAX_MIDI_CHANNELS)
-            return;
-        if (note >= MAX_MIDI_NOTE)
             return;
 
         // TODO

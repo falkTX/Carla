@@ -68,13 +68,13 @@ OBJS += \
 	midi-transpose.c.o \
 	nekofilter.c.o
 
-ifeq ($(_ignore_WIN32__),true)
+ifneq ($(WIN32),true)
 # --------------------------------------------------------------
 # External-UI plugins
 
 OBJS += \
-	ext-bigmeter.cpp.o \
-	ext-notes.cpp.o
+	bigmeter.cpp.o
+# 	ext-notes.cpp.o
 endif
 
 # --------------------------------------------------------------
@@ -205,6 +205,9 @@ nekofilter.c.o: nekofilter.c nekofilter/*.c nekofilter/*.h $(CDEPS)
 CXXDEPS = ../CarlaNative.h ../CarlaNative.hpp
 
 audio-file.cpp.o: audio-file.cpp audio-base.hpp $(CXXDEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+bigmeter.cpp.o: bigmeter.cpp $(CXXDEPS) ../CarlaNativeExtUI.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 distrho-3bandeq.cpp.o: distrho-3bandeq.cpp 3bandeq/*.cpp 3bandeq/*.h 3bandeq/*.hpp $(CXXDEPS)
