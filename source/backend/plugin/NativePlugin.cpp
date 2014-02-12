@@ -2006,22 +2006,22 @@ public:
     // -------------------------------------------------------------------
 
 protected:
-    uint32_t handleGetBufferSize() const
+    uint32_t handleGetBufferSize() const noexcept
     {
         return pData->engine->getBufferSize();
     }
 
-    double handleGetSampleRate() const
+    double handleGetSampleRate() const noexcept
     {
         return pData->engine->getSampleRate();
     }
 
-    bool handleIsOffline() const
+    bool handleIsOffline() const noexcept
     {
         return pData->engine->isOffline();
     }
 
-    const NativeTimeInfo* handleGetTimeInfo() const
+    const NativeTimeInfo* handleGetTimeInfo() const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fIsProcessing, nullptr);
 
@@ -2376,22 +2376,22 @@ private:
 
     #define handlePtr ((NativePlugin*)handle)
 
-    static uint32_t carla_host_get_buffer_size(NativeHostHandle handle)
+    static uint32_t carla_host_get_buffer_size(NativeHostHandle handle) noexcept
     {
         return handlePtr->handleGetBufferSize();
     }
 
-    static double carla_host_get_sample_rate(NativeHostHandle handle)
+    static double carla_host_get_sample_rate(NativeHostHandle handle) noexcept
     {
         return handlePtr->handleGetSampleRate();
     }
 
-    static bool carla_host_is_offline(NativeHostHandle handle)
+    static bool carla_host_is_offline(NativeHostHandle handle) noexcept
     {
         return handlePtr->handleIsOffline();
     }
 
-    static const NativeTimeInfo* carla_host_get_time_info(NativeHostHandle handle)
+    static const NativeTimeInfo* carla_host_get_time_info(NativeHostHandle handle) noexcept
     {
         return handlePtr->handleGetTimeInfo();
     }

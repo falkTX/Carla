@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugin API (C++)
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -52,42 +52,42 @@ protected:
         return pHost;
     }
 
-    const char* getResourceDir() const
+    const char* getResourceDir() const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, nullptr);
 
         return pHost->resourceDir;
     }
 
-    const char* getUiName() const
+    const char* getUiName() const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, nullptr);
 
         return pHost->uiName;
     }
 
-    uint32_t getBufferSize() const
+    uint32_t getBufferSize() const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, 0);
 
         return pHost->get_buffer_size(pHost->handle);
     }
 
-    double getSampleRate() const
+    double getSampleRate() const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, 0.0);
 
         return pHost->get_sample_rate(pHost->handle);
     }
 
-    bool isOffline() const
+    bool isOffline() const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, false);
 
         return pHost->is_offline(pHost->handle);
     }
 
-    const NativeTimeInfo* getTimeInfo() const
+    const NativeTimeInfo* getTimeInfo() const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, nullptr);
 
@@ -408,7 +408,10 @@ protected:
 
     virtual void sampleRateChanged(const double sampleRate)
     {
-        CARLA_SAFE_ASSERT_RETURN(sampleRate > 0.0,);
+        return;
+
+        // unused
+        (void)sampleRate;
     }
 
     virtual void offlineChanged(const bool isOffline)
@@ -421,7 +424,10 @@ protected:
 
     virtual void uiNameChanged(const char* const uiName)
     {
-        CARLA_SAFE_ASSERT_RETURN(uiName != nullptr,);
+        return;
+
+        // unused
+        (void)uiName;
     }
 
     // -------------------------------------------------------------------
@@ -541,12 +547,14 @@ public:
             handlePtr->bufferSizeChanged(static_cast<uint32_t>(value));
             return 0;
         case PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
+            CARLA_SAFE_ASSERT_RETURN(opt > 0.0f,);
             handlePtr->sampleRateChanged(static_cast<double>(opt));
             return 0;
         case PLUGIN_OPCODE_OFFLINE_CHANGED:
             handlePtr->offlineChanged(value != 0);
             return 0;
         case PLUGIN_OPCODE_UI_NAME_CHANGED:
+            CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, 0);
             handlePtr->uiNameChanged(static_cast<const char*>(ptr));
             return 0;
         }
