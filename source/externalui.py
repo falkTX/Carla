@@ -71,6 +71,9 @@ class ExternalUI(object):
     def d_setParameterValue(self, index, value):
         self.send(["control", index, value])
 
+    def d_setProgram(self, channel, bank, program):
+        self.send(["program", channel, bank, program])
+
     def d_setState(self, key, value):
         self.send(["configure", key, value])
 
@@ -83,7 +86,7 @@ class ExternalUI(object):
     def d_parameterChanged(self, index, value):
         return
 
-    def d_programChanged(self, index):
+    def d_programChanged(self, channel, bank, program):
         return
 
     def d_stateChanged(self, key, value):
@@ -141,8 +144,10 @@ class ExternalUI(object):
                 self.d_parameterChanged(index, value)
 
             elif msg == "program":
-                index = int(self.fPipeRecv.readline())
-                self.d_programChanged(index)
+                channel = int(self.fPipeRecv.readline())
+                bank    = int(self.fPipeRecv.readline())
+                program = int(self.fPipeRecv.readline())
+                self.d_programChanged(channel, bank, program)
 
             elif msg == "configure":
                 key   = self.fPipeRecv.readline().strip().replace("\r", "\n")

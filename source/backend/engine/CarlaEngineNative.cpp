@@ -422,6 +422,10 @@ protected:
 
             if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
                 plugin->setCustomData(type, key, value, true);
+
+            delete[] type;
+            delete[] key;
+            delete[] value;
         }
         else if (std::strcmp(msg, "set_chunk_data") == 0)
         {
@@ -433,6 +437,8 @@ protected:
 
             if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
                 plugin->setChunkData(cdata);
+
+            delete[] cdata;
         }
         else if (std::strcmp(msg, "prepare_for_save") == 0)
         {
