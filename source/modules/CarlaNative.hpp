@@ -547,7 +547,7 @@ public:
             handlePtr->bufferSizeChanged(static_cast<uint32_t>(value));
             return 0;
         case PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
-            CARLA_SAFE_ASSERT_RETURN(opt > 0.0f,);
+            CARLA_SAFE_ASSERT_RETURN(opt > 0.0f, 0);
             handlePtr->sampleRateChanged(static_cast<double>(opt));
             return 0;
         case PLUGIN_OPCODE_OFFLINE_CHANGED:

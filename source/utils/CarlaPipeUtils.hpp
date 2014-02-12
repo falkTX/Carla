@@ -547,6 +547,8 @@ private:
         return nullptr;
     }
 
+    // -------------------------------------------------------------------
+
     static bool fork_exec(const char* const argv[5], int* const retp)
     {
         const pid_t ret = *retp = vfork();
@@ -606,31 +608,6 @@ private:
 
         carla_stderr2("we waited for child with pid %i to exit for %.1f seconds and we are giving up", int(pid), float(WAIT_START_TIMEOUT)/1000.0f);
         return false;
-    }
-};
-
-// -----------------------------------------------------------------------
-
-class CarlaPipeClient
-{
-protected:
-    CarlaPipeClient()
-    {
-        carla_debug("CarlaPipeClient::CarlaPipeClient()");
-    }
-
-    // -------------------------------------------------------------------
-
-public:
-    virtual ~CarlaPipeClient()
-    {
-        carla_debug("CarlaPipeClient::~CarlaPipeClient()");
-
-        stop();
-    }
-
-    void stop()
-    {
     }
 };
 
