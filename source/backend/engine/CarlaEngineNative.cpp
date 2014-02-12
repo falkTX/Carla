@@ -39,6 +39,10 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
+} // Fix editor indentation
+#endif
+
 // -----------------------------------------------------------------------
 
 class CarlaEngineNativeUI : public CarlaPipeServer
@@ -953,7 +957,7 @@ protected:
     uint32_t getMidiProgramCount() const
     {
         if (CarlaPlugin* const plugin = _getFirstPlugin())
-           return plugin->getMidiProgramCount();
+            return plugin->getMidiProgramCount();
 
         return 0;
     }
@@ -1318,7 +1322,7 @@ protected:
                 SaveState saveState;
                 fillSaveStateFromXmlNode(saveState, node);
 
-                CARLA_SAFE_ASSERT_CONTINUE(saveState.type != nullptr)
+                CARLA_SAFE_ASSERT_CONTINUE(saveState.type != nullptr);
 
                 const void* extraStuff = nullptr;
 
@@ -1599,7 +1603,7 @@ void carla_register_native_plugin_carla();
 
 void carla_register_native_plugin_carla()
 {
-    CARLA_BACKEND_USE_NAMESPACE
+    CARLA_BACKEND_USE_NAMESPACE;
     carla_register_native_plugin(&carlaRackDesc);
 #if 0 //def HAVE_JUCE
     carla_register_native_plugin(&carlaPatchbayDesc);

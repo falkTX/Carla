@@ -90,7 +90,7 @@ public:
         fBuffer = (float*)jackbridge_port_get_buffer(fPort, bufferSize);
 
         if (! fIsInput)
-           FLOAT_CLEAR(fBuffer, bufferSize);
+            FLOAT_CLEAR(fBuffer, bufferSize);
     }
 
 private:
@@ -151,7 +151,7 @@ public:
         fBuffer = (float*)jackbridge_port_get_buffer(fPort, bufferSize);
 
         if (! fIsInput)
-           FLOAT_CLEAR(fBuffer, bufferSize);
+            FLOAT_CLEAR(fBuffer, bufferSize);
     }
 
 private:
@@ -550,7 +550,7 @@ public:
             unsigned int ret = 0;
 
             try {
-              ret = static_cast<unsigned int>(jackbridge_client_name_size());
+                ret = static_cast<unsigned int>(jackbridge_client_name_size());
             }
             catch (...) {}
 
@@ -567,7 +567,7 @@ public:
             unsigned int ret = 0;
 
             try {
-              ret = static_cast<unsigned int>(jackbridge_port_name_size());
+                ret = static_cast<unsigned int>(jackbridge_port_name_size());
             }
             catch (...) {}
 
@@ -583,7 +583,7 @@ public:
     bool init(const char* const clientName) override
     {
         carla_debug("CarlaEngineJack::init(\"%s\")", clientName);
-        CARLA_ENGINE_THREAD_SAFE_SECTION
+        CARLA_ENGINE_THREAD_SAFE_SECTION;
 
         fFreewheel      = false;
         fTransportState = JackTransportStopped;
@@ -671,7 +671,7 @@ public:
     bool close() override
     {
         carla_debug("CarlaEngineJack::close()");
-        CARLA_ENGINE_THREAD_SAFE_SECTION
+        CARLA_ENGINE_THREAD_SAFE_SECTION;
 
         CarlaEngine::close();
 
@@ -718,7 +718,7 @@ public:
 #ifndef BUILD_BRIDGE
     void idle() override
     {
-        CARLA_ENGINE_THREAD_SAFE_SECTION
+        CARLA_ENGINE_THREAD_SAFE_SECTION;
 
         CarlaEngine::idle();
 
@@ -771,7 +771,7 @@ public:
 
     CarlaEngineClient* addClient(CarlaPlugin* const plugin) override
     {
-        CARLA_ENGINE_THREAD_SAFE_SECTION
+        CARLA_ENGINE_THREAD_SAFE_SECTION;
 
         jack_client_t* client = nullptr;
 
@@ -815,7 +815,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(id < pData->curPluginCount, nullptr);
         CARLA_SAFE_ASSERT_RETURN(pData->plugins != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(newName != nullptr && newName[0] != '\0', nullptr);
-        CARLA_ENGINE_THREAD_SAFE_SECTION
+        CARLA_ENGINE_THREAD_SAFE_SECTION;
 
         CarlaPlugin* const plugin(pData->plugins[id].plugin);
 
@@ -895,7 +895,7 @@ public:
     bool patchbayConnect(int portA, int portB) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
-        CARLA_ENGINE_THREAD_SAFE_SECTION
+        CARLA_ENGINE_THREAD_SAFE_SECTION;
 
         if (fClient == nullptr)
         {
@@ -920,7 +920,7 @@ public:
     bool patchbayDisconnect(uint connectionId) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
-        CARLA_ENGINE_THREAD_SAFE_SECTION
+        CARLA_ENGINE_THREAD_SAFE_SECTION;
 
         for (LinkedList<ConnectionToId>::Itenerator it = fUsedConnections.begin(); it.valid(); it.next())
         {
@@ -951,7 +951,7 @@ public:
     bool patchbayRefresh() override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
-        CARLA_ENGINE_THREAD_SAFE_SECTION
+        CARLA_ENGINE_THREAD_SAFE_SECTION;
 
         fLastGroupId = 0;
         fLastPortId  = 0;

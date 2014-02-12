@@ -458,7 +458,7 @@ protected:
         else
         {
             pData->processRackFull(const_cast<float**>(inputChannelData), static_cast<uint32_t>(numInputChannels),
-                                                       outputChannelData, static_cast<uint32_t>(numOutputChannels),
+                                   outputChannelData, static_cast<uint32_t>(numOutputChannels),
                                    static_cast<uint32_t>(numSamples), false);
         }
 
