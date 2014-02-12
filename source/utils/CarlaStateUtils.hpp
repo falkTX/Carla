@@ -18,6 +18,7 @@
 #ifndef CARLA_STATE_UTILS_HPP_INCLUDED
 #define CARLA_STATE_UTILS_HPP_INCLUDED
 
+#include "CarlaBackend.h"
 #include "LinkedList.hpp"
 
 class QDomNode;
