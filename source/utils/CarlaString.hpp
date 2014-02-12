@@ -22,7 +22,7 @@
 
 #ifdef CARLA_OS_HAIKU
 namespace std {
-	using ::snprintf;
+using ::snprintf;
 }
 #endif
 

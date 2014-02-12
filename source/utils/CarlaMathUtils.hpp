@@ -173,14 +173,14 @@ void carla_copyFloat(float* const dataDst, float* const dataSrc, const size_t nu
  */
 namespace std {
 inline float
-  fmin(float __x, float __y)
-  { return __builtin_fminf(__x, __y); }
+fmin(float __x, float __y)
+{ return __builtin_fminf(__x, __y); }
 inline float
-  fmax(float __x, float __y)
-  { return __builtin_fmaxf(__x, __y); }
+fmax(float __x, float __y)
+{ return __builtin_fmaxf(__x, __y); }
 inline float
-  rint(float __x)
-  { return __builtin_rintf(__x); }
+rint(float __x)
+{ return __builtin_rintf(__x); }
 }
 #endif
 
