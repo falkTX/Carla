@@ -45,7 +45,7 @@ protected:
     {
         carla_debug("CarlaPipeServer::CarlaPipeServer()");
 
-        fTmpBuf[0xff] = '\0';
+        carla_zeroChar(fTmpBuf, 0xff+1);
     }
 
     // -------------------------------------------------------------------
@@ -474,12 +474,14 @@ public:
     // -------------------------------------------------------------------
 
 protected:
+    // to possibly send errors somewhere
     virtual void fail(const char* const error)
     {
         carla_stderr2(error);
     }
 
-    virtual void msgReceived(const char* const msg) = 0;
+    // returns true if msg handled
+    virtual bool msgReceived(const char* const msg) = 0;
 
     // -------------------------------------------------------------------
 
