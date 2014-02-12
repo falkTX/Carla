@@ -178,13 +178,14 @@ install:
 	# Install script files
 	install -m 755 \
 		data/carla \
-		data/carla-control \
 		data/carla-database \
 		data/carla-patchbay \
 		data/carla-rack \
 		data/carla-settings \
 		data/carla-single \
 		$(DESTDIR)$(PREFIX)/bin/
+
+# 		data/carla-control \
 
 	# Install desktop files
 	install -m 644 data/*.desktop $(DESTDIR)$(PREFIX)/share/applications/
@@ -261,13 +262,14 @@ install:
 	# Adjust PREFIX value in script files
 	sed -i "s/X-PREFIX-X/$(SED_PREFIX)/" \
 		$(DESTDIR)$(PREFIX)/bin/carla \
-		$(DESTDIR)$(PREFIX)/bin/carla-control \
 		$(DESTDIR)$(PREFIX)/bin/carla-database \
 		$(DESTDIR)$(PREFIX)/bin/carla-patchbay \
 		$(DESTDIR)$(PREFIX)/bin/carla-rack \
 		$(DESTDIR)$(PREFIX)/bin/carla-settings \
 		$(DESTDIR)$(PREFIX)/bin/carla-single \
 		$(DESTDIR)$(PREFIX)/lib/pkgconfig/carla-standalone.pc
+
+# 		$(DESTDIR)$(PREFIX)/bin/carla-control \
 
 	# Set plugin resources
 	cd $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/ && \
