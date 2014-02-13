@@ -27,6 +27,9 @@ from PyQt4.QtGui import QApplication, QColor, QPalette
 
 from carla_shared import *
 
+# Make sure resources are good
+import resources_rc
+
 # ------------------------------------------------------------------------------------------------------------
 
 class CarlaApplication(object):
@@ -203,6 +206,9 @@ class CarlaApplication(object):
 
     def exec_(self):
         return self.fApp.exec_()
+
+    def exit_exec(self):
+        return sys.exit(self.fApp.exec_())
 
     def getApp(self):
         return self.fApp

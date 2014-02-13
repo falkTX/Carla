@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# DISTRHO Notes Plugin
-# Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+# Carla Native Plugins
+# Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -14,14 +14,12 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
-# For a full copy of the GNU General Public License see the GPL.txt file
+# For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 from numpy import rint
-from sys import argv, exit
-
 from PyQt4.QtCore import pyqtSlot
 from PyQt4.QtGui import QApplication, QGridLayout, QLabel, QPushButton, QTextEdit, QWidget
 
@@ -31,8 +29,6 @@ from PyQt4.QtGui import QApplication, QGridLayout, QLabel, QPushButton, QTextEdi
 from carla_style import CarlaApplication
 from externalui import ExternalUI
 from paramspinbox import ParamSpinBox
-
-import resources_rc
 
 # -----------------------------------------------------------------------
 # External UI
@@ -231,4 +227,4 @@ if __name__ == '__main__':
     app = CarlaApplication("Notes")
     #app...
     gui = DistrhoUINotes()
-    exit(app.exec_())
+    app.exit_exec()
