@@ -323,7 +323,7 @@ public:
         return fInfo.category;
     }
 
-    long getUniqueId() const noexcept override
+    int64_t getUniqueId() const noexcept override
     {
         return fInfo.uniqueId;
     }
