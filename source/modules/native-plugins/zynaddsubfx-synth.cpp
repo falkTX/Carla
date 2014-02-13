@@ -789,9 +789,9 @@ public:
 static const NativePluginDescriptor zynaddsubfxDesc = {
     /* category  */ PLUGIN_CATEGORY_SYNTH,
 #ifdef WANT_ZYNADDSUBFX_UI
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_SYNTH|PLUGIN_HAS_UI|PLUGIN_USES_STATE),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_SYNTH|PLUGIN_HAS_UI|PLUGIN_USES_MULTI_PROGS|PLUGIN_USES_STATE),
 #else
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_SYNTH|PLUGIN_USES_STATE),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_SYNTH|PLUGIN_USES_MULTI_PROGS|PLUGIN_USES_STATE),
 #endif
     /* supports  */ static_cast<NativePluginSupports>(PLUGIN_SUPPORTS_CONTROL_CHANGES|PLUGIN_SUPPORTS_NOTE_AFTERTOUCH|PLUGIN_SUPPORTS_PITCHBEND|PLUGIN_SUPPORTS_ALL_SOUND_OFF),
     /* audioIns  */ 0,

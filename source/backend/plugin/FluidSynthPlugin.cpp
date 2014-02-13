@@ -926,7 +926,9 @@ public:
         pData->extraHints  = 0x0;
         pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_IN;
 
-        if (! fUses16Outs)
+        if (fUses16Outs)
+            pData->extraHints |= PLUGIN_EXTRA_HINT_USES_MULTI_PROGS;
+        else
             pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
 
         bufferSizeChanged(pData->engine->getBufferSize());

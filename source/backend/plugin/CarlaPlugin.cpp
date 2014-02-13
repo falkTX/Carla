@@ -547,7 +547,7 @@ const SaveState& CarlaPlugin::getSaveState()
 void CarlaPlugin::loadSaveState(const SaveState& saveState)
 {
     char strBuf[STR_MAX+1];
-    const bool usesMultiProgs(getType() == PLUGIN_FILE_GIG || getType() == PLUGIN_FILE_SF2 || (getType() == PLUGIN_INTERNAL && getCategory() == PLUGIN_CATEGORY_SYNTH));
+    const bool usesMultiProgs(pData->extraHints & PLUGIN_EXTRA_HINT_USES_MULTI_PROGS);
 
     gIsLoadingProject = true;
     ScopedValueSetter<bool>(gIsLoadingProject, false);
