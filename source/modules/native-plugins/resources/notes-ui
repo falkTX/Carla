@@ -228,7 +228,7 @@ class DistrhoUINotes(QWidget, ExternalUI):
 
 #--------------- main ------------------
 if __name__ == '__main__':
-    app = CarlaApplication()
+    app = CarlaApplication("Notes")
     #app...
     gui = DistrhoUINotes()
     exit(app.exec_())

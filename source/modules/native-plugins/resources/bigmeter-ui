@@ -19,7 +19,6 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from numpy import rint
 from sys import exit
 
 # -----------------------------------------------------------------------
@@ -57,7 +56,7 @@ class DistrhoUIBigMeter(DigitalPeakMeter, ExternalUI):
 
     def d_parameterChanged(self, index, value):
         if index == 0:
-            color = rint(value)+1
+            color = int(value)
 
             if color not in (self.GREEN, self.BLUE):
                 return
