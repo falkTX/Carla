@@ -434,7 +434,7 @@ public:
                     fixedMsg[i] = '\r';
             }
 
-            if (fixedMsg[size+1] == '\r')
+            if (fixedMsg[size-1] == '\r')
             {
                 fixedMsg[size-1] = '\n';
                 fixedMsg[size]   = '\0';

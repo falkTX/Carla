@@ -73,8 +73,8 @@ ifneq ($(WIN32),true)
 # External-UI plugins
 
 OBJS += \
-	bigmeter.cpp.o
-# 	ext-notes.cpp.o
+	bigmeter.cpp.o \
+	notes.cpp.o
 endif
 
 # --------------------------------------------------------------
@@ -232,6 +232,9 @@ midi-file.cpp.o: midi-file.cpp midi-base.hpp $(CXXDEPS)
 	$(CXX) $< $(MF_CXX_FLAGS) -c -o $@
 
 midi-sequencer.cpp.o: midi-sequencer.cpp midi-base.hpp $(CXXDEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+notes.cpp.o: notes.cpp $(CXXDEPS) ../CarlaNativeExtUI.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 vex-%.cpp.o: vex-%.cpp

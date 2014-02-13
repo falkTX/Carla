@@ -85,7 +85,7 @@ void carla_register_all_plugins()
 
     // External-UI plugins
     carla_register_native_plugin_bigmeter();
-    //carla_register_native_plugin_notes();
+    carla_register_native_plugin_notes();
 #endif
 
     // DISTRHO plugins

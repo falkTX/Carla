@@ -93,9 +93,9 @@ protected:
 
         writeMsg("control\n", 8);
         std::sprintf(tmpBuf, "%i\n", index);
-        writeAndFixMsg(tmpBuf);
+        writeMsg(tmpBuf);
         std::sprintf(tmpBuf, "%f\n", value);
-        writeAndFixMsg(tmpBuf);
+        writeMsg(tmpBuf);
     }
 
     void uiSetMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program) override
@@ -106,16 +106,16 @@ protected:
 
         writeMsg("program\n", 8);
         std::sprintf(tmpBuf, "%i\n", channel);
-        writeAndFixMsg(tmpBuf);
+        writeMsg(tmpBuf);
         std::sprintf(tmpBuf, "%i\n", bank);
-        writeAndFixMsg(tmpBuf);
+        writeMsg(tmpBuf);
         std::sprintf(tmpBuf, "%i\n", program);
-        writeAndFixMsg(tmpBuf);
+        writeMsg(tmpBuf);
     }
 
     void uiSetCustomData(const char* const key, const char* const value) override
     {
-        CARLA_SAFE_ASSERT_RETURN(key != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 
         writeMsg("configure\n", 10);

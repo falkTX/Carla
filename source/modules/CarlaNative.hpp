@@ -325,7 +325,7 @@ protected:
 
     virtual void setCustomData(const char* const key, const char* const value)
     {
-        CARLA_SAFE_ASSERT_RETURN(key != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
     }
 

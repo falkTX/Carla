@@ -85,7 +85,7 @@ class DistrhoUINotes(QWidget, ExternalUI):
         self.showUiIfTesting()
 
     def saveCurrentTextState(self):
-        pageKey   = "pageText %i" % self.fCurPage
+        pageKey   = "pageText #%i" % self.fCurPage
         pageValue = self.fTextEdit.toPlainText()
 
         if pageValue != self.fNotes[self.fCurPage-1]:
