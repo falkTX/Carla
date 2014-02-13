@@ -37,11 +37,15 @@ struct PluginListManager {
         {
             const NativePluginDescriptor* const desc(CarlaBackend::CarlaPlugin::getNativePluginDescriptor(i));
 
-#ifdef CARLA_NATIVE_PLUGIN_LV2
-            // Open/Save are not implemented yet
+            // Open/Save not possible in plugins
             if (desc->hints & PLUGIN_NEEDS_UI_OPEN_SAVE)
-               continue;
-#endif
+                continue;
+
+            // skip distrho plugins and Vex
+            if (std::strcmp(desc->label, "3bandeq")     == 0 || std::strcmp(desc->label, "3bandsplitter")  == 0 || std::strcmp(desc->label, "nekobi")   == 0 ||
+                std::strcmp(desc->label, "pingpongpan") == 0 || std::strcmp(desc->label, "stereoenhancer") == 0 || std::strcmp(desc->label, "vexsynth") == 0)
+                continue;
+
             descs.append(desc);
         }
     }
