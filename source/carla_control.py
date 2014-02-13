@@ -19,8 +19,8 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt5.QtCore import QLibrary
-from PyQt5.QtWidgets import QApplication, QInputDialog, QMainWindow
+from PyQt4.QtCore import QLibrary
+from PyQt4.QtGui import QApplication, QInputDialog, QMainWindow
 from liblo import make_method, Address, ServerError, ServerThread
 from liblo import send as lo_send
 from liblo import TCP as LO_TCP
