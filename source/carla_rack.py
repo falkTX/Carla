@@ -20,7 +20,7 @@
 # Imports (Global)
 
 from PyQt4.QtCore import Qt, QSize, QTimer
-from PyQt4.QtGui import QApplication, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QScrollBar
+from PyQt4.QtGui import QApplication, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QPixmap, QScrollBar
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
@@ -77,8 +77,15 @@ class CarlaRackList(QListWidget):
     def __init__(self, parent):
         QListWidget.__init__(self, parent)
 
+        self.fPixmapL = QPixmap(":/bitmaps/rack_interior_left.png")
+        self.fPixmapR = QPixmap(":/bitmaps/rack_interior_right.png")
+
+        self.fPixmapWidth = self.fPixmapL.width()
+
     def paintEvent(self, event):
-        #painter = QPainter(self)
+        painter = QPainter(self.viewport())
+        painter.drawTiledPixmap(0, 0, self.fPixmapWidth, self.height(), self.fPixmapL)
+        painter.drawTiledPixmap(self.width()-self.fPixmapWidth-2, 0, self.fPixmapWidth, self.height(), self.fPixmapR)
         QListWidget.paintEvent(self, event)
 
 # ------------------------------------------------------------------------------------------------------------
@@ -151,11 +158,11 @@ class CarlaRackW(QFrame):
 
         self.setStyleSheet("""
           QLabel#PadLeft {
-            background-image: url(:/bitmaps/padding_left.png);
+            background-image: url(:/bitmaps/rack_padding_left.png);
             background-repeat: repeat-y;
           }
           QLabel#PadRight {
-            background-image: url(:/bitmaps/padding_right.png);
+            background-image: url(:/bitmaps/rack_padding_right.png);
             background-repeat: repeat-y;
           }
           QListWidget {
