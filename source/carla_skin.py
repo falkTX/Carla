@@ -734,7 +734,7 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
             g += 10
 
         self.setStyleSheet("""
-        QFrame#PluginWidget {
+        AbstractPluginSlot#PluginWidget {
             background-color: rgb(%i, %i, %i);
             background-image: url(:/bitmaps/background_noise1.png);
             background-repeat: repeat-xy;
@@ -856,6 +856,20 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
     def getFixedHeight(self):
         return 79
 
+    #------------------------------------------------------------------
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setBrush(Qt.transparent)
+
+        painter.setPen(QPen(QColor(42, 42, 42), 1))
+        painter.drawRect(0, 1, self.width()-1, 76)
+
+        painter.setPen(QPen(QColor(60, 60, 60), 1))
+        painter.drawLine(0, 0, self.width(), 0)
+
+        AbstractPluginSlot.paintEvent(self, event)
+
 # ------------------------------------------------------------------------------------------------------------
 
 class PluginSlot_Calf(AbstractPluginSlot):
@@ -878,10 +892,10 @@ class PluginSlot_Calf(AbstractPluginSlot):
         # Set-up GUI
 
         self.setStyleSheet("""
-          QLabel#label_name, QLabel#label_audio_in, QLabel#label_audio_out, QLabel#label_midi {
+          QLabel#label_audio_in, QLabel#label_audio_out, QLabel#label_midi {
               color: black;
           }
-          QFrame#PluginWidget {
+          AbstractPluginSlot#PluginWidget {
               background-image: url(:/bitmaps/background_calf.png);
               background-repeat: repeat-xy;
               border: 2px;
@@ -975,7 +989,7 @@ class PluginSlot_ZitaRev(AbstractPluginSlot):
         self.setMinimumWidth(640)
 
         self.setStyleSheet("""
-          QFrame#PluginWidget {
+          AbstractPluginSlot#PluginWidget {
               background-color: #404040;
               border: 2px solid transparent;
           }
@@ -1112,7 +1126,7 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
         # Set-up GUI
 
         self.setStyleSheet("""
-          QFrame#PluginWidget {
+          AbstractPluginSlot#PluginWidget {
               background-image: url(:/bitmaps/background_zynfx.png);
               background-repeat: repeat-xy;
               border: 2px;
