@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla rack widget code
-# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
 # Imports (Global)
 
 from PyQt4.QtCore import Qt, QSize, QTimer
-from PyQt4.QtGui import QApplication, QListWidget, QListWidgetItem
+from PyQt4.QtGui import QApplication, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QScrollBar
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
@@ -71,11 +71,64 @@ class CarlaRackItem(QListWidgetItem):
         #QListWidgetItem.paintEvent(self, event)
 
 # ------------------------------------------------------------------------------------------------------------
+# Rack widget list
+
+class CarlaRackList(QListWidget):
+    def __init__(self, parent):
+        QListWidget.__init__(self, parent)
+
+    def paintEvent(self, event):
+        #painter = QPainter(self)
+        QListWidget.paintEvent(self, event)
+
+# ------------------------------------------------------------------------------------------------------------
 # Rack widget
 
-class CarlaRackW(QListWidget):
+class CarlaRackW(QFrame):
     def __init__(self, parent, doSetup = True):
-        QListWidget.__init__(self, parent)
+        QFrame.__init__(self, parent)
+
+        self.fLayout = QHBoxLayout(self)
+        self.fLayout.setContentsMargins(0, 0, 0, 0)
+        self.fLayout.setSpacing(1)
+        self.setLayout(self.fLayout)
+
+        self.fPadLeft  = QLabel(self)
+        self.fPadLeft.setFixedWidth(25)
+        self.fPadLeft.setObjectName("PadLeft")
+        self.fPadLeft.setText("")
+
+        self.fPadRight = QLabel(self)
+        self.fPadRight.setFixedWidth(25)
+        self.fPadRight.setObjectName("PadRight")
+        self.fPadRight.setText("")
+
+        self.fRack = CarlaRackList(self)
+        self.fRack.setMinimumWidth(640+20) # required by zita, 591 was old value
+        self.fRack.setSortingEnabled(False)
+        self.fRack.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.fRack.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.fRack.currentRowChanged.connect(self.slot_currentRowChanged)
+
+        sb = self.fRack.verticalScrollBar()
+        self.fScrollBar = QScrollBar(Qt.Vertical, self)
+        self.fScrollBar.setMinimum(sb.minimum())
+        self.fScrollBar.setMaximum(sb.maximum())
+        self.fScrollBar.setValue(sb.value())
+
+        #sb.actionTriggered.connect(self.fScrollBar.triggerAction)
+        #sb.sliderMoved.connect(self.fScrollBar.)
+        #sb.sliderPressed.connect(self.fScrollBar.)
+        #sb.sliderReleased.connect(self.fScrollBar.)
+        sb.rangeChanged.connect(self.fScrollBar.setRange)
+        sb.valueChanged.connect(self.fScrollBar.setValue)
+        self.fScrollBar.rangeChanged.connect(sb.setRange)
+        self.fScrollBar.valueChanged.connect(sb.setValue)
+
+        self.fLayout.addWidget(self.fPadLeft)
+        self.fLayout.addWidget(self.fRack)
+        self.fLayout.addWidget(self.fPadRight)
+        self.fLayout.addWidget(self.fScrollBar)
 
         # -------------------------------------------------------------
         # Internal stuff
@@ -90,27 +143,25 @@ class CarlaRackW(QListWidget):
         # -------------------------------------------------------------
         # Set-up GUI stuff
 
-        self.setMinimumWidth(644) # required by zita, 591 was old value
-        self.setSortingEnabled(False)
-
-        self.currentRowChanged.connect(self.slot_currentRowChanged)
-
         #app  = QApplication.instance()
         #pal1 = app.palette().base().color()
         #pal2 = app.palette().button().color()
         #col1 = "stop:0 rgb(%i, %i, %i)" % (pal1.red(), pal1.green(), pal1.blue())
         #col2 = "stop:1 rgb(%i, %i, %i)" % (pal2.red(), pal2.green(), pal2.blue())
 
-        #self.setStyleSheet("""
-          #QListWidget {
-            #background-color: qlineargradient(spread:pad,
-                #x1:0.0, y1:0.0,
-                #x2:0.2, y2:1.0,
-                #%s,
-                #%s
-            #);
-          #}
-        #""" % (col1, col2))
+        self.setStyleSheet("""
+          QLabel#PadLeft {
+            background-image: url(:/bitmaps/padding_left.png);
+            background-repeat: repeat-y;
+          }
+          QLabel#PadRight {
+            background-image: url(:/bitmaps/padding_right.png);
+            background-repeat: repeat-y;
+          }
+          QListWidget {
+            background-color: black;
+          }
+        """)
 
         # -------------------------------------------------------------
         # Connect actions to functions
@@ -153,7 +204,7 @@ class CarlaRackW(QListWidget):
     # -----------------------------------------------------------------
 
     def addPlugin(self, pluginId, isProjectLoading):
-        pitem = CarlaRackItem(self, pluginId)
+        pitem = CarlaRackItem(self.fRack, pluginId)
 
         self.fPluginList.append(pitem)
         self.fPluginCount += 1
@@ -172,7 +223,7 @@ class CarlaRackW(QListWidget):
         self.fPluginCount -= 1
         self.fPluginList.pop(pluginId)
 
-        self.takeItem(pluginId)
+        self.fRack.takeItem(pluginId)
 
         pitem.close()
         del pitem
@@ -201,7 +252,7 @@ class CarlaRackW(QListWidget):
             return
 
     def removeAllPlugins(self):
-        while (self.takeItem(0)):
+        while self.fRack.takeItem(0):
             pass
 
         for i in range(self.fPluginCount):
