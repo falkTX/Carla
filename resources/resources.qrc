@@ -110,6 +110,9 @@
 
         <file>bitmaps/logo_calf.png</file>
 
+        <file>bitmaps/padding_left.png</file>
+        <file>bitmaps/padding_right.png</file>
+
         <file>bitmaps/canvas/frame_node_header.png</file>
         <file>bitmaps/canvas/frame_port_bg.png</file>
 

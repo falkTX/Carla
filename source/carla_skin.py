@@ -709,7 +709,6 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
         labelFont.setPointSize(9)
 
         self.ui.label_name.setFont(labelFont)
-        self.ui.label_type.setFont(labelFont)
 
         r = 40
         g = 40
@@ -839,7 +838,11 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
         self.b_edit   = self.ui.b_edit
 
         self.label_name = self.ui.label_name
-        self.label_type = self.ui.label_type
+
+        self.led_control   = self.ui.led_control
+        self.led_midi      = self.ui.led_midi
+        self.led_audio_in  = self.ui.led_audio_in
+        self.led_audio_out = self.ui.led_audio_out
 
         self.peak_in  = self.ui.peak_in
         self.peak_out = self.ui.peak_out
