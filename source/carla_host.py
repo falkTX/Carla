@@ -718,6 +718,15 @@ class HostWindow(QMainWindow):
     # -----------------------------------------------------------------
     # Internal stuff (gui)
 
+    def killTimers(self):
+        if self.fIdleTimerFast != 0:
+            self.killTimer(self.fIdleTimerFast)
+            self.fIdleTimerFast = 0
+
+        if self.fIdleTimerSlow != 0:
+            self.killTimer(self.fIdleTimerSlow)
+            self.fIdleTimerSlow = 0
+
     def setProperWindowTitle(self):
         title = self.fClientName
 
@@ -1024,14 +1033,7 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_handleEngineStoppedCallback(self):
-        if self.fIdleTimerFast != 0:
-            self.killTimer(self.fIdleTimerFast)
-            self.fIdleTimerFast = 0
-
-        if self.fIdleTimerSlow != 0:
-            self.killTimer(self.fIdleTimerSlow)
-            self.fIdleTimerSlow = 0
-
+        self.killTimers()
         self.slot_engineStop(False)
 
         Carla.bufferSize = 0
@@ -1103,14 +1105,7 @@ class HostWindow(QMainWindow):
         QMainWindow.timerEvent(self, event)
 
     def closeEvent(self, event):
-        if self.fIdleTimerFast != 0:
-            self.killTimer(self.fIdleTimerFast)
-            self.fIdleTimerFast = 0
-
-        if self.fIdleTimerSlow != 0:
-            self.killTimer(self.fIdleTimerSlow)
-            self.fIdleTimerSlow = 0
-
+        self.killTimers()
         self.saveSettings()
 
         if Carla.host.is_engine_running():
@@ -1214,6 +1209,7 @@ def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
     elif action == ENGINE_CALLBACK_ENGINE_STARTED:
         Carla.gui.EngineStartedCallback.emit(value1, value2, valueStr)
     elif action == ENGINE_CALLBACK_ENGINE_STOPPED:
+        Carla.gui.killTimers()
         Carla.gui.EngineStoppedCallback.emit()
     elif action == ENGINE_CALLBACK_INFO:
         Carla.gui.InfoCallback.emit(valueStr)
