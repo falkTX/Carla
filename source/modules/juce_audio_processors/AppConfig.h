@@ -32,7 +32,7 @@
     @see VSTPluginFormat, VST3PluginFormat, AudioPluginFormat, AudioPluginFormatManager, JUCE_PLUGINHOST_VST, JUCE_PLUGINHOST_AU
 */
 #if defined(JUCE_WINDOWS) || defined(JUCE_MAC)
-# define JUCE_PLUGINHOST_VST3 1
+# define JUCE_PLUGINHOST_VST3 1 // FIXME
 #else
 # define JUCE_PLUGINHOST_VST3 0
 #endif

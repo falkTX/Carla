@@ -76,6 +76,15 @@ endif
 
 ifeq ($(WANT_JUCE_PROCESSORS),true)
 LIBS         += ../modules/juce_audio_processors.a
+LIBS         += ../modules/juce_data_structures.a
+LIBS         += ../modules/juce_events.a
+LIBS         += ../modules/juce_graphics.a
+LIBS         += ../modules/juce_gui_basics.a
+LINK_FLAGS   += $(JUCE_AUDIO_PROCESSORS_LIBS)
+LINK_FLAGS   += $(JUCE_DATA_STRUCTURES_LIBS)
+LINK_FLAGS   += $(JUCE_EVENTS_LIBS)
+LINK_FLAGS   += $(JUCE_GRAPHICS_LIBS)
+LINK_FLAGS   += $(JUCE_GUI_BASICS_LIBS)
 endif
 
 POSIX_BUILD_FLAGS = $(BUILD_CXX_FLAGS)
@@ -126,10 +135,10 @@ win64:   carla-discovery-win64.exe
 # --------------------------------------------------------------
 
 carla-discovery-native: $(OBJS) $(DEPS) $(LIBS)
-	$(CXX) $< $(LIBS) $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) $(POSIX_LINK_FLAGS) -o $@
+	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) $(POSIX_LINK_FLAGS) -o $@
 
 carla-discovery-native.exe: $(OBJS) $(DEPS) $(LIBS)
-	$(CXX) $< $(LIBS) $(WIN_BUILD_FLAGS) $(NATIVE_FLAGS) $(WIN_LINK_FLAGS) -o $@
+	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group $(WIN_BUILD_FLAGS) $(NATIVE_FLAGS) $(WIN_LINK_FLAGS) -o $@
 
 carla-discovery-posix32: $(OBJS) $(DEPS) $(LIBS_posix32)
 	$(CXX) $< $(LIBS_posix32) $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@
