@@ -15,6 +15,7 @@ ifeq ($(CARLA_VESTIGE_HEADER),true)
 BUILD_CXX_FLAGS += -DVESTIGE_HEADER
 else
 # needed by vst3
+BUILD_CXX_FLAGS += -DUNICODE_OFF -fpermissive
 ifeq ($(DEBUG),true)
 BUILD_CXX_FLAGS += -DDEVELOPMENT -D_DEBUG
 else
