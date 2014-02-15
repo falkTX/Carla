@@ -15,17 +15,18 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-// if using juce, don't build UI stuff
-#define JUCE_PLUGIN_HOST_NO_UI
-
 #include "CarlaBackendUtils.hpp"
 #include "CarlaLibUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 
 #ifdef HAVE_JUCE
-# include "juce_audio_processors.h"
+# if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+#  define WANT_JUCE_PROCESSORS
+#  include "juce_audio_processors.h"
+# endif
 #else
+// our csound code needs juce
 # undef WANT_CSOUND
 #endif
 
@@ -1452,7 +1453,7 @@ static void do_vst_check(void*& libHandle, const bool init)
 #endif
 }
 
-#ifdef HAVE_JUCE
+#ifdef WANT_JUCE_PROCESSORS
 static void do_juce_check(const char* const filename, const char* const stype, const bool init)
 {
     using namespace juce;
@@ -1470,14 +1471,14 @@ static void do_juce_check(const char* const filename, const char* const stype, c
         DISCOVERY_OUT("error", "LADSPA support not available");
 #endif
     }
-    /*else if (std::strcmp(stype, "VST") == 0)
+    else if (std::strcmp(stype, "VST") == 0)
     {
 #if defined(WANT_VST) && JUCE_PLUGINHOST_VST
         pluginFormat = new VSTPluginFormat();
 #else
         DISCOVERY_OUT("error", "VST support not available");
 #endif
-    }*/
+    }
     else if (std::strcmp(stype, "VST3") == 0)
     {
 #if defined(WANT_VST3) && JUCE_PLUGINHOST_VST3
@@ -1901,14 +1902,14 @@ int main(int argc, char* argv[])
         do_vst_check(handle, doInit);
         break;
     case PLUGIN_VST3:
-#ifdef HAVE_JUCE
+#ifdef WANT_JUCE_PROCESSORS
         do_juce_check(filename, "VST3", doInit);
 #else
         DISCOVERY_OUT("error", "VST3 support not available");
 #endif
         break;
     case PLUGIN_AU:
-#ifdef HAVE_JUCE
+#ifdef WANT_JUCE_PROCESSORS
         do_juce_check(filename, "AU", doInit);
 #else
         DISCOVERY_OUT("error", "AU support not available");
@@ -1941,46 +1942,6 @@ int main(int argc, char* argv[])
 
 #ifdef WANT_DSSI
 # include "CarlaDssiUtils.cpp"
-#endif
-
-#ifdef HAVE_JUCE
-// --------------------------------------------------------------------------
-// we want juce_audio_processors but without UI code
-// this is copied from juce_audio_processors.cpp
-
-#include "juce_core/native/juce_BasicNativeHeaders.h"
-
-namespace juce
-{
-
-static inline
-bool arrayContainsPlugin(const OwnedArray<PluginDescription>& list, const PluginDescription& desc)
-{
-    for (int i = list.size(); --i >= 0;)
-    {
-        if (list.getUnchecked(i)->isDuplicateOf(desc))
-            return true;
-    }
-    return false;
-}
-
-#include "juce_audio_processors/format/juce_AudioPluginFormat.cpp"
-#include "juce_audio_processors/processors/juce_AudioProcessor.cpp"
-#include "juce_audio_processors/processors/juce_PluginDescription.cpp"
-
-#ifdef WANT_LADSPA
-# include "juce_audio_processors/format_types/juce_LADSPAPluginFormat.cpp"
-#endif
-#if 0 //def WANT_VST
-# include "juce_audio_processors/format_types/juce_VSTPluginFormat.cpp"
-#endif
-#ifdef WANT_VST3
-# include "juce_audio_processors/format_types/juce_VST3PluginFormat.cpp"
-#endif
-#ifdef WANT_AU
-# include "juce_audio_processors/format_types/juce_AudioUnitPluginFormat.mm"
-#endif
-}
 #endif
 
 // --------------------------------------------------------------------------
