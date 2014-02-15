@@ -31,7 +31,7 @@
 
     @see VSTPluginFormat, VST3PluginFormat, AudioPluginFormat, AudioPluginFormatManager, JUCE_PLUGINHOST_VST, JUCE_PLUGINHOST_AU
 */
-#if defined(JUCE_WINDOW) || defined(JUCE_MAC)
+#if defined(JUCE_WINDOWS) || defined(JUCE_MAC)
 # define JUCE_PLUGINHOST_VST3 1
 #else
 # define JUCE_PLUGINHOST_VST3 0
