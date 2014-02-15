@@ -44,11 +44,9 @@ AudioProcessor::AudioProcessor()
 
 AudioProcessor::~AudioProcessor()
 {
-#ifndef JUCE_PLUGIN_HOST_NO_UI
     // ooh, nasty - the editor should have been deleted before the filter
     // that it refers to is deleted..
     jassert (activeEditor == nullptr);
-#endif
 
    #if JUCE_DEBUG
     // This will fail if you've called beginParameterChangeGesture() for one
@@ -221,15 +219,12 @@ void AudioProcessor::editorBeingDeleted (AudioProcessorEditor* const editor) noe
 {
     const ScopedLock sl (callbackLock);
 
-#ifndef JUCE_PLUGIN_HOST_NO_UI
     if (activeEditor == editor)
         activeEditor = nullptr;
-#endif
 }
 
 AudioProcessorEditor* AudioProcessor::createEditorIfNeeded()
 {
-#ifndef JUCE_PLUGIN_HOST_NO_UI
     if (activeEditor != nullptr)
         return activeEditor;
 
@@ -248,9 +243,6 @@ AudioProcessorEditor* AudioProcessor::createEditorIfNeeded()
     }
 
     return ed;
-#else
-    return nullptr;
-#endif
 }
 
 //==============================================================================

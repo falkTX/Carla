@@ -59,7 +59,7 @@ static juce::String toString (const Steinberg::char16* string) noexcept     { re
 static juce::String toString (const Steinberg::UString128& string) noexcept { return toString (static_cast<const Steinberg::char16*> (string)); }
 static juce::String toString (const Steinberg::UString256& string) noexcept { return toString (static_cast<const Steinberg::char16*> (string)); }
 
-static void toString (Steinberg::Vst::String128 result, const juce::String& source)
+static void toString128 (Steinberg::Vst::String128 result, const juce::String& source)
 {
     Steinberg::UString (result, 128).fromAscii (source.toUTF8());
 }
@@ -68,6 +68,13 @@ static Steinberg::Vst::TChar* toString (const juce::String& source) noexcept
 {
     return reinterpret_cast<Steinberg::Vst::TChar*> (source.toUTF16().getAddress());
 }
+
+#if JUCE_WINDOWS
+static const Steinberg::FIDString defaultVST3WindowType = Steinberg::kPlatformTypeHWND;
+#else
+static const Steinberg::FIDString defaultVST3WindowType = Steinberg::kPlatformTypeNSView;
+#endif
+
 
 //==============================================================================
 /** The equivalent numChannels and speaker arrangements should always
@@ -81,22 +88,32 @@ static Steinberg::Vst::SpeakerArrangement getArrangementForNumChannels (int numC
 {
     using namespace Steinberg::Vst::SpeakerArr;
 
-    if (numChannels >= 14)  return k131;
-    if (numChannels >= 13)  return k130;
-    if (numChannels >= 12)  return k111;
-    if (numChannels >= 11)  return k101;
-    if (numChannels >= 10)  return k91;
-    if (numChannels >= 9)   return k90;
-    if (numChannels >= 8)   return k71CineFullFront;
-    if (numChannels >= 7)   return k61Cine;
-    if (numChannels >= 6)   return k51;
-    if (numChannels >= 5)   return k50;
-    if (numChannels >= 4)   return k31Cine;
-    if (numChannels >= 3)   return k30Cine;
-    if (numChannels >= 2)   return kStereo;
-    if (numChannels >= 1)   return kMono;
+    switch (numChannels)
+    {
+        case 0:     return kEmpty;
+        case 1:     return kMono;
+        case 2:     return kStereo;
+        case 3:     return k30Cine;
+        case 4:     return k31Cine;
+        case 5:     return k50;
+        case 6:     return k51;
+        case 7:     return k61Cine;
+        case 8:     return k71CineFullFront;
+        case 9:     return k90;
+        case 10:    return k91;
+        case 11:    return k101;
+        case 12:    return k111;
+        case 13:    return k130;
+        case 14:    return k131;
+        case 24:    return (Steinberg::Vst::SpeakerArrangement) 1929904127; // k222
+        default:    break;
+    }
 
-    return kEmpty;
+    jassert (numChannels >= 0);
+
+    juce::BigInteger bi;
+    bi.setRange (0, jmin (numChannels, (int) (sizeof (Steinberg::Vst::SpeakerArrangement) * 8)), true);
+    return (Steinberg::Vst::SpeakerArrangement) bi.toInt64();
 }
 
 /** The equivalent numChannels and speaker arrangements should always
@@ -119,10 +136,17 @@ static void fillWithCorrespondingSpeakerArrangements (Array<Steinberg::Vst::Spea
         return;
     }
 
-    /*
-        The order of the arrangement checks must be descending, since most plugins test for
-        the first arrangement to match their number of specified channels.
-    */
+    // The order of the arrangement checks must be descending, since most plugins test for
+    /// the first arrangement to match their number of specified channels.
+
+    if (numChannels > 24)
+    {
+        juce::BigInteger bi;
+        bi.setRange (0, jmin (numChannels, (int) (sizeof (Steinberg::Vst::SpeakerArrangement) * 8)), true);
+        destination.add ((Steinberg::Vst::SpeakerArrangement) bi.toInt64());
+    }
+
+    if (numChannels >= 24)  destination.add ((Steinberg::Vst::SpeakerArrangement) 1929904127); // k222
     if (numChannels >= 14)  destination.add (k131);
     if (numChannels >= 13)  destination.add (k130);
     if (numChannels >= 12)  destination.add (k111);
@@ -225,7 +249,9 @@ public:
     //==============================================================================
     static void toMidiBuffer (MidiBuffer& result, Steinberg::Vst::IEventList& eventList)
     {
-        for (Steinberg::int32 i = 0; i < eventList.getEventCount(); ++i)
+        const int32 numEvents = eventList.getEventCount();
+
+        for (Steinberg::int32 i = 0; i < numEvents; ++i)
         {
             Steinberg::Vst::Event e;
 
@@ -407,4 +433,4 @@ namespace VST3BufferExchange
     }
 }
 
-#endif //JUCE_VST3COMMON_H_INCLUDED
+#endif   // JUCE_VST3COMMON_H_INCLUDED

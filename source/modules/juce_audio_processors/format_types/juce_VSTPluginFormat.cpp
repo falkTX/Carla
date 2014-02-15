@@ -187,7 +187,6 @@ static VstIntPtr VSTCALLBACK audioMaster (AEffect* effect, VstInt32 opcode, VstI
 static int shellUIDToCreate = 0;
 static int insideVSTCallback = 0;
 
-#ifndef JUCE_PLUGIN_HOST_NO_UI
 class IdleCallRecursionPreventer
 {
 public:
@@ -211,9 +210,6 @@ private:
 };
 
 class VSTPluginWindow;
-#else
-struct IdleCallRecursionPreventer{};
-#endif
 
 //==============================================================================
 // Change this to disable logging of various VST activities
@@ -240,7 +236,6 @@ static void* NewCFMFromMachO (void* const machofp) noexcept
 }
 #endif
 
-#ifndef JUCE_PLUGIN_HOST_NO_UI
 //==============================================================================
 #if JUCE_LINUX
 
@@ -345,7 +340,6 @@ namespace
     }
 }
 
-#endif
 #endif
 
 //==============================================================================
@@ -716,13 +710,9 @@ static const int defaultVSTBlockSizeValue = 512;
 
 //==============================================================================
 //==============================================================================
-#ifndef JUCE_PLUGIN_HOST_NO_UI
 class VSTPluginInstance     : public AudioPluginInstance,
                               private Timer,
                               private AsyncUpdater
-#else
-class VSTPluginInstance     : public AudioPluginInstance
-#endif
 {
 public:
     VSTPluginInstance (const ModuleHandle::Ptr& module_)
@@ -793,10 +783,8 @@ public:
                 UseResFile (module->resFileId);
            #endif
 
-#ifndef JUCE_PLUGIN_HOST_NO_UI
             // Must delete any editors before deleting the plugin instance!
             jassert (getActiveEditor() == 0);
-#endif
 
             _fpreset(); // some dodgy plugs fuck around with this
 
@@ -1254,7 +1242,6 @@ public:
     void setCurrentProgramStateInformation (const void* data, int size) override { loadFromFXBFile (data, size); }
 
     //==============================================================================
-#ifndef JUCE_PLUGIN_HOST_NO_UI
     void timerCallback() override
     {
         if (dispatch (effIdle, 0, 0, 0, 0) == 0)
@@ -1266,7 +1253,6 @@ public:
         // indicates that something about the plugin has changed..
         updateHostDisplay();
     }
-#endif
 
     VstIntPtr handleCallback (VstInt32 opcode, VstInt32 index, VstIntPtr value, void* ptr, float opt)
     {
@@ -1284,7 +1270,6 @@ public:
             #pragma warning (pop)
            #endif
 
-#ifndef JUCE_PLUGIN_HOST_NO_UI
             case audioMasterIdle:
                 if (insideVSTCallback == 0 && MessageManager::getInstance()->isThisTheMessageThread())
                 {
@@ -1313,7 +1298,6 @@ public:
             case audioMasterUpdateDisplay:      triggerAsyncUpdate(); break;
             case audioMasterIOChanged:          setLatencySamples (effect->initialDelay); break;
             case audioMasterNeedIdle:           startTimer (50); break;
-#endif
 
             case audioMasterGetSampleRate:      return (VstIntPtr) (getSampleRate() > 0 ? getSampleRate() : defaultVSTSampleRateValue);
             case audioMasterGetBlockSize:       return (VstIntPtr) (getBlockSize() > 0  ? getBlockSize()  : defaultVSTBlockSizeValue);
@@ -1399,12 +1383,10 @@ public:
             case audioMasterGetVendorString:
             case audioMasterGetProductString:
             {
-                String hostName ("Carla");
+                String hostName ("Juce VST Host");
 
-#ifndef JUCE_PLUGIN_HOST_NO_UI
                 if (JUCEApplicationBase* app = JUCEApplicationBase::getInstance())
                     hostName = app->getApplicationName();
-#endif
 
                 hostName.copyToUTF8 ((char*) ptr, (size_t) jmin (kVstMaxVendorStrLen, kVstMaxProductStrLen) - 1);
                 break;
@@ -1911,7 +1893,6 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VSTPluginInstance)
 };
 
-#ifndef JUCE_PLUGIN_HOST_NO_UI
 //==============================================================================
 static Array <VSTPluginWindow*> activeVSTWindows;
 
@@ -1946,17 +1927,10 @@ public:
        #elif JUCE_MAC
         #if JUCE_SUPPORT_CARBON
         if (! plug.usesCocoaNSView)
-        {
             addAndMakeVisible (carbonWrapper = new CarbonWrapperComponent (*this));
-        }
         else
         #endif
-        {
-            addAndMakeVisible (cocoaWrapper = new AutoResizingNSViewComponent());
-            NSView* innerView = [[NSView alloc] init];
-            cocoaWrapper->setView (innerView);
-            [innerView release];
-        }
+            addAndMakeVisible (cocoaWrapper = new AutoResizingNSViewComponentWithParent());
        #endif
 
         activeVSTWindows.add (this);
@@ -2619,7 +2593,7 @@ private:
     ScopedPointer<CarbonWrapperComponent> carbonWrapper;
    #endif
 
-    ScopedPointer<NSViewComponent> cocoaWrapper;
+    ScopedPointer<AutoResizingNSViewComponentWithParent> cocoaWrapper;
 
     void resized() override
     {
@@ -2635,17 +2609,12 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VSTPluginWindow)
 };
-#endif
 
 //==============================================================================
 AudioProcessorEditor* VSTPluginInstance::createEditor()
 {
-#ifndef JUCE_PLUGIN_HOST_NO_UI
     return hasEditor() ? new VSTPluginWindow (*this)
                        : nullptr;
-#else
-    return nullptr;
-#endif
 }
 
 //==============================================================================

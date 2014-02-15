@@ -998,7 +998,8 @@ private:
 
     void releaseFactory()
     {
-        const Steinberg::FReleaser releaser (factory);
+        if (factory != nullptr)
+            factory->release();
     }
 
    #if JUCE_WINDOWS
@@ -1219,10 +1220,9 @@ public:
 
        #if JUCE_MAC
         dummyComponent.setView (nullptr);
-        [pluginHandle release];
        #endif
 
-       const Steinberg::FReleaser releaser (view);
+        view = nullptr;
     }
 
     JUCE_DECLARE_VST3_COM_REF_METHODS
@@ -1284,7 +1284,8 @@ public:
             dummyComponent.setBounds (0, 0, (int) rect.getWidth(), (int) rect.getHeight());
            #endif
 
-            Desktop::getInstance().getMainMouseSource().forceMouseCursorUpdate(); // Some plugins don't update their cursor correctly when mousing out the window
+            // Some plugins don't update their cursor correctly when mousing out the window
+            Desktop::getInstance().getMainMouseSource().forceMouseCursorUpdate();
 
             recursiveResize = false;
         }
@@ -1316,7 +1317,7 @@ public:
 private:
     //==============================================================================
     Atomic<int> refCount;
-    IPlugView* view; // N.B.: Don't use a ComSmartPtr here! The view should start with a refCount of 1, and does NOT need to be incremented!
+    ComSmartPtr<IPlugView> view;
 
    #if JUCE_WINDOWS
     class ChildComponent  : public Component
@@ -1335,14 +1336,14 @@ private:
     ScopedPointer<ComponentPeer> peer;
     typedef HWND HandleFormat;
    #elif JUCE_MAC
-    NSViewComponent dummyComponent;
+    AutoResizingNSViewComponentWithParent dummyComponent;
     typedef NSView* HandleFormat;
    #else
     Component dummyComponent;
     typedef void* HandleFormat;
    #endif
 
-    HandleFormat pluginHandle; // Don't delete this
+    HandleFormat pluginHandle;
     bool recursiveResize;
 
     //==============================================================================
@@ -1368,17 +1369,12 @@ private:
            #elif JUCE_MAC
             dummyComponent.setBounds (getBounds().withZeroOrigin());
             addAndMakeVisible (dummyComponent);
-            pluginHandle = [[NSView alloc] init];
-            dummyComponent.setView (pluginHandle);
+            pluginHandle = (NSView*) dummyComponent.getView();
+            jassert (pluginHandle != nil);
            #endif
 
             if (pluginHandle != nullptr)
-                view->attached (pluginHandle,
-                               #if JUCE_WINDOWS
-                                kPlatformTypeHWND);
-                               #else
-                                kPlatformTypeNSView);
-                               #endif
+                warnOnFailure (view->attached (pluginHandle, defaultVST3WindowType));
         }
     }
 
@@ -1452,7 +1448,8 @@ public:
         if (! fetchComponentAndController (factory, factory->countClasses()))
             return false;
 
-        editController->initialize (host->getFUnknown()); // (May return an error if the plugin combines the IComponent and IEditController implementations)
+        // (May return an error if the plugin combines the IComponent and IEditController implementations)
+        editController->initialize (host->getFUnknown());
 
         isControllerInitialised = true;
         editController->setComponentHandler (host);
