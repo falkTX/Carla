@@ -66,7 +66,9 @@ class PixmapDial(QDial):
 
         self.fLabel     = ""
         self.fLabelPos  = QPointF(0.0, 0.0)
-        self.fLabelFont = QFont()
+        self.fLabelFont = QFont() #"DejaVu Sans [Book]", 6, QFont.Normal, False)
+        #self.fLabelFont.setPixelSize(8)
+        #self.fLabelFont.setWeight(100)
         self.fLabelFont.setPointSize(6)
         self.fLabelWidth  = 0
         self.fLabelHeight = 0
@@ -141,6 +143,11 @@ class PixmapDial(QDial):
 
         self.updateSizes()
         #self.update()
+
+    def setWhiteText(self):
+        self.fColor1 = QColor(0, 0, 0, 255)
+        self.fColor2 = QColor(0, 0, 0, 0)
+        self.fColorT = [Qt.white, Qt.darkGray]
 
     def minimumSizeHint(self):
         return QSize(self.fSize, self.fSize)

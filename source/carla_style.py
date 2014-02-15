@@ -20,7 +20,7 @@
 # Imports (Global)
 
 from PyQt4.QtCore import QSettings
-from PyQt4.QtGui import QApplication, QColor, QPalette
+from PyQt4.QtGui import QApplication, QColor, QFont, QPalette
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -181,8 +181,13 @@ class CarlaApplication(object):
 
         useProTheme = settings.value("Main/UseProTheme", True, type=bool)
 
-        if useProTheme:
+        if useProTheme or True:
+            #font = QFont("Sans Serif", 8, QFont.Normal, False)
+            #self.fApp.setFont(font)
+            #QApplication.setFont(font)
+
             self.fApp.setStyle("carla")
+            #QApplication.setStyle("carla")
 
             proThemeColor = settings.value("Main/ProThemeColor", "Black", type=str).lower()
 

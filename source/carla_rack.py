@@ -97,7 +97,7 @@ class CarlaRackW(QFrame):
 
         self.fLayout = QHBoxLayout(self)
         self.fLayout.setContentsMargins(0, 0, 0, 0)
-        self.fLayout.setSpacing(1)
+        self.fLayout.setSpacing(0)
         self.setLayout(self.fLayout)
 
         self.fPadLeft  = QLabel(self)

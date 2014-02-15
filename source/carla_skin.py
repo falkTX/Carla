@@ -735,10 +735,12 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
 
         self.setStyleSheet("""
           AbstractPluginSlot#PluginWidget {
-              color: white;
               background-color: rgb(%i, %i, %i);
               background-image: url(:/bitmaps/background_noise1.png);
               background-repeat: repeat-xy;
+          }
+          QLabel#label_name {
+              color: white;
           }
         """ % (r, g, b))
 
@@ -807,10 +809,11 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
             widget.setLabel(paramName)
             widget.setCustomColor(QColor(_r, _g, _b))
             widget.setCustomPaint(PixmapDial.CUSTOM_PAINT_COLOR)
+            widget.setWhiteText()
 
-            widget.setSingleStep(paramRanges['step']*1000)
             widget.setMinimum(paramRanges['min']*1000)
             widget.setMaximum(paramRanges['max']*1000)
+            widget.setSingleStep(paramRanges['step']*1000)
 
             if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
                 widget.setEnabled(False)
@@ -824,11 +827,13 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
         self.ui.dial_drywet.setPixmap(3)
         self.ui.dial_drywet.setLabel("Dry/Wet")
         self.ui.dial_drywet.setCustomPaint(PixmapDial.CUSTOM_PAINT_CARLA_WET)
+        self.ui.dial_drywet.setWhiteText()
 
         self.ui.dial_vol.setIndex(PARAMETER_VOLUME)
         self.ui.dial_vol.setPixmap(3)
         self.ui.dial_vol.setLabel("Volume")
         self.ui.dial_vol.setCustomPaint(PixmapDial.CUSTOM_PAINT_CARLA_VOL)
+        self.ui.dial_vol.setWhiteText()
 
         self.fParameterList.append([PARAMETER_DRYWET, self.ui.dial_drywet])
         self.fParameterList.append([PARAMETER_VOLUME, self.ui.dial_vol])
