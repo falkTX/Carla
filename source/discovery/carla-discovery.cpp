@@ -1482,7 +1482,7 @@ static void do_juce_check(const char* const filename, const char* const stype, c
     else if (std::strcmp(stype, "VST3") == 0)
     {
 #if defined(WANT_VST3) && JUCE_PLUGINHOST_VST3
-        pluginFormat = new VSTPluginFormat();
+        pluginFormat = new VST3PluginFormat();
 #else
         DISCOVERY_OUT("error", "VST3 support not available");
 #endif
