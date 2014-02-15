@@ -175,16 +175,17 @@ class CarlaApplication(object):
             self.loadSettings()
 
     def loadSettings(self):
-        if WINDOWS: return
-
         settings = QSettings()
 
         useProTheme = settings.value("Main/UseProTheme", True, type=bool)
 
         if useProTheme or True:
-            #font = QFont("Sans Serif", 8, QFont.Normal, False)
+            #font = QFont("DejaVu Sans [Book]", 8, QFont.Normal)
             #self.fApp.setFont(font)
             #QApplication.setFont(font)
+
+            # TODO
+            if WINDOWS: return
 
             self.fApp.setStyle("carla")
             #QApplication.setStyle("carla")

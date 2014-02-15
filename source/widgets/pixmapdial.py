@@ -66,9 +66,7 @@ class PixmapDial(QDial):
 
         self.fLabel     = ""
         self.fLabelPos  = QPointF(0.0, 0.0)
-        self.fLabelFont = QFont() #"DejaVu Sans [Book]", 6, QFont.Normal, False)
-        #self.fLabelFont.setPixelSize(8)
-        #self.fLabelFont.setWeight(100)
+        self.fLabelFont = QFont(self.font())
         self.fLabelFont.setPointSize(6)
         self.fLabelWidth  = 0
         self.fLabelHeight = 0
