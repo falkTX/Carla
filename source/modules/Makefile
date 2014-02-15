@@ -204,6 +204,7 @@ lib%.so:
 
 clean:
 	rm -f *.a *.def *.dll *.dylib *.so
+	$(MAKE) clean -C audio_decoder
 	$(MAKE) clean -C native-plugins
 	$(MAKE) clean -C dgl
 	$(MAKE) clean -C jackbridge
@@ -216,6 +217,7 @@ clean:
 	$(MAKE) clean -C juce_events
 	$(MAKE) clean -C juce_graphics
 	$(MAKE) clean -C juce_gui_basics
+	$(MAKE) clean -C juce_gui_extra
 	$(MAKE) clean -C lilv
 	$(MAKE) clean -C rtaudio
 	$(MAKE) clean -C rtmidi

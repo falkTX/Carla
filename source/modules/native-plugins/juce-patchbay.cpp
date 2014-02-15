@@ -20,6 +20,13 @@
 #include "juce_audio_processors.h"
 #include "juce_gui_extra.h"
 
+// -----------------------------------------------------------------------
+
+namespace juce {
+#include "jucepluginhost/juce_MidiKeyboardComponent.h"
+#include "jucepluginhost/juce_MidiKeyboardComponent.cpp"
+}
+
 using namespace juce;
 
 // -----------------------------------------------------------------------
@@ -259,9 +266,6 @@ void carla_register_native_plugin_jucepatchbay()
 }
 
 // -----------------------------------------------------------------------
-
-#include "jucepluginhost/juce_MidiKeyboardComponent.h"
-#include "jucepluginhost/juce_MidiKeyboardComponent.cpp"
 
 #include "jucepluginhost/FilterGraph.cpp"
 #include "jucepluginhost/InternalFilters.cpp"

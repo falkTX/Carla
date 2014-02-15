@@ -562,10 +562,10 @@ public:
         float x1, y1, x2, y2;
         getPoints (x1, y1, x2, y2);
 
-        const Rectangle<int> newBounds ((int) jmin (x1, x2) - 4,
-                                        (int) jmin (y1, y2) - 4,
-                                        (int) std::abs (x1 - x2) + 8,
-                                        (int) std::abs (y1 - y2) + 8);
+        const juce::Rectangle<int> newBounds ((int) jmin (x1, x2) - 4,
+                                              (int) jmin (y1, y2) - 4,
+                                              (int) std::abs (x1 - x2) + 8,
+                                              (int) std::abs (y1 - y2) + 8);
 
         if (newBounds != getBounds())
             setBounds (newBounds);

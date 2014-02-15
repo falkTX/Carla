@@ -16,6 +16,8 @@
  */
 
 #include "CarlaNative.h"
+
+#include "CarlaDefines.h"
 #include "CarlaMIDI.h"
 
 #include <math.h>

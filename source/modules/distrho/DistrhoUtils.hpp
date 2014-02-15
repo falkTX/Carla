@@ -32,6 +32,7 @@
 #endif
 
 #ifdef DISTRHO_OS_WINDOWS
+# include <winsock2.h>
 # include <windows.h>
 #else
 # include <unistd.h>
