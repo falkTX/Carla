@@ -9,6 +9,7 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils -isystem ../modules
+BUILD_CXX_FLAGS += -I../includes/ladspa -I../includes/vst -I../includes/vst3
 #-Wno-multichar
 
 ifeq ($(MACOS),true)
