@@ -127,8 +127,8 @@ struct VstTimeInfo_R {
 # define TARGET_API_MAC_CARBON 0
 #endif
 #undef VST_64BIT_PLATFORM
-#define VST_64BIT_PLATFORM defined(_WIN64) || defined(__LP64__) || defined (_LP64)
-#include "vst/aeffectx.h"
+#define VST_64BIT_PLATFORM (defined(_WIN64) || defined(__LP64__) || defined (_LP64))
+#include "vst/pluginterfaces/vst2.x/aeffectx.h"
 typedef VstTimeInfo VstTimeInfo_R;
 #endif
 

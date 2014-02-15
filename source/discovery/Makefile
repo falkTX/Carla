@@ -14,6 +14,11 @@ BUILD_CXX_FLAGS += -I../includes/ladspa -I../includes/vst -I../includes/vst3
 
 ifeq ($(MACOS),true)
 BUILD_CXX_FLAGS += -ObjC++
+WANT_JUCE_PROCESSORS = true
+endif
+
+ifeq ($(WIN32),true)
+WANT_JUCE_PROCESSORS = true
 endif
 
 BUILD_CXX_FLAGS += $(QTCORE_FLAGS)
@@ -67,6 +72,10 @@ LIBS_posix64 += ../modules/juce_core.posix64.a
 LIBS_win32   += ../modules/juce_core.win32.a
 LIBS_win64   += ../modules/juce_core.win64.a
 LINK_FLAGS   += $(JUCE_CORE_LIBS) $(JUCE_AUDIO_BASICS_LIBS)
+endif
+
+ifeq ($(WANT_JUCE_PROCESSORS),true)
+LIBS         += ../modules/juce_audio_processors.a
 endif
 
 POSIX_BUILD_FLAGS = $(BUILD_CXX_FLAGS)

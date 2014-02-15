@@ -13,6 +13,13 @@ LINK_FLAGS      += $(JUCE_AUDIO_PROCESSORS_LIBS) -L.. -ljuce_audio_basics -ljuce
 
 ifeq ($(CARLA_VESTIGE_HEADER),true)
 BUILD_CXX_FLAGS += -DVESTIGE_HEADER
+else
+# needed by vst3
+ifeq ($(DEBUG),true)
+BUILD_CXX_FLAGS += -DDEVELOPMENT -D_DEBUG
+else
+BUILD_CXX_FLAGS += -DRELEASE
+endif
 endif
 
 ifeq ($(MACOS),true)
