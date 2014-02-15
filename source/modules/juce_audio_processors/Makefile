@@ -15,7 +15,7 @@ ifeq ($(CARLA_VESTIGE_HEADER),true)
 BUILD_CXX_FLAGS += -DVESTIGE_HEADER
 else
 # needed by vst3
-BUILD_CXX_FLAGS += -DUNICODE_OFF -fpermissive
+BUILD_CXX_FLAGS += -D_NATIVE_WCHAR_T_DEFINED -D__wchar_t=wchar_t -fpermissive
 ifeq ($(DEBUG),true)
 BUILD_CXX_FLAGS += -DDEVELOPMENT -D_DEBUG
 else

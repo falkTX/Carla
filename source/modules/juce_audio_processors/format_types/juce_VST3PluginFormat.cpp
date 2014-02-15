@@ -451,7 +451,7 @@ public:
     tresult PLUGIN_API getName (Vst::String128 name) override
     {
         Steinberg::String str (appName.toUTF8());
-        str.copyTo16 (name, 0, 127);
+        str.copyTo (name, 0, 127);
         return kResultOk;
     }
 
@@ -685,7 +685,7 @@ private:
             if (fetchValueForId (id, stringToFetch))
             {
                 Steinberg::String str (stringToFetch.toRawUTF8());
-                str.copyTo16 (result, 0, (Steinberg::int32) jmin (length, (Steinberg::uint32) std::numeric_limits<Steinberg::int32>::max()));
+                str.copyTo (result, 0, (Steinberg::int32) jmin (length, (Steinberg::uint32) std::numeric_limits<Steinberg::int32>::max()));
 
                 return kResultTrue;
             }
