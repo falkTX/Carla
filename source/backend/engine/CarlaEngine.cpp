@@ -496,7 +496,7 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
         return newRtAudio(AUDIO_API_JACK);
 
     // linux
-#ifdef HAVE_JUCE
+#if 0//def HAVE_JUCE
     if (std::strcmp(driverName, "ALSA") == 0)
         return newJuce(AUDIO_API_ALSA);
 #else
@@ -509,7 +509,7 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
         return newRtAudio(AUDIO_API_PULSE);
 
     // macos
-#ifdef HAVE_JUCE
+#if 0//def HAVE_JUCE
     if (std::strcmp(driverName, "CoreAudio") == 0)
         return newJuce(AUDIO_API_CORE);
 #else
@@ -518,7 +518,7 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
 #endif
 
     // windows
-#ifdef HAVE_JUCE
+#if 0//def HAVE_JUCE
     if (std::strcmp(driverName, "ASIO") == 0)
         return newJuce(AUDIO_API_ASIO);
     if (std::strcmp(driverName, "DirectSound") == 0)

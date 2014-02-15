@@ -41,7 +41,7 @@ static void initRtApis()
     {
         RtAudio::getCompiledApi(gRtAudioApis);
 
-#ifdef HAVE_JUCE
+#if 0//def HAVE_JUCE
         // prefer juce to handle some APIs
         std::vector<RtAudio::Api>::iterator it = std::find(gRtAudioApis.begin(), gRtAudioApis.end(), RtAudio::LINUX_ALSA);
         if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);

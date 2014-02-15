@@ -574,6 +574,8 @@ CarlaEngine* CarlaEngine::newJuce(const AudioApi api)
 
 unsigned int CarlaEngine::getJuceApiCount()
 {
+    return 0; // TODO
+
     initJuceDevices();
 
     return static_cast<unsigned int>(gJuceDeviceTypes.size());

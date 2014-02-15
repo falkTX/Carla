@@ -734,11 +734,13 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
             g += 10
 
         self.setStyleSheet("""
-        AbstractPluginSlot#PluginWidget {
-            background-color: rgb(%i, %i, %i);
-            background-image: url(:/bitmaps/background_noise1.png);
-            background-repeat: repeat-xy;
-        }""" % (r, g, b))
+          AbstractPluginSlot#PluginWidget {
+              color: white;
+              background-color: rgb(%i, %i, %i);
+              background-image: url(:/bitmaps/background_noise1.png);
+              background-repeat: repeat-xy;
+          }
+        """ % (r, g, b))
 
         self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
         self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
