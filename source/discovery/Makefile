@@ -76,10 +76,30 @@ endif
 
 ifeq ($(WANT_JUCE_PROCESSORS),true)
 LIBS         += ../modules/juce_audio_processors.a
+LIBS_posix32 += ../modules/juce_audio_processors.posix32.a
+LIBS_posix64 += ../modules/juce_audio_processors.posix64.a
+LIBS_win32   += ../modules/juce_audio_processors.win32.a
+LIBS_win64   += ../modules/juce_audio_processors.win64.a
 LIBS         += ../modules/juce_data_structures.a
+LIBS_posix32 += ../modules/juce_data_structures.posix32.a
+LIBS_posix64 += ../modules/juce_data_structures.posix64.a
+LIBS_win32   += ../modules/juce_data_structures.win32.a
+LIBS_win64   += ../modules/juce_data_structures.win64.a
 LIBS         += ../modules/juce_events.a
+LIBS_posix32 += ../modules/juce_events.posix32.a
+LIBS_posix64 += ../modules/juce_events.posix64.a
+LIBS_win32   += ../modules/juce_events.win32.a
+LIBS_win64   += ../modules/juce_events.win64.a
 LIBS         += ../modules/juce_graphics.a
+LIBS_posix32 += ../modules/juce_graphics.posix32.a
+LIBS_posix64 += ../modules/juce_graphics.posix64.a
+LIBS_win32   += ../modules/juce_graphics.win32.a
+LIBS_win64   += ../modules/juce_graphics.win64.a
 LIBS         += ../modules/juce_gui_basics.a
+LIBS_posix32 += ../modules/juce_gui_basics.posix32.a
+LIBS_posix64 += ../modules/juce_gui_basics.posix64.a
+LIBS_win32   += ../modules/juce_gui_basics.win32.a
+LIBS_win64   += ../modules/juce_gui_basics.win64.a
 LINK_FLAGS   += $(JUCE_AUDIO_PROCESSORS_LIBS)
 LINK_FLAGS   += $(JUCE_DATA_STRUCTURES_LIBS)
 LINK_FLAGS   += $(JUCE_EVENTS_LIBS)
@@ -141,16 +161,16 @@ carla-discovery-native.exe: $(OBJS) $(DEPS) $(LIBS)
 	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group $(WIN_BUILD_FLAGS) $(NATIVE_FLAGS) $(WIN_LINK_FLAGS) -o $@
 
 carla-discovery-posix32: $(OBJS) $(DEPS) $(LIBS_posix32)
-	$(CXX) $< $(LIBS_posix32) $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@
+	$(CXX) $< -Wl,--start-group $(LIBS_posix32) -Wl,--end-group $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@
 
 carla-discovery-posix64: $(OBJS) $(DEPS) $(LIBS_posix64)
-	$(CXX) $< $(LIBS_posix64) $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@
+	$(CXX) $< -Wl,--start-group $(LIBS_posix64) -Wl,--end-group $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@
 
 carla-discovery-win32.exe: $(OBJS) $(DEPS) $(LIBS_win32)
-	$(CXX) $< $(LIBS_win32) $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@
+	$(CXX) $< -Wl,--start-group $(LIBS_win32) -Wl,--end-group $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@
 
 carla-discovery-win64.exe: $(OBJS) $(DEPS) $(LIBS_win64)
-	$(CXX) $< $(LIBS_win64) $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@
+	$(CXX) $< -Wl,--start-group $(LIBS_win64) -Wl,--end-group $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
 
@@ -168,8 +188,23 @@ debug:
 ../modules/juce_audio_basics.%.a: .FORCE
 	$(MAKE) -C ../modules juce_audio_basics_$*
 
+../modules/juce_audio_processors.%.a: .FORCE
+	$(MAKE) -C ../modules juce_audio_processors_$*
+
 ../modules/juce_core.%.a: .FORCE
 	$(MAKE) -C ../modules juce_core_$*
+
+../modules/juce_data_structures.%.a: .FORCE
+	$(MAKE) -C ../modules juce_data_structures_$*
+
+../modules/juce_events.%.a: .FORCE
+	$(MAKE) -C ../modules juce_events_$*
+
+../modules/juce_graphics.%.a: .FORCE
+	$(MAKE) -C ../modules juce_graphics_$*
+
+../modules/juce_gui_basics.%.a: .FORCE
+	$(MAKE) -C ../modules juce_gui_basics_$*
 
 ../modules/lilv.%.a: .FORCE
 	$(MAKE) -C ../modules lilv_$*

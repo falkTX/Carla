@@ -115,7 +115,8 @@ void CarlaEngineThread::run()
         // ---------------------------------------------------------------
         // Send pong
 
-        fEngine->oscSend_bridge_pong();
+        if (oscRegisted)
+            fEngine->oscSend_bridge_pong();
 #endif
 
         carla_msleep(25);
