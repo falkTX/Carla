@@ -108,7 +108,10 @@ qt5: ../theme.qt5.a
 # --------------------------------------------------------------
 
 styles/carlastyle.dll: $(FILES_shared) $(OBJS_shared)
-	$(CXX) $(OBJS_shared) $(SHARED_LINK_FLAGS) -shared -o $@
+	$(CXX) $(OBJS_shared) $(SHARED_LINK_FLAGS) -luuid -lwinspool -lgdi32 -limm32 -lole32 -lshell32 -lws2_32 -shared -o $@
+# 	$(CXX) $(OBJS_shared) \
+# 	-L/home/falktx/.winepy3/drive_c/Python33/Lib/site-packages/PyQt4/ -lQtGui4 -lQtCore4 \
+# 	-shared -o $@
 
 styles/carlastyle.dylib: $(FILES_shared) $(OBJS_shared)
 	$(CXX) $(OBJS_shared) $(SHARED_LINK_FLAGS) -dynamiclib -o $@
