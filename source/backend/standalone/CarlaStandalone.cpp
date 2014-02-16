@@ -503,7 +503,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     if (gStandalone.engineOptions.frontendWinId != 0)
     {
         char strBuf[STR_MAX+1];
-        std::sprintf(strBuf, P_INTPTR, gStandalone.engineOptions.frontendWinId);
+        std::sprintf(strBuf, P_UINTPTR, gStandalone.engineOptions.frontendWinId);
         gStandalone.engine->setOption(CB::ENGINE_OPTION_FRONTEND_WIN_ID, 0, strBuf);
     }
     else

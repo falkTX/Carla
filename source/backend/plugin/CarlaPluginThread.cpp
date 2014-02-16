@@ -148,7 +148,7 @@ void CarlaPluginThread::run()
 
     if (options.frontendWinId != 0)
     {
-        std::sprintf(strBuf, P_INTPTR, options.frontendWinId);
+        std::sprintf(strBuf, P_UINTPTR, options.frontendWinId);
         env.insert("ENGINE_OPTION_FRONTEND_WIN_ID", strBuf);
     }
 

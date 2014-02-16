@@ -58,7 +58,7 @@ public:
      */
     bool isRunning() const noexcept
     {
-#ifdef CARLA_OS_WIN32
+#ifdef CARLA_OS_WIN
         return (fHandle.p != nullptr);
 #else
         return (fHandle != 0);
@@ -171,7 +171,7 @@ private:
 
     void _init() noexcept
     {
-#ifdef CARLA_OS_WIN32
+#ifdef CARLA_OS_WIN
         fHandle.p = nullptr;
         fHandle.x = 0;
 #else
