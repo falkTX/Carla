@@ -327,7 +327,7 @@ class CarlaRackW(QFrame):
 
     @pyqtSlot()
     def slot_pluginsEnable(self):
-        if not Carla.host.is_engine_running():
+        if not gCarla.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):
@@ -339,7 +339,7 @@ class CarlaRackW(QFrame):
 
     @pyqtSlot()
     def slot_pluginsDisable(self):
-        if not Carla.host.is_engine_running():
+        if not gCarla.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):
@@ -351,7 +351,7 @@ class CarlaRackW(QFrame):
 
     @pyqtSlot()
     def slot_pluginsVolume100(self):
-        if not Carla.host.is_engine_running():
+        if not gCarla.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):
@@ -363,7 +363,7 @@ class CarlaRackW(QFrame):
 
     @pyqtSlot()
     def slot_pluginsMute(self):
-        if not Carla.host.is_engine_running():
+        if not gCarla.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):
@@ -375,7 +375,7 @@ class CarlaRackW(QFrame):
 
     @pyqtSlot()
     def slot_pluginsWet100(self):
-        if not Carla.host.is_engine_running():
+        if not gCarla.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):
@@ -387,7 +387,7 @@ class CarlaRackW(QFrame):
 
     @pyqtSlot()
     def slot_pluginsBypass(self):
-        if not Carla.host.is_engine_running():
+        if not gCarla.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):
@@ -399,7 +399,7 @@ class CarlaRackW(QFrame):
 
     @pyqtSlot()
     def slot_pluginsCenter(self):
-        if not Carla.host.is_engine_running():
+        if not gCarla.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):

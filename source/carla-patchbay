@@ -75,31 +75,31 @@ if __name__ == '__main__':
     # -------------------------------------------------------------
     # Init host backend
 
-    Carla.isControl   = False
-    Carla.isLocal     = True
-    Carla.isPlugin    = False
-    Carla.processMode = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS
+    gCarla.isControl   = False
+    gCarla.isLocal     = True
+    gCarla.isPlugin    = False
+    gCarla.processMode = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS
 
     initHost(appName, libPrefix)
 
     # -------------------------------------------------------------
     # Create GUI
 
-    Carla.gui = CarlaHostW()
+    gCarla.gui = CarlaHostW()
 
     # set our gui as parent for all plugins UIs
-    Carla.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, str(Carla.gui.winId()))
+    gCarla.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, str(gCarla.gui.winId()))
 
     # -------------------------------------------------------------
     # Load project file if set
 
     if projectFilename is not None:
-        Carla.gui.loadProjectLater(projectFilename)
+        gCarla.gui.loadProjectLater(projectFilename)
 
     # -------------------------------------------------------------
     # Show GUI
 
-    Carla.gui.show()
+    gCarla.gui.show()
 
     # -------------------------------------------------------------
     # App-Loop

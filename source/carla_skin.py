@@ -45,7 +45,7 @@ class AbstractPluginSlot(QFrame):
         # Get plugin info
 
         self.fPluginId   = pluginId
-        self.fPluginInfo = Carla.host.get_plugin_info(self.fPluginId) if Carla.host is not None else gFakePluginInfo
+        self.fPluginInfo = gCarla.host.get_plugin_info(self.fPluginId) if gCarla.host is not None else gFakePluginInfo
 
         self.fPluginInfo['filename']  = charPtrToString(self.fPluginInfo['filename'])
         self.fPluginInfo['name']      = charPtrToString(self.fPluginInfo['name'])
@@ -54,7 +54,7 @@ class AbstractPluginSlot(QFrame):
         self.fPluginInfo['copyright'] = charPtrToString(self.fPluginInfo['copyright'])
         self.fPluginInfo['iconName']  = charPtrToString(self.fPluginInfo['iconName'])
 
-        if not Carla.isLocal:
+        if not gCarla.isLocal:
             self.fPluginInfo['hints'] &= ~PLUGIN_HAS_CUSTOM_UI
 
         # -------------------------------------------------------------
@@ -69,11 +69,11 @@ class AbstractPluginSlot(QFrame):
         self.fParameterIconTimer = ICON_STATE_NULL
         self.fParameterList      = [] # index, widget
 
-        if Carla.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK or Carla.host is None:
+        if gCarla.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK or gCarla.host is None:
             self.fPeaksInputCount  = 2
             self.fPeaksOutputCount = 2
         else:
-            audioCountInfo = Carla.host.get_audio_port_count_info(self.fPluginId)
+            audioCountInfo = gCarla.host.get_audio_port_count_info(self.fPluginId)
 
             self.fPeaksInputCount  = int(audioCountInfo['ins'])
             self.fPeaksOutputCount = int(audioCountInfo['outs'])
@@ -167,8 +167,8 @@ class AbstractPluginSlot(QFrame):
         for paramIndex, paramWidget in self.fParameterList:
             paramWidget.valueChanged.connect(self.slot_parameterValueChanged)
 
-            if paramIndex >= 0 and Carla.host is not None:
-                paramWidget.setValue(Carla.host.get_current_parameter_value(self.fPluginId, paramIndex) * 1000)
+            if paramIndex >= 0 and gCarla.host is not None:
+                paramWidget.setValue(gCarla.host.get_current_parameter_value(self.fPluginId, paramIndex) * 1000)
 
     #------------------------------------------------------------------
 
@@ -209,7 +209,7 @@ class AbstractPluginSlot(QFrame):
         self.fIsActive = active
 
         if sendGui:      self.activeChanged(active)
-        if sendCallback: Carla.host.set_active(self.fPluginId, active)
+        if sendCallback: gCarla.host.set_active(self.fPluginId, active)
 
         if active:
             self.fEditDialog.clearNotes()
@@ -225,26 +225,26 @@ class AbstractPluginSlot(QFrame):
 
         elif parameterId == PARAMETER_DRYWET:
             if (self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET) == 0: return
-            Carla.host.set_drywet(self.fPluginId, value)
+            gCarla.host.set_drywet(self.fPluginId, value)
 
         elif parameterId == PARAMETER_VOLUME:
             if (self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME) == 0: return
-            Carla.host.set_volume(self.fPluginId, value)
+            gCarla.host.set_volume(self.fPluginId, value)
 
         elif parameterId == PARAMETER_BALANCE_LEFT:
             if (self.fPluginInfo['hints'] & PLUGIN_CAN_BALANCE) == 0: return
-            Carla.host.set_balance_left(self.fPluginId, value)
+            gCarla.host.set_balance_left(self.fPluginId, value)
 
         elif parameterId == PARAMETER_BALANCE_RIGHT:
             if (self.fPluginInfo['hints'] & PLUGIN_CAN_BALANCE) == 0: return
-            Carla.host.set_balance_right(self.fPluginId, value)
+            gCarla.host.set_balance_right(self.fPluginId, value)
 
         elif parameterId == PARAMETER_PANNING:
             if (self.fPluginInfo['hints'] & PLUGIN_CAN_PANNING) == 0: return
-            Carla.host.set_panning(self.fPluginId, value)
+            gCarla.host.set_panning(self.fPluginId, value)
 
         elif parameterId == PARAMETER_CTRL_CHANNEL:
-            Carla.host.set_ctrl_channel(self.fPluginId, value)
+            gCarla.host.set_ctrl_channel(self.fPluginId, value)
 
         self.fEditDialog.setParameterValue(parameterId, value)
 
@@ -382,8 +382,8 @@ class AbstractPluginSlot(QFrame):
         # Input peaks
         if self.fPeaksInputCount > 0:
             if self.fPeaksInputCount > 1:
-                peak1 = Carla.host.get_input_peak_value(self.fPluginId, True)
-                peak2 = Carla.host.get_input_peak_value(self.fPluginId, False)
+                peak1 = gCarla.host.get_input_peak_value(self.fPluginId, True)
+                peak2 = gCarla.host.get_input_peak_value(self.fPluginId, False)
                 ledState = bool(peak1 != 0.0 or peak2 != 0.0)
 
                 if self.peak_in is not None:
@@ -391,7 +391,7 @@ class AbstractPluginSlot(QFrame):
                     self.peak_in.displayMeter(2, peak2)
 
             else:
-                peak = Carla.host.get_input_peak_value(self.fPluginId, True)
+                peak = gCarla.host.get_input_peak_value(self.fPluginId, True)
                 ledState = bool(peak != 0.0)
 
                 if self.peak_in is not None:
@@ -404,8 +404,8 @@ class AbstractPluginSlot(QFrame):
         # Output peaks
         if self.fPeaksOutputCount > 0:
             if self.fPeaksOutputCount > 1:
-                peak1 = Carla.host.get_output_peak_value(self.fPluginId, True)
-                peak2 = Carla.host.get_output_peak_value(self.fPluginId, False)
+                peak1 = gCarla.host.get_output_peak_value(self.fPluginId, True)
+                peak2 = gCarla.host.get_output_peak_value(self.fPluginId, False)
                 ledState = bool(peak1 != 0.0 or peak2 != 0.0)
 
                 if self.peak_out is not None:
@@ -413,7 +413,7 @@ class AbstractPluginSlot(QFrame):
                     self.peak_out.displayMeter(2, peak2)
 
             else:
-                peak = Carla.host.get_output_peak_value(self.fPluginId, True)
+                peak = gCarla.host.get_output_peak_value(self.fPluginId, True)
                 ledState = bool(peak != 0.0)
 
                 if self.peak_out is not None:
@@ -487,9 +487,9 @@ class AbstractPluginSlot(QFrame):
         elif actSel == actEdit:
             bEdit.click()
         elif actSel == actClone:
-            if Carla.host is not None and not Carla.host.clone_plugin(self.fPluginId):
+            if gCarla.host is not None and not gCarla.host.clone_plugin(self.fPluginId):
                 CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
-                                       Carla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+                                       gCarla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
         elif actSel == actRename:
             oldName    = self.fPluginInfo['name']
@@ -500,16 +500,16 @@ class AbstractPluginSlot(QFrame):
 
             newName = newNameTry[0]
 
-            if Carla.host is None or Carla.host.rename_plugin(self.fPluginId, newName):
+            if gCarla.host is None or gCarla.host.rename_plugin(self.fPluginId, newName):
                 self.setName(newName)
             else:
                 CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
-                                       Carla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+                                       gCarla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
         elif actSel == actRemove:
-            if Carla.host is not None and not Carla.host.remove_plugin(self.fPluginId):
+            if gCarla.host is not None and not gCarla.host.remove_plugin(self.fPluginId):
                 CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
-                                       Carla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+                                       gCarla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
     #------------------------------------------------------------------
 
@@ -525,7 +525,7 @@ class AbstractPluginSlot(QFrame):
 
     @pyqtSlot(bool)
     def slot_showCustomUi(self, show):
-        Carla.host.show_custom_ui(self.fPluginId, show)
+        gCarla.host.show_custom_ui(self.fPluginId, show)
 
     @pyqtSlot(bool)
     def slot_showEditDialog(self, show):
@@ -533,7 +533,7 @@ class AbstractPluginSlot(QFrame):
 
     @pyqtSlot()
     def slot_removePlugin(self):
-        Carla.host.remove_plugin(self.fPluginId)
+        gCarla.host.remove_plugin(self.fPluginId)
 
     #------------------------------------------------------------------
 
@@ -545,17 +545,17 @@ class AbstractPluginSlot(QFrame):
         if index < 0:
             self.setInternalParameter(index, value)
         else:
-            Carla.host.set_parameter_value(self.fPluginId, index, value)
+            gCarla.host.set_parameter_value(self.fPluginId, index, value)
             self.setParameterValue(index, value, False)
 
     @pyqtSlot(int)
     def slot_programChanged(self, index):
-        Carla.host.set_program(self.fPluginId, index)
+        gCarla.host.set_program(self.fPluginId, index)
         self.setProgram(index, False)
 
     @pyqtSlot(int)
     def slot_midiProgramChanged(self, index):
-        Carla.host.set_midi_program(self.fPluginId, index)
+        gCarla.host.set_midi_program(self.fPluginId, index)
         self.setMidiProgram(index, False)
 
     #------------------------------------------------------------------
@@ -757,13 +757,13 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
         # -------------------------------------------------------------
         # Set-up parameters
 
-        parameterCount = Carla.host.get_parameter_count(self.fPluginId) if Carla.host is not None else 0
+        parameterCount = gCarla.host.get_parameter_count(self.fPluginId) if gCarla.host is not None else 0
 
         index = 0
         for i in range(min(parameterCount, 8)):
-            paramInfo   = Carla.host.get_parameter_info(self.fPluginId, i)
-            paramData   = Carla.host.get_parameter_data(self.fPluginId, i)
-            paramRanges = Carla.host.get_parameter_ranges(self.fPluginId, i)
+            paramInfo   = gCarla.host.get_parameter_info(self.fPluginId, i)
+            paramData   = gCarla.host.get_parameter_data(self.fPluginId, i)
+            paramRanges = gCarla.host.get_parameter_ranges(self.fPluginId, i)
 
             if paramData['type'] != PARAMETER_INPUT:
                 continue
@@ -926,8 +926,8 @@ class PluginSlot_Calf(AbstractPluginSlot):
         labelFont.setPointSize(labelFont.pointSize()+3)
         self.ui.label_name.setFont(labelFont)
 
-        audioCount = Carla.host.get_audio_port_count_info(self.fPluginId) if Carla.host is not None else {'ins': 2, 'outs': 2 }
-        midiCount  = Carla.host.get_midi_port_count_info(self.fPluginId) if Carla.host is not None else {'ins': 1, 'outs': 0 }
+        audioCount = gCarla.host.get_audio_port_count_info(self.fPluginId) if gCarla.host is not None else {'ins': 2, 'outs': 2 }
+        midiCount  = gCarla.host.get_midi_port_count_info(self.fPluginId) if gCarla.host is not None else {'ins': 1, 'outs': 0 }
 
         if audioCount['ins'] == 0:
             self.ui.label_audio_in.hide()
@@ -988,7 +988,7 @@ class PluginSlot_ZitaRev(AbstractPluginSlot):
         # -------------------------------------------------------------
         # Internal stuff
 
-        audioCount = Carla.host.get_audio_port_count_info(self.fPluginId) if Carla.host is not None else {'ins': 2, 'outs': 2 }
+        audioCount = gCarla.host.get_audio_port_count_info(self.fPluginId) if gCarla.host is not None else {'ins': 2, 'outs': 2 }
 
         # -------------------------------------------------------------
         # Set-up GUI
@@ -1146,13 +1146,13 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
         # -------------------------------------------------------------
         # Set-up parameters
 
-        parameterCount = Carla.host.get_parameter_count(self.fPluginId) if Carla.host is not None else 0
+        parameterCount = gCarla.host.get_parameter_count(self.fPluginId) if gCarla.host is not None else 0
 
         index = 0
         for i in range(parameterCount):
-            paramInfo   = Carla.host.get_parameter_info(self.fPluginId, i)
-            paramData   = Carla.host.get_parameter_data(self.fPluginId, i)
-            paramRanges = Carla.host.get_parameter_ranges(self.fPluginId, i)
+            paramInfo   = gCarla.host.get_parameter_info(self.fPluginId, i)
+            paramData   = gCarla.host.get_parameter_data(self.fPluginId, i)
+            paramRanges = gCarla.host.get_parameter_ranges(self.fPluginId, i)
 
             if paramData['type'] != PARAMETER_INPUT:
                 continue
@@ -1252,19 +1252,19 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
         # -------------------------------------------------------------
         # Set-up MIDI programs
 
-        midiProgramCount = Carla.host.get_midi_program_count(self.fPluginId) if Carla.host is not None else 0
+        midiProgramCount = gCarla.host.get_midi_program_count(self.fPluginId) if gCarla.host is not None else 0
 
         if midiProgramCount > 0:
             self.ui.cb_presets.setEnabled(True)
             self.ui.label_presets.setEnabled(True)
 
             for i in range(midiProgramCount):
-                mpData = Carla.host.get_midi_program_data(self.fPluginId, i)
+                mpData = gCarla.host.get_midi_program_data(self.fPluginId, i)
                 mpName = charPtrToString(mpData['name'])
 
                 self.ui.cb_presets.addItem(mpName)
 
-            self.fCurrentMidiProgram = Carla.host.get_current_midi_program_index(self.fPluginId)
+            self.fCurrentMidiProgram = gCarla.host.get_current_midi_program_index(self.fPluginId)
             self.ui.cb_presets.setCurrentIndex(self.fCurrentMidiProgram)
 
         else:
@@ -1302,8 +1302,8 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
 # ------------------------------------------------------------------------------------------------------------
 
 def createPluginSlot(parent, pluginId):
-    pluginInfo  = Carla.host.get_plugin_info(pluginId)
-    pluginName  = Carla.host.get_real_plugin_name(pluginId)
+    pluginInfo  = gCarla.host.get_plugin_info(pluginId)
+    pluginName  = gCarla.host.get_real_plugin_name(pluginId)
     pluginLabel = charPtrToString(pluginInfo['label'])
     uniqueId    = int(pluginInfo['uniqueId'])
 

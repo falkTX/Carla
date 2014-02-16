@@ -19,7 +19,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import pyqtSlot, QByteArray, QSettings
+from PyQt4.QtCore import pyqtSlot, QByteArray, QDir, QSettings
 from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
 from PyQt4.QtGui import QDialog, QDialogButtonBox, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 
@@ -42,7 +42,7 @@ CANVAS_EYECANDY_SMALL     = 1
 # Carla defaults
 
 # Main
-CARLA_DEFAULT_MAIN_PROJECT_FOLDER   = HOME
+CARLA_DEFAULT_MAIN_PROJECT_FOLDER   = QDir.homePath()
 CARLA_DEFAULT_MAIN_USE_PRO_THEME    = True
 CARLA_DEFAULT_MAIN_PRO_THEME_COLOR  = "Black"
 CARLA_DEFAULT_MAIN_REFRESH_INTERVAL = 20
@@ -105,7 +105,7 @@ class DriverSettingsW(QDialog):
 
         self.fDriverIndex = driverIndex
         self.fDriverName  = driverName
-        self.fDeviceNames = Carla.host.get_engine_driver_device_names(driverIndex) if Carla.host is not None else []
+        self.fDeviceNames = gCarla.host.get_engine_driver_device_names(driverIndex) if gCarla.host is not None else []
 
         self.fBufferSizes = BUFFER_SIZE_LIST
         self.fSampleRates = SAMPLE_RATE_LIST
@@ -180,8 +180,8 @@ class DriverSettingsW(QDialog):
         self.ui.cb_buffersize.clear()
         self.ui.cb_samplerate.clear()
 
-        if deviceName and Carla.host is not None:
-            driverDeviceInfo = Carla.host.get_engine_driver_device_info(self.fDriverIndex, deviceName)
+        if deviceName and gCarla.host is not None:
+            driverDeviceInfo = gCarla.host.get_engine_driver_device_info(self.fDriverIndex, deviceName)
 
             self.fBufferSizes = numPtrToList(driverDeviceInfo['bufferSizes'])
             self.fSampleRates = numPtrToList(driverDeviceInfo['sampleRates'])
@@ -234,9 +234,9 @@ class CarlaSettingsW(QDialog):
         # -------------------------------------------------------------
         # Set-up GUI
 
-        if Carla.host is not None:
-            for i in range(Carla.host.get_engine_driver_count()):
-                self.ui.cb_engine_audio_driver.addItem(Carla.host.get_engine_driver_name(i))
+        if gCarla.host is not None:
+            for i in range(gCarla.host.get_engine_driver_count()):
+                self.ui.cb_engine_audio_driver.addItem(gCarla.host.get_engine_driver_name(i))
         else:
             self.ui.tb_engine_driver_config.setEnabled(False)
 
@@ -262,7 +262,7 @@ class CarlaSettingsW(QDialog):
         if not MACOS:
             self.ui.cb_paths.removeItem(self.ui.cb_paths.findText("AU"))
 
-        if Carla.isPlugin:
+        if gCarla.isPlugin:
             self.ui.lw_page.hideRow(self.TAB_INDEX_ENGINE)
             self.ui.lw_page.hideRow(self.TAB_INDEX_PATHS)
 
@@ -361,15 +361,15 @@ class CarlaSettingsW(QDialog):
         # --------------------------------------------
         # Paths
 
-        ladspas = toList(settings.value(CARLA_KEY_PATHS_LADSPA, Carla.DEFAULT_LADSPA_PATH))
-        dssis   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   Carla.DEFAULT_DSSI_PATH))
-        lv2s    = toList(settings.value(CARLA_KEY_PATHS_LV2,    Carla.DEFAULT_LV2_PATH))
-        vsts    = toList(settings.value(CARLA_KEY_PATHS_VST,    Carla.DEFAULT_VST_PATH))
-        aus     = toList(settings.value(CARLA_KEY_PATHS_AU,     Carla.DEFAULT_AU_PATH))
-        csds    = toList(settings.value(CARLA_KEY_PATHS_CSD,    Carla.DEFAULT_CSOUND_PATH))
-        gigs    = toList(settings.value(CARLA_KEY_PATHS_GIG,    Carla.DEFAULT_GIG_PATH))
-        sf2s    = toList(settings.value(CARLA_KEY_PATHS_SF2,    Carla.DEFAULT_SF2_PATH))
-        sfzs    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    Carla.DEFAULT_SFZ_PATH))
+        ladspas = toList(settings.value(CARLA_KEY_PATHS_LADSPA, gCarla.DEFAULT_LADSPA_PATH))
+        dssis   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   gCarla.DEFAULT_DSSI_PATH))
+        lv2s    = toList(settings.value(CARLA_KEY_PATHS_LV2,    gCarla.DEFAULT_LV2_PATH))
+        vsts    = toList(settings.value(CARLA_KEY_PATHS_VST,    gCarla.DEFAULT_VST_PATH))
+        aus     = toList(settings.value(CARLA_KEY_PATHS_AU,     gCarla.DEFAULT_AU_PATH))
+        csds    = toList(settings.value(CARLA_KEY_PATHS_CSD,    gCarla.DEFAULT_CSOUND_PATH))
+        gigs    = toList(settings.value(CARLA_KEY_PATHS_GIG,    gCarla.DEFAULT_GIG_PATH))
+        sf2s    = toList(settings.value(CARLA_KEY_PATHS_SF2,    gCarla.DEFAULT_SF2_PATH))
+        sfzs    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    gCarla.DEFAULT_SFZ_PATH))
 
         ladspas.sort()
         dssis.sort()

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla host code
-# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -154,16 +154,16 @@ class HostWindow(QMainWindow):
         self.ui.setupUi(self)
 
         if False:
-            Carla.gui = self
+            gCarla.gui = self
             self.fContainer = CarlaDummyW(self)
 
         # -------------------------------------------------------------
         # Set callback, TODO put somewhere else
 
-        if Carla.host is not None:
-            Carla.host.set_engine_callback(engineCallback)
+        if gCarla.host is not None:
+            gCarla.host.set_engine_callback(engineCallback)
 
-        Carla.host.set_file_callback(fileCallback)
+        gCarla.host.set_file_callback(fileCallback)
 
         # -------------------------------------------------------------
         # Internal stuff
@@ -207,7 +207,7 @@ class HostWindow(QMainWindow):
         # -------------------------------------------------------------
         # Set up GUI (engine stopped)
 
-        if Carla.isPlugin:
+        if gCarla.isPlugin:
             self.ui.act_file_new.setEnabled(False)
             self.ui.act_file_open.setEnabled(False)
             self.ui.act_engine_start.setEnabled(False)
@@ -231,8 +231,8 @@ class HostWindow(QMainWindow):
         self.fDirModel = QFileSystemModel(self)
         self.fDirModel.setRootPath(HOME)
 
-        if Carla.host is not None:
-            self.fDirModel.setNameFilters(Carla.host.get_supported_file_extensions().split(";"))
+        if gCarla.host is not None:
+            self.fDirModel.setNameFilters(gCarla.host.get_supported_file_extensions().split(";"))
 
         self.ui.fileTreeView.setModel(self.fDirModel)
         self.ui.fileTreeView.setRootIndex(self.fDirModel.index(HOME))
@@ -309,8 +309,8 @@ class HostWindow(QMainWindow):
     #@pyqtSlot()
     #def slot_test(self):
         #print("test started")
-        #if not Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, "/usr/bin/zita-rev1", "name of client", "label of client", None):
-            #print(Carla.host.get_last_error())
+        #if not gCarla.host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, "/usr/bin/zita-rev1", "name of client", "label of client", None):
+            #print(gCarla.host.get_last_error())
         #print("test ended")
 
     # -----------------------------------------------------------------
@@ -343,7 +343,7 @@ class HostWindow(QMainWindow):
             return qCritical("ERROR: loading project without filename set")
 
         self.fIsProjectLoading = True
-        Carla.host.load_project(self.fProjectFilename)
+        gCarla.host.load_project(self.fProjectFilename)
         self.fIsProjectLoading = False
 
         self.fContainer.projectLoaded()
@@ -361,13 +361,13 @@ class HostWindow(QMainWindow):
         if not self.fProjectFilename:
             return qCritical("ERROR: saving project without filename set")
 
-        Carla.host.save_project(self.fProjectFilename)
+        gCarla.host.save_project(self.fProjectFilename)
 
     # -----------------------------------------------------------------
     # Internal stuff (engine)
 
     def setEngineSettings(self, settings = None):
-        if Carla.isPlugin:
+        if gCarla.isPlugin:
             return "Plugin"
 
         if settings is None: settings = QSettings()
@@ -460,26 +460,26 @@ class HostWindow(QMainWindow):
         # -------------------------------------------------------------
         # apply to engine
 
-        Carla.host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,          forceStereo,         "")
-        Carla.host.set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     uisAlwaysOnTop,      "")
+        gCarla.host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,          forceStereo,         "")
+        gCarla.host.set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     uisAlwaysOnTop,      "")
 
-        if not Carla.isPlugin:
-            Carla.host.set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, preferPluginBridges, "")
-            Carla.host.set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     preferUiBridges,     "")
+        if not gCarla.isPlugin:
+            gCarla.host.set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, preferPluginBridges, "")
+            gCarla.host.set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     preferUiBridges,     "")
 
-        Carla.host.set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        maxParameters,       "")
-        Carla.host.set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    uiBridgesTimeout,    "")
+        gCarla.host.set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        maxParameters,       "")
+        gCarla.host.set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    uiBridgesTimeout,    "")
 
-        Carla.host.set_engine_option(ENGINE_OPTION_PROCESS_MODE,          processMode,         "")
-        Carla.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE,        transportMode,       "")
+        gCarla.host.set_engine_option(ENGINE_OPTION_PROCESS_MODE,          processMode,         "")
+        gCarla.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE,        transportMode,       "")
 
-        Carla.host.set_engine_option(ENGINE_OPTION_AUDIO_NUM_PERIODS,     audioNumPeriods,     "")
-        Carla.host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE,     audioBufferSize,     "")
-        Carla.host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE,     audioSampleRate,     "")
-        Carla.host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE,          0,                   audioDevice)
+        gCarla.host.set_engine_option(ENGINE_OPTION_AUDIO_NUM_PERIODS,     audioNumPeriods,     "")
+        gCarla.host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE,     audioBufferSize,     "")
+        gCarla.host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE,     audioSampleRate,     "")
+        gCarla.host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE,          0,                   audioDevice)
 
         # save this for later
-        Carla.maxParameters = maxParameters
+        gCarla.maxParameters = maxParameters
 
         # return selected driver name
         return audioDriver
@@ -487,12 +487,12 @@ class HostWindow(QMainWindow):
     def startEngine(self):
         audioDriver = self.setEngineSettings()
 
-        if not Carla.host.engine_init(audioDriver, self.fClientName):
+        if not gCarla.host.engine_init(audioDriver, self.fClientName):
             if self.fFirstEngineInit:
                 self.fFirstEngineInit = False
                 return
 
-            audioError = Carla.host.get_last_error()
+            audioError = gCarla.host.get_last_error()
 
             if audioError:
                 QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s', possible reasons:\n%s" % (audioDriver, audioError)))
@@ -513,8 +513,8 @@ class HostWindow(QMainWindow):
             self.ui.act_plugin_remove_all.setEnabled(False)
             self.fContainer.removeAllPlugins()
 
-        if Carla.host.is_engine_running() and not Carla.host.engine_close():
-            print(Carla.host.get_last_error())
+        if gCarla.host.is_engine_running() and not gCarla.host.engine_close():
+            print(gCarla.host.get_last_error())
 
     # -----------------------------------------------------------------
     # Internal stuff (plugins)
@@ -567,10 +567,10 @@ class HostWindow(QMainWindow):
     # Internal stuff (transport)
 
     def refreshTransport(self, forced = False):
-        if Carla.sampleRate == 0.0 or not Carla.host.is_engine_running():
+        if gCarla.sampleRate == 0.0 or not gCarla.host.is_engine_running():
             return
 
-        timeInfo = Carla.host.get_transport_info()
+        timeInfo = gCarla.host.get_transport_info()
         playing  = bool(timeInfo['playing'])
         frame    = int(timeInfo['frame'])
 
@@ -589,7 +589,7 @@ class HostWindow(QMainWindow):
             self.fLastTransportState = playing
 
         if frame != self.fLastTransportFrame or forced:
-            time = frame / Carla.sampleRate
+            time = frame / gCarla.sampleRate
             secs = time % 60
             mins = (time / 60) % 60
             hrs  = (time / 3600) % 60
@@ -645,20 +645,20 @@ class HostWindow(QMainWindow):
 
         # ---------------------------------------------
 
-        if not Carla.isPlugin:
+        if not gCarla.isPlugin:
             # engine
             self.setEngineSettings(settings)
 
             # plugin paths
-            LADSPA_PATH = toList(settings.value("Paths/LADSPA", Carla.DEFAULT_LADSPA_PATH))
-            DSSI_PATH   = toList(settings.value("Paths/DSSI",   Carla.DEFAULT_DSSI_PATH))
-            LV2_PATH    = toList(settings.value("Paths/LV2",    Carla.DEFAULT_LV2_PATH))
-            VST_PATH    = toList(settings.value("Paths/VST",    Carla.DEFAULT_VST_PATH))
-            AU_PATH     = toList(settings.value("Paths/AU",     Carla.DEFAULT_AU_PATH))
-            CSOUND_PATH = toList(settings.value("Paths/CSOUND", Carla.DEFAULT_CSOUND_PATH))
-            GIG_PATH    = toList(settings.value("Paths/GIG",    Carla.DEFAULT_GIG_PATH))
-            SF2_PATH    = toList(settings.value("Paths/SF2",    Carla.DEFAULT_SF2_PATH))
-            SFZ_PATH    = toList(settings.value("Paths/SFZ",    Carla.DEFAULT_SFZ_PATH))
+            LADSPA_PATH = toList(settings.value("Paths/LADSPA", gCarla.DEFAULT_LADSPA_PATH))
+            DSSI_PATH   = toList(settings.value("Paths/DSSI",   gCarla.DEFAULT_DSSI_PATH))
+            LV2_PATH    = toList(settings.value("Paths/LV2",    gCarla.DEFAULT_LV2_PATH))
+            VST_PATH    = toList(settings.value("Paths/VST",    gCarla.DEFAULT_VST_PATH))
+            AU_PATH     = toList(settings.value("Paths/AU",     gCarla.DEFAULT_AU_PATH))
+            CSOUND_PATH = toList(settings.value("Paths/CSOUND", gCarla.DEFAULT_CSOUND_PATH))
+            GIG_PATH    = toList(settings.value("Paths/GIG",    gCarla.DEFAULT_GIG_PATH))
+            SF2_PATH    = toList(settings.value("Paths/SF2",    gCarla.DEFAULT_SF2_PATH))
+            SFZ_PATH    = toList(settings.value("Paths/SFZ",    gCarla.DEFAULT_SFZ_PATH))
 
             os.environ["LADSPA_PATH"] = splitter.join(LADSPA_PATH)
             os.environ["DSSI_PATH"]   = splitter.join(DSSI_PATH)
@@ -803,11 +803,11 @@ class HostWindow(QMainWindow):
     def slot_engineStart(self, doStart = True):
         if doStart: self.startEngine()
 
-        check = Carla.host.is_engine_running()
+        check = gCarla.host.is_engine_running()
         self.ui.menu_PluginMacros.setEnabled(check)
         self.ui.menu_Canvas.setEnabled(check)
 
-        if not Carla.isPlugin:
+        if not gCarla.isPlugin:
             self.ui.act_file_save.setEnabled(check)
             self.ui.act_engine_start.setEnabled(not check)
             self.ui.act_engine_stop.setEnabled(check)
@@ -819,7 +819,7 @@ class HostWindow(QMainWindow):
             self.setTransportMenuEnabled(check)
 
         if check:
-            if not Carla.isPlugin:
+            if not gCarla.isPlugin:
                 self.refreshTransport(True)
 
             self.fContainer.engineStarted()
@@ -833,11 +833,11 @@ class HostWindow(QMainWindow):
             self.ui.act_plugin_remove_all.setEnabled(False)
             self.fContainer.removeAllPlugins()
 
-        check = Carla.host.is_engine_running()
+        check = gCarla.host.is_engine_running()
         self.ui.menu_PluginMacros.setEnabled(check)
         self.ui.menu_Canvas.setEnabled(check)
 
-        if not Carla.isPlugin:
+        if not gCarla.isPlugin:
             self.ui.act_file_save.setEnabled(check)
             self.ui.act_engine_start.setEnabled(not check)
             self.ui.act_engine_stop.setEnabled(check)
@@ -861,7 +861,7 @@ class HostWindow(QMainWindow):
         if not dialog.exec_():
             return
 
-        if not Carla.host.is_engine_running():
+        if not gCarla.host.is_engine_running():
             QMessageBox.warning(self, self.tr("Warning"), self.tr("Cannot add new plugins while engine is stopped"))
             return
 
@@ -872,59 +872,59 @@ class HostWindow(QMainWindow):
         uniqueId = dialog.fRetPlugin['uniqueId']
         extraPtr = self.getExtraPtr(dialog.fRetPlugin)
 
-        if not Carla.host.add_plugin(btype, ptype, filename, None, label, uniqueId, extraPtr):
-            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"), charPtrToString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
+        if not gCarla.host.add_plugin(btype, ptype, filename, None, label, uniqueId, extraPtr):
+            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"), charPtrToString(gCarla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
             return
 
     @pyqtSlot()
     def slot_pluginRemoveAll(self):
         self.ui.act_plugin_remove_all.setEnabled(False)
         self.fContainer.removeAllPlugins()
-        Carla.host.remove_all_plugins()
+        gCarla.host.remove_all_plugins()
 
     # -----------------------------------------------------------------
 
     @pyqtSlot(bool)
     def slot_transportPlayPause(self, toggled):
-        if not Carla.host.is_engine_running():
+        if not gCarla.host.is_engine_running():
             return
 
         if toggled:
-            Carla.host.transport_play()
+            gCarla.host.transport_play()
         else:
-            Carla.host.transport_pause()
+            gCarla.host.transport_pause()
 
         self.refreshTransport()
 
     @pyqtSlot()
     def slot_transportStop(self):
-        if not Carla.host.is_engine_running():
+        if not gCarla.host.is_engine_running():
             return
 
-        Carla.host.transport_pause()
-        Carla.host.transport_relocate(0)
+        gCarla.host.transport_pause()
+        gCarla.host.transport_relocate(0)
 
         self.refreshTransport()
 
     @pyqtSlot()
     def slot_transportBackwards(self):
-        if not Carla.host.is_engine_running():
+        if not gCarla.host.is_engine_running():
             return
 
-        newFrame = Carla.host.get_current_transport_frame() - 100000
+        newFrame = gCarla.host.get_current_transport_frame() - 100000
 
         if newFrame < 0:
             newFrame = 0
 
-        Carla.host.transport_relocate(newFrame)
+        gCarla.host.transport_relocate(newFrame)
 
     @pyqtSlot()
     def slot_transportForwards(self):
-        if not Carla.host.is_engine_running():
+        if not gCarla.host.is_engine_running():
             return
 
-        newFrame = Carla.host.get_current_transport_frame() + 100000
-        Carla.host.transport_relocate(newFrame)
+        newFrame = gCarla.host.get_current_transport_frame() + 100000
+        gCarla.host.transport_relocate(newFrame)
 
     # -----------------------------------------------------------------
 
@@ -979,10 +979,10 @@ class HostWindow(QMainWindow):
     def slot_fileTreeDoubleClicked(self, modelIndex):
         filename = self.fDirModel.filePath(modelIndex)
 
-        if not Carla.host.load_file(filename):
+        if not gCarla.host.load_file(filename):
             CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
                              self.tr("Failed to load file"),
-                             Carla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+                             gCarla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
     # -----------------------------------------------------------------
 
@@ -1019,10 +1019,10 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot(str)
     def slot_handleEngineStartedCallback(self, processMode, transportMode, driverName):
-        Carla.processMode   = processMode
-        Carla.transportMode = transportMode
-        Carla.bufferSize    = Carla.host.get_buffer_size()
-        Carla.sampleRate    = Carla.host.get_sample_rate()
+        gCarla.processMode   = processMode
+        gCarla.transportMode = transportMode
+        gCarla.bufferSize    = gCarla.host.get_buffer_size()
+        gCarla.sampleRate    = gCarla.host.get_sample_rate()
 
         self.slot_engineStart(False)
 
@@ -1036,8 +1036,8 @@ class HostWindow(QMainWindow):
         self.killTimers()
         self.slot_engineStop(False)
 
-        Carla.bufferSize = 0
-        Carla.sampleRate = 0.0
+        gCarla.bufferSize = 0
+        gCarla.sampleRate = 0.0
 
     # -----------------------------------------------------------------
 
@@ -1089,8 +1089,8 @@ class HostWindow(QMainWindow):
 
     def timerEvent(self, event):
         if event.timerId() == self.fIdleTimerFast:
-            #if not Carla.isPlugin:
-            Carla.host.engine_idle()
+            #if not gCarla.isPlugin:
+            gCarla.host.engine_idle()
             self.refreshTransport()
 
             self.fContainer.idleFast()
@@ -1108,8 +1108,8 @@ class HostWindow(QMainWindow):
         self.killTimers()
         self.saveSettings()
 
-        if Carla.host.is_engine_running():
-            Carla.host.set_engine_about_to_close()
+        if gCarla.host.is_engine_running():
+            gCarla.host.set_engine_about_to_close()
             self.ui.act_plugin_remove_all.setEnabled(False)
             self.fContainer.removeAllPlugins()
             self.stopEngine()
@@ -1121,108 +1121,108 @@ class HostWindow(QMainWindow):
 
 def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
     if action == ENGINE_CALLBACK_PROCESS_MODE_CHANGED:
-        Carla.processMode = value1
-        if Carla.gui is not None:
-            Carla.gui.ProcessModeChangedCallback.emit(value1)
+        gCarla.processMode = value1
+        if gCarla.gui is not None:
+            gCarla.gui.ProcessModeChangedCallback.emit(value1)
         return
 
     if action == ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED:
-        Carla.transportMode = value1
-        if Carla.gui is not None:
-            Carla.gui.TransportModeChangedCallback.emit(value1)
+        gCarla.transportMode = value1
+        if gCarla.gui is not None:
+            gCarla.gui.TransportModeChangedCallback.emit(value1)
         return
 
     if action == ENGINE_CALLBACK_BUFFER_SIZE_CHANGED:
-        Carla.bufferSize = value1
-        if Carla.gui is not None:
-            Carla.gui.BufferSizeChangedCallback.emit(value1)
+        gCarla.bufferSize = value1
+        if gCarla.gui is not None:
+            gCarla.gui.BufferSizeChangedCallback.emit(value1)
         return
 
     if action == ENGINE_CALLBACK_SAMPLE_RATE_CHANGED:
-        Carla.sampleRate = value1
-        if Carla.gui is not None:
-            Carla.gui.SampleRateChangedCallback.emit(value3)
+        gCarla.sampleRate = value1
+        if gCarla.gui is not None:
+            gCarla.gui.SampleRateChangedCallback.emit(value3)
         return
 
-    if Carla.gui is None:
+    if gCarla.gui is None:
         print("WARNING: Got engine callback but UI is not ready : ", pluginId, value1, value2, value3, valueStr)
         return
 
     valueStr = charPtrToString(valueStr)
 
     if action == ENGINE_CALLBACK_DEBUG:
-        Carla.gui.DebugCallback.emit(pluginId, value1, value2, value3, valueStr)
+        gCarla.gui.DebugCallback.emit(pluginId, value1, value2, value3, valueStr)
     elif action == ENGINE_CALLBACK_PLUGIN_ADDED:
-        Carla.gui.PluginAddedCallback.emit(pluginId, valueStr)
+        gCarla.gui.PluginAddedCallback.emit(pluginId, valueStr)
     elif action == ENGINE_CALLBACK_PLUGIN_REMOVED:
-        Carla.gui.PluginRemovedCallback.emit(pluginId)
+        gCarla.gui.PluginRemovedCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_PLUGIN_RENAMED:
-        Carla.gui.PluginRenamedCallback.emit(pluginId, valueStr)
+        gCarla.gui.PluginRenamedCallback.emit(pluginId, valueStr)
     elif action == ENGINE_CALLBACK_PLUGIN_UNAVAILABLE:
-        Carla.gui.PluginUnavailableCallback.emit(pluginId, valueStr)
+        gCarla.gui.PluginUnavailableCallback.emit(pluginId, valueStr)
     elif action == ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
-        Carla.gui.ParameterValueChangedCallback.emit(pluginId, value1, value3)
+        gCarla.gui.ParameterValueChangedCallback.emit(pluginId, value1, value3)
     elif action == ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
-        Carla.gui.ParameterDefaultChangedCallback.emit(pluginId, value1, value3)
+        gCarla.gui.ParameterDefaultChangedCallback.emit(pluginId, value1, value3)
     elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
-        Carla.gui.ParameterMidiCcChangedCallback.emit(pluginId, value1, value2)
+        gCarla.gui.ParameterMidiCcChangedCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
-        Carla.gui.ParameterMidiChannelChangedCallback.emit(pluginId, value1, value2)
+        gCarla.gui.ParameterMidiChannelChangedCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_PROGRAM_CHANGED:
-        Carla.gui.ProgramChangedCallback.emit(pluginId, value1)
+        gCarla.gui.ProgramChangedCallback.emit(pluginId, value1)
     elif action == ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
-        Carla.gui.MidiProgramChangedCallback.emit(pluginId, value1)
+        gCarla.gui.MidiProgramChangedCallback.emit(pluginId, value1)
     elif action == ENGINE_CALLBACK_UI_STATE_CHANGED:
-        Carla.gui.UiStateChangedCallback.emit(pluginId, value1)
+        gCarla.gui.UiStateChangedCallback.emit(pluginId, value1)
     elif action == ENGINE_CALLBACK_NOTE_ON:
-        Carla.gui.NoteOnCallback.emit(pluginId, value1, value2, int(value3))
+        gCarla.gui.NoteOnCallback.emit(pluginId, value1, value2, int(value3))
     elif action == ENGINE_CALLBACK_NOTE_OFF:
-        Carla.gui.NoteOffCallback.emit(pluginId, value1, value2)
+        gCarla.gui.NoteOffCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_UPDATE:
-        Carla.gui.UpdateCallback.emit(pluginId)
+        gCarla.gui.UpdateCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_RELOAD_INFO:
-        Carla.gui.ReloadInfoCallback.emit(pluginId)
+        gCarla.gui.ReloadInfoCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_RELOAD_PARAMETERS:
-        Carla.gui.ReloadParametersCallback.emit(pluginId)
+        gCarla.gui.ReloadParametersCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_RELOAD_PROGRAMS:
-        Carla.gui.ReloadProgramsCallback.emit(pluginId)
+        gCarla.gui.ReloadProgramsCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_RELOAD_ALL:
-        Carla.gui.ReloadAllCallback.emit(pluginId)
+        gCarla.gui.ReloadAllCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED:
-        Carla.gui.PatchbayClientAddedCallback.emit(pluginId, value1, value2, valueStr)
+        gCarla.gui.PatchbayClientAddedCallback.emit(pluginId, value1, value2, valueStr)
     elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED:
-        Carla.gui.PatchbayClientRemovedCallback.emit(pluginId)
+        gCarla.gui.PatchbayClientRemovedCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED:
-        Carla.gui.PatchbayClientRenamedCallback.emit(pluginId, valueStr)
+        gCarla.gui.PatchbayClientRenamedCallback.emit(pluginId, valueStr)
     elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED:
-        Carla.gui.PatchbayClientDataChangedCallback.emit(pluginId, value1, value2)
+        gCarla.gui.PatchbayClientDataChangedCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_PATCHBAY_PORT_ADDED:
-        Carla.gui.PatchbayPortAddedCallback.emit(pluginId, value1, value2, valueStr)
+        gCarla.gui.PatchbayPortAddedCallback.emit(pluginId, value1, value2, valueStr)
     elif action == ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED:
-        Carla.gui.PatchbayPortRemovedCallback.emit(pluginId, value1)
+        gCarla.gui.PatchbayPortRemovedCallback.emit(pluginId, value1)
     elif action == ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED:
-        Carla.gui.PatchbayPortRenamedCallback.emit(pluginId, value1, valueStr)
+        gCarla.gui.PatchbayPortRenamedCallback.emit(pluginId, value1, valueStr)
     elif action == ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED:
-        Carla.gui.PatchbayConnectionAddedCallback.emit(pluginId, value1, value2)
+        gCarla.gui.PatchbayConnectionAddedCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED:
-        Carla.gui.PatchbayConnectionRemovedCallback.emit(pluginId, value1, value2)
+        gCarla.gui.PatchbayConnectionRemovedCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_ENGINE_STARTED:
-        Carla.gui.EngineStartedCallback.emit(value1, value2, valueStr)
+        gCarla.gui.EngineStartedCallback.emit(value1, value2, valueStr)
     elif action == ENGINE_CALLBACK_ENGINE_STOPPED:
-        Carla.gui.killTimers()
-        Carla.gui.EngineStoppedCallback.emit()
+        gCarla.gui.killTimers()
+        gCarla.gui.EngineStoppedCallback.emit()
     elif action == ENGINE_CALLBACK_INFO:
-        Carla.gui.InfoCallback.emit(valueStr)
+        gCarla.gui.InfoCallback.emit(valueStr)
     elif action == ENGINE_CALLBACK_ERROR:
-        Carla.gui.ErrorCallback.emit(valueStr)
+        gCarla.gui.ErrorCallback.emit(valueStr)
     elif action == ENGINE_CALLBACK_QUIT:
-        Carla.gui.QuitCallback.emit()
+        gCarla.gui.QuitCallback.emit()
 
 # ------------------------------------------------------------------------------------------------------------
 # File callback
 
 def fileCallback(ptr, action, isDir, title, filter):
-    if Carla.gui is None:
+    if gCarla.gui is None:
         return None
 
     ret = ""
@@ -1230,13 +1230,13 @@ def fileCallback(ptr, action, isDir, title, filter):
     if action == FILE_CALLBACK_DEBUG:
         pass
     elif action == FILE_CALLBACK_OPEN:
-        ret = QFileDialog.getOpenFileName(Carla.gui, charPtrToString(title), "", charPtrToString(filter) ) #, QFileDialog.ShowDirsOnly if isDir else 0x0)
+        ret = QFileDialog.getOpenFileName(gCarla.gui, charPtrToString(title), "", charPtrToString(filter) ) #, QFileDialog.ShowDirsOnly if isDir else 0x0)
     elif action == FILE_CALLBACK_SAVE:
-        ret = QFileDialog.getSaveFileName(Carla.gui, charPtrToString(title), "", charPtrToString(filter), QFileDialog.ShowDirsOnly if isDir else 0x0)
+        ret = QFileDialog.getSaveFileName(gCarla.gui, charPtrToString(title), "", charPtrToString(filter), QFileDialog.ShowDirsOnly if isDir else 0x0)
 
     if not ret:
         return None
 
-    Carla.gui._fileRet = c_char_p(ret.encode("utf-8"))
-    retval = cast(byref(Carla.gui._fileRet), POINTER(c_uintptr))
+    gCarla.gui._fileRet = c_char_p(ret.encode("utf-8"))
+    retval = cast(byref(gCarla.gui._fileRet), POINTER(c_uintptr))
     return retval.contents.value

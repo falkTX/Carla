@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Common Carla code
-# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -22,7 +22,7 @@
 import os
 import sys
 
-from PyQt4.QtCore import qFatal, qWarning
+from PyQt4.QtCore import qFatal, qWarning, QDir
 from PyQt4.QtGui import QIcon
 from PyQt4.QtGui import QFileDialog, QMessageBox
 
@@ -59,51 +59,56 @@ VERSION = "1.9.0"
 # ------------------------------------------------------------------------------------------------------------
 # Set TMP
 
-TMP = os.getenv("TMP")
+envTMP = os.getenv("TMP")
 
-if TMP is None:
+if envTMP is None:
     if WINDOWS:
         qWarning("TMP variable not set")
-        TMP = os.path.join(WINDIR, "temp")
-    else:
-        TMP = "/tmp"
+    TMP = QDir.tempPath()
+else:
+    TMP = envTMP
 
-elif not os.path.exists(TMP):
+if not os.path.exists(TMP):
     qWarning("TMP does not exist")
-    TMP = "/tmp"
+    TMP = "/"
+
+del envTMP
 
 # ------------------------------------------------------------------------------------------------------------
 # Set HOME
 
-HOME = os.getenv("HOME")
+envHOME = os.getenv("HOME")
 
-if HOME is None:
-    HOME = os.path.expanduser("~")
-
+if envHOME is None:
     if LINUX or MACOS:
         qWarning("HOME variable not set")
+    HOME = QDir.homePath()
+else:
+    HOME = envHOME
 
 if not os.path.exists(HOME):
     qWarning("HOME does not exist")
     HOME = TMP
 
+del envHOME
+
 # ------------------------------------------------------------------------------------------------------------
 # Set PATH
 
-PATH = os.getenv("PATH")
+envPATH = os.getenv("PATH")
 
-if PATH is None:
+if envPATH is None:
     qWarning("PATH variable not set")
-
     if MACOS:
         PATH = ("/opt/local/bin", "/usr/local/bin", "/usr/bin", "/bin")
     elif WINDOWS:
         PATH = (os.path.join(WINDIR, "system32"), WINDIR)
     else:
         PATH = ("/usr/local/bin", "/usr/bin", "/bin")
-
 else:
-    PATH = PATH.split(os.pathsep)
+    PATH = envPATH.split(os.pathsep)
+
+del envPATH
 
 # ------------------------------------------------------------------------------------------------------------
 # Static MIDI CC list
@@ -159,141 +164,7 @@ MIDI_CC_LIST = (
     "0x5D FX 3 Depth [Chorus]",
     "0x5E FX 4 Depth [Detune]",
     "0x5F FX 5 Depth [Phaser]"
-  )
-
-# ------------------------------------------------------------------------------------------------------------
-# Default Plugin Folders (get)
-
-if WINDOWS:
-    splitter = ";"
-    APPDATA = os.getenv("APPDATA")
-    PROGRAMFILES = os.getenv("PROGRAMFILES")
-    PROGRAMFILESx86 = os.getenv("PROGRAMFILES(x86)")
-    COMMONPROGRAMFILES = os.getenv("COMMONPROGRAMFILES")
-
-    # Small integrity tests
-    if not APPDATA:
-        qFatal("APPDATA variable not set, cannot continue")
-        sys.exit(1)
-
-    if not PROGRAMFILES:
-        qFatal("PROGRAMFILES variable not set, cannot continue")
-        sys.exit(1)
-
-    if not COMMONPROGRAMFILES:
-        qFatal("COMMONPROGRAMFILES variable not set, cannot continue")
-        sys.exit(1)
-
-    DEFAULT_LADSPA_PATH = ";".join((os.path.join(APPDATA, "LADSPA"),
-                                    os.path.join(PROGRAMFILES, "LADSPA")))
-
-    DEFAULT_DSSI_PATH   = ";".join((os.path.join(APPDATA, "DSSI"),
-                                    os.path.join(PROGRAMFILES, "DSSI")))
-
-    DEFAULT_LV2_PATH    = ";".join((os.path.join(APPDATA, "LV2"),
-                                    os.path.join(COMMONPROGRAMFILES, "LV2")))
-
-    DEFAULT_VST_PATH    = ";".join((os.path.join(PROGRAMFILES, "VstPlugins"),
-                                    os.path.join(PROGRAMFILES, "Steinberg", "VstPlugins")))
-
-    DEFAULT_AU_PATH     = ""
-
-    # TODO
-    DEFAULT_CSOUND_PATH = ""
-
-    DEFAULT_GIG_PATH    = ";".join((os.path.join(APPDATA, "GIG"),))
-    DEFAULT_SF2_PATH    = ";".join((os.path.join(APPDATA, "SF2"),))
-    DEFAULT_SFZ_PATH    = ";".join((os.path.join(APPDATA, "SFZ"),))
-
-    if PROGRAMFILESx86:
-        DEFAULT_LADSPA_PATH += ";"+os.path.join(PROGRAMFILESx86, "LADSPA")
-        DEFAULT_DSSI_PATH   += ";"+os.path.join(PROGRAMFILESx86, "DSSI")
-        DEFAULT_VST_PATH    += ";"+os.path.join(PROGRAMFILESx86, "VstPlugins")
-        DEFAULT_VST_PATH    += ";"+os.path.join(PROGRAMFILESx86, "Steinberg", "VstPlugins")
-
-elif HAIKU:
-    splitter = ":"
-
-    DEFAULT_LADSPA_PATH = ":".join((os.path.join(HOME, ".ladspa"),
-                                    os.path.join("/", "boot", "common", "add-ons", "ladspa")))
-
-    DEFAULT_DSSI_PATH   = ":".join((os.path.join(HOME, ".dssi"),
-                                    os.path.join("/", "boot", "common", "add-ons", "dssi")))
-
-    DEFAULT_LV2_PATH    = ":".join((os.path.join(HOME, ".lv2"),
-                                    os.path.join("/", "boot", "common", "add-ons", "lv2")))
-
-    DEFAULT_VST_PATH    = ":".join((os.path.join(HOME, ".vst"),
-                                    os.path.join("/", "boot", "common", "add-ons", "vst")))
-
-    DEFAULT_AU_PATH     = ""
-
-    # TODO
-    DEFAULT_CSOUND_PATH = ""
-
-    # TODO
-    DEFAULT_GIG_PATH    = ""
-    DEFAULT_SF2_PATH    = ""
-    DEFAULT_SFZ_PATH    = ""
-
-elif MACOS:
-    splitter = ":"
-
-    DEFAULT_LADSPA_PATH = ":".join((os.path.join(HOME, "Library", "Audio", "Plug-Ins", "LADSPA"),
-                                    os.path.join("/", "Library", "Audio", "Plug-Ins", "LADSPA")))
-
-    DEFAULT_DSSI_PATH   = ":".join((os.path.join(HOME, "Library", "Audio", "Plug-Ins", "DSSI"),
-                                    os.path.join("/", "Library", "Audio", "Plug-Ins", "DSSI")))
-
-    DEFAULT_LV2_PATH    = ":".join((os.path.join(HOME, "Library", "Audio", "Plug-Ins", "LV2"),
-                                    os.path.join("/", "Library", "Audio", "Plug-Ins", "LV2")))
-
-    DEFAULT_VST_PATH    = ":".join((os.path.join(HOME, "Library", "Audio", "Plug-Ins", "VST"),
-                                    os.path.join("/", "Library", "Audio", "Plug-Ins", "VST")))
-
-    DEFAULT_AU_PATH     = ":".join((os.path.join(HOME, "Library", "Audio", "Plug-Ins", "Components"),
-                                    os.path.join("/", "Library", "Audio", "Plug-Ins", "Components")))
-
-    # TODO
-    DEFAULT_CSOUND_PATH = ""
-
-    # TODO
-    DEFAULT_GIG_PATH    = ""
-    DEFAULT_SF2_PATH    = ""
-    DEFAULT_SFZ_PATH    = ""
-
-else:
-    splitter = ":"
-
-    DEFAULT_LADSPA_PATH = ":".join((os.path.join(HOME, ".ladspa"),
-                                    os.path.join("/", "usr", "lib", "ladspa"),
-                                    os.path.join("/", "usr", "local", "lib", "ladspa")))
-
-    DEFAULT_DSSI_PATH   = ":".join((os.path.join(HOME, ".dssi"),
-                                    os.path.join("/", "usr", "lib", "dssi"),
-                                    os.path.join("/", "usr", "local", "lib", "dssi")))
-
-    DEFAULT_LV2_PATH    = ":".join((os.path.join(HOME, ".lv2"),
-                                    os.path.join("/", "usr", "lib", "lv2"),
-                                    os.path.join("/", "usr", "local", "lib", "lv2")))
-
-    DEFAULT_VST_PATH    = ":".join((os.path.join(HOME, ".vst"),
-                                    os.path.join("/", "usr", "lib", "vst"),
-                                    os.path.join("/", "usr", "local", "lib", "vst")))
-
-    DEFAULT_AU_PATH     = ""
-
-    # TODO
-    DEFAULT_CSOUND_PATH = ""
-
-    DEFAULT_GIG_PATH    = ":".join((os.path.join(HOME, ".sounds", "gig"),
-                                    os.path.join("/", "usr", "share", "sounds", "gig")))
-
-    DEFAULT_SF2_PATH    = ":".join((os.path.join(HOME, ".sounds", "sf2"),
-                                    os.path.join("/", "usr", "share", "sounds", "sf2")))
-
-    DEFAULT_SFZ_PATH    = ":".join((os.path.join(HOME, ".sounds", "sfz"),
-                                    os.path.join("/", "usr", "share", "sounds", "sfz")))
+)
 
 # ------------------------------------------------------------------------------------------------------------
 # Carla Settings keys
@@ -328,6 +199,7 @@ CARLA_KEY_PATHS_LADSPA = "Paths/LADSPA"
 CARLA_KEY_PATHS_DSSI   = "Paths/DSSI"
 CARLA_KEY_PATHS_LV2    = "Paths/LV2"
 CARLA_KEY_PATHS_VST    = "Paths/VST"
+CARLA_KEY_PATHS_VST3   = "Paths/VST3"
 CARLA_KEY_PATHS_AU     = "Paths/AU"
 CARLA_KEY_PATHS_CSD    = "Paths/CSD"
 CARLA_KEY_PATHS_GIG    = "Paths/GIG"
@@ -370,6 +242,7 @@ class CarlaObject(object):
         'DEFAULT_DSSI_PATH',
         'DEFAULT_LV2_PATH',
         'DEFAULT_VST_PATH',
+        'DEFAULT_VST3_PATH',
         'DEFAULT_AU_PATH',
         'DEFAULT_CSOUND_PATH',
         'DEFAULT_GIG_PATH',
@@ -377,22 +250,149 @@ class CarlaObject(object):
         'DEFAULT_SFZ_PATH'
     ]
 
-Carla = CarlaObject()
-Carla.host = None
-Carla.gui  = None
-Carla.isControl = False
-Carla.isLocal   = True
-Carla.isPlugin  = False
-Carla.bufferSize = 0
-Carla.sampleRate = 0.0
-Carla.processMode   = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS if LINUX else ENGINE_PROCESS_MODE_CONTINUOUS_RACK
-Carla.transportMode = ENGINE_TRANSPORT_MODE_JACK if LINUX else ENGINE_TRANSPORT_MODE_INTERNAL
-Carla.maxParameters = MAX_DEFAULT_PARAMETERS
-Carla.discovery_native  = ""
-Carla.discovery_posix32 = ""
-Carla.discovery_posix64 = ""
-Carla.discovery_win32   = ""
-Carla.discovery_win64   = ""
+gCarla = CarlaObject()
+gCarla.host = None
+gCarla.gui  = None
+gCarla.isControl = False
+gCarla.isLocal   = True
+gCarla.isPlugin  = False
+gCarla.bufferSize = 0
+gCarla.sampleRate = 0.0
+gCarla.processMode   = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS if LINUX else ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+gCarla.transportMode = ENGINE_TRANSPORT_MODE_JACK if LINUX else ENGINE_TRANSPORT_MODE_INTERNAL
+gCarla.maxParameters = MAX_DEFAULT_PARAMETERS
+gCarla.discovery_native  = ""
+gCarla.discovery_posix32 = ""
+gCarla.discovery_posix64 = ""
+gCarla.discovery_win32   = ""
+gCarla.discovery_win64   = ""
+
+# ------------------------------------------------------------------------------------------------------------
+# Default Plugin Folders (get)
+
+DEFAULT_LADSPA_PATH = ""
+DEFAULT_DSSI_PATH   = ""
+DEFAULT_LV2_PATH    = ""
+DEFAULT_VST_PATH    = ""
+DEFAULT_VST3_PATH   = ""
+DEFAULT_AU_PATH     = ""
+DEFAULT_CSOUND_PATH = ""
+DEFAULT_GIG_PATH    = ""
+DEFAULT_SF2_PATH    = ""
+DEFAULT_SFZ_PATH    = ""
+
+if WINDOWS:
+    splitter = ";"
+
+    APPDATA = os.getenv("APPDATA")
+    PROGRAMFILES = os.getenv("PROGRAMFILES")
+    PROGRAMFILESx86 = os.getenv("PROGRAMFILES(x86)")
+    COMMONPROGRAMFILES = os.getenv("COMMONPROGRAMFILES")
+
+    # Small integrity tests
+    if not APPDATA:
+        qFatal("APPDATA variable not set, cannot continue")
+        sys.exit(1)
+
+    if not PROGRAMFILES:
+        qFatal("PROGRAMFILES variable not set, cannot continue")
+        sys.exit(1)
+
+    if not COMMONPROGRAMFILES:
+        qFatal("COMMONPROGRAMFILES variable not set, cannot continue")
+        sys.exit(1)
+
+    DEFAULT_LADSPA_PATH  = APPDATA + "\\LADSPA"
+    DEFAULT_LADSPA_PATH += ";" + PROGRAMFILES + "\\LADSPA"
+
+    DEFAULT_DSSI_PATH    = APPDATA + "\\DSSI"
+    DEFAULT_DSSI_PATH   += ";" + PROGRAMFILES + "\\DSSI"
+
+    DEFAULT_LV2_PATH     = APPDATA + "\\LV2"
+    DEFAULT_LV2_PATH    += ";" + COMMONPROGRAMFILES + "\\LV2"
+
+    DEFAULT_VST_PATH     = PROGRAMFILES + "\\VstPlugins"
+    DEFAULT_VST_PATH    += ";" + PROGRAMFILES + "\\Steinberg\\VstPlugins"
+
+    DEFAULT_VST3_PATH    = PROGRAMFILES + "\\Vst3"
+
+    DEFAULT_GIG_PATH     = APPDATA + "\\GIG"
+    DEFAULT_SF2_PATH     = APPDATA + "\\SF2"
+    DEFAULT_SFZ_PATH     = APPDATA + "\\SFZ"
+
+    if PROGRAMFILESx86:
+        DEFAULT_LADSPA_PATH += ";" + PROGRAMFILESx86 + "\\LADSPA"
+        DEFAULT_DSSI_PATH   += ";" + PROGRAMFILESx86 + "\\DSSI"
+        DEFAULT_VST_PATH    += ";" + PROGRAMFILESx86 + "\\VstPlugins"
+        DEFAULT_VST_PATH    += ";" + PROGRAMFILESx86 + "\\Steinberg\\VstPlugins"
+elif HAIKU:
+    splitter = ":"
+
+    DEFAULT_LADSPA_PATH  = HOME + "/.ladspa"
+    DEFAULT_LADSPA_PATH += ":/boot/common/add-ons/ladspa"
+
+    DEFAULT_DSSI_PATH    = HOME + "/.dssi"
+    DEFAULT_DSSI_PATH   += ":/boot/common/add-ons/dssi"
+
+    DEFAULT_LV2_PATH     = HOME + "/.lv2"
+    DEFAULT_LV2_PATH    += ":/boot/common/add-ons/lv2"
+
+    DEFAULT_VST_PATH     = HOME + "/.vst"
+    DEFAULT_VST_PATH    += ":/boot/common/add-ons/vst"
+
+    DEFAULT_VST3_PATH    = HOME + "/.vst3"
+    DEFAULT_VST3_PATH   += ":/boot/common/add-ons/vst3"
+elif MACOS:
+    splitter = ":"
+
+    DEFAULT_LADSPA_PATH  = HOME + "/Library/Audio/Plug-Ins/LADSPA"
+    DEFAULT_LADSPA_PATH += ":/Library/Audio/Plug-Ins/LADSPA"
+
+    DEFAULT_DSSI_PATH    = HOME + "/Library/Audio/Plug-Ins/DSSI"
+    DEFAULT_DSSI_PATH   += ":/Library/Audio/Plug-Ins/DSSI"
+
+    DEFAULT_LV2_PATH     = HOME + "/Library/Audio/Plug-Ins/LV2"
+    DEFAULT_LV2_PATH    += ":/Library/Audio/Plug-Ins/LV2"
+
+    DEFAULT_VST_PATH     = HOME + "/Library/Audio/Plug-Ins/VST"
+    DEFAULT_VST_PATH    += ":/Library/Audio/Plug-Ins/VST"
+
+    DEFAULT_VST3_PATH    = HOME + "/Library/Audio/Plug-Ins/VST3"
+    DEFAULT_VST3_PATH   += ":/Library/Audio/Plug-Ins/VST3"
+
+    DEFAULT_AU_PATH      = HOME + "/Library/Audio/Plug-Ins/Components"
+    DEFAULT_AU_PATH     += ":/Library/Audio/Plug-Ins/Components"
+else:
+    splitter = ":"
+
+    DEFAULT_LADSPA_PATH  = HOME + "/.ladspa"
+    DEFAULT_LADSPA_PATH += ":/usr/lib/ladspa"
+    DEFAULT_LADSPA_PATH += ":/usr/local/lib/ladspa"
+
+    DEFAULT_DSSI_PATH    = HOME + "/.dssi"
+    DEFAULT_DSSI_PATH   += ":/usr/lib/dssi"
+    DEFAULT_DSSI_PATH   += ":/usr/local/lib/dssi"
+
+    DEFAULT_LV2_PATH     = HOME + "/.lv2"
+    DEFAULT_LV2_PATH    += ":/usr/lib/lv2"
+    DEFAULT_LV2_PATH    += ":/usr/local/lib/lv2"
+
+    DEFAULT_VST_PATH     = HOME + "/.vst"
+    DEFAULT_VST_PATH    += ":/usr/lib/vst"
+    DEFAULT_VST_PATH    += ":/usr/local/lib/vst"
+
+    DEFAULT_VST3_PATH    = HOME + "/.vst3"
+    DEFAULT_VST3_PATH   += ":/usr/lib/vst3"
+    DEFAULT_VST3_PATH   += ":/usr/local/lib/vst3"
+
+    DEFAULT_GIG_PATH     = HOME + "/.sounds/gig"
+    DEFAULT_GIG_PATH    += ":/usr/share/sounds/gig"
+
+    DEFAULT_SF2_PATH     = HOME + "/.sounds/sf2"
+    DEFAULT_SF2_PATH    += ":/usr/share/sounds/sf2"
+
+    DEFAULT_SFZ_PATH     = HOME + "/.sounds/sfz"
+    DEFAULT_SFZ_PATH    += ":/usr/share/sounds/sfz"
 
 # ------------------------------------------------------------------------------------------------------------
 # Default Plugin Folders (set)
@@ -415,26 +415,28 @@ if WINDOWS:
     del reg
 
 if readEnvVars:
-    Carla.DEFAULT_LADSPA_PATH = os.getenv("LADSPA_PATH", DEFAULT_LADSPA_PATH).split(splitter)
-    Carla.DEFAULT_DSSI_PATH   = os.getenv("DSSI_PATH",   DEFAULT_DSSI_PATH).split(splitter)
-    Carla.DEFAULT_LV2_PATH    = os.getenv("LV2_PATH",    DEFAULT_LV2_PATH).split(splitter)
-    Carla.DEFAULT_VST_PATH    = os.getenv("VST_PATH",    DEFAULT_VST_PATH).split(splitter)
-    Carla.DEFAULT_AU_PATH     = os.getenv("AU_PATH",     DEFAULT_AU_PATH).split(splitter)
-    Carla.DEFAULT_CSOUND_PATH = os.getenv("CSOUND_PATH", DEFAULT_CSOUND_PATH).split(splitter)
-    Carla.DEFAULT_GIG_PATH    = os.getenv("GIG_PATH",    DEFAULT_GIG_PATH).split(splitter)
-    Carla.DEFAULT_SF2_PATH    = os.getenv("SF2_PATH",    DEFAULT_SF2_PATH).split(splitter)
-    Carla.DEFAULT_SFZ_PATH    = os.getenv("SFZ_PATH",    DEFAULT_SFZ_PATH).split(splitter)
+    gCarla.DEFAULT_LADSPA_PATH = os.getenv("LADSPA_PATH", DEFAULT_LADSPA_PATH).split(splitter)
+    gCarla.DEFAULT_DSSI_PATH   = os.getenv("DSSI_PATH",   DEFAULT_DSSI_PATH).split(splitter)
+    gCarla.DEFAULT_LV2_PATH    = os.getenv("LV2_PATH",    DEFAULT_LV2_PATH).split(splitter)
+    gCarla.DEFAULT_VST_PATH    = os.getenv("VST_PATH",    DEFAULT_VST_PATH).split(splitter)
+    gCarla.DEFAULT_VST3_PATH   = os.getenv("VST3_PATH",   DEFAULT_VST3_PATH).split(splitter)
+    gCarla.DEFAULT_AU_PATH     = os.getenv("AU_PATH",     DEFAULT_AU_PATH).split(splitter)
+    gCarla.DEFAULT_CSOUND_PATH = os.getenv("CSOUND_PATH", DEFAULT_CSOUND_PATH).split(splitter)
+    gCarla.DEFAULT_GIG_PATH    = os.getenv("GIG_PATH",    DEFAULT_GIG_PATH).split(splitter)
+    gCarla.DEFAULT_SF2_PATH    = os.getenv("SF2_PATH",    DEFAULT_SF2_PATH).split(splitter)
+    gCarla.DEFAULT_SFZ_PATH    = os.getenv("SFZ_PATH",    DEFAULT_SFZ_PATH).split(splitter)
 
 else:
-    Carla.DEFAULT_LADSPA_PATH = DEFAULT_LADSPA_PATH.split(splitter)
-    Carla.DEFAULT_DSSI_PATH   = DEFAULT_DSSI_PATH.split(splitter)
-    Carla.DEFAULT_LV2_PATH    = DEFAULT_LV2_PATH.split(splitter)
-    Carla.DEFAULT_VST_PATH    = DEFAULT_VST_PATH.split(splitter)
-    Carla.DEFAULT_AU_PATH     = DEFAULT_AU_PATH.split(splitter)
-    Carla.DEFAULT_CSOUND_PATH = DEFAULT_CSOUND_PATH.split(splitter)
-    Carla.DEFAULT_GIG_PATH    = DEFAULT_GIG_PATH.split(splitter)
-    Carla.DEFAULT_SF2_PATH    = DEFAULT_SF2_PATH.split(splitter)
-    Carla.DEFAULT_SFZ_PATH    = DEFAULT_SFZ_PATH.split(splitter)
+    gCarla.DEFAULT_LADSPA_PATH = DEFAULT_LADSPA_PATH.split(splitter)
+    gCarla.DEFAULT_DSSI_PATH   = DEFAULT_DSSI_PATH.split(splitter)
+    gCarla.DEFAULT_LV2_PATH    = DEFAULT_LV2_PATH.split(splitter)
+    gCarla.DEFAULT_VST_PATH    = DEFAULT_VST_PATH.split(splitter)
+    gCarla.DEFAULT_VST3_PATH   = DEFAULT_VST3_PATH.split(splitter)
+    gCarla.DEFAULT_AU_PATH     = DEFAULT_AU_PATH.split(splitter)
+    gCarla.DEFAULT_CSOUND_PATH = DEFAULT_CSOUND_PATH.split(splitter)
+    gCarla.DEFAULT_GIG_PATH    = DEFAULT_GIG_PATH.split(splitter)
+    gCarla.DEFAULT_SF2_PATH    = DEFAULT_SF2_PATH.split(splitter)
+    gCarla.DEFAULT_SFZ_PATH    = DEFAULT_SFZ_PATH.split(splitter)
 
 # ------------------------------------------------------------------------------------------------------------
 # Search for Carla tools
@@ -469,7 +471,7 @@ def initHost(appName, libPrefix = None, failError = True):
 
     libname = "libcarla_"
 
-    if Carla.isControl:
+    if gCarla.isControl:
         libname += "control2"
     else:
         libname += "standalone2"
@@ -514,20 +516,20 @@ def initHost(appName, libPrefix = None, failError = True):
     # -------------------------------------------------------------
     # find windows tools
 
-    Carla.discovery_win32 = findTool("discovery", "carla-discovery-win32.exe")
-    Carla.discovery_win64 = findTool("discovery", "carla-discovery-win64.exe")
+    gCarla.discovery_win32 = findTool("discovery", "carla-discovery-win32.exe")
+    gCarla.discovery_win64 = findTool("discovery", "carla-discovery-win64.exe")
 
     # -------------------------------------------------------------
     # find native and posix tools
 
     if not WINDOWS:
-        Carla.discovery_native  = findTool("discovery", "carla-discovery-native")
-        Carla.discovery_posix32 = findTool("discovery", "carla-discovery-posix32")
-        Carla.discovery_posix64 = findTool("discovery", "carla-discovery-posix64")
+        gCarla.discovery_native  = findTool("discovery", "carla-discovery-native")
+        gCarla.discovery_posix32 = findTool("discovery", "carla-discovery-posix32")
+        gCarla.discovery_posix64 = findTool("discovery", "carla-discovery-posix64")
 
     # -------------------------------------------------------------
 
-    if not (libfilename or Carla.isPlugin):
+    if not (libfilename or gCarla.isPlugin):
         if failError:
             QMessageBox.critical(None, "Error", "Failed to find the carla library, cannot continue")
             sys.exit(1)
@@ -536,8 +538,8 @@ def initHost(appName, libPrefix = None, failError = True):
     # -------------------------------------------------------------
     # Init host
 
-    if Carla.host is None:
-        Carla.host = Host(libfilename)
+    if gCarla.host is None:
+        gCarla.host = Host(libfilename)
 
     # -------------------------------------------------------------
     # Set binary path
@@ -547,11 +549,11 @@ def initHost(appName, libPrefix = None, failError = True):
     systemBinaries = os.path.join(libfolder, "bridges")
 
     if os.path.exists(libfolder):
-        Carla.host.set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, libfolder)
+        gCarla.host.set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, libfolder)
     elif os.path.exists(localBinaries):
-        Carla.host.set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, localBinaries)
+        gCarla.host.set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, localBinaries)
     elif os.path.exists(systemBinaries):
-        Carla.host.set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, systemBinaries)
+        gCarla.host.set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, systemBinaries)
 
     # -------------------------------------------------------------
     # Set resource path
@@ -560,9 +562,9 @@ def initHost(appName, libPrefix = None, failError = True):
     systemResources = os.path.join(libfolder, "resources")
 
     if os.path.exists(localResources):
-        Carla.host.set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, localResources)
+        gCarla.host.set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, localResources)
     elif os.path.exists(systemResources):
-        Carla.host.set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, systemResources)
+        gCarla.host.set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, systemResources)
 
 # ------------------------------------------------------------------------------------------------------------
 # Check if a value is a number (float support)
@@ -595,13 +597,13 @@ def getIcon(icon, size=16):
 # Signal handler
 
 def signalHandler(sig, frame):
-    if Carla.gui is None:
+    if gCarla.gui is None:
         return
 
     if sig in (SIGINT, SIGTERM):
-        Carla.gui.SIGTERM.emit()
+        gCarla.gui.SIGTERM.emit()
     elif haveSIGUSR1 and sig == SIGUSR1:
-        Carla.gui.SIGUSR1.emit()
+        gCarla.gui.SIGUSR1.emit()
 
 def setUpSignals():
     signal(SIGINT,  signalHandler)
@@ -615,8 +617,8 @@ def setUpSignals():
 # ------------------------------------------------------------------------------------------------------------
 # QLineEdit and QPushButton combo
 
-def getAndSetPath(self_, currentPath, lineEdit):
-    newPath = QFileDialog.getExistingDirectory(self_, self_.tr("Set Path"), currentPath, QFileDialog.ShowDirsOnly)
+def getAndSetPath(parent, currentPath, lineEdit):
+    newPath = QFileDialog.getExistingDirectory(parent, parent.tr("Set Path"), currentPath, QFileDialog.ShowDirsOnly)
     if newPath:
         lineEdit.setText(newPath)
     return newPath
@@ -656,8 +658,8 @@ def getPluginTypeAsString(ptype):
 # ------------------------------------------------------------------------------------------------------------
 # Custom MessageBox
 
-def CustomMessageBox(self_, icon, title, text, extraText="", buttons=QMessageBox.Yes|QMessageBox.No, defButton=QMessageBox.No):
-    msgBox = QMessageBox(self_)
+def CustomMessageBox(parent, icon, title, text, extraText="", buttons=QMessageBox.Yes|QMessageBox.No, defButton=QMessageBox.No):
+    msgBox = QMessageBox(parent)
     msgBox.setIcon(icon)
     msgBox.setWindowTitle(title)
     msgBox.setText(text)

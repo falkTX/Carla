@@ -93,9 +93,9 @@ class CarlaAboutW(QDialog):
         self.ui = ui_carla_about.Ui_CarlaAboutW()
         self.ui.setupUi(self)
 
-        if Carla.isControl:
+        if gCarla.isControl:
             extraInfo = " - <b>%s</b>" % self.tr("OSC Bridge Version")
-        elif Carla.isPlugin:
+        elif gCarla.isPlugin:
             extraInfo = " - <b>%s</b>" % self.tr("Plugin Version")
         else:
             extraInfo = ""
@@ -106,18 +106,18 @@ class CarlaAboutW(QDialog):
                                      "<br>Copyright (C) 2011-2013 falkTX<br>"
                                      "" % (VERSION, extraInfo)))
 
-        if Carla.isControl or Carla.isPlugin or Carla.host is None:
+        if gCarla.isControl or gCarla.isPlugin or gCarla.host is None:
             self.ui.l_extended.hide()
             self.ui.tabWidget.removeTab(1)
             self.ui.tabWidget.removeTab(1)
             self.adjustSize()
 
         else:
-            self.ui.l_extended.setText(Carla.host.get_complete_license_text())
+            self.ui.l_extended.setText(gCarla.host.get_complete_license_text())
 
-            if Carla.host.is_engine_running():
-                self.ui.le_osc_url_tcp.setText(Carla.host.get_host_osc_url_tcp())
-                self.ui.le_osc_url_udp.setText(Carla.host.get_host_osc_url_udp())
+            if gCarla.host.is_engine_running():
+                self.ui.le_osc_url_tcp.setText(gCarla.host.get_host_osc_url_tcp())
+                self.ui.le_osc_url_udp.setText(gCarla.host.get_host_osc_url_udp())
             else:
                 self.ui.le_osc_url_tcp.setText(self.tr("(Engine not running)"))
                 self.ui.le_osc_url_udp.setText(self.tr("(Engine not running)"))
@@ -363,7 +363,7 @@ class PluginParameter(QWidget):
         self.valueChanged.emit(self.fParameterId, value)
 
     def _textCallBack(self):
-        return Carla.host.get_parameter_text(self.fPluginId, self.fParameterId)
+        return gCarla.host.get_parameter_text(self.fPluginId, self.fParameterId)
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Editor (Built-in)
@@ -372,7 +372,7 @@ class PluginEdit(QDialog):
     kParamsPerPage = 8
 
     def __init__(self, parent, pluginId):
-        QDialog.__init__(self, Carla.gui)
+        QDialog.__init__(self, gCarla.gui)
         self.ui = ui_carla_edit.Ui_PluginEdit()
         self.ui.setupUi(self)
 
@@ -471,7 +471,7 @@ class PluginEdit(QDialog):
         self.ui.cb_programs.currentIndexChanged.connect(self.slot_programIndexChanged)
         self.ui.cb_midi_programs.currentIndexChanged.connect(self.slot_midiProgramIndexChanged)
 
-        if Carla.isLocal:
+        if gCarla.isLocal:
             self.ui.b_save_state.clicked.connect(self.slot_stateSave)
             self.ui.b_load_state.clicked.connect(self.slot_stateLoad)
         else:
@@ -484,14 +484,14 @@ class PluginEdit(QDialog):
         # Update current program text
         if self.ui.cb_programs.count() > 0:
             pIndex = self.ui.cb_programs.currentIndex()
-            pName  = charPtrToString(Carla.host.get_program_name(self.fPluginId, pIndex))
+            pName  = charPtrToString(gCarla.host.get_program_name(self.fPluginId, pIndex))
             #pName  = pName[:40] + (pName[40:] and "...")
             self.ui.cb_programs.setItemText(pIndex, pName)
 
         # Update current midi program text
         if self.ui.cb_midi_programs.count() > 0:
             mpIndex = self.ui.cb_midi_programs.currentIndex()
-            mpData  = Carla.host.get_midi_program_data(self.fPluginId, mpIndex)
+            mpData  = gCarla.host.get_midi_program_data(self.fPluginId, mpIndex)
             mpBank  = int(mpData['bank'])
             mpProg  = int(mpData['program'])
             mpName  = charPtrToString(mpData['name'])
@@ -500,7 +500,7 @@ class PluginEdit(QDialog):
 
         # Update all parameter values
         for paramType, paramId, paramWidget in self.fParameterList:
-            paramWidget.setValue(Carla.host.get_current_parameter_value(self.fPluginId, paramId), False)
+            paramWidget.setValue(gCarla.host.get_current_parameter_value(self.fPluginId, paramId), False)
             paramWidget.update()
 
         self.fParametersToUpdate = []
@@ -508,8 +508,8 @@ class PluginEdit(QDialog):
     #------------------------------------------------------------------
 
     def reloadAll(self):
-        if Carla.host is not None:
-            self.fPluginInfo = Carla.host.get_plugin_info(self.fPluginId)
+        if gCarla.host is not None:
+            self.fPluginInfo = gCarla.host.get_plugin_info(self.fPluginId)
             self.fPluginInfo['filename']  = charPtrToString(self.fPluginInfo['filename'])
             self.fPluginInfo['name']      = charPtrToString(self.fPluginInfo['name'])
             self.fPluginInfo['label']     = charPtrToString(self.fPluginInfo['label'])
@@ -517,7 +517,7 @@ class PluginEdit(QDialog):
             self.fPluginInfo['copyright'] = charPtrToString(self.fPluginInfo['copyright'])
             self.fPluginInfo['iconName']  = charPtrToString(self.fPluginInfo['iconName'])
 
-            if not Carla.isLocal:
+            if not gCarla.isLocal:
                 self.fPluginInfo['hints'] &= ~PLUGIN_HAS_CUSTOM_UI
 
         else:
@@ -538,11 +538,11 @@ class PluginEdit(QDialog):
     #------------------------------------------------------------------
 
     def reloadInfo(self):
-        if Carla.host is not None:
-            pluginName     = Carla.host.get_real_plugin_name(self.fPluginId)
-            audioCountInfo = Carla.host.get_audio_port_count_info(self.fPluginId)
-            midiCountInfo  = Carla.host.get_midi_port_count_info(self.fPluginId)
-            paramCountInfo = Carla.host.get_parameter_count_info(self.fPluginId)
+        if gCarla.host is not None:
+            pluginName     = gCarla.host.get_real_plugin_name(self.fPluginId)
+            audioCountInfo = gCarla.host.get_audio_port_count_info(self.fPluginId)
+            midiCountInfo  = gCarla.host.get_midi_port_count_info(self.fPluginId)
+            paramCountInfo = gCarla.host.get_parameter_count_info(self.fPluginId)
         else:
             pluginName     = ""
             audioCountInfo = gFakePortCountInfo
@@ -661,7 +661,7 @@ class PluginEdit(QDialog):
             self.ui.tabWidget.widget(1).deleteLater()
             self.ui.tabWidget.removeTab(1)
 
-        if Carla.host is None:
+        if gCarla.host is None:
             paramFakeListFull = []
             paramFakeList  = []
             paramFakeWidth = QFontMetrics(self.font()).width(gFakeParamInfo['name'])
@@ -672,12 +672,12 @@ class PluginEdit(QDialog):
             self._createParameterWidgets(PARAMETER_INPUT, paramFakeListFull,  self.tr("Parameters"))
             return
 
-        parameterCount = Carla.host.get_parameter_count(self.fPluginId)
+        parameterCount = gCarla.host.get_parameter_count(self.fPluginId)
 
         if parameterCount <= 0:
             pass
 
-        elif parameterCount <= Carla.maxParameters:
+        elif parameterCount <= gCarla.maxParameters:
             paramInputListFull  = []
             paramOutputListFull = []
 
@@ -687,10 +687,10 @@ class PluginEdit(QDialog):
             paramOutputWidth = 0
 
             for i in range(parameterCount):
-                paramInfo   = Carla.host.get_parameter_info(self.fPluginId, i)
-                paramData   = Carla.host.get_parameter_data(self.fPluginId, i)
-                paramRanges = Carla.host.get_parameter_ranges(self.fPluginId, i)
-                paramValue  = Carla.host.get_current_parameter_value(self.fPluginId, i)
+                paramInfo   = gCarla.host.get_parameter_info(self.fPluginId, i)
+                paramData   = gCarla.host.get_parameter_data(self.fPluginId, i)
+                paramRanges = gCarla.host.get_parameter_ranges(self.fPluginId, i)
+                paramValue  = gCarla.host.get_current_parameter_value(self.fPluginId, i)
 
                 if paramData['type'] not in (PARAMETER_INPUT, PARAMETER_OUTPUT):
                     continue
@@ -718,7 +718,7 @@ class PluginEdit(QDialog):
                 }
 
                 for j in range(paramInfo['scalePointCount']):
-                    scalePointInfo = Carla.host.get_parameter_scalepoint_info(self.fPluginId, i, j)
+                    scalePointInfo = gCarla.host.get_parameter_scalepoint_info(self.fPluginId, i, j)
 
                     parameter['scalePoints'].append({
                         'value': scalePointInfo['value'],
@@ -771,7 +771,7 @@ class PluginEdit(QDialog):
             self._createParameterWidgets(PARAMETER_INPUT,  paramInputListFull,  self.tr("Parameters"))
             self._createParameterWidgets(PARAMETER_OUTPUT, paramOutputListFull, self.tr("Outputs"))
 
-        else: # > Carla.maxParameters
+        else: # > gCarla.maxParameters
             fakeName = self.tr("This plugin has too many parameters to display here!")
 
             paramFakeListFull = []
@@ -808,18 +808,18 @@ class PluginEdit(QDialog):
         self.ui.cb_programs.blockSignals(True)
         self.ui.cb_programs.clear()
 
-        programCount = Carla.host.get_program_count(self.fPluginId) if Carla.host is not None else 0
+        programCount = gCarla.host.get_program_count(self.fPluginId) if gCarla.host is not None else 0
 
         if programCount > 0:
             self.ui.cb_programs.setEnabled(True)
             self.ui.label_programs.setEnabled(True)
 
             for i in range(programCount):
-                pName = charPtrToString(Carla.host.get_program_name(self.fPluginId, i))
+                pName = charPtrToString(gCarla.host.get_program_name(self.fPluginId, i))
                 #pName = pName[:40] + (pName[40:] and "...")
                 self.ui.cb_programs.addItem(pName)
 
-            self.fCurrentProgram = Carla.host.get_current_program_index(self.fPluginId)
+            self.fCurrentProgram = gCarla.host.get_current_program_index(self.fPluginId)
             self.ui.cb_programs.setCurrentIndex(self.fCurrentProgram)
 
         else:
@@ -833,14 +833,14 @@ class PluginEdit(QDialog):
         self.ui.cb_midi_programs.blockSignals(True)
         self.ui.cb_midi_programs.clear()
 
-        midiProgramCount = Carla.host.get_midi_program_count(self.fPluginId) if Carla.host is not None else 0
+        midiProgramCount = gCarla.host.get_midi_program_count(self.fPluginId) if gCarla.host is not None else 0
 
         if midiProgramCount > 0:
             self.ui.cb_midi_programs.setEnabled(True)
             self.ui.label_midi_programs.setEnabled(True)
 
             for i in range(midiProgramCount):
-                mpData = Carla.host.get_midi_program_data(self.fPluginId, i)
+                mpData = gCarla.host.get_midi_program_data(self.fPluginId, i)
                 mpBank = int(mpData['bank'])
                 mpProg = int(mpData['program'])
                 mpName = charPtrToString(mpData['name'])
@@ -848,7 +848,7 @@ class PluginEdit(QDialog):
 
                 self.ui.cb_midi_programs.addItem("%03i:%03i - %s" % (mpBank+1, mpProg+1, mpName))
 
-            self.fCurrentMidiProgram = Carla.host.get_current_midi_program_index(self.fPluginId)
+            self.fCurrentMidiProgram = gCarla.host.get_current_midi_program_index(self.fPluginId)
             self.ui.cb_midi_programs.setCurrentIndex(self.fCurrentMidiProgram)
 
         else:
@@ -1026,7 +1026,7 @@ class PluginEdit(QDialog):
         # Update parameter outputs
         for paramType, paramId, paramWidget in self.fParameterList:
             if paramType == PARAMETER_OUTPUT:
-                value = Carla.host.get_current_parameter_value(self.fPluginId, paramId)
+                value = gCarla.host.get_current_parameter_value(self.fPluginId, paramId)
                 paramWidget.setValue(value, False)
 
     #------------------------------------------------------------------
@@ -1041,7 +1041,7 @@ class PluginEdit(QDialog):
             askTry = QMessageBox.question(self, self.tr("Overwrite?"), self.tr("Overwrite previously created file?"), QMessageBox.Ok|QMessageBox.Cancel)
 
             if askTry == QMessageBox.Ok:
-                Carla.host.save_plugin_state(self.fPluginId, self.fCurrentStateFilename)
+                gCarla.host.save_plugin_state(self.fPluginId, self.fCurrentStateFilename)
                 return
 
             self.fCurrentStateFilename = None
@@ -1054,22 +1054,22 @@ class PluginEdit(QDialog):
                 filenameTry += ".carxs"
 
             self.fCurrentStateFilename = filenameTry
-            Carla.host.save_plugin_state(self.fPluginId, self.fCurrentStateFilename)
+            gCarla.host.save_plugin_state(self.fPluginId, self.fCurrentStateFilename)
 
     @pyqtSlot()
     def slot_stateLoad(self):
         if self.fPluginInfo['type'] == PLUGIN_LV2:
             presetList = []
 
-            for i in range(Carla.host.get_program_count(self.fPluginId)):
-                presetList.append("%03i - %s" % (i+1, charPtrToString(Carla.host.get_program_name(self.fPluginId, i))))
+            for i in range(gCarla.host.get_program_count(self.fPluginId)):
+                presetList.append("%03i - %s" % (i+1, charPtrToString(gCarla.host.get_program_name(self.fPluginId, i))))
 
             ret = QInputDialog.getItem(self, self.tr("Open LV2 Preset"), self.tr("Select an LV2 Preset:"), presetList, 0, False)
 
             if ret[1]:
                 index = int(ret[0].split(" - ", 1)[0])-1
-                Carla.host.set_midi_program(self.fPluginId, -1)
-                Carla.host.set_program(self.fPluginId, index)
+                gCarla.host.set_midi_program(self.fPluginId, -1)
+                gCarla.host.set_program(self.fPluginId, index)
                 self.setMidiProgram(-1)
 
             return
@@ -1079,13 +1079,13 @@ class PluginEdit(QDialog):
 
         if filenameTry:
             self.fCurrentStateFilename = filenameTry
-            Carla.host.load_plugin_state(self.fPluginId, self.fCurrentStateFilename)
+            gCarla.host.load_plugin_state(self.fPluginId, self.fCurrentStateFilename)
 
     #------------------------------------------------------------------
 
     @pyqtSlot(bool)
     def slot_optionChanged(self, clicked):
-        if Carla.host is None:
+        if gCarla.host is None:
             return
 
         sender = self.sender()
@@ -1111,41 +1111,41 @@ class PluginEdit(QDialog):
         else:
             return
 
-        Carla.host.set_option(self.fPluginId, option, clicked)
+        gCarla.host.set_option(self.fPluginId, option, clicked)
 
     #------------------------------------------------------------------
 
     @pyqtSlot(int)
     def slot_dryWetChanged(self, value):
-        if Carla.host is not None:
-            Carla.host.set_drywet(self.fPluginId, float(value)/1000)
+        if gCarla.host is not None:
+            gCarla.host.set_drywet(self.fPluginId, float(value)/1000)
 
     @pyqtSlot(int)
     def slot_volumeChanged(self, value):
-        if Carla.host is not None:
-            Carla.host.set_volume(self.fPluginId, float(value)/1000)
+        if gCarla.host is not None:
+            gCarla.host.set_volume(self.fPluginId, float(value)/1000)
 
     @pyqtSlot(int)
     def slot_balanceLeftChanged(self, value):
-        if Carla.host is not None:
-            Carla.host.set_balance_left(self.fPluginId, float(value)/1000)
+        if gCarla.host is not None:
+            gCarla.host.set_balance_left(self.fPluginId, float(value)/1000)
 
     @pyqtSlot(int)
     def slot_balanceRightChanged(self, value):
-        if Carla.host is not None:
-            Carla.host.set_balance_right(self.fPluginId, float(value)/1000)
+        if gCarla.host is not None:
+            gCarla.host.set_balance_right(self.fPluginId, float(value)/1000)
 
     @pyqtSlot(int)
     def slot_panningChanged(self, value):
-        if Carla.host is not None:
-            Carla.host.set_panning(self.fPluginId, float(value)/1000)
+        if gCarla.host is not None:
+            gCarla.host.set_panning(self.fPluginId, float(value)/1000)
 
     @pyqtSlot(int)
     def slot_ctrlChannelChanged(self, value):
         self.fControlChannel = value-1
 
-        if Carla.host is not None:
-            Carla.host.set_ctrl_channel(self.fPluginId, self.fControlChannel)
+        if gCarla.host is not None:
+            gCarla.host.set_ctrl_channel(self.fPluginId, self.fControlChannel)
 
         self.ui.keyboard.allNotesOff()
         self._updateCtrlMidiProgram()
@@ -1154,20 +1154,20 @@ class PluginEdit(QDialog):
 
     @pyqtSlot(int, float)
     def slot_parameterValueChanged(self, parameterId, value):
-        if Carla.host is not None:
-            Carla.host.set_parameter_value(self.fPluginId, parameterId, value)
+        if gCarla.host is not None:
+            gCarla.host.set_parameter_value(self.fPluginId, parameterId, value)
         if self.fRealParent is not None:
             self.fRealParent.parameterValueChanged(parameterId, value)
 
     @pyqtSlot(int, int)
     def slot_parameterMidiControlChanged(self, parameterId, control):
-        if Carla.host is not None:
-            Carla.host.set_parameter_midi_cc(self.fPluginId, parameterId, control)
+        if gCarla.host is not None:
+            gCarla.host.set_parameter_midi_cc(self.fPluginId, parameterId, control)
 
     @pyqtSlot(int, int)
     def slot_parameterMidiChannelChanged(self, parameterId, channel):
-        if Carla.host is not None:
-            Carla.host.set_parameter_midi_channel(self.fPluginId, parameterId, channel-1)
+        if gCarla.host is not None:
+            gCarla.host.set_parameter_midi_channel(self.fPluginId, parameterId, channel-1)
 
     #------------------------------------------------------------------
 
@@ -1175,8 +1175,8 @@ class PluginEdit(QDialog):
     def slot_programIndexChanged(self, index):
         self.fCurrentProgram = index
 
-        if Carla.host is not None:
-            Carla.host.set_program(self.fPluginId, index)
+        if gCarla.host is not None:
+            gCarla.host.set_program(self.fPluginId, index)
         if self.fRealParent is not None:
             self.fRealParent.programChanged(index)
 
@@ -1184,8 +1184,8 @@ class PluginEdit(QDialog):
     def slot_midiProgramIndexChanged(self, index):
         self.fCurrentMidiProgram = index
 
-        if Carla.host is not None:
-            Carla.host.set_midi_program(self.fPluginId, index)
+        if gCarla.host is not None:
+            gCarla.host.set_midi_program(self.fPluginId, index)
         if self.fRealParent is not None:
             self.fRealParent.midiProgramChanged(index)
 
@@ -1193,15 +1193,15 @@ class PluginEdit(QDialog):
 
     @pyqtSlot(int)
     def slot_noteOn(self, note):
-        if self.fControlChannel >= 0 and Carla.host is not None:
-            Carla.host.send_midi_note(self.fPluginId, self.fControlChannel, note, 100)
+        if self.fControlChannel >= 0 and gCarla.host is not None:
+            gCarla.host.send_midi_note(self.fPluginId, self.fControlChannel, note, 100)
         if self.fRealParent is not None:
             self.fRealParent.notePressed(note)
 
     @pyqtSlot(int)
     def slot_noteOff(self, note):
-        if self.fControlChannel >= 0 and Carla.host is not None:
-            Carla.host.send_midi_note(self.fPluginId, self.fControlChannel, note, 0)
+        if self.fControlChannel >= 0 and gCarla.host is not None:
+            gCarla.host.send_midi_note(self.fPluginId, self.fControlChannel, note, 0)
         if self.fRealParent is not None:
             self.fRealParent.noteReleased(note)
 
@@ -1370,7 +1370,7 @@ class PluginEdit(QDialog):
 
         self.ui.cb_midi_programs.setEnabled(True)
 
-        mpIndex = Carla.host.get_current_midi_program_index(self.fPluginId)
+        mpIndex = gCarla.host.get_current_midi_program_index(self.fPluginId)
 
         if self.ui.cb_midi_programs.currentIndex() != mpIndex:
             self.setMidiProgram(mpIndex)

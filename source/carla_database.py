@@ -354,7 +354,7 @@ class SearchPluginsThread(QThread):
         self.fCheckSF2    = False
         self.fCheckSFZ    = False
 
-        self.fToolNative = Carla.discovery_native
+        self.fToolNative = gCarla.discovery_native
 
         self.fCurCount = 0
         self.fCurPercentValue = 0
@@ -369,7 +369,7 @@ class SearchPluginsThread(QThread):
         self.fCsdFiles      = []
         self.fKitPlugins    = []
 
-        print(Carla.discovery_native)
+        print(gCarla.discovery_native)
 
         # -------------------------------------------------------------
 
@@ -472,25 +472,25 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
             if self.fCheckPosix32:
-                self._checkLADSPA(OS, Carla.discovery_posix32)
+                self._checkLADSPA(OS, gCarla.discovery_posix32)
                 settingsDB.setValue("Plugins/LADSPA_posix32", self.fLadspaPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckPosix64:
-                self._checkLADSPA(OS, Carla.discovery_posix64)
+                self._checkLADSPA(OS, gCarla.discovery_posix64)
                 settingsDB.setValue("Plugins/LADSPA_posix64", self.fLadspaPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin32:
-                self._checkLADSPA("WINDOWS", Carla.discovery_win32, not WINDOWS)
+                self._checkLADSPA("WINDOWS", gCarla.discovery_win32, not WINDOWS)
                 settingsDB.setValue("Plugins/LADSPA_win32", self.fLadspaPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin64:
-                self._checkLADSPA("WINDOWS", Carla.discovery_win64, not WINDOWS)
+                self._checkLADSPA("WINDOWS", gCarla.discovery_win64, not WINDOWS)
                 settingsDB.setValue("Plugins/LADSPA_win64", self.fLadspaPlugins)
 
             settingsDB.sync()
@@ -518,25 +518,25 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
             if self.fCheckPosix32:
-                self._checkDSSI(OS, Carla.discovery_posix32)
+                self._checkDSSI(OS, gCarla.discovery_posix32)
                 settingsDB.setValue("Plugins/DSSI_posix32", self.fDssiPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckPosix64:
-                self._checkDSSI(OS, Carla.discovery_posix64)
+                self._checkDSSI(OS, gCarla.discovery_posix64)
                 settingsDB.setValue("Plugins/DSSI_posix64", self.fDssiPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin32:
-                self._checkDSSI("WINDOWS", Carla.discovery_win32, not WINDOWS)
+                self._checkDSSI("WINDOWS", gCarla.discovery_win32, not WINDOWS)
                 settingsDB.setValue("Plugins/DSSI_win32", self.fDssiPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin64:
-                self._checkDSSI("WINDOWS", Carla.discovery_win64, not WINDOWS)
+                self._checkDSSI("WINDOWS", gCarla.discovery_win64, not WINDOWS)
                 settingsDB.setValue("Plugins/DSSI_win64", self.fDssiPlugins)
 
             settingsDB.sync()
@@ -551,25 +551,25 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
             if self.fCheckPosix32:
-                self._checkLV2(Carla.discovery_posix32)
+                self._checkLV2(gCarla.discovery_posix32)
                 settingsDB.setValue("Plugins/LV2_posix32", self.fLv2Plugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckPosix64:
-                self._checkLV2(Carla.discovery_posix64)
+                self._checkLV2(gCarla.discovery_posix64)
                 settingsDB.setValue("Plugins/LV2_posix64", self.fLv2Plugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin32:
-                self._checkLV2(Carla.discovery_win32, not WINDOWS)
+                self._checkLV2(gCarla.discovery_win32, not WINDOWS)
                 settingsDB.setValue("Plugins/LV2_win32", self.fLv2Plugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin64:
-                self._checkLV2(Carla.discovery_win64, not WINDOWS)
+                self._checkLV2(gCarla.discovery_win64, not WINDOWS)
                 settingsDB.setValue("Plugins/LV2_win64", self.fLv2Plugins)
 
             settingsDB.sync()
@@ -584,25 +584,25 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
             if self.fCheckPosix32:
-                self._checkVST(OS, Carla.discovery_posix32)
+                self._checkVST(OS, gCarla.discovery_posix32)
                 settingsDB.setValue("Plugins/VST_posix32", self.fVstPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckPosix64:
-                self._checkVST(OS, Carla.discovery_posix64)
+                self._checkVST(OS, gCarla.discovery_posix64)
                 settingsDB.setValue("Plugins/VST_posix64", self.fVstPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin32:
-                self._checkVST("WINDOWS", Carla.discovery_win32, not WINDOWS)
+                self._checkVST("WINDOWS", gCarla.discovery_win32, not WINDOWS)
                 settingsDB.setValue("Plugins/VST_win32", self.fVstPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin64:
-                self._checkVST("WINDOWS", Carla.discovery_win64, not WINDOWS)
+                self._checkVST("WINDOWS", gCarla.discovery_win64, not WINDOWS)
                 settingsDB.setValue("Plugins/VST_win64", self.fVstPlugins)
 
             settingsDB.sync()
@@ -617,13 +617,13 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
             if self.fCheckPosix32:
-                self._checkAU(Carla.discovery_posix32)
+                self._checkAU(gCarla.discovery_posix32)
                 settingsDB.setValue("Plugins/AU_posix32", self.fAuPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckPosix64:
-                self._checkAU(Carla.discovery_posix64)
+                self._checkAU(gCarla.discovery_posix64)
                 settingsDB.setValue("Plugins/AU_posix64", self.fAuPlugins)
 
             settingsDB.sync()
@@ -638,7 +638,7 @@ class SearchPluginsThread(QThread):
 
         if self.fCheckGIG:
             settings = QSettings()
-            GIG_PATH = toList(settings.value("Paths/GIG", Carla.DEFAULT_GIG_PATH))
+            GIG_PATH = toList(settings.value("Paths/GIG", gCarla.DEFAULT_GIG_PATH))
             del settings
 
             self._checkKIT(GIG_PATH, "gig")
@@ -648,7 +648,7 @@ class SearchPluginsThread(QThread):
 
         if self.fCheckSF2:
             settings = QSettings()
-            SF2_PATH = toList(settings.value("Paths/SF2", Carla.DEFAULT_SF2_PATH))
+            SF2_PATH = toList(settings.value("Paths/SF2", gCarla.DEFAULT_SF2_PATH))
             del settings
 
             self._checkKIT(SF2_PATH, "sf2")
@@ -658,7 +658,7 @@ class SearchPluginsThread(QThread):
 
         if self.fCheckSFZ:
             settings = QSettings()
-            SFZ_PATH = toList(settings.value("Paths/SFZ", Carla.DEFAULT_SFZ_PATH))
+            SFZ_PATH = toList(settings.value("Paths/SFZ", gCarla.DEFAULT_SFZ_PATH))
             del settings
 
             self._checkKIT(SFZ_PATH, "sfz")
@@ -673,7 +673,7 @@ class SearchPluginsThread(QThread):
         self._pluginLook(self.fLastCheckValue, "LADSPA plugins...")
 
         settings = QSettings()
-        LADSPA_PATH = toList(settings.value("Paths/LADSPA", Carla.DEFAULT_LADSPA_PATH))
+        LADSPA_PATH = toList(settings.value("Paths/LADSPA", gCarla.DEFAULT_LADSPA_PATH))
 
         for iPATH in LADSPA_PATH:
             binaries = findBinaries(iPATH, OS)
@@ -706,7 +706,7 @@ class SearchPluginsThread(QThread):
         self._pluginLook(self.fLastCheckValue, "DSSI plugins...")
 
         settings = QSettings()
-        DSSI_PATH = toList(settings.value("Paths/DSSI", Carla.DEFAULT_DSSI_PATH))
+        DSSI_PATH = toList(settings.value("Paths/DSSI", gCarla.DEFAULT_DSSI_PATH))
 
         for iPATH in DSSI_PATH:
             binaries = findBinaries(iPATH, OS)
@@ -739,7 +739,7 @@ class SearchPluginsThread(QThread):
         self._pluginLook(self.fLastCheckValue, "LV2 bundles...")
 
         settings = QSettings()
-        LV2_PATH = toList(settings.value("Paths/LV2", Carla.DEFAULT_LV2_PATH))
+        LV2_PATH = toList(settings.value("Paths/LV2", gCarla.DEFAULT_LV2_PATH))
 
         for iPATH in LV2_PATH:
             bundles = findLV2Bundles(iPATH)
@@ -775,7 +775,7 @@ class SearchPluginsThread(QThread):
             self._pluginLook(self.fLastCheckValue, "VST plugins...")
 
         settings = QSettings()
-        VST_PATH = toList(settings.value("Paths/VST", Carla.DEFAULT_VST_PATH))
+        VST_PATH = toList(settings.value("Paths/VST", gCarla.DEFAULT_VST_PATH))
 
         for iPATH in VST_PATH:
             if MACOS and not isWine:
@@ -812,7 +812,7 @@ class SearchPluginsThread(QThread):
         self._pluginLook(self.fLastCheckValue, "AU plugins...")
 
         settings = QSettings()
-        AU_PATH = toList(settings.value("Paths/AU", Carla.DEFAULT_AU_PATH))
+        AU_PATH = toList(settings.value("Paths/AU", gCarla.DEFAULT_AU_PATH))
 
         for iPATH in AU_PATH:
             binaries = findBinaries(iPATH, "MACOS")
@@ -843,7 +843,7 @@ class SearchPluginsThread(QThread):
         self.fCsdFiles = []
 
         settings = QSettings()
-        CSOUND_PATH = toList(settings.value("Paths/CSOUND", Carla.DEFAULT_CSOUND_PATH))
+        CSOUND_PATH = toList(settings.value("Paths/CSOUND", gCarla.DEFAULT_CSOUND_PATH))
 
         for iPATH in CSOUND_PATH:
             files = findFilenames(iPATH, "csd")
@@ -945,28 +945,28 @@ class PluginRefreshW(QDialog):
             self.ui.ch_posix32.setText("MacOS 32bit")
             self.ui.ch_posix64.setText("MacOS 64bit")
 
-        if Carla.discovery_posix32 and not WINDOWS:
+        if gCarla.discovery_posix32 and not WINDOWS:
             self.ui.ico_posix32.setPixmap(self.fIconYes)
         else:
             self.ui.ico_posix32.setPixmap(self.fIconNo)
             self.ui.ch_posix32.setChecked(False)
             self.ui.ch_posix32.setEnabled(False)
 
-        if Carla.discovery_posix64 and not WINDOWS:
+        if gCarla.discovery_posix64 and not WINDOWS:
             self.ui.ico_posix64.setPixmap(self.fIconYes)
         else:
             self.ui.ico_posix64.setPixmap(self.fIconNo)
             self.ui.ch_posix64.setChecked(False)
             self.ui.ch_posix64.setEnabled(False)
 
-        if Carla.discovery_win32:
+        if gCarla.discovery_win32:
             self.ui.ico_win32.setPixmap(self.fIconYes)
         else:
             self.ui.ico_win32.setPixmap(self.fIconNo)
             self.ui.ch_win32.setChecked(False)
             self.ui.ch_win32.setEnabled(False)
 
-        if Carla.discovery_win64:
+        if gCarla.discovery_win64:
             self.ui.ico_win64.setPixmap(self.fIconYes)
         else:
             self.ui.ico_win64.setPixmap(self.fIconNo)
@@ -978,35 +978,35 @@ class PluginRefreshW(QDialog):
         else:
             self.ui.ico_rdflib.setPixmap(self.fIconNo)
 
-        hasNative = bool(Carla.discovery_native)
+        hasNative = bool(gCarla.discovery_native)
         hasNonNative = False
 
         if WINDOWS:
             if kIs64bit:
-                hasNative = bool(Carla.discovery_win64)
-                hasNonNative = bool(Carla.discovery_win32)
-                self.fThread.setSearchToolNative(Carla.discovery_win64)
+                hasNative = bool(gCarla.discovery_win64)
+                hasNonNative = bool(gCarla.discovery_win32)
+                self.fThread.setSearchToolNative(gCarla.discovery_win64)
                 self.ui.ch_win64.setChecked(False)
                 self.ui.ch_win64.setVisible(False)
                 self.ui.ico_win64.setVisible(False)
                 self.ui.label_win64.setVisible(False)
             else:
-                hasNative = bool(Carla.discovery_win32)
-                hasNonNative = bool(Carla.discovery_win64)
-                self.fThread.setSearchToolNative(Carla.discovery_win32)
+                hasNative = bool(gCarla.discovery_win32)
+                hasNonNative = bool(gCarla.discovery_win64)
+                self.fThread.setSearchToolNative(gCarla.discovery_win32)
                 self.ui.ch_win32.setChecked(False)
                 self.ui.ch_win32.setVisible(False)
                 self.ui.ico_win32.setVisible(False)
                 self.ui.label_win32.setVisible(False)
         elif LINUX or MACOS:
             if kIs64bit:
-                hasNonNative = bool(Carla.discovery_posix32 or Carla.discovery_win32 or Carla.discovery_win64)
+                hasNonNative = bool(gCarla.discovery_posix32 or gCarla.discovery_win32 or gCarla.discovery_win64)
                 self.ui.ch_posix64.setChecked(False)
                 self.ui.ch_posix64.setVisible(False)
                 self.ui.ico_posix64.setVisible(False)
                 self.ui.label_posix64.setVisible(False)
             else:
-                hasNonNative = bool(Carla.discovery_posix64 or Carla.discovery_win32 or Carla.discovery_win64)
+                hasNonNative = bool(gCarla.discovery_posix64 or gCarla.discovery_win32 or gCarla.discovery_win64)
                 self.ui.ch_posix32.setChecked(False)
                 self.ui.ch_posix32.setVisible(False)
                 self.ui.ico_posix32.setVisible(False)
@@ -1445,14 +1445,14 @@ class PluginDatabaseW(QDialog):
         for plugins in internalPlugins:
             internalCount += len(plugins)
 
-        canRefreshInternals = not (Carla.isControl or Carla.isPlugin or Carla.host is None)
+        canRefreshInternals = not (gCarla.isControl or gCarla.isPlugin or gCarla.host is None)
 
-        if  canRefreshInternals and internalCount != Carla.host.get_internal_plugin_count():
-            internalCount   = Carla.host.get_internal_plugin_count()
+        if  canRefreshInternals and internalCount != gCarla.host.get_internal_plugin_count():
+            internalCount   = gCarla.host.get_internal_plugin_count()
             internalPlugins = []
 
-            for i in range(Carla.host.get_internal_plugin_count()):
-                descInfo = Carla.host.get_internal_plugin_info(i)
+            for i in range(gCarla.host.get_internal_plugin_count()):
+                descInfo = gCarla.host.get_internal_plugin_info(i)
                 plugins  = checkPluginInternal(descInfo)
 
                 if plugins:
