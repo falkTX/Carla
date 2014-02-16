@@ -540,14 +540,14 @@ class PluginEdit(QDialog):
     def reloadInfo(self):
         if gCarla.host is not None:
             pluginName     = gCarla.host.get_real_plugin_name(self.fPluginId)
-            audioCountInfo = gCarla.host.get_audio_port_count_info(self.fPluginId)
+            #audioCountInfo = gCarla.host.get_audio_port_count_info(self.fPluginId)
             midiCountInfo  = gCarla.host.get_midi_port_count_info(self.fPluginId)
-            paramCountInfo = gCarla.host.get_parameter_count_info(self.fPluginId)
+            #paramCountInfo = gCarla.host.get_parameter_count_info(self.fPluginId)
         else:
             pluginName     = ""
-            audioCountInfo = gFakePortCountInfo
+            #audioCountInfo = gFakePortCountInfo
             midiCountInfo  = gFakePortCountInfo
-            paramCountInfo = gFakePortCountInfo
+            #paramCountInfo = gFakePortCountInfo
 
         pluginHints = self.fPluginInfo['hints']
 
@@ -1385,7 +1385,7 @@ class PluginEdit(QDialog):
 # Main
 
 if __name__ == '__main__':
-    from carla_style import *
+    from carla_style import CarlaApplication
 
     app = CarlaApplication()
 

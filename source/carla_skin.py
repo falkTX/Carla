@@ -1158,7 +1158,7 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
                 continue
 
             paramName = charPtrToString(paramInfo['name'])
-            paramLow  = paramName.lower()
+            #paramLow  = paramName.lower()
 
             # real zyn fx plugins
             if self.fPluginInfo['label'] == "zynalienwah":
@@ -1322,7 +1322,7 @@ def createPluginSlot(parent, pluginId):
         return PluginSlot_Calf(parent, pluginId)
 
     return PluginSlot_BasicFX(parent, pluginId)
-    return PluginSlot_Default(parent, pluginId)
+    #return PluginSlot_Default(parent, pluginId)
 
 # ------------------------------------------------------------------------------------------------------------
 # Main Testing
