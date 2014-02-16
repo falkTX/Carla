@@ -112,7 +112,7 @@ class CarlaMultiW(QTabWidget):
         self.fRack.renamePlugin(pluginId, newName)
 
     def disablePlugin(self, pluginId, errorMsg):
-        self.fRack.disablePlugin(pluginId)
+        self.fRack.disablePlugin(pluginId, errorMsg)
 
     def removeAllPlugins(self):
         self.fRack.removeAllPlugins()
