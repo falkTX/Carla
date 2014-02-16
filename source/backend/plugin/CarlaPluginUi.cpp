@@ -174,7 +174,7 @@ private:
 
 // -----------------------------------------------------
 
-bool CarlaPluginUi::tryTransientWinIdMatch(const ulong pid, const char* const uiTitle, const uintptr_t winId)
+bool CarlaPluginUi::tryTransientWinIdMatch(const uintptr_t pid, const char* const uiTitle, const uintptr_t winId)
 {
     CARLA_SAFE_ASSERT_RETURN(uiTitle != nullptr && uiTitle[0] != '\0', true);
     CARLA_SAFE_ASSERT_RETURN(winId != 0, true);
@@ -244,7 +244,7 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const ulong pid, const char* const ui
                 CARLA_SAFE_ASSERT_CONTINUE(status == Success);
                 CARLA_SAFE_ASSERT_CONTINUE(pidSize != 0);
 
-                if (*(ulong*)pidData == pid)
+                if (*(ulong*)pidData == static_cast<ulong>(pid))
                 {
                     CARLA_SAFE_ASSERT_RETURN(lastGoodWindow == window || lastGoodWindow == 0,  true);
                     lastGoodWindow = window;

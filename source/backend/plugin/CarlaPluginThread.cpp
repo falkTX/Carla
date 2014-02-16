@@ -85,11 +85,11 @@ void CarlaPluginThread::setOscData(const char* const binary, const char* const l
     fExtra2 = extra2;
 }
 
-ulong CarlaPluginThread::getPid() const
+uintptr_t CarlaPluginThread::getPid() const
 {
     CARLA_SAFE_ASSERT_RETURN(fProcess != nullptr, 0);
 
-    return (ulong)fProcess->pid();
+    return (uintptr_t)fProcess->pid();
 }
 
 void CarlaPluginThread::run()

@@ -48,7 +48,7 @@ public:
     void setMode(const CarlaPluginThread::Mode mode);
     void setOscData(const char* const binary, const char* const label, const char* const extra1="", const char* const extra2="");
 
-    ulong getPid() const;
+    uintptr_t getPid() const;
 
 protected:
     void run() override;
