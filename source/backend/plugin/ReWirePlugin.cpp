@@ -18,6 +18,10 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
+#ifdef CARLA_OS_WIN64
+# undef WANT_REWIRE
+#endif
+
 #ifdef WANT_REWIRE
 
 #include "CarlaLibUtils.hpp"
