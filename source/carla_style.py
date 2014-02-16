@@ -188,7 +188,7 @@ class CarlaApplication(object):
             if WINDOWS: return
 
             self.fApp.setStyle("carla")
-            #QApplication.setStyle("carla")
+            QApplication.setStyle("carla")
 
             proThemeColor = settings.value("Main/ProThemeColor", "Black", type=str).lower()
 
