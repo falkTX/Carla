@@ -325,6 +325,7 @@ if WINDOWS:
         DEFAULT_DSSI_PATH   += ";" + PROGRAMFILESx86 + "\\DSSI"
         DEFAULT_VST_PATH    += ";" + PROGRAMFILESx86 + "\\VstPlugins"
         DEFAULT_VST_PATH    += ";" + PROGRAMFILESx86 + "\\Steinberg\\VstPlugins"
+
 elif HAIKU:
     splitter = ":"
 
@@ -342,6 +343,7 @@ elif HAIKU:
 
     DEFAULT_VST3_PATH    = HOME + "/.vst3"
     DEFAULT_VST3_PATH   += ":/boot/common/add-ons/vst3"
+
 elif MACOS:
     splitter = ":"
 
@@ -362,6 +364,7 @@ elif MACOS:
 
     DEFAULT_AU_PATH      = HOME + "/Library/Audio/Plug-Ins/Components"
     DEFAULT_AU_PATH     += ":/Library/Audio/Plug-Ins/Components"
+
 else:
     splitter = ":"
 
