@@ -25,8 +25,10 @@ QT5_STYLES_DIR   = $(shell pkg-config --variable=libdir Qt5Core)/qt5/plugins/sty
 endif
 
 ifeq ($(HAVE_QT4),true)
+QT_STYLES_DIR     = $(QT4_STYLES_DIR)
 SHARED_LINK_FLAGS = $(QT4_LINK_FLAGS)
 else
+QT_STYLES_DIR     = $(QT5_STYLES_DIR)
 SHARED_LINK_FLAGS = $(QT5_LINK_FLAGS)
 endif
 
@@ -154,8 +156,8 @@ debug:
 	$(MAKE) DEBUG=true
 
 install: $(CARLASTYLE) styles/carlastyle.json
-	install -d $(QT4_STYLES_DIR)
-	install -m 644 $^ $(QT4_STYLES_DIR)
+	install -d $(QT_STYLES_DIR)
+	install -m 644 $^ $(QT_STYLES_DIR)
 
 install-main: $(CARLASTYLE) styles/carlastyle.json
 	install -d $(STYLES_DIR)

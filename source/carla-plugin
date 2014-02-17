@@ -239,6 +239,9 @@ class PluginHost(object):
     def set_engine_option(self, option, value, valueStr):
         gCarla.gui.send(["set_engine_option", option, value, valueStr])
 
+    def set_file_callback(self, func):
+        pass
+
     # -------------------------------------------------------------------
 
     def set_file_callback(self, func):
@@ -289,8 +292,8 @@ class PluginHost(object):
 
     # -------------------------------------------------------------------
 
-    def add_plugin(self, btype, ptype, filename, name, label, extraPtr):
-        gCarla.gui.send(["add_plugin", btype, ptype, filename, name, label])
+    def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr):
+        gCarla.gui.send(["add_plugin", btype, ptype, filename, name, uniqueId, label])
         return True
 
     def remove_plugin(self, pluginId):
@@ -716,6 +719,9 @@ if __name__ == '__main__':
     # App initialization
 
     app = CarlaApplication("Carla2-Plugin")
+
+    if "__file__" in dir():
+        app.addLibraryPath(os.path.dirname(__file__))
 
     # -------------------------------------------------------------
     # Set-up custom signal handling

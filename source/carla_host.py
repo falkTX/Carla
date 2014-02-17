@@ -162,8 +162,7 @@ class HostWindow(QMainWindow):
 
         if gCarla.host is not None:
             gCarla.host.set_engine_callback(engineCallback)
-
-        gCarla.host.set_file_callback(fileCallback)
+            gCarla.host.set_file_callback(fileCallback)
 
         # -------------------------------------------------------------
         # Internal stuff

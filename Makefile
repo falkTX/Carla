@@ -31,7 +31,7 @@ all: CXX RES UI WIDGETS
 # C++ code (native)
 
 ifeq ($(HAVE_JUCE),true)
-CXX: backend bridges discovery plugin theme
+CXX: backend bridges discovery plugin plugin_ui theme
 else
 CXX: backend bridges discovery theme
 endif
@@ -47,6 +47,10 @@ discovery:
 
 plugin:
 	$(MAKE) -C source/plugin
+
+plugin_ui: source/carla-plugin source/*.py RES UI WIDGETS
+	$(LINK) $(CURDIR)/source/carla-plugin source/modules/native-plugins/resources/
+	$(LINK) $(CURDIR)/source/*.py         source/modules/native-plugins/resources/
 
 theme:
 	$(MAKE) -C source/modules/theme
@@ -163,6 +167,9 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/nekofilter/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/zynaddsubfx/
 	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/
+	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/
+	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/nekofilter/
+	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/zynaddsubfx/
 	install -d $(DESTDIR)$(PREFIX)/lib/pkgconfig/
 	install -d $(DESTDIR)$(PREFIX)/include/carla/
 	install -d $(DESTDIR)$(PREFIX)/include/carla/includes/
@@ -182,10 +189,10 @@ install:
 		data/carla-patchbay \
 		data/carla-rack \
 		data/carla-settings \
-		data/carla-single \
 		$(DESTDIR)$(PREFIX)/bin/
 
 # 		data/carla-control \
+# 		data/carla-single \
 
 	# Install desktop files
 	install -m 644 data/*.desktop $(DESTDIR)$(PREFIX)/share/applications/
@@ -213,7 +220,7 @@ install:
 	# Install mime package
 	install -m 644 data/carla.xml $(DESTDIR)$(PREFIX)/share/mime/packages/
 
-	# Install pkgconfig file
+	# Install pkg-config file
 	install -m 644 data/carla-standalone.pc $(DESTDIR)$(PREFIX)/lib/pkgconfig/
 
 	# Install backend
@@ -227,7 +234,7 @@ install:
 		source/discovery/carla-discovery-* \
 		$(DESTDIR)$(PREFIX)/lib/carla/
 
-	# Install plugin
+	# Install lv2 plugin
 	install -m 644 \
 		source/plugin/carla-native.lv2/*.so \
 		source/plugin/carla-native.lv2/*.ttl \
@@ -249,15 +256,23 @@ install:
 	install -m 644 source/backend/CarlaHost.h     $(DESTDIR)$(PREFIX)/include/carla/
 	install -m 644 source/includes/CarlaDefines.h $(DESTDIR)$(PREFIX)/include/carla/includes/
 
-	# Install resources
+	# Install resources (main)
 	install -m 755 source/modules/native-plugins/resources/carla-plugin      $(DESTDIR)$(PREFIX)/lib/carla/resources/
 	install -m 755 source/modules/native-plugins/resources/*-ui              $(DESTDIR)$(PREFIX)/lib/carla/resources/
 	install -m 644 source/modules/native-plugins/resources/*.py              $(DESTDIR)$(PREFIX)/lib/carla/resources/
 	install -m 644 source/modules/native-plugins/resources/nekofilter/*.png  $(DESTDIR)$(PREFIX)/lib/carla/resources/nekofilter/
 	install -m 644 source/modules/native-plugins/resources/zynaddsubfx/*.png $(DESTDIR)$(PREFIX)/lib/carla/resources/zynaddsubfx/
 
+	# Install resources (lv2 plugin)
+	install -m 755 source/modules/native-plugins/resources/carla-plugin      $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/
+	install -m 755 source/modules/native-plugins/resources/*-ui              $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/
+	install -m 644 source/modules/native-plugins/resources/*.py              $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/
+	install -m 644 source/modules/native-plugins/resources/nekofilter/*.png  $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/nekofilter/
+	install -m 644 source/modules/native-plugins/resources/zynaddsubfx/*.png $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/zynaddsubfx/
+
 	# Install theme
-	$(MAKE) STYLES_DIR=$(DESTDIR)$(PREFIX)/lib/carla/styles install-main -C source/modules/theme
+	$(MAKE) STYLES_DIR=$(DESTDIR)$(PREFIX)/lib/carla/styles                          install-main -C source/modules/theme
+	$(MAKE) STYLES_DIR=$(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/styles install-main -C source/modules/theme
 
 	# Adjust PREFIX value in script files
 	sed -i "s/X-PREFIX-X/$(SED_PREFIX)/" \
@@ -271,15 +286,11 @@ install:
 # 		$(DESTDIR)$(PREFIX)/bin/carla-single \
 # 		$(DESTDIR)$(PREFIX)/bin/carla-control \
 
-	# Set plugin resources
-	cd $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/ && \
-		$(RM) -r resources && \
-		$(LINK) $(PREFIX)/lib/carla/resources/ .
-
 # --------------------------------------------------------------
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/carla*
+	rm -f $(DESTDIR)$(PREFIX)/lib/pkgconfig/carla-standalone.pc
 	rm -f $(DESTDIR)$(PREFIX)/share/applications/carla.desktop
 	rm -f $(DESTDIR)$(PREFIX)/share/applications/carla-control.desktop
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/*/apps/carla.png
@@ -287,10 +298,9 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/carla.svg
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/carla-control.svg
 	rm -f $(DESTDIR)$(PREFIX)/share/mime/packages/carla.xml
-	rm -f $(DESTDIR)$(PREFIX)/lib/dssi/carla-dssi.so
-	rm -f $(DESTDIR)$(PREFIX)/lib/vst/carla-vst.so
+	rm -rf $(DESTDIR)$(PREFIX)/include/carla/
 	rm -rf $(DESTDIR)$(PREFIX)/lib/carla/
-	rm -rf $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
+	rm -rf $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/
 	rm -rf $(DESTDIR)$(PREFIX)/share/carla/
 
 # --------------------------------------------------------------
