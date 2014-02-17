@@ -266,9 +266,9 @@ install:
 		$(DESTDIR)$(PREFIX)/bin/carla-patchbay \
 		$(DESTDIR)$(PREFIX)/bin/carla-rack \
 		$(DESTDIR)$(PREFIX)/bin/carla-settings \
-		$(DESTDIR)$(PREFIX)/bin/carla-single \
 		$(DESTDIR)$(PREFIX)/lib/pkgconfig/carla-standalone.pc
 
+# 		$(DESTDIR)$(PREFIX)/bin/carla-single \
 # 		$(DESTDIR)$(PREFIX)/bin/carla-control \
 
 	# Set plugin resources
