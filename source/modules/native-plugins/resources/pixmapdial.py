@@ -1,1 +1,0 @@
-../../../pixmapdial.py
