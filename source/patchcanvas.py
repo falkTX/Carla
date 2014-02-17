@@ -935,6 +935,19 @@ def updateZValues():
         if group.split and group.widgets[1]:
             group.widgets[1].resetLinesZValue()
 
+def handlePluginRemoved(plugin_id):
+    if canvas.debug:
+        qDebug("PatchCanvas::handlePluginRemoved(%i)" % plugin_id)
+
+    for group in canvas.group_list:
+        if group.widgets[0].m_plugin_id < plugin_id:
+            continue
+
+        group.widgets[0].m_plugin_id -= 1
+
+        if group.split and group.widgets[1]:
+            group.widgets[1].m_plugin_id -= 1
+
 # Extra Internal functions
 
 def CanvasGetGroupName(group_id):

@@ -217,6 +217,8 @@ class CarlaPatchbayW(QFrame):
             gCarla.host.set_active(pluginId, True)
 
     def removePlugin(self, pluginId):
+        patchcanvas.handlePluginRemoved(pluginId)
+
         if not self.fIsOnlyPatchbay:
             self.fPluginCount -= 1
             return
