@@ -317,8 +317,8 @@ class CarlaPatchbayW(QFrame):
         QTimer.singleShot(1000, self.slot_canvasRefresh)
 
     def saveSettings(self, settings):
-        settings.setValue("ShowMeters", self.fPeaksIn.isVisible())
-        settings.setValue("ShowKeyboard", self.fKeys.isVisible())
+        settings.setValue("ShowMeters", self.fParent.ui.act_settings_show_meters.isChecked())
+        settings.setValue("ShowKeyboard", self.fParent.ui.act_settings_show_keyboard.isChecked())
         settings.setValue("HorizontalScrollBarValue", self.fView.horizontalScrollBar().value())
         settings.setValue("VerticalScrollBarValue", self.fView.verticalScrollBar().value())
 
