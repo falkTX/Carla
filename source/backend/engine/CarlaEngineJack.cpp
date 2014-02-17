@@ -421,12 +421,12 @@ public:
                 port = jackbridge_port_register(fClient, name, JACK_DEFAULT_MIDI_TYPE, isInput ? JackPortIsInput : JackPortIsOutput, 0);
                 break;
             }
-        }
 
-        if (port == nullptr)
-        {
-            carla_stderr("CarlaEngineJackClient::addPort(%s, \"%s\", %s) - failed to create JACK port", EnginePortType2Str(portType), name, bool2str(isInput));
-            return nullptr;
+            if (port == nullptr)
+            {
+                carla_stderr("CarlaEngineJackClient::addPort(%s, \"%s\", %s) - failed to create JACK port", EnginePortType2Str(portType), name, bool2str(isInput));
+                return nullptr;
+            }
         }
 
         // Create Engine port

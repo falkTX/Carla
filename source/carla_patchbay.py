@@ -274,6 +274,8 @@ class CarlaPatchbayW(QFrame):
 
         self.clearSideStuff()
 
+        patchcanvas.handlePluginRemoved(0)
+
     # -----------------------------------------------------------------
 
     def engineStarted(self):
