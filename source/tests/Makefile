@@ -56,7 +56,7 @@ ansi-pedantic-test_cxx11: ansi-pedantic-test.c ../backend/Carla*.h
 
 CarlaString: CarlaString.cpp ../utils/CarlaString.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
-	valgrind ./$@
+	valgrind --leak-check=full ./$@
 
 Engine: Engine.cpp
 	$(CXX) $< \

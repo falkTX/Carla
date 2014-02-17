@@ -38,16 +38,15 @@ public:
     /*
      * Empty string.
      */
-    explicit CarlaString()
+    explicit CarlaString() noexcept
     {
         _init();
-        _dup(nullptr);
     }
 
     /*
      * Simple character.
      */
-    explicit CarlaString(const char c)
+    explicit CarlaString(const char c) noexcept
     {
         char ch[2];
         ch[0] = c;
@@ -60,7 +59,7 @@ public:
     /*
      * Simple char string.
      */
-    explicit CarlaString(char* const strBuf)
+    explicit CarlaString(char* const strBuf) noexcept
     {
         _init();
         _dup(strBuf);
@@ -69,7 +68,7 @@ public:
     /*
      * Simple const char string.
      */
-    explicit CarlaString(const char* const strBuf)
+    explicit CarlaString(const char* const strBuf) noexcept
     {
         _init();
         _dup(strBuf);
@@ -78,7 +77,7 @@ public:
     /*
      * Integer.
      */
-    explicit CarlaString(const int value)
+    explicit CarlaString(const int value) noexcept
     {
         char strBuf[0xff+1];
         carla_zeroChar(strBuf, 0xff+1);
@@ -91,7 +90,7 @@ public:
     /*
      * Unsigned integer, possibly in hexadecimal.
      */
-    explicit CarlaString(const unsigned int value, const bool hexadecimal = false)
+    explicit CarlaString(const uint value, const bool hexadecimal = false) noexcept
     {
         char strBuf[0xff+1];
         carla_zeroChar(strBuf, 0xff+1);
@@ -104,7 +103,7 @@ public:
     /*
      * Long integer.
      */
-    explicit CarlaString(const long int value)
+    explicit CarlaString(const long value) noexcept
     {
         char strBuf[0xff+1];
         carla_zeroChar(strBuf, 0xff+1);
@@ -117,7 +116,7 @@ public:
     /*
      * Long unsigned integer, possibly hexadecimal.
      */
-    explicit CarlaString(const unsigned long int value, const bool hexadecimal = false)
+    explicit CarlaString(const ulong value, const bool hexadecimal = false) noexcept
     {
         char strBuf[0xff+1];
         carla_zeroChar(strBuf, 0xff+1);
@@ -130,7 +129,7 @@ public:
     /*
      * Long long integer.
      */
-    explicit CarlaString(const long long int value)
+    explicit CarlaString(const long long value) noexcept
     {
         char strBuf[0xff+1];
         carla_zeroChar(strBuf, 0xff+1);
@@ -143,7 +142,7 @@ public:
     /*
      * Long long unsigned integer, possibly hexadecimal.
      */
-    explicit CarlaString(const unsigned long long int value, const bool hexadecimal = false)
+    explicit CarlaString(const unsigned long long value, const bool hexadecimal = false) noexcept
     {
         char strBuf[0xff+1];
         carla_zeroChar(strBuf, 0xff+1);
@@ -156,7 +155,7 @@ public:
     /*
      * Single-precision floating point number.
      */
-    explicit CarlaString(const float value)
+    explicit CarlaString(const float value) noexcept
     {
         char strBuf[0xff+1];
         carla_zeroChar(strBuf, 0xff+1);
@@ -169,7 +168,7 @@ public:
     /*
      * Double-precision floating point number.
      */
-    explicit CarlaString(const double value)
+    explicit CarlaString(const double value) noexcept
     {
         char strBuf[0xff+1];
         carla_zeroChar(strBuf, 0xff+1);
@@ -185,7 +184,7 @@ public:
     /*
      * Create string from another string.
      */
-    CarlaString(const CarlaString& str)
+    CarlaString(const CarlaString& str) noexcept
     {
         _init();
         _dup(str.fBuffer);
@@ -197,11 +196,17 @@ public:
     /*
      * Destructor.
      */
-    ~CarlaString()
+    ~CarlaString() noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
 
-        delete[] fBuffer;
+        if (fBuffer == _null())
+            return;
+
+        try {
+            delete[] fBuffer;
+        } catch(...) {}
+
         fBuffer = nullptr;
     }
 
@@ -235,7 +240,7 @@ public:
     /*
      * Check if the string contains another string, optionally ignoring case.
      */
-    bool contains(const char* const strBuf, const bool ignoreCase = false) const
+    bool contains(const char* const strBuf, const bool ignoreCase = false) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(strBuf != nullptr, false);
 
@@ -245,6 +250,11 @@ public:
             return (strcasestr(fBuffer, strBuf) != nullptr);
 #else
             CarlaString tmp1(fBuffer), tmp2(strBuf);
+
+            // memory allocation failed or empty string(s)
+            if (tmp1.fBuffer == _null() || tmp2.fBuffer == _null())
+                return false;
+
             tmp1.toLower();
             tmp2.toLower();
             return (std::strstr((const char*)tmp1, (const char*)tmp2) != nullptr);
@@ -257,7 +267,7 @@ public:
     /*
      * Overloaded function.
      */
-    bool contains(const CarlaString& str, const bool ignoreCase = false) const
+    bool contains(const CarlaString& str, const bool ignoreCase = false) const noexcept
     {
         return contains(str.fBuffer, ignoreCase);
     }
@@ -298,6 +308,14 @@ public:
     }
 
     /*
+     * Check if the string starts with the string 'prefix'.
+     */
+    bool startsWith(const CarlaString& prefix) const noexcept
+    {
+        return startsWith(prefix.fBuffer);
+    }
+
+    /*
      * Check if the string ends with the character 'c'.
      */
     bool endsWith(const char c) const noexcept
@@ -320,6 +338,14 @@ public:
             return false;
 
         return (std::strncmp(fBuffer + (fBufferLen-suffixLen), suffix, suffixLen) == 0);
+    }
+
+    /*
+     * Check if the string ends with the string 'suffix'.
+     */
+    bool endsWith(const CarlaString& suffix) const noexcept
+    {
+        return endsWith(suffix.fBuffer);
     }
 
     /*
@@ -467,8 +493,6 @@ public:
         {
             if (fBuffer[i] == before)
                 fBuffer[i] = after;
-            else if (fBuffer[i] == '\0')
-                break;
         }
     }
 
@@ -535,6 +559,14 @@ public:
     }
 
     /*
+     * Direct access to the string buffer (read-only).
+     */
+    const char* buffer() const noexcept
+    {
+        return fBuffer;
+    }
+
+    /*
      * Return a duplicate string buffer.
      */
     const char* dup() const
@@ -542,31 +574,25 @@ public:
         return carla_strdup(fBuffer);
     }
 
-    /*
-     * Direct access to the string buffer.
-     */
-    const char* getBuffer() const noexcept
-    {
-        return fBuffer;
-    }
-
     // -------------------------------------------------------------------
     // public operators
 
+#if 0
     operator const char*() const noexcept
     {
         return fBuffer;
     }
+#endif
 
     char& operator[](const size_t pos) const noexcept
     {
         if (pos < fBufferLen)
             return fBuffer[pos];
 
-        static char rfallback;
-        rfallback = '\0';
+        static char fallback;
+        fallback = '\0';
         carla_safe_assert("pos < fBufferLen", __FILE__, __LINE__);
-        return rfallback;
+        return fallback;
     }
 
     bool operator==(const char* const strBuf) const noexcept
@@ -589,19 +615,19 @@ public:
         return !operator==(str.fBuffer);
     }
 
-    CarlaString& operator=(const char* const strBuf)
+    CarlaString& operator=(const char* const strBuf) noexcept
     {
         _dup(strBuf);
 
         return *this;
     }
 
-    CarlaString& operator=(const CarlaString& str)
+    CarlaString& operator=(const CarlaString& str) noexcept
     {
         return operator=(str.fBuffer);
     }
 
-    CarlaString& operator+=(const char* const strBuf)
+    CarlaString& operator+=(const char* const strBuf) noexcept
     {
         if (strBuf == nullptr)
             return *this;
@@ -617,12 +643,12 @@ public:
         return *this;
     }
 
-    CarlaString& operator+=(const CarlaString& str)
+    CarlaString& operator+=(const CarlaString& str) noexcept
     {
         return operator+=(str.fBuffer);
     }
 
-    CarlaString operator+(const char* const strBuf)
+    CarlaString operator+(const char* const strBuf) noexcept
     {
         const size_t newBufSize = fBufferLen + ((strBuf != nullptr) ? std::strlen(strBuf) : 0) + 1;
         char         newBuf[newBufSize];
@@ -635,7 +661,7 @@ public:
         return CarlaString(newBuf);
     }
 
-    CarlaString operator+(const CarlaString& str)
+    CarlaString operator+(const CarlaString& str) noexcept
     {
         return operator+(str.fBuffer);
     }
@@ -645,7 +671,16 @@ public:
 private:
     char*  fBuffer;    // the actual string buffer
     size_t fBufferLen; // string length
-    bool   fFirstInit; // true when first initiated
+
+    /*
+     * Static null string.
+     * Prevents excessive allocations for empty strings.
+     */
+    static char* _null() noexcept
+    {
+        static char sNull = '\0';
+        return &sNull;
+    }
 
     /*
      * Shared init function.
@@ -653,9 +688,8 @@ private:
      */
     void _init() noexcept
     {
-        fBuffer    = nullptr;
+        fBuffer    = _null();
         fBufferLen = 0;
-        fFirstInit = true;
     }
 
     /*
@@ -663,51 +697,50 @@ private:
      * Called whenever the string needs to be allocated.
      *
      * Notes:
-     * - Allocates string only if first initiated, or if 'strBuf' is not null and new string contents are different
+     * - Allocates string only if 'strBuf' is not null and new string contents are different
      * - If 'strBuf' is null 'size' must be 0
      */
-    void _dup(const char* const strBuf, const size_t size = 0)
+    void _dup(const char* const strBuf, const size_t size = 0) noexcept
     {
         if (strBuf != nullptr)
         {
             // don't recreate string if contents match
-            if (fFirstInit || std::strcmp(fBuffer, strBuf) != 0)
+            if (std::strcmp(fBuffer, strBuf) == 0)
+                return;
+
+            if (fBuffer != _null())
             {
-                if (! fFirstInit)
-                {
-                    CARLA_SAFE_ASSERT(fBuffer != nullptr);
+                try {
                     delete[] fBuffer;
-                }
-
-                fBufferLen = (size > 0) ? size : std::strlen(strBuf);
-                fBuffer    = new char[fBufferLen+1];
-
-                std::strcpy(fBuffer, strBuf);
-
-                fBuffer[fBufferLen] = '\0';
-
-                fFirstInit = false;
+                } catch(...) {}
             }
+
+            fBufferLen = (size > 0) ? size : std::strlen(strBuf);
+
+            try {
+                fBuffer = new char[fBufferLen+1];
+            }
+            catch(...) {
+                _init();
+                return;
+            }
+
+            std::strcpy(fBuffer, strBuf);
+
+            fBuffer[fBufferLen] = '\0';
         }
         else
         {
             CARLA_SAFE_ASSERT(size == 0);
 
             // don't recreate null string
-            if (fFirstInit || fBufferLen != 0)
-            {
-                if (! fFirstInit)
-                {
-                    CARLA_SAFE_ASSERT(fBuffer != nullptr);
-                    delete[] fBuffer;
-                }
+            if (fBuffer == _null())
+                return;
 
-                fBufferLen = 0;
-                fBuffer    = new char[1];
-                fBuffer[0] = '\0';
+            CARLA_SAFE_ASSERT(fBuffer != nullptr);
+            delete[] fBuffer;
 
-                fFirstInit = false;
-            }
+            _init();
         }
     }
 
@@ -718,9 +751,9 @@ private:
 // -----------------------------------------------------------------------
 
 static inline
-CarlaString operator+(const CarlaString& strBefore, const char* const strBufAfter)
+CarlaString operator+(const CarlaString& strBefore, const char* const strBufAfter) noexcept
 {
-    const char* const strBufBefore = (const char*)strBefore;
+    const char* const strBufBefore = strBefore.buffer();
     const size_t      newBufSize   = strBefore.length() + ((strBufAfter != nullptr) ? std::strlen(strBufAfter) : 0) + 1;
     char newBuf[newBufSize];
 
@@ -731,9 +764,9 @@ CarlaString operator+(const CarlaString& strBefore, const char* const strBufAfte
 }
 
 static inline
-CarlaString operator+(const char* const strBufBefore, const CarlaString& strAfter)
+CarlaString operator+(const char* const strBufBefore, const CarlaString& strAfter) noexcept
 {
-    const char* const strBufAfter = (const char*)strAfter;
+    const char* const strBufAfter = strAfter.buffer();
     const size_t      newBufSize  = ((strBufBefore != nullptr) ? std::strlen(strBufBefore) : 0) + strAfter.length() + 1;
     char newBuf[newBufSize];
 
