@@ -320,12 +320,14 @@ class HostWindow(QMainWindow):
         dialog = CarlaSettingsW(self, hasCanvas, hasCanvasGL)
         return dialog.exec_()
 
-    def setupContainer(self, showMiniCanvas, canvasThemeData = []):
-        if showMiniCanvas:
+    def setupContainer(self, showCanvas, canvasThemeData = []):
+        if showCanvas:
             canvasWidth, canvasHeight, canvasBg, canvasBrush, canvasPen = canvasThemeData
             self.ui.miniCanvasPreview.setViewTheme(canvasBg, canvasBrush, canvasPen)
             self.ui.miniCanvasPreview.init(self.fContainer.scene, canvasWidth, canvasHeight, self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING])
         else:
+            self.ui.act_settings_show_meters.setVisible(False)
+            self.ui.act_settings_show_keyboard.setVisible(False)
             self.ui.miniCanvasPreview.hide()
 
         self.ui.splitter.insertWidget(1, self.fContainer)
