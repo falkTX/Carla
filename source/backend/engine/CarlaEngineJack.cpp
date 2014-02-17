@@ -1800,7 +1800,7 @@ private:
             groupNameToId.setData(fLastGroupId++, ourName);
             fUsedGroupNames.append(groupNameToId);
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, 0 /* our client */, PATCHBAY_ICON_CARLA, 0, 0.0f, ourName);
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, 0 /* our client */, PATCHBAY_ICON_CARLA, -1, 0.0f, ourName);
         }
 
         if (const char** const ports = jackbridge_get_ports(fClient, nullptr, nullptr, 0))

@@ -116,6 +116,7 @@ class CarlaMultiW(QTabWidget):
 
     def removeAllPlugins(self):
         self.fRack.removeAllPlugins()
+        self.fPatchbay.removeAllPlugins()
 
     # -----------------------------------------------------------------
 

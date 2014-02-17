@@ -219,6 +219,9 @@ class CarlaPatchbayW(QFrame):
     def removePlugin(self, pluginId):
         patchcanvas.handlePluginRemoved(pluginId)
 
+        if pluginId in self.fSelectedPlugins:
+            self.clearSideStuff()
+
         if not self.fIsOnlyPatchbay:
             self.fPluginCount -= 1
             return
@@ -260,17 +263,16 @@ class CarlaPatchbayW(QFrame):
             return
 
     def removeAllPlugins(self):
-        for i in range(self.fPluginCount):
-            pitem = self.fPluginList[i]
-
+        for pitem in self.fPluginList:
             if pitem is None:
                 break
-
             pitem.close()
             del pitem
 
         self.fPluginCount = 0
         self.fPluginList  = []
+
+        self.clearSideStuff()
 
     # -----------------------------------------------------------------
 
@@ -286,6 +288,9 @@ class CarlaPatchbayW(QFrame):
     # -----------------------------------------------------------------
 
     def idleFast(self):
+        if self.fPluginCount == 0:
+            return
+
         for pluginId in self.fSelectedPlugins:
             self.fPeaksCleared = False
             if self.fPeaksIn.isVisible():
@@ -295,6 +300,7 @@ class CarlaPatchbayW(QFrame):
                 self.fPeaksOut.displayMeter(1, gCarla.host.get_output_peak_value(pluginId, True))
                 self.fPeaksOut.displayMeter(2, gCarla.host.get_output_peak_value(pluginId, False))
             return
+
         if self.fPeaksCleared:
             return
 
@@ -305,12 +311,9 @@ class CarlaPatchbayW(QFrame):
         self.fPeaksOut.displayMeter(2, 0.0, True)
 
     def idleSlow(self):
-        for i in range(self.fPluginCount):
-            pitem = self.fPluginList[i]
-
+        for pitem in self.fPluginList:
             if pitem is None:
                 break
-
             pitem.idleSlow()
 
     # -----------------------------------------------------------------
@@ -344,6 +347,20 @@ class CarlaPatchbayW(QFrame):
         pass
 
     # -----------------------------------------------------------------
+
+    def clearSideStuff(self):
+        self.scene.clearSelection()
+
+        self.fSelectedPlugins = []
+
+        self.fKeys.keyboard.allNotesOff(False)
+        self.fKeys.setEnabled(False)
+
+        self.fPeaksCleared = True
+        self.fPeaksIn.displayMeter(1, 0.0, True)
+        self.fPeaksIn.displayMeter(2, 0.0, True)
+        self.fPeaksOut.displayMeter(1, 0.0, True)
+        self.fPeaksOut.displayMeter(2, 0.0, True)
 
     def setupCanvas(self):
         pOptions = patchcanvas.options_t()
@@ -450,7 +467,7 @@ class CarlaPatchbayW(QFrame):
     @pyqtSlot(list)
     def slot_canvasPluginSelected(self, pluginList):
         self.fKeys.keyboard.allNotesOff(False)
-        self.fKeys.setEnabled(len(pluginList) != 0)
+        self.fKeys.setEnabled(len(pluginList) != 0) # and self.fPluginCount > 0
         self.fSelectedPlugins = pluginList
 
     @pyqtSlot(float, float)

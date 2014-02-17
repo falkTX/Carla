@@ -953,6 +953,9 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     {
         ++pData->curPluginCount;
         callback(ENGINE_CALLBACK_PLUGIN_ADDED, id, 0, 0, 0.0f, plugin->getName());
+
+        if (pData->curPluginCount == 1 && pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED, 0, PATCHBAY_ICON_CARLA, 0, 0.0f, nullptr);
     }
 
     return true;
