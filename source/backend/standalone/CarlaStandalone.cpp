@@ -1418,7 +1418,7 @@ const char* carla_get_chunk_data(uint pluginId)
             {
                 chunkData = QByteArray((char*)data, dataSize).toBase64().constData();
 
-                return (const char*)chunkData;
+                return chunkData;
             }
             else
                 carla_stderr2("carla_get_chunk_data(%i) - got invalid chunk data", pluginId);

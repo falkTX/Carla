@@ -68,7 +68,7 @@ struct BridgeAudioPool {
 
     bool attach()
     {
-        jackbridge_shm_attach(shm, filename.getBuffer());
+        jackbridge_shm_attach(shm, filename);
 
         return jackbridge_shm_is_valid(shm);
     }
@@ -107,7 +107,7 @@ struct BridgeControl : public RingBufferControl<StackRingBuffer> {
 
     bool attach()
     {
-        jackbridge_shm_attach(shm, filename.getBuffer());
+        jackbridge_shm_attach(shm, filename);
 
         return jackbridge_shm_is_valid(shm);
     }

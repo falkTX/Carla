@@ -2219,9 +2219,9 @@ public:
             bridgeBinary = "";
 #endif
 
-            if (QFile(bridgeBinary.getBuffer()).exists())
+            if (QFile(bridgeBinary.buffer()).exists())
             {
-                pData->osc.thread.setOscData(bridgeBinary.getBuffer(), nullptr);
+                pData->osc.thread.setOscData(bridgeBinary, nullptr);
                 fUi.isOsc = true;
             }
         }

@@ -745,7 +745,7 @@ protected:
             // there seems to be a problem with this...
             tmpName[4] = '0' + ((index-1+24) / 24);
 #else
-            char* tmpBuf(const_cast<char*>(tmpName.getBuffer()));
+            char* tmpBuf(const_cast<char*>(tmpName.buffer()));
             tmpBuf[4] = '0' + ((index-1+24) / 24);
 #endif
 

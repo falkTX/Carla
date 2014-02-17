@@ -166,14 +166,14 @@ void CarlaPluginThread::run()
     case PLUGIN_THREAD_DSSI_GUI:
         /* osc-url  */ arguments << QString("%1/%2").arg(fEngine->getOscServerPathUDP()).arg(fPlugin->getId());
         /* filename */ arguments << fPlugin->getFilename();
-        /* label    */ arguments << fLabel.getBuffer();
+        /* label    */ arguments << fLabel.buffer();
         /* ui-title */ arguments << QString("%1 (GUI)").arg(fPlugin->getName());
         break;
 
     case PLUGIN_THREAD_LV2_GUI:
         /* osc-url  */ arguments << QString("%1/%2").arg(fEngine->getOscServerPathUDP()).arg(fPlugin->getId());
-        /* URI      */ arguments << fLabel.getBuffer();
-        /* ui-URI   */ arguments << fExtra1.getBuffer();
+        /* URI      */ arguments << fLabel.buffer();
+        /* ui-URI   */ arguments << fExtra1.buffer();
         /* ui-title */ arguments << QString("%1 (GUI)").arg(fPlugin->getName());
         break;
 
@@ -184,17 +184,17 @@ void CarlaPluginThread::run()
         break;
 
     case PLUGIN_THREAD_BRIDGE:
-        env.insert("ENGINE_BRIDGE_SHM_IDS", fExtra2.getBuffer());
+        env.insert("ENGINE_BRIDGE_SHM_IDS", fExtra2.buffer());
         env.insert("ENGINE_BRIDGE_CLIENT_NAME", name);
         env.insert("ENGINE_BRIDGE_OSC_URL", QString("%1/%2").arg(fEngine->getOscServerPathUDP()).arg(fPlugin->getId()));
 
         if (fPlugin->getType() != PLUGIN_JACK)
         {
             /* osc-url  */ arguments << QString("%1/%2").arg(fEngine->getOscServerPathUDP()).arg(fPlugin->getId());
-            /* stype    */ arguments << fExtra1.getBuffer();
+            /* stype    */ arguments << fExtra1.buffer();
             /* filename */ arguments << fPlugin->getFilename();
             /* name     */ arguments << name;
-            /* label    */ arguments << fLabel.getBuffer();
+            /* label    */ arguments << fLabel.buffer();
             /* uniqueId */ arguments << QString("%1").arg(fPlugin->getUniqueId());
         }
         else
@@ -211,7 +211,7 @@ void CarlaPluginThread::run()
     carla_stdout("starting app..");
     qWarning() << arguments;
 
-    fProcess->start((const char*)fBinary, arguments);
+    fProcess->start(fBinary.buffer(), arguments);
     fProcess->waitForStarted();
 
     switch (fMode)
@@ -291,7 +291,7 @@ void CarlaPluginThread::run()
                 CarlaString errorString("Plugin '" + CarlaString(fPlugin->getName()) + "' has crashed!\n"
                                         "Saving now will lose its current settings.\n"
                                         "Please remove this plugin, and not rely on it from this point.");
-                fEngine->callback(CarlaBackend::ENGINE_CALLBACK_ERROR, fPlugin->getId(), 0, 0, 0.0f, (const char*)errorString);
+                fEngine->callback(CarlaBackend::ENGINE_CALLBACK_ERROR, fPlugin->getId(), 0, 0, 0.0f, errorString);
             }
         }
         break;

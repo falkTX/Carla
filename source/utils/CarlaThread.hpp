@@ -90,7 +90,7 @@ public:
         {
 #if defined(__GLIBC__) && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012
             if (fName.isNotEmpty())
-                pthread_setname_np(threadId, fName.getBuffer());
+                pthread_setname_np(threadId, fName);
 #endif
             pthread_detach(threadId);
 

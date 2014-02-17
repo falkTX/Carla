@@ -135,9 +135,9 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
     const size_t nameSize(fName.length());
 
     // Check if message is for this client
-    if (std::strlen(path) <= nameSize || std::strncmp(path+1, (const char*)fName, nameSize) != 0)
+    if (std::strlen(path) <= nameSize || std::strncmp(path+1, fName, nameSize) != 0)
     {
-        carla_stderr("CarlaBridgeOsc::handleMessage() - message not for this client -> '%s' != '/%s/'", path, (const char*)fName);
+        carla_stderr("CarlaBridgeOsc::handleMessage() - message not for this client -> '%s' != '/%s/'", path, fName.buffer());
         return 1;
     }
 

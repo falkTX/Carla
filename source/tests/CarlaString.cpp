@@ -237,7 +237,7 @@ int main()
     assert(str5.rfind("haha!", &found) == str5.length());
     assert(! found);
 
-    printf("FINAL: \"%s\"\n", (const char*)str5);
+    printf("FINAL: \"%s\"\n", str5.buffer());
 
     // clear
     str.clear();

@@ -387,22 +387,22 @@ public:
 
     void getLabel(char* const strBuf) const noexcept override
     {
-        std::strncpy(strBuf, fInfo.label.getBuffer(), STR_MAX);
+        std::strncpy(strBuf, fInfo.label, STR_MAX);
     }
 
     void getMaker(char* const strBuf) const noexcept override
     {
-        std::strncpy(strBuf, fInfo.maker.getBuffer(), STR_MAX);
+        std::strncpy(strBuf, fInfo.maker, STR_MAX);
     }
 
     void getCopyright(char* const strBuf) const noexcept override
     {
-        std::strncpy(strBuf, fInfo.copyright.getBuffer(), STR_MAX);
+        std::strncpy(strBuf, fInfo.copyright, STR_MAX);
     }
 
     void getRealName(char* const strBuf) const noexcept override
     {
-        std::strncpy(strBuf, fInfo.name.getBuffer(), STR_MAX);
+        std::strncpy(strBuf, fInfo.name, STR_MAX);
     }
 
     void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
@@ -1669,7 +1669,7 @@ public:
 
     const void* getExtraStuff() const noexcept override
     {
-        return fBridgeBinary.isNotEmpty() ? fBridgeBinary.getBuffer() : nullptr;
+        return fBridgeBinary.isNotEmpty() ? fBridgeBinary.buffer() : nullptr;
     }
 
     bool init(const char* const filename, const char* const name, const char* const label, const char* const bridgeBinary)

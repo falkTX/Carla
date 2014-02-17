@@ -445,7 +445,7 @@ public:
         // Audio In
         {
             if (fDeviceName.isNotEmpty())
-                std::snprintf(strBuf, STR_MAX, "Capture (%s)", (const char*)fDeviceName);
+                std::snprintf(strBuf, STR_MAX, "Capture (%s)", fDeviceName.buffer());
             else
                 std::strncpy(strBuf, "Capture", STR_MAX);
 
@@ -461,7 +461,7 @@ public:
         // Audio Out
         {
             if (fDeviceName.isNotEmpty())
-                std::snprintf(strBuf, STR_MAX, "Playback (%s)", (const char*)fDeviceName);
+                std::snprintf(strBuf, STR_MAX, "Playback (%s)", fDeviceName.buffer());
             else
                 std::strncpy(strBuf, "Playback", STR_MAX);
 
@@ -768,7 +768,7 @@ protected:
         const char* const portName(fUsedMidiIns.getAt(static_cast<size_t>(portId)).name);
 
         char newPortName[STR_MAX+1];
-        std::snprintf(newPortName, STR_MAX, "%s:in-%i", (const char*)getName(), portId+1);
+        std::snprintf(newPortName, STR_MAX, "%s:in-%i", getName(), portId+1);
 
         bool found = false;
         uint rtMidiPortIndex;
@@ -814,7 +814,7 @@ protected:
         const char* const portName(fUsedMidiOuts.getAt(static_cast<size_t>(portId)).name);
 
         char newPortName[STR_MAX+1];
-        std::snprintf(newPortName, STR_MAX, "%s:out-%i", (const char*)getName(), portId+1);
+        std::snprintf(newPortName, STR_MAX, "%s:out-%i", getName(), portId+1);
 
         bool found = false;
         uint rtMidiPortIndex;

@@ -110,7 +110,7 @@ protected:
                         {
                             if (fOldBuffer.isNotEmpty())
                             {
-                                fCallback(fCallbackPtr, CarlaBackend::CALLBACK_DEBUG, 0, 0, 0, 0.0f, (const char*)fOldBuffer);
+                                fCallback(fCallbackPtr, CarlaBackend::CALLBACK_DEBUG, 0, 0, 0, 0.0f, fOldBuffer);
                                 fOldBuffer = nullptr;
                             }
 

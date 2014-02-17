@@ -3735,7 +3735,7 @@ public:
         bridgeBinary += ".exe";
 #endif
 
-        QFile file(bridgeBinary.getBuffer());
+        QFile file(bridgeBinary.buffer());
 
         if (! file.exists())
             return nullptr;

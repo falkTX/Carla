@@ -77,7 +77,7 @@ public:
 
     const char* getServerPath() const noexcept
     {
-        return (const char*)fServerPath;
+        return fServerPath;
     }
 
     // -------------------------------------------------------------------

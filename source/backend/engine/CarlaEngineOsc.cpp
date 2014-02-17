@@ -188,9 +188,9 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     const size_t nameSize(fName.length());
 
     // Check if message is for this client
-    if (std::strlen(path) <= nameSize || std::strncmp(path+1, fName.getBuffer(), nameSize) != 0)
+    if (std::strlen(path) <= nameSize || std::strncmp(path+1, fName, nameSize) != 0)
     {
-        carla_stderr("CarlaEngineOsc::handleMessage() - message not for this client -> '%s' != '/%s/'", path, fName.getBuffer());
+        carla_stderr("CarlaEngineOsc::handleMessage() - message not for this client -> '%s' != '/%s/'", path, fName.buffer());
         return 1;
     }
 

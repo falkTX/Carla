@@ -1824,7 +1824,7 @@ private:
 
                 CARLA_SAFE_ASSERT(found);
 
-                QString qGroupName((const char*)groupName);
+                QString qGroupName(groupName.buffer());
 
                 if (parsedGroups.contains(qGroupName))
                 {
@@ -1843,7 +1843,7 @@ private:
                     int pluginId = -1;
                     PatchbayIcon icon = (jackPortFlags & JackPortIsPhysical) ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION;
 
-                    findPluginIdAndIcon(groupName.getBuffer(), pluginId, icon);
+                    findPluginIdAndIcon(groupName, pluginId, icon);
 
                     callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, static_cast<uint>(groupId), icon, pluginId, 0.0f, groupName);
                 }

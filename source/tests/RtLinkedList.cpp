@@ -105,7 +105,7 @@ void run5Tests()
     {
         const MyData& my(allMyData[i]);
 
-        printf("Got data: %i %s\n", my.id, (const char*)my.str);
+        printf("Got data: %i %s\n", my.id, my.str.buffer());
     }
 }
 
@@ -143,7 +143,7 @@ int main()
     {
         const MyData& my(it.getValue());
 
-        printf("FOR DATA!!!: %i %s\n", my.id, (const char*)my.str);
+        printf("FOR DATA!!!: %i %s\n", my.id, my.str.buffer());
 
         if (my.id == 1)
         {

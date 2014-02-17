@@ -1171,7 +1171,7 @@ public:
 
         CarlaString cstype(fFormat);
         cstype.toLower();
-        const char* const ctype(cstype.getBuffer());
+        const char* const ctype(cstype.buffer());
 
         // ---------------------------------------------------------------
         // Create the LinuxSampler Engine

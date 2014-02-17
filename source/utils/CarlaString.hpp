@@ -203,11 +203,10 @@ public:
         if (fBuffer == _null())
             return;
 
-        try {
-            delete[] fBuffer;
-        } catch(...) {}
+        std::free(fBuffer);
 
-        fBuffer = nullptr;
+        fBuffer    = nullptr;
+        fBufferLen = 0;
     }
 
     // -------------------------------------------------------------------
@@ -257,7 +256,7 @@ public:
 
             tmp1.toLower();
             tmp2.toLower();
-            return (std::strstr((const char*)tmp1, (const char*)tmp2) != nullptr);
+            return (std::strstr(tmp1, tmp2) != nullptr);
 #endif
         }
 
@@ -577,12 +576,10 @@ public:
     // -------------------------------------------------------------------
     // public operators
 
-#if 0
     operator const char*() const noexcept
     {
         return fBuffer;
     }
-#endif
 
     char& operator[](const size_t pos) const noexcept
     {
@@ -698,7 +695,7 @@ private:
      *
      * Notes:
      * - Allocates string only if 'strBuf' is not null and new string contents are different
-     * - If 'strBuf' is null 'size' must be 0
+     * - If 'strBuf' is null, 'size' must be 0
      */
     void _dup(const char* const strBuf, const size_t size = 0) noexcept
     {
@@ -709,21 +706,13 @@ private:
                 return;
 
             if (fBuffer != _null())
-            {
-                try {
-                    delete[] fBuffer;
-                } catch(...) {}
-            }
+                std::free(fBuffer);
 
             fBufferLen = (size > 0) ? size : std::strlen(strBuf);
+            fBuffer    = (char*)std::malloc(fBufferLen+1);
 
-            try {
-                fBuffer = new char[fBufferLen+1];
-            }
-            catch(...) {
-                _init();
-                return;
-            }
+            if (fBuffer == nullptr)
+                return _init();
 
             std::strcpy(fBuffer, strBuf);
 
@@ -738,7 +727,7 @@ private:
                 return;
 
             CARLA_SAFE_ASSERT(fBuffer != nullptr);
-            delete[] fBuffer;
+            std::free(fBuffer);
 
             _init();
         }

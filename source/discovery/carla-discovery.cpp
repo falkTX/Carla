@@ -381,7 +381,7 @@ public:
 
         // 2 channels
         DISCOVERY_OUT("init", "-----------");
-        DISCOVERY_OUT("name", name.getBuffer());
+        DISCOVERY_OUT("name", name.buffer());
         DISCOVERY_OUT("label", label);
 
         if (info != nullptr)
@@ -403,7 +403,7 @@ public:
 
         // 16 channels
         DISCOVERY_OUT("init", "-----------");
-        DISCOVERY_OUT("name", name.getBuffer());
+        DISCOVERY_OUT("name", name.buffer());
         DISCOVERY_OUT("label", label);
 
         if (info != nullptr)
@@ -1407,10 +1407,10 @@ static void do_vst_check(void*& libHandle, const bool init)
         // -----------------------------------------------------------------------
 
         DISCOVERY_OUT("init", "-----------");
-        DISCOVERY_OUT("name", cName.getBuffer());
-        DISCOVERY_OUT("label", cProduct.getBuffer());
-        DISCOVERY_OUT("maker", cVendor.getBuffer());
-        DISCOVERY_OUT("copyright", cVendor.getBuffer());
+        DISCOVERY_OUT("name", cName.buffer());
+        DISCOVERY_OUT("label", cProduct.buffer());
+        DISCOVERY_OUT("maker", cVendor.buffer());
+        DISCOVERY_OUT("copyright", cVendor.buffer());
         DISCOVERY_OUT("uniqueId", gVstCurrentUniqueId);
         DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("audio.ins", audioIns);
@@ -1639,8 +1639,8 @@ static void do_csound_check(const char* const filename, const bool init)
     csound.Reset();
 
     DISCOVERY_OUT("init", "-----------");
-    //DISCOVERY_OUT("name", name.getBuffer());
-    //DISCOVERY_OUT("label", label.getBuffer());
+    //DISCOVERY_OUT("name", name.buffer());
+    //DISCOVERY_OUT("label", label.buffer());
     //DISCOVERY_OUT("maker", "");
     //DISCOVERY_OUT("copyright", "");
     DISCOVERY_OUT("hints", hints);
@@ -1713,8 +1713,8 @@ static void do_fluidsynth_check(const char* const filename, const bool init)
 
     // 2 channels
     DISCOVERY_OUT("init", "-----------");
-    DISCOVERY_OUT("name", name.getBuffer());
-    DISCOVERY_OUT("label", label.getBuffer());
+    DISCOVERY_OUT("name", name.buffer());
+    DISCOVERY_OUT("label", label.buffer());
     DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
     DISCOVERY_OUT("audio.outs", 2);
     DISCOVERY_OUT("midi.ins", 1);
@@ -1730,8 +1730,8 @@ static void do_fluidsynth_check(const char* const filename, const bool init)
     name += " (16 outputs)";
 
     DISCOVERY_OUT("init", "-----------");
-    DISCOVERY_OUT("name", name.getBuffer());
-    DISCOVERY_OUT("label", label.getBuffer());
+    DISCOVERY_OUT("name", name.buffer());
+    DISCOVERY_OUT("label", label.buffer());
     DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
     DISCOVERY_OUT("audio.outs", 32);
     DISCOVERY_OUT("midi.ins", 1);

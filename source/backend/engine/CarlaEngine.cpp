@@ -790,7 +790,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             }
         }
 
-        QFile file(bridgeBinary.getBuffer());
+        QFile file(bridgeBinary.buffer());
 
         if (! file.exists())
             bridgeBinary.clear();
@@ -800,7 +800,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     {
         if (bridgeBinary.isNotEmpty())
         {
-            plugin = CarlaPlugin::newBridge(initializer, btype, ptype, bridgeBinary.getBuffer());
+            plugin = CarlaPlugin::newBridge(initializer, btype, ptype, bridgeBinary);
         }
 # ifdef CARLA_OS_LINUX
         else if (btype == BINARY_WIN32)
@@ -816,7 +816,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
                 id,
                 "/usr/lib/dssi/dssi-vst.so",
                 name,
-                (const char*)label2,
+                label2,
                 uniqueId
             };
 
@@ -1468,7 +1468,7 @@ bool CarlaEngine::loadProject(const char* const filename)
                 }
 
                 if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
-                    restorePatchbayConnection(sourcePort.getBuffer(), targetPort.getBuffer());
+                    restorePatchbayConnection(sourcePort, targetPort);
             }
             break;
         }
@@ -1579,7 +1579,7 @@ double CarlaEngine::getSampleRate() const noexcept
 
 const char* CarlaEngine::getName() const noexcept
 {
-    return pData->name.getBuffer();
+    return pData->name;
 }
 
 EngineProcessMode CarlaEngine::getProccessMode() const noexcept
@@ -1892,7 +1892,7 @@ void CarlaEngine::transportRelocate(const uint64_t frame) noexcept
 
 const char* CarlaEngine::getLastError() const noexcept
 {
-    return pData->lastError.getBuffer();
+    return pData->lastError;
 }
 
 void CarlaEngine::setLastError(const char* const error) const

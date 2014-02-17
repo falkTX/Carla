@@ -636,7 +636,7 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Init plugin client
 
-    CarlaPluginClient client(useBridge, clientName.getBuffer(), bridgeBaseAudioName, bridgeBaseControlName);
+    CarlaPluginClient client(useBridge, clientName, bridgeBaseAudioName, bridgeBaseControlName);
 
     if (! client.isOk())
     {

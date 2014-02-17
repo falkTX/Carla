@@ -53,9 +53,9 @@ protected:
         if (show)
         {
             CarlaString path(getResourceDir() + fExtUiPath);
-            carla_stdout("Trying to start UI using \"%s\"", path.getBuffer());
+            carla_stdout("Trying to start UI using \"%s\"", path.buffer());
 
-            CarlaExternalUI::setData(path.getBuffer(), getSampleRate(), getUiName());
+            CarlaExternalUI::setData(path, getSampleRate(), getUiName());
             CarlaExternalUI::start();
         }
         else
