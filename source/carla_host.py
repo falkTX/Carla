@@ -154,7 +154,9 @@ class HostWindow(QMainWindow):
         self.ui.setupUi(self)
 
         if False:
-            gCarla.gui = self
+            # kdevelop likes this :)
+            gCarla.gui  = self
+            gCarla.host = Host("")
             self.fContainer = CarlaDummyW(self)
 
         # -------------------------------------------------------------

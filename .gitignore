@@ -92,6 +92,10 @@ src/dist/
 *build-*Debug/
 *build-*Release/
 
+# carla-plugin
+source/modules/native-plugins/resources/carla-plugin
+source/modules/native-plugins/resources/*.py
+
 # zynaddsubfx
 source/modules/native-plugins/zynaddsubfx/Output/
 source/modules/native-plugins/zynaddsubfx/Tests/
