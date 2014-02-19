@@ -230,9 +230,15 @@ install:
 
 	# Install binaries
 	install -m 755 \
-		source/bridges/carla-bridge-* \
+		source/bridges/*bridge-* \
 		source/discovery/carla-discovery-* \
 		$(DESTDIR)$(PREFIX)/lib/carla/
+
+	# Install binaries for lv2 plugin
+	install -m 755 \
+		source/bridges/*bridge-* \
+		source/discovery/carla-discovery-* \
+		$(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/
 
 	# Install lv2 plugin
 	install -m 644 \
