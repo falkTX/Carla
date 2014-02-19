@@ -395,8 +395,13 @@ class CarlaRackW(QFrame):
 
     # -----------------------------------------------------------------
 
-    def projectLoaded(self):
-        pass
+    def projectLoadingStarted(self):
+        self.fRack.setEnabled(False)
+
+    def projectLoadingFinished(self):
+        self.fRack.setEnabled(True)
+
+    # -----------------------------------------------------------------
 
     def saveSettings(self, settings):
         pass

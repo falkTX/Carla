@@ -320,8 +320,13 @@ class CarlaPatchbayW(QFrame):
 
     # -----------------------------------------------------------------
 
-    def projectLoaded(self):
+    def projectLoadingStarted(self):
+        pass
+
+    def projectLoadingFinished(self):
         QTimer.singleShot(1000, self.slot_canvasRefresh)
+
+    # -----------------------------------------------------------------
 
     def saveSettings(self, settings):
         settings.setValue("ShowMeters", self.fParent.ui.act_settings_show_meters.isChecked())

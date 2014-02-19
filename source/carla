@@ -144,8 +144,15 @@ class CarlaMultiW(QTabWidget):
 
     # -----------------------------------------------------------------
 
-    def projectLoaded(self):
-        self.fPatchbay.projectLoaded()
+    def projectLoadingStarted(self):
+        self.fRack.projectLoadingStarted()
+        #self.fPatchbay.projectLoadingStarted()
+
+    def projectLoadingFinished(self):
+        self.fRack.projectLoadingFinished()
+        self.fPatchbay.projectLoadingFinished()
+
+    # -----------------------------------------------------------------
 
     def saveSettings(self, settings):
         self.fPatchbay.saveSettings(settings)

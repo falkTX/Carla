@@ -94,8 +94,13 @@ class CarlaDummyW(object):
 
     # -----------------------------------------------------------------
 
-    def projectLoaded(self):
+    def projectLoadingStarted(self):
         pass
+
+    def projectLoadingFinished(self):
+        pass
+
+    # -----------------------------------------------------------------
 
     def saveSettings(self, settings):
         pass
@@ -357,11 +362,13 @@ class HostWindow(QMainWindow):
         if not self.fProjectFilename:
             return qCritical("ERROR: loading project without filename set")
 
+        self.fContainer.projectLoadingStarted()
         self.fIsProjectLoading = True
-        gCarla.host.load_project(self.fProjectFilename)
-        self.fIsProjectLoading = False
 
-        self.fContainer.projectLoaded()
+        gCarla.host.load_project(self.fProjectFilename)
+
+        self.fIsProjectLoading = False
+        self.fContainer.projectLoadingFinished()
 
     @pyqtSlot()
     def slot_loadProjectNow(self):
@@ -894,8 +901,23 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_pluginRemoveAll(self):
         self.ui.act_plugin_remove_all.setEnabled(False)
-        self.fContainer.removeAllPlugins()
-        gCarla.host.remove_all_plugins()
+
+        count = self.fContainer.getPluginCount()
+
+        if count == 0:
+            return
+
+        self.fContainer.projectLoadingStarted()
+
+        app = QApplication.instance()
+        for i in range(count):
+            app.processEvents()
+            gCarla.host.remove_plugin(count-i-1)
+
+        self.fContainer.projectLoadingFinished()
+
+        #self.fContainer.removeAllPlugins()
+        #gCarla.host.remove_all_plugins()
 
     # -----------------------------------------------------------------
 
@@ -1125,8 +1147,24 @@ class HostWindow(QMainWindow):
 
         if gCarla.host.is_engine_running():
             gCarla.host.set_engine_about_to_close()
-            self.ui.act_plugin_remove_all.setEnabled(False)
-            self.fContainer.removeAllPlugins()
+
+            count = self.fContainer.getPluginCount()
+
+            if count > 0:
+                # simulate project loading, to disable container
+                self.ui.act_plugin_remove_all.setEnabled(False)
+                self.fContainer.projectLoadingStarted()
+
+                app = QApplication.instance()
+                for i in range(count):
+                    app.processEvents()
+                    gCarla.host.remove_plugin(count-i-1)
+
+                app.processEvents()
+
+                #self.fContainer.removeAllPlugins()
+                #gCarla.host.remove_all_plugins()
+
             self.stopEngine()
 
         QMainWindow.closeEvent(self, event)
