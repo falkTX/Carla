@@ -36,19 +36,18 @@ class CarlaApplication(object):
     def __init__(self, appName = "Carla2"):
         object.__init__(self)
 
-        libdir1  = os.path.join(CWD, "modules", "theme")
-        libdir2  = os.path.join(CWD, "styles")
-        libdir3  = os.path.join(CWD, "..", "styles")
         foundDir = False
 
-        if os.path.exists(libdir1):
-            QApplication.addLibraryPath(libdir1)
+        if os.path.exists(os.path.join(CWD, "modules", "theme", "styles")):
+            QApplication.addLibraryPath(os.path.join(CWD, "modules", "theme"))
             foundDir = True
-        elif os.path.exists(libdir2):
-            QApplication.addLibraryPath(libdir2)
+
+        elif os.path.exists(os.path.join(CWD, "styles")):
+            QApplication.addLibraryPath(CWD)
             foundDir = True
-        elif os.path.exists(libdir3):
-            QApplication.addLibraryPath(libdir3)
+
+        elif os.path.exists(os.path.join(CWD, "..", "styles")):
+            QApplication.addLibraryPath(os.path.join(CWD, ".."))
             foundDir = True
 
         self.fApp = QApplication(sys.argv)
