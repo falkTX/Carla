@@ -651,16 +651,21 @@ ENGINE_CALLBACK_BUFFER_SIZE_CHANGED = 32
 # @param value3 New sample rate
 ENGINE_CALLBACK_SAMPLE_RATE_CHANGED = 33
 
+# Idle frontend.
+# This is used by the engine during long operations that might block the frontend,
+# giving it the possibility to idle while the operation is still in place.
+ENGINE_CALLBACK_IDLE = 34
+
 # Show a message as information.
 # @param valueStr The message
-ENGINE_CALLBACK_INFO = 34
+ENGINE_CALLBACK_INFO = 35
 
 # Show a message as an error.
 # @param valueStr The message
-ENGINE_CALLBACK_ERROR = 35
+ENGINE_CALLBACK_ERROR = 36
 
 # The engine has crashed or malfunctioned and will no longer work.
-ENGINE_CALLBACK_QUIT = 36
+ENGINE_CALLBACK_QUIT = 37
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine Option

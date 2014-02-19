@@ -271,6 +271,8 @@ const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode) noexcept
         return "ENGINE_CALLBACK_BUFFER_SIZE_CHANGED";
     case ENGINE_CALLBACK_SAMPLE_RATE_CHANGED:
         return "ENGINE_CALLBACK_SAMPLE_RATE_CHANGED";
+    case ENGINE_CALLBACK_IDLE:
+        return "ENGINE_CALLBACK_IDLE";
     case ENGINE_CALLBACK_INFO:
         return "ENGINE_CALLBACK_INFO";
     case ENGINE_CALLBACK_ERROR:
