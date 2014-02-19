@@ -164,6 +164,14 @@ class CarlaRackList(QListWidget):
             gCarla.host.replace_plugin(self.parent().fPluginCount)
             tryItem.widget.setActive(True, True, True)
 
+    def mousePressEvent(self, event):
+        if self.itemAt(event.pos()) is None:
+            event.accept()
+            self.setCurrentRow(-1)
+            return
+
+        QListWidget.mousePressEvent(self, event)
+
     def paintEvent(self, event):
         painter = QPainter(self.viewport())
         painter.drawTiledPixmap(0, 0, self.fPixmapWidth, self.height(), self.fPixmapL)
