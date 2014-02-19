@@ -177,6 +177,9 @@ class DriverSettingsW(QDialog):
     def slot_updateDeviceInfo(self):
         deviceName = self.ui.cb_device.currentText()
 
+        oldBufferSize = self.ui.cb_buffersize.currentText()
+        oldSampleRate = self.ui.cb_samplerate.currentText()
+
         self.ui.cb_buffersize.clear()
         self.ui.cb_samplerate.clear()
 
@@ -190,10 +193,18 @@ class DriverSettingsW(QDialog):
             self.fSampleRates = SAMPLE_RATE_LIST
 
         for bsize in self.fBufferSizes:
-            self.ui.cb_buffersize.addItem(str(bsize))
+            sbsize = str(bsize)
+            self.ui.cb_buffersize.addItem(sbsize)
+
+            if oldBufferSize == sbsize:
+                self.ui.cb_buffersize.setCurrentIndex(self.ui.cb_buffersize.count()-1)
 
         for srate in self.fSampleRates:
-            self.ui.cb_samplerate.addItem(str(int(srate)))
+            ssrate = str(int(srate))
+            self.ui.cb_samplerate.addItem(ssrate)
+
+            if oldSampleRate == ssrate:
+                self.ui.cb_samplerate.setCurrentIndex(self.ui.cb_samplerate.count()-1)
 
     def done(self, r):
         QDialog.done(self, r)
