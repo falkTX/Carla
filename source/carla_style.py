@@ -36,10 +36,20 @@ class CarlaApplication(object):
     def __init__(self, appName = "Carla2"):
         object.__init__(self)
 
-        libdir = os.path.join(CWD, "modules", "theme")
+        libdir1  = os.path.join(CWD, "modules", "theme")
+        libdir2  = os.path.join(CWD, "styles")
+        libdir3  = os.path.join(CWD, "..", "styles")
+        foundDir = False
 
-        if os.path.exists(libdir):
-            QApplication.addLibraryPath(libdir)
+        if os.path.exists(libdir1):
+            QApplication.addLibraryPath(libdir1)
+            foundDir = True
+        elif os.path.exists(libdir2):
+            QApplication.addLibraryPath(libdir2)
+            foundDir = True
+        elif os.path.exists(libdir3):
+            QApplication.addLibraryPath(libdir3)
+            foundDir = True
 
         self.fApp = QApplication(sys.argv)
         self.fApp.setApplicationName(appName)
@@ -171,7 +181,7 @@ class CarlaApplication(object):
         self.fPalBlue.setColor(QPalette.Active,   QPalette.LinkVisited, QColor(64, 128, 255))
         self.fPalBlue.setColor(QPalette.Inactive, QPalette.LinkVisited, QColor(64, 128, 255))
 
-        if os.path.exists(libdir):
+        if foundDir:
             self.loadSettings()
 
     def loadSettings(self):

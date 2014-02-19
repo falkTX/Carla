@@ -720,9 +720,6 @@ if __name__ == '__main__':
 
     app = CarlaApplication("Carla2-Plugin")
 
-    if "__file__" in dir():
-        app.addLibraryPath(os.path.dirname(__file__))
-
     # -------------------------------------------------------------
     # Set-up custom signal handling
 
