@@ -178,6 +178,9 @@ class AbstractPluginSlot(QFrame):
     def getHints(self):
         return self.fPluginInfo['hints']
 
+    def getPluginId(self):
+        return self.fPluginId
+
     #------------------------------------------------------------------
 
     def recheckPluginHints(self, hints):

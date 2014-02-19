@@ -20,7 +20,7 @@
 # Imports (Global)
 
 from PyQt4.QtCore import Qt, QSize, QTimer
-from PyQt4.QtGui import QApplication, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QPixmap, QScrollBar
+from PyQt4.QtGui import QAbstractItemView, QApplication, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QPixmap, QScrollBar
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
@@ -36,39 +36,32 @@ class CarlaRackItem(QListWidgetItem):
     def __init__(self, parent, pluginId):
         QListWidgetItem.__init__(self, parent, self.kRackItemType)
 
-        self.widget = createPluginSlot(parent, pluginId)
+        self.fParent = parent
+
+        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+        #self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled|Qt.ItemIsDragEnabled|Qt.ItemIsDropEnabled)
+
+        self.createWidget(pluginId)
+
+    # -----------------------------------------------------------------
+
+    def createWidget(self, pluginId):
+        self.widget = createPluginSlot(self.fParent, pluginId)
         self.widget.setFixedHeight(self.widget.getFixedHeight())
 
-        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled) # Qt.ItemIsDragEnabled|Qt.ItemIsDropEnabled
-        self.setSizeHint(QSize(300, self.widget.getFixedHeight()))
+        self.setSizeHint(QSize(640, self.widget.getFixedHeight()))
 
-        parent.setItemWidget(self, self.widget)
+        self.fParent.setItemWidget(self, self.widget)
 
     # -----------------------------------------------------------------
 
     def close(self):
         self.widget.fEditDialog.close()
 
-    #def setId(self, idx):
-        #self.widget.setId(idx)
-
-    #def setName(self, newName):
-        #self.widget.ui.label_name.setText(newName)
-        #self.widget.ui.edit_dialog.setName(newName)
-
-    # -----------------------------------------------------------------
-
-    #def paintEvent(self, event):
-        #painter = QPainter(self)
-        #painter.save()
-
-        #painter.setPen(QPen(Qt.black, 3))
-        #painter.setBrush(Qt.black)
-        #painter.drawRect(0, 0, self.width(), self.height())
-        #painter.drawLine(0, self.height()-4, self.width(), self.height()-4)
-
-        #painter.restore()
-        #QListWidgetItem.paintEvent(self, event)
+    def reloadAll(self, pluginId):
+        self.widget.fEditDialog.close()
+        del self.widget
+        self.createWidget(pluginId)
 
 # ------------------------------------------------------------------------------------------------------------
 # Rack widget list
@@ -77,10 +70,99 @@ class CarlaRackList(QListWidget):
     def __init__(self, parent):
         QListWidget.__init__(self, parent)
 
+        exts = gCarla.host.get_supported_file_extensions().split(";") if gCarla.host is not None else ["wav",]
+
+        # plugin files
+        exts.append("dll")
+        exts.append("so")
+
+        if MACOS:
+            exts.append("dylib")
+
+        self.fSupportedExtensions = tuple(i.replace("*.","") for i in exts)
+        self.fWasLastDragValid    = False
+
+        self.setMinimumWidth(640+20) # required by zita, 591 was old value
+        self.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.setSortingEnabled(False)
+        #self.setSortingEnabled(True)
+
+        self.setDragEnabled(True)
+        self.setDragDropMode(QAbstractItemView.DropOnly)
+        self.setDropIndicatorShown(True)
+        self.viewport().setAcceptDrops(True)
+
         self.fPixmapL = QPixmap(":/bitmaps/rack_interior_left.png")
         self.fPixmapR = QPixmap(":/bitmaps/rack_interior_right.png")
 
         self.fPixmapWidth = self.fPixmapL.width()
+
+    def isDragEventValid(self, urls):
+        for url in urls:
+            filename = url.toLocalFile()
+
+            if os.path.isdir(filename):
+                if os.path.exists(os.path.join(filename, "manifest.ttl")):
+                    return False
+
+            elif os.path.isfile(filename):
+                if filename.lower().endswith(self.fSupportedExtensions):
+                    return True
+
+        return False
+
+    def dragEnterEvent(self, event):
+        if self.isDragEventValid(event.mimeData().urls()):
+            self.fWasLastDragValid = True
+            event.acceptProposedAction()
+            return
+
+        self.fWasLastDragValid = False
+        QListWidget.dragEnterEvent(self, event)
+
+    def dragMoveEvent(self, event):
+        if self.fWasLastDragValid:
+            event.acceptProposedAction()
+
+            tryItem = self.itemAt(event.pos())
+
+            if tryItem is not None:
+                self.setCurrentRow(tryItem.widget.getPluginId())
+            else:
+                self.setCurrentRow(-1)
+            return
+
+        QListWidget.dragMoveEvent(self, event)
+
+    #def dragLeaveEvent(self, event):
+        #self.fWasLastDragValid = False
+        #QListWidget.dragLeaveEvent(self, event)
+
+    def dropEvent(self, event):
+        event.acceptProposedAction()
+
+        urls = event.mimeData().urls()
+
+        if len(urls) == 0:
+            return
+
+        tryItem = self.itemAt(event.pos())
+
+        if tryItem is not None:
+            pluginId = tryItem.widget.getPluginId()
+            gCarla.host.replace_plugin(pluginId)
+
+        for url in urls:
+            filename = url.toLocalFile()
+
+            if not gCarla.host.load_file(filename):
+                CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
+                                 self.tr("Failed to load file"),
+                                 gCarla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+
+        if tryItem is not None:
+            gCarla.host.replace_plugin(self.parent().fPluginCount)
+            tryItem.widget.setActive(True, True, True)
 
     def paintEvent(self, event):
         painter = QPainter(self.viewport())
@@ -111,8 +193,6 @@ class CarlaRackW(QFrame):
         self.fPadRight.setText("")
 
         self.fRack = CarlaRackList(self)
-        self.fRack.setMinimumWidth(640+20) # required by zita, 591 was old value
-        self.fRack.setSortingEnabled(False)
         self.fRack.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.fRack.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.fRack.currentRowChanged.connect(self.slot_currentRowChanged)
@@ -582,7 +662,11 @@ class CarlaRackW(QFrame):
         if pitem is None:
             return
 
-        pitem.widget.fEditDialog.reloadAll()
+        self.fRack.setCurrentRow(-1)
+        self.fCurrentRow = -1
+        self.fLastSelectedItem = None
+
+        pitem.reloadAll(pluginId)
 
     # -----------------------------------------------------------------
 

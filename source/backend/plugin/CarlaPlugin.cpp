@@ -122,7 +122,6 @@ CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
 {
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
     CARLA_ASSERT(id < engine->getMaxPluginNumber());
-    CARLA_ASSERT(id == engine->getCurrentPluginCount());
     carla_debug("CarlaPlugin::CarlaPlugin(%p, %i)", engine, id);
 
     switch (engine->getProccessMode())

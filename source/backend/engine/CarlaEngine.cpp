@@ -1098,9 +1098,17 @@ bool CarlaEngine::replacePlugin(const unsigned int id)
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data (err #29)");
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->curPluginCount != 0, "Invalid engine internal data (err #30)");
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data (err #31)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(id < pData->curPluginCount, "Invalid plugin Id (err #4)");
     carla_debug("CarlaEngine::replacePlugin(%i)", id);
     CARLA_ENGINE_THREAD_SAFE_SECTION;
+
+    // might use this to reset
+    if (id == pData->curPluginCount || id == pData->maxPluginNumber)
+    {
+        pData->nextPluginId = pData->maxPluginNumber;
+        return true;
+    }
+
+    CARLA_SAFE_ASSERT_RETURN_ERR(id < pData->curPluginCount, "Invalid plugin Id (err #4)");
 
     CarlaPlugin* const plugin(pData->plugins[id].plugin);
 
