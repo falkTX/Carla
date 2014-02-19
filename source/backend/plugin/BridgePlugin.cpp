@@ -1803,6 +1803,7 @@ public:
             if (fInitiated || ! pData->osc.thread.isRunning())
                 break;
             carla_msleep(50);
+            pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
         }
 
         fLastPongCounter = -1;

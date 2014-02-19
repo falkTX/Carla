@@ -1015,6 +1015,8 @@ bool CarlaEngine::removeAllPlugins()
     const bool lockWait(isRunning());
     const CarlaEngineProtectedData::ScopedActionLock sal(pData, kEnginePostActionZeroCount, 0, 0, lockWait);
 
+    callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
     for (unsigned int i=0; i < pData->maxPluginNumber; ++i)
     {
         EnginePluginData& pluginData(pData->plugins[i]);
@@ -1029,6 +1031,8 @@ bool CarlaEngine::removeAllPlugins()
         pluginData.insPeak[1]  = 0.0f;
         pluginData.outsPeak[0] = 0.0f;
         pluginData.outsPeak[1] = 0.0f;
+
+        callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
     }
 
     if (isRunning() && ! pData->aboutToClose)
@@ -1423,6 +1427,8 @@ bool CarlaEngine::loadProject(const char* const filename)
             SaveState saveState;
             fillSaveStateFromXmlNode(saveState, isPreset ? xmlNode : node);
 
+            callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
             CARLA_SAFE_ASSERT_CONTINUE(saveState.type != nullptr);
 
             const void* extraStuff = nullptr;
@@ -1452,6 +1458,8 @@ bool CarlaEngine::loadProject(const char* const filename)
     }
 
 #ifndef BUILD_BRIDGE
+    callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
     // now connections
     for (QDomNode node = xmlNode.firstChild(); ! node.isNull(); node = node.nextSibling())
     {

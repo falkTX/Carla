@@ -1226,6 +1226,8 @@ def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
     elif action == ENGINE_CALLBACK_ENGINE_STOPPED:
         gCarla.gui.killTimers()
         gCarla.gui.EngineStoppedCallback.emit()
+    elif action == ENGINE_CALLBACK_IDLE:
+        QApplication.instance().processEvents()
     elif action == ENGINE_CALLBACK_INFO:
         gCarla.gui.InfoCallback.emit(valueStr)
     elif action == ENGINE_CALLBACK_ERROR:
