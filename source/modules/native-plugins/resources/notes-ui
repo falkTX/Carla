@@ -19,9 +19,8 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from numpy import rint
 from PyQt4.QtCore import pyqtSlot
-from PyQt4.QtGui import QApplication, QGridLayout, QLabel, QPushButton, QTextEdit, QWidget
+from PyQt4.QtGui import QGridLayout, QLabel, QPushButton, QTextEdit, QWidget
 
 # -----------------------------------------------------------------------
 # Imports (ExternalUI)
@@ -102,9 +101,10 @@ class DistrhoUINotes(QWidget, ExternalUI):
 
     @pyqtSlot(float)
     def slot_progressBarValueChanged(self, value):
-        value = rint(value)
+        ivalue = int(value)
+        value  = float(ivalue)
 
-        if self.fCurPage == int(value):
+        if self.fCurPage == ivalue:
             return
 
         # maybe save current text before changing page
