@@ -293,7 +293,7 @@ class PluginHost(object):
     # -------------------------------------------------------------------
 
     def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr):
-        gCarla.gui.send(["add_plugin", btype, ptype, filename, name, uniqueId, label])
+        gCarla.gui.send(["add_plugin", btype, ptype, filename, name, label, uniqueId])
         return True
 
     def remove_plugin(self, pluginId):
