@@ -497,9 +497,10 @@ CARLA_EXPORT bool carla_engine_init(const char* driverName, const char* clientNa
  * Initialize the engine in bridged mode.
  * @param audioBaseName   Shared memory key for audio pool
  * @param controlBaseName Shared memory key for control messages
+ * @param timeBaseName    Shared memory key for time info
  * @param clientName      Engine master client name
  */
-CARLA_EXPORT bool carla_engine_init_bridge(const char audioBaseName[6+1], const char controlBaseName[6+1], const char* clientName);
+CARLA_EXPORT bool carla_engine_init_bridge(const char audioBaseName[6+1], const char controlBaseName[6+1], const char timeBaseName[6+1], const char* clientName);
 #endif
 
 /*!

@@ -142,6 +142,8 @@ struct BridgeAudioPool {
 
         data = (float*)carla_shm_map(shm, size);
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(BridgeAudioPool)
 };
 
 struct BridgeControl : public RingBufferControl<StackRingBuffer> {
@@ -220,7 +222,67 @@ struct BridgeControl : public RingBufferControl<StackRingBuffer> {
     {
         writeInt(static_cast<int32_t>(opcode));
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(BridgeControl)
 };
+
+struct BridgeTime {
+    CarlaString filename;
+    BridgeTimeInfo* info;
+    shm_t shm;
+
+    BridgeTime()
+        : info(nullptr)
+    {
+        carla_shm_init(shm);
+    }
+
+    ~BridgeTime()
+    {
+        // should be cleared by now
+        CARLA_ASSERT(info == nullptr);
+
+        clear();
+    }
+
+    void clear()
+    {
+        filename.clear();
+
+        if (! carla_is_shm_valid(shm))
+            return;
+
+        if (info != nullptr)
+        {
+            carla_shm_unmap(shm, info, sizeof(BridgeTimeInfo));
+            info = nullptr;
+        }
+
+        carla_shm_close(shm);
+    }
+
+    bool mapData()
+    {
+        CARLA_ASSERT(info == nullptr);
+
+        return carla_shm_map<BridgeTimeInfo>(shm, info);
+    }
+
+    void unmapData()
+    {
+        CARLA_ASSERT(info != nullptr);
+
+        if (info == nullptr)
+            return;
+
+        carla_shm_unmap(shm, info, sizeof(BridgeTimeInfo));
+        info = nullptr;
+    }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(BridgeTime)
+};
+
+// -------------------------------------------------------------------------------------------------------------------
 
 struct BridgeParamInfo {
     float value;
@@ -299,6 +361,7 @@ public:
 
         fShmAudioPool.clear();
         fShmControl.clear();
+        fShmTime.clear();
 
         clearBuffers();
 
@@ -1085,6 +1148,31 @@ public:
             FLOAT_COPY(fShmAudioPool.data + (i * frames), inBuffer[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
+        // TimeInfo
+
+        const EngineTimeInfo& timeInfo(pData->engine->getTimeInfo());
+        BridgeTimeInfo* const bridgeInfo(fShmTime.info);
+
+        bridgeInfo->playing = timeInfo.playing;
+        bridgeInfo->frame   = timeInfo.frame;
+        bridgeInfo->usecs   = timeInfo.usecs;
+        bridgeInfo->valid   = timeInfo.valid;
+
+        if (timeInfo.valid & EngineTimeInfo::kValidBBT)
+        {
+            bridgeInfo->bar  = timeInfo.bbt.bar;
+            bridgeInfo->beat = timeInfo.bbt.beat;
+            bridgeInfo->tick = timeInfo.bbt.tick;
+
+            bridgeInfo->beatsPerBar = timeInfo.bbt.beatsPerBar;
+            bridgeInfo->beatType    = timeInfo.bbt.beatType;
+
+            bridgeInfo->ticksPerBeat   = timeInfo.bbt.ticksPerBeat;
+            bridgeInfo->beatsPerMinute = timeInfo.bbt.beatsPerMinute;
+            bridgeInfo->barStartTick   = timeInfo.bbt.barStartTick;
+        }
+
+        // --------------------------------------------------------------------------------------------------------
         // Run plugin
 
         {
@@ -1696,12 +1784,13 @@ public:
         if (bridgeBinary != nullptr)
             fBridgeBinary = bridgeBinary;
 
+        std::srand(static_cast<uint>(std::time(nullptr)));
+
         // ---------------------------------------------------------------
         // SHM Audio Pool
         {
             char tmpFileBase[60];
 
-            std::srand(static_cast<uint>(std::time(nullptr)));
             std::sprintf(tmpFileBase, "/carla-bridge_shm_XXXXXX");
 
             fShmAudioPool.shm = shm_mkstemp(tmpFileBase);
@@ -1736,7 +1825,7 @@ public:
 
             if (! fShmControl.mapData())
             {
-                carla_stdout("Failed to mmap shared memory file");
+                carla_stdout("Failed to map shared memory file #2");
                 // clear
                 carla_shm_close(fShmControl.shm);
                 carla_shm_close(fShmAudioPool.shm);
@@ -1769,6 +1858,36 @@ public:
             fNeedsSemDestroy = true;
         }
 
+        // ---------------------------------------------------------------
+        // SHM TimeInfo
+        {
+            char tmpFileBase[60];
+
+            std::sprintf(tmpFileBase, "/carla-bridge_sht_XXXXXX");
+
+            fShmTime.shm = shm_mkstemp(tmpFileBase);
+
+            if (! carla_is_shm_valid(fShmTime.shm))
+            {
+                carla_stdout("Failed to open or create shared memory file #3");
+                return false;
+            }
+
+            fShmTime.filename = tmpFileBase;
+
+            if (! fShmTime.mapData())
+            {
+                carla_stdout("Failed to map shared memory file #3");
+                // clear
+                jackbridge_sem_destroy(&fShmControl.data->runServer);
+                fShmControl.unmapData();
+                carla_shm_close(fShmTime.shm);
+                carla_shm_close(fShmControl.shm);
+                carla_shm_close(fShmAudioPool.shm);
+                return false;
+            }
+        }
+
         // initial values
         fShmControl.writeOpcode(kPluginBridgeOpcodeNull);
         fShmControl.writeInt(static_cast<int32_t>(sizeof(BridgeShmControl)));
@@ -1787,9 +1906,10 @@ public:
 
         // init OSC
         {
-            char shmIdStr[12+1] = { 0 };
+            char shmIdStr[16+1] = { 0 };
             std::strncpy(shmIdStr, &fShmAudioPool.filename[fShmAudioPool.filename.length()-6], 6);
             std::strncat(shmIdStr, &fShmControl.filename[fShmControl.filename.length()-6], 6);
+            std::strncat(shmIdStr, &fShmTime.filename[fShmTime.filename.length()-6], 6);
 
             pData->osc.thread.setOscData(bridgeBinary, label, getPluginTypeAsString(fPluginType), shmIdStr);
             pData->osc.thread.start();
@@ -1858,6 +1978,7 @@ private:
 
     BridgeAudioPool fShmAudioPool;
     BridgeControl   fShmControl;
+    BridgeTime      fShmTime;
 
     struct Info {
         uint32_t aIns, aOuts;

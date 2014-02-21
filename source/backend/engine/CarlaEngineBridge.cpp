@@ -82,6 +82,8 @@ struct BridgeAudioPool {
         if (jackbridge_shm_is_valid(shm))
             jackbridge_shm_close(shm);
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(BridgeAudioPool)
 };
 
 struct BridgeControl : public RingBufferControl<StackRingBuffer> {
@@ -139,6 +141,55 @@ struct BridgeControl : public RingBufferControl<StackRingBuffer> {
     {
         return static_cast<PluginBridgeOpcode>(readInt());
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(BridgeControl)
+};
+
+struct BridgeTime {
+    CarlaString filename;
+    BridgeTimeInfo* info;
+    char shm[32];
+
+    BridgeTime()
+        : info(nullptr)
+    {
+        carla_zeroChar(shm, 32);
+        jackbridge_shm_init(shm);
+    }
+
+    ~BridgeTime()
+    {
+        // should be cleared by now
+        CARLA_ASSERT(info == nullptr);
+
+        clear();
+    }
+
+    bool attach()
+    {
+        jackbridge_shm_attach(shm, filename);
+
+        return jackbridge_shm_is_valid(shm);
+    }
+
+    void clear()
+    {
+        filename.clear();
+
+        info = nullptr;
+
+        if (jackbridge_shm_is_valid(shm))
+            jackbridge_shm_close(shm);
+    }
+
+    bool mapData()
+    {
+        CARLA_ASSERT(info == nullptr);
+
+        return jackbridge_shm_map2<BridgeTimeInfo>(shm, info);
+    }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(BridgeTime)
 };
 
 // -------------------------------------------------------------------
@@ -147,7 +198,7 @@ class CarlaEngineBridge : public CarlaEngine,
                           public CarlaThread
 {
 public:
-    CarlaEngineBridge(const char* const audioBaseName, const char* const controlBaseName)
+    CarlaEngineBridge(const char* const audioBaseName, const char* const controlBaseName, const char* const timeBaseName)
         : CarlaEngine(),
           CarlaThread("CarlaEngineBridge"),
           fIsRunning(false)
@@ -157,8 +208,11 @@ public:
         fShmAudioPool.filename  = "/carla-bridge_shm_";
         fShmAudioPool.filename += audioBaseName;
 
-        fShmControl.filename    = "/carla-bridge_shc_";
-        fShmControl.filename   += controlBaseName;
+        fShmControl.filename  = "/carla-bridge_shc_";
+        fShmControl.filename += controlBaseName;
+
+        fShmTime.filename  = "/carla-bridge_sht_";
+        fShmTime.filename += timeBaseName;
     }
 
     ~CarlaEngineBridge() override
@@ -194,8 +248,30 @@ public:
 
             if (! fShmControl.mapData())
             {
-                carla_stdout("Failed to mmap shared memory file");
+                carla_stdout("Failed to map shared memory file #2");
                 // clear
+                fShmControl.clear();
+                fShmAudioPool.clear();
+                return false;
+            }
+        }
+
+        // SHM Transport
+        {
+            if (! fShmTime.attach())
+            {
+                carla_stdout("Failed to open or create shared memory file #3");
+                // clear
+                fShmControl.clear();
+                fShmAudioPool.clear();
+                return false;
+            }
+
+            if (! fShmTime.mapData())
+            {
+                carla_stdout("Failed to map shared memory file #3");
+                // clear
+                fShmTime.clear();
                 fShmControl.clear();
                 fShmAudioPool.clear();
                 return false;
@@ -233,6 +309,7 @@ public:
 
         CarlaThread::stop(6000);
 
+        fShmTime.clear();
         fShmControl.clear();
         fShmAudioPool.clear();
 
@@ -297,7 +374,7 @@ public:
                 case kPluginBridgeOpcodeSetAudioPool: {
                     const int64_t poolSize(fShmControl.readLong());
                     CARLA_SAFE_ASSERT_BREAK(poolSize > 0);
-                    fShmAudioPool.data = (float*)jackbridge_shm_map(fShmAudioPool.shm, size_t(poolSize));
+                    fShmAudioPool.data = (float*)jackbridge_shm_map(fShmAudioPool.shm, static_cast<size_t>(poolSize));
                     break;
                 }
 
@@ -388,6 +465,9 @@ public:
                     CARLA_SAFE_ASSERT_BREAK(fShmAudioPool.data != nullptr);
                     CarlaPlugin* const plugin(getPluginUnchecked(0));
 
+                    BridgeTimeInfo* const bridgeInfo(fShmTime.info);
+                    CARLA_SAFE_ASSERT_BREAK(bridgeInfo != nullptr);
+
                     if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock(true)) // FIXME - always lock?
                     {
                         const uint32_t inCount(plugin->getAudioInCount());
@@ -400,6 +480,27 @@ public:
                             inBuffer[i] = fShmAudioPool.data + i*pData->bufferSize;
                         for (uint32_t i=0; i < outCount; ++i)
                             outBuffer[i] = fShmAudioPool.data + (i+inCount)*pData->bufferSize;
+
+                        EngineTimeInfo& timeInfo(pData->timeInfo);
+
+                        timeInfo.playing = bridgeInfo->playing;
+                        timeInfo.frame   = bridgeInfo->frame;
+                        timeInfo.usecs   = bridgeInfo->usecs;
+                        timeInfo.valid   = bridgeInfo->valid;
+
+                        if (timeInfo.valid & EngineTimeInfo::kValidBBT)
+                        {
+                            timeInfo.bbt.bar  = bridgeInfo->bar;
+                            timeInfo.bbt.beat = bridgeInfo->beat;
+                            timeInfo.bbt.tick = bridgeInfo->tick;
+
+                            timeInfo.bbt.beatsPerBar = bridgeInfo->beatsPerBar;
+                            timeInfo.bbt.beatType    = bridgeInfo->beatType;
+
+                            timeInfo.bbt.ticksPerBeat   = bridgeInfo->ticksPerBeat;
+                            timeInfo.bbt.beatsPerMinute = bridgeInfo->beatsPerMinute;
+                            timeInfo.bbt.barStartTick   = bridgeInfo->barStartTick;
+                        }
 
                         plugin->initBuffers();
                         plugin->process(inBuffer, outBuffer, pData->bufferSize);
@@ -431,6 +532,7 @@ public:
 private:
     BridgeAudioPool fShmAudioPool;
     BridgeControl   fShmControl;
+    BridgeTime      fShmTime;
 
     volatile bool fIsRunning;
 
@@ -439,9 +541,9 @@ private:
 
 // -----------------------------------------
 
-CarlaEngine* CarlaEngine::newBridge(const char* const audioBaseName, const char* const controlBaseName)
+CarlaEngine* CarlaEngine::newBridge(const char* const audioBaseName, const char* const controlBaseName, const char* const timeBaseName)
 {
-    return new CarlaEngineBridge(audioBaseName, controlBaseName);
+    return new CarlaEngineBridge(audioBaseName, controlBaseName, timeBaseName);
 }
 
 CARLA_BACKEND_END_NAMESPACE

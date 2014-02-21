@@ -18,7 +18,8 @@
 #ifndef CARLA_BRIDGE_UTILS_HPP_INCLUDED
 #define CARLA_BRIDGE_UTILS_HPP_INCLUDED
 
-#include "CarlaBackend.h"
+//#include "CarlaBackend.h"
+#include "CarlaEngine.hpp"
 #include "CarlaRingBuffer.hpp"
 
 // -----------------------------------------------------------------------
@@ -71,6 +72,20 @@ const char* const CARLA_BRIDGE_MSG_SET_CHUNK  = "CarlaBridgeSetChunk";  //!< Hos
 const char* const CARLA_BRIDGE_MSG_SET_CUSTOM = "CarlaBridgeSetCustom"; //!< Host -> Plugin call, tells plugin to set a custom data set using \a value ("type·key·rvalue").
 //If \a type is 'chunk' or 'binary' \a rvalue refers to chunk file.
 #endif
+
+// -----------------------------------------------------------------------
+
+PRE_PACKED_STRUCTURE
+struct BridgeTimeInfo {
+    bool playing;
+    uint64_t frame;
+    uint64_t usecs;
+    uint     valid;
+    // bbt
+    int32_t bar, beat, tick;
+    float beatsPerBar, beatType;
+    double barStartTick, ticksPerBeat, beatsPerMinute;
+} POST_PACKED_STRUCTURE;
 
 // -----------------------------------------------------------------------
 

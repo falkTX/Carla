@@ -1116,7 +1116,7 @@ private:
 #ifdef BUILD_BRIDGE
 public:
     // Bridge
-    static CarlaEngine* newBridge(const char* const audioBaseName, const char* const controlBaseName);
+    static CarlaEngine* newBridge(const char* const audioBaseName, const char* const controlBaseName, const char* const timeBaseName);
 
     // -------------------------------------------------------------------
     // Bridge/Controller OSC stuff

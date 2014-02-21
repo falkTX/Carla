@@ -157,18 +157,18 @@ CARLA_BRIDGE_START_NAMESPACE
 class CarlaPluginClient : public CarlaBridgeClient
 {
 public:
-    CarlaPluginClient(const bool useBridge, const char* const clientName, const char* audioBaseName, const char* controlBaseName)
+    CarlaPluginClient(const bool useBridge, const char* const clientName, const char* const audioBaseName, const char* const controlBaseName, const char* const timeBaseName)
         : CarlaBridgeClient(nullptr),
           fPlugin(nullptr),
           fEngine(nullptr)
     {
         CARLA_ASSERT(clientName != nullptr && clientName[0] != '\0');
-        carla_debug("CarlaPluginClient::CarlaPluginClient(%s, \"%s\", %s, %s)", bool2str(useBridge), clientName, audioBaseName, controlBaseName);
+        carla_debug("CarlaPluginClient::CarlaPluginClient(%s, \"%s\", %s, %s, %s)", bool2str(useBridge), clientName, audioBaseName, controlBaseName, timeBaseName);
 
         carla_set_engine_callback(callback, this);
 
         if (useBridge)
-            carla_engine_init_bridge(audioBaseName, controlBaseName, clientName);
+            carla_engine_init_bridge(audioBaseName, controlBaseName, timeBaseName, clientName);
         else
             carla_engine_init("JACK", clientName);
 
@@ -585,19 +585,23 @@ int main(int argc, char* argv[])
 
     char bridgeBaseAudioName[6+1];
     char bridgeBaseControlName[6+1];
+    char bridgeBaseTimeName[6+1];
 
     if (useBridge)
     {
-        CARLA_SAFE_ASSERT_RETURN(std::strlen(shmIds) == 6*2, 1);
-        std::strncpy(bridgeBaseAudioName,   shmIds,   6);
-        std::strncpy(bridgeBaseControlName, shmIds+6, 6);
+        CARLA_SAFE_ASSERT_RETURN(std::strlen(shmIds) == 6*3, 1);
+        std::strncpy(bridgeBaseAudioName,   shmIds,    6);
+        std::strncpy(bridgeBaseControlName, shmIds+6,  6);
+        std::strncpy(bridgeBaseTimeName,    shmIds+12, 6);
         bridgeBaseAudioName[6]   = '\0';
         bridgeBaseControlName[6] = '\0';
+        bridgeBaseTimeName[6]    = '\0';
     }
     else
     {
         bridgeBaseAudioName[0]   = '\0';
         bridgeBaseControlName[0] = '\0';
+        bridgeBaseTimeName[0]    = '\0';
     }
 
     // ---------------------------------------------------------------------
@@ -636,7 +640,7 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Init plugin client
 
-    CarlaPluginClient client(useBridge, clientName, bridgeBaseAudioName, bridgeBaseControlName);
+    CarlaPluginClient client(useBridge, clientName, bridgeBaseAudioName, bridgeBaseControlName, bridgeBaseTimeName);
 
     if (! client.isOk())
     {
