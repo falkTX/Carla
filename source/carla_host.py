@@ -1145,7 +1145,7 @@ class HostWindow(QMainWindow):
         self.killTimers()
         self.saveSettings()
 
-        if gCarla.host.is_engine_running():
+        if gCarla.host.is_engine_running() and not gCarla.isPlugin:
             gCarla.host.set_engine_about_to_close()
 
             count = self.fContainer.getPluginCount()

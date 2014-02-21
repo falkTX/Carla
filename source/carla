@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla plugin host
-# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -42,6 +42,11 @@ class CarlaMultiW(QTabWidget):
 
         self.addTab(self.fRack, "Plugins")
         self.addTab(self.fPatchbay, "Patchbay")
+
+        #self.fPatchbay.hide()
+        #self.removeTab(1)
+        #self.fPatchbay.setParent(None)
+        #self.fPatchbay.show()
 
         self.scene = self.fPatchbay.scene
 
