@@ -816,9 +816,9 @@ public:
 
         if (timeInfo.valid & EngineTimeInfo::kValidBBT)
         {
-            double ppqBar  = double(timeInfo.bbt.bar - 1) * timeInfo.bbt.beatsPerBar;
-            double ppqBeat = double(timeInfo.bbt.beat - 1);
-            double ppqTick = double(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat;
+            const double ppqBar  = double(timeInfo.bbt.bar - 1) * timeInfo.bbt.beatsPerBar;
+            const double ppqBeat = double(timeInfo.bbt.beat - 1);
+            const double ppqTick = double(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat;
 
             fPosInfo.bpm = timeInfo.bbt.beatsPerMinute;
 

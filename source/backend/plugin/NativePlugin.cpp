@@ -26,6 +26,17 @@
 
 #include <QtCore/QStringList>
 
+// -----------------------------------------------------
+
+static LinkedList<const NativePluginDescriptor*> gPluginDescriptors;
+
+void carla_register_native_plugin(const NativePluginDescriptor* desc)
+{
+    gPluginDescriptors.append(desc);
+}
+
+// -----------------------------------------------------
+
 CARLA_BACKEND_START_NAMESPACE
 
 #if 0
@@ -104,6 +115,21 @@ struct NativePluginMidiData {
 
     CARLA_DECLARE_NON_COPY_STRUCT(NativePluginMidiData)
 };
+
+// -----------------------------------------------------
+
+static const
+struct ScopedInitializer {
+    ScopedInitializer()
+    {
+        carla_register_all_plugins();
+    }
+
+    ~ScopedInitializer()
+    {
+        gPluginDescriptors.clear();
+    }
+} _si;
 
 // -----------------------------------------------------
 
@@ -2153,19 +2179,14 @@ protected:
 public:
     static size_t getPluginCount() noexcept
     {
-        return sPluginDescriptors.count();
+        return gPluginDescriptors.count();
     }
 
     static const NativePluginDescriptor* getPluginDescriptor(const size_t index) noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(index < sPluginDescriptors.count(), nullptr);
+        CARLA_SAFE_ASSERT_RETURN(index < gPluginDescriptors.count(), nullptr);
 
-        return sPluginDescriptors.getAt(index);
-    }
-
-    static void registerPlugin(const NativePluginDescriptor* desc)
-    {
-        sPluginDescriptors.append(desc);
+        return gPluginDescriptors.getAt(index);
     }
 
     // -------------------------------------------------------------------
@@ -2192,7 +2213,7 @@ public:
         // ---------------------------------------------------------------
         // get descriptor that matches label
 
-        for (LinkedList<const NativePluginDescriptor*>::Itenerator it = sPluginDescriptors.begin(); it.valid(); it.next())
+        for (LinkedList<const NativePluginDescriptor*>::Itenerator it = gPluginDescriptors.begin(); it.valid(); it.next())
         {
             fDescriptor = it.getValue();
 
@@ -2320,19 +2341,6 @@ public:
         return true;
     }
 
-    class ScopedInitializer
-    {
-    public:
-        ScopedInitializer()
-        {
-            carla_register_all_plugins();
-        }
-
-        ~ScopedInitializer()
-        {
-            sPluginDescriptors.clear();
-        }
-    };
 
 private:
     NativePluginHandle   fHandle;
@@ -2354,8 +2362,6 @@ private:
     NativePluginMidiData fMidiOut;
 
     NativeTimeInfo fTimeInfo;
-
-    static LinkedList<const NativePluginDescriptor*> sPluginDescriptors;
 
     // -------------------------------------------------------------------
 
@@ -2421,17 +2427,7 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NativePlugin)
 };
 
-LinkedList<const NativePluginDescriptor*> NativePlugin::sPluginDescriptors;
-
-static const NativePlugin::ScopedInitializer _si;
-
 CARLA_BACKEND_END_NAMESPACE
-
-void carla_register_native_plugin(const NativePluginDescriptor* desc)
-{
-    CARLA_BACKEND_USE_NAMESPACE
-    NativePlugin::registerPlugin(desc);
-}
 
 #endif // WANT_NATIVE
 

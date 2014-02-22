@@ -246,7 +246,7 @@ struct EngineOptions {
 
 #ifndef DOXYGEN
     EngineOptions() noexcept;
-    ~EngineOptions();
+    ~EngineOptions() noexcept;
 #endif
 };
 
@@ -360,7 +360,7 @@ public:
     /*!
      * The destructor.
      */
-    virtual ~CarlaEngineAudioPort() override;
+    ~CarlaEngineAudioPort() override;
 
     /*!
      * Get the type of the port, in this case kEnginePortTypeAudio.
@@ -406,7 +406,7 @@ public:
     /*!
      * The destructor.
      */
-    virtual ~CarlaEngineCVPort() override;
+    ~CarlaEngineCVPort() override;
 
     /*!
      * Get the type of the port, in this case kEnginePortTypeCV.
@@ -419,20 +419,12 @@ public:
     /*!
      * Initialize the port's internal buffer for \a engine.
      */
-    virtual void initBuffer() noexcept override;
+    void initBuffer() noexcept override;
 
     /*!
      * Set a new buffer size.
      */
     void setBufferSize(const uint32_t bufferSize);
-
-#if 0
-    // TESTING: I should remove this
-    /*!
-     * Write buffer back into the engine.
-     */
-    virtual void writeBuffer(const uint32_t frames, const uint32_t timeOffset);
-#endif
 
     /*!
      * Direct access to the port's buffer.
@@ -466,7 +458,7 @@ public:
     /*!
      * The destructor.
      */
-    virtual ~CarlaEngineEventPort() override;
+    ~CarlaEngineEventPort() override;
 
     /*!
      * Get the type of the port, in this case kEnginePortTypeEvent.
@@ -479,7 +471,7 @@ public:
     /*!
      * Initialize the port's internal buffer for \a engine.
      */
-    virtual void initBuffer() noexcept override;
+    void initBuffer() noexcept override;
 
     /*!
      * Get the number of events present in the buffer.

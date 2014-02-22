@@ -214,7 +214,7 @@ EngineOptions::EngineOptions() noexcept
       resourceDir(nullptr),
       frontendWinId(0) {}
 
-EngineOptions::~EngineOptions()
+EngineOptions::~EngineOptions() noexcept
 {
     if (audioDevice != nullptr)
     {
