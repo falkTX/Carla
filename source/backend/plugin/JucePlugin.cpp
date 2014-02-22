@@ -29,7 +29,8 @@ using namespace juce;
 
 CARLA_BACKEND_START_NAMESPACE
 
-class JucePlugin : public CarlaPlugin
+class JucePlugin : public CarlaPlugin,
+                   public AudioPlayHead
 {
 public:
     JucePlugin(CarlaEngine* const engine, const uint id)
@@ -41,6 +42,7 @@ public:
 
         fMidiBuffer.ensureSize(2048);
         fMidiBuffer.clear();
+        fPosInfo.resetToDefault();
     }
 
     ~JucePlugin() override
@@ -806,6 +808,31 @@ public:
         } // End of Event Input
 
         // --------------------------------------------------------------------------------------------------------
+        // Set TimeInfo
+
+        const EngineTimeInfo& timeInfo(pData->engine->getTimeInfo());
+
+        fPosInfo.isPlaying = timeInfo.playing;
+
+        if (timeInfo.valid & EngineTimeInfo::kValidBBT)
+        {
+            double ppqBar  = double(timeInfo.bbt.bar - 1) * timeInfo.bbt.beatsPerBar;
+            double ppqBeat = double(timeInfo.bbt.beat - 1);
+            double ppqTick = double(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat;
+
+            fPosInfo.bpm = timeInfo.bbt.beatsPerMinute;
+
+            fPosInfo.timeSigNumerator   = static_cast<int>(timeInfo.bbt.beatsPerBar);
+            fPosInfo.timeSigDenominator = static_cast<int>(timeInfo.bbt.beatType);
+
+            fPosInfo.timeInSamples = static_cast<int64_t>(timeInfo.frame);
+            fPosInfo.timeInSeconds = static_cast<double>(fPosInfo.timeInSamples)/pData->engine->getSampleRate();
+
+            fPosInfo.ppqPosition = ppqBar + ppqBeat + ppqTick;
+            fPosInfo.ppqPositionOfLastBarStart = ppqBar;
+        }
+
+        // --------------------------------------------------------------------------------------------------------
         // Process
 
         processSingle(inBuffer, outBuffer, frames);
@@ -908,7 +935,11 @@ public:
     // -------------------------------------------------------------------
 
 protected:
-    // TODO
+    bool getCurrentPosition(CurrentPositionInfo& result) override
+    {
+        carla_copyStruct<CurrentPositionInfo>(result, fPosInfo);
+        return true;
+    }
 
     // -------------------------------------------------------------------
 
@@ -978,6 +1009,7 @@ public:
         }
 
         fInstance->fillInPluginDescription(fDesc);
+        fInstance->setPlayHead(this);
 
         // ---------------------------------------------------------------
         // get info
@@ -1041,8 +1073,9 @@ private:
     AudioPluginInstance* fInstance;
     AudioPluginFormatManager fFormatManager;
 
-    AudioSampleBuffer fAudioBuffer;
-    MidiBuffer        fMidiBuffer;
+    AudioSampleBuffer   fAudioBuffer;
+    MidiBuffer          fMidiBuffer;
+    CurrentPositionInfo fPosInfo;
 
     const char* fUniqueId;
 
