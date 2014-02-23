@@ -279,6 +279,9 @@ class PluginParameter(QWidget):
     def getTabIndex(self):
         return self.fTabIndex
 
+    def setPluginId(self, pluginId):
+        self.fPluginId = pluginId
+
     def setDefault(self, value):
         self.ui.widget.setDefault(value)
 
@@ -298,8 +301,7 @@ class PluginParameter(QWidget):
         self.ui.sb_channel.blockSignals(False)
 
     def setLabelWidth(self, width):
-        self.ui.label.setMinimumWidth(width)
-        self.ui.label.setMaximumWidth(width)
+        self.ui.label.setFixedWidth(width)
 
     @pyqtSlot()
     def slot_controlSpinboxCustomMenu(self):
@@ -314,7 +316,7 @@ class PluginParameter(QWidget):
         for cc in MIDI_CC_LIST:
             action = menu.addAction(cc)
 
-            if self.fMidiControl != -1 and int(cc.split(" ")[0], 16) == self.fMidiControl:
+            if self.fMidiControl != -1 and int(cc.split(" ", 1)[0], 16) == self.fMidiControl:
                 action.setCheckable(True)
                 action.setChecked(True)
 
@@ -326,7 +328,7 @@ class PluginParameter(QWidget):
             self.ui.sb_control.setValue(-1)
         else:
             selControlStr = actSel.text()
-            selControl    = int(selControlStr.split(" ")[0], 16)
+            selControl    = int(selControlStr.split(" ", 1)[0], 16)
             self.ui.sb_control.setValue(selControl)
 
     @pyqtSlot()
@@ -348,15 +350,13 @@ class PluginParameter(QWidget):
 
     @pyqtSlot(int)
     def slot_controlSpinboxChanged(self, control):
-        if self.fMidiControl != control:
-            self.midiControlChanged.emit(self.fParameterId, control)
-            self.fMidiControl = control
+        self.fMidiControl = control
+        self.midiControlChanged.emit(self.fParameterId, control)
 
     @pyqtSlot(int)
     def slot_channelSpinboxChanged(self, channel):
-        if self.fMidiChannel != channel:
-            self.midiChannelChanged.emit(self.fParameterId, channel)
-            self.fMidiChannel = channel
+        self.fMidiChannel = channel
+        self.midiChannelChanged.emit(self.fParameterId, channel)
 
     @pyqtSlot(float)
     def slot_widgetValueChanged(self, value):
@@ -457,12 +457,14 @@ class PluginEdit(QDialog):
         self.ui.dial_vol.valueChanged.connect(self.slot_volumeChanged)
         self.ui.dial_b_left.valueChanged.connect(self.slot_balanceLeftChanged)
         self.ui.dial_b_right.valueChanged.connect(self.slot_balanceRightChanged)
+        self.ui.dial_pan.valueChanged.connect(self.slot_panChanged)
         self.ui.sb_ctrl_channel.valueChanged.connect(self.slot_ctrlChannelChanged)
 
         self.ui.dial_drywet.customContextMenuRequested.connect(self.slot_knobCustomMenu)
         self.ui.dial_vol.customContextMenuRequested.connect(self.slot_knobCustomMenu)
         self.ui.dial_b_left.customContextMenuRequested.connect(self.slot_knobCustomMenu)
         self.ui.dial_b_right.customContextMenuRequested.connect(self.slot_knobCustomMenu)
+        self.ui.dial_pan.customContextMenuRequested.connect(self.slot_knobCustomMenu)
         self.ui.sb_ctrl_channel.customContextMenuRequested.connect(self.slot_channelCustomMenu)
 
         self.ui.keyboard.noteOn.connect(self.slot_noteOn)
@@ -484,7 +486,7 @@ class PluginEdit(QDialog):
         # Update current program text
         if self.ui.cb_programs.count() > 0:
             pIndex = self.ui.cb_programs.currentIndex()
-            pName  = charPtrToString(gCarla.host.get_program_name(self.fPluginId, pIndex))
+            pName  = gCarla.host.get_program_name(self.fPluginId, pIndex)
             #pName  = pName[:40] + (pName[40:] and "...")
             self.ui.cb_programs.setItemText(pIndex, pName)
 
@@ -492,9 +494,9 @@ class PluginEdit(QDialog):
         if self.ui.cb_midi_programs.count() > 0:
             mpIndex = self.ui.cb_midi_programs.currentIndex()
             mpData  = gCarla.host.get_midi_program_data(self.fPluginId, mpIndex)
-            mpBank  = int(mpData['bank'])
-            mpProg  = int(mpData['program'])
-            mpName  = charPtrToString(mpData['name'])
+            mpBank  = mpData['bank']
+            mpProg  = mpData['program']
+            mpName  = mpData['name']
             #mpName  = mpName[:40] + (mpName[40:] and "...")
             self.ui.cb_midi_programs.setItemText(mpIndex, "%03i:%03i - %s" % (mpBank+1, mpProg+1, mpName))
 
@@ -510,12 +512,6 @@ class PluginEdit(QDialog):
     def reloadAll(self):
         if gCarla.host is not None:
             self.fPluginInfo = gCarla.host.get_plugin_info(self.fPluginId)
-            self.fPluginInfo['filename']  = charPtrToString(self.fPluginInfo['filename'])
-            self.fPluginInfo['name']      = charPtrToString(self.fPluginInfo['name'])
-            self.fPluginInfo['label']     = charPtrToString(self.fPluginInfo['label'])
-            self.fPluginInfo['maker']     = charPtrToString(self.fPluginInfo['maker'])
-            self.fPluginInfo['copyright'] = charPtrToString(self.fPluginInfo['copyright'])
-            self.fPluginInfo['iconName']  = charPtrToString(self.fPluginInfo['iconName'])
 
             if not gCarla.isLocal:
                 self.fPluginInfo['hints'] &= ~PLUGIN_HAS_CUSTOM_UI
@@ -700,8 +696,8 @@ class PluginEdit(QDialog):
                 parameter = {
                     'type':  paramData['type'],
                     'hints': paramData['hints'],
-                    'name':  charPtrToString(paramInfo['name']),
-                    'unit':  charPtrToString(paramInfo['unit']),
+                    'name':  paramInfo['name'],
+                    'unit':  paramInfo['unit'],
                     'scalePoints': [],
 
                     'index':   paramData['index'],
@@ -722,7 +718,7 @@ class PluginEdit(QDialog):
 
                     parameter['scalePoints'].append({
                         'value': scalePointInfo['value'],
-                        'label': charPtrToString(scalePointInfo['label'])
+                        'label': scalePointInfo['label']
                     })
 
                 #parameter['name'] = parameter['name'][:30] + (parameter['name'][30:] and "...")
@@ -815,7 +811,7 @@ class PluginEdit(QDialog):
             self.ui.label_programs.setEnabled(True)
 
             for i in range(programCount):
-                pName = charPtrToString(gCarla.host.get_program_name(self.fPluginId, i))
+                pName = gCarla.host.get_program_name(self.fPluginId, i)
                 #pName = pName[:40] + (pName[40:] and "...")
                 self.ui.cb_programs.addItem(pName)
 
@@ -841,9 +837,9 @@ class PluginEdit(QDialog):
 
             for i in range(midiProgramCount):
                 mpData = gCarla.host.get_midi_program_data(self.fPluginId, i)
-                mpBank = int(mpData['bank'])
-                mpProg = int(mpData['program'])
-                mpName = charPtrToString(mpData['name'])
+                mpBank = mpData['bank']
+                mpProg = mpData['program']
+                mpName = mpData['name']
                 #mpName = mpName[:40] + (mpName[40:] and "...")
 
                 self.ui.cb_midi_programs.addItem("%03i:%03i - %s" % (mpBank+1, mpProg+1, mpName))
@@ -1062,7 +1058,7 @@ class PluginEdit(QDialog):
             presetList = []
 
             for i in range(gCarla.host.get_program_count(self.fPluginId)):
-                presetList.append("%03i - %s" % (i+1, charPtrToString(gCarla.host.get_program_name(self.fPluginId, i))))
+                presetList.append("%03i - %s" % (i+1, gCarla.host.get_program_name(self.fPluginId, i)))
 
             ret = QInputDialog.getItem(self, self.tr("Open LV2 Preset"), self.tr("Select an LV2 Preset:"), presetList, 0, False)
 
@@ -1134,6 +1130,11 @@ class PluginEdit(QDialog):
     def slot_balanceRightChanged(self, value):
         if gCarla.host is not None:
             gCarla.host.set_balance_right(self.fPluginId, float(value)/1000)
+
+    @pyqtSlot(int)
+    def slot_panChanged(self, value):
+        if gCarla.host is not None:
+            gCarla.host.set_panning(self.fPluginId, float(value)/1000)
 
     @pyqtSlot(int)
     def slot_panningChanged(self, value):

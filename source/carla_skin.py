@@ -47,13 +47,6 @@ class AbstractPluginSlot(QFrame):
         self.fPluginId   = pluginId
         self.fPluginInfo = gCarla.host.get_plugin_info(self.fPluginId) if gCarla.host is not None else gFakePluginInfo
 
-        self.fPluginInfo['filename']  = charPtrToString(self.fPluginInfo['filename'])
-        self.fPluginInfo['name']      = charPtrToString(self.fPluginInfo['name'])
-        self.fPluginInfo['label']     = charPtrToString(self.fPluginInfo['label'])
-        self.fPluginInfo['maker']     = charPtrToString(self.fPluginInfo['maker'])
-        self.fPluginInfo['copyright'] = charPtrToString(self.fPluginInfo['copyright'])
-        self.fPluginInfo['iconName']  = charPtrToString(self.fPluginInfo['iconName'])
-
         if not gCarla.isLocal:
             self.fPluginInfo['hints'] &= ~PLUGIN_HAS_CUSTOM_UI
 
@@ -771,7 +764,7 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
             if paramData['type'] != PARAMETER_INPUT:
                 continue
 
-            paramName = charPtrToString(paramInfo['name']).split("/", 1)[0].split(" (", 1)[0].strip()
+            paramName = paramInfo['name'].split("/", 1)[0].split(" (", 1)[0].strip()
             paramLow  = paramName.lower()
 
             if "Bandwidth" in paramName:
@@ -1160,7 +1153,7 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
             if paramData['type'] != PARAMETER_INPUT:
                 continue
 
-            paramName = charPtrToString(paramInfo['name'])
+            paramName = paramInfo['name']
             #paramLow  = paramName.lower()
 
             # real zyn fx plugins
@@ -1263,7 +1256,7 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
 
             for i in range(midiProgramCount):
                 mpData = gCarla.host.get_midi_program_data(self.fPluginId, i)
-                mpName = charPtrToString(mpData['name'])
+                mpName = mpData['name']
 
                 self.ui.cb_presets.addItem(mpName)
 
@@ -1307,11 +1300,11 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
 def createPluginSlot(parent, pluginId):
     pluginInfo  = gCarla.host.get_plugin_info(pluginId)
     pluginName  = gCarla.host.get_real_plugin_name(pluginId)
-    pluginLabel = charPtrToString(pluginInfo['label'])
-    uniqueId    = int(pluginInfo['uniqueId'])
+    pluginLabel = pluginInfo['label']
+    uniqueId    = pluginInfo['uniqueId']
 
-    #pluginMaker = charPtrToString(pluginInfo['maker'])
-    #pluginIcon  = charPtrToString(pluginInfo['iconName'])
+    #pluginMaker = pluginInfo['maker']
+    #pluginIcon  = pluginInfo['iconName']
 
     if pluginInfo['type'] == PLUGIN_INTERNAL:
         if pluginLabel.startswith("zyn") and pluginInfo['category'] != PLUGIN_CATEGORY_SYNTH:

@@ -20,7 +20,7 @@
 # Imports (Global)
 
 from PyQt4.QtCore import qCritical, QModelIndex, QTimer
-from PyQt4.QtGui import QApplication, QFileSystemModel, QMainWindow, QPalette
+from PyQt4.QtGui import QApplication, QFileSystemModel, QListWidgetItem, QMainWindow, QPalette
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -232,7 +232,7 @@ class HostWindow(QMainWindow):
         self.setTransportMenuEnabled(False)
 
         # -------------------------------------------------------------
-        # Set up GUI (right panel)
+        # Set up GUI (disk)
 
         self.fDirModel = QFileSystemModel(self)
         self.fDirModel.setRootPath(HOME)
@@ -246,6 +246,18 @@ class HostWindow(QMainWindow):
         self.ui.fileTreeView.setColumnHidden(2, True)
         self.ui.fileTreeView.setColumnHidden(3, True)
         self.ui.fileTreeView.setHeaderHidden(True)
+
+        # -------------------------------------------------------------
+        # Set up GUI (disk)
+
+        #self.item1 = QListWidgetItem(self.ui.lw_plugins)
+        #self.item1.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled|Qt.ItemIsDragEnabled)
+        #self.item1.setIcon(QIcon(":/bitmaps/thumbs/zita-rev1.png"))
+        #self.item1.setText("zita-rev1")
+        #item1.setTextAlignment(Qt.ali)
+        #self.ui.lw_plugins.()
+
+        # -------------------------------------------------------------
 
         self.setProperWindowTitle()
 
@@ -895,7 +907,7 @@ class HostWindow(QMainWindow):
         extraPtr = self.getExtraPtr(dialog.fRetPlugin)
 
         if not gCarla.host.add_plugin(btype, ptype, filename, None, label, uniqueId, extraPtr):
-            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"), charPtrToString(gCarla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
+            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"), gCarla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
             return
 
     @pyqtSlot()

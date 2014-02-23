@@ -192,6 +192,92 @@ struct CarlaBackendStandalone {
 static CarlaBackendStandalone gStandalone;
 
 // -------------------------------------------------------------------------------------------------------------------
+// Always return a valid string ptr
+
+static const char* const gNullCharPtr = "";
+
+static void checkStringPtr(const char*& charPtr)
+{
+    if (charPtr == nullptr)
+        charPtr = gNullCharPtr;
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+// Constructors
+
+_CarlaPluginInfo::_CarlaPluginInfo() noexcept
+    : type(CB::PLUGIN_NONE),
+      category(CB::PLUGIN_CATEGORY_NONE),
+      hints(0x0),
+      optionsAvailable(0x0),
+      optionsEnabled(0x0),
+      filename(gNullCharPtr),
+      name(gNullCharPtr),
+      label(gNullCharPtr),
+      maker(gNullCharPtr),
+      copyright(gNullCharPtr),
+      iconName(gNullCharPtr),
+      uniqueId(0) {}
+
+_CarlaPluginInfo::~_CarlaPluginInfo() noexcept
+{
+    if (label != gNullCharPtr)
+        delete[] label;
+    if (maker != gNullCharPtr)
+        delete[] maker;
+    if (copyright != gNullCharPtr)
+        delete[] copyright;
+}
+
+_CarlaNativePluginInfo::_CarlaNativePluginInfo() noexcept
+    : category(CB::PLUGIN_CATEGORY_NONE),
+      hints(0x0),
+      audioIns(0),
+      audioOuts(0),
+      midiIns(0),
+      midiOuts(0),
+      parameterIns(0),
+      parameterOuts(0),
+      name(gNullCharPtr),
+      label(gNullCharPtr),
+      maker(gNullCharPtr),
+      copyright(gNullCharPtr) {}
+
+_CarlaParameterInfo::_CarlaParameterInfo() noexcept
+    : name(gNullCharPtr),
+      symbol(gNullCharPtr),
+      unit(gNullCharPtr),
+      scalePointCount(0) {}
+
+_CarlaParameterInfo::~_CarlaParameterInfo() noexcept
+{
+    if (name != gNullCharPtr)
+        delete[] name;
+    if (symbol != gNullCharPtr)
+        delete[] symbol;
+    if (unit != gNullCharPtr)
+        delete[] unit;
+}
+
+_CarlaScalePointInfo::_CarlaScalePointInfo() noexcept
+    : value(0.0f),
+      label(gNullCharPtr) {}
+
+_CarlaScalePointInfo::~_CarlaScalePointInfo() noexcept
+{
+    if (label != gNullCharPtr)
+        delete[] label;
+}
+
+_CarlaTransportInfo::_CarlaTransportInfo() noexcept
+    : playing(false),
+      frame(0),
+      bar(0),
+      beat(0),
+      tick(0),
+      bpm(0.0) {}
+
+// -------------------------------------------------------------------------------------------------------------------
 // API
 
 const char* carla_get_complete_license_text()
@@ -363,7 +449,19 @@ const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(unsigned int i
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', nullptr);
     carla_debug("carla_get_engine_driver_device_info(%i, \"%s\")", index, name);
 
-    return CarlaEngine::getDriverDeviceInfo(index, name);
+    if (const EngineDriverDeviceInfo* const ret = CarlaEngine::getDriverDeviceInfo(index, name))
+    {
+        static EngineDriverDeviceInfo devInfo;
+        static const uint32_t nullBufferSizes[] = { 0   };
+        static const double   nullSampleRates[] = { 0.0 };
+
+        devInfo.hints       = ret->hints;
+        devInfo.bufferSizes = (ret->bufferSizes != nullptr) ? ret->bufferSizes : nullBufferSizes;
+        devInfo.sampleRates = (ret->sampleRates != nullptr) ? ret->sampleRates : nullSampleRates;
+        return &devInfo;
+    }
+
+    return nullptr;
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -416,6 +514,11 @@ const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int index)
      info.label     = nativePlugin->label;
      info.maker     = nativePlugin->maker;
      info.copyright = nativePlugin->copyright;
+
+     checkStringPtr(info.name);
+     checkStringPtr(info.label);
+     checkStringPtr(info.maker);
+     checkStringPtr(info.copyright);
 
     return &info;
 #else
@@ -1071,28 +1174,28 @@ const CarlaPluginInfo* carla_get_plugin_info(uint pluginId)
     info.hints            = 0x0;
     info.optionsAvailable = 0x0;
     info.optionsEnabled   = 0x0;
-    info.filename         = nullptr;
-    info.name             = nullptr;
-    info.iconName         = nullptr;
+    info.filename         = gNullCharPtr;
+    info.name             = gNullCharPtr;
+    info.iconName         = gNullCharPtr;
     info.uniqueId         = 0;
 
     // cleanup
-    if (info.label != nullptr)
+    if (info.label != gNullCharPtr)
     {
         delete[] info.label;
-        info.label = nullptr;
+        info.label = gNullCharPtr;
     }
 
-    if (info.maker != nullptr)
+    if (info.maker != gNullCharPtr)
     {
         delete[] info.maker;
-        info.maker = nullptr;
+        info.maker = gNullCharPtr;
     }
 
-    if (info.copyright != nullptr)
+    if (info.copyright != gNullCharPtr)
     {
         delete[] info.copyright;
-        info.copyright = nullptr;
+        info.copyright = gNullCharPtr;
     }
 
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &info);
@@ -1126,6 +1229,10 @@ const CarlaPluginInfo* carla_get_plugin_info(uint pluginId)
 
         plugin->getCopyright(strBufCopyright);
         info.copyright = carla_strdup(strBufCopyright);
+
+        checkStringPtr(info.filename);
+        checkStringPtr(info.name);
+        checkStringPtr(info.iconName);
 
         return &info;
     }
@@ -1212,22 +1319,22 @@ const CarlaParameterInfo* carla_get_parameter_info(uint pluginId, uint32_t param
     info.scalePointCount = 0;
 
     // cleanup
-    if (info.name != nullptr)
+    if (info.name != gNullCharPtr)
     {
         delete[] info.name;
-        info.name = nullptr;
+        info.name = gNullCharPtr;
     }
 
-    if (info.symbol != nullptr)
+    if (info.symbol != gNullCharPtr)
     {
         delete[] info.symbol;
-        info.symbol = nullptr;
+        info.symbol = gNullCharPtr;
     }
 
-    if (info.unit != nullptr)
+    if (info.unit != gNullCharPtr)
     {
         delete[] info.unit;
-        info.unit = nullptr;
+        info.unit = gNullCharPtr;
     }
 
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &info);
@@ -1276,10 +1383,10 @@ const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(uint pluginId, ui
     info.value = 0.0f;
 
     // cleanup
-    if (info.label != nullptr)
+    if (info.label != gNullCharPtr)
     {
         delete[] info.label;
-        info.label = nullptr;
+        info.label = gNullCharPtr;
     }
 
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &info);
@@ -1359,42 +1466,64 @@ const MidiProgramData* carla_get_midi_program_data(uint pluginId, uint32_t midiP
 {
     carla_debug("carla_get_midi_program_data(%i, %i)", pluginId, midiProgramId);
 
-    static const MidiProgramData fallbackMidiProgData = { 0, 0, nullptr };
+    static MidiProgramData midiProgData;
 
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &fallbackMidiProgData);
+    // reset
+    midiProgData.bank    = 0;
+    midiProgData.program = 0;
+    midiProgData.name    = gNullCharPtr;
+
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &midiProgData);
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
     {
         if (midiProgramId < plugin->getMidiProgramCount())
-            return &plugin->getMidiProgramData(midiProgramId);
+        {
+            const MidiProgramData& ret(plugin->getMidiProgramData(midiProgramId));
+            carla_copyStruct<MidiProgramData>(midiProgData, ret);
+            checkStringPtr(midiProgData.name);
+            return &midiProgData;
+        }
 
         carla_stderr2("carla_get_midi_program_data(%i, %i) - midiProgramId out of bounds", pluginId, midiProgramId);
-        return &fallbackMidiProgData;
+        return &midiProgData;
     }
 
     carla_stderr2("carla_get_midi_program_data(%i, %i) - could not find plugin", pluginId, midiProgramId);
-    return &fallbackMidiProgData;
+    return &midiProgData;
 }
 
 const CustomData* carla_get_custom_data(uint pluginId, uint32_t customDataId)
 {
     carla_debug("carla_get_custom_data(%i, %i)", pluginId, customDataId);
 
-    static const CustomData fallbackCustomData = { nullptr, nullptr, nullptr };
+    static CustomData customData;
 
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &fallbackCustomData);
+    // reset
+    customData.type  = gNullCharPtr;
+    customData.key   = gNullCharPtr;
+    customData.value = gNullCharPtr;
+
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, &customData);
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
     {
         if (customDataId < plugin->getCustomDataCount())
-            return &plugin->getCustomData(customDataId);
+        {
+            const CustomData& ret(plugin->getCustomData(customDataId));
+            carla_copyStruct<CustomData>(customData, ret);
+            checkStringPtr(customData.type);
+            checkStringPtr(customData.key);
+            checkStringPtr(customData.value);
+            return &customData;
+        }
 
         carla_stderr2("carla_get_custom_data(%i, %i) - customDataId out of bounds", pluginId, customDataId);
-        return &fallbackCustomData;
+        return &customData;
     }
 
     carla_stderr2("carla_get_custom_data(%i, %i) - could not find plugin", pluginId, customDataId);
-    return &fallbackCustomData;
+    return &customData;
 }
 
 const char* carla_get_chunk_data(uint pluginId)
@@ -1492,12 +1621,12 @@ const char* carla_get_parameter_text(uint pluginId, uint32_t parameterId, float 
     carla_debug("carla_get_parameter_text(%i, %i)", pluginId, parameterId);
 
     static char textBuf[STR_MAX+1];
-    carla_zeroChar(textBuf, STR_MAX+1);
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
     {
         if (parameterId < plugin->getParameterCount())
         {
+            carla_zeroChar(textBuf, STR_MAX+1);
             plugin->getParameterText(parameterId, value, textBuf);
             return textBuf;
         }
@@ -1516,12 +1645,12 @@ const char* carla_get_program_name(uint pluginId, uint32_t programId)
     carla_debug("carla_get_program_name(%i, %i)", pluginId, programId);
 
     static char programName[STR_MAX+1];
-    carla_zeroChar(programName, STR_MAX+1);
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
     {
         if (programId < plugin->getProgramCount())
         {
+            carla_zeroChar(programName, STR_MAX+1);
             plugin->getProgramName(programId, programName);
             return programName;
         }
@@ -1540,12 +1669,12 @@ const char* carla_get_midi_program_name(uint pluginId, uint32_t midiProgramId)
     carla_debug("carla_get_midi_program_name(%i, %i)", pluginId, midiProgramId);
 
     static char midiProgramName[STR_MAX+1];
-    carla_zeroChar(midiProgramName, STR_MAX+1);
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
     {
         if (midiProgramId < plugin->getMidiProgramCount())
         {
+            carla_zeroChar(midiProgramName, STR_MAX+1);
             plugin->getMidiProgramName(midiProgramId, midiProgramName);
             return midiProgramName;
         }
@@ -1564,10 +1693,10 @@ const char* carla_get_real_plugin_name(uint pluginId)
     carla_debug("carla_get_real_plugin_name(%i)", pluginId);
 
     static char realPluginName[STR_MAX+1];
-    carla_zeroChar(realPluginName, STR_MAX+1);
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
     {
+        carla_zeroChar(realPluginName, STR_MAX+1);
         plugin->getRealName(realPluginName);
         return realPluginName;
     }

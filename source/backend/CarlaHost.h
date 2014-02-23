@@ -134,42 +134,10 @@ typedef struct _CarlaPluginInfo {
     /*!
      * C++ constructor.
      */
-    _CarlaPluginInfo() noexcept
-        : type(CarlaBackend::PLUGIN_NONE),
-          category(CarlaBackend::PLUGIN_CATEGORY_NONE),
-          hints(0x0),
-          optionsAvailable(0x0),
-          optionsEnabled(0x0),
-          filename(nullptr),
-          name(nullptr),
-          label(nullptr),
-          maker(nullptr),
-          copyright(nullptr),
-          iconName(nullptr),
-          uniqueId(0) {}
-
-    /*!
-     * C++ destructor.
-     */
-    ~_CarlaPluginInfo()
-    {
-        if (label != nullptr)
-        {
-            delete[] label;
-            label = nullptr;
-        }
-        if (maker != nullptr)
-        {
-            delete[] maker;
-            maker = nullptr;
-        }
-        if (copyright != nullptr)
-        {
-            delete[] copyright;
-            copyright = nullptr;
-        }
-    }
+    _CarlaPluginInfo() noexcept;
+    ~_CarlaPluginInfo() noexcept;
 #endif
+
 } CarlaPluginInfo;
 
 /*!
@@ -242,20 +210,9 @@ typedef struct _CarlaNativePluginInfo {
     /*!
      * C++ constructor.
      */
-    _CarlaNativePluginInfo() noexcept
-        : category(CarlaBackend::PLUGIN_CATEGORY_NONE),
-          hints(0x0),
-          audioIns(0),
-          audioOuts(0),
-          midiIns(0),
-          midiOuts(0),
-          parameterIns(0),
-          parameterOuts(0),
-          name(nullptr),
-          label(nullptr),
-          maker(nullptr),
-          copyright(nullptr) {}
+    _CarlaNativePluginInfo() noexcept;
 #endif
+
 } CarlaNativePluginInfo;
 
 /*!
@@ -307,34 +264,10 @@ typedef struct _CarlaParameterInfo {
     /*!
      * C++ constructor.
      */
-    _CarlaParameterInfo() noexcept
-        : name(nullptr),
-          symbol(nullptr),
-          unit(nullptr),
-          scalePointCount(0) {}
-
-    /*!
-     * C++ destructor.
-     */
-    ~_CarlaParameterInfo()
-    {
-        if (name != nullptr)
-        {
-            delete[] name;
-            name = nullptr;
-        }
-        if (symbol != nullptr)
-        {
-            delete[] symbol;
-            symbol = nullptr;
-        }
-        if (unit != nullptr)
-        {
-            delete[] unit;
-            unit = nullptr;
-        }
-    }
+    _CarlaParameterInfo() noexcept;
+    ~_CarlaParameterInfo() noexcept;
 #endif
+
 } CarlaParameterInfo;
 
 /*!
@@ -356,22 +289,10 @@ typedef struct _CarlaScalePointInfo {
     /*!
      * C++ constructor.
      */
-    _CarlaScalePointInfo() noexcept
-        : value(0.0f),
-          label(nullptr) {}
-
-    /*!
-     * C++ destructor.
-     */
-    ~_CarlaScalePointInfo()
-    {
-        if (label != nullptr)
-        {
-            delete[] label;
-            label = nullptr;
-        }
-    }
+    _CarlaScalePointInfo() noexcept;
+    ~_CarlaScalePointInfo() noexcept;
 #endif
+
 } CarlaScalePointInfo;
 
 /*!
@@ -413,14 +334,9 @@ typedef struct _CarlaTransportInfo {
     /*!
      * C++ constructor.
      */
-    _CarlaTransportInfo() noexcept
-        : playing(false),
-          frame(0),
-          bar(0),
-          beat(0),
-          tick(0),
-          bpm(0.0) {}
+    _CarlaTransportInfo() noexcept;
 #endif
+
 } CarlaTransportInfo;
 
 /* ------------------------------------------------------------------------------------------------------------

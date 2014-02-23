@@ -428,7 +428,6 @@ if readEnvVars:
     gCarla.DEFAULT_GIG_PATH    = os.getenv("GIG_PATH",    DEFAULT_GIG_PATH).split(splitter)
     gCarla.DEFAULT_SF2_PATH    = os.getenv("SF2_PATH",    DEFAULT_SF2_PATH).split(splitter)
     gCarla.DEFAULT_SFZ_PATH    = os.getenv("SFZ_PATH",    DEFAULT_SFZ_PATH).split(splitter)
-
 else:
     gCarla.DEFAULT_LADSPA_PATH = DEFAULT_LADSPA_PATH.split(splitter)
     gCarla.DEFAULT_DSSI_PATH   = DEFAULT_DSSI_PATH.split(splitter)
@@ -447,10 +446,10 @@ else:
 CWD = sys.path[0]
 
 # make it work with cxfreeze
-if CWD.endswith("/carla"):
-    CWD = CWD.rsplit("/carla", 1)[0]
-elif CWD.endswith("\\carla.exe"):
-    CWD = CWD.rsplit("\\carla.exe", 1)[0]
+if WINDOWS and CWD.endswith(".exe"):
+    CWD = CWD.rsplit("\\", 1)[0]
+elif CWD.endswith("/carla") or CWD.endswith("/carla-plugin") or CWD.endswith("/carla-patchbay") or CWD.endswith("/carla-rack"):
+    CWD = CWD.rsplit("/", 1)[0]
 
 # find tool
 def findTool(toolDir, toolName):

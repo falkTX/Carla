@@ -278,22 +278,22 @@ def checkPluginInternal(desc):
     pinfo = deepcopy(PyPluginInfo)
     pinfo['build']     = BINARY_NATIVE
     pinfo['type']      = PLUGIN_INTERNAL
-    pinfo['hints']     = int(desc['hints'])
-    pinfo['name']      = charPtrToString(desc['name'])
-    pinfo['label']     = charPtrToString(desc['label'])
-    pinfo['maker']     = charPtrToString(desc['maker'])
-    pinfo['copyright'] = charPtrToString(desc['copyright'])
+    pinfo['hints']     = desc['hints']
+    pinfo['name']      = desc['name']
+    pinfo['label']     = desc['label']
+    pinfo['maker']     = desc['maker']
+    pinfo['copyright'] = desc['copyright']
 
-    pinfo['audio.ins']   = int(desc['audioIns'])
-    pinfo['audio.outs']  = int(desc['audioOuts'])
+    pinfo['audio.ins']   = desc['audioIns']
+    pinfo['audio.outs']  = desc['audioOuts']
     pinfo['audio.total'] = pinfo['audio.ins'] + pinfo['audio.outs']
 
-    pinfo['midi.ins']   = int(desc['midiIns'])
-    pinfo['midi.outs']  = int(desc['midiOuts'])
+    pinfo['midi.ins']   = desc['midiIns']
+    pinfo['midi.outs']  = desc['midiOuts']
     pinfo['midi.total'] = pinfo['midi.ins'] + pinfo['midi.outs']
 
-    pinfo['parameters.ins']   = int(desc['parameterIns'])
-    pinfo['parameters.outs']  = int(desc['parameterOuts'])
+    pinfo['parameters.ins']   = desc['parameterIns']
+    pinfo['parameters.outs']  = desc['parameterOuts']
     pinfo['parameters.total'] = pinfo['parameters.ins'] + pinfo['parameters.outs']
 
     plugins.append(pinfo)

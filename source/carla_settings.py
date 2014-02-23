@@ -145,7 +145,7 @@ class DriverSettingsW(QDialog):
         # fill combo-boxes first
         self.slot_updateDeviceInfo()
 
-        if 2 < audioNumPeriods < 3:
+        if audioNumPeriods in (2, 3):
             self.ui.sb_numperiods.setValue(audioNumPeriods)
         else:
             self.ui.sb_numperiods.setValue(CARLA_DEFAULT_AUDIO_NUM_PERIODS)
@@ -184,10 +184,9 @@ class DriverSettingsW(QDialog):
         self.ui.cb_samplerate.clear()
 
         if deviceName and gCarla.host is not None:
-            driverDeviceInfo = gCarla.host.get_engine_driver_device_info(self.fDriverIndex, deviceName)
-
-            self.fBufferSizes = numPtrToList(driverDeviceInfo['bufferSizes'])
-            self.fSampleRates = numPtrToList(driverDeviceInfo['sampleRates'])
+            driverDeviceInfo  = gCarla.host.get_engine_driver_device_info(self.fDriverIndex, deviceName)
+            self.fBufferSizes = driverDeviceInfo['bufferSizes']
+            self.fSampleRates = driverDeviceInfo['sampleRates']
         else:
             self.fBufferSizes = BUFFER_SIZE_LIST
             self.fSampleRates = SAMPLE_RATE_LIST

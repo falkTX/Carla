@@ -74,10 +74,11 @@ class CarlaRackList(QListWidget):
 
         # plugin files
         exts.append("dll")
-        exts.append("so")
 
         if MACOS:
             exts.append("dylib")
+        if not WINDOWS:
+            exts.append("so")
 
         self.fSupportedExtensions = tuple(i.replace("*.","") for i in exts)
         self.fWasLastDragValid    = False
@@ -103,7 +104,7 @@ class CarlaRackList(QListWidget):
 
             if os.path.isdir(filename):
                 if os.path.exists(os.path.join(filename, "manifest.ttl")):
-                    return False
+                    return True
 
             elif os.path.isfile(filename):
                 if filename.lower().endswith(self.fSupportedExtensions):

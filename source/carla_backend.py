@@ -112,10 +112,45 @@ def numPtrToList(numPtr):
     return numList
 
 # ------------------------------------------------------------------------------------------------------------
+# Convert a ctypes value into a python one
+
+c_int_types    = (c_int, c_int8, c_int16, c_int32, c_int64, c_uint, c_uint8, c_uint16, c_uint32, c_uint64, c_long, c_longlong)
+c_float_types  = (c_float, c_double, c_longdouble)
+c_intp_types   = tuple(POINTER(i) for i in c_int_types)
+c_floatp_types = tuple(POINTER(i) for i in c_float_types)
+
+def toPythonType(value, attr):
+    #if value is None:
+        #return None
+    if isinstance(value, (bool, int, float)):
+        return value
+    if isinstance(value, bytes):
+        return charPtrToString(value)
+    #if isinstance(value, c_bool):
+        #return bool(value)
+    #if isinstance(value, c_char_p):
+        #return charPtrToString(value)
+    #if isinstance(value, c_int_types):
+        #return int(value)
+    #if isinstance(value, c_float_types):
+        #return float(value)
+    if isinstance(value, c_intp_types):
+        return numPtrToList(value)
+    if isinstance(value, c_floatp_types):
+        return numPtrToList(value)
+    if isinstance(value, POINTER(c_char_p)):
+        return charPtrPtrToStringList(value)
+    print("..............", attr, ".....................", value, ":", type(value))
+    #raise Exception("error here!!!")
+    #from sys import exit
+    #exit(1)
+    return value
+
+# ------------------------------------------------------------------------------------------------------------
 # Convert a ctypes struct into a python dict
 
 def structToDict(struct):
-    return dict((attr, getattr(struct, attr)) for attr, value in struct._fields_)
+    return dict((attr, toPythonType(getattr(struct, attr), attr)) for attr, value in struct._fields_)
 
 # ------------------------------------------------------------------------------------------------------------
 # Carla Backend API (base definitions)
