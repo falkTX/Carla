@@ -298,7 +298,7 @@
                <number>0</number>
               </property>
               <item>
-               <widget class="QRadioButton" name="radioButton">
+               <widget class="QRadioButton" name="rb_balance">
                 <property name="text">
                  <string>Use Balance</string>
                 </property>
@@ -308,7 +308,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="radioButton_2">
+               <widget class="QRadioButton" name="rb_pan">
                 <property name="text">
                  <string>Use Panning</string>
                 </property>

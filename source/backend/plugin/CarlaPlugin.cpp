@@ -501,13 +501,14 @@ const SaveState& CarlaPlugin::getSaveState()
     {
         const ParameterData& paramData(pData->param.data[i]);
 
-        if (paramData.type != PARAMETER_INPUT || (paramData.hints & PARAMETER_IS_ENABLED) == 0)
+        if ((paramData.hints & PARAMETER_IS_ENABLED) == 0)
             continue;
 
         StateParameter* const stateParameter(new StateParameter());
 
-        stateParameter->index  = paramData.index;
-        stateParameter->midiCC = paramData.midiCC;
+        stateParameter->isInput = (paramData.type == PARAMETER_INPUT);
+        stateParameter->index   = paramData.index;
+        stateParameter->midiCC  = paramData.midiCC;
         stateParameter->midiChannel = paramData.midiChannel;
 
         getParameterName(i, strBuf);
@@ -691,10 +692,16 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
         // Now set parameter
         if (index >= 0 && index < static_cast<int32_t>(pData->param.count))
         {
-            if (pData->param.data[index].hints & PARAMETER_USES_SAMPLERATE)
-                stateParameter->value *= sampleRate;
+            //CARLA_SAFE_ASSERT(stateParameter->isInput == (pData
 
-            setParameterValue(static_cast<uint32_t>(index), stateParameter->value, true, true, true);
+            if (stateParameter->isInput)
+            {
+                if (pData->param.data[index].hints & PARAMETER_USES_SAMPLERATE)
+                    stateParameter->value *= sampleRate;
+
+                setParameterValue(static_cast<uint32_t>(index), stateParameter->value, true, true, true);
+            }
+
 #ifndef BUILD_BRIDGE
             setParameterMidiCC(static_cast<uint32_t>(index), stateParameter->midiCC, true, true);
             setParameterMidiChannel(static_cast<uint32_t>(index), stateParameter->midiChannel, true, true);

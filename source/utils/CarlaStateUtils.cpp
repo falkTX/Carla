@@ -30,7 +30,8 @@ CARLA_BACKEND_START_NAMESPACE
 // StateParameter
 
 StateParameter::StateParameter() noexcept
-    : index(-1),
+    : isInput(true),
+      index(-1),
       name(nullptr),
       symbol(nullptr),
       value(0.0f),
@@ -506,7 +507,8 @@ void fillXmlStringFromSaveState(QString& content, const SaveState& saveState)
         if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
             parameter += QString("    <Symbol>%1</Symbol>\n").arg(xmlSafeString(stateParameter->symbol, true));
 
-        parameter += QString("    <Value>%1</Value>\n").arg(stateParameter->value);
+        if (stateParameter->isInput)
+            parameter += QString("    <Value>%1</Value>\n").arg(stateParameter->value);
 
         if (stateParameter->midiCC > 0)
         {

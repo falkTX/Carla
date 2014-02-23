@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla widgets code
-# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -103,7 +103,7 @@ class CarlaAboutW(QDialog):
         self.ui.l_about.setText(self.tr(""
                                      "<br>Version %s"
                                      "<br>Carla is a Multi-Plugin Host for JACK%s.<br>"
-                                     "<br>Copyright (C) 2011-2013 falkTX<br>"
+                                     "<br>Copyright (C) 2011-2014 falkTX<br>"
                                      "" % (VERSION, extraInfo)))
 
         if gCarla.isControl or gCarla.isPlugin or gCarla.host is None:
@@ -435,6 +435,10 @@ class PluginEdit(QDialog):
 
         self.ui.scrollArea.setEnabled(False)
         self.ui.scrollArea.setVisible(False)
+
+        # todo
+        self.ui.rb_balance.setEnabled(False)
+        self.ui.rb_pan.setEnabled(False)
 
         self.reloadAll()
 
