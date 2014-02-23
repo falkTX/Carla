@@ -23,13 +23,17 @@ from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QTimer
 from PyQt4.QtGui import QAbstractSpinBox, QApplication, QComboBox, QCursor, QDialog, QMenu, QProgressBar
 
 from math import isnan
+from random import random
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
 import ui_inputdialog_value
 
-def fixValue(value, minimum, maximum):
+# ------------------------------------------------------------------------------------------------------------
+# Get a fixed value within min/max bounds
+
+def geFixedValue(value, minimum, maximum):
     if isnan(value):
         print("Parameter is NaN! - %f" % value)
         return minimum
@@ -181,25 +185,28 @@ class ParamSpinBox(QAbstractSpinBox):
     def __init__(self, parent):
         QAbstractSpinBox.__init__(self, parent)
 
+        self.fName = ""
+
         self.fMinimum = 0.0
         self.fMaximum = 1.0
         self.fDefault = 0.0
         self.fValue   = None
-        self.fStep    = 0.01
+
+        self.fStep      = 0.01
         self.fStepSmall = 0.0001
         self.fStepLarge = 0.1
 
-        self.fReadOnly = False
+        self.fIsReadOnly = False
         self.fScalePoints = None
-        self.fHaveScalePoints = False
+        self.fUseScalePoints = False
 
         self.fBar = ParamProgressBar(self)
         self.fBar.setContextMenuPolicy(Qt.NoContextMenu)
-        self.fBar.show()
+        #self.fBar.show()
 
-        self.fName = ""
+        self.fBox = None
 
-        self.lineEdit().setVisible(False)
+        self.lineEdit().hide()
 
         self.customContextMenuRequested.connect(self.slot_showCustomMenu)
         self.fBar.valueChanged.connect(self.slot_progressBarValueChanged)
@@ -207,7 +214,7 @@ class ParamSpinBox(QAbstractSpinBox):
         QTimer.singleShot(0, self.slot_updateProgressBarGeometry)
 
     def setDefault(self, value):
-        value = fixValue(value, self.fMinimum, self.fMaximum)
+        value = geFixedValue(value, self.fMinimum, self.fMaximum)
         self.fDefault = value
 
     def setMinimum(self, value):
@@ -219,7 +226,7 @@ class ParamSpinBox(QAbstractSpinBox):
         self.fBar.setMaximum(value)
 
     def setValue(self, value, send=True):
-        value = fixValue(value, self.fMinimum, self.fMaximum)
+        value = geFixedValue(value, self.fMinimum, self.fMaximum)
 
         if self.fValue == value:
             return False
@@ -227,7 +234,7 @@ class ParamSpinBox(QAbstractSpinBox):
         self.fValue = value
         self.fBar.setValue(value)
 
-        if self.fHaveScalePoints:
+        if self.fUseScalePoints:
             self._setScalePointValue(value)
 
         if send:
@@ -278,8 +285,8 @@ class ParamSpinBox(QAbstractSpinBox):
         self.fBar.setTextCall(textCall)
 
     def setReadOnly(self, yesNo):
+        self.fIsReadOnly = yesNo
         self.setButtonSymbols(QAbstractSpinBox.UpDownArrows if yesNo else QAbstractSpinBox.NoButtons)
-        self.fReadOnly = yesNo
         QAbstractSpinBox.setReadOnly(self, yesNo)
 
     def setEnabled(self, yesNo):
@@ -289,11 +296,11 @@ class ParamSpinBox(QAbstractSpinBox):
     def setScalePoints(self, scalePoints, useScalePoints):
         if len(scalePoints) == 0:
             self.fScalePoints     = None
-            self.fHaveScalePoints = False
+            self.fUseScalePoints = False
             return
 
         self.fScalePoints     = scalePoints
-        self.fHaveScalePoints = useScalePoints
+        self.fUseScalePoints = useScalePoints
 
         if not useScalePoints:
             return
@@ -302,7 +309,7 @@ class ParamSpinBox(QAbstractSpinBox):
         self.fBar.close()
         self.fBox = QComboBox(self)
         self.fBox.setContextMenuPolicy(Qt.NoContextMenu)
-        self.fBox.show()
+        #self.fBox.show()
         self.slot_updateProgressBarGeometry()
 
         # Add items, sorted
@@ -334,7 +341,7 @@ class ParamSpinBox(QAbstractSpinBox):
                             boxItemValues.insert(index+1, value)
                             break
 
-        if self.fValue != None:
+        if self.fValue is not None:
             self._setScalePointValue(self.fValue)
 
         self.fBox.currentIndexChanged['QString'].connect(self.slot_comboBoxIndexChanged)
@@ -353,7 +360,7 @@ class ParamSpinBox(QAbstractSpinBox):
         self.setValue(value)
 
     def stepEnabled(self):
-        if self.fReadOnly or self.fValue is None:
+        if self.fIsReadOnly or self.fValue is None:
             return QAbstractSpinBox.StepNone
         if self.fValue <= self.fMinimum:
             return QAbstractSpinBox.StepUpEnabled
@@ -364,16 +371,16 @@ class ParamSpinBox(QAbstractSpinBox):
     def updateAll(self):
         self.update()
         self.fBar.update()
-        if self.fHaveScalePoints:
+        if self.fBox is not None:
             self.fBox.update()
 
     def resizeEvent(self, event):
-        QTimer.singleShot(0, self.slot_updateProgressBarGeometry)
         QAbstractSpinBox.resizeEvent(self, event)
+        self.slot_updateProgressBarGeometry()
 
     @pyqtSlot(str)
     def slot_comboBoxIndexChanged(self, boxText):
-        if self.fReadOnly:
+        if self.fIsReadOnly:
             return
 
         value          = float(boxText.split(" - ", 1)[0])
@@ -386,7 +393,7 @@ class ParamSpinBox(QAbstractSpinBox):
 
     @pyqtSlot(float)
     def slot_progressBarValueChanged(self, value):
-        if self.fReadOnly:
+        if self.fIsReadOnly:
             return
 
         step      = int((value - self.fMinimum) / self.fStep + 0.5)
@@ -396,11 +403,6 @@ class ParamSpinBox(QAbstractSpinBox):
 
     @pyqtSlot()
     def slot_showCustomMenu(self):
-        menu     = QMenu(self)
-        actReset = menu.addAction(self.tr("Reset (%f)" % self.fDefault))
-        menu.addSeparator()
-        actCopy  = menu.addAction(self.tr("Copy (%f)" % self.fValue))
-
         clipboard  = QApplication.instance().clipboard()
         pasteText  = clipboard.text()
         pasteValue = None
@@ -411,27 +413,36 @@ class ParamSpinBox(QAbstractSpinBox):
             except:
                 pass
 
+        menu      = QMenu(self)
+        actReset  = menu.addAction(self.tr("Reset (%f)" % self.fDefault))
+        actRandom = menu.addAction(self.tr("Random"))
+        menu.addSeparator()
+        actCopy   = menu.addAction(self.tr("Copy (%f)" % self.fValue))
+
         if pasteValue is None:
             actPaste = menu.addAction(self.tr("Paste"))
+            actPaste.setEnabled(False)
         else:
-            actPaste = menu.addAction(self.tr("Paste (%s)" % pasteValue))
+            actPaste = menu.addAction(self.tr("Paste (%f)" % pasteValue))
 
         menu.addSeparator()
 
         actSet = menu.addAction(self.tr("Set value..."))
 
-        if self.fReadOnly:
+        if self.fIsReadOnly:
             actReset.setEnabled(False)
+            actRandom.setEnabled(False)
             actPaste.setEnabled(False)
             actSet.setEnabled(False)
 
         actSel = menu.exec_(QCursor.pos())
 
-        if actSel == actSet:
-            dialog = CustomInputDialog(self, self.fName, self.fValue, self.fMinimum, self.fMaximum, self.fStep, self.fScalePoints)
-            if dialog.exec_():
-                value = dialog.returnValue()
-                self.setValue(value)
+        if actSel == actReset:
+            self.setValue(self.fDefault)
+
+        elif actSel == actRandom:
+            value = random() * (self.fMaximum - self.fMinimum) + self.fMinimum
+            self.setValue(value)
 
         elif actSel == actCopy:
             clipboard.setText("%f" % self.fValue)
@@ -439,13 +450,16 @@ class ParamSpinBox(QAbstractSpinBox):
         elif actSel == actPaste:
             self.setValue(pasteValue)
 
-        elif actSel == actReset:
-            self.setValue(self.fDefault)
+        elif actSel == actSet:
+            dialog = CustomInputDialog(self, self.fName, self.fValue, self.fMinimum, self.fMaximum, self.fStep, self.fScalePoints)
+            if dialog.exec_():
+                value = dialog.returnValue()
+                self.setValue(value)
 
     @pyqtSlot()
     def slot_updateProgressBarGeometry(self):
         self.fBar.setGeometry(self.lineEdit().geometry())
-        if self.fHaveScalePoints:
+        if self.fUseScalePoints:
             self.fBox.setGeometry(self.lineEdit().geometry())
 
     def _getNearestScalePoint(self, realValue):
