@@ -327,13 +327,10 @@ public:
 
         for (LinkedList<const char*>::Itenerator it = fCustomURIDs.begin(); it.valid(); it.next())
         {
-            const char*& uri(it.getValue());
+            const char* const uri(it.getValue());
 
             if (uri != nullptr)
-            {
                 delete[] uri;
-                uri = nullptr;
-            }
         }
 
         fCustomURIDs.clear();
@@ -566,7 +563,7 @@ public:
 
         for (size_t i=0; i < fCustomURIDs.count(); ++i)
         {
-            const char*& thisUri(fCustomURIDs.getAt(i));
+            const char* const thisUri(fCustomURIDs.getAt(i));
             if (thisUri != nullptr && std::strcmp(thisUri, uri) == 0)
                 return i;
         }

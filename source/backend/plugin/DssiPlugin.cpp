@@ -2003,7 +2003,7 @@ private:
 
         for (LinkedList<const char*>::Itenerator it = sMultiSynthList.begin(); it.valid(); it.next())
         {
-            const char*& itLabel(it.getValue());
+            const char* const itLabel(it.getValue());
 
             if (std::strcmp(label, itLabel) == 0)
                 return false;

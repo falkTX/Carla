@@ -176,7 +176,7 @@ public:
         if (index >= fPrograms.count())
             return nullptr;
 
-        const ProgramInfo*& pInfo(fPrograms.getAt(index));
+        const ProgramInfo* const pInfo(fPrograms.getAt(index));
 
         fRetProgram.bank    = pInfo->bank;
         fRetProgram.program = pInfo->prog;

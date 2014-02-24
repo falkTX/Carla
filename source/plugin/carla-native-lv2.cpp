@@ -1399,7 +1399,7 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
         return plm.lv2Descs.getAt(index);
     }
 
-    const NativePluginDescriptor*& pluginDesc(plm.descs.getAt(index));
+    const NativePluginDescriptor* const pluginDesc(plm.descs.getAt(index));
 
     CarlaString tmpURI;
 

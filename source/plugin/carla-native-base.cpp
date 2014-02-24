@@ -59,7 +59,7 @@ struct PluginListManager {
 #ifdef CARLA_NATIVE_PLUGIN_LV2
         for (LinkedList<const LV2_Descriptor*>::Itenerator it = lv2Descs.begin(); it.valid(); it.next())
         {
-            const LV2_Descriptor*& lv2Desc(it.getValue());
+            const LV2_Descriptor* const lv2Desc(it.getValue());
             delete[] lv2Desc->URI;
             delete lv2Desc;
         }
