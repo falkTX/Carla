@@ -32,15 +32,6 @@
 #define CARLA_SAFE_ASSERT_RETURN_ERRN(cond, err) if (cond) pass(); else { carla_safe_assert(#cond, __FILE__, __LINE__); setLastError(err); return nullptr; }
 
 // -----------------------------------------------------------------------
-// Global action lock for UI operations, used for osc only
-
-#ifndef BUILD_BRIDGE
-# define CARLA_ENGINE_THREAD_SAFE_SECTION const CarlaCriticalSection::Scope _ccsl(pData->_cs);
-#else
-# define CARLA_ENGINE_THREAD_SAFE_SECTION
-#endif
-
-// -----------------------------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -247,10 +238,6 @@ struct CarlaEngineProtectedData {
     EngineInternalEvents bufEvents;
     EngineInternalTime   time;
     EngineNextAction     nextAction;
-
-#ifndef BUILD_BRIDGE
-    CarlaCriticalSection _cs; // for handling requests from multiple threads
-#endif
 
     // -------------------------------------------------------------------
 

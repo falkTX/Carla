@@ -64,7 +64,7 @@ const T& carla_max(const T& v1, const T& v2, const T& max) noexcept
 }
 
 /*
- * Fix bounds of 'value', between 'min' and 'max'.
+ * Fix bounds of 'value' between 'min' and 'max'.
  */
 template<typename T>
 static inline
@@ -77,64 +77,6 @@ const T& carla_fixValue(const T& min, const T& max, const T& value) noexcept
     if (value >= max)
         return max;
     return value;
-}
-
-/*
- * Add array values to another array.
- */
-template<typename T>
-static inline
-void carla_add(T* dataDst, T* dataSrc, const size_t size) noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(size > 0,);
-
-    for (size_t i=0; i < size; ++i)
-        *dataDst++ += *dataSrc++;
-}
-
-/*
- * Add array values to another array.
- */
-template<typename T>
-static inline
-void carla_add(T* dataDst, const T* dataSrc, const size_t size) noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(size > 0,);
-
-    for (size_t i=0; i < size; ++i)
-        *dataDst++ += *dataSrc++;
-}
-
-/*
- * Copy array values to another array.
- */
-template<typename T>
-static inline
-void carla_copy(T* dataDst, T* dataSrc, const size_t size) noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(size > 0,);
-
-    std::memcpy(dataDst, dataSrc, size*sizeof(T));
-}
-
-/*
- * Copy array values to another array.
- */
-template<typename T>
-static inline
-void carla_copy(T* dataDst, const T* dataSrc, const size_t size) noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(size > 0,);
-
-    std::memcpy(dataDst, dataSrc, size*sizeof(T));
 }
 
 // -----------------------------------------------------------------------

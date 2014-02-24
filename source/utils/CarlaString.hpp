@@ -567,6 +567,7 @@ public:
 
     /*
      * Return a duplicate string buffer.
+     * May throw.
      */
     const char* dup() const
     {

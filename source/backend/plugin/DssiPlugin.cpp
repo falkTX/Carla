@@ -64,7 +64,7 @@ public:
         {
             showCustomUI(false);
 
-            pData->osc.thread.stop(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
+            pData->osc.thread.stopThread(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
         }
 
         pData->singleMutex.lock();
@@ -386,7 +386,7 @@ public:
         if (yesNo)
         {
             pData->osc.data.free();
-            pData->osc.thread.start();
+            pData->osc.thread.startThread();
         }
         else
         {
@@ -399,7 +399,7 @@ public:
                 pData->osc.data.free();
             }
 
-            pData->osc.thread.stop(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
+            pData->osc.thread.stopThread(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
         }
     }
 

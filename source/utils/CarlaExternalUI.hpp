@@ -39,7 +39,7 @@ public:
 
     ~CarlaExternalUI() override
     {
-        CARLA_ASSERT_INT(fUiState == UiNone, fUiState);
+        CARLA_SAFE_ASSERT_INT(fUiState == UiNone, fUiState);
     }
 
     UiState getAndResetUiState() noexcept

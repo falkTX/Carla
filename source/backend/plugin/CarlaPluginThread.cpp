@@ -68,7 +68,7 @@ CarlaPluginThread::~CarlaPluginThread()
 
 void CarlaPluginThread::setMode(const CarlaPluginThread::Mode mode)
 {
-    CARLA_ASSERT(! isRunning());
+    CARLA_SAFE_ASSERT(! isThreadRunning());
     carla_debug("CarlaPluginThread::setMode(%s)", PluginThreadMode2str(mode));
 
     fMode = mode;
@@ -76,7 +76,7 @@ void CarlaPluginThread::setMode(const CarlaPluginThread::Mode mode)
 
 void CarlaPluginThread::setOscData(const char* const binary, const char* const label, const char* const extra1, const char* const extra2)
 {
-    CARLA_ASSERT(! isRunning());
+    CARLA_SAFE_ASSERT(! isThreadRunning());
     carla_debug("CarlaPluginThread::setOscData(\"%s\", \"%s\", \"%s\", \"%s\")", binary, label, extra1, extra2);
 
     fBinary = binary;
@@ -226,12 +226,12 @@ void CarlaPluginThread::run()
         {
             //fProcess->waitForFinished(-1);
 
-            while (fProcess->state() != QProcess::NotRunning && ! shouldExit())
+            while (fProcess->state() != QProcess::NotRunning && ! shouldThreadExit())
                 carla_sleep(1);
 
             // we only get here if UI was closed or thread asked to exit
 
-            if (fProcess->state() != QProcess::NotRunning && shouldExit())
+            if (fProcess->state() != QProcess::NotRunning && shouldThreadExit())
             {
                 fProcess->waitForFinished(static_cast<int>(fEngine->getOptions().uiBridgesTimeout));
 
@@ -255,7 +255,7 @@ void CarlaPluginThread::run()
         else
         {
             fProcess->close();
-            CARLA_ASSERT(fProcess->state() == QProcess::NotRunning);
+            CARLA_SAFE_ASSERT(fProcess->state() == QProcess::NotRunning);
 
             if (fProcess->exitCode() != 0 || fProcess->exitStatus() == QProcess::CrashExit)
                 carla_stderr("CarlaPluginThread::run() - GUI crashed while opening");
@@ -269,12 +269,12 @@ void CarlaPluginThread::run()
     case PLUGIN_THREAD_BRIDGE:
         //fProcess->waitForFinished(-1);
 
-        while (fProcess->state() != QProcess::NotRunning && ! shouldExit())
+        while (fProcess->state() != QProcess::NotRunning && ! shouldThreadExit())
             carla_sleep(1);
 
         // we only get here if bridge crashed or thread asked to exit
 
-        if (shouldExit())
+        if (shouldThreadExit())
         {
             fProcess->waitForFinished(500);
 

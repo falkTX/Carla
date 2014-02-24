@@ -27,7 +27,7 @@ CarlaEngineThread::CarlaEngineThread(CarlaEngine* const engine)
     : CarlaThread("CarlaEngineThread"),
       fEngine(engine)
 {
-    CARLA_ASSERT(engine != nullptr);
+    CARLA_SAFE_ASSERT(engine != nullptr);
     carla_debug("CarlaEngineThread::CarlaEngineThread(%p)", engine);
 }
 
@@ -47,7 +47,7 @@ void CarlaEngineThread::run()
     bool hasUi, oscRegisted, needsSingleThread;
     float value;
 
-    for (; fEngine->isRunning() && ! shouldExit();)
+    for (; fEngine->isRunning() && ! shouldThreadExit();)
     {
 #ifdef BUILD_BRIDGE
         oscRegisted = fEngine->isOscBridgeRegistered();

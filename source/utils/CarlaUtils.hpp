@@ -174,30 +174,34 @@ void carla_safe_assert_uint2(const char* const assertion, const char* const file
  * Sleep for 'secs' seconds.
  */
 static inline
-void carla_sleep(const unsigned int secs)
+void carla_sleep(const unsigned int secs) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(secs > 0,);
 
+    try {
 #ifdef CARLA_OS_WIN
     ::Sleep(secs * 1000);
 #else
     ::sleep(secs);
 #endif
+    } catch(...) {}
 }
 
 /*
  * Sleep for 'msecs' milliseconds.
  */
 static inline
-void carla_msleep(const unsigned int msecs)
+void carla_msleep(const unsigned int msecs) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(msecs > 0,);
 
+    try {
 #ifdef CARLA_OS_WIN
     ::Sleep(msecs);
 #else
     ::usleep(msecs * 1000);
 #endif
+    } catch(...) {}
 }
 
 // -----------------------------------------------------------------------
@@ -213,7 +217,9 @@ void carla_setenv(const char* const key, const char* const value) noexcept
     CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 
 #ifdef CARLA_OS_WIN
-    ::SetEnvironmentVariableA(key, value);
+    try {
+        ::SetEnvironmentVariableA(key, value);
+    } catch(...) {}
 #else
     ::setenv(key, value, 1);
 #endif
@@ -225,6 +231,7 @@ void carla_setenv(const char* const key, const char* const value) noexcept
 /*
  * Custom 'strdup' function.
  * Return value is always valid, and must be freed with "delete[] var".
+ * May throw.
  */
 static inline
 const char* carla_strdup(const char* const strBuf)
@@ -246,6 +253,7 @@ const char* carla_strdup(const char* const strBuf)
  * Custom 'strdup' function.
  * Calls "std::free(strBuf)".
  * Return value is always valid, and must be freed with "delete[] var".
+ * May throw.
  */
 static inline
 const char* carla_strdup_free(char* const strBuf)
@@ -257,6 +265,68 @@ const char* carla_strdup_free(char* const strBuf)
 
 // -----------------------------------------------------------------------
 // memory functions
+
+#if 0
+/*
+ * Add array values to another array.
+ */
+template<typename T>
+static inline
+void carla_add(T* dataDst, T* dataSrc, const size_t size) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(size > 0,);
+
+    for (size_t i=0; i < size; ++i)
+        *dataDst++ += *dataSrc++;
+}
+#endif
+
+/*
+ * Add array values to another array.
+ */
+template<typename T>
+static inline
+void carla_add(T* dataDst, const T* dataSrc, const size_t size) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(size > 0,);
+
+    for (size_t i=0; i < size; ++i)
+        *dataDst++ += *dataSrc++;
+}
+
+#if 0
+/*
+ * Copy array values to another array.
+ */
+template<typename T>
+static inline
+void carla_copy(T* dataDst, T* dataSrc, const size_t size) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(size > 0,);
+
+    std::memcpy(dataDst, dataSrc, size*sizeof(T));
+}
+#endif
+
+/*
+ * Copy array values to another array.
+ */
+template<typename T>
+static inline
+void carla_copy(T* dataDst, const T* dataSrc, const size_t size) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(size > 0,);
+
+    std::memcpy(dataDst, dataSrc, size*sizeof(T));
+}
 
 /*
  * Fill an array with a fixed value.
@@ -326,7 +396,7 @@ void carla_zeroStruct(T& structure) noexcept
 }
 
 /*
- * Clear an array of struct/class.
+ * Clear an array of struct/classes.
  */
 template <typename T>
 static inline
@@ -349,7 +419,7 @@ void carla_copyStruct(T& struct1, const T& struct2) noexcept
 }
 
 /*
- * Copy an array of struct/class.
+ * Copy an array of struct/classes.
  */
 template <typename T>
 static inline

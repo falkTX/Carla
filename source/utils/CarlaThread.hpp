@@ -30,7 +30,7 @@ protected:
     /*
      * Constructor.
      */
-    CarlaThread(const char* const threadName = nullptr)
+    CarlaThread(const char* const threadName = nullptr) noexcept
         : fName(threadName),
           fShouldExit(false)
     {
@@ -40,11 +40,11 @@ protected:
     /*
      * Destructor.
      */
-    virtual ~CarlaThread()
+    virtual ~CarlaThread() noexcept
     {
-        CARLA_SAFE_ASSERT(! isRunning());
+        CARLA_SAFE_ASSERT(! isThreadRunning());
 
-        stop(-1);
+        stopThread(-1);
     }
 
     /*
@@ -56,7 +56,7 @@ public:
     /*
      * Check if the thread is running.
      */
-    bool isRunning() const noexcept
+    bool isThreadRunning() const noexcept
     {
 #ifdef CARLA_OS_WIN
         return (fHandle.p != nullptr);
@@ -68,7 +68,7 @@ public:
     /*
      * Check if the thread should exit.
      */
-    bool shouldExit() const noexcept
+    bool shouldThreadExit() const noexcept
     {
         return fShouldExit;
     }
@@ -76,9 +76,9 @@ public:
     /*
      * Start the thread.
      */
-    void start()
+    void startThread() noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(! isRunning(),);
+        CARLA_SAFE_ASSERT_RETURN(! isThreadRunning(),);
 
         const CarlaMutex::ScopedLocker sl(fLock);
 
@@ -108,24 +108,24 @@ public:
     /*
      * Stop the thread.
      * In the 'timeOutMilliseconds':
-     * =0 -> no wait
-     * >0 -> wait timeout value
-     * <0 -> wait forever
+     * = 0 -> no wait
+     * > 0 -> wait timeout value
+     * < 0 -> wait forever
      */
-    bool stop(const int timeOutMilliseconds)
+    bool stopThread(const int timeOutMilliseconds) noexcept
     {
         const CarlaMutex::ScopedLocker sl(fLock);
 
-        if (isRunning())
+        if (isThreadRunning())
         {
-            signalShouldExit();
+            signalThreadShouldExit();
 
             if (timeOutMilliseconds != 0)
             {
                 // Wait for the thread to stop
                 int timeOutCheck = (timeOutMilliseconds == 1 || timeOutMilliseconds == -1) ? timeOutMilliseconds : timeOutMilliseconds/2;
 
-                while (isRunning())
+                while (isThreadRunning())
                 {
                     carla_msleep(2);
 
@@ -139,7 +139,7 @@ public:
                 }
             }
 
-            if (isRunning())
+            if (isThreadRunning())
             {
                 // should never happen!
                 carla_stderr2("Carla assertion failure: \"! isRunning()\" in file %s, line %i", __FILE__, __LINE__);
@@ -147,7 +147,10 @@ public:
                 pthread_t threadId = *(const_cast<pthread_t*>(&fHandle));
                 _init();
 
-                pthread_cancel(threadId);
+                try {
+                    pthread_cancel(threadId);
+                } catch(...) {}
+
                 return false;
             }
         }
@@ -158,7 +161,7 @@ public:
     /*
      * Tell the thread to stop as soon as possible.
      */
-    void signalShouldExit() noexcept
+    void signalThreadShouldExit() noexcept
     {
         fShouldExit = true;
     }
@@ -179,18 +182,20 @@ private:
 #endif
     }
 
-    void _runEntryPoint()
+    void _runEntryPoint() noexcept
     {
         // report ready
         fLock.unlock();
 
-        run();
+        try {
+            run();
+        } catch(...) {}
 
         // done
         _init();
     }
 
-    static void* _entryPoint(void* userData)
+    static void* _entryPoint(void* userData) noexcept
     {
         static_cast<CarlaThread*>(userData)->_runEntryPoint();
         return nullptr;

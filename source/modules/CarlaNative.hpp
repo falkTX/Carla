@@ -36,7 +36,7 @@ public:
     NativePluginClass(const NativeHostDescriptor* const host)
         : pHost(host)
     {
-        CARLA_ASSERT(host != nullptr);
+        CARLA_SAFE_ASSERT(host != nullptr);
     }
 
     virtual ~NativePluginClass()

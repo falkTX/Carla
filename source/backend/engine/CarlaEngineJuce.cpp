@@ -155,7 +155,7 @@ public:
         pData->bufAudio.inCount  = static_cast<uint32_t>(inputChannels.countNumberOfSetBits());
         pData->bufAudio.outCount = static_cast<uint32_t>(outputChannels.countNumberOfSetBits());
 
-        CARLA_ASSERT(pData->bufAudio.outCount > 0);
+        CARLA_SAFE_ASSERT(pData->bufAudio.outCount > 0);
 
         pData->bufAudio.create(pData->bufferSize);
 
@@ -255,7 +255,7 @@ public:
             callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_IN, PATCHBAY_ICON_HARDWARE, -1, 0.0f, strBuf);
 
             StringArray inputNames(fDevice->getInputChannelNames());
-            CARLA_ASSERT(inputNames.size() == static_cast<int>(pData->bufAudio.inCount));
+            CARLA_SAFE_ASSERT(inputNames.size() == static_cast<int>(pData->bufAudio.inCount));
 
             for (uint i=0; i < pData->bufAudio.inCount; ++i)
             {
@@ -280,7 +280,7 @@ public:
             callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_OUT, PATCHBAY_ICON_HARDWARE, -1, 0.0f, strBuf);
 
             StringArray outputNames(fDevice->getOutputChannelNames());
-            CARLA_ASSERT(outputNames.size() == static_cast<int>(pData->bufAudio.outCount));
+            CARLA_SAFE_ASSERT(outputNames.size() == static_cast<int>(pData->bufAudio.outCount));
 
             for (uint i=0; i < pData->bufAudio.outCount; ++i)
             {

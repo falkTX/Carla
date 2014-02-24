@@ -1,7 +1,7 @@
 /*
  * Carla misc utils based on Juce
  * Copyright (C) 2013 Raw Material Software Ltd.
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -71,7 +71,7 @@ public:
     LeakedObjectDetector() noexcept                            { ++(getCounter().numObjects); }
     LeakedObjectDetector(const LeakedObjectDetector&) noexcept { ++(getCounter().numObjects); }
 
-    ~LeakedObjectDetector()
+    ~LeakedObjectDetector() noexcept
     {
         if (--(getCounter().numObjects) < 0)
         {
@@ -100,7 +100,7 @@ private:
             numObjects = 0;
         }
 
-        ~LeakCounter()
+        ~LeakCounter() noexcept
         {
             if (numObjects > 0)
             {
@@ -115,10 +115,11 @@ private:
             }
         }
 
+        // this should be an atomic...
         volatile int numObjects;
     };
 
-    static const char* getLeakedObjectClassName()
+    static const char* getLeakedObjectClassName() noexcept
     {
         return OwnerClass::getLeakedObjectClassName();
     }
@@ -161,8 +162,9 @@ class ScopedValueSetter
 public:
     /** Creates a ScopedValueSetter that will immediately change the specified value to the
         given new value, and will then reset it to its original value when this object is deleted.
+        Must be used only for 'noexcept' compatible types.
     */
-    ScopedValueSetter(ValueType& valueToSet, ValueType newValue)
+    ScopedValueSetter(ValueType& valueToSet, ValueType newValue) noexcept
         : value(valueToSet),
           originalValue(valueToSet)
     {
@@ -172,14 +174,14 @@ public:
     /** Creates a ScopedValueSetter that will immediately change the specified value to the
         given new value, and will then reset it to be valueWhenDeleted when this object is deleted.
     */
-    ScopedValueSetter(ValueType& valueToSet, ValueType newValue, ValueType valueWhenDeleted)
+    ScopedValueSetter(ValueType& valueToSet, ValueType newValue, ValueType valueWhenDeleted) noexcept
         : value(valueToSet),
           originalValue(valueWhenDeleted)
     {
         valueToSet = newValue;
     }
 
-    ~ScopedValueSetter()
+    ~ScopedValueSetter() noexcept
     {
         value = originalValue;
     }

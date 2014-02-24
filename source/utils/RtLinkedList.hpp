@@ -77,7 +77,7 @@ public:
             }
 
             rtsafe_memory_pool_create(&fHandle, nullptr, fDataSize, minPreallocated, maxPreallocated);
-            CARLA_ASSERT(fHandle != nullptr);
+            CARLA_SAFE_ASSERT(fHandle != nullptr);
         }
 
         bool operator==(const Pool& pool) const noexcept
@@ -132,14 +132,14 @@ public:
 
     void spliceAppend(RtLinkedList& list, const bool init = true)
     {
-        CARLA_ASSERT(fMemPool == list.fMemPool);
+        CARLA_SAFE_ASSERT_RETURN(fMemPool == list.fMemPool,);
 
         AbstractLinkedList<T>::spliceAppend(list, init);
     }
 
     void spliceInsert(RtLinkedList& list, const bool init = true)
     {
-        CARLA_ASSERT(fMemPool == list.fMemPool);
+        CARLA_SAFE_ASSERT_RETURN(fMemPool == list.fMemPool,);
 
         AbstractLinkedList<T>::spliceInsert(list, init);
     }

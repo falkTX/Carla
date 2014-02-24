@@ -335,7 +335,7 @@ public:
             pData->active = false;
         }
 
-        if (pData->osc.thread.isRunning())
+        if (pData->osc.thread.isThreadRunning())
         {
             fShmControl.writeOpcode(kPluginBridgeOpcodeQuit);
             fShmControl.commitWrite();
@@ -351,7 +351,7 @@ public:
         }
 
         pData->osc.data.free();
-        pData->osc.thread.stop(3000);
+        pData->osc.thread.stopThread(3000);
 
         if (fNeedsSemDestroy)
         {
@@ -623,7 +623,7 @@ public:
 
     void idle() override
     {
-        if (! pData->osc.thread.isRunning())
+        if (! pData->osc.thread.isThreadRunning())
             carla_stderr2("TESTING: Bridge has closed!");
 
         CarlaPlugin::idle();
@@ -1912,25 +1912,26 @@ public:
             std::strncat(shmIdStr, &fShmTime.filename[fShmTime.filename.length()-6], 6);
 
             pData->osc.thread.setOscData(bridgeBinary, label, getPluginTypeAsString(fPluginType), shmIdStr);
-            pData->osc.thread.start();
+            pData->osc.thread.startThread();
         }
 
         fInitiated = false;
         fLastPongCounter = 0;
 
-        for (; fLastPongCounter < 100; ++fLastPongCounter)
+        for (; fLastPongCounter < 200; ++fLastPongCounter)
         {
-            if (fInitiated || ! pData->osc.thread.isRunning())
+            if (fInitiated || ! pData->osc.thread.isThreadRunning())
                 break;
-            carla_msleep(50);
+            carla_msleep(30);
             pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+            pData->engine->idle();
         }
 
         fLastPongCounter = -1;
 
         if (fInitError || ! fInitiated)
         {
-            pData->osc.thread.stop(6000);
+            pData->osc.thread.stopThread(6000);
 
             if (! fInitError)
                 pData->engine->setLastError("Timeout while waiting for a response from plugin-bridge\n(or the plugin crashed on initialization?)");

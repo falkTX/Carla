@@ -65,7 +65,7 @@ protected:
 public:
     virtual ~AbstractLinkedList()
     {
-        CARLA_ASSERT(fCount == 0);
+        CARLA_SAFE_ASSERT(fCount == 0);
     }
 
     class Itenerator {
@@ -76,9 +76,9 @@ public:
               fEntry2(fEntry->next),
               fQueue(queue)
         {
-            CARLA_ASSERT(fEntry != nullptr);
-            CARLA_ASSERT(fEntry2 != nullptr);
-            CARLA_ASSERT(fQueue != nullptr);
+            CARLA_SAFE_ASSERT(fEntry != nullptr);
+            CARLA_SAFE_ASSERT(fEntry2 != nullptr);
+            CARLA_SAFE_ASSERT(fQueue != nullptr);
         }
 
         bool valid() const noexcept
@@ -95,7 +95,7 @@ public:
         T& getValue() noexcept
         {
             fData = list_entry(fEntry, Data, siblings);
-            CARLA_ASSERT(fData != nullptr);
+            CARLA_SAFE_ASSERT(fData != nullptr);
             return fData->value;
         }
 

@@ -176,8 +176,8 @@ public:
 
     ~CarlaEngineRtAudio() override
     {
-        CARLA_ASSERT(fAudioBufIn == nullptr);
-        CARLA_ASSERT(fAudioBufOut == nullptr);
+        CARLA_SAFE_ASSERT(fAudioBufIn == nullptr);
+        CARLA_SAFE_ASSERT(fAudioBufOut == nullptr);
         carla_debug("CarlaEngineRtAudio::~CarlaEngineRtAudio()");
 
         fUsedMidiIns.clear();
@@ -274,7 +274,7 @@ public:
         pData->bufAudio.inCount  = iParams.nChannels;
         pData->bufAudio.outCount = oParams.nChannels;
 
-        CARLA_ASSERT(pData->bufAudio.outCount > 0);
+        CARLA_SAFE_ASSERT(pData->bufAudio.outCount > 0);
 
         if (pData->bufAudio.inCount > 0)
         {
@@ -312,7 +312,7 @@ public:
 
     bool close() override
     {
-        CARLA_ASSERT(fAudioBufOut != nullptr);
+        CARLA_SAFE_ASSERT(fAudioBufOut != nullptr);
         carla_debug("CarlaEngineRtAudio::close()");
 
         pData->bufAudio.isReady = false;

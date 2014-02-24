@@ -310,13 +310,13 @@ protected:
      * Param \a isInputPort defines wherever this is an input port or not (output otherwise).\n
      * Input/output and process mode are constant for the lifetime of the port.
      */
-    CarlaEnginePort(const CarlaEngine& engine, const bool isInputPort);
+    CarlaEnginePort(const CarlaEngine& engine, const bool isInputPort) noexcept;
 
 public:
     /*!
      * The destructor.
      */
-    virtual ~CarlaEnginePort();
+    virtual ~CarlaEnginePort() noexcept;
 
     /*!
      * Get the type of the port, as provided by the respective subclasses.
@@ -355,12 +355,12 @@ public:
      * The constructor.\n
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
-    CarlaEngineAudioPort(const CarlaEngine& engine, const bool isInputPort);
+    CarlaEngineAudioPort(const CarlaEngine& engine, const bool isInputPort) noexcept;
 
     /*!
      * The destructor.
      */
-    ~CarlaEngineAudioPort() override;
+    ~CarlaEngineAudioPort() noexcept override;
 
     /*!
      * Get the type of the port, in this case kEnginePortTypeAudio.
@@ -377,6 +377,7 @@ public:
 
     /*!
      * Direct access to the port's audio buffer.
+     * May return null.
      */
     float* getBuffer() const noexcept
     {
@@ -401,12 +402,12 @@ public:
      * The constructor.\n
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
-    CarlaEngineCVPort(const CarlaEngine& engine, const bool isInputPort);
+    CarlaEngineCVPort(const CarlaEngine& engine, const bool isInputPort) noexcept;
 
     /*!
      * The destructor.
      */
-    ~CarlaEngineCVPort() override;
+    ~CarlaEngineCVPort() noexcept override;
 
     /*!
      * Get the type of the port, in this case kEnginePortTypeCV.
@@ -422,12 +423,8 @@ public:
     void initBuffer() noexcept override;
 
     /*!
-     * Set a new buffer size.
-     */
-    void setBufferSize(const uint32_t bufferSize);
-
-    /*!
-     * Direct access to the port's buffer.
+     * Direct access to the port's CV buffer.
+     * May return null.
      */
     float* getBuffer() const noexcept
     {
@@ -437,7 +434,6 @@ public:
 #ifndef DOXYGEN
 protected:
     float* fBuffer;
-    const EngineProcessMode fProcessMode;
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineCVPort)
 #endif
@@ -453,12 +449,12 @@ public:
      * The constructor.\n
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
-    CarlaEngineEventPort(const CarlaEngine& engine, const bool isInputPort);
+    CarlaEngineEventPort(const CarlaEngine& engine, const bool isInputPort) noexcept;
 
     /*!
      * The destructor.
      */
-    ~CarlaEngineEventPort() override;
+    ~CarlaEngineEventPort() noexcept override;
 
     /*!
      * Get the type of the port, in this case kEnginePortTypeEvent.
@@ -588,7 +584,7 @@ public:
      * Add a new port of type \a portType.
      * \note This function does nothing in rack processing mode since ports are static there (2 audio + 1 event for both input and output).
      */
-    virtual CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput);
+    virtual CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput) /*noexcept*/;
 
 #ifndef DOXYGEN
 protected:
@@ -971,6 +967,11 @@ public:
      */
     bool isOscControlRegistered() const noexcept;
 #endif
+
+    /*!
+     * Idle OSC.
+     */
+    void idleOsc() const noexcept;
 
     /*!
      * Get OSC TCP server path.

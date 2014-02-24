@@ -546,7 +546,7 @@ public:
 
     ~CarlaEngineNative() override
     {
-        CARLA_ASSERT(! fIsActive);
+        CARLA_SAFE_ASSERT(! fIsActive);
         carla_debug("CarlaEngineNative::~CarlaEngineNative() - START");
 
         pData->aboutToClose = true;

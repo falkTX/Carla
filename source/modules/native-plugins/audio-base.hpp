@@ -129,7 +129,7 @@ public:
 
     ~AudioFileThread() override
     {
-        CARLA_ASSERT(! isRunning());
+        CARLA_ASSERT(! isThreadRunning());
 
         if (fFilePtr != nullptr)
             ad_close(fFilePtr);
@@ -140,13 +140,13 @@ public:
     void startNow()
     {
         fNeedsRead = true;
-        start();
+        startThread();
     }
 
     void stopNow()
     {
         fNeedsRead = false;
-        stop(1000);
+        stopThread(1000);
 
         const CarlaMutex::ScopedLocker sl(fMutex);
         fPool.reset();
@@ -164,7 +164,7 @@ public:
 
     bool loadFilename(const char* const filename)
     {
-        CARLA_ASSERT(! isRunning());
+        CARLA_ASSERT(! isThreadRunning());
         CARLA_ASSERT(filename != nullptr);
 
         fPool.startFrame = 0;
@@ -351,7 +351,7 @@ public:
 protected:
     void run() override
     {
-        while (! shouldExit())
+        while (! shouldThreadExit())
         {
             const uint64_t lastFrame(kPlayer->getLastFrame());
 

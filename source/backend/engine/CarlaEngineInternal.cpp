@@ -549,8 +549,8 @@ EngineInternalEvents::EngineInternalEvents() noexcept
 
 EngineInternalEvents::~EngineInternalEvents() noexcept
 {
-    CARLA_ASSERT(in == nullptr);
-    CARLA_ASSERT(out == nullptr);
+    CARLA_SAFE_ASSERT(in == nullptr);
+    CARLA_SAFE_ASSERT(out == nullptr);
 }
 
 // -----------------------------------------------------------------------
@@ -570,7 +570,7 @@ EngineNextAction::EngineNextAction() noexcept
 
 EngineNextAction::~EngineNextAction() noexcept
 {
-    CARLA_ASSERT(opcode == kEnginePostActionNull);
+    CARLA_SAFE_ASSERT(opcode == kEnginePostActionNull);
 }
 
 void EngineNextAction::ready() noexcept

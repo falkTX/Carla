@@ -121,26 +121,26 @@ CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
     : pData(new CarlaPluginProtectedData(engine, id, this))
 {
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
-    CARLA_ASSERT(id < engine->getMaxPluginNumber());
+    CARLA_SAFE_ASSERT(id < engine->getMaxPluginNumber());
     carla_debug("CarlaPlugin::CarlaPlugin(%p, %i)", engine, id);
 
     switch (engine->getProccessMode())
     {
     case ENGINE_PROCESS_MODE_SINGLE_CLIENT:
     case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
-        CARLA_ASSERT(id < MAX_DEFAULT_PLUGINS);
+        CARLA_SAFE_ASSERT(id < MAX_DEFAULT_PLUGINS);
         break;
 
     case ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
-        CARLA_ASSERT(id < MAX_RACK_PLUGINS);
+        CARLA_SAFE_ASSERT(id < MAX_RACK_PLUGINS);
         break;
 
     case ENGINE_PROCESS_MODE_PATCHBAY:
-        CARLA_ASSERT(id < MAX_PATCHBAY_PLUGINS);
+        CARLA_SAFE_ASSERT(id < MAX_PATCHBAY_PLUGINS);
         break;
 
     case ENGINE_PROCESS_MODE_BRIDGE:
-        CARLA_ASSERT(id == 0);
+        CARLA_SAFE_ASSERT(id == 0);
         break;
     }
 }
@@ -306,7 +306,7 @@ const CustomData& CarlaPlugin::getCustomData(const uint32_t index) const noexcep
 int32_t CarlaPlugin::getChunkData(void** const dataPtr) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
-    CARLA_ASSERT(false); // this should never happen
+    CARLA_SAFE_ASSERT(false); // this should never happen
     return 0;
 }
 
@@ -315,14 +315,14 @@ int32_t CarlaPlugin::getChunkData(void** const dataPtr) const noexcept
 
 unsigned int CarlaPlugin::getOptionsAvailable() const noexcept
 {
-    CARLA_ASSERT(false); // this should never happen
+    CARLA_SAFE_ASSERT(false); // this should never happen
     return 0x0;
 }
 
 float CarlaPlugin::getParameterValue(const uint32_t parameterId) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(), 0.0f);
-    CARLA_ASSERT(false); // this should never happen
+    CARLA_SAFE_ASSERT(false); // this should never happen
     return 0.0f;
 }
 
@@ -330,7 +330,7 @@ float CarlaPlugin::getParameterScalePointValue(const uint32_t parameterId, const
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(), 0.0f);
     CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId), 0.0f);
-    CARLA_ASSERT(false); // this should never happen
+    CARLA_SAFE_ASSERT(false); // this should never happen
     return 0.0f;
 }
 
@@ -357,7 +357,7 @@ void CarlaPlugin::getRealName(char* const strBuf) const noexcept
 void CarlaPlugin::getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
-    CARLA_ASSERT(false); // this should never happen
+    CARLA_SAFE_ASSERT(false); // this should never happen
     strBuf[0] = '\0';
 }
 
@@ -370,7 +370,7 @@ void CarlaPlugin::getParameterSymbol(const uint32_t parameterId, char* const str
 void CarlaPlugin::getParameterText(const uint32_t parameterId, const float, char* const strBuf) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
-    CARLA_ASSERT(false); // this should never happen
+    CARLA_SAFE_ASSERT(false); // this should never happen
     strBuf[0] = '\0';
 }
 
@@ -384,7 +384,7 @@ void CarlaPlugin::getParameterScalePointLabel(const uint32_t parameterId, const 
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
     CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId),);
-    CARLA_ASSERT(false); // this should never happen
+    CARLA_SAFE_ASSERT(false); // this should never happen
     strBuf[0] = '\0';
 }
 
@@ -828,7 +828,7 @@ void CarlaPlugin::setId(const unsigned int newId) noexcept
 
 void CarlaPlugin::setName(const char* const newName)
 {
-    CARLA_ASSERT(newName != nullptr && newName[0] != '\0');
+    CARLA_SAFE_ASSERT_RETURN(newName != nullptr && newName[0] != '\0',);
 
     if (pData->name != nullptr)
         delete[] pData->name;
@@ -838,7 +838,7 @@ void CarlaPlugin::setName(const char* const newName)
 
 void CarlaPlugin::setOption(const unsigned int option, const bool yesNo)
 {
-    CARLA_ASSERT(getOptionsAvailable() & option);
+    CARLA_SAFE_ASSERT_RETURN(getOptionsAvailable() & option,);
 
     if (yesNo)
         pData->options |= option;
@@ -865,7 +865,7 @@ void CarlaPlugin::setEnabled(const bool yesNo) noexcept
 void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool sendCallback) noexcept
 {
 #ifndef BUILD_BRIDGE
-    CARLA_ASSERT(sendOsc || sendCallback); // never call this from RT
+    CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
 #endif
 
     if (pData->active == active)
@@ -902,7 +902,7 @@ void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool se
 #ifndef BUILD_BRIDGE
 void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool sendCallback) noexcept
 {
-    CARLA_ASSERT(value >= 0.0f && value <= 1.0f);
+    CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.0f);
 
     const float fixedValue(carla_fixValue<float>(0.0f, 1.0f, value));
 
@@ -920,7 +920,7 @@ void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool se
 
 void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool sendCallback) noexcept
 {
-    CARLA_ASSERT(value >= 0.0f && value <= 1.27f);
+    CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.27f);
 
     const float fixedValue(carla_fixValue<float>(0.0f, 1.27f, value));
 
@@ -938,7 +938,7 @@ void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool se
 
 void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bool sendCallback) noexcept
 {
-    CARLA_ASSERT(value >= -1.0f && value <= 1.0f);
+    CARLA_SAFE_ASSERT(value >= -1.0f && value <= 1.0f);
 
     const float fixedValue(carla_fixValue<float>(-1.0f, 1.0f, value));
 
@@ -956,7 +956,7 @@ void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bo
 
 void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const bool sendCallback) noexcept
 {
-    CARLA_ASSERT(value >= -1.0f && value <= 1.0f);
+    CARLA_SAFE_ASSERT(value >= -1.0f && value <= 1.0f);
 
     const float fixedValue(carla_fixValue<float>(-1.0f, 1.0f, value));
 
@@ -974,7 +974,7 @@ void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const b
 
 void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool sendCallback) noexcept
 {
-    CARLA_ASSERT(value >= -1.0f && value <= 1.0f);
+    CARLA_SAFE_ASSERT(value >= -1.0f && value <= 1.0f);
 
     const float fixedValue(carla_fixValue<float>(-1.0f, 1.0f, value));
 
@@ -994,9 +994,9 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
 void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept
 {
 #ifndef BUILD_BRIDGE
-    CARLA_ASSERT(sendOsc || sendCallback); // never call this from RT
+    CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
 #endif
-    CARLA_ASSERT_INT(channel >= -1 && channel < MAX_MIDI_CHANNELS, channel);
+    CARLA_SAFE_ASSERT_RETURN(channel >= -1 && channel < MAX_MIDI_CHANNELS,);
 
     if (pData->ctrlChannel == channel)
         return;
@@ -1028,7 +1028,7 @@ void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const
 
 void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
 {
-    CARLA_ASSERT(parameterId < pData->param.count);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 #ifdef BUILD_BRIDGE
     if (! gIsLoadingProject)
     {
@@ -1058,12 +1058,8 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
 
 void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
 {
-    CARLA_ASSERT(rindex > PARAMETER_MAX && rindex != PARAMETER_NULL);
+    CARLA_SAFE_ASSERT_RETURN(rindex > PARAMETER_MAX && rindex != PARAMETER_NULL,);
 
-    if (rindex <= PARAMETER_MAX)
-        return;
-    if (rindex == PARAMETER_NULL)
-        return;
     if (rindex == PARAMETER_ACTIVE)
         return setActive((value > 0.0f), sendOsc, sendCallback);
     if (rindex == PARAMETER_CTRL_CHANNEL)
@@ -1095,12 +1091,9 @@ void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float
 
 void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, uint8_t channel, const bool sendOsc, const bool sendCallback) noexcept
 {
-    CARLA_ASSERT(sendOsc || sendCallback); // never call this from RT
-    CARLA_ASSERT(parameterId < pData->param.count);
-    CARLA_ASSERT_INT(channel < MAX_MIDI_CHANNELS, channel);
-
-    if (channel >= MAX_MIDI_CHANNELS)
-        channel = MAX_MIDI_CHANNELS;
+    CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+    CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+    CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
 
     pData->param.data[parameterId].midiChannel = channel;
 
@@ -1124,12 +1117,9 @@ void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, uint8_t ch
 
 void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, int16_t cc, const bool sendOsc, const bool sendCallback) noexcept
 {
-    CARLA_ASSERT(sendOsc || sendCallback); // never call this from RT
-    CARLA_ASSERT(parameterId < pData->param.count);
-    CARLA_ASSERT_INT(cc >= -1 && cc <= 0x5F, cc);
-
-    if (cc < -1 || cc > 0x5F)
-        cc = -1;
+    CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+    CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+    CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc <= 0x5F,);
 
     pData->param.data[parameterId].midiCC = cc;
 
@@ -1184,9 +1174,9 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
     {
         CustomData& cData(it.getValue());
 
-        CARLA_SAFE_ASSERT_RETURN(cData.type != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(cData.key != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(cData.value != nullptr,);
+        CARLA_SAFE_ASSERT_CONTINUE(cData.type != nullptr && cData.type[0] != '\0');
+        CARLA_SAFE_ASSERT_CONTINUE(cData.key != nullptr && cData.key[0] != '\0');
+        CARLA_SAFE_ASSERT_CONTINUE(cData.value != nullptr);
 
         if (std::strcmp(cData.key, key) == 0)
         {
@@ -1208,12 +1198,8 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
 
 void CarlaPlugin::setChunkData(const char* const stringData)
 {
-    CARLA_ASSERT(stringData != nullptr);
-    CARLA_ASSERT(false); // this should never happen
-    return;
-
-    // unused
-    (void)stringData;
+    CARLA_SAFE_ASSERT_RETURN(stringData != nullptr && stringData[0] != '\0',);
+    CARLA_SAFE_ASSERT(false); // this should never happen
 }
 
 void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
@@ -1387,7 +1373,7 @@ void CarlaPlugin::idle()
 
 void CarlaPlugin::showCustomUI(const bool yesNo)
 {
-    CARLA_ASSERT(false);
+    CARLA_SAFE_ASSERT(false);
     return;
 
     // unused
@@ -1406,12 +1392,12 @@ void CarlaPlugin::reloadPrograms(const bool)
 
 void CarlaPlugin::activate() noexcept
 {
-    CARLA_ASSERT(! pData->active);
+    CARLA_SAFE_ASSERT(! pData->active);
 }
 
 void CarlaPlugin::deactivate() noexcept
 {
-    CARLA_ASSERT(pData->active);
+    CARLA_SAFE_ASSERT(pData->active);
 }
 
 void CarlaPlugin::bufferSizeChanged(const uint32_t)
@@ -1651,9 +1637,9 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
     {
         const CustomData& cData(it.getValue());
 
-        CARLA_ASSERT(cData.type != nullptr);
-        CARLA_ASSERT(cData.key != nullptr);
-        CARLA_ASSERT(cData.value != nullptr);
+        CARLA_SAFE_ASSERT_CONTINUE(cData.type != nullptr && cData.type[0] != '\0');
+        CARLA_SAFE_ASSERT_CONTINUE(cData.key != nullptr && cData.key[0] != '\0');
+        CARLA_SAFE_ASSERT_CONTINUE(cData.value != nullptr);
 
         if (std::strcmp(cData.type, CUSTOM_DATA_TYPE_STRING) == 0)
             osc_send_configure(pData->osc.data, cData.key, cData.value);
@@ -1701,7 +1687,7 @@ bool CarlaPlugin::waitForOscGuiShow()
             return true;
         }
 
-        if (pData->osc.thread.isRunning())
+        if (pData->osc.thread.isThreadRunning())
             carla_msleep(100);
         else
             return false;
@@ -1717,9 +1703,9 @@ bool CarlaPlugin::waitForOscGuiShow()
 #ifndef BUILD_BRIDGE
 void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, const uint8_t velo, const bool sendGui, const bool sendOsc, const bool sendCallback)
 {
-    CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
-    CARLA_ASSERT(note < MAX_MIDI_NOTE);
-    CARLA_ASSERT(velo < MAX_MIDI_VALUE);
+    CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
+    CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
+    CARLA_SAFE_ASSERT_RETURN(velo < MAX_MIDI_VALUE,);
 
     if (! pData->active)
         return;
@@ -1929,54 +1915,34 @@ void CarlaPlugin::postRtEventsRun()
 
 void CarlaPlugin::uiParameterChange(const uint32_t index, const float value) noexcept
 {
-    CARLA_ASSERT(index < getParameterCount());
+    CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(),);
     return;
 
     // unused
-    (void)index;
     (void)value;
 }
 
 void CarlaPlugin::uiProgramChange(const uint32_t index) noexcept
 {
-    CARLA_ASSERT(index < getProgramCount());
-    return;
-
-    // unused
-    (void)index;
+    CARLA_SAFE_ASSERT_RETURN(index < getProgramCount(),);
 }
 
 void CarlaPlugin::uiMidiProgramChange(const uint32_t index) noexcept
 {
-    CARLA_ASSERT(index < getMidiProgramCount());
-    return;
-
-    // unused
-    (void)index;
+    CARLA_SAFE_ASSERT_RETURN(index < getMidiProgramCount(),);
 }
 
 void CarlaPlugin::uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) noexcept
 {
-    CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
-    CARLA_ASSERT(note < MAX_MIDI_NOTE);
-    CARLA_ASSERT(velo > 0 && velo < MAX_MIDI_VALUE);
-    return;
-
-    // unused
-    (void)channel;
-    (void)note;
-    (void)velo;
+    CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
+    CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
+    CARLA_SAFE_ASSERT_RETURN(velo > 0 && velo < MAX_MIDI_VALUE,);
 }
 
 void CarlaPlugin::uiNoteOff(const uint8_t channel, const uint8_t note) noexcept
 {
-    CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
-    CARLA_ASSERT(note < MAX_MIDI_NOTE);
-    return;
-
-    // unused
-    (void)channel;
-    (void)note;
+    CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
+    CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
 }
 
 bool CarlaPlugin::canRunInRack() const noexcept

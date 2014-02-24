@@ -42,17 +42,17 @@ CarlaEngineOsc::CarlaEngineOsc(CarlaEngine* const engine)
       fServerTCP(nullptr),
       fServerUDP(nullptr)
 {
-    CARLA_ASSERT(engine != nullptr);
+    CARLA_SAFE_ASSERT(engine != nullptr);
     carla_debug("CarlaEngineOsc::CarlaEngineOsc(%p)", engine);
 }
 
 CarlaEngineOsc::~CarlaEngineOsc()
 {
-    CARLA_ASSERT(fName.isEmpty());
-    CARLA_ASSERT(fServerPathTCP.isEmpty());
-    CARLA_ASSERT(fServerPathUDP.isEmpty());
-    CARLA_ASSERT(fServerTCP == nullptr);
-    CARLA_ASSERT(fServerUDP == nullptr);
+    CARLA_SAFE_ASSERT(fName.isEmpty());
+    CARLA_SAFE_ASSERT(fServerPathTCP.isEmpty());
+    CARLA_SAFE_ASSERT(fServerPathUDP.isEmpty());
+    CARLA_SAFE_ASSERT(fServerTCP == nullptr);
+    CARLA_SAFE_ASSERT(fServerUDP == nullptr);
     carla_debug("CarlaEngineOsc::~CarlaEngineOsc()");
 }
 
@@ -71,48 +71,55 @@ void CarlaEngineOsc::init(const char* const name)
     fName = name;
     fName.toBasic();
 
-    fServerTCP = lo_server_thread_new_with_proto(nullptr, LO_TCP, osc_error_handler_TCP);
+    fServerTCP = lo_server_new_with_proto(nullptr, LO_TCP, osc_error_handler_TCP);
 
     if (fServerTCP != nullptr)
     {
-        if (char* const tmpServerPathTCP = lo_server_thread_get_url(fServerTCP))
+        if (char* const tmpServerPathTCP = lo_server_get_url(fServerTCP))
         {
             fServerPathTCP  = tmpServerPathTCP;
             fServerPathTCP += fName;
             std::free(tmpServerPathTCP);
         }
 
-        lo_server_thread_add_method(fServerTCP, nullptr, nullptr, osc_message_handler_TCP, this);
-        int ret = lo_server_thread_start(fServerTCP);
-        CARLA_SAFE_ASSERT(ret == 0);
+        lo_server_add_method(fServerTCP, nullptr, nullptr, osc_message_handler_TCP, this);
     }
 
-    fServerUDP = lo_server_thread_new_with_proto(nullptr, LO_UDP, osc_error_handler_UDP);
+    fServerUDP = lo_server_new_with_proto(nullptr, LO_UDP, osc_error_handler_UDP);
 
     if (fServerUDP != nullptr)
     {
-        if (char* const tmpServerPathUDP = lo_server_thread_get_url(fServerUDP))
+        if (char* const tmpServerPathUDP = lo_server_get_url(fServerUDP))
         {
             fServerPathUDP  = tmpServerPathUDP;
             fServerPathUDP += fName;
             std::free(tmpServerPathUDP);
         }
 
-        lo_server_thread_add_method(fServerUDP, nullptr, nullptr, osc_message_handler_UDP, this);
-        int ret = lo_server_thread_start(fServerUDP);
-        CARLA_SAFE_ASSERT(ret == 0);
+        lo_server_add_method(fServerUDP, nullptr, nullptr, osc_message_handler_UDP, this);
     }
 
-    CARLA_ASSERT(fName.isNotEmpty());
+    CARLA_SAFE_ASSERT(fName.isNotEmpty());
     CARLA_SAFE_ASSERT(fServerPathTCP.isNotEmpty());
     CARLA_SAFE_ASSERT(fServerPathUDP.isNotEmpty());
     CARLA_SAFE_ASSERT(fServerTCP != nullptr);
     CARLA_SAFE_ASSERT(fServerUDP != nullptr);
 }
 
+void CarlaEngineOsc::idle() const
+{
+    if (fServerTCP != nullptr) {
+        while (lo_server_recv_noblock(fServerTCP, 0) != 0) {}
+    }
+
+    if (fServerUDP != nullptr) {
+        while (lo_server_recv_noblock(fServerUDP, 0) != 0) {}
+    }
+}
+
 void CarlaEngineOsc::close()
 {
-    CARLA_ASSERT(fName.isNotEmpty());
+    CARLA_SAFE_ASSERT(fName.isNotEmpty());
     CARLA_SAFE_ASSERT(fServerPathTCP.isNotEmpty());
     CARLA_SAFE_ASSERT(fServerPathUDP.isNotEmpty());
     CARLA_SAFE_ASSERT(fServerTCP != nullptr);
@@ -123,17 +130,15 @@ void CarlaEngineOsc::close()
 
     if (fServerTCP != nullptr)
     {
-        lo_server_thread_stop(fServerTCP);
-        lo_server_thread_del_method(fServerTCP, nullptr, nullptr);
-        lo_server_thread_free(fServerTCP);
+        lo_server_del_method(fServerTCP, nullptr, nullptr);
+        lo_server_free(fServerTCP);
         fServerTCP = nullptr;
     }
 
     if (fServerUDP != nullptr)
     {
-        lo_server_thread_stop(fServerUDP);
-        lo_server_thread_del_method(fServerUDP, nullptr, nullptr);
-        lo_server_thread_free(fServerUDP);
+        lo_server_del_method(fServerUDP, nullptr, nullptr);
+        lo_server_free(fServerUDP);
         fServerUDP = nullptr;
     }
 
@@ -157,16 +162,13 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     CARLA_SAFE_ASSERT_RETURN(fName.isNotEmpty(), 1);
     CARLA_SAFE_ASSERT_RETURN(path != nullptr && path[0] != '\0', 1);
     carla_debug("CarlaEngineOsc::handleMessage(%s, \"%s\", %i, %p, \"%s\", %p)", bool2str(isTCP), path, argc, argv, types, msg);
-#ifndef BUILD_BRIDGE
-    const CarlaCriticalSection::Scope _ccsl(_cs);
-#endif
 
-    if (isTCP)
+    //if (isTCP)
     {
         CARLA_SAFE_ASSERT_RETURN(fServerPathTCP.isNotEmpty(), 1);
         CARLA_SAFE_ASSERT_RETURN(fServerTCP != nullptr, 1);
     }
-    else
+    //else
     {
         CARLA_SAFE_ASSERT_RETURN(fServerPathUDP.isNotEmpty(), 1);
         CARLA_SAFE_ASSERT_RETURN(fServerUDP != nullptr, 1);

@@ -412,7 +412,7 @@ public:
 protected:
     void run() override
     {
-        while (! shouldExit())
+        while (! shouldThreadExit())
         {
 #ifdef WANT_ZYNADDSUBFX_UI
             Fl::lock();
@@ -511,7 +511,7 @@ protected:
         }
 
 #ifdef WANT_ZYNADDSUBFX_UI
-        if (shouldExit() || fUi != nullptr)
+        if (shouldThreadExit() || fUi != nullptr)
         {
             Fl::lock();
             delete fUi;
@@ -550,7 +550,7 @@ public:
           fIsActive(false),
           fThread(fMaster, host)
     {
-        fThread.start();
+        fThread.startThread();
 
         for (int i = 0; i < NUM_MIDI_PARTS; ++i)
             fMaster->partonoff(i, 1);
@@ -736,7 +736,7 @@ protected:
     {
         fMaster = new Master();
         fThread.setMaster(fMaster);
-        fThread.start();
+        fThread.startThread();
 
         for (int i = 0; i < NUM_MIDI_PARTS; ++i)
             fMaster->partonoff(i, 1);
@@ -747,7 +747,7 @@ protected:
         //ensure that everything has stopped
         pthread_mutex_lock(&fMaster->mutex);
         pthread_mutex_unlock(&fMaster->mutex);
-        fThread.stop(-1);
+        fThread.stopThread(-1);
 
         delete fMaster;
         fMaster = nullptr;

@@ -297,7 +297,7 @@ public:
         pData->sampleRate = fShmControl.readFloat();
         carla_stderr("SampleRate: %f", pData->sampleRate);
 
-        CarlaThread::start();
+        CarlaThread::startThread();
         CarlaEngine::init(clientName);
         return true;
     }
@@ -307,7 +307,7 @@ public:
         carla_debug("CarlaEnginePlugin::close()");
         CarlaEngine::close();
 
-        CarlaThread::stop(6000);
+        CarlaThread::stopThread(6000);
 
         fShmTime.clear();
         fShmControl.clear();
@@ -346,14 +346,14 @@ public:
         // TODO - set RT permissions
         carla_debug("CarlaEngineBridge::run()");
 
-        for (; ! shouldExit();)
+        for (; ! shouldThreadExit();)
         {
             if (! jackbridge_sem_timedwait(&fShmControl.data->runServer, 5))
             {
                 if (errno == ETIMEDOUT)
                 {
                     fIsRunning = false;
-                    signalShouldExit();
+                    signalThreadShouldExit();
                     return;
                 }
             }
@@ -516,7 +516,7 @@ public:
                 }
 
                 case kPluginBridgeOpcodeQuit:
-                    signalShouldExit();
+                    signalThreadShouldExit();
                     fIsRunning = false;
                     break;
                 }

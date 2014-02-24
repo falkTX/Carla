@@ -24,6 +24,7 @@
 #include "CarlaLadspaUtils.hpp"
 // #include "CarlaLibUtils.hpp"
 // #include "CarlaLv2Utils.hpp"
+#include "CarlaMathUtils.hpp"
 #include "CarlaOscUtils.hpp"
 #include "CarlaPipeUtils.hpp"
 // #include "CarlaShmUtils.hpp"

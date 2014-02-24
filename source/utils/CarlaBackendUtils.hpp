@@ -431,7 +431,7 @@ const char* getPluginTypeAsString(const PluginType type) noexcept
 }
 
 static inline
-PluginType getPluginTypeFromString(const char* const ctype)
+PluginType getPluginTypeFromString(const char* const ctype) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(ctype != nullptr && ctype[0] != '\0', PLUGIN_NONE);
     carla_debug("CarlaBackend::getPluginTypeFromString(\"%s\")", ctype);
@@ -475,7 +475,7 @@ PluginType getPluginTypeFromString(const char* const ctype)
 // -----------------------------------------------------------------------
 
 static inline
-PluginCategory getPluginCategoryFromName(const char* const name)
+PluginCategory getPluginCategoryFromName(const char* const name) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', PLUGIN_CATEGORY_NONE);
     carla_debug("CarlaBackend::getPluginCategoryFromName(\"%s\")", name);
