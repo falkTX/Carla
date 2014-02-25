@@ -25,33 +25,33 @@ from PyQt4.QtGui import QColor, QFont, QPainter, QPixmap, QScrollArea, QWidget
 # ------------------------------------------------------------------------------------------------------------
 
 kMidiKey2RectMapHorizontal = {
-    '0':  QRectF(0,   0, 17, 59), # C
-    '1':  QRectF(13,  0,  8, 41), # C#
-    '2':  QRectF(17,  0, 17, 59), # D
-    '3':  QRectF(31,  0,  8, 41), # D#
-    '4':  QRectF(34,  0, 17, 59), # E
-    '5':  QRectF(51,  0, 17, 59), # F
-    '6':  QRectF(63,  0,  8, 41), # F#
-    '7':  QRectF(68,  0, 17, 59), # G
-    '8':  QRectF(81,  0,  8, 41), # G#
-    '9':  QRectF(85,  0, 17, 59), # A
-    '10': QRectF(99,  0,  8, 41), # A#
-    '11': QRectF(102, 0, 17, 59)  # B
+    '0':  QRectF(0,   0, 24, 57), # C
+    '1':  QRectF(14,  0, 15, 33), # C#
+    '2':  QRectF(24,  0, 24, 57), # D
+    '3':  QRectF(42,  0, 15, 33), # D#
+    '4':  QRectF(48,  0, 24, 57), # E
+    '5':  QRectF(72,  0, 24, 57), # F
+    '6':  QRectF(84,  0, 15, 33), # F#
+    '7':  QRectF(96,  0, 24, 57), # G
+    '8':  QRectF(112, 0, 15, 33), # G#
+    '9':  QRectF(120, 0, 24, 57), # A
+    '10': QRectF(140, 0, 15, 33), # A#
+    '11': QRectF(144, 0, 24, 57)  # B
 }
 
 kMidiKey2RectMapVertical = {
-    '11': QRectF(0,  0,  59, 17), # B
-    '10': QRectF(0, 11,  41,  8), # A#
-    '9':  QRectF(0, 16,  59, 17), # A
-    '8':  QRectF(0, 29,  41,  8), # G#
-    '7':  QRectF(0, 33,  59, 18), # G
-    '6':  QRectF(0, 47,  41,  8), # F#
-    '5':  QRectF(0, 50,  59, 17), # F
-    '4':  QRectF(0, 67,  59, 17), # E
-    '3':  QRectF(0, 79,  41,  8), # D#
-    '2':  QRectF(0, 84,  59, 17), # D
-    '1':  QRectF(0, 97,  41,  8), # C#
-    '0':  QRectF(0, 101, 59, 17)  # C
+    '11': QRectF(0,  0,  57, 24), # B
+    '10': QRectF(0, 13,  33, 15), # A#
+    '9':  QRectF(0, 24,  57, 24), # A
+    '8':  QRectF(0, 41,  33, 15), # G#
+    '7':  QRectF(0, 48,  57, 24), # G
+    '6':  QRectF(0, 69,  33, 15), # F#
+    '5':  QRectF(0, 72,  57, 24), # F
+    '4':  QRectF(0, 96,  57, 24), # E
+    '3':  QRectF(0, 111, 33, 15), # D#
+    '2':  QRectF(0, 120, 57, 24), # D
+    '1':  QRectF(0, 139, 33, 15), # C#
+    '0':  QRectF(0, 144, 57, 24)  # C
 }
 
 kMidiKeyboard2KeyMap = {
@@ -107,7 +107,11 @@ class PixmapKeyboard(QWidget):
 
         self.fEnabledKeys = []
 
-        self.fFont   = QFont("Monospace", 7, QFont.Normal)
+        self.fFont = self.font()
+        self.fFont.setFamily("Monospace")
+        self.fFont.setPixelSize(12)
+        self.fFont.setBold(True)
+
         self.fPixmap = QPixmap("")
 
         self.setCursor(Qt.PointingHandCursor)
@@ -183,12 +187,12 @@ class PixmapKeyboard(QWidget):
 
     def handleMousePos(self, pos):
         if self.fPixmapMode == self.HORIZONTAL:
-            if pos.x() < 0 or pos.x() > self.fOctaves * 119:
+            if pos.x() < 0 or pos.x() > self.fOctaves * self.fWidth:
                 return
             octave = int(pos.x() / self.fWidth)
             keyPos = QPointF(pos.x() % self.fWidth, pos.y())
         elif self.fPixmapMode == self.VERTICAL:
-            if pos.y() < 0 or pos.y() > self.fOctaves * 119:
+            if pos.y() < 0 or pos.y() > self.fOctaves * self.fHeight:
                 return
             octave = int(self.fOctaves - pos.y() / self.fHeight)
             keyPos = QPointF(pos.x(), (pos.y()-1) % self.fHeight)
@@ -425,9 +429,9 @@ class PixmapKeyboard(QWidget):
 
         for i in range(self.fOctaves):
             if self.fPixmapMode == self.HORIZONTAL:
-                painter.drawText(i * 119 + (2 if i == 0 else 1), 45, 16, 16, Qt.AlignCenter, "C%i" % (i-1))
+                painter.drawText(i * 168 + (4 if i == 0 else 3), 35, 20, 20, Qt.AlignCenter, "C%i" % (i-1))
             elif self.fPixmapMode == self.VERTICAL:
-                painter.drawText(44, (self.fOctaves * 119) - (i * 119) - 16, 16, 16, Qt.AlignCenter, "C%i" % (i-1))
+                painter.drawText(33, (self.fOctaves * 168) - (i * 168) - 20, 20, 20, Qt.AlignCenter, "C%i" % (i-1))
 
     def _isNoteBlack(self, note):
         baseNote = note % 12
@@ -475,7 +479,8 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
 
     gui = PixmapKeyboard(None)
-    gui.setMode(gui.VERTICAL)
+    gui.setMode(gui.HORIZONTAL)
+    #gui.setMode(gui.VERTICAL)
     gui.setEnabled(True)
     gui.show()
 
