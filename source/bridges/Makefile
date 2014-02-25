@@ -137,11 +137,11 @@ endif
 
 # --------------------------------------------------------------
 
-BUILD_UI_LV2_GTK2_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK2 -DBRIDGE_LV2_GTK2 $(shell pkg-config --cflags gtk+-2.0 QtCore)
-LINK_UI_LV2_GTK2_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-2.0 QtCore) -ldl
+BUILD_UI_LV2_GTK2_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK2 -DBRIDGE_LV2_GTK2 $(shell pkg-config --cflags gtk+-2.0) $(QTCORE_FLAGS)
+LINK_UI_LV2_GTK2_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-2.0) $(QTCORE_LIBS) -ldl
 
-BUILD_UI_LV2_GTK3_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK3 -DBRIDGE_LV2_GTK3 $(shell pkg-config --cflags gtk+-3.0 QtCore)
-LINK_UI_LV2_GTK3_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-3.0 QtCore) -ldl
+BUILD_UI_LV2_GTK3_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK3 -DBRIDGE_LV2_GTK3 $(shell pkg-config --cflags gtk+-3.0) $(QTCORE_FLAGS)
+LINK_UI_LV2_GTK3_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-3.0) $(QTCORE_LIBS) -ldl
 
 BUILD_UI_LV2_QT4_FLAGS    = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT4 -DBRIDGE_LV2_QT4 $(shell pkg-config --cflags QtCore QtGui)
 LINK_UI_LV2_QT4_FLAGS     = $(LINK_UI_FLAGS) $(shell pkg-config --libs QtCore QtGui) -ldl
