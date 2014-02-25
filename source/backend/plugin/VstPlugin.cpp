@@ -32,6 +32,8 @@
 
 #include <QtCore/QFile>
 
+#include <pthread.h>
+
 #undef VST_FORCE_DEPRECATED
 #define VST_FORCE_DEPRECATED 0
 
@@ -60,10 +62,10 @@ public:
         : CarlaPlugin(engine, id),
           fUnique1(1),
           fEffect(nullptr),
-          fLastChunk(nullptr),
           fMidiEventCount(0),
-          fIsProcessing(false),
           fNeedIdle(false),
+          fLastChunk(nullptr),
+          fIsProcessing(false),
           fUnique2(2)
     {
         carla_debug("VstPlugin::VstPlugin(%p, %i)", engine, id);
@@ -75,6 +77,13 @@ public:
             fEvents.data[i] = (VstEvent*)&fMidiEvents[i];
 
         pData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_VST_GUI);
+
+#ifdef CARLA_OS_WIN
+        fProcThread.p = nullptr;
+        fProcThread.x = 0;
+#else
+        fProcThread = 0;
+#endif
 
         // make plugin valid
         srand(id);
@@ -439,6 +448,9 @@ public:
 
                 if (fUi.window == nullptr)
                     return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, msg);
+
+                if (uintptr_t winId = pData->engine->getOptions().frontendWinId)
+                    fUi.window->setTransientWinId(winId);
 
                 QString guiTitle(QString("%1 (GUI)").arg(pData->name));
                 fUi.window->setTitle(guiTitle.toUtf8().constData());
@@ -1000,6 +1012,8 @@ public:
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
     {
+        fProcThread = pthread_self();
+
         // --------------------------------------------------------------------------------------------------------
         // Check if active
 
@@ -1739,8 +1753,7 @@ protected:
 
         switch (opcode)
         {
-#if 0
-        case audioMasterAutomate:
+        case audioMasterAutomate: {
             if (! pData->enabled)
                 break;
 
@@ -1750,32 +1763,31 @@ protected:
             if (index < 0 || index >= static_cast<int32_t>(pData->param.count))
                 break;
 
-            if (fGui.isVisible && ! fIsProcessing)
-            {
-                // Called from GUI
-                setParameterValue(index, opt, false, true, true);
-            }
-            else if (fIsProcessing)
-            {
-                // Called from engine
-                const float fixedValue(pData->param.getFixedValue(index, opt));
+            const uint32_t uindex(static_cast<uint32_t>(index));
+            const float fixedValue(pData->param.getFixedValue(uindex, opt));
 
-                if (pData->engine->isOffline())
-                {
-                    CarlaPlugin::setParameterValue(index, fixedValue, true, true, true);
-                }
-                else
-                {
-                    CarlaPlugin::setParameterValue(index, fixedValue, false, false, false);
-                    pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, fixedValue);
-                }
+            // Called from plugin processing, nasty!
+            if (pthread_equal(pthread_self(), fProcThread))
+            {
+                CARLA_SAFE_ASSERT(fIsProcessing);
+
+                pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, fixedValue);
             }
+            // Called from UI
+            else if (fUi.isVisible)
+            {
+                CarlaPlugin::setParameterValue(uindex, fixedValue, false, true, true);
+            }
+            // Unknown
             else
             {
                 carla_stdout("audioMasterAutomate called from unknown source");
+
+                setParameterValue(uindex, fixedValue, true, true, true);
+                //pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, fixedValue);
             }
             break;
-#endif
+        }
 
         case audioMasterCurrentId:
             // TODO
@@ -1955,10 +1967,15 @@ protected:
 #endif
 
         case audioMasterGetCurrentProcessLevel:
-            if (pData->engine->isOffline())
-                ret = kVstProcessLevelOffline;
-            else if (fIsProcessing)
-                ret = kVstProcessLevelRealtime;
+            if (pthread_equal(pthread_self(), fProcThread))
+            {
+                CARLA_SAFE_ASSERT(fIsProcessing);
+
+                if (pData->engine->isOffline())
+                    ret = kVstProcessLevelOffline;
+                else
+                    ret = kVstProcessLevelRealtime;
+            }
             else
                 ret = kVstProcessLevelUser;
             break;
@@ -2277,12 +2294,18 @@ public:
 
 private:
     int fUnique1;
+
     AEffect* fEffect;
 
-    void*         fLastChunk;
     uint32_t      fMidiEventCount;
     VstMidiEvent  fMidiEvents[kPluginMaxMidiEvents*2];
     VstTimeInfo_R fTimeInfo;
+
+    bool  fNeedIdle;
+    void* fLastChunk;
+
+    volatile bool      fIsProcessing;
+    volatile pthread_t fProcThread;
 
     struct FixedVstEvents {
         int32_t numEvents;
@@ -2319,9 +2342,6 @@ private:
         }
     } fUi;
 
-    volatile bool fIsProcessing;
-
-    bool fNeedIdle;
     int  fUnique2;
 
     static VstPlugin* sLastVstPlugin;

@@ -1158,6 +1158,9 @@ public:
                     if (fUi.window == nullptr)
                         return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, msg);
 
+                    if (uintptr_t winId = pData->engine->getOptions().frontendWinId)
+                        fUi.window->setTransientWinId(winId);
+
                     fUi.window->setTitle(fUi.title);
 
                     fFeatures[kFeatureIdUiParent]->data = fUi.window->getPtr();
