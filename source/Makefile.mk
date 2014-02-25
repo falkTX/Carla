@@ -120,7 +120,7 @@ endif
 # --------------------------------------------------------------
 # Check for qt, set default version (prefer qt4)
 
-HAVE_QT4 = $(shell pkg-config --exists QtCore QtGui Qt5Xml && echo true)
+HAVE_QT4 = $(shell pkg-config --exists QtCore QtGui QtXml && echo true)
 HAVE_QT5 = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Xml Qt5Widgets && echo true)
 
 ifeq ($(HAVE_QT5),true)
