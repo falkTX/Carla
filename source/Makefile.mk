@@ -62,7 +62,7 @@ CFLAGS     += -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes
 CXXFLAGS   += -Wnon-virtual-dtor -Woverloaded-virtual
 ifeq ($(LINUX),true)
 CFLAGS     += -isystem /opt/kxstudio/include
-CXXFLAGS   += -isystem /opt/kxstudio/include -isystem /usr/include/qt4
+CXXFLAGS   += -isystem /opt/kxstudio/include -isystem /usr/include/qt5
 endif
 ifeq ($(MACOS),true)
 CFLAGS     += -isystem /opt/local/include/
@@ -70,7 +70,7 @@ CXXFLAGS   += -isystem /opt/local/include/
 endif
 ifeq ($(WIN32),true)
 CFLAGS     += -isystem /opt/mingw32/include
-CXXFLAGS   += -isystem /opt/mingw32/include -isystem /opt/mingw32/include/qt4
+CXXFLAGS   += -isystem /opt/mingw32/include -isystem /opt/mingw32/include/qt5
 endif
 endif
 
@@ -120,8 +120,8 @@ endif
 # --------------------------------------------------------------
 # Check for qt, set default version (prefer qt4)
 
-HAVE_QT4 = $(shell pkg-config --exists QtCore QtGui && echo true)
-HAVE_QT5 = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
+HAVE_QT4 = $(shell pkg-config --exists QtCore QtGui Qt5Xml && echo true)
+HAVE_QT5 = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Xml Qt5Widgets && echo true)
 
 ifeq ($(HAVE_QT5),true)
 DEFAULT_QT=5
@@ -239,10 +239,17 @@ endif
 LIBLO_FLAGS = $(shell pkg-config --cflags liblo)
 LIBLO_LIBS  = $(shell pkg-config --libs liblo)
 
+ifeq ($(DEFAULT_QT),5)
+QTCORE_FLAGS = $(shell pkg-config --cflags Qt5Core)
+QTCORE_LIBS  = $(shell pkg-config --libs Qt5Core)
+QTXML_FLAGS  = $(shell pkg-config --cflags Qt5Xml)
+QTXML_LIBS   = $(shell pkg-config --libs Qt5Xml)
+else
 QTCORE_FLAGS = $(shell pkg-config --cflags QtCore)
 QTCORE_LIBS  = $(shell pkg-config --libs QtCore)
 QTXML_FLAGS  = $(shell pkg-config --cflags QtXml)
 QTXML_LIBS   = $(shell pkg-config --libs QtXml)
+endif
 
 ifeq ($(HAVE_CSOUND),true)
 CSOUND_FLAGS = $(shell pkg-config --cflags sndfile) -DUSE_DOUBLE=1

@@ -30,7 +30,7 @@ protected:
     /*
      * Constructor.
      */
-    CarlaThread(const char* const threadName = nullptr) noexcept
+    CarlaThread(const char* const threadName = nullptr) /*noexcept*/
         : fName(threadName),
           fShouldExit(false)
     {
@@ -40,7 +40,7 @@ protected:
     /*
      * Destructor.
      */
-    virtual ~CarlaThread() noexcept
+    virtual ~CarlaThread() /*noexcept*/
     {
         CARLA_SAFE_ASSERT(! isThreadRunning());
 
