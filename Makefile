@@ -58,7 +58,7 @@ discovery:
 plugin:
 	$(MAKE) -C source/plugin
 
-plugin_ui: source/carla-plugin source/*.py RES UI WIDGETS
+plugin_ui: source/carla-plugin source/carla_config.py source/*.py RES UI WIDGETS
 	$(LINK) $(CURDIR)/source/carla-plugin source/modules/native-plugins/resources/
 	$(LINK) $(CURDIR)/source/*.py         source/modules/native-plugins/resources/
 

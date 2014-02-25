@@ -17,10 +17,19 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
+# Imports (Config)
+
+from carla_config import *
+
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import pyqtSlot
-from PyQt4.QtGui import QGridLayout, QLabel, QPushButton, QTextEdit, QWidget
+if config_UseQt5:
+    from PyQt5.QtCore import pyqtSlot
+    from PyQt5.QtWidgets import QGridLayout, QLabel, QPushButton, QTextEdit, QWidget
+else:
+    from PyQt4.QtCore import pyqtSlot
+    from PyQt4.QtGui import QGridLayout, QLabel, QPushButton, QTextEdit, QWidget
 
 # -----------------------------------------------------------------------
 # Imports (ExternalUI)
