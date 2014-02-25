@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Custom Mini Canvas Preview, a custom Qt4 widget
-# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,10 +17,20 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
+# Imports (Config)
+
+from carla_config import *
+
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import pyqtSignal, Qt, QRectF, QTimer
-from PyQt4.QtGui import QBrush, QColor, QCursor, QFrame, QPainter, QPen
+if config_UseQt5:
+    from PyQt5.QtCore import pyqtSignal, Qt, QRectF, QTimer
+    from PyQt5.QtGui import QBrush, QColor, QCursor, QPainter, QPen
+    from PyQt5.QtWidgets import QFrame
+else:
+    from PyQt4.QtCore import pyqtSignal, Qt, QRectF, QTimer
+    from PyQt4.QtGui import QBrush, QColor, QCursor, QFrame, QPainter, QPen
 
 # ------------------------------------------------------------------------------------------------------------
 # Static Variables

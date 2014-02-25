@@ -17,13 +17,24 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
+# Imports (Config)
+
+from carla_config import *
+
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import Qt, QPointF, QRectF, QTimer, QSize
-from PyQt4.QtGui import QColor, QConicalGradient, QFont, QFontMetrics
-from PyQt4.QtGui import QDial, QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
-
 from math import cos, floor, pi, sin
+
+if config_UseQt5:
+    from PyQt5.QtCore import Qt, QPointF, QRectF, QTimer, QSize
+    from PyQt5.QtGui import QColor, QConicalGradient, QFont, QFontMetrics
+    from PyQt5.QtGui import QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
+    from PyQt5.QtWidgets import QDial
+else:
+    from PyQt4.QtCore import Qt, QPointF, QRectF, QTimer, QSize
+    from PyQt4.QtGui import QColor, QConicalGradient, QFont, QFontMetrics
+    from PyQt4.QtGui import QDial, QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
 
 # ------------------------------------------------------------------------------------------------------------
 # Widget Class

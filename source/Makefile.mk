@@ -118,18 +118,30 @@ LINK_FLAGS      = $(32BIT_FLAGS) $(LDFLAGS)
 endif
 
 # --------------------------------------------------------------
+# Check for qt, set default version (prefer qt4)
+
+HAVE_QT4 = $(shell pkg-config --exists QtCore QtGui && echo true)
+HAVE_QT5 = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
+
+ifeq ($(HAVE_QT5),true)
+DEFAULT_QT=5
+endif
+
+ifeq ($(HAVE_QT4),true)
+DEFAULT_QT=4
+endif
+
+# --------------------------------------------------------------
 # Check for required libs
 
 ifneq ($(shell pkg-config --exists liblo && echo true),true)
 $(error liblo missing, cannot continue)
 endif
 
-ifneq ($(shell pkg-config --exists QtCore && echo true),true)
-$(error QtCore missing, cannot continue)
+ifneq ($(HAVE_QT4),true)
+ifneq ($(HAVE_QT5),true)
+$(error Qt missing, cannot continue)
 endif
-
-ifneq ($(shell pkg-config --exists QtXml && echo true),true)
-$(error QtXml missing, cannot continue)
 endif
 
 # --------------------------------------------------------------
@@ -176,8 +188,6 @@ endif
 HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
 HAVE_GTK2         = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3         = $(shell pkg-config --exists gtk+-3.0 && echo true)
-HAVE_QT4          = $(shell pkg-config --exists QtCore QtGui && echo true)
-HAVE_QT5          = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
 HAVE_X11          = $(shell pkg-config --exists x11 && echo true)
 
 ifeq ($(LINUX),true)

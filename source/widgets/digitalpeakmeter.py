@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Digital Peak Meter, a custom Qt4 widget
-# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,10 +17,20 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
+# Imports (Config)
+
+from carla_config import *
+
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import qCritical, Qt, QTimer, QSize
-from PyQt4.QtGui import QColor, QLinearGradient, QPainter, QWidget
+if config_UseQt5:
+    from PyQt5.QtCore import qCritical, Qt, QTimer, QSize
+    from PyQt5.QtGui import QColor, QLinearGradient, QPainter
+    from PyQt5.QtWidgets import QWidget
+else:
+    from PyQt4.QtCore import qCritical, Qt, QTimer, QSize
+    from PyQt4.QtGui import QColor, QLinearGradient, QPainter, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Widget Class

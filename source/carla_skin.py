@@ -17,10 +17,20 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
+# Imports (Config)
+
+from carla_config import *
+
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import Qt
-from PyQt4.QtGui import QFont, QFrame, QPen, QPushButton
+if config_UseQt5:
+    from PyQt5.QtCore import Qt
+    from PyQt5.QtGui import QFont, QPen
+    from PyQt5.QtWidgets import QFrame, QPushButton
+else:
+    from PyQt4.QtCore import Qt
+    from PyQt4.QtGui import QFont, QFrame, QPen, QPushButton
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)

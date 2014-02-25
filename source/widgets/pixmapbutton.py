@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Pixmap Button, a custom Qt4 widget
-# Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,10 +17,20 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
+# Imports (Config)
+
+from carla_config import *
+
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import QPointF, QRectF
-from PyQt4.QtGui import QColor, QFont, QPainter, QPixmap, QPushButton
+if config_UseQt5:
+    from PyQt5.QtCore import QPointF, QRectF
+    from PyQt5.QtGui import QColor, QFont, QPainter, QPixmap
+    from PyQt5.QtWidgets import QPushButton
+else:
+    from PyQt4.QtCore import QPointF, QRectF
+    from PyQt4.QtGui import QColor, QFont, QPainter, QPixmap, QPushButton
 
 # ------------------------------------------------------------------------------------------------------------
 # Widget Class

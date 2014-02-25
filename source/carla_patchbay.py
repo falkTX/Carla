@@ -17,10 +17,21 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
+# Imports (Config)
+
+from carla_config import *
+
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import QPointF, QTimer
-from PyQt4.QtGui import QFrame, QGraphicsView, QGridLayout, QImage, QPrinter, QPrintDialog
+if config_UseQt5:
+    from PyQt5.QtCore import QPointF, QTimer
+    from PyQt5.QtGui import QImage
+    from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
+    from PyQt5.QtWidgets import QFrame, QGraphicsView, QGridLayout
+else:
+    from PyQt4.QtCore import QPointF, QTimer
+    from PyQt4.QtGui import QFrame, QGraphicsView, QGridLayout, QImage, QPrinter, QPrintDialog
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)

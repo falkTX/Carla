@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Parameter SpinBox, a custom Qt4 widget
-# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,13 +17,23 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Global)
+# Imports (Config)
 
-from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QTimer
-from PyQt4.QtGui import QAbstractSpinBox, QApplication, QComboBox, QCursor, QDialog, QMenu, QProgressBar
+from carla_config import *
+
+# ------------------------------------------------------------------------------------------------------------
+# Imports (Global)
 
 from math import isnan
 from random import random
+
+if config_UseQt5:
+    from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QTimer
+    from PyQt5.QtGui import QCursor
+    from PyQt5.QtWidgets import QAbstractSpinBox, QApplication, QComboBox, QDialog, QMenu, QProgressBar
+else:
+    from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QTimer
+    from PyQt4.QtGui import QAbstractSpinBox, QApplication, QComboBox, QCursor, QDialog, QMenu, QProgressBar
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)

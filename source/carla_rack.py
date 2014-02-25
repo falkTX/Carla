@@ -17,10 +17,20 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
+# Imports (Config)
+
+from carla_config import *
+
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import Qt, QSize, QTimer
-from PyQt4.QtGui import QAbstractItemView, QApplication, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QPixmap, QScrollBar
+if config_UseQt5:
+    from PyQt5.QtCore import Qt, QSize, QTimer
+    from PyQt5.QtGui import QPixmap
+    from PyQt5.QtWidgets import QAbstractItemView, QApplication, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QScrollBar
+else:
+    from PyQt4.QtCore import Qt, QSize, QTimer
+    from PyQt4.QtGui import QAbstractItemView, QApplication, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QPixmap, QScrollBar
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)

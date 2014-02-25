@@ -17,10 +17,20 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
+# Imports (Config)
+
+from carla_config import *
+
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import pyqtSignal, pyqtSlot, qCritical, Qt, QPointF, QRectF, QTimer, QSize
-from PyQt4.QtGui import QColor, QFont, QPainter, QPixmap, QScrollArea, QWidget
+if config_UseQt5:
+    from PyQt5.QtCore import pyqtSignal, pyqtSlot, qCritical, Qt, QPointF, QRectF, QTimer, QSize
+    from PyQt5.QtGui import QColor, QFont, QPainter, QPixmap
+    from PyQt5.QtWidgets import QScrollArea, QWidget
+else:
+    from PyQt4.QtCore import pyqtSignal, pyqtSlot, qCritical, Qt, QPointF, QRectF, QTimer, QSize
+    from PyQt4.QtGui import QColor, QFont, QPainter, QPixmap, QScrollArea, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -473,7 +483,7 @@ class PixmapKeyboardHArea(QScrollArea):
 
 if __name__ == '__main__':
     import sys
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtWidgets import QApplication
     import resources_rc
 
     app = QApplication(sys.argv)

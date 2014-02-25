@@ -17,14 +17,23 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
+# Imports (Config)
+
+from carla_config import *
+
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 import os
 import sys
 
-from PyQt4.QtCore import qFatal, qWarning, QDir
-from PyQt4.QtGui import QIcon
-from PyQt4.QtGui import QFileDialog, QMessageBox
+if config_UseQt5:
+    from PyQt5.QtCore import qFatal, qWarning, QDir
+    from PyQt5.QtGui import QIcon
+    from PyQt5.QtWidgets import QFileDialog, QMessageBox
+else:
+    from PyQt4.QtCore import qFatal, qWarning, QDir
+    from PyQt4.QtGui import QFileDialog, QIcon, QMessageBox
 
 # ------------------------------------------------------------------------------------------------------------
 # Import Signal
@@ -46,8 +55,12 @@ from carla_backend import *
 # Platform specific stuff
 
 if MACOS:
-    from PyQt4.QtGui import qt_mac_set_menubar_icons
+    if config_UseQt5:
+        from PyQt5.QtGui import qt_mac_set_menubar_icons
+    else:
+        from PyQt4.QtGui import qt_mac_set_menubar_icons
     qt_mac_set_menubar_icons(False)
+
 elif WINDOWS:
     WINDIR = os.getenv("WINDIR")
 

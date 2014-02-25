@@ -17,11 +17,21 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
+# Imports (Config)
+
+from carla_config import *
+
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import pyqtSignal, pyqtSlot, QByteArray, QSettings
-from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
-from PyQt4.QtGui import QDialog, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
+if config_UseQt5:
+    from PyQt5.QtCore import pyqtSignal, pyqtSlot, QByteArray, QSettings
+    from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
+    from PyQt5.QtWidgets import QDialog, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
+else:
+    from PyQt4.QtCore import pyqtSignal, pyqtSlot, QByteArray, QSettings
+    from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
+    from PyQt4.QtGui import QDialog, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)

@@ -17,9 +17,17 @@
 # For a full copy of the GNU General Public License see the GPL.txt file
 
 # ------------------------------------------------------------------------------------------------------------
+# Imports (Config)
+
+from carla_config import *
+
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtGui import QLabel, QTabWidget
+if config_UseQt5:
+    from PyQt5.QtWidgets import QLabel, QTabWidget
+else:
+    from PyQt4.QtGui import QLabel, QTabWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)

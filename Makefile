@@ -13,14 +13,24 @@ DESTDIR =
 
 SED_PREFIX = $(shell echo $(PREFIX) | sed "s/\//\\\\\\\\\//g")
 
-LINK   = ln -sf
+LINK = ln -sf
 
 ifneq ($(MACOS),true)
+ifeq ($(DEFAULT_QT),5)
+PYUIC ?= pyuic5
+PYRCC ?= pyrcc5
+else
 PYUIC ?= pyuic4 -w
 PYRCC ?= pyrcc4 -py3
+endif
+else # MACOS
+ifeq ($(DEFAULT_QT),5)
+PYUIC ?= pyuic5-3.3
+PYRCC ?= pyrcc5-3.3
 else
 PYUIC ?= pyuic4-3.3 -w
 PYRCC ?= pyrcc4-3.3 -py3
+endif
 endif
 
 # --------------------------------------------------------------
@@ -85,11 +95,19 @@ wine64:
 # --------------------------------------------------------------
 # Resources
 
-RES = source/resources_rc.py
+RES = source/carla_config.py source/resources_rc.py
 
 RES: $(RES)
 
-source/%_rc.py: resources/%.qrc resources/*/*.png resources/*/*.svg
+source/carla_config.py:
+	@echo "#!/usr/bin/env python3\n# -*- coding: utf-8 -*-\n" > $@
+ifeq ($(DEFAULT_QT),5)
+	@echo "config_UseQt5 = True" >> $@
+else
+	@echo "config_UseQt5 = False" >> $@
+endif
+
+source/resources_rc.py: resources/resources.qrc resources/*/*.png resources/*/*.svg
 	$(PYRCC) $< -o $@
 
 # --------------------------------------------------------------
@@ -311,7 +329,22 @@ uninstall:
 
 # --------------------------------------------------------------
 
-ifneq ($(HAIKU),true)
+USE_COLORS=true
+USE_VST3=false
+
+ifeq ($(HAIKU),true)
+USE_COLORS=false
+endif
+
+ifeq ($(MACOS),true)
+USE_VST3=true
+endif
+
+ifeq ($(WIN32),true)
+USE_VST3=true
+endif
+
+ifeq ($(USE_COLORS),true)
 ANS_NO=\033[31m NO \033[0m
 ANS_YES=\033[32m YES \033[0m
 mS=\033[33m[
@@ -363,6 +396,11 @@ ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 	@echo "DSSI:    $(ANS_YES)"
 	@echo "LV2:     $(ANS_YES)"
 	@echo "VST:     $(ANS_YES)"
+ifeq ($(USE_VST3),true)
+	@echo "VST3:    $(ANS_YES) $(mZ)MacOS only$(mE)"
+else
+	@echo "VST3:    $(ANS_NO)  $(mZ)Windows and MacOS only$(mE)"
+endif
 ifeq ($(MACOS),true)
 	@echo "AU:      $(ANS_YES)"
 else
@@ -379,8 +417,7 @@ endif
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 	@echo "$(tS)---> LV2 UI toolkit support: $(tE)"
-	@echo "External:$(ANS_YES) (direct+bridge)"
-ifeq ($(LINUX),true)
+# 	@echo "External:$(ANS_YES) (direct+bridge)"
 ifeq ($(HAVE_GTK2),true)
 	@echo "Gtk2:    $(ANS_YES) (bridge)"
 else
@@ -402,23 +439,16 @@ else
 	@echo "Qt5:     $(ANS_NO)  $(mS)Qt5 missing$(mE)"
 endif
 	@echo "X11:     $(ANS_YES) (direct+bridge)"
-else
-	@echo "Gtk2:    $(ANS_NO)  $(mZ)Linux only$(mE)"
-	@echo "Gtk3:    $(ANS_NO)  $(mZ)Linux only$(mE)"
-	@echo "Qt4:     $(ANS_NO)  $(mZ)Linux only$(mE)"
-	@echo "Qt5:     $(ANS_NO)  $(mZ)Linux only$(mE)"
-	@echo "X11:     $(ANS_NO)  $(mZ)Linux only$(mE)"
-endif
-ifeq ($(MACOS),true)
-	@echo "Cocoa:   $(ANS_YES) (direct+bridge)"
-else
-	@echo "Cocoa:   $(ANS_NO)  $(mZ)MacOS only$(mE)"
-endif
-ifeq ($(WIN32),true)
-	@echo "Windows: $(ANS_YES) (direct+bridge)"
-else
-	@echo "Windows: $(ANS_NO)  $(mZ)Windows only$(mE)"
-endif
+# ifeq ($(MACOS),true)
+# 	@echo "Cocoa:   $(ANS_YES) (direct+bridge)"
+# else
+# 	@echo "Cocoa:   $(ANS_NO)  $(mZ)MacOS only$(mE)"
+# endif
+# ifeq ($(WIN32),true)
+# 	@echo "Windows: $(ANS_YES) (direct+bridge)"
+# else
+# 	@echo "Windows: $(ANS_NO)  $(mZ)Windows only$(mE)"
+# endif
 	@echo ""
 endif
 
@@ -456,7 +486,7 @@ ifeq ($(HAVE_AF_DEPS),true)
 ifeq ($(HAVE_FFMPEG),true)
 	@echo "AudioFile:  $(ANS_YES) (with ffmpeg)"
 else
-	@echo "AudioFile:  $(ANS_YES) (without ffmpeg) $(mS)ffmpeg/libav missing or too new$(mE)"
+	@echo "AudioFile:  $(ANS_YES) (without ffmpeg) $(mS)ffmpeg/libav missing$(mE)"
 endif
 else
 	@echo "AudioFile:  $(ANS_NO)  $(mS)libsndfile missing$(mE)"
@@ -466,7 +496,7 @@ ifeq ($(HAVE_MF_DEPS),true)
 else
 	@echo "MidiFile:   $(ANS_NO)  $(mS)LibSMF missing$(mE)"
 endif
-ifeq ($(HAVE_OPENGL),true)
+ifeq ($(HAVE_DGL),true)
 	@echo "DISTRHO:    $(ANS_YES)"
 else
 	@echo "DISTRHO:    $(ANS_NO)  $(mS)OpenGL missing$(mE)"

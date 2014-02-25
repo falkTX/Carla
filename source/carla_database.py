@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla plugin database code
-# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,13 +17,22 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
+# Imports (Config)
+
+from carla_config import *
+
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 from copy import deepcopy
 from subprocess import Popen, PIPE
 
-from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QThread, QSettings
-from PyQt4.QtGui import QDialog, QTableWidgetItem
+if config_UseQt5:
+    from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QThread, QSettings
+    from PyQt5.QtWidgets import QDialog, QTableWidgetItem
+else:
+    from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QThread, QSettings
+    from PyQt4.QtGui import QDialog, QTableWidgetItem
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
