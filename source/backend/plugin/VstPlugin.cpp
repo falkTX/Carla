@@ -1767,7 +1767,7 @@ protected:
             const float fixedValue(pData->param.getFixedValue(uindex, opt));
 
             // Called from plugin processing, nasty!
-            if (pthread_equal(pthread_self(), fProcThread))
+            if (pthread_equal(pthread_self(), *const_cast<pthread_t*>(&fProcThread)))
             {
                 CARLA_SAFE_ASSERT(fIsProcessing);
 
