@@ -959,12 +959,19 @@ public:
     // -------------------------------------------------------------------
 
 protected:
-    void audioProcessorParameterChanged(AudioProcessor*, int /*parameterIndex*/, float /*newValue*/) override
+    void audioProcessorParameterChanged(AudioProcessor*, int index, float value) override
     {
+        CARLA_SAFE_ASSERT_RETURN(index >= 0,);
+
+        const uint32_t uindex(static_cast<uint32_t>(index));
+        const float fixedValue(pData->param.getFixedValue(uindex, value));
+
+        CarlaPlugin::setParameterValue(static_cast<uint32_t>(index), fixedValue, false, true, true);
     }
 
     void audioProcessorChanged(AudioProcessor*) override
     {
+        pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0f, nullptr);
     }
 
     void audioProcessorParameterChangeGestureBegin(AudioProcessor*, int) {}
@@ -979,7 +986,7 @@ protected:
     // -------------------------------------------------------------------
 
 public:
-    bool init(const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const char* const format)
+    bool init(const char* const filename, const char* const name, /*const char* const label, */const int64_t uniqueId, const char* const format)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -998,11 +1005,13 @@ public:
             return false;
         }
 
+#if 0
         if (label == nullptr || label[0] == '\0')
         {
             pData->engine->setLastError("null label");
             return false;
         }
+#endif
 
         if (format == nullptr || format[0] == '\0')
         {
@@ -1135,7 +1144,7 @@ CarlaPlugin* CarlaPlugin::newJuce(const Initializer& init, const char* const for
 #ifdef HAVE_JUCE
     JucePlugin* const plugin(new JucePlugin(init.engine, init.id));
 
-    if (! plugin->init(init.filename, init.name, init.label, init.uniqueId, format))
+    if (! plugin->init(init.filename, init.name, /*init.label,*/ init.uniqueId, format))
     {
         delete plugin;
         return nullptr;

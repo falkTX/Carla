@@ -1426,6 +1426,8 @@ bool CarlaEngine::loadProject(const char* const filename)
                 if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
                     plugin->loadSaveState(saveState);
             }
+            else
+                carla_stderr2("Failed to load a plugin, error was:%s\n", getLastError());
         }
 
         if (isPreset)
