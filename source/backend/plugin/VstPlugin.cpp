@@ -1767,7 +1767,7 @@ protected:
             const float fixedValue(pData->param.getFixedValue(uindex, opt));
 
             // Called from plugin processing, nasty!
-            if (pthread_equal(pthread_self(), *const_cast<pthread_t*>(&fProcThread)))
+            if (pthread_equal(pthread_self(), fProcThread))
             {
                 CARLA_SAFE_ASSERT(fIsProcessing);
 
@@ -2304,8 +2304,8 @@ private:
     bool  fNeedIdle;
     void* fLastChunk;
 
-    volatile bool      fIsProcessing;
-    volatile pthread_t fProcThread;
+    bool      fIsProcessing;
+    pthread_t fProcThread;
 
     struct FixedVstEvents {
         int32_t numEvents;
