@@ -145,7 +145,8 @@ WIDGETS = \
 	source/paramspinbox.py \
 	source/pixmapbutton.py \
 	source/pixmapdial.py \
-	source/pixmapkeyboard.py
+	source/pixmapkeyboard.py \
+	source/qgraphicsembedscene.py
 
 WIDGETS: $(WIDGETS)
 
