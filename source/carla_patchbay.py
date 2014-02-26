@@ -46,7 +46,10 @@ from pixmapkeyboard import PixmapKeyboardHArea
 # Try Import OpenGL
 
 try:
-    from PyQt4.QtOpenGL import QGLWidget
+    if config_UseQt5:
+        from PyQt5.QtOpenGL import QGLWidget
+    else:
+        from PyQt4.QtOpenGL import QGLWidget
     hasGL = True
 except:
     hasGL = False
@@ -61,7 +64,7 @@ CARLA_DEFAULT_CANVAS_SIZE_HEIGHT = 2400
 # Patchbay widget
 
 class CarlaPatchbayW(QFrame):
-    def __init__(self, parent, doSetup = True, onlyPatchbay = True):
+    def __init__(self, parent, doSetup = True, onlyPatchbay = True, is3D = False):
         QFrame.__init__(self, parent)
 
         self.fLayout = QGridLayout(self)
@@ -87,7 +90,7 @@ class CarlaPatchbayW(QFrame):
         self.fPeaksOut.setFixedWidth(25)
 
         self.fLayout.addWidget(self.fPeaksIn, 0, 0)
-        self.fLayout.addWidget(self.fView, 0, 1)
+        self.fLayout.addWidget(self.fView, 0, 1) # self.fViewWidget if is3D else
         self.fLayout.addWidget(self.fPeaksOut, 0, 2)
         self.fLayout.addWidget(self.fKeys, 1, 0, 1, 0)
 
@@ -118,8 +121,9 @@ class CarlaPatchbayW(QFrame):
         self.fView.setScene(self.scene)
         self.fView.setRenderHint(QPainter.Antialiasing, bool(parent.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] == patchcanvas.ANTIALIASING_FULL))
 
-        if parent.fSavedSettings[CARLA_KEY_CANVAS_USE_OPENGL] and hasGL:
-            self.fView.setViewport(QGLWidget(self))
+        if parent.fSavedSettings[CARLA_KEY_CANVAS_USE_OPENGL] and hasGL: # and not is3D:
+            self.fViewWidget = QGLWidget(self)
+            self.fView.setViewport(self.fViewWidget)
             self.fView.setRenderHint(QPainter.HighQualityAntialiasing, parent.fSavedSettings[CARLA_KEY_CANVAS_HQ_ANTIALIASING])
 
         self.setupCanvas()

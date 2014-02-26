@@ -26,14 +26,14 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, pyqtSlot, qRound, Qt, QPoint, QSize
-    from PyQt5.QtGui import QEvent, QPainter
+    from PyQt5.QtCore import pyqtSignal, pyqtSlot, qRound, Qt, QPoint, QPointF, QRectF, QSize
+    from PyQt5.QtGui import QPainter
     from PyQt5.QtOpenGL import QGLFramebufferObject, QGLFramebufferObjectFormat
-    from PyQt5.QtWidgets import QApplication, QGraphicsScene
+    from PyQt5.QtWidgets import QApplication, QEvent, QGraphicsItem, QGraphicsScene
 else:
-    from PyQt4.QtCore import pyqtSignal, pyqtSlot, qRound, Qt, QPoint, QSize
+    from PyQt4.QtCore import pyqtSignal, pyqtSlot, qRound, Qt, QEvent, QObject, QPoint, QPointF, QRectF, QSize
     from PyQt4.QtOpenGL import QGLFramebufferObject, QGLFramebufferObjectFormat
-    from PyQt4.QtGui import QApplication, QEvent, QObject, QPainter, QGraphicsScene
+    from PyQt4.QtGui import QApplication, QPainter, QGraphicsItem, QGraphicsScene
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -234,3 +234,93 @@ class QGraphicsEmbedScene(QGraphicsScene):
     @pyqtSlot()
     def slot_update(self):
         self.dirty = True
+
+# ------------------------------------------------------------------------------------------------------------
+# PatchScene compatible class
+
+# object types
+CanvasBoxType           = QGraphicsItem.UserType + 1
+CanvasIconType          = QGraphicsItem.UserType + 2
+CanvasPortType          = QGraphicsItem.UserType + 3
+CanvasLineType          = QGraphicsItem.UserType + 4
+CanvasBezierLineType    = QGraphicsItem.UserType + 5
+CanvasLineMovType       = QGraphicsItem.UserType + 6
+CanvasBezierLineMovType = QGraphicsItem.UserType + 7
+
+class PatchScene3D(QGraphicsEmbedScene):
+    scaleChanged    = pyqtSignal(float)
+    sceneGroupMoved = pyqtSignal(int, int, QPointF)
+    pluginSelected  = pyqtSignal(list)
+
+    def __init__(self, parent, view):
+        QGraphicsEmbedScene.__init__(self, parent)
+
+        self.m_ctrl_down = False
+        self.m_mouse_down_init = False
+        self.m_mouse_rubberband = False
+
+        self.addRubberBand()
+
+        self.m_view = view
+        #if not self.m_view:
+            #qFatal("PatchCanvas::PatchScene() - invalid view")
+
+        self.selectionChanged.connect(self.slot_selectionChanged)
+
+    def addRubberBand(self):
+        self.m_rubberband = self.addRect(QRectF(0, 0, 0, 0))
+        self.m_rubberband.setZValue(-1)
+        self.m_rubberband.hide()
+        self.m_rubberband_selection = False
+        self.m_rubberband_orig_point = QPointF(0, 0)
+
+    def clear(self):
+        QGraphicsEmbedScene.clear(self)
+
+        # Re-add rubberband, that just got deleted
+        self.addRubberBand()
+
+    def fixScaleFactor(self):
+        pass
+
+    def updateTheme(self):
+        pass
+
+    def zoom_fit(self):
+        pass
+
+    def zoom_in(self):
+        pass
+
+    def zoom_out(self):
+        pass
+
+    def zoom_reset(self):
+        pass
+
+    @pyqtSlot()
+    def slot_selectionChanged(self):
+        items_list = self.selectedItems()
+
+        if len(items_list) == 0:
+            self.pluginSelected.emit([])
+            return
+
+        plugin_list = []
+
+        for item in items_list:
+            if item and item.isVisible():
+                group_item = None
+
+                if item.type() == CanvasBoxType:
+                    group_item = item
+                elif item.type() == CanvasPortType:
+                    group_item = item.parentItem()
+                #elif item.type() in (CanvasLineType, CanvasBezierLineType, CanvasLineMovType, CanvasBezierLineMovType):
+                    #plugin_list = []
+                    #break
+
+                if group_item is not None and group_item.m_plugin_id >= 0:
+                    plugin_list.append(group_item.m_plugin_id)
+
+        self.pluginSelected.emit(plugin_list)
