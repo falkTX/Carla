@@ -102,12 +102,12 @@ class QGraphicsEmbedScene(QGraphicsScene):
         # Render the scene into the fbo, scaling the QPainter's view
         # transform up to the power-of-two fbo size.
         painter = QPainter(self.fbo)
-        painter.setWindow(0, 0, size.width(), size.height());
-        painter.setViewport(0, 0, fboSize.width(), fboSize.height());
+        painter.setWindow(0, 0, size.width(), size.height())
+        painter.setViewport(0, 0, fboSize.width(), fboSize.height())
         self.render(painter)
         painter.end()
         self.dirty = False
-        return self.fbo.texture();
+        return self.fbo.texture()
 
     def deliverEvent(self, event, texCoord):
         # Map the texture co-ordinate into "screen" co-ordinates.
@@ -140,78 +140,78 @@ class QGraphicsEmbedScene(QGraphicsScene):
                          QEvent.GraphicsSceneMouseDoubleClick):
             pass
             #QGraphicsSceneMouseEvent *ev =
-                #static_cast<QGraphicsSceneMouseEvent *>(event);
-            #QGraphicsSceneMouseEvent e(ev->type());
-            #e.setPos(QPointF(screenX, screenY));
-            #e.setScenePos(QPointF(screenX + bounds.x(), screenY + bounds.y()));
-            #e.setScreenPos(QPoint(screenX, screenY));
-            #e.setButtonDownScreenPos(ev->button(), d->pressedPos);
+                #static_cast<QGraphicsSceneMouseEvent *>(event)
+            #QGraphicsSceneMouseEvent e(ev->type())
+            #e.setPos(QPointF(screenX, screenY))
+            #e.setScenePos(QPointF(screenX + bounds.x(), screenY + bounds.y()))
+            #e.setScreenPos(QPoint(screenX, screenY))
+            #e.setButtonDownScreenPos(ev->button(), d->pressedPos)
             #e.setButtonDownScenePos
                 #(ev->button(), QPointF(d->pressedPos.x() + bounds.x(),
-                                      #d->pressedPos.y() + bounds.y()));
-            #e.setButtons(ev->buttons());
-            #e.setButton(ev->button());
-            #e.setModifiers(ev->modifiers());
-            #e.setAccepted(false);
-            #QApplication::sendEvent(this, &e);
+                                      #d->pressedPos.y() + bounds.y()))
+            #e.setButtons(ev->buttons())
+            #e.setButton(ev->button())
+            #e.setModifiers(ev->modifiers())
+            #e.setAccepted(false)
+            #QApplication::sendEvent(this, &e)
 
         elif eventType == QEvent.GraphicsSceneWheel:
             pass
             #QGraphicsSceneWheelEvent *ev =
-                #static_cast<QGraphicsSceneWheelEvent *>(event);
-            #QGraphicsSceneWheelEvent e(QEvent::GraphicsSceneWheel);
-            #e.setPos(QPointF(screenX, screenY));
-            #e.setScenePos(QPointF(screenX + bounds.x(), screenY + bounds.y()));
-            #e.setScreenPos(QPoint(screenX, screenY));
-            #e.setButtons(ev->buttons());
-            #e.setModifiers(ev->modifiers());
-            #e.setDelta(ev->delta());
-            #e.setOrientation(ev->orientation());
-            #e.setAccepted(false);
-            #QApplication::sendEvent(this, &e);
+                #static_cast<QGraphicsSceneWheelEvent *>(event)
+            #QGraphicsSceneWheelEvent e(QEvent::GraphicsSceneWheel)
+            #e.setPos(QPointF(screenX, screenY))
+            #e.setScenePos(QPointF(screenX + bounds.x(), screenY + bounds.y()))
+            #e.setScreenPos(QPoint(screenX, screenY))
+            #e.setButtons(ev->buttons())
+            #e.setModifiers(ev->modifiers())
+            #e.setDelta(ev->delta())
+            #e.setOrientation(ev->orientation())
+            #e.setAccepted(false)
+            #QApplication::sendEvent(this, &e)
 
         elif eventType in (QEvent.MouseButtonPress,
                            QEvent.MouseButtonRelease,
                            QEvent.MouseButtonDblClick,
                            QEvent.MouseMove):
             pass
-            #QMouseEvent *ev = static_cast<QMouseEvent *>(event);
-            #QEvent::Type type;
+            #QMouseEvent *ev = static_cast<QMouseEvent *>(event)
+            #QEvent::Type type
             #if (ev->type() == QEvent::MouseButtonPress)
-                #type = QEvent::GraphicsSceneMousePress;
+                #type = QEvent::GraphicsSceneMousePress
             #else if (ev->type() == QEvent::MouseButtonRelease)
-                #type = QEvent::GraphicsSceneMouseRelease;
+                #type = QEvent::GraphicsSceneMouseRelease
             #else if (ev->type() == QEvent::MouseButtonDblClick)
-                #type = QEvent::GraphicsSceneMouseDoubleClick;
+                #type = QEvent::GraphicsSceneMouseDoubleClick
             #else
-                #type = QEvent::GraphicsSceneMouseMove;
-            #QGraphicsSceneMouseEvent e(type);
-            #e.setPos(QPointF(screenX, screenY));
-            #e.setScenePos(QPointF(screenX + bounds.x(), screenY + bounds.y()));
-            #e.setScreenPos(QPoint(screenX, screenY));
-            #e.setButtonDownScreenPos(ev->button(), d->pressedPos);
+                #type = QEvent::GraphicsSceneMouseMove
+            #QGraphicsSceneMouseEvent e(type)
+            #e.setPos(QPointF(screenX, screenY))
+            #e.setScenePos(QPointF(screenX + bounds.x(), screenY + bounds.y()))
+            #e.setScreenPos(QPoint(screenX, screenY))
+            #e.setButtonDownScreenPos(ev->button(), d->pressedPos)
             #e.setButtonDownScenePos
                 #(ev->button(), QPointF(d->pressedPos.x() + bounds.x(),
-                                      #d->pressedPos.y() + bounds.y()));
-            #e.setButtons(ev->buttons());
-            #e.setButton(ev->button());
-            #e.setModifiers(ev->modifiers());
-            #e.setAccepted(false);
-            #QApplication::sendEvent(this, &e);
+                                      #d->pressedPos.y() + bounds.y()))
+            #e.setButtons(ev->buttons())
+            #e.setButton(ev->button())
+            #e.setModifiers(ev->modifiers())
+            #e.setAccepted(false)
+            #QApplication::sendEvent(this, &e)
 
         elif eventType == QEvent.Wheel:
             pass
-            #QWheelEvent *ev = static_cast<QWheelEvent *>(event);
-            #QGraphicsSceneWheelEvent e(QEvent::GraphicsSceneWheel);
-            #e.setPos(QPointF(screenX, screenY));
-            #e.setScenePos(QPointF(screenX + bounds.x(), screenY + bounds.y()));
-            #e.setScreenPos(QPoint(screenX, screenY));
-            #e.setButtons(ev->buttons());
-            #e.setModifiers(ev->modifiers());
-            #e.setDelta(ev->delta());
-            #e.setOrientation(ev->orientation());
-            #e.setAccepted(false);
-            #QApplication::sendEvent(this, &e);
+            #QWheelEvent *ev = static_cast<QWheelEvent *>(event)
+            #QGraphicsSceneWheelEvent e(QEvent::GraphicsSceneWheel)
+            #e.setPos(QPointF(screenX, screenY))
+            #e.setScenePos(QPointF(screenX + bounds.x(), screenY + bounds.y()))
+            #e.setScreenPos(QPoint(screenX, screenY))
+            #e.setButtons(ev->buttons())
+            #e.setModifiers(ev->modifiers())
+            #e.setDelta(ev->delta())
+            #e.setOrientation(ev->orientation())
+            #e.setAccepted(false)
+            #QApplication::sendEvent(this, &e)
 
         #else:
             # Send the event directly without any conversion.

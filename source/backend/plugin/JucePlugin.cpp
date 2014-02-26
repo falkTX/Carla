@@ -30,7 +30,8 @@ using namespace juce;
 CARLA_BACKEND_START_NAMESPACE
 
 class JucePlugin : public CarlaPlugin,
-                   public AudioPlayHead
+                   public AudioPlayHead,
+                   public AudioProcessorListener
 {
 public:
     JucePlugin(CarlaEngine* const engine, const uint id)
@@ -891,6 +892,29 @@ public:
             FloatVectorOperations::copy(outBuffer[i], fAudioBuffer.getSampleData(static_cast<int>(i)), static_cast<int>(frames));
 
         // --------------------------------------------------------------------------------------------------------
+        // Midi out
+
+        if (! fMidiBuffer.isEmpty())
+        {
+            if (pData->event.portOut != nullptr)
+            {
+                const uint8* midiEventData;
+                int midiEventSize, midiEventPosition;
+
+                for (MidiBuffer::Iterator i(fMidiBuffer); i.getNextEvent(midiEventData, midiEventSize, midiEventPosition);)
+                {
+                    CARLA_SAFE_ASSERT_BREAK(midiEventPosition >= 0 && midiEventPosition < static_cast<int>(frames));
+                    CARLA_SAFE_ASSERT_BREAK(midiEventSize > 0);
+
+                    if (! pData->event.portOut->writeMidiEvent(static_cast<uint32_t>(midiEventPosition), static_cast<uint8_t>(midiEventSize), midiEventData))
+                        break;
+                }
+            }
+
+            fMidiBuffer.clear();
+        }
+
+        // --------------------------------------------------------------------------------------------------------
 
         pData->singleMutex.unlock();
         return true;
@@ -935,6 +959,17 @@ public:
     // -------------------------------------------------------------------
 
 protected:
+    void audioProcessorParameterChanged(AudioProcessor*, int /*parameterIndex*/, float /*newValue*/) override
+    {
+    }
+
+    void audioProcessorChanged(AudioProcessor*) override
+    {
+    }
+
+    void audioProcessorParameterChangeGestureBegin(AudioProcessor*, int) {}
+    void audioProcessorParameterChangeGestureEnd(AudioProcessor*, int) {}
+
     bool getCurrentPosition(CurrentPositionInfo& result) override
     {
         carla_copyStruct<CurrentPositionInfo>(result, fPosInfo);
@@ -1010,6 +1045,7 @@ public:
 
         fInstance->fillInPluginDescription(fDesc);
         fInstance->setPlayHead(this);
+        fInstance->addListener(this);
 
         // ---------------------------------------------------------------
         // get info
