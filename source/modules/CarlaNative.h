@@ -231,7 +231,7 @@ typedef struct _NativePluginDescriptor {
     uint32_t               (*get_parameter_count)(NativePluginHandle handle);
     const NativeParameter* (*get_parameter_info)(NativePluginHandle handle, uint32_t index);
     float                  (*get_parameter_value)(NativePluginHandle handle, uint32_t index);
-    const char*            (*get_parameter_text)(NativePluginHandle handle, uint32_t index, float value);
+    const char*            (*get_parameter_text)(NativePluginHandle handle, uint32_t index /*, float value*/);
 
     uint32_t                 (*get_midi_program_count)(NativePluginHandle handle);
     const NativeMidiProgram* (*get_midi_program_info)(NativePluginHandle handle, uint32_t index);

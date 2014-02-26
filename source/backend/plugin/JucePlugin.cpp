@@ -174,7 +174,15 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
 
-        std::strncpy(strBuf, fInstance->getParameterName(static_cast<int>(parameterId)).toRawUTF8(), STR_MAX);
+        std::strncpy(strBuf, fInstance->getParameterName(static_cast<int>(parameterId), STR_MAX).toRawUTF8(), STR_MAX);
+    }
+
+    void getParameterText(const uint32_t parameterId, char* const strBuf) const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
+
+        std::strncpy(strBuf, fInstance->getParameterText(static_cast<int>(parameterId), STR_MAX).toRawUTF8(), STR_MAX);
     }
 
     void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
@@ -406,7 +414,7 @@ public:
 
             pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
 #ifndef BUILD_BRIDGE
-            //pData->param.data[j].hints |= PARAMETER_USES_CUSTOM_TEXT;
+            pData->param.data[j].hints |= PARAMETER_USES_CUSTOM_TEXT;
 #endif
 
             if (fInstance->isParameterAutomatable(static_cast<int>(j)))

@@ -407,7 +407,7 @@ public:
         CarlaPlugin::getParameterName(parameterId, strBuf);
     }
 
-    void getParameterText(const uint32_t parameterId, const float value, char* const strBuf) const noexcept override
+    void getParameterText(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_text != nullptr,);
@@ -416,14 +416,14 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         // FIXME - try
-        if (const char* const text = fDescriptor->get_parameter_text(fHandle, parameterId, value))
+        if (const char* const text = fDescriptor->get_parameter_text(fHandle, parameterId /*, fDescriptor->get_parameter_value(fHandle, parameterId)*/))
         {
             std::strncpy(strBuf, text, STR_MAX);
             return;
         }
 
         carla_safe_assert("const char* const text = fDescriptor->get_parameter_text(fHandle, parameterId, value)", __FILE__, __LINE__);
-        CarlaPlugin::getParameterText(parameterId, value, strBuf);
+        CarlaPlugin::getParameterText(parameterId, strBuf);
     }
 
     void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override

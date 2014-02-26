@@ -717,10 +717,9 @@ CARLA_EXPORT uint32_t carla_get_custom_data_count(uint pluginId);
  * Get a plugin's parameter text (custom display of internal values).
  * @param pluginId    Plugin
  * @param parameterId Parameter index
- * @param value       Parameter value
  * @see PARAMETER_USES_CUSTOM_TEXT
  */
-CARLA_EXPORT const char* carla_get_parameter_text(uint pluginId, uint32_t parameterId, float value);
+CARLA_EXPORT const char* carla_get_parameter_text(uint pluginId, uint32_t parameterId);
 
 /*!
  * Get a plugin's program name.

@@ -1615,7 +1615,7 @@ uint32_t carla_get_custom_data_count(uint pluginId)
 
 // -------------------------------------------------------------------------------------------------------------------
 
-const char* carla_get_parameter_text(uint pluginId, uint32_t parameterId, float value)
+const char* carla_get_parameter_text(uint pluginId, uint32_t parameterId)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, nullptr);
     carla_debug("carla_get_parameter_text(%i, %i)", pluginId, parameterId);
@@ -1627,7 +1627,7 @@ const char* carla_get_parameter_text(uint pluginId, uint32_t parameterId, float 
         if (parameterId < plugin->getParameterCount())
         {
             carla_zeroChar(textBuf, STR_MAX+1);
-            plugin->getParameterText(parameterId, value, textBuf);
+            plugin->getParameterText(parameterId, textBuf);
             return textBuf;
         }
 

@@ -904,7 +904,7 @@ protected:
         return 0.0f;
     }
 
-    const char* getParameterText(const uint32_t index, const float value) const
+    const char* getParameterText(const uint32_t index /*, const float value*/) const
     {
         if (CarlaPlugin* const plugin = _getFirstPlugin())
         {
@@ -913,7 +913,7 @@ protected:
                 static char strBuf[STR_MAX+1];
                 carla_zeroChar(strBuf, STR_MAX+1);
 
-                plugin->getParameterText(index, value, strBuf);
+                plugin->getParameterText(index, /*value,*/ strBuf);
 
                 return strBuf;
             }
@@ -1361,9 +1361,9 @@ public:
         return handlePtr->getParameterValue(index);
     }
 
-    static const char* _get_parameter_text(NativePluginHandle handle, uint32_t index, float value)
+    static const char* _get_parameter_text(NativePluginHandle handle, uint32_t index /*, float value*/)
     {
-        return handlePtr->getParameterText(index, value);
+        return handlePtr->getParameterText(index /*, value*/);
     }
 
     static uint32_t _get_midi_program_count(NativePluginHandle handle)

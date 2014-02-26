@@ -326,7 +326,7 @@ public:
     /*!
      * Get the custom text of the parameter \a parameterId.
      */
-    virtual void getParameterText(const uint32_t parameterId, const float value, char* const strBuf) const noexcept;
+    virtual void getParameterText(const uint32_t parameterId, char* const strBuf) const noexcept;
 
     /*!
      * Get the unit of the parameter \a parameterId.

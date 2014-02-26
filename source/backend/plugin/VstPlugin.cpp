@@ -276,19 +276,17 @@ public:
         dispatcher(effGetParamName, static_cast<int32_t>(parameterId), 0, strBuf, 0.0f);
     }
 
-#if 0
     void getParameterText(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         strBuf[0] = '\0';
-        dispatcher(effGetParamDisplay, parameterId, 0, strBuf, 0.0f);
+        dispatcher(effGetParamDisplay, static_cast<int32_t>(parameterId), 0, strBuf, 0.0f);
 
         if (strBuf[0] == '\0')
             std::snprintf(strBuf, STR_MAX, "%f", getParameterValue(parameterId));
     }
-#endif
 
     void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
@@ -742,7 +740,7 @@ public:
 
             pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
 #ifndef BUILD_BRIDGE
-            //pData->param.data[j].hints |= PARAMETER_USES_CUSTOM_TEXT;
+            pData->param.data[j].hints |= PARAMETER_USES_CUSTOM_TEXT;
 #endif
 
             if ((pData->hints & PLUGIN_USES_OLD_VSTSDK) != 0 || dispatcher(effCanBeAutomated, static_cast<int32_t>(j), 0, nullptr, 0.0f) == 1)

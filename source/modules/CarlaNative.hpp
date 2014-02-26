@@ -278,13 +278,10 @@ protected:
         return 0.0f;
     }
 
-    virtual const char* getParameterText(const uint32_t index, const float value) const
+    virtual const char* getParameterText(const uint32_t index /*, const float value*/) const
     {
         CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(), nullptr);
         return nullptr;
-
-        // unused
-        (void)value;
     }
 
     // -------------------------------------------------------------------
@@ -456,9 +453,9 @@ public:
         return handlePtr->getParameterValue(index);
     }
 
-    static const char* _get_parameter_text(NativePluginHandle handle, uint32_t index, float value)
+    static const char* _get_parameter_text(NativePluginHandle handle, uint32_t index /*, float value*/)
     {
-        return handlePtr->getParameterText(index, value);
+        return handlePtr->getParameterText(index /*, value*/);
     }
 
     static uint32_t _get_midi_program_count(NativePluginHandle handle)
