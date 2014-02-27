@@ -3,9 +3,8 @@
 # ----------------------------------------------------------------------------
 # in short
 
-4. custom "plugin slots" skins, ala Reason (also define set of keys for a new LV2 extension, 40% done)
+4. custom "plugin slots" skins, ala Reason (also define set of keys for a new LV2 extension, 50% done)
 5. internal patchbay processing mode
-6. Carla as an LV2 plugin (75% done)
 7. direct support for csound files (as plugins, inspired by 'cabbage')
 8. OSX builds
 
@@ -33,19 +32,34 @@ GENERAL:
  - make it possible to use backend as fake standalone app (using pipes) instead of a shared library
  - smarter carla-single script (LV2 must only need URI for example, and ignore all other hints)
  - alternate, simpler UI for mobile and/or VST version
+ - artwork about tab
+ - don't pass audio buffers to plugin process, make them request via ports
+ - distrho carla changes
+ - randomize button
+ - all-params to default button
+ - NSM rework
+
+FRONTEND:
+ - options for UIs on top of carla (managed)
+ - make always-on-top depend on it^
+ - complete zynfx, knob values on top
+ - synth skin
+ - samplers skin
 
 ENGINE:
  - allow to change position of plugins (up/down)
  - allow to add plugins when engine is stopped
- - complete RtAudio+RtMidi support (only MIDI out missing + save&restore)
+ - complete RtAudio+RtMidi support (only MIDI out missing)
  - complete Juce engine driver support
  - implement Haiku Media support (based from JACK?, LATER)
  - implement latency in continuous-rack mode
  - implement internal patchbay mode (once Juce move is complete)
  - internal patchbay mode, based on Juce graph code
  - handle sample-rate changes in JACK (made possible by switch-master)
- - add MIDI-bank change type (GM, GS, XG and MMA). See fluidsynth docs
+ - add MIDI-bank change type (GM, GS, XG and MMA). See fluidsynth and los docs
  - allow to use static OSC ports
+ - save engine info
+ - switch engine modes when opening project
 
 PLUGINS:
  - add control-out rate/freq option in frames (or just a regular block-size option?)
@@ -58,6 +72,7 @@ PLUGINS:
 Native:
  - Cleanup API
  - Document API
+ - update zynaddsubfx
 
 LADSPA:
 
@@ -67,6 +82,7 @@ DSSI:
 LV2:
  - revisit all extensions
  - option to set lv2 preset folder?
+ - strict bounds recheck
 
 FluidSynth:
  - per-channel volume control
@@ -80,8 +96,9 @@ LinuxSampler:
 # current work
 
 FRONTEND:
- - fix things to new cleanup API
  - more skins
+ - testing stuff
+ - noexcept wherever possible
 
 OTHER:
  - create tests for all utils code
