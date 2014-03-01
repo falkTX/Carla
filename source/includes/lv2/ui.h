@@ -51,6 +51,7 @@
 #define LV2_UI__portNotification LV2_UI_PREFIX "portNotification"
 #define LV2_UI__portSubscribe    LV2_UI_PREFIX "portSubscribe"
 #define LV2_UI__resize           LV2_UI_PREFIX "resize"
+#define LV2_UI__showInterface    LV2_UI_PREFIX "showInterface"
 #define LV2_UI__touch            LV2_UI_PREFIX "touch"
 #define LV2_UI__ui               LV2_UI_PREFIX "ui"
 #define LV2_UI__updateRate       LV2_UI_PREFIX "updateRate"
@@ -340,7 +341,7 @@ typedef struct _LV2UI_Touch {
 } LV2UI_Touch;
 
 /**
-   UI Idle Feature (LV2_UI__idle)
+   UI Idle Feature (LV2_UI__idleInterface)
 
    This feature is an addition to the UI API that provides a callback for the
    host to call rapidly, e.g. to drive the idle callback of a toolkit.
@@ -356,6 +357,31 @@ typedef struct _LV2UI_Idle_Interface {
 	*/
 	int (*idle)(LV2UI_Handle ui);
 } LV2UI_Idle_Interface;
+
+/**
+   UI Show Interface (LV2_UI__showInterface)
+
+   UIs can use this interface to provide show/hide methods to pop up a window,
+   which allows them to function in hosts unable to embed their widget type.
+
+   If used, LV2UI_Idle_Interface should also be used to drive the UI.  The UI
+   should return non-zero from idle() when the window has been closed.
+*/
+typedef struct _LV2UI_Show_Interface {
+	/**
+	   Show a window for this UI.
+
+	   @return 0 on success, or anything else to stop being called.
+	*/
+	int (*show)(LV2UI_Handle ui);
+
+	/**
+	   Hide the window for this UI.
+
+	   @return 0 on success, or anything else to stop being called.
+	*/
+	int (*hide)(LV2UI_Handle ui);
+} LV2UI_Show_Interface;
 
 /**
    Peak data for a slice of time, the update format for ui:peakProtocol.
