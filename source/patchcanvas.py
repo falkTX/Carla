@@ -150,6 +150,7 @@ class port_dict_t(object):
         'port_name',
         'port_mode',
         'port_type',
+        'is_alternate',
         'widget'
     ]
 
@@ -587,6 +588,7 @@ def splitGroup(group_id):
             port_dict.port_name = port.port_name
             port_dict.port_mode = port.port_mode
             port_dict.port_type = port.port_type
+            port_dict.is_alternate = port.is_alternate
             port_dict.widget = None
             ports_data.append(port_dict)
 
@@ -612,7 +614,7 @@ def splitGroup(group_id):
     addGroup(group_id, group_name, SPLIT_YES, group_icon)
 
     for port in ports_data:
-        addPort(group_id, port.port_id, port.port_name, port.port_mode, port.port_type)
+        addPort(group_id, port.port_id, port.port_name, port.port_mode, port.port_type, port.is_alternate)
 
     for conn in conns_data:
         connectPorts(conn.connection_id, conn.port_out_id, conn.port_in_id)
@@ -663,6 +665,7 @@ def joinGroup(group_id):
             port_dict.port_name = port.port_name
             port_dict.port_mode = port.port_mode
             port_dict.port_type = port.port_type
+            port_dict.is_alternate = port.is_alternate
             port_dict.widget = None
             ports_data.append(port_dict)
 
@@ -688,7 +691,7 @@ def joinGroup(group_id):
     addGroup(group_id, group_name, SPLIT_NO, group_icon)
 
     for port in ports_data:
-        addPort(group_id, port.port_id, port.port_name, port.port_mode, port.port_type)
+        addPort(group_id, port.port_id, port.port_name, port.port_mode, port.port_type, port.is_alternate)
 
     for conn in conns_data:
         connectPorts(conn.connection_id, conn.port_out_id, conn.port_in_id)
@@ -764,9 +767,9 @@ def setGroupAsPlugin(group_id, plugin_id, hasUi):
 
     qCritical("PatchCanvas::setGroupAsPlugin(%i, %i, %s) - unable to find group to set as plugin" % (group_id, plugin_id, bool2str(hasUi)))
 
-def addPort(group_id, port_id, port_name, port_mode, port_type):
+def addPort(group_id, port_id, port_name, port_mode, port_type, is_alternate=False):
     if canvas.debug:
-        qDebug("PatchCanvas::addPort(%i, %i, %s, %s, %s)" % (group_id, port_id, port_name.encode(), port_mode2str(port_mode), port_type2str(port_type)))
+        qDebug("PatchCanvas::addPort(%i, %i, %s, %s, %s, %s)" % (group_id, port_id, port_name.encode(), port_mode2str(port_mode), port_type2str(port_type), bool2str(is_alternate)))
 
     for port in canvas.port_list:
         if port.group_id == group_id and port.port_id == port_id:
@@ -783,7 +786,7 @@ def addPort(group_id, port_id, port_name, port_mode, port_type):
             else:
                 n = 0
             box_widget  = group.widgets[n]
-            port_widget = box_widget.addPortFromGroup(port_id, port_mode, port_type, port_name)
+            port_widget = box_widget.addPortFromGroup(port_id, port_mode, port_type, port_name, is_alternate)
             break
 
     if not (box_widget and port_widget):
@@ -799,6 +802,7 @@ def addPort(group_id, port_id, port_name, port_mode, port_type):
     port_dict.port_name = port_name
     port_dict.port_mode = port_mode
     port_dict.port_type = port_type
+    port_dict.is_alternate = is_alternate
     port_dict.widget = port_widget
     canvas.port_list.append(port_dict)
 
@@ -1730,7 +1734,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
 # canvasport.cpp
 
 class CanvasPort(QGraphicsItem):
-    def __init__(self, port_id, port_name, port_mode, port_type, parent):
+    def __init__(self, port_id, port_name, port_mode, port_type, is_alternate, parent):
         QGraphicsItem.__init__(self, parent)
 
         # Save Variables, useful for later
@@ -1738,6 +1742,7 @@ class CanvasPort(QGraphicsItem):
         self.m_port_mode = port_mode
         self.m_port_type = port_type
         self.m_port_name = port_name
+        self.m_is_alternate = is_alternate
 
         # Base Variables
         self.m_port_width  = 15
@@ -2166,14 +2171,14 @@ class CanvasBox(QGraphicsItem):
         if self.shadow:
             self.shadow.setOpacity(opacity)
 
-    def addPortFromGroup(self, port_id, port_mode, port_type, port_name):
+    def addPortFromGroup(self, port_id, port_mode, port_type, port_name, is_alternate):
         if len(self.m_port_list_ids) == 0:
             if options.auto_hide_groups:
                 if options.eyecandy == EYECANDY_FULL:
                     CanvasItemFX(self, True)
                 self.setVisible(True)
 
-        new_widget = CanvasPort(port_id, port_name, port_mode, port_type, self)
+        new_widget = CanvasPort(port_id, port_name, port_mode, port_type, is_alternate, self)
 
         port_dict = port_dict_t()
         port_dict.group_id = self.m_group_id
@@ -2181,6 +2186,7 @@ class CanvasBox(QGraphicsItem):
         port_dict.port_name = port_name
         port_dict.port_mode = port_mode
         port_dict.port_type = port_type
+        port_dict.is_alternate = is_alternate
         port_dict.widget = new_widget
 
         self.m_port_list_ids.append(port_id)
