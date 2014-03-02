@@ -93,28 +93,28 @@ class Theme(object):
             self.port_audio_jack_pen_sel = QPen(QColor(63 + 30, 90 + 30, 126 + 30), 1)
             self.port_midi_jack_pen = QPen(QColor(159, 44, 42), 1)
             self.port_midi_jack_pen_sel = QPen(QColor(159 + 30, 44 + 30, 42 + 30), 1)
-            self.port_midi_a2j_pen = QPen(QColor(137, 76, 43), 1)
-            self.port_midi_a2j_pen_sel = QPen(QColor(137 + 30, 76 + 30, 43 + 30), 1)
             self.port_midi_alsa_pen = QPen(QColor(93, 141, 46), 1)
             self.port_midi_alsa_pen_sel = QPen(QColor(93 + 30, 141 + 30, 46 + 30), 1)
+            self.port_parameter_pen = QPen(QColor(137, 76, 43), 1)
+            self.port_parameter_pen_sel = QPen(QColor(137 + 30, 76 + 30, 43 + 30), 1)
 
             self.port_audio_jack_bg = QColor(35, 61, 99)
             self.port_audio_jack_bg_sel = QColor(35 + 50, 61 + 50, 99 + 50)
             self.port_midi_jack_bg = QColor(120, 15, 16)
             self.port_midi_jack_bg_sel = QColor(120 + 50, 15 + 50, 16 + 50)
-            self.port_midi_a2j_bg = QColor(101, 47, 16)
-            self.port_midi_a2j_bg_sel = QColor(101 + 50, 47 + 50, 16 + 50)
             self.port_midi_alsa_bg = QColor(64, 112, 18)
             self.port_midi_alsa_bg_sel = QColor(64 + 50, 112 + 50, 18 + 50)
+            self.port_parameter_bg = QColor(101, 47, 16)
+            self.port_parameter_bg_sel = QColor(101 + 50, 47 + 50, 16 + 50)
 
             self.port_audio_jack_text = self.port_text
             self.port_audio_jack_text_sel = self.port_text
             self.port_midi_jack_text = self.port_text
             self.port_midi_jack_text_sel = self.port_text
-            self.port_midi_a2j_text = self.port_text
-            self.port_midi_a2j_text_sel = self.port_text
             self.port_midi_alsa_text = self.port_text
             self.port_midi_alsa_text_sel = self.port_text
+            self.port_parameter_text = self.port_text
+            self.port_parameter_text_sel = self.port_text
 
             self.port_height   = 15
             self.port_offset   = 0
@@ -128,12 +128,12 @@ class Theme(object):
             self.line_midi_jack = QColor(159, 44, 42)
             self.line_midi_jack_sel = QColor(159 + 90, 44 + 90, 42 + 90)
             self.line_midi_jack_glow = QColor(200, 100, 100)
-            self.line_midi_a2j = QColor(137, 76, 43)
-            self.line_midi_a2j_sel = QColor(137 + 90, 76 + 90, 43 + 90)
-            self.line_midi_a2j_glow = QColor(166, 133, 133)
             self.line_midi_alsa = QColor(93, 141, 46)
             self.line_midi_alsa_sel = QColor(93 + 90, 141 + 90, 46 + 90)
             self.line_midi_alsa_glow = QColor(100, 200, 100)
+            self.line_parameter = QColor(137, 76, 43)
+            self.line_parameter_sel = QColor(137 + 90, 76 + 90, 43 + 90)
+            self.line_parameter_glow = QColor(166, 133, 133)
 
             self.rubberband_pen = QPen(QColor(206, 207, 208), 1, Qt.SolidLine)
             self.rubberband_brush = QColor(76, 77, 78, 100)
@@ -175,28 +175,28 @@ class Theme(object):
             self.port_audio_jack_pen_sel = QPen(QColor(63 + 30, 90 + 30, 126 + 30), 1)
             self.port_midi_jack_pen = QPen(QColor(159, 44, 42), 1)
             self.port_midi_jack_pen_sel = QPen(QColor(159 + 30, 44 + 30, 42 + 30), 1)
-            self.port_midi_a2j_pen = QPen(QColor(137, 76, 43), 1)
-            self.port_midi_a2j_pen_sel = QPen(QColor(137 + 30, 76 + 30, 43 + 30), 1)
             self.port_midi_alsa_pen = QPen(QColor(93, 141, 46), 1)
             self.port_midi_alsa_pen_sel = QPen(QColor(93 + 30, 141 + 30, 46 + 30), 1)
+            self.port_parameter_pen = QPen(QColor(137, 76, 43), 1)
+            self.port_parameter_pen_sel = QPen(QColor(137 + 30, 76 + 30, 43 + 30), 1)
 
             self.port_audio_jack_bg = QColor(35, 61, 99)
             self.port_audio_jack_bg_sel = QColor(35 + 50, 61 + 50, 99 + 50)
             self.port_midi_jack_bg = QColor(120, 15, 16)
             self.port_midi_jack_bg_sel = QColor(120 + 50, 15 + 50, 16 + 50)
-            self.port_midi_a2j_bg = QColor(101, 47, 16)
-            self.port_midi_a2j_bg_sel = QColor(101 + 50, 47 + 50, 16 + 50)
             self.port_midi_alsa_bg = QColor(64, 112, 18)
             self.port_midi_alsa_bg_sel = QColor(64 + 50, 112 + 50, 18 + 50)
+            self.port_parameter_bg = QColor(101, 47, 16)
+            self.port_parameter_bg_sel = QColor(101 + 50, 47 + 50, 16 + 50)
 
             self.port_audio_jack_text = self.port_text
             self.port_audio_jack_text_sel = self.port_text
             self.port_midi_jack_text = self.port_text
             self.port_midi_jack_text_sel = self.port_text
-            self.port_midi_a2j_text = self.port_text
-            self.port_midi_a2j_text_sel = self.port_text
             self.port_midi_alsa_text = self.port_text
             self.port_midi_alsa_text_sel = self.port_text
+            self.port_parameter_text = self.port_text
+            self.port_parameter_text_sel = self.port_text
 
             self.port_height   = 11
             self.port_offset   = 0
@@ -210,12 +210,12 @@ class Theme(object):
             self.line_midi_jack = QColor(159, 44, 42)
             self.line_midi_jack_sel = QColor(159 + 90, 44 + 90, 42 + 90)
             self.line_midi_jack_glow = QColor(200, 100, 100)
-            self.line_midi_a2j = QColor(137, 76, 43)
-            self.line_midi_a2j_sel = QColor(137 + 90, 76 + 90, 43 + 90)
-            self.line_midi_a2j_glow = QColor(166, 133, 133)
             self.line_midi_alsa = QColor(93, 141, 46)
             self.line_midi_alsa_sel = QColor(93 + 90, 141 + 90, 46 + 90)
             self.line_midi_alsa_glow = QColor(100, 200, 100)
+            self.line_parameter = QColor(137, 76, 43)
+            self.line_parameter_sel = QColor(137 + 90, 76 + 90, 43 + 90)
+            self.line_parameter_glow = QColor(166, 133, 133)
 
             self.rubberband_pen = QPen(QColor(206, 207, 208), 1, Qt.SolidLine)
             self.rubberband_brush = QColor(76, 77, 78, 100)
@@ -257,28 +257,28 @@ class Theme(object):
             self.port_audio_jack_pen_sel = QPen(QColor(103 + 136, 190 + 130, 226 + 130), 1)
             self.port_midi_jack_pen = QPen(QColor(159, 44, 42), 1)
             self.port_midi_jack_pen_sel = QPen(QColor(90 + 30, 44 + 30, 42 + 30), 1)
-            self.port_midi_a2j_pen = QPen(QColor(137, 76, 43), 1)
-            self.port_midi_a2j_pen_sel = QPen(QColor(137 + 30, 76 + 30, 43 + 30), 1)
             self.port_midi_alsa_pen = QPen(QColor(93, 141, 46), 1)
             self.port_midi_alsa_pen_sel = QPen(QColor(93 + 30, 141 + 30, 46 + 30), 1)
+            self.port_parameter_pen = QPen(QColor(137, 76, 43), 1)
+            self.port_parameter_pen_sel = QPen(QColor(137 + 30, 76 + 30, 43 + 30), 1)
 
             self.port_audio_jack_bg = QColor(0, 0, 180)
             self.port_audio_jack_bg_sel = QColor(135 + 150, 161 + 150, 199 + 150)
             self.port_midi_jack_bg = QColor(130, 15, 16)
             self.port_midi_jack_bg_sel = QColor(90 + 30, 15 + 50, 16 + 50)
-            self.port_midi_a2j_bg = QColor(101, 47, 16)
-            self.port_midi_a2j_bg_sel = QColor(101 + 50, 47 + 50, 16 + 50)
             self.port_midi_alsa_bg = QColor(64, 112, 18)
             self.port_midi_alsa_bg_sel = QColor(64 + 50, 112 + 50, 18 + 50)
+            self.port_parameter_bg = QColor(101, 47, 16)
+            self.port_parameter_bg_sel = QColor(101 + 50, 47 + 50, 16 + 50)
 
             self.port_audio_jack_text = self.port_text
             self.port_audio_jack_text_sel = self.port_text
             self.port_midi_jack_text = self.port_text
             self.port_midi_jack_text_sel = self.port_text
-            self.port_midi_a2j_text = self.port_text
-            self.port_midi_a2j_text_sel = self.port_text
             self.port_midi_alsa_text = self.port_text
             self.port_midi_alsa_text_sel = self.port_text
+            self.port_parameter_text = self.port_text
+            self.port_parameter_text_sel = self.port_text
 
             self.port_height   = 15
             self.port_offset   = 0
@@ -292,12 +292,12 @@ class Theme(object):
             self.line_midi_jack = QColor(159, 44, 42)
             self.line_midi_jack_sel = QColor(159 + 44, 44 + 90, 42 + 90)
             self.line_midi_jack_glow = QColor(200, 100, 100)
-            self.line_midi_a2j = QColor(137, 43, 43)
-            self.line_midi_a2j_sel = QColor(137 + 90, 76 + 90, 43 + 90)
-            self.line_midi_a2j_glow = QColor(166, 133, 133)
             self.line_midi_alsa = QColor(93, 141, 46)
             self.line_midi_alsa_sel = QColor(93 + 90, 141 + 90, 46 + 90)
             self.line_midi_alsa_glow = QColor(100, 200, 100)
+            self.line_parameter = QColor(137, 43, 43)
+            self.line_parameter_sel = QColor(137 + 90, 76 + 90, 43 + 90)
+            self.line_parameter_glow = QColor(166, 133, 133)
 
             self.rubberband_pen = QPen(QColor(206, 207, 208), 1, Qt.SolidLine)
             self.rubberband_brush = QColor(76, 77, 78, 100)
@@ -339,28 +339,28 @@ class Theme(object):
             self.port_audio_jack_pen_sel = QPen(QColor(255, 0, 0), 0)
             self.port_midi_jack_pen = QPen(QColor(120, 15, 16), 0)
             self.port_midi_jack_pen_sel = QPen(QColor(255, 0, 0), 0)
-            self.port_midi_a2j_pen = QPen(QColor(101, 47, 17), 0)
-            self.port_midi_a2j_pen_sel = QPen(QColor(255, 0, 0), 0)
             self.port_midi_alsa_pen = QPen(QColor(63, 112, 19), 0)
             self.port_midi_alsa_pen_sel = QPen(QColor(255, 0, 0), 0)
+            self.port_parameter_pen = QPen(QColor(101, 47, 17), 0)
+            self.port_parameter_pen_sel = QPen(QColor(255, 0, 0), 0)
 
             self.port_audio_jack_bg = QColor(35, 61, 99)
             self.port_audio_jack_bg_sel = QColor(255, 0, 0)
             self.port_midi_jack_bg = QColor(120, 15, 16)
             self.port_midi_jack_bg_sel = QColor(255, 0, 0)
-            self.port_midi_a2j_bg = QColor(101, 47, 17)
-            self.port_midi_a2j_bg_sel = QColor(255, 0, 0)
             self.port_midi_alsa_bg = QColor(63, 112, 19)
             self.port_midi_alsa_bg_sel = QColor(255, 0, 0)
+            self.port_parameter_bg = QColor(101, 47, 17)
+            self.port_parameter_bg_sel = QColor(255, 0, 0)
 
             self.port_audio_jack_text = self.port_text
             self.port_audio_jack_text_sel = self.port_text
             self.port_midi_jack_text = self.port_text
             self.port_midi_jack_text_sel = self.port_text
-            self.port_midi_a2j_text = self.port_text
-            self.port_midi_a2j_text_sel = self.port_text
             self.port_midi_alsa_text = self.port_text
             self.port_midi_alsa_text_sel = self.port_text
+            self.port_parameter_text = self.port_text
+            self.port_parameter_text_sel = self.port_text
 
             self.port_height   = 14
             self.port_offset   = -1
@@ -374,12 +374,12 @@ class Theme(object):
             self.line_midi_jack = QColor(139, 32, 32)
             self.line_midi_jack_sel = QColor(255, 0, 0)
             self.line_midi_jack_glow = QColor(255, 0, 0)
-            self.line_midi_a2j = QColor(120, 65, 33)
-            self.line_midi_a2j_sel = QColor(255, 0, 0)
-            self.line_midi_a2j_glow = QColor(255, 0, 0)
             self.line_midi_alsa = QColor(81, 130, 36)
             self.line_midi_alsa_sel = QColor(255, 0, 0)
             self.line_midi_alsa_glow = QColor(255, 0, 0)
+            self.line_parameter = QColor(120, 65, 33)
+            self.line_parameter_sel = QColor(255, 0, 0)
+            self.line_parameter_glow = QColor(255, 0, 0)
 
             self.rubberband_pen = QPen(QColor(147, 151, 143), 2, Qt.SolidLine)
             self.rubberband_brush = QColor(35, 61, 99, 100)
@@ -424,28 +424,28 @@ class Theme(object):
             self.port_audio_jack_pen_sel = QPen(QColor(1, 230, 238), 1)
             self.port_midi_jack_pen = QPen(selPortBG, 2)
             self.port_midi_jack_pen_sel = QPen(QColor(252, 118, 118), 1)
-            self.port_midi_a2j_pen = QPen(selPortBG, 2)
-            self.port_midi_a2j_pen_sel = QPen(QColor(137, 76, 43), 1)
             self.port_midi_alsa_pen = QPen(selPortBG, 2)
             self.port_midi_alsa_pen_sel = QPen(QColor(129, 244, 118), 0)
+            self.port_parameter_pen = QPen(selPortBG, 2)
+            self.port_parameter_pen_sel = QPen(QColor(137, 76, 43), 1)
 
             self.port_audio_jack_bg = normalPortBG
             self.port_audio_jack_bg_sel = selPortBG
             self.port_midi_jack_bg = normalPortBG
             self.port_midi_jack_bg_sel = selPortBG
-            self.port_midi_a2j_bg = normalPortBG
-            self.port_midi_a2j_bg_sel = selPortBG
             self.port_midi_alsa_bg = normalPortBG
             self.port_midi_alsa_bg_sel = selPortBG
+            self.port_parameter_bg = normalPortBG
+            self.port_parameter_bg_sel = selPortBG
 
             self.port_audio_jack_text = self.port_text
             self.port_audio_jack_text_sel = self.port_audio_jack_pen_sel
             self.port_midi_jack_text = self.port_text
             self.port_midi_jack_text_sel = self.port_midi_jack_pen_sel
-            self.port_midi_a2j_text = self.port_text
-            self.port_midi_a2j_text_sel = self.port_midi_a2j_pen_sel
             self.port_midi_alsa_text = self.port_text
             self.port_midi_alsa_text_sel = self.port_midi_alsa_pen_sel
+            self.port_parameter_text = self.port_text
+            self.port_parameter_text_sel = self.port_parameter_pen_sel
 
             # missing, ports 2
             self.port_height   = 19
@@ -460,12 +460,12 @@ class Theme(object):
             self.line_midi_jack = QColor(64, 64, 64)
             self.line_midi_jack_sel = QColor(252, 118, 118)
             self.line_midi_jack_glow = QColor(200, 100, 100)
-            self.line_midi_a2j = QColor(64, 64, 64)
-            self.line_midi_a2j_sel = QColor(137+90, 76+90, 43+90)
-            self.line_midi_a2j_glow = QColor(166, 133, 133)
             self.line_midi_alsa = QColor(64, 64, 64)
             self.line_midi_alsa_sel = QColor(129, 244, 118)
             self.line_midi_alsa_glow = QColor(100, 200, 100)
+            self.line_parameter = QColor(64, 64, 64)
+            self.line_parameter_sel = QColor(137+90, 76+90, 43+90)
+            self.line_parameter_glow = QColor(166, 133, 133)
 
             self.rubberband_pen = QPen(QColor(1, 230, 238), 2, Qt.SolidLine)
             self.rubberband_brush = QColor(90, 90, 90, 100)
