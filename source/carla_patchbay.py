@@ -854,6 +854,8 @@ class CarlaPatchbayW(QFrame):
 
     @pyqtSlot(int, int, int, str)
     def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portName):
+        isAlternate = False
+
         if (portFlags & PATCHBAY_PORT_IS_INPUT):
             portMode = patchcanvas.PORT_MODE_INPUT
         else:
@@ -862,13 +864,18 @@ class CarlaPatchbayW(QFrame):
         if (portFlags & PATCHBAY_PORT_TYPE_AUDIO):
             portType = patchcanvas.PORT_TYPE_AUDIO_JACK
         elif (portFlags & PATCHBAY_PORT_TYPE_CV):
-            portType = patchcanvas.PORT_TYPE_AUDIO_JACK # TODO
+            portType = patchcanvas.PORT_TYPE_AUDIO_JACK
         elif (portFlags & PATCHBAY_PORT_TYPE_MIDI):
             portType = patchcanvas.PORT_TYPE_MIDI_JACK
+        #elif (portFlags & PATCHBAY_PORT_TYPE_PARAMETER):
+            #portType = patchcanvas.PORT_TYPE_PARAMETER
         else:
             portType = patchcanvas.PORT_TYPE_NULL
 
-        patchcanvas.addPort(clientId, portId, portName, portMode, portType)
+        if (portFlags & PATCHBAY_PORT_TYPE_CV):
+            isAlternate = True
+
+        patchcanvas.addPort(clientId, portId, portName, portMode, portType, isAlternate)
         QTimer.singleShot(0, self.fMiniCanvasPreview.update)
 
     @pyqtSlot(int, int)

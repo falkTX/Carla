@@ -27,6 +27,7 @@
 
 #include <QtCore/QStringList>
 
+#define URI_CANVAS_CV   "http://kxstudio.sf.net/ns/canvas/cv"
 #define URI_CANVAS_ICON "http://kxstudio.sf.net/ns/canvas/icon"
 
 CARLA_BACKEND_START_NAMESPACE
@@ -58,11 +59,10 @@ public:
 
         if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
-            CARLA_SAFE_ASSERT(client != nullptr && port != nullptr);
-#if 0
-            if (jack_uuid_t uuid = jackbridge_port_uuid(port))
-                jackbridge_set_property(client, uuid, "urn:jack:IsControlVoltage", "NO", "text/plain");
-#endif
+            CARLA_SAFE_ASSERT_RETURN(client != nullptr && port != nullptr,);
+
+            if (const jack_uuid_t uuid = jackbridge_port_uuid(port))
+                jackbridge_set_property(client, uuid, URI_CANVAS_CV, "NO", "text/plain");
         }
         else
         {
@@ -76,6 +76,9 @@ public:
 
         if (fClient != nullptr && fPort != nullptr)
         {
+            if (const jack_uuid_t uuid = jackbridge_port_uuid(fPort))
+                jackbridge_remove_property(fClient, uuid, URI_CANVAS_CV);
+
             try {
                 jackbridge_port_unregister(fClient, fPort);
             } catch(...) {}
@@ -129,11 +132,10 @@ public:
 
         if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
-            CARLA_SAFE_ASSERT(client != nullptr && port != nullptr);
-#if 0
-            if (jack_uuid_t uuid = jackbridge_port_uuid(port))
-                jackbridge_set_property(client, uuid, "urn:jack:IsControlVoltage", "YES", "text/plain");
-#endif
+            CARLA_SAFE_ASSERT_RETURN(client != nullptr && port != nullptr,);
+
+            if (const jack_uuid_t uuid = jackbridge_port_uuid(port))
+                jackbridge_set_property(client, uuid, URI_CANVAS_CV, "YES", "text/plain");
         }
         else
         {
@@ -147,6 +149,9 @@ public:
 
         if (fClient != nullptr && fPort != nullptr)
         {
+            if (const jack_uuid_t uuid = jackbridge_port_uuid(fPort))
+                jackbridge_remove_property(fClient, uuid, URI_CANVAS_CV);
+
             try {
                 jackbridge_port_unregister(fClient, fPort);
             } catch(...) {}
@@ -1424,13 +1429,13 @@ protected:
             bool portIsAudio = (std::strcmp(jackbridge_port_type(jackPort), JACK_DEFAULT_AUDIO_TYPE) == 0);
             bool portIsCV    = false;
 
-            //if (jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
+            if (const jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
             {
-                //char* value = nullptr;
-                //char* type  = nullptr;
+                char* value = nullptr;
+                char* type  = nullptr;
 
-                //if (jackbridge_get_property(uuid, "urn:jack:IsControlVoltage", &value, &type) && value != nullptr && type != nullptr && std::strcmp(type, "text/plain") == 0)
-                //    portIsCV = (std::strcmp(value, "YES") == 0);
+                if (jackbridge_get_property(uuid, URI_CANVAS_CV, &value, &type) && value != nullptr && type != nullptr && std::strcmp(type, "text/plain") == 0)
+                    portIsCV = (std::strcmp(value, "YES") == 0);
             }
 
             unsigned int canvasPortFlags = 0x0;
@@ -1902,13 +1907,13 @@ private:
                 bool portIsAudio = (std::strcmp(jackbridge_port_type(jackPort), JACK_DEFAULT_AUDIO_TYPE) == 0);
                 bool portIsCV    = false;
 
-                //if (jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
+                if (const jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
                 {
-                    //char* value = nullptr;
-                    //char* type  = nullptr;
+                    char* value = nullptr;
+                    char* type  = nullptr;
 
-                    //if (jackbridge_get_property(uuid, "urn:jack:IsControlVoltage", &value, &type) && value != nullptr && type != nullptr && std::strcmp(type, "text/plain") == 0)
-                    //    portIsCV = (std::strcmp(value, "YES") == 0);
+                    if (jackbridge_get_property(uuid, URI_CANVAS_CV, &value, &type) && value != nullptr && type != nullptr && std::strcmp(type, "text/plain") == 0)
+                        portIsCV = (std::strcmp(value, "YES") == 0);
                 }
 
                 unsigned int canvasPortFlags = 0x0;

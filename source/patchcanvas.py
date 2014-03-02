@@ -1483,7 +1483,7 @@ class CanvasLine(QGraphicsLineItem):
         elif port_type1 == PORT_TYPE_MIDI_ALSA:
             port_gradient.setColorAt(pos1, canvas.theme.line_midi_alsa_sel if self.m_lineSelected else canvas.theme.line_midi_alsa)
         elif port_type1 == PORT_TYPE_PARAMETER:
-            pass # TODO
+            port_gradient.setColorAt(pos1, canvas.theme.line_parameter_sel if self.m_lineSelected else canvas.theme.line_parameter)
 
         if port_type2 == PORT_TYPE_AUDIO_JACK:
             port_gradient.setColorAt(pos2, canvas.theme.line_audio_jack_sel if self.m_lineSelected else canvas.theme.line_audio_jack)
@@ -1492,7 +1492,7 @@ class CanvasLine(QGraphicsLineItem):
         elif port_type2 == PORT_TYPE_MIDI_ALSA:
             port_gradient.setColorAt(pos2, canvas.theme.line_midi_alsa_sel if self.m_lineSelected else canvas.theme.line_midi_alsa)
         elif port_type2 == PORT_TYPE_PARAMETER:
-            pass # TODO
+            port_gradient.setColorAt(pos2, canvas.theme.line_parameter_sel if self.m_lineSelected else canvas.theme.line_parameter)
 
         self.setPen(QPen(port_gradient, 2))
 
@@ -1590,7 +1590,7 @@ class CanvasBezierLine(QGraphicsPathItem):
         elif port_type1 == PORT_TYPE_MIDI_ALSA:
             port_gradient.setColorAt(pos1, canvas.theme.line_midi_alsa_sel if self.m_lineSelected else canvas.theme.line_midi_alsa)
         elif port_type1 == PORT_TYPE_PARAMETER:
-            pass # TODO
+            port_gradient.setColorAt(pos1, canvas.theme.line_parameter_sel if self.m_lineSelected else canvas.theme.line_parameter)
 
         if port_type2 == PORT_TYPE_AUDIO_JACK:
             port_gradient.setColorAt(pos2, canvas.theme.line_audio_jack_sel if self.m_lineSelected else canvas.theme.line_audio_jack)
@@ -1599,7 +1599,7 @@ class CanvasBezierLine(QGraphicsPathItem):
         elif port_type2 == PORT_TYPE_MIDI_ALSA:
             port_gradient.setColorAt(pos2, canvas.theme.line_midi_alsa_sel if self.m_lineSelected else canvas.theme.line_midi_alsa)
         elif port_type2 == PORT_TYPE_PARAMETER:
-            pass # TODO
+            port_gradient.setColorAt(pos2, canvas.theme.line_parameter_sel if self.m_lineSelected else canvas.theme.line_parameter)
 
         self.setPen(QPen(port_gradient, 2))
 
@@ -1631,7 +1631,7 @@ class CanvasLineMov(QGraphicsLineItem):
         elif port_type == PORT_TYPE_MIDI_ALSA:
             pen = QPen(canvas.theme.line_midi_alsa, 2)
         elif port_type == PORT_TYPE_PARAMETER:
-            pass # TODO
+            pen = QPen(canvas.theme.line_parameter, 2)
         else:
             qWarning("PatchCanvas::CanvasLineMov(%s, %s, %s) - invalid port type" % (port_mode2str(port_mode), port_type2str(port_type), parent))
             pen = QPen(Qt.black)
@@ -1688,7 +1688,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         elif port_type == PORT_TYPE_MIDI_ALSA:
             pen = QPen(canvas.theme.line_midi_alsa, 2)
         elif port_type == PORT_TYPE_PARAMETER:
-            pass # TODO
+            pen = QPen(canvas.theme.line_parameter, 2)
         else:
             qWarning("PatchCanvas::CanvasBezierLineMov(%s, %s, %s) - invalid port type" % (port_mode2str(port_mode), port_type2str(port_type), parent))
             pen = QPen(Qt.black)
@@ -2013,10 +2013,19 @@ class CanvasPort(QGraphicsItem):
             text_pen = canvas.theme.port_midi_alsa_text_sel if self.isSelected() else canvas.theme.port_midi_alsa_text
             conn_pen = canvas.theme.port_midi_alsa_pen_sel
         elif self.m_port_type == PORT_TYPE_PARAMETER:
-            pass # TODO
+            poly_color = canvas.theme.port_parameter_bg_sel if self.isSelected() else canvas.theme.port_parameter_bg
+            poly_pen = canvas.theme.port_parameter_pen_sel  if self.isSelected() else canvas.theme.port_parameter_pen
+            text_pen = canvas.theme.port_parameter_text_sel if self.isSelected() else canvas.theme.port_parameter_text
+            conn_pen = canvas.theme.port_parameter_pen_sel
         else:
             qCritical("PatchCanvas::CanvasPort.paint() - invalid port type '%s'" % port_type2str(self.m_port_type))
             return
+
+        if self.m_is_alternate:
+            poly_color = poly_color.darker(180)
+            #poly_pen.setColor(poly_pen.color().darker(110))
+            #text_pen.setColor(text_pen.color()) #.darker(150))
+            #conn_pen.setColor(conn_pen.color()) #.darker(150))
 
         polygon  = QPolygonF()
         polygon += QPointF(poly_locx[0], 0)
@@ -2773,7 +2782,7 @@ class CanvasPortGlow(QGraphicsDropShadowEffect):
         elif port_type == PORT_TYPE_MIDI_ALSA:
             self.setColor(canvas.theme.line_midi_alsa_glow)
         elif port_type == PORT_TYPE_PARAMETER:
-            pass # TODO
+            self.setColor(canvas.theme.line_parameter_glow)
 
 # ------------------------------------------------------------------------------
 # canvasboxshadow.cpp
