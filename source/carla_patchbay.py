@@ -864,16 +864,14 @@ class CarlaPatchbayW(QFrame):
         if (portFlags & PATCHBAY_PORT_TYPE_AUDIO):
             portType = patchcanvas.PORT_TYPE_AUDIO_JACK
         elif (portFlags & PATCHBAY_PORT_TYPE_CV):
+            isAlternate = True
             portType = patchcanvas.PORT_TYPE_AUDIO_JACK
         elif (portFlags & PATCHBAY_PORT_TYPE_MIDI):
             portType = patchcanvas.PORT_TYPE_MIDI_JACK
-        #elif (portFlags & PATCHBAY_PORT_TYPE_PARAMETER):
-            #portType = patchcanvas.PORT_TYPE_PARAMETER
+        elif (portFlags & PATCHBAY_PORT_TYPE_PARAMETER):
+            portType = patchcanvas.PORT_TYPE_PARAMETER
         else:
             portType = patchcanvas.PORT_TYPE_NULL
-
-        if (portFlags & PATCHBAY_PORT_TYPE_CV):
-            isAlternate = True
 
         patchcanvas.addPort(clientId, portId, portName, portMode, portType, isAlternate)
         QTimer.singleShot(0, self.fMiniCanvasPreview.update)

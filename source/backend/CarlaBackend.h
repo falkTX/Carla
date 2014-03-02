@@ -316,6 +316,11 @@ const unsigned int PATCHBAY_PORT_TYPE_CV = 0x4;
  */
 const unsigned int PATCHBAY_PORT_TYPE_MIDI = 0x8;
 
+/*!
+ * Patchbay port is of Parameter type.
+ */
+const unsigned int PATCHBAY_PORT_TYPE_PARAMETER = 0x10;
+
 /** @} */
 
 /* ------------------------------------------------------------------------------------------------------------

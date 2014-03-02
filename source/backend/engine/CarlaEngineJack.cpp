@@ -1440,10 +1440,13 @@ protected:
 
             unsigned int canvasPortFlags = 0x0;
             canvasPortFlags |= portIsInput ? PATCHBAY_PORT_IS_INPUT : 0x0;
-            canvasPortFlags |= portIsAudio ? PATCHBAY_PORT_TYPE_AUDIO : PATCHBAY_PORT_TYPE_MIDI;
 
-            if (portIsAudio && portIsCV)
+            if (portIsCV)
                 canvasPortFlags |= PATCHBAY_PORT_TYPE_CV;
+            else if (portIsAudio)
+                canvasPortFlags |= PATCHBAY_PORT_TYPE_AUDIO;
+            else
+                canvasPortFlags |= PATCHBAY_PORT_TYPE_MIDI;
 
             PortNameToId portNameToId;
             portNameToId.setData(groupId, fLastPortId++, portName, fullPortName);
@@ -1918,10 +1921,13 @@ private:
 
                 unsigned int canvasPortFlags = 0x0;
                 canvasPortFlags |= portIsInput ? PATCHBAY_PORT_IS_INPUT : 0x0;
-                canvasPortFlags |= portIsAudio ? PATCHBAY_PORT_TYPE_AUDIO : PATCHBAY_PORT_TYPE_MIDI;
 
                 if (portIsCV)
                     canvasPortFlags |= PATCHBAY_PORT_TYPE_CV;
+                else if (portIsAudio)
+                    canvasPortFlags |= PATCHBAY_PORT_TYPE_AUDIO;
+                else
+                    canvasPortFlags |= PATCHBAY_PORT_TYPE_MIDI;
 
                 PortNameToId portNameToId;
                 portNameToId.setData(groupId, fLastPortId++, portName, fullPortName);
