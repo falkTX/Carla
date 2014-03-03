@@ -861,16 +861,13 @@ typedef enum {
     /*!
      * A patchbay connection has been added.
      * @param pluginId Connection Id
-     * @param value1   Output port Id
-     * @param value2   Input port Id
+     * @param valueStr Out group, port plus in group and port, in "og:op:ig:ip" syntax.
      */
     ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED = 26,
 
     /*!
      * A patchbay connection has been removed.
      * @param pluginId Connection Id
-     * @param value1   Output port Id
-     * @param value2   Input port Id
      */
     ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED = 27,
 

@@ -1142,7 +1142,6 @@ CarlaPlugin* CarlaEngine::getPlugin(const unsigned int id) const
     CARLA_SAFE_ASSERT_RETURN_ERRN(pData->curPluginCount != 0, "Invalid engine internal data (err #39)");
     CARLA_SAFE_ASSERT_RETURN_ERRN(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data (err #40)");
     CARLA_SAFE_ASSERT_RETURN_ERRN(id < pData->curPluginCount, "Invalid plugin Id (err #7)");
-    carla_debug("CarlaEngine::getPlugin(%i) [count:%i]", id, pData->curPluginCount);
 
     return pData->plugins[id].plugin;
 }
@@ -1841,7 +1840,7 @@ bool CarlaEngine::patchbayDisconnect(const uint connectionId)
                 CARLA_SAFE_ASSERT_RETURN(false, false);
             }
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connection.id, connection.portOut, connection.portIn, 0.0f, nullptr);
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connection.id, 0, 0, 0.0f, nullptr);
 
             rack->usedConnections.remove(it);
             return true;

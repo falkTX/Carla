@@ -157,7 +157,9 @@ class port_dict_t(object):
 class connection_dict_t(object):
     __slots__ = [
         'connection_id',
+        'group_in_id',
         'port_in_id',
+        'group_out_id',
         'port_out_id',
         'widget'
     ]
@@ -377,7 +379,7 @@ def clear():
         group_list_ids.append(group.group_id)
 
     for port in canvas.port_list:
-        port_list_ids.append(port.port_id)
+        port_list_ids.append((port.group_id, port.port_id))
 
     for connection in canvas.connection_list:
         connection_list_ids.append(connection.connection_id)
@@ -385,8 +387,8 @@ def clear():
     for idx in connection_list_ids:
         disconnectPorts(idx)
 
-    for idx in port_list_ids:
-        removePort(idx)
+    for group_id, port_id in port_list_ids:
+        removePort(group_id, port_id)
 
     for idx in group_list_ids:
         removeGroup(idx)
@@ -596,7 +598,9 @@ def splitGroup(group_id):
         if connection.port_out_id in port_list_ids or connection.port_in_id in port_list_ids:
             connection_dict = connection_dict_t()
             connection_dict.connection_id = connection.connection_id
+            connection_dict.group_in_id = connection.group_in_id
             connection_dict.port_in_id = connection.port_in_id
+            connection_dict.group_out_id = connection.group_out_id
             connection_dict.port_out_id = connection.port_out_id
             connection_dict.widget = None
             conns_data.append(connection_dict)
@@ -606,7 +610,7 @@ def splitGroup(group_id):
         disconnectPorts(conn.connection_id)
 
     for port_id in port_list_ids:
-        removePort(port_id)
+        removePort(group_id, port_id)
 
     removeGroup(group_id)
 
@@ -617,7 +621,7 @@ def splitGroup(group_id):
         addPort(group_id, port.port_id, port.port_name, port.port_mode, port.port_type, port.is_alternate)
 
     for conn in conns_data:
-        connectPorts(conn.connection_id, conn.port_out_id, conn.port_in_id)
+        connectPorts(conn.connection_id, conn.group_out_id, conn.port_out_id, conn.group_in_id, conn.port_in_id)
 
     QTimer.singleShot(0, canvas.scene.update)
 
@@ -673,7 +677,9 @@ def joinGroup(group_id):
         if connection.port_out_id in port_list_ids or connection.port_in_id in port_list_ids:
             connection_dict = connection_dict_t()
             connection_dict.connection_id = connection.connection_id
+            connection_dict.group_in_id = connection.group_in_id
             connection_dict.port_in_id = connection.port_in_id
+            connection_dict.group_out_id = connection.group_out_id
             connection_dict.port_out_id = connection.port_out_id
             connection_dict.widget = None
             conns_data.append(connection_dict)
@@ -683,7 +689,7 @@ def joinGroup(group_id):
         disconnectPorts(conn.connection_id)
 
     for port_id in port_list_ids:
-        removePort(port_id)
+        removePort(group_id, port_id)
 
     removeGroup(group_id)
 
@@ -694,7 +700,7 @@ def joinGroup(group_id):
         addPort(group_id, port.port_id, port.port_name, port.port_mode, port.port_type, port.is_alternate)
 
     for conn in conns_data:
-        connectPorts(conn.connection_id, conn.port_out_id, conn.port_in_id)
+        connectPorts(conn.connection_id, conn.group_out_id, conn.port_out_id, conn.group_in_id, conn.port_in_id)
 
     QTimer.singleShot(0, canvas.scene.update)
 
@@ -810,12 +816,12 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, is_alternate=Fal
 
     QTimer.singleShot(0, canvas.scene.update)
 
-def removePort(port_id):
+def removePort(group_id, port_id):
     if canvas.debug:
-        qDebug("PatchCanvas::removePort(%i)" % port_id)
+        qDebug("PatchCanvas::removePort(%i, %i)" % (group_id, port_id))
 
     for port in canvas.port_list:
-        if port.port_id == port_id:
+        if port.group_id == group_id and port.port_id == port_id:
             item = port.widget
             item.parentItem().removePortFromGroup(port_id)
             canvas.scene.removeItem(item)
@@ -826,14 +832,14 @@ def removePort(port_id):
             QTimer.singleShot(0, canvas.scene.update)
             return
 
-    qCritical("PatchCanvas::removePort(%i) - Unable to find port to remove" % port_id)
+    qCritical("PatchCanvas::removePort(%i, %i) - Unable to find port to remove" % (group_id, port_id))
 
-def renamePort(port_id, new_port_name):
+def renamePort(group_id, port_id, new_port_name):
     if canvas.debug:
-        qDebug("PatchCanvas::renamePort(%i, %s)" % (port_id, new_port_name.encode()))
+        qDebug("PatchCanvas::renamePort(%i, %i, %s)" % (group_id, port_id, new_port_name.encode()))
 
     for port in canvas.port_list:
-        if port.port_id == port_id:
+        if port.group_id == group_id and port.port_id == port_id:
             port.port_name = new_port_name
             port.widget.setPortName(new_port_name)
             port.widget.parentItem().updatePositions()
@@ -841,11 +847,11 @@ def renamePort(port_id, new_port_name):
             QTimer.singleShot(0, canvas.scene.update)
             return
 
-    qCritical("PatchCanvas::renamePort(%i, %s) - Unable to find port to rename" % (port_id, new_port_name.encode()))
+    qCritical("PatchCanvas::renamePort(%i, %i, %s) - Unable to find port to rename" % (group_id, port_id, new_port_name.encode()))
 
-def connectPorts(connection_id, port_out_id, port_in_id):
+def connectPorts(connection_id, group_out_id, port_out_id, group_in_id, port_in_id):
     if canvas.debug:
-        qDebug("PatchCanvas::connectPorts(%i, %i, %i)" % (connection_id, port_out_id, port_in_id))
+        qDebug("PatchCanvas::connectPorts(%i, %i, %i, %i, %i)" % (connection_id, group_out_id, port_out_id, group_in_id, port_in_id))
 
     port_out = None
     port_in  = None
@@ -853,22 +859,24 @@ def connectPorts(connection_id, port_out_id, port_in_id):
     port_in_parent  = None
 
     for port in canvas.port_list:
-        if port.port_id == port_out_id:
+        if port.group_id == group_out_id and port.port_id == port_out_id:
             port_out = port.widget
             port_out_parent = port_out.parentItem()
-        elif port.port_id == port_in_id:
+        elif port.group_id == group_in_id and port.port_id == port_in_id:
             port_in = port.widget
             port_in_parent = port_in.parentItem()
 
     # FIXME
     if not (port_out and port_in):
-        qCritical("PatchCanvas::connectPorts(%i, %i, %i) - unable to find ports to connect" % (connection_id, port_out_id, port_in_id))
+        qCritical("PatchCanvas::connectPorts(%i, %i, %i, %i, %i) - unable to find ports to connect" % (connection_id, group_out_id, port_out_id, group_in_id, port_in_id))
         return
 
     connection_dict = connection_dict_t()
     connection_dict.connection_id = connection_id
-    connection_dict.port_out_id = port_out_id
+    connection_dict.group_in_id = group_in_id
     connection_dict.port_in_id = port_in_id
+    connection_dict.group_out_id = group_out_id
+    connection_dict.port_out_id = port_out_id
 
     if options.use_bezier_lines:
         connection_dict.widget = CanvasBezierLine(port_out, port_in, None)
@@ -1021,24 +1029,24 @@ def CanvasGetNewGroupPos(horizontal=False):
 
     return new_pos
 
-def CanvasGetFullPortName(port_id):
+def CanvasGetFullPortName(group_id, port_id):
     if canvas.debug:
-        qDebug("PatchCanvas::CanvasGetFullPortName(%i)" % port_id)
+        qDebug("PatchCanvas::CanvasGetFullPortName(%i, %i)" % (group_id, port_id))
 
     for port in canvas.port_list:
-        if port.port_id == port_id:
+        if port.group_id == group_id and port.port_id == port_id:
             group_id = port.group_id
             for group in canvas.group_list:
                 if group.group_id == group_id:
                     return group.group_name + ":" + port.port_name
             break
 
-    qCritical("PatchCanvas::CanvasGetFullPortName(%i) - unable to find port" % port_id)
+    qCritical("PatchCanvas::CanvasGetFullPortName(%i, %i) - unable to find port" % (group_id, port_id))
     return ""
 
-def CanvasGetPortConnectionList(port_id):
+def CanvasGetPortConnectionList(group_id, port_id):
     if canvas.debug:
-        qDebug("PatchCanvas::CanvasGetPortConnectionList(%i)" % port_id)
+        qDebug("PatchCanvas::CanvasGetPortConnectionList(%i, %i)" % (group_id, port_id))
 
     port_con_list = []
 
@@ -1734,11 +1742,12 @@ class CanvasBezierLineMov(QGraphicsPathItem):
 # canvasport.cpp
 
 class CanvasPort(QGraphicsItem):
-    def __init__(self, port_id, port_name, port_mode, port_type, is_alternate, parent):
+    def __init__(self, group_id, port_id, port_name, port_mode, port_type, is_alternate, parent):
         QGraphicsItem.__init__(self, parent)
 
         # Save Variables, useful for later
-        self.m_port_id = port_id
+        self.m_group_id = group_id
+        self.m_port_id  = port_id
         self.m_port_mode = port_mode
         self.m_port_type = port_type
         self.m_port_name = port_name
@@ -1903,12 +1912,12 @@ class CanvasPort(QGraphicsItem):
         menu = QMenu()
         discMenu = QMenu("Disconnect", menu)
 
-        port_con_list = CanvasGetPortConnectionList(self.m_port_id)
+        port_con_list = CanvasGetPortConnectionList(self.m_group_id, self.m_port_id)
 
         if len(port_con_list) > 0:
             for port_id in port_con_list:
                 port_con_id = CanvasGetConnectedPort(port_id, self.m_port_id)
-                act_x_disc = discMenu.addAction(CanvasGetFullPortName(port_con_id))
+                act_x_disc = discMenu.addAction(CanvasGetFullPortName(self.m_group_id, port_con_id))
                 act_x_disc.setData(port_id)
                 act_x_disc.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
         else:
@@ -2187,11 +2196,11 @@ class CanvasBox(QGraphicsItem):
                     CanvasItemFX(self, True)
                 self.setVisible(True)
 
-        new_widget = CanvasPort(port_id, port_name, port_mode, port_type, is_alternate, self)
+        new_widget = CanvasPort(self.m_group_id, port_id, port_name, port_mode, port_type, is_alternate, self)
 
         port_dict = port_dict_t()
         port_dict.group_id = self.m_group_id
-        port_dict.port_id = port_id
+        port_dict.port_id  = port_id
         port_dict.port_name = port_name
         port_dict.port_mode = port_mode
         port_dict.port_type = port_type
@@ -2254,8 +2263,8 @@ class CanvasBox(QGraphicsItem):
     def updatePositions(self):
         self.prepareGeometryChange()
 
-        max_in_width  = 0
-        max_in_height = canvas.theme.box_header_height + canvas.theme.box_header_spacing
+        max_in_width   = 0
+        max_in_height  = canvas.theme.box_header_height + canvas.theme.box_header_spacing
         max_out_width  = 0
         max_out_height = canvas.theme.box_header_height + canvas.theme.box_header_spacing
         port_spacing   = canvas.theme.port_height + canvas.theme.port_spacing
@@ -2275,7 +2284,7 @@ class CanvasBox(QGraphicsItem):
         # Get Port List
         port_list = []
         for port in canvas.port_list:
-            if port.port_id in self.m_port_list_ids:
+            if port.group_id == self.m_group_id and port.port_id in self.m_port_list_ids:
                 port_list.append(port)
 
         # Get Max Box Width/Height
@@ -2313,11 +2322,11 @@ class CanvasBox(QGraphicsItem):
                 elif port.port_type == PORT_TYPE_MIDI_JACK and not have_midi_jack_out:
                     have_midi_jack_out = True
                     max_out_height += canvas.theme.port_spacingT
-                elif port.port_type == PORT_TYPE_PARAMETER and not have_parameter_out:
-                    have_parameter_out = True
-                    max_out_height += canvas.theme.port_spacingT
                 elif port.port_type == PORT_TYPE_MIDI_ALSA and not have_midi_alsa_out:
                     have_midi_alsa_out = True
+                    max_out_height += canvas.theme.port_spacingT
+                elif port.port_type == PORT_TYPE_PARAMETER and not have_parameter_out:
+                    have_parameter_out = True
                     max_out_height += canvas.theme.port_spacingT
 
         if canvas.theme.port_spacingT == 0:
@@ -2350,89 +2359,103 @@ class CanvasBox(QGraphicsItem):
 
         # Re-position ports, AUDIO_JACK
         for port in port_list:
-            if port.port_type == PORT_TYPE_AUDIO_JACK:
-                if port.port_mode == PORT_MODE_INPUT:
-                    port.widget.setPos(QPointF(1 + canvas.theme.port_offset, last_in_pos))
-                    port.widget.setPortWidth(max_in_width)
+            if port.port_type != PORT_TYPE_AUDIO_JACK:
+                continue
 
-                    last_in_pos += port_spacing
-                    last_in_type = port.port_type
+            if port.port_mode == PORT_MODE_INPUT:
+                if last_in_type != PORT_TYPE_NULL and port.port_type != last_in_type:
+                    last_in_pos += canvas.theme.port_spacingT
 
-                elif port.port_mode == PORT_MODE_OUTPUT:
-                    port.widget.setPos(QPointF(self.p_width - max_out_width - canvas.theme.port_offset - 13, last_out_pos))
-                    port.widget.setPortWidth(max_out_width)
+                port.widget.setPos(QPointF(1 + canvas.theme.port_offset, last_in_pos))
+                port.widget.setPortWidth(max_in_width)
 
-                    last_out_pos += port_spacing
-                    last_out_type = port.port_type
+                last_in_pos += port_spacing
+                last_in_type = port.port_type
+
+            elif port.port_mode == PORT_MODE_OUTPUT:
+                if last_out_type != PORT_TYPE_NULL and port.port_type != last_out_type:
+                    last_out_pos += canvas.theme.port_spacingT
+
+                port.widget.setPos(QPointF(self.p_width - max_out_width - canvas.theme.port_offset - 13, last_out_pos))
+                port.widget.setPortWidth(max_out_width)
+
+                last_out_pos += port_spacing
+                last_out_type = port.port_type
 
         # Re-position ports, MIDI_JACK
         for port in port_list:
-            if port.port_type == PORT_TYPE_MIDI_JACK:
-                if port.port_mode == PORT_MODE_INPUT:
-                    if last_in_type != PORT_TYPE_NULL and port.port_type != last_in_type:
-                        last_in_pos += canvas.theme.port_spacingT
+            if port.port_type != PORT_TYPE_MIDI_JACK:
+                continue
 
-                    port.widget.setPos(QPointF(1 + canvas.theme.port_offset, last_in_pos))
-                    port.widget.setPortWidth(max_in_width)
+            if port.port_mode == PORT_MODE_INPUT:
+                if last_in_type != PORT_TYPE_NULL and port.port_type != last_in_type:
+                    last_in_pos += canvas.theme.port_spacingT
 
-                    last_in_pos += port_spacing
-                    last_in_type = port.port_type
+                port.widget.setPos(QPointF(1 + canvas.theme.port_offset, last_in_pos))
+                port.widget.setPortWidth(max_in_width)
 
-                elif port.port_mode == PORT_MODE_OUTPUT:
-                    if last_out_type != PORT_TYPE_NULL and port.port_type != last_out_type:
-                        last_out_pos += canvas.theme.port_spacingT
+                last_in_pos += port_spacing
+                last_in_type = port.port_type
 
-                    port.widget.setPos(QPointF(self.p_width - max_out_width - canvas.theme.port_offset - 13, last_out_pos))
-                    port.widget.setPortWidth(max_out_width)
+            elif port.port_mode == PORT_MODE_OUTPUT:
+                if last_out_type != PORT_TYPE_NULL and port.port_type != last_out_type:
+                    last_out_pos += canvas.theme.port_spacingT
 
-                    last_out_pos += port_spacing
-                    last_out_type = port.port_type
+                port.widget.setPos(QPointF(self.p_width - max_out_width - canvas.theme.port_offset - 13, last_out_pos))
+                port.widget.setPortWidth(max_out_width)
+
+                last_out_pos += port_spacing
+                last_out_type = port.port_type
 
         # Re-position ports, MIDI_ALSA
         for port in port_list:
-            if port.port_type == PORT_TYPE_MIDI_ALSA:
-                if port.port_mode == PORT_MODE_INPUT:
-                    if last_in_type != PORT_TYPE_NULL and port.port_type != last_in_type:
-                        last_in_pos += canvas.theme.port_spacingT
+            if port.port_type != PORT_TYPE_MIDI_ALSA:
+                continue
 
-                    port.widget.setPos(QPointF(1 + canvas.theme.port_offset, last_in_pos))
-                    port.widget.setPortWidth(max_in_width)
+            if port.port_mode == PORT_MODE_INPUT:
+                if last_in_type != PORT_TYPE_NULL and port.port_type != last_in_type:
+                    last_in_pos += canvas.theme.port_spacingT
 
-                    last_in_pos += port_spacing
-                    last_in_type = port.port_type
+                port.widget.setPos(QPointF(1 + canvas.theme.port_offset, last_in_pos))
+                port.widget.setPortWidth(max_in_width)
 
-                elif port.port_mode == PORT_MODE_OUTPUT:
-                    if last_out_type != PORT_TYPE_NULL and port.port_type != last_out_type:
-                        last_out_pos += canvas.theme.port_spacingT
+                last_in_pos += port_spacing
+                last_in_type = port.port_type
 
-                    port.widget.setPos(QPointF(self.p_width - max_out_width - canvas.theme.port_offset - 13, last_out_pos))
-                    port.widget.setPortWidth(max_out_width)
+            elif port.port_mode == PORT_MODE_OUTPUT:
+                if last_out_type != PORT_TYPE_NULL and port.port_type != last_out_type:
+                    last_out_pos += canvas.theme.port_spacingT
 
-                    last_out_pos += port_spacing
-                    last_out_type = port.port_type
+                port.widget.setPos(QPointF(self.p_width - max_out_width - canvas.theme.port_offset - 13, last_out_pos))
+                port.widget.setPortWidth(max_out_width)
+
+                last_out_pos += port_spacing
+                last_out_type = port.port_type
 
         # Re-position ports, PARAMETER
         for port in port_list:
-            if port.port_type == PORT_TYPE_PARAMETER:
-                if port.port_mode == PORT_MODE_INPUT:
-                    if last_in_type != PORT_TYPE_NULL and port.port_type != last_in_type:
-                        last_in_pos += canvas.theme.port_spacingT
+            if port.port_type != PORT_TYPE_PARAMETER:
+                continue
 
-                    port.widget.setPos(QPointF(1 + canvas.theme.port_offset, last_in_pos))
-                    port.widget.setPortWidth(max_in_width)
+            if port.port_mode == PORT_MODE_INPUT:
+                if last_in_type != PORT_TYPE_NULL and port.port_type != last_in_type:
+                    last_in_pos += canvas.theme.port_spacingT
 
-                    last_in_pos += port_spacing
-                    last_in_type = port.port_type
+                port.widget.setPos(QPointF(1 + canvas.theme.port_offset, last_in_pos))
+                port.widget.setPortWidth(max_in_width)
 
-                elif port.port_mode == PORT_MODE_OUTPUT:
-                    if last_out_type != PORT_TYPE_NULL and port.port_type != last_out_type:
-                        last_out_pos += canvas.theme.port_spacingT
+                last_in_pos += port_spacing
+                last_in_type = port.port_type
 
-                    port.widget.setPos(QPointF(self.p_width - max_out_width - canvas.theme.port_offset - 13, last_out_pos))
-                    port.widget.setPortWidth(max_out_width)
+            elif port.port_mode == PORT_MODE_OUTPUT:
+                if last_out_type != PORT_TYPE_NULL and port.port_type != last_out_type:
+                    last_out_pos += canvas.theme.port_spacingT
 
-                    last_out_pos += port_spacing
-                    last_out_type = port.port_type
+                port.widget.setPos(QPointF(self.p_width - max_out_width - canvas.theme.port_offset - 13, last_out_pos))
+                port.widget.setPortWidth(max_out_width)
+
+                last_out_pos += port_spacing
+                last_out_type = port.port_type
 
         self.repaintLines(True)
         self.update()
@@ -2464,7 +2487,7 @@ class CanvasBox(QGraphicsItem):
         port_con_list_ids = []
 
         for port_id in self.m_port_list_ids:
-            tmp_port_con_list = CanvasGetPortConnectionList(port_id)
+            tmp_port_con_list = CanvasGetPortConnectionList(self.m_group_id, port_id)
             for port_con_id in tmp_port_con_list:
                 if port_con_id not in port_con_list:
                     port_con_list.append(port_con_id)
@@ -2473,7 +2496,7 @@ class CanvasBox(QGraphicsItem):
         if len(port_con_list) > 0:
             for i in range(len(port_con_list)):
                 port_con_id = CanvasGetConnectedPort(port_con_list[i], port_con_list_ids[i])
-                act_x_disc = discMenu.addAction(CanvasGetFullPortName(port_con_id))
+                act_x_disc = discMenu.addAction(CanvasGetFullPortName(self.m_group_id, port_con_id))
                 act_x_disc.setData(port_con_list[i])
                 act_x_disc.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
         else:
@@ -2515,7 +2538,7 @@ class CanvasBox(QGraphicsItem):
 
         haveIns = haveOuts = False
         for port in canvas.port_list:
-            if port.port_id in self.m_port_list_ids:
+            if port.group_id == self.m_group_id and port.port_id in self.m_port_list_ids:
                 if port.port_mode == PORT_MODE_INPUT:
                     haveIns = True
                 elif port.port_mode == PORT_MODE_OUTPUT:

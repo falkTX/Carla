@@ -879,17 +879,17 @@ class CarlaPatchbayW(QFrame):
     @pyqtSlot(int, int)
     def slot_handlePatchbayPortRemovedCallback(self, groupId, portId):
         #if not self.fEngineStarted: return
-        patchcanvas.removePort(portId)
+        patchcanvas.removePort(groupId, portId)
         QTimer.singleShot(0, self.fMiniCanvasPreview.update)
 
     @pyqtSlot(int, int, str)
     def slot_handlePatchbayPortRenamedCallback(self, groupId, portId, newPortName):
-        patchcanvas.renamePort(portId, newPortName)
+        patchcanvas.renamePort(groupId, portId, newPortName)
         QTimer.singleShot(0, self.fMiniCanvasPreview.update)
 
-    @pyqtSlot(int, int, int)
-    def slot_handlePatchbayConnectionAddedCallback(self, connectionId, portOutId, portInId):
-        patchcanvas.connectPorts(connectionId, portOutId, portInId)
+    @pyqtSlot(int, int, int, int, int)
+    def slot_handlePatchbayConnectionAddedCallback(self, connectionId, groupOutId, portOutId, groupInId, portInId):
+        patchcanvas.connectPorts(connectionId, groupOutId, portOutId, groupInId, portInId)
         QTimer.singleShot(0, self.fMiniCanvasPreview.update)
 
     @pyqtSlot(int, int, int)

@@ -958,6 +958,25 @@ public:
             return false;
         }
 
+        if (portA < 0 || portB < 0)
+        {
+            // both must be < 0
+            CARLA_SAFE_ASSERT_RETURN(portA < 0 && portB < 0, false);
+
+#if 0
+            ConnectionToId connectionToId;
+            connectionToId.setData(fLastConnectionId++, portIdA.groupId, portIdA.portId, portIdB.groupId, portIdB.portId);
+            fUsedConnections.append(connectionToId);
+
+            char strBuf[STR_MAX+1];
+            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", portIdA.groupId, portIdA.portId, portIdB.groupId, portIdB.portId);
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+#endif
+
+            return true;
+        }
+
         char portNameA[STR_MAX+1];
         char portNameB[STR_MAX+1];
         getFullPortName(portA, portNameA);
@@ -1481,19 +1500,22 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fullPortNameA != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fullPortNameB != nullptr,);
 
-        const int portIdA(getPortId(fullPortNameA));
-        const int portIdB(getPortId(fullPortNameB));
+        const PortNameToId& portIdA(getPortNameToId(fullPortNameA));
+        const PortNameToId& portIdB(getPortNameToId(fullPortNameB));
 
-        if (portIdA == -1 || portIdB == -1)
+        if (portIdA.portId == -1 || portIdB.portId == -1)
             return;
 
         if (connect)
         {
             ConnectionToId connectionToId;
-            connectionToId.setData(fLastConnectionId++, portIdA, portIdB);
+            connectionToId.setData(fLastConnectionId++, portIdA.groupId, portIdA.portId, portIdB.groupId, portIdB.portId);
             fUsedConnections.append(connectionToId);
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
+            char strBuf[STR_MAX+1];
+            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", portIdA.groupId, portIdA.portId, portIdB.groupId, portIdB.portId);
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
         }
         else
         {
@@ -1501,9 +1523,10 @@ protected:
             {
                 const ConnectionToId& connectionToId(it.getValue());
 
-                if (connectionToId.portOut == portIdA && connectionToId.portIn == portIdB)
+                if (connectionToId.groupOut == portIdA.groupId && connectionToId.portOut == portIdA.portId &&
+                    connectionToId.groupIn  == portIdB.groupId && connectionToId.portIn == portIdB.portId)
                 {
-                    callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, static_cast<uint>(connectionToId.id), connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
+                    callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, static_cast<uint>(connectionToId.id), 0, 0, 0.0f, nullptr);
                     fUsedConnections.remove(it);
                     break;
                 }
@@ -1671,9 +1694,7 @@ private:
 
         bool operator==(const PortNameToId& portNameId) noexcept
         {
-            if (portNameId.groupId != groupId)
-                return false;
-            if (portNameId.portId != portId)
+            if (portNameId.groupId != groupId || portNameId.portId != portId)
                 return false;
             if (std::strcmp(portNameId.name, name) != 0)
                 return false;
@@ -1690,30 +1711,36 @@ private:
 
     struct ConnectionToId {
         uint id;
+        int  groupOut;
         int  portOut;
+        int  groupIn;
         int  portIn;
 
         void clear() noexcept
         {
-            id      = 0;
-            portOut = -1;
-            portIn  = -1;
+            id       = 0;
+            groupOut = -1;
+            portOut  = -1;
+            groupIn  = -1;
+            portIn   = -1;
         }
 
-        void setData(const uint i, const int out, const int in) noexcept
+        void setData(const uint i, const int gout, const int pout, const int gin, const int pin) noexcept
         {
-            id      = i;
-            portOut = out;
-            portIn  = in;
+            id        = i;
+            groupOut = gout;
+            portOut  = pout;
+            groupIn  = gin;
+            portIn   = pin;
         }
 
         bool operator==(const ConnectionToId& connectionId) const noexcept
         {
             if (connectionId.id != id)
                 return false;
-            if (connectionId.portOut != portOut)
+            if (connectionId.groupOut != groupOut || connectionId.portOut != portOut)
                 return false;
-            if (connectionId.portIn != portIn)
+            if (connectionId.groupIn != groupIn || connectionId.portIn != portIn)
                 return false;
             return true;
         }
@@ -1778,6 +1805,23 @@ private:
         }
 
         return -1;
+    }
+
+    const PortNameToId& getPortNameToId(const char* const fullName)
+    {
+        static const PortNameToId fallback = { -1, -1, { '\0' }, { '\0' } };
+
+        CARLA_SAFE_ASSERT_RETURN(fullName != nullptr, fallback);
+
+        for (LinkedList<PortNameToId>::Itenerator it = fUsedPortNames.begin(); it.valid(); it.next())
+        {
+            const PortNameToId& portNameId(it.getValue());
+
+            if (std::strcmp(portNameId.fullName, fullName) == 0)
+                return portNameId;
+        }
+
+        return fallback;
     }
 
     void getFullPortName(const int portId, char nameBuf[STR_MAX+1])
@@ -1904,6 +1948,32 @@ private:
                     findPluginIdAndIcon(groupName, pluginId, icon);
 
                     callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, static_cast<uint>(groupId), icon, pluginId, 0.0f, groupName);
+
+                    if (pluginId >= 0)
+                    {
+                        CarlaPlugin* const plugin(getPlugin(static_cast<uint32_t>(pluginId)));
+
+                        if (plugin != nullptr && plugin->isEnabled())
+                        {
+                            unsigned int canvasPortFlags;
+                            char strBuf[STR_MAX+1];
+
+                            for (uint32_t j=0, count=plugin->getParameterCount(); j < count; ++j)
+                            {
+                                if ((plugin->getParameterData(j).hints & PARAMETER_IS_AUTOMABLE) == 0)
+                                    continue;
+
+                                canvasPortFlags = PATCHBAY_PORT_TYPE_PARAMETER;
+
+                                if (! plugin->isParameterOutput(j))
+                                    canvasPortFlags |= PATCHBAY_PORT_IS_INPUT;
+
+                                plugin->getParameterName(j, strBuf);
+
+                                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, static_cast<uint>(groupId), static_cast<int>(j)-1, static_cast<int>(canvasPortFlags), 0.0f, strBuf);
+                            }
+                        }
+                    }
                 }
 
                 bool portIsInput = (jackPortFlags & JackPortIsInput);
@@ -1947,22 +2017,25 @@ private:
                 jack_port_t* const jackPort(jackbridge_port_by_name(fClient, ports[i]));
                 const char*  const fullPortName(ports[i]);
 
-                const int thisPortId(getPortId(fullPortName));
+                const PortNameToId& thisPort(getPortNameToId(fullPortName));
 
                 CARLA_SAFE_ASSERT_CONTINUE(jackPort != nullptr);
-                CARLA_SAFE_ASSERT_CONTINUE(thisPortId != -1);
+                CARLA_SAFE_ASSERT_CONTINUE(thisPort.portId != -1);
 
                 if (const char** connections = jackbridge_port_get_all_connections(fClient, jackPort))
                 {
                     for (int j=0; connections[j] != nullptr; ++j)
                     {
-                        const int targetPortId(getPortId(connections[j]));
+                        const PortNameToId& targetPort(getPortNameToId(connections[j]));
 
                         ConnectionToId connectionToId;
-                        connectionToId.setData(fLastConnectionId++, thisPortId, targetPortId);
+                        connectionToId.setData(fLastConnectionId++, thisPort.groupId, thisPort.portId, targetPort.groupId, targetPort.portId);
                         fUsedConnections.append(connectionToId);
 
-                        callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
+                        char strBuf[STR_MAX+1];
+                        std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", thisPort.groupId, thisPort.portId, targetPort.groupId, targetPort.portId);
+
+                        callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
                     }
 
                     jackbridge_free(connections);

@@ -1754,7 +1754,6 @@ float carla_get_default_parameter_value(uint pluginId, uint32_t parameterId)
 float carla_get_current_parameter_value(uint pluginId, uint32_t parameterId)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0.0f);
-    carla_debug("carla_get_current_parameter_value(%i, %i)", pluginId, parameterId);
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
     {
