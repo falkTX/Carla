@@ -70,7 +70,7 @@ ACTION_GROUP_SPLIT      =  2 # group_id, N, N
 ACTION_GROUP_JOIN       =  3 # group_id, N, N
 ACTION_PORT_INFO        =  4 # port_id, N, N
 ACTION_PORT_RENAME      =  5 # port_id, N, new_name
-ACTION_PORTS_CONNECT    =  6 # out_id, in_id, N
+ACTION_PORTS_CONNECT    =  6 # N, N, "outG:outP:inG:inP"
 ACTION_PORTS_DISCONNECT =  7 # conn_id, N, N
 ACTION_PLUGIN_CLONE     =  8 # plugin_id, N, N
 ACTION_PLUGIN_EDIT      =  9 # plugin_id, N, N
@@ -140,6 +140,7 @@ class group_dict_t(object):
         'group_name',
         'split',
         'icon',
+        'plugin_id',
         'widgets'
     ]
 
@@ -444,6 +445,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
     group_dict.group_name = group_name
     group_dict.split = bool(split == SPLIT_YES)
     group_dict.icon = icon
+    group_dict.plugin_id = -1
     group_dict.widgets = [group_box, None]
 
     if split == SPLIT_YES:
@@ -759,12 +761,24 @@ def setGroupIcon(group_id, icon):
 
     qCritical("PatchCanvas::setGroupIcon(%i, %s) - unable to find group to change icon" % (group_id, icon2str(icon)))
 
+def getPluginAsGroup(plugin_id):
+    if canvas.debug:
+        qDebug("PatchCanvas::getPluginAsGroup(%i)" % plugin_id)
+
+    for group in canvas.group_list:
+        if group.plugin_id == plugin_id:
+            return (True, group.group_id)
+
+    qCritical("PatchCanvas::getPluginAsGroup(%i) - no such plugin" % plugin_id)
+    return (False, -1)
+
 def setGroupAsPlugin(group_id, plugin_id, hasUi):
     if canvas.debug:
         qDebug("PatchCanvas::setGroupAsPlugin(%i, %i, %s)" % (group_id, plugin_id, bool2str(hasUi)))
 
     for group in canvas.group_list:
         if group.group_id == group_id:
+            group.plugin_id = plugin_id
             group.widgets[0].setAsPlugin(plugin_id, hasUi)
 
             if group.split and group.widgets[1]:
@@ -848,6 +862,17 @@ def renamePort(group_id, port_id, new_port_name):
             return
 
     qCritical("PatchCanvas::renamePort(%i, %i, %s) - Unable to find port to rename" % (group_id, port_id, new_port_name.encode()))
+
+def setPortValue(group_id, port_id, value):
+    if canvas.debug:
+        qDebug("PatchCanvas::setPortValue(%i, %i, %f)" % (group_id, port_id, value))
+
+    for port in canvas.port_list:
+        if port.group_id == group_id and port.port_id == port_id:
+            port.widget.setPortValue(value)
+            return
+
+    qCritical("PatchCanvas::setPortValue(%i, %i, %f) - Unable to find port" % (group_id, port_id, value))
 
 def connectPorts(connection_id, group_out_id, port_out_id, group_in_id, port_in_id):
     if canvas.debug:
@@ -971,9 +996,10 @@ def handlePluginRemoved(plugin_id):
         qDebug("PatchCanvas::handlePluginRemoved(%i)" % plugin_id)
 
     for group in canvas.group_list:
-        if group.widgets[0].m_plugin_id < plugin_id:
+        if group.plugin_id < plugin_id:
             continue
 
+        group.plugin_id -= 1
         group.widgets[0].m_plugin_id -= 1
 
         if group.split and group.widgets[1]:
@@ -1761,6 +1787,8 @@ class CanvasPort(QGraphicsItem):
         self.m_port_font.setPointSize(canvas.theme.port_font_size)
         self.m_port_font.setWeight(canvas.theme.port_font_state)
 
+        self.m_port_value = 1.0
+
         self.m_line_mov = None
         self.m_hover_item = None
         self.m_last_selected_state = False
@@ -1769,6 +1797,9 @@ class CanvasPort(QGraphicsItem):
         self.m_cursor_moving = False
 
         self.setFlags(QGraphicsItem.ItemIsSelectable)
+
+    def getGroupId(self):
+        return self.m_group_id
 
     def getPortId(self):
         return self.m_port_id
@@ -1797,6 +1828,13 @@ class CanvasPort(QGraphicsItem):
 
     def setPortType(self, port_type):
         self.m_port_type = port_type
+        self.update()
+
+    def setPortValue(self, value):
+        if self.m_port_value == value:
+            return
+
+        self.m_port_value = value
         self.update()
 
     def setPortName(self, port_name):
@@ -1881,19 +1919,19 @@ class CanvasPort(QGraphicsItem):
                     connection.widget.setLocked(False)
 
             if self.m_hover_item:
-                check = False
+                # TODO: a better way to check already existing connection
                 for connection in canvas.connection_list:
                     if ( (connection.port_out_id == self.m_port_id and connection.port_in_id == self.m_hover_item.getPortId()) or
                          (connection.port_out_id == self.m_hover_item.getPortId() and connection.port_in_id == self.m_port_id) ):
                         canvas.callback(ACTION_PORTS_DISCONNECT, connection.connection_id, 0, "")
-                        check = True
                         break
-
-                if not check:
+                else:
                     if self.m_port_mode == PORT_MODE_OUTPUT:
-                        canvas.callback(ACTION_PORTS_CONNECT, self.m_port_id, self.m_hover_item.getPortId(), "")
+                        conn = "%i:%i:%i:%i" % (self.m_group_id, self.m_port_id, self.m_hover_item.getGroupId(), self.m_hover_item.getPortId())
+                        canvas.callback(ACTION_PORTS_CONNECT, 0, 0, conn)
                     else:
-                        canvas.callback(ACTION_PORTS_CONNECT, self.m_hover_item.getPortId(), self.m_port_id, "")
+                        conn = "%i:%i:%i:%i" % (self.m_hover_item.getGroupId(), self.m_hover_item.getPortId(), self.m_group_id, self.m_port_id)
+                        canvas.callback(ACTION_PORTS_CONNECT, 0, 0, conn)
 
                 canvas.scene.clearSelection()
 
@@ -2043,15 +2081,39 @@ class CanvasPort(QGraphicsItem):
         polygon += QPointF(poly_locx[3], canvas.theme.port_height)
         polygon += QPointF(poly_locx[4], canvas.theme.port_height)
 
-        if canvas.theme.port_bg_pixmap:
-            portRect = polygon.boundingRect()
-            portPos  = portRect.topLeft()
-            painter.drawTiledPixmap(portRect, canvas.theme.port_bg_pixmap, portPos)
-        else:
-            painter.setBrush(poly_color)
+        if self.m_port_value == 1.0 or canvas.theme.port_bg_pixmap:
+            # normal paint
+            if canvas.theme.port_bg_pixmap:
+                portRect = polygon.boundingRect()
+                portPos  = portRect.topLeft()
+                painter.drawTiledPixmap(portRect, canvas.theme.port_bg_pixmap, portPos)
+            else:
+                painter.setBrush(poly_color) #.lighter(200))
 
-        painter.setPen(poly_pen)
-        painter.drawPolygon(polygon)
+            painter.setPen(poly_pen)
+            painter.drawPolygon(polygon)
+
+        else:
+            # incomplete paint
+            painter.setPen(poly_pen)
+            painter.drawPolygon(polygon)
+
+            sub  = QPolygonF()
+
+            if self.m_port_mode == PORT_MODE_INPUT:
+                sub += QPointF(poly_locx[0], 0)
+                sub += QPointF(poly_locx[2]*self.m_port_value, 0)
+                sub += QPointF(poly_locx[2]*self.m_port_value, canvas.theme.port_height)
+                sub += QPointF(poly_locx[0], canvas.theme.port_height)
+            else:
+                sub += QPointF(poly_locx[2], 0)
+                sub += QPointF(poly_locx[0]*self.m_port_value, 0)
+                sub += QPointF(poly_locx[0]*self.m_port_value, canvas.theme.port_height)
+                sub += QPointF(poly_locx[2], canvas.theme.port_height)
+
+            painter.setBrush(poly_color)
+            painter.setPen(poly_pen)
+            painter.drawPolygon(polygon.intersected(sub))
 
         painter.setPen(text_pen)
         painter.setFont(self.m_port_font)

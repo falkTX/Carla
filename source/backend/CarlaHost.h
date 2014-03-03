@@ -492,11 +492,13 @@ CARLA_EXPORT bool carla_save_project(const char* filename);
 #ifndef BUILD_BRIDGE
 /*!
  * Connect two patchbay ports.
- * @param portIdA Output port
- * @param portIdB Input port
+ * @param groupIdA Output group
+ * @param portIdA  Output port
+ * @param groupIdB Input group
+ * @param portIdB  Input port
  * @see ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED
  */
-CARLA_EXPORT bool carla_patchbay_connect(int portIdA, int portIdB);
+CARLA_EXPORT bool carla_patchbay_connect(int groupIdA, int portIdA, int groupIdB, int portIdB);
 
 /*!
  * Disconnect two patchbay ports.

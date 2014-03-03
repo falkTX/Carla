@@ -927,13 +927,12 @@ bool carla_save_project(const char* filename)
 #ifndef BUILD_BRIDGE
 // -------------------------------------------------------------------------------------------------------------------
 
-bool carla_patchbay_connect(int portIdA, int portIdB)
+bool carla_patchbay_connect(int groupIdA, int portIdA, int groupIdB, int portIdB)
 {
-    CARLA_SAFE_ASSERT_RETURN(portIdA != portIdB, false);
-    carla_debug("carla_patchbay_connect(%i, %i)", portIdA, portIdB);
+    carla_debug("carla_patchbay_connect(%i, %i, %i, %i)", groupIdA, portIdA, groupIdB, portIdB);
 
     if (gStandalone.engine != nullptr)
-        return gStandalone.engine->patchbayConnect(portIdA, portIdB);
+        return gStandalone.engine->patchbayConnect(groupIdA, portIdA, groupIdB, portIdB);
 
     carla_stderr2("Engine is not running");
     gStandalone.lastError = "Engine is not running";

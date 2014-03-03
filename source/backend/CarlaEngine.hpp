@@ -892,7 +892,7 @@ public:
     /*!
      * Connect patchbay ports \a portA and \a portB.
      */
-    virtual bool patchbayConnect(const int portA, const int portB);
+    virtual bool patchbayConnect(const int groupA, const int portA, const int groupB, const int portB);
 
     /*!
      * Disconnect patchbay connection \a connectionId.

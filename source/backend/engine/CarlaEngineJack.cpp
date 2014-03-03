@@ -948,7 +948,7 @@ public:
     // -------------------------------------------------------------------
     // Patchbay
 
-    bool patchbayConnect(int portA, int portB) override
+    bool patchbayConnect(const int groupA, const int portA, const int groupB, const int portB) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
 
@@ -963,16 +963,14 @@ public:
             // both must be < 0
             CARLA_SAFE_ASSERT_RETURN(portA < 0 && portB < 0, false);
 
-#if 0
             ConnectionToId connectionToId;
-            connectionToId.setData(fLastConnectionId++, portIdA.groupId, portIdA.portId, portIdB.groupId, portIdB.portId);
+            connectionToId.setData(fLastConnectionId++, groupA, portA, groupB, portB);
             fUsedConnections.append(connectionToId);
 
             char strBuf[STR_MAX+1];
-            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", portIdA.groupId, portIdA.portId, portIdB.groupId, portIdB.portId);
+            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", groupA, portA, groupB, portB);
 
             callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
-#endif
 
             return true;
         }
@@ -991,7 +989,7 @@ public:
         return true;
     }
 
-    bool patchbayDisconnect(uint connectionId) override
+    bool patchbayDisconnect(const uint connectionId) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
 
@@ -1949,6 +1947,7 @@ private:
 
                     callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, static_cast<uint>(groupId), icon, pluginId, 0.0f, groupName);
 
+#if 0
                     if (pluginId >= 0)
                     {
                         CarlaPlugin* const plugin(getPlugin(static_cast<uint32_t>(pluginId)));
@@ -1970,10 +1969,15 @@ private:
 
                                 plugin->getParameterName(j, strBuf);
 
-                                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, static_cast<uint>(groupId), static_cast<int>(j)-1, static_cast<int>(canvasPortFlags), 0.0f, strBuf);
+                                const int pluginPortId = -static_cast<int>(j)-1;
+                                const float pluginValue = plugin->getParameterRanges(j).getNormalizedValue(plugin->getParameterValue(j));
+
+                                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, static_cast<uint>(groupId), pluginPortId, static_cast<int>(canvasPortFlags), 0.0f, strBuf);
+                                callback(ENGINE_CALLBACK_PATCHBAY_PORT_VALUE_CHANGED, static_cast<uint>(groupId), pluginPortId, 0, pluginValue, nullptr);
                             }
                         }
                     }
+#endif
                 }
 
                 bool portIsInput = (jackPortFlags & JackPortIsInput);

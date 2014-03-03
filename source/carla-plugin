@@ -261,8 +261,8 @@ class PluginHost(object):
 
     # -------------------------------------------------------------------
 
-    def patchbay_connect(self, portIdA, portIdB):
-        gCarla.gui.send(["patchbay_connect", portIdA, portIdB])
+    def patchbay_connect(self, groupIdA, portIdA, groupIdB, portIdB):
+        gCarla.gui.send(["patchbay_connect", groupIdA, portIdA, groupIdB, portIdB])
         return True
 
     def patchbay_disconnect(self, connectionId):

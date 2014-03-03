@@ -61,6 +61,94 @@ CARLA_DEFAULT_CANVAS_SIZE_WIDTH  = 3100
 CARLA_DEFAULT_CANVAS_SIZE_HEIGHT = 2400
 
 # ------------------------------------------------------------------------------------------------
+# Patchbay info class, used in main carla as replacement for PluginEdit
+
+class PluginInfo(object):
+    def __init__(self, parent, pluginId):
+        object.__init__(self)
+
+        self.fGroupId  = None
+        self.fPluginId = pluginId
+
+        self.fParameterList = [] # type, index, min, max
+
+        self.reloadParameters()
+
+    def close(self):
+        for paramType, paramIndex, paramMin, paramMax in self.fParameterList:
+            patchcanvas.removePort(self.fGroupId, -paramIndex-1)
+
+    #------------------------------------------------------------------
+
+    def reloadAll(self):
+        self.reloadParameters()
+
+    def reloadParameters(self):
+        # Remove all previous parameters
+        self.close()
+
+        hasGroup, groupId = patchcanvas.getPluginAsGroup(self.fPluginId)
+
+        if not hasGroup:
+            self.fGroupId = None
+            return
+
+        self.fGroupId = groupId
+
+        # Reset
+        self.fParameterList = []
+
+        if gCarla.host is None:
+            return
+
+        parameterCount = gCarla.host.get_parameter_count(self.fPluginId)
+
+        if parameterCount <= 0 or parameterCount > 25:
+            return
+
+        for i in range(parameterCount):
+            paramInfo   = gCarla.host.get_parameter_info(self.fPluginId, i)
+            paramData   = gCarla.host.get_parameter_data(self.fPluginId, i)
+            paramRanges = gCarla.host.get_parameter_ranges(self.fPluginId, i)
+            paramValue  = gCarla.host.get_current_parameter_value(self.fPluginId, i)
+
+            if paramData['type'] not in (PARAMETER_INPUT, PARAMETER_OUTPUT):
+            #if paramData['type'] != PARAMETER_INPUT:
+                continue
+            if (paramData['hints'] & PARAMETER_IS_AUTOMABLE) == 0:
+                continue
+
+            portId    = -i-1
+            portMode  = patchcanvas.PORT_MODE_OUTPUT if paramData['type'] == PARAMETER_OUTPUT else patchcanvas.PORT_MODE_INPUT
+            portValue = (paramValue - paramRanges['min']) / (paramRanges['max'] - paramRanges['min'])
+            patchcanvas.addPort(groupId, portId, paramInfo['name'], portMode, patchcanvas.PORT_TYPE_PARAMETER)
+            patchcanvas.setPortValue(groupId, portId, portValue)
+
+            self.fParameterList.append((paramData['type'], i, paramRanges['min'], paramRanges['max']))
+
+    #------------------------------------------------------------------
+
+    def setId(self, idx):
+        self.fPluginId = idx
+
+    def setParameterValue(self, parameterId, value):
+        if self.fGroupId is None:
+            return
+
+        paramRanges = gCarla.host.get_parameter_ranges(self.fPluginId, parameterId)
+        portValue   = (value - paramRanges['min']) / (paramRanges['max'] - paramRanges['min'])
+        patchcanvas.setPortValue(self.fGroupId, -parameterId-1, portValue)
+
+    #------------------------------------------------------------------
+
+    def idleSlow(self):
+        # Update parameter outputs
+        for paramType, paramIndex, paramMin, paramMax in self.fParameterList:
+            if paramType == PARAMETER_OUTPUT:
+                portValue = (gCarla.host.get_current_parameter_value(self.fPluginId, paramIndex) - paramMin) / (paramMax - paramMin)
+                patchcanvas.setPortValue(self.fGroupId, -paramIndex-1, portValue)
+
+# ------------------------------------------------------------------------------------------------
 # Patchbay widget
 
 class CarlaPatchbayW(QFrame):
@@ -208,6 +296,7 @@ class CarlaPatchbayW(QFrame):
         parent.PatchbayPortAddedCallback.connect(self.slot_handlePatchbayPortAddedCallback)
         parent.PatchbayPortRemovedCallback.connect(self.slot_handlePatchbayPortRemovedCallback)
         parent.PatchbayPortRenamedCallback.connect(self.slot_handlePatchbayPortRenamedCallback)
+        parent.PatchbayPortValueChangedCallback.connect(self.slot_handlePatchbayPortValueChangedCallback)
         parent.PatchbayConnectionAddedCallback.connect(self.slot_handlePatchbayConnectionAddedCallback)
         parent.PatchbayConnectionRemovedCallback.connect(self.slot_handlePatchbayConnectionRemovedCallback)
 
@@ -219,16 +308,15 @@ class CarlaPatchbayW(QFrame):
     # -----------------------------------------------------------------
 
     def addPlugin(self, pluginId, isProjectLoading):
-        if not self.fIsOnlyPatchbay:
-            self.fPluginCount += 1
-            return
-
-        pitem = PluginEdit(self, pluginId)
+        if self.fIsOnlyPatchbay:
+            pitem = PluginEdit(self, pluginId)
+        else:
+            pitem = PluginInfo(self, pluginId)
 
         self.fPluginList.append(pitem)
         self.fPluginCount += 1
 
-        if not isProjectLoading:
+        if self.fIsOnlyPatchbay and not isProjectLoading:
             gCarla.host.set_active(pluginId, True)
 
     def removePlugin(self, pluginId):
@@ -236,10 +324,6 @@ class CarlaPatchbayW(QFrame):
 
         if pluginId in self.fSelectedPlugins:
             self.clearSideStuff()
-
-        if not self.fIsOnlyPatchbay:
-            self.fPluginCount -= 1
-            return
 
         if pluginId >= self.fPluginCount:
             return
@@ -887,6 +971,10 @@ class CarlaPatchbayW(QFrame):
         patchcanvas.renamePort(groupId, portId, newPortName)
         QTimer.singleShot(0, self.fMiniCanvasPreview.update)
 
+    @pyqtSlot(int, int, float)
+    def slot_handlePatchbayPortValueChangedCallback(self, groupId, portId, value):
+        patchcanvas.setPortValue(groupId, portId, value)
+
     @pyqtSlot(int, int, int, int, int)
     def slot_handlePatchbayConnectionAddedCallback(self, connectionId, groupOutId, portOutId, groupInId, portInId):
         patchcanvas.connectPorts(connectionId, groupOutId, portOutId, groupInId, portInId)
@@ -909,6 +997,12 @@ class CarlaPatchbayW(QFrame):
         patchcanvas.clear()
         if gCarla.host.is_engine_running():
             gCarla.host.patchbay_refresh()
+
+            for pitem in self.fPluginList:
+                if pitem is None:
+                    break
+                pitem.reloadAll()
+
         QTimer.singleShot(1000 if self.fParent.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY] else 0, self.fMiniCanvasPreview.update)
 
     @pyqtSlot()
@@ -999,10 +1093,9 @@ def canvasCallback(action, value1, value2, valueStr):
         pass
 
     elif action == patchcanvas.ACTION_PORTS_CONNECT:
-        portIdA = value1
-        portIdB = value2
+        gOut, pOut, gIn, pIn = [int(i) for i in valueStr.split(":")]
 
-        if not gCarla.host.patchbay_connect(portIdA, portIdB):
+        if not gCarla.host.patchbay_connect(gOut, pOut, gIn, pIn):
             print("Connection failed:", gCarla.host.get_last_error())
 
     elif action == patchcanvas.ACTION_PORTS_DISCONNECT:

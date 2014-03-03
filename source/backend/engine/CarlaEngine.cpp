@@ -1663,7 +1663,7 @@ void CarlaEngine::setFileCallback(const FileCallbackFunc func, void* const ptr) 
 // -----------------------------------------------------------------------
 // Patchbay
 
-bool CarlaEngine::patchbayConnect(const int portA, const int portB)
+bool CarlaEngine::patchbayConnect(const int /*groupA*/, const int portA, const int /*groupB*/, const int portB)
 {
     CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
     CARLA_SAFE_ASSERT_RETURN(pData->bufAudio.isReady, false);
@@ -2179,36 +2179,75 @@ void CarlaEngine::restorePatchbayConnection(const char* const connSource, const 
     }
     else
     {
-        int sourcePort, targetPort;
+        int sourceGroup, targetGroup;
+        int sourcePort,  targetPort;
 
         if (std::strncmp(connSource, "Carla:", 6) == 0)
-            sourcePort = getCarlaPortIdFromName(connSource+6);
+        {
+            sourceGroup = RACK_PATCHBAY_GROUP_CARLA;
+            sourcePort  = getCarlaPortIdFromName(connSource+6);
+        }
         else if (std::strncmp(connSource, "AudioIn:", 8) == 0)
-            sourcePort = std::atoi(connSource+8) + RACK_PATCHBAY_GROUP_AUDIO_IN*1000 - 1;
+        {
+            sourceGroup = RACK_PATCHBAY_GROUP_AUDIO_IN;
+            sourcePort  = std::atoi(connSource+8) - 1;
+        }
         else if (std::strncmp(connSource, "AudioOut:", 9) == 0)
-            sourcePort = std::atoi(connSource+9) + RACK_PATCHBAY_GROUP_AUDIO_OUT*1000 - 1;
+        {
+            sourceGroup = RACK_PATCHBAY_GROUP_AUDIO_OUT;
+            sourcePort  = std::atoi(connSource+9) - 1;
+        }
         else if (std::strncmp(connSource, "MidiIn:", 7) == 0)
-            sourcePort = std::atoi(connSource+7) + RACK_PATCHBAY_GROUP_MIDI_IN*1000 - 1;
+        {
+            sourceGroup = RACK_PATCHBAY_GROUP_MIDI_IN;
+            sourcePort  = std::atoi(connSource+7) - 1;
+        }
         else if (std::strncmp(connSource, "MidiOut:", 8) == 0)
-            sourcePort = std::atoi(connSource+8) + RACK_PATCHBAY_GROUP_MIDI_OUT*1000 - 1;
+        {
+            sourceGroup = RACK_PATCHBAY_GROUP_MIDI_OUT;
+            sourcePort  = std::atoi(connSource+8) - 1;
+        }
         else
-            sourcePort = RACK_PATCHBAY_PORT_MAX;
+        {
+            sourceGroup = RACK_PATCHBAY_GROUP_MAX;
+            sourcePort  = RACK_PATCHBAY_PORT_MAX;
+        }
 
         if (std::strncmp(connTarget, "Carla:", 6) == 0)
-            targetPort = getCarlaPortIdFromName(connTarget+6);
+        {
+            targetGroup = RACK_PATCHBAY_GROUP_CARLA;
+            targetPort  = getCarlaPortIdFromName(connTarget+6);
+        }
         else if (std::strncmp(connTarget, "AudioIn:", 8) == 0)
-            targetPort = std::atoi(connTarget+8) + RACK_PATCHBAY_GROUP_AUDIO_IN*1000 - 1;
+        {
+            targetGroup = RACK_PATCHBAY_GROUP_AUDIO_IN;
+            targetPort  = std::atoi(connTarget+8) - 1;
+        }
         else if (std::strncmp(connTarget, "AudioOut:", 9) == 0)
-            targetPort = std::atoi(connTarget+9) + RACK_PATCHBAY_GROUP_AUDIO_OUT*1000 - 1;
+        {
+            targetGroup = RACK_PATCHBAY_GROUP_AUDIO_OUT;
+            targetPort  = std::atoi(connTarget+9) - 1;
+        }
         else if (std::strncmp(connTarget, "MidiIn:", 7) == 0)
-            targetPort = std::atoi(connTarget+7) + RACK_PATCHBAY_GROUP_MIDI_IN*1000 - 1;
+        {
+            targetGroup = RACK_PATCHBAY_GROUP_MIDI_IN;
+            targetPort  = std::atoi(connTarget+7) - 1;
+        }
         else if (std::strncmp(connTarget, "MidiOut:", 8) == 0)
-            targetPort = std::atoi(connTarget+8) + RACK_PATCHBAY_GROUP_MIDI_OUT*1000 - 1;
+        {
+            targetGroup = RACK_PATCHBAY_GROUP_MIDI_OUT;
+            targetPort  = std::atoi(connTarget+8) - 1;
+        }
         else
-            targetPort = RACK_PATCHBAY_PORT_MAX;
+        {
+            targetGroup = RACK_PATCHBAY_GROUP_MAX;
+            targetPort  = RACK_PATCHBAY_PORT_MAX;
+        }
 
-        if (sourcePort != RACK_PATCHBAY_PORT_MAX && targetPort != RACK_PATCHBAY_PORT_MAX)
-            patchbayConnect(targetPort, sourcePort);
+        CARLA_SAFE_ASSERT_RETURN(sourceGroup == RACK_PATCHBAY_GROUP_MAX || sourcePort == RACK_PATCHBAY_PORT_MAX,);
+        CARLA_SAFE_ASSERT_RETURN(targetGroup == RACK_PATCHBAY_GROUP_MAX || targetPort == RACK_PATCHBAY_PORT_MAX,);
+
+        patchbayConnect(targetGroup, targetPort, sourceGroup, sourcePort);
     }
 }
 #endif

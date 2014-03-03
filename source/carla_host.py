@@ -149,6 +149,7 @@ class HostWindow(QMainWindow):
     PatchbayPortAddedCallback = pyqtSignal(int, int, int, str)
     PatchbayPortRemovedCallback = pyqtSignal(int, int)
     PatchbayPortRenamedCallback = pyqtSignal(int, int, str)
+    PatchbayPortValueChangedCallback = pyqtSignal(int, int, float)
     PatchbayConnectionAddedCallback = pyqtSignal(int, int, int, int, int)
     PatchbayConnectionRemovedCallback = pyqtSignal(int, int, int)
     EngineStartedCallback = pyqtSignal(int, int, str)
@@ -741,7 +742,7 @@ class HostWindow(QMainWindow):
 
         if self.fIdleTimerSlow != 0:
             self.killTimer(self.fIdleTimerSlow)
-            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL]*2)
+            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL]*4)
 
     def saveSettings(self):
         settings = QSettings()
@@ -1088,7 +1089,7 @@ class HostWindow(QMainWindow):
         if self.fIdleTimerFast == 0:
             self.fIdleTimerFast = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL])
         if self.fIdleTimerSlow == 0:
-            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL]*2)
+            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL]*4)
 
     @pyqtSlot()
     def slot_handleEngineStoppedCallback(self):
@@ -1277,6 +1278,8 @@ def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
         gCarla.gui.PatchbayPortRemovedCallback.emit(pluginId, value1)
     elif action == ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED:
         gCarla.gui.PatchbayPortRenamedCallback.emit(pluginId, value1, valueStr)
+    elif action == ENGINE_CALLBACK_PATCHBAY_PORT_VALUE_CHANGED:
+        gCarla.gui.PatchbayPortValueChangedCallback.emit(pluginId, value1, value3)
     elif action == ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED:
         gOut, pOut, gIn, pIn = [int(i) for i in valueStr.split(":")]
         gCarla.gui.PatchbayConnectionAddedCallback.emit(pluginId, gOut, pOut, gIn, pIn)

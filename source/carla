@@ -80,6 +80,7 @@ class CarlaMultiW(QTabWidget):
         parent.ui.act_settings_configure.triggered.connect(self.fPatchbay.slot_configureCarla)
 
         parent.ParameterValueChangedCallback.connect(self.fRack.slot_handleParameterValueChangedCallback)
+        parent.ParameterValueChangedCallback.connect(self.fPatchbay.slot_handleParameterValueChangedCallback)
         parent.ParameterDefaultChangedCallback.connect(self.fRack.slot_handleParameterDefaultChangedCallback)
         parent.ParameterMidiChannelChangedCallback.connect(self.fRack.slot_handleParameterMidiChannelChangedCallback)
         parent.ParameterMidiCcChangedCallback.connect(self.fRack.slot_handleParameterMidiCcChangedCallback)
@@ -93,8 +94,10 @@ class CarlaMultiW(QTabWidget):
         parent.UpdateCallback.connect(self.fRack.slot_handleUpdateCallback)
         parent.ReloadInfoCallback.connect(self.fRack.slot_handleReloadInfoCallback)
         parent.ReloadParametersCallback.connect(self.fRack.slot_handleReloadParametersCallback)
+        parent.ReloadParametersCallback.connect(self.fPatchbay.slot_handleReloadParametersCallback)
         parent.ReloadProgramsCallback.connect(self.fRack.slot_handleReloadProgramsCallback)
         parent.ReloadAllCallback.connect(self.fRack.slot_handleReloadAllCallback)
+        parent.ReloadAllCallback.connect(self.fPatchbay.slot_handleReloadAllCallback)
 
         parent.PatchbayClientAddedCallback.connect(self.fPatchbay.slot_handlePatchbayClientAddedCallback)
         parent.PatchbayClientRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayClientRemovedCallback)
@@ -103,6 +106,7 @@ class CarlaMultiW(QTabWidget):
         parent.PatchbayPortAddedCallback.connect(self.fPatchbay.slot_handlePatchbayPortAddedCallback)
         parent.PatchbayPortRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayPortRemovedCallback)
         parent.PatchbayPortRenamedCallback.connect(self.fPatchbay.slot_handlePatchbayPortRenamedCallback)
+        parent.PatchbayPortValueChangedCallback.connect(self.fPatchbay.slot_handlePatchbayPortValueChangedCallback)
         parent.PatchbayConnectionAddedCallback.connect(self.fPatchbay.slot_handlePatchbayConnectionAddedCallback)
         parent.PatchbayConnectionRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayConnectionRemovedCallback)
 
@@ -154,6 +158,7 @@ class CarlaMultiW(QTabWidget):
 
     def idleSlow(self):
         self.fRack.idleSlow()
+        self.fPatchbay.idleSlow()
 
     # -----------------------------------------------------------------
 

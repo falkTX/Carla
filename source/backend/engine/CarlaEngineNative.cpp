@@ -113,12 +113,14 @@ protected:
         }
         else if (std::strcmp(msg, "patchbay_connect") == 0)
         {
-            int32_t portA, portB;
+            int32_t groupA, portA, groupB, portB;
 
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(groupA), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(portA), true);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(groupB), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(portB), true);
 
-            ok = fEngine->patchbayConnect(portA, portB);
+            ok = fEngine->patchbayConnect(groupA, portA, groupB, portB);
         }
         else if (std::strcmp(msg, "patchbay_disconnect") == 0)
         {
