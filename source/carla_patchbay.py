@@ -84,6 +84,9 @@ class PluginInfo(object):
         self.reloadParameters()
 
     def reloadParameters(self):
+        # TODO
+        return
+
         # Remove all previous parameters
         self.close()
 
