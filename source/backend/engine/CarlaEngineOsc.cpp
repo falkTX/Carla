@@ -161,7 +161,11 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
 {
     CARLA_SAFE_ASSERT_RETURN(fName.isNotEmpty(), 1);
     CARLA_SAFE_ASSERT_RETURN(path != nullptr && path[0] != '\0', 1);
-    carla_debug("CarlaEngineOsc::handleMessage(%s, \"%s\", %i, %p, \"%s\", %p)", bool2str(isTCP), path, argc, argv, types, msg);
+#ifdef DEBUG
+    if (std::strstr(path, "/bridge_pong") == nullptr) {
+        carla_debug("CarlaEngineOsc::handleMessage(%s, \"%s\", %i, %p, \"%s\", %p)", bool2str(isTCP), path, argc, argv, types, msg);
+    }
+#endif
 
     //if (isTCP)
     {

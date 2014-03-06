@@ -1304,7 +1304,11 @@ public:
 
     int setOscPluginBridgeInfo(const PluginBridgeInfoType infoType, const int argc, const lo_arg* const* const argv, const char* const types)
     {
-        carla_debug("setOscPluginBridgeInfo(%s, %i, %p, \"%s\")", PluginBridgeInfoType2str(infoType), argc, argv, types);
+#ifdef DEBUG
+        if (infoType != kPluginBridgePong) {
+            carla_debug("BridgePlugin::setOscPluginBridgeInfo(%s, %i, %p, \"%s\")", PluginBridgeInfoType2str(infoType), argc, argv, types);
+        }
+#endif
 
         switch (infoType)
         {
