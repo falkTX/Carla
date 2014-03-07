@@ -1,6 +1,6 @@
 /*
- * DISTRHO Plugin Toolkit (DPT)
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * DISTRHO Plugin Framework (DPF)
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

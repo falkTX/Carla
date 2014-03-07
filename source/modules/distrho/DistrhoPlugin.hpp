@@ -1,6 +1,6 @@
 /*
- * DISTRHO Plugin Toolkit (DPT)
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * DISTRHO Plugin Framework (DPF)
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -18,6 +18,12 @@
 #define DISTRHO_PLUGIN_HPP_INCLUDED
 
 #include "DistrhoUtils.hpp"
+
+#include <cmath>
+
+#ifndef M_PI
+# define M_PI 3.14159265358979323846
+#endif
 
 START_NAMESPACE_DISTRHO
 
