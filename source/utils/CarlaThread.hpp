@@ -21,6 +21,12 @@
 #include "CarlaMutex.hpp"
 #include "CarlaString.hpp"
 
+#if defined(__GLIBC__) && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012
+// has pthread_setname_np
+#elif defined(CARLA_OS_LINUX)
+# include <sys/prctl.h>
+#endif
+
 // -----------------------------------------------------------------------
 // CarlaThread class
 
@@ -76,33 +82,36 @@ public:
     /*
      * Start the thread.
      */
-    void startThread() noexcept
+    bool startThread() noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(! isThreadRunning(),);
+        // check if already running
+        CARLA_SAFE_ASSERT_RETURN(! isThreadRunning(), true);
 
-        const CarlaMutexLocker sl(fLock);
+        const CarlaMutexLocker cml(fLock);
 
         fShouldExit = false;
 
-        pthread_t threadId;
-
-        if (pthread_create(&threadId, nullptr, _entryPoint, this) == 0)
+        if (pthread_create(&fHandle, nullptr, _entryPoint, this) == 0)
         {
+#ifdef CARLA_OS_WIN
+            CARLA_SAFE_ASSERT_RETURN(fHandle.p != nullptr, false);
+#else
+            CARLA_SAFE_ASSERT_RETURN(fHandle != 0, false);
+#endif
+
 #if defined(__GLIBC__) && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012
             if (fName.isNotEmpty())
-                pthread_setname_np(threadId, fName);
+                pthread_setname_np(fHandle, fName);
 #endif
-            pthread_detach(threadId);
-
-#ifdef CARLA_OS_WIN
-            *(const_cast<pthread_t*>(&fHandle)) = threadId;
-#else
-            fHandle = threadId;
-#endif
+            pthread_detach(fHandle);
 
             // wait for thread to start
             fLock.lock();
+
+            return true;
         }
+
+        return false;
     }
 
     /*
@@ -114,7 +123,7 @@ public:
      */
     bool stopThread(const int timeOutMilliseconds) noexcept
     {
-        const CarlaMutexLocker sl(fLock);
+        const CarlaMutexLocker cml(fLock);
 
         if (isThreadRunning())
         {
@@ -125,7 +134,7 @@ public:
                 // Wait for the thread to stop
                 int timeOutCheck = (timeOutMilliseconds == 1 || timeOutMilliseconds == -1) ? timeOutMilliseconds : timeOutMilliseconds/2;
 
-                while (isThreadRunning())
+                for (; isThreadRunning();)
                 {
                     carla_msleep(2);
 
@@ -142,9 +151,11 @@ public:
             if (isThreadRunning())
             {
                 // should never happen!
-                carla_stderr2("Carla assertion failure: \"! isRunning()\" in file %s, line %i", __FILE__, __LINE__);
+                carla_stderr2("Carla assertion failure: \"! isThreadRunning()\" in file %s, line %i", __FILE__, __LINE__);
 
-                pthread_t threadId = *(const_cast<pthread_t*>(&fHandle));
+                // use a copy thread id so we can clear our own one
+                pthread_t threadId;
+                carla_copyStruct<pthread_t>(threadId, fHandle);
                 _init();
 
                 try {
@@ -166,24 +177,23 @@ public:
         fShouldExit = true;
     }
 
+    static void setCurrentThreadName(const char* const name) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
+
+#if defined(__GLIBC__) && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012
+        if (fName.isNotEmpty())
+            pthread_setname_np(pthread_self(), fName);
+#elif defined(CARLA_OS_LINUX)
+        prctl(PR_SET_NAME, name, 0, 0, 0);
+#endif
+    }
+
 private:
     CarlaMutex         fLock;       // Thread lock
     const CarlaString  fName;       // Thread name
-    volatile pthread_t fHandle;     // Handle for this thread
+    pthread_t          fHandle;     // Handle for this thread
     volatile bool      fShouldExit; // true if thread should exit
-
-    /*
-     * Static null thread.
-     */
-    static pthread_t& _null() noexcept
-    {
-#ifdef CARLA_OS_WIN
-        static pthread_t sThread = { nullptr, 0 };
-#else
-        static pthread_t sThread = 0;
-#endif
-        return sThread;
-    }
 
     void _init() noexcept
     {
@@ -214,6 +224,7 @@ private:
         return nullptr;
     }
 
+    CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaThread)
 };
 

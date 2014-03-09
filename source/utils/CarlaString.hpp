@@ -306,6 +306,7 @@ public:
         return (std::strncmp(fBuffer, prefix, prefixLen) == 0);
     }
 
+#if 0
     /*
      * Check if the string starts with the string 'prefix'.
      */
@@ -313,6 +314,7 @@ public:
     {
         return startsWith(prefix.fBuffer);
     }
+#endif
 
     /*
      * Check if the string ends with the character 'c'.
@@ -339,6 +341,7 @@ public:
         return (std::strncmp(fBuffer + (fBufferLen-suffixLen), suffix, suffixLen) == 0);
     }
 
+#if 0
     /*
      * Check if the string ends with the string 'suffix'.
      */
@@ -346,6 +349,7 @@ public:
     {
         return endsWith(suffix.fBuffer);
     }
+#endif
 
     /*
      * Find the first occurrence of character 'c' in the string.
