@@ -946,8 +946,8 @@ public:
 
         // save drum info in case we have one program for it
         bool hasDrums = false;
-        int32_t drumIndex;
-        uint32_t drumProg;
+        uint32_t drumIndex, drumProg;
+        drumIndex = drumProg = 0;
 
         // Delete old programs
         pData->midiprog.clear();
@@ -974,7 +974,7 @@ public:
             uint32_t i = 0;
             f_sfont->iteration_start(f_sfont);
 
-            while (f_sfont->iteration_next(f_sfont, &f_preset))
+            for (; f_sfont->iteration_next(f_sfont, &f_preset);)
             {
                 CARLA_SAFE_ASSERT_BREAK(i < count);
 
@@ -989,7 +989,7 @@ public:
                 if (pData->midiprog.data[i].bank == 128 && ! hasDrums)
                 {
                     hasDrums  = true;
-                    drumIndex = static_cast<int32_t>(i);
+                    drumIndex = i;
                     drumProg  = pData->midiprog.data[i].program;
                 }
 
@@ -1036,7 +1036,7 @@ public:
 #endif
                 fluid_synth_program_select(fSynth, 9, fSynthId, 128, drumProg);
 
-                fCurMidiProgs[9] = drumIndex;
+                fCurMidiProgs[9] = static_cast<int32_t>(drumIndex);
             }
             else
             {
