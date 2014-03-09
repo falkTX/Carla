@@ -395,6 +395,21 @@ void carla_zeroStruct(T& structure) noexcept
     std::memset(&structure, 0, sizeof(T));
 }
 
+#if 0
+/*
+ * Clear a single struct/class, volatile version.
+ */
+template <typename T>
+static inline
+void carla_zeroStruct(volatile T& structure) noexcept
+{
+    volatile uint8_t* data((volatile uint8_t*)&structure);
+
+    for (size_t i=0; i < sizeof(T); ++i)
+        *data++ = 0;
+}
+#endif
+
 /*
  * Clear an array of struct/classes.
  */
@@ -417,6 +432,36 @@ void carla_copyStruct(T& struct1, const T& struct2) noexcept
 {
     std::memcpy(&struct1, &struct2, sizeof(T));
 }
+
+#if 0
+/*
+ * Copy a single struct/class, volatile version.
+ */
+template <typename T>
+static inline
+void carla_copyStruct(volatile T& struct1, const T& struct2) noexcept
+{
+    volatile uint8_t* data1((volatile uint8_t*)&struct1);
+    const    uint8_t* data2((const uint8_t*)&struct2);
+
+    for (size_t i=0; i < sizeof(T); ++i)
+        *data1++ = *data2++;
+}
+
+/*
+ * Copy a single struct/class, volatile version.
+ */
+template <typename T>
+static inline
+void carla_copyStruct(T& struct1, const volatile T& struct2) noexcept
+{
+                   uint8_t* data1((uint8_t*)&struct1);
+    volatile const uint8_t* data2((volatile const uint8_t*)&struct2);
+
+    for (size_t i=0; i < sizeof(T); ++i)
+        *data1++ = *data2++;
+}
+#endif
 
 /*
  * Copy an array of struct/classes.

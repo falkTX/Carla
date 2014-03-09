@@ -40,7 +40,7 @@ protected:
         : fName(threadName),
           fShouldExit(false)
     {
-        _init();
+        carla_zeroStruct<pthread_t>(fHandle);
     }
 
     /*
@@ -57,6 +57,8 @@ protected:
      * Virtual function to be implemented by the subclass.
      */
     virtual void run() = 0;
+
+    // -------------------------------------------------------------------
 
 public:
     /*
@@ -97,11 +99,6 @@ public:
             CARLA_SAFE_ASSERT_RETURN(fHandle.p != nullptr, false);
 #else
             CARLA_SAFE_ASSERT_RETURN(fHandle != 0, false);
-#endif
-
-#if defined(__GLIBC__) && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012
-            if (fName.isNotEmpty())
-                pthread_setname_np(fHandle, fName);
 #endif
             pthread_detach(fHandle);
 
@@ -153,10 +150,10 @@ public:
                 // should never happen!
                 carla_stderr2("Carla assertion failure: \"! isThreadRunning()\" in file %s, line %i", __FILE__, __LINE__);
 
-                // use a copy thread id so we can clear our own one
+                // copy thread id so we can clear our one
                 pthread_t threadId;
                 carla_copyStruct<pthread_t>(threadId, fHandle);
-                _init();
+                carla_zeroStruct<pthread_t>(fHandle);
 
                 try {
                     pthread_cancel(threadId);
@@ -177,6 +174,20 @@ public:
         fShouldExit = true;
     }
 
+    // -------------------------------------------------------------------
+
+    /*
+     * Returns the name of the thread.
+     * This is the name that gets set in the constructor.
+     */
+    const CarlaString& getThreadName() const noexcept
+    {
+        return fName;
+    }
+
+    /*
+     * Changes the name of the caller thread.
+     */
     static void setCurrentThreadName(const char* const name) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
@@ -188,33 +199,28 @@ public:
 #endif
     }
 
+    // -------------------------------------------------------------------
+
 private:
     CarlaMutex         fLock;       // Thread lock
     const CarlaString  fName;       // Thread name
     pthread_t          fHandle;     // Handle for this thread
     volatile bool      fShouldExit; // true if thread should exit
 
-    void _init() noexcept
-    {
-#ifdef CARLA_OS_WIN
-        fHandle.p = nullptr;
-        fHandle.x = 0;
-#else
-        fHandle = 0;
-#endif
-    }
-
     void _runEntryPoint() noexcept
     {
         // report ready
         fLock.unlock();
+
+        setCurrentThreadName(fName);
 
         try {
             run();
         } catch(...) {}
 
         // done
-        _init();
+        const CarlaMutexLocker cml(fLock);
+        carla_zeroStruct<pthread_t>(fHandle);
     }
 
     static void* _entryPoint(void* userData) noexcept
