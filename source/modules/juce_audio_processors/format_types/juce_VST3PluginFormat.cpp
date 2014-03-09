@@ -1752,7 +1752,7 @@ private:
     //==============================================================================
     VST3ModuleHandle::Ptr module;
 
-    friend VST3HostContext;
+    friend class VST3HostContext;
     ComSmartPtr<VST3HostContext> host;
 
     // Information objects:
