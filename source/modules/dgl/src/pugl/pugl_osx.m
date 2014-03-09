@@ -36,7 +36,6 @@
                      defer:(BOOL)flag;
 - (void) setPuglview:(PuglView*)view;
 - (BOOL) windowShouldClose:(id)sender;
-- (BOOL) canBecomeKeyWindow:(id)sender;
 @end
 
 @implementation PuglWindow
@@ -56,12 +55,15 @@
 	[result setLevel: CGShieldingWindowLevel() + 1];
 
 	return result;
+
+	// unused
+	(void)aStyle; (void)bufferingType; (void)flag;
 }
 
 - (void)setPuglview:(PuglView*)view
 {
 	puglview = view;
-	[self setContentSize:NSMakeSize(view->width, view->height) ];
+	[self setContentSize:NSMakeSize(view->width, view->height)];
 }
 
 - (BOOL)windowShouldClose:(id)sender
@@ -69,16 +71,14 @@
 	if (puglview->closeFunc)
 		puglview->closeFunc(puglview);
 	return YES;
-}
 
-- (BOOL) canBecomeKeyWindow:(id)sender
-{
-	return NO;
+	// unused
+	(void)sender;
 }
 
 @end
 
-void
+static void
 puglDisplay(PuglView* view)
 {
 	if (view->displayFunc) {
@@ -182,6 +182,9 @@ puglDisplay(PuglView* view)
 	puglDisplay(puglview);
 	glFlush();
 	glSwapAPPLE();
+
+	// unused
+	return; (void)rect;
 }
 
 static unsigned
@@ -190,10 +193,6 @@ getModifiers(PuglView* view, NSEvent* ev)
 	const unsigned modifierFlags = [ev modifierFlags];
 
 	view->event_timestamp_ms = fmod([ev timestamp] * 1000.0, UINT32_MAX);
-
-	double ts = [ev timestamp] * 1000.0;
-	ts = (uint32)ts % 500000;  //ridiculously large vals won't fit
-	view->event_timestamp_ms = ts;
 
 	unsigned mods = 0;
 	mods |= (modifierFlags & NSShiftKeyMask)     ? PUGL_MOD_SHIFT : 0;
@@ -223,10 +222,15 @@ getModifiers(PuglView* view, NSEvent* ev)
 - (void)mouseEntered:(NSEvent*)theEvent
 {
 	[self updateTrackingAreas];
+
+	// unused
+	return; (void)theEvent;
 }
 
 - (void)mouseExited:(NSEvent*)theEvent
 {
+	// unused
+	return; (void)theEvent;
 }
 
 - (void) mouseMoved:(NSEvent*)event
@@ -345,7 +349,6 @@ getModifiers(PuglView* view, NSEvent* ev)
 struct PuglInternalsImpl {
 	PuglOpenGLView* glview;
 	id              window;
-	bool            isEmbed;
 };
 
 PuglView*
@@ -379,9 +382,8 @@ puglCreate(PuglNativeWindow parent,
 	[window setPuglview:view];
 	[window setTitle:titleString];
 
-	impl->glview  = [PuglOpenGLView new];
-	impl->window  = window;
-	impl->isEmbed = (parent != 0);
+	impl->glview   = [PuglOpenGLView new];
+	impl->window   = window;
 	impl->glview->puglview = view;
 
 	[window setContentView:impl->glview];
@@ -395,6 +397,9 @@ puglCreate(PuglNativeWindow parent,
 	}
 
 	return view;
+
+	// unused
+	(void)parent; (void)resizable;
 }
 
 void
@@ -411,36 +416,6 @@ puglDestroy(PuglView* view)
 PuglStatus
 puglProcessEvents(PuglView* view)
 {
-	if (! view->impl->isEmbed)
-	{
-		NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-		NSEvent* event;
-
-		static const NSUInteger eventMask = (NSLeftMouseDownMask | NSLeftMouseUpMask |
-		                                     NSRightMouseDownMask | NSRightMouseUpMask |
-		                                     NSMouseMovedMask |
-		                                     NSLeftMouseDraggedMask | NSRightMouseDraggedMask |
-		                                     NSMouseEnteredMask | NSMouseExitedMask |
-		                                     NSKeyDownMask | NSKeyUpMask |
-		                                     NSFlagsChangedMask |
-		                                     NSCursorUpdateMask | NSScrollWheelMask);
-
-		for (;;) {
-			event = [view->impl->window
-				  nextEventMatchingMask:eventMask
-					      untilDate:[NSDate distantPast]
-						 inMode:NSEventTrackingRunLoopMode
-						dequeue:YES];
-
-			if (event == nil)
-				break;
-
-			[view->impl->window sendEvent: event];
-		}
-
-		[pool release];
-	}
-
 	[view->impl->glview setNeedsDisplay: YES];
 
 	return PUGL_SUCCESS;

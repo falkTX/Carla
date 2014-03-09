@@ -27,6 +27,7 @@
 extern "C" {
 #endif
 
+void puglImplIdle(PuglView* view);
 void puglImplFocus(PuglView* view);
 void puglImplSetSize(PuglView* view, unsigned int width, unsigned int height, bool forced);
 void puglImplSetTitle(PuglView* view, const char* title);

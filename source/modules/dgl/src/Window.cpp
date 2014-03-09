@@ -80,6 +80,8 @@ public:
 #elif defined(DGL_OS_LINUX)
           xDisplay(nullptr),
           xWindow(0)
+#elif defined(DGL_OS_MAC)
+          fNeedsIdle(true)
 #else
           _dummy('\0')
 #endif
@@ -102,6 +104,8 @@ public:
 #elif defined(DGL_OS_LINUX)
           xDisplay(nullptr),
           xWindow(0)
+#elif defined(DGL_OS_MAC)
+          fNeedsIdle(false)
 #else
           _dummy('\0')
 #endif
@@ -129,6 +133,8 @@ public:
 #elif defined(DGL_OS_LINUX)
           xDisplay(nullptr),
           xWindow(0)
+#elif defined(DGL_OS_MAC)
+          fNeedsIdle(false)
 #else
           _dummy('\0')
 #endif
@@ -241,12 +247,7 @@ public:
         {
             for (; fVisible && fModal.enabled;)
             {
-                // idle()
-                puglProcessEvents(fView);
-
-                if (fModal.parent != nullptr)
-                    fModal.parent->idle();
-
+                idle();
                 msleep(10);
             }
 
@@ -492,6 +493,11 @@ public:
     {
         puglProcessEvents(fView);
 
+#ifdef DGL_OS_MAC
+        if (fNeedsIdle)
+            puglImplIdle(fView);
+#endif
+
         if (fModal.enabled && fModal.parent != nullptr)
             fModal.parent->idle();
     }
@@ -713,6 +719,8 @@ private:
 #elif defined(DGL_OS_LINUX)
     Display* xDisplay;
     ::Window xWindow;
+#elif defined(DGL_OS_MAC)
+    bool     fNeedsIdle;
 #else
     char      _dummy;
 #endif
