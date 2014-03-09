@@ -556,7 +556,12 @@ private:
         switch (ret)
         {
         case 0: /* child process */
-            execlp(argv[0], argv[0], argv[1], argv[2], argv[3], argv[4], nullptr);
+            execlp(argv[0], argv[0], argv[1], argv[2], argv[3], argv[4],
+#ifdef CARLA_OS_MAC // fix warning
+                   NULL);
+#else
+                   nullptr);
+#endif
             carla_stderr2("exec failed: %s", std::strerror(errno));
             _exit(0);
             return false;

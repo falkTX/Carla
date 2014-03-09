@@ -153,7 +153,7 @@ struct BridgeControl : public RingBufferControl<StackRingBuffer> {
     shm_t shm;
 
     BridgeControl()
-        : RingBufferControl(nullptr),
+        : RingBufferControl<StackRingBuffer>(nullptr),
           data(nullptr)
     {
         carla_shm_init(shm);
