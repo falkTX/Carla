@@ -115,6 +115,9 @@ ifeq ($(MACOS),true)
 BUILD_C_FLAGS  += $(32BIT_FLAGS)
 BUILD_CXX_FLAGS = $(BASE_FLAGS) $(32BIT_FLAGS) $(CXXFLAGS)
 LINK_FLAGS      = $(32BIT_FLAGS) $(LDFLAGS)
+# Set target
+BUILD_CXX_FLAGS += -DMAC_OS_X_VERSION_MIN_REQUIRED=MAC_OS_X_VERSION_10_5
+BUILD_CXX_FLAGS += -DMAC_OS_X_VERSION_MAX_ALLOWED=MAC_OS_X_VERSION_10_5
 endif
 
 # --------------------------------------------------------------

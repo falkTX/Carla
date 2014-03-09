@@ -31,7 +31,7 @@ const float referenceFontSize = 1024.0f;
 
 #if JUCE_CORETEXT_AVAILABLE
 
-#if 1 // JUCE_MAC && MAC_OS_X_VERSION_MAX_ALLOWED == MAC_OS_X_VERSION_10_5
+#if JUCE_MAC && MAC_OS_X_VERSION_MAX_ALLOWED == MAC_OS_X_VERSION_10_5
 extern "C"
 {
     void CTRunGetAdvances (CTRunRef, CFRange, CGSize buffer[]);
