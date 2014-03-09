@@ -20,6 +20,23 @@
 
 #ifdef HAVE_JUCE
 
+#if defined(CARLA_OS_MAC)
+/*
+ * Missing functions in OSX.
+ */
+namespace std {
+inline float
+fmin(float __x, float __y)
+{ return __builtin_fminf(__x, __y); }
+inline float
+fmax(float __x, float __y)
+{ return __builtin_fmaxf(__x, __y); }
+inline float
+rint(float __x)
+{ return __builtin_rintf(__x); }
+}
+#endif
+
 #include "CarlaBackendUtils.hpp"
 #include "JucePluginWindow.hpp"
 
