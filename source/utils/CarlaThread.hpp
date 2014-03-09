@@ -30,7 +30,7 @@ protected:
     /*
      * Constructor.
      */
-    CarlaThread(const char* const threadName = nullptr) /*noexcept*/
+    CarlaThread(const char* const threadName = nullptr) noexcept
         : fName(threadName),
           fShouldExit(false)
     {
@@ -80,7 +80,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(! isThreadRunning(),);
 
-        const CarlaMutex::ScopedLocker sl(fLock);
+        const CarlaMutexLocker sl(fLock);
 
         fShouldExit = false;
 
@@ -114,7 +114,7 @@ public:
      */
     bool stopThread(const int timeOutMilliseconds) noexcept
     {
-        const CarlaMutex::ScopedLocker sl(fLock);
+        const CarlaMutexLocker sl(fLock);
 
         if (isThreadRunning())
         {
@@ -171,6 +171,19 @@ private:
     const CarlaString  fName;       // Thread name
     volatile pthread_t fHandle;     // Handle for this thread
     volatile bool      fShouldExit; // true if thread should exit
+
+    /*
+     * Static null thread.
+     */
+    static pthread_t& _null() noexcept
+    {
+#ifdef CARLA_OS_WIN
+        static pthread_t sThread = { nullptr, 0 };
+#else
+        static pthread_t sThread = 0;
+#endif
+        return sThread;
+    }
 
     void _init() noexcept
     {

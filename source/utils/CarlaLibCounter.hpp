@@ -33,7 +33,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', nullptr);
 
-        const CarlaMutex::ScopedLocker sl(fMutex);
+        const CarlaMutexLocker sl(fMutex);
 
         for (LinkedList<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
         {
@@ -67,7 +67,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(libPtr != nullptr, false);
 
-        const CarlaMutex::ScopedLocker sl(fMutex);
+        const CarlaMutexLocker sl(fMutex);
 
         for (LinkedList<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
         {

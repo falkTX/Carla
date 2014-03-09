@@ -864,7 +864,7 @@ void CarlaEngineProtectedData::processRackFull(float** const inBuf, const uint32
 {
     EngineRackBuffers* const rack(bufAudio.rack);
 
-    const CarlaCriticalSection::Scope _cs2(rack->connectLock);
+    const CarlaCriticalSectionScope _cs2(rack->connectLock);
 
     // connect input buffers
     if (rack->connectedIn1.count() == 0)

@@ -198,7 +198,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(atom != nullptr && atom->size > 0, false);
 
-        const CarlaMutex::ScopedLocker sl(fMutex);
+        const CarlaMutexLocker cml(fMutex);
 
         return fRingBufferCtrl.writeAtom(atom, static_cast<int32_t>(portIndex));
     }
@@ -209,7 +209,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(atom != nullptr && atom->size > 0, false);
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
 
-        const CarlaMutex::ScopedLocker sl(fMutex);
+        const CarlaMutexLocker cml(fMutex);
 
         return fRingBufferCtrl.writeAtomChunk(atom, data, static_cast<int32_t>(portIndex));
     }
@@ -236,11 +236,11 @@ public:
     void copyDataFromQueue(Lv2AtomQueue& queue)
     {
         // lock source
-        const CarlaMutex::ScopedLocker qsl(queue.fMutex);
+        const CarlaMutexLocker qsl(queue.fMutex);
 
         {
             // copy data from source
-            const CarlaMutex::ScopedLocker sl(fMutex);
+            const CarlaMutexLocker cml(fMutex);
             fRingBufferCtrl.fBuffer = queue.fRingBufferCtrl.fBuffer;
         }
 
@@ -251,11 +251,11 @@ public:
     void copyAndDumpDataFromQueue(Lv2AtomQueue& queue, char dumpBuf[])
     {
         // lock source
-        const CarlaMutex::ScopedLocker qsl(queue.fMutex);
+        const CarlaMutexLocker cml1(queue.fMutex);
 
         {
             // copy data from source
-            const CarlaMutex::ScopedLocker sl(fMutex);
+            const CarlaMutexLocker cml2(fMutex);
             fRingBufferCtrl.copyDump(queue.fRingBufferCtrl.fBuffer, dumpBuf);
         }
 

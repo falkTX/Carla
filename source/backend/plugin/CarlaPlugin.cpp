@@ -1761,7 +1761,7 @@ void CarlaPlugin::sendMidiAllNotesOffToCallback()
 
 void CarlaPlugin::postRtEventsRun()
 {
-    const CarlaMutex::ScopedLocker sl(pData->postRtEvents.mutex);
+    const CarlaMutexLocker sl(pData->postRtEvents.mutex);
 #ifndef BUILD_BRIDGE
     const bool sendOsc(pData->engine->isOscControlRegistered());
 #endif

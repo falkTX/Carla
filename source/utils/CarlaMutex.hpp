@@ -85,54 +85,6 @@ public:
         pthread_mutex_unlock(&fMutex);
     }
 
-    /*
-     * Helper class to lock&unlock a mutex during a function scope.
-     */
-    class ScopedLocker
-    {
-    public:
-        ScopedLocker(CarlaMutex& mutex) noexcept
-            : fMutex(mutex)
-        {
-            fMutex.lock();
-        }
-
-        ~ScopedLocker() noexcept
-        {
-            fMutex.unlock();
-        }
-
-    private:
-        CarlaMutex& fMutex;
-
-        CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPY_CLASS(ScopedLocker)
-    };
-
-    /*
-     * Helper class to unlock&lock a mutex during a function scope.
-     */
-    class ScopedUnlocker
-    {
-    public:
-        ScopedUnlocker(CarlaMutex& mutex) noexcept
-            : fMutex(mutex)
-        {
-            fMutex.unlock();
-        }
-
-        ~ScopedUnlocker() noexcept
-        {
-            fMutex.lock();
-        }
-
-    private:
-        CarlaMutex& fMutex;
-
-        CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPY_CLASS(ScopedUnlocker)
-    };
-
 private:
     mutable pthread_mutex_t fMutex;            // The mutex
     mutable volatile bool   fTryLockWasCalled; // true if "tryLock()" was called at least once
@@ -155,9 +107,14 @@ public:
 #ifdef CARLA_OS_WIN
         InitializeCriticalSection(&fSection);
 #else
-        fCounter = 0;
-        fOwnerThread = 0;
-        pthread_mutex_init(&fMutex, nullptr);
+        pthread_mutexattr_t atts;
+        pthread_mutexattr_init(&atts);
+        pthread_mutexattr_settype(&atts, PTHREAD_MUTEX_RECURSIVE);
+# ifndef CARLA_OS_ANDROID
+        pthread_mutexattr_setprotocol(&atts, PTHREAD_PRIO_INHERIT);
+# endif
+        pthread_mutex_init(&fMutex, &atts);
+        pthread_mutexattr_destroy(&atts);
 #endif
     }
 
@@ -176,77 +133,120 @@ public:
     /*
      * Enter section.
      */
-    void enter() noexcept
+    void enter() const noexcept
     {
 #ifdef CARLA_OS_WIN
         EnterCriticalSection(&fSection);
 #else
-        const pthread_t thisThread(pthread_self());
+        pthread_mutex_lock(&fMutex);
+#endif
+    }
 
-        if (fOwnerThread == thisThread)
-        {
-            ++fCounter;
-        }
-        else
-        {
-            pthread_mutex_lock(&fMutex);
-            fOwnerThread = thisThread;
-            fCounter = 0;
-        }
+    /*
+     * Try-Enter section.
+     */
+    bool tryEnter() const noexcept
+    {
+#ifdef CARLA_OS_WIN
+        return (TryEnterCriticalSection(&fSection) != FALSE);
+#else
+        return (pthread_mutex_trylock(&fMutex) == 0);
 #endif
     }
 
     /*
      * Leave section.
      */
-    void leave() noexcept
+    void leave() const noexcept
     {
 #ifdef CARLA_OS_WIN
         LeaveCriticalSection(&fSection);
 #else
-        if (--fCounter < 0)
-        {
-            fOwnerThread = 0;
-            pthread_mutex_unlock(&fMutex);
-        }
+        pthread_mutex_unlock(&fMutex);
 #endif
     }
 
-    /*
-     * Helper class to enter&leave during a function scope.
-     */
-    class Scope
-    {
-    public:
-        Scope(CarlaCriticalSection& cs) noexcept
-            : fSection(cs)
-        {
-            fSection.enter();
-        }
-
-        ~Scope() noexcept
-        {
-            fSection.leave();
-        }
-
-    private:
-        CarlaCriticalSection& fSection;
-
-        CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPY_CLASS(Scope)
-    };
-
 private:
 #ifdef CARLA_OS_WIN
-    CRITICAL_SECTION fSection;
+    mutable CRITICAL_SECTION fSection;
 #else
-    int             fCounter;
-    pthread_t       fOwnerThread;
-    pthread_mutex_t fMutex;
+    mutable pthread_mutex_t fMutex;
 #endif
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(CarlaCriticalSection)
+};
+
+// -----------------------------------------------------------------------
+// Helper class to lock&unlock a mutex during a function scope.
+
+class CarlaMutexLocker
+{
+public:
+    CarlaMutexLocker(const CarlaMutex& mutex) noexcept
+        : fMutex(mutex)
+    {
+        fMutex.lock();
+    }
+
+    ~CarlaMutexLocker() noexcept
+    {
+        fMutex.unlock();
+    }
+
+private:
+    const CarlaMutex& fMutex;
+
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaMutexLocker)
+};
+
+// -----------------------------------------------------------------------
+// Helper class to unlock&lock a mutex during a function scope.
+
+class CarlaMutexUnlocker
+{
+public:
+    CarlaMutexUnlocker(const CarlaMutex& mutex) noexcept
+        : fMutex(mutex)
+    {
+        fMutex.unlock();
+    }
+
+    ~CarlaMutexUnlocker() noexcept
+    {
+        fMutex.lock();
+    }
+
+private:
+    const CarlaMutex& fMutex;
+
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaMutexUnlocker)
+};
+
+// -----------------------------------------------------------------------
+// Helper class to enter&leave during a function scope.
+
+class CarlaCriticalSectionScope
+{
+public:
+    CarlaCriticalSectionScope(const CarlaCriticalSection& cs) noexcept
+        : fSection(cs)
+    {
+        fSection.enter();
+    }
+
+    ~CarlaCriticalSectionScope() noexcept
+    {
+        fSection.leave();
+    }
+
+private:
+    const CarlaCriticalSection& fSection;
+
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaCriticalSectionScope)
 };
 
 // -----------------------------------------------------------------------
