@@ -18,7 +18,7 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
-#ifdef CARLA_OS_WIN64
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN64)
 # undef WANT_REWIRE
 #endif
 
