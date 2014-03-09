@@ -269,6 +269,11 @@ LINUXSAMPLER_FLAGS = $(shell pkg-config --cflags linuxsampler) -Wno-unused-param
 LINUXSAMPLER_LIBS  = $(shell pkg-config --libs linuxsampler)
 endif
 
+ifeq ($(HAVE_X11),true)
+X11_FLAGS = $(shell pkg-config --cflags x11)
+X11_LIBS  = $(shell pkg-config --libs x11)
+endif
+
 ifneq ($(HAIKU),true)
 RTMEMPOOL_LIBS = -lpthread
 endif

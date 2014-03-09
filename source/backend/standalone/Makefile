@@ -66,13 +66,20 @@ STATIC_LIBS += ../../modules/lilv.a
 LINK_FLAGS  += $(LILV_LIBS)
 endif
 
-ifeq ($(CARLA_CSOUND_SUPPORT),true)
-LINK_FLAGS  += $(CSOUND_LIBS)
+ifeq ($(HAVE_CSOUND),true)
+LINK_FLAGS += $(CSOUND_LIBS)
 endif
 
-ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
+ifeq ($(HAVE_FLUIDSYNTH),true)
 LINK_FLAGS += $(FLUIDSYNTH_LIBS)
+endif
+
+ifeq ($(HAVE_LINUXSAMPLER),true)
 LINK_FLAGS += $(LINUXSAMPLER_LIBS)
+endif
+
+ifeq ($(HAVE_X11),true)
+LINK_FLAGS += $(X11_LIBS)
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
