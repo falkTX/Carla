@@ -29,7 +29,7 @@ class Lv2AtomRingBufferControl : public RingBufferControl<HeapRingBuffer>
 {
 public:
     Lv2AtomRingBufferControl()
-        : RingBufferControl(nullptr),
+        : RingBufferControl<HeapRingBuffer>(nullptr),
           fIsDummy(false)
     {
         fBuffer.size = 0;
