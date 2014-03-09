@@ -398,7 +398,7 @@ ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 	@echo "LV2:     $(ANS_YES)"
 	@echo "VST:     $(ANS_YES)"
 ifeq ($(USE_VST3),true)
-	@echo "VST3:    $(ANS_YES) $(mZ)MacOS only$(mE)"
+	@echo "VST3:    $(ANS_YES)"
 else
 	@echo "VST3:    $(ANS_NO)  $(mZ)Windows and MacOS only$(mE)"
 endif
@@ -439,7 +439,11 @@ ifeq ($(HAVE_QT5),true)
 else
 	@echo "Qt5:     $(ANS_NO)  $(mS)Qt5 missing$(mE)"
 endif
+ifeq ($(HAVE_X11),true)
 	@echo "X11:     $(ANS_YES) (direct+bridge)"
+else
+	@echo "X11:     $(ANS_NO)  $(mS)X11 missing$(mE)"
+endif
 # ifeq ($(MACOS),true)
 # 	@echo "Cocoa:   $(ANS_YES) (direct+bridge)"
 # else
