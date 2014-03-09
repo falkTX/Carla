@@ -44,7 +44,11 @@ public:
     /** Creates an empty URL. */
     URL();
 
-    /** Creates a URL from a string. */
+    /** Creates a URL from a string.
+        This will parse any embedded parameters after a '?' character and store them
+        in the list (see getParameterNames etc). If you don't want this to happen, you
+        can use createWithoutParsing().
+    */
     URL (const String& url);
 
     /** Creates a copy of another URL. */
@@ -243,8 +247,10 @@ public:
         @param connectionTimeOutMs  if 0, this will use whatever default setting the OS chooses. If
                                 a negative number, it will be infinite. Otherwise it specifies a
                                 time in milliseconds.
-        @param responseHeaders  if this is non-zero, all the (key, value) pairs received as headers
+        @param responseHeaders  if this is non-null, all the (key, value) pairs received as headers
                                 in the response will be stored in this array
+        @param statusCode       if this is non-null, it will get set to the http status code, if one
+                                is known, or 0 if a code isn't available
         @returns    an input stream that the caller must delete, or a null pointer if there was an
                     error trying to open it.
      */
@@ -253,7 +259,8 @@ public:
                                     void* progressCallbackContext = nullptr,
                                     String extraHeaders = String(),
                                     int connectionTimeOutMs = 0,
-                                    StringPairArray* responseHeaders = nullptr) const;
+                                    StringPairArray* responseHeaders = nullptr,
+                                    int* statusCode = nullptr) const;
 
 
     //==============================================================================
@@ -326,18 +333,21 @@ public:
     */
     static String removeEscapeChars (const String& stringToRemoveEscapeCharsFrom);
 
+    /** Returns a URL without attempting to remove any embedded parameters from the string.
+        This may be necessary if you need to create a request that involves both POST
+        parameters and parameters which are embedded in the URL address itself.
+    */
+    static URL createWithoutParsing (const String& url);
+
 private:
     //==============================================================================
     String url, postData;
     StringArray parameterNames, parameterValues;
     StringPairArray filesToUpload, mimeTypes;
 
+    URL (const String&, int);
     void addParameter (const String&, const String&);
 
-    static InputStream* createNativeStream (const String& address, bool isPost, const MemoryBlock& postData,
-                                            OpenStreamProgressCallback* progressCallback,
-                                            void* progressCallbackContext, const String& headers,
-                                            const int timeOutMs, StringPairArray* responseHeaders);
     JUCE_LEAK_DETECTOR (URL)
 };
 
