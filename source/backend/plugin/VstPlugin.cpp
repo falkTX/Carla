@@ -24,7 +24,7 @@
 # define USE_JUCE_FOR_VST 1
 #endif
 
-#ifdef WANT_VST
+#if defined(WANT_VST) && ! (defined(HAVE_JUCE) && USE_JUCE_FOR_VST)
 
 #include "CarlaVstUtils.hpp"
 #include "CarlaMathUtils.hpp"
@@ -435,8 +435,6 @@ public:
 #elif defined(CARLA_OS_MAC)
 # ifdef __LP64__
                 fUi.window = CarlaPluginUi::newCocoa(this, frontendWinId);
-# else
-                fUi.window = CarlaPluginUi::newCarbon(this, frontendWinId);
 # endif
 #elif defined(CARLA_OS_WIN)
                 fUi.window = CarlaPluginUi::newWindows(this, frontendWinId);
@@ -2476,7 +2474,7 @@ VstPlugin* VstPlugin::sLastVstPlugin = nullptr;
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // WANT_VST
+#endif // WANT_VST && ! (defined(HAVE_JUCE) && USE_JUCE_FOR_VST)
 
 // -------------------------------------------------------------------------------------------------------------------
 

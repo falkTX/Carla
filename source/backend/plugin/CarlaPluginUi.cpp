@@ -299,20 +299,18 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 // -----------------------------------------------------
 
 #ifdef CARLA_OS_MAC
-CarlaPluginUi* CarlaPluginUi::newCocoa(CloseCallback* cb, uintptr_t)
+CarlaPluginUi* CarlaPluginUi::newCocoa(CloseCallback*, uintptr_t)
 {
     //return new CocoaPluginUi(cb, parentId);
     return nullptr;
-    (void)cb;
 }
 #endif
 
 #ifdef CARLA_OS_WIN
-CarlaPluginUi* CarlaPluginUi::newWindows(CloseCallback* cb, uintptr_t)
+CarlaPluginUi* CarlaPluginUi::newWindows(CloseCallback*, uintptr_t)
 {
     //return new WindowsPluginUi(cb, parentId);
     return nullptr;
-    (void)cb;
 }
 #endif
 
