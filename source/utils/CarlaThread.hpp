@@ -182,8 +182,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
 
 #if defined(__GLIBC__) && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012
-        if (fName.isNotEmpty())
-            pthread_setname_np(pthread_self(), fName);
+        pthread_setname_np(pthread_self(), name);
 #elif defined(CARLA_OS_LINUX)
         prctl(PR_SET_NAME, name, 0, 0, 0);
 #endif
@@ -224,7 +223,6 @@ private:
         return nullptr;
     }
 
-    CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaThread)
 };
 
