@@ -42,7 +42,7 @@
 
     @see AudioUnitPluginFormat, AudioPluginFormat, AudioPluginFormatManager, JUCE_PLUGINHOST_VST
 */
-#define JUCE_PLUGINHOST_AU 1
+#define JUCE_PLUGINHOST_AU 0 // FIXME - my OSX version is still at 10.5...
 
 #define JUCE_PLUGINHOST_LADSPA 1
 
