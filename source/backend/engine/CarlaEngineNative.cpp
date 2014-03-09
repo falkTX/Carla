@@ -633,7 +633,7 @@ protected:
         std::sprintf(fTmpBuf, "PLUGIN_INFO_%i\n", pluginId);
         fUiServer.writeMsg(fTmpBuf);
 
-        std::sprintf(fTmpBuf, "%i:%i:%i:%li:%i:%i\n", plugin->getType(), plugin->getCategory(), plugin->getHints(), plugin->getUniqueId(), plugin->getOptionsAvailable(), plugin->getOptionsEnabled());
+        std::sprintf(fTmpBuf, "%i:%i:%i:" P_INT64 ":%i:%i\n", plugin->getType(), plugin->getCategory(), plugin->getHints(), plugin->getUniqueId(), plugin->getOptionsAvailable(), plugin->getOptionsEnabled());
         fUiServer.writeMsg(fTmpBuf);
 
         if (const char* const filename = plugin->getFilename())
