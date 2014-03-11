@@ -18,23 +18,30 @@ Ideas for later:
 13. Port good JACK-only apps as internal plugins (zita stuff would be nice)
 
 # ----------------------------------------------------------------------------
+# current work
+
+FRONTEND:
+ - more skins
+ - testing stuff
+
+BACKEND:
+ - noexcept wherever possible
+
+OTHER:
+ - create tests for all utils code
+ - fix reported bugs
+
+# ----------------------------------------------------------------------------
 # more detailed
 
 GENERAL:
- - finalize Juce backend move
- - finalize PyQt5 move (just a few corrections now)
  - add direct program access on ui-dialogs (needed for standalone bridges), maybe add extra buttons too (reset plugin, fix ui size)
  - implement midi-learn (new dialog)
- - custom skins for plugin slots, design for 8 types + instruments (gig, sf2, sfz)
- - custom skins for internal plugins
  - implement favorite plugins, add in new tab near file-browser
  - blender style canvas theme
  - make it possible to use backend as fake standalone app (using pipes) instead of a shared library
  - smarter carla-single script (LV2 must only need URI for example, and ignore all other hints)
- - alternate, simpler UI for mobile and/or VST version
  - artwork about tab
- - don't pass audio buffers to plugin process, make them request via ports
- - distrho carla changes
  - randomize button
  - all-params to default button
  - NSM rework
@@ -60,18 +67,18 @@ ENGINE:
  - allow to use static OSC ports
  - save engine info
  - switch engine modes when opening project
+ - don't pass audio buffers to plugin process, make them request via ports
 
 PLUGINS:
  - add control-out rate/freq option in frames (or just a regular block-size option?)
  - control/midi-out in singleProcess() calls, use timeoutFrames var
  - implement midi-cc automation special rules (invert, half, logarithmic, etc)
- - implement Juce plugin hosting (provides AU and VST2/3 support; will replace current VST hosting if Juce is used)
- - implement LSCP file support (new native plugin)
+ - implement LSCP file support (new native plugin?)
  - implement Csound file support
 
 Native:
  - Cleanup API
- - Document API
+ - Document API from daz
  - update zynaddsubfx
 
 LADSPA:
@@ -81,7 +88,6 @@ DSSI:
 
 LV2:
  - revisit all extensions
- - option to set lv2 preset folder?
  - strict bounds recheck
 
 FluidSynth:
@@ -91,14 +97,3 @@ FluidSynth:
 LinuxSampler:
  - per-channel volume pan&control
  - proper buffer-size/sample-rate change (needs testing)
-
-# ----------------------------------------------------------------------------
-# current work
-
-FRONTEND:
- - more skins
- - testing stuff
- - noexcept wherever possible
-
-OTHER:
- - create tests for all utils code
