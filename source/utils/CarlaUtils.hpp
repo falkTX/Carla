@@ -71,12 +71,12 @@ static inline
 void carla_debug(const char* const fmt, ...) noexcept
 {
     try {
-        va_list args;
-        va_start(args, fmt);
+        ::va_list args;
+        ::va_start(args, fmt);
         std::fprintf(stdout, "\x1b[30;1m");
         std::vfprintf(stdout, fmt, args);
         std::fprintf(stdout, "\x1b[0m\n");
-        va_end(args);
+        ::va_end(args);
     } catch (...) {}
 }
 #endif
@@ -88,11 +88,11 @@ static inline
 void carla_stdout(const char* const fmt, ...) noexcept
 {
     try {
-        va_list args;
-        va_start(args, fmt);
+        ::va_list args;
+        ::va_start(args, fmt);
         std::vfprintf(stdout, fmt, args);
         std::fprintf(stdout, "\n");
-        va_end(args);
+        ::va_end(args);
     } catch (...) {}
 }
 
@@ -103,11 +103,11 @@ static inline
 void carla_stderr(const char* const fmt, ...) noexcept
 {
     try {
-        va_list args;
-        va_start(args, fmt);
+        ::va_list args;
+        ::va_start(args, fmt);
         std::vfprintf(stderr, fmt, args);
         std::fprintf(stderr, "\n");
-        va_end(args);
+        ::va_end(args);
     } catch (...) {}
 }
 
@@ -118,12 +118,12 @@ static inline
 void carla_stderr2(const char* const fmt, ...) noexcept
 {
     try {
-        va_list args;
-        va_start(args, fmt);
+        ::va_list args;
+        ::va_start(args, fmt);
         std::fprintf(stderr, "\x1b[31m");
         std::vfprintf(stderr, fmt, args);
         std::fprintf(stderr, "\x1b[0m\n");
-        va_end(args);
+        ::va_end(args);
     } catch (...) {}
 }
 
@@ -174,15 +174,15 @@ void carla_safe_assert_uint2(const char* const assertion, const char* const file
  * Sleep for 'secs' seconds.
  */
 static inline
-void carla_sleep(const unsigned int secs) noexcept
+void carla_sleep(const uint secs) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(secs > 0,);
 
     try {
 #ifdef CARLA_OS_WIN
-    ::Sleep(secs * 1000);
+        ::Sleep(secs * 1000);
 #else
-    ::sleep(secs);
+        ::sleep(secs);
 #endif
     } catch(...) {}
 }
@@ -191,15 +191,15 @@ void carla_sleep(const unsigned int secs) noexcept
  * Sleep for 'msecs' milliseconds.
  */
 static inline
-void carla_msleep(const unsigned int msecs) noexcept
+void carla_msleep(const uint msecs) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(msecs > 0,);
 
     try {
 #ifdef CARLA_OS_WIN
-    ::Sleep(msecs);
+        ::Sleep(msecs);
 #else
-    ::usleep(msecs * 1000);
+        ::usleep(msecs * 1000);
 #endif
     } catch(...) {}
 }
@@ -230,7 +230,7 @@ void carla_setenv(const char* const key, const char* const value) noexcept
 
 /*
  * Custom 'strdup' function.
- * Return value is always valid, and must be freed with "delete[] var".
+ * Returned value is always valid, and must be freed with "delete[] var".
  * May throw.
  */
 static inline
@@ -252,7 +252,7 @@ const char* carla_strdup(const char* const strBuf)
 /*
  * Custom 'strdup' function.
  * Calls "std::free(strBuf)".
- * Return value is always valid, and must be freed with "delete[] var".
+ * Returned value is always valid, and must be freed with "delete[] var".
  * May throw.
  */
 static inline
@@ -265,23 +265,6 @@ const char* carla_strdup_free(char* const strBuf)
 
 // -----------------------------------------------------------------------
 // memory functions
-
-#if 0
-/*
- * Add array values to another array.
- */
-template<typename T>
-static inline
-void carla_add(T* dataDst, T* dataSrc, const size_t size) noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(size > 0,);
-
-    for (size_t i=0; i < size; ++i)
-        *dataDst++ += *dataSrc++;
-}
-#endif
 
 /*
  * Add array values to another array.
@@ -298,28 +281,12 @@ void carla_add(T* dataDst, const T* dataSrc, const size_t size) noexcept
         *dataDst++ += *dataSrc++;
 }
 
-#if 0
 /*
  * Copy array values to another array.
  */
 template<typename T>
 static inline
-void carla_copy(T* dataDst, T* dataSrc, const size_t size) noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(size > 0,);
-
-    std::memcpy(dataDst, dataSrc, size*sizeof(T));
-}
-#endif
-
-/*
- * Copy array values to another array.
- */
-template<typename T>
-static inline
-void carla_copy(T* dataDst, const T* dataSrc, const size_t size) noexcept
+void carla_copy(T* const dataDst, const T* const dataSrc, const size_t size) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
@@ -338,9 +305,9 @@ void carla_fill(T* data, const size_t size, const T v) noexcept
     CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
-    if (v == 0)
+    if (v == 0 || sizeof(T) == 1)
     {
-        std::memset(data, 0, size*sizeof(T));
+        std::memset(data, v, size*sizeof(T));
     }
     else
     {
@@ -359,18 +326,6 @@ void carla_zeroChar(char* const data, const size_t numChars) noexcept
     CARLA_SAFE_ASSERT_RETURN(numChars > 0,);
 
     std::memset(data, 0, numChars*sizeof(char));
-}
-
-/*
- * Clear a float array.
- */
-static inline
-void carla_zeroFloat(float* const data, const size_t numSamples) noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(numSamples > 0,);
-
-    std::memset(data, 0, numSamples*sizeof(float));
 }
 
 /*
@@ -395,21 +350,6 @@ void carla_zeroStruct(T& structure) noexcept
     std::memset(&structure, 0, sizeof(T));
 }
 
-#if 0
-/*
- * Clear a single struct/class, volatile version.
- */
-template <typename T>
-static inline
-void carla_zeroStruct(volatile T& structure) noexcept
-{
-    volatile uint8_t* data((volatile uint8_t*)&structure);
-
-    for (size_t i=0; i < sizeof(T); ++i)
-        *data++ = 0;
-}
-#endif
-
 /*
  * Clear an array of struct/classes.
  */
@@ -433,42 +373,12 @@ void carla_copyStruct(T& struct1, const T& struct2) noexcept
     std::memcpy(&struct1, &struct2, sizeof(T));
 }
 
-#if 0
-/*
- * Copy a single struct/class, volatile version.
- */
-template <typename T>
-static inline
-void carla_copyStruct(volatile T& struct1, const T& struct2) noexcept
-{
-    volatile uint8_t* data1((volatile uint8_t*)&struct1);
-    const    uint8_t* data2((const uint8_t*)&struct2);
-
-    for (size_t i=0; i < sizeof(T); ++i)
-        *data1++ = *data2++;
-}
-
-/*
- * Copy a single struct/class, volatile version.
- */
-template <typename T>
-static inline
-void carla_copyStruct(T& struct1, const volatile T& struct2) noexcept
-{
-                   uint8_t* data1((uint8_t*)&struct1);
-    volatile const uint8_t* data2((volatile const uint8_t*)&struct2);
-
-    for (size_t i=0; i < sizeof(T); ++i)
-        *data1++ = *data2++;
-}
-#endif
-
 /*
  * Copy an array of struct/classes.
  */
 template <typename T>
 static inline
-void carla_copyStruct(T* const struct1, T* const struct2, const size_t count) noexcept
+void carla_copyStruct(T* const struct1, const T* const struct2, const size_t count) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(struct1 != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(struct2 != nullptr,);
