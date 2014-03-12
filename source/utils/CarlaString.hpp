@@ -80,8 +80,8 @@ public:
     explicit CarlaString(const int value) noexcept
     {
         char strBuf[0xff+1];
-        carla_zeroChar(strBuf, 0xff+1);
         std::snprintf(strBuf, 0xff, "%d", value);
+        strBuf[0xff] = '\0';
 
         _init();
         _dup(strBuf);
@@ -90,11 +90,11 @@ public:
     /*
      * Unsigned integer, possibly in hexadecimal.
      */
-    explicit CarlaString(const uint value, const bool hexadecimal = false) noexcept
+    explicit CarlaString(const unsigned int value, const bool hexadecimal = false) noexcept
     {
         char strBuf[0xff+1];
-        carla_zeroChar(strBuf, 0xff+1);
         std::snprintf(strBuf, 0xff, hexadecimal ? "0x%x" : "%u", value);
+        strBuf[0xff] = '\0';
 
         _init();
         _dup(strBuf);
@@ -106,8 +106,8 @@ public:
     explicit CarlaString(const long value) noexcept
     {
         char strBuf[0xff+1];
-        carla_zeroChar(strBuf, 0xff+1);
         std::snprintf(strBuf, 0xff, "%ld", value);
+        strBuf[0xff] = '\0';
 
         _init();
         _dup(strBuf);
@@ -116,11 +116,11 @@ public:
     /*
      * Long unsigned integer, possibly hexadecimal.
      */
-    explicit CarlaString(const ulong value, const bool hexadecimal = false) noexcept
+    explicit CarlaString(const unsigned long value, const bool hexadecimal = false) noexcept
     {
         char strBuf[0xff+1];
-        carla_zeroChar(strBuf, 0xff+1);
         std::snprintf(strBuf, 0xff, hexadecimal ? "0x%lx" : "%lu", value);
+        strBuf[0xff] = '\0';
 
         _init();
         _dup(strBuf);
@@ -132,8 +132,8 @@ public:
     explicit CarlaString(const long long value) noexcept
     {
         char strBuf[0xff+1];
-        carla_zeroChar(strBuf, 0xff+1);
         std::snprintf(strBuf, 0xff, "%lld", value);
+        strBuf[0xff] = '\0';
 
         _init();
         _dup(strBuf);
@@ -145,8 +145,8 @@ public:
     explicit CarlaString(const unsigned long long value, const bool hexadecimal = false) noexcept
     {
         char strBuf[0xff+1];
-        carla_zeroChar(strBuf, 0xff+1);
         std::snprintf(strBuf, 0xff, hexadecimal ? "0x%llx" : "%llu", value);
+        strBuf[0xff] = '\0';
 
         _init();
         _dup(strBuf);
@@ -158,8 +158,8 @@ public:
     explicit CarlaString(const float value) noexcept
     {
         char strBuf[0xff+1];
-        carla_zeroChar(strBuf, 0xff+1);
         std::snprintf(strBuf, 0xff, "%f", value);
+        strBuf[0xff] = '\0';
 
         _init();
         _dup(strBuf);
@@ -171,8 +171,8 @@ public:
     explicit CarlaString(const double value) noexcept
     {
         char strBuf[0xff+1];
-        carla_zeroChar(strBuf, 0xff+1);
         std::snprintf(strBuf, 0xff, "%g", value);
+        strBuf[0xff] = '\0';
 
         _init();
         _dup(strBuf);
@@ -306,16 +306,6 @@ public:
         return (std::strncmp(fBuffer, prefix, prefixLen) == 0);
     }
 
-#if 0
-    /*
-     * Check if the string starts with the string 'prefix'.
-     */
-    bool startsWith(const CarlaString& prefix) const noexcept
-    {
-        return startsWith(prefix.fBuffer);
-    }
-#endif
-
     /*
      * Check if the string ends with the character 'c'.
      */
@@ -340,16 +330,6 @@ public:
 
         return (std::strncmp(fBuffer + (fBufferLen-suffixLen), suffix, suffixLen) == 0);
     }
-
-#if 0
-    /*
-     * Check if the string ends with the string 'suffix'.
-     */
-    bool endsWith(const CarlaString& suffix) const noexcept
-    {
-        return endsWith(suffix.fBuffer);
-    }
-#endif
 
     /*
      * Find the first occurrence of character 'c' in the string.
@@ -591,9 +571,10 @@ public:
         if (pos < fBufferLen)
             return fBuffer[pos];
 
+        carla_safe_assert("pos < fBufferLen", __FILE__, __LINE__);
+
         static char fallback;
         fallback = '\0';
-        carla_safe_assert("pos < fBufferLen", __FILE__, __LINE__);
         return fallback;
     }
 
@@ -602,19 +583,9 @@ public:
         return (strBuf != nullptr && std::strcmp(fBuffer, strBuf) == 0);
     }
 
-    bool operator==(const CarlaString& str) const noexcept
-    {
-        return operator==(str.fBuffer);
-    }
-
     bool operator!=(const char* const strBuf) const noexcept
     {
         return !operator==(strBuf);
-    }
-
-    bool operator!=(const CarlaString& str) const noexcept
-    {
-        return !operator==(str.fBuffer);
     }
 
     CarlaString& operator=(const char* const strBuf) noexcept
@@ -622,11 +593,6 @@ public:
         _dup(strBuf);
 
         return *this;
-    }
-
-    CarlaString& operator=(const CarlaString& str) noexcept
-    {
-        return operator=(str.fBuffer);
     }
 
     CarlaString& operator+=(const char* const strBuf) noexcept
@@ -645,11 +611,6 @@ public:
         return *this;
     }
 
-    CarlaString& operator+=(const CarlaString& str) noexcept
-    {
-        return operator+=(str.fBuffer);
-    }
-
     CarlaString operator+(const char* const strBuf) noexcept
     {
         const size_t newBufSize = fBufferLen + ((strBuf != nullptr) ? std::strlen(strBuf) : 0) + 1;
@@ -661,11 +622,6 @@ public:
             std::strcat(newBuf, strBuf);
 
         return CarlaString(newBuf);
-    }
-
-    CarlaString operator+(const CarlaString& str) noexcept
-    {
-        return operator+(str.fBuffer);
     }
 
     // -------------------------------------------------------------------
