@@ -86,16 +86,22 @@ const unsigned int MAX_DEFAULT_PARAMETERS = 200;
 const unsigned int ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL = 0x1;
 
 /*!
+ * Engine driver device can use a triple-buffer (3 number of periods instead of the usual 2).
+ * @see ENGINE_OPTION_AUDIO_NUM_PERIODS
+ */
+const unsigned int ENGINE_DRIVER_DEVICE_CAN_TRIPLE_BUFFER = 0x2;
+
+/*!
  * Engine driver device can change buffer-size on the fly.
  * @see ENGINE_OPTION_AUDIO_BUFFER_SIZE
  */
-const unsigned int ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE = 0x2;
+const unsigned int ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE = 0x4;
 
 /*!
  * Engine driver device can change sample-rate on the fly.
  * @see ENGINE_OPTION_AUDIO_SAMPLE_RATE
  */
-const unsigned int ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE = 0x4;
+const unsigned int ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE = 0x8;
 
 /** @} */
 
@@ -1013,7 +1019,7 @@ typedef enum {
     ENGINE_OPTION_UI_BRIDGES_TIMEOUT = 8,
 
     /*!
-     * Audio number of periods.\n
+     * Number of audio periods.\n
      * Default is 2.
      */
     ENGINE_OPTION_AUDIO_NUM_PERIODS = 9,

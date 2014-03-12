@@ -134,9 +134,7 @@ def toPythonType(value, attr):
         #return int(value)
     #if isinstance(value, c_float_types):
         #return float(value)
-    if isinstance(value, c_intp_types):
-        return numPtrToList(value)
-    if isinstance(value, c_floatp_types):
+    if isinstance(value, c_intp_types) or isinstance(value, c_floatp_types):
         return numPtrToList(value)
     if isinstance(value, POINTER(c_char_p)):
         return charPtrPtrToStringList(value)
@@ -176,13 +174,17 @@ MAX_DEFAULT_PARAMETERS = 200
 # Engine driver device has custom control-panel.
 ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL = 0x1
 
+# Engine driver device can use a triple-buffer (3 number of periods instead of the usual 2).
+# @see ENGINE_OPTION_AUDIO_NUM_PERIODS
+ENGINE_DRIVER_DEVICE_CAN_TRIPLE_BUFFER = 0x2
+
 # Engine driver device can change buffer-size on the fly.
 # @see ENGINE_OPTION_AUDIO_BUFFER_SIZE
-ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE = 0x2
+ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE = 0x4
 
 # Engine driver device can change sample-rate on the fly.
 # @see ENGINE_OPTION_AUDIO_SAMPLE_RATE
-ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE = 0x4
+ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE = 0x8
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Hints
@@ -753,7 +755,7 @@ ENGINE_OPTION_MAX_PARAMETERS = 7
 # Default is 4000 (4 seconds).
 ENGINE_OPTION_UI_BRIDGES_TIMEOUT = 8
 
-# Audio number of periods.
+# Number of audio periods.
 # Default is 2.
 ENGINE_OPTION_AUDIO_NUM_PERIODS = 9
 
