@@ -311,9 +311,6 @@ PATCHBAY_PORT_TYPE_CV = 0x4
 # Patchbay port is of MIDI type.
 PATCHBAY_PORT_TYPE_MIDI = 0x8
 
-# Patchbay port is of Parameter type.
-PATCHBAY_PORT_TYPE_PARAMETER = 0x10
-
 # ------------------------------------------------------------------------------------------------------------
 # Custom Data Types
 # These types define how the value in the CustomData struct is stored.

@@ -955,8 +955,6 @@ class CarlaPatchbayW(QFrame):
             portType = patchcanvas.PORT_TYPE_AUDIO_JACK
         elif (portFlags & PATCHBAY_PORT_TYPE_MIDI):
             portType = patchcanvas.PORT_TYPE_MIDI_JACK
-        elif (portFlags & PATCHBAY_PORT_TYPE_PARAMETER):
-            portType = patchcanvas.PORT_TYPE_PARAMETER
         else:
             portType = patchcanvas.PORT_TYPE_NULL
 
