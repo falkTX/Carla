@@ -1,6 +1,6 @@
 /*
  * Custom types to store LV2 information
- * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -333,7 +333,7 @@ struct LV2_RDF_PortUnit {
           Symbol(nullptr),
           Unit(0) {}
 
-    ~LV2_RDF_PortUnit()
+    ~LV2_RDF_PortUnit() noexcept
     {
         if (Name != nullptr)
         {
@@ -364,7 +364,7 @@ struct LV2_RDF_PortScalePoint {
         : Label(nullptr),
           Value(0.0f) {}
 
-    ~LV2_RDF_PortScalePoint()
+    ~LV2_RDF_PortScalePoint() noexcept
     {
         if (Label != nullptr)
         {
@@ -403,7 +403,7 @@ struct LV2_RDF_Port {
           ScalePointCount(0),
           ScalePoints(nullptr) {}
 
-    ~LV2_RDF_Port()
+    ~LV2_RDF_Port() noexcept
     {
         if (Name != nullptr)
         {
@@ -434,7 +434,7 @@ struct LV2_RDF_Preset {
         : URI(nullptr),
           Label(nullptr) {}
 
-    ~LV2_RDF_Preset()
+    ~LV2_RDF_Preset() noexcept
     {
         if (URI != nullptr)
         {
@@ -460,7 +460,7 @@ struct LV2_RDF_Feature {
         : Type(0),
           URI(nullptr) {}
 
-    ~LV2_RDF_Feature()
+    ~LV2_RDF_Feature() noexcept
     {
         if (URI != nullptr)
         {
@@ -495,7 +495,7 @@ struct LV2_RDF_UI {
           ExtensionCount(0),
           Extensions(nullptr) {}
 
-    ~LV2_RDF_UI()
+    ~LV2_RDF_UI() noexcept
     {
         if (URI != nullptr)
         {
@@ -575,7 +575,7 @@ struct LV2_RDF_Descriptor {
         Type[0] = Type[1] = 0x0;
     }
 
-    ~LV2_RDF_Descriptor()
+    ~LV2_RDF_Descriptor() noexcept
     {
         if (URI != nullptr)
         {

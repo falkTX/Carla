@@ -38,7 +38,7 @@ static shm_t gNullCarlaShm = -1;
 // shared memory calls
 
 static inline
-bool carla_is_shm_valid(const shm_t& shm)
+bool carla_is_shm_valid(const shm_t& shm) noexcept
 {
 #ifdef CARLA_OS_WIN
     return (shm.shm != nullptr && shm.shm != INVALID_HANDLE_VALUE);
@@ -48,7 +48,7 @@ bool carla_is_shm_valid(const shm_t& shm)
 }
 
 static inline
-void carla_shm_init(shm_t& shm)
+void carla_shm_init(shm_t& shm) noexcept
 {
 #ifdef CARLA_OS_WIN
     shm.shm = nullptr;

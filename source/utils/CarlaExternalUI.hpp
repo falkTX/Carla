@@ -49,7 +49,7 @@ public:
         return uiState;
     }
 
-    void setData(const char* const filename, const double sampleRate, const char* const uiTitle)
+    void setData(const char* const filename, const double sampleRate, const char* const uiTitle) noexcept
     {
         fFilename   = filename;
         fSampleRate = CarlaString(sampleRate);

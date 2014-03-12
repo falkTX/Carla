@@ -29,7 +29,7 @@ struct HeapRingBuffer {
     bool     invalidateCommit;
     char*    buf;
 
-    HeapRingBuffer& operator=(const HeapRingBuffer& rb)
+    HeapRingBuffer& operator=(const HeapRingBuffer& rb) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(size == rb.size, *this);
 

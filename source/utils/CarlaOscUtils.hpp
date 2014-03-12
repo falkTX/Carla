@@ -39,12 +39,12 @@ struct CarlaOscData {
           source(nullptr),
           target(nullptr) {}
 
-    ~CarlaOscData()
+    ~CarlaOscData() noexcept
     {
         free();
     }
 
-    void free()
+    void free() noexcept
     {
         if (path != nullptr)
         {
@@ -54,17 +54,22 @@ struct CarlaOscData {
 
         if (source != nullptr)
         {
-            lo_address_free(source);
+            try {
+                lo_address_free(source);
+            } catch(...) {}
             source = nullptr;
         }
 
         if (target != nullptr)
         {
-            lo_address_free(target);
+            try {
+                lo_address_free(target);
+            } catch(...) {}
             target = nullptr;
         }
     }
 
+    CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaOscData)
 };
 

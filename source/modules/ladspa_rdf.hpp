@@ -1,6 +1,6 @@
 /*
  * Custom types to store LADSPA-RDF information
- * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -126,7 +126,7 @@ struct LADSPA_RDF_ScalePoint {
         : Value(0.0f),
           Label(nullptr) {}
 
-    ~LADSPA_RDF_ScalePoint()
+    ~LADSPA_RDF_ScalePoint() noexcept
     {
         if (Label != nullptr)
         {
@@ -158,7 +158,7 @@ struct LADSPA_RDF_Port {
           ScalePointCount(0),
           ScalePoints(nullptr) {}
 
-    ~LADSPA_RDF_Port()
+    ~LADSPA_RDF_Port() noexcept
     {
         if (Label != nullptr)
         {
@@ -193,7 +193,7 @@ struct LADSPA_RDF_Descriptor {
           PortCount(0),
           Ports(nullptr) {}
 
-    ~LADSPA_RDF_Descriptor()
+    ~LADSPA_RDF_Descriptor() noexcept
     {
         if (Title != nullptr)
         {

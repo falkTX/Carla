@@ -1272,7 +1272,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
 // Check if we support a plugin port
 
 static inline
-bool is_lv2_port_supported(const LV2_Property types)
+bool is_lv2_port_supported(const LV2_Property types) noexcept
 {
     if (LV2_IS_PORT_CONTROL(types))
         return true;
@@ -1293,7 +1293,7 @@ bool is_lv2_port_supported(const LV2_Property types)
 // Check if we support a plugin feature
 
 static inline
-bool is_lv2_feature_supported(const LV2_URI uri)
+bool is_lv2_feature_supported(const LV2_URI uri) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', false);
 
@@ -1344,7 +1344,7 @@ bool is_lv2_feature_supported(const LV2_URI uri)
 // Check if we support a plugin or UI feature
 
 static inline
-bool is_lv2_ui_feature_supported(const LV2_URI uri)
+bool is_lv2_ui_feature_supported(const LV2_URI uri) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', false);
 

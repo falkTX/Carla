@@ -38,7 +38,7 @@ StateParameter::StateParameter() noexcept
       midiChannel(0),
       midiCC(-1) {}
 
-StateParameter::~StateParameter()
+StateParameter::~StateParameter() noexcept
 {
     if (name != nullptr)
     {
@@ -60,7 +60,7 @@ StateCustomData::StateCustomData() noexcept
       key(nullptr),
       value(nullptr) {}
 
-StateCustomData::~StateCustomData()
+StateCustomData::~StateCustomData() noexcept
 {
     if (type != nullptr)
     {
@@ -101,12 +101,12 @@ SaveState::SaveState() noexcept
       currentMidiProgram(-1),
       chunk(nullptr) {}
 
-SaveState::~SaveState()
+SaveState::~SaveState() noexcept
 {
     reset();
 }
 
-void SaveState::reset()
+void SaveState::reset() noexcept
 {
     if (type != nullptr)
     {

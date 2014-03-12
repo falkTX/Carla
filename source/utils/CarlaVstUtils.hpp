@@ -141,16 +141,22 @@ typedef AEffect* (*VST_Function)(audioMasterCallback);
 // Check if feature is supported by the plugin
 
 static inline
-bool vstPluginCanDo(AEffect* const effect, const char* const feature)
+bool vstPluginCanDo(AEffect* const effect, const char* const feature) noexcept
 {
-    return (effect->dispatcher(effect, effCanDo, 0, 0, const_cast<char*>(feature), 0.0f) == 1);
+    bool ret = false;
+
+    try {
+        ret = (effect->dispatcher(effect, effCanDo, 0, 0, const_cast<char*>(feature), 0.0f) == 1);
+    } catch(...) {}
+
+    return ret;
 }
 
 // -----------------------------------------------------------------------
 // Convert Effect opcode to string
 
 static inline
-const char* vstEffectOpcode2str(const int32_t opcode)
+const char* vstEffectOpcode2str(const int32_t opcode) noexcept
 {
     switch (opcode)
     {
@@ -343,7 +349,7 @@ const char* vstEffectOpcode2str(const int32_t opcode)
 // Convert Host/Master opcode to string
 
 static inline
-const char* vstMasterOpcode2str(const int32_t opcode)
+const char* vstMasterOpcode2str(const int32_t opcode) noexcept
 {
     switch (opcode)
     {

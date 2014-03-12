@@ -44,7 +44,7 @@ struct StateParameter {
     int16_t     midiCC;
 
     StateParameter() noexcept;
-    ~StateParameter();
+    ~StateParameter() noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(StateParameter)
 };
@@ -55,7 +55,7 @@ struct StateCustomData {
     const char* value;
 
     StateCustomData() noexcept;
-    ~StateCustomData();
+    ~StateCustomData() noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(StateCustomData)
 };
@@ -91,8 +91,8 @@ struct SaveState {
     StateCustomDataList customData;
 
     SaveState() noexcept;
-    ~SaveState();
-    void reset();
+    ~SaveState() noexcept;
+    void reset() noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(SaveState)
 };

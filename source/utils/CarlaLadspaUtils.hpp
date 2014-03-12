@@ -140,7 +140,7 @@ bool is_ladspa_rdf_descriptor_valid(const LADSPA_RDF_Descriptor* const rdfDescri
 // Get default control port value
 
 static inline
-LADSPA_Data get_default_ladspa_port_value(const LADSPA_PortRangeHintDescriptor hintDescriptor, const LADSPA_Data min, const LADSPA_Data max)
+LADSPA_Data get_default_ladspa_port_value(const LADSPA_PortRangeHintDescriptor hintDescriptor, const LADSPA_Data min, const LADSPA_Data max) noexcept
 {
     if (LADSPA_IS_HINT_HAS_DEFAULT(hintDescriptor))
     {
@@ -166,21 +166,30 @@ LADSPA_Data get_default_ladspa_port_value(const LADSPA_PortRangeHintDescriptor h
 
         case LADSPA_HINT_DEFAULT_LOW:
             if (LADSPA_IS_HINT_LOGARITHMIC(hintDescriptor))
-                return std::exp((std::log(min)*0.75f) + (std::log(max)*0.25f));
-            else
-                return (min*0.75f) + (max*0.25f);
+            {
+                try {
+                    return std::exp((std::log(min)*0.75f) + (std::log(max)*0.25f));
+                } catch(...) {}
+            }
+            return (min*0.75f) + (max*0.25f);
 
         case LADSPA_HINT_DEFAULT_MIDDLE:
             if (LADSPA_IS_HINT_LOGARITHMIC(hintDescriptor))
-                return std::sqrt(min*max);
-            else
-                return (min+max)/2;
+            {
+                try {
+                    return std::sqrt(min*max);
+                } catch(...) {}
+            }
+            return (min+max)/2;
 
         case LADSPA_HINT_DEFAULT_HIGH:
             if (LADSPA_IS_HINT_LOGARITHMIC(hintDescriptor))
-                return std::exp((std::log(min)*0.25f) + (std::log(max)*0.75f));
-            else
-                return (min*0.25f) + (max*0.75f);
+            {
+                try {
+                    return std::exp((std::log(min)*0.25f) + (std::log(max)*0.75f));
+                } catch(...) {}
+            }
+            return (min*0.25f) + (max*0.75f);
         }
     }
 

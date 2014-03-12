@@ -401,7 +401,7 @@ protected:
     k_list_head  fQueue;
 
     virtual Data* _allocate() noexcept = 0;
-    virtual void  _deallocate(Data*& dataPtr) noexcept = 0;
+    virtual void  _deallocate(Data* const dataPtr) noexcept = 0;
 
 private:
     mutable T fRetValue;
@@ -456,12 +456,11 @@ private:
         return (typename AbstractLinkedList<T>::Data*)std::malloc(this->fDataSize);
     }
 
-    void _deallocate(typename AbstractLinkedList<T>::Data*& dataPtr) noexcept override
+    void _deallocate(typename AbstractLinkedList<T>::Data* const dataPtr) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr,);
 
         std::free(dataPtr);
-        dataPtr = nullptr;
     }
 
     LINKED_LIST_DECLARATIONS(LinkedList)

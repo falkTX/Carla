@@ -179,12 +179,11 @@ private:
         return (typename AbstractLinkedList<T>::Data*)fMemPool.allocate_sleepy();
     }
 
-    void _deallocate(typename AbstractLinkedList<T>::Data*& dataPtr) noexcept override
+    void _deallocate(typename AbstractLinkedList<T>::Data* const dataPtr) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr,);
 
         fMemPool.deallocate(dataPtr);
-        dataPtr = nullptr;
     }
 
     LINKED_LIST_DECLARATIONS(RtLinkedList)
