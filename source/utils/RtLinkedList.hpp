@@ -37,14 +37,14 @@ public:
     class Pool
     {
     public:
-        Pool(const size_t minPreallocated, const size_t maxPreallocated)
+        Pool(const size_t minPreallocated, const size_t maxPreallocated) noexcept
             : fHandle(nullptr),
               fDataSize(sizeof(typename AbstractLinkedList<T>::Data))
         {
             resize(minPreallocated, maxPreallocated);
         }
 
-        ~Pool()
+        ~Pool() noexcept
         {
             if (fHandle != nullptr)
             {
@@ -53,22 +53,22 @@ public:
             }
         }
 
-        void* allocate_atomic() const
+        void* allocate_atomic() const noexcept
         {
             return rtsafe_memory_pool_allocate_atomic(fHandle);
         }
 
-        void* allocate_sleepy() const
+        void* allocate_sleepy() const noexcept
         {
             return rtsafe_memory_pool_allocate_sleepy(fHandle);
         }
 
-        void deallocate(void* const dataPtr) const
+        void deallocate(void* const dataPtr) const noexcept
         {
             rtsafe_memory_pool_deallocate(fHandle, dataPtr);
         }
 
-        void resize(const size_t minPreallocated, const size_t maxPreallocated)
+        void resize(const size_t minPreallocated, const size_t maxPreallocated) noexcept
         {
             if (fHandle != nullptr)
             {
@@ -101,43 +101,65 @@ public:
     RtLinkedList(Pool& memPool)
         : fMemPool(memPool) {}
 
-    void append_sleepy(const T& value)
+    bool append_sleepy(const T& value) noexcept
     {
         if (typename AbstractLinkedList<T>::Data* const data = _allocate_sleepy())
         {
-            new(data)typename AbstractLinkedList<T>::Data();
+            try {
+                new(data)typename AbstractLinkedList<T>::Data();
+            }
+            catch(...) {
+                _deallocate(data);
+                return false;
+            }
+
             data->value = value;
             list_add_tail(&data->siblings, &this->fQueue);
             ++(this->fCount);
+
+            return true;
         }
+
+        return false;
     }
 
-    void insert_sleepy(const T& value)
+    bool insert_sleepy(const T& value) noexcept
     {
         if (typename AbstractLinkedList<T>::Data* const data = _allocate_sleepy())
         {
-            new(data)typename AbstractLinkedList<T>::Data();
+            try {
+                new(data)typename AbstractLinkedList<T>::Data();
+            }
+            catch(...) {
+                _deallocate(data);
+                return false;
+            }
+
             data->value = value;
             list_add(&data->siblings, &this->fQueue);
             ++(this->fCount);
+
+            return true;
         }
+
+        return false;
     }
 
-    void resize(const size_t minPreallocated, const size_t maxPreallocated)
+    void resize(const size_t minPreallocated, const size_t maxPreallocated) noexcept
     {
         this->clear();
 
         fMemPool.resize(minPreallocated, maxPreallocated);
     }
 
-    void spliceAppend(RtLinkedList& list, const bool init = true)
+    void spliceAppend(RtLinkedList& list, const bool init = true) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fMemPool == list.fMemPool,);
 
         AbstractLinkedList<T>::spliceAppend(list, init);
     }
 
-    void spliceInsert(RtLinkedList& list, const bool init = true)
+    void spliceInsert(RtLinkedList& list, const bool init = true) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fMemPool == list.fMemPool,);
 
@@ -147,17 +169,17 @@ public:
 private:
     Pool& fMemPool;
 
-    typename AbstractLinkedList<T>::Data* _allocate() override
+    typename AbstractLinkedList<T>::Data* _allocate() noexcept override
     {
         return (typename AbstractLinkedList<T>::Data*)fMemPool.allocate_atomic();
     }
 
-    typename AbstractLinkedList<T>::Data* _allocate_sleepy()
+    typename AbstractLinkedList<T>::Data* _allocate_sleepy() noexcept
     {
         return (typename AbstractLinkedList<T>::Data*)fMemPool.allocate_sleepy();
     }
 
-    void _deallocate(typename AbstractLinkedList<T>::Data*& dataPtr) override
+    void _deallocate(typename AbstractLinkedList<T>::Data*& dataPtr) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr,);
 

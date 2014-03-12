@@ -1,6 +1,6 @@
 /*
  * Carla library counter
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -27,11 +27,21 @@
 class LibCounter
 {
 public:
-    LibCounter() {}
+    LibCounter() noexcept {}
 
-    void* open(const char* const filename)
+    void* open(const char* const filename) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', nullptr);
+
+        // try duplicating filename first, it can throw
+        const char* dfilename = nullptr;
+
+        try {
+            dfilename = carla_strdup(filename);
+        }
+        catch(...) {
+            return nullptr;
+        }
 
         const CarlaMutexLocker sl(fMutex);
 
@@ -55,7 +65,7 @@ public:
 
         Lib lib;
         lib.lib      = libPtr;
-        lib.filename = carla_strdup(filename);
+        lib.filename = dfilename;
         lib.count    = 1;
 
         fLibs.append(lib);
@@ -63,7 +73,7 @@ public:
         return libPtr;
     }
 
-    bool close(void* const libPtr)
+    bool close(void* const libPtr) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(libPtr != nullptr, false);
 

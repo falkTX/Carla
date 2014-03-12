@@ -46,6 +46,8 @@ typedef struct list_head k_list_head;
 // Abstract Linked List class
 // _allocate() and _deallocate are virtual calls provided by subclasses
 
+// NOTE: classes are allowed to throw on creation, but NOT on deletion!
+
 template<typename T>
 class AbstractLinkedList
 {
@@ -55,7 +57,7 @@ protected:
         k_list_head siblings;
     };
 
-    AbstractLinkedList()
+    AbstractLinkedList() noexcept
         : fDataSize(sizeof(Data)),
           fCount(0)
     {
@@ -63,7 +65,7 @@ protected:
     }
 
 public:
-    virtual ~AbstractLinkedList()
+    virtual ~AbstractLinkedList() noexcept
     {
         CARLA_SAFE_ASSERT(fCount == 0);
     }
@@ -113,7 +115,7 @@ public:
         return Itenerator(&fQueue);
     }
 
-    void clear()
+    void clear() noexcept
     {
         if (fCount != 0)
         {
@@ -143,11 +145,18 @@ public:
         return (fCount == 0);
     }
 
-    bool append(const T& value)
+    bool append(const T& value) noexcept
     {
         if (Data* const data = _allocate())
         {
-            new(data)Data();
+            try {
+                new(data)Data();
+            }
+            catch(...) {
+                _deallocate(data);
+                return false;
+            }
+
             data->value = value;
             list_add_tail(&data->siblings, &fQueue);
             ++fCount;
@@ -157,11 +166,18 @@ public:
         return false;
     }
 
-    bool appendAt(const T& value, const Itenerator& it)
+    bool appendAt(const T& value, const Itenerator& it) noexcept
     {
         if (Data* const data = _allocate())
         {
-            new(data)Data();
+            try {
+                new(data)Data();
+            }
+            catch(...) {
+                _deallocate(data);
+                return false;
+            }
+
             data->value = value;
             list_add_tail(&data->siblings, it.fEntry->next);
             ++fCount;
@@ -171,11 +187,18 @@ public:
         return false;
     }
 
-    bool insert(const T& value)
+    bool insert(const T& value) noexcept
     {
         if (Data* const data = _allocate())
         {
-            new(data)Data();
+            try {
+                new(data)Data();
+            }
+            catch(...) {
+                _deallocate(data);
+                return false;
+            }
+
             data->value = value;
             list_add(&data->siblings, &fQueue);
             ++fCount;
@@ -185,11 +208,18 @@ public:
         return false;
     }
 
-    bool insertAt(const T& value, const Itenerator& it)
+    bool insertAt(const T& value, const Itenerator& it) noexcept
     {
         if (Data* const data = _allocate())
         {
-            new(data)Data();
+            try {
+                new(data)Data();
+            }
+            catch(...) {
+                _deallocate(data);
+                return false;
+            }
+
             data->value = value;
             list_add(&data->siblings, it.fEntry->prev);
             ++fCount;
@@ -225,7 +255,7 @@ public:
         return fRetValue;
     }
 
-    T& getAt(const size_t index, const bool removeObj)
+    T& getAt(const size_t index, const bool removeObj) noexcept
     {
         if (fCount == 0 || index >= fCount)
             return fRetValue;
@@ -263,17 +293,17 @@ public:
         return fRetValue;
     }
 
-    T& getFirst(const bool removeObj = false)
+    T& getFirst(const bool removeObj = false) noexcept
     {
         return _getFirstOrLast(true, removeObj);
     }
 
-    T& getLast(const bool removeObj = false)
+    T& getLast(const bool removeObj = false) noexcept
     {
         return _getFirstOrLast(false, removeObj);
     }
 
-    void remove(Itenerator& it)
+    void remove(Itenerator& it) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(it.fEntry != nullptr,);
 
@@ -286,7 +316,7 @@ public:
         _deallocate(it.fData);
     }
 
-    bool removeOne(const T& value)
+    bool removeOne(const T& value) noexcept
     {
         Data* data = nullptr;
         k_list_head* entry;
@@ -312,7 +342,7 @@ public:
         return (data != nullptr);
     }
 
-    void removeAll(const T& value)
+    void removeAll(const T& value) noexcept
     {
         Data* data;
         k_list_head* entry;
@@ -370,8 +400,8 @@ protected:
           size_t fCount;
     k_list_head  fQueue;
 
-    virtual Data* _allocate() = 0;
-    virtual void  _deallocate(Data*& dataPtr) = 0;
+    virtual Data* _allocate() noexcept = 0;
+    virtual void  _deallocate(Data*& dataPtr) noexcept = 0;
 
 private:
     mutable T fRetValue;
@@ -382,7 +412,7 @@ private:
         INIT_LIST_HEAD(&fQueue);
     }
 
-    T& _getFirstOrLast(const bool first, const bool removeObj)
+    T& _getFirstOrLast(const bool first, const bool removeObj) noexcept
     {
         if (fCount == 0)
             return fRetValue;
@@ -421,12 +451,12 @@ public:
     LinkedList() {}
 
 private:
-    typename AbstractLinkedList<T>::Data* _allocate() override
+    typename AbstractLinkedList<T>::Data* _allocate() noexcept override
     {
         return (typename AbstractLinkedList<T>::Data*)std::malloc(this->fDataSize);
     }
 
-    void _deallocate(typename AbstractLinkedList<T>::Data*& dataPtr) override
+    void _deallocate(typename AbstractLinkedList<T>::Data*& dataPtr) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr,);
 
