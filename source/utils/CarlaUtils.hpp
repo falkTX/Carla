@@ -305,9 +305,9 @@ void carla_fill(T* data, const size_t size, const T v) noexcept
     CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
-    if (v == 0 || sizeof(T) == 1)
+    if (v == 0)
     {
-        std::memset(data, v, size*sizeof(T));
+        std::memset(data, 0, size*sizeof(T));
     }
     else
     {

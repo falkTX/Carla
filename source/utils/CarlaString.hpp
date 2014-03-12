@@ -264,14 +264,6 @@ public:
     }
 
     /*
-     * Overloaded function.
-     */
-    bool contains(const CarlaString& str, const bool ignoreCase = false) const noexcept
-    {
-        return contains(str.fBuffer, ignoreCase);
-    }
-
-    /*
      * Check if character at 'pos' is a digit.
      */
     bool isDigit(const size_t pos) const noexcept
@@ -622,6 +614,11 @@ public:
             std::strcat(newBuf, strBuf);
 
         return CarlaString(newBuf);
+    }
+
+    CarlaString operator+(const CarlaString& str) noexcept
+    {
+        return operator+(str.fBuffer);
     }
 
     // -------------------------------------------------------------------

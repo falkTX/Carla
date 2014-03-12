@@ -16,6 +16,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
+#define __THROW
+
 #include "rtmempool.h"
 #include "list.h"
 
