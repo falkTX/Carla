@@ -32,15 +32,21 @@
  * May return null, in which case "lib_error" has the error.
  */
 static inline
-void* lib_open(const char* const filename)
+void* lib_open(const char* const filename) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', nullptr);
 
+    void* ret = nullptr;
+
+    try {
 #ifdef CARLA_OS_WIN
-    return (void*)LoadLibraryA(filename);
+        ret = (void*)LoadLibraryA(filename);
 #else
-    return dlopen(filename, RTLD_NOW|RTLD_LOCAL);
+        ret = dlopen(filename, RTLD_NOW|RTLD_LOCAL);
 #endif
+    } catch(...) {}
+
+    return ret;
 }
 
 /*
@@ -48,15 +54,21 @@ void* lib_open(const char* const filename)
  * If false is returned,"lib_error" has the error.
  */
 static inline
-bool lib_close(void* const lib)
+bool lib_close(void* const lib) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(lib != nullptr, false);
 
+    bool ret = false;
+
+    try {
 #ifdef CARLA_OS_WIN
-    return FreeLibrary((HMODULE)lib);
+        ret = FreeLibrary((HMODULE)lib);
 #else
-    return (dlclose(lib) == 0);
+        ret = (dlclose(lib) == 0);
 #endif
+    } catch(...) {}
+
+    return ret;
 }
 
 /*
@@ -64,13 +76,13 @@ bool lib_close(void* const lib)
  * May return null if the symbol is not found.
  */
 static inline
-void* lib_symbol(void* const lib, const char* const symbol)
+void* lib_symbol(void* const lib, const char* const symbol) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(lib != nullptr, nullptr);
     CARLA_SAFE_ASSERT_RETURN(symbol != nullptr && symbol[0] != '\0', nullptr);
 
 #ifdef CARLA_OS_WIN
-    return (void*)GetProcAddress((HMODULE)lib, symbol);
+    return (void*)GetProcAddressA((HMODULE)lib, symbol);
 #else
     return dlsym(lib, symbol);
 #endif
@@ -78,9 +90,10 @@ void* lib_symbol(void* const lib, const char* const symbol)
 
 /*
  * Return the last operation error ('filename' must not be null).
+ * May return null.
  */
 static inline
-const char* lib_error(const char* const filename)
+const char* lib_error(const char* const filename) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', nullptr);
 
@@ -88,14 +101,16 @@ const char* lib_error(const char* const filename)
     static char libError[2048+1];
     carla_zeroChar(libError, 2048+1);
 
-    LPVOID winErrorString;
-    DWORD  winErrorCode = GetLastError();
-    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, winErrorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&winErrorString, 0, nullptr);
+    try {
+        LPVOID winErrorString;
+        DWORD  winErrorCode = GetLastError();
+        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, winErrorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&winErrorString, 0, nullptr);
 
-    std::snprintf(libError, 2048, "%s: error code %li: %s", filename, winErrorCode, (const char*)winErrorString);
-    LocalFree(winErrorString);
+        std::snprintf(libError, 2048, "%s: error code %li: %s", filename, winErrorCode, (const char*)winErrorString);
+        LocalFree(winErrorString);
+    } catch(...) {}
 
-    return libError;
+    return (libError[0] != '\0') ? libError : nullptr;
 #else
     return dlerror();
 #endif

@@ -132,7 +132,7 @@ typedef struct _CarlaPluginInfo {
 
 #ifdef __cplusplus
     /*!
-     * C++ constructor.
+     * C++ constructor and destructor.
      */
     _CarlaPluginInfo() noexcept;
     ~_CarlaPluginInfo() noexcept;
@@ -262,7 +262,7 @@ typedef struct _CarlaParameterInfo {
 
 #ifdef __cplusplus
     /*!
-     * C++ constructor.
+     * C++ constructor and destructor.
      */
     _CarlaParameterInfo() noexcept;
     ~_CarlaParameterInfo() noexcept;
@@ -287,7 +287,7 @@ typedef struct _CarlaScalePointInfo {
 
 #ifdef __cplusplus
     /*!
-     * C++ constructor.
+     * C++ constructor and destructor.
      */
     _CarlaScalePointInfo() noexcept;
     ~_CarlaScalePointInfo() noexcept;
