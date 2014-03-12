@@ -56,14 +56,15 @@ public:
         fUiTitle    = uiTitle;
     }
 
-    void start()
+    void start() noexcept
     {
         CarlaPipeServer::start(fFilename, fSampleRate, fUiTitle);
         writeMsg("show\n", 5);
     }
 
 protected:
-    bool msgReceived(const char* const msg) override
+    // returns true if msg was handled
+    bool msgReceived(const char* const msg) noexcept override
     {
         if (std::strcmp(msg, "exiting") == 0)
         {

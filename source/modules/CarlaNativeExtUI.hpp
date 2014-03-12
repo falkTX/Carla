@@ -19,7 +19,6 @@
 #define CARLA_NATIVE_EXTERNAL_UI_HPP_INCLUDED
 
 #include "CarlaNative.hpp"
-
 #include "CarlaExternalUI.hpp"
 
 /*!
@@ -126,7 +125,7 @@ protected:
     // -------------------------------------------------------------------
     // Pipe Server calls
 
-    bool msgReceived(const char* const msg) override
+    bool msgReceived(const char* const msg) noexcept override
     {
         if (CarlaExternalUI::msgReceived(msg))
             return true;
@@ -139,20 +138,30 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(param), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
 
-            uiParameterChanged(param, value);
+            try {
+                uiParameterChanged(param, value);
+            } catch(...) {}
+
+            return true;
         }
-        else if (std::strcmp(msg, "program") == 0)
+
+        if (std::strcmp(msg, "program") == 0)
         {
             uint32_t channel, bank, program;
 
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(channel), true);;
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(channel), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(bank), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(program), true);
             CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, true);
 
-            uiMidiProgramChanged(channel, bank, program);
+            try {
+                uiMidiProgramChanged(channel, bank, program);
+            } catch(...) {}
+
+            return true;
         }
-        else if (std::strcmp(msg, "configure") == 0)
+
+        if (std::strcmp(msg, "configure") == 0)
         {
             const char* key;
             const char* value;
@@ -160,18 +169,18 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(key), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(value), true);
 
-            uiCustomDataChanged(key, value);
+            try {
+                uiCustomDataChanged(key, value);
+            } catch(...) {}
 
             delete[] key;
             delete[] value;
-        }
-        else
-        {
-            carla_stderr("msgReceived : %s", msg);
-            return false;
+
+            return true;
         }
 
-        return true;
+        carla_stderr("msgReceived : %s", msg);
+        return false;
     }
 
 private:

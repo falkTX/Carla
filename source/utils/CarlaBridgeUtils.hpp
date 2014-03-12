@@ -19,7 +19,7 @@
 #define CARLA_BRIDGE_UTILS_HPP_INCLUDED
 
 //#include "CarlaBackend.h"
-#include "CarlaEngine.hpp"
+//#include "CarlaEngine.hpp"
 #include "CarlaRingBuffer.hpp"
 
 // -----------------------------------------------------------------------

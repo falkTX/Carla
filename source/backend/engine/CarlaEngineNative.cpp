@@ -60,7 +60,7 @@ public:
     }
 
 protected:
-    bool msgReceived(const char* const msg) override
+    bool msgReceived(const char* const msg) noexcept override
     {
         if (CarlaExternalUI::msgReceived(msg))
             return true;
@@ -77,7 +77,9 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(value), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(valueStr), true);
 
-            fEngine->setOption(static_cast<EngineOption>(option), value, valueStr);
+            try {
+                fEngine->setOption(static_cast<EngineOption>(option), value, valueStr);
+            } catch(...) {}
 
             delete[] valueStr;
         }
@@ -87,7 +89,9 @@ protected:
 
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename), true);
 
-            ok = fEngine->loadFile(filename);
+            try {
+                ok = fEngine->loadFile(filename);
+            } catch(...) {}
 
             delete[] filename;
         }
@@ -97,7 +101,9 @@ protected:
 
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename), true);
 
-            ok = fEngine->loadProject(filename);
+            try {
+                ok = fEngine->loadProject(filename);
+            } catch(...) {}
 
             delete[] filename;
         }
@@ -107,7 +113,9 @@ protected:
 
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(filename), true);
 
-            ok = fEngine->saveProject(filename);
+            try {
+                ok = fEngine->saveProject(filename);
+            } catch(...) {}
 
             delete[] filename;
         }
@@ -120,7 +128,9 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(groupB), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(portB), true);
 
-            ok = fEngine->patchbayConnect(groupA, portA, groupB, portB);
+            try {
+                ok = fEngine->patchbayConnect(groupA, portA, groupB, portB);
+            } catch(...) {}
         }
         else if (std::strcmp(msg, "patchbay_disconnect") == 0)
         {
@@ -128,11 +138,15 @@ protected:
 
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(connectionId), true);
 
-            ok = fEngine->patchbayDisconnect(connectionId);
+            try {
+                ok = fEngine->patchbayDisconnect(connectionId);
+            } catch(...) {}
         }
         else if (std::strcmp(msg, "patchbay_refresh") == 0)
         {
-            ok = fEngine->patchbayRefresh();
+            try {
+                ok = fEngine->patchbayRefresh();
+            } catch(...) {}
         }
         else if (std::strcmp(msg, "transport_play") == 0)
         {

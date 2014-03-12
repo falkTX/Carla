@@ -65,7 +65,7 @@ public:
         clearContentComponent();
     }
 
-    bool wasClosedByUser() const
+    bool wasClosedByUser() const noexcept
     {
         return fClosed;
     }

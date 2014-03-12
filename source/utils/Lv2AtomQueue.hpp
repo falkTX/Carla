@@ -28,7 +28,7 @@
 class Lv2AtomRingBufferControl : public RingBufferControl<HeapRingBuffer>
 {
 public:
-    Lv2AtomRingBufferControl()
+    Lv2AtomRingBufferControl() noexcept
         : RingBufferControl<HeapRingBuffer>(nullptr),
           fIsDummy(false)
     {
@@ -36,7 +36,7 @@ public:
         fBuffer.buf  = nullptr;
     }
 
-    ~Lv2AtomRingBufferControl()
+    ~Lv2AtomRingBufferControl() noexcept
     {
         if (fBuffer.buf != nullptr && ! fIsDummy)
         {
@@ -47,7 +47,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    void createBuffer(const uint32_t size)
+    void createBuffer(const uint32_t size) noexcept
     {
         if (fBuffer.buf != nullptr)
         {
@@ -65,7 +65,7 @@ public:
     }
 
     // used for tmp buffers only
-    void copyDump(HeapRingBuffer& rb, char dumpBuf[])
+    void copyDump(HeapRingBuffer& rb, char dumpBuf[]) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fBuffer.size == 0,);
         CARLA_SAFE_ASSERT_RETURN(fBuffer.buf == nullptr,);
@@ -153,13 +153,11 @@ private:
 class Lv2AtomQueue
 {
 public:
-    Lv2AtomQueue()
-    {
-    }
+    Lv2AtomQueue() noexcept {}
 
     // -------------------------------------------------------------------
 
-    void createBuffer(const uint32_t size)
+    void createBuffer(const uint32_t size) noexcept
     {
         fRingBufferCtrl.createBuffer(size);
     }
@@ -177,7 +175,7 @@ public:
     }
 
     // must have been locked before
-    bool get(const LV2_Atom** const atom, uint32_t* const portIndex)
+    bool get(const LV2_Atom** const atom, uint32_t* const portIndex) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(atom != nullptr && portIndex != nullptr, false);
 
@@ -194,7 +192,7 @@ public:
     }
 
     // must NOT been locked, we do that here
-    bool put(const LV2_Atom* const atom, const uint32_t portIndex)
+    bool put(const LV2_Atom* const atom, const uint32_t portIndex) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(atom != nullptr && atom->size > 0, false);
 
@@ -204,7 +202,7 @@ public:
     }
 
     // must NOT been locked, we do that here
-    bool putChunk(const LV2_Atom* const atom, const void* const data, const uint32_t portIndex)
+    bool putChunk(const LV2_Atom* const atom, const void* const data, const uint32_t portIndex) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(atom != nullptr && atom->size > 0, false);
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
@@ -233,14 +231,14 @@ public:
 
     // -------------------------------------------------------------------
 
-    void copyDataFromQueue(Lv2AtomQueue& queue)
+    void copyDataFromQueue(Lv2AtomQueue& queue) noexcept
     {
         // lock source
-        const CarlaMutexLocker qsl(queue.fMutex);
+        const CarlaMutexLocker cml1(queue.fMutex);
 
         {
             // copy data from source
-            const CarlaMutexLocker cml(fMutex);
+            const CarlaMutexLocker cml2(fMutex);
             fRingBufferCtrl.fBuffer = queue.fRingBufferCtrl.fBuffer;
         }
 
@@ -248,7 +246,7 @@ public:
         queue.fRingBufferCtrl.clear();
     }
 
-    void copyAndDumpDataFromQueue(Lv2AtomQueue& queue, char dumpBuf[])
+    void copyAndDumpDataFromQueue(Lv2AtomQueue& queue, char dumpBuf[]) noexcept
     {
         // lock source
         const CarlaMutexLocker cml1(queue.fMutex);

@@ -63,7 +63,7 @@ public:
         return (fPipeRecv != -1 && fPipeSend != -1 && fPid != -1);
     }
 
-    bool start(const char* const filename, const char* const arg1, const char* const arg2)
+    bool start(const char* const filename, const char* const arg1, const char* const arg2) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
         CARLA_SAFE_ASSERT_RETURN(arg1 != nullptr, false);
@@ -99,8 +99,10 @@ public:
 
         if (::pipe(pipe2) != 0)
         {
-            ::close(pipe1[0]);
-            ::close(pipe1[1]);
+            try {
+                ::close(pipe1[0]);
+                ::close(pipe1[1]);
+            } catch (...) {}
             fail("pipe2 creation failed");
             return false;
         }
@@ -124,10 +126,14 @@ public:
 
         if ((! fork_exec(argv, &ret)) || ret == -1)
         {
-            ::close(pipe1[0]);
-            ::close(pipe1[1]);
-            ::close(pipe2[0]);
-            ::close(pipe2[1]);
+            try {
+                ::close(pipe1[0]);
+                ::close(pipe1[1]);
+            } catch (...) {}
+            try {
+                ::close(pipe2[0]);
+                ::close(pipe2[1]);
+            } catch (...) {}
             fail("fork_exec() failed");
             return false;
         }
@@ -135,15 +141,19 @@ public:
         fPid = ret;
 
         // fork duplicated the handles, close pipe ends that are used by the child process
-        ::close(pipe1[0]);
-        ::close(pipe2[1]);
+        try {
+            ::close(pipe1[0]);
+        } catch(...) {}
+        try {
+            ::close(pipe2[1]);
+        } catch(...) {}
 
         fPipeSend = pipe1[1]; // [1] means writting end
         fPipeRecv = pipe2[0]; // [0] means reading end
 
         // set non-block
         try {
-            ret = fcntl(fPipeRecv, F_SETFL, fcntl(fPipeRecv, F_GETFL) | O_NONBLOCK);
+            ret = ::fcntl(fPipeRecv, F_SETFL, ::fcntl(fPipeRecv, F_GETFL) | O_NONBLOCK);
         } catch (...) {
             ret = -1;
             fail("failed to set pipe as non-block");
@@ -199,9 +209,9 @@ public:
 
                 break;
             }
-
-            carla_stderr("force killing misbehaved child %i (start)", int(fPid));
         }
+
+        carla_stderr("force killing misbehaved child %i (start)", int(fPid));
 
         if (kill(fPid, SIGKILL) == -1)
         {
@@ -287,7 +297,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool readNextLineAsBool(bool& value)
+    bool readNextLineAsBool(bool& value) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fIsReading, false);
 
@@ -301,7 +311,7 @@ public:
         return false;
     }
 
-    bool readNextLineAsInt(int32_t& value)
+    bool readNextLineAsInt(int32_t& value) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fIsReading, false);
 
@@ -315,7 +325,7 @@ public:
         return false;
     }
 
-    bool readNextLineAsUInt(uint32_t& value)
+    bool readNextLineAsUInt(uint32_t& value) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fIsReading, false);
 
@@ -334,7 +344,7 @@ public:
         return false;
     }
 
-    bool readNextLineAsLong(int64_t& value)
+    bool readNextLineAsLong(int64_t& value) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fIsReading, false);
 
@@ -348,7 +358,7 @@ public:
         return false;
     }
 
-    bool readNextLineAsULong(uint64_t& value)
+    bool readNextLineAsULong(uint64_t& value) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fIsReading, false);
 
@@ -367,7 +377,7 @@ public:
         return false;
     }
 
-    bool readNextLineAsFloat(float& value)
+    bool readNextLineAsFloat(float& value) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fIsReading, false);
 
@@ -381,7 +391,7 @@ public:
         return false;
     }
 
-    bool readNextLineAsString(const char*& value)
+    bool readNextLineAsString(const char*& value) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fIsReading, false);
 
@@ -416,7 +426,7 @@ public:
         } catch (...) {}
     }
 
-    void writeAndFixMsg(const char* const msg)
+    void writeAndFixMsg(const char* const msg) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fPipeSend != -1,);
 
@@ -458,7 +468,7 @@ public:
         } catch (...) {}
     }
 
-    void waitChildClose()
+    void waitChildClose() noexcept
     {
         if (! wait_child(fPid))
         {
@@ -481,7 +491,7 @@ protected:
     }
 
     // returns true if msg handled
-    virtual bool msgReceived(const char* const msg) = 0;
+    virtual bool msgReceived(const char* const msg) noexcept = 0;
 
     // -------------------------------------------------------------------
 
@@ -496,7 +506,7 @@ private:
 
     // -------------------------------------------------------------------
 
-    const char* readline()
+    const char* readline() noexcept
     {
         char    ch;
         char*   ptr = fTmpBuf;
@@ -507,7 +517,7 @@ private:
         for (int i=0; i < 0xff; ++i)
         {
             try {
-                ret = read(fPipeRecv, &ch, 1);
+                ret = ::read(fPipeRecv, &ch, 1);
             }
             catch (...) {
                 break;
@@ -538,7 +548,12 @@ private:
                     fTmpStr += fTmpBuf;
                 }
 
-                return fTmpStr.dup();
+                try {
+                    return fTmpStr.dup();
+                }
+                catch(...) {
+                    return nullptr;
+                }
             }
 
             break;
@@ -549,13 +564,13 @@ private:
 
     // -------------------------------------------------------------------
 
-    static bool fork_exec(const char* const argv[5], int* const retp)
+    static bool fork_exec(const char* const argv[5], int* const retp) noexcept
     {
         const pid_t ret = *retp = vfork();
 
         switch (ret)
         {
-        case 0: /* child process */
+        case 0: // child process
             execlp(argv[0], argv[0], argv[1], argv[2], argv[3], argv[4],
 #ifdef CARLA_OS_MAC // fix warning
                    NULL);
@@ -563,18 +578,19 @@ private:
                    nullptr);
 #endif
             carla_stderr2("exec failed: %s", std::strerror(errno));
-            _exit(0);
+            _exit(0); // this is not noexcept safe but doesn't matter anyway
             return false;
-        case -1: /* error */
+
+        case -1: // error
             carla_stderr2("fork() failed: %s", std::strerror(errno));
-            _exit(0);
+            _exit(0); // this is not noexcept safe but doesn't matter anyway
             return false;
         }
 
         return true;
     }
 
-    static bool wait_child(const pid_t pid)
+    static bool wait_child(const pid_t pid) noexcept
     {
         if (pid == -1)
         {
@@ -589,7 +605,7 @@ private:
             try {
                 ret = ::waitpid(pid, nullptr, WNOHANG);
             }
-            catch (...) {
+            catch(...) {
                 break;
             }
 

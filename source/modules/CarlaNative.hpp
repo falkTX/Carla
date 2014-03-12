@@ -66,28 +66,28 @@ protected:
         return pHost->uiName;
     }
 
-    uint32_t getBufferSize() const noexcept
+    uint32_t getBufferSize() const
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, 0);
 
         return pHost->get_buffer_size(pHost->handle);
     }
 
-    double getSampleRate() const noexcept
+    double getSampleRate() const
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, 0.0);
 
         return pHost->get_sample_rate(pHost->handle);
     }
 
-    bool isOffline() const noexcept
+    bool isOffline() const
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, false);
 
         return pHost->is_offline(pHost->handle);
     }
 
-    const NativeTimeInfo* getTimeInfo() const noexcept
+    const NativeTimeInfo* getTimeInfo() const
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, nullptr);
 
