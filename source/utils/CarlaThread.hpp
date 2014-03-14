@@ -40,7 +40,7 @@ protected:
         : fName(threadName),
           fShouldExit(false)
     {
-        carla_zeroStruct<pthread_t>(fHandle);
+        _init();
     }
 
     /*
@@ -93,14 +93,17 @@ public:
 
         fShouldExit = false;
 
-        if (pthread_create(&fHandle, nullptr, _entryPoint, this) == 0)
+        pthread_t handle;
+
+        if (pthread_create(&handle, nullptr, _entryPoint, this) == 0)
         {
 #ifdef CARLA_OS_WIN
-            CARLA_SAFE_ASSERT_RETURN(fHandle.p != nullptr, false);
+            CARLA_SAFE_ASSERT_RETURN(handle.p != nullptr, false);
 #else
-            CARLA_SAFE_ASSERT_RETURN(fHandle != 0, false);
+            CARLA_SAFE_ASSERT_RETURN(handle != 0, false);
 #endif
-            pthread_detach(fHandle);
+            pthread_detach(handle);
+            _copyFrom(handle);
 
             // wait for thread to start
             fLock.lock();
@@ -152,8 +155,8 @@ public:
 
                 // copy thread id so we can clear our one
                 pthread_t threadId;
-                carla_copyStruct<pthread_t>(threadId, fHandle);
-                carla_zeroStruct<pthread_t>(fHandle);
+                _copyTo(threadId);
+                _init();
 
                 try {
                     pthread_cancel(threadId);
@@ -204,9 +207,51 @@ public:
 private:
     CarlaMutex         fLock;       // Thread lock
     const CarlaString  fName;       // Thread name
-    pthread_t          fHandle;     // Handle for this thread
+    volatile pthread_t fHandle;     // Handle for this thread
     volatile bool      fShouldExit; // true if thread should exit
 
+    /*
+     * Init pthread type.
+     */
+    void _init() noexcept
+    {
+#ifdef CARLA_OS_WIN
+        fHandle.p = nullptr;
+        fHandle.x = 0;
+#else
+        fHandle = 0;
+#endif
+    }
+
+    /*
+     * Copy our pthread type from another var.
+     */
+    void _copyFrom(const pthread_t& handle) noexcept
+    {
+#ifdef CARLA_OS_WIN
+        fHandle.p = handle.p;
+        fHandle.x = handle.x;
+#else
+        fHandle = handle;
+#endif
+    }
+
+    /*
+     * Copy our pthread type to another var.
+     */
+    void _copyTo(volatile pthread_t& handle) noexcept
+    {
+#ifdef CARLA_OS_WIN
+        handle.p = fHandle.p;
+        handle.x = fHandle.x;
+#else
+        handle = fHandle;
+#endif
+    }
+
+    /*
+     * Thread entry point.
+     */
     void _runEntryPoint() noexcept
     {
         // report ready
@@ -219,10 +264,12 @@ private:
         } catch(...) {}
 
         // done
-        const CarlaMutexLocker cml(fLock);
-        carla_zeroStruct<pthread_t>(fHandle);
+        _init();
     }
 
+    /*
+     * Thread entry point.
+     */
     static void* _entryPoint(void* userData) noexcept
     {
         static_cast<CarlaThread*>(userData)->_runEntryPoint();
