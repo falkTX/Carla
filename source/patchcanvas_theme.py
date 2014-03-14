@@ -24,6 +24,8 @@ from carla_config import *
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
+#from sys import platform
+
 if config_UseQt5:
     from PyQt5.QtCore import Qt
     from PyQt5.QtGui import QColor, QFont, QPen, QPixmap
@@ -469,6 +471,10 @@ class Theme(object):
 
             self.rubberband_pen = QPen(QColor(1, 230, 238), 2, Qt.SolidLine)
             self.rubberband_brush = QColor(90, 90, 90, 100)
+
+#        if platform == "darwin":
+#            self.box_font_size += 3
+#            self.port_font_size += 3
 
 def getDefaultTheme():
     return Theme.THEME_MODERN_DARK

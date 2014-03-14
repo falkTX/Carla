@@ -15,10 +15,6 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-// for UINT32_MAX
-#define __STDC_LIMIT_MACROS
-#include <cstdint>
-
 #include "CarlaNative.hpp"
 #include "CarlaMIDI.h"
 #include "CarlaThread.hpp"
@@ -87,7 +83,7 @@ public:
         if (! fInitiated)
             return;
 
-        for (auto it = fPrograms.begin(); it.valid(); it.next())
+        for (LinkedList<const ProgramInfo*>::Itenerator it = fPrograms.begin(); it.valid(); it.next())
         {
             const ProgramInfo* const& pInfo(it.getValue());
             delete pInfo;

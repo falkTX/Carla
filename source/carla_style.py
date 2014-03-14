@@ -198,8 +198,8 @@ class CarlaApplication(object):
 
         useProTheme = settings.value("Main/UseProTheme", True, type=bool)
 
-        if useProTheme or True:
-            #font = QFont("DejaVu Sans [Book]", 8, QFont.Normal)
+        if useProTheme:
+            #font = QFont("DejaVu Sans [Book]", 12 if MACOS else 8, QFont.Normal)
             #self.fApp.setFont(font)
             #QApplication.setFont(font)
 

@@ -119,12 +119,14 @@ bool fileexists(const char *filename)
 
 void set_realtime()
 {
+#ifdef CARLA_OS_LINUX
     sched_param sc;
     sc.sched_priority = 60;
     //if you want get "sched_setscheduler undeclared" from compilation,
     //you can safely remove the folowing line:
     sched_setscheduler(0, SCHED_FIFO, &sc);
     //if (err==0) printf("Real-time");
+#endif
 }
 
 void os_sleep(long length)

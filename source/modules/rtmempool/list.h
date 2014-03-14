@@ -38,6 +38,8 @@
 # include <stddef.h>
 #endif
 
+#define __THROW
+
 #ifndef offsetof
 # define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
 #endif

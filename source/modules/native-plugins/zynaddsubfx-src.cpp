@@ -15,6 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "CarlaDefines.h"
+
 // zynaddsubfx includes
 #include "zynaddsubfx/DSP/AnalogFilter.cpp"
 #include "zynaddsubfx/DSP/FFTwrapper.cpp"

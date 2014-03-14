@@ -111,13 +111,9 @@ BUILD_CXX_FLAGS = $(BASE_FLAGS) -std=c++0x -std=gnu++0x $(CXXFLAGS)
 LINK_FLAGS      = $(LINK_OPTS) -Wl,--no-undefined $(LDFLAGS)
 
 ifeq ($(MACOS),true)
-# No C++11 support; force 32bit per default
-BUILD_C_FLAGS  += $(32BIT_FLAGS)
-BUILD_CXX_FLAGS = $(BASE_FLAGS) $(32BIT_FLAGS) $(CXXFLAGS)
-LINK_FLAGS      = $(32BIT_FLAGS) $(LDFLAGS)
-# Set target
-BUILD_CXX_FLAGS += -DMAC_OS_X_VERSION_MIN_REQUIRED=MAC_OS_X_VERSION_10_5
-BUILD_CXX_FLAGS += -DMAC_OS_X_VERSION_MAX_ALLOWED=MAC_OS_X_VERSION_10_5
+# No C++11 support
+BUILD_CXX_FLAGS = $(BASE_FLAGS) $(CXXFLAGS)
+LINK_FLAGS      = $(LINK_OPTS) $(LDFLAGS)
 endif
 
 # --------------------------------------------------------------
