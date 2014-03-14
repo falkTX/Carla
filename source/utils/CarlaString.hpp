@@ -575,14 +575,31 @@ public:
         return (strBuf != nullptr && std::strcmp(fBuffer, strBuf) == 0);
     }
 
+    bool operator==(const CarlaString& str) const noexcept
+    {
+        return operator==(str.fBuffer);
+    }
+
     bool operator!=(const char* const strBuf) const noexcept
     {
         return !operator==(strBuf);
     }
 
+    bool operator!=(const CarlaString& str) const noexcept
+    {
+        return !operator==(str.fBuffer);
+    }
+
     CarlaString& operator=(const char* const strBuf) noexcept
     {
         _dup(strBuf);
+
+        return *this;
+    }
+
+    CarlaString& operator=(const CarlaString& str) noexcept
+    {
+        _dup(str.fBuffer);
 
         return *this;
     }
@@ -601,6 +618,11 @@ public:
         _dup(newBuf, newBufSize-1);
 
         return *this;
+    }
+
+    CarlaString& operator+=(const CarlaString& str) noexcept
+    {
+        return operator+=(str.fBuffer);
     }
 
     CarlaString operator+(const char* const strBuf) noexcept
