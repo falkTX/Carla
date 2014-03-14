@@ -167,7 +167,7 @@ carla-native.lv2/carla-native.so: carla-native-lv2.cpp.o $(LIBS)
 # --------------------------------------------------------------
 
 .FORCE:
-.PHONY: .FORCE
+.PHONY: .FORCE carla-native-lv2-export
 
 ../backend/carla_engine_plugin.a: .FORCE
 	$(MAKE) -C ../backend/engine ../carla_engine_plugin.a

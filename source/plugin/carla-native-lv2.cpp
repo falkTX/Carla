@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -263,13 +263,14 @@ public:
             gActivePlugins.removeFirstMatchingValue(this);
 
             JUCE_AUTORELEASEPOOL
-
-            MessageManagerLock mmLock;
-
-            if (gActivePlugins.size() == 0)
             {
-                JuceMessageThread::deleteInstance();
-                shutdownJuce_GUI();
+                MessageManagerLock mmLock;
+
+                if (gActivePlugins.size() == 0)
+                {
+                    JuceMessageThread::deleteInstance();
+                    shutdownJuce_GUI();
+                }
             }
 
             fUiWasShown = false;
@@ -645,11 +646,12 @@ protected:
             if (fDescriptor->hints & PLUGIN_NEEDS_UI_JUCE)
             {
                 JUCE_AUTORELEASEPOOL
-
-                if (gActivePlugins.size() == 0)
                 {
-                    initialiseJuce_GUI();
-                    JuceMessageThread::getInstance();
+                    if (gActivePlugins.size() == 0)
+                    {
+                        initialiseJuce_GUI();
+                        JuceMessageThread::getInstance();
+                    }
                 }
 
                 fDescriptor->ui_show(fHandle, true);
