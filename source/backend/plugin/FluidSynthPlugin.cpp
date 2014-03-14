@@ -687,7 +687,6 @@ public:
             pData->param.ranges[j].step = 1.0f;
             pData->param.ranges[j].stepSmall = 1.0f;
             pData->param.ranges[j].stepLarge = 1.0f;
-            pData->param.special[j] = PARAMETER_SPECIAL_NULL;
             fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
@@ -704,7 +703,6 @@ public:
             pData->param.ranges[j].step = 0.01f;
             pData->param.ranges[j].stepSmall = 0.0001f;
             pData->param.ranges[j].stepLarge = 0.1f;
-            pData->param.special[j] = PARAMETER_SPECIAL_NULL;
             fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
@@ -721,7 +719,6 @@ public:
             pData->param.ranges[j].step = 0.01f;
             pData->param.ranges[j].stepSmall = 0.0001f;
             pData->param.ranges[j].stepLarge = 0.1f;
-            pData->param.special[j] = PARAMETER_SPECIAL_NULL;
             fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
@@ -738,7 +735,6 @@ public:
             pData->param.ranges[j].step = 0.01f;
             pData->param.ranges[j].stepSmall = 0.0001f;
             pData->param.ranges[j].stepLarge = 0.1f;
-            pData->param.special[j] = PARAMETER_SPECIAL_NULL;
             fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
@@ -755,7 +751,6 @@ public:
             pData->param.ranges[j].step = 0.01f;
             pData->param.ranges[j].stepSmall = 0.0001f;
             pData->param.ranges[j].stepLarge = 0.1f;
-            pData->param.special[j] = PARAMETER_SPECIAL_NULL;
             fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
@@ -772,7 +767,6 @@ public:
             pData->param.ranges[j].step = 1.0f;
             pData->param.ranges[j].stepSmall = 1.0f;
             pData->param.ranges[j].stepLarge = 1.0f;
-            pData->param.special[j] = PARAMETER_SPECIAL_NULL;
             fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
@@ -789,7 +783,6 @@ public:
             pData->param.ranges[j].step = 1.0f;
             pData->param.ranges[j].stepSmall = 1.0f;
             pData->param.ranges[j].stepLarge = 10.0f;
-            pData->param.special[j] = PARAMETER_SPECIAL_NULL;
             fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
@@ -806,7 +799,6 @@ public:
             pData->param.ranges[j].step = 0.01f;
             pData->param.ranges[j].stepSmall = 0.0001f;
             pData->param.ranges[j].stepLarge = 0.1f;
-            pData->param.special[j] = PARAMETER_SPECIAL_NULL;
             fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
@@ -823,7 +815,6 @@ public:
             pData->param.ranges[j].step = 0.01f;
             pData->param.ranges[j].stepSmall = 0.0001f;
             pData->param.ranges[j].stepLarge = 0.1f;
-            pData->param.special[j] = PARAMETER_SPECIAL_NULL;
             fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
@@ -840,7 +831,6 @@ public:
             pData->param.ranges[j].step = 0.01f;
             pData->param.ranges[j].stepSmall = 0.0001f;
             pData->param.ranges[j].stepLarge = 0.1f;
-            pData->param.special[j] = PARAMETER_SPECIAL_NULL;
             fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
@@ -857,7 +847,6 @@ public:
             pData->param.ranges[j].step = 1.0f;
             pData->param.ranges[j].stepSmall = 1.0f;
             pData->param.ranges[j].stepLarge = 1.0f;
-            pData->param.special[j] = PARAMETER_SPECIAL_NULL;
             fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
@@ -874,7 +863,6 @@ public:
             pData->param.ranges[j].step = 1.0f;
             pData->param.ranges[j].stepSmall = 1.0f;
             pData->param.ranges[j].stepLarge = 10.0f;
-            pData->param.special[j] = PARAMETER_SPECIAL_NULL;
             fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
@@ -891,7 +879,6 @@ public:
             pData->param.ranges[j].step = 1.0f;
             pData->param.ranges[j].stepSmall = 1.0f;
             pData->param.ranges[j].stepLarge = 1.0f;
-            pData->param.special[j] = PARAMETER_SPECIAL_NULL;
             fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
@@ -908,7 +895,6 @@ public:
             pData->param.ranges[j].step = 1.0f;
             pData->param.ranges[j].stepSmall = 1.0f;
             pData->param.ranges[j].stepLarge = 1.0f;
-            pData->param.special[j] = PARAMETER_SPECIAL_NULL;
             fParamBuffers[j] = pData->param.ranges[j].def;
         }
 
