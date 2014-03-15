@@ -377,9 +377,16 @@ UIC_QT4 ?= $(shell pkg-config --variable=uic_location QtCore)
 endif
 
 ifeq ($(HAVE_QT5),true)
-MOC_QT5 ?= $(shell pkg-config --variable=libdir Qt5Core)/qt5/bin/moc
-RCC_QT5 ?= $(shell pkg-config --variable=libdir Qt5Core)/qt5/bin/rcc
-UIC_QT5 ?= $(shell pkg-config --variable=libdir Qt5Core)/qt5/bin/uic
+QT5_LIBDIR = $(shell pkg-config --variable=libdir Qt5Core)
+ifneq (,$(wildcard $(QT5_LIBDIR)/qt5/bin/moc))
+MOC_QT5 ?= $(QT5_LIBDIR)/qt5/bin/moc
+RCC_QT5 ?= $(QT5_LIBDIR)/qt5/bin/rcc
+UIC_QT5 ?= $(QT5_LIBDIR)/qt5/bin/uic
+else
+MOC_QT5 ?= $(QT5_LIBDIR)/qt/bin/moc
+RCC_QT5 ?= $(QT5_LIBDIR)/qt/bin/rcc
+UIC_QT5 ?= $(QT5_LIBDIR)/qt/bin/uic
+endif
 endif
 
 # --------------------------------------------------------------
