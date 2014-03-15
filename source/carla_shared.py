@@ -466,6 +466,10 @@ elif CWD.endswith("/carla") or CWD.endswith("/carla-plugin") or CWD.endswith("/c
 
 # find tool
 def findTool(toolDir, toolName):
+    path = os.path.join(CWD, toolName)
+    if os.path.exists(path):
+        return path
+
     path = os.path.join(CWD, toolDir, toolName)
     if os.path.exists(path):
         return path
