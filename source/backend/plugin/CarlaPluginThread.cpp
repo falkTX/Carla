@@ -193,6 +193,7 @@ void CarlaPluginThread::run()
 #ifndef CARLA_OS_WIN
             if (fBinary.endsWith(".exe"))
             {
+                env.insert("WINEDEBUG", "-all");
                 arguments << fBinary.buffer();
                 fBinary = "wine";
             }
