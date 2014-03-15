@@ -162,6 +162,7 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
         command.append("LANG=C")
         if isWine:
             command.append("WINEDEBUG=-all")
+            command.append("wine")
 
     command.append(tool)
     command.append(stype)

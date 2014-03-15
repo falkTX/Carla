@@ -188,8 +188,15 @@ void CarlaPluginThread::run()
         env.insert("ENGINE_BRIDGE_CLIENT_NAME", name);
         env.insert("ENGINE_BRIDGE_OSC_URL", QString("%1/%2").arg(fEngine->getOscServerPathUDP()).arg(fPlugin->getId()));
 
-        if (fPlugin->getType() != PLUGIN_JACK)
+        //if (fPlugin->getType() != PLUGIN_JACK)
         {
+#ifndef CARLA_OS_WIN
+            if (fBinary.endsWith(".exe"))
+            {
+                arguments << fBinary.buffer();
+                fBinary = "wine";
+            }
+#endif
             /* osc-url  */ arguments << QString("%1/%2").arg(fEngine->getOscServerPathUDP()).arg(fPlugin->getId());
             /* stype    */ arguments << fExtra1.buffer();
             /* filename */ arguments << fPlugin->getFilename();
@@ -197,12 +204,14 @@ void CarlaPluginThread::run()
             /* label    */ arguments << fLabel.buffer();
             /* uniqueId */ arguments << QString("%1").arg(fPlugin->getUniqueId());
         }
+#if 0
         else
         {
             env.insert("LD_LIBRARY_PATH", "/home/falktx/FOSS/GIT-mine/Carla/source/bridges/jackplugin/");
             carla_stdout("JACK app bridge here, filename: %s", fPlugin->getFilename());
             fBinary = fPlugin->getFilename();
         }
+#endif
         break;
     }
 
