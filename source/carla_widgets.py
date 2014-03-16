@@ -112,7 +112,7 @@ class CarlaAboutW(QDialog):
 
         self.ui.l_about.setText(self.tr(""
                                      "<br>Version %s"
-                                     "<br>Carla is a Multi-Plugin Host for JACK%s.<br>"
+                                     "<br>Carla is a fully-featured audio plugin host%s.<br>"
                                      "<br>Copyright (C) 2011-2014 falkTX<br>"
                                      "" % (VERSION, extraInfo)))
 
