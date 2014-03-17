@@ -23,7 +23,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
 
-CarlaEngineThread::CarlaEngineThread(CarlaEngine* const engine)
+CarlaEngineThread::CarlaEngineThread(CarlaEngine* const engine) noexcept
     : CarlaThread("CarlaEngineThread"),
       fEngine(engine)
 {
@@ -31,14 +31,14 @@ CarlaEngineThread::CarlaEngineThread(CarlaEngine* const engine)
     carla_debug("CarlaEngineThread::CarlaEngineThread(%p)", engine);
 }
 
-CarlaEngineThread::~CarlaEngineThread()
+CarlaEngineThread::~CarlaEngineThread() noexcept
 {
     carla_debug("CarlaEngineThread::~CarlaEngineThread()");
 }
 
 // -----------------------------------------------------------------------
 
-void CarlaEngineThread::run()
+void CarlaEngineThread::run() noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fEngine != nullptr,);
     CARLA_SAFE_ASSERT(fEngine->isRunning());
@@ -71,7 +71,14 @@ void CarlaEngineThread::run()
             if (oscRegisted || ! needsSingleThread)
             {
                 if (! needsSingleThread)
-                    plugin->postRtEventsRun();
+                {
+                    try {
+                        plugin->postRtEventsRun();
+                    }
+                    catch (...) {
+                        carla_stderr2("Caught exception during postRtEventsRun()");
+                    }
+                }
 
                 if (hasUi || oscRegisted)
                 {

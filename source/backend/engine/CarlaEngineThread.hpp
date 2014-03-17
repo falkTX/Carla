@@ -28,15 +28,16 @@ CARLA_BACKEND_START_NAMESPACE
 #endif
 
 // -----------------------------------------------------------------------
+// CarlaEngineThread
 
 class CarlaEngineThread : public CarlaThread
 {
 public:
-    CarlaEngineThread(CarlaEngine* const engine);
-    ~CarlaEngineThread() override;
+    CarlaEngineThread(CarlaEngine* const engine) noexcept;
+    ~CarlaEngineThread() noexcept override;
 
 protected:
-    void run() override;
+    void run() noexcept override;
 
 private:
     CarlaEngine* const fEngine;

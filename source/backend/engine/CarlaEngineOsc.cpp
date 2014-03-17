@@ -37,7 +37,7 @@ extern int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBr
 
 // -----------------------------------------------------------------------
 
-CarlaEngineOsc::CarlaEngineOsc(CarlaEngine* const engine)
+CarlaEngineOsc::CarlaEngineOsc(CarlaEngine* const engine) noexcept
     : fEngine(engine),
       fServerTCP(nullptr),
       fServerUDP(nullptr)
@@ -46,7 +46,7 @@ CarlaEngineOsc::CarlaEngineOsc(CarlaEngine* const engine)
     carla_debug("CarlaEngineOsc::CarlaEngineOsc(%p)", engine);
 }
 
-CarlaEngineOsc::~CarlaEngineOsc()
+CarlaEngineOsc::~CarlaEngineOsc() noexcept
 {
     CARLA_SAFE_ASSERT(fName.isEmpty());
     CARLA_SAFE_ASSERT(fServerPathTCP.isEmpty());
@@ -58,7 +58,7 @@ CarlaEngineOsc::~CarlaEngineOsc()
 
 // -----------------------------------------------------------------------
 
-void CarlaEngineOsc::init(const char* const name)
+void CarlaEngineOsc::init(const char* const name) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fName.isEmpty(),);
     CARLA_SAFE_ASSERT_RETURN(fServerPathTCP.isEmpty(),);
@@ -106,18 +106,38 @@ void CarlaEngineOsc::init(const char* const name)
     CARLA_SAFE_ASSERT(fServerUDP != nullptr);
 }
 
-void CarlaEngineOsc::idle() const
+void CarlaEngineOsc::idle() const noexcept
 {
-    if (fServerTCP != nullptr) {
-        while (lo_server_recv_noblock(fServerTCP, 0) != 0) {}
+    if (fServerTCP != nullptr)
+    {
+        for (;;)
+        {
+            try {
+                if (lo_server_recv_noblock(fServerTCP, 0) == 0)
+                    break;
+            }
+            catch(...) {
+                break;
+            }
+        }
     }
 
-    if (fServerUDP != nullptr) {
-        while (lo_server_recv_noblock(fServerUDP, 0) != 0) {}
+    if (fServerUDP != nullptr)
+    {
+        for (;;)
+        {
+            try {
+                if (lo_server_recv_noblock(fServerUDP, 0) == 0)
+                    break;
+            }
+            catch(...) {
+                break;
+            }
+        }
     }
 }
 
-void CarlaEngineOsc::close()
+void CarlaEngineOsc::close() noexcept
 {
     CARLA_SAFE_ASSERT(fName.isNotEmpty());
     CARLA_SAFE_ASSERT(fServerPathTCP.isNotEmpty());
@@ -130,15 +150,23 @@ void CarlaEngineOsc::close()
 
     if (fServerTCP != nullptr)
     {
-        lo_server_del_method(fServerTCP, nullptr, nullptr);
-        lo_server_free(fServerTCP);
+        try {
+            lo_server_del_method(fServerTCP, nullptr, nullptr);
+        } catch(...) {}
+        try {
+            lo_server_free(fServerTCP);
+        } catch(...) {}
         fServerTCP = nullptr;
     }
 
     if (fServerUDP != nullptr)
     {
-        lo_server_del_method(fServerUDP, nullptr, nullptr);
-        lo_server_free(fServerUDP);
+        try {
+            lo_server_del_method(fServerUDP, nullptr, nullptr);
+        } catch(...) {}
+        try {
+            lo_server_free(fServerUDP);
+        } catch(...) {}
         fServerUDP = nullptr;
     }
 

@@ -57,12 +57,12 @@ CARLA_BACKEND_START_NAMESPACE
 class CarlaEngineOsc
 {
 public:
-    CarlaEngineOsc(CarlaEngine* const engine);
-    ~CarlaEngineOsc();
+    CarlaEngineOsc(CarlaEngine* const engine) noexcept;
+    ~CarlaEngineOsc() noexcept;
 
-    void init(const char* const name);
-    void idle() const;
-    void close();
+    void init(const char* const name) noexcept;
+    void idle() const noexcept;
+    void close() noexcept;
 
     // -------------------------------------------------------------------
 
@@ -76,9 +76,9 @@ public:
         return fServerPathUDP;
     }
 
+#ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------
 
-#ifndef BUILD_BRIDGE
     bool isControlRegistered() const noexcept
     {
         return (fControlData.target != nullptr);

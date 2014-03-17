@@ -188,6 +188,13 @@ private:                               \
     static void operator delete(void*);
 #endif
 
+/* Define CARLA_CATCH_MSG */
+#define CARLA_CATCH_MSG(msg, after) \
+    catch(...) {                                                     \
+        carla_stderr2("Caught exception: " msg); \
+        after                                                        \
+    }
+
 /* Define EXTERN_C */
 #ifdef __cplusplus
 # define EXTERN_C extern "C"

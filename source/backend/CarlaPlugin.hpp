@@ -740,7 +740,7 @@ public:
 
     /*!
      * Process all the post-poned events.
-     * This function must be called from the main thread (ie, idleGui()) if PLUGIN_USES_SINGLE_THREAD is set.
+     * This function must be called from the main thread (ie, idle()) if PLUGIN_USES_SINGLE_THREAD is set.
      */
     void postRtEventsRun();
 

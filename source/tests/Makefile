@@ -69,6 +69,10 @@ Engine: Engine.cpp
 	env LD_LIBRARY_PATH=../backend valgrind --leak-check=full ./$@
 # 	../modules/juce_audio_basics.a ../modules/juce_core.a \
 
+Exception: Exception.cpp
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
+# 	valgrind ./$@
+
 EngineEvents: EngineEvents.cpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -L../backend -lcarla_standalone2 -o $@
 	env LD_LIBRARY_PATH=../backend valgrind ./$@
