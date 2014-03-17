@@ -45,125 +45,59 @@ CARLA_BACKEND_START_NAMESPACE
 const unsigned short kMaxEngineEventInternalCount = 512;
 
 // -----------------------------------------------------------------------
-// Rack Patchbay stuff
+// AbstractEngineBuffer
 
-enum RackPatchbayGroupIds {
-    RACK_PATCHBAY_GROUP_CARLA = 0,
-    RACK_PATCHBAY_GROUP_AUDIO = 1,
-    RACK_PATCHBAY_GROUP_MIDI  = 2,
-    RACK_PATCHBAY_GROUP_MAX   = 3
-};
+struct AbstractEngineBuffer {
+    AbstractEngineBuffer(const uint32_t /*bufferSize*/) {}
+    virtual ~AbstractEngineBuffer() noexcept {}
 
-enum RackPatchbayCarlaPortIds {
-    RACK_PATCHBAY_CARLA_PORT_NULL       = 0,
-    RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1  = 1,
-    RACK_PATCHBAY_CARLA_PORT_AUDIO_IN2  = 2,
-    RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1 = 3,
-    RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT2 = 4,
-    RACK_PATCHBAY_CARLA_PORT_MIDI_IN    = 5,
-    RACK_PATCHBAY_CARLA_PORT_MIDI_OUT   = 6,
-    RACK_PATCHBAY_CARLA_PORT_MAX        = 7
-};
+    virtual void clear() noexcept = 0;
+    virtual void resize(const uint32_t bufferSize) = 0;
 
-struct PortNameToId {
-    int portId;
-    char name[STR_MAX+1];
-};
+    virtual bool connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int port) noexcept = 0;
+    virtual bool disconnect(const uint connectionId) noexcept = 0;
 
-struct ConnectionToId {
-    uint id;
-    int groupA;
-    int portA;
-    int groupB;
-    int portB;
-};
-
-static inline
-int getCarlaRackPortIdFromName(const char* const shortname) noexcept
-{
-    if (std::strcmp(shortname, "AudioIn1") == 0)
-        return RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1;
-    if (std::strcmp(shortname, "AudioIn2") == 0)
-        return RACK_PATCHBAY_CARLA_PORT_AUDIO_IN2;
-    if (std::strcmp(shortname, "AudioOut1") == 0)
-        return RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1;
-    if (std::strcmp(shortname, "AudioOut2") == 0)
-        return RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT2;
-    if (std::strcmp(shortname, "MidiIn") == 0)
-        return RACK_PATCHBAY_CARLA_PORT_MIDI_IN;
-    if (std::strcmp(shortname, "MidiOut") == 0)
-        return RACK_PATCHBAY_CARLA_PORT_MIDI_OUT;
-    return RACK_PATCHBAY_CARLA_PORT_NULL;
-}
-
-// -----------------------------------------------------------------------
-// EngineRackBuffers
-
-struct EngineRackBuffers {
-    float* in[2];
-    float* out[2];
-
-    // connections stuff
-    LinkedList<int> connectedIn1;
-    LinkedList<int> connectedIn2;
-    LinkedList<int> connectedOut1;
-    LinkedList<int> connectedOut2;
-    CarlaCriticalSection connectLock;
-
-    uint lastConnectionId;
-    LinkedList<ConnectionToId> usedConnections;
-
-    EngineRackBuffers(const uint32_t bufferSize);
-    ~EngineRackBuffers() noexcept;
-    void clear() noexcept;
-    void resize(const uint32_t bufferSize);
-
-    bool connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int port) noexcept;
-    const char* const* getConnections() const;
-
-    CARLA_DECLARE_NON_COPY_STRUCT(EngineRackBuffers)
-};
-
-// -----------------------------------------------------------------------
-// EnginePatchbayBuffers
-
-struct EnginePatchbayBuffers {
-    // TODO
-    EnginePatchbayBuffers(const uint32_t bufferSize);
-    ~EnginePatchbayBuffers() noexcept;
-    void clear() noexcept;
-    void resize(const uint32_t bufferSize);
-
-    bool connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int port) noexcept;
-    const char* const* getConnections() const;
-
-    CARLA_DECLARE_NON_COPY_STRUCT(EnginePatchbayBuffers)
+    virtual const char* const* getConnections() const = 0;
 };
 
 // -----------------------------------------------------------------------
 // InternalAudio
 
 struct EngineInternalAudio {
+    bool isPatchbay; // can only be patchbay or rack mode
     bool isReady;
-    bool usePatchbay;
 
     uint inCount;
     uint outCount;
 
-    union {
-        EngineRackBuffers*     rack;
-        EnginePatchbayBuffers* patchbay;
-    };
+    AbstractEngineBuffer* buffer;
 
-    EngineInternalAudio() noexcept;
-    ~EngineInternalAudio() noexcept;
-    void initPatchbay() noexcept;
-    void clear() noexcept;
+    EngineInternalAudio() noexcept
+        : isPatchbay(false),
+          isReady(false),
+          inCount(0),
+          outCount(0),
+          buffer(nullptr) {}
+
+    ~EngineInternalAudio() noexcept
+    {
+        CARLA_SAFE_ASSERT(! isReady);
+        CARLA_SAFE_ASSERT(buffer == nullptr);
+    }
+
+    void clear() noexcept
+    {
+        isReady  = false;
+        inCount  = 0;
+        outCount = 0;
+
+        CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
+        delete buffer;
+        buffer = nullptr;
+    }
+
     void create(const uint32_t bufferSize);
-    void resize(const uint32_t bufferSize);
-
-    bool connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int port) noexcept;
-    const char* const* getConnections() const;
+    void initPatchbay() noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalAudio)
 };
@@ -175,8 +109,15 @@ struct EngineInternalEvents {
     EngineEvent* in;
     EngineEvent* out;
 
-    EngineInternalEvents() noexcept;
-    ~EngineInternalEvents() noexcept;
+    EngineInternalEvents() noexcept
+        : in(nullptr),
+          out(nullptr) {}
+
+    ~EngineInternalEvents() noexcept
+    {
+        CARLA_SAFE_ASSERT(in == nullptr);
+        CARLA_SAFE_ASSERT(out == nullptr);
+    }
 
     CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalEvents)
 };
@@ -188,7 +129,9 @@ struct EngineInternalTime {
     bool playing;
     uint64_t frame;
 
-    EngineInternalTime() noexcept;
+    EngineInternalTime() noexcept
+        : playing(false),
+          frame(0) {}
 
     CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalTime)
 };
@@ -209,9 +152,21 @@ struct EngineNextAction {
     unsigned int value;
     CarlaMutex   mutex;
 
-    EngineNextAction() noexcept;
-    ~EngineNextAction() noexcept;
-    void ready() noexcept;
+    EngineNextAction() noexcept
+        : opcode(kEnginePostActionNull),
+          pluginId(0),
+          value(0) {}
+
+    ~EngineNextAction() noexcept
+    {
+        CARLA_SAFE_ASSERT(opcode == kEnginePostActionNull);
+    }
+
+    void ready() const noexcept
+    {
+        mutex.lock();
+        mutex.unlock();
+    }
 
     CARLA_DECLARE_NON_COPY_STRUCT(EngineNextAction)
 };
@@ -224,7 +179,12 @@ struct EnginePluginData {
     float insPeak[2];
     float outsPeak[2];
 
-    void clear() noexcept;
+    void clear() noexcept
+    {
+        plugin = nullptr;
+        insPeak[0] = insPeak[1] = 0.0f;
+        outsPeak[0] = outsPeak[1] = 0.0f;
+    }
 };
 
 // -----------------------------------------------------------------------

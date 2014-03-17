@@ -46,34 +46,34 @@ CARLA_BACKEND_START_NAMESPACE
  */
 enum EngineType {
     /*!
-    * Null engine type.
-    */
+     * Null engine type.
+     */
     kEngineTypeNull = 0,
 
     /*!
-    * JACK engine type.\n
-    * Provides all processing modes.
-    */
+     * JACK engine type.\n
+     * Provides all processing modes.
+     */
     kEngineTypeJack = 1,
 
     /*!
-    * Juce engine type, used to provide Native Audio and MIDI support.
-    */
+     * Juce engine type, used to provide Native Audio and MIDI support.
+     */
     kEngineTypeJuce = 2,
 
     /*!
-    * RtAudio engine type, used to provide Native Audio and MIDI support.
-    */
+     * RtAudio engine type, used to provide Native Audio and MIDI support.
+     */
     kEngineTypeRtAudio = 3,
 
     /*!
-    * Plugin engine type, used to export the engine as a plugin.
-    */
+     * Plugin engine type, used to export the engine as a plugin.
+     */
     kEngineTypePlugin = 4,
 
     /*!
-    * Bridge engine type, used in BridgePlugin class.
-    */
+     * Bridge engine type, used in BridgePlugin class.
+     */
     kEngineTypeBridge = 5
 };
 
@@ -82,26 +82,26 @@ enum EngineType {
  */
 enum EnginePortType {
     /*!
-    * Null port type.
-    */
+     * Null port type.
+     */
     kEnginePortTypeNull = 0,
 
     /*!
-    * Audio port type.
-    * \see CarlaEngineAudioPort
-    */
+     * Audio port type.
+     * \see CarlaEngineAudioPort
+     */
     kEnginePortTypeAudio = 1,
 
     /*!
-    * CV port type.
-    * \see CarlaEngineCVPort
-    */
+     * CV port type.
+     * \see CarlaEngineCVPort
+     */
     kEnginePortTypeCV = 2,
 
     /*!
-    * Event port type (Control or MIDI).
-    ** \see CarlaEngineEventPort
-    */
+     * Event port type (Control or MIDI).
+     * \see CarlaEngineEventPort
+     */
     kEnginePortTypeEvent = 3
 };
 
@@ -110,20 +110,20 @@ enum EnginePortType {
  */
 enum EngineEventType {
     /*!
-    * Null port type.
-    */
+     * Null port type.
+     */
     kEngineEventTypeNull = 0,
 
     /*!
-    * Control event type.
-    * \see EngineControlEvent
-    */
+     * Control event type.
+     * \see EngineControlEvent
+     */
     kEngineEventTypeControl = 1,
 
     /*!
-    * MIDI event type.
-    * \see EngineMidiEvent
-    */
+     * MIDI event type.
+     * \see EngineMidiEvent
+     */
     kEngineEventTypeMidi = 2
 };
 
@@ -132,34 +132,34 @@ enum EngineEventType {
  */
 enum EngineControlEventType {
     /*!
-    * Null event type.
-    */
+     * Null event type.
+     */
     kEngineControlEventTypeNull = 0,
 
     /*!
-    * Parameter event type.\n
-    * \note Value uses a normalized range of 0.0f<->1.0f.
-    */
+     * Parameter event type.\n
+     * \note Value uses a normalized range of 0.0f<->1.0f.
+     */
     kEngineControlEventTypeParameter = 1,
 
     /*!
-    * MIDI Bank event type.
-    */
+     * MIDI Bank event type.
+     */
     kEngineControlEventTypeMidiBank = 2,
 
     /*!
-    * MIDI Program change event type.
-    */
+     * MIDI Program change event type.
+     */
     kEngineControlEventTypeMidiProgram = 3,
 
     /*!
-    * All sound off event type.
-    */
+     * All sound off event type.
+     */
     kEngineControlEventTypeAllSoundOff = 4,
 
     /*!
-    * All notes off event type.
-    */
+     * All notes off event type.
+     */
     kEngineControlEventTypeAllNotesOff = 5
 };
 
@@ -174,9 +174,9 @@ struct EngineControlEvent {
     float    value;              //!< Parameter value, normalized to 0.0f<->1.0f.
 
     /*!
-     * Dump control event as MIDI data.
+     * Convert this control event to MIDI data.
      */
-    void dumpToMidiData(const uint8_t channel, uint8_t& size, uint8_t data[3]) const noexcept;
+    void convertToMidiData(const uint8_t channel, uint8_t& size, uint8_t data[3]) const noexcept;
 };
 
 /*!
@@ -190,7 +190,7 @@ struct EngineMidiEvent {
 
     /*!
      * MIDI data, without channel bit.
-     * If size > kDataSize, dataExt is used.
+     * If size > kDataSize, dataExt is used (otherwise NULL).
      */
     uint8_t        data[kDataSize];
     const uint8_t* dataExt;
@@ -213,7 +213,7 @@ struct EngineEvent {
     };
 
     /*!
-     * Fill event from MIDI data.
+     * Fill this event from MIDI data.
      */
     void fillFromMidiData(const uint8_t size, const uint8_t* const data) noexcept;
 };
@@ -584,7 +584,7 @@ public:
      * Add a new port of type \a portType.
      * \note This function does nothing in rack processing mode since ports are static there (2 audio + 1 event for both input and output).
      */
-    virtual CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput) /*noexcept*/;
+    virtual CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput) noexcept;
 
 #ifndef DOXYGEN
 protected:
