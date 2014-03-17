@@ -75,9 +75,7 @@ void CarlaEngineThread::run() noexcept
                     try {
                         plugin->postRtEventsRun();
                     }
-                    catch (...) {
-                        carla_stderr2("Caught exception during postRtEventsRun()");
-                    }
+                    CARLA_SAFE_EXCEPTION("postRtEventsRun()")
                 }
 
                 if (hasUi || oscRegisted)

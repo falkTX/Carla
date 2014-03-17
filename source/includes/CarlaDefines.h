@@ -148,7 +148,11 @@
 #define CARLA_SAFE_ASSERT_RETURN(cond, ret)   if (cond) pass(); else { carla_safe_assert(#cond, __FILE__, __LINE__); return ret; }
 
 /* Define CARLA_SAFE_EXCEPTION */
-#define CARLA_SAFE_EXCEPTION(msg, aftercode) catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); aftercode }
+#define CARLA_SAFE_EXCEPTION(msg)             catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); }
+
+#define CARLA_SAFE_EXCEPTION_BREAK(msg)       catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); break; }
+#define CARLA_SAFE_EXCEPTION_CONTINUE(msg)    catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); continue; }
+#define CARLA_SAFE_EXCEPTION_RETURN(msg, ret) catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); return ret; }
 
 /* Define CARLA_DECLARE_NON_COPY_CLASS */
 #ifdef CARLA_PROPER_CPP11_SUPPORT

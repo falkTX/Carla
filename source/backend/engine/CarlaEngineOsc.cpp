@@ -116,9 +116,7 @@ void CarlaEngineOsc::idle() const noexcept
                 if (lo_server_recv_noblock(fServerTCP, 0) == 0)
                     break;
             }
-            catch(...) {
-                break;
-            }
+            CARLA_SAFE_EXCEPTION_BREAK("OSC idle TCP")
         }
     }
 
@@ -130,9 +128,7 @@ void CarlaEngineOsc::idle() const noexcept
                 if (lo_server_recv_noblock(fServerUDP, 0) == 0)
                     break;
             }
-            catch(...) {
-                break;
-            }
+            CARLA_SAFE_EXCEPTION_BREAK("OSC idle UDP")
         }
     }
 }
@@ -152,10 +148,14 @@ void CarlaEngineOsc::close() noexcept
     {
         try {
             lo_server_del_method(fServerTCP, nullptr, nullptr);
-        } catch(...) {}
+        }
+        CARLA_SAFE_EXCEPTION("lo_server_del_method TCP")
+
         try {
             lo_server_free(fServerTCP);
-        } catch(...) {}
+        }
+        CARLA_SAFE_EXCEPTION("lo_server_free TCP")
+
         fServerTCP = nullptr;
     }
 
@@ -163,10 +163,14 @@ void CarlaEngineOsc::close() noexcept
     {
         try {
             lo_server_del_method(fServerUDP, nullptr, nullptr);
-        } catch(...) {}
+        }
+        CARLA_SAFE_EXCEPTION("lo_server_del_method UDP")
+
         try {
             lo_server_free(fServerUDP);
-        } catch(...) {}
+        }
+        CARLA_SAFE_EXCEPTION("lo_server_free UDP")
+
         fServerUDP = nullptr;
     }
 
@@ -180,7 +184,7 @@ void CarlaEngineOsc::close() noexcept
 
 // -----------------------------------------------------------------------
 
-static bool isDigit(const char c)
+static bool isDigit(const char c) noexcept
 {
     return (c >= '0' && c <= '9');
 }
@@ -210,7 +214,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     // Initial path check
     if (std::strcmp(path, "/register") == 0)
     {
-        const lo_address source = lo_message_get_source(msg);
+        const lo_address source(lo_message_get_source(msg));
         return handleMsgRegister(isTCP, argc, argv, types, source);
     }
     if (std::strcmp(path, "/unregister") == 0)
@@ -286,9 +290,9 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     }
 
     // Get method from path, "/Carla/i/method" -> "method"
-    char method[32];
-    carla_zeroChar(method, 32);
-    std::strncpy(method, path + (nameSize + offset), 31);
+    char method[32+1];
+    method[32] = '\0';
+    std::strncpy(method, path + (nameSize + offset), 32);
 
     if (method[0] == '\0')
     {
