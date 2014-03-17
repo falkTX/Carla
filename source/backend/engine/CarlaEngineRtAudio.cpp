@@ -434,12 +434,12 @@ public:
         {
             callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_CARLA, PATCHBAY_ICON_CARLA, -1, 0.0f, getName());
 
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_PORT_AUDIO_IN1,  PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, "audio-in1");
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_PORT_AUDIO_IN2,  PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, "audio-in2");
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_PORT_AUDIO_OUT1, PATCHBAY_PORT_TYPE_AUDIO,                        0.0f, "audio-out1");
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_PORT_AUDIO_OUT2, PATCHBAY_PORT_TYPE_AUDIO,                        0.0f, "audio-out2");
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_PORT_MIDI_IN,    PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT,  0.0f, "midi-in");
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_PORT_MIDI_OUT,   PATCHBAY_PORT_TYPE_MIDI,                         0.0f, "midi-out");
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1,  PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, "audio-in1");
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_CARLA_PORT_AUDIO_IN2,  PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, "audio-in2");
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1, PATCHBAY_PORT_TYPE_AUDIO,                        0.0f, "audio-out1");
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT2, PATCHBAY_PORT_TYPE_AUDIO,                        0.0f, "audio-out2");
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_CARLA_PORT_MIDI_IN,    PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT,  0.0f, "midi-in");
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_CARLA, RACK_PATCHBAY_CARLA_PORT_MIDI_OUT,   PATCHBAY_PORT_TYPE_MIDI,                         0.0f, "midi-out");
         }
 
         // Audio In
@@ -454,7 +454,7 @@ public:
             for (uint i=0; i < pData->bufAudio.inCount; ++i)
             {
                 std::snprintf(strBuf, STR_MAX, "capture_%i", i+1);
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_IN, int(RACK_PATCHBAY_GROUP_AUDIO_IN*1000 + i), int(PATCHBAY_PORT_TYPE_AUDIO), 0.0f, strBuf);
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_IN, static_cast<int>(i), PATCHBAY_PORT_TYPE_AUDIO, 0.0f, strBuf);
             }
         }
 
@@ -470,7 +470,7 @@ public:
             for (uint i=0; i < pData->bufAudio.outCount; ++i)
             {
                 std::snprintf(strBuf, STR_MAX, "playback_%i", i+1);
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_OUT, int(RACK_PATCHBAY_GROUP_AUDIO_OUT*1000 + i), int(PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT), 0.0f, strBuf);
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_OUT, static_cast<int>(i), PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, strBuf);
             }
         }
 
@@ -481,7 +481,7 @@ public:
             for (uint i=0, count=fDummyMidiIn.getPortCount(); i < count; ++i)
             {
                 PortNameToId portNameToId;
-                portNameToId.portId = int(RACK_PATCHBAY_GROUP_MIDI_IN*1000 + i);
+                portNameToId.portId = static_cast<int>(i);
                 std::strncpy(portNameToId.name, fDummyMidiIn.getPortName(i).c_str(), STR_MAX);
                 portNameToId.name[STR_MAX] = '\0';
                 fUsedMidiIns.append(portNameToId);
@@ -490,23 +490,21 @@ public:
             }
         }
 
-#if 0 // midi-out not implemented yet
         // MIDI Out
         {
             callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_MIDI_OUT, PATCHBAY_ICON_HARDWARE, -1, 0.0f, "Writable MIDI ports");
 
-            for (unsigned int i=0, count=fDummyMidiOut.getPortCount(); i < count; ++i)
+            for (uint i=0, count=fDummyMidiOut.getPortCount(); i < count; ++i)
             {
                 PortNameToId portNameToId;
-                portNameToId.portId = int(RACK_PATCHBAY_GROUP_MIDI_OUT*1000 + i);
+                portNameToId.portId = static_cast<int>(i);
                 std::strncpy(portNameToId.name, fDummyMidiOut.getPortName(i).c_str(), STR_MAX);
                 portNameToId.name[STR_MAX] = '\0';
                 fUsedMidiOuts.append(portNameToId);
 
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, 0, RACK_PATCHBAY_GROUP_MIDI_OUT, portNameToId.portId, PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT, portNameToId.name);
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_MIDI_OUT, portNameToId.portId, PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT, 0.0f, portNameToId.name);
             }
         }
-#endif
 
         // Connections
         rack->connectLock.enter();
@@ -517,14 +515,17 @@ public:
             CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(pData->bufAudio.inCount));
 
             ConnectionToId connectionToId;
-            connectionToId.id      = rack->lastConnectionId;
-            connectionToId.portOut = RACK_PATCHBAY_GROUP_AUDIO_IN*1000 + port;
-            connectionToId.portIn  = RACK_PATCHBAY_PORT_AUDIO_IN1;
+            connectionToId.id       = rack->lastConnectionId;
+            connectionToId.groupOut = RACK_PATCHBAY_GROUP_AUDIO_IN;
+            connectionToId.portOut  = port;
+            connectionToId.groupIn  = RACK_PATCHBAY_GROUP_CARLA;
+            connectionToId.portIn   = RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1;
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
+            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupOut, connectionToId.portOut, connectionToId.groupIn, connectionToId.portIn);
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, 0, 0, 0.0f, strBuf);
 
             rack->usedConnections.append(connectionToId);
-            rack->lastConnectionId++;
+            ++rack->lastConnectionId;
         }
 
         for (LinkedList<int>::Itenerator it = rack->connectedIn2.begin(); it.valid(); it.next())
@@ -533,14 +534,17 @@ public:
             CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(pData->bufAudio.inCount));
 
             ConnectionToId connectionToId;
-            connectionToId.id      = rack->lastConnectionId;
-            connectionToId.portOut = RACK_PATCHBAY_GROUP_AUDIO_IN*1000 + port;
-            connectionToId.portIn  = RACK_PATCHBAY_PORT_AUDIO_IN2;
+            connectionToId.id       = rack->lastConnectionId;
+            connectionToId.groupOut = RACK_PATCHBAY_GROUP_AUDIO_IN;
+            connectionToId.portOut  = port;
+            connectionToId.groupIn  = RACK_PATCHBAY_GROUP_CARLA;
+            connectionToId.portIn   = RACK_PATCHBAY_CARLA_PORT_AUDIO_IN2;
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
+            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupOut, connectionToId.portOut, connectionToId.groupIn, connectionToId.portIn);
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, 0, 0, 0.0f, strBuf);
 
             rack->usedConnections.append(connectionToId);
-            rack->lastConnectionId++;
+            ++rack->lastConnectionId;
         }
 
         for (LinkedList<int>::Itenerator it = rack->connectedOut1.begin(); it.valid(); it.next())
@@ -549,14 +553,17 @@ public:
             CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(pData->bufAudio.outCount));
 
             ConnectionToId connectionToId;
-            connectionToId.id      = rack->lastConnectionId;
-            connectionToId.portOut = RACK_PATCHBAY_PORT_AUDIO_OUT1;
-            connectionToId.portIn  = RACK_PATCHBAY_GROUP_AUDIO_OUT*1000 + port;
+            connectionToId.id       = rack->lastConnectionId;
+            connectionToId.groupOut = RACK_PATCHBAY_GROUP_CARLA;
+            connectionToId.portOut  = RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1;
+            connectionToId.groupIn  = RACK_PATCHBAY_GROUP_AUDIO_OUT;
+            connectionToId.portIn   = port;
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
+            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupOut, connectionToId.portOut, connectionToId.groupIn, connectionToId.portIn);
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, 0, 0, 0.0f, strBuf);
 
             rack->usedConnections.append(connectionToId);
-            rack->lastConnectionId++;
+            ++rack->lastConnectionId;
         }
 
         for (LinkedList<int>::Itenerator it = rack->connectedOut2.begin(); it.valid(); it.next())
@@ -565,14 +572,17 @@ public:
             CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(pData->bufAudio.outCount));
 
             ConnectionToId connectionToId;
-            connectionToId.id      = rack->lastConnectionId;
-            connectionToId.portOut = RACK_PATCHBAY_PORT_AUDIO_OUT2;
-            connectionToId.portIn  = RACK_PATCHBAY_GROUP_AUDIO_OUT*1000 + port;
+            connectionToId.id       = rack->lastConnectionId;
+            connectionToId.groupOut = RACK_PATCHBAY_GROUP_CARLA;
+            connectionToId.portOut  = RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT2;
+            connectionToId.groupIn  = RACK_PATCHBAY_GROUP_AUDIO_OUT;
+            connectionToId.portIn   = port;
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
+            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupOut, connectionToId.portOut, connectionToId.groupIn, connectionToId.portIn);
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, 0, 0, 0.0f, strBuf);
 
             rack->usedConnections.append(connectionToId);
-            rack->lastConnectionId++;
+            ++rack->lastConnectionId;
         }
 
         pData->bufAudio.rack->connectLock.leave();
@@ -582,14 +592,17 @@ public:
             const MidiPort& midiPort(it.getValue());
 
             ConnectionToId connectionToId;
-            connectionToId.id      = rack->lastConnectionId;
-            connectionToId.portOut = RACK_PATCHBAY_GROUP_MIDI_IN*1000 + midiPort.portId;
-            connectionToId.portIn  = RACK_PATCHBAY_PORT_MIDI_IN;
+            connectionToId.id       = rack->lastConnectionId;
+            connectionToId.groupOut = RACK_PATCHBAY_GROUP_MIDI_IN;
+            connectionToId.portOut  = midiPort.portId;
+            connectionToId.groupIn  = RACK_PATCHBAY_GROUP_CARLA;
+            connectionToId.portIn   = RACK_PATCHBAY_CARLA_PORT_MIDI_IN;
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
+            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupOut, connectionToId.portOut, connectionToId.groupIn, connectionToId.portIn);
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, 0, 0, 0.0f, strBuf);
 
             rack->usedConnections.append(connectionToId);
-            rack->lastConnectionId++;
+            ++rack->lastConnectionId;
         }
 
         for (LinkedList<MidiPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
@@ -597,14 +610,17 @@ public:
             const MidiPort& midiPort(it.getValue());
 
             ConnectionToId connectionToId;
-            connectionToId.id      = rack->lastConnectionId;
-            connectionToId.portOut = RACK_PATCHBAY_PORT_MIDI_OUT;
-            connectionToId.portIn  = RACK_PATCHBAY_GROUP_MIDI_OUT*1000 + midiPort.portId;
+            connectionToId.id       = rack->lastConnectionId;
+            connectionToId.groupOut = RACK_PATCHBAY_GROUP_CARLA;
+            connectionToId.portOut  = RACK_PATCHBAY_CARLA_PORT_MIDI_OUT;
+            connectionToId.groupIn  = RACK_PATCHBAY_GROUP_MIDI_OUT;
+            connectionToId.portIn   = midiPort.portId;
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
+            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupOut, connectionToId.portOut, connectionToId.groupIn, connectionToId.portIn);
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, 0, 0, 0.0f, strBuf);
 
             rack->usedConnections.append(connectionToId);
-            rack->lastConnectionId++;
+            ++rack->lastConnectionId;
         }
 
         return true;

@@ -448,7 +448,7 @@ template<typename T>
 class LinkedList : public AbstractLinkedList<T>
 {
 public:
-    LinkedList() {}
+    LinkedList() noexcept {}
 
 private:
     typename AbstractLinkedList<T>::Data* _allocate() noexcept override

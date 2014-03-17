@@ -934,7 +934,7 @@ public:
     /*!
      * Set last error.
      */
-    void setLastError(const char* const error) const;
+    void setLastError(const char* const error) const noexcept;
 
     // -------------------------------------------------------------------
     // Misc
@@ -1005,6 +1005,16 @@ public:
      */
     void registerEnginePlugin(const unsigned int id, CarlaPlugin* const plugin) noexcept;
 
+#ifndef BUILD_BRIDGE
+    /*!
+     * Virtual functions for handling MIDI ports in the rack patchbay.
+     */
+    virtual bool connectRackMidiInPort(const int)     { return false; }
+    virtual bool connectRackMidiOutPort(const int)    { return false; }
+    virtual bool disconnectRackMidiInPort(const int)  { return false; }
+    virtual bool disconnectRackMidiOutPort(const int) { return false; }
+#endif
+
     // -------------------------------------------------------------------
 
 protected:
@@ -1049,14 +1059,6 @@ protected:
 #ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------
     // Patchbay stuff
-
-    /*!
-     * Virtual functions for handling MIDI ports in the rack patchbay.
-     */
-    virtual bool connectRackMidiInPort(const int)     { return false; }
-    virtual bool connectRackMidiOutPort(const int)    { return false; }
-    virtual bool disconnectRackMidiInPort(const int)  { return false; }
-    virtual bool disconnectRackMidiOutPort(const int) { return false; }
 
     /*!
      * Virtual functions for handling patchbay state.

@@ -98,7 +98,7 @@ public:
     // -------------------------------------------------------------------
     // Now the actual rt-linkedlist code
 
-    RtLinkedList(Pool& memPool)
+    RtLinkedList(Pool& memPool) noexcept
         : fMemPool(memPool) {}
 
     bool append_sleepy(const T& value) noexcept

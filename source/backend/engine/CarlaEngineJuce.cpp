@@ -266,7 +266,7 @@ public:
                 else
                     std::snprintf(strBuf, STR_MAX, "capture_%i", i+1);
 
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_IN, static_cast<int>(RACK_PATCHBAY_GROUP_AUDIO_IN*1000 + i), PATCHBAY_PORT_TYPE_AUDIO, 0.0f, strBuf);
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_IN, static_cast<int>(i), PATCHBAY_PORT_TYPE_AUDIO, 0.0f, strBuf);
             }
         }
 
@@ -291,144 +291,15 @@ public:
                 else
                     std::snprintf(strBuf, STR_MAX, "playback_%i", i+1);
 
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_OUT, static_cast<int>(RACK_PATCHBAY_GROUP_AUDIO_OUT*1000 + i), PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, strBuf);
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_AUDIO_OUT, static_cast<int>(i), static_cast<int>(PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT), 0.0f, strBuf);
             }
         }
 
-#if 0 // midi implemented yet
         // MIDI In
-        {
-            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_MIDI_IN, PATCHBAY_ICON_HARDWARE, -1, 0.0f, "Readable MIDI ports");
-
-            for (unsigned int i=0, count=fDummyMidiIn.getPortCount(); i < count; ++i)
-            {
-                PortNameToId portNameToId;
-                portNameToId.portId = RACK_PATCHBAY_GROUP_MIDI_IN*1000 + i;
-                std::strncpy(portNameToId.name, fDummyMidiIn.getPortName(i).c_str(), STR_MAX);
-                fUsedMidiIns.append(portNameToId);
-
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_PATCHBAY_GROUP_MIDI_IN, portNameToId.portId, PATCHBAY_PORT_TYPE_MIDI, 0.0f, portNameToId.name);
-            }
-        }
 
         // MIDI Out
-        {
-            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_PATCHBAY_GROUP_MIDI_OUT, PATCHBAY_ICON_HARDWARE, -1, 0.0f, "Writable MIDI ports");
 
-            for (unsigned int i=0, count=fDummyMidiOut.getPortCount(); i < count; ++i)
-            {
-                PortNameToId portNameToId;
-                portNameToId.portId = RACK_PATCHBAY_GROUP_MIDI_OUT*1000 + i;
-                std::strncpy(portNameToId.name, fDummyMidiOut.getPortName(i).c_str(), STR_MAX);
-                fUsedMidiOuts.append(portNameToId);
-
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, 0, RACK_PATCHBAY_GROUP_MIDI_OUT, portNameToId.portId, PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT, portNameToId.name);
-            }
-        }
-#endif
-
-#if 0
         // Connections
-        rack->connectLock.lock();
-
-        for (LinkedList<uint>::Itenerator it = rack->connectedIns[0].begin(); it.valid(); it.next())
-        {
-            const uint& port(it.getValue());
-            CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.inCount);
-
-            ConnectionToId connectionToId;
-            connectionToId.id      = rack->lastConnectionId;
-            connectionToId.portOut = RACK_PATCHBAY_GROUP_AUDIO_IN*1000 + port;
-            connectionToId.portIn  = RACK_PATCHBAY_PORT_AUDIO_IN1;
-
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
-
-            rack->usedConnections.append(connectionToId);
-            rack->lastConnectionId++;
-        }
-
-        for (LinkedList<uint>::Itenerator it = rack->connectedIns[1].begin(); it.valid(); it.next())
-        {
-            const uint& port(it.getValue());
-            CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.inCount);
-
-            ConnectionToId connectionToId;
-            connectionToId.id      = rack->lastConnectionId;
-            connectionToId.portOut = RACK_PATCHBAY_GROUP_AUDIO_IN*1000 + port;
-            connectionToId.portIn  = RACK_PATCHBAY_PORT_AUDIO_IN2;
-
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
-
-            rack->usedConnections.append(connectionToId);
-            rack->lastConnectionId++;
-        }
-
-        for (LinkedList<uint>::Itenerator it = rack->connectedOuts[0].begin(); it.valid(); it.next())
-        {
-            const uint& port(it.getValue());
-            CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.outCount);
-
-            ConnectionToId connectionToId;
-            connectionToId.id      = rack->lastConnectionId;
-            connectionToId.portOut = RACK_PATCHBAY_PORT_AUDIO_OUT1;
-            connectionToId.portIn  = RACK_PATCHBAY_GROUP_AUDIO_OUT*1000 + port;
-
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
-
-            rack->usedConnections.append(connectionToId);
-            rack->lastConnectionId++;
-        }
-
-        for (LinkedList<uint>::Itenerator it = rack->connectedOuts[1].begin(); it.valid(); it.next())
-        {
-            const uint& port(it.getValue());
-            CARLA_SAFE_ASSERT_CONTINUE(port < pData->bufAudio.outCount);
-
-            ConnectionToId connectionToId;
-            connectionToId.id      = rack->lastConnectionId;
-            connectionToId.portOut = RACK_PATCHBAY_PORT_AUDIO_OUT2;
-            connectionToId.portIn  = RACK_PATCHBAY_GROUP_AUDIO_OUT*1000 + port;
-
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
-
-            rack->usedConnections.append(connectionToId);
-            rack->lastConnectionId++;
-        }
-
-        pData->bufAudio.rack->connectLock.unlock();
-
-#if 0
-        for (LinkedList<MidiPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
-        {
-            const MidiPort& midiPort(it.getValue());
-
-            ConnectionToId connectionToId;
-            connectionToId.id      = rack->lastConnectionId;
-            connectionToId.portOut = RACK_PATCHBAY_GROUP_MIDI_IN*1000 + midiPort.portId;
-            connectionToId.portIn  = RACK_PATCHBAY_PORT_MIDI_IN;
-
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
-
-            rack->usedConnections.append(connectionToId);
-            rack->lastConnectionId++;
-        }
-
-        for (LinkedList<MidiPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
-        {
-            const MidiPort& midiPort(it.getValue());
-
-            ConnectionToId connectionToId;
-            connectionToId.id      = rack->lastConnectionId;
-            connectionToId.portOut = RACK_PATCHBAY_PORT_MIDI_OUT;
-            connectionToId.portIn  = RACK_PATCHBAY_GROUP_MIDI_OUT*1000 + midiPort.portId;
-
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, rack->lastConnectionId, connectionToId.portOut, connectionToId.portIn, 0.0f, nullptr);
-
-            rack->usedConnections.append(connectionToId);
-            rack->lastConnectionId++;
-        }
-#endif
-#endif
 
         return true;
     }

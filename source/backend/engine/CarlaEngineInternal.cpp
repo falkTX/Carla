@@ -290,12 +290,12 @@ EngineRackBuffers::EngineRackBuffers(const uint32_t bufferSize)
     resize(bufferSize);
 }
 
-EngineRackBuffers::~EngineRackBuffers()
+EngineRackBuffers::~EngineRackBuffers() noexcept
 {
     clear();
 }
 
-void EngineRackBuffers::clear()
+void EngineRackBuffers::clear() noexcept
 {
     lastConnectionId = 0;
 
@@ -348,6 +348,96 @@ void EngineRackBuffers::resize(const uint32_t bufferSize)
     }
 }
 
+bool EngineRackBuffers::connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int portB) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(engine != nullptr, false);
+    CARLA_SAFE_ASSERT_RETURN(groupA != groupB, false);
+    CARLA_SAFE_ASSERT_RETURN(groupA >= RACK_PATCHBAY_GROUP_CARLA && groupA < RACK_PATCHBAY_GROUP_MAX, false);
+    CARLA_SAFE_ASSERT_RETURN(groupB >= RACK_PATCHBAY_GROUP_CARLA && groupB < RACK_PATCHBAY_GROUP_MAX, false);
+    CARLA_SAFE_ASSERT_RETURN(portA >= 0, false);
+    CARLA_SAFE_ASSERT_RETURN(portB >= 0, false);
+
+    int carlaPort, otherPort;
+
+    if (groupA == RACK_PATCHBAY_GROUP_CARLA)
+    {
+        carlaPort = portA;
+        otherPort = portB;
+    }
+    else
+    {
+        CARLA_SAFE_ASSERT_RETURN(groupB == RACK_PATCHBAY_GROUP_CARLA, false);
+
+        carlaPort = portB;
+        otherPort = portA;
+    }
+
+    bool makeConnection = false;
+
+    switch (carlaPort)
+    {
+    case RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1:
+        connectLock.enter();
+        connectedIn1.append(otherPort);
+        connectLock.leave();
+        makeConnection = true;
+        break;
+
+    case RACK_PATCHBAY_CARLA_PORT_AUDIO_IN2:
+        connectLock.enter();
+        connectedIn2.append(otherPort);
+        connectLock.leave();
+        makeConnection = true;
+        break;
+
+    case RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1:
+        connectLock.enter();
+        connectedOut1.append(otherPort);
+        connectLock.leave();
+        makeConnection = true;
+        break;
+
+    case RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT2:
+        connectLock.enter();
+        connectedOut2.append(otherPort);
+        connectLock.leave();
+        makeConnection = true;
+        break;
+
+    case RACK_PATCHBAY_CARLA_PORT_MIDI_IN:
+        makeConnection = engine->connectRackMidiInPort(otherPort);
+        break;
+
+    case RACK_PATCHBAY_CARLA_PORT_MIDI_OUT:
+        makeConnection = engine->connectRackMidiOutPort(otherPort);
+        break;
+    }
+
+    if (! makeConnection)
+    {
+        engine->setLastError("Invalid rack connection");
+        return false;
+    }
+
+    ConnectionToId connectionToId;
+    connectionToId.id     = lastConnectionId;
+    connectionToId.groupA = groupA;
+    connectionToId.portA  = portA;
+    connectionToId.groupB = groupB;
+    connectionToId.portB  = portB;
+
+    char strBuf[STR_MAX+1];
+    strBuf[STR_MAX] = '\0';
+    std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", groupA, portA, groupB, portB);
+
+    engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, lastConnectionId, 0, 0, 0.0f, strBuf);
+
+    usedConnections.append(connectionToId);
+    ++lastConnectionId;
+
+    return true;
+}
+
 const char* const* EngineRackBuffers::getConnections() const
 {
     if (usedConnections.count() == 0)
@@ -360,56 +450,54 @@ const char* const* EngineRackBuffers::getConnections() const
     {
         const ConnectionToId& connection(it.getValue());
 
-        const int otherPort((connection.portOut >= 0) ? connection.portOut : connection.portIn);
-        const int carlaPort((otherPort == connection.portOut) ? connection.portIn : connection.portOut);
+        CARLA_SAFE_ASSERT_CONTINUE(connection.groupA != connection.groupB);
+        CARLA_SAFE_ASSERT_CONTINUE(connection.groupA >= RACK_PATCHBAY_GROUP_CARLA && connection.groupA < RACK_PATCHBAY_GROUP_MAX);
+        CARLA_SAFE_ASSERT_CONTINUE(connection.groupB >= RACK_PATCHBAY_GROUP_CARLA && connection.groupB < RACK_PATCHBAY_GROUP_MAX);
+        CARLA_SAFE_ASSERT_CONTINUE(connection.portA >= 0);
+        CARLA_SAFE_ASSERT_CONTINUE(connection.portB >= 0);
 
-        if (otherPort >= RACK_PATCHBAY_GROUP_MIDI_OUT*1000)
+        int carlaPort, otherPort;
+
+        if (connection.groupA == RACK_PATCHBAY_GROUP_CARLA)
         {
-            CARLA_SAFE_ASSERT_CONTINUE(carlaPort == RACK_PATCHBAY_PORT_MIDI_IN);
-
-            const int portId(otherPort-RACK_PATCHBAY_GROUP_MIDI_OUT*1000);
-
-            std::sprintf(strBuf, "MidiOut:%i", portId+1);
-            connList.append(carla_strdup(strBuf));
-
-            connList.append(carla_strdup("Carla:MidiOut"));
-        }
-        else if (otherPort >= RACK_PATCHBAY_GROUP_MIDI_IN*1000)
-        {
-            CARLA_SAFE_ASSERT_CONTINUE(carlaPort == RACK_PATCHBAY_PORT_MIDI_OUT);
-
-            const int portId(otherPort-RACK_PATCHBAY_GROUP_MIDI_IN*1000);
-
-            connList.append(carla_strdup("Carla:MidiIn"));
-
-            std::sprintf(strBuf, "MidiIn:%i", portId+1);
-            connList.append(carla_strdup(strBuf));
-        }
-        else if (otherPort >= RACK_PATCHBAY_GROUP_AUDIO_OUT*1000)
-        {
-            CARLA_SAFE_ASSERT_CONTINUE(carlaPort == RACK_PATCHBAY_PORT_AUDIO_OUT1 || carlaPort == RACK_PATCHBAY_PORT_AUDIO_OUT2);
-
-            const int portId(otherPort-RACK_PATCHBAY_GROUP_AUDIO_OUT*1000);
-
-            std::sprintf(strBuf, "AudioOut:%i", portId+1);
-            connList.append(carla_strdup(strBuf));
-
-            connList.append(carla_strdup((carlaPort == RACK_PATCHBAY_PORT_AUDIO_OUT1) ? "Carla:AudioOut1" : "Carla:AudioOut2"));
-        }
-        else if (otherPort >= RACK_PATCHBAY_GROUP_AUDIO_IN*1000)
-        {
-            CARLA_SAFE_ASSERT_CONTINUE(carlaPort == RACK_PATCHBAY_PORT_AUDIO_IN1 || carlaPort == RACK_PATCHBAY_PORT_AUDIO_IN2);
-
-            const int portId(otherPort-RACK_PATCHBAY_GROUP_AUDIO_IN*1000);
-
-            connList.append(carla_strdup((carlaPort == RACK_PATCHBAY_PORT_AUDIO_IN1) ? "Carla:AudioIn1" : "Carla:AudioIn2"));
-
-            std::sprintf(strBuf, "AudioIn:%i", portId+1);
-            connList.append(carla_strdup(strBuf));
+            carlaPort = connection.portA;
+            otherPort = connection.portB;
         }
         else
         {
-            CARLA_SAFE_ASSERT_RETURN(false, nullptr);
+            CARLA_SAFE_ASSERT_CONTINUE(connection.groupB == RACK_PATCHBAY_GROUP_CARLA);
+
+            carlaPort = connection.portB;
+            otherPort = connection.portA;
+        }
+
+        switch (carlaPort)
+        {
+        case RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1:
+        case RACK_PATCHBAY_CARLA_PORT_AUDIO_IN2:
+            std::sprintf(strBuf, "AudioIn:%i", otherPort+1);
+            connList.append(carla_strdup(strBuf));
+            connList.append(carla_strdup((carlaPort == RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1) ? "Carla:AudioIn1" : "Carla:AudioIn2"));
+            break;
+
+        case RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1:
+        case RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT2:
+            connList.append(carla_strdup((carlaPort == RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1) ? "Carla:AudioOut1" : "Carla:AudioOut2"));
+            std::sprintf(strBuf, "AudioOut:%i", otherPort+1);
+            connList.append(carla_strdup(strBuf));
+            break;
+
+        case RACK_PATCHBAY_CARLA_PORT_MIDI_IN:
+            std::sprintf(strBuf, "MidiIn:%i", otherPort+1);
+            connList.append(carla_strdup(strBuf));
+            connList.append(carla_strdup("Carla:MidiIn"));
+            break;
+
+        case RACK_PATCHBAY_CARLA_PORT_MIDI_OUT:
+            connList.append(carla_strdup("Carla:MidiOut"));
+            std::sprintf(strBuf, "MidiOut:%i", otherPort+1);
+            connList.append(carla_strdup(strBuf));
+            break;
         }
     }
 
@@ -437,17 +525,24 @@ EnginePatchbayBuffers::EnginePatchbayBuffers(const uint32_t bufferSize)
     resize(bufferSize);
 }
 
-EnginePatchbayBuffers::~EnginePatchbayBuffers()
+EnginePatchbayBuffers::~EnginePatchbayBuffers() noexcept
 {
     clear();
 }
 
-void EnginePatchbayBuffers::clear()
+void EnginePatchbayBuffers::clear() noexcept
 {
 }
 
 void EnginePatchbayBuffers::resize(const uint32_t /*bufferSize*/)
 {
+}
+
+bool EnginePatchbayBuffers::connect(CarlaEngine* const engine, const int, const int, const int, const int) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(engine != nullptr, false);
+
+    return false;
 }
 
 const char* const* EnginePatchbayBuffers::getConnections() const
@@ -490,7 +585,7 @@ void EngineInternalAudio::initPatchbay() noexcept
     }
 }
 
-void EngineInternalAudio::clear()
+void EngineInternalAudio::clear() noexcept
 {
     isReady  = false;
     inCount  = 0;
@@ -537,6 +632,34 @@ void EngineInternalAudio::resize(const uint32_t bufferSize)
     {
         CARLA_SAFE_ASSERT_RETURN(rack != nullptr,);
         rack->resize(bufferSize);
+    }
+}
+
+bool EngineInternalAudio::connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int portB) noexcept
+{
+    if (usePatchbay)
+    {
+        CARLA_SAFE_ASSERT_RETURN(patchbay != nullptr, nullptr);
+        return patchbay->connect(engine, groupA, portA, groupB, portB);
+    }
+    else
+    {
+        CARLA_SAFE_ASSERT_RETURN(rack != nullptr, nullptr);
+        return rack->connect(engine, groupA, portA, groupB, portB);
+    }
+}
+
+const char* const* EngineInternalAudio::getConnections() const
+{
+    if (usePatchbay)
+    {
+        CARLA_SAFE_ASSERT_RETURN(patchbay != nullptr, nullptr);
+        return patchbay->getConnections();
+    }
+    else
+    {
+        CARLA_SAFE_ASSERT_RETURN(rack != nullptr, nullptr);
+        return rack->getConnections();
     }
 }
 

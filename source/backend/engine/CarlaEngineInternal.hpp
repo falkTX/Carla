@@ -48,22 +48,21 @@ const unsigned short kMaxEngineEventInternalCount = 512;
 // Rack Patchbay stuff
 
 enum RackPatchbayGroupIds {
-    RACK_PATCHBAY_GROUP_CARLA     = 0,
-    RACK_PATCHBAY_GROUP_AUDIO_IN  = 1,
-    RACK_PATCHBAY_GROUP_AUDIO_OUT = 2,
-    RACK_PATCHBAY_GROUP_MIDI_IN   = 3,
-    RACK_PATCHBAY_GROUP_MIDI_OUT  = 4,
-    RACK_PATCHBAY_GROUP_MAX       = 5
+    RACK_PATCHBAY_GROUP_CARLA = 0,
+    RACK_PATCHBAY_GROUP_AUDIO = 1,
+    RACK_PATCHBAY_GROUP_MIDI  = 2,
+    RACK_PATCHBAY_GROUP_MAX   = 3
 };
 
-enum RackPatchbayPortIds {
-    RACK_PATCHBAY_PORT_AUDIO_IN1  = -1,
-    RACK_PATCHBAY_PORT_AUDIO_IN2  = -2,
-    RACK_PATCHBAY_PORT_AUDIO_OUT1 = -3,
-    RACK_PATCHBAY_PORT_AUDIO_OUT2 = -4,
-    RACK_PATCHBAY_PORT_MIDI_IN    = -5,
-    RACK_PATCHBAY_PORT_MIDI_OUT   = -6,
-    RACK_PATCHBAY_PORT_MAX        = -7
+enum RackPatchbayCarlaPortIds {
+    RACK_PATCHBAY_CARLA_PORT_NULL       = 0,
+    RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1  = 1,
+    RACK_PATCHBAY_CARLA_PORT_AUDIO_IN2  = 2,
+    RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1 = 3,
+    RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT2 = 4,
+    RACK_PATCHBAY_CARLA_PORT_MIDI_IN    = 5,
+    RACK_PATCHBAY_CARLA_PORT_MIDI_OUT   = 6,
+    RACK_PATCHBAY_CARLA_PORT_MAX        = 7
 };
 
 struct PortNameToId {
@@ -73,9 +72,29 @@ struct PortNameToId {
 
 struct ConnectionToId {
     uint id;
-    int  portOut;
-    int  portIn;
+    int groupA;
+    int portA;
+    int groupB;
+    int portB;
 };
+
+static inline
+int getCarlaRackPortIdFromName(const char* const shortname) noexcept
+{
+    if (std::strcmp(shortname, "AudioIn1") == 0)
+        return RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1;
+    if (std::strcmp(shortname, "AudioIn2") == 0)
+        return RACK_PATCHBAY_CARLA_PORT_AUDIO_IN2;
+    if (std::strcmp(shortname, "AudioOut1") == 0)
+        return RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1;
+    if (std::strcmp(shortname, "AudioOut2") == 0)
+        return RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT2;
+    if (std::strcmp(shortname, "MidiIn") == 0)
+        return RACK_PATCHBAY_CARLA_PORT_MIDI_IN;
+    if (std::strcmp(shortname, "MidiOut") == 0)
+        return RACK_PATCHBAY_CARLA_PORT_MIDI_OUT;
+    return RACK_PATCHBAY_CARLA_PORT_NULL;
+}
 
 // -----------------------------------------------------------------------
 // EngineRackBuffers
@@ -95,9 +114,11 @@ struct EngineRackBuffers {
     LinkedList<ConnectionToId> usedConnections;
 
     EngineRackBuffers(const uint32_t bufferSize);
-    ~EngineRackBuffers();
-    void clear();
+    ~EngineRackBuffers() noexcept;
+    void clear() noexcept;
     void resize(const uint32_t bufferSize);
+
+    bool connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int port) noexcept;
     const char* const* getConnections() const;
 
     CARLA_DECLARE_NON_COPY_STRUCT(EngineRackBuffers)
@@ -109,9 +130,11 @@ struct EngineRackBuffers {
 struct EnginePatchbayBuffers {
     // TODO
     EnginePatchbayBuffers(const uint32_t bufferSize);
-    ~EnginePatchbayBuffers();
-    void clear();
+    ~EnginePatchbayBuffers() noexcept;
+    void clear() noexcept;
     void resize(const uint32_t bufferSize);
+
+    bool connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int port) noexcept;
     const char* const* getConnections() const;
 
     CARLA_DECLARE_NON_COPY_STRUCT(EnginePatchbayBuffers)
@@ -135,9 +158,12 @@ struct EngineInternalAudio {
     EngineInternalAudio() noexcept;
     ~EngineInternalAudio() noexcept;
     void initPatchbay() noexcept;
-    void clear();
+    void clear() noexcept;
     void create(const uint32_t bufferSize);
     void resize(const uint32_t bufferSize);
+
+    bool connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int port) noexcept;
+    const char* const* getConnections() const;
 
     CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalAudio)
 };

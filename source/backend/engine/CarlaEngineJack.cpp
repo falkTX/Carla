@@ -968,6 +968,7 @@ public:
             fUsedConnections.append(connectionToId);
 
             char strBuf[STR_MAX+1];
+            strBuf[STR_MAX] = '\0';
             std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", groupA, portA, groupB, portB);
 
             callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
