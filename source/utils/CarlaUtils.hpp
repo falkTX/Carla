@@ -168,6 +168,18 @@ void carla_safe_assert_uint2(const char* const assertion, const char* const file
 }
 
 // -----------------------------------------------------------------------
+// carla_safe_exception*
+
+/*
+ * Print a safe exception error message.
+ */
+static inline
+void carla_safe_exception(const char* const exception, const char* const file, const int line) noexcept
+{
+    carla_stderr2("Carla exception caught: \"%s\" in file %s, line %i", exception, file, line);
+}
+
+// -----------------------------------------------------------------------
 // carla_*sleep
 
 /*

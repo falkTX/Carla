@@ -40,16 +40,18 @@ struct Struct2 {
 
 int main()
 {
+    carla_safe_assert("test here", __FILE__, __LINE__);
+
     Struct1 a;
     Struct2* b = nullptr;
 
     try {
         a.throwHere();
-    } CARLA_CATCH_MSG("Struct1 throw", carla_stdout("after text1 here");)
+    } CARLA_SAFE_EXCEPTION("Struct1 throw", carla_stdout("after text1 here");)
 
     try {
         b = new Struct2;
-    } CARLA_CATCH_MSG("Struct2 throw", carla_stdout("after text2 here");)
+    } CARLA_SAFE_EXCEPTION("Struct2 throw", carla_stdout("after text2 here");)
 
     if (b != nullptr)
     {

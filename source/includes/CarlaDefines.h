@@ -143,9 +143,12 @@
 #define CARLA_SAFE_ASSERT_UINT(cond, value)   if (cond) pass(); else carla_safe_assert_uint (#cond, __FILE__, __LINE__, static_cast<uint>(value));
 #define CARLA_SAFE_ASSERT_UINT2(cond, v1, v2) if (cond) pass(); else carla_safe_assert_uint2(#cond, __FILE__, __LINE__, static_cast<uint>(v1), static_cast<uint>(v2));
 
-#define CARLA_SAFE_ASSERT_BREAK(cond)        if (cond) pass(); else { carla_safe_assert(#cond, __FILE__, __LINE__); break; }
-#define CARLA_SAFE_ASSERT_CONTINUE(cond)     if (cond) pass(); else { carla_safe_assert(#cond, __FILE__, __LINE__); continue; }
-#define CARLA_SAFE_ASSERT_RETURN(cond, ret)  if (cond) pass(); else { carla_safe_assert(#cond, __FILE__, __LINE__); return ret; }
+#define CARLA_SAFE_ASSERT_BREAK(cond)         if (cond) pass(); else { carla_safe_assert(#cond, __FILE__, __LINE__); break; }
+#define CARLA_SAFE_ASSERT_CONTINUE(cond)      if (cond) pass(); else { carla_safe_assert(#cond, __FILE__, __LINE__); continue; }
+#define CARLA_SAFE_ASSERT_RETURN(cond, ret)   if (cond) pass(); else { carla_safe_assert(#cond, __FILE__, __LINE__); return ret; }
+
+/* Define CARLA_SAFE_EXCEPTION */
+#define CARLA_SAFE_EXCEPTION(msg, aftercode) catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); aftercode }
 
 /* Define CARLA_DECLARE_NON_COPY_CLASS */
 #ifdef CARLA_PROPER_CPP11_SUPPORT
@@ -187,13 +190,6 @@ private:                               \
     static void* operator new(size_t); \
     static void operator delete(void*);
 #endif
-
-/* Define CARLA_CATCH_MSG */
-#define CARLA_CATCH_MSG(msg, after) \
-    catch(...) {                                                     \
-        carla_stderr2("Caught exception: " msg); \
-        after                                                        \
-    }
 
 /* Define EXTERN_C */
 #ifdef __cplusplus
