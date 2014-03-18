@@ -232,12 +232,12 @@ struct EngineOptions {
     bool preferUiBridges;
     bool uisAlwaysOnTop;
 
-    unsigned int maxParameters;
-    unsigned int uiBridgesTimeout;
-    unsigned int audioNumPeriods;
-    unsigned int audioBufferSize;
-    unsigned int audioSampleRate;
-    const char*  audioDevice;
+    uint maxParameters;
+    uint uiBridgesTimeout;
+    uint audioNumPeriods;
+    uint audioBufferSize;
+    uint audioSampleRate;
+    const char* audioDevice;
 
     const char* binaryDir;
     const char* resourceDir;

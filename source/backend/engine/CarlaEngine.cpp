@@ -49,6 +49,11 @@ CARLA_BACKEND_START_NAMESPACE
 #endif
 
 // -----------------------------------------------------------------------
+// Fallback data
+
+static const EngineEvent kFallbackEngineEvent = { kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, 0.0f }} };
+
+// -----------------------------------------------------------------------
 // EngineControlEvent
 
 void EngineControlEvent::convertToMidiData(const uint8_t channel, uint8_t& size, uint8_t data[3]) const noexcept
@@ -301,6 +306,217 @@ bool EngineTimeInfo::operator!=(const EngineTimeInfo& timeInfo) const noexcept
 }
 
 // -----------------------------------------------------------------------
+// Carla Engine port (Abstract)
+
+CarlaEnginePort::CarlaEnginePort(const CarlaEngine& engine, const bool isInputPort) noexcept
+    : fEngine(engine),
+      fIsInput(isInputPort)
+{
+    carla_debug("CarlaEnginePort::CarlaEnginePort(%s)", bool2str(isInputPort));
+}
+
+CarlaEnginePort::~CarlaEnginePort() noexcept
+{
+    carla_debug("CarlaEnginePort::~CarlaEnginePort()");
+}
+
+// -----------------------------------------------------------------------
+// Carla Engine Audio port
+
+CarlaEngineAudioPort::CarlaEngineAudioPort(const CarlaEngine& engine, const bool isInputPort) noexcept
+    : CarlaEnginePort(engine, isInputPort),
+      fBuffer(nullptr)
+{
+    carla_debug("CarlaEngineAudioPort::CarlaEngineAudioPort(%s)", bool2str(isInputPort));
+}
+
+CarlaEngineAudioPort::~CarlaEngineAudioPort() noexcept
+{
+    carla_debug("CarlaEngineAudioPort::~CarlaEngineAudioPort()");
+}
+
+void CarlaEngineAudioPort::initBuffer() noexcept
+{
+}
+
+// -----------------------------------------------------------------------
+// Carla Engine CV port
+
+CarlaEngineCVPort::CarlaEngineCVPort(const CarlaEngine& engine, const bool isInputPort) noexcept
+    : CarlaEnginePort(engine, isInputPort),
+      fBuffer(nullptr)
+{
+    carla_debug("CarlaEngineCVPort::CarlaEngineCVPort(%s)", bool2str(isInputPort));
+}
+
+CarlaEngineCVPort::~CarlaEngineCVPort() noexcept
+{
+    carla_debug("CarlaEngineCVPort::~CarlaEngineCVPort()");
+}
+
+void CarlaEngineCVPort::initBuffer() noexcept
+{
+}
+
+// -----------------------------------------------------------------------
+// Carla Engine Event port
+
+CarlaEngineEventPort::CarlaEngineEventPort(const CarlaEngine& engine, const bool isInputPort) noexcept
+    : CarlaEnginePort(engine, isInputPort),
+      fBuffer(nullptr),
+      fProcessMode(engine.getProccessMode())
+{
+    carla_debug("CarlaEngineEventPort::CarlaEngineEventPort(%s)", bool2str(isInputPort));
+
+    if (fProcessMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        fBuffer = new EngineEvent[kMaxEngineEventInternalCount];
+}
+
+CarlaEngineEventPort::~CarlaEngineEventPort() noexcept
+{
+    carla_debug("CarlaEngineEventPort::~CarlaEngineEventPort()");
+
+    if (fProcessMode == ENGINE_PROCESS_MODE_PATCHBAY)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
+
+        delete[] fBuffer;
+        fBuffer = nullptr;
+    }
+}
+
+void CarlaEngineEventPort::initBuffer() noexcept
+{
+    if (fProcessMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || fProcessMode == ENGINE_PROCESS_MODE_BRIDGE)
+        fBuffer = fEngine.getInternalEventBuffer(fIsInput);
+    else if (fProcessMode == ENGINE_PROCESS_MODE_PATCHBAY && ! fIsInput)
+        carla_zeroStruct<EngineEvent>(fBuffer, kMaxEngineEventInternalCount);
+}
+
+uint32_t CarlaEngineEventPort::getEventCount() const noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(fIsInput, 0);
+    CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, 0);
+    CARLA_SAFE_ASSERT_RETURN(fProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, 0);
+
+    uint32_t i=0;
+
+    for (; i < kMaxEngineEventInternalCount; ++i)
+    {
+        if (fBuffer[i].type == kEngineEventTypeNull)
+            break;
+    }
+
+    return i;
+}
+
+const EngineEvent& CarlaEngineEventPort::getEvent(const uint32_t index) const noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(fIsInput, kFallbackEngineEvent);
+    CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, kFallbackEngineEvent);
+    CARLA_SAFE_ASSERT_RETURN(fProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, kFallbackEngineEvent);
+    CARLA_SAFE_ASSERT_RETURN(index < kMaxEngineEventInternalCount, kFallbackEngineEvent);
+
+    return fBuffer[index];
+}
+
+const EngineEvent& CarlaEngineEventPort::getEventUnchecked(const uint32_t index) const noexcept
+{
+    return fBuffer[index];
+}
+
+bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(! fIsInput, false);
+    CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
+    CARLA_SAFE_ASSERT_RETURN(fProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, false);
+    CARLA_SAFE_ASSERT_RETURN(type != kEngineControlEventTypeNull, false);
+    CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, false);
+    CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.0f);
+
+    if (type == kEngineControlEventTypeParameter) {
+        CARLA_SAFE_ASSERT(! MIDI_IS_CONTROL_BANK_SELECT(param));
+    }
+
+    // FIXME? should not fix range if midi-program
+    const float fixedValue(carla_fixValue<float>(0.0f, 1.0f, value));
+
+    for (uint32_t i=0; i < kMaxEngineEventInternalCount; ++i)
+    {
+        EngineEvent& event(fBuffer[i]);
+
+        if (event.type != kEngineEventTypeNull)
+            continue;
+
+        event.type    = kEngineEventTypeControl;
+        event.time    = time;
+        event.channel = channel;
+
+        event.ctrl.type  = type;
+        event.ctrl.param = param;
+        event.ctrl.value = fixedValue;
+
+        return true;
+    }
+
+    carla_stderr2("CarlaEngineEventPort::writeControlEvent() - buffer full");
+    return false;
+}
+
+bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEvent& ctrl) noexcept
+{
+    return writeControlEvent(time, channel, ctrl.type, ctrl.param, ctrl.value);
+}
+
+bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t size, const uint8_t* const data) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(! fIsInput, false);
+    CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
+    CARLA_SAFE_ASSERT_RETURN(fProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && fProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, false);
+    CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, false);
+    CARLA_SAFE_ASSERT_RETURN(size > 0 && size <= EngineMidiEvent::kDataSize, false);
+    CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
+
+    for (uint32_t i=0; i < kMaxEngineEventInternalCount; ++i)
+    {
+        EngineEvent& event(fBuffer[i]);
+
+        if (event.type != kEngineEventTypeNull)
+            continue;
+
+        event.type    = kEngineEventTypeMidi;
+        event.time    = time;
+        event.channel = channel;
+
+        event.midi.port = port;
+        event.midi.size = size;
+
+        event.midi.data[0] = uint8_t(MIDI_GET_STATUS_FROM_DATA(data));
+
+        uint8_t j=1;
+        for (; j < size; ++j)
+            event.midi.data[j] = data[j];
+        for (; j < EngineMidiEvent::kDataSize; ++j)
+            event.midi.data[j] = 0;
+
+        return true;
+    }
+
+    carla_stderr2("CarlaEngineEventPort::writeMidiEvent() - buffer full");
+    return false;
+}
+
+bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t size, const uint8_t* const data) noexcept
+{
+    return writeMidiEvent(time, uint8_t(MIDI_GET_CHANNEL_FROM_DATA(data)), 0, size, data);
+}
+
+bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t channel, const EngineMidiEvent& midi) noexcept
+{
+    return writeMidiEvent(time, channel, midi.port, midi.size, midi.data);
+}
+
+// -----------------------------------------------------------------------
 // Carla Engine client (Abstract)
 
 CarlaEngineClient::CarlaEngineClient(const CarlaEngine& engine)
@@ -510,44 +726,61 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
     if (std::strcmp(driverName, "JACK") == 0)
         return newJack();
 
+    // -------------------------------------------------------------------
     // common
+
     if (std::strncmp(driverName, "JACK ", 5) == 0)
         return newRtAudio(AUDIO_API_JACK);
 
+    // -------------------------------------------------------------------
     // linux
-#if 0//def HAVE_JUCE
+
     if (std::strcmp(driverName, "ALSA") == 0)
+    {
+#if 0//def HAVE_JUCE
         return newJuce(AUDIO_API_ALSA);
 #else
-    if (std::strcmp(driverName, "ALSA") == 0)
         return newRtAudio(AUDIO_API_ALSA);
 #endif
+    }
+
     if (std::strcmp(driverName, "OSS") == 0)
         return newRtAudio(AUDIO_API_OSS);
     if (std::strcmp(driverName, "PulseAudio") == 0)
         return newRtAudio(AUDIO_API_PULSE);
 
+    // -------------------------------------------------------------------
     // macos
-#if 0//def HAVE_JUCE
+
     if (std::strcmp(driverName, "CoreAudio") == 0)
+    {
+#if 0//def HAVE_JUCE
         return newJuce(AUDIO_API_CORE);
 #else
-    if (std::strcmp(driverName, "CoreAudio") == 0)
         return newRtAudio(AUDIO_API_CORE);
 #endif
+    }
 
+    // -------------------------------------------------------------------
     // windows
-#if 0//def HAVE_JUCE
+
     if (std::strcmp(driverName, "ASIO") == 0)
+    {
+#if 0//def HAVE_JUCE
         return newJuce(AUDIO_API_ASIO);
+#else
+        return newRtAudio(AUDIO_API_ASIO);
+#endif
+    }
+
     if (std::strcmp(driverName, "DirectSound") == 0)
+    {
+#if 0//def HAVE_JUCE
         return newJuce(AUDIO_API_DS);
 #else
-    if (std::strcmp(driverName, "ASIO") == 0)
-        return newRtAudio(AUDIO_API_ASIO);
-    if (std::strcmp(driverName, "DirectSound") == 0)
         return newRtAudio(AUDIO_API_DS);
 #endif
+    }
 
     carla_stderr("CarlaEngine::newDriverByName(\"%s\") - invalid driver name", driverName);
     return nullptr;
@@ -603,8 +836,8 @@ bool CarlaEngine::init(const char* const clientName)
 
     case ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
         pData->maxPluginNumber = MAX_RACK_PLUGINS;
-        pData->events.in    = new EngineEvent[kMaxEngineEventInternalCount];
-        pData->events.out   = new EngineEvent[kMaxEngineEventInternalCount];
+        pData->events.in  = new EngineEvent[kMaxEngineEventInternalCount];
+        pData->events.out = new EngineEvent[kMaxEngineEventInternalCount];
         break;
 
     case ENGINE_PROCESS_MODE_PATCHBAY:
@@ -613,8 +846,8 @@ bool CarlaEngine::init(const char* const clientName)
 
     case ENGINE_PROCESS_MODE_BRIDGE:
         pData->maxPluginNumber = 1;
-        pData->events.in    = new EngineEvent[kMaxEngineEventInternalCount];
-        pData->events.out   = new EngineEvent[kMaxEngineEventInternalCount];
+        pData->events.in  = new EngineEvent[kMaxEngineEventInternalCount];
+        pData->events.out = new EngineEvent[kMaxEngineEventInternalCount];
         break;
     }
 
@@ -633,8 +866,15 @@ bool CarlaEngine::init(const char* const clientName)
         pData->plugins[i].clear();
 
     pData->osc.init(clientName);
+
 #ifndef BUILD_BRIDGE
     pData->oscData = pData->osc.getControlData();
+
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+    {
+        pData->graph.isRack = (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK);
+        pData->graph.create();
+    }
 #endif
 
     pData->nextAction.ready();
@@ -662,9 +902,15 @@ bool CarlaEngine::close()
     pData->nextAction.ready();
 
 #ifndef BUILD_BRIDGE
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+    {
+        pData->graph.clear();
+    }
+
     if (pData->osc.isControlRegistered())
         oscSend_control_exit();
 #endif
+
     pData->osc.close();
     pData->oscData = nullptr;
 
@@ -1710,18 +1956,15 @@ bool CarlaEngine::patchbayConnect(const int groupA, const int portA, const int g
         return false;
     }
 
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+    if (pData->graph.isRack)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->graph.rack != nullptr, nullptr);
-
         return pData->graph.rack->connect(this, groupA, portA, groupB, portB);
     }
     else
     {
         CARLA_SAFE_ASSERT_RETURN(pData->graph.patchbay != nullptr, nullptr);
-
-        setLastError("Not implemented yet");
-        return false;
+        return pData->graph.patchbay->connect(this, groupA, portA, groupB, portB);
     }
 }
 
@@ -1729,17 +1972,17 @@ bool CarlaEngine::patchbayDisconnect(const uint connectionId)
 {
     CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
     CARLA_SAFE_ASSERT_RETURN(pData->audio.isReady, false);
-    CARLA_SAFE_ASSERT_RETURN(pData->audio.buffer != nullptr, false);
     carla_debug("CarlaEngineRtAudio::patchbayDisconnect(%i)", connectionId);
 
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+    if (pData->graph.isRack)
     {
-        return pData->audio.rack->disconnect(this, connectionId);
+        CARLA_SAFE_ASSERT_RETURN(pData->graph.rack != nullptr, nullptr);
+        return pData->graph.rack->disconnect(this, connectionId);
     }
     else
     {
-        setLastError("Not implemented yet");
-        return false;
+        CARLA_SAFE_ASSERT_RETURN(pData->graph.patchbay != nullptr, nullptr);
+        return pData->graph.patchbay->disconnect(this, connectionId);
     }
 }
 
@@ -2029,17 +2272,15 @@ const char* const* CarlaEngine::getPatchbayConnections() const
 {
     carla_debug("CarlaEngine::getPatchbayConnections()");
 
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+    if (pData->graph.isRack)
     {
-        CARLA_SAFE_ASSERT_RETURN(pData->audio.rack != nullptr, nullptr);
-        return pData->audio.rack->getConnections();
+        CARLA_SAFE_ASSERT_RETURN(pData->graph.rack != nullptr, nullptr);
+        return pData->graph.rack->getConnections();
     }
     else
     {
-        CARLA_SAFE_ASSERT_RETURN(pData->audio.patchbay != nullptr, nullptr);
-
-        setLastError("Not implemented yet");
-        return nullptr;
+        CARLA_SAFE_ASSERT_RETURN(pData->graph.patchbay != nullptr, nullptr);
+        return pData->graph.patchbay->getConnections();
     }
 }
 
@@ -2049,13 +2290,13 @@ void CarlaEngine::restorePatchbayConnection(const char* const connSource, const 
     CARLA_SAFE_ASSERT_RETURN(connTarget != nullptr && connTarget[0] != '\0',);
     carla_debug("CarlaEngine::restorePatchbayConnection(\"%s\", \"%s\")", connSource, connTarget);
 
-#if 0
-    if (pData->audio.usePatchbay)
+    if (pData->graph.isRack)
     {
         // TODO
     }
     else
     {
+#if 0
         int sourceGroup, targetGroup;
         int sourcePort,  targetPort;
 
@@ -2125,8 +2366,8 @@ void CarlaEngine::restorePatchbayConnection(const char* const connSource, const 
         CARLA_SAFE_ASSERT_RETURN(targetGroup == RACK_PATCHBAY_GROUP_MAX || targetPort == RACK_PATCHBAY_PORT_MAX,);
 
         patchbayConnect(targetGroup, targetPort, sourceGroup, sourcePort);
-    }
 #endif
+    }
 }
 #endif
 

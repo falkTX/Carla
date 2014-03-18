@@ -45,6 +45,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 const unsigned short kMaxEngineEventInternalCount = 512;
 
+#ifndef BUILD_BRIDGE
 // -----------------------------------------------------------------------
 // Rack Graph stuff
 
@@ -141,6 +142,7 @@ struct PatchbayGraph {
 
     const char* const* getConnections() const;
 };
+#endif
 
 // -----------------------------------------------------------------------
 // InternalAudio
@@ -281,6 +283,7 @@ struct EngineInternalEvents {
     CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalEvents)
 };
 
+#ifndef BUILD_BRIDGE
 // -----------------------------------------------------------------------
 // InternalGraph
 
@@ -329,25 +332,9 @@ struct EngineInternalGraph {
         }
     }
 
-    void init() noexcept
-    {
-        if (isRack)
-        {
-            CARLA_SAFE_ASSERT_RETURN(rack != nullptr,);
-
-            rack->lastConnectionId = 0;
-            rack->usedConnections.clear();
-        }
-        else
-        {
-            CARLA_SAFE_ASSERT_RETURN(patchbay != nullptr,);
-
-            // TODO
-        }
-    }
-
     CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalGraph)
 };
+#endif
 
 // -----------------------------------------------------------------------
 // InternalTime

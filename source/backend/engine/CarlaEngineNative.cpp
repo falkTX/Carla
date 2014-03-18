@@ -1067,8 +1067,8 @@ protected:
         // ---------------------------------------------------------------
         // initialize events
 
-        carla_zeroStruct<EngineEvent>(pData->bufEvents.in,  kMaxEngineEventInternalCount);
-        carla_zeroStruct<EngineEvent>(pData->bufEvents.out, kMaxEngineEventInternalCount);
+        carla_zeroStruct<EngineEvent>(pData->events.in,  kMaxEngineEventInternalCount);
+        carla_zeroStruct<EngineEvent>(pData->events.out, kMaxEngineEventInternalCount);
 
         // ---------------------------------------------------------------
         // events input (before processing)
@@ -1079,7 +1079,7 @@ protected:
             for (uint32_t i=0; i < midiEventCount && engineEventIndex < kMaxEngineEventInternalCount; ++i)
             {
                 const NativeMidiEvent& midiEvent(midiEvents[i]);
-                EngineEvent&           engineEvent(pData->bufEvents.in[engineEventIndex++]);
+                EngineEvent&           engineEvent(pData->events.in[engineEventIndex++]);
 
                 engineEvent.time = midiEvent.time;
                 engineEvent.fillFromMidiData(midiEvent.size, midiEvent.data);
@@ -1120,14 +1120,14 @@ protected:
         // ---------------------------------------------------------------
         // events output (after processing)
 
-        carla_zeroStruct<EngineEvent>(pData->bufEvents.in, kMaxEngineEventInternalCount);
+        carla_zeroStruct<EngineEvent>(pData->events.in, kMaxEngineEventInternalCount);
 
         {
             NativeMidiEvent midiEvent;
 
             for (uint32_t i=0; i < kMaxEngineEventInternalCount; ++i)
             {
-                const EngineEvent& engineEvent(pData->bufEvents.out[i]);
+                const EngineEvent& engineEvent(pData->events.out[i]);
 
                 if (engineEvent.type == kEngineEventTypeNull)
                     break;
@@ -1137,7 +1137,7 @@ protected:
                 if (engineEvent.type == CarlaBackend::kEngineEventTypeControl)
                 {
                     midiEvent.port = 0;
-                    engineEvent.ctrl.dumpToMidiData(engineEvent.channel, midiEvent.size, midiEvent.data);
+                    engineEvent.ctrl.convertToMidiData(engineEvent.channel, midiEvent.size, midiEvent.data);
                 }
                 else if (engineEvent.type == kEngineEventTypeMidi)
                 {
