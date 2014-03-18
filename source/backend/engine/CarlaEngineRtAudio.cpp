@@ -163,7 +163,6 @@ public:
           fAudioInCount(0),
           fAudioOutBuf(nullptr),
           fAudioOutCount(0),
-          fIsAudioInterleaved(false),
           fLastEventTime(0),
           fDummyMidiIn(getMatchedAudioMidiAPi(api), "Carla"),
           fDummyMidiOut(getMatchedAudioMidiAPi(api), "Carla")
@@ -250,20 +249,12 @@ public:
         }
 
         RtAudio::StreamOptions rtOptions;
-        rtOptions.flags = RTAUDIO_MINIMIZE_LATENCY | RTAUDIO_HOG_DEVICE | RTAUDIO_SCHEDULE_REALTIME;
+        rtOptions.flags = RTAUDIO_MINIMIZE_LATENCY | RTAUDIO_HOG_DEVICE | RTAUDIO_SCHEDULE_REALTIME | RTAUDIO_NONINTERLEAVED;
         rtOptions.streamName = clientName;
         rtOptions.priority = 85;
 
-        if (fAudio.getCurrentApi() != RtAudio::LINUX_PULSE)
-        {
-            rtOptions.flags |= RTAUDIO_NONINTERLEAVED;
-            fIsAudioInterleaved = false;
-
-            if (fAudio.getCurrentApi() == RtAudio::LINUX_ALSA && ! deviceSet)
-                rtOptions.flags |= RTAUDIO_ALSA_USE_DEFAULT;
-        }
-        else
-            fIsAudioInterleaved = true;
+        if (fAudio.getCurrentApi() == RtAudio::LINUX_ALSA && ! deviceSet)
+            rtOptions.flags |= RTAUDIO_ALSA_USE_DEFAULT;
 
         uint bufferFrames = pData->options.audioBufferSize;
 
@@ -700,26 +691,8 @@ protected:
             return runPendingRtEvents();
 
         // initialize rtaudio input
-        if (fIsAudioInterleaved)
-        {
-            for (uint i=0, j=0, k=0; j < nframes*fAudioInCount; ++k)
-            {
-                fAudioInBuf[i][j] = insPtr[k];
-
-                if (++i == fAudioInCount)
-                {
-                    i = 0;
-
-                    if (++j == nframes)
-                        j = 0;
-                }
-            }
-        }
-        else
-        {
-            for (uint i=0; i < fAudioInCount; ++i)
-                FLOAT_COPY(fAudioInBuf[i], insPtr+(nframes*i), nframes);
-        }
+        for (uint i=0; i < fAudioInCount; ++i)
+            FLOAT_COPY(fAudioInBuf[i], insPtr+(nframes*i), nframes);
 
         // initialize rtaudio output
         for (uint i=0; i < fAudioOutCount; ++i)
@@ -768,26 +741,8 @@ protected:
         }
 
         // output audio
-        if (fIsAudioInterleaved)
-        {
-            for (uint i=0, j=0, k=0; i < nframes*fAudioOutCount; ++k)
-            {
-                outsPtr[k] = fAudioOutBuf[i][j];
-
-                if (++i == fAudioOutCount)
-                {
-                    i = 0;
-
-                    if (++j == nframes)
-                        j = 0;
-                }
-            }
-        }
-        else
-        {
-            for (uint i=0; i < fAudioOutCount; ++i)
-                FLOAT_COPY(outsPtr+(nframes*i), fAudioOutBuf[i], nframes);
-        }
+        for (uint i=0; i < fAudioOutCount; ++i)
+            FLOAT_COPY(outsPtr+(nframes*i), fAudioOutBuf[i], nframes);
 
         // output events
         {
@@ -995,7 +950,6 @@ private:
     uint    fAudioOutCount;
 
     // useful info
-    bool     fIsAudioInterleaved;
     uint64_t fLastEventTime;
 
     // current device name
