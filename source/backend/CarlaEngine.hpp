@@ -584,7 +584,7 @@ public:
      * Add a new port of type \a portType.
      * \note This function does nothing in rack processing mode since ports are static there (2 audio + 1 event for both input and output).
      */
-    virtual CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput) noexcept;
+    virtual CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput);
 
 #ifndef DOXYGEN
 protected:
@@ -623,7 +623,7 @@ public:
      * The decontructor.
      * The engine must have been closed before this happens.
      */
-    virtual ~CarlaEngine();
+    virtual ~CarlaEngine() noexcept;
 
     // -------------------------------------------------------------------
     // Static calls
@@ -1069,7 +1069,7 @@ protected:
 
     // -------------------------------------------------------------------
 
-private:
+public:
     /*!
      * Native audio APIs.
      */
@@ -1094,6 +1094,7 @@ private:
     // JACK
     static CarlaEngine*       newJack();
 
+#ifndef BUILD_BRIDGE
     // RtAudio
     static CarlaEngine*       newRtAudio(const AudioApi api);
     static uint               getRtAudioApiCount();
@@ -1107,15 +1108,15 @@ private:
     static const char*        getJuceApiName(const uint index);
     static const char* const* getJuceApiDeviceNames(const uint index);
     static const EngineDriverDeviceInfo* getJuceDeviceInfo(const uint index, const char* const deviceName);
-
-#ifdef BUILD_BRIDGE
-public:
+#else
     // Bridge
-    static CarlaEngine* newBridge(const char* const audioBaseName, const char* const controlBaseName, const char* const timeBaseName);
+    static CarlaEngine*       newBridge(const char* const audioBaseName, const char* const controlBaseName, const char* const timeBaseName);
+#endif
 
     // -------------------------------------------------------------------
     // Bridge/Controller OSC stuff
 
+#ifdef BUILD_BRIDGE
     void oscSend_bridge_plugin_info1(const PluginCategory category, const uint hints, const int64_t uniqueId) const noexcept;
     void oscSend_bridge_plugin_info2(const char* const realName, const char* const label, const char* const maker, const char* const copyright) const noexcept;
     void oscSend_bridge_audio_count(const uint32_t ins, const uint32_t outs) const noexcept;
@@ -1140,7 +1141,6 @@ public:
     void oscSend_bridge_set_peaks() const noexcept;
     void oscSend_bridge_pong() const noexcept;
 #else
-public:
     void oscSend_control_add_plugin_start(const uint pluginId, const char* const pluginName) const noexcept;
     void oscSend_control_add_plugin_end(const uint pluginId) const noexcept;
     void oscSend_control_remove_plugin(const uint pluginId) const noexcept;

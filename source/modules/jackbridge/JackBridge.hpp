@@ -263,6 +263,8 @@ typedef void (*JackPropertyChangeCallback)(jack_uuid_t subject, const char* key,
 
 #endif // ! JACKBRIDGE_DIRECT
 
+bool jackbridge_is_ok() noexcept;
+
 CARLA_EXPORT void        jackbridge_get_version(int* major_ptr, int* minor_ptr, int* micro_ptr, int* proto_ptr);
 CARLA_EXPORT const char* jackbridge_get_version_string();
 

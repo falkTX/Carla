@@ -484,9 +484,20 @@ struct JackBridge {
     }
 };
 
-static JackBridge bridge;
+static const JackBridge bridge;
 
 #endif // ! JACKBRIDGE_DIRECT
+
+// -----------------------------------------------------------------------------
+
+bool jackbridge_is_ok() noexcept
+{
+#if defined(JACKBRIDGE_DUMMY) || defined(JACKBRIDGE_DIRECT)
+    return true;
+#else
+    return (bridge.lib != nullptr);
+#endif
+}
 
 // -----------------------------------------------------------------------------
 

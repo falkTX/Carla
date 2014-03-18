@@ -62,7 +62,7 @@ static void initRtApis()
     }
 }
 
-static const char* getRtAudioApiName(const RtAudio::Api api)
+static const char* getRtAudioApiName(const RtAudio::Api api) noexcept
 {
     switch (api)
     {
@@ -98,7 +98,7 @@ static const char* getRtAudioApiName(const RtAudio::Api api)
     return nullptr;
 }
 
-static RtMidi::Api getMatchedAudioMidiAPi(const RtAudio::Api rtApi)
+static RtMidi::Api getMatchedAudioMidiAPi(const RtAudio::Api rtApi) noexcept
 {
     switch (rtApi)
     {
@@ -138,16 +138,14 @@ static RtMidi::Api getMatchedAudioMidiAPi(const RtAudio::Api rtApi)
 // -------------------------------------------------------------------------------------------------------------------
 // Cleanup
 
-static struct RtAudioCleanup {
+static const struct RtAudioCleanup {
     RtAudioCleanup() {}
-    ~RtAudioCleanup()
-    {
+    ~RtAudioCleanup() {
         if (gRetNames != nullptr)
         {
             delete[] gRetNames;
             gRetNames = nullptr;
         }
-
         gRtAudioApis.clear();
     }
 } sRtAudioCleanup;
@@ -202,7 +200,7 @@ public:
         RtAudio::StreamParameters iParams, oParams;
         bool deviceSet = false;
 
-        const unsigned int devCount(fAudio.getDeviceCount());
+        const uint devCount(fAudio.getDeviceCount());
 
         if (devCount == 0)
         {
@@ -212,13 +210,13 @@ public:
 
         if (pData->options.audioDevice != nullptr && pData->options.audioDevice[0] != '\0')
         {
-            for (unsigned int i=0; i < devCount; ++i)
+            for (uint i=0; i < devCount; ++i)
             {
                 RtAudio::DeviceInfo devInfo(fAudio.getDeviceInfo(i));
 
                 if (devInfo.probed && devInfo.outputChannels > 0 && devInfo.name == pData->options.audioDevice)
                 {
-                    deviceSet    = true;
+                    deviceSet   = true;
                     fDeviceName = devInfo.name.c_str();
                     iParams.deviceId  = i;
                     oParams.deviceId  = i;
@@ -255,13 +253,12 @@ public:
 
         fLastEventTime = 0;
 
-        unsigned int bufferFrames = pData->options.audioBufferSize;
+        uint bufferFrames = pData->options.audioBufferSize;
 
         try {
             fAudio.openStream(&oParams, &iParams, RTAUDIO_FLOAT32, pData->options.audioSampleRate, &bufferFrames, carla_rtaudio_process_callback, this, &rtOptions);
         }
-        catch (const RtError& e)
-        {
+        catch (const RtError& e) {
             setLastError(e.what());
             return false;
         }
@@ -278,16 +275,30 @@ public:
         {
             fAudioBufIn = new float*[pData->audio.inCount];
 
+            // set as null first
             for (uint i=0; i < pData->audio.inCount; ++i)
+                fAudioBufIn[i] = nullptr;
+
+            for (uint i=0; i < pData->audio.inCount; ++i)
+            {
                 fAudioBufIn[i] = new float[pData->bufferSize];
+                FLOAT_CLEAR(fAudioBufIn[i], pData->bufferSize);
+            }
         }
 
         if (pData->audio.outCount > 0)
         {
             fAudioBufOut = new float*[pData->audio.outCount];
 
+            // set as null first
             for (uint i=0; i < pData->audio.outCount; ++i)
+                fAudioBufOut[i] = nullptr;
+
+            for (uint i=0; i < pData->audio.outCount; ++i)
+            {
                 fAudioBufOut[i] = new float[pData->bufferSize];
+                FLOAT_CLEAR(fAudioBufOut[i], pData->bufferSize);
+            }
         }
 
         pData->audio.create(pData->bufferSize);
@@ -340,7 +351,13 @@ public:
         if (fAudioBufIn != nullptr)
         {
             for (uint i=0; i < pData->audio.inCount; ++i)
-                delete[] fAudioBufIn[i];
+            {
+                if (fAudioBufIn[i] != nullptr)
+                {
+                    delete[] fAudioBufIn[i];
+                    fAudioBufIn[i] = nullptr;
+                }
+            }
 
             delete[] fAudioBufIn;
             fAudioBufIn = nullptr;
@@ -349,15 +366,17 @@ public:
         if (fAudioBufOut != nullptr)
         {
             for (uint i=0; i < pData->audio.outCount; ++i)
-                delete[] fAudioBufOut[i];
+            {
+                if (fAudioBufOut[i] != nullptr)
+                {
+                    delete[] fAudioBufOut[i];
+                    fAudioBufOut[i] = nullptr;
+                }
+            }
 
             delete[] fAudioBufOut;
             fAudioBufOut = nullptr;
         }
-
-        pData->audio.clear();
-
-        fDeviceName.clear();
 
         for (LinkedList<MidiPort>::Itenerator it = fMidiIns.begin(); it.valid(); it.next())
         {
@@ -375,6 +394,8 @@ public:
 
             delete midiOutPort;
         }
+
+        fDeviceName.clear();
 
         fMidiIns.clear();
         fMidiOuts.clear();
@@ -410,13 +431,18 @@ public:
 
     bool patchbayRefresh() override
     {
+        CARLA_SAFE_ASSERT_RETURN(pData->audio.isReady, false);
+
+        fUsedMidiIns.clear();
+        fUsedMidiOuts.clear();
+
         return true;
     }
 
     // -------------------------------------------------------------------
 
 protected:
-    void handleAudioProcessCallback(void* outputBuffer, void* inputBuffer, unsigned int nframes, double streamTime, RtAudioStreamStatus status)
+    void handleAudioProcessCallback(void* outputBuffer, void* inputBuffer, uint nframes, double streamTime, RtAudioStreamStatus status)
     {
         // get buffers from RtAudio
         float* const insPtr  = (float*)inputBuffer;
@@ -432,7 +458,7 @@ protected:
         // initialize rtaudio input
         if (fIsAudioInterleaved)
         {
-            for (unsigned int i=0, j=0, count=nframes*pData->audio.inCount; i < count; ++i)
+            for (uint i=0, j=0, count=nframes*pData->audio.inCount; i < count; ++i)
             {
                 fAudioBufIn[i/pData->audio.inCount][j] = insPtr[i];
 
@@ -442,12 +468,12 @@ protected:
         }
         else
         {
-            for (unsigned int i=0; i < pData->audio.inCount; ++i)
+            for (uint i=0; i < pData->audio.inCount; ++i)
                 FLOAT_COPY(fAudioBufIn[i], insPtr+(nframes*i), nframes);
         }
 
         // initialize rtaudio output
-        for (unsigned int i=0; i < pData->audio.outCount; ++i)
+        for (uint i=0; i < pData->audio.outCount; ++i)
             FLOAT_CLEAR(fAudioBufOut[i], nframes);
 
         // initialize input events
@@ -495,7 +521,7 @@ protected:
         // output audio
         if (fIsAudioInterleaved)
         {
-            for (unsigned int i=0, j=0; i < nframes*pData->audio.outCount; ++i)
+            for (uint i=0, j=0; i < nframes*pData->audio.outCount; ++i)
             {
                 outsPtr[i] = fAudioBufOut[i/pData->audio.outCount][j];
 
@@ -505,7 +531,7 @@ protected:
         }
         else
         {
-            for (unsigned int i=0; i < pData->audio.outCount; ++i)
+            for (uint i=0; i < pData->audio.outCount; ++i)
                 FLOAT_COPY(outsPtr+(nframes*i), fAudioBufOut[i], nframes);
         }
 
@@ -523,7 +549,7 @@ protected:
         (void)status;
     }
 
-    void handleMidiCallback(double timeStamp, std::vector<unsigned char>* const message)
+    void handleMidiCallback(double timeStamp, std::vector<uchar>* const message)
     {
         if (! pData->audio.isReady)
             return;
@@ -781,13 +807,13 @@ private:
 
     #define handlePtr ((CarlaEngineRtAudio*)userData)
 
-    static int carla_rtaudio_process_callback(void* outputBuffer, void* inputBuffer, unsigned int nframes, double streamTime, RtAudioStreamStatus status, void* userData)
+    static int carla_rtaudio_process_callback(void* outputBuffer, void* inputBuffer, uint nframes, double streamTime, RtAudioStreamStatus status, void* userData)
     {
         handlePtr->handleAudioProcessCallback(outputBuffer, inputBuffer, nframes, streamTime, status);
         return 0;
     }
 
-    static void carla_rtmidi_callback(double timeStamp, std::vector<unsigned char>* message, void* userData)
+    static void carla_rtmidi_callback(double timeStamp, std::vector<uchar>* message, void* userData)
     {
         handlePtr->handleMidiCallback(timeStamp, message);
     }
@@ -799,7 +825,7 @@ private:
 
 // -----------------------------------------
 
-CarlaEngine* CarlaEngine::newRtAudio(AudioApi api)
+CarlaEngine* CarlaEngine::newRtAudio(const AudioApi api)
 {
     initRtApis();
 
@@ -836,14 +862,14 @@ CarlaEngine* CarlaEngine::newRtAudio(AudioApi api)
     return new CarlaEngineRtAudio(rtApi);
 }
 
-unsigned int CarlaEngine::getRtAudioApiCount()
+uint CarlaEngine::getRtAudioApiCount()
 {
     initRtApis();
 
-    return static_cast<unsigned int>(gRtAudioApis.size());
+    return static_cast<uint>(gRtAudioApis.size());
 }
 
-const char* CarlaEngine::getRtAudioApiName(const unsigned int index)
+const char* CarlaEngine::getRtAudioApiName(const uint index)
 {
     initRtApis();
 
@@ -853,7 +879,7 @@ const char* CarlaEngine::getRtAudioApiName(const unsigned int index)
     return CarlaBackend::getRtAudioApiName(gRtAudioApis[index]);
 }
 
-const char* const* CarlaEngine::getRtAudioApiDeviceNames(const unsigned int index)
+const char* const* CarlaEngine::getRtAudioApiDeviceNames(const uint index)
 {
     initRtApis();
 
@@ -864,14 +890,14 @@ const char* const* CarlaEngine::getRtAudioApiDeviceNames(const unsigned int inde
 
     RtAudio rtAudio(api);
 
-    const unsigned int devCount(rtAudio.getDeviceCount());
+    const uint devCount(rtAudio.getDeviceCount());
 
     if (devCount == 0)
         return nullptr;
 
     LinkedList<const char*> devNames;
 
-    for (unsigned int i=0; i < devCount; ++i)
+    for (uint i=0; i < devCount; ++i)
     {
         RtAudio::DeviceInfo devInfo(rtAudio.getDeviceInfo(i));
 
@@ -899,7 +925,7 @@ const char* const* CarlaEngine::getRtAudioApiDeviceNames(const unsigned int inde
     return gRetNames;
 }
 
-const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const unsigned int index, const char* const deviceName)
+const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const uint index, const char* const deviceName)
 {
     initRtApis();
 
@@ -910,12 +936,12 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const unsigned i
 
     RtAudio rtAudio(api);
 
-    const unsigned int devCount(rtAudio.getDeviceCount());
+    const uint devCount(rtAudio.getDeviceCount());
 
     if (devCount == 0)
         return nullptr;
 
-    unsigned int i;
+    uint i;
     RtAudio::DeviceInfo rtAudioDevInfo;
 
     for (i=0; i < devCount; ++i)

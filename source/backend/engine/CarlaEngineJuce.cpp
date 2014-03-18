@@ -184,8 +184,6 @@ public:
             fDevice = nullptr;
         }
 
-        pData->audio.clear();
-
         return !hasError;
     }
 

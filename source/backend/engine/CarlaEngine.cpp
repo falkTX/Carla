@@ -30,9 +30,10 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaEngineUtils.hpp"
 #include "CarlaMathUtils.hpp"
+#include "CarlaMIDI.h"
 #include "CarlaStateUtils.hpp"
 
-#include "CarlaMIDI.h"
+#include "jackbridge/JackBridge.hpp"
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -438,9 +439,6 @@ bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
         CARLA_SAFE_ASSERT(! MIDI_IS_CONTROL_BANK_SELECT(param));
     }
 
-    // FIXME? should not fix range if midi-program
-    const float fixedValue(carla_fixValue<float>(0.0f, 1.0f, value));
-
     for (uint32_t i=0; i < kMaxEngineEventInternalCount; ++i)
     {
         EngineEvent& event(fBuffer[i]);
@@ -454,7 +452,7 @@ bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
 
         event.ctrl.type  = type;
         event.ctrl.param = param;
-        event.ctrl.value = fixedValue;
+        event.ctrl.value = carla_fixValue<float>(0.0f, 1.0f, value);
 
         return true;
     }
@@ -569,30 +567,22 @@ void CarlaEngineClient::setLatency(const uint32_t samples) noexcept
     fLatency = samples;
 }
 
-CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const char* const name, const bool isInput) noexcept
+CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const char* const name, const bool isInput)
 {
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', nullptr);
     carla_debug("CarlaEngineClient::addPort(%i:%s, \"%s\", %s)", portType, EnginePortType2Str(portType), name, bool2str(isInput));
 
-    CarlaEnginePort* ret = nullptr;
-
-    try {
-        switch (portType)
-        {
-        case kEnginePortTypeNull:
-            break;
-        case kEnginePortTypeAudio:
-            ret = new CarlaEngineAudioPort(fEngine, isInput);
-        case kEnginePortTypeCV:
-            ret = new CarlaEngineCVPort(fEngine, isInput);
-        case kEnginePortTypeEvent:
-            ret = new CarlaEngineEventPort(fEngine, isInput);
-        }
+    switch (portType)
+    {
+    case kEnginePortTypeNull:
+        break;
+    case kEnginePortTypeAudio:
+        return new CarlaEngineAudioPort(fEngine, isInput);
+    case kEnginePortTypeCV:
+        return new CarlaEngineCVPort(fEngine, isInput);
+    case kEnginePortTypeEvent:
+        return new CarlaEngineEventPort(fEngine, isInput);
     }
-    CARLA_SAFE_EXCEPTION_RETURN("new CarlaEnginePort", nullptr);
-
-    if (ret != nullptr)
-        return ret;
 
     carla_stderr("CarlaEngineClient::addPort(%i, \"%s\", %s) - invalid type", portType, name, bool2str(isInput));
     return nullptr;
@@ -607,7 +597,7 @@ CarlaEngine::CarlaEngine()
     carla_debug("CarlaEngine::CarlaEngine()");
 }
 
-CarlaEngine::~CarlaEngine()
+CarlaEngine::~CarlaEngine() noexcept
 {
     carla_debug("CarlaEngine::~CarlaEngine()");
 
@@ -617,11 +607,14 @@ CarlaEngine::~CarlaEngine()
 // -----------------------------------------------------------------------
 // Static calls
 
-unsigned int CarlaEngine::getDriverCount()
+uint CarlaEngine::getDriverCount()
 {
     carla_debug("CarlaEngine::getDriverCount()");
 
-    unsigned int count = 1; // JACK
+    uint count = 0;
+
+    if (jackbridge_is_ok())
+        count += 1;
 
 #ifndef BUILD_BRIDGE
     count += getRtAudioApiCount();
@@ -633,24 +626,24 @@ unsigned int CarlaEngine::getDriverCount()
     return count;
 }
 
-const char* CarlaEngine::getDriverName(const unsigned int index)
+const char* CarlaEngine::getDriverName(const uint index2)
 {
-    carla_debug("CarlaEngine::getDriverName(%i)", index);
+    carla_debug("CarlaEngine::getDriverName(%i)", index2);
 
-    if (index == 0)
+    uint index(index2);
+
+    if (jackbridge_is_ok() && index-- == 0)
         return "JACK";
 
 #ifndef BUILD_BRIDGE
-    const unsigned int rtAudioIndex(index-1);
+    if (index < getRtAudioApiCount())
+        return getRtAudioApiName(index);
 
-    if (rtAudioIndex < getRtAudioApiCount())
-        return getRtAudioApiName(rtAudioIndex);
+    index -= getRtAudioApiCount();
 
 # ifdef HAVE_JUCE
-    const unsigned int juceIndex(index-rtAudioIndex-1);
-
-    if (juceIndex < getJuceApiCount())
-        return getJuceApiName(juceIndex);
+    if (index < getJuceApiCount())
+        return getJuceApiName(index);
 # endif
 #endif
 
@@ -658,27 +651,27 @@ const char* CarlaEngine::getDriverName(const unsigned int index)
     return nullptr;
 }
 
-const char* const* CarlaEngine::getDriverDeviceNames(const unsigned int index)
+const char* const* CarlaEngine::getDriverDeviceNames(const uint index2)
 {
-    carla_debug("CarlaEngine::getDriverDeviceNames(%i)", index);
+    carla_debug("CarlaEngine::getDriverDeviceNames(%i)", index2);
 
-    if (index == 0) // JACK
+    uint index(index2);
+
+    if (jackbridge_is_ok() && index-- == 0)
     {
         static const char* ret[3] = { "Auto-Connect OFF", "Auto-Connect ON", nullptr };
         return ret;
     }
 
 #ifndef BUILD_BRIDGE
-    const unsigned int rtAudioIndex(index-1);
+    if (index < getRtAudioApiCount())
+        return getRtAudioApiDeviceNames(index);
 
-    if (rtAudioIndex < getRtAudioApiCount())
-        return getRtAudioApiDeviceNames(rtAudioIndex);
+    index -= getRtAudioApiCount();
 
 # ifdef HAVE_JUCE
-    const unsigned int juceIndex(index-rtAudioIndex-1);
-
-    if (juceIndex < getJuceApiCount())
-        return getJuceApiDeviceNames(juceIndex);
+    if (index < getJuceApiCount())
+        return getJuceApiDeviceNames(index);
 # endif
 #endif
 
@@ -686,11 +679,13 @@ const char* const* CarlaEngine::getDriverDeviceNames(const unsigned int index)
     return nullptr;
 }
 
-const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const unsigned int index, const char* const deviceName)
+const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2, const char* const deviceName)
 {
-    carla_debug("CarlaEngine::getDriverDeviceInfo(%i, \"%s\")", index, deviceName);
+    carla_debug("CarlaEngine::getDriverDeviceInfo(%i, \"%s\")", index2, deviceName);
 
-    if (index == 0) // JACK
+    uint index(index2);
+
+    if (jackbridge_is_ok() && index-- == 0)
     {
         static uint32_t bufSizes[11] = { 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 0 };
         static EngineDriverDeviceInfo devInfo;
@@ -701,16 +696,14 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const unsigned in
     }
 
 #ifndef BUILD_BRIDGE
-    const unsigned int rtAudioIndex(index-1);
+    if (index < getRtAudioApiCount())
+        return getRtAudioDeviceInfo(index, deviceName);
 
-    if (rtAudioIndex < getRtAudioApiCount())
-        return getRtAudioDeviceInfo(rtAudioIndex, deviceName);
+    index -= getRtAudioApiCount();
 
 # ifdef HAVE_JUCE
-    const unsigned int juceIndex(index-rtAudioIndex-1);
-
-    if (juceIndex < getJuceApiCount())
-        return getJuceDeviceInfo(juceIndex, deviceName);
+    if (index < getJuceApiCount())
+        return getJuceDeviceInfo(index, deviceName);
 # endif
 #endif
 
@@ -789,22 +782,22 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
 // -----------------------------------------------------------------------
 // Maximum values
 
-unsigned int CarlaEngine::getMaxClientNameSize() const noexcept
+uint CarlaEngine::getMaxClientNameSize() const noexcept
 {
     return STR_MAX/2;
 }
 
-unsigned int CarlaEngine::getMaxPortNameSize() const noexcept
+uint CarlaEngine::getMaxPortNameSize() const noexcept
 {
     return STR_MAX;
 }
 
-unsigned int CarlaEngine::getCurrentPluginCount() const noexcept
+uint CarlaEngine::getCurrentPluginCount() const noexcept
 {
     return pData->curPluginCount;
 }
 
-unsigned int CarlaEngine::getMaxPluginNumber() const noexcept
+uint CarlaEngine::getMaxPluginNumber() const noexcept
 {
     return pData->maxPluginNumber;
 }
@@ -924,17 +917,8 @@ bool CarlaEngine::close()
         pData->plugins = nullptr;
     }
 
-    if (pData->events.in != nullptr)
-    {
-        delete[] pData->events.in;
-        pData->events.in = nullptr;
-    }
-
-    if (pData->events.out != nullptr)
-    {
-        delete[] pData->events.out;
-        pData->events.out = nullptr;
-    }
+    pData->events.clear();
+    pData->audio.clear();
 
     pData->name.clear();
 
@@ -949,7 +933,7 @@ void CarlaEngine::idle()
     CARLA_SAFE_ASSERT_RETURN(pData->nextPluginId == pData->maxPluginNumber,);     // TESTING, remove later
     CARLA_SAFE_ASSERT_RETURN(pData->plugins != nullptr,); // this one too maybe
 
-    for (unsigned int i=0; i < pData->curPluginCount; ++i)
+    for (uint i=0; i < pData->curPluginCount; ++i)
     {
         CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
@@ -978,7 +962,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     CARLA_SAFE_ASSERT_RETURN_ERR((filename != nullptr && filename[0] != '\0') || (label != nullptr && label[0] != '\0'), "Invalid plugin params (err #3)");
     carla_debug("CarlaEngine::addPlugin(%i:%s, %i:%s, \"%s\", \"%s\", \"%s\", " P_INT64 ", %p)", btype, BinaryType2Str(btype), ptype, PluginType2Str(ptype), filename, name, label, uniqueId, extra);
 
-    unsigned int id;
+    uint id;
     CarlaPlugin* oldPlugin = nullptr;
 
     if (pData->nextPluginId < pData->curPluginCount)
@@ -1229,7 +1213,7 @@ bool CarlaEngine::addPlugin(const PluginType ptype, const char* const filename, 
     return addPlugin(BINARY_NATIVE, ptype, filename, name, label, uniqueId, extra);
 }
 
-bool CarlaEngine::removePlugin(const unsigned int id)
+bool CarlaEngine::removePlugin(const uint id)
 {
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data (err #14)");
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->curPluginCount != 0, "Invalid engine internal data (err #15)");
@@ -1278,7 +1262,7 @@ bool CarlaEngine::removeAllPlugins()
 
     callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
 
-    for (unsigned int i=0; i < pData->maxPluginNumber; ++i)
+    for (uint i=0; i < pData->maxPluginNumber; ++i)
     {
         EnginePluginData& pluginData(pData->plugins[i]);
 
@@ -1302,7 +1286,7 @@ bool CarlaEngine::removeAllPlugins()
     return true;
 }
 
-const char* CarlaEngine::renamePlugin(const unsigned int id, const char* const newName)
+const char* CarlaEngine::renamePlugin(const uint id, const char* const newName)
 {
     CARLA_SAFE_ASSERT_RETURN_ERRN(pData->plugins != nullptr, "Invalid engine internal data (err #21)");
     CARLA_SAFE_ASSERT_RETURN_ERRN(pData->curPluginCount != 0, "Invalid engine internal data (err #22)");
@@ -1326,7 +1310,7 @@ const char* CarlaEngine::renamePlugin(const unsigned int id, const char* const n
     return nullptr;
 }
 
-bool CarlaEngine::clonePlugin(const unsigned int id)
+bool CarlaEngine::clonePlugin(const uint id)
 {
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data (err #25)");
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->curPluginCount != 0, "Invalid engine internal data (err #26)");
@@ -1343,7 +1327,7 @@ bool CarlaEngine::clonePlugin(const unsigned int id)
     carla_zeroChar(label, STR_MAX+1);
     plugin->getLabel(label);
 
-    const unsigned int pluginCountBefore(pData->curPluginCount);
+    const uint pluginCountBefore(pData->curPluginCount);
 
     if (! addPlugin(plugin->getBinaryType(), plugin->getType(), plugin->getFilename(), plugin->getName(), label, plugin->getUniqueId(), plugin->getExtraStuff()))
         return false;
@@ -1356,7 +1340,7 @@ bool CarlaEngine::clonePlugin(const unsigned int id)
     return true;
 }
 
-bool CarlaEngine::replacePlugin(const unsigned int id)
+bool CarlaEngine::replacePlugin(const uint id)
 {
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data (err #29)");
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->curPluginCount != 0, "Invalid engine internal data (err #30)");
@@ -1382,7 +1366,7 @@ bool CarlaEngine::replacePlugin(const unsigned int id)
     return true;
 }
 
-bool CarlaEngine::switchPlugins(const unsigned int idA, const unsigned int idB)
+bool CarlaEngine::switchPlugins(const uint idA, const uint idB)
 {
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data (err #33)");
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->curPluginCount >= 2, "Invalid engine internal data (err #34)");
@@ -1416,7 +1400,7 @@ bool CarlaEngine::switchPlugins(const unsigned int idA, const unsigned int idB)
     return true;
 }
 
-CarlaPlugin* CarlaEngine::getPlugin(const unsigned int id) const
+CarlaPlugin* CarlaEngine::getPlugin(const uint id) const
 {
     CARLA_SAFE_ASSERT_RETURN_ERRN(pData->plugins != nullptr, "Invalid engine internal data (err #38)");
     CARLA_SAFE_ASSERT_RETURN_ERRN(pData->curPluginCount != 0, "Invalid engine internal data (err #39)");
@@ -1426,7 +1410,7 @@ CarlaPlugin* CarlaEngine::getPlugin(const unsigned int id) const
     return pData->plugins[id].plugin;
 }
 
-CarlaPlugin* CarlaEngine::getPluginUnchecked(const unsigned int id) const noexcept
+CarlaPlugin* CarlaEngine::getPluginUnchecked(const uint id) const noexcept
 {
     return pData->plugins[id].plugin;
 }
@@ -1454,7 +1438,7 @@ const char* CarlaEngine::getUniquePluginName(const char* const name) const
     sname.truncate(maxNameSize);
     sname.replace(':', '.'); // ':' is used in JACK1 to split client/port names
 
-    for (unsigned short i=0; i < pData->curPluginCount; ++i)
+    for (uint i=0; i < pData->curPluginCount; ++i)
     {
         CARLA_SAFE_ASSERT_BREAK(pData->plugins[i].plugin != nullptr);
 
@@ -1836,7 +1820,7 @@ bool CarlaEngine::saveProject(const char* const filename)
 // -----------------------------------------------------------------------
 // Information (base)
 
-unsigned int CarlaEngine::getHints() const noexcept
+uint CarlaEngine::getHints() const noexcept
 {
     return pData->hints;
 }
@@ -1874,14 +1858,14 @@ const EngineTimeInfo& CarlaEngine::getTimeInfo() const noexcept
 // -----------------------------------------------------------------------
 // Information (peaks)
 
-float CarlaEngine::getInputPeak(const unsigned int pluginId, const bool isLeft) const noexcept
+float CarlaEngine::getInputPeak(const uint pluginId, const bool isLeft) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount, 0.0f);
 
     return pData->plugins[pluginId].insPeak[isLeft ? 0 : 1];
 }
 
-float CarlaEngine::getOutputPeak(const unsigned int pluginId, const bool isLeft) const noexcept
+float CarlaEngine::getOutputPeak(const uint pluginId, const bool isLeft) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount, 0.0f);
 
@@ -1891,7 +1875,7 @@ float CarlaEngine::getOutputPeak(const unsigned int pluginId, const bool isLeft)
 // -----------------------------------------------------------------------
 // Callback
 
-void CarlaEngine::callback(const EngineCallbackOpcode action, const unsigned int pluginId, const int value1, const int value2, const float value3, const char* const valueStr) noexcept
+void CarlaEngine::callback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr) noexcept
 {
     carla_debug("CarlaEngine::callback(%s, %i, %i, %i, %f, \"%s\")", EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
 
@@ -2186,7 +2170,7 @@ EngineEvent* CarlaEngine::getInternalEventBuffer(const bool isInput) const noexc
     return isInput ? pData->events.in : pData->events.out;
 }
 
-void CarlaEngine::registerEnginePlugin(const unsigned int id, CarlaPlugin* const plugin) noexcept
+void CarlaEngine::registerEnginePlugin(const uint id, CarlaPlugin* const plugin) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(id == pData->curPluginCount,);
     carla_debug("CarlaEngine::registerEnginePlugin(%i, %p)", id, plugin);
@@ -2254,7 +2238,7 @@ void CarlaEngine::runPendingRtEvents() noexcept
     }
 }
 
-void CarlaEngine::setPluginPeaks(const unsigned int pluginId, float const inPeaks[2], float const outPeaks[2]) noexcept
+void CarlaEngine::setPluginPeaks(const uint pluginId, float const inPeaks[2], float const outPeaks[2]) noexcept
 {
     EnginePluginData& pluginData(pData->plugins[pluginId]);
 

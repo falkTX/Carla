@@ -280,6 +280,21 @@ struct EngineInternalEvents {
         CARLA_SAFE_ASSERT(out == nullptr);
     }
 
+    void clear() noexcept
+    {
+        if (in != nullptr)
+        {
+            delete[] in;
+            in = nullptr;
+        }
+
+        if (out != nullptr)
+        {
+            delete[] out;
+            out = nullptr;
+        }
+    }
+
     CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalEvents)
 };
 
@@ -432,11 +447,13 @@ struct CarlaEngineProtectedData {
 
     EnginePluginData* plugins;
 
-//#ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE
     EngineInternalAudio  audio;
-//#endif
+#endif
     EngineInternalEvents events;
+#ifndef BUILD_BRIDGE
     EngineInternalGraph  graph;
+#endif
     EngineInternalTime   time;
     EngineNextAction     nextAction;
 

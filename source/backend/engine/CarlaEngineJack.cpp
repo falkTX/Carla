@@ -457,60 +457,56 @@ public:
     }
 #endif
 
-    CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput) noexcept override
+    CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput) override
     {
-        carla_debug("CarlaEngineJackClient::addPort(%s, \"%s\", %s)", EnginePortType2Str(portType), name, bool2str(isInput));
+        carla_debug("CarlaEngineJackClient::addPort(%i:%s, \"%s\", %s)", portType, EnginePortType2Str(portType), name, bool2str(isInput));
 
         jack_port_t* port = nullptr;
 
         // Create JACK port first, if needed
         if (fUseClient && fClient != nullptr)
         {
-            try {
-                switch (portType)
-                {
-                case kEnginePortTypeNull:
-                    break;
-                case kEnginePortTypeAudio:
-                    port = jackbridge_port_register(fClient, name, JACK_DEFAULT_AUDIO_TYPE, isInput ? JackPortIsInput : JackPortIsOutput, 0);
-                    break;
-                case kEnginePortTypeCV:
-                    port = jackbridge_port_register(fClient, name, JACK_DEFAULT_AUDIO_TYPE, isInput ? JackPortIsInput : JackPortIsOutput, 0);
-                    break;
-                case kEnginePortTypeEvent:
-                    port = jackbridge_port_register(fClient, name, JACK_DEFAULT_MIDI_TYPE, isInput ? JackPortIsInput : JackPortIsOutput, 0);
-                    break;
-                }
-            }
-            CARLA_SAFE_EXCEPTION_RETURN("JackClient addPort", nullptr)
-        }
-
-        // Create Engine port
-        try {
             switch (portType)
             {
             case kEnginePortTypeNull:
                 break;
-            case kEnginePortTypeAudio: {
-                CarlaEngineJackAudioPort* const enginePort(new CarlaEngineJackAudioPort(fEngine, isInput, fClient, port));
-                fAudioPorts.append(enginePort);
-                return enginePort;
+            case kEnginePortTypeAudio:
+                port = jackbridge_port_register(fClient, name, JACK_DEFAULT_AUDIO_TYPE, isInput ? JackPortIsInput : JackPortIsOutput, 0);
+                break;
+            case kEnginePortTypeCV:
+                port = jackbridge_port_register(fClient, name, JACK_DEFAULT_AUDIO_TYPE, isInput ? JackPortIsInput : JackPortIsOutput, 0);
+                break;
+            case kEnginePortTypeEvent:
+                port = jackbridge_port_register(fClient, name, JACK_DEFAULT_MIDI_TYPE, isInput ? JackPortIsInput : JackPortIsOutput, 0);
+                break;
             }
-            case kEnginePortTypeCV: {
-                CarlaEngineJackCVPort* const enginePort(new CarlaEngineJackCVPort(fEngine, isInput, fClient, port));
-                fCVPorts.append(enginePort);
-                return enginePort;
-            }
-            case kEnginePortTypeEvent: {
-                CarlaEngineJackEventPort* const enginePort(new CarlaEngineJackEventPort(fEngine, isInput, fClient, port));
-                fEventPorts.append(enginePort);
-                return enginePort;
-            }
-            }
-        }
-        CARLA_SAFE_EXCEPTION_RETURN("JackClient new Port", nullptr)
 
-        carla_stderr("CarlaEngineJackClient::addPort(%s, \"%s\", %s) - invalid type", EnginePortType2Str(portType), name, bool2str(isInput));
+            CARLA_SAFE_ASSERT_RETURN(port != nullptr, nullptr);
+        }
+
+        // Create Engine port
+        switch (portType)
+        {
+        case kEnginePortTypeNull:
+            break;
+        case kEnginePortTypeAudio: {
+            CarlaEngineJackAudioPort* const enginePort(new CarlaEngineJackAudioPort(fEngine, isInput, fClient, port));
+            fAudioPorts.append(enginePort);
+            return enginePort;
+        }
+        case kEnginePortTypeCV: {
+            CarlaEngineJackCVPort* const enginePort(new CarlaEngineJackCVPort(fEngine, isInput, fClient, port));
+            fCVPorts.append(enginePort);
+            return enginePort;
+        }
+        case kEnginePortTypeEvent: {
+            CarlaEngineJackEventPort* const enginePort(new CarlaEngineJackEventPort(fEngine, isInput, fClient, port));
+            fEventPorts.append(enginePort);
+            return enginePort;
+        }
+        }
+
+        carla_stderr("CarlaEngineJackClient::addPort(%i, \"%s\", %s) - invalid type", portType, name, bool2str(isInput));
         return nullptr;
     }
 
