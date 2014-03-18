@@ -203,9 +203,6 @@ public:
             return false;
         }
 
-        RtAudio::StreamParameters iParams, oParams;
-        bool deviceSet = false;
-
         const uint devCount(fAudio.getDeviceCount());
 
         if (devCount == 0)
@@ -213,6 +210,9 @@ public:
             setLastError("No audio devices available for this driver");
             return false;
         }
+
+        RtAudio::StreamParameters iParams, oParams;
+        bool deviceSet = false;
 
         if (pData->options.audioDevice != nullptr && pData->options.audioDevice[0] != '\0')
         {
@@ -264,8 +264,6 @@ public:
         }
         else
             fIsAudioInterleaved = true;
-
-        fLastEventTime = 0;
 
         uint bufferFrames = pData->options.audioBufferSize;
 
@@ -332,8 +330,8 @@ public:
         }
         catch (const RtError& e)
         {
+            close();
             setLastError(e.what());
-            fAudio.closeStream();
             return false;
         }
 
@@ -425,6 +423,8 @@ public:
 
             delete midiOutPort;
         }
+
+        fLastEventTime = 0;
 
         fDeviceName.clear();
 
