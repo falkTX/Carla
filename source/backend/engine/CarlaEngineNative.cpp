@@ -1108,8 +1108,8 @@ protected:
             // -----------------------------------------------------------
             // create audio buffers
 
-            float* inBuf[2]  = { inBuffer[0], inBuffer[1] };
-            float* outBuf[2] = { outBuffer[0], outBuffer[1] };
+            const float* inBuf[2]  = { inBuffer[0], inBuffer[1] };
+                  float* outBuf[2] = { outBuffer[0], outBuffer[1] };
 
             // -----------------------------------------------------------
             // process

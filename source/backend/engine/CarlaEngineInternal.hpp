@@ -70,7 +70,7 @@ enum RackGraphCarlaPortIds {
 };
 
 struct PortNameToId {
-    int group, port;
+    int port;
     char name[STR_MAX+1];
 };
 
@@ -116,7 +116,6 @@ struct RackGraph {
 
     bool connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int portB) noexcept;
     bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept;
-    void refresh(CarlaEngine* const engine, const LinkedList<PortNameToId>& midiIns, const LinkedList<PortNameToId>& midiOuts) noexcept;
 
     const char* const* getConnections() const;
 };
@@ -138,7 +137,6 @@ struct PatchbayGraph {
 
     bool connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int portB) noexcept;
     bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept;
-    void refresh(CarlaEngine* const engine, const LinkedList<PortNameToId>& midiIns, const LinkedList<PortNameToId>& midiOuts) noexcept;
 
     const char* const* getConnections() const;
 };
@@ -150,6 +148,7 @@ struct PatchbayGraph {
 struct EngineInternalAudio {
     bool isReady;
 
+    // always 2x2 in rack mode
     uint inCount;
     uint outCount;
     float** inBuf;
@@ -236,8 +235,6 @@ struct EngineInternalAudio {
         }
 
         resize(bufferSize, false);
-
-        isReady = true;
     }
 
     void resize(const uint32_t bufferSize, const bool doClear = true)
@@ -431,14 +428,14 @@ struct CarlaEngineProtectedData {
     FileCallbackFunc fileCallback;
     void*            fileCallbackPtr;
 
-    unsigned int hints;
-    uint32_t     bufferSize;
-    double       sampleRate;
+    uint     hints;
+    uint32_t bufferSize;
+    double   sampleRate;
 
-    bool         aboutToClose;    // don't re-activate thread if true
-    unsigned int curPluginCount;  // number of plugins loaded (0...max)
-    unsigned int maxPluginNumber; // number of plugins allowed (0, 16, 99 or 255)
-    unsigned int nextPluginId;    // invalid if == maxPluginNumber
+    bool aboutToClose;    // don't re-activate thread if true
+    uint curPluginCount;  // number of plugins loaded (0...max)
+    uint maxPluginNumber; // number of plugins allowed (0, 16, 99 or 255)
+    uint nextPluginId;    // invalid if == maxPluginNumber
 
     CarlaString    lastError;
     CarlaString    name;
@@ -472,10 +469,10 @@ struct CarlaEngineProtectedData {
     // -------------------------------------------------------------------
 
     // the base, where plugins run
-    void processRack(float* inBufReal[2], float* outBuf[2], const uint32_t nframes, const bool isOffline);
+    void processRack(const float* inBufReal[2], float* outBuf[2], const uint32_t nframes, const bool isOffline);
 
     // extended, will call processRack() in the middle
-    void processRackFull(float** const inBuf, const uint32_t inCount, float** const outBuf, const uint32_t outCount, const uint32_t nframes, const bool isOffline);
+    void processRackFull(const float* const* const inBuf, const uint32_t inCount, float* const* const outBuf, const uint32_t outCount, const uint32_t nframes, const bool isOffline);
 #endif
 
     // -------------------------------------------------------------------

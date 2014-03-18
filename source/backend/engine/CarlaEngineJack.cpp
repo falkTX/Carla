@@ -1286,8 +1286,8 @@ protected:
 #endif
 
             // create audio buffers
-            float* inBuf[2]  = { audioIn1, audioIn2 };
-            float* outBuf[2] = { audioOut1, audioOut2 };
+            const float* inBuf[2]  = { audioIn1, audioIn2 };
+                  float* outBuf[2] = { audioOut1, audioOut2 };
 
             // initialize input events
             carla_zeroStruct<EngineEvent>(pData->events.in, kMaxEngineEventInternalCount);
