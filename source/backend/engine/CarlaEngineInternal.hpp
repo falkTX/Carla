@@ -45,17 +45,65 @@ CARLA_BACKEND_START_NAMESPACE
 const unsigned short kMaxEngineEventInternalCount = 512;
 
 // -----------------------------------------------------------------------
+// Rack Patchbay stuff
+
+enum RackPatchbayGroupIds {
+    RACK_PATCHBAY_GROUP_CARLA = 0,
+    RACK_PATCHBAY_GROUP_AUDIO = 1,
+    RACK_PATCHBAY_GROUP_MIDI  = 2,
+    RACK_PATCHBAY_GROUP_MAX   = 3
+};
+
+enum RackPatchbayCarlaPortIds {
+    RACK_PATCHBAY_CARLA_PORT_NULL       = 0,
+    RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1  = 1,
+    RACK_PATCHBAY_CARLA_PORT_AUDIO_IN2  = 2,
+    RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1 = 3,
+    RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT2 = 4,
+    RACK_PATCHBAY_CARLA_PORT_MIDI_IN    = 5,
+    RACK_PATCHBAY_CARLA_PORT_MIDI_OUT   = 6,
+    RACK_PATCHBAY_CARLA_PORT_MAX        = 7
+};
+
+// -----------------------------------------------------------------------
+// ...
+
+struct PortNameToId {
+    int group, port;
+    char name[STR_MAX+1];
+};
+
+struct ConnectionToId {
+    uint id;
+    int groupA, portA;
+    int groupB, portB;
+};
+
+// -----------------------------------------------------------------------
 // AbstractEngineBuffer
 
 struct AbstractEngineBuffer {
-    AbstractEngineBuffer(const uint32_t /*bufferSize*/) {}
+    uint lastConnectionId;
+    LinkedList<ConnectionToId> usedConnections;
+
+    CarlaCriticalSection connectLock;
+
+    AbstractEngineBuffer()
+        : lastConnectionId(0) {}
+
     virtual ~AbstractEngineBuffer() noexcept {}
 
-    virtual void clear() noexcept = 0;
+    virtual void clear() noexcept
+    {
+        lastConnectionId = 0;
+        usedConnections.clear();
+    }
+
     virtual void resize(const uint32_t bufferSize) = 0;
 
-    virtual bool connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int port) noexcept = 0;
-    virtual bool disconnect(const uint connectionId) noexcept = 0;
+    virtual bool connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int portB) noexcept = 0;
+    virtual bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept = 0;
+    virtual void refresh(CarlaEngine* const engine, const LinkedList<PortNameToId>& midiIns, const LinkedList<PortNameToId>& midiOuts);
 
     virtual const char* const* getConnections() const = 0;
 };
@@ -64,7 +112,7 @@ struct AbstractEngineBuffer {
 // InternalAudio
 
 struct EngineInternalAudio {
-    bool isPatchbay; // can only be patchbay or rack mode
+    bool isRack;  // can only be rack or patchbay mode
     bool isReady;
 
     uint inCount;
@@ -73,7 +121,7 @@ struct EngineInternalAudio {
     AbstractEngineBuffer* buffer;
 
     EngineInternalAudio() noexcept
-        : isPatchbay(false),
+        : isRack(true),
           isReady(false),
           inCount(0),
           outCount(0),
@@ -227,7 +275,7 @@ struct CarlaEngineProtectedData {
 
     // -------------------------------------------------------------------
 
-    CarlaEngineProtectedData(CarlaEngine* const engine);
+    CarlaEngineProtectedData(CarlaEngine* const engine) noexcept;
     ~CarlaEngineProtectedData() noexcept;
 
     // -------------------------------------------------------------------
@@ -236,9 +284,9 @@ struct CarlaEngineProtectedData {
     void doPluginsSwitch() noexcept;
     void doNextPluginAction(const bool unlock) noexcept;
 
+#ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------
 
-#ifndef BUILD_BRIDGE
     // the base, where plugins run
     void processRack(float* inBufReal[2], float* outBuf[2], const uint32_t nframes, const bool isOffline);
 
@@ -248,25 +296,25 @@ struct CarlaEngineProtectedData {
 
     // -------------------------------------------------------------------
 
-    class ScopedActionLock
-    {
-    public:
-        ScopedActionLock(CarlaEngineProtectedData* const data, const EnginePostAction action, const unsigned int pluginId, const unsigned int value, const bool lockWait) noexcept;
-        ~ScopedActionLock() noexcept;
-
-    private:
-        CarlaEngineProtectedData* const fData;
-
-        CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPY_CLASS(ScopedActionLock)
-    };
-
-    // -------------------------------------------------------------------
-
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     CarlaEngineProtectedData() = delete;
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaEngineProtectedData)
 #endif
+};
+
+// -----------------------------------------------------------------------
+
+class ScopedActionLock
+{
+public:
+    ScopedActionLock(CarlaEngineProtectedData* const data, const EnginePostAction action, const uint pluginId, const uint value, const bool lockWait) noexcept;
+    ~ScopedActionLock() noexcept;
+
+private:
+    CarlaEngineProtectedData* const fData;
+
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_CLASS(ScopedActionLock)
 };
 
 // -----------------------------------------------------------------------

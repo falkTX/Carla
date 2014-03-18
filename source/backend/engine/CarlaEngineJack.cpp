@@ -315,7 +315,7 @@ public:
         uint8_t data[3] = { 0, 0, 0 };
 
         EngineControlEvent ctrlEvent = { type, param, value };
-        ctrlEvent.dumpToMidiData(channel, size, data);
+        ctrlEvent.convertToMidiData(channel, size, data);
 
         if (size == 0)
             return false;
@@ -457,7 +457,7 @@ public:
     }
 #endif
 
-    CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput) /*noexcept*/ override
+    CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput) noexcept override
     {
         carla_debug("CarlaEngineJackClient::addPort(%s, \"%s\", %s)", EnginePortType2Str(portType), name, bool2str(isInput));
 
@@ -481,36 +481,34 @@ public:
                     port = jackbridge_port_register(fClient, name, JACK_DEFAULT_MIDI_TYPE, isInput ? JackPortIsInput : JackPortIsOutput, 0);
                     break;
                 }
-            } catch(...) {}
-
-            if (port == nullptr)
-            {
-                carla_stderr("CarlaEngineJackClient::addPort(%s, \"%s\", %s) - failed to create JACK port", EnginePortType2Str(portType), name, bool2str(isInput));
-                return nullptr;
             }
+            CARLA_SAFE_EXCEPTION_RETURN("JackClient addPort", nullptr)
         }
 
         // Create Engine port
-        switch (portType)
-        {
-        case kEnginePortTypeNull:
-            break;
-        case kEnginePortTypeAudio: {
-            CarlaEngineJackAudioPort* const enginePort(new CarlaEngineJackAudioPort(fEngine, isInput, fClient, port));
-            fAudioPorts.append(enginePort);
-            return enginePort;
+        try {
+            switch (portType)
+            {
+            case kEnginePortTypeNull:
+                break;
+            case kEnginePortTypeAudio: {
+                CarlaEngineJackAudioPort* const enginePort(new CarlaEngineJackAudioPort(fEngine, isInput, fClient, port));
+                fAudioPorts.append(enginePort);
+                return enginePort;
+            }
+            case kEnginePortTypeCV: {
+                CarlaEngineJackCVPort* const enginePort(new CarlaEngineJackCVPort(fEngine, isInput, fClient, port));
+                fCVPorts.append(enginePort);
+                return enginePort;
+            }
+            case kEnginePortTypeEvent: {
+                CarlaEngineJackEventPort* const enginePort(new CarlaEngineJackEventPort(fEngine, isInput, fClient, port));
+                fEventPorts.append(enginePort);
+                return enginePort;
+            }
+            }
         }
-        case kEnginePortTypeCV: {
-            CarlaEngineJackCVPort* const enginePort(new CarlaEngineJackCVPort(fEngine, isInput, fClient, port));
-            fCVPorts.append(enginePort);
-            return enginePort;
-        }
-        case kEnginePortTypeEvent: {
-            CarlaEngineJackEventPort* const enginePort(new CarlaEngineJackEventPort(fEngine, isInput, fClient, port));
-            fEventPorts.append(enginePort);
-            return enginePort;
-        }
-        }
+        CARLA_SAFE_EXCEPTION_RETURN("JackClient new Port", nullptr)
 
         carla_stderr("CarlaEngineJackClient::addPort(%s, \"%s\", %s) - invalid type", EnginePortType2Str(portType), name, bool2str(isInput));
         return nullptr;
@@ -1343,7 +1341,7 @@ protected:
                     case kEngineEventTypeControl:
                     {
                         const EngineControlEvent& ctrlEvent(engineEvent.ctrl);
-                        ctrlEvent.dumpToMidiData(engineEvent.channel, size, data);
+                        ctrlEvent.convertToMidiData(engineEvent.channel, size, data);
                         break;
                     }
 

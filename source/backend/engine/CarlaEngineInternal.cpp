@@ -50,19 +50,6 @@ enum RackPatchbayCarlaPortIds {
     RACK_PATCHBAY_CARLA_PORT_MAX        = 7
 };
 
-struct PortNameToId {
-    int portId;
-    char name[STR_MAX+1];
-};
-
-struct ConnectionToId {
-    uint id;
-    int groupA;
-    int portA;
-    int groupB;
-    int portB;
-};
-
 static inline
 int getCarlaRackPortIdFromName(const char* const shortname) noexcept
 {
@@ -84,7 +71,7 @@ int getCarlaRackPortIdFromName(const char* const shortname) noexcept
 // -----------------------------------------------------------------------
 // EngineRackBuffers
 
-struct EngineRackBuffers {
+struct EngineRackBuffers : AbstractEngineBuffer {
     float* in[2];
     float* out[2];
 
@@ -93,339 +80,791 @@ struct EngineRackBuffers {
     LinkedList<int> connectedIn2;
     LinkedList<int> connectedOut1;
     LinkedList<int> connectedOut2;
-    CarlaCriticalSection connectLock;
 
-    uint lastConnectionId;
-    LinkedList<ConnectionToId> usedConnections;
+    EngineRackBuffers(const uint32_t bufferSize)
+    {
+        resize(bufferSize);
+    }
 
-    EngineRackBuffers(const uint32_t bufferSize);
-    ~EngineRackBuffers() noexcept;
-    void clear() noexcept;
-    void resize(const uint32_t bufferSize);
+    ~EngineRackBuffers() noexcept override
+    {
+        clear();
+    }
 
-    bool connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int port) noexcept;
-    bool disconnect(const uint connectionId);
+    void clear() noexcept override
+    {
+        if (in[0] != nullptr)
+        {
+            delete[] in[0];
+            in[0] = nullptr;
+        }
 
-    const char* const* getConnections() const;
+        if (in[1] != nullptr)
+        {
+            delete[] in[1];
+            in[1] = nullptr;
+        }
+
+        if (out[0] != nullptr)
+        {
+            delete[] out[0];
+            out[0] = nullptr;
+        }
+
+        if (out[1] != nullptr)
+        {
+            delete[] out[1];
+            out[1] = nullptr;
+        }
+
+        connectedIn1.clear();
+        connectedIn2.clear();
+        connectedOut1.clear();
+        connectedOut2.clear();
+
+        AbstractEngineBuffer::clear();
+    }
+
+    void resize(const uint32_t bufferSize) override
+    {
+        if (bufferSize > 0)
+        {
+            in[0]  = new float[bufferSize];
+            in[1]  = new float[bufferSize];
+            out[0] = new float[bufferSize];
+            out[1] = new float[bufferSize];
+        }
+        else
+        {
+            in[0]  = nullptr;
+            in[1]  = nullptr;
+            out[0] = nullptr;
+            out[1] = nullptr;
+        }
+    }
+
+    bool connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int portB) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(engine != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(groupA != groupB, false);
+        CARLA_SAFE_ASSERT_RETURN(groupA >= RACK_PATCHBAY_GROUP_CARLA && groupA < RACK_PATCHBAY_GROUP_MAX, false);
+        CARLA_SAFE_ASSERT_RETURN(groupB >= RACK_PATCHBAY_GROUP_CARLA && groupB < RACK_PATCHBAY_GROUP_MAX, false);
+        CARLA_SAFE_ASSERT_RETURN(portA >= 0, false);
+        CARLA_SAFE_ASSERT_RETURN(portB >= 0, false);
+
+        int carlaPort, otherPort;
+
+        if (groupA == RACK_PATCHBAY_GROUP_CARLA)
+        {
+            carlaPort = portA;
+            otherPort = portB;
+        }
+        else
+        {
+            CARLA_SAFE_ASSERT_RETURN(groupB == RACK_PATCHBAY_GROUP_CARLA, false);
+
+            carlaPort = portB;
+            otherPort = portA;
+        }
+
+        bool makeConnection = false;
+
+        switch (carlaPort)
+        {
+        case RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1:
+            connectLock.enter();
+            connectedIn1.append(otherPort);
+            connectLock.leave();
+            makeConnection = true;
+            break;
+
+        case RACK_PATCHBAY_CARLA_PORT_AUDIO_IN2:
+            connectLock.enter();
+            connectedIn2.append(otherPort);
+            connectLock.leave();
+            makeConnection = true;
+            break;
+
+        case RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1:
+            connectLock.enter();
+            connectedOut1.append(otherPort);
+            connectLock.leave();
+            makeConnection = true;
+            break;
+
+        case RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT2:
+            connectLock.enter();
+            connectedOut2.append(otherPort);
+            connectLock.leave();
+            makeConnection = true;
+            break;
+
+        case RACK_PATCHBAY_CARLA_PORT_MIDI_IN:
+            makeConnection = engine->connectRackMidiInPort(otherPort);
+            break;
+
+        case RACK_PATCHBAY_CARLA_PORT_MIDI_OUT:
+            makeConnection = engine->connectRackMidiOutPort(otherPort);
+            break;
+        }
+
+        if (! makeConnection)
+        {
+            engine->setLastError("Invalid rack connection");
+            return false;
+        }
+
+        ConnectionToId connectionToId;
+        connectionToId.id     = lastConnectionId;
+        connectionToId.groupA = groupA;
+        connectionToId.portA  = portA;
+        connectionToId.groupB = groupB;
+        connectionToId.portB  = portB;
+
+        char strBuf[STR_MAX+1];
+        strBuf[STR_MAX] = '\0';
+        std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", groupA, portA, groupB, portB);
+
+        engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, lastConnectionId, 0, 0, 0.0f, strBuf);
+
+        usedConnections.append(connectionToId);
+        ++lastConnectionId;
+
+        return true;
+    }
+
+    bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(engine != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(usedConnections.count() > 0, false);
+
+        for (LinkedList<ConnectionToId>::Itenerator it=usedConnections.begin(); it.valid(); it.next())
+        {
+            const ConnectionToId& connection(it.getValue());
+
+            if (connection.id == connectionId)
+            {
+#if 0
+                const int otherPort((connection.portOut >= 0) ? connection.portOut : connection.portIn);
+                const int carlaPort((otherPort == connection.portOut) ? connection.portIn : connection.portOut);
+
+                if (otherPort >= RACK_PATCHBAY_GROUP_MIDI_OUT*1000)
+                {
+                    CARLA_SAFE_ASSERT_RETURN(carlaPort == RACK_PATCHBAY_PORT_MIDI_IN, false);
+
+                    const int portId(otherPort-RACK_PATCHBAY_GROUP_MIDI_OUT*1000);
+                    disconnectRackMidiInPort(portId);
+                }
+                else if (otherPort >= RACK_PATCHBAY_GROUP_MIDI_IN*1000)
+                {
+                    CARLA_SAFE_ASSERT_RETURN(carlaPort == RACK_PATCHBAY_PORT_MIDI_OUT, false);
+
+                    const int portId(otherPort-RACK_PATCHBAY_GROUP_MIDI_IN*1000);
+                    disconnectRackMidiOutPort(portId);
+                }
+                else if (otherPort >= RACK_PATCHBAY_GROUP_AUDIO_OUT*1000)
+                {
+                    CARLA_SAFE_ASSERT_RETURN(carlaPort == RACK_PATCHBAY_PORT_AUDIO_OUT1 || carlaPort == RACK_PATCHBAY_PORT_AUDIO_OUT2, false);
+
+                    const int portId(otherPort-RACK_PATCHBAY_GROUP_AUDIO_OUT*1000);
+
+                    connectLock.enter();
+
+                    if (carlaPort == RACK_PATCHBAY_PORT_AUDIO_OUT1)
+                        connectedOut1.removeAll(portId);
+                    else
+                        connectedOut2.removeAll(portId);
+
+                    connectLock.leave();
+                }
+                else if (otherPort >= RACK_PATCHBAY_GROUP_AUDIO_IN*1000)
+                {
+                    CARLA_SAFE_ASSERT_RETURN(carlaPort == RACK_PATCHBAY_PORT_AUDIO_IN1 || carlaPort == RACK_PATCHBAY_PORT_AUDIO_IN2, false);
+
+                    const int portId(otherPort-RACK_PATCHBAY_GROUP_AUDIO_IN*1000);
+
+                    connectLock.enter();
+
+                    if (carlaPort == RACK_PATCHBAY_PORT_AUDIO_IN1)
+                        connectedIn1.removeAll(portId);
+                    else
+                        connectedIn2.removeAll(portId);
+
+                    connectLock.leave();
+                }
+                else
+                {
+                    CARLA_SAFE_ASSERT_RETURN(false, false);
+                }
+#endif
+
+                engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connection.id, 0, 0, 0.0f, nullptr);
+
+                usedConnections.remove(it);
+                return true;
+            }
+        }
+
+        engine->setLastError("Failed to find connection");
+        return false;
+    }
+
+    const char* const* getConnections() const override
+    {
+        if (usedConnections.count() == 0)
+            return nullptr;
+
+        LinkedList<const char*> connList;
+        char strBuf[STR_MAX+1];
+
+        for (LinkedList<ConnectionToId>::Itenerator it=usedConnections.begin(); it.valid(); it.next())
+        {
+            const ConnectionToId& connection(it.getValue());
+
+            CARLA_SAFE_ASSERT_CONTINUE(connection.groupA != connection.groupB);
+            CARLA_SAFE_ASSERT_CONTINUE(connection.groupA >= RACK_PATCHBAY_GROUP_CARLA && connection.groupA < RACK_PATCHBAY_GROUP_MAX);
+            CARLA_SAFE_ASSERT_CONTINUE(connection.groupB >= RACK_PATCHBAY_GROUP_CARLA && connection.groupB < RACK_PATCHBAY_GROUP_MAX);
+            CARLA_SAFE_ASSERT_CONTINUE(connection.portA >= 0);
+            CARLA_SAFE_ASSERT_CONTINUE(connection.portB >= 0);
+
+            int carlaPort, otherPort;
+
+            if (connection.groupA == RACK_PATCHBAY_GROUP_CARLA)
+            {
+                carlaPort = connection.portA;
+                otherPort = connection.portB;
+            }
+            else
+            {
+                CARLA_SAFE_ASSERT_CONTINUE(connection.groupB == RACK_PATCHBAY_GROUP_CARLA);
+
+                carlaPort = connection.portB;
+                otherPort = connection.portA;
+            }
+
+            switch (carlaPort)
+            {
+            case RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1:
+            case RACK_PATCHBAY_CARLA_PORT_AUDIO_IN2:
+                std::sprintf(strBuf, "AudioIn:%i", otherPort+1);
+                connList.append(carla_strdup(strBuf));
+                connList.append(carla_strdup((carlaPort == RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1) ? "Carla:AudioIn1" : "Carla:AudioIn2"));
+                break;
+
+            case RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1:
+            case RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT2:
+                connList.append(carla_strdup((carlaPort == RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1) ? "Carla:AudioOut1" : "Carla:AudioOut2"));
+                std::sprintf(strBuf, "AudioOut:%i", otherPort+1);
+                connList.append(carla_strdup(strBuf));
+                break;
+
+            case RACK_PATCHBAY_CARLA_PORT_MIDI_IN:
+                std::sprintf(strBuf, "MidiIn:%i", otherPort+1);
+                connList.append(carla_strdup(strBuf));
+                connList.append(carla_strdup("Carla:MidiIn"));
+                break;
+
+            case RACK_PATCHBAY_CARLA_PORT_MIDI_OUT:
+                connList.append(carla_strdup("Carla:MidiOut"));
+                std::sprintf(strBuf, "MidiOut:%i", otherPort+1);
+                connList.append(carla_strdup(strBuf));
+                break;
+            }
+        }
+
+        const size_t connCount(connList.count());
+
+        if (connCount == 0)
+            return nullptr;
+
+        const char** const retConns = new const char*[connCount+1];
+
+        for (size_t i=0; i < connCount; ++i)
+            retConns[i] = connList.getAt(i);
+
+        retConns[connCount] = nullptr;
+        connList.clear();
+
+        return retConns;
+    }
 
     CARLA_DECLARE_NON_COPY_STRUCT(EngineRackBuffers)
 };
 
 // -----------------------------------------------------------------------
 // EnginePatchbayBuffers
+// TODO
 
-struct EnginePatchbayBuffers {
-    // TODO
-    EnginePatchbayBuffers(const uint32_t bufferSize);
-    ~EnginePatchbayBuffers() noexcept;
-    void clear() noexcept;
-    void resize(const uint32_t bufferSize);
+struct EnginePatchbayBuffers : AbstractEngineBuffer {
 
-    bool connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int port) noexcept;
-    const char* const* getConnections() const;
+    EnginePatchbayBuffers(const uint32_t bufferSize)
+    {
+        resize(bufferSize);
+    }
+
+    ~EnginePatchbayBuffers() noexcept override
+    {
+        clear();
+    }
+
+    void clear() noexcept override
+    {
+        AbstractEngineBuffer::clear();
+    }
+
+    void resize(const uint32_t /*bufferSize*/) override
+    {
+    }
+
+    bool connect(CarlaEngine* const engine, const int /*groupA*/, const int /*portA*/, const int /*groupB*/, const int /*portB*/) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(engine != nullptr, false);
+
+        return false;
+    }
+
+    bool disconnect(CarlaEngine* const engine, const uint /*connectionId*/) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(engine != nullptr, false);
+
+        return false;
+    }
+
+    const char* const* getConnections() const override
+    {
+        return nullptr;
+    }
 
     CARLA_DECLARE_NON_COPY_STRUCT(EnginePatchbayBuffers)
 };
 
 // -----------------------------------------------------------------------
-// EngineRackBuffers
-
-EngineRackBuffers::EngineRackBuffers(const uint32_t bufferSize)
-    : lastConnectionId(0)
-{
-    resize(bufferSize);
-}
-
-EngineRackBuffers::~EngineRackBuffers() noexcept
-{
-    clear();
-}
-
-void EngineRackBuffers::clear() noexcept
-{
-    lastConnectionId = 0;
-
-    if (in[0] != nullptr)
-    {
-        delete[] in[0];
-        in[0] = nullptr;
-    }
-
-    if (in[1] != nullptr)
-    {
-        delete[] in[1];
-        in[1] = nullptr;
-    }
-
-    if (out[0] != nullptr)
-    {
-        delete[] out[0];
-        out[0] = nullptr;
-    }
-
-    if (out[1] != nullptr)
-    {
-        delete[] out[1];
-        out[1] = nullptr;
-    }
-
-    connectedIn1.clear();
-    connectedIn2.clear();
-    connectedOut1.clear();
-    connectedOut2.clear();
-    usedConnections.clear();
-}
-
-void EngineRackBuffers::resize(const uint32_t bufferSize)
-{
-    if (bufferSize > 0)
-    {
-        in[0]  = new float[bufferSize];
-        in[1]  = new float[bufferSize];
-        out[0] = new float[bufferSize];
-        out[1] = new float[bufferSize];
-    }
-    else
-    {
-        in[0]  = nullptr;
-        in[1]  = nullptr;
-        out[0] = nullptr;
-        out[1] = nullptr;
-    }
-}
-
-bool EngineRackBuffers::connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int portB) noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(engine != nullptr, false);
-    CARLA_SAFE_ASSERT_RETURN(groupA != groupB, false);
-    CARLA_SAFE_ASSERT_RETURN(groupA >= RACK_PATCHBAY_GROUP_CARLA && groupA < RACK_PATCHBAY_GROUP_MAX, false);
-    CARLA_SAFE_ASSERT_RETURN(groupB >= RACK_PATCHBAY_GROUP_CARLA && groupB < RACK_PATCHBAY_GROUP_MAX, false);
-    CARLA_SAFE_ASSERT_RETURN(portA >= 0, false);
-    CARLA_SAFE_ASSERT_RETURN(portB >= 0, false);
-
-    int carlaPort, otherPort;
-
-    if (groupA == RACK_PATCHBAY_GROUP_CARLA)
-    {
-        carlaPort = portA;
-        otherPort = portB;
-    }
-    else
-    {
-        CARLA_SAFE_ASSERT_RETURN(groupB == RACK_PATCHBAY_GROUP_CARLA, false);
-
-        carlaPort = portB;
-        otherPort = portA;
-    }
-
-    bool makeConnection = false;
-
-    switch (carlaPort)
-    {
-    case RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1:
-        connectLock.enter();
-        connectedIn1.append(otherPort);
-        connectLock.leave();
-        makeConnection = true;
-        break;
-
-    case RACK_PATCHBAY_CARLA_PORT_AUDIO_IN2:
-        connectLock.enter();
-        connectedIn2.append(otherPort);
-        connectLock.leave();
-        makeConnection = true;
-        break;
-
-    case RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1:
-        connectLock.enter();
-        connectedOut1.append(otherPort);
-        connectLock.leave();
-        makeConnection = true;
-        break;
-
-    case RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT2:
-        connectLock.enter();
-        connectedOut2.append(otherPort);
-        connectLock.leave();
-        makeConnection = true;
-        break;
-
-    case RACK_PATCHBAY_CARLA_PORT_MIDI_IN:
-        makeConnection = engine->connectRackMidiInPort(otherPort);
-        break;
-
-    case RACK_PATCHBAY_CARLA_PORT_MIDI_OUT:
-        makeConnection = engine->connectRackMidiOutPort(otherPort);
-        break;
-    }
-
-    if (! makeConnection)
-    {
-        engine->setLastError("Invalid rack connection");
-        return false;
-    }
-
-    ConnectionToId connectionToId;
-    connectionToId.id     = lastConnectionId;
-    connectionToId.groupA = groupA;
-    connectionToId.portA  = portA;
-    connectionToId.groupB = groupB;
-    connectionToId.portB  = portB;
-
-    char strBuf[STR_MAX+1];
-    strBuf[STR_MAX] = '\0';
-    std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", groupA, portA, groupB, portB);
-
-    engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, lastConnectionId, 0, 0, 0.0f, strBuf);
-
-    usedConnections.append(connectionToId);
-    ++lastConnectionId;
-
-    return true;
-}
-
-const char* const* EngineRackBuffers::getConnections() const
-{
-    if (usedConnections.count() == 0)
-        return nullptr;
-
-    LinkedList<const char*> connList;
-    char strBuf[STR_MAX+1];
-
-    for (LinkedList<ConnectionToId>::Itenerator it=usedConnections.begin(); it.valid(); it.next())
-    {
-        const ConnectionToId& connection(it.getValue());
-
-        CARLA_SAFE_ASSERT_CONTINUE(connection.groupA != connection.groupB);
-        CARLA_SAFE_ASSERT_CONTINUE(connection.groupA >= RACK_PATCHBAY_GROUP_CARLA && connection.groupA < RACK_PATCHBAY_GROUP_MAX);
-        CARLA_SAFE_ASSERT_CONTINUE(connection.groupB >= RACK_PATCHBAY_GROUP_CARLA && connection.groupB < RACK_PATCHBAY_GROUP_MAX);
-        CARLA_SAFE_ASSERT_CONTINUE(connection.portA >= 0);
-        CARLA_SAFE_ASSERT_CONTINUE(connection.portB >= 0);
-
-        int carlaPort, otherPort;
-
-        if (connection.groupA == RACK_PATCHBAY_GROUP_CARLA)
-        {
-            carlaPort = connection.portA;
-            otherPort = connection.portB;
-        }
-        else
-        {
-            CARLA_SAFE_ASSERT_CONTINUE(connection.groupB == RACK_PATCHBAY_GROUP_CARLA);
-
-            carlaPort = connection.portB;
-            otherPort = connection.portA;
-        }
-
-        switch (carlaPort)
-        {
-        case RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1:
-        case RACK_PATCHBAY_CARLA_PORT_AUDIO_IN2:
-            std::sprintf(strBuf, "AudioIn:%i", otherPort+1);
-            connList.append(carla_strdup(strBuf));
-            connList.append(carla_strdup((carlaPort == RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1) ? "Carla:AudioIn1" : "Carla:AudioIn2"));
-            break;
-
-        case RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1:
-        case RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT2:
-            connList.append(carla_strdup((carlaPort == RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1) ? "Carla:AudioOut1" : "Carla:AudioOut2"));
-            std::sprintf(strBuf, "AudioOut:%i", otherPort+1);
-            connList.append(carla_strdup(strBuf));
-            break;
-
-        case RACK_PATCHBAY_CARLA_PORT_MIDI_IN:
-            std::sprintf(strBuf, "MidiIn:%i", otherPort+1);
-            connList.append(carla_strdup(strBuf));
-            connList.append(carla_strdup("Carla:MidiIn"));
-            break;
-
-        case RACK_PATCHBAY_CARLA_PORT_MIDI_OUT:
-            connList.append(carla_strdup("Carla:MidiOut"));
-            std::sprintf(strBuf, "MidiOut:%i", otherPort+1);
-            connList.append(carla_strdup(strBuf));
-            break;
-        }
-    }
-
-    const size_t connCount(connList.count());
-
-    if (connCount == 0)
-        return nullptr;
-
-    const char** const retConns = new const char*[connCount+1];
-
-    for (size_t i=0; i < connCount; ++i)
-        retConns[i] = connList.getAt(i);
-
-    retConns[connCount] = nullptr;
-    connList.clear();
-
-    return retConns;
-}
-
-// -----------------------------------------------------------------------
 // EnginePatchbayBuffers
 
-EnginePatchbayBuffers::EnginePatchbayBuffers(const uint32_t bufferSize)
-{
-    resize(bufferSize);
-}
-
-EnginePatchbayBuffers::~EnginePatchbayBuffers() noexcept
-{
-    clear();
-}
-
-void EnginePatchbayBuffers::clear() noexcept
-{
-}
-
-void EnginePatchbayBuffers::resize(const uint32_t /*bufferSize*/)
-{
-}
-
-bool EnginePatchbayBuffers::connect(CarlaEngine* const engine, const int, const int, const int, const int) noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(engine != nullptr, false);
-
-    return false;
-}
-
-const char* const* EnginePatchbayBuffers::getConnections() const
-{
-    return nullptr;
-}
-
-// -----------------------------------------------------------------------
-// EnginePatchbayBuffers
-
-EngineInternalAudio::create(const uint32_t bufferSize)
+void EngineInternalAudio::create(const uint32_t bufferSize)
 {
     CARLA_SAFE_ASSERT_RETURN(buffer == nullptr,);
 
-    if (usePatchbay)
-        buffer = new EnginePatchbayBuffers(bufferSize);
-    else
+    if (isRack)
         buffer = new EngineRackBuffers(bufferSize);
+    else
+        buffer = new EnginePatchbayBuffers(bufferSize);
 
     isReady = true;
 }
 
-EngineInternalAudio::initPatchbay() noexcept
+void EngineInternalAudio::initPatchbay() noexcept
 {
-    if (usePatchbay)
-    {
-        CARLA_SAFE_ASSERT_RETURN(patchbay != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
 
-        // TODO
+    buffer->lastConnectionId = 0;
+    buffer->usedConnections.clear();
+
+    if (isRack)
+    {
+        //EngineRackBuffers* const rack((EngineRackBuffers*)buffer);
     }
     else
     {
-        CARLA_SAFE_ASSERT_RETURN(rack != nullptr,);
-
-        rack->lastConnectionId = 0;
-        rack->usedConnections.clear();
+        // TODO
     }
+}
+
+// -----------------------------------------------------------------------
+// CarlaEngineProtectedData
+
+CarlaEngineProtectedData::CarlaEngineProtectedData(CarlaEngine* const engine) noexcept
+    : osc(engine),
+      thread(engine),
+      oscData(nullptr),
+      callback(nullptr),
+      callbackPtr(nullptr),
+      fileCallback(nullptr),
+      fileCallbackPtr(nullptr),
+      hints(0x0),
+      bufferSize(0),
+      sampleRate(0.0),
+      aboutToClose(false),
+      curPluginCount(0),
+      maxPluginNumber(0),
+      nextPluginId(0),
+      plugins(nullptr) {}
+
+CarlaEngineProtectedData::~CarlaEngineProtectedData() noexcept
+{
+    CARLA_SAFE_ASSERT(curPluginCount == 0);
+    CARLA_SAFE_ASSERT(maxPluginNumber == 0);
+    CARLA_SAFE_ASSERT(nextPluginId == 0);
+    CARLA_SAFE_ASSERT(plugins == nullptr);
+}
+
+// -----------------------------------------------------------------------
+
+void CarlaEngineProtectedData::doPluginRemove() noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(curPluginCount > 0,);
+    CARLA_SAFE_ASSERT_RETURN(nextAction.pluginId < curPluginCount,);
+    --curPluginCount;
+
+    // move all plugins 1 spot backwards
+    for (unsigned int i=nextAction.pluginId; i < curPluginCount; ++i)
+    {
+        CarlaPlugin* const plugin(plugins[i+1].plugin);
+
+        CARLA_SAFE_ASSERT_BREAK(plugin != nullptr);
+
+        plugin->setId(i);
+
+        plugins[i].plugin      = plugin;
+        plugins[i].insPeak[0]  = 0.0f;
+        plugins[i].insPeak[1]  = 0.0f;
+        plugins[i].outsPeak[0] = 0.0f;
+        plugins[i].outsPeak[1] = 0.0f;
+    }
+
+    const unsigned int id(curPluginCount);
+
+    // reset last plugin (now removed)
+    plugins[id].plugin      = nullptr;
+    plugins[id].insPeak[0]  = 0.0f;
+    plugins[id].insPeak[1]  = 0.0f;
+    plugins[id].outsPeak[0] = 0.0f;
+    plugins[id].outsPeak[1] = 0.0f;
+}
+
+void CarlaEngineProtectedData::doPluginsSwitch() noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(curPluginCount >= 2,);
+
+    const unsigned int idA(nextAction.pluginId);
+    const unsigned int idB(nextAction.value);
+
+    CARLA_SAFE_ASSERT_RETURN(idA < curPluginCount,);
+    CARLA_SAFE_ASSERT_RETURN(idB < curPluginCount,);
+    CARLA_SAFE_ASSERT_RETURN(plugins[idA].plugin != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(plugins[idB].plugin != nullptr,);
+
+#if 0
+    std::swap(plugins[idA].plugin, plugins[idB].plugin);
+#else
+    CarlaPlugin* const tmp(plugins[idA].plugin);
+
+    plugins[idA].plugin = plugins[idB].plugin;
+    plugins[idB].plugin = tmp;
+#endif
+}
+
+void CarlaEngineProtectedData::doNextPluginAction(const bool unlock) noexcept
+{
+    switch (nextAction.opcode)
+    {
+    case kEnginePostActionNull:
+        break;
+    case kEnginePostActionZeroCount:
+        curPluginCount = 0;
+        break;
+    case kEnginePostActionRemovePlugin:
+        doPluginRemove();
+        break;
+    case kEnginePostActionSwitchPlugins:
+        doPluginsSwitch();
+        break;
+    }
+
+    nextAction.opcode   = kEnginePostActionNull;
+    nextAction.pluginId = 0;
+    nextAction.value    = 0;
+
+    if (unlock)
+        nextAction.mutex.unlock();
+}
+
+// -----------------------------------------------------------------------
+
+#ifndef BUILD_BRIDGE
+void CarlaEngineProtectedData::processRack(float* inBufReal[2], float* outBuf[2], const uint32_t frames, const bool isOffline)
+{
+    CARLA_SAFE_ASSERT_RETURN(bufEvents.in != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(bufEvents.out != nullptr,);
+
+    // safe copy
+    float inBuf0[frames];
+    float inBuf1[frames];
+    float* inBuf[2] = { inBuf0, inBuf1 };
+
+    // initialize audio inputs
+    FLOAT_COPY(inBuf0, inBufReal[0], frames);
+    FLOAT_COPY(inBuf1, inBufReal[1], frames);
+
+    // initialize audio outputs (zero)
+    FLOAT_CLEAR(outBuf[0], frames);
+    FLOAT_CLEAR(outBuf[1], frames);
+
+    // initialize event outputs (zero)
+    carla_zeroStruct<EngineEvent>(bufEvents.out, kMaxEngineEventInternalCount);
+
+    bool processed = false;
+
+    uint32_t oldAudioInCount = 0;
+    uint32_t oldMidiOutCount = 0;
+
+    // process plugins
+    for (unsigned int i=0; i < curPluginCount; ++i)
+    {
+        CarlaPlugin* const plugin = plugins[i].plugin;
+
+        if (plugin == nullptr || ! plugin->isEnabled() || ! plugin->tryLock(isOffline))
+            continue;
+
+        if (processed)
+        {
+            // initialize audio inputs (from previous outputs)
+            FLOAT_COPY(inBuf0, outBuf[0], frames);
+            FLOAT_COPY(inBuf1, outBuf[1], frames);
+
+            // initialize audio outputs (zero)
+            FLOAT_CLEAR(outBuf[0], frames);
+            FLOAT_CLEAR(outBuf[1], frames);
+
+            // if plugin has no midi out, add previous events
+            if (oldMidiOutCount == 0 && bufEvents.in[0].type != kEngineEventTypeNull)
+            {
+                if (bufEvents.out[0].type != kEngineEventTypeNull)
+                {
+                    // TODO: carefully add to input, sorted events
+                }
+                // else nothing needed
+            }
+            else
+            {
+                // initialize event inputs from previous outputs
+                carla_copyStruct<EngineEvent>(bufEvents.in, bufEvents.out, kMaxEngineEventInternalCount);
+
+                // initialize event outputs (zero)
+                carla_zeroStruct<EngineEvent>(bufEvents.out, kMaxEngineEventInternalCount);
+            }
+        }
+
+        oldAudioInCount = plugin->getAudioInCount();
+        oldMidiOutCount = plugin->getMidiOutCount();
+
+        // process
+        plugin->initBuffers();
+        plugin->process(inBuf, outBuf, frames);
+        plugin->unlock();
+
+        // if plugin has no audio inputs, add input buffer
+        if (oldAudioInCount == 0)
+        {
+            FLOAT_ADD(outBuf[0], inBuf0, frames);
+            FLOAT_ADD(outBuf[1], inBuf1, frames);
+        }
+
+        // set peaks
+        {
+            EnginePluginData& pluginData(plugins[i]);
+
+#ifdef HAVE_JUCE
+            float tmpMin, tmpMax;
+
+            if (oldAudioInCount > 0)
+            {
+                FloatVectorOperations::findMinAndMax(inBuf0, static_cast<int>(frames), tmpMin, tmpMax);
+                pluginData.insPeak[0] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
+
+                FloatVectorOperations::findMinAndMax(inBuf1, static_cast<int>(frames), tmpMin, tmpMax);
+                pluginData.insPeak[1] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
+            }
+            else
+            {
+                pluginData.insPeak[0] = 0.0f;
+                pluginData.insPeak[1] = 0.0f;
+            }
+
+            if (plugin->getAudioOutCount() > 0)
+            {
+                FloatVectorOperations::findMinAndMax(outBuf[0], static_cast<int>(frames), tmpMin, tmpMax);
+                pluginData.outsPeak[0] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
+
+                FloatVectorOperations::findMinAndMax(outBuf[1], static_cast<int>(frames), tmpMin, tmpMax);
+                pluginData.outsPeak[1] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
+            }
+            else
+            {
+                pluginData.outsPeak[0] = 0.0f;
+                pluginData.outsPeak[1] = 0.0f;
+            }
+#else
+            float peak1, peak2;
+
+            if (oldAudioInCount > 0)
+            {
+                peak1 = peak2 = 0.0f;
+
+                for (uint32_t k=0; k < frames; ++k)
+                {
+                    peak1  = carla_max<float>(peak1, std::fabs(inBuf0[k]), 1.0f);
+                    peak2  = carla_max<float>(peak2, std::fabs(inBuf1[k]), 1.0f);
+                }
+
+                pluginData.insPeak[0] = peak1;
+                pluginData.insPeak[1] = peak2;
+            }
+            else
+            {
+                pluginData.insPeak[0] = 0.0f;
+                pluginData.insPeak[1] = 0.0f;
+            }
+
+            if (plugin->getAudioOutCount() > 0)
+            {
+                peak1 = peak2 = 0.0f;
+
+                for (uint32_t k=0; k < frames; ++k)
+                {
+                    peak1 = carla_max<float>(peak1, std::fabs(outBuf[0][k]), 1.0f);
+                    peak2 = carla_max<float>(peak2, std::fabs(outBuf[1][k]), 1.0f);
+                }
+
+                pluginData.outsPeak[0] = peak1;
+                pluginData.outsPeak[1] = peak2;
+            }
+            else
+            {
+                pluginData.outsPeak[0] = 0.0f;
+                pluginData.outsPeak[1] = 0.0f;
+            }
+#endif
+        }
+
+        processed = true;
+    }
+}
+
+void CarlaEngineProtectedData::processRackFull(float** const inBuf, const uint32_t inCount, float** const outBuf, const uint32_t outCount, const uint32_t nframes, const bool isOffline)
+{
+    EngineRackBuffers* const rack((EngineRackBuffers*)bufAudio.buffer);
+
+    const CarlaCriticalSectionScope _cs2(rack->connectLock);
+
+    // connect input buffers
+    if (rack->connectedIn1.count() == 0)
+    {
+        FLOAT_CLEAR(rack->in[0], nframes);
+    }
+    else
+    {
+        bool first = true;
+
+        for (LinkedList<int>::Itenerator it = rack->connectedIn1.begin(); it.valid(); it.next())
+        {
+            const int& port(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(inCount));
+
+            if (first)
+            {
+                FLOAT_COPY(rack->in[0], inBuf[port], nframes);
+                first = false;
+            }
+            else
+            {
+                FLOAT_ADD(rack->in[0], inBuf[port], nframes);
+            }
+        }
+
+        if (first)
+            FLOAT_CLEAR(rack->in[0], nframes);
+    }
+
+    if (rack->connectedIn2.count() == 0)
+    {
+        FLOAT_CLEAR(rack->in[1], nframes);
+    }
+    else
+    {
+        bool first = true;
+
+        for (LinkedList<int>::Itenerator it = rack->connectedIn2.begin(); it.valid(); it.next())
+        {
+            const int& port(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(inCount));
+
+            if (first)
+            {
+                FLOAT_COPY(rack->in[1], inBuf[port], nframes);
+                first = false;
+            }
+            else
+            {
+                FLOAT_ADD(rack->in[1], inBuf[port], nframes);
+            }
+        }
+
+        if (first)
+            FLOAT_CLEAR(rack->in[1], nframes);
+    }
+
+    FLOAT_CLEAR(rack->out[0], nframes);
+    FLOAT_CLEAR(rack->out[1], nframes);
+
+    // process
+    processRack(rack->in, rack->out, nframes, isOffline);
+
+    // connect output buffers
+    if (rack->connectedOut1.count() != 0)
+    {
+        for (LinkedList<int>::Itenerator it = rack->connectedOut1.begin(); it.valid(); it.next())
+        {
+            const int& port(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(outCount));
+
+            FLOAT_ADD(outBuf[port], rack->out[0], nframes);
+        }
+    }
+
+    if (rack->connectedOut2.count() != 0)
+    {
+        for (LinkedList<int>::Itenerator it = rack->connectedOut2.begin(); it.valid(); it.next())
+        {
+            const int& port(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(outCount));
+
+            FLOAT_ADD(outBuf[port], rack->out[1], nframes);
+        }
+    }
+}
+#endif
+
+// -----------------------------------------------------------------------
+// ScopedActionLock
+
+ScopedActionLock::ScopedActionLock(CarlaEngineProtectedData* const data, const EnginePostAction action, const uint pluginId, const uint value, const bool lockWait) noexcept
+    : fData(data)
+{
+    fData->nextAction.mutex.lock();
+
+    CARLA_SAFE_ASSERT_RETURN(fData->nextAction.opcode == kEnginePostActionNull,);
+
+    fData->nextAction.opcode   = action;
+    fData->nextAction.pluginId = pluginId;
+    fData->nextAction.value    = value;
+
+    if (lockWait)
+    {
+        // block wait for unlock on processing side
+        carla_stdout("ScopedPluginAction(%i) - blocking START", pluginId);
+        fData->nextAction.mutex.lock();
+        carla_stdout("ScopedPluginAction(%i) - blocking DONE", pluginId);
+    }
+    else
+    {
+        fData->doNextPluginAction(false);
+    }
+}
+
+ScopedActionLock::~ScopedActionLock() noexcept
+{
+    fData->nextAction.mutex.unlock();
 }
 
 // -----------------------------------------------------------------------

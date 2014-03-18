@@ -116,7 +116,7 @@ void CarlaEngineOsc::idle() const noexcept
                 if (lo_server_recv_noblock(fServerTCP, 0) == 0)
                     break;
             }
-            CARLA_SAFE_EXCEPTION_BREAK("OSC idle TCP")
+            CARLA_SAFE_EXCEPTION_CONTINUE("OSC idle TCP")
         }
     }
 
@@ -128,7 +128,7 @@ void CarlaEngineOsc::idle() const noexcept
                 if (lo_server_recv_noblock(fServerUDP, 0) == 0)
                     break;
             }
-            CARLA_SAFE_EXCEPTION_BREAK("OSC idle UDP")
+            CARLA_SAFE_EXCEPTION_CONTINUE("OSC idle UDP")
         }
     }
 }

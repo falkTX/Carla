@@ -999,7 +999,7 @@ bool CarlaEngine::removePlugin(const unsigned int id)
     pData->thread.stopThread(500);
 
     const bool lockWait(isRunning() && pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS);
-    const CarlaEngineProtectedData::ScopedActionLock sal(pData, kEnginePostActionRemovePlugin, id, 0, lockWait);
+    const ScopedActionLock sal(pData, kEnginePostActionRemovePlugin, id, 0, lockWait);
 
 #ifndef BUILD_BRIDGE
     if (isOscControlRegistered())
@@ -1028,7 +1028,7 @@ bool CarlaEngine::removeAllPlugins()
     pData->thread.stopThread(500);
 
     const bool lockWait(isRunning());
-    const CarlaEngineProtectedData::ScopedActionLock sal(pData, kEnginePostActionZeroCount, 0, 0, lockWait);
+    const ScopedActionLock sal(pData, kEnginePostActionZeroCount, 0, 0, lockWait);
 
     callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
 
@@ -1157,7 +1157,7 @@ bool CarlaEngine::switchPlugins(const unsigned int idA, const unsigned int idB)
     pData->thread.stopThread(500);
 
     const bool lockWait(isRunning() && pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS);
-    const CarlaEngineProtectedData::ScopedActionLock sal(pData, kEnginePostActionSwitchPlugins, idA, idB, lockWait);
+    const ScopedActionLock sal(pData, kEnginePostActionSwitchPlugins, idA, idB, lockWait);
 
 #ifndef BUILD_BRIDGE // TODO
     //if (isOscControlRegistered())
@@ -1702,6 +1702,7 @@ bool CarlaEngine::patchbayConnect(const int groupA, const int portA, const int g
 {
     CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
     CARLA_SAFE_ASSERT_RETURN(pData->bufAudio.isReady, false);
+    CARLA_SAFE_ASSERT_RETURN(pData->bufAudio.buffer != nullptr, nullptr);
     carla_debug("CarlaEngine::patchbayConnect(%i, %i)", portA, portB);
 
     if (portA < 0 || portB < 0)
@@ -1710,94 +1711,17 @@ bool CarlaEngine::patchbayConnect(const int groupA, const int portA, const int g
         return false;
     }
 
-    return pData->bufAudio.connect(this, groupA, portA, groupB, portB);
+    return pData->bufAudio.buffer->connect(this, groupA, portA, groupB, portB);
 }
 
 bool CarlaEngine::patchbayDisconnect(const uint connectionId)
 {
     CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
     CARLA_SAFE_ASSERT_RETURN(pData->bufAudio.isReady, false);
+    CARLA_SAFE_ASSERT_RETURN(pData->bufAudio.buffer != nullptr, false);
     carla_debug("CarlaEngineRtAudio::patchbayDisconnect(%i)", connectionId);
 
-    if (pData->bufAudio.usePatchbay)
-    {
-        // not implemented yet
-        return false;
-    }
-
-#if 0
-    EngineRackBuffers* const rack(pData->bufAudio.rack);
-
-    CARLA_SAFE_ASSERT_RETURN_ERR(rack->usedConnections.count() > 0, "No connections available");
-
-    for (LinkedList<ConnectionToId>::Itenerator it=rack->usedConnections.begin(); it.valid(); it.next())
-    {
-        const ConnectionToId& connection(it.getValue());
-
-        if (connection.id == connectionId)
-        {
-            const int otherPort((connection.portOut >= 0) ? connection.portOut : connection.portIn);
-            const int carlaPort((otherPort == connection.portOut) ? connection.portIn : connection.portOut);
-
-            if (otherPort >= RACK_PATCHBAY_GROUP_MIDI_OUT*1000)
-            {
-                CARLA_SAFE_ASSERT_RETURN(carlaPort == RACK_PATCHBAY_PORT_MIDI_IN, false);
-
-                const int portId(otherPort-RACK_PATCHBAY_GROUP_MIDI_OUT*1000);
-                disconnectRackMidiInPort(portId);
-            }
-            else if (otherPort >= RACK_PATCHBAY_GROUP_MIDI_IN*1000)
-            {
-                CARLA_SAFE_ASSERT_RETURN(carlaPort == RACK_PATCHBAY_PORT_MIDI_OUT, false);
-
-                const int portId(otherPort-RACK_PATCHBAY_GROUP_MIDI_IN*1000);
-                disconnectRackMidiOutPort(portId);
-            }
-            else if (otherPort >= RACK_PATCHBAY_GROUP_AUDIO_OUT*1000)
-            {
-                CARLA_SAFE_ASSERT_RETURN(carlaPort == RACK_PATCHBAY_PORT_AUDIO_OUT1 || carlaPort == RACK_PATCHBAY_PORT_AUDIO_OUT2, false);
-
-                const int portId(otherPort-RACK_PATCHBAY_GROUP_AUDIO_OUT*1000);
-
-                rack->connectLock.enter();
-
-                if (carlaPort == RACK_PATCHBAY_PORT_AUDIO_OUT1)
-                    rack->connectedOut1.removeAll(portId);
-                else
-                    rack->connectedOut2.removeAll(portId);
-
-                rack->connectLock.leave();
-            }
-            else if (otherPort >= RACK_PATCHBAY_GROUP_AUDIO_IN*1000)
-            {
-                CARLA_SAFE_ASSERT_RETURN(carlaPort == RACK_PATCHBAY_PORT_AUDIO_IN1 || carlaPort == RACK_PATCHBAY_PORT_AUDIO_IN2, false);
-
-                const int portId(otherPort-RACK_PATCHBAY_GROUP_AUDIO_IN*1000);
-
-                rack->connectLock.enter();
-
-                if (carlaPort == RACK_PATCHBAY_PORT_AUDIO_IN1)
-                    rack->connectedIn1.removeAll(portId);
-                else
-                    rack->connectedIn2.removeAll(portId);
-
-                rack->connectLock.leave();
-            }
-            else
-            {
-                CARLA_SAFE_ASSERT_RETURN(false, false);
-            }
-
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connection.id, 0, 0, 0.0f, nullptr);
-
-            rack->usedConnections.remove(it);
-            return true;
-        }
-    }
-#endif
-
-    setLastError("Failed to find connection");
-    return false;
+    return pData->bufAudio.buffer->disconnect(this, connectionId);
 }
 
 bool CarlaEngine::patchbayRefresh()
@@ -2084,9 +2008,10 @@ void CarlaEngine::setPluginPeaks(const unsigned int pluginId, float const inPeak
 
 const char* const* CarlaEngine::getPatchbayConnections() const
 {
+    CARLA_SAFE_ASSERT_RETURN(pData->bufAudio.buffer != nullptr, nullptr);
     carla_debug("CarlaEngine::getPatchbayConnections()");
 
-    return pData->bufAudio.getConnections();
+    return pData->bufAudio.buffer->getConnections();
 }
 
 void CarlaEngine::restorePatchbayConnection(const char* const connSource, const char* const connTarget)
