@@ -631,22 +631,22 @@ public:
     /*!
      * Get the number of available engine drivers.
      */
-    static unsigned int getDriverCount();
+    static uint getDriverCount();
 
     /*!
      * Get the name of the engine driver at \a index.
      */
-    static const char* getDriverName(const unsigned int index);
+    static const char* getDriverName(const uint index);
 
     /*!
      * Get the device names of driver at \a index.
      */
-    static const char* const* getDriverDeviceNames(const unsigned int index);
+    static const char* const* getDriverDeviceNames(const uint index);
 
     /*!
      * Get the device names of driver at \a index.
      */
-    static const EngineDriverDeviceInfo* getDriverDeviceInfo(const unsigned int index, const char* const driverName);
+    static const EngineDriverDeviceInfo* getDriverDeviceInfo(const uint index, const char* const driverName);
 
     /*!
      * Create a new engine, using driver \a driverName. \n
@@ -661,23 +661,23 @@ public:
     /*!
      * Maximum client name size.
      */
-    virtual unsigned int getMaxClientNameSize() const noexcept;
+    virtual uint getMaxClientNameSize() const noexcept;
 
     /*!
      * Maximum port name size.
      */
-    virtual unsigned int getMaxPortNameSize() const noexcept;
+    virtual uint getMaxPortNameSize() const noexcept;
 
     /*!
      * Current number of plugins loaded.
      */
-    unsigned int getCurrentPluginCount() const noexcept;
+    uint getCurrentPluginCount() const noexcept;
 
     /*!
      * Maximum number of loadable plugins allowed.
      * \note This function returns 0 if engine is not started.
      */
-    unsigned int getMaxPluginNumber() const noexcept;
+    uint getMaxPluginNumber() const noexcept;
 
     // -------------------------------------------------------------------
     // Virtual, per-engine type calls
@@ -739,7 +739,7 @@ public:
     /*!
      * Remove plugin with id \a id.
      */
-    bool removePlugin(const unsigned int id);
+    bool removePlugin(const uint id);
 
     /*!
      * Remove all plugins.
@@ -750,34 +750,34 @@ public:
      * Rename plugin with id \a id to \a newName.\n
      * Returns the new name, or nullptr if the operation failed.
      */
-    virtual const char* renamePlugin(const unsigned int id, const char* const newName);
+    virtual const char* renamePlugin(const uint id, const char* const newName);
 
     /*!
      * Clone plugin with id \a id.
      */
-    bool clonePlugin(const unsigned int id);
+    bool clonePlugin(const uint id);
 
     /*!
      * Prepare replace of plugin with id \a id.\n
      * The next call to addPlugin() will use this id, replacing the selected plugin.
      * \note This function requires addPlugin() to be called afterwards, as soon as possible.
      */
-    bool replacePlugin(const unsigned int id);
+    bool replacePlugin(const uint id);
 
     /*!
      * Switch plugins with id \a idA and \a idB.
      */
-    bool switchPlugins(const unsigned int idA, const unsigned int idB);
+    bool switchPlugins(const uint idA, const uint idB);
 
     /*!
      * Get plugin with id \a id.
      */
-    CarlaPlugin* getPlugin(const unsigned int id) const;
+    CarlaPlugin* getPlugin(const uint id) const;
 
     /*!
      * Get plugin with id \a id, faster unchecked version.
      */
-    CarlaPlugin* getPluginUnchecked(const unsigned int id) const noexcept;
+    CarlaPlugin* getPluginUnchecked(const uint id) const noexcept;
 
     /*!
      * Get a unique plugin name within the engine.\n
@@ -812,7 +812,7 @@ public:
     /*!
      * Get the current engine driver hints.
      */
-    unsigned int getHints() const noexcept;
+    uint getHints() const noexcept;
 
     /*!
      * Get the current buffer size.
@@ -850,12 +850,12 @@ public:
     /*!
      * TODO.
      */
-    float getInputPeak(const unsigned int pluginId, const bool isLeft) const noexcept;
+    float getInputPeak(const uint pluginId, const bool isLeft) const noexcept;
 
     /*!
      * TODO.
      */
-    float getOutputPeak(const unsigned int pluginId, const bool isLeft) const noexcept;
+    float getOutputPeak(const uint pluginId, const bool isLeft) const noexcept;
 
     // -------------------------------------------------------------------
     // Callback
@@ -864,7 +864,7 @@ public:
      * Run the main engine callback, if set.
      * May be called by plugins.
      */
-    void callback(const EngineCallbackOpcode action, const unsigned int pluginId, const int value1, const int value2, const float value3, const char* const valueStr) noexcept;
+    void callback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr) noexcept;
 
     /*!
      * Set the main engine callback.
@@ -1003,11 +1003,11 @@ public:
      * Force register a plugin into slot \a id. \n
      * This is needed so we can receive OSC events for a plugin while it initializes.
      */
-    void registerEnginePlugin(const unsigned int id, CarlaPlugin* const plugin) noexcept;
+    void registerEnginePlugin(const uint id, CarlaPlugin* const plugin) noexcept;
 
 #ifndef BUILD_BRIDGE
     /*!
-     * Virtual functions for handling MIDI ports in the rack patchbay.
+     * Virtual functions for handling MIDI ports in the rack graph.
      */
     virtual bool connectRackMidiInPort(const int)     { return false; }
     virtual bool connectRackMidiOutPort(const int)    { return false; }
@@ -1054,7 +1054,7 @@ protected:
      * Set a plugin (stereo) peak values.
      * \note RT call
      */
-    void setPluginPeaks(const unsigned int pluginId, float const inPeaks[2], float const outPeaks[2]) noexcept;
+    void setPluginPeaks(const uint pluginId, float const inPeaks[2], float const outPeaks[2]) noexcept;
 
 #ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------
@@ -1096,17 +1096,17 @@ private:
 
     // RtAudio
     static CarlaEngine*       newRtAudio(const AudioApi api);
-    static unsigned int       getRtAudioApiCount();
-    static const char*        getRtAudioApiName(const unsigned int index);
-    static const char* const* getRtAudioApiDeviceNames(const unsigned int index);
-    static const EngineDriverDeviceInfo* getRtAudioDeviceInfo(const unsigned int index, const char* const deviceName);
+    static uint               getRtAudioApiCount();
+    static const char*        getRtAudioApiName(const uint index);
+    static const char* const* getRtAudioApiDeviceNames(const uint index);
+    static const EngineDriverDeviceInfo* getRtAudioDeviceInfo(const uint index, const char* const deviceName);
 
     // Juce
     static CarlaEngine*       newJuce(const AudioApi api);
-    static unsigned int       getJuceApiCount();
-    static const char*        getJuceApiName(const unsigned int index);
-    static const char* const* getJuceApiDeviceNames(const unsigned int index);
-    static const EngineDriverDeviceInfo* getJuceDeviceInfo(const unsigned int index, const char* const deviceName);
+    static uint               getJuceApiCount();
+    static const char*        getJuceApiName(const uint index);
+    static const char* const* getJuceApiDeviceNames(const uint index);
+    static const EngineDriverDeviceInfo* getJuceDeviceInfo(const uint index, const char* const deviceName);
 
 #ifdef BUILD_BRIDGE
 public:
