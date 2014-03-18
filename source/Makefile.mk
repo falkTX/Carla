@@ -312,7 +312,7 @@ LILV_LIBS                = -ldl -lm -lrt
 ifeq ($(HAVE_ALSA),true)
 RTAUDIO_FLAGS           += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
 RTAUDIO_LIBS            += $(shell pkg-config --libs alsa) -lpthread
-RTMIDI_FLAGS            += $(shell pkg-config --cflags alsa) -D__LINUX_ALSASEQ__
+RTMIDI_FLAGS            += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
 RTMIDI_LIBS             += $(shell pkg-config --libs alsa)
 endif
 ifeq ($(HAVE_PULSEAUDIO),true)

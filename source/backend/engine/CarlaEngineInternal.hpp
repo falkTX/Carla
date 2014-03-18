@@ -118,6 +118,7 @@ struct RackGraph {
     bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept;
 
     const char* const* getConnections() const;
+    bool getPortIdFromName(const char* const portName, int& groupId, int& portId);
 };
 
 // -----------------------------------------------------------------------
@@ -139,6 +140,7 @@ struct PatchbayGraph {
     bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept;
 
     const char* const* getConnections() const;
+    bool getPortIdFromName(const char* const portName, int& groupId, int& portId);
 };
 #endif
 

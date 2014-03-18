@@ -336,9 +336,9 @@ public:
         }
 
         CarlaEngine::init(clientName);
-        patchbayRefresh();
-
         pData->audio.isReady = true;
+
+        patchbayRefresh();
 
         return true;
     }

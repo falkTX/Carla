@@ -29,43 +29,26 @@ CARLA_BACKEND_START_NAMESPACE
 } // Fix editor indentation
 #endif
 
+#ifndef BUILD_BRIDGE
 // -----------------------------------------------------------------------
 // Rack Patchbay stuff
 
-enum RackPatchbayGroupIds {
-    RACK_PATCHBAY_GROUP_CARLA = 0,
-    RACK_PATCHBAY_GROUP_AUDIO = 1,
-    RACK_PATCHBAY_GROUP_MIDI  = 2,
-    RACK_PATCHBAY_GROUP_MAX   = 3
-};
-
-enum RackPatchbayCarlaPortIds {
-    RACK_PATCHBAY_CARLA_PORT_NULL       = 0,
-    RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1  = 1,
-    RACK_PATCHBAY_CARLA_PORT_AUDIO_IN2  = 2,
-    RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1 = 3,
-    RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT2 = 4,
-    RACK_PATCHBAY_CARLA_PORT_MIDI_IN    = 5,
-    RACK_PATCHBAY_CARLA_PORT_MIDI_OUT   = 6,
-    RACK_PATCHBAY_CARLA_PORT_MAX        = 7
-};
-
-static inline
+static
 int getCarlaRackPortIdFromName(const char* const shortname) noexcept
 {
     if (std::strcmp(shortname, "AudioIn1") == 0)
-        return RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1;
+        return RACK_GRAPH_CARLA_PORT_AUDIO_IN1;
     if (std::strcmp(shortname, "AudioIn2") == 0)
-        return RACK_PATCHBAY_CARLA_PORT_AUDIO_IN2;
+        return RACK_GRAPH_CARLA_PORT_AUDIO_IN2;
     if (std::strcmp(shortname, "AudioOut1") == 0)
-        return RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1;
+        return RACK_GRAPH_CARLA_PORT_AUDIO_OUT1;
     if (std::strcmp(shortname, "AudioOut2") == 0)
-        return RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT2;
+        return RACK_GRAPH_CARLA_PORT_AUDIO_OUT2;
     if (std::strcmp(shortname, "MidiIn") == 0)
-        return RACK_PATCHBAY_CARLA_PORT_MIDI_IN;
+        return RACK_GRAPH_CARLA_PORT_MIDI_IN;
     if (std::strcmp(shortname, "MidiOut") == 0)
-        return RACK_PATCHBAY_CARLA_PORT_MIDI_OUT;
-    return RACK_PATCHBAY_CARLA_PORT_NULL;
+        return RACK_GRAPH_CARLA_PORT_MIDI_OUT;
+    return RACK_GRAPH_CARLA_PORT_NULL;
 }
 
 // -----------------------------------------------------------------------
@@ -75,21 +58,21 @@ bool RackGraph::connect(CarlaEngine* const engine, const int groupA, const int p
 {
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr, false);
     CARLA_SAFE_ASSERT_RETURN(groupA != groupB, false);
-    CARLA_SAFE_ASSERT_RETURN(groupA >= RACK_PATCHBAY_GROUP_CARLA && groupA < RACK_PATCHBAY_GROUP_MAX, false);
-    CARLA_SAFE_ASSERT_RETURN(groupB >= RACK_PATCHBAY_GROUP_CARLA && groupB < RACK_PATCHBAY_GROUP_MAX, false);
+    CARLA_SAFE_ASSERT_RETURN(groupA >= RACK_GRAPH_GROUP_CARLA && groupA < RACK_GRAPH_GROUP_MAX, false);
+    CARLA_SAFE_ASSERT_RETURN(groupB >= RACK_GRAPH_GROUP_CARLA && groupB < RACK_GRAPH_GROUP_MAX, false);
     CARLA_SAFE_ASSERT_RETURN(portA >= 0, false);
     CARLA_SAFE_ASSERT_RETURN(portB >= 0, false);
 
     int carlaPort, otherPort;
 
-    if (groupA == RACK_PATCHBAY_GROUP_CARLA)
+    if (groupA == RACK_GRAPH_GROUP_CARLA)
     {
         carlaPort = portA;
         otherPort = portB;
     }
     else
     {
-        CARLA_SAFE_ASSERT_RETURN(groupB == RACK_PATCHBAY_GROUP_CARLA, false);
+        CARLA_SAFE_ASSERT_RETURN(groupB == RACK_GRAPH_GROUP_CARLA, false);
 
         carlaPort = portB;
         otherPort = portA;
@@ -99,39 +82,39 @@ bool RackGraph::connect(CarlaEngine* const engine, const int groupA, const int p
 
     switch (carlaPort)
     {
-    case RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1:
+    case RACK_GRAPH_CARLA_PORT_AUDIO_IN1:
         connectLock.enter();
         connectedIn1.append(otherPort);
         connectLock.leave();
         makeConnection = true;
         break;
 
-    case RACK_PATCHBAY_CARLA_PORT_AUDIO_IN2:
+    case RACK_GRAPH_CARLA_PORT_AUDIO_IN2:
         connectLock.enter();
         connectedIn2.append(otherPort);
         connectLock.leave();
         makeConnection = true;
         break;
 
-    case RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1:
+    case RACK_GRAPH_CARLA_PORT_AUDIO_OUT1:
         connectLock.enter();
         connectedOut1.append(otherPort);
         connectLock.leave();
         makeConnection = true;
         break;
 
-    case RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT2:
+    case RACK_GRAPH_CARLA_PORT_AUDIO_OUT2:
         connectLock.enter();
         connectedOut2.append(otherPort);
         connectLock.leave();
         makeConnection = true;
         break;
 
-    case RACK_PATCHBAY_CARLA_PORT_MIDI_IN:
+    case RACK_GRAPH_CARLA_PORT_MIDI_IN:
         makeConnection = engine->connectRackMidiInPort(otherPort);
         break;
 
-    case RACK_PATCHBAY_CARLA_PORT_MIDI_OUT:
+    case RACK_GRAPH_CARLA_PORT_MIDI_OUT:
         makeConnection = engine->connectRackMidiOutPort(otherPort);
         break;
     }
@@ -175,14 +158,14 @@ bool RackGraph::disconnect(CarlaEngine* const engine, const uint connectionId) n
 
         int carlaPort, otherPort;
 
-        if (connection.groupA == RACK_PATCHBAY_GROUP_CARLA)
+        if (connection.groupA == RACK_GRAPH_GROUP_CARLA)
         {
             carlaPort = connection.portA;
             otherPort = connection.portB;
         }
         else
         {
-            CARLA_SAFE_ASSERT_RETURN(connection.groupB == RACK_PATCHBAY_GROUP_CARLA, false);
+            CARLA_SAFE_ASSERT_RETURN(connection.groupB == RACK_GRAPH_GROUP_CARLA, false);
 
             carlaPort = connection.portB;
             otherPort = connection.portA;
@@ -190,35 +173,35 @@ bool RackGraph::disconnect(CarlaEngine* const engine, const uint connectionId) n
 
         switch (carlaPort)
         {
-        case RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1:
+        case RACK_GRAPH_CARLA_PORT_AUDIO_IN1:
             connectLock.enter();
             connectedIn1.removeAll(otherPort);
             connectLock.leave();
             break;
 
-        case RACK_PATCHBAY_CARLA_PORT_AUDIO_IN2:
+        case RACK_GRAPH_CARLA_PORT_AUDIO_IN2:
             connectLock.enter();
             connectedIn2.removeAll(otherPort);
             connectLock.leave();
             break;
 
-        case RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1:
+        case RACK_GRAPH_CARLA_PORT_AUDIO_OUT1:
             connectLock.enter();
             connectedOut1.removeAll(otherPort);
             connectLock.leave();
             break;
 
-        case RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT2:
+        case RACK_GRAPH_CARLA_PORT_AUDIO_OUT2:
             connectLock.enter();
             connectedOut2.removeAll(otherPort);
             connectLock.leave();
             break;
 
-        case RACK_PATCHBAY_CARLA_PORT_MIDI_IN:
+        case RACK_GRAPH_CARLA_PORT_MIDI_IN:
             engine->disconnectRackMidiInPort(otherPort);
             break;
 
-        case RACK_PATCHBAY_CARLA_PORT_MIDI_OUT:
+        case RACK_GRAPH_CARLA_PORT_MIDI_OUT:
             engine->disconnectRackMidiOutPort(otherPort);
             break;
 
@@ -250,21 +233,21 @@ const char* const* RackGraph::getConnections() const
         const ConnectionToId& connection(it.getValue());
 
         CARLA_SAFE_ASSERT_CONTINUE(connection.groupA != connection.groupB);
-        CARLA_SAFE_ASSERT_CONTINUE(connection.groupA >= RACK_PATCHBAY_GROUP_CARLA && connection.groupA < RACK_PATCHBAY_GROUP_MAX);
-        CARLA_SAFE_ASSERT_CONTINUE(connection.groupB >= RACK_PATCHBAY_GROUP_CARLA && connection.groupB < RACK_PATCHBAY_GROUP_MAX);
+        CARLA_SAFE_ASSERT_CONTINUE(connection.groupA >= RACK_GRAPH_GROUP_CARLA && connection.groupA < RACK_GRAPH_GROUP_MAX);
+        CARLA_SAFE_ASSERT_CONTINUE(connection.groupB >= RACK_GRAPH_GROUP_CARLA && connection.groupB < RACK_GRAPH_GROUP_MAX);
         CARLA_SAFE_ASSERT_CONTINUE(connection.portA >= 0);
         CARLA_SAFE_ASSERT_CONTINUE(connection.portB >= 0);
 
         int carlaPort, otherPort;
 
-        if (connection.groupA == RACK_PATCHBAY_GROUP_CARLA)
+        if (connection.groupA == RACK_GRAPH_GROUP_CARLA)
         {
             carlaPort = connection.portA;
             otherPort = connection.portB;
         }
         else
         {
-            CARLA_SAFE_ASSERT_CONTINUE(connection.groupB == RACK_PATCHBAY_GROUP_CARLA);
+            CARLA_SAFE_ASSERT_CONTINUE(connection.groupB == RACK_GRAPH_GROUP_CARLA);
 
             carlaPort = connection.portB;
             otherPort = connection.portA;
@@ -272,27 +255,27 @@ const char* const* RackGraph::getConnections() const
 
         switch (carlaPort)
         {
-        case RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1:
-        case RACK_PATCHBAY_CARLA_PORT_AUDIO_IN2:
+        case RACK_GRAPH_CARLA_PORT_AUDIO_IN1:
+        case RACK_GRAPH_CARLA_PORT_AUDIO_IN2:
             std::sprintf(strBuf, "AudioIn:%i", otherPort+1);
             connList.append(carla_strdup(strBuf));
-            connList.append(carla_strdup((carlaPort == RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1) ? "Carla:AudioIn1" : "Carla:AudioIn2"));
+            connList.append(carla_strdup((carlaPort == RACK_GRAPH_CARLA_PORT_AUDIO_IN1) ? "Carla:AudioIn1" : "Carla:AudioIn2"));
             break;
 
-        case RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1:
-        case RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT2:
-            connList.append(carla_strdup((carlaPort == RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1) ? "Carla:AudioOut1" : "Carla:AudioOut2"));
+        case RACK_GRAPH_CARLA_PORT_AUDIO_OUT1:
+        case RACK_GRAPH_CARLA_PORT_AUDIO_OUT2:
+            connList.append(carla_strdup((carlaPort == RACK_GRAPH_CARLA_PORT_AUDIO_OUT1) ? "Carla:AudioOut1" : "Carla:AudioOut2"));
             std::sprintf(strBuf, "AudioOut:%i", otherPort+1);
             connList.append(carla_strdup(strBuf));
             break;
 
-        case RACK_PATCHBAY_CARLA_PORT_MIDI_IN:
+        case RACK_GRAPH_CARLA_PORT_MIDI_IN:
             std::sprintf(strBuf, "MidiIn:%i", otherPort+1);
             connList.append(carla_strdup(strBuf));
             connList.append(carla_strdup("Carla:MidiIn"));
             break;
 
-        case RACK_PATCHBAY_CARLA_PORT_MIDI_OUT:
+        case RACK_GRAPH_CARLA_PORT_MIDI_OUT:
             connList.append(carla_strdup("Carla:MidiOut"));
             std::sprintf(strBuf, "MidiOut:%i", otherPort+1);
             connList.append(carla_strdup(strBuf));
@@ -314,6 +297,41 @@ const char* const* RackGraph::getConnections() const
     connList.clear();
 
     return retConns;
+}
+
+bool RackGraph::getPortIdFromName(const char* const portName, int& groupId, int& portId)
+{
+    if (std::strncmp(portName, "Carla:", 6) == 0)
+    {
+        groupId = RACK_GRAPH_GROUP_CARLA;
+        portId  = getCarlaRackPortIdFromName(portName+6);
+    }
+    else if (std::strncmp(portName, "AudioIn:", 8) == 0)
+    {
+        groupId = RACK_GRAPH_GROUP_AUDIO_IN;
+        portId  = std::atoi(portName+8) - 1;
+    }
+    else if (std::strncmp(portName, "AudioOut:", 9) == 0)
+    {
+        groupId = RACK_GRAPH_GROUP_AUDIO_OUT;
+        portId  = std::atoi(portName+9) - 1;
+    }
+    else if (std::strncmp(portName, "MidiIn:", 7) == 0)
+    {
+        groupId = RACK_GRAPH_GROUP_MIDI_IN;
+        portId  = std::atoi(portName+7) - 1;
+    }
+    else if (std::strncmp(portName, "MidiOut:", 8) == 0)
+    {
+        groupId = RACK_GRAPH_GROUP_MIDI_OUT;
+        portId  = std::atoi(portName+8) - 1;
+    }
+    else
+    {
+        return false;
+    }
+
+    return true;
 }
 
 // -----------------------------------------------------------------------
@@ -338,6 +356,12 @@ const char* const* PatchbayGraph::getConnections() const
 {
     return nullptr;
 }
+
+bool PatchbayGraph::getPortIdFromName(const char* const /*portName*/, int& /*groupId*/, int& /*portId*/)
+{
+    return false;
+}
+#endif
 
 // -----------------------------------------------------------------------
 // CarlaEngineProtectedData

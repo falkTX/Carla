@@ -624,8 +624,7 @@ int CarlaEngineOsc::handleMsgExiting(CARLA_ENGINE_OSC_HANDLE_ARGS1)
     // TODO - check for non-UIs (dssi-vst) and set to -1 instead
     fEngine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, plugin->getId(), 0, 0, 0.0f, nullptr);
 
-    // TODO
-    //plugin->freeOscData();
+    plugin->showCustomUI(false);
 
     return 0;
 }
