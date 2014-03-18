@@ -78,7 +78,7 @@ void CarlaEngineThread::run() noexcept
                     CARLA_SAFE_EXCEPTION("postRtEventsRun()")
                 }
 
-                if (hasUi || oscRegisted)
+                if (oscRegisted || (hasUi && ! needsSingleThread))
                 {
                     // ---------------------------------------------------
                     // Update parameter outputs
@@ -90,10 +90,6 @@ void CarlaEngineThread::run() noexcept
 
                         value = plugin->getParameterValue(j);
 
-                        // Update UI
-                        if (hasUi && ! needsSingleThread)
-                            plugin->uiParameterChange(j, value);
-
                         // Update OSC engine client
                         if (oscRegisted)
                         {
@@ -103,6 +99,10 @@ void CarlaEngineThread::run() noexcept
                             fEngine->oscSend_control_set_parameter_value(i, static_cast<int32_t>(j), value);
 #endif
                         }
+
+                        // Update UI
+                        if (hasUi && ! needsSingleThread)
+                            plugin->uiParameterChange(j, value);
                     }
                 }
 

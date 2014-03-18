@@ -584,8 +584,8 @@ bool CarlaEngine::init(const char* const clientName)
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->name.isEmpty(), "Invalid engine internal data (err #1)");
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->oscData == nullptr, "Invalid engine internal data (err #2)");
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins == nullptr, "Invalid engine internal data (err #3)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->bufEvents.in  == nullptr, "Invalid engine internal data (err #4)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->bufEvents.out == nullptr, "Invalid engine internal data (err #5)");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->events.in  == nullptr, "Invalid engine internal data (err #4)");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->events.out == nullptr, "Invalid engine internal data (err #5)");
     CARLA_SAFE_ASSERT_RETURN_ERR(clientName != nullptr && clientName[0] != '\0', "Invalid client name");
     carla_debug("CarlaEngine::init(\"%s\")", clientName);
 
@@ -603,8 +603,8 @@ bool CarlaEngine::init(const char* const clientName)
 
     case ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
         pData->maxPluginNumber = MAX_RACK_PLUGINS;
-        pData->bufEvents.in    = new EngineEvent[kMaxEngineEventInternalCount];
-        pData->bufEvents.out   = new EngineEvent[kMaxEngineEventInternalCount];
+        pData->events.in    = new EngineEvent[kMaxEngineEventInternalCount];
+        pData->events.out   = new EngineEvent[kMaxEngineEventInternalCount];
         break;
 
     case ENGINE_PROCESS_MODE_PATCHBAY:
@@ -613,8 +613,8 @@ bool CarlaEngine::init(const char* const clientName)
 
     case ENGINE_PROCESS_MODE_BRIDGE:
         pData->maxPluginNumber = 1;
-        pData->bufEvents.in    = new EngineEvent[kMaxEngineEventInternalCount];
-        pData->bufEvents.out   = new EngineEvent[kMaxEngineEventInternalCount];
+        pData->events.in    = new EngineEvent[kMaxEngineEventInternalCount];
+        pData->events.out   = new EngineEvent[kMaxEngineEventInternalCount];
         break;
     }
 
@@ -678,16 +678,16 @@ bool CarlaEngine::close()
         pData->plugins = nullptr;
     }
 
-    if (pData->bufEvents.in != nullptr)
+    if (pData->events.in != nullptr)
     {
-        delete[] pData->bufEvents.in;
-        pData->bufEvents.in = nullptr;
+        delete[] pData->events.in;
+        pData->events.in = nullptr;
     }
 
-    if (pData->bufEvents.out != nullptr)
+    if (pData->events.out != nullptr)
     {
-        delete[] pData->bufEvents.out;
-        pData->bufEvents.out = nullptr;
+        delete[] pData->events.out;
+        pData->events.out = nullptr;
     }
 
     pData->name.clear();
@@ -1701,8 +1701,7 @@ void CarlaEngine::setFileCallback(const FileCallbackFunc func, void* const ptr) 
 bool CarlaEngine::patchbayConnect(const int groupA, const int portA, const int groupB, const int portB)
 {
     CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
-    CARLA_SAFE_ASSERT_RETURN(pData->bufAudio.isReady, false);
-    CARLA_SAFE_ASSERT_RETURN(pData->bufAudio.buffer != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(pData->audio.isReady, false);
     carla_debug("CarlaEngine::patchbayConnect(%i, %i)", portA, portB);
 
     if (portA < 0 || portB < 0)
@@ -1711,17 +1710,37 @@ bool CarlaEngine::patchbayConnect(const int groupA, const int portA, const int g
         return false;
     }
 
-    return pData->bufAudio.buffer->connect(this, groupA, portA, groupB, portB);
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+    {
+        CARLA_SAFE_ASSERT_RETURN(pData->graph.rack != nullptr, nullptr);
+
+        return pData->graph.rack->connect(this, groupA, portA, groupB, portB);
+    }
+    else
+    {
+        CARLA_SAFE_ASSERT_RETURN(pData->graph.patchbay != nullptr, nullptr);
+
+        setLastError("Not implemented yet");
+        return false;
+    }
 }
 
 bool CarlaEngine::patchbayDisconnect(const uint connectionId)
 {
     CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
-    CARLA_SAFE_ASSERT_RETURN(pData->bufAudio.isReady, false);
-    CARLA_SAFE_ASSERT_RETURN(pData->bufAudio.buffer != nullptr, false);
+    CARLA_SAFE_ASSERT_RETURN(pData->audio.isReady, false);
+    CARLA_SAFE_ASSERT_RETURN(pData->audio.buffer != nullptr, false);
     carla_debug("CarlaEngineRtAudio::patchbayDisconnect(%i)", connectionId);
 
-    return pData->bufAudio.buffer->disconnect(this, connectionId);
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+    {
+        return pData->audio.rack->disconnect(this, connectionId);
+    }
+    else
+    {
+        setLastError("Not implemented yet");
+        return false;
+    }
 }
 
 bool CarlaEngine::patchbayRefresh()
@@ -1921,7 +1940,7 @@ void CarlaEngine::setOscBridgeData(const CarlaOscData* const oscData) const noex
 
 EngineEvent* CarlaEngine::getInternalEventBuffer(const bool isInput) const noexcept
 {
-    return isInput ? pData->bufEvents.in : pData->bufEvents.out;
+    return isInput ? pData->events.in : pData->events.out;
 }
 
 void CarlaEngine::registerEnginePlugin(const unsigned int id, CarlaPlugin* const plugin) noexcept
@@ -2008,10 +2027,20 @@ void CarlaEngine::setPluginPeaks(const unsigned int pluginId, float const inPeak
 
 const char* const* CarlaEngine::getPatchbayConnections() const
 {
-    CARLA_SAFE_ASSERT_RETURN(pData->bufAudio.buffer != nullptr, nullptr);
     carla_debug("CarlaEngine::getPatchbayConnections()");
 
-    return pData->bufAudio.buffer->getConnections();
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+    {
+        CARLA_SAFE_ASSERT_RETURN(pData->audio.rack != nullptr, nullptr);
+        return pData->audio.rack->getConnections();
+    }
+    else
+    {
+        CARLA_SAFE_ASSERT_RETURN(pData->audio.patchbay != nullptr, nullptr);
+
+        setLastError("Not implemented yet");
+        return nullptr;
+    }
 }
 
 void CarlaEngine::restorePatchbayConnection(const char* const connSource, const char* const connTarget)
@@ -2021,7 +2050,7 @@ void CarlaEngine::restorePatchbayConnection(const char* const connSource, const 
     carla_debug("CarlaEngine::restorePatchbayConnection(\"%s\", \"%s\")", connSource, connTarget);
 
 #if 0
-    if (pData->bufAudio.usePatchbay)
+    if (pData->audio.usePatchbay)
     {
         // TODO
     }

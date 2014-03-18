@@ -22,6 +22,7 @@
 #include "CarlaEngineOsc.hpp"
 #include "CarlaEngineThread.hpp"
 
+#include "CarlaMathUtils.hpp"
 #include "CarlaMutex.hpp"
 #include "LinkedList.hpp"
 
@@ -45,28 +46,27 @@ CARLA_BACKEND_START_NAMESPACE
 const unsigned short kMaxEngineEventInternalCount = 512;
 
 // -----------------------------------------------------------------------
-// Rack Patchbay stuff
+// Rack Graph stuff
 
-enum RackPatchbayGroupIds {
-    RACK_PATCHBAY_GROUP_CARLA = 0,
-    RACK_PATCHBAY_GROUP_AUDIO = 1,
-    RACK_PATCHBAY_GROUP_MIDI  = 2,
-    RACK_PATCHBAY_GROUP_MAX   = 3
+enum RackGraphGroupIds {
+    RACK_GRAPH_GROUP_CARLA     = 0,
+    RACK_GRAPH_GROUP_AUDIO_IN  = 1,
+    RACK_GRAPH_GROUP_AUDIO_OUT = 2,
+    RACK_GRAPH_GROUP_MIDI_IN   = 3,
+    RACK_GRAPH_GROUP_MIDI_OUT  = 4,
+    RACK_GRAPH_GROUP_MAX       = 5
 };
 
-enum RackPatchbayCarlaPortIds {
-    RACK_PATCHBAY_CARLA_PORT_NULL       = 0,
-    RACK_PATCHBAY_CARLA_PORT_AUDIO_IN1  = 1,
-    RACK_PATCHBAY_CARLA_PORT_AUDIO_IN2  = 2,
-    RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT1 = 3,
-    RACK_PATCHBAY_CARLA_PORT_AUDIO_OUT2 = 4,
-    RACK_PATCHBAY_CARLA_PORT_MIDI_IN    = 5,
-    RACK_PATCHBAY_CARLA_PORT_MIDI_OUT   = 6,
-    RACK_PATCHBAY_CARLA_PORT_MAX        = 7
+enum RackGraphCarlaPortIds {
+    RACK_GRAPH_CARLA_PORT_NULL       = 0,
+    RACK_GRAPH_CARLA_PORT_AUDIO_IN1  = 1,
+    RACK_GRAPH_CARLA_PORT_AUDIO_IN2  = 2,
+    RACK_GRAPH_CARLA_PORT_AUDIO_OUT1 = 3,
+    RACK_GRAPH_CARLA_PORT_AUDIO_OUT2 = 4,
+    RACK_GRAPH_CARLA_PORT_MIDI_IN    = 5,
+    RACK_GRAPH_CARLA_PORT_MIDI_OUT   = 6,
+    RACK_GRAPH_CARLA_PORT_MAX        = 7
 };
-
-// -----------------------------------------------------------------------
-// ...
 
 struct PortNameToId {
     int group, port;
@@ -80,72 +80,183 @@ struct ConnectionToId {
 };
 
 // -----------------------------------------------------------------------
-// AbstractEngineBuffer
+// RackGraph
 
-struct AbstractEngineBuffer {
+struct RackGraph {
     uint lastConnectionId;
-    LinkedList<ConnectionToId> usedConnections;
 
     CarlaCriticalSection connectLock;
 
-    AbstractEngineBuffer()
+    LinkedList<int> connectedIn1;
+    LinkedList<int> connectedIn2;
+    LinkedList<int> connectedOut1;
+    LinkedList<int> connectedOut2;
+    LinkedList<ConnectionToId> usedConnections;
+
+    RackGraph() noexcept
         : lastConnectionId(0) {}
 
-    virtual ~AbstractEngineBuffer() noexcept {}
+    ~RackGraph() noexcept
+    {
+        clear();
+    }
 
-    virtual void clear() noexcept
+    void clear() noexcept
     {
         lastConnectionId = 0;
+
+        connectedIn1.clear();
+        connectedIn2.clear();
+        connectedOut1.clear();
+        connectedOut2.clear();
+
         usedConnections.clear();
     }
 
-    virtual void resize(const uint32_t bufferSize) = 0;
+    bool connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int portB) noexcept;
+    bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept;
+    void refresh(CarlaEngine* const engine, const LinkedList<PortNameToId>& midiIns, const LinkedList<PortNameToId>& midiOuts) noexcept;
 
-    virtual bool connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int portB) noexcept = 0;
-    virtual bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept = 0;
-    virtual void refresh(CarlaEngine* const engine, const LinkedList<PortNameToId>& midiIns, const LinkedList<PortNameToId>& midiOuts);
+    const char* const* getConnections() const;
+};
 
-    virtual const char* const* getConnections() const = 0;
+// -----------------------------------------------------------------------
+// PatchbayGraph
+
+struct PatchbayGraph {
+    PatchbayGraph() noexcept {}
+
+    ~PatchbayGraph()
+    {
+        clear();
+    }
+
+    void clear() noexcept
+    {
+    }
+
+    bool connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int portB) noexcept;
+    bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept;
+    void refresh(CarlaEngine* const engine, const LinkedList<PortNameToId>& midiIns, const LinkedList<PortNameToId>& midiOuts) noexcept;
+
+    const char* const* getConnections() const;
 };
 
 // -----------------------------------------------------------------------
 // InternalAudio
 
 struct EngineInternalAudio {
-    bool isRack;  // can only be rack or patchbay mode
     bool isReady;
 
     uint inCount;
     uint outCount;
-
-    AbstractEngineBuffer* buffer;
+    float** inBuf;
+    float** outBuf;
 
     EngineInternalAudio() noexcept
-        : isRack(true),
-          isReady(false),
+        : isReady(false),
           inCount(0),
           outCount(0),
-          buffer(nullptr) {}
+          inBuf(nullptr),
+          outBuf(nullptr) {}
 
     ~EngineInternalAudio() noexcept
     {
         CARLA_SAFE_ASSERT(! isReady);
-        CARLA_SAFE_ASSERT(buffer == nullptr);
+        CARLA_SAFE_ASSERT(inCount == 0);
+        CARLA_SAFE_ASSERT(outCount == 0);
+        CARLA_SAFE_ASSERT(inBuf == nullptr);
+        CARLA_SAFE_ASSERT(outBuf == nullptr);
+    }
+
+    void clearBuffers() noexcept
+    {
+        for (uint32_t i=0; i < inCount; ++i)
+        {
+            if (inBuf[i] != nullptr)
+            {
+                delete[] inBuf[i];
+                inBuf[i] = nullptr;
+            }
+        }
+        for (uint32_t i=0; i < outCount; ++i)
+        {
+            if (outBuf[i] != nullptr)
+            {
+                delete[] outBuf[i];
+                outBuf[i] = nullptr;
+            }
+        }
     }
 
     void clear() noexcept
     {
-        isReady  = false;
+        isReady = false;
+
+        clearBuffers();
+
         inCount  = 0;
         outCount = 0;
 
-        CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
-        delete buffer;
-        buffer = nullptr;
+        if (inBuf != nullptr)
+        {
+            delete[] inBuf;
+            inBuf = nullptr;
+        }
+
+        if (outBuf != nullptr)
+        {
+            delete[] outBuf;
+            outBuf = nullptr;
+        }
     }
 
-    void create(const uint32_t bufferSize);
-    void initPatchbay() noexcept;
+    void create(const uint32_t bufferSize)
+    {
+        CARLA_SAFE_ASSERT(! isReady);
+        CARLA_SAFE_ASSERT(inBuf == nullptr);
+        CARLA_SAFE_ASSERT(outBuf == nullptr);
+
+        if (inCount > 0)
+        {
+            inBuf = new float*[inCount];
+
+            for (uint32_t i=0; i < inCount; ++i)
+                inBuf[i] = nullptr;
+        }
+
+        if (outCount > 0)
+        {
+            outBuf = new float*[outCount];
+
+            for (uint32_t i=0; i < outCount; ++i)
+                outBuf[i] = nullptr;
+        }
+
+        resize(bufferSize, false);
+
+        isReady = true;
+    }
+
+    void resize(const uint32_t bufferSize, const bool doClear = true)
+    {
+        if (doClear)
+            clearBuffers();
+
+        CARLA_SAFE_ASSERT_RETURN(bufferSize != 0,);
+
+        for (uint32_t i=0; i < inCount; ++i)
+        {
+            inBuf[i] = new float[bufferSize];
+            FLOAT_CLEAR(inBuf[i], bufferSize);
+        }
+
+        for (uint32_t i=0; i < outCount; ++i)
+        {
+            outBuf[i] = new float[bufferSize];
+            FLOAT_CLEAR(outBuf[i], bufferSize);
+        }
+    }
 
     CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalAudio)
 };
@@ -168,6 +279,74 @@ struct EngineInternalEvents {
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalEvents)
+};
+
+// -----------------------------------------------------------------------
+// InternalGraph
+
+struct EngineInternalGraph {
+    bool isRack;
+
+    union {
+        RackGraph* rack;
+        PatchbayGraph* patchbay;
+    };
+
+    EngineInternalGraph() noexcept
+        : isRack(true)
+    {
+        rack = nullptr;
+    }
+
+    ~EngineInternalGraph() noexcept
+    {
+        CARLA_SAFE_ASSERT(rack == nullptr);
+    }
+
+    void create()
+    {
+        CARLA_SAFE_ASSERT(rack == nullptr);
+
+        if (isRack)
+            rack = new RackGraph();
+        else
+            patchbay = new PatchbayGraph();
+    }
+
+    void clear()
+    {
+        if (isRack)
+        {
+            CARLA_SAFE_ASSERT_RETURN(rack != nullptr,);
+            delete rack;
+            rack = nullptr;
+        }
+        else
+        {
+            CARLA_SAFE_ASSERT_RETURN(patchbay != nullptr,);
+            delete patchbay;
+            patchbay = nullptr;
+        }
+    }
+
+    void init() noexcept
+    {
+        if (isRack)
+        {
+            CARLA_SAFE_ASSERT_RETURN(rack != nullptr,);
+
+            rack->lastConnectionId = 0;
+            rack->usedConnections.clear();
+        }
+        else
+        {
+            CARLA_SAFE_ASSERT_RETURN(patchbay != nullptr,);
+
+            // TODO
+        }
+    }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalGraph)
 };
 
 // -----------------------------------------------------------------------
@@ -266,10 +445,11 @@ struct CarlaEngineProtectedData {
 
     EnginePluginData* plugins;
 
-#ifndef BUILD_BRIDGE
-    EngineInternalAudio  bufAudio;
-#endif
-    EngineInternalEvents bufEvents;
+//#ifndef BUILD_BRIDGE
+    EngineInternalAudio  audio;
+//#endif
+    EngineInternalEvents events;
+    EngineInternalGraph  graph;
     EngineInternalTime   time;
     EngineNextAction     nextAction;
 
