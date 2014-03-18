@@ -700,20 +700,23 @@ protected:
             return runPendingRtEvents();
 
         // initialize rtaudio input
-        if (fIsAudioInterleaved)
-        {
-            for (uint i=0, j=0, count=nframes*fAudioInCount; i < count; ++i)
-            {
-                fAudioInBuf[i/fAudioInCount][j] = insPtr[i];
-
-                if ((i+1) % fAudioInCount == 0)
-                    j += 1;
-            }
-        }
-        else
+        if (! fIsAudioInterleaved)
         {
             for (uint i=0; i < fAudioInCount; ++i)
                 FLOAT_COPY(fAudioInBuf[i], insPtr+(nframes*i), nframes);
+        }
+        else if (fAudioInCount > 0)
+        {
+            for (uint i=0, j=0, k=0; j < nframes*fAudioInCount; ++k)
+            {
+                fAudioInBuf[i][j] = insPtr[k];
+
+                if (++i == fAudioInCount)
+                {
+                    i = 0;
+                    ++j;
+                }
+            }
         }
 
         // initialize rtaudio output
@@ -765,12 +768,15 @@ protected:
         // output audio
         if (fIsAudioInterleaved)
         {
-            for (uint i=0, j=0; i < nframes*fAudioOutCount; ++i)
+            for (uint i=0, j=0, k=0; i < nframes*fAudioOutCount; ++k)
             {
-                outsPtr[i] = fAudioOutBuf[i/fAudioOutCount][j];
+                outsPtr[k] = fAudioOutBuf[i][j];
 
-                if ((i+1) % fAudioOutCount == 0)
-                    j += 1;
+                if (++i == fAudioOutCount)
+                {
+                    i = 0;
+                    ++j;
+                }
             }
         }
         else
