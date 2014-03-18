@@ -709,7 +709,9 @@ protected:
                 if (++i == fAudioInCount)
                 {
                     i = 0;
-                    ++j;
+
+                    if (++j == nframes)
+                        j = 0;
                 }
             }
         }
@@ -775,7 +777,9 @@ protected:
                 if (++i == fAudioOutCount)
                 {
                     i = 0;
-                    ++j;
+
+                    if (++j == nframes)
+                        j = 0;
                 }
             }
         }
