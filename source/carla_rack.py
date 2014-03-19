@@ -103,6 +103,9 @@ class CarlaRackList(QListWidget):
         self.setDropIndicatorShown(True)
         self.viewport().setAcceptDrops(True)
 
+        self.setFrameShape(QFrame.NoFrame)
+        self.setFrameShadow(QFrame.Plain)
+
         self.fPixmapL = QPixmap(":/bitmaps/rack_interior_left.png")
         self.fPixmapR = QPixmap(":/bitmaps/rack_interior_right.png")
 
@@ -212,6 +215,7 @@ class CarlaRackW(QFrame):
         self.fPadRight.setText("")
 
         self.fRack = CarlaRackList(self)
+        self.fRack.setObjectName("CarlaRackList")
         self.fRack.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.fRack.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.fRack.currentRowChanged.connect(self.slot_currentRowChanged)
@@ -264,7 +268,7 @@ class CarlaRackW(QFrame):
             background-image: url(:/bitmaps/rack_padding_right.png);
             background-repeat: repeat-y;
           }
-          QListWidget {
+          CarlaRackList#CarlaRackList {
             background-color: black;
           }
         """)

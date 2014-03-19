@@ -196,7 +196,7 @@ class CarlaApplication(object):
     def loadSettings(self):
         settings = QSettings()
 
-        useProTheme = settings.value("Main/UseProTheme", True, type=bool)
+        useProTheme = settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool)
 
         if useProTheme:
             #font = QFont("DejaVu Sans [Book]", 12 if MACOS else 8, QFont.Normal)
@@ -209,7 +209,7 @@ class CarlaApplication(object):
             self.fApp.setStyle("carla")
             QApplication.setStyle("carla")
 
-            proThemeColor = settings.value("Main/ProThemeColor", "Black", type=str).lower()
+            proThemeColor = settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower()
 
             if proThemeColor == "black":
                 self.fApp.setPalette(self.fPalBlack)
