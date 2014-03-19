@@ -581,52 +581,28 @@ class PluginSlot_Default(AbstractPluginSlot):
         # -------------------------------------------------------------
         # Internal stuff
 
-        if self.palette().window().color().lightness() > 100:
-            # Light background
-            labelColor = "333"
-            isLight = True
-
-            self.fColorTop    = QColor(60, 60, 60)
-            self.fColorBottom = QColor(47, 47, 47)
-            self.fColorSeprtr = QColor(70, 70, 70)
-
-        else:
-            # Dark background
-            labelColor = "BBB"
-            isLight = False
-
-            self.fColorTop    = QColor(60, 60, 60)
-            self.fColorBottom = QColor(47, 47, 47)
-            self.fColorSeprtr = QColor(70, 70, 70)
+        self.fColorTop    = QColor(60, 60, 60)
+        self.fColorBottom = QColor(47, 47, 47)
+        self.fColorSeprtr = QColor(70, 70, 70)
 
         # -------------------------------------------------------------
         # Set-up GUI
 
         self.setStyleSheet("""
-        QLabel#label_name {
-            color: #%s;
-        }""" % labelColor)
+            QLabel#label_name {
+                color: #BBB;
+            }
+        """)
 
-        if isLight:
-            self.ui.b_enable.setPixmaps(":/bitmaps/button_off2.png", ":/bitmaps/button_on2.png", ":/bitmaps/button_off2.png")
-            self.ui.b_edit.setPixmaps(":/bitmaps/button_edit2.png", ":/bitmaps/button_edit_down2.png", ":/bitmaps/button_edit_hover2.png")
+        self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
+        self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
 
-            if self.fPluginInfo['iconName'] == "distrho":
-                self.ui.b_gui.setPixmaps(":/bitmaps/button_distrho2.png", ":/bitmaps/button_distrho_down2.png", ":/bitmaps/button_distrho_hover2.png")
-            elif self.fPluginInfo['iconName'] == "file":
-                self.ui.b_gui.setPixmaps(":/bitmaps/button_file2.png", ":/bitmaps/button_file_down2.png", ":/bitmaps/button_file_hover2.png")
-            else:
-                self.ui.b_gui.setPixmaps(":/bitmaps/button_gui2.png", ":/bitmaps/button_gui_down2.png", ":/bitmaps/button_gui_hover2.png")
+        if self.fPluginInfo['iconName'] == "distrho":
+            self.ui.b_gui.setPixmaps(":/bitmaps/button_distrho.png", ":/bitmaps/button_distrho_down.png", ":/bitmaps/button_distrho_hover.png")
+        elif self.fPluginInfo['iconName'] == "file":
+            self.ui.b_gui.setPixmaps(":/bitmaps/button_file.png", ":/bitmaps/button_file_down.png", ":/bitmaps/button_file_hover.png")
         else:
-            self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
-            self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
-
-            if self.fPluginInfo['iconName'] == "distrho":
-                self.ui.b_gui.setPixmaps(":/bitmaps/button_distrho.png", ":/bitmaps/button_distrho_down.png", ":/bitmaps/button_distrho_hover.png")
-            elif self.fPluginInfo['iconName'] == "file":
-                self.ui.b_gui.setPixmaps(":/bitmaps/button_file.png", ":/bitmaps/button_file_down.png", ":/bitmaps/button_file_hover.png")
-            else:
-                self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
+            self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
 
         # -------------------------------------------------------------
 
@@ -661,6 +637,10 @@ class PluginSlot_Default(AbstractPluginSlot):
         areaX  = self.ui.area_right.x()+7
         width  = self.width()
         height = self.height()
+
+        painter.setPen(QPen(QColor(17, 17, 17), 1))
+        painter.setBrush(QColor(17, 17, 17))
+        painter.drawRect(0, 0, width, height)
 
         painter.setPen(self.fColorSeprtr.lighter(110))
         painter.setBrush(self.fColorBottom)
@@ -740,14 +720,14 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
             g += 10
 
         self.setStyleSheet("""
-          AbstractPluginSlot#PluginWidget {
-              background-color: rgb(%i, %i, %i);
-              background-image: url(:/bitmaps/background_noise1.png);
-              background-repeat: repeat-xy;
-          }
-          QLabel#label_name {
-              color: white;
-          }
+            PluginSlot_BasicFX#PluginWidget {
+                background-color: rgb(%i, %i, %i);
+                background-image: url(:/bitmaps/background_noise1.png);
+                background-repeat: repeat-xy;
+            }
+            QLabel#label_name {
+                color: #BBB;
+            }
         """ % (r, g, b))
 
         self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
@@ -905,14 +885,14 @@ class PluginSlot_Calf(AbstractPluginSlot):
         # Set-up GUI
 
         self.setStyleSheet("""
-          QLabel#label_audio_in, QLabel#label_audio_out, QLabel#label_midi {
-              color: black;
-          }
-          AbstractPluginSlot#PluginWidget {
-              background-image: url(:/bitmaps/background_calf.png);
-              background-repeat: repeat-xy;
-              border: 2px;
-          }
+            QLabel#label_audio_in, QLabel#label_audio_out, QLabel#label_midi {
+                color: black;
+            }
+            PluginSlot_Calf#PluginWidget {
+                background-image: url(:/bitmaps/background_calf.png);
+                background-repeat: repeat-xy;
+                border: 2px;
+            }
         """)
 
         self.ui.b_gui.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
@@ -1002,25 +982,25 @@ class PluginSlot_ZitaRev(AbstractPluginSlot):
         self.setMinimumWidth(640)
 
         self.setStyleSheet("""
-          AbstractPluginSlot#PluginWidget {
-              background-color: #404040;
-              border: 2px solid transparent;
-          }
-          QWidget#w_revsect {
-              background-image: url(:/bitmaps/zita-rev/revsect.png);
-          }
-          QWidget#w_eq1sect {
-              background-image: url(:/bitmaps/zita-rev/eq1sect.png);
-          }
-          QWidget#w_eq2sect {
-              background-image: url(:/bitmaps/zita-rev/eq2sect.png);
-          }
-          QWidget#w_ambmixsect {
-              background-image: url(:/bitmaps/zita-rev/%s.png);
-          }
-          QWidget#w_redzita {
-              background-image: url(:/bitmaps/zita-rev/redzita.png);
-          }
+            PluginSlot_ZitaRev#PluginWidget {
+                background-color: #404040;
+                border: 2px solid transparent;
+            }
+            QWidget#w_revsect {
+                background-image: url(:/bitmaps/zita-rev/revsect.png);
+            }
+            QWidget#w_eq1sect {
+                background-image: url(:/bitmaps/zita-rev/eq1sect.png);
+            }
+            QWidget#w_eq2sect {
+                background-image: url(:/bitmaps/zita-rev/eq2sect.png);
+            }
+            QWidget#w_ambmixsect {
+                background-image: url(:/bitmaps/zita-rev/%s.png);
+            }
+            QWidget#w_redzita {
+                background-image: url(:/bitmaps/zita-rev/redzita.png);
+            }
         """ % ("mixsect" if audioCount['outs'] == 2 else "ambsect"))
 
         # -------------------------------------------------------------
@@ -1139,11 +1119,14 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
         # Set-up GUI
 
         self.setStyleSheet("""
-          AbstractPluginSlot#PluginWidget {
-              background-image: url(:/bitmaps/background_zynfx.png);
-              background-repeat: repeat-xy;
-              border: 2px;
-          }
+            PluginSlot_ZynFX#PluginWidget {
+                background-image: url(:/bitmaps/background_zynfx.png);
+                background-repeat: repeat-xy;
+                border: 2px;
+            }
+            QLabel#label_name, QLabel#label_presets {
+                color: #BBB;
+            }
         """)
 
         self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
@@ -1239,16 +1222,20 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
             #elif paramName == "Random":     paramName = "Rnd"
 
             widget = PixmapDial(self, i)
+            widget.setEnabled(True)
+
             widget.setPixmap(5)
+            #widget.setPixmap(5)
             widget.setLabel(paramName)
             widget.setCustomPaint(PixmapDial.CUSTOM_PAINT_NO_GRADIENT)
+            widget.setMidWhiteText()
 
             widget.setSingleStep(paramRanges['step']*1000)
             widget.setMinimum(paramRanges['min']*1000)
             widget.setMaximum(paramRanges['max']*1000)
 
-            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                widget.setEnabled(False)
+            #if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
+                #widget.setEnabled(False)
 
             self.ui.container.layout().insertWidget(index, widget)
             index += 1
@@ -1327,8 +1314,8 @@ def createPluginSlot(parent, pluginId):
     if pluginName.split(" ", 1)[0].lower() == "calf":
         return PluginSlot_Calf(parent, pluginId)
 
-    return PluginSlot_BasicFX(parent, pluginId)
-    #return PluginSlot_Default(parent, pluginId)
+    #return PluginSlot_BasicFX(parent, pluginId)
+    return PluginSlot_Default(parent, pluginId)
 
 # ------------------------------------------------------------------------------------------------------------
 # Main Testing

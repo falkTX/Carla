@@ -38,7 +38,7 @@ else:
 from carla_shared import *
 
 # Make sure resources are good
-import resources_rc
+# import resources_rc
 
 # ------------------------------------------------------------------------------------------------------------
 

@@ -158,6 +158,11 @@ class PixmapDial(QDial):
         self.fColor2 = QColor(0, 0, 0, 0)
         self.fColorT = [Qt.white, Qt.darkGray]
 
+    def setMidWhiteText(self):
+        self.fColor1 = QColor(0, 0, 0, 255)
+        self.fColor2 = QColor(0, 0, 0, 0)
+        self.fColorT = [QColor("#BBB"), Qt.darkGray]
+
     def minimumSizeHint(self):
         return QSize(self.fSize, self.fSize)
 
