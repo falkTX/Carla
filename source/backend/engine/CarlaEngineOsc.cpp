@@ -25,6 +25,8 @@
 
 #include "CarlaMIDI.h"
 
+#include <cctype>
+
 CARLA_BACKEND_START_NAMESPACE
 
 #ifndef BUILD_BRIDGE
@@ -146,31 +148,15 @@ void CarlaEngineOsc::close() noexcept
 
     if (fServerTCP != nullptr)
     {
-        try {
-            lo_server_del_method(fServerTCP, nullptr, nullptr);
-        }
-        CARLA_SAFE_EXCEPTION("lo_server_del_method TCP")
-
-        try {
-            lo_server_free(fServerTCP);
-        }
-        CARLA_SAFE_EXCEPTION("lo_server_free TCP")
-
+        lo_server_del_method(fServerTCP, nullptr, nullptr);
+        lo_server_free(fServerTCP);
         fServerTCP = nullptr;
     }
 
     if (fServerUDP != nullptr)
     {
-        try {
-            lo_server_del_method(fServerUDP, nullptr, nullptr);
-        }
-        CARLA_SAFE_EXCEPTION("lo_server_del_method UDP")
-
-        try {
-            lo_server_free(fServerUDP);
-        }
-        CARLA_SAFE_EXCEPTION("lo_server_free UDP")
-
+        lo_server_del_method(fServerUDP, nullptr, nullptr);
+        lo_server_free(fServerUDP);
         fServerUDP = nullptr;
     }
 
@@ -183,11 +169,6 @@ void CarlaEngineOsc::close() noexcept
 }
 
 // -----------------------------------------------------------------------
-
-static bool isDigit(const char c) noexcept
-{
-    return (c >= '0' && c <= '9');
-}
 
 int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg)
 {
@@ -236,16 +217,16 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     uint pluginId = 0;
     size_t offset;
 
-    if (isDigit(path[nameSize+2]))
+    if (std::isdigit(path[nameSize+2]))
     {
-        if (isDigit(path[nameSize+3]))
+        if (std::isdigit(path[nameSize+3]))
         {
-            if (isDigit(path[nameSize+5]))
+            if (std::isdigit(path[nameSize+5]))
             {
                 carla_stderr2("CarlaEngineOsc::handleMessage() - invalid plugin id, over 999? (value: \"%s\")", path+(nameSize+1));
                 return 1;
             }
-            else if (isDigit(path[nameSize+4]))
+            else if (std::isdigit(path[nameSize+4]))
             {
                 // 3 digits, /xyz/method
                 offset    = 6;
@@ -277,7 +258,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     if (pluginId > fEngine->getCurrentPluginCount())
     {
         carla_stderr("CarlaEngineOsc::handleMessage() - failed to get plugin, wrong id '%i'", pluginId);
-        return 1;
+        return 0;
     }
 
     // Get plugin
@@ -286,7 +267,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     if (plugin == nullptr || plugin->getId() != pluginId)
     {
         carla_stderr("CarlaEngineOsc::handleMessage() - invalid plugin id '%i', probably has been removed", pluginId);
-        return 1;
+        return 0;
     }
 
     // Get method from path, "/Carla/i/method" -> "method"
@@ -297,7 +278,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     if (method[0] == '\0')
     {
         carla_stderr("CarlaEngineOsc::handleMessage(%s, \"%s\", ...) - received message without method", bool2str(isTCP), path);
-        return 1;
+        return 0;
     }
 
     // Common OSC methods (DSSI and bridge UIs)
@@ -448,7 +429,7 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP, const int argc, const lo
         std::free(port);
     }
 
-    for (unsigned int i=0, count=fEngine->getCurrentPluginCount(); i < count; ++i)
+    for (uint i=0, count=fEngine->getCurrentPluginCount(); i < count; ++i)
     {
         CarlaPlugin* const plugin(fEngine->getPluginUnchecked(i));
 
@@ -484,7 +465,6 @@ int CarlaEngineOsc::handleMsgUpdate(CARLA_ENGINE_OSC_HANDLE_ARGS2, const lo_addr
     const char* const url = (const char*)&argv[0]->s;
 
     plugin->updateOscData(source, url);
-
     return 0;
 }
 
@@ -497,7 +477,6 @@ int CarlaEngineOsc::handleMsgConfigure(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     const char* const value = (const char*)&argv[1]->s;
 
     plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, key, value, false);
-
     return 0;
 }
 
@@ -510,7 +489,6 @@ int CarlaEngineOsc::handleMsgControl(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     const float   value  = argv[1]->f;
 
     plugin->setParameterValueByRealIndex(rindex, value, false, true, true);
-
     return 0;
 }
 
@@ -525,16 +503,10 @@ int CarlaEngineOsc::handleMsgProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
         const int32_t bank    = argv[0]->i;
         const int32_t program = argv[1]->i;
 
-        CARLA_SAFE_ASSERT_INT(bank >= 0, bank);
-        CARLA_SAFE_ASSERT_INT(program >= 0, program);
-
-        if (bank < 0)
-            return 1;
-        if (program < 0)
-            return 1;
+        CARLA_SAFE_ASSERT_RETURN(bank >= 0, 0);
+        CARLA_SAFE_ASSERT_RETURN(program >= 0, 0);
 
         plugin->setMidiProgramById(static_cast<uint32_t>(bank), static_cast<uint32_t>(program), false, true, true);
-
         return 0;
     }
     else
@@ -543,19 +515,11 @@ int CarlaEngineOsc::handleMsgProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
         const int32_t program = argv[0]->i;
 
-        CARLA_SAFE_ASSERT_INT(program >= 0, program);
+        CARLA_SAFE_ASSERT_RETURN(program >= 0, 0);
+        CARLA_SAFE_ASSERT_RETURN(program < static_cast<int32_t>(plugin->getProgramCount()), 0);
 
-        if (program < 0)
-            return 1;
-
-        if (program < static_cast<int32_t>(plugin->getProgramCount()))
-        {
-            plugin->setProgram(program, false, true, true);
-            return 0;
-        }
-
-        carla_stderr("CarlaEngineOsc::handleMsgProgram() - programId '%i' out of bounds", program);
-        return 1;
+        plugin->setProgram(program, false, true, true);
+        return 0;
     }
 }
 
@@ -566,7 +530,7 @@ int CarlaEngineOsc::handleMsgMidi(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
 #ifdef BUILD_BRIDGE
     CARLA_ASSERT(false); // this should never happen
-    return 1;
+    return 0;
 
     // unused
     (void)plugin;
@@ -574,8 +538,8 @@ int CarlaEngineOsc::handleMsgMidi(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 #else
     if (plugin->getMidiInCount() == 0)
     {
-        carla_stderr("CarlaEngineOsc::handleMsgMidi() - recived midi when plugin has no midi inputs");
-        return 1;
+        carla_stderr("CarlaEngineOsc::handleMsgMidi() - received midi when plugin has no midi inputs");
+        return 0;
     }
 
     const uint8_t* const data = argv[0]->m;
@@ -584,16 +548,13 @@ int CarlaEngineOsc::handleMsgMidi(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
     // Fix bad note-off
     if (MIDI_IS_STATUS_NOTE_ON(status) && data[3] == 0)
-        status = static_cast<uint8_t>(status - 0x10);
+        status = MIDI_STATUS_NOTE_OFF;
 
     if (MIDI_IS_STATUS_NOTE_OFF(status))
     {
         const uint8_t note = data[2];
 
-        CARLA_SAFE_ASSERT_INT(note < MAX_MIDI_NOTE, note);
-
-        if (note >= MAX_MIDI_NOTE)
-            return 1;
+        CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE, 0);
 
         plugin->sendMidiSingleNote(channel, note, 0, false, true, true);
     }
@@ -602,13 +563,8 @@ int CarlaEngineOsc::handleMsgMidi(CARLA_ENGINE_OSC_HANDLE_ARGS2)
         const uint8_t note = data[2];
         const uint8_t velo = data[3];
 
-        CARLA_SAFE_ASSERT_INT(note < MAX_MIDI_NOTE, note);
-        CARLA_SAFE_ASSERT_INT(velo < MAX_MIDI_VALUE, velo);
-
-        if (note >= MAX_MIDI_NOTE)
-            return 1;
-        if (velo >= MAX_MIDI_VALUE)
-            return 1;
+        CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE, 0);
+        CARLA_SAFE_ASSERT_RETURN(velo < MAX_MIDI_VALUE, 0);
 
         plugin->sendMidiSingleNote(channel, note, velo, false, true, true);
     }
@@ -625,7 +581,6 @@ int CarlaEngineOsc::handleMsgExiting(CARLA_ENGINE_OSC_HANDLE_ARGS1)
     fEngine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, plugin->getId(), 0, 0, 0.0f, nullptr);
 
     plugin->showCustomUI(false);
-
     return 0;
 }
 
@@ -640,7 +595,6 @@ int CarlaEngineOsc::handleMsgSetActive(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     const bool active = (argv[0]->i != 0);
 
     plugin->setActive(active, false, true);
-
     return 0;
 }
 
@@ -652,7 +606,6 @@ int CarlaEngineOsc::handleMsgSetDryWet(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     const float value = argv[0]->f;
 
     plugin->setDryWet(value, false, true);
-
     return 0;
 }
 
@@ -664,7 +617,6 @@ int CarlaEngineOsc::handleMsgSetVolume(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     const float value = argv[0]->f;
 
     plugin->setVolume(value, false, true);
-
     return 0;
 }
 
@@ -676,7 +628,6 @@ int CarlaEngineOsc::handleMsgSetBalanceLeft(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     const float value = argv[0]->f;
 
     plugin->setBalanceLeft(value, false, true);
-
     return 0;
 }
 
@@ -688,7 +639,6 @@ int CarlaEngineOsc::handleMsgSetBalanceRight(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     const float value = argv[0]->f;
 
     plugin->setBalanceRight(value, false, true);
-
     return 0;
 }
 
@@ -700,7 +650,6 @@ int CarlaEngineOsc::handleMsgSetPanning(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     const float value = argv[0]->f;
 
     plugin->setPanning(value, false, true);
-
     return 0;
 }
 
@@ -712,13 +661,9 @@ int CarlaEngineOsc::handleMsgSetParameterValue(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     const int32_t index = argv[0]->i;
     const float   value = argv[1]->f;
 
-    CARLA_SAFE_ASSERT_INT(index >= 0, index);
-
-    if (index < 0)
-        return 1;
+    CARLA_SAFE_ASSERT_RETURN(index >= 0, 0);
 
     plugin->setParameterValue(static_cast<uint32_t>(index), value, true, false, true);
-
     return 0;
 }
 
@@ -730,16 +675,10 @@ int CarlaEngineOsc::handleMsgSetParameterMidiCC(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     const int32_t index = argv[0]->i;
     const int32_t cc    = argv[1]->i;
 
-    CARLA_SAFE_ASSERT_INT(index >= 0, index);
-    CARLA_SAFE_ASSERT_INT(cc >= -1 && cc <= 0x5F, cc);
-
-    if (index < 0)
-        return 1;
-    if (cc < -1 || cc > 0x5F)
-        return 1;
+    CARLA_SAFE_ASSERT_RETURN(index >= 0, 0);
+    CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc <= 0x5F, 0);
 
     plugin->setParameterMidiCC(static_cast<uint32_t>(index), static_cast<int16_t>(cc), false, true);
-
     return 0;
 }
 
@@ -751,16 +690,10 @@ int CarlaEngineOsc::handleMsgSetParameterMidiChannel(CARLA_ENGINE_OSC_HANDLE_ARG
     const int32_t index   = argv[0]->i;
     const int32_t channel = argv[1]->i;
 
-    CARLA_SAFE_ASSERT_INT(index >= 0, index);
-    CARLA_SAFE_ASSERT_INT(channel >= 0 && channel < MAX_MIDI_CHANNELS, channel);
-
-    if (index < 0)
-        return 1;
-    if (channel < 0 || channel >= MAX_MIDI_CHANNELS)
-        return 1;
+    CARLA_SAFE_ASSERT_RETURN(index >= 0, 0);
+    CARLA_SAFE_ASSERT_RETURN(channel >= 0 && channel < MAX_MIDI_CHANNELS, 0);
 
     plugin->setParameterMidiChannel(static_cast<uint32_t>(index), static_cast<uint8_t>(channel), false, true);
-
     return 0;
 }
 
@@ -771,8 +704,9 @@ int CarlaEngineOsc::handleMsgSetProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
     const int32_t index = argv[0]->i;
 
-    plugin->setProgram(index, true, false, true);
+    CARLA_SAFE_ASSERT_RETURN(index >= -1, 0);
 
+    plugin->setProgram(index, true, false, true);
     return 0;
 }
 
@@ -783,8 +717,9 @@ int CarlaEngineOsc::handleMsgSetMidiProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
     const int32_t index = argv[0]->i;
 
-    plugin->setMidiProgram(index, true, false, true);
+    CARLA_SAFE_ASSERT_RETURN(index >= -1, 0);
 
+    plugin->setMidiProgram(index, true, false, true);
     return 0;
 }
 
@@ -797,19 +732,11 @@ int CarlaEngineOsc::handleMsgNoteOn(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     const int32_t note    = argv[1]->i;
     const int32_t velo    = argv[2]->i;
 
-    CARLA_SAFE_ASSERT_INT(channel >= 0 && channel < MAX_MIDI_CHANNELS, channel);
-    CARLA_SAFE_ASSERT_INT(note >= 0 && note < MAX_MIDI_NOTE, note);
-    CARLA_SAFE_ASSERT_INT(velo >= 0 && velo < MAX_MIDI_VALUE, velo);
-
-    if (channel < 0 || channel >= MAX_MIDI_CHANNELS)
-        return 1;
-    if (note < 0 || note >= MAX_MIDI_NOTE)
-        return 1;
-    if (velo < 0 || velo >= MAX_MIDI_VALUE)
-        return 1;
+    CARLA_SAFE_ASSERT_RETURN(channel >= 0 && channel < MAX_MIDI_CHANNELS, 0);
+    CARLA_SAFE_ASSERT_RETURN(note >= 0 && note < MAX_MIDI_NOTE, 0);
+    CARLA_SAFE_ASSERT_RETURN(velo >= 0 && velo < MAX_MIDI_VALUE, 0);
 
     plugin->sendMidiSingleNote(static_cast<uint8_t>(channel), static_cast<uint8_t>(note), static_cast<uint8_t>(velo), true, false, true);
-
     return 0;
 }
 
@@ -821,18 +748,14 @@ int CarlaEngineOsc::handleMsgNoteOff(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     const int32_t channel = argv[0]->i;
     const int32_t note    = argv[1]->i;
 
-    CARLA_SAFE_ASSERT_INT(channel >= 0 && channel < MAX_MIDI_CHANNELS, channel);
-    CARLA_SAFE_ASSERT_INT(note >= 0 && note < MAX_MIDI_NOTE, note);
-
-    if (channel < 0 || channel >= MAX_MIDI_CHANNELS)
-        return 1;
-    if (note < 0 || note >= MAX_MIDI_NOTE)
-        return 1;
+    CARLA_SAFE_ASSERT_RETURN(channel >= 0 && channel < MAX_MIDI_CHANNELS, 0);
+    CARLA_SAFE_ASSERT_RETURN(note >= 0 && note < MAX_MIDI_NOTE, 0);
 
     plugin->sendMidiSingleNote(static_cast<uint8_t>(channel), static_cast<uint8_t>(note), 0, true, false, true);
-
     return 0;
 }
 #endif
+
+// -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
