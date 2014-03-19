@@ -414,25 +414,40 @@ class PluginEdit(QDialog):
         # -------------------------------------------------------------
         # Set-up GUI
 
-        self.ui.dial_drywet.setCustomPaint(self.ui.dial_drywet.CUSTOM_PAINT_CARLA_WET)
+        self.ui.dial_drywet.setCustomPaintMode(self.ui.dial_drywet.CUSTOM_PAINT_MODE_CARLA_WET)
         self.ui.dial_drywet.setPixmap(3)
         self.ui.dial_drywet.setLabel("Dry/Wet")
+        self.ui.dial_drywet.setMinimum(0.0)
+        self.ui.dial_drywet.setMaximum(1.0)
+        self.ui.dial_drywet.setValue(1.0)
 
-        self.ui.dial_vol.setCustomPaint(self.ui.dial_vol.CUSTOM_PAINT_CARLA_VOL)
+        self.ui.dial_vol.setCustomPaintMode(self.ui.dial_vol.CUSTOM_PAINT_MODE_CARLA_VOL)
         self.ui.dial_vol.setPixmap(3)
         self.ui.dial_vol.setLabel("Volume")
+        self.ui.dial_vol.setMinimum(0.0)
+        self.ui.dial_vol.setMaximum(1.27)
+        self.ui.dial_vol.setValue(1.0)
 
-        self.ui.dial_b_left.setCustomPaint(self.ui.dial_b_left.CUSTOM_PAINT_CARLA_L)
+        self.ui.dial_b_left.setCustomPaintMode(self.ui.dial_b_left.CUSTOM_PAINT_MODE_CARLA_L)
         self.ui.dial_b_left.setPixmap(4)
         self.ui.dial_b_left.setLabel("L")
+        self.ui.dial_b_left.setMinimum(-1.0)
+        self.ui.dial_b_left.setMaximum(1.0)
+        self.ui.dial_b_left.setValue(0.0)
 
-        self.ui.dial_b_right.setCustomPaint(self.ui.dial_b_right.CUSTOM_PAINT_CARLA_R)
+        self.ui.dial_b_right.setCustomPaintMode(self.ui.dial_b_right.CUSTOM_PAINT_MODE_CARLA_R)
         self.ui.dial_b_right.setPixmap(4)
         self.ui.dial_b_right.setLabel("R")
+        self.ui.dial_b_right.setMinimum(-1.0)
+        self.ui.dial_b_right.setMaximum(1.0)
+        self.ui.dial_b_right.setValue(0.0)
 
-        self.ui.dial_pan.setCustomPaint(self.ui.dial_b_right.CUSTOM_PAINT_CARLA_R) # FIXME
+        self.ui.dial_pan.setCustomPaintMode(self.ui.dial_b_right.CUSTOM_PAINT_MODE_CARLA_PAN)
         self.ui.dial_pan.setPixmap(4)
         self.ui.dial_pan.setLabel("Pan")
+        self.ui.dial_pan.setMinimum(-1.0)
+        self.ui.dial_pan.setMaximum(1.0)
+        self.ui.dial_pan.setValue(0.0)
 
         self.ui.scrollArea = PixmapKeyboardHArea(self)
         self.layout().addWidget(self.ui.scrollArea)
@@ -467,11 +482,11 @@ class PluginEdit(QDialog):
         self.ui.ch_send_pitchbend.clicked.connect(self.slot_optionChanged)
         self.ui.ch_send_all_sound_off.clicked.connect(self.slot_optionChanged)
 
-        self.ui.dial_drywet.valueChanged.connect(self.slot_dryWetChanged)
-        self.ui.dial_vol.valueChanged.connect(self.slot_volumeChanged)
-        self.ui.dial_b_left.valueChanged.connect(self.slot_balanceLeftChanged)
-        self.ui.dial_b_right.valueChanged.connect(self.slot_balanceRightChanged)
-        self.ui.dial_pan.valueChanged.connect(self.slot_panChanged)
+        self.ui.dial_drywet.realValueChanged.connect(self.slot_dryWetChanged)
+        self.ui.dial_vol.realValueChanged.connect(self.slot_volumeChanged)
+        self.ui.dial_b_left.realValueChanged.connect(self.slot_balanceLeftChanged)
+        self.ui.dial_b_right.realValueChanged.connect(self.slot_balanceRightChanged)
+        self.ui.dial_pan.realValueChanged.connect(self.slot_panChanged)
         self.ui.sb_ctrl_channel.valueChanged.connect(self.slot_ctrlChannelChanged)
 
         self.ui.dial_drywet.customContextMenuRequested.connect(self.slot_knobCustomMenu)
@@ -1128,17 +1143,17 @@ class PluginEdit(QDialog):
     @pyqtSlot(int)
     def slot_dryWetChanged(self, value):
         if gCarla.host is not None:
-            gCarla.host.set_drywet(self.fPluginId, float(value)/1000)
+            gCarla.host.set_drywet(self.fPluginId, value)
 
     @pyqtSlot(int)
     def slot_volumeChanged(self, value):
         if gCarla.host is not None:
-            gCarla.host.set_volume(self.fPluginId, float(value)/1000)
+            gCarla.host.set_volume(self.fPluginId, value)
 
     @pyqtSlot(int)
     def slot_balanceLeftChanged(self, value):
         if gCarla.host is not None:
-            gCarla.host.set_balance_left(self.fPluginId, float(value)/1000)
+            gCarla.host.set_balance_left(self.fPluginId, value)
 
     @pyqtSlot(int)
     def slot_balanceRightChanged(self, value):
