@@ -24,6 +24,7 @@
 #define EFFECT_H
 
 #include "../Misc/Util.h"
+#include "../globals.h"
 #include "../Params/FilterParams.h"
 #include "../Misc/Stereo.h"
 

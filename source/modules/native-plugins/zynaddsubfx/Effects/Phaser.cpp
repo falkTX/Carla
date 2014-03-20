@@ -207,7 +207,7 @@ void Phaser::normalPhase(const Stereo<float *> &input)
     gain.r = limit(gain.r, ZERO_, ONE_);
 
     for(int i = 0; i < buffersize; ++i) {
-        float x  = (float)i / buffersize_f;
+        float x  = (float) i / buffersize_f;
         float x1 = 1.0f - x;
         //TODO think about making panning an external feature
         Stereo<float> xn(input.l[i] * pangainL + fb.l,

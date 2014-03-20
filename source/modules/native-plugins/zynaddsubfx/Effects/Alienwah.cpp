@@ -60,7 +60,7 @@ void Alienwah::out(const Stereo<float *> &smp)
     clfor = complex<float>(cosf(lfor + phase) * fb, sinf(lfor + phase) * fb); //rework
 
     for(int i = 0; i < buffersize; ++i) {
-        float x  = ((float)i) / buffersize_f;
+        float x  = ((float) i) / buffersize_f;
         float x1 = 1.0f - x;
         //left
         complex<float> tmp = clfol * x + oldclfol * x1;

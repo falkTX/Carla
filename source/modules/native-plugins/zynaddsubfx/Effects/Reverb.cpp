@@ -240,7 +240,7 @@ void Reverb::setidelay(unsigned char _Pidelay)
         delete [] idelay;
     idelay = NULL;
 
-    idelaylen = (int) (samplerate_f * delay / 1000.0f);
+    idelaylen = (int) (samplerate_f * delay / 1000);
     if(idelaylen > 1) {
         idelayk = 0;
         idelay  = new float[idelaylen];
