@@ -23,6 +23,14 @@
 # include "config.h"
 #endif
 
+/* Compatibility with non-clang compilers */
+#ifndef __has_feature
+# define __has_feature(x) 0
+#endif
+#ifndef __has_extension
+# define __has_extension __has_feature
+#endif
+
 /* Set Version */
 #define CARLA_VERSION_HEX    0x01093
 #define CARLA_VERSION_STRING "1.9.3 (2.0-beta1)"
@@ -51,10 +59,10 @@
 /* Check for C++11 support */
 #if defined(HAVE_CPP11_SUPPORT)
 # define CARLA_PROPER_CPP11_SUPPORT
-#elif defined(__GNUC__) && defined(__cplusplus)
-# if (__cplusplus >= 201103L || defined(__GXX_EXPERIMENTAL_CXX0X__)) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 405
+#elif defined(__cplusplus)
+# if __cplusplus >= 201103L || (defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 405) || __has_extension(cxx_noexcept)
 #  define CARLA_PROPER_CPP11_SUPPORT
-#  if (__GNUC__ * 100 + __GNUC_MINOR__) < 407
+#  if (defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) < 407) || ! __has_extension(cxx_override_control)
 #   define override // gcc4.7+ only
 #   define final    // gcc4.7+ only
 #  endif
@@ -62,11 +70,7 @@
 #endif
 
 #if defined(__cplusplus) && !defined(CARLA_PROPER_CPP11_SUPPORT)
-# ifndef __clang__
-#  define noexcept throw()
-# else
-#  define noexcept
-# endif
+# define noexcept throw()
 # define override
 # define final
 # define nullptr (0)
@@ -214,7 +218,7 @@ private:                               \
 #endif
 
 /* Define PRE/POST_PACKED_STRUCTURE */
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__clang__)
 # define PRE_PACKED_STRUCTURE
 # define POST_PACKED_STRUCTURE __attribute__((__packed__))
 #elif defined(_MSC_VER)
