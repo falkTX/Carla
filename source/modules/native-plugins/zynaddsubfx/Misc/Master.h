@@ -23,6 +23,8 @@
 
 #ifndef MASTER_H
 #define MASTER_H
+#include <pthread.h>
+
 #include "../globals.h"
 #include "Microtonal.h"
 

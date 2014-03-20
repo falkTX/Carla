@@ -153,21 +153,21 @@ void Part::defaultsinstrument()
 /*
  * Cleanup the part
  */
-void Part::cleanup(bool final_)
+void Part::cleanup(bool final)
 {
     for(int k = 0; k < POLIPHONY; ++k)
         KillNotePos(k);
     for(int i = 0; i < synth->buffersize; ++i) {
-        partoutl[i] = final_ ? 0.0f : denormalkillbuf[i];
-        partoutr[i] = final_ ? 0.0f : denormalkillbuf[i];
+        partoutl[i] = final ? 0.0f : denormalkillbuf[i];
+        partoutr[i] = final ? 0.0f : denormalkillbuf[i];
     }
     ctl.resetall();
     for(int nefx = 0; nefx < NUM_PART_EFX; ++nefx)
         partefx[nefx]->cleanup();
     for(int n = 0; n < NUM_PART_EFX + 1; ++n)
         for(int i = 0; i < synth->buffersize; ++i) {
-            partfxinputl[n][i] = final_ ? 0.0f : denormalkillbuf[i];
-            partfxinputr[n][i] = final_ ? 0.0f : denormalkillbuf[i];
+            partfxinputl[n][i] = final ? 0.0f : denormalkillbuf[i];
+            partfxinputr[n][i] = final ? 0.0f : denormalkillbuf[i];
         }
 }
 
@@ -672,11 +672,11 @@ void Part::PolyphonicAftertouch(unsigned char note,
             vel = (vel > 1.0f) ? 1.0f : vel;
 
             if(!Pkitmode) { // "normal mode"
-                if(kit[0].Padenabled)
+                if(kit[0].Padenabled && partnote[i].kititem[0].adnote)
                     partnote[i].kititem[0].adnote->setVelocity(vel);
-                if(kit[0].Psubenabled)
+                if(kit[0].Psubenabled && partnote[i].kititem[0].subnote)
                     partnote[i].kititem[0].subnote->setVelocity(vel);
-                if(kit[0].Ppadenabled)
+                if(kit[0].Ppadenabled && partnote[i].kititem[0].padnote)
                     partnote[i].kititem[0].padnote->setVelocity(vel);
             }
             else     // "kit mode"
@@ -687,11 +687,11 @@ void Part::PolyphonicAftertouch(unsigned char note,
                        || (note > kit[item].Pmaxkey))
                         continue;
 
-                    if(kit[item].Padenabled)
+                    if(kit[item].Padenabled && partnote[i].kititem[item].adnote)
                         partnote[i].kititem[item].adnote->setVelocity(vel);
-                    if(kit[item].Psubenabled)
+                    if(kit[item].Psubenabled && partnote[i].kititem[item].subnote)
                         partnote[i].kititem[item].subnote->setVelocity(vel);
-                    if(kit[item].Ppadenabled)
+                    if(kit[item].Ppadenabled && partnote[i].kititem[item].padnote)
                         partnote[i].kititem[item].padnote->setVelocity(vel);
                 }
         }
@@ -934,14 +934,12 @@ void Part::RunNote(unsigned int k)
 
         for(unsigned type = 0; type < 3; ++type) {
             //Select a note
-            SynthNote **note;
+            SynthNote **note = NULL;
             if(type == 0)
                 note = &partnote[k].kititem[item].adnote;
-            else
-            if(type == 1)
+            else if(type == 1)
                 note = &partnote[k].kititem[item].subnote;
-            else
-            if(type == 2)
+            else if(type == 2)
                 note = &partnote[k].kititem[item].padnote;
 
             //Process if it exists

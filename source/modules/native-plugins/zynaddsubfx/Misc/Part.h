@@ -29,6 +29,7 @@
 #include "../Params/Controller.h"
 #include "../Misc/Microtonal.h"
 
+#include <pthread.h>
 #include <list> // For the monomemnotes list.
 
 class EffectMgr;
