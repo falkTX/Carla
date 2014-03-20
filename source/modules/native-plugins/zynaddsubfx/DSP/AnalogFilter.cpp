@@ -24,6 +24,7 @@
 
 #include <cstring> //memcpy
 #include <cmath>
+#include <cassert>
 
 #include "../Misc/Util.h"
 #include "AnalogFilter.h"
@@ -329,10 +330,33 @@ void AnalogFilter::setstages(int stages_)
     computefiltercoefs();
 }
 
+inline void AnalogBiquadFilterA(const float coeff[5], float &src, float work[4])
+{
+    work[3] = src*coeff[0]
+        + work[0]*coeff[1]
+        + work[1]*coeff[2]
+        + work[2]*coeff[3]
+        + work[3]*coeff[4];
+    work[1] = src;
+    src     = work[3];
+}
+
+inline void AnalogBiquadFilterB(const float coeff[5], float &src, float work[4])
+{
+    work[2] = src*coeff[0]
+        + work[1]*coeff[1]
+        + work[0]*coeff[2]
+        + work[3]*coeff[3]
+        + work[2]*coeff[4];
+    work[0] = src;
+    src     = work[2];
+}
+
 void AnalogFilter::singlefilterout(float *smp, fstage &hist,
                                    const Coeff &coeff)
 {
-    if(order == 1)   //First order filter
+    assert((buffersize % 8) == 0);
+    if(order == 1) {  //First order filter
         for(int i = 0; i < buffersize; ++i) {
             float y0 = smp[i] * coeff.c[0] + hist.x1 * coeff.c[1]
                        + hist.y1 * coeff.d[1];
@@ -340,17 +364,24 @@ void AnalogFilter::singlefilterout(float *smp, fstage &hist,
             hist.x1 = smp[i];
             smp[i]  = y0;
         }
-    if(order == 2) //Second order filter
-        for(int i = 0; i < buffersize; ++i) {
-            float y0 = smp[i] * coeff.c[0] + hist.x1 * coeff.c[1]
-                       + hist.x2 * coeff.c[2] + hist.y1 * coeff.d[1]
-                       + hist.y2 * coeff.d[2];
-            hist.y2 = hist.y1;
-            hist.y1 = y0;
-            hist.x2 = hist.x1;
-            hist.x1 = smp[i];
-            smp[i]  = y0;
+    } else if(order == 2) {//Second order filter
+        const float coeff_[5] = {coeff.c[0], coeff.c[1], coeff.c[2],  coeff.d[1], coeff.d[2]};
+        float work[4]  = {hist.x1, hist.x2, hist.y1, hist.y2};
+        for(int i = 0; i < buffersize; i+=8) {
+            AnalogBiquadFilterA(coeff_, smp[i + 0], work);
+            AnalogBiquadFilterB(coeff_, smp[i + 1], work);
+            AnalogBiquadFilterA(coeff_, smp[i + 2], work);
+            AnalogBiquadFilterB(coeff_, smp[i + 3], work);
+            AnalogBiquadFilterA(coeff_, smp[i + 4], work);
+            AnalogBiquadFilterB(coeff_, smp[i + 5], work);
+            AnalogBiquadFilterA(coeff_, smp[i + 6], work);
+            AnalogBiquadFilterB(coeff_, smp[i + 7], work);
         }
+        hist.x1 = work[0];
+        hist.x2 = work[1];
+        hist.y1 = work[2];
+        hist.y2 = work[3];
+    }
 }
 
 void AnalogFilter::filterout(float *smp)

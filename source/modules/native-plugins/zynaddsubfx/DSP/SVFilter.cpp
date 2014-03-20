@@ -167,7 +167,7 @@ void SVFilter::filterout(float *smp)
             singlefilterout(ismp, st[i], ipar);
 
         for(int i = 0; i < buffersize; ++i) {
-            float x = (float)i / buffersize_f;
+            float x = i / buffersize_f;
             smp[i] = ismp[i] * (1.0f - x) + smp[i] * x;
         }
         needsinterpolation = false;
