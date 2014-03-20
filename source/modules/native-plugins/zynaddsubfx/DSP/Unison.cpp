@@ -92,11 +92,11 @@ void Unison::updateParameters(void)
                                   / (float) update_period_samples;
 //	printf("#%g, %g\n",increments_per_second,base_freq);
     for(int i = 0; i < unison_size; ++i) {
-        float base = powf(UNISON_FREQ_SPAN, numRandom() * 2.0f - 1.0f);
+        float base = powf(UNISON_FREQ_SPAN, SYNTH_T::numRandom() * 2.0f - 1.0f);
         uv[i].relative_amplitude = base;
         float period = base / base_freq;
         float m      = 4.0f / (period * increments_per_second);
-        if(numRandom() < 0.5f)
+        if(SYNTH_T::numRandom() < 0.5f)
             m = -m;
         uv[i].step = m;
 //		printf("%g %g\n",uv[i].relative_amplitude,period);
