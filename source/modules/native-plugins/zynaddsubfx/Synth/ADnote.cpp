@@ -23,6 +23,8 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
+#include <cassert>
+#include <stdint.h>
 
 #include "../globals.h"
 #include "../Misc/Util.h"
@@ -38,7 +40,7 @@ ADnote::ADnote(ADnoteParameters *pars,
                int portamento_,
                int midinote_,
                bool besilent)
-    :SynthNote(freq, velocity, portamento_, midinote, besilent)
+    :SynthNote(freq, velocity, portamento_, midinote_, besilent)
 {
     tmpwavel = new float [synth->buffersize];
     tmpwaver = new float [synth->buffersize];
@@ -139,7 +141,13 @@ ADnote::ADnote(ADnoteParameters *pars,
                 for(int k = 0; k < unison; ++k) {
                     float step = (k / (float) (unison - 1)) * 2.0f - 1.0f; //this makes the unison spread more uniform
                     float val  = step + (RND * 2.0f - 1.0f) / (unison - 1);
-                    unison_values[k] = limit(val, min, max);
+                    unison_values[k] = val;
+                    if (min > val) {
+                        min = val;
+                    }
+                    if (max < val) {
+                        max = val;
+                    }
                 }
                 float diff = max - min;
                 for(int k = 0; k < unison; ++k) {
@@ -1102,30 +1110,39 @@ inline void ADnote::fadein(float *smps) const
 /*
  * Computes the Oscillator (Without Modulation) - LinearInterpolation
  */
+
+/* As the code here is a bit odd due to optimization, here is what happens
+ * First the current possition and frequency are retrieved from the running
+ * state. These are broken up into high and low portions to indicate how many
+ * samples are skipped in one step and how many fractional samples are skipped.
+ * Outside of this method the fractional samples are just handled with floating
+ * point code, but that's a bit slower than it needs to be. In this code the low
+ * portions are known to exist between 0.0 and 1.0 and it is known that they are
+ * stored in single precision floating point IEEE numbers. This implies that
+ * a maximum of 24 bits are significant. The below code does your standard
+ * linear interpolation that you'll see throughout this codebase, but by
+ * sticking to integers for tracking the overflow of the low portion, around 15%
+ * of the execution time was shaved off in the ADnote test.
+ */
 inline void ADnote::ComputeVoiceOscillator_LinearInterpolation(int nvoice)
 {
-    int   i, poshi;
-    float poslo;
-
     for(int k = 0; k < unison_size[nvoice]; ++k) {
-        poshi = oscposhi[nvoice][k];
-        poslo = oscposlo[nvoice][k];
+        int    poshi  = oscposhi[nvoice][k];
+        int    poslo  = oscposlo[nvoice][k] * (1<<24);
         int    freqhi = oscfreqhi[nvoice][k];
-        float  freqlo = oscfreqlo[nvoice][k];
+        int    freqlo = oscfreqlo[nvoice][k] * (1<<24);
         float *smps   = NoteVoicePar[nvoice].OscilSmp;
         float *tw     = tmpwave_unison[k];
-        for(i = 0; i < synth->buffersize; ++i) {
-            tw[i]  = smps[poshi] * (1.0f - poslo) + smps[poshi + 1] * poslo;
+        assert(oscfreqlo[nvoice][k] < 1.0f);
+        for(int i = 0; i < synth->buffersize; ++i) {
+            tw[i]  = (smps[poshi] * ((1<<24) - poslo) + smps[poshi + 1] * poslo)/(1.0f*(1<<24));
             poslo += freqlo;
-            if(poslo >= 1.0f) {
-                poslo -= 1.0f;
-                poshi++;
-            }
-            poshi += freqhi;
+            poshi += freqhi + (poslo>>24);
+            poslo &= 0xffffff;
             poshi &= synth->oscilsize - 1;
         }
         oscposhi[nvoice][k] = poshi;
-        oscposlo[nvoice][k] = poslo;
+        oscposlo[nvoice][k] = poslo/(1.0f*(1<<24));
     }
 }
 

@@ -322,30 +322,43 @@ void SUBnote::initfilter(bpfilter &filter,
 /*
  * Do the filtering
  */
-inline float SUBnote::SubFilter(bpfilter &filter, const float input) const
+
+inline void SubFilterA(const float coeff[4], float &src, float work[4])
 {
-    const float out = input * filter.b0 + filter.b2 * filter.xn2
-                      - filter.a1 * filter.yn1 - filter.a2 * filter.yn2;
-    filter.xn2 = filter.xn1;
-    filter.xn1 = input;
-    filter.yn2 = filter.yn1;
-    filter.yn1 = out;
-    return out;
+    work[3] = src*coeff[0]+work[1]*coeff[1]+work[2]*coeff[2]+work[3]*coeff[3];
+    work[1] = src;
+    src     = work[3];
 }
 
+inline void SubFilterB(const float coeff[4], float &src, float work[4])
+{
+    work[2] = src*coeff[0]+work[0]*coeff[1]+work[3]*coeff[2]+work[2]*coeff[3];
+    work[0] = src;
+    src     = work[2];
+}
+
+//This dance is designed to minimize unneeded memory operations which can result
+//in quite a bit of wasted time
 void SUBnote::filter(bpfilter &filter, float *smps)
 {
     assert(synth->buffersize % 8 == 0);
+    float coeff[4] = {filter.b0, filter.b2,  -filter.a1, -filter.a2};
+    float work[4]  = {filter.xn1, filter.xn2, filter.yn1, filter.yn2};
+
     for(int i = 0; i < synth->buffersize; i += 8) {
-        smps[i]     = SubFilter(filter, smps[i]);
-        smps[i + 1] = SubFilter(filter, smps[i + 1]);
-        smps[i + 2] = SubFilter(filter, smps[i + 2]);
-        smps[i + 3] = SubFilter(filter, smps[i + 3]);
-        smps[i + 4] = SubFilter(filter, smps[i + 4]);
-        smps[i + 5] = SubFilter(filter, smps[i + 5]);
-        smps[i + 6] = SubFilter(filter, smps[i + 6]);
-        smps[i + 7] = SubFilter(filter, smps[i + 7]);
+        SubFilterA(coeff, smps[i + 0], work);
+        SubFilterB(coeff, smps[i + 1], work);
+        SubFilterA(coeff, smps[i + 2], work);
+        SubFilterB(coeff, smps[i + 3], work);
+        SubFilterA(coeff, smps[i + 4], work);
+        SubFilterB(coeff, smps[i + 5], work);
+        SubFilterA(coeff, smps[i + 6], work);
+        SubFilterB(coeff, smps[i + 7], work);
     }
+    filter.xn1 = work[0];
+    filter.xn2 = work[1];
+    filter.yn1 = work[2];
+    filter.yn2 = work[3];
 }
 
 /*

@@ -95,7 +95,6 @@ class SUBnote:public SynthNote
                                 float freq,
                                 float bw,
                                 float gain);
-        inline float SubFilter(bpfilter &filter, float input) const;
         inline void filter(bpfilter &filter, float *smps);
 
         bpfilter *lfilter, *rfilter;
