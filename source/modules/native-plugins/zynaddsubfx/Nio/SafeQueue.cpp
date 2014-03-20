@@ -56,6 +56,19 @@ int SafeQueue<T>::push(const T &in)
 }
 
 template<class T>
+int SafeQueue<T>::peak(T &out) const
+{
+    if(!rSpace())
+        return -1;
+
+    //ok, there is space to read
+    size_t r = (readPtr + 1) % bufSize;
+    out     = buffer[r];
+
+    return 0;
+}
+
+template<class T>
 int SafeQueue<T>::pop(T &out)
 {
     if(!rSpace())

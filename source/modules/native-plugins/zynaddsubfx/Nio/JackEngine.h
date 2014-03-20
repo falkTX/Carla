@@ -80,6 +80,7 @@ class JackEngine:public AudioOut, MidiIn
         } audio;
         struct midi {
             jack_port_t *inport;
+            bool         jack_sync;
         } midi;
 
         void handleMidi(unsigned long frames);

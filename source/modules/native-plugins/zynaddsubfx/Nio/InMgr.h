@@ -19,6 +19,7 @@ struct MidiEvent {
     int type;    //type=1 for note, type=2 for controller
     int num;     //note, controller or program number
     int value;   //velocity or controller value
+    int time;    //time offset of event (used only in jack->jack case at the moment)
 };
 
 //super simple class to manage the inputs
@@ -31,7 +32,9 @@ class InMgr
         void putEvent(MidiEvent ev);
 
         /**Flush the Midi Queue*/
-        void flush();
+        void flush(unsigned frameStart, unsigned frameStop);
+
+        bool empty() const;
 
         bool setSource(std::string name);
 
@@ -42,7 +45,7 @@ class InMgr
         InMgr();
         class MidiIn *getIn(std::string name);
         SafeQueue<MidiEvent> queue;
-        sem_t work;
+        mutable sem_t work;
         class MidiIn * current;
 
         /**the link to the rest of zyn*/

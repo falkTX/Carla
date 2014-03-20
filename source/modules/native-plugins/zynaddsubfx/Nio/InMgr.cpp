@@ -31,7 +31,7 @@ ostream &operator<<(ostream &out, const MidiEvent &ev)
 }
 
 MidiEvent::MidiEvent()
-    :channel(0), type(0), num(0), value(0)
+    :channel(0), type(0), num(0), value(0), time(0)
 {}
 
 InMgr &InMgr::getInstance()
@@ -61,10 +61,17 @@ void InMgr::putEvent(MidiEvent ev)
         sem_post(&work);
 }
 
-void InMgr::flush()
+void InMgr::flush(unsigned frameStart, unsigned frameStop)
 {
     MidiEvent ev;
     while(!sem_trywait(&work)) {
+        queue.peak(ev);
+        if(ev.time < (int)frameStart || ev.time > (int)frameStop) {
+            //Back out of transaction
+            sem_post(&work);
+            //printf("%d vs [%d..%d]\n",ev.time, frameStart, frameStop);
+            break;
+        }
         queue.pop(ev);
         //cout << ev << endl;
 
@@ -91,6 +98,13 @@ void InMgr::flush()
                 break;
         }
     }
+}
+
+bool InMgr::empty(void) const
+{
+    int semvalue = 0;
+    sem_getvalue(&work, &semvalue);
+    return semvalue <= 0;
 }
 
 bool InMgr::setSource(string name)

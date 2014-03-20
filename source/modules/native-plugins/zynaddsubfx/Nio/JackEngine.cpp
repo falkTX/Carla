@@ -45,6 +45,7 @@ JackEngine::JackEngine()
         audio.portBuffs[i] = NULL;
     }
     midi.inport = NULL;
+    midi.jack_sync = false;
 }
 
 bool JackEngine::connectServer(string server)
@@ -211,10 +212,12 @@ bool JackEngine::openAudio()
             else
                 cerr << "Warning, No outputs to autoconnect to" << endl;
         }
+        midi.jack_sync = true;
         return true;
     }
     else
         cerr << "Error, failed to register jack audio ports" << endl;
+    midi.jack_sync = false;
     return false;
 }
 
@@ -226,6 +229,7 @@ void JackEngine::stopAudio()
         if(NULL != port)
             jack_port_unregister(jackClient, port);
     }
+    midi.jack_sync = false;
     if(!getMidiEn())
         disconnectJack();
 }
@@ -281,10 +285,9 @@ int JackEngine::processCallback(jack_nframes_t nframes)
 {
     bool okaudio = true;
 
+    handleMidi(nframes);
     if((NULL != audio.ports[0]) && (NULL != audio.ports[1]))
         okaudio = processAudio(nframes);
-    if(okaudio)
-        handleMidi(nframes);
     return okaudio ? 0 : -1;
 }
 
@@ -352,6 +355,7 @@ void JackEngine::handleMidi(unsigned long frames)
         midi_data  = jack_midi_event.buffer;
         type       = midi_data[0] & 0xF0;
         ev.channel = midi_data[0] & 0x0F;
+        ev.time    = midi.jack_sync ? jack_midi_event.time : 0;
 
         switch(type) {
             case 0x80: /* note-off */

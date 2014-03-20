@@ -45,28 +45,31 @@ OutMgr::~OutMgr()
 }
 
 /* Sequence of a tick
- * 1) lets see if we have any stuff to do via midi
- * 2) Lets do that stuff
- * 3) Lets see if the event queue has anything for us
- * 4) Lets empty that out
- * 5) Lets remove old/stale samples
- * 6) Lets see if we need to generate samples
- * 7) Lets generate some
- * 8) Lets return those samples to the primary and secondary outputs
- * 9) Lets wait for another tick
+ * 1) Lets remove old/stale samples
+ * 2) Apply appliciable midi events
+ * 3) Lets see if we need to generate samples
+ * 4) Lets generate some
+ * 5) Goto 2 if more are needed
+ * 6) Lets return those samples to the primary and secondary outputs
+ * 7) Lets wait for another tick
  */
 const Stereo<float *> OutMgr::tick(unsigned int frameSize)
 {
-    pthread_mutex_lock(&(master.mutex));
-    InMgr::getInstance().flush();
-    pthread_mutex_unlock(&(master.mutex));
+    InMgr &midi = InMgr::getInstance();
     //SysEv->execute();
     removeStaleSmps();
+    int i=0;
     while(frameSize > storedSmps()) {
+        if(!midi.empty()) {
+            pthread_mutex_lock(&(master.mutex));
+            midi.flush(i*synth->buffersize, (i+1)*synth->buffersize);
+            pthread_mutex_unlock(&(master.mutex));
+        }
         pthread_mutex_lock(&(master.mutex));
         master.AudioOut(outl, outr);
         pthread_mutex_unlock(&(master.mutex));
         addSmps(outl, outr);
+        i++;
     }
     stales = frameSize;
     return priBuf;
