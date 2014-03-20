@@ -41,7 +41,7 @@ void TipWin::draw()
 {
     //setup window
     draw_box(FL_BORDER_BOX, 0, 0, w(), h(), Fl_Color(175));
-    fl_color(FL_BLACK);
+    fl_color(Fl_Tooltip::textcolor());
     fl_font(labelfont(), labelsize());
 
     //Draw the current string
@@ -115,9 +115,9 @@ WidgetPDial::~WidgetPDial()
 
 int WidgetPDial::handle(int event)
 {
-#ifdef NTK_GUI
-    return Fl_Dial::handle( event );
-#else
+//#ifdef NTK_GUI
+//    return Fl_Dial::handle( event );
+//#else
     double dragsize, min = minimum(), max = maximum();
     int    my;
 
@@ -156,7 +156,7 @@ int WidgetPDial::handle(int event)
             break;
     }
     return 0;
-#endif
+//#endif
 }
 
 void WidgetPDial::drawgradient(int cx, int cy, int sx, double m1, double m2)

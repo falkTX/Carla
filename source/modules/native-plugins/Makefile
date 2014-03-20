@@ -45,6 +45,9 @@ endif
 ifeq ($(HAVE_ZYN_DEPS),true)
 ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS)
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags fftw3 mxml zlib)
+ifneq ($(MACOS),true)
+ZYN_CXX_FLAGS += -DHAVE_SCHEDULER
+endif
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 ZYN_CXX_FLAGS += -DNTK_GUI -DWANT_ZYNADDSUBFX_UI
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags ntk_images ntk)

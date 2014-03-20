@@ -566,9 +566,9 @@ voiceonbutton->redraw();} open
               code1 {o->value(pars->get_unison_size_index(nvoice));}
             } {}
             Fl_Dial {} {
-              label Vibratto
+              label Vibrato
               callback {pars->VoicePar[nvoice].Unison_vibratto=(int)o->value();}
-              tooltip Vibratto xywh {340 555 25 30} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
+              tooltip Vibrato xywh {340 555 25 30} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
               code0 {o->value(pars->VoicePar[nvoice].Unison_vibratto);}
               class WidgetPDial
             }
@@ -595,7 +595,7 @@ unisonspreadoutput->do_callback();}
             Fl_Dial {} {
               label {Vib.speed}
               callback {pars->VoicePar[nvoice].Unison_vibratto_speed=(int)o->value();}
-              tooltip {Vibratto Average Speed} xywh {390 555 25 30} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
+              tooltip {Vibrato Average Speed} xywh {390 555 25 30} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
               code0 {o->value(pars->VoicePar[nvoice].Unison_vibratto_speed);}
               class WidgetPDial
             }

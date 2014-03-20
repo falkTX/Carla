@@ -29,6 +29,8 @@ mark_as_advanced(DSSI_LIBRARIES)
 pkg_search_module(LIBLO liblo>=0.26)
 mark_as_advanced(LIBLO_LIBRARIES)
 
+CHECK_FUNCTION_EXISTS(sched_setscheduler HAVE_SCHEDULER)
+
 execute_process(COMMAND echo fistpl 0
                 COMMAND as -
                 ERROR_VARIABLE AVOID_ASM)
@@ -59,6 +61,14 @@ SET (LibloEnable ${LIBLO_FOUND} CACHE BOOL
 
 # Add version information
 add_definitions(-DVERSION="${VERSION}")
+
+message(STATUS "Building on a '${CMAKE_SYSTEM_NAME}' System")
+
+if(NOT "Darwin" STREQUAL ${CMAKE_SYSTEM_NAME})
+    # Add scheduler function existance info (OSX compatiability)
+    add_definitions(-DHAVE_SCHEDULER=${HAVE_SCHEDULER})
+endif()
+
 
 # Give a good guess on the best Input/Output default backends
 if (JackEnable)

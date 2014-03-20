@@ -242,8 +242,7 @@ struct SYNTH_T {
         bufferbytes      = buffersize * sizeof(float);
         oscilsize_f      = oscilsize;
     }
-
-    static float numRandom(void); //defined in Util.cpp for now
+    float numRandom(void) const; //defined in Util.cpp for now
 };
 
 extern SYNTH_T *synth;

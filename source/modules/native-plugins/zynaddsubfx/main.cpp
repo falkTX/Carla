@@ -60,6 +60,7 @@ QApplication *app;
 #include <FL/Fl_Shared_Image.H>
 #include <FL/Fl_Tiled_Image.H>
 #include <FL/Fl_Dial.H>
+#include <FL/Fl_Tooltip.H>
 #endif // FLTK_GUI
 
 MasterUI *ui;
@@ -437,6 +438,8 @@ int main(int argc, char *argv[])
 
 #ifdef NTK_GUI
     fl_register_images();
+
+    Fl_Tooltip::textcolor(0x0);
 
     Fl_Dial::default_style(Fl_Dial::PIXMAP_DIAL);
 

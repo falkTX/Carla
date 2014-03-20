@@ -1028,6 +1028,11 @@ master=master_;
 ninseff=0;
 
 make_window();
+\#ifdef NTK_GUI
+adsynenabledcheck->selection_color(55);
+subsynenabledcheck->selection_color(55);
+padsynenabledcheck->selection_color(55);
+\#endif
 partgroup->position(this->parent()->x()+2,this->parent()->y()+2);
 partgroup->show();
 end();
