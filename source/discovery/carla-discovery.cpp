@@ -67,6 +67,7 @@ CARLA_BACKEND_USE_NAMESPACE
 
 static const uint32_t kBufferSize  = 512;
 static const double   kSampleRate  = 44100.0;
+static const int32_t  kSampleRatei = 44100.0;
 static const float    kSampleRatef = 44100.0f;
 
 // --------------------------------------------------------------------------
@@ -221,7 +222,7 @@ static intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t
         break;
 
     case audioMasterGetSampleRate:
-        ret = kSampleRate;
+        ret = kSampleRatei;
         break;
 
     case audioMasterGetBlockSize:
@@ -454,7 +455,7 @@ static void do_ladspa_check(void*& libHandle, const char* const filename, const 
 
         if (init && descriptor->instantiate != nullptr && descriptor->cleanup != nullptr)
         {
-            LADSPA_Handle handle = descriptor->instantiate(descriptor, kSampleRate);
+            LADSPA_Handle handle = descriptor->instantiate(descriptor, kSampleRatei);
 
             if (handle == nullptr)
             {
@@ -548,7 +549,7 @@ static void do_ladspa_check(void*& libHandle, const char* const filename, const 
             // -----------------------------------------------------------------------
             // start crash-free plugin test
 
-            LADSPA_Handle handle = descriptor->instantiate(descriptor, kSampleRate);
+            LADSPA_Handle handle = descriptor->instantiate(descriptor, kSampleRatei);
 
             if (handle == nullptr)
             {
@@ -559,7 +560,7 @@ static void do_ladspa_check(void*& libHandle, const char* const filename, const 
             // Test quick init and cleanup
             descriptor->cleanup(handle);
 
-            handle = descriptor->instantiate(descriptor, kSampleRate);
+            handle = descriptor->instantiate(descriptor, kSampleRatei);
 
             if (handle == nullptr)
             {
@@ -706,7 +707,7 @@ static void do_dssi_check(void*& libHandle, const char* const filename, const bo
 
         if (init && ldescriptor->instantiate != nullptr && ldescriptor->cleanup != nullptr)
         {
-            LADSPA_Handle handle = ldescriptor->instantiate(ldescriptor, kSampleRate);
+            LADSPA_Handle handle = ldescriptor->instantiate(ldescriptor, kSampleRatei);
 
             if (handle == nullptr)
             {
@@ -826,7 +827,7 @@ static void do_dssi_check(void*& libHandle, const char* const filename, const bo
             // -----------------------------------------------------------------------
             // start crash-free plugin test
 
-            LADSPA_Handle handle = ldescriptor->instantiate(ldescriptor, kSampleRate);
+            LADSPA_Handle handle = ldescriptor->instantiate(ldescriptor, kSampleRatei);
 
             if (handle == nullptr)
             {
@@ -837,7 +838,7 @@ static void do_dssi_check(void*& libHandle, const char* const filename, const bo
             // Test quick init and cleanup
             ldescriptor->cleanup(handle);
 
-            handle = ldescriptor->instantiate(ldescriptor, kSampleRate);
+            handle = ldescriptor->instantiate(ldescriptor, kSampleRatei);
 
             if (handle == nullptr)
             {

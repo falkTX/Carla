@@ -596,7 +596,7 @@ public:
                     CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
                     uint8_t midiEvent[3];
-                    midiEvent[0] = static_cast<uint8_t>(note.channel + (note.velo > 0) ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF);
+                    midiEvent[0] = static_cast<uint8_t>((note.velo > 0 ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF) | (note.channel & MIDI_CHANNEL_BIT));
                     midiEvent[1] = note.note;
                     midiEvent[2] = note.velo;
 

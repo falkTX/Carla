@@ -44,7 +44,6 @@ using CarlaBackend::CarlaPlugin;
 // LinuxSampler static values
 
 static const float kVolumeMax = 3.16227766f; // +10 dB
-static const float kVolumeMin = 0.0f;        // -inf dB
 
 // -----------------------------------------------------------------------
 // LinuxSampler AudioOutputDevice Plugin

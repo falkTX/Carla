@@ -57,9 +57,12 @@ BASE_OPTS  = -O2 -ffast-math -mtune=generic -msse -msse2 -mfpmath=sse -fdata-sec
 LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,--gc-sections
 
 ifeq ($(TESTBUILD),true)
-BASE_FLAGS += -Werror -Wcast-align -Wcast-qual -Wconversion -Wformat-security -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wundef -Wunsafe-loop-optimizations -Wwrite-strings
+BASE_FLAGS += -Werror -Wcast-qual -Wconversion -Wformat-security -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wundef -Wwrite-strings
 CFLAGS     += -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes
 CXXFLAGS   += -Wnon-virtual-dtor -Woverloaded-virtual
+ifneq ($(CC),clang)
+BASE_FLAGS += -Wcast-align -Wunsafe-loop-optimizations
+endif
 ifeq ($(LINUX),true)
 CFLAGS     += -isystem /opt/kxstudio/include
 CXXFLAGS   += -isystem /opt/kxstudio/include -isystem /usr/include/qt4
@@ -75,7 +78,9 @@ endif
 endif
 
 ifneq ($(MACOS),true)
+ifneq ($(CC),clang)
 BASE_FLAGS += -Wlogical-op
+endif
 ifeq ($(TESTBUILD),true)
 BASE_FLAGS += -Wmissing-declarations -Wsign-conversion
 # -Wsuggest-attribute=noreturn

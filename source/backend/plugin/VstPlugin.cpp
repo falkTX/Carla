@@ -1144,7 +1144,7 @@ public:
 
                     fMidiEvents[fMidiEventCount].type = kVstMidiType;
                     fMidiEvents[fMidiEventCount].byteSize    = static_cast<int32_t>(sizeof(VstMidiEvent));
-                    fMidiEvents[fMidiEventCount].midiData[0] = static_cast<char>(note.channel + (note.velo > 0) ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF);
+                    fMidiEvents[fMidiEventCount].midiData[0] = static_cast<char>((note.velo > 0 ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF) | (note.channel & MIDI_CHANNEL_BIT));
                     fMidiEvents[fMidiEventCount].midiData[1] = static_cast<char>(note.note);
                     fMidiEvents[fMidiEventCount].midiData[2] = static_cast<char>(note.velo);
 

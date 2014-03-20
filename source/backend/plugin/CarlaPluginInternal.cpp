@@ -412,9 +412,9 @@ CarlaPluginProtectedData::PostRtEvents::~PostRtEvents()
     clear();
 }
 
-void CarlaPluginProtectedData::PostRtEvents::appendRT(const PluginPostRtEvent& event)
+void CarlaPluginProtectedData::PostRtEvents::appendRT(const PluginPostRtEvent& e)
 {
-    dataPendingRT.append(event);
+    dataPendingRT.append(e);
 }
 
 void CarlaPluginProtectedData::PostRtEvents::trySplice()
@@ -447,8 +447,8 @@ CarlaPluginProtectedData::PostProc::PostProc() noexcept
 
 // -----------------------------------------------------------------------
 
-CarlaPluginProtectedData::OSC::OSC(CarlaEngine* const engine, CarlaPlugin* const plugin)
-    : thread(engine, plugin) {}
+CarlaPluginProtectedData::OSC::OSC(CarlaEngine* const eng, CarlaPlugin* const plug)
+    : thread(eng, plug) {}
 
 // -----------------------------------------------------------------------
 

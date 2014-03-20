@@ -363,9 +363,12 @@ public:
         for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; ++i)
             fCustomURIDs.append(nullptr);
 
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
-#    pragma GCC diagnostic push
-#    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
         fAtomForge.Blank    = CARLA_URI_MAP_ID_ATOM_BLANK;
         fAtomForge.Bool     = CARLA_URI_MAP_ID_ATOM_BOOL;
@@ -385,8 +388,10 @@ public:
         fAtomForge.URI      = CARLA_URI_MAP_ID_ATOM_URI;
         fAtomForge.URID     = CARLA_URI_MAP_ID_ATOM_URID;
         fAtomForge.Vector   = CARLA_URI_MAP_ID_ATOM_VECTOR;
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
-#    pragma GCC diagnostic pop
+#if defined(__clang__)
+# pragma clang diagnostic pop
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
 #endif
 
         pData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_LV2_GUI);
@@ -2631,7 +2636,7 @@ public:
                         CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
                         uint8_t midiEvent[3];
-                        midiEvent[0] = static_cast<uint8_t>(note.channel + (note.velo > 0) ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF);
+                        midiEvent[0] = static_cast<uint8_t>((note.velo > 0 ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF) | (note.channel & MIDI_CHANNEL_BIT));
                         midiEvent[1] = note.note;
                         midiEvent[2] = note.velo;
 

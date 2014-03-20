@@ -304,7 +304,7 @@ static inline void list_splice_tail_init(struct list_head *list, struct list_hea
  * @type:   the type of the struct this is embedded in.
  * @member: the name of the list_struct within the struct.
  */
-#if defined(__GNUC__) && ! defined(__STRICT_ANSI__)
+#if (defined(__GNUC__) || defined(__clang__)) && ! defined(__STRICT_ANSI__)
 # define list_entry(ptr, type, member) \
     container_of(ptr, type, member)
 # define list_entry_const(ptr, type, member) \
