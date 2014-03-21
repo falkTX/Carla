@@ -1172,7 +1172,7 @@ private:
 };
 
 // -----------------------------------------------------------------------
-// LV2 descriptor functions
+// LV2 plugin descriptor functions
 
 static LV2_Handle lv2_instantiate(const LV2_Descriptor* lv2Descriptor, double sampleRate, const char* bundlePath, const LV2_Feature* const* features)
 {
@@ -1313,7 +1313,7 @@ static const void* lv2_extension_data(const char* uri)
 #undef instancePtr
 
 // -----------------------------------------------------------------------
-// Startup code
+// LV2 UI descriptor functions
 
 static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char*, const char*, LV2UI_Write_Function writeFunction,
                                       LV2UI_Controller controller, LV2UI_Widget* widget, const LV2_Feature* const* features)
