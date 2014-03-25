@@ -198,7 +198,7 @@ protected:
 
     const NativeParameter* getParameterInfo(const uint32_t index) const override
     {
-        CARLA_ASSERT(index < getParameterCount());
+        CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(), nullptr);
 
         static NativeParameter param;
 
@@ -234,9 +234,6 @@ protected:
             param.ranges.def = ranges.def;
             param.ranges.min = ranges.min;
             param.ranges.max = ranges.max;
-            //param.ranges.step = ranges.step;
-            //param.ranges.stepSmall = ranges.stepSmall;
-            //param.ranges.stepLarge = ranges.stepLarge;
         }
 
         return &param;
@@ -244,7 +241,7 @@ protected:
 
     float getParameterValue(const uint32_t index) const override
     {
-        CARLA_ASSERT(index < getParameterCount());
+        CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(), 0.0f);
 
         return fPlugin.getParameterValue(index);
     }
@@ -260,10 +257,7 @@ protected:
 
     const NativeMidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
-        CARLA_ASSERT(index < getMidiProgramCount());
-
-        if (index >= fPlugin.getProgramCount())
-            return nullptr;
+        CARLA_SAFE_ASSERT_RETURN(index < getMidiProgramCount(), nullptr);
 
         static NativeMidiProgram midiProgram;
 
@@ -280,7 +274,7 @@ protected:
 
     void setParameterValue(const uint32_t index, const float value) override
     {
-        CARLA_ASSERT(index < getParameterCount());
+        CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(),);
 
         fPlugin.setParameterValue(index, value);
     }
@@ -290,8 +284,7 @@ protected:
     {
         const uint32_t realProgram(bank * 128 + program);
 
-        if (realProgram >= fPlugin.getProgramCount())
-            return;
+        CARLA_SAFE_ASSERT_RETURN(realProgram < getMidiProgramCount(),);
 
         fPlugin.setProgram(realProgram);
     }
@@ -300,8 +293,8 @@ protected:
 #if DISTRHO_PLUGIN_WANT_STATE
     void setCustomData(const char* const key, const char* const value) override
     {
-        CARLA_ASSERT(key != nullptr);
-        CARLA_ASSERT(value != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 
         fPlugin.setState(key, value);
     }
@@ -323,21 +316,20 @@ protected:
 #if DISTRHO_PLUGIN_IS_SYNTH
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
-        uint32_t i;
+        MidiEvent realMidiEvents[midiEventCount];
 
-        for (i=0; i < midiEventCount && i < kMaxMidiEvents; ++i)
+        for (uint32_t i=0; i < midiEventCount; ++i)
         {
-            const NativeMidiEvent* const midiEvent(&midiEvents[i]);
-            MidiEvent* const realMidiEvent(&fRealMidiEvents[i]);
+            const NativeMidiEvent& midiEvent(midiEvents[i]);
+            MidiEvent& realMidiEvent(realMidiEvents[i]);
 
-            realMidiEvent->frame = midiEvent->time;
-            realMidiEvent->size  = midiEvent->size;
+            realMidiEvent.frame = midiEvent.time;
+            realMidiEvent.size  = midiEvent.size;
 
-            for (uint8_t j=0; j < midiEvent->size; ++j)
-                realMidiEvent->buf[j] = midiEvent->data[j];
+            carla_copy<uint8_t>(realMidiEvent.buf, midiEvent.data, midiEvent.size);
         }
 
-        fPlugin.run(inBuffer, outBuffer, frames, fRealMidiEvents, i);
+        fPlugin.run(inBuffer, outBuffer, frames, realMidiEvents, midiEventCount);
     }
 #else
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
@@ -361,45 +353,40 @@ protected:
 
     void uiIdle() override
     {
-        CARLA_ASSERT(fUiPtr != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fUiPtr != nullptr,);
 
-        if (fUiPtr != nullptr)
-            fUiPtr->carla_idle();
+        fUiPtr->carla_idle();
     }
 
     void uiSetParameterValue(const uint32_t index, const float value) override
     {
-        CARLA_ASSERT(fUiPtr != nullptr);
-        CARLA_ASSERT(index < getParameterCount());
+        CARLA_SAFE_ASSERT_RETURN(fUiPtr != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(),);
 
-        if (fUiPtr != nullptr)
-            fUiPtr->carla_setParameterValue(index, value);
+        fUiPtr->carla_setParameterValue(index, value);
     }
 
 # if DISTRHO_PLUGIN_WANT_PROGRAMS
     void uiSetMidiProgram(const uint8_t, const uint32_t bank, const uint32_t program) override
     {
-        CARLA_ASSERT(fUiPtr != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fUiPtr != nullptr,);
 
         const uint32_t realProgram(bank * 128 + program);
 
-        if (realProgram >= fPlugin.getProgramCount())
-            return;
+        CARLA_SAFE_ASSERT_RETURN(realProgram < getMidiProgramCount(),);
 
-        if (fUiPtr != nullptr)
-            fUiPtr->carla_setMidiProgram(realProgram);
+        fUiPtr->carla_setMidiProgram(realProgram);
     }
 # endif
 
 # if DISTRHO_PLUGIN_WANT_STATE
     void uiSetCustomData(const char* const key, const char* const value) override
     {
-        CARLA_ASSERT(fUiPtr != nullptr);
-        CARLA_ASSERT(key != nullptr);
-        CARLA_ASSERT(value != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fUiPtr != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 
-        if (fUiPtr != nullptr)
-            fUiPtr->carla_setCustomData(key, value);
+        fUiPtr->carla_setCustomData(key, value);
     }
 # endif
 #endif
@@ -420,8 +407,9 @@ protected:
 #if DISTRHO_PLUGIN_HAS_UI
     void uiNameChanged(const char* const uiName) override
     {
-        if (fUiPtr != nullptr)
-            fUiPtr->carla_setUiTitle(uiName);
+        CARLA_SAFE_ASSERT_RETURN(fUiPtr != nullptr,);
+
+        fUiPtr->carla_setUiTitle(uiName);
     }
 #endif
 
@@ -429,10 +417,6 @@ protected:
 
 private:
     PluginExporter fPlugin;
-
-#if DISTRHO_PLUGIN_IS_SYNTH
-    MidiEvent fRealMidiEvents[kMaxMidiEvents];
-#endif
 
 #if DISTRHO_PLUGIN_HAS_UI
     // UI

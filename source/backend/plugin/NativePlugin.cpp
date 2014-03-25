@@ -156,6 +156,7 @@ public:
         fHost.handle      = this;
         fHost.resourceDir = carla_strdup(engine->getOptions().resourceDir);
         fHost.uiName      = nullptr;
+        fHost.uiParentId  = engine->getOptions().frontendWinId;
 
         fHost.get_buffer_size        = carla_host_get_buffer_size;
         fHost.get_sample_rate        = carla_host_get_sample_rate;
@@ -680,10 +681,17 @@ public:
             return;
 
         fDescriptor->ui_show(fHandle, yesNo);
+
+        if (fIsUiVisible == yesNo)
+            return;
+
         fIsUiVisible = yesNo;
 
         if (! yesNo)
             return;
+
+        if ((fDescriptor->hints & ::PLUGIN_USES_PARENT_ID) == 0)
+            pData->tryTransient();
 
         if (fDescriptor->ui_set_custom_data != nullptr)
         {

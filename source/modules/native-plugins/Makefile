@@ -213,19 +213,19 @@ audio-file.cpp.o: audio-file.cpp audio-base.hpp $(CXXDEPS)
 bigmeter.cpp.o: bigmeter.cpp $(CXXDEPS) ../CarlaNativeExtUI.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-distrho-3bandeq.cpp.o: distrho-3bandeq.cpp 3bandeq/*.cpp 3bandeq/*.h 3bandeq/*.hpp $(CXXDEPS)
+distrho-3bandeq.cpp.o: distrho-3bandeq.cpp 3bandeq/*.cpp 3bandeq/*.h 3bandeq/*.hpp ../distrho/* $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -I3bandeq -DDISTRHO_NAMESPACE=DISTRHO_3BandEQ -c -o $@
 
-distrho-3bandsplitter.cpp.o: distrho-3bandsplitter.cpp 3bandsplitter/*.cpp 3bandsplitter/*.h 3bandsplitter/*.hpp $(CXXDEPS)
+distrho-3bandsplitter.cpp.o: distrho-3bandsplitter.cpp 3bandsplitter/*.cpp 3bandsplitter/*.h 3bandsplitter/*.hpp ../distrho/* $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -I3bandsplitter -DDISTRHO_NAMESPACE=DISTRHO_3BandSplitter -c -o $@
 
-distrho-nekobi.cpp.o: distrho-nekobi.cpp nekobi/*.cpp nekobi/*.h nekobi/*.hpp nekobi/nekobee-src/*.c nekobi/nekobee-src/*.h $(CXXDEPS)
+distrho-nekobi.cpp.o: distrho-nekobi.cpp nekobi/*.cpp nekobi/*.h nekobi/*.hpp nekobi/nekobee-src/*.c nekobi/nekobee-src/*.h ../distrho/* $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Inekobi -DDISTRHO_NAMESPACE=DISTRHO_Nekobi -c -o $@
 
-distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/*.cpp pingpongpan/*.h pingpongpan/*.hpp $(CXXDEPS)
+distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/*.cpp pingpongpan/*.h pingpongpan/*.hpp ../distrho/* $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Ipingpongpan -DDISTRHO_NAMESPACE=DISTRHO_PingPongPan -c -o $@
 
-distrho-stereoenhancer.cpp.o: distrho-stereoenhancer.cpp stereoenhancer/*.cpp stereoenhancer/*.h stereoenhancer/*.hpp $(CXXDEPS)
+distrho-stereoenhancer.cpp.o: distrho-stereoenhancer.cpp stereoenhancer/*.cpp stereoenhancer/*.h stereoenhancer/*.hpp ../distrho/* $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Istereoenhancer -DDISTRHO_NAMESPACE=DISTRHO_StereoEnhancer -c -o $@
 
 juce-patchbay.cpp.o: juce-patchbay.cpp

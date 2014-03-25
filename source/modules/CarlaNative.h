@@ -63,7 +63,8 @@ typedef enum {
     PLUGIN_USES_MULTI_PROGS    = 1 <<  7, // has 1 patch per midi channel
     PLUGIN_USES_PANNING        = 1 <<  8, // uses stereo balance if unset (default)
     PLUGIN_USES_STATE          = 1 <<  9,
-    PLUGIN_USES_TIME           = 1 << 10
+    PLUGIN_USES_TIME           = 1 << 10,
+    PLUGIN_USES_PARENT_ID      = 1 << 11  // can set transient hint to parent
 } NativePluginHints;
 
 typedef enum {
@@ -187,6 +188,7 @@ typedef struct {
     NativeHostHandle handle;
     const char* resourceDir;
     const char* uiName;
+    uintptr_t   uiParentId;
 
     uint32_t (*get_buffer_size)(NativeHostHandle handle);
     double   (*get_sample_rate)(NativeHostHandle handle);
