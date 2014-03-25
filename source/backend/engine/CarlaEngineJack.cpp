@@ -45,15 +45,30 @@ class CarlaEngineJackClient;
 static const EngineEvent kFallbackJackEngineEvent = { kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, 0.0f }} };
 
 // -----------------------------------------------------------------------
+// Carla Engine Port removal helper
+
+class CarlaEngineJackAudioPort;
+class CarlaEngineJackCVPort;
+class CarlaEngineJackEventPort;
+
+struct JackPortDeletionCallback {
+    virtual ~JackPortDeletionCallback() {}
+    virtual void jackAudioPortDeleted(CarlaEngineJackAudioPort* const) = 0;
+    virtual void jackCVPortDeleted(CarlaEngineJackCVPort* const) = 0;
+    virtual void jackEventPortDeleted(CarlaEngineJackEventPort* const) = 0;
+};
+
+// -----------------------------------------------------------------------
 // Carla Engine JACK-Audio port
 
 class CarlaEngineJackAudioPort : public CarlaEngineAudioPort
 {
 public:
-    CarlaEngineJackAudioPort(const CarlaEngineClient& client, const bool isInputPort, jack_client_t* const jackClient, jack_port_t* const jackPort) noexcept
+    CarlaEngineJackAudioPort(const CarlaEngineClient& client, const bool isInputPort, jack_client_t* const jackClient, jack_port_t* const jackPort, JackPortDeletionCallback* const delCallback) noexcept
         : CarlaEngineAudioPort(client, isInputPort),
           fJackClient(jackClient),
-          fJackPort(jackPort)
+          fJackPort(jackPort),
+          fDeletionCallback(delCallback)
     {
         carla_debug("CarlaEngineJackAudioPort::CarlaEngineJackAudioPort(%s, %p, %p)", bool2str(isInputPort), jackClient, jackPort);
 
@@ -90,6 +105,9 @@ public:
             fJackClient = nullptr;
             fJackPort   = nullptr;
         }
+
+        if (fDeletionCallback != nullptr)
+            fDeletionCallback->jackAudioPortDeleted(this);
     }
 
     void initBuffer() noexcept override
@@ -121,6 +139,8 @@ private:
     jack_client_t* fJackClient;
     jack_port_t*   fJackPort;
 
+    JackPortDeletionCallback* const fDeletionCallback;
+
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackAudioPort)
 };
 
@@ -130,10 +150,11 @@ private:
 class CarlaEngineJackCVPort : public CarlaEngineCVPort
 {
 public:
-    CarlaEngineJackCVPort(const CarlaEngineClient& client, const bool isInputPort, jack_client_t* const jackClient, jack_port_t* const jackPort) noexcept
+    CarlaEngineJackCVPort(const CarlaEngineClient& client, const bool isInputPort, jack_client_t* const jackClient, jack_port_t* const jackPort, JackPortDeletionCallback* const delCallback) noexcept
         : CarlaEngineCVPort(client, isInputPort),
           fJackClient(jackClient),
-          fJackPort(jackPort)
+          fJackPort(jackPort),
+          fDeletionCallback(delCallback)
     {
         carla_debug("CarlaEngineJackCVPort::CarlaEngineJackCVPort(%s, %p, %p)", bool2str(isInputPort), jackClient, jackPort);
 
@@ -170,6 +191,9 @@ public:
             fJackClient = nullptr;
             fJackPort   = nullptr;
         }
+
+        if (fDeletionCallback != nullptr)
+            fDeletionCallback->jackCVPortDeleted(this);
     }
 
     void initBuffer() noexcept override
@@ -201,6 +225,8 @@ private:
     jack_client_t* fJackClient;
     jack_port_t*   fJackPort;
 
+    JackPortDeletionCallback* const fDeletionCallback;
+
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackCVPort)
 };
 
@@ -210,11 +236,12 @@ private:
 class CarlaEngineJackEventPort : public CarlaEngineEventPort
 {
 public:
-    CarlaEngineJackEventPort(const CarlaEngineClient& client, const bool isInputPort, jack_client_t* const jackClient, jack_port_t* const jackPort) noexcept
+    CarlaEngineJackEventPort(const CarlaEngineClient& client, const bool isInputPort, jack_client_t* const jackClient, jack_port_t* const jackPort, JackPortDeletionCallback* const delCallback) noexcept
         : CarlaEngineEventPort(client, isInputPort),
           fJackClient(jackClient),
           fJackPort(jackPort),
-          fJackBuffer(nullptr)
+          fJackBuffer(nullptr),
+          fDeletionCallback(delCallback)
     {
         carla_debug("CarlaEngineJackEventPort::CarlaEngineJackEventPort(%s, %p, %p)", bool2str(isInputPort), jackClient, jackPort);
 
@@ -243,6 +270,9 @@ public:
             fJackClient = nullptr;
             fJackPort   = nullptr;
         }
+
+        if (fDeletionCallback != nullptr)
+            fDeletionCallback->jackEventPortDeleted(this);
     }
 
     void initBuffer() noexcept override
@@ -385,13 +415,16 @@ private:
 
     mutable EngineEvent fRetEvent;
 
+    JackPortDeletionCallback* const fDeletionCallback;
+
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackEventPort)
 };
 
 // -----------------------------------------------------------------------
 // Jack Engine client
 
-class CarlaEngineJackClient : public CarlaEngineClient
+class CarlaEngineJackClient : public CarlaEngineClient,
+                                     JackPortDeletionCallback
 {
 public:
     CarlaEngineJackClient(const CarlaEngine& engine, jack_client_t* const jackClient)
@@ -510,17 +543,17 @@ public:
         case kEnginePortTypeNull:
             break;
         case kEnginePortTypeAudio: {
-            CarlaEngineJackAudioPort* const enginePort(new CarlaEngineJackAudioPort(fEngine, isInput, fJackClient, jackPort));
+            CarlaEngineJackAudioPort* const enginePort(new CarlaEngineJackAudioPort(*this, isInput, fJackClient, jackPort, this));
             fAudioPorts.append(enginePort);
             return enginePort;
         }
         case kEnginePortTypeCV: {
-            CarlaEngineJackCVPort* const enginePort(new CarlaEngineJackCVPort(fEngine, isInput, fJackClient, jackPort));
+            CarlaEngineJackCVPort* const enginePort(new CarlaEngineJackCVPort(*this, isInput, fJackClient, jackPort, this));
             fCVPorts.append(enginePort);
             return enginePort;
         }
         case kEnginePortTypeEvent: {
-            CarlaEngineJackEventPort* const enginePort(new CarlaEngineJackEventPort(fEngine, isInput, fJackClient, jackPort));
+            CarlaEngineJackEventPort* const enginePort(new CarlaEngineJackEventPort(*this, isInput, fJackClient, jackPort, this));
             fEventPorts.append(enginePort);
             return enginePort;
         }
@@ -562,6 +595,21 @@ public:
         } CARLA_SAFE_EXCEPTION("JACK client get name");
 
         return nullptr;
+    }
+
+    void jackAudioPortDeleted(CarlaEngineJackAudioPort* const port) override
+    {
+        fAudioPorts.removeAll(port);
+    }
+
+    void jackCVPortDeleted(CarlaEngineJackCVPort* const port) override
+    {
+        fCVPorts.removeAll(port);
+    }
+
+    void jackEventPortDeleted(CarlaEngineJackEventPort* const port) override
+    {
+        fEventPorts.removeAll(port);
     }
 
 private:
