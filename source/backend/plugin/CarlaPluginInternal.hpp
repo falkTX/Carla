@@ -107,7 +107,7 @@ struct PluginAudioPort {
     CarlaEngineAudioPort* port;
 
     PluginAudioPort() noexcept;
-    ~PluginAudioPort();
+    ~PluginAudioPort() noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginAudioPort)
 };
@@ -117,10 +117,10 @@ struct PluginAudioData {
     PluginAudioPort* ports;
 
     PluginAudioData() noexcept;
-    ~PluginAudioData();
+    ~PluginAudioData() noexcept;
     void createNew(const uint32_t newCount);
-    void clear();
-    void initBuffers();
+    void clear() noexcept;
+    void initBuffers() noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginAudioData)
 };
@@ -133,7 +133,7 @@ struct PluginCVPort {
     CarlaEngineCVPort* port;
 
     PluginCVPort() noexcept;
-    ~PluginCVPort();
+    ~PluginCVPort() noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginCVPort)
 };
@@ -143,10 +143,10 @@ struct PluginCVData {
     PluginCVPort* ports;
 
     PluginCVData() noexcept;
-    ~PluginCVData();
+    ~PluginCVData() noexcept;
     void createNew(const uint32_t newCount);
-    void clear();
-    void initBuffers();
+    void clear() noexcept;
+    void initBuffers() noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginCVData)
 };
@@ -158,9 +158,9 @@ struct PluginEventData {
     CarlaEngineEventPort* portOut;
 
     PluginEventData() noexcept;
-    ~PluginEventData();
-    void clear();
-    void initBuffers();
+    ~PluginEventData() noexcept;
+    void clear() noexcept;
+    void initBuffers() noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginEventData)
 };
@@ -182,10 +182,10 @@ struct PluginParameterData {
     SpecialParameterType* special;
 
     PluginParameterData() noexcept;
-    ~PluginParameterData();
+    ~PluginParameterData() noexcept;
     void createNew(const uint32_t newCount, const bool withSpecial);
-    void clear();
-    float getFixedValue(const uint32_t parameterId, const float& value) const;
+    void clear() noexcept;
+    float getFixedValue(const uint32_t parameterId, const float& value) const noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginParameterData)
 };
@@ -200,9 +200,9 @@ struct PluginProgramData {
     ProgramName* names;
 
     PluginProgramData() noexcept;
-    ~PluginProgramData();
+    ~PluginProgramData() noexcept;
     void createNew(const uint32_t newCount);
-    void clear();
+    void clear() noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginProgramData)
 };
@@ -215,9 +215,9 @@ struct PluginMidiProgramData {
     MidiProgramData* data;
 
     PluginMidiProgramData() noexcept;
-    ~PluginMidiProgramData();
+    ~PluginMidiProgramData() noexcept;
     void createNew(const uint32_t newCount);
-    void clear();
+    void clear() noexcept;
     const MidiProgramData& getCurrent() const noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginMidiProgramData)

@@ -219,6 +219,17 @@ HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
 HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk_images ntk && echo true)
 
 # --------------------------------------------------------------
+# Don't use X11 on MacOS or Windows
+
+ifeq ($(MACOS),true)
+HAVE_X11 = false
+endif
+
+ifeq ($(WIN32),true)
+HAVE_X11 = false
+endif
+
+# --------------------------------------------------------------
 # Set base stuff
 
 ifeq ($(HAVE_DGL),true)

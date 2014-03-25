@@ -43,7 +43,7 @@ PluginAudioPort::PluginAudioPort() noexcept
     : rindex(0),
       port(nullptr) {}
 
-PluginAudioPort::~PluginAudioPort()
+PluginAudioPort::~PluginAudioPort() noexcept
 {
     CARLA_ASSERT(port == nullptr);
 }
@@ -55,7 +55,7 @@ PluginAudioData::PluginAudioData() noexcept
     : count(0),
       ports(nullptr) {}
 
-PluginAudioData::~PluginAudioData()
+PluginAudioData::~PluginAudioData() noexcept
 {
     CARLA_ASSERT_INT(count == 0, count);
     CARLA_ASSERT(ports == nullptr);
@@ -71,7 +71,7 @@ void PluginAudioData::createNew(const uint32_t newCount)
     count = newCount;
 }
 
-void PluginAudioData::clear()
+void PluginAudioData::clear() noexcept
 {
     if (ports != nullptr)
     {
@@ -91,7 +91,7 @@ void PluginAudioData::clear()
     count = 0;
 }
 
-void PluginAudioData::initBuffers()
+void PluginAudioData::initBuffers() noexcept
 {
     for (uint32_t i=0; i < count; ++i)
     {
@@ -108,7 +108,7 @@ PluginCVPort::PluginCVPort() noexcept
       param(0),
       port(nullptr) {}
 
-PluginCVPort::~PluginCVPort()
+PluginCVPort::~PluginCVPort() noexcept
 {
     CARLA_ASSERT(port == nullptr);
 }
@@ -120,7 +120,7 @@ PluginCVData::PluginCVData() noexcept
     : count(0),
       ports(nullptr) {}
 
-PluginCVData::~PluginCVData()
+PluginCVData::~PluginCVData() noexcept
 {
     CARLA_ASSERT_INT(count == 0, count);
     CARLA_ASSERT(ports == nullptr);
@@ -136,7 +136,7 @@ void PluginCVData::createNew(const uint32_t newCount)
     count = newCount;
 }
 
-void PluginCVData::clear()
+void PluginCVData::clear() noexcept
 {
     if (ports != nullptr)
     {
@@ -156,7 +156,7 @@ void PluginCVData::clear()
     count = 0;
 }
 
-void PluginCVData::initBuffers()
+void PluginCVData::initBuffers() noexcept
 {
     for (uint32_t i=0; i < count; ++i)
     {
@@ -172,13 +172,13 @@ PluginEventData::PluginEventData() noexcept
     : portIn(nullptr),
       portOut(nullptr) {}
 
-PluginEventData::~PluginEventData()
+PluginEventData::~PluginEventData() noexcept
 {
     CARLA_ASSERT(portIn == nullptr);
     CARLA_ASSERT(portOut == nullptr);
 }
 
-void PluginEventData::clear()
+void PluginEventData::clear() noexcept
 {
     if (portIn != nullptr)
     {
@@ -193,7 +193,7 @@ void PluginEventData::clear()
     }
 }
 
-void PluginEventData::initBuffers()
+void PluginEventData::initBuffers() noexcept
 {
     if (portIn != nullptr)
         portIn->initBuffer();
@@ -211,7 +211,7 @@ PluginParameterData::PluginParameterData() noexcept
       ranges(nullptr),
       special(nullptr) {}
 
-PluginParameterData::~PluginParameterData()
+PluginParameterData::~PluginParameterData() noexcept
 {
     CARLA_ASSERT_INT(count == 0, count);
     CARLA_ASSERT(data == nullptr);
@@ -235,7 +235,7 @@ void PluginParameterData::createNew(const uint32_t newCount, const bool withSpec
         special = new SpecialParameterType[newCount];
 }
 
-void PluginParameterData::clear()
+void PluginParameterData::clear() noexcept
 {
     if (data != nullptr)
     {
@@ -258,7 +258,7 @@ void PluginParameterData::clear()
     count = 0;
 }
 
-float PluginParameterData::getFixedValue(const uint32_t parameterId, const float& value) const
+float PluginParameterData::getFixedValue(const uint32_t parameterId, const float& value) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < count, 0.0f);
     return ranges[parameterId].getFixedValue(value);
@@ -272,7 +272,7 @@ PluginProgramData::PluginProgramData() noexcept
       current(-1),
       names(nullptr) {}
 
-PluginProgramData::~PluginProgramData()
+PluginProgramData::~PluginProgramData() noexcept
 {
     CARLA_ASSERT_INT(count == 0, count);
     CARLA_ASSERT_INT(current == -1, current);
@@ -296,7 +296,7 @@ void PluginProgramData::createNew(const uint32_t newCount)
         names[i] = nullptr;
 }
 
-void PluginProgramData::clear()
+void PluginProgramData::clear() noexcept
 {
     if (names != nullptr)
     {
@@ -325,7 +325,7 @@ PluginMidiProgramData::PluginMidiProgramData() noexcept
       current(-1),
       data(nullptr) {}
 
-PluginMidiProgramData::~PluginMidiProgramData()
+PluginMidiProgramData::~PluginMidiProgramData() noexcept
 {
     CARLA_ASSERT_INT(count == 0, count);
     CARLA_ASSERT_INT(current == -1, current);
@@ -353,7 +353,7 @@ void PluginMidiProgramData::createNew(const uint32_t newCount)
     }
 }
 
-void PluginMidiProgramData::clear()
+void PluginMidiProgramData::clear() noexcept
 {
     if (data != nullptr)
     {
