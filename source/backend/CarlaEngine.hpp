@@ -310,7 +310,7 @@ protected:
      * Param \a isInputPort defines wherever this is an input port or not (output otherwise).\n
      * Input/output and process mode are constant for the lifetime of the port.
      */
-    CarlaEnginePort(const CarlaEngine& engine, const bool isInputPort) noexcept;
+    CarlaEnginePort(const CarlaEngineClient& client, const bool isInputPort) noexcept;
 
 public:
     /*!
@@ -336,9 +336,17 @@ public:
         return fIsInput;
     }
 
+    /*!
+     * Get this ports' engine client.
+     */
+    const CarlaEngineClient& getEngineClient() const noexcept
+    {
+        return fClient;
+    }
+
 #ifndef DOXYGEN
 protected:
-    const CarlaEngine& fEngine;
+    const CarlaEngineClient& fClient;
     const bool fIsInput;
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEnginePort)
@@ -355,7 +363,7 @@ public:
      * The constructor.\n
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
-    CarlaEngineAudioPort(const CarlaEngine& engine, const bool isInputPort) noexcept;
+    CarlaEngineAudioPort(const CarlaEngineClient& client, const bool isInputPort) noexcept;
 
     /*!
      * The destructor.
@@ -402,7 +410,7 @@ public:
      * The constructor.\n
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
-    CarlaEngineCVPort(const CarlaEngine& engine, const bool isInputPort) noexcept;
+    CarlaEngineCVPort(const CarlaEngineClient& client, const bool isInputPort) noexcept;
 
     /*!
      * The destructor.
@@ -449,7 +457,7 @@ public:
      * The constructor.\n
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
-    CarlaEngineEventPort(const CarlaEngine& engine, const bool isInputPort) noexcept;
+    CarlaEngineEventPort(const CarlaEngineClient& client, const bool isInputPort) noexcept;
 
     /*!
      * The destructor.
@@ -585,6 +593,14 @@ public:
      * \note This function does nothing in rack processing mode since ports are static there (2 audio + 1 event for both input and output).
      */
     virtual CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput);
+
+    /*!
+     * Get this client's engine.
+     */
+    const CarlaEngine& getEngine() const noexcept
+    {
+        return fEngine;
+    }
 
 #ifndef DOXYGEN
 protected:

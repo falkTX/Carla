@@ -1349,7 +1349,7 @@ public:
 
                     CARLA_ASSERT(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
-                    fMidiEvents[fMidiEventCount].data[0] = (note.velo > 0 ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF) | (note.channel & MIDI_CHANNEL_BIT);
+                    fMidiEvents[fMidiEventCount].data[0] = static_cast<uint8_t>((note.velo > 0 ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF) | (note.channel & MIDI_CHANNEL_BIT));
                     fMidiEvents[fMidiEventCount].data[1] = note.note;
                     fMidiEvents[fMidiEventCount].data[2] = note.velo;
                     fMidiEvents[fMidiEventCount].size    = 3;

@@ -1442,6 +1442,7 @@ typedef struct {
 #ifdef __cplusplus
 /* Forward declarations of commonly used Carla classes */
 class CarlaEngine;
+class CarlaEngineClient;
 class CarlaPlugin;
 /* End namespace */
 CARLA_BACKEND_END_NAMESPACE

@@ -309,8 +309,8 @@ bool EngineTimeInfo::operator!=(const EngineTimeInfo& timeInfo) const noexcept
 // -----------------------------------------------------------------------
 // Carla Engine port (Abstract)
 
-CarlaEnginePort::CarlaEnginePort(const CarlaEngine& engine, const bool isInputPort) noexcept
-    : fEngine(engine),
+CarlaEnginePort::CarlaEnginePort(const CarlaEngineClient& client, const bool isInputPort) noexcept
+    : fClient(client),
       fIsInput(isInputPort)
 {
     carla_debug("CarlaEnginePort::CarlaEnginePort(%s)", bool2str(isInputPort));
@@ -324,8 +324,8 @@ CarlaEnginePort::~CarlaEnginePort() noexcept
 // -----------------------------------------------------------------------
 // Carla Engine Audio port
 
-CarlaEngineAudioPort::CarlaEngineAudioPort(const CarlaEngine& engine, const bool isInputPort) noexcept
-    : CarlaEnginePort(engine, isInputPort),
+CarlaEngineAudioPort::CarlaEngineAudioPort(const CarlaEngineClient& client, const bool isInputPort) noexcept
+    : CarlaEnginePort(client, isInputPort),
       fBuffer(nullptr)
 {
     carla_debug("CarlaEngineAudioPort::CarlaEngineAudioPort(%s)", bool2str(isInputPort));
@@ -343,8 +343,8 @@ void CarlaEngineAudioPort::initBuffer() noexcept
 // -----------------------------------------------------------------------
 // Carla Engine CV port
 
-CarlaEngineCVPort::CarlaEngineCVPort(const CarlaEngine& engine, const bool isInputPort) noexcept
-    : CarlaEnginePort(engine, isInputPort),
+CarlaEngineCVPort::CarlaEngineCVPort(const CarlaEngineClient& client, const bool isInputPort) noexcept
+    : CarlaEnginePort(client, isInputPort),
       fBuffer(nullptr)
 {
     carla_debug("CarlaEngineCVPort::CarlaEngineCVPort(%s)", bool2str(isInputPort));
@@ -362,10 +362,10 @@ void CarlaEngineCVPort::initBuffer() noexcept
 // -----------------------------------------------------------------------
 // Carla Engine Event port
 
-CarlaEngineEventPort::CarlaEngineEventPort(const CarlaEngine& engine, const bool isInputPort) noexcept
-    : CarlaEnginePort(engine, isInputPort),
+CarlaEngineEventPort::CarlaEngineEventPort(const CarlaEngineClient& client, const bool isInputPort) noexcept
+    : CarlaEnginePort(client, isInputPort),
       fBuffer(nullptr),
-      fProcessMode(engine.getProccessMode())
+      fProcessMode(client.getEngine().getProccessMode())
 {
     carla_debug("CarlaEngineEventPort::CarlaEngineEventPort(%s)", bool2str(isInputPort));
 
@@ -389,7 +389,7 @@ CarlaEngineEventPort::~CarlaEngineEventPort() noexcept
 void CarlaEngineEventPort::initBuffer() noexcept
 {
     if (fProcessMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || fProcessMode == ENGINE_PROCESS_MODE_BRIDGE)
-        fBuffer = fEngine.getInternalEventBuffer(fIsInput);
+        fBuffer = fClient.getEngine().getInternalEventBuffer(fIsInput);
     else if (fProcessMode == ENGINE_PROCESS_MODE_PATCHBAY && ! fIsInput)
         carla_zeroStruct<EngineEvent>(fBuffer, kMaxEngineEventInternalCount);
 }
@@ -577,11 +577,11 @@ CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const
     case kEnginePortTypeNull:
         break;
     case kEnginePortTypeAudio:
-        return new CarlaEngineAudioPort(fEngine, isInput);
+        return new CarlaEngineAudioPort(*this, isInput);
     case kEnginePortTypeCV:
-        return new CarlaEngineCVPort(fEngine, isInput);
+        return new CarlaEngineCVPort(*this, isInput);
     case kEnginePortTypeEvent:
-        return new CarlaEngineEventPort(fEngine, isInput);
+        return new CarlaEngineEventPort(*this, isInput);
     }
 
     carla_stderr("CarlaEngineClient::addPort(%i, \"%s\", %s) - invalid type", portType, name, bool2str(isInput));

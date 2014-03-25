@@ -196,7 +196,7 @@ void carla_sleep(const uint secs) noexcept
 #else
         ::sleep(secs);
 #endif
-    } catch(...) {}
+    } CARLA_SAFE_EXCEPTION("carla_sleep");
 }
 
 /*
@@ -213,7 +213,7 @@ void carla_msleep(const uint msecs) noexcept
 #else
         ::usleep(msecs * 1000);
 #endif
-    } catch(...) {}
+    } CARLA_SAFE_EXCEPTION("carla_msleep");
 }
 
 // -----------------------------------------------------------------------
@@ -231,7 +231,7 @@ void carla_setenv(const char* const key, const char* const value) noexcept
 #ifdef CARLA_OS_WIN
     try {
         ::SetEnvironmentVariableA(key, value);
-    } catch(...) {}
+    } CARLA_SAFE_EXCEPTION("carla_setenv",);
 #else
     ::setenv(key, value, 1);
 #endif

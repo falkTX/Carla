@@ -44,7 +44,6 @@ CARLA_BACKEND_START_NAMESPACE
  * @{
  */
 
-class CarlaEngineClient;
 class CarlaEngineAudioPort;
 
 /*!
