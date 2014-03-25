@@ -914,7 +914,7 @@ public:
         // Set audio out buffers
 
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
-            FloatVectorOperations::copy(outBuffer[i], fAudioBuffer.getSampleData(static_cast<int>(i)), static_cast<int>(frames));
+            FloatVectorOperations::copy(outBuffer[i], fAudioBuffer.getReadPointer(static_cast<int>(i)), static_cast<int>(frames));
 
         // --------------------------------------------------------------------------------------------------------
         // Midi out

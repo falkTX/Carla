@@ -558,15 +558,15 @@ void CarlaEngineProtectedData::processRack(const float* inBufReal[2], float* out
             EnginePluginData& pluginData(plugins[i]);
 
 #ifdef HAVE_JUCE
-            float tmpMin, tmpMax;
+            juce::Range<float> range;
 
             if (oldAudioInCount > 0)
             {
-                FloatVectorOperations::findMinAndMax(inBuf0, static_cast<int>(frames), tmpMin, tmpMax);
-                pluginData.insPeak[0] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
+                range = FloatVectorOperations::findMinAndMax(inBuf0, static_cast<int>(frames));
+                pluginData.insPeak[0] = carla_max<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
 
-                FloatVectorOperations::findMinAndMax(inBuf1, static_cast<int>(frames), tmpMin, tmpMax);
-                pluginData.insPeak[1] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
+                range = FloatVectorOperations::findMinAndMax(inBuf1, static_cast<int>(frames));
+                pluginData.insPeak[1] = carla_max<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
             }
             else
             {
@@ -576,11 +576,11 @@ void CarlaEngineProtectedData::processRack(const float* inBufReal[2], float* out
 
             if (plugin->getAudioOutCount() > 0)
             {
-                FloatVectorOperations::findMinAndMax(outBuf[0], static_cast<int>(frames), tmpMin, tmpMax);
-                pluginData.outsPeak[0] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
+                range = FloatVectorOperations::findMinAndMax(outBuf[0], static_cast<int>(frames));
+                pluginData.outsPeak[0] = carla_max<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
 
-                FloatVectorOperations::findMinAndMax(outBuf[1], static_cast<int>(frames), tmpMin, tmpMax);
-                pluginData.outsPeak[1] = carla_max<float>(std::abs(tmpMin), std::abs(tmpMax), 1.0f);
+                range = FloatVectorOperations::findMinAndMax(outBuf[1], static_cast<int>(frames));
+                pluginData.outsPeak[1] = carla_max<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
             }
             else
             {
