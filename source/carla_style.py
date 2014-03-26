@@ -74,7 +74,14 @@ class CarlaApplication(object):
             return
 
         # set initial Qt stuff
-        customFont = QFont("DejaVu Sans [Book]", 12 if MACOS else 8, QFont.Normal)
+        #customFont = QFont("DejaVu Sans [Book]")
+        #customFont.setBold(False)
+        #customFont.setItalic(False)
+        #customFont.setOverline(False)
+        #customFont.setKerning(True)
+        #customFont.setHintingPreference(QFont.PreferFullHinting) # TODO - 4.8 only
+        #customFont.setPixelSize(14)
+        #customFont.setWeight(QFont.Normal)
 
         #QApplication.setDesktopSettingsAware(False)
         #QApplication.setFont(customFont)
