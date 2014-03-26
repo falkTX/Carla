@@ -531,6 +531,13 @@ class CarlaMiniW(HostWindow, ExternalUI):
     # -------------------------------------------------------------------
     # Qt events
 
+    def showEvent(self, event):
+        HostWindow.showEvent(self, event)
+
+        # set our gui as parent for all plugins UIs
+        if gCarla.host is not None:
+            gCarla.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, str(self.winId()))
+
     def closeEvent(self, event):
         self.closeExternalUI()
         HostWindow.closeEvent(self, event)
@@ -728,9 +735,10 @@ if __name__ == '__main__':
     # -------------------------------------------------------------
     # Init plugin host data
 
-    gCarla.isControl = False
-    gCarla.isLocal   = True
-    gCarla.isPlugin  = True
+    gCarla.isControl   = False
+    gCarla.isLocal     = True
+    gCarla.isPlugin    = True
+    gCarla.processMode = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
 
     # -------------------------------------------------------------
     # Create GUI first
@@ -743,9 +751,6 @@ if __name__ == '__main__':
     gCarla.host = PluginHost(gCarla.gui.d_getSampleRate())
 
     initHost("Carla-Plugin")
-
-    # set our gui as parent for all plugins UIs
-    gCarla.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, str(gCarla.gui.winId()))
 
     # simulate an engire started callback
     engineCallback(None, ENGINE_CALLBACK_ENGINE_STARTED, 0, ENGINE_PROCESS_MODE_CONTINUOUS_RACK, ENGINE_TRANSPORT_MODE_PLUGIN, 0.0, "Plugin")

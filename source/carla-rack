@@ -32,45 +32,41 @@ class CarlaHostW(HostWindow):
         self.fContainer = CarlaRackW(self)
         self.setupContainer(False)
 
+    # -----------------------------------------------------------------
+
+    def showEvent(self, event):
+        HostWindow.showEvent(self, event)
+
+        # set our gui as parent for all plugins UIs
+        if gCarla.host is not None:
+            gCarla.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, str(self.winId()))
+
 # ------------------------------------------------------------------------------------------------------------
 # Main
 
 if __name__ == '__main__':
     # -------------------------------------------------------------
+    # Read CLI args
+
+    initName = os.path.basename(__file__) if ("__file__" in dir() and os.path.dirname(__file__) in PATH) else sys.argv[0]
+    libPrefix = None
+
+    for arg in sys.argv:
+        if arg.startswith("--with-appname="):
+            initName = os.path.basename(arg.replace("--with-initname=", ""))
+
+        elif arg.startswith("--with-libprefix="):
+            libPrefix = arg.replace("--with-libprefix=", "")
+
+    # -------------------------------------------------------------
     # App initialization
 
-    app = CarlaApplication("Carla2-Rack")
+    app = CarlaApplication("Carla2-Rack", libPrefix)
 
     # -------------------------------------------------------------
     # Set-up custom signal handling
 
     setUpSignals()
-
-    # -------------------------------------------------------------
-    # Read CLI args
-
-    appName = os.path.basename(__file__) if ("__file__" in dir() and os.path.dirname(__file__) in PATH) else sys.argv[0]
-    libPrefix = None
-    projectFilename = None
-
-    argv = app.arguments()
-    argc = len(argv)
-
-    for i in range(argc):
-        if i == 0: continue
-        argument = argv[i]
-
-        if argument.startswith("--with-appname="):
-            appName = os.path.basename(argument.replace("--with-appname=", ""))
-
-        elif argument.startswith("--with-libprefix="):
-            libPrefix = argument.replace("--with-libprefix=", "")
-
-        elif os.path.exists(argument):
-            projectFilename = argument
-
-    if libPrefix is not None:
-        app.addLibraryPath(os.path.join(libPrefix, "lib", "carla"))
 
     # -------------------------------------------------------------
     # Init host backend
@@ -80,21 +76,25 @@ if __name__ == '__main__':
     gCarla.isPlugin    = False
     gCarla.processMode = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
 
-    initHost(appName, libPrefix)
+    initHost(initName, libPrefix)
 
     # -------------------------------------------------------------
     # Create GUI
 
     gCarla.gui = CarlaHostW()
 
-    # set our gui as parent for all plugins UIs
-    gCarla.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, str(gCarla.gui.winId()))
-
     # -------------------------------------------------------------
     # Load project file if set
 
-    if projectFilename is not None:
-        gCarla.gui.loadProjectLater(projectFilename)
+    args = app.arguments()
+
+    if len(args) > 1:
+        arg = args[-1]
+
+        if arg.startswith("--with-appname=") or arg.startswith("--with-libprefix="):
+            pass
+        elif os.path.exists(arg):
+            gCarla.gui.loadProjectLater(arg)
 
     # -------------------------------------------------------------
     # Show GUI
@@ -104,4 +104,4 @@ if __name__ == '__main__':
     # -------------------------------------------------------------
     # App-Loop
 
-    sys.exit(app.exec_())
+    app.exit_exec()

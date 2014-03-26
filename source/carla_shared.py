@@ -485,7 +485,7 @@ def findTool(toolDir, toolName):
 # ------------------------------------------------------------------------------------------------------------
 # Init host
 
-def initHost(appName, libPrefix = None, failError = True):
+def initHost(initName, libPrefix = None, failError = True):
     # -------------------------------------------------------------
     # Set Carla library name
 

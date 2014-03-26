@@ -43,25 +43,23 @@ from carla_shared import *
 # ------------------------------------------------------------------------------------------------------------
 
 class CarlaApplication(object):
-    def __init__(self, appName = "Carla2"):
+    def __init__(self, appName = "Carla2", libPrefix = None):
         object.__init__(self)
 
         # try to find style dir
-        foundDir = False
+        if libPrefix is not None:
+            QApplication.addLibraryPath(os.path.join(libPrefix, "lib", "carla"))
 
-        if os.path.exists(os.path.join(CWD, "modules", "theme", "styles")):
+        elif os.path.exists(os.path.join(CWD, "modules", "theme", "styles")):
             QApplication.addLibraryPath(os.path.join(CWD, "modules", "theme"))
-            foundDir = True
 
         elif os.path.exists(os.path.join(CWD, "styles")):
             QApplication.addLibraryPath(CWD)
-            foundDir = True
 
         elif os.path.exists(os.path.join(CWD, "..", "styles")):
             QApplication.addLibraryPath(os.path.join(CWD, ".."))
-            foundDir = True
 
-        if not foundDir:
+        else:
             self._createApp(appName)
             return
 
@@ -234,13 +232,6 @@ class CarlaApplication(object):
             self.fApp.setWindowIcon(QIcon(":/scalable/carla-control.svg"))
         else:
             self.fApp.setWindowIcon(QIcon(":/scalable/carla.svg"))
-
-    def addLibraryPath(self, libdir):
-        if not os.path.exists(libdir):
-            return
-
-        #QApplication.addLibraryPath(libdir)
-        #self.loadSettings()
 
     def arguments(self):
         return self.fApp.arguments()
