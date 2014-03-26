@@ -24,12 +24,6 @@
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
       <widget class="QTableWidget" name="lw_page">
-       <property name="maximumSize">
-        <size>
-         <width>125</width>
-         <height>16777215</height>
-        </size>
-       </property>
        <property name="editTriggers">
         <set>QAbstractItemView::NoEditTriggers</set>
        </property>
@@ -1156,7 +1150,7 @@ This mode is not available for VST plugins.</string>
              <property name="currentIndex">
               <number>0</number>
              </property>
-             <widget class="QWidget" name="tw_paths_ladspa" native="true">
+             <widget class="QWidget" name="tw_paths_ladspa">
               <layout class="QVBoxLayout" name="verticalLayout_11">
                <property name="spacing">
                 <number>0</number>
@@ -1169,7 +1163,7 @@ This mode is not available for VST plugins.</string>
                </item>
               </layout>
              </widget>
-             <widget class="QWidget" name="tw_paths_dssi" native="true">
+             <widget class="QWidget" name="tw_paths_dssi">
               <layout class="QVBoxLayout" name="verticalLayout_12">
                <property name="spacing">
                 <number>0</number>
@@ -1182,7 +1176,7 @@ This mode is not available for VST plugins.</string>
                </item>
               </layout>
              </widget>
-             <widget class="QWidget" name="tw_paths_lv2" native="true">
+             <widget class="QWidget" name="tw_paths_lv2">
               <layout class="QVBoxLayout" name="verticalLayout_6">
                <property name="spacing">
                 <number>0</number>
@@ -1195,7 +1189,7 @@ This mode is not available for VST plugins.</string>
                </item>
               </layout>
              </widget>
-             <widget class="QWidget" name="tw_paths_vst" native="true">
+             <widget class="QWidget" name="tw_paths_vst">
               <layout class="QVBoxLayout" name="verticalLayout_13">
                <property name="spacing">
                 <number>0</number>
@@ -1234,7 +1228,7 @@ This mode is not available for VST plugins.</string>
                </item>
               </layout>
              </widget>
-             <widget class="QWidget" name="tw_paths_gig" native="true">
+             <widget class="QWidget" name="tw_paths_gig">
               <layout class="QVBoxLayout" name="verticalLayout_15">
                <property name="spacing">
                 <number>0</number>
@@ -1247,7 +1241,7 @@ This mode is not available for VST plugins.</string>
                </item>
               </layout>
              </widget>
-             <widget class="QWidget" name="tw_paths_sf2" native="true">
+             <widget class="QWidget" name="tw_paths_sf2">
               <layout class="QVBoxLayout" name="verticalLayout_4">
                <property name="spacing">
                 <number>0</number>
@@ -1260,7 +1254,7 @@ This mode is not available for VST plugins.</string>
                </item>
               </layout>
              </widget>
-             <widget class="QWidget" name="tw_paths_sfz" native="true">
+             <widget class="QWidget" name="tw_paths_sfz">
               <layout class="QVBoxLayout" name="verticalLayout_14">
                <property name="spacing">
                 <number>0</number>

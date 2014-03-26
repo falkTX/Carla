@@ -251,6 +251,8 @@ class CarlaSettingsW(QDialog):
         self.ui = ui_carla_settings.Ui_CarlaSettingsW()
         self.ui.setupUi(self)
 
+        self.ui.lw_page.setFixedWidth(48 + 6 + 6 + QFontMetrics(self.ui.lw_page.font()).width("88888888"))
+
         # -------------------------------------------------------------
         # Set-up GUI
 
