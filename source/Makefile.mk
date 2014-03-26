@@ -39,17 +39,6 @@ endif
 endif
 
 # --------------------------------------------------------------
-# Use the real VSTSDK in MacOS and Windows
-
-ifeq ($(MACOS),true)
-CARLA_VESTIGE_HEADER = false
-endif
-
-ifeq ($(WIN32),true)
-CARLA_VESTIGE_HEADER = false
-endif
-
-# --------------------------------------------------------------
 # Common build and link flags
 
 BASE_FLAGS = -Wall -Wextra -pipe -DREAL_BUILD
@@ -219,14 +208,19 @@ HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
 HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk_images ntk && echo true)
 
 # --------------------------------------------------------------
-# Don't use X11 on MacOS or Windows
+# Force some things on MacOS and Windows
 
 ifeq ($(MACOS),true)
-HAVE_X11 = false
+FORCE_FEATURES = true
+endif
+ifeq ($(WIN32),true)
+FORCE_FEATURES = true
 endif
 
-ifeq ($(WIN32),true)
-HAVE_X11 = false
+ifeq ($(FORCE_FEATURES),true)
+CARLA_VESTIGE_HEADER = false
+HAVE_WAYLAND = false
+HAVE_X11     = false
 endif
 
 # --------------------------------------------------------------
@@ -267,7 +261,7 @@ QTXML_LIBS   = $(shell pkg-config --libs QtXml)
 endif
 
 ifeq ($(HAVE_CSOUND),true)
-CSOUND_FLAGS = $(shell pkg-config --cflags sndfile) -DUSE_DOUBLE=1
+CSOUND_FLAGS = -DUSE_DOUBLE=1
 CSOUND_LIBS  = $(shell pkg-config --libs sndfile) -lcsound64
 endif
 
@@ -279,6 +273,11 @@ endif
 ifeq ($(HAVE_LINUXSAMPLER),true)
 LINUXSAMPLER_FLAGS = $(shell pkg-config --cflags linuxsampler) -Wno-unused-parameter
 LINUXSAMPLER_LIBS  = $(shell pkg-config --libs linuxsampler)
+endif
+
+ifeq ($(HAVE_WAYLAND),true)
+WAYLAND_FLAGS = $(shell pkg-config --cflags x11)
+WAYLAND_LIBS  = $(shell pkg-config --libs x11)
 endif
 
 ifeq ($(HAVE_X11),true)
