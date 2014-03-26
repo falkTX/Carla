@@ -46,6 +46,7 @@ class CarlaApplication(object):
     def __init__(self, appName = "Carla2"):
         object.__init__(self)
 
+        # try to find style dir
         foundDir = False
 
         if os.path.exists(os.path.join(CWD, "modules", "theme", "styles")):
@@ -60,16 +61,32 @@ class CarlaApplication(object):
             QApplication.addLibraryPath(os.path.join(CWD, ".."))
             foundDir = True
 
-        self.fApp = QApplication(sys.argv)
-        self.fApp.setApplicationName(appName)
-        self.fApp.setApplicationVersion(VERSION)
-        self.fApp.setOrganizationName("falkTX")
+        if not foundDir:
+            self._createApp(appName)
+            return
 
-        if appName.lower() == "carla-control":
-            self.fApp.setWindowIcon(QIcon(":/scalable/carla-control.svg"))
-        else:
-            self.fApp.setWindowIcon(QIcon(":/scalable/carla.svg"))
+        # base settings
+        settings    = QSettings("falkTX", appName)
+        useProTheme = settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool)
 
+        if not useProTheme:
+            self._createApp(appName)
+            return
+
+        # set initial Qt stuff
+        customFont = QFont("DejaVu Sans [Book]", 12 if MACOS else 8, QFont.Normal)
+
+        #QApplication.setDesktopSettingsAware(False)
+        #QApplication.setFont(customFont)
+        QApplication.setStyle("carla")
+
+        # create app
+        self._createApp(appName)
+
+        #self.fApp.setFont(customFont)
+        self.fApp.setStyle("carla")
+
+        # create palettes
         self.fPalSystem = self.fApp.palette()
 
         self.fPalBlack = QPalette()
@@ -190,41 +207,33 @@ class CarlaApplication(object):
         self.fPalBlue.setColor(QPalette.Active,   QPalette.LinkVisited, QColor(64, 128, 255))
         self.fPalBlue.setColor(QPalette.Inactive, QPalette.LinkVisited, QColor(64, 128, 255))
 
-        if foundDir:
-            self.loadSettings()
+        proThemeColor = settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower()
 
-    def loadSettings(self):
-        settings = QSettings()
+        if proThemeColor == "black":
+            self.fApp.setPalette(self.fPalBlack)
 
-        useProTheme = settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool)
-
-        if useProTheme:
-            #font = QFont("DejaVu Sans [Book]", 12 if MACOS else 8, QFont.Normal)
-            #self.fApp.setFont(font)
-            #QApplication.setFont(font)
-
-            # TODO
-            if WINDOWS: return
-
-            self.fApp.setStyle("carla")
-            QApplication.setStyle("carla")
-
-            proThemeColor = settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower()
-
-            if proThemeColor == "black":
-                self.fApp.setPalette(self.fPalBlack)
-
-            elif proThemeColor == "blue":
-                self.fApp.setPalette(self.fPalBlue)
+        elif proThemeColor == "blue":
+            self.fApp.setPalette(self.fPalBlue)
 
         print("Using \"%s\" theme" % self.fApp.style().objectName())
+
+    def _createApp(self, appName):
+        self.fApp = QApplication(sys.argv)
+        self.fApp.setApplicationName(appName)
+        self.fApp.setApplicationVersion(VERSION)
+        self.fApp.setOrganizationName("falkTX")
+
+        if appName.lower() == "carla-control":
+            self.fApp.setWindowIcon(QIcon(":/scalable/carla-control.svg"))
+        else:
+            self.fApp.setWindowIcon(QIcon(":/scalable/carla.svg"))
 
     def addLibraryPath(self, libdir):
         if not os.path.exists(libdir):
             return
 
-        QApplication.addLibraryPath(libdir)
-        self.loadSettings()
+        #QApplication.addLibraryPath(libdir)
+        #self.loadSettings()
 
     def arguments(self):
         return self.fApp.arguments()

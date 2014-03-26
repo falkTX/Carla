@@ -187,15 +187,15 @@ CARLA_KEY_MAIN_USE_PRO_THEME    = "Main/UseProTheme"     # bool
 CARLA_KEY_MAIN_PRO_THEME_COLOR  = "Main/ProThemeColor"   # str
 CARLA_KEY_MAIN_REFRESH_INTERVAL = "Main/RefreshInterval" # int
 
-CARLA_KEY_CANVAS_THEME            = "Canvas/Theme"           # str
-CARLA_KEY_CANVAS_SIZE             = "Canvas/Size"            # str "NxN"
-CARLA_KEY_CANVAS_USE_BEZIER_LINES = "Canvas/UseBezierLines"  # bool
-CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS = "Canvas/AutoHideGroups"  # bool
-CARLA_KEY_CANVAS_EYE_CANDY        = "Canvas/EyeCandy"        # enum
-CARLA_KEY_CANVAS_USE_OPENGL       = "Canvas/UseOpenGL"       # bool
-CARLA_KEY_CANVAS_ANTIALIASING     = "Canvas/Antialiasing"    # enum
-CARLA_KEY_CANVAS_HQ_ANTIALIASING  = "Canvas/HQAntialiasing"  # bool
-CARLA_KEY_CUSTOM_PAINTING         = "UseCustomPainting"      # bool
+CARLA_KEY_CANVAS_THEME            = "Canvas/Theme"          # str
+CARLA_KEY_CANVAS_SIZE             = "Canvas/Size"           # str "NxN"
+CARLA_KEY_CANVAS_USE_BEZIER_LINES = "Canvas/UseBezierLines" # bool
+CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS = "Canvas/AutoHideGroups" # bool
+CARLA_KEY_CANVAS_EYE_CANDY        = "Canvas/EyeCandy"       # enum
+CARLA_KEY_CANVAS_USE_OPENGL       = "Canvas/UseOpenGL"      # bool
+CARLA_KEY_CANVAS_ANTIALIASING     = "Canvas/Antialiasing"   # enum
+CARLA_KEY_CANVAS_HQ_ANTIALIASING  = "Canvas/HQAntialiasing" # bool
+CARLA_KEY_CUSTOM_PAINTING         = "UseCustomPainting"     # bool
 
 CARLA_KEY_ENGINE_DRIVER_PREFIX         = "Engine/Driver-"
 CARLA_KEY_ENGINE_AUDIO_DRIVER          = "Engine/AudioDriver"         # str
@@ -441,6 +441,7 @@ if readEnvVars:
     gCarla.DEFAULT_GIG_PATH    = os.getenv("GIG_PATH",    DEFAULT_GIG_PATH).split(splitter)
     gCarla.DEFAULT_SF2_PATH    = os.getenv("SF2_PATH",    DEFAULT_SF2_PATH).split(splitter)
     gCarla.DEFAULT_SFZ_PATH    = os.getenv("SFZ_PATH",    DEFAULT_SFZ_PATH).split(splitter)
+
 else:
     gCarla.DEFAULT_LADSPA_PATH = DEFAULT_LADSPA_PATH.split(splitter)
     gCarla.DEFAULT_DSSI_PATH   = DEFAULT_DSSI_PATH.split(splitter)
@@ -461,7 +462,7 @@ CWD = sys.path[0]
 # make it work with cxfreeze
 if WINDOWS and CWD.endswith(".exe"):
     CWD = CWD.rsplit("\\", 1)[0]
-elif CWD.endswith("/carla") or CWD.endswith("/carla-plugin") or CWD.endswith("/carla-patchbay") or CWD.endswith("/carla-rack"):
+elif CWD.endswith(("/carla", "/carla-plugin", "/carla-patchbay", "/carla-rack")):
     CWD = CWD.rsplit("/", 1)[0]
 
 # find tool

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla Backend code
-# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -120,28 +120,15 @@ c_intp_types   = tuple(POINTER(i) for i in c_int_types)
 c_floatp_types = tuple(POINTER(i) for i in c_float_types)
 
 def toPythonType(value, attr):
-    #if value is None:
-        #return None
     if isinstance(value, (bool, int, float)):
         return value
     if isinstance(value, bytes):
         return charPtrToString(value)
-    #if isinstance(value, c_bool):
-        #return bool(value)
-    #if isinstance(value, c_char_p):
-        #return charPtrToString(value)
-    #if isinstance(value, c_int_types):
-        #return int(value)
-    #if isinstance(value, c_float_types):
-        #return float(value)
     if isinstance(value, c_intp_types) or isinstance(value, c_floatp_types):
         return numPtrToList(value)
     if isinstance(value, POINTER(c_char_p)):
         return charPtrPtrToStringList(value)
     print("..............", attr, ".....................", value, ":", type(value))
-    #raise Exception("error here!!!")
-    #from sys import exit
-    #exit(1)
     return value
 
 # ------------------------------------------------------------------------------------------------------------
