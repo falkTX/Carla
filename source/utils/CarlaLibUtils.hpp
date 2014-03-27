@@ -82,7 +82,7 @@ void* lib_symbol(void* const lib, const char* const symbol) noexcept
     CARLA_SAFE_ASSERT_RETURN(symbol != nullptr && symbol[0] != '\0', nullptr);
 
 #ifdef CARLA_OS_WIN
-    return (void*)GetProcAddressA((HMODULE)lib, symbol);
+    return (void*)GetProcAddress((HMODULE)lib, symbol);
 #else
     return dlsym(lib, symbol);
 #endif

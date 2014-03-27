@@ -658,7 +658,7 @@ public:
         carla_zeroStruct<jack_position_t>(fTransportPos);
     }
 
-    ~CarlaEngineJack() override
+    ~CarlaEngineJack() noexcept override
     {
         carla_debug("CarlaEngineJack::~CarlaEngineJack()");
         CARLA_SAFE_ASSERT(fClient == nullptr);

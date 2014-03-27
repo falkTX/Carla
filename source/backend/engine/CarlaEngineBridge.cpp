@@ -31,6 +31,17 @@
 #include <cerrno>
 #include <ctime>
 
+#ifdef JACKBRIDGE_EXPORT
+// -------------------------------------------------------------------
+
+bool jackbridge_is_ok() noexcept
+{
+    return true;
+}
+#endif
+
+// -------------------------------------------------------------------
+
 CARLA_BACKEND_START_NAMESPACE
 
 #if 0
@@ -215,7 +226,7 @@ public:
         fShmTime.filename += timeBaseName;
     }
 
-    ~CarlaEngineBridge() override
+    ~CarlaEngineBridge() noexcept override
     {
         carla_debug("CarlaEngineBridge::~CarlaEngineBridge()");
     }

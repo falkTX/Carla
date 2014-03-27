@@ -580,8 +580,8 @@ int main(int argc, char* argv[])
     if (std::strcmp(name, "(none)") == 0)
         name = nullptr;
 
-    if (std::strlen(label) == 0)
-        label = nullptr;
+    //if (std::strlen(label) == 0)
+    //    label = nullptr;
 
     char bridgeBaseAudioName[6+1];
     char bridgeBaseControlName[6+1];

@@ -1032,7 +1032,7 @@ const CarlaTransportInfo* carla_get_transport_info()
 
 bool carla_add_plugin(BinaryType btype, PluginType ptype, const char* filename, const char* name, const char* label, int64_t uniqueId, const void* extraPtr)
 {
-    CARLA_SAFE_ASSERT_RETURN(label != nullptr && label[0] != '\0', false);
+    CARLA_SAFE_ASSERT_RETURN(label != nullptr /*&& label[0] != '\0'*/, false);
     carla_debug("carla_add_plugin(%i:%s, %i:%s, \"%s\", \"%s\", \"%s\", " P_INT64 ", %p)", btype, CB::BinaryType2Str(btype), ptype, CB::PluginType2Str(ptype), filename, name, label, uniqueId, extraPtr);
 
     if (gStandalone.engine != nullptr)

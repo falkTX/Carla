@@ -231,7 +231,7 @@ void carla_setenv(const char* const key, const char* const value) noexcept
 #ifdef CARLA_OS_WIN
     try {
         ::SetEnvironmentVariableA(key, value);
-    } CARLA_SAFE_EXCEPTION("carla_setenv",);
+    } CARLA_SAFE_EXCEPTION("carla_setenv");
 #else
     ::setenv(key, value, 1);
 #endif
