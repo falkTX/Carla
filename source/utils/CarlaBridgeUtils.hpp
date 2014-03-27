@@ -75,7 +75,6 @@ const char* const CARLA_BRIDGE_MSG_SET_CUSTOM = "CarlaBridgeSetCustom"; //!< Hos
 
 // -----------------------------------------------------------------------
 
-PRE_PACKED_STRUCTURE
 struct BridgeTimeInfo {
     bool playing;
     uint64_t frame;
@@ -85,11 +84,10 @@ struct BridgeTimeInfo {
     int32_t bar, beat, tick;
     float beatsPerBar, beatType;
     double barStartTick, ticksPerBeat, beatsPerMinute;
-} POST_PACKED_STRUCTURE;
+};
 
 // -----------------------------------------------------------------------
 
-PRE_PACKED_STRUCTURE
 struct BridgeShmControl {
     union {
         void* runServer;
@@ -100,7 +98,7 @@ struct BridgeShmControl {
         char _padClient[32];
     };
     StackRingBuffer ringBuffer;
-} POST_PACKED_STRUCTURE;
+};
 
 // -----------------------------------------------------------------------
 

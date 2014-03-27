@@ -1892,9 +1892,14 @@ public:
             }
         }
 
+        carla_stdout("Carla Server Info:");
+        carla_stdout("  sizeof(BridgeShmControl): " P_SIZE, sizeof(BridgeShmControl));
+        carla_stdout("  sizeof(BridgeTimeInfo):   " P_SIZE, sizeof(BridgeTimeInfo));
+
         // initial values
         fShmControl.writeOpcode(kPluginBridgeOpcodeNull);
         fShmControl.writeInt(static_cast<int32_t>(sizeof(BridgeShmControl)));
+        fShmControl.writeInt(static_cast<int32_t>(sizeof(BridgeTimeInfo)));
 
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetBufferSize);
         fShmControl.writeInt(static_cast<int32_t>(pData->engine->getBufferSize()));

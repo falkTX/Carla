@@ -217,6 +217,7 @@ private:                               \
 # endif
 #endif
 
+#if 0
 /* Define PRE/POST_PACKED_STRUCTURE */
 #if defined(__GNUC__) || defined(__clang__)
 # define PRE_PACKED_STRUCTURE
@@ -228,6 +229,7 @@ private:                               \
 #else
 # define PRE_PACKED_STRUCTURE
 # define POST_PACKED_STRUCTURE
+#endif
 #endif
 
 /* Define OS_SEP */

@@ -294,19 +294,26 @@ public:
 
         opcode = fShmControl.readOpcode();
         CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeOpcodeNull, opcode);
-        const uint32_t structSize = fShmControl.readUInt();
-        CARLA_SAFE_ASSERT_INT2(structSize == sizeof(BridgeShmControl), structSize, sizeof(BridgeShmControl));
-        carla_stderr("Struct Size: %i", structSize);
+
+        const uint32_t shmStructSize = fShmControl.readUInt();
+        CARLA_SAFE_ASSERT_INT2(shmStructSize == sizeof(BridgeShmControl), shmStructSize, sizeof(BridgeShmControl));
+
+        const uint32_t timeStructSize = fShmControl.readUInt();
+        CARLA_SAFE_ASSERT_INT2(timeStructSize == sizeof(BridgeTimeInfo), timeStructSize, sizeof(BridgeTimeInfo));
 
         opcode = fShmControl.readOpcode();
         CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeOpcodeSetBufferSize, opcode);
         pData->bufferSize = fShmControl.readUInt();
-        carla_stderr("BufferSize: %i", pData->bufferSize);
 
         opcode = fShmControl.readOpcode();
         CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeOpcodeSetSampleRate, opcode);
         pData->sampleRate = fShmControl.readFloat();
-        carla_stderr("SampleRate: %f", pData->sampleRate);
+
+        carla_stdout("Carla Client Info:");
+        carla_stdout("  BufferSize: %i", pData->bufferSize);
+        carla_stdout("  SampleRate: %f", pData->sampleRate);
+        carla_stdout("  sizeof(BridgeShmControl): %i/" P_SIZE, shmStructSize,  sizeof(BridgeShmControl));
+        carla_stdout("  sizeof(BridgeTimeInfo):   %i/" P_SIZE, timeStructSize, sizeof(BridgeTimeInfo));
 
         CarlaThread::startThread();
         CarlaEngine::init(clientName);
