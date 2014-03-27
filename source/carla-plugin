@@ -409,6 +409,24 @@ class PluginHost(object):
     def get_current_parameter_value(self, pluginId, parameterId):
         return self.fPluginsInfo[pluginId].parameterValueS[parameterId]
 
+    # TODO
+    def get_internal_parameter_value(self, pluginId, parameterId):
+        if parameterId == PARAMETER_ACTIVE:
+            return 1.0
+        elif parameterId == PARAMETER_DRYWET:
+            return 1.0
+        elif parameterId == PARAMETER_VOLUME:
+            return 1.0
+        elif parameterId == PARAMETER_BALANCE_LEFT:
+            return -1.0
+        elif parameterId == PARAMETER_BALANCE_RIGHT:
+            return 1.0
+        elif parameterId == PARAMETER_PANNING:
+            return 0.0
+        elif parameterId == PARAMETER_CTRL_CHANNEL:
+            return 0.0
+        return 0.0
+
     def get_input_peak_value(self, pluginId, isLeft):
         return self.fPluginsInfo[pluginId].peaks[0 if isLeft else 1]
 
