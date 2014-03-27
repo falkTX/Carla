@@ -1583,6 +1583,13 @@ class Host(object):
     def get_current_parameter_value(self, pluginId, parameterId):
         return float(self.lib.carla_get_current_parameter_value(pluginId, parameterId))
 
+    # Get a plugin's internal parameter value.
+    # @param pluginId    Plugin
+    # @param parameterId Parameter index, maybe be negative
+    # @see InternalParameterIndex
+    def get_internal_parameter_value(self, pluginId, parameterId):
+        return float(self.lib.carla_get_internal_parameter_value(pluginId, parameterId))
+
     # Get a plugin's input peak value.
     # @param pluginId Plugin
     # @param isLeft   Wherever to get the left/mono value, otherwise right.
@@ -1914,6 +1921,9 @@ class Host(object):
 
         self.lib.carla_get_current_parameter_value.argtypes = [c_uint, c_uint32]
         self.lib.carla_get_current_parameter_value.restype = c_float
+
+        self.lib.carla_get_internal_parameter_value.argtypes = [c_uint, c_int32]
+        self.lib.carla_get_internal_parameter_value.restype = c_float
 
         self.lib.carla_get_input_peak_value.argtypes = [c_uint, c_bool]
         self.lib.carla_get_input_peak_value.restype = c_float

@@ -388,6 +388,35 @@ void CarlaPlugin::getParameterScalePointLabel(const uint32_t parameterId, const 
     strBuf[0] = '\0';
 }
 
+float CarlaPlugin::getInternalParameterValue(const int32_t parameterId) const noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(parameterId != PARAMETER_NULL && parameterId > PARAMETER_MAX, 0.0f);
+
+    switch (parameterId)
+    {
+    case PARAMETER_ACTIVE:
+        return pData->active;
+    case PARAMETER_CTRL_CHANNEL:
+        return pData->ctrlChannel;
+#ifndef BUILD_BRIDGE
+    case PARAMETER_DRYWET:
+        return pData->postProc.dryWet;
+    case PARAMETER_VOLUME:
+        return pData->postProc.volume;
+    case PARAMETER_BALANCE_LEFT:
+        return pData->postProc.balanceLeft;
+    case PARAMETER_BALANCE_RIGHT:
+        return pData->postProc.balanceRight;
+    case PARAMETER_PANNING:
+        return pData->postProc.panning;
+#endif
+    };
+
+    CARLA_SAFE_ASSERT_RETURN(parameterId >= 0, 0.0f);
+
+    return getParameterValue(static_cast<uint32_t>(parameterId));
+}
+
 void CarlaPlugin::getProgramName(const uint32_t index, char* const strBuf) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(index < pData->prog.count,);
@@ -1060,23 +1089,25 @@ void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float
 {
     CARLA_SAFE_ASSERT_RETURN(rindex > PARAMETER_MAX && rindex != PARAMETER_NULL,);
 
-    if (rindex == PARAMETER_ACTIVE)
+    switch (rindex)
+    {
+    case PARAMETER_ACTIVE:
         return setActive((value > 0.0f), sendOsc, sendCallback);
-    if (rindex == PARAMETER_CTRL_CHANNEL)
+    case PARAMETER_CTRL_CHANNEL:
         return setCtrlChannel(int8_t(value), sendOsc, sendCallback);
-
 #ifndef BUILD_BRIDGE
-    if (rindex == PARAMETER_DRYWET)
+    case PARAMETER_DRYWET:
         return setDryWet(value, sendOsc, sendCallback);
-    if (rindex == PARAMETER_VOLUME)
+    case PARAMETER_VOLUME:
         return setVolume(value, sendOsc, sendCallback);
-    if (rindex == PARAMETER_BALANCE_LEFT)
+    case PARAMETER_BALANCE_LEFT:
         return setBalanceLeft(value, sendOsc, sendCallback);
-    if (rindex == PARAMETER_BALANCE_RIGHT)
+    case PARAMETER_BALANCE_RIGHT:
         return setBalanceRight(value, sendOsc, sendCallback);
-    if (rindex == PARAMETER_PANNING)
+    case PARAMETER_PANNING:
         return setPanning(value, sendOsc, sendCallback);
 #endif
+    }
 
     for (uint32_t i=0; i < pData->param.count; ++i)
     {

@@ -338,6 +338,13 @@ public:
     virtual void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept;
 
     /*!
+     * Get the current parameter value of \a parameterId.
+     * \a parameterId can be negative to allow internal parameters.
+     * \see InternalParametersIndex
+     */
+    float getInternalParameterValue(const int32_t parameterId) const noexcept;
+
+    /*!
      * Get the name of the program at \a index.
      */
     void getProgramName(const uint32_t index, char* const strBuf) const noexcept;

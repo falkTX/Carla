@@ -397,7 +397,7 @@ class PluginEdit(QDialog):
         self.fCurrentProgram = -1
         self.fCurrentMidiProgram = -1
         self.fCurrentStateFilename = None
-        self.fControlChannel  = 0
+        self.fControlChannel  = int(gCarla.host.get_internal_parameter_value(pluginId, PARAMETER_CTRL_CHANNEL)) if gCarla.host is not None else 0
         self.fFirstInit       = True
 
         self.fParameterCount = 0
@@ -419,35 +419,45 @@ class PluginEdit(QDialog):
         self.ui.dial_drywet.setLabel("Dry/Wet")
         self.ui.dial_drywet.setMinimum(0.0)
         self.ui.dial_drywet.setMaximum(1.0)
-        self.ui.dial_drywet.setValue(1.0)
 
         self.ui.dial_vol.setCustomPaintMode(self.ui.dial_vol.CUSTOM_PAINT_MODE_CARLA_VOL)
         self.ui.dial_vol.setPixmap(3)
         self.ui.dial_vol.setLabel("Volume")
         self.ui.dial_vol.setMinimum(0.0)
         self.ui.dial_vol.setMaximum(1.27)
-        self.ui.dial_vol.setValue(1.0)
 
         self.ui.dial_b_left.setCustomPaintMode(self.ui.dial_b_left.CUSTOM_PAINT_MODE_CARLA_L)
         self.ui.dial_b_left.setPixmap(4)
         self.ui.dial_b_left.setLabel("L")
         self.ui.dial_b_left.setMinimum(-1.0)
         self.ui.dial_b_left.setMaximum(1.0)
-        self.ui.dial_b_left.setValue(0.0)
 
         self.ui.dial_b_right.setCustomPaintMode(self.ui.dial_b_right.CUSTOM_PAINT_MODE_CARLA_R)
         self.ui.dial_b_right.setPixmap(4)
         self.ui.dial_b_right.setLabel("R")
         self.ui.dial_b_right.setMinimum(-1.0)
         self.ui.dial_b_right.setMaximum(1.0)
-        self.ui.dial_b_right.setValue(0.0)
 
         self.ui.dial_pan.setCustomPaintMode(self.ui.dial_b_right.CUSTOM_PAINT_MODE_CARLA_PAN)
         self.ui.dial_pan.setPixmap(4)
         self.ui.dial_pan.setLabel("Pan")
         self.ui.dial_pan.setMinimum(-1.0)
         self.ui.dial_pan.setMaximum(1.0)
-        self.ui.dial_pan.setValue(0.0)
+
+        if gCarla.host is not None:
+            self.ui.dial_drywet.setValue(gCarla.host.get_internal_parameter_value(pluginId, PARAMETER_DRYWET))
+            self.ui.dial_vol.setValue(gCarla.host.get_internal_parameter_value(pluginId, PARAMETER_VOLUME))
+            self.ui.dial_b_left.setValue(gCarla.host.get_internal_parameter_value(pluginId, PARAMETER_BALANCE_LEFT))
+            self.ui.dial_b_right.setValue(gCarla.host.get_internal_parameter_value(pluginId, PARAMETER_BALANCE_RIGHT))
+            self.ui.dial_pan.setValue(gCarla.host.get_internal_parameter_value(pluginId, PARAMETER_PANNING))
+        else:
+            self.ui.dial_drywet.setValue(1.0)
+            self.ui.dial_vol.setValue(1.0)
+            self.ui.dial_b_left.setValue(-1.0)
+            self.ui.dial_b_right.setValue(1.0)
+            self.ui.dial_pan.setValue(0.0)
+
+        self.ui.sb_ctrl_channel.setValue(self.fControlChannel+1)
 
         self.ui.scrollArea = PixmapKeyboardHArea(self)
         self.layout().addWidget(self.ui.scrollArea)
@@ -455,8 +465,6 @@ class PluginEdit(QDialog):
         self.ui.keyboard = self.ui.scrollArea.keyboard
         self.ui.keyboard.setMode(self.ui.keyboard.HORIZONTAL)
         self.ui.keyboard.setOctaves(10)
-
-        self.ui.sb_ctrl_channel.setValue(self.fControlChannel+1)
 
         self.ui.scrollArea.setEnabled(False)
         self.ui.scrollArea.setVisible(False)
@@ -1248,44 +1256,44 @@ class PluginEdit(QDialog):
     def slot_knobCustomMenu(self):
         knobName = self.sender().objectName()
         if knobName == "dial_drywet":
-            minimum = 0
-            maximum = 100
-            default = 100
+            minimum = 0.0
+            maximum = 1.0
+            default = 1.0
             label   = "Dry/Wet"
         elif knobName == "dial_vol":
-            minimum = 0
-            maximum = 127
-            default = 100
+            minimum = 0.0
+            maximum = 1.27
+            default = 1.0
             label   = "Volume"
         elif knobName == "dial_b_left":
-            minimum = -100
-            maximum = 100
-            default = -100
+            minimum = -1.0
+            maximum = 1.0
+            default = -1.0
             label   = "Balance-Left"
         elif knobName == "dial_b_right":
-            minimum = -100
-            maximum = 100
-            default = 100
+            minimum = -1.0
+            maximum = 1.0
+            default = 1.0
             label   = "Balance-Right"
         elif knobName == "dial_pan":
-            minimum = -100
-            maximum = 100
-            default = 0
+            minimum = -1.0
+            maximum = 1.0
+            default = 0.0
             label   = "Panning"
         else:
-            minimum = 0
-            maximum = 100
-            default = 100
+            minimum = 0.0
+            maximum = 1.0
+            default = 0.5
             label   = "Unknown"
 
         current = self.sender().value() / 10
 
         menu = QMenu(self)
-        actReset = menu.addAction(self.tr("Reset (%i%%)" % default))
+        actReset = menu.addAction(self.tr("Reset (%i%%)" % (default*100)))
         menu.addSeparator()
-        actMinimum = menu.addAction(self.tr("Set to Minimum (%i%%)" % minimum))
+        actMinimum = menu.addAction(self.tr("Set to Minimum (%i%%)" % (minimum*100)))
         actCenter  = menu.addAction(self.tr("Set to Center"))
-        actMaximum = menu.addAction(self.tr("Set to Maximum (%i%%)" % maximum))
+        actMaximum = menu.addAction(self.tr("Set to Maximum (%i%%)" % (maximum*100)))
         menu.addSeparator()
         actSet = menu.addAction(self.tr("Set value..."))
 
@@ -1295,20 +1303,20 @@ class PluginEdit(QDialog):
         actSelected = menu.exec_(QCursor.pos())
 
         if actSelected == actSet:
-            valueTry = QInputDialog.getInteger(self, self.tr("Set value"), label, current, minimum, maximum, 1)
+            valueTry = QInputDialog.getDouble(self, self.tr("Set value"), label, current, minimum, maximum, 3)
             if valueTry[1]:
                 value = valueTry[0] * 10
             else:
                 return
 
         elif actSelected == actMinimum:
-            value = minimum * 10
+            value = minimum
         elif actSelected == actMaximum:
-            value = maximum * 10
+            value = maximum
         elif actSelected == actReset:
-            value = default * 10
+            value = default
         elif actSelected == actCenter:
-            value = 0
+            value = 0.0
         else:
             return
 

@@ -1767,6 +1767,18 @@ float carla_get_current_parameter_value(uint pluginId, uint32_t parameterId)
     return 0.0f;
 }
 
+float carla_get_internal_parameter_value(uint pluginId, int32_t parameterId)
+{
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0.0f);
+    CARLA_SAFE_ASSERT_RETURN(parameterId != CB::PARAMETER_NULL && parameterId > CB::PARAMETER_MAX, 0.0f);
+
+    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
+        return plugin->getInternalParameterValue(parameterId);
+
+    carla_stderr2("carla_get_internal_parameter_value(%i, %i) - could not find plugin", pluginId, parameterId);
+    return 0.0f;
+}
+
 // -------------------------------------------------------------------------------------------------------------------
 
 float carla_get_input_peak_value(uint pluginId, bool isLeft)
