@@ -1152,31 +1152,36 @@ class PluginEdit(QDialog):
     def slot_dryWetChanged(self, value):
         if gCarla.host is not None:
             gCarla.host.set_drywet(self.fPluginId, value)
+        if self.fRealParent is not None:
+            self.fRealParent.parameterValueChanged(PARAMETER_DRYWET, value)
 
     @pyqtSlot(int)
     def slot_volumeChanged(self, value):
         if gCarla.host is not None:
             gCarla.host.set_volume(self.fPluginId, value)
+        if self.fRealParent is not None:
+            self.fRealParent.parameterValueChanged(PARAMETER_VOLUME, value)
 
     @pyqtSlot(int)
     def slot_balanceLeftChanged(self, value):
         if gCarla.host is not None:
             gCarla.host.set_balance_left(self.fPluginId, value)
+        if self.fRealParent is not None:
+            self.fRealParent.parameterValueChanged(PARAMETER_BALANCE_LEFT, value)
 
     @pyqtSlot(int)
     def slot_balanceRightChanged(self, value):
         if gCarla.host is not None:
             gCarla.host.set_balance_right(self.fPluginId, value)
+        if self.fRealParent is not None:
+            self.fRealParent.parameterValueChanged(PARAMETER_BALANCE_RIGHT, value)
 
     @pyqtSlot(int)
     def slot_panChanged(self, value):
         if gCarla.host is not None:
             gCarla.host.set_panning(self.fPluginId, value)
-
-    @pyqtSlot(int)
-    def slot_panningChanged(self, value):
-        if gCarla.host is not None:
-            gCarla.host.set_panning(self.fPluginId, value)
+        if self.fRealParent is not None:
+            self.fRealParent.parameterValueChanged(PARAMETER_PANNING, value)
 
     @pyqtSlot(int)
     def slot_ctrlChannelChanged(self, value):

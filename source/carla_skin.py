@@ -167,11 +167,12 @@ class AbstractPluginSlot(QFrame):
             self.peak_out.setChannels(self.fPeaksOutputCount)
             self.peak_out.setOrientation(self.peak_out.HORIZONTAL)
 
-        for paramIndex, paramWidget in self.fParameterList:
-            paramWidget.realValueChanged.connect(self.slot_parameterValueChanged)
+        if gCarla.host is None:
+            return
 
-            if paramIndex >= 0 and gCarla.host is not None:
-                paramWidget.setValue(gCarla.host.get_current_parameter_value(self.fPluginId, paramIndex))
+        for paramIndex, paramWidget in self.fParameterList:
+            paramWidget.setValue(gCarla.host.get_internal_parameter_value(self.fPluginId, paramIndex))
+            paramWidget.realValueChanged.connect(self.slot_parameterValueChanged)
 
     #------------------------------------------------------------------
 
@@ -819,8 +820,8 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
         self.ui.dial_vol.setPixmap(3)
         self.ui.dial_vol.setLabel("Volume")
         self.ui.dial_vol.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_VOL)
-        self.ui.dial_drywet.setMinimum(0.0)
-        self.ui.dial_drywet.setMaximum(1.27)
+        self.ui.dial_vol.setMinimum(0.0)
+        self.ui.dial_vol.setMaximum(1.27)
         #self.ui.dial_vol.forceWhiteLabelGradientText()
 
         self.fParameterList.append([PARAMETER_DRYWET, self.ui.dial_drywet])
