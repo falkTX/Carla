@@ -997,27 +997,27 @@ class PluginEdit(QDialog):
         for index, value in self.fParametersToUpdate:
             if index == PARAMETER_DRYWET:
                 self.ui.dial_drywet.blockSignals(True)
-                self.ui.dial_drywet.setValue(value * 1000)
+                self.ui.dial_drywet.setValue(value)
                 self.ui.dial_drywet.blockSignals(False)
 
             elif index == PARAMETER_VOLUME:
                 self.ui.dial_vol.blockSignals(True)
-                self.ui.dial_vol.setValue(value * 1000)
+                self.ui.dial_vol.setValue(value)
                 self.ui.dial_vol.blockSignals(False)
 
             elif index == PARAMETER_BALANCE_LEFT:
                 self.ui.dial_b_left.blockSignals(True)
-                self.ui.dial_b_left.setValue(value * 1000)
+                self.ui.dial_b_left.setValue(value)
                 self.ui.dial_b_left.blockSignals(False)
 
             elif index == PARAMETER_BALANCE_RIGHT:
                 self.ui.dial_b_right.blockSignals(True)
-                self.ui.dial_b_right.setValue(value * 1000)
+                self.ui.dial_b_right.setValue(value)
                 self.ui.dial_b_right.blockSignals(False)
 
             elif index == PARAMETER_PANNING:
                 self.ui.dial_pan.blockSignals(True)
-                self.ui.dial_pan.setValue(value * 1000)
+                self.ui.dial_pan.setValue(value)
                 self.ui.dial_pan.blockSignals(False)
 
             elif index == PARAMETER_CTRL_CHANNEL:
@@ -1158,17 +1158,17 @@ class PluginEdit(QDialog):
     @pyqtSlot(int)
     def slot_balanceRightChanged(self, value):
         if gCarla.host is not None:
-            gCarla.host.set_balance_right(self.fPluginId, float(value)/1000)
+            gCarla.host.set_balance_right(self.fPluginId, value)
 
     @pyqtSlot(int)
     def slot_panChanged(self, value):
         if gCarla.host is not None:
-            gCarla.host.set_panning(self.fPluginId, float(value)/1000)
+            gCarla.host.set_panning(self.fPluginId, value)
 
     @pyqtSlot(int)
     def slot_panningChanged(self, value):
         if gCarla.host is not None:
-            gCarla.host.set_panning(self.fPluginId, float(value)/1000)
+            gCarla.host.set_panning(self.fPluginId, value)
 
     @pyqtSlot(int)
     def slot_ctrlChannelChanged(self, value):

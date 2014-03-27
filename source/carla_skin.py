@@ -168,10 +168,10 @@ class AbstractPluginSlot(QFrame):
             self.peak_out.setOrientation(self.peak_out.HORIZONTAL)
 
         for paramIndex, paramWidget in self.fParameterList:
-            paramWidget.valueChanged.connect(self.slot_parameterValueChanged)
+            paramWidget.realValueChanged.connect(self.slot_parameterValueChanged)
 
             if paramIndex >= 0 and gCarla.host is not None:
-                paramWidget.setValue(gCarla.host.get_current_parameter_value(self.fPluginId, paramIndex) * 1000)
+                paramWidget.setValue(gCarla.host.get_current_parameter_value(self.fPluginId, paramIndex))
 
     #------------------------------------------------------------------
 
@@ -546,7 +546,6 @@ class AbstractPluginSlot(QFrame):
     @pyqtSlot(int)
     def slot_parameterValueChanged(self, value):
         index = self.sender().getIndex()
-        value = float(value)/1000.0
 
         if index < 0:
             self.setInternalParameter(index, value)
@@ -795,7 +794,7 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
             widget.setLabel(paramName)
             widget.setCustomPaintColor(QColor(_r, _g, _b))
             widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_COLOR)
-            widget.setWhiteText()
+            widget.forceWhiteLabelGradientText()
 
             widget.setMinimum(paramRanges['min'])
             widget.setMaximum(paramRanges['max'])
@@ -812,13 +811,17 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
         self.ui.dial_drywet.setPixmap(3)
         self.ui.dial_drywet.setLabel("Dry/Wet")
         self.ui.dial_drywet.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_WET)
-        #self.ui.dial_drywet.setWhiteText()
+        self.ui.dial_drywet.setMinimum(0.0)
+        self.ui.dial_drywet.setMaximum(1.0)
+        #self.ui.dial_drywet.forceWhiteLabelGradientText()
 
         self.ui.dial_vol.setIndex(PARAMETER_VOLUME)
         self.ui.dial_vol.setPixmap(3)
         self.ui.dial_vol.setLabel("Volume")
         self.ui.dial_vol.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_VOL)
-        #self.ui.dial_vol.setWhiteText()
+        self.ui.dial_drywet.setMinimum(0.0)
+        self.ui.dial_drywet.setMaximum(1.27)
+        #self.ui.dial_vol.forceWhiteLabelGradientText()
 
         self.fParameterList.append([PARAMETER_DRYWET, self.ui.dial_drywet])
         self.fParameterList.append([PARAMETER_VOLUME, self.ui.dial_vol])
@@ -1311,7 +1314,7 @@ def createPluginSlot(parent, pluginId):
     if pluginName.split(" ", 1)[0].lower() == "calf":
         return PluginSlot_Calf(parent, pluginId)
 
-    #return PluginSlot_BasicFX(parent, pluginId)
+    return PluginSlot_BasicFX(parent, pluginId)
     return PluginSlot_Default(parent, pluginId)
 
 # ------------------------------------------------------------------------------------------------------------
