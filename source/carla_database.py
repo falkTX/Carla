@@ -1180,6 +1180,8 @@ class PluginRefreshW(QDialog):
         self.ui.b_start.setEnabled(False)
         self.ui.b_skip.setVisible(True)
         self.ui.b_close.setVisible(False)
+        self.ui.group_types.setEnabled(False)
+        self.ui.group_options.setEnabled(False)
 
         if self.ui.ch_do_checks.isChecked():
             if os.getenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS"):
@@ -1226,6 +1228,8 @@ class PluginRefreshW(QDialog):
         self.ui.b_start.setEnabled(True)
         self.ui.b_skip.setVisible(False)
         self.ui.b_close.setVisible(True)
+        self.ui.group_types.setEnabled(True)
+        self.ui.group_options.setEnabled(True)
 
     def loadSettings(self):
         settings = QSettings()
