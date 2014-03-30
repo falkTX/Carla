@@ -1103,6 +1103,11 @@ This mode is not available for VST plugins.</string>
              </item>
              <item>
               <property name="text">
+               <string>VST3</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
                <string>AU</string>
               </property>
              </item>
@@ -1231,6 +1236,19 @@ This mode is not available for VST plugins.</string>
                </property>
                <item>
                 <widget class="QListWidget" name="lw_vst"/>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="tw_paths_vst3">
+              <layout class="QVBoxLayout" name="verticalLayout_6">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="margin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QListWidget" name="lw_vst3"/>
                </item>
               </layout>
              </widget>
