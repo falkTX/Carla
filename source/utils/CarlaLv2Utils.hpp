@@ -216,6 +216,8 @@ public:
     Lilv::Node rdf_type;
     Lilv::Node rdfs_label;
 
+    bool needsInit;
+
     // -------------------------------------------------------------------
 
     Lv2WorldClass()
@@ -330,12 +332,25 @@ public:
           dct_replaces       (new_uri(NS_dct "replaces")),
           doap_license       (new_uri(NS_doap "license")),
           rdf_type           (new_uri(NS_rdf "type")),
-          rdfs_label         (new_uri(NS_rdfs "label")) {}
+          rdfs_label         (new_uri(NS_rdfs "label")),
+
+          needsInit(true)
+    {
+    }
 
     static Lv2WorldClass& getInstance()
     {
         static Lv2WorldClass lv2World;
         return lv2World;
+    }
+
+    void init()
+    {
+        if (! needsInit)
+            return;
+
+        needsInit = false;
+        Lilv::World::load_all();
     }
 
     const LilvPlugin* getPlugin(const LV2_URI uri) const
@@ -402,11 +417,14 @@ public:
 // Create new RDF object (using lilv)
 
 static inline
-const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
+const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
 {
     CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', nullptr);
 
     Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
+
+    if (doInit)
+        lv2World.init();
 
     const LilvPlugin* const cPlugin(lv2World.getPlugin(uri));
 
@@ -1019,11 +1037,10 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
         }
     }
 
-#if 1
     // -------------------------------------------------------------------
     // Set Plugin Presets
 
-    if (fillPresets)
+    if (doInit)
     {
         Lilv::Nodes presetNodes(lilvPlugin.get_related(lv2World.preset_preset));
 
@@ -1081,7 +1098,6 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
             }
         }
     }
-#endif
 
     // -------------------------------------------------------------------
     // Set Plugin Features

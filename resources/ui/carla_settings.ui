@@ -1177,15 +1177,47 @@ This mode is not available for VST plugins.</string>
               </layout>
              </widget>
              <widget class="QWidget" name="tw_paths_lv2">
-              <layout class="QVBoxLayout" name="verticalLayout_6">
-               <property name="spacing">
+              <layout class="QGridLayout" name="gridLayout">
+               <property name="leftMargin">
                 <number>0</number>
                </property>
-               <property name="margin">
+               <property name="topMargin">
                 <number>0</number>
                </property>
-               <item>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>6</number>
+               </property>
+               <item row="0" column="0" colspan="2">
                 <widget class="QListWidget" name="lw_lv2"/>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="label_4">
+                 <property name="maximumSize">
+                  <size>
+                   <width>22</width>
+                   <height>22</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string/>
+                 </property>
+                 <property name="pixmap">
+                  <pixmap resource="../resources.qrc">:/16x16/dialog-information.png</pixmap>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QLabel" name="label_5">
+                 <property name="text">
+                  <string>Restart Carla to be able to load new found plugins</string>
+                 </property>
+                </widget>
                </item>
               </layout>
              </widget>
@@ -1361,6 +1393,7 @@ This mode is not available for VST plugins.</string>
   <include location="../resources.qrc"/>
   <include location="../resources.qrc"/>
   <include location="../resources.qrc"/>
+  <include location="../../../Carla-stable/resources/resources.qrc"/>
  </resources>
  <connections>
   <connection>

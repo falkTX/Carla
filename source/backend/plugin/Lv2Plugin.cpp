@@ -4245,17 +4245,6 @@ public:
         // ---------------------------------------------------------------
         // get plugin from lv2_rdf (lilv)
 
-        Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
-
-        // Convert bundle filename to URI
-        QString qBundle(QUrl::fromLocalFile(bundle).toString());
-        if (! qBundle.endsWith(OS_SEP_STR))
-            qBundle += OS_SEP_STR;
-
-        // Load bundle
-        Lilv::Node lilvBundle(lv2World.new_uri(qBundle.toUtf8().constData()));
-        lv2World.load_bundle(lilvBundle);
-
         fRdfDescriptor = lv2_rdf_new(uri, true);
 
         if (fRdfDescriptor == nullptr)

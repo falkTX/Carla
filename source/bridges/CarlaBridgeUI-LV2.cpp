@@ -349,10 +349,7 @@ public:
         // -----------------------------------------------------------------
         // get plugin from lv2_rdf (lilv)
 
-        Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
-
-        lv2World.load_all(); // FIXME
-        fRdfDescriptor = lv2_rdf_new(pluginURI, false);
+        fRdfDescriptor = lv2_rdf_new(pluginURI, true);
 
         if (fRdfDescriptor == nullptr)
             return false;
