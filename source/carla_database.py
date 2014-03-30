@@ -81,6 +81,15 @@ def findBinaries(binPath, OS):
 
     return binaries
 
+def findVST3Binaries(binPath):
+    binaries = []
+
+    for root, dirs, files in os.walk(binPath):
+        for name in [name for name in files if name.lower().endswith(".vst3")]:
+            binaries.append(os.path.join(root, name))
+
+    return binaries
+
 def findLV2Bundles(bundlePath):
     bundles = []
 
@@ -90,11 +99,11 @@ def findLV2Bundles(bundlePath):
 
     return bundles
 
-def findMacVSTBundles(bundlePath):
+def findMacVSTBundles(bundlePath, isVST3):
     bundles = []
 
     for root, dirs, files in os.walk(bundlePath):
-        for name in [name for name in dirs if name.lower().endswith(".vst")]:
+        for name in [name for name in dirs if name.lower().endswith(".vst3" if isVST3 else ".vst")]:
             bundles.append(os.path.join(root, name))
 
     return bundles
@@ -837,7 +846,7 @@ class SearchPluginsThread(QThread):
 
         for iPATH in VST_PATH:
             if MACOS and not isWine:
-                binaries = findMacVSTBundles(iPATH)
+                binaries = findMacVSTBundles(iPATH, False)
             else:
                 binaries = findBinaries(iPATH, OS)
             for binary in binaries:
@@ -876,9 +885,9 @@ class SearchPluginsThread(QThread):
 
         for iPATH in VST3_PATH:
             if MACOS and not isWine:
-                binaries = findMacVSTBundles(iPATH)
+                binaries = findMacVSTBundles(iPATH, True)
             else:
-                binaries = findBinaries(iPATH, OS)
+                binaries = findVST3Binaries(iPATH)
             for binary in binaries:
                 if binary not in vst3Binaries:
                     vst3Binaries.append(binary)

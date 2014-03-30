@@ -390,7 +390,7 @@ class CarlaSettingsW(QDialog):
         dssis   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   gCarla.DEFAULT_DSSI_PATH))
         lv2s    = toList(settings.value(CARLA_KEY_PATHS_LV2,    gCarla.DEFAULT_LV2_PATH))
         vsts    = toList(settings.value(CARLA_KEY_PATHS_VST,    gCarla.DEFAULT_VST_PATH))
-        vst3s   = toList(settings.value(CARLA_KEY_PATHS_VST,    gCarla.DEFAULT_VST3_PATH))
+        vst3s   = toList(settings.value(CARLA_KEY_PATHS_VST3,   gCarla.DEFAULT_VST3_PATH))
         aus     = toList(settings.value(CARLA_KEY_PATHS_AU,     gCarla.DEFAULT_AU_PATH))
         csds    = toList(settings.value(CARLA_KEY_PATHS_CSD,    gCarla.DEFAULT_CSOUND_PATH))
         gigs    = toList(settings.value(CARLA_KEY_PATHS_GIG,    gCarla.DEFAULT_GIG_PATH))

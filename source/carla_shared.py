@@ -414,6 +414,20 @@ else:
     DEFAULT_SFZ_PATH     = HOME + "/.sounds/sfz"
     DEFAULT_SFZ_PATH    += ":/usr/share/sounds/sfz"
 
+if not WINDOWS:
+    winePrefix = os.getenv("WINEPREFIX")
+
+    if not winePrefix:
+        winePrefix = HOME + "/.wine"
+
+    if os.path.exists(winePrefix):
+        DEFAULT_VST_PATH  += ":" + winePrefix + "/drive_c/Program Files/VstPlugins"
+        DEFAULT_VST3_PATH += ":" + winePrefix + "/drive_c/Program Files/Common Files/VST3"
+
+        if kIs64bit and os.path.exists(winePrefix + "/drive_c/Program Files (x86)"):
+            DEFAULT_VST_PATH  += ":" + winePrefix + "/drive_c/Program Files (x86)/VstPlugins"
+            DEFAULT_VST3_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/VST3"
+
 # ------------------------------------------------------------------------------------------------------------
 # Default Plugin Folders (set)
 
