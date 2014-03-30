@@ -47,7 +47,11 @@
         <file>scalable/carla-control.svg</file>
 
         <file>bitmaps/carla_about.png</file>
+        <file>bitmaps/background_3bandeq.png</file>
         <file>bitmaps/background_calf.png</file>
+        <file>bitmaps/background_nekobi.png</file>
+        <file>bitmaps/background_nekobi_left.png</file>
+        <file>bitmaps/background_nekobi_right.png</file>
         <file>bitmaps/background_noise1.png</file>
         <file>bitmaps/background_noise2.png</file>
         <file>bitmaps/background_zynfx.png</file>

@@ -25,12 +25,12 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
-    from PyQt5.QtCore import Qt
-    from PyQt5.QtGui import QFont, QPen
+    from PyQt5.QtCore import Qt, QRectF
+    from PyQt5.QtGui import QFont, QPen, QPixmap
     from PyQt5.QtWidgets import QFrame, QPushButton
 else:
-    from PyQt4.QtCore import Qt
-    from PyQt4.QtGui import QFont, QFrame, QPen, QPushButton
+    from PyQt4.QtCore import Qt, QRectF
+    from PyQt4.QtGui import QFont, QFrame, QPen, QPixmap, QPushButton
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -719,16 +719,21 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
             r += 10
             g += 10
 
+        bg = "noise1"
+
+        if self.fPluginInfo['maker'] in ("falkTX, Michael Gruhn", "DISTRHO") and "3bandeq" in self.fPluginInfo['label'].lower():
+            bg = "3bandeq"
+
         self.setStyleSheet("""
             PluginSlot_BasicFX#PluginWidget {
                 background-color: rgb(%i, %i, %i);
-                background-image: url(:/bitmaps/background_noise1.png);
+                background-image: url(:/bitmaps/background_%s.png);
                 background-repeat: repeat-xy;
             }
             QLabel#label_name {
                 color: #BBB;
             }
-        """ % (r, g, b))
+        """ % (r, g, b, bg))
 
         self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
         self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
@@ -863,6 +868,58 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
 
         painter.setPen(QPen(QColor(60, 60, 60), 1))
         painter.drawLine(0, 0, self.width(), 0)
+
+        AbstractPluginSlot.paintEvent(self, event)
+
+# ------------------------------------------------------------------------------------------------------------
+
+class PluginSlot_Nekobi(AbstractPluginSlot):
+    def __init__(self, parent, pluginId):
+        AbstractPluginSlot.__init__(self, parent, pluginId)
+        #self.ui = ui_carla_plugin_basic_fx.Ui_PluginWidget()
+        #self.ui.setupUi(self)
+
+        # -------------------------------------------------------------
+        # Set-up GUI
+
+        self.fPixmapCenter = QPixmap(":/bitmaps/background_nekobi.png")
+
+        self.fPixmapLeft     = QPixmap(":/bitmaps/background_nekobi_left.png")
+        self.fPixmapLeftRect = QRectF(0, 0, self.fPixmapLeft.width(), self.fPixmapLeft.height())
+
+        self.fPixmapRight     = QPixmap(":/bitmaps/background_nekobi_right.png")
+        self.fPixmapRightRect = QRectF(0, 0, self.fPixmapRight.width(), self.fPixmapRight.height())
+
+        #self.setStyleSheet("""
+            #PluginSlot_Nekobi#PluginWidget {
+                #background-image: url(:/bitmaps/background_nekobi.png);
+                #background-repeat: repeat-xy;
+            #}
+            #QLabel#label_name {
+                #color: #BBB;
+            #}
+        #""")
+
+    #------------------------------------------------------------------
+
+    def getFixedHeight(self):
+        return 108
+
+    #------------------------------------------------------------------
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+
+        # main bg (center)
+        painter.drawTiledPixmap(0, 0, self.width(), self.height(), self.fPixmapCenter)
+
+        # left side
+        painter.drawPixmap(self.fPixmapLeftRect, self.fPixmapLeft, self.fPixmapLeftRect)
+
+        # right side
+        rightTarget = QRectF(self.fPixmapRightRect)
+        rightTarget.moveLeft(self.width()-rightTarget.width())
+        painter.drawPixmap(rightTarget, self.fPixmapRight, self.fPixmapRightRect)
 
         AbstractPluginSlot.paintEvent(self, event)
 
@@ -1314,6 +1371,9 @@ def createPluginSlot(parent, pluginId):
 
     if pluginName.split(" ", 1)[0].lower() == "calf":
         return PluginSlot_Calf(parent, pluginId)
+
+    #if pluginName.lower() == "nekobi":
+        #return PluginSlot_Nekobi(parent, pluginId)
 
     return PluginSlot_BasicFX(parent, pluginId)
     return PluginSlot_Default(parent, pluginId)
