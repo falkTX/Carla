@@ -6,14 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>609</width>
-    <height>349</height>
+    <width>556</width>
+    <height>323</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Carla - Refresh</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_3">
+  <layout class="QVBoxLayout" name="verticalLayout_5">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
@@ -72,9 +72,16 @@
            </widget>
           </item>
           <item>
+           <widget class="QCheckBox" name="ch_vst3">
+            <property name="text">
+             <string>VST3</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QCheckBox" name="ch_au">
             <property name="text">
-             <string>AudioUnits</string>
+             <string>AU</string>
             </property>
            </widget>
           </item>
@@ -232,158 +239,201 @@
       </spacer>
      </item>
      <item>
-      <widget class="QGroupBox" name="groupBox_2">
-       <property name="title">
-        <string>Available tools:</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-       <property name="flat">
-        <bool>true</bool>
-       </property>
-       <layout class="QGridLayout" name="gridLayout">
-        <item row="0" column="0">
-         <widget class="QLabel" name="ico_native">
-          <property name="maximumSize">
-           <size>
-            <width>22</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="pixmap">
-           <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="ico_posix32">
-          <property name="maximumSize">
-           <size>
-            <width>22</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="pixmap">
-           <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="1">
-         <widget class="QLabel" name="label_rdflib">
-          <property name="text">
-           <string>python3-rdflib (LADSPA-RDF support)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="1">
-         <widget class="QLabel" name="label_win64">
-          <property name="text">
-           <string>carla-discovery-win64</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QLabel" name="label_native">
-          <property name="text">
-           <string>carla-discovery-native</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="ico_posix64">
-          <property name="text">
-           <string/>
-          </property>
-          <property name="pixmap">
-           <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="0">
-         <widget class="QLabel" name="ico_rdflib">
-          <property name="maximumSize">
-           <size>
-            <width>22</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="pixmap">
-           <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QLabel" name="label_posix32">
-          <property name="text">
-           <string>carla-discovery-posix32</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="ico_win32">
-          <property name="maximumSize">
-           <size>
-            <width>22</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="pixmap">
-           <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="0">
-         <widget class="QLabel" name="ico_win64">
-          <property name="text">
-           <string/>
-          </property>
-          <property name="pixmap">
-           <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QLabel" name="label_posix64">
-          <property name="text">
-           <string>carla-discovery-posix64</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QLabel" name="label_win32">
-          <property name="text">
-           <string>carla-discovery-win32</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="1">
-         <spacer name="verticalSpacer_4">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-       </layout>
-      </widget>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QGroupBox" name="groupBox_2">
+         <property name="title">
+          <string>Available tools:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+         <layout class="QGridLayout" name="gridLayout">
+          <item row="0" column="0">
+           <widget class="QLabel" name="ico_native">
+            <property name="maximumSize">
+             <size>
+              <width>22</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="pixmap">
+             <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="ico_posix32">
+            <property name="maximumSize">
+             <size>
+              <width>22</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="pixmap">
+             <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QLabel" name="label_rdflib">
+            <property name="text">
+             <string>python3-rdflib (LADSPA-RDF support)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QLabel" name="label_win64">
+            <property name="text">
+             <string>carla-discovery-win64</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLabel" name="label_native">
+            <property name="text">
+             <string>carla-discovery-native</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="ico_posix64">
+            <property name="text">
+             <string/>
+            </property>
+            <property name="pixmap">
+             <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
+           <widget class="QLabel" name="ico_rdflib">
+            <property name="maximumSize">
+             <size>
+              <width>22</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="pixmap">
+             <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLabel" name="label_posix32">
+            <property name="text">
+             <string>carla-discovery-posix32</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="ico_win32">
+            <property name="maximumSize">
+             <size>
+              <width>22</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="pixmap">
+             <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="ico_win64">
+            <property name="text">
+             <string/>
+            </property>
+            <property name="pixmap">
+             <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLabel" name="label_posix64">
+            <property name="text">
+             <string>carla-discovery-posix64</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLabel" name="label_win32">
+            <property name="text">
+             <string>carla-discovery-win32</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox_3">
+         <property name="title">
+          <string>Options:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item>
+           <widget class="QCheckBox" name="ch_do_checks">
+            <property name="toolTip">
+             <string>Carla will run small processing checks when scanning the plugins (to make sure they won't crash).
+You can disable these checks to get a faster scanning time (at your own risk).</string>
+            </property>
+            <property name="text">
+             <string>Run processing checks while scanning</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_4">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
      </item>
      <item>
       <spacer name="horizontalSpacer_2">
@@ -402,22 +452,6 @@
       </spacer>
      </item>
     </layout>
-   </item>
-   <item>
-    <spacer name="verticalSpacer_5">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Fixed</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>6</height>
-      </size>
-     </property>
-    </spacer>
    </item>
    <item>
     <spacer name="verticalSpacer">

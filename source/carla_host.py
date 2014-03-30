@@ -680,15 +680,6 @@ class HostWindow(QMainWindow):
                 self.setUnifiedTitleAndToolBarOnMac(True)
 
         # ---------------------------------------------
-        # plugin checks
-
-        if settings.value("Engine/DisableChecks", False, type=bool):
-            os.environ["CARLA_DISCOVERY_NO_PROCESSING_CHECKS"] = "true"
-
-        elif os.getenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS"):
-            os.environ.pop("CARLA_DISCOVERY_NO_PROCESSING_CHECKS")
-
-        # ---------------------------------------------
 
         if not gCarla.isPlugin:
             # engine
