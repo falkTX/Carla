@@ -301,6 +301,7 @@ if WINDOWS:
     PROGRAMFILES = os.getenv("PROGRAMFILES")
     PROGRAMFILESx86 = os.getenv("PROGRAMFILES(x86)")
     COMMONPROGRAMFILES = os.getenv("COMMONPROGRAMFILES")
+    COMMONPROGRAMFILESx86 = os.getenv("COMMONPROGRAMFILES(x86)")
 
     # Small integrity tests
     if not APPDATA:
@@ -327,7 +328,7 @@ if WINDOWS:
     DEFAULT_VST_PATH     = PROGRAMFILES + "\\VstPlugins"
     DEFAULT_VST_PATH    += ";" + PROGRAMFILES + "\\Steinberg\\VstPlugins"
 
-    DEFAULT_VST3_PATH    = PROGRAMFILES + "\\Vst3"
+    DEFAULT_VST3_PATH    = COMMONPROGRAMFILES + "\\VST3"
 
     DEFAULT_GIG_PATH     = APPDATA + "\\GIG"
     DEFAULT_SF2_PATH     = APPDATA + "\\SF2"
@@ -338,6 +339,9 @@ if WINDOWS:
         DEFAULT_DSSI_PATH   += ";" + PROGRAMFILESx86 + "\\DSSI"
         DEFAULT_VST_PATH    += ";" + PROGRAMFILESx86 + "\\VstPlugins"
         DEFAULT_VST_PATH    += ";" + PROGRAMFILESx86 + "\\Steinberg\\VstPlugins"
+
+    if COMMONPROGRAMFILESx86:
+        DEFAULT_VST3_PATH   += COMMONPROGRAMFILESx86 + "\\VST3"
 
 elif HAIKU:
     splitter = ":"
