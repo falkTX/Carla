@@ -597,7 +597,7 @@ CarlaEngine::CarlaEngine()
     carla_debug("CarlaEngine::CarlaEngine()");
 }
 
-CarlaEngine::~CarlaEngine() noexcept
+CarlaEngine::~CarlaEngine()
 {
     carla_debug("CarlaEngine::~CarlaEngine()");
 

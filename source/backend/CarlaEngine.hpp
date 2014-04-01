@@ -639,7 +639,7 @@ public:
      * The decontructor.
      * The engine must have been closed before this happens.
      */
-    virtual ~CarlaEngine() noexcept;
+    virtual ~CarlaEngine();
 
     // -------------------------------------------------------------------
     // Static calls
