@@ -1782,9 +1782,9 @@ class CanvasPort(QGraphicsItem):
         # Base Variables
         self.m_port_width  = 15
         self.m_port_height = canvas.theme.port_height
-        self.m_port_font = QFont() # FIXME
+        self.m_port_font = QFont()
         self.m_port_font.setFamily(canvas.theme.port_font_name)
-        self.m_port_font.setPointSize(canvas.theme.port_font_size)
+        self.m_port_font.setPixelSize(canvas.theme.port_font_size)
         self.m_port_font.setWeight(canvas.theme.port_font_state)
 
         self.m_port_value = 1.0
@@ -2176,14 +2176,14 @@ class CanvasBox(QGraphicsItem):
         self.m_connection_lines = []
 
         # Set Font
-        self.m_font_name = QFont() # FIXME
+        self.m_font_name = QFont()
         self.m_font_name.setFamily(canvas.theme.box_font_name)
-        self.m_font_name.setPointSize(canvas.theme.box_font_size)
+        self.m_font_name.setPixelSize(canvas.theme.box_font_size)
         self.m_font_name.setWeight(canvas.theme.box_font_state)
 
-        self.m_font_port = QFont() # FIXME
+        self.m_font_port = QFont()
         self.m_font_port.setFamily(canvas.theme.port_font_name)
-        self.m_font_port.setPointSize(canvas.theme.port_font_size)
+        self.m_font_port.setPixelSize(canvas.theme.port_font_size)
         self.m_font_port.setWeight(canvas.theme.port_font_state)
 
         # Icon

@@ -76,7 +76,7 @@ class Theme(object):
             self.box_text_sel  = self.box_text
             self.box_text_ypos = 16
             self.box_font_name = "Deja Vu Sans"
-            self.box_font_size = 8
+            self.box_font_size = 11
             self.box_font_state = QFont.Bold
 
             self.box_bg_type  = self.THEME_BG_GRADIENT
@@ -87,7 +87,7 @@ class Theme(object):
             self.port_text_ypos = 12
             self.port_bg_pixmap = None
             self.port_font_name = "Deja Vu Sans"
-            self.port_font_size = 8
+            self.port_font_size = 11
             self.port_font_state = QFont.Normal
             self.port_mode = self.THEME_PORT_POLYGON
 
@@ -158,7 +158,7 @@ class Theme(object):
             self.box_text_sel  = self.box_text
             self.box_text_ypos = 10
             self.box_font_name = "Deja Vu Sans"
-            self.box_font_size = 7
+            self.box_font_size = 10
             self.box_font_state = QFont.Bold
 
             self.box_bg_type  = self.THEME_BG_GRADIENT
@@ -169,7 +169,7 @@ class Theme(object):
             self.port_text_ypos = 9
             self.port_bg_pixmap = None
             self.port_font_name = "Deja Vu Sans"
-            self.port_font_size = 6
+            self.port_font_size = 9
             self.port_font_state = QFont.Normal
             self.port_mode = self.THEME_PORT_POLYGON
 
@@ -251,7 +251,7 @@ class Theme(object):
             self.port_text_ypos = 12
             self.port_bg_pixmap = None
             self.port_font_name = "Ubuntu"
-            self.port_font_size = 10
+            self.port_font_size = 11
             self.port_font_state = QFont.Bold
             self.port_mode = self.THEME_PORT_POLYGON
 
@@ -322,7 +322,7 @@ class Theme(object):
             self.box_text_sel  = self.box_text
             self.box_text_ypos = 12
             self.box_font_name = "Sans"
-            self.box_font_size = 9
+            self.box_font_size = 12
             self.box_font_state = QFont.Normal
 
             self.box_bg_type  = self.THEME_BG_GRADIENT
@@ -333,7 +333,7 @@ class Theme(object):
             self.port_text_ypos = 11
             self.port_bg_pixmap = None
             self.port_font_name = "Sans"
-            self.port_font_size = 8
+            self.port_font_size = 11
             self.port_font_state = QFont.Normal
             self.port_mode = self.THEME_PORT_SQUARE
 
@@ -404,7 +404,7 @@ class Theme(object):
             self.box_text_sel  = QPen(QColor(189, 122, 214), 0)
             self.box_text_ypos = 16
             self.box_font_name = "Deja Vu Sans"
-            self.box_font_size = 8
+            self.box_font_size = 11
             self.box_font_state = QFont.Bold
 
             self.box_bg_type  = self.THEME_BG_SOLID
@@ -418,7 +418,7 @@ class Theme(object):
             self.port_text_ypos = 14
             self.port_bg_pixmap = QPixmap(":/bitmaps/canvas/frame_port_bg.png")
             self.port_font_name = "Deja Vu Sans"
-            self.port_font_size = 8
+            self.port_font_size = 11
             self.port_font_state = QFont.Normal
             self.port_mode = self.THEME_PORT_SQUARE
 
@@ -471,10 +471,6 @@ class Theme(object):
 
             self.rubberband_pen = QPen(QColor(1, 230, 238), 2, Qt.SolidLine)
             self.rubberband_brush = QColor(90, 90, 90, 100)
-
-#        if platform == "darwin":
-#            self.box_font_size += 3
-#            self.port_font_size += 3
 
 def getDefaultTheme():
     return Theme.THEME_MODERN_DARK

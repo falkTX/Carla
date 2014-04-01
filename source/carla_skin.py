@@ -819,7 +819,7 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
         self.ui.dial_drywet.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_WET)
         self.ui.dial_drywet.setMinimum(0.0)
         self.ui.dial_drywet.setMaximum(1.0)
-        #self.ui.dial_drywet.forceWhiteLabelGradientText()
+        self.ui.dial_drywet.forceWhiteLabelGradientText()
 
         self.ui.dial_vol.setIndex(PARAMETER_VOLUME)
         self.ui.dial_vol.setPixmap(3)
@@ -827,7 +827,7 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
         self.ui.dial_vol.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_VOL)
         self.ui.dial_vol.setMinimum(0.0)
         self.ui.dial_vol.setMaximum(1.27)
-        #self.ui.dial_vol.forceWhiteLabelGradientText()
+        self.ui.dial_vol.forceWhiteLabelGradientText()
 
         self.fParameterList.append([PARAMETER_DRYWET, self.ui.dial_drywet])
         self.fParameterList.append([PARAMETER_VOLUME, self.ui.dial_vol])
