@@ -676,8 +676,8 @@ class HostWindow(QMainWindow):
                 folder = diskFolders[i]
                 self.ui.cb_disk.addItem(os.path.basename(folder), folder)
 
-            if MACOS and not settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool):
-                self.setUnifiedTitleAndToolBarOnMac(True)
+            #if MACOS and not settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool):
+            #    self.setUnifiedTitleAndToolBarOnMac(True)
 
         # ---------------------------------------------
 

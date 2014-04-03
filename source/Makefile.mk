@@ -399,9 +399,15 @@ MOC_QT5 ?= $(QT5_LIBDIR)/qt5/bin/moc
 RCC_QT5 ?= $(QT5_LIBDIR)/qt5/bin/rcc
 UIC_QT5 ?= $(QT5_LIBDIR)/qt5/bin/uic
 else
+ifeq ($(MACOS),true)
+MOC_QT5 ?= $(QT5_LIBDIR)/../bin/moc
+RCC_QT5 ?= $(QT5_LIBDIR)/../bin/rcc
+UIC_QT5 ?= $(QT5_LIBDIR)/../bin/uic
+else
 MOC_QT5 ?= $(QT5_LIBDIR)/qt/bin/moc
 RCC_QT5 ?= $(QT5_LIBDIR)/qt/bin/rcc
 UIC_QT5 ?= $(QT5_LIBDIR)/qt/bin/uic
+endif
 endif
 endif
 
