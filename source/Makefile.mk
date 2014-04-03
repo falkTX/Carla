@@ -43,7 +43,8 @@ endif
 
 BASE_FLAGS = -Wall -Wextra -pipe -DREAL_BUILD
 BASE_OPTS  = -O2 -ffast-math -mtune=generic -msse -msse2 -mfpmath=sse -fdata-sections -ffunction-sections
-LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,--gc-sections
+LINK_OPTS  = -fdata-sections -ffunction-sections
+# -Wl,--strip-all
 
 ifeq ($(TESTBUILD),true)
 BASE_FLAGS += -Werror -Wcast-qual -Wconversion -Wformat-security -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wundef -Wwrite-strings
@@ -67,6 +68,7 @@ endif
 endif
 
 ifneq ($(MACOS),true)
+LINK_OPTS += -Wl,-O1 -Wl,--gc-sections
 ifneq ($(CC),clang)
 BASE_FLAGS += -Wlogical-op
 endif
@@ -94,8 +96,6 @@ LINK_OPTS   =
 else
 BASE_FLAGS += -DNDEBUG $(BASE_OPTS) -fvisibility=hidden
 CXXFLAGS   += -fvisibility-inlines-hidden
-LINK_OPTS  += -Wl,-O1
-# -Wl,--strip-all
 endif
 
 32BIT_FLAGS = -m32
