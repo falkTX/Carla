@@ -55,6 +55,15 @@
 # error DISTRHO_PLUGIN_WANT_TIMEPOS undefined!
 #endif
 
+/* Compatibility with non-clang compilers */
+#ifndef __has_feature
+# define __has_feature(x) 0
+#endif
+#ifndef __has_extension
+# define __has_extension __has_feature
+#endif
+
+/* Check OS */
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 # define DISTRHO_PLUGIN_EXPORT extern "C" __declspec (dllexport)
 # define DISTRHO_OS_WINDOWS    1
@@ -81,7 +90,7 @@
 #if defined(HAVE_CPP11_SUPPORT)
 # define PROPER_CPP11_SUPPORT
 #elif __cplusplus >= 201103L || (defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 405) || __has_extension(cxx_noexcept)
-# define CARLA_PROPER_CPP11_SUPPORT
+# define PROPER_CPP11_SUPPORT
 # if (defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) < 407) || ! __has_extension(cxx_override_control)
 #  define override // gcc4.7+ only
 #  define final    // gcc4.7+ only
