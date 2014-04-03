@@ -17,35 +17,44 @@
 #ifndef DGL_BASE_HPP_INCLUDED
 #define DGL_BASE_HPP_INCLUDED
 
+/* Compatibility with non-clang compilers */
+#ifndef __has_feature
+# define __has_feature(x) 0
+#endif
+#ifndef __has_extension
+# define __has_extension __has_feature
+#endif
+
+/* Check OS */
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 # define DGL_OS_WINDOWS 1
 #elif defined(__APPLE__)
 # define DGL_OS_MAC     1
 #elif defined(__HAIKU__)
 # define DGL_OS_HAIKU   1
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__linux)
 # define DGL_OS_LINUX   1
 #endif
 
+/* Check for C++11 support */
 #if defined(HAVE_CPP11_SUPPORT)
 # define PROPER_CPP11_SUPPORT
-#elif defined(__GNUC__) && (__cplusplus >= 201103L || defined(__GXX_EXPERIMENTAL_CXX0X__))
-# if  (__GNUC__ * 100 + __GNUC_MINOR__) >= 405
-#  define PROPER_CPP11_SUPPORT
-#  if  (__GNUC__ * 100 + __GNUC_MINOR__) < 407
-#   define override // gcc4.7+ only
-#  endif
+#elif __cplusplus >= 201103L || (defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 405) || __has_extension(cxx_noexcept)
+# define CARLA_PROPER_CPP11_SUPPORT
+# if (defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) < 407) || ! __has_extension(cxx_override_control)
+#  define override // gcc4.7+ only
+#  define final    // gcc4.7+ only
 # endif
 #endif
 
 #ifndef PROPER_CPP11_SUPPORT
-# ifndef __clang__
-#  define noexcept throw()
-# endif
+# define noexcept throw()
 # define override
+# define final
 # define nullptr (0)
 #endif
 
+/* Define namespace */
 #ifndef DGL_NAMESPACE
 # define DGL_NAMESPACE DGL
 #endif
@@ -54,12 +63,14 @@
 #define END_NAMESPACE_DGL }
 #define USE_NAMESPACE_DGL using namespace DGL_NAMESPACE;
 
+/* GL includes */
 #ifdef DGL_OS_MAC
 # include <OpenGL/gl.h>
 #else
 # include <GL/gl.h>
 #endif
 
+/* missing GL defines */
 #if defined(GL_BGR_EXT) && ! defined(GL_BGR)
 # define GL_BGR GL_BGR_EXT
 #endif
