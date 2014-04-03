@@ -528,7 +528,11 @@ LIBS_NATIVE += \
 endif
 
 carla-bridge-native: $(OBJS_NATIVE) $(LIBS_NATIVE)
+ifeq ($(MACOS),true)
+	$(CXX) $(OBJS_NATIVE) $(LIBS_NATIVE) $(NATIVE_LINK_FLAGS) -o $@
+else
 	$(CXX) $(OBJS_NATIVE) -Wl,--start-group $(LIBS_NATIVE) -Wl,--end-group $(NATIVE_LINK_FLAGS) -o $@
+endif
 
 %__native.o: %.cpp
 	$(CXX) $< $(NATIVE_BUILD_FLAGS) -c -o $@
