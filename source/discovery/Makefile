@@ -108,6 +108,10 @@ LINK_FLAGS   += $(JUCE_DATA_STRUCTURES_LIBS)
 LINK_FLAGS   += $(JUCE_EVENTS_LIBS)
 LINK_FLAGS   += $(JUCE_GRAPHICS_LIBS)
 LINK_FLAGS   += $(JUCE_GUI_BASICS_LIBS)
+ifeq ($(MACOS),true)
+LIBS         += ../modules/juce_gui_extra.a
+LINK_FLAGS   += $(JUCE_GUI_EXTRA_LIBS)
+endif
 endif
 
 POSIX_BUILD_FLAGS = $(BUILD_CXX_FLAGS)
@@ -158,7 +162,11 @@ win64:   carla-discovery-win64.exe
 # --------------------------------------------------------------
 
 carla-discovery-native: $(OBJS) $(DEPS) $(LIBS)
+ifeq ($(MACOS),true)
+	$(CXX) $< $(LIBS) $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) $(POSIX_LINK_FLAGS) -o $@
+else
 	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) $(POSIX_LINK_FLAGS) -o $@
+endif
 
 carla-discovery-native.exe: $(OBJS) $(DEPS) $(LIBS)
 	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group $(WIN_BUILD_FLAGS) $(NATIVE_FLAGS) $(WIN_LINK_FLAGS) -o $@

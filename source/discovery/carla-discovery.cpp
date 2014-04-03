@@ -81,7 +81,7 @@ static void print_lib_error(const char* const filename)
         DISCOVERY_OUT("error", error);
 }
 
-#ifdef WANT_VST
+#if defined(WANT_VST) && ! defined(CARLA_OS_MAC)
 // --------------------------------------------------------------------------
 // VST stuff
 
@@ -1210,9 +1210,10 @@ static void do_lv2_check(const char* const bundle, const bool init)
 #endif
 }
 
+#ifndef CARLA_OS_MAC
 static void do_vst_check(void*& libHandle, const bool init)
 {
-#ifdef WANT_VST
+# ifdef WANT_VST
     VST_Function vstFn = (VST_Function)lib_symbol(libHandle, "VSTPluginMain");
 
     if (vstFn == nullptr)
@@ -1453,6 +1454,7 @@ static void do_vst_check(void*& libHandle, const bool init)
     (void)init;
 #endif
 }
+#endif // ! CARLA_OS_MAC
 
 #ifdef WANT_JUCE_PROCESSORS
 static void do_juce_check(const char* const filename, const char* const stype, const bool init)
@@ -1847,8 +1849,10 @@ int main(int argc, char* argv[])
     {
     case PLUGIN_LADSPA:
     case PLUGIN_DSSI:
+#ifndef CARLA_OS_MAC
     case PLUGIN_VST:
         openLib = true;
+#endif
     default:
         break;
     }
@@ -1900,7 +1904,11 @@ int main(int argc, char* argv[])
         do_lv2_check(filename, doInit);
         break;
     case PLUGIN_VST:
+#ifdef CARLA_OS_MAC
+        do_juce_check(filename, "VST", doInit);
+#else
         do_vst_check(handle, doInit);
+#endif
         break;
     case PLUGIN_VST3:
 #ifdef WANT_JUCE_PROCESSORS
