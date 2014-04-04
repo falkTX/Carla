@@ -77,10 +77,10 @@ public:
         case ENGINE_PROCESS_MODE_SINGLE_CLIENT:
         case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
             CARLA_SAFE_ASSERT_RETURN(jackClient != nullptr && jackPort != nullptr,);
-
+#ifndef CARLA_OS_WIN
             if (const jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
                 jackbridge_set_property(jackClient, uuid, URI_CANVAS_CV, "NO", "text/plain");
-
+#endif
             break;
 
         default:
@@ -95,8 +95,10 @@ public:
 
         if (fJackClient != nullptr && fJackPort != nullptr)
         {
+#ifndef CARLA_OS_WIN
             if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
                 jackbridge_remove_property(fJackClient, uuid, URI_CANVAS_CV);
+#endif
 
             try {
                 jackbridge_port_unregister(fJackClient, fJackPort);
@@ -163,10 +165,10 @@ public:
         case ENGINE_PROCESS_MODE_SINGLE_CLIENT:
         case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
             CARLA_SAFE_ASSERT_RETURN(jackClient != nullptr && jackPort != nullptr,);
-
+#ifndef CARLA_OS_WIN
             if (const jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
                 jackbridge_set_property(jackClient, uuid, URI_CANVAS_CV, "YES", "text/plain");
-
+#endif
             break;
 
         default:
@@ -181,8 +183,10 @@ public:
 
         if (fJackClient != nullptr && fJackPort != nullptr)
         {
+#ifndef CARLA_OS_WIN
             if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
                 jackbridge_remove_property(fJackClient, uuid, URI_CANVAS_CV);
+#endif
 
             try {
                 jackbridge_port_unregister(fJackClient, fJackPort);
