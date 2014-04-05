@@ -1500,7 +1500,6 @@ static void do_juce_check(const char* const filename, const char* const stype, c
         int midiIns = 0;
         int midiOuts = 0;
         int parameters = 0;
-        int programs = 0;
 
         if (desc->isInstrument)
             hints |= PLUGIN_IS_SYNTH;
@@ -1512,7 +1511,6 @@ static void do_juce_check(const char* const filename, const char* const stype, c
                 instance->refreshParameterList();
 
                 parameters = instance->getNumParameters();
-                programs   = instance->getNumPrograms();
 
                 if (instance->hasEditor())
                     hints |= PLUGIN_HAS_CUSTOM_UI;

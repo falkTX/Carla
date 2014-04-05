@@ -967,6 +967,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     carla_debug("CarlaEngine::addPlugin(%i:%s, %i:%s, \"%s\", \"%s\", \"%s\", " P_INT64 ", %p)", btype, BinaryType2Str(btype), ptype, PluginType2Str(ptype), filename, name, label, uniqueId, extra);
 
     uint id;
+
+#ifndef BUILD_BRIDGE
     CarlaPlugin* oldPlugin = nullptr;
 
     if (pData->nextPluginId < pData->curPluginCount)
@@ -979,6 +981,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
         CARLA_SAFE_ASSERT_RETURN_ERR(oldPlugin != nullptr, "Invalid replace plugin Id");
     }
     else
+#endif
     {
         id = pData->curPluginCount;
 
@@ -1182,7 +1185,9 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
 
     if (plugin == nullptr)
     {
+#ifndef BUILD_BRIDGE
         pData->plugins[id].plugin = oldPlugin;
+#endif
         return false;
     }
 
@@ -1195,6 +1200,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     pluginData.outsPeak[0] = 0.0f;
     pluginData.outsPeak[1] = 0.0f;
 
+#ifndef BUILD_BRIDGE
     if (oldPlugin != nullptr)
     {
         bool  wasActive = (oldPlugin->getInternalParameterValue(PARAMETER_ACTIVE) >= 0.5f);
@@ -1214,6 +1220,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             plugin->setVolume(oldVolume, true, true);
     }
     else
+#endif
     {
         ++pData->curPluginCount;
         callback(ENGINE_CALLBACK_PLUGIN_ADDED, id, 0, 0, 0.0f, plugin->getName());
