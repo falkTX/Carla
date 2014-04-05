@@ -329,6 +329,18 @@ void carla_fill(T* data, const size_t size, const T v) noexcept
 }
 
 /*
+ * Clear a byte array.
+ */
+static inline
+void carla_zeroBytes(void* const memory, const size_t numBytes) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(memory != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(numBytes > 0,);
+
+    std::memset(memory, 0, numBytes);
+}
+
+/*
  * Clear a char array.
  */
 static inline
@@ -338,18 +350,6 @@ void carla_zeroChar(char* const data, const size_t numChars) noexcept
     CARLA_SAFE_ASSERT_RETURN(numChars > 0,);
 
     std::memset(data, 0, numChars*sizeof(char));
-}
-
-/*
- * Clear a memory location.
- */
-static inline
-void carla_zeroMem(void* const memory, const size_t numBytes) noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(memory != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(numBytes > 0,);
-
-    std::memset(memory, 0, numBytes);
 }
 
 /*

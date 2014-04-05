@@ -558,7 +558,7 @@ public:
         return fBuffer;
     }
 
-    char& operator[](const size_t pos) const noexcept
+    char& operator[](const size_t pos) noexcept
     {
         if (pos < fBufferLen)
             return fBuffer[pos];
@@ -651,7 +651,7 @@ private:
 
     /*
      * Static null string.
-     * Prevents excessive allocations for empty strings.
+     * Prevents allocation for new and/or empty strings.
      */
     static char* _null() noexcept
     {
