@@ -142,18 +142,13 @@ PyPluginInfo = {
     'name': "",
     'label': "",
     'maker': "",
-    'copyright': "",
     'uniqueId': 0,
     'audio.ins': 0,
     'audio.outs': 0,
-    'audio.total': 0,
     'midi.ins': 0,
     'midi.outs': 0,
-    'midi.total': 0,
     'parameters.ins': 0,
-    'parameters.outs': 0,
-    'parameters.total': 0,
-    'programs.total': 0
+    'parameters.outs': 0
 }
 
 global gDiscoveryProcess
@@ -235,14 +230,14 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
             except:
                 continue
 
-            if prop == "name":
+            if prop == "build":
+                if value.isdigit(): pinfo['build'] = int(value)
+            elif prop == "name":
                 pinfo['name'] = value if value else fakeLabel
             elif prop == "label":
                 pinfo['label'] = value if value else fakeLabel
             elif prop == "maker":
                 pinfo['maker'] = value
-            elif prop == "copyright":
-                pinfo['copyright'] = value
             elif prop == "uniqueId":
                 if value.isdigit(): pinfo['uniqueId'] = int(value)
             elif prop == "hints":
@@ -251,24 +246,14 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
                 if value.isdigit(): pinfo['audio.ins'] = int(value)
             elif prop == "audio.outs":
                 if value.isdigit(): pinfo['audio.outs'] = int(value)
-            elif prop == "audio.total":
-                if value.isdigit(): pinfo['audio.total'] = int(value)
             elif prop == "midi.ins":
                 if value.isdigit(): pinfo['midi.ins'] = int(value)
             elif prop == "midi.outs":
                 if value.isdigit(): pinfo['midi.outs'] = int(value)
-            elif prop == "midi.total":
-                if value.isdigit(): pinfo['midi.total'] = int(value)
             elif prop == "parameters.ins":
                 if value.isdigit(): pinfo['parameters.ins'] = int(value)
             elif prop == "parameters.outs":
                 if value.isdigit(): pinfo['parameters.outs'] = int(value)
-            elif prop == "parameters.total":
-                if value.isdigit(): pinfo['parameters.total'] = int(value)
-            elif prop == "programs.total":
-                if value.isdigit(): pinfo['programs.total'] = int(value)
-            elif prop == "build":
-                if value.isdigit(): pinfo['build'] = int(value)
             elif prop == "uri":
                 if value:
                     pinfo['label'] = value
@@ -295,25 +280,21 @@ def checkPluginInternal(desc):
     plugins = []
 
     pinfo = deepcopy(PyPluginInfo)
-    pinfo['build']     = BINARY_NATIVE
-    pinfo['type']      = PLUGIN_INTERNAL
-    pinfo['hints']     = desc['hints']
-    pinfo['name']      = desc['name']
-    pinfo['label']     = desc['label']
-    pinfo['maker']     = desc['maker']
-    pinfo['copyright'] = desc['copyright']
+    pinfo['build'] = BINARY_NATIVE
+    pinfo['type']  = PLUGIN_INTERNAL
+    pinfo['hints'] = desc['hints']
+    pinfo['name']  = desc['name']
+    pinfo['label'] = desc['label']
+    pinfo['maker'] = desc['maker']
 
-    pinfo['audio.ins']   = desc['audioIns']
-    pinfo['audio.outs']  = desc['audioOuts']
-    pinfo['audio.total'] = pinfo['audio.ins'] + pinfo['audio.outs']
+    pinfo['audio.ins']  = desc['audioIns']
+    pinfo['audio.outs'] = desc['audioOuts']
 
     pinfo['midi.ins']   = desc['midiIns']
     pinfo['midi.outs']  = desc['midiOuts']
-    pinfo['midi.total'] = pinfo['midi.ins'] + pinfo['midi.outs']
 
-    pinfo['parameters.ins']   = desc['parameterIns']
-    pinfo['parameters.outs']  = desc['parameterOuts']
-    pinfo['parameters.total'] = pinfo['parameters.ins'] + pinfo['parameters.outs']
+    pinfo['parameters.ins']  = desc['parameterIns']
+    pinfo['parameters.outs'] = desc['parameterOuts']
 
     plugins.append(pinfo)
 
@@ -1543,7 +1524,6 @@ class PluginDatabaseW(QDialog):
         self.ui.tableWidget.setItem(index, 5, QTableWidgetItem(str(plugin['audio.outs'])))
         self.ui.tableWidget.setItem(index, 6, QTableWidgetItem(str(plugin['parameters.ins'])))
         self.ui.tableWidget.setItem(index, 7, QTableWidgetItem(str(plugin['parameters.outs'])))
-        self.ui.tableWidget.setItem(index, 8, QTableWidgetItem(str(plugin['programs.total'])))
         self.ui.tableWidget.setItem(index, 9, QTableWidgetItem(self.tr("Yes") if (plugin['hints'] & PLUGIN_HAS_CUSTOM_UI) else self.tr("No")))
         self.ui.tableWidget.setItem(index, 10, QTableWidgetItem(self.tr("Yes") if (plugin['hints'] & PLUGIN_IS_SYNTH) else self.tr("No")))
         self.ui.tableWidget.setItem(index, 11, QTableWidgetItem(bridgeText))

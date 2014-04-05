@@ -382,42 +382,37 @@ public:
 
         // 2 channels
         DISCOVERY_OUT("init", "-----------");
+        DISCOVERY_OUT("build", BINARY_NATIVE);
+        DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
+
         DISCOVERY_OUT("name", name.buffer());
         DISCOVERY_OUT("label", label);
 
         if (info != nullptr)
-        {
             DISCOVERY_OUT("maker", info->Artists);
-            DISCOVERY_OUT("copyright", info->Artists);
-        }
 
-        DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
         DISCOVERY_OUT("audio.outs", 2);
         DISCOVERY_OUT("midi.ins", 1);
-        DISCOVERY_OUT("programs", programs);
-        DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("end", "------------");
 
+        // 16 channels
         if (name.isEmpty() || programs <= 1)
             return;
+
         name += " (16 outputs)";
 
-        // 16 channels
         DISCOVERY_OUT("init", "-----------");
+        DISCOVERY_OUT("build", BINARY_NATIVE);
+        DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
+
         DISCOVERY_OUT("name", name.buffer());
         DISCOVERY_OUT("label", label);
 
         if (info != nullptr)
-        {
             DISCOVERY_OUT("maker", info->Artists);
-            DISCOVERY_OUT("copyright", info->Artists);
-        }
 
-        DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
-        DISCOVERY_OUT("audio.outs", 2);
+        DISCOVERY_OUT("audio.outs", 32);
         DISCOVERY_OUT("midi.ins", 1);
-        DISCOVERY_OUT("programs", programs);
-        DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("end", "------------");
     }
 
@@ -651,17 +646,16 @@ static void do_ladspa_check(void*& libHandle, const char* const filename, const 
         }
 
         DISCOVERY_OUT("init", "-----------");
+        DISCOVERY_OUT("build", BINARY_NATIVE);
+        DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("name", descriptor->Name);
         DISCOVERY_OUT("label", descriptor->Label);
         DISCOVERY_OUT("maker", descriptor->Maker);
-        DISCOVERY_OUT("copyright", descriptor->Copyright);
         DISCOVERY_OUT("uniqueId", descriptor->UniqueID);
-        DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("audio.ins", audioIns);
         DISCOVERY_OUT("audio.outs", audioOuts);
         DISCOVERY_OUT("parameters.ins", parametersIns);
         DISCOVERY_OUT("parameters.outs", parametersOuts);
-        DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("end", "------------");
     }
 #else
@@ -780,7 +774,6 @@ static void do_dssi_check(void*& libHandle, const char* const filename, const bo
         int parametersIns = 0;
         int parametersOuts = 0;
         int parametersTotal = 0;
-        ulong programs = 0;
 
         if (LADSPA_IS_HARD_RT_CAPABLE(ldescriptor->Properties))
             hints |= PLUGIN_IS_RTSAFE;
@@ -844,12 +837,6 @@ static void do_dssi_check(void*& libHandle, const char* const filename, const bo
             {
                 DISCOVERY_OUT("error", "Failed to init DSSI plugin (#2)");
                 continue;
-            }
-
-            if (descriptor->get_program != nullptr && descriptor->select_program != nullptr)
-            {
-                for (; descriptor->get_program(handle, programs) != nullptr;)
-                    ++programs;
             }
 
             LADSPA_Data bufferAudio[kBufferSize][audioTotal];
@@ -921,7 +908,7 @@ static void do_dssi_check(void*& libHandle, const char* const filename, const bo
             }
 
             // select first midi-program if available
-            if (programs > 0)
+            if (descriptor->get_program != nullptr && descriptor->select_program != nullptr)
             {
                 if (const DSSI_Program_Descriptor* const pDesc = descriptor->get_program(handle, 0))
                     descriptor->select_program(handle, pDesc->Bank, pDesc->Program);
@@ -969,19 +956,17 @@ static void do_dssi_check(void*& libHandle, const char* const filename, const bo
         }
 
         DISCOVERY_OUT("init", "-----------");
+        DISCOVERY_OUT("build", BINARY_NATIVE);
+        DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("name", ldescriptor->Name);
         DISCOVERY_OUT("label", ldescriptor->Label);
         DISCOVERY_OUT("maker", ldescriptor->Maker);
-        DISCOVERY_OUT("copyright", ldescriptor->Copyright);
         DISCOVERY_OUT("uniqueId", ldescriptor->UniqueID);
-        DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("audio.ins", audioIns);
         DISCOVERY_OUT("audio.outs", audioOuts);
         DISCOVERY_OUT("midi.ins", midiIns);
         DISCOVERY_OUT("parameters.ins", parametersIns);
         DISCOVERY_OUT("parameters.outs", parametersOuts);
-        DISCOVERY_OUT("programs", programs);
-        DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("end", "------------");
     }
 #else
@@ -1116,7 +1101,6 @@ static void do_lv2_check(const char* const bundle, const bool init)
         int midiOuts = 0;
         int parametersIns = 0;
         int parametersOuts = 0;
-        uint programs = rdfDescriptor->PresetCount;
 
         for (uint32_t j=0; j < rdfDescriptor->FeatureCount; ++j)
         {
@@ -1179,23 +1163,22 @@ static void do_lv2_check(const char* const bundle, const bool init)
             hints |= PLUGIN_HAS_CUSTOM_UI;
 
         DISCOVERY_OUT("init", "-----------");
-        DISCOVERY_OUT("uri", rdfDescriptor->URI);
+        DISCOVERY_OUT("build", BINARY_NATIVE);
+        DISCOVERY_OUT("hints", hints);
+
         if (rdfDescriptor->Name != nullptr)
             DISCOVERY_OUT("name", rdfDescriptor->Name);
         if (rdfDescriptor->Author != nullptr)
             DISCOVERY_OUT("maker", rdfDescriptor->Author);
-        if (rdfDescriptor->License != nullptr)
-            DISCOVERY_OUT("copyright", rdfDescriptor->License);
+
+        DISCOVERY_OUT("uri", rdfDescriptor->URI);
         DISCOVERY_OUT("uniqueId", rdfDescriptor->UniqueID);
-        DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("audio.ins", audioIns);
         DISCOVERY_OUT("audio.outs", audioOuts);
         DISCOVERY_OUT("midi.ins", midiIns);
         DISCOVERY_OUT("midi.outs", midiOuts);
         DISCOVERY_OUT("parameters.ins", parametersIns);
         DISCOVERY_OUT("parameters.outs", parametersOuts);
-        DISCOVERY_OUT("programs", programs);
-        DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("end", "------------");
 
         delete rdfDescriptor;
@@ -1298,7 +1281,6 @@ static void do_vst_check(void*& libHandle, const bool init)
         int midiIns = 0;
         int midiOuts = 0;
         int parameters = effect->numParams;
-        int programs = effect->numPrograms;
 
         if (effect->flags & effFlagsHasEditor)
             hints |= PLUGIN_HAS_CUSTOM_UI;
@@ -1409,19 +1391,17 @@ static void do_vst_check(void*& libHandle, const bool init)
         // -----------------------------------------------------------------------
 
         DISCOVERY_OUT("init", "-----------");
+        DISCOVERY_OUT("build", BINARY_NATIVE);
+        DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("name", cName.buffer());
         DISCOVERY_OUT("label", cProduct.buffer());
         DISCOVERY_OUT("maker", cVendor.buffer());
-        DISCOVERY_OUT("copyright", cVendor.buffer());
         DISCOVERY_OUT("uniqueId", gVstCurrentUniqueId);
-        DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("audio.ins", audioIns);
         DISCOVERY_OUT("audio.outs", audioOuts);
         DISCOVERY_OUT("midi.ins", midiIns);
         DISCOVERY_OUT("midi.outs", midiOuts);
         DISCOVERY_OUT("parameters.ins", parameters);
-        DISCOVERY_OUT("programs", programs);
-        DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("end", "------------");
 
         if (vstCategory != kPlugCategShell)
@@ -1546,19 +1526,17 @@ static void do_juce_check(const char* const filename, const char* const stype, c
         }
 
         DISCOVERY_OUT("init", "-----------");
+        DISCOVERY_OUT("build", BINARY_NATIVE);
+        DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("name", desc->name);
         DISCOVERY_OUT("label", desc->descriptiveName);
         DISCOVERY_OUT("maker", desc->manufacturerName);
-        DISCOVERY_OUT("copyright", desc->manufacturerName);
         DISCOVERY_OUT("uniqueId", desc->uid);
-        DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("audio.ins", audioIns);
         DISCOVERY_OUT("audio.outs", audioOuts);
         DISCOVERY_OUT("midi.ins", midiIns);
         DISCOVERY_OUT("midi.outs", midiOuts);
         DISCOVERY_OUT("parameters.ins", parameters);
-        DISCOVERY_OUT("programs", programs);
-        DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("end", "------------");
     }
 }
@@ -1642,19 +1620,17 @@ static void do_csound_check(const char* const filename, const bool init)
     csound.Reset();
 
     DISCOVERY_OUT("init", "-----------");
+    DISCOVERY_OUT("build", BINARY_NATIVE);
+    DISCOVERY_OUT("hints", hints);
     //DISCOVERY_OUT("name", name.buffer());
     //DISCOVERY_OUT("label", label.buffer());
     //DISCOVERY_OUT("maker", "");
-    //DISCOVERY_OUT("copyright", "");
-    DISCOVERY_OUT("hints", hints);
     DISCOVERY_OUT("audio.ins", audioIns);
     DISCOVERY_OUT("audio.outs", audioOuts);
     DISCOVERY_OUT("midi.ins", midiIns);
     DISCOVERY_OUT("midi.outs", midiOuts);
     DISCOVERY_OUT("parameters.ins", parametersIns);
     DISCOVERY_OUT("parameters.outs", parametersOuts);
-    DISCOVERY_OUT("programs", programs);
-    DISCOVERY_OUT("build", BINARY_NATIVE);
     DISCOVERY_OUT("end", "------------");
 
 #else
@@ -1716,32 +1692,31 @@ static void do_fluidsynth_check(const char* const filename, const bool init)
 
     // 2 channels
     DISCOVERY_OUT("init", "-----------");
+    DISCOVERY_OUT("build", BINARY_NATIVE);
+    DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
     DISCOVERY_OUT("name", name.buffer());
     DISCOVERY_OUT("label", label.buffer());
-    DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
     DISCOVERY_OUT("audio.outs", 2);
     DISCOVERY_OUT("midi.ins", 1);
-    DISCOVERY_OUT("programs", programs);
     DISCOVERY_OUT("parameters.ins", 13); // defined in Carla
     DISCOVERY_OUT("parameters.outs", 1);
-    DISCOVERY_OUT("build", BINARY_NATIVE);
     DISCOVERY_OUT("end", "------------");
 
     // 16 channels
     if (name.isEmpty() || programs <= 1)
         return;
+
     name += " (16 outputs)";
 
     DISCOVERY_OUT("init", "-----------");
+    DISCOVERY_OUT("build", BINARY_NATIVE);
+    DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
     DISCOVERY_OUT("name", name.buffer());
     DISCOVERY_OUT("label", label.buffer());
-    DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
     DISCOVERY_OUT("audio.outs", 32);
     DISCOVERY_OUT("midi.ins", 1);
-    DISCOVERY_OUT("programs", programs);
     DISCOVERY_OUT("parameters.ins", 13); // defined in Carla
     DISCOVERY_OUT("parameters.outs", 1);
-    DISCOVERY_OUT("build", BINARY_NATIVE);
     DISCOVERY_OUT("end", "------------");
 #else
     DISCOVERY_OUT("error", "SF2 support not available");
