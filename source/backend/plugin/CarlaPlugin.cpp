@@ -492,6 +492,8 @@ void CarlaPlugin::randomizeParameters() noexcept
 
         if (std::strstr(strBuf, "olume") != nullptr)
             continue;
+        if (std::strstr(strBuf, "Master") != nullptr)
+            continue;
 
         const ParameterRanges& paramRanges(pData->param.ranges[i]);
 
