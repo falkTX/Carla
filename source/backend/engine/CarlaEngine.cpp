@@ -2052,6 +2052,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
     switch (option)
     {
     case ENGINE_OPTION_DEBUG:
+    case ENGINE_OPTION_NSM_INIT:
         break;
 
     case ENGINE_OPTION_PROCESS_MODE:

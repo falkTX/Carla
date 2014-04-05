@@ -26,7 +26,7 @@
 #include "CarlaPlugin.hpp"
 
 #include "CarlaBackendUtils.hpp"
-#include "CarlaThread.hpp"
+#include "CarlaOscUtils.hpp"
 
 #include <QtCore/QByteArray>
 
@@ -44,17 +44,16 @@ using juce::MessageManager;
 namespace CB = CarlaBackend;
 using CB::EngineOptions;
 
-#if defined(HAVE_JUCE) && defined(CARLA_OS_LINUX)
-using juce::Thread;
-
-// -----------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------
 // Juce Message Thread
 
-class JuceMessageThread : public Thread
+#if defined(HAVE_JUCE) && defined(CARLA_OS_LINUX)
+
+class JuceMessageThread : public juce::Thread
 {
 public:
     JuceMessageThread()
-      : Thread("JuceMessageThread"),
+      : juce::Thread("JuceMessageThread"),
         fInitialised(false)
     {
     }
@@ -101,8 +100,11 @@ protected:
 
 private:
     volatile bool fInitialised;
+
+    CARLA_DECLARE_NON_COPY_CLASS(JuceMessageThread)
 };
-#endif
+
+#endif // defined(HAVE_JUCE) && defined(CARLA_OS_LINUX)
 
 // -------------------------------------------------------------------------------------------------------------------
 // Single, standalone engine
@@ -140,9 +142,9 @@ struct CarlaBackendStandalone {
 
     ~CarlaBackendStandalone()
     {
-        CARLA_ASSERT(engine == nullptr);
+        CARLA_SAFE_ASSERT(engine == nullptr);
 #ifdef HAVE_JUCE
-        CARLA_ASSERT(MessageManager::getInstanceWithoutCreating() == nullptr);
+        CARLA_SAFE_ASSERT(MessageManager::getInstanceWithoutCreating() == nullptr);
 #endif
     }
 
@@ -186,10 +188,207 @@ struct CarlaBackendStandalone {
 # endif
 #endif
 
+    CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaBackendStandalone)
 };
 
 static CarlaBackendStandalone gStandalone;
+
+// -------------------------------------------------------------------------------------------------------------------
+// NSM support
+
+#define NSM_API_VERSION_MAJOR 1
+#define NSM_API_VERSION_MINOR 2
+
+class CarlaNSM
+{
+public:
+    CarlaNSM() noexcept
+        : fOscServer(nullptr) {}
+
+    ~CarlaNSM()
+    {
+        if (fOscServer != nullptr)
+        {
+            lo_server_del_method(fOscServer, "/reply", "ssss");
+            lo_server_del_method(fOscServer, "/nsm/client/open", "sss");
+            lo_server_del_method(fOscServer, "/nsm/client/save", "");
+            lo_server_free(fOscServer);
+            fOscServer = nullptr;
+        }
+    }
+
+    void announce(const int pid, const char* const initName)
+    {
+        const char* const NSM_URL(std::getenv("NSM_URL"));
+
+        if (NSM_URL == nullptr)
+            return;
+
+        const lo_address addr = lo_address_new_from_url(NSM_URL);
+
+        if (addr == nullptr)
+            return;
+
+        const int proto = lo_address_get_protocol(addr);
+
+        if (fOscServer == nullptr)
+        {
+            // create new OSC server
+            fOscServer = lo_server_new_with_proto(nullptr, proto, _error_handler);
+
+            // register message handlers and start OSC thread
+            lo_server_add_method(fOscServer, "/reply",           "ssss", _reply_handler, this);
+            lo_server_add_method(fOscServer, "/nsm/client/open", "sss",  _open_handler,  this);
+            lo_server_add_method(fOscServer, "/nsm/client/save", "",     _save_handler,  this);
+            // /nsm/client/session_is_loaded
+            // /nsm/client/show_optional_gui
+            // /nsm/client/hide_optional_gui
+        }
+
+#ifndef BUILD_ANSI_TEST
+        lo_send_from(addr, fOscServer, LO_TT_IMMEDIATE, "/nsm/server/announce", "sssiii",
+                     "Carla", ":switch:", initName, NSM_API_VERSION_MAJOR, NSM_API_VERSION_MINOR, pid); // optional-gui:
+#endif
+
+        lo_address_free(addr);
+    }
+
+    void idle() noexcept
+    {
+        if (fOscServer == nullptr)
+            return;
+
+        for (;;)
+        {
+            try {
+                if (lo_server_recv_noblock(fOscServer, 0) == 0)
+                    break;
+            }
+            CARLA_SAFE_EXCEPTION_CONTINUE("NSM OSC idle")
+        }
+    }
+
+protected:
+    int handleReply(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg)
+    {
+        carla_debug("CarlaNSM::handleReply(%s, %i, %p, %s, %p)", path, argc, argv, types, msg);
+
+        const char* const method  = &argv[0]->s;
+        const char* const message = &argv[1]->s;
+        const char* const smName  = &argv[2]->s;
+
+        CARLA_SAFE_ASSERT_RETURN(std::strcmp(method, "/nsm/server/announce") == 0, 0);
+
+        carla_stdout("'%s' started: %s", smName, message);
+
+        // TODO: send callback, disable open+save etc
+
+        return 0;
+
+#ifndef DEBUG
+        // unused
+        (void)path; (void)types; (void)argc;
+#endif
+    }
+
+    int handleOpen(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 0);
+        carla_debug("CarlaNSM::handleOpen(\"%s\", \"%s\", %p, %i, %p)", path, types, argv, argc, msg);
+
+        const char* const projectPath = &argv[0]->s;
+        //const char* const displayName = &argv[1]->s;
+        const char* const clientId    = &argv[2]->s;
+
+        if (! carla_is_engine_running())
+        {
+            gStandalone.engineOptions.processMode   = CB::ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS;
+            gStandalone.engineOptions.transportMode = CB::ENGINE_TRANSPORT_MODE_JACK;
+
+            carla_engine_init("JACK", clientId);
+        }
+        else
+        {
+            CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0);
+
+            for (uint i=0, count=gStandalone.engine->getCurrentPluginCount(); i < count; ++i)
+                gStandalone.engine->removePlugin(i);
+        }
+
+        fProjectPath  = projectPath;
+        fProjectPath += ".carxp";
+
+        CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0);
+
+        gStandalone.engine->loadProject(fProjectPath);
+
+#ifndef BUILD_ANSI_TEST
+        lo_send_from(lo_message_get_source(msg), fOscServer, LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/open", "OK");
+#endif
+
+        return 0;
+
+#ifndef DEBUG
+        // unused
+        (void)path; (void)types; (void)argc; (void)msg;
+#endif
+    }
+
+    int handleSave(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(fProjectPath.isNotEmpty(), 0);
+        carla_debug("CarlaNSM::handleSave(\"%s\", \"%s\", %p, %i, %p)", path, types, argv, argc, msg);
+
+        gStandalone.engine->saveProject(fProjectPath);
+
+#ifndef BUILD_ANSI_TEST
+        lo_send_from(lo_message_get_source(msg), fOscServer, LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/save", "OK");
+#endif
+
+        return 0;
+
+#ifndef DEBUG
+        // unused
+        (void)path; (void)types; (void)argv; (void)argc; (void)msg;
+#endif
+    }
+
+private:
+    lo_server   fOscServer;
+    CarlaString fProjectPath;
+
+    #define handlePtr ((CarlaNSM*)data)
+
+    static void _error_handler(int num, const char* msg, const char* path)
+    {
+        carla_stderr2("CarlaNSM::_error_handler(%i, \"%s\", \"%s\")", num, msg, path);
+    }
+
+    static int _reply_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* data)
+    {
+        return handlePtr->handleReply(path, types, argv, argc, msg);
+    }
+
+    static int _open_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* data)
+    {
+        return handlePtr->handleOpen(path, types, argv, argc, msg);
+    }
+
+    static int _save_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* data)
+    {
+        return handlePtr->handleSave(path, types, argv, argc, msg);
+    }
+
+    #undef handlePtr
+
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaNSM)
+};
+
+static CarlaNSM gNSM;
 
 // -------------------------------------------------------------------------------------------------------------------
 // Always return a valid string ptr
@@ -733,6 +932,7 @@ void carla_engine_idle()
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
 
+    gNSM.idle();
 #if defined(HAVE_JUCE) && ! defined(CARLA_OS_LINUX)
     gStandalone.idle();
 #endif
@@ -839,6 +1039,12 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
             delete[] gStandalone.engineOptions.audioDevice;
 
         gStandalone.engineOptions.audioDevice = carla_strdup(valueStr);
+        break;
+
+    case CB:: ENGINE_OPTION_NSM_INIT:
+        CARLA_SAFE_ASSERT_RETURN(value != 0,);
+        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
+        gNSM.announce(value, valueStr);
         break;
 
     case CB::ENGINE_OPTION_PATH_BINARIES:
@@ -2145,276 +2351,5 @@ int main(int argc, char* argv[])
     return 0;
 }
 #endif
-
-#if 0
-//#include "CarlaOscUtils.hpp"
-
-// -------------------------------------------------------------------------------------------------------------------
-
-#define NSM_API_VERSION_MAJOR 1
-#define NSM_API_VERSION_MINOR 2
-
-class CarlaNSM
-{
-public:
-    CarlaNSM()
-        : fServerThread(nullptr),
-          fReplyAddr(nullptr),
-          fIsReady(false),
-          fIsOpened(false),
-          fIsSaved(false)
-    {
-    }
-
-    ~CarlaNSM()
-    {
-        if (fReplyAddr != nullptr)
-            lo_address_free(fReplyAddr);
-
-        if (fServerThread != nullptr)
-        {
-            lo_server_thread_stop(fServerThread);
-            lo_server_thread_del_method(fServerThread, "/reply", "ssss");
-            lo_server_thread_del_method(fServerThread, "/nsm/client/open", "sss");
-            lo_server_thread_del_method(fServerThread, "/nsm/client/save", "");
-            lo_server_thread_free(fServerThread);
-        }
-    }
-
-    void announce(const char* const url, const char* appName, const int pid)
-    {
-        lo_address const addr = lo_address_new_from_url(url);
-
-        if (addr == nullptr)
-            return;
-
-        const int proto = lo_address_get_protocol(addr);
-
-        if (fServerThread == nullptr)
-        {
-            // create new OSC thread
-            fServerThread = lo_server_thread_new_with_proto(nullptr, proto, error_handler);
-
-            // register message handlers and start OSC thread
-            lo_server_thread_add_method(fServerThread, "/reply",           "ssss", _reply_handler, this);
-            lo_server_thread_add_method(fServerThread, "/nsm/client/open", "sss",  _open_handler,  this);
-            lo_server_thread_add_method(fServerThread, "/nsm/client/save", "",     _save_handler,  this);
-            lo_server_thread_start(fServerThread);
-        }
-
-#ifndef BUILD_ANSI_TEST
-        lo_send_from(addr, lo_server_thread_get_server(fServerThread), LO_TT_IMMEDIATE, "/nsm/server/announce", "sssiii",
-                     "Carla", ":switch:", appName, NSM_API_VERSION_MAJOR, NSM_API_VERSION_MINOR, pid);
-#endif
-
-        lo_address_free(addr);
-    }
-
-    void ready()
-    {
-        fIsReady = true;
-    }
-
-    void replyOpen()
-    {
-        fIsOpened = true;
-    }
-
-    void replySave()
-    {
-        fIsSaved = true;
-    }
-
-protected:
-    int handleReply(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg)
-    {
-        carla_debug("CarlaNSM::handleReply(%s, %i, %p, %s, %p)", path, argc, argv, types, msg);
-
-        if (fReplyAddr != nullptr)
-            lo_address_free(fReplyAddr);
-
-        fIsOpened = false;
-        fIsSaved  = false;
-
-        char* const url = lo_address_get_url(lo_message_get_source(msg));
-        fReplyAddr      = lo_address_new_from_url(url);
-        std::free(url);
-
-        const char* const method = &argv[0]->s;
-        const char* const smName = &argv[2]->s;
-
-        // wait max 6 secs for host to init
-        for (int i=0; i < 60 && ! fIsReady; ++i)
-            carla_msleep(100);
-
-        if (std::strcmp(method, "/nsm/server/announce") == 0 && gStandalone.callback != nullptr)
-            gStandalone.callback(gStandalone.callbackPtr, CB::ENGINE_CALLBACK_NSM_ANNOUNCE, 0, 0, 0, 0.0f, smName);
-
-        return 0;
-
-#ifndef DEBUG
-        // unused
-        (void)path;
-        (void)types;
-        (void)argc;
-#endif
-    }
-
-    int handleOpen(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg)
-    {
-        carla_debug("CarlaNSM::handleOpen(\"%s\", \"%s\", %p, %i, %p)", path, types, argv, argc, msg);
-
-        if (gStandalone.callback == nullptr)
-            return 1;
-        if (fServerThread == nullptr)
-            return 1;
-        if (fReplyAddr == nullptr)
-            return 1;
-
-        const char* const projectPath = &argv[0]->s;
-        const char* const clientId    = &argv[2]->s;
-
-        char data[std::strlen(projectPath)+std::strlen(clientId)+2];
-        std::strcpy(data, projectPath);
-        std::strcat(data, ":");
-        std::strcat(data, clientId);
-
-        fIsOpened = false;
-
-        gStandalone.callback(nullptr, CB::ENGINE_CALLBACK_NSM_OPEN, 0, 0, 0, 0.0f, data);
-
-        // wait max 10 secs to open
-        for (int i=0; i < 100 && ! fIsOpened; ++i)
-            carla_msleep(100);
-
-#ifndef BUILD_ANSI_TEST
-        if (fIsOpened)
-            lo_send_from(fReplyAddr, lo_server_thread_get_server(fServerThread), LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/open", "OK");
-#endif
-
-        return 0;
-
-#ifndef DEBUG
-        // unused
-        (void)path;
-        (void)types;
-        (void)argc;
-        (void)msg;
-#endif
-    }
-
-    int handleSave(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg)
-    {
-        carla_debug("CarlaNSM::handleSave(\"%s\", \"%s\", %p, %i, %p)", path, types, argv, argc, msg);
-
-        if (gStandalone.callback == nullptr)
-            return 1;
-        if (fServerThread == nullptr)
-            return 1;
-        if (fReplyAddr == nullptr)
-            return 1;
-
-        fIsSaved = false;
-
-        gStandalone.callback(nullptr, CB::ENGINE_CALLBACK_NSM_SAVE, 0, 0, 0, 0.0f, nullptr);
-
-        // wait max 10 secs to save
-        for (int i=0; i < 100 && ! fIsSaved; ++i)
-            carla_msleep(100);
-
-#ifndef BUILD_ANSI_TEST
-        if (fIsSaved)
-            lo_send_from(fReplyAddr, lo_server_thread_get_server(fServerThread), LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/save", "OK");
-#endif
-
-        return 0;
-
-#ifndef DEBUG
-        // unused
-        (void)path;
-        (void)types;
-        (void)argv;
-        (void)argc;
-        (void)msg;
-#endif
-    }
-
-private:
-    lo_server_thread fServerThread;
-    lo_address       fReplyAddr;
-
-    bool fIsReady; // used to startup, only once
-    bool fIsOpened;
-    bool fIsSaved;
-
-    #define handlePtr ((CarlaNSM*)data)
-
-    static int _reply_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* data)
-    {
-        return handlePtr->handleReply(path, types, argv, argc, msg);
-    }
-
-    static int _open_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* data)
-    {
-        return handlePtr->handleOpen(path, types, argv, argc, msg);
-    }
-
-    static int _save_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* data)
-    {
-        return handlePtr->handleSave(path, types, argv, argc, msg);
-    }
-
-    #undef handlePtr
-
-    static void error_handler(int num, const char* msg, const char* path)
-    {
-        carla_stderr2("CarlaNSM::error_handler(%i, \"%s\", \"%s\")", num, msg, path);
-    }
-};
-
-static CarlaNSM gCarlaNSM;
-
-void carla_nsm_announce(const char* url, const char* appName, int pid)
-{
-    CARLA_SAFE_ASSERT_RETURN(url != nullptr && url[0] != '\0',);
-    CARLA_SAFE_ASSERT_RETURN(appName != nullptr && appName[0] != '\0',);
-    CARLA_SAFE_ASSERT_RETURN(pid != 0,);
-    carla_debug("carla_nsm_announce(\"%s\", \"%s\", %i)", url, appName, pid);
-
-    gCarlaNSM.announce(url, appName, pid);
-}
-
-void carla_nsm_ready()
-{
-    carla_debug("carla_nsm_ready()");
-
-    gCarlaNSM.ready();
-}
-
-void carla_nsm_reply_open()
-{
-    carla_debug("carla_nsm_reply_open()");
-
-    gCarlaNSM.replyOpen();
-}
-
-void carla_nsm_reply_save()
-{
-    carla_debug("carla_nsm_reply_save()");
-
-    gCarlaNSM.replySave();
-}
-#endif
-
-// -------------------------------------------------------------------------------------------------------------------
-
-//#include "CarlaLogThread.hpp"
-//#if ! (defined(DEBUG) || defined(WANT_LOGS) || defined(BUILD_ANSI_TEST))
-//# define WANT_LOGS
-//#endif
-
-//#ifdef WANT_LOGS
-//static CarlaLogThread gLogThread;
-//#endif
 
 // -------------------------------------------------------------------------------------------------------------------

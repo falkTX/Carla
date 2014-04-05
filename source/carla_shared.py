@@ -580,6 +580,8 @@ def initHost(initName, libPrefix = None, failError = True):
     if gCarla.host is None:
         gCarla.host = Host(libfilename)
 
+    gCarla.host.set_engine_option(ENGINE_OPTION_NSM_INIT, os.getpid(), initName)
+
     # -------------------------------------------------------------
     # Set binary path
 

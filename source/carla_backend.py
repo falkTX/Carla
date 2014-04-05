@@ -758,18 +758,21 @@ ENGINE_OPTION_AUDIO_SAMPLE_RATE = 11
 # Default unset.
 ENGINE_OPTION_AUDIO_DEVICE = 12
 
+# Set data needed for NSM support.
+ENGINE_OPTION_NSM_INIT = 13
+
 # Set path to the binary files.
 # Default unset.
 # @note Must be set for plugin and UI bridges to work
-ENGINE_OPTION_PATH_BINARIES = 13
+ENGINE_OPTION_PATH_BINARIES = 14
 
 # Set path to the resource files.
 # Default unset.
 # @note Must be set for some internal plugins to work
-ENGINE_OPTION_PATH_RESOURCES = 14
+ENGINE_OPTION_PATH_RESOURCES = 15
 
 # Set frontend winId, used to define as parent window for plugin UIs.
-ENGINE_OPTION_FRONTEND_WIN_ID = 15
+ENGINE_OPTION_FRONTEND_WIN_ID = 16
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine Process Mode

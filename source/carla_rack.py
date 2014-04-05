@@ -698,6 +698,7 @@ class CarlaRackW(QFrame):
 
     # -----------------------------------------------------------------
 
+    @pyqtSlot(int)
     def slot_currentRowChanged(self, row):
         self.fCurrentRow = row
 

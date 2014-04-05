@@ -46,6 +46,7 @@ class CarlaMultiW(QTabWidget):
         self.fRack     = CarlaRackW(parent, False)
         self.fPatchbay = CarlaPatchbayW(parent, False, False)
         self.fParent   = parent
+
         self.fUseCustomPaint = False
 
         self.addTab(self.fRack, "Plugins")
