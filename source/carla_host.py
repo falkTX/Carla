@@ -891,7 +891,7 @@ class HostWindow(QMainWindow):
     # -----------------------------------------------------------------
 
     @pyqtSlot()
-    def slot_pluginAdd(self):
+    def slot_pluginAdd(self, pluginToReplace = -1):
         dialog = PluginDatabaseW(self)
 
         if not dialog.exec_():
@@ -908,9 +908,18 @@ class HostWindow(QMainWindow):
         uniqueId = dialog.fRetPlugin['uniqueId']
         extraPtr = self.getExtraPtr(dialog.fRetPlugin)
 
-        if not gCarla.host.add_plugin(btype, ptype, filename, None, label, uniqueId, extraPtr):
+        if pluginToReplace >= 0:
+            if not gCarla.host.replace_plugin(pluginToReplace):
+                CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to replace plugin"), gCarla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+                return
+
+        ok = gCarla.host.add_plugin(btype, ptype, filename, None, label, uniqueId, extraPtr)
+
+        if pluginToReplace >= 0:
+            gCarla.host.replace_plugin(self.fContainer.getPluginCount())
+
+        if not ok:
             CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"), gCarla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
-            return
 
     @pyqtSlot()
     def slot_pluginRemoveAll(self):

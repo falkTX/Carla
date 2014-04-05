@@ -1197,16 +1197,29 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
 
     if (oldPlugin != nullptr)
     {
+        bool  wasActive = (oldPlugin->getInternalParameterValue(PARAMETER_ACTIVE) >= 0.5f);
+        float oldDryWet =  oldPlugin->getInternalParameterValue(PARAMETER_DRYWET);
+        float oldVolume =  oldPlugin->getInternalParameterValue(PARAMETER_VOLUME);
+
         delete oldPlugin;
         callback(ENGINE_CALLBACK_RELOAD_ALL, id, 0, 0, 0.0f, plugin->getName());
+
+        if (wasActive)
+            plugin->setActive(true, true, true);
+
+        if (plugin->getHints() & PLUGIN_CAN_DRYWET)
+            plugin->setDryWet(oldDryWet, true, true);
+
+        if (plugin->getHints() & PLUGIN_CAN_VOLUME)
+            plugin->setVolume(oldVolume, true, true);
     }
     else
     {
         ++pData->curPluginCount;
         callback(ENGINE_CALLBACK_PLUGIN_ADDED, id, 0, 0, 0.0f, plugin->getName());
 
-        if (pData->curPluginCount == 1 && pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED, 0, PATCHBAY_ICON_CARLA, 0, 0.0f, nullptr);
+        //if (pData->curPluginCount == 1 && pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        //    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED, 0, PATCHBAY_ICON_CARLA, 0, 0.0f, nullptr);
     }
 
     return true;

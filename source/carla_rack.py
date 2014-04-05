@@ -176,7 +176,7 @@ class CarlaRackList(QListWidget):
 
         if tryItem is not None:
             gCarla.host.replace_plugin(self.parent().fPluginCount)
-            tryItem.widget.setActive(True, True, True)
+            #tryItem.widget.setActive(True, True, True)
 
     def mousePressEvent(self, event):
         if self.itemAt(event.pos()) is None:

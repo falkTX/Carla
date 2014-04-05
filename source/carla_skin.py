@@ -63,7 +63,7 @@ class AbstractPluginSlot(QFrame):
         # -------------------------------------------------------------
         # Internal stuff
 
-        self.fIsActive = False
+        self.fIsActive   = bool(gCarla.host.get_internal_parameter_value(self.fPluginId, PARAMETER_ACTIVE) >= 0.5) if gCarla.host is not None else True
         self.fIsSelected = False
 
         self.fLastGreenLedState = False
@@ -117,6 +117,7 @@ class AbstractPluginSlot(QFrame):
 
     def ready(self):
         if self.b_enable is not None:
+            self.b_enable.setChecked(self.fIsActive)
             self.b_enable.clicked.connect(self.slot_enableClicked)
 
         if self.b_gui is not None:
@@ -481,9 +482,10 @@ class AbstractPluginSlot(QFrame):
             actGui = None
 
         menu.addSeparator()
-        actClone  = menu.addAction(self.tr("Clone"))
-        actRename = menu.addAction(self.tr("Rename..."))
-        actRemove = menu.addAction(self.tr("Remove"))
+        actClone   = menu.addAction(self.tr("Clone"))
+        actReplace = menu.addAction(self.tr("Replace..."))
+        actRename  = menu.addAction(self.tr("Rename..."))
+        actRemove  = menu.addAction(self.tr("Remove"))
 
         actSel = menu.exec_(QCursor.pos())
 
@@ -526,6 +528,9 @@ class AbstractPluginSlot(QFrame):
             else:
                 CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
                                        gCarla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+
+        elif actSel == actReplace:
+            gCarla.gui.slot_pluginAdd(self.fPluginId)
 
         elif actSel == actRemove:
             if gCarla.host is not None and not gCarla.host.remove_plugin(self.fPluginId):
