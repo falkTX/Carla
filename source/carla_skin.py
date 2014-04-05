@@ -461,6 +461,10 @@ class AbstractPluginSlot(QFrame):
         actActive = menu.addAction(self.tr("Disable") if isEnabled else self.tr("Enable"))
         menu.addSeparator()
 
+        actReset  = menu.addAction(self.tr("Reset parameters"))
+        actRandom = menu.addAction(self.tr("Randomize parameters"))
+        menu.addSeparator()
+
         if bEdit is not None:
             actEdit = menu.addAction(self.tr("Edit"))
             actEdit.setCheckable(True)
@@ -488,10 +492,21 @@ class AbstractPluginSlot(QFrame):
 
         if actSel == actActive:
             self.setActive(not isEnabled, True, True)
+
+        elif actSel == actReset:
+            if gCarla.host is None: return
+            gCarla.host.reset_parameters(self.fPluginId)
+
+        elif actSel == actRandom:
+            if gCarla.host is None: return
+            gCarla.host.randomize_parameters(self.fPluginId)
+
         elif actSel == actGui:
             bGui.click()
+
         elif actSel == actEdit:
             bEdit.click()
+
         elif actSel == actClone:
             if gCarla.host is not None and not gCarla.host.clone_plugin(self.fPluginId):
                 CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),

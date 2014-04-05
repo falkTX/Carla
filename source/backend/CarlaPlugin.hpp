@@ -375,6 +375,11 @@ public:
     virtual void prepareForSave();
 
     /*!
+     * Reset all possible parameters.
+     */
+    virtual void resetParameters() noexcept;
+
+    /*!
      * Randomize all possible parameters.
      */
     virtual void randomizeParameters() noexcept;

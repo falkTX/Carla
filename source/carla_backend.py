@@ -1706,7 +1706,12 @@ class Host(object):
     def prepare_for_save(self, pluginId):
         self.lib.carla_prepare_for_save(pluginId)
 
-    # Randomize a plugin's parameters.
+    # Reset all plugin's parameters.
+    # @param pluginId Plugin
+    def reset_parameters(self, pluginId):
+        self.lib.carla_reset_parameters(pluginId)
+
+    # Randomize all plugin's parameters.
     # @param pluginId Plugin
     def randomize_parameters(self, pluginId):
         self.lib.carla_randomize_parameters(pluginId)
@@ -1983,6 +1988,12 @@ class Host(object):
 
         self.lib.carla_prepare_for_save.argtypes = [c_uint]
         self.lib.carla_prepare_for_save.restype = None
+
+        self.lib.carla_reset_parameters.argtypes = [c_uint]
+        self.lib.carla_reset_parameters.restype = None
+
+        self.lib.carla_randomize_parameters.argtypes = [c_uint]
+        self.lib.carla_randomize_parameters.restype = None
 
         self.lib.carla_send_midi_note.argtypes = [c_uint, c_uint8, c_uint8, c_uint8]
         self.lib.carla_send_midi_note.restype = None

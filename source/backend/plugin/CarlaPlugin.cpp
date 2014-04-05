@@ -454,12 +454,8 @@ void CarlaPlugin::prepareForSave()
 {
 }
 
-void CarlaPlugin::randomizeParameters() noexcept
+void CarlaPlugin::resetParameters() noexcept
 {
-    float value, random;
-
-    std::srand(static_cast<uint>(std::time(nullptr)));
-
     for (uint i=0; i < pData->param.count; ++i)
     {
         const ParameterData&   paramData(pData->param.data[i]);
@@ -470,8 +466,48 @@ void CarlaPlugin::randomizeParameters() noexcept
         if ((paramData.hints & PARAMETER_IS_ENABLED) == 0)
             continue;
 
-        random = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
-        value  = random * (paramRanges.max - paramRanges.min) + paramRanges.min;
+        setParameterValue(i, paramRanges.def, true, true, true);
+    }
+}
+
+void CarlaPlugin::randomizeParameters() noexcept
+{
+    float value, random;
+
+    char strBuf[STR_MAX+1];
+    strBuf[STR_MAX] = '\0';
+
+    std::srand(static_cast<uint>(std::time(nullptr)));
+
+    for (uint i=0; i < pData->param.count; ++i)
+    {
+        const ParameterData& paramData(pData->param.data[i]);
+
+        if (paramData.type != PARAMETER_INPUT)
+            continue;
+        if ((paramData.hints & PARAMETER_IS_ENABLED) == 0)
+            continue;
+
+        getParameterName(i, strBuf);
+
+        if (std::strstr(strBuf, "olume") != nullptr)
+            continue;
+
+        const ParameterRanges& paramRanges(pData->param.ranges[i]);
+
+        if (paramData.hints & PARAMETER_IS_BOOLEAN)
+        {
+            random = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+            value  = random > 0.5 ? paramRanges.max : paramRanges.min;
+        }
+        else
+        {
+            random = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+            value  = random * (paramRanges.max - paramRanges.min) + paramRanges.min;
+
+            if (paramData.hints & PARAMETER_IS_INTEGER)
+                value = std::rint(value);
+        }
 
         setParameterValue(i, value, true, true, true);
     }

@@ -2027,6 +2027,17 @@ void carla_prepare_for_save(uint pluginId)
     carla_stderr2("carla_prepare_for_save(%i) - could not find plugin", pluginId);
 }
 
+void carla_reset_parameters(uint pluginId)
+{
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+    carla_debug("carla_reset_parameters(%i)", pluginId);
+
+    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
+        return plugin->resetParameters();
+
+    carla_stderr2("carla_reset_parameters(%i) - could not find plugin", pluginId);
+}
+
 void carla_randomize_parameters(uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);

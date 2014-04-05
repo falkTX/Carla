@@ -919,7 +919,13 @@ CARLA_EXPORT void carla_set_chunk_data(uint pluginId, const char* chunkData);
 CARLA_EXPORT void carla_prepare_for_save(uint pluginId);
 
 /*!
- * Randomize a plugin's parameters.
+ * Reset all plugin's parameters.
+ * @param pluginId Plugin
+ */
+CARLA_EXPORT void carla_reset_parameters(uint pluginId);
+
+/*!
+ * Randomize all plugin's parameters.
  * @param pluginId Plugin
  */
 CARLA_EXPORT void carla_randomize_parameters(uint pluginId);
