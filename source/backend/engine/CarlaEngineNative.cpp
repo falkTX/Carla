@@ -465,6 +465,15 @@ protected:
             if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
                 plugin->prepareForSave();
         }
+        else if (std::strcmp(msg, "randomize_parameters") == 0)
+        {
+            uint32_t pluginId;
+
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+
+            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+                plugin->randomizeParameters();
+        }
         else if (std::strcmp(msg, "send_midi_note") == 0)
         {
             uint32_t pluginId, channel, note, velocity;

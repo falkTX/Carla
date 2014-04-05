@@ -77,7 +77,7 @@ protected:
      * \param engine The engine which this plugin belongs to, must not be null
      * \param id     The 'id' of this plugin, must be between 0 and CarlaEngine::maxPluginNumber()
      */
-    CarlaPlugin(CarlaEngine* const engine, const unsigned int id);
+    CarlaPlugin(CarlaEngine* const engine, const uint id);
 
 public:
     /*!
@@ -105,21 +105,21 @@ public:
      *
      * \see setId()
      */
-    unsigned int getId() const noexcept;
+    uint getId() const noexcept;
 
     /*!
      * Get the plugin's hints.
      *
      * \see PluginHints
      */
-    unsigned int getHints() const noexcept;
+    uint getHints() const noexcept;
 
     /*!
      * Get the plugin's options (currently in use).
      *
      * \see PluginOptions, getAvailableOptions() and setOption()
      */
-    unsigned int getOptionsEnabled() const noexcept;
+    uint getOptionsEnabled() const noexcept;
 
     /*!
      * Check if the plugin is enabled.\n
@@ -278,7 +278,7 @@ public:
      *
      * \see PluginOptions, getOptions() and setOption()
      */
-    virtual unsigned int getOptionsAvailable() const noexcept;
+    virtual uint getOptionsAvailable() const noexcept;
 
     /*!
      * Get the current parameter value of \a parameterId.
@@ -375,6 +375,11 @@ public:
     virtual void prepareForSave();
 
     /*!
+     * Randomize all possible parameters.
+     */
+    virtual void randomizeParameters() noexcept;
+
+    /*!
      * Get the plugin's save state.\n
      * The plugin will automatically call prepareForSave() as needed.
      *
@@ -411,7 +416,7 @@ public:
      *
      * \see getId()
      */
-    void setId(const unsigned int newId) noexcept;
+    void setId(const uint newId) noexcept;
 
     /*!
      * Set the plugin's name to \a newName.
@@ -425,7 +430,7 @@ public:
      *
      * \see getOptions() and getAvailableOptions()
      */
-    void setOption(const unsigned int option, const bool yesNo);
+    void setOption(const uint option, const bool yesNo);
 
     /*!
      * Enable or disable the plugin according to \a yesNo. \n
@@ -829,7 +834,7 @@ public:
 #ifndef DOXYGEN
     struct Initializer {
         CarlaEngine* const engine;
-        const unsigned int id;
+        const uint id;
         const char* const filename;
         const char* const name;
         const char* const label;

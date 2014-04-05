@@ -22,6 +22,8 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaPluginUi.hpp"
 
+#include <ctime>
+
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>
 #include <QtXml/QDomNode>
@@ -450,6 +452,29 @@ void CarlaPlugin::getParameterCountInfo(uint32_t& ins, uint32_t& outs) const noe
 
 void CarlaPlugin::prepareForSave()
 {
+}
+
+void CarlaPlugin::randomizeParameters() noexcept
+{
+    float value, random;
+
+    std::srand(static_cast<uint>(std::time(nullptr)));
+
+    for (uint i=0; i < pData->param.count; ++i)
+    {
+        const ParameterData&   paramData(pData->param.data[i]);
+        const ParameterRanges& paramRanges(pData->param.ranges[i]);
+
+        if (paramData.type != PARAMETER_INPUT)
+            continue;
+        if ((paramData.hints & PARAMETER_IS_ENABLED) == 0)
+            continue;
+
+        random = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+        value  = random * (paramRanges.max - paramRanges.min) + paramRanges.min;
+
+        setParameterValue(i, value, true, true, true);
+    }
 }
 
 const SaveState& CarlaPlugin::getSaveState()

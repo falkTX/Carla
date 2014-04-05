@@ -2027,6 +2027,17 @@ void carla_prepare_for_save(uint pluginId)
     carla_stderr2("carla_prepare_for_save(%i) - could not find plugin", pluginId);
 }
 
+void carla_randomize_parameters(uint pluginId)
+{
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+    carla_debug("carla_randomize_parameters(%i)", pluginId);
+
+    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
+        return plugin->randomizeParameters();
+
+    carla_stderr2("carla_randomize_parameters(%i) - could not find plugin", pluginId);
+}
+
 #ifndef BUILD_BRIDGE
 void carla_send_midi_note(uint pluginId, uint8_t channel, uint8_t note, uint8_t velocity)
 {

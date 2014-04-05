@@ -487,6 +487,9 @@ class PluginHost(object):
     def prepare_for_save(self, pluginId):
         gCarla.gui.send(["prepare_for_save", pluginId])
 
+    def randomize_parameters(self, pluginId):
+        gCarla.gui.send(["randomize_parameters", pluginId])
+
     def send_midi_note(self, pluginId, channel, note, velocity):
         gCarla.gui.send(["send_midi_note", pluginId, channel, note, velocity])
 

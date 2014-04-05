@@ -75,20 +75,20 @@ typedef struct _CarlaPluginInfo {
      * Plugin hints.
      * @see PluginHints
      */
-    unsigned int hints;
+    uint hints;
 
     /*!
      * Plugin options available for the user to change.
      * @see PluginOptions
      */
-    unsigned int optionsAvailable;
+    uint optionsAvailable;
 
     /*!
      * Plugin options currently enabled.\n
      * Some options are enabled but not available, which means they will always be on.
      * @see PluginOptions
      */
-    unsigned int optionsEnabled;
+    uint optionsEnabled;
 
     /*!
      * Plugin filename.\n
@@ -154,7 +154,7 @@ typedef struct _CarlaNativePluginInfo {
      * Plugin hints.
      * @see PluginHints
      */
-    unsigned int hints;
+    uint hints;
 
     /*!
      * Number of audio inputs.
@@ -360,37 +360,37 @@ CARLA_EXPORT const char* carla_get_supported_file_extensions();
 /*!
  * Get how many engine drivers are available.
  */
-CARLA_EXPORT unsigned int carla_get_engine_driver_count();
+CARLA_EXPORT uint carla_get_engine_driver_count();
 
 /*!
  * Get an engine driver name.
  * @param index Driver index
  */
-CARLA_EXPORT const char* carla_get_engine_driver_name(unsigned int index);
+CARLA_EXPORT const char* carla_get_engine_driver_name(uint index);
 
 /*!
  * Get the device names of an engine driver.
  * @param index Driver index
  */
-CARLA_EXPORT const char* const* carla_get_engine_driver_device_names(unsigned int index);
+CARLA_EXPORT const char* const* carla_get_engine_driver_device_names(uint index);
 
 /*!
  * Get information about a device driver.
  * @param index Driver index
  * @param name  Device name
  */
-CARLA_EXPORT const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(unsigned int index, const char* name);
+CARLA_EXPORT const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(uint index, const char* name);
 
 /*!
  * Get how many internal plugins are available.
  */
-CARLA_EXPORT unsigned int carla_get_internal_plugin_count();
+CARLA_EXPORT uint carla_get_internal_plugin_count();
 
 /*!
  * Get information about an internal plugin.
  * @param index Internal plugin Id
  */
-CARLA_EXPORT const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int index);
+CARLA_EXPORT const CarlaNativePluginInfo* carla_get_internal_plugin_info(uint index);
 
 #ifdef __cplusplus
 /*!
@@ -917,6 +917,12 @@ CARLA_EXPORT void carla_set_chunk_data(uint pluginId, const char* chunkData);
  * @param pluginId Plugin
  */
 CARLA_EXPORT void carla_prepare_for_save(uint pluginId);
+
+/*!
+ * Randomize a plugin's parameters.
+ * @param pluginId Plugin
+ */
+CARLA_EXPORT void carla_randomize_parameters(uint pluginId);
 
 #ifndef BUILD_BRIDGE
 /*!

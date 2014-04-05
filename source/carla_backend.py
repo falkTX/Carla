@@ -1706,6 +1706,11 @@ class Host(object):
     def prepare_for_save(self, pluginId):
         self.lib.carla_prepare_for_save(pluginId)
 
+    # Randomize a plugin's parameters.
+    # @param pluginId Plugin
+    def randomize_parameters(self, pluginId):
+        self.lib.carla_randomize_parameters(pluginId)
+
     # Send a single note of a plugin.\n
     # If velocity is 0, note-off is sent; note-on otherwise.
     # @param pluginId Plugin
