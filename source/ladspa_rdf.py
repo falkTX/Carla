@@ -171,6 +171,7 @@ NS_dc     = "http://purl.org/dc/elements/1.1/"
 NS_rdf    = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 NS_rdfs   = "http://www.w3.org/2000/01/rdf-schema#"
 NS_ladspa = "http://ladspa.org/ontology#"
+NS_caps   = "http://quitte.de/dsp/caps.html#"
 
 # Prefixes (sorted alphabetically and by type)
 rdf_prefix = {
@@ -611,8 +612,8 @@ def parse_rdf_file(filename):
             else:
                 print("LADSPA_RDF - Port predicate '%s' not handled" % predicate)
 
-        # These "extensions" are already implemented
-        elif subject in (URIRef(rdf_prefix['ladspa:NotchPlugin']), URIRef(rdf_prefix['ladspa:SpectralPlugin'])):
+        # These "extensions" are already implemented. caps stuff is skipped
+        elif subject in (URIRef(rdf_prefix['ladspa:NotchPlugin']), URIRef(rdf_prefix['ladspa:SpectralPlugin'])) or NS_caps in subject:
             pass
 
         elif type(subject) == BNode:
