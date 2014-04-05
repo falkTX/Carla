@@ -477,15 +477,15 @@ void fillXmlStringFromSaveState(QString& content, const SaveState& saveState)
         data += QString("   <Active>%1</Active>\n").arg(saveState.active ? "Yes" : "No");
 
         if (saveState.dryWet != 1.0f)
-            data += QString("   <DryWet>%1</DryWet>\n").arg(saveState.dryWet);
+            data += QString("   <DryWet>%1</DryWet>\n").arg(saveState.dryWet, 0, 'g', 7);
         if (saveState.volume != 1.0f)
-            data += QString("   <Volume>%1</Volume>\n").arg(saveState.volume);
+            data += QString("   <Volume>%1</Volume>\n").arg(saveState.volume, 0, 'g', 7);
         if (saveState.balanceLeft != -1.0f)
-            data += QString("   <Balance-Left>%1</Balance-Left>\n").arg(saveState.balanceLeft);
+            data += QString("   <Balance-Left>%1</Balance-Left>\n").arg(saveState.balanceLeft, 0, 'g', 7);
         if (saveState.balanceRight != 1.0f)
-            data += QString("   <Balance-Right>%1</Balance-Right>\n").arg(saveState.balanceRight);
+            data += QString("   <Balance-Right>%1</Balance-Right>\n").arg(saveState.balanceRight, 0, 'g', 7);
         if (saveState.panning != 0.0f)
-            data += QString("   <Panning>%1</Panning>\n").arg(saveState.panning);
+            data += QString("   <Panning>%1</Panning>\n").arg(saveState.panning, 0, 'g', 7);
 
         if (saveState.ctrlChannel < 0)
             data += QString("   <ControlChannel>N</ControlChannel>\n");
@@ -508,7 +508,7 @@ void fillXmlStringFromSaveState(QString& content, const SaveState& saveState)
             parameter += QString("    <Symbol>%1</Symbol>\n").arg(xmlSafeString(stateParameter->symbol, true));
 
         if (stateParameter->isInput)
-            parameter += QString("    <Value>%1</Value>\n").arg(stateParameter->value);
+            parameter += QString("    <Value>%1</Value>\n").arg(stateParameter->value, 0, 'g', 15);
 
         if (stateParameter->midiCC > 0)
         {
