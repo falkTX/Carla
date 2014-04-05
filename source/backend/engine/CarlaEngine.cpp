@@ -1724,6 +1724,13 @@ bool CarlaEngine::loadProject(const char* const filename)
 #ifndef BUILD_BRIDGE
     callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
 
+    // if we're running inside some session-manager, let them handle the connections
+    if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
+    {
+        if (std::getenv("LADISH_APP_NAME") != nullptr || std::getenv("NSM_URL") != nullptr)
+            return;
+    }
+
     // now connections
     for (QDomNode node = xmlNode.firstChild(); ! node.isNull(); node = node.nextSibling())
     {
@@ -1807,6 +1814,13 @@ bool CarlaEngine::saveProject(const char* const filename)
     }
 
 #ifndef BUILD_BRIDGE
+    // if we're running inside some session-manager, let them handle the connections
+    if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
+    {
+        if (std::getenv("LADISH_APP_NAME") != nullptr || std::getenv("NSM_URL") != nullptr)
+            return;
+    }
+
     if (const char* const* patchbayConns = getPatchbayConnections())
     {
         if (! firstPlugin)
