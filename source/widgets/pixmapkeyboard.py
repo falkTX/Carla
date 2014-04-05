@@ -462,6 +462,7 @@ class PixmapKeyboardHArea(QScrollArea):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         self.keyboard = PixmapKeyboard(self)
+        self.keyboard.setMode(PixmapKeyboard.HORIZONTAL)
         self.keyboard.setOctaves(10)
         self.setWidget(self.keyboard)
 

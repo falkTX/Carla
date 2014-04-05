@@ -460,11 +460,8 @@ class PluginEdit(QDialog):
         self.ui.sb_ctrl_channel.setValue(self.fControlChannel+1)
 
         self.ui.scrollArea = PixmapKeyboardHArea(self)
+        self.ui.keyboard   = self.ui.scrollArea.keyboard
         self.layout().addWidget(self.ui.scrollArea)
-
-        self.ui.keyboard = self.ui.scrollArea.keyboard
-        self.ui.keyboard.setMode(self.ui.keyboard.HORIZONTAL)
-        self.ui.keyboard.setOctaves(10)
 
         self.ui.scrollArea.setEnabled(False)
         self.ui.scrollArea.setVisible(False)
