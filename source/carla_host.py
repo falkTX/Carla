@@ -213,7 +213,7 @@ class HostWindow(QMainWindow):
             self.fClientName         = LADISH_APP_NAME
             self.fSessionManagerName = "LADISH"
         elif NSM_URL:
-            self.fClientName         = "Carla.tmp"
+            self.fClientName         = "Carla" # "Carla.tmp"
             self.fSessionManagerName = "Non Session Manager"
         else:
             self.fClientName         = "Carla"
