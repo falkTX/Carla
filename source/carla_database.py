@@ -1485,7 +1485,7 @@ class PluginDatabaseW(QDialog):
         self.ui.frame.setVisible(yesNo)
 
     def _addPluginToTable(self, plugin, ptype):
-        if plugin['API'] != PLUGIN_QUERY_API_VERSION:
+        if plugin['API'] != PLUGIN_QUERY_API_VERSION and not ptype == self.tr("Internal"):
             return
 
         index = self.fLastTableIndex
