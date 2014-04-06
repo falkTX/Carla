@@ -426,7 +426,9 @@ public:
             XSizeHints sizeHints;
             memset(&sizeHints, 0, sizeof(sizeHints));
 
-            sizeHints.flags      = PMinSize|PMaxSize;
+            sizeHints.flags      = PSize|PMinSize|PMaxSize;
+            sizeHints.width      = static_cast<int>(width);
+            sizeHints.height     = static_cast<int>(height);
             sizeHints.min_width  = static_cast<int>(width);
             sizeHints.min_height = static_cast<int>(height);
             sizeHints.max_width  = static_cast<int>(width);

@@ -136,7 +136,9 @@ public:
         XSizeHints sizeHints;
         carla_zeroStruct<XSizeHints>(sizeHints);
 
-        sizeHints.flags      = PMinSize|PMaxSize;
+        sizeHints.flags      = PSize|PMinSize|PMaxSize;
+        sizeHints.width      = static_cast<int>(width);
+        sizeHints.height     = static_cast<int>(height);
         sizeHints.min_width  = static_cast<int>(width);
         sizeHints.min_height = static_cast<int>(height);
         sizeHints.max_width  = static_cast<int>(width);
@@ -160,7 +162,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
 
-        XSetTransientForHint(fDisplay, fWindow, (Window)winId);
+        XSetTransientForHint(fDisplay, fWindow, static_cast<Window>(winId));
     }
 
     void* getPtr() const noexcept
@@ -190,7 +192,7 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 #elif defined(HAVE_X11)
     struct ScopedDisplay {
         Display* display;
-        ScopedDisplay() : display(XOpenDisplay(0)) {}
+        ScopedDisplay() : display(XOpenDisplay(nullptr)) {}
         ~ScopedDisplay() { if (display!=nullptr) XCloseDisplay(display); }
     };
     struct ScopedFreeData {

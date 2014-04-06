@@ -1155,6 +1155,13 @@ class HostWindow(QMainWindow):
 
     # -----------------------------------------------------------------
 
+    def showEvent(self, event):
+        QMainWindow.showEvent(self, event)
+
+        # set our gui as parent for all plugins UIs
+        if gCarla.host is not None:
+            gCarla.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, "%x" % self.winId())
+
     def timerEvent(self, event):
         if event.timerId() == self.fIdleTimerFast:
             #if not gCarla.isPlugin:

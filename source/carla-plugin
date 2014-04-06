@@ -552,13 +552,6 @@ class CarlaMiniW(HostWindow, ExternalUI):
     # -------------------------------------------------------------------
     # Qt events
 
-    def showEvent(self, event):
-        HostWindow.showEvent(self, event)
-
-        # set our gui as parent for all plugins UIs
-        if gCarla.host is not None:
-            gCarla.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, str(self.winId()))
-
     def closeEvent(self, event):
         self.closeExternalUI()
         HostWindow.closeEvent(self, event)

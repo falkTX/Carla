@@ -2153,7 +2153,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
 
     case ENGINE_OPTION_FRONTEND_WIN_ID:
         CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-        const long winId(std::atol(valueStr));
+        const long long winId(std::strtoll(valueStr, nullptr, 16));
         CARLA_SAFE_ASSERT_RETURN(winId >= 0,);
         pData->options.frontendWinId = static_cast<uintptr_t>(winId);
         break;
