@@ -264,7 +264,7 @@ class PluginParameter(QWidget):
             self.ui.sb_control.setVisible(False)
             self.ui.sb_channel.setVisible(False)
 
-        if pHints & PARAMETER_USES_CUSTOM_TEXT:
+        if pHints & PARAMETER_USES_CUSTOM_TEXT and not gCarla.isPlugin:
             self.ui.widget.setTextCallback(self._textCallBack)
 
         self.ui.widget.updateAll()

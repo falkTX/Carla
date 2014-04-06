@@ -383,7 +383,7 @@ class PluginHost(object):
 
     # -------------------------------------------------------------------
 
-    def get_parameter_text(self, pluginId, parameterId, value):
+    def get_parameter_text(self, pluginId, parameterId):
         return ""
 
     def get_program_name(self, pluginId, programId):
