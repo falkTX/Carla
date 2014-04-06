@@ -1181,6 +1181,9 @@ protected:
     {
         if (show)
         {
+            if (fUiServer.isOk())
+                return;
+
             CarlaString path(pHost->resourceDir);
             path += "/carla-plugin";
 

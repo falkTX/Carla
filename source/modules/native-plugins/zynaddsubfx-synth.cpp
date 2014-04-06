@@ -447,8 +447,6 @@ protected:
                     Fl_Theme::set("Cairo");
                 }
 
-                CARLA_ASSERT(fUi == nullptr);
-
                 if (fUi == nullptr)
                 {
                     fUiClosed = 0;
@@ -456,6 +454,8 @@ protected:
                     fUi->masterwindow->label(kHost->uiName);
                     fUi->showUI();
                 }
+                else
+                    fUi->showUI();
             }
             else if (fNextUiAction == 0) // close
             {

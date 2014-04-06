@@ -51,6 +51,9 @@ protected:
     {
         if (show)
         {
+            if (isOk())
+                return;
+
             CarlaString path(getResourceDir() + fExtUiPath);
             carla_stdout("Trying to start UI using \"%s\"", path.buffer());
 
