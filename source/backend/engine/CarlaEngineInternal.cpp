@@ -83,30 +83,30 @@ bool RackGraph::connect(CarlaEngine* const engine, const int groupA, const int p
     switch (carlaPort)
     {
     case RACK_GRAPH_CARLA_PORT_AUDIO_IN1:
-        connectLock.enter();
+        connectLock.lock();
         connectedIn1.append(otherPort);
-        connectLock.leave();
+        connectLock.unlock();
         makeConnection = true;
         break;
 
     case RACK_GRAPH_CARLA_PORT_AUDIO_IN2:
-        connectLock.enter();
+        connectLock.lock();
         connectedIn2.append(otherPort);
-        connectLock.leave();
+        connectLock.unlock();
         makeConnection = true;
         break;
 
     case RACK_GRAPH_CARLA_PORT_AUDIO_OUT1:
-        connectLock.enter();
+        connectLock.lock();
         connectedOut1.append(otherPort);
-        connectLock.leave();
+        connectLock.unlock();
         makeConnection = true;
         break;
 
     case RACK_GRAPH_CARLA_PORT_AUDIO_OUT2:
-        connectLock.enter();
+        connectLock.lock();
         connectedOut2.append(otherPort);
-        connectLock.leave();
+        connectLock.unlock();
         makeConnection = true;
         break;
 
@@ -174,27 +174,27 @@ bool RackGraph::disconnect(CarlaEngine* const engine, const uint connectionId) n
         switch (carlaPort)
         {
         case RACK_GRAPH_CARLA_PORT_AUDIO_IN1:
-            connectLock.enter();
+            connectLock.lock();
             connectedIn1.removeAll(otherPort);
-            connectLock.leave();
+            connectLock.unlock();
             break;
 
         case RACK_GRAPH_CARLA_PORT_AUDIO_IN2:
-            connectLock.enter();
+            connectLock.lock();
             connectedIn2.removeAll(otherPort);
-            connectLock.leave();
+            connectLock.unlock();
             break;
 
         case RACK_GRAPH_CARLA_PORT_AUDIO_OUT1:
-            connectLock.enter();
+            connectLock.lock();
             connectedOut1.removeAll(otherPort);
-            connectLock.leave();
+            connectLock.unlock();
             break;
 
         case RACK_GRAPH_CARLA_PORT_AUDIO_OUT2:
-            connectLock.enter();
+            connectLock.lock();
             connectedOut2.removeAll(otherPort);
-            connectLock.leave();
+            connectLock.unlock();
             break;
 
         case RACK_GRAPH_CARLA_PORT_MIDI_IN:
@@ -636,7 +636,7 @@ void CarlaEngineProtectedData::processRack(const float* inBufReal[2], float* out
 
 void CarlaEngineProtectedData::processRackFull(const float* const* const inBuf, const uint32_t inCount, float* const* const outBuf, const uint32_t outCount, const uint32_t nframes, const bool isOffline)
 {
-    const CarlaCriticalSectionScope _cs(graph.rack->connectLock);
+    const CarlaMutexLocker _crml(graph.rack->connectLock); // Recursive
 
     if (inBuf != nullptr && inCount > 0)
     {

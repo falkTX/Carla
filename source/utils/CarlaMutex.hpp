@@ -94,15 +94,15 @@ private:
 };
 
 // -----------------------------------------------------------------------
-// CarlaCriticalSection class
+// CarlaRecursiveMutex class
 
-class CarlaCriticalSection
+class CarlaRecursiveMutex
 {
 public:
     /*
      * Constructor.
      */
-    CarlaCriticalSection() noexcept
+    CarlaRecursiveMutex() noexcept
     {
 #ifdef CARLA_OS_WIN
         InitializeCriticalSection(&fSection);
@@ -121,7 +121,7 @@ public:
     /*
      * Destructor.
      */
-    ~CarlaCriticalSection() noexcept
+    ~CarlaRecursiveMutex() noexcept
     {
 #ifdef CARLA_OS_WIN
         DeleteCriticalSection(&fSection);
@@ -131,9 +131,9 @@ public:
     }
 
     /*
-     * Enter section.
+     * Lock the mutex.
      */
-    void enter() const noexcept
+    void lock() const noexcept
     {
 #ifdef CARLA_OS_WIN
         EnterCriticalSection(&fSection);
@@ -143,9 +143,10 @@ public:
     }
 
     /*
-     * Try-Enter section.
+     * Try to lock the mutex.
+     * Returns true if successful.
      */
-    bool tryEnter() const noexcept
+    bool tryLock() const noexcept
     {
 #ifdef CARLA_OS_WIN
         return (TryEnterCriticalSection(&fSection) != FALSE);
@@ -155,9 +156,9 @@ public:
     }
 
     /*
-     * Leave section.
+     * Unlock the mutex.
      */
-    void leave() const noexcept
+    void unlock() const noexcept
     {
 #ifdef CARLA_OS_WIN
         LeaveCriticalSection(&fSection);
@@ -174,80 +175,67 @@ private:
 #endif
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaCriticalSection)
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaRecursiveMutex)
 };
 
 // -----------------------------------------------------------------------
 // Helper class to lock&unlock a mutex during a function scope.
 
-class CarlaMutexLocker
+template <class Mutex>
+class CarlaScopedLocker
 {
 public:
-    CarlaMutexLocker(const CarlaMutex& mutex) noexcept
+    CarlaScopedLocker(const Mutex& mutex) noexcept
         : fMutex(mutex)
     {
         fMutex.lock();
     }
 
-    ~CarlaMutexLocker() noexcept
+    ~CarlaScopedLocker() noexcept
     {
         fMutex.unlock();
     }
 
 private:
-    const CarlaMutex& fMutex;
+    const Mutex& fMutex;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaMutexLocker)
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaScopedLocker)
 };
 
 // -----------------------------------------------------------------------
 // Helper class to unlock&lock a mutex during a function scope.
 
-class CarlaMutexUnlocker
+template <class Mutex>
+class CarlaScopedUnlocker
 {
 public:
-    CarlaMutexUnlocker(const CarlaMutex& mutex) noexcept
+    CarlaScopedUnlocker(const Mutex& mutex) noexcept
         : fMutex(mutex)
     {
         fMutex.unlock();
     }
 
-    ~CarlaMutexUnlocker() noexcept
+    ~CarlaScopedUnlocker() noexcept
     {
         fMutex.lock();
     }
 
 private:
-    const CarlaMutex& fMutex;
+    const Mutex& fMutex;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaMutexUnlocker)
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaScopedUnlocker)
 };
 
 // -----------------------------------------------------------------------
-// Helper class to enter&leave during a function scope.
+// Define types
 
-class CarlaCriticalSectionScope
-{
-public:
-    CarlaCriticalSectionScope(const CarlaCriticalSection& cs) noexcept
-        : fSection(cs)
-    {
-        fSection.enter();
-    }
+typedef CarlaScopedLocker<CarlaMutex>          CarlaMutexLocker;
+typedef CarlaScopedLocker<CarlaRecursiveMutex> CarlaRecursiveMutexLocker;
 
-    ~CarlaCriticalSectionScope() noexcept
-    {
-        fSection.leave();
-    }
-
-private:
-    const CarlaCriticalSection& fSection;
-
-    CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaCriticalSectionScope)
-};
+typedef CarlaScopedUnlocker<CarlaMutex>          CarlaMutexUnlocker;
+typedef CarlaScopedUnlocker<CarlaRecursiveMutex> CarlaRecursiveMutexUnlocker;
 
 // -----------------------------------------------------------------------
 

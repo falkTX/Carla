@@ -148,7 +148,7 @@ struct BridgeAudioPool {
 
 struct BridgeControl : public RingBufferControl<StackRingBuffer> {
     CarlaString filename;
-    CarlaCriticalSection lock;
+    CarlaRecursiveMutex lock;
     BridgeShmControl* data;
     shm_t shm;
 
@@ -520,7 +520,7 @@ public:
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
         fParams[parameterId].value = fixedValue;
 
-        const CarlaCriticalSectionScope _cs(fShmControl.lock);
+        const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
 
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetParameter);
         fShmControl.writeInt(static_cast<int32_t>(parameterId));
@@ -534,7 +534,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
 
-        const CarlaCriticalSectionScope _cs(fShmControl.lock);
+        const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
 
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetProgram);
         fShmControl.writeInt(index);
@@ -547,7 +547,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
 
-        const CarlaCriticalSectionScope _cs(fShmControl.lock);
+        const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
 
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetMidiProgram);
         fShmControl.writeInt(index);
@@ -769,7 +769,7 @@ public:
     void activate() noexcept override
     {
         {
-            const CarlaCriticalSectionScope _cs(fShmControl.lock);
+            const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
 
             fShmControl.writeOpcode(kPluginBridgeOpcodeSetParameter);
             fShmControl.writeInt(PARAMETER_ACTIVE);
@@ -790,7 +790,7 @@ public:
     void deactivate() noexcept override
     {
         {
-            const CarlaCriticalSectionScope _cs(fShmControl.lock);
+            const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
 
             fShmControl.writeOpcode(kPluginBridgeOpcodeSetParameter);
             fShmControl.writeInt(PARAMETER_ACTIVE);
@@ -852,7 +852,7 @@ public:
                     data2 = static_cast<char>(note.note);
                     data3 = static_cast<char>(note.velo);
 
-                    const CarlaCriticalSectionScope _cs(fShmControl.lock);
+                    const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
 
                     fShmControl.writeOpcode(kPluginBridgeOpcodeMidiEvent);
                     fShmControl.writeLong(0);
@@ -988,7 +988,7 @@ public:
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
-                            const CarlaCriticalSectionScope _cs(fShmControl.lock);
+                            const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
 
                             fShmControl.writeOpcode(kPluginBridgeOpcodeMidiEvent);
                             fShmControl.writeLong(event.time);
@@ -1083,7 +1083,7 @@ public:
                         data[j] = static_cast<char>(midiEvent.data[j]);
 
                     {
-                          const CarlaCriticalSectionScope _cs(fShmControl.lock);
+                          const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
 
                           fShmControl.writeOpcode(kPluginBridgeOpcodeMidiEvent);
                           fShmControl.writeLong(event.time);
@@ -1176,7 +1176,7 @@ public:
         // Run plugin
 
         {
-            const CarlaCriticalSectionScope _cs(fShmControl.lock);
+            const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
 
             fShmControl.writeOpcode(kPluginBridgeOpcodeProcess);
             fShmControl.commitWrite();
@@ -1263,7 +1263,7 @@ public:
 
     void bufferSizeChanged(const uint32_t newBufferSize) override
     {
-        const CarlaCriticalSectionScope _cs(fShmControl.lock);
+        const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
 
         resizeAudioPool(newBufferSize);
 
@@ -1274,7 +1274,7 @@ public:
 
     void sampleRateChanged(const double newSampleRate) override
     {
-        const CarlaCriticalSectionScope _cs(fShmControl.lock);
+        const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
 
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetSampleRate);
         fShmControl.writeFloat(static_cast<float>(newSampleRate));

@@ -39,16 +39,14 @@ public:
         try {
             dfilename = carla_strdup(filename);
         }
-        catch(...) {
-            return nullptr;
-        }
+        CARLA_SAFE_EXCEPTION_RETURN("LibCounter::open", nullptr);
 
         const CarlaMutexLocker sl(fMutex);
 
         for (LinkedList<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
         {
             Lib& lib(it.getValue());
-            CARLA_ASSERT(lib.count > 0);
+            CARLA_SAFE_ASSERT_CONTINUE(lib.count > 0);
             CARLA_SAFE_ASSERT_CONTINUE(lib.filename != nullptr);
 
             if (std::strcmp(lib.filename, filename) == 0)
@@ -61,16 +59,21 @@ public:
         void* const libPtr(lib_open(filename));
 
         if (libPtr == nullptr)
+        {
+            delete[] dfilename;
             return nullptr;
+        }
 
         Lib lib;
         lib.lib      = libPtr;
         lib.filename = dfilename;
         lib.count    = 1;
 
-        fLibs.append(lib);
+        if (fLibs.append(lib))
+            return libPtr;
 
-        return libPtr;
+        delete[] dfilename;
+        return nullptr;
     }
 
     bool close(void* const libPtr) noexcept
@@ -82,7 +85,7 @@ public:
         for (LinkedList<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
         {
             Lib& lib(it.getValue());
-            CARLA_ASSERT(lib.count > 0);
+            CARLA_SAFE_ASSERT_CONTINUE(lib.count > 0);
             CARLA_SAFE_ASSERT_CONTINUE(lib.lib != nullptr);
 
             if (lib.lib != libPtr)
@@ -90,14 +93,16 @@ public:
 
             if (--lib.count == 0)
             {
+                if (! lib_close(lib.lib))
+                    carla_stderr("LibCounter::close() failed, reason:\n%s", lib_error(lib.filename));
+
+                lib.lib = nullptr;
+
                 if (lib.filename != nullptr)
                 {
                     delete[] lib.filename;
                     lib.filename = nullptr;
                 }
-
-                lib_close(lib.lib);
-                lib.lib = nullptr;
 
                 fLibs.remove(it);
             }
@@ -105,7 +110,7 @@ public:
             return true;
         }
 
-        CARLA_ASSERT(false); // invalid pointer
+        carla_safe_assert("invalid lib pointer", __FILE__, __LINE__);
         return false;
     }
 

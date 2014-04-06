@@ -36,39 +36,31 @@ void* lib_open(const char* const filename) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', nullptr);
 
-    void* ret = nullptr;
-
     try {
 #ifdef CARLA_OS_WIN
-        ret = (void*)LoadLibraryA(filename);
+        return (void*)LoadLibraryA(filename);
 #else
-        ret = dlopen(filename, RTLD_NOW|RTLD_LOCAL);
+        return dlopen(filename, RTLD_NOW|RTLD_LOCAL);
 #endif
-    } catch(...) {}
-
-    return ret;
+    } CARLA_SAFE_EXCEPTION_RETURN("lib_open", nullptr);
 }
 
 /*
  * Close a previously opened library (must not be null).
- * If false is returned,"lib_error" has the error.
+ * If false is returned, "lib_error" has the error.
  */
 static inline
 bool lib_close(void* const lib) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(lib != nullptr, false);
 
-    bool ret = false;
-
     try {
 #ifdef CARLA_OS_WIN
-        ret = FreeLibrary((HMODULE)lib);
+        return FreeLibrary((HMODULE)lib);
 #else
-        ret = (dlclose(lib) == 0);
+        return (dlclose(lib) == 0);
 #endif
-    } catch(...) {}
-
-    return ret;
+    } CARLA_SAFE_EXCEPTION_RETURN("lib_close", false);
 }
 
 /*
@@ -108,7 +100,7 @@ const char* lib_error(const char* const filename) noexcept
 
         std::snprintf(libError, 2048, "%s: error code %li: %s", filename, winErrorCode, (const char*)winErrorString);
         LocalFree(winErrorString);
-    } catch(...) {}
+    } CARLA_SAFE_EXCEPTION("lib_error");
 
     return (libError[0] != '\0') ? libError : nullptr;
 #else

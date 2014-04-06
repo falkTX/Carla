@@ -553,7 +553,7 @@ public:
         }
 
         // Connections
-        rack->connectLock.enter();
+        rack->connectLock.lock();
 
         for (LinkedList<int>::Itenerator it = rack->connectedIn1.begin(); it.valid(); it.next())
         {
@@ -631,7 +631,7 @@ public:
             ++rack->lastConnectionId;
         }
 
-        rack->connectLock.leave();
+        rack->connectLock.unlock();
 
         for (LinkedList<MidiPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
         {

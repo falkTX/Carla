@@ -86,7 +86,7 @@ struct ConnectionToId {
 struct RackGraph {
     uint lastConnectionId;
 
-    CarlaCriticalSection connectLock;
+    CarlaMutex connectLock; // Recursive
 
     LinkedList<int> connectedIn1;
     LinkedList<int> connectedIn2;

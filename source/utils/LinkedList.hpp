@@ -46,7 +46,7 @@ typedef struct list_head k_list_head;
 // Abstract Linked List class
 // _allocate() and _deallocate are virtual calls provided by subclasses
 
-// NOTE: classes are allowed to throw on creation, but NOT on deletion!
+// NOTE: data-type classes are allowed to throw on creation, but NOT on deletion!
 
 template<typename T>
 class AbstractLinkedList
@@ -97,7 +97,6 @@ public:
         T& getValue() noexcept
         {
             fData = list_entry(fEntry, Data, siblings);
-            CARLA_SAFE_ASSERT(fData != nullptr);
             return fData->value;
         }
 
