@@ -83,7 +83,7 @@ public:
 
     void processBlock(AudioSampleBuffer* const outBuffer, double bpm)
     {
-        processBlock(outBuffer->getSampleData(0, 0), outBuffer->getSampleData(1, 0), outBuffer->getNumSamples(), bpm);
+        processBlock(outBuffer->getWritePointer(0), outBuffer->getWritePointer(1), outBuffer->getNumSamples(), bpm);
     }
 
     void processBlock(float* const outBufferL, float* const outBufferR, const int numSamples, double bpm)
@@ -93,8 +93,8 @@ public:
         const int   delay    = jmin(int(parameters[73] * 8.0f) * int(((60.0 / bpm) * sampleRate) / 4.0), 44100);
         const float feedback = parameters[74];
 
-        float* const bufferL = buffer.getSampleData(0, 0);
-        float* const bufferR = buffer.getSampleData(1, 0);
+        float* const bufferL = buffer.getWritePointer(0);
+        float* const bufferR = buffer.getWritePointer(1);
 
         for (int i = 0; i < numSamples; ++i)
         {

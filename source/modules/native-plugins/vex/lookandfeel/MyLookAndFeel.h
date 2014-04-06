@@ -50,31 +50,31 @@ class MyLookAndFeel : public LookAndFeel_V2
 {
 public:
     MyLookAndFeel();
-    ~MyLookAndFeel();
+    ~MyLookAndFeel() override;
 
-    Font getComboBoxFont (ComboBox& box);
-    Font getPopupMenuFont();
-    void getIdealPopupMenuItemSize (const String& text,
-                                          const bool isSeparator,
-                                          int standardMenuItemHeight,
-                                          int& idealWidth,
-                                          int& idealHeight);
+    juce::Font getComboBoxFont (ComboBox& box) override;
+    juce::Font getPopupMenuFont() override;
+    void getIdealPopupMenuItemSize(const String& text,
+                                   const bool isSeparator,
+                                   int standardMenuItemHeight,
+                                   int& idealWidth,
+                                   int& idealHeight) override;
 
-    void drawToggleButton (Graphics& g,
-                                ToggleButton& button,
-                                bool isMouseOverButton,
-                                bool isButtonDown);
+    void drawToggleButton(Graphics& g,
+                          ToggleButton& button,
+                          bool isMouseOverButton,
+                          bool isButtonDown) override;
 
-    void drawRotarySlider (Graphics& g,
-                            int x, int y,
-                            int width, int height,
-                            float sliderPosProportional,
-                            const float rotaryStartAngle,
-                            const float rotaryEndAngle,
-                            Slider& slider);
+    void drawRotarySlider(Graphics& g,
+                          int x, int y,
+                          int width, int height,
+                          float sliderPosProportional,
+                          const float rotaryStartAngle,
+                          const float rotaryEndAngle,
+                          Slider& slider) override;
 
 public:
-    Font* Topaz;
+    juce::Font* Topaz;
 };
 
 #endif

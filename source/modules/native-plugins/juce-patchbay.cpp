@@ -20,21 +20,33 @@
 #include "juce_audio_processors.h"
 #include "juce_gui_extra.h"
 
+#ifdef HAVE_X11
+# include <X11/Xlib.h>
+# undef KeyPress
+#endif
+
 // -----------------------------------------------------------------------
 
 namespace juce {
 #include "jucepluginhost/juce_MidiKeyboardComponent.h"
 #include "jucepluginhost/juce_MidiKeyboardComponent.cpp"
-}
-
-using namespace juce;
-
-// -----------------------------------------------------------------------
 
 #include "jucepluginhost/FilterGraph.h"
 #include "jucepluginhost/InternalFilters.h"
 #include "jucepluginhost/GraphEditorPanel.h"
 #include "jucepluginhost/MainHostWindow.h"
+
+#include "jucepluginhost/FilterGraph.cpp"
+#include "jucepluginhost/InternalFilters.cpp"
+#include "jucepluginhost/GraphEditorPanel.cpp"
+#include "jucepluginhost/MainHostWindow.cpp"
+
+#ifdef HAVE_X11
+extern Display* display;
+#endif
+}
+
+using namespace juce;
 
 // -----------------------------------------------------------------------
 
@@ -152,6 +164,13 @@ protected:
             {
                 fWindow = new MainHostWindow(fFormatManager, fGraph, *fAppProperties);
                 fWindow->setName(getUiName());
+#ifdef HAVE_X11
+                ::Window thisWinId = (::Window)fWindow->getWindowHandle();
+                ::Window hostWinId = (::Window)getUiParentId();
+
+                if (display != nullptr && thisWinId != 0 && hostWinId != 0)
+                    XSetTransientForHint(display, thisWinId, hostWinId);
+#endif
             }
             {
                 const ScopedLock csl(fMidiKeyMutex);
@@ -242,7 +261,7 @@ private:
 
 static const NativePluginDescriptor jucepatchbayDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_SYNTH|PLUGIN_HAS_UI|PLUGIN_NEEDS_FIXED_BUFFERS|PLUGIN_NEEDS_UI_JUCE|PLUGIN_USES_STATE/*|PLUGIN_USES_TIME*/),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_SYNTH|PLUGIN_HAS_UI|PLUGIN_NEEDS_FIXED_BUFFERS|PLUGIN_NEEDS_UI_JUCE|PLUGIN_USES_STATE/*|PLUGIN_USES_TIME*/|PLUGIN_USES_PARENT_ID),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -264,12 +283,5 @@ void carla_register_native_plugin_jucepatchbay()
 {
     carla_register_native_plugin(&jucepatchbayDesc);
 }
-
-// -----------------------------------------------------------------------
-
-#include "jucepluginhost/FilterGraph.cpp"
-#include "jucepluginhost/InternalFilters.cpp"
-#include "jucepluginhost/GraphEditorPanel.cpp"
-#include "jucepluginhost/MainHostWindow.cpp"
 
 // -----------------------------------------------------------------------

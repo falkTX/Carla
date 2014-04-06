@@ -1033,6 +1033,9 @@ protected:
                 fView = new VexEditorComponent(this, fArpSet1, fArpSet2, fArpSet3);
 
             fWindow->show(fView);
+
+            if (const uintptr_t winId = getUiParentId())
+                fWindow->setTransientWinId(winId);
         }
         else if (fWindow != nullptr)
         {
@@ -1220,7 +1223,7 @@ private:
 
 static const NativePluginDescriptor vexsynthDesc = {
     /* category  */ PLUGIN_CATEGORY_SYNTH,
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_SYNTH|PLUGIN_HAS_UI|PLUGIN_NEEDS_UI_JUCE|PLUGIN_USES_STATE|PLUGIN_USES_TIME),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_SYNTH|PLUGIN_HAS_UI|PLUGIN_NEEDS_UI_JUCE|PLUGIN_USES_STATE|PLUGIN_USES_TIME|PLUGIN_USES_PARENT_ID),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 0,
     /* audioOuts */ 2,

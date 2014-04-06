@@ -66,6 +66,13 @@ protected:
         return pHost->uiName;
     }
 
+    uintptr_t getUiParentId() const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, 0);
+
+        return pHost->uiParentId;
+    }
+
     uint32_t getBufferSize() const
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, 0);

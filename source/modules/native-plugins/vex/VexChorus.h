@@ -88,7 +88,7 @@ public:
 
     void processBlock(AudioSampleBuffer* const outBuffer)
     {
-        processBlock(outBuffer->getSampleData(0, 0), outBuffer->getSampleData(1, 0), outBuffer->getNumSamples());
+        processBlock(outBuffer->getWritePointer(0), outBuffer->getWritePointer(1), outBuffer->getNumSamples());
     }
 
     void processBlock(float* const outBufferL, float* const outBufferR, const int numSamples)
@@ -99,8 +99,8 @@ public:
         const int   delay = int(cycle * 0.5f);
         const float lfoC  = 2.0f * sinf(float_Pi * (speed * 5.0f) / sampleRate);
 
-        float* const bufferL = buffer.getSampleData(0, 0);
-        float* const bufferR = buffer.getSampleData(1, 0);
+        float* const bufferL = buffer.getWritePointer(0);
+        float* const bufferR = buffer.getWritePointer(1);
 
         float a, b, alpha, readpoint;
         int rp;

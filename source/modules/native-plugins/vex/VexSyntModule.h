@@ -80,8 +80,8 @@ public:
     void doProcess(AudioSampleBuffer& obf, AudioSampleBuffer& assbf, AudioSampleBuffer& ebf1, AudioSampleBuffer& ebf2, AudioSampleBuffer& ebf3)
     {
         const int numSamples = obf.getNumSamples();
-        float* const outPtrL = assbf.getSampleData(0,0);
-        float* const outPtrR = assbf.getSampleData(1,0);
+        float* const outPtrL = assbf.getWritePointer(0);
+        float* const outPtrR = assbf.getWritePointer(1);
 
         if (part1)
         {

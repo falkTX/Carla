@@ -64,7 +64,7 @@ public:
 
     void processBlock(AudioSampleBuffer* const outBuffer)
     {
-        processBlock(outBuffer->getSampleData(0, 0), outBuffer->getSampleData(1, 0), outBuffer->getNumSamples());
+        processBlock(outBuffer->getWritePointer(0), outBuffer->getWritePointer(1), outBuffer->getNumSamples());
     }
 
     void processBlock(float* const outBufferL, float* const outBufferR, const int numSamples)

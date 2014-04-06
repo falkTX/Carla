@@ -47,17 +47,17 @@ MyLookAndFeel::MyLookAndFeel()
 //	Topaz->setHorizontalScale (1.0f);
 }
 
-MyLookAndFeel::~MyLookAndFeel()
+MyLookAndFeel::~MyLookAndFeel() override
 {
     delete Topaz;
 }
 
-Font MyLookAndFeel::getComboBoxFont (ComboBox& box)
+Font MyLookAndFeel::getComboBoxFont(ComboBox&) override
 {
     return *Topaz;
 }
 
-Font MyLookAndFeel::getPopupMenuFont()
+Font MyLookAndFeel::getPopupMenuFont() override
 {
     return *Topaz;
 }
@@ -66,7 +66,7 @@ void MyLookAndFeel::getIdealPopupMenuItemSize(const String& text,
                                               const bool isSeparator,
                                               int standardMenuItemHeight,
                                               int& idealWidth,
-                                              int& idealHeight)
+                                              int& idealHeight) override
 {
     if (isSeparator)
     {
@@ -86,7 +86,7 @@ void MyLookAndFeel::getIdealPopupMenuItemSize(const String& text,
 void MyLookAndFeel::drawToggleButton(Graphics& g,
                                      ToggleButton& button,
                                      bool isMouseOverButton,
-                                     bool isButtonDown)
+                                     bool isButtonDown) override
 {
     const int tickWidth = jmin (20, button.getHeight() - 4);
 
@@ -108,13 +108,13 @@ void MyLookAndFeel::drawToggleButton(Graphics& g,
                       Justification::centredLeft, 10);
 }
 
-void MyLookAndFeel::drawRotarySlider (Graphics& g,
-                                      int x, int y,
-                                      int width, int height,
-                                      float sliderPos,
-                                      const float rotaryStartAngle,
-                                      const float rotaryEndAngle,
-                                      Slider& slider)
+void MyLookAndFeel::drawRotarySlider(Graphics& g,
+                                     int x, int y,
+                                     int width, int height,
+                                     float sliderPos,
+                                     const float rotaryStartAngle,
+                                     const float rotaryEndAngle,
+                                     Slider& slider) override
 {
     const float radius = jmin (width / 2, height / 2) - 2.0f;
     const float centreX = x + width * 0.5f;

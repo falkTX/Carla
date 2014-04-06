@@ -18,11 +18,21 @@
 #ifndef JUCE_PLUGIN_WINDOW_HPP_INCLUDED
 #define JUCE_PLUGIN_WINDOW_HPP_INCLUDED
 
+#include "CarlaUtils.hpp"
+
 #include "juce_gui_basics.h"
+
+#ifdef HAVE_X11
+# include <X11/Xlib.h>
+#endif
 
 // -----------------------------------------------------------------------
 
 namespace juce {
+
+#ifdef HAVE_X11
+extern Display* display;
+#endif
 
 class JucePluginWindow : public DocumentWindow
 {
@@ -68,6 +78,21 @@ public:
     bool wasClosedByUser() const noexcept
     {
         return fClosed;
+    }
+
+    void setTransientWinId(const uintptr_t winId) const override
+    {
+        CARLA_SAFE_ASSERT_RETURN(winId != 0,);
+
+#ifdef HAVE_X11
+        CARLA_SAFE_ASSERT_RETURN(display != nullptr,);
+
+        ::Window window = (::Window)getWindowHandle();
+
+        CARLA_SAFE_ASSERT_RETURN(window != 0,);
+
+        XSetTransientForHint(display, window, static_cast<Window>(winId));
+#endif
     }
 
 protected:

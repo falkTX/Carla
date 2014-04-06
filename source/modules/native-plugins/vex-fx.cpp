@@ -347,6 +347,9 @@ protected:
             }
 
             fWindow->show(fView);
+
+            if (const uintptr_t winId = getUiParentId())
+                fWindow->setTransientWinId(winId);
         }
         else if (fWindow != nullptr)
         {
@@ -820,7 +823,7 @@ private:
 
 static const NativePluginDescriptor vexArpDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_HAS_UI|PLUGIN_NEEDS_UI_JUCE|PLUGIN_USES_TIME),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_HAS_UI|PLUGIN_NEEDS_UI_JUCE|PLUGIN_USES_TIME|PLUGIN_USES_PARENT_ID),
     /* supports  */ static_cast<NativePluginSupports>(PLUGIN_SUPPORTS_EVERYTHING),
     /* audioIns  */ 0,
     /* audioOuts */ 0,
