@@ -49,6 +49,7 @@ namespace FlacNamespace
   #pragma clang diagnostic push
   #pragma clang diagnostic ignored "-Wconversion"
   #pragma clang diagnostic ignored "-Wshadow"
+  #pragma clang diagnostic ignored "-Wdeprecated-register"
  #endif
 
  #if JUCE_INTEL
@@ -104,7 +105,6 @@ class FlacReader  : public AudioFormatReader
 public:
     FlacReader (InputStream* const in)
         : AudioFormatReader (in, flacFormatName),
-          reservoir (2, 0),
           reservoirStart (0),
           samplesInReservoir (0),
           scanningForLength (false)

@@ -1728,7 +1728,7 @@ bool CarlaEngine::loadProject(const char* const filename)
     if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
     {
         if (std::getenv("LADISH_APP_NAME") != nullptr || std::getenv("NSM_URL") != nullptr)
-            return;
+            return true;
     }
 
     // now connections
@@ -1818,7 +1818,7 @@ bool CarlaEngine::saveProject(const char* const filename)
     if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
     {
         if (std::getenv("LADISH_APP_NAME") != nullptr || std::getenv("NSM_URL") != nullptr)
-            return;
+            return true;
     }
 
     if (const char* const* patchbayConns = getPatchbayConnections())

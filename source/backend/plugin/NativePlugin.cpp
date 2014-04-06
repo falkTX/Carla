@@ -21,7 +21,6 @@
 #ifdef WANT_NATIVE
 
 #include "CarlaMathUtils.hpp"
-
 #include "CarlaNative.h"
 
 #include <QtCore/QStringList>

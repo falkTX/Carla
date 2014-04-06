@@ -558,6 +558,18 @@ public:
         return fBuffer;
     }
 
+    char operator[](const size_t pos) const noexcept
+    {
+        if (pos < fBufferLen)
+            return fBuffer[pos];
+
+        carla_safe_assert("pos < fBufferLen", __FILE__, __LINE__);
+
+        static char fallback;
+        fallback = '\0';
+        return fallback;
+    }
+
     char& operator[](const size_t pos) noexcept
     {
         if (pos < fBufferLen)

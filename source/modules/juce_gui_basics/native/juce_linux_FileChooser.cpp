@@ -34,8 +34,12 @@ static bool exeIsAvailable (const char* const executable)
 
 bool FileChooser::isPlatformDialogAvailable()
 {
+   #if JUCE_DISABLE_NATIVE_FILECHOOSERS
+    return false;
+   #else
     static bool canUseNativeBox = exeIsAvailable ("zenity") || exeIsAvailable ("kdialog");
     return canUseNativeBox;
+   #endif
 }
 
 void FileChooser::showPlatformDialog (Array<File>& results,
@@ -98,6 +102,7 @@ void FileChooser::showPlatformDialog (Array<File>& results,
 
         args.add (startPath);
         args.add (filters.replaceCharacter (';', ' '));
+        args.add ("2>/dev/null");
     }
     else
     {
@@ -130,8 +135,6 @@ void FileChooser::showPlatformDialog (Array<File>& results,
         if (! file.getFileName().isEmpty())
             args.add ("--filename=" + file.getFileName());
     }
-
-    args.add ("2>/dev/null");
 
     ChildProcess child;
 

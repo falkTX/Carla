@@ -24,10 +24,8 @@
 
 #ifdef WANT_LV2
 
-// need this first for juce headers
-#include "CarlaMathUtils.hpp"
-
 #include "CarlaLv2Utils.hpp"
+#include "CarlaMathUtils.hpp"
 #include "CarlaPluginUi.hpp"
 #include "Lv2AtomQueue.hpp"
 

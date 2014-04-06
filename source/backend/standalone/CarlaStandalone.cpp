@@ -200,6 +200,12 @@ static CarlaBackendStandalone gStandalone;
 #define NSM_API_VERSION_MAJOR 1
 #define NSM_API_VERSION_MINOR 2
 
+#ifdef HAVE_X11
+# define NSM_CLIENT_FEATURES ":switch:optional-gui:"
+#else
+# define NSM_CLIENT_FEATURES ":switch:"
+#endif
+
 class CarlaNSM
 {
 public:
@@ -241,14 +247,14 @@ public:
             lo_server_add_method(fOscServer, "/reply",           "ssss", _reply_handler, this);
             lo_server_add_method(fOscServer, "/nsm/client/open", "sss",  _open_handler,  this);
             lo_server_add_method(fOscServer, "/nsm/client/save", "",     _save_handler,  this);
+            lo_server_add_method(fOscServer, "/nsm/client/show_optional_gui", "", _show_gui_handler, this);
+            lo_server_add_method(fOscServer, "/nsm/client/hide_optional_gui", "", _hide_gui_handler, this);
             // /nsm/client/session_is_loaded
-            // /nsm/client/show_optional_gui
-            // /nsm/client/hide_optional_gui
         }
 
 #ifndef BUILD_ANSI_TEST
         lo_send_from(addr, fOscServer, LO_TT_IMMEDIATE, "/nsm/server/announce", "sssiii",
-                     "Carla", ":switch:", initName, NSM_API_VERSION_MAJOR, NSM_API_VERSION_MINOR, pid); // optional-gui:
+                     "Carla", NSM_CLIENT_FEATURES, initName, NSM_API_VERSION_MAJOR, NSM_API_VERSION_MINOR, pid);
 #endif
 
         lo_address_free(addr);
@@ -356,6 +362,23 @@ protected:
 #endif
     }
 
+    int handleShowHideGui(const bool show)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0);
+        //CARLA_SAFE_ASSERT_RETURN(gStandalone.frontendWinId != 0, 0);
+        carla_debug("CarlaNSM::handleShowHideGui(%s)", bool2str(show));
+
+#ifdef HAVE_X11
+#endif
+
+#ifndef BUILD_ANSI_TEST
+        lo_send_from(lo_message_get_source(msg), fOscServer, LO_TT_IMMEDIATE, show ? "/nsm/client/gui_is_shown" : "/nsm/client/gui_is_hidden", "");
+#endif
+
+        return 0;
+    }
+
 private:
     lo_server   fOscServer;
     CarlaString fProjectPath;
@@ -380,6 +403,16 @@ private:
     static int _save_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* data)
     {
         return handlePtr->handleSave(path, types, argv, argc, msg);
+    }
+
+    static int _show_gui_handler(const char*, const char*, lo_arg**, int, lo_message, void* data)
+    {
+        return handlePtr->handleShowHideGui(true);
+    }
+
+    static int _hide_gui_handler(const char*, const char*, lo_arg**, int, lo_message, void* data)
+    {
+        return handlePtr->handleShowHideGui(false);
     }
 
     #undef handlePtr
