@@ -46,6 +46,9 @@ public:
           fUI(this, 0, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, uiResizeCallback)
     {
         fUI.setTitle(host->uiName);
+
+        if (host->uiParentId != 0)
+            fUI.setTransientWinId(host->uiParentId);
     }
 
     // ---------------------------------------------

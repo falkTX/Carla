@@ -223,6 +223,11 @@ public:
         glWindow.setTitle(uiTitle);
     }
 
+    void setTransientWinId(const intptr_t winId)
+    {
+        glWindow.setTransientWinId(winId);
+    }
+
     void setVisible(const bool yesNo)
     {
         glWindow.setVisible(yesNo);

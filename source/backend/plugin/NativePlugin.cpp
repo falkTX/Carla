@@ -687,7 +687,10 @@ public:
         fIsUiVisible = yesNo;
 
         if (! yesNo)
+        {
+            pData->transientTryCounter = 0;
             return;
+        }
 
         if ((fDescriptor->hints & ::PLUGIN_USES_PARENT_ID) == 0)
             pData->tryTransient();

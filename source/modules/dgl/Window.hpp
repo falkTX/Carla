@@ -61,6 +61,8 @@ public:
 
     void setTitle(const char* title);
 
+    void setTransientWinId(intptr_t winId);
+
     App&     getApp() const noexcept;
     uint32_t getEventTimestamp() const;
     int      getModifiers() const;

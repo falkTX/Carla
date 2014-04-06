@@ -459,6 +459,19 @@ public:
 #endif
     }
 
+    void setTransientWinId(const intptr_t winId)
+    {
+#if defined(DGL_OS_LINUX)
+        XSetTransientForHint(xDisplay, xWindow, static_cast<::Window>(winId));
+#else
+        return;
+        // unused
+        (void)winId;
+#endif
+    }
+
+    // -------------------------------------------------------------------
+
     App& getApp() const noexcept
     {
         return fApp;
@@ -871,6 +884,11 @@ void Window::setSize(unsigned int width, unsigned int height)
 void Window::setTitle(const char* title)
 {
     pData->setTitle(title);
+}
+
+void Window::setTransientWinId(intptr_t winId)
+{
+    pData->setTransientWinId(winId);
 }
 
 App& Window::getApp() const noexcept
