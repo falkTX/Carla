@@ -34,6 +34,8 @@ struct PuglViewImpl {
     int height;
 };}
 #elif defined(DGL_OS_LINUX)
+# include <sys/types.h>
+# include <unistd.h>
 extern "C" {
 # include "pugl/pugl_x11.c"
 }
@@ -185,6 +187,10 @@ public:
         xDisplay = impl->display;
         xWindow  = impl->win;
         assert(xWindow != 0);
+
+        pid_t pid = getpid();
+        Atom _nwp = XInternAtom(xDisplay, "_NET_WM_PID", True);
+        XChangeProperty(xDisplay, xWindow, _nwp, XA_CARDINAL, 32, PropModeReplace, (const unsigned char*)&pid, 1);
 #endif
 
         DBG("Success!\n");

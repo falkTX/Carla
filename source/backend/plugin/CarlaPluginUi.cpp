@@ -196,8 +196,12 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
         ~ScopedDisplay() { if (display!=nullptr) XCloseDisplay(display); }
     };
     struct ScopedFreeData {
-        uchar* data;
-        ScopedFreeData(uchar* d) : data(d) {}
+        union {
+            char* data;
+            uchar* udata;
+        };
+        ScopedFreeData(char* d) : data(d) {}
+        ScopedFreeData(uchar* d) : udata(d) {}
         ~ScopedFreeData() { XFree(data); }
     };
 
@@ -259,7 +263,7 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
         }
 
         // ------------------------------------------------
-        // try using name
+        // try using name (UTF-8)
 
         unsigned long nameSize;
         unsigned char* nameData = nullptr;
@@ -277,7 +281,28 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
             {
                 CARLA_SAFE_ASSERT_RETURN(lastGoodWindow == window || lastGoodWindow == 0,  true);
                 lastGoodWindow = window;
-                carla_stdout("Match found using name");
+                carla_stdout("Match found using UTF-8 name");
+            }
+        }
+
+        // ------------------------------------------------
+        // try using name (simple)
+
+        char* wmName = nullptr;
+
+        status = XFetchName(sd.display, window, &wmName);
+
+        if (wmName != nullptr)
+        {
+            const ScopedFreeData sfd2(wmName);
+
+            CARLA_SAFE_ASSERT_CONTINUE(status != 0);
+
+            if (std::strstr(wmName, uiTitle) != nullptr)
+            {
+                CARLA_SAFE_ASSERT_RETURN(lastGoodWindow == window || lastGoodWindow == 0,  true);
+                lastGoodWindow = window;
+                carla_stdout("Match found using simple name");
             }
         }
     }
@@ -290,7 +315,7 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
     _nws[0] = XInternAtom(sd.display, "_NET_WM_STATE_SKIP_TASKBAR", True);
     _nws[1] = XInternAtom(sd.display, "_NET_WM_STATE_SKIP_PAGER", True);
 
-    XChangeProperty(sd.display, lastGoodWindow, _nwt, XA_ATOM, 32, PropModeAppend, (uchar*)_nws, 2);
+    XChangeProperty(sd.display, lastGoodWindow, _nwt, XA_ATOM, 32, PropModeAppend, (const uchar*)_nws, 2);
     XSetTransientForHint(sd.display, lastGoodWindow, (Window)winId);
     XFlush(sd.display);
     return true;

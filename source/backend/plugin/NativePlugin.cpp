@@ -179,6 +179,8 @@ public:
         {
             if (fIsUiVisible && fDescriptor != nullptr && fDescriptor->ui_show != nullptr && fHandle != nullptr)
                 fDescriptor->ui_show(fHandle, false);
+
+            pData->transientTryCounter = 0;
         }
 
         pData->singleMutex.lock();
