@@ -206,7 +206,10 @@ class HostWindow(QMainWindow):
 
         self.fSavedSettings = {}
 
-        if LADISH_APP_NAME:
+        if gCarla.isPlugin:
+            self.fClientName         = "Carla-Plugin"
+            self.fSessionManagerName = "Plugin"
+        elif LADISH_APP_NAME:
             self.fClientName         = LADISH_APP_NAME
             self.fSessionManagerName = "LADISH"
         elif NSM_URL:
@@ -225,13 +228,15 @@ class HostWindow(QMainWindow):
         # Set up GUI (engine stopped)
 
         if gCarla.isPlugin:
-            self.ui.act_file_new.setEnabled(False)
-            self.ui.act_file_open.setEnabled(False)
             self.ui.act_engine_start.setEnabled(False)
             self.ui.menu_Engine.setEnabled(False)
         else:
             self.ui.act_engine_start.setEnabled(True)
 
+        if self.fSessionManagerName:
+            self.ui.act_file_new.setEnabled(False)
+
+        self.ui.act_file_open.setEnabled(False)
         self.ui.act_file_save.setEnabled(False)
         self.ui.act_file_save_as.setEnabled(False)
         self.ui.act_engine_stop.setEnabled(False)
@@ -847,12 +852,12 @@ class HostWindow(QMainWindow):
         self.ui.menu_Canvas.setEnabled(check)
 
         if not gCarla.isPlugin:
-            self.ui.act_file_save.setEnabled(check)
             self.ui.act_engine_start.setEnabled(not check)
             self.ui.act_engine_stop.setEnabled(check)
 
-            if self.fSessionManagerName != "Non Session Manager":
+            if not self.fSessionManagerName:
                 self.ui.act_file_open.setEnabled(check)
+                self.ui.act_file_save.setEnabled(check)
                 self.ui.act_file_save_as.setEnabled(check)
 
             self.setTransportMenuEnabled(check)
@@ -877,12 +882,12 @@ class HostWindow(QMainWindow):
         self.ui.menu_Canvas.setEnabled(check)
 
         if not gCarla.isPlugin:
-            self.ui.act_file_save.setEnabled(check)
             self.ui.act_engine_start.setEnabled(not check)
             self.ui.act_engine_stop.setEnabled(check)
 
-            if self.fSessionManagerName != "Non Session Manager":
+            if not self.fSessionManagerName:
                 self.ui.act_file_open.setEnabled(check)
+                self.ui.act_file_save.setEnabled(check)
                 self.ui.act_file_save_as.setEnabled(check)
 
             self.setTransportMenuEnabled(check)

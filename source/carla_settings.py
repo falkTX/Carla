@@ -278,8 +278,11 @@ class CarlaSettingsW(QDialog):
                 self.ui.cb_canvas_use_opengl.setChecked(False)
                 self.ui.cb_canvas_use_opengl.setEnabled(False)
 
-        if not hasEngine:
+        if gCarla.isPlugin or not hasEngine:
             self.ui.lw_page.hideRow(self.TAB_INDEX_ENGINE)
+
+            if gCarla.isPlugin:
+                self.ui.lw_page.hideRow(self.TAB_INDEX_PATHS)
 
         if WINDOWS:
             self.ui.group_main_theme.setEnabled(False)
@@ -287,10 +290,6 @@ class CarlaSettingsW(QDialog):
 
         if not MACOS:
             self.ui.cb_paths.removeItem(self.ui.cb_paths.findText("AU"))
-
-        if gCarla.isPlugin:
-            self.ui.lw_page.hideRow(self.TAB_INDEX_ENGINE)
-            self.ui.lw_page.hideRow(self.TAB_INDEX_PATHS)
 
         # -------------------------------------------------------------
         # Set-up connections
