@@ -777,6 +777,8 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
 
             if paramData['type'] != PARAMETER_INPUT:
                 continue
+            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
+                continue
 
             paramName = paramInfo['name'].split("/", 1)[0].split(" (", 1)[0].strip()
             paramLow  = paramName.lower()
