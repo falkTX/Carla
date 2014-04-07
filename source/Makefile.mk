@@ -43,51 +43,22 @@ endif
 
 BASE_FLAGS = -Wall -Wextra -pipe -DREAL_BUILD
 BASE_OPTS  = -O2 -ffast-math -mtune=generic -msse -msse2 -mfpmath=sse -fdata-sections -ffunction-sections
-LINK_OPTS  = -fdata-sections -ffunction-sections
-# -Wl,--strip-all
+LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,-O1 -Wl,--as-needed -Wl,--gc-sections -Wl,--strip-all
 
-ifeq ($(TESTBUILD),true)
-BASE_FLAGS += -Werror -Wcast-qual -Wconversion -Wformat-security -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wundef -Wwrite-strings
-CFLAGS     += -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes
-CXXFLAGS   += -Wnon-virtual-dtor -Woverloaded-virtual
-ifneq ($(CC),clang)
-BASE_FLAGS += -Wcast-align -Wunsafe-loop-optimizations
-endif
-ifeq ($(LINUX),true)
-CFLAGS     += -isystem /opt/kxstudio/include
-CXXFLAGS   += -isystem /opt/kxstudio/include -isystem /usr/include/qt4
-endif
 ifeq ($(MACOS),true)
-CFLAGS     += -isystem /opt/local/include/
-CXXFLAGS   += -isystem /opt/local/include/
-endif
-ifeq ($(WIN32),true)
-CFLAGS     += -isystem /opt/mingw32/include
-CXXFLAGS   += -isystem /opt/mingw32/include -isystem /opt/mingw32/include/qt4
-endif
-endif
-
-ifneq ($(MACOS),true)
-LINK_OPTS += -Wl,-O1 -Wl,--gc-sections
-ifneq ($(CC),clang)
-BASE_FLAGS += -Wlogical-op
-endif
-ifeq ($(TESTBUILD),true)
-BASE_FLAGS += -Wmissing-declarations -Wsign-conversion
-# -Wsuggest-attribute=noreturn
-endif
-endif
-
-ifeq ($(WIN32),true)
-BASE_FLAGS += -msse -msse2
-else
-BASE_FLAGS += -fPIC -DPIC
+# MacOS linker flags
+LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,-dead_strip -Wl,-dead_strip_dylibs
 endif
 
 ifeq ($(RASPPI),true)
 # Raspberry-Pi optimization flags
-BASE_OPTS  = -O3 -ffast-math -march=armv6 -mfpu=vfp -mfloat-abi=hard
-LINK_OPTS  =
+BASE_OPTS  = -O2 -ffast-math -march=armv6 -mfpu=vfp -mfloat-abi=hard
+LINK_OPTS  = -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
+endif
+
+ifneq ($(WIN32),true)
+# not needed for Windows
+BASE_FLAGS += -fPIC -DPIC
 endif
 
 ifeq ($(DEBUG),true)
@@ -109,6 +80,34 @@ ifeq ($(MACOS),true)
 # No C++11 support
 BUILD_CXX_FLAGS = $(BASE_FLAGS) $(CXXFLAGS)
 LINK_FLAGS      = $(LINK_OPTS) $(LDFLAGS)
+endif
+
+# --------------------------------------------------------------
+# Strict test build
+
+ifeq ($(TESTBUILD),true)
+BASE_FLAGS += -Werror -Wcast-qual -Wconversion -Wformat -Wformat-security -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wundef -Wwrite-strings
+# ifneq ($(CC),clang)
+BASE_FLAGS += -Wcast-align -Wunsafe-loop-optimizations
+# endif
+# -Wsuggest-attribute=noreturn
+ifneq ($(MACOS),true)
+BASE_FLAGS += -Wlogical-op -Wmissing-declarations -Wsign-conversion
+endif
+CFLAGS     += -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes
+CXXFLAGS   += -Wnon-virtual-dtor -Woverloaded-virtual
+ifeq ($(LINUX),true)
+CFLAGS     += -isystem /opt/kxstudio/include
+CXXFLAGS   += -isystem /opt/kxstudio/include -isystem /usr/include/qt4
+endif
+ifeq ($(MACOS),true)
+CFLAGS     += -isystem /opt/local/include/
+CXXFLAGS   += -isystem /opt/local/include/
+endif
+ifeq ($(WIN32),true)
+CFLAGS     += -isystem /opt/mingw32/include
+CXXFLAGS   += -isystem /opt/mingw32/include -isystem /opt/mingw32/include/qt4
+endif
 endif
 
 # --------------------------------------------------------------
@@ -182,6 +181,7 @@ endif
 HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
 HAVE_GTK2         = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3         = $(shell pkg-config --exists gtk+-3.0 && echo true)
+HAVE_WAYLAND      = $(shell pkg-config --exists wayland-client && echo true)
 HAVE_X11          = $(shell pkg-config --exists x11 && echo true)
 
 ifeq ($(LINUX),true)
@@ -201,7 +201,7 @@ HAVE_LINUXSAMPLER = $(shell pkg-config --exists linuxsampler && echo true)
 endif
 
 # --------------------------------------------------------------
-# Check for optional libs (needed by internal plugins)
+# Check for optional libs (required by internal plugins)
 
 HAVE_AF_DEPS      = $(shell pkg-config --exists sndfile && echo true)
 HAVE_MF_DEPS      = $(shell pkg-config --exists smf && echo true)
@@ -209,7 +209,7 @@ HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
 HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk_images ntk && echo true)
 
 # --------------------------------------------------------------
-# Force some things on MacOS and Windows
+# Force some features on MacOS and Windows
 
 ifeq ($(MACOS),true)
 FORCE_FEATURES = true
@@ -225,7 +225,7 @@ HAVE_X11     = false
 endif
 
 # --------------------------------------------------------------
-# Set base stuff
+# Set base defines
 
 ifeq ($(HAVE_DGL),true)
 BASE_FLAGS += -DHAVE_DGL
@@ -239,6 +239,10 @@ ifeq ($(HAVE_JUCE),true)
 BASE_FLAGS += -DHAVE_JUCE
 endif
 
+ifeq ($(HAVE_WAYLAND),true)
+BASE_FLAGS += -DHAVE_WAYLAND
+endif
+
 ifeq ($(HAVE_X11),true)
 BASE_FLAGS += -DHAVE_X11
 endif
@@ -246,8 +250,8 @@ endif
 # --------------------------------------------------------------
 # Set libs stuff (part 1)
 
-LIBLO_FLAGS = $(shell pkg-config --cflags liblo)
-LIBLO_LIBS  = $(shell pkg-config --libs liblo)
+LIBLO_FLAGS  = $(shell pkg-config --cflags liblo)
+LIBLO_LIBS   = $(shell pkg-config --libs liblo)
 
 ifeq ($(DEFAULT_QT),5)
 QTCORE_FLAGS = $(shell pkg-config --cflags Qt5Core)
@@ -277,17 +281,13 @@ LINUXSAMPLER_LIBS  = $(shell pkg-config --libs linuxsampler)
 endif
 
 ifeq ($(HAVE_WAYLAND),true)
-WAYLAND_FLAGS = $(shell pkg-config --cflags x11)
-WAYLAND_LIBS  = $(shell pkg-config --libs x11)
+WAYLAND_FLAGS = $(shell pkg-config --cflags wayland-client)
+WAYLAND_LIBS  = $(shell pkg-config --libs wayland-client)
 endif
 
 ifeq ($(HAVE_X11),true)
 X11_FLAGS = $(shell pkg-config --cflags x11)
 X11_LIBS  = $(shell pkg-config --libs x11)
-endif
-
-ifneq ($(HAIKU),true)
-RTMEMPOOL_LIBS = -lpthread
 endif
 
 # --------------------------------------------------------------
@@ -307,6 +307,10 @@ RTAUDIO_FLAGS  = -DHAVE_GETTIMEOFDAY -D__UNIX_JACK__
 ifeq ($(DEBUG),true)
 RTAUDIO_FLAGS += -D__RTAUDIO_DEBUG__
 RTMIDI_FLAGS  += -D__RTMIDI_DEBUG__
+endif
+
+ifneq ($(HAIKU),true)
+RTMEMPOOL_LIBS = -lpthread
 endif
 
 ifeq ($(LINUX),true)
@@ -338,18 +342,22 @@ endif
 endif
 
 ifeq ($(MACOS),true)
-DGL_LIBS                = -framework OpenGL -framework Cocoa
-JACKBRIDGE_LIBS         = -ldl -lpthread
-JUCE_AUDIO_BASICS_LIBS  = -framework Accelerate
-JUCE_AUDIO_DEVICES_LIBS = -framework AudioToolbox -framework CoreAudio -framework CoreMIDI -framework DiscRecording
-JUCE_AUDIO_FORMATS_LIBS = -framework CoreAudio -framework CoreMIDI -framework QuartzCore -framework AudioToolbox
-JUCE_CORE_LIBS          = -framework Cocoa -framework IOKit
-JUCE_GRAPHICS_LIBS      = -framework Cocoa -framework QuartzCore
-JUCE_GUI_BASICS_LIBS    = -framework Cocoa -framework Carbon -framework QuartzCore
-LILV_LIBS               = -ldl -lm
-RTAUDIO_FLAGS          += -D__MACOSX_CORE__
-RTAUDIO_LIBS           += -lpthread
-RTMIDI_FLAGS           += -D__MACOSX_CORE__
+DGL_LIBS                   = -framework OpenGL -framework Cocoa
+JACKBRIDGE_LIBS            = -ldl -lpthread
+JUCE_AUDIO_BASICS_LIBS     = -framework Accelerate
+JUCE_AUDIO_DEVICES_LIBS    = -framework AppKit -framework AudioToolbox -framework CoreAudio -framework CoreMIDI
+JUCE_AUDIO_FORMATS_LIBS    = -framework AudioToolbox -framework CoreFoundation
+JUCE_AUDIO_PROCESSORS_LIBS = -framework Cocoa -framework Carbon
+JUCE_CORE_LIBS             = -framework AppKit
+JUCE_EVENTS_LIBS           = -framework AppKit
+JUCE_GRAPHICS_LIBS         = -framework Cocoa -framework QuartzCore
+JUCE_GUI_BASICS_LIBS       = -framework Cocoa
+JUCE_GUI_EXTRA_LIBS        = -framework Cocoa -framework IOKit
+LILV_LIBS                  = -ldl -lm
+RTAUDIO_FLAGS             += -D__MACOSX_CORE__
+RTAUDIO_LIBS              += -framework CoreAudio -framework CoreFoundation -lpthread
+RTMIDI_FLAGS              += -D__MACOSX_CORE__
+RTMIDI_LIBS               += -framework CoreAudio -framework CoreMIDI -framework CoreFoundation
 endif
 
 ifeq ($(WIN32),true)
@@ -357,7 +365,7 @@ DGL_LIBS                = -lopengl32 -lgdi32
 JACKBRIDGE_LIBS         = -lpthread
 JUCE_AUDIO_DEVICES_LIBS = -lwinmm -lole32
 JUCE_CORE_LIBS          = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
-JUCE_EVENTS_LIBS        = -lole32
+# JUCE_EVENTS_LIBS        = -lole32
 JUCE_GRAPHICS_LIBS      = -lgdi32
 JUCE_GUI_BASICS_LIBS    = -lgdi32 -limm32 -lcomdlg32 -lole32
 LILV_LIBS               = -lm

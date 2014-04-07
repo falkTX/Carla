@@ -45,7 +45,7 @@
 /** Config: JUCE_ALSA
     Enables ALSA audio devices (Linux only).
 */
-#if JUCE_LINUX
+#if 0 //JUCE_LINUX
  #define JUCE_ALSA 1
  #define JUCE_ALSA_MIDI_INPUT_NAME  "Carla"
  #define JUCE_ALSA_MIDI_OUTPUT_NAME "Carla"

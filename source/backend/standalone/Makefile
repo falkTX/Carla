@@ -36,6 +36,7 @@ STATIC_LIBS += ../../modules/juce_gui_basics.a
 STATIC_LIBS += ../../modules/juce_gui_extra.a
 LINK_FLAGS  += $(JUCE_AUDIO_BASICS_LIBS)
 LINK_FLAGS  += $(JUCE_AUDIO_DEVICES_LIBS)
+LINK_FLAGS  += $(JUCE_AUDIO_PROCESSORS_LIBS)
 LINK_FLAGS  += $(JUCE_CORE_LIBS)
 LINK_FLAGS  += $(JUCE_DATA_STRUCTURES_LIBS)
 LINK_FLAGS  += $(JUCE_EVENTS_LIBS)
@@ -77,6 +78,10 @@ endif
 ifeq ($(HAVE_LINUXSAMPLER),true)
 LINK_FLAGS += $(LINUXSAMPLER_LIBS)
 endif
+
+# ifeq ($(HAVE_WAYLAND),true)
+# LINK_FLAGS += $(WAYLAND_LIBS)
+# endif
 
 ifeq ($(HAVE_X11),true)
 LINK_FLAGS += $(X11_LIBS)

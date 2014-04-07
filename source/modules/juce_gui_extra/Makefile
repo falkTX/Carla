@@ -9,7 +9,7 @@ include ../../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += $(JUCE_GUI_EXTRA_FLAGS) -I. -w
-LINK_FLAGS      += $(JUCE_GUI_EXTRA_LIBS) -L.. -ljuce_gui_basics
+LINK_FLAGS      += $(JUCE_GUI_EXTRA_LIBS) -L.. -ljuce_gui_basics -ljuce_graphics -ljuce_data_structures -ljuce_events -ljuce_core
 
 ifeq ($(MACOS),true)
 BUILD_CXX_FLAGS += -ObjC++
