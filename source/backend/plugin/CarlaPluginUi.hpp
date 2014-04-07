@@ -43,11 +43,13 @@ public:
 
     static bool tryTransientWinIdMatch(const uintptr_t pid, const char* const uiTitle, const uintptr_t winId);
 
-#if defined(CARLA_OS_MAC)
+#ifdef CARLA_OS_MAC
     static CarlaPluginUi* newCocoa(CloseCallback*, uintptr_t);
-#elif defined(CARLA_OS_WIN)
+#endif
+#ifdef CARLA_OS_WIN
     static CarlaPluginUi* newWindows(CloseCallback*, uintptr_t);
-#elif defined(HAVE_X11)
+#endif
+#ifdef HAVE_X11
     static CarlaPluginUi* newX11(CloseCallback*, uintptr_t);
 #endif
 

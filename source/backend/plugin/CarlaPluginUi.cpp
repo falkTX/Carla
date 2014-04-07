@@ -16,7 +16,6 @@
  */
 
 #include "CarlaPluginUi.hpp"
-#include "CarlaHost.h"
 
 #ifdef HAVE_X11
 # include <sys/types.h>
@@ -25,9 +24,7 @@
 # include <X11/Xutil.h>
 #endif
 
-#if defined(CARLA_OS_MAC)
-#elif defined(CARLA_OS_WIN)
-#elif defined(HAVE_X11)
+#ifdef HAVE_X11
 // -----------------------------------------------------
 // X11
 
@@ -332,19 +329,23 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 
 // -----------------------------------------------------
 
-#if defined(CARLA_OS_MAC)
+#ifdef CARLA_OS_MAC
 CarlaPluginUi* CarlaPluginUi::newCocoa(CloseCallback*, uintptr_t)
 {
     //return new CocoaPluginUi(cb, parentId);
     return nullptr;
 }
-#elif defined(CARLA_OS_WIN)
+#endif
+
+#ifdef CARLA_OS_WIN
 CarlaPluginUi* CarlaPluginUi::newWindows(CloseCallback*, uintptr_t)
 {
     //return new WindowsPluginUi(cb, parentId);
     return nullptr;
 }
-#elif defined(HAVE_X11)
+#endif
+
+#ifdef HAVE_X11
 CarlaPluginUi* CarlaPluginUi::newX11(CloseCallback* cb, uintptr_t parentId)
 {
     return new X11PluginUi(cb, parentId);
