@@ -103,7 +103,7 @@ struct BridgeControl : public RingBufferControl<StackRingBuffer> {
     char shm[32];
 
     BridgeControl()
-        : RingBufferControl(nullptr),
+        : RingBufferControl<StackRingBuffer>(nullptr),
           data(nullptr)
     {
         carla_zeroChar(shm, 32);
