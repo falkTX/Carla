@@ -114,7 +114,7 @@ void MyLookAndFeel::drawRotarySlider(Graphics& g,
                                      float sliderPos,
                                      const float rotaryStartAngle,
                                      const float rotaryEndAngle,
-                                     Slider& slider) override
+                                     Slider& /*slider*/) override
 {
     const float radius = jmin (width / 2, height / 2) - 2.0f;
     const float centreX = x + width * 0.5f;
@@ -123,9 +123,9 @@ void MyLookAndFeel::drawRotarySlider(Graphics& g,
     const float ry = centreY - radius;
     const float rw = radius * 2.0f;
     const float angle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
-    //const bool isMouseOver = slider.isMouseOverOrDragging() && slider.isEnabled();
 
-    // const float zeroPos = rotaryStartAngle + fabs((float)slider.getMinimum() / ((float)slider.getMaximum() - (float)slider.getMinimum())) * (rotaryEndAngle - rotaryStartAngle);
+    //const bool isMouseOver = slider.isMouseOverOrDragging() && slider.isEnabled();
+    //const float zeroPos = rotaryStartAngle + fabs((float)slider.getMinimum() / ((float)slider.getMaximum() - (float)slider.getMinimum())) * (rotaryEndAngle - rotaryStartAngle);
 
     Path p;
 

@@ -87,12 +87,14 @@ endif
 
 ifeq ($(TESTBUILD),true)
 BASE_FLAGS += -Werror -Wcast-qual -Wconversion -Wformat -Wformat-security -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wundef -Wwrite-strings
-# ifneq ($(CC),clang)
+ifneq ($(CC),clang)
 BASE_FLAGS += -Wcast-align -Wunsafe-loop-optimizations
-# endif
-# -Wsuggest-attribute=noreturn
+endif
 ifneq ($(MACOS),true)
-BASE_FLAGS += -Wlogical-op -Wmissing-declarations -Wsign-conversion
+BASE_FLAGS += -Wmissing-declarations -Wsign-conversion
+ifneq ($(CC),clang)
+BASE_FLAGS += -Wlogical-op
+endif
 endif
 CFLAGS     += -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes
 CXXFLAGS   += -Wnon-virtual-dtor -Woverloaded-virtual

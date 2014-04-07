@@ -19,6 +19,7 @@
 #include "CarlaHost.h"
 
 #ifdef HAVE_X11
+# include <sys/types.h>
 # include <X11/Xatom.h>
 # include <X11/Xlib.h>
 # include <X11/Xutil.h>
@@ -57,6 +58,10 @@ public:
 
         Atom wmDelete = XInternAtom(fDisplay, "WM_DELETE_WINDOW", True);
         XSetWMProtocols(fDisplay, fWindow, &wmDelete, 1);
+
+        pid_t pid = getpid();
+        Atom _nwp = XInternAtom(fDisplay, "_NET_WM_PID", True);
+        XChangeProperty(fDisplay, fWindow, _nwp, XA_CARDINAL, 32, PropModeReplace, (const uchar*)&pid, 1);
 
         if (parentId != 0)
             setTransientWinId(parentId);

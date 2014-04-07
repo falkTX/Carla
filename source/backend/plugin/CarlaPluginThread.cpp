@@ -24,6 +24,7 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
+#ifdef DEBUG
 static inline
 const char* PluginThreadMode2str(const CarlaPluginThread::Mode mode)
 {
@@ -44,6 +45,7 @@ const char* PluginThreadMode2str(const CarlaPluginThread::Mode mode)
     carla_stderr("CarlaPluginThread::PluginThreadMode2str(%i) - invalid mode", mode);
     return nullptr;
 }
+#endif
 
 CarlaPluginThread::CarlaPluginThread(CarlaBackend::CarlaEngine* const engine, CarlaBackend::CarlaPlugin* const plugin, const Mode mode)
     : CarlaThread("CarlaPluginThread"),

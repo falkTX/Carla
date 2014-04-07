@@ -88,7 +88,7 @@ private:
     float Fvelocity;
     double SampleRate;
     float BaseFrequency;
-    float lfoC, LFOA, LFOP, LFOF;
+    float lfoC, LFOA, LFOF;
     float lfoS[2];
     float lowL, bandL, highL, lowR, bandR, highR, q, cut;
 };

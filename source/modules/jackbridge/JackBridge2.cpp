@@ -120,31 +120,31 @@ bool jackbridge_sem_timedwait(void* sem, int secs)
 # endif
 }
 
-bool jackbridge_shm_is_valid(char* shm)
+bool jackbridge_shm_is_valid(void* shm)
 {
     shm_t* t = (shm_t*)shm;
     return carla_is_shm_valid(*t);
 }
 
-void jackbridge_shm_init(char* shm)
+void jackbridge_shm_init(void* shm)
 {
     shm_t* t = (shm_t*)shm;
     carla_shm_init(*t);
 }
 
-void jackbridge_shm_attach(char* shm, const char* name)
+void jackbridge_shm_attach(void* shm, const char* name)
 {
     shm_t* t = (shm_t*)shm;
     *t = carla_shm_attach(name);
 }
 
-void  jackbridge_shm_close(char* shm)
+void  jackbridge_shm_close(void* shm)
 {
     shm_t* t = (shm_t*)shm;
     carla_shm_close(*t);
 }
 
-void* jackbridge_shm_map(char* shm, size_t size)
+void* jackbridge_shm_map(void* shm, size_t size)
 {
     shm_t* t = (shm_t*)shm;
     return carla_shm_map(*t, size);

@@ -52,9 +52,9 @@ class MidiPattern
 {
 public:
     MidiPattern(AbstractMidiPlayer* const player)
-        : kPlayer(player),
-          fStartTime(0),
-          fDuration(0)
+        : kPlayer(player)
+          //fStartTime(0),
+          //fDuration(0)
     {
         CARLA_ASSERT(kPlayer != nullptr);
     }
@@ -200,8 +200,8 @@ public:
 private:
     AbstractMidiPlayer* const kPlayer;
 
-    uint32_t fStartTime; // unused
-    uint32_t fDuration;  // unused
+    //uint32_t fStartTime; // unused
+    //uint32_t fDuration;  // unused
 
     CarlaMutex fMutex;
     LinkedList<const RawMidiEvent*> fData;
