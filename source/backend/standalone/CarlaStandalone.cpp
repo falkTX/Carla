@@ -299,7 +299,7 @@ protected:
 
 #ifndef DEBUG
         // unused
-        (void)path; (void)types; (void)argc;
+        (void)path; (void)types; (void)argc; (void)msg;
 #endif
     }
 
