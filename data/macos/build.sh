@@ -22,6 +22,8 @@ else
   export PYRCC="pyrcc4-3.3 -py3"
 fi
 
+./configure -prefix /Users/falktx/Source/Qt-5.2.1 -release -opensource -confirm-license -no-c++11 -no-javascript-jit -no-qml-debug -force-pkg-config -qt-zlib -no-mtdev -no-gif -qt-libpng -qt-libjpeg -qt-freetype -no-openssl -qt-pcre -no-xinput2 -no-xcb-xlib -no-glib -no-cups -no-iconv -no-icu -no-fontconfig -no-dbus -no-xcb -no-eglfs -no-directfb -no-linuxfb -no-kms -no-compile-examples -nomake examples -nomake tests -make tools -make libs -qt-sql-sqlite -no-framework -no-sql-odbc
+
 # Clean build
 make clean
 
