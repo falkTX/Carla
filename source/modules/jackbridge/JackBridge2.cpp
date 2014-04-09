@@ -56,24 +56,24 @@ bool jackbridge_sem_timedwait(void*, int)
     return false;
 }
 
-bool jackbridge_shm_is_valid(char*)
+bool jackbridge_shm_is_valid(void*)
 {
     return false;
 }
 
-void jackbridge_shm_init(char*)
+void jackbridge_shm_init(void*)
 {
 }
 
-void jackbridge_shm_attach(char*, const char*)
+void jackbridge_shm_attach(void*, const char*)
 {
 }
 
-void jackbridge_shm_close(char*)
+void jackbridge_shm_close(void*)
 {
 }
 
-void* jackbridge_shm_map(char*, size_t)
+void* jackbridge_shm_map(void*, size_t)
 {
     return nullptr;
 }
