@@ -126,7 +126,8 @@ public:
             {
                 if (Data* data = list_entry(entry, Data, siblings))
                 {
-                    data->~Data();
+                    if (fNeedsCopyCtr)
+                        data->~Data();
                     _deallocate(data);
                 }
             }
@@ -218,7 +219,8 @@ public:
 
                 if (data != nullptr)
                 {
-                    data->~Data();
+                    if (fNeedsCopyCtr)
+                        data->~Data();
                     _deallocate(data);
                 }
             }
@@ -248,7 +250,8 @@ public:
 
         CARLA_SAFE_ASSERT_RETURN(it.fData != nullptr,);
 
-        it.fData->~Data();
+        if (fNeedsCopyCtr)
+            it.fData->~Data();
         _deallocate(it.fData);
     }
 
@@ -269,7 +272,8 @@ public:
                 --fCount;
                 list_del(entry);
 
-                data->~Data();
+                if (fNeedsCopyCtr)
+                    data->~Data();
                 _deallocate(data);
                 break;
             }
@@ -295,7 +299,8 @@ public:
                 --fCount;
                 list_del(entry);
 
-                data->~Data();
+                if (fNeedsCopyCtr)
+                    data->~Data();
                 _deallocate(data);
             }
         }
@@ -408,7 +413,8 @@ private:
 
             if (data != nullptr)
             {
-                data->~Data();
+                if (fNeedsCopyCtr)
+                    data->~Data();
                 _deallocate(data);
             }
         }
@@ -429,7 +435,7 @@ public:
     LinkedList(const bool needsCopyCtr = false) noexcept
         : AbstractLinkedList<T>(needsCopyCtr) {}
 
-private:
+protected:
     typename AbstractLinkedList<T>::Data* _allocate() noexcept override
     {
         return (typename AbstractLinkedList<T>::Data*)std::malloc(this->fDataSize);

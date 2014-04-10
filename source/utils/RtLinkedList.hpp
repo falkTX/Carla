@@ -133,9 +133,7 @@ public:
         AbstractLinkedList<T>::spliceInsert(list, init);
     }
 
-private:
-    Pool& fMemPool;
-
+protected:
     typename AbstractLinkedList<T>::Data* _allocate() noexcept override
     {
         return (typename AbstractLinkedList<T>::Data*)fMemPool.allocate_atomic();
@@ -152,6 +150,9 @@ private:
 
         fMemPool.deallocate(dataPtr);
     }
+
+private:
+    Pool& fMemPool;
 
     bool _add_sleepy(const T& value, const bool inTail) noexcept
     {
