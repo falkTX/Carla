@@ -239,7 +239,7 @@ private:
     /*
      * Copy our pthread type to another var.
      */
-    void _copyTo(volatile pthread_t& handle) noexcept
+    void _copyTo(volatile pthread_t& handle) const noexcept
     {
 #ifdef CARLA_OS_WIN
         handle.p = fHandle.p;

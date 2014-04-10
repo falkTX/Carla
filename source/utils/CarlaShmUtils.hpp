@@ -106,7 +106,7 @@ void carla_shm_close(shm_t& shm)
     CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm),);
 
 #ifdef CARLA_OS_WIN
-    CARLA_SAFE_ASSERT_RETURN(shm.map == nullptr,);
+    CARLA_SAFE_ASSERT(shm.map == nullptr);
 
     CloseHandle(shm.shm);
     shm.shm = nullptr;
@@ -127,8 +127,7 @@ void* carla_shm_map(shm_t& shm, const size_t size)
 
     HANDLE map = CreateFileMapping(shm.shm, NULL, PAGE_READWRITE, size, size, NULL);
 
-    if (map == nullptr)
-        return nullptr;
+    CARLA_SAFE_ASSERT_RETURN((map != nullptr, nullptr);
 
     HANDLE ptr = MapViewOfFile(map, FILE_MAP_COPY, 0, 0, size);
 
