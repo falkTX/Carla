@@ -24,7 +24,7 @@
 // -----------------------------------------------------------------------
 // Find UI binary for a plugin (returned value must be deleted)
 
-const char* find_dssi_ui(const char* const filename, const char* const label);
+const char* find_dssi_ui(const char* const filename, const char* const label) noexcept;
 
 // -----------------------------------------------------------------------
 

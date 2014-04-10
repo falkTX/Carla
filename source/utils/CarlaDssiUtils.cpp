@@ -23,38 +23,41 @@
 
 // -----------------------------------------------------------------------
 
-const char* find_dssi_ui(const char* const filename, const char* const label)
+const char* find_dssi_ui(const char* const filename, const char* const label) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', nullptr);
     CARLA_SAFE_ASSERT_RETURN(label    != nullptr && label[0]    != '\0', nullptr);
     carla_debug("find_dssi_ui(\"%s\", \"%s\")", filename, label);
 
-    QString guiFilename;
-    QString pluginDir(filename);
-    pluginDir.resize(pluginDir.lastIndexOf("."));
+    try {
+        QString guiFilename;
+        QString pluginDir(filename);
+        pluginDir.resize(pluginDir.lastIndexOf("."));
 
-    QString checkLabel(label);
-    QString checkSName(QFileInfo(pluginDir).baseName());
+        QString checkLabel(label);
+        QString checkSName(QFileInfo(pluginDir).baseName());
 
-    if (! checkLabel.endsWith("_")) checkLabel += "_";
-    if (! checkSName.endsWith("_")) checkSName += "_";
+        if (! checkLabel.endsWith("_")) checkLabel += "_";
+        if (! checkSName.endsWith("_")) checkSName += "_";
 
-    QStringList guiFiles(QDir(pluginDir).entryList());
+        QStringList guiFiles(QDir(pluginDir).entryList());
 
-    foreach (const QString& gui, guiFiles)
-    {
-        if (gui.startsWith(checkLabel) || gui.startsWith(checkSName))
+        foreach (const QString& gui, guiFiles)
         {
-            QFileInfo finalname(pluginDir + QDir::separator() + gui);
-            guiFilename = finalname.absoluteFilePath();
-            break;
+            if (gui.startsWith(checkLabel) || gui.startsWith(checkSName))
+            {
+                QFileInfo finalname(pluginDir + QDir::separator() + gui);
+                guiFilename = finalname.absoluteFilePath();
+                break;
+            }
         }
-    }
 
-    if (guiFilename.isEmpty())
-        return nullptr;
+        if (guiFilename.isEmpty())
+            return nullptr;
 
-    return carla_strdup(guiFilename.toUtf8().constData());
+        return carla_strdup(guiFilename.toUtf8().constData());
+
+    } CARLA_SAFE_EXCEPTION_RETURN("find_dssi_ui", nullptr);
 }
 
 // -----------------------------------------------------------------------

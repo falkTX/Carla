@@ -25,7 +25,7 @@
 #define try_lo_send(...)      \
     try {                     \
         lo_send(__VA_ARGS__); \
-    } catch(...) {}
+    } CARLA_SAFE_EXCEPTION("lo_send");
 
 // -----------------------------------------------------------------------
 

@@ -57,9 +57,10 @@ protected:
         k_list_head siblings;
     };
 
-    AbstractLinkedList() noexcept
+    AbstractLinkedList(const bool needsCopyCtr) noexcept
         : fDataSize(sizeof(Data)),
-          fCount(0)
+          fCount(0),
+          fNeedsCopyCtr(needsCopyCtr)
     {
         _init();
     }
@@ -146,86 +147,22 @@ public:
 
     bool append(const T& value) noexcept
     {
-        if (Data* const data = _allocate())
-        {
-            try {
-                new(data)Data();
-            }
-            catch(...) {
-                _deallocate(data);
-                return false;
-            }
-
-            data->value = value;
-            list_add_tail(&data->siblings, &fQueue);
-            ++fCount;
-            return true;
-        }
-
-        return false;
+        return _add(value, true, &fQueue);
     }
 
     bool appendAt(const T& value, const Itenerator& it) noexcept
     {
-        if (Data* const data = _allocate())
-        {
-            try {
-                new(data)Data();
-            }
-            catch(...) {
-                _deallocate(data);
-                return false;
-            }
-
-            data->value = value;
-            list_add_tail(&data->siblings, it.fEntry->next);
-            ++fCount;
-            return true;
-        }
-
-        return false;
+        return _add(value, true, it.fEntry->next);
     }
 
     bool insert(const T& value) noexcept
     {
-        if (Data* const data = _allocate())
-        {
-            try {
-                new(data)Data();
-            }
-            catch(...) {
-                _deallocate(data);
-                return false;
-            }
-
-            data->value = value;
-            list_add(&data->siblings, &fQueue);
-            ++fCount;
-            return true;
-        }
-
-        return false;
+        return _add(value, false, &fQueue);
     }
 
     bool insertAt(const T& value, const Itenerator& it) noexcept
     {
-        if (Data* const data = _allocate())
-        {
-            try {
-                new(data)Data();
-            }
-            catch(...) {
-                _deallocate(data);
-                return false;
-            }
-
-            data->value = value;
-            list_add(&data->siblings, it.fEntry->prev);
-            ++fCount;
-            return true;
-        }
-
-        return false;
+        return _add(value, false, it.fEntry->prev);
     }
 
     T& getAt(const size_t index) const noexcept
@@ -399,6 +336,8 @@ protected:
           size_t fCount;
     k_list_head  fQueue;
 
+    const bool fNeedsCopyCtr;
+
     virtual Data* _allocate() noexcept = 0;
     virtual void  _deallocate(Data* const dataPtr) noexcept = 0;
 
@@ -409,6 +348,46 @@ private:
     {
         fCount = 0;
         INIT_LIST_HEAD(&fQueue);
+    }
+
+    bool _add(const T& value, const bool inTail, k_list_head* const queue) noexcept
+    {
+        if (Data* const data = _allocate())
+        {
+            if (fNeedsCopyCtr)
+            {
+                try {
+                    new(data)Data();
+                }
+                catch(...) {
+                    _deallocate(data);
+                    return false;
+                }
+
+                try {
+                    data->value = value;
+                }
+                catch(...) {
+                    data->~Data();
+                    _deallocate(data);
+                    return false;
+                }
+            }
+            else
+            {
+                std::memcpy(&data->value, &value, fDataSize);
+            }
+
+            if (inTail)
+                list_add_tail(&data->siblings, queue);
+            else
+                list_add(&data->siblings, queue);
+
+            ++fCount;
+            return true;
+        }
+
+        return false;
     }
 
     T& _getFirstOrLast(const bool first, const bool removeObj) noexcept
@@ -447,7 +426,8 @@ template<typename T>
 class LinkedList : public AbstractLinkedList<T>
 {
 public:
-    LinkedList() noexcept {}
+    LinkedList(const bool needsCopyCtr = false) noexcept
+        : AbstractLinkedList<T>(needsCopyCtr) {}
 
 private:
     typename AbstractLinkedList<T>::Data* _allocate() noexcept override

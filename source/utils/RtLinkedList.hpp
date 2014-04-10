@@ -98,51 +98,18 @@ public:
     // -------------------------------------------------------------------
     // Now the actual rt-linkedlist code
 
-    RtLinkedList(Pool& memPool) noexcept
-        : fMemPool(memPool) {}
+    RtLinkedList(Pool& memPool, const bool needsCopyCtr = false) noexcept
+        : AbstractLinkedList<T>(needsCopyCtr),
+          fMemPool(memPool) {}
 
     bool append_sleepy(const T& value) noexcept
     {
-        if (typename AbstractLinkedList<T>::Data* const data = _allocate_sleepy())
-        {
-            try {
-                new(data)typename AbstractLinkedList<T>::Data();
-            }
-            catch(...) {
-                _deallocate(data);
-                return false;
-            }
-
-            data->value = value;
-            list_add_tail(&data->siblings, &this->fQueue);
-            ++(this->fCount);
-
-            return true;
-        }
-
-        return false;
+        return _add_sleepy(value, true);
     }
 
     bool insert_sleepy(const T& value) noexcept
     {
-        if (typename AbstractLinkedList<T>::Data* const data = _allocate_sleepy())
-        {
-            try {
-                new(data)typename AbstractLinkedList<T>::Data();
-            }
-            catch(...) {
-                _deallocate(data);
-                return false;
-            }
-
-            data->value = value;
-            list_add(&data->siblings, &this->fQueue);
-            ++(this->fCount);
-
-            return true;
-        }
-
-        return false;
+        return _add_sleepy(value, false);
     }
 
     void resize(const size_t minPreallocated, const size_t maxPreallocated) noexcept
@@ -184,6 +151,46 @@ private:
         CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr,);
 
         fMemPool.deallocate(dataPtr);
+    }
+
+    bool _add_sleepy(const T& value, const bool inTail) noexcept
+    {
+        if (typename AbstractLinkedList<T>::Data* const data = _allocate_sleepy())
+        {
+            if (this->fNeedsCopyCtr)
+            {
+                try {
+                    new(data)typename AbstractLinkedList<T>::Data();
+                }
+                catch(...) {
+                    _deallocate(data);
+                    return false;
+                }
+
+                try {
+                    data->value = value;
+                }
+                catch(...) {
+                    data->~Data();
+                    _deallocate(data);
+                    return false;
+                }
+            }
+            else
+            {
+                std::memcpy(&data->value, &value, this->fDataSize);
+            }
+
+            if (inTail)
+                list_add_tail(&data->siblings, &this->fQueue);
+            else
+                list_add(&data->siblings, &this->fQueue);
+
+            ++(this->fCount);
+            return true;
+        }
+
+        return false;
     }
 
     LINKED_LIST_DECLARATIONS(RtLinkedList)

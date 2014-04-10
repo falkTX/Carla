@@ -43,8 +43,8 @@ struct PostRtEvents {
 
     PostRtEvents()
         : dataPool(MIN_RT_EVENTS, MAX_RT_EVENTS),
-          data(dataPool),
-          dataPendingRT(dataPool) {}
+          data(dataPool, true),
+          dataPendingRT(dataPool, true) {}
 
     ~PostRtEvents()
     {

@@ -49,7 +49,7 @@ const LADSPA_RDF_Descriptor* ladspa_rdf_dup(const LADSPA_RDF_Descriptor* const o
     {
         newDescriptor->Ports = new LADSPA_RDF_Port[newDescriptor->PortCount];
 
-        for (unsigned long i=0; i < newDescriptor->PortCount; ++i)
+        for (ulong i=0; i < newDescriptor->PortCount; ++i)
         {
             LADSPA_RDF_Port* const oldPort(&oldDescriptor->Ports[i]);
             LADSPA_RDF_Port* const newPort(&newDescriptor->Ports[i]);
@@ -67,7 +67,7 @@ const LADSPA_RDF_Descriptor* ladspa_rdf_dup(const LADSPA_RDF_Descriptor* const o
             {
                 newPort->ScalePoints = new LADSPA_RDF_ScalePoint[oldPort->ScalePointCount];
 
-                for (unsigned long j=0; j < oldPort->ScalePointCount; ++j)
+                for (ulong j=0; j < oldPort->ScalePointCount; ++j)
                 {
                     LADSPA_RDF_ScalePoint* const oldScalePoint(&oldPort->ScalePoints[j]);
                     LADSPA_RDF_ScalePoint* const newScalePoint(&newPort->ScalePoints[j]);
@@ -124,7 +124,7 @@ bool is_ladspa_rdf_descriptor_valid(const LADSPA_RDF_Descriptor* const rdfDescri
         return false;
     }
 
-    for (unsigned long i=0; i < rdfDescriptor->PortCount; ++i)
+    for (ulong i=0; i < rdfDescriptor->PortCount; ++i)
     {
         if (! is_ladspa_port_good(rdfDescriptor->Ports[i].Type, descriptor->PortDescriptors[i]))
         {
@@ -169,7 +169,7 @@ LADSPA_Data get_default_ladspa_port_value(const LADSPA_PortRangeHintDescriptor h
             {
                 try {
                     return std::exp((std::log(min)*0.75f) + (std::log(max)*0.25f));
-                } catch(...) {}
+                } CARLA_SAFE_EXCEPTION("exp(log)");
             }
             return (min*0.75f) + (max*0.25f);
 
@@ -178,7 +178,7 @@ LADSPA_Data get_default_ladspa_port_value(const LADSPA_PortRangeHintDescriptor h
             {
                 try {
                     return std::sqrt(min*max);
-                } catch(...) {}
+                } CARLA_SAFE_EXCEPTION("sqrt");
             }
             return (min+max)/2;
 
@@ -187,7 +187,7 @@ LADSPA_Data get_default_ladspa_port_value(const LADSPA_PortRangeHintDescriptor h
             {
                 try {
                     return std::exp((std::log(min)*0.25f) + (std::log(max)*0.75f));
-                } catch(...) {}
+                } CARLA_SAFE_EXCEPTION("exp(log)");
             }
             return (min*0.25f) + (max*0.75f);
         }
