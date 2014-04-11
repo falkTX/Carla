@@ -723,18 +723,22 @@ private:
     // -------------------------------------------------------------------
     // functions called from the plugin side, RT no block
 
+#if DISTRHO_PLUGIN_HAS_UI
     void setParameterValueFromPlugin(const uint32_t index, const float realValue)
     {
         parameterValues[index] = realValue;
         parameterChecks[index] = true;
     }
+#endif
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
     void setProgramFromPlugin(const uint32_t index)
     {
+# if DISTRHO_PLUGIN_HAS_UI
         // set previous parameters invalid
         for (uint32_t i=0, count = fPlugin.getParameterCount(); i < count; ++i)
             parameterChecks[i] = false;
+# endif
 
         nextProgram = index;
     }
