@@ -97,13 +97,13 @@ struct BridgeAudioPool {
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeAudioPool)
 };
 
-struct BridgeControl : public RingBufferControl<StackRingBuffer> {
+struct BridgeControl : public RingBufferControl<StackBuffer> {
     CarlaString filename;
     BridgeShmControl* data;
     char shm[32];
 
     BridgeControl()
-        : RingBufferControl<StackRingBuffer>(nullptr),
+        : RingBufferControl<StackBuffer>(nullptr),
           data(nullptr)
     {
         carla_zeroChar(shm, 32);
@@ -141,7 +141,7 @@ struct BridgeControl : public RingBufferControl<StackRingBuffer> {
 
         if (jackbridge_shm_map2<BridgeShmControl>(shm, data))
         {
-            setRingBuffer(&data->ringBuffer, false);
+            setRingBuffer(&data->buffer, false);
             return true;
         }
 

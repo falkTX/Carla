@@ -25,23 +25,23 @@
 
 // -----------------------------------------------------------------------
 
-class Lv2AtomRingBufferControl : public RingBufferControl<HeapRingBuffer>
+class Lv2AtomRingBufferControl : public RingBufferControl<HeapBuffer>
 {
 public:
     Lv2AtomRingBufferControl() noexcept
-        : RingBufferControl<HeapRingBuffer>(nullptr),
+        : RingBufferControl<HeapBuffer>(nullptr),
           fIsDummy(false)
     {
-        fBuffer.size = 0;
-        fBuffer.buf  = nullptr;
+        fLv2Buffer.size = 0;
+        fLv2Buffer.buf  = nullptr;
     }
 
     ~Lv2AtomRingBufferControl() noexcept
     {
-        if (fBuffer.buf != nullptr && ! fIsDummy)
+        if (fLv2Buffer.buf != nullptr && ! fIsDummy)
         {
-            delete[] fBuffer.buf;
-            fBuffer.buf = nullptr;
+            delete[] fLv2Buffer.buf;
+            fLv2Buffer.buf = nullptr;
         }
     }
 
@@ -49,38 +49,38 @@ public:
 
     void createBuffer(const uint32_t size) noexcept
     {
-        if (fBuffer.buf != nullptr)
+        if (fLv2Buffer.buf != nullptr)
         {
             if (! fIsDummy)
-                delete[] fBuffer.buf;
-            fBuffer.buf = nullptr;
+                delete[] fLv2Buffer.buf;
+            fLv2Buffer.buf = nullptr;
         }
 
         // shouldn't really happen please...
         CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
-        fBuffer.size = size;
-        fBuffer.buf  = new char[size];
-        setRingBuffer(&fBuffer, true);
+        fLv2Buffer.size = size;
+        fLv2Buffer.buf  = new char[size];
+        setRingBuffer(&fLv2Buffer, true);
     }
 
     // used for tmp buffers only
-    void copyDump(HeapRingBuffer& rb, char dumpBuf[]) noexcept
+    void copyDump(HeapBuffer& rb, char dumpBuf[]) noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(fBuffer.size == 0,);
-        CARLA_SAFE_ASSERT_RETURN(fBuffer.buf == nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fLv2Buffer.size == 0,);
+        CARLA_SAFE_ASSERT_RETURN(fLv2Buffer.buf == nullptr,);
 
-        fBuffer.buf  = dumpBuf;
-        fBuffer.size = rb.size;
-        fBuffer.head = rb.head;
-        fBuffer.tail = rb.tail;
-        fBuffer.written = rb.written;
-        fBuffer.invalidateCommit = rb.invalidateCommit;
+        fLv2Buffer.buf  = dumpBuf;
+        fLv2Buffer.size = rb.size;
+        fLv2Buffer.head = rb.head;
+        fLv2Buffer.tail = rb.tail;
+        fLv2Buffer.written = rb.written;
+        fLv2Buffer.invalidateCommit = rb.invalidateCommit;
         fIsDummy = true;
 
         std::memcpy(dumpBuf, rb.buf, rb.size);
 
-        setRingBuffer(&fBuffer, false);
+        setRingBuffer(&fLv2Buffer, false);
     }
 
     // -------------------------------------------------------------------
@@ -132,7 +132,7 @@ public:
     // -------------------------------------------------------------------
 
 private:
-    HeapRingBuffer fBuffer;
+    HeapBuffer fLv2Buffer;
     bool fIsDummy;
 
     static const size_t kMaxDataSize = 8192;
@@ -166,12 +166,12 @@ public:
 
     uint32_t getSize() const noexcept
     {
-        return fRingBufferCtrl.fBuffer.size;
+        return fRingBufferCtrl.fLv2Buffer.size;
     }
 
     bool isEmpty() const noexcept
     {
-        return (fRingBufferCtrl.fBuffer.buf == nullptr || !fRingBufferCtrl.isDataAvailable());
+        return (fRingBufferCtrl.fLv2Buffer.buf == nullptr || !fRingBufferCtrl.isDataAvailable());
     }
 
     // must have been locked before
@@ -239,7 +239,7 @@ public:
         {
             // copy data from source
             const CarlaMutexLocker cml2(fMutex);
-            fRingBufferCtrl.fBuffer = queue.fRingBufferCtrl.fBuffer;
+            fRingBufferCtrl.fLv2Buffer = queue.fRingBufferCtrl.fLv2Buffer;
         }
 
         // clear source
@@ -254,7 +254,7 @@ public:
         {
             // copy data from source
             const CarlaMutexLocker cml2(fMutex);
-            fRingBufferCtrl.copyDump(queue.fRingBufferCtrl.fBuffer, dumpBuf);
+            fRingBufferCtrl.copyDump(queue.fRingBufferCtrl.fLv2Buffer, dumpBuf);
         }
 
         // clear source
