@@ -83,7 +83,7 @@ const T& carla_fixValue(const T& min, const T& max, const T& value) noexcept
  * Get next power of 2.
  */
 static inline
-uint32_t carla_nextPowerOf2(uint32_t size)
+uint32_t carla_nextPowerOf2(uint32_t size) noexcept
 {
     // http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
     --size;

@@ -128,8 +128,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
 
 #ifdef CARLA_OS_WIN
-        ::VirtualLock(fBuffer, sizeof(BufferStruct));
-        ::VirtualLock(fBuffer->buf, fBuffer->size);
+        try {
+            ::VirtualLock(fBuffer, sizeof(BufferStruct));
+            ::VirtualLock(fBuffer->buf, fBuffer->size);
+        } CARLA_SAFE_EXCEPTION("RingBufferControl::lockMemory");
 #else
         ::mlock(fBuffer, sizeof(BufferStruct));
         ::mlock(fBuffer->buf, fBuffer->size);
@@ -290,15 +292,17 @@ protected:
 private:
     BufferStruct* fBuffer;
 
-    static void memoryBarrier()
+    static void memoryBarrier() noexcept
     {
+        try {
 #if defined(CARLA_OS_MAC)
-        ::OSMemoryBarrier();
+          ::OSMemoryBarrier();
 #elif defined(CARLA_OS_WIN)
-        ::MemoryBarrier();
+            ::MemoryBarrier();
 #elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 401
-        ::__sync_synchronize();
+            ::__sync_synchronize();
 #endif
+        } CARLA_SAFE_EXCEPTION("RingBufferControl::memoryBarrier");
     }
 
     CARLA_PREVENT_HEAP_ALLOCATION

@@ -63,8 +63,13 @@ public:
         // shouldn't really happen please...
         CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
-        fLv2Buffer.size = carla_nextPowerOf2(size);
-        fLv2Buffer.buf  = new char[fLv2Buffer.size];
+        const uint32_t p2size(carla_nextPowerOf2(size));
+
+        try {
+            fLv2Buffer.buf = new char[p2size];
+        } CARLA_SAFE_EXCEPTION_RETURN("Lv2AtomRingBufferControl::createBuffer",);
+
+        fLv2Buffer.size = p2size;
         setRingBuffer(&fLv2Buffer, true);
         lockMemory();
     }
@@ -251,6 +256,7 @@ public:
         queue.fRingBufferCtrl.clear();
     }
 
+    // used for tmp buffers only
     void copyAndDumpDataFromQueue(Lv2AtomQueue& queue, char dumpBuf[]) noexcept
     {
         // lock source

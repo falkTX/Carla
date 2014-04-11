@@ -160,7 +160,7 @@ public:
 
                 try {
                     pthread_cancel(threadId);
-                } catch(...) {}
+                } CARLA_SAFE_EXCEPTION("pthread_cancel");
 
                 return false;
             }

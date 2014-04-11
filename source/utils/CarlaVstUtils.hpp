@@ -147,7 +147,7 @@ bool vstPluginCanDo(AEffect* const effect, const char* const feature) noexcept
 
     try {
         ret = (effect->dispatcher(effect, effCanDo, 0, 0, const_cast<char*>(feature), 0.0f) == 1);
-    } catch(...) {}
+    } CARLA_SAFE_EXCEPTION("vstPluginCanDo");
 
     return ret;
 }
