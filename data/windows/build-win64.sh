@@ -12,6 +12,7 @@ if [ ! -f Makefile ]; then
 fi
 
 export WIN32=true
+export WIN64=true
 
 export PATH=$MINGW_PATH/bin:$MINGW_PATH/$MINGW/bin:$PATH
 export AR=$MINGW-ar
@@ -32,18 +33,20 @@ export WINEPREFIX=~/.winepy3_x64
 export PYTHON_EXE="C:\\\\Python33\\\\python.exe"
 
 export CXFREEZE="wine $PYTHON_EXE C:\\\\Python33\\\\Scripts\\\\cxfreeze"
-export PYUIC="wine $PYTHON_EXE C:\\\\Python33\\\\Lib\\\\site-packages\\\\PyQt4\\\\uic\\\\pyuic.py"
-export PYRCC="wine C:\\\\Python33\\\\Lib\\\\site-packages\\\\PyQt4\\\\pyrcc4.exe -py3"
+export PYUIC="wine $PYTHON_EXE -m PyQt5.uic.pyuic"
+export PYRCC="wine C:\\\\Python33\\\\Lib\\\\site-packages\\\\PyQt5\\\\pyrcc5.exe"
 
 # Clean build
 make clean
 
-# Build PyQt4 resources
+# Build PyQt5 resources
+make source/carla_config.py
+sed "s/config_UseQt5 = False/config_UseQt5 = True/" -i source/carla_config.py
 make $JOBS UI RES WIDGETS
 
 # Build discovery
 make $JOBS discovery EXTRA_LIBS="$EXTRA_LIBS"
-mv source/discovery/carla-discovery-native.exe source/discovery/carla-discovery-win32.exe
+mv source/discovery/carla-discovery-native.exe source/discovery/carla-discovery-win64.exe
 
 # Build backend
 make $JOBS backend EXTRA_LIBS="$EXTRA_LIBS"
@@ -72,20 +75,39 @@ cp ../../source/backend/*.dll   Carla/backend/
 cp ../../source/discovery/*.exe Carla/discovery/
 # mv CarlaControl/carla_control.exe CarlaControl/CarlaControl.exe
 
-cp $WINEPREFIX/drive_c/windows/syswow64/python33.dll Carla/
-cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/QtCore4.dll   Carla/
-cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/QtGui4.dll    Carla/
-cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/QtOpenGL4.dll Carla/
-cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/QtSvg4.dll    Carla/
-cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/QtXml4.dll    Carla/
-cp -r $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/plugins/imageformats/ Carla/
-cp -r $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/plugins/iconengines/ Carla/
+rm -f Carla/imageformats/*.so
 
-# cp $WINEPREFIX/drive_c/windows/syswow64/python33.dll CarlaControl/
-# cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/QtCore4.dll   CarlaControl/
-# cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/QtGui4.dll    CarlaControl/
-# cp -r $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/plugins/imageformats/ CarlaControl/
-# cp -r $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/plugins/iconengines/ CarlaControl/
+cp $WINEPREFIX/drive_c/drive_c/Python33/python33.dll                        Carla/
+cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/libEGL.dll          Carla/
+cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/libGLESv2.dll       Carla/
+cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/icuin49.dll         Carla/
+cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/icuuc49.dll         Carla/
+cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/icudt49.dll         Carla/
+cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/Qt5Core.dll         Carla/
+cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/Qt5Gui.dll          Carla/
+cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/Qt5Widgets.dll      Carla/
+cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/Qt5OpenGL.dll       Carla/
+cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/Qt5PrintSupport.dll Carla/
+cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/Qt5Svg.dll          Carla/
+cp -r $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/plugins/imageformats/ Carla/
+cp -r $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/plugins/iconengines/  Carla/
+cp -r $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/plugins/platforms/    Carla/
+
+# cp $WINEPREFIX/drive_c/drive_c/Python33/python33.dll                        CarlaControl/
+# cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/libEGL.dll          CarlaControl/
+# cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/libGLESv2.dll       CarlaControl/
+# cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/icuin49.dll         CarlaControl/
+# cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/icuuc49.dll         CarlaControl/
+# cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/icudt49.dll         CarlaControl/
+# cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/Qt5Core.dll         CarlaControl/
+# cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/Qt5Gui.dll          CarlaControl/
+# cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/Qt5Widgets.dll      CarlaControl/
+# cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/Qt5OpenGL.dll       CarlaControl/
+# cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/Qt5PrintSupport.dll CarlaControl/
+# cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/Qt5Svg.dll          CarlaControl/
+# cp -r $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/plugins/imageformats/ CarlaControl/
+# cp -r $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/plugins/iconengines/  CarlaControl/
+# cp -r $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/plugins/platforms/    CarlaControl/
 
 # Build unzipfx
 make -C unzipfx-carla -f Makefile.win32
@@ -108,6 +130,8 @@ make -C unzipfx-carla-control -f Makefile.win32 clean
 rm -f Carla.zip CarlaControl.zip
 rm -f unzipfx-*/*.exe
 
+cd ../..
+
 # Testing:
 echo "export WINEPREFIX=~/.winepy3_x64"
-echo "wine $PYTHON_EXE ../../source/carla.py"
+echo "wine $PYTHON_EXE ./source/carla -platformpluginpath \"C:\\\\Python33\\\\Lib\\\\site-packages\\\\PyQt5\\\\plugins\\\\platforms\""

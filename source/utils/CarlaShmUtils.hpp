@@ -127,7 +127,7 @@ void* carla_shm_map(shm_t& shm, const size_t size)
 
     HANDLE map = CreateFileMapping(shm.shm, NULL, PAGE_READWRITE, size, size, NULL);
 
-    CARLA_SAFE_ASSERT_RETURN((map != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(map != nullptr, nullptr);
 
     HANDLE ptr = MapViewOfFile(map, FILE_MAP_COPY, 0, 0, size);
 
