@@ -1896,6 +1896,9 @@ public:
         carla_stdout("  sizeof(BridgeShmControl): " P_SIZE, sizeof(BridgeShmControl));
         carla_stdout("  sizeof(BridgeTimeInfo):   " P_SIZE, sizeof(BridgeTimeInfo));
 
+        // lock memory
+        fShmControl.lockMemory();
+
         // initial values
         fShmControl.writeOpcode(kPluginBridgeOpcodeNull);
         fShmControl.writeInt(static_cast<int32_t>(sizeof(BridgeShmControl)));

@@ -20,6 +20,13 @@
 
 #include "CarlaUtils.hpp"
 
+#ifndef CARLA_OS_WIN
+# include <sys/mman.h>
+# ifdef CARLA_OS_MAC
+#  include <libkern/OSAtomic.h>
+# endif
+#endif
+
 // -----------------------------------------------------------------------
 // RingBuffer structs
 
@@ -97,6 +104,7 @@ public:
 
         if (fBuffer->invalidateCommit)
         {
+            memoryBarrier();
             fBuffer->written = fBuffer->head;
             fBuffer->invalidateCommit = false;
             return false;
@@ -113,6 +121,19 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
 
         return (fBuffer->head != fBuffer->tail);
+    }
+
+    void lockMemory() const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
+
+#ifdef CARLA_OS_WIN
+        ::VirtualLock(fBuffer, sizeof(BufferStruct));
+        ::VirtualLock(fBuffer->buf, fBuffer->size);
+#else
+        ::mlock(fBuffer, sizeof(BufferStruct));
+        ::mlock(fBuffer->buf, fBuffer->size);
+#endif
     }
 
     // -------------------------------------------------------------------
@@ -219,6 +240,7 @@ protected:
             std::memcpy(charbuf, fBuffer->buf + tail, size);
         }
 
+        memoryBarrier();
         fBuffer->tail = static_cast<int32_t>(readto);
     }
 
@@ -261,11 +283,23 @@ protected:
             std::memcpy(fBuffer->buf + wrtn, charbuf, size);
         }
 
+        memoryBarrier();
         fBuffer->written = static_cast<int32_t>(writeto);
     }
 
 private:
     BufferStruct* fBuffer;
+
+    static void memoryBarrier()
+    {
+#if defined(CARLA_OS_MAC)
+        ::OSMemoryBarrier();
+#elif defined(CARLA_OS_WIN)
+        ::MemoryBarrier();
+#elif (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)
+        ::__sync_synchronize();
+#endif
+    }
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(RingBufferControl)

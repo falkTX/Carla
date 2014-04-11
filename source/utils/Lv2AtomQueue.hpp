@@ -18,6 +18,7 @@
 #ifndef LV2_ATOM_QUEUE_HPP_INCLUDED
 #define LV2_ATOM_QUEUE_HPP_INCLUDED
 
+#include "CarlaMathUtils.hpp"
 #include "CarlaMutex.hpp"
 #include "CarlaRingBuffer.hpp"
 
@@ -49,6 +50,9 @@ public:
 
     void createBuffer(const uint32_t size) noexcept
     {
+        if (fLv2Buffer.size == size && ! fIsDummy)
+            return;
+
         if (fLv2Buffer.buf != nullptr)
         {
             if (! fIsDummy)
@@ -59,9 +63,10 @@ public:
         // shouldn't really happen please...
         CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
-        fLv2Buffer.size = size;
-        fLv2Buffer.buf  = new char[size];
+        fLv2Buffer.size = carla_nextPowerOf2(size);
+        fLv2Buffer.buf  = new char[fLv2Buffer.size];
         setRingBuffer(&fLv2Buffer, true);
+        lockMemory();
     }
 
     // used for tmp buffers only
@@ -182,7 +187,7 @@ public:
         if (! fRingBufferCtrl.isDataAvailable())
             return false;
 
-        if (const LV2_Atom* retAtom = fRingBufferCtrl.readAtom(portIndex))
+        if (const LV2_Atom* const retAtom = fRingBufferCtrl.readAtom(portIndex))
         {
             *atom = retAtom;
             return true;
