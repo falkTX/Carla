@@ -296,7 +296,7 @@ private:
         ::OSMemoryBarrier();
 #elif defined(CARLA_OS_WIN)
         ::MemoryBarrier();
-#elif (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)
+#elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 401
         ::__sync_synchronize();
 #endif
     }
