@@ -408,7 +408,8 @@ public:
                     break;
                 }
 
-                case kPluginBridgeOpcodeSetParameter: {
+                case kPluginBridgeOpcodeSetParameterRt:
+                case kPluginBridgeOpcodeSetParameterNonRt:{
                     const int32_t index(fShmControl.readInt());
                     const float   value(fShmControl.readFloat());
 
@@ -416,10 +417,15 @@ public:
 
                     if (plugin != nullptr && plugin->isEnabled())
                     {
-                        plugin->setParameterValueByRealIndex(index, value, false, false, false);
+                        if (index == PARAMETER_ACTIVE)
+                        {
+                            plugin->setActive((value > 0.0f), false, false);
+                            break;
+                        }
 
-                        //if (index >= 0)
-                        //    plugin->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, value);
+                        CARLA_SAFE_ASSERT_BREAK(index >= 0);
+
+                        plugin->setParameterValue(static_cast<uint32_t>(index), value, (opcode == kPluginBridgeOpcodeSetParameterNonRt), false, false);
                     }
                     break;
                 }

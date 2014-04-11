@@ -552,7 +552,7 @@ public:
 
         if (params > 0)
         {
-            pData->param.createNew(params, false);
+            pData->param.createNew(params, false, true);
             needsCtrlIn = true;
         }
 

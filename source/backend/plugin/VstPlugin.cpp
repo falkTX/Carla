@@ -560,7 +560,7 @@ public:
 
         if (params > 0)
         {
-            pData->param.createNew(params, false);
+            pData->param.createNew(params, false, false);
             needsCtrlIn = true;
         }
 
@@ -1854,12 +1854,7 @@ protected:
 
         case audioMasterGetNumAutomatableParameters:
             // Deprecated in VST SDK 2.4
-            if (fEffect->numParams <= 0)
-                ret = 0;
-            else if (fEffect->numParams > static_cast<int32_t>(pData->engine->getOptions().maxParameters))
-                ret = static_cast<intptr_t>(pData->engine->getOptions().maxParameters);
-            else
-                ret = fEffect->numParams;
+            ret = carla_fixValue<intptr_t>(0, static_cast<intptr_t>(pData->engine->getOptions().maxParameters), fEffect->numParams);
             break;
 
         case audioMasterGetParameterQuantization:

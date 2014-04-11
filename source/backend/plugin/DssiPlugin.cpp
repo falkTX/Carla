@@ -510,7 +510,7 @@ public:
 
         if (params > 0)
         {
-            pData->param.createNew(params, true);
+            pData->param.createNew(params, true, false);
 
             fParamBuffers = new float[params];
             FLOAT_CLEAR(fParamBuffers, params);
@@ -1997,23 +1997,31 @@ private:
 
     static LinkedList<const char*> sMultiSynthList;
 
-    static bool addUniqueMultiSynth(const char* const label)
+    static bool addUniqueMultiSynth(const char* const label) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(label != nullptr && label[0] != '\0', false);
+
+        const char* dlabel = nullptr;
+
+        try {
+            dlabel = carla_strdup(label);
+        } catch(...) { return false; }
 
         for (LinkedList<const char*>::Itenerator it = sMultiSynthList.begin(); it.valid(); it.next())
         {
             const char* const itLabel(it.getValue());
 
-            if (std::strcmp(label, itLabel) == 0)
+            if (std::strcmp(dlabel, itLabel) == 0)
+            {
+                delete[] dlabel;
                 return false;
+            }
         }
 
-        sMultiSynthList.append(carla_strdup(label));
-        return true;
+        return sMultiSynthList.append(dlabel);
     }
 
-    static void removeUniqueMultiSynth(const char* const label)
+    static void removeUniqueMultiSynth(const char* const label) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(label != nullptr && label[0] != '\0',);
 

@@ -1124,11 +1124,15 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
 #ifdef BUILD_BRIDGE
     if (! gIsLoadingProject)
     {
-        CARLA_ASSERT(! sendGui); // this should never happen
+        //CARLA_ASSERT(! sendGui); // this should never happen
     }
 #endif
 
-#ifndef BUILD_BRIDGE
+#ifdef BUILD_BRIDGE
+    if (sendGui == sendOsc && sendOsc == sendCallback && ! sendCallback) {
+        //pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(parameterId), 1, value);
+    }
+#else
     if (sendGui && (pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0)
         uiParameterChange(parameterId, value);
 
@@ -1138,14 +1142,6 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, static_cast<int>(parameterId), 0, value, nullptr);
-
-#ifdef BUILD_BRIDGE
-    return;
-
-    // unused
-    (void)sendGui;
-    (void)sendOsc;
-#endif
 }
 
 void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
@@ -1598,8 +1594,8 @@ void CarlaPlugin::registerToOscClient() noexcept
 
         for (uint32_t i=0; i < pData->param.count; ++i)
         {
-            carla_fill<char>(bufName, STR_MAX, '\0');
-            carla_fill<char>(bufUnit, STR_MAX, '\0');
+            carla_zeroChar(bufName, STR_MAX);
+            carla_zeroChar(bufUnit, STR_MAX);
 
             getParameterName(i, bufName);
             getParameterUnit(i, bufUnit);

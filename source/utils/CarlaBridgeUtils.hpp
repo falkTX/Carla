@@ -52,16 +52,17 @@ enum PluginBridgeInfoType {
 };
 
 enum PluginBridgeOpcode {
-    kPluginBridgeOpcodeNull           = 0,
-    kPluginBridgeOpcodeSetAudioPool   = 1, // long
-    kPluginBridgeOpcodeSetBufferSize  = 2, // int
-    kPluginBridgeOpcodeSetSampleRate  = 3, // float
-    kPluginBridgeOpcodeSetParameter   = 4, // int, float
-    kPluginBridgeOpcodeSetProgram     = 5, // int
-    kPluginBridgeOpcodeSetMidiProgram = 6, // int
-    kPluginBridgeOpcodeMidiEvent      = 7, // long, int, char[] (long = timeFrame, int = size max 4)
-    kPluginBridgeOpcodeProcess        = 8,
-    kPluginBridgeOpcodeQuit           = 9
+    kPluginBridgeOpcodeNull              =  0,
+    kPluginBridgeOpcodeSetAudioPool      =  1, // long
+    kPluginBridgeOpcodeSetBufferSize     =  2, // int
+    kPluginBridgeOpcodeSetSampleRate     =  3, // float
+    kPluginBridgeOpcodeSetParameterRt    =  4, // int, float
+    kPluginBridgeOpcodeSetParameterNonRt =  5, // int, float
+    kPluginBridgeOpcodeSetProgram        =  6, // int
+    kPluginBridgeOpcodeSetMidiProgram    =  7, // int
+    kPluginBridgeOpcodeMidiEvent         =  8, // long, int, char[] (long = timeFrame, int = size max 4)
+    kPluginBridgeOpcodeProcess           =  9,
+    kPluginBridgeOpcodeQuit              = 10
 };
 
 const char* const CARLA_BRIDGE_MSG_HIDE_GUI   = "CarlaBridgeHideGUI";   //!< Plugin -> Host call, tells host GUI is now hidden
@@ -174,8 +175,10 @@ const char* PluginBridgeOpcode2str(const PluginBridgeOpcode opcode) noexcept
         return "kPluginBridgeOpcodeSetBufferSize";
     case kPluginBridgeOpcodeSetSampleRate:
         return "kPluginBridgeOpcodeSetSampleRate";
-    case kPluginBridgeOpcodeSetParameter:
-        return "kPluginBridgeOpcodeSetParameter";
+    case kPluginBridgeOpcodeSetParameterRt:
+        return "kPluginBridgeOpcodeSetParameterRt";
+    case kPluginBridgeOpcodeSetParameterNonRt:
+        return "kPluginBridgeOpcodeSetParameterNonRt";
     case kPluginBridgeOpcodeSetProgram:
         return "kPluginBridgeOpcodeSetProgram";
     case kPluginBridgeOpcodeSetMidiProgram:

@@ -207,7 +207,7 @@ static intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t
         break;
 
     case DECLARE_VST_DEPRECATED(audioMasterGetNumAutomatableParameters):
-        ret = carla_min<intptr_t>(effect->numParams, MAX_DEFAULT_PARAMETERS, 0);
+        ret = carla_fixValue<intptr_t>(0, MAX_DEFAULT_PARAMETERS, effect->numParams);
         break;
 
     case DECLARE_VST_DEPRECATED(audioMasterGetParameterQuantization):

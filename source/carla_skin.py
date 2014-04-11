@@ -776,8 +776,10 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
             paramRanges = gCarla.host.get_parameter_ranges(self.fPluginId, i)
 
             if paramData['type'] != PARAMETER_INPUT:
+                print("NOT input", paramData['type'])
                 continue
             if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
+                print("NOT enabled", paramData['hints'])
                 continue
 
             paramName = paramInfo['name'].split("/", 1)[0].split(" (", 1)[0].strip()

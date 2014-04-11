@@ -219,7 +219,7 @@ PluginParameterData::~PluginParameterData() noexcept
     CARLA_ASSERT(special == nullptr);
 }
 
-void PluginParameterData::createNew(const uint32_t newCount, const bool withSpecial)
+void PluginParameterData::createNew(const uint32_t newCount, const bool withSpecial, const bool doReset)
 {
     CARLA_ASSERT_INT(count == 0, count);
     CARLA_SAFE_ASSERT_RETURN(data == nullptr,);
@@ -233,6 +233,28 @@ void PluginParameterData::createNew(const uint32_t newCount, const bool withSpec
 
     if (withSpecial)
         special = new SpecialParameterType[newCount];
+
+    if (! doReset)
+        return;
+
+    for (uint32_t i=0; i < newCount; ++i)
+    {
+        data[i].type   = PARAMETER_UNKNOWN;
+        data[i].hints  = 0x0;
+        data[i].index  = PARAMETER_NULL;
+        data[i].rindex = PARAMETER_NULL;
+        data[i].midiCC = -1;
+        data[i].midiChannel = 0;
+        ranges[i].def = 0.0f;
+        ranges[i].min = 0.0f;
+        ranges[i].max = 0.0f;
+        ranges[i].step = 0.0f;
+        ranges[i].stepSmall = 0.0f;
+        ranges[i].stepLarge = 0.0f;
+
+        if (withSpecial)
+            special[i] = PARAMETER_SPECIAL_NULL;
+    }
 }
 
 void PluginParameterData::clear() noexcept

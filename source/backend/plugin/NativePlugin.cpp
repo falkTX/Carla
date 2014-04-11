@@ -175,7 +175,7 @@ public:
         carla_debug("NativePlugin::~NativePlugin()");
 
         // close UI
-        if (pData->hints & PLUGIN_HAS_UI)
+        if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
         {
             if (fIsUiVisible && fDescriptor != nullptr && fDescriptor->ui_show != nullptr && fHandle != nullptr)
                 fDescriptor->ui_show(fHandle, false);
@@ -826,7 +826,7 @@ public:
 
         if (params > 0)
         {
-            pData->param.createNew(params, true);
+            pData->param.createNew(params, true, false);
         }
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());

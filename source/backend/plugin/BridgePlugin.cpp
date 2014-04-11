@@ -148,7 +148,7 @@ struct BridgeAudioPool {
 
 struct BridgeControl : public RingBufferControl<StackBuffer> {
     CarlaString filename;
-    CarlaRecursiveMutex lock;
+    CarlaMutex lock;
     BridgeShmControl* data;
     shm_t shm;
 
@@ -322,6 +322,10 @@ public:
     ~BridgePlugin() override
     {
         carla_debug("BridgePlugin::~BridgePlugin()");
+
+        // close UI
+        if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
+            pData->transientTryCounter = 0;
 
         pData->singleMutex.lock();
         pData->masterMutex.lock();
@@ -520,12 +524,14 @@ public:
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
         fParams[parameterId].value = fixedValue;
 
-        const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
+        {
+            const CarlaMutexLocker _cml(fShmControl.lock);
 
-        fShmControl.writeOpcode(kPluginBridgeOpcodeSetParameter);
-        fShmControl.writeInt(static_cast<int32_t>(parameterId));
-        fShmControl.writeFloat(value);
-        fShmControl.commitWrite();
+            fShmControl.writeOpcode(sendGui ? kPluginBridgeOpcodeSetParameterNonRt : kPluginBridgeOpcodeSetParameterRt);
+            fShmControl.writeInt(static_cast<int32_t>(parameterId));
+            fShmControl.writeFloat(value);
+            fShmControl.commitWrite();
+        }
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
@@ -534,11 +540,13 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
 
-        const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
+        {
+            const CarlaMutexLocker _cml(fShmControl.lock);
 
-        fShmControl.writeOpcode(kPluginBridgeOpcodeSetProgram);
-        fShmControl.writeInt(index);
-        fShmControl.commitWrite();
+            fShmControl.writeOpcode(kPluginBridgeOpcodeSetProgram);
+            fShmControl.writeInt(index);
+            fShmControl.commitWrite();
+        }
 
         CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
     }
@@ -547,11 +555,13 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
 
-        const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
+        {
+            const CarlaMutexLocker _cml(fShmControl.lock);
 
-        fShmControl.writeOpcode(kPluginBridgeOpcodeSetMidiProgram);
-        fShmControl.writeInt(index);
-        fShmControl.commitWrite();
+            fShmControl.writeOpcode(kPluginBridgeOpcodeSetMidiProgram);
+            fShmControl.writeInt(index);
+            fShmControl.commitWrite();
+        }
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
     }
@@ -769,9 +779,9 @@ public:
     void activate() noexcept override
     {
         {
-            const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
+            const CarlaMutexLocker _cml(fShmControl.lock);
 
-            fShmControl.writeOpcode(kPluginBridgeOpcodeSetParameter);
+            fShmControl.writeOpcode(kPluginBridgeOpcodeSetParameterNonRt);
             fShmControl.writeInt(PARAMETER_ACTIVE);
             fShmControl.writeFloat(1.0f);
             fShmControl.commitWrite();
@@ -790,9 +800,9 @@ public:
     void deactivate() noexcept override
     {
         {
-            const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
+            const CarlaMutexLocker _cml(fShmControl.lock);
 
-            fShmControl.writeOpcode(kPluginBridgeOpcodeSetParameter);
+            fShmControl.writeOpcode(kPluginBridgeOpcodeSetParameterNonRt);
             fShmControl.writeInt(PARAMETER_ACTIVE);
             fShmControl.writeFloat(0.0f);
             fShmControl.commitWrite();
@@ -852,7 +862,7 @@ public:
                     data2 = static_cast<char>(note.note);
                     data3 = static_cast<char>(note.velo);
 
-                    const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
+                    const CarlaMutexLocker _cml(fShmControl.lock);
 
                     fShmControl.writeOpcode(kPluginBridgeOpcodeMidiEvent);
                     fShmControl.writeLong(0);
@@ -988,7 +998,7 @@ public:
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
-                            const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
+                            const CarlaMutexLocker _cml(fShmControl.lock);
 
                             fShmControl.writeOpcode(kPluginBridgeOpcodeMidiEvent);
                             fShmControl.writeLong(event.time);
@@ -1083,7 +1093,7 @@ public:
                         data[j] = static_cast<char>(midiEvent.data[j]);
 
                     {
-                          const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
+                          const CarlaMutexLocker _cml(fShmControl.lock);
 
                           fShmControl.writeOpcode(kPluginBridgeOpcodeMidiEvent);
                           fShmControl.writeLong(event.time);
@@ -1176,7 +1186,7 @@ public:
         // Run plugin
 
         {
-            const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
+            const CarlaMutexLocker _cml(fShmControl.lock);
 
             fShmControl.writeOpcode(kPluginBridgeOpcodeProcess);
             fShmControl.commitWrite();
@@ -1263,7 +1273,7 @@ public:
 
     void bufferSizeChanged(const uint32_t newBufferSize) override
     {
-        const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
+        const CarlaMutexLocker _cml(fShmControl.lock);
 
         resizeAudioPool(newBufferSize);
 
@@ -1274,7 +1284,7 @@ public:
 
     void sampleRateChanged(const double newSampleRate) override
     {
-        const CarlaRecursiveMutexLocker _crml(fShmControl.lock);
+        const CarlaMutexLocker _cml(fShmControl.lock);
 
         fShmControl.writeOpcode(kPluginBridgeOpcodeSetSampleRate);
         fShmControl.writeFloat(static_cast<float>(newSampleRate));
@@ -1406,11 +1416,11 @@ public:
 
             CARLA_SAFE_ASSERT_INT2(ins+outs <= static_cast<int32_t>(pData->engine->getOptions().maxParameters), ins+outs, pData->engine->getOptions().maxParameters);
 
-            const uint32_t count(static_cast<uint32_t>(carla_min<int32_t>(ins+outs, static_cast<int32_t>(pData->engine->getOptions().maxParameters), 0)));
+            const uint32_t count(carla_fixValue<uint32_t>(0, pData->engine->getOptions().maxParameters, static_cast<uint32_t>(ins+outs)));
 
             if (count > 0)
             {
-                pData->param.createNew(count, false);
+                pData->param.createNew(count, false, true);
                 fParams = new BridgeParamInfo[count];
             }
             break;
@@ -1466,9 +1476,10 @@ public:
 
             if (index < static_cast<int32_t>(pData->param.count))
             {
-                pData->param.data[index].index   = index;
-                pData->param.data[index].rindex  = rindex;
-                pData->param.data[index].hints   = static_cast<uint>(hints);
+                pData->param.data[index].type   = static_cast<ParameterType>(type);
+                pData->param.data[index].index  = index;
+                pData->param.data[index].rindex = rindex;
+                pData->param.data[index].hints  = static_cast<uint>(hints);
                 fParams[index].name = name;
                 fParams[index].unit = unit;
             }

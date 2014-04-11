@@ -2445,7 +2445,7 @@ void CarlaEngine::oscSend_bridge_parameter_data(const uint32_t index, const int3
     CARLA_SAFE_ASSERT_RETURN(unit != nullptr,);
     carla_debug("CarlaEngine::oscSend_bridge_parameter_data(%i, %i, %i:%s, %X, \"%s\", \"%s\")", index, rindex, type, ParameterType2Str(type), hints, name, unit);
 
-    char targetPath[std::strlen(pData->oscData->path)+23];
+    char targetPath[std::strlen(pData->oscData->path)+24];
     std::strcpy(targetPath, pData->oscData->path);
     std::strcat(targetPath, "/bridge_parameter_data");
     try_lo_send(pData->oscData->target, targetPath, "iiiiss", static_cast<int32_t>(index), static_cast<int32_t>(rindex), static_cast<int32_t>(type), static_cast<int32_t>(hints), name, unit);

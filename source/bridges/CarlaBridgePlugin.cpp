@@ -377,7 +377,10 @@ protected:
         {
         case ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
             if (isOscControlRegistered())
-                sendOscControl(value1, value3);
+            {
+                CARLA_SAFE_ASSERT_RETURN(value1 >= 0,);
+                fEngine->oscSend_bridge_parameter_value(static_cast<uint32_t>(value1), value3);
+            }
             break;
 
         case ENGINE_CALLBACK_UI_STATE_CHANGED:

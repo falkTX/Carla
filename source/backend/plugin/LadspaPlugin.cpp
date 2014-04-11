@@ -496,7 +496,7 @@ public:
 
         if (params > 0)
         {
-            pData->param.createNew(params, true);
+            pData->param.createNew(params, true, false);
 
             fParamBuffers = new float[params];
             FLOAT_CLEAR(fParamBuffers, params);

@@ -72,7 +72,7 @@ const unsigned int PLUGIN_EXTRA_HINT_USES_MULTI_PROGS = 0x08;
  * so events have to be postponned to be executed later, on a separate thread.
  */
 enum PluginPostRtEventType {
-    kPluginPostRtEventNull,
+    kPluginPostRtEventNull = 0,
     kPluginPostRtEventDebug,
     kPluginPostRtEventParameterChange,   // param, SP (*), value (SP: if 1, don't report change to Callback and OSC)
     kPluginPostRtEventProgramChange,     // index
@@ -183,7 +183,7 @@ struct PluginParameterData {
 
     PluginParameterData() noexcept;
     ~PluginParameterData() noexcept;
-    void createNew(const uint32_t newCount, const bool withSpecial);
+    void createNew(const uint32_t newCount, const bool withSpecial, const bool doReset);
     void clear() noexcept;
     float getFixedValue(const uint32_t parameterId, const float& value) const noexcept;
 
