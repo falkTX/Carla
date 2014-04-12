@@ -187,7 +187,7 @@ public:
 			dCoeff = 1.0f - expf(-1/decay);
 			rCoeff = 1.0f - expf(-1/release);
 		} else {
-			std::cout << "not playing" << std::endl; 
+			//std::cout << "not playing" << std::endl; 
 			//glide towards the target freq
 			notePlaying = note;
 			tFreq = 440.0 * pow(2.0, (notePlaying - 69)/12);

@@ -92,6 +92,7 @@ OBJS += \
 
 OBJS += \
 	distrho-segmentjuice.cpp.o \
+	distrho-vectorjuice.cpp.o \
 	distrho-wobblejuice.cpp.o
 
 ifeq ($(HAVE_JUCE),true)
@@ -234,6 +235,9 @@ distrho-stereoenhancer.cpp.o: distrho-stereoenhancer.cpp stereoenhancer/*.cpp st
 
 distrho-segmentjuice.cpp.o: distrho-segmentjuice.cpp segmentjuice/*.cpp segmentjuice/*.h segmentjuice/*.hpp segmentjuice/*.hxx ../distrho/* $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Isegmentjuice -DDISTRHO_NAMESPACE=DISTRHO_SegmentJuice -c -o $@
+
+distrho-vectorjuice.cpp.o: distrho-vectorjuice.cpp vectorjuice/*.cpp vectorjuice/*.h vectorjuice/*.hpp ../distrho/* $(CXXDEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Ivectorjuice -DDISTRHO_NAMESPACE=DISTRHO_VectorJuice -c -o $@
 
 distrho-wobblejuice.cpp.o: distrho-wobblejuice.cpp wobblejuice/*.cpp wobblejuice/*.h wobblejuice/*.hpp wobblejuice/*.hxx ../distrho/* $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Iwobblejuice -DDISTRHO_NAMESPACE=DISTRHO_WobbleJuice -c -o $@

@@ -43,6 +43,7 @@ extern void carla_register_native_plugin_pingpongpan();
 extern void carla_register_native_plugin_stereoenhancer();
 
 extern void carla_register_native_plugin_segmentjuice();
+extern void carla_register_native_plugin_vectorjuice();
 extern void carla_register_native_plugin_wobblejuice();
 
 #ifdef HAVE_JUCE
@@ -99,6 +100,7 @@ void carla_register_all_plugins()
     //carla_register_native_plugin_stereoenhancer();
 
     carla_register_native_plugin_segmentjuice();
+    carla_register_native_plugin_vectorjuice();
     carla_register_native_plugin_wobblejuice();
 
 #ifdef HAVE_JUCE
