@@ -91,6 +91,7 @@ OBJS += \
 #	distrho-stereoenhancer.cpp.o
 
 OBJS += \
+	distrho-segmentjuice.cpp.o \
 	distrho-wobblejuice.cpp.o
 
 ifeq ($(HAVE_JUCE),true)
@@ -230,6 +231,9 @@ distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/*.cpp pingpongpan
 
 distrho-stereoenhancer.cpp.o: distrho-stereoenhancer.cpp stereoenhancer/*.cpp stereoenhancer/*.h stereoenhancer/*.hpp ../distrho/* $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Istereoenhancer -DDISTRHO_NAMESPACE=DISTRHO_StereoEnhancer -c -o $@
+
+distrho-segmentjuice.cpp.o: distrho-segmentjuice.cpp segmentjuice/*.cpp segmentjuice/*.h segmentjuice/*.hpp segmentjuice/*.hxx ../distrho/* $(CXXDEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Isegmentjuice -DDISTRHO_NAMESPACE=DISTRHO_SegmentJuice -c -o $@
 
 distrho-wobblejuice.cpp.o: distrho-wobblejuice.cpp wobblejuice/*.cpp wobblejuice/*.h wobblejuice/*.hpp wobblejuice/*.hxx ../distrho/* $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Iwobblejuice -DDISTRHO_NAMESPACE=DISTRHO_WobbleJuice -c -o $@
