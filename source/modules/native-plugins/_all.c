@@ -42,6 +42,8 @@ extern void carla_register_native_plugin_nekobi();
 extern void carla_register_native_plugin_pingpongpan();
 extern void carla_register_native_plugin_stereoenhancer();
 
+extern void carla_register_native_plugin_wobblejuice();
+
 #ifdef HAVE_JUCE
 // JUCE based plugins
 extern void carla_register_native_plugin_jucepatchbay();
@@ -94,6 +96,8 @@ void carla_register_all_plugins()
     carla_register_native_plugin_nekobi();
     carla_register_native_plugin_pingpongpan();
     //carla_register_native_plugin_stereoenhancer();
+
+    carla_register_native_plugin_wobblejuice();
 
 #ifdef HAVE_JUCE
     // JUCE based plugins

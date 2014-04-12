@@ -90,6 +90,9 @@ OBJS += \
 	distrho-nekobi.cpp.o
 #	distrho-stereoenhancer.cpp.o
 
+OBJS += \
+	distrho-wobblejuice.cpp.o
+
 ifeq ($(HAVE_JUCE),true)
 # --------------------------------------------------------------
 # JUCE based plugins
@@ -227,6 +230,9 @@ distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/*.cpp pingpongpan
 
 distrho-stereoenhancer.cpp.o: distrho-stereoenhancer.cpp stereoenhancer/*.cpp stereoenhancer/*.h stereoenhancer/*.hpp ../distrho/* $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Istereoenhancer -DDISTRHO_NAMESPACE=DISTRHO_StereoEnhancer -c -o $@
+
+distrho-wobblejuice.cpp.o: distrho-wobblejuice.cpp wobblejuice/*.cpp wobblejuice/*.h wobblejuice/*.hpp wobblejuice/*.hxx ../distrho/* $(CXXDEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Iwobblejuice -DDISTRHO_NAMESPACE=DISTRHO_WobbleJuice -c -o $@
 
 juce-patchbay.cpp.o: juce-patchbay.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
