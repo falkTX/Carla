@@ -42,9 +42,19 @@ struct PluginListManager {
                 continue;
 
             // skip distrho plugins and Vex
-            if (std::strcmp(desc->label, "3bandeq")     == 0 || std::strcmp(desc->label, "3bandsplitter")  == 0 || std::strcmp(desc->label, "nekobi")   == 0 ||
-                std::strcmp(desc->label, "pingpongpan") == 0 || std::strcmp(desc->label, "stereoenhancer") == 0 || std::strcmp(desc->label, "vexsynth") == 0)
+            if (
+                // distrho mini-series
+                std::strcmp(desc->label, "3bandeq")     == 0 || std::strcmp(desc->label, "3bandsplitter")  == 0 ||
+                std::strcmp(desc->label, "pingpongpan") == 0 || std::strcmp(desc->label, "stereoenhancer") == 0 ||
+                // juice
+                std::strcmp(desc->label, "powerjuice")  == 0 || std::strcmp(desc->label, "segmentjuice") == 0 ||
+                std::strcmp(desc->label, "vectorjuice") == 0 || std::strcmp(desc->label, "wobblejuice") == 0  ||
+                // other synths
+                std::strcmp(desc->label, "nekobi")      == 0 || std::strcmp(desc->label, "vexsynth") == 0
+               )
+            {
                 continue;
+            }
 
             // skip midi plugins, not implemented yet
             if (desc->audioIns == 0 && desc->audioOuts == 0 && desc->midiIns == 1 && desc->midiOuts >= 1)
