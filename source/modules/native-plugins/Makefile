@@ -91,6 +91,7 @@ OBJS += \
 #	distrho-stereoenhancer.cpp.o
 
 OBJS += \
+	distrho-powerjuice.cpp.o \
 	distrho-segmentjuice.cpp.o \
 	distrho-vectorjuice.cpp.o \
 	distrho-wobblejuice.cpp.o
@@ -232,6 +233,9 @@ distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/*.cpp pingpongpan
 
 distrho-stereoenhancer.cpp.o: distrho-stereoenhancer.cpp stereoenhancer/*.cpp stereoenhancer/*.h stereoenhancer/*.hpp ../distrho/* $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Istereoenhancer -DDISTRHO_NAMESPACE=DISTRHO_StereoEnhancer -c -o $@
+
+distrho-powerjuice.cpp.o: distrho-powerjuice.cpp powerjuice/*.cpp powerjuice/*.h powerjuice/*.hpp ../distrho/* $(CXXDEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Ipowerjuice -DDISTRHO_NAMESPACE=DISTRHO_PowerJuice -c -o $@
 
 distrho-segmentjuice.cpp.o: distrho-segmentjuice.cpp segmentjuice/*.cpp segmentjuice/*.h segmentjuice/*.hpp segmentjuice/*.hxx ../distrho/* $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Isegmentjuice -DDISTRHO_NAMESPACE=DISTRHO_SegmentJuice -c -o $@

@@ -533,7 +533,7 @@ public:
 
                     // found, set value
                     stateValue = &state[i+1];
-                    setSharedState(stateKey, stateValue);
+                    setStateFromUi(stateKey, stateValue);
 
                     if (fVstUi != nullptr)
                         fVstUi->setStateFromPlugin(stateKey, stateValue);
