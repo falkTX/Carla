@@ -241,6 +241,8 @@ class CarlaObject(object):
         'sampleRate',
         # current process mode
         'processMode',
+        # check if process mode is forced (rack/patchbay)
+        'processModeForced',
         # current transport mode
         'transportMode',
         # current max parameters
@@ -272,9 +274,10 @@ gCarla.isLocal   = True
 gCarla.isPlugin  = False
 gCarla.bufferSize = 0
 gCarla.sampleRate = 0.0
-gCarla.processMode   = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS if LINUX else ENGINE_PROCESS_MODE_CONTINUOUS_RACK
-gCarla.transportMode = ENGINE_TRANSPORT_MODE_JACK if LINUX else ENGINE_TRANSPORT_MODE_INTERNAL
-gCarla.maxParameters = MAX_DEFAULT_PARAMETERS
+gCarla.processMode       = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS if LINUX else ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+gCarla.processModeForced = False
+gCarla.transportMode     = ENGINE_TRANSPORT_MODE_JACK if LINUX else ENGINE_TRANSPORT_MODE_INTERNAL
+gCarla.maxParameters     = MAX_DEFAULT_PARAMETERS
 gCarla.discovery_native  = ""
 gCarla.discovery_posix32 = ""
 gCarla.discovery_posix64 = ""

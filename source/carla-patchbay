@@ -66,6 +66,7 @@ if __name__ == '__main__':
     gCarla.isLocal     = True
     gCarla.isPlugin    = False
     gCarla.processMode = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS
+    gCarla.processModeForced = True
 
     initHost(initName, libPrefix)
 

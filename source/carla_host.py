@@ -498,6 +498,9 @@ class HostWindow(QMainWindow):
         except:
             audioSampleRate = CARLA_DEFAULT_AUDIO_SAMPLE_RATE
 
+        if gCarla.processModeForced:
+            processMode = gCarla.processMode
+
         # -------------------------------------------------------------
         # fix things if needed
 
