@@ -83,6 +83,7 @@ protected:
             break;
         case CarlaExternalUI::UiHide:
             uiClosed();
+            stop();
             break;
         }
     }

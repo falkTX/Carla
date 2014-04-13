@@ -616,6 +616,9 @@ private:
 
                 if (ret == -1)
                 {
+                    if (errno == ECHILD)
+                        return true;
+
                     carla_stderr2("waitpid(%i) failed: %s", int(pid), std::strerror(errno));
                     return false;
                 }

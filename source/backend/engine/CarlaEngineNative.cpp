@@ -1249,6 +1249,7 @@ protected:
             break;
         case CarlaExternalUI::UiHide:
             pHost->ui_closed(pHost->handle);
+            fUiServer.stop();
             break;
         }
     }
