@@ -91,10 +91,10 @@ OBJS += \
 #	distrho-stereoenhancer.cpp.o
 
 OBJS += \
-	distrho-powerjuice.cpp.o \
 	distrho-segmentjuice.cpp.o \
 	distrho-vectorjuice.cpp.o \
 	distrho-wobblejuice.cpp.o
+# 	distrho-powerjuice.cpp.o
 
 ifeq ($(HAVE_JUCE),true)
 # --------------------------------------------------------------
