@@ -530,8 +530,10 @@ const SaveState& CarlaPlugin::getSaveState()
     pData->saveState.type     = carla_strdup(getPluginTypeAsString(getType()));
     pData->saveState.name     = carla_strdup(pData->name);
     pData->saveState.label    = carla_strdup(strBuf);
-    pData->saveState.binary   = carla_strdup(pData->filename);
     pData->saveState.uniqueId = getUniqueId();
+
+    if (pData->filename != nullptr)
+        pData->saveState.binary = carla_strdup(pData->filename);
 
     // ---------------------------------------------------------------
     // Internals

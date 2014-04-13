@@ -215,7 +215,7 @@ public:
 
         if (kill(fPid, SIGKILL) == -1)
         {
-            carla_stderr("kill() failed: %s (start)\n", strerror(errno));
+            carla_stderr("kill() failed: %s (start)\n", std::strerror(errno));
         }
 
         // wait a while child to exit, we dont like zombie processes
@@ -475,7 +475,7 @@ public:
             carla_stderr2("force killing misbehaved child %i (exit)", int(fPid));
 
             if (kill(fPid, SIGKILL) == -1)
-                carla_stderr2("kill() failed: %s (exit)", strerror(errno));
+                carla_stderr2("kill() failed: %s (exit)", std::strerror(errno));
             else
                 wait_child(fPid);
         }
