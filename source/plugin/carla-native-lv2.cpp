@@ -1183,8 +1183,6 @@ static LV2_Handle lv2_instantiate(const LV2_Descriptor* lv2Descriptor, double sa
 
     if (std::strncmp(lv2Descriptor->URI, "http://kxstudio.sf.net/carla/plugins/", 37) == 0)
         pluginLabel = lv2Descriptor->URI+37;
-    else if (std::strcmp(lv2Descriptor->URI, "http://kxstudio.sf.net/carla") == 0)
-        pluginLabel = "carla";
 
     if (pluginLabel == nullptr)
     {
@@ -1404,16 +1402,8 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
     const NativePluginDescriptor* const pluginDesc(plm.descs.getAt(index));
 
     CarlaString tmpURI;
-
-    if (std::strcmp(pluginDesc->label, "carla") == 0)
-    {
-        tmpURI = "http://kxstudio.sf.net/carla";
-    }
-    else
-    {
-        tmpURI  = "http://kxstudio.sf.net/carla/plugins/";
-        tmpURI += pluginDesc->label;
-    }
+    tmpURI  = "http://kxstudio.sf.net/carla/plugins/";
+    tmpURI += pluginDesc->label;
 
     carla_debug("lv2_descriptor(%i) - not found, allocating new with uri \"%s\"", index, (const char*)tmpURI);
 

@@ -119,11 +119,7 @@ static void writeManifestFile(PluginListManager& plm)
         const NativePluginDescriptor* const& pluginDesc(it.getValue());
         const String label(pluginDesc->label);
 
-        if (label == "carla")
-            text += "<http://kxstudio.sf.net/carla>\n";
-        else
-            text += "<http://kxstudio.sf.net/carla/plugins/" + label + ">\n";
-
+        text += "<http://kxstudio.sf.net/carla/plugins/" + label + ">\n";
         text += "    a lv2:Plugin ;\n";
         text += "    lv2:binary <carla-native" PLUGIN_EXT "> ;\n";
         text += "    rdfs:seeAlso <" + label + ".ttl> .\n";
@@ -210,10 +206,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     // -------------------------------------------------------------------
     // Plugin URI
 
-    if (pluginLabel == "carla")
-        text += "<http://kxstudio.sf.net/carla>\n";
-    else
-        text += "<http://kxstudio.sf.net/carla/plugins/" + pluginLabel + ">\n";
+    text += "<http://kxstudio.sf.net/carla/plugins/" + pluginLabel + ">\n";
 
     // -------------------------------------------------------------------
     // Category

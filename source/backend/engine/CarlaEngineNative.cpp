@@ -465,6 +465,15 @@ protected:
             if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
                 plugin->prepareForSave();
         }
+        else if (std::strcmp(msg, "reset_parameters") == 0)
+        {
+            uint32_t pluginId;
+
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
+
+            if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+                plugin->resetParameters();
+        }
         else if (std::strcmp(msg, "randomize_parameters") == 0)
         {
             uint32_t pluginId;
