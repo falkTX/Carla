@@ -400,14 +400,14 @@ public:
 
         if (fView->width == static_cast<int>(width) && fView->height == static_cast<int>(height) && ! forced)
         {
-            DBG("Window setSize matches current size, ignoring request\n");
+            DBGp("Window setSize matches current size, ignoring request (%i %i)\n", width, height);
             return;
         }
 
         fView->width  = static_cast<int>(width);
         fView->height = static_cast<int>(height);
 
-        DBGp("Window setSize called %s\n", forced ? "(forced)" : "(not forced)");
+        DBGp("Window setSize called %s, size %i %i\n", forced ? "(forced)" : "(not forced)", width, height);
 
 #if defined(DGL_OS_WINDOWS)
         int winFlags = WS_POPUPWINDOW | WS_CAPTION;
