@@ -86,7 +86,7 @@ zix_tree_find(const ZixTree* t, const void* e, ZixTreeIter** ti);
    Return the data associated with the given tree item.
 */
 ZIX_API void*
-zix_tree_get(ZixTreeIter* ti);
+zix_tree_get(const ZixTreeIter* ti);
 
 /**
    Return an iterator to the first (smallest) element in @a t.
@@ -104,7 +104,7 @@ zix_tree_end(ZixTree* t);
    Return true iff @a i is an iterator to the end of its tree.
 */
 ZIX_API bool
-zix_tree_iter_is_end(ZixTreeIter* i);
+zix_tree_iter_is_end(const ZixTreeIter* i);
 
 /**
    Return an iterator to the last (largest) element in @a t.
@@ -122,7 +122,7 @@ zix_tree_rend(ZixTree* t);
    Return true iff @a i is an iterator to the reverse end of its tree.
 */
 ZIX_API bool
-zix_tree_iter_is_rend(ZixTreeIter* i);
+zix_tree_iter_is_rend(const ZixTreeIter* i);
 
 /**
    Return an iterator that points to the element one past @a i.
