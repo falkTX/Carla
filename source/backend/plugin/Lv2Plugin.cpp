@@ -4181,25 +4181,25 @@ public:
         switch (type)
         {
         case CARLA_URI_MAP_ID_ATOM_BOOL:
-              CARLA_SAFE_ASSERT_RETURN(size == sizeof(bool),);
-              paramValue = (*(const bool*)value) ? 1.0f : 0.0f;
-              break;
+            CARLA_SAFE_ASSERT_RETURN(size == sizeof(bool),);
+            paramValue = (*(const bool*)value) ? 1.0f : 0.0f;
+            break;
         case CARLA_URI_MAP_ID_ATOM_DOUBLE:
-              CARLA_SAFE_ASSERT_RETURN(size == sizeof(double),);
-              paramValue = static_cast<float>((*(const double*)value));
-              break;
+            CARLA_SAFE_ASSERT_RETURN(size == sizeof(double),);
+            paramValue = static_cast<float>((*(const double*)value));
+            break;
         case CARLA_URI_MAP_ID_ATOM_FLOAT:
-              CARLA_SAFE_ASSERT_RETURN(size == sizeof(float),);
-              paramValue = (*(const float*)value);
-              break;
+            CARLA_SAFE_ASSERT_RETURN(size == sizeof(float),);
+            paramValue = (*(const float*)value);
+            break;
         case CARLA_URI_MAP_ID_ATOM_INT:
-              CARLA_SAFE_ASSERT_RETURN(size == sizeof(int32_t),);
-              paramValue = static_cast<float>((*(const int32_t*)value));
-              break;
+            CARLA_SAFE_ASSERT_RETURN(size == sizeof(int32_t),);
+            paramValue = static_cast<float>((*(const int32_t*)value));
+            break;
         case CARLA_URI_MAP_ID_ATOM_LONG:
-              CARLA_SAFE_ASSERT_RETURN(size == sizeof(int64_t),);
-              paramValue = static_cast<float>((*(const int64_t*)value));
-              break;
+            CARLA_SAFE_ASSERT_RETURN(size == sizeof(int64_t),);
+            paramValue = static_cast<float>((*(const int64_t*)value));
+            break;
         default:
             carla_stdout("Lv2Plugin::handleLilvSetPortValue(\"%s\", %p, %i, %i:\"%s\") - unknown type", portSymbol, value, size, type, carla_lv2_urid_unmap(this, type));
             return;
