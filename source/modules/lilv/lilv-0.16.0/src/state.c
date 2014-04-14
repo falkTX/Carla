@@ -374,7 +374,7 @@ lilv_state_new_from_instance(const LilvPlugin*          plugin,
 	// Store properties
 	const LV2_Descriptor*      desc  = instance->lv2_descriptor;
 	const LV2_State_Interface* iface = (desc->extension_data)
-		? (LV2_State_Interface*)desc->extension_data(LV2_STATE__interface)
+		? (const LV2_State_Interface*)desc->extension_data(LV2_STATE__interface)
 		: NULL;
 
 	if (iface) {
@@ -489,11 +489,12 @@ new_state_from_model(LilvWorld*       world,
 		} else if (value) {
 			chunk.len = 0;
 			sratom_read(sratom, &forge, world->world, model, value);
-			LV2_Atom* atom = (LV2_Atom*)chunk.buf;
+			const LV2_Atom* atom = (const LV2_Atom*)chunk.buf;
 
 			append_port_value(state,
 			                  (const char*)sord_node_get_string(symbol),
-			                  LV2_ATOM_BODY(atom), atom->size, atom->type);
+			                  LV2_ATOM_BODY_CONST(atom),
+			                  atom->size, atom->type);
 
 			if (label) {
 				lilv_state_set_label(state,
@@ -520,15 +521,15 @@ new_state_from_model(LilvWorld*       world,
 				&forge, sratom_forge_sink, sratom_forge_deref, &chunk);
 
 			sratom_read(sratom, &forge, world->world, model, o);
-			LV2_Atom* atom  = (LV2_Atom*)chunk.buf;
-			uint32_t  flags = LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE;
-			Property  prop  = { NULL, 0, 0, 0, flags };
+			const LV2_Atom* atom  = (const LV2_Atom*)chunk.buf;
+			uint32_t        flags = LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE;
+			Property        prop  = { NULL, 0, 0, 0, flags };
 
 			prop.key   = map->map(map->handle, (const char*)sord_node_get_string(p));
 			prop.type  = atom->type;
 			prop.size  = atom->size;
 			prop.value = malloc(atom->size);
-			memcpy(prop.value, LV2_ATOM_BODY(atom), atom->size);
+			memcpy(prop.value, LV2_ATOM_BODY_CONST(atom), atom->size);
 			if (atom->type == forge.Path) {
 				prop.flags = LV2_STATE_IS_PORTABLE;
 			}
@@ -701,7 +702,7 @@ add_state_to_manifest(const LilvNode* plugin_uri,
                       const char*     state_uri,
                       const char*     state_path)
 {
-	FILE* fd = fopen((char*)manifest_path, "a");
+	FILE* fd = fopen(manifest_path, "a");
 	if (!fd) {
 		LILV_ERRORF("Failed to open %s (%s)\n",
 		            manifest_path, strerror(errno));
