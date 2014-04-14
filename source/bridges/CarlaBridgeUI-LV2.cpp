@@ -195,6 +195,12 @@ public:
         for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; ++i)
             fCustomURIDs.append(nullptr);
 
+        // FIXME
+        fCustomURIDs.append(carla_strdup("http://drobilla.net/ns/ingen#GraphUIGtk2"));
+        fCustomURIDs.append(carla_strdup("http://lv2plug.in/ns/ext/state#interface"));
+        fCustomURIDs.append(carla_strdup("ingen:/root"));
+        fCustomURIDs.append(carla_strdup("ingen:/root/"));
+
         // ---------------------------------------------------------------
         // initialize options
 
@@ -678,7 +684,21 @@ public:
         CARLA_ASSERT(uri != nullptr);
         carla_debug("CarlaLv2Client::handleUridMap(%i, \"%s\")", urid, uri);
 
-        // TODO
+        if (urid < fCustomURIDs.count())
+        {
+            const char* const ourURI(carla_lv2_urid_unmap(this, urid));
+            CARLA_SAFE_ASSERT_RETURN(ourURI != nullptr,);
+
+            if (std::strcmp(ourURI, uri) != 0)
+            {
+                carla_stderr2("UI :: wrong URI '%s' vs '%s'", ourURI,  uri);
+            }
+        }
+        else
+        {
+            CARLA_SAFE_ASSERT_RETURN(urid == fCustomURIDs.count(),);
+            fCustomURIDs.append(carla_strdup(uri));
+        }
     }
 
 private:

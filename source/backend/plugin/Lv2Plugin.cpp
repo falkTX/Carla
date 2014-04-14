@@ -361,6 +361,12 @@ public:
         for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; ++i)
             fCustomURIDs.append(nullptr);
 
+        // FIXME
+        fCustomURIDs.append(carla_strdup("http://drobilla.net/ns/ingen#GraphUIGtk2"));
+        fCustomURIDs.append(carla_strdup("http://lv2plug.in/ns/ext/state#interface"));
+        fCustomURIDs.append(carla_strdup("ingen:/root"));
+        fCustomURIDs.append(carla_strdup("ingen:/root/"));
+
 #if defined(__clang__)
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wdeprecated-declarations"
@@ -4258,24 +4264,53 @@ public:
         }
 
         // ---------------------------------------------------------------
-        // get DLL main entry
+        // try to get DLL main entry via new mode
 
-        const LV2_Descriptor_Function descFn = (LV2_Descriptor_Function)pData->libSymbol("lv2_descriptor");
-
-        if (descFn == nullptr)
+        if (const LV2_Lib_Descriptor_Function libDescFn = (LV2_Lib_Descriptor_Function)pData->libSymbol("lv2_lib_descriptor"))
         {
-            pData->engine->setLastError("Could not find the LV2 Descriptor in the plugin library");
-            return false;
+            // -----------------------------------------------------------
+            // all ok, get lib descriptor
+
+            const LV2_Lib_Descriptor* const libDesc = libDescFn(bundle, nullptr);
+
+            if (libDesc == nullptr)
+            {
+                pData->engine->setLastError("Could not find the LV2 Descriptor");
+                return false;
+            }
+
+            // -----------------------------------------------------------
+            // get descriptor that matches URI (new mode)
+
+            uint32_t i = 0;
+            while ((fDescriptor = libDesc->get_plugin(libDesc->handle, i++)))
+            {
+                if (std::strcmp(fDescriptor->URI, uri) == 0)
+                    break;
+            }
         }
-
-        // -----------------------------------------------------------
-        // get descriptor that matches URI
-
-        uint32_t i = 0;
-        while ((fDescriptor = descFn(i++)))
+        else
         {
-            if (std::strcmp(fDescriptor->URI, uri) == 0)
-                break;
+            // -----------------------------------------------------------
+            // get DLL main entry (old mode)
+
+            const LV2_Descriptor_Function descFn = (LV2_Descriptor_Function)pData->libSymbol("lv2_descriptor");
+
+            if (descFn == nullptr)
+            {
+                pData->engine->setLastError("Could not find the LV2 Descriptor in the plugin library");
+                return false;
+            }
+
+            // -----------------------------------------------------------
+            // get descriptor that matches URI (old mode)
+
+            uint32_t i = 0;
+            while ((fDescriptor = descFn(i++)))
+            {
+                if (std::strcmp(fDescriptor->URI, uri) == 0)
+                    break;
+            }
         }
 
         if (fDescriptor == nullptr)
@@ -4895,13 +4930,17 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL,);
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0',);
-        carla_debug("Lv2Plugin::handleUridMap(%i v " P_SIZE ", \"%s\")", urid, fCustomURIDs.count(), uri);
+        carla_debug("Lv2Plugin::handleUridMap(%i v " P_SIZE ", \"%s\")", urid, fCustomURIDs.count()-1, uri);
 
         if (urid < fCustomURIDs.count())
         {
             const char* const ourURI(carla_lv2_urid_unmap(this, urid));
             CARLA_SAFE_ASSERT_RETURN(ourURI != nullptr,);
-            CARLA_SAFE_ASSERT(std::strcmp(ourURI, uri) == 0);
+
+            if (std::strcmp(ourURI, uri) != 0)
+            {
+                carla_stderr2("PLUGIN :: wrong URI '%s' vs '%s'", ourURI,  uri);
+            }
         }
         else
         {
