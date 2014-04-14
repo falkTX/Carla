@@ -64,7 +64,7 @@ void*
 lilv_collection_get(const LilvCollection* collection,
                     const LilvIter*       i)
 {
-	return zix_tree_get((ZixTreeIter*)i);
+	return zix_tree_get((const ZixTreeIter*)i);
 }
 
 /* Constructors */

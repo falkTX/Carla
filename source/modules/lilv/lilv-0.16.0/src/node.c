@@ -85,6 +85,11 @@ lilv_node_new(LilvWorld* world, LilvNodeType type, const char* str)
 		break;
 	}
 
+	if (!val->node) {
+		free(val);
+		return NULL;
+	}
+
 	return val;
 }
 
