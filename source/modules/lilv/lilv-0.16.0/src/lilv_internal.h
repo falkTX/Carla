@@ -30,7 +30,6 @@ extern "C" {
 #    include <windows.h>
 #    define dlopen(path, flags) LoadLibrary(path)
 #    define dlclose(lib) FreeLibrary((HMODULE)lib)
-#    define dlsym GetProcAddress
 #    ifdef _MSC_VER
 #        define __func__ __FUNCTION__
 #        define INFINITY DBL_MAX + DBL_MAX
@@ -65,7 +64,7 @@ typedef struct LilvSpecImpl LilvSpec;
 typedef void LilvCollection;
 
 struct LilvPortImpl {
-	SordNode*  node;     ///< RDF node
+	LilvNode*  node;     ///< RDF node
 	uint32_t   index;    ///< lv2:index
 	LilvNode*  symbol;   ///< lv2:symbol
 	LilvNodes* classes;  ///< rdf:type
@@ -164,6 +163,7 @@ struct LilvWorldImpl {
 		SordNode* lv2_designation;
 		SordNode* lv2_extensionData;
 		SordNode* lv2_index;
+		SordNode* lv2_latency;
 		SordNode* lv2_maximum;
 		SordNode* lv2_minimum;
 		SordNode* lv2_name;
@@ -173,6 +173,7 @@ struct LilvWorldImpl {
 		SordNode* lv2_reportsLatency;
 		SordNode* lv2_requiredFeature;
 		SordNode* lv2_symbol;
+		SordNode* lv2_prototype;
 		SordNode* null_uri;
 		SordNode* pset_value;
 		SordNode* rdf_a;
@@ -357,15 +358,19 @@ lilv_dir_for_each(const char* path,
                   void*       data,
                   void (*f)(const char* path, const char* name, void* data));
 
-typedef void (*VoidFunc)(void);
+typedef void (*LilvVoidFunc)(void);
 
 /** dlsym wrapper to return a function pointer (without annoying warning) */
-static inline VoidFunc
+static inline LilvVoidFunc
 lilv_dlfunc(void* handle, const char* symbol)
 {
-	typedef VoidFunc (*VoidFuncGetter)(void*, const char*);
+#ifdef _WIN32
+	 return (LilvVoidFunc)GetProcAddress((HMODULE)handle, symbol);
+#else
+	typedef LilvVoidFunc (*VoidFuncGetter)(void*, const char*);
 	VoidFuncGetter dlfunc = (VoidFuncGetter)dlsym;
 	return dlfunc(handle, symbol);
+#endif
 }
 
 #ifdef LILV_DYN_MANIFEST
