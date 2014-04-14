@@ -19,7 +19,7 @@
 #define POWERJUICEPLUGIN_HPP_INCLUDED
 
 #include "DistrhoPlugin.hpp"
-#include "carla/CarlaShmUtils.hpp"
+#include "CarlaShmUtils.hpp"
 
 static const int kFloatStackCount = 1126;
 
