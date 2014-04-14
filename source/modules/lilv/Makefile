@@ -11,7 +11,7 @@ include ../../Makefile.mk
 SERD_VERSION   = 0.18.2
 SORD_VERSION   = 0.12.0
 SRATOM_VERSION = 0.4.4
-LILV_VERSION   = 0.16.0
+LILV_VERSION   = 0.18.0
 
 BUILD_C_FLAGS += $(LILV_FLAGS) -Iconfig -I../../includes -w
 LINK_FLAGS    += $(LILV_LIBS)

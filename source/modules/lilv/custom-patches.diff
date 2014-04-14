@@ -1,0 +1,423 @@
+diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/lilv/lilv.h lilv-0.18.0/lilv/lilv.h
+--- lilv-0.18.0.orig/lilv/lilv.h	2014-01-04 04:17:29.000000000 +0000
++++ lilv-0.18.0/lilv/lilv.h	2014-04-14 20:49:45.340264688 +0000
+@@ -26,8 +26,9 @@
+ #include <stdint.h>
+ #include <stdio.h>
+ 
+-#include "lv2/lv2plug.in/ns/lv2core/lv2.h"
+-#include "lv2/lv2plug.in/ns/ext/urid/urid.h"
++#include "lv2/lv2.h"
++#include "lv2/state.h"
++#include "lv2/urid.h"
+ 
+ #ifdef LILV_SHARED
+ #    ifdef _WIN32
+@@ -1228,7 +1229,7 @@
+ LILV_API
+ LilvState*
+ lilv_state_new_from_world(LilvWorld*      world,
+-                          LV2_URID_Map*   map,
++                          const LV2_URID_Map* map,
+                           const LilvNode* subject);
+ 
+ /**
+@@ -1247,7 +1248,7 @@
+ LILV_API
+ LilvState*
+ lilv_state_new_from_file(LilvWorld*      world,
+-                         LV2_URID_Map*   map,
++                         const LV2_URID_Map* map,
+                          const LilvNode* subject,
+                          const char*     path);
+ 
+@@ -1257,7 +1258,7 @@
+ LILV_API
+ LilvState*
+ lilv_state_new_from_string(LilvWorld*    world,
+-                           LV2_URID_Map* map,
++                           const LV2_URID_Map* map,
+                            const char*   str);
+ 
+ /**
+@@ -1428,7 +1429,8 @@
+ LILV_API
+ void
+ lilv_state_restore(const LilvState*           state,
+-                   LilvInstance*              instance,
++                   const LV2_State_Interface* iface,
++                   LV2_Handle                 handle,
+                    LilvSetPortValueFunc       set_value,
+                    void*                      user_data,
+                    uint32_t                   flags,
+@@ -1782,6 +1784,25 @@
+ lilv_ui_get_binary_uri(const LilvUI* ui);
+ 
+ /**
++  Custom calls
++*/
++LILV_API
++const LilvNodes*
++lilv_ui_get_supported_features(const LilvUI* ui);
++
++LILV_API
++const LilvNodes*
++lilv_ui_get_required_features(const LilvUI* ui);
++
++LILV_API
++const LilvNodes*
++lilv_ui_get_optional_features(const LilvUI* ui);
++
++LILV_API
++const LilvNodes*
++lilv_ui_get_extension_data(const LilvUI* ui);
++
++/**
+    @}
+    @}
+ */
+diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/lilv/lilvmm.hpp lilv-0.18.0/lilv/lilvmm.hpp
+--- lilv-0.18.0.orig/lilv/lilvmm.hpp	2013-03-19 04:05:10.000000000 +0000
++++ lilv-0.18.0/lilv/lilvmm.hpp	2014-04-14 20:55:29.312713841 +0000
+@@ -35,6 +35,9 @@
+ #define LILV_WRAP0(RT, prefix, name) \
+ 	inline RT name() { return lilv_ ## prefix ## _ ## name (me); }
+ 
++#define LILV_WRAP0_CONST(RT, prefix, name) \
++	inline RT name() const { return lilv_ ## prefix ## _ ## name (me); }
++
+ #define LILV_WRAP0_VOID(prefix, name) \
+ 	inline void name() { lilv_ ## prefix ## _ ## name(me); }
+ 
+@@ -65,6 +68,7 @@
+ #endif
+ 
+ struct Node {
++	inline Node(LilvNode* node)       : me(node) {}
+ 	inline Node(const LilvNode* node) : me(lilv_node_duplicate(node)) {}
+ 	inline Node(const Node& copy)     : me(lilv_node_duplicate(copy.me)) {}
+ 
+@@ -78,20 +82,20 @@
+ 
+ 	LILV_WRAP_CONVERSION(LilvNode);
+ 
+-	LILV_WRAP0(char*,       node, get_turtle_token);
+-	LILV_WRAP0(bool,        node, is_uri);
+-	LILV_WRAP0(const char*, node, as_uri);
+-	LILV_WRAP0(bool,        node, is_blank);
+-	LILV_WRAP0(const char*, node, as_blank);
+-	LILV_WRAP0(bool,        node, is_literal);
+-	LILV_WRAP0(bool,        node, is_string);
+-	LILV_WRAP0(const char*, node, as_string);
+-	LILV_WRAP0(bool,        node, is_float);
+-	LILV_WRAP0(float,       node, as_float);
+-	LILV_WRAP0(bool,        node, is_int);
+-	LILV_WRAP0(int,         node, as_int);
+-	LILV_WRAP0(bool,        node, is_bool);
+-	LILV_WRAP0(bool,        node, as_bool);
++	LILV_WRAP0_CONST(char*,       node, get_turtle_token);
++	LILV_WRAP0_CONST(bool,        node, is_uri);
++	LILV_WRAP0_CONST(const char*, node, as_uri);
++	LILV_WRAP0_CONST(bool,        node, is_blank);
++	LILV_WRAP0_CONST(const char*, node, as_blank);
++	LILV_WRAP0_CONST(bool,        node, is_literal);
++	LILV_WRAP0_CONST(bool,        node, is_string);
++	LILV_WRAP0_CONST(const char*, node, as_string);
++	LILV_WRAP0_CONST(bool,        node, is_float);
++	LILV_WRAP0_CONST(float,       node, as_float);
++	LILV_WRAP0_CONST(bool,        node, is_int);
++	LILV_WRAP0_CONST(int,         node, as_int);
++	LILV_WRAP0_CONST(bool,        node, is_bool);
++	LILV_WRAP0_CONST(bool,        node, as_bool);
+ 
+ 	LilvNode* me;
+ };
+@@ -126,7 +130,7 @@
+ 	LILV_WRAP0(LilvIter*, prefix, begin); \
+ 	LILV_WRAP1(LilvIter*, prefix, next, LilvIter*, i); \
+ 	LILV_WRAP1(bool, prefix, is_end, LilvIter*, i); \
+-	const Lilv ## CT* me; \
++	const Lilv ## CT* me
+ 
+ struct PluginClasses {
+ 	LILV_WRAP_COLL(PluginClasses, PluginClass, plugin_classes);
+@@ -148,15 +152,14 @@
+ 	inline UI(const LilvUI* c_obj) : me(c_obj) {}
+ 	LILV_WRAP_CONVERSION(const LilvUI);
+ 
+-	LILV_WRAP0(const LilvNode*, ui, get_uri);
+-	LILV_WRAP0(const LilvNode*, ui, get_bundle_uri);
+-	LILV_WRAP0(const LilvNode*, ui, get_binary_uri);
+-	LILV_WRAP0(const LilvNodes*, ui, get_classes);
+-	/*LILV_WRAP3(bool, ui, is_supported,
+-	           LilvUISupportedFunc, supported_func,
+-	           const LilvNode*,     container_type,
+-	           const LilvNode**,    ui_type);*/
+-	LILV_WRAP1(bool, ui, is_a, const LilvNode*, class_uri);
++	LILV_WRAP0(Node,  ui, get_uri);
++	LILV_WRAP1(bool,  ui, is_a, LilvNode*, ui_class);
++	LILV_WRAP0(Node,  ui, get_bundle_uri);
++	LILV_WRAP0(Node,  ui, get_binary_uri);
++	LILV_WRAP0(Nodes, ui, get_supported_features);
++	LILV_WRAP0(Nodes, ui, get_required_features);
++	LILV_WRAP0(Nodes, ui, get_optional_features);
++	LILV_WRAP0(Nodes, ui, get_extension_data);
+ 
+ 	const LilvUI* me;
+ };
+@@ -260,7 +263,7 @@
+ 
+ 	LILV_DEPRECATED
+ 	inline Instance(Plugin plugin, double sample_rate) {
+-		me = lilv_plugin_instantiate(plugin, sample_rate, NULL);
++		me = lilv_plugin_instantiate(plugin, sample_rate, nullptr);
+ 	}
+ 
+ 	LILV_DEPRECATED inline Instance(Plugin              plugin,
+@@ -275,7 +278,7 @@
+ 		LilvInstance* me = lilv_plugin_instantiate(
+ 			plugin, sample_rate, features);
+ 
+-		return me ? new Instance(me) : NULL;
++		return me ? new Instance(me) : nullptr;
+ 	}
+ 
+ 	LILV_WRAP_CONVERSION(LilvInstance);
+@@ -307,19 +310,19 @@
+ 	inline World() : me(lilv_world_new()) {}
+ 	inline ~World() { lilv_world_free(me); }
+ 
+-	inline LilvNode* new_uri(const char* uri) {
++	inline LilvNode* new_uri(const char* uri) const {
+ 		return lilv_new_uri(me, uri);
+ 	}
+-	inline LilvNode* new_string(const char* str) {
++	inline LilvNode* new_string(const char* str) const {
+ 		return lilv_new_string(me, str);
+ 	}
+-	inline LilvNode* new_int(int val) {
++	inline LilvNode* new_int(int val) const {
+ 		return lilv_new_int(me, val);
+ 	}
+-	inline LilvNode* new_float(float val) {
++	inline LilvNode* new_float(float val) const {
+ 		return lilv_new_float(me, val);
+ 	}
+-	inline LilvNode* new_bool(bool val) {
++	inline LilvNode* new_bool(bool val) const {
+ 		return lilv_new_bool(me, val);
+ 	}
+ 	inline Nodes find_nodes(const LilvNode* subject,
+diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/lilv_internal.h lilv-0.18.0/src/lilv_internal.h
+--- lilv-0.18.0.orig/src/lilv_internal.h	2014-01-04 04:02:22.000000000 +0000
++++ lilv-0.18.0/src/lilv_internal.h	2014-04-14 20:31:23.028483446 +0000
+@@ -50,7 +50,7 @@
+ #include "lilv/lilv.h"
+ 
+ #ifdef LILV_DYN_MANIFEST
+-#    include "lv2/lv2plug.in/ns/ext/dynmanifest/dynmanifest.h"
++#    include "lv2/dynmanifest.h"
+ #endif
+ 
+ /*
+diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/plugin.c lilv-0.18.0/src/plugin.c
+--- lilv-0.18.0.orig/src/plugin.c	2014-01-04 21:23:47.000000000 +0000
++++ lilv-0.18.0/src/plugin.c	2014-04-14 20:44:13.939913922 +0000
+@@ -27,7 +27,7 @@
+ #include "lilv_config.h"
+ #include "lilv_internal.h"
+ 
+-#include "lv2/lv2plug.in/ns/extensions/ui/ui.h"
++#include "lv2/ui.h"
+ 
+ #define NS_DOAP (const uint8_t*)"http://usefulinc.com/ns/doap#"
+ #define NS_FOAF (const uint8_t*)"http://xmlns.com/foaf/0.1/"
+diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/port.c lilv-0.18.0/src/port.c
+--- lilv-0.18.0.orig/src/port.c	2014-01-04 04:04:20.000000000 +0000
++++ lilv-0.18.0/src/port.c	2014-04-14 20:33:03.708189391 +0000
+@@ -20,8 +20,8 @@
+ #include <stdlib.h>
+ #include <string.h>
+ 
+-#include "lv2/lv2plug.in/ns/ext/atom/atom.h"
+-#include "lv2/lv2plug.in/ns/ext/event/event.h"
++#include "lv2/atom.h"
++#include "lv2/event.h"
+ 
+ #include "lilv_internal.h"
+ 
+diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/state.c lilv-0.18.0/src/state.c
+--- lilv-0.18.0.orig/src/state.c	2013-12-16 03:17:00.000000000 +0000
++++ lilv-0.18.0/src/state.c	2014-04-14 20:39:02.307711987 +0000
+@@ -18,10 +18,10 @@
+ #include <stdio.h>
+ #include <string.h>
+ 
+-#include "lv2/lv2plug.in/ns/ext/atom/atom.h"
+-#include "lv2/lv2plug.in/ns/ext/atom/forge.h"
+-#include "lv2/lv2plug.in/ns/ext/presets/presets.h"
+-#include "lv2/lv2plug.in/ns/ext/state/state.h"
++#include "lv2/atom.h"
++#include "lv2/atom-forge.h"
++#include "lv2/presets.h"
++#include "lv2/state.h"
+ 
+ #include "lilv_config.h"
+ #include "lilv_internal.h"
+@@ -399,30 +399,18 @@
+ LILV_API
+ void
+ lilv_state_restore(const LilvState*           state,
+-                   LilvInstance*              instance,
++                   const LV2_State_Interface* iface,
++                   LV2_Handle                 handle,
+                    LilvSetPortValueFunc       set_value,
+                    void*                      user_data,
+                    uint32_t                   flags,
+                    const LV2_Feature *const * features)
+ {
+-	LV2_State_Map_Path map_path = {
+-		(LilvState*)state, abstract_path, absolute_path };
+-	LV2_Feature map_feature = { LV2_STATE__mapPath, &map_path };
+-
+-	const LV2_Feature** sfeatures = add_features(features, &map_feature, NULL);
+-
+-	const LV2_Descriptor*      desc  = instance ? instance->lv2_descriptor : NULL;
+-	const LV2_State_Interface* iface = (desc && desc->extension_data)
+-		? (const LV2_State_Interface*)desc->extension_data(LV2_STATE__interface)
+-		: NULL;
+-
+ 	if (iface) {
+-		iface->restore(instance->lv2_handle, retrieve_callback,
+-		               (LV2_State_Handle)state, flags, sfeatures);
++		iface->restore(handle, retrieve_callback,
++		               (LV2_State_Handle)state, flags, features);
+ 	}
+ 
+-	free(sfeatures);
+-
+ 	if (set_value) {
+ 		for (uint32_t i = 0; i < state->num_values; ++i) {
+ 			const PortValue* val = &state->values[i];
+@@ -569,7 +557,7 @@
+ LILV_API
+ LilvState*
+ lilv_state_new_from_world(LilvWorld*      world,
+-                          LV2_URID_Map*   map,
++                          const LV2_URID_Map* map,
+                           const LilvNode* node)
+ {
+ 	if (!lilv_node_is_uri(node) && !lilv_node_is_blank(node)) {
+@@ -587,7 +575,7 @@
+ LILV_API
+ LilvState*
+ lilv_state_new_from_file(LilvWorld*      world,
+-                         LV2_URID_Map*   map,
++                         const LV2_URID_Map* map,
+                          const LilvNode* subject,
+                          const char*     path)
+ {
+@@ -641,7 +629,7 @@
+ LILV_API
+ LilvState*
+ lilv_state_new_from_string(LilvWorld*    world,
+-                           LV2_URID_Map* map,
++                           const LV2_URID_Map* map,
+                            const char*   str)
+ {
+ 	if (!str) {
+diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/ui.c lilv-0.18.0/src/ui.c
+--- lilv-0.18.0.orig/src/ui.c	2012-03-27 03:41:41.000000000 +0000
++++ lilv-0.18.0/src/ui.c	2014-04-14 20:46:20.491810535 +0000
+@@ -128,3 +128,59 @@
+ 	assert(ui->binary_uri);
+ 	return ui->binary_uri;
+ }
++
++static LilvNodes*
++lilv_ui_get_value_internal(const LilvUI* ui,
++                           const SordNode* predicate)
++{
++	assert(ui);
++	return lilv_world_find_nodes_internal(ui->world, ui->uri->node, predicate, NULL);
++}
++
++LILV_API
++const LilvNodes*
++lilv_ui_get_supported_features(const LilvUI* ui)
++{
++	assert(ui);
++	LilvNodes* optional = lilv_ui_get_optional_features(ui);
++	LilvNodes* required = lilv_ui_get_required_features(ui);
++	LilvNodes* result   = lilv_nodes_new();
++
++	LILV_FOREACH(nodes, i, optional)
++		zix_tree_insert((ZixTree*)result, lilv_node_duplicate(lilv_nodes_get(optional, i)), NULL);
++
++	LILV_FOREACH(nodes, i, required)
++		zix_tree_insert((ZixTree*)result, lilv_node_duplicate(lilv_nodes_get(required, i)), NULL);
++
++	lilv_nodes_free(optional);
++	lilv_nodes_free(required);
++
++	return result;
++}
++
++LILV_API
++const LilvNodes*
++lilv_ui_get_required_features(const LilvUI* ui)
++{
++	assert(ui);
++	assert(ui->world);
++	return lilv_ui_get_value_internal(ui, ui->world->uris.lv2_requiredFeature);
++}
++
++LILV_API
++const LilvNodes*
++lilv_ui_get_optional_features(const LilvUI* ui)
++{
++	assert(ui);
++	assert(ui->world);
++	return lilv_ui_get_value_internal(ui, ui->world->uris.lv2_optionalFeature);
++}
++
++LILV_API
++const LilvNodes*
++lilv_ui_get_extension_data(const LilvUI* ui)
++{
++	assert(ui);
++	assert(ui->world);
++	return lilv_ui_get_value_internal(ui, ui->world->uris.lv2_extensionData);
++}
+diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/util.c lilv-0.18.0/src/util.c
+--- lilv-0.18.0.orig/src/util.c	2012-08-09 20:51:00.000000000 +0000
++++ lilv-0.18.0/src/util.c	2014-04-14 20:43:49.832743279 +0000
+@@ -29,7 +29,6 @@
+ #include <string.h>
+ 
+ #ifdef _WIN32
+-#    define _WIN32_WINNT 0x0600  /* for CreateSymbolicLink */
+ #    include <windows.h>
+ #    include <direct.h>
+ #    include <io.h>
+@@ -426,7 +425,7 @@
+ 	int ret = 0;
+ 	if (strcmp(oldpath, newpath)) {
+ #ifdef _WIN32
+-		ret = !CreateSymbolicLink(newpath, oldpath, 0);
++		ret = 0;
+ #else
+ 		ret = symlink(oldpath, newpath);
+ #endif
+diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/world.c lilv-0.18.0/src/world.c
+--- lilv-0.18.0.orig/src/world.c	2013-12-27 19:45:19.000000000 +0000
++++ lilv-0.18.0/src/world.c	2014-04-14 20:45:37.828508116 +0000
+@@ -19,7 +19,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ 
+-#include "lv2/lv2plug.in/ns/ext/presets/presets.h"
++#include "lv2/presets.h"
+ 
+ #include "lilv_internal.h"
+ 
