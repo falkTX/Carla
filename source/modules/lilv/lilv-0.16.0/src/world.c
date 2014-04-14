@@ -64,6 +64,7 @@ lilv_world_new(void)
 	world->uris.lv2_designation     = NEW_URI(LV2_CORE__designation);
 	world->uris.lv2_extensionData   = NEW_URI(LV2_CORE__extensionData);
 	world->uris.lv2_index           = NEW_URI(LV2_CORE__index);
+	world->uris.lv2_latency         = NEW_URI(LV2_CORE__latency);
 	world->uris.lv2_maximum         = NEW_URI(LV2_CORE__maximum);
 	world->uris.lv2_minimum         = NEW_URI(LV2_CORE__minimum);
 	world->uris.lv2_name            = NEW_URI(LV2_CORE__name);
@@ -73,6 +74,7 @@ lilv_world_new(void)
 	world->uris.lv2_reportsLatency  = NEW_URI(LV2_CORE__reportsLatency);
 	world->uris.lv2_requiredFeature = NEW_URI(LV2_CORE__requiredFeature);
 	world->uris.lv2_symbol          = NEW_URI(LV2_CORE__symbol);
+	world->uris.lv2_prototype       = NEW_URI(LV2_CORE__prototype);
 	world->uris.pset_value          = NEW_URI(LV2_PRESETS__value);
 	world->uris.rdf_a               = NEW_URI(LILV_NS_RDF  "type");
 	world->uris.rdf_value           = NEW_URI(LILV_NS_RDF  "value");
@@ -321,7 +323,7 @@ lilv_world_add_spec(LilvWorld*      world,
 	spec->bundle    = sord_node_copy(bundle_node);
 	spec->data_uris = lilv_nodes_new();
 
-	// Add all plugin data files (rdfs:seeAlso)
+	// Add all data files (rdfs:seeAlso)
 	SordIter* files = sord_search(
 		world->model,
 		specification_node,
