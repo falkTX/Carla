@@ -142,6 +142,28 @@ lilv_plugin_load(LilvPlugin* p)
 	SerdReader* reader = sord_new_reader(p->world->model, env, SERD_TURTLE,
 	                                     bundle_uri_node);
 
+	SordIter* prototypes = sord_search(p->world->model,
+	                                   p->plugin_uri->node,
+	                                   p->world->uris.lv2_prototype,
+	                                   NULL, NULL);
+	FOREACH_MATCH(prototypes) {
+		const SordNode* t         = sord_iter_get_node(prototypes, SORD_OBJECT);
+		LilvNode*       prototype = lilv_node_new_from_node(p->world, t);
+
+		lilv_world_load_resource(p->world, prototype);
+
+		SordIter* statements = sord_search(
+			p->world->model, prototype->node, NULL, NULL, NULL);
+		FOREACH_MATCH(statements) {
+			SordQuad quad;
+			sord_iter_get(statements, quad);
+			quad[0] = p->plugin_uri->node;
+			sord_add(p->world->model, quad);
+		}
+
+		lilv_node_free(prototype);
+	}
+
 	// Parse all the plugin's data files into RDF model
 	LILV_FOREACH(nodes, i, p->data_uris) {
 		const LilvNode* data_uri_val  = lilv_nodes_get(p->data_uris, i);
@@ -594,15 +616,21 @@ lilv_plugin_has_latency(const LilvPlugin* p)
 
 	bool ret = false;
 	FOREACH_MATCH(ports) {
-		const SordNode* port            = sord_iter_get_node(ports, SORD_OBJECT);
-		SordIter*       reports_latency = lilv_world_query_internal(
+		const SordNode* port = sord_iter_get_node(ports, SORD_OBJECT);
+		SordIter*       prop = lilv_world_query_internal(
 			p->world,
 			port,
 			p->world->uris.lv2_portProperty,
 			p->world->uris.lv2_reportsLatency);
-		const bool end = sord_iter_end(reports_latency);
-		sord_iter_free(reports_latency);
-		if (!end) {
+		SordIter*       des   = lilv_world_query_internal(
+			p->world,
+			port,
+			p->world->uris.lv2_designation,
+			p->world->uris.lv2_latency);
+		const bool latent = !sord_iter_end(prop) || !sord_iter_end(des);
+		sord_iter_free(prop);
+		sord_iter_free(des);
+		if (latent) {
 			ret = true;
 			break;
 		}
@@ -621,7 +649,7 @@ lilv_plugin_get_port_by_property(const LilvPlugin* plugin,
 		LilvPort* port = plugin->ports[i];
 		SordIter* iter = lilv_world_query_internal(
 			plugin->world,
-			port->node,
+			port->node->node,
 			plugin->world->uris.lv2_portProperty,
 			port_property->node);
 
@@ -648,12 +676,12 @@ lilv_plugin_get_port_by_designation(const LilvPlugin* plugin,
 		LilvPort* port = plugin->ports[i];
 		SordIter* iter = lilv_world_query_internal(
 			world,
-			port->node,
+			port->node->node,
 			world->uris.lv2_designation,
 			designation->node);
 
 		const bool found = !sord_iter_end(iter) &&
-			lilv_port_is_a(plugin, port, port_class);
+			(!port_class || lilv_port_is_a(plugin, port, port_class));
 		sord_iter_free(iter);
 
 		if (found) {
@@ -670,9 +698,19 @@ lilv_plugin_get_latency_port_index(const LilvPlugin* p)
 {
 	LilvNode* prop = lilv_node_new_from_node(
 		p->world, p->world->uris.lv2_reportsLatency);
-	const LilvPort* latency_port = lilv_plugin_get_port_by_property(p, prop);
+	LilvNode* des = lilv_node_new_from_node(
+		p->world, p->world->uris.lv2_latency);
+	const LilvPort* prop_port = lilv_plugin_get_port_by_property(p, prop);
+	const LilvPort* des_port = lilv_plugin_get_port_by_property(p, des);
 	lilv_node_free(prop);
-	return latency_port ? latency_port->index : UINT32_MAX;
+	lilv_node_free(des);
+	if (prop_port) {
+		return prop_port->index;
+	} else if (des_port) {
+		return des_port->index;
+	} else {
+		return UINT32_MAX;
+	}
 }
 
 LILV_API
@@ -1040,7 +1078,7 @@ lilv_plugin_write_description(LilvWorld*        world,
 	for (uint32_t i = 0; i < num_ports; ++i) {
 		const LilvPort* port = plugin->ports[i];
 		SordIter* port_iter = lilv_world_query_internal(
-			world, port->node, NULL, NULL);
+			world, port->node->node, NULL, NULL);
 		sord_write_iter(port_iter, writer);
 	}
 
