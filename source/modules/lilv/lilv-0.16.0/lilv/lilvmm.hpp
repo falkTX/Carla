@@ -52,6 +52,11 @@ uri_to_path(const char* uri) {
 		return lilv_ ## prefix ## _ ## name(me, a1, a2); \
 	}
 
+#define LILV_WRAP3(RT, prefix, name, T1, a1, T2, a2, T3, a3) \
+	inline RT name(T1 a1, T2 a2, T3 a3) { \
+		return lilv_ ## prefix ## _ ## name(me, a1, a2, a3); \
+	}
+
 #define LILV_WRAP2_VOID(prefix, name, T1, a1, T2, a2) \
 	inline void name(T1 a1, T2 a2) { lilv_ ## prefix ## _ ## name(me, a1, a2); }
 
@@ -143,6 +148,26 @@ struct Nodes {
 	LILV_WRAP0(Node, nodes, get_first);
 };
 
+struct UI {
+	inline UI(const LilvUI* c_obj) : me(c_obj) {}
+	LILV_WRAP_CONVERSION(const LilvUI);
+
+	LILV_WRAP0(Node,  ui, get_uri);
+	LILV_WRAP1(bool,  ui, is_a, LilvNode*, ui_class);
+	LILV_WRAP0(Node,  ui, get_bundle_uri);
+	LILV_WRAP0(Node,  ui, get_binary_uri);
+	LILV_WRAP0(Nodes, ui, get_supported_features);
+	LILV_WRAP0(Nodes, ui, get_required_features);
+	LILV_WRAP0(Nodes, ui, get_optional_features);
+	LILV_WRAP0(Nodes, ui, get_extension_data);
+
+	const LilvUI* me;
+};
+
+struct UIs {
+	LILV_WRAP_COLL(UIs, UI, uis);
+};
+
 struct Port {
 	inline Port(const LilvPlugin* p, const LilvPort* c_obj)
 		: parent(p), me(c_obj)
@@ -170,26 +195,6 @@ struct Port {
 
 	const LilvPlugin* parent;
 	const LilvPort*   me;
-};
-
-struct UI {
-	inline UI(const LilvUI* c_obj) : me(c_obj) {}
-	LILV_WRAP_CONVERSION(const LilvUI);
-
-	LILV_WRAP0(Node,  ui, get_uri);
-	LILV_WRAP1(bool,  ui, is_a, LilvNode*, ui_class);
-	LILV_WRAP0(Node,  ui, get_bundle_uri);
-	LILV_WRAP0(Node,  ui, get_binary_uri);
-	LILV_WRAP0(Nodes, ui, get_supported_features);
-	LILV_WRAP0(Nodes, ui, get_required_features);
-	LILV_WRAP0(Nodes, ui, get_optional_features);
-	LILV_WRAP0(Nodes, ui, get_extension_data);
-
-	const LilvUI* me;
-};
-
-struct UIs {
-	LILV_WRAP_COLL(UIs, UI, uis);
 };
 
 struct Plugin {
