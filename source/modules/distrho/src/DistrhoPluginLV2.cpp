@@ -644,6 +644,10 @@ private:
     {
         fPlugin.setState(key, newValue);
 
+        // check if we want to save this key
+        if (! fPlugin.wantsStateKey(key))
+            return;
+
         // check if key already exists
         for (auto it = fStateMap.begin(), end = fStateMap.end(); it != end; ++it)
         {
@@ -656,7 +660,7 @@ private:
             }
         }
 
-        // add a new one then
+        // nope, add a new one then
         d_string d_key(key);
         fStateMap[d_key] = newValue;
     }

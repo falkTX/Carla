@@ -258,6 +258,17 @@ public:
 #endif
 
 #if DISTRHO_PLUGIN_WANT_STATE
+    bool wantsStateKey(const char* const key) const noexcept
+    {
+        for (uint32_t i=0; i < fData->stateCount; ++i)
+        {
+            if (fData->stateKeys[i] == key)
+                return true;
+        }
+
+        return false;
+    }
+
     uint32_t getStateCount() const noexcept
     {
         return fData != nullptr ? fData->stateCount : 0;

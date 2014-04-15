@@ -188,9 +188,12 @@ public:
         xWindow  = impl->win;
         assert(xWindow != 0);
 
-        pid_t pid = getpid();
-        Atom _nwp = XInternAtom(xDisplay, "_NET_WM_PID", True);
-        XChangeProperty(xDisplay, xWindow, _nwp, XA_CARDINAL, 32, PropModeReplace, (const unsigned char*)&pid, 1);
+        if (! fUsingEmbed)
+        {
+            pid_t pid = getpid();
+            Atom _nwp = XInternAtom(xDisplay, "_NET_WM_PID", True);
+            XChangeProperty(xDisplay, xWindow, _nwp, XA_CARDINAL, 32, PropModeReplace, (const unsigned char*)&pid, 1);
+        }
 #endif
 
         DBG("Success!\n");
