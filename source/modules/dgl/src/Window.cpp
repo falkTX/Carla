@@ -14,9 +14,6 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-// we need this for now
-#define XKEYFOCUSGRAB 1
-
 #include "../App.hpp"
 #include "../Widget.hpp"
 #include "../Window.hpp"
