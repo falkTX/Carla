@@ -67,7 +67,7 @@ public:
         fWindow.setTitle(title);
     }
 
-private:
+protected:
     App fApp;
     Window fWindow;
 };

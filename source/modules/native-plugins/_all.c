@@ -64,6 +64,11 @@ extern void carla_register_native_plugin_audiofile();
 extern void carla_register_native_plugin_midifile();
 #endif
 
+#ifdef WANT_PROJECTM
+// ProjectM
+extern void carla_register_native_plugin_projectm();
+#endif
+
 // SunVox File
 extern void carla_register_native_plugin_sunvoxfile();
 
@@ -120,6 +125,11 @@ void carla_register_all_plugins()
 #ifdef WANT_MIDIFILE
     // MIDI File
     carla_register_native_plugin_midifile();
+#endif
+
+#ifdef WANT_PROJECTM
+    // ProjectM
+    carla_register_native_plugin_projectm();
 #endif
 
     // SunVox File

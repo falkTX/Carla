@@ -26,6 +26,11 @@ ifeq ($(HAVE_MF_DEPS),true)
 ALL_C_FLAGS += -DWANT_MIDIFILE
 endif
 
+# ProjectM
+ifeq ($(HAVE_PM_DEPS),true)
+ALL_C_FLAGS += -DWANT_PROJECTM
+endif
+
 # ZynAddSubFX
 ifeq ($(HAVE_ZYN_DEPS),true)
 ALL_C_FLAGS += -DWANT_ZYNADDSUBFX
@@ -37,6 +42,14 @@ endif
 ifeq ($(HAVE_MF_DEPS),true)
 MF_CXX_FLAGS  = $(BUILD_CXX_FLAGS)
 MF_CXX_FLAGS += $(shell pkg-config --cflags smf)
+endif
+
+# --------------------------------------------------------------
+# Flags for ProjectM
+
+ifeq ($(HAVE_PM_DEPS),true)
+PM_CXX_FLAGS  = $(BUILD_CXX_FLAGS)
+PM_CXX_FLAGS += $(shell pkg-config --cflags libprojectM)
 endif
 
 # --------------------------------------------------------------
@@ -119,6 +132,13 @@ endif
 
 ifeq ($(HAVE_MF_DEPS),true)
 OBJS += midi-file.cpp.o
+endif
+
+# --------------------------------------------------------------
+# ProjectM
+
+ifeq ($(HAVE_PM_DEPS),true)
+OBJS += projectm.cpp.o
 endif
 
 # --------------------------------------------------------------
@@ -254,6 +274,9 @@ midi-file.cpp.o: midi-file.cpp midi-base.hpp $(CXXDEPS)
 
 midi-sequencer.cpp.o: midi-sequencer.cpp midi-base.hpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+projectm.cpp.o: projectm.cpp $(CXXDEPS)
+	$(CXX) $< $(PM_CXX_FLAGS) -c -o $@
 
 notes.cpp.o: notes.cpp $(CXXDEPS) ../CarlaNativeExtUI.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@

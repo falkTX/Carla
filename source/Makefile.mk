@@ -210,6 +210,7 @@ endif
 
 HAVE_AF_DEPS      = $(shell pkg-config --exists sndfile && echo true)
 HAVE_MF_DEPS      = $(shell pkg-config --exists smf && echo true)
+HAVE_PM_DEPS      = $(shell pkg-config --exists libprojectM && echo true)
 HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
 HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk_images ntk && echo true)
 
@@ -387,6 +388,10 @@ NATIVE_PLUGINS_LIBS += $(DGL_LIBS)
 
 ifeq ($(HAVE_MF_DEPS),true)
 NATIVE_PLUGINS_LIBS += $(shell pkg-config --libs smf)
+endif
+
+ifeq ($(HAVE_PM_DEPS),true)
+NATIVE_PLUGINS_LIBS += $(shell pkg-config --libs libprojectM)
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
