@@ -14,6 +14,9 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+// we need this for now
+#define XKEYFOCUSGRAB 1
+
 #include "../App.hpp"
 #include "../Widget.hpp"
 #include "../Window.hpp"
@@ -198,8 +201,10 @@ public:
 
         DBG("Success!\n");
 
+#if 0
         // process any initial events
         puglProcessEvents(fView);
+#endif
 
         fApp._addWindow(fSelf);
     }
@@ -583,6 +588,7 @@ protected:
         //DBG("PUGL: onDisplay\n");
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glLoadIdentity();
 
         FOR_EACH_WIDGET(it)
         {

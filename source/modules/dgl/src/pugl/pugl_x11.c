@@ -194,8 +194,6 @@ static void
 puglDisplay(PuglView* view)
 {
 	glXMakeCurrent(view->impl->display, view->impl->win, view->impl->ctx);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glLoadIdentity();
 
 	if (view->displayFunc) {
 		view->displayFunc(view);
@@ -364,7 +362,7 @@ puglProcessEvents(PuglView* view)
 				}
 			}
 			break;
-#ifdef PUGL_GRAB_FOCUS
+#ifdef XKEYFOCUSGRAB
 		case EnterNotify:
 			XSetInputFocus(view->impl->display,
 			               view->impl->win,
