@@ -137,3 +137,5 @@ source/includes/asio/
 source/includes/rewire/
 source/includes/vst/
 source/includes/vst3/
+
+data/windows/python/
