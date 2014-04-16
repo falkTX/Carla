@@ -115,7 +115,7 @@ void CarlaPluginThread::run()
         case PLUGIN_THREAD_DSSI_GUI:
         case PLUGIN_THREAD_LV2_GUI:
         case PLUGIN_THREAD_VST_GUI:
-            fEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, fPlugin->getId(), -1, 0, 0.0f, nullptr);
+            fEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, fPlugin->getId(), 0, 0, 0.0f, nullptr);
             fProcess->terminate();
             return;
 
