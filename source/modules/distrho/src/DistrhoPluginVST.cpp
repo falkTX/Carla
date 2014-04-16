@@ -753,7 +753,7 @@ private:
         fPlugin.setState(newKey, newValue);
 
         // check if we want to save this key
-        if (! fPlugin.wantsStateKey(key))
+        if (! fPlugin.wantsStateKey(newKey))
             return;
 
         // check if key already exists
