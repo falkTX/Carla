@@ -34,7 +34,6 @@ using DGL::ImageAboutWindow;
 using DGL::ImageButton;
 using DGL::ImageKnob;
 using DGL::ImageSlider;
-using DGL::Rectangle;
 
 START_NAMESPACE_DISTRHO
 
@@ -115,7 +114,7 @@ private:
     bool fDragValid;
     int  fLastX;
     int  fLastY;
-    Rectangle<int> fCanvasArea;
+    DGL::Rectangle<int> fCanvasArea;
     float orbitX, orbitY, subOrbitX, subOrbitY;
 };
 
