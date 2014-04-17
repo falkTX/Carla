@@ -1908,7 +1908,7 @@ public:
         carla_stdout("  sizeof(BridgeTimeInfo):   " P_SIZE, sizeof(BridgeTimeInfo));
 
         // lock memory
-        fShmControl.lockMemory();
+        //fShmControl.lockMemory();
 
         // initial values
         fShmControl.writeOpcode(kPluginBridgeOpcodeNull);

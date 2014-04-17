@@ -294,15 +294,18 @@ private:
 
     static void memoryBarrier() noexcept
     {
+        // this breaks win32<=>linux plugin bridges
+#if 0
         try {
 #if defined(CARLA_OS_MAC)
-          ::OSMemoryBarrier();
+            ::OSMemoryBarrier();
 #elif defined(CARLA_OS_WIN)
             ::MemoryBarrier();
 #elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 401
             ::__sync_synchronize();
 #endif
         } CARLA_SAFE_EXCEPTION("RingBufferControl::memoryBarrier");
+#endif
     }
 
     CARLA_PREVENT_HEAP_ALLOCATION
