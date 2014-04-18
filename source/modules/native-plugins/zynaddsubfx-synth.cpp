@@ -552,6 +552,9 @@ public:
             fMaster->partonoff(i, 1);
 
         sPrograms.init();
+
+        // create instance if needed
+        getGlobalMutex();
     }
 
     ~ZynAddSubFxPlugin() override
@@ -626,6 +629,8 @@ protected:
             FLOAT_CLEAR(outBuffer[1], frames);
             return;
         }
+
+        const CarlaMutexLocker csm(getGlobalMutex());
 
         for (uint32_t i=0; i < midiEventCount; ++i)
         {
@@ -764,6 +769,16 @@ private:
     bool     fIsActive;
 
     ZynAddSubFxThread fThread;
+
+    // -------------------------------------------------------------------
+
+    static CarlaMutex& getGlobalMutex() noexcept
+    {
+        static CarlaMutex m;
+        return m;
+    }
+
+    // -------------------------------------------------------------------
 
 public:
     static NativePluginHandle _instantiate(const NativeHostDescriptor* host)
