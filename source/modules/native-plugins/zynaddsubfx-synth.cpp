@@ -553,8 +553,10 @@ public:
 
         sPrograms.init();
 
+#if 0
         // create instance if needed
         getGlobalMutex();
+#endif
     }
 
     ~ZynAddSubFxPlugin() override
@@ -630,7 +632,9 @@ protected:
             return;
         }
 
+#if 0
         const CarlaMutexLocker csm(getGlobalMutex());
+#endif
 
         for (uint32_t i=0; i < midiEventCount; ++i)
         {
@@ -770,6 +774,7 @@ private:
 
     ZynAddSubFxThread fThread;
 
+#if 0
     // -------------------------------------------------------------------
 
     static CarlaMutex& getGlobalMutex() noexcept
@@ -777,6 +782,7 @@ private:
         static CarlaMutex m;
         return m;
     }
+#endif
 
     // -------------------------------------------------------------------
 
