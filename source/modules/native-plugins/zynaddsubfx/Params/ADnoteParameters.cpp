@@ -39,7 +39,7 @@ int ADnote_unison_sizes[] =
 ADnoteParameters::ADnoteParameters(FFTwrapper *fft_)
     :PresetsArray()
 {
-    setpresettype("Padsyth");
+    setpresettype("Padsynth");
     fft = fft_;
 
 

@@ -26,8 +26,6 @@
 #include "../DSP/Unison.h"
 #include <cmath>
 
-//todo: EarlyReflections, Prdelay, Perbalance
-
 Reverb::Reverb(bool insertion_, float *efxoutl_, float *efxoutr_, unsigned int srate, int bufsize)
     :Effect(insertion_, efxoutl_, efxoutr_, NULL, 0, srate, bufsize),
       // defaults
@@ -35,8 +33,6 @@ Reverb::Reverb(bool insertion_, float *efxoutl_, float *efxoutr_, unsigned int s
       Ptime(64),
       Pidelay(40),
       Pidelayfb(0),
-      Prdelay(0),
-      Perbalance(64),
       Plpf(127),
       Phpf(0),
       Plohidamp(80),
@@ -484,8 +480,6 @@ unsigned char Reverb::getpar(int npar) const
         case 2:  return Ptime;
         case 3:  return Pidelay;
         case 4:  return Pidelayfb;
-//      case 5:  return Prdelay;
-//      case 6:  return Perbalance;
         case 7:  return Plpf;
         case 8:  return Phpf;
         case 9:  return Plohidamp;

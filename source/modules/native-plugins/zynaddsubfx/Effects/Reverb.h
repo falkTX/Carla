@@ -47,8 +47,6 @@ class Reverb:public Effect
         unsigned char Ptime;        //duration
         unsigned char Pidelay;      //initial delay
         unsigned char Pidelayfb;    //initial feedback
-        unsigned char Prdelay;      //delay between ER/Reverbs
-        unsigned char Perbalance;   //EarlyReflections/Reverb Balance
         unsigned char Plpf;
         unsigned char Phpf;
         unsigned char Plohidamp;    //Low/HighFrequency Damping
@@ -69,11 +67,10 @@ class Reverb:public Effect
         void setbandwidth(unsigned char _Pbandwidth);
         void processmono(int ch, float *output, float *inputbuf);
 
-        float erbalance;
 
         //Parameters
         int   lohidamptype;   //0=disable, 1=highdamp (lowpass), 2=lowdamp (highpass)
-        int   idelaylen, rdelaylen;
+        int   idelaylen;
         int   idelayk;
         float lohifb;
         float idelayfb;

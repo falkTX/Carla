@@ -42,7 +42,6 @@ class EffectLFO
         float xl, xr;
         float incx;
         float ampl1, ampl2, ampr1, ampr2; //necessary for "randomness"
-        float lfointensity;
         float lfornd;
         char  lfotype;
 

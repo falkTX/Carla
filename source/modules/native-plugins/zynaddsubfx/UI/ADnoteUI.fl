@@ -1010,12 +1010,12 @@ resui->resonancewindow->show();}
       }
       Fl_Button {} {
         label C
-        callback {presetsui->copy(pars);}
+        callback {presetsui->copyArray(pars);}
         xywh {405 405 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 7
       }
       Fl_Button {} {
         label P
-        callback {presetsui->paste(pars,this);}
+        callback {presetsui->pasteArray(pars,this);}
         xywh {435 405 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 7
       }
     }

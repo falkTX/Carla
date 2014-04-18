@@ -394,8 +394,8 @@ void Master::AudioOut(float *outl, float *outr)
         if(sysefx[nefx]->geteffect() == 0)
             continue;  //the effect is disabled
 
-        float *tmpmixl = getTmpBuffer();
-        float *tmpmixr = getTmpBuffer();
+        float tmpmixl[synth->buffersize];
+        float tmpmixr[synth->buffersize];
         //Clean up the samples used by the system effects
         memset(tmpmixl, 0, synth->bufferbytes);
         memset(tmpmixr, 0, synth->bufferbytes);
@@ -436,9 +436,6 @@ void Master::AudioOut(float *outl, float *outr)
             outl[i] += tmpmixl[i] * outvol;
             outr[i] += tmpmixr[i] * outvol;
         }
-
-        returnTmpBuffer(tmpmixl);
-        returnTmpBuffer(tmpmixr);
     }
 
     //Mix all parts

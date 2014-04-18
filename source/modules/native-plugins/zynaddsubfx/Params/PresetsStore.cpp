@@ -94,7 +94,7 @@ void PresetsStore::rescanforpresets(const string &type)
     //std::cout << "Of Type: " << type << std::endl;
 
     clearpresets();
-    string ftype = "." + type + ".xpz";
+    string ftype = "." + type.substr(1) + ".xpz";
 
     for(int i = 0; i < MAX_BANK_ROOT_DIRS; ++i) {
         if(config.cfg.presetsDirList[i].empty())
@@ -155,7 +155,7 @@ void PresetsStore::copypreset(XMLwrapper *xml, char *type, string name)
     else
         tmps = "/";
 
-    string filename("" + dirname + tmps + name + type);
+    string filename("" + dirname + tmps + name + "." + &type[1] + ".xpz");
 
     xml->saveXMLfile(filename);
 }

@@ -26,7 +26,7 @@
 PADnoteParameters::PADnoteParameters(FFTwrapper *fft_,
                                      pthread_mutex_t *mutex_):Presets()
 {
-    setpresettype("Ppadsyth");
+    setpresettype("Ppadsynth");
 
     fft   = fft_;
     mutex = mutex_;

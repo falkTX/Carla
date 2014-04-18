@@ -56,13 +56,6 @@ extern class Config config;
 
 void invSignal(float *sig, size_t len);
 
-//Memory pool for temporary buffers
-//No allocation in *normal* case
-//All should be sized to synth->buffersize
-float *getTmpBuffer();
-void returnTmpBuffer(float *buf);
-void clearTmpBuffers(void);
-
 template<class T>
 std::string stringFrom(T x)
 {

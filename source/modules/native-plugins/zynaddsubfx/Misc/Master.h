@@ -167,7 +167,6 @@ class Master
 
 
     private:
-        bool   nullRun;
         vuData vu;
         float  volume;
         float  sysefxvol[NUM_SYS_EFX][NUM_MIDI_PARTS];

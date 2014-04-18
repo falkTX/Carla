@@ -332,12 +332,12 @@ pars->changed=true;} open
       }
       Fl_Button {} {
         label C
-        callback {presetsui->copy(pars);}
+        callback {presetsui->copyArray(pars);}
         xywh {186 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 7
       }
       Fl_Button {} {
         label P
-        callback {presetsui->paste(pars,this);}
+        callback {presetsui->pasteArray(pars,this);}
         xywh {203 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 7
       }
     }

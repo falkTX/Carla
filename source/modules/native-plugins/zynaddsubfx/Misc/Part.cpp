@@ -947,8 +947,8 @@ void Part::RunNote(unsigned int k)
                 continue;
             noteplay++;
 
-            float *tmpoutr = getTmpBuffer();
-            float *tmpoutl = getTmpBuffer();
+            float tmpoutr[synth->buffersize];
+            float tmpoutl[synth->buffersize];
             (*note)->noteout(&tmpoutl[0], &tmpoutr[0]);
 
             if((*note)->finished()) {
@@ -959,8 +959,6 @@ void Part::RunNote(unsigned int k)
                 partfxinputl[sendcurrenttofx][i] += tmpoutl[i];
                 partfxinputr[sendcurrenttofx][i] += tmpoutr[i];
             }
-            returnTmpBuffer(tmpoutr);
-            returnTmpBuffer(tmpoutl);
         }
     }
 

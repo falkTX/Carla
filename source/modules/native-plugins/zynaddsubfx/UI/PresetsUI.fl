@@ -135,8 +135,15 @@ pui->refresh();}
       Fl_Button deletepbutton {
         label Delete
         callback {int n=pastebrowse->value();
-if (n!=0) p->deletepreset(n);
-rescan();}
+
+if (this->p_is_PresetArray) {
+    PresetsArray *pre = dynamic_cast<PresetsArray *>(p);
+    if (n!=0) pre->deletepreset(n);
+    rescanArray();
+} else {
+    if (n!=0) p->deletepreset(n);
+    rescan();
+}} selected
         xywh {180 355 75 20} box THIN_UP_BOX
       }
     }
@@ -173,6 +180,7 @@ if (but) {
 	pastetypetext->label(&p->type[1]);
 	if (p->checkclipboardtype()) pastebutton->activate();
 		else pastebutton->deactivate();
+	this->p_is_PresetArray = false;
 	pastewin->show();
    };} {}
   }
@@ -180,13 +188,13 @@ if (but) {
     code {PresetsArray *pre = dynamic_cast<PresetsArray *>(p);
 if(pre)
     pre->setelement(n);
-copy(p);} {}
+copyArray(p);} {}
   }
   Function {paste(Presets *p,PresetsUI_ *pui,int n)} {} {
     code {PresetsArray *pre = dynamic_cast<PresetsArray *>(p);
 if(pre)
     pre->setelement(n);
-paste(p,pui);} {}
+pasteArray(p,pui);} {}
   }
   Function {rescan()} {} {
     code {copybrowse->clear();
@@ -201,9 +209,68 @@ for (unsigned int i=0;i<presetsstore.presets.size();i++){
    pastebrowse->add(name.c_str());
 };} {}
   }
-  decl {Presets *p;} {public
+  decl {Presets *p;} {public local
   }
-  decl {PresetsUI_ *pui;} {public
+  decl {PresetsUI_ *pui;} {public local
+  }
+  Function {copyArray(Presets *p)} {open
+  } {
+    code {PresetsArray *pre = dynamic_cast<PresetsArray *>(p);
+
+copybutton->activate();
+copypbutton->deactivate();
+
+this->p=p;
+this->pui=NULL;
+bool but=(Fl::event_button()!=FL_LEFT_MOUSE);
+presetname->cut(0,presetname->maximum_size());
+
+if (but) pre->copy(NULL);
+   else {
+        rescanArray();
+	copytypetext->label(&pre->type[1]);
+	copywin->show();
+   };} {}
+  }
+  Function {pasteArray(Presets *p,PresetsUI_ *pui)} {open
+  } {
+    code {PresetsArray *pre = dynamic_cast<PresetsArray *>(p);
+
+this->p=p;
+this->pui=pui;
+bool but=(Fl::event_button()!=FL_LEFT_MOUSE);
+pastepbutton->deactivate();
+deletepbutton->deactivate();
+
+if (but) {
+	pre->paste(0);
+	pui->refresh();
+} else {
+        rescanArray();
+	pastetypetext->label(&pre->type[1]);
+	if (pre->checkclipboardtype()) pastebutton->activate();
+		else pastebutton->deactivate();
+	this->p_is_PresetArray = true;
+	pastewin->show();
+   };} {}
+  }
+  Function {rescanArray()} {open
+  } {
+    code {PresetsArray *pre = dynamic_cast<PresetsArray *>(p);
+
+copybrowse->clear();
+pastebrowse->clear();
+pre->rescanforpresets();
+
+for (unsigned int i=0;i<presetsstore.presets.size();i++){
+   std::string name=presetsstore.presets[i].name;
+   if(name.empty())
+       continue;
+   copybrowse->add(name.c_str());
+   pastebrowse->add(name.c_str());
+};} {}
+   }
+  decl {bool p_is_PresetArray;} {public
   }
 } 
 

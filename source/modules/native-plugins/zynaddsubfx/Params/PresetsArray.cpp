@@ -130,6 +130,16 @@ bool PresetsArray::checkclipboardtype()
     return presetsstore.checkclipboardtype(type);
 }
 
+void PresetsArray::rescanforpresets()
+{
+    char type[MAX_PRESETTYPE_SIZE];
+    strcpy(type, this->type);
+    if(nelement != -1)
+        strcat(type, "n");
+
+    presetsstore.rescanforpresets(type);
+}
+
 void PresetsArray::setelement(int n)
 {
     nelement = n;
