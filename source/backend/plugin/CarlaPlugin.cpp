@@ -1723,6 +1723,10 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
     }
 #endif
 
+    // send possible extra data first
+    if (updateOscDataExtra())
+        pData->engine->idleOsc();
+
     osc_send_sample_rate(pData->osc.data, static_cast<float>(pData->engine->getSampleRate()));
 
     for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
@@ -1757,6 +1761,11 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
         pData->transientTryCounter = 1;
 
     carla_stdout("CarlaPlugin::updateOscData() - done");
+}
+
+bool CarlaPlugin::updateOscDataExtra() override
+{
+    return false;
 }
 
 // void CarlaPlugin::freeOscData()

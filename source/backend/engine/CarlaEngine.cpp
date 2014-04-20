@@ -2175,7 +2175,6 @@ bool CarlaEngine::isOscControlRegistered() const noexcept
 }
 #endif
 
-
 void CarlaEngine::idleOsc() const noexcept
 {
     try {

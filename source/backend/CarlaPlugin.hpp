@@ -719,7 +719,13 @@ public:
      * Update the plugin's internal OSC data according to \a source and \a url.\n
      * This is used for OSC-GUI bridges.
      */
-    virtual void updateOscData(const lo_address& source, const char* const url);
+    void updateOscData(const lo_address& source, const char* const url);
+
+    /*!
+     * Update the plugin's extra OSC data, called from the start of updateOscData().\n
+     * The default implementation does nothing.
+     */
+    virtual bool updateOscDataExtra();
 
     /*!
      * Free the plugin's internal OSC memory data.

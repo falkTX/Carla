@@ -563,15 +563,12 @@ public:
     {
         sendOscUpdate();
 
-        if (fIsReady)
-            return;
-
-        for (int i=0; i < 2000; ++i)
+        for (;;)
         {
+            oscWait();
+
             if (fIsReady)
                 return;
-            oscIdle();
-            carla_msleep(10);
         }
     }
 
@@ -601,8 +598,8 @@ public:
             fCustomURIDs.append(carla_strdup(uri));
         }
 
-        //if (isOscControlRegistered())
-        sendOscLv2UridMap(urid, uri);
+        if (isOscControlRegistered())
+            sendOscLv2UridMap(urid, uri);
 
         return urid;
     }
@@ -668,7 +665,7 @@ public:
 
             const float value(*(const float*)buffer);
 
-            //if (isOscControlRegistered())
+            if (isOscControlRegistered())
                 sendOscControl(portIndex, value);
         }
         else if (format == CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM || CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)
@@ -679,7 +676,7 @@ public:
             if (bufferSize == 0 || buffer == nullptr)
                 return;
 
-            //if (isOscControlRegistered())
+            if (isOscControlRegistered())
                 sendOscLv2AtomTransfer(portIndex, QByteArray((const char*)buffer, bufferSize).toBase64().constData());
         }
         else
@@ -728,6 +725,7 @@ public:
                 {
                     if (i != urid)
                         continue;
+                    CARLA_SAFE_ASSERT(it.getValue() == nullptr);
                     it.setValue(carla_strdup(uri));
                     break;
                 }

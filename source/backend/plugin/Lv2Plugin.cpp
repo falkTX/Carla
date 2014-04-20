@@ -3505,14 +3505,14 @@ public:
     // -------------------------------------------------------------------
     // OSC stuff
 
-    void updateOscData(const lo_address& source, const char* const url) override
+    bool updateOscDataExtra() override
     {
-        CarlaPlugin::updateOscData(source, url);
-
         for (size_t i=CARLA_URI_MAP_ID_COUNT, count=fCustomURIDs.count(); i < count; ++i)
             osc_send_lv2_urid_map(pData->osc.data, static_cast<uint32_t>(i), fCustomURIDs.getAt(i));
 
         osc_send_lv2_urid_map(pData->osc.data, CARLA_URI_MAP_ID_NULL, "Complete");
+
+        return true;
     }
 
     // -------------------------------------------------------------------

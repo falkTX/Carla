@@ -75,6 +75,7 @@ public:
 
     void oscInit(const char* const url);
     bool oscIdle() const;
+    void oscWait() const;
     void oscClose();
 
     bool isOscControlRegistered() const noexcept;
