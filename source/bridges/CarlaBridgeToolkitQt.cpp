@@ -88,7 +88,8 @@ public:
 #ifdef BRIDGE_CONTAINER
           fEmbedContainer(nullptr),
 #endif
-          fMsgTimer(0)
+          fMsgTimer(0),
+          fNeedsShow(false)
     {
         carla_debug("CarlaBridgeToolkitQt::CarlaBridgeToolkitQt(%p, \"%s\")", client, uiTitle);
 
@@ -190,10 +191,11 @@ public:
                 fWindow->setWindowFlags(fWindow->windowFlags() | Qt::WindowStaysOnTopHint);
         }
 
-        if (showGui)
+        if (showGui || fNeedsShow)
+        {
             show();
-        else
-            kClient->sendOscUpdate();
+            fNeedsShow = false;
+        }
 
         fMsgTimer = startTimer(30);
 
@@ -254,8 +256,9 @@ public:
 
     void show() override
     {
-        CARLA_ASSERT(fWindow != nullptr);
         carla_debug("CarlaBridgeToolkitQt::show()");
+
+        fNeedsShow = true;
 
         if (fWindow != nullptr)
             fWindow->show();
@@ -263,8 +266,9 @@ public:
 
     void hide() override
     {
-        CARLA_ASSERT(fWindow != nullptr);
         carla_debug("CarlaBridgeToolkitQt::hide()");
+
+        fNeedsShow = false;
 
         if (fWindow != nullptr)
             fWindow->hide();
@@ -313,7 +317,8 @@ protected:
     QEmbedContainer* fEmbedContainer;
 #endif
 
-    int fMsgTimer;
+    int  fMsgTimer;
+    bool fNeedsShow;
 
     void handleTimeout()
     {

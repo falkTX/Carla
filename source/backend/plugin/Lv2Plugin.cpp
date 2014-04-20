@@ -39,6 +39,8 @@ extern "C" {
 #include <QtCore/QFile>
 #include <QtCore/QUrl>
 
+#define URI_CARLA_WORKER "http://kxstudio.sf.net/ns/carla/worker"
+
 // -----------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
@@ -360,12 +362,6 @@ public:
 
         for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; ++i)
             fCustomURIDs.append(nullptr);
-
-        // FIXME
-        fCustomURIDs.append(carla_strdup("http://drobilla.net/ns/ingen#GraphUIGtk2"));
-        fCustomURIDs.append(carla_strdup("http://lv2plug.in/ns/ext/state#interface"));
-        fCustomURIDs.append(carla_strdup("ingen:/root"));
-        fCustomURIDs.append(carla_strdup("ingen:/root/"));
 
 #if defined(__clang__)
 # pragma clang diagnostic push
@@ -2594,12 +2590,12 @@ public:
                 if (! fAtomQueueIn.isEmpty())
                 {
                     const LV2_Atom* atom;
-                    uint32_t portIndex;
-
-                    const uint32_t j = fEventsIn.ctrlIndex;
+                    uint32_t j, portIndex;
 
                     for (; fAtomQueueIn.get(&atom, &portIndex);)
                     {
+                        j = (portIndex < fEventsIn.count) ? portIndex : fEventsIn.ctrlIndex;
+
                         if (atom->type == CARLA_URI_MAP_ID_ATOM_WORKER)
                         {
                             CARLA_SAFE_ASSERT_CONTINUE(fExt.worker != nullptr && fExt.worker->work_response != nullptr);
@@ -3004,8 +3000,9 @@ public:
                             fEventsOut.ctrl->port->writeMidiEvent(static_cast<uint32_t>(ev->time.frames), static_cast<uint8_t>(ev->body.size), data);
                         }
                     }
-                    else if (ev->body.type == CARLA_URI_MAP_ID_ATOM_BLANK)
+                    else //if (ev->body.type == CARLA_URI_MAP_ID_ATOM_BLANK)
                     {
+                        //carla_stdout("Got out event, %s", carla_lv2_urid_unmap(this, ev->body.type));
                         fAtomQueueOut.put(&ev->body, fEventsOut.ctrl->rindex);
                     }
 
@@ -3514,6 +3511,8 @@ public:
 
         for (size_t i=CARLA_URI_MAP_ID_COUNT, count=fCustomURIDs.count(); i < count; ++i)
             osc_send_lv2_urid_map(pData->osc.data, static_cast<uint32_t>(i), fCustomURIDs.getAt(i));
+
+        osc_send_lv2_urid_map(pData->osc.data, CARLA_URI_MAP_ID_NULL, "Complete");
     }
 
     // -------------------------------------------------------------------
@@ -4030,7 +4029,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fExt.worker != nullptr && fExt.worker->work != nullptr, LV2_WORKER_ERR_UNKNOWN);
         CARLA_SAFE_ASSERT_RETURN(fEventsIn.ctrl != nullptr, LV2_WORKER_ERR_UNKNOWN);
-        carla_stdout("Lv2Plugin::handleWorkerSchedule(%i, %p)", size, data);
+        carla_debug("Lv2Plugin::handleWorkerSchedule(%i, %p)", size, data);
 
         if (pData->engine->isOffline())
         {
@@ -4042,18 +4041,18 @@ public:
         atom.size = size;
         atom.type = CARLA_URI_MAP_ID_ATOM_WORKER;
 
-        return fAtomQueueOut.putChunk(&atom, data, fEventsIn.ctrl->rindex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
+        return fAtomQueueOut.putChunk(&atom, data, fEventsOut.ctrlIndex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
     }
 
     LV2_Worker_Status handleWorkerRespond(const uint32_t size, const void* const data)
     {
-        carla_stdout("Lv2Plugin::handleWorkerRespond(%i, %p)", size, data);
+        carla_debug("Lv2Plugin::handleWorkerRespond(%i, %p)", size, data);
 
         LV2_Atom atom;
         atom.size = size;
         atom.type = CARLA_URI_MAP_ID_ATOM_WORKER;
 
-        return fAtomQueueIn.putChunk(&atom, data, fEventsIn.ctrl->rindex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
+        return fAtomQueueIn.putChunk(&atom, data, fEventsIn.ctrlIndex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
     }
 
     // -------------------------------------------------------------------
@@ -4121,31 +4120,51 @@ public:
         CARLA_SAFE_ASSERT_RETURN(bufferSize > 0,);
         carla_debug("Lv2Plugin::handleUiWrite(%i, %i, %i, %p)", rindex, bufferSize, format, buffer);
 
+        uint32_t index = LV2UI_INVALID_PORT_INDEX;
+
         switch (format)
         {
-        case CARLA_URI_MAP_ID_NULL:
+        case CARLA_URI_MAP_ID_NULL: {
             CARLA_SAFE_ASSERT_RETURN(bufferSize == sizeof(float),);
 
             for (uint32_t i=0; i < pData->param.count; ++i)
             {
-                if (pData->param.data[i].rindex == static_cast<int32_t>(rindex))
-                {
-                    const float value(*(const float*)buffer);
-
-                    if (fParamBuffers[i] != value)
-                        setParameterValue(i, value, false, true, true);
-                    break;
-                }
+                if (pData->param.data[i].rindex != static_cast<int32_t>(rindex))
+                    continue;
+                index = i;
+                break;
             }
-            break;
+
+            CARLA_SAFE_ASSERT_RETURN(index != LV2UI_INVALID_PORT_INDEX,);
+
+            const float value(*(const float*)buffer);
+
+            if (fParamBuffers[index] != value)
+                setParameterValue(index, value, false, true, true);
+
+        } break;
 
         case CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM:
-        case CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT:
-            // plugins sometimes fails on this, not good...
-            CARLA_SAFE_ASSERT_INT2(((const LV2_Atom*)buffer)->size == bufferSize, ((const LV2_Atom*)buffer)->size, bufferSize);
+        case CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT: {
+            CARLA_SAFE_ASSERT_RETURN(bufferSize >= sizeof(LV2_Atom),);
 
-            fAtomQueueIn.put((const LV2_Atom*)buffer, rindex);
-            break;
+            // plugins sometimes fail on this, not good...
+            CARLA_SAFE_ASSERT_INT2(((const LV2_Atom*)buffer)->size == bufferSize-sizeof(LV2_Atom), ((const LV2_Atom*)buffer)->size, bufferSize-sizeof(LV2_Atom));
+
+            for (uint32_t i=0; i < fEventsIn.count; ++i)
+            {
+                if (fEventsIn.data[i].rindex != rindex)
+                    continue;
+                index = i;
+                break;
+            }
+
+            // for bad plugins
+            CARLA_SAFE_ASSERT(index != LV2UI_INVALID_PORT_INDEX);
+            index = fEventsIn.ctrlIndex;
+
+            fAtomQueueIn.put((const LV2_Atom*)buffer, index);
+        } break;
 
         default:
             carla_stdout("Lv2Plugin::handleUiWrite(%i, %i, %i:\"%s\", %p) - unknown format", rindex, bufferSize, format, carla_lv2_urid_unmap(this, format), buffer);
@@ -4921,7 +4940,7 @@ public:
     void handleTransferAtom(const uint32_t portIndex, const LV2_Atom* const atom)
     {
         CARLA_SAFE_ASSERT_RETURN(atom != nullptr,);
-        carla_debug("Lv2Plugin::handleTransferAtom(%i, %p)", portIndex, atom);
+        carla_stdout("Lv2Plugin::handleTransferAtom(%i, %p)", portIndex, atom);
 
         fAtomQueueIn.put(atom, portIndex);
     }
@@ -4930,7 +4949,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL,);
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0',);
-        carla_debug("Lv2Plugin::handleUridMap(%i v " P_SIZE ", \"%s\")", urid, fCustomURIDs.count()-1, uri);
+        carla_stdout("Lv2Plugin::handleUridMap(%i v " P_SIZE ", \"%s\")", urid, fCustomURIDs.count()-1, uri);
 
         if (urid < fCustomURIDs.count())
         {
@@ -5308,6 +5327,10 @@ private:
         if (std::strcmp(uri, LV2_PARAMETERS__sampleRate) == 0)
             return CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE;
 
+        // Custom
+        if (std::strcmp(uri, URI_CARLA_WORKER) == 0)
+            return CARLA_URI_MAP_ID_ATOM_WORKER;
+
         // Custom types
         return ((Lv2Plugin*)handle)->getCustomURID(uri);
     }
@@ -5362,7 +5385,7 @@ private:
         if (urid == CARLA_URI_MAP_ID_ATOM_VECTOR)
             return LV2_ATOM__Vector;
         if (urid == CARLA_URI_MAP_ID_ATOM_WORKER)
-            return nullptr; // custom
+            return URI_CARLA_WORKER; // custom
         if (urid == CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM)
             return LV2_ATOM__atomTransfer;
         if (urid == CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)

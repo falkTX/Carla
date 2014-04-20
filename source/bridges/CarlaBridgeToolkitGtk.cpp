@@ -1,6 +1,6 @@
 /*
  * Carla Bridge Toolkit, Gtk version
- * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -47,6 +47,7 @@ class CarlaToolkitGtk : public CarlaBridgeToolkit
 public:
     CarlaToolkitGtk(CarlaBridgeClient* const client, const char* const uiTitle)
         : CarlaBridgeToolkit(client, uiTitle),
+          fNeedsShow(false),
           fWindow(nullptr),
           fLastX(0),
           fLastY(0),
@@ -118,10 +119,11 @@ public:
                gtk_window_set_keep_above(GTK_WINDOW(fWindow), true);
         }
 
-        if (showGui)
+        if (showGui || fNeedsShow)
+        {
             show();
-        else
-            kClient->sendOscUpdate();
+            fNeedsShow = false;
+        }
 
         g_timeout_add(30, gtk_ui_timeout, this);
         g_signal_connect(fWindow, "destroy", G_CALLBACK(gtk_ui_destroy), this);
@@ -149,8 +151,9 @@ public:
 
     void show() override
     {
-        CARLA_ASSERT(fWindow != nullptr);
         carla_debug("CarlaToolkitGtk::show()");
+
+        fNeedsShow = true;
 
         if (fWindow != nullptr)
             gtk_widget_show_all(fWindow);
@@ -158,8 +161,9 @@ public:
 
     void hide() override
     {
-        CARLA_ASSERT(fWindow != nullptr);
         carla_debug("CarlaToolkitGtk::hide()");
+
+        fNeedsShow = false;
 
         if (fWindow != nullptr)
             gtk_widget_hide(fWindow);
@@ -177,6 +181,7 @@ public:
     // ---------------------------------------------------------------------
 
 protected:
+    bool fNeedsShow;
     GtkWidget* fWindow;
 
     gint fLastX;

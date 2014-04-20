@@ -305,7 +305,7 @@ void osc_send_lv2_urid_map(const CarlaOscData& oscData, const uint32_t urid, con
 {
     CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr && oscData.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(urid != 0,);
+    //CARLA_SAFE_ASSERT_RETURN(urid != 0,);
     CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0',);
     carla_debug("osc_send_lv2_urid_map(path:\"%s\", %u, \"%s\")", oscData.path, urid, uri);
 

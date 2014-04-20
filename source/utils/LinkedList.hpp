@@ -101,6 +101,12 @@ public:
             return fData->value;
         }
 
+        void setValue(const T& value) noexcept
+        {
+            fData = list_entry(fEntry, Data, siblings);
+            fData->value = value;
+        }
+
     private:
         Data* fData;
         k_list_head* fEntry;

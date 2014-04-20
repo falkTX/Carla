@@ -1,6 +1,6 @@
 /*
  * Carla Bridge UI, LV2 version
- * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -22,9 +22,7 @@
 
 #include <QtCore/QDir>
 
-extern "C" {
-#include "rtmempool/rtmempool-lv2.h"
-}
+#define URI_CARLA_WORKER "http://kxstudio.sf.net/ns/carla/worker"
 
 // -----------------------------------------------------
 
@@ -184,6 +182,7 @@ public:
           fDescriptor(nullptr),
           fRdfDescriptor(nullptr),
           fRdfUiDescriptor(nullptr),
+          fIsReady(false),
 #if defined(BRIDGE_COCOA) || defined(BRIDGE_HWND) || defined(BRIDGE_X11)
           fIsResizable(false)
 #else
@@ -194,12 +193,6 @@ public:
 
         for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; ++i)
             fCustomURIDs.append(nullptr);
-
-        // FIXME
-        fCustomURIDs.append(carla_strdup("http://drobilla.net/ns/ingen#GraphUIGtk2"));
-        fCustomURIDs.append(carla_strdup("http://lv2plug.in/ns/ext/state#interface"));
-        fCustomURIDs.append(carla_strdup("ingen:/root"));
-        fCustomURIDs.append(carla_strdup("ingen:/root/"));
 
         // ---------------------------------------------------------------
         // initialize options
@@ -418,7 +411,7 @@ public:
         fFeatures[kFeatureIdUiParent]->data = getContainerId();
 #endif
 
-        fHandle = fDescriptor->instantiate(fDescriptor, pluginURI, fRdfUiDescriptor->Bundle, carla_lv2_ui_write_function, this, &fWidget, fFeatures);
+        fHandle = fDescriptor->instantiate(fDescriptor, fRdfDescriptor->URI, fRdfUiDescriptor->Bundle, carla_lv2_ui_write_function, this, &fWidget, fFeatures);
 
         if (fHandle == nullptr)
         {
@@ -467,8 +460,11 @@ public:
     {
         CarlaBridgeClient::uiClose();
 
-        if (fHandle && fDescriptor && fDescriptor->cleanup)
+        if (fHandle != nullptr && fDescriptor != nullptr && fDescriptor->cleanup != nullptr)
+        {
             fDescriptor->cleanup(fHandle);
+            fHandle = nullptr;
+        }
 
         uiLibClose();
     }
@@ -500,10 +496,13 @@ public:
 
     void setParameter(const int32_t rindex, const float value) override
     {
-        CARLA_ASSERT(fHandle != nullptr && fDescriptor != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,)
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
-        if (fHandle != nullptr && fDescriptor != nullptr && fDescriptor->port_event != nullptr)
-            fDescriptor->port_event(fHandle, rindex, sizeof(float), 0, &value);
+        if (fDescriptor->port_event == nullptr)
+            return;
+
+        fDescriptor->port_event(fHandle, rindex, sizeof(float), 0, &value);
     }
 
     void setProgram(const uint32_t) override
@@ -512,45 +511,67 @@ public:
 
     void setMidiProgram(const uint32_t bank, const uint32_t program) override
     {
-        CARLA_ASSERT(fHandle != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,)
 
-        if (fHandle != nullptr && fExt.programs != nullptr)
-            fExt.programs->select_program(fHandle, bank, program);
+        if (fExt.programs == nullptr)
+            return;
+
+        fExt.programs->select_program(fHandle, bank, program);
     }
 
     void noteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) override
     {
-        CARLA_ASSERT(fHandle != nullptr && fDescriptor != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,)
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
-        if (fHandle != nullptr && fDescriptor != nullptr && fDescriptor->port_event != nullptr)
-        {
-            LV2_Atom_MidiEvent midiEv;
-            midiEv.event.time.frames = 0;
-            midiEv.event.body.type   = CARLA_URI_MAP_ID_MIDI_EVENT;
-            midiEv.event.body.size   = 3;
-            midiEv.data[0] = MIDI_STATUS_NOTE_ON + channel;
-            midiEv.data[1] = note;
-            midiEv.data[2] = velo;
+        if (fDescriptor->port_event == nullptr)
+            return;
 
-            fDescriptor->port_event(fHandle, 0, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
-        }
+        LV2_Atom_MidiEvent midiEv;
+        midiEv.event.time.frames = 0;
+        midiEv.event.body.type   = CARLA_URI_MAP_ID_MIDI_EVENT;
+        midiEv.event.body.size   = 3;
+        midiEv.data[0] = MIDI_STATUS_NOTE_ON + channel;
+        midiEv.data[1] = note;
+        midiEv.data[2] = velo;
+
+        fDescriptor->port_event(fHandle, 0, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
     }
 
     void noteOff(const uint8_t channel, const uint8_t note) override
     {
-        CARLA_ASSERT(fHandle != nullptr && fDescriptor != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,)
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
-        if (fHandle != nullptr && fDescriptor != nullptr && fDescriptor->port_event != nullptr)
+        if (fDescriptor->port_event == nullptr)
+            return;
+
+        LV2_Atom_MidiEvent midiEv;
+        midiEv.event.time.frames = 0;
+        midiEv.event.body.type   = CARLA_URI_MAP_ID_MIDI_EVENT;
+        midiEv.event.body.size   = 3;
+        midiEv.data[0] = MIDI_STATUS_NOTE_OFF + channel;
+        midiEv.data[1] = note;
+        midiEv.data[2] = 0;
+
+        fDescriptor->port_event(fHandle, 0, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
+    }
+
+    // ---------------------------------------------------------------------
+
+    void waitForOscURIs()
+    {
+        sendOscUpdate();
+
+        if (fIsReady)
+            return;
+
+        for (int i=0; i < 2000; ++i)
         {
-            LV2_Atom_MidiEvent midiEv;
-            midiEv.event.time.frames = 0;
-            midiEv.event.body.type   = CARLA_URI_MAP_ID_MIDI_EVENT;
-            midiEv.event.body.size   = 3;
-            midiEv.data[0] = MIDI_STATUS_NOTE_OFF + channel;
-            midiEv.data[1] = note;
-            midiEv.data[2] = 0;
-
-            fDescriptor->port_event(fHandle, 0, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
+            if (fIsReady)
+                return;
+            oscIdle();
+            carla_msleep(10);
         }
     }
 
@@ -558,41 +579,41 @@ public:
 
     LV2_URID getCustomURID(const char* const uri)
     {
-        CARLA_ASSERT(uri != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', CARLA_URI_MAP_ID_NULL);
         carla_debug("CarlaLv2Client::getCustomURID(\"%s\")", uri);
 
-        if (uri == nullptr)
-            return CARLA_URI_MAP_ID_NULL;
+        LV2_URID urid = CARLA_URI_MAP_ID_NULL;
 
         for (size_t i=0; i < fCustomURIDs.count(); ++i)
         {
             const char* const thisUri(fCustomURIDs.getAt(i));
+
             if (thisUri != nullptr && std::strcmp(thisUri, uri) == 0)
-                return i;
+            {
+                urid = i;
+                break;
+            }
         }
 
-        fCustomURIDs.append(carla_strdup(uri));
+        if (urid == CARLA_URI_MAP_ID_NULL)
+        {
+            urid = fCustomURIDs.count();
+            fCustomURIDs.append(carla_strdup(uri));
+        }
 
-        const LV2_URID urid(fCustomURIDs.count()-1);
-
-        if (isOscControlRegistered())
-            sendOscLv2UridMap(urid, uri);
+        //if (isOscControlRegistered())
+        sendOscLv2UridMap(urid, uri);
 
         return urid;
     }
 
-    const char* getCustomURIString(const LV2_URID urid)
+    const char* getCustomURIString(const LV2_URID urid) const noexcept
     {
-        CARLA_ASSERT(urid != CARLA_URI_MAP_ID_NULL);
-        CARLA_ASSERT_INT2(urid < fCustomURIDs.count(), urid, fCustomURIDs.count());
+        CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.count(), nullptr);
         carla_debug("CarlaLv2Client::getCustomURIString(%i)", urid);
 
-        if (urid == CARLA_URI_MAP_ID_NULL)
-            return nullptr;
-        if (urid < fCustomURIDs.count())
-            return fCustomURIDs.getAt(urid);
-
-        return nullptr;
+        return fCustomURIDs.getAt(urid);
     }
 
     // ---------------------------------------------------------------------
@@ -605,10 +626,8 @@ public:
 
     uint32_t handleUiPortMap(const char* const symbol)
     {
-        CARLA_ASSERT(symbol != nullptr);
-
-        if (symbol == nullptr)
-            return LV2UI_INVALID_PORT_INDEX;
+        CARLA_SAFE_ASSERT_RETURN(symbol != nullptr && symbol[0] != '\0', LV2UI_INVALID_PORT_INDEX);
+        carla_debug("CarlaLv2Client::handleUiPortMap(\"%s\")", symbol);
 
         for (uint32_t i=0; i < fRdfDescriptor->PortCount; ++i)
         {
@@ -621,11 +640,9 @@ public:
 
     int handleUiResize(const int width, const int height)
     {
-        CARLA_ASSERT(width > 0);
-        CARLA_ASSERT(height > 0);
-
-        if (width <= 0 || height <= 0)
-            return 1;
+        CARLA_SAFE_ASSERT_RETURN(width > 0, 1);
+        CARLA_SAFE_ASSERT_RETURN(height > 0, 1);
+        carla_debug("CarlaLv2Client::handleUiResize(%i, %i)", width, height);
 
         toolkitResize(width, height);
 
@@ -634,6 +651,10 @@ public:
 
     void handleUiWrite(uint32_t portIndex, uint32_t bufferSize, uint32_t format, const void* buffer)
     {
+        CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(bufferSize > 0,);
+        carla_debug("CarlaLv2Client::handleUiWrite(%i, %i, %i, %p)", rindex, bufferSize, format, buffer);
+
         if (format == 0)
         {
             CARLA_ASSERT(buffer != nullptr);
@@ -647,7 +668,7 @@ public:
 
             const float value(*(const float*)buffer);
 
-            if (isOscControlRegistered())
+            //if (isOscControlRegistered())
                 sendOscControl(portIndex, value);
         }
         else if (format == CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM || CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)
@@ -658,7 +679,7 @@ public:
             if (bufferSize == 0 || buffer == nullptr)
                 return;
 
-            if (isOscControlRegistered())
+            //if (isOscControlRegistered())
                 sendOscLv2AtomTransfer(portIndex, QByteArray((const char*)buffer, bufferSize).toBase64().constData());
         }
         else
@@ -680,23 +701,45 @@ public:
 
     void handleUridMap(const LV2_URID urid, const char* const uri)
     {
-        CARLA_ASSERT(urid != CARLA_URI_MAP_ID_NULL);
-        CARLA_ASSERT(uri != nullptr);
-        carla_debug("CarlaLv2Client::handleUridMap(%i, \"%s\")", urid, uri);
+        CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0',);
+        carla_stdout("CarlaLv2Client::handleUridMap(%i, \"%s\")", urid, uri);
 
-        if (urid < fCustomURIDs.count())
+        if (urid == CARLA_URI_MAP_ID_NULL)
         {
-            const char* const ourURI(carla_lv2_urid_unmap(this, urid));
-            CARLA_SAFE_ASSERT_RETURN(ourURI != nullptr,);
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(uri, "Complete") == 0,);
+            carla_stdout("URID map from host complete");
+            fIsReady = true;
+            return;
+        }
 
-            if (std::strcmp(ourURI, uri) != 0)
+        const uint32_t uridCount(fCustomURIDs.count());
+
+        if (urid < uridCount)
+        {
+            if (const char* const ourURI = carla_lv2_urid_unmap(this, urid))
             {
-                carla_stderr2("UI :: wrong URI '%s' vs '%s'", ourURI,  uri);
+                if (std::strcmp(ourURI, uri) != 0)
+                    carla_stderr2("UI :: wrong URI '%s' vs '%s'", ourURI,  uri);
             }
+            else
+            {
+                uint32_t i=0;
+                for (LinkedList<const char*>::Itenerator it = fCustomURIDs.begin(); it.valid(); it.next())
+                {
+                    if (i != urid)
+                        continue;
+                    it.setValue(carla_strdup(uri));
+                    break;
+                }
+            }
+        }
+        else if (urid > uridCount)
+        {
+            for (uint32_t i=uridCount; i < urid; ++i)
+                fCustomURIDs.append(nullptr);
         }
         else
         {
-            CARLA_SAFE_ASSERT_RETURN(urid == fCustomURIDs.count(),);
             fCustomURIDs.append(carla_strdup(uri));
         }
     }
@@ -711,6 +754,7 @@ private:
     const LV2_RDF_UI*         fRdfUiDescriptor;
     Lv2PluginOptions          fOptions;
 
+    bool fIsReady;
     bool fIsResizable;
     LinkedList<const char*> fCustomURIDs;
 
@@ -951,6 +995,10 @@ private:
         if (std::strcmp(uri, LV2_PARAMETERS__sampleRate) == 0)
             return CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE;
 
+        // Custom
+        if (std::strcmp(uri, URI_CARLA_WORKER) == 0)
+            return CARLA_URI_MAP_ID_ATOM_WORKER;
+
         // Custom types
         return ((CarlaLv2Client*)handle)->getCustomURID(uri);
     }
@@ -1005,7 +1053,7 @@ private:
         if (urid == CARLA_URI_MAP_ID_ATOM_VECTOR)
             return LV2_ATOM__Vector;
         if (urid == CARLA_URI_MAP_ID_ATOM_WORKER)
-            return nullptr; // custom
+            return URI_CARLA_WORKER; // custom
         if (urid == CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM)
             return LV2_ATOM__atomTransfer;
         if (urid == CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)
@@ -1133,7 +1181,7 @@ int CarlaBridgeOsc::handleMsgLv2UridMap(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     const int32_t    urid = argv[0]->i;
     const char* const uri = (const char*)&argv[1]->s;
 
-    if (urid <= 0)
+    if (urid < 0)
         return 0;
 
     lv2ClientPtr->handleUridMap(urid, uri);
@@ -1170,7 +1218,10 @@ int main(int argc, char* argv[])
 
     // Init OSC
     if (useOsc)
+    {
         client.oscInit(oscUrl);
+        client.waitForOscURIs();
+    }
 
     // Load UI
     int ret;
