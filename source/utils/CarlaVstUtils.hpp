@@ -143,13 +143,9 @@ typedef AEffect* (*VST_Function)(audioMasterCallback);
 static inline
 bool vstPluginCanDo(AEffect* const effect, const char* const feature) noexcept
 {
-    bool ret = false;
-
     try {
-        ret = (effect->dispatcher(effect, effCanDo, 0, 0, const_cast<char*>(feature), 0.0f) == 1);
-    } CARLA_SAFE_EXCEPTION("vstPluginCanDo");
-
-    return ret;
+        return (effect->dispatcher(effect, effCanDo, 0, 0, const_cast<char*>(feature), 0.0f) == 1);
+    } CARLA_SAFE_EXCEPTION_RETURN("vstPluginCanDo", false);
 }
 
 // -----------------------------------------------------------------------

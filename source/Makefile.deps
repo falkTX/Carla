@@ -1,0 +1,157 @@
+#!/usr/bin/make -f
+# Makefile for file dependencies #
+# ------------------------------ #
+# Created by falkTX
+#
+
+ifeq ($(CWD),)
+$(error CWD not set)
+endif
+
+# ----------------------------------------------------------------------------------------------------------------------------
+# includes
+
+CARLA_DEFINES_H = $(CWD)/includes/CarlaDefines.h
+CARLA_MIDI_H    = $(CWD)/includes/CarlaMIDI.h
+
+# ----------------------------------------------------------------------------------------------------------------------------
+# backend
+
+CARLA_BACKEND_H  = $(CWD)/backend/CarlaBackend.h  $(CARLA_DEFINES_H)
+CARLA_HOST_H     = $(CWD)/backend/CarlaHost.h     $(CARLA_BACKEND_H)
+CARLA_ENGINE_HPP = $(CWD)/backend/CarlaEngine.hpp $(CARLA_BACKEND_H)
+CARLA_PLUGIN_HPP = $(CWD)/backend/CarlaPlugin.hpp $(CARLA_BACKEND_H)
+
+# ----------------------------------------------------------------------------------------------------------------------------
+# utils (base with no extra depends)
+
+CARLA_UTILS_HPP      = $(CWD)/utils/CarlaUtils.hpp     $(CARLA_DEFINES_H)
+CARLA_JUCE_UTILS_HPP = $(CWD)/utils/CarlaJuceUtils.hpp $(CARLA_UTILS_HPP)
+CARLA_MATH_UTILS_HPP = $(CWD)/utils/CarlaMathUtils.hpp $(CARLA_UTILS_HPP)
+CARLA_LIB_UTILS_HPP  = $(CWD)/utils/CarlaLibUtils.hpp  $(CARLA_UTILS_HPP)
+CARLA_OSC_UTILS_HPP  = $(CWD)/utils/CarlaOscUtils.hpp  $(CARLA_UTILS_HPP)
+CARLA_SHM_UTILS_HPP  = $(CWD)/utils/CarlaShmUtils.hpp  $(CARLA_UTILS_HPP)
+
+# ----------------------------------------------------------------------------------------------------------------------------
+# utils (base classes)
+
+CARLA_MUTEX_HPP       = $(CWD)/utils/CarlaMutex.hpp      $(CARLA_UTILS_HPP)
+CARLA_RING_BUFFER_HPP = $(CWD)/utils/CarlaRingBuffer.hpp $(CARLA_UTILS_HPP)
+CARLA_STRING_HPP      = $(CWD)/utils/CarlaString.hpp     $(CARLA_JUCE_UTILS_HPP)
+CARLA_THREAD_HPP      = $(CWD)/utils/CarlaThread.hpp     $(CARLA_MUTEX_HPP) $(CARLA_STRING_HPP)
+LINKED_LIST_HPP       = $(CWD)/utils/LinkedList.hpp      $(CARLA_UTILS_HPP)
+LV2_ATOM_QUEUE_HPP    = $(CWD)/utils/Lv2AtomQueue.hpp    $(CARLA_MATH_UTILS_HPP) $(CARLA_MUTEX_HPP) $(CARLA_RING_BUFFER_HPP)
+RT_LINKED_LIST_HPP    = $(CWD)/utils/RtLinkedList.hpp    $(LINKED_LIST_HPP)
+
+# ----------------------------------------------------------------------------------------------------------------------------
+# utils (plugin stuff)
+
+CARLA_LADSPA_UTILS_HPP = $(CWD)/utils/CarlaLadspaUtils.hpp $(CARLA_UTILS_HPP)
+CARLA_DSSI_UTILS_HPP   = $(CWD)/utils/CarlaDssiUtils.hpp   $(CARLA_LADSPA_UTILS_HPP)
+CARLA_DSSI_UTILS_CPP   = $(CWD)/utils/CarlaDssiUtils.cpp   $(CARLA_DSSI_UTILS_HPP)
+CARLA_LV2_UTILS_HPP    = $(CWD)/utils/CarlaLv2Utils.hpp    $(CARLA_UTILS_HPP)
+CARLA_VST_UTILS_HPP    = $(CWD)/utils/CarlaVstUtils.hpp    $(CARLA_UTILS_HPP)
+
+# ----------------------------------------------------------------------------------------------------------------------------
+# utils (misc stuff)
+
+CARLA_BACKEND_UTILS_HPP = $(CWD)/utils/CarlaBackendUtils.hpp $(CARLA_BACKEND_H) $(CARLA_HOST_H) $(CARLA_STRING_HPP)
+CARLA_BRIDGE_UTILS_HPP  = $(CWD)/utils/CarlaBridgeUtils.hpp  $(CARLA_RING_BUFFER_HPP)
+CARLA_ENGINE_UTILS_HPP  = $(CWD)/utils/CarlaEngineUtils.hpp  $(CARLA_ENGINE_HPP) $(CARLA_UTILS_HPP)
+CARLA_PIPE_UTILS_HPP    = $(CWD)/utils/CarlaPipeUtils.hpp    $(CARLA_STRING_HPP)
+CARLA_STATE_UTILS_HPP   = $(CWD)/utils/CarlaStateUtils.hpp   $(CARLA_BACKEND_H) $(LINKED_LIST_HPP)
+CARLA_STATE_UTILS_CPP   = $(CWD)/utils/CarlaStateUtils.cpp   $(CARLA_STATE_UTILS_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_MIDI_H)
+
+# ----------------------------------------------------------------------------------------------------------------------------
+# utils (advanced classes)
+
+CARLA_EXTERNAL_UI_HPP = $(CWD)/utils/CarlaExternalUI.hpp $(CARLA_PIPE_UTILS_HPP)
+CARLA_LIB_COUNTER_HPP = $(CWD)/utils/CarlaLibCounter.hpp $(CARLA_LIB_UTILS_HPP) $(CARLA_MUTEX_HPP) $(LINKED_LIST_HPP)
+
+# ----------------------------------------------------------------------------------------------------------------------------
+# modules
+
+CARLA_NATIVE_H          = $(CWD)/modules/CarlaNative.h
+CARLA_NATIVE_HPP        = $(CWD)/modules/CarlaNative.hpp           $(CARLA_NATIVE_H) $(CARLA_MIDI_H) $(CARLA_JUCE_UTILS_HPP)
+CARLA_NATIVE_EXT_UI_HPP = $(CWD)/modules/CarlaNativeExtUI.hpp      $(CARLA_NATIVE_HPP) $(CARLA_EXTERNAL_UI_HPP)
+JACK_BRIDGE_HPP         = $(CWD)/modules/jackbridge/JackBridge.hpp $(CARLA_DEFINES_H)
+RTAUDIO_HPP             = $(CWD)/modules/rtaudio/RtAudio.h
+RTMIDI_HPP              = $(CWD)/modules/rtmidi/RtMidi.h           $(CARLA_DEFINES_H)
+
+# ----------------------------------------------------------------------------------------------------------------------------
+# backend/engine
+
+CARLA_ENGINE_OSC_HPP           = $(CWD)/backend/engine/CarlaEngineOsc.hpp      $(CARLA_BACKEND_H) $(CARLA_OSC_UTILS_HPP) $(CARLA_STRING_HPP)
+CARLA_ENGINE_THREAD_HPP        = $(CWD)/backend/engine/CarlaEngineThread.hpp   $(CARLA_BACKEND_H) $(CARLA_THREAD_HPP)
+CARLA_ENGINE_INTERNAL_HPP      = $(CWD)/backend/engine/CarlaEngineInternal.hpp $(CARLA_ENGINE_HPP) $(CARLA_ENGINE_OSC_HPP) $(CARLA_ENGINE_THREAD_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_MUTEX_HPP) $(LINKED_LIST_HPP)
+
+CARLA_ENGINE_CPP_DEPS          = $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_ENGINE_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_STATE_UTILS_HPP) $(CARLA_MIDI_H) $(JACK_BRIDGE_HPP)
+CARLA_ENGINE_BRIDGE_CPP_DEPS   = $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_BRIDGE_UTILS_HPP) $(CARLA_MIDI_H) $(JACK_BRIDGE_HPP)
+CARLA_ENGINE_INTERNAL_CPP_DEPS = $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_MIDI_H) $(CARLA_MATH_UTILS_HPP)
+CARLA_ENGINE_JACK_CPP_DEPS     = $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_ENGINE_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_MIDI_H) $(JACK_BRIDGE_HPP)
+CARLA_ENGINE_JUCE_CPP_DEPS     = $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_BACKEND_UTILS_HPP)
+CARLA_ENGINE_NATIVE_CPP_DEPS   = $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_STATE_UTILS_HPP) $(CARLA_EXTERNAL_UI_HPP) $(CARLA_NATIVE_HPP) $(CARLA_DSSI_UTILS_CPP) $(CARLA_STATE_UTILS_CPP)
+CARLA_ENGINE_OSC_CPP_DEPS      = $(CARLA_ENGINE_HPP) $(CARLA_ENGINE_OSC_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BRIDGE_UTILS_HPP) $(CARLA_MIDI_H)
+CARLA_ENGINE_RTAUDIO_CPP_DEPS  = $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(RT_LINKED_LIST_HPP) $(RTAUDIO_HPP) $(RTMIDI_HPP)
+CARLA_ENGINE_THREAD_CPP_DEPS   = $(CARLA_ENGINE_HPP) $(CARLA_ENGINE_THREAD_HPP) $(CARLA_PLUGIN_HPP)
+
+CARLA_ENGINE_CPP               = $(CWD)/backend/engine/CarlaEngine.cpp         $(CARLA_ENGINE_CPP_DEPS)
+CARLA_ENGINE_BRIDGE_CPP        = $(CWD)/backend/engine/CarlaEngineBridge.cpp   $(CARLA_ENGINE_CPP_BRIDGE_DEPS)
+CARLA_ENGINE_INTERNAL_CPP      = $(CWD)/backend/engine/CarlaEngineInternal.cpp $(CARLA_ENGINE_CPP_INTERNAL_DEPS)
+CARLA_ENGINE_JACK_CPP          = $(CWD)/backend/engine/CarlaEngineJack.cpp     $(CARLA_ENGINE_CPP_JACK_DEPS)
+CARLA_ENGINE_JUCE_CPP          = $(CWD)/backend/engine/CarlaEngineJuce.cpp     $(CARLA_ENGINE_CPP_JUCE_DEPS)
+CARLA_ENGINE_NATIVE_CPP        = $(CWD)/backend/engine/CarlaEngineNative.cpp   $(CARLA_ENGINE_CPP_NATIVE_DEPS)
+CARLA_ENGINE_OSC_CPP           = $(CWD)/backend/engine/CarlaEngineOsc.cpp      $(CARLA_ENGINE_CPP_OSC_DEPS)
+CARLA_ENGINE_RTAUDIO_CPP       = $(CWD)/backend/engine/CarlaEngineRtAudio.cpp  $(CARLA_ENGINE_CPP_RTAUDIO_DEPS)
+CARLA_ENGINE_THREAD_CPP        = $(CWD)/backend/engine/CarlaEngineThread.cpp   $(CARLA_ENGINE_CPP_THREAD_DEPS)
+
+# ----------------------------------------------------------------------------------------------------------------------------
+# backend/plugin
+
+CARLA_PLUGIN_THREAD_HPP        = $(CWD)/backend/plugin/CarlaPluginThread.hpp   $(CARLA_BACKEND_H) $(CARLA_THREAD_HPP)
+CARLA_PLUGIN_UI_HPP            = $(CWD)/backend/plugin/CarlaPluginUi.hpp       $(CARLA_UTILS_HPP)
+CARLA_PLUGIN_INTERNAL_HPP      = $(CWD)/backend/plugin/CarlaPluginInternal.hpp $(CARLA_PLUGIN_HPP) $(CARLA_PLUGIN_THREAD_HPP) $(CARLA_OSC_UTILS_HPP) $(CARLA_STATE_UTILS_HPP) $(CARLA_MUTEX_HPP) $(RT_LINKED_LIST_HPP) $(CARLA_MIDI_H)
+
+AU_PLUGIN_CPP_DEPS             = $(CARLA_PLUGIN_HPP) $(CARLA_ENGINE_HPP) $(CARLA_UTILS_HPP)
+BRIDGE_PLUGIN_CPP_DEPS         = $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_BRIDGE_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_SHM_UTILS_HPP) $(JACK_BRIDGE_HPP)
+CARLA_PLUGIN_CPP_DEPS          = $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_PLUGIN_UI_HPP)
+CARLA_PLUGIN_INTERNAL_CPP_DEPS = $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_LIB_COUNTER_HPP) $(CARLA_MATH_UTILS_HPP)
+CARLA_PLUGIN_THREAD_CPP_DEPS   = $(CARLA_PLUGIN_HPP) $(CARLA_PLUGIN_THREAD_HPP) $(CARLA_ENGINE_HPP)
+CARLA_PLUGIN_UI_CPP_DEPS       = $(CARLA_PLUGIN_UI_HPP)
+CSOUND_PLUGIN_CPP_DEPS         = $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP)
+DSSI_PLUGIN_CPP_DEPS           = $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_DSSI_UTILS_HPP) $(CARLA_MATH_UTILS_HPP)
+FLUIDSYNTH_PLUGIN_CPP_DEPS     = $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_MATH_UTILS_HPP)
+JUCE_PLUGIN_CPP_DEPS           = $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP)
+LADSPA_PLUGIN_CPP_DEPS         = $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_LADSPA_UTILS_HPP) $(CARLA_MATH_UTILS_HPP)
+LINUXSAMPLER_PLUGIN_CPP_DEPS   = $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_MATH_UTILS_HPP)
+LV2_PLUGIN_CPP_DEPS            = $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_LV2_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_PLUGIN_UI_HPP) $(LV2_ATOM_QUEUE_HPP) $(CARLA_ENGINE_OSC_HPP)
+NATIVE_PLUGIN_CPP_DEPS         = $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_NATIVE_H)
+REWIRE_PLUGIN_CPP_DEPS         = $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_LIB_UTILS_HPP) $(CARLA_MATH_UTILS_HPP)
+VST_PLUGIN_CPP_DEPS            = $(CARLA_PLUGIN_INTERNAL_HPP) $(CARLA_ENGINE_HPP) $(CARLA_VST_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_PLUGIN_UI_HPP)
+VST3_PLUGIN_CPP_DEPS           = $(CARLA_PLUGIN_HPP) $(CARLA_ENGINE_HPP) $(CARLA_UTILS_HPP)
+
+AU_PLUGIN_CPP                  = $(CWD)/backend/plugin/AuPlugin.cpp            $(AU_PLUGIN_CPP_DEPS)
+BRIDGE_PLUGIN_CPP              = $(CWD)/backend/plugin/BridgePlugin.cpp        $(BRIDGE_PLUGIN_CPP_DEPS)
+CARLA_PLUGIN_CPP               = $(CWD)/backend/plugin/CarlaPlugin.cpp         $(CARLA_PLUGIN_CPP_DEPS)
+CARLA_PLUGIN_INTERNAL_CPP      = $(CWD)/backend/plugin/CarlaPluginInternal.cpp $(CARLA_PLUGIN_INTERNAL_CPP_DEPS)
+CARLA_PLUGIN_THREAD_CPP        = $(CWD)/backend/plugin/CarlaPluginThread.cpp   $(CARLA_PLUGIN_THREAD_CPP_DEPS)
+CARLA_PLUGIN_UI_CPP            = $(CWD)/backend/plugin/CarlaPluginUi.cpp       $(CARLA_PLUGIN_UI_CPP_DEPS)
+CSOUND_PLUGIN_CPP              = $(CWD)/backend/plugin/CsoundPlugin.cpp        $(CSOUND_PLUGIN_CPP_DEPS)
+DSSI_PLUGIN_CPP                = $(CWD)/backend/plugin/DssiPlugin.cpp          $(DSSI_PLUGIN_CPP_DEPS)
+FLUIDSYNTH_PLUGIN_CPP          = $(CWD)/backend/plugin/FluidSynthPlugin.cpp    $(FLUIDSYNTH_PLUGIN_CPP_DEPS)
+JUCE_PLUGIN_CPP                = $(CWD)/backend/plugin/JucePlugin.cpp          $(JUCE_PLUGIN_CPP_DEPS)
+LADSPA_PLUGIN_CPP              = $(CWD)/backend/plugin/LadspaPlugin.cpp        $(LADSPA_PLUGIN_CPP_DEPS)
+LINUXSAMPLER_PLUGIN_CPP        = $(CWD)/backend/plugin/LinuxSamplerPlugin.cpp  $(LINUXSAMPLER_PLUGIN_CPP_DEPS)
+LV2_PLUGIN_CPP                 = $(CWD)/backend/plugin/Lv2Plugin.cpp           $(LV2_PLUGIN_CPP_DEPS)
+NATIVE_PLUGIN_CPP              = $(CWD)/backend/plugin/NativePlugin.cpp        $(NATIVE_PLUGIN_CPP_DEPS)
+REWIRE_PLUGIN_CPP              = $(CWD)/backend/plugin/ReWirePlugin.cpp        $(REWIRE_PLUGIN_CPP_DEPS)
+VST_PLUGIN_CPP                 = $(CWD)/backend/plugin/VstPlugin.cpp           $(VST_PLUGIN_CPP_DEPS)
+VST3_PLUGIN_CPP                = $(CWD)/backend/plugin/Vst3Plugin.cpp          $(VST3_PLUGIN_CPP_DEPS)
+
+# ----------------------------------------------------------------------------------------------------------------------------
+# backend/standalone
+
+CARLA_STANDALONE_CPP_DEPS = $(CARLA_HOST_H) $(CARLA_MIDI_H) $(CARLA_NATIVE_H) $(CARLA_ENGINE_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_OSC_UTILS_HPP) $(CARLA_DSSI_UTILS_CPP) $(CARLA_STATE_UTILS_CPP)
+CARLA_STANDALONE_CPP      = $(CWD)/backend/standalone/CarlaStandalone.cpp $(CARLA_STANDALONE_CPP_DEPS)
+
+# ----------------------------------------------------------------------------------------------------------------------------

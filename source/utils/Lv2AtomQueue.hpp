@@ -71,7 +71,7 @@ public:
 
         fLv2Buffer.size = p2size;
         setRingBuffer(&fLv2Buffer, true);
-        lockMemory();
+        //lockMemory();
     }
 
     // used for tmp buffers only

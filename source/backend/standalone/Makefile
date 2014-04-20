@@ -24,6 +24,11 @@ STATIC_LIBS += ../../modules/rtmempool.a
 LINK_FLAGS  += $(JACKBRIDGE_LIBS)
 LINK_FLAGS  += $(RTMEMPOOL_LIBS)
 
+ifeq ($(HAVE_DGL),true)
+STATIC_LIBS += ../../modules/dgl.a
+LINK_FLAGS  += $(DGL_LIBS)
+endif
+
 ifeq ($(HAVE_JUCE),true)
 STATIC_LIBS += ../../modules/juce_audio_basics.a
 STATIC_LIBS += ../../modules/juce_audio_devices.a
@@ -43,11 +48,6 @@ LINK_FLAGS  += $(JUCE_EVENTS_LIBS)
 LINK_FLAGS  += $(JUCE_GRAPHICS_LIBS)
 LINK_FLAGS  += $(JUCE_GUI_BASICS_LIBS)
 LINK_FLAGS  += $(JUCE_GUI_EXTRA_LIBS)
-endif
-
-ifeq ($(HAVE_DGL),true)
-STATIC_LIBS += ../../modules/dgl.a
-LINK_FLAGS  += $(DGL_LIBS)
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -133,7 +133,7 @@ debug:
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-CarlaStandalone.cpp.o: CarlaStandalone.cpp $(CARLA_HOST_H) $(CARLA_MIDI_H) $(CARLA_NATIVE_H) $(CARLA_ENGINE_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_THREAD_HPP) $(CARLA_STATE_UTILS_CPP)
+CarlaStandalone.cpp.o: CarlaStandalone.cpp $(CARLA_STANDALONE_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------

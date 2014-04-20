@@ -38,6 +38,7 @@ using CarlaBackend::MidiProgramData;
 using CarlaBackend::CustomData;
 using CarlaBackend::EngineDriverDeviceInfo;
 using CarlaBackend::CarlaEngine;
+using CarlaBackend::CarlaEngineClient;
 using CarlaBackend::CarlaPlugin;
 #endif
 

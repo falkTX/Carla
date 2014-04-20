@@ -47,7 +47,6 @@ CARLA_BACKEND_START_NAMESPACE
 class CarlaEngineAudioPort;
 class CarlaEngineCVPort;
 class CarlaEngineEventPort;
-class CarlaEngineClient;
 
 // -----------------------------------------------------------------------
 // Maximum pre-allocated events for some plugin types

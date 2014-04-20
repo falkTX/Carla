@@ -217,21 +217,6 @@ private:                               \
 # endif
 #endif
 
-#if 0
-/* Define PRE/POST_PACKED_STRUCTURE */
-#if defined(__GNUC__) || defined(__clang__)
-# define PRE_PACKED_STRUCTURE
-# define POST_PACKED_STRUCTURE __attribute__((__packed__))
-#elif defined(_MSC_VER)
-# define PRE_PACKED_STRUCTURE1 __pragma(pack(push,1))
-# define PRE_PACKED_STRUCTURE    PRE_PACKED_STRUCTURE1
-# define POST_PACKED_STRUCTURE ;__pragma(pack(pop))
-#else
-# define PRE_PACKED_STRUCTURE
-# define POST_PACKED_STRUCTURE
-#endif
-#endif
-
 /* Define OS_SEP */
 #ifdef CARLA_OS_WIN
 # define OS_SEP     '\\'

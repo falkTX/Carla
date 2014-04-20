@@ -30,8 +30,8 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaEngineUtils.hpp"
 #include "CarlaMathUtils.hpp"
-#include "CarlaMIDI.h"
 #include "CarlaStateUtils.hpp"
+#include "CarlaMIDI.h"
 
 #include "jackbridge/JackBridge.hpp"
 

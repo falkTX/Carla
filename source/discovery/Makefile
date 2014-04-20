@@ -12,26 +12,24 @@ BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils -isystem ../modules
 BUILD_CXX_FLAGS += -I../includes/ladspa -I../includes/vst -I../includes/vst3
 #-Wno-multichar
 
-ifeq ($(MACOS),true)
-BUILD_CXX_FLAGS += -ObjC++
-WANT_JUCE_PROCESSORS = true
-endif
-
-ifeq ($(WIN32),true)
-WANT_JUCE_PROCESSORS = true
-endif
-
 BUILD_CXX_FLAGS += $(QTCORE_FLAGS)
 LINK_FLAGS      += $(QTCORE_LIBS)
+
+ifeq ($(MACOS),true)
+BUILD_CXX_FLAGS += -ObjC++
+endif
 
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -DWANT_NATIVE
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST -DWANT_VST3
+BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
 ifeq ($(MACOS),true)
 BUILD_CXX_FLAGS += -DWANT_AU
+endif
+ifeq ($(MACOS_OR_WIN32),true)
+BUILD_CXX_FLAGS += -DWANT_VST3
 endif
 ifeq ($(CARLA_VESTIGE_HEADER),true)
 BUILD_CXX_FLAGS += -DVESTIGE_HEADER
@@ -40,16 +38,16 @@ endif
 
 # --------------------------------------------------------------
 
-# ifeq ($(HAVE_CSOUND),true)
-# NATIVE_FLAGS += $(shell pkg-config --cflags --libs sndfile) -lcsound64 -DWANT_CSOUND
-# endif
+ifeq ($(HAVE_CSOUND),true)
+NATIVE_FLAGS += -DWANT_CSOUND $(CSOUND_FLAGS) $(CSOUND_LIBS)
+endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
-NATIVE_FLAGS += $(FLUIDSYNTH_FLAGS) $(FLUIDSYNTH_LIBS) -DWANT_FLUIDSYNTH
+NATIVE_FLAGS += -DWANT_FLUIDSYNTH $(FLUIDSYNTH_FLAGS) $(FLUIDSYNTH_LIBS)
 endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
-NATIVE_FLAGS += $(LINUXSAMPLER_FLAGS) $(LINUXSAMPLER_LIBS) -DWANT_LINUXSAMPLER
+NATIVE_FLAGS += -DWANT_LINUXSAMPLER $(LINUXSAMPLER_FLAGS) $(LINUXSAMPLER_LIBS)
 endif
 
 # --------------------------------------------------------------
@@ -77,7 +75,12 @@ LIBS_win64   += ../modules/juce_core.win64.a
 LINK_FLAGS   += $(JUCE_CORE_LIBS) $(JUCE_AUDIO_BASICS_LIBS)
 endif
 
-ifeq ($(WANT_JUCE_PROCESSORS),true)
+ifeq ($(MACOS),true)
+LIBS         += ../modules/juce_gui_extra.a
+LINK_FLAGS   += $(JUCE_GUI_EXTRA_LIBS)
+endif
+
+ifeq ($(MACOS_OR_WIN32),true)
 LIBS         += ../modules/juce_audio_processors.a
 LIBS_posix32 += ../modules/juce_audio_processors.posix32.a
 LIBS_posix64 += ../modules/juce_audio_processors.posix64.a
@@ -108,10 +111,6 @@ LINK_FLAGS   += $(JUCE_DATA_STRUCTURES_LIBS)
 LINK_FLAGS   += $(JUCE_EVENTS_LIBS)
 LINK_FLAGS   += $(JUCE_GRAPHICS_LIBS)
 LINK_FLAGS   += $(JUCE_GUI_BASICS_LIBS)
-ifeq ($(MACOS),true)
-LIBS         += ../modules/juce_gui_extra.a
-LINK_FLAGS   += $(JUCE_GUI_EXTRA_LIBS)
-endif
 endif
 
 POSIX_BUILD_FLAGS = $(BUILD_CXX_FLAGS)

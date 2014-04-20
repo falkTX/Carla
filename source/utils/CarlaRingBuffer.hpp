@@ -20,7 +20,7 @@
 
 #include "CarlaUtils.hpp"
 
-#ifndef CARLA_OS_WIN
+#if 0 //ndef CARLA_OS_WIN
 # include <sys/mman.h>
 # ifdef CARLA_OS_MAC
 #  include <libkern/OSAtomic.h>
@@ -123,6 +123,7 @@ public:
         return (fBuffer->head != fBuffer->tail);
     }
 
+#if 0
     void lockMemory() const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
@@ -137,6 +138,7 @@ public:
         ::mlock(fBuffer->buf, fBuffer->size);
 #endif
     }
+#endif
 
     // -------------------------------------------------------------------
 

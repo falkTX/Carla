@@ -39,6 +39,17 @@ endif
 endif
 
 # --------------------------------------------------------------
+# Set MACOS_OR_WIN32
+
+ifeq ($(MACOS),true)
+MACOS_OR_WIN32=true
+endif
+
+ifeq ($(WIN32),true)
+MACOS_OR_WIN32=true
+endif
+
+# --------------------------------------------------------------
 # Common build and link flags
 
 BASE_FLAGS = -Wall -Wextra -pipe -DREAL_BUILD
@@ -217,14 +228,7 @@ HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk_images ntk && echo true)
 # --------------------------------------------------------------
 # Force some features on MacOS and Windows
 
-ifeq ($(MACOS),true)
-FORCE_FEATURES = true
-endif
-ifeq ($(WIN32),true)
-FORCE_FEATURES = true
-endif
-
-ifeq ($(FORCE_FEATURES),true)
+ifeq ($(MACOS_OR_WIN32),true)
 CARLA_VESTIGE_HEADER = false
 HAVE_WAYLAND = false
 HAVE_X11     = false
@@ -383,21 +387,31 @@ endif
 # --------------------------------------------------------------
 # Set libs stuff (part 3)
 
-NATIVE_PLUGINS_LIBS  = $(AUDIO_DECODER_LIBS)
-NATIVE_PLUGINS_LIBS += $(DGL_LIBS)
+ifeq ($(HAVE_DGL),true)
+NATIVE_PLUGINS_LIBS  += $(DGL_LIBS)
+endif
+
+ifeq ($(HAVE_AF_DEPS),true)
+NATIVE_PLUGINS_FLAGS += -DWANT_AUDIOFILE
+NATIVE_PLUGINS_LIBS  += $(AUDIO_DECODER_LIBS)
+endif
 
 ifeq ($(HAVE_MF_DEPS),true)
-NATIVE_PLUGINS_LIBS += $(shell pkg-config --libs smf)
+NATIVE_PLUGINS_FLAGS += -DWANT_MIDIFILE
+NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs smf)
 endif
 
 ifeq ($(HAVE_PM_DEPS),true)
-NATIVE_PLUGINS_LIBS += $(shell pkg-config --libs libprojectM)
+NATIVE_PLUGINS_FLAGS += -DWANT_PROJECTM
+NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs libprojectM)
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
-NATIVE_PLUGINS_LIBS += $(shell pkg-config --libs fftw3 mxml zlib)
+NATIVE_PLUGINS_FLAGS += -DWANT_ZYNADDSUBFX
+NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
-NATIVE_PLUGINS_LIBS += $(shell pkg-config --libs ntk_images ntk)
+NATIVE_PLUGINS_FLAGS += -DWANT_ZYNADDSUBFX_UI
+NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs ntk_images ntk)
 endif
 endif
 
