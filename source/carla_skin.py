@@ -770,16 +770,17 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
         parameterCount = gCarla.host.get_parameter_count(self.fPluginId) if gCarla.host is not None else 0
 
         index = 0
-        for i in range(min(parameterCount, 8)):
+        for i in range(parameterCount):
+            if index >= 8:
+                break
+
             paramInfo   = gCarla.host.get_parameter_info(self.fPluginId, i)
             paramData   = gCarla.host.get_parameter_data(self.fPluginId, i)
             paramRanges = gCarla.host.get_parameter_ranges(self.fPluginId, i)
 
             if paramData['type'] != PARAMETER_INPUT:
-                print("NOT input", paramData['type'])
                 continue
             if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                print("NOT enabled", paramData['hints'])
                 continue
 
             paramName = paramInfo['name'].split("/", 1)[0].split(" (", 1)[0].strip()
@@ -810,8 +811,8 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
                 #_g = 127
                 #_b = 255 - float(i)/8*200
             #else:
-            _r = 255 - float(i)/8*200
-            _g =  55 + float(i)/8*200
+            _r = 255 - float(index)/8*200
+            _g =  55 + float(index)/8*200
             _b =  (r-40)*4
 
             #if _r < 140: _r = 140
