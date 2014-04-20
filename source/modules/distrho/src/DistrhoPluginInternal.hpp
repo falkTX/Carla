@@ -173,6 +173,11 @@ public:
         return (fPlugin != nullptr) ? fPlugin->d_getUniqueId() : 0;
     }
 
+    void* getInstancePointer() const noexcept
+    {
+        return fPlugin;
+    }
+
     // -------------------------------------------------------------------
 
 #if DISTRHO_PLUGIN_WANT_LATENCY

@@ -55,6 +55,10 @@
 # error DISTRHO_PLUGIN_WANT_TIMEPOS undefined!
 #endif
 
+#ifndef DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
+# define DISTRHO_PLUGIN_WANT_DIRECT_ACCESS 0
+#endif
+
 /* Compatibility with non-clang compilers */
 #ifndef __has_feature
 # define __has_feature(x) 0

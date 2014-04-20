@@ -16,6 +16,10 @@
 
 #include "DistrhoUIInternal.hpp"
 
+#if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
+# error DSSI UIs do not support direct access!
+#endif
+
 #include <lo/lo.h>
 
 START_NAMESPACE_DISTRHO

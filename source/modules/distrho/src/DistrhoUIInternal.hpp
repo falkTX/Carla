@@ -45,6 +45,9 @@ struct UI::PrivateData {
     // DSP
     double   sampleRate;
     uint32_t parameterOffset;
+#if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
+    void*    dspPtr;
+#endif
 
     // Callbacks
     editParamFunc editParamCallbackFunc;
@@ -57,6 +60,9 @@ struct UI::PrivateData {
     PrivateData() noexcept
         : sampleRate(d_lastUiSampleRate),
           parameterOffset(0),
+#if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
+          dspPtr(nullptr),
+#endif
           editParamCallbackFunc(nullptr),
           setParamCallbackFunc(nullptr),
           setStateCallbackFunc(nullptr),
@@ -120,7 +126,7 @@ class UIExporter
 {
 public:
     UIExporter(void* const ptr, const intptr_t winId,
-               const editParamFunc editParamCall, const setParamFunc setParamCall, const setStateFunc setStateCall, const sendNoteFunc sendNoteCall, const uiResizeFunc uiResizeCall)
+               const editParamFunc editParamCall, const setParamFunc setParamCall, const setStateFunc setStateCall, const sendNoteFunc sendNoteCall, const uiResizeFunc uiResizeCall, void* const dspPtr = nullptr)
         : glApp(),
           glWindow(glApp, winId),
           fUi(createUI()),
@@ -140,6 +146,13 @@ public:
 
         glWindow.setSize(fUi->d_getWidth(), fUi->d_getHeight());
         glWindow.setResizable(false);
+
+#if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
+        fData->dspPtr = dspPtr;
+#else
+        return; // unused
+        (void)dspPtr;
+#endif
     }
 
     ~UIExporter()

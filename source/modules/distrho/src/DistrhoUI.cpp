@@ -84,6 +84,16 @@ void UI::d_uiResize(unsigned int width, unsigned int height)
     pData->uiResizeCallback(width, height);
 }
 
+#if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
+// -----------------------------------------------------------------------
+// Direct DSP access
+
+void* UI::d_getPluginInstancePointer()
+{
+    return pData->dspPtr;
+}
+#endif
+
 // -----------------------------------------------------------------------
 
 END_NAMESPACE_DISTRHO

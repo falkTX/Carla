@@ -43,7 +43,7 @@ public:
     UICarla(const NativeHostDescriptor* const host, PluginExporter* const plugin)
         : fHost(host),
           fPlugin(plugin),
-          fUI(this, 0, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, uiResizeCallback)
+          fUI(this, 0, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, uiResizeCallback, plugin->getInstancePointer())
     {
         fUI.setTitle(host->uiName);
 

@@ -18,6 +18,8 @@
 
 #include "lv2/atom.h"
 #include "lv2/buf-size.h"
+#include "lv2/data-access.h"
+#include "lv2/instance-access.h"
 #include "lv2/midi.h"
 #include "lv2/options.h"
 #include "lv2/state.h"
@@ -86,16 +88,24 @@ void lv2_generate_ttl(const char* const basename)
 # else
         manifestString += "    a ui:X11UI ;\n";
 # endif
+# if ! DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
         manifestString += "    ui:binary <" + pluginLabel + "_ui." DISTRHO_DLL_EXTENSION "> ;\n";
-#if DISTRHO_PLUGIN_WANT_PROGRAMS
+# else
+        manifestString += "    ui:binary <" + pluginLabel + "." DISTRHO_DLL_EXTENSION "> ;\n";
+#endif
+# if DISTRHO_PLUGIN_WANT_PROGRAMS
         manifestString += "    lv2:extensionData ui:idleInterface ,\n";
         manifestString += "                      <" LV2_PROGRAMS__Interface "> ;\n";
-#else
+# else
         manifestString += "    lv2:extensionData ui:idleInterface ;\n";
-#endif
+# endif
         manifestString += "    lv2:optionalFeature ui:noUserResize ,\n";
         manifestString += "                        ui:touch ;\n";
         manifestString += "    lv2:requiredFeature ui:resize ,\n";
+# if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
+        manifestString += "                        <" LV2_DATA_ACCESS_URI "> ,\n";
+        manifestString += "                        <" LV2_INSTANCE_ACCESS_URI "> ,\n";
+# endif
         manifestString += "                        <" LV2_OPTIONS__options "> ,\n";
         manifestString += "                        <" LV2_URID__map "> .\n";
 #endif

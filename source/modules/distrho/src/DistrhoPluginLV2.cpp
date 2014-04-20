@@ -19,6 +19,8 @@
 #include "lv2/atom.h"
 #include "lv2/atom-util.h"
 #include "lv2/buf-size.h"
+#include "lv2/data-access.h"
+#include "lv2/instance-access.h"
 #include "lv2/midi.h"
 #include "lv2/options.h"
 #include "lv2/state.h"
@@ -556,6 +558,15 @@ public:
 
     // -------------------------------------------------------------------
 
+#if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
+    void* lv2_get_instance_pointer()
+    {
+        return fPlugin.getInstancePointer();
+    }
+#endif
+
+    // -------------------------------------------------------------------
+
 private:
     PluginExporter fPlugin;
 
@@ -824,6 +835,15 @@ LV2_Worker_Status lv2_work(LV2_Handle instance, LV2_Worker_Respond_Function, LV2
 
 // -----------------------------------------------------------------------
 
+#if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
+static void* lv2_get_instance_pointer(LV2_Handle instance)
+{
+    return instancePtr->lv2_get_instance_pointer();
+}
+#endif
+
+// -----------------------------------------------------------------------
+
 static const void* lv2_extension_data(const char* uri)
 {
     static const LV2_Options_Interface options = { lv2_get_options, lv2_set_options };
@@ -846,6 +866,19 @@ static const void* lv2_extension_data(const char* uri)
         return &state;
     if (std::strcmp(uri, LV2_WORKER__interface) == 0)
         return &worker;
+#endif
+
+#if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
+# define DISTRHO_DIRECT_ACCESS_URI "urn:distrho:direct-access"
+
+    struct LV2_DirectAccess_Interface {
+        void* (*get_instance_pointer)(LV2_Handle handle);
+    };
+
+    static const LV2_DirectAccess_Interface directaccess = { lv2_get_instance_pointer };
+
+    if (std::strcmp(uri, DISTRHO_DIRECT_ACCESS_URI) == 0)
+        return &directaccess;
 #endif
 
     return nullptr;
