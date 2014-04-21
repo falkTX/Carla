@@ -59,12 +59,12 @@ make $JOBS backend EXTRA_LIBS="$EXTRA_LIBS"
 
 rm -rf ./data/windows/Carla
 cp ./source/carla ./source/carla.pyw
-$CXFREEZE --target-dir=".\\data\\windows\\Carla" ".\\source\\carla.pyw"
+$CXFREEZE --include-modules=subprocess,inspect --target-dir=".\\data\\windows\\Carla" ".\\source\\carla.pyw"
 rm -f ./source/carla.pyw
 
 # rm -rf ./data/windows/CarlaControl
 # cp ./source/carla_control.py ./source/carla_control.pyw
-# $CXFREEZE --target-dir=".\\data\\windows\\CarlaControl" ".\\source\\carla_control.pyw"
+# $CXFREEZE --include-modules=subprocess,inspect --target-dir=".\\data\\windows\\CarlaControl" ".\\source\\carla_control.pyw"
 # rm -f ./source/carla_control.pyw
 
 cd data/windows
