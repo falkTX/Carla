@@ -245,9 +245,10 @@ public:
             return;
 
         try {
+            const CarlaMutexLocker cml(fWriteLock);
             ssize_t ignore = ::write(fPipeSend, "quit\n", 5);
             (void)ignore;
-        } catch (...) {}
+        } CARLA_SAFE_EXCEPTION("CarlaPipeServer::stop");
 
         waitChildClose();
 
@@ -411,9 +412,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fPipeSend != -1,);
 
         try {
+            const CarlaMutexLocker cml(fWriteLock);
             ssize_t ignore = ::write(fPipeSend, msg, std::strlen(msg));
             (void)ignore;
-        } catch (...) {}
+        } CARLA_SAFE_EXCEPTION("CarlaPipeServer::writeMsg");
     }
 
     void writeMsg(const char* const msg, size_t size) const noexcept
@@ -421,9 +423,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fPipeSend != -1,);
 
         try {
+            const CarlaMutexLocker cml(fWriteLock);
             ssize_t ignore = ::write(fPipeSend, msg, size);
             (void)ignore;
-        } catch (...) {}
+        } CARLA_SAFE_EXCEPTION("CarlaPipeServer::writeMsg");
     }
 
     void writeAndFixMsg(const char* const msg) noexcept
@@ -463,9 +466,10 @@ public:
         }
 
         try {
+            const CarlaMutexLocker cml(fWriteLock);
             ssize_t ignore = ::write(fPipeSend, fixedMsg, size+1);
             (void)ignore;
-        } catch (...) {}
+        } CARLA_SAFE_EXCEPTION("CarlaPipeServer::writeAndFixMsg");
     }
 
     void waitChildClose() noexcept
@@ -503,6 +507,7 @@ private:
 
     char        fTmpBuf[0xff+1];
     CarlaString fTmpStr;
+    CarlaMutex  fWriteLock;
 
     // -------------------------------------------------------------------
 
