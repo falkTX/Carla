@@ -19,6 +19,7 @@
 #ifndef CARLA_PIPE_UTILS_HPP_INCLUDED
 #define CARLA_PIPE_UTILS_HPP_INCLUDED
 
+#include "CarlaMutex.hpp"
 #include "CarlaString.hpp"
 
 #include <cerrno>
