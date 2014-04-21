@@ -5,7 +5,7 @@ set -e
 MINGW=x86_64-w64-mingw32
 MINGW_PATH=/opt/mingw64
 
-JOBS="-j 2"
+JOBS="-j 8"
 
 if [ ! -f Makefile ]; then
   cd ../..
@@ -75,9 +75,9 @@ cp ../../source/backend/*.dll   Carla/backend/
 cp ../../source/discovery/*.exe Carla/discovery/
 # mv CarlaControl/carla_control.exe CarlaControl/CarlaControl.exe
 
-rm -f Carla/imageformats/*.so
+# rm -f Carla/imageformats/*.so
 
-cp $WINEPREFIX/drive_c/drive_c/Python33/python33.dll                        Carla/
+cp $WINEPREFIX/drive_c/Python33/python33.dll                                Carla/
 cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/libEGL.dll          Carla/
 cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/libGLESv2.dll       Carla/
 cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/icuin49.dll         Carla/
@@ -93,7 +93,7 @@ cp -r $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/plugins/imageformats/
 cp -r $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/plugins/iconengines/  Carla/
 cp -r $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/plugins/platforms/    Carla/
 
-# cp $WINEPREFIX/drive_c/drive_c/Python33/python33.dll                        CarlaControl/
+# cp $WINEPREFIX/drive_c/Python33/python33.dll                                CarlaControl/
 # cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/libEGL.dll          CarlaControl/
 # cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/libGLESv2.dll       CarlaControl/
 # cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt5/icuin49.dll         CarlaControl/

@@ -1,5 +1,7 @@
 # ---  Release Notes for Carla 1.9.x  ---
 
+0.  THIS IS A BETA RELEASE!
+
 1.  LADISH does not support multi-client JACK applications.
     To prevent any issues Carla will switch to single-client mode automatically.
 
@@ -12,3 +14,5 @@
     Be sure to report any issues.
 
 5.  Carla "PRO" theme, Carla-Control and ZynAddSubFX internal plugin are not available for Windows at this point.
+
+6.  Carla-Control is not available at this point (needs to be reworked for the 2.0 codebase).
