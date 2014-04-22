@@ -83,7 +83,7 @@ protected:
             break;
         case CarlaExternalUI::UiHide:
             uiClosed();
-            stop();
+            CarlaExternalUI::stop();
             break;
         }
     }
@@ -93,6 +93,8 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(),);
 
         char tmpBuf[0xff+1];
+
+        const CarlaMutexLocker cml(fWriteLock);
 
         writeMsg("control\n", 8);
         std::sprintf(tmpBuf, "%i\n", index);
@@ -107,6 +109,8 @@ protected:
 
         char tmpBuf[0xff+1];
 
+        const CarlaMutexLocker cml(fWriteLock);
+
         writeMsg("program\n", 8);
         std::sprintf(tmpBuf, "%i\n", channel);
         writeMsg(tmpBuf);
@@ -120,6 +124,8 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
+
+        const CarlaMutexLocker cml(fWriteLock);
 
         writeMsg("configure\n", 10);
         writeAndFixMsg(key);

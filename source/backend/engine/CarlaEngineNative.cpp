@@ -59,6 +59,11 @@ public:
         carla_debug("CarlaEngineNativeUI::~CarlaEngineNativeUI()");
     }
 
+    CarlaMutex& getWriteLock() noexcept
+    {
+        return fWriteLock;
+    }
+
 protected:
     bool msgReceived(const char* const msg) noexcept override
     {
@@ -517,6 +522,7 @@ protected:
 
         if (! ok)
         {
+            const CarlaMutexLocker cml(fWriteLock);
             writeMsg("error\n", 6);
             writeAndFixMsg(fEngine->getLastError());
         }
@@ -660,6 +666,8 @@ protected:
 
     void uiServerSendPluginInfo(CarlaPlugin* const plugin)
     {
+        const CarlaMutexLocker cml(fUiServer.getWriteLock());
+
         const uint pluginId(plugin->getId());
 
         std::sprintf(fTmpBuf, "PLUGIN_INFO_%i\n", pluginId);
@@ -713,6 +721,8 @@ protected:
 
     void uiServerSendPluginParameters(CarlaPlugin* const plugin)
     {
+        const CarlaMutexLocker cml(fUiServer.getWriteLock());
+
         const uint pluginId(plugin->getId());
 
         uint32_t ins, outs, count;
@@ -749,6 +759,8 @@ protected:
 
     void uiServerSendPluginPrograms(CarlaPlugin* const plugin)
     {
+        const CarlaMutexLocker cml(fUiServer.getWriteLock());
+
         const uint pluginId(plugin->getId());
 
         uint32_t count = plugin->getProgramCount();
@@ -837,6 +849,8 @@ protected:
         default:
             break;
         }
+
+        const CarlaMutexLocker cml(fUiServer.getWriteLock());
 
         std::sprintf(fTmpBuf, "ENGINE_CALLBACK_%i\n", int(action));
         fUiServer.writeMsg(fTmpBuf);
@@ -1230,16 +1244,22 @@ protected:
             const EnginePluginData& plugData(pData->plugins[i]);
             const CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
-            std::sprintf(fTmpBuf, "PEAKS_%i\n", i);
-            fUiServer.writeMsg(fTmpBuf);
+            {
+                const CarlaMutexLocker cml(fUiServer.getWriteLock());
 
-            std::sprintf(fTmpBuf, "%f:%f:%f:%f\n", plugData.insPeak[0], plugData.insPeak[1], plugData.outsPeak[0], plugData.outsPeak[1]);
-            fUiServer.writeMsg(fTmpBuf);
+                std::sprintf(fTmpBuf, "PEAKS_%i\n", i);
+                fUiServer.writeMsg(fTmpBuf);
+
+                std::sprintf(fTmpBuf, "%f:%f:%f:%f\n", plugData.insPeak[0], plugData.insPeak[1], plugData.outsPeak[0], plugData.outsPeak[1]);
+                fUiServer.writeMsg(fTmpBuf);
+            }
 
             for (uint32_t j=0, count=plugin->getParameterCount(); j < count; ++j)
             {
                 if (plugin->isParameterOutput(j))
                     continue;
+
+                const CarlaMutexLocker cml(fUiServer.getWriteLock());
 
                 std::sprintf(fTmpBuf, "PARAMVAL_%i:%i\n", i, j);
                 fUiServer.writeMsg(fTmpBuf);

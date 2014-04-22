@@ -59,6 +59,8 @@ public:
     void start() noexcept
     {
         CarlaPipeServer::start(fFilename, fSampleRate, fUiTitle);
+
+        const CarlaMutexLocker cml(fWriteLock);
         writeMsg("show\n", 5);
     }
 

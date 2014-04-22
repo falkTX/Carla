@@ -71,6 +71,8 @@ public:
         CARLA_SAFE_ASSERT_RETURN(arg2 != nullptr, false);
         carla_debug("CarlaPipeServer::start(\"%s\", \"%s\", \"%s\")", filename, arg1, arg2);
 
+        const CarlaMutexLocker cml(fWriteLock);
+
         //----------------------------------------------------------------
 
         const char* argv[5];
@@ -110,12 +112,11 @@ public:
 
         char pipeRecv[100+1];
         char pipeSend[100+1];
+        pipeRecv[100] = '\0';
+        pipeSend[100] = '\0';
 
         std::snprintf(pipeRecv, 100, "%d", pipe1[0]); // [0] means reading end
         std::snprintf(pipeSend, 100, "%d", pipe2[1]); // [1] means writting end
-
-        pipeRecv[100] = '\0';
-        pipeSend[100] = '\0';
 
         argv[3] = pipeRecv; // reading end
         argv[4] = pipeSend; // writting end
@@ -245,8 +246,9 @@ public:
         if (fPipeSend == -1 || fPipeRecv == -1 || fPid == -1)
             return;
 
+        const CarlaMutexLocker cml(fWriteLock);
+
         try {
-            const CarlaMutexLocker cml(fWriteLock);
             ssize_t ignore = ::write(fPipeSend, "quit\n", 5);
             (void)ignore;
         } CARLA_SAFE_EXCEPTION("CarlaPipeServer::stop");
@@ -413,7 +415,6 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fPipeSend != -1,);
 
         try {
-            const CarlaMutexLocker cml(fWriteLock);
             ssize_t ignore = ::write(fPipeSend, msg, std::strlen(msg));
             (void)ignore;
         } CARLA_SAFE_EXCEPTION("CarlaPipeServer::writeMsg");
@@ -424,7 +425,6 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fPipeSend != -1,);
 
         try {
-            const CarlaMutexLocker cml(fWriteLock);
             ssize_t ignore = ::write(fPipeSend, msg, size);
             (void)ignore;
         } CARLA_SAFE_EXCEPTION("CarlaPipeServer::writeMsg");
@@ -467,7 +467,6 @@ public:
         }
 
         try {
-            const CarlaMutexLocker cml(fWriteLock);
             ssize_t ignore = ::write(fPipeSend, fixedMsg, size+1);
             (void)ignore;
         } CARLA_SAFE_EXCEPTION("CarlaPipeServer::writeAndFixMsg");
@@ -489,6 +488,9 @@ public:
     // -------------------------------------------------------------------
 
 protected:
+    // common write lock
+    CarlaMutex fWriteLock;
+
     // to possibly send errors somewhere
     virtual void fail(const char* const error)
     {
@@ -508,7 +510,6 @@ private:
 
     char        fTmpBuf[0xff+1];
     CarlaString fTmpStr;
-    CarlaMutex  fWriteLock;
 
     // -------------------------------------------------------------------
 
