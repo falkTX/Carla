@@ -49,6 +49,9 @@ inline float
 inline float
   rint(float __x)
   { return __builtin_rintf(__x); }
+inline float
+  round(float __x)
+  { return __builtin_roundf(__x); }
 }
 #endif
 

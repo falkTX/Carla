@@ -143,14 +143,17 @@ void carla_zeroFloat(float* const data, const size_t numSamples) noexcept
  */
 namespace std {
 inline float
-fmin(float __x, float __y)
-{ return __builtin_fminf(__x, __y); }
+  fmin(float __x, float __y)
+  { return __builtin_fminf(__x, __y); }
 inline float
-fmax(float __x, float __y)
-{ return __builtin_fmaxf(__x, __y); }
+  fmax(float __x, float __y)
+  { return __builtin_fmaxf(__x, __y); }
 inline float
-rint(float __x)
-{ return __builtin_rintf(__x); }
+  rint(float __x)
+  { return __builtin_rintf(__x); }
+inline float
+  round(float __x)
+  { return __builtin_roundf(__x); }
 }
 #endif
 
