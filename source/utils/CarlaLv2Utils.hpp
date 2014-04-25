@@ -654,9 +654,11 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
                         else if (node.equals(lv2World.time_position))
                             rdfPort->Types |= LV2_PORT_DATA_TIME_POSITION;
 
+#if 0
                         // something new we don't support yet?
                         else if (std::strstr(node.as_uri(), "lv2plug.in/") != nullptr)
                             carla_stderr("lv2_rdf_new(\"%s\") - port '%s' is of atom type but has unsupported data '%s'", uri, rdfPort->Name, node.as_uri());
+#endif
                     }
                 }
                 else if (lilvPort.is_a(lv2World.port_event))
