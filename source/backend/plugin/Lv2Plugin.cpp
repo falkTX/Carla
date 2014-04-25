@@ -2988,7 +2988,7 @@ public:
                     data = nullptr;
                     ev = lv2_atom_buffer_get(&iter, &data);
 
-                    if (ev == nullptr || data == nullptr)
+                    if (ev == nullptr || ev->body.size == 0 || data == nullptr)
                         break;
 
                     if (ev->body.type == CARLA_URI_MAP_ID_MIDI_EVENT)
@@ -4148,8 +4148,10 @@ public:
         case CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT: {
             CARLA_SAFE_ASSERT_RETURN(bufferSize >= sizeof(LV2_Atom),);
 
+            const LV2_Atom* const atom((const LV2_Atom*)buffer);
+
             // plugins sometimes fail on this, not good...
-            CARLA_SAFE_ASSERT_INT2(((const LV2_Atom*)buffer)->size == bufferSize-sizeof(LV2_Atom), ((const LV2_Atom*)buffer)->size, bufferSize-sizeof(LV2_Atom));
+            CARLA_SAFE_ASSERT_INT2(bufferSize == lv2_atom_pad_size(static_cast<uint32_t>(sizeof(LV2_Atom)+atom->size)), bufferSize, atom->size);
 
             for (uint32_t i=0; i < fEventsIn.count; ++i)
             {
@@ -4160,10 +4162,13 @@ public:
             }
 
             // for bad plugins
-            CARLA_SAFE_ASSERT(index != LV2UI_INVALID_PORT_INDEX);
-            index = fEventsIn.ctrlIndex;
+            if (index == LV2UI_INVALID_PORT_INDEX)
+            {
+                CARLA_SAFE_ASSERT(index != LV2UI_INVALID_PORT_INDEX); // FIXME
+                index = fEventsIn.ctrlIndex;
+            }
 
-            fAtomQueueIn.put((const LV2_Atom*)buffer, index);
+            fAtomQueueIn.put(atom, index);
         } break;
 
         default:
