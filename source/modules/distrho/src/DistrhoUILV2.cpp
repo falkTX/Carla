@@ -42,7 +42,8 @@ public:
           fController(controller),
           fWriteFunction(writeFunc),
           fEventTransferURID(uridMap->map(uridMap->handle, LV2_ATOM__eventTransfer)),
-          fKeyValueURID(uridMap->map(uridMap->handle, "urn:distrho:keyValueState"))
+          fKeyValueURID(uridMap->map(uridMap->handle, "urn:distrho:keyValueState")),
+          fWinIdWasNull(winId == 0)
     {
         fUiResize->ui_resize(fUiResize->handle, fUI.getWidth(), fUI.getHeight());
 
@@ -72,6 +73,9 @@ public:
         else if (format == fEventTransferURID)
         {
             const LV2_Atom* const atom((const LV2_Atom*)buffer);
+
+            // TODO - check atom type
+
             const char* const stateKey((const char*)LV2_ATOM_BODY_CONST(atom));
             const char* const stateValue(stateKey+std::strlen(stateKey)+1);
 
@@ -85,8 +89,20 @@ public:
 
     int lv2ui_idle()
     {
-        fUI.idle();
-        return 0;
+        if (fWinIdWasNull)
+            return (fUI.idle() && fUI.isVisible()) ? 0 : 1;
+
+        return fUI.idle() ? 0 : 1;
+    }
+
+    int lv2ui_show()
+    {
+        return fUI.setVisible(true) ? 0 : 1;
+    }
+
+    int lv2ui_hide()
+    {
+        return fUI.setVisible(false) ? 0 : 1;
     }
 
     // -------------------------------------------------------------------
@@ -173,6 +189,9 @@ private:
     // Need to save this
     const LV2_URID fEventTransferURID;
     const LV2_URID fKeyValueURID;
+
+    // using ui:showInterface if true
+    bool fWinIdWasNull;
 
     // -------------------------------------------------------------------
     // Callbacks
@@ -271,8 +290,7 @@ static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char* uri, 
 
     if (parentId == nullptr)
     {
-        d_stderr("Parent Window Id missing, cannot continue!");
-        return nullptr;
+        d_stdout("Parent Window Id missing, host should use be ui:showInterface...");
     }
 
 #if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
@@ -335,6 +353,16 @@ static int lv2ui_idle(LV2UI_Handle ui)
     return uiPtr->lv2ui_idle();
 }
 
+static int lv2ui_show(LV2UI_Handle ui)
+{
+    return uiPtr->lv2ui_show();
+}
+
+static int lv2ui_hide(LV2UI_Handle ui)
+{
+    return uiPtr->lv2ui_hide();
+}
+
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
 static void lv2ui_select_program(LV2UI_Handle ui, uint32_t bank, uint32_t program)
 {
@@ -347,9 +375,12 @@ static void lv2ui_select_program(LV2UI_Handle ui, uint32_t bank, uint32_t progra
 static const void* lv2ui_extension_data(const char* uri)
 {
     static const LV2UI_Idle_Interface uiIdle = { lv2ui_idle };
+    static const LV2UI_Show_Interface uiShow = { lv2ui_show, lv2ui_hide };
 
     if (std::strcmp(uri, LV2_UI__idleInterface) == 0)
         return &uiIdle;
+    if (std::strcmp(uri, LV2_UI__showInterface) == 0)
+        return &uiShow;
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
     static const LV2_Programs_UI_Interface uiPrograms = { lv2ui_select_program };

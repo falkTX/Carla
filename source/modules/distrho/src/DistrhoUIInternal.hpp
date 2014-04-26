@@ -233,6 +233,11 @@ public:
         return ! glApp.isQuiting();
     }
 
+    bool isVisible() const noexcept
+    {
+        return glWindow.isVisible();
+    }
+
     void quit()
     {
         glWindow.close();
@@ -254,9 +259,11 @@ public:
         glWindow.setTransientWinId(winId);
     }
 
-    void setVisible(const bool yesNo)
+    bool setVisible(const bool yesNo)
     {
         glWindow.setVisible(yesNo);
+
+        return ! glApp.isQuiting();
     }
 
 private:

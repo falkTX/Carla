@@ -98,11 +98,12 @@ void lv2_generate_ttl(const char* const basename)
 # else
         manifestString += "    ui:binary <" + pluginLabel + "." DISTRHO_DLL_EXTENSION "> ;\n";
 #endif
-# if DISTRHO_PLUGIN_WANT_PROGRAMS
         manifestString += "    lv2:extensionData ui:idleInterface ,\n";
+# if DISTRHO_PLUGIN_WANT_PROGRAMS
+        manifestString += "                      ui:showInterface ,\n";
         manifestString += "                      <" LV2_PROGRAMS__Interface "> ;\n";
 # else
-        manifestString += "    lv2:extensionData ui:idleInterface ;\n";
+        manifestString += "                      ui:showInterface ;\n";
 # endif
         manifestString += "    lv2:optionalFeature ui:noUserResize ,\n";
         manifestString += "                        ui:touch ;\n";
