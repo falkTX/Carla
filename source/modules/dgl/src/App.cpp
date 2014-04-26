@@ -68,7 +68,7 @@ void App::exec()
     while (pData->doLoop)
     {
         idle();
-        msleep(10);
+        d_msleep(10);
     }
 }
 

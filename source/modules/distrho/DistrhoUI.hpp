@@ -17,7 +17,8 @@
 #ifndef DISTRHO_UI_HPP_INCLUDED
 #define DISTRHO_UI_HPP_INCLUDED
 
-#include "DistrhoUtils.hpp"
+#include "extra/d_leakdetector.hpp"
+#include "src/DistrhoPluginChecks.h"
 
 #include "../dgl/Widget.hpp"
 
@@ -48,15 +49,15 @@ public:
     // -------------------------------------------------------------------
     // Host UI State
 
-    void d_uiResize(unsigned int width, unsigned int height);
+    void d_uiResize(uint width, uint height);
 
 protected:
     // -------------------------------------------------------------------
     // Basic Information
 
-    virtual const char*  d_getName()   const noexcept { return DISTRHO_PLUGIN_NAME; }
-    virtual unsigned int d_getWidth()  const noexcept = 0;
-    virtual unsigned int d_getHeight() const noexcept = 0;
+    virtual const char* d_getName()   const noexcept { return DISTRHO_PLUGIN_NAME; }
+    virtual uint        d_getWidth()  const noexcept = 0;
+    virtual uint        d_getHeight() const noexcept = 0;
 
     // -------------------------------------------------------------------
     // DSP Callbacks
@@ -78,7 +79,7 @@ protected:
     // -------------------------------------------------------------------
     // Direct DSP access - DO NOT USE THIS UNLESS STRICTLY NECESSARY!!
 
-    void* d_getPluginInstancePointer();
+    void* d_getPluginInstancePointer() const noexcept;
 #endif
 
     // -------------------------------------------------------------------
@@ -87,6 +88,8 @@ private:
     struct PrivateData;
     PrivateData* const pData;
     friend class UIExporter;
+
+    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(UI)
 };
 
 // -----------------------------------------------------------------------

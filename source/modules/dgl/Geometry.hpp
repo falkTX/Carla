@@ -49,6 +49,8 @@ public:
 private:
     T fX, fY;
     template<typename> friend class Rectangle;
+
+    DISTRHO_PREVENT_HEAP_ALLOCATION
 };
 
 // -----------------------------------------------------------------------
@@ -78,6 +80,8 @@ public:
 private:
     T fWidth, fHeight;
     template<typename> friend class Rectangle;
+
+    DISTRHO_PREVENT_HEAP_ALLOCATION
 };
 
 // -----------------------------------------------------------------------
@@ -124,6 +128,8 @@ public:
 private:
     Point<T> fPos;
     Size<T>  fSize;
+
+    DISTRHO_PREVENT_HEAP_ALLOCATION
 };
 
 // -----------------------------------------------------------------------

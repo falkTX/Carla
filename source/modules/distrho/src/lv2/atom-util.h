@@ -1,5 +1,5 @@
 /*
-  Copyright 2008-2012 David Robillard <http://drobilla.net>
+  Copyright 2008-2013 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -41,14 +41,14 @@ extern "C" {
 static inline uint32_t
 lv2_atom_pad_size(uint32_t size)
 {
-	return (size + 7) & (~7);
+	return (size + 7U) & (~7U);
 }
 
 /** Return the total size of @p atom, including the header. */
 static inline uint32_t
 lv2_atom_total_size(const LV2_Atom* atom)
 {
-	return sizeof(LV2_Atom) + atom->size;
+	return (uint32_t)sizeof(LV2_Atom) + atom->size;
 }
 
 /** Return true iff @p atom is null. */
@@ -80,10 +80,10 @@ lv2_atom_sequence_begin(const LV2_Atom_Sequence_Body* body)
 }
 
 /** Get an iterator pointing to the end of a Sequence body. */
-static inline const LV2_Atom_Event*
-lv2_atom_sequence_end(const LV2_Atom_Sequence_Body* body, uint32_t size)
+static inline LV2_Atom_Event*
+lv2_atom_sequence_end(LV2_Atom_Sequence_Body* body, uint32_t size)
 {
-	return (const LV2_Atom_Event*)((const uint8_t*)body + lv2_atom_pad_size(size));
+	return (LV2_Atom_Event*)((uint8_t*)body + lv2_atom_pad_size(size));
 }
 
 /** Return true iff @p i has reached the end of @p body. */
@@ -99,7 +99,6 @@ lv2_atom_sequence_is_end(const LV2_Atom_Sequence_Body* body,
 static inline const LV2_Atom_Event*
 lv2_atom_sequence_next(const LV2_Atom_Event* i)
 {
-	if (!i) return NULL;
 	return (const LV2_Atom_Event*)((const uint8_t*)i
 	                               + sizeof(LV2_Atom_Event)
 	                               + lv2_atom_pad_size(i->body.size));
@@ -130,6 +129,52 @@ lv2_atom_sequence_next(const LV2_Atom_Event* i)
 
 /**
    @}
+   @name Sequence Utilities
+   @{
+*/
+
+/**
+   Clear all events from @p sequence.
+
+   This simply resets the size field, the other fields are left untouched.
+*/
+static inline void
+lv2_atom_sequence_clear(LV2_Atom_Sequence* seq)
+{
+	seq->atom.size = sizeof(LV2_Atom_Sequence_Body);
+}
+
+/**
+   Append an event at the end of @p sequence.
+
+   @param seq Sequence to append to.
+   @param capacity Total capacity of the sequence atom
+   (e.g. as set by the host for sequence output ports).
+   @param event Event to write.
+
+   @return A pointer to the newly written event in @p seq,
+   or NULL on failure (insufficient space).
+*/
+static inline LV2_Atom_Event*
+lv2_atom_sequence_append_event(LV2_Atom_Sequence*    seq,
+                               uint32_t              capacity,
+                               const LV2_Atom_Event* event)
+{
+	const uint32_t total_size = (uint32_t)sizeof(*event) + event->body.size;
+	if (capacity - seq->atom.size < total_size) {
+		return NULL;
+	}
+
+	LV2_Atom_Event* e = lv2_atom_sequence_end(&seq->body, seq->atom.size);
+	memcpy(e, event, total_size);
+
+	seq->atom.size += lv2_atom_pad_size(total_size);
+
+	return e;
+}
+
+/**
+   @}
    @name Tuple Iterator
    @{
 */
@@ -143,7 +188,7 @@ lv2_atom_tuple_begin(const LV2_Atom_Tuple* tup)
 
 /** Return true iff @p i has reached the end of @p body. */
 static inline bool
-lv2_atom_tuple_is_end(const void* body, uint32_t size, LV2_Atom* i)
+lv2_atom_tuple_is_end(const void* body, uint32_t size, const LV2_Atom* i)
 {
 	return (const uint8_t*)i >= ((const uint8_t*)body + size);
 }
@@ -169,13 +214,13 @@ lv2_atom_tuple_next(const LV2_Atom* i)
    @endcode
 */
 #define LV2_ATOM_TUPLE_FOREACH(tuple, iter) \
-	for (LV2_Atom* (iter) = lv2_atom_tuple_begin(tuple); \
-	     !lv2_atom_tuple_is_end(LV2_ATOM_BODY(tuple), (tuple)->size, (iter)); \
+	for (const LV2_Atom* (iter) = lv2_atom_tuple_begin(tuple); \
+	     !lv2_atom_tuple_is_end(LV2_ATOM_BODY_CONST(tuple), (tuple)->size, (iter)); \
 	     (iter) = lv2_atom_tuple_next(iter))
 
 /** Like LV2_ATOM_TUPLE_FOREACH but for a headerless tuple body. */
 #define LV2_ATOM_TUPLE_BODY_FOREACH(body, size, iter) \
-	for (LV2_Atom* (iter) = (LV2_Atom*)body; \
+	for (const LV2_Atom* (iter) = (const LV2_Atom*)body; \
 	     !lv2_atom_tuple_is_end(body, size, (iter)); \
 	     (iter) = lv2_atom_tuple_next(iter))
 
@@ -208,8 +253,8 @@ lv2_atom_object_next(const LV2_Atom_Property_Body* i)
 	const LV2_Atom* const value = (const LV2_Atom*)(
 		(const uint8_t*)i + 2 * sizeof(uint32_t));
 	return (const LV2_Atom_Property_Body*)(
-		(const uint8_t*)i + lv2_atom_pad_size(sizeof(LV2_Atom_Property_Body)
-		                                      + value->size));
+		(const uint8_t*)i + lv2_atom_pad_size(
+			(uint32_t)sizeof(LV2_Atom_Property_Body) + value->size));
 }
 
 /**

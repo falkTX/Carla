@@ -17,42 +17,9 @@
 #ifndef DGL_BASE_HPP_INCLUDED
 #define DGL_BASE_HPP_INCLUDED
 
-/* Compatibility with non-clang compilers */
-#ifndef __has_feature
-# define __has_feature(x) 0
-#endif
-#ifndef __has_extension
-# define __has_extension __has_feature
-#endif
+#include "../distrho/extra/d_leakdetector.hpp"
 
-/* Check OS */
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
-# define DGL_OS_WINDOWS 1
-#elif defined(__APPLE__)
-# define DGL_OS_MAC     1
-#elif defined(__HAIKU__)
-# define DGL_OS_HAIKU   1
-#elif defined(__linux__) || defined(__linux)
-# define DGL_OS_LINUX   1
-#endif
-
-/* Check for C++11 support */
-#if defined(HAVE_CPP11_SUPPORT)
-# define PROPER_CPP11_SUPPORT
-#elif __cplusplus >= 201103L || (defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 405) || __has_extension(cxx_noexcept)
-# define PROPER_CPP11_SUPPORT
-# if (defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) < 407) || ! __has_extension(cxx_override_control)
-#  define override // gcc4.7+ only
-#  define final    // gcc4.7+ only
-# endif
-#endif
-
-#ifndef PROPER_CPP11_SUPPORT
-# define noexcept throw()
-# define override
-# define final
-# define nullptr (0)
-#endif
+// -----------------------------------------------------------------------
 
 /* Define namespace */
 #ifndef DGL_NAMESPACE
@@ -64,7 +31,7 @@
 #define USE_NAMESPACE_DGL using namespace DGL_NAMESPACE;
 
 /* GL includes */
-#ifdef DGL_OS_MAC
+#ifdef DISTRHO_OS_MAC
 # include <OpenGL/gl.h>
 #else
 # include <GL/gl.h>
@@ -136,16 +103,6 @@ enum Modifier {
     MODIFIER_ALT   = 1 << 2, /**< Alt/Option key */
     MODIFIER_SUPER = 1 << 3  /**< Mod4/Command/Windows key */
 };
-
-/*
- * Cross-platform sleep function.
- */
-void sleep(unsigned int secs);
-
-/*
- * Cross-platform msleep function.
- */
-void msleep(unsigned int msecs);
 
 // -----------------------------------------------------------------------
 

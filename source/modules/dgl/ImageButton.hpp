@@ -55,6 +55,8 @@ private:
     int    fCurButton;
 
     Callback* fCallback;
+
+    DISTRHO_LEAK_DETECTOR(ImageButton)
 };
 
 // -----------------------------------------------------------------------

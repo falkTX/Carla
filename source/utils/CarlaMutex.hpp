@@ -110,9 +110,6 @@ public:
         pthread_mutexattr_t atts;
         pthread_mutexattr_init(&atts);
         pthread_mutexattr_settype(&atts, PTHREAD_MUTEX_RECURSIVE);
-# ifndef CARLA_OS_ANDROID
-        pthread_mutexattr_setprotocol(&atts, PTHREAD_PRIO_INHERIT);
-# endif
         pthread_mutex_init(&fMutex, &atts);
         pthread_mutexattr_destroy(&atts);
 #endif
@@ -182,16 +179,16 @@ private:
 // Helper class to lock&unlock a mutex during a function scope.
 
 template <class Mutex>
-class CarlaScopedLocker
+class CarlaScopeLocker
 {
 public:
-    CarlaScopedLocker(const Mutex& mutex) noexcept
+    CarlaScopeLocker(const Mutex& mutex) noexcept
         : fMutex(mutex)
     {
         fMutex.lock();
     }
 
-    ~CarlaScopedLocker() noexcept
+    ~CarlaScopeLocker() noexcept
     {
         fMutex.unlock();
     }
@@ -200,23 +197,23 @@ private:
     const Mutex& fMutex;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaScopedLocker)
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaScopeLocker)
 };
 
 // -----------------------------------------------------------------------
 // Helper class to unlock&lock a mutex during a function scope.
 
 template <class Mutex>
-class CarlaScopedUnlocker
+class CarlaScopeUnlocker
 {
 public:
-    CarlaScopedUnlocker(const Mutex& mutex) noexcept
+    CarlaScopeUnlocker(const Mutex& mutex) noexcept
         : fMutex(mutex)
     {
         fMutex.unlock();
     }
 
-    ~CarlaScopedUnlocker() noexcept
+    ~CarlaScopeUnlocker() noexcept
     {
         fMutex.lock();
     }
@@ -225,17 +222,17 @@ private:
     const Mutex& fMutex;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaScopedUnlocker)
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaScopeUnlocker)
 };
 
 // -----------------------------------------------------------------------
 // Define types
 
-typedef CarlaScopedLocker<CarlaMutex>          CarlaMutexLocker;
-typedef CarlaScopedLocker<CarlaRecursiveMutex> CarlaRecursiveMutexLocker;
+typedef CarlaScopeLocker<CarlaMutex>          CarlaMutexLocker;
+typedef CarlaScopeLocker<CarlaRecursiveMutex> CarlaRecursiveMutexLocker;
 
-typedef CarlaScopedUnlocker<CarlaMutex>          CarlaMutexUnlocker;
-typedef CarlaScopedUnlocker<CarlaRecursiveMutex> CarlaRecursiveMutexUnlocker;
+typedef CarlaScopeUnlocker<CarlaMutex>          CarlaMutexUnlocker;
+typedef CarlaScopeUnlocker<CarlaRecursiveMutex> CarlaRecursiveMutexUnlocker;
 
 // -----------------------------------------------------------------------
 

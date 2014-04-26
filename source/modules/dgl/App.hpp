@@ -55,6 +55,8 @@ private:
     void _removeWindow(Window* const window);
     void _oneShown();
     void _oneHidden();
+
+    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(App)
 };
 
 // -----------------------------------------------------------------------

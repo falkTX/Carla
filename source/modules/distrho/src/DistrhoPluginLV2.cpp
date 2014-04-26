@@ -34,6 +34,7 @@
 #endif
 
 #include <map>
+#include <string>
 
 #ifndef DISTRHO_PLUGIN_URI
 # error DISTRHO_PLUGIN_URI undefined!
@@ -110,6 +111,20 @@ public:
 #if DISTRHO_PLUGIN_WANT_LATENCY
         fPortLatency = nullptr;
 #endif
+
+#if DISTRHO_PLUGIN_WANT_STATE
+        if (const uint32_t count = fPlugin.getStateCount())
+        {
+            fNeededUiSends = new bool[count];
+
+            for (uint32_t i=0; i < count; ++i)
+                fNeededUiSends[i] = false;
+        }
+        else
+        {
+            fNeededUiSends = nullptr;
+        }
+#endif
     }
 
     ~PluginLv2()
@@ -127,6 +142,12 @@ public:
         }
 
 #if DISTRHO_PLUGIN_WANT_STATE
+        if (fNeededUiSends != nullptr)
+        {
+            delete[] fNeededUiSends;
+            fNeededUiSends = nullptr;
+        }
+
         fStateMap.clear();
 #endif
     }
@@ -384,7 +405,18 @@ public:
             if (event->body.type == fURIDs.distrhoState && fWorker != nullptr)
             {
                 const void* const data((const void*)(event + 1));
-                fWorker->schedule_work(fWorker->handle, event->body.size, data);
+
+                // check if this is our special message
+                if (std::strcmp((const char*)data, "__dpf_ui_data__") == 0)
+                {
+                    for (uint32_t i=0, count=fPlugin.getStateCount(); i < count; ++i)
+                        fNeededUiSends[i] = true;
+                }
+                else
+                // no, send to DSP as usual
+                {
+                    fWorker->schedule_work(fWorker->handle, event->body.size, data);
+                }
 
                 continue;
             }
@@ -404,10 +436,76 @@ public:
         fPlugin.run(fPortAudioIns, fPortAudioOuts, sampleCount);
 #endif
 
-#if DISTRHO_LV2_USE_EVENTS_OUT
-#endif
-
         updateParameterOutputs();
+
+#if DISTRHO_LV2_USE_EVENTS_OUT
+        const uint32_t capacity = fPortEventsOut->atom.size;
+
+        bool needsInit = true;
+        uint32_t size, offset = 0;
+        LV2_Atom_Event* aev;
+
+        for (uint32_t i=0, count=fPlugin.getStateCount(); i < count; ++i)
+        {
+            if (! fNeededUiSends[i])
+                continue;
+
+            const d_string& key = fPlugin.getStateKey(i);
+
+            for (auto it = fStateMap.begin(), end = fStateMap.end(); it != end; ++it)
+            {
+                const d_string& curKey = it->first;
+
+                if (curKey != key)
+                    continue;
+
+                const d_string& value = it->second;
+
+                // TODO - RT safe
+                d_stdout("Got msg (from DSP to UI via host):\n%s\n%s", (const char*)key, (const char*)value);
+
+                // join key and value
+                std::string tmpStr;
+                tmpStr += std::string(key);
+                tmpStr += std::string("\0", 1);
+                tmpStr += std::string(value);
+
+                // get msg size
+                const size_t msgSize(tmpStr.size()+1);
+
+                if (sizeof(LV2_Atom_Event) + msgSize > capacity - offset)
+                    return;
+
+                if (needsInit)
+                {
+                    fPortEventsOut->atom.size = 0;
+                    fPortEventsOut->atom.type = fURIDs.atomSequence;
+                    fPortEventsOut->body.unit = 0;
+                    fPortEventsOut->body.pad  = 0;
+                    needsInit = false;
+                }
+
+                // reserve atom space
+                const size_t atomSize(lv2_atom_pad_size(sizeof(LV2_Atom) + msgSize));
+                char         atomBuf[atomSize];
+                std::memset(atomBuf, 0, atomSize);
+
+                // put data
+                aev = (LV2_Atom_Event*)((char*)LV2_ATOM_CONTENTS(LV2_Atom_Sequence, fPortEventsOut) + offset);
+                aev->time.frames = 0;
+                aev->body.type   = fURIDs.distrhoState;
+                aev->body.size   = msgSize;
+                std::memcpy(LV2_ATOM_BODY(&aev->body), tmpStr.data(), msgSize-1);
+
+                size    = lv2_atom_pad_size(sizeof(LV2_Atom_Event) + msgSize);
+                offset += size;
+                fPortEventsOut->atom.size += size;
+
+                fNeededUiSends[i] = false;
+                break;
+            }
+        }
+#endif
     }
 
     // -------------------------------------------------------------------
@@ -538,6 +636,13 @@ public:
                 continue;
 
             setState(key, value);
+
+            d_stdout("Got state msg:\n%s\n%s", (const char*)key, value);
+
+#if DISTRHO_LV2_USE_EVENTS_OUT
+            // signal msg needed for UI
+            fNeededUiSends[i] = true;
+#endif
         }
 
         return LV2_STATE_SUCCESS;
@@ -610,6 +715,7 @@ private:
         LV2_URID atomFloat;
         LV2_URID atomInt;
         LV2_URID atomLong;
+        LV2_URID atomSequence;
         LV2_URID atomString;
         LV2_URID distrhoState;
         LV2_URID midiEvent;
@@ -629,6 +735,7 @@ private:
               atomFloat(uridMap->map(uridMap->handle, LV2_ATOM__Float)),
               atomInt(uridMap->map(uridMap->handle, LV2_ATOM__Int)),
               atomLong(uridMap->map(uridMap->handle, LV2_ATOM__Long)),
+              atomSequence(uridMap->map(uridMap->handle, LV2_ATOM__Sequence)),
               atomString(uridMap->map(uridMap->handle, LV2_ATOM__String)),
               distrhoState(uridMap->map(uridMap->handle, "urn:distrho:keyValueState")),
               midiEvent(uridMap->map(uridMap->handle, LV2_MIDI__MidiEvent)),
@@ -650,13 +757,14 @@ private:
 
 #if DISTRHO_PLUGIN_WANT_STATE
     StringMap fStateMap;
+    bool* fNeededUiSends;
 
     void setState(const char* const key, const char* const newValue)
     {
         fPlugin.setState(key, newValue);
 
         // check if we want to save this key
-        if (! fPlugin.wantsStateKey(key))
+        if (! fPlugin.wantStateKey(key))
             return;
 
         // check if key already exists

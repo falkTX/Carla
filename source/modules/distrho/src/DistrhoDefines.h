@@ -17,48 +17,6 @@
 #ifndef DISTRHO_DEFINES_H_INCLUDED
 #define DISTRHO_DEFINES_H_INCLUDED
 
-#include "DistrhoPluginInfo.h"
-
-#ifndef DISTRHO_PLUGIN_NAME
-# error DISTRHO_PLUGIN_NAME undefined!
-#endif
-
-#ifndef DISTRHO_PLUGIN_HAS_UI
-# error DISTRHO_PLUGIN_HAS_UI undefined!
-#endif
-
-#ifndef DISTRHO_PLUGIN_IS_SYNTH
-# error DISTRHO_PLUGIN_IS_SYNTH undefined!
-#endif
-
-#ifndef DISTRHO_PLUGIN_NUM_INPUTS
-# error DISTRHO_PLUGIN_NUM_INPUTS undefined!
-#endif
-
-#ifndef DISTRHO_PLUGIN_NUM_OUTPUTS
-# error DISTRHO_PLUGIN_NUM_OUTPUTS undefined!
-#endif
-
-#ifndef DISTRHO_PLUGIN_WANT_LATENCY
-# error DISTRHO_PLUGIN_WANT_LATENCY undefined!
-#endif
-
-#ifndef DISTRHO_PLUGIN_WANT_PROGRAMS
-# error DISTRHO_PLUGIN_WANT_PROGRAMS undefined!
-#endif
-
-#ifndef DISTRHO_PLUGIN_WANT_STATE
-# error DISTRHO_PLUGIN_WANT_STATE undefined!
-#endif
-
-#ifndef DISTRHO_PLUGIN_WANT_TIMEPOS
-# error DISTRHO_PLUGIN_WANT_TIMEPOS undefined!
-#endif
-
-#ifndef DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
-# define DISTRHO_PLUGIN_WANT_DIRECT_ACCESS 0
-#endif
-
 /* Compatibility with non-clang compilers */
 #ifndef __has_feature
 # define __has_feature(x) 0
@@ -108,6 +66,59 @@
 # define nullptr (0)
 #endif
 
+/* Define DISTRHO_SAFE_ASSERT* */
+#define DISTRHO_SAFE_ASSERT(cond)               if (cond) d_pass(); else   d_safe_assert(#cond, __FILE__, __LINE__);
+#define DISTRHO_SAFE_ASSERT_BREAK(cond)         if (cond) d_pass(); else { d_safe_assert(#cond, __FILE__, __LINE__); break; }
+#define DISTRHO_SAFE_ASSERT_CONTINUE(cond)      if (cond) d_pass(); else { d_safe_assert(#cond, __FILE__, __LINE__); continue; }
+#define DISTRHO_SAFE_ASSERT_RETURN(cond, ret)   if (cond) d_pass(); else { d_safe_assert(#cond, __FILE__, __LINE__); return ret; }
+
+/* Define DISTRHO_SAFE_EXCEPTION */
+#define DISTRHO_SAFE_EXCEPTION(msg)             catch(...) { d_safe_exception(msg, __FILE__, __LINE__); }
+#define DISTRHO_SAFE_EXCEPTION_BREAK(msg)       catch(...) { d_safe_exception(msg, __FILE__, __LINE__); break; }
+#define DISTRHO_SAFE_EXCEPTION_CONTINUE(msg)    catch(...) { d_safe_exception(msg, __FILE__, __LINE__); continue; }
+#define DISTRHO_SAFE_EXCEPTION_RETURN(msg, ret) catch(...) { d_safe_exception(msg, __FILE__, __LINE__); return ret; }
+
+/* Define DISTRHO_DECLARE_NON_COPY_CLASS */
+#ifdef DISTRHO_PROPER_CPP11_SUPPORT
+# define DISTRHO_DECLARE_NON_COPY_CLASS(ClassName) \
+private:                                           \
+    ClassName(ClassName&) = delete;                \
+    ClassName(const ClassName&) = delete;          \
+    ClassName& operator=(ClassName&) = delete  ;   \
+    ClassName& operator=(const ClassName&) = delete;
+#else
+# define DISTRHO_DECLARE_NON_COPY_CLASS(ClassName) \
+private:                                           \
+    ClassName(ClassName&);                         \
+    ClassName(const ClassName&);                   \
+    ClassName& operator=(ClassName&);              \
+    ClassName& operator=(const ClassName&);
+#endif
+
+/* Define DISTRHO_DECLARE_NON_COPY_STRUCT */
+#ifdef DISTRHO_PROPER_CPP11_SUPPORT
+# define DISTRHO_DECLARE_NON_COPY_STRUCT(StructName) \
+    StructName(StructName&) = delete;                \
+    StructName(const StructName&) = delete;          \
+    StructName& operator=(StructName&) = delete;     \
+    StructName& operator=(const StructName&) = delete;
+#else
+# define DISTRHO_DECLARE_NON_COPY_STRUCT(StructName)
+#endif
+
+/* Define DISTRHO_PREVENT_HEAP_ALLOCATION */
+#ifdef DISTRHO_PROPER_CPP11_SUPPORT
+# define DISTRHO_PREVENT_HEAP_ALLOCATION        \
+private:                                        \
+    static void* operator new(size_t) = delete; \
+    static void operator delete(void*) = delete;
+#else
+# define DISTRHO_PREVENT_HEAP_ALLOCATION \
+private:                                 \
+    static void* operator new(size_t);   \
+    static void operator delete(void*);
+#endif
+
 /* Define namespace */
 #ifndef DISTRHO_NO_NAMESPACE
 # ifndef DISTRHO_NAMESPACE
@@ -122,6 +133,10 @@
 # define USE_NAMESPACE_DISTRHO
 #endif
 
-#define DISTRHO_UI_URI DISTRHO_PLUGIN_URI "#UI"
+/* Useful typedefs */
+typedef unsigned char uchar;
+typedef unsigned long int ulong;
+typedef unsigned short int ushort;
+typedef unsigned int uint;
 
 #endif // DISTRHO_DEFINES_H_INCLUDED

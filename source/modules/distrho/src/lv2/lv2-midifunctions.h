@@ -50,7 +50,7 @@ inline double lv2midi_get_event(LV2_MIDIState* state,
   }
   
   *timestamp = *(double*)(state->midi->data + state->position);
-  *size = *(size_t*)(state->midi->data + state->position + sizeof(double));
+  *size = (uint32_t)*(size_t*)(state->midi->data + state->position + sizeof(double));
   *data = state->midi->data + state->position + 
     sizeof(double) + sizeof(size_t);
   return *timestamp;
@@ -64,10 +64,10 @@ inline double lv2midi_step(LV2_MIDIState* state) {
     return state->frame_count;
   }
   
-  state->position += sizeof(double);
+  state->position += (uint32_t)sizeof(double);
   size_t size = *(size_t*)(state->midi->data + state->position);
-  state->position += sizeof(size_t);
-  state->position += size;
+  state->position += (uint32_t)sizeof(size_t);
+  state->position += (uint32_t)size;
   return *(double*)(state->midi->data + state->position);
 }
 
@@ -80,9 +80,9 @@ inline void lv2midi_put_event(LV2_MIDIState* state,
   if (state->midi->size + sizeof(double) + sizeof(size_t) + size < state->midi->capacity)
   {
     *((double*)(state->midi->data + state->midi->size)) = timestamp;
-    state->midi->size += sizeof(double);
+    state->midi->size += (uint32_t)sizeof(double);
     *((size_t*)(state->midi->data + state->midi->size)) = size;
-    state->midi->size += sizeof(size_t);
+    state->midi->size += (uint32_t)sizeof(size_t);
     memcpy(state->midi->data + state->midi->size, data, size);
 
     state->midi->size += size;

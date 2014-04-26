@@ -92,7 +92,7 @@ typedef struct {
 } LV2_URI_Map_Feature;
 
 #ifdef __cplusplus
-} /* extern "C" */
+}  /* extern "C" */
 #endif
 
 #endif /* LV2_URI_MAP_H */

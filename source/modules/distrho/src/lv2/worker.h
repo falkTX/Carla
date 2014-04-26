@@ -152,7 +152,7 @@ typedef struct _LV2_Worker_Schedule {
 } LV2_Worker_Schedule;
 
 #ifdef __cplusplus
-} /* extern "C" */
+}  /* extern "C" */
 #endif
 
 #endif  /* LV2_WORKER_H */

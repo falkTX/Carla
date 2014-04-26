@@ -24,16 +24,16 @@
 
 #include "pugl/pugl.h"
 
-#if defined(DGL_OS_WINDOWS)
+#if defined(DISTRHO_OS_WINDOWS)
 # include "pugl/pugl_win.cpp"
-#elif defined(DGL_OS_MAC)
+#elif defined(DISTRHO_OS_MAC)
 # include "pugl/pugl_osx_extended.h"
 extern "C" {
 struct PuglViewImpl {
     int width;
     int height;
 };}
-#elif defined(DGL_OS_LINUX)
+#elif defined(DISTRHO_OS_LINUX)
 # include <sys/types.h>
 # include <unistd.h>
 extern "C" {
@@ -77,12 +77,12 @@ public:
           fVisible(false),
           fResizable(true),
           fUsingEmbed(false),
-#if defined(DGL_OS_WINDOWS)
+#if defined(DISTRHO_OS_WINDOWS)
           hwnd(0)
-#elif defined(DGL_OS_LINUX)
+#elif defined(DISTRHO_OS_LINUX)
           xDisplay(nullptr),
           xWindow(0)
-#elif defined(DGL_OS_MAC)
+#elif defined(DISTRHO_OS_MAC)
           fNeedsIdle(true)
 #else
           _dummy('\0')
@@ -101,12 +101,12 @@ public:
           fResizable(true),
           fUsingEmbed(false),
           fModal(parent.pData),
-#if defined(DGL_OS_WINDOWS)
+#if defined(DISTRHO_OS_WINDOWS)
           hwnd(0)
-#elif defined(DGL_OS_LINUX)
+#elif defined(DISTRHO_OS_LINUX)
           xDisplay(nullptr),
           xWindow(0)
-#elif defined(DGL_OS_MAC)
+#elif defined(DISTRHO_OS_MAC)
           fNeedsIdle(false)
 #else
           _dummy('\0')
@@ -115,7 +115,7 @@ public:
         DBG("Creating window with parent..."); DBGF;
         init();
 
-#ifdef DGL_OS_LINUX
+#ifdef DISTRHO_OS_LINUX
         const PuglInternals* const parentImpl(parent.pData->fView->impl);
 
         XSetTransientForHint(xDisplay, xWindow, parentImpl->win);
@@ -130,12 +130,12 @@ public:
           fVisible(parentId != 0),
           fResizable(parentId == 0),
           fUsingEmbed(parentId != 0),
-#if defined(DGL_OS_WINDOWS)
+#if defined(DISTRHO_OS_WINDOWS)
           hwnd(0)
-#elif defined(DGL_OS_LINUX)
+#elif defined(DISTRHO_OS_LINUX)
           xDisplay(nullptr),
           xWindow(0)
-#elif defined(DGL_OS_MAC)
+#elif defined(DISTRHO_OS_MAC)
           fNeedsIdle(false)
 #else
           _dummy('\0')
@@ -178,11 +178,11 @@ public:
         puglSetReshapeFunc(fView, onReshapeCallback);
         puglSetCloseFunc(fView, onCloseCallback);
 
-#if defined(DGL_OS_WINDOWS)
+#if defined(DISTRHO_OS_WINDOWS)
         PuglInternals* impl = fView->impl;
         hwnd = impl->hwnd;
         assert(hwnd != 0);
-#elif defined(DGL_OS_LINUX)
+#elif defined(DISTRHO_OS_LINUX)
         PuglInternals* impl = fView->impl;
         xDisplay = impl->display;
         xWindow  = impl->win;
@@ -225,9 +225,9 @@ public:
             fView = nullptr;
         }
 
-#if defined(DGL_OS_WINDOWS)
+#if defined(DISTRHO_OS_WINDOWS)
           hwnd = 0;
-#elif defined(DGL_OS_LINUX)
+#elif defined(DISTRHO_OS_LINUX)
           xDisplay = nullptr;
           xWindow  = 0;
 #endif
@@ -259,7 +259,7 @@ public:
             for (; fVisible && fModal.enabled;)
             {
                 idle();
-                msleep(10);
+                d_msleep(10);
             }
 
             exec_fini();
@@ -275,13 +275,13 @@ public:
     void focus()
     {
         DBG("Window focus\n");
-#if defined(DGL_OS_WINDOWS)
+#if defined(DISTRHO_OS_WINDOWS)
         SetForegroundWindow(hwnd);
         SetActiveWindow(hwnd);
         SetFocus(hwnd);
-#elif defined(DGL_OS_MAC)
+#elif defined(DISTRHO_OS_MAC)
         puglImplFocus(fView);
-#elif defined(DGL_OS_LINUX)
+#elif defined(DISTRHO_OS_LINUX)
         XRaiseWindow(xDisplay, xWindow);
         XSetInputFocus(xDisplay, xWindow, RevertToPointerRoot, CurrentTime);
         XFlush(xDisplay);
@@ -321,16 +321,16 @@ public:
         if (yesNo && fFirstInit)
             setSize(static_cast<unsigned int>(fView->width), static_cast<unsigned int>(fView->height), true);
 
-#if defined(DGL_OS_WINDOWS)
+#if defined(DISTRHO_OS_WINDOWS)
         if (yesNo)
             ShowWindow(hwnd, fFirstInit ? SW_SHOWNORMAL : SW_RESTORE);
         else
             ShowWindow(hwnd, SW_HIDE);
 
         UpdateWindow(hwnd);
-#elif defined(DGL_OS_MAC)
+#elif defined(DISTRHO_OS_MAC)
         puglImplSetVisible(fView, yesNo);
-#elif defined(DGL_OS_LINUX)
+#elif defined(DISTRHO_OS_LINUX)
         if (yesNo)
             XMapRaised(xDisplay, xWindow);
         else
@@ -414,7 +414,7 @@ public:
 
         DBGp("Window setSize called %s, size %i %i\n", forced ? "(forced)" : "(not forced)", width, height);
 
-#if defined(DGL_OS_WINDOWS)
+#if defined(DISTRHO_OS_WINDOWS)
         int winFlags = WS_POPUPWINDOW | WS_CAPTION;
 
         if (fResizable)
@@ -427,9 +427,9 @@ public:
 
         if (! forced)
             UpdateWindow(hwnd);
-#elif defined(DGL_OS_MAC)
+#elif defined(DISTRHO_OS_MAC)
         puglImplSetSize(fView, width, height, forced);
-#elif defined(DGL_OS_LINUX)
+#elif defined(DISTRHO_OS_LINUX)
         XResizeWindow(xDisplay, xWindow, width, height);
 
         if (! fResizable)
@@ -461,19 +461,19 @@ public:
     {
         DBGp("Window setTitle \"%s\"\n", title);
 
-#if defined(DGL_OS_WINDOWS)
+#if defined(DISTRHO_OS_WINDOWS)
         SetWindowTextA(hwnd, title);
-#elif defined(DGL_OS_MAC)
+#elif defined(DISTRHO_OS_MAC)
         puglImplSetTitle(fView, title);
-#elif defined(DGL_OS_LINUX)
+#elif defined(DISTRHO_OS_LINUX)
         XStoreName(xDisplay, xWindow, title);
 #endif
     }
 
     void setTransientWinId(const intptr_t winId)
     {
-#if defined(DGL_OS_LINUX)
-        XSetTransientForHint(xDisplay, xWindow, static_cast<::Window>(winId));
+#if defined(DISTRHO_OS_LINUX)
+        XSetTransientForHint(xDisplay, xWindow, static_cast< ::Window>(winId));
 #else
         return;
         // unused
@@ -519,7 +519,7 @@ public:
     {
         puglProcessEvents(fView);
 
-#ifdef DGL_OS_MAC
+#ifdef DISTRHO_OS_MAC
         if (fNeedsIdle)
             puglImplIdle(fView);
 #endif
@@ -544,7 +544,7 @@ public:
         fModal.enabled = true;
         fModal.parent->fModal.childFocus = this;
 
-#ifdef DGL_OS_WINDOWS
+#ifdef DISTRHO_OS_WINDOWS
         // Center this window
         PuglInternals* const parentImpl = fModal.parent->fView->impl;
 
@@ -741,12 +741,12 @@ private:
         }
     } fModal;
 
-#if defined(DGL_OS_WINDOWS)
+#if defined(DISTRHO_OS_WINDOWS)
     HWND     hwnd;
-#elif defined(DGL_OS_LINUX)
+#elif defined(DISTRHO_OS_LINUX)
     Display* xDisplay;
     ::Window xWindow;
-#elif defined(DGL_OS_MAC)
+#elif defined(DISTRHO_OS_MAC)
     bool     fNeedsIdle;
 #else
     char      _dummy;

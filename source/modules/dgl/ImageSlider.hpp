@@ -47,6 +47,7 @@ public:
     void setEndPos(const Point<int>& endPos);
     void setEndPos(int x, int y);
 
+    void setInverted(bool inverted);
     void setRange(float min, float max);
     void setStep(float step);
     void setValue(float value, bool sendCallback = false);
@@ -67,6 +68,7 @@ private:
     float fValueTmp;
 
     bool fDragging;
+    bool fInverted;
     int  fStartedX;
     int  fStartedY;
 
@@ -77,6 +79,8 @@ private:
     Rectangle<int> fSliderArea;
 
     void _recheckArea();
+
+    DISTRHO_LEAK_DETECTOR(ImageSlider)
 };
 
 // -----------------------------------------------------------------------

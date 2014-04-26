@@ -57,9 +57,8 @@ public:
         fPortAudioOuts = nullptr;
 #endif
 
+        if (const uint32_t count = fPlugin.getParameterCount())
         {
-            const uint32_t count(fPlugin.getParameterCount());
-
             fPortControls      = new LADSPA_Data*[count];
             fLastControlValues = new LADSPA_Data[count];
 
@@ -69,13 +68,18 @@ public:
                 fLastControlValues[i] = fPlugin.getParameterValue(i);
             }
         }
+        else
+        {
+            fPortControls = nullptr;
+            fLastControlValues = nullptr;
+        }
 
 #if DISTRHO_PLUGIN_WANT_LATENCY
         fPortLatency = nullptr;
 #endif
     }
 
-    ~PluginLadspaDssi()
+    ~PluginLadspaDssi() noexcept
     {
         if (fPortControls != nullptr)
         {
@@ -83,7 +87,7 @@ public:
             fPortControls = nullptr;
         }
 
-        if (fLastControlValues)
+        if (fLastControlValues != nullptr)
         {
             delete[] fLastControlValues;
             fLastControlValues = nullptr;
@@ -104,12 +108,12 @@ public:
 
     // -------------------------------------------------------------------
 
-    void ladspa_connect_port(const unsigned long port, LADSPA_Data* const dataLocation)
+    void ladspa_connect_port(const ulong port, LADSPA_Data* const dataLocation) noexcept
     {
-        unsigned long index = 0;
+        ulong index = 0;
 
 #if DISTRHO_PLUGIN_NUM_INPUTS > 0
-        for (unsigned long i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i)
+        for (ulong i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i)
         {
             if (port == index++)
             {
@@ -120,7 +124,7 @@ public:
 #endif
 
 #if DISTRHO_PLUGIN_NUM_OUTPUTS > 0
-        for (unsigned long i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; ++i)
+        for (ulong i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; ++i)
         {
             if (port == index++)
             {
@@ -138,7 +142,7 @@ public:
         }
 #endif
 
-        for (unsigned long i=0, count=fPlugin.getParameterCount(); i < count; ++i)
+        for (ulong i=0, count=fPlugin.getParameterCount(); i < count; ++i)
         {
             if (port == index++)
             {
@@ -151,14 +155,14 @@ public:
     // -------------------------------------------------------------------
 
 #ifdef DISTRHO_PLUGIN_TARGET_DSSI
-    void ladspa_run(const unsigned long sampleCount)
+    void ladspa_run(const ulong sampleCount)
     {
         dssi_run_synth(sampleCount, nullptr, 0);
     }
 
-    void dssi_run_synth(const unsigned long sampleCount, snd_seq_event_t* const events, const unsigned long eventCount)
+    void dssi_run_synth(const ulong sampleCount, snd_seq_event_t* const events, const ulong eventCount)
 #else
-    void ladspa_run(const unsigned long sampleCount)
+    void ladspa_run(const ulong sampleCount)
 #endif
     {
         // pre-roll
@@ -191,6 +195,7 @@ public:
         {
             const snd_seq_event_t& seqEvent(events[i]);
 
+            // FIXME
             if (seqEvent.data.note.channel > 0xF || seqEvent.data.control.channel > 0xF)
                 continue;
 
@@ -264,8 +269,7 @@ public:
 
 #if defined(DISTRHO_PLUGIN_TARGET_DSSI) && ! DISTRHO_PLUGIN_IS_SYNTH
         return; // unused
-        (void)events;
-        (void)eventCount;
+        (void)events; (void)eventCount;
 #endif
     }
 
@@ -286,7 +290,7 @@ public:
 # endif
 
 # if DISTRHO_PLUGIN_WANT_PROGRAMS
-    const DSSI_Program_Descriptor* dssi_get_program(const unsigned long index)
+    const DSSI_Program_Descriptor* dssi_get_program(const ulong index)
     {
         if (index >= fPlugin.getProgramCount())
             return nullptr;
@@ -300,12 +304,11 @@ public:
         return &desc;
     }
 
-    void dssi_select_program(const unsigned long bank, const unsigned long program)
+    void dssi_select_program(const ulong bank, const ulong program)
     {
-        const unsigned long realProgram(bank * 128 + program);
+        const ulong realProgram(bank * 128 + program);
 
-        if (realProgram >= fPlugin.getProgramCount())
-            return;
+        DISTRHO_SAFE_ASSERT_RETURN(realProgram < fPlugin.getProgramCount(),);
 
         fPlugin.setProgram(realProgram);
 
@@ -372,7 +375,7 @@ private:
 
 // -----------------------------------------------------------------------
 
-static LADSPA_Handle ladspa_instantiate(const LADSPA_Descriptor*, unsigned long sampleRate)
+static LADSPA_Handle ladspa_instantiate(const LADSPA_Descriptor*, ulong sampleRate)
 {
     if (d_lastBufferSize == 0)
         d_lastBufferSize = 2048;
@@ -383,7 +386,7 @@ static LADSPA_Handle ladspa_instantiate(const LADSPA_Descriptor*, unsigned long 
 
 #define instancePtr ((PluginLadspaDssi*)instance)
 
-static void ladspa_connect_port(LADSPA_Handle instance, unsigned long port, LADSPA_Data* dataLocation)
+static void ladspa_connect_port(LADSPA_Handle instance, ulong port, LADSPA_Data* dataLocation)
 {
     instancePtr->ladspa_connect_port(port, dataLocation);
 }
@@ -393,7 +396,7 @@ static void ladspa_activate(LADSPA_Handle instance)
     instancePtr->ladspa_activate();
 }
 
-static void ladspa_run(LADSPA_Handle instance, unsigned long sampleCount)
+static void ladspa_run(LADSPA_Handle instance, ulong sampleCount)
 {
     instancePtr->ladspa_run(sampleCount);
 }
@@ -417,19 +420,19 @@ static char* dssi_configure(LADSPA_Handle instance, const char* key, const char*
 # endif
 
 # if DISTRHO_PLUGIN_WANT_PROGRAMS
-static const DSSI_Program_Descriptor* dssi_get_program(LADSPA_Handle instance, unsigned long index)
+static const DSSI_Program_Descriptor* dssi_get_program(LADSPA_Handle instance, ulong index)
 {
     return instancePtr->dssi_get_program(index);
 }
 
-static void dssi_select_program(LADSPA_Handle instance, unsigned long bank, unsigned long program)
+static void dssi_select_program(LADSPA_Handle instance, ulong bank, ulong program)
 {
     instancePtr->dssi_select_program(bank, program);
 }
 # endif
 
 # if DISTRHO_PLUGIN_IS_SYNTH
-static void dssi_run_synth(LADSPA_Handle instance, unsigned long sampleCount, snd_seq_event_t* events, unsigned long eventCount)
+static void dssi_run_synth(LADSPA_Handle instance, ulong sampleCount, snd_seq_event_t* events, ulong eventCount)
 {
     instancePtr->dssi_run_synth(sampleCount, events, eventCount);
 }
@@ -443,7 +446,7 @@ static void dssi_run_synth(LADSPA_Handle instance, unsigned long sampleCount, sn
 static LADSPA_Descriptor sLadspaDescriptor = {
     /* UniqueID   */ 0,
     /* Label      */ nullptr,
-    /* Properties */ LADSPA_PROPERTY_REALTIME | LADSPA_PROPERTY_HARD_RT_CAPABLE,
+    /* Properties */ LADSPA_PROPERTY_HARD_RT_CAPABLE,
     /* Name       */ nullptr,
     /* Maker      */ nullptr,
     /* Copyright  */ nullptr,
@@ -506,8 +509,8 @@ public:
         d_lastSampleRate = 0.0;
 
         // Get port count, init
-        unsigned long port = 0;
-        unsigned long portCount = DISTRHO_PLUGIN_NUM_INPUTS + DISTRHO_PLUGIN_NUM_OUTPUTS + plugin.getParameterCount();
+        ulong port = 0;
+        ulong portCount = DISTRHO_PLUGIN_NUM_INPUTS + DISTRHO_PLUGIN_NUM_OUTPUTS + plugin.getParameterCount();
 #if DISTRHO_PLUGIN_WANT_LATENCY
         portCount += 1;
 #endif
@@ -517,7 +520,7 @@ public:
 
         // Set ports
 #if DISTRHO_PLUGIN_NUM_INPUTS > 0
-        for (unsigned long i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i, ++port)
+        for (ulong i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i, ++port)
         {
             char portName[24] = { '\0' };
             std::sprintf(portName, "Audio Input %lu", i+1);
@@ -532,7 +535,7 @@ public:
 #endif
 
 #if DISTRHO_PLUGIN_NUM_OUTPUTS > 0
-        for (unsigned long i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; ++i, ++port)
+        for (ulong i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; ++i, ++port)
         {
             char portName[24] = { '\0' };
             std::sprintf(portName, "Audio Output %lu", i+1);
@@ -556,7 +559,7 @@ public:
         ++port;
 #endif
 
-        for (unsigned long i=0, count=plugin.getParameterCount(); i < count; ++i, ++port)
+        for (ulong i=0, count=plugin.getParameterCount(); i < count; ++i, ++port)
         {
             portNames[port]       = strdup((const char*)plugin.getParameterName(i));
             portDescriptors[port] = LADSPA_PORT_CONTROL;
@@ -665,7 +668,7 @@ public:
 
         if (sLadspaDescriptor.PortNames != nullptr)
         {
-            for (unsigned long i=0; i < sLadspaDescriptor.PortCount; ++i)
+            for (ulong i=0; i < sLadspaDescriptor.PortCount; ++i)
             {
                 if (sLadspaDescriptor.PortNames[i] != nullptr)
                     std::free((void*)sLadspaDescriptor.PortNames[i]);
@@ -684,7 +687,7 @@ static DescriptorInitializer sDescInit;
 END_NAMESPACE_DISTRHO
 
 DISTRHO_PLUGIN_EXPORT
-const LADSPA_Descriptor* ladspa_descriptor(unsigned long index)
+const LADSPA_Descriptor* ladspa_descriptor(ulong index)
 {
     USE_NAMESPACE_DISTRHO
     return (index == 0) ? &sLadspaDescriptor : nullptr;
@@ -692,7 +695,7 @@ const LADSPA_Descriptor* ladspa_descriptor(unsigned long index)
 
 #ifdef DISTRHO_PLUGIN_TARGET_DSSI
 DISTRHO_PLUGIN_EXPORT
-const DSSI_Descriptor* dssi_descriptor(unsigned long index)
+const DSSI_Descriptor* dssi_descriptor(ulong index)
 {
     USE_NAMESPACE_DISTRHO
     return (index == 0) ? &sDssiDescriptor : nullptr;

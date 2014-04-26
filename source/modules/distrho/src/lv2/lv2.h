@@ -21,7 +21,7 @@
 /**
    @file lv2.h
    API for the LV2 specification <http://lv2plug.in/ns/lv2core>.
-   Revision: 6.5
+   Revision: 12.0
 */
 
 #ifndef LV2_H_INCLUDED
@@ -109,6 +109,7 @@
 #define LV2_CORE__port               LV2_CORE_PREFIX "port"
 #define LV2_CORE__portProperty       LV2_CORE_PREFIX "portProperty"
 #define LV2_CORE__project            LV2_CORE_PREFIX "project"
+#define LV2_CORE__prototype          LV2_CORE_PREFIX "prototype"
 #define LV2_CORE__reportsLatency     LV2_CORE_PREFIX "reportsLatency"
 #define LV2_CORE__requiredFeature    LV2_CORE_PREFIX "requiredFeature"
 #define LV2_CORE__sampleRate         LV2_CORE_PREFIX "sampleRate"

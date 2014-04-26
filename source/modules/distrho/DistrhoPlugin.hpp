@@ -17,9 +17,16 @@
 #ifndef DISTRHO_PLUGIN_HPP_INCLUDED
 #define DISTRHO_PLUGIN_HPP_INCLUDED
 
-#include "DistrhoUtils.hpp"
+#include "extra/d_string.hpp"
+#include "src/DistrhoPluginChecks.h"
 
 #include <cmath>
+
+#ifdef PROPER_CPP11_SUPPORT
+# include <cstdint>
+#else
+# include <stdint.h>
+#endif
 
 #ifndef M_PI
 # define M_PI 3.14159265358979323846
@@ -63,34 +70,74 @@ struct ParameterRanges {
         max = 1.0f;
     }
 
+    /*!
+     * Fix default value within range.
+     */
+    void fixDefault() noexcept
+    {
+        fixValue(def);
+    }
+
+    /*!
+     * Fix a value within range.
+     */
     void fixValue(float& value) const noexcept
     {
-        if (value < min)
+        if (value <= min)
             value = min;
         else if (value > max)
             value = max;
     }
 
+    /*!
+     * Get a fixed value within range.
+     */
     float getFixedValue(const float& value) const noexcept
     {
-        if (value < min)
+        if (value <= min)
             return min;
-        else if (value > max)
+        if (value >= max)
             return max;
         return value;
     }
 
+    /*!
+     * Get a value normalized to 0.0<->1.0.
+     */
     float getNormalizedValue(const float& value) const noexcept
     {
-        const float newValue((value - min) / (max - min));
+        const float normValue((value - min) / (max - min));
 
-        if (newValue <= 0.0f)
+        if (normValue <= 0.0f)
             return 0.0f;
-        if (newValue >= 1.0f)
+        if (normValue >= 1.0f)
             return 1.0f;
-        return newValue;
+        return normValue;
     }
 
+    /*!
+     * Get a value normalized to 0.0<->1.0, fixed within range.
+     */
+    float getFixedAndNormalizedValue(const float& value) const noexcept
+    {
+        if (value <= min)
+            return 0.0f;
+        if (value >= max)
+            return 1.0f;
+
+        const float normValue((value - min) / (max - min));
+
+        if (normValue <= 0.0f)
+            return 0.0f;
+        if (normValue >= 1.0f)
+            return 1.0f;
+
+        return normValue;
+    }
+
+    /*!
+     * Get a proper value previously normalized to 0.0<->1.0.
+     */
     float getUnnormalizedValue(const float& value) const noexcept
     {
         return value * (max - min) + min;
@@ -107,7 +154,7 @@ struct Parameter {
     d_string unit;
     ParameterRanges ranges;
 
-    Parameter()
+    Parameter() noexcept
         : hints(0x0) {}
 
     void clear() noexcept
@@ -255,6 +302,8 @@ private:
     struct PrivateData;
     PrivateData* const pData;
     friend class PluginExporter;
+
+    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Plugin)
 };
 
 // -----------------------------------------------------------------------

@@ -77,11 +77,11 @@ struct Plugin::PrivateData {
           bufferSize(d_lastBufferSize),
           sampleRate(d_lastSampleRate)
     {
-        assert(bufferSize != 0);
-        assert(sampleRate != 0.0);
+        DISTRHO_SAFE_ASSERT(bufferSize != 0);
+        DISTRHO_SAFE_ASSERT(sampleRate != 0.0);
     }
 
-    ~PrivateData()
+    ~PrivateData() noexcept
     {
         if (parameters != nullptr)
         {
@@ -117,10 +117,8 @@ public:
         : fPlugin(createPlugin()),
           fData((fPlugin != nullptr) ? fPlugin->pData : nullptr)
     {
-        assert(fPlugin != nullptr);
-
-        if (fPlugin == nullptr)
-            return;
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr,);
 
         for (uint32_t i=0, count=fData->parameterCount; i < count; ++i)
             fPlugin->d_initParameter(i, fData->parameters[i]);
@@ -145,32 +143,44 @@ public:
 
     const char* getName() const noexcept
     {
-        return (fPlugin != nullptr) ? fPlugin->d_getName() : "";
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr, "");
+
+        return fPlugin->d_getName();
     }
 
     const char* getLabel() const noexcept
     {
-        return (fPlugin != nullptr) ? fPlugin->d_getLabel() : "";
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr, "");
+
+        return fPlugin->d_getLabel();
     }
 
     const char* getMaker() const noexcept
     {
-        return (fPlugin != nullptr) ? fPlugin->d_getMaker() : "";
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr, "");
+
+        return fPlugin->d_getMaker();
     }
 
     const char* getLicense() const noexcept
     {
-        return (fPlugin != nullptr) ? fPlugin->d_getLicense() : "";
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr, "");
+
+        return fPlugin->d_getLicense();
     }
 
     uint32_t getVersion() const noexcept
     {
-        return (fPlugin != nullptr) ? fPlugin->d_getVersion() : 1000;
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr, 0);
+
+        return fPlugin->d_getVersion();
     }
 
     long getUniqueId() const noexcept
     {
-        return (fPlugin != nullptr) ? fPlugin->d_getUniqueId() : 0;
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr, 0);
+
+        return fPlugin->d_getUniqueId();
     }
 
     void* getInstancePointer() const noexcept
@@ -183,19 +193,24 @@ public:
 #if DISTRHO_PLUGIN_WANT_LATENCY
     uint32_t getLatency() const noexcept
     {
-        return (fData != nullptr) ? fData->latency : 0;
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr, 0);
+
+        return fData->latency;
     }
 #endif
 
     uint32_t getParameterCount() const noexcept
     {
-        return (fData != nullptr) ? fData->parameterCount : 0;
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr, 0);
+
+        return fData->parameterCount;
     }
 
     uint32_t getParameterHints(const uint32_t index) const noexcept
     {
-        assert(index < fData->parameterCount);
-        return (fData != nullptr && index < fData->parameterCount) ? fData->parameters[index].hints : 0x0;
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->parameterCount, 0x0);
+
+        return fData->parameters[index].hints;
     }
 
     bool isParameterOutput(const uint32_t index) const noexcept
@@ -205,66 +220,101 @@ public:
 
     const d_string& getParameterName(const uint32_t index) const noexcept
     {
-        assert(index < fData->parameterCount);
-        return (fData != nullptr && index < fData->parameterCount) ? fData->parameters[index].name : sFallbackString;
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->parameterCount, sFallbackString);
+
+        return fData->parameters[index].name;
     }
 
     const d_string& getParameterSymbol(const uint32_t index) const noexcept
     {
-        assert(index < fData->parameterCount);
-        return (fData != nullptr && index < fData->parameterCount) ? fData->parameters[index].symbol : sFallbackString;
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->parameterCount, sFallbackString);
+
+        return fData->parameters[index].symbol;
     }
 
     const d_string& getParameterUnit(const uint32_t index) const noexcept
     {
-        assert(index < fData->parameterCount);
-        return (fData != nullptr && index < fData->parameterCount) ? fData->parameters[index].unit : sFallbackString;
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->parameterCount, sFallbackString);
+
+        return fData->parameters[index].unit;
     }
 
     const ParameterRanges& getParameterRanges(const uint32_t index) const noexcept
     {
-        assert(index < fData->parameterCount);
-        return (fData != nullptr && index < fData->parameterCount) ? fData->parameters[index].ranges : sFallbackRanges;
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->parameterCount, sFallbackRanges);
+
+        return fData->parameters[index].ranges;
     }
 
-    float getParameterValue(const uint32_t index) const noexcept
+    float getParameterValue(const uint32_t index) const
     {
-        assert(index < fData->parameterCount);
-        return (fPlugin != nullptr && index < fData->parameterCount) ? fPlugin->d_getParameterValue(index) : 0.0f;
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr, 0.0f);
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->parameterCount, 0.0f);
+
+        return fPlugin->d_getParameterValue(index);
     }
 
     void setParameterValue(const uint32_t index, const float value)
     {
-        assert(index < fData->parameterCount);
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->parameterCount,);
 
-        if (fPlugin != nullptr && index < fData->parameterCount)
-            fPlugin->d_setParameterValue(index, value);
+        fPlugin->d_setParameterValue(index, value);
     }
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
     uint32_t getProgramCount() const noexcept
     {
-        return (fData != nullptr) ? fData->programCount : 0;
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr, 0);
+
+        return fData->programCount;
     }
 
     const d_string& getProgramName(const uint32_t index) const noexcept
     {
-        assert(index < fData->programCount);
-        return (fData != nullptr && index < fData->programCount) ? fData->programNames[index] : sFallbackString;
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->programCount, sFallbackString);
+
+        return fData->programNames[index];
     }
 
     void setProgram(const uint32_t index)
     {
-        assert(index < fData->programCount);
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->programCount,);
 
-        if (fPlugin != nullptr && index < fData->programCount)
-            fPlugin->d_setProgram(index);
+        fPlugin->d_setProgram(index);
     }
 #endif
 
 #if DISTRHO_PLUGIN_WANT_STATE
-    bool wantsStateKey(const char* const key) const noexcept
+    uint32_t getStateCount() const noexcept
     {
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr, 0);
+
+        return fData->stateCount;
+    }
+
+    const d_string& getStateKey(const uint32_t index) const noexcept
+    {
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->stateCount, sFallbackString);
+
+        return fData->stateKeys[index];
+    }
+
+    void setState(const char* const key, const char* const value)
+    {
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr,);
+        DISTRHO_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
+        DISTRHO_SAFE_ASSERT_RETURN(value != nullptr,);
+
+        fPlugin->d_setState(key, value);
+    }
+
+    bool wantStateKey(const char* const key) const noexcept
+    {
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr, false);
+        DISTRHO_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0', false);
+
         for (uint32_t i=0; i < fData->stateCount; ++i)
         {
             if (fData->stateKeys[i] == key)
@@ -273,32 +323,14 @@ public:
 
         return false;
     }
-
-    uint32_t getStateCount() const noexcept
-    {
-        return fData != nullptr ? fData->stateCount : 0;
-    }
-
-    const d_string& getStateKey(const uint32_t index) const noexcept
-    {
-        assert(index < fData->stateCount);
-        return (fData != nullptr && index < fData->stateCount) ? fData->stateKeys[index] : sFallbackString;
-    }
-
-    void setState(const char* const key, const char* const value)
-    {
-        assert(key != nullptr && value != nullptr);
-
-        if (fPlugin != nullptr && key != nullptr && value != nullptr)
-            fPlugin->d_setState(key, value);
-    }
 #endif
 
 #if DISTRHO_PLUGIN_WANT_TIMEPOS
-    void setTimePos(const TimePos& timePos)
+    void setTimePos(const TimePos& timePos) noexcept
     {
-        if (fData != nullptr)
-            std::memcpy(&fData->timePos, &timePos, sizeof(TimePos));
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr,);
+
+        std::memcpy(&fData->timePos, &timePos, sizeof(TimePos));
     }
 #endif
 
@@ -306,44 +338,47 @@ public:
 
     void activate()
     {
-        if (fPlugin != nullptr)
-            fPlugin->d_activate();
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+
+        fPlugin->d_activate();
     }
 
     void deactivate()
     {
-        if (fPlugin != nullptr)
-            fPlugin->d_deactivate();
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+
+        fPlugin->d_deactivate();
     }
 
 #if DISTRHO_PLUGIN_IS_SYNTH
     void run(float** const inputs, float** const outputs, const uint32_t frames, const MidiEvent* const midiEvents, const uint32_t midiEventCount)
     {
-        if (fPlugin != nullptr)
-            fPlugin->d_run(inputs, outputs, frames, midiEvents, midiEventCount);
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+
+        fPlugin->d_run(inputs, outputs, frames, midiEvents, midiEventCount);
     }
 #else
     void run(float** const inputs, float** const outputs, const uint32_t frames)
     {
-        if (fPlugin != nullptr)
-            fPlugin->d_run(inputs, outputs, frames);
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+
+        fPlugin->d_run(inputs, outputs, frames);
     }
 #endif
     // -------------------------------------------------------------------
 
     void setBufferSize(const uint32_t bufferSize, bool doCallback = false)
     {
-        assert(bufferSize >= 2);
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr,);
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+        DISTRHO_SAFE_ASSERT(bufferSize >= 2);
 
-        if (fData != nullptr)
-        {
-            if (doCallback && fData->bufferSize == bufferSize)
-                doCallback = false;
+        if (fData->bufferSize == bufferSize)
+            return;
 
-            fData->bufferSize = bufferSize;
-        }
+        fData->bufferSize = bufferSize;
 
-        if (fPlugin != nullptr && doCallback)
+        if (doCallback)
         {
             fPlugin->d_deactivate();
             fPlugin->d_bufferSizeChanged(bufferSize);
@@ -353,17 +388,16 @@ public:
 
     void setSampleRate(const double sampleRate, bool doCallback = false)
     {
-        assert(sampleRate > 0.0);
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr,);
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+        DISTRHO_SAFE_ASSERT(sampleRate > 0.0);
 
-        if (fData != nullptr)
-        {
-            if (doCallback && fData->sampleRate == sampleRate)
-                doCallback = false;
+        if (fData->sampleRate == sampleRate)
+            return;
 
-            fData->sampleRate = sampleRate;
-        }
+        fData->sampleRate = sampleRate;
 
-        if (fPlugin != nullptr && doCallback)
+        if (doCallback)
         {
             fPlugin->d_deactivate();
             fPlugin->d_sampleRateChanged(sampleRate);
@@ -373,7 +407,7 @@ public:
 
 private:
     // -------------------------------------------------------------------
-    // private members accessed by DistrhoPlugin class
+    // private members accessed by DistrhoPlugin classes
 
     Plugin* const fPlugin;
     Plugin::PrivateData* const fData;
@@ -383,6 +417,9 @@ private:
 
     static const d_string        sFallbackString;
     static const ParameterRanges sFallbackRanges;
+
+    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginExporter)
+    DISTRHO_PREVENT_HEAP_ALLOCATION
 };
 
 // -----------------------------------------------------------------------

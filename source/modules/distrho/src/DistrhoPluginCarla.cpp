@@ -110,7 +110,7 @@ protected:
         // TODO
     }
 
-    void handleUiResize(const unsigned int width, const unsigned int height)
+    void handleUiResize(const uint width, const uint height)
     {
         fUI.setSize(width, height);
     }
@@ -154,7 +154,7 @@ private:
     }
 #endif
 
-    static void uiResizeCallback(void* ptr, unsigned int width, unsigned int height)
+    static void uiResizeCallback(void* ptr, uint width, uint height)
     {
         handlePtr->handleUiResize(width, height);
     }

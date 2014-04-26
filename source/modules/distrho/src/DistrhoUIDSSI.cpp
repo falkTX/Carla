@@ -60,7 +60,7 @@ struct OscData {
         lo_send(addr, targetPath, "if", index, value);
     }
 
-    void send_midi(unsigned char data[4]) const
+    void send_midi(uchar data[4]) const
     {
         char targetPath[std::strlen(path)+6];
         std::strcpy(targetPath, path);
@@ -126,13 +126,13 @@ public:
     }
 #endif
 
-    void dssiui_control(unsigned long index, float value)
+    void dssiui_control(ulong index, float value)
     {
         fUI.parameterChanged(index, value);
     }
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
-    void dssiui_program(unsigned long bank, unsigned long program)
+    void dssiui_program(ulong bank, ulong program)
     {
         fUI.programChanged(bank * 128 + program);
     }
@@ -186,7 +186,7 @@ protected:
         fOscData.send_midi(mdata);
     }
 
-    void uiResize(const unsigned int width, const unsigned int height)
+    void uiResize(const uint width, const uint height)
     {
         fUI.setSize(width, height);
     }
@@ -217,7 +217,7 @@ private:
         uiPtr->sendNote(channel, note, velocity);
     }
 
-    static void uiResizeCallback(void* ptr, unsigned int width, unsigned int height)
+    static void uiResizeCallback(void* ptr, uint width, uint height)
     {
         uiPtr->uiResize(width, height);
     }

@@ -59,6 +59,8 @@ private:
     GLenum fFormat;
     GLenum fType;
     GLuint fTextureId;
+
+    DISTRHO_PREVENT_HEAP_ALLOCATION
 };
 
 // -----------------------------------------------------------------------

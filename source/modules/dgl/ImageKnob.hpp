@@ -83,6 +83,8 @@ private:
     int  fImgLayerCount;
     Rectangle<int> fKnobArea;
     GLuint fTextureId;
+
+    DISTRHO_LEAK_DETECTOR(ImageKnob)
 };
 
 // -----------------------------------------------------------------------

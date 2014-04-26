@@ -42,6 +42,7 @@ DistrhoUI3BandEQ::DistrhoUI3BandEQ()
     fSliderLow = new ImageSlider(this, sliderImage);
     fSliderLow->setStartPos(sliderPosStart);
     fSliderLow->setEndPos(sliderPosEnd);
+    fSliderLow->setInverted(true);
     fSliderLow->setRange(-24.0f, 24.0f);
     fSliderLow->setValue(0.0f);
     fSliderLow->setCallback(this);

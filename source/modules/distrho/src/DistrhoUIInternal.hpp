@@ -36,7 +36,7 @@ typedef void (*editParamFunc) (void* ptr, uint32_t rindex, bool started);
 typedef void (*setParamFunc)  (void* ptr, uint32_t rindex, float value);
 typedef void (*setStateFunc)  (void* ptr, const char* key, const char* value);
 typedef void (*sendNoteFunc)  (void* ptr, uint8_t channel, uint8_t note, uint8_t velo);
-typedef void (*uiResizeFunc)  (void* ptr, unsigned int width, unsigned int height);
+typedef void (*uiResizeFunc)  (void* ptr, uint width, uint height);
 
 // -----------------------------------------------------------------------
 // UI private data
@@ -70,7 +70,7 @@ struct UI::PrivateData {
           uiResizeCallbackFunc(nullptr),
           ptr(nullptr)
     {
-        assert(sampleRate != 0.0);
+        DISTRHO_SAFE_ASSERT(sampleRate != 0.0);
 
 #if defined(DISTRHO_PLUGIN_TARGET_DSSI) || defined(DISTRHO_PLUGIN_TARGET_LV2)
         parameterOffset += DISTRHO_PLUGIN_NUM_INPUTS + DISTRHO_PLUGIN_NUM_OUTPUTS;
@@ -78,6 +78,7 @@ struct UI::PrivateData {
         parameterOffset += 1;
 # endif
 #endif
+
 #ifdef DISTRHO_PLUGIN_TARGET_LV2
 # if (DISTRHO_PLUGIN_IS_SYNTH || DISTRHO_PLUGIN_WANT_TIMEPOS || DISTRHO_PLUGIN_WANT_STATE)
         parameterOffset += 1;
@@ -112,7 +113,7 @@ struct UI::PrivateData {
             sendNoteCallbackFunc(ptr, channel, note, velocity);
     }
 
-    void uiResizeCallback(const unsigned int width, const unsigned int height)
+    void uiResizeCallback(const uint width, const uint height)
     {
         if (uiResizeCallbackFunc != nullptr)
             uiResizeCallbackFunc(ptr, width, height);
@@ -126,16 +127,15 @@ class UIExporter
 {
 public:
     UIExporter(void* const ptr, const intptr_t winId,
-               const editParamFunc editParamCall, const setParamFunc setParamCall, const setStateFunc setStateCall, const sendNoteFunc sendNoteCall, const uiResizeFunc uiResizeCall, void* const dspPtr = nullptr)
+               const editParamFunc editParamCall, const setParamFunc setParamCall, const setStateFunc setStateCall, const sendNoteFunc sendNoteCall, const uiResizeFunc uiResizeCall,
+               void* const dspPtr = nullptr)
         : glApp(),
           glWindow(glApp, winId),
           fUi(createUI()),
           fData((fUi != nullptr) ? fUi->pData : nullptr)
     {
-        assert(fUi != nullptr);
-
-        if (fUi == nullptr)
-            return;
+        DISTRHO_SAFE_ASSERT_RETURN(fUi != nullptr,);
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr,);
 
         fData->ptr = ptr;
         fData->editParamCallbackFunc = editParamCall;
@@ -164,47 +164,60 @@ public:
 
     const char* getName() const noexcept
     {
-        return (fUi != nullptr) ? fUi->d_getName() : "";
+        DISTRHO_SAFE_ASSERT_RETURN(fUi != nullptr, "");
+
+        return fUi->d_getName();
     }
 
-    unsigned int getWidth() const noexcept
+    uint getWidth() const noexcept
     {
-        return (fUi != nullptr) ? fUi->d_getWidth() : 0;
+        DISTRHO_SAFE_ASSERT_RETURN(fUi != nullptr, 0);
+
+        return fUi->d_getWidth();
     }
 
-    unsigned int getHeight() const noexcept
+    uint getHeight() const noexcept
     {
-        return (fUi != nullptr) ? fUi->d_getHeight() : 0;
+        DISTRHO_SAFE_ASSERT_RETURN(fUi != nullptr, 0);
+
+        return fUi->d_getHeight();
     }
 
     // -------------------------------------------------------------------
 
     uint32_t getParameterOffset() const noexcept
     {
-        return (fData != nullptr) ? fData->parameterOffset : 0;
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr, 0);
+
+        return fData->parameterOffset;
     }
 
     // -------------------------------------------------------------------
 
     void parameterChanged(const uint32_t index, const float value)
     {
-        if (fUi != nullptr)
-            fUi->d_parameterChanged(index, value);
+        DISTRHO_SAFE_ASSERT_RETURN(fUi != nullptr,);
+
+        fUi->d_parameterChanged(index, value);
     }
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
     void programChanged(const uint32_t index)
     {
-        if (fUi != nullptr)
-            fUi->d_programChanged(index);
+        DISTRHO_SAFE_ASSERT_RETURN(fUi != nullptr,);
+
+        fUi->d_programChanged(index);
     }
 #endif
 
 #if DISTRHO_PLUGIN_WANT_STATE
     void stateChanged(const char* const key, const char* const value)
     {
-        if (fUi != nullptr)
-            fUi->d_stateChanged(key, value);
+        DISTRHO_SAFE_ASSERT_RETURN(fUi != nullptr,);
+        DISTRHO_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
+        DISTRHO_SAFE_ASSERT_RETURN(value != nullptr,);
+
+        fUi->d_stateChanged(key, value);
     }
 #endif
 
@@ -212,9 +225,9 @@ public:
 
     bool idle()
     {
-        if (fUi != nullptr)
-            fUi->d_uiIdle();
+        DISTRHO_SAFE_ASSERT_RETURN(fUi != nullptr, false);
 
+        fUi->d_uiIdle();
         glApp.idle();
 
         return ! glApp.isQuiting();
@@ -226,7 +239,7 @@ public:
         glApp.quit();
     }
 
-    void setSize(const unsigned int width, const unsigned int height)
+    void setSize(const uint width, const uint height)
     {
         glWindow.setSize(width, height);
     }
@@ -254,10 +267,13 @@ private:
     DGL::Window glWindow;
 
     // -------------------------------------------------------------------
-    // private members accessed by DistrhoPlugin class
+    // private members accessed by DistrhoUI classes
 
     UI* const fUi;
     UI::PrivateData* const fData;
+
+    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(UIExporter)
+    DISTRHO_PREVENT_HEAP_ALLOCATION
 };
 
 // -----------------------------------------------------------------------
