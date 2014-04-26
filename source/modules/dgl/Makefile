@@ -14,7 +14,6 @@ LINK_FLAGS      += $(DGL_LIBS)
 
 OBJS = \
 	src/App.cpp.o \
-	src/Base.cpp.o \
 	src/Image.cpp.o \
 	src/ImageAboutWindow.cpp.o \
 	src/ImageButton.cpp.o \
@@ -26,7 +25,6 @@ OBJS = \
 
 OBJS_posix32 = \
 	src/App.cpp.posix32.o \
-	src/Base.cpp.posix32.o \
 	src/Image.cpp.posix32.o \
 	src/ImageAboutWindow.cpp.posix32.o \
 	src/ImageButton.cpp.posix32.o \
@@ -38,7 +36,6 @@ OBJS_posix32 = \
 
 OBJS_posix64 = \
 	src/App.cpp.posix64.o \
-	src/Base.cpp.posix64.o \
 	src/Image.cpp.posix64.o \
 	src/ImageAboutWindow.cpp.posix64.o \
 	src/ImageButton.cpp.posix64.o \
@@ -50,7 +47,6 @@ OBJS_posix64 = \
 
 OBJS_win32 = \
 	src/App.cpp.win32.o \
-	src/Base.cpp.win32.o \
 	src/Image.cpp.win32.o \
 	src/ImageAboutWindow.cpp.win32.o \
 	src/ImageButton.cpp.win32.o \
@@ -62,7 +58,6 @@ OBJS_win32 = \
 
 OBJS_win64 = \
 	src/App.cpp.win64.o \
-	src/Base.cpp.win64.o \
 	src/Image.cpp.win64.o \
 	src/ImageAboutWindow.cpp.win64.o \
 	src/ImageButton.cpp.win64.o \

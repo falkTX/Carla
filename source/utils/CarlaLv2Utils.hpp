@@ -905,62 +905,69 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
 
                 if (unitUnitNodes.size() > 0)
                 {
-                    if (const char* const unitUnit = unitUnitNodes.get_first().as_uri())
-                    {
-                        rdfPort->Unit.Hints |= LV2_PORT_UNIT_UNIT;
+                    Lilv::Node unitUnitNode(unitUnitNodes.get_first());
 
-                        if (std::strcmp(unitUnit, LV2_UNITS__bar) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_BAR;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__beat) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_BEAT;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__bpm) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_BPM;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__cent) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_CENT;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__cm) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_CM;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__coef) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_COEF;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__db) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_DB;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__degree) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_DEGREE;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__frame) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_FRAME;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__hz) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_HZ;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__inch) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_INCH;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__khz) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_KHZ;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__km) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_KM;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__m) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_M;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__mhz) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_MHZ;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__midiNote) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_MIDINOTE;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__mile) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_MILE;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__min) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_MIN;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__mm) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_MM;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__ms) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_MS;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__oct) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_OCT;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__pc) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_PC;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__s) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_S;
-                        else if (std::strcmp(unitUnit, LV2_UNITS__semitone12TET) == 0)
-                            rdfPort->Unit.Unit = LV2_PORT_UNIT_SEMITONE;
-                        else
-                            carla_stderr("lv2_rdf_new(\"%s\") - got unknown unit unit '%s'", uri, unitUnit);
+                    if (unitUnitNode.is_uri())
+                    {
+                        if (const char* const unitUnit = unitUnitNode.as_uri())
+                        {
+                            rdfPort->Unit.Hints |= LV2_PORT_UNIT_UNIT;
+
+                            if (std::strcmp(unitUnit, LV2_UNITS__bar) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_BAR;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__beat) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_BEAT;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__bpm) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_BPM;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__cent) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_CENT;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__cm) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_CM;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__coef) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_COEF;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__db) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_DB;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__degree) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_DEGREE;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__frame) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_FRAME;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__hz) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_HZ;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__inch) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_INCH;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__khz) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_KHZ;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__km) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_KM;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__m) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_M;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__mhz) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_MHZ;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__midiNote) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_MIDINOTE;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__mile) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_MILE;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__min) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_MIN;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__mm) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_MM;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__ms) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_MS;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__oct) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_OCT;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__pc) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_PC;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__s) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_S;
+                            else if (std::strcmp(unitUnit, LV2_UNITS__semitone12TET) == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_SEMITONE;
+                            else
+                                carla_stderr("lv2_rdf_new(\"%s\") - got unknown unit unit '%s'", uri, unitUnit);
+                        }
                     }
                 }
+
+                // FIXME
 
                 Lilv::Nodes unitNameNodes(lilvPort.get_value(lv2World.unit_name));
 
@@ -1264,7 +1271,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
                         {
                             CARLA_SAFE_ASSERT_BREAK(h2 < rdfUI->ExtensionCount);
 
-                            Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(it));
+                            Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(it2));
                             LV2_URI* const rdfExtension(&rdfUI->Extensions[h2++]);
 
                             if (lilvExtensionDataNode.is_uri())

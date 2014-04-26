@@ -1160,12 +1160,18 @@ public:
                         break;
                     }
 
-                    if (fUi.window == nullptr)
+                    if (fUi.window == nullptr && fExt.uishow == nullptr)
+                    {
                         return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, msg);
+                        // unused
+                        (void)frontendWinId;
+                    }
 
-                    fUi.window->setTitle(fUi.title);
-
-                    fFeatures[kFeatureIdUiParent]->data = fUi.window->getPtr();
+                    if (fUi.window != nullptr)
+                    {
+                        fUi.window->setTitle(fUi.title);
+                        fFeatures[kFeatureIdUiParent]->data = fUi.window->getPtr();
+                    }
                 }
 #endif
 
@@ -1195,7 +1201,10 @@ public:
 #ifndef LV2_UIS_ONLY_BRIDGES
             if (fUi.type == UI::TYPE_EMBED)
             {
-                fUi.window->show();
+                if (fUi.window != nullptr)
+                    fUi.window->show();
+                else if (fExt.uishow != nullptr)
+                    fExt.uishow->show(fUi.handle);
             }
             else
 #endif
@@ -1209,10 +1218,10 @@ public:
 #ifndef LV2_UIS_ONLY_BRIDGES
             if (fUi.type == UI::TYPE_EMBED)
             {
-                CARLA_SAFE_ASSERT(fUi.window != nullptr);
-
                 if (fUi.window != nullptr)
                     fUi.window->hide();
+                else if (fExt.uishow != nullptr)
+                    fExt.uishow->hide(fUi.handle);
             }
             else
 #endif
@@ -3762,6 +3771,8 @@ public:
 
         for (uint32_t i=0; i < fRdfDescriptor->ExtensionCount; ++i)
         {
+            CARLA_SAFE_ASSERT_CONTINUE(fRdfDescriptor->Extensions[i] != nullptr);
+
             if (std::strcmp(fRdfDescriptor->Extensions[i], LV2_OPTIONS__interface) == 0)
                 pData->hints |= PLUGIN_HAS_EXTENSION_OPTIONS;
             else if (std::strcmp(fRdfDescriptor->Extensions[i], LV2_PROGRAMS__Interface) == 0)
@@ -3810,22 +3821,6 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fUi.handle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fUi.descriptor != nullptr,);
         carla_debug("Lv2Plugin::updateUi()");
-
-        fExt.uiidle = nullptr;
-        fExt.uiprograms = nullptr;
-
-        if (fUi.descriptor->extension_data != nullptr)
-        {
-            fExt.uiidle     = (const LV2UI_Idle_Interface*)fUi.descriptor->extension_data(LV2_UI__idleInterface);
-            fExt.uiprograms = (const LV2_Programs_UI_Interface*)fUi.descriptor->extension_data(LV2_PROGRAMS__UIInterface);
-
-            // check if invalid
-            if (fExt.uiidle != nullptr && fExt.uiidle->idle == nullptr)
-                fExt.uiidle = nullptr;
-
-            if (fExt.uiprograms != nullptr && fExt.uiprograms->select_program == nullptr)
-                fExt.uiprograms = nullptr;
-        }
 
         // update midi program
         if (fExt.uiprograms != nullptr && pData->midiprog.count > 0 && pData->midiprog.current >= 0)
@@ -4620,7 +4615,7 @@ public:
     void initUi()
     {
         // ---------------------------------------------------------------
-        // find more appropriate ui
+        // find the most appropriate ui
 
         int eQt4, eQt5, eGtk2, eGtk3, eCocoa, eWindows, eX11, eExt, iCocoa, iWindows, iX11, iExt, iFinal;
         eQt4 = eQt5 = eGtk2 = eGtk3 = eCocoa = eWindows = eX11 = eExt = iCocoa = iWindows = iX11 = iExt = iFinal = -1;
@@ -4657,32 +4652,21 @@ public:
                 if (isUiBridgeable(i))
                     eGtk3 = ii;
                 break;
-#if defined(CARLA_OS_HAIKU)
-#elif defined(CARLA_OS_MAC)
             case LV2_UI_COCOA:
                 if (isUiBridgeable(i) && preferUiBridges)
                     eCocoa = ii;
-# ifndef LV2_UIS_ONLY_BRIDGES
                 iCocoa = ii;
-# endif
                 break;
-#elif defined(CARLA_OS_WIN)
             case LV2_UI_WINDOWS:
                 if (isUiBridgeable(i) && preferUiBridges)
                     eWindows = ii;
-# ifndef LV2_UIS_ONLY_BRIDGES
                 iWindows = ii;
-# endif
                 break;
-#else
             case LV2_UI_X11:
                 if (isUiBridgeable(i) && preferUiBridges)
                     eX11 = ii;
-# ifndef LV2_UIS_ONLY_BRIDGES
                 iX11 = ii;
-# endif
                 break;
-#endif
             case LV2_UI_EXTERNAL:
             case LV2_UI_OLD_EXTERNAL:
                 if (isUiBridgeable(i))
@@ -4702,29 +4686,64 @@ public:
             iFinal = eGtk2;
         else if (eGtk3 >= 0)
             iFinal = eGtk3;
+#ifdef CARLA_OS_MAC
         else if (eCocoa >= 0)
             iFinal = eCocoa;
+#endif
+#ifdef CARLA_OS_WIN
         else if (eWindows >= 0)
             iFinal = eWindows;
+#endif
+#ifdef HAVE_X11
         else if (eX11 >= 0)
             iFinal = eX11;
+#endif
         //else if (eExt >= 0) // TODO
         //    iFinal = eExt;
 #ifndef LV2_UIS_ONLY_BRIDGES
+# ifdef CARLA_OS_MAC
         else if (iCocoa >= 0)
             iFinal = iCocoa;
+# endif
+# ifdef CARLA_OS_WIN
         else if (iWindows >= 0)
             iFinal = iWindows;
+# endif
+# ifdef HAVE_X11
         else if (iX11 >= 0)
             iFinal = iX11;
+# endif
 #endif
         else if (iExt >= 0)
             iFinal = iExt;
 
         if (iFinal < 0)
         {
-            carla_stderr("Failed to find an appropriate LV2 UI for this plugin");
-            return;
+            // no suitable UI found, see if there's one which supports ui:showInterface
+            bool hasShowInterface = false;
+
+            for (uint32_t i=0; i < fRdfDescriptor->UICount && ! hasShowInterface; ++i)
+            {
+                LV2_RDF_UI* const ui(&fRdfDescriptor->UIs[i]);
+
+                for (uint32_t j=0; j < ui->ExtensionCount; ++j)
+                {
+                    CARLA_SAFE_ASSERT_CONTINUE(ui->Extensions[j] != nullptr);
+
+                    if (std::strcmp(ui->Extensions[j], LV2_UI__showInterface) != 0)
+                        continue;
+
+                    iFinal = static_cast<int>(i);
+                    hasShowInterface = true;
+                    break;
+                }
+            }
+
+            if (! hasShowInterface)
+            {
+                carla_stderr("Failed to find an appropriate LV2 UI for this plugin");
+                return;
+            }
         }
 
         fUi.rdfDescriptor = &fRdfDescriptor->UIs[iFinal];
@@ -4770,6 +4789,13 @@ public:
                 fUi.type = UI::TYPE_OSC;
                 pData->osc.thread.setOscData(bridgeBinary, fDescriptor->URI, fUi.rdfDescriptor->URI);
                 delete[] bridgeBinary;
+                return;
+            }
+
+            if (iFinal == eQt4 || iFinal == eQt5 || iFinal == eGtk2 || iFinal == eGtk3)
+            {
+                carla_stderr2("Failed to find UI bridge binary, cannot use UI");
+                fUi.rdfDescriptor = nullptr;
                 return;
             }
         }
@@ -4828,33 +4854,40 @@ public:
         {
         case LV2_UI_QT4:
             carla_stdout("Will use LV2 Qt4 UI, NOT!");
+            fUi.type = UI::TYPE_EMBED;
             break;
         case LV2_UI_QT5:
             carla_stdout("Will use LV2 Qt5 UI, NOT!");
+            fUi.type = UI::TYPE_EMBED;
             break;
         case LV2_UI_GTK2:
             carla_stdout("Will use LV2 Gtk2 UI, NOT!");
+            fUi.type = UI::TYPE_EMBED;
             break;
         case LV2_UI_GTK3:
             carla_stdout("Will use LV2 Gtk3 UI, NOT!");
+            fUi.type = UI::TYPE_EMBED;
             break;
-#if defined(CARLA_OS_HAIKU)
-#elif defined(CARLA_OS_MAC)
+#ifdef CARLA_OS_MAC
         case LV2_UI_COCOA:
             carla_stdout("Will use LV2 Cocoa UI");
             fUi.type = UI::TYPE_EMBED;
             break;
-#elif defined(CARLA_OS_WIN)
+#endif
+#ifdef CARLA_OS_WIN
         case LV2_UI_WINDOWS:
             carla_stdout("Will use LV2 Windows UI");
             fUi.type = UI::TYPE_EMBED;
             break;
-#else
+#endif
         case LV2_UI_X11:
+#ifdef HAVE_X11
             carla_stdout("Will use LV2 X11 UI");
+#else
+            carla_stdout("Will use LV2 X11 UI, NOT!");
+#endif
             fUi.type = UI::TYPE_EMBED;
             break;
-#endif
         case LV2_UI_EXTERNAL:
         case LV2_UI_OLD_EXTERNAL:
             carla_stdout("Will use LV2 External UI");
@@ -4938,6 +4971,26 @@ public:
 
         fFeatures[kFeatureIdExternalUiOld]->URI  = LV2_EXTERNAL_UI_DEPRECATED_URI;
         fFeatures[kFeatureIdExternalUiOld]->data = uiExternalHostFt;
+
+        // ---------------------------------------------------------------
+        // initialize ui extensions
+
+        if (fUi.descriptor->extension_data == nullptr)
+            return;
+
+        fExt.uiidle     = (const LV2UI_Idle_Interface*)fUi.descriptor->extension_data(LV2_UI__idleInterface);
+        fExt.uishow     = (const LV2UI_Show_Interface*)fUi.descriptor->extension_data(LV2_UI__showInterface);
+        fExt.uiprograms = (const LV2_Programs_UI_Interface*)fUi.descriptor->extension_data(LV2_PROGRAMS__UIInterface);
+
+        // check if invalid
+        if (fExt.uiidle != nullptr && fExt.uiidle->idle == nullptr)
+            fExt.uiidle = nullptr;
+
+        if (fExt.uishow != nullptr && (fExt.uishow->show == nullptr || fExt.uishow->hide == nullptr))
+            fExt.uishow = nullptr;
+
+        if (fExt.uiprograms != nullptr && fExt.uiprograms->select_program == nullptr)
+            fExt.uiprograms = nullptr;
     }
 
     // -------------------------------------------------------------------
@@ -5010,6 +5063,7 @@ private:
         const LV2_Worker_Interface* worker;
         const LV2_Programs_Interface* programs;
         const LV2UI_Idle_Interface* uiidle;
+        const LV2UI_Show_Interface* uishow;
         const LV2_Programs_UI_Interface* uiprograms;
 
         Extensions()
@@ -5018,6 +5072,7 @@ private:
               worker(nullptr),
               programs(nullptr),
               uiidle(nullptr),
+              uishow(nullptr),
               uiprograms(nullptr) {}
     } fExt;
 
