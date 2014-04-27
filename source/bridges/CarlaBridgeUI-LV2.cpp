@@ -22,7 +22,8 @@
 
 #include <QtCore/QDir>
 
-#define URI_CARLA_WORKER "http://kxstudio.sf.net/ns/carla/worker"
+#define URI_CARLA_FRONTEND_WIN_ID "http://kxstudio.sf.net/ns/carla/frontendWinId"
+#define URI_CARLA_WORKER          "http://kxstudio.sf.net/ns/carla/worker"
 
 // -----------------------------------------------------
 
@@ -83,7 +84,8 @@ const uint32_t CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND = 40;
 const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 41;
 const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 42;
 const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 43;
-const uint32_t CARLA_URI_MAP_ID_COUNT                  = 44;
+const uint32_t CARLA_URI_MAP_ID_FRONTEND_WIN_ID        = 44;
+const uint32_t CARLA_URI_MAP_ID_COUNT                  = 45;
 
 // LV2 Feature Ids
 const uint32_t kFeatureIdLogs             =  0;
@@ -113,6 +115,7 @@ struct Lv2PluginOptions {
         MinBlockLenth,
         SequenceSize,
         SampleRate,
+        FrontendWinId,
         Null
     };
 
@@ -120,13 +123,15 @@ struct Lv2PluginOptions {
     int minBufferSize;
     int sequenceSize;
     double sampleRate;
-    LV2_Options_Option opts[5];
+    int64_t frontendWinId;
+    LV2_Options_Option opts[6];
 
     Lv2PluginOptions()
         : maxBufferSize(0),
           minBufferSize(0),
           sequenceSize(MAX_DEFAULT_BUFFER_SIZE),
-          sampleRate(0.0)
+          sampleRate(0.0),
+          frontendWinId(0)
     {
         LV2_Options_Option& optMaxBlockLenth(opts[MaxBlockLenth]);
         optMaxBlockLenth.context = LV2_OPTIONS_INSTANCE;
@@ -159,6 +164,14 @@ struct Lv2PluginOptions {
         optSampleRate.size    = sizeof(double);
         optSampleRate.type    = CARLA_URI_MAP_ID_ATOM_DOUBLE;
         optSampleRate.value   = &sampleRate;
+
+        LV2_Options_Option& optFrontendWinId(opts[FrontendWinId]);
+        optFrontendWinId.context = LV2_OPTIONS_INSTANCE;
+        optFrontendWinId.subject = 0;
+        optFrontendWinId.key     = CARLA_URI_MAP_ID_FRONTEND_WIN_ID;
+        optFrontendWinId.size    = sizeof(int64_t);
+        optFrontendWinId.type    = CARLA_URI_MAP_ID_ATOM_LONG;
+        optFrontendWinId.value   = &frontendWinId;
 
         LV2_Options_Option& optNull(opts[Null]);
         optNull.context = LV2_OPTIONS_INSTANCE;
@@ -994,6 +1007,8 @@ private:
             return CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE;
 
         // Custom
+        if (std::strcmp(uri, URI_CARLA_FRONTEND_WIN_ID) == 0)
+            return CARLA_URI_MAP_ID_FRONTEND_WIN_ID;
         if (std::strcmp(uri, URI_CARLA_WORKER) == 0)
             return CARLA_URI_MAP_ID_ATOM_WORKER;
 
@@ -1102,6 +1117,8 @@ private:
             return LV2_MIDI__MidiEvent;
         if (urid == CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE)
             return LV2_PARAMETERS__sampleRate;
+        if (urid == CARLA_URI_MAP_ID_FRONTEND_WIN_ID)
+            return URI_CARLA_FRONTEND_WIN_ID;
 
         // Custom types
         return ((CarlaLv2Client*)handle)->getCustomURIString(urid);
