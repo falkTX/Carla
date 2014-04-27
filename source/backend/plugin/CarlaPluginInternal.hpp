@@ -347,7 +347,7 @@ struct CarlaPluginProtectedData {
     bool  libClose();
     void* libSymbol(const char* const symbol);
 
-    bool  uiLibOpen(const char* const filename);
+    bool  uiLibOpen(const char* const filename, const bool canDelete);
     bool  uiLibClose();
     void* uiLibSymbol(const char* const symbol);
 

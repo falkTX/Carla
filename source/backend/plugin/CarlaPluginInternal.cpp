@@ -693,9 +693,9 @@ void* CarlaPluginProtectedData::libSymbol(const char* const symbol)
     return lib_symbol(lib, symbol);
 }
 
-bool CarlaPluginProtectedData::uiLibOpen(const char* const fname)
+bool CarlaPluginProtectedData::uiLibOpen(const char* const fname, const bool canDelete)
 {
-    uiLib = sLibCounter.open(fname);
+    uiLib = sLibCounter.open(fname, canDelete);
     return (uiLib != nullptr);
 }
 

@@ -4766,6 +4766,7 @@ public:
         // check supported ui features
 
         bool canContinue = true;
+        bool canDelete = true;
 
         for (uint32_t i=0; i < fUi.rdfDescriptor->FeatureCount; ++i)
         {
@@ -4779,6 +4780,8 @@ public:
                     break;
                 }
             }
+            if (std::strcmp(fUi.rdfDescriptor->Features[i].URI, LV2_UI__makeResident) == 0)
+                canDelete = false;
         }
 
         if (! canContinue)
@@ -4823,7 +4826,7 @@ public:
         // ---------------------------------------------------------------
         // open UI DLL
 
-        if (! pData->uiLibOpen(fUi.rdfDescriptor->Binary))
+        if (! pData->uiLibOpen(fUi.rdfDescriptor->Binary, canDelete))
         {
             carla_stderr2("Could not load UI library, error was:\n%s", pData->libError(fUi.rdfDescriptor->Binary));
             fUi.rdfDescriptor = nullptr;

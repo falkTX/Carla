@@ -29,7 +29,31 @@ class LibCounter
 public:
     LibCounter() noexcept {}
 
-    void* open(const char* const filename) noexcept
+    ~LibCounter()
+    {
+        // might have some leftovers
+        for (LinkedList<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
+        {
+            Lib& lib(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(lib.count > 0);
+            CARLA_SAFE_ASSERT_CONTINUE(lib.lib != nullptr);
+
+            if (! lib_close(lib.lib))
+                carla_stderr("LibCounter cleanup failed, reason:\n%s", lib_error(lib.filename));
+
+            lib.lib = nullptr;
+
+            if (lib.filename != nullptr)
+            {
+                delete[] lib.filename;
+                lib.filename = nullptr;
+            }
+        }
+
+        fLibs.clear();
+    }
+
+    void* open(const char* const filename, const bool canDelete = true) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', nullptr);
 
@@ -65,9 +89,10 @@ public:
         }
 
         Lib lib;
-        lib.lib      = libPtr;
-        lib.filename = dfilename;
-        lib.count    = 1;
+        lib.lib       = libPtr;
+        lib.filename  = dfilename;
+        lib.count     = 1;
+        lib.canDelete = canDelete;
 
         if (fLibs.append(lib))
             return libPtr;
@@ -90,6 +115,9 @@ public:
 
             if (lib.lib != libPtr)
                 continue;
+
+            if (lib.count == 1 && ! lib.canDelete)
+                return true;
 
             if (--lib.count == 0)
             {
@@ -119,6 +147,7 @@ private:
         void* lib;
         const char* filename;
         int count;
+        bool canDelete;
     };
 
     CarlaMutex fMutex;
