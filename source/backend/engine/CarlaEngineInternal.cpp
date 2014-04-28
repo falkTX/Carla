@@ -469,7 +469,10 @@ void CarlaEngineProtectedData::doNextPluginAction(const bool unlock) noexcept
     nextAction.value    = 0;
 
     if (unlock)
+    {
+        nextAction.mutex.tryLock();
         nextAction.mutex.unlock();
+    }
 }
 
 // -----------------------------------------------------------------------

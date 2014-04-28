@@ -663,7 +663,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(bufferSize > 0,);
-        carla_debug("CarlaLv2Client::handleUiWrite(%i, %i, %i, %p)", rindex, bufferSize, format, buffer);
+        carla_debug("CarlaLv2Client::handleUiWrite(%i, %i, %i, %p)", portIndex, bufferSize, format, buffer);
 
         if (format == 0)
         {
