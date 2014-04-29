@@ -974,7 +974,8 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
     effect->magic    = kEffectMagic;
     effect->uniqueID = plugin->getUniqueId();
 #ifdef VESTIGE_HEADER
-    *(int32_t*)&effect->unknown1 = plugin->getVersion();
+    int32_t* const version = (int32_t*)&effect->unknown1;
+    *version = plugin->getVersion();
 #else
     effect->version  = plugin->getVersion();
 #endif

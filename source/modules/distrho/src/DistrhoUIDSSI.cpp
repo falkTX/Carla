@@ -248,6 +248,11 @@ int osc_debug_handler(const char* path, const char*, lo_arg**, int, lo_message, 
 {
     d_debug("osc_debug_handler(\"%s\")", path);
     return 0;
+
+#ifndef DEBUG
+    // unused
+    (void)path;
+#endif
 }
 
 void osc_error_handler(int num, const char* msg, const char* path)

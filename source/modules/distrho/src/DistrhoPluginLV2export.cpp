@@ -106,13 +106,15 @@ void lv2_generate_ttl(const char* const basename)
         manifestString += "                      ui:showInterface ;\n";
 # endif
         manifestString += "    lv2:optionalFeature ui:noUserResize ,\n";
+        manifestString += "                        ui:resize ,\n";
         manifestString += "                        ui:touch ;\n";
-        manifestString += "    lv2:requiredFeature ui:resize ,\n";
 # if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
-        manifestString += "                        <" LV2_DATA_ACCESS_URI "> ,\n";
+        manifestString += "    lv2:requiredFeature <" LV2_DATA_ACCESS_URI "> ,\n";
         manifestString += "                        <" LV2_INSTANCE_ACCESS_URI "> ,\n";
-# endif
         manifestString += "                        <" LV2_OPTIONS__options "> ,\n";
+# else
+        manifestString += "    lv2:requiredFeature <" LV2_OPTIONS__options "> ,\n";
+# endif
         manifestString += "                        <" LV2_URID__map "> .\n";
 #endif
 

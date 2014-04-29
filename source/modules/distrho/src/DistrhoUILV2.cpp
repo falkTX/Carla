@@ -34,7 +34,9 @@ START_NAMESPACE_DISTRHO
 class UiLv2
 {
 public:
-    UiLv2(const intptr_t winId, const LV2_URID_Map* const uridMap, const LV2UI_Resize* const uiResz, const LV2UI_Touch* uiTouch, const LV2UI_Controller controller, const LV2UI_Write_Function writeFunc, void* const dspPtr)
+    UiLv2(const intptr_t winId,
+          const LV2_Options_Option* options, const LV2_URID_Map* const uridMap, const LV2UI_Resize* const uiResz, const LV2UI_Touch* uiTouch,
+          const LV2UI_Controller controller, const LV2UI_Write_Function writeFunc, void* const dspPtr)
         : fUI(this, winId, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, uiResizeCallback, dspPtr),
           fUridMap(uridMap),
           fUiResize(uiResz),
@@ -45,12 +47,35 @@ public:
           fKeyValueURID(uridMap->map(uridMap->handle, "urn:distrho:keyValueState")),
           fWinIdWasNull(winId == 0)
     {
-        fUiResize->ui_resize(fUiResize->handle, fUI.getWidth(), fUI.getHeight());
+        if (winId == 0)
+            fUI.setTitle(fUI.getName());
+        else if (fUiResize != nullptr)
+            fUiResize->ui_resize(fUiResize->handle, fUI.getWidth(), fUI.getHeight());
 
 #if DISTRHO_PLUGIN_WANT_STATE
         // tell the DSP we're ready to receive msgs
         setState("__dpf_ui_data__", "");
 #endif
+
+        if (winId != 0)
+            return;
+
+        const LV2_URID uridFrontendWinId(uridMap->map(uridMap->handle, "http://kxstudio.sf.net/ns/carla/frontendWinId"));
+
+        for (int i=0; options[i].key != 0; ++i)
+        {
+            if (options[i].key == uridFrontendWinId)
+            {
+                if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__Long))
+                {
+                    if (const int64_t frontendWinId = *(const int64_t*)options[i].value)
+                        fUI.setTransientWinId(static_cast<intptr_t>(frontendWinId));
+                }
+                else
+                    d_stderr("Host provides frontendWinId but has wrong value type");
+                break;
+            }
+        }
     }
 
     // -------------------------------------------------------------------
@@ -171,7 +196,9 @@ protected:
     void uiResize(const uint width, const uint height)
     {
         fUI.setSize(width, height);
-        fUiResize->ui_resize(fUiResize->handle, width, height);
+
+        if (fUiResize != nullptr && ! fWinIdWasNull)
+            fUiResize->ui_resize(fUiResize->handle, width, height);
     }
 
 private:
@@ -282,15 +309,9 @@ static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char* uri, 
         return nullptr;
     }
 
-    if (uiResize == nullptr)
-    {
-        d_stderr("UI Resize feature missing, cannot continue!");
-        return nullptr;
-    }
-
     if (parentId == nullptr)
     {
-        d_stdout("Parent Window Id missing, host should use be ui:showInterface...");
+        d_stdout("Parent Window Id missing, host should be using ui:showInterface...");
     }
 
 #if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
@@ -313,11 +334,13 @@ static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char* uri, 
 
     *widget = parentId;
 
-    const intptr_t winId(*((intptr_t*)&parentId));
+    const intptr_t winId((intptr_t)parentId);
+
+    const LV2_URID uridSampleRate(uridMap->map(uridMap->handle, LV2_CORE__sampleRate));
 
     for (int i=0; options[i].key != 0; ++i)
     {
-        if (options[i].key == uridMap->map(uridMap->handle, LV2_CORE__sampleRate))
+        if (options[i].key == uridSampleRate)
         {
             if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__Double))
                 d_lastUiSampleRate = *(const double*)options[i].value;
@@ -331,7 +354,7 @@ static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char* uri, 
     if (d_lastUiSampleRate == 0.0)
         d_lastUiSampleRate = 44100.0;
 
-    return new UiLv2(winId, uridMap, uiResize, uiTouch, controller, writeFunction, instance);
+    return new UiLv2(winId, options, uridMap, uiResize, uiTouch, controller, writeFunction, instance);
 }
 
 #define uiPtr ((UiLv2*)ui)
