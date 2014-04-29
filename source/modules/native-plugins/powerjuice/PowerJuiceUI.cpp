@@ -28,8 +28,7 @@ START_NAMESPACE_DISTRHO
 
 PowerJuiceUI::PowerJuiceUI()
     : UI(),
-      fAboutWindow(this),
-      shmData(nullptr)
+      fAboutWindow(this)
 {
     // background
     fImgBackground = Image(PowerJuiceArtwork::backgroundData, PowerJuiceArtwork::backgroundWidth, PowerJuiceArtwork::backgroundHeight, GL_BGR);
@@ -97,11 +96,7 @@ PowerJuiceUI::PowerJuiceUI()
     fButtonAbout->setPos(502, 17);
     fButtonAbout->setCallback(this);
 
-    // init shm vars
-    carla_shm_init(shm);
-    shmData = nullptr;
-
-    fFirstDisplay = true;
+    
 }
 
 PowerJuiceUI::~PowerJuiceUI()
@@ -113,8 +108,6 @@ PowerJuiceUI::~PowerJuiceUI()
     delete fKnobMakeup;
     delete fKnobMix;
     delete fButtonAbout;
-
-    closeShm();
 }
 
 // -----------------------------------------------------------------------
@@ -157,10 +150,6 @@ void PowerJuiceUI::d_programChanged(uint32_t index)
     fKnobRatio->setValue(1.0f);
     fKnobMakeup->setValue(0.0f);
     fKnobMix->setValue(1.0f);
-}
-
-void PowerJuiceUI::d_stateChanged(const char*, const char*)
-{
 }
 
 // -----------------------------------------------------------------------
@@ -208,7 +197,7 @@ void PowerJuiceUI::imageKnobDragFinished(ImageKnob* knob)
 
 void PowerJuiceUI::imageKnobValueChanged(ImageKnob* knob, float value)
 {
-    if (knob == fKnobAttack)
+    if (knob == fKnobAttack) 
         d_setParameterValue(PowerJuicePlugin::paramAttack, value);
     else if (knob == fKnobRelease)
         d_setParameterValue(PowerJuicePlugin::paramRelease, value);
@@ -224,106 +213,97 @@ void PowerJuiceUI::imageKnobValueChanged(ImageKnob* knob, float value)
 }
 
 void PowerJuiceUI::d_uiIdle() {
-    repaint();
+	dsp = (PowerJuicePlugin*)d_getPluginInstancePointer();
+	if (dsp -> repaintNeeded()) {
+		repaint();
+	} else {
+	}
 }
 
 void PowerJuiceUI::onDisplay()
 {
-    if (fFirstDisplay)
-    {
-        initShm();
-        fFirstDisplay = false;
-    }
-
+	
     fImgBackground.draw();
-
-    if (shmData == nullptr)
+    //dsp side connection
+    dsp = (PowerJuicePlugin*)d_getPluginInstancePointer();
+    if (dsp == nullptr)
         return;
 
     int w = 563; //waveform plane size, size of the plane in pixels;
     int w2 = 1126; //wavefowm array
-    int h = 60; //waveform plane height
-    int x = 28; //waveform plane positions
-    int y = 51;
+    int h = 121; //waveform plane height
+    int x = 27; //waveform plane positions
+    int y = 53;
     int dc = 113; //0DC line y position
 
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_LINE_SMOOTH);
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+
+
+
+    float thresholdPosition = (-toIEC(fKnobThreshold->getValue()))/200*h+h+y;
+
     //draw waveform
-    for (int i=0; i<w2; i+=2) {
-        //glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        //glEnable(GL_LINE_SMOOTH);
-        //glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    /*
+    glColor4f(0.0f, 1.0f, 0.0f, 0.4f);
+    glLineWidth(1.2f);
+    for (int i=0; i<w; i++) {
 
-        glColor4f(0.0f, 1.0f, 0.0f, 1.0f);
-        glLineWidth(1.0f);
         glBegin(GL_LINES);
-            glVertex2i(x+(i/2), shmData->input[i]*h+dc);
-            glVertex2i(x+(i/2), shmData->input[i+1]*h+dc);
+            glVertex2i(x+i, -toIEC(shmData->input[i])/200*h+h+y);
+            glVertex2i(x+i, y+h);
         glEnd();
-
-        // reset color
-        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
     }
+    */
+    //draw RMS
 
-    //draw shits
-}
-
-void PowerJuiceUI::onClose()
-{
-    // tell DSP to stop sending SHM data
-    d_setState("shmKey", "");
-}
-
-void PowerJuiceUI::initShm()
-{
-    // generate a random key
-    static const char charSet[]  = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    static const int  charSetLen = sizeof(charSet) - 1; // -1 to avoid trailing '\0'
-
-    char shmKey[24+1];
-    shmKey[24] = '\0';
-
-    std::srand(std::time(nullptr));
-
-    for (int i=0; i<24; ++i)
-        shmKey[i] = charSet[std::rand() % charSetLen];
-
-    // create shared memory
-    shm = carla_shm_create(shmKey);
-
-    if (! carla_is_shm_valid(shm))
-    {
-        carla_stderr2("Failed to created shared memory!");
-        return;
+    glColor4f(0.0f, 0.0f, 1.0f, 1.0f);
+    glLineWidth(2.0f);
+    glBegin(GL_LINE_STRIP);
+    for (int i=2; i<w; i++) {
+            float value = dsp->getRMSHistory(i);
+            if (value<thresholdPosition) {
+                glColor4f(0.0f, 0.5f, 0.0f, 1.0f);
+            } else {
+                glColor4f(0.0f, 0.5f, 0.2f, 1.0f);
+            }
+            glVertex2i(x+i, value);
     }
+    glEnd();
+	
+    //draw gain reduction
+    glColor4f(1.0f, 1.0f, 1.0f, 0.3f);
+    glLineWidth(3.0f);
+    glBegin(GL_LINES);
+    for (int i=2; i<w; i++) {
+        glColor4f(1.0f, 1.0f, 1.0f, 0.3f);
+        float value = dsp->getGainReductionHistory(i);
+	   
+          glVertex2i(x+i, value);
+        glVertex2i(x+i, y);
 
-    if (! carla_shm_map<SharedMemData>(shm, shmData))
-    {
-        carla_stderr2("Failed to map shared memory!");
-        return;
+        value = dsp->getRMSHistory(i);
+        glColor4f(0.0f, 0.5f, 0.2f, 0.1f);
+          glVertex2i(x+i, value);
+        glVertex2i(x+i, y+h);
     }
+    glEnd();
+	
 
-    std::memset(shmData, 0, sizeof(SharedMemData));
+    //draw Threshold
+    glLineWidth(2.0f);
+    glColor4f(0.4f, 0.4f, 1.0f, 0.8f);
+    //float thresholdPosition = ((60-fKnobThreshold->getValue())/60);
+    glBegin(GL_LINES);
+            glVertex2i(x, thresholdPosition);
+            glVertex2i(x+w, thresholdPosition);
+    glEnd();
 
-    // tell DSP to use this key for SHM
-    carla_stdout("Sending shmKey %s", shmKey);
-    d_setState("shmKey", shmKey);
-}
-
-void PowerJuiceUI::closeShm()
-{
-    fFirstDisplay = true;
-
-    if (! carla_is_shm_valid(shm))
-        return;
-
-    if (shmData != nullptr)
-    {
-        carla_shm_unmap<SharedMemData>(shm, shmData);
-        shmData = nullptr;
-    }
-
-    carla_shm_close(shm);
+    // reset color
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 
 // -----------------------------------------------------------------------

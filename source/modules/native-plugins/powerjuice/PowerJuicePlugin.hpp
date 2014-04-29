@@ -19,18 +19,29 @@
 #define POWERJUICEPLUGIN_HPP_INCLUDED
 
 #include "DistrhoPlugin.hpp"
-#include "CarlaShmUtils.hpp"
 
-static const int kFloatStackCount = 1126;
+#include <cmath>
 
-struct FloatStack {
+static const int kFloatStackCount = 563;
+
+
+struct FloatStack { //history for GUI!
     int32_t start;
     float data[kFloatStackCount];
 };
 
-struct SharedMemData {
-    float input[kFloatStackCount];
-    float output[kFloatStackCount];
+struct FloatRMSStack { //rms, sr-dependent
+    int32_t start;
+    float* data;
+};
+
+struct LookaheadStack { //lookahead buffer, sr-dependent
+    int32_t start;
+    float* data;
+};
+
+struct SharedMemData { //history for the GUI !
+    float rms[kFloatStackCount];
     float gainReduction[kFloatStackCount];
 };
 
@@ -49,9 +60,6 @@ public:
         paramRatio,
         paramMakeup,
         paramMix,
-        paramInput,
-        paramOutput,
-        paramGainReduction,
         paramCount
     };
 
@@ -92,7 +100,6 @@ protected:
 
     void d_initParameter(uint32_t index, Parameter& parameter) override;
     void d_initProgramName(uint32_t index, d_string& programName) override;
-    void d_initStateKey(uint32_t, d_string&) override;
 
     // -------------------------------------------------------------------
     // Internal data
@@ -100,7 +107,6 @@ protected:
     float d_getParameterValue(uint32_t index) const override;
     void  d_setParameterValue(uint32_t index, float value) override;
     void  d_setProgram(uint32_t index) override;
-    void  d_setState(const char* key, const char* value) override;
 
     // -------------------------------------------------------------------
     // Process
@@ -114,20 +120,89 @@ protected:
 private:
     // params
     float attack, release, threshold, ratio, makeup, mix;
+    float attackSamples, releaseSamples, makeupFloat;
+    float balancer;
+    float targetGR;
+    float GR;
+
+    SharedMemData history;
+
+    float sum;
+    float data;
+    float difference;
+
+    int w;  //waveform plane size, size of the plane in pixels;
+    int w2; //wavefowm array
+    int h;  //waveform plane height
+    int x;  //waveform plane positions
+    int y;
+    int dc; //0DC line y position
+    
+    int kFloatRMSStackCount;
+	int kFloatLookaheadStackCount;
+    
+    float refreshSkip;
 
     int averageCounter;
-    float inputMin, inputMax;
+    float inputMax;
+    FloatStack input, rms, gainReduction;
+    struct FloatRMSStack RMSStack;
+    struct LookaheadStack lookaheadStack;
+    
+    bool newRepaint;
+    int repaintSkip;
 
-    // this was unused
-    // float averageInputs[150];
+    float fromDB(float gdb) {
+        return (std::exp(gdb/20.f*std::log(10.f)));
+    };
 
-    FloatStack input, output, gainReduction;
+    float toDB(float g) {
+        return (20.f*std::log10(g));
+    }
 
-    shm_t shm;
-    SharedMemData* shmData;
+    float toIEC(float db) {
+     float def = 0.0f; /* Meter deflection %age */
 
-    void initShm(const char* shmKey);
-    void closeShm();
+     if (db < -70.0f) {
+               def = 0.0f;
+     } else if (db < -60.0f) {
+               def = (db + 70.0f) * 0.25f;
+     } else if (db < -50.0f) {
+               def = (db + 60.0f) * 0.5f + 5.0f;
+     } else if (db < -40.0f) {
+               def = (db + 50.0f) * 0.75f + 7.5;
+     } else if (db < -30.0f) {
+               def = (db + 40.0f) * 1.5f + 15.0f;
+     } else if (db < -20.0f) {
+               def = (db + 30.0f) * 2.0f + 30.0f;
+     } else if (db < 0.0f) {
+               def = (db + 20.0f) * 2.5f + 50.0f;
+     } else {
+               def = 100.0f;
+     }
+
+     return (def * 2.0f);
+    }
+
+    bool isNan(float& value ) {
+        if (((*(uint32_t *) &value) & 0x7fffffff) > 0x7f800000) {
+            return true;
+        }
+        return false;
+    }
+
+    void sanitizeDenormal(float& value) {
+        if (isNan(value)) {
+            //std::printf("Booo!\n");
+            value = 0.f;
+        }
+    }
+
+public:
+    //methods
+    float getRMSHistory(int n);
+    float getGainReductionHistory(int n);
+    bool repaintNeeded();
 };
 
 // -----------------------------------------------------------------------

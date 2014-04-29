@@ -42,7 +42,7 @@ extern void carla_register_native_plugin_nekobi();
 extern void carla_register_native_plugin_pingpongpan();
 extern void carla_register_native_plugin_stereoenhancer();
 
-//extern void carla_register_native_plugin_powerjuice();
+extern void carla_register_native_plugin_powerjuice();
 extern void carla_register_native_plugin_segmentjuice();
 extern void carla_register_native_plugin_vectorjuice();
 extern void carla_register_native_plugin_wobblejuice();
@@ -105,7 +105,7 @@ void carla_register_all_plugins()
     carla_register_native_plugin_pingpongpan();
     //carla_register_native_plugin_stereoenhancer();
 
-    //carla_register_native_plugin_powerjuice();
+    carla_register_native_plugin_powerjuice();
     carla_register_native_plugin_segmentjuice();
     carla_register_native_plugin_vectorjuice();
     carla_register_native_plugin_wobblejuice();
