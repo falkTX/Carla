@@ -14,56 +14,56 @@ LINK_FLAGS      += $(DGL_LIBS)
 
 OBJS = \
 	src/App.cpp.o \
+	src/Geometry.cpp.o \
 	src/Image.cpp.o \
 	src/ImageAboutWindow.cpp.o \
 	src/ImageButton.cpp.o \
 	src/ImageKnob.cpp.o \
 	src/ImageSlider.cpp.o \
-	src/Geometry.cpp.o \
 	src/Widget.cpp.o \
 	src/Window.cpp.o
 
 OBJS_posix32 = \
 	src/App.cpp.posix32.o \
+	src/Geometry.cpp.posix32.o \
 	src/Image.cpp.posix32.o \
 	src/ImageAboutWindow.cpp.posix32.o \
 	src/ImageButton.cpp.posix32.o \
 	src/ImageKnob.cpp.posix32.o \
 	src/ImageSlider.cpp.posix32.o \
-	src/Geometry.cpp.posix32.o \
 	src/Widget.cpp.posix32.o \
 	src/Window.cpp.posix32.o
 
 OBJS_posix64 = \
 	src/App.cpp.posix64.o \
+	src/Geometry.cpp.posix64.o \
 	src/Image.cpp.posix64.o \
 	src/ImageAboutWindow.cpp.posix64.o \
 	src/ImageButton.cpp.posix64.o \
 	src/ImageKnob.cpp.posix64.o \
 	src/ImageSlider.cpp.posix64.o \
-	src/Geometry.cpp.posix64.o \
 	src/Widget.cpp.posix64.o \
 	src/Window.cpp.posix64.o
 
 OBJS_win32 = \
 	src/App.cpp.win32.o \
+	src/Geometry.cpp.win32.o \
 	src/Image.cpp.win32.o \
 	src/ImageAboutWindow.cpp.win32.o \
 	src/ImageButton.cpp.win32.o \
 	src/ImageKnob.cpp.win32.o \
 	src/ImageSlider.cpp.win32.o \
-	src/Geometry.cpp.win32.o \
 	src/Widget.cpp.win32.o \
 	src/Window.cpp.win32.o
 
 OBJS_win64 = \
 	src/App.cpp.win64.o \
+	src/Geometry.cpp.win64.o \
 	src/Image.cpp.win64.o \
 	src/ImageAboutWindow.cpp.win64.o \
 	src/ImageButton.cpp.win64.o \
 	src/ImageKnob.cpp.win64.o \
 	src/ImageSlider.cpp.win64.o \
-	src/Geometry.cpp.win64.o \
 	src/Widget.cpp.win64.o \
 	src/Window.cpp.win64.o
 
