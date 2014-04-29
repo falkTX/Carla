@@ -1727,7 +1727,7 @@ bool CarlaEngine::loadProject(const char* const filename)
     // if we're running inside some session-manager, let them handle the connections
     if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
     {
-        if (std::getenv("LADISH_APP_NAME") != nullptr || std::getenv("NSM_URL") != nullptr)
+        if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr || std::getenv("LADISH_APP_NAME") != nullptr || std::getenv("NSM_URL") != nullptr)
             return true;
     }
 
@@ -1817,7 +1817,7 @@ bool CarlaEngine::saveProject(const char* const filename)
     // if we're running inside some session-manager, let them handle the connections
     if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
     {
-        if (std::getenv("LADISH_APP_NAME") != nullptr || std::getenv("NSM_URL") != nullptr)
+        if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr || std::getenv("LADISH_APP_NAME") != nullptr || std::getenv("NSM_URL") != nullptr)
             return true;
     }
 
