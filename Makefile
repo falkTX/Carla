@@ -402,6 +402,7 @@ else
 	@echo "DSSI:    $(ANS_NO)  $(mS)Plugins disabled$(mE)"
 	@echo "LV2:     $(ANS_NO)  $(mS)Plugins disabled$(mE)"
 	@echo "VST:     $(ANS_NO)  $(mS)Plugins disabled$(mE)"
+	@echo "VST3:    $(ANS_NO)  $(mS)Plugins disabled$(mE)"
 	@echo "AU:      $(ANS_NO)  $(mS)Plugins disabled$(mE)"
 endif
 	@echo ""
@@ -491,10 +492,16 @@ ifeq ($(HAVE_MF_DEPS),true)
 else
 	@echo "MidiFile:   $(ANS_NO)  $(mS)LibSMF missing$(mE)"
 endif
-ifeq ($(HAVE_DGL),true)
-	@echo "DISTRHO:    $(ANS_YES)"
+ifeq ($(HAVE_PM_DEPS),true)
+	@echo "ProjectM:   $(ANS_YES)"
 else
-	@echo "DISTRHO:    $(ANS_NO)  $(mS)OpenGL missing$(mE)"
+	@echo "ProjectM:   $(ANS_NO)  $(mS)ProjectM missing$(mE)"
+endif
+	@echo "DPF Stuff:  $(ANS_YES)"
+ifeq ($(HAVE_JUCE),true)
+	@echo "Juce Stuff: $(ANS_YES)"
+else
+	@echo "Juce Stuff: $(ANS_NO)  $(mS)Juce deps missing or unavailable$(mE)"
 endif
 ifeq ($(HAVE_ZYN_DEPS),true)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)

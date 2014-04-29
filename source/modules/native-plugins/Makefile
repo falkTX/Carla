@@ -302,8 +302,10 @@ zynaddsubfx/UI/%.h: zynaddsubfx/UI/%.fl
 # --------------------------------------------------------------
 
 clean:
-	$(RM) $(OBJS) ../native-plugins*.a ../libnative-plugins.*
+	$(RM) *.o ../native-plugins*.a ../libnative-plugins.*
+ifeq ($(HAVE_ZYN_UI_DEPS),true)
 	$(RM) $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
+endif
 
 debug:
 	$(MAKE) DEBUG=true
