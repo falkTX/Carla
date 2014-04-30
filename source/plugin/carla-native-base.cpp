@@ -47,8 +47,9 @@ struct PluginListManager {
                 std::strcmp(desc->label, "3bandeq")     == 0 || std::strcmp(desc->label, "3bandsplitter")  == 0 ||
                 std::strcmp(desc->label, "pingpongpan") == 0 || std::strcmp(desc->label, "stereoenhancer") == 0 ||
                 // juice
-                std::strcmp(desc->label, "powerjuice")  == 0 || std::strcmp(desc->label, "segmentjuice") == 0 ||
-                std::strcmp(desc->label, "vectorjuice") == 0 || std::strcmp(desc->label, "wobblejuice") == 0  ||
+                std::strstr(desc->label, "juice")       != nullptr ||
+                // zamaudio
+                std::strncmp(desc->label, "zam", 3)     == 0 ||
                 // other synths
                 std::strcmp(desc->label, "nekobi")      == 0 || std::strcmp(desc->label, "vexsynth") == 0
                )
