@@ -1,5 +1,5 @@
 /*
- * Wobble Juice Plugin
+ * Power Juice Plugin
  * Copyright (C) 2014 Andre Sklenar <andre.sklenar@gmail.com>, www.juicelab.cz
  *
  * This program is free software; you can redistribute it and/or

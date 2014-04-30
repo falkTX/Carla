@@ -104,10 +104,20 @@ OBJS += \
 #	distrho-stereoenhancer.cpp.o
 
 OBJS += \
+	distrho-groovejuice.cpp.o \
+	distrho-powerjuice.cpp.o \
 	distrho-segmentjuice.cpp.o \
 	distrho-vectorjuice.cpp.o \
 	distrho-wobblejuice.cpp.o
-# 	distrho-powerjuice.cpp.o
+
+OBJS += \
+	distrho-zamcomp.cpp.o \
+	distrho-zamcompx2.cpp.o \
+	distrho-zameq2.cpp.o \
+	distrho-zamsynth.cpp.o \
+	distrho-zamtube.cpp.o \
+	distrho-zamulticomp.cpp.o \
+	distrho-zamulticompx2.cpp.o
 
 ifeq ($(HAVE_JUCE),true)
 # --------------------------------------------------------------
@@ -254,6 +264,9 @@ distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/*.cpp pingpongpan
 distrho-stereoenhancer.cpp.o: distrho-stereoenhancer.cpp stereoenhancer/*.cpp stereoenhancer/*.h stereoenhancer/*.hpp ../distrho/* $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Istereoenhancer -DDISTRHO_NAMESPACE=DISTRHO_StereoEnhancer -c -o $@
 
+distrho-groovejuice.cpp.o: distrho-groovejuice.cpp groovejuice/*.cpp groovejuice/*.h groovejuice/*.hpp groovejuice/*.hxx ../distrho/* $(CXXDEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Igroovejuice -DDISTRHO_NAMESPACE=DISTRHO_GrooveJuice -c -o $@
+
 distrho-powerjuice.cpp.o: distrho-powerjuice.cpp powerjuice/*.cpp powerjuice/*.h powerjuice/*.hpp ../distrho/* $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Ipowerjuice -DDISTRHO_NAMESPACE=DISTRHO_PowerJuice -c -o $@
 
@@ -265,6 +278,27 @@ distrho-vectorjuice.cpp.o: distrho-vectorjuice.cpp vectorjuice/*.cpp vectorjuice
 
 distrho-wobblejuice.cpp.o: distrho-wobblejuice.cpp wobblejuice/*.cpp wobblejuice/*.h wobblejuice/*.hpp wobblejuice/*.hxx ../distrho/* $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Iwobblejuice -DDISTRHO_NAMESPACE=DISTRHO_WobbleJuice -c -o $@
+
+distrho-zamcomp.cpp.o: distrho-zamcomp.cpp zamcomp/*.cpp zamcomp/*.h zamcomp/*.hpp ../distrho/* $(CXXDEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Izamcomp -DDISTRHO_NAMESPACE=DISTRHO_ZamComp -c -o $@
+
+distrho-zamcompx2.cpp.o: distrho-zamcompx2.cpp zamcompx2/*.cpp zamcompx2/*.h zamcompx2/*.hpp ../distrho/* $(CXXDEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Izamcompx2 -DDISTRHO_NAMESPACE=DISTRHO_ZamCompX2 -c -o $@
+
+distrho-zameq2.cpp.o: distrho-zameq2.cpp zameq2/*.cpp zameq2/*.h zameq2/*.hpp ../distrho/* $(CXXDEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Izameq2 -DDISTRHO_NAMESPACE=DISTRHO_ZamEQ2 -c -o $@
+
+distrho-zamsynth.cpp.o: distrho-zamsynth.cpp zamsynth/*.cpp zamsynth/*.h zamsynth/*.hpp ../distrho/* $(CXXDEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Izamsynth -DDISTRHO_NAMESPACE=DISTRHO_ZamSynth -c -o $@
+
+distrho-zamtube.cpp.o: distrho-zamtube.cpp zamtube/*.cpp zamtube/*.h zamtube/*.hpp ../distrho/* $(CXXDEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Izamtube -DDISTRHO_NAMESPACE=DISTRHO_ZamTube -c -o $@
+
+distrho-zamulticomp.cpp.o: distrho-zamulticomp.cpp zamulticomp/*.cpp zamulticomp/*.h zamulticomp/*.hpp ../distrho/* $(CXXDEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Izamulticomp -DDISTRHO_NAMESPACE=DISTRHO_ZaMultiComp -c -o $@
+
+distrho-zamulticompx2.cpp.o: distrho-zamulticompx2.cpp zamulticompx2/*.cpp zamulticompx2/*.h zamulticompx2/*.hpp ../distrho/* $(CXXDEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Izamulticompx2 -DDISTRHO_NAMESPACE=DISTRHO_ZaMultiCompX2 -c -o $@
 
 juce-patchbay.cpp.o: juce-patchbay.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@

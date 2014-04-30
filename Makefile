@@ -497,6 +497,11 @@ ifeq ($(HAVE_PM_DEPS),true)
 else
 	@echo "ProjectM:   $(ANS_NO)  $(mS)ProjectM missing$(mE)"
 endif
+ifneq ($(WIN32),true)
+	@echo "Carla-Rack: $(ANS_YES)"
+else
+	@echo "Carla-Rack: $(ANS_NO)  $(mS)Not available for Windows$(mE)"
+endif
 	@echo "DPF Stuff:  $(ANS_YES)"
 ifeq ($(HAVE_JUCE),true)
 	@echo "Juce Stuff: $(ANS_YES)"
