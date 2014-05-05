@@ -138,7 +138,7 @@ void jackbridge_shm_attach(void* shm, const char* name)
     *t = carla_shm_attach(name);
 }
 
-void  jackbridge_shm_close(void* shm)
+void jackbridge_shm_close(void* shm)
 {
     shm_t* t = (shm_t*)shm;
     carla_shm_close(*t);

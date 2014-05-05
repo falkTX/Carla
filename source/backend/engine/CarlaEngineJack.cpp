@@ -24,10 +24,10 @@
 #include "CarlaMIDI.h"
 
 #include "jackbridge/JackBridge.hpp"
+#include "jackey.h"
 
 #include <QtCore/QStringList>
 
-#define URI_CANVAS_CV   "http://kxstudio.sf.net/ns/canvas/cv"
 #define URI_CANVAS_ICON "http://kxstudio.sf.net/ns/canvas/icon"
 
 CARLA_BACKEND_START_NAMESPACE
@@ -79,7 +79,7 @@ public:
             CARLA_SAFE_ASSERT_RETURN(jackClient != nullptr && jackPort != nullptr,);
 #ifndef CARLA_OS_WIN
             if (const jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
-                jackbridge_set_property(jackClient, uuid, URI_CANVAS_CV, "NO", "text/plain");
+                jackbridge_set_property(jackClient, uuid, JACKEY_SIGNAL_TYPE, "AUDIO", "text/plain");
 #endif
             break;
 
@@ -97,7 +97,7 @@ public:
         {
 #ifndef CARLA_OS_WIN
             if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
-                jackbridge_remove_property(fJackClient, uuid, URI_CANVAS_CV);
+                jackbridge_remove_property(fJackClient, uuid, JACKEY_SIGNAL_TYPE);
 #endif
 
             try {
@@ -167,7 +167,7 @@ public:
             CARLA_SAFE_ASSERT_RETURN(jackClient != nullptr && jackPort != nullptr,);
 #ifndef CARLA_OS_WIN
             if (const jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
-                jackbridge_set_property(jackClient, uuid, URI_CANVAS_CV, "YES", "text/plain");
+                jackbridge_set_property(jackClient, uuid, JACKEY_SIGNAL_TYPE, "CV", "text/plain");
 #endif
             break;
 
@@ -185,7 +185,7 @@ public:
         {
 #ifndef CARLA_OS_WIN
             if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
-                jackbridge_remove_property(fJackClient, uuid, URI_CANVAS_CV);
+                jackbridge_remove_property(fJackClient, uuid, JACKEY_SIGNAL_TYPE);
 #endif
 
             try {
@@ -1540,8 +1540,8 @@ protected:
                 char* value = nullptr;
                 char* type  = nullptr;
 
-                if (jackbridge_get_property(uuid, URI_CANVAS_CV, &value, &type) && value != nullptr && type != nullptr && std::strcmp(type, "text/plain") == 0)
-                    portIsCV = (std::strcmp(value, "YES") == 0);
+                if (jackbridge_get_property(uuid, JACKEY_SIGNAL_TYPE, &value, &type) && value != nullptr && type != nullptr && std::strcmp(type, "text/plain") == 0)
+                    portIsCV = (std::strcmp(value, "CV") == 0);
             }
 
             uint canvasPortFlags = 0x0;
@@ -2080,8 +2080,8 @@ private:
                     char* value = nullptr;
                     char* type  = nullptr;
 
-                    if (jackbridge_get_property(uuid, URI_CANVAS_CV, &value, &type) && value != nullptr && type != nullptr && std::strcmp(type, "text/plain") == 0)
-                        portIsCV = (std::strcmp(value, "YES") == 0);
+                    if (jackbridge_get_property(uuid, JACKEY_SIGNAL_TYPE, &value, &type) && value != nullptr && type != nullptr && std::strcmp(type, "text/plain") == 0)
+                        portIsCV = (std::strcmp(value, "CV") == 0);
                 }
 
                 uint canvasPortFlags = 0x0;
