@@ -1414,14 +1414,20 @@ public:
                 fParams = nullptr;
             }
 
-            CARLA_SAFE_ASSERT_INT2(ins+outs <= static_cast<int32_t>(pData->engine->getOptions().maxParameters), ins+outs, pData->engine->getOptions().maxParameters);
-
-            const uint32_t count(carla_fixValue<uint32_t>(0, pData->engine->getOptions().maxParameters, static_cast<uint32_t>(ins+outs)));
-
-            if (count > 0)
+            if (int32_t count = ins+outs)
             {
-                pData->param.createNew(count, false, true);
-                fParams = new BridgeParamInfo[count];
+                const int32_t maxParams(static_cast<int32_t>(pData->engine->getOptions().maxParameters));
+
+                if (count > maxParams)
+                {
+                    count = maxParams;
+                    carla_safe_assert_int2("count <= pData->engine->getOptions().maxParameters", __FILE__, __LINE__, count, maxParams);
+                }
+
+                const uint32_t ucount(static_cast<uint32_t>(count));
+
+                pData->param.createNew(ucount, false, true);
+                fParams = new BridgeParamInfo[ucount];
             }
             break;
         }
