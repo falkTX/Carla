@@ -158,29 +158,8 @@ private:
     {
         if (typename AbstractLinkedList<T>::Data* const data = _allocate_sleepy())
         {
-            if (this->fNeedsCopyCtr)
-            {
-                try {
-                    new(data)typename AbstractLinkedList<T>::Data();
-                }
-                catch(...) {
-                    _deallocate(data);
-                    return false;
-                }
-
-                try {
-                    data->value = value;
-                }
-                catch(...) {
-                    data->~Data();
-                    _deallocate(data);
-                    return false;
-                }
-            }
-            else
-            {
-                std::memcpy(&data->value, &value, this->fDataSize);
-            }
+            if (! this->_createData(data, value))
+                return false;
 
             if (inTail)
                 list_add_tail(&data->siblings, &this->fQueue);

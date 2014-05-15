@@ -352,6 +352,35 @@ protected:
     virtual Data* _allocate() noexcept = 0;
     virtual void  _deallocate(Data* const dataPtr) noexcept = 0;
 
+    bool _createData(Data* const data, const T& value)
+    {
+        if (fNeedsCopyCtr)
+        {
+            try {
+                new(data)Data();
+            }
+            catch(...) {
+                _deallocate(data);
+                return false;
+            }
+
+            try {
+                data->value = value;
+            }
+            catch(...) {
+                data->~Data();
+                _deallocate(data);
+                return false;
+            }
+        }
+        else
+        {
+            std::memcpy(&data->value, &value, this->fDataSize);
+        }
+
+        return true;
+    }
+
 private:
     mutable T fRetValue;
 
@@ -365,29 +394,8 @@ private:
     {
         if (Data* const data = _allocate())
         {
-            if (fNeedsCopyCtr)
-            {
-                try {
-                    new(data)Data();
-                }
-                catch(...) {
-                    _deallocate(data);
-                    return false;
-                }
-
-                try {
-                    data->value = value;
-                }
-                catch(...) {
-                    data->~Data();
-                    _deallocate(data);
-                    return false;
-                }
-            }
-            else
-            {
-                std::memcpy(&data->value, &value, fDataSize);
-            }
+            if (! _createData(data, value))
+                return false;
 
             if (inTail)
                 list_add_tail(&data->siblings, queue);
