@@ -725,7 +725,6 @@ private:
         }
     }
 
-    CARLA_LEAK_DETECTOR(CarlaString)
     CARLA_PREVENT_HEAP_ALLOCATION
 };
 
