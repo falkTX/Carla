@@ -141,15 +141,15 @@
 #endif
 
 /* Define CARLA_SAFE_ASSERT* */
-#define CARLA_SAFE_ASSERT(cond)               if (cond) pass(); else carla_safe_assert      (#cond, __FILE__, __LINE__);
-#define CARLA_SAFE_ASSERT_INT(cond, value)    if (cond) pass(); else carla_safe_assert_int  (#cond, __FILE__, __LINE__, static_cast<int>(value));
-#define CARLA_SAFE_ASSERT_INT2(cond, v1, v2)  if (cond) pass(); else carla_safe_assert_int2 (#cond, __FILE__, __LINE__, static_cast<int>(v1), static_cast<int>(v2));
-#define CARLA_SAFE_ASSERT_UINT(cond, value)   if (cond) pass(); else carla_safe_assert_uint (#cond, __FILE__, __LINE__, static_cast<uint>(value));
-#define CARLA_SAFE_ASSERT_UINT2(cond, v1, v2) if (cond) pass(); else carla_safe_assert_uint2(#cond, __FILE__, __LINE__, static_cast<uint>(v1), static_cast<uint>(v2));
+#define CARLA_SAFE_ASSERT(cond)               if (! (cond)) carla_safe_assert      (#cond, __FILE__, __LINE__);
+#define CARLA_SAFE_ASSERT_INT(cond, value)    if (! (cond)) carla_safe_assert_int  (#cond, __FILE__, __LINE__, static_cast<int>(value));
+#define CARLA_SAFE_ASSERT_INT2(cond, v1, v2)  if (! (cond)) carla_safe_assert_int2 (#cond, __FILE__, __LINE__, static_cast<int>(v1), static_cast<int>(v2));
+#define CARLA_SAFE_ASSERT_UINT(cond, value)   if (! (cond)) carla_safe_assert_uint (#cond, __FILE__, __LINE__, static_cast<uint>(value));
+#define CARLA_SAFE_ASSERT_UINT2(cond, v1, v2) if (! (cond)) carla_safe_assert_uint2(#cond, __FILE__, __LINE__, static_cast<uint>(v1), static_cast<uint>(v2));
 
-#define CARLA_SAFE_ASSERT_BREAK(cond)         if (cond) pass(); else { carla_safe_assert(#cond, __FILE__, __LINE__); break; }
-#define CARLA_SAFE_ASSERT_CONTINUE(cond)      if (cond) pass(); else { carla_safe_assert(#cond, __FILE__, __LINE__); continue; }
-#define CARLA_SAFE_ASSERT_RETURN(cond, ret)   if (cond) pass(); else { carla_safe_assert(#cond, __FILE__, __LINE__); return ret; }
+#define CARLA_SAFE_ASSERT_BREAK(cond)         if (! (cond)) { carla_safe_assert(#cond, __FILE__, __LINE__); break; }
+#define CARLA_SAFE_ASSERT_CONTINUE(cond)      if (! (cond)) { carla_safe_assert(#cond, __FILE__, __LINE__); continue; }
+#define CARLA_SAFE_ASSERT_RETURN(cond, ret)   if (! (cond)) { carla_safe_assert(#cond, __FILE__, __LINE__); return ret; }
 
 /* Define CARLA_SAFE_EXCEPTION */
 #define CARLA_SAFE_EXCEPTION(msg)             catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); }
