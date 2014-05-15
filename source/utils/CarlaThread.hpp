@@ -276,7 +276,7 @@ private:
         return nullptr;
     }
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaThread)
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaThread)
 };
 
 // -----------------------------------------------------------------------
