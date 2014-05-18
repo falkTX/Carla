@@ -16,6 +16,7 @@ if [ -d /dev/shm ]; then
 else
   # MacOS
   . ./data/macos/env-vars.sh
+  export CXFREEZE=cxfreeze-3.3
 fi
 
 # ./configure -prefix /Users/falktx/Source/Qt-5.2.1 -release -opensource -confirm-license -no-c++11 
@@ -24,23 +25,25 @@ fi
 # -no-compile-examples -nomake examples -nomake tests -make tools -make libs -qt-sql-sqlite -no-framework -no-sql-odbc
 
 # Clean build
-make clean
+# make clean
 
 # Build
-make $JOBS HAVE_FFMPEG=false HAVE_GTK2=false HAVE_GTK3=false
-
-# rm -rf ./data/macos/build
+# make $JOBS
 
 # Build Mac App
-# cd data/macos
-# python3.3 setup.py build
-# cxfreeze-3.3 --target-dir=./data/macos/Carla ./source/carla.py --include-modules=re,sip
+rm -rf ./data/macos/Carla
 
-# mkdir build/backend
-# mkdir build/bridges
-# mkdir build/discovery
-# cp ../../source/backend/*.dylib             build/backend/
-# cp ../../source/discovery/carla-discovery-* build/discovery/
+cp ./source/carla ./source/carla.pyw
+$CXFREEZE --include-modules=re,sip,subprocess,inspect --target-dir=./data/macos/Carla ./source/carla.pyw
+rm ./source/carla.pyw
 
-# cd ../..
+cd data/macos
 
+mkdir Carla/backend
+mkdir Carla/bridges
+mkdir Carla/discovery
+cp ../../source/backend/*.dylib             Carla/backend/
+cp ../../source/discovery/carla-discovery-* Carla/discovery/
+cp -r ../../source/modules/theme/styles     Carla/
+
+cd ../..
