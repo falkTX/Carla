@@ -1,0 +1,148 @@
+#!/bin/bash
+
+set -e
+
+if [ -f Makefile ]; then
+  cd data/macos
+fi
+
+export MACOS=true
+export CC=gcc-4.2
+export CXX=g++-4.2
+export PATH=/opt/kxstudio/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+export PKG_CONFIG_PATH=/opt/kxstudio/lib/pkgconfig
+
+# -fPIC -DPIC
+export CFLAGS="-O2 -mtune=generic -msse -msse2"
+export CXXFLAGS=$CFLAGS
+
+# ------------------------------------------------------------------------------------
+# pkgconfig
+
+if [ ! -d pkg-config-0.28 ]; then
+curl -O http://pkgconfig.freedesktop.org/releases/pkg-config-0.28.tar.gz
+tar -xf pkg-config-0.28.tar.gz
+fi
+
+if [ ! -f pkg-config-0.28/Makefile ]; then
+cd pkg-config-0.28
+./configure --enable-indirect-deps --with-internal-glib --with-pc-path=$PKG_CONFIG_PATH --prefix=/opt/kxstudio
+make
+sudo make install
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# zlib
+
+if [ ! -d zlib-1.2.8 ]; then
+curl -O http://zlib.net/zlib-1.2.8.tar.gz
+tar -xf zlib-1.2.8.tar.gz
+fi
+
+if [ ! -f zlib-1.2.8/zlib.pc ]; then
+cd zlib-1.2.8
+./configure --static --prefix=/opt/kxstudio
+make
+sudo make install
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# liblo
+
+if [ ! -d liblo-0.28 ]; then
+curl -L http://download.sourceforge.net/liblo/liblo-0.28.tar.gz -o liblo-0.28.tar.gz
+tar -xf liblo-0.28.tar.gz
+fi
+
+if [ ! -f liblo-0.28/liblo.pc ]; then
+cd liblo-0.28
+./configure --enable-static --disable-shared --prefix=/opt/kxstudio
+make
+sudo make install
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# mxml
+
+if [ ! -d mxml-2.8 ]; then
+curl -O http://www.msweet.org/files/project3/mxml-2.8.tar.gz
+tar -xf mxml-2.8.tar.gz
+fi
+
+if [ ! -f mxml-2.8/mxml.pc ]; then
+cd mxml-2.8
+./configure --enable-static --disable-shared --prefix=/opt/kxstudio
+make
+sudo cp *.a    /opt/kxstudio/lib/
+sudo cp *.pc   /opt/kxstudio/lib/pkgconfig/
+sudo cp mxml.h /opt/kxstudio/include/
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# fltk
+
+if [ ! -d fltk-1.3.2 ]; then
+curl -O http://fltk.org/pub/fltk/1.3.2/fltk-1.3.2-source.tar.gz
+tar -xf fltk-1.3.2-source.tar.gz
+fi
+
+if [ ! -f fltk-1.3.2/fltk-config ]; then
+cd fltk-1.3.2
+./configure --enable-static --enable-localjpeg --enable-localpng --enable-localzlib \
+            --disable-shared --disable-x11 --disable-cairoext --disable-cairo  --disable-gl --prefix=/opt/kxstudio
+make
+sudo make install
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# qt
+
+if [ ! -d qt-everywhere-opensource-src-4.8.6 ]; then
+curl -O http://download.qt-project.org/official_releases/qt/4.8/4.8.6/qt-everywhere-opensource-src-4.8.6.tar.gz
+tar -xf qt-everywhere-opensource-src-4.8.6.tar.gz
+fi
+
+if [ ! -f qt-everywhere-opensource-src-4.8.6/fltk-config ]; then
+cd qt-everywhere-opensource-src-4.8.6
+./configure -prefix /opt/kxstudio -release -static -opensource -confirm-license -force-pkg-config -no-framework \
+            -qt-freetype -qt-libjpeg -qt-libpng -qt-sql-sqlite -qt-zlib -harfbuzz -svg \
+            -no-cups -no-dbus -no-fontconfig -no-iconv -no-icu -no-gif -no-glib -no-libmng -no-libtiff -no-nis -no-openssl -no-pch -no-sql-odbc \
+            -no-audio-backend -no-multimedia -no-phonon -no-phonon-backend -no-qt3support -no-webkit -no-xmlpatterns \
+            -no-declarative -no-declarative-debug -no-javascript-jit -no-script -no-scripttools \
+            -nomake examples -nomake tests -make libs -make tools
+make
+sudo make install
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# fftw3
+
+if [ ! -d fftw-3.3.4 ]; then
+curl -O http://www.fftw.org/fftw-3.3.4.tar.gz
+tar -xf fftw-3.3.4.tar.gz
+fi
+
+if [ ! -f fftw-3.3.4/build-done ]; then
+# -fPIC -DPIC
+export CFLAGS="-O2 -mtune=generic -msse -msse2 -ffast-math -mfpmath=sse"
+export CXXFLAGS=$CFLAGS
+cd fftw-3.3.4
+./configure --enable-static --enable-sse2 --disable-shared --disable-debug --prefix=/opt/kxstudio
+make
+sudo make install
+make clean
+./configure --enable-static --enable-sse --enable-sse2 --enable-single --disable-shared --disable-debug --prefix=/opt/kxstudio
+make
+sudo make install
+make clean
+touch build-done
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------

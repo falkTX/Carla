@@ -4,6 +4,7 @@
 .*.kate-swp
 .kdev_include_paths
 .kdev4/
+.DS_Store
 
 # Temp files
 *~
@@ -137,5 +138,8 @@ source/includes/asio/
 source/includes/rewire/
 source/includes/vst/
 source/includes/vst3/
+
+data/macos/*.gz
+data/macos/*.*/
 
 data/windows/python/
