@@ -192,11 +192,13 @@ endif
 # --------------------------------------------------------------
 # Check for optional libs (required by backend or bridges)
 
+ifneq ($(MACOS_OR_WIN32),true)
 HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
 HAVE_GTK2         = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3         = $(shell pkg-config --exists gtk+-3.0 && echo true)
 HAVE_WAYLAND      = $(shell pkg-config --exists wayland-client && echo true)
 HAVE_X11          = $(shell pkg-config --exists x11 && echo true)
+endif
 
 ifeq ($(LINUX),true)
 HAVE_ALSA         = $(shell pkg-config --exists alsa && echo true)
@@ -228,8 +230,6 @@ HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk_images ntk && echo true)
 
 ifeq ($(MACOS_OR_WIN32),true)
 CARLA_VESTIGE_HEADER = false
-HAVE_WAYLAND = false
-HAVE_X11     = false
 endif
 
 # --------------------------------------------------------------
