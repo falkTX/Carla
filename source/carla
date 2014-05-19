@@ -193,7 +193,7 @@ class CarlaMultiW(QTabWidget):
     def paintEvent(self, event):
         QTabWidget.paintEvent(self, event)
 
-        if not self.fUseCustomPaint:
+        if MACOS or not self.fUseCustomPaint:
             return
 
         painter = QPainter(self)
@@ -230,7 +230,7 @@ class CarlaHostW(HostWindow):
         self.fInfoLabel.setAlignment(Qt.AlignRight|Qt.AlignVCenter)
         self.fInfoLabel.setText("Engine stopped")
 
-        if MACOS and False: # TODO: check if NOT using pro theme
+        if MACOS: # TODO: check if NOT using pro theme
             self.fInfoLabel.hide()
             self.setUnifiedTitleAndToolBarOnMac(True)
 

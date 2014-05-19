@@ -445,6 +445,9 @@ class AbstractPluginSlot(QFrame):
     #------------------------------------------------------------------
 
     def drawOutline(self):
+        # FIXME - broken in Qt4
+        if MACOS: return
+
         painter = QPainter(self)
 
         if self.fIsSelected:

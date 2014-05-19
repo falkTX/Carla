@@ -36,6 +36,7 @@ rm -rf ./data/macos/Carla
 cp ./source/carla ./source/carla.pyw
 # python3 ./data/macos/bundle.py bdist_mac --bundle-name=Carla 
 $CXFREEZE --include-modules=re,sip,subprocess,inspect --target-dir=./data/macos/Carla ./source/carla.pyw
+rm -rf ./data/macos/Carla/imageformats/
 rm ./source/carla.pyw
 
 cd data/macos

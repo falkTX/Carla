@@ -67,7 +67,7 @@ class CarlaApplication(object):
         settings    = QSettings("falkTX", appName)
         useProTheme = settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool)
 
-        if WINDOWS or not useProTheme:
+        if WINDOWS or MACOS or not useProTheme:
             self._createApp(appName)
             return
 
