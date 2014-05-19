@@ -16,7 +16,7 @@ if [ -d /dev/shm ]; then
 else
   # MacOS
   . ./data/macos/env-vars.sh
-  export CXFREEZE=cxfreeze-3.3
+  export CXFREEZE=cxfreeze
 fi
 
 # ./configure -prefix /Users/falktx/Source/Qt-5.2.1 -release -opensource -confirm-license -no-c++11 
@@ -34,6 +34,7 @@ fi
 rm -rf ./data/macos/Carla
 
 cp ./source/carla ./source/carla.pyw
+# python3 ./data/macos/bundle.py bdist_mac --bundle-name=Carla 
 $CXFREEZE --include-modules=re,sip,subprocess,inspect --target-dir=./data/macos/Carla ./source/carla.pyw
 rm ./source/carla.pyw
 

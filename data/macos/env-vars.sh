@@ -7,5 +7,5 @@ export CXXFLAGS="-DMAC_OS_X_VERSION_MIN_REQUIRED=MAC_OS_X_VERSION_10_5 -DMAC_OS_
 export PATH=/opt/kxstudio/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=/opt/kxstudio/lib/pkgconfig
 
-export PYRCC="pyrcc4-3.3 -py3"
-export PYUIC="pyuic4-3.3 -w"
+# export PYRCC="pyrcc4-3.3 -py3"
+# export PYUIC="pyuic4-3.3 -w"

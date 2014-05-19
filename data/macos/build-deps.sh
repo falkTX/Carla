@@ -107,7 +107,7 @@ curl -O http://download.qt-project.org/official_releases/qt/4.8/4.8.6/qt-everywh
 tar -xf qt-everywhere-opensource-src-4.8.6.tar.gz
 fi
 
-if [ ! -f qt-everywhere-opensource-src-4.8.6/fltk-config ]; then
+if [ ! -f qt-everywhere-opensource-src-4.8.6/bin/moc ]; then
 cd qt-everywhere-opensource-src-4.8.6
 ./configure -prefix /opt/kxstudio -release -static -opensource -confirm-license -force-pkg-config -no-framework \
             -qt-freetype -qt-libjpeg -qt-libpng -qt-sql-sqlite -qt-zlib -harfbuzz -svg \
@@ -117,6 +117,69 @@ cd qt-everywhere-opensource-src-4.8.6
             -nomake examples -nomake tests -make libs -make tools
 make
 sudo make install
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# python
+
+if [ ! -d Python-3.3.5 ]; then
+curl -O https://www.python.org/ftp/python/3.3.5/Python-3.3.5.tgz
+tar -xf Python-3.3.5.tgz
+fi
+
+if [ ! -f Python-3.3.5/Makefile ]; then
+cd Python-3.3.5
+./configure --prefix=/opt/kxstudio
+make
+sudo make install
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# sip
+
+if [ ! -d sip-4.15.5 ]; then
+curl -L http://download.sourceforge.net/pyqt/sip-4.15.5.tar.gz -o sip-4.15.5.tar.gz
+tar -xf sip-4.15.5.tar.gz
+fi
+
+if [ ! -f sip-4.15.5/Makefile ]; then
+cd sip-4.15.5
+python3 configure.py
+make
+sudo make install
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# pyqt
+
+if [ ! -d PyQt-mac-gpl-4.10.4 ]; then
+curl -L http://download.sourceforge.net/pyqt/PyQt-mac-gpl-4.10.4.tar.gz -o PyQt-mac-gpl-4.10.4.tar.gz
+tar -xf PyQt-mac-gpl-4.10.4.tar.gz
+fi
+
+if [ ! -f PyQt-mac-gpl-4.10.4/Makefile ]; then
+cd PyQt-mac-gpl-4.10.4
+python3 configure.py -g --confirm-license --no-deprecated
+make
+sudo make install
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# cxfreeze
+
+if [ ! -d cx_Freeze-4.3.3 ]; then
+curl -L http://download.sourceforge.net/cx-freeze/cx_Freeze-4.3.3.tar.gz -o cx_Freeze-4.3.3.tar.gz
+tar -xf cx_Freeze-4.3.3.tar.gz
+fi
+
+if [ ! -d cx_Freeze-4.3.3/build ]; then
+cd cx_Freeze-4.3.3
+python3 setup.py build
+sudo python3 setup.py install --prefix=/opt/kxstudio
 cd ..
 fi
 
