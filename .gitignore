@@ -38,12 +38,14 @@ ui_*.py
 
 # PyQt widgets
 source/canvaspreviewframe.py
+source/carla_config.py
 source/digitalpeakmeter.py
 source/ledbutton.py
 source/paramspinbox.py
 source/pixmapbutton.py
 source/pixmapdial.py
 source/pixmapkeyboard.py
+source/qgraphicsembedscene.py
 
 # Binaries
 carla-bridge-qtcreator
@@ -140,6 +142,8 @@ source/includes/vst/
 source/includes/vst3/
 
 data/macos/*.gz
+data/macos/*.tgz
 data/macos/*.*/
+data/macos/Carla/
 
 data/windows/python/
