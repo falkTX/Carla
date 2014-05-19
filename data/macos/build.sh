@@ -45,6 +45,6 @@ mkdir Carla/bridges
 mkdir Carla/discovery
 cp ../../source/backend/*.dylib             Carla/backend/
 cp ../../source/discovery/carla-discovery-* Carla/discovery/
-cp -r ../../source/modules/theme/styles     Carla/
+# cp -r ../../source/modules/theme/styles     Carla/
 
 cd ../..
