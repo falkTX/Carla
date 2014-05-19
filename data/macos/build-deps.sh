@@ -100,7 +100,7 @@ cd ..
 fi
 
 # ------------------------------------------------------------------------------------
-# qt
+# qt4
 
 if [ ! -d qt-everywhere-opensource-src-4.8.6 ]; then
 curl -O http://download.qt-project.org/official_releases/qt/4.8/4.8.6/qt-everywhere-opensource-src-4.8.6.tar.gz
@@ -116,6 +116,29 @@ cd qt-everywhere-opensource-src-4.8.6
             -no-declarative -no-declarative-debug -no-javascript-jit -no-script -no-scripttools \
             -nomake examples -nomake tests -make libs -make tools
 make
+sudo make install
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# qt5
+
+if [ ! -d qtbase5-mac10.5 ]; then
+git clone git://github.com/falkTX/qtbase5-mac10.5 --depth 1
+fi
+
+if [ ! -f qtbase5-mac10.5/bin/moc ]; then
+cd qtbase5-mac10.5
+export QMAKESPEC=macx-g++42
+./configure -release -static -opensource -confirm-license -force-pkg-config \
+            -prefix /opt/kxstudio -plugindir /opt/kxstudio/lib/qt5/plugins -headerdir /opt/kxstudio/include/qt5 \
+            -qt-freetype -qt-libjpeg -qt-libpng -qt-pcre -qt-sql-sqlite -qt-zlib -opengl no -no-c++11 -no-framework -qpa cocoa \
+            -no-directfb -no-eglfs -no-kms -no-linuxfb -no-mtdev -no-xcb -no-xcb-xlib \
+            -no-sse3 -no-ssse3 -no-sse4.1 -no-sse4.2 -no-avx -no-avx2 -no-neon -no-mips_dsp -no-mips_dspr2 \
+            -no-cups -no-dbus -no-fontconfig -no-harfbuzz -no-iconv -no-icu -no-gif -no-glib -no-nis -no-openssl -no-pch -no-sql-ibase -no-sql-odbc \
+            -no-audio-backend -no-javascript-jit -no-qml-debug -no-rpath -no-separate-debug-info \
+            -no-compile-examples -nomake examples -nomake tests -make libs -make tools
+make -j 2
 sudo make install
 cd ..
 fi
@@ -163,6 +186,23 @@ fi
 if [ ! -f PyQt-mac-gpl-4.10.4/Makefile ]; then
 cd PyQt-mac-gpl-4.10.4
 python3 configure.py -g --confirm-license --no-deprecated
+make
+sudo make install
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# pyqt5
+
+if [ ! -d PyQt-gpl-5.2.1 ]; then
+curl -L http://download.sourceforge.net/pyqt/PyQt-gpl-5.2.1.tar.gz -o PyQt-gpl-5.2.1.tar.gz
+tar -xf PyQt-gpl-5.2.1.tar.gz
+fi
+
+if [ ! -f PyQt-gpl-5.2.1/Makefile ]; then
+cd PyQt-gpl-5.2.1
+python3 configure.py -g --confirm-license
+cp _qt/*.h qpy/QtCore/
 make
 sudo make install
 cd ..
