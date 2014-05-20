@@ -230,7 +230,7 @@ class CarlaHostW(HostWindow):
         self.fInfoLabel.setAlignment(Qt.AlignRight|Qt.AlignVCenter)
         self.fInfoLabel.setText("Engine stopped")
 
-        if MACOS: # TODO: check if NOT using pro theme
+        if MACOS and False: # TODO: check if NOT using pro theme
             self.fInfoLabel.hide()
             self.setUnifiedTitleAndToolBarOnMac(True)
 

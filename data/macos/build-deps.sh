@@ -124,19 +124,19 @@ fi
 # qt5
 
 if [ ! -d qtbase5-mac10.5 ]; then
-git clone git://github.com/falkTX/qtbase5-mac10.5 --depth 1
+/opt/local/bin/git clone git://github.com/falkTX/qtbase5-mac10.5 --depth 1
 fi
 
 if [ ! -f qtbase5-mac10.5/bin/moc ]; then
 cd qtbase5-mac10.5
 export QMAKESPEC=macx-g++42
-./configure -release -static -opensource -confirm-license -force-pkg-config \
+./configure -release -shared -opensource -confirm-license -force-pkg-config \
             -prefix /opt/kxstudio -plugindir /opt/kxstudio/lib/qt5/plugins -headerdir /opt/kxstudio/include/qt5 \
             -qt-freetype -qt-libjpeg -qt-libpng -qt-pcre -qt-sql-sqlite -qt-zlib -opengl no -no-c++11 -no-framework -qpa cocoa \
             -no-directfb -no-eglfs -no-kms -no-linuxfb -no-mtdev -no-xcb -no-xcb-xlib \
             -no-sse3 -no-ssse3 -no-sse4.1 -no-sse4.2 -no-avx -no-avx2 -no-neon -no-mips_dsp -no-mips_dspr2 \
             -no-cups -no-dbus -no-fontconfig -no-harfbuzz -no-iconv -no-icu -no-gif -no-glib -no-nis -no-openssl -no-pch -no-sql-ibase -no-sql-odbc \
-            -no-audio-backend -no-javascript-jit -no-qml-debug -no-rpath -no-separate-debug-info \
+            -no-audio-backend -no-javascript-jit -no-qml-debug -no-separate-debug-info \
             -no-compile-examples -nomake examples -nomake tests -make libs -make tools
 make -j 2
 sudo make install
@@ -167,13 +167,13 @@ curl -L http://download.sourceforge.net/pyqt/sip-4.15.5.tar.gz -o sip-4.15.5.tar
 tar -xf sip-4.15.5.tar.gz
 fi
 
-if [ ! -f sip-4.15.5/Makefile ]; then
-cd sip-4.15.5
-python3 configure.py
-make
-sudo make install
-cd ..
-fi
+# if [ ! -f sip-4.15.5/Makefile ]; then
+# cd sip-4.15.5
+# python3 configure.py
+# make
+# sudo make install
+# cd ..
+# fi
 
 # ------------------------------------------------------------------------------------
 # pyqt
@@ -201,8 +201,8 @@ fi
 
 if [ ! -f PyQt-gpl-5.2.1/Makefile ]; then
 cd PyQt-gpl-5.2.1
-python3 configure.py -g --confirm-license
-cp _qt/*.h qpy/QtCore/
+python3 configure.py --confirm-license
+# cp _qt/*.h qpy/QtCore/
 make
 sudo make install
 cd ..

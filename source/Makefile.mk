@@ -115,8 +115,8 @@ CFLAGS     += -isystem /opt/kxstudio/include
 CXXFLAGS   += -isystem /opt/kxstudio/include -isystem /usr/include/qt4
 endif
 ifeq ($(MACOS),true)
-CFLAGS     += -isystem /opt/local/include/
-CXXFLAGS   += -isystem /opt/local/include/
+CFLAGS     += -isystem /opt/kxstudio/include
+CXXFLAGS   += -isystem /opt/kxstudio/include -isystem /opt/kxstudio/include/qt5
 endif
 ifeq ($(WIN32),true)
 CFLAGS     += -isystem /opt/mingw32/include

@@ -482,9 +482,9 @@ else:
 CWD = sys.path[0]
 
 # make it work with cxfreeze
-if WINDOWS and CWD.endswith(".exe"):
+if WINDOWS and CWD.lower().endswith(".exe"):
     CWD = CWD.rsplit("\\", 1)[0]
-elif CWD.endswith(("/carla", "/carla-plugin", "/carla-patchbay", "/carla-rack")):
+elif CWD.lower().endswith(("/carla", "/carla-plugin", "/carla-patchbay", "/carla-rack")):
     CWD = CWD.rsplit("/", 1)[0]
 
 # find tool
