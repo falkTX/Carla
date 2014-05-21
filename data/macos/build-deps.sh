@@ -194,7 +194,7 @@ cp -r qtbase5-mac10.6 qtbase5-mac10.6_64
 cd qtbase5-mac10.6_64
 export CFG_ARCH=x86_64
 export QMAKESPEC=macx-clang
-./configure -release -shared -opensource -confirm-license -force-pkg-config -platform macx-clang \
+./configure -release -static -opensource -confirm-license -force-pkg-config -platform macx-clang \
             -prefix $PREFIX -plugindir $PREFIX/lib/qt5/plugins -headerdir $PREFIX/include/qt5 \
             -qt-freetype -qt-libjpeg -qt-libpng -qt-pcre -qt-sql-sqlite -qt-zlib -opengl no -qpa cocoa \
             -no-directfb -no-eglfs -no-kms -no-linuxfb -no-mtdev -no-xcb -no-xcb-xlib \
@@ -219,15 +219,23 @@ export PREFIX=/opt/kxstudio
 export PATH=$PREFIX/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
 
+export CFG_ARCH=x86_64
+export QMAKESPEC=macx-clang
+
+# ------------------------------------------------------------------------------------
+# qt5-base download (5.2.1 for now)
+
+if [ ! -d qtbase-opensource-src-5.2.1 ]; then
+curl -O http://download.qt-project.org/official_releases/qt/5.2/5.2.1/submodules/qtbase-opensource-src-5.2.1.tar.gz
+tar -xf qtbase-opensource-src-5.2.1.tar.gz
+fi
+
 # ------------------------------------------------------------------------------------
 # qt5-base (regular, 64bit, shared, framework)
 
-if [ ! -f qtbase5-mac10.6_shared/build-done ]; then
-cp -r qtbase5-mac10.6 qtbase5-mac10.6_shared
-cd qtbase5-mac10.6_shared
-export CFG_ARCH=x86_64
-export QMAKESPEC=macx-clang
-./configure -release -shared -opensource -confirm-license -no-pkg-config -platform macx-clang -framework \
+if [ ! -f qtbase-opensource-src-5.2.1/build-done ]; then
+cd qtbase-opensource-src-5.2.1
+./configure -release -shared -opensource -confirm-license -force-pkg-config -platform macx-clang -framework \
             -prefix $PREFIX -plugindir $PREFIX/lib/qt5/plugins -headerdir $PREFIX/include/qt5 \
             -qt-freetype -qt-libjpeg -qt-libpng -qt-pcre -qt-sql-sqlite -qt-zlib -opengl desktop -qpa cocoa \
             -no-directfb -no-eglfs -no-kms -no-linuxfb -no-mtdev -no-xcb -no-xcb-xlib \
@@ -237,6 +245,26 @@ export QMAKESPEC=macx-clang
             -no-compile-examples -nomake examples -nomake tests -make libs -make tools
 make -j 2
 sudo make install
+sudo ln -s /opt/kxstudio/lib/QtCore.framework/Headers    /opt/kxstudio/include/qt5/QtCore
+sudo ln -s /opt/kxstudio/lib/QtGui.framework/Headers     /opt/kxstudio/include/qt5/QtGui
+sudo ln -s /opt/kxstudio/lib/QtWidgets.framework/Headers /opt/kxstudio/include/qt5/QtWidgets
+touch build-done
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# qt5-mac-extras
+
+if [ ! -d qtmacextras-opensource-src-5.2.1 ]; then
+http://download.qt-project.org/official_releases/qt/5.2/5.2.1/submodules/qtmacextras-opensource-src-5.2.1.tar.gz
+tar -xf qtmacextras-opensource-src-5.2.1.tar.gz
+fi
+
+if [ ! -f qtmacextras-opensource-src-5.2.1/build-done ]; then
+cd qtmacextras-opensource-src-5.2.1
+qmake
+make -j 2
+sudo make install
 touch build-done
 cd ..
 fi
@@ -244,12 +272,13 @@ fi
 # ------------------------------------------------------------------------------------
 # qt5-svg
 
-if [ ! -d qtsvg-opensource-src-5.3.0 ]; then
-curl -O http://download.qt-project.org/official_releases/qt/5.3/5.3.0/submodules/qtsvg-opensource-src-5.3.0.tar.gz
+if [ ! -d qtsvg-opensource-src-5.2.1 ]; then
+curl -O http://download.qt-project.org/official_releases/qt/5.2/5.2.1/submodules/qtsvg-opensource-src-5.2.1.tar.gz
+tar -xf qtsvg-opensource-src-5.2.1.tar.gz
 fi
 
-if [ ! -f qtsvg-opensource-src-5.3.0/build-done ]; then
-cd qtsvg-opensource-src-5.3.0
+if [ ! -f qtsvg-opensource-src-5.2.1/build-done ]; then
+cd qtsvg-opensource-src-5.2.1
 qmake
 make -j 2
 sudo make install
@@ -277,13 +306,13 @@ fi
 # ------------------------------------------------------------------------------------
 # sip
 
-if [ ! -d sip-4.16-snapshot-f6acb8ed7b65 ]; then
-curl -O http://www.riverbankcomputing.co.uk/static/Downloads/sip4/sip-4.16-snapshot-f6acb8ed7b65.tar.gz
-tar -xf sip-4.16-snapshot-f6acb8ed7b65.tar.gz
+if [ ! -d sip-4.15.5 ]; then
+curl -L http://sourceforge.net/projects/pyqt/files/sip/sip-4.15.5/sip-4.15.5.tar.gz -o sip-4.15.5.tar.gz
+tar -xf sip-4.15.5.tar.gz
 fi
 
-if [ ! -f sip-4.16-snapshot-f6acb8ed7b65/build-done ]; then
-cd sip-4.16-snapshot-f6acb8ed7b65
+if [ ! -f sip-4.15.5/build-done ]; then
+cd sip-4.15.5
 python3 configure.py
 make
 sudo make install
@@ -294,21 +323,19 @@ fi
 # ------------------------------------------------------------------------------------
 # pyqt5
 
-if [ ! -d PyQt-gpl-5.3-snapshot-f6e83c05f2a1 ]; then
-curl -O http://www.riverbankcomputing.co.uk/static/Downloads/PyQt5/PyQt-gpl-5.3-snapshot-f6e83c05f2a1.tar.gz
-tar -xf PyQt-gpl-5.3-snapshot-f6e83c05f2a1.tar.gz
+if [ ! -d PyQt-gpl-5.2.1 ]; then
+curl -L http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.2.1/PyQt-gpl-5.2.1.tar.gz -o PyQt-gpl-5.2.1.tar.gz
+tar -xf PyQt-gpl-5.2.1.tar.gz
 fi
 
-if [ ! -f PyQt-gpl-5.3-snapshot-f6e83c05f2a1/build-done ]; then
-cd PyQt-gpl-5.3-snapshot-f6e83c05f2a1
+if [ ! -f PyQt-gpl-5.2.1/build-done ]; then
+cd PyQt-gpl-5.2.1
 python3 configure.py --confirm-license
 make
 sudo make install
 touch build-done
 cd ..
 fi
-
-exit 0
 
 # ------------------------------------------------------------------------------------
 # cxfreeze
@@ -318,18 +345,13 @@ curl -L http://download.sourceforge.net/cx-freeze/cx_Freeze-4.3.3.tar.gz -o cx_F
 tar -xf cx_Freeze-4.3.3.tar.gz
 fi
 
-if [ ! -d cx_Freeze-4.3.3/build-done ]; then
+if [ ! -f cx_Freeze-4.3.3/build-done ]; then
 cd cx_Freeze-4.3.3
+sed  -i -e 's/"python%s.%s"/"python%s.%sm"/' setup.py
 python3 setup.py build
 sudo python3 setup.py install --prefix=$PREFIX
 touch build-done
 cd ..
 fi
-
-# ------------------------------------------------------------------------------------
-# switch back to gcc
-
-export CC=gcc
-export CXX=g++
 
 # ------------------------------------------------------------------------------------

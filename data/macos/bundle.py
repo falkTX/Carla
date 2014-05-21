@@ -9,18 +9,18 @@ from cx_Freeze import setup, Executable
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
 
-# from carla_host import *
+from carla_host import *
 
 # ------------------------------------------------------------------------------------------------------------
 
-options = {
+options  = {
   "packages": ["re", "sip", "subprocess", "inspect"]
 }
 
 setup(name = "Carla",
-      version = "1.9.3",
+      version = VERSION,
       description = "Carla Plugin Host",
-      options = {"bdist_exe": options},
-      executables = [Executable("./source/carla.pyw")])
+      options = {"build_exe": options},
+      executables = [Executable("./source/Carla.pyw")])
 
 # ------------------------------------------------------------------------------------------------------------

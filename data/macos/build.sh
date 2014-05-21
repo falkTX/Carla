@@ -13,49 +13,47 @@ export CC=clang
 export CXX=clang++
 export CXFREEZE=/opt/kxstudio/bin/cxfreeze
 
-# Build python stuff
-export PATH=/opt/kxstudio/bin:/opt/kxstudio64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
-export PKG_CONFIG_PATH=/opt/kxstudio64/lib/pkgconfig
+# # Build python stuff
+# export PATH=/opt/kxstudio/bin:/opt/kxstudio64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+# export PKG_CONFIG_PATH=/opt/kxstudio/lib/pkgconfig:/opt/kxstudio64/lib/pkgconfig
 # make $JOBS UI RES WIDGETS
-
-# Build theme
-rm -rf incs
-mkdir incs
-ln -s /opt/kxstudio/lib/QtCore.framework/Headers    incs/QtCore
-ln -s /opt/kxstudio/lib/QtGui.framework/Headers     incs/QtGui
-ln -s /opt/kxstudio/lib/QtWidgets.framework/Headers incs/QtWidgets
-export CXXFLAGS="-I`pwd`/incs"
-export LDFLAGS="-F/opt/kxstudio/lib/ -framework QtCore -framework QtGui -framework QtWidgets"
-make $JOBS theme
-rm -rf incs
-unset CXXFLAGS
-unset LDFLAGS
-exit 0
-
-# Build backend
-export PATH=/opt/kxstudio64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
-export PKG_CONFIG_PATH=/opt/kxstudio64/lib/pkgconfig
-make $JOBS backend discovery plugin
-
-cd ../..
-exit 0
+# 
+# # Build theme
+# make -C source/modules/theme clean
+# make $JOBS theme
+# 
+# # Build everything else
+# export PATH=/opt/kxstudio64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+# export PKG_CONFIG_PATH=/opt/kxstudio64/lib/pkgconfig
+# make backend $JOBS
+# make $JOBS
 
 # Build Mac App
-rm -rf ./data/macos/Carla
+export PATH=/opt/kxstudio/bin:/opt/kxstudio64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+export PYTHONPATH=`pwd`/source
+unset PKG_CONFIG_PATH
 
-cp ./source/carla ./source/carla.pyw
-# python3 ./data/macos/bundle.py bdist_mac --bundle-name=Carla
-$CXFREEZE --include-modules=re,sip,subprocess,inspect --target-dir=./data/macos/Carla ./source/carla.pyw
-rm ./source/carla.pyw
+# cd source
+rm -rf ./build
 
-cd data/macos
+cp ./source/carla ./source/Carla.pyw
+python3 ./data/macos/bundle.py bdist_mac --bundle-name=Carla
+rm ./source/Carla.pyw
 
-mkdir Carla/backend
-mkdir Carla/bridges
-mkdir Carla/discovery
-cp ../../source/backend/*.dylib             Carla/backend/
-cp ../../source/bridges/carla-bridge-*      Carla/bridges/
-cp ../../source/discovery/carla-discovery-* Carla/discovery/
-cp -r ../../source/modules/theme/styles     Carla/
+cd build
 
-cd ../..
+mkdir Carla.app/Contents/MacOS/backend
+mkdir Carla.app/Contents/MacOS/bridges
+mkdir Carla.app/Contents/MacOS/discovery
+cp ../source/backend/*.dylib             Carla.app/Contents/MacOS/backend/
+cp ../source/bridges/carla-bridge-*      Carla.app/Contents/MacOS/bridges/
+cp ../source/discovery/carla-discovery-* Carla.app/Contents/MacOS/discovery/
+cp -r ../source/modules/theme/styles     Carla.app/Contents/MacOS/
+
+cd Carla.app/Contents/MacOS/styles
+install_name_tool -change "/opt/kxstudio/lib/QtCore.framework/Versions/5/QtCore"       @loader_path/../QtCore    carlastyle.dylib
+install_name_tool -change "/opt/kxstudio/lib/QtGui.framework/Versions/5/QtGui"         @loader_path/../QtGui     carlastyle.dylib
+install_name_tool -change "/opt/kxstudio/lib/QtWidgets.framework/Versions/5/QtWidgets" @loader_path/../QtWidgets carlastyle.dylib
+cd ../../../..
+
+cd ..

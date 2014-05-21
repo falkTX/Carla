@@ -849,7 +849,7 @@ if __name__ == '__main__':
 
     initHost("Settings", None, False)
 
-    gui = CarlaSettingsW(None, True, True)
+    gui = CarlaSettingsW(None, True, True, True)
     gui.show()
 
     sys.exit(app.exec_())

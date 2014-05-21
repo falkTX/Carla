@@ -172,6 +172,7 @@ LINK_UI_VST_X11_FLAGS     = $(LINK_UI_FLAGS) -ldl
 
 # --------------------------------------------------------------
 
+ifneq ($(MACOS_OR_WIN32),true)
 ifeq ($(HAVE_GTK2),true)
 TARGETS += ui_lv2-gtk2
 endif
@@ -186,6 +187,7 @@ endif
 
 ifeq ($(HAVE_QT5),true)
 TARGETS += ui_lv2-qt5
+endif
 endif
 
 ifeq ($(HAVE_X11),true)
