@@ -12,8 +12,7 @@ export CXX=g++-4.2
 export PATH=/opt/kxstudio/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=/opt/kxstudio/lib/pkgconfig
 
-# -fPIC -DPIC
-export CFLAGS="-O2 -mtune=generic -msse -msse2"
+export CFLAGS="-O2 -mtune=generic -msse -msse2 -m64 -fPIC -DPIC"
 export CXXFLAGS=$CFLAGS
 
 # ------------------------------------------------------------------------------------
@@ -100,35 +99,14 @@ cd ..
 fi
 
 # ------------------------------------------------------------------------------------
-# qt4
-
-if [ ! -d qt-everywhere-opensource-src-4.8.6 ]; then
-curl -O http://download.qt-project.org/official_releases/qt/4.8/4.8.6/qt-everywhere-opensource-src-4.8.6.tar.gz
-tar -xf qt-everywhere-opensource-src-4.8.6.tar.gz
-fi
-
-if [ ! -f qt-everywhere-opensource-src-4.8.6/bin/moc ]; then
-cd qt-everywhere-opensource-src-4.8.6
-./configure -prefix /opt/kxstudio -release -static -opensource -confirm-license -force-pkg-config -no-framework \
-            -qt-freetype -qt-libjpeg -qt-libpng -qt-sql-sqlite -qt-zlib -harfbuzz -svg \
-            -no-cups -no-dbus -no-fontconfig -no-iconv -no-icu -no-gif -no-glib -no-libmng -no-libtiff -no-nis -no-openssl -no-pch -no-sql-odbc \
-            -no-audio-backend -no-multimedia -no-phonon -no-phonon-backend -no-qt3support -no-webkit -no-xmlpatterns \
-            -no-declarative -no-declarative-debug -no-javascript-jit -no-script -no-scripttools \
-            -nomake examples -nomake tests -make libs -make tools
-make
-sudo make install
-cd ..
-fi
-
-# ------------------------------------------------------------------------------------
 # qt5
 
-if [ ! -d qtbase5-mac10.5 ]; then
-/opt/local/bin/git clone git://github.com/falkTX/qtbase5-mac10.5 --depth 1
+if [ ! -d qtbase5-mac10.6 ]; then
+/opt/local/bin/git clone git://github.com/falkTX/qtbase5-mac10.6 --depth 1
 fi
 
-if [ ! -f qtbase5-mac10.5/bin/moc ]; then
-cd qtbase5-mac10.5
+if [ ! -f qtbase5-mac10.6/bin/moc ]; then
+cd qtbase5-mac10.6
 export QMAKESPEC=macx-g++42
 ./configure -release -shared -opensource -confirm-license -force-pkg-config \
             -prefix /opt/kxstudio -plugindir /opt/kxstudio/lib/qt5/plugins -headerdir /opt/kxstudio/include/qt5 \
@@ -167,25 +145,9 @@ curl -L http://download.sourceforge.net/pyqt/sip-4.15.5.tar.gz -o sip-4.15.5.tar
 tar -xf sip-4.15.5.tar.gz
 fi
 
-# if [ ! -f sip-4.15.5/Makefile ]; then
-# cd sip-4.15.5
-# python3 configure.py
-# make
-# sudo make install
-# cd ..
-# fi
-
-# ------------------------------------------------------------------------------------
-# pyqt
-
-if [ ! -d PyQt-mac-gpl-4.10.4 ]; then
-curl -L http://download.sourceforge.net/pyqt/PyQt-mac-gpl-4.10.4.tar.gz -o PyQt-mac-gpl-4.10.4.tar.gz
-tar -xf PyQt-mac-gpl-4.10.4.tar.gz
-fi
-
-if [ ! -f PyQt-mac-gpl-4.10.4/Makefile ]; then
-cd PyQt-mac-gpl-4.10.4
-python3 configure.py -g --confirm-license --no-deprecated
+if [ ! -f sip-4.15.5/Makefile ]; then
+cd sip-4.15.5
+python3 configure.py
 make
 sudo make install
 cd ..
@@ -202,7 +164,6 @@ fi
 if [ ! -f PyQt-gpl-5.2.1/Makefile ]; then
 cd PyQt-gpl-5.2.1
 python3 configure.py --confirm-license
-# cp _qt/*.h qpy/QtCore/
 make
 sudo make install
 cd ..
@@ -232,8 +193,7 @@ tar -xf fftw-3.3.4.tar.gz
 fi
 
 if [ ! -f fftw-3.3.4/build-done ]; then
-# -fPIC -DPIC
-export CFLAGS="-O2 -mtune=generic -msse -msse2 -ffast-math -mfpmath=sse"
+export CFLAGS="-O2 -mtune=generic -msse -msse2 -ffast-math -mfpmath=sse -m64 -fPIC -DPIC"
 export CXXFLAGS=$CFLAGS
 cd fftw-3.3.4
 ./configure --enable-static --enable-sse2 --disable-shared --disable-debug --prefix=/opt/kxstudio
