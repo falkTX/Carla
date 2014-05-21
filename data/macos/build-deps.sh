@@ -23,6 +23,7 @@ export CXX=g++
 
 export CFLAGS="-O2 -mtune=generic -msse -msse2 -m$ARCH -fPIC -DPIC"
 export CXXFLAGS=$CFLAGS
+export LDFLAGS="-m$ARCH"
 
 export PREFIX=/opt/kxstudio$ARCH
 export PATH=$PREFIX/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
@@ -134,10 +135,10 @@ fi
 # ------------------------------------------------------------------------------------
 # build base libs
 
-export $ARCH=32
+export ARCH=32
 build_base
 
-export $ARCH=64
+export ARCH=64
 build_base
 
 # TODO
