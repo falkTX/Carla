@@ -8,22 +8,35 @@ if [ ! -f Makefile ]; then
   cd ../..
 fi
 
-if [ -d /dev/shm ]; then
-  # Linux
-  export CC="i686-apple-darwin10-gcc"
-  export CXX="i686-apple-darwin10-g++"
-  export PATH=/usr/i686-apple-darwin10/bin/:$PATH
-else
-  # MacOS
-  . ./data/macos/env-vars.sh
-  export CXFREEZE=cxfreeze
-fi
+export MACOS="true"
+export CC=clang
+export CXX=clang++
+export CXFREEZE=/opt/kxstudio/bin/cxfreeze
 
-# Clean build
-# make clean
+# Build python stuff
+export PATH=/opt/kxstudio/bin:/opt/kxstudio64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+export PKG_CONFIG_PATH=/opt/kxstudio64/lib/pkgconfig
+# make $JOBS UI RES WIDGETS
 
-# Build
-# make $JOBS
+# Build theme
+rm -rf incs
+mkdir incs
+ln -s /opt/kxstudio/lib/QtCore.framework/Headers    incs/QtCore
+ln -s /opt/kxstudio/lib/QtGui.framework/Headers     incs/QtGui
+ln -s /opt/kxstudio/lib/QtWidgets.framework/Headers incs/QtWidgets
+export CXXFLAGS="-I`pwd`/incs"
+export LDFLAGS="-F/opt/kxstudio/lib/ -framework QtCore -framework QtGui -framework QtWidgets"
+make $JOBS theme
+rm -rf incs
+exit 0
+
+# Build backend
+export PATH=/opt/kxstudio64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+export PKG_CONFIG_PATH=/opt/kxstudio64/lib/pkgconfig
+make $JOBS backend discovery plugin
+
+cd ../..
+exit 0
 
 # Build Mac App
 rm -rf ./data/macos/Carla

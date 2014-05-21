@@ -128,8 +128,6 @@ touch build-done
 cd ..
 fi
 
-# TODO - add qt (for 32bit and 64bit)
-
 }
 
 # ------------------------------------------------------------------------------------
@@ -141,82 +139,105 @@ build_base
 export ARCH=64
 build_base
 
-# TODO
-exit 0
-
 # ------------------------------------------------------------------------------------
-# python
-
-if [ ! -d Python-3.3.5 ]; then
-curl -O https://www.python.org/ftp/python/3.3.5/Python-3.3.5.tgz
-tar -xf Python-3.3.5.tgz
-fi
-
-if [ ! -f Python-3.3.5/Makefile ]; then
-cd Python-3.3.5
-./configure --prefix=/opt/kxstudio
-make
-sudo make install
-cd ..
-fi
-
-# ------------------------------------------------------------------------------------
-# cxfreeze
-
-if [ ! -d cx_Freeze-4.3.3 ]; then
-curl -L http://download.sourceforge.net/cx-freeze/cx_Freeze-4.3.3.tar.gz -o cx_Freeze-4.3.3.tar.gz
-tar -xf cx_Freeze-4.3.3.tar.gz
-fi
-
-if [ ! -d cx_Freeze-4.3.3/build ]; then
-cd cx_Freeze-4.3.3
-python3 setup.py build
-sudo python3 setup.py install --prefix=/opt/kxstudio
-cd ..
-fi
-
-# ------------------------------------------------------------------------------------
-# sip
-
-if [ ! -d sip-4.15.5 ]; then
-curl -L http://download.sourceforge.net/pyqt/sip-4.15.5.tar.gz -o sip-4.15.5.tar.gz
-tar -xf sip-4.15.5.tar.gz
-fi
-
-if [ ! -f sip-4.15.5/Makefile ]; then
-cd sip-4.15.5
-python3 configure.py
-make
-sudo make install
-cd ..
-fi
-
-# ------------------------------------------------------------------------------------
-# switch to clang for Qt
+# switch to clang for Qt5
 
 export CC=clang
 export CXX=clang
 
 # ------------------------------------------------------------------------------------
-# qt5-base
+# qt5-base download
 
 if [ ! -d qtbase5-mac10.6 ]; then
-/opt/local/bin/git clone git://github.com/falkTX/qtbase5-mac10.6 --depth 1
+/opt/local/bin/git clone git@github.com:falkTX/qtbase5-mac10.6.git --depth 1
 fi
 
-if [ ! -f qtbase5-mac10.6/bin/moc ]; then
-cd qtbase5-mac10.6
-export QMAKESPEC=macx-g++42
-./configure -release -shared -opensource -confirm-license -force-pkg-config \
-            -prefix /opt/kxstudio -plugindir /opt/kxstudio/lib/qt5/plugins -headerdir /opt/kxstudio/include/qt5 \
-            -qt-freetype -qt-libjpeg -qt-libpng -qt-pcre -qt-sql-sqlite -qt-zlib -no-framework -opengl desktop -qpa cocoa \
+# ------------------------------------------------------------------------------------
+# qt5-base 32bit (minimal, static)
+
+if [ ! -f qtbase5-mac10.6_32/build-done ]; then
+export CFLAGS="-O2 -mtune=generic -msse -msse2 -m32 -fPIC -DPIC"
+export CXXFLAGS=$CFLAGS
+export LDFLAGS="-m32"
+export PREFIX=/opt/kxstudio32
+export PATH=$PREFIX/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
+cp -r qtbase5-mac10.6 qtbase5-mac10.6_32
+cd qtbase5-mac10.6_32
+export CFG_ARCH=i386
+export QMAKESPEC=macx-clang-32
+./configure -release -static -opensource -confirm-license -force-pkg-config -platform macx-clang-32 \
+            -prefix $PREFIX -plugindir $PREFIX/lib/qt5/plugins -headerdir $PREFIX/include/qt5 \
+            -qt-freetype -qt-libjpeg -qt-libpng -qt-pcre -qt-sql-sqlite -qt-zlib -opengl no -qpa cocoa \
             -no-directfb -no-eglfs -no-kms -no-linuxfb -no-mtdev -no-xcb -no-xcb-xlib \
-            -no-sse3 -no-ssse3 -no-sse4.1 -no-sse4.2 -no-avx -no-avx2 -no-neon -no-mips_dsp -no-mips_dspr2 \
-            -no-cups -no-dbus -no-fontconfig -no-harfbuzz -no-iconv -no-icu -no-gif -no-glib -no-nis -no-openssl -no-pch -no-sql-ibase -no-sql-odbc \
-            -no-audio-backend -no-javascript-jit -no-qml-debug -no-separate-debug-info \
+            -no-sse3 -no-ssse3 -no-sse4.1 -no-sse4.2 -no-avx -no-avx2 -no-mips_dsp -no-mips_dspr2 \
+            -no-cups -no-dbus -no-evdev -no-fontconfig -no-harfbuzz -no-iconv -no-icu -no-gif -no-glib -no-nis -no-openssl -no-pch -no-sql-ibase -no-sql-odbc \
+            -no-audio-backend -no-qml-debug -no-separate-debug-info \
+            -no-compile-examples -no-framework -no-gui -no-widgets -nomake examples -nomake tests -nomake tools -make libs
+make -j 2
+sudo make install
+touch build-done
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# qt5-base 64bit (minimal, static)
+
+if [ ! -f qtbase5-mac10.6_64/build-done ]; then
+export CFLAGS="-O2 -mtune=generic -msse -msse2 -m64 -fPIC -DPIC"
+export CXXFLAGS=$CFLAGS
+export LDFLAGS="-m64"
+export PREFIX=/opt/kxstudio64
+export PATH=$PREFIX/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
+cp -r qtbase5-mac10.6 qtbase5-mac10.6_64
+cd qtbase5-mac10.6_64
+export CFG_ARCH=x86_64
+export QMAKESPEC=macx-clang
+./configure -release -shared -opensource -confirm-license -force-pkg-config -platform macx-clang \
+            -prefix $PREFIX -plugindir $PREFIX/lib/qt5/plugins -headerdir $PREFIX/include/qt5 \
+            -qt-freetype -qt-libjpeg -qt-libpng -qt-pcre -qt-sql-sqlite -qt-zlib -opengl no -qpa cocoa \
+            -no-directfb -no-eglfs -no-kms -no-linuxfb -no-mtdev -no-xcb -no-xcb-xlib \
+            -no-sse3 -no-ssse3 -no-sse4.1 -no-sse4.2 -no-avx -no-avx2 -no-mips_dsp -no-mips_dspr2 \
+            -no-cups -no-dbus -no-evdev -no-fontconfig -no-harfbuzz -no-iconv -no-icu -no-gif -no-glib -no-nis -no-openssl -no-pch -no-sql-ibase -no-sql-odbc \
+            -no-audio-backend -no-qml-debug -no-separate-debug-info \
+            -no-compile-examples -no-framework -no-gui -no-widgets -nomake examples -nomake tests -nomake tools -make libs
+make -j 2
+sudo make install
+touch build-done
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# set flags for qt stuff
+
+export CFLAGS="-O2 -mtune=generic -msse -msse2 -m64 -fPIC -DPIC"
+export CXXFLAGS=$CFLAGS
+export LDFLAGS="-m64"
+
+export PREFIX=/opt/kxstudio
+export PATH=$PREFIX/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
+
+# ------------------------------------------------------------------------------------
+# qt5-base (regular, 64bit, shared, framework)
+
+if [ ! -f qtbase5-mac10.6_shared/build-done ]; then
+cp -r qtbase5-mac10.6 qtbase5-mac10.6_shared
+cd qtbase5-mac10.6_shared
+export CFG_ARCH=x86_64
+export QMAKESPEC=macx-clang
+./configure -release -shared -opensource -confirm-license -no-pkg-config -platform macx-clang -framework \
+            -prefix $PREFIX -plugindir $PREFIX/lib/qt5/plugins -headerdir $PREFIX/include/qt5 \
+            -qt-freetype -qt-libjpeg -qt-libpng -qt-pcre -qt-sql-sqlite -qt-zlib -opengl desktop -qpa cocoa \
+            -no-directfb -no-eglfs -no-kms -no-linuxfb -no-mtdev -no-xcb -no-xcb-xlib \
+            -no-sse3 -no-ssse3 -no-sse4.1 -no-sse4.2 -no-avx -no-avx2 -no-mips_dsp -no-mips_dspr2 \
+            -no-cups -no-dbus -no-evdev -no-fontconfig -no-harfbuzz -no-iconv -no-icu -no-gif -no-glib -no-nis -no-openssl -no-pch -no-sql-ibase -no-sql-odbc \
+            -no-audio-backend -no-qml-debug -no-separate-debug-info \
             -no-compile-examples -nomake examples -nomake tests -make libs -make tools
 make -j 2
 sudo make install
+touch build-done
 cd ..
 fi
 
@@ -227,34 +248,88 @@ if [ ! -d qtsvg-opensource-src-5.3.0 ]; then
 curl -O http://download.qt-project.org/official_releases/qt/5.3/5.3.0/submodules/qtsvg-opensource-src-5.3.0.tar.gz
 fi
 
-if [ ! -f qtsvg-opensource-src-5.3.0/xx ]; then
+if [ ! -f qtsvg-opensource-src-5.3.0/build-done ]; then
 cd qtsvg-opensource-src-5.3.0
-exit 1
+qmake
 make -j 2
 sudo make install
+touch build-done
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# python
+
+if [ ! -d Python-3.3.5 ]; then
+curl -O https://www.python.org/ftp/python/3.3.5/Python-3.3.5.tgz
+tar -xf Python-3.3.5.tgz
+fi
+
+if [ ! -f Python-3.3.5/build-done ]; then
+cd Python-3.3.5
+./configure --prefix=$PREFIX
+make
+sudo make install
+touch build-done
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# sip
+
+if [ ! -d sip-4.16-snapshot-f6acb8ed7b65 ]; then
+curl -O http://www.riverbankcomputing.co.uk/static/Downloads/sip4/sip-4.16-snapshot-f6acb8ed7b65.tar.gz
+tar -xf sip-4.16-snapshot-f6acb8ed7b65.tar.gz
+fi
+
+if [ ! -f sip-4.16-snapshot-f6acb8ed7b65/build-done ]; then
+cd sip-4.16-snapshot-f6acb8ed7b65
+python3 configure.py
+make
+sudo make install
+touch build-done
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# pyqt5
+
+if [ ! -d PyQt-gpl-5.3-snapshot-f6e83c05f2a1 ]; then
+curl -O http://www.riverbankcomputing.co.uk/static/Downloads/PyQt5/PyQt-gpl-5.3-snapshot-f6e83c05f2a1.tar.gz
+tar -xf PyQt-gpl-5.3-snapshot-f6e83c05f2a1.tar.gz
+fi
+
+if [ ! -f PyQt-gpl-5.3-snapshot-f6e83c05f2a1/build-done ]; then
+cd PyQt-gpl-5.3-snapshot-f6e83c05f2a1
+python3 configure.py --confirm-license
+make
+sudo make install
+touch build-done
+cd ..
+fi
+
+exit 0
+
+# ------------------------------------------------------------------------------------
+# cxfreeze
+
+if [ ! -d cx_Freeze-4.3.3 ]; then
+curl -L http://download.sourceforge.net/cx-freeze/cx_Freeze-4.3.3.tar.gz -o cx_Freeze-4.3.3.tar.gz
+tar -xf cx_Freeze-4.3.3.tar.gz
+fi
+
+if [ ! -d cx_Freeze-4.3.3/build-done ]; then
+cd cx_Freeze-4.3.3
+python3 setup.py build
+sudo python3 setup.py install --prefix=$PREFIX
+touch build-done
 cd ..
 fi
 
 # ------------------------------------------------------------------------------------
 # switch back to gcc
 
-export CC=gcc-4.2
-export CXX=g++-4.2
-
-# ------------------------------------------------------------------------------------
-# pyqt5
-
-if [ ! -d PyQt-gpl-5.2.1 ]; then
-curl -L http://download.sourceforge.net/pyqt/PyQt-gpl-5.2.1.tar.gz -o PyQt-gpl-5.2.1.tar.gz
-tar -xf PyQt-gpl-5.2.1.tar.gz
-fi
-
-if [ ! -f PyQt-gpl-5.2.1/Makefile ]; then
-cd PyQt-gpl-5.2.1
-python3 configure.py --confirm-license
-make
-sudo make install
-cd ..
-fi
+export CC=gcc
+export CXX=g++
 
 # ------------------------------------------------------------------------------------

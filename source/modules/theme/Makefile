@@ -13,6 +13,7 @@ BUILD_CXX_FLAGS += -I. -I../../includes -I../../utils
 ifeq ($(HAVE_QT4),true)
 QT4_CXX_FLAGS    = $(BUILD_CXX_FLAGS)
 QT4_CXX_FLAGS   += $(shell pkg-config --cflags QtCore QtGui)
+QT4_LINK_FLAGS   = $(LINK_FLAGS)
 QT4_LINK_FLAGS  += $(shell pkg-config --libs QtCore QtGui)
 QT4_STYLES_DIR   = $(shell pkg-config --variable=libdir QtCore)/qt4/plugins/styles
 endif
@@ -20,6 +21,7 @@ endif
 ifeq ($(HAVE_QT5),true)
 QT5_CXX_FLAGS    = $(BUILD_CXX_FLAGS)
 QT5_CXX_FLAGS   += $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
+QT5_LINK_FLAGS   = $(LINK_FLAGS)
 QT5_LINK_FLAGS  += $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets)
 QT5_STYLES_DIR   = $(shell pkg-config --variable=libdir Qt5Core)/qt5/plugins/styles
 endif

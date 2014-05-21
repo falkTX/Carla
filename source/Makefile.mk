@@ -127,8 +127,8 @@ endif
 # --------------------------------------------------------------
 # Check for qt, set default version (prefer qt4)
 
-HAVE_QT4 = $(shell pkg-config --exists QtCore QtGui QtXml && echo true)
-HAVE_QT5 = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Xml Qt5Widgets && echo true)
+HAVE_QT4 = $(shell pkg-config --exists QtCore QtXml && echo true)
+HAVE_QT5 = $(shell pkg-config --exists Qt5Core Qt5Xml && echo true)
 
 ifeq ($(HAVE_QT5),true)
 DEFAULT_QT=5
@@ -355,7 +355,7 @@ JACKBRIDGE_LIBS            = -ldl -lpthread
 JUCE_AUDIO_BASICS_LIBS     = -framework Accelerate
 JUCE_AUDIO_DEVICES_LIBS    = -framework AppKit -framework AudioToolbox -framework CoreAudio -framework CoreMIDI
 JUCE_AUDIO_FORMATS_LIBS    = -framework AudioToolbox -framework CoreFoundation
-JUCE_AUDIO_PROCESSORS_LIBS = -framework Cocoa -framework Carbon
+JUCE_AUDIO_PROCESSORS_LIBS = -framework AudioToolbox -framework AudioUnit -framework CoreAudio -framework CoreAudioKit -framework Cocoa -framework Carbon
 JUCE_CORE_LIBS             = -framework AppKit
 JUCE_EVENTS_LIBS           = -framework AppKit
 JUCE_GRAPHICS_LIBS         = -framework Cocoa -framework QuartzCore

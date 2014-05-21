@@ -29,7 +29,7 @@ if config_UseQt5:
     from PyQt5.QtCore import QAbstractAnimation, QLineF, QPointF, QRectF, QSizeF, QSettings, QTimer
     from PyQt5.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath
     from PyQt5.QtGui import QCursor, QFont, QFontMetrics
-    #from PyQt5.QtSvg import QGraphicsSvgItem, QSvgRenderer
+    from PyQt5.QtSvg import QGraphicsSvgItem, QSvgRenderer
     from PyQt5.QtWidgets import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem
     from PyQt5.QtWidgets import QGraphicsColorizeEffect, QGraphicsDropShadowEffect
     from PyQt5.QtWidgets import QInputDialog, QLineEdit, QMenu
@@ -2187,10 +2187,10 @@ class CanvasBox(QGraphicsItem):
         self.m_font_port.setWeight(canvas.theme.port_font_state)
 
         # Icon
-        #if canvas.theme.box_use_icon:
-            #self.icon_svg = CanvasIcon(icon, self.m_group_name, self)
-        #else:
-        self.icon_svg = None
+        if canvas.theme.box_use_icon:
+            self.icon_svg = CanvasIcon(icon, self.m_group_name, self)
+        else:
+            self.icon_svg = None
 
         # Shadow
         if options.eyecandy:
@@ -2761,9 +2761,9 @@ class CanvasBox(QGraphicsItem):
 # ------------------------------------------------------------------------------
 # canvasicon.cpp
 
-class CanvasIcon(QGraphicsItem):
+class CanvasIcon(QGraphicsSvgItem):
     def __init__(self, icon, name, parent):
-        QGraphicsItem.__init__(self, parent)
+        QGraphicsSvgItem.__init__(self, parent)
 
         self.m_renderer = None
         self.p_size = QRectF(0, 0, 0, 0)
