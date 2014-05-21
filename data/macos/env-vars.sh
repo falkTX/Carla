@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export MACOS="true"
-export CC=gcc-4.2
-export CXX=g++-4.2
-export PATH=/opt/kxstudio/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
-export PKG_CONFIG_PATH=/opt/kxstudio/lib/pkgconfig
+export CC=clang
+export CXX=clang++
+export PATH=/opt/kxstudio64/bin:/opt/kxstudio/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+export PKG_CONFIG_PATH=/opt/kxstudio64/lib/pkgconfig:/opt/kxstudio/lib/pkgconfig
