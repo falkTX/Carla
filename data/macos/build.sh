@@ -28,6 +28,8 @@ export CXXFLAGS="-I`pwd`/incs"
 export LDFLAGS="-F/opt/kxstudio/lib/ -framework QtCore -framework QtGui -framework QtWidgets"
 make $JOBS theme
 rm -rf incs
+unset CXXFLAGS
+unset LDFLAGS
 exit 0
 
 # Build backend
