@@ -13,20 +13,19 @@ export CC=clang
 export CXX=clang++
 export CXFREEZE=/opt/kxstudio/bin/cxfreeze
 
-# # Build python stuff
-# export PATH=/opt/kxstudio/bin:/opt/kxstudio64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
-# export PKG_CONFIG_PATH=/opt/kxstudio/lib/pkgconfig:/opt/kxstudio64/lib/pkgconfig
-# make $JOBS UI RES WIDGETS
-# 
-# # Build theme
-# make -C source/modules/theme clean
-# make $JOBS theme
-# 
-# # Build everything else
-# export PATH=/opt/kxstudio64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
-# export PKG_CONFIG_PATH=/opt/kxstudio64/lib/pkgconfig
-# make backend $JOBS
-# make $JOBS
+# Build python stuff
+export PATH=/opt/kxstudio/bin:/opt/kxstudio64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+export PKG_CONFIG_PATH=/opt/kxstudio/lib/pkgconfig:/opt/kxstudio64/lib/pkgconfig
+make $JOBS UI RES WIDGETS
+
+# Build theme
+make $JOBS theme
+
+# Build everything else
+export PATH=/opt/kxstudio64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+export PKG_CONFIG_PATH=/opt/kxstudio64/lib/pkgconfig
+make backend $JOBS
+make $JOBS
 
 # Build Mac App
 export PATH=/opt/kxstudio/bin:/opt/kxstudio64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
