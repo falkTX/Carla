@@ -1763,7 +1763,7 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
     carla_stdout("CarlaPlugin::updateOscData() - done");
 }
 
-bool CarlaPlugin::updateOscDataExtra() override
+bool CarlaPlugin::updateOscDataExtra()
 {
     return false;
 }

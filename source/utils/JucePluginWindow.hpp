@@ -80,7 +80,7 @@ public:
         return fClosed;
     }
 
-    void setTransientWinId(const uintptr_t winId) const override
+    void setTransientWinId(const uintptr_t winId) const
     {
         CARLA_SAFE_ASSERT_RETURN(winId != 0,);
 

@@ -47,17 +47,17 @@ MyLookAndFeel::MyLookAndFeel()
 //	Topaz->setHorizontalScale (1.0f);
 }
 
-MyLookAndFeel::~MyLookAndFeel() override
+MyLookAndFeel::~MyLookAndFeel()
 {
     delete Topaz;
 }
 
-Font MyLookAndFeel::getComboBoxFont(ComboBox&) override
+Font MyLookAndFeel::getComboBoxFont(ComboBox&)
 {
     return *Topaz;
 }
 
-Font MyLookAndFeel::getPopupMenuFont() override
+Font MyLookAndFeel::getPopupMenuFont()
 {
     return *Topaz;
 }
@@ -66,7 +66,7 @@ void MyLookAndFeel::getIdealPopupMenuItemSize(const String& text,
                                               const bool isSeparator,
                                               int standardMenuItemHeight,
                                               int& idealWidth,
-                                              int& idealHeight) override
+                                              int& idealHeight)
 {
     if (isSeparator)
     {
@@ -86,7 +86,7 @@ void MyLookAndFeel::getIdealPopupMenuItemSize(const String& text,
 void MyLookAndFeel::drawToggleButton(Graphics& g,
                                      ToggleButton& button,
                                      bool isMouseOverButton,
-                                     bool isButtonDown) override
+                                     bool isButtonDown)
 {
     const int tickWidth = jmin (20, button.getHeight() - 4);
 
@@ -114,7 +114,7 @@ void MyLookAndFeel::drawRotarySlider(Graphics& g,
                                      float sliderPos,
                                      const float rotaryStartAngle,
                                      const float rotaryEndAngle,
-                                     Slider& /*slider*/) override
+                                     Slider& /*slider*/)
 {
     const float radius = jmin (width / 2, height / 2) - 2.0f;
     const float centreX = x + width * 0.5f;

@@ -161,6 +161,17 @@ public:
             fail("failed to set pipe as non-block");
         }
 
+        if (ret != -1)
+        {
+            // set to not close on exec
+            try {
+                ret = ::fcntl(fPipeRecv, F_SETFD, ::fcntl(fPipeRecv, F_GETFD) & ~FD_CLOEXEC);
+            } catch (...) {
+                ret = -1;
+                fail("failed to set pipe to not close on exec");
+            }
+        }
+
         //----------------------------------------------------------------
         // wait a while for child process to confirm it is alive
 
