@@ -121,19 +121,6 @@ public:
         argv[3] = pipeRecv; // reading end
         argv[4] = pipeSend; // writting end
 
-        // TESTING
-        {
-            // set to not close on exec
-            try {
-                ::fcntl(pipe1[0], F_SETFD, ::fcntl(pipe1[0], F_GETFD) & ~FD_CLOEXEC);
-                ::fcntl(pipe1[1], F_SETFD, ::fcntl(pipe1[1], F_GETFD) & ~FD_CLOEXEC);
-                ::fcntl(pipe2[0], F_SETFD, ::fcntl(pipe2[0], F_GETFD) & ~FD_CLOEXEC);
-                ::fcntl(pipe2[1], F_SETFD, ::fcntl(pipe2[1], F_GETFD) & ~FD_CLOEXEC);
-            } catch (...) {
-                fail("failed to set pipe to not close on exec");
-            }
-        }
-
         //----------------------------------------------------------------
         // fork
 
