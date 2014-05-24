@@ -25,7 +25,7 @@ export CFLAGS="-O2 -mtune=generic -msse -msse2 -m$ARCH -fPIC -DPIC"
 export CXXFLAGS=$CFLAGS
 export LDFLAGS="-m$ARCH"
 
-export PREFIX=/opt/kxstudio$ARCH
+export PREFIX=/opt/carla$ARCH
 export PATH=$PREFIX/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
 
@@ -159,7 +159,7 @@ if [ ! -f qtbase5-mac10.6_32/build-done ]; then
 export CFLAGS="-O2 -mtune=generic -msse -msse2 -m32 -fPIC -DPIC"
 export CXXFLAGS=$CFLAGS
 export LDFLAGS="-m32"
-export PREFIX=/opt/kxstudio32
+export PREFIX=/opt/carla32
 export PATH=$PREFIX/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
 cp -r qtbase5-mac10.6 qtbase5-mac10.6_32
@@ -187,7 +187,7 @@ if [ ! -f qtbase5-mac10.6_64/build-done ]; then
 export CFLAGS="-O2 -mtune=generic -msse -msse2 -m64 -fPIC -DPIC"
 export CXXFLAGS=$CFLAGS
 export LDFLAGS="-m64"
-export PREFIX=/opt/kxstudio64
+export PREFIX=/opt/carla64
 export PATH=$PREFIX/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
 cp -r qtbase5-mac10.6 qtbase5-mac10.6_64
@@ -215,7 +215,7 @@ export CFLAGS="-O2 -mtune=generic -msse -msse2 -m64 -fPIC -DPIC"
 export CXXFLAGS=$CFLAGS
 export LDFLAGS="-m64"
 
-export PREFIX=/opt/kxstudio
+export PREFIX=/opt/carla
 export PATH=$PREFIX/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
 
@@ -245,9 +245,9 @@ cd qtbase-opensource-src-5.2.1
             -no-compile-examples -nomake examples -nomake tests -make libs -make tools
 make -j 2
 sudo make install
-sudo ln -s /opt/kxstudio/lib/QtCore.framework/Headers    /opt/kxstudio/include/qt5/QtCore
-sudo ln -s /opt/kxstudio/lib/QtGui.framework/Headers     /opt/kxstudio/include/qt5/QtGui
-sudo ln -s /opt/kxstudio/lib/QtWidgets.framework/Headers /opt/kxstudio/include/qt5/QtWidgets
+sudo ln -s /opt/carla/lib/QtCore.framework/Headers    /opt/carla/include/qt5/QtCore
+sudo ln -s /opt/carla/lib/QtGui.framework/Headers     /opt/carla/include/qt5/QtGui
+sudo ln -s /opt/carla/lib/QtWidgets.framework/Headers /opt/carla/include/qt5/QtWidgets
 touch build-done
 cd ..
 fi

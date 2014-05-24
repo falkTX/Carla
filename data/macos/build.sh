@@ -11,24 +11,24 @@ fi
 export MACOS="true"
 export CC=clang
 export CXX=clang++
-export CXFREEZE=/opt/kxstudio/bin/cxfreeze
+export CXFREEZE=/opt/carla/bin/cxfreeze
 
 # Build python stuff
-export PATH=/opt/kxstudio/bin:/opt/kxstudio64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
-export PKG_CONFIG_PATH=/opt/kxstudio/lib/pkgconfig:/opt/kxstudio64/lib/pkgconfig
+export PATH=/opt/carla/bin:/opt/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+export PKG_CONFIG_PATH=/opt/carla/lib/pkgconfig:/opt/carla64/lib/pkgconfig
 make $JOBS UI RES WIDGETS
 
 # Build theme
 make $JOBS theme
 
 # Build everything else
-export PATH=/opt/kxstudio64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
-export PKG_CONFIG_PATH=/opt/kxstudio64/lib/pkgconfig
+export PATH=/opt/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+export PKG_CONFIG_PATH=/opt/carla64/lib/pkgconfig
 make backend $JOBS
 make $JOBS
 
 # Build Mac App
-export PATH=/opt/kxstudio/bin:/opt/kxstudio64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+export PATH=/opt/carla/bin:/opt/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PYTHONPATH=`pwd`/source
 unset PKG_CONFIG_PATH
 
@@ -64,9 +64,9 @@ mv plugin/* Carla.app/Contents/MacOS/resources/
 rmdir plugin
 
 cd Carla.app/Contents/MacOS/styles
-install_name_tool -change "/opt/kxstudio/lib/QtCore.framework/Versions/5/QtCore"       @loader_path/../QtCore    carlastyle.dylib
-install_name_tool -change "/opt/kxstudio/lib/QtGui.framework/Versions/5/QtGui"         @loader_path/../QtGui     carlastyle.dylib
-install_name_tool -change "/opt/kxstudio/lib/QtWidgets.framework/Versions/5/QtWidgets" @loader_path/../QtWidgets carlastyle.dylib
+install_name_tool -change "/opt/carla/lib/QtCore.framework/Versions/5/QtCore"       @loader_path/../QtCore    carlastyle.dylib
+install_name_tool -change "/opt/carla/lib/QtGui.framework/Versions/5/QtGui"         @loader_path/../QtGui     carlastyle.dylib
+install_name_tool -change "/opt/carla/lib/QtWidgets.framework/Versions/5/QtWidgets" @loader_path/../QtWidgets carlastyle.dylib
 cd ../../../..
 
 mkdir ../build-lv2
