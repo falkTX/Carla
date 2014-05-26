@@ -353,19 +353,15 @@ typedef struct _LV2_Descriptor {
 /**
    Prototype for plugin accessor function.
 
-   This is part of the old discovery API, which has been replaced due to being
-   inadequate for some plugins.  It is limited because the bundle path is not
-   available during discovery, and it relies on non-portable shared library
-   constructors/destructors.  However, this API is still supported and plugins
-   are not required to migrate.
-
    Plugins are discovered by hosts using RDF data (not by loading libraries).
    See http://lv2plug.in for details on the discovery process, though most
    hosts should use an existing library to implement this functionality.
 
-   A plugin library MUST include a function called "lv2_descriptor" with this
-   prototype.  This function MUST have C-style linkage (if you are using C++
-   this is taken care of by the 'extern "C"' clause at the top of this file).
+   This is the simple plugin discovery API, suitable for most statically
+   defined plugins.  Advanced plugins that need access to their bundle during
+   discovery can use lv2_lib_descriptor() instead.  Plugin libraries MUST
+   include a function called "lv2_descriptor" or "lv2_lib_descriptor" with
+   C-style linkage, but SHOULD provide "lv2_descriptor" wherever possible.
 
    When it is time to load a plugin (designated by its URI), the host loads the
    plugin's library, gets the lv2_descriptor() function from it, and uses this
@@ -430,6 +426,13 @@ typedef struct {
 
 /**
    Prototype for library accessor function.
+
+   This is the more advanced discovery API, which allows plugin libraries to
+   access their bundles during discovery, which makes it possible for plugins to
+   be dynamically defined by files in their bundle.  This API also has an
+   explicit cleanup function, removing any need for non-portable shared library
+   destructors.  Simple plugins that do not require these features may use
+   lv2_descriptor() instead.
 
    This is the entry point for a plugin library.  Hosts load this symbol from
    the library and call this function to obtain a library descriptor which can

@@ -1,6 +1,6 @@
 /*
   LV2 UI Extension
-  Copyright 2009-2013 David Robillard <d@drobilla.net>
+  Copyright 2009-2014 David Robillard <d@drobilla.net>
   Copyright 2006-2011 Lars Luthman <lars.luthman@gmail.com>
 
   Permission to use, copy, modify, and/or distribute this software for any
@@ -17,8 +17,9 @@
 */
 
 /**
-   @file ui.h
-   C header for the LV2 UI extension <http://lv2plug.in/ns/extensions/ui>.
+   @file ui.h User Interface API.
+
+   For high-level documentation, see <http://lv2plug.in/ns/extensions/ui>.
 */
 
 #ifndef LV2_UI_H
@@ -55,6 +56,7 @@
 #define LV2_UI__touch            LV2_UI_PREFIX "touch"
 #define LV2_UI__ui               LV2_UI_PREFIX "ui"
 #define LV2_UI__updateRate       LV2_UI_PREFIX "updateRate"
+#define LV2_UI__windowTitle      LV2_UI_PREFIX "windowTitle"
 
 /**
    The index returned by LV2_UI_Port_Port::port_index() for unknown ports.
@@ -75,20 +77,16 @@ extern "C" {
 typedef void* LV2UI_Widget;
 
 /**
-   A pointer to an instance of a UI.
+   A pointer to UI instance internals.
 
-   It is valid to compare this to NULL (0 for C++) but otherwise the host MUST
-   not attempt to interpret it.  The UI plugin may use it to reference internal
-   instance data.
+   The host may compare this to NULL, but otherwise MUST NOT interpret it.
 */
 typedef void* LV2UI_Handle;
 
 /**
    A pointer to a controller provided by the host.
 
-   It is valid to compare this to NULL (0 for C++) but otherwise the UI plugin
-   MUST NOT attempt to interpret it.  The host may use it to reference internal
-   instance data.
+   The UI may compare this to NULL, but otherwise MUST NOT interpret it.
 */
 typedef void* LV2UI_Controller;
 
@@ -98,22 +96,20 @@ typedef void* LV2UI_Controller;
 typedef void* LV2UI_Feature_Handle;
 
 /**
-   The type of the host-provided function that the UI can use to
-   send data to a plugin's input ports.
+   A host-provided function that sends data to a plugin's input ports.
 
-   The @p buffer parameter must point to a block of data, @c buffer_size bytes
+   The @p buffer parameter must point to a block of data, @p buffer_size bytes
    large.  The format of this data and how the host should use it is defined by
    the @p port_protocol.  This buffer is owned by the UI and is only valid for
    the duration of this call.
 
    The @p port_protocol parameter should either be 0 or the URID for a
    ui:PortProtocol.  If it is 0, the protocol is implicitly ui:floatProtocol,
-   the port must be an lv2:ControlPort input, @c buffer must point to a single
-   float value, and @c buffer_size must be sizeof(float).
+   the port MUST be an lv2:ControlPort input, @p buffer MUST point to a single
+   float value, and @p buffer_size MUST be sizeof(float).
 
-   The UI SHOULD NOT use a PortProtocol not supported by the host (i.e. one not
-   passed by the host as a feature), but the host MUST gracefully ignore any
-   port_protocol it does not understand.
+   The UI SHOULD NOT use a protocol not supported by the host, but the host
+   MUST gracefully ignore any protocol it does not understand.
 */
 typedef void (*LV2UI_Write_Function)(LV2UI_Controller controller,
                                      uint32_t         port_index,
@@ -122,7 +118,7 @@ typedef void (*LV2UI_Write_Function)(LV2UI_Controller controller,
                                      const void*      buffer);
 
 /**
-   The implementation of a UI.
+   A plugin UI.
 
    A pointer to an object of this type is returned by the lv2ui_descriptor()
    function.
@@ -134,32 +130,29 @@ typedef struct _LV2UI_Descriptor {
 	const char* URI;
 
 	/**
-	   Create a new UI object and return a handle to it.  This function works
-	   similarly to the instantiate() member in LV2_Descriptor.
+	   Create a new UI and return a handle to it.  This function works
+	   similarly to LV2_Descriptor::instantiate().
 
-	   @param descriptor The descriptor for the UI that you want to instantiate.
+	   @param descriptor The descriptor for the UI to instantiate.
 
 	   @param plugin_uri The URI of the plugin that this UI will control.
 
-	   @param bundle_path The path to the bundle containing the RDF data file
-	   that references this shared object file, including the trailing '/'.
+	   @param bundle_path The path to the bundle containing this UI, including
+	   the trailing directory separator.
 
-	   @param write_function A function provided by the host that the UI can use
-	   to send data to the plugin's input ports.
+	   @param write_function A function that the UI can use to send data to the
+	   plugin's input ports.
 
-	   @param controller A handle for the plugin instance that should be passed
-	   as the first parameter of @p write_function.
+	   @param controller A handle for the plugin instance to be passed as the
+	   first parameter of UI methods.
 
-	   @param widget A pointer to an LV2UI_Widget.  The UI will write a widget
-	   pointer to this location (what type of widget depends on the RDF class of
-	   the UI) that will be the main UI widget.
+	   @param widget (output) widget pointer.  The UI points this at its main
+	   widget, which has the type defined by the UI type in the data file.
 
-	   @param features An array of LV2_Feature pointers.  The host must pass all
-	   feature URIs that it and the UI supports and any additional data, just
-	   like in the LV2 plugin instantiate() function.  Note that UI features and
-	   plugin features are NOT necessarily the same, they just share the same
-	   data structure - this will probably not be the same array as the one the
-	   plugin host passes to a plugin.
+	   @param features An array of LV2_Feature pointers.  The host must pass
+	   all feature URIs that it and the UI supports and any additional data, as
+	   in LV2_Descriptor::instantiate().  Note that UI features and plugin
+	   features are not necessarily the same.
 
 	*/
 	LV2UI_Handle (*instantiate)(const struct _LV2UI_Descriptor* descriptor,
@@ -172,33 +165,29 @@ typedef struct _LV2UI_Descriptor {
 
 
 	/**
-	   Destroy the UI object and the associated widget. The host must not try
-	   to access the widget after calling this function.
+	   Destroy the UI.  The host must not try to access the widget after
+	   calling this function.
 	*/
 	void (*cleanup)(LV2UI_Handle ui);
 
 	/**
 	   Tell the UI that something interesting has happened at a plugin port.
 
-	   What is interesting and how it is written to the buffer passed to this
-	   function is defined by the @p format parameter, which has the same
-	   meaning as in LV2UI_Write_Function.  The only exception is ports of the
-	   class lv2:ControlPort, for which this function should be called when the
-	   port value changes (it does not have to be called for every single change
-	   if the host's UI thread has problems keeping up with the thread the
-	   plugin is running in), @p buffer_size should be 4, the buffer should
-	   contain a single IEEE-754 float, and @p format should be 0.
+	   What is "interesting" and how it is written to @p buffer is defined by
+	   @p format, which has the same meaning as in LV2UI_Write_Function().
+	   Format 0 is a special case for lv2:ControlPort, where this function
+	   should be called when the port value changes (but not necessarily for
+	   every change), @p buffer_size must be sizeof(float), and @p buffer
+	   points to a single IEEE-754 float.
 
-	   By default, the host should only call this function for input ports of
-	   the lv2:ControlPort class.  However, this can be modified by using
-	   ui:portNotification in the UI data, or the ui:portSubscribe feature.
+	   By default, the host should only call this function for lv2:ControlPort
+	   inputs.  However, the UI can request updates for other ports statically
+	   with ui:portNotification or dynamicaly with ui:portSubscribe.
 
-	   The @p buffer is only valid during the time of this function call, so if
-	   the UI wants to keep it for later use it has to copy the contents to an
-	   internal buffer.
+	   The UI MUST NOT retain any reference to @p buffer after this function
+	   returns, it is only valid for the duration of the call.
 
-	   This member may be set to NULL if the UI is not interested in any
-	   port events.
+	   This member may be NULL if the UI is not interested in any port events.
 	*/
 	void (*port_event)(LV2UI_Handle ui,
 	                   uint32_t     port_index,
@@ -207,22 +196,21 @@ typedef struct _LV2UI_Descriptor {
 	                   const void*  buffer);
 
 	/**
-	   Return a data structure associated with an extension URI, for example
-	   a struct containing additional function pointers.
+	   Return a data structure associated with an extension URI, typically an
+	   interface struct with additional function pointers
 
-	   Avoid returning function pointers directly since standard C/C++ has no
-	   valid way of casting a void* to a function pointer. This member may be set
-	   to NULL if the UI is not interested in supporting any extensions. This is
-	   similar to the extension_data() member in LV2_Descriptor.
+	   This member may be set to NULL if the UI is not interested in supporting
+	   any extensions. This is similar to LV2_Descriptor::extension_data().
+	   
 	*/
 	const void* (*extension_data)(const char* uri);
 } LV2UI_Descriptor;
 
 /**
-   UI Resize Feature (LV2_UI__resize)
+   Feature/interface for resizable UIs (LV2_UI__resize).
 
-   This structure may be used in two ways: as a feature passed by the host via
-   LV2UI_Descriptor::instantiate(), or as extension data provided by a UI via
+   This structure is used in two ways: as a feature passed by the host via
+   LV2UI_Descriptor::instantiate(), or as an interface provided by a UI via
    LV2UI_Descriptor::extension_data()).
 */
 typedef struct _LV2UI_Resize {
@@ -232,13 +220,13 @@ typedef struct _LV2UI_Resize {
 	LV2UI_Feature_Handle handle;
 
 	/**
-	   Request or advertise a size change.
+	   Request/advertise a size change.
 
-	   When this struct is provided by the host, the UI may call this
-	   function to inform the host about the size of the UI.
+	   When provided by the host, the UI may call this function to inform the
+	   host about the size of the UI.
 
-	   When this struct is provided by the UI, the host may call this
-	   function to notify the UI that it should change its size accordingly.
+	   When provided by the UI, the host may call this function to notify the
+	   UI that it should change its size accordingly.
 
 	   @return 0 on success.
 	*/
@@ -246,16 +234,15 @@ typedef struct _LV2UI_Resize {
 } LV2UI_Resize;
 
 /**
-   Port Map Feature (LV2_UI__portMap).
+   Feature to map port symbols to UIs.
 
-   This feature can be used by the UI to get the index for a port with the
-   given symbol.  This makes it possible to implement and distribute a UI
-   separately from the plugin (since symbol is a guaranteed stable port
-   identifier while index is not).
+   This can be used by the UI to get the index for a port with the given
+   symbol.  This makes it possible to implement and distribute a UI separately
+   from the plugin (since symbol, unlike index, is a stable port identifier).
 */
 typedef struct _LV2UI_Port_Map {
 	/**
-	   Pointer to opaque data which must be passed to ui_resize().
+	   Pointer to opaque data which must be passed to port_index().
 	*/
 	LV2UI_Feature_Handle handle;
 
@@ -269,11 +256,12 @@ typedef struct _LV2UI_Port_Map {
 } LV2UI_Port_Map;
 
 /**
-   Port subscription feature (LV2_UI__portSubscribe);
+   Feature to subscribe to port updates (LV2_UI__portSubscribe).
 */
 typedef struct _LV2UI_Port_Subscribe {
 	/**
-	   Pointer to opaque data which must be passed to ui_resize().
+	   Pointer to opaque data which must be passed to subscribe() and
+	   unsubscribe().
 	*/
 	LV2UI_Feature_Handle handle;
 
@@ -319,7 +307,7 @@ typedef struct _LV2UI_Port_Subscribe {
 } LV2UI_Port_Subscribe;
 
 /**
-   A feature to notify the host the user has grabbed a UI control.
+   A feature to notify the host that the user has grabbed a UI control.
 */
 typedef struct _LV2UI_Touch {
 	/**
@@ -329,6 +317,9 @@ typedef struct _LV2UI_Touch {
 
 	/**
 	   Notify the host that a control has been grabbed or released.
+
+	   The host should cease automating the port or otherwise manipulating the
+	   port value until the control has been ungrabbed.
 
 	   @param handle The handle field of this struct.
 	   @param port_index The index of the port associated with the control.
@@ -341,19 +332,23 @@ typedef struct _LV2UI_Touch {
 } LV2UI_Touch;
 
 /**
-   UI Idle Feature (LV2_UI__idleInterface)
+   UI Idle Interface (LV2_UI__idleInterface)
 
-   This feature is an addition to the UI API that provides a callback for the
-   host to call rapidly, e.g. to drive the idle callback of a toolkit.
+   UIs can provide this interface to have an idle() callback called by the host
+   rapidly to update the UI.
 */
 typedef struct _LV2UI_Idle_Interface {
 	/**
 	   Run a single iteration of the UI's idle loop.
 
-	   This will be called "frequently" in the UI thread at a rate appropriate
-	   for a toolkit main loop.  There are no precise timing guarantees.
+	   This will be called rapidly in the UI thread at a rate appropriate
+	   for a toolkit main loop.  There are no precise timing guarantees, but
+	   the host should attempt to call idle() at a high enough rate for smooth
+	   animation, at least 30Hz.
 
-	   @return 0 on success, or anything else to stop being called.
+	   @return non-zero if the UI has been closed, in which case the host
+	   should stop calling idle(), and can either completely destroy the UI, or
+	   re-show it and resume calling idle().
 	*/
 	int (*idle)(LV2UI_Handle ui);
 } LV2UI_Idle_Interface;
@@ -361,15 +356,23 @@ typedef struct _LV2UI_Idle_Interface {
 /**
    UI Show Interface (LV2_UI__showInterface)
 
-   UIs can use this interface to provide show/hide methods to pop up a window,
-   which allows them to function in hosts unable to embed their widget type.
+   UIs can provide this interface to show and hide a window, which allows them
+   to function in hosts unable to embed their widget.  This allows any UI to
+   provide a fallback for embedding that works in any host.
 
-   If used, LV2UI_Idle_Interface should also be used to drive the UI.  The UI
-   should return non-zero from idle() when the window has been closed.
+   If used:
+   - The host MUST use LV2UI_Idle_Interface to drive the UI.
+   - The UI MUST return non-zero from LV2UI_Idle_Interface::idle() when it has been closed.
+   - If idle() returns non-zero, the host MUST call hide() and stop calling
+     idle().  It MAY later call show() then resume calling idle().
 */
 typedef struct _LV2UI_Show_Interface {
 	/**
 	   Show a window for this UI.
+
+	   The window title MAY have been passed by the host to
+	   LV2UI_Descriptor::instantiate() as an LV2_Options_Option with key
+	   LV2_UI__windowTitle.
 
 	   @return 0 on success, or anything else to stop being called.
 	*/
@@ -407,17 +410,10 @@ typedef struct _LV2UI_Peak_Data {
 } LV2UI_Peak_Data;
 
 /**
-   A plugin UI programmer must include a function called "lv2ui_descriptor"
-   with the following function prototype within the shared object file.  This
-   function will have C-style linkage (if you are using C++ this is taken care
-   of by the 'extern "C"' clause at the top of the file).  This function is
-   loaded from the library by the UI host and called to get a
-   LV2UI_Descriptor for the wanted plugin.
+   Prototype for UI accessor function.
 
-   Just like lv2_descriptor(), this function takes an index parameter.  The
-   index should only be used for enumeration and not as any sort of ID number -
-   the host should just iterate from 0 and upwards until the function returns
-   NULL or a descriptor with an URI matching the one the host is looking for.
+   This is the entry point to a UI library, which works in the same way as
+   lv2_descriptor() but for UIs rather than plugins.
 */
 LV2_SYMBOL_EXPORT
 const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index);
