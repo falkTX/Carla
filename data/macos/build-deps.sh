@@ -148,22 +148,23 @@ export CXX=clang
 # ------------------------------------------------------------------------------------
 # qt5-base download
 
-if [ ! -d qtbase5-mac10.6 ]; then
-/opt/local/bin/git clone git@github.com:falkTX/qtbase5-mac10.6.git --depth 1
+if [ ! -d qtbase-opensource-src-5.3.0 ]; then
+curl -O http://download.qt-project.org/official_releases/qt/5.3/5.3.0/submodules/qtbase-opensource-src-5.3.0.tar.xz
+tar -xf qtbase-opensource-src-5.3.0.tar.xz
 fi
 
 # ------------------------------------------------------------------------------------
 # qt5-base 32bit (minimal, static)
 
-if [ ! -f qtbase5-mac10.6_32/build-done ]; then
+if [ ! -f qtbase-opensource-src-5.3.0_32/build-done ]; then
 export CFLAGS="-O2 -mtune=generic -msse -msse2 -m32 -fPIC -DPIC"
 export CXXFLAGS=$CFLAGS
 export LDFLAGS="-m32"
 export PREFIX=/opt/carla32
 export PATH=$PREFIX/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
-cp -r qtbase5-mac10.6 qtbase5-mac10.6_32
-cd qtbase5-mac10.6_32
+cp -r qtbase-opensource-src-5.3.0 qtbase-opensource-src-5.3.0_32
+cd qtbase-opensource-src-5.3.0_32
 export CFG_ARCH=i386
 export QMAKESPEC=macx-clang-32
 ./configure -release -static -opensource -confirm-license -force-pkg-config -platform macx-clang-32 \
@@ -183,15 +184,15 @@ fi
 # ------------------------------------------------------------------------------------
 # qt5-base 64bit (minimal, static)
 
-if [ ! -f qtbase5-mac10.6_64/build-done ]; then
+if [ ! -f qtbase-opensource-src-5.3.0_64/build-done ]; then
 export CFLAGS="-O2 -mtune=generic -msse -msse2 -m64 -fPIC -DPIC"
 export CXXFLAGS=$CFLAGS
 export LDFLAGS="-m64"
 export PREFIX=/opt/carla64
 export PATH=$PREFIX/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
-cp -r qtbase5-mac10.6 qtbase5-mac10.6_64
-cd qtbase5-mac10.6_64
+cp -r qtbase-opensource-src-5.3.0 qtbase-opensource-src-5.3.0_64
+cd qtbase-opensource-src-5.3.0_64
 export CFG_ARCH=x86_64
 export QMAKESPEC=macx-clang
 ./configure -release -static -opensource -confirm-license -force-pkg-config -platform macx-clang \
@@ -256,7 +257,7 @@ fi
 # qt5-mac-extras
 
 if [ ! -d qtmacextras-opensource-src-5.2.1 ]; then
-http://download.qt-project.org/official_releases/qt/5.2/5.2.1/submodules/qtmacextras-opensource-src-5.2.1.tar.gz
+curl -O http://download.qt-project.org/official_releases/qt/5.2/5.2.1/submodules/qtmacextras-opensource-src-5.2.1.tar.gz
 tar -xf qtmacextras-opensource-src-5.2.1.tar.gz
 fi
 
