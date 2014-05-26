@@ -39,8 +39,8 @@ extern "C" {
 #include <QtCore/QFile>
 #include <QtCore/QUrl>
 
+#define URI_CARLA_ATOM_WORKER     "http://kxstudio.sf.net/ns/carla/atomWorker"
 #define URI_CARLA_FRONTEND_WIN_ID "http://kxstudio.sf.net/ns/carla/frontendWinId"
-#define URI_CARLA_WORKER          "http://kxstudio.sf.net/ns/carla/worker"
 
 // -----------------------------------------------------
 
@@ -94,30 +94,31 @@ const uint32_t CARLA_URI_MAP_ID_ATOM_TUPLE             = 18;
 const uint32_t CARLA_URI_MAP_ID_ATOM_URI               = 19;
 const uint32_t CARLA_URI_MAP_ID_ATOM_URID              = 20;
 const uint32_t CARLA_URI_MAP_ID_ATOM_VECTOR            = 21;
-const uint32_t CARLA_URI_MAP_ID_ATOM_WORKER            = 22; // custom
-const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM     = 23;
-const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT    = 24;
-const uint32_t CARLA_URI_MAP_ID_BUF_MAX_LENGTH         = 25;
-const uint32_t CARLA_URI_MAP_ID_BUF_MIN_LENGTH         = 26;
-const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE      = 27;
-const uint32_t CARLA_URI_MAP_ID_LOG_ERROR              = 28;
-const uint32_t CARLA_URI_MAP_ID_LOG_NOTE               = 29;
-const uint32_t CARLA_URI_MAP_ID_LOG_TRACE              = 30;
-const uint32_t CARLA_URI_MAP_ID_LOG_WARNING            = 31;
-const uint32_t CARLA_URI_MAP_ID_TIME_POSITION          = 32; // base type
-const uint32_t CARLA_URI_MAP_ID_TIME_BAR               = 33; // values
-const uint32_t CARLA_URI_MAP_ID_TIME_BAR_BEAT          = 34;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEAT              = 35;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEAT_UNIT         = 36;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR     = 37;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE  = 38;
-const uint32_t CARLA_URI_MAP_ID_TIME_FRAME             = 39;
-const uint32_t CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND = 40;
-const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 41;
-const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 42;
-const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 43;
-const uint32_t CARLA_URI_MAP_ID_FRONTEND_WIN_ID        = 44;
-const uint32_t CARLA_URI_MAP_ID_COUNT                  = 45;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM     = 22;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT    = 23;
+const uint32_t CARLA_URI_MAP_ID_BUF_MAX_LENGTH         = 24;
+const uint32_t CARLA_URI_MAP_ID_BUF_MIN_LENGTH         = 25;
+const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE      = 26;
+const uint32_t CARLA_URI_MAP_ID_LOG_ERROR              = 27;
+const uint32_t CARLA_URI_MAP_ID_LOG_NOTE               = 28;
+const uint32_t CARLA_URI_MAP_ID_LOG_TRACE              = 29;
+const uint32_t CARLA_URI_MAP_ID_LOG_WARNING            = 30;
+const uint32_t CARLA_URI_MAP_ID_TIME_POSITION          = 31; // base type
+const uint32_t CARLA_URI_MAP_ID_TIME_BAR               = 32; // values
+const uint32_t CARLA_URI_MAP_ID_TIME_BAR_BEAT          = 33;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEAT              = 34;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEAT_UNIT         = 35;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR     = 36;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE  = 37;
+const uint32_t CARLA_URI_MAP_ID_TIME_FRAME             = 38;
+const uint32_t CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND = 39;
+const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 40;
+const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 41;
+const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 42;
+const uint32_t CARLA_URI_MAP_ID_UI_WINDOW_TITLE        = 43;
+const uint32_t CARLA_URI_MAP_ID_CARLA_ATOM_WORKER      = 44;
+const uint32_t CARLA_URI_MAP_ID_CARLA_FRONTEND_WIN_ID  = 45;
+const uint32_t CARLA_URI_MAP_ID_COUNT                  = 46;
 
 // LV2 Feature Ids
 const uint32_t kFeatureIdBufSizeBounded   =  0;
@@ -162,6 +163,7 @@ struct Lv2EventData {
     uint32_t type;
     uint32_t rindex;
     CarlaEngineEventPort* port;
+
     union {
         LV2_Atom_Buffer* atom;
         LV2_Event_Buffer* event;
@@ -283,7 +285,9 @@ struct Lv2PluginOptions {
         SequenceSize,
         SampleRate,
         FrontendWinId,
-        Null
+        WindowTitle,
+        Null,
+        Count
     };
 
     int maxBufferSize;
@@ -291,14 +295,16 @@ struct Lv2PluginOptions {
     int sequenceSize;
     double sampleRate;
     int64_t frontendWinId;
-    LV2_Options_Option opts[6];
+    const char* windowTitle;
+    LV2_Options_Option opts[Count];
 
     Lv2PluginOptions()
         : maxBufferSize(0),
           minBufferSize(0),
           sequenceSize(MAX_DEFAULT_BUFFER_SIZE),
           sampleRate(0.0),
-          frontendWinId(0)
+          frontendWinId(0),
+          windowTitle(nullptr)
     {
         LV2_Options_Option& optMaxBlockLenth(opts[MaxBlockLenth]);
         optMaxBlockLenth.context = LV2_OPTIONS_INSTANCE;
@@ -335,10 +341,18 @@ struct Lv2PluginOptions {
         LV2_Options_Option& optFrontendWinId(opts[FrontendWinId]);
         optFrontendWinId.context = LV2_OPTIONS_INSTANCE;
         optFrontendWinId.subject = 0;
-        optFrontendWinId.key     = CARLA_URI_MAP_ID_FRONTEND_WIN_ID;
+        optFrontendWinId.key     = CARLA_URI_MAP_ID_CARLA_FRONTEND_WIN_ID;
         optFrontendWinId.size    = sizeof(int64_t);
         optFrontendWinId.type    = CARLA_URI_MAP_ID_ATOM_LONG;
         optFrontendWinId.value   = &frontendWinId;
+
+        LV2_Options_Option& optWindowTitle(opts[WindowTitle]);
+        optWindowTitle.context = LV2_OPTIONS_INSTANCE;
+        optWindowTitle.subject = 0;
+        optWindowTitle.key     = CARLA_URI_MAP_ID_UI_WINDOW_TITLE;
+        optWindowTitle.size    = 0;
+        optWindowTitle.type    = CARLA_URI_MAP_ID_ATOM_STRING;
+        optWindowTitle.value   = nullptr;
 
         LV2_Options_Option& optNull(opts[Null]);
         optNull.context = LV2_OPTIONS_INSTANCE;
@@ -347,6 +361,20 @@ struct Lv2PluginOptions {
         optNull.size    = 0;
         optNull.type    = CARLA_URI_MAP_ID_NULL;
         optNull.value   = nullptr;
+    }
+
+    ~Lv2PluginOptions()
+    {
+        LV2_Options_Option& optWindowTitle(opts[WindowTitle]);
+
+        optWindowTitle.size  = 0;
+        optWindowTitle.value = nullptr;
+
+        if (windowTitle != nullptr)
+        {
+            delete[] windowTitle;
+            windowTitle = nullptr;
+        }
     }
 };
 
@@ -439,12 +467,6 @@ public:
 
                 fUi.descriptor = nullptr;
                 pData->uiLibClose();
-            }
-
-            if (fUi.title != nullptr)
-            {
-                delete[] fUi.title;
-                fUi.title = nullptr;
             }
 
 #ifndef LV2_UIS_ONLY_BRIDGES
@@ -938,21 +960,24 @@ public:
     {
         CarlaPlugin::setName(newName);
 
-        if (fUi.title == nullptr)
+        if (fLv2Options.windowTitle == nullptr)
             return;
 
         QString guiTitle(QString("%1 (GUI)").arg(pData->name));
 
-        delete[] fUi.title;
-        fUi.title = carla_strdup(guiTitle.toUtf8().constData());
+        delete[] fLv2Options.windowTitle;
+        fLv2Options.windowTitle = carla_strdup(guiTitle.toUtf8().constData());
+
+        fLv2Options.opts[Lv2PluginOptions::WindowTitle].size  = std::strlen(fLv2Options.windowTitle);
+        fLv2Options.opts[Lv2PluginOptions::WindowTitle].value = fLv2Options.windowTitle;
+
+        if (fFeatures[kFeatureIdExternalUi] != nullptr && fFeatures[kFeatureIdExternalUi]->data != nullptr)
+            ((LV2_External_UI_Host*)fFeatures[kFeatureIdExternalUi]->data)->plugin_human_id = fLv2Options.windowTitle;
 
 #ifndef LV2_UIS_ONLY_BRIDGES
         if (fUi.window != nullptr)
-            fUi.window->setTitle(fUi.title);
+            fUi.window->setTitle(fLv2Options.windowTitle);
 #endif
-
-        if (fFeatures[kFeatureIdExternalUi] != nullptr && fFeatures[kFeatureIdExternalUi]->data != nullptr)
-            ((LV2_External_UI_Host*)fFeatures[kFeatureIdExternalUi]->data)->plugin_human_id = fUi.title;
     }
 
     // -------------------------------------------------------------------
@@ -1182,7 +1207,7 @@ public:
 
                     if (fUi.window != nullptr)
                     {
-                        fUi.window->setTitle(fUi.title);
+                        fUi.window->setTitle(fLv2Options.windowTitle);
                         fFeatures[kFeatureIdUiParent]->data = fUi.window->getPtr();
                     }
                 }
@@ -1267,7 +1292,7 @@ public:
 
             for (; tmpQueue.get(&atom, &portIndex);)
             {
-                if (atom->type == CARLA_URI_MAP_ID_ATOM_WORKER)
+                if (atom->type == CARLA_URI_MAP_ID_CARLA_ATOM_WORKER)
                 {
                     CARLA_SAFE_ASSERT_CONTINUE(fExt.worker != nullptr && fExt.worker->work != nullptr);
                     fExt.worker->work(fHandle, carla_lv2_worker_respond, this, atom->size, LV2_ATOM_BODY_CONST(atom));
@@ -2618,7 +2643,7 @@ public:
                     {
                         j = (portIndex < fEventsIn.count) ? portIndex : fEventsIn.ctrlIndex;
 
-                        if (atom->type == CARLA_URI_MAP_ID_ATOM_WORKER)
+                        if (atom->type == CARLA_URI_MAP_ID_CARLA_ATOM_WORKER)
                         {
                             CARLA_SAFE_ASSERT_CONTINUE(fExt.worker != nullptr && fExt.worker->work_response != nullptr);
                             fExt.worker->work_response(fHandle, atom->size, LV2_ATOM_BODY_CONST(atom));
@@ -4047,7 +4072,7 @@ public:
 
         LV2_Atom atom;
         atom.size = size;
-        atom.type = CARLA_URI_MAP_ID_ATOM_WORKER;
+        atom.type = CARLA_URI_MAP_ID_CARLA_ATOM_WORKER;
 
         return fAtomQueueOut.putChunk(&atom, data, fEventsOut.ctrlIndex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
     }
@@ -4058,7 +4083,7 @@ public:
 
         LV2_Atom atom;
         atom.size = size;
-        atom.type = CARLA_URI_MAP_ID_ATOM_WORKER;
+        atom.type = CARLA_URI_MAP_ID_CARLA_ATOM_WORKER;
 
         return fAtomQueueIn.putChunk(&atom, data, fEventsIn.ctrlIndex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
     }
@@ -4924,7 +4949,10 @@ public:
         // initialize ui data
 
         QString guiTitle(QString("%1 (GUI)").arg(pData->name));
-        fUi.title = carla_strdup(guiTitle.toUtf8().constData());
+        fLv2Options.windowTitle = carla_strdup(guiTitle.toUtf8().constData());
+
+        fLv2Options.opts[Lv2PluginOptions::WindowTitle].size  = std::strlen(fLv2Options.windowTitle);
+        fLv2Options.opts[Lv2PluginOptions::WindowTitle].value = fLv2Options.windowTitle;
 
         // ---------------------------------------------------------------
         // initialize ui features (part 1)
@@ -4942,7 +4970,7 @@ public:
 
         LV2_External_UI_Host* const uiExternalHostFt = new LV2_External_UI_Host;
         uiExternalHostFt->ui_closed                  = carla_lv2_external_ui_closed;
-        uiExternalHostFt->plugin_human_id            = fUi.title;
+        uiExternalHostFt->plugin_human_id            = fLv2Options.windowTitle;
 
         // ---------------------------------------------------------------
         // initialize ui features (part 2)
@@ -5107,7 +5135,6 @@ private:
         const LV2UI_Descriptor* descriptor;
         const LV2_RDF_UI*       rdfDescriptor;
 
-        const char* title;
         CarlaPluginUi* window;
 
         UI()
@@ -5116,7 +5143,6 @@ private:
               widget(nullptr),
               descriptor(nullptr),
               rdfDescriptor(nullptr),
-              title(nullptr),
               window(nullptr) {}
 
         ~UI()
@@ -5125,7 +5151,6 @@ private:
             CARLA_ASSERT(widget == nullptr);
             CARLA_ASSERT(descriptor == nullptr);
             CARLA_ASSERT(rdfDescriptor == nullptr);
-            CARLA_ASSERT(title == nullptr);
             CARLA_ASSERT(window == nullptr);
         }
     } fUi;
@@ -5403,12 +5428,14 @@ private:
             return CARLA_URI_MAP_ID_MIDI_EVENT;
         if (std::strcmp(uri, LV2_PARAMETERS__sampleRate) == 0)
             return CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE;
+        if (std::strcmp(uri, LV2_UI__windowTitle) == 0)
+            return CARLA_URI_MAP_ID_UI_WINDOW_TITLE;
 
         // Custom
+        if (std::strcmp(uri, URI_CARLA_ATOM_WORKER) == 0)
+            return CARLA_URI_MAP_ID_CARLA_ATOM_WORKER;
         if (std::strcmp(uri, URI_CARLA_FRONTEND_WIN_ID) == 0)
-            return CARLA_URI_MAP_ID_FRONTEND_WIN_ID;
-        if (std::strcmp(uri, URI_CARLA_WORKER) == 0)
-            return CARLA_URI_MAP_ID_ATOM_WORKER;
+            return CARLA_URI_MAP_ID_CARLA_FRONTEND_WIN_ID;
 
         // Custom types
         return ((Lv2Plugin*)handle)->getCustomURID(uri);
@@ -5463,8 +5490,6 @@ private:
             return LV2_ATOM__URID;
         if (urid == CARLA_URI_MAP_ID_ATOM_VECTOR)
             return LV2_ATOM__Vector;
-        if (urid == CARLA_URI_MAP_ID_ATOM_WORKER)
-            return URI_CARLA_WORKER; // custom
         if (urid == CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM)
             return LV2_ATOM__atomTransfer;
         if (urid == CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)
@@ -5515,7 +5540,13 @@ private:
             return LV2_MIDI__MidiEvent;
         if (urid == CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE)
             return LV2_PARAMETERS__sampleRate;
-        if (urid == CARLA_URI_MAP_ID_FRONTEND_WIN_ID)
+        if (urid == CARLA_URI_MAP_ID_UI_WINDOW_TITLE)
+            return LV2_UI__windowTitle;
+
+        // Custom
+        if (urid == CARLA_URI_MAP_ID_CARLA_ATOM_WORKER)
+            return URI_CARLA_ATOM_WORKER;
+        if (urid == CARLA_URI_MAP_ID_CARLA_FRONTEND_WIN_ID)
             return URI_CARLA_FRONTEND_WIN_ID;
 
         // Custom types
