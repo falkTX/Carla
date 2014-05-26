@@ -75,7 +75,7 @@ extern void carla_register_native_plugin_midifile();
 
 #ifdef WANT_PROJECTM
 // ProjectM
-extern void carla_register_native_plugin_projectm();
+extern void carla_register_native_plugin_prom();
 #endif
 
 // SunVox File
@@ -147,7 +147,7 @@ void carla_register_all_plugins()
 
 #ifdef WANT_PROJECTM
     // ProjectM
-    carla_register_native_plugin_projectm();
+    carla_register_native_plugin_prom();
 #endif
 
     // SunVox File

@@ -119,6 +119,11 @@ OBJS += \
 	distrho-zamulticomp.cpp.o \
 	distrho-zamulticompx2.cpp.o
 
+ifeq ($(HAVE_PM_DEPS),true)
+OBJS += \
+	distrho-prom.cpp.o
+endif
+
 ifeq ($(HAVE_JUCE),true)
 # --------------------------------------------------------------
 # JUCE based plugins
@@ -142,13 +147,6 @@ endif
 
 ifeq ($(HAVE_MF_DEPS),true)
 OBJS += midi-file.cpp.o
-endif
-
-# --------------------------------------------------------------
-# ProjectM
-
-ifeq ($(HAVE_PM_DEPS),true)
-OBJS += projectm.cpp.o
 endif
 
 # --------------------------------------------------------------
@@ -261,6 +259,9 @@ distrho-nekobi.cpp.o: distrho-nekobi.cpp nekobi/*.cpp nekobi/*.h nekobi/*.hpp ne
 distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/*.cpp pingpongpan/*.h pingpongpan/*.hpp ../distrho/* $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Ipingpongpan -DDISTRHO_NAMESPACE=DISTRHO_PingPongPan -c -o $@
 
+distrho-prom.cpp.o: distrho-prom.cpp prom/*.cpp prom/*.h prom/*.hpp ../distrho/* $(CXXDEPS)
+	$(CXX) $< $(PM_CXX_FLAGS) -I../dgl -Iprom -DDISTRHO_NAMESPACE=DISTRHO_ProM -c -o $@
+
 distrho-stereoenhancer.cpp.o: distrho-stereoenhancer.cpp stereoenhancer/*.cpp stereoenhancer/*.h stereoenhancer/*.hpp ../distrho/* $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I../dgl -Istereoenhancer -DDISTRHO_NAMESPACE=DISTRHO_StereoEnhancer -c -o $@
 
@@ -308,9 +309,6 @@ midi-file.cpp.o: midi-file.cpp midi-base.hpp $(CXXDEPS)
 
 midi-sequencer.cpp.o: midi-sequencer.cpp midi-base.hpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-projectm.cpp.o: projectm.cpp $(CXXDEPS)
-	$(CXX) $< $(PM_CXX_FLAGS) -c -o $@
 
 notes.cpp.o: notes.cpp $(CXXDEPS) ../CarlaNativeExtUI.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@

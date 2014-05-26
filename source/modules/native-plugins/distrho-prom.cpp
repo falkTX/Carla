@@ -16,9 +16,8 @@
  */
 
 // Plugin Code
-#include "zamulticompx2/ZaMultiCompX2Artwork.cpp"
-#include "zamulticompx2/ZaMultiCompX2Plugin.cpp"
-#include "zamulticompx2/ZaMultiCompX2UI.cpp"
+#include "prom/DistrhoPluginProM.cpp"
+#include "prom/DistrhoUIProM.cpp"
 
 // DISTRHO Code
 #define DISTRHO_PLUGIN_TARGET_CARLA
@@ -29,20 +28,20 @@ START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
-static const NativePluginDescriptor zamulticompx2Desc = {
-    /* category  */ PLUGIN_CATEGORY_DYNAMICS,
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_UI|PLUGIN_USES_PARENT_ID),
+static const NativePluginDescriptor promDesc = {
+    /* category  */ PLUGIN_CATEGORY_OTHER,
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_HAS_UI|PLUGIN_USES_PARENT_ID),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ DISTRHO_PLUGIN_NUM_INPUTS,
     /* audioOuts */ DISTRHO_PLUGIN_NUM_OUTPUTS,
     /* midiIns   */ 0,
     /* midiOuts  */ 0,
-    /* paramIns  */ ZaMultiCompX2Plugin::paramCount,
+    /* paramIns  */ 0,
     /* paramOuts */ 0,
     /* name      */ DISTRHO_PLUGIN_NAME,
-    /* label     */ "zamulticompx2",
-    /* maker     */ "Damien Zammit",
-    /* copyright */ "GPL v2+",
+    /* label     */ "prom",
+    /* maker     */ "falkTX",
+    /* copyright */ "LGPL",
     PluginDescriptorFILL(PluginCarla)
 };
 
@@ -51,10 +50,10 @@ END_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 
 CARLA_EXPORT
-void carla_register_native_plugin_zamulticompx2()
+void carla_register_native_plugin_prom()
 {
     USE_NAMESPACE_DISTRHO
-    carla_register_native_plugin(&zamulticompx2Desc);
+    carla_register_native_plugin(&promDesc);
 }
 
 // -----------------------------------------------------------------------
