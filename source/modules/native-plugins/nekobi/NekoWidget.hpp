@@ -1,6 +1,6 @@
 /*
  * Neko widget animation
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
+ * For a full copy of the GNU General Public License see the LICENSE file.
  */
 
 #ifndef NEKO_WIDGET_HPP_INCLUDED
@@ -26,8 +26,6 @@
 #include <cstdlib> // rand
 
 using DGL::Image;
-
-USE_NAMESPACE_DGL;
 
 // -----------------------------------------------------------------------
 
@@ -75,7 +73,7 @@ public:
             y += 12;
         }
 
-        fCurImage->draw(x, y);
+        fCurImage->drawAt(x, y);
     }
 
     // returns true if needs repaint

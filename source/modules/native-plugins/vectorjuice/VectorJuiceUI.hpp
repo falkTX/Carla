@@ -20,14 +20,12 @@
 
 #include "DistrhoUI.hpp"
 
-#include "Geometry.hpp"
 #include "ImageAboutWindow.hpp"
 #include "ImageButton.hpp"
 #include "ImageKnob.hpp"
 #include "ImageSlider.hpp"
 
 #include "VectorJuiceArtwork.hpp"
-#include "VectorJuicePlugin.hpp"
 
 using DGL::Image;
 using DGL::ImageAboutWindow;
@@ -46,18 +44,17 @@ class VectorJuiceUI : public UI,
 {
 public:
     VectorJuiceUI();
-    ~VectorJuiceUI() override;
 
 protected:
     // -------------------------------------------------------------------
     // Information
 
-    unsigned int d_getWidth() const noexcept override
+    uint d_getWidth() const noexcept override
     {
         return VectorJuiceArtwork::backgroundWidth;
     }
 
-    unsigned int d_getHeight() const noexcept override
+    uint d_getHeight() const noexcept override
     {
         return VectorJuiceArtwork::backgroundHeight;
     }
@@ -80,8 +77,8 @@ protected:
     void imageSliderValueChanged(ImageSlider* slider, float value) override;
 
     void onDisplay() override;
-    bool onMouse(int button, bool press, int x, int y) override;
-    bool onMotion(int x, int y) override;
+    bool onMouse(const MouseEvent&) override;
+    bool onMotion(const MotionEvent&) override;
 
 private:
     float paramX, paramY;
@@ -92,22 +89,15 @@ private:
     Image fImgSubOrbit;
     ImageAboutWindow fAboutWindow;
 
+    ScopedPointer<ImageButton> fButtonAbout;
+
     //knobs
-    ImageKnob* fKnobOrbitSpeedX;
-    ImageKnob* fKnobOrbitSpeedY;
-    ImageKnob* fKnobOrbitSizeX;
-    ImageKnob* fKnobOrbitSizeY;
-    ImageKnob* fKnobSubOrbitSpeed;
-    ImageKnob* fKnobSubOrbitSize;
-    ImageKnob* fKnobSubOrbitSmooth;
+    ScopedPointer<ImageKnob> fKnobOrbitSpeedX, fKnobOrbitSpeedY, fKnobOrbitSizeX, fKnobOrbitSizeY;
+    ScopedPointer<ImageKnob> fKnobSubOrbitSpeed, fKnobSubOrbitSize, fKnobSubOrbitSmooth;
 
     //sliders
-    ImageSlider* fSliderOrbitWaveX;
-    ImageSlider* fSliderOrbitWaveY;
-    ImageSlider* fSliderOrbitPhaseX;
-    ImageSlider* fSliderOrbitPhaseY;
-
-    ImageButton* fButtonAbout;
+    ScopedPointer<ImageSlider> fSliderOrbitWaveX,  fSliderOrbitWaveY;
+    ScopedPointer<ImageSlider> fSliderOrbitPhaseX, fSliderOrbitPhaseY;
 
     // needed for XY canvas handling
     bool fDragging;

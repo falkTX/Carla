@@ -1,6 +1,6 @@
 /*
- * ZamTube triode WDF distortion model 
- * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com> 
+ * ZamTube triode WDF distortion model
+ * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -25,13 +25,9 @@ START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
-
-#include <stdint.h>
-#include <math.h>
-
-template <int N> inline float faustpower(float x) 		{ return powf(x,N); } 
+template <int N> inline float faustpower(float x) 		{ return powf(x,N); }
 template <int N> inline double faustpower(double x) 	{ return pow(x,N); }
-template <int N> inline int faustpower(int x) 			{ return faustpower<N/2>(x) * faustpower<N-N/2>(x); } 
+template <int N> inline int faustpower(int x) 			{ return faustpower<N/2>(x) * faustpower<N-N/2>(x); }
 template <> 	 inline int faustpower<0>(int)	 		{ return 1; }
 template <> 	 inline int faustpower<1>(int x) 		{ return x; }
 
@@ -119,7 +115,6 @@ public:
     };
 
     ZamTubePlugin();
-    ~ZamTubePlugin() override;
 
 protected:
     // -------------------------------------------------------------------
@@ -184,8 +179,7 @@ protected:
 	}
 
     void d_activate() override;
-    void d_deactivate() override;
-    void d_run(float** inputs, float** outputs, uint32_t frames) override;
+    void d_run(const float** inputs, float** outputs, uint32_t frames) override;
 
     // -------------------------------------------------------------------
 

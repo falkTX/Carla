@@ -35,13 +35,13 @@ public:
         paramOrbitSizeY,
         paramOrbitSpeedX,
         paramOrbitSpeedY,
-        paramSubOrbitSpeed,
         paramSubOrbitSize,
+        paramSubOrbitSpeed,
+        paramSubOrbitSmooth,
         paramOrbitWaveX,
         paramOrbitWaveY,
         paramOrbitPhaseX,
         paramOrbitPhaseY,
-        paramSubOrbitSmooth,
         paramOrbitOutX,
         paramOrbitOutY,
         paramSubOrbitOutX,
@@ -49,9 +49,9 @@ public:
         paramCount
     };
 
-    inline float smoothParameter(float in, int axis) {
-            sZ[axis] = (in * sB[axis]) + (sZ[axis] * sA[axis]);
-            return sZ[axis];
+    float smoothParameter(float in, int axis) {
+        sZ[axis] = (in * sB[axis]) + (sZ[axis] * sA[axis]);
+        return sZ[axis];
     }
 
     float getSinePhase(float x) {
@@ -88,18 +88,7 @@ public:
         }
     }
 
-    void resetPhase()
-    {
-        const TimePos& time = d_getTimePos();
-        if (!time.playing)
-        {
-            sinePosX = 0;
-            sinePosY = 0;
-            sinePos = 0;
-        }
-    }
-
-    float tN (float x)
+    float tN(float x)
     {
         if (x>0) return x;
         else return 0;
@@ -150,8 +139,8 @@ public:
         //* 0.25
         //0, 0.25, 0.5, 0.75
 
-        float tempPhaseX = std::round(orbitPhaseX*3)*0.25;
-        float tempPhaseY = std::round(orbitPhaseY*3)*0.25;
+        float tempPhaseX = std::round(orbitPhaseX)*0.25-0.25;
+        float tempPhaseY = std::round(orbitPhaseY)*0.25-0.25;
 
         orbitX = x+getBlendedPhase(sinePosX + tempPhaseX*(2*M_PI), std::round(orbitWaveX))*(orbitSizeX/2);
         orbitY = y+getBlendedPhase(sinePosY+M_PI/2 + tempPhaseY*(2*M_PI), std::round(orbitWaveY))*(orbitSizeY/2);
@@ -216,8 +205,7 @@ protected:
     // Process
 
     void d_activate() override;
-    void d_deactivate() override;
-    void d_run(float** inputs, float** outputs, uint32_t frames) override;
+    void d_run(const float** inputs, float** outputs, uint32_t frames) override;
 
     // -------------------------------------------------------------------
 

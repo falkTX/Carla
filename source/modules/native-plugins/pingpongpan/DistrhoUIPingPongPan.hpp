@@ -1,6 +1,6 @@
 /*
  * DISTRHO PingPongPan Plugin, based on PingPongPan by Michael Gruhn
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -11,7 +11,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
- * For a full copy of the license see the doc/LGPL.txt file.
+ * For a full copy of the license see the LICENSE file.
  */
 
 #ifndef DISTRHO_UI_PINGPONGPAN_HPP_INCLUDED
@@ -24,7 +24,6 @@
 #include "ImageKnob.hpp"
 
 #include "DistrhoArtworkPingPongPan.hpp"
-#include "DistrhoPluginPingPongPan.hpp"
 
 using DGL::Image;
 using DGL::ImageAboutWindow;
@@ -41,18 +40,17 @@ class DistrhoUIPingPongPan : public UI,
 {
 public:
     DistrhoUIPingPongPan();
-    ~DistrhoUIPingPongPan() override;
 
 protected:
     // -------------------------------------------------------------------
     // Information
 
-    unsigned int d_getWidth() const noexcept override
+    uint d_getWidth() const noexcept override
     {
         return DistrhoArtworkPingPongPan::backgroundWidth;
     }
 
-    unsigned int d_getHeight() const noexcept override
+    uint d_getHeight() const noexcept override
     {
         return DistrhoArtworkPingPongPan::backgroundHeight;
     }
@@ -77,9 +75,10 @@ private:
     Image fImgBackground;
     ImageAboutWindow fAboutWindow;
 
-    ImageKnob*   fKnobFreq;
-    ImageKnob*   fKnobWidth;
-    ImageButton* fButtonAbout;
+    ScopedPointer<ImageButton> fButtonAbout;
+    ScopedPointer<ImageKnob>   fKnobFreq, fKnobWidth;
+
+    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DistrhoUIPingPongPan)
 };
 
 // -----------------------------------------------------------------------

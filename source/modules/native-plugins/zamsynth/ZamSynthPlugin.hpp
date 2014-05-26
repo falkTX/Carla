@@ -1,5 +1,5 @@
 /*
- * ZamSynth polyphonic synthesiser 
+ * ZamSynth polyphonic synthesiser
  * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -40,7 +40,6 @@ public:
     };
 
     ZamSynthPlugin();
-    ~ZamSynthPlugin() override;
 
 protected:
     // -------------------------------------------------------------------
@@ -106,8 +105,7 @@ protected:
 
     float wavetable(float in);
     void d_activate() override;
-    void d_deactivate() override;
-    void d_run(float** inputs, float** outputs, uint32_t frames,
+    void d_run(const float** inputs, float** outputs, uint32_t frames,
     		const MidiEvent* midievent, uint32_t midicount) override;
     void d_setState(const char* key, const char* value) override;
     void d_initStateKey(unsigned int key, d_string& val) override;

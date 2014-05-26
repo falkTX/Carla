@@ -1,6 +1,6 @@
 /*
- * ZamSynth polyphonic synthesiser 
- * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com> 
+ * ZamSynth polyphonic synthesiser
+ * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,9 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "ZamSynthPlugin.hpp"
 #include "ZamSynthUI.hpp"
-
-using DGL::Point;
 
 START_NAMESPACE_DISTRHO
 
@@ -28,6 +27,9 @@ ZamSynthUI::ZamSynthUI()
 {
     // background
     fImgBackground = Image(ZamSynthArtwork::zamsynthData, ZamSynthArtwork::zamsynthWidth, ZamSynthArtwork::zamsynthHeight, GL_BGR);
+
+    fDragging = false;
+    fDragValid = false;
 
     // knob
     Image knobImage(ZamSynthArtwork::knobData, ZamSynthArtwork::knobWidth, ZamSynthArtwork::knobHeight);
@@ -40,26 +42,26 @@ ZamSynthUI::ZamSynthUI()
     Image toggleonImage(ZamSynthArtwork::toggleonData, ZamSynthArtwork::toggleonWidth, ZamSynthArtwork::toggleonHeight);
     Image toggleoffImage(ZamSynthArtwork::toggleoffData, ZamSynthArtwork::toggleoffWidth, ZamSynthArtwork::toggleoffHeight);
 
-    // knob 
+    // knob
 
     fKnobGain = new ImageKnob(this, knobImage);
-    fKnobGain->setPos(284.75, 240);
+    fKnobGain->setAbsolutePos(284.75, 240);
     fKnobGain->setRange(-30.f, 30.0f);
-    //fKnobGain->setDefault(0.0f);
+    fKnobGain->setDefault(0.0f);
     fKnobGain->setRotationAngle(240);
     fKnobGain->setCallback(this);
 
     fKnobSpeed = new ImageKnob(this, knobImage);
-    fKnobSpeed->setPos(284.75, 92.5);
+    fKnobSpeed->setAbsolutePos(284.75, 92.5);
     fKnobSpeed->setRange(1.f, 20.0f);
-    //fKnobSpeed->setDefault(10.0f);
+    fKnobSpeed->setDefault(10.0f);
     fKnobSpeed->setStep(1.0f);
     fKnobSpeed->setRotationAngle(240);
     fKnobSpeed->setCallback(this);
 
     // button
     fButtonSmooth = new ImageButton(this, smoothrImage, smoothrImage, smoothyImage);
-    fButtonSmooth->setPos(265, 165);
+    fButtonSmooth->setAbsolutePos(265, 165);
     fButtonSmooth->setCallback(this);
 
     // drawing area
@@ -71,18 +73,13 @@ ZamSynthUI::ZamSynthUI()
     }
 
     // toggle
-    fToggleGraph = new ImageToggle(this, toggleonImage, toggleoffImage, toggleoffImage);
-    fToggleGraph->setPos(300, 33);
+    fToggleGraph = new ImageToggle(this, toggleonImage, toggleoffImage);
+    fToggleGraph->setAbsolutePos(300, 33);
     fToggleGraph->setCallback(this);
     fToggleGraph->setValue(0.f);
-}
 
-ZamSynthUI::~ZamSynthUI()
-{
-	delete fKnobGain;
-	delete fKnobSpeed;
-	delete fButtonSmooth;
-	delete fToggleGraph;
+    // set default values
+    d_programChanged(0);
 }
 
 void ZamSynthUI::d_stateChanged(const char* key, const char* value)
@@ -138,8 +135,8 @@ void ZamSynthUI::d_programChanged(uint32_t index)
     if (index != 0)
         return;
 
-    fKnobGain->setValue(0.0f);
-    fKnobSpeed->setValue(10.0f);
+    fKnobGain->setDefault(0.0f);
+    fKnobSpeed->setDefault(10.0f);
 }
 
 // -----------------------------------------------------------------------
@@ -183,7 +180,7 @@ void ZamSynthUI::imageButtonClicked(ImageButton*, int)
 
 	gaussiansmooth(wavesmooth, xs, gr, AREAHEIGHT, 4);
 	memcpy(gr, wavesmooth, AREAHEIGHT*sizeof(float));
-	
+
 	char tmp[4*AREAHEIGHT+1] = {0};
 	for(i = 0; i < AREAHEIGHT; i++) {
 		char wavestr[5] = {0};
@@ -191,7 +188,7 @@ void ZamSynthUI::imageButtonClicked(ImageButton*, int)
 		strcat(tmp, wavestr);
 	}
 
-	if (fToggleGraph->getValue() == 1.f) 
+	if (fToggleGraph->getValue() == 1.f)
 		d_setState("envelope", tmp);
 	else
 		d_setState("waveform", tmp);
@@ -201,7 +198,7 @@ void ZamSynthUI::imageToggleClicked(ImageToggle*, int)
 {
 	float toggle = fToggleGraph->getValue();
 	fToggleGraph->setValue(toggle);
-	d_setParameterValue(ZamSynthPlugin::paramGraph, toggle);	
+	d_setParameterValue(ZamSynthPlugin::paramGraph, toggle);
 }
 
 void ZamSynthUI::gaussiansmooth(float* smoothed, float* xs, float* ys, int n, int radius)
@@ -222,14 +219,14 @@ void ZamSynthUI::gaussiansmooth(float* smoothed, float* xs, float* ys, int n, in
 	}
 }
 
-bool ZamSynthUI::onMouse(int button, bool press, int x, int y)
+bool ZamSynthUI::onMouse(const MouseEvent& ev)
 {
-    if (button != 1)
+    if (ev.button != 1)
         return false;
 
-    if (press)
+    if (ev.press)
     {
-        if (! fCanvasArea.contains(x, y)) {
+        if (! fCanvasArea.contains(ev.pos)) {
             //fDragValid = false;
             return false;
 	}
@@ -247,7 +244,7 @@ bool ZamSynthUI::onMouse(int button, bool press, int x, int y)
     return false;
 }
 
-bool ZamSynthUI::onMotion(int x, int y)
+bool ZamSynthUI::onMotion(const MotionEvent& ev)
 {
     if (! fDragging)
         return false;
@@ -255,15 +252,18 @@ bool ZamSynthUI::onMotion(int x, int y)
     {
         fDragValid = true;
     }
-    
+
+    int x = ev.pos.getX();
+    int y = ev.pos.getY();
+
     if (x > fCanvasArea.getWidth()+10)
     x = fCanvasArea.getWidth()+10;
     if (x < 10) x = 10;
     if (y < 10) y = 10;
-    
+
     float *gr;
     if (fToggleGraph->getValue() == 0.f) {
-	gr = wave_y;	
+	gr = wave_y;
 	if (y > fCanvasArea.getHeight()+10)
 		y = fCanvasArea.getHeight()+10;
     } else {
@@ -271,7 +271,7 @@ bool ZamSynthUI::onMotion(int x, int y)
 	if (y > fCanvasArea.getHeight() / 2. + 10)
 		y = fCanvasArea.getHeight() / 2. + 10;
     }
-    
+
     if (gr[x-10] != (y-10)) {
 	char tmp[4*AREAHEIGHT+1] = {0};
 	int i;
@@ -282,12 +282,12 @@ bool ZamSynthUI::onMotion(int x, int y)
 	}
 
         gr[x-10] = y-10;
-        
+
 	if (gr == env_y)
 		d_setState("envelope",tmp);
 	else
 		d_setState("waveform",tmp);
-        
+
 	repaint();
     }
 

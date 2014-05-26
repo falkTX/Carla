@@ -26,13 +26,6 @@ WobbleJuicePlugin::WobbleJuicePlugin()
 {
     // set default values
     d_setProgram(0);
-
-    // reset
-    d_deactivate();
-}
-
-WobbleJuicePlugin::~WobbleJuicePlugin()
-{
 }
 
 // -----------------------------------------------------------------------
@@ -46,7 +39,7 @@ void WobbleJuicePlugin::d_initParameter(uint32_t index, Parameter& parameter)
         parameter.hints      = PARAMETER_IS_AUTOMABLE|PARAMETER_IS_INTEGER;
         parameter.name       = "Division";
         parameter.symbol     = "div";
-        parameter.unit       = "times";
+        parameter.unit       = "x";
         parameter.ranges.def = 4.0f;
         parameter.ranges.min = 1.0f;
         parameter.ranges.max = 16.0f;
@@ -55,7 +48,7 @@ void WobbleJuicePlugin::d_initParameter(uint32_t index, Parameter& parameter)
         parameter.hints      = PARAMETER_IS_AUTOMABLE;
         parameter.name       = "Resonance";
         parameter.symbol     = "reso";
-        parameter.unit       = "amount";
+        parameter.unit       = "";
         parameter.ranges.def = 0.1f;
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 0.2f;
@@ -91,8 +84,8 @@ void WobbleJuicePlugin::d_initParameter(uint32_t index, Parameter& parameter)
         parameter.hints      = PARAMETER_IS_AUTOMABLE;
         parameter.name       = "Drive";
         parameter.symbol     = "drv";
-        parameter.unit       = "amount";
-        parameter.ranges.def = 0.1f;
+        parameter.unit       = "";
+        parameter.ranges.def = 0.5f;
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 1.0f;
         break;
@@ -170,9 +163,9 @@ void WobbleJuicePlugin::d_setProgram(uint32_t index)
     drive    = 0.5f;
 
     /* Default variable values */
-    bar=tick=tickOffset=percentage=phaseOffset=currentPhaseL=0;
-    currentPhaseR=posL=posR=cutoffL=cutoffR=0;
-    waveType = 2;
+    bar=tick=tickOffset=percentage=phaseOffset=currentPhaseL=0.0f;
+    currentPhaseR=posL=posR=cutoffL=cutoffR=0.0f;
+    waveType=2.0f;
 
     /* reset filter values */
     d_activate();
@@ -183,27 +176,22 @@ void WobbleJuicePlugin::d_setProgram(uint32_t index)
 
 void WobbleJuicePlugin::d_activate()
 {
-    sinePos = 0;
+    sinePos = 0.0;
 }
 
-void WobbleJuicePlugin::d_deactivate()
-{
-    // all values to zero
-}
-
-void WobbleJuicePlugin::d_run(float** inputs, float** outputs, uint32_t frames)
+void WobbleJuicePlugin::d_run(const float** inputs, float** outputs, uint32_t frames)
 {
     //fetch the timepos struct from host;
-    const TimePos& time = d_getTimePos();
+    const TimePos& time(d_getTimePos());
 
     /* sample count for one bar */
     bar = ((120.0/(time.bbt.valid ? time.bbt.beatsPerMinute : 120.0))*(d_getSampleRate())); //ONE, two, three, four
     tick = bar/(std::round(division)); //size of one target wob
     phaseOffset = phase*M_PI; //2pi = 1 whole cycle
 
+    /* if rolling then sync to timepos */
     if (time.playing)
     {
-        /* if rolling then sync to timepos */
         tickOffset = time.frame-std::floor(time.frame/tick)*tick; //how much after last tick
 
         if (tickOffset!=0) {
@@ -219,9 +207,9 @@ void WobbleJuicePlugin::d_run(float** inputs, float** outputs, uint32_t frames)
             sinePos = 0;
         }
     }
+    /* else just keep on wobblin' */
     else
     {
-        /* else just keep on wobblin' */
         sinePos += (M_PI)/(tick/2000); //wtf, but works
         if (sinePos>2*M_PI) {
             sinePos = 0;

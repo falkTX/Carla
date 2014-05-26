@@ -1,6 +1,6 @@
 /*
  * ZamTube triode WDF distortion model
- * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com> 
+ * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -14,6 +14,12 @@
  *
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
+
+#include "ZamTubePlugin.hpp"
+
+// conflict macros in wdf
+#undef max
+#undef min
 
 #include "ZamTubeUI.hpp"
 
@@ -35,44 +41,44 @@ ZamTubeUI::ZamTubeUI()
     // notch slider
     Image notchImage(ZamTubeArtwork::notchData, ZamTubeArtwork::notchWidth, ZamTubeArtwork::notchHeight);
 
-    // knobs 
+    // knobs
     fKnobTube = new ImageKnob(this, knobImage);
-    fKnobTube->setPos(177, 76);
+    fKnobTube->setAbsolutePos(177, 76);
     fKnobTube->setRange(0.f, 30.0f);
     fKnobTube->setStep(0.1f);
-    //fKnobTube->setDefault(0.0f);
+    fKnobTube->setDefault(0.0f);
     fKnobTube->setRotationAngle(240);
     fKnobTube->setCallback(this);
 
     fKnobBass = new ImageKnob(this, knobImage);
-    fKnobBass->setPos(63, 140.5);
+    fKnobBass->setAbsolutePos(63, 140.5);
     fKnobBass->setRange(0.f, 1.0f);
     fKnobBass->setStep(0.01f);
-    //fKnobBass->setDefault(0.5f);
+    fKnobBass->setDefault(0.5f);
     fKnobBass->setRotationAngle(240);
     fKnobBass->setCallback(this);
 
     fKnobMids = new ImageKnob(this, knobImage);
-    fKnobMids->setPos(63, 87);
+    fKnobMids->setAbsolutePos(63, 87);
     fKnobMids->setRange(0.f, 1.0f);
     fKnobMids->setStep(0.01f);
-    //fKnobMids->setDefault(0.5f);
+    fKnobMids->setDefault(0.5f);
     fKnobMids->setRotationAngle(240);
     fKnobMids->setCallback(this);
 
     fKnobTreb = new ImageKnob(this, knobImage);
-    fKnobTreb->setPos(63, 33);
+    fKnobTreb->setAbsolutePos(63, 33);
     fKnobTreb->setRange(0.f, 1.0f);
     fKnobTreb->setStep(0.01f);
-    //fKnobTreb->setDefault(0.0f);
+    fKnobTreb->setDefault(0.0f);
     fKnobTreb->setRotationAngle(240);
     fKnobTreb->setCallback(this);
 
     fKnobGain = new ImageKnob(this, knobImage);
-    fKnobGain->setPos(63, 231);
+    fKnobGain->setAbsolutePos(63, 231);
     fKnobGain->setRange(-30.f, 30.0f);
     fKnobGain->setStep(1.f);
-    //fKnobGain->setDefault(0.0f);
+    fKnobGain->setDefault(0.0f);
     fKnobGain->setRotationAngle(240);
     fKnobGain->setCallback(this);
 
@@ -86,16 +92,9 @@ ZamTubeUI::ZamTubeUI()
     fSliderNotch->setStep(1.f);
     fSliderNotch->setValue(0.f);
     fSliderNotch->setCallback(this);
-}
 
-ZamTubeUI::~ZamTubeUI()
-{
-    delete fKnobTube;
-    delete fKnobBass;
-    delete fKnobMids;
-    delete fKnobTreb;
-    delete fKnobGain;
-    delete fSliderNotch;
+    // set default values
+    d_programChanged(0);
 }
 
 // -----------------------------------------------------------------------

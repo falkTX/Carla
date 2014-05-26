@@ -1,6 +1,6 @@
 /*
  * ZamSynth polyphonic synthesiser
- * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com> 
+ * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,50 +20,47 @@
 
 #include "DistrhoUI.hpp"
 
-#include "Geometry.hpp"
-#include "ImageKnob.hpp"
 #include "ImageButton.hpp"
+#include "ImageKnob.hpp"
 #include "ImageToggle.hpp"
 
 #include "ZamSynthArtwork.hpp"
-#include "ZamSynthPlugin.hpp"
-
-using DGL::Image;
-using DGL::ImageKnob;
-using DGL::ImageButton;
-using DGL::ImageToggle;
 
 #define AREAHEIGHT 250
+
+using DGL::Image;
+using DGL::ImageButton;
+using DGL::ImageKnob;
+using DGL::ImageToggle;
 
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
 class ZamSynthUI : public UI,
-                  public ImageKnob::Callback,
-                  public ImageButton::Callback,
-                  public ImageToggle::Callback
+                   public ImageButton::Callback,
+                   public ImageKnob::Callback,
+                   public ImageToggle::Callback
 {
 public:
     ZamSynthUI();
-    ~ZamSynthUI() override;
 
 protected:
     // -------------------------------------------------------------------
     // Information
 
-    unsigned int d_getWidth() const noexcept override
+    uint d_getWidth() const noexcept override
     {
         return ZamSynthArtwork::zamsynthWidth;
     }
 
-    unsigned int d_getHeight() const noexcept override
+    uint d_getHeight() const noexcept override
     {
         return ZamSynthArtwork::zamsynthHeight;
     }
 
     void gaussiansmooth(float* smoothed, float* xs, float* ys, int n, int radius);
-    
+
     // -------------------------------------------------------------------
     // DSP Callbacks
 
@@ -82,15 +79,14 @@ protected:
     void imageToggleClicked(ImageToggle* toggle, int) override;
 
     void onDisplay() override;
-    bool onMouse(int, bool, int, int) override;
-    bool onMotion(int, int) override;
+    bool onMouse(const MouseEvent&) override;
+    bool onMotion(const MotionEvent&) override;
 
 private:
     Image fImgBackground;
-    ImageKnob* fKnobGain;
-    ImageKnob* fKnobSpeed;
-    ImageButton* fButtonSmooth;
-    ImageToggle* fToggleGraph;
+    ScopedPointer<ImageKnob> fKnobGain, fKnobSpeed;
+    ScopedPointer<ImageButton> fButtonSmooth;
+    ScopedPointer<ImageToggle> fToggleGraph;
     float wave_y[AREAHEIGHT];
     float env_y[AREAHEIGHT];
     bool fGraph;

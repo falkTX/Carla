@@ -26,13 +26,6 @@ ZamEQ2Plugin::ZamEQ2Plugin()
 {
     // set default values
     d_setProgram(0);
-
-    // reset
-    d_deactivate();
-}
-
-ZamEQ2Plugin::~ZamEQ2Plugin()
-{
 }
 
 // -----------------------------------------------------------------------
@@ -291,12 +284,6 @@ void ZamEQ2Plugin::d_activate()
         }
 }
 
-void ZamEQ2Plugin::d_deactivate()
-{
-    // all values to zero
-}
-
-
 void ZamEQ2Plugin::lowshelf(int i, int ch, float srate, float fc, float g)
 {
 	float k, v0;
@@ -307,7 +294,7 @@ void ZamEQ2Plugin::lowshelf(int i, int ch, float srate, float fc, float g)
 	if (g < 0.f) {
 		// LF cut
 		float denom = v0 + sqrt(2. * v0)*k + k*k;
-		b0[ch][i] = v0 * (1. + sqrt(2.)*k + k*k) / denom; 
+		b0[ch][i] = v0 * (1. + sqrt(2.)*k + k*k) / denom;
 		b1[ch][i] = 2. * v0*(k*k - 1.) / denom;
 		b2[ch][i] = v0 * (1. - sqrt(2.)*k + k*k) / denom;
 		a1[ch][i] = 2. * (k*k - v0) / denom;
@@ -369,7 +356,7 @@ void ZamEQ2Plugin::peq(int i, int ch, float srate, float fc, float g, float bw)
 		// boost
 		float denom = 1. + k/q + k*k;
 		b0[ch][i] = (1. + k*v0/q + k*k) / denom;
-		b1[ch][i] = 2. * (k*k - 1.) / denom; 
+		b1[ch][i] = 2. * (k*k - 1.) / denom;
 		b2[ch][i] = (1. - k*v0/q + k*k) / denom;
 		a1[ch][i] = b1[ch][i];
 		a2[ch][i] = (1. - k/q + k*k) / denom;
@@ -380,7 +367,7 @@ float ZamEQ2Plugin::run_filter(int i, int ch, double in)
 {
 	double out;
 	in = sanitize_denormal(in);
-	out = in * b0[ch][i] 	+ x1[ch][i] * b1[ch][i] 
+	out = in * b0[ch][i] 	+ x1[ch][i] * b1[ch][i]
 				+ x2[ch][i] * b2[ch][i]
 				- y1[ch][i] * a1[ch][i]
 				- y2[ch][i] * a2[ch][i] + 1e-20f;
@@ -393,7 +380,7 @@ float ZamEQ2Plugin::run_filter(int i, int ch, double in)
 	return (float) out;
 }
 
-void ZamEQ2Plugin::d_run(float** inputs, float** outputs, uint32_t frames)
+void ZamEQ2Plugin::d_run(const float** inputs, float** outputs, uint32_t frames)
 {
 	float srate = d_getSampleRate();
 

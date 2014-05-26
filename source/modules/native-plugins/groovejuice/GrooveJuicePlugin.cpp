@@ -508,7 +508,7 @@ void GrooveJuicePlugin::d_deactivate()
     // all values to zero
 }
 
-void GrooveJuicePlugin::d_run(float**, float** outputs, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
+void GrooveJuicePlugin::d_run(const float**, float** outputs, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
 {
     float out1, out2, tX, tY;
         

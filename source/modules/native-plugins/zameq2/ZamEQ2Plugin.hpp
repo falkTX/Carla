@@ -1,5 +1,5 @@
 /*
- * ZamEQ2 2 band parametric equaliser 
+ * ZamEQ2 2 band parametric equaliser
  * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -47,7 +47,6 @@ public:
     };
 
     ZamEQ2Plugin();
-    ~ZamEQ2Plugin() override;
 
 protected:
     // -------------------------------------------------------------------
@@ -117,8 +116,7 @@ protected:
 	}
 
     void d_activate() override;
-    void d_deactivate() override;
-    void d_run(float** inputs, float** outputs, uint32_t frames) override;
+    void d_run(const float** inputs, float** outputs, uint32_t frames) override;
 
     void peq(int i, int ch, float srate, float fc, float g, float bw);
     void lowshelf(int i, int ch, float srate, float fc, float g);

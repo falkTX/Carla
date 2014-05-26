@@ -1,7 +1,7 @@
 /*
  * DISTRHO Nekobi Plugin, based on Nekobee by Sean Bolton and others.
  * Copyright (C) 2004 Sean Bolton and others
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -13,7 +13,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
+ * For a full copy of the GNU General Public License see the LICENSE file.
  */
 
 #ifndef DISTRHO_PLUGIN_NEKOBI_HPP_INCLUDED
@@ -22,7 +22,7 @@
 #include "DistrhoPlugin.hpp"
 
 extern "C" {
-#include "nekobee-src/nekobee_types.h"
+#include "nekobee-src/nekobee_synth.h"
 }
 
 START_NAMESPACE_DISTRHO
@@ -93,7 +93,7 @@ protected:
 
     void d_activate() override;
     void d_deactivate() override;
-    void d_run(float** inputs, float** outputs, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount) override;
+    void d_run(const float**, float** outputs, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount) override;
 
     // -------------------------------------------------------------------
 
@@ -109,7 +109,9 @@ private:
         float volume;
     } fParams;
 
-    nekobee_synth_t* fSynth;
+    nekobee_synth_t fSynth;
+
+    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DistrhoPluginNekobi)
 };
 
 // -----------------------------------------------------------------------

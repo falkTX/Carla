@@ -26,13 +26,6 @@ ZamSynthPlugin::ZamSynthPlugin()
 {
     // set default values
     d_setProgram(0);
-
-    // reset
-    d_deactivate();
-}
-
-ZamSynthPlugin::~ZamSynthPlugin()
-{
 }
 
 // -----------------------------------------------------------------------
@@ -137,7 +130,7 @@ void ZamSynthPlugin::d_setProgram(uint32_t index)
 	voice[i].vi = 0.f;
         voice[i].rampstate = 0.f;
     }
-    
+
     curvoice = voice; //ptr to first voice
 
     for (int i = 0; i < AREAHEIGHT; i++) {
@@ -193,12 +186,6 @@ void ZamSynthPlugin::d_activate()
 {
 }
 
-void ZamSynthPlugin::d_deactivate()
-{
-    // all values to zero
-}
-
-
 float ZamSynthPlugin::wavetable(float in)
 {
 	int index = (int) ((in / (2.0 * M_PI)) * (AREAHEIGHT-1.0));
@@ -206,14 +193,14 @@ float ZamSynthPlugin::wavetable(float in)
 	//return (sin(in));
 }
 
-void ZamSynthPlugin::d_run(float**, float** outputs, uint32_t frames,
+void ZamSynthPlugin::d_run(const float**, float** outputs, uint32_t frames,
 				const MidiEvent* midievent, uint32_t midicount)
 {
 	float srate = d_getSampleRate();
 	int slowfactor = (int) srate / (speed * 2400); // 1-20 ~ 20-1
 	uint32_t i;
 	float RD_0;
-	
+
 	for (i = 0; i < midicount; i++) {
 		int type = midievent[i].buf[0] & 0xF0;
 		int chan = midievent[i].buf[0] & 0x0F;
@@ -250,7 +237,7 @@ void ZamSynthPlugin::d_run(float**, float** outputs, uint32_t frames,
 			}
 		}
 	}
-	
+
 	float power;
 	bool signal;
 	float wave;

@@ -1,6 +1,6 @@
 /*
  * DISTRHO Nekobi Plugin, based on Nekobee by Sean Bolton and others.
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
+ * For a full copy of the GNU General Public License see the LICENSE file.
  */
 
 #ifndef DISTRHO_UI_NEKOBI_HPP_INCLUDED
@@ -26,7 +26,6 @@
 #include "ImageSlider.hpp"
 
 #include "DistrhoArtworkNekobi.hpp"
-#include "DistrhoPluginNekobi.hpp"
 #include "NekoWidget.hpp"
 
 using DGL::ImageAboutWindow;
@@ -45,18 +44,17 @@ class DistrhoUINekobi : public UI,
 {
 public:
     DistrhoUINekobi();
-    ~DistrhoUINekobi() override;
 
 protected:
     // -------------------------------------------------------------------
     // Information
 
-    unsigned int d_getWidth() const noexcept override
+    uint d_getWidth() const noexcept override
     {
         return DistrhoArtworkNekobi::backgroundWidth;
     }
 
-    unsigned int d_getHeight() const noexcept override
+    uint d_getHeight() const noexcept override
     {
         return DistrhoArtworkNekobi::backgroundHeight;
     }
@@ -85,20 +83,16 @@ protected:
     void onDisplay() override;
 
 private:
-    Image      fImgBackground;
-    NekoWidget fNeko;
-
-    ImageKnob* fKnobTuning;
-    ImageKnob* fKnobCutoff;
-    ImageKnob* fKnobResonance;
-    ImageKnob* fKnobEnvMod;
-    ImageKnob* fKnobDecay;
-    ImageKnob* fKnobAccent;
-    ImageKnob* fKnobVolume;
-
-    ImageButton* fButtonAbout;
-    ImageSlider* fSliderWaveform;
+    Image            fImgBackground;
     ImageAboutWindow fAboutWindow;
+    NekoWidget       fNeko;
+
+    ScopedPointer<ImageButton> fButtonAbout;
+    ScopedPointer<ImageSlider> fSliderWaveform;
+    ScopedPointer<ImageKnob> fKnobTuning, fKnobCutoff, fKnobResonance;
+    ScopedPointer<ImageKnob> fKnobEnvMod, fKnobDecay, fKnobAccent, fKnobVolume;
+
+    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DistrhoUINekobi)
 };
 
 // -----------------------------------------------------------------------

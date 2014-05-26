@@ -1,5 +1,5 @@
 /*
- * ZamCompX2 Stereo compressor 
+ * ZamCompX2 Stereo compressor
  * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -15,6 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "ZamCompX2Plugin.hpp"
 #include "ZamCompX2UI.hpp"
 
 using DGL::Point;
@@ -35,81 +36,77 @@ ZamCompX2UI::ZamCompX2UI()
 
     // led values
     fLedRedValue = 0.0f;
-    fLedYellowValue = 0.0f; 
+    fLedYellowValue = 0.0f;
 
     // knob
     Image knobImage(ZamCompX2Artwork::knobData, ZamCompX2Artwork::knobWidth, ZamCompX2Artwork::knobHeight);
 
-    // knob 
+    // knob
     fKnobAttack = new ImageKnob(this, knobImage);
-    fKnobAttack->setPos(24, 45);
+    fKnobAttack->setAbsolutePos(24, 45);
+    fKnobAttack->setId(ZamCompX2Plugin::paramAttack);
     fKnobAttack->setRange(0.1f, 200.0f);
     fKnobAttack->setStep(0.1f);
-    //fKnobAttack->setLogScale(true);
-    //fKnobAttack->setDefault(10.0f);
+    fKnobAttack->setUsingLogScale(true);
+    fKnobAttack->setDefault(10.0f);
     fKnobAttack->setRotationAngle(240);
     fKnobAttack->setCallback(this);
 
     fKnobRelease = new ImageKnob(this, knobImage);
-    fKnobRelease->setPos(108, 45);
+    fKnobRelease->setAbsolutePos(108, 45);
+    fKnobRelease->setId(ZamCompX2Plugin::paramRelease);
     fKnobRelease->setRange(50.0f, 500.0f);
     fKnobRelease->setStep(1.0f);
-    //fKnobRelease->setDefault(80.0f);
+    fKnobRelease->setDefault(80.0f);
     fKnobRelease->setRotationAngle(240);
     fKnobRelease->setCallback(this);
 
     fKnobThresh = new ImageKnob(this, knobImage);
-    fKnobThresh->setPos(191.5, 45);
+    fKnobThresh->setAbsolutePos(191.5, 45);
+    fKnobThresh->setId(ZamCompX2Plugin::paramThresh);
     fKnobThresh->setRange(-60.0f, 0.0f);
     fKnobThresh->setStep(1.0f);
-    //fKnobThresh->setDefault(0.0f);
+    fKnobThresh->setDefault(0.0f);
     fKnobThresh->setRotationAngle(240);
     fKnobThresh->setCallback(this);
 
     fKnobRatio = new ImageKnob(this, knobImage);
-    fKnobRatio->setPos(270, 45);
+    fKnobRatio->setAbsolutePos(270, 45);
+    fKnobRatio->setId(ZamCompX2Plugin::paramRatio);
     fKnobRatio->setRange(1.0f, 20.0f);
     fKnobRatio->setStep(0.1f);
-    //fKnobRatio->setDefault(4.0f);
+    fKnobRatio->setDefault(4.0f);
     fKnobRatio->setRotationAngle(240);
     fKnobRatio->setCallback(this);
 
     fKnobKnee = new ImageKnob(this, knobImage);
-    fKnobKnee->setPos(348.5, 45);
+    fKnobKnee->setAbsolutePos(348.5, 45);
+    fKnobKnee->setId(ZamCompX2Plugin::paramKnee);
     fKnobKnee->setRange(0.0f, 8.0f);
     fKnobKnee->setStep(0.1f);
-    //fKnobKnee->setDefault(0.0f);
+    fKnobKnee->setDefault(0.0f);
     fKnobKnee->setRotationAngle(240);
     fKnobKnee->setCallback(this);
 
     fKnobMakeup = new ImageKnob(this, knobImage);
-    fKnobMakeup->setPos(427.3, 45);
+    fKnobMakeup->setAbsolutePos(427.3, 45);
+    fKnobMakeup->setId(ZamCompX2Plugin::paramMakeup);
     fKnobMakeup->setRange(-30.0f, 30.0f);
     fKnobMakeup->setStep(1.0f);
-    //fKnobMakeup->setDefault(0.0f);
+    fKnobMakeup->setDefault(0.0f);
     fKnobMakeup->setRotationAngle(240);
     fKnobMakeup->setCallback(this);
 
     Image toggleonImage(ZamCompX2Artwork::toggleonData, ZamCompX2Artwork::toggleonWidth, ZamCompX2Artwork::toggleonHeight);
     Image toggleoffImage(ZamCompX2Artwork::toggleoffData, ZamCompX2Artwork::toggleoffWidth, ZamCompX2Artwork::toggleoffHeight);
 
-    Point<int> togglePosStart(652,72);
-
-    fToggleStereo = new ImageToggle(this, toggleoffImage, toggleoffImage, toggleonImage);
-    fToggleStereo->setPos(togglePosStart);
+    fToggleStereo = new ImageToggle(this, toggleoffImage, toggleonImage);
+    fToggleStereo->setAbsolutePos(652, 72);
+    fToggleStereo->setId(ZamCompX2Plugin::paramStereo);
     fToggleStereo->setCallback(this);
 
-}
-
-ZamCompX2UI::~ZamCompX2UI()
-{
-    delete fKnobAttack;
-    delete fKnobRelease;
-    delete fKnobThresh;
-    delete fKnobRatio;
-    delete fKnobKnee;
-    delete fKnobMakeup;
-    delete fToggleStereo;
+    // set default values
+    d_programChanged(0);
 }
 
 // -----------------------------------------------------------------------
@@ -152,8 +149,8 @@ void ZamCompX2UI::d_parameterChanged(uint32_t index, float value)
         }
         break;
     case ZamCompX2Plugin::paramStereo:
-        //fToggleStereo->setValue((int)value);
-	break;
+        fToggleStereo->setValue((int)value);
+        break;
     }
 }
 
@@ -163,15 +160,13 @@ void ZamCompX2UI::d_programChanged(uint32_t index)
         return;
 
     // Default values
-    /*
     fKnobAttack->setValue(10.0f);
     fKnobRelease->setValue(80.0f);
     fKnobThresh->setValue(0.0f);
     fKnobRatio->setValue(4.0f);
     fKnobKnee->setValue(0.0f);
     fKnobMakeup->setValue(0.0f);
-    */
-    //fToggleStereo->setValue(1.f);
+    fToggleStereo->setValue(1.0f);
 }
 
 // -----------------------------------------------------------------------
@@ -179,58 +174,24 @@ void ZamCompX2UI::d_programChanged(uint32_t index)
 
 void ZamCompX2UI::imageKnobDragStarted(ImageKnob* knob)
 {
-    if (knob == fKnobAttack)
-        d_editParameter(ZamCompX2Plugin::paramAttack, true);
-    else if (knob == fKnobRelease)
-        d_editParameter(ZamCompX2Plugin::paramRelease, true);
-    else if (knob == fKnobThresh)
-        d_editParameter(ZamCompX2Plugin::paramThresh, true);
-    else if (knob == fKnobRatio)
-        d_editParameter(ZamCompX2Plugin::paramRatio, true);
-    else if (knob == fKnobKnee)
-        d_editParameter(ZamCompX2Plugin::paramKnee, true);
-    else if (knob == fKnobMakeup)
-        d_editParameter(ZamCompX2Plugin::paramMakeup, true);
+    d_editParameter(knob->getId(), true);
 }
 
 void ZamCompX2UI::imageKnobDragFinished(ImageKnob* knob)
 {
-    if (knob == fKnobAttack)
-        d_editParameter(ZamCompX2Plugin::paramAttack, false);
-    else if (knob == fKnobRelease)
-        d_editParameter(ZamCompX2Plugin::paramRelease, false);
-    else if (knob == fKnobThresh)
-        d_editParameter(ZamCompX2Plugin::paramThresh, false);
-    else if (knob == fKnobRatio)
-        d_editParameter(ZamCompX2Plugin::paramRatio, false);
-    else if (knob == fKnobKnee)
-        d_editParameter(ZamCompX2Plugin::paramKnee, false);
-    else if (knob == fKnobMakeup)
-        d_editParameter(ZamCompX2Plugin::paramMakeup, false);
+    d_editParameter(knob->getId(), false);
 }
 
 void ZamCompX2UI::imageKnobValueChanged(ImageKnob* knob, float value)
 {
-    if (knob == fKnobAttack)
-        d_setParameterValue(ZamCompX2Plugin::paramAttack, value);
-    else if (knob == fKnobRelease)
-        d_setParameterValue(ZamCompX2Plugin::paramRelease, value);
-    else if (knob == fKnobThresh)
-        d_setParameterValue(ZamCompX2Plugin::paramThresh, value);
-    else if (knob == fKnobRatio)
-        d_setParameterValue(ZamCompX2Plugin::paramRatio, value);
-    else if (knob == fKnobKnee)
-        d_setParameterValue(ZamCompX2Plugin::paramKnee, value);
-    else if (knob == fKnobMakeup)
-        d_setParameterValue(ZamCompX2Plugin::paramMakeup, value);
+    d_setParameterValue(knob->getId(), value);
 }
 
-void ZamCompX2UI::imageToggleClicked(ImageToggle *toggle, int)
+void ZamCompX2UI::imageToggleClicked(ImageToggle* imageToggle, int)
 {
-    int flip = !toggle->getValue();
-    if (toggle == fToggleStereo) {
+    int flip = !imageToggle->getValue();
+    if (imageToggle == fToggleStereo)
         d_setParameterValue(ZamCompX2Plugin::paramStereo, flip);
-    }
 }
 
 void ZamCompX2UI::onDisplay()
@@ -274,7 +235,7 @@ void ZamCompX2UI::onDisplay()
 	else numRedLeds = 0;
 
     for (int i=numRedLeds; i>0; --i)
-        fLedRedImg.draw(sLedInitialX + (12 - i)*sLedSpacing, sRedLedStaticY);
+        fLedRedImg.drawAt(sLedInitialX + (12 - i)*sLedSpacing, sRedLedStaticY);
 
 	if (fLedYellowValue >= 20.f)
 		numYellowLeds = 19;
@@ -318,12 +279,12 @@ void ZamCompX2UI::onDisplay()
 
 	if (numYellowLeds > 12) {
 		for (int i=12; i<numYellowLeds; ++i)
-			fLedRedImg.draw(sLedInitialX + i*sLedSpacing, sYellowLedStaticY);
+			fLedRedImg.drawAt(sLedInitialX + i*sLedSpacing, sYellowLedStaticY);
 		for (int i=0; i<12; ++i)
-			fLedYellowImg.draw(sLedInitialX + i*sLedSpacing, sYellowLedStaticY);
+			fLedYellowImg.drawAt(sLedInitialX + i*sLedSpacing, sYellowLedStaticY);
 	} else {
 		for (int i=0; i<numYellowLeds; ++i)
-			fLedYellowImg.draw(sLedInitialX + i*sLedSpacing, sYellowLedStaticY);
+			fLedYellowImg.drawAt(sLedInitialX + i*sLedSpacing, sYellowLedStaticY);
 	}
 }
 

@@ -1,6 +1,6 @@
 /*
- * ZamCompX2 stereo compressor 
- * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com> 
+ * ZamCompX2 stereo compressor
+ * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -24,7 +24,6 @@
 #include "ImageToggle.hpp"
 
 #include "ZamCompX2Artwork.hpp"
-#include "ZamCompX2Plugin.hpp"
 
 using DGL::Image;
 using DGL::ImageKnob;
@@ -35,23 +34,22 @@ START_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 
 class ZamCompX2UI : public UI,
-                  public ImageKnob::Callback,
-                  public ImageToggle::Callback
+                    public ImageKnob::Callback,
+                    public ImageToggle::Callback
 {
 public:
     ZamCompX2UI();
-    ~ZamCompX2UI() override;
 
 protected:
     // -------------------------------------------------------------------
     // Information
 
-    unsigned int d_getWidth() const noexcept override
+    uint d_getWidth() const noexcept override
     {
         return ZamCompX2Artwork::zamcompx2Width;
     }
 
-    unsigned int d_getHeight() const noexcept override
+    uint d_getHeight() const noexcept override
     {
         return ZamCompX2Artwork::zamcompx2Height;
     }
@@ -68,21 +66,17 @@ protected:
     void imageKnobDragStarted(ImageKnob* knob) override;
     void imageKnobDragFinished(ImageKnob* knob) override;
     void imageKnobValueChanged(ImageKnob* knob, float value) override;
-    void imageToggleClicked(ImageToggle *toggle, int button) override;
+    void imageToggleClicked(ImageToggle* imageToggle, int button) override;
 
     void onDisplay() override;
 
 private:
     Image fImgBackground;
-    ImageKnob* fKnobAttack;
-    ImageKnob* fKnobRelease;
-    ImageKnob* fKnobThresh;
-    ImageKnob* fKnobRatio;
-    ImageKnob* fKnobKnee;
-    ImageKnob* fKnobMakeup;
+    ScopedPointer<ImageKnob> fKnobAttack, fKnobRelease, fKnobThresh;
+    ScopedPointer<ImageKnob> fKnobRatio, fKnobKnee, fKnobMakeup;
 
-    Image fImgToggleSlider;
-    ImageToggle* fToggleStereo;
+    Image fImgSwitchSlider;
+    ScopedPointer<ImageToggle> fToggleStereo;
 
     Image fLedRedImg;
     float fLedRedValue;

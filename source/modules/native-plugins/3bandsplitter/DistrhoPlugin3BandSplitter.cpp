@@ -1,7 +1,7 @@
 /*
  * DISTRHO 3BandSplitter Plugin, based on 3BandSplitter by Michael Gruhn
  * Copyright (C) 2007 Michael Gruhn <michael-gruhn@web.de>
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
- * For a full copy of the license see the doc/LGPL.txt file.
+ * For a full copy of the license see the LICENSE file.
  */
 
 #include "DistrhoPlugin3BandSplitter.hpp"
@@ -35,10 +35,6 @@ DistrhoPlugin3BandSplitter::DistrhoPlugin3BandSplitter()
 
     // reset
     d_deactivate();
-}
-
-DistrhoPlugin3BandSplitter::~DistrhoPlugin3BandSplitter()
-{
 }
 
 // -----------------------------------------------------------------------
@@ -151,30 +147,30 @@ void DistrhoPlugin3BandSplitter::d_setParameterValue(uint32_t index, float value
     {
     case paramLow:
         fLow   = value;
-        lowVol = std::exp( (fLow/48.0f) * 48 / kAMP_DB);
+        lowVol = std::exp( (fLow/48.0f) * 48.0f / kAMP_DB);
         break;
     case paramMid:
         fMid   = value;
-        midVol = std::exp( (fMid/48.0f) * 48 / kAMP_DB);
+        midVol = std::exp( (fMid/48.0f) * 48.0f / kAMP_DB);
         break;
     case paramHigh:
         fHigh   = value;
-        highVol = std::exp( (fHigh/48.0f) * 48 / kAMP_DB);
+        highVol = std::exp( (fHigh/48.0f) * 48.0f / kAMP_DB);
         break;
     case paramMaster:
         fMaster = value;
-        outVol  = std::exp( (fMaster/48.0f) * 48 / kAMP_DB);
+        outVol  = std::exp( (fMaster/48.0f) * 48.0f / kAMP_DB);
         break;
     case paramLowMidFreq:
         fLowMidFreq = std::fmin(value, fMidHighFreq);
-        freqLP = fLowMidFreq; //fLowMidFreq * (fLowMidFreq / 24000.0f) * (fLowMidFreq / 24000.0f);
+        freqLP = fLowMidFreq;
         xLP  = std::exp(-2.0f * kPI * freqLP / (float)d_getSampleRate());
         a0LP = 1.0f - xLP;
         b1LP = -xLP;
         break;
     case paramMidHighFreq:
         fMidHighFreq = std::fmax(value, fLowMidFreq);
-        freqHP = fMidHighFreq; //fMidHighFreq * (fMidHighFreq / 24000.0f) * (fMidHighFreq / 24000.0f);
+        freqHP = fMidHighFreq;
         xHP  = std::exp(-2.0f * kPI * freqHP / (float)d_getSampleRate());
         a0HP = 1.0f - xHP;
         b1HP = -xHP;
@@ -209,11 +205,13 @@ void DistrhoPlugin3BandSplitter::d_setProgram(uint32_t index)
 
 void DistrhoPlugin3BandSplitter::d_activate()
 {
-    xLP  = std::exp(-2.0f * kPI * freqLP / (float)d_getSampleRate());
+    const float sr = (float)d_getSampleRate();
+
+    xLP  = std::exp(-2.0f * kPI * freqLP / sr);
     a0LP = 1.0f - xLP;
     b1LP = -xLP;
 
-    xHP  = std::exp(-2.0f * kPI * freqHP / (float)d_getSampleRate());
+    xHP  = std::exp(-2.0f * kPI * freqHP / sr);
     a0HP = 1.0f - xHP;
     b1HP = -xHP;
 }
@@ -224,16 +222,16 @@ void DistrhoPlugin3BandSplitter::d_deactivate()
     tmp1LP = tmp2LP = tmp1HP = tmp2HP = 0.0f;
 }
 
-void DistrhoPlugin3BandSplitter::d_run(float** inputs, float** outputs, uint32_t frames)
+void DistrhoPlugin3BandSplitter::d_run(const float** inputs, float** outputs, uint32_t frames)
 {
-    float* in1  = inputs[0];
-    float* in2  = inputs[1];
-    float* out1 = outputs[0];
-    float* out2 = outputs[1];
-    float* out3 = outputs[2];
-    float* out4 = outputs[3];
-    float* out5 = outputs[4];
-    float* out6 = outputs[5];
+    const float* in1  = inputs[0];
+    const float* in2  = inputs[1];
+    float*       out1 = outputs[0];
+    float*       out2 = outputs[1];
+    float*       out3 = outputs[2];
+    float*       out4 = outputs[3];
+    float*       out5 = outputs[4];
+    float*       out6 = outputs[5];
 
     for (uint32_t i=0; i < frames; ++i)
     {

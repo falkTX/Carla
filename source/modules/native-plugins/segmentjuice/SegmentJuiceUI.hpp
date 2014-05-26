@@ -45,7 +45,6 @@ class SegmentJuiceUI : public UI,
 {
 public:
     SegmentJuiceUI();
-    ~SegmentJuiceUI() override;
 
     void updateSynth();
 
@@ -53,12 +52,12 @@ protected:
     // -------------------------------------------------------------------
     // Information
 
-    unsigned int d_getWidth() const noexcept override
+    uint d_getWidth() const noexcept override
     {
         return SegmentJuiceArtwork::backgroundWidth;
     }
 
-    unsigned int d_getHeight() const noexcept override
+    uint d_getHeight() const noexcept override
     {
         return SegmentJuiceArtwork::backgroundHeight;
     }
@@ -83,43 +82,13 @@ private:
     Image fImgBackground;
     ImageAboutWindow fAboutWindow;
 
-    ImageKnob* fKnobWave1;
-    ImageKnob* fKnobWave2;
-    ImageKnob* fKnobWave3;
-    ImageKnob* fKnobWave4;
-    ImageKnob* fKnobWave5;
-    ImageKnob* fKnobWave6;
-
-    ImageKnob* fKnobFM1;
-    ImageKnob* fKnobFM2;
-    ImageKnob* fKnobFM3;
-    ImageKnob* fKnobFM4;
-    ImageKnob* fKnobFM5;
-    ImageKnob* fKnobFM6;
-
-    ImageKnob* fKnobPan1;
-    ImageKnob* fKnobPan2;
-    ImageKnob* fKnobPan3;
-    ImageKnob* fKnobPan4;
-    ImageKnob* fKnobPan5;
-    ImageKnob* fKnobPan6;
-
-    ImageKnob* fKnobAmp1;
-    ImageKnob* fKnobAmp2;
-    ImageKnob* fKnobAmp3;
-    ImageKnob* fKnobAmp4;
-    ImageKnob* fKnobAmp5;
-    ImageKnob* fKnobAmp6;
-
-    ImageKnob* fKnobAttack;
-    ImageKnob* fKnobDecay;
-    ImageKnob* fKnobSustain;
-    ImageKnob* fKnobRelease;
-    ImageKnob* fKnobStereo;
-    ImageKnob* fKnobTune;
-    ImageKnob* fKnobVolume;
-    ImageKnob* fKnobGlide;
-    ImageButton* fButtonAbout;
+    ScopedPointer<ImageButton> fButtonAbout;
+    ScopedPointer<ImageKnob> fKnobWave1, fKnobWave2, fKnobWave3, fKnobWave4, fKnobWave5, fKnobWave6;
+    ScopedPointer<ImageKnob> fKnobFM1, fKnobFM2, fKnobFM3, fKnobFM4, fKnobFM5, fKnobFM6;
+    ScopedPointer<ImageKnob> fKnobPan1, fKnobPan2, fKnobPan3, fKnobPan4, fKnobPan5, fKnobPan6;
+    ScopedPointer<ImageKnob> fKnobAmp1, fKnobAmp2, fKnobAmp3, fKnobAmp4, fKnobAmp5, fKnobAmp6;
+    ScopedPointer<ImageKnob> fKnobAttack, fKnobDecay, fKnobSustain, fKnobRelease;
+    ScopedPointer<ImageKnob> fKnobStereo, fKnobTune, fKnobVolume, fKnobGlide;
 
     CSynth synthL, synthR;
 };

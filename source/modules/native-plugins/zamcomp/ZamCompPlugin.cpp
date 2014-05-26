@@ -26,13 +26,6 @@ ZamCompPlugin::ZamCompPlugin()
 {
     // set default values
     d_setProgram(0);
-
-    // reset
-    d_deactivate();
-}
-
-ZamCompPlugin::~ZamCompPlugin()
-{
 }
 
 // -----------------------------------------------------------------------
@@ -204,10 +197,6 @@ void ZamCompPlugin::d_setProgram(uint32_t index)
     ratio = 4.0f;
     thresdb = 0.0f;
     makeup = 0.0f;
-    gainr = 0.0f;
-    outlevel = -45.f;
-
-    /* Default variable values */
 
     /* reset filter values */
     d_activate();
@@ -218,14 +207,12 @@ void ZamCompPlugin::d_setProgram(uint32_t index)
 
 void ZamCompPlugin::d_activate()
 {
+    gainr = 0.0f;
+    outlevel = -45.f;
+    old_yl = old_y1 = 0.0f;
 }
 
-void ZamCompPlugin::d_deactivate()
-{
-    // all values to zero
-}
-
-void ZamCompPlugin::d_run(float** inputs, float** outputs, uint32_t frames)
+void ZamCompPlugin::d_run(const float** inputs, float** outputs, uint32_t frames)
 {
 	float srate = d_getSampleRate();
         float width=(knee-0.99f)*6.f;
@@ -261,7 +248,7 @@ void ZamCompPlugin::d_run(float** inputs, float** outputs, uint32_t frames)
                 yl = attack_coeff * old_yl+(1.f-attack_coeff)*y1;
                 y1 = sanitize_denormal(y1);
                 yl = sanitize_denormal(yl);
-		
+
 		cdb = -yl;
                 gain = from_dB(cdb);
 
@@ -269,7 +256,7 @@ void ZamCompPlugin::d_run(float** inputs, float** outputs, uint32_t frames)
 
                 outputs[0][i] = inputs[0][i];
                 outputs[0][i] *= gain * from_dB(makeup);
-		
+
 		max = (fabsf(outputs[0][i]) > max) ? fabsf(outputs[0][i]) : sanitize_denormal(max);
 
                 old_yl = yl;

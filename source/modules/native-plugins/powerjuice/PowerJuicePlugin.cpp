@@ -257,9 +257,9 @@ void PowerJuicePlugin::d_deactivate()
     // all values to zero
 }
 
-void PowerJuicePlugin::d_run(float** inputs, float** outputs, uint32_t frames)
+void PowerJuicePlugin::d_run(const float** inputs, float** outputs, uint32_t frames)
 {
-    float* in = inputs[0];
+    const float* in = inputs[0];
     float* out = outputs[0];
     float sum;
     float data;
@@ -271,7 +271,7 @@ void PowerJuicePlugin::d_run(float** inputs, float** outputs, uint32_t frames)
         sum = 0.0f;
         data = 0.0f;
         difference = 0;
-        sanitizeDenormal(in[i]);
+        //sanitizeDenormal(in[i]); // FIXME - you cannot modify inputs
 
         /*   compute last RMS   */
 

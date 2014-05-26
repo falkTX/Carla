@@ -1,7 +1,7 @@
 /*
  * DISTRHO PingPongPan Plugin, based on PingPongPan by Michael Gruhn
  * Copyright (C) 2007 Michael Gruhn <michael-gruhn@web.de>
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
- * For a full copy of the license see the doc/LGPL.txt file.
+ * For a full copy of the license see the LICENSE file.
  */
 
 #ifndef DISTRHO_PLUGIN_PINGPONGPAN_HPP_INCLUDED
@@ -35,7 +35,6 @@ public:
     };
 
     DistrhoPluginPingPongPan();
-    ~DistrhoPluginPingPongPan() override;
 
 protected:
     // -------------------------------------------------------------------
@@ -84,7 +83,7 @@ protected:
 
     void d_activate() override;
     void d_deactivate() override;
-    void d_run(float** inputs, float** outputs, uint32_t frames) override;
+    void d_run(const float** inputs, float** outputs, uint32_t frames) override;
 
     // -------------------------------------------------------------------
 
@@ -94,6 +93,8 @@ private:
     float waveSpeed;
 
     float pan, wavePos;
+
+    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DistrhoPluginPingPongPan)
 };
 
 // -----------------------------------------------------------------------

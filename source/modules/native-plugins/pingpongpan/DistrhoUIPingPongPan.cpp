@@ -1,6 +1,6 @@
 /*
  * DISTRHO PingPongPan Plugin, based on PingPongPan by Michael Gruhn
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -11,12 +11,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
- * For a full copy of the license see the doc/LGPL.txt file.
+ * For a full copy of the license see the LICENSE file.
  */
 
+#include "DistrhoPluginPingPongPan.hpp"
 #include "DistrhoUIPingPongPan.hpp"
-
-using DGL::Point;
 
 START_NAMESPACE_DISTRHO
 
@@ -36,18 +35,18 @@ DistrhoUIPingPongPan::DistrhoUIPingPongPan()
     Image knobImage(DistrhoArtworkPingPongPan::knobData, DistrhoArtworkPingPongPan::knobWidth, DistrhoArtworkPingPongPan::knobHeight);
 
     // knob Low-Mid
-    fKnobFreq = new ImageKnob(this, knobImage);
-    fKnobFreq->setPos(60, 58);
+    fKnobFreq = new ImageKnob(this, knobImage, ImageKnob::Vertical, DistrhoPluginPingPongPan::paramFreq);
+    fKnobFreq->setAbsolutePos(60, 58);
     fKnobFreq->setRange(0.0f, 100.0f);
-    fKnobFreq->setValue(50.0f);
+    fKnobFreq->setDefault(50.0f);
     fKnobFreq->setRotationAngle(270);
     fKnobFreq->setCallback(this);
 
     // knob Mid-High
-    fKnobWidth = new ImageKnob(this, knobImage);
-    fKnobWidth->setPos(182, 58);
+    fKnobWidth = new ImageKnob(this, knobImage, ImageKnob::Vertical, DistrhoPluginPingPongPan::paramWidth);
+    fKnobWidth->setAbsolutePos(182, 58);
     fKnobWidth->setRange(0.0f, 100.0f);
-    fKnobWidth->setValue(75.0f);
+    fKnobWidth->setDefault(75.0f);
     fKnobWidth->setRotationAngle(270);
     fKnobWidth->setCallback(this);
 
@@ -55,15 +54,11 @@ DistrhoUIPingPongPan::DistrhoUIPingPongPan()
     Image aboutImageNormal(DistrhoArtworkPingPongPan::aboutButtonNormalData, DistrhoArtworkPingPongPan::aboutButtonNormalWidth, DistrhoArtworkPingPongPan::aboutButtonNormalHeight);
     Image aboutImageHover(DistrhoArtworkPingPongPan::aboutButtonHoverData, DistrhoArtworkPingPongPan::aboutButtonHoverWidth, DistrhoArtworkPingPongPan::aboutButtonHoverHeight);
     fButtonAbout = new ImageButton(this, aboutImageNormal, aboutImageHover, aboutImageHover);
-    fButtonAbout->setPos(183, 8);
+    fButtonAbout->setAbsolutePos(183, 8);
     fButtonAbout->setCallback(this);
-}
 
-DistrhoUIPingPongPan::~DistrhoUIPingPongPan()
-{
-    delete fKnobFreq;
-    delete fKnobWidth;
-    delete fButtonAbout;
+    // set default values
+    d_programChanged(0);
 }
 
 // -----------------------------------------------------------------------
@@ -105,27 +100,17 @@ void DistrhoUIPingPongPan::imageButtonClicked(ImageButton* button, int)
 
 void DistrhoUIPingPongPan::imageKnobDragStarted(ImageKnob* knob)
 {
-    if (knob == fKnobFreq)
-        d_editParameter(DistrhoPluginPingPongPan::paramFreq, true);
-    else if (knob == fKnobWidth)
-        d_editParameter(DistrhoPluginPingPongPan::paramWidth, true);
+    d_editParameter(knob->getId(), true);
 }
 
 void DistrhoUIPingPongPan::imageKnobDragFinished(ImageKnob* knob)
 {
-    if (knob == fKnobFreq)
-        d_editParameter(DistrhoPluginPingPongPan::paramFreq, false);
-    else if (knob == fKnobWidth)
-        d_editParameter(DistrhoPluginPingPongPan::paramWidth, false);
+    d_editParameter(knob->getId(), false);
 }
-
 
 void DistrhoUIPingPongPan::imageKnobValueChanged(ImageKnob* knob, float value)
 {
-    if (knob == fKnobFreq)
-        d_setParameterValue(DistrhoPluginPingPongPan::paramFreq, value);
-    else if (knob == fKnobWidth)
-        d_setParameterValue(DistrhoPluginPingPongPan::paramWidth, value);
+    d_setParameterValue(knob->getId(), value);
 }
 
 void DistrhoUIPingPongPan::onDisplay()

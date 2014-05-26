@@ -1,6 +1,6 @@
 /*
  * ZamEQ2 2 band parametric equaliser
- * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com> 
+ * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -35,81 +35,81 @@ ZamEQ2UI::ZamEQ2UI()
     // knob
     Image knobImage(ZamEQ2Artwork::knobData, ZamEQ2Artwork::knobWidth, ZamEQ2Artwork::knobHeight);
 
-    // knob 
+    // knob
     fKnobGain1 = new ImageKnob(this, knobImage);
-    fKnobGain1->setPos(91, 172);
+    fKnobGain1->setAbsolutePos(91, 172);
     fKnobGain1->setRange(-50.f, 20.0f);
     fKnobGain1->setRotationAngle(240);
-    //fKnobGain1->setDefault(0.0f);
+    fKnobGain1->setDefault(0.0f);
     fKnobGain1->setCallback(this);
 
     fKnobQ1 = new ImageKnob(this, knobImage);
-    fKnobQ1->setPos(91, 122);
+    fKnobQ1->setAbsolutePos(91, 122);
     fKnobQ1->setRange(0.1f, 6.0f);
-    //fKnobQ1->setLogScale(true);
+    fKnobQ1->setUsingLogScale(true);
     fKnobQ1->setRotationAngle(240);
-    //fKnobQ1->setDefault(1.0f);
+    fKnobQ1->setDefault(1.0f);
     fKnobQ1->setCallback(this);
 
     fKnobFreq1 = new ImageKnob(this, knobImage);
-    fKnobFreq1->setPos(23, 144);
+    fKnobFreq1->setAbsolutePos(23, 144);
     fKnobFreq1->setRange(20.f, 14000.0f);
-    //fKnobFreq1->setLogScale(true);
+    fKnobFreq1->setUsingLogScale(true);
     fKnobFreq1->setRotationAngle(240);
-    //fKnobFreq1->setDefault(500.0f);
+    fKnobFreq1->setDefault(500.0f);
     fKnobFreq1->setCallback(this);
 
     fKnobGain2 = new ImageKnob(this, knobImage);
-    fKnobGain2->setPos(567, 172);
+    fKnobGain2->setAbsolutePos(567, 172);
     fKnobGain2->setRange(-50.f, 20.0f);
     fKnobGain2->setRotationAngle(240);
-    //fKnobGain2->setDefault(0.0f);
+    fKnobGain2->setDefault(0.0f);
     fKnobGain2->setCallback(this);
 
     fKnobQ2 = new ImageKnob(this, knobImage);
-    fKnobQ2->setPos(567, 122);
+    fKnobQ2->setAbsolutePos(567, 122);
     fKnobQ2->setRange(0.1f, 6.0f);
-    //fKnobQ2->setLogScale(true);
+    fKnobQ2->setUsingLogScale(true);
     fKnobQ2->setRotationAngle(240);
-    //fKnobQ2->setDefault(1.0f);
+    fKnobQ2->setDefault(1.0f);
     fKnobQ2->setCallback(this);
 
     fKnobFreq2 = new ImageKnob(this, knobImage);
-    fKnobFreq2->setPos(499, 144);
+    fKnobFreq2->setAbsolutePos(499, 144);
     fKnobFreq2->setRange(20.f, 14000.0f);
-    //fKnobFreq2->setLogScale(true);
+    fKnobFreq2->setUsingLogScale(true);
     fKnobFreq2->setRotationAngle(240);
-    //fKnobFreq2->setDefault(3000.0f);
+    fKnobFreq2->setDefault(3000.0f);
     fKnobFreq2->setCallback(this);
 
     fKnobGainL = new ImageKnob(this, knobImage);
-    fKnobGainL->setPos(91, 52);
+    fKnobGainL->setAbsolutePos(91, 52);
     fKnobGainL->setRange(-50.f, 20.0f);
     fKnobGainL->setRotationAngle(240);
-    //fKnobGainL->setDefault(0.0f);
+    fKnobGainL->setDefault(0.0f);
     fKnobGainL->setCallback(this);
 
     fKnobFreqL = new ImageKnob(this, knobImage);
-    fKnobFreqL->setPos(23, 23);
+    fKnobFreqL->setAbsolutePos(23, 23);
     fKnobFreqL->setRange(20.f, 14000.0f);
-    //fKnobFreqL->setLogScale(true);
+    fKnobFreqL->setUsingLogScale(true);
     fKnobFreqL->setRotationAngle(240);
-    //fKnobFreqL->setDefault(250.0f);
+    fKnobFreqL->setDefault(250.0f);
     fKnobFreqL->setCallback(this);
 
     fKnobGainH = new ImageKnob(this, knobImage);
-    fKnobGainH->setPos(567, 53);
+    fKnobGainH->setAbsolutePos(567, 53);
     fKnobGainH->setRange(-50.f, 20.0f);
     fKnobGainH->setRotationAngle(240);
-    //fKnobGainH->setDefault(0.0f);
+    fKnobGainH->setDefault(0.0f);
     fKnobGainH->setCallback(this);
 
     fKnobFreqH = new ImageKnob(this, knobImage);
-    fKnobFreqH->setPos(499, 24);
+    fKnobFreqH->setAbsolutePos(499, 24);
     fKnobFreqH->setRange(20.f, 14000.0f);
-    //fKnobFreqH->setLogScale(true);
+    fKnobFreqH->setUsingLogScale(true);
     fKnobFreqH->setRotationAngle(240);
-    //fKnobFreqH->setDefault(8000.0f);
+    fKnobFreqH->setDefault(8000.0f);
     fKnobFreqH->setCallback(this);
 
     Point<int> masterPosStart(211,204);
@@ -122,24 +122,12 @@ ZamEQ2UI::ZamEQ2UI()
     fSliderMaster->setValue(0.f);
     fSliderMaster->setStep(6.f);
     fSliderMaster->setCallback(this);
-    
+
     fCanvasArea.setPos(165,10);
     fCanvasArea.setSize(305,180);
-}
 
-ZamEQ2UI::~ZamEQ2UI()
-{
-    delete fKnobGain1;
-    delete fKnobQ1;
-    delete fKnobFreq1;
-    delete fKnobGain2;
-    delete fKnobQ2;
-    delete fKnobFreq2;
-    delete fKnobGainL;
-    delete fKnobFreqL;
-    delete fKnobGainH;
-    delete fKnobFreqH;
-    delete fSliderMaster;
+    // set default values
+    d_programChanged(0);
 }
 
 // -----------------------------------------------------------------------
@@ -309,7 +297,7 @@ void ZamEQ2UI::lowshelf(int i, int ch, float srate, float fc, float g)
 	if (g < 0.f) {
 		// LF cut
 		float denom = v0 + sqrt(2. * v0)*k + k*k;
-		b0[ch][i] = v0 * (1. + sqrt(2.)*k + k*k) / denom; 
+		b0[ch][i] = v0 * (1. + sqrt(2.)*k + k*k) / denom;
 		b1[ch][i] = 2. * v0*(k*k - 1.) / denom;
 		b2[ch][i] = v0 * (1. - sqrt(2.)*k + k*k) / denom;
 		a1[ch][i] = 2. * (k*k - v0) / denom;
@@ -371,7 +359,7 @@ void ZamEQ2UI::peq(int i, int ch, float srate, float fc, float g, float bw)
 		// boost
 		float denom = 1. + k/q + k*k;
 		b0[ch][i] = (1. + k*v0/q + k*k) / denom;
-		b1[ch][i] = 2. * (k*k - 1.) / denom; 
+		b1[ch][i] = 2. * (k*k - 1.) / denom;
 		b2[ch][i] = (1. - k*v0/q + k*k) / denom;
 		a1[ch][i] = b1[ch][i];
 		a2[ch][i] = (1. - k/q + k*k) / denom;
@@ -437,14 +425,14 @@ void ZamEQ2UI::onDisplay()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_LINE_SMOOTH);
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-    
+
     glLineWidth(2);
     int i;
     glColor4f(1.f, 1.f, 0.235f, 1.0f);
     for (i = 1; i < EQPOINTS; ++i) {
         glBegin(GL_LINES);
             if (eqy[i-1] < fCanvasArea.getY() + fCanvasArea.getHeight()
-			&& eqy[i] < fCanvasArea.getY() + fCanvasArea.getHeight() 
+			&& eqy[i] < fCanvasArea.getY() + fCanvasArea.getHeight()
 			&& eqy[i-1] > fCanvasArea.getY()
 			&& eqy[i] > fCanvasArea.getY()) {
                 glVertex2i(eqx[i-1], eqy[i-1]);

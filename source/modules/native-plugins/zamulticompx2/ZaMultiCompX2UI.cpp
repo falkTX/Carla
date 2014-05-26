@@ -1,5 +1,5 @@
 /*
- * ZaMultiCompX2  Stereo multiband compressor 
+ * ZaMultiCompX2  Stereo multiband compressor
  * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "ZaMultiCompX2Plugin.hpp"
 #include "ZaMultiCompX2UI.hpp"
-#include <stdio.h>
 
 using DGL::Point;
 
@@ -38,107 +38,107 @@ ZaMultiCompX2UI::ZaMultiCompX2UI()
     fLedRedValue1 = 0.0f;
     fLedRedValue2 = 0.0f;
     fLedRedValue3 = 0.0f;
-    fLedYellowValueL = 0.0f; 
-    fLedYellowValueR = 0.0f; 
+    fLedYellowValueL = 0.0f;
+    fLedYellowValueR = 0.0f;
 
     // knob
     Image knobImage(ZaMultiCompX2Artwork::knobData, ZaMultiCompX2Artwork::knobWidth, ZaMultiCompX2Artwork::knobHeight);
 
-    // knob 
+    // knob
     fKnobAttack = new ImageKnob(this, knobImage);
-    fKnobAttack->setPos(24, 43);
+    fKnobAttack->setAbsolutePos(24, 43);
     fKnobAttack->setRange(0.1f, 200.0f);
-    //fKnobAttack->setLogScale(true);
-    //fKnobAttack->setDefault(10.0f);
+    fKnobAttack->setUsingLogScale(true);
+    fKnobAttack->setDefault(10.0f);
     fKnobAttack->setStep(0.1f);
     fKnobAttack->setRotationAngle(240);
     fKnobAttack->setCallback(this);
 
     fKnobRelease = new ImageKnob(this, knobImage);
-    fKnobRelease->setPos(108, 43);
+    fKnobRelease->setAbsolutePos(108, 43);
     fKnobRelease->setRange(50.0f, 500.0f);
-    //fKnobRelease->setDefault(80.0f);
+    fKnobRelease->setDefault(80.0f);
     fKnobRelease->setRotationAngle(240);
     fKnobRelease->setCallback(this);
 
     fKnobThresh3 = new ImageKnob(this, knobImage);
-    fKnobThresh3->setPos(94.5, 99);
+    fKnobThresh3->setAbsolutePos(94.5, 99);
     fKnobThresh3->setRange(-60.0f, 0.0f);
-    //fKnobThresh3->setDefault(-16.0f);
+    fKnobThresh3->setDefault(-16.0f);
     fKnobThresh3->setRotationAngle(240);
     fKnobThresh3->setCallback(this);
 
     fKnobThresh2 = new ImageKnob(this, knobImage);
-    fKnobThresh2->setPos(94.5, 150);
+    fKnobThresh2->setAbsolutePos(94.5, 150);
     fKnobThresh2->setRange(-60.0f, 0.0f);
-    //fKnobThresh2->setDefault(-18.0f);
+    fKnobThresh2->setDefault(-18.0f);
     fKnobThresh2->setRotationAngle(240);
     fKnobThresh2->setCallback(this);
 
     fKnobThresh1 = new ImageKnob(this, knobImage);
-    fKnobThresh1->setPos(94.5, 201);
+    fKnobThresh1->setAbsolutePos(94.5, 201);
     fKnobThresh1->setRange(-60.0f, 0.0f);
-    //fKnobThresh1->setDefault(-20.0f);
+    fKnobThresh1->setDefault(-20.0f);
     fKnobThresh1->setRotationAngle(240);
     fKnobThresh1->setCallback(this);
 
     fKnobRatio = new ImageKnob(this, knobImage);
-    fKnobRatio->setPos(191.5, 43);
+    fKnobRatio->setAbsolutePos(191.5, 43);
     fKnobRatio->setRange(1.0f, 20.0f);
-    //fKnobRatio->setDefault(4.0f);
+    fKnobRatio->setDefault(4.0f);
     fKnobRatio->setRotationAngle(240);
     fKnobRatio->setCallback(this);
 
     fKnobKnee = new ImageKnob(this, knobImage);
-    fKnobKnee->setPos(273, 43);
+    fKnobKnee->setAbsolutePos(273, 43);
     fKnobKnee->setRange(0.0f, 8.0f);
-    //fKnobKnee->setDefault(0.0f);
+    fKnobKnee->setDefault(0.0f);
     fKnobKnee->setRotationAngle(240);
     fKnobKnee->setCallback(this);
 
     fKnobGlobalGain = new ImageKnob(this, knobImage);
-    fKnobGlobalGain->setPos(427.3, 43);
+    fKnobGlobalGain->setAbsolutePos(427.3, 43);
     fKnobGlobalGain->setRange(-30.0f, 30.0f);
-    //fKnobGlobalGain->setDefault(0.0f);
+    fKnobGlobalGain->setDefault(0.0f);
     fKnobGlobalGain->setRotationAngle(240);
     fKnobGlobalGain->setCallback(this);
 
     fKnobXover2 = new ImageKnob(this, knobImage);
-    fKnobXover2->setPos(23, 121);
+    fKnobXover2->setAbsolutePos(23, 121);
     fKnobXover2->setRange(1400.f, 14000.f);
-    //fKnobXover2->setLogScale(true);
-    //fKnobXover2->setDefault(1400.f);
+    fKnobXover2->setUsingLogScale(true);
+    fKnobXover2->setDefault(1400.f);
     fKnobXover2->setStep(5.f);
     fKnobXover2->setRotationAngle(240);
     fKnobXover2->setCallback(this);
 
     fKnobXover1 = new ImageKnob(this, knobImage);
-    fKnobXover1->setPos(23, 175.5);
+    fKnobXover1->setAbsolutePos(23, 175.5);
     fKnobXover1->setRange(20.0f, 1400.0f);
-    //fKnobXover1->setLogScale(true);
-    //fKnobXover1->setDefault(250.0f);
+    fKnobXover1->setUsingLogScale(true);
+    fKnobXover1->setDefault(250.0f);
     fKnobXover1->setStep(1.f);
     fKnobXover1->setRotationAngle(240);
     fKnobXover1->setCallback(this);
 
     fKnobMakeup3 = new ImageKnob(this, knobImage);
-    fKnobMakeup3->setPos(167.75, 99.5);
+    fKnobMakeup3->setAbsolutePos(167.75, 99.5);
     fKnobMakeup3->setRange(0.0f, 30.0f);
-    //fKnobMakeup3->setDefault(0.0f);
+    fKnobMakeup3->setDefault(0.0f);
     fKnobMakeup3->setRotationAngle(240);
     fKnobMakeup3->setCallback(this);
 
     fKnobMakeup2 = new ImageKnob(this, knobImage);
-    fKnobMakeup2->setPos(167.75, 150.25);
+    fKnobMakeup2->setAbsolutePos(167.75, 150.25);
     fKnobMakeup2->setRange(0.0f, 30.0f);
-    //fKnobMakeup2->setDefault(0.0f);
+    fKnobMakeup2->setDefault(0.0f);
     fKnobMakeup2->setRotationAngle(240);
     fKnobMakeup2->setCallback(this);
 
     fKnobMakeup1 = new ImageKnob(this, knobImage);
-    fKnobMakeup1->setPos(167.75, 201.4);
+    fKnobMakeup1->setAbsolutePos(167.75, 201.4);
     fKnobMakeup1->setRange(0.0f, 30.0f);
-    //fKnobMakeup1->setDefault(0.0f);
+    fKnobMakeup1->setDefault(0.0f);
     fKnobMakeup1->setRotationAngle(240);
     fKnobMakeup1->setCallback(this);
 
@@ -149,46 +149,46 @@ ZaMultiCompX2UI::ZaMultiCompX2UI()
 
     Point<int> togglePosStart(247,108);
 
-    fToggleBypass3 = new ImageToggle(this, toggleoffImage, toggleoffImage, toggleonImage);
-    fToggleBypass3->setPos(togglePosStart);
+    fToggleBypass3 = new ImageToggle(this, toggleoffImage, toggleonImage);
+    fToggleBypass3->setAbsolutePos(togglePosStart);
     fToggleBypass3->setCallback(this);
 
     togglePosStart.setY(158);
 
-    fToggleBypass2 = new ImageToggle(this, toggleoffImage, toggleoffImage, toggleonImage);
-    fToggleBypass2->setPos(togglePosStart);
+    fToggleBypass2 = new ImageToggle(this, toggleoffImage, toggleonImage);
+    fToggleBypass2->setAbsolutePos(togglePosStart);
     fToggleBypass2->setCallback(this);
 
     togglePosStart.setY(209);
 
-    fToggleBypass1 = new ImageToggle(this, toggleoffImage, toggleoffImage, toggleonImage);
-    fToggleBypass1->setPos(togglePosStart);
+    fToggleBypass1 = new ImageToggle(this, toggleoffImage, toggleonImage);
+    fToggleBypass1->setAbsolutePos(togglePosStart);
     fToggleBypass1->setCallback(this);
 
     togglePosStart.setX(278);
     togglePosStart.setY(113);
 
-    fToggleListen3 = new ImageToggle(this, toggleoffhImage, toggleoffhImage, toggleonhImage);
-    fToggleListen3->setPos(togglePosStart);
+    fToggleListen3 = new ImageToggle(this, toggleoffhImage, toggleonhImage);
+    fToggleListen3->setAbsolutePos(togglePosStart);
     fToggleListen3->setCallback(this);
 
     togglePosStart.setY(164);
 
-    fToggleListen2 = new ImageToggle(this, toggleoffhImage, toggleoffhImage, toggleonhImage);
-    fToggleListen2->setPos(togglePosStart);
+    fToggleListen2 = new ImageToggle(this, toggleoffhImage, toggleonhImage);
+    fToggleListen2->setAbsolutePos(togglePosStart);
     fToggleListen2->setCallback(this);
 
     togglePosStart.setY(214);
 
-    fToggleListen1 = new ImageToggle(this, toggleoffhImage, toggleoffhImage, toggleonhImage);
-    fToggleListen1->setPos(togglePosStart);
+    fToggleListen1 = new ImageToggle(this, toggleoffhImage, toggleonhImage);
+    fToggleListen1->setAbsolutePos(togglePosStart);
     fToggleListen1->setCallback(this);
 
     togglePosStart.setX(285.5);
     togglePosStart.setY(254);
 
-    fToggleStereo = new ImageToggle(this, toggleoffImage, toggleoffImage, toggleonImage);
-    fToggleStereo->setPos(togglePosStart);
+    fToggleStereo = new ImageToggle(this, toggleoffImage, toggleonImage);
+    fToggleStereo->setAbsolutePos(togglePosStart);
     fToggleStereo->setCallback(this);
 
     fCanvasArea.setPos(540, 32);
@@ -215,30 +215,8 @@ ZaMultiCompX2UI::ZaMultiCompX2UI()
 	}
     }
 
-}
-
-ZaMultiCompX2UI::~ZaMultiCompX2UI()
-{
-    delete fKnobAttack;
-    delete fKnobRelease;
-    delete fKnobThresh1;
-    delete fKnobThresh2;
-    delete fKnobThresh3;
-    delete fKnobRatio;
-    delete fKnobKnee;
-    delete fKnobGlobalGain;
-    delete fKnobMakeup1;
-    delete fKnobMakeup2;
-    delete fKnobMakeup3;
-    delete fKnobXover1;
-    delete fKnobXover2;
-    delete fToggleBypass1;
-    delete fToggleBypass2;
-    delete fToggleBypass3;
-    delete fToggleListen1;
-    delete fToggleListen2;
-    delete fToggleListen3;
-    delete fToggleStereo;
+    // set default values
+    d_programChanged(0);
 }
 
 void ZaMultiCompX2UI::compcurve(float in, int k, float *outx, float* outy) {
@@ -277,16 +255,16 @@ void ZaMultiCompX2UI::calc_compcurves() {
 	                compcurve(x2, k, &compx[k][i], &compy[k][i]);
                         compx[k][i] = fCanvasArea.getX() + compx[k][i]*fCanvasArea.getWidth();
                         compy[k][i] = fCanvasArea.getY() + (1.-compy[k][i])*fCanvasArea.getHeight();
-		}        
+		}
 	       	 //dot follows curve:
 	        //compcurve(from_dB(-ui->gainred), k, &dotx[0], &doty[0]);
 	        //dotx[0] = -(1-dotx[0])*280. + 280.;
-	        //doty[0] = (1.-doty[0])*280.; 
-	
+	        //doty[0] = (1.-doty[0])*280.;
+
 	        //dot follows centre:
 	        //dotx[0] = -(1.- from_dB(-gainred))*280. + 280.;
 	        //doty[0] = (1.- from_dB(-gainred))*280.;
-	
+
 	        //printf("gainr=%.2f x=%.2f y=%.2f\n",ui->gainred, ui->dotx[0], ui->doty[0]);
 	}
 }
@@ -692,13 +670,13 @@ void ZaMultiCompX2UI::onDisplay()
 	else numRedLeds3 = 0;
 
     for (int i=numRedLeds1; i>0; --i)
-        fLedRedImg.draw(sLedInitialX + (12 - i)*sLedSpacing, sRedLed1StaticY);
+        fLedRedImg.drawAt(sLedInitialX + (12 - i)*sLedSpacing, sRedLed1StaticY);
 
     for (int i=numRedLeds2; i>0; --i)
-        fLedRedImg.draw(sLedInitialX + (12 - i)*sLedSpacing, sRedLed2StaticY);
+        fLedRedImg.drawAt(sLedInitialX + (12 - i)*sLedSpacing, sRedLed2StaticY);
 
     for (int i=numRedLeds3; i>0; --i)
-        fLedRedImg.draw(sLedInitialX + (12 - i)*sLedSpacing, sRedLed3StaticY);
+        fLedRedImg.drawAt(sLedInitialX + (12 - i)*sLedSpacing, sRedLed3StaticY);
 
 	if (fLedYellowValueL >= 20.f)
 		numYellowLedsL = 19;
@@ -742,14 +720,14 @@ void ZaMultiCompX2UI::onDisplay()
 
 	if (numYellowLedsL > 12) {
 		for (int i=12; i<numYellowLedsL; ++i)
-			fLedRedImg.draw(sLedInitialX + i*sLedSpacing, sYellowLedStaticYL);
+			fLedRedImg.drawAt(sLedInitialX + i*sLedSpacing, sYellowLedStaticYL);
 		for (int i=0; i<12; ++i)
-			fLedYellowImg.draw(sLedInitialX + i*sLedSpacing, sYellowLedStaticYL);
+			fLedYellowImg.drawAt(sLedInitialX + i*sLedSpacing, sYellowLedStaticYL);
 	} else {
 		for (int i=0; i<numYellowLedsL; ++i)
-			fLedYellowImg.draw(sLedInitialX + i*sLedSpacing, sYellowLedStaticYL);
+			fLedYellowImg.drawAt(sLedInitialX + i*sLedSpacing, sYellowLedStaticYL);
 	}
-	
+
 	if (fLedYellowValueR >= 20.f)
 		numYellowLedsR = 19;
 	else if (fLedYellowValueR >= 10.f)
@@ -792,12 +770,12 @@ void ZaMultiCompX2UI::onDisplay()
 
 	if (numYellowLedsR > 12) {
 		for (int i=12; i<numYellowLedsR; ++i)
-			fLedRedImg.draw(sLedInitialX + i*sLedSpacing, sYellowLedStaticYR);
+			fLedRedImg.drawAt(sLedInitialX + i*sLedSpacing, sYellowLedStaticYR);
 		for (int i=0; i<12; ++i)
-			fLedYellowImg.draw(sLedInitialX + i*sLedSpacing, sYellowLedStaticYR);
+			fLedYellowImg.drawAt(sLedInitialX + i*sLedSpacing, sYellowLedStaticYR);
 	} else {
 		for (int i=0; i<numYellowLedsR; ++i)
-			fLedYellowImg.draw(sLedInitialX + i*sLedSpacing, sYellowLedStaticYR);
+			fLedYellowImg.drawAt(sLedInitialX + i*sLedSpacing, sYellowLedStaticYR);
 	}
 /*
 // TESTING - remove later

@@ -1,5 +1,5 @@
 /*
- * ZamComp mono compressor 
+ * ZamComp mono compressor
  * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -41,7 +41,6 @@ public:
     };
 
     ZamCompPlugin();
-    ~ZamCompPlugin() override;
 
 protected:
     // -------------------------------------------------------------------
@@ -75,15 +74,15 @@ protected:
     // -------------------------------------------------------------------
     // Init
 
-    void d_initParameter(uint32_t index, Parameter& parameter) ;
-    void d_initProgramName(uint32_t index, d_string& programName) ;
+    void d_initParameter(uint32_t index, Parameter& parameter) override;
+    void d_initProgramName(uint32_t index, d_string& programName) override;
 
     // -------------------------------------------------------------------
     // Internal data
 
     float d_getParameterValue(uint32_t index) const override;
     void  d_setParameterValue(uint32_t index, float value) override;
-    void  d_setProgram(uint32_t index) ;
+    void  d_setProgram(uint32_t index) override;
 
     // -------------------------------------------------------------------
     // Process
@@ -106,8 +105,7 @@ protected:
 	}
 
     void d_activate() override;
-    void d_deactivate() override;
-    void d_run(float** inputs, float** outputs, uint32_t frames) override;
+    void d_run(const float** inputs, float** outputs, uint32_t frames) override;
 
     // -------------------------------------------------------------------
 

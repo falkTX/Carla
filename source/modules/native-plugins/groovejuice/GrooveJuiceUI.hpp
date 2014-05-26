@@ -47,24 +47,24 @@ class GrooveJuiceUI : public UI,
 {
 public:
     GrooveJuiceUI();
-    ~GrooveJuiceUI() override;
 
 protected:
     // -------------------------------------------------------------------
     // Information
 
-    unsigned int d_getWidth() const noexcept override
+    uint d_getWidth() const noexcept override
     {
         return GrooveJuiceArtwork::backgroundWidth;
     }
 
-    unsigned int d_getHeight() const noexcept override
+    uint d_getHeight() const noexcept override
     {
         return GrooveJuiceArtwork::backgroundHeight;
     }
 
     // -------------------------------------------------------------------
     // DSP Callbacks
+
     void d_parameterChanged(uint32_t index, float value) override;
     void d_programChanged(uint32_t index) override;
 
@@ -80,8 +80,8 @@ protected:
     void imageSliderValueChanged(ImageSlider* slider, float value) override;
 
     void onDisplay() override;
-    bool onMouse(int button, bool press, int x, int y) override;
-    bool onMotion(int x, int y) override;
+    bool onMouse(const MouseEvent&) override;
+    bool onMotion(const MotionEvent&) override;
 
 private:
     float paramX, paramY;
@@ -93,15 +93,11 @@ private:
     ImageAboutWindow fAboutWindow;
 
     //knobs
-    ImageKnob* fKnobOrbitSpeedX;
-    ImageKnob* fKnobOrbitSpeedY;
-    ImageKnob* fKnobOrbitSizeX;
-    ImageKnob* fKnobOrbitSizeY;
-    ImageKnob* fKnobSubOrbitSpeed;
-    ImageKnob* fKnobSubOrbitSize;
-    ImageKnob* fKnobSubOrbitSmooth;
+    ScopedPointer<ImageKnob> fKnobOrbitSpeedX, fKnobOrbitSpeedY;
+    ScopedPointer<ImageKnob> fKnobOrbitSizeX, fKnobOrbitSizeY;
+    ScopedPointer<ImageKnob> fKnobSubOrbitSpeed, fKnobSubOrbitSize, fKnobSubOrbitSmooth;
     
-    ImageKnob* fKnobsSynth[8];
+    ScopedPointer<ImageKnob> fKnobsSynth[8];
     int page;
     
     struct square {
@@ -113,14 +109,12 @@ private:
     } squares[8][8];
 
 	//sliders
-	ImageSlider* fSliderOrbitWaveX;
-	ImageSlider* fSliderOrbitWaveY;
-	ImageSlider* fSliderOrbitPhaseX;
-	ImageSlider* fSliderOrbitPhaseY;
+	ScopedPointer<ImageSlider> fSliderOrbitWaveX, fSliderOrbitWaveY;
+	ScopedPointer<ImageSlider> fSliderOrbitPhaseX, fSliderOrbitPhaseY;
 
-	ImageButton* fButtonAbout;
-	ImageButton* fButtonRandomize;
-	ImageButton* fButtonsPage[8];
+	ScopedPointer<ImageButton> fButtonAbout;
+	ScopedPointer<ImageButton> fButtonRandomize;
+	ScopedPointer<ImageButton> fButtonsPage[8];
 
 	int tabOX;
 	int tabOY;

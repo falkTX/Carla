@@ -58,7 +58,7 @@ GrooveJuiceUI::GrooveJuiceUI()
     Image aboutImageNormal(GrooveJuiceArtwork::aboutButtonNormalData, GrooveJuiceArtwork::aboutButtonNormalWidth, GrooveJuiceArtwork::aboutButtonNormalHeight);
     Image aboutImageHover(GrooveJuiceArtwork::aboutButtonHoverData, GrooveJuiceArtwork::aboutButtonHoverWidth, GrooveJuiceArtwork::aboutButtonHoverHeight);
     fButtonAbout = new ImageButton(this, aboutImageNormal, aboutImageHover, aboutImageHover);
-    fButtonAbout->setPos(599, 17);
+    fButtonAbout->setAbsolutePos(599, 17);
     fButtonAbout->setCallback(this);
 
     Image pageImageNormal(GrooveJuiceArtwork::pageButtonNormalData, GrooveJuiceArtwork::pageButtonNormalWidth, GrooveJuiceArtwork::pageButtonNormalHeight);
@@ -68,8 +68,8 @@ GrooveJuiceUI::GrooveJuiceUI()
     Image randomizeImageHover(GrooveJuiceArtwork::randomizeButtonHoverData, GrooveJuiceArtwork::randomizeButtonHoverWidth, GrooveJuiceArtwork::randomizeButtonHoverHeight);
 
     fButtonRandomize = new ImageButton(this, randomizeImageNormal, randomizeImageHover, randomizeImageHover);
-    fButtonRandomize -> setPos(313, 586);
-    fButtonRandomize -> setCallback(this);
+    fButtonRandomize->setAbsolutePos(313, 586);
+    fButtonRandomize->setCallback(this);
 
     int oX = 15;
     int oY = 557;
@@ -77,7 +77,7 @@ GrooveJuiceUI::GrooveJuiceUI()
     int mY = 0;
     for (int i=0; i<8; i++) {
 		fButtonsPage[i] = new ImageButton(this, pageImageNormal, pageImageHover, pageImageHover);
-		fButtonsPage[i]->setPos(oX+mX*i, oY);
+		fButtonsPage[i]->setAbsolutePos(oX+mX*i, oY);
 		fButtonsPage[i]->setCallback(this);
     }
 
@@ -87,7 +87,7 @@ GrooveJuiceUI::GrooveJuiceUI()
 
     // knob KnobOrbitSpeedX
     fKnobOrbitSpeedX = new ImageKnob(this, knobImage);
-    fKnobOrbitSpeedX->setPos(423, 185);
+    fKnobOrbitSpeedX->setAbsolutePos(423, 185);
     fKnobOrbitSpeedX->setStep(1.0f);
     fKnobOrbitSpeedX->setRange(1.0f, 128.0f);
     fKnobOrbitSpeedX->setValue(4.0f);
@@ -96,7 +96,7 @@ GrooveJuiceUI::GrooveJuiceUI()
 
     // knob KnobOrbitSpeedY
     fKnobOrbitSpeedY = new ImageKnob(this, knobImage);
-    fKnobOrbitSpeedY->setPos(516, 185);
+    fKnobOrbitSpeedY->setAbsolutePos(516, 185);
     fKnobOrbitSpeedY->setStep(1.0f);
     fKnobOrbitSpeedY->setRange(1.0f, 128.0f);
     fKnobOrbitSpeedY->setValue(4.0f);
@@ -105,7 +105,7 @@ GrooveJuiceUI::GrooveJuiceUI()
 
     // knob KnobOrbitSizeX
     fKnobOrbitSizeX = new ImageKnob(this, knobImage);
-    fKnobOrbitSizeX->setPos(423, 73);
+    fKnobOrbitSizeX->setAbsolutePos(423, 73);
     fKnobOrbitSizeX->setRange(0.0f, 1.0f);
     fKnobOrbitSizeX->setValue(0.5f);
     fKnobOrbitSizeX->setRotationAngle(270);
@@ -113,7 +113,7 @@ GrooveJuiceUI::GrooveJuiceUI()
 
     // knob KnobOrbitSizeY
     fKnobOrbitSizeY = new ImageKnob(this, knobImage);
-    fKnobOrbitSizeY->setPos(516, 73);
+    fKnobOrbitSizeY->setAbsolutePos(516, 73);
     fKnobOrbitSizeY->setRange(0.0f, 1.0f);
     fKnobOrbitSizeY->setValue(0.5f);
     fKnobOrbitSizeY->setRotationAngle(270);
@@ -121,7 +121,7 @@ GrooveJuiceUI::GrooveJuiceUI()
 
     // knob KnobSubOrbitSpeed
     fKnobSubOrbitSpeed = new ImageKnob(this, knobImage);
-    fKnobSubOrbitSpeed->setPos(620, 185);
+    fKnobSubOrbitSpeed->setAbsolutePos(620, 185);
     fKnobSubOrbitSpeed->setStep(1.0f);
     fKnobSubOrbitSpeed->setRange(1.0f, 128.0f);
     fKnobSubOrbitSpeed->setValue(32.0f);
@@ -130,7 +130,7 @@ GrooveJuiceUI::GrooveJuiceUI()
 
     // knob KnobSubOrbitSize
     fKnobSubOrbitSize = new ImageKnob(this, knobImage);
-    fKnobSubOrbitSize->setPos(620, 73);
+    fKnobSubOrbitSize->setAbsolutePos(620, 73);
     fKnobSubOrbitSize->setRange(0.0f, 1.0f);
     fKnobSubOrbitSize->setValue(0.5f);
     fKnobSubOrbitSize->setRotationAngle(270);
@@ -138,7 +138,7 @@ GrooveJuiceUI::GrooveJuiceUI()
 
     // knob KnobSubOrbitSmooth
     fKnobSubOrbitSmooth = new ImageKnob(this, knobImage);
-    fKnobSubOrbitSmooth->setPos(620, 297);
+    fKnobSubOrbitSmooth->setAbsolutePos(620, 297);
     fKnobSubOrbitSmooth->setRange(0.0f, 1.0f);
     fKnobSubOrbitSmooth->setValue(0.5f);
     fKnobSubOrbitSmooth->setRotationAngle(270);
@@ -208,7 +208,7 @@ GrooveJuiceUI::GrooveJuiceUI()
     //synth Knobs
 	for (int x=0; x<8; x++) {
 		fKnobsSynth[x] = new ImageKnob(this, knob2Image);
-		fKnobsSynth[x]->setPos(oX+mX*x, oY);
+		fKnobsSynth[x]->setAbsolutePos(oX+mX*x, oY);
 		//fKnobsSynth[x]->setStep(1.0f);
 		fKnobsSynth[x]->setRange(0.0f, 1.0f);
 		fKnobsSynth[x]->setValue(0.5f);
@@ -245,26 +245,6 @@ GrooveJuiceUI::GrooveJuiceUI()
 	tabPosX = tabOX;
 	tabTargetPosX = tabPosX;
 	tabMarginX = 103-tabOX;
-}
-
-GrooveJuiceUI::~GrooveJuiceUI()
-{
-    delete fButtonAbout;
-
-    //knobs
-    delete fKnobOrbitSpeedX;
-    delete fKnobOrbitSpeedY;
-    delete fKnobOrbitSizeX;
-    delete fKnobOrbitSizeY;
-    delete fKnobSubOrbitSpeed;
-    delete fKnobSubOrbitSize;
-    delete fKnobSubOrbitSmooth;
-
-    //sliders
-    delete fSliderOrbitWaveX;
-    delete fSliderOrbitWaveY;
-    delete fSliderOrbitPhaseX;
-    delete fSliderOrbitPhaseY;
 }
 
 // -----------------------------------------------------------------------
@@ -682,28 +662,28 @@ void GrooveJuiceUI::onDisplay()
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
 	// draw roundlet and orbits
-	fImgRoundlet.draw(x, y);
-	fImgOrbit.draw(nOrbitX, nOrbitY);
-	fImgSubOrbit.draw(nSubOrbitX, nSubOrbitY);
+	fImgRoundlet.drawAt(x, y);
+	fImgOrbit.drawAt(nOrbitX, nOrbitY);
+	fImgSubOrbit.drawAt(nSubOrbitX, nSubOrbitY);
 
 
 
 }
 
-bool GrooveJuiceUI::onMouse(int button, bool press, int x, int y)
+bool GrooveJuiceUI::onMouse(const MouseEvent& ev)
 {
-    if (button != 1)
+    if (ev.button != 1)
         return false;
 
-    if (press)
+    if (ev.press)
     {
-        if (! fCanvasArea.contains(x, y))
+        if (! fCanvasArea.contains(ev.pos))
             return false;
 
         fDragging = true;
         fDragValid = true;
-        fLastX = x;
-        fLastY = y;
+        fLastX = ev.pos.getX();
+        fLastY = ev.pos.getY();
         return true;
     }
     else if (fDragging)
@@ -715,10 +695,14 @@ bool GrooveJuiceUI::onMouse(int button, bool press, int x, int y)
     return false;
 }
 
-bool GrooveJuiceUI::onMotion(int x, int y)
+bool GrooveJuiceUI::onMotion(const MotionEvent& ev)
 {
     if (! fDragging)
         return false;
+
+    const int x = ev.pos.getX();
+    const int y = ev.pos.getY();
+
     if (! fDragValid)
     {
         fDragValid = true;

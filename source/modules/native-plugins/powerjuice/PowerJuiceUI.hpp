@@ -45,18 +45,17 @@ class PowerJuiceUI : public UI,
 {
 public:
     PowerJuiceUI();
-    ~PowerJuiceUI() override;
 
 protected:
     // -------------------------------------------------------------------
     // Information
 
-    unsigned int d_getWidth() const noexcept override
+    uint d_getWidth() const noexcept override
     {
         return PowerJuiceArtwork::backgroundWidth;
     }
 
-    unsigned int d_getHeight() const noexcept override
+    uint d_getHeight() const noexcept override
     {
         return PowerJuiceArtwork::backgroundHeight;
     }
@@ -85,15 +84,11 @@ private:
     Image fImgBackground;
     ImageAboutWindow fAboutWindow;
 
-    ImageKnob* fKnobAttack;
-    ImageKnob* fKnobRelease;
-    ImageKnob* fKnobThreshold;
-    ImageKnob* fKnobRatio;
-    ImageKnob* fKnobMakeup;
-    ImageKnob* fKnobMix;
-    ImageButton* fButtonAbout;
+    ScopedPointer<ImageKnob> fKnobAttack, fKnobRelease, fKnobThreshold;
+    ScopedPointer<ImageKnob> fKnobRatio, fKnobMakeup, fKnobMix;
+    ScopedPointer<ImageButton> fButtonAbout;
 
-    PowerJuicePlugin* dsp;
+    PowerJuicePlugin* const dsp;
 
     float fromDB(float gdb) {
         return (std::exp(gdb/20.f*std::log(10.f)));

@@ -1,6 +1,6 @@
 /*
  * ZamComp mono compressor
- * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com> 
+ * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,7 +23,6 @@
 #include "ImageKnob.hpp"
 
 #include "ZamCompArtwork.hpp"
-#include "ZamCompPlugin.hpp"
 
 using DGL::Image;
 using DGL::ImageKnob;
@@ -37,18 +36,17 @@ class ZamCompUI : public UI,
 {
 public:
     ZamCompUI();
-    ~ZamCompUI() override;
 
 protected:
     // -------------------------------------------------------------------
     // Information
 
-    unsigned int d_getWidth() const noexcept override
+    uint d_getWidth() const noexcept override
     {
         return ZamCompArtwork::zamcompWidth;
     }
 
-    unsigned int d_getHeight() const noexcept override
+    uint d_getHeight() const noexcept override
     {
         return ZamCompArtwork::zamcompHeight;
     }
@@ -70,12 +68,8 @@ protected:
 
 private:
     Image fImgBackground;
-    ImageKnob* fKnobAttack;
-    ImageKnob* fKnobRelease;
-    ImageKnob* fKnobThresh;
-    ImageKnob* fKnobRatio;
-    ImageKnob* fKnobKnee;
-    ImageKnob* fKnobMakeup;
+    ScopedPointer<ImageKnob> fKnobAttack, fKnobRelease, fKnobThresh;
+    ScopedPointer<ImageKnob> fKnobRatio, fKnobKnee, fKnobMakeup;
 
     Image fLedRedImg;
     float fLedRedValue;

@@ -1,7 +1,7 @@
 /*
  * DISTRHO Nekobi Plugin, based on Nekobee by Sean Bolton and others.
  * Copyright (C) 2004 Sean Bolton and others
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -13,18 +13,13 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
+ * For a full copy of the GNU General Public License see the LICENSE file.
  */
 
 #include "DistrhoPluginNekobi.hpp"
 
-#ifdef CARLA_EXPORT
-# include "CarlaUtils.hpp"
-#else
-# define CARLA_SAFE_ASSERT_INT2(...)
-#endif
-
 extern "C" {
+
 #include "nekobee-src/nekobee_synth.c"
 #include "nekobee-src/nekobee_voice.c"
 #include "nekobee-src/nekobee_voice_render.c"
@@ -33,7 +28,7 @@ extern "C" {
 // -----------------------------------------------------------------------
 // mutual exclusion
 
-bool dssp_voicelist_mutex_trylock(nekobee_synth_t* synth)
+bool dssp_voicelist_mutex_trylock(nekobee_synth_t* const synth)
 {
     /* Attempt the mutex lock */
     if (pthread_mutex_trylock(&synth->voicelist_mutex) != 0)
@@ -52,12 +47,12 @@ bool dssp_voicelist_mutex_trylock(nekobee_synth_t* synth)
     return true;
 }
 
-bool dssp_voicelist_mutex_lock(nekobee_synth_t* synth)
+bool dssp_voicelist_mutex_lock(nekobee_synth_t* const synth)
 {
     return (pthread_mutex_lock(&synth->voicelist_mutex) == 0);
 }
 
-bool dssp_voicelist_mutex_unlock(nekobee_synth_t *synth)
+bool dssp_voicelist_mutex_unlock(nekobee_synth_t* const synth)
 {
     return (pthread_mutex_unlock(&synth->voicelist_mutex) == 0);
 }
@@ -65,7 +60,7 @@ bool dssp_voicelist_mutex_unlock(nekobee_synth_t *synth)
 // -----------------------------------------------------------------------
 // nekobee_handle_raw_event
 
-void nekobee_handle_raw_event(nekobee_synth_t* synth, uint8_t size, const uint8_t* data)
+void nekobee_handle_raw_event(nekobee_synth_t* const synth, const uint8_t size, const uint8_t* const data)
 {
     if (size != 3)
         return;
@@ -101,42 +96,40 @@ DistrhoPluginNekobi::DistrhoPluginNekobi()
     nekobee_init_tables();
 
     // init synth
-    fSynth = new nekobee_synth_t;
+    fSynth.sample_rate = d_getSampleRate();
+    fSynth.deltat = 1.0f / (float)d_getSampleRate();
+    fSynth.nugget_remains = 0;
 
-    fSynth->sample_rate = d_getSampleRate();
-    fSynth->deltat = 1.0f / (float)d_getSampleRate();
-    fSynth->nugget_remains = 0;
-
-    fSynth->note_id = 0;
-    fSynth->polyphony = XSYNTH_DEFAULT_POLYPHONY;
-    fSynth->voices = XSYNTH_DEFAULT_POLYPHONY;
-    fSynth->monophonic = XSYNTH_MONO_MODE_ONCE;
-    fSynth->glide = 0;
-    fSynth->last_noteon_pitch = 0.0f;
-    fSynth->vcf_accent = 0.0f;
-    fSynth->vca_accent = 0.0f;
+    fSynth.note_id = 0;
+    fSynth.polyphony = XSYNTH_DEFAULT_POLYPHONY;
+    fSynth.voices = XSYNTH_DEFAULT_POLYPHONY;
+    fSynth.monophonic = XSYNTH_MONO_MODE_ONCE;
+    fSynth.glide = 0;
+    fSynth.last_noteon_pitch = 0.0f;
+    fSynth.vcf_accent = 0.0f;
+    fSynth.vca_accent = 0.0f;
 
     for (int i=0; i<8; ++i)
-      fSynth->held_keys[i] = -1;
+        fSynth.held_keys[i] = -1;
 
-    fSynth->voice = nekobee_voice_new();
-    fSynth->voicelist_mutex_grab_failed = 0;
-    pthread_mutex_init(&fSynth->voicelist_mutex, nullptr);
+    fSynth.voice = nekobee_voice_new();
+    fSynth.voicelist_mutex_grab_failed = 0;
+    pthread_mutex_init(&fSynth.voicelist_mutex, nullptr);
 
-    fSynth->channel_pressure = 0;
-    fSynth->pitch_wheel_sensitivity = 0;
-    fSynth->pitch_wheel = 0;
+    fSynth.channel_pressure = 0;
+    fSynth.pitch_wheel_sensitivity = 0;
+    fSynth.pitch_wheel = 0;
 
     for (int i=0; i<128; ++i)
     {
-        fSynth->key_pressure[i] = 0;
-        fSynth->cc[i] = 0;
+        fSynth.key_pressure[i] = 0;
+        fSynth.cc[i] = 0;
     }
-    fSynth->cc[7] = 127; // full volume
+    fSynth.cc[7] = 127; // full volume
 
-    fSynth->mod_wheel  = 1.0f;
-    fSynth->pitch_bend = 1.0f;
-    fSynth->cc_volume  = 1.0f;
+    fSynth.mod_wheel  = 1.0f;
+    fSynth.pitch_bend = 1.0f;
+    fSynth.cc_volume  = 1.0f;
 
     // Default values
     fParams.waveform = 0.0f;
@@ -149,14 +142,14 @@ DistrhoPluginNekobi::DistrhoPluginNekobi()
     fParams.volume = 75.0f;
 
     // Internal stuff
-    fSynth->waveform  = 0.0f;
-    fSynth->tuning    = 1.0f;
-    fSynth->cutoff    = 5.0f;
-    fSynth->resonance = 0.8f;
-    fSynth->envmod    = 0.3f;
-    fSynth->decay     = 0.0002f;
-    fSynth->accent    = 0.3f;
-    fSynth->volume    = 0.75f;
+    fSynth.waveform  = 0.0f;
+    fSynth.tuning    = 1.0f;
+    fSynth.cutoff    = 5.0f;
+    fSynth.resonance = 0.8f;
+    fSynth.envmod    = 0.3f;
+    fSynth.decay     = 0.0002f;
+    fSynth.accent    = 0.3f;
+    fSynth.volume    = 0.75f;
 
     // reset
     d_deactivate();
@@ -164,8 +157,7 @@ DistrhoPluginNekobi::DistrhoPluginNekobi()
 
 DistrhoPluginNekobi::~DistrhoPluginNekobi()
 {
-    std::free(fSynth->voice);
-    delete fSynth;
+    std::free(fSynth.voice);
 }
 
 // -----------------------------------------------------------------------
@@ -282,43 +274,43 @@ void DistrhoPluginNekobi::d_setParameterValue(uint32_t index, float value)
     {
     case paramWaveform:
         fParams.waveform = value;
-        fSynth->waveform = value;
-        CARLA_SAFE_ASSERT_INT2(fSynth->waveform == 0.0f || fSynth->waveform == 1.0f, fSynth->waveform, value);
+        fSynth.waveform = value;
+        DISTRHO_SAFE_ASSERT(fSynth.waveform == 0.0f || fSynth.waveform == 1.0f);
         break;
     case paramTuning:
         fParams.tuning = value;
-        fSynth->tuning = (value+12.0f)/24.0f * 1.5 + 0.5f; // FIXME: log?
-        CARLA_SAFE_ASSERT_INT2(fSynth->tuning >= 0.5f && fSynth->tuning <= 2.0f, fSynth->tuning, value);
+        fSynth.tuning = (value+12.0f)/24.0f * 1.5 + 0.5f; // FIXME: log?
+        DISTRHO_SAFE_ASSERT(fSynth.tuning >= 0.5f && fSynth.tuning <= 2.0f);
         break;
     case paramCutoff:
         fParams.cutoff = value;
-        fSynth->cutoff = value/2.5f;
-        CARLA_SAFE_ASSERT_INT2(fSynth->cutoff >= 0.0f && fSynth->cutoff <= 40.0f, fSynth->cutoff, value);
+        fSynth.cutoff = value/2.5f;
+        DISTRHO_SAFE_ASSERT(fSynth.cutoff >= 0.0f && fSynth.cutoff <= 40.0f);
         break;
     case paramResonance:
         fParams.resonance = value;
-        fSynth->resonance = value/100.0f;
-        CARLA_SAFE_ASSERT_INT2(fSynth->resonance >= 0.0f && fSynth->resonance <= 0.95f, fSynth->resonance, value);
+        fSynth.resonance = value/100.0f;
+        DISTRHO_SAFE_ASSERT(fSynth.resonance >= 0.0f && fSynth.resonance <= 0.95f);
         break;
     case paramEnvMod:
         fParams.envMod = value;
-        fSynth->envmod = value/100.0f;
-        CARLA_SAFE_ASSERT_INT2(fSynth->envmod >= 0.0f && fSynth->envmod <= 1.0f, fSynth->envmod, value);
+        fSynth.envmod = value/100.0f;
+        DISTRHO_SAFE_ASSERT(fSynth.envmod >= 0.0f && fSynth.envmod <= 1.0f);
         break;
     case paramDecay:
         fParams.decay = value;
-        fSynth->decay = value/100.0f * 0.000491f + 0.000009f; // FIXME: log?
-        CARLA_SAFE_ASSERT_INT2(fSynth->decay >= 0.000009f && fSynth->decay <= 0.0005f, fSynth->decay, value);
+        fSynth.decay = value/100.0f * 0.000491f + 0.000009f; // FIXME: log?
+        DISTRHO_SAFE_ASSERT(fSynth.decay >= 0.000009f && fSynth.decay <= 0.0005f);
         break;
     case paramAccent:
         fParams.accent = value;
-        fSynth->accent = value/100.0f;
-        CARLA_SAFE_ASSERT_INT2(fSynth->accent >= 0.0f && fSynth->accent <= 1.0f, fSynth->accent, value);
+        fSynth.accent = value/100.0f;
+        DISTRHO_SAFE_ASSERT(fSynth.accent >= 0.0f && fSynth.accent <= 1.0f);
         break;
     case paramVolume:
         fParams.volume = value;
-        fSynth->volume = value/100.0f;
-        CARLA_SAFE_ASSERT_INT2(fSynth->volume >= 0.0f && fSynth->volume <= 1.0f, fSynth->volume, value);
+        fSynth.volume = value/100.0f;
+        DISTRHO_SAFE_ASSERT(fSynth.volume >= 0.0f && fSynth.volume <= 1.0f);
         break;
     }
 }
@@ -328,20 +320,20 @@ void DistrhoPluginNekobi::d_setParameterValue(uint32_t index, float value)
 
 void DistrhoPluginNekobi::d_activate()
 {
-    fSynth->nugget_remains = 0;
-    fSynth->note_id = 0;
+    fSynth.nugget_remains = 0;
+    fSynth.note_id = 0;
 
-    if (fSynth->voice != nullptr)
-        nekobee_synth_all_voices_off(fSynth);
+    if (fSynth.voice != nullptr)
+        nekobee_synth_all_voices_off(&fSynth);
 }
 
 void DistrhoPluginNekobi::d_deactivate()
 {
-    if (fSynth->voice != nullptr)
-        nekobee_synth_all_voices_off(fSynth);
+    if (fSynth.voice != nullptr)
+        nekobee_synth_all_voices_off(&fSynth);
 }
 
-void DistrhoPluginNekobi::d_run(float**, float** outputs, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
+void DistrhoPluginNekobi::d_run(const float**, float** outputs, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
 {
     uint32_t framesDone = 0;
     uint32_t curEventIndex = 0;
@@ -349,22 +341,21 @@ void DistrhoPluginNekobi::d_run(float**, float** outputs, uint32_t frames, const
 
     float* out = outputs[0];
 
-    if (fSynth->voice == nullptr || ! dssp_voicelist_mutex_trylock(fSynth))
+    if (fSynth.voice == nullptr || ! dssp_voicelist_mutex_trylock(&fSynth))
     {
-        for (uint32_t i=0; i < frames; ++i)
-            *out++ = 0.0f;
+        std::memset(out, 0, sizeof(float)*frames);
         return;
     }
 
     while (framesDone < frames)
     {
-        if (fSynth->nugget_remains == 0)
-            fSynth->nugget_remains = XSYNTH_NUGGET_SIZE;
+        if (fSynth.nugget_remains == 0)
+            fSynth.nugget_remains = XSYNTH_NUGGET_SIZE;
 
         /* process any ready events */
         while (curEventIndex < midiEventCount && framesDone == midiEvents[curEventIndex].frame)
         {
-            nekobee_handle_raw_event(fSynth, midiEvents[curEventIndex].size, midiEvents[curEventIndex].buf);
+            nekobee_handle_raw_event(&fSynth, midiEvents[curEventIndex].size, midiEvents[curEventIndex].buf);
             curEventIndex++;
         }
 
@@ -378,8 +369,8 @@ void DistrhoPluginNekobi::d_run(float**, float** outputs, uint32_t frames, const
 
         /* we're still in the middle of a nugget, so reduce the burst size
          * to end when the nugget ends */
-        if (fSynth->nugget_remains < burstSize)
-            burstSize = fSynth->nugget_remains;
+        if (fSynth.nugget_remains < burstSize)
+            burstSize = fSynth.nugget_remains;
 
         /* reduce burst size to end when next event is ready */
         if (curEventIndex < midiEventCount && midiEvents[curEventIndex].frame - framesDone < burstSize)
@@ -390,12 +381,12 @@ void DistrhoPluginNekobi::d_run(float**, float** outputs, uint32_t frames, const
             burstSize = frames - framesDone;
 
         /* render the burst */
-        nekobee_synth_render_voices(fSynth, out + framesDone, burstSize, (burstSize == fSynth->nugget_remains));
+        nekobee_synth_render_voices(&fSynth, out + framesDone, burstSize, (burstSize == fSynth.nugget_remains));
         framesDone += burstSize;
-        fSynth->nugget_remains -= burstSize;
+        fSynth.nugget_remains -= burstSize;
     }
 
-    dssp_voicelist_mutex_unlock(fSynth);
+    dssp_voicelist_mutex_unlock(&fSynth);
 }
 
 // -----------------------------------------------------------------------

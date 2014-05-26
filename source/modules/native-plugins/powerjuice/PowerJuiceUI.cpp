@@ -28,7 +28,8 @@ START_NAMESPACE_DISTRHO
 
 PowerJuiceUI::PowerJuiceUI()
     : UI(),
-      fAboutWindow(this)
+      fAboutWindow(this),
+      dsp((PowerJuicePlugin*)d_getPluginInstancePointer())
 {
     // background
     fImgBackground = Image(PowerJuiceArtwork::backgroundData, PowerJuiceArtwork::backgroundWidth, PowerJuiceArtwork::backgroundHeight, GL_BGR);
@@ -42,7 +43,7 @@ PowerJuiceUI::PowerJuiceUI()
 
     // knob Attack
     fKnobAttack = new ImageKnob(this, knobImage);
-    fKnobAttack->setPos(37, 213);
+    fKnobAttack->setAbsolutePos(37, 213);
     fKnobAttack->setRange(0.1f, 1000.0f);
     fKnobAttack->setStep(0.1f);
     fKnobAttack->setValue(20.0f);
@@ -51,7 +52,7 @@ PowerJuiceUI::PowerJuiceUI()
 
     // knob Release
     fKnobRelease = new ImageKnob(this, knobImage);
-    fKnobRelease->setPos(136, 213);
+    fKnobRelease->setAbsolutePos(136, 213);
     fKnobRelease->setRange(0.1f, 1000.0f);
     fKnobRelease->setValue(0.1f);
     fKnobRelease->setRotationAngle(270);
@@ -59,7 +60,7 @@ PowerJuiceUI::PowerJuiceUI()
 
     // knob Threshold
     fKnobThreshold = new ImageKnob(this, knobImage);
-    fKnobThreshold->setPos(235, 213);
+    fKnobThreshold->setAbsolutePos(235, 213);
     fKnobThreshold->setRange(-60.0f, 0.0f);
     fKnobThreshold->setValue(0.0f);
     fKnobThreshold->setRotationAngle(270);
@@ -67,7 +68,7 @@ PowerJuiceUI::PowerJuiceUI()
 
     // knob Ratio
     fKnobRatio = new ImageKnob(this, knobImage);
-    fKnobRatio->setPos(334, 213);
+    fKnobRatio->setAbsolutePos(334, 213);
     fKnobRatio->setRange(1.0f, 10.0f);
     fKnobRatio->setValue(1.0f);
     fKnobRatio->setRotationAngle(270);
@@ -75,7 +76,7 @@ PowerJuiceUI::PowerJuiceUI()
 
     // knob Make-Up
     fKnobMakeup = new ImageKnob(this, knobImage);
-    fKnobMakeup->setPos(433, 213);
+    fKnobMakeup->setAbsolutePos(433, 213);
     fKnobMakeup->setRange(0.0f, 20.0f);
     fKnobMakeup->setValue(0.0f);
     fKnobMakeup->setRotationAngle(270);
@@ -83,7 +84,7 @@ PowerJuiceUI::PowerJuiceUI()
 
     // knob Mix
     fKnobMix = new ImageKnob(this, knobImage);
-    fKnobMix->setPos(532, 213);
+    fKnobMix->setAbsolutePos(532, 213);
     fKnobMix->setRange(0.0f, 1.0f);
     fKnobMix->setValue(1.0f);
     fKnobMix->setRotationAngle(270);
@@ -93,21 +94,8 @@ PowerJuiceUI::PowerJuiceUI()
     Image aboutImageNormal(PowerJuiceArtwork::aboutButtonNormalData, PowerJuiceArtwork::aboutButtonNormalWidth, PowerJuiceArtwork::aboutButtonNormalHeight);
     Image aboutImageHover(PowerJuiceArtwork::aboutButtonHoverData, PowerJuiceArtwork::aboutButtonHoverWidth, PowerJuiceArtwork::aboutButtonHoverHeight);
     fButtonAbout = new ImageButton(this, aboutImageNormal, aboutImageHover, aboutImageHover);
-    fButtonAbout->setPos(502, 17);
+    fButtonAbout->setAbsolutePos(502, 17);
     fButtonAbout->setCallback(this);
-
-    
-}
-
-PowerJuiceUI::~PowerJuiceUI()
-{
-    delete fKnobAttack;
-    delete fKnobRelease;
-    delete fKnobThreshold;
-    delete fKnobRatio;
-    delete fKnobMakeup;
-    delete fKnobMix;
-    delete fButtonAbout;
 }
 
 // -----------------------------------------------------------------------
@@ -212,20 +200,16 @@ void PowerJuiceUI::imageKnobValueChanged(ImageKnob* knob, float value)
 
 }
 
-void PowerJuiceUI::d_uiIdle() {
-	dsp = (PowerJuicePlugin*)d_getPluginInstancePointer();
-	if (dsp -> repaintNeeded()) {
-		repaint();
-	} else {
-	}
+void PowerJuiceUI::d_uiIdle()
+{
+    if (dsp != nullptr && dsp->repaintNeeded())
+        repaint();
 }
 
 void PowerJuiceUI::onDisplay()
 {
-	
     fImgBackground.draw();
-    //dsp side connection
-    dsp = (PowerJuicePlugin*)d_getPluginInstancePointer();
+
     if (dsp == nullptr)
         return;
 

@@ -42,7 +42,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Wave1
     fKnobWave1 = new ImageKnob(this, knobImage);
-    fKnobWave1->setPos(446, 79);
+    fKnobWave1->setAbsolutePos(446, 79);
     fKnobWave1->setRange(1.0f, 4.0f);
     fKnobWave1->setValue(0.3f);
     fKnobWave1->setRotationAngle(270);
@@ -50,7 +50,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Wave2
     fKnobWave2 = new ImageKnob(this, knobImage);
-    fKnobWave2->setPos(446, 139);
+    fKnobWave2->setAbsolutePos(446, 139);
     fKnobWave2->setRange(1.0f, 4.0f);
     fKnobWave2->setValue(3.0f);
     fKnobWave2->setRotationAngle(270);
@@ -58,7 +58,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Wave3
     fKnobWave3 = new ImageKnob(this, knobImage);
-    fKnobWave3->setPos(446, 199);
+    fKnobWave3->setAbsolutePos(446, 199);
     fKnobWave3->setRange(1.0f, 4.0f);
     fKnobWave3->setValue(3.0f);
     fKnobWave3->setRotationAngle(270);
@@ -66,7 +66,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Wave4
     fKnobWave4 = new ImageKnob(this, knobImage);
-    fKnobWave4->setPos(446, 259);
+    fKnobWave4->setAbsolutePos(446, 259);
     fKnobWave4->setRange(1.0f, 4.0f);
     fKnobWave4->setValue(3.0f);
     fKnobWave4->setRotationAngle(270);
@@ -74,7 +74,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Wave5
     fKnobWave5 = new ImageKnob(this, knobImage);
-    fKnobWave5->setPos(446, 319);
+    fKnobWave5->setAbsolutePos(446, 319);
     fKnobWave5->setRange(1.0f, 4.0f);
     fKnobWave5->setValue(3.0f);
     fKnobWave5->setRotationAngle(270);
@@ -82,7 +82,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Wave6
     fKnobWave6 = new ImageKnob(this, knobImage);
-    fKnobWave6->setPos(446, 379);
+    fKnobWave6->setAbsolutePos(446, 379);
     fKnobWave6->setRange(1.0f, 4.0f);
     fKnobWave6->setValue(3.0f);
     fKnobWave6->setRotationAngle(270);
@@ -90,7 +90,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob FM1
     fKnobFM1 = new ImageKnob(this, knobImage);
-    fKnobFM1->setPos(510, 79);
+    fKnobFM1->setAbsolutePos(510, 79);
     fKnobFM1->setRange(0.0f, 1.0f);
     fKnobFM1->setValue(0.5f);
     fKnobFM1->setRotationAngle(270);
@@ -98,7 +98,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob FM2
     fKnobFM2 = new ImageKnob(this, knobImage);
-    fKnobFM2->setPos(510, 139);
+    fKnobFM2->setAbsolutePos(510, 139);
     fKnobFM2->setRange(0.0f, 1.0f);
     fKnobFM2->setValue(0.5f);
     fKnobFM2->setRotationAngle(270);
@@ -106,7 +106,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob FM3
     fKnobFM3 = new ImageKnob(this, knobImage);
-    fKnobFM3->setPos(510, 199);
+    fKnobFM3->setAbsolutePos(510, 199);
     fKnobFM3->setRange(0.0f, 1.0f);
     fKnobFM3->setValue(0.5f);
     fKnobFM3->setRotationAngle(270);
@@ -114,7 +114,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob FM4
     fKnobFM4 = new ImageKnob(this, knobImage);
-    fKnobFM4->setPos(510, 259);
+    fKnobFM4->setAbsolutePos(510, 259);
     fKnobFM4->setRange(0.0f, 1.0f);
     fKnobFM4->setValue(0.5f);
     fKnobFM4->setRotationAngle(270);
@@ -122,7 +122,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob FM5
     fKnobFM5 = new ImageKnob(this, knobImage);
-    fKnobFM5->setPos(510, 319);
+    fKnobFM5->setAbsolutePos(510, 319);
     fKnobFM5->setRange(0.0f, 1.0f);
     fKnobFM5->setValue(0.5f);
     fKnobFM5->setRotationAngle(270);
@@ -130,7 +130,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob FM6
     fKnobFM6 = new ImageKnob(this, knobImage);
-    fKnobFM6->setPos(510, 379);
+    fKnobFM6->setAbsolutePos(510, 379);
     fKnobFM6->setRange(0.0f, 1.0f);
     fKnobFM6->setValue(0.5f);
     fKnobFM6->setRotationAngle(270);
@@ -138,7 +138,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Pan1
     fKnobPan1 = new ImageKnob(this, knobImage);
-    fKnobPan1->setPos(574, 79);
+    fKnobPan1->setAbsolutePos(574, 79);
     fKnobPan1->setRange(-1.0f, 1.0f);
     fKnobPan1->setValue(0.0f);
     fKnobPan1->setRotationAngle(270);
@@ -146,7 +146,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Pan2
     fKnobPan2 = new ImageKnob(this, knobImage);
-    fKnobPan2->setPos(574, 139);
+    fKnobPan2->setAbsolutePos(574, 139);
     fKnobPan2->setRange(-1.0f, 1.0f);
     fKnobPan2->setValue(0.0f);
     fKnobPan2->setRotationAngle(270);
@@ -154,7 +154,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Pan3
     fKnobPan3 = new ImageKnob(this, knobImage);
-    fKnobPan3->setPos(574, 199);
+    fKnobPan3->setAbsolutePos(574, 199);
     fKnobPan3->setRange(-1.0f, 1.0f);
     fKnobPan3->setValue(0.0f);
     fKnobPan3->setRotationAngle(270);
@@ -162,7 +162,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Pan4
     fKnobPan4 = new ImageKnob(this, knobImage);
-    fKnobPan4->setPos(574, 259);
+    fKnobPan4->setAbsolutePos(574, 259);
     fKnobPan4->setRange(-1.0f, 1.0f);
     fKnobPan4->setValue(0.0f);
     fKnobPan4->setRotationAngle(270);
@@ -170,7 +170,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Pan5
     fKnobPan5 = new ImageKnob(this, knobImage);
-    fKnobPan5->setPos(574, 319);
+    fKnobPan5->setAbsolutePos(574, 319);
     fKnobPan5->setRange(-1.0f, 1.0f);
     fKnobPan5->setValue(0.0f);
     fKnobPan5->setRotationAngle(270);
@@ -178,7 +178,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Pan6
     fKnobPan6 = new ImageKnob(this, knobImage);
-    fKnobPan6->setPos(574, 379);
+    fKnobPan6->setAbsolutePos(574, 379);
     fKnobPan6->setRange(-1.0f, 1.0f);
     fKnobPan6->setValue(0.0f);
     fKnobPan6->setRotationAngle(270);
@@ -186,7 +186,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Amp1
     fKnobAmp1 = new ImageKnob(this, knobImage);
-    fKnobAmp1->setPos(638, 79);
+    fKnobAmp1->setAbsolutePos(638, 79);
     fKnobAmp1->setRange(0.0f, 1.0f);
     fKnobAmp1->setValue(0.5f);
     fKnobAmp1->setRotationAngle(270);
@@ -194,7 +194,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Amp2
     fKnobAmp2 = new ImageKnob(this, knobImage);
-    fKnobAmp2->setPos(638, 139);
+    fKnobAmp2->setAbsolutePos(638, 139);
     fKnobAmp2->setRange(0.0f, 1.0f);
     fKnobAmp2->setValue(0.5f);
     fKnobAmp2->setRotationAngle(270);
@@ -202,7 +202,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Amp3
     fKnobAmp3 = new ImageKnob(this, knobImage);
-    fKnobAmp3->setPos(638, 199);
+    fKnobAmp3->setAbsolutePos(638, 199);
     fKnobAmp3->setRange(0.0f, 1.0f);
     fKnobAmp3->setValue(0.5f);
     fKnobAmp3->setRotationAngle(270);
@@ -210,7 +210,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Amp4
     fKnobAmp4 = new ImageKnob(this, knobImage);
-    fKnobAmp4->setPos(638, 259);
+    fKnobAmp4->setAbsolutePos(638, 259);
     fKnobAmp4->setRange(0.0f, 1.0f);
     fKnobAmp4->setValue(0.5f);
     fKnobAmp4->setRotationAngle(270);
@@ -218,7 +218,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Amp5
     fKnobAmp5 = new ImageKnob(this, knobImage);
-    fKnobAmp5->setPos(638, 319);
+    fKnobAmp5->setAbsolutePos(638, 319);
     fKnobAmp5->setRange(0.0f, 1.0f);
     fKnobAmp5->setValue(0.5f);
     fKnobAmp5->setRotationAngle(270);
@@ -226,7 +226,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Amp6
     fKnobAmp6 = new ImageKnob(this, knobImage);
-    fKnobAmp6->setPos(638, 379);
+    fKnobAmp6->setAbsolutePos(638, 379);
     fKnobAmp6->setRange(0.0f, 1.0f);
     fKnobAmp6->setValue(0.5f);
     fKnobAmp6->setRotationAngle(270);
@@ -234,7 +234,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Attack
     fKnobAttack = new ImageKnob(this, knobImage2);
-    fKnobAttack->setPos(34, 248);
+    fKnobAttack->setAbsolutePos(34, 248);
     fKnobAttack->setRange(0.0f, 1.0f);
     fKnobAttack->setValue(0.0f);
     fKnobAttack->setRotationAngle(270);
@@ -242,7 +242,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Decay
     fKnobDecay = new ImageKnob(this, knobImage2);
-    fKnobDecay->setPos(132, 248);
+    fKnobDecay->setAbsolutePos(132, 248);
     fKnobDecay->setRange(0.0f, 1.0f);
     fKnobDecay->setValue(0.0f);
     fKnobDecay->setRotationAngle(270);
@@ -250,7 +250,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Sustain
     fKnobSustain = new ImageKnob(this, knobImage2);
-    fKnobSustain->setPos(232, 248);
+    fKnobSustain->setAbsolutePos(232, 248);
     fKnobSustain->setRange(0.0f, 1.0f);
     fKnobSustain->setValue(1.0f);
     fKnobSustain->setRotationAngle(270);
@@ -258,7 +258,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Release
     fKnobRelease = new ImageKnob(this, knobImage2);
-    fKnobRelease->setPos(330, 248);
+    fKnobRelease->setAbsolutePos(330, 248);
     fKnobRelease->setRange(0.0f, 1.0f);
     fKnobRelease->setValue(0.0f);
     fKnobRelease->setRotationAngle(270);
@@ -266,7 +266,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Stereo
     fKnobStereo = new ImageKnob(this, knobImage2);
-    fKnobStereo->setPos(34, 339);
+    fKnobStereo->setAbsolutePos(34, 339);
     fKnobStereo->setRange(-1.0f, 1.0f);
     fKnobStereo->setValue(0.0f);
     fKnobStereo->setRotationAngle(270);
@@ -274,7 +274,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Tune
     fKnobTune = new ImageKnob(this, knobImage2);
-    fKnobTune->setPos(132, 339);
+    fKnobTune->setAbsolutePos(132, 339);
     fKnobTune->setRange(-1.0f, 1.0f);
     fKnobTune->setValue(0.0f);
     fKnobTune->setRotationAngle(270);
@@ -282,7 +282,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Volume
     fKnobVolume = new ImageKnob(this, knobImage2);
-    fKnobVolume->setPos(232, 339);
+    fKnobVolume->setAbsolutePos(232, 339);
     fKnobVolume->setRange(0.0f, 1.0f);
     fKnobVolume->setValue(0.5f);
     fKnobVolume->setRotationAngle(270);
@@ -290,7 +290,7 @@ SegmentJuiceUI::SegmentJuiceUI()
 
     // knob Glide
     fKnobGlide = new ImageKnob(this, knobImage2);
-    fKnobGlide->setPos(330, 339);
+    fKnobGlide->setAbsolutePos(330, 339);
     fKnobGlide->setRange(0.0f, 1.0f);
     fKnobGlide->setValue(0.0f);
     fKnobGlide->setRotationAngle(270);
@@ -300,49 +300,8 @@ SegmentJuiceUI::SegmentJuiceUI()
     Image aboutImageNormal(SegmentJuiceArtwork::aboutButtonNormalData, SegmentJuiceArtwork::aboutButtonNormalWidth, SegmentJuiceArtwork::aboutButtonNormalHeight);
     Image aboutImageHover(SegmentJuiceArtwork::aboutButtonHoverData, SegmentJuiceArtwork::aboutButtonHoverWidth, SegmentJuiceArtwork::aboutButtonHoverHeight);
     fButtonAbout = new ImageButton(this, aboutImageNormal, aboutImageHover, aboutImageHover);
-    fButtonAbout->setPos(599, 17);
+    fButtonAbout->setAbsolutePos(599, 17);
     fButtonAbout->setCallback(this);
-}
-
-SegmentJuiceUI::~SegmentJuiceUI()
-{
-    delete fKnobWave1;
-    delete fKnobWave2;
-    delete fKnobWave3;
-    delete fKnobWave4;
-    delete fKnobWave5;
-    delete fKnobWave6;
-
-    delete fKnobFM1;
-    delete fKnobFM2;
-    delete fKnobFM3;
-    delete fKnobFM4;
-    delete fKnobFM5;
-    delete fKnobFM6;
-
-    delete fKnobPan1;
-    delete fKnobPan2;
-    delete fKnobPan3;
-    delete fKnobPan4;
-    delete fKnobPan5;
-    delete fKnobPan6;
-
-    delete fKnobAmp1;
-    delete fKnobAmp2;
-    delete fKnobAmp3;
-    delete fKnobAmp4;
-    delete fKnobAmp5;
-    delete fKnobAmp6;
-
-    delete fKnobAttack;
-    delete fKnobDecay;
-    delete fKnobSustain;
-    delete fKnobRelease;
-    delete fKnobStereo;
-    delete fKnobTune;
-    delete fKnobVolume;
-    delete fKnobGlide;
-    delete fButtonAbout;
 }
 
 void SegmentJuiceUI::updateSynth() {
@@ -825,7 +784,7 @@ void SegmentJuiceUI::onDisplay()
         for (int i = 0; i<cW; i++) {
             float out = synthL.run()*cH/2+cH/2+cY;
             glVertex2i(i+cX, out);
-            //std::cout << out << std::endl;
+            std::cout << out << std::endl;
         }
     //draw #right waveform
     glEnd();

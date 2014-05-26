@@ -74,7 +74,6 @@ public:
     }
 
     WobbleJuicePlugin();
-    ~WobbleJuicePlugin() override;
 
 protected:
     // -------------------------------------------------------------------
@@ -122,8 +121,7 @@ protected:
     // Process
 
     void d_activate() override;
-    void d_deactivate() override;
-    void d_run(float** inputs, float** outputs, uint32_t frames) override;
+    void d_run(const float** inputs, float** outputs, uint32_t frames) override;
 
     // -------------------------------------------------------------------
 
@@ -133,6 +131,8 @@ private:
     float bar, tick, tickOffset, percentage, phaseOffset, currentPhaseL, currentPhaseR, posL, posR, cutoffL, cutoffR;
     double sinePos;
     float waveType, waveBlend;
+
+    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WobbleJuicePlugin)
 };
 
 // -----------------------------------------------------------------------

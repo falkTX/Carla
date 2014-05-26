@@ -1,7 +1,7 @@
 /*
  * DISTRHO PingPongPan Plugin, based on PingPongPan by Michael Gruhn
  * Copyright (C) 2007 Michael Gruhn <michael-gruhn@web.de>
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
- * For a full copy of the license see the doc/LGPL.txt file.
+ * For a full copy of the license see the LICENSE file.
  */
 
 #include "DistrhoPluginPingPongPan.hpp"
@@ -33,10 +33,6 @@ DistrhoPluginPingPongPan::DistrhoPluginPingPongPan()
 
     // reset
     d_deactivate();
-}
-
-DistrhoPluginPingPongPan::~DistrhoPluginPingPongPan()
-{
 }
 
 // -----------------------------------------------------------------------
@@ -134,12 +130,12 @@ void DistrhoPluginPingPongPan::d_deactivate()
     wavePos = 0.0f;
 }
 
-void DistrhoPluginPingPongPan::d_run(float** inputs, float** outputs, uint32_t frames)
+void DistrhoPluginPingPongPan::d_run(const float** inputs, float** outputs, uint32_t frames)
 {
-    float* in1  = inputs[0];
-    float* in2  = inputs[1];
-    float* out1 = outputs[0];
-    float* out2 = outputs[1];
+    const float* in1  = inputs[0];
+    const float* in2  = inputs[1];
+    float*       out1 = outputs[0];
+    float*       out2 = outputs[1];
 
     for (uint32_t i=0; i < frames; ++i)
     {

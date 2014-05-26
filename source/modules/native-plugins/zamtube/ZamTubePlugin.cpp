@@ -33,13 +33,6 @@ ZamTubePlugin::ZamTubePlugin()
 {
     // set default values
     d_setProgram(0);
-
-    // reset
-    d_deactivate();
-}
-
-ZamTubePlugin::~ZamTubePlugin()
-{
 }
 
 // -----------------------------------------------------------------------
@@ -288,12 +281,7 @@ void ZamTubePlugin::d_activate()
         for (int i=0; i<4; i++) fRec24[i] = 0;
 }
 
-void ZamTubePlugin::d_deactivate()
-{
-    // all values to zero
-}
-
-void ZamTubePlugin::d_run(float** inputs, float** outputs, uint32_t frames)
+void ZamTubePlugin::d_run(const float** inputs, float** outputs, uint32_t frames)
 {
 	T tubetone = 0.f;
 	

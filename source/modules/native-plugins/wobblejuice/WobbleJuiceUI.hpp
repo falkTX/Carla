@@ -23,10 +23,8 @@
 #include "ImageAboutWindow.hpp"
 #include "ImageButton.hpp"
 #include "ImageKnob.hpp"
-#include "ImageSlider.hpp"
 
 #include "WobbleJuiceArtwork.hpp"
-#include "WobbleJuicePlugin.hpp"
 
 using DGL::Image;
 using DGL::ImageAboutWindow;
@@ -43,18 +41,17 @@ class WobbleJuiceUI : public UI,
 {
 public:
     WobbleJuiceUI();
-    ~WobbleJuiceUI() override;
 
 protected:
     // -------------------------------------------------------------------
     // Information
 
-    unsigned int d_getWidth() const noexcept override
+    uint d_getWidth() const noexcept override
     {
         return WobbleJuiceArtwork::backgroundWidth;
     }
 
-    unsigned int d_getHeight() const noexcept override
+    uint d_getHeight() const noexcept override
     {
         return WobbleJuiceArtwork::backgroundHeight;
     }
@@ -79,13 +76,11 @@ private:
     Image fImgBackground;
     ImageAboutWindow fAboutWindow;
 
-    ImageKnob* fKnobDivision;
-    ImageKnob* fKnobResonance;
-    ImageKnob* fKnobRange;
-    ImageKnob* fKnobPhase;
-    ImageKnob* fKnobDrive;
-    ImageKnob* fKnobWave;
-    ImageButton* fButtonAbout;
+    ScopedPointer<ImageButton> fButtonAbout;
+    ScopedPointer<ImageKnob>   fKnobDivision, fKnobResonance, fKnobRange;
+    ScopedPointer<ImageKnob>   fKnobPhase, fKnobWave, fKnobDrive;
+
+    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WobbleJuiceUI)
 };
 
 // -----------------------------------------------------------------------

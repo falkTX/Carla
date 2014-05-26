@@ -1,6 +1,6 @@
 /*
  * ZamComp mono compressor
- * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com> 
+ * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,9 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "ZamCompPlugin.hpp"
 #include "ZamCompUI.hpp"
-
-using DGL::Point;
 
 START_NAMESPACE_DISTRHO
 
@@ -35,70 +34,69 @@ ZamCompUI::ZamCompUI()
 
     // led values
     fLedRedValue = 0.0f;
-    fLedYellowValue = 0.0f; 
+    fLedYellowValue = 0.0f;
 
     // knob
     Image knobImage(ZamCompArtwork::knobData, ZamCompArtwork::knobWidth, ZamCompArtwork::knobHeight);
 
-    // knob 
+    // knob
     fKnobAttack = new ImageKnob(this, knobImage);
-    fKnobAttack->setPos(24, 45);
+    fKnobAttack->setAbsolutePos(24, 45);
+    fKnobAttack->setId(ZamCompPlugin::paramAttack);
     fKnobAttack->setRange(0.1f, 200.0f);
     fKnobAttack->setStep(0.1f);
-    //fKnobAttack->setLogScale(true);
-    //fKnobAttack->setDefault(10.0f);
+    fKnobAttack->setUsingLogScale(true);
+    fKnobAttack->setDefault(10.0f);
     fKnobAttack->setRotationAngle(240);
     fKnobAttack->setCallback(this);
 
     fKnobRelease = new ImageKnob(this, knobImage);
-    fKnobRelease->setPos(108, 45);
+    fKnobRelease->setAbsolutePos(108, 45);
+    fKnobRelease->setId(ZamCompPlugin::paramRelease);
     fKnobRelease->setRange(50.0f, 500.0f);
     fKnobRelease->setStep(1.0f);
-    //fKnobRelease->setDefault(80.0f);
+    fKnobRelease->setDefault(80.0f);
     fKnobRelease->setRotationAngle(240);
     fKnobRelease->setCallback(this);
 
     fKnobThresh = new ImageKnob(this, knobImage);
-    fKnobThresh->setPos(191.5, 45);
+    fKnobThresh->setAbsolutePos(191.5, 45);
+    fKnobThresh->setId(ZamCompPlugin::paramThresh);
     fKnobThresh->setRange(-60.0f, 0.0f);
     fKnobThresh->setStep(1.0f);
-    //fKnobThresh->setDefault(0.0f);
+    fKnobThresh->setDefault(0.0f);
     fKnobThresh->setRotationAngle(240);
     fKnobThresh->setCallback(this);
 
     fKnobRatio = new ImageKnob(this, knobImage);
-    fKnobRatio->setPos(270, 45);
+    fKnobRatio->setAbsolutePos(270, 45);
+    fKnobRatio->setId(ZamCompPlugin::paramRatio);
     fKnobRatio->setRange(1.0f, 20.0f);
     fKnobRatio->setStep(0.1f);
-    //fKnobRatio->setDefault(4.0f);
+    fKnobRatio->setDefault(4.0f);
     fKnobRatio->setRotationAngle(240);
     fKnobRatio->setCallback(this);
 
     fKnobKnee = new ImageKnob(this, knobImage);
-    fKnobKnee->setPos(348.5, 45);
+    fKnobKnee->setAbsolutePos(348.5, 45);
+    fKnobKnee->setId(ZamCompPlugin::paramKnee);
     fKnobKnee->setRange(0.0f, 8.0f);
     fKnobKnee->setStep(0.1f);
-    //fKnobKnee->setDefault(0.0f);
+    fKnobKnee->setDefault(0.0f);
     fKnobKnee->setRotationAngle(240);
     fKnobKnee->setCallback(this);
 
     fKnobMakeup = new ImageKnob(this, knobImage);
-    fKnobMakeup->setPos(427.3, 45);
+    fKnobMakeup->setAbsolutePos(427.3, 45);
+    fKnobMakeup->setId(ZamCompPlugin::paramMakeup);
     fKnobMakeup->setRange(-30.0f, 30.0f);
     fKnobMakeup->setStep(1.0f);
-    //fKnobMakeup->setDefault(0.0f);
+    fKnobMakeup->setDefault(0.0f);
     fKnobMakeup->setRotationAngle(240);
     fKnobMakeup->setCallback(this);
-}
 
-ZamCompUI::~ZamCompUI()
-{
-    delete fKnobAttack;
-    delete fKnobRelease;
-    delete fKnobThresh;
-    delete fKnobRatio;
-    delete fKnobKnee;
-    delete fKnobMakeup;
+    // set default values
+    d_programChanged(0);
 }
 
 // -----------------------------------------------------------------------
@@ -148,14 +146,13 @@ void ZamCompUI::d_programChanged(uint32_t index)
     if (index != 0)
         return;
 
-    /* Default values
-    fKnobAttack->setDefault(10.0f);
-    fKnobRelease->setDefault(80.0f);
-    fKnobThresh->setDefault(0.0f);
-    fKnobRatio->setDefault(4.0f);
-    fKnobKnee->setDefault(0.0f);
-    fKnobMakeup->setDefault(0.0f);
-    */
+    // Default values
+    fKnobAttack->setValue(10.0f);
+    fKnobRelease->setValue(80.0f);
+    fKnobThresh->setValue(0.0f);
+    fKnobRatio->setValue(4.0f);
+    fKnobKnee->setValue(0.0f);
+    fKnobMakeup->setValue(0.0f);
 }
 
 // -----------------------------------------------------------------------
@@ -163,50 +160,17 @@ void ZamCompUI::d_programChanged(uint32_t index)
 
 void ZamCompUI::imageKnobDragStarted(ImageKnob* knob)
 {
-    if (knob == fKnobAttack)
-        d_editParameter(ZamCompPlugin::paramAttack, true);
-    else if (knob == fKnobRelease)
-        d_editParameter(ZamCompPlugin::paramRelease, true);
-    else if (knob == fKnobThresh)
-        d_editParameter(ZamCompPlugin::paramThresh, true);
-    else if (knob == fKnobRatio)
-        d_editParameter(ZamCompPlugin::paramRatio, true);
-    else if (knob == fKnobKnee)
-        d_editParameter(ZamCompPlugin::paramKnee, true);
-    else if (knob == fKnobMakeup)
-        d_editParameter(ZamCompPlugin::paramMakeup, true);
+    d_editParameter(knob->getId(), true);
 }
 
 void ZamCompUI::imageKnobDragFinished(ImageKnob* knob)
 {
-    if (knob == fKnobAttack)
-        d_editParameter(ZamCompPlugin::paramAttack, false);
-    else if (knob == fKnobRelease)
-        d_editParameter(ZamCompPlugin::paramRelease, false);
-    else if (knob == fKnobThresh)
-        d_editParameter(ZamCompPlugin::paramThresh, false);
-    else if (knob == fKnobRatio)
-        d_editParameter(ZamCompPlugin::paramRatio, false);
-    else if (knob == fKnobKnee)
-        d_editParameter(ZamCompPlugin::paramKnee, false);
-    else if (knob == fKnobMakeup)
-        d_editParameter(ZamCompPlugin::paramMakeup, false);
+    d_editParameter(knob->getId(), false);
 }
 
 void ZamCompUI::imageKnobValueChanged(ImageKnob* knob, float value)
 {
-    if (knob == fKnobAttack)
-        d_setParameterValue(ZamCompPlugin::paramAttack, value);
-    else if (knob == fKnobRelease)
-        d_setParameterValue(ZamCompPlugin::paramRelease, value);
-    else if (knob == fKnobThresh)
-        d_setParameterValue(ZamCompPlugin::paramThresh, value);
-    else if (knob == fKnobRatio)
-        d_setParameterValue(ZamCompPlugin::paramRatio, value);
-    else if (knob == fKnobKnee)
-        d_setParameterValue(ZamCompPlugin::paramKnee, value);
-    else if (knob == fKnobMakeup)
-        d_setParameterValue(ZamCompPlugin::paramMakeup, value);
+    d_setParameterValue(knob->getId(), value);
 }
 
 void ZamCompUI::onDisplay()
@@ -250,7 +214,7 @@ void ZamCompUI::onDisplay()
 	else numRedLeds = 0;
 
     for (int i=numRedLeds; i>0; --i)
-        fLedRedImg.draw(sLedInitialX + (12 - i)*sLedSpacing, sRedLedStaticY);
+        fLedRedImg.drawAt(sLedInitialX + (12 - i)*sLedSpacing, sRedLedStaticY);
 
 	if (fLedYellowValue >= 20.f)
 		numYellowLeds = 19;
@@ -294,12 +258,12 @@ void ZamCompUI::onDisplay()
 
 	if (numYellowLeds > 12) {
 		for (int i=12; i<numYellowLeds; ++i)
-			fLedRedImg.draw(sLedInitialX + i*sLedSpacing, sYellowLedStaticY);
+			fLedRedImg.drawAt(sLedInitialX + i*sLedSpacing, sYellowLedStaticY);
 		for (int i=0; i<12; ++i)
-			fLedYellowImg.draw(sLedInitialX + i*sLedSpacing, sYellowLedStaticY);
+			fLedYellowImg.drawAt(sLedInitialX + i*sLedSpacing, sYellowLedStaticY);
 	} else {
 		for (int i=0; i<numYellowLeds; ++i)
-			fLedYellowImg.draw(sLedInitialX + i*sLedSpacing, sYellowLedStaticY);
+			fLedYellowImg.drawAt(sLedInitialX + i*sLedSpacing, sYellowLedStaticY);
 	}
 }
 

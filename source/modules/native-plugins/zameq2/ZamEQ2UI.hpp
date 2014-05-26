@@ -1,6 +1,6 @@
 /*
  * ZamEQ2 2 band parametric equaliser
- * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com> 
+ * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -18,9 +18,6 @@
 #ifndef ZAMEQ2UI_HPP_INCLUDED
 #define ZAMEQ2UI_HPP_INCLUDED
 
-#define EQPOINTS 1000
-#include <complex>
-
 #include "DistrhoUI.hpp"
 
 #include "ImageKnob.hpp"
@@ -28,6 +25,9 @@
 
 #include "ZamEQ2Artwork.hpp"
 #include "ZamEQ2Plugin.hpp"
+
+#define EQPOINTS 1000
+#include <complex>
 
 using DGL::Image;
 using DGL::ImageKnob;
@@ -38,23 +38,22 @@ START_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 
 class ZamEQ2UI : public UI,
-                  public ImageKnob::Callback,
-                  public ImageSlider::Callback
+                 public ImageKnob::Callback,
+                 public ImageSlider::Callback
 {
 public:
     ZamEQ2UI();
-    ~ZamEQ2UI() override;
 
 protected:
     // -------------------------------------------------------------------
     // Information
 
-    unsigned int d_getWidth() const noexcept override
+    uint d_getWidth() const noexcept override
     {
         return ZamEQ2Artwork::zameq2Width;
     }
 
-    unsigned int d_getHeight() const noexcept override
+    uint d_getHeight() const noexcept override
     {
         return ZamEQ2Artwork::zameq2Height;
     }
@@ -105,6 +104,7 @@ protected:
 	void peq(int i, int ch, float srate, float fc, float g, float bw);
 	void lowshelf(int i, int ch, float srate, float fc, float g);
 	void highshelf(int i, int ch, float srate, float fc, float g);
+
     // -------------------------------------------------------------------
     // DSP Callbacks
 
@@ -126,17 +126,12 @@ protected:
 
 private:
     Image fImgBackground;
-    ImageKnob* fKnobGain1;
-    ImageKnob* fKnobQ1;
-    ImageKnob* fKnobFreq1;
-    ImageKnob* fKnobGain2;
-    ImageKnob* fKnobQ2;
-    ImageKnob* fKnobFreq2;
-    ImageKnob* fKnobGainL;
-    ImageKnob* fKnobFreqL;
-    ImageKnob* fKnobGainH;
-    ImageKnob* fKnobFreqH;
-    ImageSlider* fSliderMaster;
+    ScopedPointer<ImageKnob> fKnobGain1;
+    ScopedPointer<ImageKnob> fKnobQ1, fKnobFreq1, fKnobGain2;
+    ScopedPointer<ImageKnob> fKnobQ2, fKnobFreq2;
+    ScopedPointer<ImageKnob> fKnobGainL, fKnobFreqL;
+    ScopedPointer<ImageKnob> fKnobGainH, fKnobFreqH;
+    ScopedPointer<ImageSlider> fSliderMaster;
     float eqx[EQPOINTS];
     float eqy[EQPOINTS];
     DGL::Rectangle<int> fCanvasArea;

@@ -1,6 +1,6 @@
 /*
  * ZaMultiComp mono multiband compressor
- * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com> 
+ * Copyright (C) 2014  Damien Zammit <damien@zamaudio.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -24,7 +24,6 @@
 #include "ImageToggle.hpp"
 
 #include "ZaMultiCompArtwork.hpp"
-#include "ZaMultiCompPlugin.hpp"
 
 using DGL::Image;
 using DGL::ImageKnob;
@@ -35,23 +34,22 @@ START_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 
 class ZaMultiCompUI : public UI,
-                  public ImageKnob::Callback,
-                  public ImageToggle::Callback
+                      public ImageKnob::Callback,
+                      public ImageToggle::Callback
 {
 public:
     ZaMultiCompUI();
-    ~ZaMultiCompUI() override;
 
 protected:
     // -------------------------------------------------------------------
     // Information
 
-    unsigned int d_getWidth() const noexcept override
+    uint d_getWidth() const noexcept override
     {
         return ZaMultiCompArtwork::zamulticompWidth;
     }
 
-    unsigned int d_getHeight() const noexcept override
+    uint d_getHeight() const noexcept override
     {
         return ZaMultiCompArtwork::zamulticompHeight;
     }
@@ -75,23 +73,13 @@ protected:
 
 private:
     Image fImgBackground;
-    ImageKnob* fKnobAttack;
-    ImageKnob* fKnobRelease;
-    ImageKnob* fKnobThresh;
-    ImageKnob* fKnobRatio;
-    ImageKnob* fKnobKnee;
-    ImageKnob* fKnobGlobalGain;
-    ImageKnob* fKnobMakeup1;
-    ImageKnob* fKnobMakeup2;
-    ImageKnob* fKnobMakeup3;
-    ImageKnob* fKnobXover1;
-    ImageKnob* fKnobXover2;
-    ImageToggle* fToggleBypass1;
-    ImageToggle* fToggleBypass2;
-    ImageToggle* fToggleBypass3;
-    ImageToggle* fToggleListen1;
-    ImageToggle* fToggleListen2;
-    ImageToggle* fToggleListen3;
+
+    ScopedPointer<ImageKnob> fKnobAttack, fKnobRelease, fKnobThresh;
+    ScopedPointer<ImageKnob> fKnobRatio, fKnobKnee, fKnobGlobalGain;
+    ScopedPointer<ImageKnob> fKnobMakeup1, fKnobMakeup2, fKnobMakeup3;
+    ScopedPointer<ImageKnob> fKnobXover1, fKnobXover2;
+    ScopedPointer<ImageToggle> fToggleBypass1, fToggleBypass2, fToggleBypass3;
+    ScopedPointer<ImageToggle> fToggleListen1, fToggleListen2, fToggleListen3;
 
     Image fLedRedImg;
     float fLedRedValue1;

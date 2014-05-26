@@ -1,6 +1,6 @@
 /*
  * DISTRHO Nekobi Plugin, based on Nekobee by Sean Bolton and others.
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -12,12 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
+ * For a full copy of the GNU General Public License see the LICENSE file.
  */
 
+#include "DistrhoPluginNekobi.hpp"
 #include "DistrhoUINekobi.hpp"
-
-using DGL::Point;
 
 START_NAMESPACE_DISTRHO
 
@@ -28,18 +27,18 @@ DistrhoUINekobi::DistrhoUINekobi()
       fAboutWindow(this)
 {
     // FIXME
-    fNeko.setTimerSpeed(4);
+    fNeko.setTimerSpeed(5);
 
     // background
     fImgBackground = Image(DistrhoArtworkNekobi::backgroundData, DistrhoArtworkNekobi::backgroundWidth, DistrhoArtworkNekobi::backgroundHeight, GL_BGR);
 
-    Image imageAbout(DistrhoArtworkNekobi::aboutData, DistrhoArtworkNekobi::aboutWidth, DistrhoArtworkNekobi::aboutHeight, GL_BGR);
-    fAboutWindow.setImage(imageAbout);
+    Image aboutImage(DistrhoArtworkNekobi::aboutData, DistrhoArtworkNekobi::aboutWidth, DistrhoArtworkNekobi::aboutHeight, GL_BGR);
+    fAboutWindow.setImage(aboutImage);
 
     // slider
     Image sliderImage(DistrhoArtworkNekobi::sliderData, DistrhoArtworkNekobi::sliderWidth, DistrhoArtworkNekobi::sliderHeight);
 
-    fSliderWaveform = new ImageSlider(this, sliderImage);
+    fSliderWaveform = new ImageSlider(this, sliderImage, DistrhoPluginNekobi::paramWaveform);
     fSliderWaveform->setStartPos(133, 40);
     fSliderWaveform->setEndPos(133, 60);
     fSliderWaveform->setRange(0.0f, 1.0f);
@@ -51,57 +50,64 @@ DistrhoUINekobi::DistrhoUINekobi()
     Image knobImage(DistrhoArtworkNekobi::knobData, DistrhoArtworkNekobi::knobWidth, DistrhoArtworkNekobi::knobHeight);
 
     // knob Tuning
-    fKnobTuning = new ImageKnob(this, knobImage);
-    fKnobTuning->setPos(41, 43);
+    fKnobTuning = new ImageKnob(this, knobImage, ImageKnob::Vertical, DistrhoPluginNekobi::paramTuning);
+    fKnobTuning->setAbsolutePos(41, 43);
     fKnobTuning->setRange(-12.0f, 12.0f);
+    fKnobTuning->setDefault(0.0f);
     fKnobTuning->setValue(0.0f);
     fKnobTuning->setRotationAngle(305);
     fKnobTuning->setCallback(this);
 
     // knob Cutoff
-    fKnobCutoff = new ImageKnob(this, knobImage);
-    fKnobCutoff->setPos(185, 43);
+    fKnobCutoff = new ImageKnob(this, knobImage, ImageKnob::Vertical, DistrhoPluginNekobi::paramCutoff);
+    fKnobCutoff->setAbsolutePos(185, 43);
     fKnobCutoff->setRange(0.0f, 100.0f);
+    fKnobCutoff->setDefault(25.0f);
     fKnobCutoff->setValue(25.0f);
     fKnobCutoff->setRotationAngle(305);
     fKnobCutoff->setCallback(this);
 
     // knob Resonance
-    fKnobResonance = new ImageKnob(this, knobImage);
-    fKnobResonance->setPos(257, 43);
+    fKnobResonance = new ImageKnob(this, knobImage, ImageKnob::Vertical, DistrhoPluginNekobi::paramResonance);
+    fKnobResonance->setAbsolutePos(257, 43);
     fKnobResonance->setRange(0.0f, 95.0f);
+    fKnobResonance->setDefault(25.0f);
     fKnobResonance->setValue(25.0f);
     fKnobResonance->setRotationAngle(305);
     fKnobResonance->setCallback(this);
 
     // knob Env Mod
-    fKnobEnvMod = new ImageKnob(this, knobImage);
-    fKnobEnvMod->setPos(329, 43);
+    fKnobEnvMod = new ImageKnob(this, knobImage, ImageKnob::Vertical, DistrhoPluginNekobi::paramEnvMod);
+    fKnobEnvMod->setAbsolutePos(329, 43);
     fKnobEnvMod->setRange(0.0f, 100.0f);
+    fKnobEnvMod->setDefault(50.0f);
     fKnobEnvMod->setValue(50.0f);
     fKnobEnvMod->setRotationAngle(305);
     fKnobEnvMod->setCallback(this);
 
     // knob Decay
-    fKnobDecay = new ImageKnob(this, knobImage);
-    fKnobDecay->setPos(400, 43);
+    fKnobDecay = new ImageKnob(this, knobImage, ImageKnob::Vertical, DistrhoPluginNekobi::paramDecay);
+    fKnobDecay->setAbsolutePos(400, 43);
     fKnobDecay->setRange(0.0f, 100.0f);
+    fKnobDecay->setDefault(75.0f);
     fKnobDecay->setValue(75.0f);
     fKnobDecay->setRotationAngle(305);
     fKnobDecay->setCallback(this);
 
     // knob Accent
-    fKnobAccent = new ImageKnob(this, knobImage);
-    fKnobAccent->setPos(473, 43);
+    fKnobAccent = new ImageKnob(this, knobImage, ImageKnob::Vertical, DistrhoPluginNekobi::paramAccent);
+    fKnobAccent->setAbsolutePos(473, 43);
     fKnobAccent->setRange(0.0f, 100.0f);
+    fKnobAccent->setDefault(25.0f);
     fKnobAccent->setValue(25.0f);
     fKnobAccent->setRotationAngle(305);
     fKnobAccent->setCallback(this);
 
     // knob Volume
-    fKnobVolume = new ImageKnob(this, knobImage);
-    fKnobVolume->setPos(545, 43);
+    fKnobVolume = new ImageKnob(this, knobImage, ImageKnob::Vertical, DistrhoPluginNekobi::paramVolume);
+    fKnobVolume->setAbsolutePos(545, 43);
     fKnobVolume->setRange(0.0f, 100.0f);
+    fKnobVolume->setDefault(75.0f);
     fKnobVolume->setValue(75.0f);
     fKnobVolume->setRotationAngle(305);
     fKnobVolume->setCallback(this);
@@ -110,21 +116,8 @@ DistrhoUINekobi::DistrhoUINekobi()
     Image aboutImageNormal(DistrhoArtworkNekobi::aboutButtonNormalData, DistrhoArtworkNekobi::aboutButtonNormalWidth, DistrhoArtworkNekobi::aboutButtonNormalHeight);
     Image aboutImageHover(DistrhoArtworkNekobi::aboutButtonHoverData, DistrhoArtworkNekobi::aboutButtonHoverWidth, DistrhoArtworkNekobi::aboutButtonHoverHeight);
     fButtonAbout = new ImageButton(this, aboutImageNormal, aboutImageHover, aboutImageHover);
-    fButtonAbout->setPos(505, 5);
+    fButtonAbout->setAbsolutePos(505, 5);
     fButtonAbout->setCallback(this);
-}
-
-DistrhoUINekobi::~DistrhoUINekobi()
-{
-    delete fSliderWaveform;
-    delete fKnobTuning;
-    delete fKnobCutoff;
-    delete fKnobResonance;
-    delete fKnobEnvMod;
-    delete fKnobDecay;
-    delete fKnobAccent;
-    delete fKnobVolume;
-    delete fButtonAbout;
 }
 
 // -----------------------------------------------------------------------
@@ -183,80 +176,32 @@ void DistrhoUINekobi::imageButtonClicked(ImageButton* button, int)
 
 void DistrhoUINekobi::imageKnobDragStarted(ImageKnob* knob)
 {
-    if (knob == fKnobTuning)
-        d_editParameter(DistrhoPluginNekobi::paramTuning, true);
-    else if (knob == fKnobCutoff)
-        d_editParameter(DistrhoPluginNekobi::paramCutoff, true);
-    else if (knob == fKnobResonance)
-        d_editParameter(DistrhoPluginNekobi::paramResonance, true);
-    else if (knob == fKnobEnvMod)
-        d_editParameter(DistrhoPluginNekobi::paramEnvMod, true);
-    else if (knob == fKnobDecay)
-        d_editParameter(DistrhoPluginNekobi::paramDecay, true);
-    else if (knob == fKnobAccent)
-        d_editParameter(DistrhoPluginNekobi::paramAccent, true);
-    else if (knob == fKnobVolume)
-        d_editParameter(DistrhoPluginNekobi::paramVolume, true);
+    d_editParameter(knob->getId(), true);
 }
 
 void DistrhoUINekobi::imageKnobDragFinished(ImageKnob* knob)
 {
-    if (knob == fKnobTuning)
-        d_editParameter(DistrhoPluginNekobi::paramTuning, false);
-    else if (knob == fKnobCutoff)
-        d_editParameter(DistrhoPluginNekobi::paramCutoff, false);
-    else if (knob == fKnobResonance)
-        d_editParameter(DistrhoPluginNekobi::paramResonance, false);
-    else if (knob == fKnobEnvMod)
-        d_editParameter(DistrhoPluginNekobi::paramEnvMod, false);
-    else if (knob == fKnobDecay)
-        d_editParameter(DistrhoPluginNekobi::paramDecay, false);
-    else if (knob == fKnobAccent)
-        d_editParameter(DistrhoPluginNekobi::paramAccent, false);
-    else if (knob == fKnobVolume)
-        d_editParameter(DistrhoPluginNekobi::paramVolume, false);
+    d_editParameter(knob->getId(), false);
 }
 
 void DistrhoUINekobi::imageKnobValueChanged(ImageKnob* knob, float value)
 {
-    if (knob == fKnobTuning)
-        d_setParameterValue(DistrhoPluginNekobi::paramTuning, value);
-    else if (knob == fKnobCutoff)
-        d_setParameterValue(DistrhoPluginNekobi::paramCutoff, value);
-    else if (knob == fKnobResonance)
-        d_setParameterValue(DistrhoPluginNekobi::paramResonance, value);
-    else if (knob == fKnobEnvMod)
-        d_setParameterValue(DistrhoPluginNekobi::paramEnvMod, value);
-    else if (knob == fKnobDecay)
-        d_setParameterValue(DistrhoPluginNekobi::paramDecay, value);
-    else if (knob == fKnobAccent)
-        d_setParameterValue(DistrhoPluginNekobi::paramAccent, value);
-    else if (knob == fKnobVolume)
-        d_setParameterValue(DistrhoPluginNekobi::paramVolume, value);
+    d_setParameterValue(knob->getId(), value);
 }
 
 void DistrhoUINekobi::imageSliderDragStarted(ImageSlider* slider)
 {
-    if (slider != fSliderWaveform)
-        return;
-
-    d_editParameter(DistrhoPluginNekobi::paramWaveform, true);
+    d_editParameter(slider->getId(), true);
 }
 
 void DistrhoUINekobi::imageSliderDragFinished(ImageSlider* slider)
 {
-    if (slider != fSliderWaveform)
-        return;
-
-    d_editParameter(DistrhoPluginNekobi::paramWaveform, false);
+    d_editParameter(slider->getId(), false);
 }
 
 void DistrhoUINekobi::imageSliderValueChanged(ImageSlider* slider, float value)
 {
-    if (slider != fSliderWaveform)
-        return;
-
-    d_setParameterValue(DistrhoPluginNekobi::paramWaveform, value);
+    d_setParameterValue(slider->getId(), value);
 }
 
 void DistrhoUINekobi::onDisplay()

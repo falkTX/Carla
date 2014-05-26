@@ -26,13 +26,6 @@ ZamCompX2Plugin::ZamCompX2Plugin()
 {
     // set default values
     d_setProgram(0);
-
-    // reset
-    d_deactivate();
-}
-
-ZamCompX2Plugin::~ZamCompX2Plugin()
-{
 }
 
 // -----------------------------------------------------------------------
@@ -219,11 +212,7 @@ void ZamCompX2Plugin::d_setProgram(uint32_t index)
     ratio = 4.0f;
     thresdb = 0.0f;
     makeup = 0.0f;
-    gainred = 0.0f;
     stereolink = 1.0f;
-    outlevel = -45.0f;
-
-    /* Default variable values */
 
     /* reset filter values */
     d_activate();
@@ -234,15 +223,12 @@ void ZamCompX2Plugin::d_setProgram(uint32_t index)
 
 void ZamCompX2Plugin::d_activate()
 {
-	oldL_yl = oldL_y1 = oldR_yl = oldR_y1 = 0.f;
+    gainred = 0.0f;
+    outlevel = -45.0f;
+    oldL_yl = oldL_y1 = oldR_yl = oldR_y1 = 0.f;
 }
 
-void ZamCompX2Plugin::d_deactivate()
-{
-    // all values to zero
-}
-
-void ZamCompX2Plugin::d_run(float** inputs, float** outputs, uint32_t frames)
+void ZamCompX2Plugin::d_run(const float** inputs, float** outputs, uint32_t frames)
 {
 	float srate = d_getSampleRate();
         float width=(knee-0.99f)*6.f;
@@ -321,7 +307,7 @@ void ZamCompX2Plugin::d_run(float** inputs, float** outputs, uint32_t frames)
                 outputs[0][i] *= Lgain * from_dB(makeup);
                 outputs[1][i] = inputs[1][i];
                 outputs[1][i] *= Rgain * from_dB(makeup);
-		
+
 		max = (fabsf(outputs[0][i]) > max) ? fabsf(outputs[0][i]) : sanitize_denormal(max);
 		max = (fabsf(outputs[1][i]) > max) ? fabsf(outputs[1][i]) : sanitize_denormal(max);
 

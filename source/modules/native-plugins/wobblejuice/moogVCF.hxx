@@ -34,7 +34,7 @@ public:
         drive = nDrive;
     }
 
-    void process (long frames, float* inputs, float* outputs)
+    void process (long frames, const float* inputs, float* outputs)
     {
         //run the shit
         for (long i=0; i<frames; i++)

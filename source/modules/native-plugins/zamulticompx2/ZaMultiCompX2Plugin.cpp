@@ -26,13 +26,6 @@ ZaMultiCompX2Plugin::ZaMultiCompX2Plugin()
 {
     // set default values
     d_setProgram(0);
-
-    // reset
-    d_deactivate();
-}
-
-ZaMultiCompX2Plugin::~ZaMultiCompX2Plugin()
-{
 }
 
 // -----------------------------------------------------------------------
@@ -530,12 +523,6 @@ void ZaMultiCompX2Plugin::d_activate()
 	maxL = maxR = 0.f;
 }
 
-void ZaMultiCompX2Plugin::d_deactivate()
-{
-    // all values to zero
-    d_activate();
-}
-
 float ZaMultiCompX2Plugin::run_filter(int i, int ch, float in)
 {
         in = sanitize_denormal(in);
@@ -568,14 +555,14 @@ void ZaMultiCompX2Plugin::set_lp_coeffs(float fc, float q, float sr, int i, int 
         b2[ch][i] = (float)((1.f - alpha)*inv);
 }
 
-void ZaMultiCompX2Plugin::set_hp_coeffs(float fc, float q, float sr, int i, int ch, float gain=1.0) 
-{       
+void ZaMultiCompX2Plugin::set_hp_coeffs(float fc, float q, float sr, int i, int ch, float gain=1.0)
+{
         float omega=(float)(2.f*M_PI*fc/sr);
         float sn=sin(omega);
         float cs=cos(omega);
         float alpha=(float)(sn/(2.f*q));
         float inv=(float)(1.f/(1.f+alpha));
-        
+
         a0[ch][i] =  (float)(gain*inv*(1.f + cs)/2.f);
         a1[ch][i] =  -2.f * a0[ch][i];
         a2[ch][i] =  a0[ch][i];
@@ -605,9 +592,9 @@ void ZaMultiCompX2Plugin::run_comp(int k, float inL, float inR, float *outL, flo
         Lxg = (inL==0.f) ? -160.f : to_dB(fabs(inL));
         Rxg = (inR==0.f) ? -160.f : to_dB(fabs(inR));
         Lxg = sanitize_denormal(Lxg);
-        Rxg = sanitize_denormal(Rxg); 
-        
-        
+        Rxg = sanitize_denormal(Rxg);
+
+
         if (2.f*(Lxg-thresdb[k])<-width) {
                 Lyg = Lxg;
         } else if (2.f*fabs(Lxg-thresdb[k])<=width) {
@@ -615,9 +602,9 @@ void ZaMultiCompX2Plugin::run_comp(int k, float inL, float inR, float *outL, flo
         } else if (2.f*(Lxg-thresdb[k])>width) {
                 Lyg = thresdb[k] + (Lxg-thresdb[k])/ratio;
         }
-        
-        Lyg = sanitize_denormal(Lyg); 
-        
+
+        Lyg = sanitize_denormal(Lyg);
+
         if (2.f*(Rxg-thresdb[k])<-width) {
                 Ryg = Rxg;
         } else if (2.f*fabs(Rxg-thresdb[k])<=width) {
@@ -625,37 +612,37 @@ void ZaMultiCompX2Plugin::run_comp(int k, float inL, float inR, float *outL, flo
         } else if (2.f*(Rxg-thresdb[k])>width) {
                 Ryg = thresdb[k] + (Rxg-thresdb[k])/ratio;
         }
-        
-        Ryg = sanitize_denormal(Ryg); 
-        
+
+        Ryg = sanitize_denormal(Ryg);
+
         if (stereolink == STEREOLINK_MAX) {
                 Lxl = Rxl = fmaxf(Lxg - Lyg, Rxg - Ryg);
         } else {
                 Lxl = Rxl = (Lxg - Lyg + Rxg - Ryg) / 2.f;
-        }       
-        
-        old_y1[0][k] = sanitize_denormal(old_y1[0][k]); 
+        }
+
+        old_y1[0][k] = sanitize_denormal(old_y1[0][k]);
         old_y1[1][k] = sanitize_denormal(old_y1[1][k]);
-        old_yl[0][k] = sanitize_denormal(old_yl[0][k]); 
+        old_yl[0][k] = sanitize_denormal(old_yl[0][k]);
         old_yl[1][k] = sanitize_denormal(old_yl[1][k]);
-        
-        
-        Ly1 = fmaxf(Lxl, release_coeff * old_y1[0][k]+(1.f-release_coeff)*Lxl);     
+
+
+        Ly1 = fmaxf(Lxl, release_coeff * old_y1[0][k]+(1.f-release_coeff)*Lxl);
         Lyl = attack_coeff * old_yl[0][k]+(1.f-attack_coeff)*Ly1;
         Ly1 = sanitize_denormal(Ly1);
         Lyl = sanitize_denormal(Lyl);
-        
+
         cdb = -Lyl;
         Lgain = from_dB(cdb);
-        
+
         Ry1 = fmaxf(Rxl, release_coeff * old_y1[1][k]+(1.f-release_coeff)*Rxl);
         Ryl = attack_coeff * old_yl[1][k]+(1.f-attack_coeff)*Ry1;
         Ry1 = sanitize_denormal(Ry1);
         Ryl = sanitize_denormal(Ryl);
-        
+
         cdb = -Ryl;
         Rgain = from_dB(cdb);
-        
+
         if (stereolink == STEREOLINK_MAX)
 		gainr[k] = fmaxf(Lyl, Ryl);
 	else
@@ -665,14 +652,14 @@ void ZaMultiCompX2Plugin::run_comp(int k, float inL, float inR, float *outL, flo
 	*outL *= Lgain;
 	*outR = inR;
 	*outR *= Rgain;
-        
+
         old_yl[0][k] = Lyl;
         old_yl[1][k] = Ryl;
         old_y1[0][k] = Ly1;
-        old_y1[1][k] = Ry1;	
+        old_y1[1][k] = Ry1;
 }
 
-void ZaMultiCompX2Plugin::d_run(float** inputs, float** outputs, uint32_t frames)
+void ZaMultiCompX2Plugin::d_run(const float** inputs, float** outputs, uint32_t frames)
 {
 	float srate = d_getSampleRate();
 	float maxxL = maxL;
@@ -745,14 +732,14 @@ void ZaMultiCompX2Plugin::d_run(float** inputs, float** outputs, uint32_t frames
                 fil4[1] = run_filter(6, 1, inr);
                 tmp5[0] = run_filter(7, 0, fil4[0]);
                 tmp5[1] = run_filter(7, 1, fil4[1]);
-		if (tog3) 
+		if (tog3)
 			run_comp(2, tmp5[0], tmp5[1], &outL[2], &outR[2]);
 
                 tmp6[0] = tog3 ? outL[2] * from_dB(makeup[2]) : tmp5[0];
                 tmp6[1] = tog3 ? outR[2] * from_dB(makeup[2]) : tmp5[1];
 
 
-		outputs[0][i] = outputs[1][i] = 0.f;	
+		outputs[0][i] = outputs[1][i] = 0.f;
 		if (listen1) {
 			listenmode = 1;
 			outputs[0][i] += outL[0] * tog1*from_dB(makeup[0])

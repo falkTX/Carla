@@ -70,7 +70,7 @@ public:
 	paramOutputLevelR,
         paramCount
     };
-    
+
     enum States
     {
         stateReadMeter,
@@ -78,8 +78,6 @@ public:
     };
 
     ZaMultiCompX2Plugin();
-    ~ZaMultiCompX2Plugin() override;
-
 
 protected:
     // -------------------------------------------------------------------
@@ -151,8 +149,7 @@ protected:
     void set_hp_coeffs(float fc, float q, float sr, int i, int ch, float gain);
 
     void d_activate() override;
-    void d_deactivate() override;
-    void d_run(float** inputs, float** outputs, uint32_t frames) override;
+    void d_run(const float** inputs, float** outputs, uint32_t frames) override;
 
     // -------------------------------------------------------------------
 

@@ -653,7 +653,7 @@ void SegmentJuicePlugin::d_deactivate()
     // all values to zero
 }
 
-void SegmentJuicePlugin::d_run(float**, float** outputs, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
+void SegmentJuicePlugin::d_run(const float**, float** outputs, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
 {
     for (uint32_t i = 0; i<midiEventCount; i++) {
         int mType = midiEvents[i].buf[0] & 0xF0;
