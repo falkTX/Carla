@@ -166,8 +166,12 @@ void lv2_generate_ttl(const char* const basename)
         pluginString += ";\n\n";
 
         // optionalFeatures
+#if DISTRHO_PLUGIN_IS_RT_SAFE
         pluginString += "    lv2:optionalFeature <" LV2_CORE__hardRTCapable "> ,\n";
         pluginString += "                        <" LV2_BUF_SIZE__boundedBlockLength "> ;\n";
+#else
+        pluginString += "    lv2:optionalFeature <" LV2_BUF_SIZE__boundedBlockLength "> ;\n";
+#endif
         pluginString += "\n";
 
         // requiredFeatures

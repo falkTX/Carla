@@ -22,6 +22,10 @@
 #include "../../dgl/App.hpp"
 #include "../../dgl/Window.hpp"
 
+using DGL::App;
+using DGL::IdleCallback;
+using DGL::Window;
+
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
@@ -36,7 +40,7 @@ typedef void (*editParamFunc) (void* ptr, uint32_t rindex, bool started);
 typedef void (*setParamFunc)  (void* ptr, uint32_t rindex, float value);
 typedef void (*setStateFunc)  (void* ptr, const char* key, const char* value);
 typedef void (*sendNoteFunc)  (void* ptr, uint8_t channel, uint8_t note, uint8_t velo);
-typedef void (*uiResizeFunc)  (void* ptr, uint width, uint height);
+typedef void (*setSizeFunc)   (void* ptr, uint width, uint height);
 
 // -----------------------------------------------------------------------
 // UI private data
@@ -54,7 +58,7 @@ struct UI::PrivateData {
     setParamFunc  setParamCallbackFunc;
     setStateFunc  setStateCallbackFunc;
     sendNoteFunc  sendNoteCallbackFunc;
-    uiResizeFunc  uiResizeCallbackFunc;
+    setSizeFunc   setSizeCallbackFunc;
     void*         ptr;
 
     PrivateData() noexcept
@@ -67,7 +71,7 @@ struct UI::PrivateData {
           setParamCallbackFunc(nullptr),
           setStateCallbackFunc(nullptr),
           sendNoteCallbackFunc(nullptr),
-          uiResizeCallbackFunc(nullptr),
+          setSizeCallbackFunc(nullptr),
           ptr(nullptr)
     {
         DISTRHO_SAFE_ASSERT(sampleRate != 0.0);
@@ -113,11 +117,59 @@ struct UI::PrivateData {
             sendNoteCallbackFunc(ptr, channel, note, velocity);
     }
 
-    void uiResizeCallback(const uint width, const uint height)
+    void setSizeCallback(const uint width, const uint height)
     {
-        if (uiResizeCallbackFunc != nullptr)
-            uiResizeCallbackFunc(ptr, width, height);
+        if (setSizeCallbackFunc != nullptr)
+            setSizeCallbackFunc(ptr, width, height);
     }
+};
+
+// -----------------------------------------------------------------------
+// Plugin Window, needed to take care of resize properly
+
+class UIExporterWindow : public Window
+{
+public:
+    UIExporterWindow(App& app, const intptr_t winId)
+        : Window(app, winId),
+          fUi(createUI()),
+          fIsReady(false)
+    {
+        DISTRHO_SAFE_ASSERT_RETURN(fUi != nullptr,);
+
+        setResizable(false);
+        setSize(fUi->d_getWidth(), fUi->d_getHeight());
+    }
+
+    ~UIExporterWindow()
+    {
+        delete fUi;
+    }
+
+    UI* getUI() const noexcept
+    {
+        return fUi;
+    }
+
+    bool isReady() const noexcept
+    {
+        return fIsReady;
+    }
+
+protected:
+    void onReshape(int width, int height) override
+    {
+        DISTRHO_SAFE_ASSERT_RETURN(fUi != nullptr,);
+
+        fIsReady = true;
+
+        fUi->setSize(width, height);
+        fUi->d_uiReshape(width, height);
+    }
+
+private:
+    UI* const fUi;
+    bool fIsReady;
 };
 
 // -----------------------------------------------------------------------
@@ -127,11 +179,11 @@ class UIExporter
 {
 public:
     UIExporter(void* const ptr, const intptr_t winId,
-               const editParamFunc editParamCall, const setParamFunc setParamCall, const setStateFunc setStateCall, const sendNoteFunc sendNoteCall, const uiResizeFunc uiResizeCall,
+               const editParamFunc editParamCall, const setParamFunc setParamCall, const setStateFunc setStateCall, const sendNoteFunc sendNoteCall, const setSizeFunc setSizeCall,
                void* const dspPtr = nullptr)
         : glApp(),
           glWindow(glApp, winId),
-          fUi(createUI()),
+          fUi(glWindow.getUI()),
           fData((fUi != nullptr) ? fUi->pData : nullptr)
     {
         DISTRHO_SAFE_ASSERT_RETURN(fUi != nullptr,);
@@ -142,10 +194,7 @@ public:
         fData->setParamCallbackFunc  = setParamCall;
         fData->setStateCallbackFunc  = setStateCall;
         fData->sendNoteCallbackFunc  = sendNoteCall;
-        fData->uiResizeCallbackFunc  = uiResizeCall;
-
-        glWindow.setSize(fUi->d_getWidth(), fUi->d_getHeight());
-        glWindow.setResizable(false);
+        fData->setSizeCallbackFunc   = setSizeCall;
 
 #if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
         fData->dspPtr = dspPtr;
@@ -153,11 +202,6 @@ public:
         return; // unused
         (void)dspPtr;
 #endif
-    }
-
-    ~UIExporter()
-    {
-        delete fUi;
     }
 
     // -------------------------------------------------------------------
@@ -223,12 +267,30 @@ public:
 
     // -------------------------------------------------------------------
 
+    void exec(IdleCallback* const cb)
+    {
+        DISTRHO_SAFE_ASSERT_RETURN(cb != nullptr,);
+        DISTRHO_SAFE_ASSERT_RETURN(fUi != nullptr,);
+
+        glWindow.addIdleCallback(cb);
+        glWindow.setVisible(true);
+        glApp.exec();
+    }
+
+    void exec_idle()
+    {
+        if (glWindow.isReady())
+            fUi->d_uiIdle();
+    }
+
     bool idle()
     {
         DISTRHO_SAFE_ASSERT_RETURN(fUi != nullptr, false);
 
-        fUi->d_uiIdle();
         glApp.idle();
+
+        if (glWindow.isReady())
+            fUi->d_uiIdle();
 
         return ! glApp.isQuiting();
     }
@@ -268,19 +330,18 @@ public:
 
 private:
     // -------------------------------------------------------------------
-    // DGL Application and Window for this plugin
+    // DGL Application and Window for this widget
 
-    DGL::App    glApp;
-    DGL::Window glWindow;
+    App glApp;
+    UIExporterWindow glWindow;
 
     // -------------------------------------------------------------------
-    // private members accessed by DistrhoUI classes
+    // Widget and DistrhoUI data
 
     UI* const fUi;
     UI::PrivateData* const fData;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(UIExporter)
-    DISTRHO_PREVENT_HEAP_ALLOCATION
 };
 
 // -----------------------------------------------------------------------

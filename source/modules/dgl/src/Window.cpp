@@ -14,25 +14,21 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "../App.hpp"
+// we need this for now
+#define PUGL_GRAB_FOCUS 1
+
+#include "AppPrivateData.hpp"
 #include "../Widget.hpp"
 #include "../Window.hpp"
-
-#include <cassert>
-#include <cstdio>
-#include <list>
 
 #include "pugl/pugl.h"
 
 #if defined(DISTRHO_OS_WINDOWS)
 # include "pugl/pugl_win.cpp"
 #elif defined(DISTRHO_OS_MAC)
-# include "pugl/pugl_osx_extended.h"
 extern "C" {
-struct PuglViewImpl {
-    int width;
-    int height;
-};}
+# include "pugl/pugl_osx.m"
+}
 #elif defined(DISTRHO_OS_LINUX)
 # include <sys/types.h>
 # include <unistd.h>
@@ -66,13 +62,11 @@ Window* dgl_lastUiParent = nullptr;
 // -----------------------------------------------------------------------
 // Window Private
 
-class Window::PrivateData
-{
-public:
+struct Window::PrivateData {
     PrivateData(App& app, Window* const self)
         : fApp(app),
           fSelf(self),
-          fView(puglCreate(0, "Window", 100, 100, true, false)),
+          fView(puglInit(nullptr, nullptr)),
           fFirstInit(true),
           fVisible(false),
           fResizable(true),
@@ -83,7 +77,8 @@ public:
           xDisplay(nullptr),
           xWindow(0)
 #elif defined(DISTRHO_OS_MAC)
-          fNeedsIdle(true)
+          fNeedsIdle(true),
+          xWindow(nullptr)
 #else
           _dummy('\0')
 #endif
@@ -95,7 +90,7 @@ public:
     PrivateData(App& app, Window* const self, Window& parent)
         : fApp(app),
           fSelf(self),
-          fView(puglCreate(0, "Window", 100, 100, true, false)),
+          fView(puglInit(nullptr, nullptr)),
           fFirstInit(true),
           fVisible(false),
           fResizable(true),
@@ -107,7 +102,8 @@ public:
           xDisplay(nullptr),
           xWindow(0)
 #elif defined(DISTRHO_OS_MAC)
-          fNeedsIdle(false)
+          fNeedsIdle(false),
+          xWindow(nullptr)
 #else
           _dummy('\0')
 #endif
@@ -125,7 +121,7 @@ public:
     PrivateData(App& app, Window* const self, const intptr_t parentId)
         : fApp(app),
           fSelf(self),
-          fView(puglCreate(parentId, "Window", 100, 100, (parentId == 0), (parentId != 0))),
+          fView(puglInit(nullptr, nullptr)),
           fFirstInit(true),
           fVisible(parentId != 0),
           fResizable(parentId == 0),
@@ -136,14 +132,19 @@ public:
           xDisplay(nullptr),
           xWindow(0)
 #elif defined(DISTRHO_OS_MAC)
-          fNeedsIdle(false)
+          fNeedsIdle(false),
+          xWindow(nullptr)
 #else
           _dummy('\0')
 #endif
     {
-        if (parentId != 0) {
+        if (parentId != 0)
+        {
             DBG("Creating embedded window..."); DBGF;
-        } else {
+            puglInitWindowParent(fView, parentId);
+        }
+        else
+        {
             DBG("Creating window without parent..."); DBGF;
         }
 
@@ -152,7 +153,8 @@ public:
         if (parentId != 0)
         {
             DBG("NOTE: Embed window is always visible and non-resizable\n");
-            fApp._oneShown();
+            puglShowWindow(fView);
+            fApp.pData->oneShown();
             fFirstInit = false;
         }
     }
@@ -168,6 +170,8 @@ public:
 
         dgl_lastUiParent = fSelf;
 
+        puglInitResizable(fView, fResizable);
+
         puglSetHandle(fView, this);
         puglSetDisplayFunc(fView, onDisplayCallback);
         puglSetKeyboardFunc(fView, onKeyboardCallback);
@@ -178,32 +182,31 @@ public:
         puglSetReshapeFunc(fView, onReshapeCallback);
         puglSetCloseFunc(fView, onCloseCallback);
 
+        puglCreateWindow(fView, nullptr);
+
+        PuglInternals* impl = fView->impl;
 #if defined(DISTRHO_OS_WINDOWS)
-        PuglInternals* impl = fView->impl;
         hwnd = impl->hwnd;
-        assert(hwnd != 0);
+        DISTRHO_SAFE_ASSERT(hwnd != 0);
+#elif defined(DISTRHO_OS_MAC)
+        xWindow = impl->window;
+        DISTRHO_SAFE_ASSERT(xWindow != nullptr);
 #elif defined(DISTRHO_OS_LINUX)
-        PuglInternals* impl = fView->impl;
         xDisplay = impl->display;
         xWindow  = impl->win;
-        assert(xWindow != 0);
+        DISTRHO_SAFE_ASSERT(xWindow != 0);
 
         if (! fUsingEmbed)
         {
             pid_t pid = getpid();
             Atom _nwp = XInternAtom(xDisplay, "_NET_WM_PID", True);
-            XChangeProperty(xDisplay, xWindow, _nwp, XA_CARDINAL, 32, PropModeReplace, (const unsigned char*)&pid, 1);
+            XChangeProperty(xDisplay, xWindow, _nwp, XA_CARDINAL, 32, PropModeReplace, (const uchar*)&pid, 1);
         }
 #endif
 
+        fApp.pData->windows.push_back(fSelf);
+
         DBG("Success!\n");
-
-#if 0
-        // process any initial events
-        puglProcessEvents(fView);
-#endif
-
-        fApp._addWindow(fSelf);
     }
 
     ~PrivateData()
@@ -215,7 +218,7 @@ public:
 
         if (fSelf != nullptr)
         {
-            fApp._removeWindow(fSelf);
+            fApp.pData->windows.remove(fSelf);
             fSelf = nullptr;
         }
 
@@ -226,10 +229,12 @@ public:
         }
 
 #if defined(DISTRHO_OS_WINDOWS)
-          hwnd = 0;
+        hwnd = 0;
+#elif defined(DISTRHO_OS_MAC)
+        xWindow = nullptr;
 #elif defined(DISTRHO_OS_LINUX)
-          xDisplay = nullptr;
-          xWindow  = 0;
+        xDisplay = nullptr;
+        xWindow  = 0;
 #endif
 
         DBG("Success!\n");
@@ -244,7 +249,7 @@ public:
 
         if (! fFirstInit)
         {
-            fApp._oneHidden();
+            fApp.pData->oneHidden();
             fFirstInit = true;
         }
     }
@@ -272,274 +277,10 @@ public:
 
     // -------------------------------------------------------------------
 
-    void focus()
-    {
-        DBG("Window focus\n");
-#if defined(DISTRHO_OS_WINDOWS)
-        SetForegroundWindow(hwnd);
-        SetActiveWindow(hwnd);
-        SetFocus(hwnd);
-#elif defined(DISTRHO_OS_MAC)
-        puglImplFocus(fView);
-#elif defined(DISTRHO_OS_LINUX)
-        XRaiseWindow(xDisplay, xWindow);
-        XSetInputFocus(xDisplay, xWindow, RevertToPointerRoot, CurrentTime);
-        XFlush(xDisplay);
-#endif
-    }
-
-    void repaint()
-    {
-        //DBG("Window repaint\n");
-        puglPostRedisplay(fView);
-    }
-
-    // -------------------------------------------------------------------
-
-    bool isVisible() const noexcept
-    {
-        return fVisible;
-    }
-
-    void setVisible(const bool yesNo)
-    {
-        if (fVisible == yesNo)
-        {
-            DBG("Window setVisible matches current state, ignoring request\n");
-            return;
-        }
-        if (fUsingEmbed)
-        {
-            DBG("Window setVisible cannot be called when embedded\n");
-            return;
-        }
-
-        DBG("Window setVisible called\n");
-
-        fVisible = yesNo;
-
-        if (yesNo && fFirstInit)
-            setSize(static_cast<unsigned int>(fView->width), static_cast<unsigned int>(fView->height), true);
-
-#if defined(DISTRHO_OS_WINDOWS)
-        if (yesNo)
-            ShowWindow(hwnd, fFirstInit ? SW_SHOWNORMAL : SW_RESTORE);
-        else
-            ShowWindow(hwnd, SW_HIDE);
-
-        UpdateWindow(hwnd);
-#elif defined(DISTRHO_OS_MAC)
-        puglImplSetVisible(fView, yesNo);
-#elif defined(DISTRHO_OS_LINUX)
-        if (yesNo)
-            XMapRaised(xDisplay, xWindow);
-        else
-            XUnmapWindow(xDisplay, xWindow);
-
-        XFlush(xDisplay);
-#endif
-
-        if (yesNo)
-        {
-            if (fFirstInit)
-            {
-                fApp._oneShown();
-                fFirstInit = false;
-            }
-        }
-        else if (fModal.enabled)
-            exec_fini();
-    }
-
-    // -------------------------------------------------------------------
-
-    bool isResizable() const noexcept
-    {
-        return fResizable;
-    }
-
-    void setResizable(const bool yesNo)
-    {
-        if (fResizable == yesNo)
-        {
-            DBG("Window setResizable matches current state, ignoring request\n");
-            return;
-        }
-        if (fUsingEmbed)
-        {
-            DBG("Window setResizable cannot be called when embedded\n");
-            return;
-        }
-
-        DBG("Window setResizable called\n");
-
-        fResizable = yesNo;
-
-        setSize(static_cast<unsigned int>(fView->width), static_cast<unsigned int>(fView->height), true);
-    }
-
-    // -------------------------------------------------------------------
-
-    int getWidth() const noexcept
-    {
-        return fView->width;
-    }
-
-    int getHeight() const noexcept
-    {
-        return fView->height;
-    }
-
-    Size<int> getSize() const noexcept
-    {
-        return Size<int>(fView->width, fView->height);
-    }
-
-    void setSize(unsigned int width, unsigned int height, const bool forced = false)
-    {
-        if (width == 0 || height == 0)
-        {
-            DBGp("Window setSize called with invalid value(s) %i %i, ignoring request\n", width, height);
-            return;
-        }
-
-        if (fView->width == static_cast<int>(width) && fView->height == static_cast<int>(height) && ! forced)
-        {
-            DBGp("Window setSize matches current size, ignoring request (%i %i)\n", width, height);
-            return;
-        }
-
-        fView->width  = static_cast<int>(width);
-        fView->height = static_cast<int>(height);
-
-        DBGp("Window setSize called %s, size %i %i\n", forced ? "(forced)" : "(not forced)", width, height);
-
-#if defined(DISTRHO_OS_WINDOWS)
-        int winFlags = WS_POPUPWINDOW | WS_CAPTION;
-
-        if (fResizable)
-            winFlags |= WS_SIZEBOX;
-
-        RECT wr = { 0, 0, static_cast<long>(width), static_cast<long>(height) };
-        AdjustWindowRectEx(&wr, winFlags, FALSE, WS_EX_TOPMOST);
-
-        SetWindowPos(hwnd, 0, 0, 0, wr.right-wr.left, wr.bottom-wr.top, SWP_NOACTIVATE|SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOZORDER);
-
-        if (! forced)
-            UpdateWindow(hwnd);
-#elif defined(DISTRHO_OS_MAC)
-        puglImplSetSize(fView, width, height, forced);
-#elif defined(DISTRHO_OS_LINUX)
-        XResizeWindow(xDisplay, xWindow, width, height);
-
-        if (! fResizable)
-        {
-            XSizeHints sizeHints;
-            memset(&sizeHints, 0, sizeof(sizeHints));
-
-            sizeHints.flags      = PSize|PMinSize|PMaxSize;
-            sizeHints.width      = static_cast<int>(width);
-            sizeHints.height     = static_cast<int>(height);
-            sizeHints.min_width  = static_cast<int>(width);
-            sizeHints.min_height = static_cast<int>(height);
-            sizeHints.max_width  = static_cast<int>(width);
-            sizeHints.max_height = static_cast<int>(height);
-
-            XSetNormalHints(xDisplay, xWindow, &sizeHints);
-        }
-
-        if (! forced)
-            XFlush(xDisplay);
-#endif
-
-        repaint();
-    }
-
-    // -------------------------------------------------------------------
-
-    void setTitle(const char* const title)
-    {
-        DBGp("Window setTitle \"%s\"\n", title);
-
-#if defined(DISTRHO_OS_WINDOWS)
-        SetWindowTextA(hwnd, title);
-#elif defined(DISTRHO_OS_MAC)
-        puglImplSetTitle(fView, title);
-#elif defined(DISTRHO_OS_LINUX)
-        XStoreName(xDisplay, xWindow, title);
-#endif
-    }
-
-    void setTransientWinId(const intptr_t winId)
-    {
-#if defined(DISTRHO_OS_LINUX)
-        XSetTransientForHint(xDisplay, xWindow, static_cast< ::Window>(winId));
-#else
-        return;
-        // unused
-        (void)winId;
-#endif
-    }
-
-    // -------------------------------------------------------------------
-
-    App& getApp() const noexcept
-    {
-        return fApp;
-    }
-
-    int getModifiers() const
-    {
-        return puglGetModifiers(fView);
-    }
-
-    uint32_t getEventTimestamp() const
-    {
-        return puglGetEventTimestamp(fView);
-    }
-
-    intptr_t getWindowId() const
-    {
-        return puglGetNativeWindow(fView);
-    }
-
-    // -------------------------------------------------------------------
-
-    void addWidget(Widget* const widget)
-    {
-        fWidgets.push_back(widget);
-    }
-
-    void removeWidget(Widget* const widget)
-    {
-        fWidgets.remove(widget);
-    }
-
-    void idle()
-    {
-        puglProcessEvents(fView);
-
-#ifdef DISTRHO_OS_MAC
-        if (fNeedsIdle)
-            puglImplIdle(fView);
-#endif
-
-        if (fModal.enabled && fModal.parent != nullptr)
-            fModal.parent->idle();
-    }
-
-    // -------------------------------------------------------------------
-
     void exec_init()
     {
         DBG("Window modal loop starting..."); DBGF;
-        assert(fModal.parent != nullptr);
-
-        if (fModal.parent == nullptr)
-        {
-            DBG("Failed, there's no modal parent!\n");
-            return setVisible(true);
-        }
+        DISTRHO_SAFE_ASSERT_RETURN(fModal.parent != nullptr, setVisible(true));
 
         fModal.enabled = true;
         fModal.parent->fModal.childFocus = this;
@@ -579,35 +320,333 @@ public:
 
     // -------------------------------------------------------------------
 
-protected:
+    void focus()
+    {
+        DBG("Window focus\n");
+#if defined(DISTRHO_OS_WINDOWS)
+        SetForegroundWindow(hwnd);
+        SetActiveWindow(hwnd);
+        SetFocus(hwnd);
+#elif defined(DISTRHO_OS_MAC)
+        // TODO
+        //[NSApp activateIgnoringOtherApps:YES];
+        //[xWindow makeKeyAndOrderFront:xWindow];
+#elif defined(DISTRHO_OS_LINUX)
+        XRaiseWindow(xDisplay, xWindow);
+        XSetInputFocus(xDisplay, xWindow, RevertToPointerRoot, CurrentTime);
+        XFlush(xDisplay);
+#endif
+    }
+
+    // -------------------------------------------------------------------
+
+    void setVisible(const bool yesNo)
+    {
+        if (fVisible == yesNo)
+        {
+            DBG("Window setVisible matches current state, ignoring request\n");
+            return;
+        }
+        if (fUsingEmbed)
+        {
+            DBG("Window setVisible cannot be called when embedded\n");
+            return;
+        }
+
+        DBG("Window setVisible called\n");
+
+        fVisible = yesNo;
+
+        if (yesNo && fFirstInit)
+            setSize(static_cast<uint>(fView->width), static_cast<uint>(fView->height), true);
+
+#if defined(DISTRHO_OS_WINDOWS)
+        if (yesNo)
+            ShowWindow(hwnd, fFirstInit ? SW_SHOWNORMAL : SW_RESTORE);
+        else
+            ShowWindow(hwnd, SW_HIDE);
+
+        UpdateWindow(hwnd);
+#elif defined(DISTRHO_OS_MAC)
+        if (yesNo)
+            [xWindow setIsVisible:YES];
+        else
+            [xWindow setIsVisible:NO];
+#elif defined(DISTRHO_OS_LINUX)
+        if (yesNo)
+            XMapRaised(xDisplay, xWindow);
+        else
+            XUnmapWindow(xDisplay, xWindow);
+
+        XFlush(xDisplay);
+#endif
+
+        if (yesNo)
+        {
+            if (fFirstInit)
+            {
+                fApp.pData->oneShown();
+                fFirstInit = false;
+            }
+        }
+        else if (fModal.enabled)
+            exec_fini();
+    }
+
+    // -------------------------------------------------------------------
+
+    void setResizable(const bool yesNo)
+    {
+        if (fResizable == yesNo)
+        {
+            DBG("Window setResizable matches current state, ignoring request\n");
+            return;
+        }
+        if (fUsingEmbed)
+        {
+            DBG("Window setResizable cannot be called when embedded\n");
+            return;
+        }
+
+        DBG("Window setResizable called\n");
+
+        fResizable = yesNo;
+
+        setSize(static_cast<uint>(fView->width), static_cast<uint>(fView->height), true);
+    }
+
+    // -------------------------------------------------------------------
+
+    void setSize(uint width, uint height, const bool forced = false)
+    {
+        if (width == 0 || height == 0)
+        {
+            DBGp("Window setSize called with invalid value(s) %i %i, ignoring request\n", width, height);
+            return;
+        }
+
+        if (fView->width == static_cast<int>(width) && fView->height == static_cast<int>(height) && ! forced)
+        {
+            DBGp("Window setSize matches current size, ignoring request (%i %i)\n", width, height);
+            return;
+        }
+
+        fView->width  = static_cast<int>(width);
+        fView->height = static_cast<int>(height);
+
+        DBGp("Window setSize called %s, size %i %i\n", forced ? "(forced)" : "(not forced)", width, height);
+
+#if defined(DISTRHO_OS_WINDOWS)
+        int winFlags = WS_POPUPWINDOW | WS_CAPTION;
+
+        if (fResizable)
+            winFlags |= WS_SIZEBOX;
+
+        RECT wr = { 0, 0, static_cast<long>(width), static_cast<long>(height) };
+        AdjustWindowRectEx(&wr, winFlags, FALSE, WS_EX_TOPMOST);
+
+        SetWindowPos(hwnd, 0, 0, 0, wr.right-wr.left, wr.bottom-wr.top, SWP_NOACTIVATE|SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOZORDER);
+
+        if (! forced)
+            UpdateWindow(hwnd);
+#elif defined(DISTRHO_OS_MAC)
+        [xWindow setContentSize:NSMakeSize(width, height)];
+# if 0
+        NSRect frame      = [xWindow frame];
+        frame.origin.y   -= height - frame.size.height;
+        frame.size.width  = width;
+        frame.size.height = height+20;
+
+        //if (forced)
+        //    [xWindow setFrame:frame];
+        //else
+        [xWindow setFrame:frame display:YES animate:NO];
+# endif
+#elif defined(DISTRHO_OS_LINUX)
+        XResizeWindow(xDisplay, xWindow, width, height);
+
+        if (! fResizable)
+        {
+            XSizeHints sizeHints;
+            memset(&sizeHints, 0, sizeof(sizeHints));
+
+            sizeHints.flags      = PSize|PMinSize|PMaxSize;
+            sizeHints.width      = static_cast<int>(width);
+            sizeHints.height     = static_cast<int>(height);
+            sizeHints.min_width  = static_cast<int>(width);
+            sizeHints.min_height = static_cast<int>(height);
+            sizeHints.max_width  = static_cast<int>(width);
+            sizeHints.max_height = static_cast<int>(height);
+
+            XSetNormalHints(xDisplay, xWindow, &sizeHints);
+        }
+
+        if (! forced)
+            XFlush(xDisplay);
+#endif
+
+        puglPostRedisplay(fView);
+    }
+
+    // -------------------------------------------------------------------
+
+    void setTitle(const char* const title)
+    {
+        DBGp("Window setTitle \"%s\"\n", title);
+
+#if defined(DISTRHO_OS_WINDOWS)
+        SetWindowTextA(hwnd, title);
+#elif defined(DISTRHO_OS_MAC)
+        NSString* titleString = [[NSString alloc]
+                                  initWithBytes:title
+                                        length:strlen(title)
+                                      encoding:NSUTF8StringEncoding];
+
+        [xWindow setTitle:titleString];
+#elif defined(DISTRHO_OS_LINUX)
+        XStoreName(xDisplay, xWindow, title);
+#endif
+    }
+
+    void setTransientWinId(const intptr_t winId)
+    {
+#if defined(DISTRHO_OS_LINUX)
+        XSetTransientForHint(xDisplay, xWindow, static_cast< ::Window>(winId));
+#else
+        return;
+        // unused
+        (void)winId;
+#endif
+    }
+
+    // -------------------------------------------------------------------
+
+    void addWidget(Widget* const widget)
+    {
+        fWidgets.push_back(widget);
+    }
+
+    void removeWidget(Widget* const widget)
+    {
+        fWidgets.remove(widget);
+    }
+
+    void idle()
+    {
+        puglProcessEvents(fView);
+
+#ifdef DISTRHO_OS_MAC
+        if (fNeedsIdle)
+        {
+            NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+            NSEvent* event;
+
+            for (;;)
+            {
+                event = [NSApp
+                         nextEventMatchingMask:NSAnyEventMask
+                                     untilDate:[NSDate distantPast]
+                                        inMode:NSDefaultRunLoopMode
+                                       dequeue:YES];
+
+                if (event == nil)
+                    break;
+
+                [NSApp sendEvent: event];
+            }
+
+            [pool release];
+        }
+#endif
+
+        if (fModal.enabled && fModal.parent != nullptr)
+            fModal.parent->idle();
+    }
+
+    // -------------------------------------------------------------------
+
     void onDisplay()
     {
-        //DBG("PUGL: onDisplay\n");
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glLoadIdentity();
+        fSelf->onDisplayBefore();
 
         FOR_EACH_WIDGET(it)
         {
             Widget* const widget(*it);
 
             if (widget->isVisible())
-                widget->onDisplay();
+            {
+                // reset color
+                glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
+                if (widget->fNeedsFullViewport || widget->fArea == Rectangle<int>(0, 0, fView->width, fView->height))
+                {
+                    // full viewport size
+                    glViewport(0, 0, fView->width, fView->height);
+
+                    // display widget
+                    widget->onDisplay();
+                }
+                else
+                {
+                    // limit viewport to widget bounds
+                    glViewport(widget->getAbsoluteX(), fView->height - widget->getHeight() - widget->getAbsoluteY(), widget->getWidth(), widget->getHeight());
+
+                    // scale contents to match viewport size
+                    glPushMatrix();
+                    glScalef(float(fView->width)/float(widget->getWidth()), float(fView->height)/float(widget->getHeight()), 1.0f);
+
+                    // display widget
+                    widget->onDisplay();
+
+                    // done
+                    glPopMatrix();
+                }
+            }
         }
+
+        fSelf->onDisplayAfter();
     }
 
-    void onKeyboard(const bool press, const uint32_t key)
+    void onKeyboard(const bool press, const uint key)
     {
         DBGp("PUGL: onKeyboard : %i %i\n", press, key);
 
         if (fModal.childFocus != nullptr)
             return fModal.childFocus->focus();
 
+        Widget::KeyboardEvent ev;
+        ev.press = press;
+        ev.key  = key;
+        ev.mod  = static_cast<Modifier>(puglGetModifiers(fView));
+        ev.time = puglGetEventTimestamp(fView);
+
         FOR_EACH_WIDGET_INV(rit)
         {
             Widget* const widget(*rit);
 
-            if (widget->isVisible() && widget->onKeyboard(press, key))
+            if (widget->isVisible() && widget->onKeyboard(ev))
+                break;
+        }
+    }
+
+    void onSpecial(const bool press, const Key key)
+    {
+        DBGp("PUGL: onSpecial : %i %i\n", press, key);
+
+        if (fModal.childFocus != nullptr)
+            return fModal.childFocus->focus();
+
+        Widget::SpecialEvent ev;
+        ev.press = press;
+        ev.key  = key;
+        ev.mod  = static_cast<Modifier>(puglGetModifiers(fView));
+        ev.time = puglGetEventTimestamp(fView);
+
+        FOR_EACH_WIDGET_INV(rit)
+        {
+            Widget* const widget(*rit);
+
+            if (widget->isVisible() && widget->onSpecial(ev))
                 break;
         }
     }
@@ -619,11 +658,19 @@ protected:
         if (fModal.childFocus != nullptr)
             return fModal.childFocus->focus();
 
+        Widget::MouseEvent ev;
+        ev.button = button;
+        ev.press = press;
+        ev.mod  = static_cast<Modifier>(puglGetModifiers(fView));
+        ev.time = puglGetEventTimestamp(fView);
+
         FOR_EACH_WIDGET_INV(rit)
         {
             Widget* const widget(*rit);
 
-            if (widget->isVisible() && widget->onMouse(button, press, x, y))
+            ev.pos = Point<int>(x-widget->getAbsoluteX(), y-widget->getAbsoluteY());
+
+            if (widget->isVisible() && widget->onMouse(ev))
                 break;
         }
     }
@@ -635,11 +682,17 @@ protected:
         if (fModal.childFocus != nullptr)
             return;
 
+        Widget::MotionEvent ev;
+        ev.mod  = static_cast<Modifier>(puglGetModifiers(fView));
+        ev.time = puglGetEventTimestamp(fView);
+
         FOR_EACH_WIDGET_INV(rit)
         {
             Widget* const widget(*rit);
 
-            if (widget->isVisible() && widget->onMotion(x, y))
+            ev.pos = Point<int>(x-widget->getAbsoluteX(), y-widget->getAbsoluteY());
+
+            if (widget->isVisible() && widget->onMotion(ev))
                 break;
         }
     }
@@ -651,27 +704,18 @@ protected:
         if (fModal.childFocus != nullptr)
             return;
 
-        FOR_EACH_WIDGET_INV(rit)
-        {
-            Widget* const widget(*rit);
-
-            if (widget->isVisible() && widget->onScroll(x, y, dx, dy))
-                break;
-        }
-    }
-
-    void onSpecial(const bool press, const Key key)
-    {
-        DBGp("PUGL: onSpecial : %i %i\n", press, key);
-
-        if (fModal.childFocus != nullptr)
-            return;
+        Widget::ScrollEvent ev;
+        ev.delta = Point<float>(dx, dy);
+        ev.mod   = static_cast<Modifier>(puglGetModifiers(fView));
+        ev.time  = puglGetEventTimestamp(fView);
 
         FOR_EACH_WIDGET_INV(rit)
         {
             Widget* const widget(*rit);
 
-            if (widget->isVisible() && widget->onSpecial(press, key))
+            ev.pos = Point<int>(x-widget->getAbsoluteX(), y-widget->getAbsoluteY());
+
+            if (widget->isVisible() && widget->onScroll(ev))
                 break;
         }
     }
@@ -680,10 +724,14 @@ protected:
     {
         DBGp("PUGL: onReshape : %i %i\n", width, height);
 
+        fSelf->onReshape(width, height);
+
         FOR_EACH_WIDGET(it)
         {
             Widget* const widget(*it);
-            widget->onReshape(width, height);
+
+            if (widget->fNeedsFullViewport)
+                widget->setSize(width, height);
         }
     }
 
@@ -694,21 +742,16 @@ protected:
         if (fModal.enabled && fModal.parent != nullptr)
             exec_fini();
 
+        fSelf->onClose();
+
         if (fModal.childFocus != nullptr)
             fModal.childFocus->onClose();
-
-        FOR_EACH_WIDGET(it)
-        {
-            Widget* const widget(*it);
-            widget->onClose();
-        }
 
         close();
     }
 
     // -------------------------------------------------------------------
 
-private:
     App&      fApp;
     Window*   fSelf;
     PuglView* fView;
@@ -736,8 +779,8 @@ private:
 
         ~Modal()
         {
-            assert(! enabled);
-            assert(childFocus == nullptr);
+            DISTRHO_SAFE_ASSERT(! enabled);
+            DISTRHO_SAFE_ASSERT(childFocus == nullptr);
         }
     } fModal;
 
@@ -748,8 +791,9 @@ private:
     ::Window xWindow;
 #elif defined(DISTRHO_OS_MAC)
     bool     fNeedsIdle;
+    id       xWindow;
 #else
-    char      _dummy;
+    char     _dummy;
 #endif
 
     // -------------------------------------------------------------------
@@ -767,6 +811,11 @@ private:
         handlePtr->onKeyboard(press, key);
     }
 
+    static void onSpecialCallback(PuglView* view, bool press, PuglKey key)
+    {
+        handlePtr->onSpecial(press, static_cast<Key>(key));
+    }
+
     static void onMouseCallback(PuglView* view, int button, bool press, int x, int y)
     {
         handlePtr->onMouse(button, press, x, y);
@@ -780,11 +829,6 @@ private:
     static void onScrollCallback(PuglView* view, int x, int y, float dx, float dy)
     {
         handlePtr->onScroll(x, y, dx, dy);
-    }
-
-    static void onSpecialCallback(PuglView* view, bool press, PuglKey key)
-    {
-        handlePtr->onSpecial(press, static_cast<Key>(key));
     }
 
     static void onReshapeCallback(PuglView* view, int width, int height)
@@ -804,19 +848,13 @@ private:
 // Window
 
 Window::Window(App& app)
-    : pData(new PrivateData(app, this))
-{
-}
+    : pData(new PrivateData(app, this)) {}
 
 Window::Window(App& app, Window& parent)
-    : pData(new PrivateData(app, this, parent))
-{
-}
+    : pData(new PrivateData(app, this, parent)) {}
 
 Window::Window(App& app, intptr_t parentId)
-    : pData(new PrivateData(app, this, parentId))
-{
-}
+    : pData(new PrivateData(app, this, parentId)) {}
 
 Window::~Window()
 {
@@ -848,14 +886,14 @@ void Window::focus()
     pData->focus();
 }
 
-void Window::repaint()
+void Window::repaint() noexcept
 {
-    pData->repaint();
+    puglPostRedisplay(pData->fView);
 }
 
 bool Window::isVisible() const noexcept
 {
-    return pData->isVisible();
+    return pData->fVisible;
 }
 
 void Window::setVisible(bool yesNo)
@@ -865,7 +903,7 @@ void Window::setVisible(bool yesNo)
 
 bool Window::isResizable() const noexcept
 {
-    return pData->isResizable();
+    return pData->fResizable;
 }
 
 void Window::setResizable(bool yesNo)
@@ -875,22 +913,29 @@ void Window::setResizable(bool yesNo)
 
 int Window::getWidth() const noexcept
 {
-    return pData->getWidth();
+    return pData->fView->width;
 }
 
 int Window::getHeight() const noexcept
 {
-    return pData->getHeight();
+    return pData->fView->height;
 }
 
-Size<int> Window::getSize() const noexcept
+Size<uint> Window::getSize() const noexcept
 {
-    return pData->getSize();
+    DISTRHO_SAFE_ASSERT_RETURN(pData->fView->width >= 0 && pData->fView->height >= 0, Size<uint>(0, 0));
+
+    return Size<uint>(pData->fView->width, pData->fView->height);
 }
 
-void Window::setSize(unsigned int width, unsigned int height)
+void Window::setSize(uint width, uint height)
 {
     pData->setSize(width, height);
+}
+
+void Window::setSize(Size<uint> size)
+{
+    pData->setSize(size.getWidth(), size.getHeight());
 }
 
 void Window::setTitle(const char* title)
@@ -905,22 +950,12 @@ void Window::setTransientWinId(intptr_t winId)
 
 App& Window::getApp() const noexcept
 {
-    return pData->getApp();
+    return pData->fApp;
 }
 
-int Window::getModifiers() const
+intptr_t Window::getWindowId() const noexcept
 {
-    return pData->getModifiers();
-}
-
-uint32_t Window::getEventTimestamp() const
-{
-    return pData->getEventTimestamp();
-}
-
-intptr_t Window::getWindowId() const
-{
-    return pData->getWindowId();
+    return puglGetNativeWindow(pData->fView);
 }
 
 void Window::_addWidget(Widget* const widget)
@@ -936,6 +971,50 @@ void Window::_removeWidget(Widget* const widget)
 void Window::_idle()
 {
     pData->idle();
+}
+
+// -----------------------------------------------------------------------
+
+void Window::addIdleCallback(IdleCallback* const callback)
+{
+    DISTRHO_SAFE_ASSERT_RETURN(callback != nullptr,)
+
+    pData->fApp.pData->idleCallbacks.push_back(callback);
+}
+
+void Window::removeIdleCallback(IdleCallback* const callback)
+{
+    DISTRHO_SAFE_ASSERT_RETURN(callback != nullptr,)
+
+    pData->fApp.pData->idleCallbacks.remove(callback);
+}
+
+// -----------------------------------------------------------------------
+
+void Window::onDisplayBefore()
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity();
+}
+
+void Window::onDisplayAfter()
+{
+}
+
+void Window::onReshape(int width, int height)
+{
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, width, height, 0, 0.0f, 1.0f);
+    glViewport(0, 0, width, height);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
+void Window::onClose()
+{
 }
 
 // -----------------------------------------------------------------------

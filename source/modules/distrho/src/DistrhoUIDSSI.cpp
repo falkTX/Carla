@@ -20,6 +20,8 @@
 # error DSSI UIs do not support direct access!
 #endif
 
+#include "../extra/d_sleep.hpp"
+
 #include <lo/lo.h>
 
 START_NAMESPACE_DISTRHO
@@ -91,7 +93,7 @@ class UIDssi
 {
 public:
     UIDssi(const OscData& oscData, const char* const uiTitle)
-        : fUI(this, 0, nullptr, setParameterCallback, setStateCallback, sendNoteCallback, uiResizeCallback),
+        : fUI(this, 0, nullptr, setParameterCallback, setStateCallback, sendNoteCallback, setSizeCallback),
           fHostClosed(false),
           fOscData(oscData)
     {
@@ -113,7 +115,7 @@ public:
             if (! fUI.idle())
                 break;
 
-            d_msleep(50);
+            d_msleep(30);
         }
     }
 
@@ -186,7 +188,7 @@ protected:
         fOscData.send_midi(mdata);
     }
 
-    void uiResize(const uint width, const uint height)
+    void setSize(const uint width, const uint height)
     {
         fUI.setSize(width, height);
     }
@@ -217,9 +219,9 @@ private:
         uiPtr->sendNote(channel, note, velocity);
     }
 
-    static void uiResizeCallback(void* ptr, uint width, uint height)
+    static void setSizeCallback(void* ptr, uint width, uint height)
     {
-        uiPtr->uiResize(width, height);
+        uiPtr->setSize(width, height);
     }
 
     #undef uiPtr

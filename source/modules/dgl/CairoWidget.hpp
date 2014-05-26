@@ -102,7 +102,7 @@ private:
         cairoDisplay(fContext);
 
         // get cairo surface data (RGB24)
-        unsigned char* const surfaceData = cairo_image_surface_get_data(fSurface);
+        uchar* const surfaceData = cairo_image_surface_get_data(fSurface);
 
         // enable GL texture
         glEnable(GL_TEXTURE_RECTANGLE_ARB);

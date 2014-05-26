@@ -30,13 +30,6 @@
 # include <stdint.h>
 #endif
 
-#ifdef DISTRHO_OS_WINDOWS
-# include <winsock2.h>
-# include <windows.h>
-#else
-# include <unistd.h>
-#endif
-
 #if defined(DISTRHO_OS_MAC) && ! defined(CARLA_OS_MAC)
 namespace std {
 inline float
@@ -133,37 +126,6 @@ static inline
 void d_safe_exception(const char* const exception, const char* const file, const int line) noexcept
 {
     d_stderr2("exception caught: \"%s\" in file %s, line %i", exception, file, line);
-}
-
-// -----------------------------------------------------------------------
-// d_*sleep
-
-static inline
-void d_sleep(const uint secs)
-{
-    DISTRHO_SAFE_ASSERT_RETURN(secs > 0,);
-
-    try {
-#ifdef DISTRHO_OS_WINDOWS
-        ::Sleep(secs * 1000);
-#else
-        ::sleep(secs);
-#endif
-    } DISTRHO_SAFE_EXCEPTION("carla_sleep");
-}
-
-static inline
-void d_msleep(const uint msecs)
-{
-    DISTRHO_SAFE_ASSERT_RETURN(msecs > 0,);
-
-    try {
-#ifdef DISTRHO_OS_WINDOWS
-        ::Sleep(msecs);
-#else
-        ::usleep(msecs * 1000);
-#endif
-    } DISTRHO_SAFE_EXCEPTION("carla_msleep");
 }
 
 // -----------------------------------------------------------------------

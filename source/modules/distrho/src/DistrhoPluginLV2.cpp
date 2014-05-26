@@ -175,7 +175,7 @@ public:
         {
             if (port == index++)
             {
-                fPortAudioIns[i] = (float*)dataLocation;
+                fPortAudioIns[i] = (const float*)dataLocation;
                 return;
             }
         }
@@ -677,9 +677,9 @@ private:
 
     // LV2 ports
 #if DISTRHO_PLUGIN_NUM_INPUTS > 0
-    float*  fPortAudioIns[DISTRHO_PLUGIN_NUM_INPUTS];
+    const float*  fPortAudioIns[DISTRHO_PLUGIN_NUM_INPUTS];
 #else
-    float** fPortAudioIns;
+    const float** fPortAudioIns;
 #endif
 #if DISTRHO_PLUGIN_NUM_OUTPUTS > 0
     float*  fPortAudioOuts[DISTRHO_PLUGIN_NUM_OUTPUTS];

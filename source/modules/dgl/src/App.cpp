@@ -14,25 +14,10 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "../App.hpp"
+#include "AppPrivateData.hpp"
 #include "../Window.hpp"
 
-#include <list>
-
 START_NAMESPACE_DGL
-
-// -----------------------------------------------------------------------
-
-struct App::PrivateData {
-    bool     doLoop;
-    unsigned visibleWindows;
-    std::list<Window*> windows;
-    std::list<IdleCallback*> idleCallbacks;
-
-    PrivateData()
-        : doLoop(false),
-          visibleWindows(0) {}
-};
 
 // -----------------------------------------------------------------------
 
@@ -43,20 +28,18 @@ App::App()
 
 App::~App()
 {
-    pData->windows.clear();
-    pData->idleCallbacks.clear();
     delete pData;
 }
 
 void App::idle()
 {
-    for (std::list<Window*>::iterator it = pData->windows.begin(); it != pData->windows.end(); ++it)
+    for (std::list<Window*>::iterator it = pData->windows.begin(), ite = pData->windows.end(); it != ite; ++it)
     {
         Window* const window(*it);
         window->_idle();
     }
 
-    for (std::list<IdleCallback*>::iterator it = pData->idleCallbacks.begin(); it != pData->idleCallbacks.end(); ++it)
+    for (std::list<IdleCallback*>::iterator it = pData->idleCallbacks.begin(), ite = pData->idleCallbacks.end(); it != ite; ++it)
     {
         IdleCallback* const idleCallback(*it);
         idleCallback->idleCallback();
@@ -65,7 +48,7 @@ void App::idle()
 
 void App::exec()
 {
-    while (pData->doLoop)
+    for (; pData->doLoop;)
     {
         idle();
         d_msleep(10);
@@ -76,56 +59,16 @@ void App::quit()
 {
     pData->doLoop = false;
 
-    for (std::list<Window*>::reverse_iterator rit = pData->windows.rbegin(); rit != pData->windows.rend(); ++rit)
+    for (std::list<Window*>::reverse_iterator rit = pData->windows.rbegin(), rite = pData->windows.rend(); rit != rite; ++rit)
     {
         Window* const window(*rit);
         window->close();
     }
 }
 
-bool App::isQuiting() const
+bool App::isQuiting() const noexcept
 {
     return !pData->doLoop;
-}
-
-// -----------------------------------------------------------------------
-
-void App::addIdleCallback(IdleCallback* const callback)
-{
-    if (callback != nullptr)
-        pData->idleCallbacks.push_back(callback);
-}
-
-void App::removeIdleCallback(IdleCallback* const callback)
-{
-    if (callback != nullptr)
-        pData->idleCallbacks.remove(callback);
-}
-
-// -----------------------------------------------------------------------
-
-void App::_addWindow(Window* const window)
-{
-    if (window != nullptr)
-        pData->windows.push_back(window);
-}
-
-void App::_removeWindow(Window* const window)
-{
-    if (window != nullptr)
-        pData->windows.remove(window);
-}
-
-void App::_oneShown()
-{
-    if (++pData->visibleWindows == 1)
-        pData->doLoop = true;
-}
-
-void App::_oneHidden()
-{
-    if (--pData->visibleWindows == 0)
-        pData->doLoop = false;
 }
 
 // -----------------------------------------------------------------------

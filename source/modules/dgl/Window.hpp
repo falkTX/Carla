@@ -19,12 +19,6 @@
 
 #include "Geometry.hpp"
 
-#ifdef PROPER_CPP11_SUPPORT
-# include <cstdint>
-#else
-# include <stdint.h>
-#endif
-
 START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
@@ -35,9 +29,9 @@ class Widget;
 class Window
 {
 public:
-    Window(App& app);
-    Window(App& app, Window& parent);
-    Window(App& app, intptr_t parentId);
+    explicit Window(App& app);
+    explicit Window(App& app, Window& parent);
+    explicit Window(App& app, intptr_t parentId);
     virtual ~Window();
 
     void show();
@@ -46,7 +40,7 @@ public:
     void exec(bool lockWait = false);
 
     void focus();
-    void repaint();
+    void repaint() noexcept;
 
     bool isVisible() const noexcept;
     void setVisible(bool yesNo);
@@ -56,26 +50,35 @@ public:
 
     int getWidth() const noexcept;
     int getHeight() const noexcept;
-    Size<int> getSize() const noexcept;
-    void setSize(unsigned int width, unsigned int height);
+    Size<uint> getSize() const noexcept;
+    void setSize(uint width, uint height);
+    void setSize(Size<uint> size);
 
     void setTitle(const char* title);
 
     void setTransientWinId(intptr_t winId);
 
-    App&     getApp() const noexcept;
-    uint32_t getEventTimestamp() const;
-    int      getModifiers() const;
-    intptr_t getWindowId() const;
+    App& getApp() const noexcept;
+    intptr_t getWindowId() const noexcept;
+
+    void addIdleCallback(IdleCallback* const callback);
+    void removeIdleCallback(IdleCallback* const callback);
+
+protected:
+    virtual void onDisplayBefore();
+    virtual void onDisplayAfter();
+    virtual void onReshape(int width, int height);
+    virtual void onClose();
 
 private:
-    class PrivateData;
+    struct PrivateData;
     PrivateData* const pData;
     friend class App;
     friend class Widget;
+    friend class StandaloneWindow;
 
-    void _addWidget(Widget* const widget);
-    void _removeWidget(Widget* const widget);
+    virtual void _addWidget(Widget* const widget);
+    virtual void _removeWidget(Widget* const widget);
     void _idle();
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Window)

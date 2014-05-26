@@ -351,64 +351,97 @@ struct PuglInternalsImpl {
 	id              window;
 };
 
-PuglView*
-puglCreate(PuglNativeWindow parent,
-           const char*      title,
-           int              width,
-           int              height,
-           bool             resizable,
-           bool             visible)
+PuglInternals*
+puglInitInternals()
 {
-	PuglView*      view = (PuglView*)calloc(1, sizeof(PuglView));
-	PuglInternals* impl = (PuglInternals*)calloc(1, sizeof(PuglInternals));
-	if (!view || !impl) {
-		return NULL;
-	}
+	return (PuglInternals*)calloc(1, sizeof(PuglInternals));
+}
 
-	view->impl   = impl;
-	view->width  = width;
-	view->height = height;
+int
+puglCreateWindow(PuglView* view, const char* title)
+{
+	PuglInternals* impl = view->impl;
 
 	[NSAutoreleasePool new];
 	[NSApplication sharedApplication];
 
-	NSString* titleString = [[NSString alloc]
-		                        initWithBytes:title
-		                               length:strlen(title)
-		                             encoding:NSUTF8StringEncoding];
+	impl->glview = [PuglOpenGLView new];
+	impl->glview->puglview = view;
+
+	if (view->resizable) {
+		[impl->glview setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
+	}
+
+	if (view->parent) {
+		NSView* pview = (NSView*)view->parent;
+		[pview addSubview:impl->glview];
+		return 0;
+	}
 
 	id window = [[PuglWindow new]retain];
 
-	[window setPuglview:view];
-	[window setTitle:titleString];
+	if (title) {
+		NSString* titleString = [[NSString alloc]
+					  initWithBytes:title
+					         length:strlen(title)
+					       encoding:NSUTF8StringEncoding];
 
-	impl->glview   = [PuglOpenGLView new];
-	impl->window   = window;
-	impl->glview->puglview = view;
-
-	[window setContentView:impl->glview];
-	[NSApp activateIgnoringOtherApps:YES];
-	[window makeFirstResponder:impl->glview];
-
-	[window makeKeyAndOrderFront:window];
-
-	if (! visible) {
-		[window setIsVisible:NO];
+		[window setTitle:titleString];
 	}
 
-	return view;
+	[window setPuglview:view];
+	[window setContentView:impl->glview];
+	[window makeFirstResponder:impl->glview];
+	[window makeKeyAndOrderFront:window];
 
-	// unused
-	(void)parent; (void)resizable;
+	// wait for first puglShowWindow
+	[window setIsVisible:NO];
+
+	[NSApp activateIgnoringOtherApps:YES];
+	[window center];
+
+	impl->window = window;
+
+	return 0;
+}
+
+void
+puglShowWindow(PuglView* view)
+{
+	PuglInternals* impl = view->impl;
+
+	if (impl->window) {
+		[impl->window setIsVisible:YES];
+	} else {
+		[view->impl->glview setHidden:NO];
+	}
+}
+
+void
+puglHideWindow(PuglView* view)
+{
+	PuglInternals* impl = view->impl;
+
+	if (impl->window) {
+		[impl->window setIsVisible:NO];
+	} else {
+		[impl->glview setHidden:YES];
+	}
 }
 
 void
 puglDestroy(PuglView* view)
 {
 	view->impl->glview->puglview = NULL;
-	[view->impl->window close];
-	[view->impl->glview release];
-	[view->impl->window release];
+
+	if (view->impl->window) {
+		[view->impl->window close];
+		[view->impl->glview release];
+		[view->impl->window release];
+	} else {
+		[view->impl->glview release];
+	}
+
 	free(view->impl);
 	free(view);
 }

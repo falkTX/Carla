@@ -1,5 +1,5 @@
 /*
-  Copyright 2012 David Robillard <http://drobilla.net>
+  Copyright 2012-2014 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -217,21 +217,54 @@ typedef void (*PuglScrollFunc)(PuglView* view,
 typedef void (*PuglSpecialFunc)(PuglView* view, bool press, PuglKey key);
 
 /**
-   Create a new GL window.
-   @param parent Parent window, or 0 for top level.
-   @param title Window title, or NULL.
-   @param width Window width in pixels.
-   @param height Window height in pixels.
-   @param resizable Whether window should be user resizable.
-   @param visible Whether window should be initially visible.
+   Create a Pugl context.
+
+   To create a window, call the various puglInit* functions as necessary, then
+   call puglCreateWindow().
+
+   @param pargc Pointer to argument count (unused, for GLUT compatibility).
+   @param argv  Arguments (unused, for GLUT compatibility).
 */
 PUGL_API PuglView*
-puglCreate(PuglNativeWindow parent,
-           const char*      title,
-           int              width,
-           int              height,
-           bool             resizable,
-           bool             visible);
+puglInit(int* pargc, char** argv);
+
+/**
+   Set the parent window before creating a window (for embedding).
+*/
+PUGL_API void
+puglInitWindowParent(PuglView* view, PuglNativeWindow parent);
+
+/**
+   Set the window size before creating a window.
+*/
+PUGL_API void
+puglInitWindowSize(PuglView* view, int width, int height);
+
+/**
+   Enable or disable resizing before creating a window.
+*/
+PUGL_API void
+puglInitResizable(PuglView* view, bool resizable);
+
+/**
+   Create a window with the settings given by the various puglInit functions.
+
+   @return 1 (pugl does not currently support multiple windows).
+*/
+PUGL_API int
+puglCreateWindow(PuglView* view, const char* title);
+
+/**
+   Show the current window.
+*/
+PUGL_API void
+puglShowWindow(PuglView* view);
+
+/**
+   Hide the current window.
+*/
+PUGL_API void
+puglHideWindow(PuglView* view);
 
 /**
    Set the handle to be passed to all callbacks.

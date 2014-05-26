@@ -23,31 +23,109 @@ START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
 
+/**
+   Base DGL Image class.
+
+   This is an Image class that handles raw image data in pixels.
+   You can init the image data on the contructor or later on by calling loadFromMemory().
+
+   To generate raw data useful for this class see the utils/png2rgba.py script.
+   Be careful when using a PNG without alpha channel, for those the format is 'GL_BGR'
+   instead of the default 'GL_BGRA'.
+
+   Images are drawn on screen via 2D textures.
+ */
 class Image
 {
 public:
-    Image() noexcept;
-    Image(const char* rawData, int width, int height, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE) noexcept;
-    Image(const char* rawData, const Size<int>& size, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE) noexcept;
-    Image(const Image& image) noexcept;
+   /**
+      Constructor for a null Image.
+    */
+    Image();
+
+   /**
+      Constructor using raw image data.
+      @note @a rawData must remain valid for the lifetime of this Image.
+    */
+    Image(const char* rawData, int width, int height, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE);
+
+   /**
+      Constructor using raw image data.
+      @note @a rawData must remain valid for the lifetime of this Image.
+    */
+    Image(const char* rawData, const Size<int>& size, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE);
+
+   /**
+      Constructor using another image data.
+    */
+    Image(const Image& image);
+
+   /**
+      Destructor.
+    */
     ~Image();
 
+   /**
+      Load image data from memory.
+      @note @a rawData must remain valid for the lifetime of this Image.
+    */
     void loadFromMemory(const char* rawData, int width, int height, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE) noexcept;
+
+   /**
+      Load image data from memory.
+      @note @a rawData must remain valid for the lifetime of this Image.
+    */
     void loadFromMemory(const char* rawData, const Size<int>& size, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE) noexcept;
 
+   /**
+      Check if this image is valid.
+    */
     bool isValid() const noexcept;
 
+   /**
+      Get width.
+    */
     int getWidth() const noexcept;
+
+   /**
+      Get height.
+    */
     int getHeight() const noexcept;
+
+   /**
+      Get size.
+    */
     const Size<int>& getSize() const noexcept;
 
+   /**
+      Get the raw image data.
+    */
     const char* getRawData() const noexcept;
+
+   /**
+      Get the image format.
+    */
     GLenum getFormat() const noexcept;
+
+   /**
+      Get the image type.
+    */
     GLenum getType() const noexcept;
 
+   /**
+      Draw this image at (0, 0) point.
+    */
     void draw();
-    void draw(int x, int y);
-    void draw(const Point<int>& pos);
+
+   /**
+      Draw this image at (x, y) point.
+    */
+    void drawAt(int x, int y);
+
+   /**
+      Draw this image at position @a pos.
+    */
+    void drawAt(const Point<int>& pos);
 
     Image& operator=(const Image& image) noexcept;
     bool operator==(const Image& image) const noexcept;
@@ -59,8 +137,7 @@ private:
     GLenum fFormat;
     GLenum fType;
     GLuint fTextureId;
-
-    DISTRHO_PREVENT_HEAP_ALLOCATION
+    bool fIsReady;
 };
 
 // -----------------------------------------------------------------------

@@ -14,17 +14,4 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "src/DistrhoPlugin.cpp"
-
-#if defined(DISTRHO_PLUGIN_TARGET_CARLA)
-# include "src/DistrhoPluginCarla.cpp"
-#elif defined(DISTRHO_PLUGIN_TARGET_JACK)
-# include "src/DistrhoPluginJack.cpp"
-#elif (defined(DISTRHO_PLUGIN_TARGET_LADSPA) || defined(DISTRHO_PLUGIN_TARGET_DSSI))
-# include "src/DistrhoPluginLADSPA+DSSI.cpp"
-#elif defined(DISTRHO_PLUGIN_TARGET_LV2)
-# include "src/DistrhoPluginLV2.cpp"
-# include "src/DistrhoPluginLV2export.cpp"
-#elif defined(DISTRHO_PLUGIN_TARGET_VST)
-# include "src/DistrhoPluginVST.cpp"
-#endif
+#include "Window.cpp"

@@ -66,12 +66,12 @@
     To use it, use the DISTRHO_LEAK_DETECTOR macro as a simple way to put one in your
     class declaration.
 */
-template <class OwnerClass>
+template<class OwnerClass>
 class DistrhoLeakedObjectDetector
 {
 public:
     //==============================================================================
-    DistrhoLeakedObjectDetector() noexcept                            { ++(getCounter().numObjects); }
+    DistrhoLeakedObjectDetector() noexcept                                   { ++(getCounter().numObjects); }
     DistrhoLeakedObjectDetector(const DistrhoLeakedObjectDetector&) noexcept { ++(getCounter().numObjects); }
 
     ~DistrhoLeakedObjectDetector() noexcept

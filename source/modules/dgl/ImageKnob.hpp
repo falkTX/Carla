@@ -41,34 +41,43 @@ public:
         virtual void imageKnobValueChanged(ImageKnob* imageKnob, float value) = 0;
     };
 
-    ImageKnob(Window& parent, const Image& image, Orientation orientation = Vertical);
-    ImageKnob(Widget* widget, const Image& image, Orientation orientation = Vertical);
-    ImageKnob(const ImageKnob& imageKnob);
+    explicit ImageKnob(Window& parent, const Image& image, Orientation orientation = Vertical, int id = 0) noexcept;
+    explicit ImageKnob(Widget* widget, const Image& image, Orientation orientation = Vertical, int id = 0) noexcept;
+    explicit ImageKnob(const ImageKnob& imageKnob);
+    ~ImageKnob() override;
 
-    float getValue() const;
+    int getId() const noexcept;
+    void setId(int id) noexcept;
 
-    void setOrientation(Orientation orientation);
-    void setRange(float min, float max);
-    void setStep(float step);
-    void setValue(float value, bool sendCallback = false);
+    float getValue() const noexcept;
+
+    void setDefault(float def) noexcept;
+    void setRange(float min, float max) noexcept;
+    void setStep(float step) noexcept;
+    void setValue(float value, bool sendCallback = false) noexcept;
+    void setUsingLogScale(bool yesNo) noexcept;
+
+    void setCallback(Callback* callback) noexcept;
+    void setOrientation(Orientation orientation) noexcept;
     void setRotationAngle(int angle);
-
-    void setCallback(Callback* callback);
 
 protected:
      void onDisplay() override;
-     bool onMouse(int button, bool press, int x, int y) override;
-     bool onMotion(int x, int y) override;
-     void onReshape(int width, int height) override;
-     void onClose() override;
+     bool onMouse(const MouseEvent&) override;
+     bool onMotion(const MotionEvent&) override;
+     bool onScroll(const ScrollEvent&) override;
 
 private:
     Image fImage;
+    int   fId;
     float fMinimum;
     float fMaximum;
     float fStep;
     float fValue;
+    float fValueDef;
     float fValueTmp;
+    bool  fUsingDefault;
+    bool  fUsingLog;
     Orientation fOrientation;
 
     int  fRotationAngle;
@@ -83,6 +92,9 @@ private:
     int  fImgLayerCount;
     Rectangle<int> fKnobArea;
     GLuint fTextureId;
+
+    float _logscale(float value) const;
+    float _invlogscale(float value) const;
 
     DISTRHO_LEAK_DETECTOR(ImageKnob)
 };

@@ -39,14 +39,9 @@
 #    define PUGL_LOGF(fmt, ...)
 #endif
 
-void puglDefaultReshape(PuglView* view, int width, int height);
-
 typedef struct PuglInternalsImpl PuglInternals;
 
 struct PuglViewImpl {
-	int width;
-	int height;
-
 	PuglHandle       handle;
 	PuglCloseFunc    closeFunc;
 	PuglDisplayFunc  displayFunc;
@@ -59,12 +54,63 @@ struct PuglViewImpl {
 
 	PuglInternals* impl;
 
+	PuglNativeWindow parent;
+
+	int      width;
+	int      height;
 	int      mods;
 	bool     mouse_in_view;
 	bool     ignoreKeyRepeat;
 	bool     redisplay;
+	bool     resizable;
 	uint32_t event_timestamp_ms;
 };
+
+PuglInternals* puglInitInternals();
+
+void puglDefaultReshape(PuglView* view, int width, int height);
+
+PuglView*
+puglInit(int* pargc, char** argv)
+{
+	PuglView* view = (PuglView*)calloc(1, sizeof(PuglView));
+	if (!view) {
+		return NULL;
+	}
+
+	PuglInternals* impl = puglInitInternals();
+	if (!impl) {
+		return NULL;
+	}
+
+	view->impl   = impl;
+	view->width  = 640;
+	view->height = 480;
+
+	return view;
+
+	// unused
+	(void)pargc; (void)argv;
+}
+
+void
+puglInitWindowSize(PuglView* view, int width, int height)
+{
+	view->width  = width;
+	view->height = height;
+}
+
+void
+puglInitWindowParent(PuglView* view, PuglNativeWindow parent)
+{
+	view->parent = parent;
+}
+
+void
+puglInitResizable(PuglView* view, bool resizable)
+{
+	view->resizable = resizable;
+}
 
 void
 puglSetHandle(PuglView* view, PuglHandle handle)

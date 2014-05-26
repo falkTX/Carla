@@ -14,40 +14,49 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef DGL_IMAGE_ABOUT_WINDOW_HPP_INCLUDED
-#define DGL_IMAGE_ABOUT_WINDOW_HPP_INCLUDED
+#ifndef DISTRHO_SLEEP_HPP_INCLUDED
+#define DISTRHO_SLEEP_HPP_INCLUDED
 
-#include "Image.hpp"
-#include "Widget.hpp"
-#include "Window.hpp"
+#include "../DistrhoUtils.hpp"
 
-START_NAMESPACE_DGL
+#ifdef DISTRHO_OS_WINDOWS
+# include <winsock2.h>
+# include <windows.h>
+#else
+# include <unistd.h>
+#endif
 
 // -----------------------------------------------------------------------
+// d_*sleep
 
-class ImageAboutWindow : public Window,
-                         public Widget
+static inline
+void d_sleep(const uint secs) noexcept
 {
-public:
-    explicit ImageAboutWindow(Window& parent, const Image& image = Image());
-    explicit ImageAboutWindow(Widget* widget, const Image& image = Image());
+    DISTRHO_SAFE_ASSERT_RETURN(secs > 0,);
 
-    void setImage(const Image& image);
+    try {
+#ifdef DISTRHO_OS_WINDOWS
+        ::Sleep(secs * 1000);
+#else
+        ::sleep(secs);
+#endif
+    } DISTRHO_SAFE_EXCEPTION("d_sleep");
+}
 
-protected:
-    void onDisplay() override;
-    bool onKeyboard(const KeyboardEvent&) override;
-    bool onMouse(const MouseEvent&) override;
-    void onReshape(int width, int height) override;
+static inline
+void d_msleep(const uint msecs) noexcept
+{
+    DISTRHO_SAFE_ASSERT_RETURN(msecs > 0,);
 
-private:
-    Image fImgBackground;
-
-    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ImageAboutWindow)
-};
+    try {
+#ifdef DISTRHO_OS_WINDOWS
+        ::Sleep(msecs);
+#else
+        ::usleep(msecs * 1000);
+#endif
+    } DISTRHO_SAFE_EXCEPTION("d_msleep");
+}
 
 // -----------------------------------------------------------------------
 
-END_NAMESPACE_DGL
-
-#endif // DGL_IMAGE_ABOUT_WINDOW_HPP_INCLUDED
+#endif // DISTRHO_SLEEP_HPP_INCLUDED

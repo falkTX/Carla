@@ -37,7 +37,7 @@ public:
     UiLv2(const intptr_t winId,
           const LV2_Options_Option* options, const LV2_URID_Map* const uridMap, const LV2UI_Resize* const uiResz, const LV2UI_Touch* uiTouch,
           const LV2UI_Controller controller, const LV2UI_Write_Function writeFunc, void* const dspPtr)
-        : fUI(this, winId, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, uiResizeCallback, dspPtr),
+        : fUI(this, winId, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, setSizeCallback, dspPtr),
           fUridMap(uridMap),
           fUiResize(uiResz),
           fUiTouch(uiTouch),
@@ -193,7 +193,7 @@ protected:
     {
     }
 
-    void uiResize(const uint width, const uint height)
+    void setSize(const uint width, const uint height)
     {
         fUI.setSize(width, height);
 
@@ -245,9 +245,9 @@ private:
         uiPtr->sendNote(channel, note, velocity);
     }
 
-    static void uiResizeCallback(void* ptr, uint width, uint height)
+    static void setSizeCallback(void* ptr, uint width, uint height)
     {
-        uiPtr->uiResize(width, height);
+        uiPtr->setSize(width, height);
     }
 
     #undef uiPtr

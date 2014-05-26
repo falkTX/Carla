@@ -14,11 +14,8 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "../App.hpp"
 #include "../Widget.hpp"
 #include "../Window.hpp"
-
-#include <cassert>
 
 START_NAMESPACE_DGL
 
@@ -27,6 +24,7 @@ START_NAMESPACE_DGL
 
 Widget::Widget(Window& parent)
     : fParent(parent),
+      fNeedsFullViewport(false),
       fVisible(true)
 {
     fParent._addWidget(this);
@@ -61,65 +59,6 @@ void Widget::hide()
     setVisible(false);
 }
 
-int Widget::getX() const noexcept
-{
-    return fArea.getX();
-}
-
-int Widget::getY() const noexcept
-{
-    return fArea.getY();
-}
-
-const Point<int>& Widget::getPos() const noexcept
-{
-    return fArea.getPos();
-}
-
-void Widget::setX(int x)
-{
-    if (fArea.getX() == x)
-        return;
-
-    fArea.setX(x);
-    fParent.repaint();
-}
-
-void Widget::setY(int y)
-{
-    if (fArea.getY() == y)
-        return;
-
-    fArea.setY(y);
-    fParent.repaint();
-}
-
-void Widget::setPos(int x, int y)
-{
-    setPos(Point<int>(x, y));
-}
-
-void Widget::setPos(const Point<int>& pos)
-{
-    if (fArea.getPos() == pos)
-        return;
-
-    fArea.setPos(pos);
-    fParent.repaint();
-}
-
-void Widget::move(int x, int y)
-{
-    fArea.move(x, y);
-    fParent.repaint();
-}
-
-void Widget::move(const Point<int>& pos)
-{
-    fArea.move(pos);
-    fParent.repaint();
-}
-
 int Widget::getWidth() const noexcept
 {
     return fArea.getWidth();
@@ -135,46 +74,101 @@ const Size<int>& Widget::getSize() const noexcept
     return fArea.getSize();
 }
 
-void Widget::setWidth(int width)
+void Widget::setWidth(int width) noexcept
 {
     if (fArea.getWidth() == width)
         return;
 
+    ResizeEvent ev;
+    ev.oldSize = fArea.getSize();
+    ev.size = Size<int>(width, fArea.getHeight());
+
     fArea.setWidth(width);
+    onResize(ev);
+
     fParent.repaint();
 }
 
-void Widget::setHeight(int height)
+void Widget::setHeight(int height) noexcept
 {
     if (fArea.getHeight() == height)
         return;
 
+    ResizeEvent ev;
+    ev.oldSize = fArea.getSize();
+    ev.size = Size<int>(fArea.getWidth(), height);
+
     fArea.setHeight(height);
+    onResize(ev);
+
     fParent.repaint();
 }
 
-void Widget::setSize(const Size<int>& size)
+void Widget::setSize(int width, int height) noexcept
+{
+    setSize(Size<int>(width, height));
+}
+
+void Widget::setSize(const Size<int>& size) noexcept
 {
     if (fArea.getSize() == size)
         return;
 
+    ResizeEvent ev;
+    ev.oldSize = fArea.getSize();
+    ev.size = size;
+
     fArea.setSize(size);
+    onResize(ev);
+
     fParent.repaint();
 }
 
-const Rectangle<int>& Widget::getArea() const noexcept
+int Widget::getAbsoluteX() const noexcept
 {
-    return fArea;
+    return fArea.getX();
 }
 
-uint32_t Widget::getEventTimestamp()
+int Widget::getAbsoluteY() const noexcept
 {
-    return fParent.getEventTimestamp();
+    return fArea.getY();
 }
 
-int Widget::getModifiers()
+const Point<int>& Widget::getAbsolutePos() const noexcept
 {
-    return fParent.getModifiers();
+    return fArea.getPos();
+}
+
+void Widget::setAbsoluteX(int x) noexcept
+{
+    if (fArea.getX() == x)
+        return;
+
+    fArea.setX(x);
+    fParent.repaint();
+}
+
+void Widget::setAbsoluteY(int y) noexcept
+{
+    if (fArea.getY() == y)
+        return;
+
+    fArea.setY(y);
+    fParent.repaint();
+}
+
+void Widget::setAbsolutePos(int x, int y) noexcept
+{
+    setAbsolutePos(Point<int>(x, y));
+}
+
+void Widget::setAbsolutePos(const Point<int>& pos) noexcept
+{
+    if (fArea.getPos() == pos)
+        return;
+
+    fArea.setPos(pos);
+    fParent.repaint();
 }
 
 App& Widget::getParentApp() const noexcept
@@ -187,50 +181,53 @@ Window& Widget::getParentWindow() const noexcept
     return fParent;
 }
 
-void Widget::repaint()
+bool Widget::contains(int x, int y) const noexcept
+{
+    return (x >= 0 && y >= 0 && x < fArea.getWidth() && y < fArea.getHeight());
+}
+
+bool Widget::contains(const Point<int>& pos) const noexcept
+{
+    return contains(pos.getX(), pos.getY());
+}
+
+void Widget::repaint() noexcept
 {
     fParent.repaint();
 }
 
-bool Widget::onKeyboard(bool, uint32_t)
+bool Widget::onKeyboard(const KeyboardEvent&)
 {
     return false;
 }
 
-bool Widget::onMouse(int, bool, int, int)
+bool Widget::onSpecial(const SpecialEvent&)
 {
     return false;
 }
 
-bool Widget::onMotion(int, int)
+bool Widget::onMouse(const MouseEvent&)
 {
     return false;
 }
 
-bool Widget::onScroll(int, int, float, float)
+bool Widget::onMotion(const MotionEvent&)
 {
     return false;
 }
 
-bool Widget::onSpecial(bool, Key)
+bool Widget::onScroll(const ScrollEvent&)
 {
     return false;
 }
 
-void Widget::onReshape(int width, int height)
+void Widget::onResize(const ResizeEvent&)
 {
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, width, height, 0, 0.0f, 1.0f);
-    glViewport(0, 0, width, height);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
 }
 
-void Widget::onClose()
+void Widget::setNeedsFullViewport(bool yesNo) noexcept
 {
+    fNeedsFullViewport = yesNo;
 }
 
 // -----------------------------------------------------------------------

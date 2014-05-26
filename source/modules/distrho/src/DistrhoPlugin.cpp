@@ -80,6 +80,9 @@ double Plugin::d_getSampleRate() const noexcept
 #if DISTRHO_PLUGIN_WANT_TIMEPOS
 const TimePos& Plugin::d_getTimePos() const noexcept
 {
+    // timePos outside run() may not be valid
+    DISTRHO_SAFE_ASSERT(pData->isProcessing);
+
     return pData->timePos;
 }
 #endif

@@ -37,7 +37,9 @@
 #    define WHEEL_DELTA 120
 #endif
 
-const int LOCAL_CLOSE_MSG = WM_USER + 50;
+#define PUGL_LOCAL_CLOSE_MSG (WM_USER + 50)
+
+HINSTANCE hInstance = NULL;
 
 struct PuglInternalsImpl {
 	HWND     hwnd;
@@ -49,23 +51,29 @@ struct PuglInternalsImpl {
 LRESULT CALLBACK
 wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-PuglView*
-puglCreate(PuglNativeWindow parent,
-           const char*      title,
-           int              width,
-           int              height,
-           bool             resizable,
-           bool             visible)
+extern "C" {
+BOOL WINAPI
+DllMain(HINSTANCE hInst, DWORD, LPVOID)
 {
-	PuglView*      view = (PuglView*)calloc(1, sizeof(PuglView));
-	PuglInternals* impl = (PuglInternals*)calloc(1, sizeof(PuglInternals));
-	if (!view || !impl) {
-		return NULL;
-	}
+    hInstance = hInst;
+    return 1;
+}
+} // extern "C"
 
-	view->impl   = impl;
-	view->width  = width;
-	view->height = height;
+PuglInternals*
+puglInitInternals()
+{
+	return (PuglInternals*)calloc(1, sizeof(PuglInternals));
+}
+
+int
+puglCreateWindow(PuglView* view, const char* title)
+{
+	PuglInternals* impl = view->impl;
+
+	if (!title) {
+		title = "Window";
+	}
 
 	// FIXME: This is nasty, and pugl should not have static anything.
 	// Should class be a parameter?  Does this make sense on other platforms?
@@ -77,34 +85,34 @@ puglCreate(PuglNativeWindow parent,
 	impl->wc.lpfnWndProc   = wndProc;
 	impl->wc.cbClsExtra    = 0;
 	impl->wc.cbWndExtra    = 0;
-	impl->wc.hInstance     = 0;
-	impl->wc.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
-	impl->wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
+	impl->wc.hInstance     = hInstance;
+	impl->wc.hIcon         = LoadIcon(hInstance, IDI_APPLICATION);
+	impl->wc.hCursor       = LoadCursor(hInstance, IDC_ARROW);
 	impl->wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
 	impl->wc.lpszMenuName  = NULL;
 	impl->wc.lpszClassName = classNameBuf;
 	RegisterClass(&impl->wc);
 
 	int winFlags = WS_POPUPWINDOW | WS_CAPTION;
-	if (resizable) {
+	if (view->resizable) {
 		winFlags |= WS_SIZEBOX;
 	}
 
 	// Adjust the overall window size to accomodate our requested client size
-	RECT wr = { 0, 0, width, height };
+	RECT wr = { 0, 0, view->width, view->height };
 	AdjustWindowRectEx(&wr, winFlags, FALSE, WS_EX_TOPMOST);
 
 	impl->hwnd = CreateWindowEx(
 		WS_EX_TOPMOST,
 		classNameBuf, title,
-		(visible ? WS_VISIBLE : 0) | (parent ? WS_CHILD : winFlags),
-		0, 0, wr.right-wr.left, wr.bottom-wr.top,
-		(HWND)parent, NULL, NULL, NULL);
+		view->parent ? WS_CHILD : winFlags,
+		CW_USEDEFAULT, CW_USEDEFAULT, wr.right-wr.left, wr.bottom-wr.top,
+		(HWND)view->parent, NULL, hInstance, NULL);
 
 	if (!impl->hwnd) {
 		free(impl);
 		free(view);
-		return NULL;
+		return 1;
 	}
 
 #ifdef _WIN64
@@ -131,10 +139,23 @@ puglCreate(PuglNativeWindow parent,
 	impl->hglrc = wglCreateContext(impl->hdc);
 	wglMakeCurrent(impl->hdc, impl->hglrc);
 
-	view->width  = width;
-	view->height = height;
+	return 0;
+}
 
-	return view;
+void
+puglShowWindow(PuglView* view)
+{
+	PuglInternals* impl = view->impl;
+
+	ShowWindow(impl->hwnd, SW_SHOWNORMAL);
+}
+
+void
+puglHideWindow(PuglView* view)
+{
+	PuglInternals* impl = view->impl;
+
+	ShowWindow(impl->hwnd, SW_HIDE);
 }
 
 void
@@ -149,7 +170,7 @@ puglDestroy(PuglView* view)
 	free(view);
 }
 
-void
+static void
 puglReshape(PuglView* view, int width, int height)
 {
 	wglMakeCurrent(view->impl->hdc, view->impl->hglrc);
@@ -164,7 +185,7 @@ puglReshape(PuglView* view, int width, int height)
 	view->height = height;
 }
 
-void
+static void
 puglDisplay(PuglView* view)
 {
 	wglMakeCurrent(view->impl->hdc, view->impl->hglrc);
@@ -221,7 +242,7 @@ processMouseEvent(PuglView* view, int button, bool press, LPARAM lParam)
 	} else {
 		ReleaseCapture();
 	}
-	
+
 	if (view->mouseFunc) {
 		view->mouseFunc(view, button, press,
 		                GET_X_LPARAM(lParam),
@@ -251,7 +272,7 @@ handleMessage(PuglView* view, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_CREATE:
 	case WM_SHOWWINDOW:
 	case WM_SIZE:
-		RECT rect; 
+		RECT rect;
 		GetClientRect(view->impl->hwnd, &rect);
 		puglReshape(view, rect.right, rect.bottom);
 		view->width = rect.right;
@@ -316,7 +337,7 @@ handleMessage(PuglView* view, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 	case WM_QUIT:
-	case LOCAL_CLOSE_MSG:
+	case PUGL_LOCAL_CLOSE_MSG:
 		if (view->closeFunc) {
 			view->closeFunc(view);
 		}
@@ -359,7 +380,7 @@ wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		PostMessage(hwnd, WM_SHOWWINDOW, TRUE, 0);
 		return 0;
 	case WM_CLOSE:
-		PostMessage(hwnd, LOCAL_CLOSE_MSG, wParam, lParam);
+		PostMessage(hwnd, PUGL_LOCAL_CLOSE_MSG, wParam, lParam);
 		return 0;
 	case WM_DESTROY:
 		return 0;

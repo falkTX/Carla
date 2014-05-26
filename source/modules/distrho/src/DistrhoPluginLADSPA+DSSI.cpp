@@ -334,9 +334,9 @@ private:
 
     // LADSPA ports
 #if DISTRHO_PLUGIN_NUM_INPUTS > 0
-    LADSPA_Data*  fPortAudioIns[DISTRHO_PLUGIN_NUM_INPUTS];
+    const LADSPA_Data*  fPortAudioIns[DISTRHO_PLUGIN_NUM_INPUTS];
 #else
-    LADSPA_Data** fPortAudioIns;
+    const LADSPA_Data** fPortAudioIns;
 #endif
 #if DISTRHO_PLUGIN_NUM_OUTPUTS > 0
     LADSPA_Data*  fPortAudioOuts[DISTRHO_PLUGIN_NUM_OUTPUTS];
@@ -446,7 +446,11 @@ static void dssi_run_synth(LADSPA_Handle instance, ulong sampleCount, snd_seq_ev
 static LADSPA_Descriptor sLadspaDescriptor = {
     /* UniqueID   */ 0,
     /* Label      */ nullptr,
+#if DISTRHO_PLUGIN_IS_RT_SAFE
     /* Properties */ LADSPA_PROPERTY_HARD_RT_CAPABLE,
+#else
+    /* Properties */ 0x0,
+#endif
     /* Name       */ nullptr,
     /* Maker      */ nullptr,
     /* Copyright  */ nullptr,

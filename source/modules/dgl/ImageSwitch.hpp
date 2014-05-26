@@ -14,40 +14,55 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef DGL_IMAGE_ABOUT_WINDOW_HPP_INCLUDED
-#define DGL_IMAGE_ABOUT_WINDOW_HPP_INCLUDED
+#ifndef DGL_IMAGE_SWITCH_HPP_INCLUDED
+#define DGL_IMAGE_SWITCH_HPP_INCLUDED
 
 #include "Image.hpp"
 #include "Widget.hpp"
-#include "Window.hpp"
 
 START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
 
-class ImageAboutWindow : public Window,
-                         public Widget
+class ImageSwitch : public Widget
 {
 public:
-    explicit ImageAboutWindow(Window& parent, const Image& image = Image());
-    explicit ImageAboutWindow(Widget* widget, const Image& image = Image());
+    class Callback
+    {
+    public:
+        virtual ~Callback() {}
+        virtual void imageSwitchClicked(ImageSwitch* imageButton, bool down) = 0;
+    };
 
-    void setImage(const Image& image);
+    explicit ImageSwitch(Window& parent, const Image& imageNormal, const Image& imageDown, int id = 0) noexcept;
+    explicit ImageSwitch(Widget* widget, const Image& imageNormal, const Image& imageDown, int id = 0) noexcept;
+    explicit ImageSwitch(const ImageSwitch& imageSwitch) noexcept;
+
+    int getId() const noexcept;
+    void setId(int id) noexcept;
+
+    bool isDown() const noexcept;
+    void setDown(bool down) noexcept;
+
+    void setCallback(Callback* callback) noexcept;
 
 protected:
-    void onDisplay() override;
-    bool onKeyboard(const KeyboardEvent&) override;
-    bool onMouse(const MouseEvent&) override;
-    void onReshape(int width, int height) override;
+     void onDisplay() override;
+     bool onMouse(const MouseEvent&) override;
 
 private:
-    Image fImgBackground;
+    Image fImageNormal;
+    Image fImageDown;
+    bool  fIsDown;
+    int   fId;
 
-    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ImageAboutWindow)
+    Callback* fCallback;
+
+    DISTRHO_LEAK_DETECTOR(ImageSwitch)
 };
 
 // -----------------------------------------------------------------------
 
 END_NAMESPACE_DGL
 
-#endif // DGL_IMAGE_ABOUT_WINDOW_HPP_INCLUDED
+#endif // DGL_IMAGE_SWITCH_HPP_INCLUDED

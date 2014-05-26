@@ -25,36 +25,57 @@ class Window;
 
 // -----------------------------------------------------------------------
 
+/**
+   Base DGL Application class.
+
+   One application instance is required for creating a window.
+   There's no single/global application instance in DGL, and multiple
+   windows can share the same app instance.
+
+   In standalone mode an application will automatically quit its
+   event-loop when all its windows are closed.
+ */
 class App
 {
 public:
-    class IdleCallback
-    {
-    public:
-        virtual ~IdleCallback() {}
-        virtual void idleCallback() = 0;
-    };
-
+   /**
+      Constructor.
+    */
     App();
+
+   /**
+      Destructor.
+    */
     ~App();
 
+   /**
+      Idle function.
+      This calls all this app Windows' idle functions and idle callbacks.
+    */
     void idle();
-    void exec();
-    void quit();
-    bool isQuiting() const;
 
-    void addIdleCallback(IdleCallback* const callback);
-    void removeIdleCallback(IdleCallback* const callback);
+   /**
+      Run the application event-loop until all Windows are closed.
+      @idle() is called at regular intervals.
+    */
+    void exec();
+
+   /**
+      Quit the application.
+      This stops the event-loop and closes all Windows.
+    */
+    void quit();
+
+   /**
+      Check if the application is about to quit.
+      Returning true means there's no event-loop running at the moment.
+    */
+    bool isQuiting() const noexcept;
 
 private:
     struct PrivateData;
     PrivateData* const pData;
     friend class Window;
-
-    void _addWindow(Window* const window);
-    void _removeWindow(Window* const window);
-    void _oneShown();
-    void _oneHidden();
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(App)
 };

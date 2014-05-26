@@ -22,9 +22,10 @@ START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
 
-ImageSlider::ImageSlider(Window& parent, const Image& image)
+ImageSlider::ImageSlider(Window& parent, const Image& image, int id) noexcept
     : Widget(parent),
       fImage(image),
+      fId(id),
       fMinimum(0.0f),
       fMaximum(1.0f),
       fStep(0.0f),
@@ -36,12 +37,13 @@ ImageSlider::ImageSlider(Window& parent, const Image& image)
       fStartedY(0),
       fCallback(nullptr)
 {
-    setSize(fImage.getSize());
+    Widget::setNeedsFullViewport(true);
 }
 
-ImageSlider::ImageSlider(Widget* widget, const Image& image)
+ImageSlider::ImageSlider(Widget* widget, const Image& image, int id) noexcept
     : Widget(widget->getParentWindow()),
       fImage(image),
+      fId(id),
       fMinimum(0.0f),
       fMaximum(1.0f),
       fStep(0.0f),
@@ -53,12 +55,13 @@ ImageSlider::ImageSlider(Widget* widget, const Image& image)
       fStartedY(0),
       fCallback(nullptr)
 {
-    setSize(fImage.getSize());
+    Widget::setNeedsFullViewport(true);
 }
 
-ImageSlider::ImageSlider(const ImageSlider& imageSlider)
+ImageSlider::ImageSlider(const ImageSlider& imageSlider) noexcept
     : Widget(imageSlider.getParentWindow()),
       fImage(imageSlider.fImage),
+      fId(imageSlider.fId),
       fMinimum(imageSlider.fMinimum),
       fMaximum(imageSlider.fMaximum),
       fStep(imageSlider.fStep),
@@ -73,37 +76,47 @@ ImageSlider::ImageSlider(const ImageSlider& imageSlider)
       fEndPos(imageSlider.fEndPos),
       fSliderArea(imageSlider.fSliderArea)
 {
-    setSize(fImage.getSize());
+    Widget::setNeedsFullViewport(true);
 }
 
-float ImageSlider::getValue() const
+int ImageSlider::getId() const noexcept
+{
+    return fId;
+}
+
+void ImageSlider::setId(int id) noexcept
+{
+    fId = id;
+}
+
+float ImageSlider::getValue() const noexcept
 {
     return fValue;
 }
 
-void ImageSlider::setStartPos(const Point<int>& startPos)
+void ImageSlider::setStartPos(const Point<int>& startPos) noexcept
 {
     fStartPos = startPos;
     _recheckArea();
 }
 
-void ImageSlider::setStartPos(int x, int y)
+void ImageSlider::setStartPos(int x, int y) noexcept
 {
     setStartPos(Point<int>(x, y));
 }
 
-void ImageSlider::setEndPos(const Point<int>& endPos)
+void ImageSlider::setEndPos(const Point<int>& endPos) noexcept
 {
     fEndPos = endPos;
     _recheckArea();
 }
 
-void ImageSlider::setEndPos(int x, int y)
+void ImageSlider::setEndPos(int x, int y) noexcept
 {
     setEndPos(Point<int>(x, y));
 }
 
-void ImageSlider::setInverted(bool inverted)
+void ImageSlider::setInverted(bool inverted) noexcept
 {
     if (fInverted == inverted)
         return;
@@ -112,7 +125,7 @@ void ImageSlider::setInverted(bool inverted)
     repaint();
 }
 
-void ImageSlider::setRange(float min, float max)
+void ImageSlider::setRange(float min, float max) noexcept
 {
     if (fValue < min)
     {
@@ -120,7 +133,11 @@ void ImageSlider::setRange(float min, float max)
         repaint();
 
         if (fCallback != nullptr)
-            fCallback->imageSliderValueChanged(this, fValue);
+        {
+            try {
+                fCallback->imageSliderValueChanged(this, fValue);
+            } DISTRHO_SAFE_EXCEPTION("ImageSlider::setRange < min");
+        }
     }
     else if (fValue > max)
     {
@@ -128,19 +145,23 @@ void ImageSlider::setRange(float min, float max)
         repaint();
 
         if (fCallback != nullptr)
-            fCallback->imageSliderValueChanged(this, fValue);
+        {
+            try {
+                fCallback->imageSliderValueChanged(this, fValue);
+            } DISTRHO_SAFE_EXCEPTION("ImageSlider::setRange > max");
+        }
     }
 
     fMinimum = min;
     fMaximum = max;
 }
 
-void ImageSlider::setStep(float step)
+void ImageSlider::setStep(float step) noexcept
 {
     fStep = step;
 }
 
-void ImageSlider::setValue(float value, bool sendCallback)
+void ImageSlider::setValue(float value, bool sendCallback) noexcept
 {
     if (fValue == value)
         return;
@@ -153,10 +174,14 @@ void ImageSlider::setValue(float value, bool sendCallback)
     repaint();
 
     if (sendCallback && fCallback != nullptr)
-        fCallback->imageSliderValueChanged(this, fValue);
+    {
+        try {
+            fCallback->imageSliderValueChanged(this, fValue);
+        } DISTRHO_SAFE_EXCEPTION("ImageSlider::setValue");
+    }
 }
 
-void ImageSlider::setCallback(Callback* callback)
+void ImageSlider::setCallback(Callback* callback) noexcept
 {
     fCallback = callback;
 }
@@ -194,20 +219,22 @@ void ImageSlider::onDisplay()
             y = fStartPos.getY() + static_cast<int>(normValue*static_cast<float>(fEndPos.getY()-fStartPos.getY()));
     }
 
-    fImage.draw(x, y);
+    fImage.drawAt(x, y);
 }
 
-bool ImageSlider::onMouse(int button, bool press, int x, int y)
+bool ImageSlider::onMouse(const MouseEvent& ev)
 {
-    if (button != 1)
+    if (ev.button != 1)
         return false;
 
-    if (press)
+    if (ev.press)
     {
-        if (! fSliderArea.contains(x, y))
+        if (! fSliderArea.contains(ev.pos))
             return false;
 
         float vper;
+        const int x = ev.pos.getX();
+        const int y = ev.pos.getY();
 
         if (fStartPos.getY() == fEndPos.getY())
         {
@@ -229,13 +256,11 @@ bool ImageSlider::onMouse(int button, bool press, int x, int y)
 
         if (value < fMinimum)
         {
-            value = fMinimum;
-            fValueTmp = value;
+            fValueTmp = value = fMinimum;
         }
         else if (value > fMaximum)
         {
-            value = fMaximum;
-            fValueTmp = value;
+            fValueTmp = value = fMaximum;
         }
         else if (fStep != 0.0f)
         {
@@ -267,12 +292,14 @@ bool ImageSlider::onMouse(int button, bool press, int x, int y)
     return false;
 }
 
-bool ImageSlider::onMotion(int x, int y)
+bool ImageSlider::onMotion(const MotionEvent& ev)
 {
     if (! fDragging)
         return false;
 
     const bool horizontal = fStartPos.getY() == fEndPos.getY();
+    const int x = ev.pos.getX();
+    const int y = ev.pos.getY();
 
     if ((horizontal && fSliderArea.containsX(x)) || (fSliderArea.containsY(y) && ! horizontal))
     {
@@ -298,13 +325,11 @@ bool ImageSlider::onMotion(int x, int y)
 
         if (value < fMinimum)
         {
-            value = fMinimum;
-            fValueTmp = value;
+            fValueTmp = value = fMinimum;
         }
         else if (value > fMaximum)
         {
-            value = fMaximum;
-            fValueTmp = value;
+            fValueTmp = value = fMaximum;
         }
         else if (fStep != 0.0f)
         {
@@ -333,7 +358,7 @@ bool ImageSlider::onMotion(int x, int y)
     return true;
 }
 
-void ImageSlider::_recheckArea()
+void ImageSlider::_recheckArea() noexcept
 {
     if (fStartPos.getY() == fEndPos.getY())
     {

@@ -36,6 +36,8 @@ extern double   d_lastSampleRate;
 // Plugin private data
 
 struct Plugin::PrivateData {
+    bool isProcessing;
+
     uint32_t   parameterCount;
     Parameter* parameters;
 
@@ -61,7 +63,8 @@ struct Plugin::PrivateData {
     double   sampleRate;
 
     PrivateData() noexcept
-        : parameterCount(0),
+        : isProcessing(false),
+          parameterCount(0),
           parameters(nullptr),
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
           programCount(0),
@@ -351,20 +354,27 @@ public:
     }
 
 #if DISTRHO_PLUGIN_IS_SYNTH
-    void run(float** const inputs, float** const outputs, const uint32_t frames, const MidiEvent* const midiEvents, const uint32_t midiEventCount)
+    void run(const float** const inputs, float** const outputs, const uint32_t frames, const MidiEvent* const midiEvents, const uint32_t midiEventCount)
     {
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr,);
         DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
 
+        fData->isProcessing = true;
         fPlugin->d_run(inputs, outputs, frames, midiEvents, midiEventCount);
+        fData->isProcessing = false;
     }
 #else
-    void run(float** const inputs, float** const outputs, const uint32_t frames)
+    void run(const float** const inputs, float** const outputs, const uint32_t frames)
     {
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr,);
         DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
 
+        fData->isProcessing = true;
         fPlugin->d_run(inputs, outputs, frames);
+        fData->isProcessing = false;
     }
 #endif
+
     // -------------------------------------------------------------------
 
     void setBufferSize(const uint32_t bufferSize, bool doCallback = false)
@@ -407,7 +417,7 @@ public:
 
 private:
     // -------------------------------------------------------------------
-    // private members accessed by DistrhoPlugin classes
+    // Plugin and DistrhoPlugin data
 
     Plugin* const fPlugin;
     Plugin::PrivateData* const fData;

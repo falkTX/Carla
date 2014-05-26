@@ -31,12 +31,14 @@ double d_lastUiSampleRate = 0.0;
 // UI
 
 UI::UI()
-    : DGL::Widget(*DGL::dgl_lastUiParent),
+    : UIWidget(*DGL::dgl_lastUiParent),
       pData(new PrivateData())
 {
     DISTRHO_SAFE_ASSERT(DGL::dgl_lastUiParent != nullptr);
 
     DGL::dgl_lastUiParent = nullptr;
+
+    Widget::setNeedsFullViewport(true);
 }
 
 UI::~UI()
@@ -79,9 +81,9 @@ void UI::d_sendNote(uint8_t channel, uint8_t note, uint8_t velocity)
 // -----------------------------------------------------------------------
 // Host UI State
 
-void UI::d_uiResize(uint width, uint height)
+void UI::d_setSize(uint width, uint height)
 {
-    pData->uiResizeCallback(width, height);
+    pData->setSizeCallback(width, height);
 }
 
 #if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
@@ -93,6 +95,21 @@ void* UI::d_getPluginInstancePointer() const noexcept
     return pData->dspPtr;
 }
 #endif
+
+// -----------------------------------------------------------------------
+// UI Callbacks (optional)
+
+void UI::d_uiReshape(int width, int height)
+{
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, width, height, 0, 0.0f, 1.0f);
+    glViewport(0, 0, width, height);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
 
 // -----------------------------------------------------------------------
 

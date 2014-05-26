@@ -43,7 +43,7 @@ public:
     UICarla(const NativeHostDescriptor* const host, PluginExporter* const plugin)
         : fHost(host),
           fPlugin(plugin),
-          fUI(this, 0, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, uiResizeCallback, plugin->getInstancePointer())
+          fUI(this, 0, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, setSizeCallback, plugin->getInstancePointer())
     {
         fUI.setTitle(host->uiName);
 
@@ -110,7 +110,7 @@ protected:
         // TODO
     }
 
-    void handleUiResize(const uint width, const uint height)
+    void handleSetSize(const uint width, const uint height)
     {
         fUI.setSize(width, height);
     }
@@ -154,9 +154,9 @@ private:
     }
 #endif
 
-    static void uiResizeCallback(void* ptr, uint width, uint height)
+    static void setSizeCallback(void* ptr, uint width, uint height)
     {
-        handlePtr->handleUiResize(width, height);
+        handlePtr->handleSetSize(width, height);
     }
 
     #undef handlePtr
@@ -332,12 +332,12 @@ protected:
             carla_copy<uint8_t>(realMidiEvent.buf, midiEvent.data, midiEvent.size);
         }
 
-        fPlugin.run(inBuffer, outBuffer, frames, realMidiEvents, midiEventCount);
+        fPlugin.run(const_cast<const float**>(inBuffer), outBuffer, frames, realMidiEvents, midiEventCount);
     }
 #else
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
     {
-        fPlugin.run(inBuffer, outBuffer, frames);
+        fPlugin.run(const_cast<const float**>(inBuffer), outBuffer, frames);
     }
 #endif
 

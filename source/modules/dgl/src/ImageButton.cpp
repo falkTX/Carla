@@ -16,13 +16,11 @@
 
 #include "../ImageButton.hpp"
 
-#include <cassert>
-
 START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
 
-ImageButton::ImageButton(Window& parent, const Image& image)
+ImageButton::ImageButton(Window& parent, const Image& image) noexcept
     : Widget(parent),
       fImageNormal(image),
       fImageHover(image),
@@ -33,7 +31,21 @@ ImageButton::ImageButton(Window& parent, const Image& image)
 {
 }
 
-ImageButton::ImageButton(Widget* widget, const Image& image)
+ImageButton::ImageButton(Window& parent, const Image& imageNormal, const Image& imageHover, const Image& imageDown) noexcept
+    : Widget(parent),
+      fImageNormal(imageNormal),
+      fImageHover(imageHover),
+      fImageDown(imageDown),
+      fCurImage(&fImageNormal),
+      fCurButton(-1),
+      fCallback(nullptr)
+{
+    DISTRHO_SAFE_ASSERT(fImageNormal.getSize() == fImageHover.getSize() && fImageHover.getSize() == fImageDown.getSize());
+
+    setSize(fCurImage->getSize());
+}
+
+ImageButton::ImageButton(Widget* widget, const Image& image) noexcept
     : Widget(widget->getParentWindow()),
       fImageNormal(image),
       fImageHover(image),
@@ -44,21 +56,7 @@ ImageButton::ImageButton(Widget* widget, const Image& image)
 {
 }
 
-ImageButton::ImageButton(Window& parent, const Image& imageNormal, const Image& imageHover, const Image& imageDown)
-    : Widget(parent),
-      fImageNormal(imageNormal),
-      fImageHover(imageHover),
-      fImageDown(imageDown),
-      fCurImage(&fImageNormal),
-      fCurButton(-1),
-      fCallback(nullptr)
-{
-    assert(fImageNormal.getSize() == fImageHover.getSize() && fImageHover.getSize() == fImageDown.getSize());
-
-    setSize(fCurImage->getSize());
-}
-
-ImageButton::ImageButton(Widget* widget, const Image& imageNormal, const Image& imageHover, const Image& imageDown)
+ImageButton::ImageButton(Widget* widget, const Image& imageNormal, const Image& imageHover, const Image& imageDown) noexcept
     : Widget(widget->getParentWindow()),
       fImageNormal(imageNormal),
       fImageHover(imageHover),
@@ -67,12 +65,12 @@ ImageButton::ImageButton(Widget* widget, const Image& imageNormal, const Image& 
       fCurButton(-1),
       fCallback(nullptr)
 {
-    assert(fImageNormal.getSize() == fImageHover.getSize() && fImageHover.getSize() == fImageDown.getSize());
+    DISTRHO_SAFE_ASSERT(fImageNormal.getSize() == fImageHover.getSize() && fImageHover.getSize() == fImageDown.getSize());
 
     setSize(fCurImage->getSize());
 }
 
-ImageButton::ImageButton(const ImageButton& imageButton)
+ImageButton::ImageButton(const ImageButton& imageButton) noexcept
     : Widget(imageButton.getParentWindow()),
       fImageNormal(imageButton.fImageNormal),
       fImageHover(imageButton.fImageHover),
@@ -81,24 +79,24 @@ ImageButton::ImageButton(const ImageButton& imageButton)
       fCurButton(-1),
       fCallback(imageButton.fCallback)
 {
-    assert(fImageNormal.getSize() == fImageHover.getSize() && fImageHover.getSize() == fImageDown.getSize());
+    DISTRHO_SAFE_ASSERT(fImageNormal.getSize() == fImageHover.getSize() && fImageHover.getSize() == fImageDown.getSize());
 
     setSize(fCurImage->getSize());
 }
 
-void ImageButton::setCallback(Callback* callback)
+void ImageButton::setCallback(Callback* callback) noexcept
 {
     fCallback = callback;
 }
 
 void ImageButton::onDisplay()
 {
-    fCurImage->draw(getPos());
+    fCurImage->draw();
 }
 
-bool ImageButton::onMouse(int button, bool press, int x, int y)
+bool ImageButton::onMouse(const MouseEvent& ev)
 {
-    if (fCurButton != -1 && ! press)
+    if (fCurButton != -1 && ! ev.press)
     {
         if (fCurImage != &fImageNormal)
         {
@@ -106,7 +104,7 @@ bool ImageButton::onMouse(int button, bool press, int x, int y)
             repaint();
         }
 
-        if (! getArea().contains(x, y))
+        if (! contains(ev.pos))
         {
             fCurButton = -1;
             return false;
@@ -115,18 +113,20 @@ bool ImageButton::onMouse(int button, bool press, int x, int y)
         if (fCallback != nullptr)
             fCallback->imageButtonClicked(this, fCurButton);
 
-        //if (getArea().contains(x, y))
-        //{
-        //    fCurImage = &fImageHover;
-        //    repaint();
-        //}
+#if 0
+        if (contains(ev.pos))
+        {
+           fCurImage = &fImageHover;
+           repaint();
+        }
+#endif
 
         fCurButton = -1;
 
         return true;
     }
 
-    if (press && getArea().contains(x, y))
+    if (ev.press && contains(ev.pos))
     {
         if (fCurImage != &fImageDown)
         {
@@ -134,19 +134,19 @@ bool ImageButton::onMouse(int button, bool press, int x, int y)
             repaint();
         }
 
-        fCurButton = button;
+        fCurButton = ev.button;
         return true;
     }
 
     return false;
 }
 
-bool ImageButton::onMotion(int x, int y)
+bool ImageButton::onMotion(const MotionEvent& ev)
 {
     if (fCurButton != -1)
         return true;
 
-    if (getArea().contains(x, y))
+    if (contains(ev.pos))
     {
         if (fCurImage != &fImageHover)
         {

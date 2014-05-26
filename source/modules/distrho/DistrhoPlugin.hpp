@@ -285,9 +285,9 @@ protected:
     virtual void d_activate() {}
     virtual void d_deactivate() {}
 #if DISTRHO_PLUGIN_IS_SYNTH
-    virtual void d_run(float** inputs, float** outputs, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount) = 0;
+    virtual void d_run(const float** inputs, float** outputs, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount) = 0;
 #else
-    virtual void d_run(float** inputs, float** outputs, uint32_t frames) = 0;
+    virtual void d_run(const float** inputs, float** outputs, uint32_t frames) = 0;
 #endif
 
     // -------------------------------------------------------------------
