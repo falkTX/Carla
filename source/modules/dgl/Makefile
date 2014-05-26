@@ -20,8 +20,15 @@ OBJS = \
 	src/ImageButton.cpp.o \
 	src/ImageKnob.cpp.o \
 	src/ImageSlider.cpp.o \
-	src/Widget.cpp.o \
-	src/Window.cpp.o
+	src/ImageSwitch.cpp.o \
+	src/NanoVG.cpp.o \
+	src/Widget.cpp.o
+
+ifeq ($(MACOS),true)
+OBJS += src/Window.mm.o
+else
+OBJS += src/Window.cpp.o
+endif
 
 OBJS_posix32 = \
 	src/App.cpp.posix32.o \
@@ -66,12 +73,6 @@ OBJS_win64 = \
 	src/ImageSlider.cpp.win64.o \
 	src/Widget.cpp.win64.o \
 	src/Window.cpp.win64.o
-
-ifeq ($(MACOS),true)
-OBJS         += src/pugl/pugl_osx_extended.m.o
-OBJS_posix32 += src/pugl/pugl_osx_extended.m.posix32.o
-OBJS_posix64 += src/pugl/pugl_osx_extended.m.posix64.o
-endif
 
 # --------------------------------------------------------------
 
@@ -132,6 +133,9 @@ win64:   ../dgl.win64.a
 
 %.m.o: %.m
 	$(CC) $< $(BUILD_C_FLAGS) -ObjC -c -o $@
+
+%.mm.o: %.mm
+	$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
 
 # --------------------------------------------------------------
 

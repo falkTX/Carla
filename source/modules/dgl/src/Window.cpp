@@ -26,9 +26,7 @@
 #if defined(DISTRHO_OS_WINDOWS)
 # include "pugl/pugl_win.cpp"
 #elif defined(DISTRHO_OS_MAC)
-extern "C" {
 # include "pugl/pugl_osx.m"
-}
 #elif defined(DISTRHO_OS_LINUX)
 # include <sys/types.h>
 # include <unistd.h>

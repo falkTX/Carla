@@ -16,6 +16,11 @@ export CXFREEZE=/opt/carla/bin/cxfreeze
 # Build python stuff
 export PATH=/opt/carla/bin:/opt/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=/opt/carla/lib/pkgconfig:/opt/carla64/lib/pkgconfig
+
+# clean?
+# make clean
+
+# Build Py UI stuff 
 make $JOBS UI RES WIDGETS
 
 # Build theme

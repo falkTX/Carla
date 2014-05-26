@@ -149,8 +149,8 @@ export CXX=clang
 # qt5-base download
 
 if [ ! -d qtbase-opensource-src-5.3.0 ]; then
-curl -O http://download.qt-project.org/official_releases/qt/5.3/5.3.0/submodules/qtbase-opensource-src-5.3.0.tar.xz
-tar -xf qtbase-opensource-src-5.3.0.tar.xz
+curl -L http://download.qt-project.org/official_releases/qt/5.3/5.3.0/submodules/qtbase-opensource-src-5.3.0.tar.gz -o qtbase-opensource-src-5.3.0.tar.gz
+tar -xf qtbase-opensource-src-5.3.0.tar.gz
 fi
 
 # ------------------------------------------------------------------------------------
@@ -227,7 +227,7 @@ export QMAKESPEC=macx-clang
 # qt5-base download (5.2.1 for now)
 
 if [ ! -d qtbase-opensource-src-5.2.1 ]; then
-curl -O http://download.qt-project.org/official_releases/qt/5.2/5.2.1/submodules/qtbase-opensource-src-5.2.1.tar.gz
+curl -L http://download.qt-project.org/official_releases/qt/5.2/5.2.1/submodules/qtbase-opensource-src-5.2.1.tar.gz -o qtbase-opensource-src-5.2.1.tar.gz
 tar -xf qtbase-opensource-src-5.2.1.tar.gz
 fi
 
@@ -257,7 +257,7 @@ fi
 # qt5-mac-extras
 
 if [ ! -d qtmacextras-opensource-src-5.2.1 ]; then
-curl -O http://download.qt-project.org/official_releases/qt/5.2/5.2.1/submodules/qtmacextras-opensource-src-5.2.1.tar.gz
+curl -L http://download.qt-project.org/official_releases/qt/5.2/5.2.1/submodules/qtmacextras-opensource-src-5.2.1.tar.gz -o qtmacextras-opensource-src-5.2.1.tar.gz
 tar -xf qtmacextras-opensource-src-5.2.1.tar.gz
 fi
 
@@ -274,7 +274,7 @@ fi
 # qt5-svg
 
 if [ ! -d qtsvg-opensource-src-5.2.1 ]; then
-curl -O http://download.qt-project.org/official_releases/qt/5.2/5.2.1/submodules/qtsvg-opensource-src-5.2.1.tar.gz
+curl -L http://download.qt-project.org/official_releases/qt/5.2/5.2.1/submodules/qtsvg-opensource-src-5.2.1.tar.gz -o qtsvg-opensource-src-5.2.1.tar.gz
 tar -xf qtsvg-opensource-src-5.2.1.tar.gz
 fi
 
