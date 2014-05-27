@@ -968,7 +968,7 @@ public:
         delete[] fLv2Options.windowTitle;
         fLv2Options.windowTitle = carla_strdup(guiTitle.toUtf8().constData());
 
-        fLv2Options.opts[Lv2PluginOptions::WindowTitle].size  = std::strlen(fLv2Options.windowTitle);
+        fLv2Options.opts[Lv2PluginOptions::WindowTitle].size  = (uint32_t)std::strlen(fLv2Options.windowTitle);
         fLv2Options.opts[Lv2PluginOptions::WindowTitle].value = fLv2Options.windowTitle;
 
         if (fFeatures[kFeatureIdExternalUi] != nullptr && fFeatures[kFeatureIdExternalUi]->data != nullptr)
@@ -1215,7 +1215,7 @@ public:
 
                 fUi.widget = nullptr;
                 fUi.handle = fUi.descriptor->instantiate(fUi.descriptor, fRdfDescriptor->URI, fUi.rdfDescriptor->Bundle,
-                                                          carla_lv2_ui_write_function, this, &fUi.widget, fFeatures);
+                                                         carla_lv2_ui_write_function, this, &fUi.widget, fFeatures);
             }
 
             CARLA_SAFE_ASSERT(fUi.handle != nullptr);
@@ -4951,7 +4951,7 @@ public:
         QString guiTitle(QString("%1 (GUI)").arg(pData->name));
         fLv2Options.windowTitle = carla_strdup(guiTitle.toUtf8().constData());
 
-        fLv2Options.opts[Lv2PluginOptions::WindowTitle].size  = std::strlen(fLv2Options.windowTitle);
+        fLv2Options.opts[Lv2PluginOptions::WindowTitle].size  = (uint32_t)std::strlen(fLv2Options.windowTitle);
         fLv2Options.opts[Lv2PluginOptions::WindowTitle].value = fLv2Options.windowTitle;
 
         // ---------------------------------------------------------------
