@@ -299,6 +299,11 @@ public:
     void beginFrame(int width, int height, float scaleFactor = 1.0f, Alpha alpha = PREMULTIPLIED_ALPHA);
 
    /**
+      Begin drawing a new frame inside a widget.
+    */
+    void beginFrame(Widget* widget);
+
+   /**
       Ends drawing flushing remaining render state.
     */
     void endFrame();
@@ -794,7 +799,10 @@ public:
     */
     NanoWidget(Window& parent)
         : Widget(parent),
-          NanoVG() {}
+          NanoVG()
+    {
+        setNeedsScaling(true);
+    }
 
 protected:
    /**

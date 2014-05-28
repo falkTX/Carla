@@ -47,9 +47,7 @@ public:
           fKeyValueURID(uridMap->map(uridMap->handle, "urn:distrho:keyValueState")),
           fWinIdWasNull(winId == 0)
     {
-        if (winId == 0)
-            fUI.setTitle(fUI.getName());
-        else if (fUiResize != nullptr)
+        if (fUiResize != nullptr && winId != 0)
             fUiResize->ui_resize(fUiResize->handle, fUI.getWidth(), fUI.getHeight());
 
 #if DISTRHO_PLUGIN_WANT_STATE
@@ -60,7 +58,10 @@ public:
         if (winId != 0)
             return;
 
+        const LV2_URID uridWindowTitle(uridMap->map(uridMap->handle, LV2_UI__windowTitle));
         const LV2_URID uridFrontendWinId(uridMap->map(uridMap->handle, "http://kxstudio.sf.net/ns/carla/frontendWinId"));
+
+        bool hasTitle = false;
 
         for (int i=0; options[i].key != 0; ++i)
         {
@@ -73,9 +74,24 @@ public:
                 }
                 else
                     d_stderr("Host provides frontendWinId but has wrong value type");
-                break;
+            }
+            else if (options[i].key == uridWindowTitle)
+            {
+                if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__String))
+                {
+                    if (const char* const windowTitle = (const char*)options[i].value)
+                    {
+                        hasTitle = true;
+                        fUI.setTitle(windowTitle);
+                    }
+                }
+                else
+                    d_stderr("Host provides windowTitle but has wrong value type");
             }
         }
+
+        if (! hasTitle)
+            fUI.setTitle(fUI.getName());
     }
 
     // -------------------------------------------------------------------

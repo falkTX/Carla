@@ -16,28 +16,22 @@
 
 #include "DistrhoUIInternal.hpp"
 
-START_NAMESPACE_DGL
-extern Window* dgl_lastUiParent;
-END_NAMESPACE_DGL
-
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 // Static data, see DistrhoUIInternal.hpp
 
-double d_lastUiSampleRate = 0.0;
+double  d_lastUiSampleRate = 0.0;
+void*   d_lastUiDspPtr = nullptr;
+Window* d_lastUiWindow = nullptr;
 
 // -----------------------------------------------------------------------
 // UI
 
 UI::UI()
-    : UIWidget(*DGL::dgl_lastUiParent),
+    : UIWidget(*d_lastUiWindow),
       pData(new PrivateData())
 {
-    DISTRHO_SAFE_ASSERT(DGL::dgl_lastUiParent != nullptr);
-
-    DGL::dgl_lastUiParent = nullptr;
-
     Widget::setNeedsFullViewport(true);
 }
 

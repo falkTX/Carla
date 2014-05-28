@@ -31,7 +31,9 @@ START_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 // Static data, see DistrhoUI.cpp
 
-extern double d_lastUiSampleRate;
+extern double  d_lastUiSampleRate;
+extern void*   d_lastUiDspPtr;
+extern Window* d_lastUiWindow;
 
 // -----------------------------------------------------------------------
 // UI callbacks
@@ -65,7 +67,7 @@ struct UI::PrivateData {
         : sampleRate(d_lastUiSampleRate),
           parameterOffset(0),
 #if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
-          dspPtr(nullptr),
+          dspPtr(d_lastUiDspPtr),
 #endif
           editParamCallbackFunc(nullptr),
           setParamCallbackFunc(nullptr),
@@ -127,12 +129,23 @@ struct UI::PrivateData {
 // -----------------------------------------------------------------------
 // Plugin Window, needed to take care of resize properly
 
+static inline
+UI* createUiWrapper(void* const dspPtr, Window* const window)
+{
+    d_lastUiDspPtr = dspPtr;
+    d_lastUiWindow = window;
+    UI* const ret  = createUI();
+    d_lastUiDspPtr = nullptr;
+    d_lastUiWindow = nullptr;
+    return ret;
+}
+
 class UIExporterWindow : public Window
 {
 public:
-    UIExporterWindow(App& app, const intptr_t winId)
+    UIExporterWindow(App& app, const intptr_t winId, void* const dspPtr)
         : Window(app, winId),
-          fUi(createUI()),
+          fUi(createUiWrapper(dspPtr, this)),
           fIsReady(false)
     {
         DISTRHO_SAFE_ASSERT_RETURN(fUi != nullptr,);
@@ -182,7 +195,7 @@ public:
                const editParamFunc editParamCall, const setParamFunc setParamCall, const setStateFunc setStateCall, const sendNoteFunc sendNoteCall, const setSizeFunc setSizeCall,
                void* const dspPtr = nullptr)
         : glApp(),
-          glWindow(glApp, winId),
+          glWindow(glApp, winId, dspPtr),
           fUi(glWindow.getUI()),
           fData((fUi != nullptr) ? fUi->pData : nullptr)
     {
@@ -195,13 +208,6 @@ public:
         fData->setStateCallbackFunc  = setStateCall;
         fData->sendNoteCallbackFunc  = sendNoteCall;
         fData->setSizeCallbackFunc   = setSizeCall;
-
-#if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
-        fData->dspPtr = dspPtr;
-#else
-        return; // unused
-        (void)dspPtr;
-#endif
     }
 
     // -------------------------------------------------------------------

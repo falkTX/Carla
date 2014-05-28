@@ -25,6 +25,7 @@ START_NAMESPACE_DGL
 Widget::Widget(Window& parent)
     : fParent(parent),
       fNeedsFullViewport(false),
+      fNeedsScaling(false),
       fVisible(true)
 {
     fParent._addWidget(this);
@@ -228,6 +229,11 @@ void Widget::onResize(const ResizeEvent&)
 void Widget::setNeedsFullViewport(bool yesNo) noexcept
 {
     fNeedsFullViewport = yesNo;
+}
+
+void Widget::setNeedsScaling(bool yesNo) noexcept
+{
+    fNeedsScaling = yesNo;
 }
 
 // -----------------------------------------------------------------------

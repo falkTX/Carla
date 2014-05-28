@@ -15,6 +15,7 @@
  */
 
 #include "../NanoVG.hpp"
+#include "../Window.hpp"
 
 // -----------------------------------------------------------------------
 
@@ -180,6 +181,14 @@ NanoVG::~NanoVG()
 void NanoVG::beginFrame(int width, int height, float scaleFactor, Alpha alpha)
 {
     nvgBeginFrame(fContext, width, height, scaleFactor, static_cast<NVGalpha>(alpha));
+}
+
+void NanoVG::beginFrame(Widget* widget)
+{
+    DISTRHO_SAFE_ASSERT_RETURN(widget != nullptr,);
+
+    Window& window(widget->getParentWindow());
+    nvgBeginFrame(fContext, window.getWidth(), window.getHeight(), 1.0f, NVG_PREMULTIPLIED_ALPHA);
 }
 
 void NanoVG::endFrame()
