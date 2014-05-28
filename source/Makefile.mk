@@ -196,6 +196,8 @@ ifneq ($(MACOS_OR_WIN32),true)
 HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
 HAVE_GTK2         = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3         = $(shell pkg-config --exists gtk+-3.0 && echo true)
+HAVE_QTGUI4       = $(shell pkg-config --exists QtCore QtGui && echo true)
+HAVE_QTGUI5       = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
 HAVE_WAYLAND      = $(shell pkg-config --exists wayland-client && echo true)
 HAVE_X11          = $(shell pkg-config --exists x11 && echo true)
 endif
