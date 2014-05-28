@@ -1240,9 +1240,14 @@ public:
             if (fUi.type == UI::TYPE_EMBED)
             {
                 if (fUi.window != nullptr)
+                {
                     fUi.window->show();
+                }
                 else if (fExt.uishow != nullptr)
+                {
                     fExt.uishow->show(fUi.handle);
+                    pData->tryTransient();
+                }
             }
             else
 #endif
