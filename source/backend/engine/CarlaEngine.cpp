@@ -426,6 +426,11 @@ const EngineEvent& CarlaEngineEventPort::getEventUnchecked(const uint32_t index)
     return fBuffer[index];
 }
 
+bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEvent& ctrl) noexcept
+{
+    return writeControlEvent(time, channel, ctrl.type, ctrl.param, ctrl.value);
+}
+
 bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(! fIsInput, false);
@@ -461,9 +466,14 @@ bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
     return false;
 }
 
-bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEvent& ctrl) noexcept
+bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t size, const uint8_t* const data) noexcept
 {
-    return writeControlEvent(time, channel, ctrl.type, ctrl.param, ctrl.value);
+    return writeMidiEvent(time, uint8_t(MIDI_GET_CHANNEL_FROM_DATA(data)), 0, size, data);
+}
+
+bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t channel, const EngineMidiEvent& midi) noexcept
+{
+    return writeMidiEvent(time, channel, midi.port, midi.size, midi.data);
 }
 
 bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t size, const uint8_t* const data) noexcept
@@ -502,16 +512,6 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
 
     carla_stderr2("CarlaEngineEventPort::writeMidiEvent() - buffer full");
     return false;
-}
-
-bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t size, const uint8_t* const data) noexcept
-{
-    return writeMidiEvent(time, uint8_t(MIDI_GET_CHANNEL_FROM_DATA(data)), 0, size, data);
-}
-
-bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t channel, const EngineMidiEvent& midi) noexcept
-{
-    return writeMidiEvent(time, channel, midi.port, midi.size, midi.data);
 }
 
 // -----------------------------------------------------------------------
