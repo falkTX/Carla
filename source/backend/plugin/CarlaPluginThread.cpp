@@ -26,7 +26,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 #ifdef DEBUG
 static inline
-const char* PluginThreadMode2str(const CarlaPluginThread::Mode mode)
+const char* PluginThreadMode2str(const CarlaPluginThread::Mode mode) noexcept
 {
     switch (mode)
     {
@@ -47,7 +47,7 @@ const char* PluginThreadMode2str(const CarlaPluginThread::Mode mode)
 }
 #endif
 
-CarlaPluginThread::CarlaPluginThread(CarlaBackend::CarlaEngine* const engine, CarlaBackend::CarlaPlugin* const plugin, const Mode mode)
+CarlaPluginThread::CarlaPluginThread(CarlaBackend::CarlaEngine* const engine, CarlaBackend::CarlaPlugin* const plugin, const Mode mode) noexcept
     : CarlaThread("CarlaPluginThread"),
       fEngine(engine),
       fPlugin(plugin),
@@ -68,7 +68,7 @@ CarlaPluginThread::~CarlaPluginThread()
     }
 }
 
-void CarlaPluginThread::setMode(const CarlaPluginThread::Mode mode)
+void CarlaPluginThread::setMode(const CarlaPluginThread::Mode mode) noexcept
 {
     CARLA_SAFE_ASSERT(! isThreadRunning());
     carla_debug("CarlaPluginThread::setMode(%s)", PluginThreadMode2str(mode));
@@ -76,7 +76,7 @@ void CarlaPluginThread::setMode(const CarlaPluginThread::Mode mode)
     fMode = mode;
 }
 
-void CarlaPluginThread::setOscData(const char* const binary, const char* const label, const char* const extra1, const char* const extra2)
+void CarlaPluginThread::setOscData(const char* const binary, const char* const label, const char* const extra1, const char* const extra2) noexcept
 {
     CARLA_SAFE_ASSERT(! isThreadRunning());
     carla_debug("CarlaPluginThread::setOscData(\"%s\", \"%s\", \"%s\", \"%s\")", binary, label, extra1, extra2);

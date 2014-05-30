@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef CARLA_DEFINES_HPP_INCLUDED
-#define CARLA_DEFINES_HPP_INCLUDED
+#ifndef CARLA_DEFINES_H_INCLUDED
+#define CARLA_DEFINES_H_INCLUDED
 
 /* IDE Helper */
 #ifndef REAL_BUILD
@@ -121,7 +121,7 @@
 #  define BINARY_NATIVE BINARY_WIN32
 # endif
 #else
-# warning Unknown binary native
+# warning Unknown native binary type
 # define BINARY_NATIVE BINARY_OTHER
 #endif
 
@@ -232,4 +232,4 @@ typedef unsigned long int ulong;
 typedef unsigned short int ushort;
 typedef unsigned int uint;
 
-#endif /* CARLA_DEFINES_HPP_INCLUDED */
+#endif /* CARLA_DEFINES_H_INCLUDED */

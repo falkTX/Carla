@@ -619,12 +619,6 @@ protected:
 // -----------------------------------------------------------------------
 
 /*!
- * Protected data used in CarlaEngine and subclasses.\n
- * Non-engine code MUST NEVER have direct access to this.
- */
-struct CarlaEngineProtectedData;
-
-/*!
  * Carla Engine.
  * \note This is a virtual class for all available engine types available in Carla.
  */
@@ -1040,8 +1034,8 @@ protected:
     /*!
      * Internal data, for CarlaEngine subclasses only.
      */
-    CarlaEngineProtectedData* const pData;
-    friend struct CarlaEngineProtectedData;
+    struct ProtectedData;
+    ProtectedData* const pData;
 
     // -------------------------------------------------------------------
     // Internal stuff

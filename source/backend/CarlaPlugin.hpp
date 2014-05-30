@@ -51,12 +51,6 @@ class CarlaEngineAudioPort;
  */
 struct SaveState;
 
-/*!
- * Protected data used in CarlaPlugin and subclasses.\n
- * Non-plugin code MUST NEVER have direct access to this.
- */
-struct CarlaPluginProtectedData;
-
 // -----------------------------------------------------------------------
 
 /*!
@@ -884,8 +878,8 @@ protected:
     /*!
      * Internal data, for CarlaPlugin subclasses only.
      */
-    CarlaPluginProtectedData* const pData;
-    friend struct CarlaPluginProtectedData;
+    struct ProtectedData;
+    ProtectedData* const pData;
 
     // -------------------------------------------------------------------
     // Helper classes

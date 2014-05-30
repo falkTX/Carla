@@ -870,12 +870,12 @@ typedef enum {
      * @param value1   Port Id
      * @param value3   New port value
      */
-    ENGINE_CALLBACK_PATCHBAY_PORT_VALUE_CHANGED = 26,
+    ENGINE_CALLBACK_PATCHBAY_PORT_VALUE_CHANGED = 26, // TODO
 
     /*!
      * A patchbay connection has been added.
      * @param pluginId Connection Id
-     * @param valueStr Out group, port plus in group and port, in "og:op:ig:ip" syntax.
+     * @param valueStr Out group and port plus in group and port, in "og:op:ig:ip" syntax.
      */
     ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED = 27,
 
@@ -1252,7 +1252,7 @@ typedef struct {
     /*!
      * Currently mapped MIDI CC.\n
      * A value lower than 0 means invalid or unused.\n
-     * Maximum allowed value is 95 (0x5F).
+     * Maximum allowed value is 95 (0x5F). - FIXME
      */
     int16_t midiCC;
 

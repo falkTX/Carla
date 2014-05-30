@@ -256,7 +256,7 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 
                 if (*(ulong*)pidData == static_cast<ulong>(pid))
                 {
-                    CARLA_SAFE_ASSERT_RETURN(lastGoodWindow == window || lastGoodWindow == 0,  true);
+                    CARLA_SAFE_ASSERT_RETURN(lastGoodWindow == window || lastGoodWindow == 0, true);
                     lastGoodWindow = window;
                     carla_stdout("Match found using pid");
                     break;

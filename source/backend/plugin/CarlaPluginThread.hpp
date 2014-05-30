@@ -42,11 +42,11 @@ public:
         PLUGIN_THREAD_BRIDGE
     };
 
-    CarlaPluginThread(CarlaEngine* const engine, CarlaPlugin* const plugin, const Mode mode = PLUGIN_THREAD_NULL);
+    CarlaPluginThread(CarlaEngine* const engine, CarlaPlugin* const plugin, const Mode mode = PLUGIN_THREAD_NULL) noexcept;
     ~CarlaPluginThread() override;
 
-    void setMode(const CarlaPluginThread::Mode mode);
-    void setOscData(const char* const binary, const char* const label, const char* const extra1="", const char* const extra2="");
+    void setMode(const CarlaPluginThread::Mode mode) noexcept;
+    void setOscData(const char* const binary, const char* const label, const char* const extra1="", const char* const extra2="") noexcept;
 
     uintptr_t getPid() const;
 
