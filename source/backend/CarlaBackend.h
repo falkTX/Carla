@@ -51,23 +51,23 @@ CARLA_BACKEND_START_NAMESPACE
 /*!
  * Maximum default number of loadable plugins.
  */
-const unsigned int MAX_DEFAULT_PLUGINS = 99;
+const uint MAX_DEFAULT_PLUGINS = 99;
 
 /*!
  * Maximum number of loadable plugins in rack mode.
  */
-const unsigned int MAX_RACK_PLUGINS = 16;
+const uint MAX_RACK_PLUGINS = 16;
 
 /*!
  * Maximum number of loadable plugins in patchbay mode.
  */
-const unsigned int MAX_PATCHBAY_PLUGINS = 255;
+const uint MAX_PATCHBAY_PLUGINS = 255;
 
 /*!
  * Maximum default number of parameters allowed.
  * @see ENGINE_OPTION_MAX_PARAMETERS
  */
-const unsigned int MAX_DEFAULT_PARAMETERS = 200;
+const uint MAX_DEFAULT_PARAMETERS = 200;
 
 /* ------------------------------------------------------------------------------------------------------------
  * Engine Driver Device Hints */
@@ -83,25 +83,25 @@ const unsigned int MAX_DEFAULT_PARAMETERS = 200;
 /*!
  * Engine driver device has custom control-panel.
  */
-const unsigned int ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL = 0x1;
+const uint ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL = 0x1;
 
 /*!
  * Engine driver device can use a triple-buffer (3 number of periods instead of the usual 2).
  * @see ENGINE_OPTION_AUDIO_NUM_PERIODS
  */
-const unsigned int ENGINE_DRIVER_DEVICE_CAN_TRIPLE_BUFFER = 0x2;
+const uint ENGINE_DRIVER_DEVICE_CAN_TRIPLE_BUFFER = 0x2;
 
 /*!
  * Engine driver device can change buffer-size on the fly.
  * @see ENGINE_OPTION_AUDIO_BUFFER_SIZE
  */
-const unsigned int ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE = 0x4;
+const uint ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE = 0x4;
 
 /*!
  * Engine driver device can change sample-rate on the fly.
  * @see ENGINE_OPTION_AUDIO_SAMPLE_RATE
  */
-const unsigned int ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE = 0x8;
+const uint ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE = 0x8;
 
 /** @} */
 
@@ -120,53 +120,53 @@ const unsigned int ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE = 0x8;
  * Plugin is a bridge.\n
  * This hint is required because "bridge" itself is not a plugin type.
  */
-const unsigned int PLUGIN_IS_BRIDGE = 0x001;
+const uint PLUGIN_IS_BRIDGE = 0x001;
 
 /*!
  * Plugin is hard real-time safe.
  */
-const unsigned int PLUGIN_IS_RTSAFE = 0x002;
+const uint PLUGIN_IS_RTSAFE = 0x002;
 
 /*!
  * Plugin is a synth (produces sound).
  */
-const unsigned int PLUGIN_IS_SYNTH = 0x004;
+const uint PLUGIN_IS_SYNTH = 0x004;
 
 /*!
  * Plugin has its own custom UI.
  * @see CarlaPlugin::showCustomUI() and carla_show_custom_ui()
  */
-const unsigned int PLUGIN_HAS_CUSTOM_UI = 0x008;
+const uint PLUGIN_HAS_CUSTOM_UI = 0x008;
 
 /*!
  * Plugin can use internal Dry/Wet control.
  */
-const unsigned int PLUGIN_CAN_DRYWET = 0x010;
+const uint PLUGIN_CAN_DRYWET = 0x010;
 
 /*!
  * Plugin can use internal Volume control.
  */
-const unsigned int PLUGIN_CAN_VOLUME = 0x020;
+const uint PLUGIN_CAN_VOLUME = 0x020;
 
 /*!
  * Plugin can use internal (Stereo) Balance controls.
  */
-const unsigned int PLUGIN_CAN_BALANCE = 0x040;
+const uint PLUGIN_CAN_BALANCE = 0x040;
 
 /*!
  * Plugin can use internal (Mono) Panning control.
  */
-const unsigned int PLUGIN_CAN_PANNING = 0x080;
+const uint PLUGIN_CAN_PANNING = 0x080;
 
 /*!
  * Plugin needs a constant, fixed-size audio buffer.
  */
-const unsigned int PLUGIN_NEEDS_FIXED_BUFFERS = 0x100;
+const uint PLUGIN_NEEDS_FIXED_BUFFERS = 0x100;
 
 /*!
  * Plugin needs all UI events in a single/main thread.
  */
-const unsigned int PLUGIN_NEEDS_SINGLE_THREAD = 0x200;
+const uint PLUGIN_NEEDS_SINGLE_THREAD = 0x200;
 
 /** @} */
 
@@ -184,52 +184,52 @@ const unsigned int PLUGIN_NEEDS_SINGLE_THREAD = 0x200;
 /*!
  * Use constant/fixed-size audio buffers.
  */
-const unsigned int PLUGIN_OPTION_FIXED_BUFFERS = 0x001;
+const uint PLUGIN_OPTION_FIXED_BUFFERS = 0x001;
 
 /*!
  * Force mono plugin as stereo.
  */
-const unsigned int PLUGIN_OPTION_FORCE_STEREO = 0x002;
+const uint PLUGIN_OPTION_FORCE_STEREO = 0x002;
 
 /*!
  * Map MIDI programs to plugin programs.
  */
-const unsigned int PLUGIN_OPTION_MAP_PROGRAM_CHANGES = 0x004;
+const uint PLUGIN_OPTION_MAP_PROGRAM_CHANGES = 0x004;
 
 /*!
  * Use chunks to save and restore data.
  */
-const unsigned int PLUGIN_OPTION_USE_CHUNKS = 0x008;
+const uint PLUGIN_OPTION_USE_CHUNKS = 0x008;
 
 /*!
  * Send MIDI control change events.
  */
-const unsigned int PLUGIN_OPTION_SEND_CONTROL_CHANGES = 0x010;
+const uint PLUGIN_OPTION_SEND_CONTROL_CHANGES = 0x010;
 
 /*!
  * Send MIDI channel pressure events.
  */
-const unsigned int PLUGIN_OPTION_SEND_CHANNEL_PRESSURE = 0x020;
+const uint PLUGIN_OPTION_SEND_CHANNEL_PRESSURE = 0x020;
 
 /*!
  * Send MIDI note after-touch events.
  */
-const unsigned int PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH = 0x040;
+const uint PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH = 0x040;
 
 /*!
  * Send MIDI pitch-bend events.
  */
-const unsigned int PLUGIN_OPTION_SEND_PITCHBEND = 0x080;
+const uint PLUGIN_OPTION_SEND_PITCHBEND = 0x080;
 
 /*!
  * Send MIDI all-sounds/notes-off events, single note-offs otherwise.
  */
-const unsigned int PLUGIN_OPTION_SEND_ALL_SOUND_OFF = 0x100;
+const uint PLUGIN_OPTION_SEND_ALL_SOUND_OFF = 0x100;
 
 /*!
  * Send MIDI CC automation output feedback.
  */
-const unsigned int PLUGIN_OPTION_SEND_FEEDBACK = 0x200;
+const uint PLUGIN_OPTION_SEND_FEEDBACK = 0x200;
 
 /** @} */
 
@@ -248,51 +248,51 @@ const unsigned int PLUGIN_OPTION_SEND_FEEDBACK = 0x200;
  * Parameter value is boolean.
  * It's always at either minimum or maximum value.
  */
-const unsigned int PARAMETER_IS_BOOLEAN = 0x001;
+const uint PARAMETER_IS_BOOLEAN = 0x001;
 
 /*!
  * Parameter value is integer.
  */
-const unsigned int PARAMETER_IS_INTEGER = 0x002;
+const uint PARAMETER_IS_INTEGER = 0x002;
 
 /*!
  * Parameter value is logarithmic.
  */
-const unsigned int PARAMETER_IS_LOGARITHMIC = 0x004;
+const uint PARAMETER_IS_LOGARITHMIC = 0x004;
 
 /*!
  * Parameter is enabled.
  * It can be viewed, changed and stored.
  */
-const unsigned int PARAMETER_IS_ENABLED = 0x010;
+const uint PARAMETER_IS_ENABLED = 0x010;
 
 /*!
  * Parameter is automable (real-time safe).
  */
-const unsigned int PARAMETER_IS_AUTOMABLE = 0x020;
+const uint PARAMETER_IS_AUTOMABLE = 0x020;
 
 /*!
  * Parameter is read-only.
  * It cannot be changed.
  */
-const unsigned int PARAMETER_IS_READ_ONLY = 0x040;
+const uint PARAMETER_IS_READ_ONLY = 0x040;
 
 /*!
  * Parameter needs sample rate to work.
  * Value and ranges are multiplied by sample rate on usage and divided by sample rate on save.
  */
-const unsigned int PARAMETER_USES_SAMPLERATE = 0x100;
+const uint PARAMETER_USES_SAMPLERATE = 0x100;
 
 /*!
  * Parameter uses scale points to define internal values in a meaningful way.
  */
-const unsigned int PARAMETER_USES_SCALEPOINTS = 0x200;
+const uint PARAMETER_USES_SCALEPOINTS = 0x200;
 
 /*!
  * Parameter uses custom text for displaying its value.
  * @see CarlaPlugin::getParameterText() and carla_get_parameter_text()
  */
-const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x400;
+const uint PARAMETER_USES_CUSTOM_TEXT = 0x400;
 
 /** @} */
 
@@ -310,22 +310,22 @@ const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x400;
  * Patchbay port is input.\n
  * When this hint is not set, port is assumed to be output.
  */
-const unsigned int PATCHBAY_PORT_IS_INPUT = 0x1;
+const uint PATCHBAY_PORT_IS_INPUT = 0x1;
 
 /*!
  * Patchbay port is of Audio type.
  */
-const unsigned int PATCHBAY_PORT_TYPE_AUDIO = 0x2;
+const uint PATCHBAY_PORT_TYPE_AUDIO = 0x2;
 
 /*!
  * Patchbay port is of CV type (Control Voltage).
  */
-const unsigned int PATCHBAY_PORT_TYPE_CV = 0x4;
+const uint PATCHBAY_PORT_TYPE_CV = 0x4;
 
 /*!
  * Patchbay port is of MIDI type.
  */
-const unsigned int PATCHBAY_PORT_TYPE_MIDI = 0x8;
+const uint PATCHBAY_PORT_TYPE_MIDI = 0x8;
 
 /** @} */
 
@@ -1237,7 +1237,7 @@ typedef struct {
      * This parameter hints.
      * @see ParameterHints
      */
-    unsigned int hints;
+    uint hints;
 
     /*!
      * Index as seen by Carla.
@@ -1426,7 +1426,7 @@ typedef struct {
      * This driver device hints.
      * @see EngineDriverHints
      */
-    unsigned int hints;
+    uint hints;
 
     /*!
      * Available buffer sizes.\n

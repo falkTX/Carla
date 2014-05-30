@@ -381,7 +381,7 @@ public:
     /*!
      * Initialize the port's internal buffer.
      */
-    virtual void initBuffer() noexcept override;
+    void initBuffer() noexcept override;
 
     /*!
      * Direct access to the port's audio buffer.
@@ -426,7 +426,7 @@ public:
     }
 
     /*!
-     * Initialize the port's internal buffer for \a engine.
+     * Initialize the port's internal buffer.
      */
     void initBuffer() noexcept override;
 
@@ -495,6 +495,12 @@ public:
     virtual const EngineEvent& getEventUnchecked(const uint32_t index) const noexcept;
 
     /*!
+     * Write a control event into the buffer.
+     * \note You must only call this for output ports.
+     */
+    bool writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEvent& ctrl) noexcept;
+
+    /*!
      * Write a control event into the buffer.\n
      * Arguments are the same as in the EngineControlEvent struct.
      * \note You must only call this for output ports.
@@ -502,9 +508,16 @@ public:
     virtual bool writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value = 0.0f) noexcept;
 
     /*!
-     * Write a control event into the buffer, overloaded call.
+     * Write a MIDI event into the buffer.
+     * \note You must only call this for output ports.
      */
-    bool writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEvent& ctrl) noexcept;
+    bool writeMidiEvent(const uint32_t time, const uint8_t size, const uint8_t* const data) noexcept;
+
+    /*!
+     * Write a MIDI event into the buffer.
+     * \note You must only call this for output ports.
+     */
+    bool writeMidiEvent(const uint32_t time, const uint8_t channel, const EngineMidiEvent& midi) noexcept;
 
     /*!
      * Write a MIDI event into the buffer.\n
@@ -512,16 +525,6 @@ public:
      * \note You must only call this for output ports.
      */
     virtual bool writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t size, const uint8_t* const data) noexcept;
-
-    /*!
-     * Write a MIDI event into the buffer, overloaded call.
-     */
-    bool writeMidiEvent(const uint32_t time, const uint8_t size, const uint8_t* const data) noexcept;
-
-    /*!
-     * Write a MIDI event into the buffer, overloaded call.
-     */
-    bool writeMidiEvent(const uint32_t time, const uint8_t channel, const EngineMidiEvent& midi) noexcept;
 
 #ifndef DOXYGEN
 protected:
