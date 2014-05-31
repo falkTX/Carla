@@ -596,7 +596,7 @@ public:
 
         for (size_t i=0; i < fCustomURIDs.count(); ++i)
         {
-            const char* const thisUri(fCustomURIDs.getAt(i));
+            const char* const thisUri(fCustomURIDs.getAt(i, nullptr));
 
             if (thisUri != nullptr && std::strcmp(thisUri, uri) == 0)
             {
@@ -623,7 +623,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.count(), nullptr);
         carla_debug("CarlaLv2Client::getCustomURIString(%i)", urid);
 
-        return fCustomURIDs.getAt(urid);
+        return fCustomURIDs.getAt(urid, nullptr);
     }
 
     // ---------------------------------------------------------------------

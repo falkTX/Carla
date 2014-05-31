@@ -1396,10 +1396,11 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
     if (index < plm.lv2Descs.count())
     {
         carla_debug("lv2_descriptor(%i) - found previously allocated", index);
-        return plm.lv2Descs.getAt(index);
+        return plm.lv2Descs.getAt(index, nullptr);
     }
 
-    const NativePluginDescriptor* const pluginDesc(plm.descs.getAt(index));
+    const NativePluginDescriptor* const pluginDesc(plm.descs.getAt(index, nullptr));
+    CARLA_SAFE_ASSERT_RETURN(pluginDesc != nullptr, nullptr);
 
     CarlaString tmpURI;
     tmpURI  = "http://kxstudio.sf.net/carla/plugins/";
