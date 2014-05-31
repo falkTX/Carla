@@ -441,9 +441,13 @@ PluginType getPluginTypeFromString(const char* const ctype) noexcept
     carla_debug("CarlaBackend::getPluginTypeFromString(\"%s\")", ctype);
 
     CarlaString stype(ctype);
+
+    if (stype.isEmpty())
+        return PLUGIN_NONE;
+
     stype.toLower();
 
-    if (stype.isEmpty() || stype == "none")
+    if (stype == "none")
         return PLUGIN_NONE;
     if (stype == "internal")
         return PLUGIN_INTERNAL;

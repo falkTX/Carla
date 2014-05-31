@@ -29,9 +29,9 @@ typedef int shm_t;
 #endif
 
 #ifdef CARLA_OS_WIN
-static shm_t gNullCarlaShm = { nullptr, nullptr };
+static const shm_t gNullCarlaShm = { nullptr, nullptr };
 #else
-static shm_t gNullCarlaShm = -1;
+static const shm_t gNullCarlaShm = -1;
 #endif
 
 // -----------------------------------------------------------------------
@@ -77,7 +77,7 @@ shm_t carla_shm_attach(const char* const name)
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', gNullCarlaShm);
 
     shm_t ret;
-    ret.shm = CreateFileA(name, GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+    ret.shm = ::CreateFileA(name, GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
     ret.map = nullptr;
 
     return ret;
@@ -88,7 +88,7 @@ shm_t carla_shm_create(const char* const name)
 {
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', gNullCarlaShm);
 
-    return shm_open(name, O_RDWR|O_CREAT|O_EXCL, 0600);
+    return ::shm_open(name, O_RDWR|O_CREAT|O_EXCL, 0600);
 }
 
 static inline
@@ -96,7 +96,7 @@ shm_t carla_shm_attach(const char* const name)
 {
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', gNullCarlaShm);
 
-    return shm_open(name, O_RDWR, 0);
+    return ::shm_open(name, O_RDWR, 0);
 }
 #endif
 
@@ -108,10 +108,10 @@ void carla_shm_close(shm_t& shm)
 #ifdef CARLA_OS_WIN
     CARLA_SAFE_ASSERT(shm.map == nullptr);
 
-    CloseHandle(shm.shm);
+    ::CloseHandle(shm.shm);
     shm.shm = nullptr;
 #else
-    close(shm);
+    ::close(shm);
     shm = -1;
 #endif
 }
@@ -125,15 +125,15 @@ void* carla_shm_map(shm_t& shm, const size_t size)
 #ifdef CARLA_OS_WIN
     CARLA_SAFE_ASSERT_RETURN(shm.map == nullptr, nullptr);
 
-    HANDLE map = CreateFileMapping(shm.shm, NULL, PAGE_READWRITE, size, size, NULL);
+    HANDLE map = ::CreateFileMapping(shm.shm, NULL, PAGE_READWRITE, size, size, NULL);
 
     CARLA_SAFE_ASSERT_RETURN(map != nullptr, nullptr);
 
-    HANDLE ptr = MapViewOfFile(map, FILE_MAP_COPY, 0, 0, size);
+    HANDLE ptr = ::MapViewOfFile(map, FILE_MAP_COPY, 0, 0, size);
 
     if (ptr == nullptr)
     {
-        CloseHandle(map);
+        ::CloseHandle(map);
         return nullptr;
     }
 
@@ -141,10 +141,10 @@ void* carla_shm_map(shm_t& shm, const size_t size)
 
     return ptr;
 #else
-    if (ftruncate(shm, static_cast<off_t>(size)) != 0)
+    if (::ftruncate(shm, static_cast<off_t>(size)) != 0)
         return nullptr;
 
-    return mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED, shm, 0);
+    return ::mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED, shm, 0);
 #endif
 }
 
@@ -158,15 +158,15 @@ void carla_shm_unmap(shm_t& shm, void* const ptr, const size_t size)
 #ifdef CARLA_OS_WIN
     CARLA_SAFE_ASSERT_RETURN(shm.map != nullptr,);
 
-    UnmapViewOfFile(ptr);
-    CloseHandle(shm.map);
+    ::UnmapViewOfFile(ptr);
+    ::CloseHandle(shm.map);
     shm.map = nullptr;
     return;
 
     // unused
     (void)size;
 #else
-    munmap(ptr, size);
+    ::munmap(ptr, size);
     return;
 
     // unused

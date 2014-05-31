@@ -39,7 +39,7 @@ public:
     public:
         Pool(const size_t minPreallocated, const size_t maxPreallocated) noexcept
             : fHandle(nullptr),
-              fDataSize(sizeof(typename AbstractLinkedList<T>::Data))
+              kDataSize(sizeof(typename AbstractLinkedList<T>::Data))
         {
             resize(minPreallocated, maxPreallocated);
         }
@@ -76,30 +76,30 @@ public:
                 fHandle = nullptr;
             }
 
-            rtsafe_memory_pool_create(&fHandle, nullptr, fDataSize, minPreallocated, maxPreallocated);
+            rtsafe_memory_pool_create(&fHandle, nullptr, kDataSize, minPreallocated, maxPreallocated);
             CARLA_SAFE_ASSERT(fHandle != nullptr);
         }
 
         bool operator==(const Pool& pool) const noexcept
         {
-            return (fHandle == pool.fHandle && fDataSize == pool.fDataSize);
+            return (fHandle == pool.fHandle && kDataSize == pool.kDataSize);
         }
 
         bool operator!=(const Pool& pool) const noexcept
         {
-            return (fHandle != pool.fHandle || fDataSize != pool.fDataSize);
+            return (fHandle != pool.fHandle || kDataSize != pool.kDataSize);
         }
 
     private:
         mutable RtMemPool_Handle fHandle;
-        const size_t             fDataSize;
+        const size_t             kDataSize;
     };
 
     // -------------------------------------------------------------------
     // Now the actual rt-linkedlist code
 
-    RtLinkedList(Pool& memPool, const bool needsCopyCtr = false) noexcept
-        : AbstractLinkedList<T>(needsCopyCtr),
+    RtLinkedList(Pool& memPool, const bool isClass = false) noexcept
+        : AbstractLinkedList<T>(isClass),
           fMemPool(memPool) {}
 
     bool append_sleepy(const T& value) noexcept
@@ -119,18 +119,18 @@ public:
         fMemPool.resize(minPreallocated, maxPreallocated);
     }
 
-    void spliceAppend(RtLinkedList& list, const bool init = true) noexcept
+    void spliceAppend(RtLinkedList<T>& list) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fMemPool == list.fMemPool,);
 
-        AbstractLinkedList<T>::spliceAppend(list, init);
+        AbstractLinkedList<T>::spliceAppend(list);
     }
 
-    void spliceInsert(RtLinkedList& list, const bool init = true) noexcept
+    void spliceInsert(RtLinkedList<T>& list) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fMemPool == list.fMemPool,);
 
-        AbstractLinkedList<T>::spliceInsert(list, init);
+        AbstractLinkedList<T>::spliceInsert(list);
     }
 
 protected:
@@ -158,15 +158,13 @@ private:
     {
         if (typename AbstractLinkedList<T>::Data* const data = _allocate_sleepy())
         {
-            if (! this->_createData(data, value))
-                return false;
+            this->_createData(data, value);
 
             if (inTail)
                 list_add_tail(&data->siblings, &this->fQueue);
             else
                 list_add(&data->siblings, &this->fQueue);
 
-            ++(this->fCount);
             return true;
         }
 

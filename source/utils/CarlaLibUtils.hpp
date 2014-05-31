@@ -38,9 +38,9 @@ void* lib_open(const char* const filename) noexcept
 
     try {
 #ifdef CARLA_OS_WIN
-        return (void*)LoadLibraryA(filename);
+        return (void*)::LoadLibraryA(filename);
 #else
-        return dlopen(filename, RTLD_NOW|RTLD_LOCAL);
+        return ::dlopen(filename, RTLD_NOW|RTLD_LOCAL);
 #endif
     } CARLA_SAFE_EXCEPTION_RETURN("lib_open", nullptr);
 }
@@ -56,9 +56,9 @@ bool lib_close(void* const lib) noexcept
 
     try {
 #ifdef CARLA_OS_WIN
-        return FreeLibrary((HMODULE)lib);
+        return ::FreeLibrary((HMODULE)lib);
 #else
-        return (dlclose(lib) == 0);
+        return (::dlclose(lib) == 0);
 #endif
     } CARLA_SAFE_EXCEPTION_RETURN("lib_close", false);
 }
@@ -74,9 +74,9 @@ void* lib_symbol(void* const lib, const char* const symbol) noexcept
     CARLA_SAFE_ASSERT_RETURN(symbol != nullptr && symbol[0] != '\0', nullptr);
 
 #ifdef CARLA_OS_WIN
-    return (void*)GetProcAddress((HMODULE)lib, symbol);
+    return (void*)::GetProcAddress((HMODULE)lib, symbol);
 #else
-    return dlsym(lib, symbol);
+    return ::dlsym(lib, symbol);
 #endif
 }
 
@@ -95,16 +95,16 @@ const char* lib_error(const char* const filename) noexcept
 
     try {
         LPVOID winErrorString;
-        DWORD  winErrorCode = GetLastError();
-        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, winErrorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&winErrorString, 0, nullptr);
+        DWORD  winErrorCode = ::GetLastError();
+        ::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, winErrorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&winErrorString, 0, nullptr);
 
         std::snprintf(libError, 2048, "%s: error code %li: %s", filename, winErrorCode, (const char*)winErrorString);
-        LocalFree(winErrorString);
+        ::LocalFree(winErrorString);
     } CARLA_SAFE_EXCEPTION("lib_error");
 
     return (libError[0] != '\0') ? libError : nullptr;
 #else
-    return dlerror();
+    return ::dlerror();
 #endif
 }
 

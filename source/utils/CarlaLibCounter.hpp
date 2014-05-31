@@ -29,7 +29,7 @@ class LibCounter
 public:
     LibCounter() noexcept {}
 
-    ~LibCounter()
+    ~LibCounter() noexcept
     {
         // might have some leftovers
         for (LinkedList<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
