@@ -161,9 +161,9 @@ private:
             this->_createData(data, value);
 
             if (inTail)
-                list_add_tail(&data->siblings, &this->fQueue);
+                this->__list_add(&data->siblings, this->fQueue.prev, &this->fQueue);
             else
-                list_add(&data->siblings, &this->fQueue);
+                this->__list_add(&data->siblings, &this->fQueue, this->fQueue.next);
 
             return true;
         }

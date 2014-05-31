@@ -22,11 +22,34 @@
 
 #include <new>
 
-extern "C" {
-#include "rtmempool/list.h"
-}
+// -----------------------------------------------------------------------
+// Define list_entry and list_entry_const
 
+#ifndef offsetof
+# define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#endif
+
+#if (defined(__GNUC__) || defined(__clang__)) && ! defined(__STRICT_ANSI__)
+# define container_of(ptr, type, member) ({                  \
+    typeof( ((type *)0)->member ) *__mptr = (ptr);          \
+    (type *)( (char *)__mptr - offsetof(type, member) );})
+# define container_of_const(ptr, type, member) ({            \
+    const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
+    (const type *)( (const char *)__mptr - offsetof(type, member) );})
+# define list_entry(ptr, type, member) \
+    container_of(ptr, type, member)
+# define list_entry_const(ptr, type, member) \
+    container_of_const(ptr, type, member)
+#else
+# define list_entry(ptr, type, member) \
+    ((type *)((char *)(ptr)-offsetof(type, member)))
+# define list_entry_const(ptr, type, member) \
+    ((const type *)((const char *)(ptr)-offsetof(type, member)))
+#endif
+
+// -----------------------------------------------------------------------
 // Declare non copyable and prevent heap allocation
+
 #ifdef CARLA_PROPER_CPP11_SUPPORT
 # define LINKED_LIST_DECLARATIONS(ClassName)         \
     ClassName(ClassName&) = delete;                  \
@@ -40,8 +63,6 @@ extern "C" {
     ClassName& operator=(const ClassName&);
 #endif
 
-typedef struct list_head k_list_head;
-
 // -----------------------------------------------------------------------
 // Abstract Linked List class
 // _allocate() and _deallocate are virtual calls provided by subclasses
@@ -52,9 +73,14 @@ template<typename T>
 class AbstractLinkedList
 {
 protected:
+    struct ListHead {
+        ListHead* next;
+        ListHead* prev;
+    };
+
     struct Data {
         T value;
-        k_list_head siblings;
+        ListHead siblings;
     };
 
     AbstractLinkedList(const bool isClass) noexcept
@@ -72,7 +98,7 @@ public:
 
     class Itenerator {
     public:
-        Itenerator(const k_list_head& queue) noexcept
+        Itenerator(const ListHead& queue) noexcept
             : fData(nullptr),
               fEntry(queue.next),
               fEntry2(fEntry->next),
@@ -107,9 +133,9 @@ public:
 
     private:
         Data* fData;
-        k_list_head* fEntry;
-        k_list_head* fEntry2;
-        const k_list_head& kQueue;
+        ListHead* fEntry;
+        ListHead* fEntry2;
+        const ListHead& kQueue;
 
         friend class AbstractLinkedList;
     };
@@ -124,8 +150,8 @@ public:
         if (fCount == 0)
             return;
 
-        k_list_head* entry;
-        k_list_head* entry2;
+        ListHead* entry;
+        ListHead* entry2;
 
         for (entry = fQueue.next, entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
         {
@@ -175,8 +201,8 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fCount > 0 && index < fCount, fallback);
 
         size_t i = 0;
-        k_list_head* entry;
-        k_list_head* entry2;
+        ListHead* entry;
+        ListHead* entry2;
 
         for (entry = fQueue.next, entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
         {
@@ -194,8 +220,8 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fCount > 0 && index < fCount, fallback);
 
         size_t i = 0;
-        k_list_head* entry;
-        k_list_head* entry2;
+        ListHead* entry;
+        ListHead* entry2;
 
         for (entry = fQueue.next, entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
         {
@@ -213,8 +239,8 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fCount > 0 && index < fCount, fallback);
 
         size_t i = 0;
-        k_list_head* entry;
-        k_list_head* entry2;
+        ListHead* entry;
+        ListHead* entry2;
 
         for (entry = fQueue.next, entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
         {
@@ -279,8 +305,8 @@ public:
 
     bool removeOne(const T& value) noexcept
     {
-        k_list_head* entry;
-        k_list_head* entry2;
+        ListHead* entry;
+        ListHead* entry2;
 
         for (entry = fQueue.next, entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
         {
@@ -300,8 +326,8 @@ public:
 
     void removeAll(const T& value) noexcept
     {
-        k_list_head* entry;
-        k_list_head* entry2;
+        ListHead* entry;
+        ListHead* entry2;
 
         for (entry = fQueue.next, entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
         {
@@ -317,26 +343,43 @@ public:
 
     void spliceAppend(AbstractLinkedList<T>& list) noexcept
     {
-        list_splice_tail_init(&fQueue, &list.fQueue);
+        if (fQueue.next == &fQueue)
+            return;
+
+        __list_splice_tail(&fQueue, &list.fQueue);
         list.fCount += fCount;
-        fCount = 0;
+
+        _init();
     }
 
     void spliceInsert(AbstractLinkedList<T>& list) noexcept
     {
-        list_splice_init(&fQueue, &list.fQueue);
+        if (fQueue.next == &fQueue)
+            return;
+
+        __list_splice(&fQueue, &list.fQueue);
         list.fCount += fCount;
-        fCount = 0;
+
+        _init();
     }
 
 protected:
     const bool   kIsClass;
     const size_t kDataSize;
-          size_t fCount;
-    k_list_head  fQueue;
+
+    size_t   fCount;
+    ListHead fQueue;
 
     virtual Data* _allocate() noexcept = 0;
     virtual void  _deallocate(Data* const dataPtr) noexcept = 0;
+
+private:
+    void _init() noexcept
+    {
+        fCount = 0;
+        fQueue.next = &fQueue;
+        fQueue.prev = &fQueue;
+    }
 
     void _createData(Data* const data, const T& value) noexcept
     {
@@ -347,24 +390,16 @@ protected:
         ++fCount;
     }
 
-private:
-    void _init() noexcept
-    {
-        fCount = 0;
-        fQueue.next = &fQueue;
-        fQueue.prev = &fQueue;
-    }
-
-    bool _add(const T& value, const bool inTail, k_list_head* const queue) noexcept
+    bool _add(const T& value, const bool inTail, ListHead* const queue) noexcept
     {
         if (Data* const data = _allocate())
         {
             _createData(data, value);
 
             if (inTail)
-                list_add_tail(&data->siblings, queue);
+                __list_add(&data->siblings, queue->prev, queue);
             else
-                list_add(&data->siblings, queue);
+                __list_add(&data->siblings, queue, queue->next);
 
             return true;
         }
@@ -372,25 +407,28 @@ private:
         return false;
     }
 
-    void _delete(k_list_head* const entry, Data* const data) noexcept
+    void _delete(ListHead* const entry, Data* const data) noexcept
     {
+        __list_del(entry->prev, entry->next);
+        entry->next = nullptr;
+        entry->prev = nullptr;
+
         --fCount;
-        list_del(entry);
 
         if (kIsClass)
             data->~Data();
         _deallocate(data);
     }
 
-    const T& _get(k_list_head* const entry, const T& fallback) const noexcept
+    const T& _get(ListHead* const entry, const T& fallback) const noexcept
     {
-        const Data* const data = list_entry(entry, Data, siblings);
+        const Data* const data = list_entry_const(entry, Data, siblings);
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, fallback);
 
         return data->value;
     }
 
-    T& _get(k_list_head* const entry, T& fallback) const noexcept
+    T& _get(ListHead* const entry, T& fallback) const noexcept
     {
         Data* const data = list_entry(entry, Data, siblings);
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, fallback);
@@ -398,7 +436,7 @@ private:
         return data->value;
     }
 
-    T _get(k_list_head* const entry, T& fallback, const bool removeObj) noexcept
+    T _get(ListHead* const entry, T& fallback, const bool removeObj) noexcept
     {
         Data* const data = list_entry(entry, Data, siblings);
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, fallback);
@@ -412,6 +450,55 @@ private:
 
         return value;
     }
+
+   /*
+    * Insert a new entry between two known consecutive entries.
+    */
+    static void __list_add(ListHead* const new_, ListHead* const prev, ListHead* const next) noexcept
+    {
+        next->prev = new_;
+        new_->next = next;
+        new_->prev = prev;
+        prev->next = new_;
+    }
+
+   /*
+    * Delete a list entry by making the prev/next entries
+    * point to each other.
+    */
+    static void __list_del(ListHead* const prev, ListHead* const next) noexcept
+    {
+        next->prev = prev;
+        prev->next = next;
+    }
+
+    static void __list_splice(ListHead* const list, ListHead* const head) noexcept
+    {
+        ListHead* const first = list->next;
+        ListHead* const last = list->prev;
+        ListHead* const at = head->next;
+
+        first->prev = head;
+        head->next = first;
+
+        last->next = at;
+        at->prev = last;
+    }
+
+    static void __list_splice_tail(ListHead* const list, ListHead* const head) noexcept
+    {
+        ListHead* const first = list->next;
+        ListHead* const last = list->prev;
+        ListHead* const at = head->prev;
+
+        first->prev = at;
+        at->next = first;
+
+        last->next = head;
+        head->prev = last;
+    }
+
+    template<typename> friend class RtLinkedList;
 
     LINKED_LIST_DECLARATIONS(AbstractLinkedList)
 };
