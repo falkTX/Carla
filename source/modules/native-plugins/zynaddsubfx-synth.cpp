@@ -172,7 +172,8 @@ public:
         if (index >= fPrograms.count())
             return nullptr;
 
-        const ProgramInfo* const pInfo(fPrograms.getAt(index));
+        const ProgramInfo* const pInfo(fPrograms.getAt(index, nullptr));
+        CARLA_SAFE_ASSERT_RETURN(pInfo != nullptr, nullptr);
 
         fRetProgram.bank    = pInfo->bank;
         fRetProgram.program = pInfo->prog;

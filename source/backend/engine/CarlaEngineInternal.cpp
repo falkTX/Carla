@@ -291,7 +291,7 @@ const char* const* RackGraph::getConnections() const
     const char** const retConns = new const char*[connCount+1];
 
     for (size_t i=0; i < connCount; ++i)
-        retConns[i] = connList.getAt(i);
+        retConns[i] = connList.getAt(i, nullptr);
 
     retConns[connCount] = nullptr;
     connList.clear();
@@ -364,9 +364,9 @@ bool PatchbayGraph::getPortIdFromName(const char* const /*portName*/, int& /*gro
 #endif
 
 // -----------------------------------------------------------------------
-// CarlaEngineProtectedData
+// CarlaEngine::ProtectedData
 
-CarlaEngineProtectedData::CarlaEngineProtectedData(CarlaEngine* const engine) noexcept
+CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
     : osc(engine),
       thread(engine),
       oscData(nullptr),
@@ -383,7 +383,7 @@ CarlaEngineProtectedData::CarlaEngineProtectedData(CarlaEngine* const engine) no
       nextPluginId(0),
       plugins(nullptr) {}
 
-CarlaEngineProtectedData::~CarlaEngineProtectedData() noexcept
+CarlaEngine::ProtectedData::~ProtectedData() noexcept
 {
     CARLA_SAFE_ASSERT(curPluginCount == 0);
     CARLA_SAFE_ASSERT(maxPluginNumber == 0);
@@ -393,7 +393,7 @@ CarlaEngineProtectedData::~CarlaEngineProtectedData() noexcept
 
 // -----------------------------------------------------------------------
 
-void CarlaEngineProtectedData::doPluginRemove() noexcept
+void CarlaEngine::ProtectedData::doPluginRemove() noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(curPluginCount > 0,);
     CARLA_SAFE_ASSERT_RETURN(nextAction.pluginId < curPluginCount,);
@@ -425,7 +425,7 @@ void CarlaEngineProtectedData::doPluginRemove() noexcept
     plugins[id].outsPeak[1] = 0.0f;
 }
 
-void CarlaEngineProtectedData::doPluginsSwitch() noexcept
+void CarlaEngine::ProtectedData::doPluginsSwitch() noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(curPluginCount >= 2,);
 
@@ -447,7 +447,7 @@ void CarlaEngineProtectedData::doPluginsSwitch() noexcept
 #endif
 }
 
-void CarlaEngineProtectedData::doNextPluginAction(const bool unlock) noexcept
+void CarlaEngine::ProtectedData::doNextPluginAction(const bool unlock) noexcept
 {
     switch (nextAction.opcode)
     {
@@ -478,7 +478,7 @@ void CarlaEngineProtectedData::doNextPluginAction(const bool unlock) noexcept
 // -----------------------------------------------------------------------
 
 #ifndef BUILD_BRIDGE
-void CarlaEngineProtectedData::processRack(const float* inBufReal[2], float* outBuf[2], const uint32_t frames, const bool isOffline)
+void CarlaEngine::ProtectedData::processRack(const float* inBufReal[2], float* outBuf[2], const uint32_t frames, const bool isOffline)
 {
     CARLA_SAFE_ASSERT_RETURN(events.in != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(events.out != nullptr,);
@@ -637,7 +637,7 @@ void CarlaEngineProtectedData::processRack(const float* inBufReal[2], float* out
     }
 }
 
-void CarlaEngineProtectedData::processRackFull(const float* const* const inBuf, const uint32_t inCount, float* const* const outBuf, const uint32_t outCount, const uint32_t nframes, const bool isOffline)
+void CarlaEngine::ProtectedData::processRackFull(const float* const* const inBuf, const uint32_t inCount, float* const* const outBuf, const uint32_t outCount, const uint32_t nframes, const bool isOffline)
 {
     const CarlaMutexLocker _crml(graph.rack->connectLock); // Recursive
 
@@ -726,7 +726,7 @@ void CarlaEngineProtectedData::processRackFull(const float* const* const inBuf, 
 // -----------------------------------------------------------------------
 // ScopedActionLock
 
-ScopedActionLock::ScopedActionLock(CarlaEngineProtectedData* const data, const EnginePostAction action, const uint pluginId, const uint value, const bool lockWait) noexcept
+ScopedActionLock::ScopedActionLock(CarlaEngine::ProtectedData* const data, const EnginePostAction action, const uint pluginId, const uint value, const bool lockWait) noexcept
     : fData(data)
 {
     fData->nextAction.mutex.lock();

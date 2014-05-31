@@ -1355,9 +1355,12 @@ public:
 
             if (pData->extNotes.mutex.tryLock())
             {
+                ExternalMidiNote note = { 0, 0, 0 };
+
+                //for (RtLinkedList<ExternalMidiNote>::Itenerator it = pData->extNotes.data.begin(); it.valid(); it.next())
                 while (fMidiEventCount < kPluginMaxMidiEvents*2 && ! pData->extNotes.data.isEmpty())
                 {
-                    const ExternalMidiNote& note(pData->extNotes.data.getFirst(true));
+                    note = pData->extNotes.data.getFirst(note, true);
 
                     CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
@@ -2199,7 +2202,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(index < gPluginDescriptors.count(), nullptr);
 
-        return gPluginDescriptors.getAt(index);
+        return gPluginDescriptors.getAt(index, nullptr);
     }
 
     // -------------------------------------------------------------------

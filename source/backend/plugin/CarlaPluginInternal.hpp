@@ -224,7 +224,7 @@ struct PluginMidiProgramData {
 
 // -----------------------------------------------------------------------
 
-struct CarlaPluginProtectedData {
+struct CarlaPlugin::ProtectedData {
     CarlaEngine* const engine;
     CarlaEngineClient* client;
 
@@ -324,8 +324,8 @@ struct CarlaPluginProtectedData {
 #endif
     } osc;
 
-    CarlaPluginProtectedData(CarlaEngine* const eng, const unsigned int idx, CarlaPlugin* const self);
-    ~CarlaPluginProtectedData();
+    ProtectedData(CarlaEngine* const eng, const unsigned int idx, CarlaPlugin* const self);
+    ~ProtectedData();
 
     // -------------------------------------------------------------------
     // Buffer functions
@@ -365,8 +365,8 @@ struct CarlaPluginProtectedData {
     // -------------------------------------------------------------------
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-    CarlaPluginProtectedData() = delete;
-    CARLA_DECLARE_NON_COPY_STRUCT(CarlaPluginProtectedData)
+    ProtectedData() = delete;
+    CARLA_DECLARE_NON_COPY_STRUCT(ProtectedData)
 #endif
 };
 

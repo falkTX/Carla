@@ -706,9 +706,9 @@ protected:
             uint32_t engineEventIndex = 0;
             fMidiInEvents.splice();
 
-            while (! fMidiInEvents.data.isEmpty())
+            for (LinkedList<RtMidiEvent>::Itenerator it = fMidiInEvents.data.begin(); it.valid(); it.next())
             {
-                const RtMidiEvent& midiEvent(fMidiInEvents.data.getFirst(true));
+                const RtMidiEvent& midiEvent(it.getValue());
                 EngineEvent&       engineEvent(pData->events.in[engineEventIndex++]);
 
                 if (midiEvent.time < pData->timeInfo.frame)
@@ -729,6 +729,7 @@ protected:
                     break;
             }
 
+            fMidiInEvents.data.clear();
             fMidiInEvents.mutex.unlock();
         }
 
@@ -803,7 +804,8 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(static_cast<size_t>(portId) < fUsedMidiIns.count(), false);
         carla_debug("CarlaEngineRtAudio::connectRackMidiInPort(%i)", portId);
 
-        const char* const portName(fUsedMidiIns.getAt(static_cast<size_t>(portId)).name);
+        const PortNameToId fallback = { 0, { '\0' } };
+        const char* const portName(fUsedMidiIns.getAt(static_cast<size_t>(portId), fallback).name);
 
         char newPortName[STR_MAX+1];
         std::snprintf(newPortName, STR_MAX, "%s:in-%i", getName(), portId+1);
@@ -849,7 +851,8 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(static_cast<size_t>(portId) < fUsedMidiOuts.count(), false);
         carla_debug("CarlaEngineRtAudio::connectRackMidiOutPort(%i)", portId);
 
-        const char* const portName(fUsedMidiOuts.getAt(static_cast<size_t>(portId)).name);
+        const PortNameToId fallback = { 0, { '\0' } };
+        const char* const portName(fUsedMidiOuts.getAt(static_cast<size_t>(portId), fallback).name);
 
         char newPortName[STR_MAX+1];
         std::snprintf(newPortName, STR_MAX, "%s:out-%i", getName(), portId+1);
@@ -1128,7 +1131,7 @@ const char* const* CarlaEngine::getRtAudioApiDeviceNames(const uint index)
     gRetNames = new const char*[realDevCount+1];
 
     for (size_t i=0; i < realDevCount; ++i)
-        gRetNames[i] = devNames.getAt(i);
+        gRetNames[i] = devNames.getAt(i, nullptr);
 
     gRetNames[realDevCount] = nullptr;
     devNames.clear();

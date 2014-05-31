@@ -1036,6 +1036,7 @@ protected:
      */
     struct ProtectedData;
     ProtectedData* const pData;
+    friend class ScopedActionLock;
 
     // -------------------------------------------------------------------
     // Internal stuff

@@ -67,7 +67,7 @@ struct ParamSymbol {
 
 // -----------------------------------------------------------------------
 
-void CarlaPluginProtectedData::tryTransient()
+void CarlaPlugin::ProtectedData::tryTransient()
 {
     if (engine->getOptions().frontendWinId != 0)
         transientTryCounter = 1;
@@ -120,7 +120,7 @@ CarlaPlugin* CarlaPlugin::newFileSFZ(const Initializer& init)
 // Constructor and destructor
 
 CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
-    : pData(new CarlaPluginProtectedData(engine, id, this))
+    : pData(new ProtectedData(engine, id, this))
 {
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
     CARLA_SAFE_ASSERT(id < engine->getMaxPluginNumber());
@@ -302,7 +302,7 @@ const MidiProgramData& CarlaPlugin::getMidiProgramData(const uint32_t index) con
 const CustomData& CarlaPlugin::getCustomData(const uint32_t index) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(index < pData->custom.count(), kCustomDataNull);
-    return pData->custom.getAt(index);
+    return pData->custom.getAt(index, kCustomDataNull);
 }
 
 int32_t CarlaPlugin::getChunkData(void** const dataPtr) const noexcept
@@ -1867,9 +1867,9 @@ void CarlaPlugin::postRtEventsRun()
     const bool sendOsc(pData->engine->isOscControlRegistered());
 #endif
 
-    while (! pData->postRtEvents.data.isEmpty())
+    for (RtLinkedList<PluginPostRtEvent>::Itenerator it = pData->postRtEvents.data.begin(); it.valid(); it.next())
     {
-        const PluginPostRtEvent& event(pData->postRtEvents.data.getFirst(true));
+        const PluginPostRtEvent& event(it.getValue());
 
         switch (event.type)
         {
@@ -2009,6 +2009,8 @@ void CarlaPlugin::postRtEventsRun()
         }
         }
     }
+
+    pData->postRtEvents.data.clear();
 }
 
 // -------------------------------------------------------------------

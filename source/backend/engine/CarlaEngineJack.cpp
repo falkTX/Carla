@@ -858,7 +858,7 @@ public:
             return;
 
         LinkedList<int> newPlugins;
-        fNewGroups.spliceInsert(newPlugins, true);
+        fNewGroups.spliceInsert(newPlugins);
 
         for (LinkedList<int>::Itenerator it = newPlugins.begin(); it.valid(); it.next())
         {
@@ -1210,7 +1210,7 @@ public:
         const char** const retConns = new const char*[connCount+1];
 
         for (size_t i=0; i < connCount; ++i)
-            retConns[i] = connList.getAt(i);
+            retConns[i] = connList.getAt(i, nullptr);
 
         retConns[connCount] = nullptr;
         connList.clear();

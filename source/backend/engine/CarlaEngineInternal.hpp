@@ -418,7 +418,7 @@ struct EnginePluginData {
 // -----------------------------------------------------------------------
 // CarlaEngineProtectedData
 
-struct CarlaEngineProtectedData {
+struct CarlaEngine::ProtectedData {
     CarlaEngineOsc    osc;
     CarlaEngineThread thread;
 
@@ -458,8 +458,8 @@ struct CarlaEngineProtectedData {
 
     // -------------------------------------------------------------------
 
-    CarlaEngineProtectedData(CarlaEngine* const engine) noexcept;
-    ~CarlaEngineProtectedData() noexcept;
+    ProtectedData(CarlaEngine* const engine) noexcept;
+    ~ProtectedData() noexcept;
 
     // -------------------------------------------------------------------
 
@@ -479,9 +479,11 @@ struct CarlaEngineProtectedData {
 
     // -------------------------------------------------------------------
 
+    //friend class ScopedActionLock;
+
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-    CarlaEngineProtectedData() = delete;
-    CARLA_DECLARE_NON_COPY_STRUCT(CarlaEngineProtectedData)
+    ProtectedData() = delete;
+    CARLA_DECLARE_NON_COPY_STRUCT(ProtectedData)
 #endif
 };
 
@@ -490,11 +492,11 @@ struct CarlaEngineProtectedData {
 class ScopedActionLock
 {
 public:
-    ScopedActionLock(CarlaEngineProtectedData* const data, const EnginePostAction action, const uint pluginId, const uint value, const bool lockWait) noexcept;
+    ScopedActionLock(CarlaEngine::ProtectedData* const data, const EnginePostAction action, const uint pluginId, const uint value, const bool lockWait) noexcept;
     ~ScopedActionLock() noexcept;
 
 private:
-    CarlaEngineProtectedData* const fData;
+    CarlaEngine::ProtectedData* const fData;
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(ScopedActionLock)

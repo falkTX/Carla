@@ -592,7 +592,7 @@ CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const
 // Carla Engine
 
 CarlaEngine::CarlaEngine()
-    : pData(new CarlaEngineProtectedData(this))
+    : pData(new ProtectedData(this))
 {
     carla_debug("CarlaEngine::CarlaEngine()");
 }

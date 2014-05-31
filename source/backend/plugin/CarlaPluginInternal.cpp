@@ -404,18 +404,18 @@ const MidiProgramData& PluginMidiProgramData::getCurrent() const noexcept
 
 // -----------------------------------------------------------------------
 
-CarlaPluginProtectedData::ExternalNotes::ExternalNotes()
+CarlaPlugin::ProtectedData::ExternalNotes::ExternalNotes()
     : dataPool(32, 152),
       data(dataPool) {}
 
-CarlaPluginProtectedData::ExternalNotes::~ExternalNotes()
+CarlaPlugin::ProtectedData::ExternalNotes::~ExternalNotes()
 {
     mutex.lock();
     data.clear();
     mutex.unlock();
 }
 
-void CarlaPluginProtectedData::ExternalNotes::append(const ExternalMidiNote& note)
+void CarlaPlugin::ProtectedData::ExternalNotes::append(const ExternalMidiNote& note)
 {
     mutex.lock();
     data.append_sleepy(note);
@@ -424,22 +424,22 @@ void CarlaPluginProtectedData::ExternalNotes::append(const ExternalMidiNote& not
 
 // -----------------------------------------------------------------------
 
-CarlaPluginProtectedData::PostRtEvents::PostRtEvents()
+CarlaPlugin::ProtectedData::PostRtEvents::PostRtEvents()
     : dataPool(128, 128),
       data(dataPool),
       dataPendingRT(dataPool) {}
 
-CarlaPluginProtectedData::PostRtEvents::~PostRtEvents()
+CarlaPlugin::ProtectedData::PostRtEvents::~PostRtEvents()
 {
     clear();
 }
 
-void CarlaPluginProtectedData::PostRtEvents::appendRT(const PluginPostRtEvent& e)
+void CarlaPlugin::ProtectedData::PostRtEvents::appendRT(const PluginPostRtEvent& e)
 {
     dataPendingRT.append(e);
 }
 
-void CarlaPluginProtectedData::PostRtEvents::trySplice()
+void CarlaPlugin::ProtectedData::PostRtEvents::trySplice()
 {
     if (mutex.tryLock())
     {
@@ -448,7 +448,7 @@ void CarlaPluginProtectedData::PostRtEvents::trySplice()
     }
 }
 
-void CarlaPluginProtectedData::PostRtEvents::clear()
+void CarlaPlugin::ProtectedData::PostRtEvents::clear()
 {
     mutex.lock();
     data.clear();
@@ -459,7 +459,7 @@ void CarlaPluginProtectedData::PostRtEvents::clear()
 // -----------------------------------------------------------------------
 
 #ifndef BUILD_BRIDGE
-CarlaPluginProtectedData::PostProc::PostProc() noexcept
+CarlaPlugin::ProtectedData::PostProc::PostProc() noexcept
     : dryWet(1.0f),
       volume(1.0f),
       balanceLeft(-1.0f),
@@ -469,12 +469,12 @@ CarlaPluginProtectedData::PostProc::PostProc() noexcept
 
 // -----------------------------------------------------------------------
 
-CarlaPluginProtectedData::OSC::OSC(CarlaEngine* const eng, CarlaPlugin* const plug)
+CarlaPlugin::ProtectedData::OSC::OSC(CarlaEngine* const eng, CarlaPlugin* const plug)
     : thread(eng, plug) {}
 
 // -----------------------------------------------------------------------
 
-CarlaPluginProtectedData::CarlaPluginProtectedData(CarlaEngine* const eng, const unsigned int idx, CarlaPlugin* const self)
+CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const unsigned int idx, CarlaPlugin* const self)
     : engine(eng),
       client(nullptr),
       id(idx),
@@ -496,7 +496,7 @@ CarlaPluginProtectedData::CarlaPluginProtectedData(CarlaEngine* const eng, const
       identifier(nullptr),
       osc(eng, self) {}
 
-CarlaPluginProtectedData::~CarlaPluginProtectedData()
+CarlaPlugin::ProtectedData::~ProtectedData()
 {
     CARLA_SAFE_ASSERT(! needsReset);
     CARLA_SAFE_ASSERT(transientTryCounter == 0);
@@ -594,7 +594,7 @@ CarlaPluginProtectedData::~CarlaPluginProtectedData()
 // -----------------------------------------------------------------------
 // Buffer functions
 
-void CarlaPluginProtectedData::clearBuffers()
+void CarlaPlugin::ProtectedData::clearBuffers()
 {
     if (latencyBuffers != nullptr)
     {
@@ -623,7 +623,7 @@ void CarlaPluginProtectedData::clearBuffers()
     event.clear();
 }
 
-void CarlaPluginProtectedData::recreateLatencyBuffers()
+void CarlaPlugin::ProtectedData::recreateLatencyBuffers()
 {
     if (latencyBuffers != nullptr)
     {
@@ -656,7 +656,7 @@ void CarlaPluginProtectedData::recreateLatencyBuffers()
 // -----------------------------------------------------------------------
 // Post-poned events
 
-void CarlaPluginProtectedData::postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const float value3)
+void CarlaPlugin::ProtectedData::postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const float value3)
 {
     CARLA_SAFE_ASSERT_RETURN(type != kPluginPostRtEventNull,);
 
@@ -670,43 +670,43 @@ void CarlaPluginProtectedData::postponeRtEvent(const PluginPostRtEventType type,
 
 static LibCounter sLibCounter;
 
-const char* CarlaPluginProtectedData::libError(const char* const fname)
+const char* CarlaPlugin::ProtectedData::libError(const char* const fname)
 {
     return lib_error(fname);
 }
 
-bool CarlaPluginProtectedData::libOpen(const char* const fname)
+bool CarlaPlugin::ProtectedData::libOpen(const char* const fname)
 {
     lib = sLibCounter.open(fname);
     return (lib != nullptr);
 }
 
-bool CarlaPluginProtectedData::libClose()
+bool CarlaPlugin::ProtectedData::libClose()
 {
     const bool ret = sLibCounter.close(lib);
     lib = nullptr;
     return ret;
 }
 
-void* CarlaPluginProtectedData::libSymbol(const char* const symbol)
+void* CarlaPlugin::ProtectedData::libSymbol(const char* const symbol)
 {
     return lib_symbol(lib, symbol);
 }
 
-bool CarlaPluginProtectedData::uiLibOpen(const char* const fname, const bool canDelete)
+bool CarlaPlugin::ProtectedData::uiLibOpen(const char* const fname, const bool canDelete)
 {
     uiLib = sLibCounter.open(fname, canDelete);
     return (uiLib != nullptr);
 }
 
-bool CarlaPluginProtectedData::uiLibClose()
+bool CarlaPlugin::ProtectedData::uiLibClose()
 {
     const bool ret = sLibCounter.close(uiLib);
     uiLib = nullptr;
     return ret;
 }
 
-void* CarlaPluginProtectedData::uiLibSymbol(const char* const symbol)
+void* CarlaPlugin::ProtectedData::uiLibSymbol(const char* const symbol)
 {
     return lib_symbol(uiLib, symbol);
 }
@@ -714,7 +714,7 @@ void* CarlaPluginProtectedData::uiLibSymbol(const char* const symbol)
 // -----------------------------------------------------------------------
 // Settings functions
 
-void CarlaPluginProtectedData::saveSetting(const uint option, const bool yesNo)
+void CarlaPlugin::ProtectedData::saveSetting(const uint option, const bool yesNo)
 {
     CARLA_SAFE_ASSERT_RETURN(identifier != nullptr && identifier[0] != '\0',);
 
@@ -757,7 +757,7 @@ void CarlaPluginProtectedData::saveSetting(const uint option, const bool yesNo)
     settings.endGroup();
 }
 
-uint CarlaPluginProtectedData::loadSettings(const uint curOptions, const uint availOptions)
+uint CarlaPlugin::ProtectedData::loadSettings(const uint curOptions, const uint availOptions)
 {
     CARLA_SAFE_ASSERT_RETURN(identifier != nullptr && identifier[0] != '\0', 0x0);
 

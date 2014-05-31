@@ -1042,9 +1042,11 @@ public:
 
             if (pData->extNotes.mutex.tryLock())
             {
+                ExternalMidiNote note = { 0, 0, 0 };
+
                 for (; midiEventCount < kPluginMaxMidiEvents && ! pData->extNotes.data.isEmpty();)
                 {
-                    const ExternalMidiNote& note(pData->extNotes.data.getFirst(true));
+                    note = pData->extNotes.data.getFirst(note, true);
 
                     CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 

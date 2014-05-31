@@ -132,10 +132,10 @@ public:
             Data* const data = list_entry(entry, Data, siblings);
             CARLA_SAFE_ASSERT_CONTINUE(data != nullptr);
 
-            _delete(entry, data);
+            if (kIsClass)
+                data->~Data();
+            _deallocate(data);
         }
-
-        CARLA_SAFE_ASSERT(fCount == 0);
 
         _init();
     }
@@ -170,7 +170,7 @@ public:
         return _add(value, false, it.fEntry->prev);
     }
 
-    T& getAt(const size_t index, T& fallback) const noexcept
+    const T& getAt(const size_t index, const T& fallback) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fCount > 0 && index < fCount, fallback);
 
@@ -189,18 +189,23 @@ public:
         return fallback;
     }
 
-    T& getFirst(T& fallback) const noexcept
+    T& getAt(const size_t index, T& fallback) const noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(fCount > 0, fallback);
+        CARLA_SAFE_ASSERT_RETURN(fCount > 0 && index < fCount, fallback);
 
-        return _get(fQueue.next, fallback);
-    }
+        size_t i = 0;
+        k_list_head* entry;
+        k_list_head* entry2;
 
-    T& getLast(T& fallback) const noexcept
-    {
-        CARLA_SAFE_ASSERT_RETURN(fCount > 0, fallback);
+        for (entry = fQueue.next, entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
+        {
+            if (index != i++)
+                continue;
 
-        return _get(fQueue.prev, fallback);
+            return _get(entry, fallback);
+        }
+
+        return fallback;
     }
 
     T getAt(const size_t index, T& fallback, const bool removeObj) noexcept
@@ -222,11 +227,39 @@ public:
         return fallback;
     }
 
+    const T& getFirst(const T& fallback) const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(fCount > 0, fallback);
+
+        return _get(fQueue.next, fallback);
+    }
+
+    T& getFirst(T& fallback) const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(fCount > 0, fallback);
+
+        return _get(fQueue.next, fallback);
+    }
+
     T getFirst(T& fallback, const bool removeObj) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fCount > 0, fallback);
 
         return _get(fQueue.next, fallback, removeObj);
+    }
+
+    const T& getLast(const T& fallback) const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(fCount > 0, fallback);
+
+        return _get(fQueue.prev, fallback);
+    }
+
+    T& getLast(T& fallback) const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(fCount > 0, fallback);
+
+        return _get(fQueue.prev, fallback);
     }
 
     T getLast(T& fallback, const bool removeObj) noexcept
@@ -308,10 +341,9 @@ protected:
     void _createData(Data* const data, const T& value) noexcept
     {
         if (kIsClass)
-            new(data)Data(value);
-        else
-            data->value = value;
+            new(data)Data();
 
+        data->value = value;
         ++fCount;
     }
 
@@ -348,6 +380,14 @@ private:
         if (kIsClass)
             data->~Data();
         _deallocate(data);
+    }
+
+    const T& _get(k_list_head* const entry, const T& fallback) const noexcept
+    {
+        const Data* const data = list_entry(entry, Data, siblings);
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr, fallback);
+
+        return data->value;
     }
 
     T& _get(k_list_head* const entry, T& fallback) const noexcept

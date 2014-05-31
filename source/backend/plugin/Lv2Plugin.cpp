@@ -1493,7 +1493,7 @@ public:
 
             for (uint32_t i=0; i < count; ++i)
             {
-                const uint32_t& type(evIns.getAt(i));
+                const uint32_t& type(evIns.getAt(i, 0x0));
 
                 if (type == CARLA_EVENT_DATA_ATOM)
                 {
@@ -1525,7 +1525,7 @@ public:
 
             for (uint32_t i=0; i < count; ++i)
             {
-                const uint32_t& type(evOuts.getAt(i));
+                const uint32_t& type(evOuts.getAt(i, 0x0));
 
                 if (type == CARLA_EVENT_DATA_ATOM)
                 {
@@ -2678,9 +2678,9 @@ public:
                 {
                     const uint32_t j = fEventsIn.ctrlIndex;
 
-                    for (; ! pData->extNotes.data.isEmpty();)
+                    for (RtLinkedList<ExternalMidiNote>::Itenerator it = pData->extNotes.data.begin(); it.valid(); it.next())
                     {
-                        const ExternalMidiNote& note(pData->extNotes.data.getFirst(true));
+                        const ExternalMidiNote& note(it.getValue());
 
                         CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
@@ -2698,6 +2698,8 @@ public:
                         else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
                             lv2midi_put_event(&evInMidiStates[j], 0.0, 3, midiEvent);
                     }
+
+                    pData->extNotes.data.clear();
                 }
 
                 pData->extNotes.mutex.unlock();
@@ -3560,7 +3562,7 @@ public:
     bool updateOscDataExtra() override
     {
         for (size_t i=CARLA_URI_MAP_ID_COUNT, count=fCustomURIDs.count(); i < count; ++i)
-            osc_send_lv2_urid_map(pData->osc.data, static_cast<uint32_t>(i), fCustomURIDs.getAt(i));
+            osc_send_lv2_urid_map(pData->osc.data, static_cast<uint32_t>(i), fCustomURIDs.getAt(i, nullptr));
 
         osc_send_lv2_urid_map(pData->osc.data, CARLA_URI_MAP_ID_NULL, "Complete");
 
@@ -3893,7 +3895,7 @@ public:
 
         for (size_t i=0; i < fCustomURIDs.count(); ++i)
         {
-            const char* const thisUri(fCustomURIDs.getAt(i));
+            const char* const thisUri(fCustomURIDs.getAt(i, nullptr));
             if (thisUri != nullptr && std::strcmp(thisUri, uri) == 0)
                 return static_cast<LV2_URID>(i);
         }
@@ -3914,7 +3916,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.count(), nullptr);
         carla_debug("Lv2Plugin::getCustomURIString(%i)", urid);
 
-        return fCustomURIDs.getAt(urid);
+        return fCustomURIDs.getAt(urid, nullptr);
     }
 
     // -------------------------------------------------------------------

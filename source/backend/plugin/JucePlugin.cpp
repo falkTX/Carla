@@ -589,9 +589,9 @@ public:
 
             if (pData->extNotes.mutex.tryLock())
             {
-                for (; ! pData->extNotes.data.isEmpty();)
+                for (RtLinkedList<ExternalMidiNote>::Itenerator it = pData->extNotes.data.begin(); it.valid(); it.next())
                 {
-                    const ExternalMidiNote& note(pData->extNotes.data.getFirst(true));
+                    const ExternalMidiNote& note(it.getValue());
 
                     CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
@@ -603,6 +603,7 @@ public:
                     fMidiBuffer.addEvent(midiEvent, 3, 0);
                 }
 
+                pData->extNotes.data.clear();
                 pData->extNotes.mutex.unlock();
 
             } // End of MIDI Input (External)
