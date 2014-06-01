@@ -591,12 +591,7 @@ typedef enum {
     /*!
      * Ouput parameter.
      */
-    PARAMETER_OUTPUT = 2,
-
-    /*!
-     * Special (hidden) parameter.
-     */
-    PARAMETER_SPECIAL = 3
+    PARAMETER_OUTPUT = 2
 
 } ParameterType;
 

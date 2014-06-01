@@ -31,11 +31,6 @@ CarlaEngineThread::CarlaEngineThread(CarlaEngine* const engine) noexcept
     carla_debug("CarlaEngineThread::CarlaEngineThread(%p)", engine);
 }
 
-CarlaEngineThread::~CarlaEngineThread() noexcept
-{
-    carla_debug("CarlaEngineThread::~CarlaEngineThread()");
-}
-
 // -----------------------------------------------------------------------
 
 void CarlaEngineThread::run() noexcept

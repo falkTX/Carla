@@ -47,10 +47,10 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------
 
-const unsigned int PLUGIN_CAN_PROCESS_REPLACING = 0x1000;
-const unsigned int PLUGIN_HAS_COCKOS_EXTENSIONS = 0x2000;
-const unsigned int PLUGIN_USES_OLD_VSTSDK       = 0x4000;
-const unsigned int PLUGIN_WANTS_MIDI_INPUT      = 0x8000;
+const uint PLUGIN_CAN_PROCESS_REPLACING = 0x1000;
+const uint PLUGIN_HAS_COCKOS_EXTENSIONS = 0x2000;
+const uint PLUGIN_USES_OLD_VSTSDK       = 0x4000;
+const uint PLUGIN_WANTS_MIDI_INPUT      = 0x8000;
 
 // -----------------------------------------------------
 
@@ -58,7 +58,7 @@ class VstPlugin : public CarlaPlugin,
                          CarlaPluginUi::CloseCallback
 {
 public:
-    VstPlugin(CarlaEngine* const engine, const unsigned int id)
+    VstPlugin(CarlaEngine* const engine, const uint id)
         : CarlaPlugin(engine, id),
           fUnique1(1),
           fEffect(nullptr),
@@ -204,11 +204,11 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getOptionsAvailable() const noexcept override
+    uint getOptionsAvailable() const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, 0);
 
-        unsigned int options = 0x0;
+        uint options = 0x0;
 
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
@@ -560,7 +560,7 @@ public:
 
         if (params > 0)
         {
-            pData->param.createNew(params, false, false);
+            pData->param.createNew(params, false);
             needsCtrlIn = true;
         }
 

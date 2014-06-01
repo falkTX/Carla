@@ -180,7 +180,7 @@ CARLA_BACKEND_START_NAMESPACE
 class LinuxSamplerPlugin : public CarlaPlugin
 {
 public:
-    LinuxSamplerPlugin(CarlaEngine* const engine, const unsigned int id, const char* const format, const bool use16Outs)
+    LinuxSamplerPlugin(CarlaEngine* const engine, const uint id, const char* const format, const bool use16Outs)
         : CarlaPlugin(engine, id),
           fUses16Outs(use16Outs),
           fFormat(carla_strdup(format)),
@@ -316,9 +316,9 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getOptionsAvailable() const noexcept override
+    uint getOptionsAvailable() const noexcept override
     {
-        unsigned int options = 0x0;
+        uint options = 0x0;
 
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;

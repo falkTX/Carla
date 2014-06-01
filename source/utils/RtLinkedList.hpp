@@ -119,18 +119,18 @@ public:
         fMemPool.resize(minPreallocated, maxPreallocated);
     }
 
-    void spliceAppend(RtLinkedList<T>& list) noexcept
+    void spliceAppendTo(RtLinkedList<T>& list) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fMemPool == list.fMemPool,);
 
-        AbstractLinkedList<T>::spliceAppend(list);
+        AbstractLinkedList<T>::spliceAppendTo(list);
     }
 
-    void spliceInsert(RtLinkedList<T>& list) noexcept
+    void spliceInsertInto(RtLinkedList<T>& list) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fMemPool == list.fMemPool,);
 
-        AbstractLinkedList<T>::spliceInsert(list);
+        AbstractLinkedList<T>::spliceInsertInto(list);
     }
 
 protected:

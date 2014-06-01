@@ -67,14 +67,6 @@ struct ParamSymbol {
 
 // -----------------------------------------------------------------------
 
-void CarlaPlugin::ProtectedData::tryTransient()
-{
-    if (engine->getOptions().frontendWinId != 0)
-        transientTryCounter = 1;
-}
-
-// -----------------------------------------------------------------------
-
 CarlaPlugin* CarlaPlugin::newFileGIG(const Initializer& init, const bool use16Outs)
 {
     carla_debug("CarlaPlugin::newFileGIG({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
@@ -119,7 +111,7 @@ CarlaPlugin* CarlaPlugin::newFileSFZ(const Initializer& init)
 // -------------------------------------------------------------------
 // Constructor and destructor
 
-CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
+CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const uint id)
     : pData(new ProtectedData(engine, id, this))
 {
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
@@ -157,17 +149,17 @@ CarlaPlugin::~CarlaPlugin()
 // -------------------------------------------------------------------
 // Information (base)
 
-unsigned int CarlaPlugin::getId() const noexcept
+uint CarlaPlugin::getId() const noexcept
 {
     return pData->id;
 }
 
-unsigned int CarlaPlugin::getHints() const noexcept
+uint CarlaPlugin::getHints() const noexcept
 {
     return pData->hints;
 }
 
-unsigned int CarlaPlugin::getOptionsEnabled() const noexcept
+uint CarlaPlugin::getOptionsEnabled() const noexcept
 {
     return pData->options;
 }
@@ -315,7 +307,7 @@ int32_t CarlaPlugin::getChunkData(void** const dataPtr) const noexcept
 // -------------------------------------------------------------------
 // Information (per-plugin data)
 
-unsigned int CarlaPlugin::getOptionsAvailable() const noexcept
+uint CarlaPlugin::getOptionsAvailable() const noexcept
 {
     CARLA_SAFE_ASSERT(false); // this should never happen
     return 0x0;
@@ -915,7 +907,7 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
 // -------------------------------------------------------------------
 // Set data (internal stuff)
 
-void CarlaPlugin::setId(const unsigned int newId) noexcept
+void CarlaPlugin::setId(const uint newId) noexcept
 {
     pData->id = newId;
 }
@@ -930,7 +922,7 @@ void CarlaPlugin::setName(const char* const newName)
     pData->name = carla_strdup(newName);
 }
 
-void CarlaPlugin::setOption(const unsigned int option, const bool yesNo)
+void CarlaPlugin::setOption(const uint option, const bool yesNo)
 {
     CARLA_SAFE_ASSERT_RETURN(getOptionsAvailable() & option,);
 
@@ -1523,14 +1515,14 @@ void CarlaPlugin::unlock() noexcept
 // -------------------------------------------------------------------
 // Plugin buffers
 
-void CarlaPlugin::initBuffers()
+void CarlaPlugin::initBuffers() const noexcept
 {
     pData->audioIn.initBuffers();
     pData->audioOut.initBuffers();
     pData->event.initBuffers();
 }
 
-void CarlaPlugin::clearBuffers()
+void CarlaPlugin::clearBuffers() noexcept
 {
     pData->clearBuffers();
 }
@@ -1816,7 +1808,7 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
     extNote.note    = note;
     extNote.velo    = velo;
 
-    pData->extNotes.append(extNote);
+    pData->extNotes.appendNonRT(extNote);
 
     if (sendGui && (pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0)
     {

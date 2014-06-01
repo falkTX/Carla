@@ -161,8 +161,6 @@ const char* ParameterType2Str(const ParameterType type) noexcept
         return "PARAMETER_INPUT";
     case PARAMETER_OUTPUT:
         return "PARAMETER_OUTPUT";
-    case PARAMETER_SPECIAL:
-        return "PARAMETER_SPECIAL";
     }
 
     carla_stderr("CarlaBackend::ParameterType2Str(%i) - invalid type", type);

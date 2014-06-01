@@ -550,12 +550,12 @@ public:
      * All constructor parameters are constant and will never change in the lifetime of the client.\n
      * Client starts in deactivated state.
      */
-    CarlaEngineClient(const CarlaEngine& engine);
+    CarlaEngineClient(const CarlaEngine& engine) noexcept;
 
     /*!
      * The destructor.
      */
-    virtual ~CarlaEngineClient();
+    virtual ~CarlaEngineClient() noexcept;
 
     /*!
      * Activate this client.\n

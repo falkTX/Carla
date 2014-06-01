@@ -341,7 +341,7 @@ public:
         }
     }
 
-    void spliceAppend(AbstractLinkedList<T>& list) noexcept
+    void spliceAppendTo(AbstractLinkedList<T>& list) noexcept
     {
         if (fQueue.next == &fQueue)
             return;
@@ -352,7 +352,7 @@ public:
         _init();
     }
 
-    void spliceInsert(AbstractLinkedList<T>& list) noexcept
+    void spliceInsertInto(AbstractLinkedList<T>& list) noexcept
     {
         if (fQueue.next == &fQueue)
             return;

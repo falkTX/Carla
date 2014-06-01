@@ -36,7 +36,7 @@ CARLA_BACKEND_START_NAMESPACE
 class LadspaPlugin : public CarlaPlugin
 {
 public:
-    LadspaPlugin(CarlaEngine* const engine, const unsigned int id)
+    LadspaPlugin(CarlaEngine* const engine, const uint id) noexcept
         : CarlaPlugin(engine, id),
           fHandle(nullptr),
           fHandle2(nullptr),
@@ -49,7 +49,7 @@ public:
         carla_debug("LadspaPlugin::LadspaPlugin(%p, %i)", engine, id);
     }
 
-    ~LadspaPlugin() override
+    ~LadspaPlugin() noexcept override
     {
         carla_debug("LadspaPlugin::~LadspaPlugin()");
 
@@ -70,9 +70,18 @@ public:
             if (fDescriptor->cleanup != nullptr)
             {
                 if (fHandle != nullptr)
-                    fDescriptor->cleanup(fHandle);
+                {
+                    try {
+                        fDescriptor->cleanup(fHandle);
+                    } catch(...) {}
+                }
+
                 if (fHandle2 != nullptr)
-                    fDescriptor->cleanup(fHandle2);
+                {
+                    try {
+                        fDescriptor->cleanup(fHandle2);
+                    } catch(...) {}
+                }
             }
 
             fHandle  = nullptr;
@@ -168,7 +177,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getOptionsAvailable() const noexcept override
+    uint getOptionsAvailable() const noexcept override
     {
 #ifdef __USE_GNU
         const bool isDssiVst(strcasestr(pData->filename, "dssi-vst"));
@@ -176,7 +185,7 @@ public:
         const bool isDssiVst(std::strstr(pData->filename, "dssi-vst"));
 #endif
 
-        unsigned int options = 0x0;
+        uint options = 0x0;
 
         if (! isDssiVst)
         {
@@ -455,7 +464,7 @@ public:
             if (fHandle2 == nullptr)
             {
                 try {
-                    fHandle2 = fDescriptor->instantiate(fDescriptor, (unsigned long)sampleRate);
+                    fHandle2 = fDescriptor->instantiate(fDescriptor, (ulong)sampleRate);
                 } catch(...) {}
             }
 
@@ -496,7 +505,7 @@ public:
 
         if (params > 0)
         {
-            pData->param.createNew(params, true, false);
+            pData->param.createNew(params, true);
 
             fParamBuffers = new float[params];
             FLOAT_CLEAR(fParamBuffers, params);
@@ -1283,7 +1292,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin buffers
 
-    void clearBuffers() override
+    void clearBuffers() noexcept override
     {
         carla_debug("LadspaPlugin::clearBuffers() - start");
 
@@ -1383,7 +1392,7 @@ public:
         // ---------------------------------------------------------------
         // get descriptor that matches label
 
-        unsigned long i = 0;
+        ulong i = 0;
         while ((fDescriptor = descFn(i++)) != nullptr)
         {
             if (fDescriptor->Label != nullptr && std::strcmp(fDescriptor->Label, label) == 0)
@@ -1428,7 +1437,7 @@ public:
         // initialize plugin
 
         try {
-            fHandle = fDescriptor->instantiate(fDescriptor, (unsigned long)pData->engine->getSampleRate());
+            fHandle = fDescriptor->instantiate(fDescriptor, (ulong)pData->engine->getSampleRate());
         } catch(...) {}
 
         if (fHandle == nullptr)

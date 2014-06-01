@@ -43,7 +43,7 @@ public:
     };
 
     CarlaPluginThread(CarlaEngine* const engine, CarlaPlugin* const plugin, const Mode mode = PLUGIN_THREAD_NULL) noexcept;
-    ~CarlaPluginThread() override;
+    ~CarlaPluginThread() noexcept override;
 
     void setMode(const CarlaPluginThread::Mode mode) noexcept;
     void setOscData(const char* const binary, const char* const label, const char* const extra1="", const char* const extra2="") noexcept;

@@ -38,7 +38,7 @@ CARLA_BACKEND_START_NAMESPACE
 class DssiPlugin : public CarlaPlugin
 {
 public:
-    DssiPlugin(CarlaEngine* const engine, const unsigned int id)
+    DssiPlugin(CarlaEngine* const engine, const uint id)
         : CarlaPlugin(engine, id),
           fHandle(nullptr),
           fHandle2(nullptr),
@@ -151,7 +151,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
 
         int ret = 0;
-        unsigned long dataSize = 0;
+        ulong dataSize = 0;
 
         try {
             ret = fDssiDescriptor->get_custom_data(fHandle, dataPtr, &dataSize);
@@ -163,7 +163,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getOptionsAvailable() const noexcept override
+    uint getOptionsAvailable() const noexcept override
     {
 #ifdef __USE_GNU
         const bool isAmSynth(strcasestr(pData->filename, "amsynth"));
@@ -173,7 +173,7 @@ public:
         const bool isDssiVst(std::strstr(pData->filename, "dssi-vst"));
 #endif
 
-        unsigned int options = 0x0;
+        uint options = 0x0;
 
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
@@ -463,7 +463,7 @@ public:
             if (fHandle2 == nullptr)
             {
                 try {
-                    fHandle2 = fDescriptor->instantiate(fDescriptor, (unsigned long)sampleRate);
+                    fHandle2 = fDescriptor->instantiate(fDescriptor, (ulong)sampleRate);
                 } catch(...) {}
             }
 
@@ -510,7 +510,7 @@ public:
 
         if (params > 0)
         {
-            pData->param.createNew(params, true, false);
+            pData->param.createNew(params, true);
 
             fParamBuffers = new float[params];
             FLOAT_CLEAR(fParamBuffers, params);
@@ -987,7 +987,7 @@ public:
             return;
         }
 
-        unsigned long midiEventCount = 0;
+        ulong midiEventCount = 0;
 
         // --------------------------------------------------------------------------------------------------------
         // Check if needs reset
@@ -999,7 +999,7 @@ public:
                 midiEventCount = MAX_MIDI_CHANNELS*2;
                 carla_zeroStruct<snd_seq_event_t>(fMidiEvents, midiEventCount);
 
-                for (unsigned char i=0, k=MAX_MIDI_CHANNELS; i < MAX_MIDI_CHANNELS; ++i)
+                for (uchar i=0, k=MAX_MIDI_CHANNELS; i < MAX_MIDI_CHANNELS; ++i)
                 {
                     fMidiEvents[i].type = SND_SEQ_EVENT_CONTROLLER;
                     fMidiEvents[i].data.control.channel = i;
@@ -1015,7 +1015,7 @@ public:
                 midiEventCount = MAX_MIDI_NOTE;
                 carla_zeroStruct<snd_seq_event_t>(fMidiEvents, midiEventCount);
 
-                for (unsigned char i=0; i < MAX_MIDI_NOTE; ++i)
+                for (uchar i=0; i < MAX_MIDI_NOTE; ++i)
                 {
                     fMidiEvents[i].type = SND_SEQ_EVENT_NOTEOFF;
                     fMidiEvents[i].data.note.channel = static_cast<uchar>(pData->ctrlChannel);
@@ -1442,7 +1442,7 @@ public:
         } // End of Control Output
     }
 
-    bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset, const unsigned long midiEventCount)
+    bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset, const ulong midiEventCount)
     {
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 
@@ -1494,10 +1494,10 @@ public:
         }
         else if (fDssiDescriptor->run_multiple_synths != nullptr)
         {
-            unsigned long instances = (fHandle2 != nullptr) ? 2 : 1;
+            ulong instances = (fHandle2 != nullptr) ? 2 : 1;
             LADSPA_Handle handlePtr[2] = { fHandle, fHandle2 };
             snd_seq_event_t* midiEventsPtr[2] = { fMidiEvents, fMidiEvents };
-            unsigned long midiEventCountPtr[2] = { midiEventCount, midiEventCount };
+            ulong midiEventCountPtr[2] = { midiEventCount, midiEventCount };
             fDssiDescriptor->run_multiple_synths(instances, handlePtr, frames, midiEventsPtr, midiEventCountPtr);
         }
         else
@@ -1672,7 +1672,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin buffers
 
-    void clearBuffers() override
+    void clearBuffers() noexcept override
     {
         carla_debug("DssiPlugin::clearBuffers() - start");
 
@@ -1834,7 +1834,7 @@ public:
         // ---------------------------------------------------------------
         // get descriptor that matches label
 
-        unsigned long i = 0;
+        ulong i = 0;
         while ((fDssiDescriptor = descFn(i++)) != nullptr)
         {
             fDescriptor = fDssiDescriptor->LADSPA_Plugin;
@@ -1887,7 +1887,7 @@ public:
         // initialize plugin
 
         try {
-            fHandle = fDescriptor->instantiate(fDescriptor, (unsigned long)pData->engine->getSampleRate());
+            fHandle = fDescriptor->instantiate(fDescriptor, (ulong)pData->engine->getSampleRate());
         } catch(...) {}
 
         if (fHandle == nullptr)

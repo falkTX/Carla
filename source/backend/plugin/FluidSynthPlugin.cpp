@@ -555,7 +555,7 @@ public:
         params = FluidSynthParametersMax;
 
         pData->audioOut.createNew(aOuts);
-        pData->param.createNew(params, false, false);
+        pData->param.createNew(params, false);
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
         CarlaString portName;
@@ -1531,7 +1531,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin buffers
 
-    void clearBuffers() override
+    void clearBuffers() noexcept override
     {
         carla_debug("FluidSynthPlugin::clearBuffers() - start");
 

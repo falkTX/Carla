@@ -517,7 +517,7 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
 // -----------------------------------------------------------------------
 // Carla Engine client (Abstract)
 
-CarlaEngineClient::CarlaEngineClient(const CarlaEngine& engine)
+CarlaEngineClient::CarlaEngineClient(const CarlaEngine& engine) noexcept
     : fEngine(engine),
       fActive(false),
       fLatency(0)
@@ -525,7 +525,7 @@ CarlaEngineClient::CarlaEngineClient(const CarlaEngine& engine)
     carla_debug("CarlaEngineClient::CarlaEngineClient()");
 }
 
-CarlaEngineClient::~CarlaEngineClient()
+CarlaEngineClient::~CarlaEngineClient() noexcept
 {
     CARLA_SAFE_ASSERT(! fActive);
     carla_debug("CarlaEngineClient::~CarlaEngineClient()");

@@ -284,6 +284,7 @@ struct BridgeTime {
 
 // -------------------------------------------------------------------------------------------------------------------
 
+// FIXME - use CarlaString
 struct BridgeParamInfo {
     float value;
     QString name;
@@ -300,7 +301,7 @@ struct BridgeParamInfo {
 class BridgePlugin : public CarlaPlugin
 {
 public:
-    BridgePlugin(CarlaEngine* const engine, const unsigned int id, const BinaryType btype, const PluginType ptype)
+    BridgePlugin(CarlaEngine* const engine, const uint id, const BinaryType btype, const PluginType ptype)
         : CarlaPlugin(engine, id),
           fBinaryType(btype),
           fPluginType(ptype),
@@ -430,9 +431,9 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getOptionsAvailable() const noexcept override
+    uint getOptionsAvailable() const noexcept override
     {
-        unsigned int options = 0x0;
+        uint options = 0x0;
 
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         options |= PLUGIN_OPTION_USE_CHUNKS;
@@ -1295,7 +1296,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin buffers
 
-    void clearBuffers() override
+    void clearBuffers() noexcept override
     {
         if (fParams != nullptr)
         {
@@ -1427,7 +1428,7 @@ public:
 
                 const uint32_t ucount(static_cast<uint32_t>(count));
 
-                pData->param.createNew(ucount, false, true);
+                pData->param.createNew(ucount, false);
                 fParams = new BridgeParamInfo[ucount];
             }
             break;

@@ -275,7 +275,7 @@ struct RewireBridge {
 class ReWirePlugin : public CarlaPlugin
 {
 public:
-    ReWirePlugin(CarlaEngine* const engine, const unsigned int id)
+    ReWirePlugin(CarlaEngine* const engine, const uint id)
         : CarlaPlugin(engine, id),
           fIsOpen(false),
           fIsPanelLaunched(false),
@@ -366,9 +366,9 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getOptionsAvailable() const noexcept override
+    uint getOptionsAvailable() const noexcept override
     {
-        unsigned int options = 0x0;
+        uint options = 0x0;
 
         if (getMidiInCount() > 0)
         {
@@ -552,7 +552,7 @@ public:
 
         if (params > 0)
         {
-            pData->param.createNew(params, false, true);
+            pData->param.createNew(params, false);
             needsCtrlIn = true;
         }
 

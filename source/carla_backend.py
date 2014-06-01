@@ -448,9 +448,6 @@ PARAMETER_INPUT = 1
 # Ouput parameter.
 PARAMETER_OUTPUT = 2
 
-# Special (hidden) parameter.
-PARAMETER_SPECIAL = 3
-
 # ------------------------------------------------------------------------------------------------------------
 # Internal Parameter Index
 # Special parameters used internally in Carla.

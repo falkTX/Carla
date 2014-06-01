@@ -51,15 +51,15 @@ class CarlaEngineEventPort;
 // -----------------------------------------------------------------------
 // Maximum pre-allocated events for some plugin types
 
-const unsigned short kPluginMaxMidiEvents = 512;
+const ushort kPluginMaxMidiEvents = 512;
 
 // -----------------------------------------------------------------------
 // Extra plugin hints, hidden from backend
 
-const unsigned int PLUGIN_EXTRA_HINT_HAS_MIDI_IN      = 0x01;
-const unsigned int PLUGIN_EXTRA_HINT_HAS_MIDI_OUT     = 0x02;
-const unsigned int PLUGIN_EXTRA_HINT_CAN_RUN_RACK     = 0x04;
-const unsigned int PLUGIN_EXTRA_HINT_USES_MULTI_PROGS = 0x08;
+const uint PLUGIN_EXTRA_HINT_HAS_MIDI_IN      = 0x01;
+const uint PLUGIN_EXTRA_HINT_HAS_MIDI_OUT     = 0x02;
+const uint PLUGIN_EXTRA_HINT_CAN_RUN_RACK     = 0x04;
+const uint PLUGIN_EXTRA_HINT_USES_MULTI_PROGS = 0x08;
 
 // -----------------------------------------------------------------------
 
@@ -73,7 +73,7 @@ const unsigned int PLUGIN_EXTRA_HINT_USES_MULTI_PROGS = 0x08;
 enum PluginPostRtEventType {
     kPluginPostRtEventNull = 0,
     kPluginPostRtEventDebug,
-    kPluginPostRtEventParameterChange,   // param, SP (*), value (SP: if 1, don't report change to Callback and OSC)
+    kPluginPostRtEventParameterChange,   // param, SP (*), value (SP: if 1 only report change to UI, don't report to Callback and OSC)
     kPluginPostRtEventProgramChange,     // index
     kPluginPostRtEventMidiProgramChange, // index
     kPluginPostRtEventNoteOn,            // channel, note, velo
@@ -104,11 +104,6 @@ struct ExternalMidiNote {
 struct PluginAudioPort {
     uint32_t rindex;
     CarlaEngineAudioPort* port;
-
-    PluginAudioPort() noexcept;
-    ~PluginAudioPort() noexcept;
-
-    CARLA_DECLARE_NON_COPY_STRUCT(PluginAudioPort)
 };
 
 struct PluginAudioData {
@@ -119,7 +114,7 @@ struct PluginAudioData {
     ~PluginAudioData() noexcept;
     void createNew(const uint32_t newCount);
     void clear() noexcept;
-    void initBuffers() noexcept;
+    void initBuffers() const noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginAudioData)
 };
@@ -130,11 +125,6 @@ struct PluginCVPort {
     uint32_t rindex;
     uint32_t param;
     CarlaEngineCVPort* port;
-
-    PluginCVPort() noexcept;
-    ~PluginCVPort() noexcept;
-
-    CARLA_DECLARE_NON_COPY_STRUCT(PluginCVPort)
 };
 
 struct PluginCVData {
@@ -145,7 +135,7 @@ struct PluginCVData {
     ~PluginCVData() noexcept;
     void createNew(const uint32_t newCount);
     void clear() noexcept;
-    void initBuffers() noexcept;
+    void initBuffers() const noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginCVData)
 };
@@ -159,7 +149,7 @@ struct PluginEventData {
     PluginEventData() noexcept;
     ~PluginEventData() noexcept;
     void clear() noexcept;
-    void initBuffers() noexcept;
+    void initBuffers() const noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginEventData)
 };
@@ -182,7 +172,7 @@ struct PluginParameterData {
 
     PluginParameterData() noexcept;
     ~PluginParameterData() noexcept;
-    void createNew(const uint32_t newCount, const bool withSpecial, const bool doReset);
+    void createNew(const uint32_t newCount, const bool withSpecial);
     void clear() noexcept;
     float getFixedValue(const uint32_t parameterId, const float& value) const noexcept;
 
@@ -195,7 +185,7 @@ typedef const char* ProgramName;
 
 struct PluginProgramData {
     uint32_t count;
-    int32_t  current;
+    int32_t current;
     ProgramName* names;
 
     PluginProgramData() noexcept;
@@ -210,7 +200,7 @@ struct PluginProgramData {
 
 struct PluginMidiProgramData {
     uint32_t count;
-    int32_t  current;
+    int32_t current;
     MidiProgramData* data;
 
     PluginMidiProgramData() noexcept;
@@ -228,9 +218,9 @@ struct CarlaPlugin::ProtectedData {
     CarlaEngine* const engine;
     CarlaEngineClient* client;
 
-    unsigned int id;
-    unsigned int hints;
-    unsigned int options;
+    uint id;
+    uint hints;
+    uint options;
 
     bool active;
     bool enabled;
@@ -273,9 +263,9 @@ struct CarlaPlugin::ProtectedData {
         RtLinkedList<ExternalMidiNote>::Pool dataPool;
         RtLinkedList<ExternalMidiNote> data;
 
-        ExternalNotes();
-        ~ExternalNotes();
-        void append(const ExternalMidiNote& note);
+        ExternalNotes() noexcept;
+        ~ExternalNotes() noexcept;
+        void appendNonRT(const ExternalMidiNote& note) noexcept;
 
         CARLA_DECLARE_NON_COPY_STRUCT(ExternalNotes)
 
@@ -287,11 +277,11 @@ struct CarlaPlugin::ProtectedData {
         RtLinkedList<PluginPostRtEvent> data;
         RtLinkedList<PluginPostRtEvent> dataPendingRT;
 
-        PostRtEvents();
-        ~PostRtEvents();
-        void appendRT(const PluginPostRtEvent& event);
-        void trySplice();
-        void clear();
+        PostRtEvents() noexcept;
+        ~PostRtEvents() noexcept;
+        void appendRT(const PluginPostRtEvent& event) noexcept;
+        void trySplice() noexcept;
+        void clear() noexcept;
 
         CARLA_DECLARE_NON_COPY_STRUCT(PostRtEvents)
 
@@ -316,7 +306,7 @@ struct CarlaPlugin::ProtectedData {
         CarlaOscData data;
         CarlaPluginThread thread;
 
-        OSC(CarlaEngine* const engine, CarlaPlugin* const plugin);
+        OSC(CarlaEngine* const engine, CarlaPlugin* const plugin) noexcept;
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
         OSC() = delete;
@@ -324,43 +314,44 @@ struct CarlaPlugin::ProtectedData {
 #endif
     } osc;
 
-    ProtectedData(CarlaEngine* const eng, const unsigned int idx, CarlaPlugin* const self);
-    ~ProtectedData();
+    ProtectedData(CarlaEngine* const engine, const uint idx, CarlaPlugin* const plugin) noexcept;
+    ~ProtectedData() noexcept;
 
     // -------------------------------------------------------------------
     // Buffer functions
 
-    void clearBuffers();
+    void clearBuffers() noexcept;
     void recreateLatencyBuffers();
 
     // -------------------------------------------------------------------
     // Post-poned events
 
-    void postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const float value3);
+    void postponeRtEvent(const PluginPostRtEvent& rtEvent) noexcept;
+    void postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const float value3) noexcept;
 
     // -------------------------------------------------------------------
     // Library functions
 
-    const char* libError(const char* const filename);
+    static const char* libError(const char* const filename) noexcept;
 
-    bool  libOpen(const char* const filename);
-    bool  libClose();
-    void* libSymbol(const char* const symbol);
+    bool  libOpen(const char* const filename) noexcept;
+    bool  libClose() noexcept;
+    void* libSymbol(const char* const symbol) const noexcept;
 
-    bool  uiLibOpen(const char* const filename, const bool canDelete);
-    bool  uiLibClose();
-    void* uiLibSymbol(const char* const symbol);
+    bool  uiLibOpen(const char* const filename, const bool canDelete) noexcept;
+    bool  uiLibClose() noexcept;
+    void* uiLibSymbol(const char* const symbol) const noexcept;
 
     // -------------------------------------------------------------------
     // Settings functions
 
-    void saveSetting(const uint option, const bool yesNo);
-    uint loadSettings(const uint options, const uint availOptions);
+    void saveSetting(const uint option, const bool yesNo) const;
+    uint loadSettings(const uint options, const uint availOptions) const;
 
     // -------------------------------------------------------------------
     // Misc
 
-    void tryTransient();
+    void tryTransient() noexcept;
 
     // -------------------------------------------------------------------
 

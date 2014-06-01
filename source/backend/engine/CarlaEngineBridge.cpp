@@ -573,27 +573,6 @@ CarlaEngine* CarlaEngine::newBridge(const char* const audioBaseName, const char*
 CARLA_BACKEND_END_NAMESPACE
 
 // -----------------------------------------------------------------------
-// Extra stuff for linking purposes
-
-CARLA_BACKEND_START_NAMESPACE
-
-// CarlaEngine*       CarlaEngine::newRtAudio(const AudioApi) { return nullptr; }
-// unsigned int       CarlaEngine::getRtAudioApiCount() { return 0; }
-// const char*        CarlaEngine::getRtAudioApiName(const unsigned int) { return nullptr; }
-// const char* const* CarlaEngine::getRtAudioApiDeviceNames(const unsigned int) { return nullptr; }
-// const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const unsigned int, const char* const) { return nullptr; }
-//
-// #ifdef HAVE_JUCE
-// CarlaEngine*       CarlaEngine::newJuce(const AudioApi) { return nullptr; }
-// unsigned int       CarlaEngine::getJuceApiCount() { return 0; }
-// const char*        CarlaEngine::getJuceApiName(const unsigned int) { return nullptr; }
-// const char* const* CarlaEngine::getJuceApiDeviceNames(const unsigned int) { return nullptr; }
-// const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const unsigned int, const char* const) { return nullptr; }
-// #endif
-
-CARLA_BACKEND_END_NAMESPACE
-
-// -----------------------------------------------------------------------
 
 #if defined(CARLA_OS_WIN) && ! defined(__WINE__)
 extern "C" __declspec (dllexport)

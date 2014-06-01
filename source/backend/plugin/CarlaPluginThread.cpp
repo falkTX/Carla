@@ -57,14 +57,16 @@ CarlaPluginThread::CarlaPluginThread(CarlaBackend::CarlaEngine* const engine, Ca
     carla_debug("CarlaPluginThread::CarlaPluginThread(%p, %p, %s)", engine, plugin, PluginThreadMode2str(mode));
 }
 
-CarlaPluginThread::~CarlaPluginThread()
+CarlaPluginThread::~CarlaPluginThread() noexcept
 {
     carla_debug("CarlaPluginThread::~CarlaPluginThread()");
 
     if (fProcess != nullptr)
     {
-       delete fProcess;
-       fProcess = nullptr;
+        try {
+            delete fProcess;
+        } CARLA_SAFE_EXCEPTION("~CarlaPluginThread(): delete QProcess");
+        fProcess = nullptr;
     }
 }
 

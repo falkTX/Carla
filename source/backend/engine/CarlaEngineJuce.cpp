@@ -355,16 +355,16 @@ CarlaEngine* CarlaEngine::newJuce(const AudioApi api)
     return new CarlaEngineJuce(deviceType);
 }
 
-unsigned int CarlaEngine::getJuceApiCount()
+uint CarlaEngine::getJuceApiCount()
 {
     return 0; // TODO
 
     initJuceDevices();
 
-    return static_cast<unsigned int>(gJuceDeviceTypes.size());
+    return static_cast<uint>(gJuceDeviceTypes.size());
 }
 
-const char* CarlaEngine::getJuceApiName(const unsigned int index)
+const char* CarlaEngine::getJuceApiName(const uint index)
 {
     initJuceDevices();
 
@@ -379,7 +379,7 @@ const char* CarlaEngine::getJuceApiName(const unsigned int index)
     return deviceType->getTypeName().toRawUTF8();
 }
 
-const char* const* CarlaEngine::getJuceApiDeviceNames(const unsigned int index)
+const char* const* CarlaEngine::getJuceApiDeviceNames(const uint index)
 {
     initJuceDevices();
 
@@ -416,7 +416,7 @@ const char* const* CarlaEngine::getJuceApiDeviceNames(const unsigned int index)
     return gRetNames;
 }
 
-const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const unsigned int index, const char* const deviceName)
+const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const uint index, const char* const deviceName)
 {
     initJuceDevices();
 

@@ -1012,7 +1012,7 @@ private:
 
         void splice()
         {
-            dataPending.spliceAppend(data);
+            dataPending.spliceAppendTo(data);
         }
     };
 

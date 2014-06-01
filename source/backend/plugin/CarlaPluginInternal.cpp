@@ -37,18 +37,6 @@ CARLA_BACKEND_START_NAMESPACE
 static const MidiProgramData kMidiProgramDataNull = { 0, 0, nullptr };
 
 // -----------------------------------------------------------------------
-// PluginAudioPort
-
-PluginAudioPort::PluginAudioPort() noexcept
-    : rindex(0),
-      port(nullptr) {}
-
-PluginAudioPort::~PluginAudioPort() noexcept
-{
-    CARLA_ASSERT(port == nullptr);
-}
-
-// -----------------------------------------------------------------------
 // PluginAudioData
 
 PluginAudioData::PluginAudioData() noexcept
@@ -57,18 +45,24 @@ PluginAudioData::PluginAudioData() noexcept
 
 PluginAudioData::~PluginAudioData() noexcept
 {
-    CARLA_ASSERT_INT(count == 0, count);
-    CARLA_ASSERT(ports == nullptr);
+    CARLA_SAFE_ASSERT_INT(count == 0, count);
+    CARLA_SAFE_ASSERT(ports == nullptr);
 }
 
 void PluginAudioData::createNew(const uint32_t newCount)
 {
-    CARLA_ASSERT_INT(count == 0, count);
+    CARLA_SAFE_ASSERT_INT(count == 0, count);
     CARLA_SAFE_ASSERT_RETURN(ports == nullptr,);
     CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
     ports = new PluginAudioPort[newCount];
     count = newCount;
+
+    for (uint32_t i=0; i < count; ++i)
+    {
+        ports[i].rindex = 0;
+        ports[i].port   = nullptr;
+    }
 }
 
 void PluginAudioData::clear() noexcept
@@ -91,26 +85,13 @@ void PluginAudioData::clear() noexcept
     count = 0;
 }
 
-void PluginAudioData::initBuffers() noexcept
+void PluginAudioData::initBuffers() const noexcept
 {
     for (uint32_t i=0; i < count; ++i)
     {
         if (ports[i].port != nullptr)
             ports[i].port->initBuffer();
     }
-}
-
-// -----------------------------------------------------------------------
-// PluginCVPort
-
-PluginCVPort::PluginCVPort() noexcept
-    : rindex(0),
-      param(0),
-      port(nullptr) {}
-
-PluginCVPort::~PluginCVPort() noexcept
-{
-    CARLA_ASSERT(port == nullptr);
 }
 
 // -----------------------------------------------------------------------
@@ -122,18 +103,25 @@ PluginCVData::PluginCVData() noexcept
 
 PluginCVData::~PluginCVData() noexcept
 {
-    CARLA_ASSERT_INT(count == 0, count);
-    CARLA_ASSERT(ports == nullptr);
+    CARLA_SAFE_ASSERT_INT(count == 0, count);
+    CARLA_SAFE_ASSERT(ports == nullptr);
 }
 
 void PluginCVData::createNew(const uint32_t newCount)
 {
-    CARLA_ASSERT_INT(count == 0, count);
+    CARLA_SAFE_ASSERT_INT(count == 0, count);
     CARLA_SAFE_ASSERT_RETURN(ports == nullptr,);
     CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
     ports = new PluginCVPort[newCount];
     count = newCount;
+
+    for (uint32_t i=0; i < count; ++i)
+    {
+        ports[i].rindex = 0;
+        ports[i].param  = 0;
+        ports[i].port   = nullptr;
+    }
 }
 
 void PluginCVData::clear() noexcept
@@ -156,7 +144,7 @@ void PluginCVData::clear() noexcept
     count = 0;
 }
 
-void PluginCVData::initBuffers() noexcept
+void PluginCVData::initBuffers() const noexcept
 {
     for (uint32_t i=0; i < count; ++i)
     {
@@ -174,8 +162,8 @@ PluginEventData::PluginEventData() noexcept
 
 PluginEventData::~PluginEventData() noexcept
 {
-    CARLA_ASSERT(portIn == nullptr);
-    CARLA_ASSERT(portOut == nullptr);
+    CARLA_SAFE_ASSERT(portIn == nullptr);
+    CARLA_SAFE_ASSERT(portOut == nullptr);
 }
 
 void PluginEventData::clear() noexcept
@@ -193,7 +181,7 @@ void PluginEventData::clear() noexcept
     }
 }
 
-void PluginEventData::initBuffers() noexcept
+void PluginEventData::initBuffers() const noexcept
 {
     if (portIn != nullptr)
         portIn->initBuffer();
@@ -213,15 +201,15 @@ PluginParameterData::PluginParameterData() noexcept
 
 PluginParameterData::~PluginParameterData() noexcept
 {
-    CARLA_ASSERT_INT(count == 0, count);
-    CARLA_ASSERT(data == nullptr);
-    CARLA_ASSERT(ranges == nullptr);
-    CARLA_ASSERT(special == nullptr);
+    CARLA_SAFE_ASSERT_INT(count == 0, count);
+    CARLA_SAFE_ASSERT(data == nullptr);
+    CARLA_SAFE_ASSERT(ranges == nullptr);
+    CARLA_SAFE_ASSERT(special == nullptr);
 }
 
-void PluginParameterData::createNew(const uint32_t newCount, const bool withSpecial, const bool doReset)
+void PluginParameterData::createNew(const uint32_t newCount, const bool withSpecial)
 {
-    CARLA_ASSERT_INT(count == 0, count);
+    CARLA_SAFE_ASSERT_INT(count == 0, count);
     CARLA_SAFE_ASSERT_RETURN(data == nullptr,);
     CARLA_SAFE_ASSERT_RETURN(ranges == nullptr,);
     CARLA_SAFE_ASSERT_RETURN(special == nullptr,);
@@ -233,9 +221,6 @@ void PluginParameterData::createNew(const uint32_t newCount, const bool withSpec
 
     if (withSpecial)
         special = new SpecialParameterType[newCount];
-
-    if (! doReset)
-        return;
 
     for (uint32_t i=0; i < newCount; ++i)
     {
@@ -296,23 +281,21 @@ PluginProgramData::PluginProgramData() noexcept
 
 PluginProgramData::~PluginProgramData() noexcept
 {
-    CARLA_ASSERT_INT(count == 0, count);
-    CARLA_ASSERT_INT(current == -1, current);
-    CARLA_ASSERT(names == nullptr);
+    CARLA_SAFE_ASSERT_INT(count == 0, count);
+    CARLA_SAFE_ASSERT_INT(current == -1, current);
+    CARLA_SAFE_ASSERT(names == nullptr);
 }
 
 void PluginProgramData::createNew(const uint32_t newCount)
 {
-    CARLA_ASSERT_INT(count == 0, count);
-    CARLA_ASSERT_INT(current == -1, current);
-    CARLA_ASSERT(names == nullptr);
-    CARLA_ASSERT_INT(newCount > 0, newCount);
+    CARLA_SAFE_ASSERT_INT(count == 0, count);
+    CARLA_SAFE_ASSERT_INT(current == -1, current);
+    CARLA_SAFE_ASSERT_RETURN(names == nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
-    if (names != nullptr || newCount == 0)
-        return;
-
-    names = new ProgramName[newCount];
-    count = newCount;
+    names   = new ProgramName[newCount];
+    count   = newCount;
+    current = -1;
 
     for (uint32_t i=0; i < newCount; ++i)
         names[i] = nullptr;
@@ -349,23 +332,21 @@ PluginMidiProgramData::PluginMidiProgramData() noexcept
 
 PluginMidiProgramData::~PluginMidiProgramData() noexcept
 {
-    CARLA_ASSERT_INT(count == 0, count);
-    CARLA_ASSERT_INT(current == -1, current);
-    CARLA_ASSERT(data == nullptr);
+    CARLA_SAFE_ASSERT_INT(count == 0, count);
+    CARLA_SAFE_ASSERT_INT(current == -1, current);
+    CARLA_SAFE_ASSERT(data == nullptr);
 }
 
 void PluginMidiProgramData::createNew(const uint32_t newCount)
 {
-    CARLA_ASSERT_INT(count == 0, count);
-    CARLA_ASSERT_INT(current == -1, current);
-    CARLA_ASSERT(data == nullptr);
-    CARLA_ASSERT_INT(newCount > 0, newCount);
+    CARLA_SAFE_ASSERT_INT(count == 0, count);
+    CARLA_SAFE_ASSERT_INT(current == -1, current);
+    CARLA_SAFE_ASSERT_RETURN(data == nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
-    if (data != nullptr || newCount == 0)
-        return;
-
-    data  = new MidiProgramData[newCount];
-    count = newCount;
+    data    = new MidiProgramData[newCount];
+    count   = newCount;
+    current = -1;
 
     for (uint32_t i=0; i < count; ++i)
     {
@@ -403,19 +384,20 @@ const MidiProgramData& PluginMidiProgramData::getCurrent() const noexcept
 }
 
 // -----------------------------------------------------------------------
+// ProtectedData::ExternalNotes
 
-CarlaPlugin::ProtectedData::ExternalNotes::ExternalNotes()
+CarlaPlugin::ProtectedData::ExternalNotes::ExternalNotes() noexcept
     : dataPool(32, 152),
       data(dataPool) {}
 
-CarlaPlugin::ProtectedData::ExternalNotes::~ExternalNotes()
+CarlaPlugin::ProtectedData::ExternalNotes::~ExternalNotes() noexcept
 {
     mutex.lock();
     data.clear();
     mutex.unlock();
 }
 
-void CarlaPlugin::ProtectedData::ExternalNotes::append(const ExternalMidiNote& note)
+void CarlaPlugin::ProtectedData::ExternalNotes::appendNonRT(const ExternalMidiNote& note) noexcept
 {
     mutex.lock();
     data.append_sleepy(note);
@@ -423,32 +405,33 @@ void CarlaPlugin::ProtectedData::ExternalNotes::append(const ExternalMidiNote& n
 }
 
 // -----------------------------------------------------------------------
+// ProtectedData::PostRtEvents
 
-CarlaPlugin::ProtectedData::PostRtEvents::PostRtEvents()
+CarlaPlugin::ProtectedData::PostRtEvents::PostRtEvents() noexcept
     : dataPool(128, 128),
       data(dataPool),
       dataPendingRT(dataPool) {}
 
-CarlaPlugin::ProtectedData::PostRtEvents::~PostRtEvents()
+CarlaPlugin::ProtectedData::PostRtEvents::~PostRtEvents() noexcept
 {
     clear();
 }
 
-void CarlaPlugin::ProtectedData::PostRtEvents::appendRT(const PluginPostRtEvent& e)
+void CarlaPlugin::ProtectedData::PostRtEvents::appendRT(const PluginPostRtEvent& e) noexcept
 {
     dataPendingRT.append(e);
 }
 
-void CarlaPlugin::ProtectedData::PostRtEvents::trySplice()
+void CarlaPlugin::ProtectedData::PostRtEvents::trySplice() noexcept
 {
     if (mutex.tryLock())
     {
-        dataPendingRT.spliceAppend(data);
+        dataPendingRT.spliceAppendTo(data);
         mutex.unlock();
     }
 }
 
-void CarlaPlugin::ProtectedData::PostRtEvents::clear()
+void CarlaPlugin::ProtectedData::PostRtEvents::clear() noexcept
 {
     mutex.lock();
     data.clear();
@@ -456,9 +439,10 @@ void CarlaPlugin::ProtectedData::PostRtEvents::clear()
     mutex.unlock();
 }
 
-// -----------------------------------------------------------------------
-
 #ifndef BUILD_BRIDGE
+// -----------------------------------------------------------------------
+// ProtectedData::PostProc
+
 CarlaPlugin::ProtectedData::PostProc::PostProc() noexcept
     : dryWet(1.0f),
       volume(1.0f),
@@ -469,12 +453,12 @@ CarlaPlugin::ProtectedData::PostProc::PostProc() noexcept
 
 // -----------------------------------------------------------------------
 
-CarlaPlugin::ProtectedData::OSC::OSC(CarlaEngine* const eng, CarlaPlugin* const plug)
+CarlaPlugin::ProtectedData::OSC::OSC(CarlaEngine* const eng, CarlaPlugin* const plug) noexcept
     : thread(eng, plug) {}
 
 // -----------------------------------------------------------------------
 
-CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const unsigned int idx, CarlaPlugin* const self)
+CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx, CarlaPlugin* const plug) noexcept
     : engine(eng),
       client(nullptr),
       id(idx),
@@ -494,12 +478,35 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const unsigned
       filename(nullptr),
       iconName(nullptr),
       identifier(nullptr),
-      osc(eng, self) {}
+      osc(eng, plug) {}
 
-CarlaPlugin::ProtectedData::~ProtectedData()
+CarlaPlugin::ProtectedData::~ProtectedData() noexcept
 {
     CARLA_SAFE_ASSERT(! needsReset);
     CARLA_SAFE_ASSERT(transientTryCounter == 0);
+
+    {
+        // mutex MUST have been locked before
+        const bool lockMaster(masterMutex.tryLock());
+        const bool lockSingle(singleMutex.tryLock());
+        CARLA_SAFE_ASSERT(! lockMaster);
+        CARLA_SAFE_ASSERT(! lockSingle);
+    }
+
+    if (client != nullptr)
+    {
+        if (client->isActive())
+        {
+            // must not happen
+            carla_safe_assert("client->isActive()", __FILE__, __LINE__);
+            client->deactivate();
+        }
+
+        clearBuffers();
+
+        delete client;
+        client = nullptr;
+    }
 
     if (name != nullptr)
     {
@@ -523,29 +530,6 @@ CarlaPlugin::ProtectedData::~ProtectedData()
     {
         delete[] identifier;
         identifier = nullptr;
-    }
-
-    {
-        // mutex MUST have been locked before
-        const bool lockMaster(masterMutex.tryLock());
-        const bool lockSingle(singleMutex.tryLock());
-        CARLA_SAFE_ASSERT(! lockMaster);
-        CARLA_SAFE_ASSERT(! lockSingle);
-    }
-
-    if (client != nullptr)
-    {
-        if (client->isActive())
-        {
-            // must not happen
-            carla_safe_assert("client->isActive()", __FILE__, __LINE__);
-            client->deactivate();
-        }
-
-        clearBuffers();
-
-        delete client;
-        client = nullptr;
     }
 
     for (LinkedList<CustomData>::Itenerator it = custom.begin(); it.valid(); it.next())
@@ -594,7 +578,7 @@ CarlaPlugin::ProtectedData::~ProtectedData()
 // -----------------------------------------------------------------------
 // Buffer functions
 
-void CarlaPlugin::ProtectedData::clearBuffers()
+void CarlaPlugin::ProtectedData::clearBuffers() noexcept
 {
     if (latencyBuffers != nullptr)
     {
@@ -614,7 +598,11 @@ void CarlaPlugin::ProtectedData::clearBuffers()
     }
     else
     {
-        CARLA_SAFE_ASSERT(latency == 0);
+        if (latency != 0)
+        {
+            carla_safe_assert_int("latency != 0", __FILE__, __LINE__, static_cast<int>(latency));
+            latency = 0;
+        }
     }
 
     audioIn.clear();
@@ -627,7 +615,7 @@ void CarlaPlugin::ProtectedData::recreateLatencyBuffers()
 {
     if (latencyBuffers != nullptr)
     {
-        CARLA_ASSERT(audioIn.count > 0);
+        CARLA_SAFE_ASSERT(audioIn.count > 0);
 
         for (uint32_t i=0; i < audioIn.count; ++i)
         {
@@ -656,7 +644,14 @@ void CarlaPlugin::ProtectedData::recreateLatencyBuffers()
 // -----------------------------------------------------------------------
 // Post-poned events
 
-void CarlaPlugin::ProtectedData::postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const float value3)
+void CarlaPlugin::ProtectedData::postponeRtEvent(const PluginPostRtEvent& rtEvent) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(rtEvent.type != kPluginPostRtEventNull,);
+
+    postRtEvents.appendRT(rtEvent);
+}
+
+void CarlaPlugin::ProtectedData::postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const float value3) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(type != kPluginPostRtEventNull,);
 
@@ -670,43 +665,43 @@ void CarlaPlugin::ProtectedData::postponeRtEvent(const PluginPostRtEventType typ
 
 static LibCounter sLibCounter;
 
-const char* CarlaPlugin::ProtectedData::libError(const char* const fname)
+const char* CarlaPlugin::ProtectedData::libError(const char* const fname) noexcept
 {
     return lib_error(fname);
 }
 
-bool CarlaPlugin::ProtectedData::libOpen(const char* const fname)
+bool CarlaPlugin::ProtectedData::libOpen(const char* const fname) noexcept
 {
     lib = sLibCounter.open(fname);
     return (lib != nullptr);
 }
 
-bool CarlaPlugin::ProtectedData::libClose()
+bool CarlaPlugin::ProtectedData::libClose() noexcept
 {
     const bool ret = sLibCounter.close(lib);
     lib = nullptr;
     return ret;
 }
 
-void* CarlaPlugin::ProtectedData::libSymbol(const char* const symbol)
+void* CarlaPlugin::ProtectedData::libSymbol(const char* const symbol) const noexcept
 {
     return lib_symbol(lib, symbol);
 }
 
-bool CarlaPlugin::ProtectedData::uiLibOpen(const char* const fname, const bool canDelete)
+bool CarlaPlugin::ProtectedData::uiLibOpen(const char* const fname, const bool canDelete) noexcept
 {
     uiLib = sLibCounter.open(fname, canDelete);
     return (uiLib != nullptr);
 }
 
-bool CarlaPlugin::ProtectedData::uiLibClose()
+bool CarlaPlugin::ProtectedData::uiLibClose() noexcept
 {
     const bool ret = sLibCounter.close(uiLib);
     uiLib = nullptr;
     return ret;
 }
 
-void* CarlaPlugin::ProtectedData::uiLibSymbol(const char* const symbol)
+void* CarlaPlugin::ProtectedData::uiLibSymbol(const char* const symbol) const noexcept
 {
     return lib_symbol(uiLib, symbol);
 }
@@ -714,7 +709,7 @@ void* CarlaPlugin::ProtectedData::uiLibSymbol(const char* const symbol)
 // -----------------------------------------------------------------------
 // Settings functions
 
-void CarlaPlugin::ProtectedData::saveSetting(const uint option, const bool yesNo)
+void CarlaPlugin::ProtectedData::saveSetting(const uint option, const bool yesNo) const
 {
     CARLA_SAFE_ASSERT_RETURN(identifier != nullptr && identifier[0] != '\0',);
 
@@ -757,25 +752,25 @@ void CarlaPlugin::ProtectedData::saveSetting(const uint option, const bool yesNo
     settings.endGroup();
 }
 
-uint CarlaPlugin::ProtectedData::loadSettings(const uint curOptions, const uint availOptions)
+uint CarlaPlugin::ProtectedData::loadSettings(const uint curOptions, const uint availOptions) const
 {
     CARLA_SAFE_ASSERT_RETURN(identifier != nullptr && identifier[0] != '\0', 0x0);
 
     QSettings settings("falkTX", "CarlaPluginSettings");
     settings.beginGroup(identifier);
 
-    unsigned int newOptions = 0x0;
+    uint newOptions = 0x0;
 
-    #define CHECK_AND_SET_OPTION(STR, BIT)                              \
-    if ((availOptions & BIT) != 0 || BIT == PLUGIN_OPTION_FORCE_STEREO) \
-    {                                                                   \
-        if (settings.contains(STR))                                     \
-        {                                                               \
-            if (settings.value(STR, (curOptions & BIT) != 0).toBool())  \
-                newOptions |= BIT;                                      \
-        }                                                               \
-        else if (curOptions & BIT)                                      \
-            newOptions |= BIT;                                          \
+    #define CHECK_AND_SET_OPTION(STR, BIT)                                    \
+    if ((availOptions & BIT) != 0 || BIT == PLUGIN_OPTION_FORCE_STEREO)       \
+    {                                                                         \
+        if (settings.contains(STR))                                           \
+        {                                                                     \
+            if (settings.value(STR, bool((curOptions & BIT) != 0)).toBool())  \
+                newOptions |= BIT;                                            \
+        }                                                                     \
+        else if (curOptions & BIT)                                            \
+            newOptions |= BIT;                                                \
     }
 
     CHECK_AND_SET_OPTION("FixedBuffers", PLUGIN_OPTION_FIXED_BUFFERS);
@@ -793,6 +788,14 @@ uint CarlaPlugin::ProtectedData::loadSettings(const uint curOptions, const uint 
     settings.endGroup();
 
     return newOptions;
+}
+
+// -----------------------------------------------------------------------
+
+void CarlaPlugin::ProtectedData::tryTransient() noexcept
+{
+    if (engine->getOptions().frontendWinId != 0)
+        transientTryCounter = 1;
 }
 
 // -----------------------------------------------------------------------

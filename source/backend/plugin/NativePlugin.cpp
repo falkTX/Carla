@@ -47,16 +47,16 @@ struct NativePluginMidiData {
     uint32_t* indexes;
     CarlaEngineEventPort** ports;
 
-    NativePluginMidiData()
+    NativePluginMidiData() noexcept
         : count(0),
           indexes(nullptr),
           ports(nullptr) {}
 
-    ~NativePluginMidiData()
+    ~NativePluginMidiData() noexcept
     {
-        CARLA_ASSERT_INT(count == 0, count);
-        CARLA_ASSERT(indexes == nullptr);
-        CARLA_ASSERT(ports == nullptr);
+        CARLA_SAFE_ASSERT_INT(count == 0, count);
+        CARLA_SAFE_ASSERT(indexes == nullptr);
+        CARLA_SAFE_ASSERT(ports == nullptr);
     }
 
     void createNew(const uint32_t newCount)
@@ -66,18 +66,18 @@ struct NativePluginMidiData {
         CARLA_SAFE_ASSERT_RETURN(ports == nullptr,);
         CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
-        ports   = new CarlaEngineEventPort*[newCount];
         indexes = new uint32_t[newCount];
+        ports   = new CarlaEngineEventPort*[newCount];
         count   = newCount;
 
         for (uint32_t i=0; i < newCount; ++i)
-            ports[i] = nullptr;
+            indexes[i] = 0;
 
         for (uint32_t i=0; i < newCount; ++i)
-            indexes[i] = 0;
+            ports[i] = nullptr;
     }
 
-    void clear()
+    void clear() noexcept
     {
         if (ports != nullptr)
         {
@@ -103,7 +103,7 @@ struct NativePluginMidiData {
         count = 0;
     }
 
-    void initBuffers()
+    void initBuffers() const noexcept
     {
         for (uint32_t i=0; i < count; ++i)
         {
@@ -135,7 +135,7 @@ struct ScopedInitializer {
 class NativePlugin : public CarlaPlugin
 {
 public:
-    NativePlugin(CarlaEngine* const engine, const unsigned int id)
+    NativePlugin(CarlaEngine* const engine, const uint id)
         : CarlaPlugin(engine, id),
           fHandle(nullptr),
           fHandle2(nullptr),
@@ -278,7 +278,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getOptionsAvailable() const noexcept override
+    uint getOptionsAvailable() const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, 0x0);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, 0);
@@ -286,7 +286,7 @@ public:
         // FIXME - try
         const bool hasMidiProgs(fDescriptor->get_midi_program_count != nullptr && fDescriptor->get_midi_program_count(fHandle) > 0);
 
-        unsigned int options = 0x0;
+        uint options = 0x0;
 
         if (hasMidiProgs && (fDescriptor->supports & ::PLUGIN_SUPPORTS_PROGRAM_CHANGES) == 0)
             options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
@@ -826,7 +826,7 @@ public:
 
         if (params > 0)
         {
-            pData->param.createNew(params, true, false);
+            pData->param.createNew(params, true);
         }
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
@@ -1919,7 +1919,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin buffers
 
-    void initBuffers() override
+    void initBuffers() const noexcept override
     {
         fMidiIn.initBuffers();
         fMidiOut.initBuffers();
@@ -1927,7 +1927,7 @@ public:
         CarlaPlugin::initBuffers();
     }
 
-    void clearBuffers() override
+    void clearBuffers() noexcept override
     {
         carla_debug("NativePlugin::clearBuffers() - start");
 

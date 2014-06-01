@@ -637,7 +637,7 @@ protected:
 
     // -------------------------------------------------------------------
 
-    const char* renamePlugin(const unsigned int id, const char* const newName) override
+    const char* renamePlugin(const uint id, const char* const newName) override
     {
         if (const char* const retName = CarlaEngine::renamePlugin(id, newName))
         {
@@ -897,7 +897,7 @@ protected:
                 plugin->getParameterName(index, strBufName);
                 plugin->getParameterUnit(index, strBufUnit);
 
-                unsigned int hints = 0x0;
+                uint hints = 0x0;
 
                 if (paramData.hints & PARAMETER_IS_BOOLEAN)
                     hints |= ::PARAMETER_IS_BOOLEAN;
@@ -1297,7 +1297,7 @@ protected:
         bool firstPlugin = true;
         char strBuf[STR_MAX+1];
 
-        for (unsigned int i=0; i < pData->curPluginCount; ++i)
+        for (uint i=0; i < pData->curPluginCount; ++i)
         {
             CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
@@ -1648,18 +1648,18 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaEngine* CarlaEngine::newJack() { return nullptr; }
 
-CarlaEngine*       CarlaEngine::newRtAudio(const AudioApi) { return nullptr; }
-unsigned int       CarlaEngine::getRtAudioApiCount() { return 0; }
-const char*        CarlaEngine::getRtAudioApiName(const unsigned int) { return nullptr; }
-const char* const* CarlaEngine::getRtAudioApiDeviceNames(const unsigned int) { return nullptr; }
-const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const unsigned int, const char* const) { return nullptr; }
+CarlaEngine*       CarlaEngine::newRtAudio(const AudioApi)           { return nullptr; }
+uint               CarlaEngine::getRtAudioApiCount()                 { return 0;       }
+const char*        CarlaEngine::getRtAudioApiName(const uint)        { return nullptr; }
+const char* const* CarlaEngine::getRtAudioApiDeviceNames(const uint) { return nullptr; }
+const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const uint, const char* const) { return nullptr; }
 
 # ifdef HAVE_JUCE
-CarlaEngine*       CarlaEngine::newJuce(const AudioApi) { return nullptr; }
-unsigned int       CarlaEngine::getJuceApiCount() { return 0; }
-const char*        CarlaEngine::getJuceApiName(const unsigned int) { return nullptr; }
-const char* const* CarlaEngine::getJuceApiDeviceNames(const unsigned int) { return nullptr; }
-const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const unsigned int, const char* const) { return nullptr; }
+CarlaEngine*       CarlaEngine::newJuce(const AudioApi)           { return nullptr; }
+uint               CarlaEngine::getJuceApiCount()                 { return 0;       }
+const char*        CarlaEngine::getJuceApiName(const uint)        { return nullptr; }
+const char* const* CarlaEngine::getJuceApiDeviceNames(const uint) { return nullptr; }
+const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const uint, const char* const) { return nullptr; }
 # endif
 
 CARLA_BACKEND_END_NAMESPACE

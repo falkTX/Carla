@@ -32,7 +32,7 @@ CARLA_BACKEND_START_NAMESPACE
 class CsoundPlugin : public CarlaPlugin
 {
 public:
-    CsoundPlugin(CarlaEngine* const engine, const unsigned short id)
+    CsoundPlugin(CarlaEngine* const engine, const ushort id)
         : CarlaPlugin(engine, id)
     {
         carla_debug("CsoundPlugin::CsoundPlugin(%p, %i)", engine, id);

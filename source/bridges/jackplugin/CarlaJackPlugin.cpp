@@ -218,12 +218,12 @@ CARLA_EXPORT int jack_is_realtime(jack_client_t* client);
 CARLA_EXPORT jack_nframes_t jack_get_sample_rate(jack_client_t* client);
 CARLA_EXPORT jack_nframes_t jack_get_buffer_size(jack_client_t* client);
 
-CARLA_EXPORT jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, const char* port_type, unsigned long flags, unsigned long buffer_size);
+CARLA_EXPORT jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, const char* port_type, ulong flags, ulong buffer_size);
 CARLA_EXPORT void* jack_port_get_buffer(jack_port_t* port, jack_nframes_t frames);
 
 CARLA_EXPORT const char* jack_port_name(const jack_port_t* port);
 
-CARLA_EXPORT const char** jack_get_ports(jack_client_t*, const char* port_name_pattern, const char* type_name_pattern, unsigned long flags);
+CARLA_EXPORT const char** jack_get_ports(jack_client_t*, const char* port_name_pattern, const char* type_name_pattern, ulong flags);
 CARLA_EXPORT jack_port_t* jack_port_by_name(jack_client_t* client, const char* port_name);
 CARLA_EXPORT jack_port_t* jack_port_by_id(jack_client_t* client, jack_port_id_t port_id);
 
@@ -359,7 +359,7 @@ jack_nframes_t jack_get_buffer_size(jack_client_t* client)
 
 // -------------------------------------------------------------------------------------------------------------------
 
-jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, const char* port_type, unsigned long flags, unsigned long)
+jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, const char* port_type, ulong flags, ulong)
 {
     CARLA_SAFE_ASSERT_RETURN(client == &gJackClient, nullptr);
 
@@ -434,7 +434,7 @@ const char* jack_port_name(const jack_port_t* port)
 
 // -------------------------------------------------------------------------------------------------------------------
 
-const char** jack_get_ports(jack_client_t* client, const char* port_name_pattern, const char* type_name_pattern, unsigned long flags)
+const char** jack_get_ports(jack_client_t* client, const char* port_name_pattern, const char* type_name_pattern, ulong flags)
 {
     CARLA_SAFE_ASSERT_RETURN(client == &gJackClient, nullptr);
 
@@ -624,13 +624,13 @@ CARLA_BACKEND_START_NAMESPACE
 class JackPlugin : public CarlaPlugin
 {
 public:
-    JackPlugin(CarlaEngine* const engine, const uint id)
+    JackPlugin(CarlaEngine* const engine, const uint id) noexcept
         : CarlaPlugin(engine, id)
     {
         carla_debug("JackPlugin::JackPlugin(%p, %i)", engine, id);
     }
 
-    ~JackPlugin() override
+    ~JackPlugin() noexcept override
     {
         carla_debug("JackPlugin::~JackPlugin()");
 
@@ -649,10 +649,12 @@ public:
         clearBuffers();
     }
 
-    void clearBuffers() override
+    void clearBuffers() noexcept override
     {
         pData->audioIn.count = 0;
         pData->audioOut.count = 0;
+
+        CarlaPlugin::initBuffers();
     }
 
     // -------------------------------------------------------------------
@@ -691,9 +693,9 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getOptionsAvailable() const noexcept override
+    uint getOptionsAvailable() const noexcept override
     {
-        unsigned int options = 0x0;
+        uint options = 0x0;
 
         //options |= PLUGIN_OPTION_FIXED_BUFFERS;
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;

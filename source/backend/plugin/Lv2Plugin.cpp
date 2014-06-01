@@ -51,25 +51,25 @@ CARLA_BACKEND_START_NAMESPACE
 #endif
 
 // Maximum default buffer size
-const unsigned int MAX_DEFAULT_BUFFER_SIZE = 8192; // 0x2000
+const uint MAX_DEFAULT_BUFFER_SIZE = 8192; // 0x2000
 
 // Extra Plugin Hints
-const unsigned int PLUGIN_HAS_EXTENSION_OPTIONS  = 0x1000;
-const unsigned int PLUGIN_HAS_EXTENSION_PROGRAMS = 0x2000;
-const unsigned int PLUGIN_HAS_EXTENSION_STATE    = 0x4000;
-const unsigned int PLUGIN_HAS_EXTENSION_WORKER   = 0x8000;
+const uint PLUGIN_HAS_EXTENSION_OPTIONS  = 0x1000;
+const uint PLUGIN_HAS_EXTENSION_PROGRAMS = 0x2000;
+const uint PLUGIN_HAS_EXTENSION_STATE    = 0x4000;
+const uint PLUGIN_HAS_EXTENSION_WORKER   = 0x8000;
 
 // Extra Parameter Hints
-const unsigned int PARAMETER_IS_STRICT_BOUNDS = 0x1000;
-const unsigned int PARAMETER_IS_TRIGGER       = 0x2000;
+const uint PARAMETER_IS_STRICT_BOUNDS = 0x1000;
+const uint PARAMETER_IS_TRIGGER       = 0x2000;
 
 // LV2 Event Data/Types
-const unsigned int CARLA_EVENT_DATA_ATOM    = 0x01;
-const unsigned int CARLA_EVENT_DATA_EVENT   = 0x02;
-const unsigned int CARLA_EVENT_DATA_MIDI_LL = 0x04;
-const unsigned int CARLA_EVENT_TYPE_MESSAGE = 0x10; // unused
-const unsigned int CARLA_EVENT_TYPE_MIDI    = 0x20;
-const unsigned int CARLA_EVENT_TYPE_TIME    = 0x40;
+const uint CARLA_EVENT_DATA_ATOM    = 0x01;
+const uint CARLA_EVENT_DATA_EVENT   = 0x02;
+const uint CARLA_EVENT_DATA_MIDI_LL = 0x04;
+const uint CARLA_EVENT_TYPE_MESSAGE = 0x10; // unused
+const uint CARLA_EVENT_TYPE_MIDI    = 0x20;
+const uint CARLA_EVENT_TYPE_TIME    = 0x40;
 
 // LV2 URI Map Ids
 const uint32_t CARLA_URI_MAP_ID_NULL                   =  0;
@@ -170,12 +170,12 @@ struct Lv2EventData {
         LV2_MIDI midi;
     };
 
-    Lv2EventData()
+    Lv2EventData() noexcept
         : type(0x0),
           rindex(0),
           port(nullptr) {}
 
-    ~Lv2EventData()
+    ~Lv2EventData() noexcept
     {
         if (port != nullptr)
         {
@@ -218,18 +218,18 @@ struct Lv2PluginEventData {
     Lv2EventData* ctrl; // default port, either this->data[x] or pData->portIn/Out
     uint32_t ctrlIndex;
 
-    Lv2PluginEventData()
+    Lv2PluginEventData() noexcept
         : count(0),
           data(nullptr),
           ctrl(nullptr),
           ctrlIndex(0) {}
 
-    ~Lv2PluginEventData()
+    ~Lv2PluginEventData() noexcept
     {
-        CARLA_ASSERT_INT(count == 0, count);
-        CARLA_ASSERT(data == nullptr);
-        CARLA_ASSERT(ctrl == nullptr);
-        CARLA_ASSERT_INT(ctrlIndex == 0, ctrlIndex);
+        CARLA_SAFE_ASSERT_INT(count == 0, count);
+        CARLA_SAFE_ASSERT(data == nullptr);
+        CARLA_SAFE_ASSERT(ctrl == nullptr);
+        CARLA_SAFE_ASSERT_INT(ctrlIndex == 0, ctrlIndex);
     }
 
     void createNew(const uint32_t newCount)
@@ -242,9 +242,12 @@ struct Lv2PluginEventData {
 
         data  = new Lv2EventData[newCount];
         count = newCount;
+
+        ctrl      = nullptr;
+        ctrlIndex = 0;
     }
 
-    void clear()
+    void clear() noexcept
     {
         if (data != nullptr)
         {
@@ -298,7 +301,7 @@ struct Lv2PluginOptions {
     const char* windowTitle;
     LV2_Options_Option opts[Count];
 
-    Lv2PluginOptions()
+    Lv2PluginOptions() noexcept
         : maxBufferSize(0),
           minBufferSize(0),
           sequenceSize(MAX_DEFAULT_BUFFER_SIZE),
@@ -363,7 +366,7 @@ struct Lv2PluginOptions {
         optNull.value   = nullptr;
     }
 
-    ~Lv2PluginOptions()
+    ~Lv2PluginOptions() noexcept
     {
         LV2_Options_Option& optWindowTitle(opts[WindowTitle]);
 
@@ -384,7 +387,7 @@ class Lv2Plugin : public CarlaPlugin,
                          CarlaPluginUi::CloseCallback
 {
 public:
-    Lv2Plugin(CarlaEngine* const engine, const unsigned int id)
+    Lv2Plugin(CarlaEngine* const engine, const uint id)
         : CarlaPlugin(engine, id),
           fHandle(nullptr),
           fHandle2(nullptr),
@@ -682,11 +685,11 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getOptionsAvailable() const noexcept override
+    uint getOptionsAvailable() const noexcept override
     {
         const bool hasMidiIn(getMidiInCount() > 0);
 
-        unsigned int options = 0x0;
+        uint options = 0x0;
 
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
@@ -1363,7 +1366,7 @@ public:
 
         uint32_t aIns, aOuts, cvIns, cvOuts, params;
         aIns = aOuts = cvIns = cvOuts = params = 0;
-        LinkedList<unsigned int> evIns, evOuts;
+        LinkedList<uint> evIns, evOuts;
 
         const uint32_t eventBufferSize(static_cast<uint32_t>(fLv2Options.sequenceSize));
 
@@ -1482,7 +1485,7 @@ public:
 
         if (params > 0)
         {
-            pData->param.createNew(params, true, false);
+            pData->param.createNew(params, true);
             fParamBuffers = new float[params];
             FLOAT_CLEAR(fParamBuffers, params);
         }
@@ -1509,7 +1512,7 @@ public:
                 {
                     fEventsIn.data[i].type = CARLA_EVENT_DATA_MIDI_LL;
                     fEventsIn.data[i].midi.capacity = eventBufferSize;
-                    fEventsIn.data[i].midi.data     = new unsigned char[eventBufferSize];
+                    fEventsIn.data[i].midi.data     = new uchar[eventBufferSize];
                 }
             }
         }
@@ -1541,7 +1544,7 @@ public:
                 {
                     fEventsOut.data[i].type = CARLA_EVENT_DATA_MIDI_LL;
                     fEventsOut.data[i].midi.capacity = eventBufferSize;
-                    fEventsOut.data[i].midi.data     = new unsigned char[eventBufferSize];
+                    fEventsOut.data[i].midi.data     = new uchar[eventBufferSize];
                 }
             }
         }
@@ -3094,7 +3097,7 @@ public:
 
                 uint32_t eventSize;
                 double   eventTime;
-                unsigned char* eventData;
+                uchar* eventData;
 
                 for (;;)
                 {
@@ -3466,7 +3469,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin buffers
 
-    void initBuffers() override
+    void initBuffers() const noexcept override
     {
         fCvIn.initBuffers();
         fCvOut.initBuffers();
@@ -3476,7 +3479,7 @@ public:
         CarlaPlugin::initBuffers();
     }
 
-    void clearBuffers() override
+    void clearBuffers() noexcept override
     {
         carla_debug("Lv2Plugin::clearBuffers() - start");
 

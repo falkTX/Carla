@@ -135,11 +135,11 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getOptionsAvailable() const noexcept override
+    uint getOptionsAvailable() const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr, 0x0);
 
-        unsigned int options = 0x0;
+        uint options = 0x0;
 
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         //options |= PLUGIN_OPTION_USE_CHUNKS;
@@ -351,7 +351,7 @@ public:
 
         if (params > 0)
         {
-            pData->param.createNew(params, false, false);
+            pData->param.createNew(params, false);
             needsCtrlIn = true;
         }
 

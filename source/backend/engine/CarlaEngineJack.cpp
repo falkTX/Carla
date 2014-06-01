@@ -858,7 +858,7 @@ public:
             return;
 
         LinkedList<int> newPlugins;
-        fNewGroups.spliceInsert(newPlugins);
+        fNewGroups.spliceInsertInto(newPlugins);
 
         for (LinkedList<int>::Itenerator it = newPlugins.begin(); it.valid(); it.next())
         {

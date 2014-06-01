@@ -694,12 +694,12 @@ public:
     /*!
      * Initialize all RT buffers of the plugin.
      */
-    virtual void initBuffers();
+    virtual void initBuffers() const noexcept;
 
     /*!
      * Delete and clear all RT buffers.
      */
-    virtual void clearBuffers();
+    virtual void clearBuffers() noexcept;
 
     // -------------------------------------------------------------------
     // OSC stuff
