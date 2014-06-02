@@ -74,19 +74,19 @@ public:
                 {
                     try {
                         fDescriptor->cleanup(fHandle);
-                    } catch(...) {}
+                    } CARLA_SAFE_EXCEPTION("LADSPA cleanup");
                 }
 
                 if (fHandle2 != nullptr)
                 {
                     try {
                         fDescriptor->cleanup(fHandle2);
-                    } catch(...) {}
+                    } CARLA_SAFE_EXCEPTION("LADSPA cleanup #2");
                 }
             }
 
-            fHandle  = nullptr;
-            fHandle2 = nullptr;
+            fHandle     = nullptr;
+            fHandle2    = nullptr;
             fDescriptor = nullptr;
         }
 
@@ -207,7 +207,7 @@ public:
 
     float getParameterValue(const uint32_t parameterId) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr, 0.0f);
+        CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr,         0.0f);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
 
         return fParamBuffers[parameterId];
@@ -215,7 +215,7 @@ public:
 
     float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, 0.0f);
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,        0.0f);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
@@ -234,84 +234,64 @@ public:
 
     void getLabel(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor        != nullptr, nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->Label != nullptr, nullStrBuf(strBuf));
 
-        if (fDescriptor->Label != nullptr)
-        {
-            std::strncpy(strBuf, fDescriptor->Label, STR_MAX);
-            return;
-        }
-
-        CarlaPlugin::getLabel(strBuf);
+        std::strncpy(strBuf, fDescriptor->Label, STR_MAX);
     }
 
     void getMaker(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor        != nullptr, nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->Maker != nullptr, nullStrBuf(strBuf));
 
         if (fRdfDescriptor != nullptr && fRdfDescriptor->Creator != nullptr)
         {
             std::strncpy(strBuf, fRdfDescriptor->Creator, STR_MAX);
             return;
         }
-        if (fDescriptor->Maker != nullptr)
-        {
-            std::strncpy(strBuf, fDescriptor->Maker, STR_MAX);
-            return;
-        }
 
-        CarlaPlugin::getMaker(strBuf);
+        std::strncpy(strBuf, fDescriptor->Maker, STR_MAX);
     }
 
     void getCopyright(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor            != nullptr, nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->Copyright != nullptr, nullStrBuf(strBuf));
 
-        if (fDescriptor->Copyright != nullptr)
-        {
-            std::strncpy(strBuf, fDescriptor->Copyright, STR_MAX);
-            return;
-        }
-
-        CarlaPlugin::getCopyright(strBuf);
+        std::strncpy(strBuf, fDescriptor->Copyright, STR_MAX);
     }
 
     void getRealName(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor       != nullptr, nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->Name != nullptr, nullStrBuf(strBuf));
 
         if (fRdfDescriptor != nullptr && fRdfDescriptor->Title != nullptr)
         {
             std::strncpy(strBuf, fRdfDescriptor->Title, STR_MAX);
-        }
-        if (fDescriptor->Name != nullptr)
-        {
-            std::strncpy(strBuf, fDescriptor->Name, STR_MAX);
             return;
         }
 
-        CarlaPlugin::getRealName(strBuf);
+        std::strncpy(strBuf, fDescriptor->Name, STR_MAX);
     }
 
     void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,           nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
-        if (rindex < static_cast<int32_t>(fDescriptor->PortCount) && fDescriptor->PortNames[rindex] != nullptr)
-        {
-            std::strncpy(strBuf, fDescriptor->PortNames[rindex], STR_MAX);
-            return;
-        }
+        CARLA_SAFE_ASSERT_RETURN(rindex < static_cast<int32_t>(fDescriptor->PortCount), nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->PortNames[rindex] != nullptr,             nullStrBuf(strBuf));
 
-        CarlaPlugin::getParameterName(parameterId, strBuf);
+        std::strncpy(strBuf, fDescriptor->PortNames[rindex], STR_MAX);
     }
 
     void getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
@@ -319,19 +299,21 @@ public:
         {
             const LADSPA_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
 
-            if (LADSPA_PORT_HAS_LABEL(port->Hints) && port->Label != nullptr)
+            if (LADSPA_PORT_HAS_LABEL(port->Hints))
             {
+                CARLA_SAFE_ASSERT_RETURN(port->Label != nullptr, nullStrBuf(strBuf));
+
                 std::strncpy(strBuf, port->Label, STR_MAX);
                 return;
             }
         }
 
-        CarlaPlugin::getParameterSymbol(parameterId, strBuf);
+        nullStrBuf(strBuf);
     }
 
     void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
@@ -365,31 +347,29 @@ public:
             }
         }
 
-        CarlaPlugin::getParameterUnit(parameterId, strBuf);
+        nullStrBuf(strBuf);
     }
 
     void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,        nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
             const LADSPA_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
-            CARLA_SAFE_ASSERT_RETURN(scalePointId < port->ScalePointCount,);
+            CARLA_SAFE_ASSERT_RETURN(scalePointId < port->ScalePointCount, nullStrBuf(strBuf));
 
             const LADSPA_RDF_ScalePoint* const scalePoint(&port->ScalePoints[scalePointId]);
+            CARLA_SAFE_ASSERT_RETURN(scalePoint->Label != nullptr,         nullStrBuf(strBuf));
 
-            if (scalePoint->Label != nullptr)
-            {
-                std::strncpy(strBuf, scalePoint->Label, STR_MAX);
-                return;
-            }
+            std::strncpy(strBuf, scalePoint->Label, STR_MAX);
+            return;
         }
 
-        CarlaPlugin::getParameterScalePointLabel(parameterId, scalePointId, strBuf);
+        nullStrBuf(strBuf);
     }
 
     // -------------------------------------------------------------------
@@ -442,7 +422,7 @@ public:
         clearBuffers();
 
         const float sampleRate(static_cast<float>(pData->engine->getSampleRate()));
-        const uint32_t portCount(static_cast<uint32_t>(fDescriptor->PortCount));
+        const uint32_t portCount(getSafePortCount());
 
         uint32_t aIns, aOuts, params;
         aIns = aOuts = params = 0;
@@ -453,26 +433,19 @@ public:
         bool needsCtrlIn, needsCtrlOut;
         needsCtrlIn = needsCtrlOut = false;
 
-        if (portCount > 0)
+        for (uint32_t i=0; i < portCount; ++i)
         {
-            CARLA_ASSERT(fDescriptor->PortDescriptors != nullptr);
-            CARLA_ASSERT(fDescriptor->PortRangeHints != nullptr);
-            CARLA_ASSERT(fDescriptor->PortNames != nullptr);
+            const LADSPA_PortDescriptor portType(fDescriptor->PortDescriptors[i]);
 
-            for (uint32_t i=0; i < portCount; ++i)
+            if (LADSPA_IS_PORT_AUDIO(portType))
             {
-                const LADSPA_PortDescriptor portType = fDescriptor->PortDescriptors[i];
-
-                if (LADSPA_IS_PORT_AUDIO(portType))
-                {
-                    if (LADSPA_IS_PORT_INPUT(portType))
-                        aIns += 1;
-                    else if (LADSPA_IS_PORT_OUTPUT(portType))
-                        aOuts += 1;
-                }
-                else if (LADSPA_IS_PORT_CONTROL(portType))
-                    params += 1;
+                if (LADSPA_IS_PORT_INPUT(portType))
+                    aIns += 1;
+                else if (LADSPA_IS_PORT_OUTPUT(portType))
+                    aOuts += 1;
             }
+            else if (LADSPA_IS_PORT_CONTROL(portType))
+                params += 1;
         }
 
         if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && (aIns == 1 || aOuts == 1))
@@ -480,8 +453,8 @@ public:
             if (fHandle2 == nullptr)
             {
                 try {
-                    fHandle2 = fDescriptor->instantiate(fDescriptor, (ulong)sampleRate);
-                } catch(...) {}
+                    fHandle2 = fDescriptor->instantiate(fDescriptor, static_cast<ulong>(sampleRate));
+                } CARLA_SAFE_EXCEPTION("LADSPA instantiate #2");
             }
 
             if (fHandle2 != nullptr)
@@ -536,8 +509,6 @@ public:
             const LADSPA_PortRangeHint portRangeHints = fDescriptor->PortRangeHints[i];
             const bool hasPortRDF = (fRdfDescriptor != nullptr && i < fRdfDescriptor->PortCount);
 
-            CARLA_ASSERT(fDescriptor->PortNames[i] != nullptr);
-
             if (LADSPA_IS_PORT_AUDIO(portType))
             {
                 portName.clear();
@@ -548,7 +519,34 @@ public:
                     portName += ":";
                 }
 
-                portName += fDescriptor->PortNames[i];
+                if (fDescriptor->PortNames[i] != nullptr && fDescriptor->PortNames[i][0] != '\0')
+                {
+                    portName += fDescriptor->PortNames[i];
+                }
+                else
+                {
+                    if (LADSPA_IS_PORT_INPUT(portType))
+                    {
+                        if (aIns > 1)
+                        {
+                            portName += "audio-in_";
+                            portName += CarlaString(iAudioIn+1);
+                        }
+                        else
+                            portName += "audio-in";
+                    }
+                    else
+                    {
+                        if (aOuts > 1)
+                        {
+                            portName += "audio-out_";
+                            portName += CarlaString(iAudioOut+1);
+                        }
+                        else
+                            portName += "audio-out";
+                    }
+                }
+
                 portName.truncate(portNameSize);
 
                 if (LADSPA_IS_PORT_INPUT(portType))
@@ -586,6 +584,8 @@ public:
                 pData->param.data[j].index  = static_cast<int32_t>(j);
                 pData->param.data[j].rindex = static_cast<int32_t>(i);
 
+                const char* const paramName(fDescriptor->PortNames[i] != nullptr ? fDescriptor->PortNames[i] : "unknown");
+
                 float min, max, def, step, stepSmall, stepLarge;
 
                 // min value
@@ -602,12 +602,12 @@ public:
 
                 if (min > max)
                 {
-                    carla_stderr2("WARNING - Broken plugin parameter '%s': min > max", fDescriptor->PortNames[i]);
+                    carla_stderr2("WARNING - Broken plugin parameter '%s': min > max", paramName);
                     min = max - 0.1f;
                 }
                 else if (min == max)
                 {
-                    carla_stderr2("WARNING - Broken plugin parameter '%s': min == maxf", fDescriptor->PortNames[i]);
+                    carla_stderr2("WARNING - Broken plugin parameter '%s': min == maxf", paramName);
                     max = min + 0.1f;
                 }
 
@@ -663,7 +663,7 @@ public:
                 {
                     pData->param.data[j].type = PARAMETER_OUTPUT;
 
-                    if (std::strcmp(fDescriptor->PortNames[i], "latency") == 0 || std::strcmp(fDescriptor->PortNames[i], "_latency") == 0)
+                    if (std::strcmp(paramName, "latency") == 0 || std::strcmp(paramName, "_latency") == 0)
                     {
                         min = 0.0f;
                         max = sampleRate;
@@ -704,20 +704,32 @@ public:
                 // Start parameters in their default values
                 fParamBuffers[j] = def;
 
-                fDescriptor->connect_port(fHandle, i, &fParamBuffers[j]);
+                try {
+                    fDescriptor->connect_port(fHandle, i, &fParamBuffers[j]);
+                } CARLA_SAFE_EXCEPTION("LADSPA connect_port parameter");
 
                 if (fHandle2 != nullptr)
-                    fDescriptor->connect_port(fHandle2, i, &fParamBuffers[j]);
+                {
+                    try {
+                        fDescriptor->connect_port(fHandle2, i, &fParamBuffers[j]);
+                    } CARLA_SAFE_EXCEPTION("LADSPA connect_port parameter #2");
+                }
             }
             else
             {
                 // Not Audio or Control
                 carla_stderr2("ERROR - Got a broken Port (neither Audio or Control)");
 
-                fDescriptor->connect_port(fHandle, i, nullptr);
+                try {
+                    fDescriptor->connect_port(fHandle, i, nullptr);
+                } CARLA_SAFE_EXCEPTION("LADSPA connect_port null");
 
                 if (fHandle2 != nullptr)
-                    fDescriptor->connect_port(fHandle2, i, nullptr);
+                {
+                    try {
+                        fDescriptor->connect_port(fHandle2, i, nullptr);
+                    } CARLA_SAFE_EXCEPTION("LADSPA connect_port null #2");
+                }
             }
         }
 
@@ -794,7 +806,9 @@ public:
                 tmpIn[j][0] = 0.0f;
                 tmpIn[j][1] = 0.0f;
 
-                fDescriptor->connect_port(fHandle, pData->audioIn.ports[j].rindex, tmpIn[j]);
+                try {
+                    fDescriptor->connect_port(fHandle, pData->audioIn.ports[j].rindex, tmpIn[j]);
+                } CARLA_SAFE_EXCEPTION("LADSPA connect_port latency input");
             }
 
             for (uint32_t j=0; j < aOuts; ++j)
@@ -802,16 +816,28 @@ public:
                 tmpOut[j][0] = 0.0f;
                 tmpOut[j][1] = 0.0f;
 
-                fDescriptor->connect_port(fHandle, pData->audioOut.ports[j].rindex, tmpOut[j]);
+                try {
+                    fDescriptor->connect_port(fHandle, pData->audioOut.ports[j].rindex, tmpOut[j]);
+                } CARLA_SAFE_EXCEPTION("LADSPA connect_port latency output");
             }
 
             if (fDescriptor->activate != nullptr)
-                fDescriptor->activate(fHandle);
+            {
+                try {
+                    fDescriptor->activate(fHandle);
+                } CARLA_SAFE_EXCEPTION("LADSPA latency activate");
+            }
 
-            fDescriptor->run(fHandle, 2);
+            try {
+                fDescriptor->run(fHandle, 2);
+            } CARLA_SAFE_EXCEPTION("LADSPA latency run");
 
             if (fDescriptor->deactivate != nullptr)
-                fDescriptor->deactivate(fHandle);
+            {
+                try {
+                    fDescriptor->deactivate(fHandle);
+                } CARLA_SAFE_EXCEPTION("LADSPA latency deactivate");
+            }
 
             const int32_t latency(static_cast<int32_t>(fParamBuffers[fLatencyIndex]));
 
@@ -853,13 +879,13 @@ public:
         {
             try {
                 fDescriptor->activate(fHandle);
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("LADSPA activate");
 
             if (fHandle2 != nullptr)
             {
                 try {
                     fDescriptor->activate(fHandle2);
-                } catch(...) {}
+                } CARLA_SAFE_EXCEPTION("LADSPA activate #2");
             }
         }
     }
@@ -873,13 +899,13 @@ public:
         {
             try {
                 fDescriptor->deactivate(fHandle);
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("LADSPA deactivate");
 
             if (fHandle2 != nullptr)
             {
                 try {
                     fDescriptor->deactivate(fHandle2);
-                } catch(...) {}
+                } CARLA_SAFE_EXCEPTION("LADSPA deactivate #2");
             }
         }
     }
@@ -1163,10 +1189,16 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
 
-        fDescriptor->run(fHandle, frames);
+        try {
+            fDescriptor->run(fHandle, frames);
+        } CARLA_SAFE_EXCEPTION("LADSPA run");
 
         if (fHandle2 != nullptr)
-            fDescriptor->run(fHandle2, frames);
+        {
+            try {
+                fDescriptor->run(fHandle2, frames);
+            } CARLA_SAFE_EXCEPTION("LADSPA run #2");
+        }
 
 #ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
@@ -1276,13 +1308,19 @@ public:
             for (uint32_t i=0; i < pData->audioIn.count; ++i)
             {
                 CARLA_ASSERT(fAudioInBuffers[i] != nullptr);
-                fDescriptor->connect_port(fHandle, pData->audioIn.ports[i].rindex, fAudioInBuffers[i]);
+
+                try {
+                    fDescriptor->connect_port(fHandle, pData->audioIn.ports[i].rindex, fAudioInBuffers[i]);
+                } CARLA_SAFE_EXCEPTION("LADSPA connect_port audio input");
             }
 
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
                 CARLA_ASSERT(fAudioOutBuffers[i] != nullptr);
-                fDescriptor->connect_port(fHandle, pData->audioOut.ports[i].rindex, fAudioOutBuffers[i]);
+
+                try {
+                    fDescriptor->connect_port(fHandle, pData->audioOut.ports[i].rindex, fAudioOutBuffers[i]);
+                } CARLA_SAFE_EXCEPTION("LADSPA connect_port audio output");
             }
         }
         else
@@ -1293,8 +1331,13 @@ public:
                 CARLA_ASSERT(fAudioInBuffers[0] != nullptr);
                 CARLA_ASSERT(fAudioInBuffers[1] != nullptr);
 
-                fDescriptor->connect_port(fHandle,  pData->audioIn.ports[0].rindex, fAudioInBuffers[0]);
-                fDescriptor->connect_port(fHandle2, pData->audioIn.ports[1].rindex, fAudioInBuffers[1]);
+                try {
+                    fDescriptor->connect_port(fHandle, pData->audioIn.ports[0].rindex, fAudioInBuffers[0]);
+                } CARLA_SAFE_EXCEPTION("LADSPA connect_port audio input #1");
+
+                try {
+                    fDescriptor->connect_port(fHandle2, pData->audioIn.ports[1].rindex, fAudioInBuffers[1]);
+                } CARLA_SAFE_EXCEPTION("LADSPA connect_port audio input #2");
             }
 
             if (pData->audioOut.count > 0)
@@ -1303,8 +1346,13 @@ public:
                 CARLA_ASSERT(fAudioOutBuffers[0] != nullptr);
                 CARLA_ASSERT(fAudioOutBuffers[1] != nullptr);
 
-                fDescriptor->connect_port(fHandle,  pData->audioOut.ports[0].rindex, fAudioOutBuffers[0]);
-                fDescriptor->connect_port(fHandle2, pData->audioOut.ports[1].rindex, fAudioOutBuffers[1]);
+                try {
+                    fDescriptor->connect_port(fHandle, pData->audioOut.ports[0].rindex, fAudioOutBuffers[0]);
+                } CARLA_SAFE_EXCEPTION("LADSPA connect_port audio output #1");
+
+                try {
+                    fDescriptor->connect_port(fHandle2, pData->audioOut.ports[1].rindex, fAudioOutBuffers[1]);
+                } CARLA_SAFE_EXCEPTION("LADSPA connect_port audio output #2");
             }
         }
 
@@ -1426,9 +1474,35 @@ public:
         // get descriptor that matches label
 
         ulong i = 0;
-        while ((fDescriptor = descFn(i++)) != nullptr)
+
+        for (;;)
         {
-            if (fDescriptor->Label != nullptr && std::strcmp(fDescriptor->Label, label) == 0)
+            try {
+                fDescriptor = descFn(i++);
+            }
+            catch(...) {
+                carla_stderr2("Caught exception when trying to get LADSPA descriptor");
+                fDescriptor = nullptr;
+                break;
+            }
+
+            if (fDescriptor == nullptr)
+                break;
+
+            if (fDescriptor->Label == nullptr || fDescriptor->Label[0] == '\0')
+            {
+                carla_stderr2("WARNING - Got an invalid label, will not use this plugin");
+                fDescriptor = nullptr;
+                break;
+            }
+            if (fDescriptor->run == nullptr)
+            {
+                carla_stderr2("WARNING - Plugin has no run, cannot use it");
+                fDescriptor = nullptr;
+                break;
+            }
+
+            if (std::strcmp(fDescriptor->Label, label) == 0)
                 break;
         }
 
@@ -1470,8 +1544,8 @@ public:
         // initialize plugin
 
         try {
-            fHandle = fDescriptor->instantiate(fDescriptor, (ulong)pData->engine->getSampleRate());
-        } catch(...) {}
+            fHandle = fDescriptor->instantiate(fDescriptor, static_cast<ulong>(pData->engine->getSampleRate()));
+        } CARLA_SAFE_EXCEPTION("LADSPA instantiate");
 
         if (fHandle == nullptr)
         {
@@ -1530,6 +1604,18 @@ private:
     float** fAudioOutBuffers;
     float*  fParamBuffers;
     int32_t fLatencyIndex; // -1 if invalid
+
+    uint32_t getSafePortCount() const noexcept
+    {
+        if (fDescriptor->PortCount == 0)
+            return 0;
+
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->PortDescriptors != nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->PortRangeHints != nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->PortNames != nullptr, 0);
+
+        return static_cast<uint32_t>(fDescriptor->PortCount);
+    }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LadspaPlugin)
 };

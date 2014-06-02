@@ -52,6 +52,15 @@ const char* bool2str(const bool yesNo) noexcept
 }
 
 /*
+ * Set a string as empty/null.
+ */
+static inline
+void nullStrBuf(char* const strBuf) noexcept
+{
+    strBuf[0] = '\0';
+}
+
+/*
  * Dummy function.
  */
 static inline
