@@ -1327,7 +1327,8 @@ public:
             else if (fUi.type == UI::TYPE_EMBED && fUi.window != nullptr)
                 fUi.window->idle();
 
-            if (fExt.uiidle != nullptr && fExt.uiidle->idle(fUi.handle) != 0)
+            // note: UI might have been closed by ext-ui or window idle
+            if (fUi.handle != nullptr && fExt.uiidle != nullptr && fExt.uiidle->idle(fUi.handle) != 0)
             {
                 showCustomUI(false);
                 pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
@@ -4113,7 +4114,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fUi.type == UI::TYPE_EMBED,);
         CARLA_SAFE_ASSERT_RETURN(fUi.window != nullptr,);
-        carla_debug("Lv2Plugin::handleExternalUiClosed()");
+        carla_debug("Lv2Plugin::handlePluginUiClosed()");
 
         fUi.window->hide();
 
