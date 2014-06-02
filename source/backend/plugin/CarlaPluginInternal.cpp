@@ -476,8 +476,10 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       latencyBuffers(nullptr),
       name(nullptr),
       filename(nullptr),
+#ifndef BUILD_BRIDGE
       iconName(nullptr),
       identifier(nullptr),
+#endif
       osc(eng, plug) {}
 
 CarlaPlugin::ProtectedData::~ProtectedData() noexcept
@@ -520,6 +522,7 @@ CarlaPlugin::ProtectedData::~ProtectedData() noexcept
         filename = nullptr;
     }
 
+#ifndef BUILD_BRIDGE
     if (iconName != nullptr)
     {
         delete[] iconName;
@@ -531,6 +534,7 @@ CarlaPlugin::ProtectedData::~ProtectedData() noexcept
         delete[] identifier;
         identifier = nullptr;
     }
+#endif
 
     for (LinkedList<CustomData>::Itenerator it = custom.begin(); it.valid(); it.next())
     {
@@ -600,7 +604,9 @@ void CarlaPlugin::ProtectedData::clearBuffers() noexcept
     {
         if (latency != 0)
         {
+#ifndef BUILD_BRIDGE
             carla_safe_assert_int("latency != 0", __FILE__, __LINE__, static_cast<int>(latency));
+#endif
             latency = 0;
         }
     }
@@ -611,6 +617,7 @@ void CarlaPlugin::ProtectedData::clearBuffers() noexcept
     event.clear();
 }
 
+#ifndef BUILD_BRIDGE
 void CarlaPlugin::ProtectedData::recreateLatencyBuffers()
 {
     if (latencyBuffers != nullptr)
@@ -640,6 +647,7 @@ void CarlaPlugin::ProtectedData::recreateLatencyBuffers()
         }
     }
 }
+#endif
 
 // -----------------------------------------------------------------------
 // Post-poned events

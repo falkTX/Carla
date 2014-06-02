@@ -180,9 +180,9 @@ public:
     uint getOptionsAvailable() const noexcept override
     {
 #ifdef __USE_GNU
-        const bool isDssiVst(strcasestr(pData->filename, "dssi-vst"));
+        const bool isDssiVst(strcasestr(pData->filename, "dssi-vst") != nullptr);
 #else
-        const bool isDssiVst(std::strstr(pData->filename, "dssi-vst"));
+        const bool isDssiVst(std::strstr(pData->filename, "dssi-vst") != nullptr);
 #endif
 
         uint options = 0x0;
@@ -215,19 +215,16 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, 0.0f);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
-        CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId), 0.0f);
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
             const LADSPA_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
+            CARLA_SAFE_ASSERT_RETURN(scalePointId < port->ScalePointCount, 0.0f);
 
-            if (scalePointId < port->ScalePointCount)
-            {
-                const LADSPA_RDF_ScalePoint* const scalePoint(&port->ScalePoints[scalePointId]);
-                return scalePoint->Value;
-            }
+            const LADSPA_RDF_ScalePoint* const scalePoint(&port->ScalePoints[scalePointId]);
+            return scalePoint->Value;
         }
 
         return 0.0f;
@@ -238,9 +235,12 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
         if (fDescriptor->Label != nullptr)
+        {
             std::strncpy(strBuf, fDescriptor->Label, STR_MAX);
-        else
-            CarlaPlugin::getLabel(strBuf);
+            return;
+        }
+
+        CarlaPlugin::getLabel(strBuf);
     }
 
     void getMaker(char* const strBuf) const noexcept override
@@ -248,11 +248,17 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
         if (fRdfDescriptor != nullptr && fRdfDescriptor->Creator != nullptr)
+        {
             std::strncpy(strBuf, fRdfDescriptor->Creator, STR_MAX);
-        else if (fDescriptor->Maker != nullptr)
+            return;
+        }
+        if (fDescriptor->Maker != nullptr)
+        {
             std::strncpy(strBuf, fDescriptor->Maker, STR_MAX);
-        else
-            CarlaPlugin::getMaker(strBuf);
+            return;
+        }
+
+        CarlaPlugin::getMaker(strBuf);
     }
 
     void getCopyright(char* const strBuf) const noexcept override
@@ -260,9 +266,12 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
         if (fDescriptor->Copyright != nullptr)
+        {
             std::strncpy(strBuf, fDescriptor->Copyright, STR_MAX);
-        else
-            CarlaPlugin::getCopyright(strBuf);
+            return;
+        }
+
+        CarlaPlugin::getCopyright(strBuf);
     }
 
     void getRealName(char* const strBuf) const noexcept override
@@ -270,11 +279,16 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
         if (fRdfDescriptor != nullptr && fRdfDescriptor->Title != nullptr)
+        {
             std::strncpy(strBuf, fRdfDescriptor->Title, STR_MAX);
-        else if (fDescriptor->Name != nullptr)
+        }
+        if (fDescriptor->Name != nullptr)
+        {
             std::strncpy(strBuf, fDescriptor->Name, STR_MAX);
-        else
-            CarlaPlugin::getRealName(strBuf);
+            return;
+        }
+
+        CarlaPlugin::getRealName(strBuf);
     }
 
     void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
@@ -285,9 +299,12 @@ public:
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
         if (rindex < static_cast<int32_t>(fDescriptor->PortCount))
+        {
             std::strncpy(strBuf, fDescriptor->PortNames[rindex], STR_MAX);
-        else
-            CarlaPlugin::getParameterName(parameterId, strBuf);
+            return;
+        }
+
+        CarlaPlugin::getParameterName(parameterId, strBuf);
     }
 
     void getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept override
@@ -353,23 +370,20 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
-        CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId),);
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
             const LADSPA_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
+            CARLA_SAFE_ASSERT_RETURN(scalePointId < port->ScalePointCount,);
 
-            if (scalePointId < port->ScalePointCount)
+            const LADSPA_RDF_ScalePoint* const scalePoint(&port->ScalePoints[scalePointId]);
+
+            if (scalePoint->Label != nullptr)
             {
-                const LADSPA_RDF_ScalePoint* const scalePoint(&port->ScalePoints[scalePointId]);
-
-                if (scalePoint->Label != nullptr)
-                {
-                    std::strncpy(strBuf, scalePoint->Label, STR_MAX);
-                    return;
-                }
+                std::strncpy(strBuf, scalePoint->Label, STR_MAX);
+                return;
             }
         }
 
@@ -537,7 +551,7 @@ public:
 
                 if (LADSPA_IS_PORT_INPUT(portType))
                 {
-                    uint32_t j = iAudioIn++;
+                    const uint32_t j = iAudioIn++;
                     pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
                     pData->audioIn.ports[j].rindex = i;
 
@@ -550,7 +564,7 @@ public:
                 }
                 else if (LADSPA_IS_PORT_OUTPUT(portType))
                 {
-                    uint32_t j = iAudioOut++;
+                    const uint32_t j = iAudioOut++;
                     pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
                     pData->audioOut.ports[j].rindex = i;
 
@@ -566,13 +580,9 @@ public:
             }
             else if (LADSPA_IS_PORT_CONTROL(portType))
             {
-                uint32_t j = iCtrl++;
-                pData->param.data[j].hints  = 0x0;
+                const uint32_t j = iCtrl++;
                 pData->param.data[j].index  = static_cast<int32_t>(j);
                 pData->param.data[j].rindex = static_cast<int32_t>(i);
-                pData->param.data[j].midiCC = -1;
-                pData->param.data[j].midiChannel = 0;
-                pData->param.special[j] = PARAMETER_SPECIAL_NULL;
 
                 float min, max, def, step, stepSmall, stepLarge;
 
@@ -589,11 +599,13 @@ public:
                     max = 1.0f;
 
                 if (min > max)
-                    max = min;
-
-                if (max - min == 0.0f)
                 {
-                    carla_stderr2("WARNING - Broken plugin parameter '%s': max - min == 0.0f", fDescriptor->PortNames[i]);
+                    carla_stderr2("WARNING - Broken plugin parameter '%s': min > max", fDescriptor->PortNames[i]);
+                    min = max - 0.1f;
+                }
+                else if (min == max)
+                {
+                    carla_stderr2("WARNING - Broken plugin parameter '%s': min == maxf", fDescriptor->PortNames[i]);
                     max = min + 0.1f;
                 }
 
@@ -632,7 +644,7 @@ public:
                 }
                 else
                 {
-                    float range = max - min;
+                    const float range = max - min;
                     step = range/100.0f;
                     stepSmall = range/1000.0f;
                     stepLarge = range/10.0f;
@@ -668,7 +680,6 @@ public:
                 }
                 else
                 {
-                    pData->param.data[j].type = PARAMETER_UNKNOWN;
                     carla_stderr2("WARNING - Got a broken Port (Control, but not input or output)");
                 }
 
@@ -677,7 +688,7 @@ public:
                     pData->param.data[j].hints |= PARAMETER_IS_LOGARITHMIC;
 
                 // check for scalepoints, require at least 2 to make it useful
-                if (hasPortRDF && fRdfDescriptor->Ports[i].ScalePointCount > 1)
+                if (hasPortRDF && fRdfDescriptor->Ports[i].ScalePointCount >= 2)
                     pData->param.data[j].hints |= PARAMETER_USES_SCALEPOINTS;
 
                 pData->param.ranges[j].min = min;
@@ -750,6 +761,7 @@ public:
         if (LADSPA_IS_HARD_RT_CAPABLE(fDescriptor->Properties))
             pData->hints |= PLUGIN_IS_RTSAFE;
 
+#ifndef BUILD_BRIDGE
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
             pData->hints |= PLUGIN_CAN_DRYWET;
 
@@ -758,6 +770,7 @@ public:
 
         if (aOuts >= 2 && aOuts % 2 == 0)
             pData->hints |= PLUGIN_CAN_BALANCE;
+#endif
 
         // extra plugin hints
         pData->extraHints = 0x0;
@@ -766,12 +779,16 @@ public:
             pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
 
         // check latency
+#ifdef BUILD_BRIDGE
+        if (aIns > 0 && aOuts > 0)
+#else
         if (pData->hints & PLUGIN_CAN_DRYWET)
+#endif
         {
             for (uint32_t i=0; i < pData->param.count; ++i)
             {
                 if (pData->param.special[i] != PARAMETER_SPECIAL_LATENCY)
-                   continue;
+                    continue;
 
                 // we need to pre-run the plugin so it can update its latency control-port
 
@@ -802,13 +819,16 @@ public:
                 if (fDescriptor->deactivate != nullptr)
                     fDescriptor->deactivate(fHandle);
 
+                // TODO: check >= 0
                 const uint32_t latency = (uint32_t)fParamBuffers[i];
 
                 if (pData->latency != latency)
                 {
                     pData->latency = latency;
                     pData->client->setLatency(latency);
+#ifndef BUILD_BRIDGE
                     pData->recreateLatencyBuffers();
+#endif
                 }
 
                 break;
@@ -901,7 +921,7 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
-            bool isSampleAccurate  = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
+            const bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t numEvents  = pData->event.portIn->getEventCount();
             uint32_t timeOffset = 0;
@@ -1451,9 +1471,9 @@ public:
 
         {
 #ifdef __USE_GNU
-            const bool isDssiVst(strcasestr(pData->filename, "dssi-vst"));
+            const bool isDssiVst(strcasestr(pData->filename, "dssi-vst") != nullptr);
 #else
-            const bool isDssiVst(std::strstr(pData->filename, "dssi-vst"));
+            const bool isDssiVst(std::strstr(pData->filename, "dssi-vst") != nullptr);
 #endif
 
             // set default options

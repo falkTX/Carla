@@ -236,13 +236,17 @@ struct CarlaPlugin::ProtectedData {
 
     // latency
     uint32_t latency;
+#ifndef BUILD_BRIDGE
     float**  latencyBuffers;
+#endif
 
     // data 1
     const char* name;
     const char* filename;
+#ifndef BUILD_BRIDGE
     const char* iconName;
     const char* identifier; // used for save/restore settings per plugin
+#endif
 
     // data 2
     PluginAudioData audioIn;
@@ -321,7 +325,9 @@ struct CarlaPlugin::ProtectedData {
     // Buffer functions
 
     void clearBuffers() noexcept;
+#ifndef BUILD_BRIDGE
     void recreateLatencyBuffers();
+#endif
 
     // -------------------------------------------------------------------
     // Post-poned events
