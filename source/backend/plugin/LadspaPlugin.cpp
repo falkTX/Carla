@@ -286,6 +286,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(rindex < static_cast<int32_t>(fDescriptor->PortCount), nullStrBuf(strBuf));
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->PortNames[rindex] != nullptr,             nullStrBuf(strBuf));
 
+        if (getSeparatedParameterNameOrUnit(fDescriptor->PortNames[rindex], strBuf, true))
+            return;
+
         std::strncpy(strBuf, fDescriptor->PortNames[rindex], STR_MAX);
     }
 
@@ -346,6 +349,9 @@ public:
                 }
             }
         }
+
+        if (getSeparatedParameterNameOrUnit(fDescriptor->PortNames[rindex], strBuf, false))
+            return;
 
         nullStrBuf(strBuf);
     }
@@ -1615,6 +1621,43 @@ private:
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->PortNames != nullptr, 0);
 
         return static_cast<uint32_t>(fDescriptor->PortCount);
+    }
+
+    bool getSeparatedParameterNameOrUnit(const char* const paramName, char* const strBuf, const bool wantName) const noexcept
+    {
+        const char* const sepBracketStart = std::strstr(paramName, " [");
+
+        if (sepBracketStart == nullptr)
+            return false;
+
+        const char* const sepBracketEnd = std::strstr(sepBracketStart, "]");
+
+        if (sepBracketEnd == nullptr)
+            return false;
+
+        const size_t unitSize = static_cast<size_t>(sepBracketEnd-sepBracketStart-2);
+
+        if (unitSize > 4) // very unlikely to have such big unit
+            return false;
+
+        const size_t sepIndex(std::strlen(paramName) - unitSize - 3);
+
+        // just in case
+        if (sepIndex > STR_MAX)
+            return false;
+
+        if (wantName)
+        {
+            std::strncpy(strBuf, paramName, sepIndex);
+            strBuf[sepIndex] = '\0';
+        }
+        else
+        {
+            std::strncpy(strBuf, paramName+(sepIndex+2), unitSize);
+            strBuf[unitSize] = '\0';
+        }
+
+        return true;
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LadspaPlugin)
