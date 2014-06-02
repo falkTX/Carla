@@ -135,7 +135,7 @@ public:
                 if (std::strcmp(type, "WM_PROTOCOLS") == 0)
                 {
                     fIsVisible = false;
-                    CARLA_SAFE_ASSERT_BREAK(fCallback != nullptr);
+                    CARLA_SAFE_ASSERT_CONTINUE(fCallback != nullptr);
                     fCallback->handlePluginUiClosed();
                 }
                 break;
