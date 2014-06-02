@@ -853,9 +853,10 @@ public:
 
                 if (pData->latency != ulatency)
                 {
+                    carla_stdout("latency = %i", latency);
+
                     pData->latency = ulatency;
                     pData->client->setLatency(ulatency);
-                    carla_stdout("latency = %i", latency);
 #ifndef BUILD_BRIDGE
                     pData->recreateLatencyBuffers();
 #endif
@@ -894,6 +895,27 @@ public:
                 } CARLA_SAFE_EXCEPTION("LADSPA activate #2");
             }
         }
+
+        if (fLatencyIndex < 0)
+            return;
+
+        const int32_t latency(static_cast<int32_t>(fParamBuffers[fLatencyIndex]));
+        CARLA_SAFE_ASSERT_RETURN(latency >= 0,);
+
+        const uint32_t ulatency(static_cast<uint32_t>(latency));
+
+        if (pData->latency != ulatency)
+        {
+            carla_stdout("latency changed to %i", latency);
+
+            pData->latency = ulatency;
+            pData->client->setLatency(ulatency);
+#ifndef BUILD_BRIDGE
+            pData->recreateLatencyBuffers();
+#endif
+        }
+        else
+            carla_stdout("latency still the same %i", latency);
     }
 
     void deactivate() noexcept override
