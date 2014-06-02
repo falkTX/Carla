@@ -1647,22 +1647,31 @@ private:
 
     bool getSeparatedParameterNameOrUnit(const char* const paramName, char* const strBuf, const bool wantName) const noexcept
     {
-        const char* const sepBracketStart = std::strstr(paramName, " [");
+        if (_getSeparatedParameterNameOrUnitImpl(paramName, strBuf, wantName, true))
+            return true;
+        if (_getSeparatedParameterNameOrUnitImpl(paramName, strBuf, wantName, false))
+            return true;
+        return false;
+    }
+
+    bool _getSeparatedParameterNameOrUnitImpl(const char* const paramName, char* const strBuf, const bool wantName, const bool useBracket) const noexcept
+    {
+        const char* const sepBracketStart(std::strstr(paramName, useBracket ? " [" : " ("));
 
         if (sepBracketStart == nullptr)
             return false;
 
-        const char* const sepBracketEnd = std::strstr(sepBracketStart, "]");
+        const char* const sepBracketEnd(std::strstr(sepBracketStart, useBracket ? "]" : ")"));
 
         if (sepBracketEnd == nullptr)
             return false;
 
-        const size_t unitSize = static_cast<size_t>(sepBracketEnd-sepBracketStart-2);
+        const size_t unitSize(static_cast<size_t>(sepBracketEnd-sepBracketStart-2));
 
-        if (unitSize > 4) // very unlikely to have such big unit
+        if (unitSize > 7) // very unlikely to have such big unit
             return false;
 
-        const size_t sepIndex(std::strlen(paramName) - unitSize - 3);
+        const size_t sepIndex(std::strlen(paramName)-unitSize-3);
 
         // just in case
         if (sepIndex > STR_MAX)
