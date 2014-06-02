@@ -332,17 +332,23 @@ public:
     void getLabel(char* const strBuf) const noexcept override
     {
         if (fLabel != nullptr)
+        {
             std::strncpy(strBuf, fLabel, STR_MAX);
-        else
-            CarlaPlugin::getLabel(strBuf);
+            return;
+        }
+
+        CarlaPlugin::getLabel(strBuf);
     }
 
     void getMaker(char* const strBuf) const noexcept override
     {
         if (fMaker != nullptr)
+        {
             std::strncpy(strBuf, fMaker, STR_MAX);
-        else
-            CarlaPlugin::getMaker(strBuf);
+            return;
+        }
+
+        CarlaPlugin::getMaker(strBuf);
     }
 
     void getCopyright(char* const strBuf) const noexcept override
@@ -353,9 +359,12 @@ public:
     void getRealName(char* const strBuf) const noexcept override
     {
         if (fRealName != nullptr)
+        {
             std::strncpy(strBuf, fRealName, STR_MAX);
-        else
-            CarlaPlugin::getRealName(strBuf);
+            return;
+        }
+
+        CarlaPlugin::getRealName(strBuf);
     }
 
     // -------------------------------------------------------------------
@@ -377,7 +386,7 @@ public:
 
     void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept override
     {
-        if (channel < MAX_MIDI_CHANNELS)
+        if (channel >= 0 && channel < MAX_MIDI_CHANNELS)
             pData->midiprog.current = fCurMidiProgs[channel];
 
         CarlaPlugin::setCtrlChannel(channel, sendOsc, sendCallback);
@@ -1305,6 +1314,7 @@ public:
             pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
             pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
+#ifndef BUILD_BRIDGE
             // set identifier string
             CarlaString identifier(fFormat);
             identifier += "/";
@@ -1318,6 +1328,7 @@ public:
 
             // load settings
             pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
+#endif
         }
 
         return true;

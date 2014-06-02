@@ -38,7 +38,7 @@ CARLA_BACKEND_START_NAMESPACE
 class DssiPlugin : public CarlaPlugin
 {
 public:
-    DssiPlugin(CarlaEngine* const engine, const uint id)
+    DssiPlugin(CarlaEngine* const engine, const uint id) noexcept
         : CarlaPlugin(engine, id),
           fHandle(nullptr),
           fHandle2(nullptr),
@@ -55,7 +55,7 @@ public:
         pData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_DSSI_GUI);
     }
 
-    ~DssiPlugin() override
+    ~DssiPlugin() noexcept override
     {
         carla_debug("DssiPlugin::~DssiPlugin()");
 
@@ -87,9 +87,18 @@ public:
             if (fDescriptor->cleanup != nullptr)
             {
                 if (fHandle != nullptr)
-                    fDescriptor->cleanup(fHandle);
+                {
+                    try {
+                        fDescriptor->cleanup(fHandle);
+                    } catch(...) {}
+                }
+
                 if (fHandle2 != nullptr)
-                    fDescriptor->cleanup(fHandle2);
+                {
+                    try {
+                        fDescriptor->cleanup(fHandle2);
+                    } catch(...) {}
+                }
             }
 
             fHandle  = nullptr;
@@ -166,18 +175,16 @@ public:
     uint getOptionsAvailable() const noexcept override
     {
 #ifdef __USE_GNU
-        const bool isAmSynth(strcasestr(pData->filename, "amsynth"));
-        const bool isDssiVst(strcasestr(pData->filename, "dssi-vst"));
+        const bool isDssiVst(strcasestr(pData->filename, "dssi-vst") != nullptr);
 #else
-        const bool isAmSynth(std::strstr(pData->filename, "amsynth"));
-        const bool isDssiVst(std::strstr(pData->filename, "dssi-vst"));
+        const bool isDssiVst(std::strstr(pData->filename, "dssi-vst") != nullptr);
 #endif
 
         uint options = 0x0;
 
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-        if (! (isAmSynth || isDssiVst))
+        if (! isDssiVst)
         {
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
@@ -218,9 +225,12 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
         if (fDescriptor->Label != nullptr)
+        {
             std::strncpy(strBuf, fDescriptor->Label, STR_MAX);
-        else
-            CarlaPlugin::getLabel(strBuf);
+            return;
+        }
+
+        CarlaPlugin::getLabel(strBuf);
     }
 
     void getMaker(char* const strBuf) const noexcept override
@@ -228,9 +238,12 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
         if (fDescriptor->Maker != nullptr)
+        {
             std::strncpy(strBuf, fDescriptor->Maker, STR_MAX);
-        else
-            CarlaPlugin::getMaker(strBuf);
+            return;
+        }
+
+        CarlaPlugin::getMaker(strBuf);
     }
 
     void getCopyright(char* const strBuf) const noexcept override
@@ -238,9 +251,12 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
         if (fDescriptor->Copyright != nullptr)
+        {
             std::strncpy(strBuf, fDescriptor->Copyright, STR_MAX);
-        else
-            CarlaPlugin::getCopyright(strBuf);
+            return;
+        }
+
+        CarlaPlugin::getCopyright(strBuf);
     }
 
     void getRealName(char* const strBuf) const noexcept override
@@ -248,9 +264,12 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
         if (fDescriptor->Name != nullptr)
+        {
             std::strncpy(strBuf, fDescriptor->Name, STR_MAX);
-        else
-            CarlaPlugin::getRealName(strBuf);
+            return;
+        }
+
+        CarlaPlugin::getRealName(strBuf);
     }
 
     void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
@@ -260,10 +279,13 @@ public:
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
-        if (rindex < static_cast<int32_t>(fDescriptor->PortCount))
+        if (rindex < static_cast<int32_t>(fDescriptor->PortCount) && fDescriptor->PortNames[rindex] != nullptr)
+        {
             std::strncpy(strBuf, fDescriptor->PortNames[rindex], STR_MAX);
-        else
-            CarlaPlugin::getParameterName(parameterId, strBuf);
+            return;
+        }
+
+        CarlaPlugin::getParameterName(parameterId, strBuf);
     }
 
     // -------------------------------------------------------------------
@@ -541,7 +563,7 @@ public:
 
                 if (LADSPA_IS_PORT_INPUT(portType))
                 {
-                    uint32_t j = iAudioIn++;
+                    const uint32_t j = iAudioIn++;
                     pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
                     pData->audioIn.ports[j].rindex = i;
 
@@ -554,7 +576,7 @@ public:
                 }
                 else if (LADSPA_IS_PORT_OUTPUT(portType))
                 {
-                    uint32_t j = iAudioOut++;
+                    const uint32_t j = iAudioOut++;
                     pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
                     pData->audioOut.ports[j].rindex = i;
 
@@ -570,13 +592,9 @@ public:
             }
             else if (LADSPA_IS_PORT_CONTROL(portType))
             {
-                uint32_t j = iCtrl++;
-                pData->param.data[j].hints  = 0x0;
+                const uint32_t j = iCtrl++;
                 pData->param.data[j].index  = static_cast<int32_t>(j);
                 pData->param.data[j].rindex = static_cast<int32_t>(i);
-                pData->param.data[j].midiCC = -1;
-                pData->param.data[j].midiChannel = 0;
-                pData->param.special[j] = PARAMETER_SPECIAL_NULL;
 
                 float min, max, def, step, stepSmall, stepLarge;
 
@@ -823,7 +841,9 @@ public:
                 {
                     pData->latency = latency;
                     pData->client->setLatency(latency);
+#ifndef BUILD_BRIDGE
                     pData->recreateLatencyBuffers();
+#endif
                 }
 
                 break;
@@ -1023,11 +1043,13 @@ public:
                 }
             }
 
+#ifndef BUILD_BRIDGE
             if (pData->latency > 0)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
                     FLOAT_CLEAR(pData->latencyBuffers[i], pData->latency);
             }
+#endif
 
             pData->needsReset = false;
         }
@@ -1924,11 +1946,9 @@ public:
 
         {
 #ifdef __USE_GNU
-            const bool isAmSynth(strcasestr(pData->filename, "amsynth"));
-            const bool isDssiVst(strcasestr(pData->filename, "dssi-vst"));
+            const bool isDssiVst(strcasestr(pData->filename, "dssi-vst") != nullptr);
 #else
-            const bool isAmSynth(std::strstr(pData->filename, "amsynth"));
-            const bool isDssiVst(std::strstr(pData->filename, "dssi-vst"));
+            const bool isDssiVst(std::strstr(pData->filename, "dssi-vst") != nullptr);
 #endif
 
             // set default options
@@ -1936,7 +1956,7 @@ public:
 
             pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-            if (isAmSynth || isDssiVst)
+            if (isDssiVst)
                 pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
             if (pData->engine->getOptions().forceStereo)
@@ -1956,6 +1976,7 @@ public:
                     carla_stderr("WARNING: Plugin can ONLY use run_multiple_synths!");
             }
 
+#ifndef BUILD_BRIDGE
             // set identifier string
             CarlaString identifier("DSSI/");
 
@@ -1972,8 +1993,9 @@ public:
             pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
 
             // ignore settings, we need this anyway
-            if (isAmSynth || isDssiVst)
+            if (isDssiVst)
                 pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+#endif
         }
 
         return true;

@@ -333,11 +333,12 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_info != nullptr, 0.0f);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, 0.0f);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
-        CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId), 0.0f);
 
         // FIXME - try
         if (const NativeParameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
         {
+            CARLA_SAFE_ASSERT_RETURN(scalePointId < param->scalePointCount, 0.0f);
+
             const NativeParameterScalePoint* scalePoint(&param->scalePoints[scalePointId]);
             return scalePoint->value;
         }
@@ -351,9 +352,12 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
         if (fDescriptor->label != nullptr)
+        {
             std::strncpy(strBuf, fDescriptor->label, STR_MAX);
-        else
-            CarlaPlugin::getLabel(strBuf);
+            return;
+        }
+
+        CarlaPlugin::getLabel(strBuf);
     }
 
     void getMaker(char* const strBuf) const noexcept override
@@ -361,9 +365,12 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
         if (fDescriptor->maker != nullptr)
+        {
             std::strncpy(strBuf, fDescriptor->maker, STR_MAX);
-        else
-            CarlaPlugin::getMaker(strBuf);
+            return;
+        }
+
+        CarlaPlugin::getMaker(strBuf);
     }
 
     void getCopyright(char* const strBuf) const noexcept override
@@ -371,9 +378,12 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
         if (fDescriptor->copyright != nullptr)
+        {
             std::strncpy(strBuf, fDescriptor->copyright, STR_MAX);
-        else
-            CarlaPlugin::getCopyright(strBuf);
+            return;
+        }
+
+        CarlaPlugin::getCopyright(strBuf);
     }
 
     void getRealName(char* const strBuf) const noexcept override
@@ -381,9 +391,12 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
         if (fDescriptor->name != nullptr)
+        {
             std::strncpy(strBuf, fDescriptor->name, STR_MAX);
-        else
-            CarlaPlugin::getRealName(strBuf);
+            return;
+        }
+
+        CarlaPlugin::getRealName(strBuf);
     }
 
     void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
@@ -401,6 +414,7 @@ public:
                 std::strncpy(strBuf, param->name, STR_MAX);
                 return;
             }
+
             carla_safe_assert("param->name != nullptr", __FILE__, __LINE__);
             return CarlaPlugin::getParameterName(parameterId, strBuf);
         }
@@ -443,6 +457,7 @@ public:
                 std::strncpy(strBuf, param->unit, STR_MAX);
                 return;
             }
+
             return CarlaPlugin::getParameterUnit(parameterId, strBuf);
         }
 
@@ -456,11 +471,12 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_info != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
-        CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId),);
 
         // FIXME - try
         if (const NativeParameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
         {
+            CARLA_SAFE_ASSERT_RETURN(scalePointId < param->scalePointCount,);
+
             const NativeParameterScalePoint* scalePoint(&param->scalePoints[scalePointId]);
 
             if (scalePoint->label != nullptr)
@@ -468,6 +484,7 @@ public:
                 std::strncpy(strBuf, scalePoint->label, STR_MAX);
                 return;
             }
+
             carla_safe_assert("scalePoint->label != nullptr", __FILE__, __LINE__);
             return CarlaPlugin::getParameterScalePointLabel(parameterId, scalePointId, strBuf);
         }
@@ -532,7 +549,7 @@ public:
 
     void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept override
     {
-        if (channel < MAX_MIDI_CHANNELS && pData->midiprog.count > 0)
+        if (channel >= 0 && channel < MAX_MIDI_CHANNELS && pData->midiprog.count > 0)
             pData->midiprog.current = fCurMidiProgs[channel];
 
         CarlaPlugin::setCtrlChannel(channel, sendOsc, sendCallback);
@@ -694,8 +711,10 @@ public:
             return;
         }
 
+#ifndef BUILD_BRIDGE
         if ((fDescriptor->hints & ::PLUGIN_USES_PARENT_ID) == 0)
             pData->tryTransient();
+#endif
 
         if (fDescriptor->ui_set_custom_data != nullptr)
         {
@@ -949,12 +968,8 @@ public:
             CARLA_SAFE_ASSERT_CONTINUE(paramInfo != nullptr);
 
             pData->param.data[j].type   = PARAMETER_UNKNOWN;
-            pData->param.data[j].hints  = 0x0;
             pData->param.data[j].index  = static_cast<int32_t>(j);
             pData->param.data[j].rindex = static_cast<int32_t>(j);
-            pData->param.data[j].midiCC = -1;
-            pData->param.data[j].midiChannel = 0;
-            pData->param.special[j] = PARAMETER_SPECIAL_NULL;
 
             float min, max, def, step, stepSmall, stepLarge;
 
@@ -2341,6 +2356,7 @@ public:
             if (fDescriptor->supports & ::PLUGIN_SUPPORTS_ALL_SOUND_OFF)
                 pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
+#ifndef BUILD_BRIDGE
             // set identifier string
             CarlaString identifier("Native/");
             identifier += label;
@@ -2352,6 +2368,7 @@ public:
             // ignore settings, we need this anyway
             if (getMidiInCount() > 0 || (fDescriptor->hints & ::PLUGIN_NEEDS_FIXED_BUFFERS) != 0)
                 pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+#endif
         }
 
         return true;

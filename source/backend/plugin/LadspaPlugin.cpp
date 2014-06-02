@@ -298,7 +298,7 @@ public:
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
-        if (rindex < static_cast<int32_t>(fDescriptor->PortCount))
+        if (rindex < static_cast<int32_t>(fDescriptor->PortCount) && fDescriptor->PortNames[rindex] != nullptr)
         {
             std::strncpy(strBuf, fDescriptor->PortNames[rindex], STR_MAX);
             return;
@@ -904,11 +904,13 @@ public:
 
         if (pData->needsReset)
         {
+#ifndef BUILD_BRIDGE
             if (pData->latency > 0)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
                     FLOAT_CLEAR(pData->latencyBuffers[i], pData->latency);
             }
+#endif
 
             pData->needsReset = false;
         }
@@ -1485,6 +1487,7 @@ public:
             if (pData->engine->getOptions().forceStereo)
                 pData->options |= PLUGIN_OPTION_FORCE_STEREO;
 
+#ifndef BUILD_BRIDGE
             // set identifier string
             CarlaString identifier("LADSPA/");
             identifier += CarlaString(getUniqueId());
@@ -1498,6 +1501,7 @@ public:
             // ignore settings, we need this anyway
             if (isDssiVst)
                 pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+#endif
         }
 
         return true;

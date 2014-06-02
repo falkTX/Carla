@@ -931,7 +931,9 @@ void CarlaPlugin::setOption(const uint option, const bool yesNo)
     else
         pData->options &= ~option;
 
+#ifndef BUILD_BRIDGE
     pData->saveSetting(option, yesNo);
+#endif
 }
 
 void CarlaPlugin::setEnabled(const bool yesNo) noexcept

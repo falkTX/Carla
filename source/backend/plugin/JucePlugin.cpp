@@ -411,11 +411,8 @@ public:
         for (uint32_t j=0; j < params; ++j)
         {
             pData->param.data[j].type   = PARAMETER_INPUT;
-            pData->param.data[j].hints  = 0x0;
             pData->param.data[j].index  = static_cast<int32_t>(j);
             pData->param.data[j].rindex = static_cast<int32_t>(j);
-            pData->param.data[j].midiCC = -1;
-            pData->param.data[j].midiChannel = 0;
 
             float min, max, def, step, stepSmall, stepLarge;
 
@@ -1122,6 +1119,7 @@ public:
                 pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
             }
 
+#ifndef BUILD_BRIDGE
             // set identifier string
             String juceId(fDesc.createIdentifierString());
 
@@ -1134,6 +1132,7 @@ public:
 
             // ignore settings, we need this anyway
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+#endif
         }
 
         return true;

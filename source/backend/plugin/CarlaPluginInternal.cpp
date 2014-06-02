@@ -473,11 +473,13 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       extraHints(0x0),
       transientTryCounter(0),
       latency(0),
+#ifndef BUILD_BRIDGE
       latencyBuffers(nullptr),
+#endif
       name(nullptr),
       filename(nullptr),
-#ifndef BUILD_BRIDGE
       iconName(nullptr),
+#ifndef BUILD_BRIDGE
       identifier(nullptr),
 #endif
       osc(eng, plug) {}
@@ -522,13 +524,13 @@ CarlaPlugin::ProtectedData::~ProtectedData() noexcept
         filename = nullptr;
     }
 
-#ifndef BUILD_BRIDGE
     if (iconName != nullptr)
     {
         delete[] iconName;
         iconName = nullptr;
     }
 
+#ifndef BUILD_BRIDGE
     if (identifier != nullptr)
     {
         delete[] identifier;
@@ -584,6 +586,7 @@ CarlaPlugin::ProtectedData::~ProtectedData() noexcept
 
 void CarlaPlugin::ProtectedData::clearBuffers() noexcept
 {
+#ifndef BUILD_BRIDGE
     if (latencyBuffers != nullptr)
     {
         CARLA_SAFE_ASSERT(audioIn.count > 0);
@@ -604,12 +607,13 @@ void CarlaPlugin::ProtectedData::clearBuffers() noexcept
     {
         if (latency != 0)
         {
-#ifndef BUILD_BRIDGE
             carla_safe_assert_int("latency != 0", __FILE__, __LINE__, static_cast<int>(latency));
-#endif
             latency = 0;
         }
     }
+#else
+    latency = 0;
+#endif
 
     audioIn.clear();
     audioOut.clear();
@@ -714,6 +718,7 @@ void* CarlaPlugin::ProtectedData::uiLibSymbol(const char* const symbol) const no
     return lib_symbol(uiLib, symbol);
 }
 
+#ifndef BUILD_BRIDGE
 // -----------------------------------------------------------------------
 // Settings functions
 
@@ -805,6 +810,7 @@ void CarlaPlugin::ProtectedData::tryTransient() noexcept
     if (engine->getOptions().frontendWinId != 0)
         transientTryCounter = 1;
 }
+#endif
 
 // -----------------------------------------------------------------------
 

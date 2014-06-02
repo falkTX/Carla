@@ -620,11 +620,8 @@ public:
         for (uint32_t j=0; j < params; ++j)
         {
             pData->param.data[j].type   = PARAMETER_INPUT;
-            pData->param.data[j].hints  = 0x0;
             pData->param.data[j].index  = static_cast<int32_t>(j);
             pData->param.data[j].rindex = static_cast<int32_t>(j);
-            pData->param.data[j].midiCC = -1;
-            pData->param.data[j].midiChannel = 0;
 
             float min, max, def, step, stepSmall, stepLarge;
 
@@ -853,7 +850,9 @@ public:
 #endif
 
             pData->client->setLatency(pData->latency);
+#ifndef BUILD_BRIDGE
             pData->recreateLatencyBuffers();
+#endif
         }
 
         // special plugin fixes
@@ -1056,11 +1055,13 @@ public:
                 }
             }
 
+#ifndef BUILD_BRIDGE
             if (pData->latency > 0)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
                     FLOAT_CLEAR(pData->latencyBuffers[i], pData->latency);
             }
+#endif
 
             pData->needsReset = false;
         }
@@ -2256,6 +2257,7 @@ public:
                 pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
             }
 
+#ifndef BUILD_BRIDGE
             // set identifier string
             CarlaString identifier("VST/");
 
@@ -2274,6 +2276,7 @@ public:
             // ignore settings, we need this anyway
             if (getMidiInCount() > 0)
                 pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+#endif
         }
 
         return true;

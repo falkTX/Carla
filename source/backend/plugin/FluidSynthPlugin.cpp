@@ -41,7 +41,7 @@ CARLA_BACKEND_START_NAMESPACE
 class FluidSynthPlugin : public CarlaPlugin
 {
 public:
-    FluidSynthPlugin(CarlaEngine* const engine, const unsigned int id, const bool use16Outs)
+    FluidSynthPlugin(CarlaEngine* const engine, const uint id, const bool use16Outs)
         : CarlaPlugin(engine, id),
           fUses16Outs(use16Outs),
           fSettings(nullptr),
@@ -165,9 +165,9 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int getOptionsAvailable() const noexcept override
+    uint getOptionsAvailable() const noexcept override
     {
-        unsigned int options = 0x0;
+        uint options = 0x0;
 
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
@@ -224,9 +224,12 @@ public:
     void getLabel(char* const strBuf) const noexcept override
     {
         if (fLabel != nullptr)
+        {
             std::strncpy(strBuf, fLabel, STR_MAX);
-        else
-            CarlaPlugin::getLabel(strBuf);
+            return;
+        }
+
+        CarlaPlugin::getLabel(strBuf);
     }
 
     void getMaker(char* const strBuf) const noexcept override
@@ -252,50 +255,49 @@ public:
         {
         case FluidSynthReverbOnOff:
             std::strncpy(strBuf, "Reverb On/Off", STR_MAX);
-            break;
+            return;
         case FluidSynthReverbRoomSize:
             std::strncpy(strBuf, "Reverb Room Size", STR_MAX);
-            break;
+            return;
         case FluidSynthReverbDamp:
             std::strncpy(strBuf, "Reverb Damp", STR_MAX);
-            break;
+            return;
         case FluidSynthReverbLevel:
             std::strncpy(strBuf, "Reverb Level", STR_MAX);
-            break;
+            return;
         case FluidSynthReverbWidth:
             std::strncpy(strBuf, "Reverb Width", STR_MAX);
-            break;
+            return;
         case FluidSynthChorusOnOff:
             std::strncpy(strBuf, "Chorus On/Off", STR_MAX);
-            break;
+            return;
         case FluidSynthChorusNr:
             std::strncpy(strBuf, "Chorus Voice Count", STR_MAX);
-            break;
+            return;
         case FluidSynthChorusLevel:
             std::strncpy(strBuf, "Chorus Level", STR_MAX);
-            break;
+            return;
         case FluidSynthChorusSpeedHz:
             std::strncpy(strBuf, "Chorus Speed", STR_MAX);
-            break;
+            return;
         case FluidSynthChorusDepthMs:
             std::strncpy(strBuf, "Chorus Depth", STR_MAX);
-            break;
+            return;
         case FluidSynthChorusType:
             std::strncpy(strBuf, "Chorus Type", STR_MAX);
-            break;
+            return;
         case FluidSynthPolyphony:
             std::strncpy(strBuf, "Polyphony", STR_MAX);
-            break;
+            return;
         case FluidSynthInterpolation:
             std::strncpy(strBuf, "Interpolation", STR_MAX);
-            break;
+            return;
         case FluidSynthVoiceCount:
             std::strncpy(strBuf, "Voice Count", STR_MAX);
-            break;
-        default:
-            CarlaPlugin::getParameterName(parameterId, strBuf);
-            break;
+            return;
         }
+
+        CarlaPlugin::getParameterName(parameterId, strBuf);
     }
 
     void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
@@ -306,14 +308,13 @@ public:
         {
         case FluidSynthChorusSpeedHz:
             std::strncpy(strBuf, "Hz", STR_MAX);
-            break;
+            return;
         case FluidSynthChorusDepthMs:
             std::strncpy(strBuf, "ms", STR_MAX);
-            break;
-        default:
-            CarlaPlugin::getParameterUnit(parameterId, strBuf);
-            break;
+            return;
         }
+
+        CarlaPlugin::getParameterUnit(parameterId, strBuf);
     }
 
     void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept override
@@ -373,7 +374,7 @@ public:
 
     void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept override
     {
-        if (channel < MAX_MIDI_CHANNELS)
+        if (channel >= 0 && channel < MAX_MIDI_CHANNELS)
             pData->midiprog.current = fCurMidiProgs[channel];
 
         CarlaPlugin::setCtrlChannel(channel, sendOsc, sendCallback);
@@ -687,7 +688,6 @@ public:
             pData->param.ranges[j].step = 1.0f;
             pData->param.ranges[j].stepSmall = 1.0f;
             pData->param.ranges[j].stepLarge = 1.0f;
-            fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
             j = FluidSynthReverbRoomSize;
@@ -703,7 +703,6 @@ public:
             pData->param.ranges[j].step = 0.01f;
             pData->param.ranges[j].stepSmall = 0.0001f;
             pData->param.ranges[j].stepLarge = 0.1f;
-            fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
             j = FluidSynthReverbDamp;
@@ -719,7 +718,6 @@ public:
             pData->param.ranges[j].step = 0.01f;
             pData->param.ranges[j].stepSmall = 0.0001f;
             pData->param.ranges[j].stepLarge = 0.1f;
-            fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
             j = FluidSynthReverbLevel;
@@ -735,7 +733,6 @@ public:
             pData->param.ranges[j].step = 0.01f;
             pData->param.ranges[j].stepSmall = 0.0001f;
             pData->param.ranges[j].stepLarge = 0.1f;
-            fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
             j = FluidSynthReverbWidth;
@@ -751,7 +748,6 @@ public:
             pData->param.ranges[j].step = 0.01f;
             pData->param.ranges[j].stepSmall = 0.0001f;
             pData->param.ranges[j].stepLarge = 0.1f;
-            fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
             j = FluidSynthChorusOnOff;
@@ -767,7 +763,6 @@ public:
             pData->param.ranges[j].step = 1.0f;
             pData->param.ranges[j].stepSmall = 1.0f;
             pData->param.ranges[j].stepLarge = 1.0f;
-            fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
             j = FluidSynthChorusNr;
@@ -783,7 +778,6 @@ public:
             pData->param.ranges[j].step = 1.0f;
             pData->param.ranges[j].stepSmall = 1.0f;
             pData->param.ranges[j].stepLarge = 10.0f;
-            fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
             j = FluidSynthChorusLevel;
@@ -799,7 +793,6 @@ public:
             pData->param.ranges[j].step = 0.01f;
             pData->param.ranges[j].stepSmall = 0.0001f;
             pData->param.ranges[j].stepLarge = 0.1f;
-            fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
             j = FluidSynthChorusSpeedHz;
@@ -815,7 +808,6 @@ public:
             pData->param.ranges[j].step = 0.01f;
             pData->param.ranges[j].stepSmall = 0.0001f;
             pData->param.ranges[j].stepLarge = 0.1f;
-            fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
             j = FluidSynthChorusDepthMs;
@@ -831,7 +823,6 @@ public:
             pData->param.ranges[j].step = 0.01f;
             pData->param.ranges[j].stepSmall = 0.0001f;
             pData->param.ranges[j].stepLarge = 0.1f;
-            fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
             j = FluidSynthChorusType;
@@ -847,7 +838,6 @@ public:
             pData->param.ranges[j].step = 1.0f;
             pData->param.ranges[j].stepSmall = 1.0f;
             pData->param.ranges[j].stepLarge = 1.0f;
-            fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
             j = FluidSynthPolyphony;
@@ -863,7 +853,6 @@ public:
             pData->param.ranges[j].step = 1.0f;
             pData->param.ranges[j].stepSmall = 1.0f;
             pData->param.ranges[j].stepLarge = 10.0f;
-            fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
             j = FluidSynthInterpolation;
@@ -879,7 +868,6 @@ public:
             pData->param.ranges[j].step = 1.0f;
             pData->param.ranges[j].stepSmall = 1.0f;
             pData->param.ranges[j].stepLarge = 1.0f;
-            fParamBuffers[j] = pData->param.ranges[j].def;
 
             // ----------------------
             j = FluidSynthVoiceCount;
@@ -895,7 +883,9 @@ public:
             pData->param.ranges[j].step = 1.0f;
             pData->param.ranges[j].stepSmall = 1.0f;
             pData->param.ranges[j].stepLarge = 1.0f;
-            fParamBuffers[j] = pData->param.ranges[j].def;
+
+            for (j=0; j<FluidSynthParametersMax; ++j)
+                fParamBuffers[j] = pData->param.ranges[j].def;
         }
 
         // ---------------------------------------
@@ -1647,6 +1637,7 @@ public:
             pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
             pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
+#ifndef BUILD_BRIDGE
             // set identifier string
             CarlaString identifier("SF2/");
 
@@ -1659,6 +1650,7 @@ public:
 
             // load settings
             pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
+#endif
         }
 
         return true;

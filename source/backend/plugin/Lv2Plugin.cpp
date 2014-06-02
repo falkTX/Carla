@@ -731,19 +731,16 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, 0.0f);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
-        CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId), 0.0f);
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
             const LV2_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
+            CARLA_SAFE_ASSERT_RETURN(scalePointId < port->ScalePointCount, 0.0f);
 
-            if (scalePointId < port->ScalePointCount)
-            {
-                const LV2_RDF_PortScalePoint* const portScalePoint(&port->ScalePoints[scalePointId]);
-                return portScalePoint->Value;
-            }
+            const LV2_RDF_PortScalePoint* const portScalePoint(&port->ScalePoints[scalePointId]);
+            return portScalePoint->Value;
         }
 
         return 0.0f;
@@ -917,23 +914,20 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
-        CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId),);
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
             const LV2_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
+            CARLA_SAFE_ASSERT_RETURN(scalePointId < port->ScalePointCount,);
 
-            if (scalePointId < port->ScalePointCount)
+            const LV2_RDF_PortScalePoint* const portScalePoint(&port->ScalePoints[scalePointId]);
+
+            if (portScalePoint->Label != nullptr)
             {
-                const LV2_RDF_PortScalePoint* const portScalePoint(&port->ScalePoints[scalePointId]);
-
-                if (portScalePoint->Label != nullptr)
-                {
-                    std::strncpy(strBuf, portScalePoint->Label, STR_MAX);
-                    return;
-                }
+                std::strncpy(strBuf, portScalePoint->Label, STR_MAX);
+                return;
             }
         }
 
@@ -1249,14 +1243,18 @@ public:
                 else if (fExt.uishow != nullptr)
                 {
                     fExt.uishow->show(fUi.handle);
+# ifndef BUILD_BRIDGE
                     pData->tryTransient();
+# endif
                 }
             }
             else
 #endif
             {
                 LV2_EXTERNAL_UI_SHOW((LV2_External_UI_Widget*)fUi.widget);
+#ifndef BUILD_BRIDGE
                 pData->tryTransient();
+#endif
             }
         }
         else
@@ -1574,7 +1572,7 @@ public:
             {
                 if (LV2_IS_PORT_INPUT(portTypes))
                 {
-                    uint32_t j = iAudioIn++;
+                    const uint32_t j = iAudioIn++;
                     pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
                     pData->audioIn.ports[j].rindex = i;
 
@@ -1587,7 +1585,7 @@ public:
                 }
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
                 {
-                    uint32_t j = iAudioOut++;
+                    const uint32_t j = iAudioOut++;
                     pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
                     pData->audioOut.ports[j].rindex = i;
 
@@ -1605,13 +1603,13 @@ public:
             {
                 if (LV2_IS_PORT_INPUT(portTypes))
                 {
-                    uint32_t j = iCvIn++;
+                    const uint32_t j = iCvIn++;
                     fCvIn.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true);
                     fCvIn.ports[j].rindex = i;
                 }
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
                 {
-                    uint32_t j = iCvOut++;
+                    const uint32_t j = iCvOut++;
                     fCvOut.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, false);
                     fCvOut.ports[j].rindex = i;
                 }
@@ -1622,7 +1620,7 @@ public:
             {
                 if (LV2_IS_PORT_INPUT(portTypes))
                 {
-                    uint32_t j = iEvIn++;
+                    const uint32_t j = iEvIn++;
 
                     fDescriptor->connect_port(fHandle, i, &fEventsIn.data[j].atom->atoms);
 
@@ -1660,7 +1658,7 @@ public:
                 }
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
                 {
-                    uint32_t j = iEvOut++;
+                    const uint32_t j = iEvOut++;
 
                     fDescriptor->connect_port(fHandle, i, &fEventsOut.data[j].atom->atoms);
 
@@ -1703,7 +1701,7 @@ public:
             {
                 if (LV2_IS_PORT_INPUT(portTypes))
                 {
-                    uint32_t j = iEvIn++;
+                    const uint32_t j = iEvIn++;
 
                     fDescriptor->connect_port(fHandle, i, fEventsIn.data[j].event);
 
@@ -1741,7 +1739,7 @@ public:
                 }
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
                 {
-                    uint32_t j = iEvOut++;
+                    const uint32_t j = iEvOut++;
 
                     fDescriptor->connect_port(fHandle, i, fEventsOut.data[j].event);
 
@@ -1784,7 +1782,7 @@ public:
             {
                 if (LV2_IS_PORT_INPUT(portTypes))
                 {
-                    uint32_t j = iEvIn++;
+                    const uint32_t j = iEvIn++;
 
                     fDescriptor->connect_port(fHandle, i, &fEventsIn.data[j].midi);
 
@@ -1813,7 +1811,7 @@ public:
                 }
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
                 {
-                    uint32_t j = iEvOut++;
+                    const uint32_t j = iEvOut++;
 
                     fDescriptor->connect_port(fHandle, i, &fEventsOut.data[j].midi);
 
@@ -1849,13 +1847,9 @@ public:
                 const LV2_Property portDesignation(fRdfDescriptor->Ports[i].Designation);
                 const LV2_RDF_PortPoints portPoints(fRdfDescriptor->Ports[i].Points);
 
-                uint32_t j = iCtrl++;
-                pData->param.data[j].hints  = 0x0;
+                const uint32_t j = iCtrl++;
                 pData->param.data[j].index  = static_cast<int32_t>(j);
                 pData->param.data[j].rindex = static_cast<int32_t>(i);
-                pData->param.data[j].midiCC = -1;
-                pData->param.data[j].midiChannel = 0;
-                pData->param.special[j] = PARAMETER_SPECIAL_NULL;
 
                 float min, max, def, step, stepSmall, stepLarge;
 
@@ -2455,11 +2449,13 @@ public:
                 }
             }
 
+#ifndef BUILD_BRIDGE
             if (pData->latency > 0)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
                     FLOAT_CLEAR(pData->latencyBuffers[i], pData->latency);
             }
+#endif
 
             pData->needsReset = false;
         }
@@ -4637,6 +4633,7 @@ public:
                 pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
             }
 
+#ifndef BUILD_BRIDGE
             // set identifier string
             CarlaString identifier("LV2/");
             identifier += uri;
@@ -4648,6 +4645,7 @@ public:
             // ignore settings, we need this anyway
             if (getMidiInCount() > 0 || needsFixedBuffer())
                 pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+#endif
         }
 
         // ---------------------------------------------------------------

@@ -243,8 +243,8 @@ struct CarlaPlugin::ProtectedData {
     // data 1
     const char* name;
     const char* filename;
-#ifndef BUILD_BRIDGE
     const char* iconName;
+#ifndef BUILD_BRIDGE
     const char* identifier; // used for save/restore settings per plugin
 #endif
 
@@ -348,6 +348,7 @@ struct CarlaPlugin::ProtectedData {
     bool  uiLibClose() noexcept;
     void* uiLibSymbol(const char* const symbol) const noexcept;
 
+#ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------
     // Settings functions
 
@@ -358,6 +359,7 @@ struct CarlaPlugin::ProtectedData {
     // Misc
 
     void tryTransient() noexcept;
+#endif
 
     // -------------------------------------------------------------------
 

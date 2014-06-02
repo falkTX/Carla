@@ -700,11 +700,13 @@ public:
 
         if (pData->needsReset)
         {
+#ifndef BUILD_BRIDGE
             if (pData->latency > 0)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
                     FLOAT_CLEAR(pData->latencyBuffers[i], pData->latency);
             }
+#endif
 
             pData->needsReset = false;
         }
@@ -1033,6 +1035,7 @@ public:
                 pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
             }
 
+#ifndef BUILD_BRIDGE
             // set identifier string
             CarlaString identifier("ReWire/");
             identifier += fLabel;
@@ -1044,6 +1047,7 @@ public:
             // ignore settings, we need this anyway
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
             pData->options |= PLUGIN_OPTION_USE_CHUNKS;
+#endif
         }
 
         return true;
