@@ -34,7 +34,8 @@ public:
     X11PluginUi(CloseCallback* const cb, const uintptr_t parentId) noexcept
         : CarlaPluginUi(cb),
           fDisplay(nullptr),
-          fWindow(0)
+          fWindow(0),
+          fIsVisible(false)
      {
         fDisplay = XOpenDisplay(nullptr);
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);
@@ -44,12 +45,15 @@ public:
         XSetWindowAttributes attr;
         carla_zeroStruct<XSetWindowAttributes>(attr);
 
+        attr.border_pixel = 0;
+        attr.event_mask   = KeyPressMask|KeyReleaseMask;
+
         fWindow = XCreateWindow(fDisplay, RootWindow(fDisplay, screen),
                                 0, 0, 300, 300, 0,
                                 DefaultDepth(fDisplay, screen),
                                 InputOutput,
                                 DefaultVisual(fDisplay, screen),
-                                CWBorderPixel | CWColormap | CWEventMask, &attr);
+                                CWBorderPixel|CWEventMask, &attr);
 
         CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
 
@@ -66,6 +70,14 @@ public:
 
     ~X11PluginUi() override
     {
+        CARLA_SAFE_ASSERT(! fIsVisible);
+
+        if (fIsVisible)
+        {
+            XUnmapWindow(fDisplay, fWindow);
+            fIsVisible = false;
+        }
+
         if (fWindow != 0)
         {
             XDestroyWindow(fDisplay, fWindow);
@@ -84,6 +96,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
 
+        fIsVisible = true;
         XMapRaised(fDisplay, fWindow);
         XFlush(fDisplay);
     }
@@ -93,6 +106,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
 
+        fIsVisible = false;
         XUnmapWindow(fDisplay, fWindow);
         XFlush(fDisplay);
     }
@@ -103,18 +117,38 @@ public:
         {
             XNextEvent(fDisplay, &event);
 
+            if (! fIsVisible)
+                continue;
+
+            char* type = nullptr;
+
             switch (event.type)
             {
             case ClientMessage:
-                if (std::strcmp(XGetAtomName(fDisplay, event.xclient.message_type), "WM_PROTOCOLS") == 0)
+                type = XGetAtomName(fDisplay, event.xclient.message_type);
+                CARLA_SAFE_ASSERT_CONTINUE(type != nullptr);
+
+                if (std::strcmp(type, "WM_PROTOCOLS") == 0)
                 {
+                    fIsVisible = false;
                     CARLA_SAFE_ASSERT_BREAK(fCallback != nullptr);
                     fCallback->handlePluginUiClosed();
                 }
                 break;
-            default:
+
+            case KeyRelease:
+                //carla_stdout("got key release %i", event.xkey.keycode);
+                if (event.xkey.keycode == 9) // Escape
+                {
+                    fIsVisible = false;
+                    CARLA_SAFE_ASSERT_CONTINUE(fCallback != nullptr);
+                    fCallback->handlePluginUiClosed();
+                }
                 break;
             }
+
+            if (type != nullptr)
+                XFree(type);
         }
     }
 
@@ -175,6 +209,7 @@ public:
 private:
     Display* fDisplay;
     Window   fWindow;
+    bool     fIsVisible;
 };
 #endif
 
