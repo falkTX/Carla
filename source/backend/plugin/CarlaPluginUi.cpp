@@ -28,6 +28,8 @@
 // -----------------------------------------------------
 // X11
 
+static const int X11Key_Escape = 9;
+
 class X11PluginUi : public CarlaPluginUi
 {
 public:
@@ -56,6 +58,8 @@ public:
                                 CWBorderPixel|CWEventMask, &attr);
 
         CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+
+        XGrabKey(fDisplay, X11Key_Escape, AnyModifier, fWindow, 1, GrabModeAsync, GrabModeAsync);
 
         Atom wmDelete = XInternAtom(fDisplay, "WM_DELETE_WINDOW", True);
         XSetWMProtocols(fDisplay, fWindow, &wmDelete, 1);
@@ -137,8 +141,7 @@ public:
                 break;
 
             case KeyRelease:
-                //carla_stdout("got key release %i", event.xkey.keycode);
-                if (event.xkey.keycode == 9) // Escape
+                if (event.xkey.keycode == X11Key_Escape)
                 {
                     fIsVisible = false;
                     CARLA_SAFE_ASSERT_CONTINUE(fCallback != nullptr);
