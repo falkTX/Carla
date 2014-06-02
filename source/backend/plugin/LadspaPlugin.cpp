@@ -350,6 +350,8 @@ public:
             }
         }
 
+        CARLA_SAFE_ASSERT_RETURN(rindex < static_cast<int32_t>(fDescriptor->PortCount), nullStrBuf(strBuf));
+
         if (getSeparatedParameterNameOrUnit(fDescriptor->PortNames[rindex], strBuf, false))
             return;
 
@@ -911,7 +913,9 @@ public:
             pData->latency = ulatency;
             pData->client->setLatency(ulatency);
 #ifndef BUILD_BRIDGE
-            pData->recreateLatencyBuffers();
+            try {
+                pData->recreateLatencyBuffers(); // FIXME
+            } CARLA_SAFE_EXCEPTION("LADSPA recreateLatencyBuffers()");
 #endif
         }
         else
@@ -1633,6 +1637,8 @@ private:
     float*  fParamBuffers;
     int32_t fLatencyIndex; // -1 if invalid
 
+    // -------------------------------------------------------------------
+
     uint32_t getSafePortCount() const noexcept
     {
         if (fDescriptor->PortCount == 0)
@@ -1690,6 +1696,8 @@ private:
 
         return true;
     }
+
+    // -------------------------------------------------------------------
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LadspaPlugin)
 };
