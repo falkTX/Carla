@@ -44,7 +44,8 @@ public:
           fRdfDescriptor(nullptr),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
-          fParamBuffers(nullptr)
+          fParamBuffers(nullptr),
+          fLatencyIndex(-1)
     {
         carla_debug("LadspaPlugin::LadspaPlugin(%p, %i)", engine, id);
     }
@@ -189,7 +190,8 @@ public:
 
         if (! isDssiVst)
         {
-            options |= PLUGIN_OPTION_FIXED_BUFFERS;
+            if (fLatencyIndex == -1)
+                options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
             if (pData->engine->getProccessMode() != ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
             {
@@ -669,6 +671,7 @@ public:
                         step = 1.0f;
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
+                        fLatencyIndex = static_cast<int32_t>(j);
                         pData->param.special[j] = PARAMETER_SPECIAL_LATENCY;
                     }
                     else
@@ -779,60 +782,55 @@ public:
             pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
 
         // check latency
-#ifdef BUILD_BRIDGE
-        if (aIns > 0 && aOuts > 0)
-#else
-        if (pData->hints & PLUGIN_CAN_DRYWET)
-#endif
+        if (fLatencyIndex >= 0)
         {
-            for (uint32_t i=0; i < pData->param.count; ++i)
+            // we need to pre-run the plugin so it can update its latency control-port
+
+            float tmpIn[aIns][2];
+            float tmpOut[aOuts][2];
+
+            for (uint32_t j=0; j < aIns; ++j)
             {
-                if (pData->param.special[i] != PARAMETER_SPECIAL_LATENCY)
-                    continue;
+                tmpIn[j][0] = 0.0f;
+                tmpIn[j][1] = 0.0f;
 
-                // we need to pre-run the plugin so it can update its latency control-port
+                fDescriptor->connect_port(fHandle, pData->audioIn.ports[j].rindex, tmpIn[j]);
+            }
 
-                float tmpIn[aIns][2];
-                float tmpOut[aOuts][2];
+            for (uint32_t j=0; j < aOuts; ++j)
+            {
+                tmpOut[j][0] = 0.0f;
+                tmpOut[j][1] = 0.0f;
 
-                for (uint32_t j=0; j < aIns; ++j)
+                fDescriptor->connect_port(fHandle, pData->audioOut.ports[j].rindex, tmpOut[j]);
+            }
+
+            if (fDescriptor->activate != nullptr)
+                fDescriptor->activate(fHandle);
+
+            fDescriptor->run(fHandle, 2);
+
+            if (fDescriptor->deactivate != nullptr)
+                fDescriptor->deactivate(fHandle);
+
+            const int32_t latency(static_cast<int32_t>(fParamBuffers[fLatencyIndex]));
+
+            if (latency >= 0)
+            {
+                const uint32_t ulatency(static_cast<uint32_t>(latency));
+
+                if (pData->latency != ulatency)
                 {
-                    tmpIn[j][0] = 0.0f;
-                    tmpIn[j][1] = 0.0f;
-
-                    fDescriptor->connect_port(fHandle, pData->audioIn.ports[j].rindex, tmpIn[j]);
-                }
-
-                for (uint32_t j=0; j < aOuts; ++j)
-                {
-                    tmpOut[j][0] = 0.0f;
-                    tmpOut[j][1] = 0.0f;
-
-                    fDescriptor->connect_port(fHandle, pData->audioOut.ports[j].rindex, tmpOut[j]);
-                }
-
-                if (fDescriptor->activate != nullptr)
-                    fDescriptor->activate(fHandle);
-
-                fDescriptor->run(fHandle, 2);
-
-                if (fDescriptor->deactivate != nullptr)
-                    fDescriptor->deactivate(fHandle);
-
-                // TODO: check >= 0
-                const uint32_t latency = (uint32_t)fParamBuffers[i];
-
-                if (pData->latency != latency)
-                {
-                    pData->latency = latency;
-                    pData->client->setLatency(latency);
+                    pData->latency = ulatency;
+                    pData->client->setLatency(ulatency);
+                    carla_stdout("latency = %i", latency);
 #ifndef BUILD_BRIDGE
                     pData->recreateLatencyBuffers();
 #endif
                 }
-
-                break;
             }
+            else
+                carla_safe_assert_int("latency >= 0", __FILE__, __LINE__, latency);
         }
 
         bufferSizeChanged(pData->engine->getBufferSize());
@@ -1073,7 +1071,27 @@ public:
 
         } // End of Plugin processing (no events)
 
-        CARLA_PROCESS_CONTINUE_CHECK;
+        // --------------------------------------------------------------------------------------------------------
+        // Latency, save values for next callback
+
+        if (pData->latency > 0)
+        {
+            if (pData->latency <= frames)
+            {
+                for (uint32_t i=0; i < pData->audioIn.count; ++i)
+                    FLOAT_COPY(pData->latencyBuffers[i], inBuffer[i]+(frames-pData->latency), pData->latency);
+            }
+            else
+            {
+                for (uint32_t i=0, j, k; i < pData->audioIn.count; ++i)
+                {
+                    for (k=0; k < pData->latency-frames; ++k)
+                        pData->latencyBuffers[i][k] = pData->latencyBuffers[i][k+frames];
+                    for (j=0; k < pData->latency; ++j, ++k)
+                        pData->latencyBuffers[i][k] = inBuffer[i][j];
+                }
+            }
+        }
 
         // --------------------------------------------------------------------------------------------------------
         // Control Output
@@ -1157,6 +1175,7 @@ public:
         {
             const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && pData->postProc.dryWet != 1.0f;
             const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && (pData->postProc.balanceLeft != -1.0f || pData->postProc.balanceRight != 1.0f);
+            const bool isMono    = (pData->audioIn.count == 1);
 
             bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];
@@ -1168,13 +1187,13 @@ public:
                 {
                     for (uint32_t k=0; k < frames; ++k)
                     {
-                        // TODO
-                        //if (k < pData->latency && pData->latency < frames)
-                        //    bufValue = (pData->audioIn.count == 1) ? pData->latencyBuffers[0][k] : pData->latencyBuffers[i][k];
-                        //else
-                        //    bufValue = (pData->audioIn.count == 1) ? inBuffer[0][k-m_latency] : inBuffer[i][k-m_latency];
+                        if (k < pData->latency)
+                            bufValue = pData->latencyBuffers[isMono ? 0 : i][k];
+                        else if (pData->latency < frames)
+                            bufValue = fAudioInBuffers[isMono ? 0 : i][k-pData->latency];
+                        else
+                            bufValue = fAudioInBuffers[isMono ? 0 : i][k];
 
-                        bufValue = fAudioInBuffers[(pData->audioIn.count == 1) ? 0 : i][k];
                         fAudioOutBuffers[i][k] = (fAudioOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
                     }
                 }
@@ -1217,14 +1236,6 @@ public:
                 }
             }
 
-#if 0
-            // Latency, save values for next callback, TODO
-            if (pData->latency > 0 && pData->latency < frames)
-            {
-                for (i=0; i < pData->audioIn.count; ++i)
-                    FLOAT_COPY(pData->latencyBuffers[i], inBuffer[i] + (frames - pData->latency), pData->latency);
-            }
-#endif
         } // End of Post-processing
 
 #else // BUILD_BRIDGE
@@ -1481,7 +1492,7 @@ public:
             // set default options
             pData->options = 0x0;
 
-            if (isDssiVst)
+            if (fLatencyIndex >= 0 || isDssiVst)
                 pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
             if (pData->engine->getOptions().forceStereo)
@@ -1499,7 +1510,7 @@ public:
             pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
 
             // ignore settings, we need this anyway
-            if (isDssiVst)
+            if (fLatencyIndex >= 0 || isDssiVst)
                 pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 #endif
         }
@@ -1518,6 +1529,7 @@ private:
     float** fAudioInBuffers;
     float** fAudioOutBuffers;
     float*  fParamBuffers;
+    int32_t fLatencyIndex; // -1 if invalid
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LadspaPlugin)
 };
