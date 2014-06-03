@@ -112,7 +112,7 @@ CFLAGS     += -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes
 CXXFLAGS   += -Wnon-virtual-dtor -Woverloaded-virtual
 ifeq ($(LINUX),true)
 CFLAGS     += -isystem /opt/kxstudio/include
-CXXFLAGS   += -isystem /opt/kxstudio/include -isystem /usr/include/qt5
+CXXFLAGS   += -isystem /opt/kxstudio/include -isystem /usr/include/qt4
 endif
 ifeq ($(MACOS),true)
 CFLAGS     += -isystem /opt/kxstudio/include
