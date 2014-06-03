@@ -125,17 +125,21 @@ endif
 endif
 
 # --------------------------------------------------------------
-# Check for qt, set default version (prefer qt4)
+# Check for qt, set default version
 
 HAVE_QT4 = $(shell pkg-config --exists QtCore QtXml && echo true)
 HAVE_QT5 = $(shell pkg-config --exists Qt5Core Qt5Xml && echo true)
 
-ifeq ($(HAVE_QT5),true)
+ifeq ($(MACOS_OR_WIN32),true)
 DEFAULT_QT=5
+ifneq ($(HAVE_QT5),true)
+$(error Qt5 missing, cannot continue)
 endif
-
-ifeq ($(HAVE_QT4),true)
+else
 DEFAULT_QT=4
+ifneq ($(HAVE_QT4),true)
+$(error Qt4 missing, cannot continue)
+endif
 endif
 
 # --------------------------------------------------------------
@@ -143,12 +147,6 @@ endif
 
 ifneq ($(shell pkg-config --exists liblo && echo true),true)
 $(error liblo missing, cannot continue)
-endif
-
-ifneq ($(HAVE_QT4),true)
-ifneq ($(HAVE_QT5),true)
-$(error Qt missing, cannot continue)
-endif
 endif
 
 # --------------------------------------------------------------
