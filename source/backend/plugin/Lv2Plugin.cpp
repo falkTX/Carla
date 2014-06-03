@@ -3380,7 +3380,6 @@ public:
                         else
                             bufValue = fAudioInBuffers[isMono ? 0 : i][k];
 
-                        bufValue = fAudioInBuffers[(pData->audioIn.count == 1) ? 0 : i][k];
                         fAudioOutBuffers[i][k] = (fAudioOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
                     }
                 }
