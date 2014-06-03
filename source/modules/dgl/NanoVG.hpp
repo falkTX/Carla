@@ -38,19 +38,9 @@ class NanoImage
 {
 public:
    /**
-      Constructor for null image.
-    */
-    NanoImage() noexcept;
-
-   /**
       Destructor.
     */
     ~NanoImage();
-
-   /**
-      Check if this is a valid image.
-    */
-    bool isValid() const noexcept;
 
    /**
       Get size.
@@ -62,25 +52,19 @@ public:
     */
     void updateImage(const uchar* data);
 
-   /**
-      Operator =.
-      Takes the image data from @a img, invalidating it.
-    */
-    NanoImage operator=(NanoImage img) noexcept;
-
 protected:
    /**
       Constructors are protected.
       NanoImages must be created within a NanoVG or NanoWidget class.
     */
-    NanoImage(const char* filename);
-    NanoImage(uchar* data, int ndata);
-    NanoImage(int w, int h, const uchar* data);
+    NanoImage(NVGcontext* context, int imageId) noexcept;
 
 private:
     NVGcontext* fContext;
     int fImageId;
     friend class NanoVG;
+
+    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NanoImage)
 };
 
 // -----------------------------------------------------------------------
@@ -534,17 +518,17 @@ public:
    /**
       Creates image by loading it from the disk from specified file name.
     */
-    NanoImage createImage(const char* filename);
+    NanoImage* createImage(const char* filename);
 
    /**
       Creates image by loading it from the specified chunk of memory.
     */
-    NanoImage createImageMem(uchar* data, int ndata);
+    NanoImage* createImageMem(uchar* data, int ndata);
 
    /**
       Creates image from specified image data.
     */
-    NanoImage createImageRGBA(int w, int h, const uchar* data);
+    NanoImage* createImageRGBA(int w, int h, const uchar* data);
 
    /* --------------------------------------------------------------------
     * Paints */
@@ -573,12 +557,12 @@ public:
     Paint radialGradient(float cx, float cy, float inr, float outr, const Color& icol, const Color& ocol);
 
    /**
-      Creates and returns an image patter. Parameters (ox,oy) specify the left-top location of the image pattern,
+      Creates and returns an image pattern. Parameters (ox,oy) specify the left-top location of the image pattern,
       (ex,ey) the size of one image, angle rotation around the top-left corner, image is handle to the image to render,
       and repeat tells if the image should be repeated across x or y.
       The gradient is transformed by the current transform when it is passed to fillPaint() or strokePaint().
     */
-    Paint imagePattern(float ox, float oy, float ex, float ey, float angle, const NanoImage& image, PatternRepeat repeat);
+    Paint imagePattern(float ox, float oy, float ex, float ey, float angle, const NanoImage* image, PatternRepeat repeat);
 
    /* --------------------------------------------------------------------
     * Scissoring */

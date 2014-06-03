@@ -49,7 +49,7 @@ NanoVG::Color::Color(const NVGcolor& c) noexcept
 
 NanoVG::Color::operator NVGcolor() const noexcept
 {
-    NVGcolor nc = { r, g, b, a };
+    NVGcolor nc = {{{ r, g, b, a }}};
     return nc;
 }
 
@@ -84,43 +84,14 @@ NanoVG::Paint::operator NVGpaint() const noexcept
 // -----------------------------------------------------------------------
 // NanoImage
 
-static NVGcontext* sLastContext = nullptr;
-
-NanoImage::NanoImage() noexcept
-    : fContext(nullptr),
-      fImageId(0) {}
-
-#if 0
-NanoImage::NanoImage(NanoImage& img) noexcept
-    : fContext(img.fContext),
-      fImageId(img.fImageId)
-{
-    img.fContext = nullptr;
-    img.fImageId = 0;
-}
-#endif
-
-NanoImage::NanoImage(const char* filename)
-    : fContext(sLastContext),
-      fImageId((fContext != nullptr) ? nvgCreateImage(fContext, filename) : 0) {}
-
-NanoImage::NanoImage(uchar* data, int ndata)
-    : fContext(sLastContext),
-      fImageId((fContext != nullptr) ? nvgCreateImageMem(fContext, data, ndata) : 0) {}
-
-NanoImage::NanoImage(int w, int h, const uchar* data)
-    : fContext(sLastContext),
-      fImageId((fContext != nullptr) ? nvgCreateImageRGBA(fContext, w, h, data) : 0) {}
+NanoImage::NanoImage(NVGcontext* context, int imageId) noexcept
+    : fContext(context),
+      fImageId(imageId) {}
 
 NanoImage::~NanoImage()
 {
     if (fContext != nullptr && fImageId != 0)
         nvgDeleteImage(fContext, fImageId);
-}
-
-bool NanoImage::isValid() const noexcept
-{
-    return (fContext != nullptr && fImageId != 0);
 }
 
 Size<int> NanoImage::getSize() const
@@ -137,20 +108,6 @@ void NanoImage::updateImage(const uchar* data)
 {
     if (fContext != nullptr && fImageId != 0)
         nvgUpdateImage(fContext, fImageId, data);
-}
-
-NanoImage NanoImage::operator=(NanoImage img) noexcept
-{
-    if (fContext != nullptr && fImageId != 0)
-        nvgDeleteImage(fContext, fImageId);
-
-    fContext = img.fContext;
-    fImageId = img.fImageId;
-
-    img.fContext = nullptr;
-    img.fImageId = 0;
-
-    return *this;
 }
 
 // -----------------------------------------------------------------------
@@ -401,22 +358,25 @@ float NanoVG::radToDeg(float rad)
 // -----------------------------------------------------------------------
 // Images
 
-NanoImage NanoVG::createImage(const char* filename)
+NanoImage* NanoVG::createImage(const char* filename)
 {
-    sLastContext = fContext;
-    return NanoImage(filename);
+    if (const int imageId = nvgCreateImage(fContext, filename))
+        return new NanoImage(fContext, imageId);
+    return nullptr;
 }
 
-NanoImage NanoVG::createImageMem(uchar* data, int ndata)
+NanoImage* NanoVG::createImageMem(uchar* data, int ndata)
 {
-    sLastContext = fContext;
-    return NanoImage(data, ndata);
+    if (const int imageId = nvgCreateImageMem(fContext, data, ndata))
+        return new NanoImage(fContext, imageId);
+    return nullptr;
 }
 
-NanoImage NanoVG::createImageRGBA(int w, int h, const uchar* data)
+NanoImage* NanoVG::createImageRGBA(int w, int h, const uchar* data)
 {
-    sLastContext = fContext;
-    return NanoImage(w, h, data);
+    if (const int imageId = nvgCreateImageRGBA(fContext, w, h, data))
+        return new NanoImage(fContext, imageId);
+    return nullptr;
 }
 
 // -----------------------------------------------------------------------
@@ -437,9 +397,10 @@ NanoVG::Paint NanoVG::radialGradient(float cx, float cy, float inr, float outr, 
     return nvgRadialGradient(fContext, cx, cy, inr, outr, icol, ocol);
 }
 
-NanoVG::Paint NanoVG::imagePattern(float ox, float oy, float ex, float ey, float angle, const NanoImage& image, NanoVG::PatternRepeat repeat)
+NanoVG::Paint NanoVG::imagePattern(float ox, float oy, float ex, float ey, float angle, const NanoImage* image, NanoVG::PatternRepeat repeat)
 {
-    return nvgImagePattern(fContext, ox, oy, ex, ey, angle, image.fImageId, repeat);
+    DISTRHO_SAFE_ASSERT_RETURN(image != nullptr, Paint());
+    return nvgImagePattern(fContext, ox, oy, ex, ey, angle, image->fImageId, repeat);
 }
 
 // -----------------------------------------------------------------------
