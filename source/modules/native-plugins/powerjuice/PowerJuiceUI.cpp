@@ -31,6 +31,8 @@ PowerJuiceUI::PowerJuiceUI()
       fAboutWindow(this),
       dsp((PowerJuicePlugin*)d_getPluginInstancePointer())
 {
+    DISTRHO_SAFE_ASSERT(dsp != nullptr);
+
     // background
     fImgBackground = Image(PowerJuiceArtwork::backgroundData, PowerJuiceArtwork::backgroundWidth, PowerJuiceArtwork::backgroundHeight, GL_BGR);
 
@@ -96,6 +98,9 @@ PowerJuiceUI::PowerJuiceUI()
     fButtonAbout = new ImageButton(this, aboutImageNormal, aboutImageHover, aboutImageHover);
     fButtonAbout->setAbsolutePos(502, 17);
     fButtonAbout->setCallback(this);
+
+    // set default values
+    d_programChanged(0);
 }
 
 // -----------------------------------------------------------------------

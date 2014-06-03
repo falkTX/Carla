@@ -6,7 +6,7 @@
 namespace PowerJuiceArtwork
 {
     extern const char* aboutData;
-    const unsigned int aboutDataSize = 240000;
+    const unsigned int aboutDataSize = 180000;
     const unsigned int aboutWidth    = 300;
     const unsigned int aboutHeight   = 200;
 

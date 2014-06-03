@@ -245,6 +245,9 @@ GrooveJuiceUI::GrooveJuiceUI()
 	tabPosX = tabOX;
 	tabTargetPosX = tabPosX;
 	tabMarginX = 103-tabOX;
+
+    // set default values
+    d_programChanged(0);
 }
 
 // -----------------------------------------------------------------------

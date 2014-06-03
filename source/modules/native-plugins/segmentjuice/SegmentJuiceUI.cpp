@@ -302,6 +302,9 @@ SegmentJuiceUI::SegmentJuiceUI()
     fButtonAbout = new ImageButton(this, aboutImageNormal, aboutImageHover, aboutImageHover);
     fButtonAbout->setAbsolutePos(599, 17);
     fButtonAbout->setCallback(this);
+
+    // set default values
+    d_programChanged(0);
 }
 
 void SegmentJuiceUI::updateSynth() {
