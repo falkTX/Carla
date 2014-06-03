@@ -27,6 +27,7 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaOscUtils.hpp"
+#include "CarlaThread.hpp"
 
 #include <QtCore/QByteArray>
 
@@ -137,6 +138,11 @@ struct CarlaBackendStandalone {
         engineOptions.forceStereo         = false;
         engineOptions.preferPluginBridges = false;
         engineOptions.preferUiBridges     = false;
+#else
+        if (std::getenv("LADISH_APP_NAME") != nullptr || std::getenv("NSM_URL") != nullptr)
+            return;
+
+        CarlaThread::setCurrentThreadName("Carla");
 #endif
     }
 

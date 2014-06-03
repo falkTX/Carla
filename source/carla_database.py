@@ -1773,7 +1773,7 @@ class PluginDatabaseW(QDialog):
     def saveSettings(self):
         settings = QSettings()
         settings.setValue("PluginDatabase/Geometry", self.saveGeometry())
-        settings.setValue("PluginDatabase/TableGeometryy%s" % ("_5" if config_UseQt5 else ""), self.ui.tableWidget.horizontalHeader().saveState())
+        settings.setValue("PluginDatabase/TableGeometry%s" % ("_5" if config_UseQt5 else ""), self.ui.tableWidget.horizontalHeader().saveState())
         settings.setValue("PluginDatabase/ShowFilters", (self.ui.tb_filters.arrowType() == Qt.UpArrow))
         settings.setValue("PluginDatabase/ShowEffects", self.ui.ch_effects.isChecked())
         settings.setValue("PluginDatabase/ShowInstruments", self.ui.ch_instruments.isChecked())

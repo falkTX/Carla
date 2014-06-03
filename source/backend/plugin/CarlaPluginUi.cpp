@@ -25,6 +25,8 @@
 #endif
 
 #ifdef HAVE_X11
+# include "CarlaPluginUi_X11Icon.hpp"
+
 // -----------------------------------------------------
 // X11
 
@@ -65,8 +67,11 @@ public:
         XSetWMProtocols(fDisplay, fWindow, &wmDelete, 1);
 
         pid_t pid = getpid();
-        Atom _nwp = XInternAtom(fDisplay, "_NET_WM_PID", True);
+        Atom _nwp = XInternAtom(fDisplay, "_NET_WM_PID", False);
         XChangeProperty(fDisplay, fWindow, _nwp, XA_CARDINAL, 32, PropModeReplace, (const uchar*)&pid, 1);
+
+        Atom _nwi = XInternAtom(fDisplay, "_NET_WM_ICON", False);
+        XChangeProperty(fDisplay, fWindow, _nwi, XA_CARDINAL, 32, PropModeReplace, (const uchar*)sCarlaX11Icon, sCarlaX11IconSize);
 
         if (parentId != 0)
             setTransientWinId(parentId);
@@ -248,15 +253,15 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
     const ScopedDisplay sd;
     CARLA_SAFE_ASSERT_RETURN(sd.display != nullptr, true);
 
-    Atom _ncl = XInternAtom(sd.display, "_NET_CLIENT_LIST" , True);
-    Atom _nwn = XInternAtom(sd.display, "_NET_WM_NAME", True);
-    Atom _nwp = XInternAtom(sd.display, "_NET_WM_PID", True);
+    Atom _ncl = XInternAtom(sd.display, "_NET_CLIENT_LIST" , False);
+    Atom _nwn = XInternAtom(sd.display, "_NET_WM_NAME", False);
+    Atom _nwp = XInternAtom(sd.display, "_NET_WM_PID", False);
     Atom utf8 = XInternAtom(sd.display, "UTF8_STRING", True);
 
     Atom actualType;
     int actualFormat;
-    unsigned long numWindows, bytesAfter;
-    unsigned char* data = nullptr;
+    ulong numWindows, bytesAfter;
+    uchar* data = nullptr;
 
     int status = XGetWindowProperty(sd.display, DefaultRootWindow(sd.display), _ncl, 0L, (~0L), False, AnyPropertyType, &actualType, &actualFormat, &numWindows, &bytesAfter, &data);
 
@@ -280,8 +285,8 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 
         if (pid != 0)
         {
-            unsigned long pidSize;
-            unsigned char* pidData = nullptr;
+            ulong  pidSize;
+            uchar* pidData = nullptr;
 
             status = XGetWindowProperty(sd.display, window, _nwp, 0L, (~0L), False, XA_CARDINAL, &actualType, &actualFormat, &pidSize, &bytesAfter, &pidData);
 
@@ -305,8 +310,8 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
         // ------------------------------------------------
         // try using name (UTF-8)
 
-        unsigned long nameSize;
-        unsigned char* nameData = nullptr;
+        ulong nameSize;
+        uchar* nameData = nullptr;
 
         status = XGetWindowProperty(sd.display, window, _nwn, 0L, (~0L), False, utf8, &actualType, &actualFormat, &nameSize, &bytesAfter, &nameData);
 
@@ -350,13 +355,20 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
     if (lastGoodWindow == 0)
         return false;
 
-    Atom _nwt = XInternAtom(sd.display ,"_NET_WM_STATE", True);
+    Atom _nwt = XInternAtom(sd.display ,"_NET_WM_STATE", False);
     Atom _nws[2];
-    _nws[0] = XInternAtom(sd.display, "_NET_WM_STATE_SKIP_TASKBAR", True);
-    _nws[1] = XInternAtom(sd.display, "_NET_WM_STATE_SKIP_PAGER", True);
-
+    _nws[0] = XInternAtom(sd.display, "_NET_WM_STATE_SKIP_TASKBAR", False);
+    _nws[1] = XInternAtom(sd.display, "_NET_WM_STATE_SKIP_PAGER", False);
     XChangeProperty(sd.display, lastGoodWindow, _nwt, XA_ATOM, 32, PropModeAppend, (const uchar*)_nws, 2);
+
+    Atom _nwi = XInternAtom(sd.display, "_NET_WM_ICON", False);
+    XChangeProperty(sd.display, lastGoodWindow, _nwi, XA_CARDINAL, 32, PropModeReplace, (const uchar*)sCarlaX11Icon, sCarlaX11IconSize);
+
     XSetTransientForHint(sd.display, lastGoodWindow, (Window)winId);
+
+    XRaiseWindow(sd.display, lastGoodWindow);
+    XSetInputFocus(sd.display, lastGoodWindow, RevertToPointerRoot, CurrentTime);
+
     XFlush(sd.display);
     return true;
 #else
