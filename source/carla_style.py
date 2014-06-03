@@ -71,18 +71,21 @@ class CarlaApplication(object):
             self._createApp(appName)
             return
 
-        # set initial Qt stuff
-        #customFont = QFont("DejaVu Sans [Book]")
-        #customFont.setBold(False)
-        #customFont.setItalic(False)
-        #customFont.setOverline(False)
-        #customFont.setKerning(True)
-        #customFont.setHintingPreference(QFont.PreferFullHinting) # TODO - 4.8 only
-        #customFont.setPixelSize(14)
-        #customFont.setWeight(QFont.Normal)
+        if config_UseQt5:
+            # set initial Qt stuff
+            customFont = QFont("DejaVu Sans [Book]")
+            customFont.setBold(False)
+            customFont.setItalic(False)
+            customFont.setOverline(False)
+            customFont.setKerning(True)
+            customFont.setHintingPreference(QFont.PreferFullHinting) # TODO - 4.8 only
+            customFont.setPixelSize(12)
+            customFont.setWeight(QFont.Normal)
 
-        #QApplication.setDesktopSettingsAware(False)
-        #QApplication.setFont(customFont)
+            QApplication.setDesktopSettingsAware(False)
+            QApplication.setFont(customFont)
+
+        # set style
         QApplication.setStyle("carla")
 
         # create app

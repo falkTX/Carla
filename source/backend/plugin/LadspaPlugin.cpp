@@ -679,8 +679,9 @@ public:
                         step = 1.0f;
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
-                        fLatencyIndex = static_cast<int32_t>(j);
                         pData->param.special[j] = PARAMETER_SPECIAL_LATENCY;
+                        CARLA_SAFE_ASSERT(fLatencyIndex == -1);
+                        fLatencyIndex = static_cast<int32_t>(j);
                     }
                     else
                     {
