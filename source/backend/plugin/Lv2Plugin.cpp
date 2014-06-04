@@ -398,6 +398,7 @@ public:
           fCvInBuffers(nullptr),
           fCvOutBuffers(nullptr),
           fParamBuffers(nullptr),
+          fLatencyChanged(false),
           fLatencyIndex(-1),
           fFirstActive(true)
     {
@@ -1287,11 +1288,13 @@ public:
     {
         if (! fAtomQueueOut.isEmpty())
         {
+            fAtomQueueOut.lock();
             char dumpBuf[fAtomQueueOut.getSize()];
 
             Lv2AtomQueue tmpQueue;
             tmpQueue.copyAndDumpDataFromQueue(fAtomQueueOut, dumpBuf);
             CARLA_SAFE_ASSERT(! tmpQueue.isEmpty());
+            fAtomQueueOut.unlock();
 
             uint32_t portIndex;
             const LV2_Atom* atom;
@@ -1318,6 +1321,33 @@ public:
                         fUi.descriptor->port_event(fUi.handle, portIndex, lv2_atom_total_size(atom), CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, atom);
                 }
             }
+        }
+
+        if (fLatencyChanged && fLatencyIndex != -1)
+        {
+            fLatencyChanged = false;
+
+            const int32_t latency(static_cast<int32_t>(fParamBuffers[fLatencyIndex]));
+
+            if (latency >= 0)
+            {
+                const uint32_t ulatency(static_cast<uint32_t>(latency));
+
+                if (pData->latency != ulatency)
+                {
+                    carla_stdout("latency changed to %i", latency);
+
+                    const ScopedSingleProcessLocker sspl(this, true);
+
+                    pData->latency = ulatency;
+                    pData->client->setLatency(ulatency);
+#ifndef BUILD_BRIDGE
+                    pData->recreateLatencyBuffers();
+#endif
+                }
+            }
+            else
+                carla_safe_assert_int("latency >= 0", __FILE__, __LINE__, latency);
         }
 
         if (fUi.handle != nullptr && fUi.descriptor != nullptr)
@@ -2218,6 +2248,8 @@ public:
             }
             else
                 carla_safe_assert_int("latency >= 0", __FILE__, __LINE__, latency);
+
+            fLatencyChanged = false;
         }
 
         bufferSizeChanged(pData->engine->getBufferSize());
@@ -2376,29 +2408,6 @@ public:
         }
 
         fFirstActive = true;
-
-        if (fLatencyIndex < 0)
-            return;
-
-        const int32_t latency(static_cast<int32_t>(fParamBuffers[fLatencyIndex]));
-        CARLA_SAFE_ASSERT_RETURN(latency >= 0,);
-
-        const uint32_t ulatency(static_cast<uint32_t>(latency));
-
-        if (pData->latency != ulatency)
-        {
-            carla_stdout("latency changed to %i", latency);
-
-            pData->latency = ulatency;
-            pData->client->setLatency(ulatency);
-#ifndef BUILD_BRIDGE
-            try {
-                pData->recreateLatencyBuffers(); // FIXME
-            } CARLA_SAFE_EXCEPTION("LADSPA recreateLatencyBuffers()");
-#endif
-        }
-        else
-            carla_stdout("latency still the same %i", latency);
     }
 
     void deactivate() noexcept override
@@ -3116,21 +3125,28 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Latency, save values for next callback
 
-        if (pData->latency > 0)
+        if (fLatencyIndex != -1)
         {
-            if (pData->latency <= frames)
+            if (pData->latency != static_cast<uint32_t>(fParamBuffers[fLatencyIndex]))
             {
-                for (uint32_t i=0; i < pData->audioIn.count; ++i)
-                    FLOAT_COPY(pData->latencyBuffers[i], inBuffer[i]+(frames-pData->latency), pData->latency);
+                fLatencyChanged = true;
             }
-            else
+            else if (pData->latency > 0)
             {
-                for (uint32_t i=0, j, k; i < pData->audioIn.count; ++i)
+                if (pData->latency <= frames)
                 {
-                    for (k=0; k < pData->latency-frames; ++k)
-                        pData->latencyBuffers[i][k] = pData->latencyBuffers[i][k+frames];
-                    for (j=0; k < pData->latency; ++j, ++k)
-                        pData->latencyBuffers[i][k] = inBuffer[i][j];
+                    for (uint32_t i=0; i < pData->audioIn.count; ++i)
+                        FLOAT_COPY(pData->latencyBuffers[i], inBuffer[i]+(frames-pData->latency), pData->latency);
+                }
+                else
+                {
+                    for (uint32_t i=0, j, k; i < pData->audioIn.count; ++i)
+                    {
+                        for (k=0; k < pData->latency-frames; ++k)
+                            pData->latencyBuffers[i][k] = pData->latencyBuffers[i][k+frames];
+                        for (j=0; k < pData->latency; ++j, ++k)
+                            pData->latencyBuffers[i][k] = inBuffer[i][j];
+                    }
                 }
             }
         }
@@ -5209,6 +5225,8 @@ private:
     float** fCvInBuffers;
     float** fCvOutBuffers;
     float*  fParamBuffers;
+
+    bool    fLatencyChanged;
     int32_t fLatencyIndex; // -1 if invalid
 
     Lv2AtomQueue   fAtomQueueIn;

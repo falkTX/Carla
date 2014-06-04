@@ -259,8 +259,7 @@ public:
     // used for tmp buffers only
     void copyAndDumpDataFromQueue(Lv2AtomQueue& queue, char dumpBuf[]) noexcept
     {
-        // lock source
-        const CarlaMutexLocker cml1(queue.fMutex);
+        // source is locked
 
         {
             // copy data from source
