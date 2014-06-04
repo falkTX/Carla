@@ -28,6 +28,10 @@
 
 #include <QtCore/QStringList>
 
+#ifdef __SSE2_MATH__
+# include <xmmintrin.h>
+#endif
+
 #define URI_CANVAS_ICON "http://kxstudio.sf.net/ns/canvas/icon"
 
 CARLA_BACKEND_START_NAMESPACE
@@ -756,6 +760,7 @@ public:
             pData->bufferSize = jackbridge_get_buffer_size(fClient);
             pData->sampleRate = jackbridge_get_sample_rate(fClient);
 
+            jackbridge_set_thread_init_callback(fClient, carla_jack_thread_init_callback, nullptr);
             jackbridge_set_buffer_size_callback(fClient, carla_jack_bufsize_callback, this);
             jackbridge_set_sample_rate_callback(fClient, carla_jack_srate_callback, this);
             jackbridge_set_freewheel_callback(fClient, carla_jack_freewheel_callback, this);
@@ -913,6 +918,7 @@ public:
         pData->bufferSize = jackbridge_get_buffer_size(client);
         pData->sampleRate = jackbridge_get_sample_rate(client);
 
+        jackbridge_set_thread_init_callback(client, carla_jack_thread_init_callback, nullptr);
         jackbridge_set_buffer_size_callback(client, carla_jack_bufsize_callback, this);
         jackbridge_set_sample_rate_callback(client, carla_jack_srate_callback, this);
         jackbridge_set_freewheel_callback(client, carla_jack_freewheel_callback, this);
@@ -930,6 +936,7 @@ public:
 
             CARLA_SAFE_ASSERT_RETURN(client != nullptr, nullptr);
 
+            jackbridge_set_thread_init_callback(client, carla_jack_thread_init_callback, nullptr);
             jackbridge_set_latency_callback(client, carla_jack_latency_callback_plugin, plugin);
             jackbridge_set_process_callback(client, carla_jack_process_callback_plugin, plugin);
             jackbridge_on_shutdown(client, carla_jack_shutdown_callback_plugin, plugin);
@@ -1002,6 +1009,7 @@ public:
                     // set new client data
                     uniqueName = jackbridge_get_client_name(jackClient);
 
+                    jackbridge_set_thread_init_callback(jackClient, carla_jack_thread_init_callback, nullptr);
                     jackbridge_set_process_callback(jackClient, carla_jack_process_callback_plugin, plugin);
                     jackbridge_set_latency_callback(jackClient, carla_jack_latency_callback_plugin, plugin);
                     jackbridge_on_shutdown(jackClient, carla_jack_shutdown_callback_plugin, plugin);
@@ -2241,6 +2249,14 @@ private:
     // -------------------------------------
 
     #define handlePtr ((CarlaEngineJack*)arg)
+
+    static void carla_jack_thread_init_callback(void*)
+    {
+#ifdef __SSE2_MATH__
+        // Set FTZ and DAZ flags
+        _mm_setcsr(_mm_getcsr() | 0x8040);
+#endif
+    }
 
     static int carla_jack_bufsize_callback(jack_nframes_t newBufferSize, void* arg)
     {
