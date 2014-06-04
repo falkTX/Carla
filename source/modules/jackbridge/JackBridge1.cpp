@@ -1212,11 +1212,13 @@ void jackbridge_port_get_latency_range(jack_port_t* port, jack_latency_callback_
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
-    jack_port_get_latency_range(port, mode, range);
+    return jack_port_get_latency_range(port, mode, range);
 #else
     if (bridge.port_get_latency_range_ptr != nullptr)
-        bridge.port_get_latency_range_ptr(port, mode, range);
+        return bridge.port_get_latency_range_ptr(port, mode, range);
 #endif
+    range->min = 0;
+    range->max = 0;
 }
 
 void jackbridge_port_set_latency_range(jack_port_t* port, jack_latency_callback_mode_t mode, jack_latency_range_t* range)
