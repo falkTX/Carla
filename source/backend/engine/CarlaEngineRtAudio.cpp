@@ -21,6 +21,8 @@
 
 #include "RtLinkedList.hpp"
 
+#include "jackbridge/JackBridge.hpp"
+
 #include "rtaudio/RtAudio.h"
 #include "rtmidi/RtMidi.h"
 
@@ -31,35 +33,61 @@ CARLA_BACKEND_START_NAMESPACE
 #endif
 
 // -------------------------------------------------------------------------------------------------------------------
+// Global static data
 
 static const char** gRetNames = nullptr;
 static std::vector<RtAudio::Api> gRtAudioApis;
 
-static void initRtApis()
-{
-    if (gRtAudioApis.size() == 0)
+struct RtAudioCleanup {
+    RtAudioCleanup() noexcept {}
+    ~RtAudioCleanup()
     {
-        RtAudio::getCompiledApi(gRtAudioApis);
+        if (gRetNames != nullptr)
+        {
+            delete[] gRetNames;
+            gRetNames = nullptr;
+        }
+        gRtAudioApis.clear();
+    }
+};
+
+// -------------------------------------------------------------------------------------------------------------------
+
+static void initRtAudioAPIsIfNeeded()
+{
+    static const RtAudioCleanup sRtAudioCleanup;
+    static bool needsInit = true;
+
+    if (! needsInit)
+        return;
+
+    needsInit = false;
+
+    RtAudio::getCompiledApi(gRtAudioApis);
+
+    std::vector<RtAudio::Api>::iterator it;
+
+    // remove JACK if not available
+    if (! jackbridge_is_ok())
+    {
+        it = std::find(gRtAudioApis.begin(), gRtAudioApis.end(), RtAudio::UNIX_JACK);
+        if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);
+    }
 
 #if 0//def HAVE_JUCE
-        // prefer juce to handle some APIs
-        std::vector<RtAudio::Api>::iterator it = std::find(gRtAudioApis.begin(), gRtAudioApis.end(), RtAudio::LINUX_ALSA);
-        if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);
+    // prefer juce to handle some APIs
+    it = std::find(gRtAudioApis.begin(), gRtAudioApis.end(), RtAudio::LINUX_ALSA);
+    if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);
 
-        it = std::find(gRtAudioApis.begin(), gRtAudioApis.end(), RtAudio::MACOSX_CORE);
-        if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);
+    it = std::find(gRtAudioApis.begin(), gRtAudioApis.end(), RtAudio::MACOSX_CORE);
+    if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);
 
-        it = std::find(gRtAudioApis.begin(), gRtAudioApis.end(), RtAudio::WINDOWS_ASIO);
-        if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);
+    it = std::find(gRtAudioApis.begin(), gRtAudioApis.end(), RtAudio::WINDOWS_ASIO);
+    if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);
 
-        it = std::find(gRtAudioApis.begin(), gRtAudioApis.end(), RtAudio::WINDOWS_DS);
-        if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);
+    it = std::find(gRtAudioApis.begin(), gRtAudioApis.end(), RtAudio::WINDOWS_DS);
+    if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);
 #endif
-
-        // in case rtaudio has no apis, add dummy one so that size() != 0
-        if (gRtAudioApis.size() == 0)
-            gRtAudioApis.push_back(RtAudio::RTAUDIO_DUMMY);
-    }
 }
 
 static const char* getRtAudioApiName(const RtAudio::Api api) noexcept
@@ -98,7 +126,7 @@ static const char* getRtAudioApiName(const RtAudio::Api api) noexcept
     return nullptr;
 }
 
-static RtMidi::Api getMatchedAudioMidiAPi(const RtAudio::Api rtApi) noexcept
+static RtMidi::Api getMatchedAudioMidiAPI(const RtAudio::Api rtApi) noexcept
 {
     switch (rtApi)
     {
@@ -136,21 +164,6 @@ static RtMidi::Api getMatchedAudioMidiAPi(const RtAudio::Api rtApi) noexcept
 }
 
 // -------------------------------------------------------------------------------------------------------------------
-// Cleanup
-
-static const struct RtAudioCleanup {
-    RtAudioCleanup() {}
-    ~RtAudioCleanup() {
-        if (gRetNames != nullptr)
-        {
-            delete[] gRetNames;
-            gRetNames = nullptr;
-        }
-        gRtAudioApis.clear();
-    }
-} sRtAudioCleanup;
-
-// -------------------------------------------------------------------------------------------------------------------
 // RtAudio Engine
 
 class CarlaEngineRtAudio : public CarlaEngine
@@ -164,8 +177,8 @@ public:
           fAudioOutBuf(nullptr),
           fAudioOutCount(0),
           fLastEventTime(0),
-          fDummyMidiIn(getMatchedAudioMidiAPi(api), "Carla"),
-          fDummyMidiOut(getMatchedAudioMidiAPi(api), "Carla")
+          fDummyMidiIn(getMatchedAudioMidiAPI(api), "Carla"),
+          fDummyMidiOut(getMatchedAudioMidiAPI(api), "Carla")
     {
         carla_debug("CarlaEngineRtAudio::CarlaEngineRtAudio(%i)", api);
 
@@ -813,7 +826,7 @@ protected:
         bool found = false;
         uint rtMidiPortIndex;
 
-        RtMidiIn* const rtMidiIn(new RtMidiIn(getMatchedAudioMidiAPi(fAudio.getCurrentApi()), newPortName, 512));
+        RtMidiIn* const rtMidiIn(new RtMidiIn(getMatchedAudioMidiAPI(fAudio.getCurrentApi()), newPortName, 512));
         rtMidiIn->ignoreTypes();
         rtMidiIn->setCallback(carla_rtmidi_callback, this);
 
@@ -860,7 +873,7 @@ protected:
         bool found = false;
         uint rtMidiPortIndex;
 
-        RtMidiOut* const rtMidiOut(new RtMidiOut(getMatchedAudioMidiAPi(fAudio.getCurrentApi()), newPortName));
+        RtMidiOut* const rtMidiOut(new RtMidiOut(getMatchedAudioMidiAPI(fAudio.getCurrentApi()), newPortName));
 
         for (uint i=0, count=rtMidiOut->getPortCount(); i < count; ++i)
         {
@@ -1041,7 +1054,7 @@ private:
 
 CarlaEngine* CarlaEngine::newRtAudio(const AudioApi api)
 {
-    initRtApis();
+    initRtAudioAPIsIfNeeded();
 
     RtAudio::Api rtApi(RtAudio::UNSPECIFIED);
 
@@ -1078,14 +1091,14 @@ CarlaEngine* CarlaEngine::newRtAudio(const AudioApi api)
 
 uint CarlaEngine::getRtAudioApiCount()
 {
-    initRtApis();
+    initRtAudioAPIsIfNeeded();
 
     return static_cast<uint>(gRtAudioApis.size());
 }
 
 const char* CarlaEngine::getRtAudioApiName(const uint index)
 {
-    initRtApis();
+    initRtAudioAPIsIfNeeded();
 
     if (index >= gRtAudioApis.size())
         return nullptr;
@@ -1095,7 +1108,7 @@ const char* CarlaEngine::getRtAudioApiName(const uint index)
 
 const char* const* CarlaEngine::getRtAudioApiDeviceNames(const uint index)
 {
-    initRtApis();
+    initRtAudioAPIsIfNeeded();
 
     if (index >= gRtAudioApis.size())
         return nullptr;
@@ -1141,7 +1154,7 @@ const char* const* CarlaEngine::getRtAudioApiDeviceNames(const uint index)
 
 const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const uint index, const char* const deviceName)
 {
-    initRtApis();
+    initRtAudioAPIsIfNeeded();
 
     if (index >= gRtAudioApis.size())
         return nullptr;
