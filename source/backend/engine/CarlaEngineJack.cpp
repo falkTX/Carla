@@ -524,11 +524,11 @@ public:
         }
     }
 
-    ~CarlaEngineJackClient() override
+    ~CarlaEngineJackClient() noexcept override
     {
-        carla_debug("CarlaEngineClient::~CarlaEngineClient()");
+        carla_debug("CarlaEngineJackClient::~CarlaEngineJackClient()");
 
-        if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS && fJackClient != nullptr)
+        if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS && fJackClient != nullptr) // FIXME
             jackbridge_client_close(fJackClient);
 
         // ports must have been deleted by now!
