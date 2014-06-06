@@ -80,7 +80,7 @@ enum RackGraphCarlaPortIds {
 // RackGraph
 
 struct RackGraph {
-    uint lastConnectionId;
+    PatchbayConnectionList connections;
 
     struct Audio {
         CarlaMutex mutex;
@@ -88,18 +88,17 @@ struct RackGraph {
         LinkedList<uint> connectedIn2;
         LinkedList<uint> connectedOut1;
         LinkedList<uint> connectedOut2;
-        LinkedList<ConnectionToId> usedConnections;
     } audio;
 
     struct MIDI {
         LinkedList<PortNameToId> ins;
         LinkedList<PortNameToId> outs;
 
-        const char* getName(const bool isInput, const uint index) const;
+        const char* getName(const bool isInput, const uint index) const noexcept;
+        uint getPortId(const bool isInput, const char portName[]) const noexcept;
     } midi;
 
-    RackGraph() noexcept
-        : lastConnectionId(0) {}
+    RackGraph() noexcept {}
 
     ~RackGraph() noexcept
     {
@@ -108,14 +107,13 @@ struct RackGraph {
 
     void clear() noexcept
     {
-        lastConnectionId = 0;
+        connections.clear();
 
         audio.mutex.lock();
         audio.connectedIn1.clear();
         audio.connectedIn2.clear();
         audio.connectedOut1.clear();
         audio.connectedOut2.clear();
-        audio.usedConnections.clear();
         audio.mutex.unlock();
 
         midi.ins.clear();

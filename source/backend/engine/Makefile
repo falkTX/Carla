@@ -15,13 +15,13 @@ OBJS = \
 	CarlaEngineThread.cpp.o
 
 OBJSa = $(OBJS) \
-	CarlaEngineJack.cpp.o
-# 	CarlaEngineRtAudio.cpp.o
+	CarlaEngineJack.cpp.o \
+	CarlaEngineRtAudio.cpp.o
 
-# ifeq ($(HAVE_JUCE),true)
-# OBJSa += \
-# 	CarlaEngineJuce.cpp.o
-# endif
+ifeq ($(HAVE_JUCE),true)
+OBJSa += \
+	CarlaEngineJuce.cpp.o
+endif
 
 ifneq ($(WIN32),true)
 OBJSa += \

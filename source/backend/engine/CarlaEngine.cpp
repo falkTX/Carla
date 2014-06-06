@@ -616,7 +616,7 @@ uint CarlaEngine::getDriverCount()
     if (jackbridge_is_ok())
         count += 1;
 
-#if 0 //ndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE
     count += getRtAudioApiCount();
 # ifdef HAVE_JUCE
     count += getJuceApiCount();
@@ -635,7 +635,7 @@ const char* CarlaEngine::getDriverName(const uint index2)
     if (jackbridge_is_ok() && index-- == 0)
         return "JACK";
 
-#if 0 //ndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE
     if (index < getRtAudioApiCount())
         return getRtAudioApiName(index);
 
@@ -663,7 +663,7 @@ const char* const* CarlaEngine::getDriverDeviceNames(const uint index2)
         return ret;
     }
 
-#if 0 //ndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE
     if (index < getRtAudioApiCount())
         return getRtAudioApiDeviceNames(index);
 
@@ -695,7 +695,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2
         return &devInfo;
     }
 
-#if 0 //ndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE
     if (index < getRtAudioApiCount())
         return getRtAudioDeviceInfo(index, deviceName);
 
@@ -719,7 +719,7 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
     if (std::strcmp(driverName, "JACK") == 0)
         return newJack();
 
-#if 0 //ndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------
     // common
 

@@ -55,7 +55,7 @@ static uint getCarlaRackPortIdFromName(const char* const shortname) noexcept
 // -----------------------------------------------------------------------
 // RackGraph
 
-const char* RackGraph::MIDI::getName(const bool isInput, const uint index) const
+const char* RackGraph::MIDI::getName(const bool isInput, const uint index) const noexcept
 {
     for (LinkedList<PortNameToId>::Itenerator it = isInput ? ins.begin() : outs.begin(); it.valid(); it.next())
     {
@@ -66,6 +66,19 @@ const char* RackGraph::MIDI::getName(const bool isInput, const uint index) const
     }
 
     return nullptr;
+}
+
+uint RackGraph::MIDI::getPortId(const bool isInput, const char portName[]) const noexcept
+{
+    for (LinkedList<PortNameToId>::Itenerator it = isInput ? ins.begin() : outs.begin(); it.valid(); it.next())
+    {
+        const PortNameToId& port(it.getValue());
+
+        if (std::strcmp(port.name, portName) == 0)
+            return port.port;
+    }
+
+    return 0;
 }
 
 bool RackGraph::connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept
@@ -146,7 +159,7 @@ bool RackGraph::connect(CarlaEngine* const engine, const uint groupA, const uint
         return false;
     }
 
-    ConnectionToId connectionToId = { ++lastConnectionId, groupA, portA, groupB, portB };
+    ConnectionToId connectionToId = { ++connections.lastId, groupA, portA, groupB, portB };
 
     char strBuf[STR_MAX+1];
     strBuf[STR_MAX] = '\0';
@@ -154,16 +167,16 @@ bool RackGraph::connect(CarlaEngine* const engine, const uint groupA, const uint
 
     engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
 
-    audio.usedConnections.append(connectionToId);
+    connections.list.append(connectionToId);
     return true;
 }
 
 bool RackGraph::disconnect(CarlaEngine* const engine, const uint connectionId) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr, false);
-    CARLA_SAFE_ASSERT_RETURN(audio.usedConnections.count() > 0, false);
+    CARLA_SAFE_ASSERT_RETURN(connections.list.count() > 0, false);
 
-    for (LinkedList<ConnectionToId>::Itenerator it=audio.usedConnections.begin(); it.valid(); it.next())
+    for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin(); it.valid(); it.next())
     {
         const ConnectionToId& connection(it.getValue());
 
@@ -240,7 +253,7 @@ bool RackGraph::disconnect(CarlaEngine* const engine, const uint connectionId) n
 
         engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connection.id, 0, 0, 0.0f, nullptr);
 
-        audio.usedConnections.remove(it);
+        connections.list.remove(it);
         return true;
     }
 
@@ -250,14 +263,14 @@ bool RackGraph::disconnect(CarlaEngine* const engine, const uint connectionId) n
 
 const char* const* RackGraph::getConnections() const
 {
-    if (audio.usedConnections.count() == 0)
+    if (connections.list.count() == 0)
         return nullptr;
 
     LinkedList<const char*> connList;
     char strBuf[STR_MAX+1];
     strBuf[STR_MAX] = '\0';
 
-    for (LinkedList<ConnectionToId>::Itenerator it=audio.usedConnections.begin(); it.valid(); it.next())
+    for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin(); it.valid(); it.next())
     {
         const ConnectionToId& connection(it.getValue());
 

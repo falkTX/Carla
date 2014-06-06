@@ -852,6 +852,8 @@ public:
 
     bool init(const char* const clientName) override
     {
+        CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0', false);
         carla_debug("CarlaEngineJack::init(\"%s\")", clientName);
 
         fFreewheel      = false;
@@ -863,7 +865,7 @@ public:
         if (pData->bufferSize == 0 || pData->sampleRate == 0.0)
         {
             // open temp client to get initial buffer-size and sample-rate values
-            if (jack_client_t* tmpClient = jackbridge_client_open(clientName, JackNullOption, nullptr))
+            if (jack_client_t* const tmpClient = jackbridge_client_open(clientName, JackNullOption, nullptr))
             {
                 pData->bufferSize = jackbridge_get_buffer_size(tmpClient);
                 pData->sampleRate = jackbridge_get_sample_rate(tmpClient);
@@ -876,60 +878,54 @@ public:
 
         return CarlaEngine::init(clientName);
 #else
-        fUsedGroups.clear();
-        fUsedPorts.clear();
-        fUsedConnections.clear();
-        fNewGroups.clear();
-
         fClient = jackbridge_client_open(clientName, JackNullOption, nullptr);
 
-        if (fClient != nullptr)
+        if (fClient == nullptr)
         {
-            pData->bufferSize = jackbridge_get_buffer_size(fClient);
-            pData->sampleRate = jackbridge_get_sample_rate(fClient);
-
-            jackbridge_set_thread_init_callback(fClient, carla_jack_thread_init_callback, nullptr);
-            jackbridge_set_buffer_size_callback(fClient, carla_jack_bufsize_callback, this);
-            jackbridge_set_sample_rate_callback(fClient, carla_jack_srate_callback, this);
-            jackbridge_set_freewheel_callback(fClient, carla_jack_freewheel_callback, this);
-            jackbridge_set_latency_callback(fClient, carla_jack_latency_callback, this);
-            jackbridge_set_process_callback(fClient, carla_jack_process_callback, this);
-            jackbridge_on_shutdown(fClient, carla_jack_shutdown_callback, this);
-
-            const char* const jackClientName(jackbridge_get_client_name(fClient));
-
-            initJackPatchbay(jackClientName);
-
-            jackbridge_set_client_registration_callback(fClient, carla_jack_client_registration_callback, this);
-            jackbridge_set_port_registration_callback(fClient, carla_jack_port_registration_callback, this);
-            jackbridge_set_port_connect_callback(fClient, carla_jack_port_connect_callback, this);
-            jackbridge_set_port_rename_callback(fClient, carla_jack_port_rename_callback, this);
-
-            if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-            {
-                fRackPorts[kRackPortAudioIn1]  = jackbridge_port_register(fClient, "audio-in1",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
-                fRackPorts[kRackPortAudioIn2]  = jackbridge_port_register(fClient, "audio-in2",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
-                fRackPorts[kRackPortAudioOut1] = jackbridge_port_register(fClient, "audio-out1", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
-                fRackPorts[kRackPortAudioOut2] = jackbridge_port_register(fClient, "audio-out2", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
-                fRackPorts[kRackPortEventIn]   = jackbridge_port_register(fClient, "events-in",  JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0);
-                fRackPorts[kRackPortEventOut]  = jackbridge_port_register(fClient, "events-out", JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0);
-            }
-
-            if (jackbridge_activate(fClient))
-            {
-                CarlaEngine::init(jackClientName);
-                return true;
-            }
-            else
-            {
-                setLastError("Failed to activate the JACK client");
-                jackbridge_client_close(fClient);
-                fClient = nullptr;
-            }
-        }
-        else
             setLastError("Failed to create new JACK client");
+            return false;
+        }
 
+        pData->bufferSize = jackbridge_get_buffer_size(fClient);
+        pData->sampleRate = jackbridge_get_sample_rate(fClient);
+
+        jackbridge_set_thread_init_callback(fClient, carla_jack_thread_init_callback, nullptr);
+        jackbridge_set_buffer_size_callback(fClient, carla_jack_bufsize_callback, this);
+        jackbridge_set_sample_rate_callback(fClient, carla_jack_srate_callback, this);
+        jackbridge_set_freewheel_callback(fClient, carla_jack_freewheel_callback, this);
+        jackbridge_set_latency_callback(fClient, carla_jack_latency_callback, this);
+        jackbridge_set_process_callback(fClient, carla_jack_process_callback, this);
+        jackbridge_on_shutdown(fClient, carla_jack_shutdown_callback, this);
+
+        const char* const jackClientName(jackbridge_get_client_name(fClient));
+
+        initJackPatchbay(jackClientName);
+
+        jackbridge_set_client_registration_callback(fClient, carla_jack_client_registration_callback, this);
+        jackbridge_set_port_registration_callback(fClient, carla_jack_port_registration_callback, this);
+        jackbridge_set_port_connect_callback(fClient, carla_jack_port_connect_callback, this);
+        jackbridge_set_port_rename_callback(fClient, carla_jack_port_rename_callback, this);
+
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        {
+            fRackPorts[kRackPortAudioIn1]  = jackbridge_port_register(fClient, "audio-in1",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+            fRackPorts[kRackPortAudioIn2]  = jackbridge_port_register(fClient, "audio-in2",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+            fRackPorts[kRackPortAudioOut1] = jackbridge_port_register(fClient, "audio-out1", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
+            fRackPorts[kRackPortAudioOut2] = jackbridge_port_register(fClient, "audio-out2", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
+            fRackPorts[kRackPortEventIn]   = jackbridge_port_register(fClient, "events-in",  JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0);
+            fRackPorts[kRackPortEventOut]  = jackbridge_port_register(fClient, "events-out", JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0);
+        }
+
+        if (jackbridge_activate(fClient))
+        {
+            CarlaEngine::init(jackClientName);
+            return true;
+        }
+
+        jackbridge_client_close(fClient);
+        fClient = nullptr;
+
+        setLastError("Failed to activate the JACK client");
         return false;
 #endif
     }
@@ -994,14 +990,16 @@ public:
         for (LinkedList<uint>::Itenerator it = newPlugins.begin(); it.valid(); it.next())
         {
             const uint groupId(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(groupId > 0);
+
             const char* const groupName(fUsedGroups.getGroupName(groupId));
-            CARLA_SAFE_ASSERT_CONTINUE(groupId > 0 && groupName != nullptr && groupName[0] != '\0');
+            CARLA_SAFE_ASSERT_CONTINUE(groupName != nullptr && groupName[0] != '\0');
 
             int pluginId = -1;
             PatchbayIcon icon = PATCHBAY_ICON_PLUGIN;
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED, groupId, icon, pluginId, 0.0f, nullptr);
-            findPluginIdAndIcon(groupName, pluginId, icon);
+            if (findPluginIdAndIcon(groupName, pluginId, icon))
+                callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED, groupId, icon, pluginId, 0.0f, nullptr);
         }
 
         newPlugins.clear();
@@ -1034,41 +1032,40 @@ public:
 
     CarlaEngineClient* addClient(CarlaPlugin* const plugin) override
     {
-
         jack_client_t* client = nullptr;
 
-#ifdef BUILD_BRIDGE
-        client = fClient = jackbridge_client_open(plugin->getName(), JackNullOption, nullptr);
-
-        CARLA_SAFE_ASSERT_RETURN(client != nullptr, nullptr);
-
-        pData->bufferSize = jackbridge_get_buffer_size(client);
-        pData->sampleRate = jackbridge_get_sample_rate(client);
-
-        jackbridge_set_thread_init_callback(client, carla_jack_thread_init_callback, nullptr);
-        jackbridge_set_buffer_size_callback(client, carla_jack_bufsize_callback, this);
-        jackbridge_set_sample_rate_callback(client, carla_jack_srate_callback, this);
-        jackbridge_set_freewheel_callback(client, carla_jack_freewheel_callback, this);
-        jackbridge_set_latency_callback(client, carla_jack_latency_callback, this);
-        jackbridge_set_process_callback(client, carla_jack_process_callback, this);
-        jackbridge_on_shutdown(client, carla_jack_shutdown_callback, this);
-#else
+#ifndef BUILD_BRIDGE
         if (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
         {
             client = fClient;
         }
         else if (pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+#endif
         {
             client = jackbridge_client_open(plugin->getName(), JackNullOption, nullptr);
 
             CARLA_SAFE_ASSERT_RETURN(client != nullptr, nullptr);
 
             jackbridge_set_thread_init_callback(client, carla_jack_thread_init_callback, nullptr);
+
+#ifndef BUILD_BRIDGE
             jackbridge_set_latency_callback(client, carla_jack_latency_callback_plugin, plugin);
             jackbridge_set_process_callback(client, carla_jack_process_callback_plugin, plugin);
             jackbridge_on_shutdown(client, carla_jack_shutdown_callback_plugin, plugin);
-        }
+#else
+            fClient = client;
+            pData->bufferSize = jackbridge_get_buffer_size(client);
+            pData->sampleRate = jackbridge_get_sample_rate(client);
+
+            jackbridge_set_buffer_size_callback(client, carla_jack_bufsize_callback, this);
+            jackbridge_set_sample_rate_callback(client, carla_jack_srate_callback, this);
+            jackbridge_set_freewheel_callback(client, carla_jack_freewheel_callback, this);
+            jackbridge_set_latency_callback(client, carla_jack_latency_callback, this);
+            jackbridge_set_process_callback(client, carla_jack_process_callback, this);
+            jackbridge_on_shutdown(client, carla_jack_shutdown_callback, this);
 #endif
+        }
+
         return new CarlaEngineJackClient(*this, client);
     }
 
@@ -1179,6 +1176,8 @@ public:
 
         const char* const fullPortNameB = fUsedPorts.getFullPortName(groupB, portB);
         CARLA_SAFE_ASSERT_RETURN(fullPortNameB != nullptr && fullPortNameB[0] != '\0', false);
+
+        carla_stdout("patchbayConnect(%u, %u, %u, %u => %s, %s)", groupA, portA, groupB, portB, fullPortNameA, fullPortNameB);
 
         if (! jackbridge_connect(fClient, fullPortNameA, fullPortNameB))
         {
@@ -2020,7 +2019,7 @@ private:
         (void)portIsOSC;
     }
 
-    // -------------------------------------
+    // -------------------------------------------------------------------
 
     void processPlugin(CarlaPlugin* const plugin, const uint32_t nframes)
     {
@@ -2072,7 +2071,7 @@ private:
         setPluginPeaks(plugin->getId(), inPeaks, outPeaks);
     }
 
-    // -------------------------------------
+    // -------------------------------------------------------------------
 
     #define handlePtr ((CarlaEngineJack*)arg)
 
