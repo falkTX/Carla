@@ -62,7 +62,17 @@ struct GroupNameToId {
 };
 
 struct PatchbayGroupList {
+    uint lastId;
     LinkedList<GroupNameToId> list;
+
+    PatchbayGroupList() noexcept
+        : lastId(0) {}
+
+    void clear() noexcept
+    {
+        lastId = 0;
+        list.clear();
+    }
 
     uint getGroupId(const char* const groupName) const noexcept
     {
@@ -145,7 +155,17 @@ struct PortNameToId {
 };
 
 struct PatchbayPortList {
+    uint lastId;
     LinkedList<PortNameToId> list;
+
+    PatchbayPortList() noexcept
+        : lastId(0) {}
+
+    void clear() noexcept
+    {
+        lastId = 0;
+        list.clear();
+    }
 
     const char* getFullPortName(const uint groupId, const uint portId) const noexcept
     {
@@ -223,7 +243,17 @@ struct ConnectionToId {
 };
 
 struct PatchbayConnectionList {
+    uint lastId;
     LinkedList<ConnectionToId> list;
+
+    PatchbayConnectionList() noexcept
+        : lastId(0) {}
+
+    void clear() noexcept
+    {
+        lastId = 0;
+        list.clear();
+    }
 };
 
 // -----------------------------------------------------------------------

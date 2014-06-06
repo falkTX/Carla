@@ -788,13 +788,9 @@ public:
         : CarlaEngine(),
           fClient(nullptr),
           fTransportState(JackTransportStopped),
-          fFreewheel(false),
+          fFreewheel(false)
 #ifdef BUILD_BRIDGE
-          fIsRunning(false)
-#else
-          fLastGroupId(0),
-          fLastPortId(0),
-          fLastConnectionId(0)
+        , fIsRunning(false)
 #endif
     {
         carla_debug("CarlaEngineJack::CarlaEngineJack()");
@@ -817,9 +813,9 @@ public:
         CARLA_SAFE_ASSERT(fClient == nullptr);
 
 #ifndef BUILD_BRIDGE
-        fUsedGroupNames.list.clear();
-        fUsedPortNames.list.clear();
-        fUsedConnections.list.clear();
+        fUsedGroups.clear();
+        fUsedPorts.clear();
+        fUsedConnections.clear();
         fNewGroups.clear();
 #endif
     }
@@ -880,13 +876,9 @@ public:
 
         return CarlaEngine::init(clientName);
 #else
-        fLastGroupId = 0;
-        fLastPortId  = 0;
-        fLastConnectionId = 0;
-
-        fUsedGroupNames.list.clear();
-        fUsedPortNames.list.clear();
-        fUsedConnections.list.clear();
+        fUsedGroups.clear();
+        fUsedPorts.clear();
+        fUsedConnections.clear();
         fNewGroups.clear();
 
         fClient = jackbridge_client_open(clientName, JackNullOption, nullptr);
@@ -979,9 +971,9 @@ public:
 
         fClient = nullptr;
 
-        fUsedGroupNames.list.clear();
-        fUsedPortNames.list.clear();
-        fUsedConnections.list.clear();
+        fUsedGroups.clear();
+        fUsedPorts.clear();
+        fUsedConnections.clear();
         fNewGroups.clear();
 
         return false;
@@ -1002,7 +994,7 @@ public:
         for (LinkedList<uint>::Itenerator it = newPlugins.begin(); it.valid(); it.next())
         {
             const uint groupId(it.getValue());
-            const char* const groupName(fUsedGroupNames.getGroupName(groupId));
+            const char* const groupName(fUsedGroups.getGroupName(groupId));
             CARLA_SAFE_ASSERT_CONTINUE(groupId > 0 && groupName != nullptr && groupName[0] != '\0');
 
             int pluginId = -1;
@@ -1182,10 +1174,10 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
 
-        const char* const fullPortNameA = fUsedPortNames.getFullPortName(groupA, portA);
+        const char* const fullPortNameA = fUsedPorts.getFullPortName(groupA, portA);
         CARLA_SAFE_ASSERT_RETURN(fullPortNameA != nullptr && fullPortNameA[0] != '\0', false);
 
-        const char* const fullPortNameB = fUsedPortNames.getFullPortName(groupB, portB);
+        const char* const fullPortNameB = fUsedPorts.getFullPortName(groupB, portB);
         CARLA_SAFE_ASSERT_RETURN(fullPortNameB != nullptr && fullPortNameB[0] != '\0', false);
 
         if (! jackbridge_connect(fClient, fullPortNameA, fullPortNameB))
@@ -1207,10 +1199,10 @@ public:
 
             if (connectionToId.id == connectionId)
             {
-                const char* const fullPortNameA = fUsedPortNames.getFullPortName(connectionToId.groupA, connectionToId.portA);
+                const char* const fullPortNameA = fUsedPorts.getFullPortName(connectionToId.groupA, connectionToId.portA);
                 CARLA_SAFE_ASSERT_RETURN(fullPortNameA != nullptr && fullPortNameA[0] != '\0', false);
 
-                const char* const fullPortNameB = fUsedPortNames.getFullPortName(connectionToId.groupB, connectionToId.portB);
+                const char* const fullPortNameB = fUsedPorts.getFullPortName(connectionToId.groupB, connectionToId.portB);
                 CARLA_SAFE_ASSERT_RETURN(fullPortNameB != nullptr && fullPortNameB[0] != '\0', false);
 
                 if (! jackbridge_disconnect(fClient, fullPortNameA, fullPortNameB))
@@ -1231,13 +1223,9 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
 
-        fLastGroupId = 0;
-        fLastPortId  = 0;
-        fLastConnectionId = 0;
-
-        fUsedGroupNames.list.clear();
-        fUsedPortNames.list.clear();
-        fUsedConnections.list.clear();
+        fUsedGroups.clear();
+        fUsedPorts.clear();
+        fUsedConnections.clear();
         fNewGroups.clear();
 
         initJackPatchbay(jackbridge_get_client_name(fClient));
@@ -1605,7 +1593,7 @@ protected:
         // do nothing on client registration, wait for first port
         if (reg) return;
 
-        const uint groupId(fUsedGroupNames.getGroupId(name));
+        const uint groupId(fUsedGroups.getGroupId(name));
 
         // clients might have been registered without ports
         if (groupId == 0) return;
@@ -1614,7 +1602,7 @@ protected:
         groupNameToId.setData(groupId, name);
 
         callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED, groupNameToId.group, 0, 0, 0.0f, nullptr);
-        fUsedGroupNames.list.removeOne(groupNameToId);
+        fUsedGroups.list.removeOne(groupNameToId);
     }
 
     void handleJackPortRegistrationCallback(const jack_port_id_t port, const bool reg)
@@ -1638,11 +1626,11 @@ protected:
 
             const int jackPortFlags(jackbridge_port_flags(jackPort));
 
-            uint groupId(fUsedGroupNames.getGroupId(groupName));
+            uint groupId(fUsedGroups.getGroupId(groupName));
 
             if (groupId == 0)
             {
-                groupId = ++fLastGroupId;
+                groupId = ++fUsedGroups.lastId;
                 PatchbayIcon icon = (jackPortFlags & JackPortIsPhysical) ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION;
 
                 GroupNameToId groupNameToId;
@@ -1651,18 +1639,18 @@ protected:
                 callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, groupNameToId.group, icon, -1, 0.0f, groupNameToId.name);
 
                 fNewGroups.append(groupId);
-                fUsedGroupNames.list.append(groupNameToId);
+                fUsedGroups.list.append(groupNameToId);
             }
 
             addPatchbayJackPort(groupId, jackPort, shortPortName, fullPortName, jackPortFlags);
         }
         else
         {
-            const PortNameToId& portNameToId(fUsedPortNames.getPortNameToId(fullPortName));
+            const PortNameToId& portNameToId(fUsedPorts.getPortNameToId(fullPortName));
             CARLA_SAFE_ASSERT_RETURN(portNameToId.group > 0 && portNameToId.port > 0,);
 
             callback(ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED, portNameToId.group, static_cast<int>(portNameToId.port), 0, 0.0f, nullptr);
-            fUsedPortNames.list.removeOne(portNameToId);
+            fUsedPorts.list.removeOne(portNameToId);
         }
     }
 
@@ -1680,10 +1668,10 @@ protected:
         const char* const fullPortNameB(jackbridge_port_name(jackPortB));
         CARLA_SAFE_ASSERT_RETURN(fullPortNameB != nullptr && fullPortNameB[0] != '\0',);
 
-        const PortNameToId& portNameToIdA(fUsedPortNames.getPortNameToId(fullPortNameA));
+        const PortNameToId& portNameToIdA(fUsedPorts.getPortNameToId(fullPortNameA));
         CARLA_SAFE_ASSERT_RETURN(portNameToIdA.group > 0 && portNameToIdA.port > 0,);
 
-        const PortNameToId& portNameToIdB(fUsedPortNames.getPortNameToId(fullPortNameB));
+        const PortNameToId& portNameToIdB(fUsedPorts.getPortNameToId(fullPortNameB));
         CARLA_SAFE_ASSERT_RETURN(portNameToIdB.group > 0 && portNameToIdB.port > 0,);
 
         if (connect)
@@ -1693,7 +1681,7 @@ protected:
             strBuf[STR_MAX] = '\0';
 
             ConnectionToId connectionToId;
-            connectionToId.setData(++fLastConnectionId, portNameToIdA.group, portNameToIdA.port, portNameToIdB.group, portNameToIdB.port);
+            connectionToId.setData(++fUsedConnections.lastId, portNameToIdA.group, portNameToIdA.port, portNameToIdB.group, portNameToIdB.port);
 
             callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
             fUsedConnections.list.append(connectionToId);
@@ -1720,7 +1708,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(oldName != nullptr && oldName[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(newName != nullptr && newName[0] != '\0',);
 
-        for (LinkedList<GroupNameToId>::Itenerator it = fUsedGroupNames.list.begin(); it.valid(); it.next())
+        for (LinkedList<GroupNameToId>::Itenerator it = fUsedGroups.list.begin(); it.valid(); it.next())
         {
             GroupNameToId& groupNameToId(it.getValue());
 
@@ -1750,10 +1738,10 @@ protected:
 
         CARLA_SAFE_ASSERT_RETURN(found,);
 
-        const uint groupId(fUsedGroupNames.getGroupId(groupName));
+        const uint groupId(fUsedGroups.getGroupId(groupName));
         CARLA_SAFE_ASSERT_RETURN(groupId > 0,);
 
-        for (LinkedList<PortNameToId>::Itenerator it = fUsedPortNames.list.begin(); it.valid(); it.next())
+        for (LinkedList<PortNameToId>::Itenerator it = fUsedPorts.list.begin(); it.valid(); it.next())
         {
             PortNameToId& portNameToId(it.getValue());
 
@@ -1817,12 +1805,8 @@ private:
 
     jack_port_t* fRackPorts[kRackPortCount];
 
-    uint fLastGroupId;
-    uint fLastPortId;
-    uint fLastConnectionId;
-
-    PatchbayGroupList      fUsedGroupNames;
-    PatchbayPortList       fUsedPortNames;
+    PatchbayGroupList      fUsedGroups;
+    PatchbayPortList       fUsedPorts;
     PatchbayConnectionList fUsedConnections;
     LinkedList<uint>       fNewGroups;
 
@@ -1879,9 +1863,6 @@ private:
 
     void initJackPatchbay(const char* const ourName)
     {
-        CARLA_SAFE_ASSERT_RETURN(fLastGroupId == 0,);
-        CARLA_SAFE_ASSERT_RETURN(fLastPortId == 0,);
-        CARLA_SAFE_ASSERT_RETURN(fLastConnectionId == 0,);
         CARLA_SAFE_ASSERT_RETURN(ourName != nullptr && ourName[0] != '\0',);
 
         QStringList parsedGroups;
@@ -1891,10 +1872,10 @@ private:
             parsedGroups.append(QString(ourName));
 
             GroupNameToId groupNameToId;
-            groupNameToId.setData(++fLastGroupId, ourName);
+            groupNameToId.setData(++fUsedGroups.lastId, ourName);
 
             callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, groupNameToId.group, PATCHBAY_ICON_CARLA, -1, 0.0f, groupNameToId.name);
-            fUsedGroupNames.list.append(groupNameToId);
+            fUsedGroups.list.append(groupNameToId);
         }
 
         // query all jack ports
@@ -1925,12 +1906,12 @@ private:
 
                 if (parsedGroups.contains(qGroupName))
                 {
-                    groupId = fUsedGroupNames.getGroupId(groupName);
+                    groupId = fUsedGroups.getGroupId(groupName);
                     CARLA_SAFE_ASSERT_CONTINUE(groupId > 0);
                 }
                 else
                 {
-                    groupId = ++fLastGroupId;
+                    groupId = ++fUsedGroups.lastId;
                     parsedGroups.append(qGroupName);
 
                     int pluginId = -1;
@@ -1942,7 +1923,7 @@ private:
                     groupNameToId.setData(groupId, groupName);
 
                     callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, groupNameToId.group, icon, pluginId, 0.0f, groupNameToId.name);
-                    fUsedGroupNames.list.append(groupNameToId);
+                    fUsedGroups.list.append(groupNameToId);
                 }
 
                 addPatchbayJackPort(groupId, jackPort, shortPortName, fullPortName, jackPortFlags);
@@ -1962,7 +1943,7 @@ private:
                 const jack_port_t* const jackPort(jackbridge_port_by_name(fClient, fullPortName));
                 CARLA_SAFE_ASSERT_CONTINUE(jackPort != nullptr);
 
-                const PortNameToId& thisPort(fUsedPortNames.getPortNameToId(fullPortName));
+                const PortNameToId& thisPort(fUsedPorts.getPortNameToId(fullPortName));
 
                 CARLA_SAFE_ASSERT_CONTINUE(thisPort.group > 0);
                 CARLA_SAFE_ASSERT_CONTINUE(thisPort.port > 0);
@@ -1974,7 +1955,7 @@ private:
                         const char* const connection(connections[j]);
                         CARLA_SAFE_ASSERT_CONTINUE(connection != nullptr && connection[0] != '\0');
 
-                        const PortNameToId& targetPort(fUsedPortNames.getPortNameToId(connection));
+                        const PortNameToId& targetPort(fUsedPorts.getPortNameToId(connection));
 
                         CARLA_SAFE_ASSERT_CONTINUE(targetPort.group > 0);
                         CARLA_SAFE_ASSERT_CONTINUE(targetPort.port > 0);
@@ -1984,7 +1965,7 @@ private:
                         strBuf[STR_MAX] = '\0';
 
                         ConnectionToId connectionToId;
-                        connectionToId.setData(++fLastConnectionId, thisPort.group, thisPort.port, targetPort.group, targetPort.port);
+                        connectionToId.setData(++fUsedConnections.lastId, thisPort.group, thisPort.port, targetPort.group, targetPort.port);
 
                         callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
                         fUsedConnections.list.append(connectionToId);
@@ -2030,10 +2011,10 @@ private:
             canvasPortFlags |= PATCHBAY_PORT_TYPE_MIDI;
 
         PortNameToId portNameToId;
-        portNameToId.setData(groupId, ++fLastPortId, shortPortName, fullPortName);
+        portNameToId.setData(groupId, ++fUsedPorts.lastId, shortPortName, fullPortName);
 
         callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, portNameToId.group, static_cast<int>(portNameToId.port), static_cast<int>(canvasPortFlags), 0.0f, portNameToId.name);
-        fUsedPortNames.list.append(portNameToId);
+        fUsedPorts.list.append(portNameToId);
 
         return; // unused
         (void)portIsOSC;
