@@ -369,6 +369,9 @@ public:
         fMidiInEvents.clear();
         //fMidiOutEvents.clear();
 
+        fMidiIns.clear();
+        fMidiOuts.clear();
+
         return !hasError;
     }
 
@@ -413,7 +416,7 @@ public:
     {
         RackGraph* const rack(pData->graph.rack);
 
-        rack->clear();
+        rack->connections.clear();
 
         char strBuf[STR_MAX+1];
         strBuf[STR_MAX] = '\0';
@@ -499,6 +502,8 @@ public:
                 portNameToId.setData(RACK_GRAPH_GROUP_MIDI_OUT, i, portName.c_str(), strBuf);
 
                 callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, portNameToId.group, static_cast<int>(portNameToId.port), PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT, 0.0f, portNameToId.name);
+
+                rack->midi.outs.append(portNameToId);
             }
         }
 
@@ -572,10 +577,10 @@ public:
             const MidiPort& midiPort(it.getValue());
 
             const uint portId(rack->midi.getPortId(true, midiPort.name));
-            CARLA_SAFE_ASSERT_CONTINUE(portId > 0 && portId < rack->midi.ins.count());
+            CARLA_SAFE_ASSERT_CONTINUE(portId < rack->midi.ins.count());
 
             ConnectionToId connectionToId;
-            connectionToId.setData(++(rack->connections.lastId), RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_OUT2, RACK_GRAPH_GROUP_AUDIO_OUT, portId);
+            connectionToId.setData(++(rack->connections.lastId), RACK_GRAPH_GROUP_MIDI_IN, portId, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_MIDI_IN);
 
             std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
 
@@ -589,7 +594,7 @@ public:
             const MidiPort& midiPort(it.getValue());
 
             const uint portId(rack->midi.getPortId(false, midiPort.name));
-            CARLA_SAFE_ASSERT_CONTINUE(portId > 0 && portId < rack->midi.outs.count());
+            CARLA_SAFE_ASSERT_CONTINUE(portId < rack->midi.outs.count());
 
             ConnectionToId connectionToId;
             connectionToId.setData(++(rack->connections.lastId), RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_MIDI_OUT, RACK_GRAPH_GROUP_MIDI_OUT, portId);
@@ -633,6 +638,8 @@ protected:
 
         for (uint i=0; i < fAudioOutCount; ++i)
             outBuf[i] = outsPtr+(nframes*i);
+
+        FLOAT_CLEAR(outsPtr, nframes*fAudioOutCount);
 
         // initialize input events
         carla_zeroStruct<EngineEvent>(pData->events.in, kMaxEngineEventInternalCount);
@@ -765,7 +772,13 @@ protected:
             return false;
         }
 
-        rtMidiIn->openPort(rtMidiPortIndex, portName);
+        try {
+            rtMidiIn->openPort(rtMidiPortIndex, portName);
+        }
+        catch(...) {
+            delete rtMidiIn;
+            return false;
+        };
 
         MidiPort midiPort;
         midiPort.rtmidi = rtMidiIn;
@@ -823,37 +836,10 @@ protected:
         return true;
     }
 
-    // FIXME - this seems to be reversed
     bool disconnectRackMidiInPort(const char* const portName) override
     {
         CARLA_SAFE_ASSERT_RETURN(portName != nullptr && portName[0] != '\0', false);
         carla_debug("CarlaEngineRtAudio::disconnectRackMidiInPort(\"%s\")", portName);
-
-        RackGraph* const rack(pData->graph.rack);
-        CARLA_SAFE_ASSERT_RETURN(rack->midi.ins.count() > 0, false);
-
-        for (LinkedList<MidiPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
-        {
-            MidiPort& midiPort(it.getValue());
-
-            if (std::strcmp(midiPort.name, portName) != 0)
-                continue;
-
-            RtMidiOut* const midiOutPort((RtMidiOut*)midiPort.rtmidi);
-
-            delete midiOutPort;
-
-            fMidiOuts.remove(it);
-            return true;
-        }
-
-        return false;
-    }
-
-    bool disconnectRackMidiOutPort(const char* const portName) override
-    {
-        CARLA_SAFE_ASSERT_RETURN(portName != nullptr && portName[0] != '\0', false);
-        carla_debug("CarlaEngineRtAudio::disconnectRackMidiOutPort(\"%s\")", portName);
 
         RackGraph* const rack(pData->graph.rack);
         CARLA_SAFE_ASSERT_RETURN(rack->midi.ins.count() > 0, false);
@@ -871,6 +857,32 @@ protected:
             delete midiInPort;
 
             fMidiIns.remove(it);
+            return true;
+        }
+
+        return false;
+    }
+
+    bool disconnectRackMidiOutPort(const char* const portName) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(portName != nullptr && portName[0] != '\0', false);
+        carla_debug("CarlaEngineRtAudio::disconnectRackMidiOutPort(\"%s\")", portName);
+
+        RackGraph* const rack(pData->graph.rack);
+        CARLA_SAFE_ASSERT_RETURN(rack->midi.ins.count() > 0, false);
+
+        for (LinkedList<MidiPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
+        {
+            MidiPort& midiPort(it.getValue());
+
+            if (std::strcmp(midiPort.name, portName) != 0)
+                continue;
+
+            RtMidiOut* const midiOutPort((RtMidiOut*)midiPort.rtmidi);
+
+            delete midiOutPort;
+
+            fMidiOuts.remove(it);
             return true;
         }
 
@@ -912,6 +924,7 @@ private:
         RtLinkedList<RtMidiEvent> data;
         RtLinkedList<RtMidiEvent> dataPending;
 
+        // FIXME - 32, 512 + append_sleepy? check plugin code
         RtMidiEvents()
             : dataPool(512, 512),
               data(dataPool),

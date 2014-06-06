@@ -35,17 +35,17 @@ CARLA_BACKEND_START_NAMESPACE
 
 static uint getCarlaRackPortIdFromName(const char* const shortname) noexcept
 {
-    if (std::strcmp(shortname, "AudioIn1") == 0)
+    if (std::strcmp(shortname, "AudioIn1") == 0 || std::strcmp(shortname, "audio-in1") == 0)
         return RACK_GRAPH_CARLA_PORT_AUDIO_IN1;
-    if (std::strcmp(shortname, "AudioIn2") == 0)
+    if (std::strcmp(shortname, "AudioIn2") == 0 || std::strcmp(shortname, "audio-in2") == 0)
         return RACK_GRAPH_CARLA_PORT_AUDIO_IN2;
-    if (std::strcmp(shortname, "AudioOut1") == 0)
+    if (std::strcmp(shortname, "AudioOut1") == 0 || std::strcmp(shortname, "audio-out1") == 0)
         return RACK_GRAPH_CARLA_PORT_AUDIO_OUT1;
-    if (std::strcmp(shortname, "AudioOut2") == 0)
+    if (std::strcmp(shortname, "AudioOut2") == 0 || std::strcmp(shortname, "audio-out2") == 0)
         return RACK_GRAPH_CARLA_PORT_AUDIO_OUT2;
-    if (std::strcmp(shortname, "MidiIn") == 0)
+    if (std::strcmp(shortname, "MidiIn") == 0 || std::strcmp(shortname, "midi-in") == 0)
         return RACK_GRAPH_CARLA_PORT_MIDI_IN;
-    if (std::strcmp(shortname, "MidiOut") == 0)
+    if (std::strcmp(shortname, "MidiOut") == 0 || std::strcmp(shortname, "midi-out") == 0)
         return RACK_GRAPH_CARLA_PORT_MIDI_OUT;
 
     carla_stderr("CarlaBackend::getCarlaRackPortIdFromName(%s) - invalid short name", shortname);
@@ -113,41 +113,41 @@ bool RackGraph::connect(CarlaEngine* const engine, const uint groupA, const uint
     switch (carlaPort)
     {
     case RACK_GRAPH_CARLA_PORT_AUDIO_IN1:
-        CARLA_SAFE_ASSERT_RETURN(otherPort.group == RACK_GRAPH_GROUP_AUDIO_OUT, false);
+        CARLA_SAFE_ASSERT_RETURN(otherPort.group == RACK_GRAPH_GROUP_AUDIO_IN, false);
         audio.mutex.lock();
         makeConnection = audio.connectedIn1.append(otherPort.port);
         audio.mutex.unlock();
         break;
 
     case RACK_GRAPH_CARLA_PORT_AUDIO_IN2:
-        CARLA_SAFE_ASSERT_RETURN(otherPort.group == RACK_GRAPH_GROUP_AUDIO_OUT, false);
+        CARLA_SAFE_ASSERT_RETURN(otherPort.group == RACK_GRAPH_GROUP_AUDIO_IN, false);
         audio.mutex.lock();
         makeConnection = audio.connectedIn2.append(otherPort.port);
         audio.mutex.unlock();
         break;
 
     case RACK_GRAPH_CARLA_PORT_AUDIO_OUT1:
-        CARLA_SAFE_ASSERT_RETURN(otherPort.group == RACK_GRAPH_GROUP_AUDIO_IN, false);
+        CARLA_SAFE_ASSERT_RETURN(otherPort.group == RACK_GRAPH_GROUP_AUDIO_OUT, false);
         audio.mutex.lock();
         makeConnection = audio.connectedOut1.append(otherPort.port);
         audio.mutex.unlock();
         break;
 
     case RACK_GRAPH_CARLA_PORT_AUDIO_OUT2:
-        CARLA_SAFE_ASSERT_RETURN(otherPort.group == RACK_GRAPH_GROUP_AUDIO_IN, false);
+        CARLA_SAFE_ASSERT_RETURN(otherPort.group == RACK_GRAPH_GROUP_AUDIO_OUT, false);
         audio.mutex.lock();
         makeConnection = audio.connectedOut2.append(otherPort.port);
         audio.mutex.unlock();
         break;
 
     case RACK_GRAPH_CARLA_PORT_MIDI_IN:
-        CARLA_SAFE_ASSERT_RETURN(otherPort.group == RACK_GRAPH_GROUP_MIDI_OUT, false);
+        CARLA_SAFE_ASSERT_RETURN(otherPort.group == RACK_GRAPH_GROUP_MIDI_IN, false);
         if (const char* const portName = midi.getName(true, otherPort.port))
             makeConnection = engine->connectRackMidiInPort(portName);
         break;
 
     case RACK_GRAPH_CARLA_PORT_MIDI_OUT:
-        CARLA_SAFE_ASSERT_RETURN(otherPort.group == RACK_GRAPH_GROUP_MIDI_IN, false);
+        CARLA_SAFE_ASSERT_RETURN(otherPort.group == RACK_GRAPH_GROUP_MIDI_OUT, false);
         if (const char* const portName = midi.getName(false, otherPort.port))
             makeConnection = engine->connectRackMidiOutPort(portName);
         break;
@@ -159,7 +159,8 @@ bool RackGraph::connect(CarlaEngine* const engine, const uint groupA, const uint
         return false;
     }
 
-    ConnectionToId connectionToId = { ++connections.lastId, groupA, portA, groupB, portB };
+    ConnectionToId connectionToId;
+    connectionToId.setData(++connections.lastId, groupA, portA, groupB, portB);
 
     char strBuf[STR_MAX+1];
     strBuf[STR_MAX] = '\0';
