@@ -146,7 +146,7 @@ bool RackGraph::connect(CarlaEngine* const engine, const uint groupA, const uint
         return false;
     }
 
-    ConnectionToId connectionToId = { lastConnectionId++, groupA, portA, groupB, portB };
+    ConnectionToId connectionToId = { ++lastConnectionId, groupA, portA, groupB, portB };
 
     char strBuf[STR_MAX+1];
     strBuf[STR_MAX] = '\0';
@@ -155,7 +155,6 @@ bool RackGraph::connect(CarlaEngine* const engine, const uint groupA, const uint
     engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
 
     audio.usedConnections.append(connectionToId);
-
     return true;
 }
 

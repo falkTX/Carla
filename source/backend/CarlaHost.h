@@ -499,7 +499,7 @@ CARLA_EXPORT bool carla_save_project(const char* filename);
  * @param portIdB  Input port
  * @see ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED
  */
-CARLA_EXPORT bool carla_patchbay_connect(int groupIdA, int portIdA, int groupIdB, int portIdB);
+CARLA_EXPORT bool carla_patchbay_connect(uint groupIdA, uint portIdA, uint groupIdB, uint portIdB);
 
 /*!
  * Disconnect two patchbay ports.

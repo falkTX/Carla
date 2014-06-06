@@ -23,8 +23,8 @@
 #include "CarlaEngineThread.hpp"
 
 #include "CarlaMathUtils.hpp"
+#include "CarlaPatchbayUtils.hpp"
 #include "CarlaMutex.hpp"
-#include "LinkedList.hpp"
 
 // -----------------------------------------------------------------------
 // Engine helper macro, sets lastError and returns false/NULL
@@ -44,6 +44,13 @@ CARLA_BACKEND_START_NAMESPACE
 // Maximum pre-allocated events for rack and bridge modes
 
 const ushort kMaxEngineEventInternalCount = 512;
+
+// -----------------------------------------------------------------------
+// Patchbay stuff
+
+struct GroupPort {
+    uint group, port;
+};
 
 #ifndef BUILD_BRIDGE
 // -----------------------------------------------------------------------
@@ -67,26 +74,6 @@ enum RackGraphCarlaPortIds {
     RACK_GRAPH_CARLA_PORT_MIDI_IN    = 5,
     RACK_GRAPH_CARLA_PORT_MIDI_OUT   = 6,
     RACK_GRAPH_CARLA_PORT_MAX        = 7
-};
-
-struct GroupNameToId {
-    uint group;
-    char name[STR_MAX+1];
-};
-
-struct PortNameToId {
-    uint port;
-    char name[STR_MAX+1];
-};
-
-struct ConnectionToId {
-    uint id;
-    uint groupA, portA;
-    uint groupB, portB;
-};
-
-struct GroupPort {
-    uint group, port;
 };
 
 // -----------------------------------------------------------------------

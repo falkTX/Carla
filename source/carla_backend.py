@@ -1812,7 +1812,7 @@ class Host(object):
         self.lib.carla_save_project.argtypes = [c_char_p]
         self.lib.carla_save_project.restype = c_bool
 
-        self.lib.carla_patchbay_connect.argtypes = [c_int, c_int, c_int, c_int]
+        self.lib.carla_patchbay_connect.argtypes = [c_uint, c_uint, c_uint, c_uint]
         self.lib.carla_patchbay_connect.restype = c_bool
 
         self.lib.carla_patchbay_disconnect.argtypes = [c_uint]
