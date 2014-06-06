@@ -1830,6 +1830,10 @@ private:
     {
         carla_debug("CarlaEngineJack::findPluginIdAndIcon(\"%s\", ...)", clientName);
 
+        // TODO - this currently only works in multi-client mode
+        if (pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+            return false;
+
         for (uint i=0; i < pData->curPluginCount; ++i)
         {
             CarlaPlugin* const plugin(pData->plugins[i].plugin);
