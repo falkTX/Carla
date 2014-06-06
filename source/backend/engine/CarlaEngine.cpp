@@ -1966,17 +1966,11 @@ void CarlaEngine::setFileCallback(const FileCallbackFunc func, void* const ptr) 
 // -----------------------------------------------------------------------
 // Patchbay
 
-bool CarlaEngine::patchbayConnect(const int groupA, const int portA, const int groupB, const int portB)
+bool CarlaEngine::patchbayConnect(const uint groupA, const uint portA, const uint groupB, const uint portB)
 {
     CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
     CARLA_SAFE_ASSERT_RETURN(pData->audio.isReady, false);
-    carla_debug("CarlaEngine::patchbayConnect(%i, %i)", portA, portB);
-
-    if (portA < 0 || portB < 0)
-    {
-        setLastError("Invalid connection");
-        return false;
-    }
+    carla_debug("CarlaEngine::patchbayConnect(%u, %u, %u, %u)", groupA, portA, groupB, portB);
 
     if (pData->graph.isRack)
     {
@@ -1994,7 +1988,7 @@ bool CarlaEngine::patchbayDisconnect(const uint connectionId)
 {
     CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
     CARLA_SAFE_ASSERT_RETURN(pData->audio.isReady, false);
-    carla_debug("CarlaEngineRtAudio::patchbayDisconnect(%i)", connectionId);
+    carla_debug("CarlaEngineRtAudio::patchbayDisconnect(%u)", connectionId);
 
     if (pData->graph.isRack)
     {
@@ -2312,27 +2306,27 @@ void CarlaEngine::restorePatchbayConnection(const char* const connSource, const 
     CARLA_SAFE_ASSERT_RETURN(connTarget != nullptr && connTarget[0] != '\0',);
     carla_debug("CarlaEngine::restorePatchbayConnection(\"%s\", \"%s\")", connSource, connTarget);
 
-    int sourceGroup, targetGroup;
-    int sourcePort,  targetPort;
+    uint groupA, portA;
+    uint groupB, portB;
 
     if (pData->graph.isRack)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->graph.rack != nullptr,);
-        if (! pData->graph.rack->getPortIdFromName(connSource, sourceGroup, sourcePort))
+        if (! pData->graph.rack->getPortIdFromFullName(connSource, groupA, portA))
             return;
-        if (! pData->graph.rack->getPortIdFromName(connTarget, targetGroup, targetPort))
+        if (! pData->graph.rack->getPortIdFromFullName(connTarget, groupB, portB))
             return;
     }
     else
     {
         CARLA_SAFE_ASSERT_RETURN(pData->graph.patchbay != nullptr,);
-        if (! pData->graph.patchbay->getPortIdFromName(connSource, sourceGroup, sourcePort))
+        if (! pData->graph.patchbay->getPortIdFromFullName(connSource, groupA, portA))
             return;
-        if (! pData->graph.patchbay->getPortIdFromName(connTarget, targetGroup, targetPort))
+        if (! pData->graph.patchbay->getPortIdFromFullName(connTarget, groupB, portB))
             return;
     }
 
-    patchbayConnect(targetGroup, targetPort, sourceGroup, sourcePort);
+    patchbayConnect(groupA, portA, groupB, portB);
 }
 #endif
 

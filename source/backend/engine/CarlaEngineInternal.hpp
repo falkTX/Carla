@@ -29,8 +29,8 @@
 // -----------------------------------------------------------------------
 // Engine helper macro, sets lastError and returns false/NULL
 
-#define CARLA_SAFE_ASSERT_RETURN_ERR(cond, err)  if (cond) pass(); else { carla_safe_assert(#cond, __FILE__, __LINE__); setLastError(err); return false; }
-#define CARLA_SAFE_ASSERT_RETURN_ERRN(cond, err) if (cond) pass(); else { carla_safe_assert(#cond, __FILE__, __LINE__); setLastError(err); return nullptr; }
+#define CARLA_SAFE_ASSERT_RETURN_ERR(cond, err)  if (! (cond)) { carla_safe_assert(#cond, __FILE__, __LINE__); setLastError(err); return false;   }
+#define CARLA_SAFE_ASSERT_RETURN_ERRN(cond, err) if (! (cond)) { carla_safe_assert(#cond, __FILE__, __LINE__); setLastError(err); return nullptr; }
 
 // -----------------------------------------------------------------------
 
@@ -43,7 +43,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 // Maximum pre-allocated events for rack and bridge modes
 
-const unsigned short kMaxEngineEventInternalCount = 512;
+const ushort kMaxEngineEventInternalCount = 512;
 
 #ifndef BUILD_BRIDGE
 // -----------------------------------------------------------------------
@@ -69,15 +69,24 @@ enum RackGraphCarlaPortIds {
     RACK_GRAPH_CARLA_PORT_MAX        = 7
 };
 
+struct GroupNameToId {
+    uint group;
+    char name[STR_MAX+1];
+};
+
 struct PortNameToId {
-    int port;
+    uint port;
     char name[STR_MAX+1];
 };
 
 struct ConnectionToId {
     uint id;
-    int groupA, portA;
-    int groupB, portB;
+    uint groupA, portA;
+    uint groupB, portB;
+};
+
+struct GroupPort {
+    uint group, port;
 };
 
 // -----------------------------------------------------------------------
@@ -86,13 +95,21 @@ struct ConnectionToId {
 struct RackGraph {
     uint lastConnectionId;
 
-    CarlaMutex connectLock; // Recursive
+    struct Audio {
+        CarlaMutex mutex;
+        LinkedList<uint> connectedIn1;
+        LinkedList<uint> connectedIn2;
+        LinkedList<uint> connectedOut1;
+        LinkedList<uint> connectedOut2;
+        LinkedList<ConnectionToId> usedConnections;
+    } audio;
 
-    LinkedList<int> connectedIn1;
-    LinkedList<int> connectedIn2;
-    LinkedList<int> connectedOut1;
-    LinkedList<int> connectedOut2;
-    LinkedList<ConnectionToId> usedConnections;
+    struct MIDI {
+        LinkedList<PortNameToId> ins;
+        LinkedList<PortNameToId> outs;
+
+        const char* getName(const bool isInput, const uint index) const;
+    } midi;
 
     RackGraph() noexcept
         : lastConnectionId(0) {}
@@ -106,19 +123,24 @@ struct RackGraph {
     {
         lastConnectionId = 0;
 
-        connectedIn1.clear();
-        connectedIn2.clear();
-        connectedOut1.clear();
-        connectedOut2.clear();
+        audio.mutex.lock();
+        audio.connectedIn1.clear();
+        audio.connectedIn2.clear();
+        audio.connectedOut1.clear();
+        audio.connectedOut2.clear();
+        audio.usedConnections.clear();
+        audio.mutex.unlock();
 
-        usedConnections.clear();
+        midi.ins.clear();
+        midi.outs.clear();
     }
 
-    bool connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int portB) noexcept;
+    bool connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
     bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept;
 
     const char* const* getConnections() const;
-    bool getPortIdFromName(const char* const portName, int& groupId, int& portId);
+
+    bool getPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const;
 };
 
 // -----------------------------------------------------------------------
@@ -127,7 +149,7 @@ struct RackGraph {
 struct PatchbayGraph {
     PatchbayGraph() noexcept {}
 
-    ~PatchbayGraph()
+    ~PatchbayGraph() noexcept
     {
         clear();
     }
@@ -136,11 +158,12 @@ struct PatchbayGraph {
     {
     }
 
-    bool connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int portB) noexcept;
+    bool connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
     bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept;
 
     const char* const* getConnections() const;
-    bool getPortIdFromName(const char* const portName, int& groupId, int& portId);
+
+    bool getPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const;
 };
 #endif
 
@@ -322,12 +345,16 @@ struct EngineInternalGraph {
 
     void create()
     {
-        CARLA_SAFE_ASSERT(rack == nullptr);
-
         if (isRack)
+        {
+            CARLA_SAFE_ASSERT_RETURN(rack == nullptr,);
             rack = new RackGraph();
+        }
         else
+        {
+            CARLA_SAFE_ASSERT_RETURN(patchbay == nullptr,);
             patchbay = new PatchbayGraph();
+        }
     }
 
     void clear()
@@ -376,9 +403,9 @@ enum EnginePostAction {
 
 struct EngineNextAction {
     EnginePostAction opcode;
-    unsigned int pluginId;
-    unsigned int value;
-    CarlaMutex   mutex;
+    uint pluginId;
+    uint value;
+    CarlaMutex mutex;
 
     EngineNextAction() noexcept
         : opcode(kEnginePostActionNull),

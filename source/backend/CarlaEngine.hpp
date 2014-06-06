@@ -905,7 +905,7 @@ public:
     /*!
      * Connect patchbay ports \a portA and \a portB.
      */
-    virtual bool patchbayConnect(const int groupA, const int portA, const int groupB, const int portB);
+    virtual bool patchbayConnect(const uint groupA, const uint portA, const uint groupB, const uint portB);
 
     /*!
      * Disconnect patchbay connection \a connectionId.
@@ -1022,10 +1022,10 @@ public:
     /*!
      * Virtual functions for handling MIDI ports in the rack graph.
      */
-    virtual bool connectRackMidiInPort(const int)     { return false; }
-    virtual bool connectRackMidiOutPort(const int)    { return false; }
-    virtual bool disconnectRackMidiInPort(const int)  { return false; }
-    virtual bool disconnectRackMidiOutPort(const int) { return false; }
+    virtual bool connectRackMidiInPort(const char* const)     { return false; }
+    virtual bool connectRackMidiOutPort(const char* const)    { return false; }
+    virtual bool disconnectRackMidiInPort(const char* const)  { return false; }
+    virtual bool disconnectRackMidiOutPort(const char* const) { return false; }
 #endif
 
     // -------------------------------------------------------------------

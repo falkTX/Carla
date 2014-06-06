@@ -33,8 +33,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 // Rack Patchbay stuff
 
-static
-int getCarlaRackPortIdFromName(const char* const shortname) noexcept
+static uint getCarlaRackPortIdFromName(const char* const shortname) noexcept
 {
     if (std::strcmp(shortname, "AudioIn1") == 0)
         return RACK_GRAPH_CARLA_PORT_AUDIO_IN1;
@@ -48,74 +47,96 @@ int getCarlaRackPortIdFromName(const char* const shortname) noexcept
         return RACK_GRAPH_CARLA_PORT_MIDI_IN;
     if (std::strcmp(shortname, "MidiOut") == 0)
         return RACK_GRAPH_CARLA_PORT_MIDI_OUT;
+
+    carla_stderr("CarlaBackend::getCarlaRackPortIdFromName(%s) - invalid short name", shortname);
     return RACK_GRAPH_CARLA_PORT_NULL;
 }
 
 // -----------------------------------------------------------------------
 // RackGraph
 
-bool RackGraph::connect(CarlaEngine* const engine, const int groupA, const int portA, const int groupB, const int portB) noexcept
+const char* RackGraph::MIDI::getName(const bool isInput, const uint index) const
+{
+    for (LinkedList<PortNameToId>::Itenerator it = isInput ? ins.begin() : outs.begin(); it.valid(); it.next())
+    {
+        const PortNameToId& port(it.getValue());
+
+        if (port.port == index)
+            return port.name;
+    }
+
+    return nullptr;
+}
+
+bool RackGraph::connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr, false);
-    CARLA_SAFE_ASSERT_RETURN(groupA != groupB, false);
-    CARLA_SAFE_ASSERT_RETURN(groupA >= RACK_GRAPH_GROUP_CARLA && groupA < RACK_GRAPH_GROUP_MAX, false);
-    CARLA_SAFE_ASSERT_RETURN(groupB >= RACK_GRAPH_GROUP_CARLA && groupB < RACK_GRAPH_GROUP_MAX, false);
-    CARLA_SAFE_ASSERT_RETURN(portA >= 0, false);
-    CARLA_SAFE_ASSERT_RETURN(portB >= 0, false);
 
-    int carlaPort, otherPort;
+    uint carlaPort;
+    GroupPort otherPort;
 
     if (groupA == RACK_GRAPH_GROUP_CARLA)
     {
-        carlaPort = portA;
-        otherPort = portB;
+        CARLA_SAFE_ASSERT_RETURN(groupB != RACK_GRAPH_GROUP_CARLA, false);
+
+        carlaPort       = portA;
+        otherPort.group = groupB;
+        otherPort.port  = portB;
     }
     else
     {
         CARLA_SAFE_ASSERT_RETURN(groupB == RACK_GRAPH_GROUP_CARLA, false);
 
-        carlaPort = portB;
-        otherPort = portA;
+        carlaPort       = portB;
+        otherPort.group = groupA;
+        otherPort.port  = portA;
     }
+
+    CARLA_SAFE_ASSERT_RETURN(carlaPort > RACK_GRAPH_CARLA_PORT_NULL && carlaPort < RACK_GRAPH_CARLA_PORT_MAX, false);
+    CARLA_SAFE_ASSERT_RETURN(otherPort.group > RACK_GRAPH_GROUP_CARLA && otherPort.group < RACK_GRAPH_GROUP_MAX, false);
 
     bool makeConnection = false;
 
     switch (carlaPort)
     {
     case RACK_GRAPH_CARLA_PORT_AUDIO_IN1:
-        connectLock.lock();
-        connectedIn1.append(otherPort);
-        connectLock.unlock();
-        makeConnection = true;
+        CARLA_SAFE_ASSERT_RETURN(otherPort.group == RACK_GRAPH_GROUP_AUDIO_OUT, false);
+        audio.mutex.lock();
+        makeConnection = audio.connectedIn1.append(otherPort.port);
+        audio.mutex.unlock();
         break;
 
     case RACK_GRAPH_CARLA_PORT_AUDIO_IN2:
-        connectLock.lock();
-        connectedIn2.append(otherPort);
-        connectLock.unlock();
-        makeConnection = true;
+        CARLA_SAFE_ASSERT_RETURN(otherPort.group == RACK_GRAPH_GROUP_AUDIO_OUT, false);
+        audio.mutex.lock();
+        makeConnection = audio.connectedIn2.append(otherPort.port);
+        audio.mutex.unlock();
         break;
 
     case RACK_GRAPH_CARLA_PORT_AUDIO_OUT1:
-        connectLock.lock();
-        connectedOut1.append(otherPort);
-        connectLock.unlock();
-        makeConnection = true;
+        CARLA_SAFE_ASSERT_RETURN(otherPort.group == RACK_GRAPH_GROUP_AUDIO_IN, false);
+        audio.mutex.lock();
+        makeConnection = audio.connectedOut1.append(otherPort.port);
+        audio.mutex.unlock();
         break;
 
     case RACK_GRAPH_CARLA_PORT_AUDIO_OUT2:
-        connectLock.lock();
-        connectedOut2.append(otherPort);
-        connectLock.unlock();
-        makeConnection = true;
+        CARLA_SAFE_ASSERT_RETURN(otherPort.group == RACK_GRAPH_GROUP_AUDIO_IN, false);
+        audio.mutex.lock();
+        makeConnection = audio.connectedOut2.append(otherPort.port);
+        audio.mutex.unlock();
         break;
 
     case RACK_GRAPH_CARLA_PORT_MIDI_IN:
-        makeConnection = engine->connectRackMidiInPort(otherPort);
+        CARLA_SAFE_ASSERT_RETURN(otherPort.group == RACK_GRAPH_GROUP_MIDI_OUT, false);
+        if (const char* const portName = midi.getName(true, otherPort.port))
+            makeConnection = engine->connectRackMidiInPort(portName);
         break;
 
     case RACK_GRAPH_CARLA_PORT_MIDI_OUT:
-        makeConnection = engine->connectRackMidiOutPort(otherPort);
+        CARLA_SAFE_ASSERT_RETURN(otherPort.group == RACK_GRAPH_GROUP_MIDI_IN, false);
+        if (const char* const portName = midi.getName(false, otherPort.port))
+            makeConnection = engine->connectRackMidiOutPort(portName);
         break;
     }
 
@@ -125,21 +146,15 @@ bool RackGraph::connect(CarlaEngine* const engine, const int groupA, const int p
         return false;
     }
 
-    ConnectionToId connectionToId;
-    connectionToId.id     = lastConnectionId;
-    connectionToId.groupA = groupA;
-    connectionToId.portA  = portA;
-    connectionToId.groupB = groupB;
-    connectionToId.portB  = portB;
+    ConnectionToId connectionToId = { lastConnectionId++, groupA, portA, groupB, portB };
 
     char strBuf[STR_MAX+1];
     strBuf[STR_MAX] = '\0';
-    std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", groupA, portA, groupB, portB);
+    std::snprintf(strBuf, STR_MAX, "%u:%u:%u:%u", groupA, portA, groupB, portB);
 
-    engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, lastConnectionId, 0, 0, 0.0f, strBuf);
+    engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
 
-    usedConnections.append(connectionToId);
-    ++lastConnectionId;
+    audio.usedConnections.append(connectionToId);
 
     return true;
 }
@@ -147,72 +162,86 @@ bool RackGraph::connect(CarlaEngine* const engine, const int groupA, const int p
 bool RackGraph::disconnect(CarlaEngine* const engine, const uint connectionId) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr, false);
-    CARLA_SAFE_ASSERT_RETURN(usedConnections.count() > 0, false);
+    CARLA_SAFE_ASSERT_RETURN(audio.usedConnections.count() > 0, false);
 
-    for (LinkedList<ConnectionToId>::Itenerator it=usedConnections.begin(); it.valid(); it.next())
+    for (LinkedList<ConnectionToId>::Itenerator it=audio.usedConnections.begin(); it.valid(); it.next())
     {
         const ConnectionToId& connection(it.getValue());
 
         if (connection.id != connectionId)
             continue;
 
-        int carlaPort, otherPort;
+        uint carlaPort;
+        GroupPort otherPort;
 
         if (connection.groupA == RACK_GRAPH_GROUP_CARLA)
         {
-            carlaPort = connection.portA;
-            otherPort = connection.portB;
+            CARLA_SAFE_ASSERT_RETURN(connection.groupB != RACK_GRAPH_GROUP_CARLA, false);
+
+            carlaPort       = connection.portA;
+            otherPort.group = connection.groupB;
+            otherPort.port  = connection.portB;
         }
         else
         {
             CARLA_SAFE_ASSERT_RETURN(connection.groupB == RACK_GRAPH_GROUP_CARLA, false);
 
-            carlaPort = connection.portB;
-            otherPort = connection.portA;
+            carlaPort       = connection.portB;
+            otherPort.group = connection.groupA;
+            otherPort.port  = connection.portA;
         }
+
+        CARLA_SAFE_ASSERT_RETURN(carlaPort > RACK_GRAPH_CARLA_PORT_NULL && carlaPort < RACK_GRAPH_CARLA_PORT_MAX, false);
+        CARLA_SAFE_ASSERT_RETURN(otherPort.group > RACK_GRAPH_GROUP_CARLA && otherPort.group < RACK_GRAPH_GROUP_MAX, false);
+
+        bool makeDisconnection = false;
 
         switch (carlaPort)
         {
         case RACK_GRAPH_CARLA_PORT_AUDIO_IN1:
-            connectLock.lock();
-            connectedIn1.removeAll(otherPort);
-            connectLock.unlock();
+            audio.mutex.lock();
+            makeDisconnection = audio.connectedIn1.removeOne(otherPort.port);
+            audio.mutex.unlock();
             break;
 
         case RACK_GRAPH_CARLA_PORT_AUDIO_IN2:
-            connectLock.lock();
-            connectedIn2.removeAll(otherPort);
-            connectLock.unlock();
+            audio.mutex.lock();
+            makeDisconnection = audio.connectedIn2.removeOne(otherPort.port);
+            audio.mutex.unlock();
             break;
 
         case RACK_GRAPH_CARLA_PORT_AUDIO_OUT1:
-            connectLock.lock();
-            connectedOut1.removeAll(otherPort);
-            connectLock.unlock();
+            audio.mutex.lock();
+            makeDisconnection = audio.connectedOut1.removeOne(otherPort.port);
+            audio.mutex.unlock();
             break;
 
         case RACK_GRAPH_CARLA_PORT_AUDIO_OUT2:
-            connectLock.lock();
-            connectedOut2.removeAll(otherPort);
-            connectLock.unlock();
+            audio.mutex.lock();
+            makeDisconnection = audio.connectedOut2.removeOne(otherPort.port);
+            audio.mutex.unlock();
             break;
 
         case RACK_GRAPH_CARLA_PORT_MIDI_IN:
-            engine->disconnectRackMidiInPort(otherPort);
+            if (const char* const portName = midi.getName(true, otherPort.port))
+                makeDisconnection = engine->disconnectRackMidiInPort(portName);
             break;
 
         case RACK_GRAPH_CARLA_PORT_MIDI_OUT:
-            engine->disconnectRackMidiOutPort(otherPort);
+            if (const char* const portName = midi.getName(false, otherPort.port))
+                makeDisconnection = engine->disconnectRackMidiOutPort(portName);
             break;
+        }
 
-        default:
-            engine->setLastError("Invalid connection");
+        if (! makeDisconnection)
+        {
+            engine->setLastError("Invalid rack connection");
             return false;
         }
 
         engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connection.id, 0, 0, 0.0f, nullptr);
 
-        usedConnections.remove(it);
+        audio.usedConnections.remove(it);
         return true;
     }
 
@@ -222,62 +251,65 @@ bool RackGraph::disconnect(CarlaEngine* const engine, const uint connectionId) n
 
 const char* const* RackGraph::getConnections() const
 {
-    if (usedConnections.count() == 0)
+    if (audio.usedConnections.count() == 0)
         return nullptr;
 
     LinkedList<const char*> connList;
     char strBuf[STR_MAX+1];
+    strBuf[STR_MAX] = '\0';
 
-    for (LinkedList<ConnectionToId>::Itenerator it=usedConnections.begin(); it.valid(); it.next())
+    for (LinkedList<ConnectionToId>::Itenerator it=audio.usedConnections.begin(); it.valid(); it.next())
     {
         const ConnectionToId& connection(it.getValue());
 
-        CARLA_SAFE_ASSERT_CONTINUE(connection.groupA != connection.groupB);
-        CARLA_SAFE_ASSERT_CONTINUE(connection.groupA >= RACK_GRAPH_GROUP_CARLA && connection.groupA < RACK_GRAPH_GROUP_MAX);
-        CARLA_SAFE_ASSERT_CONTINUE(connection.groupB >= RACK_GRAPH_GROUP_CARLA && connection.groupB < RACK_GRAPH_GROUP_MAX);
-        CARLA_SAFE_ASSERT_CONTINUE(connection.portA >= 0);
-        CARLA_SAFE_ASSERT_CONTINUE(connection.portB >= 0);
-
-        int carlaPort, otherPort;
+        uint carlaPort;
+        GroupPort otherPort;
 
         if (connection.groupA == RACK_GRAPH_GROUP_CARLA)
         {
-            carlaPort = connection.portA;
-            otherPort = connection.portB;
+            CARLA_SAFE_ASSERT_CONTINUE(connection.groupB != RACK_GRAPH_GROUP_CARLA);
+
+            carlaPort       = connection.portA;
+            otherPort.group = connection.groupB;
+            otherPort.port  = connection.portB;
         }
         else
         {
             CARLA_SAFE_ASSERT_CONTINUE(connection.groupB == RACK_GRAPH_GROUP_CARLA);
 
-            carlaPort = connection.portB;
-            otherPort = connection.portA;
+            carlaPort       = connection.portB;
+            otherPort.group = connection.groupA;
+            otherPort.port  = connection.portA;
         }
+
+        CARLA_SAFE_ASSERT_CONTINUE(carlaPort > RACK_GRAPH_CARLA_PORT_NULL && carlaPort < RACK_GRAPH_CARLA_PORT_MAX);
+        CARLA_SAFE_ASSERT_CONTINUE(otherPort.group > RACK_GRAPH_GROUP_CARLA && otherPort.group < RACK_GRAPH_GROUP_MAX);
 
         switch (carlaPort)
         {
         case RACK_GRAPH_CARLA_PORT_AUDIO_IN1:
         case RACK_GRAPH_CARLA_PORT_AUDIO_IN2:
-            std::sprintf(strBuf, "AudioIn:%i", otherPort+1);
+            std::snprintf(strBuf, STR_MAX, "AudioIn:%i", otherPort.port+1);
             connList.append(carla_strdup(strBuf));
             connList.append(carla_strdup((carlaPort == RACK_GRAPH_CARLA_PORT_AUDIO_IN1) ? "Carla:AudioIn1" : "Carla:AudioIn2"));
             break;
 
         case RACK_GRAPH_CARLA_PORT_AUDIO_OUT1:
         case RACK_GRAPH_CARLA_PORT_AUDIO_OUT2:
+            std::snprintf(strBuf, STR_MAX, "AudioOut:%i", otherPort.port+1);
             connList.append(carla_strdup((carlaPort == RACK_GRAPH_CARLA_PORT_AUDIO_OUT1) ? "Carla:AudioOut1" : "Carla:AudioOut2"));
-            std::sprintf(strBuf, "AudioOut:%i", otherPort+1);
             connList.append(carla_strdup(strBuf));
             break;
 
         case RACK_GRAPH_CARLA_PORT_MIDI_IN:
-            std::sprintf(strBuf, "MidiIn:%i", otherPort+1);
+            std::snprintf(strBuf, STR_MAX, "MidiIn:%s", midi.getName(true, otherPort.port));
             connList.append(carla_strdup(strBuf));
             connList.append(carla_strdup("Carla:MidiIn"));
             break;
 
         case RACK_GRAPH_CARLA_PORT_MIDI_OUT:
+            std::snprintf(strBuf, STR_MAX, "MidiOut:%s", midi.getName(false, otherPort.port));
             connList.append(carla_strdup("Carla:MidiOut"));
-            std::sprintf(strBuf, "MidiOut:%i", otherPort+1);
             connList.append(carla_strdup(strBuf));
             break;
         }
@@ -291,7 +323,12 @@ const char* const* RackGraph::getConnections() const
     const char** const retConns = new const char*[connCount+1];
 
     for (size_t i=0; i < connCount; ++i)
+    {
         retConns[i] = connList.getAt(i, nullptr);
+
+        if (retConns[i] == nullptr)
+            retConns[i] = carla_strdup("(unknown)");
+    }
 
     retConns[connCount] = nullptr;
     connList.clear();
@@ -299,32 +336,41 @@ const char* const* RackGraph::getConnections() const
     return retConns;
 }
 
-bool RackGraph::getPortIdFromName(const char* const portName, int& groupId, int& portId)
+bool RackGraph::getPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const
 {
-    if (std::strncmp(portName, "Carla:", 6) == 0)
+    CARLA_SAFE_ASSERT_RETURN(fullPortName != nullptr && fullPortName[0] != '\0', false);
+
+    int portTest;
+
+    if (std::strncmp(fullPortName, "Carla:", 6) == 0)
     {
         groupId = RACK_GRAPH_GROUP_CARLA;
-        portId  = getCarlaRackPortIdFromName(portName+6);
+        portId  = getCarlaRackPortIdFromName(fullPortName+6);
+        CARLA_SAFE_ASSERT_RETURN(portId > RACK_GRAPH_CARLA_PORT_NULL && portId < RACK_GRAPH_CARLA_PORT_MAX, false);
     }
-    else if (std::strncmp(portName, "AudioIn:", 8) == 0)
+    else if (std::strncmp(fullPortName, "AudioIn:", 8) == 0)
     {
-        groupId = RACK_GRAPH_GROUP_AUDIO_IN;
-        portId  = std::atoi(portName+8) - 1;
+        groupId  = RACK_GRAPH_GROUP_AUDIO_IN;
+        portTest = std::atoi(fullPortName+8) - 1;
+        CARLA_SAFE_ASSERT_RETURN(portTest >= 0, false);
+        portId   = static_cast<uint>(portTest);
     }
-    else if (std::strncmp(portName, "AudioOut:", 9) == 0)
+    else if (std::strncmp(fullPortName, "AudioOut:", 9) == 0)
     {
-        groupId = RACK_GRAPH_GROUP_AUDIO_OUT;
-        portId  = std::atoi(portName+9) - 1;
+        groupId  = RACK_GRAPH_GROUP_AUDIO_OUT;
+        portTest = std::atoi(fullPortName+9) - 1;
+        CARLA_SAFE_ASSERT_RETURN(portTest >= 0, false);
+        portId   = static_cast<uint>(portTest);
     }
-    else if (std::strncmp(portName, "MidiIn:", 7) == 0)
+    else if (std::strncmp(fullPortName, "MidiIn:", 7) == 0)
     {
         groupId = RACK_GRAPH_GROUP_MIDI_IN;
-        portId  = std::atoi(portName+7) - 1;
+        //portId  = std::atoi(fullPortName+7) - 1;
     }
-    else if (std::strncmp(portName, "MidiOut:", 8) == 0)
+    else if (std::strncmp(fullPortName, "MidiOut:", 8) == 0)
     {
         groupId = RACK_GRAPH_GROUP_MIDI_OUT;
-        portId  = std::atoi(portName+8) - 1;
+        //portId  = std::atoi(fullPortName+8) - 1;
     }
     else
     {
@@ -336,9 +382,10 @@ bool RackGraph::getPortIdFromName(const char* const portName, int& groupId, int&
 
 // -----------------------------------------------------------------------
 // PatchbayGraph
+
 // TODO
 
-bool PatchbayGraph::connect(CarlaEngine* const engine, const int /*groupA*/, const int /*portA*/, const int /*groupB*/, const int /*portB*/) noexcept
+bool PatchbayGraph::connect(CarlaEngine* const engine, const uint /*groupA*/, const uint /*portA*/, const uint /*groupB*/, const uint /*portB*/) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr, false);
 
@@ -357,7 +404,7 @@ const char* const* PatchbayGraph::getConnections() const
     return nullptr;
 }
 
-bool PatchbayGraph::getPortIdFromName(const char* const /*portName*/, int& /*groupId*/, int& /*portId*/)
+bool PatchbayGraph::getPortIdFromFullName(const char* const /*fillPortName*/, uint& /*groupId*/, uint& /*portId*/) const
 {
     return false;
 }
@@ -639,17 +686,19 @@ void CarlaEngine::ProtectedData::processRack(const float* inBufReal[2], float* o
 
 void CarlaEngine::ProtectedData::processRackFull(const float* const* const inBuf, const uint32_t inCount, float* const* const outBuf, const uint32_t outCount, const uint32_t nframes, const bool isOffline)
 {
-    const CarlaMutexLocker _crml(graph.rack->connectLock); // Recursive
+    RackGraph::Audio& rackAudio(graph.rack->audio);
+
+    const CarlaMutexLocker _cml(rackAudio.mutex);
 
     if (inBuf != nullptr && inCount > 0)
     {
         bool noConnections = true;
 
         // connect input buffers
-        for (LinkedList<int>::Itenerator it = graph.rack->connectedIn1.begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = rackAudio.connectedIn1.begin(); it.valid(); it.next())
         {
-            const int& port(it.getValue());
-            CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(inCount));
+            const uint& port(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(port < inCount);
 
             if (noConnections)
             {
@@ -667,10 +716,10 @@ void CarlaEngine::ProtectedData::processRackFull(const float* const* const inBuf
 
         noConnections = true;
 
-        for (LinkedList<int>::Itenerator it = graph.rack->connectedIn2.begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = rackAudio.connectedIn2.begin(); it.valid(); it.next())
         {
-            const int& port(it.getValue());
-            CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(inCount));
+            const uint& port(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(port < inCount);
 
             if (noConnections)
             {
@@ -699,23 +748,23 @@ void CarlaEngine::ProtectedData::processRackFull(const float* const* const inBuf
     processRack(const_cast<const float**>(audio.inBuf), audio.outBuf, nframes, isOffline);
 
     // connect output buffers
-    if (graph.rack->connectedOut1.count() != 0)
+    if (rackAudio.connectedOut1.count() != 0)
     {
-        for (LinkedList<int>::Itenerator it = graph.rack->connectedOut1.begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = rackAudio.connectedOut1.begin(); it.valid(); it.next())
         {
-            const int& port(it.getValue());
-            CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(outCount));
+            const uint& port(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(port < outCount);
 
             FLOAT_ADD(outBuf[port], audio.outBuf[0], nframes);
         }
     }
 
-    if (graph.rack->connectedOut2.count() != 0)
+    if (rackAudio.connectedOut2.count() != 0)
     {
-        for (LinkedList<int>::Itenerator it = graph.rack->connectedOut2.begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = rackAudio.connectedOut2.begin(); it.valid(); it.next())
         {
-            const int& port(it.getValue());
-            CARLA_SAFE_ASSERT_CONTINUE(port >= 0 && port < static_cast<int>(outCount));
+            const uint& port(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(port < outCount);
 
             FLOAT_ADD(outBuf[port], audio.outBuf[1], nframes);
         }
