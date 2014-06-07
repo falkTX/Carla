@@ -1521,27 +1521,24 @@ protected:
             {
                 jackbridge_midi_clear_buffer(eventOut);
 
+                uint8_t        size    = 0;
+                uint8_t        data[3] = { 0, 0, 0 };
+                const uint8_t* dataPtr = data;
+
                 for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
                 {
                     const EngineEvent& engineEvent(pData->events.out[i]);
 
-                    uint8_t        size    = 0;
-                    uint8_t        data[3] = { 0, 0, 0 };
-                    const uint8_t* dataPtr = data;
-
-                    switch (engineEvent.type)
-                    {
-                    case kEngineEventTypeNull:
+                    if (engineEvent.type == kEngineEventTypeNull)
                         break;
 
-                    case kEngineEventTypeControl:
+                    else if (engineEvent.type == kEngineEventTypeControl)
                     {
                         const EngineControlEvent& ctrlEvent(engineEvent.ctrl);
                         ctrlEvent.convertToMidiData(engineEvent.channel, size, data);
-                        break;
+                        dataPtr = data;
                     }
-
-                    case kEngineEventTypeMidi:
+                    else if (engineEvent.type == kEngineEventTypeMidi)
                     {
                         const EngineMidiEvent& midiEvent(engineEvent.midi);
 
@@ -1550,10 +1547,11 @@ protected:
                         if (size > EngineMidiEvent::kDataSize && midiEvent.dataExt != nullptr)
                             dataPtr = midiEvent.dataExt;
                         else
-                            dataPtr = midiEvent.dataExt;
-
-                        break;
+                            dataPtr = midiEvent.data;
                     }
+                    else
+                    {
+                        continue;
                     }
 
                     if (size > 0)

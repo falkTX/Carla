@@ -497,7 +497,8 @@ protected:
             FloatVectorOperations::clear(outputChannelData[i], numSamples);
 
         // initialize input events
-        carla_zeroStruct<EngineEvent>(pData->events.in, kMaxEngineEventInternalCount);
+        carla_zeroStruct<EngineEvent>(pData->events.in,  kMaxEngineEventInternalCount);
+        carla_zeroStruct<EngineEvent>(pData->events.out, kMaxEngineEventInternalCount);
 
         if (fMidiInEvents.mutex.tryLock())
         {
@@ -589,7 +590,7 @@ protected:
         for (; i < EngineMidiEvent::kDataSize; ++i)
             midiEvent.data[i] = 0;
 
-        fMidiInEvents.appendNonRT(midiEvent);
+        fMidiInEvents.append(midiEvent);
     }
 
     // -------------------------------------------------------------------
@@ -740,7 +741,7 @@ private:
             clear();
         }
 
-        void appendNonRT(const RtMidiEvent& event)
+        void append(const RtMidiEvent& event)
         {
             mutex.lock();
             dataPending.append(event);

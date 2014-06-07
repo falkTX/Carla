@@ -637,8 +637,9 @@ protected:
 
         FLOAT_CLEAR(outsPtr, nframes*fAudioOutCount);
 
-        // initialize input events
-        carla_zeroStruct<EngineEvent>(pData->events.in, kMaxEngineEventInternalCount);
+        // initialize events
+        carla_zeroStruct<EngineEvent>(pData->events.in,  kMaxEngineEventInternalCount);
+        carla_zeroStruct<EngineEvent>(pData->events.out, kMaxEngineEventInternalCount);
 
         if (fMidiInEvents.mutex.tryLock())
         {
@@ -680,10 +681,59 @@ protected:
         {
         }
 
-        // output events
+        //if (fMidiOuts.count() > 0)
         {
-            // TODO
-            //fMidiOutEvents...
+            // FIXME - use lock
+
+            uint8_t        size    = 0;
+            uint8_t        data[3] = { 0, 0, 0 };
+            const uint8_t* dataPtr = data;
+            std::vector<uint8_t> vector;
+
+            for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
+            {
+                const EngineEvent& engineEvent(pData->events.out[i]);
+
+                if (engineEvent.type == kEngineEventTypeNull)
+                    break;
+
+                if (engineEvent.type == kEngineEventTypeControl)
+                {
+                    const EngineControlEvent& ctrlEvent(engineEvent.ctrl);
+                    ctrlEvent.convertToMidiData(engineEvent.channel, size, data);
+                    dataPtr = data;
+                }
+                else if (engineEvent.type == kEngineEventTypeMidi)
+                {
+                    const EngineMidiEvent& midiEvent(engineEvent.midi);
+
+                    size = midiEvent.size;
+
+                    if (size > EngineMidiEvent::kDataSize && midiEvent.dataExt != nullptr)
+                        dataPtr = midiEvent.dataExt;
+                    else
+                        dataPtr = midiEvent.data;
+                }
+                else
+                {
+                    continue;
+                }
+
+                if (size > 0)
+                {
+                    vector.reserve(size);
+                    std::memcpy(vector.data(), dataPtr, size);
+
+                    for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
+                    {
+                        MidiOutPort& outPort(it.getValue());
+                        CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
+
+                        outPort.port->sendMessage(&vector);
+                    }
+                    vector.clear();
+                }
+            }
         }
 
         runPendingRtEvents();
@@ -727,7 +777,7 @@ protected:
         for (; i < EngineMidiEvent::kDataSize; ++i)
             midiEvent.data[i] = 0;
 
-        fMidiInEvents.appendNonRT(midiEvent);
+        fMidiInEvents.append(midiEvent);
     }
 
     // -------------------------------------------------------------------
@@ -820,7 +870,13 @@ protected:
             return false;
         }
 
-        rtMidiOut->openPort(rtMidiPortIndex, portName);
+        try {
+            rtMidiOut->openPort(rtMidiPortIndex, portName);
+        }
+        catch(...) {
+            delete rtMidiOut;
+            return false;
+        };
 
         MidiOutPort midiPort;
         midiPort.port = rtMidiOut;
@@ -923,7 +979,6 @@ private:
         RtLinkedList<RtMidiEvent> data;
         RtLinkedList<RtMidiEvent> dataPending;
 
-        // FIXME - 32, 512 + append_sleepy? check plugin code
         RtMidiEvents()
             : dataPool(512, 512),
               data(dataPool),
@@ -934,7 +989,7 @@ private:
             clear();
         }
 
-        void appendNonRT(const RtMidiEvent& event)
+        void append(const RtMidiEvent& event)
         {
             mutex.lock();
             dataPending.append(event);
@@ -956,7 +1011,6 @@ private:
     };
 
     RtMidiEvents fMidiInEvents;
-    //RtMidiEvents fMidiOutEvents;
 
     #define handlePtr ((CarlaEngineRtAudio*)userData)
 
