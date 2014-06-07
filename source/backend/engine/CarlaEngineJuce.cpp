@@ -40,7 +40,7 @@ CARLA_BACKEND_START_NAMESPACE
 static const char** gRetNames = nullptr;
 static OwnedArray<AudioIODeviceType> gJuceDeviceTypes;
 
-struct JuceCleanup {
+struct JuceCleanup : public DeletedAtShutdown {
     JuceCleanup() noexcept {}
     ~JuceCleanup()
     {
@@ -62,7 +62,6 @@ struct JuceCleanup {
 
 static void initJuceDevicesIfNeeded()
 {
-    static const JuceCleanup sJuceCleanup;
     static AudioDeviceManager sDeviceManager;
     static bool needsInit = true;
 
@@ -70,6 +69,7 @@ static void initJuceDevicesIfNeeded()
         return;
 
     needsInit = false;
+    new JuceCleanup();
 
     sDeviceManager.createAudioDeviceTypes(gJuceDeviceTypes);
 
@@ -87,7 +87,8 @@ static void initJuceDevicesIfNeeded()
 // Juce Engine
 
 class CarlaEngineJuce : public CarlaEngine,
-                        public AudioIODeviceCallback
+                        public AudioIODeviceCallback,
+                        public MidiInputCallback
 {
 public:
     CarlaEngineJuce(AudioIODeviceType* const devType)
@@ -211,6 +212,28 @@ public:
             fDevice = nullptr;
         }
 
+        for (LinkedList<MidiInPort>::Itenerator it = fMidiIns.begin(); it.valid(); it.next())
+        {
+            MidiInPort& inPort(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(inPort.port != nullptr);
+
+            inPort.port->stop();
+            delete inPort.port;
+        }
+
+        for (LinkedList<MidiOutPort>::Itenerator it = fMidiOuts.begin(); it.valid(); it.next())
+        {
+            MidiOutPort& outPort(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
+
+            outPort.port->stopBackgroundThread();
+            delete outPort.port;
+        }
+
+        fMidiIns.clear();
+        fMidiOuts.clear();
+        fMidiInEvents.clear();
+
         return !hasError;
     }
 
@@ -307,7 +330,47 @@ public:
                 callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_AUDIO_OUT, static_cast<int>(i), PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, outputNames[i].toRawUTF8());
         }
 
-        // TODO - MIDI
+        // MIDI In
+        {
+            StringArray midiIns(MidiInput::getDevices());
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_GRAPH_GROUP_MIDI_IN, PATCHBAY_ICON_HARDWARE, -1, 0.0f, "Readable MIDI ports");
+
+            for (int i=0, count=midiIns.size(); i<count; ++i)
+            {
+                String portName(midiIns[i]);
+
+                std::snprintf(strBuf, STR_MAX, "Readable MIDI ports:%s", portName.toRawUTF8());
+
+                PortNameToId portNameToId;
+                portNameToId.setData(RACK_GRAPH_GROUP_MIDI_IN, static_cast<uint>(i), portName.toRawUTF8(), strBuf);
+
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, portNameToId.group, static_cast<int>(portNameToId.port), PATCHBAY_PORT_TYPE_MIDI, 0.0f, portNameToId.name);
+
+                rack->midi.ins.append(portNameToId);
+            }
+        }
+
+        // MIDI Out
+        {
+            StringArray midiOuts(MidiOutput::getDevices());
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_GRAPH_GROUP_MIDI_OUT, PATCHBAY_ICON_HARDWARE, -1, 0.0f, "Writable MIDI ports");
+
+            for (int i=0, count=midiOuts.size(); i<count; ++i)
+            {
+                String portName(midiOuts[i]);
+
+                std::snprintf(strBuf, STR_MAX, "Writable MIDI ports:%s", portName.toRawUTF8());
+
+                PortNameToId portNameToId;
+                portNameToId.setData(RACK_GRAPH_GROUP_MIDI_OUT, static_cast<uint>(i), portName.toRawUTF8(), strBuf);
+
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, portNameToId.group, static_cast<int>(portNameToId.port), PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT, 0.0f, portNameToId.name);
+
+                rack->midi.outs.append(portNameToId);
+            }
+        }
 
         // Connections
         rack->audio.mutex.lock();
@@ -374,7 +437,39 @@ public:
 
         rack->audio.mutex.unlock();
 
-        // TODO - MIDI
+        for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
+        {
+            const MidiInPort& inPort(it.getValue());
+
+            const uint portId(rack->midi.getPortId(true, inPort.name));
+            CARLA_SAFE_ASSERT_CONTINUE(portId < rack->midi.ins.count());
+
+            ConnectionToId connectionToId;
+            connectionToId.setData(++(rack->connections.lastId), RACK_GRAPH_GROUP_MIDI_IN, portId, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_MIDI_IN);
+
+            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+
+            rack->connections.list.append(connectionToId);
+        }
+
+        for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
+        {
+            const MidiOutPort& outPort(it.getValue());
+
+            const uint portId(rack->midi.getPortId(false, outPort.name));
+            CARLA_SAFE_ASSERT_CONTINUE(portId < rack->midi.outs.count());
+
+            ConnectionToId connectionToId;
+            connectionToId.setData(++(rack->connections.lastId), RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_MIDI_OUT, RACK_GRAPH_GROUP_MIDI_OUT, portId);
+
+            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+
+            rack->connections.list.append(connectionToId);
+        }
     }
 
     void patchbayRefreshPatchbay() noexcept
@@ -395,6 +490,8 @@ protected:
         if (! pData->audio.isReady)
             return runPendingRtEvents();
 
+        const uint32_t nframes(static_cast<uint32_t>(numSamples));
+
         // initialize juce output
         for (int i=0; i < numOutputChannels; ++i)
             FloatVectorOperations::clear(outputChannelData[i], numSamples);
@@ -402,7 +499,37 @@ protected:
         // initialize input events
         carla_zeroStruct<EngineEvent>(pData->events.in, kMaxEngineEventInternalCount);
 
-        // TODO - get events from juce
+        if (fMidiInEvents.mutex.tryLock())
+        {
+            uint32_t engineEventIndex = 0;
+            fMidiInEvents.splice();
+
+            for (LinkedList<RtMidiEvent>::Itenerator it = fMidiInEvents.data.begin(); it.valid(); it.next())
+            {
+                const RtMidiEvent& midiEvent(it.getValue());
+                EngineEvent&       engineEvent(pData->events.in[engineEventIndex++]);
+
+                if (midiEvent.time < pData->timeInfo.frame)
+                {
+                    engineEvent.time = 0;
+                }
+                else if (midiEvent.time >= pData->timeInfo.frame + nframes)
+                {
+                    carla_stderr("MIDI Event in the future!, %i vs %i", engineEvent.time, pData->timeInfo.frame);
+                    engineEvent.time = static_cast<uint32_t>(pData->timeInfo.frame) + nframes - 1;
+                }
+                else
+                    engineEvent.time = static_cast<uint32_t>(midiEvent.time - pData->timeInfo.frame);
+
+                engineEvent.fillFromMidiData(midiEvent.size, midiEvent.data);
+
+                if (engineEventIndex >= kMaxEngineEventInternalCount)
+                    break;
+            }
+
+            fMidiInEvents.data.clear();
+            fMidiInEvents.mutex.unlock();
+        }
 
         if (pData->graph.isRack)
         {
@@ -439,23 +566,135 @@ protected:
 
     // -------------------------------------------------------------------
 
-    bool connectRackMidiInPort(const char* const /*portName*/) override
+    void handleIncomingMidiMessage(MidiInput* /*source*/, const MidiMessage& message) override
     {
+        if (! pData->audio.isReady)
+            return;
+
+        const int messageSize(message.getRawDataSize());
+
+        if (messageSize <= 0 || messageSize > EngineMidiEvent::kDataSize)
+            return;
+
+        const uint8_t* const messageData(message.getRawData());
+
+        RtMidiEvent midiEvent;
+        midiEvent.time = 0; // TODO
+
+        midiEvent.size = static_cast<uint8_t>(messageSize);
+
+        int i=0;
+        for (; i < messageSize; ++i)
+            midiEvent.data[i] = messageData[i];
+        for (; i < EngineMidiEvent::kDataSize; ++i)
+            midiEvent.data[i] = 0;
+
+        fMidiInEvents.appendNonRT(midiEvent);
+    }
+
+    // -------------------------------------------------------------------
+
+    bool connectRackMidiInPort(const char* const portName) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(portName != nullptr && portName[0] != '\0', false);
+        carla_debug("CarlaEngineJuce::connectRackMidiInPort(\"%s\")", portName);
+
+        RackGraph* const rack(pData->graph.rack);
+        CARLA_SAFE_ASSERT_RETURN(rack->midi.ins.count() > 0, false);
+
+        StringArray midiIns(MidiInput::getDevices());
+
+        if (! midiIns.contains(portName))
+            return false;
+
+        MidiInput* const juceMidiIn(MidiInput::openDevice(midiIns.indexOf(portName), this));
+        juceMidiIn->start();
+
+        MidiInPort midiPort;
+        midiPort.port = juceMidiIn;
+
+        std::strncpy(midiPort.name, portName, STR_MAX);
+        midiPort.name[STR_MAX] = '\0';
+
+        fMidiIns.append(midiPort);
+        return true;
+    }
+
+    bool connectRackMidiOutPort(const char* const portName) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(portName != nullptr && portName[0] != '\0', false);
+        carla_debug("CarlaEngineJuce::connectRackMidiOutPort(\"%s\")", portName);
+
+        RackGraph* const rack(pData->graph.rack);
+        CARLA_SAFE_ASSERT_RETURN(rack->midi.ins.count() > 0, false);
+
+        StringArray midiOuts(MidiOutput::getDevices());
+
+        if (! midiOuts.contains(portName))
+            return false;
+
+        MidiOutput* const juceMidiOut(MidiOutput::openDevice(midiOuts.indexOf(portName)));
+        juceMidiOut->startBackgroundThread();
+
+        MidiOutPort midiPort;
+        midiPort.port = juceMidiOut;
+
+        std::strncpy(midiPort.name, portName, STR_MAX);
+        midiPort.name[STR_MAX] = '\0';
+
+        fMidiOuts.append(midiPort);
+        return true;
+    }
+
+    bool disconnectRackMidiInPort(const char* const portName) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(portName != nullptr && portName[0] != '\0', false);
+        carla_debug("CarlaEngineRtAudio::disconnectRackMidiInPort(\"%s\")", portName);
+
+        RackGraph* const rack(pData->graph.rack);
+        CARLA_SAFE_ASSERT_RETURN(rack->midi.ins.count() > 0, false);
+
+        for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
+        {
+            MidiInPort& inPort(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(inPort.port != nullptr);
+
+            if (std::strcmp(inPort.name, portName) != 0)
+                continue;
+
+            inPort.port->stop();
+            delete inPort.port;
+
+            fMidiIns.remove(it);
+            return true;
+        }
+
         return false;
     }
 
-    bool connectRackMidiOutPort(const char* const /*portName*/) override
+    bool disconnectRackMidiOutPort(const char* const portName) override
     {
-        return false;
-    }
+        CARLA_SAFE_ASSERT_RETURN(portName != nullptr && portName[0] != '\0', false);
+        carla_debug("CarlaEngineRtAudio::disconnectRackMidiOutPort(\"%s\")", portName);
 
-    bool disconnectRackMidiInPort(const char* const /*portName*/) override
-    {
-        return false;
-    }
+        RackGraph* const rack(pData->graph.rack);
+        CARLA_SAFE_ASSERT_RETURN(rack->midi.outs.count() > 0, false);
 
-    bool disconnectRackMidiOutPort(const char* const /*portName*/) override
-    {
+        for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
+        {
+            MidiOutPort& outPort(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
+
+            if (std::strcmp(outPort.name, portName) != 0)
+                continue;
+
+            outPort.port->stopBackgroundThread();
+            delete outPort.port;
+
+            fMidiOuts.remove(it);
+            return true;
+        }
+
         return false;
     }
 
@@ -464,6 +703,65 @@ protected:
 private:
     ScopedPointer<AudioIODevice> fDevice;
     AudioIODeviceType* const     fDeviceType;
+
+    struct MidiInPort {
+        MidiInput* port;
+        char name[STR_MAX+1];
+    };
+
+    struct MidiOutPort {
+        MidiOutput* port;
+        char name[STR_MAX+1];
+    };
+
+    LinkedList<MidiInPort>  fMidiIns;
+    LinkedList<MidiOutPort> fMidiOuts;
+
+    struct RtMidiEvent {
+        uint64_t time; // needs to compare to internal time
+        uint8_t  size;
+        uint8_t  data[EngineMidiEvent::kDataSize];
+    };
+
+    struct RtMidiEvents {
+        CarlaMutex mutex;
+        RtLinkedList<RtMidiEvent>::Pool dataPool;
+        RtLinkedList<RtMidiEvent> data;
+        RtLinkedList<RtMidiEvent> dataPending;
+
+        // FIXME - 32, 512 + append_sleepy? check plugin code
+        RtMidiEvents()
+            : dataPool(512, 512),
+              data(dataPool),
+              dataPending(dataPool) {}
+
+        ~RtMidiEvents()
+        {
+            clear();
+        }
+
+        void appendNonRT(const RtMidiEvent& event)
+        {
+            mutex.lock();
+            dataPending.append(event);
+            mutex.unlock();
+        }
+
+        void clear()
+        {
+            mutex.lock();
+            data.clear();
+            dataPending.clear();
+            mutex.unlock();
+        }
+
+        void splice()
+        {
+            dataPending.spliceAppendTo(data);
+        }
+    };
+
+    RtMidiEvents fMidiInEvents;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJuce)
 };

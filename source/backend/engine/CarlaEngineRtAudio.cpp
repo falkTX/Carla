@@ -192,8 +192,6 @@ public:
         CARLA_SAFE_ASSERT(fAudioOutCount == 0);
         CARLA_SAFE_ASSERT(fLastEventTime == 0);
         carla_debug("CarlaEngineRtAudio::~CarlaEngineRtAudio()");
-
-        fUsedMidiPorts.clear();
     }
 
     // -------------------------------------
@@ -343,21 +341,23 @@ public:
             fAudio.closeStream();
         }
 
-        for (LinkedList<MidiPort>::Itenerator it = fMidiIns.begin(); it.valid(); it.next())
+        for (LinkedList<MidiInPort>::Itenerator it = fMidiIns.begin(); it.valid(); it.next())
         {
-            MidiPort& port(it.getValue());
-            RtMidiIn* const midiInPort((RtMidiIn*)port.rtmidi);
+            MidiInPort& inPort(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(inPort.port != nullptr);
 
-            midiInPort->cancelCallback();
-            delete midiInPort;
+            inPort.port->cancelCallback();
+            inPort.port->closePort();
+            delete inPort.port;
         }
 
-        for (LinkedList<MidiPort>::Itenerator it = fMidiOuts.begin(); it.valid(); it.next())
+        for (LinkedList<MidiOutPort>::Itenerator it = fMidiOuts.begin(); it.valid(); it.next())
         {
-            MidiPort& port(it.getValue());
-            RtMidiOut* const midiOutPort((RtMidiOut*)port.rtmidi);
+            MidiOutPort& outPort(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
 
-            delete midiOutPort;
+            outPort.port->closePort();
+            delete outPort.port;
         }
 
         fAudioInCount  = 0;
@@ -365,12 +365,10 @@ public:
         fLastEventTime = 0;
 
         fDeviceName.clear();
-        fUsedMidiPorts.clear();
-        fMidiInEvents.clear();
-        //fMidiOutEvents.clear();
-
         fMidiIns.clear();
         fMidiOuts.clear();
+        fMidiInEvents.clear();
+        //fMidiOutEvents.clear();
 
         return !hasError;
     }
@@ -401,8 +399,6 @@ public:
     bool patchbayRefresh() override
     {
         CARLA_SAFE_ASSERT_RETURN(pData->audio.isReady, false);
-
-        fUsedMidiPorts.clear();
 
         if (pData->graph.isRack)
             patchbayRefreshRack();
@@ -572,11 +568,11 @@ public:
 
         rack->audio.mutex.unlock();
 
-        for (LinkedList<MidiPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
+        for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
         {
-            const MidiPort& midiPort(it.getValue());
+            const MidiInPort& inPort(it.getValue());
 
-            const uint portId(rack->midi.getPortId(true, midiPort.name));
+            const uint portId(rack->midi.getPortId(true, inPort.name));
             CARLA_SAFE_ASSERT_CONTINUE(portId < rack->midi.ins.count());
 
             ConnectionToId connectionToId;
@@ -589,11 +585,11 @@ public:
             rack->connections.list.append(connectionToId);
         }
 
-        for (LinkedList<MidiPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
+        for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
         {
-            const MidiPort& midiPort(it.getValue());
+            const MidiOutPort& outPort(it.getValue());
 
-            const uint portId(rack->midi.getPortId(false, midiPort.name));
+            const uint portId(rack->midi.getPortId(false, outPort.name));
             CARLA_SAFE_ASSERT_CONTINUE(portId < rack->midi.outs.count());
 
             ConnectionToId connectionToId;
@@ -780,8 +776,8 @@ protected:
             return false;
         };
 
-        MidiPort midiPort;
-        midiPort.rtmidi = rtMidiIn;
+        MidiInPort midiPort;
+        midiPort.port = rtMidiIn;
 
         std::strncpy(midiPort.name, portName, STR_MAX);
         midiPort.name[STR_MAX] = '\0';
@@ -826,8 +822,8 @@ protected:
 
         rtMidiOut->openPort(rtMidiPortIndex, portName);
 
-        MidiPort midiPort;
-        midiPort.rtmidi = rtMidiOut;
+        MidiOutPort midiPort;
+        midiPort.port = rtMidiOut;
 
         std::strncpy(midiPort.name, portName, STR_MAX);
         midiPort.name[STR_MAX] = '\0';
@@ -844,17 +840,17 @@ protected:
         RackGraph* const rack(pData->graph.rack);
         CARLA_SAFE_ASSERT_RETURN(rack->midi.ins.count() > 0, false);
 
-        for (LinkedList<MidiPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
+        for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
         {
-            MidiPort& midiPort(it.getValue());
+            MidiInPort& inPort(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(inPort.port != nullptr);
 
-            if (std::strcmp(midiPort.name, portName) != 0)
+            if (std::strcmp(inPort.name, portName) != 0)
                 continue;
 
-            RtMidiIn* const midiInPort((RtMidiIn*)midiPort.rtmidi);
-
-            midiInPort->cancelCallback();
-            delete midiInPort;
+            inPort.port->cancelCallback();
+            inPort.port->closePort();
+            delete inPort.port;
 
             fMidiIns.remove(it);
             return true;
@@ -869,18 +865,18 @@ protected:
         carla_debug("CarlaEngineRtAudio::disconnectRackMidiOutPort(\"%s\")", portName);
 
         RackGraph* const rack(pData->graph.rack);
-        CARLA_SAFE_ASSERT_RETURN(rack->midi.ins.count() > 0, false);
+        CARLA_SAFE_ASSERT_RETURN(rack->midi.outs.count() > 0, false);
 
-        for (LinkedList<MidiPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
+        for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
         {
-            MidiPort& midiPort(it.getValue());
+            MidiOutPort& outPort(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
 
-            if (std::strcmp(midiPort.name, portName) != 0)
+            if (std::strcmp(outPort.name, portName) != 0)
                 continue;
 
-            RtMidiOut* const midiOutPort((RtMidiOut*)midiPort.rtmidi);
-
-            delete midiOutPort;
+            outPort.port->closePort();
+            delete outPort.port;
 
             fMidiOuts.remove(it);
             return true;
@@ -902,15 +898,18 @@ private:
     // current device name
     CarlaString fDeviceName;
 
-    PatchbayPortList fUsedMidiPorts;
-
-    struct MidiPort {
-        RtMidi* rtmidi;
+    struct MidiInPort {
+        RtMidiIn* port;
         char name[STR_MAX+1];
     };
 
-    LinkedList<MidiPort> fMidiIns;
-    LinkedList<MidiPort> fMidiOuts;
+    struct MidiOutPort {
+        RtMidiOut* port;
+        char name[STR_MAX+1];
+    };
+
+    LinkedList<MidiInPort>  fMidiIns;
+    LinkedList<MidiOutPort> fMidiOuts;
 
     struct RtMidiEvent {
         uint64_t time; // needs to compare to internal time
