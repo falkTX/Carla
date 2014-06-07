@@ -71,10 +71,10 @@ win64:   ../juce_audio_devices.win64.a
 
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp
+%.cpp.o: %.cpp *.h
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-%.mm.o: %.mm
+%.mm.o: %.mm %.cpp *.h
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 %.posix32.o: %

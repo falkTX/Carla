@@ -73,13 +73,19 @@ static void initJuceDevicesIfNeeded()
 
     sDeviceManager.createAudioDeviceTypes(gJuceDeviceTypes);
 
-    // maybe remove devices used by rtaudio
+    // remove JACK from device list
+    for (int i=0, count=gJuceDeviceTypes.size(); i < count; ++i)
+    {
+        if (gJuceDeviceTypes[i]->getTypeName() != "JACK")
+            continue;
+
+        gJuceDeviceTypes.remove(i, true);
+    }
 }
 
 // -------------------------------------------------------------------------------------------------------------------
 // Juce Engine
 
-#if 0
 class CarlaEngineJuce : public CarlaEngine,
                         public AudioIODeviceCallback
 {
@@ -155,24 +161,32 @@ public:
 
         if (error.isNotEmpty())
         {
-            fDevice = nullptr;
             setLastError(error.toUTF8());
+            fDevice = nullptr;
             return false;
         }
 
         pData->bufferSize = static_cast<uint32_t>(fDevice->getCurrentBufferSizeSamples());
         pData->sampleRate = fDevice->getCurrentSampleRate();
 
-        pData->audio.inCount  = static_cast<uint32_t>(inputChannels.countNumberOfSetBits());
-        pData->audio.outCount = static_cast<uint32_t>(outputChannels.countNumberOfSetBits());
-
-        CARLA_SAFE_ASSERT(pData->audio.outCount > 0);
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        {
+            pData->audio.inCount  = 2;
+            pData->audio.outCount = 2;
+        }
+        else
+        {
+            pData->audio.inCount  = 0;
+            pData->audio.outCount = 0;
+        }
 
         pData->audio.create(pData->bufferSize);
 
         fDevice->start(this);
 
         CarlaEngine::init(clientName);
+        pData->audio.isReady = true;
+
         patchbayRefresh();
 
         return true;
@@ -225,8 +239,146 @@ public:
 
     bool patchbayRefresh() override
     {
-        // const String& deviceName(fDevice->getName());
+        CARLA_SAFE_ASSERT_RETURN(pData->audio.isReady, false);
+
+        //fUsedMidiPorts.clear();
+
+        if (pData->graph.isRack)
+            patchbayRefreshRack();
+        else
+            patchbayRefreshPatchbay();
+
         return true;
+    }
+
+    void patchbayRefreshRack()
+    {
+        RackGraph* const rack(pData->graph.rack);
+
+        rack->connections.clear();
+
+        char strBuf[STR_MAX+1];
+        strBuf[STR_MAX] = '\0';
+
+        // Main
+        {
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_GRAPH_GROUP_CARLA, PATCHBAY_ICON_CARLA, -1, 0.0f, getName());
+
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_IN1,  PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, "audio-in1");
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_IN2,  PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, "audio-in2");
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_OUT1, PATCHBAY_PORT_TYPE_AUDIO,                        0.0f, "audio-out1");
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_OUT2, PATCHBAY_PORT_TYPE_AUDIO,                        0.0f, "audio-out2");
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_MIDI_IN,    PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT,  0.0f, "midi-in");
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_MIDI_OUT,   PATCHBAY_PORT_TYPE_MIDI,                         0.0f, "midi-out");
+        }
+
+        String deviceName(fDevice->getName());
+
+        if (deviceName.isNotEmpty())
+            deviceName = deviceName.dropLastCharacters(deviceName.fromFirstOccurrenceOf(", ", true, false).length());
+
+        // Audio In
+        {
+            StringArray inputNames(fDevice->getInputChannelNames());
+
+            if (deviceName.isNotEmpty())
+                std::snprintf(strBuf, STR_MAX, "Capture (%s)", deviceName.toRawUTF8());
+            else
+                std::strncpy(strBuf, "Capture", STR_MAX);
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_GRAPH_GROUP_AUDIO_IN, PATCHBAY_ICON_HARDWARE, -1, 0.0f, strBuf);
+
+            for (int i=0, count=inputNames.size(); i<count; ++i)
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_AUDIO_IN, static_cast<int>(i), PATCHBAY_PORT_TYPE_AUDIO, 0.0f, inputNames[i].toRawUTF8());
+        }
+
+        // Audio Out
+        {
+            StringArray outputNames(fDevice->getOutputChannelNames());
+
+            if (deviceName.isNotEmpty())
+                std::snprintf(strBuf, STR_MAX, "Playback (%s)", deviceName.toRawUTF8());
+            else
+                std::strncpy(strBuf, "Playback", STR_MAX);
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_GRAPH_GROUP_AUDIO_OUT, PATCHBAY_ICON_HARDWARE, -1, 0.0f, strBuf);
+
+            for (int i=0, count=outputNames.size(); i<count; ++i)
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_AUDIO_OUT, static_cast<int>(i), PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, outputNames[i].toRawUTF8());
+        }
+
+        // TODO - MIDI
+
+        // Connections
+        rack->audio.mutex.lock();
+
+        for (LinkedList<uint>::Itenerator it = rack->audio.connectedIn1.begin(); it.valid(); it.next())
+        {
+            const uint& portId(it.getValue());
+            //CARLA_SAFE_ASSERT_CONTINUE(portId < fAudioInCount);
+
+            ConnectionToId connectionToId;
+            connectionToId.setData(++(rack->connections.lastId), RACK_GRAPH_GROUP_AUDIO_IN, portId, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_IN1);
+
+            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+
+            rack->connections.list.append(connectionToId);
+        }
+
+        for (LinkedList<uint>::Itenerator it = rack->audio.connectedIn2.begin(); it.valid(); it.next())
+        {
+            const uint& portId(it.getValue());
+            //CARLA_SAFE_ASSERT_CONTINUE(portId < fAudioInCount);
+
+            ConnectionToId connectionToId;
+            connectionToId.setData(++(rack->connections.lastId), RACK_GRAPH_GROUP_AUDIO_IN, portId, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_IN2);
+
+            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+
+            rack->connections.list.append(connectionToId);
+        }
+
+        for (LinkedList<uint>::Itenerator it = rack->audio.connectedOut1.begin(); it.valid(); it.next())
+        {
+            const uint& portId(it.getValue());
+            //CARLA_SAFE_ASSERT_CONTINUE(portId < fAudioOutCount);
+
+            ConnectionToId connectionToId;
+            connectionToId.setData(++(rack->connections.lastId), RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_OUT1, RACK_GRAPH_GROUP_AUDIO_OUT, portId);
+
+            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+
+            rack->connections.list.append(connectionToId);
+        }
+
+        for (LinkedList<uint>::Itenerator it = rack->audio.connectedOut2.begin(); it.valid(); it.next())
+        {
+            const uint& portId(it.getValue());
+            //CARLA_SAFE_ASSERT_CONTINUE(portId < fAudioOutCount);
+
+            ConnectionToId connectionToId;
+            connectionToId.setData(++(rack->connections.lastId), RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_OUT2, RACK_GRAPH_GROUP_AUDIO_OUT, portId);
+
+            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
+
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+
+            rack->connections.list.append(connectionToId);
+        }
+
+        rack->audio.mutex.unlock();
+
+        // TODO - MIDI
+    }
+
+    void patchbayRefreshPatchbay() noexcept
+    {
     }
 
     // -------------------------------------------------------------------
@@ -235,13 +387,17 @@ protected:
     void audioDeviceIOCallback(const float** inputChannelData, int numInputChannels, float** outputChannelData, int numOutputChannels, int numSamples) override
     {
         // assert juce buffers
-        CARLA_SAFE_ASSERT_RETURN(numInputChannels == static_cast<int>(pData->audio.inCount),);
-        CARLA_SAFE_ASSERT_RETURN(numOutputChannels == static_cast<int>(pData->audio.outCount),);
-        CARLA_SAFE_ASSERT_RETURN(outputChannelData != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(numSamples == static_cast<int>(pData->bufferSize),);
+        CARLA_SAFE_ASSERT_RETURN(numInputChannels >= 0,        runPendingRtEvents());
+        CARLA_SAFE_ASSERT_RETURN(numOutputChannels > 0,        runPendingRtEvents());
+        CARLA_SAFE_ASSERT_RETURN(outputChannelData != nullptr, runPendingRtEvents());
+        CARLA_SAFE_ASSERT_RETURN(numSamples == static_cast<int>(pData->bufferSize), runPendingRtEvents());
 
-        if (numOutputChannels == 0 || ! pData->audio.isReady)
+        if (! pData->audio.isReady)
             return runPendingRtEvents();
+
+        // initialize juce output
+        for (int i=0; i < numOutputChannels; ++i)
+            FloatVectorOperations::clear(outputChannelData[i], numSamples);
 
         // initialize input events
         carla_zeroStruct<EngineEvent>(pData->events.in, kMaxEngineEventInternalCount);
@@ -250,7 +406,7 @@ protected:
 
         if (pData->graph.isRack)
         {
-            pData->processRackFull(const_cast<float**>(inputChannelData), static_cast<uint32_t>(numInputChannels),
+            pData->processRackFull(inputChannelData, static_cast<uint32_t>(numInputChannels),
                                    outputChannelData, static_cast<uint32_t>(numOutputChannels),
                                    static_cast<uint32_t>(numSamples), false);
         }
@@ -266,10 +422,6 @@ protected:
 
         runPendingRtEvents();
         return;
-
-        // unused
-        (void)inputChannelData;
-        (void)numInputChannels;
     }
 
     void audioDeviceAboutToStart(AudioIODevice* /*device*/) override
@@ -287,22 +439,22 @@ protected:
 
     // -------------------------------------------------------------------
 
-    bool connectRackMidiInPort(const int) override
+    bool connectRackMidiInPort(const char* const /*portName*/) override
     {
         return false;
     }
 
-    bool connectRackMidiOutPort(const int) override
+    bool connectRackMidiOutPort(const char* const /*portName*/) override
     {
         return false;
     }
 
-    bool disconnectRackMidiInPort(const int) override
+    bool disconnectRackMidiInPort(const char* const /*portName*/) override
     {
         return false;
     }
 
-    bool disconnectRackMidiOutPort(const int) override
+    bool disconnectRackMidiOutPort(const char* const /*portName*/) override
     {
         return false;
     }
@@ -315,7 +467,6 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJuce)
 };
-#endif
 
 // -----------------------------------------
 
@@ -366,14 +517,11 @@ CarlaEngine* CarlaEngine::newJuce(const AudioApi api)
 
     deviceType->scanForDevices();
 
-    return nullptr;
-    //return new CarlaEngineJuce(deviceType);
+    return new CarlaEngineJuce(deviceType);
 }
 
 uint CarlaEngine::getJuceApiCount()
 {
-    return 0; // TODO
-
     initJuceDevicesIfNeeded();
 
     return static_cast<uint>(gJuceDeviceTypes.size());

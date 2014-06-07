@@ -78,7 +78,7 @@ static void initRtAudioAPIsIfNeeded()
         if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);
     }
 
-#if 0//def HAVE_JUCE
+#ifdef HAVE_JUCE
     // prefer juce to handle some APIs
     it = std::find(gRtAudioApis.begin(), gRtAudioApis.end(), RtAudio::LINUX_ALSA);
     if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);
@@ -398,7 +398,7 @@ public:
     // -------------------------------------------------------------------
     // Patchbay
 
-    bool patchbayRefresh() noexcept override
+    bool patchbayRefresh() override
     {
         CARLA_SAFE_ASSERT_RETURN(pData->audio.isReady, false);
 
@@ -412,7 +412,7 @@ public:
         return true;
     }
 
-    void patchbayRefreshRack() noexcept
+    void patchbayRefreshRack()
     {
         RackGraph* const rack(pData->graph.rack);
 

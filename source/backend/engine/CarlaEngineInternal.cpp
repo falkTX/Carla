@@ -659,8 +659,8 @@ void CarlaEngine::ProtectedData::processRack(const float* inBufReal[2], float* o
 
                 for (uint32_t k=0; k < frames; ++k)
                 {
-                    peak1  = carla_max<float>(peak1, std::fabs(inBuf0[k]), 1.0f);
-                    peak2  = carla_max<float>(peak2, std::fabs(inBuf1[k]), 1.0f);
+                    peak1 = carla_max<float>(peak1, std::fabs(inBuf0[k]), 1.0f);
+                    peak2 = carla_max<float>(peak2, std::fabs(inBuf1[k]), 1.0f);
                 }
 
                 pluginData.insPeak[0] = peak1;
