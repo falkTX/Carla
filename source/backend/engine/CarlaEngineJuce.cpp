@@ -221,6 +221,11 @@ public:
             delete inPort.port;
         }
 
+        fMidiIns.clear();
+        fMidiInEvents.clear();
+
+        fMidiOutMutex.lock();
+
         for (LinkedList<MidiOutPort>::Itenerator it = fMidiOuts.begin(); it.valid(); it.next())
         {
             MidiOutPort& outPort(it.getValue());
@@ -230,9 +235,8 @@ public:
             delete outPort.port;
         }
 
-        fMidiIns.clear();
         fMidiOuts.clear();
-        fMidiInEvents.clear();
+        fMidiOutMutex.unlock();
 
         return !hasError;
     }
@@ -454,6 +458,8 @@ public:
             rack->connections.list.append(connectionToId);
         }
 
+        fMidiOutMutex.lock();
+
         for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
         {
             const MidiOutPort& outPort(it.getValue());
@@ -470,6 +476,8 @@ public:
 
             rack->connections.list.append(connectionToId);
         }
+
+        fMidiOutMutex.unlock();
     }
 
     void patchbayRefreshPatchbay() noexcept
@@ -542,11 +550,59 @@ protected:
         {
         }
 
-        // output events
+        fMidiOutMutex.lock();
+
+        if (fMidiOuts.count() > 0)
         {
-            // TODO
-            //fMidiOutEvents...
+            uint8_t        size    = 0;
+            uint8_t        data[3] = { 0, 0, 0 };
+            const uint8_t* dataPtr = data;
+
+            for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
+            {
+                const EngineEvent& engineEvent(pData->events.out[i]);
+
+                if (engineEvent.type == kEngineEventTypeNull)
+                    break;
+
+                else if (engineEvent.type == kEngineEventTypeControl)
+                {
+                    const EngineControlEvent& ctrlEvent(engineEvent.ctrl);
+                    ctrlEvent.convertToMidiData(engineEvent.channel, size, data);
+                    dataPtr = data;
+                }
+                else if (engineEvent.type == kEngineEventTypeMidi)
+                {
+                    const EngineMidiEvent& midiEvent(engineEvent.midi);
+
+                    size = midiEvent.size;
+
+                    if (size > EngineMidiEvent::kDataSize && midiEvent.dataExt != nullptr)
+                        dataPtr = midiEvent.dataExt;
+                    else
+                        dataPtr = midiEvent.data;
+                }
+                else
+                {
+                    continue;
+                }
+
+                if (size > 0)
+                {
+                    MidiMessage message(static_cast<const void*>(dataPtr), static_cast<int>(size), static_cast<double>(engineEvent.time)/nframes);
+
+                    for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
+                    {
+                        MidiOutPort& outPort(it.getValue());
+                        CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
+
+                        outPort.port->sendMessageNow(message);
+                    }
+                }
+            }
         }
+
+        fMidiOutMutex.unlock();
 
         runPendingRtEvents();
         return;
@@ -643,6 +699,8 @@ protected:
         std::strncpy(midiPort.name, portName, STR_MAX);
         midiPort.name[STR_MAX] = '\0';
 
+        const CarlaMutexLocker cml(fMidiOutMutex);
+
         fMidiOuts.append(midiPort);
         return true;
     }
@@ -681,6 +739,8 @@ protected:
         RackGraph* const rack(pData->graph.rack);
         CARLA_SAFE_ASSERT_RETURN(rack->midi.outs.count() > 0, false);
 
+        const CarlaMutexLocker cml(fMidiOutMutex);
+
         for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
         {
             MidiOutPort& outPort(it.getValue());
@@ -715,9 +775,6 @@ private:
         char name[STR_MAX+1];
     };
 
-    LinkedList<MidiInPort>  fMidiIns;
-    LinkedList<MidiOutPort> fMidiOuts;
-
     struct RtMidiEvent {
         uint64_t time; // needs to compare to internal time
         uint8_t  size;
@@ -730,7 +787,6 @@ private:
         RtLinkedList<RtMidiEvent> data;
         RtLinkedList<RtMidiEvent> dataPending;
 
-        // FIXME - 32, 512 + append_sleepy? check plugin code
         RtMidiEvents()
             : dataPool(512, 512),
               data(dataPool),
@@ -762,7 +818,11 @@ private:
         }
     };
 
-    RtMidiEvents fMidiInEvents;
+    LinkedList<MidiInPort> fMidiIns;
+    RtMidiEvents           fMidiInEvents;
+
+    LinkedList<MidiOutPort> fMidiOuts;
+    CarlaMutex              fMidiOutMutex;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJuce)
 };

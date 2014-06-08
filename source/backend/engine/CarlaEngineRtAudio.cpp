@@ -178,7 +178,8 @@ public:
           fAudio(api),
           fAudioInCount(0),
           fAudioOutCount(0),
-          fLastEventTime(0)
+          fLastEventTime(0),
+          fMidiOutVector(3)
     {
         carla_debug("CarlaEngineRtAudio::CarlaEngineRtAudio(%i)", api);
 
@@ -351,6 +352,11 @@ public:
             delete inPort.port;
         }
 
+        fMidiIns.clear();
+        fMidiInEvents.clear();
+
+        fMidiOutMutex.lock();
+
         for (LinkedList<MidiOutPort>::Itenerator it = fMidiOuts.begin(); it.valid(); it.next())
         {
             MidiOutPort& outPort(it.getValue());
@@ -360,15 +366,13 @@ public:
             delete outPort.port;
         }
 
+        fMidiOuts.clear();
+        fMidiOutMutex.unlock();
+
         fAudioInCount  = 0;
         fAudioOutCount = 0;
         fLastEventTime = 0;
-
         fDeviceName.clear();
-        fMidiIns.clear();
-        fMidiOuts.clear();
-        fMidiInEvents.clear();
-        //fMidiOutEvents.clear();
 
         return !hasError;
     }
@@ -585,6 +589,8 @@ public:
             rack->connections.list.append(connectionToId);
         }
 
+        fMidiOutMutex.lock();
+
         for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
         {
             const MidiOutPort& outPort(it.getValue());
@@ -601,6 +607,8 @@ public:
 
             rack->connections.list.append(connectionToId);
         }
+
+        fMidiOutMutex.unlock();
     }
 
     void patchbayRefreshPatchbay() noexcept
@@ -681,14 +689,13 @@ protected:
         {
         }
 
-        //if (fMidiOuts.count() > 0)
-        {
-            // FIXME - use lock
+        fMidiOutMutex.lock();
 
+        if (fMidiOuts.count() > 0)
+        {
             uint8_t        size    = 0;
             uint8_t        data[3] = { 0, 0, 0 };
             const uint8_t* dataPtr = data;
-            std::vector<uint8_t> vector;
 
             for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
             {
@@ -697,7 +704,7 @@ protected:
                 if (engineEvent.type == kEngineEventTypeNull)
                     break;
 
-                if (engineEvent.type == kEngineEventTypeControl)
+                else if (engineEvent.type == kEngineEventTypeControl)
                 {
                     const EngineControlEvent& ctrlEvent(engineEvent.ctrl);
                     ctrlEvent.convertToMidiData(engineEvent.channel, size, data);
@@ -721,20 +728,20 @@ protected:
 
                 if (size > 0)
                 {
-                    vector.reserve(size);
-                    std::memcpy(vector.data(), dataPtr, size);
+                    fMidiOutVector.assign(dataPtr, dataPtr + size);
 
                     for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
                     {
                         MidiOutPort& outPort(it.getValue());
                         CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
 
-                        outPort.port->sendMessage(&vector);
+                        outPort.port->sendMessage(&fMidiOutVector);
                     }
-                    vector.clear();
                 }
             }
         }
+
+        fMidiOutMutex.unlock();
 
         runPendingRtEvents();
         return;
@@ -884,6 +891,8 @@ protected:
         std::strncpy(midiPort.name, portName, STR_MAX);
         midiPort.name[STR_MAX] = '\0';
 
+        const CarlaMutexLocker cml(fMidiOutMutex);
+
         fMidiOuts.append(midiPort);
         return true;
     }
@@ -922,6 +931,8 @@ protected:
 
         RackGraph* const rack(pData->graph.rack);
         CARLA_SAFE_ASSERT_RETURN(rack->midi.outs.count() > 0, false);
+
+        const CarlaMutexLocker cml(fMidiOutMutex);
 
         for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
         {
@@ -963,9 +974,6 @@ private:
         RtMidiOut* port;
         char name[STR_MAX+1];
     };
-
-    LinkedList<MidiInPort>  fMidiIns;
-    LinkedList<MidiOutPort> fMidiOuts;
 
     struct RtMidiEvent {
         uint64_t time; // needs to compare to internal time
@@ -1010,7 +1018,12 @@ private:
         }
     };
 
-    RtMidiEvents fMidiInEvents;
+    LinkedList<MidiInPort> fMidiIns;
+    RtMidiEvents           fMidiInEvents;
+
+    LinkedList<MidiOutPort> fMidiOuts;
+    CarlaMutex              fMidiOutMutex;
+    std::vector<uint8_t>    fMidiOutVector;
 
     #define handlePtr ((CarlaEngineRtAudio*)userData)
 
