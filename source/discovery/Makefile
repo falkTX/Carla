@@ -148,9 +148,9 @@ OBJS = carla-discovery.cpp
 # --------------------------------------------------------------
 
 ifeq ($(WIN32),true)
-all: carla-discovery-native.exe
+all: ../../../bin/carla-discovery-native.exe
 else
-all: carla-discovery-native
+all: ../../../bin/carla-discovery-native
 endif
 
 posix32: carla-discovery-posix32
@@ -160,7 +160,7 @@ win64:   carla-discovery-win64.exe
 
 # --------------------------------------------------------------
 
-carla-discovery-native: $(OBJS) $(DEPS) $(LIBS)
+../../../bin/carla-discovery-native: $(OBJS) $(DEPS) $(LIBS)
 ifeq ($(MACOS),true)
 	$(CXX) $< $(LIBS) $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) $(POSIX_LINK_FLAGS) -o $@
 else

@@ -100,15 +100,8 @@ LINK_FLAGS  += $(NATIVE_PLUGINS_LIBS)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-ifeq ($(WIN32),true)
-TARGET = ../libcarla_standalone2.dll
-else
-ifeq ($(MACOS),true)
-TARGET = ../libcarla_standalone2.dylib
-else
-TARGET = ../libcarla_standalone2.so
-endif
-endif
+BIN_PATH = ../../../bin
+TARGET   = $(BIN_PATH)/libcarla_standalone2.$(LIB_EXT)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -122,14 +115,8 @@ debug:
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-../libcarla_standalone2.dll: CarlaStandalone.cpp.o $(STATIC_LIBS)
-	$(CXX) $< -Wl,--start-group $(STATIC_LIBS) -Wl,--end-group $(LINK_FLAGS) $(EXTRA_LIBS) -shared -Wl,--output-def,$@.def -o $@
-
-../libcarla_standalone2.dylib: CarlaStandalone.cpp.o $(STATIC_LIBS)
-	$(CXX) $< $(STATIC_LIBS) $(LINK_FLAGS) -dynamiclib -o $@
-
-../libcarla_standalone2.so: CarlaStandalone.cpp.o $(STATIC_LIBS)
-	$(CXX) $< -Wl,--start-group $(STATIC_LIBS) -Wl,--end-group $(LINK_FLAGS) -shared -o $@
+$(TARGET): CarlaStandalone.cpp.o $(STATIC_LIBS)
+	$(CXX) $< $(LIBS_START) $(STATIC_LIBS) $(LIBS_END) $(LINK_FLAGS) $(EXTRA_LIBS) $(SHARED) -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -138,13 +125,10 @@ CarlaStandalone.cpp.o: CarlaStandalone.cpp $(CARLA_STANDALONE_CPP_DEPS)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-.FORCE:
-.PHONY: .FORCE
-
-../libcarla_%.a: .FORCE
+../carla_%.a:
 	$(MAKE) -C ../$*
 
-../../modules/%.a: .FORCE
+../../modules/%.a:
 	$(MAKE) -C ../../modules $*
 
 # ----------------------------------------------------------------------------------------------------------------------------

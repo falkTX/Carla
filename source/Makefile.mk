@@ -442,3 +442,33 @@ endif
 endif
 
 # --------------------------------------------------------------
+# Set shared lib extension
+
+LIB_EXT = so
+
+ifeq ($(MACOS),true)
+LIB_EXT = dylib
+endif
+
+ifeq ($(WIN32),true)
+LIB_EXT = dll
+endif
+
+# --------------------------------------------------------------
+# Set static libs start & end
+
+ifneq ($(MACOS),true)
+LIBS_START = -Wl,--start-group
+LIBS_END   = -Wl,--end-group
+endif
+
+# --------------------------------------------------------------
+# Set shared library CLI arg
+
+ifeq ($(MACOS),true)
+SHARED = -dynamiclib
+else
+SHARED = -shared
+endif
+
+# --------------------------------------------------------------

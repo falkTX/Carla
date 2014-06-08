@@ -9,9 +9,11 @@ include ../../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += $(RTAUDIO_FLAGS) -I. -Iinclude -I.. -I../../includes
-LINK_FLAGS      += $(RTAUDIO_LIBS) -L.. -ljackbridge
 
-OBJS = RtAudio.cpp.o
+# --------------------------------------------------------------
+
+OBJS = \
+	RtAudio.cpp.o
 
 ifeq ($(WIN32),true)
 OBJS += \
@@ -21,9 +23,21 @@ OBJS += \
 	include/iasiothiscallresolver.cpp.o
 endif
 
+TARGETS = \
+	../rtaudio.a
+
 # --------------------------------------------------------------
 
-all: ../rtaudio.a
+all: $(TARGETS)
+
+# --------------------------------------------------------------
+
+clean:
+	$(RM) $(OBJS)
+	$(RM) $(TARGETS)
+
+debug:
+	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------
 
@@ -31,26 +45,9 @@ all: ../rtaudio.a
 	$(RM) $@
 	$(AR) crs $@ $^
 
-../librtaudio.dll: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
-../librtaudio.dylib: $(OBJS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
-
-../librtaudio.so: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp
+RtAudio.cpp.o: RtAudio.cpp RtAudio.h RtError.h
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-# --------------------------------------------------------------
-
-clean:
-	$(RM) *.o ../rtaudio*.a ../librtaudio.*
-
-debug:
-	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------

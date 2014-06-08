@@ -8,9 +8,9 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_C_FLAGS   += $(DGL_FLAGS) -I.
 BUILD_CXX_FLAGS += $(DGL_FLAGS) -I.
-LINK_FLAGS      += $(DGL_LIBS)
+
+# --------------------------------------------------------------
 
 OBJS = \
 	src/App.cpp.o \
@@ -30,58 +30,21 @@ else
 OBJS += src/Window.cpp.o
 endif
 
-OBJS_posix32 = \
-	src/App.cpp.posix32.o \
-	src/Geometry.cpp.posix32.o \
-	src/Image.cpp.posix32.o \
-	src/ImageAboutWindow.cpp.posix32.o \
-	src/ImageButton.cpp.posix32.o \
-	src/ImageKnob.cpp.posix32.o \
-	src/ImageSlider.cpp.posix32.o \
-	src/Widget.cpp.posix32.o \
-	src/Window.cpp.posix32.o
-
-OBJS_posix64 = \
-	src/App.cpp.posix64.o \
-	src/Geometry.cpp.posix64.o \
-	src/Image.cpp.posix64.o \
-	src/ImageAboutWindow.cpp.posix64.o \
-	src/ImageButton.cpp.posix64.o \
-	src/ImageKnob.cpp.posix64.o \
-	src/ImageSlider.cpp.posix64.o \
-	src/Widget.cpp.posix64.o \
-	src/Window.cpp.posix64.o
-
-OBJS_win32 = \
-	src/App.cpp.win32.o \
-	src/Geometry.cpp.win32.o \
-	src/Image.cpp.win32.o \
-	src/ImageAboutWindow.cpp.win32.o \
-	src/ImageButton.cpp.win32.o \
-	src/ImageKnob.cpp.win32.o \
-	src/ImageSlider.cpp.win32.o \
-	src/Widget.cpp.win32.o \
-	src/Window.cpp.win32.o
-
-OBJS_win64 = \
-	src/App.cpp.win64.o \
-	src/Geometry.cpp.win64.o \
-	src/Image.cpp.win64.o \
-	src/ImageAboutWindow.cpp.win64.o \
-	src/ImageButton.cpp.win64.o \
-	src/ImageKnob.cpp.win64.o \
-	src/ImageSlider.cpp.win64.o \
-	src/Widget.cpp.win64.o \
-	src/Window.cpp.win64.o
+TARGETS = \
+	../dgl.a
 
 # --------------------------------------------------------------
 
-all: ../dgl.a
+all: $(TARGETS)
 
-posix32: ../dgl.posix32.a
-posix64: ../dgl.posix64.a
-win32:   ../dgl.win32.a
-win64:   ../dgl.win64.a
+# --------------------------------------------------------------
+
+clean:
+	$(RM) $(OBJS)
+	$(RM) $(TARGETS)
+
+debug:
+	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------
 
@@ -89,60 +52,49 @@ win64:   ../dgl.win64.a
 	$(RM) $@
 	$(AR) crs $@ $^
 
-../dgl.posix32.a: $(OBJS_posix32)
-	$(RM) $@
-	$(AR) crs $@ $^
-
-../dgl.posix64.a: $(OBJS_posix64)
-	$(RM) $@
-	$(AR) crs $@ $^
-
-../dgl.win32.a: $(OBJS_win32)
-	$(RM) $@
-	$(AR) crs $@ $^
-
-../dgl.win64.a: $(OBJS_win64)
-	$(RM) $@
-	$(AR) crs $@ $^
-
-../libdgl.dll: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
-../libdgl.dylib: $(OBJS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
-
-../libdgl.so: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp
+BASE_HPP     = Base.hpp ../distrho/extra/d_leakdetector.hpp ../distrho/extra/d_scopedpointer.hpp ../distrho/DistrhoUtils.hpp ../distrho/src/DistrhoDefines.h
+APP_PRIV_HPP = src/AppPrivateData.hpp App.hpp ../distrho/extra/d_sleep.hpp $(BASE_HPP)
+GEOMETRY_HPP = Geometry.hpp $(BASE_HPP)
+IMAGE_HPP    = Image.hpp $(GEOMETRY_HPP)
+WIDGET_HPP   = Widget.hpp $(GEOMETRY_HPP)
+WINDOW_HPP   = Window.hpp $(GEOMETRY_HPP)
+
+src/App.cpp.o: src/App.cpp $(APP_PRIV_HPP) $(WINDOW_HPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-%.cpp.posix32.o: %.cpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+src/Geometry.cpp.o: src/Geometry.cpp $(GEOMETRY_HPP)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-%.cpp.posix64.o: %.cpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+src/Image.cpp.o: src/Image.cpp $(IMAGE_HPP)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-%.cpp.win32.o: %.cpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+src/ImageAboutWindow.cpp.o: src/ImageAboutWindow.cpp ImageAboutWindow.hpp $(IMAGE_HPP) $(WIDGET_HPP) $(WINDOW_HPP)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-%.cpp.win64.o: %.cpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+src/ImageButton.cpp.o: src/ImageButton.cpp ImageButton.hpp $(IMAGE_HPP) $(WIDGET_HPP)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-%.m.o: %.m
-	$(CC) $< $(BUILD_C_FLAGS) -ObjC -c -o $@
+src/ImageKnob.cpp.o: src/ImageKnob.cpp ImageKnob.hpp $(IMAGE_HPP) $(WIDGET_HPP)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-%.mm.o: %.mm
+src/ImageSlider.cpp.o: src/ImageSlider.cpp ImageSlider.hpp $(IMAGE_HPP) $(WIDGET_HPP)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+src/ImageSwitch.cpp.o: src/ImageSwitch.cpp ImageSwitch.hpp $(IMAGE_HPP) $(WIDGET_HPP)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+src/NanoVG.cpp.o: src/NanoVG.cpp NanoVG.hpp $(WIDGET_HPP) $(WINDOW_HPP) src/nanovg/*
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+src/Widget.cpp.o: src/Widget.cpp $(WIDGET_HPP) $(WINDOW_HPP)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+src/Window.cpp.o: src/Window.cpp $(APP_PRIV_HPP) $(WIDGET_HPP) $(WINDOW_HPP) src/pugl/*
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+src/Window.mm.o: src/Window.mm src/Window.cpp $(APP_PRIV_HPP) $(WIDGET_HPP) $(WINDOW_HPP) src/pugl/*
 	$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
-
-# --------------------------------------------------------------
-
-clean:
-	$(RM) src/*.o src/pugl/*.o ../dgl*.a ../libdgl.*
-
-debug:
-	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------

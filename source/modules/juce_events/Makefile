@@ -9,10 +9,10 @@ include ../../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += $(JUCE_EVENTS_FLAGS) -I. -w
-LINK_FLAGS      += $(JUCE_EVENTS_LIBS) -L.. -ljuce_core
+
+# --------------------------------------------------------------
 
 ifeq ($(MACOS),true)
-BUILD_CXX_FLAGS += -ObjC++
 OBJS         = juce_events.mm.o
 OBJS_posix32 = juce_events.mm.posix32.o
 OBJS_posix64 = juce_events.mm.posix64.o
@@ -21,18 +21,24 @@ OBJS         = juce_events.cpp.o
 OBJS_posix32 = juce_events.cpp.posix32.o
 OBJS_posix64 = juce_events.cpp.posix64.o
 endif
-
-OBJS_win32 = juce_events.cpp.win32.o
-OBJS_win64 = juce_events.cpp.win64.o
+OBJS_win32   = juce_events.cpp.win32.o
+OBJS_win64   = juce_events.cpp.win64.o
 
 # --------------------------------------------------------------
 
-all: ../juce_events.a
-
+all:     ../juce_events.a
 posix32: ../juce_events.posix32.a
 posix64: ../juce_events.posix64.a
 win32:   ../juce_events.win32.a
 win64:   ../juce_events.win64.a
+
+# --------------------------------------------------------------
+
+clean:
+	$(RM) *.o ../juce_events*.a
+
+debug:
+	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------
 
@@ -56,41 +62,30 @@ win64:   ../juce_events.win64.a
 	$(RM) $@
 	$(AR) crs $@ $^
 
-../libjuce_events.dll: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
-../libjuce_events.dylib: $(OBJS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
-
-../libjuce_events.so: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp *.h */*.cpp */*.h
+CPP_DEPS = juce_events.cpp juce_events.h AppConfig.h */*.cpp */*.h
+
+juce_events.cpp.o: $(CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-%.mm.o: %.mm %.cpp *.h */*.cpp */*.h */*.mm
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-%.posix32.o: %
+juce_events.cpp.%32.o: $(CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
-%.posix64.o: %
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
-
-%.win32.o: %
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
-
-%.win64.o: %
+juce_events.cpp.%64.o: $(CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
 
-clean:
-	$(RM) *.o ../juce_events*.a ../libjuce_events.*
+MM_DEPS = juce_events.mm juce_events.h AppConfig.h */*.mm */*.cpp */*.h
 
-debug:
-	$(MAKE) DEBUG=true
+juce_events.mm.o: $(MM_DEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+
+juce_events.mm.%32.o: $(MM_DEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ $(32BIT_FLAGS) -c -o $@
+
+juce_events.mm.%64.o: $(MM_DEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ $(64BIT_FLAGS) -c -o $@
 
 # --------------------------------------------------------------

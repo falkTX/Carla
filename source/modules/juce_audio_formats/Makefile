@@ -9,10 +9,10 @@ include ../../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += $(JUCE_AUDIO_FORMATS_FLAGS) -I.
-LINK_FLAGS      += $(JUCE_AUDIO_FORMATS_LIBS) -L.. -ljuce_audio_basics -ljuce_core
+
+# --------------------------------------------------------------
 
 ifeq ($(MACOS),true)
-BUILD_CXX_FLAGS += -ObjC++
 OBJS         = juce_audio_formats.mm.o
 OBJS_posix32 = juce_audio_formats.mm.posix32.o
 OBJS_posix64 = juce_audio_formats.mm.posix64.o
@@ -21,18 +21,24 @@ OBJS         = juce_audio_formats.cpp.o
 OBJS_posix32 = juce_audio_formats.cpp.posix32.o
 OBJS_posix64 = juce_audio_formats.cpp.posix64.o
 endif
-
-OBJS_win32 = juce_audio_formats.cpp.win32.o
-OBJS_win64 = juce_audio_formats.cpp.win64.o
+OBJS_win32   = juce_audio_formats.cpp.win32.o
+OBJS_win64   = juce_audio_formats.cpp.win64.o
 
 # --------------------------------------------------------------
 
-all: ../juce_audio_formats.a
-
+all:     ../juce_audio_formats.a
 posix32: ../juce_audio_formats.posix32.a
 posix64: ../juce_audio_formats.posix64.a
 win32:   ../juce_audio_formats.win32.a
 win64:   ../juce_audio_formats.win64.a
+
+# --------------------------------------------------------------
+
+clean:
+	$(RM) *.o ../juce_audio_formats*.a
+
+debug:
+	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------
 
@@ -56,41 +62,30 @@ win64:   ../juce_audio_formats.win64.a
 	$(RM) $@
 	$(AR) crs $@ $^
 
-../libjuce_audio_formats.dll: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
-../libjuce_audio_formats.dylib: $(OBJS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
-
-../libjuce_audio_formats.so: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp *.h */*.cpp */*.h
+CPP_DEPS = juce_audio_formats.cpp juce_audio_formats.h AppConfig.h */*.cpp */*.h
+
+juce_audio_formats.cpp.o: $(CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-%.mm.o: %.mm %.cpp *.h */*.cpp */*.h */*.mm
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-%.posix32.o: %
+juce_audio_formats.cpp.%32.o: $(CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
-%.posix64.o: %
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
-
-%.win32.o: %
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
-
-%.win64.o: %
+juce_audio_formats.cpp.%64.o: $(CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
 
-clean:
-	$(RM) *.o ../juce_audio_formats*.a ../libjuce_audio_formats.*
+MM_DEPS = juce_audio_formats.mm juce_audio_formats.h AppConfig.h */*.mm */*.cpp */*.h
 
-debug:
-	$(MAKE) DEBUG=true
+juce_audio_formats.mm.o: $(MM_DEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+
+juce_audio_formats.mm.%32.o: $(MM_DEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ $(32BIT_FLAGS) -c -o $@
+
+juce_audio_formats.mm.%64.o: $(MM_DEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ $(64BIT_FLAGS) -c -o $@
 
 # --------------------------------------------------------------

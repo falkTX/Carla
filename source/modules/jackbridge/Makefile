@@ -17,6 +17,8 @@ WINE_32BIT_FLAGS = $(32BIT_FLAGS) -L/usr/lib32/wine -L/usr/lib/i386-linux-gnu/wi
 WINE_64BIT_FLAGS = $(64BIT_FLAGS) -L/usr/lib64/wine -L/usr/lib/x86_64-linux-gnu/wine
 WINE_LINK_FLAGS  = $(LINK_FLAGS) -ldl -lrt -lpthread
 
+# --------------------------------------------------------------
+
 OBJS          = JackBridge1.cpp.o          JackBridge2.cpp.o
 OBJS_posix32  = JackBridge1.cpp.posix32.o  JackBridge2.cpp.posix32.o
 OBJS_posix64  = JackBridge1.cpp.posix64.o  JackBridge2.cpp.posix64.o
@@ -47,6 +49,14 @@ wine64:  ../jackbridge-win64.dll.so
 
 # --------------------------------------------------------------
 
+clean:
+	$(RM) *.o ../jackbridge*.a
+
+debug:
+	$(MAKE) DEBUG=true
+
+# --------------------------------------------------------------
+
 ../jackbridge.a: $(OBJS)
 	$(RM) $@
 	$(AR) crs $@ $^
@@ -66,15 +76,6 @@ wine64:  ../jackbridge-win64.dll.so
 ../jackbridge.win64.a: $(OBJS_win64)
 	$(RM) $@
 	$(AR) crs $@ $^
-
-../libjackbridge.dll: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
-../libjackbridge.dylib: $(OBJS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
-
-../libjackbridge.so: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
 
@@ -130,15 +131,9 @@ wine64:  ../jackbridge-win64.dll.so
 %.wine64.o: %
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -DJACKBRIDGE_EXPORT -c -o $@
 
-%.cpp.o: %.cpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
 # --------------------------------------------------------------
 
-clean:
-	$(RM) *.o ../jackbridge*.a ../libjackbridge.*
-
-debug:
-	$(MAKE) DEBUG=true
+JackBridge%.cpp.o: JackBridge%.cpp JackBridge.hpp
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 # --------------------------------------------------------------

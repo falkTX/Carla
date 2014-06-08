@@ -11,8 +11,6 @@ include source/Makefile.mk
 PREFIX  = /usr/local
 DESTDIR =
 
-SED_PREFIX = $(shell echo $(PREFIX) | sed "s/\//\\\\\\\\\//g")
-
 LINK = ln -sf
 
 ifeq ($(DEFAULT_QT),5)
@@ -25,67 +23,122 @@ endif
 
 # --------------------------------------------------------------
 
-all: CXX RES UI WIDGETS
+all: BIN RES UI WIDGETS
 
 # --------------------------------------------------------------
 # C++ code (native)
 
-ifeq ($(HAVE_JUCE),true)
-CXX: backend bridges discovery plugin plugin_ui theme
-else
-CXX: backend bridges discovery theme
+.FORCE:
+.PHONY: .FORCE
+
+ALL_LIBS += source/modules/jackbridge.a
+ALL_LIBS += source/modules/rtaudio.a
+ALL_LIBS += source/modules/rtmempool.a
+ALL_LIBS += source/modules/rtmidi.a
+ALL_LIBS += source/modules/native-plugins.a
+
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+ALL_LIBS += source/modules/lilv.a
 endif
 
-backend:
-	$(MAKE) -C source/backend
+ifeq ($(HAVE_AF_DEPS),true)
+ALL_LIBS += source/modules/audio_decoder.a
+endif
 
-bridges:
-	$(MAKE) -C source/bridges
+ifeq ($(HAVE_DGL),true)
+ALL_LIBS += source/modules/dgl.a
+endif
 
-discovery:
-	$(MAKE) -C source/discovery
+ifeq ($(HAVE_JUCE),true)
+ALL_LIBS += source/modules/juce_audio_basics.a
+ALL_LIBS += source/modules/juce_audio_devices.a
+ALL_LIBS += source/modules/juce_audio_formats.a
+ALL_LIBS += source/modules/juce_audio_processors.a
+ALL_LIBS += source/modules/juce_core.a
+ALL_LIBS += source/modules/juce_data_structures.a
+ALL_LIBS += source/modules/juce_events.a
+ALL_LIBS += source/modules/juce_graphics.a
+ALL_LIBS += source/modules/juce_gui_basics.a
+ALL_LIBS += source/modules/juce_gui_extra.a
+endif
 
-plugin:
-	$(MAKE) -C source/plugin
+BIN = \
+	bin/libcarla_standalone2.$(LIB_EXT)
 
-plugin_ui: source/carla-plugin source/carla_config.py source/*.py RES UI WIDGETS
-	$(LINK) $(CURDIR)/source/carla-plugin source/modules/native-plugins/resources/
-	$(LINK) $(CURDIR)/source/*.py         source/modules/native-plugins/resources/
+BIN: $(BIN)
 
-theme:
-	$(MAKE) -C source/modules/theme
+source/modules/%.a: .FORCE
+	$(MAKE) -C source/modules/$* ../$*.a
+
+bin/libcarla_standalone2.$(LIB_EXT): .FORCE
+	$(MAKE) -C source/backend/standalone
+
+# ifeq ($(WIN32),true)
+# CXX += \
+# 	bin/carla-discovery-native.exe
+# else
+# CXX += \
+# 	bin/carla-discovery-native
+# endif
+
+# backend bridges discovery theme
+
+# ifeq ($(HAVE_JUCE),true)
+# CXX_TARGETS += plugin plugin_ui
+# endif
+
+# backend:
+# 	$(MAKE) -C source/backend
+#
+# bridges:
+# 	$(MAKE) -C source/bridges
+#
+# discovery:
+# 	$(MAKE) -C source/discovery
+#
+# plugin:
+# 	$(MAKE) -C source/plugin
+#
+# plugin_ui: source/carla-plugin source/carla_config.py source/*.py RES UI WIDGETS
+# 	$(LINK) $(CURDIR)/source/carla-plugin source/modules/native-plugins/resources/
+# 	$(LINK) $(CURDIR)/source/*.py         source/modules/native-plugins/resources/
+#
+# theme:
+# 	$(MAKE) -C source/modules/theme
 
 # --------------------------------------------------------------
 # C++ code (variants)
 
-posix32:
-	$(MAKE) -C source/bridges posix32
-	$(MAKE) -C source/discovery posix32
-
-posix64:
-	$(MAKE) -C source/bridges posix64
-	$(MAKE) -C source/discovery posix64
-
-win32:
-	$(MAKE) -C source/bridges win32
-	$(MAKE) -C source/discovery win32
-
-win64:
-	$(MAKE) -C source/bridges win64
-	$(MAKE) -C source/discovery win64
-
-wine32:
-	$(MAKE) -C source/modules jackbridge-wine32
-	$(LINK) ../modules/jackbridge-win32.dll.so source/bridges/jackbridge-win32.dll
-
-wine64:
-	$(MAKE) -C source/modules jackbridge-wine64
-	$(LINK) ../modules/jackbridge-win64.dll.so source/bridges/jackbridge-win64.dll
+# posix32:
+# 	$(MAKE) -C source/bridges posix32
+# 	$(MAKE) -C source/discovery posix32
+#
+# posix64:
+# 	$(MAKE) -C source/bridges posix64
+# 	$(MAKE) -C source/discovery posix64
+#
+# win32:
+# 	$(MAKE) -C source/bridges win32
+# 	$(MAKE) -C source/discovery win32
+#
+# win64:
+# 	$(MAKE) -C source/bridges win64
+# 	$(MAKE) -C source/discovery win64
+#
+# wine32:
+# 	$(MAKE) -C source/modules jackbridge-wine32
+# 	$(LINK) ../modules/jackbridge-win32.dll.so source/bridges/jackbridge-win32.dll
+#
+# wine64:
+# 	$(MAKE) -C source/modules jackbridge-wine64
+# 	$(LINK) ../modules/jackbridge-win64.dll.so source/bridges/jackbridge-win64.dll
 
 # --------------------------------------------------------------
 # Resources
 
-RES = source/carla_config.py source/resources_rc.py
+RES = \
+	source/carla_config.py \
+	source/resources_rc.py
 
 RES: $(RES)
 
@@ -146,11 +199,11 @@ source/%.py: source/widgets/%.py
 # --------------------------------------------------------------
 
 clean:
-	$(MAKE) clean -C source/backend
-	$(MAKE) clean -C source/bridges
-	$(MAKE) clean -C source/discovery
-	$(MAKE) clean -C source/modules
-	$(MAKE) clean -C source/plugin
+# 	$(MAKE) clean -C source/backend
+# 	$(MAKE) clean -C source/bridges
+# 	$(MAKE) clean -C source/discovery
+# 	$(MAKE) clean -C source/modules
+# 	$(MAKE) clean -C source/plugin
 	rm -f $(RES)
 	rm -f $(UIs)
 	rm -f $(WIDGETS)
@@ -290,7 +343,7 @@ install:
 	$(MAKE) STYLES_DIR=$(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/styles install-main -C source/modules/theme
 
 	# Adjust PREFIX value in script files
-	sed -i "s/X-PREFIX-X/$(SED_PREFIX)/" \
+	sed -i "s?X-PREFIX-X?$(PREFIX)?" \
 		$(DESTDIR)$(PREFIX)/bin/carla \
 		$(DESTDIR)$(PREFIX)/bin/carla-database \
 		$(DESTDIR)$(PREFIX)/bin/carla-patchbay \

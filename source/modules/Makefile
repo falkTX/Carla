@@ -8,22 +8,6 @@ all:
 
 # --------------------------------------------------------------
 
-audio_decoder:
-	$(MAKE) -C audio_decoder
-
-audio_decoder_%:
-	$(MAKE) -C audio_decoder $*
-
-# --------------------------------------------------------------
-
-dgl:
-	$(MAKE) -C dgl
-
-dgl_%:
-	$(MAKE) -C dgl $*
-
-# --------------------------------------------------------------
-
 juce_audio_basics:
 	$(MAKE) -C juce_audio_basics
 

@@ -13,8 +13,12 @@ SORD_VERSION   = 0.12.0
 SRATOM_VERSION = 0.4.4
 LILV_VERSION   = 0.18.0
 
+# --------------------------------------------------------------
+
 BUILD_C_FLAGS += $(LILV_FLAGS) -Iconfig -I../../includes -w
 LINK_FLAGS    += $(LILV_LIBS)
+
+# --------------------------------------------------------------
 
 OBJS         = serd.c.o         sord.c.o         sratom.c.o         lilv.c.o
 OBJS_posix32 = serd.c.posix32.o sord.c.posix32.o sratom.c.posix32.o lilv.c.posix32.o
@@ -24,12 +28,19 @@ OBJS_win64   = serd.c.win64.o   sord.c.win64.o   sratom.c.win64.o   lilv.c.win64
 
 # --------------------------------------------------------------
 
-all: ../lilv.a
-
+all:     ../lilv.a
 posix32: ../lilv.posix32.a
 posix64: ../lilv.posix64.a
 win32:   ../lilv.win32.a
 win64:   ../lilv.win64.a
+
+# --------------------------------------------------------------
+
+clean:
+	$(RM) *.o ../lilv*.a
+
+debug:
+	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------
 
@@ -53,63 +64,56 @@ win64:   ../lilv.win64.a
 	$(RM) $@
 	$(AR) crs $@ $^
 
-../liblilv.dll: $(OBJS)
-	$(CC) $^ -shared $(LINK_FLAGS) -o $@
-
-../liblilv.dylib: $(OBJS)
-	$(CC) $^ -dynamiclib $(LINK_FLAGS) -o $@
-
-../liblilv.so: $(OBJS)
-	$(CC) $^ -shared $(LINK_FLAGS) -o $@
-
 # --------------------------------------------------------------
 
-serd.c.o: serd.c
+SERD_DEPS = serd.c serd-$(SERD_VERSION)/src/* serd-$(SERD_VERSION)/serd/serd.h
+
+serd.c.o: $(SERD_DEPS)
 	$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) -c -o $@
 
-sord.c.o: sord.c
-	$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src -c -o $@
-
-sratom.c.o: sratom.c
-	$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) -c -o $@
-
-lilv.c.o: lilv.c
-	$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src -c -o $@
-
-# --------------------------------------------------------------
-
-serd.c.%32.o: serd.c
+serd.c.%32.o: $(SERD_DEPS)
 	$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) $(32BIT_FLAGS) -c -o $@
 
-sord.c.%32.o: sord.c
-	$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src $(32BIT_FLAGS) -c -o $@
-
-sratom.c.%32.o: sratom.c
-	$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) $(32BIT_FLAGS) -c -o $@
-
-lilv.c.%32.o: lilv.c
-	$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src $(32BIT_FLAGS) -c -o $@
-
-# --------------------------------------------------------------
-
-serd.c.%64.o: serd.c
+serd.c.%64.o: $(SERD_DEPS)
 	$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) $(64BIT_FLAGS) -c -o $@
 
-sord.c.%64.o: sord.c
+# --------------------------------------------------------------
+
+SORD_DEPS = sord.c sord-$(SORD_VERSION)/src/* sord-$(SORD_VERSION)/sord/sord.h
+
+sord.c.o: $(SORD_DEPS)
+	$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src -c -o $@
+
+sord.c.%32.o: $(SORD_DEPS)
+	$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src $(32BIT_FLAGS) -c -o $@
+
+sord.c.%64.o: $(SORD_DEPS)
 	$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src $(64BIT_FLAGS) -c -o $@
-
-sratom.c.%64.o: sratom.c
-	$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) $(64BIT_FLAGS) -c -o $@
-
-lilv.c.%64.o: lilv.c
-	$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src $(64BIT_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
 
-clean:
-	$(RM) *.o ../lilv*.a ../liblilv.*
+SRATOM_DEPS = sratom.c sratom-$(SRATOM_VERSION)/src/* sratom-$(SRATOM_VERSION)/sratom/sratom.h
 
-debug:
-	$(MAKE) DEBUG=true
+sratom.c.o: $(SRATOM_DEPS)
+	$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) -c -o $@
+
+sratom.c.%32.o: $(SRATOM_DEPS)
+	$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) $(32BIT_FLAGS) -c -o $@
+
+sratom.c.%64.o: $(SRATOM_DEPS)
+	$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) $(64BIT_FLAGS) -c -o $@
+
+# --------------------------------------------------------------
+
+LILV_DEPS = lilv.c lilv-$(LILV_VERSION)/src/* lilv-$(LILV_VERSION)/src/zix/* lilv-$(LILV_VERSION)/lilv/lilv.h
+
+lilv.c.o: $(LILV_DEPS)
+	$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src -c -o $@
+
+lilv.c.%32.o: $(LILV_DEPS)
+	$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src $(32BIT_FLAGS) -c -o $@
+
+lilv.c.%64.o: $(LILV_DEPS)
+	$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src $(64BIT_FLAGS) -c -o $@
 
 # --------------------------------------------------------------

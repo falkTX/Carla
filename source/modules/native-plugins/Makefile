@@ -209,15 +209,6 @@ all: ../native-plugins.a
 	$(RM) $@
 	$(AR) crs $@ $^
 
-../libnative-plugins.dll: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
-../libnative-plugins.dylib: $(OBJS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
-
-../libnative-plugins.so: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
 # --------------------------------------------------------------
 
 CDEPS   = ../CarlaNative.h

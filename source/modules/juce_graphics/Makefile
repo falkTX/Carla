@@ -9,10 +9,10 @@ include ../../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += $(JUCE_GRAPHICS_FLAGS) -I. -w
-LINK_FLAGS      += $(JUCE_GRAPHICS_LIBS) -L.. -ljuce_events -ljuce_core
+
+# --------------------------------------------------------------
 
 ifeq ($(MACOS),true)
-BUILD_CXX_FLAGS += -ObjC++
 OBJS         = juce_graphics.mm.o
 OBJS_posix32 = juce_graphics.mm.posix32.o
 OBJS_posix64 = juce_graphics.mm.posix64.o
@@ -21,18 +21,24 @@ OBJS         = juce_graphics.cpp.o
 OBJS_posix32 = juce_graphics.cpp.posix32.o
 OBJS_posix64 = juce_graphics.cpp.posix64.o
 endif
-
-OBJS_win32 = juce_graphics.cpp.win32.o
-OBJS_win64 = juce_graphics.cpp.win64.o
+OBJS_win32   = juce_graphics.cpp.win32.o
+OBJS_win64   = juce_graphics.cpp.win64.o
 
 # --------------------------------------------------------------
 
-all: ../juce_graphics.a
-
+all:     ../juce_graphics.a
 posix32: ../juce_graphics.posix32.a
 posix64: ../juce_graphics.posix64.a
 win32:   ../juce_graphics.win32.a
 win64:   ../juce_graphics.win64.a
+
+# --------------------------------------------------------------
+
+clean:
+	$(RM) *.o ../juce_graphics*.a
+
+debug:
+	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------
 
@@ -56,41 +62,30 @@ win64:   ../juce_graphics.win64.a
 	$(RM) $@
 	$(AR) crs $@ $^
 
-../libjuce_graphics.dll: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
-../libjuce_graphics.dylib: $(OBJS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
-
-../libjuce_graphics.so: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp *.h */*.cpp */*.h
+CPP_DEPS = juce_graphics.cpp juce_graphics.h AppConfig.h */*.cpp */*.h
+
+juce_graphics.cpp.o: $(CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-%.mm.o: %.mm %.cpp *.h */*.cpp */*.h */*.mm
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-%.posix32.o: %
+juce_graphics.cpp.%32.o: $(CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
-%.posix64.o: %
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
-
-%.win32.o: %
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
-
-%.win64.o: %
+juce_graphics.cpp.%64.o: $(CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
 
-clean:
-	$(RM) *.o ../juce_graphics*.a ../libjuce_graphics.*
+MM_DEPS = juce_graphics.mm juce_graphics.h AppConfig.h */*.mm */*.cpp */*.h
 
-debug:
-	$(MAKE) DEBUG=true
+juce_graphics.mm.o: $(MM_DEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+
+juce_graphics.mm.%32.o: $(MM_DEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ $(32BIT_FLAGS) -c -o $@
+
+juce_graphics.mm.%64.o: $(MM_DEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ $(64BIT_FLAGS) -c -o $@
 
 # --------------------------------------------------------------

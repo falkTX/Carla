@@ -9,13 +9,27 @@ include ../../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += $(RTMIDI_FLAGS) -I. -Iinclude -I.. -I../../includes
-LINK_FLAGS      += $(RTMIDI_LIBS)
-
-OBJS = RtMidi.cpp.o
 
 # --------------------------------------------------------------
 
-all: ../rtmidi.a
+OBJS = \
+	RtMidi.cpp.o
+
+TARGETS = \
+	../rtmidi.a
+
+# --------------------------------------------------------------
+
+all: $(TARGETS)
+
+# --------------------------------------------------------------
+
+clean:
+	$(RM) $(OBJS)
+	$(RM) $(TARGETS)
+
+debug:
+	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------
 
@@ -23,26 +37,9 @@ all: ../rtmidi.a
 	$(RM) $@
 	$(AR) crs $@ $^
 
-../librtmidi.dll: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
-../librtmidi.dylib: $(OBJS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
-
-../librtmidi.so: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp
+RtMidi.cpp.o: RtMidi.cpp RtMidi.h RtError.h
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-# --------------------------------------------------------------
-
-clean:
-	$(RM) *.o ../rtmidi*.a ../librtmidi.*
-
-debug:
-	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------
