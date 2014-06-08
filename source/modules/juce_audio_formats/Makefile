@@ -67,10 +67,10 @@ win64:   ../juce_audio_formats.win64.a
 
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp
+%.cpp.o: %.cpp *.h */*.cpp */*.h
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-%.mm.o: %.mm
+%.mm.o: %.mm %.cpp *.h */*.cpp */*.h */*.mm
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 %.posix32.o: %
