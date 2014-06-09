@@ -55,7 +55,7 @@ debug:
 # --------------------------------------------------------------
 
 BASE_HPP     = Base.hpp ../distrho/extra/d_leakdetector.hpp ../distrho/extra/d_scopedpointer.hpp ../distrho/DistrhoUtils.hpp ../distrho/src/DistrhoDefines.h
-APP_PRIV_HPP = src/AppPrivateData.hpp App.hpp ../distrho/extra/d_sleep.hpp $(BASE_HPP)
+APP_PRIV_HPP = App.hpp src/AppPrivateData.hpp ../distrho/extra/d_sleep.hpp $(BASE_HPP)
 GEOMETRY_HPP = Geometry.hpp $(BASE_HPP)
 IMAGE_HPP    = Image.hpp $(GEOMETRY_HPP)
 WIDGET_HPP   = Widget.hpp $(GEOMETRY_HPP)

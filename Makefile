@@ -32,10 +32,10 @@ all: BIN RES UI WIDGETS
 .PHONY: .FORCE
 
 ALL_LIBS += source/modules/jackbridge.a
+ALL_LIBS += source/modules/native-plugins.a
 ALL_LIBS += source/modules/rtaudio.a
 ALL_LIBS += source/modules/rtmempool.a
 ALL_LIBS += source/modules/rtmidi.a
-ALL_LIBS += source/modules/native-plugins.a
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 ALL_LIBS += source/modules/lilv.a
