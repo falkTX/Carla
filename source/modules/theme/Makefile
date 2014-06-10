@@ -26,7 +26,7 @@ QT5_LINK_FLAGS  += $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets)
 QT5_STYLES_DIR   = $(shell pkg-config --variable=libdir Qt5Core)/qt5/plugins/styles
 endif
 
-ifeq ($(HAVE_QT4),true)
+ifeq ($(DEFAULT_QT),4)
 QT_STYLES_DIR     = $(QT4_STYLES_DIR)
 SHARED_LINK_FLAGS = $(QT4_LINK_FLAGS)
 else
@@ -50,7 +50,7 @@ FILES_qt5 = \
 	moc_CarlaStylePrivate.qt5.cpp \
 	resources.qt5.cpp
 
-ifeq ($(HAVE_QT4),true)
+ifeq ($(DEFAULT_QT),4)
 FILES_shared = $(FILES_qt4)
 else
 FILES_shared = $(FILES_qt5)
@@ -72,7 +72,7 @@ OBJS_qt5 = \
 	moc_CarlaStylePrivate.qt5.cpp.o \
 	resources.qt5.cpp.o
 
-ifeq ($(HAVE_QT4),true)
+ifeq ($(DEFAULT_QT),4)
 OBJS_shared += $(OBJS_qt4) \
 	CarlaStylePlugin.cpp.qt4.o \
 	moc_CarlaStylePlugin.qt4.cpp.o

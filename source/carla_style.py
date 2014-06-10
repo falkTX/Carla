@@ -46,20 +46,22 @@ class CarlaApplication(object):
     def __init__(self, appName = "Carla2", libPrefix = None):
         object.__init__(self)
 
-        # try to find style dir
+        # try to find styles dir
+        stylesDir = ""
+
         if libPrefix is not None:
-            QApplication.addLibraryPath(os.path.join(libPrefix, "lib", "carla"))
+            stylesDir = os.path.join(libPrefix, "lib", "carla")
 
-        elif os.path.exists(os.path.join(CWD, "modules", "theme", "styles")):
-            QApplication.addLibraryPath(os.path.join(CWD, "modules", "theme"))
+        elif CWD.endswith("resources"):
+            stylesDir = os.path.join(CWD, "..")
 
-        elif os.path.exists(os.path.join(CWD, "styles")):
-            QApplication.addLibraryPath(CWD)
+        elif CWD.endswith("source"):
+            stylesDir = os.path.join(CWD, "..", "bin")
 
-        elif os.path.exists(os.path.join(CWD, "..", "styles")):
-            QApplication.addLibraryPath(os.path.join(CWD, ".."))
+        if stylesDir:
+            QApplication.addLibraryPath(stylesDir)
 
-        else:
+        elif not config_UseQt5:
             self._createApp(appName)
             return
 
@@ -67,7 +69,7 @@ class CarlaApplication(object):
         settings    = QSettings("falkTX", appName)
         useProTheme = settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool)
 
-        if WINDOWS or not useProTheme:
+        if not useProTheme:
             self._createApp(appName)
             return
 
@@ -78,7 +80,7 @@ class CarlaApplication(object):
             customFont.setItalic(False)
             customFont.setOverline(False)
             customFont.setKerning(True)
-            customFont.setHintingPreference(QFont.PreferFullHinting) # TODO - 4.8 only
+            customFont.setHintingPreference(QFont.PreferFullHinting)
             customFont.setPixelSize(12)
             customFont.setWeight(QFont.Normal)
 
@@ -86,13 +88,15 @@ class CarlaApplication(object):
             QApplication.setFont(customFont)
 
         # set style
-        QApplication.setStyle("carla")
+        QApplication.setStyle("carla" if stylesDir else "fusion")
 
         # create app
         self._createApp(appName)
 
-        #self.fApp.setFont(customFont)
-        self.fApp.setStyle("carla")
+        if config_UseQt5:
+            self.fApp.setFont(customFont)
+
+        self.fApp.setStyle("carla" if stylesDir else "fusion")
 
         # create palettes
         self.fPalSystem = self.fApp.palette()

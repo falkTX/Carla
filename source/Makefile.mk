@@ -131,12 +131,12 @@ HAVE_QT4 = $(shell pkg-config --exists QtCore QtXml && echo true)
 HAVE_QT5 = $(shell pkg-config --exists Qt5Core Qt5Xml && echo true)
 
 ifeq ($(MACOS_OR_WIN32),true)
-DEFAULT_QT=5
+DEFAULT_QT ?= 5
 ifneq ($(HAVE_QT5),true)
 $(error Qt5 missing, cannot continue)
 endif
 else
-DEFAULT_QT=4
+DEFAULT_QT ?= 4
 ifneq ($(HAVE_QT4),true)
 $(error Qt4 missing, cannot continue)
 endif

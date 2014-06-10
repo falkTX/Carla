@@ -247,12 +247,10 @@ class CarlaObject(object):
         'transportMode',
         # current max parameters
         'maxParameters',
-        # discovery tools
-        'discovery_native',
-        'discovery_posix32',
-        'discovery_posix64',
-        'discovery_win32',
-        'discovery_win64',
+        # binary dir
+        'pathBinaries',
+        # resources dir
+        'pathResources',
         # default paths
         'DEFAULT_LADSPA_PATH',
         'DEFAULT_DSSI_PATH',
@@ -278,11 +276,8 @@ gCarla.processMode       = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS if LINUX else EN
 gCarla.processModeForced = False
 gCarla.transportMode     = ENGINE_TRANSPORT_MODE_JACK if LINUX else ENGINE_TRANSPORT_MODE_INTERNAL
 gCarla.maxParameters     = MAX_DEFAULT_PARAMETERS
-gCarla.discovery_native  = ""
-gCarla.discovery_posix32 = ""
-gCarla.discovery_posix64 = ""
-gCarla.discovery_win32   = ""
-gCarla.discovery_win64   = ""
+gCarla.pathBinaries  = ""
+gCarla.pathResources = ""
 
 # ------------------------------------------------------------------------------------------------------------
 # Default Plugin Folders (get)
@@ -482,18 +477,12 @@ else:
 CWD = sys.path[0]
 
 # make it work with cxfreeze
-if WINDOWS and CWD.lower().endswith(".exe"):
-    CWD = CWD.rsplit("\\", 1)[0]
-elif CWD.lower().endswith(("/carla", "/carla-plugin", "/carla-patchbay", "/carla-rack")):
-    CWD = CWD.rsplit("/", 1)[0]
+if os.path.isfile(CWD):
+    CWD = os.path.dirname(CWD)
 
 # find tool
-def findTool(toolDir, toolName):
-    path = os.path.join(CWD, toolName)
-    if os.path.exists(path):
-        return path
-
-    path = os.path.join(CWD, toolDir, toolName)
+def findTool(binDir, toolName):
+    path = os.path.join(CWD, binDir, toolName)
     if os.path.exists(path):
         return path
 
@@ -532,42 +521,12 @@ def initHost(initName, libPrefix = None, failError = True):
 
     if libPrefix is not None:
         libfilename = os.path.join(libPrefix, "lib", "carla", libname)
-    else:
-        path = os.path.join(CWD, "backend", libname)
 
-        if os.path.exists(path):
-            libfilename = path
-        else:
-            path = os.getenv("CARLA_LIB_PATH")
+    elif CWD.endswith("resources"):
+        libfilename = os.path.join(CWD, "..", libname)
 
-            if path and os.path.exists(path):
-                CARLA_LIB_PATH = (path,)
-            elif WINDOWS:
-                CARLA_LIB_PATH = (os.path.join(PROGRAMFILES, "Carla"),)
-            elif MACOS:
-                CARLA_LIB_PATH = ("/opt/local/lib", "/usr/local/lib/", "/usr/lib")
-            else:
-                CARLA_LIB_PATH = ("/usr/local/lib/", "/usr/lib")
-
-            for libpath in CARLA_LIB_PATH:
-                path = os.path.join(libpath, "carla", libname)
-                if os.path.exists(path):
-                    libfilename = path
-                    break
-
-    # -------------------------------------------------------------
-    # find windows tools
-
-    gCarla.discovery_win32 = findTool("discovery", "carla-discovery-win32.exe")
-    gCarla.discovery_win64 = findTool("discovery", "carla-discovery-win64.exe")
-
-    # -------------------------------------------------------------
-    # find native and posix tools
-
-    if not WINDOWS:
-        gCarla.discovery_native  = findTool("discovery", "carla-discovery-native")
-        gCarla.discovery_posix32 = findTool("discovery", "carla-discovery-posix32")
-        gCarla.discovery_posix64 = findTool("discovery", "carla-discovery-posix64")
+    elif CWD.endswith("source"):
+        libfilename = os.path.join(CWD, "..", "bin", libname)
 
     # -------------------------------------------------------------
 
@@ -578,38 +537,31 @@ def initHost(initName, libPrefix = None, failError = True):
         return
 
     # -------------------------------------------------------------
+    # Set paths
+
+    gCarla.pathBinaries  = libfilename.replace(libname, "")
+    gCarla.pathResources = os.path.join(gCarla.pathBinaries, "resources")
+
+    print("Carla %s started, status:" % VERSION)
+    print("  backend lib:   %s" % libfilename)
+    print("  binary dir:    %s" % gCarla.pathBinaries)
+    print("  resources dir: %s" % gCarla.pathResources)
+
+    # -------------------------------------------------------------
     # Init host
 
     if gCarla.host is None:
-        gCarla.host = Host(libfilename)
+        try:
+            gCarla.host = Host(libfilename)
+        except:
+            print("hmmmm...")
+            return
 
     if not (gCarla.isControl or gCarla.isPlugin):
         gCarla.host.set_engine_option(ENGINE_OPTION_NSM_INIT, os.getpid(), initName)
 
-    # -------------------------------------------------------------
-    # Set binary path
-
-    libfolder      = libfilename.replace(libname, "")
-    localBinaries  = os.path.join(libfolder, "..", "bridges")
-    systemBinaries = os.path.join(libfolder, "bridges")
-
-    if os.path.exists(libfolder):
-        gCarla.host.set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, libfolder)
-    elif os.path.exists(localBinaries):
-        gCarla.host.set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, localBinaries)
-    elif os.path.exists(systemBinaries):
-        gCarla.host.set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, systemBinaries)
-
-    # -------------------------------------------------------------
-    # Set resource path
-
-    localResources  = os.path.join(libfolder, "..", "modules", "native-plugins", "resources")
-    systemResources = os.path.join(libfolder, "resources")
-
-    if os.path.exists(localResources):
-        gCarla.host.set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, localResources)
-    elif os.path.exists(systemResources):
-        gCarla.host.set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, systemResources)
+    gCarla.host.set_engine_option(ENGINE_OPTION_PATH_BINARIES,  0, gCarla.pathBinaries)
+    gCarla.host.set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, gCarla.pathResources)
 
 # ------------------------------------------------------------------------------------------------------------
 # Check if a value is a number (float support)
