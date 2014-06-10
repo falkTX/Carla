@@ -37,7 +37,8 @@ all: $(TARGETS)
 # --------------------------------------------------------------
 
 clean:
-	$(RM) $(OBJS) $(TARGETS)
+	$(RM) $(OBJS)
+	$(RM) $(TARGETS)
 
 debug:
 	$(MAKE) DEBUG=true

@@ -442,6 +442,13 @@ endif
 endif
 
 # --------------------------------------------------------------
+# Set app extension
+
+ifeq ($(WIN32),true)
+APP_EXT = .exe
+endif
+
+# --------------------------------------------------------------
 # Set shared lib extension
 
 LIB_EXT = so

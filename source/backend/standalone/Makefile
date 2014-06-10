@@ -8,9 +8,6 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-OBJS = \
-	CarlaStandalone.cpp.o
-
 TARGETS = \
 	../carla_standalone.a
 
@@ -36,6 +33,6 @@ debug:
 # --------------------------------------------------------------
 
 CarlaStandalone.cpp.o: CarlaStandalone.cpp $(CARLA_STANDALONE_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) $(LIBLO_FLAGS) -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
 
 # --------------------------------------------------------------

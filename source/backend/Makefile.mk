@@ -4,13 +4,16 @@
 # Created by falkTX
 #
 
+ifeq ($(CWD),)
 CWD=../..
-include ../../Makefile.deps
-include ../../Makefile.mk
+endif
+
+include $(CWD)/Makefile.deps
+include $(CWD)/Makefile.mk
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I. -I.. -I../../includes -I../../utils -isystem ../../modules
+BUILD_CXX_FLAGS += -I. -I.. -I$(CWD)/includes -I$(CWD)/utils -isystem $(CWD)/modules
 BUILD_CXX_FLAGS += $(LIBLO_FLAGS)
 
 # ----------------------------------------------------------------------------------------------------------------------------

@@ -147,79 +147,38 @@ OBJS = carla-discovery.cpp
 
 # --------------------------------------------------------------
 
-ifeq ($(WIN32),true)
-all: ../../../bin/carla-discovery-native.exe
-else
-all: ../../../bin/carla-discovery-native
-endif
-
-posix32: carla-discovery-posix32
-posix64: carla-discovery-posix64
-win32:   carla-discovery-win32.exe
-win64:   carla-discovery-win64.exe
+all:     ../../bin/carla-discovery-native$(APP_EXT)
+posix32: ../../carla-discovery-posix32
+posix64: ../../carla-discovery-posix64
+win32:   ../../carla-discovery-win32.exe
+win64:   ../../carla-discovery-win64.exe
 
 # --------------------------------------------------------------
 
-../../../bin/carla-discovery-native: $(OBJS) $(DEPS) $(LIBS)
-ifeq ($(MACOS),true)
-	$(CXX) $< $(LIBS) $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) $(POSIX_LINK_FLAGS) -o $@
-else
-	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) $(POSIX_LINK_FLAGS) -o $@
-endif
+../../bin/carla-discovery-native: $(OBJS) $(DEPS) $(LIBS)
+	$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) $(POSIX_LINK_FLAGS) -o $@
 
-carla-discovery-native.exe: $(OBJS) $(DEPS) $(LIBS)
-	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group $(WIN_BUILD_FLAGS) $(NATIVE_FLAGS) $(WIN_LINK_FLAGS) -o $@
+../../bin/carla-discovery-native.exe: $(OBJS) $(DEPS) $(LIBS)
+	$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(WIN_BUILD_FLAGS) $(NATIVE_FLAGS) $(WIN_LINK_FLAGS) -o $@
 
-carla-discovery-posix32: $(OBJS) $(DEPS) $(LIBS_posix32)
-	$(CXX) $< -Wl,--start-group $(LIBS_posix32) -Wl,--end-group $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@
+../../carla-discovery-posix32: $(OBJS) $(DEPS) $(LIBS_posix32)
+	$(CXX) $< $(LIBS_START) $(LIBS_posix32) $(LIBS_END) $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@
 
-carla-discovery-posix64: $(OBJS) $(DEPS) $(LIBS_posix64)
-	$(CXX) $< -Wl,--start-group $(LIBS_posix64) -Wl,--end-group $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@
+../../carla-discovery-posix64: $(OBJS) $(DEPS) $(LIBS_posix64)
+	$(CXX) $< $(LIBS_START) $(LIBS_posix64) $(LIBS_END) $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@
 
-carla-discovery-win32.exe: $(OBJS) $(DEPS) $(LIBS_win32)
-	$(CXX) $< -Wl,--start-group $(LIBS_win32) -Wl,--end-group $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@
+../../carla-discovery-win32.exe: $(OBJS) $(DEPS) $(LIBS_win32)
+	$(CXX) $< $(LIBS_START) $(LIBS_win32) $(LIBS_END) $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@
 
-carla-discovery-win64.exe: $(OBJS) $(DEPS) $(LIBS_win64)
-	$(CXX) $< -Wl,--start-group $(LIBS_win64) -Wl,--end-group $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@
+../../carla-discovery-win64.exe: $(OBJS) $(DEPS) $(LIBS_win64)
+	$(CXX) $< $(LIBS_START) $(LIBS_win64) $(LIBS_END) $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
 
 clean:
-	rm -f carla-discovery-*
+	$(RM) ../../bin/carla-discovery-*
 
 debug:
 	$(MAKE) DEBUG=true
-
-# --------------------------------------------------------------
-
-.FORCE:
-.PHONY: .FORCE
-
-../modules/juce_audio_basics.%.a: .FORCE
-	$(MAKE) -C ../modules juce_audio_basics_$*
-
-../modules/juce_audio_processors.%.a: .FORCE
-	$(MAKE) -C ../modules juce_audio_processors_$*
-
-../modules/juce_core.%.a: .FORCE
-	$(MAKE) -C ../modules juce_core_$*
-
-../modules/juce_data_structures.%.a: .FORCE
-	$(MAKE) -C ../modules juce_data_structures_$*
-
-../modules/juce_events.%.a: .FORCE
-	$(MAKE) -C ../modules juce_events_$*
-
-../modules/juce_graphics.%.a: .FORCE
-	$(MAKE) -C ../modules juce_graphics_$*
-
-../modules/juce_gui_basics.%.a: .FORCE
-	$(MAKE) -C ../modules juce_gui_basics_$*
-
-../modules/lilv.%.a: .FORCE
-	$(MAKE) -C ../modules lilv_$*
-
-../modules/%.a: .FORCE
-	$(MAKE) -C ../modules $*
 
 # --------------------------------------------------------------

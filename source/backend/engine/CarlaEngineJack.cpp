@@ -1975,7 +1975,6 @@ private:
             jackbridge_free(ports);
         }
     }
-#endif
 
     void addPatchbayJackPort(const uint groupId, const jack_port_t* const jackPort, const char* const shortPortName, const char* const fullPortName, const int jackPortFlags)
     {
@@ -2016,6 +2015,7 @@ private:
         return; // unused
         (void)portIsOSC;
     }
+#endif
 
     // -------------------------------------------------------------------
 

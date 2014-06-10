@@ -26,20 +26,11 @@ endif
 all: BIN RES UI WIDGETS
 
 # --------------------------------------------------------------
-# C++ code (native)
+# Binaries (native)
 
-.FORCE:
-.PHONY: .FORCE
+BIN: libs backend bridges discovery plugin theme
 
-ALL_LIBS += source/modules/jackbridge.a
-ALL_LIBS += source/modules/native-plugins.a
-ALL_LIBS += source/modules/rtaudio.a
-ALL_LIBS += source/modules/rtmempool.a
-ALL_LIBS += source/modules/rtmidi.a
-
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-ALL_LIBS += source/modules/lilv.a
-endif
+# --------------------------------------------------------------
 
 ifeq ($(HAVE_AF_DEPS),true)
 ALL_LIBS += source/modules/audio_decoder.a
@@ -48,6 +39,8 @@ endif
 ifeq ($(HAVE_DGL),true)
 ALL_LIBS += source/modules/dgl.a
 endif
+
+ALL_LIBS += source/modules/jackbridge.a
 
 ifeq ($(HAVE_JUCE),true)
 ALL_LIBS += source/modules/juce_audio_basics.a
@@ -62,81 +55,137 @@ ALL_LIBS += source/modules/juce_gui_basics.a
 ALL_LIBS += source/modules/juce_gui_extra.a
 endif
 
-BIN = \
-	bin/libcarla_standalone2.$(LIB_EXT)
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+ALL_LIBS += source/modules/lilv.a
+endif
 
-BIN: $(BIN)
+ALL_LIBS += source/modules/native-plugins.a
+ALL_LIBS += source/modules/rtaudio.a
+ALL_LIBS += source/modules/rtmempool.a
+ALL_LIBS += source/modules/rtmidi.a
+
+ifeq ($(HAVE_QT4),true)
+ALL_LIBS += source/modules/theme.qt4.a
+endif
+
+ifeq ($(HAVE_QT5),true)
+ALL_LIBS += source/modules/theme.qt5.a
+endif
+
+libs: $(ALL_LIBS)
 
 source/modules/%.a: .FORCE
 	$(MAKE) -C source/modules/$* ../$*.a
 
-bin/libcarla_standalone2.$(LIB_EXT): .FORCE
-	$(MAKE) -C source/backend/standalone
+source/modules/%.qt4.a: .FORCE
+	$(MAKE) -C source/modules/$* ../$*.qt4.a
 
-# ifeq ($(WIN32),true)
-# CXX += \
-# 	bin/carla-discovery-native.exe
-# else
-# CXX += \
-# 	bin/carla-discovery-native
-# endif
-
-# backend bridges discovery theme
-
-# ifeq ($(HAVE_JUCE),true)
-# CXX_TARGETS += plugin plugin_ui
-# endif
-
-# backend:
-# 	$(MAKE) -C source/backend
-#
-# bridges:
-# 	$(MAKE) -C source/bridges
-#
-# discovery:
-# 	$(MAKE) -C source/discovery
-#
-# plugin:
-# 	$(MAKE) -C source/plugin
-#
-# plugin_ui: source/carla-plugin source/carla_config.py source/*.py RES UI WIDGETS
-# 	$(LINK) $(CURDIR)/source/carla-plugin source/modules/native-plugins/resources/
-# 	$(LINK) $(CURDIR)/source/*.py         source/modules/native-plugins/resources/
-#
-# theme:
-# 	$(MAKE) -C source/modules/theme
+source/modules/%.qt5.a: .FORCE
+	$(MAKE) -C source/modules/$* ../$*.qt5.a
 
 # --------------------------------------------------------------
-# C++ code (variants)
 
-# posix32:
-# 	$(MAKE) -C source/bridges posix32
-# 	$(MAKE) -C source/discovery posix32
-#
-# posix64:
-# 	$(MAKE) -C source/bridges posix64
-# 	$(MAKE) -C source/discovery posix64
-#
-# win32:
-# 	$(MAKE) -C source/bridges win32
-# 	$(MAKE) -C source/discovery win32
-#
-# win64:
-# 	$(MAKE) -C source/bridges win64
-# 	$(MAKE) -C source/discovery win64
-#
-# wine32:
-# 	$(MAKE) -C source/modules jackbridge-wine32
-# 	$(LINK) ../modules/jackbridge-win32.dll.so source/bridges/jackbridge-win32.dll
-#
-# wine64:
-# 	$(MAKE) -C source/modules jackbridge-wine64
-# 	$(LINK) ../modules/jackbridge-win64.dll.so source/bridges/jackbridge-win64.dll
+backend: bin/libcarla_standalone2.$(LIB_EXT)
+
+bin/libcarla_standalone2.$(LIB_EXT): libs .FORCE
+	$(MAKE) -C source/backend
+
+# --------------------------------------------------------------
+
+bridges: bin/carla-bridge-native$(APP_EXT)
+
+bin/carla-bridge-native$(APP_EXT): libs .FORCE
+	$(MAKE) -C source/bridges
+
+# --------------------------------------------------------------
+
+discovery: bin/carla-discovery-native$(APP_EXT)
+
+bin/carla-discovery-native$(APP_EXT): libs .FORCE
+	$(MAKE) -C source/discovery
+
+# --------------------------------------------------------------
+
+# FIXME
+plugin: source/plugin/carla-native.lv2/carla-native.$(LIB_EXT)
+
+source/plugin/carla-native.lv2/carla-native.$(LIB_EXT): #libs .FORCE
+	$(MAKE) -C source/plugin
+
+# --------------------------------------------------------------
+
+theme: bin/styles/carlastyle.$(LIB_EXT)
+
+bin/styles/carlastyle.$(LIB_EXT): libs .FORCE
+	$(MAKE) -C source/modules/theme
+
+# --------------------------------------------------------------
+# Binaries (variants)
+
+posix32:
+	$(MAKE) -C source/bridges posix32
+	$(MAKE) -C source/discovery posix32
+
+posix64:
+	$(MAKE) -C source/bridges posix64
+	$(MAKE) -C source/discovery posix64
+
+win32:
+	$(MAKE) -C source/bridges win32
+	$(MAKE) -C source/discovery win32
+
+win64:
+	$(MAKE) -C source/bridges win64
+	$(MAKE) -C source/discovery win64
+
+wine32:
+	$(MAKE) -C source/modules jackbridge-wine32
+	$(LINK) source/modules/jackbridge-win32.dll.so source/bridges/jackbridge-win32.dll
+
+wine64:
+	$(MAKE) -C source/modules jackbridge-wine64
+	$(LINK) source/modules/jackbridge-win64.dll.so source/bridges/jackbridge-win64.dll
 
 # --------------------------------------------------------------
 # Resources
 
 RES = \
+	bin/resources/carla-plugin \
+	bin/resources/carla_backend.py \
+	bin/resources/carla_config.py \
+	bin/resources/carla_database.py \
+	bin/resources/carla_host.py \
+	bin/resources/carla_rack.py \
+	bin/resources/carla_settings.py \
+	bin/resources/carla_skin.py \
+	bin/resources/carla_shared.py \
+	bin/resources/carla_style.py \
+	bin/resources/carla_widgets.py \
+	bin/resources/canvaspreviewframe.py \
+	bin/resources/digitalpeakmeter.py \
+	bin/resources/externalui.py \
+	bin/resources/ledbutton.py \
+	bin/resources/paramspinbox.py \
+	bin/resources/patchcanvas.py \
+	bin/resources/patchcanvas_theme.py \
+	bin/resources/pixmapbutton.py \
+	bin/resources/pixmapdial.py \
+	bin/resources/pixmapkeyboard.py \
+	bin/resources/resources_rc.py \
+	bin/resources/ui_carla_about.py \
+	bin/resources/ui_carla_database.py \
+	bin/resources/ui_carla_edit.py \
+	bin/resources/ui_carla_host.py \
+	bin/resources/ui_carla_parameter.py \
+	bin/resources/ui_carla_plugin_basic_fx.py \
+	bin/resources/ui_carla_plugin_calf.py \
+	bin/resources/ui_carla_plugin_default.py \
+	bin/resources/ui_carla_plugin_zita.py \
+	bin/resources/ui_carla_plugin_zynfx.py \
+	bin/resources/ui_carla_refresh.py \
+	bin/resources/ui_carla_settings.py \
+	bin/resources/ui_carla_settings_driver.py \
+	bin/resources/ui_inputdialog_value.py \
 	source/carla_config.py \
 	source/resources_rc.py
 
@@ -152,6 +201,12 @@ endif
 
 source/resources_rc.py: resources/resources.qrc resources/*/*.png resources/*/*.svg
 	$(PYRCC) $< -o $@
+
+bin/resources/carla-plugin: source/carla-plugin
+	$(LINK) $(CURDIR)/source/carla-plugin bin/resources/
+
+bin/resources/%.py: source/%.py
+	$(LINK) $(CURDIR)/source/$*.py bin/resources/
 
 # --------------------------------------------------------------
 # UI code
@@ -199,11 +254,11 @@ source/%.py: source/widgets/%.py
 # --------------------------------------------------------------
 
 clean:
-# 	$(MAKE) clean -C source/backend
-# 	$(MAKE) clean -C source/bridges
-# 	$(MAKE) clean -C source/discovery
-# 	$(MAKE) clean -C source/modules
-# 	$(MAKE) clean -C source/plugin
+	$(MAKE) clean -C source/backend
+	$(MAKE) clean -C source/bridges
+	$(MAKE) clean -C source/discovery
+	$(MAKE) clean -C source/modules
+	$(MAKE) clean -C source/plugin
 	rm -f $(RES)
 	rm -f $(UIs)
 	rm -f $(WIDGETS)
@@ -570,5 +625,10 @@ endif
 else
 	@echo "ZynAddSubFX:$(ANS_NO)  $(mS)fftw3, mxml or zlib missing$(mE)"
 endif
+
+# --------------------------------------------------------------
+
+.FORCE:
+.PHONY: .FORCE
 
 # --------------------------------------------------------------

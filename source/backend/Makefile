@@ -4,7 +4,8 @@
 # Created by falkTX
 #
 
-include ../Makefile.mk
+CWD=..
+include Makefile.mk
 
 # --------------------------------------------------------------
 
@@ -54,6 +55,10 @@ STANDALONE_FLAGS += $(RTAUDIO_LIBS)
 STANDALONE_FLAGS += $(RTMEMPOOL_LIBS)
 STANDALONE_FLAGS += $(RTMIDI_LIBS)
 
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+STANDALONE_FLAGS += $(LILV_LIBS)
+endif
+
 ifeq ($(HAVE_CSOUND),true)
 STANDALONE_FLAGS += $(CSOUND_LIBS)
 endif
@@ -64,10 +69,6 @@ endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
 STANDALONE_FLAGS += $(LINUXSAMPLER_LIBS)
-endif
-
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-STANDALONE_FLAGS += $(LILV_LIBS)
 endif
 
 ifeq ($(HAVE_JUCE),true)
@@ -85,6 +86,9 @@ endif
 
 # --------------------------------------------------------------
 
+OBJS = \
+	CarlaStandalone.cpp.o
+
 TARGETS = \
 	../../bin/libcarla_standalone.$(LIB_EXT)
 
@@ -95,10 +99,10 @@ all: $(TARGETS)
 # --------------------------------------------------------------
 
 clean:
-	$(MAKE) clean -C control
+	$(RM) $(OBJS)
+	$(RM) $(TARGETS)
 	$(MAKE) clean -C engine
 	$(MAKE) clean -C plugin
-	$(MAKE) clean -C standalone
 
 debug:
 	$(MAKE) DEBUG=true
@@ -108,8 +112,13 @@ doxygen: CarlaBackend.doxygen
 
 # --------------------------------------------------------------
 
-../../bin/libcarla_standalone.$(LIB_EXT): standalone/CarlaStandalone.cpp.o $(STANDALONE_LIBS)
-	$(CXX) standalone/CarlaStandalone.cpp.o $(LIBS_START) $(STANDALONE_LIBS) $(LIBS_END) $(LINK_FLAGS) $(STANDALONE_FLAGS) $(SHARED) -o $@
+CarlaStandalone.cpp.o: CarlaStandalone.cpp $(CARLA_STANDALONE_CPP_DEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
+
+# --------------------------------------------------------------
+
+../../bin/libcarla_standalone.$(LIB_EXT): $(OBJS) $(STANDALONE_LIBS)
+	$(CXX) $< $(LIBS_START) $(STANDALONE_LIBS) $(LIBS_END) $(LINK_FLAGS) $(STANDALONE_FLAGS) $(SHARED) -o $@
 
 # --------------------------------------------------------------
 
