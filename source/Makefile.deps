@@ -27,8 +27,8 @@ CARLA_PLUGIN_HPP = $(CWD)/backend/CarlaPlugin.hpp $(CARLA_BACKEND_H)
 
 CARLA_UTILS_HPP      = $(CWD)/utils/CarlaUtils.hpp     $(CARLA_DEFINES_H)
 CARLA_JUCE_UTILS_HPP = $(CWD)/utils/CarlaJuceUtils.hpp $(CARLA_UTILS_HPP)
-CARLA_MATH_UTILS_HPP = $(CWD)/utils/CarlaMathUtils.hpp $(CARLA_UTILS_HPP)
 CARLA_LIB_UTILS_HPP  = $(CWD)/utils/CarlaLibUtils.hpp  $(CARLA_UTILS_HPP)
+CARLA_MATH_UTILS_HPP = $(CWD)/utils/CarlaMathUtils.hpp $(CARLA_UTILS_HPP)
 CARLA_OSC_UTILS_HPP  = $(CWD)/utils/CarlaOscUtils.hpp  $(CARLA_UTILS_HPP)
 CARLA_SHM_UTILS_HPP  = $(CWD)/utils/CarlaShmUtils.hpp  $(CARLA_UTILS_HPP)
 

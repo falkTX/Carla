@@ -67,7 +67,7 @@ CARLA_BACKEND_USE_NAMESPACE
 
 static const uint32_t kBufferSize  = 512;
 static const double   kSampleRate  = 44100.0;
-static const int32_t  kSampleRatei = 44100.0;
+static const int32_t  kSampleRatei = 44100;
 static const float    kSampleRatef = 44100.0f;
 
 // --------------------------------------------------------------------------
