@@ -1,0 +1,34 @@
+#!/bin/bash
+
+set -e
+
+# cp    -v /home/falktx/FOSS/GIT-mine/DISTRHO/DPF/dgl/*.hpp /home/falktx/FOSS/GIT-mine/Carla/source/modules/dgl/
+# cp -r -v /home/falktx/FOSS/GIT-mine/DISTRHO/DPF/dgl/src   /home/falktx/FOSS/GIT-mine/Carla/source/modules/dgl/
+
+cp -r -v /home/falktx/FOSS/GIT-mine/DISTRHO/DPF/distrho/*   /home/falktx/FOSS/GIT-mine/Carla/source/modules/distrho/
+
+cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/DISTRHO_mini-series/plugins/3BandEQ/{*.cpp,*.hpp,*.h}       /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/3bandeq/
+cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/DISTRHO_mini-series/plugins/3BandSplitter/{*.cpp,*.hpp,*.h} /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/3bandsplitter/
+cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/DISTRHO_mini-series/plugins/PingPongPan/{*.cpp,*.hpp,*.h}   /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/pingpongpan/
+
+cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/DISTRHO_nekobi/plugins/Nekobi/{*.cpp,*.hpp,*.h}             /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/nekobi/
+cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/DISTRHO_nekobi/plugins/Nekobi/nekobee-src/{*.c,*.h}         /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/nekobi/nekobee-src/
+
+cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/DISTRHO_prom/plugins/ProM/{*.cpp,*.hpp,*.h}                 /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/prom/
+
+cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/JuicePlugins/plugins/GrooveJuice/{*.cpp,*.hpp,*.hxx,*.h}    /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/groovejuice/
+cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/JuicePlugins/plugins/PowerJuice/{*.cpp,*.hpp,*.h}           /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/powerjuice/
+# cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/JuicePlugins/plugins/PowerJuiceX2/{*.cpp,*.hpp,*.hxx,*.h}   /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/powerjuicex2/
+cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/JuicePlugins/plugins/SegmentJuice/{*.cpp,*.hpp,*.hxx,*.h}   /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/segmentjuice/
+# cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/JuicePlugins/plugins/StutterJuice/{*.cpp,*.hpp,*.hxx,*.h}   /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/stutterjuice/
+# cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/JuicePlugins/plugins/TriggerJuice/{*.cpp,*.hpp,*.hxx,*.h}   /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/triggerjuice/
+cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/JuicePlugins/plugins/VectorJuice/{*.cpp,*.hpp,*.h}          /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/vectorjuice/
+cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/JuicePlugins/plugins/WobbleJuice/{*.cpp,*.hpp,*.hxx,*.h}    /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/wobblejuice/
+
+cp -v /home/falktx/FOSS/GIT-mine/zam-plugins-DPF/plugins/ZamComp/{*.cpp,*.hpp,*.h}                   /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/zamcomp/
+cp -v /home/falktx/FOSS/GIT-mine/zam-plugins-DPF/plugins/ZamCompX2/{*.cpp,*.hpp,*.h}                 /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/zamcompx2/
+cp -v /home/falktx/FOSS/GIT-mine/zam-plugins-DPF/plugins/ZamEQ2/{*.cpp,*.hpp,*.h}                    /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/zameq2/
+cp -v /home/falktx/FOSS/GIT-mine/zam-plugins-DPF/plugins/ZamSynth/{*.cpp,*.hpp,*.h}                  /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/zamsynth/
+cp -v /home/falktx/FOSS/GIT-mine/zam-plugins-DPF/plugins/ZamTube/{*.cpp,*.hpp,*.h}                   /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/zamtube/
+cp -v /home/falktx/FOSS/GIT-mine/zam-plugins-DPF/plugins/ZaMultiComp/{*.cpp,*.hpp,*.h}               /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/zamulticomp/
+cp -v /home/falktx/FOSS/GIT-mine/zam-plugins-DPF/plugins/ZaMultiCompX2/{*.cpp,*.hpp,*.h}             /home/falktx/FOSS/GIT-mine/Carla/source/modules/native-plugins/zamulticompx2/

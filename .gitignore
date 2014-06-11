@@ -37,6 +37,7 @@ resources.*.cpp
 ui_*.py
 
 # Misc files
+*.meta4
 *.ttl
 
 # PyQt widgets
@@ -143,6 +144,11 @@ source/includes/rewire/
 source/includes/vst/
 source/includes/vst3/
 source/includes/config.h
+
+data/linux/*.gz
+data/linux/*.tgz
+data/linux/*.xz
+data/linux/*.*/
 
 data/macos/*.gz
 data/macos/*.tgz
