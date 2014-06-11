@@ -90,7 +90,7 @@ OBJS = \
 	CarlaStandalone.cpp.o
 
 TARGETS = \
-	../../bin/libcarla_standalone.$(LIB_EXT)
+	../../bin/libcarla_standalone2$(LIB_EXT)
 
 # --------------------------------------------------------------
 
@@ -117,7 +117,7 @@ CarlaStandalone.cpp.o: CarlaStandalone.cpp $(CARLA_STANDALONE_CPP_DEPS)
 
 # --------------------------------------------------------------
 
-../../bin/libcarla_standalone.$(LIB_EXT): $(OBJS) $(STANDALONE_LIBS)
+../../bin/libcarla_standalone2$(LIB_EXT): $(OBJS) $(STANDALONE_LIBS)
 	$(CXX) $< $(LIBS_START) $(STANDALONE_LIBS) $(LIBS_END) $(LINK_FLAGS) $(STANDALONE_FLAGS) $(SHARED) -o $@
 
 # --------------------------------------------------------------

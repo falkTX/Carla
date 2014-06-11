@@ -261,16 +261,16 @@ endif
 LIBLO_FLAGS  = $(shell pkg-config --cflags liblo)
 LIBLO_LIBS   = $(shell pkg-config --libs liblo)
 
-ifeq ($(DEFAULT_QT),5)
-QTCORE_FLAGS = $(shell pkg-config --cflags Qt5Core)
-QTCORE_LIBS  = $(shell pkg-config --libs Qt5Core)
-QTXML_FLAGS  = $(shell pkg-config --cflags Qt5Xml)
-QTXML_LIBS   = $(shell pkg-config --libs Qt5Xml)
-else
+ifeq ($(DEFAULT_QT),4)
 QTCORE_FLAGS = $(shell pkg-config --cflags QtCore)
 QTCORE_LIBS  = $(shell pkg-config --libs QtCore)
 QTXML_FLAGS  = $(shell pkg-config --cflags QtXml)
 QTXML_LIBS   = $(shell pkg-config --libs QtXml)
+else
+QTCORE_FLAGS = $(shell pkg-config --cflags Qt5Core)
+QTCORE_LIBS  = $(shell pkg-config --libs Qt5Core)
+QTXML_FLAGS  = $(shell pkg-config --cflags Qt5Xml)
+QTXML_LIBS   = $(shell pkg-config --libs Qt5Xml)
 endif
 
 ifeq ($(HAVE_CSOUND),true)
@@ -334,7 +334,7 @@ JUCE_EVENTS_LIBS         = $(shell pkg-config --libs x11)
 JUCE_GRAPHICS_FLAGS      = $(shell pkg-config --cflags x11 xinerama xext freetype2)
 JUCE_GRAPHICS_LIBS       = $(shell pkg-config --libs x11 xinerama xext freetype2)
 JUCE_GUI_BASICS_FLAGS    = $(shell pkg-config --cflags x11 xinerama xext xcursor)
-JUCE_GUI_BASICS_LIBS     = $(shell pkg-config --libs x11 xinerama xext xcursor) -ldl
+JUCE_GUI_BASICS_LIBS     = $(shell pkg-config --libs x11 xinerama xext xcursor)
 endif
 LILV_LIBS                = -ldl -lm -lrt
 ifeq ($(HAVE_ALSA),true)
@@ -451,14 +451,14 @@ endif
 # --------------------------------------------------------------
 # Set shared lib extension
 
-LIB_EXT = so
+LIB_EXT = .so
 
 ifeq ($(MACOS),true)
-LIB_EXT = dylib
+LIB_EXT = .dylib
 endif
 
 ifeq ($(WIN32),true)
-LIB_EXT = dll
+LIB_EXT = .dll
 endif
 
 # --------------------------------------------------------------

@@ -13,12 +13,12 @@ DESTDIR =
 
 LINK = ln -sf
 
-ifeq ($(DEFAULT_QT),5)
-PYUIC ?= pyuic5
-PYRCC ?= pyrcc5
-else
+ifeq ($(DEFAULT_QT),4)
 PYUIC ?= pyuic4 -w
 PYRCC ?= pyrcc4 -py3
+else
+PYUIC ?= pyuic5
+PYRCC ?= pyrcc5
 endif
 
 # --------------------------------------------------------------
@@ -85,9 +85,9 @@ source/modules/%.qt5.a: .FORCE
 
 # --------------------------------------------------------------
 
-backend: bin/libcarla_standalone2.$(LIB_EXT)
+backend: bin/libcarla_standalone2$(LIB_EXT)
 
-bin/libcarla_standalone2.$(LIB_EXT): libs .FORCE
+bin/libcarla_standalone2$(LIB_EXT): libs .FORCE
 	$(MAKE) -C source/backend
 
 # --------------------------------------------------------------
@@ -107,16 +107,16 @@ bin/carla-discovery-native$(APP_EXT): libs .FORCE
 # --------------------------------------------------------------
 
 # FIXME
-plugin: source/plugin/carla-native.lv2/carla-native.$(LIB_EXT)
+plugin: source/plugin/carla-native.lv2/carla-native$(LIB_EXT)
 
-source/plugin/carla-native.lv2/carla-native.$(LIB_EXT): #libs .FORCE
+source/plugin/carla-native.lv2/carla-native$(LIB_EXT): #libs .FORCE
 	$(MAKE) -C source/plugin
 
 # --------------------------------------------------------------
 
-theme: bin/styles/carlastyle.$(LIB_EXT)
+theme: bin/styles/carlastyle$(LIB_EXT)
 
-bin/styles/carlastyle.$(LIB_EXT): libs .FORCE
+bin/styles/carlastyle$(LIB_EXT): .FORCE
 	$(MAKE) -C source/modules/theme
 
 # --------------------------------------------------------------
