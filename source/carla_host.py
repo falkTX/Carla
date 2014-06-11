@@ -394,7 +394,8 @@ class HostWindow(QMainWindow):
         self.fContainer.projectLoadingStarted()
         self.fIsProjectLoading = True
 
-        gCarla.host.load_project(self.fProjectFilename)
+        if gCarla.host is not None:
+            gCarla.host.load_project(self.fProjectFilename)
 
         self.fIsProjectLoading = False
         self.fContainer.projectLoadingFinished()
@@ -513,6 +514,9 @@ class HostWindow(QMainWindow):
         if audioDriver != "JACK" and transportMode == ENGINE_TRANSPORT_MODE_JACK:
             transportMode = ENGINE_TRANSPORT_MODE_INTERNAL
 
+        if gCarla.host is None:
+            return audioDriver
+
         # -------------------------------------------------------------
         # apply to engine
 
@@ -543,7 +547,7 @@ class HostWindow(QMainWindow):
     def startEngine(self):
         audioDriver = self.setEngineSettings()
 
-        if not gCarla.host.engine_init(audioDriver, self.fClientName):
+        if gCarla.host is not None and not gCarla.host.engine_init(audioDriver, self.fClientName):
             if self.fFirstEngineInit:
                 self.fFirstEngineInit = False
                 return
@@ -850,7 +854,7 @@ class HostWindow(QMainWindow):
     def slot_engineStart(self, doStart = True):
         if doStart: self.startEngine()
 
-        check = gCarla.host.is_engine_running()
+        check = gCarla.host is not None and gCarla.host.is_engine_running()
         self.ui.menu_PluginMacros.setEnabled(check)
         self.ui.menu_Canvas.setEnabled(check)
 
@@ -908,7 +912,7 @@ class HostWindow(QMainWindow):
         if not dialog.exec_():
             return
 
-        if not gCarla.host.is_engine_running():
+        if gCarla.host is not None and not gCarla.host.is_engine_running():
             QMessageBox.warning(self, self.tr("Warning"), self.tr("Cannot add new plugins while engine is stopped"))
             return
 
@@ -1186,7 +1190,10 @@ class HostWindow(QMainWindow):
         self.killTimers()
         self.saveSettings()
 
-        if gCarla.host.is_engine_running() and not gCarla.isPlugin:
+        if gCarla.host is None or gCarla.isPlugin:
+            pass
+
+        elif gCarla.host.is_engine_running():
             gCarla.host.set_engine_about_to_close()
 
             count = self.fContainer.getPluginCount()

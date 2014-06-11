@@ -996,7 +996,8 @@ class CarlaPatchbayW(QFrame):
     @pyqtSlot()
     def slot_canvasRefresh(self):
         patchcanvas.clear()
-        if gCarla.host.is_engine_running():
+
+        if gCarla.host is not None and gCarla.host.is_engine_running():
             gCarla.host.patchbay_refresh()
 
             for pitem in self.fPluginList:
