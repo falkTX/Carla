@@ -264,12 +264,8 @@ clean:
 	rm -f $(WIDGETS)
 	rm -f *~ source/*~ source/*.pyc source/*_rc.py source/ui_*.py
 
-# --------------------------------------------------------------
-
 debug:
 	$(MAKE) DEBUG=true
-
-# --------------------------------------------------------------
 
 doxygen:
 	$(MAKE) doxygen -C source/backend
@@ -280,18 +276,19 @@ install:
 	# Create directories
 	install -d $(DESTDIR)$(PREFIX)/bin/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/
-	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/
-	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/nekofilter/
-	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/zynaddsubfx/
-	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/
-	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/
-	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/nekofilter/
-	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/zynaddsubfx/
+	install -d $(DESTDIR)$(PREFIX)/lib/carla/styles/
+# 	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/
+# 	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/
+# 	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/nekofilter/
+# 	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/zynaddsubfx/
 	install -d $(DESTDIR)$(PREFIX)/lib/pkgconfig/
 	install -d $(DESTDIR)$(PREFIX)/include/carla/
 	install -d $(DESTDIR)$(PREFIX)/include/carla/includes/
 	install -d $(DESTDIR)$(PREFIX)/share/applications/
 	install -d $(DESTDIR)$(PREFIX)/share/carla/
+	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/
+	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/nekofilter/
+	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/zynaddsubfx/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
@@ -342,35 +339,34 @@ install:
 
 	# Install backend
 	install -m 644 \
-		source/backend/*.so \
+		bin/libcarla_standalone2.* \
 		$(DESTDIR)$(PREFIX)/lib/carla/
 
 	# Install binaries
 	install -m 755 \
-		source/bridges/*bridge-* \
-		source/discovery/carla-discovery-* \
+		bin/*bridge-* \
+		bin/carla-discovery-* \
 		$(DESTDIR)$(PREFIX)/lib/carla/
 
-	# Install binaries for lv2 plugin
-	install -m 755 \
-		source/bridges/*bridge-* \
-		source/discovery/carla-discovery-* \
-		$(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/
+	# Install binaries for lv2 plugin, TODO
+# 	install -m 755 \
+# 		source/bridges/*bridge-* \
+# 		source/discovery/carla-discovery-* \
+# 		$(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/
 
-	# Install lv2 plugin
-	install -m 644 \
-		source/plugin/carla-native.lv2/*.so \
-		source/plugin/carla-native.lv2/*.ttl \
-		$(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/
+	# Install lv2 plugin, TODO
+# 	install -m 644 \
+# 		source/plugin/carla-native.lv2/*.so \
+# 		source/plugin/carla-native.lv2/*.ttl \
+# 		$(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/
 
 	# Install python code
 	install -m 644 source/*.py $(DESTDIR)$(PREFIX)/share/carla/
 
 	# Install python "binaries"
-	install -m 755 \
+	install -m 644 \
 		source/carla \
 		source/carla-patchbay \
-		source/carla-plugin \
 		source/carla-rack \
 		$(DESTDIR)$(PREFIX)/share/carla/
 
@@ -380,22 +376,26 @@ install:
 	install -m 644 source/includes/CarlaDefines.h $(DESTDIR)$(PREFIX)/include/carla/includes/
 
 	# Install resources (main)
-	install -m 755 source/modules/native-plugins/resources/carla-plugin      $(DESTDIR)$(PREFIX)/lib/carla/resources/
-	install -m 755 source/modules/native-plugins/resources/*-ui              $(DESTDIR)$(PREFIX)/lib/carla/resources/
-	install -m 644 source/modules/native-plugins/resources/*.py              $(DESTDIR)$(PREFIX)/lib/carla/resources/
-	install -m 644 source/modules/native-plugins/resources/nekofilter/*.png  $(DESTDIR)$(PREFIX)/lib/carla/resources/nekofilter/
-	install -m 644 source/modules/native-plugins/resources/zynaddsubfx/*.png $(DESTDIR)$(PREFIX)/lib/carla/resources/zynaddsubfx/
+	install -m 644 bin/resources/carla-plugin      $(DESTDIR)$(PREFIX)/share/carla/resources/
+	install -m 644 bin/resources/*-ui              $(DESTDIR)$(PREFIX)/share/carla/resources/
+	install -m 644 bin/resources/nekofilter/*.png  $(DESTDIR)$(PREFIX)/share/carla/resources/nekofilter/
+	install -m 644 bin/resources/zynaddsubfx/*.png $(DESTDIR)$(PREFIX)/share/carla/resources/zynaddsubfx/
 
-	# Install resources (lv2 plugin)
-	install -m 755 source/modules/native-plugins/resources/carla-plugin      $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/
-	install -m 755 source/modules/native-plugins/resources/*-ui              $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/
-	install -m 644 source/modules/native-plugins/resources/*.py              $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/
-	install -m 644 source/modules/native-plugins/resources/nekofilter/*.png  $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/nekofilter/
-	install -m 644 source/modules/native-plugins/resources/zynaddsubfx/*.png $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/zynaddsubfx/
+	# Install resources (re-use python files)
+	cd $(DESTDIR)$(PREFIX)/share/carla/resources/ && \
+		$(LINK) ../*.py .
+	cd $(CURDIR)
+
+	# Install resources (lv2 plugin), TODO
+# 	install -m 755 source/modules/native-plugins/resources/carla-plugin      $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/
+# 	install -m 755 source/modules/native-plugins/resources/*-ui              $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/
+# 	install -m 644 source/modules/native-plugins/resources/*.py              $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/
+# 	install -m 644 source/modules/native-plugins/resources/nekofilter/*.png  $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/nekofilter/
+# 	install -m 644 source/modules/native-plugins/resources/zynaddsubfx/*.png $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/zynaddsubfx/
 
 	# Install theme
-	$(MAKE) STYLES_DIR=$(DESTDIR)$(PREFIX)/lib/carla/styles                          install-main -C source/modules/theme
-	$(MAKE) STYLES_DIR=$(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/styles install-main -C source/modules/theme
+	install -m 644 bin/styles/* $(DESTDIR)$(PREFIX)/lib/carla/styles/
+# 	$(MAKE) STYLES_DIR=$(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources/styles install-main -C source/modules/theme
 
 	# Adjust PREFIX value in script files
 	sed -i "s?X-PREFIX-X?$(PREFIX)?" \
