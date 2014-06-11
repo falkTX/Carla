@@ -95,8 +95,7 @@ src/dist/
 *build-*Debug/
 *build-*Release/
 
-# carla-plugin
-source/modules/native-plugins/resources/carla-plugin
+# python files in plugin resources dir
 source/modules/native-plugins/resources/*.py
 
 # zynaddsubfx
