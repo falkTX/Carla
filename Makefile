@@ -32,6 +32,10 @@ BIN: libs backend bridges discovery plugin theme
 
 # --------------------------------------------------------------
 
+ALL_LIBS += source/backend/carla_engine.a
+ALL_LIBS += source/backend/carla_engine_plugin.a
+ALL_LIBS += source/backend/carla_plugin.a
+
 ifeq ($(HAVE_AF_DEPS),true)
 ALL_LIBS += source/modules/audio_decoder.a
 endif
@@ -73,6 +77,12 @@ ALL_LIBS += source/modules/theme.qt5.a
 endif
 
 libs: $(ALL_LIBS)
+
+source/backend/carla_%.a: .FORCE
+	$(MAKE) -C source/backend/$* ../carla_$*.a
+
+source/backend/carla_%_plugin.a: .FORCE
+	$(MAKE) -C source/backend/$* ../carla_$*_plugin.a
 
 source/modules/%.a: .FORCE
 	$(MAKE) -C source/modules/$* ../$*.a
