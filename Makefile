@@ -106,11 +106,17 @@ bin/carla-discovery-native$(APP_EXT): libs .FORCE
 
 # --------------------------------------------------------------
 
-# FIXME
-plugin: source/plugin/carla-native.lv2/carla-native$(LIB_EXT)
+plugin: bin/carla-native.lv2/manifest.ttl
 
-source/plugin/carla-native.lv2/carla-native$(LIB_EXT): #libs .FORCE
-	$(MAKE) -C source/plugin
+bin/carla-native.lv2/carla-native$(LIB_EXT): backend .FORCE
+	$(MAKE) -C source/plugin ../../$@
+
+bin/carla-native.lv2/manifest.ttl: bin/carla-native-lv2-export$(APP_EXT) bridges discovery .FORCE
+	cd bin && ./carla-native-lv2-export$(APP_EXT); cd ..
+	cd bin/carla-native.lv2 && $(LINK) ../*bridge-* ../carla-discovery-* .; cd ..
+
+bin/carla-native-lv2-export$(APP_EXT): bin/carla-native.lv2/carla-native$(LIB_EXT) .FORCE
+	$(MAKE) -C source/plugin ../../$@
 
 # --------------------------------------------------------------
 
@@ -150,7 +156,6 @@ wine64:
 # Resources
 
 RES = \
-	bin/resources/carla-plugin \
 	bin/resources/carla_backend.py \
 	bin/resources/carla_config.py \
 	bin/resources/carla_database.py \
@@ -201,9 +206,6 @@ endif
 
 source/resources_rc.py: resources/resources.qrc resources/*/*.png resources/*/*.svg
 	$(PYRCC) $< -o $@
-
-bin/resources/carla-plugin: source/carla-plugin
-	$(LINK) $(CURDIR)/source/carla-plugin bin/resources/
 
 bin/resources/%.py: source/%.py
 	$(LINK) $(CURDIR)/source/$*.py bin/resources/
@@ -376,8 +378,8 @@ install:
 	install -m 644 source/includes/CarlaDefines.h $(DESTDIR)$(PREFIX)/include/carla/includes/
 
 	# Install resources (main)
-	install -m 644 bin/resources/carla-plugin      $(DESTDIR)$(PREFIX)/share/carla/resources/
-	install -m 644 bin/resources/*-ui              $(DESTDIR)$(PREFIX)/share/carla/resources/
+	install -m 755 bin/resources/carla-plugin      $(DESTDIR)$(PREFIX)/share/carla/resources/
+	install -m 755 bin/resources/*-ui              $(DESTDIR)$(PREFIX)/share/carla/resources/
 	install -m 644 bin/resources/nekofilter/*.png  $(DESTDIR)$(PREFIX)/share/carla/resources/nekofilter/
 	install -m 644 bin/resources/zynaddsubfx/*.png $(DESTDIR)$(PREFIX)/share/carla/resources/zynaddsubfx/
 

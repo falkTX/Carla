@@ -36,6 +36,9 @@ resources.*.cpp
 *_rc.py
 ui_*.py
 
+# Misc files
+*.ttl
+
 # PyQt widgets
 source/canvaspreviewframe.py
 source/carla_config.py
@@ -73,7 +76,6 @@ carla-native-lv2-export
 data/windows/Carla
 data/windows/CarlaControl
 source/bridges/jackplugin/libjack.so.0
-source/plugin/carla-native.lv2/*.ttl
 source/tests/ansi-pedantic-test_*
 source/tests/CarlaString
 source/tests/EngineEvents
@@ -89,13 +91,14 @@ doc/CarlaBridge/
 doc/DISTRHO/
 
 # CX-Freeze builds
-src/dist/
+source/dist/
 
 # QtCreator builds
 *build-*Debug/
 *build-*Release/
 
 # python files in plugin resources dir
+bin/resources/*.py
 source/modules/native-plugins/resources/*.py
 
 # zynaddsubfx
@@ -139,6 +142,7 @@ source/includes/asio/
 source/includes/rewire/
 source/includes/vst/
 source/includes/vst3/
+source/includes/config.h
 
 data/macos/*.gz
 data/macos/*.tgz

@@ -1,26 +1,16 @@
 #!/usr/bin/make -f
-# Makefile for carla plugin exports #
-# --------------------------------- #
+# Makefile for carla plugin #
+# ------------------------- #
 # Created by falkTX
 #
 
+CWD=..
 include ../Makefile.mk
-
-BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils -isystem ../modules
 
 # --------------------------------------------------------------
 
-ifeq ($(HAVE_AF_DEPS),true)
-BUILD_CXX_FLAGS += -DWANT_AUDIOFILE
-endif
-
-ifeq ($(HAVE_MF_DEPS),true)
-BUILD_CXX_FLAGS += -DWANT_MIDIFILE
-endif
-
-ifeq ($(HAVE_ZYN_DEPS),true)
-BUILD_CXX_FLAGS += -DWANT_ZYNADDSUBFX
-endif
+BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils -isystem ../modules
+BUILD_CXX_FLAGS += $(NATIVE_PLUGINS_FLAGS)
 
 # --------------------------------------------------------------
 # Common
@@ -108,15 +98,9 @@ endif
 
 # --------------------------------------------------------------
 
-ifeq ($(WIN32),true)
-TARGETS = carla-native-lv2-export.exe carla-native.lv2/carla-native.dll
-else
-ifeq ($(MACOS),true)
-TARGETS = carla-native-lv2-export carla-native.lv2/carla-native.dylib
-else
-TARGETS = carla-native-lv2-export carla-native.lv2/carla-native.so
-endif
-endif
+TARGETS = \
+	../../bin/carla-native.lv2/carla-native$(LIB_EXT) \
+	../../bin/carla-native-lv2-export$(APP_EXT)
 
 # --------------------------------------------------------------
 
@@ -142,41 +126,10 @@ carla-native-lv2-export.cpp.o: carla-native-lv2-export.cpp carla-native-base.cpp
 
 # --------------------------------------------------------------
 
-carla-native-lv2-export: carla-native-lv2-export.cpp.o $(LIBS)
-ifneq ($(MACOS),true)
-	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group $(LINK_FLAGS) -o $@
-else
-	$(CXX) $< $(LIBS) $(LINK_FLAGS) -o $@
-endif
-	./carla-native-lv2-export
+../../bin/carla-native.lv2/carla-native$(LIB_EXT): carla-native-lv2.cpp.o $(LIBS)
+	$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
 
-carla-native-lv2-export.exe: carla-native-lv2-export.cpp.o $(LIBS)
-	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group $(LINK_FLAGS) -o $@
-	./carla-native-lv2-export.exe
-
-# --------------------------------------------------------------
-
-carla-native.lv2/carla-native.dll: carla-native-lv2.cpp.o $(LIBS)
-	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group -shared $(LINK_FLAGS) -o $@
-
-carla-native.lv2/carla-native.dylib: carla-native-lv2.cpp.o $(LIBS)
-	$(CXX) $< $(LIBS) -dynamiclib $(LINK_FLAGS) -o $@
-
-carla-native.lv2/carla-native.so: carla-native-lv2.cpp.o $(LIBS)
-	$(CXX) $< -Wl,--start-group $(LIBS) -Wl,--end-group -shared $(LINK_FLAGS) -o $@
-
-# --------------------------------------------------------------
-
-.FORCE:
-.PHONY: .FORCE carla-native-lv2-export
-
-../backend/carla_engine_plugin.a: .FORCE
-	$(MAKE) -C ../backend/engine ../carla_engine_plugin.a
-
-../backend/carla_plugin.a: .FORCE
-	$(MAKE) -C ../backend/plugin ../carla_plugin.a
-
-../modules/%.a: .FORCE
-	$(MAKE) -C ../modules $*
+../../bin/carla-native-lv2-export$(APP_EXT): carla-native-lv2-export.cpp.o $(LIBS)
+	$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------

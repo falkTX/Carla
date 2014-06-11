@@ -515,35 +515,40 @@ def initHost(initName, libPrefix = None, failError = True):
         libname += ".so"
 
     # -------------------------------------------------------------
-    # Search for the Carla library
+    # Set binary dir
 
-    libfilename = ""
+    CWDl = CWD.lower()
 
     if libPrefix is not None:
-        libfilename = os.path.join(libPrefix, "lib", "carla", libname)
+        gCarla.pathBinaries = os.path.join(libPrefix, "lib", "carla")
 
-    elif CWD.endswith("resources"):
-        libfilename = os.path.join(CWD, "..", libname)
+    elif CWDl.endswith("resources"):
+        gCarla.pathBinaries = os.path.abspath(os.path.join(CWD, ".."))
 
-    elif CWD.endswith("source"):
-        libfilename = os.path.join(CWD, "..", "bin", libname)
+    elif CWDl.endswith("source"):
+        gCarla.pathBinaries = os.path.abspath(os.path.join(CWD, "..", "bin"))
 
     # -------------------------------------------------------------
+    # Fail if binary dir is not found
 
-    if not (libfilename or gCarla.isPlugin):
+    if not (gCarla.pathBinaries or gCarla.isPlugin):
         if failError:
             QMessageBox.critical(None, "Error", "Failed to find the carla library, cannot continue")
             sys.exit(1)
         return
 
     # -------------------------------------------------------------
-    # Set paths
+    # Set resources dir
 
-    gCarla.pathBinaries  = libfilename.replace(libname, "")
-    gCarla.pathResources = os.path.join(gCarla.pathBinaries, "resources")
+    if libPrefix is not None:
+        gCarla.pathResources = os.path.join(libPrefix, "share", "carla", "resources")
+    else:
+        gCarla.pathResources = os.path.join(gCarla.pathBinaries, "resources")
+
+    # -------------------------------------------------------------
+    # Print info
 
     print("Carla %s started, status:" % VERSION)
-    print("  backend lib:   %s" % libfilename)
     print("  binary dir:    %s" % gCarla.pathBinaries)
     print("  resources dir: %s" % gCarla.pathResources)
 
@@ -552,7 +557,7 @@ def initHost(initName, libPrefix = None, failError = True):
 
     if gCarla.host is None:
         try:
-            gCarla.host = Host(libfilename)
+            gCarla.host = Host(os.path.join(gCarla.pathBinaries, libname))
         except:
             print("hmmmm...")
             return

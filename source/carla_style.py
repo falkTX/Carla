@@ -49,16 +49,22 @@ class CarlaApplication(object):
         # try to find styles dir
         stylesDir = ""
 
+        CWDl = CWD.lower()
+
         if libPrefix is not None:
             stylesDir = os.path.join(libPrefix, "lib", "carla")
 
-        elif CWD.endswith("resources"):
-            stylesDir = os.path.join(CWD, "..")
+        elif CWDl.endswith("resources"):
+            if CWDl.endswith("native-plugins%sresources" % os.sep):
+                stylesDir = os.path.abspath(os.path.join(CWD, "..", "..", "..", "..", "bin"))
+            else:
+                stylesDir = os.path.abspath(os.path.join(CWD, ".."))
 
-        elif CWD.endswith("source"):
-            stylesDir = os.path.join(CWD, "..", "bin")
+        elif CWDl.endswith("source"):
+            stylesDir = os.path.abspath(os.path.join(CWD, "..", "bin"))
 
         if stylesDir:
+            print("TEST : ", stylesDir, " : ", CWD)
             QApplication.addLibraryPath(stylesDir)
 
         elif not config_UseQt5:
