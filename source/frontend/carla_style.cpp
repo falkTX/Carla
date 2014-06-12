@@ -22,6 +22,7 @@
 
 #include <QtCore/QDir>
 #include <QtCore/QSettings>
+#include <QtWidgets/QApplication>
 
 // ------------------------------------------------------------------------------------------------------------
 

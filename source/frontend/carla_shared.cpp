@@ -19,7 +19,8 @@
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
-#include <QtGui/QFileDialog>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QLineEdit>
 
 //#ifdef CARLA_OS_MAC
 //#endif
@@ -204,12 +205,18 @@ void init()
     gCarla.sampleRate = 0.0;
 #ifdef CARLA_OS_LINUX
     gCarla.processMode = CarlaBackend::ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS;
-    gCarla.transportMode = CarlaBackend::ENGINE_TRANSPORT_MODE_JACK;
 #else
     gCarla.processMode = CarlaBackend::ENGINE_PROCESS_MODE_CONTINUOUS_RACK;
+#endif
+    gCarla.processModeForced = false;
+#ifdef CARLA_OS_LINUX
+    gCarla.transportMode = CarlaBackend::ENGINE_TRANSPORT_MODE_JACK;
+#else
     gCarla.transportMode = CarlaBackend::ENGINE_TRANSPORT_MODE_INTERNAL;
 #endif
     gCarla.maxParameters = CarlaBackend::MAX_DEFAULT_PARAMETERS;
+    gCarla.pathBinaries  = "";
+    gCarla.pathResources = "";
 
     // --------------------------------------------------------------------------------------------------------
     // Default Plugin Folders (get)
@@ -345,6 +352,27 @@ void init()
     DEFAULT_SFZ_PATH    += ":/usr/share/sounds/sfz";
 #endif
 
+#ifndef CARLA_OS_WIN
+    QString winePrefix = std::getenv("WINEPREFIX");
+
+    if (winePrefix.isEmpty())
+        winePrefix = HOME + "/.wine";
+
+    if (QDir(winePrefix).exists())
+    {
+        DEFAULT_VST_PATH  += ":" + winePrefix + "/drive_c/Program Files/VstPlugins";
+        DEFAULT_VST3_PATH += ":" + winePrefix + "/drive_c/Program Files/Common Files/VST3";
+
+# if defined (__LP64__) || defined (_LP64)
+        if (QDir(winePrefix + "/drive_c/Program Files (x86)").exists())
+        {
+            DEFAULT_VST_PATH  += ":" + winePrefix + "/drive_c/Program Files (x86)/VstPlugins";
+            DEFAULT_VST3_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/VST3";
+        }
+# endif
+    }
+#endif
+
     // --------------------------------------------------------------------------------------------------------
     // Default Plugin Folders (set)
 
@@ -392,23 +420,26 @@ void init()
 }
 
 // ------------------------------------------------------------------------------------------------------------
-// Search for Carla tools
+// find tool
 
-static
-QString findTool(const QString& toolDir, const QString& toolName)
+QString findTool(const QString& toolName)
 {
-    QDir tmp(QDir::current());
-    tmp.cd(toolDir);
+    QString path;
 
-    QString path = tmp.filePath(toolName);
-
+    path = QDir::current().filePath(toolName);
     if (QFile(path).exists())
         return path;
+
+    if (! gCarla.pathBinaries.isEmpty())
+    {
+        path = QDir(gCarla.pathBinaries).filePath(toolName);
+        if (QFile(path).exists())
+            return path;
+    }
 
     foreach (const QString& p, PATH)
     {
         path = QDir(p).filePath(toolName);
-
         if (QFile(path).exists())
             return path;
     }
@@ -419,7 +450,7 @@ QString findTool(const QString& toolDir, const QString& toolName)
 // ------------------------------------------------------------------------------------------------------------
 // Init host
 
-void initHost(const QString& /*appName*/, const char* const libPrefix, bool failError)
+void initHost(const char* const initName, const char* const libPrefix, bool failError)
 {
     init();
 
@@ -442,86 +473,42 @@ void initHost(const QString& /*appName*/, const char* const libPrefix, bool fail
 #endif
 
     // -------------------------------------------------------------
-    // Search for the Carla library
+    // Set binary dir
 
-    QString libfilename = "";
+    QString CWD = QDir::current().absolutePath();
 
-    if (libPrefix != nullptr)
+    if (libPrefix != nullptr && libPrefix[0] != '\0')
     {
         QDir tmp(libPrefix);
         tmp.cd("lib");
         tmp.cd("carla");
-        libfilename = tmp.filePath(libname);
+
+        gCarla.pathBinaries = tmp.absolutePath();
     }
-    else
+    else if (CWD.endsWith("resources", Qt::CaseInsensitive))
     {
-        QDir tmp(QDir::current());
+        QDir tmp(CWD);
         tmp.cdUp();
-        tmp.cd("backend");
 
-        QString path = tmp.filePath(libname);
+        gCarla.pathBinaries = tmp.absolutePath();
+    }
+    else if (CWD.endsWith("source", Qt::CaseInsensitive))
+    {
+        QDir tmp(CWD);
+        tmp.cdUp();
+        tmp.cd("bin");
 
-        if (QFile(path).exists())
-        {
-            libfilename = path;
-        }
-        else
-        {
-            QStringList CARLA_LIB_PATH;
-            const char* const envLibPath = std::getenv("CARLA_LIB_PATH");
-
-            if (envLibPath != nullptr && QDir(envLibPath).exists())
-            {
-                CARLA_LIB_PATH << envLibPath;
-            }
-            else
-            {
-#if defined(CARLA_OS_WIN)
-                //CARLA_LIB_PATH << (os.path.join(PROGRAMFILES, "Carla"),);
-#elif defined(CARLA_OS_MAC)
-                CARLA_LIB_PATH << "/opt/local/lib";
-                CARLA_LIB_PATH << "/usr/local/lib/";
-                CARLA_LIB_PATH << "/usr/lib";
-#else
-                CARLA_LIB_PATH << "/usr/local/lib/";
-                CARLA_LIB_PATH << "/usr/lib";
-#endif
-            }
-
-            foreach (const QString& libpath, CARLA_LIB_PATH)
-            {
-                tmp = libpath;
-                tmp.cd("carla");
-
-                path = tmp.filePath(libname);
-
-                if (QFile(path).exists())
-                {
-                    libfilename = path;
-                    break;
-                }
-            }
-        }
+        gCarla.pathBinaries = tmp.absolutePath();
+    }
+    else if (CWD.endsWith("bin", Qt::CaseInsensitive))
+    {
+        gCarla.pathBinaries = CWD;
     }
 
     // -------------------------------------------------------------
-    // find windows tools
+    // Fail if binary dir is not found
 
-    gCarla.discovery_win32 = findTool("discovery", "carla-discovery-win32.exe");
-    gCarla.discovery_win64 = findTool("discovery", "carla-discovery-win64.exe");
-
-#ifndef CARLA_OS_WIN
-    // -------------------------------------------------------------
-    // find native and posix tools
-
-    gCarla.discovery_native  = findTool("discovery", "carla-discovery-native");
-    gCarla.discovery_posix32 = findTool("discovery", "carla-discovery-posix32");
-    gCarla.discovery_posix64 = findTool("discovery", "carla-discovery-posix64");
-#endif
-
-    // -------------------------------------------------------------
-
-    if (libfilename.isEmpty() && ! gCarla.isPlugin)
+    if (gCarla.pathBinaries.isEmpty() && ! gCarla.isPlugin)
     {
         if (failError)
         {
@@ -532,49 +519,40 @@ void initHost(const QString& /*appName*/, const char* const libPrefix, bool fail
     }
 
     // -------------------------------------------------------------
-    // Set binary path
+    // Set resources dir
 
-    QDir tmp;
-    QString libfolder, localBinaries, systemBinaries;
+    if (libPrefix != nullptr && libPrefix[0] != '\0')
+    {
+        QDir tmp(libPrefix);
+        tmp.cd("share");
+        tmp.cd("carla");
+        tmp.cd("resources");
 
-    libfolder = libfilename.replace(libname, "");
+        gCarla.pathResources = tmp.absolutePath();
+    }
+    else
+    {
+        QDir tmp(gCarla.pathBinaries);
+        tmp.cd("resources");
 
-    tmp = libfolder;
-    tmp.cdUp();
-    tmp.cd("bridges");
-    localBinaries = tmp.absolutePath();
-
-    tmp = libfolder;
-    tmp.cd("bridges");
-    systemBinaries = tmp.absolutePath();
-
-    if (QDir(libfolder).exists())
-        carla_set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, libfolder.toUtf8().constData());
-    else if (QDir(localBinaries).exists())
-        carla_set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, localBinaries.toUtf8().constData());
-    else if (QDir(systemBinaries).exists())
-        carla_set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, systemBinaries.toUtf8().constData());
+        gCarla.pathResources = tmp.absolutePath();
+    }
 
     // -------------------------------------------------------------
-    // Set resource path
+    // Print info
 
-    QString localResources, systemResources;
+    carla_stdout("Carla %s started, status:", VERSION);
+    carla_stdout("  binary dir:    %s", gCarla.pathBinaries.toUtf8().constData());
+    carla_stdout("  resources dir: %s", gCarla.pathResources.toUtf8().constData());
 
-    tmp = libfolder;
-    tmp.cdUp();
-    tmp.cd("modules");
-    tmp.cd("native-plugins");
-    tmp.cd("resources");
-    localResources = tmp.absolutePath();
+    // -------------------------------------------------------------
+    // Init host
 
-    tmp = libfolder;
-    tmp.cd("resources");
-    systemResources = tmp.absolutePath();
+    if (! (gCarla.isControl or gCarla.isPlugin))
+        carla_set_engine_option(ENGINE_OPTION_NSM_INIT, getpid(), initName);
 
-    if (QDir(localResources).exists())
-        carla_set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, localResources.toUtf8().constData());
-    else if (QDir(systemResources).exists())
-        carla_set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, systemResources.toUtf8().constData());
+    carla_set_engine_option(ENGINE_OPTION_PATH_BINARIES,  0, gCarla.pathBinaries.toUtf8().constData());
+    carla_set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, gCarla.pathResources.toUtf8().constData());
 }
 
 // ------------------------------------------------------------------------------------------------------------

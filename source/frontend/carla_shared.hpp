@@ -22,8 +22,7 @@
 // Imports (Global)
 
 #include <QtGui/QIcon>
-#include <QtGui/QLineEdit>
-#include <QtGui/QMessageBox>
+#include <QtWidgets/QMessageBox>
 
 class QLineEdit;
 
@@ -31,12 +30,11 @@ class QLineEdit;
 // Imports (Custom)
 
 #include "CarlaBackendUtils.hpp"
-#include "CarlaHost.h"
 
 // ------------------------------------------------------------------------------------------------------------
 // Set Version
 
-#define VERSION "1.9.0"
+#define VERSION "1.9.4 (2.0-beta2)"
 
 // ------------------------------------------------------------------------------------------------------------
 // Set TMP
@@ -118,16 +116,16 @@ struct CarlaObject {
     double sampleRate;
     // current process mode
     EngineProcessMode processMode;
+    // check if process mode is forced (rack/patchbay)
+    bool processModeForced;
     // current transport mode
     EngineTransportMode transportMode;
     // current max parameters
     uint maxParameters;
-    // discovery tools
-    QString discovery_native;
-    QString discovery_posix32;
-    QString discovery_posix64;
-    QString discovery_win32;
-    QString discovery_win64;
+    // binary dir
+    QString pathBinaries;
+    // resources dir
+    QString pathResources;
     // default paths
     QStringList DEFAULT_LADSPA_PATH;
     QStringList DEFAULT_DSSI_PATH;
@@ -144,14 +142,19 @@ struct CarlaObject {
 extern CarlaObject gCarla;
 
 // ------------------------------------------------------------------------------------------------------------
+// find tool
+
+QString findTool(const QString& toolName);
+
+// ------------------------------------------------------------------------------------------------------------
 // Init host
 
-void initHost(const QString& appName, const char* const libPrefix = nullptr, bool failError = true);
+void initHost(const char* const initName, const char* const libPrefix = nullptr, bool failError = true);
 
 // ------------------------------------------------------------------------------------------------------------
 // Get Icon from user theme, using our own as backup (Oxygen)
 
-QIcon getIcon(const QString& icon, const int size=16);
+QIcon getIcon(const QString& icon, const int size = 16);
 
 // ------------------------------------------------------------------------------------------------------------
 // Signal handler

@@ -68,7 +68,7 @@ elif WINDOWS:
 # ------------------------------------------------------------------------------------------------------------
 # Set Version
 
-VERSION = "1.9.3 (2.0-beta1)"
+VERSION = "1.9.4 (2.0-beta2)"
 
 # ------------------------------------------------------------------------------------------------------------
 # Set TMP
@@ -481,10 +481,15 @@ if os.path.isfile(CWD):
     CWD = os.path.dirname(CWD)
 
 # find tool
-def findTool(binDir, toolName):
-    path = os.path.join(CWD, binDir, toolName)
+def findTool(toolName):
+    path = os.path.join(CWD, toolName)
     if os.path.exists(path):
         return path
+
+    if gCarla.pathBinaries:
+        path = os.path.join(gCarla.pathBinaries, toolName)
+        if os.path.exists(path):
+            return path
 
     for p in PATH:
         path = os.path.join(p, toolName)
@@ -527,6 +532,9 @@ def initHost(initName, libPrefix = None, failError = True):
 
     elif CWDl.endswith("source"):
         gCarla.pathBinaries = os.path.abspath(os.path.join(CWD, "..", "bin"))
+
+    elif CWDl.endswith("bin"):
+        gCarla.pathBinaries = CWD
 
     # -------------------------------------------------------------
     # Fail if binary dir is not found
@@ -592,7 +600,7 @@ def toList(value):
 # ------------------------------------------------------------------------------------------------------------
 # Get Icon from user theme, using our own as backup (Oxygen)
 
-def getIcon(icon, size=16):
+def getIcon(icon, size = 16):
     return QIcon.fromTheme(icon, QIcon(":/%ix%i/%s.png" % (size, size, icon)))
 
 # ------------------------------------------------------------------------------------------------------------

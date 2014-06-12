@@ -1,10 +1,10 @@
 # QtCreator project file
 
-QT = core gui
+QT = core gui widgets
 
 TARGET   = carla-frontend
 TEMPLATE = app
-VERSION  = 1.9.0
+VERSION  = 1.9.4
 
 # -------------------------------------------------------
 
@@ -46,8 +46,8 @@ INCLUDEPATH = \
 
 # -------------------------------------------------------
 
-LIBS  = ../modules/theme.qt4.a
-LIBS += -L../backend -lcarla_standalone2
+LIBS  = ../modules/theme.qt5.a
+LIBS += -L../../bin -lcarla_standalone2
 
 # -------------------------------------------------------
 
@@ -58,6 +58,6 @@ QMAKE_CXXFLAGS += -Wlogical-op -Wsign-conversion
 # -Wmissing-declarations
 QMAKE_CXXFLAGS += -O0 -g
 QMAKE_CXXFLAGS += -std=c++0x -std=gnu++0x
-QMAKE_CXXFLAGS += -isystem /opt/kxstudio/include -isystem /usr/include/qt4
+QMAKE_CXXFLAGS += -isystem /opt/kxstudio/include -isystem /usr/include/qt5
 
 # -------------------------------------------------------
