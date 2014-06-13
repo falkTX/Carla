@@ -78,20 +78,20 @@ endif
 
 libs: $(ALL_LIBS)
 
-source/backend/carla_%.a: .FORCE
-	$(MAKE) -C source/backend/$* ../carla_$*.a
-
 source/backend/carla_%_plugin.a: .FORCE
 	$(MAKE) -C source/backend/$* ../carla_$*_plugin.a
 
-source/modules/%.a: .FORCE
-	$(MAKE) -C source/modules/$* ../$*.a
+source/backend/carla_%.a: .FORCE
+	$(MAKE) -C source/backend/$* ../carla_$*.a
 
 source/modules/%.qt4.a: .FORCE
 	$(MAKE) -C source/modules/$* ../$*.qt4.a
 
 source/modules/%.qt5.a: .FORCE
 	$(MAKE) -C source/modules/$* ../$*.qt5.a
+
+source/modules/%.a: .FORCE
+	$(MAKE) -C source/modules/$* ../$*.a
 
 # --------------------------------------------------------------
 
