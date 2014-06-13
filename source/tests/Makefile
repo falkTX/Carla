@@ -78,7 +78,7 @@ EngineEvents: EngineEvents.cpp
 	env LD_LIBRARY_PATH=../backend valgrind ./$@
 
 PipeServer: PipeServer.cpp ../utils/CarlaPipeUtils.hpp
-	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -lpthread -o $@
 # 	valgrind ./$@
 
 Print: Print.cpp ../utils/CarlaUtils.hpp

@@ -41,10 +41,10 @@ from paramspinbox import ParamSpinBox
 # -----------------------------------------------------------------------
 # External UI
 
-class DistrhoUINotes(QWidget, ExternalUI):
+class DistrhoUINotes(ExternalUI, QWidget):
     def __init__(self):
-        QWidget.__init__(self, None)
         ExternalUI.__init__(self)
+        QWidget.__init__(self, None)
 
         self.fCurPage = 1
         self.fSaveSizeNowChecker = -1
@@ -233,7 +233,7 @@ class DistrhoUINotes(QWidget, ExternalUI):
 
 #--------------- main ------------------
 if __name__ == '__main__':
+    import resources_rc
     app = CarlaApplication("Notes")
-    #app...
     gui = DistrhoUINotes()
     app.exit_exec()

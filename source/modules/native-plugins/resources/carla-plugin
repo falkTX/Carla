@@ -519,10 +519,10 @@ class PluginHost(object):
 # ------------------------------------------------------------------------------------------------------------
 # Main Window
 
-class CarlaMiniW(HostWindow, ExternalUI):
+class CarlaMiniW(ExternalUI, HostWindow):
     def __init__(self):
-        HostWindow.__init__(self, None)
         ExternalUI.__init__(self)
+        HostWindow.__init__(self, None)
 
         if False:
             from carla_patchbay import CarlaPatchbayW

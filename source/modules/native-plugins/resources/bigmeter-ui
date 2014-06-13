@@ -26,10 +26,10 @@ from digitalpeakmeter import DigitalPeakMeter
 # -----------------------------------------------------------------------
 # External UI
 
-class DistrhoUIBigMeter(DigitalPeakMeter, ExternalUI):
+class DistrhoUIBigMeter(ExternalUI, DigitalPeakMeter):
     def __init__(self):
-        DigitalPeakMeter.__init__(self, None)
         ExternalUI.__init__(self)
+        DigitalPeakMeter.__init__(self, None)
 
         channels = 2 #6 if argv[0].endswith("bigmeterM-ui") else 2
 
@@ -91,7 +91,7 @@ class DistrhoUIBigMeter(DigitalPeakMeter, ExternalUI):
 
 #--------------- main ------------------
 if __name__ == '__main__':
+    import resources_rc
     app = CarlaApplication("BigMeter")
-    #app...
     gui = DistrhoUIBigMeter()
     app.exit_exec()

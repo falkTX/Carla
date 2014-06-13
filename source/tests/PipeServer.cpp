@@ -26,17 +26,12 @@ public:
     {
     }
 
-    ~ExternalPluginUI() override
-    {
-    }
-
     void fail(const char* const error) override
     {
         carla_stderr2(error);
-        //fHost->dispatcher(fHost->handle, HOST_OPCODE_UI_UNAVAILABLE, 0, 0, nullptr, 0.0f);
     }
 
-    void msgReceived(const char* const msg) override
+    bool msgReceived(const char* const msg) noexcept override
     {
         carla_stderr("msgReceived : %s", msg);
 
@@ -46,37 +41,7 @@ public:
             gStopNow = true;
         }
 
-#if 0
-        if (std::strcmp(msg, "control") == 0)
-        {
-            int index;
-            float value;
-
-            if (readNextLineAsInt(index) && readNextLineAsFloat(value))
-                handleSetParameterValue(index, value);
-        }
-        else if (std::strcmp(msg, "configure") == 0)
-        {
-            char* key;
-            char* value;
-
-            if (readNextLineAsString(key) && readNextLineAsString(value))
-            {
-                handleSetState(key, value);
-                std::free(key);
-                std::free(value);
-            }
-        }
-        else if (std::strcmp(msg, "exiting") == 0)
-        {
-            waitChildClose();
-            fHost->ui_closed(fHost->handle);
-        }
-        else
-        {
-            carla_stderr("unknown message HOST: \"%s\"", msg);
-        }
-#endif
+        return false;
     }
 };
 
@@ -84,7 +49,7 @@ int main()
 {
     ExternalPluginUI ui;
 
-    if (! ui.start("/home/falktx/FOSS/GIT-mine/Carla/source/notes-ui", "44100.0", "Ui title here"))
+    if (! ui.start("/home/falktx/FOSS/GIT-mine/Carla/bin/resources/carla-plugin", "44100.0", "Ui title here"))
     {
         carla_stderr("failed to start");
         return 1;
@@ -97,8 +62,6 @@ int main()
         ui.idle();
         carla_msleep(10);
     }
-
-    //ui.stop();
 
     return 0;
 }

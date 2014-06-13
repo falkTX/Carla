@@ -425,7 +425,8 @@ public:
     void writeMsg(const char* const msg) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fPipeSend != -1,);
-        CARLA_SAFE_ASSERT(! fWriteLock.tryLock());
+
+        const CarlaMutexTryLocker cmtl(fWriteLock);
 
         try {
             ssize_t ignore = ::write(fPipeSend, msg, std::strlen(msg));
@@ -436,7 +437,8 @@ public:
     void writeMsg(const char* const msg, size_t size) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fPipeSend != -1,);
-        CARLA_SAFE_ASSERT(! fWriteLock.tryLock());
+
+        const CarlaMutexTryLocker cmtl(fWriteLock);
 
         try {
             ssize_t ignore = ::write(fPipeSend, msg, size);
@@ -447,7 +449,8 @@ public:
     void writeAndFixMsg(const char* const msg) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fPipeSend != -1,);
-        CARLA_SAFE_ASSERT(! fWriteLock.tryLock());
+
+        const CarlaMutexTryLocker cmtl(fWriteLock);
 
         const size_t size(msg != nullptr ? std::strlen(msg) : 0);
 

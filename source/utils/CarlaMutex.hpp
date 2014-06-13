@@ -201,6 +201,33 @@ private:
 };
 
 // -----------------------------------------------------------------------
+// Helper class to try-lock&unlock a mutex during a function scope.
+
+template <class Mutex>
+class CarlaScopeTryLocker
+{
+public:
+    CarlaScopeTryLocker(const Mutex& mutex) noexcept
+        : fMutex(mutex),
+          fLocked(mutex.tryLock())
+    {
+    }
+
+    ~CarlaScopeTryLocker() noexcept
+    {
+        if (fLocked)
+            fMutex.unlock();
+    }
+
+private:
+    const Mutex& fMutex;
+    const bool   fLocked;
+
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaScopeTryLocker)
+};
+
+// -----------------------------------------------------------------------
 // Helper class to unlock&lock a mutex during a function scope.
 
 template <class Mutex>
@@ -230,6 +257,9 @@ private:
 
 typedef CarlaScopeLocker<CarlaMutex>          CarlaMutexLocker;
 typedef CarlaScopeLocker<CarlaRecursiveMutex> CarlaRecursiveMutexLocker;
+
+typedef CarlaScopeTryLocker<CarlaMutex>          CarlaMutexTryLocker;
+typedef CarlaScopeTryLocker<CarlaRecursiveMutex> CarlaRecursiveMutexTryLocker;
 
 typedef CarlaScopeUnlocker<CarlaMutex>          CarlaMutexUnlocker;
 typedef CarlaScopeUnlocker<CarlaRecursiveMutex> CarlaRecursiveMutexUnlocker;
