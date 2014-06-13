@@ -37,9 +37,6 @@ else:
 
 from carla_shared import *
 
-# Make sure resources are good
-# import resources_rc
-
 # ------------------------------------------------------------------------------------------------------------
 
 class CarlaApplication(object):
@@ -66,7 +63,6 @@ class CarlaApplication(object):
             stylesDir = os.path.abspath(os.path.join(CWD, "..", "bin"))
 
         if stylesDir:
-            print("TEST : ", stylesDir, " : ", CWD)
             QApplication.addLibraryPath(stylesDir)
 
         elif not config_UseQt5:

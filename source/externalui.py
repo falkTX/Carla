@@ -35,7 +35,6 @@ class ExternalUI(object):
         self.fQuitReceived = False
 
         if len(argv) > 1:
-            print(argv)
             self.fSampleRate = float(argv[1])
             self.fUiName     = argv[2]
             self.fPipeRecvFd = int(argv[3])
