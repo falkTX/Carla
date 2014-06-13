@@ -75,26 +75,21 @@ public:
 
         //----------------------------------------------------------------
 
-        const char* argv[7];
+        const char* argv[6];
 
         //----------------------------------------------------------------
-        // argv[0] => python
+        // argv[0] => filename
 
-        argv[0] = "/usr/bin/python3";
-
-        //----------------------------------------------------------------
-        // argv[1] => filename
-
-        argv[1] = filename;
+        argv[0] = filename;
 
         //----------------------------------------------------------------
-        // argv[2-3] => args
+        // argv[1-2] => args
 
-        argv[2] = arg1;
-        argv[3] = arg2;
+        argv[1] = arg1;
+        argv[2] = arg2;
 
         //----------------------------------------------------------------
-        // argv[4-5] => pipes
+        // argv[3-4] => pipes
 
         int pipe1[2]; // written by host process, read by plugin UI process
         int pipe2[2]; // written by plugin UI process, read by host process
@@ -124,13 +119,13 @@ public:
         pipeRecv[100] = '\0';
         pipeSend[100] = '\0';
 
-        argv[4] = pipeRecv; // reading end
-        argv[5] = pipeSend; // writting end
+        argv[3] = pipeRecv; // reading end
+        argv[4] = pipeSend; // writting end
 
         //----------------------------------------------------------------
-        // argv[6] => null
+        // argv[5] => null
 
-        argv[6] = nullptr;
+        argv[5] = nullptr;
 
         //----------------------------------------------------------------
         // fork
@@ -591,7 +586,7 @@ private:
 
     // -------------------------------------------------------------------
 
-    static bool fork_exec(const char* const argv[7], int* const retp) noexcept
+    static bool fork_exec(const char* const argv[6], int* const retp) noexcept
     {
         const pid_t ret = *retp = vfork();
 
