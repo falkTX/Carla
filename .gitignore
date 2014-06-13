@@ -30,6 +30,7 @@
 moc_*.cpp
 ui_*.h
 resources.*.cpp
+qrc_resources.cpp
 
 # Python files
 *.pyc
@@ -72,11 +73,13 @@ carla-discovery-native
 carla-discovery-posix32
 carla-discovery-posix64
 
+carla-frontend
 carla-native-lv2-export
 
 data/windows/Carla
 data/windows/CarlaControl
 source/bridges/jackplugin/libjack.so.0
+source/frontend/Makefile
 source/tests/ansi-pedantic-test_*
 source/tests/CarlaString
 source/tests/EngineEvents
