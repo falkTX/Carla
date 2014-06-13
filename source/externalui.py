@@ -35,12 +35,14 @@ class ExternalUI(object):
         self.fQuitReceived = False
 
         if len(argv) > 1:
+            print(argv)
             self.fSampleRate = float(argv[1])
             self.fUiName     = argv[2]
             self.fPipeRecvFd = int(argv[3])
             self.fPipeSendFd = int(argv[4])
 
-            fcntl(self.fPipeRecvFd, F_SETFL, fcntl(self.fPipeRecvFd, F_GETFL) | O_NONBLOCK)
+            oldFlags = fcntl(self.fPipeRecvFd, F_GETFL)
+            fcntl(self.fPipeRecvFd, F_SETFL, oldFlags | O_NONBLOCK)
 
             self.fPipeRecv = fdopen(self.fPipeRecvFd, 'r')
             self.fPipeSend = fdopen(self.fPipeSendFd, 'w')

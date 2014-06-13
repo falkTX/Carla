@@ -75,21 +75,26 @@ public:
 
         //----------------------------------------------------------------
 
-        const char* argv[5];
+        const char* argv[7];
 
         //----------------------------------------------------------------
-        // argv[0] => filename
+        // argv[0] => python
 
-        argv[0] = filename;
-
-        //----------------------------------------------------------------
-        // argv[1-2] => args
-
-        argv[1] = arg1;
-        argv[2] = arg2;
+        argv[0] = "/usr/bin/python3";
 
         //----------------------------------------------------------------
-        // argv[3-4] => pipes
+        // argv[1] => filename
+
+        argv[1] = filename;
+
+        //----------------------------------------------------------------
+        // argv[2-3] => args
+
+        argv[2] = arg1;
+        argv[3] = arg2;
+
+        //----------------------------------------------------------------
+        // argv[4-5] => pipes
 
         int pipe1[2]; // written by host process, read by plugin UI process
         int pipe2[2]; // written by plugin UI process, read by host process
@@ -112,14 +117,20 @@ public:
 
         char pipeRecv[100+1];
         char pipeSend[100+1];
-        pipeRecv[100] = '\0';
-        pipeSend[100] = '\0';
 
         std::snprintf(pipeRecv, 100, "%d", pipe1[0]); // [0] means reading end
         std::snprintf(pipeSend, 100, "%d", pipe2[1]); // [1] means writting end
 
-        argv[3] = pipeRecv; // reading end
-        argv[4] = pipeSend; // writting end
+        pipeRecv[100] = '\0';
+        pipeSend[100] = '\0';
+
+        argv[4] = pipeRecv; // reading end
+        argv[5] = pipeSend; // writting end
+
+        //----------------------------------------------------------------
+        // argv[6] => null
+
+        argv[6] = nullptr;
 
         //----------------------------------------------------------------
         // fork
@@ -409,10 +420,12 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // must be locked before calling
 
     void writeMsg(const char* const msg) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fPipeSend != -1,);
+        CARLA_SAFE_ASSERT(! fWriteLock.tryLock());
 
         try {
             ssize_t ignore = ::write(fPipeSend, msg, std::strlen(msg));
@@ -423,6 +436,7 @@ public:
     void writeMsg(const char* const msg, size_t size) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fPipeSend != -1,);
+        CARLA_SAFE_ASSERT(! fWriteLock.tryLock());
 
         try {
             ssize_t ignore = ::write(fPipeSend, msg, size);
@@ -433,6 +447,7 @@ public:
     void writeAndFixMsg(const char* const msg) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fPipeSend != -1,);
+        CARLA_SAFE_ASSERT(! fWriteLock.tryLock());
 
         const size_t size(msg != nullptr ? std::strlen(msg) : 0);
 
@@ -471,6 +486,8 @@ public:
             (void)ignore;
         } CARLA_SAFE_EXCEPTION("CarlaPipeServer::writeAndFixMsg");
     }
+
+    // -------------------------------------------------------------------
 
     void waitChildClose() noexcept
     {
@@ -571,19 +588,15 @@ private:
 
     // -------------------------------------------------------------------
 
-    static bool fork_exec(const char* const argv[5], int* const retp) noexcept
+    static bool fork_exec(const char* const argv[7], int* const retp) noexcept
     {
         const pid_t ret = *retp = vfork();
 
         switch (ret)
         {
         case 0: // child process
-            execlp(argv[0], argv[0], argv[1], argv[2], argv[3], argv[4],
-#ifdef CARLA_OS_MAC // fix warning
-                   NULL);
-#else
-                   nullptr);
-#endif
+            execvp(argv[0], const_cast<char* const*>(argv));
+
             carla_stderr2("exec failed: %s", std::strerror(errno));
             _exit(0); // this is not noexcept safe but doesn't matter anyway
             return false;
