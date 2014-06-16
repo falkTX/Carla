@@ -28,11 +28,13 @@ import os
 import sys
 
 if config_UseQt5:
-    from PyQt5.QtCore import qFatal, qWarning, QDir
+    from PyQt5.Qt import PYQT_VERSION_STR
+    from PyQt5.QtCore import qFatal, qVersion, qWarning, QDir
     from PyQt5.QtGui import QIcon
     from PyQt5.QtWidgets import QFileDialog, QMessageBox
 else:
-    from PyQt4.QtCore import qFatal, qWarning, QDir
+    from PyQt4.Qt import PYQT_VERSION_STR
+    from PyQt4.QtCore import qFatal, qVersion, qWarning, QDir
     from PyQt4.QtGui import QFileDialog, QIcon, QMessageBox
 
 # ------------------------------------------------------------------------------------------------------------
@@ -557,8 +559,11 @@ def initHost(initName, libPrefix = None, failError = True):
     # Print info
 
     print("Carla %s started, status:" % VERSION)
-    print("  binary dir:    %s" % gCarla.pathBinaries)
-    print("  resources dir: %s" % gCarla.pathResources)
+    print("  Python version: %s" % sys.version.split(" ",1)[0])
+    print("  Qt version:     %s" % qVersion())
+    print("  PyQt version:   %s" % PYQT_VERSION_STR)
+    print("  Binary dir:     %s" % gCarla.pathBinaries)
+    print("  Resources dir:  %s" % gCarla.pathResources)
 
     # -------------------------------------------------------------
     # Init host
