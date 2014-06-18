@@ -99,7 +99,7 @@ public:
         {
             showCustomUI(false);
 
-            if (fUi.isOsc)
+            if (fUi.type == UI::UI_OSC)
                 pData->osc.thread.stopThread(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
         }
 
@@ -393,7 +393,7 @@ public:
 
     void showCustomUI(const bool yesNo) override
     {
-        if (fUi.isOsc)
+        if (fUi.type == UI::UI_OSC)
         {
             if (yesNo)
             {
@@ -421,7 +421,10 @@ public:
 
         if (yesNo)
         {
-            if (fUi.window == nullptr)
+            QString uiTitle(QString("%1 (GUI)").arg(pData->name));
+            void* vstPtr;
+
+            if (fUi.window == nullptr && fUi.type == UI::UI_EMBED)
             {
                 const char* msg = nullptr;
                 const uintptr_t frontendWinId(pData->engine->getOptions().frontendWinId);
@@ -445,44 +448,70 @@ public:
                 if (fUi.window == nullptr)
                     return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, msg);
 
-                QString guiTitle(QString("%1 (GUI)").arg(pData->name));
-                fUi.window->setTitle(guiTitle.toUtf8().constData());
+                fUi.window->setTitle(uiTitle.toUtf8().constData());
+
+                vstPtr = fUi.window->getPtr();
             }
 
-            if (dispatcher(effEditOpen, 0, 0, fUi.window->getPtr(), 0.0f) != 0)
+            if (fUi.type == UI::UI_EMBED)
+                vstPtr = fUi.window->getPtr();
+            else
+                vstPtr = uiTitle.toUtf8().data();
+
+            if (dispatcher(effEditOpen, 0, 0, vstPtr, 0.0f) != 0)
             {
-                ERect* vstRect = nullptr;
-
-                dispatcher(effEditGetRect, 0, 0, &vstRect, 0.0f);
-
-                if (vstRect != nullptr)
+                if (fUi.type == UI::UI_EMBED)
                 {
-                    const int width(vstRect->right  - vstRect->left);
-                    const int height(vstRect->bottom - vstRect->top);
+                    ERect* vstRect = nullptr;
 
-                    CARLA_SAFE_ASSERT_INT2(width > 1 && height > 1, width, height);
+                    dispatcher(effEditGetRect, 0, 0, &vstRect, 0.0f);
 
-                    if (width > 1 && height > 1)
-                        fUi.window->setSize(static_cast<uint>(width), static_cast<uint>(height), false);
+                    if (vstRect != nullptr)
+                    {
+                        const int width(vstRect->right  - vstRect->left);
+                        const int height(vstRect->bottom - vstRect->top);
+
+                        CARLA_SAFE_ASSERT_INT2(width > 1 && height > 1, width, height);
+
+                        if (width > 1 && height > 1)
+                            fUi.window->setSize(static_cast<uint>(width), static_cast<uint>(height), false);
+                    }
+
+                    fUi.window->show();
+                }
+                else
+                {
+                    if (pData->engine->getOptions().frontendWinId)
+                        pData->transientTryCounter = 1;
                 }
 
-                fUi.window->show();
                 fUi.isVisible = true;
             }
             else
             {
-                delete fUi.window;
-                fUi.window = nullptr;
+                if (fUi.type == UI::UI_EMBED)
+                {
+                    delete fUi.window;
+                    fUi.window = nullptr;
+                }
 
                 return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, "Plugin refused to open its own UI");
             }
         }
         else
         {
-            CARLA_SAFE_ASSERT_RETURN(fUi.window != nullptr,);
-
             fUi.isVisible = false;
-            fUi.window->hide();
+
+            if (fUi.type == UI::UI_EMBED)
+            {
+                CARLA_SAFE_ASSERT_RETURN(fUi.window != nullptr,);
+                fUi.window->hide();
+            }
+            else
+            {
+                pData->transientTryCounter = 0;
+            }
+
             dispatcher(effEditClose, 0, 0, nullptr, 0.0f);
         }
     }
@@ -805,7 +834,7 @@ public:
         {
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
 
-            if (! fUi.isOsc)
+            if (fUi.type == UI::UI_EMBED)
                 pData->hints |= PLUGIN_NEEDS_SINGLE_THREAD;
         }
 
@@ -1662,7 +1691,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(index < pData->param.count,);
 
-        if (! fUi.isOsc)
+        if (fUi.type != UI::UI_OSC)
             return;
         if (pData->osc.data.target == nullptr)
             return;
@@ -1674,7 +1703,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(index < pData->prog.count,);
 
-        if (! fUi.isOsc)
+        if (fUi.type != UI::UI_OSC)
             return;
         if (pData->osc.data.target == nullptr)
             return;
@@ -1688,7 +1717,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
         CARLA_SAFE_ASSERT_RETURN(velo > 0 && velo < MAX_MIDI_VALUE,);
 
-        if (! fUi.isOsc)
+        if (fUi.type != UI::UI_OSC)
             return;
         if (pData->osc.data.target == nullptr)
             return;
@@ -1707,7 +1736,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
         CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
 
-        if (! fUi.isOsc)
+        if (fUi.type != UI::UI_OSC)
             return;
         if (pData->osc.data.target == nullptr)
             return;
@@ -1726,9 +1755,9 @@ public:
 protected:
     void handlePluginUiClosed() override
     {
-        CARLA_SAFE_ASSERT_RETURN(! fUi.isOsc,);
+        CARLA_SAFE_ASSERT_RETURN(fUi.type == UI::UI_EMBED || fUi.type == UI::UI_EXTERNAL,);
         CARLA_SAFE_ASSERT_RETURN(fUi.window != nullptr,);
-        carla_debug("Lv2Plugin::handleExternalUiClosed()");
+        carla_debug("VstPlugin::handlePluginUiClosed()");
 
         showCustomUI(false);
         pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
@@ -1761,7 +1790,7 @@ protected:
                 break;
 
             // plugins should never do this:
-            CARLA_SAFE_ASSERT_INT(index < static_cast<int32_t>(pData->param.count), index);
+            CARLA_SAFE_ASSERT_INT(index >= 0 && index < static_cast<int32_t>(pData->param.count), index);
 
             if (index < 0 || index >= static_cast<int32_t>(pData->param.count))
                 break;
@@ -1769,7 +1798,7 @@ protected:
             const uint32_t uindex(static_cast<uint32_t>(index));
             const float fixedValue(pData->param.getFixedValue(uindex, opt));
 
-            // Called from plugin processing, nasty!
+            // Called from plugin process thread, nasty!
             if (pthread_equal(pthread_self(), fProcThread))
             {
                 CARLA_SAFE_ASSERT(fIsProcessing);
@@ -1782,6 +1811,7 @@ protected:
                 CarlaPlugin::setParameterValue(uindex, fixedValue, false, true, true);
             }
             // Unknown
+            // TODO - check if plugin or UI is initializing
             else
             {
                 carla_stdout("audioMasterAutomate called from unknown source");
@@ -2002,6 +2032,12 @@ protected:
 #endif
 
         case audioMasterVendorSpecific:
+            if (index == 0xedcd && value == 0 && ptr != nullptr && std::strcmp((const char*)ptr, "EditorClosed") == 0)
+            {
+                CARLA_SAFE_ASSERT_BREAK(fUi.type == UI::UI_EXTERNAL);
+                handlePluginUiClosed();
+                break;
+            }
             // TODO - cockos extensions
             break;
 
@@ -2220,25 +2256,34 @@ public:
         // ---------------------------------------------------------------
         // gui stuff
 
-        if ((fEffect->flags & effFlagsHasEditor) != 0 && (fEffect->flags & effFlagsProgramChunks) == 0 && pData->engine->getOptions().preferUiBridges)
+        if (fEffect->flags & effFlagsHasEditor)
         {
-            CarlaString bridgeBinary(pData->engine->getOptions().binaryDir);
+            fUi.type = UI::UI_EMBED;
 
-#if defined(CARLA_OS_LINUX)
-            bridgeBinary += "carla-bridge-vst-x11";
-#elif defined(CARLA_OS_MAC)
-            bridgeBinary += "carla-bridge-vst-mac";
-#elif defined(CARLA_OS_WIN)
-            bridgeBinary += "carla-bridge-vst-hwnd.exe";
-#else
-            bridgeBinary = "";
-#endif
-
-            if (QFile(bridgeBinary.buffer()).exists())
+            if ((fEffect->flags & effFlagsProgramChunks) == 0 && pData->engine->getOptions().preferUiBridges)
             {
-                pData->osc.thread.setOscData(bridgeBinary, nullptr);
-                fUi.isOsc = true;
+                CarlaString bridgeBinary(pData->engine->getOptions().binaryDir);
+
+    #if defined(CARLA_OS_LINUX)
+                bridgeBinary += "carla-bridge-vst-x11";
+    #elif defined(CARLA_OS_MAC)
+                bridgeBinary += "carla-bridge-vst-mac";
+    #elif defined(CARLA_OS_WIN)
+                bridgeBinary += "carla-bridge-vst-hwnd.exe";
+    #else
+                bridgeBinary.clear();
+    #endif
+
+                if (bridgeBinary.isNotEmpty() && QFile(bridgeBinary.buffer()).exists())
+                {
+                    pData->osc.thread.setOscData(bridgeBinary, nullptr);
+                    fUi.type = UI::UI_OSC;
+                }
             }
+        }
+        else if (vstPluginCanDo(fEffect, "ExternalUI"))
+        {
+            fUi.type = UI::UI_EXTERNAL;
         }
 
         // ---------------------------------------------------------------
@@ -2321,12 +2366,18 @@ private:
     } fEvents;
 
     struct UI {
-        bool isOsc;
-        bool isVisible;
+        enum Type {
+            UI_NULL     = 0,
+            UI_EMBED    = 1,
+            UI_EXTERNAL = 2,
+            UI_OSC      = 3
+        } type;
+
+        bool isVisible; // not used in OSC mode
         CarlaPluginUi* window;
 
         UI()
-            : isOsc(false),
+            : type(UI_NULL),
               isVisible(false),
               window(nullptr) {}
 
