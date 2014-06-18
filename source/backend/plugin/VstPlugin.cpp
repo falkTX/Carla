@@ -631,6 +631,7 @@ public:
             if (pData->hints & PLUGIN_HAS_COCKOS_EXTENSIONS)
             {
                 double vrange[2] = { 0.0, 1.0 };
+                bool   isInteger = false;
 
                 if (static_cast<uintptr_t>(dispatcher(effVendorSpecific, static_cast<int32_t>(0xdeadbef0), static_cast<int32_t>(j), vrange, 0.0f)) >= 0xbeef)
                 {
@@ -638,13 +639,19 @@ public:
                     max = static_cast<float>(vrange[1]);
 
                     if (min > max)
-                        max = min;
-
-                    if (max - min == 0.0f)
                     {
-                        carla_stderr2("WARNING - Broken plugin parameter: max - min == 0.0f (with cockos extensions)");
+                        carla_stderr2("WARNING - Broken plugin parameter min > max (with cockos extensions)");
+                        min = max - 0.1f;
+                    }
+                    else if (min == max)
+                    {
+                        carla_stderr2("WARNING - Broken plugin parameter min == max (with cockos extensions)");
                         max = min + 0.1f;
                     }
+
+                    // only use values as integer if we have a proper range
+                    if (max - min >= 1.0f)
+                        isInteger = dispatcher(effVendorSpecific, kVstParameterUsesIntStep, static_cast<int32_t>(j), nullptr, 0.0f) >= 0xbeef;
                 }
                 else
                 {
@@ -652,7 +659,7 @@ public:
                     max = 1.0f;
                 }
 
-                if (dispatcher(effVendorSpecific, kVstParameterUsesIntStep, static_cast<int32_t>(j), nullptr, 0.0f) >= 0xbeef)
+                if (isInteger)
                 {
                     step = 1.0f;
                     stepSmall = 1.0f;
@@ -660,7 +667,7 @@ public:
                 }
                 else
                 {
-                    float range = max - min;
+                    const float range = max - min;
                     step = range/100.0f;
                     stepSmall = range/1000.0f;
                     stepLarge = range/10.0f;
@@ -670,17 +677,17 @@ public:
             {
                 if (prop.flags & kVstParameterUsesIntegerMinMax)
                 {
-                    min = float(prop.minInteger);
-                    max = float(prop.maxInteger);
+                    min = static_cast<float>(prop.minInteger);
+                    max = static_cast<float>(prop.maxInteger);
 
                     if (min > max)
-                        max = min;
-                    else if (max < min)
-                        min = max;
-
-                    if (max - min == 0.0f)
                     {
-                        carla_stderr2("WARNING - Broken plugin parameter: max - min == 0.0f");
+                        carla_stderr2("WARNING - Broken plugin parameter min > max");
+                        min = max - 0.1f;
+                    }
+                    else if (min == max)
+                    {
+                        carla_stderr2("WARNING - Broken plugin parameter min == max");
                         max = min + 0.1f;
                     }
                 }
@@ -699,9 +706,9 @@ public:
                 }
                 else if (prop.flags & kVstParameterUsesIntStep)
                 {
-                    step = float(prop.stepInteger);
-                    stepSmall = float(prop.stepInteger)/10;
-                    stepLarge = float(prop.largeStepInteger);
+                    step = static_cast<float>(prop.stepInteger);
+                    stepSmall = static_cast<float>(prop.stepInteger)/10.0f;
+                    stepLarge = static_cast<float>(prop.largeStepInteger);
                     pData->param.data[j].hints |= PARAMETER_IS_INTEGER;
                 }
                 else if (prop.flags & kVstParameterUsesFloatStep)
@@ -712,7 +719,7 @@ public:
                 }
                 else
                 {
-                    float range = max - min;
+                    const float range = max - min;
                     step = range/100.0f;
                     stepSmall = range/1000.0f;
                     stepLarge = range/10.0f;
