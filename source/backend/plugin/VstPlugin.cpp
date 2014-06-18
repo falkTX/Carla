@@ -449,8 +449,6 @@ public:
                     return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, msg);
 
                 fUi.window->setTitle(uiTitle.toUtf8().constData());
-
-                vstPtr = fUi.window->getPtr();
             }
 
             if (fUi.type == UI::UI_EMBED)
