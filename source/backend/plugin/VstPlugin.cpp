@@ -2262,15 +2262,15 @@ public:
             {
                 CarlaString bridgeBinary(pData->engine->getOptions().binaryDir);
 
-    #if defined(CARLA_OS_LINUX)
+#if defined(CARLA_OS_LINUX)
                 bridgeBinary += "carla-bridge-vst-x11";
-    #elif defined(CARLA_OS_MAC)
+#elif defined(CARLA_OS_MAC)
                 bridgeBinary += "carla-bridge-vst-mac";
-    #elif defined(CARLA_OS_WIN)
+#elif defined(CARLA_OS_WIN)
                 bridgeBinary += "carla-bridge-vst-hwnd.exe";
-    #else
+#else
                 bridgeBinary.clear();
-    #endif
+#endif
 
                 if (bridgeBinary.isNotEmpty() && QFile(bridgeBinary.buffer()).exists())
                 {
