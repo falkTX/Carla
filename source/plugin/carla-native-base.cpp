@@ -23,6 +23,10 @@
 #include "CarlaBackendUtils.hpp"
 #include "LinkedList.hpp"
 
+#ifdef CARLA_NATIVE_PLUGIN_DSSI
+# include "dssi/dssi.h"
+#endif
+
 #ifdef CARLA_NATIVE_PLUGIN_LV2
 # include "lv2/lv2.h"
 #endif
@@ -67,6 +71,16 @@ struct PluginListManager {
 
     ~PluginListManager()
     {
+#ifdef CARLA_NATIVE_PLUGIN_DSSI
+        for (LinkedList<const DSSI_Descriptor*>::Itenerator it = dssiDescs.begin(); it.valid(); it.next())
+        {
+            const DSSI_Descriptor* const dssiDesc(it.getValue());
+            //delete[] lv2Desc->URI;
+            delete dssiDesc;
+        }
+        dssiDescs.clear();
+#endif
+
 #ifdef CARLA_NATIVE_PLUGIN_LV2
         for (LinkedList<const LV2_Descriptor*>::Itenerator it = lv2Descs.begin(); it.valid(); it.next())
         {
@@ -86,6 +100,9 @@ struct PluginListManager {
         return plm;
     }
 
+#ifdef CARLA_NATIVE_PLUGIN_DSSI
+    LinkedList<const DSSI_Descriptor*> dssiDescs;
+#endif
 #ifdef CARLA_NATIVE_PLUGIN_LV2
     LinkedList<const LV2_Descriptor*> lv2Descs;
 #endif
