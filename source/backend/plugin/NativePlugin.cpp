@@ -2164,8 +2164,8 @@ protected:
             setPanning(opt, true, true);
             break;
 #endif
-        case HOST_OPCODE_GET_PARAMETER_MIDI_CC:
-        case HOST_OPCODE_SET_PARAMETER_MIDI_CC:
+        case ::HOST_OPCODE_GET_PARAMETER_MIDI_CC:
+        case ::HOST_OPCODE_SET_PARAMETER_MIDI_CC:
             // TODO
             break;
         case ::HOST_OPCODE_SET_PROCESS_PRECISION:
@@ -2191,7 +2191,7 @@ protected:
             reload();
             pData->engine->callback(ENGINE_CALLBACK_RELOAD_ALL, pData->id, -1, 0, 0.0f, nullptr);
             break;
-        case HOST_OPCODE_UI_UNAVAILABLE:
+        case ::HOST_OPCODE_UI_UNAVAILABLE:
             pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, nullptr);
             break;
         }

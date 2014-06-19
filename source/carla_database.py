@@ -361,7 +361,15 @@ class SearchPluginsThread(QThread):
         self.fCheckSF2    = False
         self.fCheckSFZ    = False
 
-        self.fToolNative = gCarla.discovery_native
+        if WINDOWS:
+            toolNative = "carla-discovery-win64.exe" if kIs64bit else "carla-discovery-win32.exe"
+        else:
+            toolNative = "carla-discovery-native"
+
+        self.fToolNative = os.path.join(gCarla.pathBinaries, toolNative)
+
+        if not os.path.exists(self.fToolNative):
+            self.fToolNative = ""
 
         self.fCurCount = 0
         self.fCurPercentValue = 0
@@ -400,9 +408,6 @@ class SearchPluginsThread(QThread):
         self.fCheckGIG    = gig
         self.fCheckSF2    = sf2
         self.fCheckSFZ    = sfz
-
-    def setSearchToolNative(self, tool):
-        self.fToolNative = tool
 
     def stop(self):
         self.fContinueChecking = False
@@ -490,25 +495,25 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
             if self.fCheckPosix32:
-                self._checkLADSPA(OS, gCarla.discovery_posix32)
+                self._checkLADSPA(OS, os.path.join(gCarla.pathBinaries, "carla-discovery-posix32"))
                 settingsDB.setValue("Plugins/LADSPA_posix32", self.fLadspaPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckPosix64:
-                self._checkLADSPA(OS, gCarla.discovery_posix64)
+                self._checkLADSPA(OS, os.path.join(gCarla.pathBinaries, "carla-discovery-posix64"))
                 settingsDB.setValue("Plugins/LADSPA_posix64", self.fLadspaPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin32:
-                self._checkLADSPA("WINDOWS", gCarla.discovery_win32, not WINDOWS)
+                self._checkLADSPA("WINDOWS", os.path.join(gCarla.pathBinaries, "carla-discovery-win32.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/LADSPA_win32", self.fLadspaPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin64:
-                self._checkLADSPA("WINDOWS", gCarla.discovery_win64, not WINDOWS)
+                self._checkLADSPA("WINDOWS", os.path.join(gCarla.pathBinaries, "carla-discovery-win64.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/LADSPA_win64", self.fLadspaPlugins)
 
             settingsDB.sync()
@@ -540,25 +545,25 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
             if self.fCheckPosix32:
-                self._checkDSSI(OS, gCarla.discovery_posix32)
+                self._checkDSSI(OS, os.path.join(gCarla.pathBinaries, "carla-discovery-posix32"))
                 settingsDB.setValue("Plugins/DSSI_posix32", self.fDssiPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckPosix64:
-                self._checkDSSI(OS, gCarla.discovery_posix64)
+                self._checkDSSI(OS, os.path.join(gCarla.pathBinaries, "carla-discovery-posix64"))
                 settingsDB.setValue("Plugins/DSSI_posix64", self.fDssiPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin32:
-                self._checkDSSI("WINDOWS", gCarla.discovery_win32, not WINDOWS)
+                self._checkDSSI("WINDOWS", os.path.join(gCarla.pathBinaries, "carla-discovery-win32.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/DSSI_win32", self.fDssiPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin64:
-                self._checkDSSI("WINDOWS", gCarla.discovery_win64, not WINDOWS)
+                self._checkDSSI("WINDOWS", os.path.join(gCarla.pathBinaries, "carla-discovery-win64.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/DSSI_win64", self.fDssiPlugins)
 
             settingsDB.sync()
@@ -573,25 +578,25 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
             if self.fCheckPosix32:
-                self._checkLV2(gCarla.discovery_posix32)
+                self._checkLV2(os.path.join(gCarla.pathBinaries, "carla-discovery-posix32"))
                 settingsDB.setValue("Plugins/LV2_posix32", self.fLv2Plugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckPosix64:
-                self._checkLV2(gCarla.discovery_posix64)
+                self._checkLV2(os.path.join(gCarla.pathBinaries, "carla-discovery-posix64"))
                 settingsDB.setValue("Plugins/LV2_posix64", self.fLv2Plugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin32:
-                self._checkLV2(gCarla.discovery_win32, not WINDOWS)
+                self._checkLV2(os.path.join(gCarla.pathBinaries, "carla-discovery-win32.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/LV2_win32", self.fLv2Plugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin64:
-                self._checkLV2(gCarla.discovery_win64, not WINDOWS)
+                self._checkLV2(os.path.join(gCarla.pathBinaries, "carla-discovery-win64.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/LV2_win64", self.fLv2Plugins)
 
             settingsDB.sync()
@@ -606,25 +611,25 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
             if self.fCheckPosix32:
-                self._checkVST(OS, gCarla.discovery_posix32)
+                self._checkVST(OS, os.path.join(gCarla.pathBinaries, "carla-discovery-posix32"))
                 settingsDB.setValue("Plugins/VST_posix32", self.fVstPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckPosix64:
-                self._checkVST(OS, gCarla.discovery_posix64)
+                self._checkVST(OS, os.path.join(gCarla.pathBinaries, "carla-discovery-posix64"))
                 settingsDB.setValue("Plugins/VST_posix64", self.fVstPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin32:
-                self._checkVST("WINDOWS", gCarla.discovery_win32, not WINDOWS)
+                self._checkVST("WINDOWS", os.path.join(gCarla.pathBinaries, "carla-discovery-win32.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/VST_win32", self.fVstPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin64:
-                self._checkVST("WINDOWS", gCarla.discovery_win64, not WINDOWS)
+                self._checkVST("WINDOWS", os.path.join(gCarla.pathBinaries, "carla-discovery-win64.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/VST_win64", self.fVstPlugins)
 
             settingsDB.sync()
@@ -639,25 +644,25 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
             if self.fCheckPosix32 and MACOS:
-                self._checkVST3(OS, gCarla.discovery_posix32)
+                self._checkVST3(OS, os.path.join(gCarla.pathBinaries, "carla-discovery-posix32"))
                 settingsDB.setValue("Plugins/VST3_posix32", self.fVst3Plugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckPosix64 and MACOS:
-                self._checkVST3(OS, gCarla.discovery_posix64)
+                self._checkVST3(OS, os.path.join(gCarla.pathBinaries, "carla-discovery-posix64"))
                 settingsDB.setValue("Plugins/VST3_posix64", self.fVst3Plugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin32:
-                self._checkVST3("WINDOWS", gCarla.discovery_win32, not WINDOWS)
+                self._checkVST3("WINDOWS", os.path.join(gCarla.pathBinaries, "carla-discovery-win32.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/VST3_win32", self.fVst3Plugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin64:
-                self._checkVST3("WINDOWS", gCarla.discovery_win64, not WINDOWS)
+                self._checkVST3("WINDOWS", os.path.join(gCarla.pathBinaries, "carla-discovery-win64.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/VST3_win64", self.fVst3Plugins)
 
             settingsDB.sync()
@@ -672,13 +677,13 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
             if self.fCheckPosix32:
-                self._checkAU(gCarla.discovery_posix32)
+                self._checkAU(os.path.join(gCarla.pathBinaries, "carla-discovery-posix32"))
                 settingsDB.setValue("Plugins/AU_posix32", self.fAuPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckPosix64:
-                self._checkAU(gCarla.discovery_posix64)
+                self._checkAU(os.path.join(gCarla.pathBinaries, "carla-discovery-posix64"))
                 settingsDB.setValue("Plugins/AU_posix64", self.fAuPlugins)
 
             settingsDB.sync()
@@ -1039,28 +1044,34 @@ class PluginRefreshW(QDialog):
             self.ui.ch_posix32.setText("MacOS 32bit")
             self.ui.ch_posix64.setText("MacOS 64bit")
 
-        if gCarla.discovery_posix32 and not WINDOWS:
+        hasNative  = os.path.exists(os.path.join(gCarla.pathBinaries, "carla-discovery-native"))
+        hasPosix32 = os.path.exists(os.path.join(gCarla.pathBinaries, "carla-discovery-posix32"))
+        hasPosix64 = os.path.exists(os.path.join(gCarla.pathBinaries, "carla-discovery-posix64"))
+        hasWin32   = os.path.exists(os.path.join(gCarla.pathBinaries, "carla-discovery-win32.exe"))
+        hasWin64   = os.path.exists(os.path.join(gCarla.pathBinaries, "carla-discovery-win64.exe"))
+
+        if hasPosix32 and not WINDOWS:
             self.ui.ico_posix32.setPixmap(self.fIconYes)
         else:
             self.ui.ico_posix32.setPixmap(self.fIconNo)
             self.ui.ch_posix32.setChecked(False)
             self.ui.ch_posix32.setEnabled(False)
 
-        if gCarla.discovery_posix64 and not WINDOWS:
+        if hasPosix64 and not WINDOWS:
             self.ui.ico_posix64.setPixmap(self.fIconYes)
         else:
             self.ui.ico_posix64.setPixmap(self.fIconNo)
             self.ui.ch_posix64.setChecked(False)
             self.ui.ch_posix64.setEnabled(False)
 
-        if gCarla.discovery_win32:
+        if hasWin32:
             self.ui.ico_win32.setPixmap(self.fIconYes)
         else:
             self.ui.ico_win32.setPixmap(self.fIconNo)
             self.ui.ch_win32.setChecked(False)
             self.ui.ch_win32.setEnabled(False)
 
-        if gCarla.discovery_win64:
+        if hasWin64:
             self.ui.ico_win64.setPixmap(self.fIconYes)
         else:
             self.ui.ico_win64.setPixmap(self.fIconNo)
@@ -1072,35 +1083,30 @@ class PluginRefreshW(QDialog):
         else:
             self.ui.ico_rdflib.setPixmap(self.fIconNo)
 
-        hasNative = bool(gCarla.discovery_native)
-        hasNonNative = False
-
         if WINDOWS:
             if kIs64bit:
-                hasNative = bool(gCarla.discovery_win64)
-                hasNonNative = bool(gCarla.discovery_win32)
-                self.fThread.setSearchToolNative(gCarla.discovery_win64)
+                hasNative = hasWin64
+                hasNonNative = hasWin32
                 self.ui.ch_win64.setChecked(False)
                 self.ui.ch_win64.setVisible(False)
                 self.ui.ico_win64.setVisible(False)
                 self.ui.label_win64.setVisible(False)
             else:
-                hasNative = bool(gCarla.discovery_win32)
-                hasNonNative = bool(gCarla.discovery_win64)
-                self.fThread.setSearchToolNative(gCarla.discovery_win32)
+                hasNative = hasWin32
+                hasNonNative = hasWin64
                 self.ui.ch_win32.setChecked(False)
                 self.ui.ch_win32.setVisible(False)
                 self.ui.ico_win32.setVisible(False)
                 self.ui.label_win32.setVisible(False)
         else:
             if kIs64bit:
-                hasNonNative = bool(gCarla.discovery_posix32 or gCarla.discovery_win32 or gCarla.discovery_win64)
+                hasNonNative = bool(hasPosix32 or hasWin32 or hasWin64)
                 self.ui.ch_posix64.setChecked(False)
                 self.ui.ch_posix64.setVisible(False)
                 self.ui.ico_posix64.setVisible(False)
                 self.ui.label_posix64.setVisible(False)
             else:
-                hasNonNative = bool(gCarla.discovery_posix64 or gCarla.discovery_win32 or gCarla.discovery_win64)
+                hasNonNative = bool(hasPosix64 or hasWin32 or hasWin64)
                 self.ui.ch_posix32.setChecked(False)
                 self.ui.ch_posix32.setVisible(False)
                 self.ui.ico_posix32.setVisible(False)
@@ -1181,7 +1187,7 @@ class PluginRefreshW(QDialog):
         self.ui.group_options.setEnabled(False)
 
         if self.ui.ch_do_checks.isChecked():
-            if os.getenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS"):
+            if os.getenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS") is not None:
                 os.environ.pop("CARLA_DISCOVERY_NO_PROCESSING_CHECKS")
         else:
             os.environ["CARLA_DISCOVERY_NO_PROCESSING_CHECKS"] = "true"
