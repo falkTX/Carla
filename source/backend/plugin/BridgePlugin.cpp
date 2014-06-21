@@ -610,6 +610,8 @@ public:
             file.close();
             osc_send_configure(&osc.data, CARLA_BRIDGE_MSG_SET_CHUNK, filePath.toUtf8().constData());
         }
+
+        pData->updateParameterValues(this, pData->engine->isOscControlRegistered(), true, false);
     }
 #endif
 

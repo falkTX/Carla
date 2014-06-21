@@ -455,6 +455,13 @@ public:
         CARLA_SAFE_ASSERT_RETURN(stringData != nullptr,);
 
         // TODO
+
+#ifdef BUILD_BRIDGE
+        const bool sendOsc(false);
+#else
+        const bool sendOsc(pData->engine->isOscControlRegistered());
+#endif
+        pData->updateParameterValues(this, sendOsc, true, false);
     }
 
     // -------------------------------------------------------------------

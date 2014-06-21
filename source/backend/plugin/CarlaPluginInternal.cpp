@@ -812,6 +812,42 @@ void CarlaPlugin::ProtectedData::tryTransient() noexcept
 }
 #endif
 
+void CarlaPlugin::ProtectedData::updateParameterValues(CarlaPlugin* const plugin, const bool sendOsc, const bool sendCallback, const bool useDefault) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,);
+
+    for (uint32_t i=0; i < param.count; ++i)
+    {
+        const float value(param.ranges[i].getFixedValue(plugin->getParameterValue(i)));
+
+        if (useDefault)
+            param.ranges[i].def = value;
+
+#ifndef BUILD_BRIDGE
+        if (sendOsc)
+        {
+            if (useDefault)
+                engine->oscSend_control_set_default_value(id, i, value);
+
+            engine->oscSend_control_set_parameter_value(id, static_cast<int32_t>(i), value);
+        }
+#endif
+
+        if (sendCallback)
+        {
+            if (useDefault)
+                engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, id, static_cast<int>(i), 0, value, nullptr);
+
+            engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, id, static_cast<int>(i), 0, value, nullptr);
+        }
+    }
+
+#ifdef BUILD_BRIDGE
+    // unused
+    return; (void)sendOsc;
+#endif
+}
+
 // -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE

@@ -1320,26 +1320,7 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
         if (getType() == PLUGIN_FILE_CSD || getType() == PLUGIN_FILE_GIG || getType() == PLUGIN_FILE_SF2 || getType() == PLUGIN_FILE_SFZ)
             return;
 
-        for (uint32_t i=0; i < pData->param.count; ++i)
-        {
-            const float value(pData->param.ranges[i].getFixedValue(getParameterValue(i)));
-
-            pData->param.ranges[i].def = value;
-
-#ifndef BUILD_BRIDGE
-            if (reallySendOsc)
-            {
-                pData->engine->oscSend_control_set_parameter_value(pData->id, static_cast<int32_t>(i), value);
-                pData->engine->oscSend_control_set_default_value(pData->id, i, value);
-            }
-#endif
-
-            if (sendCallback)
-            {
-                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, static_cast<int>(i), 0, value, nullptr);
-                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, static_cast<int>(i), 0, value, nullptr);
-            }
-        }
+        pData->updateParameterValues(this, sendOsc, sendCallback, true);
     }
 
 #ifdef BUILD_BRIDGE
@@ -1382,26 +1363,7 @@ void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const 
         if (getType() == PLUGIN_FILE_CSD || getType() == PLUGIN_FILE_GIG || getType() == PLUGIN_FILE_SF2 || getType() == PLUGIN_FILE_SFZ)
             return;
 
-        for (uint32_t i=0; i < pData->param.count; ++i)
-        {
-            const float value(pData->param.ranges[i].getFixedValue(getParameterValue(i)));
-
-            pData->param.ranges[i].def = value;
-
-#ifndef BUILD_BRIDGE
-            if (reallySendOsc)
-            {
-                pData->engine->oscSend_control_set_parameter_value(pData->id, static_cast<int32_t>(i), value);
-                pData->engine->oscSend_control_set_default_value(pData->id, i, value);
-            }
-#endif
-
-            if (sendCallback)
-            {
-                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, static_cast<int>(i), 0, value, nullptr);
-                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, static_cast<int>(i), 0, value, nullptr);
-            }
-        }
+        pData->updateParameterValues(this, sendOsc, sendCallback, true);
     }
 
 #ifdef BUILD_BRIDGE

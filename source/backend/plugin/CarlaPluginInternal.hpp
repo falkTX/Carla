@@ -361,6 +361,8 @@ struct CarlaPlugin::ProtectedData {
     void tryTransient() noexcept;
 #endif
 
+    void updateParameterValues(CarlaPlugin* const plugin, const bool sendOsc, const bool sendCallback, const bool useDefault) noexcept;
+
     // -------------------------------------------------------------------
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT

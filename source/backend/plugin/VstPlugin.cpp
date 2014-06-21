@@ -356,6 +356,13 @@ public:
             dispatcher(effSetChunk, 0 /* bank */, chunk.size(), fLastChunk, 0.0f);
         }
 
+#ifdef BUILD_BRIDGE
+        const bool sendOsc(false);
+#else
+        const bool sendOsc(pData->engine->isOscControlRegistered());
+#endif
+        pData->updateParameterValues(this, sendOsc, true, false);
+
         // simulate an updateDisplay callback
         handleAudioMasterCallback(audioMasterUpdateDisplay, 0, 0, nullptr, 0.0f);
     }

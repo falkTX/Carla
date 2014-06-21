@@ -361,11 +361,20 @@ public:
 
         CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0,);
 
-        const ScopedSingleProcessLocker spl(this, true);
+        {
+            const ScopedSingleProcessLocker spl(this, true);
 
-        try {
-            fDssiDescriptor->set_custom_data(fHandle, chunk.data(), static_cast<ulong>(chunk.size()));
-        } catch(...) {}
+            try {
+                fDssiDescriptor->set_custom_data(fHandle, chunk.data(), static_cast<ulong>(chunk.size()));
+            } catch(...) {}
+        }
+
+#ifdef BUILD_BRIDGE
+        const bool sendOsc(false);
+#else
+        const bool sendOsc(pData->engine->isOscControlRegistered());
+#endif
+        pData->updateParameterValues(this, sendOsc, true, false);
     }
 
     void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
