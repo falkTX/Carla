@@ -132,13 +132,54 @@ HAVE_QT5 = $(shell pkg-config --exists Qt5Core Qt5Xml && echo true)
 
 ifeq ($(MACOS_OR_WIN32),true)
 DEFAULT_QT ?= 5
-ifneq ($(HAVE_QT5),true)
-$(error Qt5 missing, cannot continue)
-endif
 else
 DEFAULT_QT ?= 4
+endif
+
+# --------------------------------------------------------------
+# Set Qt tools
+
+ifeq ($(HAVE_QT4),true)
+MOC_QT4 ?= $(shell pkg-config --variable=moc_location QtCore)
+RCC_QT4 ?= $(shell pkg-config --variable=rcc_location QtCore)
+UIC_QT4 ?= $(shell pkg-config --variable=uic_location QtCore)
+ifeq (,$(wildcard $(MOC_QT4)))
+HAVE_QT4=false
+endif
+endif
+
+ifeq ($(HAVE_QT5),true)
+QT5_LIBDIR = $(shell pkg-config --variable=libdir Qt5Core)
+ifeq ($(MACOS),true)
+MOC_QT5 ?= $(QT5_LIBDIR)/../bin/moc
+RCC_QT5 ?= $(QT5_LIBDIR)/../bin/rcc
+UIC_QT5 ?= $(QT5_LIBDIR)/../bin/uic
+else # MACOS
+ifneq (,$(wildcard $(QT5_LIBDIR)/qt5/bin/moc))
+MOC_QT5 ?= $(QT5_LIBDIR)/qt5/bin/moc
+RCC_QT5 ?= $(QT5_LIBDIR)/qt5/bin/rcc
+UIC_QT5 ?= $(QT5_LIBDIR)/qt5/bin/uic
+else
+MOC_QT5 ?= $(QT5_LIBDIR)/qt/bin/moc
+RCC_QT5 ?= $(QT5_LIBDIR)/qt/bin/rcc
+UIC_QT5 ?= $(QT5_LIBDIR)/qt/bin/uic
+endif
+endif # MACOS
+ifeq (,$(wildcard $(MOC_QT5)))
+HAVE_QT5=false
+endif
+endif
+
+# --------------------------------------------------------------
+# Fail if prefered Qt is not found
+
+ifeq ($(DEFAULT_QT),4)
 ifneq ($(HAVE_QT4),true)
 $(error Qt4 missing, cannot continue)
+endif
+else
+ifneq ($(HAVE_QT5),true)
+$(error Qt5 missing, cannot continue)
 endif
 endif
 
@@ -410,34 +451,6 @@ NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 NATIVE_PLUGINS_FLAGS += -DWANT_ZYNADDSUBFX_UI
 NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs ntk_images ntk)
-endif
-endif
-
-# --------------------------------------------------------------
-# Set Qt tools
-
-ifeq ($(HAVE_QT4),true)
-MOC_QT4 ?= $(shell pkg-config --variable=moc_location QtCore)
-RCC_QT4 ?= $(shell pkg-config --variable=rcc_location QtCore)
-UIC_QT4 ?= $(shell pkg-config --variable=uic_location QtCore)
-endif
-
-ifeq ($(HAVE_QT5),true)
-QT5_LIBDIR = $(shell pkg-config --variable=libdir Qt5Core)
-ifneq (,$(wildcard $(QT5_LIBDIR)/qt5/bin/moc))
-MOC_QT5 ?= $(QT5_LIBDIR)/qt5/bin/moc
-RCC_QT5 ?= $(QT5_LIBDIR)/qt5/bin/rcc
-UIC_QT5 ?= $(QT5_LIBDIR)/qt5/bin/uic
-else
-ifeq ($(MACOS),true)
-MOC_QT5 ?= $(QT5_LIBDIR)/../bin/moc
-RCC_QT5 ?= $(QT5_LIBDIR)/../bin/rcc
-UIC_QT5 ?= $(QT5_LIBDIR)/../bin/uic
-else
-MOC_QT5 ?= $(QT5_LIBDIR)/qt/bin/moc
-RCC_QT5 ?= $(QT5_LIBDIR)/qt/bin/rcc
-UIC_QT5 ?= $(QT5_LIBDIR)/qt/bin/uic
-endif
 endif
 endif
 
