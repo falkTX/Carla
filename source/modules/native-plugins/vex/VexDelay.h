@@ -81,9 +81,9 @@ public:
         buffer.clear();
      }
 
-    void processBlock(AudioSampleBuffer* const outBuffer, double bpm)
+    void processBlock(AudioSampleBuffer& outBuffer, double bpm)
     {
-        processBlock(outBuffer->getWritePointer(0), outBuffer->getWritePointer(1), outBuffer->getNumSamples(), bpm);
+        processBlock(outBuffer.getWritePointer(0), outBuffer.getWritePointer(1), outBuffer.getNumSamples(), bpm);
     }
 
     void processBlock(float* const outBufferL, float* const outBufferR, const int numSamples, double bpm)

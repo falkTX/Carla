@@ -158,7 +158,7 @@ void VexVoice::start(float f, float v, int n, int preroll, double s, long o)
 
     isOn = true;
     isReleased = false;
-    v  = (v * v) - 1.0f;
+    v = (v * v) - 1.0f;
 
     Avelocity = (v * bipolar(parameters[18 + poff]));
     Fvelocity = (1.0f + v) * bipolar(parameters[13 + poff]);

@@ -254,7 +254,7 @@ public:
         startTimer(50);
     }
 
-    ~VexEditorComponent()
+    ~VexEditorComponent() override
     {
         stopTimer();
         removeAllChildren();
@@ -474,7 +474,7 @@ protected:
             bool params[92];
             fCallback->getChangedParameters(params);
 
-            for (int i=0; i < 89; ++i)
+            for (int i=0; i < kSliderCount; ++i)
             {
                 if (params[i])
                     sliders[i]->setValue(fCallback->getFilterParameterValue(i), dontSendNotification);
@@ -944,74 +944,75 @@ protected:
 
         int snum;
         MidiMessage midiMessage(0xf4);
-        MidiBuffer::Iterator Iterator1(part1Midi);
 
-        while (Iterator1.getNextEvent(midiMessage, snum))
+        for (MidiBuffer::Iterator Iterator1(part1Midi); Iterator1.getNextEvent(midiMessage, snum);)
         {
             if (midiMessage.isNoteOn())
                 fSynth.playNote(midiMessage.getNoteNumber(), midiMessage.getVelocity(), snum, 1);
             else if (midiMessage.isNoteOff())
-                fSynth.releaseNote(midiMessage.getNoteNumber(), snum, 1 );
+                fSynth.releaseNote(midiMessage.getNoteNumber(), snum, 1);
             else if (midiMessage.isAllSoundOff())
                 fSynth.kill();
             else if (midiMessage.isAllNotesOff())
                 fSynth.releaseAll(snum);
         }
 
-        MidiBuffer::Iterator Iterator2(part2Midi);
-
-        while (Iterator2.getNextEvent(midiMessage, snum))
+        for (MidiBuffer::Iterator Iterator2(part2Midi); Iterator2.getNextEvent(midiMessage, snum);)
         {
             if (midiMessage.isNoteOn())
                 fSynth.playNote(midiMessage.getNoteNumber(), midiMessage.getVelocity(), snum, 2);
             else if (midiMessage.isNoteOff())
-                fSynth.releaseNote(midiMessage.getNoteNumber(), snum, 2 );
+                fSynth.releaseNote(midiMessage.getNoteNumber(), snum, 2);
         }
 
-        MidiBuffer::Iterator Iterator3(part3Midi);
-
-        while (Iterator3.getNextEvent(midiMessage, snum))
+        for (MidiBuffer::Iterator Iterator3(part3Midi); Iterator3.getNextEvent(midiMessage, snum);)
         {
             if (midiMessage.isNoteOn())
                 fSynth.playNote(midiMessage.getNoteNumber(), midiMessage.getVelocity(), snum, 3);
             else if (midiMessage.isNoteOff())
-                fSynth.releaseNote(midiMessage.getNoteNumber(), snum, 3 );
+                fSynth.releaseNote(midiMessage.getNoteNumber(), snum, 3);
         }
 
         fMidiInBuffer.clear();
 
-        if (obf->getNumSamples() < (int)frames)
+        if (obf.getNumSamples() < (int)frames)
         {
-            obf->setSize(2,  frames, 0, 0, 1);
-            abf->setSize(2,  frames, 0, 0, 1);
-            dbf1->setSize(2, frames, 0, 0, 1);
-            dbf2->setSize(2, frames, 0, 0, 1);
-            dbf3->setSize(2, frames, 0, 0, 1);
+            obf.setSize(2,  frames, false, false, true);
+            dbf1.setSize(2, frames, false, false, true);
+            dbf2.setSize(2, frames, false, false, true);
+            dbf3.setSize(2, frames, false, false, true);
         }
 
-        obf ->clear();
-        dbf1->clear();
-        dbf2->clear();
-        dbf3->clear();
+        obf .clear();
+        dbf1.clear();
+        dbf2.clear();
+        dbf3.clear();
 
-        fSynth.doProcess(*obf, *abf, *dbf1, *dbf2, *dbf3);
+        fSynth.doProcess(obf, dbf1, dbf2, dbf3);
 
-        if (fParameters[75] > 0.001f) fDelay.processBlock(dbf1, bpm);
-        if (fParameters[78] > 0.001f) fChorus.processBlock(dbf2);
-        if (fParameters[82] > 0.001f) fReverb.processBlock(dbf3);
+        if (fParameters[75] > 0.001f)
+        {
+            fDelay.processBlock(dbf1, bpm);
+            obf.addFrom(0, 0, dbf1, 0, 0, frames, fParameters[75]);
+            obf.addFrom(1, 0, dbf1, 1, 0, frames, fParameters[75]);
+        }
 
-        AudioSampleBuffer output(outBuffer, 2, 0, frames);
-        output.clear();
+        if (fParameters[78] > 0.001f)
+        {
+            fChorus.processBlock(dbf2);
+            obf.addFrom(0, 0, dbf2, 0, 0, frames, fParameters[78]);
+            obf.addFrom(1, 0, dbf2, 1, 0, frames, fParameters[78]);
+        }
 
-        obf->addFrom(0, 0, *dbf1, 0, 0, frames, fParameters[75]);
-        obf->addFrom(1, 0, *dbf1, 1, 0, frames, fParameters[75]);
-        obf->addFrom(0, 0, *dbf2, 0, 0, frames, fParameters[78]);
-        obf->addFrom(1, 0, *dbf2, 1, 0, frames, fParameters[78]);
-        obf->addFrom(0, 0, *dbf3, 0, 0, frames, fParameters[82]);
-        obf->addFrom(1, 0, *dbf3, 1, 0, frames, fParameters[82]);
+        if (fParameters[82] > 0.001f)
+        {
+            fReverb.processBlock(dbf3);
+            obf.addFrom(0, 0, dbf3, 0, 0, frames, fParameters[82]);
+            obf.addFrom(1, 0, dbf3, 1, 0, frames, fParameters[82]);
+        }
 
-        output.addFrom(0, 0, *obf, 0, 0, frames, fParameters[0]);
-        output.addFrom(1, 0, *obf, 1, 0, frames, fParameters[0]);
+        FloatVectorOperations::copyWithMultiply(outBuffer[0], obf.getReadPointer(0), fParameters[0], frames);
+        FloatVectorOperations::copyWithMultiply(outBuffer[1], obf.getReadPointer(1), fParameters[0], frames);
     }
 
     // -------------------------------------------------------------------
@@ -1123,11 +1124,11 @@ protected:
 
     void bufferSizeChanged(const uint32_t bufferSize) override
     {
-        obf  = new AudioSampleBuffer(2, bufferSize);
-        abf  = new AudioSampleBuffer(2, bufferSize);
-        dbf1 = new AudioSampleBuffer(2, bufferSize);
-        dbf2 = new AudioSampleBuffer(2, bufferSize);
-        dbf3 = new AudioSampleBuffer(2, bufferSize);
+        obf.setSize(2, bufferSize);
+        dbf1.setSize(2, bufferSize);
+        dbf2.setSize(2, bufferSize);
+        dbf3.setSize(2, bufferSize);
+        fSynth.setBufferSize(bufferSize);
     }
 
     void sampleRateChanged(const double sampleRate) override
@@ -1196,11 +1197,10 @@ private:
     float fParameters[kParamCount];
     bool  fParamsChanged[92];
 
-    ScopedPointer<AudioSampleBuffer> obf;
-    ScopedPointer<AudioSampleBuffer> abf;
-    ScopedPointer<AudioSampleBuffer> dbf1; // delay
-    ScopedPointer<AudioSampleBuffer> dbf2; // chorus
-    ScopedPointer<AudioSampleBuffer> dbf3; // reverb
+    AudioSampleBuffer obf;
+    AudioSampleBuffer dbf1; // delay
+    AudioSampleBuffer dbf2; // chorus
+    AudioSampleBuffer dbf3; // reverb
 
     VexArpSettings fArpSet1, fArpSet2, fArpSet3;
     VexArp fArp1, fArp2, fArp3;
@@ -1223,8 +1223,8 @@ private:
 
 static const NativePluginDescriptor vexsynthDesc = {
     /* category  */ PLUGIN_CATEGORY_SYNTH,
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_SYNTH|PLUGIN_HAS_UI|PLUGIN_NEEDS_UI_JUCE|PLUGIN_USES_STATE|PLUGIN_USES_TIME|PLUGIN_USES_PARENT_ID),
-    /* supports  */ static_cast<NativePluginSupports>(0x0),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_SYNTH|PLUGIN_HAS_UI|PLUGIN_NEEDS_FIXED_BUFFERS|PLUGIN_NEEDS_UI_JUCE|PLUGIN_USES_STATE|PLUGIN_USES_TIME|PLUGIN_USES_PARENT_ID),
+    /* supports  */ static_cast<NativePluginSupports>(PLUGIN_SUPPORTS_ALL_SOUND_OFF),
     /* audioIns  */ 0,
     /* audioOuts */ 2,
     /* midiIns   */ 1,

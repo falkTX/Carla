@@ -304,7 +304,7 @@ midi-sequencer.cpp.o: midi-sequencer.cpp midi-base.hpp $(CXXDEPS)
 notes.cpp.o: notes.cpp $(CXXDEPS) ../CarlaNativeExtUI.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-vex-%.cpp.o: vex-%.cpp
+vex-%.cpp.o: vex-%.cpp vex/*
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 zynaddsubfx-%.cpp.o: zynaddsubfx-%.cpp $(CXXDEPS) $(ZYN_UI_FILES_H)

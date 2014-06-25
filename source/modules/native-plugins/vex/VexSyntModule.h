@@ -77,11 +77,13 @@ public:
         }
     }
 
-    void doProcess(AudioSampleBuffer& obf, AudioSampleBuffer& assbf, AudioSampleBuffer& ebf1, AudioSampleBuffer& ebf2, AudioSampleBuffer& ebf3)
+    void doProcess(AudioSampleBuffer& obf, AudioSampleBuffer& ebf1, AudioSampleBuffer& ebf2, AudioSampleBuffer& ebf3)
     {
         const int numSamples = obf.getNumSamples();
-        float* const outPtrL = assbf.getWritePointer(0);
-        float* const outPtrR = assbf.getWritePointer(1);
+
+        tmpBuf.clear();
+        float* const outPtrL = tmpBuf.getWritePointer(0);
+        float* const outPtrR = tmpBuf.getWritePointer(1);
 
         if (part1)
         {
@@ -93,14 +95,14 @@ public:
                 if (vo1[i]->getIsOn())
                 {
                     vo1[i]->doProcess(outPtrL, outPtrR, numSamples);
-                    obf.addFrom(0, 0,  assbf, 0, 0, numSamples, left);
-                    obf.addFrom(1, 0,  assbf, 1, 0, numSamples, right);
-                    ebf1.addFrom(0, 0, assbf, 0, 0, numSamples, parameters[22] * left);
-                    ebf1.addFrom(1, 0, assbf, 1, 0, numSamples, parameters[22] * right);
-                    ebf2.addFrom(0, 0, assbf, 0, 0, numSamples, parameters[23] * left);
-                    ebf2.addFrom(1, 0, assbf, 1, 0, numSamples, parameters[23] * right);
-                    ebf3.addFrom(0, 0, assbf, 0, 0, numSamples, parameters[24] * left);
-                    ebf3.addFrom(1, 0, assbf, 1, 0, numSamples, parameters[24] * right);
+                    obf.addFrom(0, 0,  tmpBuf, 0, 0, numSamples, left);
+                    obf.addFrom(1, 0,  tmpBuf, 1, 0, numSamples, right);
+                    ebf1.addFrom(0, 0, tmpBuf, 0, 0, numSamples, parameters[22] * left);
+                    ebf1.addFrom(1, 0, tmpBuf, 1, 0, numSamples, parameters[22] * right);
+                    ebf2.addFrom(0, 0, tmpBuf, 0, 0, numSamples, parameters[23] * left);
+                    ebf2.addFrom(1, 0, tmpBuf, 1, 0, numSamples, parameters[23] * right);
+                    ebf3.addFrom(0, 0, tmpBuf, 0, 0, numSamples, parameters[24] * left);
+                    ebf3.addFrom(1, 0, tmpBuf, 1, 0, numSamples, parameters[24] * right);
                 }
             }
         }
@@ -115,14 +117,14 @@ public:
                 if (vo2[i]->getIsOn())
                 {
                     vo2[i]->doProcess(outPtrL, outPtrR, numSamples);
-                    obf.addFrom(0, 0,  assbf, 0, 0, numSamples, left);
-                    obf.addFrom(1, 0,  assbf, 1, 0, numSamples, right);
-                    ebf1.addFrom(0, 0, assbf, 0, 0, numSamples, parameters[22 + 24] * left);
-                    ebf1.addFrom(1, 0, assbf, 1, 0, numSamples, parameters[22 + 24] * right);
-                    ebf2.addFrom(0, 0, assbf, 0, 0, numSamples, parameters[23 + 24] * left);
-                    ebf2.addFrom(1, 0, assbf, 1, 0, numSamples, parameters[23 + 24] * right);
-                    ebf3.addFrom(0, 0, assbf, 0, 0, numSamples, parameters[24 + 24] * left);
-                    ebf3.addFrom(1, 0, assbf, 1, 0, numSamples, parameters[24 + 24] * right);
+                    obf.addFrom(0, 0,  tmpBuf, 0, 0, numSamples, left);
+                    obf.addFrom(1, 0,  tmpBuf, 1, 0, numSamples, right);
+                    ebf1.addFrom(0, 0, tmpBuf, 0, 0, numSamples, parameters[22 + 24] * left);
+                    ebf1.addFrom(1, 0, tmpBuf, 1, 0, numSamples, parameters[22 + 24] * right);
+                    ebf2.addFrom(0, 0, tmpBuf, 0, 0, numSamples, parameters[23 + 24] * left);
+                    ebf2.addFrom(1, 0, tmpBuf, 1, 0, numSamples, parameters[23 + 24] * right);
+                    ebf3.addFrom(0, 0, tmpBuf, 0, 0, numSamples, parameters[24 + 24] * left);
+                    ebf3.addFrom(1, 0, tmpBuf, 1, 0, numSamples, parameters[24 + 24] * right);
                 }
             }
         }
@@ -137,17 +139,22 @@ public:
                 if (vo3[i]->getIsOn())
                 {
                     vo3[i]->doProcess(outPtrL, outPtrR, numSamples);
-                    obf.addFrom(0, 0,  assbf, 0, 0, numSamples, left);
-                    obf.addFrom(1, 0,  assbf, 1, 0, numSamples, right);
-                    ebf1.addFrom(0, 0, assbf, 0, 0, numSamples, parameters[22 + 48] * left);
-                    ebf1.addFrom(1, 0, assbf, 1, 0, numSamples, parameters[22 + 48] * right);
-                    ebf2.addFrom(0, 0, assbf, 0, 0, numSamples, parameters[23 + 48] * left);
-                    ebf2.addFrom(1, 0, assbf, 1, 0, numSamples, parameters[23 + 48] * right);
-                    ebf3.addFrom(0, 0, assbf, 0, 0, numSamples, parameters[24 + 48] * left);
-                    ebf3.addFrom(1, 0, assbf, 1, 0, numSamples, parameters[24 + 48] * right);
+                    obf.addFrom(0, 0,  tmpBuf, 0, 0, numSamples, left);
+                    obf.addFrom(1, 0,  tmpBuf, 1, 0, numSamples, right);
+                    ebf1.addFrom(0, 0, tmpBuf, 0, 0, numSamples, parameters[22 + 48] * left);
+                    ebf1.addFrom(1, 0, tmpBuf, 1, 0, numSamples, parameters[22 + 48] * right);
+                    ebf2.addFrom(0, 0, tmpBuf, 0, 0, numSamples, parameters[23 + 48] * left);
+                    ebf2.addFrom(1, 0, tmpBuf, 1, 0, numSamples, parameters[23 + 48] * right);
+                    ebf3.addFrom(0, 0, tmpBuf, 0, 0, numSamples, parameters[24 + 48] * left);
+                    ebf3.addFrom(1, 0, tmpBuf, 1, 0, numSamples, parameters[24 + 48] * right);
                 }
             }
         }
+    }
+
+    void setBufferSize(const int size)
+    {
+        tmpBuf.setSize(2, size);
     }
 
     void setSampleRate(const double s)
@@ -224,7 +231,7 @@ public:
                 break;
             }
 
-            if (vo1[i]->getIsReleased())
+            if (v[i]->getIsReleased())
             {
                 OldestReleased = (v[i]->getOrdinal() < tmpReleased) ? i : OldestReleased;
                 tmpReleased = v[OldestReleased]->getOrdinal();
@@ -399,6 +406,8 @@ private:
 
     double sampleRate;
     int benchwarmer;
+
+    AudioSampleBuffer tmpBuf;
 
     VexVoice* vo1[kNumVoices];
     VexVoice* vo2[kNumVoices];
