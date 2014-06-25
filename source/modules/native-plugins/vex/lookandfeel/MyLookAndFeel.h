@@ -41,7 +41,7 @@
 #ifdef CARLA_EXPORT
  #include "juce_gui_basics.h"
 #else
- #include "../StandardHeader.h"
+ #include "../../StandardHeader.h"
 #endif
 
 #include "../resources/Resources.h"
