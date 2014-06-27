@@ -21,6 +21,7 @@
 
 #include "CarlaEngineInternal.hpp"
 #include "CarlaBackendUtils.hpp"
+#include "CarlaStringList.hpp"
 
 #include "RtLinkedList.hpp"
 
@@ -37,23 +38,14 @@ CARLA_BACKEND_START_NAMESPACE
 // -------------------------------------------------------------------------------------------------------------------
 // Global static data
 
-static const char** gRetNames = nullptr;
-static OwnedArray<AudioIODeviceType> gJuceDeviceTypes;
+static CharStringListPtr             gDeviceNames;
+static OwnedArray<AudioIODeviceType> gDeviceTypes;
 
 struct JuceCleanup : public DeletedAtShutdown {
     JuceCleanup() noexcept {}
     ~JuceCleanup()
     {
-        if (gRetNames != nullptr)
-        {
-            for (int i=0; gRetNames[i] != nullptr; ++i)
-                delete[] gRetNames[i];
-
-            delete[] gRetNames;
-            gRetNames = nullptr;
-        }
-
-        gJuceDeviceTypes.clear(true);
+        gDeviceTypes.clear(true);
     }
 };
 
@@ -71,15 +63,16 @@ static void initJuceDevicesIfNeeded()
     needsInit = false;
     new JuceCleanup();
 
-    sDeviceManager.createAudioDeviceTypes(gJuceDeviceTypes);
+    sDeviceManager.createAudioDeviceTypes(gDeviceTypes);
 
     // remove JACK from device list
-    for (int i=0, count=gJuceDeviceTypes.size(); i < count; ++i)
+    for (int i=0, count=gDeviceTypes.size(); i < count; ++i)
     {
-        if (gJuceDeviceTypes[i]->getTypeName() != "JACK")
-            continue;
-
-        gJuceDeviceTypes.remove(i, true);
+        if (gDeviceTypes[i]->getTypeName() == "JACK")
+        {
+            gDeviceTypes.remove(i, true);
+            break;
+        }
     }
 }
 
@@ -863,9 +856,9 @@ CarlaEngine* CarlaEngine::newJuce(const AudioApi api)
 
     AudioIODeviceType* deviceType = nullptr;
 
-    for (int i=0, count=gJuceDeviceTypes.size(); i < count; ++i)
+    for (int i=0, count=gDeviceTypes.size(); i < count; ++i)
     {
-        deviceType = gJuceDeviceTypes[i];
+        deviceType = gDeviceTypes[i];
 
         if (deviceType == nullptr || deviceType->getTypeName() == juceApi)
             break;
@@ -883,7 +876,7 @@ uint CarlaEngine::getJuceApiCount()
 {
     initJuceDevicesIfNeeded();
 
-    return static_cast<uint>(gJuceDeviceTypes.size());
+    return static_cast<uint>(gDeviceTypes.size());
 }
 
 const char* CarlaEngine::getJuceApiName(const uint uindex)
@@ -892,9 +885,9 @@ const char* CarlaEngine::getJuceApiName(const uint uindex)
 
     const int index(static_cast<int>(uindex));
 
-    CARLA_SAFE_ASSERT_RETURN(index < gJuceDeviceTypes.size(), nullptr);
+    CARLA_SAFE_ASSERT_RETURN(index < gDeviceTypes.size(), nullptr);
 
-    AudioIODeviceType* const deviceType(gJuceDeviceTypes[index]);
+    AudioIODeviceType* const deviceType(gDeviceTypes[index]);
     CARLA_SAFE_ASSERT_RETURN(deviceType != nullptr, nullptr);
 
     return deviceType->getTypeName().toRawUTF8();
@@ -906,34 +899,27 @@ const char* const* CarlaEngine::getJuceApiDeviceNames(const uint uindex)
 
     const int index(static_cast<int>(uindex));
 
-    CARLA_SAFE_ASSERT_RETURN(index < gJuceDeviceTypes.size(), nullptr);
+    CARLA_SAFE_ASSERT_RETURN(index < gDeviceTypes.size(), nullptr);
 
-    AudioIODeviceType* const deviceType(gJuceDeviceTypes[index]);
+    AudioIODeviceType* const deviceType(gDeviceTypes[index]);
     CARLA_SAFE_ASSERT_RETURN(deviceType != nullptr, nullptr);
 
     deviceType->scanForDevices();
 
-    StringArray deviceNames(deviceType->getDeviceNames());
-    const int   deviceNameCount(deviceNames.size());
+    StringArray juceDeviceNames(deviceType->getDeviceNames());
+    const int   juceDeviceNameCount(juceDeviceNames.size());
 
-    if (deviceNameCount <= 0)
+    if (juceDeviceNameCount <= 0)
         return nullptr;
 
-    if (gRetNames != nullptr)
-    {
-        for (int i=0; gRetNames[i] != nullptr; ++i)
-            delete[] gRetNames[i];
-        delete[] gRetNames;
-    }
+    CarlaStringList devNames;
 
-    gRetNames = new const char*[deviceNameCount+1];
+    for (int i=0; i < juceDeviceNameCount; ++i)
+        devNames.append(juceDeviceNames[i].toRawUTF8());
 
-    for (int i=0; i < deviceNameCount; ++i)
-        gRetNames[i] = carla_strdup(deviceNames[i].toRawUTF8());
+    gDeviceNames = devNames.toCharStringListPtr();
 
-    gRetNames[deviceNameCount] = nullptr;
-
-    return gRetNames;
+    return gDeviceNames;
 }
 
 const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const uint uindex, const char* const deviceName)
@@ -942,9 +928,9 @@ const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const uint uindex, 
 
     const int index(static_cast<int>(uindex));
 
-    CARLA_SAFE_ASSERT_RETURN(index < gJuceDeviceTypes.size(), nullptr);
+    CARLA_SAFE_ASSERT_RETURN(index < gDeviceTypes.size(), nullptr);
 
-    AudioIODeviceType* const deviceType(gJuceDeviceTypes[index]);
+    AudioIODeviceType* const deviceType(gDeviceTypes[index]);
     CARLA_SAFE_ASSERT_RETURN(deviceType != nullptr, nullptr);
 
     deviceType->scanForDevices();

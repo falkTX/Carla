@@ -18,6 +18,7 @@
 #include "CarlaEngineInternal.hpp"
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
+#include "CarlaStringList.hpp"
 
 #include "RtLinkedList.hpp"
 
@@ -35,31 +36,13 @@ CARLA_BACKEND_START_NAMESPACE
 // -------------------------------------------------------------------------------------------------------------------
 // Global static data
 
-static const char** gRetNames = nullptr;
+static CharStringListPtr         gDeviceNames;
 static std::vector<RtAudio::Api> gRtAudioApis;
-
-struct RtAudioCleanup {
-    RtAudioCleanup() noexcept {}
-    ~RtAudioCleanup()
-    {
-        if (gRetNames != nullptr)
-        {
-            for (int i=0; gRetNames[i] != nullptr; ++i)
-                delete[] gRetNames[i];
-
-            delete[] gRetNames;
-            gRetNames = nullptr;
-        }
-
-        gRtAudioApis.clear();
-    }
-};
 
 // -------------------------------------------------------------------------------------------------------------------
 
 static void initRtAudioAPIsIfNeeded()
 {
-    static const RtAudioCleanup sRtAudioCleanup;
     static bool needsInit = true;
 
     if (! needsInit)
@@ -1114,39 +1097,19 @@ const char* const* CarlaEngine::getRtAudioApiDeviceNames(const uint index)
     if (devCount == 0)
         return nullptr;
 
-    LinkedList<const char*> devNames;
+    CarlaStringList devNames;
 
     for (uint i=0; i < devCount; ++i)
     {
         RtAudio::DeviceInfo devInfo(rtAudio.getDeviceInfo(i));
 
         if (devInfo.probed && devInfo.outputChannels > 0 /*&& (devInfo.nativeFormats & RTAUDIO_FLOAT32) != 0*/)
-            devNames.append(carla_strdup(devInfo.name.c_str()));
+            devNames.append(devInfo.name.c_str());
     }
 
-    const size_t realDevCount(devNames.count());
+    gDeviceNames = devNames.toCharStringListPtr();
 
-    if (gRetNames != nullptr)
-    {
-        for (int i=0; gRetNames[i] != nullptr; ++i)
-            delete[] gRetNames[i];
-        delete[] gRetNames;
-    }
-
-    gRetNames = new const char*[realDevCount+1];
-
-    for (size_t i=0; i < realDevCount; ++i)
-    {
-        gRetNames[i] = devNames.getAt(i, nullptr);
-
-        if (gRetNames[i] == nullptr)
-            gRetNames[i] = carla_strdup("(unknown)");
-    }
-
-    gRetNames[realDevCount] = nullptr;
-    devNames.clear();
-
-    return gRetNames;
+    return gDeviceNames;
 }
 
 const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const uint index, const char* const deviceName)
