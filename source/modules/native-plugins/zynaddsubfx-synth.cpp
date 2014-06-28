@@ -605,10 +605,22 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(key != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 
+        pthread_mutex_lock(&fMaster->mutex);
+
         if (std::strcmp(key, "CarlaAlternateFile1") == 0) // xmz
+        {
+            fMaster->defaults();
             fMaster->loadXML(value);
+        }
         else if (std::strcmp(key, "CarlaAlternateFile2") == 0) // xiz
+        {
+            fMaster->part[0]->defaultsinstrument();
             fMaster->part[0]->loadXMLinstrument(value);
+        }
+
+        pthread_mutex_unlock(&fMaster->mutex);
+
+        fMaster->applyparameters();
     }
 
     // -------------------------------------------------------------------
