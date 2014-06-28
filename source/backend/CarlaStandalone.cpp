@@ -40,6 +40,7 @@
 using juce::initialiseJuce_GUI;
 using juce::shutdownJuce_GUI;
 using juce::MessageManager;
+using juce::Thread;
 #endif
 
 namespace CB = CarlaBackend;
@@ -50,11 +51,11 @@ using CB::EngineOptions;
 
 #if defined(HAVE_JUCE) && defined(CARLA_OS_LINUX)
 
-class JuceMessageThread : public juce::Thread
+class JuceMessageThread : public Thread
 {
 public:
     JuceMessageThread()
-      : juce::Thread("JuceMessageThread"),
+      : Thread("JuceMessageThread"),
         fInitialised(false)
     {
     }
@@ -70,31 +71,29 @@ public:
 
         fInitialised = false;
 
-        startThread();
+        startThread(7);
 
         while (! fInitialised)
-            Thread::sleep(1);
+            sleep(1);
     }
 
     void stop()
     {
-        if (! fInitialised)
-            return;
-
-        stopThread(-1);
+        signalThreadShouldExit();
+        waitForThreadToExit(5000);
     }
 
 protected:
     void run() override
     {
+        MessageManager* const msgMgr(MessageManager::getInstance());
+        CARLA_SAFE_ASSERT_RETURN(msgMgr != nullptr,);
+
+        msgMgr->setCurrentThreadAsMessageThread();
         fInitialised = true;
 
-        if (MessageManager* const msgMgr = MessageManager::getInstance())
-        {
-            msgMgr->setCurrentThreadAsMessageThread();
-
-            for (; (! threadShouldExit()) && msgMgr->runDispatchLoopUntil(250);) {}
-        }
+        while ((! threadShouldExit()) && MessageManager::getInstance()->runDispatchLoopUntil(250))
+        {}
 
         fInitialised = false;
     }

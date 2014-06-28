@@ -62,14 +62,14 @@ public:
         return *this;
     }
 
-    CharStringListPtr& operator=(const CharStringListPtr& ptr)
+    CharStringListPtr& operator=(const CharStringListPtr& ptr) noexcept
     {
         clear();
         copy(ptr.charList);
         return *this;
     }
 
-    CharStringListPtr& operator=(const LinkedList<CarlaString>& list)
+    CharStringListPtr& operator=(const LinkedList<CarlaString>& list) noexcept
     {
         clear();
         copy(list);

@@ -18,9 +18,7 @@
 #define CARLA_NATIVE_PLUGIN_LV2
 #include "carla-native-base.cpp"
 
-#include "juce_audio_basics.h"
-#include "juce_gui_basics.h"
-
+#include "CarlaMathUtils.hpp"
 #include "CarlaString.hpp"
 
 #include "lv2/atom.h"
@@ -36,8 +34,24 @@
 #include "lv2/lv2_external_ui.h"
 #include "lv2/lv2_programs.h"
 
-using namespace juce;
+#ifdef HAVE_JUCE
 
+#include "juce_audio_basics.h"
+#include "juce_gui_basics.h"
+
+using juce::Array;
+using juce::FloatVectorOperations;
+using juce::JUCEApplicationBase;
+using juce::MessageManager;
+//using juce::MessageManagerLock;
+using juce::Thread;
+
+using juce::initialiseJuce_GUI;
+using juce::shutdownJuce_GUI;
+
+static Array<void*> gActivePlugins;
+
+# ifdef CARLA_OS_LINUX
 // -----------------------------------------------------------------------
 // Juce Message Thread
 
@@ -57,17 +71,17 @@ public:
     ~JuceMessageThread()
     {
         signalThreadShouldExit();
-        JUCEApplication::quit();
+        JUCEApplicationBase::quit();
         waitForThreadToExit(5000);
         clearSingletonInstance();
     }
 
-    void run()
+    void run() override
     {
         initialiseJuce_GUI();
-        fInitialised = true;
 
         MessageManager::getInstance()->setCurrentThreadAsMessageThread();
+        fInitialised = true;
 
         while ((! threadShouldExit()) && MessageManager::getInstance()->runDispatchLoopUntil(250))
         {}
@@ -80,8 +94,9 @@ private:
 };
 
 juce_ImplementSingleton(JuceMessageThread)
+# endif
+#endif
 
-static Array<void*> gActivePlugins;
 
 // -----------------------------------------------------------------------
 // LV2 descriptor functions
@@ -95,7 +110,9 @@ public:
         : fHandle(nullptr),
           fDescriptor(desc),
           fMidiEventCount(0),
+#ifdef HAVE_JUCE
           fUiWasShown(false),
+#endif
           fIsProcessing(false),
           fVolume(1.0f),
           fDryWet(1.0f),
@@ -189,7 +206,9 @@ public:
     ~NativePlugin()
     {
         CARLA_ASSERT(fHandle == nullptr);
+#ifdef HAVE_JUCE
         CARLA_ASSERT(! fUiWasShown);
+#endif
 
         if (fHost.resourceDir != nullptr)
         {
@@ -256,25 +275,19 @@ public:
 
         fHandle = nullptr;
 
+#ifdef HAVE_JUCE
         if (fUiWasShown)
         {
             CARLA_SAFE_ASSERT_RETURN(gActivePlugins.contains(this),);
 
             gActivePlugins.removeFirstMatchingValue(this);
 
-            JUCE_AUTORELEASEPOOL
-            {
-                MessageManagerLock mmLock;
-
-                if (gActivePlugins.size() == 0)
-                {
-                    JuceMessageThread::deleteInstance();
-                    shutdownJuce_GUI();
-                }
-            }
+            if (gActivePlugins.size() == 0)
+                JuceMessageThread::deleteInstance();
 
             fUiWasShown = false;
         }
+#endif
     }
 
     void lv2_run(const uint32_t frames)
@@ -438,7 +451,7 @@ public:
             {
                 FloatVectorOperations::multiply(fPorts.audioIns[i], fVolume*(1.0f-fDryWet), frames);
                 FloatVectorOperations::multiply(fPorts.audioOuts[i], fVolume*fDryWet, frames);
-                FloatVectorOperations::add(fPorts.audioOuts[i], fPorts.audioIns[i], frames);
+                FLOAT_ADD(fPorts.audioOuts[i], fPorts.audioIns[i], frames);
             }
         }
         else if (fVolume != 1.0f)
@@ -643,16 +656,11 @@ protected:
     {
         if (fDescriptor->ui_show != nullptr)
         {
+#ifdef HAVE_JUCE
             if (fDescriptor->hints & PLUGIN_NEEDS_UI_JUCE)
             {
-                JUCE_AUTORELEASEPOOL
-                {
-                    if (gActivePlugins.size() == 0)
-                    {
-                        initialiseJuce_GUI();
-                        JuceMessageThread::getInstance();
-                    }
-                }
+                if (gActivePlugins.size() == 0)
+                    JuceMessageThread::getInstance();
 
                 fDescriptor->ui_show(fHandle, true);
 
@@ -660,6 +668,7 @@ protected:
                 gActivePlugins.add(this);
             }
             else
+#endif
                 fDescriptor->ui_show(fHandle, true);
         }
 
@@ -825,7 +834,9 @@ private:
     NativeMidiEvent fMidiEvents[kMaxMidiEvents*2];
     NativeTimeInfo  fTimeInfo;
 
+#ifdef HAVE_JUCE
     bool  fUiWasShown;
+#endif
     bool  fIsProcessing;
     float fVolume;
     float fDryWet;
