@@ -130,9 +130,11 @@ static void writeManifestFile(PluginListManager& plm)
     // UI
 
     text += "<http://kxstudio.sf.net/carla/ui>\n";
-    text += "    a <" LV2_EXTERNAL_UI__Widget "> ;\n";
+    text += "    a <aaf" LV2_EXTERNAL_UI__Widget "zzz> ;\n";
     text += "    ui:binary <carla-native" PLUGIN_EXT "> ;\n";
-    text += "    lv2:extensionData <" LV2_PROGRAMS__UIInterface "> ;\n";
+    text += "    lv2:extensionData ui:idleInterface ,\n";
+    text += "                      ui:showInterface ,\n";
+    text += "                      <" LV2_PROGRAMS__UIInterface "> ;\n";
     text += "    lv2:requiredFeature <" LV2_INSTANCE_ACCESS_URI "> .\n";
 
     // -------------------------------------------------------------------

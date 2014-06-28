@@ -31,32 +31,32 @@
 # include "lv2/lv2.h"
 #endif
 
+using CarlaBackend::CarlaPlugin;
+
 // -----------------------------------------------------------------------
 // Plugin List
 
 struct PluginListManager {
     PluginListManager()
     {
-        for (size_t i=0, count = CarlaBackend::CarlaPlugin::getNativePluginCount(); i < count; ++i)
+        for (size_t i=0, count = CarlaPlugin::getNativePluginCount(); i < count; ++i)
         {
-            const NativePluginDescriptor* const desc(CarlaBackend::CarlaPlugin::getNativePluginDescriptor(i));
+            const NativePluginDescriptor* const desc(CarlaPlugin::getNativePluginDescriptor(i));
 
             // Open/Save not possible in plugins
             if (desc->hints & PLUGIN_NEEDS_UI_OPEN_SAVE)
                 continue;
 
-            // skip distrho plugins and Vex
-            if (
-                // distrho mini-series
-                std::strcmp(desc->label, "3bandeq")     == 0 || std::strcmp(desc->label, "3bandsplitter")  == 0 ||
-                std::strcmp(desc->label, "pingpongpan") == 0 || std::strcmp(desc->label, "stereoenhancer") == 0 ||
-                // juice
-                std::strstr(desc->label, "juice")       != nullptr ||
-                // zamaudio
-                std::strncmp(desc->label, "zam", 3)     == 0 ||
-                // other synths
-                std::strcmp(desc->label, "nekobi")      == 0 || std::strcmp(desc->label, "vexsynth") == 0
-               )
+            // skip some plugins
+            if (std::strcmp(desc->label,  "3bandeq"       ) == 0 ||
+                std::strcmp(desc->label,  "3bandsplitter" ) == 0 ||
+                std::strcmp(desc->label,  "pingpongpan"   ) == 0 ||
+                std::strcmp(desc->label,  "stereoenhancer") == 0 ||
+                std::strcmp(desc->label,  "nekobi"        ) == 0 ||
+                std::strcmp(desc->label,  "prom"          ) == 0 ||
+                std::strcmp(desc->label,  "vexsynth"      ) == 0 ||
+                std::strstr(desc->label,  "juice"         ) != nullptr ||
+                std::strncmp(desc->label, "zam", 3) == 0)
             {
                 continue;
             }

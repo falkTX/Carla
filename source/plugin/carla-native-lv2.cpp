@@ -581,24 +581,50 @@ public:
 
     bool lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_Controller controller, LV2UI_Widget* widget, const LV2_Feature* const* features)
     {
+        const LV2_Options_Option* options = nullptr;
+        const char* windowTitle = nullptr;
+
         for (int i=0; features[i] != nullptr; ++i)
         {
             if (std::strcmp(features[i]->URI, LV2_EXTERNAL_UI__Host) == 0 ||
                 std::strcmp(features[i]->URI, LV2_EXTERNAL_UI_DEPRECATED_URI) == 0)
             {
                 fUI.host = (const LV2_External_UI_Host*)features[i]->data;
-                break;
+            }
+            else if (std::strcmp(features[i]->URI, LV2_OPTIONS__options) == 0)
+                options = (const LV2_Options_Option*)features[i]->data;
+        }
+
+        if (options == nullptr)
+        {
+            carla_stderr("Host doesn't provides option feature");
+            return false;
+        }
+
+        if (fUI.host != nullptr)
+        {
+            windowTitle = carla_strdup(fUI.host->plugin_human_id);
+        }
+        else
+        {
+            for (int i=0; options[i].key != 0; ++i)
+            {
+                if (options[i].key == fUridMap->map(fUridMap->handle, LV2_UI__windowTitle))
+                {
+                    windowTitle = carla_strdup((const char*)options[i].value);
+                    break;
+                }
             }
         }
 
-        if (fUI.host == nullptr)
+        if (windowTitle == nullptr)
             return false;
 
         fUI.writeFunction = writeFunction;
         fUI.controller = controller;
-        *widget = this;
+        fHost.uiName = windowTitle;
 
-        fHost.uiName = fUI.host->plugin_human_id;
+        *widget = (fUI.host != nullptr) ? this : nullptr;
 
         return true;
     }
@@ -621,6 +647,12 @@ public:
         fUI.host = nullptr;
         fUI.writeFunction = nullptr;
         fUI.controller = nullptr;
+
+        if (fHost.uiName != nullptr)
+        {
+            delete[] fHost.uiName;
+            fHost.uiName = nullptr;
+        }
 
         if (! fUI.isVisible)
             return;
@@ -645,8 +677,33 @@ public:
 
     // -------------------------------------------------------------------
 
+    int lv2ui_idle() const
+    {
+        if (! fUI.isVisible)
+            return 1;
+
+        if (fDescriptor->ui_idle != nullptr)
+            fDescriptor->ui_idle(fHandle);
+
+        return 0;
+    }
+
+    int lv2ui_show()
+    {
+        handleUiShow();
+        return 0;
+    }
+
+    int lv2ui_hide()
+    {
+        handleUiHide();
+        return 0;
+    }
+
+    // -------------------------------------------------------------------
+
 protected:
-    void handleUiRun()
+    void handleUiRun() const
     {
         if (fDescriptor->ui_idle != nullptr)
             fDescriptor->ui_idle(fHandle);
@@ -1375,12 +1432,35 @@ static void lv2ui_select_program(LV2UI_Handle ui, uint32_t bank, uint32_t progra
     uiPtr->lv2ui_select_program(bank, program);
 }
 
+static int lv2ui_idle(LV2UI_Handle ui)
+{
+    return uiPtr->lv2ui_idle();
+}
+
+static int lv2ui_show(LV2UI_Handle ui)
+{
+    carla_debug("lv2ui_show(%p)", ui);
+    return uiPtr->lv2ui_show();
+}
+
+static int lv2ui_hide(LV2UI_Handle ui)
+{
+    carla_debug("lv2ui_hide(%p)", ui);
+    return uiPtr->lv2ui_hide();
+}
+
 static const void* lv2ui_extension_data(const char* uri)
 {
-    carla_debug("lv2ui_extension_data(\"%s\")", uri);
+    carla_stdout("lv2ui_extension_data(\"%s\")", uri);
 
+    static const LV2UI_Idle_Interface uiidle = { lv2ui_idle };
+    static const LV2UI_Show_Interface uishow = { lv2ui_show, lv2ui_hide };
     static const LV2_Programs_UI_Interface uiprograms = { lv2ui_select_program };
 
+    if (std::strcmp(uri, LV2_UI__idleInterface) == 0)
+        return &uiidle;
+    if (std::strcmp(uri, LV2_UI__showInterface) == 0)
+        return &uishow;
     if (std::strcmp(uri, LV2_PROGRAMS__UIInterface) == 0)
         return &uiprograms;
 
