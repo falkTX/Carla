@@ -130,7 +130,7 @@ static void writeManifestFile(PluginListManager& plm)
     // UI
 
     text += "<http://kxstudio.sf.net/carla/ui>\n";
-    text += "    a <aaf" LV2_EXTERNAL_UI__Widget "zzz> ;\n";
+    text += "    a <" LV2_EXTERNAL_UI__Widget "> ;\n";
     text += "    ui:binary <carla-native" PLUGIN_EXT "> ;\n";
     text += "    lv2:extensionData ui:idleInterface ,\n";
     text += "                      ui:showInterface ,\n";
