@@ -580,11 +580,12 @@ def initHost(initName, libPrefix = None, failError = True):
             print("hmmmm...")
             return
 
-    if not (gCarla.isControl or gCarla.isPlugin):
-        gCarla.host.set_engine_option(ENGINE_OPTION_NSM_INIT, os.getpid(), initName)
+    if not gCarla.isPlugin:
+        gCarla.host.set_engine_option(ENGINE_OPTION_PATH_BINARIES,  0, gCarla.pathBinaries)
+        gCarla.host.set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, gCarla.pathResources)
 
-    gCarla.host.set_engine_option(ENGINE_OPTION_PATH_BINARIES,  0, gCarla.pathBinaries)
-    gCarla.host.set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, gCarla.pathResources)
+        if not gCarla.isControl:
+            gCarla.host.set_engine_option(ENGINE_OPTION_NSM_INIT, os.getpid(), initName)
 
 # ------------------------------------------------------------------------------------------------------------
 # Check if a value is a number (float support)
