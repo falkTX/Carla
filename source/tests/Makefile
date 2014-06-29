@@ -54,6 +54,10 @@ ansi-pedantic-test_cxx11: ansi-pedantic-test.c ../backend/Carla*.h
 
 # --------------------------------------------------------------
 
+ChildProcess: ChildProcess.cpp
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) ../modules/juce_core.a -ldl -lpthread -lrt -o $@
+# 	valgrind --leak-check=full ./$@
+
 CarlaString: CarlaString.cpp ../utils/CarlaString.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
 	valgrind --leak-check=full ./$@

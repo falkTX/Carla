@@ -218,7 +218,7 @@ bool Process::openDocument (const String& fileName, const String& parameters)
 
     const char* const argv[4] = { "/bin/sh", "-c", cmdString.toUTF8(), 0 };
 
-    const int cpid = fork();
+    const int cpid = vfork();
 
     if (cpid == 0)
     {

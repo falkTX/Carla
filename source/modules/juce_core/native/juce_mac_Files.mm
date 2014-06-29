@@ -112,7 +112,7 @@ namespace FileHelpers
     {
         const char* const argv[4] = { "/bin/sh", "-c", pathAndArguments.toUTF8(), 0 };
 
-        const int cpid = fork();
+        const int cpid = vfork();
 
         if (cpid == 0)
         {
