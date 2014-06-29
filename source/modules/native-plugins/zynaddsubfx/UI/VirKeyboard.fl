@@ -86,7 +86,8 @@ rndvelocity=0;} {}
  Fl_Image *white_down = Fl_Shared_Image::get( PIXMAP_PATH "white_key_pressed.png" );
  Fl_Image *black_up = Fl_Shared_Image::get( PIXMAP_PATH "black_key.png" );
  Fl_Image *black_down = Fl_Shared_Image::get( PIXMAP_PATH "black_key_pressed.png" );
-\#endif
+ \#endif
+
 
 //On error fetch everything from source directory
 if(!(white_up&&white_down&&black_up&&black_down)) {

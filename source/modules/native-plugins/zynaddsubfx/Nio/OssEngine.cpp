@@ -67,10 +67,14 @@ bool OssEngine::openAudio()
     int snd_format     = AFMT_S16_LE;
     int snd_samplerate = synth->samplerate;
 
-    audio.handle = open(config.cfg.LinuxOSSWaveOutDev, O_WRONLY, 0);
+    const char *device = config.cfg.LinuxOSSWaveOutDev;
+    if(getenv("DSP_DEVICE"))
+        device = getenv("DSP_DEVICE");
+
+    audio.handle = open(device, O_WRONLY, 0);
     if(audio.handle == -1) {
         cerr << "ERROR - I can't open the "
-             << config.cfg.LinuxOSSWaveOutDev << '.' << endl;
+             << device << '.' << endl;
         return false;
     }
     ioctl(audio.handle, SNDCTL_DSP_RESET, NULL);

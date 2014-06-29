@@ -457,7 +457,7 @@ bool Bank::isPADsynth_used(unsigned int ninstrument)
 
 void Bank::deletefrombank(int pos)
 {
-    if((pos < 0) || (pos >= (int) banks.size()))
+    if((pos < 0) || (pos >= BANK_SIZE))
         return;
     ins[pos] = ins_t();
 }

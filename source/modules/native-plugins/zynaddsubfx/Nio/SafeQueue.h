@@ -2,7 +2,7 @@
 #ifndef SAFEQUEUE_H
 #define SAFEQUEUE_H
 #include <cstdlib>
-#include <semaphore.h>
+#include "ZynSema.h"
 #include <pthread.h>
 
 /**
@@ -32,9 +32,9 @@ class SafeQueue
         unsigned int rSpace() const;
 
         //write space
-        mutable sem_t w_space;
+        mutable ZynSema w_space;
         //read space
-        mutable sem_t r_space;
+        mutable ZynSema r_space;
 
         //next writing spot
         size_t writePtr;
