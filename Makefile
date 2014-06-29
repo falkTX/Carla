@@ -391,6 +391,9 @@ install:
 	install -m 644 \
 		source/backend/CarlaBackend.h \
 		source/backend/CarlaHost.h \
+		source/backend/CarlaEngine.hpp \
+		source/backend/CarlaPlugin.hpp \
+		source/modules/CarlaNative.h \
 		$(DESTDIR)$(PREFIX)/include/carla/
 
 	install -m 644 \
@@ -417,6 +420,7 @@ install:
 	cd $(CURDIR)
 
 	# Link resources for lv2 plugin
+	rm -rf $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources
 	$(LINK) $(PREFIX)/share/carla/resources/ $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/
 
 	# Adjust PREFIX value in script files

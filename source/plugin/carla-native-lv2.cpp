@@ -134,6 +134,7 @@ public:
         fHost.handle      = this;
         fHost.resourceDir = resourceDir.dup();
         fHost.uiName      = nullptr;
+        fHost.uiParentId  = 0;
 
         fHost.get_buffer_size        = host_get_buffer_size;
         fHost.get_sample_rate        = host_get_sample_rate;

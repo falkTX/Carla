@@ -1623,9 +1623,9 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
 };
 #endif
 
-// -----------------------------------------------------------------------
-
 CARLA_BACKEND_END_NAMESPACE
+
+// -----------------------------------------------------------------------
 
 CARLA_EXPORT
 void carla_register_native_plugin_carla();
@@ -1637,6 +1637,17 @@ void carla_register_native_plugin_carla()
 #if 0 //def HAVE_JUCE
     carla_register_native_plugin(&carlaPatchbayDesc);
 #endif
+}
+
+// -----------------------------------------------------------------------
+
+CARLA_EXPORT
+const NativePluginDescriptor* get_carla_native_plugin();
+
+const NativePluginDescriptor* get_carla_native_plugin()
+{
+    CARLA_BACKEND_USE_NAMESPACE;
+    return &carlaRackDesc;
 }
 
 // -----------------------------------------------------------------------
