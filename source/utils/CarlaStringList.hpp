@@ -206,6 +206,26 @@ public:
         return CharStringListPtr(*this);
     }
 
+    CarlaStringList& operator=(const char* const* const charStringList) noexcept
+    {
+        clear();
+
+        for (int i=0; charStringList[i] != nullptr; ++i)
+            append(charStringList[i]);
+
+        return *this;
+    }
+
+    CarlaStringList& operator=(const CarlaStringList& list) noexcept
+    {
+        clear();
+
+        for (Itenerator it = list.begin(); it.valid(); it.next())
+            LinkedList<CarlaString>::append(it.getValue());
+
+        return *this;
+    }
+
 private:
     LinkedList<CarlaString> fList;
 };
