@@ -366,18 +366,6 @@
          <height>34</height>
         </size>
        </property>
-       <property name="contextMenuPolicy">
-        <enum>Qt::CustomContextMenu</enum>
-       </property>
-       <property name="statusTip">
-        <string>Output dry/wet (100%)</string>
-       </property>
-       <property name="maximum">
-        <number>1000</number>
-       </property>
-       <property name="value">
-        <number>1000</number>
-       </property>
       </widget>
      </item>
      <item>
@@ -393,18 +381,6 @@
          <width>34</width>
          <height>34</height>
         </size>
-       </property>
-       <property name="contextMenuPolicy">
-        <enum>Qt::CustomContextMenu</enum>
-       </property>
-       <property name="statusTip">
-        <string>Output volume (100%)</string>
-       </property>
-       <property name="maximum">
-        <number>1270</number>
-       </property>
-       <property name="value">
-        <number>1000</number>
        </property>
       </widget>
      </item>

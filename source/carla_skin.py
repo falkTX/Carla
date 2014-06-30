@@ -171,8 +171,10 @@ class AbstractPluginSlot(QFrame):
             return
 
         for paramIndex, paramWidget in self.fParameterList:
-            paramWidget.setValue(gCarla.host.get_internal_parameter_value(self.fPluginId, paramIndex))
+            paramWidget.setContextMenuPolicy(Qt.CustomContextMenu)
+            paramWidget.customContextMenuRequested.connect(self.slot_knobCustomMenu)
             paramWidget.realValueChanged.connect(self.slot_parameterValueChanged)
+            paramWidget.setValue(gCarla.host.get_internal_parameter_value(self.fPluginId, paramIndex))
 
     #------------------------------------------------------------------
 
@@ -549,6 +551,48 @@ class AbstractPluginSlot(QFrame):
     @pyqtSlot()
     def slot_showDefaultCustomMenu(self):
         self.showDefaultCustomMenu(self.fIsActive, self.b_edit, self.b_gui)
+
+    @pyqtSlot()
+    def slot_knobCustomMenu(self):
+        sender  = self.sender()
+        index   = sender.fIndex
+        minimum = sender.fMinimum
+        maximum = sender.fMaximum
+        current = sender.fRealValue
+        label   = sender.fLabel
+
+        if index in (PARAMETER_DRYWET, PARAMETER_VOLUME):
+            default = 1.0
+        else:
+            default = gCarla.host.get_default_parameter_value(self.fPluginId, index)
+
+        menu = QMenu(self)
+        actReset = menu.addAction(self.tr("Reset (%f)" % (default)))
+        menu.addSeparator()
+        actMinimum = menu.addAction(self.tr("Set to Minimum (%f)" % (minimum)))
+        actMaximum = menu.addAction(self.tr("Set to Maximum (%f)" % (maximum)))
+        menu.addSeparator()
+        actSet = menu.addAction(self.tr("Set value..."))
+
+        actSelected = menu.exec_(QCursor.pos())
+
+        if actSelected == actSet:
+            valueTry = QInputDialog.getDouble(self, self.tr("Set value"), label, current, minimum, maximum, 3) # FIXME - 3 decimals
+            if valueTry[1]:
+                value = valueTry[0] * 10
+            else:
+                return
+
+        elif actSelected == actMinimum:
+            value = minimum
+        elif actSelected == actMaximum:
+            value = maximum
+        elif actSelected == actReset:
+            value = default
+        else:
+            return
+
+        self.sender().setValue(value)
 
     #------------------------------------------------------------------
 

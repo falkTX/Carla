@@ -1322,16 +1322,7 @@ class PluginEdit(QDialog):
         else:
             return
 
-        if label == "Dry/Wet":
-            self.ui.dial_drywet.setValue(value)
-        elif label == "Volume":
-            self.ui.dial_vol.setValue(value)
-        elif label == "Balance-Left":
-            self.ui.dial_b_left.setValue(value)
-        elif label == "Balance-Right":
-            self.ui.dial_b_right.setValue(value)
-        elif label == "Panning":
-            self.ui.dial_pan.setValue(value)
+        self.sender().setValue(value)
 
     #------------------------------------------------------------------
 
