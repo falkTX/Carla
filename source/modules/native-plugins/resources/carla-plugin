@@ -37,6 +37,7 @@ class PluginStoreInfo(object):
         'parameterDataS',
         'parameterRangeS',
         'parameterValueS',
+        'parameterValueInt',
         'programCount',
         'programCurrent',
         'programNameS',
@@ -76,6 +77,7 @@ class PluginHost(object):
         info.parameterDataS  = []
         info.parameterRangeS = []
         info.parameterValueS = []
+        info.parameterValueInt = [0.0, 1.0, 1.0, -1.0, 1.0, 0.0, -1.0]
         info.programCount = 0
         info.programCurrent = -1
         info.programNameS = []
@@ -152,6 +154,10 @@ class PluginHost(object):
     def _set_parameterValueS(self, pluginId, paramIndex, value):
         if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
             self.fPluginsInfo[pluginId].parameterValueS[paramIndex] = value
+
+    def _set_parameterValueInt(self, pluginId, paramIndex, value):
+        if pluginId < len(self.fPluginsInfo) and PARAMETER_NULL > paramIndex > PARAMETER_MAX:
+            self.fPluginsInfo[pluginId].parameterValueInt[abs(paramIndex)-2] = float(value)
 
     def _set_parameterDefault(self, pluginId, paramIndex, value):
         if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
@@ -409,23 +415,13 @@ class PluginHost(object):
     def get_current_parameter_value(self, pluginId, parameterId):
         return self.fPluginsInfo[pluginId].parameterValueS[parameterId]
 
-    # TODO
     def get_internal_parameter_value(self, pluginId, parameterId):
-        if parameterId == PARAMETER_ACTIVE:
-            return 1.0
-        elif parameterId == PARAMETER_DRYWET:
-            return 1.0
-        elif parameterId == PARAMETER_VOLUME:
-            return 1.0
-        elif parameterId == PARAMETER_BALANCE_LEFT:
-            return -1.0
-        elif parameterId == PARAMETER_BALANCE_RIGHT:
-            return 1.0
-        elif parameterId == PARAMETER_PANNING:
+        if parameterId == PARAMETER_NULL or parameterId <= PARAMETER_MAX:
             return 0.0
-        elif parameterId == PARAMETER_CTRL_CHANNEL:
-            return 0.0
-        return 0.0
+        if parameterId < 0:
+            return self.fPluginsInfo[pluginId].parameterValueInt[abs(parameterId)-2]
+
+        return self.fPluginsInfo[pluginId].parameterValueS[parameterId]
 
     def get_input_peak_value(self, pluginId, isLeft):
         return self.fPluginsInfo[pluginId].peaks[0 if isLeft else 1]
@@ -596,7 +592,10 @@ class CarlaMiniW(ExternalUI, HostWindow):
                 if action == ENGINE_CALLBACK_PLUGIN_RENAMED:
                     gCarla.host._set_pluginName(pluginId, valueStr)
                 elif action == ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
-                    gCarla.host._set_parameterValueS(pluginId, value1, value3)
+                    if value1 < 0:
+                        gCarla.host._set_parameterValueInt(pluginId, value1, value3)
+                    else:
+                        gCarla.host._set_parameterValueS(pluginId, value1, value3)
                 elif action == ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
                     gCarla.host._set_parameterDefault(pluginId, value1, value3)
                 elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
