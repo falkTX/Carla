@@ -212,13 +212,14 @@ public:
 
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-        if (getMidiInCount() == 0)
-            options |= PLUGIN_OPTION_FIXED_BUFFERS;
-
         if (fEffect->flags & effFlagsProgramChunks)
             options |= PLUGIN_OPTION_USE_CHUNKS;
 
-        if (vstPluginCanDo(fEffect, "receiveVstEvents") || vstPluginCanDo(fEffect, "receiveVstMidiEvent") || (fEffect->flags & effFlagsIsSynth) > 0 || (pData->hints & PLUGIN_WANTS_MIDI_INPUT))
+        if (getMidiInCount() == 0)
+        {
+            options |= PLUGIN_OPTION_FIXED_BUFFERS;
+        }
+        else
         {
             options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
             options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
@@ -565,7 +566,7 @@ public:
         aOuts  = (fEffect->numOutputs > 0) ? static_cast<uint32_t>(fEffect->numOutputs) : 0;
         params = (fEffect->numParams > 0)  ? static_cast<uint32_t>(fEffect->numParams)  : 0;
 
-        if (vstPluginCanDo(fEffect, "receiveVstEvents") || vstPluginCanDo(fEffect, "receiveVstMidiEvent") || (fEffect->flags & effFlagsIsSynth) > 0 || (pData->hints & PLUGIN_WANTS_MIDI_INPUT))
+        if (hasMidiInput())
         {
             mIns = 1;
             needsCtrlIn = true;
@@ -573,7 +574,7 @@ public:
         else
             mIns = 0;
 
-        if (vstPluginCanDo(fEffect, "sendVstEvents") || vstPluginCanDo(fEffect, "sendVstMidiEvent"))
+        if (hasMidiOutput())
         {
             mOuts = 1;
             needsCtrlOut = true;
@@ -2134,6 +2135,23 @@ protected:
         (void)opt;
     }
 
+    bool canDo(const char* const feature) const noexcept
+    {
+        try {
+            return (fEffect->dispatcher(fEffect, effCanDo, 0, 0, const_cast<char*>(feature), 0.0f) == 1);
+        } CARLA_SAFE_EXCEPTION_RETURN("vstPluginCanDo", false);
+    }
+
+    bool hasMidiInput() const noexcept
+    {
+        return (canDo("receiveVstEvents") || canDo("receiveVstMidiEvent") || (fEffect->flags & effFlagsIsSynth) > 0 || (pData->hints & PLUGIN_WANTS_MIDI_INPUT));
+    }
+
+    bool hasMidiOutput() const noexcept
+    {
+        return (canDo("sendVstEvents") || canDo("sendVstMidiEvent"));
+    }
+
     // -------------------------------------------------------------------
 
 public:
@@ -2295,19 +2313,19 @@ public:
         // load plugin settings
 
         {
+            const bool hasMidiIn(hasMidiInput());
+
             // set default options
             pData->options = 0x0;
 
             pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-            if (getMidiInCount() > 0)
-                pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
-
             if (fEffect->flags & effFlagsProgramChunks)
                 pData->options |= PLUGIN_OPTION_USE_CHUNKS;
 
-            if (vstPluginCanDo(fEffect, "receiveVstEvents") || vstPluginCanDo(fEffect, "receiveVstMidiEvent") || (fEffect->flags & effFlagsIsSynth) > 0 || (pData->hints & PLUGIN_WANTS_MIDI_INPUT))
+            if (hasMidiIn)
             {
+                pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
                 pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
                 pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
                 pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
@@ -2331,7 +2349,7 @@ public:
             pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
 
             // ignore settings, we need this anyway
-            if (getMidiInCount() > 0)
+            if (hasMidiIn)
                 pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 #endif
         }
