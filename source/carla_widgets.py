@@ -80,9 +80,9 @@ gFakeParamInfo = {
     "default": 0.0,
     "minimum": 0.0,
     "maximum": 1.0,
-    "step":    0.01,
-    "stepSmall": 0.01,
-    "stepLarge": 0.01, # FIXME
+    "step":    0.001,
+    "stepSmall": 0.0001,
+    "stepLarge": 0.01,
     "midiCC":   -1,
     "midiChannel": 1,
 
@@ -223,17 +223,21 @@ class PluginParameter(QWidget):
         self.ui.label.setText(pInfo['name'])
         self.ui.widget.setName(pInfo['name'])
 
-        if pType == PARAMETER_INPUT:
-            self.ui.widget.setMinimum(pInfo['minimum'])
-            self.ui.widget.setMaximum(pInfo['maximum'])
-            self.ui.widget.setDefault(pInfo['default'])
-            self.ui.widget.setValue(pInfo['current'], False)
-            self.ui.widget.setLabel(pInfo['unit'])
-            self.ui.widget.setStep(pInfo['step'])
-            self.ui.widget.setStepSmall(pInfo['stepSmall'])
-            self.ui.widget.setStepLarge(pInfo['stepLarge'])
-            self.ui.widget.setScalePoints(pInfo['scalePoints'], bool(pHints & PARAMETER_USES_SCALEPOINTS))
+        self.ui.widget.setMinimum(pInfo['minimum'])
+        self.ui.widget.setMaximum(pInfo['maximum'])
+        self.ui.widget.setDefault(pInfo['default'])
+        self.ui.widget.setValue(pInfo['current'], False)
+        self.ui.widget.setLabel(pInfo['unit'])
+        self.ui.widget.setStep(pInfo['step'])
+        self.ui.widget.setStepSmall(pInfo['stepSmall'])
+        self.ui.widget.setStepLarge(pInfo['stepLarge'])
+        self.ui.widget.setScalePoints(pInfo['scalePoints'], bool(pHints & PARAMETER_USES_SCALEPOINTS))
 
+        if not pHints & PARAMETER_IS_AUTOMABLE:
+            self.ui.sb_control.setEnabled(False)
+            self.ui.sb_channel.setEnabled(False)
+
+        if pType == PARAMETER_INPUT:
             if not pHints & PARAMETER_IS_ENABLED:
                 self.ui.label.setEnabled(False)
                 self.ui.widget.setEnabled(False)
@@ -241,23 +245,11 @@ class PluginParameter(QWidget):
                 self.ui.sb_control.setEnabled(False)
                 self.ui.sb_channel.setEnabled(False)
 
-            elif not pHints & PARAMETER_IS_AUTOMABLE:
-                self.ui.sb_control.setEnabled(False)
-                self.ui.sb_channel.setEnabled(False)
-
             if pHints & PARAMETER_IS_READ_ONLY:
                 self.ui.widget.setReadOnly(True)
 
         elif pType == PARAMETER_OUTPUT:
-            self.ui.widget.setMinimum(pInfo['minimum'])
-            self.ui.widget.setMaximum(pInfo['maximum'])
-            self.ui.widget.setValue(pInfo['current'], False)
-            self.ui.widget.setLabel(pInfo['unit'])
             self.ui.widget.setReadOnly(True)
-
-            if not pHints & PARAMETER_IS_AUTOMABLE:
-                self.ui.sb_control.setEnabled(False)
-                self.ui.sb_channel.setEnabled(False)
 
         else:
             self.ui.widget.setVisible(False)
@@ -1420,9 +1412,13 @@ if __name__ == '__main__':
 
     app = CarlaApplication()
 
-    #gui = CarlaAboutW(None)
-    #gui = PluginParameter(None, gFakeParamInfo, 0, 0)
-    gui = PluginEdit(None, 0)
-    gui.show()
+    gui1 = CarlaAboutW(None)
+    gui1.show()
 
-    sys.exit(app.exec_())
+    gui2 = PluginParameter(None, gFakeParamInfo, 0, 0)
+    gui2.show()
+
+    gui3 = PluginEdit(None, 0)
+    gui3.show()
+
+    app.exit_exec()
