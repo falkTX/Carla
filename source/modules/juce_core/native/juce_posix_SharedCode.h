@@ -142,7 +142,7 @@ void JUCE_CALLTYPE Thread::sleep (int millisecs)
 
 void JUCE_CALLTYPE Process::terminate()
 {
-   #if JUCE_ANDROID
+   #if JUCE_ANDROID || JUCE_HAIKU
     _exit (EXIT_FAILURE);
    #else
     std::_Exit (EXIT_FAILURE);
@@ -201,6 +201,10 @@ namespace
    #else
     typedef struct stat   juce_statStruct;
     #define JUCE_STAT     stat
+   #endif
+
+   #if JUCE_HAIKU
+    #define statfs statvfs
    #endif
 
     bool juce_stat (const String& fileName, juce_statStruct& info)
@@ -542,7 +546,11 @@ void MemoryMappedFile::openInternal (const File& file, AccessMode mode)
         if (m != MAP_FAILED)
         {
             address = m;
-            madvise (m, (size_t) range.getLength(), MADV_SEQUENTIAL);
+            #if JUCE_HAIKU
+             posix_madvise (m, (size_t) range.getLength(), POSIX_MADV_SEQUENTIAL);
+            #else
+             madvise (m, (size_t) range.getLength(), MADV_SEQUENTIAL);
+            #endif
         }
         else
         {
@@ -662,6 +670,10 @@ int File::getVolumeSerialNumber() const
     close (fd);*/
     return result;
 }
+
+#if JUCE_HAIKU
+ #undef statvfs
+#endif
 
 //==============================================================================
 void juce_runSystemCommand (const String&);
@@ -1006,16 +1018,20 @@ public:
 
         int pipeHandles[2] = { 0 };
 
+        Array<char*> argv;
+        for (int i = 0; i < arguments.size(); ++i)
+            if (arguments[i].isNotEmpty())
+                argv.add (const_cast<char*> (arguments[i].toUTF8().getAddress()));
+
+        argv.add (nullptr);
+
         if (pipe (pipeHandles) == 0)
         {
-            Array<char*> argv;
-            for (int i = 0; i < arguments.size(); ++i)
-                if (arguments[i].isNotEmpty())
-                    argv.add (const_cast<char*> (arguments[i].toUTF8().getAddress()));
-
-            argv.add (nullptr);
-
+#if JUCE_USE_VFORK
             const pid_t result = vfork();
+#else
+            const pid_t result = fork();
+#endif
 
             if (result < 0)
             {
@@ -1024,7 +1040,7 @@ public:
             }
             else if (result == 0)
             {
-#if 0
+#if ! JUCE_USE_VFORK
                 // we're the child process..
                 close (pipeHandles[0]);   // close the read handle
 
@@ -1040,7 +1056,6 @@ public:
 
                 close (pipeHandles[1]);
 #endif
-
                 execvp (argv[0], argv.getRawDataPointer());
                 exit (-1);
             }

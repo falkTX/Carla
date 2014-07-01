@@ -112,7 +112,11 @@ namespace FileHelpers
     {
         const char* const argv[4] = { "/bin/sh", "-c", pathAndArguments.toUTF8(), 0 };
 
+#if JUCE_USE_VFORK
         const int cpid = vfork();
+#else
+        const int cpid = fork();
+#endif
 
         if (cpid == 0)
         {

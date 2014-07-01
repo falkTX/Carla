@@ -51,6 +51,8 @@
   #define       JUCE_ANDROID 1
 #elif defined (LINUX) || defined (__linux__)
   #define     JUCE_LINUX 1
+#elif defined (__HAIKU__)
+  #define     JUCE_HAIKU 1
 #elif defined (__APPLE_CPP__) || defined(__APPLE_CC__)
   #define Point CarbonDummyPointName // (workaround to avoid definition of "Point" by old Carbon headers)
   #define Component CarbonDummyCompName
@@ -140,7 +142,7 @@
 #endif
 
 //==============================================================================
-#if JUCE_LINUX || JUCE_ANDROID
+#if JUCE_LINUX || JUCE_ANDROID || JUCE_HAIKU
 
   #ifdef _DEBUG
     #define JUCE_DEBUG 1

@@ -67,6 +67,8 @@
 
 #define JUCE_DISABLE_JUCE_VERSION_PRINTING 1
 
+#define JUCE_USE_VFORK 1
+
 #define JUCE_MODULE_AVAILABLE_juce_audio_basics          1
 #define JUCE_MODULE_AVAILABLE_juce_audio_devices         1
 #define JUCE_MODULE_AVAILABLE_juce_audio_formats         1

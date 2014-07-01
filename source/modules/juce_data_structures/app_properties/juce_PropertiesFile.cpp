@@ -82,7 +82,7 @@ File PropertiesFile::Options::getDefaultFile() const
     if (folderName.isNotEmpty())
         dir = dir.getChildFile (folderName);
 
-   #elif JUCE_LINUX || JUCE_ANDROID
+   #elif JUCE_LINUX || JUCE_ANDROID || JUCE_HAIKU
     const File dir (File (commonToAllUsers ? "/var" : "~")
                      .getChildFile (folderName.isNotEmpty() ? folderName
                                                             : ("." + applicationName)));
