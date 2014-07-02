@@ -321,7 +321,7 @@ void carla_copy(T* const dataDst, const T* const dataSrc, const size_t size) noe
  */
 template<typename T>
 static inline
-void carla_fill(T* data, const size_t size, const T v) noexcept
+void carla_fill(T* data, const T v, const size_t size) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(size > 0,);

@@ -107,7 +107,6 @@ class CarlaMultiW(QTabWidget):
         parent.PatchbayPortAddedCallback.connect(self.fPatchbay.slot_handlePatchbayPortAddedCallback)
         parent.PatchbayPortRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayPortRemovedCallback)
         parent.PatchbayPortRenamedCallback.connect(self.fPatchbay.slot_handlePatchbayPortRenamedCallback)
-        parent.PatchbayPortValueChangedCallback.connect(self.fPatchbay.slot_handlePatchbayPortValueChangedCallback)
         parent.PatchbayConnectionAddedCallback.connect(self.fPatchbay.slot_handlePatchbayConnectionAddedCallback)
         parent.PatchbayConnectionRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayConnectionRemovedCallback)
 

@@ -860,25 +860,17 @@ typedef enum {
     ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED = 25,
 
     /*!
-     * A patchbay port value has changed.
-     * @param pluginId Client Id
-     * @param value1   Port Id
-     * @param value3   New port value
-     */
-    ENGINE_CALLBACK_PATCHBAY_PORT_VALUE_CHANGED = 26, // TODO
-
-    /*!
      * A patchbay connection has been added.
      * @param pluginId Connection Id
      * @param valueStr Out group and port plus in group and port, in "og:op:ig:ip" syntax.
      */
-    ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED = 27,
+    ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED = 26,
 
     /*!
      * A patchbay connection has been removed.
      * @param pluginId Connection Id
      */
-    ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED = 28,
+    ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED = 27,
 
     /*!
      * Engine started.
@@ -888,62 +880,62 @@ typedef enum {
      * @see EngineProcessMode
      * @see EngineTransportMode
      */
-    ENGINE_CALLBACK_ENGINE_STARTED = 29,
+    ENGINE_CALLBACK_ENGINE_STARTED = 28,
 
     /*!
      * Engine stopped.
      */
-    ENGINE_CALLBACK_ENGINE_STOPPED = 30,
+    ENGINE_CALLBACK_ENGINE_STOPPED = 29,
 
     /*!
      * Engine process mode has changed.
      * @param value1 New process mode
      * @see EngineProcessMode
      */
-    ENGINE_CALLBACK_PROCESS_MODE_CHANGED = 31,
+    ENGINE_CALLBACK_PROCESS_MODE_CHANGED = 30,
 
     /*!
      * Engine transport mode has changed.
      * @param value1 New transport mode
      * @see EngineTransportMode
      */
-    ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED = 32,
+    ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED = 31,
 
     /*!
      * Engine buffer-size changed.
      * @param value1 New buffer size
      */
-    ENGINE_CALLBACK_BUFFER_SIZE_CHANGED = 33,
+    ENGINE_CALLBACK_BUFFER_SIZE_CHANGED = 32,
 
     /*!
      * Engine sample-rate changed.
      * @param value3 New sample rate
      */
-    ENGINE_CALLBACK_SAMPLE_RATE_CHANGED = 34,
+    ENGINE_CALLBACK_SAMPLE_RATE_CHANGED = 33,
 
     /*!
      * Idle frontend.\n
      * This is used by the engine during long operations that might block the frontend,
      * giving it the possibility to idle while the operation is still in place.
      */
-    ENGINE_CALLBACK_IDLE = 35,
+    ENGINE_CALLBACK_IDLE = 34,
 
     /*!
      * Show a message as information.
      * @param valueStr The message
      */
-    ENGINE_CALLBACK_INFO = 36,
+    ENGINE_CALLBACK_INFO = 35,
 
     /*!
      * Show a message as an error.
      * @param valueStr The message
      */
-    ENGINE_CALLBACK_ERROR = 37,
+    ENGINE_CALLBACK_ERROR = 36,
 
     /*!
      * The engine has crashed or malfunctioned and will no longer work.
      */
-    ENGINE_CALLBACK_QUIT = 38
+    ENGINE_CALLBACK_QUIT = 37
 
 } EngineCallbackOpcode;
 

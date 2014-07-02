@@ -863,17 +863,6 @@ def renamePort(group_id, port_id, new_port_name):
 
     qCritical("PatchCanvas::renamePort(%i, %i, %s) - Unable to find port to rename" % (group_id, port_id, new_port_name.encode()))
 
-def setPortValue(group_id, port_id, value):
-    if canvas.debug:
-        qDebug("PatchCanvas::setPortValue(%i, %i, %f)" % (group_id, port_id, value))
-
-    for port in canvas.port_list:
-        if port.group_id == group_id and port.port_id == port_id:
-            port.widget.setPortValue(value)
-            return
-
-    qCritical("PatchCanvas::setPortValue(%i, %i, %f) - Unable to find port" % (group_id, port_id, value))
-
 def connectPorts(connection_id, group_out_id, port_out_id, group_in_id, port_in_id):
     if canvas.debug:
         qDebug("PatchCanvas::connectPorts(%i, %i, %i, %i, %i)" % (connection_id, group_out_id, port_out_id, group_in_id, port_in_id))
@@ -1787,8 +1776,6 @@ class CanvasPort(QGraphicsItem):
         self.m_port_font.setPixelSize(canvas.theme.port_font_size)
         self.m_port_font.setWeight(canvas.theme.port_font_state)
 
-        self.m_port_value = 1.0
-
         self.m_line_mov = None
         self.m_hover_item = None
         self.m_last_selected_state = False
@@ -1828,13 +1815,6 @@ class CanvasPort(QGraphicsItem):
 
     def setPortType(self, port_type):
         self.m_port_type = port_type
-        self.update()
-
-    def setPortValue(self, value):
-        if self.m_port_value == value:
-            return
-
-        self.m_port_value = value
         self.update()
 
     def setPortName(self, port_name):
@@ -2081,39 +2061,15 @@ class CanvasPort(QGraphicsItem):
         polygon += QPointF(poly_locx[3], canvas.theme.port_height)
         polygon += QPointF(poly_locx[4], canvas.theme.port_height)
 
-        if self.m_port_value == 1.0 or canvas.theme.port_bg_pixmap:
-            # normal paint
-            if canvas.theme.port_bg_pixmap:
-                portRect = polygon.boundingRect()
-                portPos  = portRect.topLeft()
-                painter.drawTiledPixmap(portRect, canvas.theme.port_bg_pixmap, portPos)
-            else:
-                painter.setBrush(poly_color) #.lighter(200))
-
-            painter.setPen(poly_pen)
-            painter.drawPolygon(polygon)
-
+        if canvas.theme.port_bg_pixmap:
+            portRect = polygon.boundingRect()
+            portPos  = portRect.topLeft()
+            painter.drawTiledPixmap(portRect, canvas.theme.port_bg_pixmap, portPos)
         else:
-            # incomplete paint
-            painter.setPen(poly_pen)
-            painter.drawPolygon(polygon)
+            painter.setBrush(poly_color) #.lighter(200))
 
-            sub  = QPolygonF()
-
-            if self.m_port_mode == PORT_MODE_INPUT:
-                sub += QPointF(poly_locx[0], 0)
-                sub += QPointF(poly_locx[2]*self.m_port_value, 0)
-                sub += QPointF(poly_locx[2]*self.m_port_value, canvas.theme.port_height)
-                sub += QPointF(poly_locx[0], canvas.theme.port_height)
-            else:
-                sub += QPointF(poly_locx[2], 0)
-                sub += QPointF(poly_locx[0]*self.m_port_value, 0)
-                sub += QPointF(poly_locx[0]*self.m_port_value, canvas.theme.port_height)
-                sub += QPointF(poly_locx[2], canvas.theme.port_height)
-
-            painter.setBrush(poly_color)
-            painter.setPen(poly_pen)
-            painter.drawPolygon(polygon.intersected(sub))
+        painter.setPen(poly_pen)
+        painter.drawPolygon(polygon)
 
         painter.setPen(text_pen)
         painter.setFont(self.m_port_font)

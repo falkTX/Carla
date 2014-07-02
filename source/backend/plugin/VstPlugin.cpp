@@ -2384,7 +2384,7 @@ private:
             : numEvents(0),
               reserved(0)
         {
-            carla_fill<VstEvent*>(data, kPluginMaxMidiEvents*2, nullptr);
+            carla_fill<VstEvent*>(data, nullptr, kPluginMaxMidiEvents*2);
         }
     } fEvents;
 

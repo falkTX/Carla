@@ -32,8 +32,8 @@
 #endif
 
 /* Set Version */
-#define CARLA_VERSION_HEX    0x01093
-#define CARLA_VERSION_STRING "1.9.3 (2.0-beta1)"
+#define CARLA_VERSION_HEX    0x01094
+#define CARLA_VERSION_STRING "1.9.4 (2.0-beta2)"
 
 /* Check OS */
 #if defined(WIN64) || defined(_WIN64) || defined(__WIN64__)
@@ -52,7 +52,7 @@
 
 #if defined(CARLA_OS_WIN32) || defined(CARLA_OS_WIN64)
 # define CARLA_OS_WIN
-#elif ! defined(CARLA_OS_HAIKU)
+#elif defined(CARLA_OS_LINUX) || defined(CARLA_OS_MAC)
 # define CARLA_OS_UNIX
 #endif
 
@@ -60,20 +60,20 @@
 #if defined(HAVE_CPP11_SUPPORT)
 # define CARLA_PROPER_CPP11_SUPPORT
 #elif defined(__cplusplus)
-# if __cplusplus >= 201103L || (defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 405) || __has_extension(cxx_noexcept)
+# if __cplusplus >= 201103L || (defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 405 && defined(__GXX_EXPERIMENTAL_CXX0X__)) || __has_extension(cxx_noexcept)
 #  define CARLA_PROPER_CPP11_SUPPORT
-#  if (defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) < 407) && ! __has_extension(cxx_override_control)
+#  if (defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) < 407) || (defined(__CLANG__) && ! __has_extension(cxx_override_control))
 #   define override // gcc4.7+ only
 #   define final    // gcc4.7+ only
 #  endif
 # endif
 #endif
 
-#if defined(__cplusplus) && !defined(CARLA_PROPER_CPP11_SUPPORT)
+#if defined(__cplusplus) && ! defined(CARLA_PROPER_CPP11_SUPPORT)
 # define noexcept throw()
 # define override
 # define final
-# define nullptr (0)
+# define nullptr NULL
 #endif
 
 /* Common includes */
@@ -87,21 +87,25 @@
 /* Define various string format types */
 #if defined(CARLA_OS_WIN64)
 # define P_INT64   "%I64i"
+# define P_UINT64  "%I64u"
 # define P_INTPTR  "%I64i"
 # define P_UINTPTR "%I64x"
 # define P_SIZE    "%I64u"
 #elif defined(CARLA_OS_WIN32)
 # define P_INT64   "%I64i"
+# define P_UINT64  "%I64u"
 # define P_INTPTR  "%i"
 # define P_UINTPTR "%x"
 # define P_SIZE    "%u"
 #elif defined(__WORDSIZE) && __WORDSIZE == 64
 # define P_INT64   "%li"
+# define P_UINT64  "%lu"
 # define P_INTPTR  "%li"
 # define P_UINTPTR "%lx"
 # define P_SIZE    "%lu"
 #else
 # define P_INT64   "%lli"
+# define P_UINT64  "%llu"
 # define P_INTPTR  "%i"
 # define P_UINTPTR "%x"
 # define P_SIZE    "%u"

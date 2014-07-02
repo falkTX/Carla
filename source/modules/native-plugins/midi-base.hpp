@@ -37,7 +37,7 @@ struct RawMidiEvent {
         : time(0),
           size(0)
     {
-        carla_fill<uint8_t>(data, MAX_EVENT_DATA_SIZE, 0);
+        carla_fill<uint8_t>(data, 0, MAX_EVENT_DATA_SIZE);
     }
 };
 

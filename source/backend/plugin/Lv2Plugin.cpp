@@ -404,7 +404,7 @@ public:
     {
         carla_debug("Lv2Plugin::Lv2Plugin(%p, %i)", engine, id);
 
-        carla_fill<LV2_Feature*>(fFeatures, kFeatureCountAll+1, nullptr);
+        carla_fill<LV2_Feature*>(fFeatures, nullptr, kFeatureCountAll+1);
 
         for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; ++i)
             fCustomURIDs.append(nullptr);
@@ -2188,8 +2188,8 @@ public:
         {
             // we need to pre-run the plugin so it can update its latency control-port
 
-            float tmpIn[aIns][2];
-            float tmpOut[aOuts][2];
+            float tmpIn [(aIns > 0)  ? aIns  : 1][2];
+            float tmpOut[(aOuts > 0) ? aOuts : 1][2];
 
             for (uint32_t j=0; j < aIns; ++j)
             {

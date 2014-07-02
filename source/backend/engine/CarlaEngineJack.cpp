@@ -798,7 +798,7 @@ public:
 #ifdef BUILD_BRIDGE
         pData->options.processMode = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS;
 #else
-        carla_fill<jack_port_t*>(fRackPorts, kRackPortCount, nullptr);
+        carla_fill<jack_port_t*>(fRackPorts, nullptr, kRackPortCount);
 #endif
 
         // FIXME: Always enable JACK transport for now
@@ -951,7 +951,7 @@ public:
                 jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioOut2]);
                 jackbridge_port_unregister(fClient, fRackPorts[kRackPortEventIn]);
                 jackbridge_port_unregister(fClient, fRackPorts[kRackPortEventOut]);
-                carla_fill<jack_port_t*>(fRackPorts, kRackPortCount, nullptr);
+                carla_fill<jack_port_t*>(fRackPorts, nullptr, kRackPortCount);
             }
 
             if (jackbridge_client_close(fClient))
@@ -1770,7 +1770,7 @@ protected:
         }
 
 #ifndef BUILD_BRIDGE
-        carla_fill<jack_port_t*>(fRackPorts, kRackPortCount, nullptr);
+        carla_fill<jack_port_t*>(fRackPorts, nullptr, kRackPortCount);
 #endif
 
         fClient = nullptr;

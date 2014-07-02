@@ -82,12 +82,13 @@ source/bridges/jackplugin/libjack.so.0
 source/frontend/Makefile
 source/tests/ansi-pedantic-test_*
 source/tests/CarlaString
+source/tests/CarlaUtils
+
 source/tests/EngineEvents
 source/tests/PipeServer
 source/tests/Print
 source/tests/RtLinkedList
 source/tests/RtLinkedListGnu
-source/tests/Utils
 
 # Docs
 doc/CarlaBackend/

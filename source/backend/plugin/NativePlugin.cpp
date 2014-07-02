@@ -148,7 +148,7 @@ public:
     {
         carla_debug("NativePlugin::NativePlugin(%p, %i)", engine, id);
 
-        carla_fill<int32_t>(fCurMidiProgs, MAX_MIDI_CHANNELS, 0);
+        carla_fill<int32_t>(fCurMidiProgs, 0, MAX_MIDI_CHANNELS);
         carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kPluginMaxMidiEvents*2);
         carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
 
@@ -1164,8 +1164,7 @@ public:
             for (i=0; i < count; ++i)
             {
                 const NativeMidiProgram* const mpDesc(fDescriptor->get_midi_program_info(fHandle, i));
-                CARLA_ASSERT(mpDesc != nullptr);
-                CARLA_ASSERT(mpDesc->name != nullptr);
+                CARLA_SAFE_ASSERT_CONTINUE(mpDesc != nullptr);
 
                 pData->midiprog.data[i].bank    = mpDesc->bank;
                 pData->midiprog.data[i].program = mpDesc->program;

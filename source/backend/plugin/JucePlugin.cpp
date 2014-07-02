@@ -317,7 +317,7 @@ public:
         fInstance->refreshParameterList();
 
         uint32_t aIns, aOuts, mIns, mOuts, params;
-        aIns = aOuts = mIns = mOuts = params = 0;
+        mIns = mOuts = 0;
 
         bool needsCtrlIn, needsCtrlOut;
         needsCtrlIn = needsCtrlOut = false;

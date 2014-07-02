@@ -67,89 +67,29 @@ class PluginInfo(object):
     def __init__(self, parent, pluginId):
         object.__init__(self)
 
-        self.fGroupId  = None
         self.fPluginId = pluginId
-
-        self.fParameterList = [] # type, index, min, max
-
-        self.reloadParameters()
-
-    def close(self):
-        for paramType, paramIndex, paramMin, paramMax in self.fParameterList:
-            patchcanvas.removePort(self.fGroupId, -paramIndex-1)
-
-    #------------------------------------------------------------------
-
-    def reloadAll(self):
-        self.reloadParameters()
-
-    def reloadParameters(self):
-        # TODO
-        return
-
-        # Remove all previous parameters
-        self.close()
-
-        hasGroup, groupId = patchcanvas.getPluginAsGroup(self.fPluginId)
-
-        if not hasGroup:
-            self.fGroupId = None
-            return
-
-        self.fGroupId = groupId
-
-        # Reset
-        self.fParameterList = []
-
-        if gCarla.host is None:
-            return
-
-        parameterCount = gCarla.host.get_parameter_count(self.fPluginId)
-
-        if parameterCount <= 0 or parameterCount > 25:
-            return
-
-        for i in range(parameterCount):
-            paramInfo   = gCarla.host.get_parameter_info(self.fPluginId, i)
-            paramData   = gCarla.host.get_parameter_data(self.fPluginId, i)
-            paramRanges = gCarla.host.get_parameter_ranges(self.fPluginId, i)
-            paramValue  = gCarla.host.get_current_parameter_value(self.fPluginId, i)
-
-            if paramData['type'] not in (PARAMETER_INPUT, PARAMETER_OUTPUT):
-            #if paramData['type'] != PARAMETER_INPUT:
-                continue
-            if (paramData['hints'] & PARAMETER_IS_AUTOMABLE) == 0:
-                continue
-
-            portId    = -i-1
-            portMode  = patchcanvas.PORT_MODE_OUTPUT if paramData['type'] == PARAMETER_OUTPUT else patchcanvas.PORT_MODE_INPUT
-            portValue = (paramValue - paramRanges['min']) / (paramRanges['max'] - paramRanges['min'])
-            patchcanvas.addPort(groupId, portId, paramInfo['name'], portMode, patchcanvas.PORT_TYPE_PARAMETER)
-            patchcanvas.setPortValue(groupId, portId, portValue)
-
-            self.fParameterList.append((paramData['type'], i, paramRanges['min'], paramRanges['max']))
 
     #------------------------------------------------------------------
 
     def setId(self, idx):
         self.fPluginId = idx
 
-    def setParameterValue(self, parameterId, value):
-        if self.fGroupId is None:
-            return
-
-        paramRanges = gCarla.host.get_parameter_ranges(self.fPluginId, parameterId)
-        portValue   = (value - paramRanges['min']) / (paramRanges['max'] - paramRanges['min'])
-        patchcanvas.setPortValue(self.fGroupId, -parameterId-1, portValue)
-
     #------------------------------------------------------------------
 
+    def close(self):
+        pass
+
+    def setName(self, name):
+        pass
+
+    def setParameterValue(self, parameterId, value):
+        pass
+
+    def reloadAll(self):
+        pass
+
     def idleSlow(self):
-        # Update parameter outputs
-        for paramType, paramIndex, paramMin, paramMax in self.fParameterList:
-            if paramType == PARAMETER_OUTPUT:
-                portValue = (gCarla.host.get_current_parameter_value(self.fPluginId, paramIndex) - paramMin) / (paramMax - paramMin)
-                patchcanvas.setPortValue(self.fGroupId, -paramIndex-1, portValue)
+        pass
 
 # ------------------------------------------------------------------------------------------------
 # Patchbay widget
@@ -299,7 +239,6 @@ class CarlaPatchbayW(QFrame):
         parent.PatchbayPortAddedCallback.connect(self.slot_handlePatchbayPortAddedCallback)
         parent.PatchbayPortRemovedCallback.connect(self.slot_handlePatchbayPortRemovedCallback)
         parent.PatchbayPortRenamedCallback.connect(self.slot_handlePatchbayPortRenamedCallback)
-        parent.PatchbayPortValueChangedCallback.connect(self.slot_handlePatchbayPortValueChangedCallback)
         parent.PatchbayConnectionAddedCallback.connect(self.slot_handlePatchbayConnectionAddedCallback)
         parent.PatchbayConnectionRemovedCallback.connect(self.slot_handlePatchbayConnectionRemovedCallback)
 
@@ -453,6 +392,12 @@ class CarlaPatchbayW(QFrame):
         pass
 
     def recheckPluginHints(self, hints):
+        pass
+
+    def notePressed(self, note):
+        pass
+
+    def noteReleased(self, note):
         pass
 
     # -----------------------------------------------------------------
@@ -971,10 +916,6 @@ class CarlaPatchbayW(QFrame):
     def slot_handlePatchbayPortRenamedCallback(self, groupId, portId, newPortName):
         patchcanvas.renamePort(groupId, portId, newPortName)
         QTimer.singleShot(0, self.fMiniCanvasPreview.update)
-
-    @pyqtSlot(int, int, float)
-    def slot_handlePatchbayPortValueChangedCallback(self, groupId, portId, value):
-        patchcanvas.setPortValue(groupId, portId, value)
 
     @pyqtSlot(int, int, int, int, int)
     def slot_handlePatchbayConnectionAddedCallback(self, connectionId, groupOutId, portOutId, groupInId, portInId):

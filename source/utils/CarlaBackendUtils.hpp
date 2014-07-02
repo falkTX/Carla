@@ -27,7 +27,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 
 static inline
-const char* PluginOption2Str(const unsigned int option) noexcept
+const char* PluginOption2Str(const uint option) noexcept
 {
     switch (option)
     {
@@ -253,8 +253,6 @@ const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode) noexcept
         return "ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED";
     case ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED:
         return "ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED";
-    case ENGINE_CALLBACK_PATCHBAY_PORT_VALUE_CHANGED:
-        return "ENGINE_CALLBACK_PATCHBAY_PORT_VALUE_CHANGED";
     case ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED:
         return "ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED";
     case ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED:
@@ -370,8 +368,6 @@ const char* EngineTransportMode2Str(const EngineTransportMode mode) noexcept
     return nullptr;
 }
 
-// -----------------------------------------------------------------------
-
 static inline
 const char* FileCallbackOpcode2Str(const FileCallbackOpcode opcode) noexcept
 {
@@ -386,6 +382,29 @@ const char* FileCallbackOpcode2Str(const FileCallbackOpcode opcode) noexcept
     }
 
     carla_stderr("CarlaBackend::FileCallbackOpcode2Str(%i) - invalid opcode", opcode);
+    return nullptr;
+}
+
+static inline
+const char* PatchbayIcon2Str(const PatchbayIcon icon) noexcept
+{
+    switch (icon)
+    {
+    case PATCHBAY_ICON_APPLICATION:
+        return "PATCHBAY_ICON_APPLICATION";
+    case PATCHBAY_ICON_PLUGIN:
+        return "PATCHBAY_ICON_PLUGIN";
+    case PATCHBAY_ICON_HARDWARE:
+        return "PATCHBAY_ICON_HARDWARE";
+    case PATCHBAY_ICON_CARLA:
+        return "PATCHBAY_ICON_CARLA";
+    case PATCHBAY_ICON_DISTRHO:
+        return "PATCHBAY_ICON_DISTRHO";
+    case PATCHBAY_ICON_FILE:
+        return "PATCHBAY_ICON_FILE";
+    }
+
+    carla_stderr("CarlaBackend::PatchbayIcon2Str(%i) - invalid icon", icon);
     return nullptr;
 }
 

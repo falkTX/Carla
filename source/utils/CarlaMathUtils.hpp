@@ -54,6 +54,25 @@ const T& carla_min(const T& v1, const T& v2, const T& min) noexcept
 }
 
 /*
+ * Return the lower positive of 2 values.
+ * If one of the values is zero, returns zero.
+ * If one value is negative but the other positive, returns the positive.
+ * Returned value is guaranteed to be >= 0.
+ */
+template<typename T>
+static inline
+T carla_minPositive(const T& v1, const T& v2) noexcept
+{
+    if (v1 == 0 || v2 == 0)
+        return 0;
+    if (v1 < 0)
+        return (v2 > 0) ? v2 : 0;
+    if (v2 < 0)
+        return (v1 > 0) ? v1 : 0;
+    return (v1 < v2 ? v1 : v2);
+}
+
+/*
  * Return the higher of 2 values, with 'max' as the maximum possible value.
  */
 template<typename T>

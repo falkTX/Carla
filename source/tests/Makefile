@@ -6,19 +6,19 @@
 
 # --------------------------------------------------------------
 
-BASE_FLAGS  = -Wall -Wextra -Werror -fPIC -DPIC -pipe -DREAL_BUILD
-BASE_FLAGS += -Wcast-qual -Wconversion -Wlogical-op
-BASE_FLAGS += -Wsign-conversion -Wuninitialized -Wunused-parameter
-BASE_FLAGS += -DDEBUG -O0 -g
-BASE_FLAGS += -I. -I../backend -I../includes -I../utils
-BASE_FLAGS += -isystem ../modules
+BASE_FLAGS  = -Wall -Wextra -Werror -fPIC -DPIC -pipe -DREAL_BUILD -DDEBUG -O0 -g
+BASE_FLAGS += -I. -I../backend -I../includes -I../utils -isystem ../modules
+BASE_FLAGS += -Wcast-align -Wcast-qual -Wconversion -Wmissing-declarations -Wsign-conversion -Wuninitialized -Wunused-parameter
+BASE_FLAGS += -Wformat -Wformat-security -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wundef -Wwrite-strings
+ifneq ($(CC),clang-3.4)
+BASE_FLAGS += -Wlogical-op
+endif
 
 # --------------------------------------------------------------
 
 ANSI_FLAGS  = $(BASE_FLAGS) -DBUILD_ANSI_TEST
 ANSI_FLAGS += -ansi -pedantic -pedantic-errors -Waggregate-return
-ANSI_FLAGS += -I../backend -I../includes
-ANSI_FLAGS += -L../backend -lcarla_standalone2
+# ANSI_FLAGS += -L../backend -lcarla_standalone2
 
 # --------------------------------------------------------------
 
@@ -28,13 +28,22 @@ GNU_CXX_FLAGS += -std=c++11 -std=gnu++11 -Wzero-as-null-pointer-constant
 # --------------------------------------------------------------
 
 PEDANTIC_CXX_FLAGS  = $(BASE_FLAGS)
-PEDANTIC_CXX_FLAGS += -std=c++11 -pedantic -pedantic-errors -Wzero-as-null-pointer-constant -Wno-vla
+PEDANTIC_CXX_FLAGS += -std=c++11 -pedantic -pedantic-errors
 PEDANTIC_CXX_FLAGS += -isystem /opt/kxstudio/include
+PEDANTIC_CXX_FLAGS += -Wno-vla -Wno-vla-extension
+ifeq ($(CC),clang-3.4)
+PEDANTIC_CXX_FLAGS += -Wno-vla-extension
+else
+PEDANTIC_CXX_FLAGS += -Wunsafe-loop-optimizations -Wzero-as-null-pointer-constant
+endif
 
 # --------------------------------------------------------------
 
-TARGETS  = ansi-pedantic-test_c ansi-pedantic-test_c99 ansi-pedantic-test_cxx ansi-pedantic-test_cxx11
-TARGETS += CarlaString EngineEvents PipeServer Print RtLinkedList RtLinkedListGnu Utils
+TARGETS  = ansi-pedantic-test_c ansi-pedantic-test_c99
+TARGETS += CarlaString CarlaUtils
+
+# ansi-pedantic-test_cxx ansi-pedantic-test_cxx11
+# TARGETS +=  EngineEvents PipeServer Print RtLinkedList RtLinkedListGnu Utils
 
 all: $(TARGETS)
 
@@ -44,13 +53,23 @@ ansi-pedantic-test_c: ansi-pedantic-test.c ../backend/Carla*.h
 	$(CC) $< $(ANSI_FLAGS) -Wc++-compat -o $@
 
 ansi-pedantic-test_c99: ansi-pedantic-test.c ../backend/Carla*.h
-	$(CC) $< $(ANSI_FLAGS) -std=c99 -Wc++-compat -o $@
+	$(CC) $< $(ANSI_FLAGS) -std=c99 -pedantic -pedantic-errors -Wc++-compat -o $@
 
-ansi-pedantic-test_cxx: ansi-pedantic-test.c ../backend/Carla*.h
+ansi-pedantic-test_cxx: ansi-pedantic-test.cpp ../backend/Carla*.h
 	$(CXX) $< $(ANSI_FLAGS) -o $@
 
-ansi-pedantic-test_cxx11: ansi-pedantic-test.c ../backend/Carla*.h
-	$(CXX) $< $(ANSI_FLAGS) -std=c++11 -Wzero-as-null-pointer-constant -o $@
+ansi-pedantic-test_cxx11: ansi-pedantic-test.cpp ../backend/Carla*.h
+	$(CXX) $< $(ANSI_FLAGS) -std=c++11 -pedantic -pedantic-errors -o $@
+
+# --------------------------------------------------------------
+
+CarlaString: CarlaString.cpp ../utils/CarlaString.hpp
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
+	valgrind --leak-check=full ./$@
+
+CarlaUtils: CarlaUtils.cpp ../utils/*.hpp
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
+	valgrind --leak-check=full ./$@
 
 # --------------------------------------------------------------
 
@@ -60,10 +79,6 @@ ChildProcess: ChildProcess.cpp
 
 CarlaMutex: CarlaMutex.cpp ../utils/CarlaMutex.hpp
 	$(CXX) $< -lpthread -o $@
-	valgrind --leak-check=full ./$@
-
-CarlaString: CarlaString.cpp ../utils/CarlaString.hpp
-	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
 	valgrind --leak-check=full ./$@
 
 Engine: Engine.cpp
@@ -99,10 +114,6 @@ RtLinkedList: RtLinkedList.cpp ../utils/LinkedList.hpp ../utils/RtLinkedList.hpp
 
 RtLinkedListGnu: RtLinkedList.cpp ../utils/LinkedList.hpp ../utils/RtLinkedList.hpp ../modules/rtmempool.a
 	$(CXX) $< ../modules/rtmempool.a $(GNU_CXX_FLAGS) -lpthread -o $@
-	valgrind ./$@
-
-Utils: Utils.cpp ../utils/*.hpp
-	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -ldl -lpthread -o $@
 	valgrind ./$@
 
 # --------------------------------------------------------------

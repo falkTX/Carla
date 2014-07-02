@@ -1,0 +1,1 @@
+ansi-pedantic-test.c

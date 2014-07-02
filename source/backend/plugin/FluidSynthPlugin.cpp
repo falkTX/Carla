@@ -53,7 +53,7 @@ public:
         carla_debug("FluidSynthPlugin::FluidSynthPlugin(%p, %i, %s)", engine, id,  bool2str(use16Outs));
 
         FLOAT_CLEAR(fParamBuffers, FluidSynthParametersMax);
-        carla_fill<int32_t>(fCurMidiProgs, MAX_MIDI_CHANNELS, 0);
+        carla_fill<int32_t>(fCurMidiProgs, 0, MAX_MIDI_CHANNELS);
 
         // create settings
         fSettings = new_fluid_settings();

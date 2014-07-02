@@ -1,6 +1,6 @@
 /*
- * ANSI pedantic test for the Carla Backend API
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * ANSI pedantic test for the Carla Backend & Host API
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -43,6 +43,7 @@ int main(int argc, char* argv[])
     CarlaScalePointInfo j;
     CarlaTransportInfo k;
 
+#if 0
     const char* licenseText;
     const char* fileExtensions;
 
@@ -79,7 +80,7 @@ int main(int argc, char* argv[])
 
     if (carla_engine_init("JACK", "ansi-test"))
     {
-        if (carla_add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, NULL, NULL, "audiofile", NULL))
+        if (carla_add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, NULL, NULL, "audiofile", 0, NULL))
         {
             carla_set_custom_data(0, CUSTOM_DATA_TYPE_STRING, "file", "/home/falktx/Music/test.wav");
             carla_transport_play();
@@ -91,6 +92,7 @@ int main(int argc, char* argv[])
 
         carla_engine_close();
     }
+#endif
 
     return 0;
 
