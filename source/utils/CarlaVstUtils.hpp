@@ -1,6 +1,6 @@
 /*
  * Carla VST utils
- * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -143,6 +143,9 @@ typedef AEffect* (*VST_Function)(audioMasterCallback);
 static inline
 bool vstPluginCanDo(AEffect* const effect, const char* const feature) noexcept
 {
+    CARLA_SAFE_ASSERT_RETURN(effect != nullptr, false);
+    CARLA_SAFE_ASSERT_RETURN(feature != nullptr && feature[0] != '\0', false);
+
     try {
         return (effect->dispatcher(effect, effCanDo, 0, 0, const_cast<char*>(feature), 0.0f) == 1);
     } CARLA_SAFE_EXCEPTION_RETURN("vstPluginCanDo", false);
@@ -174,10 +177,8 @@ const char* vstEffectOpcode2str(const int32_t opcode) noexcept
         return "effGetParamDisplay";
     case effGetParamName:
         return "effGetParamName";
-#if ! VST_FORCE_DEPRECATED
-    case effGetVu:
+    case DECLARE_VST_DEPRECATED(effGetVu):
         return "effGetVu";
-#endif
     case effSetSampleRate:
         return "effSetSampleRate";
     case effSetBlockSize:
@@ -190,24 +191,20 @@ const char* vstEffectOpcode2str(const int32_t opcode) noexcept
         return "effEditOpen";
     case effEditClose:
         return "effEditClose";
-#if ! VST_FORCE_DEPRECATED
-    case effEditDraw:
+    case DECLARE_VST_DEPRECATED(effEditDraw):
         return "effEditDraw";
-    case effEditMouse:
+    case DECLARE_VST_DEPRECATED(effEditMouse):
         return "effEditMouse";
-    case effEditKey:
+    case DECLARE_VST_DEPRECATED(effEditKey):
         return "effEditKey";
-#endif
     case effEditIdle:
         return "effEditIdle";
-#if ! VST_FORCE_DEPRECATED
-    case effEditTop:
+    case DECLARE_VST_DEPRECATED(effEditTop):
         return "effEditTop";
-    case effEditSleep:
+    case DECLARE_VST_DEPRECATED(effEditSleep):
         return "effEditSleep";
-    case effIdentify:
+    case DECLARE_VST_DEPRECATED(effIdentify):
         return "effIdentify";
-#endif
     case effGetChunk:
         return "effGetChunk";
     case effSetChunk:
@@ -218,32 +215,26 @@ const char* vstEffectOpcode2str(const int32_t opcode) noexcept
         return "effCanBeAutomated";
     case effString2Parameter:
         return "effString2Parameter";
-#if ! VST_FORCE_DEPRECATED
-    case effGetNumProgramCategories:
+    case DECLARE_VST_DEPRECATED(effGetNumProgramCategories):
         return "effGetNumProgramCategories";
-#endif
     case effGetProgramNameIndexed:
         return "effGetProgramNameIndexed";
-#if ! VST_FORCE_DEPRECATED
-    case effCopyProgram:
+    case DECLARE_VST_DEPRECATED(effCopyProgram):
         return "effCopyProgram";
-    case effConnectInput:
+    case DECLARE_VST_DEPRECATED(effConnectInput):
         return "effConnectInput";
-    case effConnectOutput:
+    case DECLARE_VST_DEPRECATED(effConnectOutput):
         return "effConnectOutput";
-#endif
     case effGetInputProperties:
         return "effGetInputProperties";
     case effGetOutputProperties:
         return "effGetOutputProperties";
     case effGetPlugCategory:
         return "effGetPlugCategory";
-#if ! VST_FORCE_DEPRECATED
-    case effGetCurrentPosition:
+    case DECLARE_VST_DEPRECATED(effGetCurrentPosition):
         return "effGetCurrentPosition";
-    case effGetDestinationBuffer:
+    case DECLARE_VST_DEPRECATED(effGetDestinationBuffer):
         return "effGetDestinationBuffer";
-#endif
     case effOfflineNotify:
         return "effOfflineNotify";
     case effOfflinePrepare:
@@ -254,18 +245,14 @@ const char* vstEffectOpcode2str(const int32_t opcode) noexcept
         return "effProcessVarIo";
     case effSetSpeakerArrangement:
         return "effSetSpeakerArrangement";
-#if ! VST_FORCE_DEPRECATED
-    case effSetBlockSizeAndSampleRate:
+    case DECLARE_VST_DEPRECATED(effSetBlockSizeAndSampleRate):
         return "effSetBlockSizeAndSampleRate";
-#endif
     case effSetBypass:
         return "effSetBypass";
     case effGetEffectName:
         return "effGetEffectName";
-#if ! VST_FORCE_DEPRECATED
-    case effGetErrorText:
+    case DECLARE_VST_DEPRECATED(effGetErrorText):
         return "effGetErrorText";
-#endif
     case effGetVendorString:
         return "effGetVendorString";
     case effGetProductString:
@@ -278,20 +265,16 @@ const char* vstEffectOpcode2str(const int32_t opcode) noexcept
         return "effCanDo";
     case effGetTailSize:
         return "effGetTailSize";
-#if ! VST_FORCE_DEPRECATED
-    case effIdle:
+    case DECLARE_VST_DEPRECATED(effIdle):
         return "effIdle";
-    case effGetIcon:
+    case DECLARE_VST_DEPRECATED(effGetIcon):
         return "effGetIcon";
-    case effSetViewPosition:
+    case DECLARE_VST_DEPRECATED(effSetViewPosition):
         return "effSetViewPosition";
-#endif
     case effGetParameterProperties:
         return "effGetParameterProperties";
-#if ! VST_FORCE_DEPRECATED
-    case effKeysRequired:
+    case DECLARE_VST_DEPRECATED(effKeysRequired):
         return "effKeysRequired";
-#endif
     case effGetVstVersion:
         return "effGetVstVersion";
     case effEditKeyDown:
@@ -357,32 +340,26 @@ const char* vstMasterOpcode2str(const int32_t opcode) noexcept
         return "audioMasterCurrentId";
     case audioMasterIdle:
         return "audioMasterIdle";
-#if ! VST_FORCE_DEPRECATED
-    case audioMasterPinConnected:
+    case DECLARE_VST_DEPRECATED(audioMasterPinConnected):
         return "audioMasterPinConnected";
-    case audioMasterWantMidi:
+    case DECLARE_VST_DEPRECATED(audioMasterWantMidi):
         return "audioMasterWantMidi";
-#endif
     case audioMasterGetTime:
         return "audioMasterGetTime";
     case audioMasterProcessEvents:
         return "audioMasterProcessEvents";
-#if ! VST_FORCE_DEPRECATED
-    case audioMasterSetTime:
+    case DECLARE_VST_DEPRECATED(audioMasterSetTime):
         return "audioMasterSetTime";
-    case audioMasterTempoAt:
+    case DECLARE_VST_DEPRECATED(audioMasterTempoAt):
         return "audioMasterTempoAt";
-    case audioMasterGetNumAutomatableParameters:
+    case DECLARE_VST_DEPRECATED(audioMasterGetNumAutomatableParameters):
         return "audioMasterGetNumAutomatableParameters";
-    case audioMasterGetParameterQuantization:
+    case DECLARE_VST_DEPRECATED(audioMasterGetParameterQuantization):
         return "audioMasterGetParameterQuantization";
-#endif
     case audioMasterIOChanged:
         return "audioMasterIOChanged";
-#if ! VST_FORCE_DEPRECATED
-    case audioMasterNeedIdle:
+    case DECLARE_VST_DEPRECATED(audioMasterNeedIdle):
         return "audioMasterNeedIdle";
-#endif
     case audioMasterSizeWindow:
         return "audioMasterSizeWindow";
     case audioMasterGetSampleRate:
@@ -393,14 +370,12 @@ const char* vstMasterOpcode2str(const int32_t opcode) noexcept
         return "audioMasterGetInputLatency";
     case audioMasterGetOutputLatency:
         return "audioMasterGetOutputLatency";
-#if ! VST_FORCE_DEPRECATED
-    case audioMasterGetPreviousPlug:
+    case DECLARE_VST_DEPRECATED(audioMasterGetPreviousPlug):
         return "audioMasterGetPreviousPlug";
-    case audioMasterGetNextPlug:
+    case DECLARE_VST_DEPRECATED(audioMasterGetNextPlug):
         return "audioMasterGetNextPlug";
-    case audioMasterWillReplaceOrAccumulate:
+    case DECLARE_VST_DEPRECATED(audioMasterWillReplaceOrAccumulate):
         return "audioMasterWillReplaceOrAccumulate";
-#endif
     case audioMasterGetCurrentProcessLevel:
         return "audioMasterGetCurrentProcessLevel";
     case audioMasterGetAutomationState:
@@ -415,12 +390,10 @@ const char* vstMasterOpcode2str(const int32_t opcode) noexcept
         return "audioMasterOfflineGetCurrentPass";
     case audioMasterOfflineGetCurrentMetaPass:
         return "audioMasterOfflineGetCurrentMetaPass";
-#if ! VST_FORCE_DEPRECATED
-    case audioMasterSetOutputSampleRate:
+    case DECLARE_VST_DEPRECATED(audioMasterSetOutputSampleRate):
         return "audioMasterSetOutputSampleRate";
-    case audioMasterGetOutputSpeakerArrangement:
+    case DECLARE_VST_DEPRECATED(audioMasterGetOutputSpeakerArrangement):
         return "audioMasterGetOutputSpeakerArrangement";
-#endif
     case audioMasterGetVendorString:
         return "audioMasterGetVendorString";
     case audioMasterGetProductString:
@@ -429,20 +402,16 @@ const char* vstMasterOpcode2str(const int32_t opcode) noexcept
         return "audioMasterGetVendorVersion";
     case audioMasterVendorSpecific:
         return "audioMasterVendorSpecific";
-#if ! VST_FORCE_DEPRECATED
-    case audioMasterSetIcon:
+    case DECLARE_VST_DEPRECATED(audioMasterSetIcon):
         return "audioMasterSetIcon";
-#endif
     case audioMasterCanDo:
         return "audioMasterCanDo";
     case audioMasterGetLanguage:
         return "audioMasterGetLanguage";
-#if ! VST_FORCE_DEPRECATED
-    case audioMasterOpenWindow:
+    case DECLARE_VST_DEPRECATED(audioMasterOpenWindow):
         return "audioMasterOpenWindow";
-    case audioMasterCloseWindow:
+    case DECLARE_VST_DEPRECATED(audioMasterCloseWindow):
         return "audioMasterCloseWindow";
-#endif
     case audioMasterGetDirectory:
         return "audioMasterGetDirectory";
     case audioMasterUpdateDisplay:
@@ -455,14 +424,12 @@ const char* vstMasterOpcode2str(const int32_t opcode) noexcept
         return "audioMasterOpenFileSelector";
     case audioMasterCloseFileSelector:
         return "audioMasterCloseFileSelector";
-#if ! VST_FORCE_DEPRECATED
-    case audioMasterEditFile:
+    case DECLARE_VST_DEPRECATED(audioMasterEditFile):
         return "audioMasterEditFile";
-    case audioMasterGetChunkFile:
+    case DECLARE_VST_DEPRECATED(audioMasterGetChunkFile):
         return "audioMasterGetChunkFile";
-    case audioMasterGetInputSpeakerArrangement:
+    case DECLARE_VST_DEPRECATED(audioMasterGetInputSpeakerArrangement):
         return "audioMasterGetInputSpeakerArrangement";
-#endif
     default:
         return "unknown";
     }

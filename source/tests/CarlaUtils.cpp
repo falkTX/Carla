@@ -33,6 +33,7 @@
 #include "CarlaLadspaUtils.hpp"
 #include "CarlaDssiUtils.hpp"
 #include "CarlaLv2Utils.hpp"
+#include "CarlaVstUtils.hpp"
 
 // used in dssi utils
 #include "juce_core.h"
@@ -56,6 +57,7 @@
 
 // #include "JucePluginWindow.hpp"
 
+#if 0
 // -----------------------------------------------------------------------
 
 static void test_CarlaUtils() noexcept
@@ -576,7 +578,7 @@ static void test_CarlaLv2Utils() noexcept
     delete lv2_rdf_new("http://calf.sourceforge.net/plugins/Reverb", true);
     delete lv2_rdf_new("http://www.openavproductions.com/fabla", true);
     delete lv2_rdf_new("http://invadarecords.com/plugins/lv2/meter", true);
-    //delete lv2_rdf_new("http://gareus.org/oss/lv2/meters#spectr30stereo", true);
+    delete lv2_rdf_new("http://gareus.org/oss/lv2/meters#spectr30stereo", true);
     delete lv2_rdf_new("http://plugin.org.uk/swh-plugins/revdelay", true);
     delete lv2_rdf_new("http://lv2plug.in/plugins/eg-scope#Stereo", true);
     delete lv2_rdf_new("http://kxstudio.sf.net/carla/plugins/carlarack", true);
@@ -591,21 +593,42 @@ static void test_CarlaLv2Utils() noexcept
     is_lv2_feature_supported("test1");
     is_lv2_ui_feature_supported("test2");
 }
+#endif
+
+// -----------------------------------------------------------------------
+
+static intptr_t test_vst_dispatcher(AEffect*, int, int, intptr_t, void*, float)
+{
+    return 0;
+}
+
+static void test_CarlaVstUtils() noexcept
+{
+    AEffect effect;
+    carla_zeroStruct(effect);
+    effect.dispatcher = test_vst_dispatcher;
+
+    vstPluginCanDo(&effect, "test");
+    carla_stdout(vstEffectOpcode2str(effOpen));
+    carla_stdout(vstMasterOpcode2str(audioMasterAutomate));
+}
 
 // -----------------------------------------------------------------------
 // main
 
 int main()
 {
-    test_CarlaUtils();
-    test_CarlaMathUtils();
-
-    test_CarlaBackendUtils();
-    test_CarlaEngineUtils();
-
-    test_CarlaLadspaUtils();
-    test_CarlaDssiUtils();
-    test_CarlaLv2Utils();
+    // already tested, skip for now
+//     test_CarlaUtils();
+//     test_CarlaMathUtils();
+//
+//     test_CarlaBackendUtils();
+//     test_CarlaEngineUtils();
+//
+//     test_CarlaLadspaUtils();
+//     test_CarlaDssiUtils();
+//     test_CarlaLv2Utils();
+    test_CarlaVstUtils();
 
     return 0;
 }
