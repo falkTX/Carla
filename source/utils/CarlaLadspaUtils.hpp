@@ -196,8 +196,8 @@ LADSPA_Data get_default_ladspa_port_value(const LADSPA_PortRangeHintDescriptor h
     // no default value
     if (min < 0.0f && max > 0.0f)
         return 0.0f;
-    else
-        return min;
+
+    return min;
 }
 
 // -----------------------------------------------------------------------

@@ -121,13 +121,13 @@ uint32_t carla_nextPowerOf2(uint32_t size) noexcept
  * Add float array values to another float array.
  */
 static inline
-void carla_addFloat(float* dataDst, const float* dataSrc, const size_t numSamples) noexcept
+void carla_addFloat(float* dataDst, const float* dataSrc, const std::size_t numSamples) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(numSamples > 0,);
 
-    for (size_t i=0; i < numSamples; ++i)
+    for (std::size_t i=0; i < numSamples; ++i)
         *dataDst++ += *dataSrc++;
 }
 
@@ -135,7 +135,7 @@ void carla_addFloat(float* dataDst, const float* dataSrc, const size_t numSample
  * Copy float array values to another float array.
  */
 static inline
-void carla_copyFloat(float* const dataDst, const float* const dataSrc, const size_t numSamples) noexcept
+void carla_copyFloat(float* const dataDst, const float* const dataSrc, const std::size_t numSamples) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
@@ -148,7 +148,7 @@ void carla_copyFloat(float* const dataDst, const float* const dataSrc, const siz
  * Clear a float array.
  */
 static inline
-void carla_zeroFloat(float* const data, const size_t numSamples) noexcept
+void carla_zeroFloat(float* const data, const std::size_t numSamples) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(numSamples > 0,);

@@ -28,11 +28,16 @@
 #include "CarlaEngineUtils.hpp"
 
 #include "CarlaLadspaUtils.hpp"
+#include "CarlaDssiUtils.hpp"
+
+// used in dssi utils
+#include "juce_core.h"
+#include <QtCore/QDir>
+#include <QtCore/QFileInfo>
+#include <QtCore/QStringList>
 
 // #include "CarlaBridgeUtils.hpp"
-// #include "CarlaDssiUtils.hpp"
 // #include "CarlaJuceUtils.hpp"
-// #include "CarlaLadspaUtils.hpp"
 // #include "CarlaLibUtils.hpp"
 // #include "CarlaLv2Utils.hpp"
 // #include "CarlaOscUtils.hpp"
@@ -489,6 +494,58 @@ static void test_CarlaEngineUtils() noexcept
 }
 
 // -----------------------------------------------------------------------
+
+static void test_CarlaLadspaUtils() noexcept
+{
+    LADSPA_Descriptor desc;
+    carla_zeroStruct(desc);
+
+    LADSPA_RDF_Descriptor rdfDesc;
+    delete ladspa_rdf_dup(&rdfDesc);
+
+    is_ladspa_port_good(0x0, 0x0);
+    is_ladspa_rdf_descriptor_valid(&rdfDesc, &desc);
+    get_default_ladspa_port_value(0x0, -1.0f, 1.0f);
+}
+
+// -----------------------------------------------------------------------
+
+namespace dssi_juce {
+const char* find_dssi_ui(const char* const filename, const char* const label) noexcept;
+#define HAVE_JUCE
+#include "CarlaDssiUtils.cpp"
+}
+
+namespace dssi_qt {
+const char* find_dssi_ui(const char* const filename, const char* const label) noexcept;
+#undef HAVE_JUCE
+#include "CarlaDssiUtils.cpp"
+}
+
+static void test_CarlaDssiUtils() noexcept
+{
+    const char* const ui_juce = dssi_juce::find_dssi_ui("/usr/lib/dssi/trivial_sampler.so", "aa");
+    const char* const ui_qt   = dssi_qt::find_dssi_ui("/usr/lib/dssi/trivial_sampler.so", "aa");
+
+    CARLA_SAFE_ASSERT(ui_juce != nullptr);
+    CARLA_SAFE_ASSERT(ui_qt != nullptr);
+
+    if (ui_juce != nullptr)
+    {
+        carla_stdout("%s", ui_juce);
+        assert(std::strcmp(ui_juce, "/usr/lib/dssi/trivial_sampler/trivial_sampler_qt") == 0);
+        delete[] ui_juce;
+    }
+
+    if (ui_qt != nullptr)
+    {
+        carla_stdout("%s", ui_qt);
+        assert(std::strcmp(ui_qt, "/usr/lib/dssi/trivial_sampler/trivial_sampler_qt") == 0);
+        delete[] ui_qt;
+    }
+}
+
+// -----------------------------------------------------------------------
 // main
 
 int main()
@@ -498,6 +555,9 @@ int main()
 
     test_CarlaBackendUtils();
     test_CarlaEngineUtils();
+
+    test_CarlaLadspaUtils();
+    test_CarlaDssiUtils();
 
     return 0;
 }

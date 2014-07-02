@@ -259,8 +259,8 @@ const char* carla_strdup(const char* const strBuf)
 {
     CARLA_SAFE_ASSERT(strBuf != nullptr);
 
-    const size_t bufferLen = (strBuf != nullptr) ? std::strlen(strBuf) : 0;
-    char* const  buffer    = new char[bufferLen+1];
+    const std::size_t bufferLen = (strBuf != nullptr) ? std::strlen(strBuf) : 0;
+    char* const       buffer    = new char[bufferLen+1];
 
     if (strBuf != nullptr && bufferLen > 0)
         std::strncpy(buffer, strBuf, bufferLen);
@@ -292,13 +292,13 @@ const char* carla_strdup_free(char* const strBuf)
  */
 template<typename T>
 static inline
-void carla_add(T* dataDst, const T* dataSrc, const size_t size) noexcept
+void carla_add(T* dataDst, const T* dataSrc, const std::size_t size) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
-    for (size_t i=0; i < size; ++i)
+    for (std::size_t i=0; i < size; ++i)
         *dataDst++ += *dataSrc++;
 }
 
@@ -307,7 +307,7 @@ void carla_add(T* dataDst, const T* dataSrc, const size_t size) noexcept
  */
 template<typename T>
 static inline
-void carla_copy(T* const dataDst, const T* const dataSrc, const size_t size) noexcept
+void carla_copy(T* const dataDst, const T* const dataSrc, const std::size_t size) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
@@ -321,7 +321,7 @@ void carla_copy(T* const dataDst, const T* const dataSrc, const size_t size) noe
  */
 template<typename T>
 static inline
-void carla_fill(T* data, const T v, const size_t size) noexcept
+void carla_fill(T* data, const T v, const std::size_t size) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(size > 0,);
@@ -332,7 +332,7 @@ void carla_fill(T* data, const T v, const size_t size) noexcept
     }
     else
     {
-        for (size_t i=0; i < size; ++i)
+        for (std::size_t i=0; i < size; ++i)
             *data++ = v;
     }
 }
@@ -341,7 +341,7 @@ void carla_fill(T* data, const T v, const size_t size) noexcept
  * Clear a byte array.
  */
 static inline
-void carla_zeroBytes(void* const memory, const size_t numBytes) noexcept
+void carla_zeroBytes(void* const memory, const std::size_t numBytes) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(memory != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(numBytes > 0,);
@@ -353,7 +353,7 @@ void carla_zeroBytes(void* const memory, const size_t numBytes) noexcept
  * Clear a char array.
  */
 static inline
-void carla_zeroChar(char* const data, const size_t numChars) noexcept
+void carla_zeroChar(char* const data, const std::size_t numChars) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(numChars > 0,);
@@ -376,7 +376,7 @@ void carla_zeroStruct(T& structure) noexcept
  */
 template <typename T>
 static inline
-void carla_zeroStruct(T* const structure, const size_t count) noexcept
+void carla_zeroStruct(T* const structure, const std::size_t count) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(structure != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(count > 0,);
@@ -399,7 +399,7 @@ void carla_copyStruct(T& struct1, const T& struct2) noexcept
  */
 template <typename T>
 static inline
-void carla_copyStruct(T* const struct1, const T* const struct2, const size_t count) noexcept
+void carla_copyStruct(T* const struct1, const T* const struct2, const std::size_t count) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(struct1 != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(struct2 != nullptr,);
