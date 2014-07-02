@@ -19,16 +19,20 @@
 # error Build this file with debug ON please
 #endif
 
-#undef HAVE_JUCE
+#define HAVE_JUCE
 
 #include "CarlaUtils.hpp"
 #include "CarlaMathUtils.hpp"
+
+#undef NULL
+#define NULL nullptr
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaEngineUtils.hpp"
 
 #include "CarlaLadspaUtils.hpp"
 #include "CarlaDssiUtils.hpp"
+#include "CarlaLv2Utils.hpp"
 
 // used in dssi utils
 #include "juce_core.h"
@@ -39,7 +43,6 @@
 // #include "CarlaBridgeUtils.hpp"
 // #include "CarlaJuceUtils.hpp"
 // #include "CarlaLibUtils.hpp"
-// #include "CarlaLv2Utils.hpp"
 // #include "CarlaOscUtils.hpp"
 // #include "CarlaShmUtils.hpp"
 // #include "CarlaStateUtils.hpp"
@@ -546,6 +549,44 @@ static void test_CarlaDssiUtils() noexcept
 }
 
 // -----------------------------------------------------------------------
+
+static LV2_URID test_lv2_uridMap(LV2_URID_Map_Handle, const char*)
+{
+    return 1;
+}
+
+static void test_CarlaLv2Utils() noexcept
+{
+    Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
+    lv2World.initIfNeeded();
+
+    // getPlugin
+    const LilvPlugin* const plugin(lv2World.getPlugin("urn:juced:DrumSynth"));
+    CARLA_SAFE_ASSERT(plugin != nullptr);
+
+    // getState
+    LV2_URID_Map uridMap = { nullptr, test_lv2_uridMap };
+    LilvState* const state(lv2World.getState("http://arcticanaudio.com/plugins/thefunction#preset001", &uridMap));
+    CARLA_SAFE_ASSERT(state != nullptr);
+    if (state != nullptr) lilv_state_free(state);
+
+    // load a bunch of plugins to stress test lilv
+    delete lv2_rdf_new("http://arcticanaudio.com/plugins/thefunction", true);
+    delete lv2_rdf_new("http://kunz.corrupt.ch/products/tal-noisemaker", true);
+    delete lv2_rdf_new("http://calf.sourceforge.net/plugins/Reverb", true);
+    delete lv2_rdf_new("http://www.openavproductions.com/fabla", true);
+    delete lv2_rdf_new("http://invadarecords.com/plugins/lv2/meter", true);
+    //delete lv2_rdf_new("http://gareus.org/oss/lv2/meters#spectr30stereo", true);
+    delete lv2_rdf_new("http://synthv1.sourceforge.net/lv2", true);
+    delete lv2_rdf_new("urn:juced:DrumSynth", true);
+
+    // misc
+    is_lv2_port_supported(0x0);
+    is_lv2_feature_supported("test1");
+    is_lv2_ui_feature_supported("test2");
+}
+
+// -----------------------------------------------------------------------
 // main
 
 int main()
@@ -558,6 +599,7 @@ int main()
 
     test_CarlaLadspaUtils();
     test_CarlaDssiUtils();
+    test_CarlaLv2Utils();
 
     return 0;
 }

@@ -61,7 +61,11 @@
 #include "lilv/lilvmm.hpp"
 #include "sratom/sratom.h"
 
-#include <QtCore/QStringList>
+#ifdef HAVE_JUCE
+# include "juce_core.h"
+#else
+# include <QtCore/QStringList>
+#endif
 
 // -----------------------------------------------------------------------
 // Define namespaces and missing prefixes
@@ -344,7 +348,7 @@ public:
         return lv2World;
     }
 
-    void init()
+    void initIfNeeded()
     {
         if (! needsInit)
             return;
@@ -356,6 +360,7 @@ public:
     const LilvPlugin* getPlugin(const LV2_URI uri) const
     {
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', nullptr);
+        CARLA_SAFE_ASSERT_RETURN(! needsInit, nullptr);
 
         const LilvPlugins* const cPlugins(lilv_world_get_all_plugins(this->me));
 
@@ -385,10 +390,11 @@ public:
         return cPlugin;
     }
 
-    const LilvState* getState(const LV2_URI uri, const LV2_URID_Map* const uridMap) const
+    LilvState* getState(const LV2_URI uri, const LV2_URID_Map* const uridMap) const
     {
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', nullptr);
         CARLA_SAFE_ASSERT_RETURN(uridMap != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(! needsInit, nullptr);
 
         LilvNode* const uriNode(Lilv::World::new_uri(uri));
 
@@ -398,7 +404,7 @@ public:
             return nullptr;
         }
 
-        const LilvState* const cState(lilv_state_new_from_world(this->me, uridMap, uriNode));
+        LilvState* const cState(lilv_state_new_from_world(this->me, uridMap, uriNode));
         lilv_node_free(uriNode);
 
         if (cState == nullptr)
@@ -424,7 +430,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
     Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
 
     if (doInit)
-        lv2World.init();
+        lv2World.initIfNeeded();
 
     const LilvPlugin* const cPlugin(lv2World.getPlugin(uri));
 
@@ -519,6 +525,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
             if (typeNodes.contains(lv2World.class_waveshaper))
                 rdfDescriptor->Type[0] |= LV2_PLUGIN_WAVESHAPER;
         }
+
+        lilv_nodes_free(const_cast<LilvNodes*>(typeNodes.me));
     }
 
     // -------------------------------------------------------------------
@@ -545,6 +553,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
             if (const char* const license = licenseNodes.get_first().as_string())
                 rdfDescriptor->License = carla_strdup(license);
         }
+
+        lilv_nodes_free(const_cast<LilvNodes*>(licenseNodes.me));
     }
 
     // -------------------------------------------------------------------
@@ -558,6 +568,17 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
 
             if (replaceNode.is_uri())
             {
+#ifdef HAVE_JUCE
+                const juce::String replaceURI(replaceNode.as_uri());
+
+                if (replaceURI.startsWith("urn:"))
+                {
+                    const int uniqueId(replaceURI.getTrailingIntValue());
+
+                    if (uniqueId > 0)
+                        rdfDescriptor->UniqueID = static_cast<ulong>(uniqueId);
+                }
+#else
                 const QString replaceURI(replaceNode.as_uri());
 
                 if (replaceURI.startsWith("urn:"))
@@ -570,8 +591,11 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
                     if (ok && uniqueId != 0)
                         rdfDescriptor->UniqueID = uniqueId;
                 }
+#endif
             }
         }
+
+        lilv_nodes_free(const_cast<LilvNodes*>(replaceNodes.me));
     }
 
     // -------------------------------------------------------------------
@@ -660,6 +684,9 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
                             carla_stderr("lv2_rdf_new(\"%s\") - port '%s' is of atom type but has unsupported data '%s'", uri, rdfPort->Name, node.as_uri());
 #endif
                     }
+
+                    lilv_nodes_free(const_cast<LilvNodes*>(bufferTypeNodes.me));
+                    lilv_nodes_free(const_cast<LilvNodes*>(supportNodes.me));
                 }
                 else if (lilvPort.is_a(lv2World.port_event))
                 {
@@ -794,11 +821,9 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
             // -----------------------------------------------------------
             // Set Port Designation
             {
-                Lilv::Nodes designationNodes(lilvPort.get_value(lv2World.designation));
-
-                if (designationNodes.size() > 0)
+                if (LilvNode* const designationNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.designation.me))
                 {
-                    if (const char* const designation = designationNodes.get_first().as_string())
+                    if (const char* const designation = lilv_node_as_string(designationNode))
                     {
                         if (std::strcmp(designation, LV2_CORE__control) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_CONTROL;
@@ -833,19 +858,16 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
                         else
                             carla_stderr("lv2_rdf_new(\"%s\") - got unknown port designation '%s'", uri, designation);
                     }
+                    lilv_node_free(designationNode);
                 }
             }
 
             // -----------------------------------------------------------
             // Set Port MIDI Map
             {
-                Lilv::Nodes midiMapNodes(lilvPort.get_value(lv2World.mm_defaultControl));
-
-                if (midiMapNodes.size() > 0)
+                if (LilvNode* const midiMapNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.mm_defaultControl.me))
                 {
-                    Lilv::Node midiMapNode(midiMapNodes.get_first());
-
-                    if (midiMapNode.is_blank())
+                    if (lilv_node_is_blank(midiMapNode))
                     {
                         Lilv::Nodes midiMapTypeNodes(lv2World.find_nodes(midiMapNode, lv2World.mm_controlType, nullptr));
                         Lilv::Nodes midiMapNumberNodes(lv2World.find_nodes(midiMapNode, lv2World.mm_controlNumber, nullptr));
@@ -864,7 +886,12 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
                                 rdfPort->MidiMap.Number = static_cast<uint32_t>(midiMapNumberNodes.get_first().as_int());
                             }
                         }
+
+                        lilv_nodes_free(const_cast<LilvNodes*>(midiMapTypeNodes.me));
+                        lilv_nodes_free(const_cast<LilvNodes*>(midiMapNumberNodes.me));
                     }
+
+                    lilv_node_free(midiMapNode);
                 }
 
                 // TODO - also check using new official MIDI API too
@@ -873,43 +900,36 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
             // -----------------------------------------------------------
             // Set Port Points
             {
-                Lilv::Nodes valueNodes(lilvPort.get_value(lv2World.value_default));
-
-                if (valueNodes.size() > 0)
+                if (LilvNode* const defNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.value_default.me))
                 {
                     rdfPort->Points.Hints  |= LV2_PORT_POINT_DEFAULT;
-                    rdfPort->Points.Default = valueNodes.get_first().as_float();
+                    rdfPort->Points.Default = lilv_node_as_float(defNode);
+                    lilv_node_free(defNode);
                 }
 
-                valueNodes = lilvPort.get_value(lv2World.value_minimum);
-
-                if (valueNodes.size() > 0)
+                if (LilvNode* const minNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.value_minimum.me))
                 {
                     rdfPort->Points.Hints  |= LV2_PORT_POINT_MINIMUM;
-                    rdfPort->Points.Minimum = valueNodes.get_first().as_float();
+                    rdfPort->Points.Minimum = lilv_node_as_float(minNode);
+                    lilv_node_free(minNode);
                 }
 
-                valueNodes = lilvPort.get_value(lv2World.value_maximum);
-
-                if (valueNodes.size() > 0)
+                if (LilvNode* const maxNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.value_maximum.me))
                 {
                     rdfPort->Points.Hints  |= LV2_PORT_POINT_MAXIMUM;
-                    rdfPort->Points.Maximum = valueNodes.get_first().as_float();
+                    rdfPort->Points.Maximum = lilv_node_as_float(maxNode);
+                    lilv_node_free(maxNode);
                 }
             }
 
             // -----------------------------------------------------------
             // Set Port Unit
             {
-                Lilv::Nodes unitUnitNodes(lilvPort.get_value(lv2World.unit_unit));
-
-                if (unitUnitNodes.size() > 0)
+                if (LilvNode* const unitUnitNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.unit_unit.me))
                 {
-                    Lilv::Node unitUnitNode(unitUnitNodes.get_first());
-
-                    if (unitUnitNode.is_uri())
+                    if (lilv_node_is_uri(unitUnitNode))
                     {
-                        if (const char* const unitUnit = unitUnitNode.as_uri())
+                        if (const char* const unitUnit = lilv_node_as_uri(unitUnitNode))
                         {
                             rdfPort->Unit.Hints |= LV2_PORT_UNIT_UNIT;
 
@@ -965,83 +985,85 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
                                 carla_stderr("lv2_rdf_new(\"%s\") - got unknown unit unit '%s'", uri, unitUnit);
                         }
                     }
+                    lilv_node_free(unitUnitNode);
                 }
 
                 // FIXME
 
-                Lilv::Nodes unitNameNodes(lilvPort.get_value(lv2World.unit_name));
-
-                if (unitNameNodes.size() > 0)
+                if (LilvNode* const unitNameNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.unit_name.me))
                 {
-                    if (const char* const unitName = unitNameNodes.get_first().as_string())
+                    if (const char* const unitName = lilv_node_as_string(unitNameNode))
                     {
                         rdfPort->Unit.Hints |= LV2_PORT_UNIT_NAME;
                         rdfPort->Unit.Name   = carla_strdup(unitName);
                     }
+                    lilv_node_free(unitNameNode);
                 }
 
-                Lilv::Nodes unitRenderNodes(lilvPort.get_value(lv2World.unit_render));
-
-                if (unitRenderNodes.size() > 0)
+                if (LilvNode* const unitRenderNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.unit_render.me))
                 {
-                    if (const char* const unitRender = unitRenderNodes.get_first().as_string())
+                    if (const char* const unitRender = lilv_node_as_string(unitRenderNode))
                     {
                         rdfPort->Unit.Hints |= LV2_PORT_UNIT_RENDER;
                         rdfPort->Unit.Render = carla_strdup(unitRender);
                     }
+                    lilv_node_free(unitRenderNode);
                 }
 
-                Lilv::Nodes unitSymbolNodes(lilvPort.get_value(lv2World.unit_symbol));
-
-                if (unitSymbolNodes.size() > 0)
+                if (LilvNode* const unitSymbolNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.unit_symbol.me))
                 {
-                    if (const char* const unitSymbol = unitSymbolNodes.get_first().as_string())
+                    if (const char* const unitSymbol = lilv_node_as_string(unitSymbolNode))
                     {
                         rdfPort->Unit.Hints |= LV2_PORT_UNIT_SYMBOL;
                         rdfPort->Unit.Symbol = carla_strdup(unitSymbol);
                     }
+                    lilv_node_free(unitSymbolNode);
                 }
             }
 
             // -----------------------------------------------------------
             // Set Port Minimum Size
             {
-                Lilv::Nodes minimumSizeNodes(lilvPort.get_value(lv2World.rz_minSize));
-
-                if (minimumSizeNodes.size() > 0)
+                if (LilvNode* const minimumSizeNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.rz_minSize.me))
                 {
-                    const int minimumSize(minimumSizeNodes.get_first().as_int());
+                    const int minimumSize(lilv_node_as_int(minimumSizeNode));
 
                     if (minimumSize > 0)
                         rdfPort->MinimumSize = static_cast<uint32_t>(minimumSize);
                     else
                         carla_safe_assert_int("minimumSize > 0", __FILE__, __LINE__, minimumSize);
+
+                    lilv_node_free(minimumSizeNode);
                 }
             }
 
             // -----------------------------------------------------------
             // Set Port Scale Points
 
-            Lilv::ScalePoints lilvScalePoints(lilvPort.get_scale_points());
-
-            if (lilvScalePoints.size() > 0)
             {
-                rdfPort->ScalePointCount = lilvScalePoints.size();
-                rdfPort->ScalePoints = new LV2_RDF_PortScalePoint[rdfPort->ScalePointCount];
+                Lilv::ScalePoints lilvScalePoints(lilvPort.get_scale_points());
 
-                uint32_t h = 0;
-                LILV_FOREACH(scale_points, it, lilvScalePoints)
+                if (lilvScalePoints.size() > 0)
                 {
-                    CARLA_SAFE_ASSERT_BREAK(h < rdfPort->ScalePointCount);
+                    rdfPort->ScalePointCount = lilvScalePoints.size();
+                    rdfPort->ScalePoints = new LV2_RDF_PortScalePoint[rdfPort->ScalePointCount];
 
-                    Lilv::ScalePoint lilvScalePoint(lilvScalePoints.get(it));
-                    LV2_RDF_PortScalePoint* const rdfScalePoint(&rdfPort->ScalePoints[h++]);
+                    uint32_t h = 0;
+                    LILV_FOREACH(scale_points, it, lilvScalePoints)
+                    {
+                        CARLA_SAFE_ASSERT_BREAK(h < rdfPort->ScalePointCount);
 
-                    if (const char* const label = Lilv::Node(lilvScalePoint.get_label()).as_string())
-                        rdfScalePoint->Label = carla_strdup(label);
+                        Lilv::ScalePoint lilvScalePoint(lilvScalePoints.get(it));
+                        LV2_RDF_PortScalePoint* const rdfScalePoint(&rdfPort->ScalePoints[h++]);
 
-                    rdfScalePoint->Value = Lilv::Node(lilvScalePoint.get_value()).as_float();
+                        if (const char* const label = Lilv::Node(lilvScalePoint.get_label()).as_string())
+                            rdfScalePoint->Label = carla_strdup(label);
+
+                        rdfScalePoint->Value = Lilv::Node(lilvScalePoint.get_value()).as_float();
+                    }
                 }
+
+                lilv_nodes_free(const_cast<LilvNodes*>(lilvScalePoints.me));
             }
         }
     }
@@ -1056,12 +1078,30 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
         if (presetNodes.size() > 0)
         {
             // create a list of preset URIs (for checking appliesTo, sorting and unique-ness)
+            // FIXME - check appliesTo?
+
+#ifdef HAVE_JUCE
+            juce::StringArray presetListURIs;
+
+            LILV_FOREACH(nodes, it, presetNodes)
+            {
+                Lilv::Node presetNode(presetNodes.get(it));
+
+                juce::String presetURI(presetNode.as_uri());
+
+                if (presetURI.trim().isNotEmpty())
+                    presetListURIs.addIfNotAlreadyThere(presetURI);
+            }
+
+            presetListURIs.sortNatural();
+
+            rdfDescriptor->PresetCount = static_cast<uint32_t>(presetListURIs.size());
+#else
             QStringList presetListURIs;
 
             LILV_FOREACH(nodes, it, presetNodes)
             {
                 Lilv::Node presetNode(presetNodes.get(it));
-                // FIXME - check appliesTo?
 
                 QString presetURI(presetNode.as_uri());
 
@@ -1071,8 +1111,10 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
 
             presetListURIs.sort();
 
-            // create presets with unique URIs
             rdfDescriptor->PresetCount = static_cast<uint32_t>(presetListURIs.count());
+#endif
+
+            // create presets with unique URIs
             rdfDescriptor->Presets = new LV2_RDF_Preset[rdfDescriptor->PresetCount];
 
             // set preset data
@@ -1085,7 +1127,11 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
 
                 if (const char* const presetURI = presetNode.as_uri())
                 {
+#ifdef HAVE_JUCE
+                    const int index(presetListURIs.indexOf(juce::String(presetURI)));
+#else
                     const int index(presetListURIs.indexOf(QString(presetURI)));
+#endif
                     CARLA_SAFE_ASSERT_CONTINUE(index >= 0);
 
                     LV2_RDF_Preset* const rdfPreset(&rdfDescriptor->Presets[index]);
@@ -1102,10 +1148,14 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
                             if (const char* const label = presetLabelNodes.get_first().as_string())
                                 rdfPreset->Label = carla_strdup(label);
                         }
+
+                        lilv_nodes_free(const_cast<LilvNodes*>(presetLabelNodes.me));
                     }
                 }
             }
         }
+
+        lilv_nodes_free(const_cast<LilvNodes*>(presetNodes.me));
     }
 
     // -------------------------------------------------------------------
@@ -1135,7 +1185,11 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
                 else
                     rdfFeature->URI = nullptr;
             }
+
+            lilv_nodes_free(const_cast<LilvNodes*>(lilvFeatureNodesR.me));
         }
+
+        lilv_nodes_free(const_cast<LilvNodes*>(lilvFeatureNodes.me));
     }
 
     // -------------------------------------------------------------------
@@ -1170,6 +1224,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
             for (uint32_t x=h; x < rdfDescriptor->ExtensionCount; ++x)
                 rdfDescriptor->Extensions[x] = nullptr;
         }
+
+        lilv_nodes_free(const_cast<LilvNodes*>(lilvExtensionDataNodes.me));
     }
 
     // -------------------------------------------------------------------
@@ -1256,7 +1312,11 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
                             else
                                 rdfFeature->URI = nullptr;
                         }
+
+                        lilv_nodes_free(const_cast<LilvNodes*>(lilvFeatureNodesR.me));
                     }
+
+                    lilv_nodes_free(const_cast<LilvNodes*>(lilvFeatureNodes.me));
                 }
 
                 // -------------------------------------------------------
@@ -1288,12 +1348,16 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
                             *rdfExtension = nullptr;
                         }
 
-                        for (uint32_t x2=h2; x2 < rdfDescriptor->ExtensionCount; ++x2)
+                        for (uint32_t x2=h2; x2 < rdfUI->ExtensionCount; ++x2)
                             rdfUI->Extensions[x2] = nullptr;
                     }
+
+                    lilv_nodes_free(const_cast<LilvNodes*>(lilvExtensionDataNodes.me));
                 }
             }
         }
+
+        lilv_nodes_free(const_cast<LilvNodes*>(lilvUIs.me));
     }
 
     return rdfDescriptor;

@@ -69,7 +69,7 @@ CarlaString: CarlaString.cpp ../utils/CarlaString.hpp
 
 CarlaUtils: CarlaUtils.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ \
-		 ../modules/juce_core.a -ldl -lpthread -lrt \
+		 ../modules/juce_core.a ../modules/lilv.a -ldl -lpthread -lrt \
 		 $(shell pkg-config --cflags --libs QtCore) -isystem /usr/include/qt4
 	valgrind --leak-check=full ./$@
 

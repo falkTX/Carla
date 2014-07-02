@@ -28,19 +28,19 @@ class CharStringListPtr
 {
 public:
     CharStringListPtr() noexcept
-        : charList(nullptr) {}
+        : fCharList(nullptr) {}
 
     CharStringListPtr(const char* const* const c) noexcept
-        : charList(c) {}
+        : fCharList(c) {}
 
     CharStringListPtr(const CharStringListPtr& ptr) noexcept
-        : charList(nullptr)
+        : fCharList(nullptr)
     {
-        copy(ptr.charList);
+        copy(ptr.fCharList);
     }
 
     CharStringListPtr(const LinkedList<CarlaString>& list) noexcept
-        : charList(nullptr)
+        : fCharList(nullptr)
     {
         copy(list);
     }
@@ -52,20 +52,20 @@ public:
 
     operator const char* const*() const noexcept
     {
-        return charList;
+        return fCharList;
     }
 
     CharStringListPtr& operator=(const char* const* const c) noexcept
     {
         clear();
-        charList = c;
+        fCharList = c;
         return *this;
     }
 
     CharStringListPtr& operator=(const CharStringListPtr& ptr) noexcept
     {
         clear();
-        copy(ptr.charList);
+        copy(ptr.fCharList);
         return *this;
     }
 
@@ -79,20 +79,20 @@ public:
 protected:
     void clear() noexcept
     {
-        if (charList == nullptr)
+        if (fCharList == nullptr)
             return;
 
-        for (int i=0; charList[i] != nullptr; ++i)
-            delete[] charList[i];
+        for (int i=0; fCharList[i] != nullptr; ++i)
+            delete[] fCharList[i];
 
-        delete[] charList;
-        charList = nullptr;
+        delete[] fCharList;
+        fCharList = nullptr;
     }
 
     void copy(const char* const* const c) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(c != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(charList == nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fCharList == nullptr,);
 
         size_t count = 0;
         for (; c[count] != nullptr; ++count) {}
@@ -116,12 +116,12 @@ protected:
         }
 
         tmpList[count] = nullptr;
-        charList = tmpList;
+        fCharList = tmpList;
     }
 
     void copy(const LinkedList<CarlaString>& list) noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(charList == nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fCharList == nullptr,);
 
         const size_t count(list.count());
         CARLA_SAFE_ASSERT_RETURN(count > 0,);
@@ -147,11 +147,11 @@ protected:
         }
 
         tmpList[count] = nullptr;
-        charList = tmpList;
+        fCharList = tmpList;
     }
 
 private:
-    const char* const* charList;
+    const char* const* fCharList;
 };
 
 // -----------------------------------------------------------------------
