@@ -519,6 +519,14 @@ struct LV2_RDF_UI {
         }
         if (Extensions != nullptr)
         {
+            for (uint32_t i=0; i<ExtensionCount; ++i)
+            {
+                if (Extensions[i] != nullptr)
+                {
+                    delete[] Extensions[i];
+                    Extensions[i] = nullptr;
+                }
+            }
             delete[] Extensions;
             Extensions = nullptr;
         }
@@ -536,7 +544,7 @@ struct LV2_RDF_Descriptor {
     const char* License;
     const char* Binary;
     const char* Bundle;
-    unsigned long UniqueID;
+    ulong UniqueID;
 
     uint32_t PortCount;
     LV2_RDF_Port* Ports;
@@ -624,6 +632,14 @@ struct LV2_RDF_Descriptor {
         }
         if (Extensions != nullptr)
         {
+            for (uint32_t i=0; i<ExtensionCount; ++i)
+            {
+                if (Extensions[i] != nullptr)
+                {
+                    delete[] Extensions[i];
+                    Extensions[i] = nullptr;
+                }
+            }
             delete[] Extensions;
             Extensions = nullptr;
         }

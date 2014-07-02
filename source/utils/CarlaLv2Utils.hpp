@@ -1166,6 +1166,9 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
                 }
                 *rdfExtension = nullptr;
             }
+
+            for (uint32_t x=h; x < rdfDescriptor->ExtensionCount; ++x)
+                rdfDescriptor->Extensions[x] = nullptr;
         }
     }
 
@@ -1284,6 +1287,9 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
                             }
                             *rdfExtension = nullptr;
                         }
+
+                        for (uint32_t x2=h2; x2 < rdfDescriptor->ExtensionCount; ++x2)
+                            rdfUI->Extensions[x2] = nullptr;
                     }
                 }
             }
