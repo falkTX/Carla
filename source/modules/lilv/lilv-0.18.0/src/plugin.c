@@ -837,6 +837,7 @@ lilv_plugin_get_project(const LilvPlugin* p)
 	sord_node_free(p->world->world, lv2_project);
 
 	if (sord_iter_end(projects)) {
+		sord_iter_free(projects);
 		return NULL;
 	}
 
@@ -860,11 +861,12 @@ lilv_plugin_get_author(const LilvPlugin* p)
 		doap_maintainer,
 		NULL);
 
-	sord_node_free(p->world->world, doap_maintainer);
-
 	if (sord_iter_end(maintainers)) {
+		sord_iter_free(maintainers);
+
 		LilvNode* project = lilv_plugin_get_project(p);
 		if (!project) {
+			sord_node_free(p->world->world, doap_maintainer);
 			return NULL;
 		}
 
@@ -873,9 +875,14 @@ lilv_plugin_get_author(const LilvPlugin* p)
 			project->node,
 			doap_maintainer,
 			NULL);
+
+		lilv_node_free(project);
 	}
 
+	sord_node_free(p->world->world, doap_maintainer);
+
 	if (sord_iter_end(maintainers)) {
+		sord_iter_free(maintainers);
 		return NULL;
 	}
 
@@ -891,9 +898,10 @@ lilv_plugin_get_author_name(const LilvPlugin* plugin)
 {
 	const SordNode* author = lilv_plugin_get_author(plugin);
 	if (author) {
-		return lilv_plugin_get_one(
-			plugin, author, sord_new_uri(
-				plugin->world->world, NS_FOAF "name"));
+		SordNode* foaf_name = sord_new_uri(plugin->world->world, NS_FOAF "name");
+		LilvNode* ret = lilv_plugin_get_one(plugin, author, foaf_name);
+		sord_node_free(plugin->world->world, foaf_name);
+		return ret;
 	}
 	return NULL;
 }
@@ -904,9 +912,10 @@ lilv_plugin_get_author_email(const LilvPlugin* plugin)
 {
 	const SordNode* author = lilv_plugin_get_author(plugin);
 	if (author) {
-		return lilv_plugin_get_one(
-			plugin, author, sord_new_uri(
-				plugin->world->world, NS_FOAF "mbox"));
+		SordNode* foaf_mbox = sord_new_uri(plugin->world->world, NS_FOAF "mbox");
+		LilvNode* ret = lilv_plugin_get_one(plugin, author, foaf_mbox);
+		sord_node_free(plugin->world->world, foaf_mbox);
+		return ret;
 	}
 	return NULL;
 }
@@ -917,9 +926,10 @@ lilv_plugin_get_author_homepage(const LilvPlugin* plugin)
 {
 	const SordNode* author = lilv_plugin_get_author(plugin);
 	if (author) {
-		return lilv_plugin_get_one(
-			plugin, author, sord_new_uri(
-				plugin->world->world, NS_FOAF "homepage"));
+		SordNode* foaf_homepage = sord_new_uri(plugin->world->world, NS_FOAF "homepage");
+		LilvNode* ret = lilv_plugin_get_one(plugin, author, foaf_homepage);
+		sord_node_free(plugin->world->world, foaf_homepage);
+		return ret;
 	}
 	return NULL;
 }
