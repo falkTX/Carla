@@ -577,6 +577,12 @@ static void test_CarlaLv2Utils() noexcept
     delete lv2_rdf_new("http://www.openavproductions.com/fabla", true);
     delete lv2_rdf_new("http://invadarecords.com/plugins/lv2/meter", true);
     //delete lv2_rdf_new("http://gareus.org/oss/lv2/meters#spectr30stereo", true);
+    delete lv2_rdf_new("http://plugin.org.uk/swh-plugins/revdelay", true);
+    delete lv2_rdf_new("http://lv2plug.in/plugins/eg-scope#Stereo", true);
+    delete lv2_rdf_new("http://kxstudio.sf.net/carla/plugins/carlarack", true);
+    delete lv2_rdf_new("http://guitarix.sourceforge.net/plugins/gxautowah#autowah", true);
+    delete lv2_rdf_new("http://github.com/blablack/ams-lv2/mixer_4ch", true);
+    delete lv2_rdf_new("http://drumgizmo.org/lv2", true);
     delete lv2_rdf_new("http://synthv1.sourceforge.net/lv2", true);
     delete lv2_rdf_new("urn:juced:DrumSynth", true);
 
