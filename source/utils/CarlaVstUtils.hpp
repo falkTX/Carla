@@ -117,10 +117,6 @@
 struct ERect {
     int16_t top, left, bottom, right;
 };
-struct VstTimeInfo_R {
-    double samplePos, sampleRate, nanoSeconds, ppqPos, tempo, barStartPos, cycleStartPos, cycleEndPos;
-    int32_t timeSigNumerator, timeSigDenominator, smpteOffset, smpteFrameRate, samplesToNextClock, flags;
-};
 #else
 #ifndef CARLA_OS_MAC
 # undef TARGET_API_MAC_CARBON
@@ -129,7 +125,6 @@ struct VstTimeInfo_R {
 #undef VST_64BIT_PLATFORM
 #define VST_64BIT_PLATFORM (defined(_WIN64) || defined(__LP64__) || defined (_LP64))
 #include "vst/pluginterfaces/vst2.x/aeffectx.h"
-typedef VstTimeInfo VstTimeInfo_R;
 #endif
 
 // -----------------------------------------------------------------------

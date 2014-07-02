@@ -20,6 +20,7 @@
 #endif
 
 #define HAVE_JUCE
+#define VESTIGE_HEADER
 
 #include "CarlaUtils.hpp"
 #include "CarlaMathUtils.hpp"
