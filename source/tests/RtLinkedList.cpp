@@ -27,10 +27,10 @@ struct MyData {
     CarlaString str;
     int id;
 
-    MyData()
+    MyData() noexcept
         : id(-1) {}
 
-    MyData(int i)
+    MyData(int i) noexcept
         : str(i),
           id(i) {}
 };
@@ -41,22 +41,22 @@ struct PostRtEvents {
     RtLinkedList<MyData> data;
     RtLinkedList<MyData> dataPendingRT;
 
-    PostRtEvents()
+    PostRtEvents() noexcept
         : dataPool(MIN_RT_EVENTS, MAX_RT_EVENTS),
           data(dataPool, true),
           dataPendingRT(dataPool, true) {}
 
-    ~PostRtEvents()
+    ~PostRtEvents() noexcept
     {
         clear();
     }
 
-    void appendRT(const MyData& event)
+    void appendRT(const MyData& event) noexcept
     {
         dataPendingRT.append(event);
     }
 
-    void clear()
+    void clear() noexcept
     {
         mutex.lock();
         data.clear();
@@ -64,7 +64,7 @@ struct PostRtEvents {
         mutex.unlock();
     }
 
-    void trySplice()
+    void trySplice() noexcept
     {
         if (mutex.tryLock())
         {

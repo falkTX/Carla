@@ -27,6 +27,11 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaEngineUtils.hpp"
 
+#include "ladspa_rdf.hpp"
+#include "lv2_rdf.hpp"
+
+#include "CarlaLadspaUtils.hpp"
+
 // #include "CarlaBridgeUtils.hpp"
 // #include "CarlaDssiUtils.hpp"
 // #include "CarlaJuceUtils.hpp"
@@ -34,26 +39,21 @@
 // #include "CarlaLibUtils.hpp"
 // #include "CarlaLv2Utils.hpp"
 // #include "CarlaOscUtils.hpp"
-// #include "CarlaPipeUtils.hpp"
 // #include "CarlaShmUtils.hpp"
 // #include "CarlaStateUtils.hpp"
 // #include "CarlaVstUtils.hpp"
 
 // #include "CarlaLibCounter.hpp"
 // #include "CarlaLogThread.hpp"
-// #include "CarlaMutex.hpp"
 // #include "CarlaRingBuffer.hpp"
-// #include "CarlaString.hpp"
 // #include "CarlaThread.hpp"
-// #include "List.hpp"
 // #include "Lv2AtomQueue.hpp"
-// #include "RtList.hpp"
 
 // #include "JucePluginWindow.hpp"
 
 // -----------------------------------------------------------------------
 
-static void test_CarlaUtils()
+static void test_CarlaUtils() noexcept
 {
     // -------------------------------------------------------------------
     // misc functions
@@ -309,7 +309,7 @@ static void test_CarlaUtils()
 
 // -----------------------------------------------------------------------
 
-static void test_CarlaMathUtils()
+static void test_CarlaMathUtils() noexcept
 {
     // -------------------------------------------------------------------
     // math functions (base)
@@ -460,7 +460,7 @@ static void test_CarlaMathUtils()
 
 // -----------------------------------------------------------------------
 
-static void test_CarlaBackendUtils()
+static void test_CarlaBackendUtils() noexcept
 {
     CARLA_BACKEND_USE_NAMESPACE
     carla_stdout(PluginOption2Str(PLUGIN_OPTION_FIXED_BUFFERS));
@@ -482,7 +482,7 @@ static void test_CarlaBackendUtils()
 
 // -----------------------------------------------------------------------
 
-static void test_CarlaEngineUtils()
+static void test_CarlaEngineUtils() noexcept
 {
     CARLA_BACKEND_USE_NAMESPACE
     carla_stdout(EngineType2Str(kEngineTypeNull));

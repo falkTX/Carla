@@ -580,10 +580,13 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_Controller controller, LV2UI_Widget* widget, const LV2_Feature* const* features)
+    void lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_Controller controller, LV2UI_Widget* widget, const LV2_Feature* const* features)
     {
-        const LV2_Options_Option* options = nullptr;
-        const char* windowTitle = nullptr;
+        fUI.writeFunction = writeFunction;
+        fUI.controller = controller;
+
+        // ---------------------------------------------------------------
+        // see if the host supports external-ui
 
         for (int i=0; features[i] != nullptr; ++i)
         {
@@ -591,43 +594,42 @@ public:
                 std::strcmp(features[i]->URI, LV2_EXTERNAL_UI_DEPRECATED_URI) == 0)
             {
                 fUI.host = (const LV2_External_UI_Host*)features[i]->data;
+                break;
             }
-            else if (std::strcmp(features[i]->URI, LV2_OPTIONS__options) == 0)
-                options = (const LV2_Options_Option*)features[i]->data;
-        }
-
-        if (options == nullptr)
-        {
-            carla_stderr("Host doesn't provides option feature");
-            return false;
         }
 
         if (fUI.host != nullptr)
         {
-            windowTitle = carla_strdup(fUI.host->plugin_human_id);
+            fHost.uiName = carla_strdup(fUI.host->plugin_human_id);
+            *widget = this;
+            return;
         }
-        else
+
+        // ---------------------------------------------------------------
+        // no external-ui support, use showInterface
+
+        for (int i=0; features[i] != nullptr; ++i)
         {
-            for (int i=0; options[i].key != 0; ++i)
+            if (std::strcmp(features[i]->URI, LV2_OPTIONS__options) == 0)
             {
-                if (options[i].key == fUridMap->map(fUridMap->handle, LV2_UI__windowTitle))
+                const LV2_Options_Option* const options((const LV2_Options_Option*)features[i]->data);
+
+                for (int i=0; options[i].key != 0; ++i)
                 {
-                    windowTitle = carla_strdup((const char*)options[i].value);
-                    break;
+                    if (options[i].key == fUridMap->map(fUridMap->handle, LV2_UI__windowTitle))
+                    {
+                        fHost.uiName = carla_strdup((const char*)options[i].value);
+                        break;
+                    }
                 }
+                break;
             }
         }
 
-        if (windowTitle == nullptr)
-            return false;
+        if (fHost.uiName == nullptr)
+            fHost.uiName = carla_strdup(fDescriptor->name);
 
-        fUI.writeFunction = writeFunction;
-        fUI.controller = controller;
-        fHost.uiName = windowTitle;
-
-        *widget = (fUI.host != nullptr) ? this : nullptr;
-
-        return true;
+        *widget = nullptr;
     }
 
     void lv2ui_port_event(uint32_t portIndex, uint32_t bufferSize, uint32_t format, const void* buffer) const
@@ -1404,11 +1406,7 @@ static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char*, cons
         return nullptr;
     }
 
-    if (! plugin->lv2ui_instantiate(writeFunction, controller, widget, features))
-    {
-        carla_stderr("Host doesn't support external UI");
-        return nullptr;
-    }
+    plugin->lv2ui_instantiate(writeFunction, controller, widget, features);
 
     return (LV2UI_Handle)plugin;
 }
