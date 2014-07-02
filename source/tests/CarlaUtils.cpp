@@ -27,9 +27,6 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaEngineUtils.hpp"
 
-#include "ladspa_rdf.hpp"
-#include "lv2_rdf.hpp"
-
 #include "CarlaLadspaUtils.hpp"
 
 // #include "CarlaBridgeUtils.hpp"
