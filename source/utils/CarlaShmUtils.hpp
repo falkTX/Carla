@@ -25,28 +25,24 @@ struct shm_t { HANDLE shm; HANDLE map; };
 #else
 # include <fcntl.h>
 # include <sys/mman.h>
-typedef int shm_t;
-#endif
-
-#ifdef CARLA_OS_WIN
-static const shm_t gNullCarlaShm = { nullptr, nullptr };
-#else
-static const shm_t gNullCarlaShm = -1;
+struct shm_t { int fd; const char* filename; };
 #endif
 
 // -----------------------------------------------------------------------
 // shared memory calls
 
-static inline
-bool carla_is_shm_valid(const shm_t& shm) noexcept
-{
+/*
+ * Null object returned when a shared memory operation fails.
+ */
 #ifdef CARLA_OS_WIN
-    return (shm.shm != nullptr && shm.shm != INVALID_HANDLE_VALUE);
+static const shm_t gNullCarlaShm = { nullptr, nullptr };
 #else
-    return (shm >= 0);
+static const shm_t gNullCarlaShm = { -1, nullptr };
 #endif
-}
 
+/*
+ * Initialize a shared memory object to an invalid state.
+ */
 static inline
 void carla_shm_init(shm_t& shm) noexcept
 {
@@ -54,140 +50,205 @@ void carla_shm_init(shm_t& shm) noexcept
     shm.shm = nullptr;
     shm.map = nullptr;
 #else
-    shm = -1;
+    shm.fd       = -1;
+    shm.filename = nullptr;
 #endif
 }
 
+/*
+ * Check if a shared memory object is valid.
+ */
+static inline
+bool carla_is_shm_valid(const shm_t& shm) noexcept
+{
 #ifdef CARLA_OS_WIN
-static inline
-shm_t carla_shm_create(const char* const name)
-{
-    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', gNullCarlaShm);
-
-    shm_t ret;
-    ret.shm = nullptr; // TODO
-    ret.map = nullptr;
-
-    return ret;
-}
-
-static inline
-shm_t carla_shm_attach(const char* const name)
-{
-    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', gNullCarlaShm);
-
-    shm_t ret;
-    ret.shm = ::CreateFileA(name, GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
-    ret.map = nullptr;
-
-    return ret;
-}
+    return (shm.shm != nullptr && shm.shm != INVALID_HANDLE_VALUE);
 #else
-static inline
-shm_t carla_shm_create(const char* const name)
-{
-    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', gNullCarlaShm);
-
-    return ::shm_open(name, O_RDWR|O_CREAT|O_EXCL, 0600);
-}
-
-static inline
-shm_t carla_shm_attach(const char* const name)
-{
-    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', gNullCarlaShm);
-
-    return ::shm_open(name, O_RDWR, 0);
-}
+    return (shm.fd >= 0);
 #endif
+}
 
+/*
+ * Create and open a new shared memory object.
+ * Returns an invalid object if the operation failed or the filename already exists.
+ */
 static inline
-void carla_shm_close(shm_t& shm)
+shm_t carla_shm_create(const char* const filename) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', gNullCarlaShm);
+
+    shm_t ret;
+
+    try {
+#ifdef CARLA_OS_WIN
+        ret.shm = nullptr; // TODO
+        ret.map = nullptr;
+#else
+        ret.fd       = ::shm_open(filename, O_CREAT|O_EXCL|O_RDWR, 0600);
+        ret.filename = (ret.fd >= 0) ? carla_strdup(filename) : nullptr;
+#endif
+    }
+    catch(...) {
+        carla_safe_exception("carla_shm_create", __FILE__, __LINE__);
+        ret = gNullCarlaShm;
+    }
+
+    return ret;
+}
+
+/*
+ * Attach to an existing shared memory object.
+ */
+static inline
+shm_t carla_shm_attach(const char* const filename) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', gNullCarlaShm);
+
+    shm_t ret;
+
+    try {
+#ifdef CARLA_OS_WIN
+        ret.shm = ::CreateFileA(filename, GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+        ret.map = nullptr;
+#else
+        ret.fd       = ::shm_open(filename, O_RDWR, 0);
+        ret.filename = nullptr;
+#endif
+    }
+    catch(...) {
+        ret = gNullCarlaShm;
+    }
+
+    return ret;
+}
+
+/*
+ * Close a shared memory object and invalidate it.
+ */
+static inline
+void carla_shm_close(shm_t& shm) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm),);
-
 #ifdef CARLA_OS_WIN
     CARLA_SAFE_ASSERT(shm.map == nullptr);
-
-    ::CloseHandle(shm.shm);
-    shm.shm = nullptr;
-#else
-    ::close(shm);
-    shm = -1;
 #endif
+
+    try {
+#ifdef CARLA_OS_WIN
+        ::CloseHandle(shm.shm);
+#else
+        ::close(shm.fd);
+
+        if (shm.filename != nullptr)
+        {
+            ::shm_unlink(shm.filename);
+            delete[] shm.filename;
+        }
+#endif
+    } CARLA_SAFE_EXCEPTION("carla_shm_close");
+
+    shm = gNullCarlaShm;
 }
 
+/*
+ * Map a shared memory object to @a size bytes and returns its address.
+ * @note One shared memory object can only have one mapping at a time.
+ */
 static inline
-void* carla_shm_map(shm_t& shm, const size_t size)
+void* carla_shm_map(shm_t& shm, const size_t size) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm), nullptr);
     CARLA_SAFE_ASSERT_RETURN(size > 0, nullptr);
-
 #ifdef CARLA_OS_WIN
     CARLA_SAFE_ASSERT_RETURN(shm.map == nullptr, nullptr);
-
-    HANDLE map = ::CreateFileMapping(shm.shm, NULL, PAGE_READWRITE, size, size, NULL);
-
-    CARLA_SAFE_ASSERT_RETURN(map != nullptr, nullptr);
-
-    HANDLE ptr = ::MapViewOfFile(map, FILE_MAP_COPY, 0, 0, size);
-
-    if (ptr == nullptr)
-    {
-        ::CloseHandle(map);
-        return nullptr;
-    }
-
-    shm.map = map;
-
-    return ptr;
-#else
-    if (::ftruncate(shm, static_cast<off_t>(size)) != 0)
-        return nullptr;
-
-    return ::mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED, shm, 0);
 #endif
+
+    try {
+#ifdef CARLA_OS_WIN
+        const HANDLE map = ::CreateFileMapping(shm.shm, NULL, PAGE_READWRITE, size, size, NULL);
+        CARLA_SAFE_ASSERT_RETURN(map != nullptr, nullptr);
+
+        HANDLE ptr = ::MapViewOfFile(map, FILE_MAP_COPY, 0, 0, size);
+
+        if (ptr == nullptr)
+        {
+            carla_safe_assert("ptr != nullptr", __FILE__, __LINE__);
+            ::CloseHandle(map);
+            return nullptr;
+        }
+
+        shm.map = map;
+        return ptr;
+#else
+        const int ret = ::ftruncate(shm.fd, static_cast<off_t>(size));
+        CARLA_SAFE_ASSERT_RETURN(ret == 0, nullptr);
+
+        return ::mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED, shm.fd, 0);
+#endif
+    } CARLA_SAFE_EXCEPTION_RETURN("carla_shm_map", nullptr);
 }
 
+/*
+ * Unmap a shared memory object address.
+ */
 static inline
-void carla_shm_unmap(shm_t& shm, void* const ptr, const size_t size)
+void carla_shm_unmap(shm_t& shm, void* const ptr, const size_t size) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm),);
     CARLA_SAFE_ASSERT_RETURN(ptr != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(size > 0,);
-
 #ifdef CARLA_OS_WIN
     CARLA_SAFE_ASSERT_RETURN(shm.map != nullptr,);
-
-    ::UnmapViewOfFile(ptr);
-    ::CloseHandle(shm.map);
-    shm.map = nullptr;
-    return;
-
-    // unused
-    (void)size;
-#else
-    ::munmap(ptr, size);
-    return;
-
-    // unused
-    (void)shm;
 #endif
+
+    try {
+#ifdef CARLA_OS_WIN
+        const Handle map = shm.map;
+        shm.map = nullptr;
+
+        ::UnmapViewOfFile(ptr);
+        ::CloseHandle(map);
+#else
+        const int ret = ::munmap(ptr, size);
+        CARLA_SAFE_ASSERT(ret == 0);
+#endif
+    } CARLA_SAFE_EXCEPTION("carla_shm_unmap");
+
+    return; // unused depending on platform
+    (void)shm;
+    (void)size;
 }
 
 // -----------------------------------------------------------------------
 // shared memory, templated calls
 
+/*
+ * Map a shared memory object, handling object type and size.
+ */
 template<typename T>
 static inline
-bool carla_shm_map(shm_t& shm, T*& value)
+T* carla_shm_map(shm_t& shm) noexcept
+{
+    return (T*)carla_shm_map(shm, sizeof(T));
+}
+
+/*
+ * Map a shared memory object and return if it's non-null.
+ */
+template<typename T>
+static inline
+bool carla_shm_map(shm_t& shm, T*& value) noexcept
 {
     value = (T*)carla_shm_map(shm, sizeof(T));
     return (value != nullptr);
 }
 
+/*
+ * Unmap a shared memory object address and set it as null.
+ */
 template<typename T>
 static inline
-void carla_shm_unmap(shm_t& shm, T*& value)
+void carla_shm_unmap(shm_t& shm, T*& value) noexcept
 {
     carla_shm_unmap(shm, value, sizeof(T));
     value = nullptr;

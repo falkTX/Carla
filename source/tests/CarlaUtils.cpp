@@ -36,6 +36,8 @@
 #include "CarlaLv2Utils.hpp"
 #include "CarlaVstUtils.hpp"
 
+#include "CarlaShmUtils.hpp"
+
 // used in dssi utils
 #include "juce_core.h"
 #include <QtCore/QDir>
@@ -46,17 +48,7 @@
 // #include "CarlaJuceUtils.hpp"
 // #include "CarlaLibUtils.hpp"
 // #include "CarlaOscUtils.hpp"
-// #include "CarlaShmUtils.hpp"
 // #include "CarlaStateUtils.hpp"
-// #include "CarlaVstUtils.hpp"
-
-// #include "CarlaLibCounter.hpp"
-// #include "CarlaLogThread.hpp"
-// #include "CarlaRingBuffer.hpp"
-// #include "CarlaThread.hpp"
-// #include "Lv2AtomQueue.hpp"
-
-// #include "JucePluginWindow.hpp"
 
 #if 0
 // -----------------------------------------------------------------------
@@ -594,7 +586,6 @@ static void test_CarlaLv2Utils() noexcept
     is_lv2_feature_supported("test1");
     is_lv2_ui_feature_supported("test2");
 }
-#endif
 
 // -----------------------------------------------------------------------
 
@@ -613,6 +604,111 @@ static void test_CarlaVstUtils() noexcept
     carla_stdout(vstEffectOpcode2str(effOpen));
     carla_stdout(vstMasterOpcode2str(audioMasterAutomate));
 }
+#endif
+
+// -----------------------------------------------------------------------
+
+struct ShmStruct {
+    char stringStart[255];
+    bool boolean;
+    int integer;
+    float floating;
+    char stringEnd[255];
+};
+
+static void test_CarlaShmUtils() noexcept
+{
+    shm_t shm, shma;
+    ShmStruct* shmStruct1;
+    ShmStruct* shmStruct2;
+
+    // base tests first
+    carla_shm_init(shm);
+    assert(! carla_is_shm_valid(shm));
+
+    shm = carla_shm_create("/carla-shm-test1");
+    carla_stdout("test %i", shm);
+    assert(carla_is_shm_valid(shm));
+
+    carla_shm_close(shm);
+    assert(! carla_is_shm_valid(shm));
+
+    shm = carla_shm_create("/carla-shm-test1");
+    assert(carla_is_shm_valid(shm));
+
+    shma = carla_shm_attach("/carla-shm-test1");
+    assert(carla_is_shm_valid(shma));
+
+    carla_shm_close(shm);
+    carla_shm_close(shma);
+    assert(! carla_is_shm_valid(shm));
+    assert(! carla_is_shm_valid(shma));
+
+    // test attach invalid
+    shma = carla_shm_attach("/carla-shm-test-NOT");
+    assert(! carla_is_shm_valid(shma));
+
+    // test memory, start
+    shm = carla_shm_create("/carla-shm-test1");
+    assert(carla_is_shm_valid(shm));
+
+    shma = carla_shm_attach("/carla-shm-test1");
+    assert(carla_is_shm_valid(shma));
+
+    // test memory, check valid
+    shmStruct1 = carla_shm_map<ShmStruct>(shm);
+    assert(shmStruct1 != nullptr);
+
+    shmStruct2 = carla_shm_map<ShmStruct>(shma);
+    assert(shmStruct2 != nullptr);
+
+    carla_shm_unmap(shma, shmStruct2);
+    assert(shmStruct2 == nullptr);
+
+    carla_shm_unmap(shm, shmStruct1);
+    assert(shmStruct1 == nullptr);
+
+    // test memory, check if write data matches
+    shmStruct1 = carla_shm_map<ShmStruct>(shm);
+    assert(shmStruct1 != nullptr);
+
+    shmStruct2 = carla_shm_map<ShmStruct>(shma);
+    assert(shmStruct2 != nullptr);
+
+    carla_zeroStruct(*shmStruct1);
+    assert(shmStruct1->stringStart[0] == '\0');
+    assert(shmStruct2->stringStart[0] == '\0');
+    assert(shmStruct1->stringEnd[0] == '\0');
+    assert(shmStruct2->stringEnd[0] == '\0');
+    assert(! shmStruct1->boolean);
+    assert(! shmStruct2->boolean);
+
+    shmStruct1->boolean = true;
+    shmStruct1->integer = 232312;
+    assert(shmStruct1->boolean == shmStruct2->boolean);
+    assert(shmStruct1->integer == shmStruct2->integer);
+
+    shmStruct2->floating = 2342.231f;
+    std::strcpy(shmStruct2->stringStart, "test1start");
+    std::strcpy(shmStruct2->stringEnd, "test2end");
+    assert(shmStruct1->floating == shmStruct2->floating);
+    assert(std::strcmp(shmStruct1->stringStart, "test1start") == 0);
+    assert(std::strcmp(shmStruct1->stringStart, shmStruct2->stringStart) == 0);
+    assert(std::strcmp(shmStruct1->stringEnd, "test2end") == 0);
+    assert(std::strcmp(shmStruct1->stringEnd, shmStruct2->stringEnd) == 0);
+
+    carla_shm_unmap(shma, shmStruct2);
+    assert(shmStruct2 == nullptr);
+
+    carla_shm_unmap(shm, shmStruct1);
+    assert(shmStruct1 == nullptr);
+
+    // test memory, done
+    carla_shm_close(shm);
+    carla_shm_close(shma);
+    assert(! carla_is_shm_valid(shm));
+    assert(! carla_is_shm_valid(shma));
+}
 
 // -----------------------------------------------------------------------
 // main
@@ -620,16 +716,20 @@ static void test_CarlaVstUtils() noexcept
 int main()
 {
     // already tested, skip for now
-//     test_CarlaUtils();
-//     test_CarlaMathUtils();
-//
-//     test_CarlaBackendUtils();
-//     test_CarlaEngineUtils();
-//
-//     test_CarlaLadspaUtils();
-//     test_CarlaDssiUtils();
-//     test_CarlaLv2Utils();
+#if 0
+    test_CarlaUtils();
+    test_CarlaMathUtils();
+
+    test_CarlaBackendUtils();
+    test_CarlaEngineUtils();
+
+    test_CarlaLadspaUtils();
+    test_CarlaDssiUtils();
+    test_CarlaLv2Utils();
     test_CarlaVstUtils();
+#endif
+
+    test_CarlaShmUtils();
 
     return 0;
 }
