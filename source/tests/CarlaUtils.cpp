@@ -36,6 +36,7 @@
 #include "CarlaLv2Utils.hpp"
 #include "CarlaVstUtils.hpp"
 
+#include "CarlaLibUtils.hpp"
 #include "CarlaShmUtils.hpp"
 
 // used in dssi utils
@@ -46,14 +47,13 @@
 
 // #include "CarlaBridgeUtils.hpp"
 // #include "CarlaJuceUtils.hpp"
-// #include "CarlaLibUtils.hpp"
 // #include "CarlaOscUtils.hpp"
 // #include "CarlaStateUtils.hpp"
 
 #if 0
 // -----------------------------------------------------------------------
 
-static void test_CarlaUtils() noexcept
+static void test_CarlaUtils()
 {
     // -------------------------------------------------------------------
     // misc functions
@@ -493,7 +493,7 @@ static void test_CarlaEngineUtils() noexcept
 
 // -----------------------------------------------------------------------
 
-static void test_CarlaLadspaUtils() noexcept
+static void test_CarlaLadspaUtils()
 {
     LADSPA_Descriptor desc;
     carla_zeroStruct(desc);
@@ -550,7 +550,7 @@ static LV2_URID test_lv2_uridMap(LV2_URID_Map_Handle, const char*)
     return 1;
 }
 
-static void test_CarlaLv2Utils() noexcept
+static void test_CarlaLv2Utils()
 {
     Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
     lv2World.initIfNeeded();
@@ -606,6 +606,25 @@ static void test_CarlaVstUtils() noexcept
 }
 #endif
 
+// -----------------------------------------------------------------------
+
+static void test_CarlaLibUtils() noexcept
+{
+    void* const libNot = lib_open("/libzzzzz...");
+    assert(libNot == nullptr);
+    carla_stdout("Force lib_open fail error results in: %s", lib_error("/libzzzzz..."));
+
+    void* const lib = lib_open("/usr/lib/liblo.so");
+    CARLA_SAFE_ASSERT_RETURN(lib != nullptr,);
+
+    void* const libS = lib_symbol(lib, "lo_server_new");
+    CARLA_SAFE_ASSERT(libS != nullptr);
+
+    const bool closed = lib_close(lib);
+    CARLA_SAFE_ASSERT(closed);
+}
+
+#if 0
 // -----------------------------------------------------------------------
 
 struct ShmStruct {
@@ -709,6 +728,7 @@ static void test_CarlaShmUtils() noexcept
     assert(! carla_is_shm_valid(shm));
     assert(! carla_is_shm_valid(shma));
 }
+#endif
 
 // -----------------------------------------------------------------------
 // main
@@ -729,7 +749,8 @@ int main()
     test_CarlaVstUtils();
 #endif
 
-    test_CarlaShmUtils();
+    test_CarlaLibUtils();
+    //test_CarlaShmUtils();
 
     return 0;
 }

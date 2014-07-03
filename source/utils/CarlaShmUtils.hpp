@@ -151,7 +151,7 @@ void carla_shm_close(shm_t& shm) noexcept
 }
 
 /*
- * Map a shared memory object to @a size bytes and returns its address.
+ * Map a shared memory object to @a size bytes and return the memory address.
  * @note One shared memory object can only have one mapping at a time.
  */
 static inline

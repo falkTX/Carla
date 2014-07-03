@@ -94,9 +94,11 @@ const char* lib_error(const char* const filename) noexcept
     carla_zeroChar(libError, 2048+1);
 
     try {
-        LPVOID winErrorString;
-        DWORD  winErrorCode = ::GetLastError();
-        ::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, winErrorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&winErrorString, 0, nullptr);
+        const DWORD winErrorCode  = ::GetLastError();
+        const int   winErrorFlags = FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS;
+        LPVOID      winErrorString;
+
+        ::FormatMessage(winErrorFlags, nullptr, winErrorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&winErrorString, 0, nullptr);
 
         std::snprintf(libError, 2048, "%s: error code %li: %s", filename, winErrorCode, (const char*)winErrorString);
         ::LocalFree(winErrorString);
