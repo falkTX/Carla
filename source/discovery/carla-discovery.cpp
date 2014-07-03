@@ -34,7 +34,7 @@
 # include "CarlaLadspaUtils.hpp"
 #endif
 #ifdef WANT_DSSI
-# include "CarlaDssiUtils.hpp"
+# include "CarlaDssiUtils.cpp"
 #endif
 #ifdef WANT_LV2
 # include "CarlaLv2Utils.hpp"
@@ -157,7 +157,7 @@ static intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t
 {
     carla_debug("vstHostCallback(%p, %i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
 
-    static VstTimeInfo_R timeInfo;
+    static VstTimeInfo timeInfo;
     intptr_t ret = 0;
 
     switch (opcode)
@@ -187,7 +187,7 @@ static intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t
         if (! gVstIsProcessing) DISCOVERY_OUT("warning", "plugin requested timeInfo out of process");
         if (! gVstWantsTime)    DISCOVERY_OUT("warning", "plugin requested timeInfo but didn't ask if host could do \"sendVstTimeInfo\"");
 
-        carla_zeroStruct<VstTimeInfo_R>(timeInfo);
+        carla_zeroStruct<VstTimeInfo>(timeInfo);
         timeInfo.sampleRate = kSampleRate;
 
         // Tempo
@@ -1918,12 +1918,5 @@ int main(int argc, char* argv[])
 
     return 0;
 }
-
-// --------------------------------------------------------------------------
-// Extras
-
-#ifdef WANT_DSSI
-# include "CarlaDssiUtils.cpp"
-#endif
 
 // --------------------------------------------------------------------------

@@ -1060,7 +1060,7 @@ public:
 
         if (index >= 0 && index < static_cast<int32_t>(fRdfDescriptor->PresetCount))
         {
-            if (const LilvState* state = Lv2WorldClass::getInstance().getState(fRdfDescriptor->Presets[index].URI, (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
+            if (LilvState* const state = Lv2WorldClass::getInstance().getState(fRdfDescriptor->Presets[index].URI, (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
             {
                 const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
@@ -1068,6 +1068,8 @@ public:
 
                 if (fHandle2 != nullptr)
                     lilv_state_restore(state, fExt.state, fHandle2, carla_lilv_set_port_value, this, 0, fFeatures);
+
+                lilv_state_free(state);
             }
         }
 

@@ -15,6 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
+#undef HAVE_JUCE
+
 #include "CarlaBridgeClient.hpp"
 #include "CarlaLv2Utils.hpp"
 #include "CarlaMIDI.h"

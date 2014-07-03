@@ -71,7 +71,7 @@ public:
         carla_debug("VstPlugin::VstPlugin(%p, %i)", engine, id);
 
         carla_zeroStruct<VstMidiEvent>(fMidiEvents, kPluginMaxMidiEvents*2);
-        carla_zeroStruct<VstTimeInfo_R>(fTimeInfo);
+        carla_zeroStruct<VstTimeInfo>(fTimeInfo);
 
         for (ushort i=0; i < kPluginMaxMidiEvents*2; ++i)
             fEvents.data[i] = (VstEvent*)&fMidiEvents[i];
@@ -2365,9 +2365,9 @@ private:
 
     AEffect* fEffect;
 
-    uint32_t      fMidiEventCount;
-    VstMidiEvent  fMidiEvents[kPluginMaxMidiEvents*2];
-    VstTimeInfo_R fTimeInfo;
+    uint32_t     fMidiEventCount;
+    VstMidiEvent fMidiEvents[kPluginMaxMidiEvents*2];
+    VstTimeInfo  fTimeInfo;
 
     bool  fNeedIdle;
     void* fLastChunk;
