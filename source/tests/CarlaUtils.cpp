@@ -37,6 +37,7 @@
 #include "CarlaVstUtils.hpp"
 
 #include "CarlaBridgeUtils.hpp"
+#include "CarlaJuceUtils.hpp"
 #include "CarlaLibCounter.hpp"
 #include "CarlaShmUtils.hpp"
 
@@ -46,8 +47,9 @@
 #include <QtCore/QFileInfo>
 #include <QtCore/QStringList>
 
-// #include "CarlaJuceUtils.hpp"
 // #include "CarlaOscUtils.hpp"
+// #include "CarlaPatchbayUtils.hpp"
+// #include "CarlaPipeUtils.hpp"
 // #include "CarlaStateUtils.hpp"
 
 #if 0
@@ -604,7 +606,6 @@ static void test_CarlaVstUtils() noexcept
     carla_stdout(vstEffectOpcode2str(effOpen));
     carla_stdout(vstMasterOpcode2str(audioMasterAutomate));
 }
-#endif
 
 // -----------------------------------------------------------------------
 
@@ -612,6 +613,35 @@ static void test_CarlaBridgeUtils() noexcept
 {
     carla_stdout(PluginBridgeInfoType2str(kPluginBridgePong));
     carla_stdout(PluginBridgeOpcode2str(kPluginBridgeOpcodeNull));
+}
+
+#endif
+
+// -----------------------------------------------------------------------
+
+class LeakTestClass
+{
+public:
+    LeakTestClass()noexcept
+        : i(0) {}
+
+private:
+    int i;
+    CARLA_LEAK_DETECTOR(LeakTestClass)
+};
+
+static void test_CarlaJuceUtils()
+{
+    LeakTestClass a, b;
+    LeakTestClass* e;
+    LeakTestClass* f = nullptr;
+
+    e = new LeakTestClass;
+    f = new LeakTestClass;
+    delete e; delete f;
+    delete new LeakTestClass;
+
+    //ScopedValueSetter s;
 }
 
 #if 0
@@ -782,8 +812,9 @@ int main()
     test_CarlaVstUtils();
 #endif
 
-    test_CarlaBridgeUtils();
+    //test_CarlaBridgeUtils();
     //test_CarlaLibUtils();
+    test_CarlaJuceUtils();
     //test_CarlaShmUtils();
 
     return 0;
