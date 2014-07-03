@@ -1,5 +1,5 @@
 /*
- * Carla Tests
+ * Carla Exception Tests
  * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -18,6 +18,8 @@
 #include "CarlaDefines.h"
 #include "CarlaUtils.hpp"
 
+// -----------------------------------------------------------------------
+
 struct Struct1 {
     Struct1() noexcept {}
     ~Struct1() noexcept {}
@@ -31,33 +33,42 @@ struct Struct1 {
 struct Struct2 {
     Struct2() { throw 2; }
     ~Struct2() noexcept {}
-
-    void throwHere()
-    {
-        throw 3;
-    }
 };
+
+// -----------------------------------------------------------------------
 
 int main()
 {
     carla_safe_assert("test here", __FILE__, __LINE__);
 
     Struct1 a;
-    Struct2* b = nullptr;
+    Struct1* b;
+    Struct2* c = nullptr;
 
     try {
         a.throwHere();
-    } CARLA_SAFE_EXCEPTION("Struct1 throw", carla_stdout("after text1 here");)
+    } CARLA_SAFE_EXCEPTION("Struct1 a throw");
 
     try {
-        b = new Struct2;
-    } CARLA_SAFE_EXCEPTION("Struct2 throw", carla_stdout("after text2 here");)
+        b = new Struct1;
+    } CARLA_SAFE_EXCEPTION("Struct1 b throw constructor");
 
-    if (b != nullptr)
-    {
-        delete b;
-        b = nullptr;
-    }
+    assert(b != nullptr);
+
+    try {
+        b->throwHere();
+    } CARLA_SAFE_EXCEPTION("Struct1 b throw runtime");
+
+    delete b;
+    b = nullptr;
+
+    try {
+        c = new Struct2;
+    } CARLA_SAFE_EXCEPTION("Struct2 c throw");
+
+    assert(c == nullptr);
 
     return 0;
 }
+
+// -----------------------------------------------------------------------

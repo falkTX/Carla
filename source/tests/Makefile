@@ -40,10 +40,10 @@ endif
 # --------------------------------------------------------------
 
 TARGETS  = ansi-pedantic-test_c ansi-pedantic-test_c99
-TARGETS += CarlaString CarlaUtils RDF
+TARGETS += CarlaString CarlaUtils Exceptions Print RDF
 
 # ansi-pedantic-test_cxx ansi-pedantic-test_cxx11
-# TARGETS +=  EngineEvents PipeServer Print RtLinkedList RtLinkedListGnu Utils
+# TARGETS +=  EngineEvents PipeServer RtLinkedList RtLinkedListGnu
 
 all: $(TARGETS)
 
@@ -73,6 +73,14 @@ CarlaUtils: CarlaUtils.cpp ../utils/*.hpp
 		 $(shell pkg-config --cflags --libs QtCore) -isystem /usr/include/qt4
 	valgrind --leak-check=full ./$@
 
+Exceptions: Exceptions.cpp
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
+	valgrind --leak-check=full ./$@
+
+Print: Print.cpp ../utils/CarlaUtils.hpp
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
+	valgrind --leak-check=full ./$@
+
 RDF: RDF.cpp ../modules/ladspa_rdf.hpp ../modules/lv2_rdf.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
 	valgrind --leak-check=full ./$@
@@ -81,7 +89,7 @@ RDF: RDF.cpp ../modules/ladspa_rdf.hpp ../modules/lv2_rdf.hpp
 
 ChildProcess: ChildProcess.cpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) ../modules/juce_core.a -ldl -lpthread -lrt -o $@
-# 	valgrind --leak-check=full ./$@
+	valgrind --leak-check=full ./$@
 
 CarlaMutex: CarlaMutex.cpp ../utils/CarlaMutex.hpp
 	$(CXX) $< -lpthread -o $@
@@ -98,29 +106,21 @@ Engine: Engine.cpp
 	env LD_LIBRARY_PATH=../backend valgrind --leak-check=full ./$@
 # 	../modules/juce_audio_basics.a ../modules/juce_core.a \
 
-Exception: Exception.cpp
-	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
-# 	valgrind ./$@
-
 EngineEvents: EngineEvents.cpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -L../backend -lcarla_standalone2 -o $@
 	env LD_LIBRARY_PATH=../backend valgrind ./$@
 
 PipeServer: PipeServer.cpp ../utils/CarlaPipeUtils.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -lpthread -o $@
-# 	valgrind ./$@
-
-Print: Print.cpp ../utils/CarlaUtils.hpp
-	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
-	valgrind ./$@
+	valgrind --leak-check=full ./$@
 
 RtLinkedList: RtLinkedList.cpp ../utils/LinkedList.hpp ../utils/RtLinkedList.hpp ../modules/rtmempool.a
 	$(CXX) $< ../modules/rtmempool.a $(PEDANTIC_CXX_FLAGS) -lpthread -o $@
-	valgrind ./$@
+	valgrind --leak-check=full ./$@
 
 RtLinkedListGnu: RtLinkedList.cpp ../utils/LinkedList.hpp ../utils/RtLinkedList.hpp ../modules/rtmempool.a
 	$(CXX) $< ../modules/rtmempool.a $(GNU_CXX_FLAGS) -lpthread -o $@
-	valgrind ./$@
+	valgrind --leak-check=full ./$@
 
 # --------------------------------------------------------------
 
@@ -129,11 +129,6 @@ Rewire.exe: Rewire.cpp.o
 
 Rewire.cpp.o: Rewire.cpp
 	$(CXX) $< -Wall -Wextra -DREAL_BUILD -DDEBUG -O0 -g -I../includes -I../utils -std=c++11 -c -o $@
-
-# --------------------------------------------------------------
-
-../modules/%.a:
-	$(MAKE) -C ../modules $*
 
 # --------------------------------------------------------------
 

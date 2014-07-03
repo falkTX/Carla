@@ -83,11 +83,12 @@ source/frontend/Makefile
 source/tests/ansi-pedantic-test_*
 source/tests/CarlaString
 source/tests/CarlaUtils
+source/tests/Exceptions
+source/tests/Print
 source/tests/RDF
 
 source/tests/EngineEvents
 source/tests/PipeServer
-source/tests/Print
 source/tests/RtLinkedList
 source/tests/RtLinkedListGnu
 

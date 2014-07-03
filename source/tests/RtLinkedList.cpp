@@ -1,6 +1,6 @@
 /*
  * Carla Tests
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -68,7 +68,7 @@ struct PostRtEvents {
     {
         if (mutex.tryLock())
         {
-            dataPendingRT.spliceAppend(data);
+            dataPendingRT.spliceAppendTo(data);
             mutex.unlock();
         }
     }
@@ -91,7 +91,7 @@ void run5Tests()
 
     postRtEvents.mutex.unlock();
 
-    printf("Post-Rt Event Count: %i\n", k);
+    carla_stdout("Post-Rt Event Count: %i", k);
     assert(k == 5);
 
     // data should be empty now
@@ -105,7 +105,7 @@ void run5Tests()
     {
         const MyData& my(allMyData[i]);
 
-        printf("Got data: %i %s\n", my.id, my.str.buffer());
+        carla_stdout("Got data: %i %s", my.id, my.str.buffer());
     }
 }
 
@@ -143,7 +143,7 @@ int main()
     {
         const MyData& my(it.getValue());
 
-        printf("FOR DATA!!!: %i %s\n", my.id, my.str.buffer());
+        carla_stdout("FOR DATA!!!: %i %s", my.id, my.str.buffer());
 
         if (my.id == 1)
         {

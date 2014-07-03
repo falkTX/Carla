@@ -1,6 +1,6 @@
 /*
- * Carla Tests
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Carla Print Tests
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -17,6 +17,8 @@
 
 #include "CarlaUtils.hpp"
 
+// -----------------------------------------------------------------------
+
 int main()
 {
     carla_debug("DEBUG");
@@ -25,3 +27,5 @@ int main()
     carla_stderr2("STDERR2");
     return 0;
 }
+
+// -----------------------------------------------------------------------

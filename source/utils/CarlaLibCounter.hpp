@@ -65,8 +65,7 @@ public:
 
         try {
             dfilename = carla_strdup(filename);
-        }
-        CARLA_SAFE_EXCEPTION_RETURN("LibCounter::open", nullptr);
+        } CARLA_SAFE_EXCEPTION_RETURN("LibCounter::open", nullptr);
 
         const CarlaMutexLocker cml(fMutex);
 
