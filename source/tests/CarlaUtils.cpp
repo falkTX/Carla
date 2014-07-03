@@ -39,6 +39,7 @@
 #include "CarlaBridgeUtils.hpp"
 #include "CarlaJuceUtils.hpp"
 #include "CarlaLibCounter.hpp"
+#include "CarlaOscUtils.hpp"
 #include "CarlaShmUtils.hpp"
 
 // used in dssi utils
@@ -47,7 +48,6 @@
 #include <QtCore/QFileInfo>
 #include <QtCore/QStringList>
 
-// #include "CarlaOscUtils.hpp"
 // #include "CarlaPatchbayUtils.hpp"
 // #include "CarlaPipeUtils.hpp"
 // #include "CarlaStateUtils.hpp"
