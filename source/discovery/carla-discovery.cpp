@@ -991,8 +991,7 @@ static void do_lv2_check(const char* const bundle, const bool init)
         qBundle += OS_SEP_STR;
 
     // Load bundle
-    Lilv::Node lilvBundle(lv2World.new_uri(qBundle.toUtf8().constData()));
-    lv2World.load_bundle(lilvBundle);
+    lv2World.load_bundle(qBundle.toUtf8().constData());
 
     // Load plugins in this bundle
     const Lilv::Plugins lilvPlugins(lv2World.get_all_plugins());

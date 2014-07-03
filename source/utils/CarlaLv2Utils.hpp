@@ -357,6 +357,14 @@ public:
         Lilv::World::load_all();
     }
 
+    void load_bundle(const char* const bundle)
+    {
+        CARLA_SAFE_ASSERT_RETURN(bundle != nullptr && bundle[0] != '\0',);
+
+        needsInit = false;
+        Lilv::World::load_bundle(Lilv::Node(new_uri(bundle)));
+    }
+
     const LilvPlugin* getPlugin(const LV2_URI uri) const
     {
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', nullptr);
