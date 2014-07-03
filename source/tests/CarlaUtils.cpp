@@ -641,7 +641,23 @@ static void test_CarlaJuceUtils()
     delete e; delete f;
     delete new LeakTestClass;
 
-    //ScopedValueSetter s;
+    int x = 1;
+
+    {
+        assert(x == 1);
+        ScopedValueSetter<int> s(x, 2);
+        assert(x == 2);
+    }
+
+    assert(x == 1);
+
+    {
+        assert(x == 1);
+        ScopedValueSetter<int> s(x, 3, 4);
+        assert(x == 3);
+    }
+
+    assert(x == 4);
 }
 
 #if 0
