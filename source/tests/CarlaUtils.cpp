@@ -36,7 +36,7 @@
 #include "CarlaLv2Utils.hpp"
 #include "CarlaVstUtils.hpp"
 
-#include "CarlaLibUtils.hpp"
+#include "CarlaLibCounter.hpp"
 #include "CarlaShmUtils.hpp"
 
 // used in dssi utils
@@ -622,6 +622,31 @@ static void test_CarlaLibUtils() noexcept
 
     const bool closed = lib_close(lib);
     CARLA_SAFE_ASSERT(closed);
+
+    LibCounter lc;
+    void* const test1 = lc.open("/usr/lib/liblo.so");
+    void* const test2 = lc.open("/usr/lib/liblo.so");
+    void* const test3 = lc.open("/usr/lib/liblo.so");
+    assert(test1 == test2);
+    assert(test2 == test3);
+    lc.close(test1); lc.close(test2); lc.close(test3);
+
+    // test if the pointer changes after all closed
+    void* const test1b = lc.open("/usr/lib/liblo.so");
+    assert(test1 != test1b);
+    lc.close(test1b);
+
+    // test non-delete flag
+    void* const test4 = lc.open("/usr/lib/liblrdf.so.0", false);
+    lc.close(test4);
+    void* const test5 = lc.open("/usr/lib/liblrdf.so.0");
+    assert(test4 == test5);
+    lc.close(test5);
+
+    // open non-delete a few times, tests for cleanup on destruction
+    lc.open("/usr/lib/liblrdf.so.0");
+    lc.open("/usr/lib/liblrdf.so.0");
+    lc.open("/usr/lib/liblrdf.so.0");
 }
 
 #if 0

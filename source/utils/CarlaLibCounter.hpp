@@ -38,6 +38,9 @@ public:
             CARLA_SAFE_ASSERT_CONTINUE(lib.count > 0);
             CARLA_SAFE_ASSERT_CONTINUE(lib.lib != nullptr);
 
+            // all libs should be closed by now except those explicitly marked non-delete
+            CARLA_SAFE_ASSERT(! lib.canDelete);
+
             if (! lib_close(lib.lib))
                 carla_stderr("LibCounter cleanup failed, reason:\n%s", lib_error(lib.filename));
 
@@ -65,7 +68,7 @@ public:
         }
         CARLA_SAFE_EXCEPTION_RETURN("LibCounter::open", nullptr);
 
-        const CarlaMutexLocker sl(fMutex);
+        const CarlaMutexLocker cml(fMutex);
 
         for (LinkedList<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
         {
@@ -75,6 +78,9 @@ public:
 
             if (std::strcmp(lib.filename, filename) == 0)
             {
+                // will not be needed
+                delete[] dfilename;
+
                 ++lib.count;
                 return lib.lib;
             }
@@ -105,7 +111,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(libPtr != nullptr, false);
 
-        const CarlaMutexLocker sl(fMutex);
+        const CarlaMutexLocker cml(fMutex);
 
         for (LinkedList<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
         {
