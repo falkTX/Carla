@@ -36,6 +36,7 @@
 #include "CarlaLv2Utils.hpp"
 #include "CarlaVstUtils.hpp"
 
+#include "CarlaBridgeUtils.hpp"
 #include "CarlaLibCounter.hpp"
 #include "CarlaShmUtils.hpp"
 
@@ -45,7 +46,6 @@
 #include <QtCore/QFileInfo>
 #include <QtCore/QStringList>
 
-// #include "CarlaBridgeUtils.hpp"
 // #include "CarlaJuceUtils.hpp"
 // #include "CarlaOscUtils.hpp"
 // #include "CarlaStateUtils.hpp"
@@ -608,6 +608,15 @@ static void test_CarlaVstUtils() noexcept
 
 // -----------------------------------------------------------------------
 
+static void test_CarlaBridgeUtils() noexcept
+{
+    carla_stdout(PluginBridgeInfoType2str(kPluginBridgePong));
+    carla_stdout(PluginBridgeOpcode2str(kPluginBridgeOpcodeNull));
+}
+
+#if 0
+// -----------------------------------------------------------------------
+
 static void test_CarlaLibUtils() noexcept
 {
     void* const libNot = lib_open("/libzzzzz...");
@@ -649,7 +658,6 @@ static void test_CarlaLibUtils() noexcept
     lc.open("/usr/lib/liblrdf.so.0");
 }
 
-#if 0
 // -----------------------------------------------------------------------
 
 struct ShmStruct {
@@ -760,8 +768,8 @@ static void test_CarlaShmUtils() noexcept
 
 int main()
 {
-    // already tested, skip for now
 #if 0
+    // already tested, skip for now
     test_CarlaUtils();
     test_CarlaMathUtils();
 
@@ -774,7 +782,8 @@ int main()
     test_CarlaVstUtils();
 #endif
 
-    test_CarlaLibUtils();
+    test_CarlaBridgeUtils();
+    //test_CarlaLibUtils();
     //test_CarlaShmUtils();
 
     return 0;
