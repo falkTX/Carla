@@ -39,7 +39,8 @@ public:
         : CarlaRingBuffer<HeapBuffer>(),
           fNeedsDataDelete(false)
     {
-        fHeapBuffer.buf = buf;
+        fHeapBuffer.buf  = buf;
+        fHeapBuffer.size = ringBuf.fHeapBuffer.size;
 
         {
             const CarlaMutexLocker cml(ringBuf.fMutex);

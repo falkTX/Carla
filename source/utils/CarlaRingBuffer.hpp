@@ -53,7 +53,6 @@ struct HeapBuffer {
     {
         CARLA_SAFE_ASSERT_RETURN(size == rb.size,);
 
-        size = rb.size;
         head = rb.head;
         tail = rb.tail;
         wrtn = rb.wrtn;
