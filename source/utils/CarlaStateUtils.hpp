@@ -21,8 +21,15 @@
 #include "CarlaBackend.h"
 #include "LinkedList.hpp"
 
+#ifdef HAVE_JUCE
+namespace juce {
+class String;
+class XmlElement;
+}
+#else
 class QDomNode;
 class QString;
+#endif
 
 // -----------------------------------------------------------------------
 
@@ -99,8 +106,13 @@ struct SaveState {
 
 // -----------------------------------------------------------------------
 
+#ifdef HAVE_JUCE
+void fillSaveStateFromXmlNode(SaveState& saveState, const juce::XmlElement* const xmlElement);
+void fillXmlStringFromSaveState(juce::String& content, const SaveState& saveState);
+#else
 void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode);
 void fillXmlStringFromSaveState(QString& content, const SaveState& saveState);
+#endif
 
 // -----------------------------------------------------------------------
 

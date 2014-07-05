@@ -87,8 +87,10 @@ CarlaUtils3: CarlaUtils3.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ -ldl -lrt
 	valgrind --leak-check=full ./$@
 
-CarlaUtils4: CarlaUtils4.cpp ../utils/*.hpp
-	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ -ldl -lrt
+CarlaUtils4: CarlaUtils4.cpp ../utils/CarlaStateUtils.cpp ../utils/*.hpp
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ \
+		../modules/juce_core.a -ldl -lpthread -lrt \
+		$(shell pkg-config --cflags --libs QtCore QtXml) -isystem /usr/include/qt4
 	valgrind --leak-check=full ./$@
 
 Exceptions: Exceptions.cpp

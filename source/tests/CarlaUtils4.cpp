@@ -19,14 +19,33 @@
 # error Build this file with debug ON please
 #endif
 
-#include "CarlaStateUtils.hpp"
+#include "CarlaBackendUtils.hpp"
+
+using namespace CarlaBackend;
+
+// -----------------------------------------------------------------------
+
+#define HAVE_JUCE
+#undef CARLA_BACKEND_START_NAMESPACE
+#define CARLA_BACKEND_START_NAMESPACE namespace state_juce {
+#include "CarlaStateUtils.cpp"
+
+// -----------------------------------------------------------------------
+
+#undef CARLA_STATE_UTILS_HPP_INCLUDED
+
+// -----------------------------------------------------------------------
+
+#undef HAVE_JUCE
+#undef CARLA_BACKEND_START_NAMESPACE
+#define CARLA_BACKEND_START_NAMESPACE namespace state_qt {
+#include "CarlaStateUtils.cpp"
 
 // -----------------------------------------------------------------------
 // main
 
 int main()
 {
-
     return 0;
 }
 
