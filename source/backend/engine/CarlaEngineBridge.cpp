@@ -97,13 +97,13 @@ struct BridgeAudioPool {
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeAudioPool)
 };
 
-struct BridgeControl : public RingBufferControl<StackBuffer> {
+struct BridgeControl : public CarlaRingBuffer<StackBuffer> {
     CarlaString filename;
     BridgeShmControl* data;
     char shm[32];
 
     BridgeControl()
-        : RingBufferControl<StackBuffer>(nullptr),
+        : CarlaRingBuffer<StackBuffer>(),
           data(nullptr)
     {
         carla_zeroChar(shm, 32);
@@ -376,7 +376,7 @@ public:
                 }
             }
 
-            for (; fShmControl.isDataAvailable();)
+            for (; fShmControl.isDataAvailableForReading();)
             {
                 const PluginBridgeOpcode opcode(fShmControl.readOpcode());
 
@@ -468,7 +468,7 @@ public:
                     uint8_t data[size];
 
                     for (int32_t i=0; i < size; ++i)
-                        data[i] = static_cast<uint8_t>(fShmControl.readChar());
+                        data[i] = fShmControl.readUByte();
 
                     CARLA_SAFE_ASSERT_BREAK(pData->events.in != nullptr);
 

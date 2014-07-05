@@ -73,7 +73,7 @@ static shm_t shm_mkstemp(char* const fileBase)
     static const char charSet[] = "abcdefghijklmnopqrstuvwxyz"
                                   "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                   "0123456789";
-    static const int charSetLen = static_cast<int>(sizeof(charSet) - 1); // -1 to avoid trailing '\0'
+    static const int charSetLen = static_cast<int>(std::strlen(charSet) - 1); // -1 to avoid trailing '\0'
 
     // try until getting a valid shm or an error occurs
     for (;;)
@@ -146,14 +146,14 @@ struct BridgeAudioPool {
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeAudioPool)
 };
 
-struct BridgeControl : public RingBufferControl<StackBuffer> {
+struct BridgeControl : public CarlaRingBuffer<StackBuffer> {
     CarlaString filename;
     CarlaMutex lock;
     BridgeShmControl* data;
     shm_t shm;
 
     BridgeControl()
-        : RingBufferControl<StackBuffer>(nullptr),
+        : CarlaRingBuffer<StackBuffer>(),
           data(nullptr)
     {
         carla_shm_init(shm);
@@ -860,19 +860,19 @@ public:
 
                     CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
-                    char data1, data2, data3;
-                    data1 = static_cast<char>((note.velo > 0 ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF) | (note.channel & MIDI_CHANNEL_BIT));
-                    data2 = static_cast<char>(note.note);
-                    data3 = static_cast<char>(note.velo);
+                    uint8_t data1, data2, data3;
+                    data1 = static_cast<uint8_t>((note.velo > 0 ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF) | (note.channel & MIDI_CHANNEL_BIT));
+                    data2 = note.note;
+                    data3 = note.velo;
 
                     const CarlaMutexLocker _cml(fShmControl.lock);
 
                     fShmControl.writeOpcode(kPluginBridgeOpcodeMidiEvent);
                     fShmControl.writeLong(0);
                     fShmControl.writeInt(3);
-                    fShmControl.writeChar(data1);
-                    fShmControl.writeChar(data2);
-                    fShmControl.writeChar(data3);
+                    fShmControl.writeByte(data1);
+                    fShmControl.writeByte(data2);
+                    fShmControl.writeByte(data3);
                     fShmControl.commitWrite();
                 }
 
@@ -1007,9 +1007,9 @@ public:
                             fShmControl.writeOpcode(kPluginBridgeOpcodeMidiEvent);
                             fShmControl.writeLong(event.time);
                             fShmControl.writeInt(3);
-                            fShmControl.writeChar(static_cast<char>(MIDI_STATUS_CONTROL_CHANGE + event.channel));
-                            fShmControl.writeChar(static_cast<char>(ctrlEvent.param));
-                            fShmControl.writeChar(char(ctrlEvent.value*127.0f));
+                            fShmControl.writeByte(static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + event.channel));
+                            fShmControl.writeByte(static_cast<uint8_t>(ctrlEvent.param));
+                            fShmControl.writeByte(static_cast<uint8_t>(ctrlEvent.value*127.0f));
                             fShmControl.commitWrite();
                         }
 
@@ -1090,12 +1090,6 @@ public:
                     if (status == MIDI_STATUS_PITCH_WHEEL_CONTROL && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
                         continue;
 
-                    char data[4];
-                    data[0] = static_cast<char>(status + channel);
-
-                    for (uint8_t j=0; j < 4; ++j)
-                        data[j] = static_cast<char>(midiEvent.data[j]);
-
                     {
                           const CarlaMutexLocker _cml(fShmControl.lock);
 
@@ -1103,8 +1097,10 @@ public:
                           fShmControl.writeLong(event.time);
                           fShmControl.writeInt(midiEvent.size);
 
-                          for (uint8_t j=0; j < midiEvent.size; ++j)
-                              fShmControl.writeChar(data[j]);
+                          fShmControl.writeByte(static_cast<uint8_t>(status + channel));
+
+                          for (uint8_t j=1; j < midiEvent.size; ++j)
+                              fShmControl.writeByte(midiEvent.data[j]);
 
                           fShmControl.commitWrite();
                     }

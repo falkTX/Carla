@@ -25,9 +25,9 @@
 #ifdef WANT_LV2
 
 #include "CarlaLv2Utils.hpp"
-#include "CarlaMathUtils.hpp"
 #include "CarlaPluginUi.hpp"
-#include "Lv2AtomQueue.hpp"
+
+#include "Lv2AtomRingBuffer.hpp"
 
 #include "../engine/CarlaEngineOsc.hpp"
 
@@ -1290,7 +1290,7 @@ public:
     {
         if (fAtomBufferOut.isDataAvailableForReading())
         {
-            char dumpBuf[fAtomBufferOut.getSize()];
+            uint8_t dumpBuf[fAtomBufferOut.getSize()];
 
             Lv2AtomRingBuffer tmpRingBuffer(fAtomBufferOut, dumpBuf);
             CARLA_SAFE_ASSERT(tmpRingBuffer.isDataAvailableForReading());
