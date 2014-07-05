@@ -631,7 +631,7 @@ void fillXmlStringFromStateSave(String& content, const StateSave& stateSave)
     {
         String info(" <Info>\n");
 
-        info << " <Type>" << stateSave.type << "</Type>\n";
+        info << " <Type>" << String(stateSave.type != nullptr ? stateSave.type : "") << "</Type>\n";
         info << " <Name>" << xmlSafeString(stateSave.name, true) << "</Name>\n";
 
         switch (getPluginTypeFromString(stateSave.type))
@@ -679,7 +679,7 @@ void fillXmlStringFromStateSave(String& content, const StateSave& stateSave)
         case PLUGIN_FILE_SF2:
         case PLUGIN_FILE_SFZ:
             info << "   <Filename>"   << xmlSafeString(stateSave.binary, true) << "</Filename>\n";
-            info << "   <Label>"    << xmlSafeString(stateSave.label, true)  << "</Label>\n";
+            info << "   <Label>"      << xmlSafeString(stateSave.label, true)  << "</Label>\n";
             break;
         }
 
@@ -720,7 +720,7 @@ void fillXmlStringFromStateSave(String& content, const StateSave& stateSave)
 
         String parameter("\n""   <Parameter>\n");
 
-        parameter << "    <Index>" << (long)stateParameter->index               << "</Index>\n"; // FIXME
+        parameter << "    <Index>" << String(stateParameter->index)             << "</Index>\n";
         parameter << "    <Name>"  << xmlSafeString(stateParameter->name, true) << "</Name>\n";
 
         if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
@@ -765,6 +765,9 @@ void fillXmlStringFromStateSave(String& content, const StateSave& stateSave)
     for (StateCustomDataItenerator it = stateSave.customData.begin(); it.valid(); it.next())
     {
         StateCustomData* const stateCustomData(it.getValue());
+        CARLA_SAFE_ASSERT_CONTINUE(stateCustomData->type  != nullptr && stateCustomData->type[0] != '\0');
+        CARLA_SAFE_ASSERT_CONTINUE(stateCustomData->key   != nullptr && stateCustomData->key[0]  != '\0');
+        CARLA_SAFE_ASSERT_CONTINUE(stateCustomData->value != nullptr);
 
         String customData("\n""   <CustomData>\n");
         customData << "    <Type>" << xmlSafeString(stateCustomData->type, true) << "</Type>\n";
@@ -804,7 +807,7 @@ void fillXmlStringFromStateSave(QString& content, const StateSave& stateSave)
     {
         QString info("  <Info>\n");
 
-        info += QString("   <Type>%1</Type>\n").arg(stateSave.type);
+        info += QString("   <Type>%1</Type>\n").arg((stateSave.type != nullptr) ? stateSave.type : "");
         info += QString("   <Name>%1</Name>\n").arg(xmlSafeString(stateSave.name, true));
 
         switch (getPluginTypeFromString(stateSave.type))
@@ -938,6 +941,9 @@ void fillXmlStringFromStateSave(QString& content, const StateSave& stateSave)
     for (StateCustomDataItenerator it = stateSave.customData.begin(); it.valid(); it.next())
     {
         StateCustomData* const stateCustomData(it.getValue());
+        CARLA_SAFE_ASSERT_CONTINUE(stateCustomData->type  != nullptr && stateCustomData->type[0] != '\0');
+        CARLA_SAFE_ASSERT_CONTINUE(stateCustomData->key   != nullptr && stateCustomData->key[0]  != '\0');
+        CARLA_SAFE_ASSERT_CONTINUE(stateCustomData->value != nullptr);
 
         QString customData("\n""   <CustomData>\n");
         customData += QString("    <Type>%1</Type>\n").arg(xmlSafeString(stateCustomData->type, true));
