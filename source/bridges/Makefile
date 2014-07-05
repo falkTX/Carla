@@ -421,7 +421,7 @@ OBJS_PLUGIN = \
 	../backend/plugin/JucePlugin__native.o \
 	../backend/plugin/FluidSynthPlugin__native.o \
 	../backend/plugin/LinuxSamplerPlugin__native.o \
-	../standalone/CarlaStandalone__native.o
+	../backend/CarlaStandalone__native.o
 
 LIBS_PLUGIN = \
 	../modules/jackbridge.a \
@@ -567,7 +567,7 @@ OBJS_POSIX32 += \
 
 # carla-standalone
 OBJS_POSIX32 += \
-	../standalone/CarlaStandalone__posix32.o
+	../backend/CarlaStandalone__posix32.o
 
 # libs
 LIBS_POSIX32 = \
@@ -627,7 +627,7 @@ OBJS_POSIX64 += \
 
 # carla-standalone
 OBJS_POSIX64 += \
-	../standalone/CarlaStandalone__posix64.o
+	../backend/CarlaStandalone__posix64.o
 
 # libs
 LIBS_POSIX64 = \
@@ -687,7 +687,7 @@ OBJS_WIN32 += \
 
 # carla-standalone
 OBJS_WIN32 += \
-	../standalone/CarlaStandalone__win32.o
+	../backend/CarlaStandalone__win32.o
 
 # libs
 LIBS_WIN32 = \
@@ -747,7 +747,7 @@ OBJS_WIN64 += \
 
 # carla-standalone
 OBJS_WIN64 += \
-	../standalone/CarlaStandalone__win64.o
+	../backend/CarlaStandalone__win64.o
 
 # libs
 LIBS_WIN64 = \

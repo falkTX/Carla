@@ -1010,16 +1010,10 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
 
     if (bridgeBinary.isNotEmpty())
     {
-# ifdef CARLA_OS_LINUX
-        // test for local build
-        if (bridgeBinary.endsWith("/source/backend/"))
-            bridgeBinary += "../bridges/";
-# endif
-
 # ifndef CARLA_OS_WIN
         if (btype == BINARY_NATIVE)
         {
-            bridgeBinary += "carla-bridge-native";
+            bridgeBinary += OS_SEP_STR "carla-bridge-native";
         }
         else
 # endif
@@ -1027,16 +1021,16 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             switch (btype)
             {
             case BINARY_POSIX32:
-                bridgeBinary += "carla-bridge-posix32";
+                bridgeBinary += OS_SEP_STR "carla-bridge-posix32";
                 break;
             case BINARY_POSIX64:
-                bridgeBinary += "carla-bridge-posix64";
+                bridgeBinary += OS_SEP_STR "carla-bridge-posix64";
                 break;
             case BINARY_WIN32:
-                bridgeBinary += "carla-bridge-win32.exe";
+                bridgeBinary += OS_SEP_STR "carla-bridge-win32.exe";
                 break;
             case BINARY_WIN64:
-                bridgeBinary += "carla-bridge-win64.exe";
+                bridgeBinary += OS_SEP_STR "carla-bridge-win64.exe";
                 break;
             default:
                 bridgeBinary.clear();
