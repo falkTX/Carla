@@ -1288,21 +1288,18 @@ public:
 
     void idle() override
     {
-        if (! fAtomQueueOut.isEmpty())
+        if (fAtomBufferOut.isDataAvailableForReading())
         {
-            fAtomQueueOut.lock();
-            char dumpBuf[fAtomQueueOut.getSize()];
+            char dumpBuf[fAtomBufferOut.getSize()];
 
-            Lv2AtomQueue tmpQueue;
-            tmpQueue.copyAndDumpDataFromQueue(fAtomQueueOut, dumpBuf);
-            CARLA_SAFE_ASSERT(! tmpQueue.isEmpty());
-            fAtomQueueOut.unlock();
+            Lv2AtomRingBuffer tmpRingBuffer(fAtomBufferOut, dumpBuf);
+            CARLA_SAFE_ASSERT(tmpRingBuffer.isDataAvailableForReading());
 
             uint32_t portIndex;
             const LV2_Atom* atom;
             const bool hasPortEvent(fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->port_event != nullptr);
 
-            for (; tmpQueue.get(&atom, &portIndex);)
+            for (; tmpRingBuffer.get(atom, portIndex);)
             {
                 if (atom->type == CARLA_URI_MAP_ID_CARLA_ATOM_WORKER)
                 {
@@ -1313,14 +1310,14 @@ public:
                 {
                     if (pData->osc.data.target != nullptr)
                     {
-                        QByteArray chunk((const char*)atom, static_cast<int>(lv2_atom_total_size(atom)));
+                        QByteArray chunk((const char*)atom, atom->size);
                         osc_send_lv2_atom_transfer(pData->osc.data, portIndex, chunk.toBase64().constData());
                     }
                 }
                 else
                 {
                     if (hasPortEvent)
-                        fUi.descriptor->port_event(fUi.handle, portIndex, lv2_atom_total_size(atom), CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, atom);
+                        fUi.descriptor->port_event(fUi.handle, portIndex, atom->size, CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, atom);
                 }
             }
         }
@@ -2129,10 +2126,10 @@ public:
         }
 
         if (fExt.worker != nullptr || (fUi.type != UI::TYPE_NULL && fEventsIn.count > 0 && (fEventsIn.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
-            fAtomQueueIn.createBuffer(eventBufferSize);
+            fAtomBufferIn.createBuffer(eventBufferSize);
 
         if (fExt.worker != nullptr || (fUi.type != UI::TYPE_NULL && fEventsOut.count > 0 && (fEventsOut.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
-            fAtomQueueOut.createBuffer(eventBufferSize);
+            fAtomBufferOut.createBuffer(eventBufferSize);
 
         if (fEventsIn.ctrl != nullptr && fEventsIn.ctrl->port == nullptr)
             fEventsIn.ctrl->port = pData->event.portIn;
@@ -2738,14 +2735,14 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Message Input
 
-            if (fAtomQueueIn.tryLock())
+            if (fAtomBufferIn.tryLock())
             {
-                if (! fAtomQueueIn.isEmpty())
+                if (fAtomBufferIn.isDataAvailableForReading())
                 {
                     const LV2_Atom* atom;
                     uint32_t j, portIndex;
 
-                    for (; fAtomQueueIn.get(&atom, &portIndex);)
+                    for (; fAtomBufferIn.get(atom, portIndex);)
                     {
                         j = (portIndex < fEventsIn.count) ? portIndex : fEventsIn.ctrlIndex;
 
@@ -2762,7 +2759,7 @@ public:
                     }
                 }
 
-                fAtomQueueIn.unlock();
+                fAtomBufferIn.unlock();
             }
 
             // ----------------------------------------------------------------------------------------------------
@@ -3187,7 +3184,7 @@ public:
                     else //if (ev->body.type == CARLA_URI_MAP_ID_ATOM_BLANK)
                     {
                         //carla_stdout("Got out event, %s", carla_lv2_urid_unmap(this, ev->body.type));
-                        fAtomQueueOut.put(&ev->body, fEventsOut.ctrl->rindex);
+                        fAtomBufferOut.put(&ev->body, fEventsOut.ctrl->rindex);
                     }
 
                     lv2_atom_buffer_increment(&iter);
@@ -4214,7 +4211,7 @@ public:
         atom.size = size;
         atom.type = CARLA_URI_MAP_ID_CARLA_ATOM_WORKER;
 
-        return fAtomQueueOut.putChunk(&atom, data, fEventsOut.ctrlIndex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
+        return fAtomBufferOut.putChunk(&atom, data, fEventsOut.ctrlIndex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
     }
 
     LV2_Worker_Status handleWorkerRespond(const uint32_t size, const void* const data)
@@ -4225,7 +4222,7 @@ public:
         atom.size = size;
         atom.type = CARLA_URI_MAP_ID_CARLA_ATOM_WORKER;
 
-        return fAtomQueueIn.putChunk(&atom, data, fEventsIn.ctrlIndex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
+        return fAtomBufferIn.putChunk(&atom, data, fEventsIn.ctrlIndex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
     }
 
     // -------------------------------------------------------------------
@@ -4341,7 +4338,7 @@ public:
                 index = fEventsIn.ctrlIndex;
             }
 
-            fAtomQueueIn.put(atom, index);
+            fAtomBufferIn.put(atom, index);
         } break;
 
         default:
@@ -5187,7 +5184,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(atom != nullptr,);
         carla_stdout("Lv2Plugin::handleTransferAtom(%i, %p)", portIndex, atom);
 
-        fAtomQueueIn.put(atom, portIndex);
+        fAtomBufferIn.put(atom, portIndex);
     }
 
     void handleUridMap(const LV2_URID urid, const char* const uri)
@@ -5231,9 +5228,9 @@ private:
     bool    fLatencyChanged;
     int32_t fLatencyIndex; // -1 if invalid
 
-    Lv2AtomQueue   fAtomQueueIn;
-    Lv2AtomQueue   fAtomQueueOut;
-    LV2_Atom_Forge fAtomForge;
+    Lv2AtomRingBuffer fAtomBufferIn;
+    Lv2AtomRingBuffer fAtomBufferOut;
+    LV2_Atom_Forge    fAtomForge;
 
     PluginCVData fCvIn;
     PluginCVData fCvOut;

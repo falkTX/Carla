@@ -123,14 +123,14 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
 
-        return (fBuffer->head != fBuffer->tail);
+        return (fBuffer->buf != nullptr && fBuffer->head != fBuffer->tail);
     }
 
     bool isEmpty() const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
 
-        return (fBuffer->head == fBuffer->tail);
+        return (fBuffer->buf == nullptr || fBuffer->head == fBuffer->tail);
     }
 
     // -------------------------------------------------------------------
@@ -216,50 +216,50 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool writeBool(const bool value) noexcept
+    void writeBool(const bool value) noexcept
     {
-        return tryWrite(&value, sizeof(bool));
+        tryWrite(&value, sizeof(bool));
     }
 
-    bool writeByte(const int8_t value) noexcept
+    void writeByte(const int8_t value) noexcept
     {
-        return tryWrite(&value, sizeof(int8_t));
+        tryWrite(&value, sizeof(int8_t));
     }
 
-    bool writeShort(const int16_t value) noexcept
+    void writeShort(const int16_t value) noexcept
     {
-        return tryWrite(&value, sizeof(int16_t));
+        tryWrite(&value, sizeof(int16_t));
     }
 
-    bool writeInt(const int32_t value) noexcept
+    void writeInt(const int32_t value) noexcept
     {
-        return tryWrite(&value, sizeof(int32_t));
+        tryWrite(&value, sizeof(int32_t));
     }
 
-    bool writeLong(const int64_t value) noexcept
+    void writeLong(const int64_t value) noexcept
     {
-        return tryWrite(&value, sizeof(int64_t));
+        tryWrite(&value, sizeof(int64_t));
     }
 
-    bool writeFloat(const float value) noexcept
+    void writeFloat(const float value) noexcept
     {
-        return tryWrite(&value, sizeof(float));
+        tryWrite(&value, sizeof(float));
     }
 
-    bool writeDouble(const double value) noexcept
+    void writeDouble(const double value) noexcept
     {
-        return tryWrite(&value, sizeof(double));
+        tryWrite(&value, sizeof(double));
     }
 
-    bool writeCustomData(const void* const value, const std::size_t size) noexcept
+    void writeCustomData(const void* const value, const std::size_t size) noexcept
     {
-        return tryWrite(value, size);
+        tryWrite(value, size);
     }
 
     template <typename T>
-    bool writeCustomType(const T& value) noexcept
+    void writeCustomType(const T& value) noexcept
     {
-        return tryWrite(&value, sizeof(T));
+        tryWrite(&value, sizeof(T));
     }
 
     // -------------------------------------------------------------------
@@ -276,9 +276,6 @@ protected:
     }
 
     // -------------------------------------------------------------------
-
-private:
-    BufferStruct* fBuffer;
 
     bool tryRead(void* const buf, const std::size_t size) noexcept
     {
@@ -324,12 +321,12 @@ private:
         return true;
     }
 
-    bool tryWrite(const void* const buf, const std::size_t size) noexcept
+    void tryWrite(const void* const buf, const std::size_t size) noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
-        CARLA_SAFE_ASSERT_RETURN(buf != nullptr, false);
-        CARLA_SAFE_ASSERT_RETURN(size > 0, false);
-        CARLA_SAFE_ASSERT_RETURN(size < fBuffer->size, false);
+        CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(buf != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(size > 0,);
+        CARLA_SAFE_ASSERT_RETURN(size < fBuffer->size,);
 
         const uint8_t* const bytebuf(static_cast<const uint8_t*>(buf));
 
@@ -341,7 +338,7 @@ private:
         {
             carla_stderr2("CarlaRingBuffer::tryWrite(%p, " P_SIZE "): failed, not enough space", buf, size);
             fBuffer->invalidateCommit = true;
-            return false;
+            return;
         }
 
         std::size_t writeto(wrtn + size);
@@ -362,8 +359,10 @@ private:
         }
 
         fBuffer->wrtn = writeto;
-        return true;
     }
+
+private:
+    BufferStruct* fBuffer;
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(CarlaRingBuffer)
@@ -376,7 +375,10 @@ class CarlaHeapRingBuffer : public CarlaRingBuffer<HeapBuffer>
 {
 public:
     CarlaHeapRingBuffer() noexcept
-        : CarlaRingBuffer<HeapBuffer>() {}
+        : CarlaRingBuffer<HeapBuffer>()
+    {
+        carla_zeroStruct(fHeapBuffer);
+    }
 
     ~CarlaHeapRingBuffer() noexcept
     {
@@ -387,13 +389,18 @@ public:
         fHeapBuffer.buf = nullptr;
     }
 
-    void createBuffer(const uint32_t size)
+    void createBuffer(const uint32_t size) noexcept
     {
+        CARLA_SAFE_ASSERT_RETURN(fHeapBuffer.buf == nullptr,);
         CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
-        fHeapBuffer.size = carla_nextPowerOf2(size);
-        fHeapBuffer.buf  = new uint8_t[fHeapBuffer.size];
+        const uint32_t p2size(carla_nextPowerOf2(size));
 
+        try {
+            fHeapBuffer.buf = new uint8_t[p2size];
+        } CARLA_SAFE_EXCEPTION_RETURN("CarlaHeapRingBuffer::createBuffer",);
+
+        fHeapBuffer.size = p2size;
         setRingBuffer(&fHeapBuffer, true);
     }
 

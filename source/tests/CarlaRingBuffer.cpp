@@ -27,13 +27,13 @@ static void test_CarlaRingBuffer1(CarlaRingBuffer<BufferStruct>& b) noexcept
     assert(b.isEmpty());
 
     // write all types
-    assert(b.writeBool(true));
-    assert(b.writeByte(123));
-    assert(b.writeShort(1234));
-    assert(b.writeInt(99999123));
-    assert(b.writeLong(0xffffffff));
-    assert(b.writeFloat(0.0123f));
-    assert(b.writeDouble(0.0123));
+    b.writeBool(true);
+    b.writeByte(123);
+    b.writeShort(1234);
+    b.writeInt(99999123);
+    b.writeLong(0xffffffff);
+    b.writeFloat(0.0123f);
+    b.writeDouble(0.0123);
 
     // should be considered empty until a commitWrite
     assert(b.isEmpty());
@@ -88,7 +88,7 @@ static void test_CarlaRingBuffer2(CarlaRingBuffer<BufferStruct>& b) noexcept
     // write unmodified
     BufferTestStruct t1, t2;
     assert(t1 == t2);
-    assert(b.writeCustomType(t1));
+    b.writeCustomType(t1);
     assert(b.commitWrite());
 
     // test read
@@ -96,7 +96,7 @@ static void test_CarlaRingBuffer2(CarlaRingBuffer<BufferStruct>& b) noexcept
     assert(t1 == t2);
 
     // modify t1
-    assert(b.writeCustomType(t1));
+    b.writeCustomType(t1);
     assert(b.commitWrite());
     carla_zeroStruct(t1);
 
@@ -134,7 +134,7 @@ static void test_CarlaRingBuffer3(CarlaRingBuffer<BufferStruct>& b) noexcept
     assert(b.isEmpty());
 
     // write big chunk
-    assert(b.writeCustomData(kLicense, kLicenseSize));
+    b.writeCustomData(kLicense, kLicenseSize);
 
     // still empty
     assert(b.isEmpty());
