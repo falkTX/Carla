@@ -21,7 +21,7 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_LATER
 # include "juce_core.h"
 using juce::String;
 using juce::XmlElement;
@@ -176,7 +176,7 @@ void SaveState::reset() noexcept
 // -----------------------------------------------------------------------
 // xmlSafeString
 
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_LATER
 static String xmlSafeString(const String& string, const bool toXml)
 {
     String newString(string);
@@ -201,7 +201,7 @@ static QString xmlSafeString(const QString& string, const bool toXml)
 // -----------------------------------------------------------------------
 // xmlSafeStringCharDup
 
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_LATER
 static const char* xmlSafeStringCharDup(const String& string, const bool toXml)
 {
     return carla_strdup(xmlSafeString(string, toXml).toRawUTF8());
@@ -216,7 +216,7 @@ static const char* xmlSafeStringCharDup(const QString& string, const bool toXml)
 // -----------------------------------------------------------------------
 // fillSaveStateFromXmlNode
 
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_LATER
 void fillSaveStateFromXmlNode(SaveState& saveState, const XmlElement* const xmlElement)
 {
     CARLA_SAFE_ASSERT_RETURN(xmlElement != nullptr,);
@@ -625,7 +625,7 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
 // -----------------------------------------------------------------------
 // fillXmlStringFromSaveState
 
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_LATER
 void fillXmlStringFromSaveState(String& content, const SaveState& saveState)
 {
     {

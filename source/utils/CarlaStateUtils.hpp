@@ -21,7 +21,7 @@
 #include "CarlaBackend.h"
 #include "LinkedList.hpp"
 
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_LATER
 namespace juce {
 class String;
 class XmlElement;
@@ -106,7 +106,7 @@ struct SaveState {
 
 // -----------------------------------------------------------------------
 
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_LATER
 void fillSaveStateFromXmlNode(SaveState& saveState, const juce::XmlElement* const xmlElement);
 void fillXmlStringFromSaveState(juce::String& content, const SaveState& saveState);
 #else

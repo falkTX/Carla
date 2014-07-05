@@ -26,6 +26,7 @@ using namespace CarlaBackend;
 // -----------------------------------------------------------------------
 
 #define HAVE_JUCE
+#define HAVE_JUCE_LATER
 #undef CARLA_BACKEND_START_NAMESPACE
 #define CARLA_BACKEND_START_NAMESPACE namespace state_juce {
 #include "CarlaStateUtils.cpp"
@@ -37,6 +38,7 @@ using namespace CarlaBackend;
 // -----------------------------------------------------------------------
 
 #undef HAVE_JUCE
+#undef HAVE_JUCE_LATER
 #undef CARLA_BACKEND_START_NAMESPACE
 #define CARLA_BACKEND_START_NAMESPACE namespace state_qt {
 #include "CarlaStateUtils.cpp"
