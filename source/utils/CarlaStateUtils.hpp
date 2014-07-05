@@ -73,7 +73,7 @@ typedef LinkedList<StateCustomData*> StateCustomDataList;
 typedef LinkedList<StateParameter*>::Itenerator StateParameterItenerator;
 typedef LinkedList<StateCustomData*>::Itenerator StateCustomDataItenerator;
 
-struct SaveState {
+struct StateSave {
     const char* type;
     const char* name;
     const char* label;
@@ -97,21 +97,21 @@ struct SaveState {
     StateParameterList parameters;
     StateCustomDataList customData;
 
-    SaveState() noexcept;
-    ~SaveState() noexcept;
+    StateSave() noexcept;
+    ~StateSave() noexcept;
     void reset() noexcept;
 
-    CARLA_DECLARE_NON_COPY_STRUCT(SaveState)
+    CARLA_DECLARE_NON_COPY_STRUCT(StateSave)
 };
 
 // -----------------------------------------------------------------------
 
 #ifdef HAVE_JUCE_LATER
-void fillSaveStateFromXmlNode(SaveState& saveState, const juce::XmlElement* const xmlElement);
-void fillXmlStringFromSaveState(juce::String& content, const SaveState& saveState);
+void fillStateSaveFromXmlElement(StateSave& stateSave, const juce::XmlElement* const xmlElement);
+void fillXmlStringFromStateSave(juce::String& content, const StateSave& stateSave);
 #else
-void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode);
-void fillXmlStringFromSaveState(QString& content, const SaveState& saveState);
+void fillStateSaveFromXmlNode(StateSave& stateSave, const QDomNode& xmlNode);
+void fillXmlStringFromStateSave(QString& content, const StateSave& stateSave);
 #endif
 
 // -----------------------------------------------------------------------

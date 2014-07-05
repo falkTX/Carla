@@ -48,6 +48,7 @@ using namespace CarlaBackend;
 
 int main()
 {
+    SaveState s;
     return 0;
 }
 
