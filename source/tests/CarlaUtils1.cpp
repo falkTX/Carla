@@ -19,39 +19,13 @@
 # error Build this file with debug ON please
 #endif
 
-#define HAVE_JUCE
-#define VESTIGE_HEADER
-
 #include "CarlaUtils.hpp"
 #include "CarlaMathUtils.hpp"
 
-#undef NULL
-#define NULL nullptr
-
 #include "CarlaBackendUtils.hpp"
+#include "CarlaBridgeUtils.hpp"
 #include "CarlaEngineUtils.hpp"
 
-#include "CarlaLadspaUtils.hpp"
-#include "CarlaDssiUtils.hpp"
-#include "CarlaLv2Utils.hpp"
-#include "CarlaVstUtils.hpp"
-
-#include "CarlaBridgeUtils.hpp"
-#include "CarlaJuceUtils.hpp"
-#include "CarlaLibCounter.hpp"
-#include "CarlaOscUtils.hpp" // TODO
-#include "CarlaPatchbayUtils.hpp" // TODO
-// #include "CarlaPipeUtils.hpp"
-// #include "CarlaStateUtils.hpp"
-#include "CarlaShmUtils.hpp"
-
-// used in dssi utils
-#include "juce_core.h"
-#include <QtCore/QDir>
-#include <QtCore/QFileInfo>
-#include <QtCore/QStringList>
-
-#if 0
 // -----------------------------------------------------------------------
 
 static void test_CarlaUtils()
@@ -82,8 +56,8 @@ static void test_CarlaUtils()
     // carla_*sleep
 
     {
-        //carla_sleep(1);
-        //carla_msleep(1);
+        carla_sleep(1);
+        carla_msleep(1);
     }
 
     // -------------------------------------------------------------------
@@ -483,6 +457,14 @@ static void test_CarlaBackendUtils() noexcept
 
 // -----------------------------------------------------------------------
 
+static void test_CarlaBridgeUtils() noexcept
+{
+    carla_stdout(PluginBridgeInfoType2str(kPluginBridgePong));
+    carla_stdout(PluginBridgeOpcode2str(kPluginBridgeOpcodeNull));
+}
+
+// -----------------------------------------------------------------------
+
 static void test_CarlaEngineUtils() noexcept
 {
     CARLA_BACKEND_USE_NAMESPACE
@@ -493,344 +475,17 @@ static void test_CarlaEngineUtils() noexcept
 }
 
 // -----------------------------------------------------------------------
-
-static void test_CarlaLadspaUtils()
-{
-    LADSPA_Descriptor desc;
-    carla_zeroStruct(desc);
-
-    LADSPA_RDF_Descriptor rdfDesc;
-    delete ladspa_rdf_dup(&rdfDesc);
-
-    is_ladspa_port_good(0x0, 0x0);
-    is_ladspa_rdf_descriptor_valid(&rdfDesc, &desc);
-    get_default_ladspa_port_value(0x0, -1.0f, 1.0f);
-}
-
-// -----------------------------------------------------------------------
-
-namespace dssi_juce {
-const char* find_dssi_ui(const char* const filename, const char* const label) noexcept;
-#define HAVE_JUCE
-#include "CarlaDssiUtils.cpp"
-}
-
-namespace dssi_qt {
-const char* find_dssi_ui(const char* const filename, const char* const label) noexcept;
-#undef HAVE_JUCE
-#include "CarlaDssiUtils.cpp"
-}
-
-static void test_CarlaDssiUtils() noexcept
-{
-    const char* const ui_juce = dssi_juce::find_dssi_ui("/usr/lib/dssi/trivial_sampler.so", "aa");
-    const char* const ui_qt   = dssi_qt::find_dssi_ui("/usr/lib/dssi/trivial_sampler.so", "aa");
-
-    CARLA_SAFE_ASSERT(ui_juce != nullptr);
-    CARLA_SAFE_ASSERT(ui_qt != nullptr);
-
-    if (ui_juce != nullptr)
-    {
-        carla_stdout("%s", ui_juce);
-        assert(std::strcmp(ui_juce, "/usr/lib/dssi/trivial_sampler/trivial_sampler_qt") == 0);
-        delete[] ui_juce;
-    }
-
-    if (ui_qt != nullptr)
-    {
-        carla_stdout("%s", ui_qt);
-        assert(std::strcmp(ui_qt, "/usr/lib/dssi/trivial_sampler/trivial_sampler_qt") == 0);
-        delete[] ui_qt;
-    }
-}
-
-// -----------------------------------------------------------------------
-
-static LV2_URID test_lv2_uridMap(LV2_URID_Map_Handle, const char*)
-{
-    return 1;
-}
-
-static void test_CarlaLv2Utils()
-{
-    Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
-    lv2World.initIfNeeded();
-
-    // getPlugin
-    const LilvPlugin* const plugin(lv2World.getPlugin("urn:juced:DrumSynth"));
-    CARLA_SAFE_ASSERT(plugin != nullptr);
-
-    // getState
-    LV2_URID_Map uridMap = { nullptr, test_lv2_uridMap };
-    LilvState* const state(lv2World.getState("http://arcticanaudio.com/plugins/thefunction#preset001", &uridMap));
-    CARLA_SAFE_ASSERT(state != nullptr);
-    if (state != nullptr) lilv_state_free(state);
-
-    // load a bunch of plugins to stress test lilv
-    delete lv2_rdf_new("http://arcticanaudio.com/plugins/thefunction", true);
-    delete lv2_rdf_new("http://kunz.corrupt.ch/products/tal-noisemaker", true);
-    delete lv2_rdf_new("http://calf.sourceforge.net/plugins/Reverb", true);
-    delete lv2_rdf_new("http://www.openavproductions.com/fabla", true);
-    delete lv2_rdf_new("http://invadarecords.com/plugins/lv2/meter", true);
-    delete lv2_rdf_new("http://gareus.org/oss/lv2/meters#spectr30stereo", true);
-    delete lv2_rdf_new("http://plugin.org.uk/swh-plugins/revdelay", true);
-    delete lv2_rdf_new("http://lv2plug.in/plugins/eg-scope#Stereo", true);
-    delete lv2_rdf_new("http://kxstudio.sf.net/carla/plugins/carlarack", true);
-    delete lv2_rdf_new("http://guitarix.sourceforge.net/plugins/gxautowah#autowah", true);
-    delete lv2_rdf_new("http://github.com/blablack/ams-lv2/mixer_4ch", true);
-    delete lv2_rdf_new("http://drumgizmo.org/lv2", true);
-    delete lv2_rdf_new("http://synthv1.sourceforge.net/lv2", true);
-    delete lv2_rdf_new("urn:juced:DrumSynth", true);
-
-    // misc
-    is_lv2_port_supported(0x0);
-    is_lv2_feature_supported("test1");
-    is_lv2_ui_feature_supported("test2");
-}
-
-// -----------------------------------------------------------------------
-
-static intptr_t test_vst_dispatcher(AEffect*, int, int, intptr_t, void*, float)
-{
-    return 0;
-}
-
-static void test_CarlaVstUtils() noexcept
-{
-    AEffect effect;
-    carla_zeroStruct(effect);
-    effect.dispatcher = test_vst_dispatcher;
-
-    vstPluginCanDo(&effect, "test");
-    carla_stdout(vstEffectOpcode2str(effOpen));
-    carla_stdout(vstMasterOpcode2str(audioMasterAutomate));
-}
-
-// -----------------------------------------------------------------------
-
-static void test_CarlaBridgeUtils() noexcept
-{
-    carla_stdout(PluginBridgeInfoType2str(kPluginBridgePong));
-    carla_stdout(PluginBridgeOpcode2str(kPluginBridgeOpcodeNull));
-}
-
-#endif
-
-// -----------------------------------------------------------------------
-
-class LeakTestClass
-{
-public:
-    LeakTestClass()noexcept
-        : i(0) {}
-
-private:
-    int i;
-    CARLA_LEAK_DETECTOR(LeakTestClass)
-};
-
-static void test_CarlaJuceUtils()
-{
-    LeakTestClass a, b;
-    LeakTestClass* e;
-    LeakTestClass* f = nullptr;
-
-    e = new LeakTestClass;
-    f = new LeakTestClass;
-    delete e; delete f;
-    delete new LeakTestClass;
-
-    int x = 1;
-
-    {
-        assert(x == 1);
-        ScopedValueSetter<int> s(x, 2);
-        assert(x == 2);
-    }
-
-    assert(x == 1);
-
-    {
-        assert(x == 1);
-        ScopedValueSetter<int> s(x, 3, 4);
-        assert(x == 3);
-    }
-
-    assert(x == 4);
-}
-
-#if 0
-// -----------------------------------------------------------------------
-
-static void test_CarlaLibUtils() noexcept
-{
-    void* const libNot = lib_open("/libzzzzz...");
-    assert(libNot == nullptr);
-    carla_stdout("Force lib_open fail error results in: %s", lib_error("/libzzzzz..."));
-
-    void* const lib = lib_open("/usr/lib/liblo.so");
-    CARLA_SAFE_ASSERT_RETURN(lib != nullptr,);
-
-    void* const libS = lib_symbol(lib, "lo_server_new");
-    CARLA_SAFE_ASSERT(libS != nullptr);
-
-    const bool closed = lib_close(lib);
-    CARLA_SAFE_ASSERT(closed);
-
-    LibCounter lc;
-    void* const test1 = lc.open("/usr/lib/liblo.so");
-    void* const test2 = lc.open("/usr/lib/liblo.so");
-    void* const test3 = lc.open("/usr/lib/liblo.so");
-    assert(test1 == test2);
-    assert(test2 == test3);
-    lc.close(test1); lc.close(test2); lc.close(test3);
-
-    // test if the pointer changes after all closed
-    void* const test1b = lc.open("/usr/lib/liblo.so");
-    assert(test1 != test1b);
-    lc.close(test1b);
-
-    // test non-delete flag
-    void* const test4 = lc.open("/usr/lib/liblrdf.so.0", false);
-    lc.close(test4);
-    void* const test5 = lc.open("/usr/lib/liblrdf.so.0");
-    assert(test4 == test5);
-    lc.close(test5);
-
-    // open non-delete a few times, tests for cleanup on destruction
-    lc.open("/usr/lib/liblrdf.so.0");
-    lc.open("/usr/lib/liblrdf.so.0");
-    lc.open("/usr/lib/liblrdf.so.0");
-}
-
-// -----------------------------------------------------------------------
-
-struct ShmStruct {
-    char stringStart[255];
-    bool boolean;
-    int integer;
-    float floating;
-    char stringEnd[255];
-};
-
-static void test_CarlaShmUtils() noexcept
-{
-    shm_t shm, shma;
-    ShmStruct* shmStruct1;
-    ShmStruct* shmStruct2;
-
-    // base tests first
-    carla_shm_init(shm);
-    assert(! carla_is_shm_valid(shm));
-
-    shm = carla_shm_create("/carla-shm-test1");
-    carla_stdout("test %i", shm);
-    assert(carla_is_shm_valid(shm));
-
-    carla_shm_close(shm);
-    assert(! carla_is_shm_valid(shm));
-
-    shm = carla_shm_create("/carla-shm-test1");
-    assert(carla_is_shm_valid(shm));
-
-    shma = carla_shm_attach("/carla-shm-test1");
-    assert(carla_is_shm_valid(shma));
-
-    carla_shm_close(shm);
-    carla_shm_close(shma);
-    assert(! carla_is_shm_valid(shm));
-    assert(! carla_is_shm_valid(shma));
-
-    // test attach invalid
-    shma = carla_shm_attach("/carla-shm-test-NOT");
-    assert(! carla_is_shm_valid(shma));
-
-    // test memory, start
-    shm = carla_shm_create("/carla-shm-test1");
-    assert(carla_is_shm_valid(shm));
-
-    shma = carla_shm_attach("/carla-shm-test1");
-    assert(carla_is_shm_valid(shma));
-
-    // test memory, check valid
-    shmStruct1 = carla_shm_map<ShmStruct>(shm);
-    assert(shmStruct1 != nullptr);
-
-    shmStruct2 = carla_shm_map<ShmStruct>(shma);
-    assert(shmStruct2 != nullptr);
-
-    carla_shm_unmap(shma, shmStruct2);
-    assert(shmStruct2 == nullptr);
-
-    carla_shm_unmap(shm, shmStruct1);
-    assert(shmStruct1 == nullptr);
-
-    // test memory, check if write data matches
-    shmStruct1 = carla_shm_map<ShmStruct>(shm);
-    assert(shmStruct1 != nullptr);
-
-    shmStruct2 = carla_shm_map<ShmStruct>(shma);
-    assert(shmStruct2 != nullptr);
-
-    carla_zeroStruct(*shmStruct1);
-    assert(shmStruct1->stringStart[0] == '\0');
-    assert(shmStruct2->stringStart[0] == '\0');
-    assert(shmStruct1->stringEnd[0] == '\0');
-    assert(shmStruct2->stringEnd[0] == '\0');
-    assert(! shmStruct1->boolean);
-    assert(! shmStruct2->boolean);
-
-    shmStruct1->boolean = true;
-    shmStruct1->integer = 232312;
-    assert(shmStruct1->boolean == shmStruct2->boolean);
-    assert(shmStruct1->integer == shmStruct2->integer);
-
-    shmStruct2->floating = 2342.231f;
-    std::strcpy(shmStruct2->stringStart, "test1start");
-    std::strcpy(shmStruct2->stringEnd, "test2end");
-    assert(shmStruct1->floating == shmStruct2->floating);
-    assert(std::strcmp(shmStruct1->stringStart, "test1start") == 0);
-    assert(std::strcmp(shmStruct1->stringStart, shmStruct2->stringStart) == 0);
-    assert(std::strcmp(shmStruct1->stringEnd, "test2end") == 0);
-    assert(std::strcmp(shmStruct1->stringEnd, shmStruct2->stringEnd) == 0);
-
-    carla_shm_unmap(shma, shmStruct2);
-    assert(shmStruct2 == nullptr);
-
-    carla_shm_unmap(shm, shmStruct1);
-    assert(shmStruct1 == nullptr);
-
-    // test memory, done
-    carla_shm_close(shm);
-    carla_shm_close(shma);
-    assert(! carla_is_shm_valid(shm));
-    assert(! carla_is_shm_valid(shma));
-}
-#endif
-
-// -----------------------------------------------------------------------
 // main
 
 int main()
 {
-#if 0
     // already tested, skip for now
     test_CarlaUtils();
     test_CarlaMathUtils();
 
     test_CarlaBackendUtils();
+    test_CarlaBridgeUtils();
     test_CarlaEngineUtils();
-
-    test_CarlaLadspaUtils();
-    test_CarlaDssiUtils();
-    test_CarlaLv2Utils();
-    test_CarlaVstUtils();
-#endif
-
-    //test_CarlaBridgeUtils();
-    //test_CarlaLibUtils();
-    test_CarlaJuceUtils();
-    //test_CarlaShmUtils();
 
     return 0;
 }

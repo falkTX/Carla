@@ -110,13 +110,13 @@ public:
 
         bool valid() const noexcept
         {
-            return (fEntry != &kQueue);
+            return (fEntry != nullptr && fEntry != &kQueue);
         }
 
         void next() noexcept
         {
             fEntry  = fEntry2;
-            fEntry2 = fEntry->next;
+            fEntry2 = (fEntry != nullptr) ? fEntry->next : nullptr;
         }
 
         T& getValue() noexcept

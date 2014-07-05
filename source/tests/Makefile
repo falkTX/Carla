@@ -40,7 +40,9 @@ endif
 # --------------------------------------------------------------
 
 TARGETS  = ansi-pedantic-test_c ansi-pedantic-test_c99
-TARGETS += CarlaRingBuffer CarlaString CarlaUtils Exceptions Print RDF
+TARGETS += CarlaRingBuffer CarlaString
+TARGETS += CarlaUtils1 CarlaUtils2 CarlaUtils3 CarlaUtils4
+TARGETS += Exceptions Print RDF
 
 # ansi-pedantic-test_cxx ansi-pedantic-test_cxx11
 # TARGETS +=  EngineEvents PipeServer RtLinkedList RtLinkedListGnu
@@ -71,10 +73,22 @@ CarlaString: CarlaString.cpp ../utils/CarlaString.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
 	valgrind --leak-check=full ./$@
 
-CarlaUtils: CarlaUtils.cpp ../utils/*.hpp
+CarlaUtils1: CarlaUtils1.cpp ../utils/*.hpp
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
+	valgrind --leak-check=full ./$@
+
+CarlaUtils2: CarlaUtils2.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ \
 		 ../modules/juce_core.a ../modules/lilv.a -ldl -lpthread -lrt \
 		 $(shell pkg-config --cflags --libs QtCore) -isystem /usr/include/qt4
+	valgrind --leak-check=full ./$@
+
+CarlaUtils3: CarlaUtils3.cpp ../utils/*.hpp
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ -ldl -lrt
+	valgrind --leak-check=full ./$@
+
+CarlaUtils4: CarlaUtils4.cpp ../utils/*.hpp
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ -ldl -lrt
 	valgrind --leak-check=full ./$@
 
 Exceptions: Exceptions.cpp

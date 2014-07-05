@@ -83,7 +83,10 @@ source/frontend/Makefile
 source/tests/ansi-pedantic-test_*
 source/tests/CarlaRingBuffer
 source/tests/CarlaString
-source/tests/CarlaUtils
+source/tests/CarlaUtils1
+source/tests/CarlaUtils2
+source/tests/CarlaUtils3
+source/tests/CarlaUtils4
 source/tests/Exceptions
 source/tests/Print
 source/tests/RDF
