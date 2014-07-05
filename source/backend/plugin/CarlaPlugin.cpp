@@ -41,7 +41,7 @@ static const CustomData      kCustomDataNull      = { nullptr, nullptr, nullptr 
 static bool gIsLoadingProject = false;
 
 // -------------------------------------------------------------------
-// ParamSymbol struct, needed for CarlaPlugin::loadSaveState()
+// ParamSymbol struct, needed for CarlaPlugin::loadStateSave()
 
 struct ParamSymbol {
     int32_t index;
@@ -507,9 +507,9 @@ void CarlaPlugin::randomizeParameters() noexcept
     }
 }
 
-const SaveState& CarlaPlugin::getSaveState()
+const StateSave& CarlaPlugin::getStateSave()
 {
-    pData->saveState.reset();
+    pData->stateSave.clear();
     prepareForSave();
 
     char strBuf[STR_MAX+1];
@@ -519,26 +519,26 @@ const SaveState& CarlaPlugin::getSaveState()
 
     getLabel(strBuf);
 
-    pData->saveState.type     = carla_strdup(getPluginTypeAsString(getType()));
-    pData->saveState.name     = carla_strdup(pData->name);
-    pData->saveState.label    = carla_strdup(strBuf);
-    pData->saveState.uniqueId = getUniqueId();
+    pData->stateSave.type     = carla_strdup(getPluginTypeAsString(getType()));
+    pData->stateSave.name     = carla_strdup(pData->name);
+    pData->stateSave.label    = carla_strdup(strBuf);
+    pData->stateSave.uniqueId = getUniqueId();
 
     if (pData->filename != nullptr)
-        pData->saveState.binary = carla_strdup(pData->filename);
+        pData->stateSave.binary = carla_strdup(pData->filename);
 
     // ---------------------------------------------------------------
     // Internals
 
-    pData->saveState.active = pData->active;
+    pData->stateSave.active = pData->active;
 
 #ifndef BUILD_BRIDGE
-    pData->saveState.dryWet       = pData->postProc.dryWet;
-    pData->saveState.volume       = pData->postProc.volume;
-    pData->saveState.balanceLeft  = pData->postProc.balanceLeft;
-    pData->saveState.balanceRight = pData->postProc.balanceRight;
-    pData->saveState.panning      = pData->postProc.panning;
-    pData->saveState.ctrlChannel  = pData->ctrlChannel;
+    pData->stateSave.dryWet       = pData->postProc.dryWet;
+    pData->stateSave.volume       = pData->postProc.volume;
+    pData->stateSave.balanceLeft  = pData->postProc.balanceLeft;
+    pData->stateSave.balanceRight = pData->postProc.balanceRight;
+    pData->stateSave.panning      = pData->postProc.panning;
+    pData->stateSave.ctrlChannel  = pData->ctrlChannel;
 #endif
 
     // ---------------------------------------------------------------
@@ -551,10 +551,10 @@ const SaveState& CarlaPlugin::getSaveState()
 
         if (data != nullptr && dataSize > 0)
         {
-            pData->saveState.chunk = carla_strdup(QByteArray((char*)data, dataSize).toBase64().constData());
+            pData->stateSave.chunk = carla_strdup(QByteArray((char*)data, dataSize).toBase64().constData());
 
             // Don't save anything else if using chunks
-            return pData->saveState;
+            return pData->stateSave;
         }
     }
 
@@ -563,8 +563,8 @@ const SaveState& CarlaPlugin::getSaveState()
 
     if (pData->prog.current >= 0 && getType() != PLUGIN_LV2)
     {
-        pData->saveState.currentProgramIndex = pData->prog.current;
-        pData->saveState.currentProgramName  = carla_strdup(pData->prog.names[pData->prog.current]);
+        pData->stateSave.currentProgramIndex = pData->prog.current;
+        pData->stateSave.currentProgramName  = carla_strdup(pData->prog.names[pData->prog.current]);
     }
 
     // ---------------------------------------------------------------
@@ -574,8 +574,8 @@ const SaveState& CarlaPlugin::getSaveState()
     {
         const MidiProgramData& mpData(pData->midiprog.getCurrent());
 
-        pData->saveState.currentMidiBank    = static_cast<int32_t>(mpData.bank);
-        pData->saveState.currentMidiProgram = static_cast<int32_t>(mpData.program);
+        pData->stateSave.currentMidiBank    = static_cast<int32_t>(mpData.bank);
+        pData->stateSave.currentMidiProgram = static_cast<int32_t>(mpData.program);
     }
 
     // ---------------------------------------------------------------
@@ -608,7 +608,7 @@ const SaveState& CarlaPlugin::getSaveState()
         if (paramData.hints & PARAMETER_USES_SAMPLERATE)
             stateParameter->value /= sampleRate;
 
-        pData->saveState.parameters.append(stateParameter);
+        pData->stateSave.parameters.append(stateParameter);
     }
 
     // ---------------------------------------------------------------
@@ -624,13 +624,13 @@ const SaveState& CarlaPlugin::getSaveState()
         stateCustomData->key   = carla_strdup(cData.key);
         stateCustomData->value = carla_strdup(cData.value);
 
-        pData->saveState.customData.append(stateCustomData);
+        pData->stateSave.customData.append(stateCustomData);
     }
 
-    return pData->saveState;
+    return pData->stateSave;
 }
 
-void CarlaPlugin::loadSaveState(const SaveState& saveState)
+void CarlaPlugin::loadStateSave(const StateSave& stateSave)
 {
     char strBuf[STR_MAX+1];
     const bool usesMultiProgs(pData->extraHints & PLUGIN_EXTRA_HINT_USES_MULTI_PROGS);
@@ -641,7 +641,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------
     // Part 1 - PRE-set custom data (only that which reload programs)
 
-    for (LinkedList<StateCustomData*>::Itenerator it = saveState.customData.begin(); it.valid(); it.next())
+    for (LinkedList<StateCustomData*>::Itenerator it = stateSave.customData.begin(); it.valid(); it.next())
     {
         const StateCustomData* const stateCustomData(it.getValue());
         const char* const key(stateCustomData->key);
@@ -660,14 +660,14 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------
     // Part 2 - set program
 
-    if (saveState.currentProgramIndex >= 0 && saveState.currentProgramName != nullptr)
+    if (stateSave.currentProgramIndex >= 0 && stateSave.currentProgramName != nullptr)
     {
         int32_t programId = -1;
 
         // index < count
-        if (saveState.currentProgramIndex < static_cast<int32_t>(pData->prog.count))
+        if (stateSave.currentProgramIndex < static_cast<int32_t>(pData->prog.count))
         {
-            programId = saveState.currentProgramIndex;
+            programId = stateSave.currentProgramIndex;
         }
         // index not valid, try to find by name
         else
@@ -677,7 +677,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
                 strBuf[0] = '\0';
                 getProgramName(i, strBuf);
 
-                if (strBuf[0] != '\0' && std::strcmp(saveState.currentProgramName, strBuf) == 0)
+                if (strBuf[0] != '\0' && std::strcmp(stateSave.currentProgramName, strBuf) == 0)
                 {
                     programId = static_cast<int32_t>(i);
                     break;
@@ -693,8 +693,8 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------
     // Part 3 - set midi program
 
-    if (saveState.currentMidiBank >= 0 && saveState.currentMidiProgram >= 0 && ! usesMultiProgs)
-        setMidiProgramById(static_cast<uint32_t>(saveState.currentMidiBank), static_cast<uint32_t>(saveState.currentMidiProgram), true, true, true);
+    if (stateSave.currentMidiBank >= 0 && stateSave.currentMidiProgram >= 0 && ! usesMultiProgs)
+        setMidiProgramById(static_cast<uint32_t>(stateSave.currentMidiBank), static_cast<uint32_t>(stateSave.currentMidiProgram), true, true, true);
 
     // ---------------------------------------------------------------
     // Part 4a - get plugin parameter symbols
@@ -721,7 +721,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
 
     const float sampleRate(static_cast<float>(pData->engine->getSampleRate()));
 
-    for (LinkedList<StateParameter*>::Itenerator it = saveState.parameters.begin(); it.valid(); it.next())
+    for (LinkedList<StateParameter*>::Itenerator it = stateSave.parameters.begin(); it.valid(); it.next())
     {
         StateParameter* const stateParameter(it.getValue());
 
@@ -811,7 +811,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------
     // Part 5 - set custom data
 
-    for (LinkedList<StateCustomData*>::Itenerator it = saveState.customData.begin(); it.valid(); it.next())
+    for (LinkedList<StateCustomData*>::Itenerator it = stateSave.customData.begin(); it.valid(); it.next())
     {
         const StateCustomData* const stateCustomData(it.getValue());
         const char* const key(stateCustomData->key);
@@ -833,22 +833,22 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------
     // Part 6 - set chunk
 
-    if (saveState.chunk != nullptr && (pData->options & PLUGIN_OPTION_USE_CHUNKS) != 0)
-        setChunkData(saveState.chunk);
+    if (stateSave.chunk != nullptr && (pData->options & PLUGIN_OPTION_USE_CHUNKS) != 0)
+        setChunkData(stateSave.chunk);
 
     // ---------------------------------------------------------------
     // Part 6 - set internal stuff
 
 #ifndef BUILD_BRIDGE
-    setDryWet(saveState.dryWet, true, true);
-    setVolume(saveState.volume, true, true);
-    setBalanceLeft(saveState.balanceLeft, true, true);
-    setBalanceRight(saveState.balanceRight, true, true);
-    setPanning(saveState.panning, true, true);
-    setCtrlChannel(saveState.ctrlChannel, true, true);
+    setDryWet(stateSave.dryWet, true, true);
+    setVolume(stateSave.volume, true, true);
+    setBalanceLeft(stateSave.balanceLeft, true, true);
+    setBalanceRight(stateSave.balanceRight, true, true);
+    setPanning(stateSave.panning, true, true);
+    setCtrlChannel(stateSave.ctrlChannel, true, true);
 #endif
 
-    setActive(saveState.active, true, true);
+    setActive(stateSave.active, true, true);
 }
 
 bool CarlaPlugin::saveStateToFile(const char* const filename)
@@ -861,14 +861,11 @@ bool CarlaPlugin::saveStateToFile(const char* const filename)
     if (! file.open(QIODevice::WriteOnly | QIODevice::Text))
         return false;
 
-    QString content;
-    fillXmlStringFromSaveState(content, getSaveState());
-
     QTextStream out(&file);
     out << "<?xml version='1.0' encoding='UTF-8'?>\n";
     out << "<!DOCTYPE CARLA-PRESET>\n";
     out << "<CARLA-PRESET VERSION='2.0'>\n";
-    out << content;
+    out << getStateSave().toString();
     out << "</CARLA-PRESET>\n";
 
     file.close();
@@ -897,9 +894,8 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
         return false;
     }
 
-    pData->saveState.reset();
-    fillSaveStateFromXmlNode(pData->saveState, xmlNode);
-    loadSaveState(pData->saveState);
+    pData->stateSave.fillFromXmlNode(xmlNode);
+    loadStateSave(pData->stateSave);
 
     return true;
 }

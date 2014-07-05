@@ -50,13 +50,11 @@ int main()
 {
     state_juce::StateSave jsave;
     jsave.type = carla_strdup("NONE");
-    juce::String js;
-    state_juce::fillXmlStringFromStateSave(js, jsave);
+    carla_stdout(jsave.toString().toRawUTF8());
 
     state_qt::StateSave qsave;
     qsave.type = carla_strdup("NONE");
-    QString qs;
-    state_qt::fillXmlStringFromStateSave(qs, qsave);
+    carla_stdout(qsave.toString().toUtf8().constData());
 
     return 0;
 }

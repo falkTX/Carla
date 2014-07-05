@@ -1156,9 +1156,9 @@ public:
         if (needsReinit)
         {
             // reload plugin to recreate its ports
-            const SaveState& saveState(plugin->getSaveState());
+            const StateSave& saveState(plugin->getStateSave());
             plugin->reload();
-            plugin->loadSaveState(saveState);
+            plugin->loadStateSave(saveState);
         }
 
         return plugin->getName();

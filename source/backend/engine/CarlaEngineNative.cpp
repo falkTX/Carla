@@ -1313,11 +1313,8 @@ protected:
                 //if (strBuf[0] != '\0')
                 //    out << QString(" <!-- %1 -->\n").arg(xmlSafeString(strBuf, true));
 
-                QString content;
-                fillXmlStringFromSaveState(content, plugin->getSaveState());
-
                 out << " <Plugin>\n";
-                out << content;
+                out << plugin->getStateSave().toString();
                 out << " </Plugin>\n";
 
                 firstPlugin = false;
@@ -1348,19 +1345,19 @@ protected:
         {
             if (node.toElement().tagName().compare("plugin", Qt::CaseInsensitive) == 0)
             {
-                SaveState saveState;
-                fillSaveStateFromXmlNode(saveState, node);
+                StateSave stateSave;
+                stateSave.fillFromXmlNode(node);
 
-                CARLA_SAFE_ASSERT_CONTINUE(saveState.type != nullptr);
+                CARLA_SAFE_ASSERT_CONTINUE(stateSave.type != nullptr);
 
                 const void* extraStuff = nullptr;
 
                 // check if using GIG, SF2 or SFZ 16outs
                 static const char kUse16OutsSuffix[] = " (16 outs)";
 
-                const PluginType ptype(getPluginTypeFromString(saveState.type));
+                const PluginType ptype(getPluginTypeFromString(stateSave.type));
 
-                if (CarlaString(saveState.label).endsWith(kUse16OutsSuffix))
+                if (CarlaString(stateSave.label).endsWith(kUse16OutsSuffix))
                 {
                     if (ptype == PLUGIN_FILE_GIG || ptype == PLUGIN_FILE_SF2)
                         extraStuff = "true";
@@ -1368,10 +1365,10 @@ protected:
 
                 // TODO - proper find&load plugins
 
-                if (addPlugin(ptype, saveState.binary, saveState.name, saveState.label, saveState.uniqueId, extraStuff))
+                if (addPlugin(ptype, stateSave.binary, stateSave.name, stateSave.label, stateSave.uniqueId, extraStuff))
                 {
                     if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
-                        plugin->loadSaveState(saveState);
+                        plugin->loadStateSave(stateSave);
                 }
 
                 //pluginsAdded = true;

@@ -99,20 +99,22 @@ struct StateSave {
 
     StateSave() noexcept;
     ~StateSave() noexcept;
-    void reset() noexcept;
+    void clear() noexcept;
+
+#ifdef HAVE_JUCE_LATER
+    void fillFromXmlElement(const juce::XmlElement* const xmlElement);
+#else
+    void fillFromXmlNode(const QDomNode& xmlNode);
+#endif
+
+#ifdef HAVE_JUCE_LATER
+    juce::String toString() const;
+#else
+    QString toString() const;
+#endif
 
     CARLA_DECLARE_NON_COPY_STRUCT(StateSave)
 };
-
-// -----------------------------------------------------------------------
-
-#ifdef HAVE_JUCE_LATER
-void fillStateSaveFromXmlElement(StateSave& stateSave, const juce::XmlElement* const xmlElement);
-void fillXmlStringFromStateSave(juce::String& content, const StateSave& stateSave);
-#else
-void fillStateSaveFromXmlNode(StateSave& stateSave, const QDomNode& xmlNode);
-void fillXmlStringFromStateSave(QString& content, const StateSave& stateSave);
-#endif
 
 // -----------------------------------------------------------------------
 

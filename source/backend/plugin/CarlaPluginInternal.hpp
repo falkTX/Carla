@@ -257,7 +257,7 @@ struct CarlaPlugin::ProtectedData {
     PluginMidiProgramData midiprog;
     LinkedList<CustomData> custom;
 
-    SaveState saveState;
+    StateSave stateSave;
 
     CarlaMutex masterMutex; // global master lock
     CarlaMutex singleMutex; // small lock used only in processSingle()

@@ -49,7 +49,7 @@ class CarlaEngineAudioPort;
 /*!
  * Save state data.
  */
-struct SaveState;
+struct StateSave;
 
 // -----------------------------------------------------------------------
 
@@ -382,16 +382,16 @@ public:
      * Get the plugin's save state.\n
      * The plugin will automatically call prepareForSave() as needed.
      *
-     * \see loadSaveState()
+     * \see loadStateSave()
      */
-    const SaveState& getSaveState();
+    const StateSave& getStateSave();
 
     /*!
      * Get the plugin's save state.
      *
-     * \see getSaveState()
+     * \see getStateSave()
      */
-    void loadSaveState(const SaveState& saveState);
+    void loadStateSave(const StateSave& stateSave);
 
     /*!
      * Save the current plugin state to \a filename.
