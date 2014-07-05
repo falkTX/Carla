@@ -81,6 +81,7 @@ data/windows/CarlaControl
 source/bridges/jackplugin/libjack.so.0
 source/frontend/Makefile
 source/tests/ansi-pedantic-test_*
+source/tests/CarlaRingBuffer
 source/tests/CarlaString
 source/tests/CarlaUtils
 source/tests/Exceptions

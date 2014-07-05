@@ -40,7 +40,7 @@ endif
 # --------------------------------------------------------------
 
 TARGETS  = ansi-pedantic-test_c ansi-pedantic-test_c99
-TARGETS += CarlaString CarlaUtils Exceptions Print RDF
+TARGETS += CarlaRingBuffer CarlaString CarlaUtils Exceptions Print RDF
 
 # ansi-pedantic-test_cxx ansi-pedantic-test_cxx11
 # TARGETS +=  EngineEvents PipeServer RtLinkedList RtLinkedListGnu
@@ -62,6 +62,10 @@ ansi-pedantic-test_cxx11: ansi-pedantic-test.cpp ../backend/Carla*.h
 	$(CXX) $< $(ANSI_FLAGS) -std=c++11 -pedantic -pedantic-errors -o $@
 
 # --------------------------------------------------------------
+
+CarlaRingBuffer: CarlaRingBuffer.cpp ../utils/CarlaRingBuffer.hpp
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
+	valgrind --leak-check=full ./$@
 
 CarlaString: CarlaString.cpp ../utils/CarlaString.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
