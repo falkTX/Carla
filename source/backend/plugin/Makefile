@@ -52,7 +52,7 @@ debug:
 # --------------------------------------------------------------
 
 CarlaPlugin.cpp.o: CarlaPlugin.cpp $(CARLA_PLUGIN_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) $(QTXML_FLAGS) -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
 
 CarlaPluginInternal.cpp.o: CarlaPluginInternal.cpp $(CARLA_PLUGIN_INTERNAL_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@

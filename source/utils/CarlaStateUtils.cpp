@@ -21,11 +21,11 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 
-#ifdef HAVE_JUCE_LATER
-# include "juce_core.h"
+#include "juce_core.h"
 using juce::String;
 using juce::XmlElement;
-#else
+
+#if 0
 # include <QtCore/QString>
 # include <QtXml/QDomNode>
 #endif
@@ -35,7 +35,6 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 // xmlSafeString
 
-#ifdef HAVE_JUCE_LATER
 static String xmlSafeString(const String& string, const bool toXml)
 {
     String newString(string);
@@ -45,7 +44,7 @@ static String xmlSafeString(const String& string, const bool toXml)
     else
         return newString.replace("&lt;","<").replace("&gt;",">").replace("&apos;","'").replace("&quot;","\"").replace("&amp;","&");
 }
-#else
+#if 0
 static QString xmlSafeString(const QString& string, const bool toXml)
 {
     QString newString(string);
@@ -60,12 +59,11 @@ static QString xmlSafeString(const QString& string, const bool toXml)
 // -----------------------------------------------------------------------
 // xmlSafeStringCharDup
 
-#ifdef HAVE_JUCE_LATER
 static const char* xmlSafeStringCharDup(const String& string, const bool toXml)
 {
     return carla_strdup(xmlSafeString(string, toXml).toRawUTF8());
 }
-#else
+#if 0
 static const char* xmlSafeStringCharDup(const QString& string, const bool toXml)
 {
     return carla_strdup(xmlSafeString(string, toXml).toUtf8().constData());
@@ -216,16 +214,15 @@ void StateSave::clear() noexcept
 // -----------------------------------------------------------------------
 // fillFromXmlElement
 
-#ifdef HAVE_JUCE_LATER
-void StateSave::fillFromXmlElement(const XmlElement* const xmlElement)
+bool StateSave::fillFromXmlElement(const XmlElement* const xmlElement)
 {
-    clear();
+    CARLA_SAFE_ASSERT_RETURN(xmlElement != nullptr, false);
 
-    CARLA_SAFE_ASSERT_RETURN(xmlElement != nullptr,);
+    clear();
 
     for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
     {
-        String tagName(elem->getTagName());
+        const String& tagName(elem->getTagName());
 
         // ---------------------------------------------------------------
         // Info
@@ -404,8 +401,10 @@ void StateSave::fillFromXmlElement(const XmlElement* const xmlElement)
             }
         }
     }
+
+    return true;
 }
-#else
+#if 0
 void StateSave::fillFromXmlNode(const QDomNode& xmlNode)
 {
     clear();
@@ -629,7 +628,6 @@ void StateSave::fillFromXmlNode(const QDomNode& xmlNode)
 // -----------------------------------------------------------------------
 // fillXmlStringFromStateSave
 
-#ifdef HAVE_JUCE_LATER
 String StateSave::toString() const
 {
     String content;
@@ -702,15 +700,15 @@ String StateSave::toString() const
         dataXml << "   <Active>" << (active ? "Yes" : "No") << "</Active>\n";
 
         if (dryWet != 1.0f)
-            dataXml << "   <DryWet>"        << dryWet       << "</DryWet>\n";
+            dataXml << "   <DryWet>"        << String(dryWet, 7)       << "</DryWet>\n";
         if (volume != 1.0f)
-            dataXml << "   <Volume>"        << volume       << "</Volume>\n";
+            dataXml << "   <Volume>"        << String(volume, 7)       << "</Volume>\n";
         if (balanceLeft != -1.0f)
-            dataXml << "   <Balance-Left>"  << balanceLeft  << "</Balance-Left>\n";
+            dataXml << "   <Balance-Left>"  << String(balanceLeft, 7)  << "</Balance-Left>\n";
         if (balanceRight != 1.0f)
-            dataXml << "   <Balance-Right>" << balanceRight << "</Balance-Right>\n";
+            dataXml << "   <Balance-Right>" << String(balanceRight, 7) << "</Balance-Right>\n";
         if (panning != 0.0f)
-            dataXml << "   <Panning>"       << panning      << "</Panning>\n";
+            dataXml << "   <Panning>"       << String(panning, 7)      << "</Panning>\n";
 
         if (ctrlChannel < 0)
             dataXml << "   <ControlChannel>N</ControlChannel>\n";
@@ -733,7 +731,7 @@ String StateSave::toString() const
             parameterXml << "    <Symbol>" << xmlSafeString(stateParameter->symbol, true) << "</Symbol>\n";
 
         if (stateParameter->isInput)
-            parameterXml << "    <Value>" << stateParameter->value << "</Value>\n";
+            parameterXml << "    <Value>" << String(stateParameter->value, 15) << "</Value>\n";
 
         if (stateParameter->midiCC > 0)
         {
@@ -783,7 +781,7 @@ String StateSave::toString() const
         {
             customDataXml << "    <Value>\n";
             customDataXml << xmlSafeString(stateCustomData->value, true);
-            customDataXml << "    </Value>\n";
+            customDataXml << "\n    </Value>\n";
         }
         else
         {
@@ -809,7 +807,7 @@ String StateSave::toString() const
 
     return content;
 }
-#else
+#if 0
 QString StateSave::toString() const
 {
     QString content;

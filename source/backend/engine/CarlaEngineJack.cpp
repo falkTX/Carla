@@ -26,13 +26,16 @@
 #include "jackbridge/JackBridge.hpp"
 #include "jackey.h"
 
-#include <QtCore/QStringList>
+#include "juce_core.h"
 
 #ifdef __SSE2_MATH__
 # include <xmmintrin.h>
 #endif
 
 #define URI_CANVAS_ICON "http://kxstudio.sf.net/ns/canvas/icon"
+
+using juce::String;
+using juce::StringArray;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -1862,11 +1865,11 @@ private:
     {
         CARLA_SAFE_ASSERT_RETURN(ourName != nullptr && ourName[0] != '\0',);
 
-        QStringList parsedGroups;
+        StringArray parsedGroups;
 
         // add our client first
         {
-            parsedGroups.append(QString(ourName));
+            parsedGroups.add(String(ourName));
 
             GroupNameToId groupNameToId;
             groupNameToId.setData(++fUsedGroups.lastId, ourName);
@@ -1899,9 +1902,9 @@ private:
 
                 CARLA_SAFE_ASSERT_CONTINUE(found);
 
-                QString qGroupName(groupName.buffer());
+                String jGroupName(groupName.buffer());
 
-                if (parsedGroups.contains(qGroupName))
+                if (parsedGroups.contains(jGroupName))
                 {
                     groupId = fUsedGroups.getGroupId(groupName);
                     CARLA_SAFE_ASSERT_CONTINUE(groupId > 0);
@@ -1909,7 +1912,7 @@ private:
                 else
                 {
                     groupId = ++fUsedGroups.lastId;
-                    parsedGroups.append(qGroupName);
+                    parsedGroups.add(jGroupName);
 
                     int pluginId = -1;
                     PatchbayIcon icon = (jackPortFlags & JackPortIsPhysical) ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION;

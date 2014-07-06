@@ -21,15 +21,10 @@
 #include "CarlaBackend.h"
 #include "LinkedList.hpp"
 
-#ifdef HAVE_JUCE_LATER
 namespace juce {
 class String;
 class XmlElement;
 }
-#else
-class QDomNode;
-class QString;
-#endif
 
 // -----------------------------------------------------------------------
 
@@ -101,17 +96,8 @@ struct StateSave {
     ~StateSave() noexcept;
     void clear() noexcept;
 
-#ifdef HAVE_JUCE_LATER
-    void fillFromXmlElement(const juce::XmlElement* const xmlElement);
-#else
-    void fillFromXmlNode(const QDomNode& xmlNode);
-#endif
-
-#ifdef HAVE_JUCE_LATER
+    bool fillFromXmlElement(const juce::XmlElement* const xmlElement);
     juce::String toString() const;
-#else
-    QString toString() const;
-#endif
 
     CARLA_DECLARE_NON_COPY_STRUCT(StateSave)
 };

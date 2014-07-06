@@ -60,7 +60,7 @@ debug:
 # --------------------------------------------------------------
 
 CarlaEngine.cpp.o: CarlaEngine.cpp $(CARLA_ENGINE_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) $(QTXML_FLAGS) -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 CarlaEngineInternal.cpp.o: CarlaEngineInternal.cpp $(CARLA_ENGINE_INTERNAL_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
@@ -72,7 +72,7 @@ CarlaEngineThread.cpp.o: CarlaEngineThread.cpp $(CARLA_ENGINE_THREAD_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 CarlaEngineJack.cpp.o: CarlaEngineJack.cpp $(CARLA_ENGINE_JACK_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 CarlaEngineRtAudio.cpp.o: CarlaEngineRtAudio.cpp $(CARLA_ENGINE_RTAUDIO_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(RTAUDIO_FLAGS) $(RTMIDI_FLAGS) -c -o $@
@@ -81,9 +81,9 @@ CarlaEngineJuce.cpp.o: CarlaEngineJuce.cpp $(CARLA_ENGINE_JUCE_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 CarlaEngineNative.cpp.o: CarlaEngineNative.cpp $(CARLA_ENGINE_NATIVE_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) $(QTXML_FLAGS) -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 CarlaEngineNative.cpp.exp.o: CarlaEngineNative.cpp $(CARLA_ENGINE_NATIVE_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) $(QTXML_FLAGS) -DCARLA_PLUGIN_EXPORT -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_EXPORT -c -o $@
 
 # --------------------------------------------------------------

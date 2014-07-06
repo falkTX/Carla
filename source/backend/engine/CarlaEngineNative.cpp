@@ -34,8 +34,13 @@
 #include "CarlaExternalUI.hpp"
 #include "CarlaNative.hpp"
 
-#include <QtCore/QTextStream>
-#include <QtXml/QDomNode>
+#include "juce_core.h"
+
+using juce::MemoryOutputStream;
+using juce::ScopedPointer;
+using juce::String;
+using juce::XmlDocument;
+using juce::XmlElement;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -1288,8 +1293,7 @@ protected:
 
     char* getState() const
     {
-        QString string;
-        QTextStream out(&string);
+        MemoryOutputStream out;
         out << "<?xml version='1.0' encoding='UTF-8'?>\n";
         out << "<!DOCTYPE CARLA-PROJECT>\n";
         out << "<CARLA-PROJECT VERSION='2.0'>\n";
@@ -1323,30 +1327,32 @@ protected:
 
         out << "</CARLA-PROJECT>\n";
 
-        return strdup(string.toUtf8().constData());
+        return strdup(out.toString().toRawUTF8());
     }
 
     void setState(const char* const data)
     {
-        QDomDocument xml;
-        xml.setContent(QString(data));
+        const String text(data);
+        XmlDocument xml(text);
 
-        QDomNode xmlNode(xml.documentElement());
+        ScopedPointer<XmlElement> xmlElement(xml.getDocumentElement(true));
+        CARLA_SAFE_ASSERT_RETURN(xmlElement != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(xmlElement->getTagName().equalsIgnoreCase("carla-project"),);
 
-        if (xmlNode.toElement().tagName().compare("carla-project", Qt::CaseInsensitive) != 0)
-        {
-            carla_stderr2("Not a valid Carla project");
-            return;
-        }
+        // completely load file
+        xmlElement = xml.getDocumentElement(false);
+        CARLA_SAFE_ASSERT_RETURN(xmlElement != nullptr,);
 
         //bool pluginsAdded = false;
 
-        for (QDomNode node = xmlNode.firstChild(); ! node.isNull(); node = node.nextSibling())
+        for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
         {
-            if (node.toElement().tagName().compare("plugin", Qt::CaseInsensitive) == 0)
+            const String& tagName(elem->getTagName());
+
+            if (tagName.equalsIgnoreCase("plugin"))
             {
                 StateSave stateSave;
-                stateSave.fillFromXmlNode(node);
+                stateSave.fillFromXmlElement(elem);
 
                 CARLA_SAFE_ASSERT_CONTINUE(stateSave.type != nullptr);
 

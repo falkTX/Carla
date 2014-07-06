@@ -120,9 +120,7 @@ public:
 
     bool isDataAvailableForReading() const noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
-
-        return (fBuffer->buf != nullptr && fBuffer->head != fBuffer->tail);
+        return (fBuffer != nullptr && fBuffer->buf != nullptr && fBuffer->head != fBuffer->tail);
     }
 
     bool isEmpty() const noexcept

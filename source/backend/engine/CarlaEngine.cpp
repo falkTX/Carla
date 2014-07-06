@@ -34,12 +34,14 @@
 #include "CarlaMIDI.h"
 
 #include "jackbridge/JackBridge.hpp"
+#include "juce_core.h"
 
-#include <QtCore/QDir>
-#include <QtCore/QFile>
-#include <QtCore/QFileInfo>
-#include <QtCore/QTextStream>
-#include <QtXml/QDomNode>
+using juce::File;
+using juce::MemoryOutputStream;
+using juce::ScopedPointer;
+using juce::String;
+using juce::XmlDocument;
+using juce::XmlElement;
 
 // -----------------------------------------------------------------------
 
@@ -1038,9 +1040,9 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             }
         }
 
-        QFile file(bridgeBinary.buffer());
+        File file(bridgeBinary.buffer());
 
-        if (! file.exists())
+        if (! file.existsAsFile())
             bridgeBinary.clear();
     }
 
@@ -1054,9 +1056,9 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
         else if (btype == BINARY_WIN32)
         {
             // fallback to dssi-vst
-            QFileInfo fileInfo(filename);
+            File file(filename);
 
-            CarlaString label2(fileInfo.fileName().toUtf8().constData());
+            CarlaString label2(file.getFullPathName().toRawUTF8());
             label2.replace(' ', '*');
 
             CarlaPlugin::Initializer init2 = {
@@ -1069,7 +1071,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             };
 
             char* const oldVstPath(getenv("VST_PATH"));
-            carla_setenv("VST_PATH", fileInfo.absoluteDir().absolutePath().toUtf8().constData());
+            carla_setenv("VST_PATH", file.getParentDirectory().getFullPathName().toRawUTF8());
 
             plugin = CarlaPlugin::newDSSI(init2);
 
@@ -1525,28 +1527,11 @@ bool CarlaEngine::loadFile(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename (err #1)");
     carla_debug("CarlaEngine::loadFile(\"%s\")", filename);
 
-    QFileInfo fileInfo(filename);
+    File file(filename);
+    CARLA_SAFE_ASSERT_RETURN_ERR(file.existsAsFile(), "Requested file does not exist or is not a readable file");
 
-    if (! fileInfo.exists())
-    {
-        setLastError("File does not exist");
-        return false;
-    }
-
-    if (! fileInfo.isFile())
-    {
-        setLastError("Not a file");
-        return false;
-    }
-
-    if (! fileInfo.isReadable())
-    {
-        setLastError("File is not readable");
-        return false;
-    }
-
-    CarlaString baseName(fileInfo.baseName().toUtf8().constData());
-    CarlaString extension(fileInfo.suffix().toLower().toUtf8().constData());
+    CarlaString baseName(file.getFileName().toRawUTF8());
+    CarlaString extension(file.getFileExtension().toRawUTF8());
     extension.toLower();
 
     // -------------------------------------------------------------------
@@ -1656,32 +1641,35 @@ bool CarlaEngine::loadProject(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename (err #2)");
     carla_debug("CarlaEngine::loadProject(\"%s\")", filename);
 
-    QFile file(filename);
+    File file(filename);
+    CARLA_SAFE_ASSERT_RETURN_ERR(file.existsAsFile(), "Requested file does not exist or is not a readable file");
 
-    if (! file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return false;
+    XmlDocument xml(file);
+    ScopedPointer<XmlElement> xmlElement(xml.getDocumentElement(true));
+    CARLA_SAFE_ASSERT_RETURN_ERR(xmlElement != nullptr, "Failed to parse project file");
 
-    QDomDocument xml;
-    xml.setContent(file.readAll());
-    file.close();
+    const String& xmlType(xmlElement->getTagName());
+    const bool isPreset(xmlType.equalsIgnoreCase("carla-preset"));
 
-    QDomNode xmlNode(xml.documentElement());
-
-    const bool isPreset(xmlNode.toElement().tagName().compare("carla-preset", Qt::CaseInsensitive) == 0);
-
-    if (xmlNode.toElement().tagName().compare("carla-project", Qt::CaseInsensitive) != 0 && ! isPreset)
+    if (! (xmlType.equalsIgnoreCase("carla-project") || isPreset))
     {
         setLastError("Not a valid Carla project or preset file");
         return false;
     }
 
+    // completely load file
+    xmlElement = xml.getDocumentElement(false);
+    CARLA_SAFE_ASSERT_RETURN_ERR(xmlElement != nullptr, "Failed to completely parse project file");
+
     // handle plugins first
-    for (QDomNode node = xmlNode.firstChild(); ! node.isNull(); node = node.nextSibling())
+    for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
     {
-        if (isPreset || node.toElement().tagName().compare("plugin", Qt::CaseInsensitive) == 0)
+        const String& tagName(elem->getTagName());
+
+        if (isPreset || tagName.equalsIgnoreCase("plugin"))
         {
             StateSave stateSave;
-            stateSave.fillFromXmlNode(isPreset ? xmlNode : node);
+            stateSave.fillFromXmlElement(isPreset ? xmlElement.get() : elem);
 
             callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
 
@@ -1725,30 +1713,34 @@ bool CarlaEngine::loadProject(const char* const filename)
             return true;
     }
 
-    // now connections
-    for (QDomNode node = xmlNode.firstChild(); ! node.isNull(); node = node.nextSibling())
+    // now handle connections
+    for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
     {
-        if (node.toElement().tagName().compare("patchbay", Qt::CaseInsensitive) == 0)
+        const String& tagName(elem->getTagName());
+
+        if (tagName.equalsIgnoreCase("patchbay"))
         {
             CarlaString sourcePort, targetPort;
 
-            for (QDomNode patchNode = node.firstChild(); ! patchNode.isNull(); patchNode = patchNode.nextSibling())
+            for (XmlElement* patchElem = elem->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
             {
+                const String& patchTag(patchElem->getTagName());
+
                 sourcePort.clear();
                 targetPort.clear();
 
-                if (patchNode.toElement().tagName().compare("connection", Qt::CaseInsensitive) != 0)
+                if (! patchTag.equalsIgnoreCase("connection"))
                     continue;
 
-                for (QDomNode connNode = patchNode.firstChild(); ! connNode.isNull(); connNode = connNode.nextSibling())
+                for (XmlElement* connElem = patchElem->getFirstChildElement(); connElem != nullptr; connElem = connElem->getNextElement())
                 {
-                    const QString tag(connNode.toElement().tagName());
-                    const QString text(connNode.toElement().text().trimmed());
+                    const String& tag(connElem->getTagName());
+                    const String  text(connElem->getAllSubText().trim());
 
-                    if (tag.compare("source", Qt::CaseInsensitive) == 0)
-                        sourcePort = text.toUtf8().constData();
-                    else if (tag.compare("target", Qt::CaseInsensitive) == 0)
-                        targetPort = text.toUtf8().constData();
+                    if (tag.equalsIgnoreCase("source"))
+                        sourcePort = text.toRawUTF8();
+                    else if (tag.equalsIgnoreCase("target"))
+                        targetPort = text.toRawUTF8();
                 }
 
                 if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
@@ -1767,12 +1759,7 @@ bool CarlaEngine::saveProject(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename (err #3)");
     carla_debug("CarlaEngine::saveProject(\"%s\")", filename);
 
-    QFile file(filename);
-
-    if (! file.open(QIODevice::WriteOnly | QIODevice::Text))
-        return false;
-
-    QTextStream out(&file);
+    MemoryOutputStream out;
     out << "<?xml version='1.0' encoding='UTF-8'?>\n";
     out << "<!DOCTYPE CARLA-PROJECT>\n";
     out << "<CARLA-PROJECT VERSION='2.0'>\n";
@@ -1842,8 +1829,13 @@ bool CarlaEngine::saveProject(const char* const filename)
 
     out << "</CARLA-PROJECT>\n";
 
-    file.close();
-    return true;
+    File file(filename);
+
+    if (file.replaceWithData(out.getData(), out.getDataSize()))
+        return true;
+
+    setLastError("Failed to write file");
+    return false;
 }
 
 // -----------------------------------------------------------------------

@@ -24,9 +24,17 @@
 
 #include <ctime>
 
-#include <QtCore/QFile>
-#include <QtCore/QTextStream>
-#include <QtXml/QDomNode>
+// FIXME
+#include <QtCore/QByteArray>
+
+#include "juce_core.h"
+
+using juce::File;
+using juce::MemoryOutputStream;
+using juce::ScopedPointer;
+using juce::String;
+using juce::XmlDocument;
+using juce::XmlElement;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -856,20 +864,20 @@ bool CarlaPlugin::saveStateToFile(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
     carla_debug("CarlaPlugin::saveStateToFile(\"%s\")", filename);
 
-    QFile file(filename);
-
-    if (! file.open(QIODevice::WriteOnly | QIODevice::Text))
-        return false;
-
-    QTextStream out(&file);
+    MemoryOutputStream out;
     out << "<?xml version='1.0' encoding='UTF-8'?>\n";
     out << "<!DOCTYPE CARLA-PRESET>\n";
     out << "<CARLA-PRESET VERSION='2.0'>\n";
     out << getStateSave().toString();
     out << "</CARLA-PRESET>\n";
 
-    file.close();
-    return true;
+    File file(filename);
+
+    if (file.replaceWithData(out.getData(), out.getDataSize()))
+        return true;
+
+    pData->engine->setLastError("Failed to write file");
+    return false;
 }
 
 bool CarlaPlugin::loadStateFromFile(const char* const filename)
@@ -877,25 +885,20 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
     carla_debug("CarlaPlugin::loadStateFromFile(\"%s\")", filename);
 
-    QFile file(filename);
+    File file(filename);
+    CARLA_SAFE_ASSERT_RETURN(file.existsAsFile(), false);
 
-    if (! file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return false;
+    XmlDocument xml(file);
+    ScopedPointer<XmlElement> xmlElement(xml.getDocumentElement(true));
+    CARLA_SAFE_ASSERT_RETURN(xmlElement != nullptr, false);
+    CARLA_SAFE_ASSERT_RETURN(xmlElement->getTagName().equalsIgnoreCase("carla-preset"), false);
 
-    QDomDocument xml;
-    xml.setContent(file.readAll());
-    file.close();
+    // completely load file
+    xmlElement = xml.getDocumentElement(false);
+    CARLA_SAFE_ASSERT_RETURN(xmlElement != nullptr, false);
 
-    QDomNode xmlNode(xml.documentElement());
-
-    if (xmlNode.toElement().tagName().compare("carla-preset", Qt::CaseInsensitive) == 0)
-    {
-        pData->engine->setLastError("Not a valid Carla preset file");
-        return false;
-    }
-
-    pData->stateSave.fillFromXmlNode(xmlNode);
-    loadStateSave(pData->stateSave);
+    if (pData->stateSave.fillFromXmlElement(xmlElement->getFirstChildElement()))
+        loadStateSave(pData->stateSave);
 
     return true;
 }
@@ -1410,8 +1413,10 @@ void CarlaPlugin::idle()
 
     carla_stdout("Trying to get window...");
 
-    QString uiTitle(QString("%1 (GUI)").arg(pData->name));
-    if (CarlaPluginUi::tryTransientWinIdMatch(pData->osc.data.target != nullptr ? pData->osc.thread.getPid() : 0, uiTitle.toUtf8().constData(), pData->engine->getOptions().frontendWinId))
+    CarlaString uiTitle(pData->name);
+    uiTitle += " (GUI)";
+
+    if (CarlaPluginUi::tryTransientWinIdMatch(pData->osc.data.target != nullptr ? pData->osc.thread.getPid() : 0, uiTitle, pData->engine->getOptions().frontendWinId))
         pData->transientTryCounter = 0;
 }
 

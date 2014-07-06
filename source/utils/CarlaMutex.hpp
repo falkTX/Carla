@@ -209,9 +209,7 @@ class CarlaScopeTryLocker
 public:
     CarlaScopeTryLocker(const Mutex& mutex) noexcept
         : fMutex(mutex),
-          fLocked(mutex.tryLock())
-    {
-    }
+          fLocked(mutex.tryLock()) {}
 
     ~CarlaScopeTryLocker() noexcept
     {
