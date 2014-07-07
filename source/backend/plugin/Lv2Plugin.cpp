@@ -1979,11 +1979,11 @@ public:
                     }
                     else if (LV2_IS_PORT_DESIGNATION_FREEWHEELING(portDesignation))
                     {
-                        pData->param.special[j] = PARAMETER_SPECIAL_LV2_FREEWHEEL;
+                        pData->param.special[j] = PARAMETER_SPECIAL_FREEWHEEL;
                     }
                     else if (LV2_IS_PORT_DESIGNATION_TIME(portDesignation))
                     {
-                        pData->param.special[j] = PARAMETER_SPECIAL_LV2_TIME;
+                        pData->param.special[j] = PARAMETER_SPECIAL_TIME;
                     }
                     else
                     {
@@ -2031,7 +2031,7 @@ public:
                     }
                     else if (LV2_IS_PORT_DESIGNATION_TIME(portDesignation))
                     {
-                        pData->param.special[j] = PARAMETER_SPECIAL_LV2_TIME;
+                        pData->param.special[j] = PARAMETER_SPECIAL_TIME;
                     }
                     else
                     {
@@ -2073,7 +2073,7 @@ public:
                 pData->param.ranges[j].stepLarge = stepLarge;
 
                 // Start parameters in their default values (except freewheel, which is off by default)
-                if (pData->param.data[j].type == PARAMETER_INPUT && pData->param.special[j] == PARAMETER_SPECIAL_LV2_FREEWHEEL)
+                if (pData->param.data[j].type == PARAMETER_INPUT && pData->param.special[j] == PARAMETER_SPECIAL_FREEWHEEL)
                     fParamBuffers[j] = min;
                 else
                     fParamBuffers[j] = def;
@@ -2574,7 +2574,7 @@ public:
             {
                 if (pData->param.data[k].type != PARAMETER_INPUT)
                     continue;
-                if (pData->param.special[k] != PARAMETER_SPECIAL_LV2_TIME)
+                if (pData->param.special[k] != PARAMETER_SPECIAL_TIME)
                     continue;
 
                 doPostRt = false;
@@ -3581,7 +3581,7 @@ public:
     {
         for (uint32_t k=0; k < pData->param.count; ++k)
         {
-            if (pData->param.data[k].type == PARAMETER_INPUT && pData->param.special[k] == PARAMETER_SPECIAL_LV2_FREEWHEEL)
+            if (pData->param.data[k].type == PARAMETER_INPUT && pData->param.special[k] == PARAMETER_SPECIAL_FREEWHEEL)
             {
                 fParamBuffers[k] = isOffline ? pData->param.ranges[k].max : pData->param.ranges[k].min;
                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 1, fParamBuffers[k]);

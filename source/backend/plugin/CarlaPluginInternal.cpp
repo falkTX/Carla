@@ -56,13 +56,9 @@ void PluginAudioData::createNew(const uint32_t newCount)
     CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
     ports = new PluginAudioPort[newCount];
-    count = newCount;
+    carla_zeroStruct(ports, newCount);
 
-    for (uint32_t i=0; i < count; ++i)
-    {
-        ports[i].rindex = 0;
-        ports[i].port   = nullptr;
-    }
+    count = newCount;
 }
 
 void PluginAudioData::clear() noexcept
@@ -114,14 +110,9 @@ void PluginCVData::createNew(const uint32_t newCount)
     CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
     ports = new PluginCVPort[newCount];
-    count = newCount;
+    carla_zeroStruct(ports, newCount);
 
-    for (uint32_t i=0; i < count; ++i)
-    {
-        ports[i].rindex = 0;
-        ports[i].param  = 0;
-        ports[i].port   = nullptr;
-    }
+    count = newCount;
 }
 
 void PluginCVData::clear() noexcept
@@ -215,31 +206,26 @@ void PluginParameterData::createNew(const uint32_t newCount, const bool withSpec
     CARLA_SAFE_ASSERT_RETURN(special == nullptr,);
     CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
-    data   = new ParameterData[newCount];
-    ranges = new ParameterRanges[newCount];
-    count  = newCount;
-
-    if (withSpecial)
-        special = new SpecialParameterType[newCount];
+    data = new ParameterData[newCount];
+    carla_zeroStruct(data, newCount);
 
     for (uint32_t i=0; i < newCount; ++i)
     {
-        data[i].type   = PARAMETER_UNKNOWN;
-        data[i].hints  = 0x0;
         data[i].index  = PARAMETER_NULL;
         data[i].rindex = PARAMETER_NULL;
         data[i].midiCC = -1;
-        data[i].midiChannel = 0;
-        ranges[i].def = 0.0f;
-        ranges[i].min = 0.0f;
-        ranges[i].max = 0.0f;
-        ranges[i].step = 0.0f;
-        ranges[i].stepSmall = 0.0f;
-        ranges[i].stepLarge = 0.0f;
-
-        if (withSpecial)
-            special[i] = PARAMETER_SPECIAL_NULL;
     }
+
+    ranges = new ParameterRanges[newCount];
+    carla_zeroStruct(ranges, newCount);
+
+    if (withSpecial)
+    {
+        special = new SpecialParameterType[newCount];
+        carla_zeroStruct(special, newCount);
+    }
+
+    count = newCount;
 }
 
 void PluginParameterData::clear() noexcept
@@ -293,12 +279,11 @@ void PluginProgramData::createNew(const uint32_t newCount)
     CARLA_SAFE_ASSERT_RETURN(names == nullptr,);
     CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
-    names   = new ProgramName[newCount];
+    names = new ProgramName[newCount];
+    carla_zeroStruct(names, newCount);
+
     count   = newCount;
     current = -1;
-
-    for (uint32_t i=0; i < newCount; ++i)
-        names[i] = nullptr;
 }
 
 void PluginProgramData::clear() noexcept
@@ -318,7 +303,7 @@ void PluginProgramData::clear() noexcept
         names = nullptr;
     }
 
-    count = 0;
+    count   = 0;
     current = -1;
 }
 
@@ -344,16 +329,11 @@ void PluginMidiProgramData::createNew(const uint32_t newCount)
     CARLA_SAFE_ASSERT_RETURN(data == nullptr,);
     CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
-    data    = new MidiProgramData[newCount];
+    data = new MidiProgramData[newCount];
+    carla_zeroStruct(data, newCount);
+
     count   = newCount;
     current = -1;
-
-    for (uint32_t i=0; i < count; ++i)
-    {
-        data[i].bank    = 0;
-        data[i].program = 0;
-        data[i].name    = nullptr;
-    }
 }
 
 void PluginMidiProgramData::clear() noexcept
@@ -373,7 +353,7 @@ void PluginMidiProgramData::clear() noexcept
         data = nullptr;
     }
 
-    count = 0;
+    count   = 0;
     current = -1;
 }
 
@@ -392,15 +372,20 @@ CarlaPlugin::ProtectedData::ExternalNotes::ExternalNotes() noexcept
 
 CarlaPlugin::ProtectedData::ExternalNotes::~ExternalNotes() noexcept
 {
-    mutex.lock();
-    data.clear();
-    mutex.unlock();
+    clear();
 }
 
 void CarlaPlugin::ProtectedData::ExternalNotes::appendNonRT(const ExternalMidiNote& note) noexcept
 {
     mutex.lock();
     data.append_sleepy(note);
+    mutex.unlock();
+}
+
+void CarlaPlugin::ProtectedData::ExternalNotes::clear() noexcept
+{
+    mutex.lock();
+    data.clear();
     mutex.unlock();
 }
 

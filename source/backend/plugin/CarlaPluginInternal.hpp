@@ -24,10 +24,9 @@
 #include "CarlaOscUtils.hpp"
 #include "CarlaStateUtils.hpp"
 
+#include "CarlaMIDI.h"
 #include "CarlaMutex.hpp"
 #include "RtLinkedList.hpp"
-
-#include "CarlaMIDI.h"
 
 // -----------------------------------------------------------------------
 
@@ -42,7 +41,7 @@ CARLA_BACKEND_START_NAMESPACE
 #endif
 
 // -----------------------------------------------------------------------
-// Forward declarations of CarlaEngine classes
+// Forward declarations of CarlaEngine port classes
 
 class CarlaEngineAudioPort;
 class CarlaEngineCVPort;
@@ -124,7 +123,7 @@ struct PluginAudioData {
 
 struct PluginCVPort {
     uint32_t rindex;
-    uint32_t param;
+    uint32_t param; // FIXME is this needed?
     CarlaEngineCVPort* port;
 };
 
@@ -158,11 +157,11 @@ struct PluginEventData {
 // -----------------------------------------------------------------------
 
 enum SpecialParameterType {
-    PARAMETER_SPECIAL_NULL          = 0,
-    PARAMETER_SPECIAL_LATENCY       = 1,
-    PARAMETER_SPECIAL_SAMPLE_RATE   = 2,
-    PARAMETER_SPECIAL_LV2_FREEWHEEL = 3,
-    PARAMETER_SPECIAL_LV2_TIME      = 4
+    PARAMETER_SPECIAL_NULL        = 0,
+    PARAMETER_SPECIAL_FREEWHEEL   = 1,
+    PARAMETER_SPECIAL_LATENCY     = 2,
+    PARAMETER_SPECIAL_SAMPLE_RATE = 3,
+    PARAMETER_SPECIAL_TIME        = 4
 };
 
 struct PluginParameterData {
@@ -258,10 +257,10 @@ struct CarlaPlugin::ProtectedData {
     PluginMidiProgramData midiprog;
     LinkedList<CustomData> custom;
 
-    StateSave stateSave;
-
     CarlaMutex masterMutex; // global master lock
     CarlaMutex singleMutex; // small lock used only in processSingle()
+
+    StateSave stateSave;
 
     struct ExternalNotes {
         CarlaMutex mutex;
@@ -271,6 +270,7 @@ struct CarlaPlugin::ProtectedData {
         ExternalNotes() noexcept;
         ~ExternalNotes() noexcept;
         void appendNonRT(const ExternalMidiNote& note) noexcept;
+        void clear() noexcept;
 
         CARLA_DECLARE_NON_COPY_STRUCT(ExternalNotes)
 
