@@ -64,11 +64,12 @@ const uint PLUGIN_EXTRA_HINT_USES_MULTI_PROGS = 0x08;
 // -----------------------------------------------------------------------
 
 /*!
- * Post-RT event type.\n
+ * Post-RT event type.
  * These are events postponned from within the process function,
  *
- * During process, we cannot lock, allocate memory or do UI stuff,\n
+ * During process, we cannot lock, allocate memory or do UI stuff,
  * so events have to be postponned to be executed later, on a separate thread.
+ * @see PluginPostRtEvent
  */
 enum PluginPostRtEventType {
     kPluginPostRtEventNull = 0,
@@ -82,7 +83,7 @@ enum PluginPostRtEventType {
 
 /*!
  * A Post-RT event.
- * \see PluginPostRtEventType
+ * @see PluginPostRtEventType
  */
 struct PluginPostRtEvent {
     PluginPostRtEventType type;
@@ -96,7 +97,7 @@ struct PluginPostRtEvent {
 struct ExternalMidiNote {
     int8_t  channel; // invalid if -1
     uint8_t note;    // 0 to 127
-    uint8_t velo;    // note-off if 0
+    uint8_t velo;    // 1 to 127, 0 for note-off
 };
 
 // -----------------------------------------------------------------------

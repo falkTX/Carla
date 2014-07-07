@@ -51,7 +51,7 @@ enum EngineType {
     kEngineTypeNull = 0,
 
     /*!
-     * JACK engine type.\n
+     * JACK engine type.
      * Provides all processing modes.
      */
     kEngineTypeJack = 1,
@@ -88,19 +88,19 @@ enum EnginePortType {
 
     /*!
      * Audio port type.
-     * \see CarlaEngineAudioPort
+     * @see CarlaEngineAudioPort
      */
     kEnginePortTypeAudio = 1,
 
     /*!
      * CV port type.
-     * \see CarlaEngineCVPort
+     * @see CarlaEngineCVPort
      */
     kEnginePortTypeCV = 2,
 
     /*!
      * Event port type (Control or MIDI).
-     * \see CarlaEngineEventPort
+     * @see CarlaEngineEventPort
      */
     kEnginePortTypeEvent = 3
 };
@@ -116,13 +116,13 @@ enum EngineEventType {
 
     /*!
      * Control event type.
-     * \see EngineControlEvent
+     * @see EngineControlEvent
      */
     kEngineEventTypeControl = 1,
 
     /*!
      * MIDI event type.
-     * \see EngineMidiEvent
+     * @see EngineMidiEvent
      */
     kEngineEventTypeMidi = 2
 };
@@ -137,8 +137,8 @@ enum EngineControlEventType {
     kEngineControlEventTypeNull = 0,
 
     /*!
-     * Parameter event type.\n
-     * \note Value uses a normalized range of 0.0f<->1.0f.
+     * Parameter event type.
+     * @note Value uses a normalized range of 0.0f<->1.0f.
      */
     kEngineControlEventTypeParameter = 1,
 
@@ -174,7 +174,7 @@ struct EngineControlEvent {
     float    value;              //!< Parameter value, normalized to 0.0f<->1.0f.
 
     /*!
-     * Convert this control event to MIDI data.
+     * Convert this control event into MIDI data.
      */
     void convertToMidiData(const uint8_t channel, uint8_t& size, uint8_t data[3]) const noexcept;
 };
@@ -299,16 +299,15 @@ struct EngineTimeInfo {
 // -----------------------------------------------------------------------
 
 /*!
- * Carla Engine port (Abstract).\n
+ * Carla Engine port (Abstract).
  * This is the base class for all Carla Engine ports.
  */
 class CarlaEnginePort
 {
 protected:
     /*!
-     * The constructor.\n
-     * Param \a isInputPort defines wherever this is an input port or not (output otherwise).\n
-     * Input/output and process mode are constant for the lifetime of the port.
+     * The constructor.
+     * All constructor parameters are constant and will never change in the lifetime of the port.
      */
     CarlaEnginePort(const CarlaEngineClient& client, const bool isInputPort) noexcept;
 
@@ -360,7 +359,7 @@ class CarlaEngineAudioPort : public CarlaEnginePort
 {
 public:
     /*!
-     * The constructor.\n
+     * The constructor.
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
     CarlaEngineAudioPort(const CarlaEngineClient& client, const bool isInputPort) noexcept;
@@ -373,7 +372,7 @@ public:
     /*!
      * Get the type of the port, in this case kEnginePortTypeAudio.
      */
-    EnginePortType getType() const noexcept override
+    EnginePortType getType() const noexcept final
     {
         return kEnginePortTypeAudio;
     }
@@ -385,7 +384,7 @@ public:
 
     /*!
      * Direct access to the port's audio buffer.
-     * May return null.
+     * May be null.
      */
     float* getBuffer() const noexcept
     {
@@ -407,7 +406,7 @@ class CarlaEngineCVPort : public CarlaEnginePort
 {
 public:
     /*!
-     * The constructor.\n
+     * The constructor.
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
     CarlaEngineCVPort(const CarlaEngineClient& client, const bool isInputPort) noexcept;
@@ -420,7 +419,7 @@ public:
     /*!
      * Get the type of the port, in this case kEnginePortTypeCV.
      */
-    EnginePortType getType() const noexcept override
+    EnginePortType getType() const noexcept final
     {
         return kEnginePortTypeCV;
     }
@@ -432,7 +431,7 @@ public:
 
     /*!
      * Direct access to the port's CV buffer.
-     * May return null.
+     * May be null.
      */
     float* getBuffer() const noexcept
     {
@@ -454,7 +453,7 @@ class CarlaEngineEventPort : public CarlaEnginePort
 {
 public:
     /*!
-     * The constructor.\n
+     * The constructor.
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
     CarlaEngineEventPort(const CarlaEngineClient& client, const bool isInputPort) noexcept;
@@ -467,62 +466,62 @@ public:
     /*!
      * Get the type of the port, in this case kEnginePortTypeEvent.
      */
-    EnginePortType getType() const noexcept override
+    EnginePortType getType() const noexcept final
     {
         return kEnginePortTypeEvent;
     }
 
     /*!
-     * Initialize the port's internal buffer for \a engine.
+     * Initialize the port's internal buffer for @a engine.
      */
     void initBuffer() noexcept override;
 
     /*!
      * Get the number of events present in the buffer.
-     * \note You must only call this for input ports.
+     * @note You must only call this for input ports.
      */
     virtual uint32_t getEventCount() const noexcept;
 
     /*!
-     * Get the event at \a index.
-     * \note You must only call this for input ports.
+     * Get the event at @a index.
+     * @note You must only call this for input ports.
      */
     virtual const EngineEvent& getEvent(const uint32_t index) const noexcept;
 
     /*!
-     * Get the event at \a index, faster unchecked version.
+     * Get the event at @a index, faster unchecked version.
      */
     virtual const EngineEvent& getEventUnchecked(const uint32_t index) const noexcept;
 
     /*!
      * Write a control event into the buffer.
-     * \note You must only call this for output ports.
+     * @note You must only call this for output ports.
      */
     bool writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEvent& ctrl) noexcept;
 
     /*!
-     * Write a control event into the buffer.\n
+     * Write a control event into the buffer.
      * Arguments are the same as in the EngineControlEvent struct.
-     * \note You must only call this for output ports.
+     * @note You must only call this for output ports.
      */
     virtual bool writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value = 0.0f) noexcept;
 
     /*!
      * Write a MIDI event into the buffer.
-     * \note You must only call this for output ports.
+     * @note You must only call this for output ports.
      */
     bool writeMidiEvent(const uint32_t time, const uint8_t size, const uint8_t* const data) noexcept;
 
     /*!
      * Write a MIDI event into the buffer.
-     * \note You must only call this for output ports.
+     * @note You must only call this for output ports.
      */
     bool writeMidiEvent(const uint32_t time, const uint8_t channel, const EngineMidiEvent& midi) noexcept;
 
     /*!
-     * Write a MIDI event into the buffer.\n
+     * Write a MIDI event into the buffer.
      * Arguments are the same as in the EngineMidiEvent struct.
-     * \note You must only call this for output ports.
+     * @note You must only call this for output ports.
      */
     virtual bool writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t size, const uint8_t* const data) noexcept;
 
@@ -538,16 +537,16 @@ protected:
 // -----------------------------------------------------------------------
 
 /*!
- * Carla Engine client.\n
- * Each plugin requires one client from the engine (created via CarlaEngine::addClient()).\n
- * \note This is a virtual class, some engine types provide custom funtionality.
+ * Carla Engine client.
+ * Each plugin requires one client from the engine (created via CarlaEngine::addClient()).
+ * @note This is a virtual class, some engine types provide custom funtionality.
  */
 class CarlaEngineClient
 {
 public:
     /*!
-     * The constructor, protected.\n
-     * All constructor parameters are constant and will never change in the lifetime of the client.\n
+     * The constructor, protected.
+     * All constructor parameters are constant and will never change in the lifetime of the client.
      * Client starts in deactivated state.
      */
     CarlaEngineClient(const CarlaEngine& engine) noexcept;
@@ -558,13 +557,13 @@ public:
     virtual ~CarlaEngineClient() noexcept;
 
     /*!
-     * Activate this client.\n
+     * Activate this client.
      * Client must be deactivated before calling this function.
      */
     virtual void activate() noexcept;
 
     /*!
-     * Deactivate this client.\n
+     * Deactivate this client.
      * Client must be activated before calling this function.
      */
     virtual void deactivate() noexcept;
@@ -575,9 +574,9 @@ public:
     virtual bool isActive() const noexcept;
 
     /*!
-     * Check if the client is ok.\n
+     * Check if the client is ok.
      * Plugins will refuse to instantiate if this returns false.
-     * \note This is always true in rack and patchbay processing modes.
+     * @note This is always true in rack and patchbay processing modes.
      */
     virtual bool isOk() const noexcept;
 
@@ -592,8 +591,8 @@ public:
     virtual void setLatency(const uint32_t samples) noexcept;
 
     /*!
-     * Add a new port of type \a portType.
-     * \note This function does nothing in rack processing mode since ports are static there (2 audio + 1 event for both input and output).
+     * Add a new port of type @a portType.
+     * @note This function does nothing in rack processing mode since ports are static there.
      */
     virtual CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput);
 
@@ -620,20 +619,20 @@ protected:
 
 /*!
  * Carla Engine.
- * \note This is a virtual class for all available engine types available in Carla.
+ * @note This is a virtual class for all available engine types available in Carla.
  */
 class CarlaEngine
 {
 protected:
     /*!
-     * The constructor, protected.\n
-     * \note This only initializes engine data, it doesn't start the engine (audio).
+     * The constructor, protected.
+     * @note This only initializes engine data, it doesn't actually start the engine.
      */
     CarlaEngine();
 
 public:
     /*!
-     * The decontructor.
+     * The destructor.
      * The engine must have been closed before this happens.
      */
     virtual ~CarlaEngine();
@@ -647,24 +646,24 @@ public:
     static uint getDriverCount();
 
     /*!
-     * Get the name of the engine driver at \a index.
+     * Get the name of the engine driver at @a index.
      */
     static const char* getDriverName(const uint index);
 
     /*!
-     * Get the device names of driver at \a index.
+     * Get the device names of the driver at @a index.
      */
     static const char* const* getDriverDeviceNames(const uint index);
 
     /*!
-     * Get the device names of driver at \a index.
+     * Get device information about the driver at @a index and name @a driverName.
      */
     static const EngineDriverDeviceInfo* getDriverDeviceInfo(const uint index, const char* const driverName);
 
     /*!
-     * Create a new engine, using driver \a driverName. \n
-     * Returned variable must be deleted when no longer needed.
-     * \note This only initializes engine data, it doesn't initialize the engine itself.
+     * Create a new engine, using driver @a driverName.
+     * Returned value must be deleted when no longer needed.
+     * @note This only initializes engine data, it doesn't actually start the engine.
      */
     static CarlaEngine* newDriverByName(const char* const driverName);
 
@@ -688,7 +687,7 @@ public:
 
     /*!
      * Maximum number of loadable plugins allowed.
-     * \note This function returns 0 if engine is not started.
+     * This function returns 0 if engine is not started.
      */
     uint getMaxPluginNumber() const noexcept;
 
@@ -696,7 +695,8 @@ public:
     // Virtual, per-engine type calls
 
     /*!
-     * Initialize engine, using \a clientName.
+     * Initialize/start the engine, using @a clientName.
+     * When the engine is intialized, you need to call idle() at regular intervals.
      */
     virtual bool init(const char* const clientName);
 
@@ -732,7 +732,7 @@ public:
 
     /*!
      * Add new engine client.
-     * \note This function must only be called within a plugin class.
+     * @note This function must only be called within a plugin class.
      */
     virtual CarlaEngineClient* addClient(CarlaPlugin* const plugin);
 
@@ -741,16 +741,19 @@ public:
 
     /*!
      * Add new plugin.
+     * @see ENGINE_CALLBACK_PLUGIN_ADDED
      */
     bool addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const void* const extra);
 
     /*!
      * Add new plugin, using native binary type.
+     * @see ENGINE_CALLBACK_PLUGIN_ADDED
      */
     bool addPlugin(const PluginType ptype, const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const void* const extra);
 
     /*!
-     * Remove plugin with id \a id.
+     * Remove plugin with id @a id.
+     * @see ENGINE_CALLBACK_PLUGIN_REMOVED
      */
     bool removePlugin(const uint id);
 
@@ -760,41 +763,43 @@ public:
     bool removeAllPlugins();
 
     /*!
-     * Rename plugin with id \a id to \a newName.\n
-     * Returns the new name, or nullptr if the operation failed.
+     * Rename plugin with id @a id to @a newName.
+     * Returns the new name, or null if the operation failed.
+     * Returned variable must be deleted if non-null.
+     * @see ENGINE_CALLBACK_PLUGIN_RENAMED
      */
     virtual const char* renamePlugin(const uint id, const char* const newName);
 
     /*!
-     * Clone plugin with id \a id.
+     * Clone plugin with id @a id.
      */
     bool clonePlugin(const uint id);
 
     /*!
-     * Prepare replace of plugin with id \a id.\n
+     * Prepare replace of plugin with id @a id.
      * The next call to addPlugin() will use this id, replacing the selected plugin.
-     * \note This function requires addPlugin() to be called afterwards, as soon as possible.
+     * @note This function requires addPlugin() to be called afterwards, as soon as possible.
      */
     bool replacePlugin(const uint id);
 
     /*!
-     * Switch plugins with id \a idA and \a idB.
+     * Switch plugins with id @a idA and @a idB.
      */
     bool switchPlugins(const uint idA, const uint idB);
 
     /*!
-     * Get plugin with id \a id.
+     * Get plugin with id @a id.
      */
     CarlaPlugin* getPlugin(const uint id) const;
 
     /*!
-     * Get plugin with id \a id, faster unchecked version.
+     * Get plugin with id @a id, faster unchecked version.
      */
     CarlaPlugin* getPluginUnchecked(const uint id) const noexcept;
 
     /*!
-     * Get a unique plugin name within the engine.\n
-     * Returned variable must be deleted if non-NULL.
+     * Get a unique plugin name within the engine.
+     * Returned variable must be deleted if non-null.
      */
     const char* getUniquePluginName(const char* const name) const;
 
@@ -802,7 +807,7 @@ public:
     // Project management
 
     /*!
-     * Load a file of any type.\n
+     * Load a file of any type.
      * This will try to load a generic file as a plugin,
      * either by direct handling (GIG, SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
      */
@@ -824,6 +829,7 @@ public:
 
     /*!
      * Get the current engine driver hints.
+     * @see EngineDriverHints
      */
     uint getHints() const noexcept;
 
@@ -874,13 +880,13 @@ public:
     // Callback
 
     /*!
-     * Run the main engine callback, if set.
+     * Call the main engine callback, if set.
      * May be called by plugins.
      */
     void callback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr) noexcept;
 
     /*!
-     * Set the main engine callback.
+     * Set the main engine callback to @a func.
      */
     void setCallback(const EngineCallbackFunc func, void* const ptr) noexcept;
 
@@ -888,13 +894,13 @@ public:
     // Callback
 
     /*!
-     * Run the file callback, if set.
+     * Call the file callback, if set.
      * May be called by plugins.
      */
     const char* runFileCallback(const FileCallbackOpcode action, const bool isDir, const char* const title, const char* const filter) noexcept;
 
     /*!
-     * Set the file callback.
+     * Set the file callback to @a func.
      */
     void setFileCallback(const FileCallbackFunc func, void* const ptr) noexcept;
 
@@ -903,12 +909,12 @@ public:
     // Patchbay
 
     /*!
-     * Connect patchbay ports \a portA and \a portB.
+     * Connect two patchbay ports.
      */
     virtual bool patchbayConnect(const uint groupA, const uint portA, const uint groupB, const uint portB);
 
     /*!
-     * Disconnect patchbay connection \a connectionId.
+     * Remove a patchbay connection.
      */
     virtual bool patchbayDisconnect(const uint connectionId);
 
@@ -932,7 +938,7 @@ public:
     virtual void transportPause() noexcept;
 
     /*!
-     * Relocate the engine transport to \a frames.
+     * Relocate the engine transport to @a frames.
      */
     virtual void transportRelocate(const uint64_t frame) noexcept;
 
@@ -953,7 +959,7 @@ public:
     // Misc
 
     /*!
-     * Tell the engine it's about to close.\n
+     * Tell the engine it's about to close.
      * This is used to prevent the engine thread(s) from reactivating.
      */
     void setAboutToClose() noexcept;
@@ -962,7 +968,7 @@ public:
     // Options
 
     /*!
-     * Set the engine option \a option.
+     * Set the engine option @a option to @a value or @a valueStr.
      */
     void setOption(const EngineOption option, const int value, const char* const valueStr);
 
@@ -1008,12 +1014,12 @@ public:
 
     /*!
      * Return internal data, needed for EventPorts when used in Rack and Bridge modes.
-     * \note RT call
+     * @note RT call
      */
     EngineEvent* getInternalEventBuffer(const bool isInput) const noexcept;
 
     /*!
-     * Force register a plugin into slot \a id. \n
+     * Force register a plugin into slot @a id.
      * This is needed so we can receive OSC events for a plugin while it initializes.
      */
     void registerEnginePlugin(const uint id, CarlaPlugin* const plugin) noexcept;
@@ -1047,7 +1053,7 @@ protected:
     void bufferSizeChanged(const uint32_t newBufferSize);
 
     /*!
-     * Report to all plugins about sample rate change.\n
+     * Report to all plugins about sample rate change.
      * This is not supported on all plugin types, in which case they will have to be re-initiated.
      */
     void sampleRateChanged(const double newSampleRate);
@@ -1058,15 +1064,15 @@ protected:
     void offlineModeChanged(const bool isOffline);
 
     /*!
-     * Run any pending RT events.\n
+     * Run any pending RT events.
      * Must always be called at the end of audio processing.
-     * \note RT call
+     * @note RT call
      */
     void runPendingRtEvents() noexcept;
 
     /*!
      * Set a plugin (stereo) peak values.
-     * \note RT call
+     * @note RT call
      */
     void setPluginPeaks(const uint pluginId, float const inPeaks[2], float const outPeaks[2]) noexcept;
 
