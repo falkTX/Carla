@@ -22,6 +22,12 @@
 #include "CarlaMathUtils.hpp"
 
 // -----------------------------------------------------------------------
+// Engine Internal helper macro, sets lastError and returns false/NULL
+
+#define CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(cond, err)  if (! (cond)) { carla_safe_assert(#cond, __FILE__, __LINE__); lastError = err; return false;   }
+#define CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERRN(cond, err) if (! (cond)) { carla_safe_assert(#cond, __FILE__, __LINE__); lastError = err; return nullptr; }
+
+// -----------------------------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -440,8 +446,15 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
       aboutToClose(false),
       curPluginCount(0),
       maxPluginNumber(0),
-      nextPluginId(0),
-      plugins(nullptr) {}
+      nextPluginId(0)
+#ifndef BUILD_BRIDGE
+      , plugins(nullptr)
+#endif
+{
+#ifdef BUILD_BRIDGE
+    carla_zeroStruct(plugins, 1);
+#endif
+}
 
 CarlaEngine::ProtectedData::~ProtectedData() noexcept
 {
@@ -449,6 +462,118 @@ CarlaEngine::ProtectedData::~ProtectedData() noexcept
     CARLA_SAFE_ASSERT(maxPluginNumber == 0);
     CARLA_SAFE_ASSERT(nextPluginId == 0);
     CARLA_SAFE_ASSERT(plugins == nullptr);
+}
+
+// -----------------------------------------------------------------------
+
+bool CarlaEngine::ProtectedData::init(const char* const clientName)
+{
+    CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(name.isEmpty(), "Invalid engine internal data (err #1)");
+    CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(oscData == nullptr, "Invalid engine internal data (err #2)");
+    CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(plugins == nullptr, "Invalid engine internal data (err #3)");
+    CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(events.in  == nullptr, "Invalid engine internal data (err #4)");
+    CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(events.out == nullptr, "Invalid engine internal data (err #5)");
+    CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(clientName != nullptr && clientName[0] != '\0', "Invalid client name");
+
+    aboutToClose    = false;
+    curPluginCount  = 0;
+    maxPluginNumber = 0;
+    nextPluginId    = 0;
+
+    switch (options.processMode)
+    {
+    case ENGINE_PROCESS_MODE_SINGLE_CLIENT:
+    case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
+        maxPluginNumber = MAX_DEFAULT_PLUGINS;
+        break;
+
+    case ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
+        maxPluginNumber = MAX_RACK_PLUGINS;
+        events.in  = new EngineEvent[kMaxEngineEventInternalCount];
+        events.out = new EngineEvent[kMaxEngineEventInternalCount];
+        break;
+
+    case ENGINE_PROCESS_MODE_PATCHBAY:
+        maxPluginNumber = MAX_PATCHBAY_PLUGINS;
+        break;
+
+    case ENGINE_PROCESS_MODE_BRIDGE:
+        maxPluginNumber = 1;
+        events.in  = new EngineEvent[kMaxEngineEventInternalCount];
+        events.out = new EngineEvent[kMaxEngineEventInternalCount];
+        break;
+    }
+
+    CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(maxPluginNumber != 0, "Invalid engine process mode");
+
+    nextPluginId = maxPluginNumber;
+
+    name = clientName;
+    name.toBasic();
+
+    timeInfo.clear();
+
+#ifndef BUILD_BRIDGE
+    plugins = new EnginePluginData[maxPluginNumber];
+    carla_zeroStruct(plugins, maxPluginNumber);
+#endif
+
+    osc.init(clientName);
+
+#ifndef BUILD_BRIDGE
+    oscData = osc.getControlData();
+
+    if (options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+    {
+        graph.isRack = (options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK);
+        graph.create();
+    }
+#endif
+
+    nextAction.ready();
+    thread.startThread();
+
+    return true;
+}
+
+void CarlaEngine::ProtectedData::close()
+{
+    CARLA_SAFE_ASSERT(name.isNotEmpty());
+    CARLA_SAFE_ASSERT(plugins != nullptr);
+    CARLA_SAFE_ASSERT(nextPluginId == maxPluginNumber);
+    CARLA_SAFE_ASSERT(nextAction.opcode == kEnginePostActionNull);
+
+    aboutToClose = true;
+
+    thread.stopThread(500);
+    nextAction.ready();
+
+#ifndef BUILD_BRIDGE
+    if (options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        graph.clear();
+#endif
+
+    osc.close();
+    oscData = nullptr;
+
+    aboutToClose    = false;
+    curPluginCount  = 0;
+    maxPluginNumber = 0;
+    nextPluginId    = 0;
+
+#ifndef BUILD_BRIDGE
+    if (plugins != nullptr)
+    {
+        delete[] plugins;
+        plugins = nullptr;
+    }
+#endif
+
+    events.clear();
+#ifndef BUILD_BRIDGE
+    audio.clear();
+#endif
+    name.clear();
 }
 
 // -----------------------------------------------------------------------

@@ -418,13 +418,6 @@ struct EnginePluginData {
     CarlaPlugin* plugin;
     float insPeak[2];
     float outsPeak[2];
-
-    void clear() noexcept
-    {
-        plugin = nullptr;
-        insPeak[0] = insPeak[1] = 0.0f;
-        outsPeak[0] = outsPeak[1] = 0.0f;
-    }
 };
 
 // -----------------------------------------------------------------------
@@ -456,7 +449,11 @@ struct CarlaEngine::ProtectedData {
     EngineOptions  options;
     EngineTimeInfo timeInfo;
 
+#ifdef BUILD_BRIDGE
+    EnginePluginData plugins[1];
+#else
     EnginePluginData* plugins;
+#endif
 
 #ifndef BUILD_BRIDGE
     EngineInternalAudio  audio;
@@ -472,6 +469,11 @@ struct CarlaEngine::ProtectedData {
 
     ProtectedData(CarlaEngine* const engine) noexcept;
     ~ProtectedData() noexcept;
+
+    // -------------------------------------------------------------------
+
+    bool init(const char* const clientName);
+    void close();
 
     // -------------------------------------------------------------------
 

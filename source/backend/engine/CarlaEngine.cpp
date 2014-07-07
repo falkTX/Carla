@@ -647,7 +647,7 @@ const char* CarlaEngine::getDriverName(const uint index2)
 # endif
 #endif
 
-    carla_stderr("CarlaEngine::getDriverName(%i) - invalid index", index);
+    carla_stderr("CarlaEngine::getDriverName(%i) - invalid index", index2);
     return nullptr;
 }
 
@@ -675,7 +675,7 @@ const char* const* CarlaEngine::getDriverDeviceNames(const uint index2)
 # endif
 #endif
 
-    carla_stderr("CarlaEngine::getDriverDeviceNames(%i) - invalid index", index);
+    carla_stderr("CarlaEngine::getDriverDeviceNames(%i) - invalid index", index2);
     return nullptr;
 }
 
@@ -707,7 +707,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2
 # endif
 #endif
 
-    carla_stderr("CarlaEngine::getDriverDeviceNames(%i, \"%s\") - invalid index", index, deviceName);
+    carla_stderr("CarlaEngine::getDriverDeviceNames(%i, \"%s\") - invalid index", index2, deviceName);
     return nullptr;
 }
 
@@ -809,125 +809,33 @@ uint CarlaEngine::getMaxPluginNumber() const noexcept
 
 bool CarlaEngine::init(const char* const clientName)
 {
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->name.isEmpty(), "Invalid engine internal data (err #1)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->oscData == nullptr, "Invalid engine internal data (err #2)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins == nullptr, "Invalid engine internal data (err #3)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->events.in  == nullptr, "Invalid engine internal data (err #4)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->events.out == nullptr, "Invalid engine internal data (err #5)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(clientName != nullptr && clientName[0] != '\0', "Invalid client name");
     carla_debug("CarlaEngine::init(\"%s\")", clientName);
 
-    pData->aboutToClose    = false;
-    pData->curPluginCount  = 0;
-    pData->maxPluginNumber = 0;
-    pData->nextPluginId    = 0;
+    if (! pData->init(clientName))
+        return false;
 
-    switch (pData->options.processMode)
-    {
-    case ENGINE_PROCESS_MODE_SINGLE_CLIENT:
-    case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
-        pData->maxPluginNumber = MAX_DEFAULT_PLUGINS;
-        break;
-
-    case ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
-        pData->maxPluginNumber = MAX_RACK_PLUGINS;
-        pData->events.in  = new EngineEvent[kMaxEngineEventInternalCount];
-        pData->events.out = new EngineEvent[kMaxEngineEventInternalCount];
-        break;
-
-    case ENGINE_PROCESS_MODE_PATCHBAY:
-        pData->maxPluginNumber = MAX_PATCHBAY_PLUGINS;
-        break;
-
-    case ENGINE_PROCESS_MODE_BRIDGE:
-        pData->maxPluginNumber = 1;
-        pData->events.in  = new EngineEvent[kMaxEngineEventInternalCount];
-        pData->events.out = new EngineEvent[kMaxEngineEventInternalCount];
-        break;
-    }
-
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->maxPluginNumber != 0, "Invalid engine process mode");
-
-    pData->nextPluginId = pData->maxPluginNumber;
-
-    pData->name = clientName;
-    pData->name.toBasic();
-
-    pData->timeInfo.clear();
-
-    pData->plugins = new EnginePluginData[pData->maxPluginNumber];
-
-    for (uint i=0; i < pData->maxPluginNumber; ++i)
-        pData->plugins[i].clear();
-
-    pData->osc.init(clientName);
-
-#ifndef BUILD_BRIDGE
-    pData->oscData = pData->osc.getControlData();
-
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-    {
-        pData->graph.isRack = (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK);
-        pData->graph.create();
-    }
-#endif
-
-    pData->nextAction.ready();
-    pData->thread.startThread();
-
-    callback(ENGINE_CALLBACK_ENGINE_STARTED, 0, 0, 0, 0.0f, getCurrentDriverName());
-
+    callback(ENGINE_CALLBACK_ENGINE_STARTED, 0, pData->options.processMode, pData->options.transportMode, 0.0f, getCurrentDriverName());
     return true;
 }
 
 bool CarlaEngine::close()
 {
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->name.isNotEmpty(), "Invalid engine internal data (err #6)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data (err #7)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextPluginId == pData->maxPluginNumber, "Invalid engine internal data (err #8)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data (err #9)");
     carla_debug("CarlaEngine::close()");
 
-    pData->aboutToClose = true;
-
     if (pData->curPluginCount != 0)
-        removeAllPlugins();
-
-    pData->thread.stopThread(500);
-    pData->nextAction.ready();
-
-#ifndef BUILD_BRIDGE
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
     {
-        pData->graph.clear();
+        pData->aboutToClose = true;
+        removeAllPlugins();
     }
 
+#ifndef BUILD_BRIDGE
     if (pData->osc.isControlRegistered())
         oscSend_control_exit();
 #endif
 
-    pData->osc.close();
-    pData->oscData = nullptr;
-
-    pData->curPluginCount = 0;
-    pData->maxPluginNumber = 0;
-    pData->nextPluginId = 0;
-
-    if (pData->plugins != nullptr)
-    {
-        delete[] pData->plugins;
-        pData->plugins = nullptr;
-    }
-
-    pData->events.clear();
-#ifndef BUILD_BRIDGE
-    pData->audio.clear();
-#endif
-
-    pData->name.clear();
+    pData->close();
 
     callback(ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0.0f, nullptr);
-
     return true;
 }
 
