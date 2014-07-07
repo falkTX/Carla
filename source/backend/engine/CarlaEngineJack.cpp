@@ -980,7 +980,7 @@ public:
     }
 
 #ifndef BUILD_BRIDGE
-    void idle() override
+    void idle() noexcept override
     {
         CarlaEngine::idle();
 
@@ -1810,7 +1810,7 @@ private:
     PatchbayConnectionList fUsedConnections;
     LinkedList<uint>       fNewGroups;
 
-    bool findPluginIdAndIcon(const char* const clientName, int& pluginId, PatchbayIcon& icon)
+    bool findPluginIdAndIcon(const char* const clientName, int& pluginId, PatchbayIcon& icon) noexcept
     {
         carla_debug("CarlaEngineJack::findPluginIdAndIcon(\"%s\", ...)", clientName);
 

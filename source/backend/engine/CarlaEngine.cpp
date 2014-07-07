@@ -839,7 +839,7 @@ bool CarlaEngine::close()
     return true;
 }
 
-void CarlaEngine::idle()
+void CarlaEngine::idle() noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->nextAction.opcode == kEnginePostActionNull,); // TESTING, remove later
     CARLA_SAFE_ASSERT_RETURN(pData->nextPluginId == pData->maxPluginNumber,);     // TESTING, remove later
@@ -850,10 +850,14 @@ void CarlaEngine::idle()
         CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
         if (plugin != nullptr && plugin->isEnabled())
-            plugin->idle();
+        {
+            try {
+                plugin->idle();
+            } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin idle");
+        }
     }
 
-    idleOsc();
+    pData->osc.idle();
 }
 
 CarlaEngineClient* CarlaEngine::addClient(CarlaPlugin* const)
@@ -2060,9 +2064,7 @@ bool CarlaEngine::isOscControlRegistered() const noexcept
 
 void CarlaEngine::idleOsc() const noexcept
 {
-    try {
-        pData->osc.idle();
-    } catch(...) {}
+    pData->osc.idle();
 }
 
 const char* CarlaEngine::getOscServerPathTCP() const noexcept

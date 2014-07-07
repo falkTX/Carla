@@ -702,13 +702,15 @@ public:
 
     /*!
      * Close engine.
+     * This function always closes the engine even if it returns false.
+     * In other words, even when something goes wrong when closing the engine it still be closed nonetheless.
      */
     virtual bool close();
 
     /*!
      * Idle engine.
      */
-    virtual void idle();
+    virtual void idle() noexcept;
 
     /*!
      * Check if engine is running.
