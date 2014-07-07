@@ -136,13 +136,15 @@ void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data
 
     if (midiStatus == MIDI_STATUS_CONTROL_CHANGE)
     {
+        CARLA_SAFE_ASSERT_RETURN(size >= 2,);
+
         type = kEngineEventTypeControl;
 
         const uint8_t midiControl(data[1]);
 
         if (MIDI_IS_CONTROL_BANK_SELECT(midiControl))
         {
-            CARLA_SAFE_ASSERT_INT(size == 3, size);
+            CARLA_SAFE_ASSERT_RETURN(size >= 3,);
 
             const uint8_t midiBank(data[2]);
 
@@ -152,23 +154,19 @@ void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data
         }
         else if (midiControl == MIDI_CONTROL_ALL_SOUND_OFF)
         {
-            CARLA_SAFE_ASSERT_INT(size == 2, size);
-
             ctrl.type  = kEngineControlEventTypeAllSoundOff;
             ctrl.param = 0;
             ctrl.value = 0.0f;
         }
         else if (midiControl == MIDI_CONTROL_ALL_NOTES_OFF)
         {
-            CARLA_SAFE_ASSERT_INT(size == 2, size);
-
             ctrl.type  = kEngineControlEventTypeAllNotesOff;
             ctrl.param = 0;
             ctrl.value = 0.0f;
         }
         else
         {
-            CARLA_SAFE_ASSERT_INT2(size == 3, size, midiControl);
+            CARLA_SAFE_ASSERT_RETURN(size >= 3,);
 
             const uint8_t midiValue(carla_fixValue<uint8_t>(0, 127, data[2])); // ensures 0.0<->1.0 value range
 
@@ -179,7 +177,7 @@ void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data
     }
     else if (midiStatus == MIDI_STATUS_PROGRAM_CHANGE)
     {
-        CARLA_SAFE_ASSERT_INT2(size == 2, size, data[1]);
+        CARLA_SAFE_ASSERT_RETURN(size >= 2,);
 
         type = kEngineEventTypeControl;
 
