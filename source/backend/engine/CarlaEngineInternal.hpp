@@ -378,8 +378,10 @@ struct EngineInternalTime {
 enum EnginePostAction {
     kEnginePostActionNull,
     kEnginePostActionZeroCount,
+#ifndef BUILD_BRIDGE
     kEnginePostActionRemovePlugin,
     kEnginePostActionSwitchPlugins
+#endif
 };
 
 struct EngineNextAction {

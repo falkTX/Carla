@@ -581,6 +581,7 @@ void CarlaEngine::ProtectedData::close()
 
 // -----------------------------------------------------------------------
 
+#ifndef BUILD_BRIDGE
 void CarlaEngine::ProtectedData::doPluginRemove() noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(curPluginCount > 0,);
@@ -634,6 +635,7 @@ void CarlaEngine::ProtectedData::doPluginsSwitch() noexcept
     plugins[idB].plugin = tmp;
 #endif
 }
+#endif
 
 void CarlaEngine::ProtectedData::doNextPluginAction(const bool unlock) noexcept
 {
@@ -644,12 +646,14 @@ void CarlaEngine::ProtectedData::doNextPluginAction(const bool unlock) noexcept
     case kEnginePostActionZeroCount:
         curPluginCount = 0;
         break;
+#ifndef BUILD_BRIDGE
     case kEnginePostActionRemovePlugin:
         doPluginRemove();
         break;
     case kEnginePostActionSwitchPlugins:
         doPluginsSwitch();
         break;
+#endif
     }
 
     nextAction.opcode   = kEnginePostActionNull;

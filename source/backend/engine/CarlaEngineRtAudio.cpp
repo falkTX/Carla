@@ -50,31 +50,28 @@ static void initRtAudioAPIsIfNeeded()
 
     needsInit = false;
 
-    RtAudio::getCompiledApi(gRtAudioApis);
+    // get APIs in a local var, and pass wanted ones into gRtAudioApis
 
-    std::vector<RtAudio::Api>::iterator it;
+    std::vector<RtAudio::Api> apis;
+    RtAudio::getCompiledApi(apis);
 
-    // remove JACK if not available
-    if (! jackbridge_is_ok())
+    for (std::vector<RtAudio::Api>::iterator it = apis.begin(), end = apis.end(); it != end; ++it)
     {
-        it = std::find(gRtAudioApis.begin(), gRtAudioApis.end(), RtAudio::UNIX_JACK);
-        if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);
+        const RtAudio::Api& api(*it);
+
+        if (api == RtAudio::LINUX_ALSA)
+            continue;
+        if (api == RtAudio::MACOSX_CORE)
+            continue;
+        if (api == RtAudio::WINDOWS_ASIO)
+            continue;
+        if (api == RtAudio::WINDOWS_DS)
+            continue;
+        if (api == RtAudio::UNIX_JACK && ! jackbridge_is_ok())
+            continue;
+
+        gRtAudioApis.push_back(api);
     }
-
-#ifdef HAVE_JUCE
-    // prefer juce to handle some APIs
-    it = std::find(gRtAudioApis.begin(), gRtAudioApis.end(), RtAudio::LINUX_ALSA);
-    if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);
-
-    it = std::find(gRtAudioApis.begin(), gRtAudioApis.end(), RtAudio::MACOSX_CORE);
-    if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);
-
-    it = std::find(gRtAudioApis.begin(), gRtAudioApis.end(), RtAudio::WINDOWS_ASIO);
-    if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);
-
-    it = std::find(gRtAudioApis.begin(), gRtAudioApis.end(), RtAudio::WINDOWS_DS);
-    if (it != gRtAudioApis.end()) gRtAudioApis.erase(it);
-#endif
 }
 
 static const char* getRtAudioApiName(const RtAudio::Api api) noexcept
