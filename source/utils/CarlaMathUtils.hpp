@@ -22,23 +22,24 @@
 
 #include <cmath>
 
-#ifdef HAVE_JUCE
-# include "juce_audio_basics.h"
-using juce::FloatVectorOperations;
-#endif
+// TODO - always use juce
+// #ifdef HAVE_JUCE
+// # include "juce_audio_basics.h"
+// using juce::FloatVectorOperations;
+// #endif
 
 // -----------------------------------------------------------------------
 // Float operations
 
-#ifdef HAVE_JUCE
-# define FLOAT_ADD(bufDst, bufSrc, frames)  FloatVectorOperations::add(bufDst, bufSrc, static_cast<int>(frames))
-# define FLOAT_COPY(bufDst, bufSrc, frames) FloatVectorOperations::copy(bufDst, bufSrc, static_cast<int>(frames))
-# define FLOAT_CLEAR(buf, frames)           FloatVectorOperations::clear(buf, static_cast<int>(frames))
-#else
+// #ifdef HAVE_JUCE
+// # define FLOAT_ADD(bufDst, bufSrc, frames)  FloatVectorOperations::add(bufDst, bufSrc, static_cast<int>(frames))
+// # define FLOAT_COPY(bufDst, bufSrc, frames) FloatVectorOperations::copy(bufDst, bufSrc, static_cast<int>(frames))
+// # define FLOAT_CLEAR(buf, frames)           FloatVectorOperations::clear(buf, static_cast<int>(frames))
+// #else
 # define FLOAT_ADD(bufDst, bufSrc, frames)  carla_addFloat(bufDst, bufSrc, frames)
 # define FLOAT_COPY(bufDst, bufSrc, frames) carla_copyFloat(bufDst, bufSrc, frames)
 # define FLOAT_CLEAR(buf, frames)           carla_zeroFloat(buf, frames)
-#endif
+// #endif
 
 // -----------------------------------------------------------------------
 // math functions (base)

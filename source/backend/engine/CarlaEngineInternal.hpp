@@ -21,6 +21,7 @@
 #include "CarlaEngine.hpp"
 #include "CarlaEngineOsc.hpp"
 #include "CarlaEngineThread.hpp"
+#include "CarlaEngineUtils.hpp"
 
 #include "CarlaMathUtils.hpp"
 #include "CarlaPatchbayUtils.hpp"
@@ -39,11 +40,6 @@ CARLA_BACKEND_START_NAMESPACE
 #if 0
 } // Fix editor indentation
 #endif
-
-// -----------------------------------------------------------------------
-// Maximum pre-allocated events for rack and bridge modes
-
-const ushort kMaxEngineEventInternalCount = 512;
 
 // -----------------------------------------------------------------------
 // Patchbay stuff

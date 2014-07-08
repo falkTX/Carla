@@ -19,13 +19,7 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 
-// -----------------------------------------------------------------------
-
 CARLA_BACKEND_START_NAMESPACE
-
-#if 0
-} // Fix editor indentation
-#endif
 
 // -----------------------------------------------------------------------
 // EngineControlEvent

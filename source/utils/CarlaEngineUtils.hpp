@@ -24,6 +24,11 @@
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
+// Maximum internal pre-allocated events
+
+const ushort kMaxEngineEventInternalCount = 512;
+
+// -----------------------------------------------------------------------
 
 static inline
 const char* EngineType2Str(const EngineType type) noexcept

@@ -463,9 +463,11 @@ OBJS_NATIVE  = CarlaBridgePlugin__native.o \
 # carla-engine
 OBJS_NATIVE += \
 	../backend/engine/CarlaEngine__native.o \
+	../backend/engine/CarlaEngineClient__native.o \
 	../backend/engine/CarlaEngineData__native.o \
 	../backend/engine/CarlaEngineInternal__native.o \
 	../backend/engine/CarlaEngineOsc__native.o \
+	../backend/engine/CarlaEnginePorts__native.o \
 	../backend/engine/CarlaEngineThread__native.o \
 	../backend/engine/CarlaEngineJack__native.o \
 	../backend/engine/CarlaEngineBridge__native.o

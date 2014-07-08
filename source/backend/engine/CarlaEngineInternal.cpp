@@ -21,6 +21,9 @@
 
 #include "CarlaMathUtils.hpp"
 
+#include "juce_audio_basics.h"
+using juce::FloatVectorOperations;
+
 // -----------------------------------------------------------------------
 // Engine Internal helper macro, sets lastError and returns false/NULL
 

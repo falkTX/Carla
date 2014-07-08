@@ -10,9 +10,11 @@ include ../Makefile.mk
 
 OBJS = \
 	CarlaEngine.cpp.o \
+	CarlaEngineClient.cpp.o \
 	CarlaEngineData.cpp.o \
 	CarlaEngineInternal.cpp.o \
 	CarlaEngineOsc.cpp.o \
+	CarlaEnginePorts.cpp.o \
 	CarlaEngineThread.cpp.o
 
 OBJSa = $(OBJS) \
@@ -63,6 +65,9 @@ debug:
 CarlaEngine.cpp.o: CarlaEngine.cpp $(CARLA_ENGINE_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
+CarlaEngineClient.cpp.o: CarlaEngineClient.cpp $(CARLA_ENGINE_CLIENT_CPP_DEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
 CarlaEngineData.cpp.o: CarlaEngineData.cpp $(CARLA_ENGINE_DATA_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
@@ -70,6 +75,9 @@ CarlaEngineInternal.cpp.o: CarlaEngineInternal.cpp $(CARLA_ENGINE_INTERNAL_CPP_D
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 CarlaEngineOsc.cpp.o: CarlaEngineOsc.cpp $(CARLA_ENGINE_OSC_CPP_DEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+CarlaEnginePorts.cpp.o: CarlaEnginePorts.cpp $(CARLA_ENGINE_PORTS_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 CarlaEngineThread.cpp.o: CarlaEngineThread.cpp $(CARLA_ENGINE_THREAD_CPP_DEPS)
