@@ -131,7 +131,7 @@ public:
 
     PluginType getType() const noexcept override
     {
-        return PLUGIN_FILE_SF2;
+        return PLUGIN_SF2;
     }
 
     PluginCategory getCategory() const noexcept override

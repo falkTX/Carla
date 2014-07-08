@@ -32,10 +32,10 @@
 #include <QtCore/QByteArray>
 
 #ifdef BUILD_BRIDGE
-# undef HAVE_JUCE
+# undef HAVE_JUCE_UI
 #endif
 
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_UI
 # include "juce_gui_basics.h"
 using juce::initialiseJuce_GUI;
 using juce::shutdownJuce_GUI;
@@ -49,7 +49,7 @@ using CB::EngineOptions;
 // -------------------------------------------------------------------------------------------------------------------
 // Juce Message Thread
 
-#if defined(HAVE_JUCE) && defined(CARLA_OS_LINUX)
+#if defined(HAVE_JUCE_UI) && defined(CARLA_OS_LINUX)
 
 class JuceMessageThread : public Thread
 {
@@ -104,7 +104,7 @@ private:
     CARLA_DECLARE_NON_COPY_CLASS(JuceMessageThread)
 };
 
-#endif // defined(HAVE_JUCE) && defined(CARLA_OS_LINUX)
+#endif // defined(HAVE_JUCE_UI) && defined(CARLA_OS_LINUX)
 
 // -------------------------------------------------------------------------------------------------------------------
 // Single, standalone engine
@@ -120,7 +120,7 @@ struct CarlaBackendStandalone {
 
     CarlaString lastError;
 
-#if defined(HAVE_JUCE) && defined(CARLA_OS_LINUX)
+#if defined(HAVE_JUCE_UI) && defined(CARLA_OS_LINUX)
     JuceMessageThread juceMsgThread;
 #endif
 
@@ -148,12 +148,12 @@ struct CarlaBackendStandalone {
     ~CarlaBackendStandalone()
     {
         CARLA_SAFE_ASSERT(engine == nullptr);
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_UI
         CARLA_SAFE_ASSERT(MessageManager::getInstanceWithoutCreating() == nullptr);
 #endif
     }
 
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_UI
     void init()
     {
         JUCE_AUTORELEASEPOOL
@@ -402,9 +402,6 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0);
         //CARLA_SAFE_ASSERT_RETURN(gStandalone.frontendWinId != 0, 0);
         carla_debug("CarlaNSM::handleShowHideGui(%s)", bool2str(show));
-
-#ifdef HAVE_X11
-#endif
 
 #ifndef BUILD_ANSI_TEST
         lo_send_from(lo_message_get_source(msg), fOscServer, LO_TT_IMMEDIATE, show ? "/nsm/client/gui_is_shown" : "/nsm/client/gui_is_hidden", "");
@@ -879,7 +876,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     if (gStandalone.engine->init(clientName))
     {
         gStandalone.lastError = "No error";
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_UI
         gStandalone.init();
 #endif
         return true;
@@ -949,7 +946,7 @@ bool carla_engine_init_bridge(const char audioBaseName[6+1], const char controlB
     if (gStandalone.engine->init(clientName))
     {
         gStandalone.lastError = "No error";
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_UI
         gStandalone.init();
 #endif
         return true;
@@ -983,7 +980,7 @@ bool carla_engine_close()
     if (! closed)
         gStandalone.lastError = gStandalone.engine->getLastError();
 
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_UI
     gStandalone.close();
 #endif
 
@@ -998,7 +995,7 @@ void carla_engine_idle()
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
 
     gNSM.idle();
-#if defined(HAVE_JUCE) && ! defined(CARLA_OS_LINUX)
+#if defined(HAVE_JUCE_UI) && ! defined(CARLA_OS_LINUX)
     gStandalone.idle();
 #endif
     gStandalone.engine->idle();

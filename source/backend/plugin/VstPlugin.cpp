@@ -24,7 +24,7 @@
 # define USE_JUCE_FOR_VST 1
 #endif
 
-#if defined(WANT_VST) && ! (defined(HAVE_JUCE) && USE_JUCE_FOR_VST)
+#if defined(WANT_VST) && ! (defined(HAVE_JUCE_UI) && USE_JUCE_FOR_VST)
 
 #include "CarlaVstUtils.hpp"
 #include "CarlaMathUtils.hpp"
@@ -2552,7 +2552,7 @@ VstPlugin* VstPlugin::sLastVstPlugin = nullptr;
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // WANT_VST && ! (defined(HAVE_JUCE) && USE_JUCE_FOR_VST)
+#endif // WANT_VST && ! (defined(HAVE_JUCE_UI) && USE_JUCE_FOR_VST)
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -2563,7 +2563,7 @@ CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
     carla_debug("CarlaPlugin::newVST({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.uniqueId);
 
 #ifdef WANT_VST
-# if defined(HAVE_JUCE) && USE_JUCE_FOR_VST
+# if defined(HAVE_JUCE_UI) && USE_JUCE_FOR_VST
     return newJuce(init, "VST");
 # else
     VstPlugin* const plugin(new VstPlugin(init.engine, init.id));

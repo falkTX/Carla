@@ -752,7 +752,6 @@ void CarlaEngine::ProtectedData::processRack(const float* inBufReal[2], float* o
         {
             EnginePluginData& pluginData(plugins[i]);
 
-#ifdef HAVE_JUCE
             juce::Range<float> range;
 
             if (oldAudioInCount > 0)
@@ -782,47 +781,6 @@ void CarlaEngine::ProtectedData::processRack(const float* inBufReal[2], float* o
                 pluginData.outsPeak[0] = 0.0f;
                 pluginData.outsPeak[1] = 0.0f;
             }
-#else
-            float peak1, peak2;
-
-            if (oldAudioInCount > 0)
-            {
-                peak1 = peak2 = 0.0f;
-
-                for (uint32_t k=0; k < frames; ++k)
-                {
-                    peak1 = carla_max<float>(peak1, std::fabs(inBuf0[k]), 1.0f);
-                    peak2 = carla_max<float>(peak2, std::fabs(inBuf1[k]), 1.0f);
-                }
-
-                pluginData.insPeak[0] = peak1;
-                pluginData.insPeak[1] = peak2;
-            }
-            else
-            {
-                pluginData.insPeak[0] = 0.0f;
-                pluginData.insPeak[1] = 0.0f;
-            }
-
-            if (plugin->getAudioOutCount() > 0)
-            {
-                peak1 = peak2 = 0.0f;
-
-                for (uint32_t k=0; k < frames; ++k)
-                {
-                    peak1 = carla_max<float>(peak1, std::fabs(outBuf[0][k]), 1.0f);
-                    peak2 = carla_max<float>(peak2, std::fabs(outBuf[1][k]), 1.0f);
-                }
-
-                pluginData.outsPeak[0] = peak1;
-                pluginData.outsPeak[1] = peak2;
-            }
-            else
-            {
-                pluginData.outsPeak[0] = 0.0f;
-                pluginData.outsPeak[1] = 0.0f;
-            }
-#endif
         }
 
         processed = true;

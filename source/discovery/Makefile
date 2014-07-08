@@ -56,7 +56,6 @@ LIBS_win64   += ../modules/lilv.win64.a
 LINK_FLAGS   += $(LILV_LIBS)
 endif
 
-ifeq ($(HAVE_JUCE),true)
 LIBS         += ../modules/juce_audio_basics.a
 LIBS_posix32 += ../modules/juce_audio_basics.posix32.a
 LIBS_posix64 += ../modules/juce_audio_basics.posix64.a
@@ -69,7 +68,6 @@ LIBS_win32   += ../modules/juce_core.win32.a
 LIBS_win64   += ../modules/juce_core.win64.a
 LINK_FLAGS   += $(JUCE_AUDIO_BASICS_LIBS)
 LINK_FLAGS   += $(JUCE_CORE_LIBS)
-endif
 
 ifeq ($(MACOS_OR_WIN32),true)
 LIBS         += ../modules/juce_audio_processors.a

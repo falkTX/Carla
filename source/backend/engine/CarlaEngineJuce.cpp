@@ -15,10 +15,6 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef HAVE_JUCE
-# error This file should not be compiled if Juce is disabled
-#endif
-
 #include "CarlaEngineInternal.hpp"
 #include "CarlaBackendUtils.hpp"
 #include "CarlaStringList.hpp"

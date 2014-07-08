@@ -34,13 +34,14 @@
 #include "lv2/lv2_external_ui.h"
 #include "lv2/lv2_programs.h"
 
-#ifdef HAVE_JUCE
-
 #include "juce_audio_basics.h"
+using juce::FloatVectorOperations;
+
+#ifdef HAVE_JUCE_UI
+
 #include "juce_gui_basics.h"
 
 using juce::Array;
-using juce::FloatVectorOperations;
 using juce::JUCEApplicationBase;
 using juce::MessageManager;
 //using juce::MessageManagerLock;
@@ -110,7 +111,7 @@ public:
         : fHandle(nullptr),
           fDescriptor(desc),
           fMidiEventCount(0),
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_UI
           fUiWasShown(false),
 #endif
           fIsProcessing(false),
@@ -207,7 +208,7 @@ public:
     ~NativePlugin()
     {
         CARLA_ASSERT(fHandle == nullptr);
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_UI
         CARLA_ASSERT(! fUiWasShown);
 #endif
 
@@ -276,7 +277,7 @@ public:
 
         fHandle = nullptr;
 
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_UI
         if (fUiWasShown)
         {
             CARLA_SAFE_ASSERT_RETURN(gActivePlugins.contains(this),);
@@ -716,7 +717,7 @@ protected:
     {
         if (fDescriptor->ui_show != nullptr)
         {
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_UI
             if (fDescriptor->hints & PLUGIN_NEEDS_UI_JUCE)
             {
                 if (gActivePlugins.size() == 0)
@@ -894,7 +895,7 @@ private:
     NativeMidiEvent fMidiEvents[kMaxMidiEvents*2];
     NativeTimeInfo  fTimeInfo;
 
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_UI
     bool  fUiWasShown;
 #endif
     bool  fIsProcessing;

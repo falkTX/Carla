@@ -18,7 +18,7 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_UI
 
 #if defined(CARLA_OS_MAC)
 /*
@@ -1156,7 +1156,7 @@ private:
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // HAVE_JUCE
+#endif // HAVE_JUCE_UI
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -1166,7 +1166,7 @@ CarlaPlugin* CarlaPlugin::newJuce(const Initializer& init, const char* const for
 {
     carla_debug("CarlaPlugin::newJuce({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "}, %s)", init.engine, init.filename, init.name, init.label, init.uniqueId, format);
 
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_UI
     JucePlugin* const plugin(new JucePlugin(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name, /*init.label,*/ init.uniqueId, format))
@@ -1186,10 +1186,8 @@ CarlaPlugin* CarlaPlugin::newJuce(const Initializer& init, const char* const for
 
     return plugin;
 #else
-    init.engine->setLastError("Juce support not available");
+    init.engine->setLastError("Juce plugin not available");
     return nullptr;
-
-    // unused
     (void)format;
 #endif
 }

@@ -19,10 +19,13 @@ LINK_FLAGS      += $(LIBLO_LIBS)
 
 BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS) -DBUILD_BRIDGE_PLUGIN
 BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin
-BUILD_PLUGIN_FLAGS += $(QTCORE_FLAGS) $(QTXML_FLAGS)
+BUILD_PLUGIN_FLAGS += $(QTCORE_FLAGS)
 
 LINK_PLUGIN_FLAGS   = $(LINK_FLAGS)
-LINK_PLUGIN_FLAGS  += $(QTCORE_LIBS) $(QTXML_LIBS)
+LINK_PLUGIN_FLAGS  += $(JUCE_AUDIO_BASICS_LIBS)
+LINK_PLUGIN_FLAGS  += $(JUCE_CORE_LIBS)
+LINK_PLUGIN_FLAGS  += $(JUCE_EVENTS_LIBS)
+LINK_PLUGIN_FLAGS  += $(QTCORE_LIBS)
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 BUILD_PLUGIN_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST -DWANT_VST3
@@ -34,12 +37,9 @@ BUILD_PLUGIN_FLAGS += -DVESTIGE_HEADER
 endif
 endif
 
-ifeq ($(HAVE_JUCE),true)
-LINK_PLUGIN_FLAGS  += $(JUCE_AUDIO_BASICS_LIBS)
+ifeq ($(HAVE_JUCE_UI),true)
 LINK_PLUGIN_FLAGS  += $(JUCE_AUDIO_PROCESSORS_LIBS)
-LINK_PLUGIN_FLAGS  += $(JUCE_CORE_LIBS)
 LINK_PLUGIN_FLAGS  += $(JUCE_DATA_STRUCTURES_LIBS)
-LINK_PLUGIN_FLAGS  += $(JUCE_EVENTS_LIBS)
 LINK_PLUGIN_FLAGS  += $(JUCE_GRAPHICS_LIBS)
 LINK_PLUGIN_FLAGS  += $(JUCE_GUI_BASICS_LIBS)
 endif
@@ -418,15 +418,15 @@ OBJS_PLUGIN = \
 
 LIBS_PLUGIN = \
 	../modules/jackbridge.a \
+	../modules/juce_audio_basics.a \
+	../modules/juce_events.a \
+	../modules/juce_core.a \
 	../modules/rtmempool.a
 
-ifeq ($(HAVE_JUCE),true)
+ifeq ($(HAVE_JUCE_UI),true)
 LIBS_PLUGIN += \
-	../modules/juce_audio_basics.a \
 	../modules/juce_audio_processors.a \
-	../modules/juce_core.a \
 	../modules/juce_data_structures.a \
-	../modules/juce_events.a \
 	../modules/juce_data_structures.a \
 	../modules/juce_graphics.a \
 	../modules/juce_gui_basics.a \
@@ -489,6 +489,9 @@ OBJS_NATIVE += \
 LIBS_NATIVE = \
 	../modules/native-plugins.a \
 	../modules/jackbridge.a \
+	../modules/juce_audio_basics.a \
+	../modules/juce_core.a \
+	../modules/juce_events.a \
 	../modules/rtmempool.a
 
 ifeq ($(HAVE_DGL),true)
@@ -496,13 +499,10 @@ LIBS_NATIVE += \
 	../modules/dgl.a
 endif
 
-ifeq ($(HAVE_JUCE),true)
+ifeq ($(HAVE_JUCE_UI),true)
 LIBS_NATIVE += \
-	../modules/juce_audio_basics.a \
 	../modules/juce_audio_processors.a \
-	../modules/juce_core.a \
 	../modules/juce_data_structures.a \
-	../modules/juce_events.a \
 	../modules/juce_data_structures.a \
 	../modules/juce_graphics.a \
 	../modules/juce_gui_basics.a \

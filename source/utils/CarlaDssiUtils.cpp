@@ -17,13 +17,7 @@
 
 #include "CarlaDssiUtils.hpp"
 
-#ifdef HAVE_JUCE
-# include "juce_core.h"
-#else
-# include <QtCore/QDir>
-# include <QtCore/QFileInfo>
-# include <QtCore/QStringList>
-#endif
+#include "juce_core.h"
 
 // -----------------------------------------------------------------------
 
@@ -34,7 +28,6 @@ const char* find_dssi_ui(const char* const filename, const char* const label) no
     carla_debug("find_dssi_ui(\"%s\", \"%s\")", filename, label);
 
     try {
-#ifdef HAVE_JUCE
         using namespace juce;
 
         String guiFilename;
@@ -64,34 +57,7 @@ const char* find_dssi_ui(const char* const filename, const char* const label) no
             return nullptr;
 
         return carla_strdup(guiFilename.toRawUTF8());
-#else
-        QString guiFilename;
-        QString pluginDir(filename);
-        pluginDir.resize(pluginDir.lastIndexOf("."));
 
-        QString checkLabel(label);
-        QString checkSName(QFileInfo(pluginDir).baseName());
-
-        if (! checkLabel.endsWith("_")) checkLabel += "_";
-        if (! checkSName.endsWith("_")) checkSName += "_";
-
-        QStringList guiFiles(QDir(pluginDir).entryList());
-
-        foreach (const QString& gui, guiFiles)
-        {
-            if (gui.startsWith(checkLabel) || gui.startsWith(checkSName))
-            {
-                QFileInfo finalname(pluginDir + QDir::separator() + gui);
-                guiFilename = finalname.absoluteFilePath();
-                break;
-            }
-        }
-
-        if (guiFilename.isEmpty())
-            return nullptr;
-
-        return carla_strdup(guiFilename.toUtf8().constData());
-#endif
     } CARLA_SAFE_EXCEPTION_RETURN("find_dssi_ui", nullptr);
 }
 

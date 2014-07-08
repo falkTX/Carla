@@ -1365,7 +1365,7 @@ protected:
 
                 if (CarlaString(stateSave.label).endsWith(kUse16OutsSuffix))
                 {
-                    if (ptype == PLUGIN_FILE_GIG || ptype == PLUGIN_FILE_SF2)
+                    if (ptype == PLUGIN_GIG || ptype == PLUGIN_SF2)
                         extraStuff = "true";
                 }
 
@@ -1395,12 +1395,10 @@ public:
         return new CarlaEngineNative(host, false);
     }
 
-#ifdef HAVE_JUCE
     static NativePluginHandle _instantiatePatchbay(const NativeHostDescriptor* host)
     {
         return new CarlaEngineNative(host, true);
     }
-#endif
 
     static void _cleanup(NativePluginHandle handle)
     {
@@ -1586,7 +1584,7 @@ static const NativePluginDescriptor carlaRackDesc = {
     CarlaEngineNative::_dispatcher
 };
 
-#if 0 //def HAVE_JUCE
+#if 0
 static const NativePluginDescriptor carlaPatchbayDesc = {
     /* category  */ ::PLUGIN_CATEGORY_OTHER,
     /* hints     */ static_cast<NativePluginHints>(::PLUGIN_IS_SYNTH|::PLUGIN_HAS_UI|::PLUGIN_NEEDS_FIXED_BUFFERS|::PLUGIN_NEEDS_SINGLE_THREAD|::PLUGIN_USES_STATE|::PLUGIN_USES_TIME),
@@ -1637,7 +1635,7 @@ void carla_register_native_plugin_carla()
 {
     CARLA_BACKEND_USE_NAMESPACE;
     carla_register_native_plugin(&carlaRackDesc);
-#if 0 //def HAVE_JUCE
+#if 0
     carla_register_native_plugin(&carlaPatchbayDesc);
 #endif
 }
@@ -1668,20 +1666,15 @@ const char*        CarlaEngine::getRtAudioApiName(const uint)        { return nu
 const char* const* CarlaEngine::getRtAudioApiDeviceNames(const uint) { return nullptr; }
 const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const uint, const char* const) { return nullptr; }
 
-# ifdef HAVE_JUCE
 CarlaEngine*       CarlaEngine::newJuce(const AudioApi)           { return nullptr; }
 uint               CarlaEngine::getJuceApiCount()                 { return 0;       }
 const char*        CarlaEngine::getJuceApiName(const uint)        { return nullptr; }
 const char* const* CarlaEngine::getJuceApiDeviceNames(const uint) { return nullptr; }
 const EngineDriverDeviceInfo* CarlaEngine::getJuceDeviceInfo(const uint, const char* const) { return nullptr; }
-# endif
 
 CARLA_BACKEND_END_NAMESPACE
 
-#ifdef WANT_DSSI
-# include "CarlaDssiUtils.cpp"
-#endif
-
+#include "CarlaDssiUtils.cpp"
 #include "CarlaStateUtils.cpp"
 
 #endif

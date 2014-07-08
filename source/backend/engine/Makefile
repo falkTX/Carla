@@ -19,12 +19,8 @@ OBJS = \
 
 OBJSa = $(OBJS) \
 	CarlaEngineJack.cpp.o \
+	CarlaEngineJuce.cpp.o \
 	CarlaEngineRtAudio.cpp.o
-
-ifeq ($(HAVE_JUCE),true)
-OBJSa += \
-	CarlaEngineJuce.cpp.o
-endif
 
 ifneq ($(WIN32),true)
 OBJSa += \

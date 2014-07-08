@@ -124,7 +124,7 @@ OBJS += \
 	distrho-prom.cpp.o
 endif
 
-ifeq ($(HAVE_JUCE),true)
+ifeq ($(HAVE_JUCE_UI),true)
 # --------------------------------------------------------------
 # JUCE based plugins
 

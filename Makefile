@@ -46,14 +46,15 @@ endif
 
 ALL_LIBS += source/modules/jackbridge.a
 
-ifeq ($(HAVE_JUCE),true)
 ALL_LIBS += source/modules/juce_audio_basics.a
 ALL_LIBS += source/modules/juce_audio_devices.a
 ALL_LIBS += source/modules/juce_audio_formats.a
-ALL_LIBS += source/modules/juce_audio_processors.a
 ALL_LIBS += source/modules/juce_core.a
-ALL_LIBS += source/modules/juce_data_structures.a
 ALL_LIBS += source/modules/juce_events.a
+
+ifeq ($(HAVE_JUCE_UI),true)
+ALL_LIBS += source/modules/juce_audio_processors.a
+ALL_LIBS += source/modules/juce_data_structures.a
 ALL_LIBS += source/modules/juce_graphics.a
 ALL_LIBS += source/modules/juce_gui_basics.a
 ALL_LIBS += source/modules/juce_gui_extra.a

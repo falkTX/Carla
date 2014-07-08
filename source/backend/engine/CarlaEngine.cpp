@@ -81,9 +81,7 @@ uint CarlaEngine::getDriverCount()
 
 #ifndef BUILD_BRIDGE
     count += getRtAudioApiCount();
-# ifdef HAVE_JUCE
     count += getJuceApiCount();
-# endif
 #endif
 
     return count;
@@ -104,10 +102,8 @@ const char* CarlaEngine::getDriverName(const uint index2)
 
     index -= getRtAudioApiCount();
 
-# ifdef HAVE_JUCE
     if (index < getJuceApiCount())
         return getJuceApiName(index);
-# endif
 #endif
 
     carla_stderr("CarlaEngine::getDriverName(%i) - invalid index", index2);
@@ -132,10 +128,8 @@ const char* const* CarlaEngine::getDriverDeviceNames(const uint index2)
 
     index -= getRtAudioApiCount();
 
-# ifdef HAVE_JUCE
     if (index < getJuceApiCount())
         return getJuceApiDeviceNames(index);
-# endif
 #endif
 
     carla_stderr("CarlaEngine::getDriverDeviceNames(%i) - invalid index", index2);
@@ -164,10 +158,8 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2
 
     index -= getRtAudioApiCount();
 
-# ifdef HAVE_JUCE
     if (index < getJuceApiCount())
         return getJuceDeviceInfo(index, deviceName);
-# endif
 #endif
 
     carla_stderr("CarlaEngine::getDriverDeviceNames(%i, \"%s\") - invalid index", index2, deviceName);
@@ -193,13 +185,8 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
     // linux
 
     if (std::strcmp(driverName, "ALSA") == 0)
-    {
-# ifdef HAVE_JUCE
-        return newJuce(AUDIO_API_ALSA);
-# else
+        //return newJuce(AUDIO_API_ALSA);
         return newRtAudio(AUDIO_API_ALSA);
-# endif
-    }
 
     if (std::strcmp(driverName, "OSS") == 0)
         return newRtAudio(AUDIO_API_OSS);
@@ -210,34 +197,16 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
     // macos
 
     if (std::strcmp(driverName, "CoreAudio") == 0)
-    {
-# ifdef HAVE_JUCE
         return newJuce(AUDIO_API_CORE);
-# else
-        return newRtAudio(AUDIO_API_CORE);
-# endif
-    }
 
     // -------------------------------------------------------------------
     // windows
 
     if (std::strcmp(driverName, "ASIO") == 0)
-    {
-# ifdef HAVE_JUCE
         return newJuce(AUDIO_API_ASIO);
-# else
-        return newRtAudio(AUDIO_API_ASIO);
-# endif
-    }
 
     if (std::strcmp(driverName, "DirectSound") == 0)
-    {
-# ifdef HAVE_JUCE
         return newJuce(AUDIO_API_DS);
-# else
-        return newRtAudio(AUDIO_API_DS);
-# endif
-    }
 #endif
 
     carla_stderr("CarlaEngine::newDriverByName(\"%s\") - invalid driver name", driverName);
@@ -419,7 +388,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             bridgeBinary.clear();
     }
 
-    if (ptype != PLUGIN_INTERNAL && ptype != PLUGIN_JACK && (btype != BINARY_NATIVE || (pData->options.preferPluginBridges && bridgeBinary.isNotEmpty())))
+    if (ptype != PLUGIN_INTERNAL && (btype != BINARY_NATIVE || (pData->options.preferPluginBridges && bridgeBinary.isNotEmpty())))
     {
         if (bridgeBinary.isNotEmpty())
         {
@@ -605,12 +574,14 @@ bool CarlaEngine::removePlugin(const uint id)
 
     pData->thread.stopThread(500);
 
+#ifndef BUILD_BRIDGE
     const bool lockWait(isRunning() && pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS);
     const ScopedActionLock sal(pData, kEnginePostActionRemovePlugin, id, 0, lockWait);
 
-#ifndef BUILD_BRIDGE
     if (isOscControlRegistered())
         oscSend_control_remove_plugin(id);
+#else
+    pData->plugins[0].plugin = nullptr;
 #endif
 
     delete plugin;
@@ -763,12 +734,15 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB)
 
     pData->thread.stopThread(500);
 
+#ifndef BUILD_BRIDGE
     const bool lockWait(isRunning() && pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS);
     const ScopedActionLock sal(pData, kEnginePostActionSwitchPlugins, idA, idB, lockWait);
 
-#ifndef BUILD_BRIDGE // TODO
+    // TODO
     //if (isOscControlRegistered())
     //    oscSend_control_switch_plugins(idA, idB);
+#else
+    pData->plugins[0].plugin = nullptr;
 #endif
 
     if (isRunning() && ! pData->aboutToClose)
@@ -1038,7 +1012,7 @@ bool CarlaEngine::loadProject(const char* const filename)
 
             if (CarlaString(stateSave.label).endsWith(kUse16OutsSuffix))
             {
-                if (ptype == PLUGIN_FILE_GIG || ptype == PLUGIN_FILE_SF2)
+                if (ptype == PLUGIN_GIG || ptype == PLUGIN_SF2)
                     extraStuff = "true";
             }
 

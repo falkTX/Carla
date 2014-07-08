@@ -47,6 +47,13 @@ MACOS_OR_WIN32=true
 endif
 
 # --------------------------------------------------------------
+# Force some features on MacOS and Windows
+
+ifeq ($(MACOS_OR_WIN32),true)
+CARLA_VESTIGE_HEADER = false
+endif
+
+# --------------------------------------------------------------
 # Common build and link flags
 
 BASE_FLAGS = -Wall -Wextra -pipe -DREAL_BUILD
@@ -141,6 +148,7 @@ endif
 
 # --------------------------------------------------------------
 # Set Qt tools
+# FIXME
 
 ifeq ($(HAVE_QT4),true)
 MOC_QT4 ?= $(shell pkg-config --variable=moc_location QtCore)
@@ -175,6 +183,7 @@ endif
 
 # --------------------------------------------------------------
 # Fail if prefered Qt is not found
+# FIXME
 
 ifeq ($(DEFAULT_QT),4)
 ifneq ($(HAVE_QT4),true)
@@ -193,64 +202,31 @@ ifneq ($(shell pkg-config --exists liblo && echo true),true)
 $(error liblo missing, cannot continue)
 endif
 
-# --------------------------------------------------------------
-# Check for dgl support
-
-ifeq ($(HAIKU),true)
-HAVE_DGL = false
-endif
-
 ifeq ($(LINUX),true)
-HAVE_DGL = $(shell pkg-config --exists gl x11 && echo true)
+ifneq ($(shell pkg-config --exists x11 && echo true),true)
+$(error X11 missing, cannot continue)
 endif
-
-ifeq ($(MACOS),true)
-HAVE_DGL = true
-endif
-
-ifeq ($(WIN32),true)
-HAVE_DGL = true
-endif
-
-# --------------------------------------------------------------
-# Check for juce UI support
-
-ifeq ($(HAIKU),true)
-HAVE_JUCE_UI = false
-endif
-
-ifeq ($(LINUX),true)
-HAVE_JUCE_UI = $(shell pkg-config --exists x11 xinerama xext xcursor freetype2 && echo true)
-endif
-
-ifeq ($(MACOS),true)
-HAVE_JUCE_UI = true
-endif
-
-ifeq ($(WIN32),true)
-HAVE_JUCE_UI = true
 endif
 
 # --------------------------------------------------------------
 # Check for optional libs (required by backend or bridges)
 
-ifneq ($(MACOS_OR_WIN32),true)
-HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
-HAVE_GTK2         = $(shell pkg-config --exists gtk+-2.0 && echo true)
-HAVE_GTK3         = $(shell pkg-config --exists gtk+-3.0 && echo true)
-ifeq ($(HAVE_QT4),true)
-HAVE_QTGUI4       = $(shell pkg-config --exists QtCore QtGui && echo true)
-endif
-ifeq ($(HAVE_QT5),true)
-HAVE_QTGUI5       = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
-endif
-HAVE_WAYLAND      = $(shell pkg-config --exists wayland-client && echo true)
-HAVE_X11          = $(shell pkg-config --exists x11 && echo true)
-endif
-
+ifeq ($(MACOS_OR_WIN32),true)
+HAVE_DGL        = true
+HAVE_JUCE_UI    = true
+else
+HAVE_FFMPEG     = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
+HAVE_GTK2       = $(shell pkg-config --exists gtk+-2.0 && echo true)
+HAVE_GTK3       = $(shell pkg-config --exists gtk+-3.0 && echo true)
+HAVE_QTGUI4     = $(shell pkg-config --exists QtCore QtGui && echo true)
+HAVE_QTGUI5     = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
 ifeq ($(LINUX),true)
-HAVE_ALSA         = $(shell pkg-config --exists alsa && echo true)
-HAVE_PULSEAUDIO   = $(shell pkg-config --exists libpulse-simple && echo true)
+HAVE_ALSA       = $(shell pkg-config --exists alsa && echo true)
+HAVE_DGL        = $(shell pkg-config --exists gl && echo true)
+HAVE_JUCE_UI    = $(shell pkg-config --exists xinerama xext xcursor freetype2 TODO && echo true)
+HAVE_PULSEAUDIO = $(shell pkg-config --exists libpulse-simple && echo true)
+HAVE_X11        = true
+endif
 endif
 
 ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
@@ -268,13 +244,6 @@ HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
 HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk_images ntk && echo true)
 
 # --------------------------------------------------------------
-# Force some features on MacOS and Windows
-
-ifeq ($(MACOS_OR_WIN32),true)
-CARLA_VESTIGE_HEADER = false
-endif
-
-# --------------------------------------------------------------
 # Set base defines
 
 ifeq ($(HAVE_DGL),true)
@@ -287,10 +256,6 @@ endif
 
 ifeq ($(HAVE_JUCE_UI),true)
 BASE_FLAGS += -DHAVE_JUCE_UI
-endif
-
-ifeq ($(HAVE_WAYLAND),true)
-BASE_FLAGS += -DHAVE_WAYLAND
 endif
 
 ifeq ($(HAVE_X11),true)
@@ -319,11 +284,6 @@ endif
 ifeq ($(HAVE_LINUXSAMPLER),true)
 LINUXSAMPLER_FLAGS = $(shell pkg-config --cflags linuxsampler) -Wno-unused-parameter
 LINUXSAMPLER_LIBS  = $(shell pkg-config --libs linuxsampler)
-endif
-
-ifeq ($(HAVE_WAYLAND),true)
-WAYLAND_FLAGS = $(shell pkg-config --cflags wayland-client)
-WAYLAND_LIBS  = $(shell pkg-config --libs wayland-client)
 endif
 
 ifeq ($(HAVE_X11),true)
@@ -360,10 +320,10 @@ DGL_FLAGS                = $(shell pkg-config --cflags gl x11)
 DGL_LIBS                 = $(shell pkg-config --libs gl x11)
 endif
 JACKBRIDGE_LIBS          = -ldl -lpthread -lrt
-ifeq ($(HAVE_JUCE),true)
 JUCE_CORE_LIBS           = -ldl -lpthread -lrt
 JUCE_EVENTS_FLAGS        = $(shell pkg-config --cflags x11)
 JUCE_EVENTS_LIBS         = $(shell pkg-config --libs x11)
+ifeq ($(HAVE_JUCE_UI),true)
 JUCE_GRAPHICS_FLAGS      = $(shell pkg-config --cflags x11 xinerama xext freetype2)
 JUCE_GRAPHICS_LIBS       = $(shell pkg-config --libs x11 xinerama xext freetype2)
 JUCE_GUI_BASICS_FLAGS    = $(shell pkg-config --cflags x11 xinerama xext xcursor)

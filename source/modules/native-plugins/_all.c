@@ -56,7 +56,7 @@ extern void carla_register_native_plugin_zamtube();
 extern void carla_register_native_plugin_zamulticomp();
 extern void carla_register_native_plugin_zamulticompx2();
 
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_UI
 // JUCE based plugins
 extern void carla_register_native_plugin_jucepatchbay();
 extern void carla_register_native_plugin_vex_fx();
@@ -128,7 +128,7 @@ void carla_register_all_plugins()
     carla_register_native_plugin_zamulticomp();
     carla_register_native_plugin_zamulticompx2();
 
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_UI
     // JUCE based plugins
     carla_register_native_plugin_jucepatchbay();
     carla_register_native_plugin_vex_fx();

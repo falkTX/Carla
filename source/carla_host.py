@@ -337,14 +337,6 @@ class HostWindow(QMainWindow):
         # Final setup
 
         QTimer.singleShot(0, self.slot_engineStart)
-        #QTimer.singleShot(2000, self.slot_test)
-
-    #@pyqtSlot()
-    #def slot_test(self):
-        #print("test started")
-        #if not gCarla.host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, "/usr/bin/zita-rev1", "name of client", "label of client", None):
-            #print(gCarla.host.get_last_error())
-        #print("test ended")
 
     # -----------------------------------------------------------------
     # Called by containers
@@ -590,7 +582,7 @@ class HostWindow(QMainWindow):
                 if rdfItem.UniqueID == uniqueId:
                     return pointer(rdfItem)
 
-        elif ptype in (PLUGIN_FILE_GIG, PLUGIN_FILE_SF2):
+        elif ptype in (PLUGIN_GIG, PLUGIN_SF2):
             if plugin['name'].lower().endswith(" (16 outputs)"):
                 return c_char_p("true".encode("utf-8"))
 

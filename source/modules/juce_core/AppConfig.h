@@ -69,19 +69,32 @@
 
 #define JUCE_USE_VFORK 1
 
+// always enabled
 #define JUCE_MODULE_AVAILABLE_juce_audio_basics          1
 #define JUCE_MODULE_AVAILABLE_juce_audio_devices         1
 #define JUCE_MODULE_AVAILABLE_juce_audio_formats         1
-#define JUCE_MODULE_AVAILABLE_juce_audio_processors      1
-#define JUCE_MODULE_AVAILABLE_juce_audio_utils           0
 #define JUCE_MODULE_AVAILABLE_juce_core                  1
-#define JUCE_MODULE_AVAILABLE_juce_cryptography          0
-#define JUCE_MODULE_AVAILABLE_juce_data_structures       1
 #define JUCE_MODULE_AVAILABLE_juce_events                1
-#define JUCE_MODULE_AVAILABLE_juce_graphics              1
-#define JUCE_MODULE_AVAILABLE_juce_gui_basics            1
-#define JUCE_MODULE_AVAILABLE_juce_gui_extra             1
+
+// always disabled
+#define JUCE_MODULE_AVAILABLE_juce_audio_utils           0
+#define JUCE_MODULE_AVAILABLE_juce_cryptography          0
 #define JUCE_MODULE_AVAILABLE_juce_opengl                0
 #define JUCE_MODULE_AVAILABLE_juce_video                 0
+
+// conditional
+#ifdef HAVE_JUCE_UI
+# define JUCE_MODULE_AVAILABLE_juce_audio_processors     1
+# define JUCE_MODULE_AVAILABLE_juce_data_structures      1
+# define JUCE_MODULE_AVAILABLE_juce_graphics             1
+# define JUCE_MODULE_AVAILABLE_juce_gui_basics           1
+# define JUCE_MODULE_AVAILABLE_juce_gui_extra            1
+#else
+# define JUCE_MODULE_AVAILABLE_juce_audio_processors     0
+# define JUCE_MODULE_AVAILABLE_juce_data_structures      0
+# define JUCE_MODULE_AVAILABLE_juce_graphics             0
+# define JUCE_MODULE_AVAILABLE_juce_gui_basics           0
+# define JUCE_MODULE_AVAILABLE_juce_gui_extra            0
+#endif
 
 #endif // CARLA_JUCE_CORE_APPCONFIG_H_INCLUDED

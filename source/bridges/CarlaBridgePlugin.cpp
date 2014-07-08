@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Bridge Plugin
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -29,7 +29,7 @@
 # include <signal.h>
 #endif
 
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_UI
 # include "juce_gui_basics.h"
 using juce::JUCEApplication;
 using juce::JUCEApplicationBase;
@@ -95,7 +95,7 @@ static void initSignalHandler()
 
 // -------------------------------------------------------------------------
 
-#ifdef HAVE_JUCE
+#ifdef HACE_JUCE_UI
 static CarlaBridge::CarlaBridgeClient* gBridgeClient = nullptr;
 
 class CarlaJuceApp : public JUCEApplication,
@@ -179,10 +179,9 @@ public:
     {
         carla_debug("CarlaPluginClient::~CarlaPluginClient()");
 
-#ifdef HAVE_JUCE
+#ifdef HACE_JUCE_UI
         gBridgeClient = nullptr;
 #endif
-
         carla_engine_close();
     }
 
@@ -215,7 +214,7 @@ public:
         }
     }
 
-#ifndef HAVE_JUCE
+#ifndef HAVE_JUCE_UI
     void idle()
     {
         CARLA_SAFE_ASSERT_RETURN(fEngine != nullptr,);
@@ -234,7 +233,6 @@ public:
                     carla_stderr("Plugin preset save failed, error was:\n%s", fEngine->getLastError());
             }
         }
-
         if (gCloseNow)
         {
             //gCloseNow = false;
@@ -245,7 +243,7 @@ public:
 
     void exec(int argc, char* argv[])
     {
-#ifdef HAVE_JUCE
+#ifdef HAVE_JUCE_UI
         gBridgeClient = this;
         JUCEApplicationBase::createInstance = &juce_CreateApplication;
         JUCEApplicationBase::main(JUCE_MAIN_FUNCTION_ARGS);
@@ -256,6 +254,7 @@ public:
             carla_msleep(24);
         }
 #endif
+        // may be unused
         return; (void)argc; (void)argv;
     }
 
@@ -427,7 +426,7 @@ int CarlaBridgeOsc::handleMsgShow()
 {
     carla_debug("CarlaBridgeOsc::handleMsgShow()");
 
-#ifdef HAVE_JUCE
+#ifdef HACE_JUCE_UI
     const juce::MessageManagerLock mmLock;
 #endif
 
@@ -441,7 +440,7 @@ int CarlaBridgeOsc::handleMsgHide()
 {
     carla_debug("CarlaBridgeOsc::handleMsgHide()");
 
-#ifdef HAVE_JUCE
+#ifdef HACE_JUCE_UI
     const juce::MessageManagerLock mmLock;
 #endif
 
@@ -542,13 +541,6 @@ CARLA_BRIDGE_END_NAMESPACE
 
 // -------------------------------------------------------------------------
 
-CarlaPlugin* CarlaPlugin::newJACK(const CarlaPlugin::Initializer&)
-{
-    return nullptr;
-}
-
-// -------------------------------------------------------------------------
-
 int main(int argc, char* argv[])
 {
     CARLA_BRIDGE_USE_NAMESPACE;
@@ -631,7 +623,7 @@ int main(int argc, char* argv[])
 
     const void* extraStuff = nullptr;
 
-    if (itype == CarlaBackend::PLUGIN_FILE_GIG || itype == CarlaBackend::PLUGIN_FILE_SF2)
+    if (itype == CarlaBackend::PLUGIN_GIG || itype == CarlaBackend::PLUGIN_SF2)
     {
         if (label == nullptr)
             label = clientName;

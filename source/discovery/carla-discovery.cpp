@@ -20,6 +20,7 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 
+// FIXME
 #ifdef HAVE_JUCE
 # if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 #  define WANT_JUCE_PROCESSORS

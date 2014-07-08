@@ -25,11 +25,6 @@
 using juce::String;
 using juce::XmlElement;
 
-#if 0
-# include <QtCore/QString>
-# include <QtXml/QDomNode>
-#endif
-
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
@@ -44,17 +39,6 @@ static String xmlSafeString(const String& string, const bool toXml)
     else
         return newString.replace("&lt;","<").replace("&gt;",">").replace("&apos;","'").replace("&quot;","\"").replace("&amp;","&");
 }
-#if 0
-static QString xmlSafeString(const QString& string, const bool toXml)
-{
-    QString newString(string);
-
-    if (toXml)
-        return newString.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("'","&apos;").replace("\"","&quot;");
-    else
-        return newString.replace("&lt;","<").replace("&gt;",">").replace("&apos;","'").replace("&quot;","\"").replace("&amp;","&");
-}
-#endif
 
 // -----------------------------------------------------------------------
 // xmlSafeStringCharDup
@@ -63,12 +47,6 @@ static const char* xmlSafeStringCharDup(const String& string, const bool toXml)
 {
     return carla_strdup(xmlSafeString(string, toXml).toRawUTF8());
 }
-#if 0
-static const char* xmlSafeStringCharDup(const QString& string, const bool toXml)
-{
-    return carla_strdup(xmlSafeString(string, toXml).toUtf8().constData());
-}
-#endif
 
 // -----------------------------------------------------------------------
 // StateParameter
