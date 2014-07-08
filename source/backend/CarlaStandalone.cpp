@@ -588,11 +588,6 @@ const char* carla_get_complete_license_text()
         text2 += "<li>AU plugin support</li>"; // FIXME
 #endif
 
-        // Files
-#ifdef WANT_CSOUND
-        text2 += "<li>CSound library for csd support</li>"; // FIXME
-#endif
-
         // Sample kit libraries
 #ifdef WANT_FLUIDSYNTH
         text2 += "<li>FluidSynth library for SF2 support, http://www.fluidsynth.org/</li>";
@@ -661,11 +656,6 @@ const char* carla_get_supported_file_extensions()
     {
         // Base types
         retText += "*.carxp;*.carxs";
-
-        // CSound
-#ifdef WANT_CSOUND
-        retText += ";*.csd";
-#endif
 
         // Sample kits
 #ifdef WANT_FLUIDSYNTH

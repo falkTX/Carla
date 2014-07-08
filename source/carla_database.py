@@ -114,9 +114,7 @@ def findMacVSTBundles(bundlePath, isVST3):
 def findFilenames(filePath, stype):
     filenames = []
 
-    if stype == "csd":
-        extensions = (".csd",)
-    elif stype == "gig":
+    if stype == "gig":
         extensions = (".gig",)
     elif stype == "sf2":
         extensions = (".sf2",)
@@ -321,17 +319,14 @@ def checkPluginVST3(filename, tool, isWine=False):
 def checkPluginAU(filename, tool):
     return runCarlaDiscovery(PLUGIN_AU, "AU", filename, tool)
 
-def checkFileCSD(filename, tool):
-    return runCarlaDiscovery(PLUGIN_FILE_CSD, "CSD", filename, tool)
-
 def checkFileGIG(filename, tool):
-    return runCarlaDiscovery(PLUGIN_FILE_GIG, "GIG", filename, tool)
+    return runCarlaDiscovery(PLUGIN_GIG, "GIG", filename, tool)
 
 def checkFileSF2(filename, tool):
-    return runCarlaDiscovery(PLUGIN_FILE_SF2, "SF2", filename, tool)
+    return runCarlaDiscovery(PLUGIN_SF2, "SF2", filename, tool)
 
 def checkFileSFZ(filename, tool):
-    return runCarlaDiscovery(PLUGIN_FILE_SFZ, "SFZ", filename, tool)
+    return runCarlaDiscovery(PLUGIN_SFZ, "SFZ", filename, tool)
 
 # ------------------------------------------------------------------------------------------------------------
 # Separate Thread for Plugin Search
@@ -356,7 +351,6 @@ class SearchPluginsThread(QThread):
         self.fCheckVST    = False
         self.fCheckVST3   = False
         self.fCheckAU     = False
-        self.fCheckCSD    = False
         self.fCheckGIG    = False
         self.fCheckSF2    = False
         self.fCheckSFZ    = False
@@ -382,7 +376,6 @@ class SearchPluginsThread(QThread):
         self.fVstPlugins    = []
         self.fVst3Plugins   = []
         self.fAuPlugins     = []
-        self.fCsdFiles      = []
         self.fKitPlugins    = []
 
         # -------------------------------------------------------------
@@ -397,14 +390,13 @@ class SearchPluginsThread(QThread):
         self.fCheckWin32   = win32
         self.fCheckWin64   = win64
 
-    def setSearchPluginTypes(self, ladspa, dssi, lv2, vst, vst3, au, csd, gig, sf2, sfz):
+    def setSearchPluginTypes(self, ladspa, dssi, lv2, vst, vst3, au, gig, sf2, sfz):
         self.fCheckLADSPA = ladspa
         self.fCheckDSSI   = dssi
         self.fCheckLV2    = lv2
         self.fCheckVST    = vst
         self.fCheckVST3   = vst3
         self.fCheckAU     = au and MACOS
-        self.fCheckCSD    = csd
         self.fCheckGIG    = gig
         self.fCheckSF2    = sf2
         self.fCheckSFZ    = sfz
@@ -449,12 +441,10 @@ class SearchPluginsThread(QThread):
                 self.fCurCount -= 1
 
         if self.fCheckNative and self.fToolNative:
-            if self.fCheckCSD: self.fCurCount += 1
             if self.fCheckGIG: self.fCurCount += 1
             if self.fCheckSF2: self.fCurCount += 1
             if self.fCheckSFZ: self.fCurCount += 1
         else:
-            self.fCheckCSD = False
             self.fCheckGIG = False
             self.fCheckSF2 = False
             self.fCheckSFZ = False
@@ -687,12 +677,6 @@ class SearchPluginsThread(QThread):
                 settingsDB.setValue("Plugins/AU_posix64", self.fAuPlugins)
 
             settingsDB.sync()
-
-            if not self.fContinueChecking: return
-
-        if self.fCheckCSD:
-            self._checkCSD()
-            settingsDB.setValue("Plugins/CSD", self.fCsdFiles)
 
             if not self.fContinueChecking: return
 
@@ -937,37 +921,6 @@ class SearchPluginsThread(QThread):
 
         self.fLastCheckValue += self.fCurPercentValue
 
-    def _checkCSD(self):
-        csdFiles = []
-        self.fCsdFiles = []
-
-        settings = QSettings()
-        CSOUND_PATH = toList(settings.value(CARLA_KEY_PATHS_CSD, gCarla.DEFAULT_CSOUND_PATH))
-
-        for iPATH in CSOUND_PATH:
-            files = findFilenames(iPATH, "csd")
-            for file_ in files:
-                if file_ not in csdFiles:
-                    csdFiles.append(file_)
-
-        csdFiles.sort()
-
-        if not self.fContinueChecking: return
-
-        for i in range(len(csdFiles)):
-            csd     = csdFiles[i]
-            percent = ( float(i) / len(csdFiles) ) * self.fCurPercentValue
-            self._pluginLook(self.fLastCheckValue + percent, csd)
-
-            plugins = checkFileCSD(csd, self.fToolNative)
-            if plugins:
-                self.fCsdFiles.append(plugins)
-                self.fSomethingChanged = True
-
-            if not self.fContinueChecking: break
-
-        self.fLastCheckValue += self.fCurPercentValue
-
     def _checkKIT(self, kitPATH, kitExtension):
         kitFiles = []
         self.fKitPlugins = []
@@ -1118,8 +1071,6 @@ class PluginRefreshW(QDialog):
             self.ui.ico_native.setPixmap(self.fIconNo)
             self.ui.ch_native.setChecked(False)
             self.ui.ch_native.setEnabled(False)
-            self.ui.ch_csound.setChecked(False)
-            self.ui.ch_csound.setEnabled(False)
             self.ui.ch_gig.setChecked(False)
             self.ui.ch_gig.setEnabled(False)
             self.ui.ch_sf2.setChecked(False)
@@ -1145,11 +1096,6 @@ class PluginRefreshW(QDialog):
             self.ui.ch_au.setEnabled(False)
             self.ui.ch_au.setVisible(False)
 
-        # TODO
-        self.ui.ch_csound.setChecked(False)
-        self.ui.ch_csound.setEnabled(False)
-        self.ui.ch_csound.setVisible(False)
-
         # -------------------------------------------------------------
         # Set-up connections
 
@@ -1166,7 +1112,6 @@ class PluginRefreshW(QDialog):
         self.ui.ch_vst.clicked.connect(self.slot_checkTools)
         self.ui.ch_vst3.clicked.connect(self.slot_checkTools)
         self.ui.ch_au.clicked.connect(self.slot_checkTools)
-        self.ui.ch_csound.clicked.connect(self.slot_checkTools)
         self.ui.ch_gig.clicked.connect(self.slot_checkTools)
         self.ui.ch_sf2.clicked.connect(self.slot_checkTools)
         self.ui.ch_sfz.clicked.connect(self.slot_checkTools)
@@ -1196,14 +1141,13 @@ class PluginRefreshW(QDialog):
                                                   self.ui.ch_posix32.isChecked(), self.ui.ch_posix64.isChecked(),
                                                   self.ui.ch_win32.isChecked(), self.ui.ch_win64.isChecked())
 
-        ladspa, dssi, lv2, vst, vst3, au, csound, gig, sf2, sfz = (self.ui.ch_ladspa.isChecked(), self.ui.ch_dssi.isChecked(),
-                                                                   self.ui.ch_lv2.isChecked(), self.ui.ch_vst.isChecked(),
-                                                                   self.ui.ch_vst3.isChecked(), self.ui.ch_au.isChecked(),
-                                                                   self.ui.ch_csound.isChecked(), self.ui.ch_gig.isChecked(),
-                                                                   self.ui.ch_sf2.isChecked(), self.ui.ch_sfz.isChecked())
+        ladspa, dssi, lv2, vst, vst3, au, gig, sf2, sfz = (self.ui.ch_ladspa.isChecked(), self.ui.ch_dssi.isChecked(),
+                                                           self.ui.ch_lv2.isChecked(), self.ui.ch_vst.isChecked(),
+                                                           self.ui.ch_vst3.isChecked(), self.ui.ch_au.isChecked(),
+                                                           self.ui.ch_gig.isChecked(), self.ui.ch_sf2.isChecked(), self.ui.ch_sfz.isChecked())
 
         self.fThread.setSearchBinaryTypes(native, posix32, posix64, win32, win64)
-        self.fThread.setSearchPluginTypes(ladspa, dssi, lv2, vst, vst3, au, csound, gig, sf2, sfz)
+        self.fThread.setSearchPluginTypes(ladspa, dssi, lv2, vst, vst3, au, gig, sf2, sfz)
         self.fThread.start()
 
     @pyqtSlot()
@@ -1214,7 +1158,7 @@ class PluginRefreshW(QDialog):
     def slot_checkTools(self):
         enabled1 = bool(self.ui.ch_native.isChecked() or self.ui.ch_posix32.isChecked() or self.ui.ch_posix64.isChecked() or self.ui.ch_win32.isChecked() or self.ui.ch_win64.isChecked())
         enabled2 = bool(self.ui.ch_ladspa.isChecked() or self.ui.ch_dssi.isChecked() or self.ui.ch_lv2.isChecked() or self.ui.ch_vst.isChecked() or self.ui.ch_vst3.isChecked() or
-                        self.ui.ch_au.isChecked() or self.ui.ch_csound.isChecked() or self.ui.ch_gig.isChecked() or self.ui.ch_sf2.isChecked() or self.ui.ch_sfz.isChecked())
+                        self.ui.ch_au.isChecked() or self.ui.ch_gig.isChecked() or self.ui.ch_sf2.isChecked() or self.ui.ch_sfz.isChecked())
         self.ui.b_start.setEnabled(enabled1 and enabled2)
 
     @pyqtSlot(int, str)
@@ -1242,7 +1186,6 @@ class PluginRefreshW(QDialog):
         self.ui.ch_vst.setChecked(settings.value("PluginDatabase/SearchVST", True, type=bool))
         self.ui.ch_vst3.setChecked(settings.value("PluginDatabase/SearchVST3", (MACOS or WINDOWS), type=bool))
         self.ui.ch_au.setChecked(settings.value("PluginDatabase/SearchAU", True, type=bool))
-        self.ui.ch_csound.setChecked(settings.value("PluginDatabase/SearchCsound", False, type=bool))
         self.ui.ch_gig.setChecked(settings.value("PluginDatabase/SearchGIG", False, type=bool))
         self.ui.ch_sf2.setChecked(settings.value("PluginDatabase/SearchSF2", False, type=bool))
         self.ui.ch_sfz.setChecked(settings.value("PluginDatabase/SearchSFZ", False, type=bool))
@@ -1261,7 +1204,6 @@ class PluginRefreshW(QDialog):
         settings.setValue("PluginDatabase/SearchVST", self.ui.ch_vst.isChecked())
         settings.setValue("PluginDatabase/SearchVST3", self.ui.ch_vst3.isChecked())
         settings.setValue("PluginDatabase/SearchAU", self.ui.ch_au.isChecked())
-        settings.setValue("PluginDatabase/SearchCsound", self.ui.ch_csound.isChecked())
         settings.setValue("PluginDatabase/SearchGIG", self.ui.ch_gig.isChecked())
         settings.setValue("PluginDatabase/SearchSF2", self.ui.ch_sf2.isChecked())
         settings.setValue("PluginDatabase/SearchSFZ", self.ui.ch_sfz.isChecked())
@@ -1348,7 +1290,6 @@ class PluginDatabaseW(QDialog):
         self.ui.ch_vst.clicked.connect(self.slot_checkFilters)
         self.ui.ch_vst3.clicked.connect(self.slot_checkFilters)
         self.ui.ch_au.clicked.connect(self.slot_checkFilters)
-        self.ui.ch_csound.clicked.connect(self.slot_checkFilters)
         self.ui.ch_kits.clicked.connect(self.slot_checkFilters)
         self.ui.ch_native.clicked.connect(self.slot_checkFilters)
         self.ui.ch_bridged.clicked.connect(self.slot_checkFilters)
@@ -1402,7 +1343,6 @@ class PluginDatabaseW(QDialog):
         hideVST      = not self.ui.ch_vst.isChecked()
         hideVST3     = not self.ui.ch_vst3.isChecked()
         hideAU       = not self.ui.ch_au.isChecked()
-        hideCsound   = not self.ui.ch_csound.isChecked()
         hideKits     = not self.ui.ch_kits.isChecked()
 
         hideNative  = not self.ui.ch_native.isChecked()
@@ -1470,8 +1410,6 @@ class PluginDatabaseW(QDialog):
             elif hideVST3 and ptype == "VST3":
                 self.ui.tableWidget.hideRow(i)
             elif hideAU and ptype == "AU":
-                self.ui.tableWidget.hideRow(i)
-            elif hideCsound and ptype == "CSD":
                 self.ui.tableWidget.hideRow(i)
             elif hideNative and isNative:
                 self.ui.tableWidget.hideRow(i)
@@ -1562,7 +1500,6 @@ class PluginDatabaseW(QDialog):
         vstCount    = 0
         vst3Count   = 0
         auCount     = 0
-        csdCount    = 0
         kitCount    = 0
 
         # ---------------------------------------------------------------------------
@@ -1696,18 +1633,6 @@ class PluginDatabaseW(QDialog):
             del auPlugins
 
         # ---------------------------------------------------------------------------
-        # Csound
-
-        #csds = toList(settingsDB.value("Plugins/CSD", []))
-
-        #for csd in csds:
-            #for csd_i in csd:
-                #self._addPluginToTable(csd_i, "CSD")
-                #csdCount += 1
-
-        #del csds
-
-        # ---------------------------------------------------------------------------
         # Kits
 
         gigs = toList(settingsDB.value("Plugins/GIG", []))
@@ -1752,7 +1677,6 @@ class PluginDatabaseW(QDialog):
         else:
             self.ui.label.setText(self.tr("Have %i Internal, %i LADSPA, %i DSSI, %i LV2, %i VST and %i VST3 plugins, plus %i Sound Kits" % (
                                           internalCount, ladspaCount, dssiCount, lv2Count, vstCount, vst3Count, kitCount)))
-        #  %i Csound modules and
 
         self._checkFilters()
 
@@ -1771,7 +1695,6 @@ class PluginDatabaseW(QDialog):
         self.ui.ch_vst.setChecked(settings.value("PluginDatabase/ShowVST", True, type=bool))
         self.ui.ch_vst3.setChecked(settings.value("PluginDatabase/ShowVST3", (MACOS or WINDOWS), type=bool))
         self.ui.ch_au.setChecked(settings.value("PluginDatabase/ShowAU", True, type=bool))
-        self.ui.ch_csound.setChecked(settings.value("PluginDatabase/ShowCsound", True, type=bool))
         self.ui.ch_kits.setChecked(settings.value("PluginDatabase/ShowKits", True, type=bool))
         self.ui.ch_native.setChecked(settings.value("PluginDatabase/ShowNative", True, type=bool))
         self.ui.ch_bridged.setChecked(settings.value("PluginDatabase/ShowBridged", True, type=bool))
@@ -1799,7 +1722,6 @@ class PluginDatabaseW(QDialog):
         settings.setValue("PluginDatabase/ShowVST", self.ui.ch_vst.isChecked())
         settings.setValue("PluginDatabase/ShowVST3", self.ui.ch_vst3.isChecked())
         settings.setValue("PluginDatabase/ShowAU", self.ui.ch_au.isChecked())
-        settings.setValue("PluginDatabase/ShowCsound", self.ui.ch_csound.isChecked())
         settings.setValue("PluginDatabase/ShowKits", self.ui.ch_kits.isChecked())
         settings.setValue("PluginDatabase/ShowNative", self.ui.ch_native.isChecked())
         settings.setValue("PluginDatabase/ShowBridged", self.ui.ch_bridged.isChecked())

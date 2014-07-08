@@ -858,15 +858,11 @@ public:
     static CarlaPlugin* newVST(const Initializer& init);
     static CarlaPlugin* newVST3(const Initializer& init);
     static CarlaPlugin* newAU(const Initializer& init);
-    static CarlaPlugin* newJACK(const Initializer& init);
-    static CarlaPlugin* newReWire(const Initializer& init);
 
-    static CarlaPlugin* newCsound(const Initializer& init);
     static CarlaPlugin* newJuce(const Initializer& init, const char* const format);
     static CarlaPlugin* newFluidSynth(const Initializer& init, const bool use16Outs);
     static CarlaPlugin* newLinuxSampler(const Initializer& init, const char* const format, const bool use16Outs);
 
-    static CarlaPlugin* newFileCSD(const Initializer& init);
     static CarlaPlugin* newFileGIG(const Initializer& init, const bool use16Outs);
     static CarlaPlugin* newFileSF2(const Initializer& init, const bool use16Outs);
     static CarlaPlugin* newFileSFZ(const Initializer& init);

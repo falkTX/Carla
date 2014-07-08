@@ -10,9 +10,6 @@
 # Support for LADSPA, DSSI, LV2, VST and AU plugins
 CARLA_PLUGIN_SUPPORT = true
 
-# Support for csound files (version 6, not ready yet)
-CARLA_CSOUND_SUPPORT = false
-
 # Support for GIG, SF2 and SFZ sample banks (through fluidsynth and linuxsampler)
 CARLA_SAMPLERS_SUPPORT = true
 
@@ -65,6 +62,12 @@ endif
 ifeq ($(RASPPI),true)
 # Raspberry-Pi optimization flags
 BASE_OPTS  = -O2 -ffast-math -march=armv6 -mfpu=vfp -mfloat-abi=hard
+LINK_OPTS  = -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
+endif
+
+ifeq ($(PANDORA),true)
+# OpenPandora flags
+BASE_OPTS  = -O2 -ffast-math -march=armv7-a -mcpu=cortex-a8 -mtune=cortex-a8 -mfpu=neon -mfloat-abi=softfp
 LINK_OPTS  = -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
 endif
 
@@ -127,8 +130,8 @@ endif
 # --------------------------------------------------------------
 # Check for qt, set default version
 
-HAVE_QT4 = $(shell pkg-config --exists QtCore QtXml && echo true)
-HAVE_QT5 = $(shell pkg-config --exists Qt5Core Qt5Xml && echo true)
+HAVE_QT4 = $(shell pkg-config --exists QtCore && echo true)
+HAVE_QT5 = $(shell pkg-config --exists Qt5Core && echo true)
 
 ifeq ($(MACOS_OR_WIN32),true)
 DEFAULT_QT ?= 5
@@ -210,22 +213,22 @@ HAVE_DGL = true
 endif
 
 # --------------------------------------------------------------
-# Check for juce support
+# Check for juce UI support
 
 ifeq ($(HAIKU),true)
-HAVE_JUCE = false
+HAVE_JUCE_UI = false
 endif
 
 ifeq ($(LINUX),true)
-HAVE_JUCE = $(shell pkg-config --exists x11 xinerama xext xcursor freetype2 && echo true)
+HAVE_JUCE_UI = $(shell pkg-config --exists x11 xinerama xext xcursor freetype2 && echo true)
 endif
 
 ifeq ($(MACOS),true)
-HAVE_JUCE = true
+HAVE_JUCE_UI = true
 endif
 
 ifeq ($(WIN32),true)
-HAVE_JUCE = true
+HAVE_JUCE_UI = true
 endif
 
 # --------------------------------------------------------------
@@ -248,12 +251,6 @@ endif
 ifeq ($(LINUX),true)
 HAVE_ALSA         = $(shell pkg-config --exists alsa && echo true)
 HAVE_PULSEAUDIO   = $(shell pkg-config --exists libpulse-simple && echo true)
-endif
-
-ifeq ($(CARLA_CSOUND_SUPPORT),true)
-ifeq ($(HAVE_JUCE),true)
-HAVE_CSOUND       = $(shell pkg-config --exists sndfile && echo true)
-endif
 endif
 
 ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
@@ -288,8 +285,8 @@ ifeq ($(HAVE_FFMPEG),true)
 BASE_FLAGS += -DHAVE_FFMPEG
 endif
 
-ifeq ($(HAVE_JUCE),true)
-BASE_FLAGS += -DHAVE_JUCE
+ifeq ($(HAVE_JUCE_UI),true)
+BASE_FLAGS += -DHAVE_JUCE_UI
 endif
 
 ifeq ($(HAVE_WAYLAND),true)
@@ -309,18 +306,9 @@ LIBLO_LIBS   = $(shell pkg-config --libs liblo)
 ifeq ($(DEFAULT_QT),4)
 QTCORE_FLAGS = $(shell pkg-config --cflags QtCore)
 QTCORE_LIBS  = $(shell pkg-config --libs QtCore)
-QTXML_FLAGS  = $(shell pkg-config --cflags QtXml)
-QTXML_LIBS   = $(shell pkg-config --libs QtXml)
 else
 QTCORE_FLAGS = $(shell pkg-config --cflags Qt5Core)
 QTCORE_LIBS  = $(shell pkg-config --libs Qt5Core)
-QTXML_FLAGS  = $(shell pkg-config --cflags Qt5Xml)
-QTXML_LIBS   = $(shell pkg-config --libs Qt5Xml)
-endif
-
-ifeq ($(HAVE_CSOUND),true)
-CSOUND_FLAGS = -DUSE_DOUBLE=1
-CSOUND_LIBS  = $(shell pkg-config --libs sndfile) -lcsound64
 endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)

@@ -21,8 +21,6 @@ OBJS = \
 	VstPlugin.cpp.o \
 	Vst3Plugin.cpp.o \
 	AuPlugin.cpp.o \
-	ReWirePlugin.cpp.o \
-	CsoundPlugin.cpp.o \
 	JucePlugin.cpp.o \
 	FluidSynthPlugin.cpp.o \
 	LinuxSamplerPlugin.cpp.o
@@ -86,12 +84,6 @@ Vst3Plugin.cpp.o: Vst3Plugin.cpp $(VST3_PLUGIN_CPP_DEPS)
 
 AuPlugin.cpp.o: AuPlugin.cpp $(AU_PLUGIN_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-ReWirePlugin.cpp.o: ReWirePlugin.cpp $(REWIRE_PLUGIN_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-CsoundPlugin.cpp.o: CsoundPlugin.cpp $(CSOUND_PLUGIN_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(CSOUND_FLAGS) -c -o $@
 
 JucePlugin.cpp.o: JucePlugin.cpp $(JUCE_PLUGIN_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@

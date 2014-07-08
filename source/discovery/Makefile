@@ -37,10 +37,6 @@ endif
 
 # --------------------------------------------------------------
 
-ifeq ($(HAVE_CSOUND),true)
-NATIVE_FLAGS += -DWANT_CSOUND $(CSOUND_FLAGS) $(CSOUND_LIBS)
-endif
-
 ifeq ($(HAVE_FLUIDSYNTH),true)
 NATIVE_FLAGS += -DWANT_FLUIDSYNTH $(FLUIDSYNTH_FLAGS) $(FLUIDSYNTH_LIBS)
 endif

@@ -144,14 +144,6 @@ RtLinkedListGnu: RtLinkedList.cpp ../utils/LinkedList.hpp ../utils/RtLinkedList.
 
 # --------------------------------------------------------------
 
-Rewire.exe: Rewire.cpp.o
-	$(CXX) $^ -lversion -o $@
-
-Rewire.cpp.o: Rewire.cpp
-	$(CXX) $< -Wall -Wextra -DREAL_BUILD -DDEBUG -O0 -g -I../includes -I../utils -std=c++11 -c -o $@
-
-# --------------------------------------------------------------
-
 clean:
 	rm -f *.o $(TARGETS)
 

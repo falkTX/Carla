@@ -35,10 +35,6 @@ endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-ifeq ($(HAVE_CSOUND),true)
-BUILD_CXX_FLAGS += -DWANT_CSOUND
-endif
-
 ifeq ($(HAVE_FLUIDSYNTH),true)
 BUILD_CXX_FLAGS += -DWANT_FLUIDSYNTH
 endif

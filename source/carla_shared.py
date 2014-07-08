@@ -217,7 +217,6 @@ CARLA_KEY_PATHS_LV2    = "Paths/LV2"
 CARLA_KEY_PATHS_VST    = "Paths/VST"
 CARLA_KEY_PATHS_VST3   = "Paths/VST3"
 CARLA_KEY_PATHS_AU     = "Paths/AU"
-CARLA_KEY_PATHS_CSD    = "Paths/CSD"
 CARLA_KEY_PATHS_GIG    = "Paths/GIG"
 CARLA_KEY_PATHS_SF2    = "Paths/SF2"
 CARLA_KEY_PATHS_SFZ    = "Paths/SFZ"
@@ -260,7 +259,6 @@ class CarlaObject(object):
         'DEFAULT_VST_PATH',
         'DEFAULT_VST3_PATH',
         'DEFAULT_AU_PATH',
-        'DEFAULT_CSOUND_PATH',
         'DEFAULT_GIG_PATH',
         'DEFAULT_SF2_PATH',
         'DEFAULT_SFZ_PATH'
@@ -290,7 +288,6 @@ DEFAULT_LV2_PATH    = ""
 DEFAULT_VST_PATH    = ""
 DEFAULT_VST3_PATH   = ""
 DEFAULT_AU_PATH     = ""
-DEFAULT_CSOUND_PATH = ""
 DEFAULT_GIG_PATH    = ""
 DEFAULT_SF2_PATH    = ""
 DEFAULT_SFZ_PATH    = ""
@@ -456,7 +453,6 @@ if readEnvVars:
     gCarla.DEFAULT_VST_PATH    = os.getenv("VST_PATH",    DEFAULT_VST_PATH).split(splitter)
     gCarla.DEFAULT_VST3_PATH   = os.getenv("VST3_PATH",   DEFAULT_VST3_PATH).split(splitter)
     gCarla.DEFAULT_AU_PATH     = os.getenv("AU_PATH",     DEFAULT_AU_PATH).split(splitter)
-    gCarla.DEFAULT_CSOUND_PATH = os.getenv("CSOUND_PATH", DEFAULT_CSOUND_PATH).split(splitter)
     gCarla.DEFAULT_GIG_PATH    = os.getenv("GIG_PATH",    DEFAULT_GIG_PATH).split(splitter)
     gCarla.DEFAULT_SF2_PATH    = os.getenv("SF2_PATH",    DEFAULT_SF2_PATH).split(splitter)
     gCarla.DEFAULT_SFZ_PATH    = os.getenv("SFZ_PATH",    DEFAULT_SFZ_PATH).split(splitter)
@@ -468,7 +464,6 @@ else:
     gCarla.DEFAULT_VST_PATH    = DEFAULT_VST_PATH.split(splitter)
     gCarla.DEFAULT_VST3_PATH   = DEFAULT_VST3_PATH.split(splitter)
     gCarla.DEFAULT_AU_PATH     = DEFAULT_AU_PATH.split(splitter)
-    gCarla.DEFAULT_CSOUND_PATH = DEFAULT_CSOUND_PATH.split(splitter)
     gCarla.DEFAULT_GIG_PATH    = DEFAULT_GIG_PATH.split(splitter)
     gCarla.DEFAULT_SF2_PATH    = DEFAULT_SF2_PATH.split(splitter)
     gCarla.DEFAULT_SFZ_PATH    = DEFAULT_SFZ_PATH.split(splitter)
@@ -662,17 +657,11 @@ def getPluginTypeAsString(ptype):
         return "VST3"
     if ptype == PLUGIN_AU:
         return "AU"
-    if ptype == PLUGIN_JACK:
-        return "JACK"
-    if ptype == PLUGIN_REWIRE:
-        return "ReWire"
-    if ptype == PLUGIN_FILE_CSD:
-        return "CSD"
-    if ptype == PLUGIN_FILE_GIG:
+    if ptype == PLUGIN_GIG:
         return "GIG"
-    if ptype == PLUGIN_FILE_SF2:
+    if ptype == PLUGIN_SF2:
         return "SF2"
-    if ptype == PLUGIN_FILE_SFZ:
+    if ptype == PLUGIN_SFZ:
         return "SFZ"
     return "Unknown"
 

@@ -101,18 +101,12 @@ const char* PluginType2Str(const PluginType type) noexcept
         return "PLUGIN_VST3";
     case PLUGIN_AU:
         return "PLUGIN_AU";
-    case PLUGIN_JACK:
-        return "PLUGIN_JACK";
-    case PLUGIN_REWIRE:
-        return "PLUGIN_REWIRE";
-    case PLUGIN_FILE_CSD:
-        return "PLUGIN_FILE_CSD";
-    case PLUGIN_FILE_GIG:
-        return "PLUGIN_FILE_GIG";
-    case PLUGIN_FILE_SF2:
-        return "PLUGIN_FILE_SF2";
-    case PLUGIN_FILE_SFZ:
-        return "PLUGIN_FILE_SFZ";
+    case PLUGIN_GIG:
+        return "PLUGIN_GIG";
+    case PLUGIN_SF2:
+        return "PLUGIN_SF2";
+    case PLUGIN_SFZ:
+        return "PLUGIN_SFZ";
     }
 
     carla_stderr("CarlaBackend::PluginType2Str(%i) - invalid type", type);
@@ -432,18 +426,12 @@ const char* getPluginTypeAsString(const PluginType type) noexcept
     case PLUGIN_VST3:
         return "VST3";
     case PLUGIN_AU:
-        return "AU";
-    case PLUGIN_JACK:
-        return "JACK";
-    case PLUGIN_REWIRE:
-        return "ReWire";
-    case PLUGIN_FILE_CSD:
-        return "CSD";
-    case PLUGIN_FILE_GIG:
+        return "AU";;
+    case PLUGIN_GIG:
         return "GIG";
-    case PLUGIN_FILE_SF2:
+    case PLUGIN_SF2:
         return "SF2";
-    case PLUGIN_FILE_SFZ:
+    case PLUGIN_SFZ:
         return "SFZ";
     }
 
@@ -480,18 +468,12 @@ PluginType getPluginTypeFromString(const char* const ctype) noexcept
         return PLUGIN_VST3;
     if (stype == "au")
         return PLUGIN_AU;
-    if (stype == "jack")
-        return PLUGIN_JACK;
-    if (stype == "rewire")
-        return PLUGIN_REWIRE;
-    if (stype == "csd")
-        return PLUGIN_FILE_CSD;
     if (stype == "gig")
-        return PLUGIN_FILE_GIG;
+        return PLUGIN_GIG;
     if (stype == "sf2")
-        return PLUGIN_FILE_SF2;
+        return PLUGIN_SF2;
     if (stype == "sfz")
-        return PLUGIN_FILE_SFZ;
+        return PLUGIN_SFZ;
 
     carla_stderr("CarlaBackend::getPluginTypeFromString(\"%s\") - invalid string type", ctype);
     return PLUGIN_NONE;

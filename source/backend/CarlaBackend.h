@@ -480,35 +480,19 @@ typedef enum {
     PLUGIN_AU = 7,
 
     /*!
-     * JACK plugin.
+     * GIG file.
      */
-    PLUGIN_JACK = 8,
+    PLUGIN_GIG = 8,
 
     /*!
-     * ReWire plugin.
-     * @note Windows and MacOS only
+     * SF2 file (SoundFont).
      */
-    PLUGIN_REWIRE = 9,
+    PLUGIN_SF2 = 9,
 
     /*!
-     * Single CSD file (Csound).
+     * SFZ file.
      */
-    PLUGIN_FILE_CSD = 10,
-
-    /*!
-     * Single GIG file.
-     */
-    PLUGIN_FILE_GIG = 11,
-
-    /*!
-     * Single SF2 file (SoundFont).
-     */
-    PLUGIN_FILE_SF2 = 12,
-
-    /*!
-     * Single SFZ file.
-     */
-    PLUGIN_FILE_SFZ = 13
+    PLUGIN_SFZ = 10
 
 } PluginType;
 

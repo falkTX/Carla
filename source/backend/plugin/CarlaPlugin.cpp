@@ -1316,7 +1316,7 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
             uiProgramChange(static_cast<uint32_t>(index));
 #endif
 
-        if (getType() == PLUGIN_FILE_CSD || getType() == PLUGIN_FILE_GIG || getType() == PLUGIN_FILE_SF2 || getType() == PLUGIN_FILE_SFZ)
+        if (getType() == PLUGIN_GIG || getType() == PLUGIN_SF2 || getType() == PLUGIN_SFZ)
             return;
 
         pData->updateParameterValues(this, sendOsc, sendCallback, true);
@@ -1359,7 +1359,7 @@ void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const 
             uiMidiProgramChange(static_cast<uint32_t>(index));
 #endif
 
-        if (getType() == PLUGIN_FILE_CSD || getType() == PLUGIN_FILE_GIG || getType() == PLUGIN_FILE_SF2 || getType() == PLUGIN_FILE_SFZ)
+        if (getType() == PLUGIN_GIG || getType() == PLUGIN_SF2 || getType() == PLUGIN_SFZ)
             return;
 
         pData->updateParameterValues(this, sendOsc, sendCallback, true);

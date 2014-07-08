@@ -91,7 +91,6 @@ extern QStringList MIDI_CC_LIST;
 #define CARLA_KEY_PATHS_VST    "Paths/VST"
 #define CARLA_KEY_PATHS_VST3   "Paths/VST3"
 #define CARLA_KEY_PATHS_AU     "Paths/AU"
-#define CARLA_KEY_PATHS_CSD    "Paths/CSD"
 #define CARLA_KEY_PATHS_GIG    "Paths/GIG"
 #define CARLA_KEY_PATHS_SF2    "Paths/SF2"
 #define CARLA_KEY_PATHS_SFZ    "Paths/SFZ"
@@ -133,7 +132,6 @@ struct CarlaObject {
     QStringList DEFAULT_VST_PATH;
     QStringList DEFAULT_VST3_PATH;
     QStringList DEFAULT_AU_PATH;
-    QStringList DEFAULT_CSOUND_PATH;
     QStringList DEFAULT_GIG_PATH;
     QStringList DEFAULT_SF2_PATH;
     QStringList DEFAULT_SFZ_PATH;

@@ -25,7 +25,7 @@ LINK_PLUGIN_FLAGS   = $(LINK_FLAGS)
 LINK_PLUGIN_FLAGS  += $(QTCORE_LIBS) $(QTXML_LIBS)
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-BUILD_PLUGIN_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST -DWANT_VST3 -DWANT_REWIRE
+BUILD_PLUGIN_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST -DWANT_VST3
 ifeq ($(MACOS),true)
 BUILD_CXX_FLAGS += -DWANT_AU
 endif
@@ -78,12 +78,6 @@ NATIVE_LINK_FLAGS   = $(POSIX_LINK_FLAGS)
 ifeq ($(HAVE_DGL),true)
 NATIVE_LINK_FLAGS  += $(DGL_LIBS)
 endif
-
-# ifeq ($(HAVE_CSOUND),true)
-# NATIVE_BUILD_FLAGS += -DWANT_CSOUND
-# NATIVE_BUILD_FLAGS += $(CSOUND_FLAGS)
-# NATIVE_LINK_FLAGS  += $(CSOUND_LIBS)
-# endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 NATIVE_BUILD_FLAGS += -DWANT_FLUIDSYNTH
@@ -417,8 +411,6 @@ OBJS_PLUGIN = \
 	../backend/plugin/VstPlugin__native.o \
 	../backend/plugin/Vst3Plugin__native.o \
 	../backend/plugin/AuPlugin__native.o \
-	../backend/plugin/ReWirePlugin__native.o \
-	../backend/plugin/CsoundPlugin__native.o \
 	../backend/plugin/JucePlugin__native.o \
 	../backend/plugin/FluidSynthPlugin__native.o \
 	../backend/plugin/LinuxSamplerPlugin__native.o \
@@ -485,8 +477,6 @@ OBJS_NATIVE += \
 	../backend/plugin/VstPlugin__native.o \
 	../backend/plugin/Vst3Plugin__native.o \
 	../backend/plugin/AuPlugin__native.o \
-	../backend/plugin/ReWirePlugin__native.o \
-	../backend/plugin/CsoundPlugin__native.o \
 	../backend/plugin/JucePlugin__native.o \
 	../backend/plugin/FluidSynthPlugin__native.o \
 	../backend/plugin/LinuxSamplerPlugin__native.o
@@ -563,8 +553,6 @@ OBJS_POSIX32 += \
 	../backend/plugin/VstPlugin__posix32.o \
 	../backend/plugin/Vst3Plugin__posix32.o \
 	../backend/plugin/AuPlugin__posix32.o \
-	../backend/plugin/ReWirePlugin__posix32.o \
-	../backend/plugin/CsoundPlugin__posix32.o \
 	../backend/plugin/JucePlugin__posix32.o \
 	../backend/plugin/FluidSynthPlugin__posix32.o \
 	../backend/plugin/LinuxSamplerPlugin__posix32.o
@@ -623,8 +611,6 @@ OBJS_POSIX64 += \
 	../backend/plugin/VstPlugin__posix64.o \
 	../backend/plugin/Vst3Plugin__posix64.o \
 	../backend/plugin/AuPlugin__posix32.o \
-	../backend/plugin/ReWirePlugin__posix64.o \
-	../backend/plugin/CsoundPlugin__posix64.o \
 	../backend/plugin/JucePlugin__posix64.o \
 	../backend/plugin/FluidSynthPlugin__posix64.o \
 	../backend/plugin/LinuxSamplerPlugin__posix64.o
@@ -683,8 +669,6 @@ OBJS_WIN32 += \
 	../backend/plugin/VstPlugin__win32.o \
 	../backend/plugin/Vst3Plugin__win32.o \
 	../backend/plugin/AuPlugin__win32.o \
-	../backend/plugin/ReWirePlugin__win32.o \
-	../backend/plugin/CsoundPlugin__win32.o \
 	../backend/plugin/JucePlugin__win32.o \
 	../backend/plugin/FluidSynthPlugin__win32.o \
 	../backend/plugin/LinuxSamplerPlugin__win32.o
@@ -743,8 +727,6 @@ OBJS_WIN64 += \
 	../backend/plugin/VstPlugin__win64.o \
 	../backend/plugin/Vst3Plugin__win64.o \
 	../backend/plugin/AuPlugin__win64.o \
-	../backend/plugin/ReWirePlugin__win64.o \
-	../backend/plugin/CsoundPlugin__win64.o \
 	../backend/plugin/JucePlugin__win64.o \
 	../backend/plugin/FluidSynthPlugin__win64.o \
 	../backend/plugin/LinuxSamplerPlugin__win64.o

@@ -223,7 +223,7 @@ void init()
 
     QString splitter;
     QString DEFAULT_LADSPA_PATH, DEFAULT_DSSI_PATH, DEFAULT_LV2_PATH, DEFAULT_VST_PATH, DEFAULT_VST3_PATH, DEFAULT_AU_PATH;
-    QString DEFAULT_CSOUND_PATH, DEFAULT_GIG_PATH, DEFAULT_SF2_PATH, DEFAULT_SFZ_PATH;
+    QString DEFAULT_GIG_PATH, DEFAULT_SF2_PATH, DEFAULT_SFZ_PATH;
 
 #if defined(CARLA_OS_WIN)
     splitter = ";";
@@ -399,7 +399,6 @@ void init()
         gCarla.DEFAULT_VST_PATH    = getenvWithFallback("VST_PATH",    DEFAULT_VST_PATH).split(splitter);
         gCarla.DEFAULT_VST3_PATH   = getenvWithFallback("VST3_PATH",   DEFAULT_VST3_PATH).split(splitter);
         gCarla.DEFAULT_AU_PATH     = getenvWithFallback("AU_PATH",     DEFAULT_AU_PATH).split(splitter);
-        gCarla.DEFAULT_CSOUND_PATH = getenvWithFallback("CSOUND_PATH", DEFAULT_CSOUND_PATH).split(splitter);
         gCarla.DEFAULT_GIG_PATH    = getenvWithFallback("GIG_PATH",    DEFAULT_GIG_PATH).split(splitter);
         gCarla.DEFAULT_SF2_PATH    = getenvWithFallback("SF2_PATH",    DEFAULT_SF2_PATH).split(splitter);
         gCarla.DEFAULT_SFZ_PATH    = getenvWithFallback("SFZ_PATH",    DEFAULT_SFZ_PATH).split(splitter);
@@ -412,7 +411,6 @@ void init()
         gCarla.DEFAULT_VST_PATH    = DEFAULT_VST_PATH.split(splitter);
         gCarla.DEFAULT_VST3_PATH   = DEFAULT_VST3_PATH.split(splitter);
         gCarla.DEFAULT_AU_PATH     = DEFAULT_AU_PATH.split(splitter);
-        gCarla.DEFAULT_CSOUND_PATH = DEFAULT_CSOUND_PATH.split(splitter);
         gCarla.DEFAULT_GIG_PATH    = DEFAULT_GIG_PATH.split(splitter);
         gCarla.DEFAULT_SF2_PATH    = DEFAULT_SF2_PATH.split(splitter);
         gCarla.DEFAULT_SFZ_PATH    = DEFAULT_SFZ_PATH.split(splitter);

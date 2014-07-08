@@ -25,9 +25,6 @@
 #  define WANT_JUCE_PROCESSORS
 #  include "juce_audio_processors.h"
 # endif
-#else
-// our csound code needs juce
-# undef WANT_CSOUND
 #endif
 
 #ifdef WANT_LADSPA
@@ -41,9 +38,6 @@
 #endif
 #ifdef WANT_VST
 # include "CarlaVstUtils.hpp"
-#endif
-#ifdef WANT_CSOUND
-# include <csound/csound.hpp>
 #endif
 #ifdef WANT_FLUIDSYNTH
 # include <fluidsynth.h>
@@ -273,23 +267,6 @@ static intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t
 
     return ret;
 }
-#endif
-
-#ifdef WANT_CSOUND
-// --------------------------------------------------------------------------
-// Csound stuff
-
-static int csound_midiInOpen(CSOUND*,  void**, const char*)        { return 0; }
-static int csound_midiRead(CSOUND*,    void*, unsigned char*, int) { return 0; }
-static int csound_midiInClose(CSOUND*, void*)                      { return 0; }
-
-static int csound_midiOutOpen(CSOUND*,  void**, const char*)               { return 0; }
-static int csound_midiWrite(CSOUND*,    void*,  const unsigned char*, int) { return 0; }
-static int csound_midiOutClose(CSOUND*, void*)                             { return 0; }
-
-# ifndef DEBUG
-static void csound_silence(CSOUND*, int, const char*, va_list) {}
-# endif
 #endif
 
 #ifdef WANT_LINUXSAMPLER
@@ -1539,107 +1516,6 @@ static void do_juce_check(const char* const filename, const char* const stype, c
 }
 #endif
 
-static void do_csound_check(const char* const filename, const bool init)
-{
-#ifdef WANT_CSOUND
-    Csound csound;
-# ifndef DEBUG
-    csound.SetMessageCallback(csound_silence);
-# endif
-    csound.SetHostImplementedAudioIO(true, kBufferSize);
-    csound.SetHostImplementedMIDIIO(true);
-    csound.Reset();
-
-    csound.SetExternalMidiInOpenCallback(csound_midiInOpen);
-    csound.SetExternalMidiReadCallback(csound_midiRead);
-    csound.SetExternalMidiInCloseCallback(csound_midiInClose);
-
-    csound.SetExternalMidiOutOpenCallback(csound_midiOutOpen);
-    csound.SetExternalMidiWriteCallback(csound_midiWrite);
-    csound.SetExternalMidiOutCloseCallback(csound_midiOutClose);
-
-    if (csound.Compile(const_cast<char*>(filename)) != 0)
-    {
-        DISCOVERY_OUT("error", "csound failed to compile");
-        return;
-    }
-
-    csound.PerformKsmps();
-    csound.SetScoreOffsetSeconds(0);
-    csound.RewindScore();
-
-    int hints = 0x0;
-    int audioIns = 0;
-    int audioOuts = 0;
-    int midiIns = 0;
-    int midiOuts = 0;
-    int parametersIns = 0;
-    int parametersOuts = 0;
-    int programs = 0;
-
-    int numChannels;
-    controlChannelInfo_t* channelList;
-
-    numChannels = csound.ListChannels(channelList);
-
-    carla_stderr2("Num chan %i", numChannels);
-
-    if (numChannels != 0 && channelList != nullptr)
-    {
-        for (int i=0; i < numChannels; ++i)
-        {
-            const controlChannelInfo_t& channel(channelList[i]);
-
-            carla_stderr2("chan @%i, type %i", i, channel.type);
-
-            if (channel.type & CSOUND_AUDIO_CHANNEL)
-            {
-                if (channel.type & CSOUND_INPUT_CHANNEL)
-                    audioIns += 1;
-                else if (channel.type & CSOUND_OUTPUT_CHANNEL)
-                    audioOuts += 1;
-            }
-            else if (channel.type & CSOUND_CONTROL_CHANNEL)
-            {
-                if (channel.type & CSOUND_INPUT_CHANNEL)
-                    parametersIns += 1;
-                else if (channel.type & CSOUND_OUTPUT_CHANNEL)
-                    parametersOuts += 1;
-            }
-        }
-
-        csound.DeleteChannelList(channelList);
-    }
-
-    // TODO
-
-    csound.Cleanup();
-    csound.Reset();
-
-    DISCOVERY_OUT("init", "-----------");
-    DISCOVERY_OUT("build", BINARY_NATIVE);
-    DISCOVERY_OUT("hints", hints);
-    //DISCOVERY_OUT("name", name.buffer());
-    //DISCOVERY_OUT("label", label.buffer());
-    //DISCOVERY_OUT("maker", "");
-    DISCOVERY_OUT("audio.ins", audioIns);
-    DISCOVERY_OUT("audio.outs", audioOuts);
-    DISCOVERY_OUT("midi.ins", midiIns);
-    DISCOVERY_OUT("midi.outs", midiOuts);
-    DISCOVERY_OUT("parameters.ins", parametersIns);
-    DISCOVERY_OUT("parameters.outs", parametersOuts);
-    DISCOVERY_OUT("end", "------------");
-
-#else
-    DISCOVERY_OUT("error", "csound support not available");
-    return;
-
-    // unused
-    (void)filename;
-    (void)init;
-#endif
-}
-
 static void do_fluidsynth_check(const char* const filename, const bool init)
 {
 #ifdef WANT_FLUIDSYNTH
@@ -1896,16 +1772,13 @@ int main(int argc, char* argv[])
         DISCOVERY_OUT("error", "AU support not available");
 #endif
         break;
-    case PLUGIN_FILE_CSD:
-        do_csound_check(filename, doInit);
-        break;
-    case PLUGIN_FILE_GIG:
+    case PLUGIN_GIG:
         do_linuxsampler_check(filename, "gig", doInit);
         break;
-    case PLUGIN_FILE_SF2:
+    case PLUGIN_SF2:
         do_fluidsynth_check(filename, doInit);
         break;
-    case PLUGIN_FILE_SFZ:
+    case PLUGIN_SFZ:
         do_linuxsampler_check(filename, "sfz", doInit);
         break;
     default:

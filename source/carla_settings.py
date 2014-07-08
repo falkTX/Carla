@@ -237,10 +237,9 @@ class CarlaSettingsW(QDialog):
     PATH_INDEX_VST    = 3
     PATH_INDEX_VST3   = 4
     PATH_INDEX_AU     = 5
-    PATH_INDEX_CSOUND = 6
-    PATH_INDEX_GIG    = 7
-    PATH_INDEX_SF2    = 8
-    PATH_INDEX_SFZ    = 9
+    PATH_INDEX_GIG    = 6
+    PATH_INDEX_SF2    = 7
+    PATH_INDEX_SFZ    = 8
 
     # Single and Multiple client mode is only for JACK,
     # but we still want to match QComboBox index to defines,
@@ -312,7 +311,6 @@ class CarlaSettingsW(QDialog):
         self.ui.lw_vst.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_vst3.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_au.currentRowChanged.connect(self.slot_pluginPathRowChanged)
-        self.ui.lw_csound.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_gig.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_sf2.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_sfz.currentRowChanged.connect(self.slot_pluginPathRowChanged)
@@ -326,7 +324,6 @@ class CarlaSettingsW(QDialog):
         self.ui.lw_vst.setCurrentRow(0)
         self.ui.lw_vst3.setCurrentRow(0)
         self.ui.lw_au.setCurrentRow(0)
-        self.ui.lw_csound.setCurrentRow(0)
         self.ui.lw_gig.setCurrentRow(0)
         self.ui.lw_sf2.setCurrentRow(0)
         self.ui.lw_sfz.setCurrentRow(0)
@@ -394,7 +391,6 @@ class CarlaSettingsW(QDialog):
         vsts    = toList(settings.value(CARLA_KEY_PATHS_VST,    gCarla.DEFAULT_VST_PATH))
         vst3s   = toList(settings.value(CARLA_KEY_PATHS_VST3,   gCarla.DEFAULT_VST3_PATH))
         aus     = toList(settings.value(CARLA_KEY_PATHS_AU,     gCarla.DEFAULT_AU_PATH))
-        csds    = toList(settings.value(CARLA_KEY_PATHS_CSD,    gCarla.DEFAULT_CSOUND_PATH))
         gigs    = toList(settings.value(CARLA_KEY_PATHS_GIG,    gCarla.DEFAULT_GIG_PATH))
         sf2s    = toList(settings.value(CARLA_KEY_PATHS_SF2,    gCarla.DEFAULT_SF2_PATH))
         sfzs    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    gCarla.DEFAULT_SFZ_PATH))
@@ -405,7 +401,6 @@ class CarlaSettingsW(QDialog):
         vsts.sort()
         vst3s.sort()
         aus.sort()
-        csds.sort()
         gigs.sort()
         sf2s.sort()
         sfzs.sort()
@@ -433,10 +428,6 @@ class CarlaSettingsW(QDialog):
         for au in aus:
             if not au: continue
             self.ui.lw_au.addItem(au)
-
-        for csd in csds:
-            if not csd: continue
-            self.ui.lw_csound.addItem(csd)
 
         for gig in gigs:
             if not gig: continue
@@ -499,7 +490,6 @@ class CarlaSettingsW(QDialog):
         vsts    = []
         vst3s   = []
         aus     = []
-        csds    = []
         gigs    = []
         sf2s    = []
         sfzs    = []
@@ -522,9 +512,6 @@ class CarlaSettingsW(QDialog):
         for i in range(self.ui.lw_au.count()):
             aus.append(self.ui.lw_au.item(i).text())
 
-        for i in range(self.ui.lw_csound.count()):
-            csds.append(self.ui.lw_csound.item(i).text())
-
         for i in range(self.ui.lw_gig.count()):
             gigs.append(self.ui.lw_gig.item(i).text())
 
@@ -540,7 +527,6 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_PATHS_VST,    vsts)
         settings.setValue(CARLA_KEY_PATHS_VST3,   vst3s)
         settings.setValue(CARLA_KEY_PATHS_AU,     aus)
-        settings.setValue(CARLA_KEY_PATHS_CSD,    csds)
         settings.setValue(CARLA_KEY_PATHS_GIG,    gigs)
         settings.setValue(CARLA_KEY_PATHS_SF2,    sf2s)
         settings.setValue(CARLA_KEY_PATHS_SFZ,    sfzs)
@@ -636,15 +622,6 @@ class CarlaSettingsW(QDialog):
                     if not path: continue
                     self.ui.lw_au.addItem(path)
 
-            elif curIndex == self.PATH_INDEX_CSOUND:
-                paths = DEFAULT_CSOUND_PATH.split(splitter)
-                paths.sort()
-                self.ui.lw_csound.clear()
-
-                for path in paths:
-                    if not path: continue
-                    self.ui.lw_csound.addItem(path)
-
             elif curIndex == self.PATH_INDEX_GIG:
                 paths = DEFAULT_GIG_PATH.split(splitter)
                 paths.sort()
@@ -712,8 +689,6 @@ class CarlaSettingsW(QDialog):
             self.ui.lw_vst3.addItem(newPath)
         elif curIndex == self.PATH_INDEX_AU:
             self.ui.lw_au.addItem(newPath)
-        elif curIndex == self.PATH_INDEX_CSOUND:
-            self.ui.lw_csound.addItem(newPath)
         elif curIndex == self.PATH_INDEX_GIG:
             self.ui.lw_gig.addItem(newPath)
         elif curIndex == self.PATH_INDEX_SF2:
@@ -737,8 +712,6 @@ class CarlaSettingsW(QDialog):
             self.ui.lw_vst3.takeItem(self.ui.lw_vst3.currentRow())
         elif curIndex == self.PATH_INDEX_AU:
             self.ui.lw_au.takeItem(self.ui.lw_au.currentRow())
-        elif curIndex == self.PATH_INDEX_CSOUND:
-            self.ui.lw_csound.takeItem(self.ui.lw_csound.currentRow())
         elif curIndex == self.PATH_INDEX_GIG:
             self.ui.lw_gig.takeItem(self.ui.lw_gig.currentRow())
         elif curIndex == self.PATH_INDEX_SF2:
@@ -762,8 +735,6 @@ class CarlaSettingsW(QDialog):
             currentPath = self.ui.lw_vst3.currentItem().text()
         elif curIndex == self.PATH_INDEX_AU:
             currentPath = self.ui.lw_au.currentItem().text()
-        elif curIndex == self.PATH_INDEX_CSOUND:
-            currentPath = self.ui.lw_csound.currentItem().text()
         elif curIndex == self.PATH_INDEX_GIG:
             currentPath = self.ui.lw_gig.currentItem().text()
         elif curIndex == self.PATH_INDEX_SF2:
@@ -790,8 +761,6 @@ class CarlaSettingsW(QDialog):
             self.ui.lw_vst3.currentItem().setText(newPath)
         elif curIndex == self.PATH_INDEX_AU:
             self.ui.lw_au.currentItem().setText(newPath)
-        elif curIndex == self.PATH_INDEX_CSOUND:
-            self.ui.lw_csound.currentItem().setText(newPath)
         elif curIndex == self.PATH_INDEX_GIG:
             self.ui.lw_gig.currentItem().setText(newPath)
         elif curIndex == self.PATH_INDEX_SF2:
@@ -816,8 +785,6 @@ class CarlaSettingsW(QDialog):
             row = self.ui.lw_vst3.currentRow()
         elif index == self.PATH_INDEX_AU:
             row = self.ui.lw_au.currentRow()
-        elif index == self.PATH_INDEX_CSOUND:
-            row = self.ui.lw_csound.currentRow()
         elif index == self.PATH_INDEX_GIG:
             row = self.ui.lw_gig.currentRow()
         elif index == self.PATH_INDEX_SF2:

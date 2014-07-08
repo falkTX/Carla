@@ -470,11 +470,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             break;
 
         case PLUGIN_INTERNAL:
-            if (std::strcmp(label, "Csound") == 0)
-            {
-                plugin = CarlaPlugin::newCsound(initializer);
-            }
-            else if (std::strcmp(label, "FluidSynth") == 0)
+            if (std::strcmp(label, "FluidSynth") == 0)
             {
                 use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
                 plugin = CarlaPlugin::newFluidSynth(initializer, use16Outs);
@@ -524,29 +520,17 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             plugin = CarlaPlugin::newAU(initializer);
             break;
 
-        case PLUGIN_JACK:
-            plugin = CarlaPlugin::newJACK(initializer);
-            break;
-
-        case PLUGIN_REWIRE:
-            plugin = CarlaPlugin::newReWire(initializer);
-            break;
-
-        case PLUGIN_FILE_CSD:
-            plugin = CarlaPlugin::newFileCSD(initializer);
-            break;
-
-        case PLUGIN_FILE_GIG:
+        case PLUGIN_GIG:
             use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
             plugin = CarlaPlugin::newFileGIG(initializer, use16Outs);
             break;
 
-        case PLUGIN_FILE_SF2:
+        case PLUGIN_SF2:
             use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
             plugin = CarlaPlugin::newFileSF2(initializer, use16Outs);
             break;
 
-        case PLUGIN_FILE_SFZ:
+        case PLUGIN_SFZ:
             plugin = CarlaPlugin::newFileSFZ(initializer);
             break;
         }
@@ -914,17 +898,14 @@ bool CarlaEngine::loadFile(const char* const filename)
 
     // -------------------------------------------------------------------
 
-    if (extension == "csd")
-        return addPlugin(PLUGIN_FILE_CSD, filename, baseName, baseName, 0, nullptr);
-
     if (extension == "gig")
-        return addPlugin(PLUGIN_FILE_GIG, filename, baseName, baseName, 0, nullptr);
+        return addPlugin(PLUGIN_GIG, filename, baseName, baseName, 0, nullptr);
 
     if (extension == "sf2")
-        return addPlugin(PLUGIN_FILE_SF2, filename, baseName, baseName, 0, nullptr);
+        return addPlugin(PLUGIN_SF2, filename, baseName, baseName, 0, nullptr);
 
     if (extension == "sfz")
-        return addPlugin(PLUGIN_FILE_SFZ, filename, baseName, baseName, 0, nullptr);
+        return addPlugin(PLUGIN_SFZ, filename, baseName, baseName, 0, nullptr);
 
     // -------------------------------------------------------------------
 
