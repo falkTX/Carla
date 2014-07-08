@@ -10,6 +10,7 @@ include ../Makefile.mk
 
 OBJS = \
 	CarlaEngine.cpp.o \
+	CarlaEngineData.cpp.o \
 	CarlaEngineInternal.cpp.o \
 	CarlaEngineOsc.cpp.o \
 	CarlaEngineThread.cpp.o
@@ -60,6 +61,9 @@ debug:
 # --------------------------------------------------------------
 
 CarlaEngine.cpp.o: CarlaEngine.cpp $(CARLA_ENGINE_CPP_DEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+CarlaEngineData.cpp.o: CarlaEngineData.cpp $(CARLA_ENGINE_DATA_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 CarlaEngineInternal.cpp.o: CarlaEngineInternal.cpp $(CARLA_ENGINE_INTERNAL_CPP_DEPS)
