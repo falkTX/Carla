@@ -82,7 +82,8 @@ RackGraph::RackGraph(const uint32_t bufferSize) noexcept
 {
     audio.inBuf[0]  = audio.inBuf[1]  = nullptr;
     audio.outBuf[0] = audio.outBuf[1] = nullptr;
-    resize(bufferSize);
+
+    setBufferSize(bufferSize);
 }
 
 RackGraph::~RackGraph() noexcept
@@ -105,7 +106,7 @@ void RackGraph::clear() noexcept
     midi.outs.clear();
 }
 
-void RackGraph::resize(const uint32_t bufferSize) noexcept
+void RackGraph::setBufferSize(const uint32_t bufferSize) noexcept
 {
     if (audio.inBuf[0] != nullptr)
     {
@@ -162,6 +163,10 @@ void RackGraph::resize(const uint32_t bufferSize) noexcept
     FloatVectorOperations::clear(audio.inBuf[1], bufferSize);
     FloatVectorOperations::clear(audio.outBuf[0], bufferSize);
     FloatVectorOperations::clear(audio.outBuf[1], bufferSize);
+}
+
+void RackGraph::setSampleRate(const double) noexcept
+{
 }
 
 bool RackGraph::connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept
@@ -491,6 +496,14 @@ void PatchbayGraph::clear() noexcept
 {
 }
 
+void PatchbayGraph::setBufferSize(const uint32_t) noexcept
+{
+}
+
+void PatchbayGraph::setSampleRate(const double) noexcept
+{
+}
+
 bool PatchbayGraph::connect(CarlaEngine* const engine, const uint /*groupA*/, const uint /*portA*/, const uint /*groupB*/, const uint /*portB*/) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr, false);
@@ -505,12 +518,12 @@ bool PatchbayGraph::disconnect(CarlaEngine* const engine, const uint /*connectio
     return false;
 }
 
-const char* const* PatchbayGraph::getConnections() const
+const char* const* PatchbayGraph::getConnections() const noexcept
 {
     return nullptr;
 }
 
-bool PatchbayGraph::getPortIdFromFullName(const char* const /*fillPortName*/, uint& /*groupId*/, uint& /*portId*/) const
+bool PatchbayGraph::getPortIdFromFullName(const char* const /*fillPortName*/, uint& /*groupId*/, uint& /*portId*/) const noexcept
 {
     return false;
 }
@@ -528,7 +541,7 @@ EngineInternalGraph::~EngineInternalGraph() noexcept
     CARLA_SAFE_ASSERT(graph == nullptr);
 }
 
-void EngineInternalGraph::create(const uint32_t bufferSize)
+void EngineInternalGraph::create(const double /*sampleRate*/, const uint32_t bufferSize)
 {
     CARLA_SAFE_ASSERT_RETURN(graph == nullptr,);
 
@@ -536,24 +549,30 @@ void EngineInternalGraph::create(const uint32_t bufferSize)
         graph = new RackGraph(bufferSize);
     else
         graph = new PatchbayGraph();
-
-    //isReady = true;
-}
-
-void EngineInternalGraph::resize(const uint32_t bufferSize) noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(graph != nullptr,);
-
-    if (isRack)
-      ((RackGraph*)graph)->resize(bufferSize);
 }
 
 void EngineInternalGraph::clear() noexcept
 {
+    //CARLA_SAFE_ASSERT_RETURN(graph != nullptr,);
+    if (graph != nullptr)
+    {
+        delete graph;
+        graph = nullptr;
+    }
+}
+
+void EngineInternalGraph::setBufferSize(const uint32_t bufferSize)
+{
     CARLA_SAFE_ASSERT_RETURN(graph != nullptr,);
 
-    delete graph;
-    graph = nullptr;
+    graph->setBufferSize(bufferSize);
+}
+
+void EngineInternalGraph::setSampleRate(const double sampleRate)
+{
+    CARLA_SAFE_ASSERT_RETURN(graph != nullptr,);
+
+    graph->setSampleRate(sampleRate);
 }
 
 // -----------------------------------------------------------------------

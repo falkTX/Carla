@@ -161,7 +161,7 @@ public:
         pData->sampleRate = fDevice->getCurrentSampleRate();
 
         pData->graph.isRack = (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK);
-        pData->graph.create(pData->bufferSize);
+        pData->graph.create(pData->sampleRate, pData->bufferSize);
 
         fDevice->start(this);
 

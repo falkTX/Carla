@@ -59,9 +59,11 @@ struct EngineInternalGraph {
     EngineInternalGraph() noexcept;
     ~EngineInternalGraph() noexcept;
 
-    void create(const uint32_t bufferSize);
-    void resize(const uint32_t bufferSize) noexcept;
+    void create(const double sampleRate, const uint32_t bufferSize);
     void clear() noexcept;
+
+    void setBufferSize(const uint32_t bufferSize);
+    void setSampleRate(const double sampleRate);
 
     CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalGraph)
 };

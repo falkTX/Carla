@@ -53,6 +53,8 @@ enum RackGraphCarlaPortIds {
 struct InternalGraph {
     virtual ~InternalGraph() noexcept {}
     virtual void clear() noexcept = 0;
+    virtual void setBufferSize(const uint32_t bufferSize) = 0;
+    virtual void setSampleRate(const double sampleRate) = 0;
     virtual bool connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept = 0;
     virtual bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept = 0;
     virtual const char* const* getConnections() const = 0;
@@ -85,7 +87,8 @@ struct RackGraph : InternalGraph {
     RackGraph(const uint32_t bufferSize) noexcept;
     ~RackGraph() noexcept override;
     void clear() noexcept override;
-    void resize(const uint32_t bufferSize) noexcept;
+    void setBufferSize(const uint32_t bufferSize) noexcept override;
+    void setSampleRate(const double sampleRate) noexcept override;
     bool connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept override;
     bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept override;
     const char* const* getConnections() const override;
@@ -101,10 +104,12 @@ struct PatchbayGraph : InternalGraph {
     PatchbayGraph() noexcept;
     ~PatchbayGraph() noexcept override;
     void clear() noexcept override;
+    void setBufferSize(const uint32_t bufferSize) noexcept override;
+    void setSampleRate(const double sampleRate) noexcept override;
     bool connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept override;
     bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept override;
-    const char* const* getConnections() const override;
-    bool getPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const override;
+    const char* const* getConnections() const noexcept override;
+    bool getPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept override;
 };
 
 // -----------------------------------------------------------------------

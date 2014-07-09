@@ -459,6 +459,7 @@ OBJS_NATIVE += \
 	../backend/engine/CarlaEngineData__native.o \
 	../backend/engine/CarlaEngineInternal__native.o \
 	../backend/engine/CarlaEngineOsc__native.o \
+	../backend/engine/CarlaEngineOscSend__native.o \
 	../backend/engine/CarlaEnginePorts__native.o \
 	../backend/engine/CarlaEngineThread__native.o \
 	../backend/engine/CarlaEngineJack__native.o \

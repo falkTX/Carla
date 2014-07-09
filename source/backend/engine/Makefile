@@ -15,6 +15,7 @@ OBJS = \
 	CarlaEngineGraph.cpp.o \
 	CarlaEngineInternal.cpp.o \
 	CarlaEngineOsc.cpp.o \
+	CarlaEngineOscSend.cpp.o \
 	CarlaEnginePorts.cpp.o \
 	CarlaEngineThread.cpp.o
 
@@ -75,6 +76,9 @@ CarlaEngineInternal.cpp.o: CarlaEngineInternal.cpp $(CARLA_ENGINE_INTERNAL_CPP_D
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 CarlaEngineOsc.cpp.o: CarlaEngineOsc.cpp $(CARLA_ENGINE_OSC_CPP_DEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+CarlaEngineOscSend.cpp.o: CarlaEngineOscSend.cpp $(CARLA_ENGINE_OSC_SEND_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 CarlaEnginePorts.cpp.o: CarlaEnginePorts.cpp $(CARLA_ENGINE_PORTS_CPP_DEPS)
