@@ -632,7 +632,7 @@ void CarlaPlugin::ProtectedData::recreateLatencyBuffers()
         for (uint32_t i=0; i < audioIn.count; ++i)
         {
             latencyBuffers[i] = new float[latency];
-            FLOAT_CLEAR(latencyBuffers[i], latency);
+            FloatVectorOperations::clear(latencyBuffers[i], latency);
         }
     }
 }

@@ -80,8 +80,8 @@ protected:
         }
         else
         {
-           FLOAT_CLEAR(outBuf[0], frames);
-           FLOAT_CLEAR(outBuf[1], frames);
+           FloatVectorOperations::clear(outBuf[0], frames);
+           FloatVectorOperations::clear(outBuf[1], frames);
         }
     }
 

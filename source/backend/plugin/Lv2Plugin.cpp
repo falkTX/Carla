@@ -1516,7 +1516,7 @@ public:
         {
             pData->param.createNew(params, true);
             fParamBuffers = new float[params];
-            FLOAT_CLEAR(fParamBuffers, params);
+            FloatVectorOperations::clear(fParamBuffers, params);
         }
 
         if (const uint32_t count = static_cast<uint32_t>(evIns.count()))
@@ -2438,7 +2438,7 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FLOAT_CLEAR(outBuffer[i], frames);
+                FloatVectorOperations::clear(outBuffer[i], frames);
             return;
         }
 
@@ -2486,8 +2486,6 @@ public:
                 // not needed
             }
         }
-
-        CARLA_PROCESS_CONTINUE_CHECK;
 
         // --------------------------------------------------------------------------------------------------------
         // Check if needs reset
@@ -2552,7 +2550,7 @@ public:
             if (pData->latency > 0)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
-                    FLOAT_CLEAR(pData->latencyBuffers[i], pData->latency);
+                    FloatVectorOperations::clear(pData->latencyBuffers[i], pData->latency);
             }
 #endif
 
@@ -2705,8 +2703,6 @@ public:
             pData->postRtEvents.trySplice();
 
             carla_copyStruct<EngineTimeInfo>(fLastTimeInfo, timeInfo);
-
-            CARLA_PROCESS_CONTINUE_CHECK;
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -3135,7 +3131,7 @@ public:
                 if (pData->latency <= frames)
                 {
                     for (uint32_t i=0; i < pData->audioIn.count; ++i)
-                        FLOAT_COPY(pData->latencyBuffers[i], inBuffer[i]+(frames-pData->latency), pData->latency);
+                        FloatVectorOperations::copy(pData->latencyBuffers[i], inBuffer[i]+(frames-pData->latency), pData->latency);
                 }
                 else
                 {
@@ -3327,19 +3323,19 @@ public:
         // Set audio buffers
 
         for (uint32_t i=0; i < pData->audioIn.count; ++i)
-            FLOAT_COPY(fAudioInBuffers[i], audioInBuf[i]+timeOffset, frames);
+            FloatVectorOperations::copy(fAudioInBuffers[i], audioInBuf[i]+timeOffset, frames);
 
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
-            FLOAT_CLEAR(fAudioOutBuffers[i], frames);
+            FloatVectorOperations::clear(fAudioOutBuffers[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
         // Set CV buffers
 
         for (uint32_t i=0; i < fCvIn.count; ++i)
-            FLOAT_COPY(fCvInBuffers[i], cvInBuf[i]+timeOffset, frames);
+            FloatVectorOperations::copy(fCvInBuffers[i], cvInBuf[i]+timeOffset, frames);
 
         for (uint32_t i=0; i < fCvOut.count; ++i)
-            FLOAT_CLEAR(fCvOutBuffers[i], frames);
+            FloatVectorOperations::clear(fCvOutBuffers[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -3407,7 +3403,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        FLOAT_COPY(oldBufLeft, fAudioOutBuffers[i], frames);
+                        FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;

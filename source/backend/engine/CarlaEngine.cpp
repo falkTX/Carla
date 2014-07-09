@@ -1273,53 +1273,6 @@ void CarlaEngine::setFileCallback(const FileCallbackFunc func, void* const ptr) 
     pData->fileCallbackPtr = ptr;
 }
 
-#ifndef BUILD_BRIDGE
-// -----------------------------------------------------------------------
-// Patchbay
-
-bool CarlaEngine::patchbayConnect(const uint groupA, const uint portA, const uint groupB, const uint portB)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
-    CARLA_SAFE_ASSERT_RETURN(pData->audio.isReady, false);
-    carla_debug("CarlaEngine::patchbayConnect(%u, %u, %u, %u)", groupA, portA, groupB, portB);
-
-    if (pData->graph.isRack)
-    {
-        CARLA_SAFE_ASSERT_RETURN(pData->graph.rack != nullptr, nullptr);
-        return pData->graph.rack->connect(this, groupA, portA, groupB, portB);
-    }
-    else
-    {
-        CARLA_SAFE_ASSERT_RETURN(pData->graph.patchbay != nullptr, nullptr);
-        return pData->graph.patchbay->connect(this, groupA, portA, groupB, portB);
-    }
-}
-
-bool CarlaEngine::patchbayDisconnect(const uint connectionId)
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
-    CARLA_SAFE_ASSERT_RETURN(pData->audio.isReady, false);
-    carla_debug("CarlaEngine::patchbayDisconnect(%u)", connectionId);
-
-    if (pData->graph.isRack)
-    {
-        CARLA_SAFE_ASSERT_RETURN(pData->graph.rack != nullptr, nullptr);
-        return pData->graph.rack->disconnect(this, connectionId);
-    }
-    else
-    {
-        CARLA_SAFE_ASSERT_RETURN(pData->graph.patchbay != nullptr, nullptr);
-        return pData->graph.patchbay->disconnect(this, connectionId);
-    }
-}
-
-bool CarlaEngine::patchbayRefresh()
-{
-    setLastError("Unsupported operation");
-    return false;
-}
-#endif
-
 // -----------------------------------------------------------------------
 // Transport
 
@@ -1587,56 +1540,6 @@ void CarlaEngine::setPluginPeaks(const uint pluginId, float const inPeaks[2], fl
     pluginData.outsPeak[0] = outPeaks[0];
     pluginData.outsPeak[1] = outPeaks[1];
 }
-
-#ifndef BUILD_BRIDGE
-// -----------------------------------------------------------------------
-// Patchbay stuff
-
-const char* const* CarlaEngine::getPatchbayConnections() const
-{
-    carla_debug("CarlaEngine::getPatchbayConnections()");
-
-    if (pData->graph.isRack)
-    {
-        CARLA_SAFE_ASSERT_RETURN(pData->graph.rack != nullptr, nullptr);
-        return pData->graph.rack->getConnections();
-    }
-    else
-    {
-        CARLA_SAFE_ASSERT_RETURN(pData->graph.patchbay != nullptr, nullptr);
-        return pData->graph.patchbay->getConnections();
-    }
-}
-
-void CarlaEngine::restorePatchbayConnection(const char* const connSource, const char* const connTarget)
-{
-    CARLA_SAFE_ASSERT_RETURN(connSource != nullptr && connSource[0] != '\0',);
-    CARLA_SAFE_ASSERT_RETURN(connTarget != nullptr && connTarget[0] != '\0',);
-    carla_debug("CarlaEngine::restorePatchbayConnection(\"%s\", \"%s\")", connSource, connTarget);
-
-    uint groupA, portA;
-    uint groupB, portB;
-
-    if (pData->graph.isRack)
-    {
-        CARLA_SAFE_ASSERT_RETURN(pData->graph.rack != nullptr,);
-        if (! pData->graph.rack->getPortIdFromFullName(connSource, groupA, portA))
-            return;
-        if (! pData->graph.rack->getPortIdFromFullName(connTarget, groupB, portB))
-            return;
-    }
-    else
-    {
-        CARLA_SAFE_ASSERT_RETURN(pData->graph.patchbay != nullptr,);
-        if (! pData->graph.patchbay->getPortIdFromFullName(connSource, groupA, portA))
-            return;
-        if (! pData->graph.patchbay->getPortIdFromFullName(connTarget, groupB, portB))
-            return;
-    }
-
-    patchbayConnect(groupA, portA, groupB, portB);
-}
-#endif
 
 // -----------------------------------------------------------------------
 // Bridge/Controller OSC stuff

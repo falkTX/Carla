@@ -830,7 +830,7 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FLOAT_CLEAR(outBuffer[i], frames);
+                FloatVectorOperations::clear(outBuffer[i], frames);
             return;
         }
 
@@ -1145,7 +1145,7 @@ public:
         else if (! pData->singleMutex.tryLock())
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FLOAT_CLEAR(outBuffer[i], frames);
+                FloatVectorOperations::clear(outBuffer[i], frames);
             return false;
         }
 
@@ -1155,7 +1155,7 @@ public:
         //std::memset(fShmAudioPool.data, 0, fShmAudioPool.size);
 
         for (uint32_t i=0; i < fInfo.aIns; ++i)
-            FLOAT_COPY(fShmAudioPool.data + (i * frames), inBuffer[i], frames);
+            FloatVectorOperations::copy(fShmAudioPool.data + (i * frames), inBuffer[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
         // TimeInfo
@@ -1199,7 +1199,7 @@ public:
         }
 
         for (uint32_t i=0; i < fInfo.aOuts; ++i)
-            FLOAT_COPY(outBuffer[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), frames);
+            FloatVectorOperations::copy(outBuffer[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), frames);
 
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
@@ -1232,7 +1232,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        FLOAT_COPY(oldBufLeft, outBuffer[i], frames);
+                        FloatVectorOperations::copy(oldBufLeft, outBuffer[i], frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;

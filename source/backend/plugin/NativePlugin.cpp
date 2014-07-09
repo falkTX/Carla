@@ -1282,7 +1282,7 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FLOAT_CLEAR(outBuffer[i], frames);
+                FloatVectorOperations::clear(outBuffer[i], frames);
 
             return;
         }
@@ -1328,8 +1328,6 @@ public:
             pData->needsReset = false;
         }
 
-        CARLA_PROCESS_CONTINUE_CHECK;
-
         // --------------------------------------------------------------------------------------------------------
         // Set TimeInfo
 
@@ -1356,8 +1354,6 @@ public:
         }
         else
             fTimeInfo.bbt.valid = false;
-
-        CARLA_PROCESS_CONTINUE_CHECK;
 
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
@@ -1685,8 +1681,6 @@ public:
 
         } // End of Plugin processing (no events)
 
-        CARLA_PROCESS_CONTINUE_CHECK;
-
         // --------------------------------------------------------------------------------------------------------
         // Control and MIDI Output
 
@@ -1771,10 +1765,10 @@ public:
         // Reset audio buffers
 
         for (i=0; i < pData->audioIn.count; ++i)
-            FLOAT_COPY(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
+            FloatVectorOperations::copy(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
 
         for (i=0; i < pData->audioOut.count; ++i)
-            FLOAT_CLEAR(fAudioOutBuffers[i], frames);
+            FloatVectorOperations::clear(fAudioOutBuffers[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -1832,7 +1826,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        FLOAT_COPY(oldBufLeft, fAudioOutBuffers[i], frames);
+                        FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;

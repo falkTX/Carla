@@ -49,6 +49,9 @@
 #include <set>
 #include <string>
 
+#include "juce_audio_basics.h"
+using juce::FloatVectorOperations;
+
 #ifdef WANT_ZYNADDSUBFX_UI
 static Fl_Tiled_Image* gModuleBackdrop = nullptr;
 static CarlaString gPixmapPath;
@@ -640,8 +643,8 @@ protected:
     {
         if (pthread_mutex_trylock(&fMaster->mutex) != 0)
         {
-            FLOAT_CLEAR(outBuffer[0], frames);
-            FLOAT_CLEAR(outBuffer[1], frames);
+            FloatVectorOperations::clear(outBuffer[0], frames);
+            FloatVectorOperations::clear(outBuffer[1], frames);
             return;
         }
 

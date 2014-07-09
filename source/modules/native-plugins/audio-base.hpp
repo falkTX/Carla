@@ -20,7 +20,8 @@
 
 #include "CarlaThread.hpp"
 
-#include "CarlaMathUtils.hpp"
+#include "juce_audio_basics.h"
+using juce::FloatVectorOperations;
 
 extern "C" {
 #include "audio_decoder/ad.h"
@@ -91,8 +92,8 @@ struct AudioFilePool {
 
         startFrame = 0;
 
-        FLOAT_CLEAR(buffer[0], size);
-        FLOAT_CLEAR(buffer[1], size);
+        FloatVectorOperations::clear(buffer[0], size);
+        FloatVectorOperations::clear(buffer[1], size);
     }
 };
 
@@ -218,8 +219,8 @@ public:
         {
             pool.startFrame = fPool.startFrame;
 
-            FLOAT_COPY(pool.buffer[0], fPool.buffer[0], fPool.size);
-            FLOAT_COPY(pool.buffer[1], fPool.buffer[1], fPool.size);
+            FloatVectorOperations::copy(pool.buffer[0], fPool.buffer[0], fPool.size);
+            FloatVectorOperations::copy(pool.buffer[1], fPool.buffer[1], fPool.size);
         }
 
         fMutex.unlock();
@@ -269,7 +270,7 @@ public:
         const size_t tmpSize = fPool.size * fFileNfo.channels;
 
         float tmpData[tmpSize];
-        FLOAT_CLEAR(tmpData, int(tmpSize));
+        FloatVectorOperations::clear(tmpData, int(tmpSize));
 
         {
             carla_stderr("R: poll data - reading at %li:%02li", readFrame/44100/60, (readFrame/44100) % 60);

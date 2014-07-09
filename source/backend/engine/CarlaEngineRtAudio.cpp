@@ -16,6 +16,7 @@
  */
 
 #include "CarlaEngineInternal.hpp"
+#include "CarlaEngineGraph.hpp"
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaStringList.hpp"
@@ -23,15 +24,14 @@
 #include "RtLinkedList.hpp"
 
 #include "jackbridge/JackBridge.hpp"
+#include "juce_audio_basics.h"
 
 #include "rtaudio/RtAudio.h"
 #include "rtmidi/RtMidi.h"
 
-CARLA_BACKEND_START_NAMESPACE
+using juce::FloatVectorOperations;
 
-#if 0
-} // Fix editor indentation
-#endif
+CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------
 // Global static data
@@ -262,18 +262,8 @@ public:
         fAudioOutCount = oParams.nChannels;
         fLastEventTime = 0;
 
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-        {
-            pData->audio.inCount  = 2;
-            pData->audio.outCount = 2;
-        }
-        else
-        {
-            pData->audio.inCount  = 0;
-            pData->audio.outCount = 0;
-        }
-
-        pData->audio.create(pData->bufferSize);
+        pData->graph.isRack = (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK);
+        pData->graph.create(pData->bufferSize);
 
         try {
             fAudio.startStream();
@@ -286,7 +276,7 @@ public:
         }
 
         CarlaEngine::init(clientName);
-        pData->audio.isReady = true;
+        pData->graph.isReady = true;
 
         patchbayRefresh();
 
@@ -298,7 +288,7 @@ public:
         CARLA_SAFE_ASSERT(fAudioOutCount != 0);
         carla_debug("CarlaEngineRtAudio::close()");
 
-        pData->audio.isReady = false;
+        pData->graph.isReady = false;
 
         bool hasError = !CarlaEngine::close();
 
@@ -382,7 +372,7 @@ public:
 
     bool patchbayRefresh() override
     {
-        CARLA_SAFE_ASSERT_RETURN(pData->audio.isReady, false);
+        CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady, false);
 
         if (pData->graph.isRack)
             patchbayRefreshRack();
@@ -394,7 +384,7 @@ public:
 
     void patchbayRefreshRack()
     {
-        RackGraph* const rack(pData->graph.rack);
+        RackGraph* const rack((RackGraph*)pData->graph.graph);
 
         rack->connections.clear();
 
@@ -608,7 +598,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(outputBuffer      != nullptr, runPendingRtEvents());
         CARLA_SAFE_ASSERT_RETURN(pData->bufferSize == nframes, runPendingRtEvents());
 
-        if (! pData->audio.isReady)
+        if (! pData->graph.isReady)
             return runPendingRtEvents();
 
         // initialize rtaudio input
@@ -623,7 +613,7 @@ protected:
         for (uint i=0; i < fAudioOutCount; ++i)
             outBuf[i] = outsPtr+(nframes*i);
 
-        FLOAT_CLEAR(outsPtr, nframes*fAudioOutCount);
+        FloatVectorOperations::clear(outsPtr, nframes*fAudioOutCount);
 
         // initialize events
         carla_zeroStruct<EngineEvent>(pData->events.in,  kMaxEngineEventInternalCount);
@@ -733,7 +723,7 @@ protected:
 
     void handleMidiCallback(double timeStamp, std::vector<uchar>* const message)
     {
-        if (! pData->audio.isReady)
+        if (! pData->graph.isReady)
             return;
 
         const size_t messageSize(message->size());
@@ -774,7 +764,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(portName != nullptr && portName[0] != '\0', false);
         carla_debug("CarlaEngineRtAudio::connectRackMidiInPort(\"%s\")", portName);
 
-        RackGraph* const rack(pData->graph.rack);
+        RackGraph* const rack((RackGraph*)pData->graph.graph);
         CARLA_SAFE_ASSERT_RETURN(rack->midi.ins.count() > 0, false);
 
         CarlaString newRtMidiPortName;
@@ -828,7 +818,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(portName != nullptr && portName[0] != '\0', false);
         carla_debug("CarlaEngineRtAudio::connectRackMidiOutPort(\"%s\")", portName);
 
-        RackGraph* const rack(pData->graph.rack);
+        RackGraph* const rack((RackGraph*)pData->graph.graph);
         CARLA_SAFE_ASSERT_RETURN(rack->midi.ins.count() > 0, false);
 
         CarlaString newRtMidiPortName;
@@ -882,7 +872,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(portName != nullptr && portName[0] != '\0', false);
         carla_debug("CarlaEngineRtAudio::disconnectRackMidiInPort(\"%s\")", portName);
 
-        RackGraph* const rack(pData->graph.rack);
+        RackGraph* const rack((RackGraph*)pData->graph.graph);
         CARLA_SAFE_ASSERT_RETURN(rack->midi.ins.count() > 0, false);
 
         for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
@@ -909,7 +899,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(portName != nullptr && portName[0] != '\0', false);
         carla_debug("CarlaEngineRtAudio::disconnectRackMidiOutPort(\"%s\")", portName);
 
-        RackGraph* const rack(pData->graph.rack);
+        RackGraph* const rack((RackGraph*)pData->graph.graph);
         CARLA_SAFE_ASSERT_RETURN(rack->midi.outs.count() > 0, false);
 
         const CarlaMutexLocker cml(fMidiOutMutex);

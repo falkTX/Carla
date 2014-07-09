@@ -22,25 +22,6 @@
 
 #include <cmath>
 
-// TODO - always use juce
-// #ifdef HAVE_JUCE
-// # include "juce_audio_basics.h"
-// using juce::FloatVectorOperations;
-// #endif
-
-// -----------------------------------------------------------------------
-// Float operations
-
-// #ifdef HAVE_JUCE
-// # define FLOAT_ADD(bufDst, bufSrc, frames)  FloatVectorOperations::add(bufDst, bufSrc, static_cast<int>(frames))
-// # define FLOAT_COPY(bufDst, bufSrc, frames) FloatVectorOperations::copy(bufDst, bufSrc, static_cast<int>(frames))
-// # define FLOAT_CLEAR(buf, frames)           FloatVectorOperations::clear(buf, static_cast<int>(frames))
-// #else
-# define FLOAT_ADD(bufDst, bufSrc, frames)  carla_addFloat(bufDst, bufSrc, frames)
-# define FLOAT_COPY(bufDst, bufSrc, frames) carla_copyFloat(bufDst, bufSrc, frames)
-# define FLOAT_CLEAR(buf, frames)           carla_zeroFloat(buf, frames)
-// #endif
-
 // -----------------------------------------------------------------------
 // math functions (base)
 
@@ -115,6 +96,7 @@ uint32_t carla_nextPowerOf2(uint32_t size) noexcept
     return ++size;
 }
 
+#if 0
 // -----------------------------------------------------------------------
 // math functions (extended)
 
@@ -156,6 +138,7 @@ void carla_zeroFloat(float* const data, const std::size_t numSamples) noexcept
 
     std::memset(data, 0, numSamples*sizeof(float));
 }
+#endif
 
 #if defined(CARLA_OS_MAC) && ! defined(DISTRHO_OS_MAC)
 /*

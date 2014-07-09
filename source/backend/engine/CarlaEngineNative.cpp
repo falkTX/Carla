@@ -34,8 +34,9 @@
 #include "CarlaExternalUI.hpp"
 #include "CarlaNative.hpp"
 
-#include "juce_core.h"
+#include "juce_audio_basics.h"
 
+using juce::FloatVectorOperations;
 using juce::MemoryOutputStream;
 using juce::ScopedPointer;
 using juce::String;
@@ -1069,8 +1070,8 @@ protected:
     {
         if (pData->curPluginCount == 0 && ! fIsPatchbay)
         {
-            FLOAT_COPY(outBuffer[0], inBuffer[0], frames);
-            FLOAT_COPY(outBuffer[1], inBuffer[1], frames);
+            FloatVectorOperations::copy(outBuffer[0], inBuffer[0], frames);
+            FloatVectorOperations::copy(outBuffer[1], inBuffer[1], frames);
 
             return runPendingRtEvents();;
         }

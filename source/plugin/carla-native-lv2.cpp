@@ -453,7 +453,7 @@ public:
             {
                 FloatVectorOperations::multiply(fPorts.audioIns[i], fVolume*(1.0f-fDryWet), frames);
                 FloatVectorOperations::multiply(fPorts.audioOuts[i], fVolume*fDryWet, frames);
-                FLOAT_ADD(fPorts.audioOuts[i], fPorts.audioIns[i], frames);
+                FloatVectorOperations::add(fPorts.audioOuts[i], fPorts.audioIns[i], frames);
             }
         }
         else if (fVolume != 1.0f)

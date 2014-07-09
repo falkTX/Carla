@@ -52,7 +52,7 @@ public:
     {
         carla_debug("FluidSynthPlugin::FluidSynthPlugin(%p, %i, %s)", engine, id,  bool2str(use16Outs));
 
-        FLOAT_CLEAR(fParamBuffers, FluidSynthParametersMax);
+        FloatVectorOperations::clear(fParamBuffers, FluidSynthParametersMax);
         carla_fill<int32_t>(fCurMidiProgs, 0, MAX_MIDI_CHANNELS);
 
         // create settings
@@ -1044,7 +1044,7 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FLOAT_CLEAR(outBuffer[i], frames);
+                FloatVectorOperations::clear(outBuffer[i], frames);
             return;
         }
 
@@ -1366,8 +1366,6 @@ public:
 
         } // End of Event Input and Processing
 
-        CARLA_PROCESS_CONTINUE_CHECK;
-
         // --------------------------------------------------------------------------------------------------------
         // Control Output
 
@@ -1414,7 +1412,7 @@ public:
         if (fUses16Outs)
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FLOAT_CLEAR(fAudio16Buffers[i], frames);
+                FloatVectorOperations::clear(fAudio16Buffers[i], frames);
 
             // FIXME use '32' or '16' instead of outs
             fluid_synth_process(fSynth, static_cast<int>(frames), 0, nullptr, static_cast<int>(pData->audioOut.count), fAudio16Buffers);
@@ -1439,7 +1437,7 @@ public:
                 if (doBalance)
                 {
                     if (i % 2 == 0)
-                        FLOAT_COPY(oldBufLeft, outBuffer[i]+timeOffset, frames);
+                        FloatVectorOperations::copy(oldBufLeft, outBuffer[i]+timeOffset, frames);
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (pData->postProc.balanceRight + 1.0f)/2.0f;

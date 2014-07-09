@@ -1055,7 +1055,7 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FLOAT_CLEAR(outBuffer[i], frames);
+                FloatVectorOperations::clear(outBuffer[i], frames);
             return;
         }
 
@@ -1101,7 +1101,7 @@ public:
             if (pData->latency > 0)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
-                    FLOAT_CLEAR(pData->latencyBuffers[i], pData->latency);
+                    FloatVectorOperations::clear(pData->latencyBuffers[i], pData->latency);
             }
 #endif
 
@@ -1474,8 +1474,6 @@ public:
 
         } // End of Plugin processing (no events)
 
-        CARLA_PROCESS_CONTINUE_CHECK;
-
         // --------------------------------------------------------------------------------------------------------
         // MIDI Output
 
@@ -1568,7 +1566,7 @@ public:
         else
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FLOAT_CLEAR(vstOutBuffer[i], frames);
+                FloatVectorOperations::clear(vstOutBuffer[i], frames);
 
 #if ! VST_FORCE_DEPRECATED
             fEffect->process(fEffect, (pData->audioIn.count > 0) ? vstInBuffer : nullptr, (pData->audioOut.count > 0) ? vstOutBuffer : nullptr, static_cast<int32_t>(frames));
@@ -1611,7 +1609,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        FLOAT_COPY(oldBufLeft, outBuffer[i]+timeOffset, frames);
+                        FloatVectorOperations::copy(oldBufLeft, outBuffer[i]+timeOffset, frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;

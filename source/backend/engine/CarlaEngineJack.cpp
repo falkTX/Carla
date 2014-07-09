@@ -22,11 +22,12 @@
 #include "CarlaEngineUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
+#include "CarlaPatchbayUtils.hpp"
 
 #include "jackbridge/JackBridge.hpp"
 #include "jackey.h"
 
-#include "juce_core.h"
+#include "juce_audio_basics.h"
 
 #ifdef __SSE2_MATH__
 # include <xmmintrin.h>
@@ -34,6 +35,7 @@
 
 #define URI_CANVAS_ICON "http://kxstudio.sf.net/ns/canvas/icon"
 
+using juce::FloatVectorOperations;
 using juce::String;
 using juce::StringArray;
 
@@ -153,7 +155,7 @@ public:
         }
         else
         {
-            FLOAT_CLEAR(fBuffer, bufferSize);
+            FloatVectorOperations::clear(fBuffer, bufferSize);
         }
     }
 
@@ -191,7 +193,7 @@ public:
             {
                 fLatencyBufferSize = range.max;
                 fLatencyBuffer     = new float[fLatencyBufferSize];
-                FLOAT_CLEAR(fLatencyBuffer, fLatencyBufferSize);
+                FloatVectorOperations::clear(fLatencyBuffer, fLatencyBufferSize);
             }
         }
     }
@@ -281,7 +283,7 @@ public:
         }
 
         if (! fIsInput)
-            FLOAT_CLEAR(fBuffer, bufferSize);
+            FloatVectorOperations::clear(fBuffer, bufferSize);
     }
 
     void invalidate() noexcept
@@ -1429,8 +1431,8 @@ protected:
                 float* const audioOut2 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut2], nframes);
                 void*  const eventOut  = jackbridge_port_get_buffer(fRackPorts[kRackPortEventOut], nframes);
 
-                FLOAT_COPY(audioOut1, audioIn1, nframes);
-                FLOAT_COPY(audioOut2, audioIn2, nframes);
+                FloatVectorOperations::copy(audioOut1, audioIn1, nframes);
+                FloatVectorOperations::copy(audioOut2, audioIn2, nframes);
 
                 jackbridge_midi_clear_buffer(eventOut);
             }

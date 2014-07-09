@@ -25,20 +25,13 @@
 #include "CarlaStateUtils.hpp"
 
 #include "CarlaMIDI.h"
-#include "CarlaMutex.hpp"
 #include "RtLinkedList.hpp"
 
-// -----------------------------------------------------------------------
+#include "juce_audio_basics.h"
 
-#define CARLA_PROCESS_CONTINUE_CHECK if (! pData->enabled) { pData->engine->callback(ENGINE_CALLBACK_DEBUG, pData->id, 0, 0, 0.0f, "Processing while plugin is disabled!!"); return; }
-
-// -----------------------------------------------------------------------
+using juce::FloatVectorOperations;
 
 CARLA_BACKEND_START_NAMESPACE
-
-#if 0
-} // Fix editor indentation
-#endif
 
 // -----------------------------------------------------------------------
 // Forward declarations of CarlaEngine port classes
@@ -59,6 +52,17 @@ const uint PLUGIN_EXTRA_HINT_HAS_MIDI_IN      = 0x01;
 const uint PLUGIN_EXTRA_HINT_HAS_MIDI_OUT     = 0x02;
 const uint PLUGIN_EXTRA_HINT_CAN_RUN_RACK     = 0x04;
 const uint PLUGIN_EXTRA_HINT_USES_MULTI_PROGS = 0x08;
+
+// -----------------------------------------------------------------------
+// Special parameters
+
+enum SpecialParameterType {
+    PARAMETER_SPECIAL_NULL        = 0,
+    PARAMETER_SPECIAL_FREEWHEEL   = 1,
+    PARAMETER_SPECIAL_LATENCY     = 2,
+    PARAMETER_SPECIAL_SAMPLE_RATE = 3,
+    PARAMETER_SPECIAL_TIME        = 4
+};
 
 // -----------------------------------------------------------------------
 
@@ -123,7 +127,7 @@ struct PluginAudioData {
 
 struct PluginCVPort {
     uint32_t rindex;
-    uint32_t param; // FIXME is this needed?
+    //uint32_t param; // FIXME is this needed?
     CarlaEngineCVPort* port;
 };
 
@@ -155,14 +159,6 @@ struct PluginEventData {
 };
 
 // -----------------------------------------------------------------------
-
-enum SpecialParameterType {
-    PARAMETER_SPECIAL_NULL        = 0,
-    PARAMETER_SPECIAL_FREEWHEEL   = 1,
-    PARAMETER_SPECIAL_LATENCY     = 2,
-    PARAMETER_SPECIAL_SAMPLE_RATE = 3,
-    PARAMETER_SPECIAL_TIME        = 4
-};
 
 struct PluginParameterData {
     uint32_t count;
