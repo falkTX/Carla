@@ -141,9 +141,9 @@ void carla_zeroFloat(float* const data, const std::size_t numSamples) noexcept
 #endif
 
 #if defined(CARLA_OS_MAC) && ! defined(DISTRHO_OS_MAC)
-/*
- * Missing functions in OSX.
- */
+// -----------------------------------------------------------------------
+// Missing functions in OSX.
+
 namespace std {
 inline float
   fmin(float __x, float __y)
