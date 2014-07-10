@@ -39,14 +39,10 @@ using juce::FloatVectorOperations;
 using juce::String;
 using juce::StringArray;
 
-CARLA_BACKEND_START_NAMESPACE
-
-#if 0
-} // Fix editor indentation
-#endif
-
 class CarlaEngineJack;
 class CarlaEngineJackClient;
+
+CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
 // Fallback data

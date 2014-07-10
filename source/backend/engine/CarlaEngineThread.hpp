@@ -23,10 +23,6 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
-#if 0
-} // Fix editor indentation
-#endif
-
 // -----------------------------------------------------------------------
 // CarlaEngineThread
 
@@ -39,7 +35,7 @@ protected:
     void run() noexcept override;
 
 private:
-    CarlaEngine* const fEngine;
+    CarlaEngine* const kEngine;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineThread)
 };

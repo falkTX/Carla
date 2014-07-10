@@ -25,7 +25,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaEngineThread::CarlaEngineThread(CarlaEngine* const engine) noexcept
     : CarlaThread("CarlaEngineThread"),
-      fEngine(engine)
+      kEngine(engine)
 {
     CARLA_SAFE_ASSERT(engine != nullptr);
     carla_debug("CarlaEngineThread::CarlaEngineThread(%p)", engine);
@@ -35,24 +35,24 @@ CarlaEngineThread::CarlaEngineThread(CarlaEngine* const engine) noexcept
 
 void CarlaEngineThread::run() noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(fEngine != nullptr,);
-    CARLA_SAFE_ASSERT(fEngine->isRunning());
+    CARLA_SAFE_ASSERT_RETURN(kEngine != nullptr,);
+    CARLA_SAFE_ASSERT(kEngine->isRunning());
     carla_debug("CarlaEngineThread::run()");
 
     bool hasUi, oscRegisted, needsSingleThread;
     float value;
 
-    for (; fEngine->isRunning() && ! shouldThreadExit();)
+    for (; kEngine->isRunning() && ! shouldThreadExit();)
     {
 #ifdef BUILD_BRIDGE
-        oscRegisted = fEngine->isOscBridgeRegistered();
+        oscRegisted = kEngine->isOscBridgeRegistered();
 #else
-        oscRegisted = fEngine->isOscControlRegistered();
+        oscRegisted = kEngine->isOscControlRegistered();
 #endif
 
-        for (uint i=0, count = fEngine->getCurrentPluginCount(); i < count; ++i)
+        for (uint i=0, count = kEngine->getCurrentPluginCount(); i < count; ++i)
         {
-            CarlaPlugin* const plugin(fEngine->getPluginUnchecked(i));
+            CarlaPlugin* const plugin(kEngine->getPluginUnchecked(i));
 
             CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr && plugin->isEnabled());
             CARLA_SAFE_ASSERT_UINT2(i == plugin->getId(), i, plugin->getId());
@@ -69,8 +69,7 @@ void CarlaEngineThread::run() noexcept
                 {
                     try {
                         plugin->postRtEventsRun();
-                    }
-                    CARLA_SAFE_EXCEPTION("postRtEventsRun()")
+                    } CARLA_SAFE_EXCEPTION("postRtEventsRun()")
                 }
 
                 if (oscRegisted || (hasUi && ! needsSingleThread))
@@ -89,9 +88,9 @@ void CarlaEngineThread::run() noexcept
                         if (oscRegisted)
                         {
 #ifdef BUILD_BRIDGE
-                            fEngine->oscSend_bridge_parameter_value(j, value);
+                            kEngine->oscSend_bridge_parameter_value(j, value);
 #else
-                            fEngine->oscSend_control_set_parameter_value(i, static_cast<int32_t>(j), value);
+                            kEngine->oscSend_control_set_parameter_value(i, static_cast<int32_t>(j), value);
 #endif
                         }
 
@@ -106,7 +105,7 @@ void CarlaEngineThread::run() noexcept
                 // Update OSC control client peaks
 
                 if (oscRegisted)
-                    fEngine->oscSend_control_set_peaks(i);
+                    kEngine->oscSend_control_set_peaks(i);
 #endif
             }
         }
@@ -116,7 +115,7 @@ void CarlaEngineThread::run() noexcept
         // Send pong
 
         if (oscRegisted)
-            fEngine->oscSend_bridge_pong();
+            kEngine->oscSend_bridge_pong();
 #endif
 
         carla_msleep(25);
