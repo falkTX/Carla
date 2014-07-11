@@ -65,7 +65,7 @@ NativePlugin.cpp.o: NativePlugin.cpp $(NATIVE_PLUGIN_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
 
 BridgePlugin.cpp.o: BridgePlugin.cpp $(BRIDGE_PLUGIN_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 LadspaPlugin.cpp.o: LadspaPlugin.cpp $(LADSPA_PLUGIN_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@

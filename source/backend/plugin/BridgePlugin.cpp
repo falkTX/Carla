@@ -31,9 +31,6 @@
 #include <cmath>
 #include <ctime>
 
-// FIXME
-#include <QtCore/QString>
-
 #define CARLA_BRIDGE_CHECK_OSC_TYPES(/* argc, types, */ argcToCompare, typesToCompare)                                       \
     /* check argument count */                                                                                               \
     if (argc != argcToCompare)                                                                                               \
@@ -288,10 +285,10 @@ struct BridgeTime {
 // FIXME - use CarlaString
 struct BridgeParamInfo {
     float value;
-    QString name;
-    QString unit;
+    CarlaString name;
+    CarlaString unit;
 
-    BridgeParamInfo()
+    BridgeParamInfo() noexcept
         : value(0.0f) {}
 
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeParamInfo)
@@ -478,14 +475,14 @@ public:
     {
         CARLA_ASSERT(parameterId < pData->param.count);
 
-        std::strncpy(strBuf, fParams[parameterId].name.toUtf8().constData(), STR_MAX);
+        std::strncpy(strBuf, fParams[parameterId].name.buffer(), STR_MAX);
     }
 
     void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
         CARLA_ASSERT(parameterId < pData->param.count);
 
-        std::strncpy(strBuf, fParams[parameterId].unit.toUtf8().constData(), STR_MAX);
+        std::strncpy(strBuf, fParams[parameterId].unit.buffer(), STR_MAX);
     }
 
     // -------------------------------------------------------------------
