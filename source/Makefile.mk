@@ -235,6 +235,23 @@ HAVE_LINUXSAMPLER = $(shell pkg-config --exists linuxsampler && echo true)
 endif
 
 # --------------------------------------------------------------
+# Set Qt tools
+# TODO
+
+ifeq ($(HAVE_QTGUI4),true)
+ifeq (,$(wildcard $(MOC_QT4)))
+HAVE_QTGUI4=false
+endif
+endif
+
+ifeq ($(HAVE_QTGUI5),true)
+QT5_LIBDIR = $(shell pkg-config --variable=libdir Qt5Core)
+ifeq (,$(wildcard $(MOC_QT5)))
+HAVE_QTGUI5=false
+endif
+endif
+
+# --------------------------------------------------------------
 # Check for optional libs (required by internal plugins)
 
 HAVE_AF_DEPS      = $(shell pkg-config --exists sndfile && echo true)

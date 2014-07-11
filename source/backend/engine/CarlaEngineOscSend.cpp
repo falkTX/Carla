@@ -15,6 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "CarlaBackendUtils.hpp"
 #include "CarlaEngineInternal.hpp"
 #include "CarlaMIDI.h"
 
