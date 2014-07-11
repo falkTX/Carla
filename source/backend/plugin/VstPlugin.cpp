@@ -30,13 +30,17 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaPluginUi.hpp"
 
-// FIXME
-#include <QtCore/QFile>
+#include "juce_core.h"
 
 #include <pthread.h>
 
+// FIXME
+#include <QtCore/QByteArray>
+
 #undef VST_FORCE_DEPRECATED
 #define VST_FORCE_DEPRECATED 0
+
+using juce::File;
 
 // -----------------------------------------------------
 
@@ -313,8 +317,9 @@ public:
 
         if (fUi.window != nullptr)
         {
-            QString guiTitle(QString("%1 (GUI)").arg(pData->name));
-            fUi.window->setTitle(guiTitle.toUtf8().constData());
+            CarlaString guiTitle(pData->name);
+            guiTitle += " (GUI)";
+            fUi.window->setTitle(guiTitle.buffer());
         }
     }
 
@@ -430,7 +435,9 @@ public:
 
         if (yesNo)
         {
-            QString uiTitle(QString("%1 (GUI)").arg(pData->name));
+            CarlaString uiTitle(pData->name);
+            uiTitle += " (GUI)";
+
             void* vstPtr;
 
             if (fUi.window == nullptr && fUi.type == UI::UI_EMBED)
@@ -457,13 +464,13 @@ public:
                 if (fUi.window == nullptr)
                     return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, msg);
 
-                fUi.window->setTitle(uiTitle.toUtf8().constData());
+                fUi.window->setTitle(uiTitle.buffer());
             }
 
             if (fUi.type == UI::UI_EMBED)
                 vstPtr = fUi.window->getPtr();
             else
-                vstPtr = uiTitle.toUtf8().data();
+                vstPtr = const_cast<char*>(uiTitle.buffer());
 
             if (dispatcher(effEditOpen, 0, 0, vstPtr, 0.0f) != 0)
             {
@@ -2296,7 +2303,7 @@ public:
                 bridgeBinary.clear();
 #endif
 
-                if (bridgeBinary.isNotEmpty() && QFile(bridgeBinary.buffer()).exists())
+                if (bridgeBinary.isNotEmpty() && File(bridgeBinary.buffer()).existsAsFile())
                 {
                     pData->osc.thread.setOscData(bridgeBinary, nullptr);
                     fUi.type = UI::UI_OSC;

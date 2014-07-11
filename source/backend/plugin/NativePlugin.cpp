@@ -23,8 +23,10 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaNative.h"
 
-// FIXME
-#include <QtCore/QStringList>
+#include "juce_core.h"
+
+using juce::String;
+using juce::StringArray;
 
 // -----------------------------------------------------
 
@@ -603,17 +605,16 @@ public:
         }
         else if (std::strcmp(key, "midiPrograms") == 0 && fDescriptor->set_midi_program != nullptr)
         {
-            QStringList midiProgramList(QString(value).split(":", QString::SkipEmptyParts));
+            StringArray midiProgramList(StringArray::fromTokens(value, ":", ""));
 
-            if (midiProgramList.count() == MAX_MIDI_CHANNELS)
+            if (midiProgramList.size() == MAX_MIDI_CHANNELS)
             {
                 uint8_t channel = 0;
-                foreach (const QString& midiProg, midiProgramList)
+                for (String *it=midiProgramList.begin(), *end=midiProgramList.end(); it != end; ++it)
                 {
-                    bool ok;
-                    const int index(midiProg.toInt(&ok));
+                    const int index(it->getIntValue());
 
-                    if (ok && index >= 0 && index < static_cast<int>(pData->midiprog.count))
+                    if (index >= 0 && index < static_cast<int>(pData->midiprog.count))
                     {
                         const uint32_t bank    = pData->midiprog.data[index].bank;
                         const uint32_t program = pData->midiprog.data[index].program;
@@ -634,6 +635,7 @@ public:
 
                     ++channel;
                 }
+                CARLA_SAFE_ASSERT(channel == MAX_MIDI_CHANNELS);
             }
         }
         else

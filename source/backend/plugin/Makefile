@@ -62,7 +62,7 @@ CarlaPluginUi.cpp.o: CarlaPluginUi.cpp $(CARLA_PLUGIN_UI_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 NativePlugin.cpp.o: NativePlugin.cpp $(NATIVE_PLUGIN_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 BridgePlugin.cpp.o: BridgePlugin.cpp $(BRIDGE_PLUGIN_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
@@ -89,7 +89,7 @@ JucePlugin.cpp.o: JucePlugin.cpp $(JUCE_PLUGIN_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 FluidSynthPlugin.cpp.o: FluidSynthPlugin.cpp $(FLUIDSYNTH_PLUGIN_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(FLUIDSYNTH_FLAGS) $(QTCORE_FLAGS) -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) $(FLUIDSYNTH_FLAGS) -c -o $@
 
 LinuxSamplerPlugin.cpp.o: LinuxSamplerPlugin.cpp $(LINUXSAMPLER_PLUGIN_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(LINUXSAMPLER_FLAGS) $(QTCORE_FLAGS) -c -o $@

@@ -22,22 +22,22 @@
 
 #include "CarlaMathUtils.hpp"
 
-#include <fluidsynth.h>
+#include "juce_core.h"
 
-// FIXME
-#include <QtCore/QStringList>
+#include <fluidsynth.h>
 
 #if (FLUIDSYNTH_VERSION_MAJOR >= 1 && FLUIDSYNTH_VERSION_MINOR >= 1 && FLUIDSYNTH_VERSION_MICRO >= 4)
 # define FLUIDSYNTH_VERSION_NEW_API
 #endif
 
+#define FLUID_DEFAULT_POLYPHONY 64
+
+using juce::String;
+using juce::StringArray;
+
 CARLA_BACKEND_START_NAMESPACE
 
-#if 0
-}
-#endif
-
-#define FLUID_DEFAULT_POLYPHONY 64
+// -----------------------------------------------------
 
 class FluidSynthPlugin : public CarlaPlugin
 {
@@ -469,37 +469,33 @@ public:
 
         if (fUses16Outs)
         {
-            QStringList midiProgramList(QString(value).split(":", QString::SkipEmptyParts));
+            StringArray midiProgramList(StringArray::fromTokens(value, ":", ""));
 
-            if (midiProgramList.count() == MAX_MIDI_CHANNELS)
+            if (midiProgramList.size() == MAX_MIDI_CHANNELS)
             {
-                int i = 0;
-                foreach (const QString& midiProg, midiProgramList)
+                uint8_t channel = 0;
+                for (String *it=midiProgramList.begin(), *end=midiProgramList.end(); it != end; ++it)
                 {
-                    CARLA_SAFE_ASSERT_BREAK(i < MAX_MIDI_CHANNELS);
+                    const int index(it->getIntValue());
 
-                    bool ok;
-                    int index = midiProg.toInt(&ok);
-
-                    if (ok && index >= 0 && index < static_cast<int>(pData->midiprog.count))
+                    if (index >= 0 && index < static_cast<int>(pData->midiprog.count))
                     {
                         const uint32_t bank    = pData->midiprog.data[index].bank;
                         const uint32_t program = pData->midiprog.data[index].program;
 
-                        fluid_synth_program_select(fSynth, i, fSynthId, bank, program);
-                        fCurMidiProgs[i] = index;
+                        fluid_synth_program_select(fSynth, channel, fSynthId, bank, program);
+                        fCurMidiProgs[channel] = index;
 
-                        if (pData->ctrlChannel == static_cast<int32_t>(i))
+                        if (pData->ctrlChannel == static_cast<int32_t>(channel))
                         {
                             pData->midiprog.current = index;
                             pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
                         }
                     }
 
-                    ++i;
+                    ++channel;
                 }
-
-                CARLA_SAFE_ASSERT(i == MAX_MIDI_CHANNELS);
+                CARLA_SAFE_ASSERT(channel == MAX_MIDI_CHANNELS);
             }
         }
 
