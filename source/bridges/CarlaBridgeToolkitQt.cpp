@@ -19,7 +19,7 @@
 #include "CarlaBridgeToolkit.hpp"
 #include "CarlaStyle.hpp"
 
-#include <QtCore/QSettings>
+#include <QtCore/QSettings> // FIXME
 #include <QtCore/QThread>
 #include <QtCore/QTimerEvent>
 

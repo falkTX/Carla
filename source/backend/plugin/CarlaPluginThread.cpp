@@ -19,6 +19,7 @@
 #include "CarlaPluginThread.hpp"
 #include "CarlaEngine.hpp"
 
+// FIXME
 #include <QtCore/QDebug>
 #include <QtCore/QProcess>
 

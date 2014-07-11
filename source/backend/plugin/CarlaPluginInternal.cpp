@@ -21,6 +21,7 @@
 #include "CarlaLibCounter.hpp"
 #include "CarlaMathUtils.hpp"
 
+// FIXME
 #include <QtCore/QSettings>
 
 // -----------------------------------------------------------------------

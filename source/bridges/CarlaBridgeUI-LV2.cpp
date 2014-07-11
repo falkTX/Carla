@@ -22,7 +22,7 @@
 #include "CarlaMIDI.h"
 #include "LinkedList.hpp"
 
-#include <QtCore/QDir>
+#include <QtCore/QDir> // FIXME
 
 #define URI_CARLA_FRONTEND_WIN_ID "http://kxstudio.sf.net/ns/carla/frontendWinId"
 #define URI_CARLA_WORKER          "http://kxstudio.sf.net/ns/carla/worker"

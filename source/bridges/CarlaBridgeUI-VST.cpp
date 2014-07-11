@@ -20,7 +20,7 @@
 #include "CarlaVstUtils.hpp"
 #include "CarlaMIDI.h"
 
-#include <QtCore/QObject>
+#include <QtCore/QObject> // FIXME
 #include <QtCore/QTimerEvent>
 
 #if defined(Q_WS_X11) && (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))

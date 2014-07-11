@@ -24,6 +24,7 @@
 
 #include <fluidsynth.h>
 
+// FIXME
 #include <QtCore/QStringList>
 
 #if (FLUIDSYNTH_VERSION_MAJOR >= 1 && FLUIDSYNTH_VERSION_MINOR >= 1 && FLUIDSYNTH_VERSION_MICRO >= 4)

@@ -32,6 +32,7 @@
 #include "linuxsampler/EngineFactory.h"
 #include <linuxsampler/Sampler.h>
 
+// FIXME
 #include <QtCore/QFileInfo>
 #include <QtCore/QStringList>
 

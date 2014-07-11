@@ -23,7 +23,7 @@
 #endif
 
 #include <gtk/gtk.h>
-#include <QtCore/QSettings>
+#include <QtCore/QSettings> // FIXME
 
 CARLA_BRIDGE_START_NAMESPACE
 
