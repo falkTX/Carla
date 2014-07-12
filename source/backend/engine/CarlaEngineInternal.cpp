@@ -209,6 +209,7 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
       bufferSize(0),
       sampleRate(0.0),
       aboutToClose(false),
+      isIdling(false),
       curPluginCount(0),
       maxPluginNumber(0),
       nextPluginId(0)
@@ -226,7 +227,9 @@ CarlaEngine::ProtectedData::~ProtectedData() noexcept
     CARLA_SAFE_ASSERT(curPluginCount == 0);
     CARLA_SAFE_ASSERT(maxPluginNumber == 0);
     CARLA_SAFE_ASSERT(nextPluginId == 0);
+#ifndef BUILD_BRIDGE
     CARLA_SAFE_ASSERT(plugins == nullptr);
+#endif
 }
 
 // -----------------------------------------------------------------------
@@ -235,10 +238,12 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
 {
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(name.isEmpty(), "Invalid engine internal data (err #1)");
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(oscData == nullptr, "Invalid engine internal data (err #2)");
-    CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(plugins == nullptr, "Invalid engine internal data (err #3)");
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(events.in  == nullptr, "Invalid engine internal data (err #4)");
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(events.out == nullptr, "Invalid engine internal data (err #5)");
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(clientName != nullptr && clientName[0] != '\0', "Invalid client name");
+#ifndef BUILD_BRIDGE
+    CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(plugins == nullptr, "Invalid engine internal data (err #3)");
+#endif
 
     aboutToClose    = false;
     curPluginCount  = 0;

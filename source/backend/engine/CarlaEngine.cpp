@@ -91,13 +91,19 @@ const char* CarlaEngine::getDriverName(const uint index2)
         return "JACK";
 
 #ifndef BUILD_BRIDGE
-    if (index < getRtAudioApiCount())
-        return getRtAudioApiName(index);
+    if (const uint count = getRtAudioApiCount())
+    {
+        if (index < count)
+            return getRtAudioApiName(index);
+        index -= count;
+    }
 
-    index -= getRtAudioApiCount();
-
-    if (index < getJuceApiCount())
-        return getJuceApiName(index);
+    if (const uint count = getRtAudioApiCount())
+    {
+        if (index < count)
+            return getJuceApiName(index);
+        //index -= count;
+    }
 #endif
 
     carla_stderr("CarlaEngine::getDriverName(%i) - invalid index", index2);
@@ -117,13 +123,19 @@ const char* const* CarlaEngine::getDriverDeviceNames(const uint index2)
     }
 
 #ifndef BUILD_BRIDGE
-    if (index < getRtAudioApiCount())
-        return getRtAudioApiDeviceNames(index);
+    if (const uint count = getRtAudioApiCount())
+    {
+        if (index < count)
+            return getRtAudioApiDeviceNames(index);
+        index -= count;
+    }
 
-    index -= getRtAudioApiCount();
-
-    if (index < getJuceApiCount())
-        return getJuceApiDeviceNames(index);
+    if (const uint count = getRtAudioApiCount())
+    {
+        if (index < count)
+            return getJuceApiDeviceNames(index);
+        //index -= count;
+    }
 #endif
 
     carla_stderr("CarlaEngine::getDriverDeviceNames(%i) - invalid index", index2);
@@ -147,13 +159,19 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2
     }
 
 #ifndef BUILD_BRIDGE
-    if (index < getRtAudioApiCount())
-        return getRtAudioDeviceInfo(index, deviceName);
+    if (const uint count = getRtAudioApiCount())
+    {
+        if (index < count)
+            return getRtAudioDeviceInfo(index, deviceName);
+        index -= count;
+    }
 
-    index -= getRtAudioApiCount();
-
-    if (index < getJuceApiCount())
-        return getJuceDeviceInfo(index, deviceName);
+    if (const uint count = getRtAudioApiCount())
+    {
+        if (index < count)
+            return getJuceDeviceInfo(index, deviceName);
+        //index -= count;
+    }
 #endif
 
     carla_stderr("CarlaEngine::getDriverDeviceNames(%i, \"%s\") - invalid index", index2, deviceName);
@@ -208,7 +226,7 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
 }
 
 // -----------------------------------------------------------------------
-// Maximum values
+// Constant values
 
 uint CarlaEngine::getMaxClientNameSize() const noexcept
 {
@@ -267,9 +285,8 @@ bool CarlaEngine::close()
 
 void CarlaEngine::idle() noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(pData->nextAction.opcode == kEnginePostActionNull,); // TESTING, remove later
-    CARLA_SAFE_ASSERT_RETURN(pData->nextPluginId == pData->maxPluginNumber,);     // TESTING, remove later
-    CARLA_SAFE_ASSERT_RETURN(pData->plugins != nullptr,); // this one too maybe
+    CARLA_SAFE_ASSERT_RETURN(pData->nextAction.opcode == kEnginePostActionNull,);
+    CARLA_SAFE_ASSERT_RETURN(pData->nextPluginId == pData->maxPluginNumber,);
 
     for (uint i=0; i < pData->curPluginCount; ++i)
     {
@@ -296,12 +313,13 @@ CarlaEngineClient* CarlaEngine::addClient(CarlaPlugin* const)
 
 bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const void* const extra)
 {
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data (err #10)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextPluginId <= pData->maxPluginNumber, "Invalid engine internal data (err #11)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data (err #12)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(btype != BINARY_NONE, "Invalid plugin params (err #1)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(ptype != PLUGIN_NONE, "Invalid plugin params (err #2)");
-    CARLA_SAFE_ASSERT_RETURN_ERR((filename != nullptr && filename[0] != '\0') || (label != nullptr && label[0] != '\0'), "Invalid plugin params (err #3)");
+    CARLA_SAFE_ASSERT_RETURN_ERR(! pData->isIdling, "An operation is still being processed, please wait for it to finish");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextPluginId <= pData->maxPluginNumber, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(btype != BINARY_NONE, "Invalid plugin binary mode");
+    CARLA_SAFE_ASSERT_RETURN_ERR(ptype != PLUGIN_NONE, "Invalid plugin type");
+    CARLA_SAFE_ASSERT_RETURN_ERR((filename != nullptr && filename[0] != '\0') || (label != nullptr && label[0] != '\0'), "Invalid plugin filename and label");
     carla_debug("CarlaEngine::addPlugin(%i:%s, %i:%s, \"%s\", \"%s\", \"%s\", " P_INT64 ", %p)", btype, BinaryType2Str(btype), ptype, PluginType2Str(ptype), filename, name, label, uniqueId, extra);
 
     uint id;
@@ -329,7 +347,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             return false;
         }
 
-        CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins[id].plugin == nullptr, "Invalid engine internal data (err #13)");
+        CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins[id].plugin == nullptr, "Invalid engine internal data");
     }
 
     CarlaPlugin::Initializer initializer = {
@@ -376,9 +394,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             }
         }
 
-        File file(bridgeBinary.buffer());
-
-        if (! file.existsAsFile())
+        if (! File(bridgeBinary.buffer()).existsAsFile())
             bridgeBinary.clear();
     }
 
@@ -433,7 +449,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             break;
 
         case PLUGIN_INTERNAL:
-            if (std::strcmp(label, "FluidSynth") == 0)
+            /*if (std::strcmp(label, "FluidSynth") == 0)
             {
                 use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
                 plugin = CarlaPlugin::newFluidSynth(initializer, use16Outs);
@@ -452,11 +468,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             {
                 use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
                 plugin = CarlaPlugin::newLinuxSampler(initializer, "SFZ", use16Outs);
-            }
-            else
-            {
-                plugin = CarlaPlugin::newNative(initializer);
-            }
+            }*/
+            plugin = CarlaPlugin::newNative(initializer);
             break;
 
         case PLUGIN_LADSPA:
@@ -500,12 +513,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     }
 
     if (plugin == nullptr)
-    {
-#ifndef BUILD_BRIDGE
-        pData->plugins[id].plugin = oldPlugin;
-#endif
         return false;
-    }
 
     plugin->registerToOscClient();
 
@@ -519,30 +527,32 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
 #ifndef BUILD_BRIDGE
     if (oldPlugin != nullptr)
     {
-        bool  wasActive = (oldPlugin->getInternalParameterValue(PARAMETER_ACTIVE) >= 0.5f);
-        float oldDryWet =  oldPlugin->getInternalParameterValue(PARAMETER_DRYWET);
-        float oldVolume =  oldPlugin->getInternalParameterValue(PARAMETER_VOLUME);
+        // the engine thread might be reading from the old plugin
+        pData->thread.stopThread(500);
+        pData->thread.startThread();
+
+        const bool  wasActive = oldPlugin->getInternalParameterValue(PARAMETER_ACTIVE) >= 0.5f;
+        const float oldDryWet = oldPlugin->getInternalParameterValue(PARAMETER_DRYWET);
+        const float oldVolume = oldPlugin->getInternalParameterValue(PARAMETER_VOLUME);
 
         delete oldPlugin;
-        callback(ENGINE_CALLBACK_RELOAD_ALL, id, 0, 0, 0.0f, plugin->getName());
-
-        if (wasActive)
-            plugin->setActive(true, true, true);
 
         if (plugin->getHints() & PLUGIN_CAN_DRYWET)
             plugin->setDryWet(oldDryWet, true, true);
 
         if (plugin->getHints() & PLUGIN_CAN_VOLUME)
             plugin->setVolume(oldVolume, true, true);
+
+        if (wasActive)
+            plugin->setActive(true, true, true);
+
+        callback(ENGINE_CALLBACK_RELOAD_ALL, id, 0, 0, 0.0f, nullptr);
     }
     else
 #endif
     {
         ++pData->curPluginCount;
         callback(ENGINE_CALLBACK_PLUGIN_ADDED, id, 0, 0, 0.0f, plugin->getName());
-
-        //if (pData->curPluginCount == 1 && pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-        //    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED, 0, PATCHBAY_ICON_CARLA, 0, 0.0f, nullptr);
     }
 
     return true;
@@ -555,16 +565,17 @@ bool CarlaEngine::addPlugin(const PluginType ptype, const char* const filename, 
 
 bool CarlaEngine::removePlugin(const uint id)
 {
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data (err #14)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->curPluginCount != 0, "Invalid engine internal data (err #15)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data (err #16)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(id < pData->curPluginCount, "Invalid plugin Id (err #1)");
+    CARLA_SAFE_ASSERT_RETURN_ERR(! pData->isIdling, "An operation is still being processed, please wait for it to finish");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->curPluginCount != 0, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(id < pData->curPluginCount, "Invalid plugin Id");
     carla_debug("CarlaEngine::removePlugin(%i)", id);
 
     CarlaPlugin* const plugin(pData->plugins[id].plugin);
 
     CARLA_SAFE_ASSERT_RETURN_ERR(plugin != nullptr, "Could not find plugin to remove");
-    CARLA_SAFE_ASSERT_RETURN_ERR(plugin->getId() == id, "Invalid engine internal data (err #17)");
+    CARLA_SAFE_ASSERT_RETURN_ERR(plugin->getId() == id, "Invalid engine internal data");
 
     pData->thread.stopThread(500);
 
@@ -589,9 +600,10 @@ bool CarlaEngine::removePlugin(const uint id)
 
 bool CarlaEngine::removeAllPlugins()
 {
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data (err #18)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextPluginId == pData->maxPluginNumber, "Invalid engine internal data (err #19)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data (err #20)");
+    CARLA_SAFE_ASSERT_RETURN_ERR(! pData->isIdling, "An operation is still being processed, please wait for it to finish");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextPluginId == pData->maxPluginNumber, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data");
     carla_debug("CarlaEngine::removeAllPlugins()");
 
     if (pData->curPluginCount == 0)
@@ -630,17 +642,18 @@ bool CarlaEngine::removeAllPlugins()
 
 const char* CarlaEngine::renamePlugin(const uint id, const char* const newName)
 {
-    CARLA_SAFE_ASSERT_RETURN_ERRN(pData->plugins != nullptr, "Invalid engine internal data (err #21)");
-    CARLA_SAFE_ASSERT_RETURN_ERRN(pData->curPluginCount != 0, "Invalid engine internal data (err #22)");
-    CARLA_SAFE_ASSERT_RETURN_ERRN(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data (err #23)");
-    CARLA_SAFE_ASSERT_RETURN_ERRN(id < pData->curPluginCount, "Invalid plugin Id (err #2)");
+    CARLA_SAFE_ASSERT_RETURN_ERRN(! pData->isIdling, "An operation is still being processed, please wait for it to finish");
+    CARLA_SAFE_ASSERT_RETURN_ERRN(pData->plugins != nullptr, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERRN(pData->curPluginCount != 0, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERRN(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERRN(id < pData->curPluginCount, "Invalid plugin Id");
     CARLA_SAFE_ASSERT_RETURN_ERRN(newName != nullptr && newName[0] != '\0', "Invalid plugin name");
     carla_debug("CarlaEngine::renamePlugin(%i, \"%s\")", id, newName);
 
     CarlaPlugin* const plugin(pData->plugins[id].plugin);
 
     CARLA_SAFE_ASSERT_RETURN_ERRN(plugin != nullptr, "Could not find plugin to rename");
-    CARLA_SAFE_ASSERT_RETURN_ERRN(plugin->getId() == id, "Invalid engine internal data (err #24)");
+    CARLA_SAFE_ASSERT_RETURN_ERRN(plugin->getId() == id, "Invalid engine internal data");
 
     if (const char* const name = getUniquePluginName(newName))
     {
@@ -654,16 +667,17 @@ const char* CarlaEngine::renamePlugin(const uint id, const char* const newName)
 
 bool CarlaEngine::clonePlugin(const uint id)
 {
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data (err #25)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->curPluginCount != 0, "Invalid engine internal data (err #26)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data (err #27)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(id < pData->curPluginCount, "Invalid plugin Id (err #3)");
+    CARLA_SAFE_ASSERT_RETURN_ERR(! pData->isIdling, "An operation is still being processed, please wait for it to finish");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->curPluginCount != 0, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(id < pData->curPluginCount, "Invalid plugin Id");
     carla_debug("CarlaEngine::clonePlugin(%i)", id);
 
     CarlaPlugin* const plugin(pData->plugins[id].plugin);
 
     CARLA_SAFE_ASSERT_RETURN_ERR(plugin != nullptr, "Could not find plugin to clone");
-    CARLA_SAFE_ASSERT_RETURN_ERR(plugin->getId() == id, "Invalid engine internal data (err #28)");
+    CARLA_SAFE_ASSERT_RETURN_ERR(plugin->getId() == id, "Invalid engine internal data");
 
     char label[STR_MAX+1];
     carla_zeroChar(label, STR_MAX+1);
@@ -684,9 +698,10 @@ bool CarlaEngine::clonePlugin(const uint id)
 
 bool CarlaEngine::replacePlugin(const uint id)
 {
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data (err #29)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->curPluginCount != 0, "Invalid engine internal data (err #30)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data (err #31)");
+    CARLA_SAFE_ASSERT_RETURN_ERR(! pData->isIdling, "An operation is still being processed, please wait for it to finish");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->curPluginCount != 0, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data");
     carla_debug("CarlaEngine::replacePlugin(%i)", id);
 
     // might use this to reset
@@ -696,12 +711,12 @@ bool CarlaEngine::replacePlugin(const uint id)
         return true;
     }
 
-    CARLA_SAFE_ASSERT_RETURN_ERR(id < pData->curPluginCount, "Invalid plugin Id (err #4)");
+    CARLA_SAFE_ASSERT_RETURN_ERR(id < pData->curPluginCount, "Invalid plugin Id");
 
     CarlaPlugin* const plugin(pData->plugins[id].plugin);
 
     CARLA_SAFE_ASSERT_RETURN_ERR(plugin != nullptr, "Could not find plugin to replace");
-    CARLA_SAFE_ASSERT_RETURN_ERR(plugin->getId() == id, "Invalid engine internal data (err #32)");
+    CARLA_SAFE_ASSERT_RETURN_ERR(plugin->getId() == id, "Invalid engine internal data");
 
     pData->nextPluginId = id;
 
@@ -710,21 +725,22 @@ bool CarlaEngine::replacePlugin(const uint id)
 
 bool CarlaEngine::switchPlugins(const uint idA, const uint idB)
 {
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data (err #33)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->curPluginCount >= 2, "Invalid engine internal data (err #34)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data (err #35)");
+    CARLA_SAFE_ASSERT_RETURN_ERR(! pData->isIdling, "An operation is still being processed, please wait for it to finish");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->curPluginCount >= 2, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data");
     CARLA_SAFE_ASSERT_RETURN_ERR(idA != idB, "Invalid operation, cannot switch plugin with itself");
-    CARLA_SAFE_ASSERT_RETURN_ERR(idA < pData->curPluginCount, "Invalid plugin Id (err #5)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(idB < pData->curPluginCount, "Invalid plugin Id (err #6)");
+    CARLA_SAFE_ASSERT_RETURN_ERR(idA < pData->curPluginCount, "Invalid plugin Id");
+    CARLA_SAFE_ASSERT_RETURN_ERR(idB < pData->curPluginCount, "Invalid plugin Id");
     carla_debug("CarlaEngine::switchPlugins(%i)", idA, idB);
 
     CarlaPlugin* const pluginA(pData->plugins[idA].plugin);
     CarlaPlugin* const pluginB(pData->plugins[idB].plugin);
 
-    CARLA_SAFE_ASSERT_RETURN_ERR(pluginA != nullptr, "Could not find plugin to switch (err #1)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pluginA != nullptr, "Could not find plugin to switch (err #2)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pluginA->getId() == idA, "Invalid engine internal data (err #36)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pluginB->getId() == idB, "Invalid engine internal data (err #37)");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pluginA != nullptr, "Could not find plugin to switch");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pluginA != nullptr, "Could not find plugin to switch");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pluginA->getId() == idA, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pluginB->getId() == idB, "Invalid engine internal data");
 
     pData->thread.stopThread(500);
 
@@ -747,10 +763,10 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB)
 
 CarlaPlugin* CarlaEngine::getPlugin(const uint id) const
 {
-    CARLA_SAFE_ASSERT_RETURN_ERRN(pData->plugins != nullptr, "Invalid engine internal data (err #38)");
-    CARLA_SAFE_ASSERT_RETURN_ERRN(pData->curPluginCount != 0, "Invalid engine internal data (err #39)");
-    CARLA_SAFE_ASSERT_RETURN_ERRN(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data (err #40)");
-    CARLA_SAFE_ASSERT_RETURN_ERRN(id < pData->curPluginCount, "Invalid plugin Id (err #7)");
+    CARLA_SAFE_ASSERT_RETURN_ERRN(pData->plugins != nullptr, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERRN(pData->curPluginCount != 0, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERRN(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERRN(id < pData->curPluginCount, "Invalid plugin Id");
 
     return pData->plugins[id].plugin;
 }
@@ -849,7 +865,8 @@ const char* CarlaEngine::getUniquePluginName(const char* const name) const
 
 bool CarlaEngine::loadFile(const char* const filename)
 {
-    CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename (err #1)");
+    CARLA_SAFE_ASSERT_RETURN_ERR(! pData->isIdling, "An operation is still being processed, please wait for it to finish");
+    CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename");
     carla_debug("CarlaEngine::loadFile(\"%s\")", filename);
 
     File file(filename);
@@ -960,7 +977,8 @@ bool CarlaEngine::loadFile(const char* const filename)
 
 bool CarlaEngine::loadProject(const char* const filename)
 {
-    CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename (err #2)");
+    CARLA_SAFE_ASSERT_RETURN_ERR(! pData->isIdling, "An operation is still being processed, please wait for it to finish");
+    CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename");
     carla_debug("CarlaEngine::loadProject(\"%s\")", filename);
 
     File file(filename);
@@ -1078,7 +1096,7 @@ bool CarlaEngine::loadProject(const char* const filename)
 
 bool CarlaEngine::saveProject(const char* const filename)
 {
-    CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename (err #3)");
+    CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename");
     carla_debug("CarlaEngine::saveProject(\"%s\")", filename);
 
     MemoryOutputStream out;
@@ -1220,7 +1238,13 @@ float CarlaEngine::getOutputPeak(const uint pluginId, const bool isLeft) const n
 
 void CarlaEngine::callback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr) noexcept
 {
-    carla_debug("CarlaEngine::callback(%s, %i, %i, %i, %f, \"%s\")", EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
+    carla_debug("CarlaEngine::callback(%i:%s, %i, %i, %i, %f, \"%s\")", action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
+
+    if (pData->isIdling && action != ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED)
+        carla_stdout("callback while idling (%i:%s, %i, %i, %i, %f, \"%s\")", action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
+
+    if (action == ENGINE_CALLBACK_IDLE)
+        pData->isIdling = true;
 
     if (pData->callback != nullptr)
     {
@@ -1228,6 +1252,9 @@ void CarlaEngine::callback(const EngineCallbackOpcode action, const uint pluginI
             pData->callback(pData->callbackPtr, action, pluginId, value1, value2, value3, valueStr);
         } catch(...) {}
     }
+
+    if (action == ENGINE_CALLBACK_IDLE)
+        pData->isIdling = false;
 }
 
 void CarlaEngine::setCallback(const EngineCallbackFunc func, void* const ptr) noexcept
