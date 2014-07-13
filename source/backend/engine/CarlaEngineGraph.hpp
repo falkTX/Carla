@@ -21,6 +21,12 @@
 #include "CarlaEngine.hpp"
 #include "CarlaMutex.hpp"
 #include "CarlaPatchbayUtils.hpp"
+#include "CarlaStringList.hpp"
+
+#include "juce_audio_processors.h"
+
+using juce::AudioProcessorGraph;
+using juce::AudioSampleBuffer;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -48,24 +54,14 @@ enum RackGraphCarlaPortIds {
 };
 
 // -----------------------------------------------------------------------
-// InternalGraph
-
-struct InternalGraph {
-    virtual ~InternalGraph() noexcept {}
-    virtual void clear() noexcept = 0;
-    virtual void setBufferSize(const uint32_t bufferSize) = 0;
-    virtual void setSampleRate(const double sampleRate) = 0;
-    virtual bool connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept = 0;
-    virtual bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept = 0;
-    virtual const char* const* getConnections() const = 0;
-    virtual bool getPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const = 0;
-};
-
-// -----------------------------------------------------------------------
 // RackGraph
 
-struct RackGraph : InternalGraph {
+struct RackGraph {
     PatchbayConnectionList connections;
+    const uint32_t inputs;
+    const uint32_t outputs;
+    bool isOffline;
+    CharStringListPtr retCon;
 
     struct Audio {
         CarlaRecursiveMutex mutex;
@@ -74,6 +70,7 @@ struct RackGraph : InternalGraph {
         LinkedList<uint> connectedOut1;
         LinkedList<uint> connectedOut2;
         float* inBuf[2];
+        float* inBufTmp[2];
         float* outBuf[2];
     } audio;
 
@@ -81,35 +78,51 @@ struct RackGraph : InternalGraph {
         LinkedList<PortNameToId> ins;
         LinkedList<PortNameToId> outs;
         const char* getName(const bool isInput, const uint portId) const noexcept;
-        uint getPortId(const bool isInput, const char portName[]) const noexcept;
+        uint getPortId(const bool isInput, const char portName[], bool* const ok = nullptr) const noexcept;
     } midi;
 
-    RackGraph(const uint32_t bufferSize) noexcept;
-    ~RackGraph() noexcept override;
-    void clear() noexcept override;
-    void setBufferSize(const uint32_t bufferSize) noexcept override;
-    void setSampleRate(const double sampleRate) noexcept override;
-    bool connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept override;
-    bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept override;
-    const char* const* getConnections() const override;
-    bool getPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const override;
+    RackGraph(const uint32_t bufferSize, const uint32_t inputs, const uint32_t outputs) noexcept;
+    ~RackGraph() noexcept;
+
+    void setBufferSize(const uint32_t bufferSize) noexcept;
+    void setOffline(const bool offline) noexcept;
+
+    bool connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
+    bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept;
+    void clearConnections() noexcept;
+
+    const char* const* getConnections() noexcept;
+    bool getGroupAndPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept;
+
+    // the base, where plugins run
+    void process(CarlaEngine::ProtectedData* const data, const float* inBufReal[2], float* outBuf[2], const uint32_t frames);
+
+    // extended, will call process() in the middle
+    void processHelper(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames);
 };
 
 // -----------------------------------------------------------------------
 // PatchbayGraph
 
-struct PatchbayGraph : InternalGraph {
-    // TODO
+struct PatchbayGraph  {
+    AudioProcessorGraph graph;
+    AudioSampleBuffer audioBuffer;
+    //CharStringListPtr retCon;
 
-    PatchbayGraph() noexcept;
-    ~PatchbayGraph() noexcept override;
-    void clear() noexcept override;
-    void setBufferSize(const uint32_t bufferSize) noexcept override;
-    void setSampleRate(const double sampleRate) noexcept override;
-    bool connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept override;
-    bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept override;
-    const char* const* getConnections() const noexcept override;
-    bool getPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept override;
+    PatchbayGraph(const uint32_t bufferSize, const double sampleRate, const uint32_t inputs, const uint32_t outputs);
+    ~PatchbayGraph();
+
+    void setBufferSize(const uint32_t bufferSize);
+    void setSampleRate(const double sampleRate);
+    void setOffline(const bool offline);
+
+    //bool connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
+    //bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept;
+
+    //const char* const* getConnections() const noexcept;
+    //bool getPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept;
+
+    //void process(const float* const* const inBuf, float* const* const outBuf, const uint32_t nframes);
 };
 
 // -----------------------------------------------------------------------

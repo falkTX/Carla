@@ -24,13 +24,7 @@
 struct CarlaOscData;
 #endif
 
-// -----------------------------------------------------------------------
-
 CARLA_BACKEND_START_NAMESPACE
-
-#if 0
-} /* Fix editor indentation */
-#endif
 
 // -----------------------------------------------------------------------
 
@@ -1044,6 +1038,13 @@ protected:
      */
     struct ProtectedData;
     ProtectedData* const pData;
+
+    /*!
+     * Some internal classes read directly from pData.
+     */
+    friend class EngineInternalGraph;
+    friend class PatchbayGraph;
+    friend class RackGraph;
     friend class ScopedActionLock;
 
     // -------------------------------------------------------------------

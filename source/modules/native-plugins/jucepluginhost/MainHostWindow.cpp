@@ -106,11 +106,7 @@ MainHostWindow::MainHostWindow (AudioPluginFormatManager& fm, FilterGraph& graph
 
     //Process::setPriority (Process::HighPriority);
 
-   #if JUCE_MAC
-    setMacMainMenu (this);
-   #else
     setMenuBar (this);
-   #endif
 
     commandManager.setFirstCommandTarget (this);
     commandManager.registerAllCommandsForTarget (this);
@@ -122,11 +118,7 @@ MainHostWindow::~MainHostWindow()
 {
     pluginListWindow = nullptr;
 
-   #if JUCE_MAC
-    setMacMainMenu (nullptr);
-   #else
     setMenuBar (nullptr);
-   #endif
 
     knownPluginList.removeChangeListener (this);
 

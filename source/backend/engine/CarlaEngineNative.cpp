@@ -579,6 +579,8 @@ public:
             init("Carla-Rack");
         }
 
+        pData->graph.create(!fIsPatchbay, pData->sampleRate, pData->bufferSize, 0, 0);
+
         if (pData->options.resourceDir != nullptr)
             delete[] pData->options.resourceDir;
         if (pData->options.binaryDir != nullptr)
@@ -1152,7 +1154,7 @@ protected:
             // -----------------------------------------------------------
             // process
 
-            pData->processRack(inBuf, outBuf, frames, isOffline());
+            pData->graph.processRack(pData, inBuf, outBuf, frames);
         }
 
         // ---------------------------------------------------------------

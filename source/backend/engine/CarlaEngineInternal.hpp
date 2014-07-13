@@ -49,21 +49,40 @@ struct EngineInternalEvents {
 // -----------------------------------------------------------------------
 // InternalGraph
 
-struct InternalGraph;
+struct RackGraph;
+struct PatchbayGraph;
 
-struct EngineInternalGraph {
-    bool isRack;
-    bool isReady;
-    InternalGraph* graph;
-
+class EngineInternalGraph
+{
+public:
     EngineInternalGraph() noexcept;
     ~EngineInternalGraph() noexcept;
 
-    void create(const double sampleRate, const uint32_t bufferSize);
-    void clear() noexcept;
+    void create(const bool isRack, const double sampleRate, const uint32_t bufferSize, const uint32_t inputs, const uint32_t outputs);
+    void destroy() noexcept;
 
     void setBufferSize(const uint32_t bufferSize);
     void setSampleRate(const double sampleRate);
+    void setOffline(const bool offline);
+
+    bool isReady() const noexcept;
+
+    RackGraph*     getRackGraph() const noexcept;
+    PatchbayGraph* getPatchbayGraph() const noexcept;
+
+    void process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames);
+
+    // special direct process with connections already handled, used in JACK and Plugin
+    void processRack(CarlaEngine::ProtectedData* const data, const float* inBuf[2], float* outBuf[2], const uint32_t frames);
+
+private:
+    bool fIsRack;
+    bool fIsReady;
+
+    union {
+        RackGraph*     fRack;
+        PatchbayGraph* fPatchbay;
+    };
 
     CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalGraph)
 };
@@ -173,16 +192,6 @@ struct CarlaEngine::ProtectedData {
     void doPluginRemove() noexcept;
     void doPluginsSwitch() noexcept;
     void doNextPluginAction(const bool unlock) noexcept;
-
-#ifndef BUILD_BRIDGE
-    // -------------------------------------------------------------------
-
-    // the base, where plugins run
-    void processRack(const float* inBufReal[2], float* outBuf[2], const uint32_t nframes, const bool isOffline);
-
-    // extended, will call processRack() in the middle
-    void processRackFull(const float* const* const inBuf, const uint32_t inCount, float* const* const outBuf, const uint32_t outCount, const uint32_t nframes, const bool isOffline);
-#endif
 
     // -------------------------------------------------------------------
 

@@ -915,6 +915,8 @@ public:
             fRackPorts[kRackPortAudioOut2] = jackbridge_port_register(fClient, "audio-out2", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
             fRackPorts[kRackPortEventIn]   = jackbridge_port_register(fClient, "events-in",  JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0);
             fRackPorts[kRackPortEventOut]  = jackbridge_port_register(fClient, "events-out", JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0);
+
+            pData->graph.create(true, pData->sampleRate, pData->bufferSize, 0, 0);
         }
 
         if (jackbridge_activate(fClient))
@@ -1516,7 +1518,7 @@ protected:
             }
 
             // process rack
-            pData->processRack(inBuf, outBuf, nframes, fFreewheel);
+            pData->graph.processRack(pData, inBuf, outBuf, nframes);
 
             // output control
             {

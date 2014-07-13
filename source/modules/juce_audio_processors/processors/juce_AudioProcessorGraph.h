@@ -396,6 +396,7 @@ private:
     Array<void*> renderingOps;
 
     friend class AudioGraphIOProcessor;
+    friend class CarlaPluginInstance;
     AudioSampleBuffer* currentAudioInputBuffer;
     AudioSampleBuffer currentAudioOutputBuffer;
     MidiBuffer* currentMidiInputBuffer;

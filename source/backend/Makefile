@@ -16,6 +16,7 @@ STANDALONE_LIBS += ../modules/jackbridge.a
 STANDALONE_LIBS += ../modules/juce_audio_basics.a
 STANDALONE_LIBS += ../modules/juce_audio_devices.a
 STANDALONE_LIBS += ../modules/juce_audio_formats.a
+STANDALONE_LIBS += ../modules/juce_audio_processors.a
 STANDALONE_LIBS += ../modules/juce_core.a
 STANDALONE_LIBS += ../modules/juce_events.a
 STANDALONE_LIBS += ../modules/native-plugins.a
@@ -36,7 +37,6 @@ STANDALONE_LIBS += ../modules/dgl.a
 endif
 
 ifeq ($(HAVE_JUCE_UI),true)
-STANDALONE_LIBS += ../modules/juce_audio_processors.a
 STANDALONE_LIBS += ../modules/juce_data_structures.a
 STANDALONE_LIBS += ../modules/juce_graphics.a
 STANDALONE_LIBS += ../modules/juce_gui_basics.a

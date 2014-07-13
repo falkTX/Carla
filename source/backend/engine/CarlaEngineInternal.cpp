@@ -19,11 +19,6 @@
 #include "CarlaPlugin.hpp"
 #include "CarlaMIDI.h"
 
-#include "CarlaMathUtils.hpp"
-
-#include "juce_audio_basics.h"
-using juce::FloatVectorOperations;
-
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
@@ -31,114 +26,6 @@ CARLA_BACKEND_START_NAMESPACE
 
 #define CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(cond, err)  if (! (cond)) { carla_safe_assert(#cond, __FILE__, __LINE__); lastError = err; return false;   }
 #define CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERRN(cond, err) if (! (cond)) { carla_safe_assert(#cond, __FILE__, __LINE__); lastError = err; return nullptr; }
-
-#if 0
-// -----------------------------------------------------------------------
-// InternalAudio
-
-EngineInternalAudio::EngineInternalAudio() noexcept
-    : isReady(false),
-      inCount(0),
-      outCount(0),
-      inBuf(nullptr),
-      outBuf(nullptr) {}
-
-EngineInternalAudio::~EngineInternalAudio() noexcept
-{
-    CARLA_SAFE_ASSERT(! isReady);
-    CARLA_SAFE_ASSERT(inCount == 0);
-    CARLA_SAFE_ASSERT(outCount == 0);
-    CARLA_SAFE_ASSERT(inBuf == nullptr);
-    CARLA_SAFE_ASSERT(outBuf == nullptr);
-}
-
-void EngineInternalAudio::clearBuffers() noexcept
-{
-    for (uint32_t i=0; i < inCount; ++i)
-    {
-        if (inBuf[i] != nullptr)
-        {
-            delete[] inBuf[i];
-            inBuf[i] = nullptr;
-        }
-    }
-    for (uint32_t i=0; i < outCount; ++i)
-    {
-        if (outBuf[i] != nullptr)
-        {
-            delete[] outBuf[i];
-            outBuf[i] = nullptr;
-        }
-    }
-}
-
-void EngineInternalAudio::clear() noexcept
-{
-    isReady = false;
-
-    clearBuffers();
-
-    inCount  = 0;
-    outCount = 0;
-
-    if (inBuf != nullptr)
-    {
-        delete[] inBuf;
-        inBuf = nullptr;
-    }
-
-    if (outBuf != nullptr)
-    {
-        delete[] outBuf;
-        outBuf = nullptr;
-    }
-}
-
-void EngineInternalAudio::create(const uint32_t bufferSize)
-{
-    CARLA_SAFE_ASSERT(! isReady);
-    CARLA_SAFE_ASSERT(inBuf == nullptr);
-    CARLA_SAFE_ASSERT(outBuf == nullptr);
-
-    if (inCount > 0)
-    {
-        inBuf = new float*[inCount];
-
-        for (uint32_t i=0; i < inCount; ++i)
-            inBuf[i] = nullptr;
-    }
-
-    if (outCount > 0)
-    {
-        outBuf = new float*[outCount];
-
-        for (uint32_t i=0; i < outCount; ++i)
-            outBuf[i] = nullptr;
-    }
-
-    resize(bufferSize, false);
-}
-
-void EngineInternalAudio::resize(const uint32_t bufferSize, const bool doClear = true)
-{
-    if (doClear)
-        clearBuffers();
-
-    CARLA_SAFE_ASSERT_RETURN(bufferSize != 0,);
-
-    for (uint32_t i=0; i < inCount; ++i)
-    {
-        inBuf[i] = new float[bufferSize];
-        FloatVectorOperations::clear(inBuf[i], bufferSize);
-    }
-
-    for (uint32_t i=0; i < outCount; ++i)
-    {
-        outBuf[i] = new float[bufferSize];
-        FloatVectorOperations::clear(outBuf[i], bufferSize);
-    }
-}
-#endif
 
 // -----------------------------------------------------------------------
 // InternalEvents
@@ -327,7 +214,7 @@ void CarlaEngine::ProtectedData::close()
         plugins = nullptr;
     }
 
-    graph.clear();
+    graph.destroy();
 #endif
 
     events.clear();

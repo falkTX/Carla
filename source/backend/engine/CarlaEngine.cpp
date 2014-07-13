@@ -1500,8 +1500,7 @@ void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
     carla_debug("CarlaEngine::bufferSizeChanged(%i)", newBufferSize);
 
 #ifndef BUILD_BRIDGE
-    if (pData->graph.graph != nullptr)
-        pData->graph.setBufferSize(newBufferSize);
+    pData->graph.setBufferSize(newBufferSize);
 #endif
 
     for (uint i=0; i < pData->curPluginCount; ++i)
@@ -1520,8 +1519,7 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
     carla_debug("CarlaEngine::sampleRateChanged(%g)", newSampleRate);
 
 #ifndef BUILD_BRIDGE
-    if (pData->graph.graph != nullptr)
-        pData->graph.setSampleRate(newSampleRate);
+    pData->graph.setSampleRate(newSampleRate);
 #endif
 
     for (uint i=0; i < pData->curPluginCount; ++i)
@@ -1538,6 +1536,10 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
 void CarlaEngine::offlineModeChanged(const bool isOfflineNow)
 {
     carla_debug("CarlaEngine::offlineModeChanged(%s)", bool2str(isOfflineNow));
+
+#ifndef BUILD_BRIDGE
+    pData->graph.setOffline(isOfflineNow);
+#endif
 
     for (uint i=0; i < pData->curPluginCount; ++i)
     {

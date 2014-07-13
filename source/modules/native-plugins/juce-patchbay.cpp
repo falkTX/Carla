@@ -17,7 +17,7 @@
 
 #include "CarlaNative.hpp"
 
-#include "juce_audio_processors.h"
+#include "JuceInternalFilters.hpp"
 #include "juce_gui_extra.h"
 
 #ifdef HAVE_X11
@@ -32,12 +32,10 @@ namespace juce {
 #include "jucepluginhost/juce_MidiKeyboardComponent.cpp"
 
 #include "jucepluginhost/FilterGraph.h"
-#include "jucepluginhost/InternalFilters.h"
 #include "jucepluginhost/GraphEditorPanel.h"
 #include "jucepluginhost/MainHostWindow.h"
 
 #include "jucepluginhost/FilterGraph.cpp"
-#include "jucepluginhost/InternalFilters.cpp"
 #include "jucepluginhost/GraphEditorPanel.cpp"
 #include "jucepluginhost/MainHostWindow.cpp"
 
@@ -57,7 +55,6 @@ public:
         : NativePluginClass(host),
           fFormatManager(),
           fGraph(fFormatManager),
-          fAudioBuffer(1, 0),
           fMidiKeyState(nullptr)
     {
         PropertiesFile::Options options;

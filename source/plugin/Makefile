@@ -71,6 +71,7 @@ LIBS += ../backend/carla_plugin.a
 LIBS += ../modules/native-plugins.a
 LIBS += ../modules/jackbridge.a
 LIBS += ../modules/juce_audio_basics.a
+LIBS += ../modules/juce_audio_processors.a
 LIBS += ../modules/juce_core.a
 LIBS += ../modules/juce_events.a
 LIBS += ../modules/rtmempool.a
@@ -84,7 +85,6 @@ LIBS += ../modules/dgl.a
 endif
 
 ifeq ($(HAVE_JUCE_UI),true)
-LIBS += ../modules/juce_audio_processors.a
 LIBS += ../modules/juce_data_structures.a
 LIBS += ../modules/juce_graphics.a
 LIBS += ../modules/juce_gui_basics.a
