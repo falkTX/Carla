@@ -213,8 +213,6 @@ void CarlaEngine::ProtectedData::close()
         delete[] plugins;
         plugins = nullptr;
     }
-
-    graph.destroy();
 #endif
 
     events.clear();

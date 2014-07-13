@@ -188,6 +188,8 @@ public:
             fDevice = nullptr;
         }
 
+        pData->graph.destroy();
+
         for (LinkedList<MidiInPort>::Itenerator it = fMidiIns.begin(); it.valid(); it.next())
         {
             MidiInPort& inPort(it.getValue());

@@ -946,15 +946,20 @@ public:
 #else
         if (jackbridge_deactivate(fClient))
         {
-            if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && fRackPorts[0] != nullptr)
+            if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
             {
-                jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioIn1]);
-                jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioIn2]);
-                jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioOut1]);
-                jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioOut2]);
-                jackbridge_port_unregister(fClient, fRackPorts[kRackPortEventIn]);
-                jackbridge_port_unregister(fClient, fRackPorts[kRackPortEventOut]);
-                carla_fill<jack_port_t*>(fRackPorts, nullptr, kRackPortCount);
+                if (fRackPorts[0] != nullptr)
+                {
+                    jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioIn1]);
+                    jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioIn2]);
+                    jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioOut1]);
+                    jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioOut2]);
+                    jackbridge_port_unregister(fClient, fRackPorts[kRackPortEventIn]);
+                    jackbridge_port_unregister(fClient, fRackPorts[kRackPortEventOut]);
+                    carla_fill<jack_port_t*>(fRackPorts, nullptr, kRackPortCount);
+                }
+
+                pData->graph.destroy();
             }
 
             if (jackbridge_client_close(fClient))

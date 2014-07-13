@@ -604,6 +604,8 @@ public:
         runPendingRtEvents();
         close();
 
+        pData->graph.destroy();
+
         carla_debug("CarlaEngineNative::~CarlaEngineNative() - END");
     }
 
