@@ -1344,9 +1344,9 @@ public:
                     }
                     else if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) != 0)
                     {
-                        const uint8_t lsb   = midiEvent.data[1];
-                        const uint8_t msb   = midiEvent.data[2];
-                        const int     value = ((msb << 7) | lsb) - 8192;
+                        const uint8_t lsb = midiEvent.data[1];
+                        const uint8_t msb = midiEvent.data[2];
+                        const int   value = ((msb << 7) | lsb);
 
                         fluid_synth_pitch_bend(fSynth, channel, value);
                     }
