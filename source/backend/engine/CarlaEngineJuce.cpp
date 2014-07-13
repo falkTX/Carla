@@ -482,7 +482,7 @@ protected:
         for (int i=0; i < numOutputChannels; ++i)
             FloatVectorOperations::clear(outputChannelData[i], numSamples);
 
-        // initialize input events
+        // initialize events
         carla_zeroStruct<EngineEvent>(pData->events.in,  kMaxEngineEventInternalCount);
         carla_zeroStruct<EngineEvent>(pData->events.out, kMaxEngineEventInternalCount);
 

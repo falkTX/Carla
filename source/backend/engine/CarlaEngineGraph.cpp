@@ -20,6 +20,7 @@
 #include "CarlaPlugin.hpp"
 
 #include "CarlaMathUtils.hpp"
+#include "CarlaMIDI.h"
 
 #include "juce_audio_processors.h"
 //#include "JuceInternalFilters.hpp"
@@ -783,19 +784,23 @@ private:
 
 // TODO
 
-PatchbayGraph::PatchbayGraph(const uint32_t bufferSize, const double sampleRate, const uint32_t inputs, const uint32_t outputs)
+PatchbayGraph::PatchbayGraph(const uint32_t bufferSize, const double sampleRate, const uint32_t ins, const uint32_t outs)
+    : inputs(ins),
+      outputs(outs)
 {
     graph.setPlayConfigDetails(inputs, outputs, sampleRate, bufferSize);
     graph.prepareToPlay(sampleRate, bufferSize);
-    audioBuffer.setSize(jmax(inputs, outputs), bufferSize);
+    audioBuffer.setSize(jmax(ins, outs), bufferSize);
+    midiBuffer.ensureSize(kMaxEngineEventInternalCount*2);
+    midiBuffer.clear();
 
-    for (uint32_t i=0; i<inputs; ++i)
+    for (uint32_t i=0; i<ins; ++i)
     {
         AudioProcessorGraph::AudioGraphIOProcessor* const proc(new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode));
         graph.addNode(proc);
     }
 
-    for (uint32_t i=0; i<outputs; ++i)
+    for (uint32_t i=0; i<outs; ++i)
     {
         AudioProcessorGraph::AudioGraphIOProcessor* const proc(new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode));
         graph.addNode(proc);
@@ -852,6 +857,100 @@ bool PatchbayGraph::getPortIdFromFullName(const char* const /*fillPortName*/, ui
     return false;
 }
 #endif
+
+void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames)
+{
+    CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(data->events.in != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(data->events.out != nullptr,);
+
+    // put events in juce buffer
+    {
+        uint8_t        size     = 0;
+        uint8_t        mdata[3] = { 0, 0, 0 };
+        const uint8_t* mdataPtr = mdata;
+
+        midiBuffer.clear();
+
+        for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
+        {
+            const EngineEvent& engineEvent(data->events.in[i]);
+
+            if (engineEvent.type == kEngineEventTypeNull)
+                break;
+
+            else if (engineEvent.type == kEngineEventTypeControl)
+            {
+                const EngineControlEvent& ctrlEvent(engineEvent.ctrl);
+                ctrlEvent.convertToMidiData(engineEvent.channel, size, mdata);
+                mdataPtr = mdata;
+            }
+            else if (engineEvent.type == kEngineEventTypeMidi)
+            {
+                const EngineMidiEvent& midiEvent(engineEvent.midi);
+
+                size = midiEvent.size;
+
+                if (size > EngineMidiEvent::kDataSize && midiEvent.dataExt != nullptr)
+                    mdataPtr = midiEvent.dataExt;
+                else
+                    mdataPtr = midiEvent.data;
+            }
+            else
+            {
+                continue;
+            }
+
+            if (size > 0)
+                midiBuffer.addEvent(mdataPtr, size, engineEvent.time);
+        }
+    }
+
+    // initialize event outputs (zero)
+    carla_zeroStruct<EngineEvent>(data->events.out, kMaxEngineEventInternalCount);
+
+    // put carla audio in juce buffer
+    {
+        int i=0;
+
+        for (; i<inputs; ++i)
+            FloatVectorOperations::copy(audioBuffer.getWritePointer(i), inBuf[i], frames);
+
+        // clear remaining channels
+        for (int count=audioBuffer.getNumChannels(); i<count; ++i)
+            audioBuffer.clear(i, 0, frames);
+    }
+
+    graph.processBlock(audioBuffer, midiBuffer);
+
+    // put juce audio in carla buffer
+    {
+        for (int i=0; i<outputs; ++i)
+            FloatVectorOperations::copy(outBuf[i], audioBuffer.getReadPointer(i), frames);
+    }
+
+    // put juce events in carla buffer
+    {
+        const uint8_t* midiData;
+        int numBytes;
+        int sampleNumber;
+        ushort engineEventIndex = 0;
+
+        for (MidiBuffer::Iterator outBufferIterator(midiBuffer); outBufferIterator.getNextEvent(midiData, numBytes, sampleNumber);)
+        {
+            if (numBytes <= 0 || numBytes >= MAX_MIDI_VALUE)
+                continue;
+
+            EngineEvent& engineEvent(data->events.out[engineEventIndex++]);
+
+            engineEvent.time = sampleNumber;
+            engineEvent.fillFromMidiData(static_cast<uint8_t>(numBytes), midiData);
+
+            if (engineEventIndex >= kMaxEngineEventInternalCount)
+                break;
+        }
+    }
+}
 
 // -----------------------------------------------------------------------
 // InternalGraph
@@ -987,7 +1086,7 @@ void EngineInternalGraph::process(CarlaEngine::ProtectedData* const data, const 
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
-        //fPatchbay->process(inBuf, outBuf, frames);
+        fPatchbay->process(data, inBuf, outBuf, frames);
     }
 }
 

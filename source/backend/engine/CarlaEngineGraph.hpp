@@ -27,6 +27,7 @@
 
 using juce::AudioProcessorGraph;
 using juce::AudioSampleBuffer;
+using juce::MidiBuffer;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -107,6 +108,9 @@ struct RackGraph {
 struct PatchbayGraph  {
     AudioProcessorGraph graph;
     AudioSampleBuffer audioBuffer;
+    MidiBuffer midiBuffer;
+    const int inputs;
+    const int outputs;
     //CharStringListPtr retCon;
 
     PatchbayGraph(const uint32_t bufferSize, const double sampleRate, const uint32_t inputs, const uint32_t outputs);
@@ -122,7 +126,7 @@ struct PatchbayGraph  {
     //const char* const* getConnections() const noexcept;
     //bool getPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept;
 
-    //void process(const float* const* const inBuf, float* const* const outBuf, const uint32_t nframes);
+    void process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames);
 };
 
 // -----------------------------------------------------------------------

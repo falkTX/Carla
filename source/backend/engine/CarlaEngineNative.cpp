@@ -568,6 +568,7 @@ public:
             pData->options.preferPluginBridges = false;
             pData->options.preferUiBridges     = false;
             init("Carla-Patchbay");
+            pData->graph.create(false, pData->sampleRate, pData->bufferSize, 2, 2);
         }
         else
         {
@@ -577,9 +578,8 @@ public:
             pData->options.preferPluginBridges = false;
             pData->options.preferUiBridges     = false;
             init("Carla-Rack");
+            pData->graph.create(false, pData->sampleRate, pData->bufferSize, 0, 0);
         }
-
-        pData->graph.create(!fIsPatchbay, pData->sampleRate, pData->bufferSize, 0, 0);
 
         if (pData->options.resourceDir != nullptr)
             delete[] pData->options.resourceDir;
@@ -1134,16 +1134,9 @@ protected:
         if (fIsPatchbay)
         {
             // -----------------------------------------------------------
-            // create audio buffers
-
-            //float*   inBuf[2]    = { inBuffer[0], inBuffer[1] };
-            //float*   outBuf[2]   = { outBuffer[0], outBuffer[1] };
-            //uint32_t bufCount[2] = { 2, 2 };
-
-            // -----------------------------------------------------------
             // process
 
-            //pData->processPatchbay(inBuf, outBuf, bufCount, frames, isOffline());
+            pData->graph.process(pData, inBuffer, outBuffer, frames);
         }
         else
         {

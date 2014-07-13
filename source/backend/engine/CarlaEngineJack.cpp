@@ -1497,10 +1497,12 @@ protected:
             const float* inBuf[2]  = { audioIn1, audioIn2 };
                   float* outBuf[2] = { audioOut1, audioOut2 };
 
-            // initialize input events
-            carla_zeroStruct<EngineEvent>(pData->events.in, kMaxEngineEventInternalCount);
+            // initialize events
+            carla_zeroStruct<EngineEvent>(pData->events.in,  kMaxEngineEventInternalCount);
+            carla_zeroStruct<EngineEvent>(pData->events.out, kMaxEngineEventInternalCount);
+
             {
-                uint32_t engineEventIndex = 0;
+                ushort engineEventIndex = 0;
 
                 jack_midi_event_t jackEvent;
                 const uint32_t jackEventCount(jackbridge_midi_get_event_count(eventIn));

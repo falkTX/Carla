@@ -127,7 +127,6 @@ protected:
 
         fGraph.getGraph().processBlock(audioBuf, fMidiBuffer);
 
-        MidiBuffer::Iterator outBufferIterator(fMidiBuffer);
         const uint8_t* midiData;
         int numBytes;
         int sampleNumber;
@@ -135,7 +134,7 @@ protected:
         NativeMidiEvent tmpEvent;
         tmpEvent.port = 0;
 
-        for (; outBufferIterator.getNextEvent(midiData, numBytes, sampleNumber);)
+        for (MidiBuffer::Iterator outBufferIterator(fMidiBuffer); outBufferIterator.getNextEvent(midiData, numBytes, sampleNumber);)
         {
             if (numBytes <= 0 || numBytes > 4)
                 continue;
