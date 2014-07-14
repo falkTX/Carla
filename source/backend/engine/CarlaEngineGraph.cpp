@@ -1295,21 +1295,37 @@ void EngineInternalGraph::processRack(CarlaEngine::ProtectedData* const data, co
 bool CarlaEngine::patchbayConnect(const uint groupA, const uint portA, const uint groupB, const uint portB)
 {
     CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
-    //CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady, false);
-    //CARLA_SAFE_ASSERT_RETURN(pData->graph.graph != nullptr, false);
+    CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(), false);
     carla_stdout("CarlaEngine::patchbayConnect(%u, %u, %u, %u)", groupA, portA, groupB, portB);
 
-    return false; //pData->graph.graph->connect(this, groupA, portA, groupB, portB);
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+    {
+        if (RackGraph* const graph = pData->graph.getRackGraph())
+            return graph->connect(this, groupA, portA, groupB, portB);
+    }
+    else
+    {
+    }
+
+    return false;
 }
 
 bool CarlaEngine::patchbayDisconnect(const uint connectionId)
 {
     CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
-    //CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady, false);
-    //CARLA_SAFE_ASSERT_RETURN(pData->graph.graph != nullptr, false);
+    CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(), false);
     carla_stdout("CarlaEngine::patchbayDisconnect(%u)", connectionId);
 
-    return false; //pData->graph.graph->disconnect(this, connectionId);
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+    {
+        if (RackGraph* const graph = pData->graph.getRackGraph())
+            return graph->disconnect(this, connectionId);
+    }
+    else
+    {
+    }
+
+    return false;
 }
 
 bool CarlaEngine::patchbayRefresh()
@@ -1322,30 +1338,47 @@ bool CarlaEngine::patchbayRefresh()
 
 const char* const* CarlaEngine::getPatchbayConnections() const
 {
-    //CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady, nullptr);
-    //CARLA_SAFE_ASSERT_RETURN(pData->graph.graph != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(), nullptr);
     carla_debug("CarlaEngine::getPatchbayConnections()");
 
-    return nullptr; //pData->graph.graph->getConnections();
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+    {
+        if (RackGraph* const graph = pData->graph.getRackGraph())
+            return graph->getConnections();
+    }
+    else
+    {
+    }
+
+    return nullptr;
 }
 
 void CarlaEngine::restorePatchbayConnection(const char* const connSource, const char* const connTarget)
 {
-    //CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady,);
-    //CARLA_SAFE_ASSERT_RETURN(pData->graph.graph != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(),);
     CARLA_SAFE_ASSERT_RETURN(connSource != nullptr && connSource[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(connTarget != nullptr && connTarget[0] != '\0',);
     carla_debug("CarlaEngine::restorePatchbayConnection(\"%s\", \"%s\")", connSource, connTarget);
 
-//     uint groupA, portA;
-//     uint groupB, portB;
-//
-//     if (! pData->graph.graph->getPortIdFromFullName(connSource, groupA, portA))
-//         return;
-//     if (! pData->graph.graph->getPortIdFromFullName(connTarget, groupB, portB))
-//         return;
-//
-//     patchbayConnect(groupA, portA, groupB, portB);
+    uint groupA, portA;
+    uint groupB, portB;
+
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+    {
+        RackGraph* const graph = pData->graph.getRackGraph();
+        CARLA_SAFE_ASSERT_RETURN(graph != nullptr,);
+
+        if (! graph->getGroupAndPortIdFromFullName(connSource, groupA, portA))
+            return;
+        if (! graph->getGroupAndPortIdFromFullName(connTarget, groupB, portB))
+            return;
+    }
+    else
+    {
+        return;
+    }
+
+    patchbayConnect(groupA, portA, groupB, portB);
 }
 
 // -----------------------------------------------------------------------

@@ -152,6 +152,8 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
 
     case ENGINE_PROCESS_MODE_PATCHBAY:
         maxPluginNumber = MAX_PATCHBAY_PLUGINS;
+        events.in  = new EngineEvent[kMaxEngineEventInternalCount];
+        events.out = new EngineEvent[kMaxEngineEventInternalCount];
         break;
 
     case ENGINE_PROCESS_MODE_BRIDGE:

@@ -582,6 +582,8 @@ public:
 
     void patchbayRefreshPatchbay() noexcept
     {
+        PatchbayGraph* const graph(pData->graph.getPatchbayGraph());
+        CARLA_SAFE_ASSERT_RETURN(graph != nullptr,);
     }
 
     // -------------------------------------------------------------------
