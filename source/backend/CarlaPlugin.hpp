@@ -45,6 +45,7 @@ CARLA_BACKEND_START_NAMESPACE
  */
 
 class CarlaEngineAudioPort;
+class CarlaEngineEventPort;
 
 /*!
  * Save state data.
@@ -815,6 +816,16 @@ public:
      * Get a plugin's audio output port.
      */
     CarlaEngineAudioPort* getAudioOutPort(const uint32_t index) const noexcept;
+
+    /*!
+     * Get the plugin's default event input port.
+     */
+    CarlaEngineEventPort* getDefaultEventInPort() const noexcept;
+
+    /*!
+     * Get the plugin's default event output port.
+     */
+    CarlaEngineEventPort* getDefaultEventOutPort() const noexcept;
 
     // -------------------------------------------------------------------
     // Plugin initializers

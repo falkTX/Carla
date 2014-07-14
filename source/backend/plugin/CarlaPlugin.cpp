@@ -2030,6 +2030,16 @@ CarlaEngineAudioPort* CarlaPlugin::getAudioOutPort(const uint32_t index) const n
     return pData->audioOut.ports[index].port;
 }
 
+CarlaEngineEventPort* CarlaPlugin::getDefaultEventInPort() const noexcept
+{
+    return pData->event.portIn;
+}
+
+CarlaEngineEventPort* CarlaPlugin::getDefaultEventOutPort() const noexcept
+{
+    return pData->event.portOut;
+}
+
 // -------------------------------------------------------------------
 // Scoped Disabler
 

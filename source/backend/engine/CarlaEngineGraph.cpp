@@ -27,8 +27,12 @@
 
 using juce::jmax;
 using juce::AudioPluginInstance;
+using juce::AudioProcessor;
+using juce::AudioProcessorEditor;
 using juce::FloatVectorOperations;
+using juce::MemoryBlock;
 using juce::PluginDescription;
+using juce::String;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -732,6 +736,8 @@ public:
     {
     }
 
+    // -------------------------------------------------------------------
+
     AudioProcessorGraph* getParentGraph() const noexcept
     {
         return fGraph;
@@ -774,6 +780,135 @@ public:
         //d.hasSharedContainer = true;
     }
 
+    // -------------------------------------------------------------------
+
+    const String getName() const override
+    {
+        return fPlugin->getName();
+    }
+
+    void processBlock(AudioSampleBuffer& audio, MidiBuffer& midi)
+    {
+        if (CarlaEngineEventPort* const port = fPlugin->getDefaultEventInPort())
+        {
+            EngineEvent* const buffer(port->fBuffer);
+            CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
+
+            carla_zeroStruct<EngineEvent>(buffer, kMaxEngineEventInternalCount);
+
+            const uint8_t* midiData;
+            int numBytes;
+            int sampleNumber;
+            ushort engineEventIndex = 0;
+
+            for (MidiBuffer::Iterator outBufferIterator(midi); outBufferIterator.getNextEvent(midiData, numBytes, sampleNumber);)
+            {
+                if (numBytes <= 0 || numBytes >= MAX_MIDI_VALUE)
+                    continue;
+
+                EngineEvent& engineEvent(buffer[engineEventIndex++]);
+
+                engineEvent.time = sampleNumber;
+                engineEvent.fillFromMidiData(static_cast<uint8_t>(numBytes), midiData);
+
+                if (engineEventIndex >= kMaxEngineEventInternalCount)
+                    break;
+            }
+        }
+
+        if (const int numChan = audio.getNumChannels())
+        {
+            float* audioBuffers[numChan];
+
+            for (int i=0; i<numChan; ++i)
+                audioBuffers[i] = audio.getWritePointer(i);
+
+            fPlugin->process(audioBuffers, audioBuffers, audio.getNumSamples());
+        }
+        else
+        {
+            fPlugin->process(nullptr, nullptr, audio.getNumSamples());
+        }
+
+        midi.clear();
+
+        if (CarlaEngineEventPort* const port = fPlugin->getDefaultEventOutPort())
+        {
+            EngineEvent* const buffer(port->fBuffer);
+            CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
+
+            uint8_t        size     = 0;
+            uint8_t        mdata[3] = { 0, 0, 0 };
+            const uint8_t* mdataPtr = mdata;
+
+            for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
+            {
+                const EngineEvent& engineEvent(buffer[i]);
+
+                if (engineEvent.type == kEngineEventTypeNull)
+                    break;
+
+                else if (engineEvent.type == kEngineEventTypeControl)
+                {
+                    const EngineControlEvent& ctrlEvent(engineEvent.ctrl);
+                    ctrlEvent.convertToMidiData(engineEvent.channel, size, mdata);
+                    mdataPtr = mdata;
+                }
+                else if (engineEvent.type == kEngineEventTypeMidi)
+                {
+                    const EngineMidiEvent& midiEvent(engineEvent.midi);
+
+                    size = midiEvent.size;
+
+                    if (size > EngineMidiEvent::kDataSize && midiEvent.dataExt != nullptr)
+                        mdataPtr = midiEvent.dataExt;
+                    else
+                        mdataPtr = midiEvent.data;
+                }
+                else
+                {
+                    continue;
+                }
+
+                if (size > 0)
+                    midi.addEvent(mdataPtr, size, engineEvent.time);
+            }
+        }
+    }
+
+    void prepareToPlay(double, int) override {}
+    void releaseResources() override {}
+
+    const String getInputChannelName(int)  const override { return String(); }
+    const String getOutputChannelName(int) const override { return String(); }
+    const String getParameterName(int)           override { return String(); }
+    const String getParameterText(int)           override { return String(); }
+    const String getProgramName(int)             override { return String(); }
+
+    double getTailLengthSeconds()        const override { return 0.0;  }
+    float  getParameter(int)                   override { return 0.0f; }
+
+    bool isInputChannelStereoPair(int)   const override { return true;  }
+    bool isOutputChannelStereoPair(int)  const override { return true;  }
+    bool silenceInProducesSilenceOut()   const override { return true;  }
+    bool hasEditor()                     const override { return false; }
+    bool acceptsMidi()                   const override { return fPlugin->getMidiInCount() > 0;  }
+    bool producesMidi()                  const override { return fPlugin->getMidiOutCount() > 0; }
+
+    void setParameter(int, float)              override {}
+    void setCurrentProgram(int)                override {}
+    void changeProgramName(int, const String&) override {}
+    void getStateInformation(MemoryBlock&)     override {}
+    void setStateInformation(const void*, int) override {}
+
+    int getNumParameters()                     override { return 0; }
+    int getNumPrograms()                       override { return 0; }
+    int getCurrentProgram()                    override { return 0; }
+
+    AudioProcessorEditor* createEditor()       override { return nullptr; }
+
+    // -------------------------------------------------------------------
+
 private:
     CarlaPlugin* const fPlugin;
     AudioProcessorGraph* fGraph;
@@ -782,7 +917,8 @@ private:
 // -----------------------------------------------------------------------
 // PatchbayGraph
 
-// TODO
+static const int kMidiInputNodeId  = MAX_PATCHBAY_PLUGINS*3+1;
+static const int kMidiOutputNodeId = MAX_PATCHBAY_PLUGINS*3+2;
 
 PatchbayGraph::PatchbayGraph(const uint32_t bufferSize, const double sampleRate, const uint32_t ins, const uint32_t outs)
     : inputs(ins),
@@ -794,16 +930,26 @@ PatchbayGraph::PatchbayGraph(const uint32_t bufferSize, const double sampleRate,
     midiBuffer.ensureSize(kMaxEngineEventInternalCount*2);
     midiBuffer.clear();
 
-    for (uint32_t i=0; i<ins; ++i)
+    for (uint32_t i=0; i<ins && i<MAX_PATCHBAY_PLUGINS; ++i)
     {
         AudioProcessorGraph::AudioGraphIOProcessor* const proc(new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode));
-        graph.addNode(proc);
+        graph.addNode(proc, MAX_PATCHBAY_PLUGINS + i);
     }
 
-    for (uint32_t i=0; i<outs; ++i)
+    for (uint32_t i=0; i<outs && i<MAX_PATCHBAY_PLUGINS; ++i)
     {
         AudioProcessorGraph::AudioGraphIOProcessor* const proc(new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode));
-        graph.addNode(proc);
+        graph.addNode(proc, MAX_PATCHBAY_PLUGINS*2 + i);
+    }
+
+    {
+        AudioProcessorGraph::AudioGraphIOProcessor* const proc(new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::midiInputNode));
+        graph.addNode(proc, kMidiInputNodeId);
+    }
+
+    {
+        AudioProcessorGraph::AudioGraphIOProcessor* const proc(new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::midiOutputNode));
+        graph.addNode(proc, kMidiOutputNodeId);
     }
 }
 
@@ -830,6 +976,51 @@ void PatchbayGraph::setSampleRate(const double sampleRate)
 void PatchbayGraph::setOffline(const bool offline)
 {
     graph.setNonRealtime(offline);
+}
+
+void PatchbayGraph::addPlugin(CarlaPlugin* const plugin)
+{
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
+    CarlaPluginInstance* const instance(new CarlaPluginInstance(plugin));
+    graph.addNode(instance, plugin->getId());
+}
+
+void PatchbayGraph::replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* const newPlugin)
+{
+    CARLA_SAFE_ASSERT_RETURN(oldPlugin != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(newPlugin != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(oldPlugin != newPlugin,);
+    CARLA_SAFE_ASSERT_RETURN(oldPlugin->getId() == newPlugin->getId(),);
+
+    CarlaPluginInstance* const instance(new CarlaPluginInstance(newPlugin));
+    graph.addNode(instance, newPlugin->getId());
+}
+
+void PatchbayGraph::removePlugin(CarlaPlugin* const plugin)
+{
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
+    graph.removeNode(plugin->getId());
+
+    // move all plugins 1 spot backwards
+    for (uint i=plugin->getId(); i<MAX_PATCHBAY_PLUGINS; ++i)
+    {
+        if (AudioProcessorGraph::Node* const node = graph.getNodeForId(i+1))
+        {
+            if (AudioProcessor* const proc = node->getProcessor())
+                graph.addNode(proc, i);
+            continue;
+        }
+        break;
+    }
+}
+
+void PatchbayGraph::removeAllPlugins()
+{
+    graph.clear();
+
+    // TODO
 }
 
 #if 0

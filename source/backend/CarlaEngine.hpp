@@ -523,6 +523,7 @@ public:
 protected:
     EngineEvent* fBuffer;
     const EngineProcessMode fProcessMode;
+    friend class CarlaPluginInstance;
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineEventPort)
 #endif

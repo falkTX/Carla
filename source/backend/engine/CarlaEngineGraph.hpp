@@ -120,6 +120,11 @@ struct PatchbayGraph  {
     void setSampleRate(const double sampleRate);
     void setOffline(const bool offline);
 
+    void addPlugin(CarlaPlugin* const plugin);
+    void replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* const newPlugin);
+    void removePlugin(CarlaPlugin* const plugin);
+    void removeAllPlugins();
+
     //bool connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
     //bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept;
 
