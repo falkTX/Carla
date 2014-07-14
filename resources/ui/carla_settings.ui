@@ -1113,11 +1113,6 @@ This mode is not available for VST plugins.</string>
              </item>
              <item>
               <property name="text">
-               <string>CSound</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
                <string>GIG</string>
               </property>
              </item>

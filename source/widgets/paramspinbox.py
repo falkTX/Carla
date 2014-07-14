@@ -43,15 +43,15 @@ import ui_inputdialog_value
 # ------------------------------------------------------------------------------------------------------------
 # Get a fixed value within min/max bounds
 
-def geFixedValue(value, minimum, maximum):
+def geFixedValue(name, value, minimum, maximum):
     if isnan(value):
-        print("Parameter is NaN! - %f" % value)
+        print("Parameter '%s' is NaN! - %f" % (name, value))
         return minimum
     if value < minimum:
-        print("Parameter too low! - %f/%f" % (value, minimum))
+        print("Parameter '%s' too low! - %f/%f" % (name, value, minimum))
         return minimum
     if value > maximum:
-        print("Parameter too high! - %f/%f" % (value, maximum))
+        print("Parameter '%s' too high! - %f/%f" % (name, value, maximum))
         return maximum
     return value
 
@@ -114,6 +114,7 @@ class ParamProgressBar(QProgressBar):
         self.fRealValue = 0.0
 
         self.fLabel = ""
+        self.fName  = ""
         self.fPreLabel = " "
         self.fTextCall = None
 
@@ -132,7 +133,14 @@ class ParamProgressBar(QProgressBar):
 
     def setValue(self, value):
         self.fRealValue = value
-        vper = float(value - self.fMinimum) / float(self.fMaximum - self.fMinimum)
+        div = float(self.fMaximum - self.fMinimum)
+
+        if div == 0.0:
+            print("Parameter '%s' division by 0 prevented (value:%f, min:%f, max:%f)" % (self.fName, value, self.fMaximum, self.fMinimum))
+            vper = 1.0
+        else:
+            vper = float(value - self.fMinimum) / div
+
         QProgressBar.setValue(self, int(vper * 10000))
 
     def setLabel(self, label):
@@ -143,6 +151,9 @@ class ParamProgressBar(QProgressBar):
             self.fPreLabel = "*"
 
         self.update()
+
+    def setName(self, name):
+        self.fName = name
 
     def setTextCall(self, textCall):
         self.fTextCall = textCall
@@ -224,7 +235,7 @@ class ParamSpinBox(QAbstractSpinBox):
         QTimer.singleShot(0, self.slot_updateProgressBarGeometry)
 
     def setDefault(self, value):
-        value = geFixedValue(value, self.fMinimum, self.fMaximum)
+        value = geFixedValue(self.fName, value, self.fMinimum, self.fMaximum)
         self.fDefault = value
 
     def setMinimum(self, value):
@@ -236,7 +247,7 @@ class ParamSpinBox(QAbstractSpinBox):
         self.fBar.setMaximum(value)
 
     def setValue(self, value, send=True):
-        value = geFixedValue(value, self.fMinimum, self.fMaximum)
+        value = geFixedValue(self.fName, value, self.fMinimum, self.fMaximum)
 
         if self.fValue == value:
             return False
@@ -290,6 +301,7 @@ class ParamSpinBox(QAbstractSpinBox):
 
     def setName(self, name):
         self.fName = name
+        self.fBar.setName(name)
 
     def setTextCallback(self, textCall):
         self.fBar.setTextCall(textCall)

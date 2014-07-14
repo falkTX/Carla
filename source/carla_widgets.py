@@ -810,7 +810,7 @@ class PluginEdit(QDialog):
                 'index':   0,
                 'default': 0.0,
                 'minimum': 0.0,
-                'maximum': 0.0,
+                'maximum': 1.0,
                 'step':    0.0,
                 'stepSmall': 0.0,
                 'stepLarge': 0.0,

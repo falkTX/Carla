@@ -99,13 +99,6 @@
            </widget>
           </item>
           <item>
-           <widget class="QCheckBox" name="ch_csound">
-            <property name="text">
-             <string>CSD</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QCheckBox" name="ch_gig">
             <property name="text">
              <string>GIG</string>

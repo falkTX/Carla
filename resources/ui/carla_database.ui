@@ -61,6 +61,48 @@
       <enum>QFrame::Sunken</enum>
      </property>
      <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="1">
+       <widget class="QCheckBox" name="ch_effects">
+        <property name="text">
+         <string>Effects</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QCheckBox" name="ch_bridged_wine">
+        <property name="text">
+         <string>Bridged (Wine)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="ch_internal">
+        <property name="text">
+         <string>Internal</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="0">
+       <widget class="QCheckBox" name="ch_au">
+        <property name="text">
+         <string>AudioUnits</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QCheckBox" name="ch_ladspa">
+        <property name="text">
+         <string>LADSPA</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="2">
+       <widget class="QCheckBox" name="ch_stereo">
+        <property name="text">
+         <string>Stereo only</string>
+        </property>
+       </widget>
+      </item>
       <item row="3" column="1">
        <widget class="QCheckBox" name="ch_other">
         <property name="text">
@@ -110,48 +152,6 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QCheckBox" name="ch_effects">
-        <property name="text">
-         <string>Effects</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
-       <widget class="QCheckBox" name="ch_bridged_wine">
-        <property name="text">
-         <string>Bridged (Wine)</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QCheckBox" name="ch_internal">
-        <property name="text">
-         <string>Internal</string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="0">
-       <widget class="QCheckBox" name="ch_au">
-        <property name="text">
-         <string>AudioUnits</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QCheckBox" name="ch_ladspa">
-        <property name="text">
-         <string>LADSPA</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="2">
-       <widget class="QCheckBox" name="ch_stereo">
-        <property name="text">
-         <string>Stereo only</string>
-        </property>
-       </widget>
-      </item>
       <item row="2" column="1">
        <widget class="QCheckBox" name="ch_midi">
         <property name="text">
@@ -166,17 +166,10 @@
         </property>
        </widget>
       </item>
-      <item row="8" column="0">
+      <item row="7" column="0">
        <widget class="QCheckBox" name="ch_kits">
         <property name="text">
          <string>Sound Kits</string>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="0">
-       <widget class="QCheckBox" name="ch_csound">
-        <property name="text">
-         <string>CSound modules</string>
         </property>
        </widget>
       </item>
