@@ -62,7 +62,7 @@ struct RackGraph {
     const uint32_t inputs;
     const uint32_t outputs;
     bool isOffline;
-    CharStringListPtr retCon;
+    mutable CharStringListPtr retCon;
 
     struct Audio {
         CarlaRecursiveMutex mutex;
@@ -92,7 +92,7 @@ struct RackGraph {
     bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept;
     void clearConnections() noexcept;
 
-    const char* const* getConnections() noexcept;
+    const char* const* getConnections() const noexcept;
     bool getGroupAndPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept;
 
     // the base, where plugins run

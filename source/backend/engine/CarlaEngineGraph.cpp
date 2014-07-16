@@ -386,7 +386,7 @@ void RackGraph::clearConnections() noexcept
     midi.outs.clear();
 }
 
-const char* const* RackGraph::getConnections() noexcept
+const char* const* RackGraph::getConnections() const noexcept
 {
     if (connections.list.count() == 0)
         return nullptr;
