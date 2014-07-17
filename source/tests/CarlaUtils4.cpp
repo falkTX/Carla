@@ -19,28 +19,6 @@
 # error Build this file with debug ON please
 #endif
 
-#include "CarlaBackendUtils.hpp"
-
-using namespace CarlaBackend;
-
-// -----------------------------------------------------------------------
-
-#define HAVE_JUCE
-#define HAVE_JUCE_LATER
-#undef CARLA_BACKEND_START_NAMESPACE
-#define CARLA_BACKEND_START_NAMESPACE namespace state_juce {
-#include "CarlaStateUtils.cpp"
-
-// -----------------------------------------------------------------------
-
-#undef CARLA_STATE_UTILS_HPP_INCLUDED
-
-// -----------------------------------------------------------------------
-
-#undef HAVE_JUCE
-#undef HAVE_JUCE_LATER
-#undef CARLA_BACKEND_START_NAMESPACE
-#define CARLA_BACKEND_START_NAMESPACE namespace state_qt {
 #include "CarlaStateUtils.cpp"
 
 // -----------------------------------------------------------------------
@@ -48,13 +26,9 @@ using namespace CarlaBackend;
 
 int main()
 {
-    state_juce::StateSave jsave;
-    jsave.type = carla_strdup("NONE");
-    carla_stdout(jsave.toString().toRawUTF8());
-
-    state_qt::StateSave qsave;
-    qsave.type = carla_strdup("NONE");
-    carla_stdout(qsave.toString().toUtf8().constData());
+    CarlaBackend::StateSave save;
+    save.type = carla_strdup("NONE");
+    carla_stdout(save.toString().toRawUTF8());
 
     return 0;
 }

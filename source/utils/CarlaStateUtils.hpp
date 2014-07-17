@@ -26,13 +26,7 @@ class String;
 class XmlElement;
 }
 
-// -----------------------------------------------------------------------
-
 CARLA_BACKEND_START_NAMESPACE
-
-#if 0
-} // Fix editor indentation
-#endif
 
 // -----------------------------------------------------------------------
 
