@@ -611,7 +611,7 @@ protected:
         for (uint i=0; i < fAudioOutCount; ++i)
             outBuf[i] = outsPtr+(nframes*i);
 
-        FloatVectorOperations::clear(outsPtr, nframes*fAudioOutCount);
+        FloatVectorOperations::clear(outsPtr, static_cast<int>(nframes*fAudioOutCount));
 
         // initialize events
         carla_zeroStruct<EngineEvent>(pData->events.in,  kMaxEngineEventInternalCount);

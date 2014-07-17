@@ -142,6 +142,8 @@ RackGraph::~RackGraph() noexcept
 
 void RackGraph::setBufferSize(const uint32_t bufferSize) noexcept
 {
+    const int bufferSizei(static_cast<int>(bufferSize));
+
     if (audio.inBuf[0]    != nullptr) { delete[] audio.inBuf[0];    audio.inBuf[0]    = nullptr; }
     if (audio.inBuf[1]    != nullptr) { delete[] audio.inBuf[1];    audio.inBuf[1]    = nullptr; }
     if (audio.inBufTmp[0] != nullptr) { delete[] audio.inBufTmp[0]; audio.inBufTmp[0] = nullptr; }
@@ -175,15 +177,15 @@ void RackGraph::setBufferSize(const uint32_t bufferSize) noexcept
         return;
     }
 
-    FloatVectorOperations::clear(audio.inBufTmp[0], bufferSize);
-    FloatVectorOperations::clear(audio.inBufTmp[1], bufferSize);
+    FloatVectorOperations::clear(audio.inBufTmp[0], bufferSizei);
+    FloatVectorOperations::clear(audio.inBufTmp[1], bufferSizei);
 
     if (inputs > 0 || outputs > 0)
     {
-        FloatVectorOperations::clear(audio.inBuf[0],  bufferSize);
-        FloatVectorOperations::clear(audio.inBuf[1],  bufferSize);
-        FloatVectorOperations::clear(audio.outBuf[0], bufferSize);
-        FloatVectorOperations::clear(audio.outBuf[1], bufferSize);
+        FloatVectorOperations::clear(audio.inBuf[0],  bufferSizei);
+        FloatVectorOperations::clear(audio.inBuf[1],  bufferSizei);
+        FloatVectorOperations::clear(audio.outBuf[0], bufferSizei);
+        FloatVectorOperations::clear(audio.outBuf[1], bufferSizei);
     }
 }
 
@@ -524,18 +526,20 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
     CARLA_SAFE_ASSERT_RETURN(data->events.in != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(data->events.out != nullptr,);
 
+    const int iframes(static_cast<int>(frames));
+
     // safe copy
     float inBuf0[frames];
     float inBuf1[frames];
     float* inBuf[2] = { inBuf0, inBuf1 };
 
     // initialize audio inputs
-    FloatVectorOperations::copy(inBuf0, inBufReal[0], frames);
-    FloatVectorOperations::copy(inBuf1, inBufReal[1], frames);
+    FloatVectorOperations::copy(inBuf0, inBufReal[0], iframes);
+    FloatVectorOperations::copy(inBuf1, inBufReal[1], iframes);
 
     // initialize audio outputs (zero)
-    FloatVectorOperations::clear(outBuf[0], frames);
-    FloatVectorOperations::clear(outBuf[1], frames);
+    FloatVectorOperations::clear(outBuf[0], iframes);
+    FloatVectorOperations::clear(outBuf[1], iframes);
 
     // initialize event outputs (zero)
     carla_zeroStruct<EngineEvent>(data->events.out, kMaxEngineEventInternalCount);
@@ -556,12 +560,12 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
         if (processed)
         {
             // initialize audio inputs (from previous outputs)
-            FloatVectorOperations::copy(inBuf0, outBuf[0], frames);
-            FloatVectorOperations::copy(inBuf1, outBuf[1], frames);
+            FloatVectorOperations::copy(inBuf0, outBuf[0], iframes);
+            FloatVectorOperations::copy(inBuf1, outBuf[1], iframes);
 
             // initialize audio outputs (zero)
-            FloatVectorOperations::clear(outBuf[0], frames);
-            FloatVectorOperations::clear(outBuf[1], frames);
+            FloatVectorOperations::clear(outBuf[0], iframes);
+            FloatVectorOperations::clear(outBuf[1], iframes);
 
             // if plugin has no midi out, add previous events
             if (oldMidiOutCount == 0 && data->events.in[0].type != kEngineEventTypeNull)
@@ -593,8 +597,8 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
         // if plugin has no audio inputs, add input buffer
         if (oldAudioInCount == 0)
         {
-            FloatVectorOperations::add(outBuf[0], inBuf0, frames);
-            FloatVectorOperations::add(outBuf[1], inBuf1, frames);
+            FloatVectorOperations::add(outBuf[0], inBuf0, iframes);
+            FloatVectorOperations::add(outBuf[1], inBuf1, iframes);
         }
 
         // set peaks
@@ -605,10 +609,10 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
 
             if (oldAudioInCount > 0)
             {
-                range = FloatVectorOperations::findMinAndMax(inBuf0, static_cast<int>(frames));
+                range = FloatVectorOperations::findMinAndMax(inBuf0, iframes);
                 pluginData.insPeak[0] = carla_max<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
 
-                range = FloatVectorOperations::findMinAndMax(inBuf1, static_cast<int>(frames));
+                range = FloatVectorOperations::findMinAndMax(inBuf1, iframes);
                 pluginData.insPeak[1] = carla_max<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
             }
             else
@@ -619,10 +623,10 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
 
             if (plugin->getAudioOutCount() > 0)
             {
-                range = FloatVectorOperations::findMinAndMax(outBuf[0], static_cast<int>(frames));
+                range = FloatVectorOperations::findMinAndMax(outBuf[0], iframes);
                 pluginData.outsPeak[0] = carla_max<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
 
-                range = FloatVectorOperations::findMinAndMax(outBuf[1], static_cast<int>(frames));
+                range = FloatVectorOperations::findMinAndMax(outBuf[1], iframes);
                 pluginData.outsPeak[1] = carla_max<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
             }
             else
@@ -640,6 +644,8 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
 {
     CARLA_SAFE_ASSERT_RETURN(audio.outBuf[1] != nullptr,);
 
+    const int iframes(static_cast<int>(frames));
+
     const CarlaRecursiveMutexLocker _cml(audio.mutex);
 
     if (inBuf != nullptr && inputs > 0)
@@ -654,17 +660,17 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
 
             if (noConnections)
             {
-                FloatVectorOperations::copy(audio.inBuf[0], inBuf[port], frames);
+                FloatVectorOperations::copy(audio.inBuf[0], inBuf[port], iframes);
                 noConnections = false;
             }
             else
             {
-                FloatVectorOperations::add(audio.inBuf[0], inBuf[port], frames);
+                FloatVectorOperations::add(audio.inBuf[0], inBuf[port], iframes);
             }
         }
 
         if (noConnections)
-            FloatVectorOperations::clear(audio.inBuf[0], frames);
+            FloatVectorOperations::clear(audio.inBuf[0], iframes);
 
         noConnections = true;
 
@@ -675,26 +681,26 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
 
             if (noConnections)
             {
-                FloatVectorOperations::copy(audio.inBuf[1], inBuf[port], frames);
+                FloatVectorOperations::copy(audio.inBuf[1], inBuf[port], iframes);
                 noConnections = false;
             }
             else
             {
-                FloatVectorOperations::add(audio.inBuf[1], inBuf[port], frames);
+                FloatVectorOperations::add(audio.inBuf[1], inBuf[port], iframes);
             }
         }
 
         if (noConnections)
-            FloatVectorOperations::clear(audio.inBuf[1], frames);
+            FloatVectorOperations::clear(audio.inBuf[1], iframes);
     }
     else
     {
-        FloatVectorOperations::clear(audio.inBuf[0], frames);
-        FloatVectorOperations::clear(audio.inBuf[1], frames);
+        FloatVectorOperations::clear(audio.inBuf[0], iframes);
+        FloatVectorOperations::clear(audio.inBuf[1], iframes);
     }
 
-    FloatVectorOperations::clear(audio.outBuf[0], frames);
-    FloatVectorOperations::clear(audio.outBuf[1], frames);
+    FloatVectorOperations::clear(audio.outBuf[0], iframes);
+    FloatVectorOperations::clear(audio.outBuf[1], iframes);
 
     // process
     process(data, const_cast<const float**>(audio.inBuf), audio.outBuf, frames);
@@ -707,7 +713,7 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
             const uint& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port < outputs);
 
-            FloatVectorOperations::add(outBuf[port], audio.outBuf[0], frames);
+            FloatVectorOperations::add(outBuf[port], audio.outBuf[0], iframes);
         }
     }
 
@@ -718,7 +724,7 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
             const uint& port(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(port < outputs);
 
-            FloatVectorOperations::add(outBuf[port], audio.outBuf[1], frames);
+            FloatVectorOperations::add(outBuf[port], audio.outBuf[1], iframes);
         }
     }
 }
@@ -775,8 +781,8 @@ public:
         d.uid = d.name.hashCode();
         d.isInstrument = (fPlugin->getHints() & PLUGIN_IS_SYNTH);
 
-        d.numInputChannels  = fPlugin->getAudioInCount();
-        d.numOutputChannels = fPlugin->getAudioOutCount();
+        d.numInputChannels  = static_cast<int>(fPlugin->getAudioInCount());
+        d.numOutputChannels = static_cast<int>(fPlugin->getAudioOutCount());
         //d.hasSharedContainer = true;
     }
 
@@ -791,30 +797,14 @@ public:
     {
         if (CarlaEngineEventPort* const port = fPlugin->getDefaultEventInPort())
         {
-            EngineEvent* const buffer(port->fBuffer);
-            CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
+            EngineEvent* const engineEvents(port->fBuffer);
+            CARLA_SAFE_ASSERT_RETURN(engineEvents != nullptr,);
 
-            carla_zeroStruct<EngineEvent>(buffer, kMaxEngineEventInternalCount);
-
-            const uint8_t* midiData;
-            int numBytes;
-            int sampleNumber;
-            ushort engineEventIndex = 0;
-
-            for (MidiBuffer::Iterator outBufferIterator(midi); outBufferIterator.getNextEvent(midiData, numBytes, sampleNumber);)
-            {
-                if (numBytes <= 0 || numBytes >= MAX_MIDI_VALUE)
-                    continue;
-
-                EngineEvent& engineEvent(buffer[engineEventIndex++]);
-
-                engineEvent.time = sampleNumber;
-                engineEvent.fillFromMidiData(static_cast<uint8_t>(numBytes), midiData);
-
-                if (engineEventIndex >= kMaxEngineEventInternalCount)
-                    break;
-            }
+            carla_zeroStruct<EngineEvent>(engineEvents, kMaxEngineEventInternalCount);
+            fillEngineEventsFromJuceMidiBuffer(engineEvents, midi);
         }
+
+        const uint32_t bufferSize(static_cast<uint32_t>(audio.getNumSamples()));
 
         if (const int numChan = audio.getNumChannels())
         {
@@ -823,56 +813,21 @@ public:
             for (int i=0; i<numChan; ++i)
                 audioBuffers[i] = audio.getWritePointer(i);
 
-            fPlugin->process(audioBuffers, audioBuffers, audio.getNumSamples());
+            fPlugin->process(audioBuffers, audioBuffers, bufferSize);
         }
         else
         {
-            fPlugin->process(nullptr, nullptr, audio.getNumSamples());
+            fPlugin->process(nullptr, nullptr, bufferSize);
         }
 
         midi.clear();
 
         if (CarlaEngineEventPort* const port = fPlugin->getDefaultEventOutPort())
         {
-            EngineEvent* const buffer(port->fBuffer);
-            CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
+            const EngineEvent* const engineEvents(port->fBuffer);
+            CARLA_SAFE_ASSERT_RETURN(engineEvents != nullptr,);
 
-            uint8_t        size     = 0;
-            uint8_t        mdata[3] = { 0, 0, 0 };
-            const uint8_t* mdataPtr = mdata;
-
-            for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
-            {
-                const EngineEvent& engineEvent(buffer[i]);
-
-                if (engineEvent.type == kEngineEventTypeNull)
-                    break;
-
-                else if (engineEvent.type == kEngineEventTypeControl)
-                {
-                    const EngineControlEvent& ctrlEvent(engineEvent.ctrl);
-                    ctrlEvent.convertToMidiData(engineEvent.channel, size, mdata);
-                    mdataPtr = mdata;
-                }
-                else if (engineEvent.type == kEngineEventTypeMidi)
-                {
-                    const EngineMidiEvent& midiEvent(engineEvent.midi);
-
-                    size = midiEvent.size;
-
-                    if (size > EngineMidiEvent::kDataSize && midiEvent.dataExt != nullptr)
-                        mdataPtr = midiEvent.dataExt;
-                    else
-                        mdataPtr = midiEvent.data;
-                }
-                else
-                {
-                    continue;
-                }
-
-                if (size > 0)
-                    midi.addEvent(mdataPtr, size, engineEvent.time);
-            }
+            fillJuceMidiBufferFromEngineEvents(midi, engineEvents);
         }
     }
 
@@ -882,7 +837,9 @@ public:
     const String getInputChannelName(int)  const override { return String(); }
     const String getOutputChannelName(int) const override { return String(); }
     const String getParameterName(int)           override { return String(); }
+          String getParameterName(int, int)      override { return String(); }
     const String getParameterText(int)           override { return String(); }
+          String getParameterText(int, int)      override { return String(); }
     const String getProgramName(int)             override { return String(); }
 
     double getTailLengthSeconds()        const override { return 0.0;  }
@@ -920,13 +877,13 @@ private:
 static const int kMidiInputNodeId  = MAX_PATCHBAY_PLUGINS*3+1;
 static const int kMidiOutputNodeId = MAX_PATCHBAY_PLUGINS*3+2;
 
-PatchbayGraph::PatchbayGraph(const uint32_t bufferSize, const double sampleRate, const uint32_t ins, const uint32_t outs)
-    : inputs(ins),
-      outputs(outs)
+PatchbayGraph::PatchbayGraph(const int bufferSize, const double sampleRate, const uint32_t ins, const uint32_t outs)
+    : inputs(static_cast<int>(ins)),
+      outputs(static_cast<int>(outs))
 {
     graph.setPlayConfigDetails(inputs, outputs, sampleRate, bufferSize);
     graph.prepareToPlay(sampleRate, bufferSize);
-    audioBuffer.setSize(jmax(ins, outs), bufferSize);
+    audioBuffer.setSize(jmax(inputs, outputs), bufferSize);
     midiBuffer.ensureSize(kMaxEngineEventInternalCount*2);
     midiBuffer.clear();
 
@@ -960,7 +917,7 @@ PatchbayGraph::~PatchbayGraph()
     audioBuffer.clear();
 }
 
-void PatchbayGraph::setBufferSize(const uint32_t bufferSize)
+void PatchbayGraph::setBufferSize(const int bufferSize)
 {
     graph.releaseResources();
     graph.prepareToPlay(graph.getSampleRate(), bufferSize);
@@ -1049,56 +1006,18 @@ bool PatchbayGraph::getPortIdFromFullName(const char* const /*fillPortName*/, ui
 }
 #endif
 
-void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames)
+void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const int frames)
 {
     CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(data->events.in != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(data->events.out != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(frames > 0,);
 
     // put events in juce buffer
     {
-        uint8_t        size     = 0;
-        uint8_t        mdata[3] = { 0, 0, 0 };
-        const uint8_t* mdataPtr = mdata;
-
         midiBuffer.clear();
-
-        for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
-        {
-            const EngineEvent& engineEvent(data->events.in[i]);
-
-            if (engineEvent.type == kEngineEventTypeNull)
-                break;
-
-            else if (engineEvent.type == kEngineEventTypeControl)
-            {
-                const EngineControlEvent& ctrlEvent(engineEvent.ctrl);
-                ctrlEvent.convertToMidiData(engineEvent.channel, size, mdata);
-                mdataPtr = mdata;
-            }
-            else if (engineEvent.type == kEngineEventTypeMidi)
-            {
-                const EngineMidiEvent& midiEvent(engineEvent.midi);
-
-                size = midiEvent.size;
-
-                if (size > EngineMidiEvent::kDataSize && midiEvent.dataExt != nullptr)
-                    mdataPtr = midiEvent.dataExt;
-                else
-                    mdataPtr = midiEvent.data;
-            }
-            else
-            {
-                continue;
-            }
-
-            if (size > 0)
-                midiBuffer.addEvent(mdataPtr, size, engineEvent.time);
-        }
+        fillJuceMidiBufferFromEngineEvents(midiBuffer, data->events.in);
     }
-
-    // initialize event outputs (zero)
-    carla_zeroStruct<EngineEvent>(data->events.out, kMaxEngineEventInternalCount);
 
     // put carla audio in juce buffer
     {
@@ -1122,24 +1041,8 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float*
 
     // put juce events in carla buffer
     {
-        const uint8_t* midiData;
-        int numBytes;
-        int sampleNumber;
-        ushort engineEventIndex = 0;
-
-        for (MidiBuffer::Iterator outBufferIterator(midiBuffer); outBufferIterator.getNextEvent(midiData, numBytes, sampleNumber);)
-        {
-            if (numBytes <= 0 || numBytes >= MAX_MIDI_VALUE)
-                continue;
-
-            EngineEvent& engineEvent(data->events.out[engineEventIndex++]);
-
-            engineEvent.time = sampleNumber;
-            engineEvent.fillFromMidiData(static_cast<uint8_t>(numBytes), midiData);
-
-            if (engineEventIndex >= kMaxEngineEventInternalCount)
-                break;
-        }
+        carla_zeroStruct<EngineEvent>(data->events.out, kMaxEngineEventInternalCount);
+        fillEngineEventsFromJuceMidiBuffer(data->events.out, midiBuffer);
     }
 }
 
@@ -1171,7 +1074,7 @@ void EngineInternalGraph::create(const bool isRack, const double sampleRate, con
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay == nullptr,);
-        fPatchbay = new PatchbayGraph(sampleRate, bufferSize, inputs, outputs);
+        fPatchbay = new PatchbayGraph(static_cast<int>(bufferSize), sampleRate, inputs, outputs);
     }
 
     fIsReady = true;
@@ -1213,7 +1116,7 @@ void EngineInternalGraph::setBufferSize(const uint32_t bufferSize)
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
-        fPatchbay->setBufferSize(bufferSize);
+        fPatchbay->setBufferSize(static_cast<int>(bufferSize));
     }
 }
 
@@ -1277,7 +1180,7 @@ void EngineInternalGraph::process(CarlaEngine::ProtectedData* const data, const 
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
-        fPatchbay->process(data, inBuf, outBuf, frames);
+        fPatchbay->process(data, inBuf, outBuf, static_cast<int>(frames));
     }
 }
 

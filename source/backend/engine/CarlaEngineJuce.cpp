@@ -142,6 +142,12 @@ public:
         StringArray inputNames(fDevice->getInputChannelNames());
         StringArray outputNames(fDevice->getOutputChannelNames());
 
+        if (inputNames.size() < 0 || outputNames.size() <= 0)
+        {
+            setLastError("Selected device does not have any outputs");
+            return false;
+        }
+
         BigInteger inputChannels;
         inputChannels.setRange(0, inputNames.size(), true);
 
@@ -160,7 +166,7 @@ public:
         pData->bufferSize = static_cast<uint32_t>(fDevice->getCurrentBufferSizeSamples());
         pData->sampleRate = fDevice->getCurrentSampleRate();
 
-        pData->graph.create(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK, pData->sampleRate, pData->bufferSize, inputNames.size(), outputNames.size());
+        pData->graph.create(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK, pData->sampleRate, pData->bufferSize, static_cast<uint32_t>(inputNames.size()), static_cast<uint32_t>(outputNames.size()));
 
         fDevice->start(this);
 

@@ -1074,8 +1074,8 @@ protected:
     {
         if (pData->curPluginCount == 0 && ! fIsPatchbay)
         {
-            FloatVectorOperations::copy(outBuffer[0], inBuffer[0], frames);
-            FloatVectorOperations::copy(outBuffer[1], inBuffer[1], frames);
+            FloatVectorOperations::copy(outBuffer[0], inBuffer[0], static_cast<int>(frames));
+            FloatVectorOperations::copy(outBuffer[1], inBuffer[1], static_cast<int>(frames));
 
             return runPendingRtEvents();;
         }

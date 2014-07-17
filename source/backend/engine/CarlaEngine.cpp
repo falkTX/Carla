@@ -21,7 +21,6 @@
  * - implement oscSend_control_switch_plugins()
  * - proper find&load plugins
  * - something about the peaks?
- * - patchbayDisconnect should return false sometimes
  */
 
 #include "CarlaEngineInternal.hpp"

@@ -109,7 +109,7 @@ public:
 
             try {
                 jackbridge_port_unregister(fJackClient, fJackPort);
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("Audio port unregister");
 
             fJackClient = nullptr;
             fJackPort   = nullptr;
@@ -151,7 +151,7 @@ public:
         }
         else
         {
-            FloatVectorOperations::clear(fBuffer, bufferSize);
+            FloatVectorOperations::clear(fBuffer, static_cast<int>(bufferSize));
         }
     }
 
@@ -253,7 +253,7 @@ public:
 
             try {
                 jackbridge_port_unregister(fJackClient, fJackPort);
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("CV port unregister");
 
             fJackClient = nullptr;
             fJackPort   = nullptr;
@@ -279,7 +279,7 @@ public:
         }
 
         if (! fIsInput)
-            FloatVectorOperations::clear(fBuffer, bufferSize);
+            FloatVectorOperations::clear(fBuffer, static_cast<int>(bufferSize));
     }
 
     void invalidate() noexcept
@@ -339,7 +339,7 @@ public:
         {
             try {
                 jackbridge_port_unregister(fJackClient, fJackPort);
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("Event port unregister");
 
             fJackClient = nullptr;
             fJackPort   = nullptr;
@@ -374,13 +374,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fIsInput, 0);
         CARLA_SAFE_ASSERT_RETURN(fJackBuffer != nullptr, 0);
 
-        uint32_t count = 0;
-
         try {
-            count = jackbridge_midi_get_event_count(fJackBuffer);
-        } catch(...) {}
-
-        return count;
+            return jackbridge_midi_get_event_count(fJackBuffer);
+        } CARLA_SAFE_EXCEPTION_RETURN("jack_midi_get_event_count", 0);
     }
 
     const EngineEvent& getEvent(const uint32_t index) const noexcept override
@@ -402,12 +398,12 @@ public:
 
         try {
             test = jackbridge_midi_event_get(&jackEvent, fJackBuffer, index);
-        } catch(...) {}
+        } CARLA_SAFE_EXCEPTION_RETURN("jack_midi_event_get", kFallbackJackEngineEvent);
 
         if (! test)
             return kFallbackJackEngineEvent;
 
-        CARLA_SAFE_ASSERT_RETURN(jackEvent.size <= 0xFF /* uint8_t max */, kFallbackJackEngineEvent);
+        CARLA_SAFE_ASSERT_RETURN(jackEvent.size < UINT8_MAX, kFallbackJackEngineEvent);
 
         fRetEvent.time = jackEvent.time;
         fRetEvent.fillFromMidiData(static_cast<uint8_t>(jackEvent.size), jackEvent.buffer);
@@ -440,13 +436,9 @@ public:
         if (size == 0)
             return false;
 
-        bool ret = false;
-
         try {
-            ret = jackbridge_midi_event_write(fJackBuffer, time, data, size);
-        } catch(...) {}
-
-        return ret;
+            return jackbridge_midi_event_write(fJackBuffer, time, data, size);
+        } CARLA_SAFE_EXCEPTION_RETURN("jack_midi_event_write", false);
     }
 
     bool writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t size, const uint8_t* const data) noexcept override
@@ -467,13 +459,9 @@ public:
         for (uint8_t i=1; i < size; ++i)
             jdata[i] = data[i];
 
-        bool ret = false;
-
         try {
-            ret = jackbridge_midi_event_write(fJackBuffer, time, jdata, size);
-        } catch(...) {}
-
-        return ret;
+            return jackbridge_midi_event_write(fJackBuffer, time, jdata, size);
+        } CARLA_SAFE_EXCEPTION_RETURN("jack_midi_event_write", false);
     }
 
     void invalidate() noexcept
@@ -1434,8 +1422,8 @@ protected:
                 float* const audioOut2 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut2], nframes);
                 void*  const eventOut  = jackbridge_port_get_buffer(fRackPorts[kRackPortEventOut], nframes);
 
-                FloatVectorOperations::copy(audioOut1, audioIn1, nframes);
-                FloatVectorOperations::copy(audioOut2, audioIn2, nframes);
+                FloatVectorOperations::copy(audioOut1, audioIn1, static_cast<int>(nframes));
+                FloatVectorOperations::copy(audioOut2, audioIn2, static_cast<int>(nframes));
 
                 jackbridge_midi_clear_buffer(eventOut);
             }

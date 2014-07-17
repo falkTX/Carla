@@ -113,10 +113,10 @@ struct PatchbayGraph  {
     const int outputs;
     //CharStringListPtr retCon;
 
-    PatchbayGraph(const uint32_t bufferSize, const double sampleRate, const uint32_t inputs, const uint32_t outputs);
+    PatchbayGraph(const int bufferSize, const double sampleRate, const uint32_t inputs, const uint32_t outputs);
     ~PatchbayGraph();
 
-    void setBufferSize(const uint32_t bufferSize);
+    void setBufferSize(const int bufferSize);
     void setSampleRate(const double sampleRate);
     void setOffline(const bool offline);
 
@@ -131,7 +131,7 @@ struct PatchbayGraph  {
     //const char* const* getConnections() const noexcept;
     //bool getPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept;
 
-    void process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames);
+    void process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const int frames);
 };
 
 // -----------------------------------------------------------------------
