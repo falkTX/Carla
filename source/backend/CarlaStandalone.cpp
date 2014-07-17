@@ -2148,6 +2148,7 @@ void carla_set_panning(uint pluginId, float value)
 void carla_set_ctrl_channel(uint pluginId, int8_t channel)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(channel >= -1 && channel < MAX_MIDI_CHANNELS,);
     carla_debug("carla_set_ctrl_channel(%i, %i)", pluginId, channel);
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
@@ -2179,7 +2180,7 @@ void carla_set_parameter_value(uint pluginId, uint32_t parameterId, float value)
 void carla_set_parameter_midi_channel(uint pluginId, uint32_t parameterId, uint8_t channel)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(channel >= MAX_MIDI_CHANNELS,);
+    CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
     carla_debug("carla_set_parameter_midi_channel(%i, %i, %i)", pluginId, parameterId, channel);
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))

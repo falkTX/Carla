@@ -264,9 +264,12 @@ bool StateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                 }
                 else if (tag.equalsIgnoreCase("controlchannel") || tag.equalsIgnoreCase("control-channel"))
                 {
-                    const int value(text.getIntValue());
-                    if (value >= 1 && value <= MAX_MIDI_CHANNELS)
-                        ctrlChannel = static_cast<int8_t>(value-1);
+                    if (! text.startsWithIgnoreCase("n"))
+                    {
+                        const int value(text.getIntValue());
+                        if (value >= 1 && value <= MAX_MIDI_CHANNELS)
+                            ctrlChannel = static_cast<int8_t>(value-1);
+                    }
                 }
 
                 // -------------------------------------------------------
