@@ -828,7 +828,7 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(outBuffer[i], frames);
+                FloatVectorOperations::clear(outBuffer[i], static_cast<int>(frames));
             return;
         }
 
@@ -1143,7 +1143,7 @@ public:
         else if (! pData->singleMutex.tryLock())
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(outBuffer[i], frames);
+                FloatVectorOperations::clear(outBuffer[i], static_cast<int>(frames));
             return false;
         }
 
@@ -1153,7 +1153,7 @@ public:
         //std::memset(fShmAudioPool.data, 0, fShmAudioPool.size);
 
         for (uint32_t i=0; i < fInfo.aIns; ++i)
-            FloatVectorOperations::copy(fShmAudioPool.data + (i * frames), inBuffer[i], frames);
+            FloatVectorOperations::copy(fShmAudioPool.data + (i * frames), inBuffer[i], static_cast<int>(frames));
 
         // --------------------------------------------------------------------------------------------------------
         // TimeInfo
@@ -1197,7 +1197,7 @@ public:
         }
 
         for (uint32_t i=0; i < fInfo.aOuts; ++i)
-            FloatVectorOperations::copy(outBuffer[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), frames);
+            FloatVectorOperations::copy(outBuffer[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), static_cast<int>(frames));
 
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
@@ -1230,7 +1230,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        FloatVectorOperations::copy(oldBufLeft, outBuffer[i], frames);
+                        FloatVectorOperations::copy(oldBufLeft, outBuffer[i], static_cast<int>(frames));
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;

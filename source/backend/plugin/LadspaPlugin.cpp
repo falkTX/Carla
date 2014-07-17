@@ -534,7 +534,7 @@ public:
             pData->param.createNew(params, true);
 
             fParamBuffers = new float[params];
-            FloatVectorOperations::clear(fParamBuffers, params);
+            FloatVectorOperations::clear(fParamBuffers, static_cast<int>(params));
         }
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
@@ -960,7 +960,7 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(outBuffer[i], frames);
+                FloatVectorOperations::clear(outBuffer[i], static_cast<int>(frames));
             return;
         }
 
@@ -973,7 +973,7 @@ public:
             if (pData->latency > 0)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
-                    FloatVectorOperations::clear(pData->latencyBuffers[i], pData->latency);
+                    FloatVectorOperations::clear(pData->latencyBuffers[i], static_cast<int>(pData->latency));
             }
 #endif
 
@@ -1153,7 +1153,7 @@ public:
                 if (pData->latency <= frames)
                 {
                     for (uint32_t i=0; i < pData->audioIn.count; ++i)
-                        FloatVectorOperations::copy(pData->latencyBuffers[i], inBuffer[i]+(frames-pData->latency), pData->latency);
+                        FloatVectorOperations::copy(pData->latencyBuffers[i], inBuffer[i]+(frames-pData->latency), static_cast<int>(pData->latency));
                 }
                 else
                 {
@@ -1231,10 +1231,10 @@ public:
         // Reset audio buffers
 
         for (uint32_t i=0; i < pData->audioIn.count; ++i)
-            FloatVectorOperations::copy(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
+            FloatVectorOperations::copy(fAudioInBuffers[i], inBuffer[i]+timeOffset, static_cast<int>(frames));
 
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
-            FloatVectorOperations::clear(fAudioOutBuffers[i], frames);
+            FloatVectorOperations::clear(fAudioOutBuffers[i], static_cast<int>(frames));
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -1288,7 +1288,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], frames);
+                        FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], static_cast<int>(frames));
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;

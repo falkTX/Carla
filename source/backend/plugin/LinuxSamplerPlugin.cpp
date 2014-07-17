@@ -731,7 +731,7 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(outBuffer[i], frames);
+                FloatVectorOperations::clear(outBuffer[i], static_cast<int>(frames));
             return;
         }
 
@@ -1082,7 +1082,7 @@ public:
                 if (doBalance)
                 {
                     if (i % 2 == 0)
-                        FloatVectorOperations::copy(oldBufLeft, outBuffer[i], frames);
+                        FloatVectorOperations::copy(oldBufLeft, outBuffer[i], static_cast<int>(frames));
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (pData->postProc.balanceRight + 1.0f)/2.0f;

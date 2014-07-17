@@ -1285,7 +1285,7 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(outBuffer[i], frames);
+                FloatVectorOperations::clear(outBuffer[i], static_cast<int>(frames));
 
             return;
         }
@@ -1768,10 +1768,10 @@ public:
         // Reset audio buffers
 
         for (i=0; i < pData->audioIn.count; ++i)
-            FloatVectorOperations::copy(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
+            FloatVectorOperations::copy(fAudioInBuffers[i], inBuffer[i]+timeOffset, static_cast<int>(frames));
 
         for (i=0; i < pData->audioOut.count; ++i)
-            FloatVectorOperations::clear(fAudioOutBuffers[i], frames);
+            FloatVectorOperations::clear(fAudioOutBuffers[i], static_cast<int>(frames));
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -1829,7 +1829,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], frames);
+                        FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], static_cast<int>(frames));
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;

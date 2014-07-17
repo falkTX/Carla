@@ -1041,7 +1041,7 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(outBuffer[i], frames);
+                FloatVectorOperations::clear(outBuffer[i], static_cast<int>(frames));
             return;
         }
 
@@ -1409,7 +1409,7 @@ public:
         if (fUses16Outs)
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(fAudio16Buffers[i], frames);
+                FloatVectorOperations::clear(fAudio16Buffers[i], static_cast<int>(frames));
 
             // FIXME use '32' or '16' instead of outs
             fluid_synth_process(fSynth, static_cast<int>(frames), 0, nullptr, static_cast<int>(pData->audioOut.count), fAudio16Buffers);
@@ -1434,7 +1434,7 @@ public:
                 if (doBalance)
                 {
                     if (i % 2 == 0)
-                        FloatVectorOperations::copy(oldBufLeft, outBuffer[i]+timeOffset, frames);
+                        FloatVectorOperations::copy(oldBufLeft, outBuffer[i]+timeOffset, static_cast<int>(frames));
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (pData->postProc.balanceRight + 1.0f)/2.0f;

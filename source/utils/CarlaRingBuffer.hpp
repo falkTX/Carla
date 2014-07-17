@@ -138,13 +138,7 @@ public:
         return tryRead(&b, sizeof(bool)) ? b : false;
     }
 
-    int8_t readByte() noexcept
-    {
-        int8_t b = 0;
-        return tryRead(&b, sizeof(int8_t)) ? b : 0;
-    }
-
-    uint8_t readUByte() noexcept
+    uint8_t readByte() noexcept
     {
         int8_t ub = -1;
         return (tryRead(&ub, sizeof(int8_t)) && ub >= 0 && ub <= INT_LEAST8_MAX) ? static_cast<uint8_t>(ub) : 0;
@@ -218,9 +212,9 @@ public:
         tryWrite(&value, sizeof(bool));
     }
 
-    void writeByte(const int8_t value) noexcept
+    void writeByte(const uint8_t value) noexcept
     {
-        tryWrite(&value, sizeof(int8_t));
+        tryWrite(&value, sizeof(uint8_t));
     }
 
     void writeShort(const int16_t value) noexcept
