@@ -8,7 +8,7 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_C_FLAGS += $(AUDIO_DECODER_FLAGS) -I. -I..
+BUILD_C_FLAGS += $(AUDIO_DECODER_FLAGS) -I. -I.. -w
 
 # --------------------------------------------------------------
 

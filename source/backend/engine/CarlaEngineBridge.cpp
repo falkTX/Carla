@@ -468,7 +468,7 @@ public:
                     uint8_t data[size];
 
                     for (int32_t i=0; i < size; ++i)
-                        data[i] = fShmControl.readUByte();
+                        data[i] = fShmControl.readByte();
 
                     CARLA_SAFE_ASSERT_BREAK(pData->events.in != nullptr);
 

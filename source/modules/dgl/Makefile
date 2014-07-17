@@ -10,6 +10,9 @@ include ../../Makefile.mk
 
 BUILD_CXX_FLAGS += $(DGL_FLAGS) -I.
 
+# TODO
+BUILD_CXX_FLAGS += -w
+
 # --------------------------------------------------------------
 
 OBJS = \

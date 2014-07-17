@@ -180,10 +180,10 @@ public:
             {
                 if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__Int))
                 {
-                    fBufferSize = *(const int*)options[i].value;
+                    const int value(*(const int*)options[i].value);
+                    CARLA_SAFE_ASSERT_CONTINUE(value > 0);
 
-                    if (fBufferSize == 0)
-                        carla_stderr("Host provides maxBlockLength but has null value");
+                    fBufferSize = static_cast<uint32_t>(value);
                 }
                 else
                     carla_stderr("Host provides maxBlockLength but has wrong value type");
@@ -300,6 +300,8 @@ public:
             return;
         }
 
+        const int iframes(static_cast<int>(frames));
+
         // Check for updated parameters
         float curValue;
 
@@ -403,7 +405,12 @@ public:
                         fTimeInfo.bbt.beatType = ((LV2_Atom_Float*)beatUnit)->body;
 
                     if (frame != nullptr && frame->type == fUris.atomLong)
-                        fTimeInfo.frame = ((LV2_Atom_Long*)frame)->body;
+                    {
+                        const int64_t value(((LV2_Atom_Long*)frame)->body);
+                        CARLA_SAFE_ASSERT_CONTINUE(value >= 0);
+
+                        fTimeInfo.frame = static_cast<uint64_t>(value);
+                    }
 
                     if (speed != nullptr && speed->type == fUris.atomFloat)
                         fTimeInfo.playing = ((LV2_Atom_Float*)speed)->body == 1.0f;
@@ -451,15 +458,15 @@ public:
         {
             for (uint32_t i=0; i < fDescriptor->audioOuts; ++i)
             {
-                FloatVectorOperations::multiply(fPorts.audioIns[i], fVolume*(1.0f-fDryWet), frames);
-                FloatVectorOperations::multiply(fPorts.audioOuts[i], fVolume*fDryWet, frames);
-                FloatVectorOperations::add(fPorts.audioOuts[i], fPorts.audioIns[i], frames);
+                FloatVectorOperations::multiply(fPorts.audioIns[i], fVolume*(1.0f-fDryWet), iframes);
+                FloatVectorOperations::multiply(fPorts.audioOuts[i], fVolume*fDryWet, iframes);
+                FloatVectorOperations::add(fPorts.audioOuts[i], fPorts.audioIns[i], iframes);
             }
         }
         else if (fVolume != 1.0f)
         {
             for (uint32_t i=0; i < fDescriptor->audioOuts; ++i)
-                FloatVectorOperations::multiply(fPorts.audioOuts[i], fVolume, frames);
+                FloatVectorOperations::multiply(fPorts.audioOuts[i], fVolume, iframes);
         }
 
         // TODO - midi out
@@ -483,7 +490,10 @@ public:
             {
                 if (options[i].type == fUridMap->map(fUridMap->handle, LV2_ATOM__Int))
                 {
-                    fBufferSize = *(const int*)options[i].value;
+                    const int value(*(const int*)options[i].value);
+                    CARLA_SAFE_ASSERT_CONTINUE(value > 0);
+
+                    fBufferSize = static_cast<uint32_t>(value);
 
                     if (fDescriptor->dispatcher != nullptr)
                         fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, fBufferSize, nullptr, 0.0f);
@@ -495,7 +505,10 @@ public:
             {
                 if (options[i].type == fUridMap->map(fUridMap->handle, LV2_ATOM__Double))
                 {
-                    fSampleRate = *(const double*)options[i].value;
+                    const double value(*(const double*)options[i].value);
+                    CARLA_SAFE_ASSERT_CONTINUE(value > 0.0);
+
+                    fSampleRate = value;
 
                     if (fDescriptor->dispatcher != nullptr)
                         fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, (float)fSampleRate);
@@ -615,11 +628,11 @@ public:
             {
                 const LV2_Options_Option* const options((const LV2_Options_Option*)features[i]->data);
 
-                for (int i=0; options[i].key != 0; ++i)
+                for (int j=0; options[j].key != 0; ++j)
                 {
-                    if (options[i].key == fUridMap->map(fUridMap->handle, LV2_UI__windowTitle))
+                    if (options[j].key == fUridMap->map(fUridMap->handle, LV2_UI__windowTitle))
                     {
-                        fHost.uiName = carla_strdup((const char*)options[i].value);
+                        fHost.uiName = carla_strdup((const char*)options[j].value);
                         break;
                     }
                 }

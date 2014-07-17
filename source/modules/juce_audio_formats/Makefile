@@ -8,7 +8,7 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(JUCE_AUDIO_FORMATS_FLAGS) -I.
+BUILD_CXX_FLAGS += $(JUCE_AUDIO_FORMATS_FLAGS) -I. -w
 
 # --------------------------------------------------------------
 
