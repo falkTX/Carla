@@ -57,10 +57,10 @@ class CarlaEngineJackCVPort;
 class CarlaEngineJackEventPort;
 
 struct JackPortDeletionCallback {
-    virtual ~JackPortDeletionCallback() {}
-    virtual void jackAudioPortDeleted(CarlaEngineJackAudioPort* const) = 0;
-    virtual void jackCVPortDeleted(CarlaEngineJackCVPort* const) = 0;
-    virtual void jackEventPortDeleted(CarlaEngineJackEventPort* const) = 0;
+    virtual ~JackPortDeletionCallback() noexcept {}
+    virtual void jackAudioPortDeleted(CarlaEngineJackAudioPort* const) noexcept = 0;
+    virtual void jackCVPortDeleted(CarlaEngineJackCVPort* const) noexcept = 0;
+    virtual void jackEventPortDeleted(CarlaEngineJackEventPort* const) noexcept = 0;
 };
 
 // -----------------------------------------------------------------------
@@ -73,8 +73,6 @@ public:
         : CarlaEngineAudioPort(client, isInputPort),
           fJackClient(jackClient),
           fJackPort(jackPort),
-          fLatencyBuffer(nullptr),
-          fLatencyBufferSize(0),
           fDeletionCallback(delCallback)
     {
         carla_debug("CarlaEngineJackAudioPort::CarlaEngineJackAudioPort(%s, %p, %p)", bool2str(isInputPort), jackClient, jackPort);
@@ -102,10 +100,10 @@ public:
 
         if (fJackClient != nullptr && fJackPort != nullptr)
         {
-#ifndef CARLA_OS_WIN
-            if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort)) // FIXME
-                jackbridge_remove_property(fJackClient, uuid, JACKEY_SIGNAL_TYPE);
-#endif
+            try {
+                if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
+                    jackbridge_remove_property(fJackClient, uuid, JACKEY_SIGNAL_TYPE);
+            } CARLA_SAFE_EXCEPTION("Audio port remove meta type");
 
             try {
                 jackbridge_port_unregister(fJackClient, fJackPort);
@@ -134,25 +132,8 @@ public:
             return;
         }
 
-        if (fIsInput)
-        {
-#if 0
-            if (fLatencyBuffer != nullptr)
-            {
-                uint32_t j, k;
-                for (k=0; k < fLatencyBufferSize-bufferSize; ++k)
-                    fLatencyBuffer[k] = fLatencyBuffer[k+bufferSize];
-                for (j=0; k < fLatencyBufferSize; ++j, ++k)
-                    fLatencyBuffer[k] = fBuffer[j];
-
-                fBuffer = fLatencyBuffer;
-            }
-#endif
-        }
-        else
-        {
+        if (! fIsInput)
             FloatVectorOperations::clear(fBuffer, static_cast<int>(bufferSize));
-        }
     }
 
     void invalidate() noexcept
@@ -161,46 +142,9 @@ public:
         fJackPort   = nullptr;
     }
 
-#if 0
-    void updateJackLatencyRange(const jack_latency_callback_mode_t mode)
-    {
-        CARLA_SAFE_ASSERT_RETURN(fJackPort != nullptr,);
-
-        jack_latency_range_t range;
-
-        if (/*mode == JackPlaybackLatency &&*/ fIsInput)
-        {
-            jackbridge_port_get_latency_range(fJackPort, mode, &range);
-
-            carla_stdout("updateJackLatencyRange INPUT %p : %i, %i %i", this, mode, range.min, range.max);
-            return;
-
-            if (range.max == 0)
-            {
-                if (fLatencyBuffer != nullptr)
-                {
-                    CARLA_SAFE_ASSERT_INT(fLatencyBufferSize != 0, fLatencyBufferSize);
-                    delete[] fLatencyBuffer;
-                    fLatencyBuffer = nullptr;
-                }
-                fLatencyBufferSize = 0;
-            }
-            else if (fLatencyBufferSize != range.max)
-            {
-                fLatencyBufferSize = range.max;
-                fLatencyBuffer     = new float[fLatencyBufferSize];
-                FloatVectorOperations::clear(fLatencyBuffer, fLatencyBufferSize);
-            }
-        }
-    }
-#endif
-
 private:
     jack_client_t* fJackClient;
     jack_port_t*   fJackPort;
-
-    float*   fLatencyBuffer;
-    uint32_t fLatencyBufferSize;
 
     JackPortDeletionCallback* const fDeletionCallback;
 
@@ -246,10 +190,10 @@ public:
 
         if (fJackClient != nullptr && fJackPort != nullptr)
         {
-#ifndef CARLA_OS_WIN
-            if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort)) // FIXME
-                jackbridge_remove_property(fJackClient, uuid, JACKEY_SIGNAL_TYPE);
-#endif
+            try {
+                if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
+                    jackbridge_remove_property(fJackClient, uuid, JACKEY_SIGNAL_TYPE);
+            } CARLA_SAFE_EXCEPTION("CV port remove meta type");
 
             try {
                 jackbridge_port_unregister(fJackClient, fJackPort);
@@ -287,13 +231,6 @@ public:
         fJackClient = nullptr;
         fJackPort   = nullptr;
     }
-
-#if 0
-    void updateJackLatencyRange(const jack_latency_callback_mode_t /*mode*/, const uint32_t /*latency*/)
-    {
-        CARLA_SAFE_ASSERT_RETURN(fJackPort != nullptr,);
-    }
-#endif
 
 private:
     jack_client_t* fJackClient;
@@ -470,13 +407,6 @@ public:
         fJackPort   = nullptr;
     }
 
-#if 0
-    void updateJackLatencyRange(const jack_latency_callback_mode_t /*mode*/, const uint32_t /*latency*/)
-    {
-        CARLA_SAFE_ASSERT_RETURN(fJackPort != nullptr,);
-    }
-#endif
-
 private:
     jack_client_t* fJackClient;
     jack_port_t*   fJackPort;
@@ -566,94 +496,6 @@ public:
         return CarlaEngineClient::isOk();
     }
 
-    void setLatency(const uint32_t samples) noexcept override
-    {
-        if (fLatency == samples)
-            return;
-
-        fLatency = samples;
-
-        if (fUseClient && fJackClient != nullptr)
-        {
-            carla_stdout("got setLatency, tell jack to recompute latencies");
-            try {
-                jackbridge_recompute_total_latencies(fJackClient);
-            } CARLA_SAFE_EXCEPTION("JACK setLatency");
-        }
-    }
-
-    void updateJackLatencyRange(const jack_latency_callback_mode_t mode, const uint32_t latency)
-    {
-        CARLA_SAFE_ASSERT_INT2(fLatency == latency, fLatency, latency);
-
-        // TESTING, for mono plugins only
-
-        const CarlaEngineJackAudioPort* const inPort(fAudioPorts.getAt(0, nullptr));
-        const CarlaEngineJackAudioPort* const outPort(fAudioPorts.getAt(1, nullptr));
-
-        if (inPort == nullptr || outPort == nullptr)
-            return;
-
-        jack_latency_range_t range;
-
-        // first set the latency values
-        if (mode == JackCaptureLatency)
-        {
-            // get from input
-            jackbridge_port_get_latency_range(inPort->fJackPort, mode, &range);
-
-            range.min += latency;
-            range.max += latency;
-
-            // set in output
-            jackbridge_port_set_latency_range(outPort->fJackPort, mode, &range);
-        }
-        else
-        {
-            // get from output
-            jackbridge_port_get_latency_range(outPort->fJackPort, mode, &range);
-
-            range.min += latency;
-            range.max += latency;
-
-            // set in input
-            jackbridge_port_set_latency_range(inPort->fJackPort, mode, &range);
-        }
-
-        jackbridge_port_get_latency_range(inPort->fJackPort, JackCaptureLatency, &range);
-        if (latency == 0 && range.max != 0) carla_stdout("updateJackLatencyRange AAA  %p : %i, %i %i >== %i", this, mode, range.min, range.max, latency);
-
-        jackbridge_port_get_latency_range(inPort->fJackPort, JackPlaybackLatency, &range);
-        if (latency == 0 && range.max != 0) carla_stdout("updateJackLatencyRange BBB  %p : %i, %i %i >== %i", this, mode, range.min, range.max, latency);
-
-        jackbridge_port_get_latency_range(outPort->fJackPort, JackCaptureLatency, &range);
-        if (latency == 0 && range.max != 0) carla_stdout("updateJackLatencyRange CCC  %p : %i, %i %i >== %i", this, mode, range.min, range.max, latency);
-
-        jackbridge_port_get_latency_range(outPort->fJackPort, JackPlaybackLatency, &range);
-        if (latency == 0 && range.max != 0) carla_stdout("updateJackLatencyRange DDD  %p : %i, %i %i >== %i", this, mode, range.min, range.max, latency);
-
-#if 0
-        // now update if needed
-        //for (LinkedList<CarlaEngineJackAudioPort*>::Itenerator it = fAudioPorts.begin(); it.valid(); it.next())
-        {
-            //CarlaEngineJackAudioPort* const port(it.getValue());
-            //port->updateJackLatencyRange(mode);
-        }
-
-        for (LinkedList<CarlaEngineJackCVPort*>::Itenerator it = fCVPorts.begin(); it.valid(); it.next())
-        {
-            CarlaEngineJackCVPort* const port(it.getValue());
-            port->updateJackLatencyRange(mode, latency);
-        }
-
-        for (LinkedList<CarlaEngineJackEventPort*>::Itenerator it = fEventPorts.begin(); it.valid(); it.next())
-        {
-            CarlaEngineJackEventPort* const port(it.getValue());
-            port->updateJackLatencyRange(mode, latency);
-        }
-#endif
-    }
-
     CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput) override
     {
         carla_debug("CarlaEngineJackClient::addPort(%i:%s, \"%s\", %s)", portType, EnginePortType2Str(portType), name, bool2str(isInput));
@@ -739,17 +581,17 @@ public:
         } CARLA_SAFE_EXCEPTION_RETURN("jack_get_client_name", nullptr);
     }
 
-    void jackAudioPortDeleted(CarlaEngineJackAudioPort* const port) override
+    void jackAudioPortDeleted(CarlaEngineJackAudioPort* const port) noexcept override
     {
         fAudioPorts.removeAll(port);
     }
 
-    void jackCVPortDeleted(CarlaEngineJackCVPort* const port) override
+    void jackCVPortDeleted(CarlaEngineJackCVPort* const port) noexcept override
     {
         fCVPorts.removeAll(port);
     }
 
-    void jackEventPortDeleted(CarlaEngineJackEventPort* const port) override
+    void jackEventPortDeleted(CarlaEngineJackEventPort* const port) noexcept override
     {
         fEventPorts.removeAll(port);
     }
@@ -1566,18 +1408,7 @@ protected:
 
     void handleJackLatencyCallback(const jack_latency_callback_mode_t /*mode*/)
     {
-#if 0
-        if (pData->options.processMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT)
-            return;
-
-        for (uint i=0; i < pData->curPluginCount; ++i)
-        {
-            CarlaPlugin* const plugin(pData->plugins[i].plugin);
-
-            if (plugin != nullptr && plugin->isEnabled())
-                latencyPlugin(plugin, mode);
-        }
-#endif
+        // TODO
     }
 
 #ifndef BUILD_BRIDGE
@@ -2167,20 +1998,9 @@ private:
         return 0;
     }
 
-    static void carla_jack_latency_callback_plugin(jack_latency_callback_mode_t mode, void* arg)
+    static void carla_jack_latency_callback_plugin(jack_latency_callback_mode_t /*mode*/, void* /*arg*/)
     {
-        CarlaPlugin* const plugin((CarlaPlugin*)arg);
-
-        if (plugin != nullptr && plugin->isEnabled())
-        {
-            CarlaEngineJack* const engine((CarlaEngineJack*)plugin->getEngine());
-            CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
-
-            CarlaEngineJackClient* const engineClient((CarlaEngineJackClient*)plugin->getEngineClient());
-            CARLA_SAFE_ASSERT_RETURN(engineClient != nullptr,);
-
-            engineClient->updateJackLatencyRange(mode, plugin->getLatencyInFrames());
-        }
+        // TODO
     }
 
     static void carla_jack_shutdown_callback_plugin(void* arg)

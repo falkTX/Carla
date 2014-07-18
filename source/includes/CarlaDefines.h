@@ -113,7 +113,7 @@
 
 /* Define BINARY_NATIVE */
 #if defined(CARLA_OS_HAIKU) || defined(CARLA_OS_UNIX)
-# if defined (__LP64__) || defined (_LP64)
+# if defined(__LP64__) || defined(_LP64) || defined(__arm64__)
 #  define BINARY_NATIVE BINARY_POSIX64
 # else
 #  define BINARY_NATIVE BINARY_POSIX32
