@@ -584,11 +584,6 @@ endif
 endif
 
 	@echo "$(tS)---> File formats: $(tE)"
-ifeq ($(CARLA_CSOUND_SUPPORT),true)
-	@echo "CSD:$(ANS_YES)"
-else
-	@echo "CSD:$(ANS_NO)  $(mS)CSound disabled$(mE)"
-endif
 ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
 ifeq ($(HAVE_LINUXSAMPLER),true)
 	@echo "GIG:$(ANS_YES)"

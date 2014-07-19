@@ -122,33 +122,59 @@ CFLAGS     += -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes
 CXXFLAGS   += -Wnon-virtual-dtor -Woverloaded-virtual
 ifeq ($(LINUX),true)
 CFLAGS     += -isystem /opt/kxstudio/include
-CXXFLAGS   += -isystem /opt/kxstudio/include -isystem /usr/include/qt4
+CXXFLAGS   += -isystem /opt/kxstudio/include
 endif
 ifeq ($(MACOS),true)
 CFLAGS     += -isystem /opt/kxstudio/include
-CXXFLAGS   += -isystem /opt/kxstudio/include -isystem /opt/kxstudio/include/qt5
+CXXFLAGS   += -isystem /opt/kxstudio/include
 endif
 ifeq ($(WIN32),true)
 CFLAGS     += -isystem /opt/mingw32/include
-CXXFLAGS   += -isystem /opt/mingw32/include -isystem /opt/mingw32/include/qt4
+CXXFLAGS   += -isystem /opt/mingw32/include
 endif
 endif
 
 # --------------------------------------------------------------
-# Check for qt, set default version
+# Check for required libs
 
-HAVE_QT4 = $(shell pkg-config --exists QtCore && echo true)
-HAVE_QT5 = $(shell pkg-config --exists Qt5Core && echo true)
+ifneq ($(shell pkg-config --exists liblo && echo true),true)
+$(error liblo missing, cannot continue)
+endif
+
+ifeq ($(LINUX),true)
+ifneq ($(shell pkg-config --exists x11 && echo true),true)
+$(error X11 missing, cannot continue)
+endif
+endif
+
+# --------------------------------------------------------------
+# Check for optional libs (required by backend or bridges)
 
 ifeq ($(MACOS_OR_WIN32),true)
-DEFAULT_QT ?= 5
+HAVE_DGL        = true
+HAVE_JUCE_UI    = true
 else
-DEFAULT_QT ?= 4
+HAVE_FFMPEG     = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
+HAVE_GTK2       = $(shell pkg-config --exists gtk+-2.0 && echo true)
+HAVE_GTK3       = $(shell pkg-config --exists gtk+-3.0 && echo true)
+HAVE_QT4        = $(shell pkg-config --exists QtCore QtGui && echo true)
+HAVE_QT5        = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
+ifeq ($(LINUX),true)
+HAVE_ALSA       = $(shell pkg-config --exists alsa && echo true)
+HAVE_DGL        = $(shell pkg-config --exists gl && echo true)
+HAVE_JUCE_UI    = $(shell pkg-config --exists xinerama xext xcursor freetype2 TODO && echo true)
+HAVE_PULSEAUDIO = $(shell pkg-config --exists libpulse-simple && echo true)
+HAVE_X11        = true
+endif
+endif
+
+ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
+HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)
+HAVE_LINUXSAMPLER = $(shell pkg-config --exists linuxsampler && echo true)
 endif
 
 # --------------------------------------------------------------
 # Set Qt tools
-# FIXME
 
 ifeq ($(HAVE_QT4),true)
 MOC_QT4 ?= $(shell pkg-config --variable=moc_location QtCore)
@@ -178,76 +204,6 @@ endif
 endif # MACOS
 ifeq (,$(wildcard $(MOC_QT5)))
 HAVE_QT5=false
-endif
-endif
-
-# --------------------------------------------------------------
-# Fail if prefered Qt is not found
-# FIXME
-
-ifeq ($(DEFAULT_QT),4)
-ifneq ($(HAVE_QT4),true)
-$(error Qt4 missing, cannot continue)
-endif
-else
-ifneq ($(HAVE_QT5),true)
-$(error Qt5 missing, cannot continue)
-endif
-endif
-
-# --------------------------------------------------------------
-# Check for required libs
-
-ifneq ($(shell pkg-config --exists liblo && echo true),true)
-$(error liblo missing, cannot continue)
-endif
-
-ifeq ($(LINUX),true)
-ifneq ($(shell pkg-config --exists x11 && echo true),true)
-$(error X11 missing, cannot continue)
-endif
-endif
-
-# --------------------------------------------------------------
-# Check for optional libs (required by backend or bridges)
-
-ifeq ($(MACOS_OR_WIN32),true)
-HAVE_DGL        = true
-HAVE_JUCE_UI    = true
-else
-HAVE_FFMPEG     = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
-HAVE_GTK2       = $(shell pkg-config --exists gtk+-2.0 && echo true)
-HAVE_GTK3       = $(shell pkg-config --exists gtk+-3.0 && echo true)
-HAVE_QTGUI4     = $(shell pkg-config --exists QtCore QtGui && echo true)
-HAVE_QTGUI5     = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
-ifeq ($(LINUX),true)
-HAVE_ALSA       = $(shell pkg-config --exists alsa && echo true)
-HAVE_DGL        = $(shell pkg-config --exists gl && echo true)
-HAVE_JUCE_UI    = $(shell pkg-config --exists xinerama xext xcursor freetype2 TODO && echo true)
-HAVE_PULSEAUDIO = $(shell pkg-config --exists libpulse-simple && echo true)
-HAVE_X11        = true
-endif
-endif
-
-ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
-HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)
-HAVE_LINUXSAMPLER = $(shell pkg-config --exists linuxsampler && echo true)
-endif
-
-# --------------------------------------------------------------
-# Set Qt tools
-# TODO
-
-ifeq ($(HAVE_QTGUI4),true)
-ifeq (,$(wildcard $(MOC_QT4)))
-HAVE_QTGUI4=false
-endif
-endif
-
-ifeq ($(HAVE_QTGUI5),true)
-QT5_LIBDIR = $(shell pkg-config --variable=libdir Qt5Core)
-ifeq (,$(wildcard $(MOC_QT5)))
-HAVE_QTGUI5=false
 endif
 endif
 
@@ -284,14 +240,6 @@ endif
 
 LIBLO_FLAGS  = $(shell pkg-config --cflags liblo)
 LIBLO_LIBS   = $(shell pkg-config --libs liblo)
-
-ifeq ($(DEFAULT_QT),4)
-QTCORE_FLAGS = $(shell pkg-config --cflags QtCore)
-QTCORE_LIBS  = $(shell pkg-config --libs QtCore)
-else
-QTCORE_FLAGS = $(shell pkg-config --cflags Qt5Core)
-QTCORE_LIBS  = $(shell pkg-config --libs Qt5Core)
-endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 FLUIDSYNTH_FLAGS = $(shell pkg-config --cflags fluidsynth)

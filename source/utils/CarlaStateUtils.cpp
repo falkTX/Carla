@@ -299,7 +299,9 @@ bool StateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                 }
                 else if (tag.equalsIgnoreCase("options"))
                 {
-                    options = text.getHexValue32();
+                    const int value(text.getHexValue32());
+                    if (value > 0)
+                        options = static_cast<uint>(value);
                 }
 
                 // -------------------------------------------------------
