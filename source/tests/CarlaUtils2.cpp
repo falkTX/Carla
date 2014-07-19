@@ -28,7 +28,7 @@
 #define NULL nullptr
 
 #include "CarlaLadspaUtils.hpp"
-#include "CarlaDssiUtils.hpp"
+#include "CarlaDssiUtils.cpp"
 #include "CarlaLv2Utils.hpp"
 #include "CarlaVstUtils.hpp"
 
@@ -55,38 +55,17 @@ static void test_CarlaLadspaUtils()
 
 // -----------------------------------------------------------------------
 
-namespace dssi_juce {
-const char* find_dssi_ui(const char* const filename, const char* const label) noexcept;
-#define HAVE_JUCE
-#include "CarlaDssiUtils.cpp"
-}
-
-namespace dssi_qt {
-const char* find_dssi_ui(const char* const filename, const char* const label) noexcept;
-#undef HAVE_JUCE
-#include "CarlaDssiUtils.cpp"
-}
-
 static void test_CarlaDssiUtils() noexcept
 {
-    const char* const ui_juce = dssi_juce::find_dssi_ui("/usr/lib/dssi/trivial_sampler.so", "aa");
-    const char* const ui_qt   = dssi_qt::find_dssi_ui("/usr/lib/dssi/trivial_sampler.so", "aa");
+    const char* const ui = find_dssi_ui("/usr/lib/dssi/trivial_sampler.so", "aa");
 
-    CARLA_SAFE_ASSERT(ui_juce != nullptr);
-    CARLA_SAFE_ASSERT(ui_qt != nullptr);
+    CARLA_SAFE_ASSERT(ui != nullptr);
 
-    if (ui_juce != nullptr)
+    if (ui != nullptr)
     {
-        carla_stdout("%s", ui_juce);
-        assert(std::strcmp(ui_juce, "/usr/lib/dssi/trivial_sampler/trivial_sampler_qt") == 0);
-        delete[] ui_juce;
-    }
-
-    if (ui_qt != nullptr)
-    {
-        carla_stdout("%s", ui_qt);
-        assert(std::strcmp(ui_qt, "/usr/lib/dssi/trivial_sampler/trivial_sampler_qt") == 0);
-        delete[] ui_qt;
+        carla_stdout("%s", ui);
+        assert(std::strcmp(ui, "/usr/lib/dssi/trivial_sampler/trivial_sampler_qt") == 0);
+        delete[] ui;
     }
 }
 

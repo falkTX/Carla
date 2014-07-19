@@ -13,9 +13,6 @@ BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils -isystem ../modules
 BUILD_CXX_FLAGS += -I../includes/ladspa -I../includes/vst -I../includes/vst3
 #-Wno-multichar
 
-BUILD_CXX_FLAGS += $(QTCORE_FLAGS)
-LINK_FLAGS      += $(QTCORE_LIBS)
-
 ifeq ($(MACOS),true)
 BUILD_CXX_FLAGS += -ObjC++
 endif

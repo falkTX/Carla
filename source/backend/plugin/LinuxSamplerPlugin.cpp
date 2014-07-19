@@ -29,12 +29,12 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
 
+#include "juce_core.h"
+
 #include "linuxsampler/EngineFactory.h"
 #include <linuxsampler/Sampler.h>
 
-// FIXME
-#include <QtCore/QFileInfo>
-#include <QtCore/QStringList>
+// -----------------------------------------------------------------------
 
 namespace LinuxSampler {
 
@@ -68,17 +68,12 @@ public:
     // -------------------------------------------------------------------
     // LinuxSampler virtual methods
 
-    void Play() override
-    {
-    }
+    void Play() override {}
+    void Stop() override {}
 
     bool IsPlaying() override
     {
         return (fEngine->isRunning() && fPlugin->isEnabled());
-    }
-
-    void Stop() override
-    {
     }
 
     uint MaxSamplesPerCycle() override
@@ -123,9 +118,7 @@ class MidiInputPortPlugin : public MidiInputPort
 {
 public:
     MidiInputPortPlugin(MidiInputDevice* const device, const int portNum)
-        : MidiInputPort(device, portNum)
-    {
-    }
+        : MidiInputPort(device, portNum) {}
 
     ~MidiInputPortPlugin() override {}
 };
@@ -137,20 +130,13 @@ class MidiInputDevicePlugin : public MidiInputDevice
 {
 public:
     MidiInputDevicePlugin(Sampler* const sampler)
-        : MidiInputDevice(std::map<String, DeviceCreationParameter*>(), sampler)
-    {
-    }
+        : MidiInputDevice(std::map<String, DeviceCreationParameter*>(), sampler) {}
 
     // -------------------------------------------------------------------
     // LinuxSampler virtual methods
 
-    void Listen() override
-    {
-    }
-
-    void StopListen() override
-    {
-    }
+    void Listen()     override {}
+    void StopListen() override {}
 
     String Driver() override
     {
@@ -172,11 +158,12 @@ public:
 
 // -----------------------------------------------------------------------
 
+using juce::File;
+using juce::StringArray;
+
 CARLA_BACKEND_START_NAMESPACE
 
-#if 0
-}
-#endif
+// -----------------------------------------------------------------------
 
 class LinuxSamplerPlugin : public CarlaPlugin
 {
@@ -411,19 +398,16 @@ public:
 
         if (fUses16Outs)
         {
-            QStringList midiProgramList(QString(value).split(":", QString::SkipEmptyParts));
+            StringArray midiProgramList(StringArray::fromTokens(value, ":", ""));
 
-            if (midiProgramList.count() == MAX_MIDI_CHANNELS)
+            if (midiProgramList.size() == MAX_MIDI_CHANNELS)
             {
-                uint i = 0;
-                foreach (const QString& midiProg, midiProgramList)
+                uint8_t channel = 0;
+                for (juce::String *it=midiProgramList.begin(), *end=midiProgramList.end(); it != end; ++it)
                 {
-                    CARLA_SAFE_ASSERT_BREAK(i < MAX_MIDI_CHANNELS);
+                    const int index(it->getIntValue());
 
-                    bool ok;
-                    int index = midiProg.toInt(&ok);
-
-                    if (ok && index >= 0 && index < static_cast<int>(pData->midiprog.count))
+                    if (index >= 0 && index < static_cast<int>(pData->midiprog.count))
                     {
                         const uint32_t bank    = pData->midiprog.data[index].bank;
                         const uint32_t program = pData->midiprog.data[index].program;
@@ -431,27 +415,26 @@ public:
 
                         /*if (pData->engine->isOffline())
                         {
-                            fEngineChannels[i]->PrepareLoadInstrument(pData->filename, rIndex);
-                            fEngineChannels[i]->LoadInstrument();
+                            fEngineChannels[channel]->PrepareLoadInstrument(pData->filename, rIndex);
+                            fEngineChannels[channel]->LoadInstrument();
                         }
                         else*/
                         {
-                            fInstrument->LoadInstrumentInBackground(fInstrumentIds[rIndex], fEngineChannels[i]);
+                            fInstrument->LoadInstrumentInBackground(fInstrumentIds[rIndex], fEngineChannels[channel]);
                         }
 
-                        fCurMidiProgs[i] = index;
+                        fCurMidiProgs[channel] = index;
 
-                        if (pData->ctrlChannel == static_cast<int32_t>(i))
+                        if (pData->ctrlChannel == static_cast<int32_t>(channel))
                         {
                             pData->midiprog.current = index;
                             pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
                         }
                     }
 
-                    ++i;
+                    ++channel;
                 }
-
-                CARLA_SAFE_ASSERT(i == MAX_MIDI_CHANNELS);
+                CARLA_SAFE_ASSERT(channel == MAX_MIDI_CHANNELS);
             }
         }
 
@@ -1361,26 +1344,11 @@ CarlaPlugin* CarlaPlugin::newLinuxSampler(const Initializer& init, const char* c
 
     // -------------------------------------------------------------------
     // Check if file exists
+
+    if (! File(init.filename).existsAsFile())
     {
-        QFileInfo file(init.filename);
-
-        if (! file.exists())
-        {
-            init.engine->setLastError("Requested file does not exist");
-            return nullptr;
-        }
-
-        if (! file.isFile())
-        {
-            init.engine->setLastError("Requested file is not valid");
-            return nullptr;
-        }
-
-        if (! file.isReadable())
-        {
-            init.engine->setLastError("Requested file is not readable");
-            return nullptr;
-        }
+        init.engine->setLastError("Requested file is not valid or does not exist");
+        return nullptr;
     }
 
     LinuxSamplerPlugin* const plugin(new LinuxSamplerPlugin(init.engine, init.id, format, use16Outs));

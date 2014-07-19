@@ -47,12 +47,10 @@
 #include <iostream>
 
 #include "juce_audio_basics.h"
+using juce::File;
 using juce::FloatVectorOperations;
-
-// FIXME
-#include <QtCore/QDir>
-#include <QtCore/QFileInfo>
-#include <QtCore/QUrl>
+using juce::String;
+using juce::StringArray;
 
 #define DISCOVERY_OUT(x, y) std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl;
 
@@ -965,41 +963,43 @@ static void do_lv2_check(const char* const bundle, const bool init)
     Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
 
     // Convert bundle filename to URI
-    QString qBundle(QUrl::fromLocalFile(bundle).toString());
-    if (! qBundle.endsWith(OS_SEP_STR))
-        qBundle += OS_SEP_STR;
+    CarlaString sBundle("file://");
+    sBundle += bundle;
+
+    if (! sBundle.endsWith(OS_SEP))
+        sBundle += OS_SEP_STR;
 
     // Load bundle
-    lv2World.load_bundle(qBundle.toUtf8().constData());
+    lv2World.load_bundle(sBundle);
 
     // Load plugins in this bundle
     const Lilv::Plugins lilvPlugins(lv2World.get_all_plugins());
 
     // Get all plugin URIs in this bundle
-    QStringList URIs;
+    StringArray URIs;
 
     LILV_FOREACH(plugins, it, lilvPlugins)
     {
         Lilv::Plugin lilvPlugin(lilv_plugins_get(lilvPlugins, it));
 
         if (const char* const uri = lilvPlugin.get_uri().as_string())
-            URIs.append(QString(uri));
+            URIs.addIfNotAlreadyThere(String(uri));
     }
 
-    if (URIs.count() == 0)
+    if (URIs.size() == 0)
     {
         DISCOVERY_OUT("warning", "LV2 Bundle doesn't provide any plugins");
         return;
     }
 
     // Get & check every plugin-instance
-    for (int i=0, count=URIs.count(); i < count; ++i)
+    for (int i=0, count=URIs.size(); i < count; ++i)
     {
-        const LV2_RDF_Descriptor* const rdfDescriptor(lv2_rdf_new(URIs.at(i).toUtf8().constData(), false));
+        const LV2_RDF_Descriptor* const rdfDescriptor(lv2_rdf_new(URIs[i].toRawUTF8(), false));
 
         if (rdfDescriptor == nullptr || rdfDescriptor->URI == nullptr)
         {
-            DISCOVERY_OUT("error", "Failed to find LV2 plugin '" << URIs.at(i).toUtf8().constData() << "'");
+            DISCOVERY_OUT("error", "Failed to find LV2 plugin '" << URIs[i].toRawUTF8() << "'");
             continue;
         }
 
@@ -1606,30 +1606,18 @@ static void do_fluidsynth_check(const char* const filename, const bool init)
 static void do_linuxsampler_check(const char* const filename, const char* const stype, const bool init)
 {
 #ifdef WANT_LINUXSAMPLER
-    const QFileInfo file(filename);
+    const File file(filename);
 
-    if (! file.exists())
+    if (! file.existsAsFile())
     {
-        DISCOVERY_OUT("error", "Requested file does not exist");
-        return;
-    }
-
-    if (! file.isFile())
-    {
-        DISCOVERY_OUT("error", "Requested file is not valid");
-        return;
-    }
-
-    if (! file.isReadable())
-    {
-        DISCOVERY_OUT("error", "Requested file is not readable");
+        DISCOVERY_OUT("error", "Requested file is not valid or does not exist");
         return;
     }
 
     if (init)
         const LinuxSamplerScopedEngine engine(filename, stype);
     else
-        LinuxSamplerScopedEngine::outputInfo(nullptr, 0, file.baseName().toUtf8().constData());
+        LinuxSamplerScopedEngine::outputInfo(nullptr, 0, file.getFileNameWithoutExtension().toRawUTF8());
 #else
     DISCOVERY_OUT("error", stype << " support not available");
     return;
@@ -1639,28 +1627,6 @@ static void do_linuxsampler_check(const char* const filename, const char* const 
     (void)init;
 #endif
 }
-
-// --------------------------------------------------------------------------
-
-class ScopedWorkingDirSet
-{
-public:
-    ScopedWorkingDirSet(const char* const filename)
-        : fPreviousPath(QDir::currentPath())
-    {
-        QDir dir(filename);
-        dir.cdUp();
-        QDir::setCurrent(dir.absolutePath());
-    }
-
-    ~ScopedWorkingDirSet()
-    {
-        QDir::setCurrent(fPreviousPath);
-    }
-
-private:
-    const QString fPreviousPath;
-};
 
 // ------------------------------ main entry point ------------------------------
 
@@ -1675,8 +1641,6 @@ int main(int argc, char* argv[])
     const char* const stype    = argv[1];
     const char* const filename = argv[2];
     const PluginType  type     = getPluginTypeFromString(stype);
-
-    const ScopedWorkingDirSet swds(filename);
 
     CarlaString filenameStr(filename);
     filenameStr.toLower();

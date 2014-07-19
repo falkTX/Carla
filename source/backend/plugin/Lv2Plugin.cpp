@@ -36,10 +36,9 @@ extern "C" {
 #include "rtmempool/rtmempool-lv2.h"
 }
 
-// FIXME
-#include <QtCore/QDir>
-#include <QtCore/QFile>
-#include <QtCore/QUrl>
+#include "juce_core.h"
+
+using juce::File;
 
 #define URI_CARLA_ATOM_WORKER     "http://kxstudio.sf.net/ns/carla/atomWorker"
 #define URI_CARLA_FRONTEND_WIN_ID "http://kxstudio.sf.net/ns/carla/frontendWinId"
@@ -971,10 +970,11 @@ public:
         if (fLv2Options.windowTitle == nullptr)
             return;
 
-        QString guiTitle(QString("%1 (GUI)").arg(pData->name));
+        CarlaString guiTitle(pData->name);
+        guiTitle += " (GUI)";
 
         delete[] fLv2Options.windowTitle;
-        fLv2Options.windowTitle = carla_strdup(guiTitle.toUtf8().constData());
+        fLv2Options.windowTitle = guiTitle.dup();
 
         fLv2Options.opts[Lv2PluginOptions::WindowTitle].size  = (uint32_t)std::strlen(fLv2Options.windowTitle);
         fLv2Options.opts[Lv2PluginOptions::WindowTitle].value = fLv2Options.windowTitle;
@@ -3926,9 +3926,7 @@ public:
         bridgeBinary += ".exe";
 #endif
 
-        QFile file(bridgeBinary.buffer());
-
-        if (! file.exists())
+        if (! File(bridgeBinary.buffer()).existsAsFile())
             return nullptr;
 
         return bridgeBinary.dup();
@@ -4555,16 +4553,17 @@ public:
         {
             if (! is_lv2_feature_supported(fRdfDescriptor->Features[j].URI))
             {
-                QString msg(QString("Plugin wants a feature that is not supported:\n%1").arg(fRdfDescriptor->Features[j].URI));
+                CarlaString msg("Plugin wants a feature that is not supported:\n");
+                msg += fRdfDescriptor->Features[j].URI;
 
                 if (LV2_IS_FEATURE_REQUIRED(fRdfDescriptor->Features[j].Type))
                 {
                     canContinue = false;
-                    pData->engine->setLastError(msg.toUtf8().constData());
+                    pData->engine->setLastError(msg);
                     break;
                 }
                 else
-                    carla_stderr("%s", msg.toUtf8().constData());
+                    carla_stderr("%s", msg.buffer());
             }
         }
 
@@ -5085,8 +5084,9 @@ public:
         // ---------------------------------------------------------------
         // initialize ui data
 
-        QString guiTitle(QString("%1 (GUI)").arg(pData->name));
-        fLv2Options.windowTitle = carla_strdup(guiTitle.toUtf8().constData());
+        CarlaString guiTitle(pData->name);
+        guiTitle += " (GUI)";
+        fLv2Options.windowTitle = guiTitle.dup();
 
         fLv2Options.opts[Lv2PluginOptions::WindowTitle].size  = (uint32_t)std::strlen(fLv2Options.windowTitle);
         fLv2Options.opts[Lv2PluginOptions::WindowTitle].value = fLv2Options.windowTitle;
@@ -5414,8 +5414,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(path != nullptr && path[0] != '\0', nullptr);
         carla_debug("carla_lv2_state_make_path(%p, \"%s\")", handle, path);
 
-        QDir dir;
-        dir.mkpath(path);
+        File(path).createDirectory();
         return strdup(path);
     }
 
@@ -5425,8 +5424,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr && absolute_path[0] != '\0', nullptr);
         carla_debug("carla_lv2_state_map_abstract_path(%p, \"%s\")", handle, absolute_path);
 
-        QDir dir(absolute_path);
-        return strdup(dir.canonicalPath().toUtf8().constData());
+        return strdup(File(absolute_path).getRelativePathFrom(File::getCurrentWorkingDirectory()).toRawUTF8());
     }
 
     static char* carla_lv2_state_map_absolute_path(LV2_State_Map_Path_Handle handle, const char* abstract_path)
@@ -5435,8 +5433,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr && abstract_path[0] != '\0', nullptr);
         carla_debug("carla_lv2_state_map_absolute_path(%p, \"%s\")", handle, abstract_path);
 
-        QDir dir(abstract_path);
-        return strdup(dir.absolutePath().toUtf8().constData());
+        return strdup(File(abstract_path).getFullPathName().toRawUTF8());
     }
 
     static LV2_State_Status carla_lv2_state_store(LV2_State_Handle handle, uint32_t key, const void* value, size_t size, uint32_t type, uint32_t flags)

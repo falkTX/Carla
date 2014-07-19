@@ -61,10 +61,10 @@
 #include "lilv/lilvmm.hpp"
 #include "sratom/sratom.h"
 
-#ifdef HAVE_JUCE
-# include "juce_core.h"
-#else
+#ifdef USE_QT
 # include <QtCore/QStringList>
+#else
+# include "juce_core.h"
 #endif
 
 // -----------------------------------------------------------------------
@@ -576,17 +576,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
 
             if (replaceNode.is_uri())
             {
-#ifdef HAVE_JUCE
-                const juce::String replaceURI(replaceNode.as_uri());
-
-                if (replaceURI.startsWith("urn:"))
-                {
-                    const int uniqueId(replaceURI.getTrailingIntValue());
-
-                    if (uniqueId > 0)
-                        rdfDescriptor->UniqueID = static_cast<ulong>(uniqueId);
-                }
-#else
+#ifdef USE_QT
                 const QString replaceURI(replaceNode.as_uri());
 
                 if (replaceURI.startsWith("urn:"))
@@ -598,6 +588,16 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
 
                     if (ok && uniqueId != 0)
                         rdfDescriptor->UniqueID = uniqueId;
+                }
+#else
+                const juce::String replaceURI(replaceNode.as_uri());
+
+                if (replaceURI.startsWith("urn:"))
+                {
+                    const int uniqueId(replaceURI.getTrailingIntValue());
+
+                    if (uniqueId > 0)
+                        rdfDescriptor->UniqueID = static_cast<ulong>(uniqueId);
                 }
 #endif
             }
@@ -1088,23 +1088,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
             // create a list of preset URIs (for checking appliesTo, sorting and unique-ness)
             // FIXME - check appliesTo?
 
-#ifdef HAVE_JUCE
-            juce::StringArray presetListURIs;
-
-            LILV_FOREACH(nodes, it, presetNodes)
-            {
-                Lilv::Node presetNode(presetNodes.get(it));
-
-                juce::String presetURI(presetNode.as_uri());
-
-                if (presetURI.trim().isNotEmpty())
-                    presetListURIs.addIfNotAlreadyThere(presetURI);
-            }
-
-            presetListURIs.sortNatural();
-
-            rdfDescriptor->PresetCount = static_cast<uint32_t>(presetListURIs.size());
-#else
+#ifdef USE_QT
             QStringList presetListURIs;
 
             LILV_FOREACH(nodes, it, presetNodes)
@@ -1120,6 +1104,22 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
             presetListURIs.sort();
 
             rdfDescriptor->PresetCount = static_cast<uint32_t>(presetListURIs.count());
+#else
+            juce::StringArray presetListURIs;
+
+            LILV_FOREACH(nodes, it, presetNodes)
+            {
+                Lilv::Node presetNode(presetNodes.get(it));
+
+                juce::String presetURI(presetNode.as_uri());
+
+                if (presetURI.trim().isNotEmpty())
+                    presetListURIs.addIfNotAlreadyThere(presetURI);
+            }
+
+            presetListURIs.sortNatural();
+
+            rdfDescriptor->PresetCount = static_cast<uint32_t>(presetListURIs.size());
 #endif
 
             // create presets with unique URIs
@@ -1135,10 +1135,10 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
 
                 if (const char* const presetURI = presetNode.as_uri())
                 {
-#ifdef HAVE_JUCE
-                    const int index(presetListURIs.indexOf(juce::String(presetURI)));
-#else
+#ifdef USE_QT
                     const int index(presetListURIs.indexOf(QString(presetURI)));
+#else
+                    const int index(presetListURIs.indexOf(juce::String(presetURI)));
 #endif
                     CARLA_SAFE_ASSERT_CONTINUE(index >= 0);
 
