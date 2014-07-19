@@ -28,6 +28,30 @@ using juce::XmlElement;
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
+// getNewLineSplittedString
+
+static String getNewLineSplittedString(const String& string)
+{
+    static const int kLineWidth = 120;
+
+    int i=0;
+    const int length=string.length();
+
+    String newString;
+    newString.preallocateBytes(static_cast<size_t>(length + length/120 + 2));
+
+    for (; i+kLineWidth < length; i += kLineWidth)
+    {
+        newString += string.substring(i, i+kLineWidth);
+        newString += "\n";
+    }
+
+    newString += string.substring(i);
+
+    return newString;
+}
+
+// -----------------------------------------------------------------------
 // xmlSafeString
 
 static String xmlSafeString(const String& string, const bool toXml)
@@ -377,7 +401,8 @@ bool StateSave::fillFromXmlElement(const XmlElement* const xmlElement)
 
                 else if (tag.equalsIgnoreCase("chunk"))
                 {
-                    chunk = xmlSafeStringCharDup(text, false);
+                    const String nText(text.replace("\n", ""));
+                    chunk = xmlSafeStringCharDup(nText, false);
                 }
             }
         }
@@ -554,7 +579,7 @@ String StateSave::toString() const
     if (chunk != nullptr && chunk[0] != '\0')
     {
         String chunkXml("\n""   <Chunk>\n");
-        chunkXml << chunk << "\n   </Chunk>\n";
+        chunkXml << getNewLineSplittedString(chunk) << "\n   </Chunk>\n";
 
         content << chunkXml;
     }
