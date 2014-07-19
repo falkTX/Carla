@@ -23,7 +23,7 @@
 #endif
 
 #include <gtk/gtk.h>
-#include <QtCore/QSettings> // FIXME
+//#include <QtCore/QSettings> // FIXME
 
 CARLA_BRIDGE_START_NAMESPACE
 
@@ -88,6 +88,7 @@ public:
         gtk_window_set_resizable(GTK_WINDOW(fWindow), kClient->isResizable());
         gtk_window_set_title(GTK_WINDOW(fWindow), kUiTitle);
 
+#if 0
         {
             QSettings settings("falkTX", appName);
 
@@ -118,6 +119,7 @@ public:
             if (settings.value("Engine/UIsAlwaysOnTop", true).toBool())
                gtk_window_set_keep_above(GTK_WINDOW(fWindow), true);
         }
+#endif
 
         if (showGui || fNeedsShow)
         {
@@ -195,11 +197,13 @@ protected:
 
         fWindow = nullptr;
 
+#if 0
         QSettings settings("falkTX", appName);
         settings.setValue(QString("%1/pos_x").arg(kUiTitle), fLastX);
         settings.setValue(QString("%1/pos_y").arg(kUiTitle), fLastY);
         settings.setValue(QString("%1/width").arg(kUiTitle), fLastWidth);
         settings.setValue(QString("%1/height").arg(kUiTitle), fLastHeight);
+#endif
     }
 
     gboolean handleTimeout()

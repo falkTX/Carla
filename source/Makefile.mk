@@ -208,6 +208,15 @@ endif
 endif
 
 # --------------------------------------------------------------
+# Set default Qt used in frontend
+
+ifeq ($(HAVE_QT4),true)
+DEFAULT_QT ?= 4
+else
+DEFAULT_QT ?= 5
+endif
+
+# --------------------------------------------------------------
 # Check for optional libs (required by internal plugins)
 
 HAVE_AF_DEPS      = $(shell pkg-config --exists sndfile && echo true)

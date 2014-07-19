@@ -19,13 +19,11 @@ LINK_FLAGS      += $(LIBLO_LIBS)
 
 BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS) -DBUILD_BRIDGE_PLUGIN
 BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin
-BUILD_PLUGIN_FLAGS += $(QTCORE_FLAGS)
 
 LINK_PLUGIN_FLAGS   = $(LINK_FLAGS)
 LINK_PLUGIN_FLAGS  += $(JUCE_AUDIO_BASICS_LIBS)
 LINK_PLUGIN_FLAGS  += $(JUCE_CORE_LIBS)
 LINK_PLUGIN_FLAGS  += $(JUCE_EVENTS_LIBS)
-LINK_PLUGIN_FLAGS  += $(QTCORE_LIBS)
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 BUILD_PLUGIN_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST -DWANT_VST3
@@ -120,6 +118,9 @@ ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 BUILD_UI_FLAGS = $(BUILD_CXX_FLAGS) -DBUILD_BRIDGE_UI
 LINK_UI_FLAGS  = $(LINK_FLAGS)
 
+LINK_UI_FLAGS += ../modules/juce_core.a
+LINK_UI_FLAGS += $(JUCE_CORE_LIBS)
+
 BUILD_UI_LV2_FLAGS  = $(BUILD_UI_FLAGS) -DBRIDGE_LV2
 BUILD_UI_VST_FLAGS  = $(BUILD_UI_FLAGS) -DBRIDGE_VST
 
@@ -129,11 +130,11 @@ endif
 
 # --------------------------------------------------------------
 
-BUILD_UI_LV2_GTK2_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK2 -DBRIDGE_LV2_GTK2 $(shell pkg-config --cflags gtk+-2.0) $(QTCORE_FLAGS)
-LINK_UI_LV2_GTK2_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-2.0) $(QTCORE_LIBS) -ldl
+BUILD_UI_LV2_GTK2_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK2 -DBRIDGE_LV2_GTK2 $(shell pkg-config --cflags gtk+-2.0)
+LINK_UI_LV2_GTK2_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-2.0) -ldl
 
-BUILD_UI_LV2_GTK3_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK3 -DBRIDGE_LV2_GTK3 $(shell pkg-config --cflags gtk+-3.0) $(QTCORE_FLAGS)
-LINK_UI_LV2_GTK3_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-3.0) $(QTCORE_LIBS) -ldl
+BUILD_UI_LV2_GTK3_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK3 -DBRIDGE_LV2_GTK3 $(shell pkg-config --cflags gtk+-3.0)
+LINK_UI_LV2_GTK3_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-3.0) -ldl
 
 BUILD_UI_LV2_QT4_FLAGS    = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT4 -DBRIDGE_LV2_QT4 $(shell pkg-config --cflags QtCore QtGui)
 LINK_UI_LV2_QT4_FLAGS     = $(LINK_UI_FLAGS) $(shell pkg-config --libs QtCore QtGui) -ldl

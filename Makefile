@@ -209,10 +209,10 @@ RES: $(RES)
 
 source/carla_config.py:
 	@echo "#!/usr/bin/env python3\n# -*- coding: utf-8 -*-\n" > $@
-ifeq ($(DEFAULT_QT),5)
-	@echo "config_UseQt5 = True" >> $@
-else
+ifeq ($(DEFAULT_QT),4)
 	@echo "config_UseQt5 = False" >> $@
+else
+	@echo "config_UseQt5 = True" >> $@
 endif
 
 source/resources_rc.py: resources/resources.qrc resources/*/*.png resources/*/*.svg

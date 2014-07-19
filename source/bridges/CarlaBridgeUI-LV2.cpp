@@ -18,22 +18,21 @@
 #undef HAVE_JUCE
 
 #include "CarlaBridgeClient.hpp"
+#include "CarlaBase64Utils.hpp"
 #include "CarlaLv2Utils.hpp"
 #include "CarlaMIDI.h"
 #include "LinkedList.hpp"
 
-#include <QtCore/QDir> // FIXME
+#include "juce_core.h"
 
 #define URI_CARLA_FRONTEND_WIN_ID "http://kxstudio.sf.net/ns/carla/frontendWinId"
 #define URI_CARLA_WORKER          "http://kxstudio.sf.net/ns/carla/worker"
 
-// -----------------------------------------------------
+using juce::File;
 
 CARLA_BRIDGE_START_NAMESPACE
 
-#if 0
-}
-#endif
+// -----------------------------------------------------
 
 static uint32_t gBufferSize = 1024;
 static double   gSampleRate = 44100.0;
@@ -868,8 +867,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(path != nullptr && path[0] != '\0', nullptr);
         carla_debug("carla_lv2_state_make_path(%p, \"%s\")", handle, path);
 
-        QDir dir;
-        dir.mkpath(path);
+        File(path).createDirectory();
         return strdup(path);
     }
 
@@ -879,8 +877,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr && absolute_path[0] != '\0', nullptr);
         carla_debug("carla_lv2_state_map_abstract_path(%p, \"%s\")", handle, absolute_path);
 
-        QDir dir(absolute_path);
-        return strdup(dir.canonicalPath().toUtf8().constData());
+        return strdup(File(absolute_path).getRelativePathFrom(File::getCurrentWorkingDirectory()).toRawUTF8());
     }
 
     static char* carla_lv2_state_map_absolute_path(LV2_State_Map_Path_Handle handle, const char* abstract_path)
@@ -889,8 +886,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr && abstract_path[0] != '\0', nullptr);
         carla_debug("carla_lv2_state_map_absolute_path(%p, \"%s\")", handle, abstract_path);
 
-        QDir dir(abstract_path);
-        return strdup(dir.absolutePath().toUtf8().constData());
+        return strdup(File(abstract_path).getFullPathName().toRawUTF8());
     }
 
     // -------------------------------------------------------------------
@@ -1178,11 +1174,10 @@ int CarlaBridgeOsc::handleMsgLv2AtomTransfer(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     if (portIndex < 0)
         return 0;
 
-    QByteArray chunk;
-    chunk = QByteArray::fromBase64(atomBuf);
+    std::vector<uint8_t> chunk(carla_getChunkFromBase64String(atomBuf));
+    CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0, 0);
 
-    LV2_Atom* const atom = (LV2_Atom*)chunk.constData();
-
+    const LV2_Atom* const atom((const LV2_Atom*)chunk.data());
     lv2ClientPtr->handleAtomTransfer(portIndex, atom);
     return 0;
 }
