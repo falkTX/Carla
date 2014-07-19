@@ -175,11 +175,11 @@ ifeq ($(HAVE_GTK3),true)
 TARGETS += ui_lv2-gtk3
 endif
 
-ifeq ($(HAVE_QTGUI4),true)
+ifeq ($(HAVE_QT4),true)
 TARGETS += ui_lv2-qt4
 endif
 
-ifeq ($(HAVE_QTGUI5),true)
+ifeq ($(HAVE_QT5),true)
 TARGETS += ui_lv2-qt5
 endif
 
