@@ -87,6 +87,7 @@ class CarlaMultiW(QTabWidget):
         parent.ParameterMidiCcChangedCallback.connect(self.fRack.slot_handleParameterMidiCcChangedCallback)
         parent.ProgramChangedCallback.connect(self.fRack.slot_handleProgramChangedCallback)
         parent.MidiProgramChangedCallback.connect(self.fRack.slot_handleMidiProgramChangedCallback)
+        parent.OptionChangedCallback.connect(self.fRack.slot_handleOptionChangedCallback)
         parent.UiStateChangedCallback.connect(self.fRack.slot_handleUiStateChangedCallback)
         parent.NoteOnCallback.connect(self.fRack.slot_handleNoteOnCallback)
         parent.NoteOnCallback.connect(self.fPatchbay.slot_handleNoteOnCallback)

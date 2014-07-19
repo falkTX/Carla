@@ -2069,7 +2069,7 @@ void carla_set_option(uint pluginId, uint option, bool yesNo)
     carla_debug("carla_set_option(%i, %i, %s)", pluginId, option, bool2str(yesNo));
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->setOption(option, yesNo);
+        return plugin->setOption(option, yesNo, false);
 
     carla_stderr2("carla_set_option(%i, %i, %s) - could not find plugin", pluginId, option, bool2str(yesNo));
 }

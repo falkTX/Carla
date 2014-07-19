@@ -2103,60 +2103,35 @@ public:
         }
 
         // ---------------------------------------------------------------
-        // load plugin settings
+        // set default options
 
-        {
 #ifdef __USE_GNU
-            const bool isDssiVst(strcasestr(pData->filename, "dssi-vst") != nullptr);
+        const bool isDssiVst(strcasestr(pData->filename, "dssi-vst") != nullptr);
 #else
-            const bool isDssiVst(std::strstr(pData->filename, "dssi-vst") != nullptr);
+        const bool isDssiVst(std::strstr(pData->filename, "dssi-vst") != nullptr);
 #endif
 
-            // set default options
-            pData->options = 0x0;
+        pData->options  = 0x0;
+        pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        if (fLatencyIndex >= 0 || isDssiVst)
+            pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-            if (fLatencyIndex >= 0 || isDssiVst)
-                pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+        if (pData->engine->getOptions().forceStereo)
+            pData->options |= PLUGIN_OPTION_FORCE_STEREO;
 
-            if (pData->engine->getOptions().forceStereo)
-                pData->options |= PLUGIN_OPTION_FORCE_STEREO;
+        if (fUsesCustomData)
+            pData->options |= PLUGIN_OPTION_USE_CHUNKS;
 
-            if (fUsesCustomData)
-                pData->options |= PLUGIN_OPTION_USE_CHUNKS;
+        if (fDssiDescriptor->run_synth != nullptr || fDssiDescriptor->run_multiple_synths != nullptr)
+        {
+            pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+            pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+            pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+            pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
-            if (fDssiDescriptor->run_synth != nullptr || fDssiDescriptor->run_multiple_synths != nullptr)
-            {
-                pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-                pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-                pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
-                pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-
-                if (fDssiDescriptor->run_synth == nullptr)
-                    carla_stderr("WARNING: Plugin can ONLY use run_multiple_synths!");
-            }
-
-#ifndef BUILD_BRIDGE
-            // set identifier string
-            CarlaString identifier("DSSI/");
-
-            if (const char* const shortname = std::strrchr(filename, OS_SEP))
-            {
-                identifier += shortname+1;
-                identifier += ",";
-            }
-
-            identifier += label;
-            pData->identifier = identifier.dup();
-
-            // load settings
-            pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
-
-            // ignore settings, we need this anyway
-            if (fLatencyIndex >= 0 || isDssiVst)
-                pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
-#endif
+            if (fDssiDescriptor->run_synth == nullptr)
+                carla_stderr("WARNING: Plugin can ONLY use run_multiple_synths!");
         }
 
         return true;

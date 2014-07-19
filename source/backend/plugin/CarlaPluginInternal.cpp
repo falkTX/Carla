@@ -21,16 +21,7 @@
 #include "CarlaLibCounter.hpp"
 #include "CarlaMathUtils.hpp"
 
-// FIXME
-#include <QtCore/QSettings>
-
-// -----------------------------------------------------------------------
-
 CARLA_BACKEND_START_NAMESPACE
-
-#if 0
-} // Fix editor indentation
-#endif
 
 // -------------------------------------------------------------------
 // Fallback data
@@ -465,9 +456,6 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       name(nullptr),
       filename(nullptr),
       iconName(nullptr),
-#ifndef BUILD_BRIDGE
-      identifier(nullptr),
-#endif
       osc(eng, plug) {}
 
 CarlaPlugin::ProtectedData::~ProtectedData() noexcept
@@ -515,14 +503,6 @@ CarlaPlugin::ProtectedData::~ProtectedData() noexcept
         delete[] iconName;
         iconName = nullptr;
     }
-
-#ifndef BUILD_BRIDGE
-    if (identifier != nullptr)
-    {
-        delete[] identifier;
-        identifier = nullptr;
-    }
-#endif
 
     for (LinkedList<CustomData>::Itenerator it = custom.begin(); it.valid(); it.next())
     {
@@ -704,91 +684,6 @@ void* CarlaPlugin::ProtectedData::uiLibSymbol(const char* const symbol) const no
     return lib_symbol(uiLib, symbol);
 }
 
-#ifndef BUILD_BRIDGE
-// -----------------------------------------------------------------------
-// Settings functions
-
-void CarlaPlugin::ProtectedData::saveSetting(const uint option, const bool yesNo) const
-{
-    CARLA_SAFE_ASSERT_RETURN(identifier != nullptr && identifier[0] != '\0',);
-
-    QSettings settings("falkTX", "CarlaPluginSettings");
-    settings.beginGroup(identifier);
-
-    switch (option)
-    {
-    case PLUGIN_OPTION_FIXED_BUFFERS:
-        settings.setValue("FixedBuffers", yesNo);
-        break;
-    case PLUGIN_OPTION_FORCE_STEREO:
-        settings.setValue("ForceStereo", yesNo);
-        break;
-    case PLUGIN_OPTION_MAP_PROGRAM_CHANGES:
-        settings.setValue("MapProgramChanges", yesNo);
-        break;
-    case PLUGIN_OPTION_USE_CHUNKS:
-        settings.setValue("UseChunks", yesNo);
-        break;
-    case PLUGIN_OPTION_SEND_CONTROL_CHANGES:
-        settings.setValue("SendControlChanges", yesNo);
-        break;
-    case PLUGIN_OPTION_SEND_CHANNEL_PRESSURE:
-        settings.setValue("SendChannelPressure", yesNo);
-        break;
-    case PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH:
-        settings.setValue("SendNoteAftertouch", yesNo);
-        break;
-    case PLUGIN_OPTION_SEND_PITCHBEND:
-        settings.setValue("SendPitchbend", yesNo);
-        break;
-    case PLUGIN_OPTION_SEND_ALL_SOUND_OFF:
-        settings.setValue("SendAllSoundOff", yesNo);
-        break;
-    default:
-        break;
-    }
-
-    settings.endGroup();
-}
-
-uint CarlaPlugin::ProtectedData::loadSettings(const uint curOptions, const uint availOptions) const
-{
-    CARLA_SAFE_ASSERT_RETURN(identifier != nullptr && identifier[0] != '\0', 0x0);
-
-    QSettings settings("falkTX", "CarlaPluginSettings");
-    settings.beginGroup(identifier);
-
-    uint newOptions = 0x0;
-
-    #define CHECK_AND_SET_OPTION(STR, BIT)                                    \
-    if ((availOptions & BIT) != 0 || BIT == PLUGIN_OPTION_FORCE_STEREO)       \
-    {                                                                         \
-        if (settings.contains(STR))                                           \
-        {                                                                     \
-            if (settings.value(STR, bool((curOptions & BIT) != 0)).toBool())  \
-                newOptions |= BIT;                                            \
-        }                                                                     \
-        else if (curOptions & BIT)                                            \
-            newOptions |= BIT;                                                \
-    }
-
-    CHECK_AND_SET_OPTION("FixedBuffers", PLUGIN_OPTION_FIXED_BUFFERS);
-    CHECK_AND_SET_OPTION("ForceStereo", PLUGIN_OPTION_FORCE_STEREO);
-    CHECK_AND_SET_OPTION("MapProgramChanges", PLUGIN_OPTION_MAP_PROGRAM_CHANGES);
-    CHECK_AND_SET_OPTION("UseChunks", PLUGIN_OPTION_USE_CHUNKS);
-    CHECK_AND_SET_OPTION("SendControlChanges", PLUGIN_OPTION_SEND_CONTROL_CHANGES);
-    CHECK_AND_SET_OPTION("SendChannelPressure", PLUGIN_OPTION_SEND_CHANNEL_PRESSURE);
-    CHECK_AND_SET_OPTION("SendNoteAftertouch", PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH);
-    CHECK_AND_SET_OPTION("SendPitchbend", PLUGIN_OPTION_SEND_PITCHBEND);
-    CHECK_AND_SET_OPTION("SendAllSoundOff", PLUGIN_OPTION_SEND_ALL_SOUND_OFF);
-
-    #undef CHECK_AND_SET_OPTION
-
-    settings.endGroup();
-
-    return newOptions;
-}
-
 // -----------------------------------------------------------------------
 
 void CarlaPlugin::ProtectedData::tryTransient() noexcept
@@ -796,7 +691,6 @@ void CarlaPlugin::ProtectedData::tryTransient() noexcept
     if (engine->getOptions().frontendWinId != 0)
         transientTryCounter = 1;
 }
-#endif
 
 void CarlaPlugin::ProtectedData::updateParameterValues(CarlaPlugin* const plugin, const bool sendOsc, const bool sendCallback, const bool useDefault) noexcept
 {

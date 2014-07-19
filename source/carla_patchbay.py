@@ -225,6 +225,7 @@ class CarlaPatchbayW(QFrame):
         parent.ParameterMidiCcChangedCallback.connect(self.slot_handleParameterMidiCcChangedCallback)
         parent.ProgramChangedCallback.connect(self.slot_handleProgramChangedCallback)
         parent.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
+        parent.OptionChangedCallback.connect(self.slot_handleOptionChangedCallback)
         parent.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
         parent.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
         parent.UpdateCallback.connect(self.slot_handleUpdateCallback)
@@ -725,6 +726,19 @@ class CarlaPatchbayW(QFrame):
             return
 
         pitem.setMidiProgram(index)
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(int, int, bool)
+    def slot_handleOptionChangedCallback(self, pluginId, option, yesNo):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.setOption(option, yesNo)
 
     # -----------------------------------------------------------------
 

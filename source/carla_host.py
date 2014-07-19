@@ -134,6 +134,7 @@ class HostWindow(QMainWindow):
     ParameterMidiChannelChangedCallback = pyqtSignal(int, int, int)
     ProgramChangedCallback = pyqtSignal(int, int)
     MidiProgramChangedCallback = pyqtSignal(int, int)
+    OptionChangedCallback = pyqtSignal(int, int, bool)
     UiStateChangedCallback = pyqtSignal(int, int)
     NoteOnCallback = pyqtSignal(int, int, int, int)
     NoteOffCallback = pyqtSignal(int, int, int)
@@ -1262,6 +1263,8 @@ def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
         gCarla.gui.ProgramChangedCallback.emit(pluginId, value1)
     elif action == ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
         gCarla.gui.MidiProgramChangedCallback.emit(pluginId, value1)
+    elif action == ENGINE_CALLBACK_OPTION_CHANGED:
+        gCarla.gui.OptionChangedCallback.emit(pluginId, value1, bool(value2))
     elif action == ENGINE_CALLBACK_UI_STATE_CHANGED:
         gCarla.gui.UiStateChangedCallback.emit(pluginId, value1)
     elif action == ENGINE_CALLBACK_NOTE_ON:

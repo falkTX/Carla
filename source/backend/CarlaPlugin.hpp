@@ -430,7 +430,7 @@ public:
      *
      * \see getOptions() and getAvailableOptions()
      */
-    void setOption(const uint option, const bool yesNo);
+    void setOption(const uint option, const bool yesNo, const bool sendCallback);
 
     /*!
      * Enable or disable the plugin according to \a yesNo. \n

@@ -540,46 +540,53 @@ ENGINE_CALLBACK_PROGRAM_CHANGED = 9
 # @param value1   New MIDI program index
 ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED = 10
 
+# A plugin option has changed.
+# @param pluginId Plugin Id
+# @param value1   Option
+# @param value2   New on/off state (1 for on, 0 for off)
+# @see PluginOptions
+ENGINE_CALLBACK_OPTION_CHANGED = 11
+
 # A plugin's custom UI state has changed.
 # @param pluginId Plugin Id
 # @param value1   New state, as follows:
 #                  0: UI is now hidden
 #                  1: UI is now visible
 #                 -1: UI has crashed and should not be shown again
-ENGINE_CALLBACK_UI_STATE_CHANGED = 11
+ENGINE_CALLBACK_UI_STATE_CHANGED = 12
 
 # A note has been pressed.
 # @param pluginId Plugin Id
 # @param value1   Channel
 # @param value2   Note
 # @param value3   Velocity
-ENGINE_CALLBACK_NOTE_ON = 12
+ENGINE_CALLBACK_NOTE_ON = 13
 
 # A note has been released.
 # @param pluginId Plugin Id
 # @param value1   Channel
 # @param value2   Note
-ENGINE_CALLBACK_NOTE_OFF = 13
+ENGINE_CALLBACK_NOTE_OFF = 14
 
 # A plugin needs update.
 # @param pluginId Plugin Id
-ENGINE_CALLBACK_UPDATE = 14
+ENGINE_CALLBACK_UPDATE = 15
 
 # A plugin's data/information has changed.
 # @param pluginId Plugin Id
-ENGINE_CALLBACK_RELOAD_INFO = 15
+ENGINE_CALLBACK_RELOAD_INFO = 16
 
 # A plugin's parameters have changed.
 # @param pluginId Plugin Id
-ENGINE_CALLBACK_RELOAD_PARAMETERS = 16
+ENGINE_CALLBACK_RELOAD_PARAMETERS = 17
 
 # A plugin's programs have changed.
 # @param pluginId Plugin Id
-ENGINE_CALLBACK_RELOAD_PROGRAMS = 17
+ENGINE_CALLBACK_RELOAD_PROGRAMS = 18
 
 # A plugin state has changed.
 # @param pluginId Plugin Id
-ENGINE_CALLBACK_RELOAD_ALL = 18
+ENGINE_CALLBACK_RELOAD_ALL = 19
 
 # A patchbay client has been added.
 # @param pluginId Client Id
@@ -587,23 +594,23 @@ ENGINE_CALLBACK_RELOAD_ALL = 18
 # @param value2   Plugin Id (-1 if not a plugin)
 # @param valueStr Client name
 # @see PatchbayIcon
-ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED = 19
+ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED = 20
 
 # A patchbay client has been removed.
 # @param pluginId Client Id
-ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED = 20
+ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED = 21
 
 # A patchbay client has been renamed.
 # @param pluginId Client Id
 # @param valueStr New client name
-ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED = 21
+ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED = 22
 
 # A patchbay client data has changed.
 # @param pluginId Client Id
 # @param value1   New icon
 # @param value2   New plugin Id (-1 if not a plugin)
 # @see PatchbayIcon
-ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED = 22
+ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED = 23
 
 # A patchbay port has been added.
 # @param pluginId Client Id
@@ -611,27 +618,27 @@ ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED = 22
 # @param value2   Port hints
 # @param valueStr Port name
 # @see PatchbayPortHints
-ENGINE_CALLBACK_PATCHBAY_PORT_ADDED = 23
+ENGINE_CALLBACK_PATCHBAY_PORT_ADDED = 24
 
 # A patchbay port has been removed.
 # @param pluginId Client Id
 # @param value1   Port Id
-ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED = 24
+ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED = 25
 
 # A patchbay port has been renamed.
 # @param pluginId Client Id
 # @param value1   Port Id
 # @param valueStr New port name
-ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED = 25
+ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED = 26
 
 # A patchbay connection has been added.
 # @param pluginId Connection Id
 # @param valueStr Out group, port plus in group and port, in "og:op:ig:ip" syntax.
-ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED = 26
+ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED = 27
 
 # A patchbay connection has been removed.
 # @param pluginId Connection Id
-ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED = 27
+ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED = 28
 
 # Engine started.
 # @param value1   Process mode
@@ -639,44 +646,44 @@ ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED = 27
 # @param valuestr Engine driver
 # @see EngineProcessMode
 # @see EngineTransportMode
-ENGINE_CALLBACK_ENGINE_STARTED = 28
+ENGINE_CALLBACK_ENGINE_STARTED = 29
 
 # Engine stopped.
-ENGINE_CALLBACK_ENGINE_STOPPED = 29
+ENGINE_CALLBACK_ENGINE_STOPPED = 30
 
 # Engine process mode has changed.
 # @param value1 New process mode
 # @see EngineProcessMode
-ENGINE_CALLBACK_PROCESS_MODE_CHANGED = 30
+ENGINE_CALLBACK_PROCESS_MODE_CHANGED = 31
 
 # Engine transport mode has changed.
 # @param value1 New transport mode
 # @see EngineTransportMode
-ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED = 31
+ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED = 32
 
 # Engine buffer-size changed.
 # @param value1 New buffer size
-ENGINE_CALLBACK_BUFFER_SIZE_CHANGED = 32
+ENGINE_CALLBACK_BUFFER_SIZE_CHANGED = 33
 
 # Engine sample-rate changed.
 # @param value3 New sample rate
-ENGINE_CALLBACK_SAMPLE_RATE_CHANGED = 33
+ENGINE_CALLBACK_SAMPLE_RATE_CHANGED = 34
 
 # Idle frontend.
 # This is used by the engine during long operations that might block the frontend,
 # giving it the possibility to idle while the operation is still in place.
-ENGINE_CALLBACK_IDLE = 34
+ENGINE_CALLBACK_IDLE = 35
 
 # Show a message as information.
 # @param valueStr The message
-ENGINE_CALLBACK_INFO = 35
+ENGINE_CALLBACK_INFO = 36
 
 # Show a message as an error.
 # @param valueStr The message
-ENGINE_CALLBACK_ERROR = 36
+ENGINE_CALLBACK_ERROR = 37
 
 # The engine has crashed or malfunctioned and will no longer work.
-ENGINE_CALLBACK_QUIT = 37
+ENGINE_CALLBACK_QUIT = 38
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine Option

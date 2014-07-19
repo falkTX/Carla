@@ -217,6 +217,8 @@ const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode) noexcept
         return "ENGINE_CALLBACK_PROGRAM_CHANGED";
     case ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
         return "ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED";
+    case ENGINE_CALLBACK_OPTION_CHANGED:
+        return "ENGINE_CALLBACK_OPTION_CHANGED";
     case ENGINE_CALLBACK_UI_STATE_CHANGED:
         return "ENGINE_CALLBACK_UI_STATE_CHANGED";
     case ENGINE_CALLBACK_NOTE_ON:

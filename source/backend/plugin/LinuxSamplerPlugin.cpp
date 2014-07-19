@@ -1304,33 +1304,13 @@ public:
         }
 
         // ---------------------------------------------------------------
-        // load plugin settings
+        // set default options
 
-        {
-            // set default options
-            pData->options = 0x0;
-
-            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-            pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-            pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
-            pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-
-#ifndef BUILD_BRIDGE
-            // set identifier string
-            CarlaString identifier(fFormat);
-            identifier += "/";
-
-            if (const char* const shortname = std::strrchr(filename, OS_SEP))
-                identifier += shortname+1;
-            else
-                identifier += label;
-
-            pData->identifier = identifier.dup();
-
-            // load settings
-            pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
-#endif
-        }
+        pData->options  = 0x0;
+        pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+        pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+        pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
         return true;
     }

@@ -2306,48 +2306,21 @@ public:
         }
 
         // ---------------------------------------------------------------
-        // load plugin settings
+        // set default options
 
+        pData->options  = 0x0;
+        pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+        if (fEffect->flags & effFlagsProgramChunks)
+            pData->options |= PLUGIN_OPTION_USE_CHUNKS;
+
+        if (hasMidiInput())
         {
-            const bool hasMidiIn(hasMidiInput());
-
-            // set default options
-            pData->options = 0x0;
-
-            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-
-            if (fEffect->flags & effFlagsProgramChunks)
-                pData->options |= PLUGIN_OPTION_USE_CHUNKS;
-
-            if (hasMidiIn)
-            {
-                pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
-                pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-                pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-                pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
-                pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-            }
-
-#ifndef BUILD_BRIDGE
-            // set identifier string
-            CarlaString identifier("VST/");
-
-            if (const char* const shortname = std::strrchr(filename, OS_SEP))
-            {
-                identifier += shortname+1;
-                identifier += ",";
-            }
-
-            identifier += CarlaString(static_cast<long>(fEffect->uniqueID));
-            pData->identifier = identifier.dup();
-
-            // load settings
-            pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
-
-            // ignore settings, we need this anyway
-            if (hasMidiIn)
-                pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
-#endif
+            pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+            pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+            pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+            pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+            pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
         }
 
         return true;

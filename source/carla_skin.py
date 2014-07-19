@@ -297,6 +297,11 @@ class AbstractPluginSlot(QFrame):
 
     #------------------------------------------------------------------
 
+    def setOption(self, option, yesNo):
+        self.fEditDialog.setOption(option, yesNo)
+
+    #------------------------------------------------------------------
+
     def sendNoteOn(self, channel, note):
         if self.fEditDialog.sendNoteOn(channel, note):
             self.midiActivityChanged(True)
@@ -378,6 +383,9 @@ class AbstractPluginSlot(QFrame):
         self.cb_presets.blockSignals(True)
         self.cb_presets.setCurrentIndex(index)
         self.cb_presets.blockSignals(False)
+
+    def optionChanged(self, option, yesNo):
+        pass
 
     def notePressed(self, note):
         pass

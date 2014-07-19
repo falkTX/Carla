@@ -528,6 +528,8 @@ const StateSave& CarlaPlugin::getStateSave()
     pData->stateSave.name     = carla_strdup(pData->name);
     pData->stateSave.label    = carla_strdup(strBuf);
     pData->stateSave.uniqueId = getUniqueId();
+    pData->stateSave.options  = pData->options;
+    carla_stdout("Options: 0x%x | 0x%x", pData->options, pData->stateSave.options);
 
     if (pData->filename != nullptr)
         pData->stateSave.binary = carla_strdup(pData->filename);
@@ -844,6 +846,17 @@ void CarlaPlugin::loadStateSave(const StateSave& stateSave)
     // ---------------------------------------------------------------
     // Part 6 - set internal stuff
 
+    const uint availOptions(getOptionsAvailable());
+
+    for (int i=0; i<10; ++i) // FIXME - get this value somehow...
+    {
+        const uint option(1 << i);
+
+        if (availOptions & option)
+            setOption(option, (stateSave.options & option) != 0, true);
+
+    }
+
 #ifndef BUILD_BRIDGE
     setDryWet(stateSave.dryWet, true, true);
     setVolume(stateSave.volume, true, true);
@@ -918,7 +931,7 @@ void CarlaPlugin::setName(const char* const newName)
     pData->name = carla_strdup(newName);
 }
 
-void CarlaPlugin::setOption(const uint option, const bool yesNo)
+void CarlaPlugin::setOption(const uint option, const bool yesNo, const bool sendCallback)
 {
     CARLA_SAFE_ASSERT_RETURN(getOptionsAvailable() & option,);
 
@@ -927,9 +940,8 @@ void CarlaPlugin::setOption(const uint option, const bool yesNo)
     else
         pData->options &= ~option;
 
-#ifndef BUILD_BRIDGE
-    pData->saveSetting(option, yesNo);
-#endif
+    if (sendCallback)
+        pData->engine->callback(ENGINE_CALLBACK_OPTION_CHANGED, pData->id, option, yesNo ? 1 : 0, 0.0f, nullptr);
 }
 
 void CarlaPlugin::setEnabled(const bool yesNo) noexcept

@@ -296,7 +296,7 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(yesNo), true);
 
             if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->setOption(option, yesNo);
+                plugin->setOption(option, yesNo, false);
         }
         else if (std::strcmp(msg, "set_active") == 0)
         {

@@ -942,6 +942,32 @@ class PluginEdit(QDialog):
         self.ui.cb_midi_programs.setCurrentIndex(index)
         self.ui.cb_midi_programs.blockSignals(False)
 
+    def setOption(self, option, yesNo):
+        if option == PLUGIN_OPTION_FIXED_BUFFERS:
+            widget = self.ui.ch_fixed_buffer
+        elif option == PLUGIN_OPTION_FORCE_STEREO:
+            widget = self.ui.ch_force_stereo
+        elif option == PLUGIN_OPTION_MAP_PROGRAM_CHANGES:
+            widget = self.ui.ch_map_program_changes
+        elif option == PLUGIN_OPTION_USE_CHUNKS:
+            widget = self.ui.ch_use_chunks
+        elif option == PLUGIN_OPTION_SEND_CONTROL_CHANGES:
+            widget = self.ui.ch_send_control_changes
+        elif option == PLUGIN_OPTION_SEND_CHANNEL_PRESSURE:
+            widget = self.ui.ch_send_channel_pressure
+        elif option == PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH:
+            widget = self.ui.ch_send_note_aftertouch
+        elif option == PLUGIN_OPTION_SEND_PITCHBEND:
+            widget = self.ui.ch_send_pitchbend
+        elif option == PLUGIN_OPTION_SEND_ALL_SOUND_OFF:
+            widget = self.ui.ch_send_all_sound_off
+        else:
+            return
+
+        widget.blockSignals(True)
+        widget.setChecked(yesNo)
+        widget.blockSignals(False)
+
     #------------------------------------------------------------------
 
     def sendNoteOn(self, channel, note):

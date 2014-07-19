@@ -1604,40 +1604,21 @@ public:
         }
 
         // ---------------------------------------------------------------
-        // load plugin settings
+        // set default options
 
-        {
 #ifdef __USE_GNU
-            const bool isDssiVst(strcasestr(pData->filename, "dssi-vst") != nullptr);
+        const bool isDssiVst(strcasestr(pData->filename, "dssi-vst") != nullptr);
 #else
-            const bool isDssiVst(std::strstr(pData->filename, "dssi-vst") != nullptr);
+        const bool isDssiVst(std::strstr(pData->filename, "dssi-vst") != nullptr);
 #endif
 
-            // set default options
-            pData->options = 0x0;
+        pData->options = 0x0;
 
-            if (fLatencyIndex >= 0 || isDssiVst)
-                pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+        if (fLatencyIndex >= 0 || isDssiVst)
+            pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-            if (pData->engine->getOptions().forceStereo)
-                pData->options |= PLUGIN_OPTION_FORCE_STEREO;
-
-#ifndef BUILD_BRIDGE
-            // set identifier string
-            CarlaString identifier("LADSPA/");
-            identifier += CarlaString(getUniqueId());
-            identifier += ",";
-            identifier += label;
-            pData->identifier = identifier.dup();
-
-            // load settings
-            pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
-
-            // ignore settings, we need this anyway
-            if (fLatencyIndex >= 0 || isDssiVst)
-                pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
-#endif
-        }
+        if (pData->engine->getOptions().forceStereo)
+            pData->options |= PLUGIN_OPTION_FORCE_STEREO;
 
         return true;
     }

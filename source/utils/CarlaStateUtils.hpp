@@ -76,6 +76,7 @@ struct StateSave {
     float balanceRight;
     float panning;
     int8_t ctrlChannel;
+    uint   options;
 
     int32_t     currentProgramIndex;
     const char* currentProgramName;

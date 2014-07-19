@@ -240,9 +240,6 @@ struct CarlaPlugin::ProtectedData {
     const char* name;
     const char* filename;
     const char* iconName;
-#ifndef BUILD_BRIDGE
-    const char* identifier; // used for save/restore settings per plugin
-#endif
 
     // data 2
     PluginAudioData audioIn;
@@ -345,19 +342,10 @@ struct CarlaPlugin::ProtectedData {
     bool  uiLibClose() noexcept;
     void* uiLibSymbol(const char* const symbol) const noexcept;
 
-#ifndef BUILD_BRIDGE
-    // -------------------------------------------------------------------
-    // Settings functions
-
-    void saveSetting(const uint option, const bool yesNo) const;
-    uint loadSettings(const uint options, const uint availOptions) const;
-
     // -------------------------------------------------------------------
     // Misc
 
     void tryTransient() noexcept;
-#endif
-
     void updateParameterValues(CarlaPlugin* const plugin, const bool sendOsc, const bool sendCallback, const bool useDefault) noexcept;
 
     // -------------------------------------------------------------------

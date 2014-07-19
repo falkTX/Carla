@@ -2326,46 +2326,29 @@ public:
         }
 
         // ---------------------------------------------------------------
-        // load plugin settings
+        // set default options
 
-        {
-            const bool hasMidiProgs(fDescriptor->get_midi_program_count != nullptr && fDescriptor->get_midi_program_count(fHandle) > 0);
+        const bool hasMidiProgs(fDescriptor->get_midi_program_count != nullptr && fDescriptor->get_midi_program_count(fHandle) > 0);
 
-            // set default options
-            pData->options = 0x0;
+        pData->options = 0x0;
 
-            if (hasMidiProgs && (fDescriptor->supports & ::PLUGIN_SUPPORTS_PROGRAM_CHANGES) == 0)
-                pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        if (hasMidiProgs && (fDescriptor->supports & ::PLUGIN_SUPPORTS_PROGRAM_CHANGES) == 0)
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-            if (getMidiInCount() > 0 || (fDescriptor->hints & ::PLUGIN_NEEDS_FIXED_BUFFERS) != 0)
-                pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+        if (getMidiInCount() > 0 || (fDescriptor->hints & ::PLUGIN_NEEDS_FIXED_BUFFERS) != 0)
+            pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-            if (pData->engine->getOptions().forceStereo)
-                pData->options |= PLUGIN_OPTION_FORCE_STEREO;
+        if (pData->engine->getOptions().forceStereo)
+            pData->options |= PLUGIN_OPTION_FORCE_STEREO;
 
-            if (fDescriptor->supports & ::PLUGIN_SUPPORTS_CHANNEL_PRESSURE)
-                pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-            if (fDescriptor->supports & ::PLUGIN_SUPPORTS_NOTE_AFTERTOUCH)
-                pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-            if (fDescriptor->supports & ::PLUGIN_SUPPORTS_PITCHBEND)
-                pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
-            if (fDescriptor->supports & ::PLUGIN_SUPPORTS_ALL_SOUND_OFF)
-                pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-
-#ifndef BUILD_BRIDGE
-            // set identifier string
-            CarlaString identifier("Native/");
-            identifier += label;
-            pData->identifier = identifier.dup();
-
-            // load settings
-            pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
-
-            // ignore settings, we need this anyway
-            if (getMidiInCount() > 0 || (fDescriptor->hints & ::PLUGIN_NEEDS_FIXED_BUFFERS) != 0)
-                pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
-#endif
-        }
+        if (fDescriptor->supports & ::PLUGIN_SUPPORTS_CHANNEL_PRESSURE)
+            pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+        if (fDescriptor->supports & ::PLUGIN_SUPPORTS_NOTE_AFTERTOUCH)
+            pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+        if (fDescriptor->supports & ::PLUGIN_SUPPORTS_PITCHBEND)
+            pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+        if (fDescriptor->supports & ::PLUGIN_SUPPORTS_ALL_SOUND_OFF)
+            pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
         return true;
     }

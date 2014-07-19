@@ -297,6 +297,7 @@ class CarlaRackW(QFrame):
         parent.ParameterMidiCcChangedCallback.connect(self.slot_handleParameterMidiCcChangedCallback)
         parent.ProgramChangedCallback.connect(self.slot_handleProgramChangedCallback)
         parent.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
+        parent.OptionChangedCallback.connect(self.slot_handleOptionChangedCallback)
         parent.UiStateChangedCallback.connect(self.slot_handleUiStateChangedCallback)
         parent.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
         parent.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
@@ -597,6 +598,19 @@ class CarlaRackW(QFrame):
             return
 
         pitem.widget.setMidiProgram(index, True)
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(int, int, bool)
+    def slot_handleOptionChangedCallback(self, pluginId, option, yesNo):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.widget.setOption(option, yesNo)
 
     # -----------------------------------------------------------------
 

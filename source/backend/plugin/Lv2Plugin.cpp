@@ -4758,41 +4758,23 @@ public:
         }
 
         // ---------------------------------------------------------------
-        // load plugin settings
+        // set default options
 
+        pData->options  = 0x0;
+        pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+        if (fLatencyIndex >= 0 || getMidiInCount() > 0 || needsFixedBuffer())
+            pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+
+        if (pData->engine->getOptions().forceStereo)
+            pData->options |= PLUGIN_OPTION_FORCE_STEREO;
+
+        if (getMidiInCount() > 0)
         {
-            // set default options
-            pData->options = 0x0;
-
-            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-
-            if (fLatencyIndex >= 0 || getMidiInCount() > 0 || needsFixedBuffer())
-                pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
-
-            if (pData->engine->getOptions().forceStereo)
-                pData->options |= PLUGIN_OPTION_FORCE_STEREO;
-
-            if (getMidiInCount() > 0)
-            {
-                pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-                pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-                pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
-                pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-            }
-
-#ifndef BUILD_BRIDGE
-            // set identifier string
-            CarlaString identifier("LV2/");
-            identifier += uri;
-            pData->identifier = identifier.dup();
-
-            // load settings
-            pData->options = pData->loadSettings(pData->options, getOptionsAvailable());
-
-            // ignore settings, we need this anyway
-            if (fLatencyIndex >= 0 || getMidiInCount() > 0 || needsFixedBuffer())
-                pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
-#endif
+            pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+            pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+            pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+            pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
         }
 
         // ---------------------------------------------------------------

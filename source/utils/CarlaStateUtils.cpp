@@ -141,6 +141,7 @@ StateSave::StateSave() noexcept
       balanceRight(1.0f),
       panning(0.0f),
       ctrlChannel(-1),
+      options(0x0),
       currentProgramIndex(-1),
       currentProgramName(nullptr),
       currentMidiBank(-1),
@@ -193,6 +194,7 @@ void StateSave::clear() noexcept
     balanceRight = 1.0f;
     panning      = 0.0f;
     ctrlChannel  = -1;
+    options      = 0x0;
     currentProgramIndex = -1;
     currentMidiBank     = -1;
     currentMidiProgram  = -1;
@@ -294,6 +296,10 @@ bool StateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                         if (value >= 1 && value <= MAX_MIDI_CHANNELS)
                             ctrlChannel = static_cast<int8_t>(value-1);
                     }
+                }
+                else if (tag.equalsIgnoreCase("options"))
+                {
+                    options = text.getHexValue32();
                 }
 
                 // -------------------------------------------------------
@@ -495,6 +501,8 @@ String StateSave::toString() const
             dataXml << "   <ControlChannel>N</ControlChannel>\n";
         else
             dataXml << "   <ControlChannel>" << int(ctrlChannel+1) << "</ControlChannel>\n";
+
+        dataXml << "   <Options>0x" << String::toHexString(static_cast<int>(options)) << "</Options>\n";
 
         content << dataXml;
     }
