@@ -29,9 +29,6 @@
 #include "CarlaOscUtils.hpp"
 #include "CarlaThread.hpp"
 
-// FIXME
-#include <QtCore/QByteArray>
-
 #ifdef BUILD_BRIDGE
 # undef HAVE_JUCE_UI
 #endif
@@ -1814,7 +1811,7 @@ const char* carla_get_chunk_data(uint pluginId)
 
             if (data != nullptr && dataSize > 0)
             {
-                chunkData = QByteArray((char*)data, dataSize).toBase64().constData();
+                chunkData = CarlaString::asBase64(data, static_cast<std::size_t>(dataSize)).dup();
 
                 return chunkData;
             }

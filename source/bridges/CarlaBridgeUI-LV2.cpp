@@ -692,7 +692,7 @@ public:
                 return;
 
             if (isOscControlRegistered())
-                sendOscLv2AtomTransfer(portIndex, QByteArray((const char*)buffer, bufferSize).toBase64().constData());
+                sendOscLv2AtomTransfer(portIndex, CarlaString::asBase64(buffer, bufferSize).buffer());
         }
         else
         {

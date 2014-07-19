@@ -24,9 +24,6 @@
 
 #include <ctime>
 
-// FIXME
-#include <QtCore/QByteArray>
-
 #include "juce_core.h"
 
 using juce::File;
@@ -559,7 +556,7 @@ const StateSave& CarlaPlugin::getStateSave()
 
         if (data != nullptr && dataSize > 0)
         {
-            pData->stateSave.chunk = carla_strdup(QByteArray((char*)data, dataSize).toBase64().constData());
+            pData->stateSave.chunk = CarlaString::asBase64(data, static_cast<std::size_t>(dataSize)).dup();
 
             // Don't save anything else if using chunks
             return pData->stateSave;

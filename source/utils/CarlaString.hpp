@@ -26,6 +26,13 @@ using ::snprintf;
 }
 #endif
 
+namespace CarlaStringHelpers {
+static const char* const kBase64Chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "abcdefghijklmnopqrstuvwxyz"
+    "0123456789+/";
+}
+
 // -----------------------------------------------------------------------
 // CarlaString class
 
@@ -548,6 +555,72 @@ public:
     const char* dup() const
     {
         return carla_strdup(fBuffer);
+    }
+
+    // -------------------------------------------------------------------
+    // base64 stuff, based on http://www.adp-gmbh.ch/cpp/common/base64.html
+    // Copyright (C) 2004-2008 René Nyffenegger
+
+    static CarlaString asBase64(const void* const data, const std::size_t dataSize)
+    {
+        const uchar* bytesToEncode((const uchar*)data);
+        std::size_t  numBytes(dataSize);
+
+        uint i=0, j=0;
+        uint charArray3[3], charArray4[4];
+
+        char strBuf[0xff+1];
+        strBuf[0xff] = '\0';
+        int strBufIndex = 0;
+
+        CarlaString ret;
+
+        for (; numBytes-- != 0;)
+        {
+            charArray3[i++] = *(bytesToEncode++);
+
+            if (i == 3)
+            {
+                charArray4[0] =  (charArray3[0] & 0xfc) >> 2;
+                charArray4[1] = ((charArray3[0] & 0x03) << 4) + ((charArray3[1] & 0xf0) >> 4);
+                charArray4[2] = ((charArray3[1] & 0x0f) << 2) + ((charArray3[2] & 0xc0) >> 6);
+                charArray4[3] =   charArray3[2] & 0x3f;
+
+                for (i=0; i<4; ++i)
+                    strBuf[strBufIndex++] = CarlaStringHelpers::kBase64Chars[charArray4[i]];
+
+                if (strBufIndex >= 0xff-7)
+                {
+                    strBuf[strBufIndex] = '\0';
+                    strBufIndex = 0;
+                    ret += strBuf;
+                }
+
+                i = 0;
+            }
+        }
+
+        if (i != 0)
+        {
+            for (j=i; j<3; ++j)
+              charArray3[j] = '\0';
+
+            charArray4[0] =  (charArray3[0] & 0xfc) >> 2;
+            charArray4[1] = ((charArray3[0] & 0x03) << 4) + ((charArray3[1] & 0xf0) >> 4);
+            charArray4[2] = ((charArray3[1] & 0x0f) << 2) + ((charArray3[2] & 0xc0) >> 6);
+            charArray4[3] =   charArray3[2] & 0x3f;
+
+            for (j=0; j<4 && i<3 && j<i+1; ++j)
+                strBuf[strBufIndex++] = CarlaStringHelpers::kBase64Chars[charArray4[j]];
+
+            for (; i++ < 3;)
+                strBuf[strBufIndex++] = '=';
+
+            strBuf[strBufIndex] = '\0';
+            ret += strBuf;
+        }
+
+        return ret;
     }
 
     // -------------------------------------------------------------------

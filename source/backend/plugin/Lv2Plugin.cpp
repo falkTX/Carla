@@ -1311,8 +1311,8 @@ public:
                 {
                     if (pData->osc.data.target != nullptr)
                     {
-                        QByteArray chunk((const char*)atom, (int)atom->size);
-                        osc_send_lv2_atom_transfer(pData->osc.data, portIndex, chunk.toBase64().constData());
+                        CarlaString chunk(CarlaString::asBase64(atom, atom->size));
+                        osc_send_lv2_atom_transfer(pData->osc.data, portIndex, chunk.buffer());
                     }
                 }
                 else
@@ -4121,7 +4121,7 @@ public:
                 if (type == CARLA_URI_MAP_ID_ATOM_STRING || type == CARLA_URI_MAP_ID_ATOM_PATH)
                     data.value = carla_strdup((const char*)value);
                 else
-                    data.value = carla_strdup(QByteArray((const char*)value, static_cast<int>(size)).toBase64().constData());
+                    data.value = CarlaString::asBase64(value, size).dup();
 
                 return LV2_STATE_SUCCESS;
             }
@@ -4135,7 +4135,7 @@ public:
         if (type == CARLA_URI_MAP_ID_ATOM_STRING || type == CARLA_URI_MAP_ID_ATOM_PATH)
             newData.value = carla_strdup((const char*)value);
         else
-            newData.value = carla_strdup(QByteArray((const char*)value, static_cast<int>(size)).toBase64().constData());
+            newData.value = CarlaString::asBase64(value, size).dup();
 
         pData->custom.append(newData);
 
