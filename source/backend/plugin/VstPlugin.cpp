@@ -27,6 +27,8 @@
 #if defined(WANT_VST) && ! (defined(HAVE_JUCE_UI) && USE_JUCE_FOR_VST)
 
 #include "CarlaVstUtils.hpp"
+
+#include "CarlaBase64Utils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaPluginUi.hpp"
 
@@ -34,21 +36,12 @@
 
 #include <pthread.h>
 
-// FIXME
-#include <QtCore/QByteArray>
-
 #undef VST_FORCE_DEPRECATED
 #define VST_FORCE_DEPRECATED 0
 
 using juce::File;
 
-// -----------------------------------------------------
-
 CARLA_BACKEND_START_NAMESPACE
-
-#if 0
-}
-#endif
 
 // -----------------------------------------------------
 
@@ -197,13 +190,11 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, 0);
         CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
 
-        int32_t ret = 0;
+        *dataPtr = nullptr;
 
         try {
-            ret = static_cast<int32_t>(dispatcher(effGetChunk, 0 /* bank */, 0, dataPtr, 0.0f));
-        } catch(...) {}
-
-        return ret;
+            return static_cast<int32_t>(dispatcher(effGetChunk, 0 /* bank */, 0, dataPtr, 0.0f));
+        } CARLA_SAFE_EXCEPTION_RETURN("VstPlugin::getChunkData", 0);
     }
 
     // -------------------------------------------------------------------
@@ -349,18 +340,17 @@ public:
             fLastChunk = nullptr;
         }
 
-        QByteArray chunk(QByteArray::fromBase64(stringData));
-
+        std::vector<uint8_t> chunk(carla_getChunkFromBase64String(stringData));
         CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0,);
 
-        fLastChunk = std::malloc(static_cast<size_t>(chunk.size()));
+        fLastChunk = std::malloc(chunk.size());
         CARLA_SAFE_ASSERT_RETURN(fLastChunk != nullptr,);
 
-        std::memcpy(fLastChunk, chunk.constData(), static_cast<size_t>(chunk.size()));
+        std::memcpy(fLastChunk, chunk.data(), chunk.size());
 
         {
             const ScopedSingleProcessLocker spl(this, true);
-            dispatcher(effSetChunk, 0 /* bank */, chunk.size(), fLastChunk, 0.0f);
+            dispatcher(effSetChunk, 0 /* bank */, static_cast<intptr_t>(chunk.size()), fLastChunk, 0.0f);
         }
 
         // simulate an updateDisplay callback

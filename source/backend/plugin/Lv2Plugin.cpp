@@ -25,8 +25,9 @@
 #ifdef WANT_LV2
 
 #include "CarlaLv2Utils.hpp"
-#include "CarlaPluginUi.hpp"
 
+#include "CarlaBase64Utils.hpp"
+#include "CarlaPluginUi.hpp"
 #include "Lv2AtomRingBuffer.hpp"
 
 #include "../engine/CarlaEngineOsc.hpp"
@@ -401,7 +402,8 @@ public:
           fParamBuffers(nullptr),
           fLatencyChanged(false),
           fLatencyIndex(-1),
-          fFirstActive(true)
+          fFirstActive(true),
+          fLastStateChunk(nullptr)
     {
         carla_debug("Lv2Plugin::Lv2Plugin(%p, %i)", engine, id);
 
@@ -573,6 +575,12 @@ public:
         }
 
         fCustomURIDs.clear();
+
+        if (fLastStateChunk != nullptr)
+        {
+            std::free(fLastStateChunk);
+            fLastStateChunk = nullptr;
+        }
 
         clearBuffers();
     }
@@ -4182,11 +4190,22 @@ public:
         }
         else
         {
-            static QByteArray chunk; // FIXME
-            chunk = QByteArray::fromBase64(stringData);
+            if (fLastStateChunk != nullptr)
+            {
+                std::free(fLastStateChunk);
+                fLastStateChunk = nullptr;
+            }
+
+            std::vector<uint8_t> chunk(carla_getChunkFromBase64String(stringData));
             CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0, nullptr);
-            *size = static_cast<size_t>(chunk.size());
-            return chunk.constData();
+
+            fLastStateChunk = std::malloc(chunk.size());
+            CARLA_SAFE_ASSERT_RETURN(fLastStateChunk != nullptr, nullptr);
+
+            std::memcpy(fLastStateChunk, chunk.data(), chunk.size());
+
+            *size = chunk.size();
+            return fLastStateChunk;
         }
     }
 
@@ -5239,6 +5258,7 @@ private:
     LinkedList<const char*> fCustomURIDs;
 
     bool fFirstActive; // first process() call after activate()
+    void* fLastStateChunk;
     EngineTimeInfo fLastTimeInfo;
 
     struct Extensions {
@@ -5785,11 +5805,10 @@ int CarlaEngineOsc::handleMsgLv2AtomTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
     CARLA_SAFE_ASSERT_RETURN(portIndex >= 0, 0);
 
-    QByteArray chunk(QByteArray::fromBase64(atomBuf));
-
+    std::vector<uint8_t> chunk(carla_getChunkFromBase64String(atomBuf));
     CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0, 0);
 
-    const LV2_Atom* const atom((const LV2_Atom*)chunk.constData());
+    const LV2_Atom* const atom((const LV2_Atom*)chunk.data());
     lv2PluginPtr->handleTransferAtom(static_cast<uint32_t>(portIndex), atom);
     return 0;
 }

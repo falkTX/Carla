@@ -20,17 +20,23 @@
 
 #include "CarlaJuceUtils.hpp"
 
-#ifdef CARLA_OS_HAIKU
-namespace std {
-using ::snprintf;
-}
-#endif
+#include <cctype>
+#include <sys/types.h>
 
-namespace CarlaStringHelpers {
-static const char* const kBase64Chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "abcdefghijklmnopqrstuvwxyz"
-    "0123456789+/";
+#include <vector>
+
+namespace std {
+#ifdef CARLA_OS_HAIKU
+using ::snprintf;
+#endif
+using ::ssize_t; // FIXME?
+}
+
+// -----------------------------------------------------------------------
+// Helpers
+
+namespace Base64Helpers {
+
 }
 
 // -----------------------------------------------------------------------
@@ -222,7 +228,7 @@ public:
     /*
      * Get length of the string.
      */
-    size_t length() const noexcept
+    std::size_t length() const noexcept
     {
         return fBufferLen;
     }
@@ -273,7 +279,7 @@ public:
     /*
      * Check if character at 'pos' is a digit.
      */
-    bool isDigit(const size_t pos) const noexcept
+    bool isDigit(const std::size_t pos) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(pos < fBufferLen, false);
 
@@ -297,7 +303,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(prefix != nullptr, false);
 
-        const size_t prefixLen(std::strlen(prefix));
+        const std::size_t prefixLen(std::strlen(prefix));
 
         if (fBufferLen < prefixLen)
             return false;
@@ -322,7 +328,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(suffix != nullptr, false);
 
-        const size_t suffixLen(std::strlen(suffix));
+        const std::size_t suffixLen(std::strlen(suffix));
 
         if (fBufferLen < suffixLen)
             return false;
@@ -334,7 +340,7 @@ public:
      * Find the first occurrence of character 'c' in the string.
      * Returns "length()" if the character is not found.
      */
-    size_t find(const char c, bool* const found = nullptr) const noexcept
+    std::size_t find(const char c, bool* const found = nullptr) const noexcept
     {
         if (fBufferLen == 0 || c == '\0')
         {
@@ -343,7 +349,7 @@ public:
             return fBufferLen;
         }
 
-        for (size_t i=0; i < fBufferLen; ++i)
+        for (std::size_t i=0; i < fBufferLen; ++i)
         {
             if (fBuffer[i] == c)
             {
@@ -362,7 +368,7 @@ public:
      * Find the first occurrence of string 'strBuf' in the string.
      * Returns "length()" if the string is not found.
      */
-    size_t find(const char* const strBuf, bool* const found = nullptr) const noexcept
+    std::size_t find(const char* const strBuf, bool* const found = nullptr) const noexcept
     {
         if (fBufferLen == 0 || strBuf == nullptr || strBuf[0] == '\0')
         {
@@ -373,7 +379,7 @@ public:
 
         if (char* const subStrBuf = std::strstr(fBuffer, strBuf))
         {
-            const ssize_t ret(subStrBuf - fBuffer);
+            const std::ssize_t ret(subStrBuf - fBuffer);
 
             if (ret < 0)
             {
@@ -387,7 +393,7 @@ public:
 
             if (found != nullptr)
                 *found = true;
-            return static_cast<size_t>(ret);
+            return static_cast<std::size_t>(ret);
         }
 
         if (found != nullptr)
@@ -399,7 +405,7 @@ public:
      * Find the last occurrence of character 'c' in the string.
      * Returns "length()" if the character is not found.
      */
-    size_t rfind(const char c, bool* const found = nullptr) const noexcept
+    std::size_t rfind(const char c, bool* const found = nullptr) const noexcept
     {
         if (fBufferLen == 0 || c == '\0')
         {
@@ -408,7 +414,7 @@ public:
             return fBufferLen;
         }
 
-        for (size_t i=fBufferLen; i > 0; --i)
+        for (std::size_t i=fBufferLen; i > 0; --i)
         {
             if (fBuffer[i-1] == c)
             {
@@ -427,7 +433,7 @@ public:
      * Find the last occurrence of string 'strBuf' in the string.
      * Returns "length()" if the string is not found.
      */
-    size_t rfind(const char* const strBuf, bool* const found = nullptr) const noexcept
+    std::size_t rfind(const char* const strBuf, bool* const found = nullptr) const noexcept
     {
         if (found != nullptr)
             *found = false;
@@ -435,12 +441,12 @@ public:
         if (fBufferLen == 0 || strBuf == nullptr || strBuf[0] == '\0')
             return fBufferLen;
 
-        const size_t strBufLen(std::strlen(strBuf));
+        const std::size_t strBufLen(std::strlen(strBuf));
 
-        size_t ret = fBufferLen;
+        std::size_t ret = fBufferLen;
         const char* tmpBuf = fBuffer;
 
-        for (size_t i=0; i < fBufferLen; ++i)
+        for (std::size_t i=0; i < fBufferLen; ++i)
         {
             if (std::strstr(tmpBuf+1, strBuf) == nullptr && std::strncmp(tmpBuf, strBuf, strBufLen) == 0)
             {
@@ -471,7 +477,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(before != '\0' && after != '\0',);
 
-        for (size_t i=0; i < fBufferLen; ++i)
+        for (std::size_t i=0; i < fBufferLen; ++i)
         {
             if (fBuffer[i] == before)
                 fBuffer[i] = after;
@@ -481,12 +487,12 @@ public:
     /*
      * Truncate the string to size 'n'.
      */
-    void truncate(const size_t n) noexcept
+    void truncate(const std::size_t n) noexcept
     {
         if (n >= fBufferLen)
             return;
 
-        for (size_t i=n; i < fBufferLen; ++i)
+        for (std::size_t i=n; i < fBufferLen; ++i)
             fBuffer[i] = '\0';
 
         fBufferLen = n;
@@ -497,7 +503,7 @@ public:
      */
     void toBasic() noexcept
     {
-        for (size_t i=0; i < fBufferLen; ++i)
+        for (std::size_t i=0; i < fBufferLen; ++i)
         {
             if (fBuffer[i] >= '0' && fBuffer[i] <= '9')
                 continue;
@@ -519,7 +525,7 @@ public:
     {
         static const char kCharDiff('a' - 'A');
 
-        for (size_t i=0; i < fBufferLen; ++i)
+        for (std::size_t i=0; i < fBufferLen; ++i)
         {
             if (fBuffer[i] >= 'A' && fBuffer[i] <= 'Z')
                 fBuffer[i] = static_cast<char>(fBuffer[i] + kCharDiff);
@@ -533,7 +539,7 @@ public:
     {
         static const char kCharDiff('a' - 'A');
 
-        for (size_t i=0; i < fBufferLen; ++i)
+        for (std::size_t i=0; i < fBufferLen; ++i)
         {
             if (fBuffer[i] >= 'a' && fBuffer[i] <= 'z')
                 fBuffer[i] = static_cast<char>(fBuffer[i] - kCharDiff);
@@ -563,8 +569,12 @@ public:
 
     static CarlaString asBase64(const void* const data, const std::size_t dataSize)
     {
+        static const char* const kBase64Chars =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            "abcdefghijklmnopqrstuvwxyz"
+            "0123456789+/";
+
         const uchar* bytesToEncode((const uchar*)data);
-        std::size_t  numBytes(dataSize);
 
         uint i=0, j=0;
         uint charArray3[3], charArray4[4];
@@ -575,7 +585,7 @@ public:
 
         CarlaString ret;
 
-        for (; numBytes-- != 0;)
+        for (std::size_t s=0; s<dataSize; ++s)
         {
             charArray3[i++] = *(bytesToEncode++);
 
@@ -587,7 +597,7 @@ public:
                 charArray4[3] =   charArray3[2] & 0x3f;
 
                 for (i=0; i<4; ++i)
-                    strBuf[strBufIndex++] = CarlaStringHelpers::kBase64Chars[charArray4[i]];
+                    strBuf[strBufIndex++] = kBase64Chars[charArray4[i]];
 
                 if (strBufIndex >= 0xff-7)
                 {
@@ -611,7 +621,7 @@ public:
             charArray4[3] =   charArray3[2] & 0x3f;
 
             for (j=0; j<4 && i<3 && j<i+1; ++j)
-                strBuf[strBufIndex++] = CarlaStringHelpers::kBase64Chars[charArray4[j]];
+                strBuf[strBufIndex++] = kBase64Chars[charArray4[j]];
 
             for (; i++ < 3;)
                 strBuf[strBufIndex++] = '=';
@@ -631,7 +641,7 @@ public:
         return fBuffer;
     }
 
-    char operator[](const size_t pos) const noexcept
+    char operator[](const std::size_t pos) const noexcept
     {
         if (pos < fBufferLen)
             return fBuffer[pos];
@@ -643,7 +653,7 @@ public:
         return fallback;
     }
 
-    char& operator[](const size_t pos) noexcept
+    char& operator[](const std::size_t pos) noexcept
     {
         if (pos < fBufferLen)
             return fBuffer[pos];
@@ -694,8 +704,8 @@ public:
         if (strBuf == nullptr)
             return *this;
 
-        const size_t newBufSize = fBufferLen + std::strlen(strBuf) + 1;
-        char         newBuf[newBufSize];
+        const std::size_t newBufSize = fBufferLen + std::strlen(strBuf) + 1;
+        char              newBuf[newBufSize];
 
         std::strcpy(newBuf, fBuffer);
         std::strcat(newBuf, strBuf);
@@ -712,8 +722,8 @@ public:
 
     CarlaString operator+(const char* const strBuf) noexcept
     {
-        const size_t newBufSize = fBufferLen + ((strBuf != nullptr) ? std::strlen(strBuf) : 0) + 1;
-        char         newBuf[newBufSize];
+        const std::size_t newBufSize = fBufferLen + ((strBuf != nullptr) ? std::strlen(strBuf) : 0) + 1;
+        char              newBuf[newBufSize];
 
         std::strcpy(newBuf, fBuffer);
 
@@ -731,8 +741,8 @@ public:
     // -------------------------------------------------------------------
 
 private:
-    char*  fBuffer;    // the actual string buffer
-    size_t fBufferLen; // string length
+    char*       fBuffer;    // the actual string buffer
+    std::size_t fBufferLen; // string length
 
     /*
      * Static null string.
@@ -762,7 +772,7 @@ private:
      * - Allocates string only if 'strBuf' is not null and new string contents are different
      * - If 'strBuf' is null, 'size' must be 0
      */
-    void _dup(const char* const strBuf, const size_t size = 0) noexcept
+    void _dup(const char* const strBuf, const std::size_t size = 0) noexcept
     {
         if (strBuf != nullptr)
         {
@@ -807,7 +817,7 @@ static inline
 CarlaString operator+(const CarlaString& strBefore, const char* const strBufAfter) noexcept
 {
     const char* const strBufBefore = strBefore.buffer();
-    const size_t      newBufSize   = strBefore.length() + ((strBufAfter != nullptr) ? std::strlen(strBufAfter) : 0) + 1;
+    const std::size_t newBufSize   = strBefore.length() + ((strBufAfter != nullptr) ? std::strlen(strBufAfter) : 0) + 1;
     char newBuf[newBufSize];
 
     std::strcpy(newBuf, strBufBefore);
@@ -820,7 +830,7 @@ static inline
 CarlaString operator+(const char* const strBufBefore, const CarlaString& strAfter) noexcept
 {
     const char* const strBufAfter = strAfter.buffer();
-    const size_t      newBufSize  = ((strBufBefore != nullptr) ? std::strlen(strBufBefore) : 0) + strAfter.length() + 1;
+    const std::size_t newBufSize  = ((strBufBefore != nullptr) ? std::strlen(strBufBefore) : 0) + strAfter.length() + 1;
     char newBuf[newBufSize];
 
     std::strcpy(newBuf, strBufBefore);

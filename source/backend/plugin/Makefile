@@ -71,13 +71,13 @@ LadspaPlugin.cpp.o: LadspaPlugin.cpp $(LADSPA_PLUGIN_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 DssiPlugin.cpp.o: DssiPlugin.cpp $(DSSI_PLUGIN_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 Lv2Plugin.cpp.o: Lv2Plugin.cpp $(LV2_PLUGIN_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
 
 VstPlugin.cpp.o: VstPlugin.cpp $(VST_PLUGIN_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(QTCORE_FLAGS) -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 Vst3Plugin.cpp.o: Vst3Plugin.cpp $(VST3_PLUGIN_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@

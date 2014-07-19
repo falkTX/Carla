@@ -21,18 +21,11 @@
 #ifdef WANT_DSSI
 
 #include "CarlaDssiUtils.hpp"
+
+#include "CarlaBase64Utils.hpp"
 #include "CarlaMathUtils.hpp"
 
-// FIXME
-#include <QtCore/QByteArray>
-
-// -----------------------------------------------------
-
 CARLA_BACKEND_START_NAMESPACE
-
-#if 0
-}
-#endif
 
 // -----------------------------------------------------
 
@@ -162,12 +155,14 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fHandle2 == nullptr, 0);
         CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
 
+        *dataPtr = nullptr;
+
         int ret = 0;
         ulong dataSize = 0;
 
         try {
             ret = fDssiDescriptor->get_custom_data(fHandle, dataPtr, &dataSize);
-        } catch(...) {}
+        } CARLA_SAFE_EXCEPTION_RETURN("DssiPlugin::getChunkData", 0);
 
         return (ret != 0) ? static_cast<int32_t>(dataSize) : 0;
     }
@@ -358,16 +353,15 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fHandle2 == nullptr,);
         CARLA_SAFE_ASSERT_RETURN(stringData != nullptr,);
 
-        QByteArray chunk(QByteArray::fromBase64(stringData));
-
+        std::vector<uint8_t> chunk(carla_getChunkFromBase64String(stringData));
         CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0,);
 
         {
             const ScopedSingleProcessLocker spl(this, true);
 
             try {
-                fDssiDescriptor->set_custom_data(fHandle, chunk.data(), static_cast<ulong>(chunk.size()));
-            } catch(...) {}
+                fDssiDescriptor->set_custom_data(fHandle, chunk.data(), chunk.size());
+            } CARLA_SAFE_EXCEPTION("DssiPlugin::setChunkData");
         }
 
 #ifdef BUILD_BRIDGE
