@@ -848,9 +848,9 @@ void CarlaPlugin::loadStateSave(const StateSave& stateSave)
 
     const uint availOptions(getOptionsAvailable());
 
-    for (int i=0; i<10; ++i) // FIXME - get this value somehow...
+    for (uint i=0; i<10; ++i) // FIXME - get this value somehow...
     {
-        const uint option(1 << i);
+        const uint option(1u << i);
 
         if (availOptions & option)
             setOption(option, (stateSave.options & option) != 0, true);
@@ -941,7 +941,7 @@ void CarlaPlugin::setOption(const uint option, const bool yesNo, const bool send
         pData->options &= ~option;
 
     if (sendCallback)
-        pData->engine->callback(ENGINE_CALLBACK_OPTION_CHANGED, pData->id, option, yesNo ? 1 : 0, 0.0f, nullptr);
+        pData->engine->callback(ENGINE_CALLBACK_OPTION_CHANGED, pData->id, static_cast<int>(option), yesNo ? 1 : 0, 0.0f, nullptr);
 }
 
 void CarlaPlugin::setEnabled(const bool yesNo) noexcept

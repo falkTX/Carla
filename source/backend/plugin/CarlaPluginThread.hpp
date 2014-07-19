@@ -19,15 +19,15 @@
 #define CARLA_PLUGIN_THREAD_HPP_INCLUDED
 
 #include "CarlaBackend.h"
+#include "CarlaJuceUtils.hpp"
 #include "CarlaThread.hpp"
 
-class QProcess;
+#include "juce_core.h"
+
+using juce::ChildProcess;
+using juce::ScopedPointer;
 
 CARLA_BACKEND_START_NAMESPACE
-
-#if 0
-} // Fix editor indentation
-#endif
 
 // -----------------------------------------------------------------------
 
@@ -62,7 +62,8 @@ private:
     CarlaString fLabel;
     CarlaString fExtra1;
     CarlaString fExtra2;
-    QProcess*   fProcess;
+
+    ScopedPointer<ChildProcess> fProcess;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginThread)
 };
