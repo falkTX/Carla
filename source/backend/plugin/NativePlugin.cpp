@@ -715,7 +715,7 @@ public:
         }
 
 #ifndef BUILD_BRIDGE
-        if ((fDescriptor->hints & ::PLUGIN_USES_PARENT_ID) == 0)
+        if ((fDescriptor->hints & ::PLUGIN_USES_PARENT_ID) == 0 && std::strstr(fDescriptor->label, "file") == nullptr)
             pData->tryTransient();
 #endif
 
