@@ -157,7 +157,7 @@ nekofilter.c.o: nekofilter.c nekofilter/*.c nekofilter/*.h $(CDEPS)
 
 CXXDEPS = ../CarlaNative.h ../CarlaNative.hpp
 
-audio-file.cpp.o: audio-file.cpp audio-base.hpp $(CXXDEPS)
+audio-file.cpp.o: audio-file.cpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 bigmeter.cpp.o: bigmeter.cpp $(CXXDEPS) ../CarlaNativeExtUI.hpp
