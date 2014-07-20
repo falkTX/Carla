@@ -211,18 +211,11 @@ endif
 # --------------------------------------------------------------
 # Check for optional libs (required by internal plugins)
 
-HAVE_AF_DEPS      = $(shell pkg-config --exists sndfile && echo true)
-HAVE_MF_DEPS      = $(shell pkg-config --exists smf && echo true)
-HAVE_PM_DEPS      = $(shell pkg-config --exists libprojectM && echo true)
 HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
 HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk_images ntk && echo true)
 
 # --------------------------------------------------------------
 # Set base defines
-
-ifeq ($(HAVE_FFMPEG),true)
-BASE_FLAGS += -DHAVE_FFMPEG
-endif
 
 ifeq ($(HAVE_JUCE_UI),true)
 BASE_FLAGS += -DHAVE_JUCE_UI
@@ -255,15 +248,6 @@ endif
 
 # --------------------------------------------------------------
 # Set libs stuff (part 2)
-
-ifeq ($(HAVE_AF_DEPS),true)
-AUDIO_DECODER_FLAGS  = $(shell pkg-config --cflags sndfile)
-AUDIO_DECODER_LIBS   = $(shell pkg-config --libs sndfile)
-ifeq ($(HAVE_FFMPEG),true)
-AUDIO_DECODER_FLAGS += $(shell pkg-config --cflags libavcodec libavformat libavutil)
-AUDIO_DECODER_LIBS  += $(shell pkg-config --libs libavcodec libavformat libavutil)
-endif
-endif
 
 RTAUDIO_FLAGS  = -DHAVE_GETTIMEOFDAY -D__UNIX_JACK__
 
@@ -333,21 +317,6 @@ endif
 
 # --------------------------------------------------------------
 # Set libs stuff (part 3)
-
-ifeq ($(HAVE_AF_DEPS),true)
-NATIVE_PLUGINS_FLAGS += -DWANT_AUDIOFILE
-NATIVE_PLUGINS_LIBS  += $(AUDIO_DECODER_LIBS)
-endif
-
-ifeq ($(HAVE_MF_DEPS),true)
-NATIVE_PLUGINS_FLAGS += -DWANT_MIDIFILE
-NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs smf)
-endif
-
-ifeq ($(HAVE_PM_DEPS),true)
-NATIVE_PLUGINS_FLAGS += -DWANT_PROJECTM
-NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs libprojectM)
-endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 NATIVE_PLUGINS_FLAGS += -DWANT_ZYNADDSUBFX

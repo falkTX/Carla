@@ -85,14 +85,6 @@ NATIVE_BUILD_FLAGS += $(LINUXSAMPLER_FLAGS)
 NATIVE_LINK_FLAGS  += $(LINUXSAMPLER_LIBS)
 endif
 
-ifeq ($(HAVE_AF_DEPS),true)
-NATIVE_BUILD_FLAGS += -DWANT_AUDIOFILE
-endif
-
-ifeq ($(HAVE_MF_DEPS),true)
-NATIVE_BUILD_FLAGS += -DWANT_MIDIFILE
-endif
-
 ifeq ($(HAVE_ZYN_DEPS),true)
 NATIVE_BUILD_FLAGS += -DWANT_ZYNADDSUBFX
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
@@ -500,11 +492,6 @@ LIBS_NATIVE += \
 	../modules/juce_graphics.a \
 	../modules/juce_gui_basics.a \
 	../modules/juce_gui_extra.a
-endif
-
-ifeq ($(HAVE_AF_DEPS),true)
-LIBS_NATIVE += \
-	../modules/audio_decoder.a
 endif
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)

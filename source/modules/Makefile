@@ -60,8 +60,6 @@ jackbridge-wine64:
 
 clean:
 	rm -f *.a *.def *.dll *.dylib *.so
-	$(MAKE) clean -C audio_decoder
-	$(MAKE) clean -C dgl
 	$(MAKE) clean -C jackbridge
 	$(MAKE) clean -C juce_audio_basics
 	$(MAKE) clean -C juce_audio_devices
@@ -78,13 +76,12 @@ clean:
 	$(MAKE) clean -C rtaudio
 	$(MAKE) clean -C rtmempool
 	$(MAKE) clean -C rtmidi
-	$(MAKE) clean -C stk
 	$(MAKE) clean -C theme
 
 # --------------------------------------------------------------
 
 .PHONY: \
-	audio_decoder dgl jackbridge lilv native-plugins rtaudio rtmempool rtmidi stk theme \
+	jackbridge lilv native-plugins rtaudio rtmempool rtmidi theme \
 	juce_audio_basics juce_audio_devices juce_audio_formats juce_audio_processors juce_core juce_data_structures juce_events juce_graphics juce_gui_basics juce_gui_extra
 
 # --------------------------------------------------------------

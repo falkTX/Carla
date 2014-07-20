@@ -593,17 +593,7 @@ const char* carla_get_complete_license_text()
 
 #ifdef WANT_NATIVE
         // Internal plugins
-# ifdef HAVE_OPENGL
-        text3 += "<li>DISTRHO Mini-Series plugin code, based on LOSER-dev suite by Michael Gruhn</li>";
-# endif
         text3 += "<li>NekoFilter plugin code, based on lv2fil by Nedko Arnaudov and Fons Adriaensen</li>";
-        //text1 += "<li>SunVox library file support, http://www.warmplace.ru/soft/sunvox/</li>"; // unfinished
-# ifdef WANT_AUDIOFILE
-        text3 += "<li>AudioDecoder library for Audio file support, by Robin Gareus</li>";
-# endif
-# ifdef WANT_MIDIFILE
-        text3 += "<li>LibSMF library for MIDI file support, http://libsmf.sourceforge.net/</li>";
-# endif
 # ifdef WANT_ZYNADDSUBFX
         text3 += "<li>ZynAddSubFX plugin code, http://zynaddsubfx.sf.net/</li>";
 #  ifdef WANT_ZYNADDSUBFX_UI
@@ -660,16 +650,12 @@ const char* carla_get_supported_file_extensions()
         retText += ";*.gig;*.sfz";
 #endif
 
-        // Files provided by internal plugins
-#ifdef WANT_AUDIOFILE
+        // Audio files, FIXME
         retText += ";*.aiff;*.flac;*.oga;*.ogg;*.w64;*.wav";
-# ifdef HAVE_FFMPEG
         retText += ";*.3g2;*.3gp;*.aac;*.ac3;*.amr;*.ape;*.mp2;*.mp3;*.mpc;*.wma";
-# endif
-#endif
-#ifdef WANT_MIDIFILE
+
+        // MIDI files
         retText += ";*.mid;*.midi";
-#endif
 
         // Plugin presets
 #ifdef WANT_ZYNADDSUBFX

@@ -16,27 +16,9 @@ BUILD_CXX_FLAGS += -I. -I../../includes -I../../utils -I../distrho -isystem ..
 
 ALL_C_FLAGS  = $(BUILD_C_FLAGS)
 
-# AudioFile
-ifeq ($(HAVE_AF_DEPS),true)
-ALL_C_FLAGS += -DWANT_AUDIOFILE
-endif
-
-# MidiFile
-ifeq ($(HAVE_MF_DEPS),true)
-ALL_C_FLAGS += -DWANT_MIDIFILE
-endif
-
 # ZynAddSubFX
 ifeq ($(HAVE_ZYN_DEPS),true)
 ALL_C_FLAGS += -DWANT_ZYNADDSUBFX
-endif
-
-# --------------------------------------------------------------
-# Flags for MidiFile
-
-ifeq ($(HAVE_MF_DEPS),true)
-MF_CXX_FLAGS  = $(BUILD_CXX_FLAGS)
-MF_CXX_FLAGS += $(shell pkg-config --cflags smf)
 endif
 
 # --------------------------------------------------------------
@@ -71,6 +53,10 @@ OBJS += \
 	midi-transpose.c.o \
 	nekofilter.c.o
 
+OBJS += \
+	audio-file.cpp.o \
+	midi-file.cpp.o
+
 ifneq ($(WIN32),true)
 # --------------------------------------------------------------
 # External-UI plugins
@@ -86,20 +72,6 @@ ifeq ($(HAVE_JUCE_UI),true)
 
 OBJS += \
 	juce-patchbay.cpp.o
-endif
-
-# --------------------------------------------------------------
-# AudioFile
-
-ifeq ($(HAVE_AF_DEPS),true)
-OBJS += audio-file.cpp.o
-endif
-
-# --------------------------------------------------------------
-# MidiFile
-
-ifeq ($(HAVE_MF_DEPS),true)
-OBJS += midi-file.cpp.o
 endif
 
 # --------------------------------------------------------------
@@ -195,7 +167,7 @@ juce-patchbay.cpp.o: juce-patchbay.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 midi-file.cpp.o: midi-file.cpp midi-base.hpp $(CXXDEPS)
-	$(CXX) $< $(MF_CXX_FLAGS) -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 midi-sequencer.cpp.o: midi-sequencer.cpp midi-base.hpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@

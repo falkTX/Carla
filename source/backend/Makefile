@@ -25,10 +25,6 @@ ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 STANDALONE_LIBS += ../modules/lilv.a
 endif
 
-ifeq ($(HAVE_AF_DEPS),true)
-STANDALONE_LIBS += ../modules/audio_decoder.a
-endif
-
 ifeq ($(HAVE_JUCE_UI),true)
 STANDALONE_LIBS += ../modules/juce_audio_devices.a
 STANDALONE_LIBS += ../modules/juce_audio_processors.a

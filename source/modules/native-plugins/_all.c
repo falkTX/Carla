@@ -26,6 +26,12 @@ extern void carla_register_native_plugin_midithrough();
 extern void carla_register_native_plugin_miditranspose();
 extern void carla_register_native_plugin_nekofilter();
 
+// Audio File
+extern void carla_register_native_plugin_audiofile();
+
+// MIDI File
+extern void carla_register_native_plugin_midifile();
+
 #ifndef CARLA_OS_WIN
 // Carla
 extern void carla_register_native_plugin_carla();
@@ -41,19 +47,6 @@ extern void carla_register_native_plugin_jucepatchbay();
 extern void carla_register_native_plugin_vex_fx();
 extern void carla_register_native_plugin_vex_synth();
 #endif
-
-#ifdef WANT_AUDIOFILE
-// Audio File
-extern void carla_register_native_plugin_audiofile();
-#endif
-
-#ifdef WANT_MIDIFILE
-// MIDI File
-extern void carla_register_native_plugin_midifile();
-#endif
-
-// SunVox File
-extern void carla_register_native_plugin_sunvoxfile();
 
 #ifdef WANT_ZYNADDSUBFX
 // ZynAddSubFX
@@ -72,6 +65,12 @@ void carla_register_all_plugins()
     carla_register_native_plugin_miditranspose();
     carla_register_native_plugin_nekofilter();
 
+    // Audio File
+    carla_register_native_plugin_audiofile();
+
+    // MIDI File
+    carla_register_native_plugin_midifile();
+
 #ifndef CARLA_OS_WIN
     // Carla
     carla_register_native_plugin_carla();
@@ -86,16 +85,6 @@ void carla_register_all_plugins()
     carla_register_native_plugin_jucepatchbay();
     carla_register_native_plugin_vex_fx();
     carla_register_native_plugin_vex_synth();
-#endif
-
-#ifdef WANT_AUDIOFILE
-    // Audio File
-    carla_register_native_plugin_audiofile();
-#endif
-
-#ifdef WANT_MIDIFILE
-    // MIDI File
-    carla_register_native_plugin_midifile();
 #endif
 
 #ifdef WANT_ZYNADDSUBFX

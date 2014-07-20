@@ -69,10 +69,6 @@ LIBS += ../modules/juce_audio_basics.a
 LIBS += ../modules/juce_core.a
 LIBS += ../modules/rtmempool.a
 
-ifeq ($(HAVE_AF_DEPS),true)
-LIBS += ../modules/audio_decoder.a
-endif
-
 ifeq ($(HAVE_JUCE_UI),true)
 LIBS += ../modules/juce_audio_processors.a
 LIBS += ../modules/juce_data_structures.a

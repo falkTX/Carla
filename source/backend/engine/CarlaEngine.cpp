@@ -913,9 +913,9 @@ bool CarlaEngine::loadFile(const char* const filename)
 
     // -------------------------------------------------------------------
 
+    // FIXME
     if (extension == "aiff" || extension == "flac" || extension == "oga" || extension == "ogg" || extension == "w64" || extension == "wav")
     {
-#ifdef WANT_AUDIOFILE
         if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "audiofile", 0, nullptr))
         {
             if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
@@ -923,17 +923,11 @@ bool CarlaEngine::loadFile(const char* const filename)
             return true;
         }
         return false;
-#else
-        setLastError("This Carla build does not have Audio file support");
-        return false;
-#endif
     }
 
     if (extension == "3g2" || extension == "3gp" || extension == "aac" || extension == "ac3" || extension == "amr" || extension == "ape" ||
-            extension == "mp2" || extension == "mp3" || extension == "mpc" || extension == "wma")
+        extension == "mp2" || extension == "mp3" || extension == "mpc" || extension == "wma")
     {
-#ifdef WANT_AUDIOFILE
-# ifdef HAVE_FFMPEG
         if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "audiofile", 0, nullptr))
         {
             if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
@@ -941,21 +935,12 @@ bool CarlaEngine::loadFile(const char* const filename)
             return true;
         }
         return false;
-# else
-        setLastError("This Carla build has Audio file support, but not libav/ffmpeg");
-        return false;
-# endif
-#else
-        setLastError("This Carla build does not have Audio file support");
-        return false;
-#endif
     }
 
     // -------------------------------------------------------------------
 
     if (extension == "mid" || extension == "midi")
     {
-#ifdef WANT_MIDIFILE
         if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "midifile", 0, nullptr))
         {
             if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
@@ -963,10 +948,6 @@ bool CarlaEngine::loadFile(const char* const filename)
             return true;
         }
         return false;
-#else
-        setLastError("This Carla build does not have MIDI file support");
-        return false;
-#endif
     }
 
     // -------------------------------------------------------------------
