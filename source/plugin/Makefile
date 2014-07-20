@@ -16,6 +16,7 @@ BUILD_CXX_FLAGS += $(NATIVE_PLUGINS_FLAGS)
 # Common
 
 LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
+LINK_FLAGS += $(JUCE_AUDIO_FORMATS_LIBS)
 LINK_FLAGS += $(JUCE_CORE_LIBS)
 LINK_FLAGS += $(LIBLO_LIBS)
 LINK_FLAGS += $(RTMEMPOOL_LIBS)
@@ -66,6 +67,7 @@ LIBS += ../backend/carla_plugin.a
 LIBS += ../modules/native-plugins.a
 LIBS += ../modules/jackbridge.a
 LIBS += ../modules/juce_audio_basics.a
+LIBS += ../modules/juce_audio_formats.a
 LIBS += ../modules/juce_core.a
 LIBS += ../modules/rtmempool.a
 

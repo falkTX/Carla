@@ -22,6 +22,7 @@ BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin
 
 LINK_PLUGIN_FLAGS   = $(LINK_FLAGS)
 LINK_PLUGIN_FLAGS  += $(JUCE_AUDIO_BASICS_LIBS)
+LINK_PLUGIN_FLAGS  += $(JUCE_AUDIO_FORMATS_LIBS)
 LINK_PLUGIN_FLAGS  += $(JUCE_CORE_LIBS)
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
@@ -408,6 +409,7 @@ OBJS_PLUGIN = \
 LIBS_PLUGIN = \
 	../modules/jackbridge.a \
 	../modules/juce_audio_basics.a \
+	../modules/juce_audio_formats.a \
 	../modules/juce_events.a \
 	../modules/juce_core.a \
 	../modules/rtmempool.a
@@ -480,6 +482,7 @@ LIBS_NATIVE = \
 	../modules/native-plugins.a \
 	../modules/jackbridge.a \
 	../modules/juce_audio_basics.a \
+	../modules/juce_audio_formats.a \
 	../modules/juce_core.a \
 	../modules/rtmempool.a
 
