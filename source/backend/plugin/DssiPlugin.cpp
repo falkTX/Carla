@@ -1928,10 +1928,22 @@ public:
 
     // -------------------------------------------------------------------
 
+    void* getNativeHandle() const noexcept override
+    {
+        return fHandle;
+    }
+
+    const void* getNativeDescriptor() const noexcept override
+    {
+        return fDssiDescriptor;
+    }
+
     const void* getExtraStuff() const noexcept override
     {
         return fUiFilename;
     }
+
+    // -------------------------------------------------------------------
 
     bool init(const char* const filename, const char* const name, const char* const label)
     {

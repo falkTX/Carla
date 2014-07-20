@@ -827,6 +827,18 @@ public:
      */
     CarlaEngineEventPort* getDefaultEventOutPort() const noexcept;
 
+    /*!
+     * Get the plugin's type native handle.
+     * This will be LADSPA_Handle, LV2_Handle, etc.
+     */
+    virtual void* getNativeHandle() const noexcept;
+
+    /*!
+     * Get the plugin's type native descriptor.
+     * This will be LADSPA_Descriptor, DSSI_Descriptor, LV2_Descriptor, AEffect, etc.
+     */
+    virtual const void* getNativeDescriptor() const noexcept;
+
     // -------------------------------------------------------------------
     // Plugin initializers
 

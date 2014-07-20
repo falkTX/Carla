@@ -2218,6 +2218,18 @@ public:
 
     // -------------------------------------------------------------------
 
+    void* getNativeHandle() const noexcept override
+    {
+        return fHandle;
+    }
+
+    const void* getNativeDescriptor() const noexcept override
+    {
+        return fDescriptor;
+    }
+
+    // -------------------------------------------------------------------
+
     bool init(const char* const name, const char* const label)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);

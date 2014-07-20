@@ -981,6 +981,13 @@ public:
 
     // -------------------------------------------------------------------
 
+    void* getNativeHandle() const noexcept override
+    {
+        return (fInstance != nullptr) ? fInstance-> /* TODO */ : nullptr;
+    }
+
+    // -------------------------------------------------------------------
+
 protected:
     void audioProcessorParameterChanged(AudioProcessor*, int index, float value) override
     {
@@ -997,8 +1004,8 @@ protected:
         pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0f, nullptr);
     }
 
-    void audioProcessorParameterChangeGestureBegin(AudioProcessor*, int) {}
-    void audioProcessorParameterChangeGestureEnd(AudioProcessor*, int) {}
+    void audioProcessorParameterChangeGestureBegin(AudioProcessor*, int) override {}
+    void audioProcessorParameterChangeGestureEnd(AudioProcessor*, int) override {}
 
     bool getCurrentPosition(CurrentPositionInfo& result) override
     {

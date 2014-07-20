@@ -2150,6 +2150,13 @@ protected:
 
     // -------------------------------------------------------------------
 
+    const void* getNativeDescriptor() const noexcept override
+    {
+        return fEffect;
+    }
+
+    // -------------------------------------------------------------------
+
 public:
     bool init(const char* const filename, const char* const name, const int64_t uniqueId)
     {

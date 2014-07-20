@@ -4425,6 +4425,18 @@ public:
 
     // -------------------------------------------------------------------
 
+    void* getNativeHandle() const noexcept override
+    {
+        return fHandle;
+    }
+
+    const void* getNativeDescriptor() const noexcept override
+    {
+        return fDescriptor;
+    }
+
+    // -------------------------------------------------------------------
+
 public:
     bool init(const char* const bundle, const char* const name, const char* const uri)
     {

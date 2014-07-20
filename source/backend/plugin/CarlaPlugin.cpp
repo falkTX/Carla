@@ -2049,6 +2049,16 @@ CarlaEngineEventPort* CarlaPlugin::getDefaultEventOutPort() const noexcept
     return pData->event.portOut;
 }
 
+void* CarlaPlugin::getNativeHandle() const noexcept
+{
+    return nullptr;
+}
+
+const void* CarlaPlugin::getNativeDescriptor() const noexcept
+{
+    return nullptr;
+}
+
 // -------------------------------------------------------------------
 // Scoped Disabler
 

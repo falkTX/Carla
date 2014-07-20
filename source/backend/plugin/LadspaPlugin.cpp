@@ -1470,10 +1470,22 @@ public:
 
     // -------------------------------------------------------------------
 
+    void* getNativeHandle() const noexcept override
+    {
+        return fHandle;
+    }
+
+    const void* getNativeDescriptor() const noexcept override
+    {
+        return fDescriptor;
+    }
+
     const void* getExtraStuff() const noexcept override
     {
         return fRdfDescriptor;
     }
+
+    // -------------------------------------------------------------------
 
     bool init(const char* const filename, const char* const name, const char* const label, const LADSPA_RDF_Descriptor* const rdfDescriptor)
     {

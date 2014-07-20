@@ -1549,6 +1549,8 @@ public:
         return fUses16Outs ? xtrue : xfalse;
     }
 
+    // -------------------------------------------------------------------
+
     bool init(const char* const filename, const char* const name, const char* const label)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
