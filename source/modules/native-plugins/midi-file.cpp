@@ -18,7 +18,9 @@
 #include "CarlaNative.hpp"
 #include "midi-base.hpp"
 
-#include <smf.h>
+#include "juce_audio_basics.h"
+
+// -----------------------------------------------------------------------
 
 class MidiFilePlugin : public NativePluginClass,
                        public AbstractMidiPlayer
@@ -27,13 +29,7 @@ public:
     MidiFilePlugin(const NativeHostDescriptor* const host)
         : NativePluginClass(host),
           fMidiOut(this),
-          fWasPlayingBefore(false)
-    {
-    }
-
-    ~MidiFilePlugin() override
-    {
-    }
+          fWasPlayingBefore(false) {}
 
 protected:
     // -------------------------------------------------------------------
@@ -41,8 +37,8 @@ protected:
 
     void setCustomData(const char* const key, const char* const value) override
     {
-        CARLA_ASSERT(key != nullptr);
-        CARLA_ASSERT(value != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(value != nullptr && value[0] != '\0',);
 
         if (std::strcmp(key, "file") != 0)
             return;
@@ -127,88 +123,71 @@ private:
     {
         fMidiOut.clear();
 
-        if (smf_t* const smf = smf_load(filename))
+        using juce::File;
+        using juce::FileInputStream;
+        using juce::MidiFile;
+        using juce::MidiMessage;
+        using juce::MidiMessageSequence;
+        using juce::ScopedPointer;
+
+        File file(filename);
+
+        if (! file.existsAsFile())
+           return;
+
+        FileInputStream fileStream(file);
+        MidiFile        midiFile;
+
+        if (! midiFile.readFrom(fileStream))
+            return;
+
+        midiFile.convertTimestampTicksToSeconds();
+
+        const double sampleRate(getSampleRate());
+
+        for (int i=0, numTracks = midiFile.getNumTracks(); i<numTracks; ++i)
         {
-            smf_event_t* event;
-            const double sampleRate(getSampleRate());
+            const MidiMessageSequence* const track(midiFile.getTrack(i));
+            CARLA_SAFE_ASSERT_CONTINUE(track != nullptr);
 
-            while ((event = smf_get_next_event(smf)) != nullptr)
+            for (int j=0, numEvents = track->getNumEvents(); j<numEvents; ++j)
             {
-                if (smf_event_is_valid(event) == 0)
+                const MidiMessageSequence::MidiEventHolder* const midiEventHolder(track->getEventPointer(j));
+                CARLA_SAFE_ASSERT_CONTINUE(midiEventHolder != nullptr);
+
+                const MidiMessage& midiMessage(midiEventHolder->message);
+                //const double time(track->getEventTime(i)*sampleRate);
+                const int dataSize(midiMessage.getRawDataSize());
+
+                if (dataSize <= 0 || dataSize > MAX_EVENT_DATA_SIZE)
                     continue;
-                if (smf_event_is_metadata(event))
+                if (midiMessage.isActiveSense())
                     continue;
-                if (smf_event_is_system_realtime(event))
+                if (midiMessage.isMetaEvent())
                     continue;
-                if (smf_event_is_system_common(event))
+                if (midiMessage.isMidiStart())
                     continue;
-                if (event->midi_buffer_length <= 0 || event->midi_buffer_length > MAX_EVENT_DATA_SIZE)
+                if (midiMessage.isMidiContinue())
+                    continue;
+                if (midiMessage.isMidiStop())
+                    continue;
+                if (midiMessage.isMidiClock())
+                    continue;
+                if (midiMessage.isSongPositionPointer())
+                    continue;
+                if (midiMessage.isQuarterFrame())
+                    continue;
+                if (midiMessage.isFullFrame())
+                    continue;
+                if (midiMessage.isMidiMachineControlMessage())
+                    continue;
+                if (midiMessage.isSysEx())
                     continue;
 
-                const uint64_t time(uint64_t(event->time_seconds*sampleRate));
+                const double time(midiMessage.getTimeStamp()*sampleRate);
 
-#if 1
-                fMidiOut.addRaw(time, event->midi_buffer, uint8_t(event->midi_buffer_length));
-#else
-                const uint8_t status  = MIDI_GET_STATUS_FROM_DATA(event->midi_buffer);
-                const uint8_t channel = MIDI_GET_CHANNEL_FROM_DATA(event->midi_buffer);
-
-                uint8_t nextBank[MAX_MIDI_CHANNELS] = { 0 };
-
-                if (MIDI_IS_STATUS_NOTE_OFF(status))
-                {
-                    const uint8_t note = event->midi_buffer[1];
-                    const uint8_t velo = event->midi_buffer[2];
-
-                    fMidiOut.addNoteOff(time, channel, note, velo);
-                }
-                else if (MIDI_IS_STATUS_NOTE_ON(status))
-                {
-                    const uint8_t note = event->midi_buffer[1];
-                    const uint8_t velo = event->midi_buffer[2];
-
-                    fMidiOut.addNoteOn(time, channel, note, velo);
-                }
-                else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status))
-                {
-                    const uint8_t note     = event->midi_buffer[1];
-                    const uint8_t pressure = event->midi_buffer[2];
-
-                    fMidiOut.addNoteAftertouch(time, channel, note, pressure);
-                }
-                else if (MIDI_IS_STATUS_CONTROL_CHANGE(status))
-                {
-                    const uint8_t control = event->midi_buffer[1];
-                    const uint8_t value   = (event->midi_buffer_length > 2) ? event->midi_buffer[2] : 0;
-
-                    if (MIDI_IS_CONTROL_BANK_SELECT(control))
-                        nextBank[channel] = value;
-                    else
-                        fMidiOut.addControl(time, channel, control, value);
-                }
-                else if (MIDI_IS_STATUS_PROGRAM_CHANGE(status))
-                {
-                    const uint8_t program = event->midi_buffer[1];
-
-                    fMidiOut.addProgram(time, channel, nextBank[channel], program);
-                }
-                else if (MIDI_IS_STATUS_AFTERTOUCH(status))
-                {
-                    const uint8_t pressure = event->midi_buffer[1];
-
-                    fMidiOut.addChannelPressure(time, channel, pressure);
-                }
-                else if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status))
-                {
-                    const uint8_t lsb = event->midi_buffer[1];
-                    const uint8_t msb = event->midi_buffer[2];
-
-                    fMidiOut.addPitchbend(time, channel, lsb, msb);
-                }
-#endif
+                fMidiOut.addRaw(time, midiMessage.getRawData(), static_cast<uint8_t>(dataSize));
             }
-
-            smf_delete(smf);
         }
     }
 

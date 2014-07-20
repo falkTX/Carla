@@ -892,8 +892,7 @@ bool CarlaEngine::loadFile(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN_ERR(file.existsAsFile(), "Requested file does not exist or is not a readable file");
 
     CarlaString baseName(file.getFileName().toRawUTF8());
-    CarlaString extension(file.getFileExtension().toRawUTF8());
-    extension.toLower();
+    CarlaString extension(file.getFileExtension().replace(".","").toLowerCase().toRawUTF8());
 
     // -------------------------------------------------------------------
 
@@ -913,20 +912,7 @@ bool CarlaEngine::loadFile(const char* const filename)
 
     // -------------------------------------------------------------------
 
-    // FIXME
-    if (extension == "aiff" || extension == "flac" || extension == "oga" || extension == "ogg" || extension == "w64" || extension == "wav")
-    {
-        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "audiofile", 0, nullptr))
-        {
-            if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
-                plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "file", filename, true);
-            return true;
-        }
-        return false;
-    }
-
-    if (extension == "3g2" || extension == "3gp" || extension == "aac" || extension == "ac3" || extension == "amr" || extension == "ape" ||
-        extension == "mp2" || extension == "mp3" || extension == "mpc" || extension == "wma")
+    if (extension == "aif" || extension == "aiff" || extension == "bwf" || extension == "flac" || extension == "ogg" || extension == "wav")
     {
         if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "audiofile", 0, nullptr))
         {

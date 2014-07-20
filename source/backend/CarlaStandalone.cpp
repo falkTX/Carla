@@ -29,6 +29,8 @@
 #include "CarlaOscUtils.hpp"
 #include "CarlaThread.hpp"
 
+#include "juce_audio_formats.h"
+
 #ifdef BUILD_BRIDGE
 # undef HAVE_JUCE_UI
 #endif
@@ -43,6 +45,11 @@ using juce::Thread;
 
 namespace CB = CarlaBackend;
 using CB::EngineOptions;
+
+using juce::AudioFormat;
+using juce::AudioFormatManager;
+using juce::String;
+using juce::StringArray;
 
 // -------------------------------------------------------------------------------------------------------------------
 // Juce Message Thread
@@ -650,9 +657,17 @@ const char* carla_get_supported_file_extensions()
         retText += ";*.gig;*.sfz";
 #endif
 
-        // Audio files, FIXME
-        retText += ";*.aiff;*.flac;*.oga;*.ogg;*.w64;*.wav";
-        retText += ";*.3g2;*.3gp;*.aac;*.ac3;*.amr;*.ape;*.mp2;*.mp3;*.mpc;*.wma";
+        // Audio files
+        AudioFormatManager afm;
+        afm.registerBasicFormats();
+
+        for (AudioFormat **it=afm.begin(), **end=afm.end(); it != end; ++it)
+        {
+            const StringArray& exts((*it)->getFileExtensions());
+
+            for (String *eit=exts.begin(), *end=exts.end(); eit != end; ++eit)
+                retText += String(";*" + (*eit)).toRawUTF8();
+        }
 
         // MIDI files
         retText += ";*.mid;*.midi";

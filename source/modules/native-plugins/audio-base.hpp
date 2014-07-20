@@ -20,14 +20,9 @@
 
 #include "CarlaThread.hpp"
 
-#include "juce_audio_basics.h"
+#include "juce_audio_formats.h"
+
 using juce::FloatVectorOperations;
-
-extern "C" {
-#include "audio_decoder/ad.h"
-}
-
-typedef struct adinfo ADInfo;
 
 struct AudioFilePool {
     float*   buffer[2];
