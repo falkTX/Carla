@@ -74,7 +74,9 @@ uint CarlaEngine::getDriverCount()
 
 #ifndef BUILD_BRIDGE
     count += getRtAudioApiCount();
+# ifdef HAVE_JUCE_UI
     count += getJuceApiCount();
+# endif
 #endif
 
     return count;
@@ -97,12 +99,14 @@ const char* CarlaEngine::getDriverName(const uint index2)
         index -= count;
     }
 
+# ifdef HAVE_JUCE_UI
     if (const uint count = getRtAudioApiCount())
     {
         if (index < count)
             return getJuceApiName(index);
         //index -= count;
     }
+# endif
 #endif
 
     carla_stderr("CarlaEngine::getDriverName(%i) - invalid index", index2);
@@ -129,12 +133,14 @@ const char* const* CarlaEngine::getDriverDeviceNames(const uint index2)
         index -= count;
     }
 
+# ifdef HAVE_JUCE_UI
     if (const uint count = getRtAudioApiCount())
     {
         if (index < count)
             return getJuceApiDeviceNames(index);
         //index -= count;
     }
+# endif
 #endif
 
     carla_stderr("CarlaEngine::getDriverDeviceNames(%i) - invalid index", index2);
@@ -165,12 +171,14 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2
         index -= count;
     }
 
+# ifdef HAVE_JUCE_UI
     if (const uint count = getRtAudioApiCount())
     {
         if (index < count)
             return getJuceDeviceInfo(index, deviceName);
         //index -= count;
     }
+# endif
 #endif
 
     carla_stderr("CarlaEngine::getDriverDeviceNames(%i, \"%s\") - invalid index", index2, deviceName);
@@ -208,16 +216,28 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
     // macos
 
     if (std::strcmp(driverName, "CoreAudio") == 0)
+# ifdef HAVE_JUCE_UI
         return newJuce(AUDIO_API_CORE);
+# else
+        return newRtAudio(AUDIO_API_DS);
+# endif
 
     // -------------------------------------------------------------------
     // windows
 
     if (std::strcmp(driverName, "ASIO") == 0)
+# ifdef HAVE_JUCE_UI
         return newJuce(AUDIO_API_ASIO);
+# else
+        return newRtAudio(AUDIO_API_DS);
+# endif
 
     if (std::strcmp(driverName, "DirectSound") == 0)
+# ifdef HAVE_JUCE_UI
         return newJuce(AUDIO_API_DS);
+# else
+        return newRtAudio(AUDIO_API_DS);
+# endif
 #endif
 
     carla_stderr("CarlaEngine::newDriverByName(\"%s\") - invalid driver name", driverName);

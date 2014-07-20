@@ -141,17 +141,10 @@ ifneq ($(shell pkg-config --exists liblo && echo true),true)
 $(error liblo missing, cannot continue)
 endif
 
-ifeq ($(LINUX),true)
-ifneq ($(shell pkg-config --exists x11 && echo true),true)
-$(error X11 missing, cannot continue)
-endif
-endif
-
 # --------------------------------------------------------------
 # Check for optional libs (required by backend or bridges)
 
 ifeq ($(MACOS_OR_WIN32),true)
-HAVE_DGL        = true
 HAVE_JUCE_UI    = true
 else
 HAVE_FFMPEG     = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
@@ -161,10 +154,9 @@ HAVE_QT4        = $(shell pkg-config --exists QtCore QtGui && echo true)
 HAVE_QT5        = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
 ifeq ($(LINUX),true)
 HAVE_ALSA       = $(shell pkg-config --exists alsa && echo true)
-HAVE_DGL        = $(shell pkg-config --exists gl && echo true)
-HAVE_JUCE_UI    = $(shell pkg-config --exists xinerama xext xcursor freetype2 TODO && echo true)
+HAVE_JUCE_UI    = $(shell pkg-config --exists x11 xinerama xext xcursor freetype2 TODO && echo true)
 HAVE_PULSEAUDIO = $(shell pkg-config --exists libpulse-simple && echo true)
-HAVE_X11        = true
+HAVE_X11        = $(shell pkg-config --exists x11 && echo true)
 endif
 endif
 
@@ -228,10 +220,6 @@ HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk_images ntk && echo true)
 # --------------------------------------------------------------
 # Set base defines
 
-ifeq ($(HAVE_DGL),true)
-BASE_FLAGS += -DHAVE_DGL
-endif
-
 ifeq ($(HAVE_FFMPEG),true)
 BASE_FLAGS += -DHAVE_FFMPEG
 endif
@@ -289,15 +277,11 @@ RTMEMPOOL_LIBS = -lpthread
 endif
 
 ifeq ($(LINUX),true)
-ifeq ($(HAVE_DGL),true)
-DGL_FLAGS                = $(shell pkg-config --cflags gl x11)
-DGL_LIBS                 = $(shell pkg-config --libs gl x11)
-endif
 JACKBRIDGE_LIBS          = -ldl -lpthread -lrt
 JUCE_CORE_LIBS           = -ldl -lpthread -lrt
+ifeq ($(HAVE_JUCE_UI),true)
 JUCE_EVENTS_FLAGS        = $(shell pkg-config --cflags x11)
 JUCE_EVENTS_LIBS         = $(shell pkg-config --libs x11)
-ifeq ($(HAVE_JUCE_UI),true)
 JUCE_GRAPHICS_FLAGS      = $(shell pkg-config --cflags x11 xinerama xext freetype2)
 JUCE_GRAPHICS_LIBS       = $(shell pkg-config --libs x11 xinerama xext freetype2)
 JUCE_GUI_BASICS_FLAGS    = $(shell pkg-config --cflags x11 xinerama xext xcursor)
@@ -317,7 +301,6 @@ endif
 endif
 
 ifeq ($(MACOS),true)
-DGL_LIBS                   = -framework OpenGL -framework Cocoa
 JACKBRIDGE_LIBS            = -ldl -lpthread
 JUCE_AUDIO_BASICS_LIBS     = -framework Accelerate
 JUCE_AUDIO_DEVICES_LIBS    = -framework AppKit -framework AudioToolbox -framework CoreAudio -framework CoreMIDI
@@ -336,7 +319,6 @@ RTMIDI_LIBS               += -framework CoreAudio -framework CoreMIDI -framework
 endif
 
 ifeq ($(WIN32),true)
-DGL_LIBS                = -lopengl32 -lgdi32
 JACKBRIDGE_LIBS         = -lpthread
 JUCE_AUDIO_DEVICES_LIBS = -lwinmm -lole32
 JUCE_CORE_LIBS          = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
@@ -351,10 +333,6 @@ endif
 
 # --------------------------------------------------------------
 # Set libs stuff (part 3)
-
-ifeq ($(HAVE_DGL),true)
-NATIVE_PLUGINS_LIBS  += $(DGL_LIBS)
-endif
 
 ifeq ($(HAVE_AF_DEPS),true)
 NATIVE_PLUGINS_FLAGS += -DWANT_AUDIOFILE

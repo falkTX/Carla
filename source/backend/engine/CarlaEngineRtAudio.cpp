@@ -59,14 +59,16 @@ static void initRtAudioAPIsIfNeeded()
     {
         const RtAudio::Api& api(*it);
 
-        if (api == RtAudio::LINUX_ALSA)
-            continue;
+        //if (api == RtAudio::LINUX_ALSA)
+        //    continue;
+#ifdef HAVE_JUCE_UI
         if (api == RtAudio::MACOSX_CORE)
             continue;
         if (api == RtAudio::WINDOWS_ASIO)
             continue;
         if (api == RtAudio::WINDOWS_DS)
             continue;
+#endif
         if (api == RtAudio::UNIX_JACK && ! jackbridge_is_ok())
             continue;
 

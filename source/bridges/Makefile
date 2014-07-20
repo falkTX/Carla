@@ -23,7 +23,6 @@ BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin
 LINK_PLUGIN_FLAGS   = $(LINK_FLAGS)
 LINK_PLUGIN_FLAGS  += $(JUCE_AUDIO_BASICS_LIBS)
 LINK_PLUGIN_FLAGS  += $(JUCE_CORE_LIBS)
-LINK_PLUGIN_FLAGS  += $(JUCE_EVENTS_LIBS)
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 BUILD_PLUGIN_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST -DWANT_VST3
@@ -38,6 +37,7 @@ endif
 ifeq ($(HAVE_JUCE_UI),true)
 LINK_PLUGIN_FLAGS  += $(JUCE_AUDIO_PROCESSORS_LIBS)
 LINK_PLUGIN_FLAGS  += $(JUCE_DATA_STRUCTURES_LIBS)
+LINK_PLUGIN_FLAGS  += $(JUCE_EVENTS_LIBS)
 LINK_PLUGIN_FLAGS  += $(JUCE_GRAPHICS_LIBS)
 LINK_PLUGIN_FLAGS  += $(JUCE_GUI_BASICS_LIBS)
 endif
@@ -72,10 +72,6 @@ WIN_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) -L../modules
 
 NATIVE_BUILD_FLAGS  = $(POSIX_BUILD_FLAGS) -DWANT_NATIVE
 NATIVE_LINK_FLAGS   = $(POSIX_LINK_FLAGS)
-
-ifeq ($(HAVE_DGL),true)
-NATIVE_LINK_FLAGS  += $(DGL_LIBS)
-endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 NATIVE_BUILD_FLAGS += -DWANT_FLUIDSYNTH
@@ -493,19 +489,14 @@ LIBS_NATIVE = \
 	../modules/jackbridge.a \
 	../modules/juce_audio_basics.a \
 	../modules/juce_core.a \
-	../modules/juce_events.a \
 	../modules/rtmempool.a
-
-ifeq ($(HAVE_DGL),true)
-LIBS_NATIVE += \
-	../modules/dgl.a
-endif
 
 ifeq ($(HAVE_JUCE_UI),true)
 LIBS_NATIVE += \
 	../modules/juce_audio_processors.a \
 	../modules/juce_data_structures.a \
 	../modules/juce_data_structures.a \
+	../modules/juce_events.a \
 	../modules/juce_graphics.a \
 	../modules/juce_gui_basics.a \
 	../modules/juce_gui_extra.a

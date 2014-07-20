@@ -14,11 +14,8 @@ STANDALONE_LIBS += carla_plugin.a
 
 STANDALONE_LIBS += ../modules/jackbridge.a
 STANDALONE_LIBS += ../modules/juce_audio_basics.a
-STANDALONE_LIBS += ../modules/juce_audio_devices.a
 STANDALONE_LIBS += ../modules/juce_audio_formats.a
-STANDALONE_LIBS += ../modules/juce_audio_processors.a
 STANDALONE_LIBS += ../modules/juce_core.a
-STANDALONE_LIBS += ../modules/juce_events.a
 STANDALONE_LIBS += ../modules/native-plugins.a
 STANDALONE_LIBS += ../modules/rtaudio.a
 STANDALONE_LIBS += ../modules/rtmempool.a
@@ -32,12 +29,11 @@ ifeq ($(HAVE_AF_DEPS),true)
 STANDALONE_LIBS += ../modules/audio_decoder.a
 endif
 
-ifeq ($(HAVE_DGL),true)
-STANDALONE_LIBS += ../modules/dgl.a
-endif
-
 ifeq ($(HAVE_JUCE_UI),true)
+STANDALONE_LIBS += ../modules/juce_audio_devices.a
+STANDALONE_LIBS += ../modules/juce_audio_processors.a
 STANDALONE_LIBS += ../modules/juce_data_structures.a
+STANDALONE_LIBS += ../modules/juce_events.a
 STANDALONE_LIBS += ../modules/juce_graphics.a
 STANDALONE_LIBS += ../modules/juce_gui_basics.a
 STANDALONE_LIBS += ../modules/juce_gui_extra.a
@@ -48,9 +44,7 @@ endif
 STANDALONE_FLAGS  = $(JACKBRIDGE_LIBS)
 STANDALONE_FLAGS += $(JUCE_CORE_LIBS)
 STANDALONE_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
-STANDALONE_FLAGS += $(JUCE_AUDIO_DEVICES_LIBS)
 STANDALONE_FLAGS += $(JUCE_AUDIO_FORMATS_LIBS)
-STANDALONE_FLAGS += $(JUCE_EVENTS_LIBS)
 STANDALONE_FLAGS += $(LIBLO_LIBS)
 STANDALONE_FLAGS += $(NATIVE_PLUGINS_LIBS)
 STANDALONE_FLAGS += $(RTAUDIO_LIBS)
@@ -70,8 +64,10 @@ STANDALONE_FLAGS += $(LINUXSAMPLER_LIBS)
 endif
 
 ifeq ($(HAVE_JUCE_UI),true)
+STANDALONE_FLAGS += $(JUCE_AUDIO_DEVICES_LIBS)
 STANDALONE_FLAGS += $(JUCE_AUDIO_PROCESSORS_LIBS)
 STANDALONE_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
+STANDALONE_FLAGS += $(JUCE_EVENTS_LIBS)
 STANDALONE_FLAGS += $(JUCE_GRAPHICS_LIBS)
 STANDALONE_FLAGS += $(JUCE_GUI_BASICS_LIBS)
 STANDALONE_FLAGS += $(JUCE_GUI_EXTRA_LIBS)

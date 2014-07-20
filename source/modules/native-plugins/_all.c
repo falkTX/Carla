@@ -35,27 +35,6 @@ extern void carla_register_native_plugin_bigmeter();
 extern void carla_register_native_plugin_notes();
 #endif
 
-// DISTRHO plugins
-extern void carla_register_native_plugin_3bandeq();
-extern void carla_register_native_plugin_3bandsplitter();
-extern void carla_register_native_plugin_nekobi();
-extern void carla_register_native_plugin_pingpongpan();
-extern void carla_register_native_plugin_stereoenhancer();
-
-extern void carla_register_native_plugin_groovejuice();
-extern void carla_register_native_plugin_powerjuice();
-extern void carla_register_native_plugin_segmentjuice();
-extern void carla_register_native_plugin_vectorjuice();
-extern void carla_register_native_plugin_wobblejuice();
-
-extern void carla_register_native_plugin_zamcomp();
-extern void carla_register_native_plugin_zamcompx2();
-extern void carla_register_native_plugin_zameq2();
-extern void carla_register_native_plugin_zamsynth();
-extern void carla_register_native_plugin_zamtube();
-extern void carla_register_native_plugin_zamulticomp();
-extern void carla_register_native_plugin_zamulticompx2();
-
 #ifdef HAVE_JUCE_UI
 // JUCE based plugins
 extern void carla_register_native_plugin_jucepatchbay();
@@ -71,11 +50,6 @@ extern void carla_register_native_plugin_audiofile();
 #ifdef WANT_MIDIFILE
 // MIDI File
 extern void carla_register_native_plugin_midifile();
-#endif
-
-#ifdef WANT_PROJECTM
-// ProjectM
-extern void carla_register_native_plugin_prom();
 #endif
 
 // SunVox File
@@ -107,27 +81,6 @@ void carla_register_all_plugins()
     carla_register_native_plugin_notes();
 #endif
 
-    // DISTRHO plugins
-    carla_register_native_plugin_3bandeq();
-    carla_register_native_plugin_3bandsplitter();
-    carla_register_native_plugin_nekobi();
-    carla_register_native_plugin_pingpongpan();
-    //carla_register_native_plugin_stereoenhancer();
-
-    carla_register_native_plugin_groovejuice();
-    carla_register_native_plugin_powerjuice();
-    carla_register_native_plugin_segmentjuice();
-    carla_register_native_plugin_vectorjuice();
-    carla_register_native_plugin_wobblejuice();
-
-    carla_register_native_plugin_zamcomp();
-    carla_register_native_plugin_zamcompx2();
-    carla_register_native_plugin_zameq2();
-    carla_register_native_plugin_zamsynth();
-    carla_register_native_plugin_zamtube();
-    carla_register_native_plugin_zamulticomp();
-    carla_register_native_plugin_zamulticompx2();
-
 #ifdef HAVE_JUCE_UI
     // JUCE based plugins
     carla_register_native_plugin_jucepatchbay();
@@ -144,14 +97,6 @@ void carla_register_all_plugins()
     // MIDI File
     carla_register_native_plugin_midifile();
 #endif
-
-#ifdef WANT_PROJECTM
-    // ProjectM
-    carla_register_native_plugin_prom();
-#endif
-
-    // SunVox File
-    //carla_register_native_plugin_sunvoxfile();
 
 #ifdef WANT_ZYNADDSUBFX
     // ZynAddSubFX

@@ -17,9 +17,7 @@ BUILD_CXX_FLAGS += $(NATIVE_PLUGINS_FLAGS)
 
 LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
 LINK_FLAGS += $(JUCE_CORE_LIBS)
-LINK_FLAGS += $(JUCE_EVENTS_LIBS)
 LINK_FLAGS += $(LIBLO_LIBS)
-LINK_FLAGS += $(QTCORE_LIBS)
 LINK_FLAGS += $(RTMEMPOOL_LIBS)
 
 # --------------------------------------------------------------
@@ -45,13 +43,10 @@ endif
 # --------------------------------------------------------------
 # Coomon
 
-ifeq ($(HAVE_DGL),true)
-LINK_FLAGS += $(DGL_LIBS)
-endif
-
 ifeq ($(HAVE_JUCE_UI),true)
 LINK_FLAGS += $(JUCE_AUDIO_PROCESSORS_LIBS)
 LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
+LINK_FLAGS += $(JUCE_EVENTS_LIBS)
 LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
 LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
 LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
@@ -71,21 +66,17 @@ LIBS += ../backend/carla_plugin.a
 LIBS += ../modules/native-plugins.a
 LIBS += ../modules/jackbridge.a
 LIBS += ../modules/juce_audio_basics.a
-LIBS += ../modules/juce_audio_processors.a
 LIBS += ../modules/juce_core.a
-LIBS += ../modules/juce_events.a
 LIBS += ../modules/rtmempool.a
 
 ifeq ($(HAVE_AF_DEPS),true)
 LIBS += ../modules/audio_decoder.a
 endif
 
-ifeq ($(HAVE_DGL),true)
-LIBS += ../modules/dgl.a
-endif
-
 ifeq ($(HAVE_JUCE_UI),true)
+LIBS += ../modules/juce_audio_processors.a
 LIBS += ../modules/juce_data_structures.a
+LIBS += ../modules/juce_events.a
 LIBS += ../modules/juce_graphics.a
 LIBS += ../modules/juce_gui_basics.a
 LIBS += ../modules/juce_gui_extra.a

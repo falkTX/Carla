@@ -22,16 +22,16 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 
-#include "juce_audio_processors.h"
-//#include "JuceInternalFilters.hpp"
-
-using juce::jmax;
+#ifdef HAVE_JUCE_UI
 using juce::AudioPluginInstance;
 using juce::AudioProcessor;
 using juce::AudioProcessorEditor;
+using juce::PluginDescription;
+#endif
+
+using juce::jmax;
 using juce::FloatVectorOperations;
 using juce::MemoryBlock;
-using juce::PluginDescription;
 using juce::String;
 
 CARLA_BACKEND_START_NAMESPACE
@@ -729,6 +729,7 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
     }
 }
 
+#ifdef HAVE_JUCE_UI
 // -----------------------------------------------------------------------
 
 class CarlaPluginInstance : public AudioPluginInstance
@@ -1045,6 +1046,7 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float*
         fillEngineEventsFromJuceMidiBuffer(data->events.out, midiBuffer);
     }
 }
+#endif
 
 // -----------------------------------------------------------------------
 // InternalGraph
@@ -1071,13 +1073,18 @@ void EngineInternalGraph::create(const bool isRack, const double sampleRate, con
         CARLA_SAFE_ASSERT_RETURN(fRack == nullptr,);
         fRack = new RackGraph(bufferSize, inputs, outputs);
     }
+#ifdef HAVE_JUCE_UI
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay == nullptr,);
         fPatchbay = new PatchbayGraph(static_cast<int>(bufferSize), sampleRate, inputs, outputs);
     }
+#endif
 
     fIsReady = true;
+
+    // unused
+    return; (void)sampleRate;
 }
 
 void EngineInternalGraph::destroy() noexcept
@@ -1096,12 +1103,14 @@ void EngineInternalGraph::destroy() noexcept
         delete fRack;
         fRack = nullptr;
     }
+#ifdef HAVE_JUCE_UI
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
         delete fPatchbay;
         fPatchbay = nullptr;
     }
+#endif
 }
 
 void EngineInternalGraph::setBufferSize(const uint32_t bufferSize)
@@ -1113,11 +1122,13 @@ void EngineInternalGraph::setBufferSize(const uint32_t bufferSize)
         CARLA_SAFE_ASSERT_RETURN(fRack != nullptr,);
         fRack->setBufferSize(bufferSize);
     }
+#ifdef HAVE_JUCE_UI
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
         fPatchbay->setBufferSize(static_cast<int>(bufferSize));
     }
+#endif
 }
 
 void EngineInternalGraph::setSampleRate(const double sampleRate)
@@ -1128,11 +1139,16 @@ void EngineInternalGraph::setSampleRate(const double sampleRate)
     {
         CARLA_SAFE_ASSERT_RETURN(fRack != nullptr,);
     }
+#ifdef HAVE_JUCE_UI
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
         fPatchbay->setSampleRate(sampleRate);
     }
+#endif
+
+    // unused
+    return; (void)sampleRate;
 }
 
 void EngineInternalGraph::setOffline(const bool offline)
@@ -1144,11 +1160,13 @@ void EngineInternalGraph::setOffline(const bool offline)
         CARLA_SAFE_ASSERT_RETURN(fRack != nullptr,);
         fRack->setOffline(offline);
     }
+#ifdef HAVE_JUCE_UI
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
         fPatchbay->setOffline(offline);
     }
+#endif
 }
 
 bool EngineInternalGraph::isReady() const noexcept
@@ -1177,11 +1195,13 @@ void EngineInternalGraph::process(CarlaEngine::ProtectedData* const data, const 
         CARLA_SAFE_ASSERT_RETURN(fRack != nullptr,);
         fRack->processHelper(data, inBuf, outBuf, frames);
     }
+#ifdef HAVE_JUCE_UI
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
         fPatchbay->process(data, inBuf, outBuf, static_cast<int>(frames));
     }
+#endif
 }
 
 void EngineInternalGraph::processRack(CarlaEngine::ProtectedData* const data, const float* inBuf[2], float* outBuf[2], const uint32_t frames)

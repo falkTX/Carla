@@ -21,12 +21,17 @@ OBJS = \
 
 OBJSa = $(OBJS) \
 	CarlaEngineJack.cpp.o \
-	CarlaEngineJuce.cpp.o \
 	CarlaEngineRtAudio.cpp.o
+
+ifeq ($(HAVE_JUCE_UI),true)
+OBJSa += \
+	CarlaEngineJuce.cpp.o
+endif
 
 ifneq ($(WIN32),true)
 OBJSa += \
 	CarlaEngineNative.cpp.o
+
 OBJSp  = $(OBJS) \
 	CarlaEngineNative.cpp.exp.o
 endif

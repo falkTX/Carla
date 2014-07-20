@@ -23,11 +23,14 @@
 #include "CarlaPatchbayUtils.hpp"
 #include "CarlaStringList.hpp"
 
-#include "juce_audio_processors.h"
-
+#ifdef HAVE_JUCE_UI
+# include "juce_audio_processors.h"
 using juce::AudioProcessorGraph;
 using juce::AudioSampleBuffer;
 using juce::MidiBuffer;
+#else
+# include "juce_audio_basics.h"
+#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -102,6 +105,7 @@ struct RackGraph {
     void processHelper(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames);
 };
 
+#ifdef HAVE_JUCE_UI
 // -----------------------------------------------------------------------
 // PatchbayGraph
 
@@ -133,6 +137,7 @@ struct PatchbayGraph  {
 
     void process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const int frames);
 };
+#endif
 
 // -----------------------------------------------------------------------
 

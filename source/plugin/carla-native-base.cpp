@@ -48,15 +48,7 @@ struct PluginListManager {
                 continue;
 
             // skip some plugins
-            if (std::strcmp(desc->label,  "3bandeq"       ) == 0 ||
-                std::strcmp(desc->label,  "3bandsplitter" ) == 0 ||
-                std::strcmp(desc->label,  "pingpongpan"   ) == 0 ||
-                std::strcmp(desc->label,  "stereoenhancer") == 0 ||
-                std::strcmp(desc->label,  "nekobi"        ) == 0 ||
-                std::strcmp(desc->label,  "prom"          ) == 0 ||
-                std::strcmp(desc->label,  "vexsynth"      ) == 0 ||
-                std::strstr(desc->label,  "juice"         ) != nullptr ||
-                std::strncmp(desc->label, "zam", 3) == 0)
+            if (std::strcmp(desc->label, "vexsynth") == 0)
             {
                 continue;
             }

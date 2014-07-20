@@ -93,37 +93,6 @@ OBJS += \
 	notes.cpp.o
 endif
 
-# --------------------------------------------------------------
-# DISTRHO plugins
-
-OBJS += \
-	distrho-3bandeq.cpp.o \
-	distrho-3bandsplitter.cpp.o \
-	distrho-pingpongpan.cpp.o \
-	distrho-nekobi.cpp.o
-#	distrho-stereoenhancer.cpp.o
-
-OBJS += \
-	distrho-groovejuice.cpp.o \
-	distrho-powerjuice.cpp.o \
-	distrho-segmentjuice.cpp.o \
-	distrho-vectorjuice.cpp.o \
-	distrho-wobblejuice.cpp.o
-
-OBJS += \
-	distrho-zamcomp.cpp.o \
-	distrho-zamcompx2.cpp.o \
-	distrho-zameq2.cpp.o \
-	distrho-zamsynth.cpp.o \
-	distrho-zamtube.cpp.o \
-	distrho-zamulticomp.cpp.o \
-	distrho-zamulticompx2.cpp.o
-
-ifeq ($(HAVE_PM_DEPS),true)
-OBJS += \
-	distrho-prom.cpp.o
-endif
-
 ifeq ($(HAVE_JUCE_UI),true)
 # --------------------------------------------------------------
 # JUCE based plugins
