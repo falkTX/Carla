@@ -665,7 +665,7 @@ const char* carla_get_supported_file_extensions()
         {
             const StringArray& exts((*it)->getFileExtensions());
 
-            for (String *eit=exts.begin(), *end=exts.end(); eit != end; ++eit)
+            for (String *eit=exts.begin(), *eend=exts.end(); eit != eend; ++eit)
                 retText += String(";*" + (*eit)).toRawUTF8();
         }
 

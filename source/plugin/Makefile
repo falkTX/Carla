@@ -53,6 +53,10 @@ LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
 LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
 endif
 
+ifeq ($(HAVE_X11),true)
+LINK_FLAGS += $(X11_LIBS)
+endif
+
 # --------------------------------------------------------------
 # Native
 

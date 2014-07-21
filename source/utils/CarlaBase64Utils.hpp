@@ -22,6 +22,7 @@
 #include "CarlaUtils.hpp"
 
 #include <cctype>
+#include <vector>
 
 // -----------------------------------------------------------------------
 // Helpers

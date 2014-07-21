@@ -30,6 +30,7 @@ class CarlaEngineThread : public CarlaThread
 {
 public:
     CarlaEngineThread(CarlaEngine* const engine) noexcept;
+    ~CarlaEngineThread() noexcept override;
 
 protected:
     void run() noexcept override;
