@@ -326,7 +326,7 @@ public:
      */
     bool isInput() const noexcept
     {
-        return fIsInput;
+        return kIsInput;
     }
 
     /*!
@@ -334,13 +334,13 @@ public:
      */
     const CarlaEngineClient& getEngineClient() const noexcept
     {
-        return fClient;
+        return kClient;
     }
 
 #ifndef DOXYGEN
 protected:
-    const CarlaEngineClient& fClient;
-    const bool fIsInput;
+    const CarlaEngineClient& kClient;
+    const bool kIsInput;
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEnginePort)
 #endif
@@ -522,7 +522,7 @@ public:
 #ifndef DOXYGEN
 protected:
     EngineEvent* fBuffer;
-    const EngineProcessMode fProcessMode;
+    const EngineProcessMode kProcessMode;
     friend class CarlaPluginInstance;
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineEventPort)
@@ -596,12 +596,12 @@ public:
      */
     const CarlaEngine& getEngine() const noexcept
     {
-        return fEngine;
+        return kEngine;
     }
 
 #ifndef DOXYGEN
 protected:
-    const CarlaEngine& fEngine;
+    const CarlaEngine& kEngine;
 
     bool     fActive;
     uint32_t fLatency;

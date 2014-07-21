@@ -20,23 +20,11 @@
 
 #include "CarlaJuceUtils.hpp"
 
-#include <cctype>
-#include <sys/types.h>
-
-#include <vector>
-
 namespace std {
 #ifdef CARLA_OS_HAIKU
 using ::snprintf;
 #endif
 using ::ssize_t; // FIXME?
-}
-
-// -----------------------------------------------------------------------
-// Helpers
-
-namespace Base64Helpers {
-
 }
 
 // -----------------------------------------------------------------------

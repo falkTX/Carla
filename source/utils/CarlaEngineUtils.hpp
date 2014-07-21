@@ -120,8 +120,7 @@ static inline
 void fillEngineEventsFromJuceMidiBuffer(EngineEvent engineEvents[kMaxEngineEventInternalCount], const juce::MidiBuffer& midiBuffer)
 {
     const uint8_t* midiData;
-    int numBytes;
-    int sampleNumber;
+    int numBytes, sampleNumber;
     ushort engineEventIndex = 0;
 
     for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)

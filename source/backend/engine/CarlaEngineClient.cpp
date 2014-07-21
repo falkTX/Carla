@@ -23,7 +23,7 @@ CARLA_BACKEND_START_NAMESPACE
 // Carla Engine client (Abstract)
 
 CarlaEngineClient::CarlaEngineClient(const CarlaEngine& engine) noexcept
-    : fEngine(engine),
+    : kEngine(engine),
       fActive(false),
       fLatency(0)
 {

@@ -50,9 +50,7 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
-#if 0
-} // Fix editor indentation
-#endif
+// -----------------------------------------------------------------------
 
 class CarlaEngineOsc
 {
@@ -167,6 +165,8 @@ private:
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineOsc)
 };
+
+// -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
 

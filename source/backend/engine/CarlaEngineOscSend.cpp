@@ -323,7 +323,7 @@ void CarlaEngine::oscSend_bridge_pong() const noexcept
     std::strcat(targetPath, "/bridge_pong");
     try_lo_send(pData->oscData->target, targetPath, "");
 }
-#else
+#else // BUILD_BRIDGE
 void CarlaEngine::oscSend_control_add_plugin_start(const uint pluginId, const char* const pluginName) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
@@ -696,7 +696,7 @@ void CarlaEngine::oscSend_control_exit() const noexcept
     std::strcat(targetPath, "/exit");
     try_lo_send(pData->oscData->target, targetPath, "");
 }
-#endif
+#endif // BUILD_BRIDGE
 
 // -----------------------------------------------------------------------
 

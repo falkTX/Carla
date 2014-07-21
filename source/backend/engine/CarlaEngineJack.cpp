@@ -73,11 +73,11 @@ public:
         : CarlaEngineAudioPort(client, isInputPort),
           fJackClient(jackClient),
           fJackPort(jackPort),
-          fDeletionCallback(delCallback)
+          kDeletionCallback(delCallback)
     {
         carla_debug("CarlaEngineJackAudioPort::CarlaEngineJackAudioPort(%s, %p, %p)", bool2str(isInputPort), jackClient, jackPort);
 
-        switch (fClient.getEngine().getProccessMode())
+        switch (kClient.getEngine().getProccessMode())
         {
         case ENGINE_PROCESS_MODE_SINGLE_CLIENT:
         case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
@@ -113,8 +113,8 @@ public:
             fJackPort   = nullptr;
         }
 
-        if (fDeletionCallback != nullptr)
-            fDeletionCallback->jackAudioPortDeleted(this);
+        if (kDeletionCallback != nullptr)
+            kDeletionCallback->jackAudioPortDeleted(this);
     }
 
     void initBuffer() noexcept override
@@ -122,7 +122,7 @@ public:
         if (fJackPort == nullptr)
             return CarlaEngineAudioPort::initBuffer();
 
-        const uint32_t bufferSize(fClient.getEngine().getBufferSize());
+        const uint32_t bufferSize(kClient.getEngine().getBufferSize());
 
         try {
             fBuffer = (float*)jackbridge_port_get_buffer(fJackPort, bufferSize);
@@ -132,7 +132,7 @@ public:
             return;
         }
 
-        if (! fIsInput)
+        if (! kIsInput)
             FloatVectorOperations::clear(fBuffer, static_cast<int>(bufferSize));
     }
 
@@ -146,7 +146,7 @@ private:
     jack_client_t* fJackClient;
     jack_port_t*   fJackPort;
 
-    JackPortDeletionCallback* const fDeletionCallback;
+    JackPortDeletionCallback* const kDeletionCallback;
 
     friend class CarlaEngineJackClient;
 
@@ -163,11 +163,11 @@ public:
         : CarlaEngineCVPort(client, isInputPort),
           fJackClient(jackClient),
           fJackPort(jackPort),
-          fDeletionCallback(delCallback)
+          kDeletionCallback(delCallback)
     {
         carla_debug("CarlaEngineJackCVPort::CarlaEngineJackCVPort(%s, %p, %p)", bool2str(isInputPort), jackClient, jackPort);
 
-        switch (fClient.getEngine().getProccessMode())
+        switch (kClient.getEngine().getProccessMode())
         {
         case ENGINE_PROCESS_MODE_SINGLE_CLIENT:
         case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
@@ -203,8 +203,8 @@ public:
             fJackPort   = nullptr;
         }
 
-        if (fDeletionCallback != nullptr)
-            fDeletionCallback->jackCVPortDeleted(this);
+        if (kDeletionCallback != nullptr)
+            kDeletionCallback->jackCVPortDeleted(this);
     }
 
     void initBuffer() noexcept override
@@ -212,7 +212,7 @@ public:
         if (fJackPort == nullptr)
             return CarlaEngineCVPort::initBuffer();
 
-        const uint32_t bufferSize(fClient.getEngine().getBufferSize());
+        const uint32_t bufferSize(kClient.getEngine().getBufferSize());
 
         try {
             fBuffer = (float*)jackbridge_port_get_buffer(fJackPort, bufferSize);
@@ -222,7 +222,7 @@ public:
             return;
         }
 
-        if (! fIsInput)
+        if (! kIsInput)
             FloatVectorOperations::clear(fBuffer, static_cast<int>(bufferSize));
     }
 
@@ -236,7 +236,7 @@ private:
     jack_client_t* fJackClient;
     jack_port_t*   fJackPort;
 
-    JackPortDeletionCallback* const fDeletionCallback;
+    JackPortDeletionCallback* const kDeletionCallback;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackCVPort)
 };
@@ -252,11 +252,11 @@ public:
           fJackClient(jackClient),
           fJackPort(jackPort),
           fJackBuffer(nullptr),
-          fDeletionCallback(delCallback)
+          kDeletionCallback(delCallback)
     {
         carla_debug("CarlaEngineJackEventPort::CarlaEngineJackEventPort(%s, %p, %p)", bool2str(isInputPort), jackClient, jackPort);
 
-        switch (fClient.getEngine().getProccessMode())
+        switch (kClient.getEngine().getProccessMode())
         {
         case ENGINE_PROCESS_MODE_SINGLE_CLIENT:
         case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
@@ -282,8 +282,8 @@ public:
             fJackPort   = nullptr;
         }
 
-        if (fDeletionCallback != nullptr)
-            fDeletionCallback->jackEventPortDeleted(this);
+        if (kDeletionCallback != nullptr)
+            kDeletionCallback->jackEventPortDeleted(this);
     }
 
     void initBuffer() noexcept override
@@ -292,14 +292,14 @@ public:
             return CarlaEngineEventPort::initBuffer();
 
         try {
-            fJackBuffer = jackbridge_port_get_buffer(fJackPort, fClient.getEngine().getBufferSize());
+            fJackBuffer = jackbridge_port_get_buffer(fJackPort, kClient.getEngine().getBufferSize());
         }
         catch(...) {
             fJackBuffer = nullptr;
             return;
         }
 
-        if (! fIsInput)
+        if (! kIsInput)
             jackbridge_midi_clear_buffer(fJackBuffer);
     }
 
@@ -308,7 +308,7 @@ public:
         if (fJackPort == nullptr)
             return CarlaEngineEventPort::getEventCount();
 
-        CARLA_SAFE_ASSERT_RETURN(fIsInput, 0);
+        CARLA_SAFE_ASSERT_RETURN(kIsInput, 0);
         CARLA_SAFE_ASSERT_RETURN(fJackBuffer != nullptr, 0);
 
         try {
@@ -321,7 +321,7 @@ public:
         if (fJackPort == nullptr)
             return CarlaEngineEventPort::getEvent(index);
 
-        CARLA_SAFE_ASSERT_RETURN(fIsInput, kFallbackJackEngineEvent);
+        CARLA_SAFE_ASSERT_RETURN(kIsInput, kFallbackJackEngineEvent);
         CARLA_SAFE_ASSERT_RETURN(fJackBuffer != nullptr, kFallbackJackEngineEvent);
 
         return getEventUnchecked(index);
@@ -353,7 +353,7 @@ public:
         if (fJackPort == nullptr)
             return CarlaEngineEventPort::writeControlEvent(time, channel, type, param, value);
 
-        CARLA_SAFE_ASSERT_RETURN(! fIsInput, false);
+        CARLA_SAFE_ASSERT_RETURN(! kIsInput, false);
         CARLA_SAFE_ASSERT_RETURN(fJackBuffer != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(type != kEngineControlEventTypeNull, false);
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, false);
@@ -383,7 +383,7 @@ public:
         if (fJackPort == nullptr)
             return CarlaEngineEventPort::writeMidiEvent(time, channel, port, size, data);
 
-        CARLA_SAFE_ASSERT_RETURN(! fIsInput, false);
+        CARLA_SAFE_ASSERT_RETURN(! kIsInput, false);
         CARLA_SAFE_ASSERT_RETURN(fJackBuffer != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, false);
         CARLA_SAFE_ASSERT_RETURN(size > 0, false);
@@ -414,7 +414,7 @@ private:
 
     mutable EngineEvent fRetEvent;
 
-    JackPortDeletionCallback* const fDeletionCallback;
+    JackPortDeletionCallback* const kDeletionCallback;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackEventPort)
 };
@@ -447,7 +447,7 @@ public:
     {
         carla_debug("CarlaEngineJackClient::~CarlaEngineJackClient()");
 
-        if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS && fJackClient != nullptr) // FIXME
+        if (kEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS && fJackClient != nullptr) // FIXME
             jackbridge_client_close(fJackClient);
 
         // ports must have been deleted by now!
@@ -460,7 +460,7 @@ public:
     {
         carla_debug("CarlaEngineJackClient::activate()");
 
-        if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+        if (kEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             CARLA_SAFE_ASSERT_RETURN(fJackClient != nullptr && ! fActive,);
 
@@ -476,7 +476,7 @@ public:
     {
         carla_debug("CarlaEngineJackClient::deactivate()");
 
-        if (fEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+        if (kEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             CARLA_SAFE_ASSERT_RETURN(fJackClient != nullptr && fActive,);
 

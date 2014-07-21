@@ -25,23 +25,23 @@ CARLA_PLUGIN_HPP = $(CWD)/backend/CarlaPlugin.hpp $(CARLA_BACKEND_H)
 # ----------------------------------------------------------------------------------------------------------------------------
 # utils (base with no extra depends)
 
-CARLA_UTILS_HPP      = $(CWD)/utils/CarlaUtils.hpp     $(CARLA_DEFINES_H)
-CARLA_JUCE_UTILS_HPP = $(CWD)/utils/CarlaJuceUtils.hpp $(CARLA_UTILS_HPP)
-CARLA_LIB_UTILS_HPP  = $(CWD)/utils/CarlaLibUtils.hpp  $(CARLA_UTILS_HPP)
-CARLA_MATH_UTILS_HPP = $(CWD)/utils/CarlaMathUtils.hpp $(CARLA_UTILS_HPP)
-CARLA_OSC_UTILS_HPP  = $(CWD)/utils/CarlaOscUtils.hpp  $(CARLA_UTILS_HPP)
-CARLA_SHM_UTILS_HPP  = $(CWD)/utils/CarlaShmUtils.hpp  $(CARLA_UTILS_HPP)
+CARLA_UTILS_HPP        = $(CWD)/utils/CarlaUtils.hpp       $(CARLA_DEFINES_H)
+CARLA_BASE64_UTILS_HPP = $(CWD)/utils/CarlaBase64Utils.hpp $(CARLA_UTILS_HPP)
+CARLA_JUCE_UTILS_HPP   = $(CWD)/utils/CarlaJuceUtils.hpp   $(CARLA_UTILS_HPP)
+CARLA_LIB_UTILS_HPP    = $(CWD)/utils/CarlaLibUtils.hpp    $(CARLA_UTILS_HPP)
+CARLA_MATH_UTILS_HPP   = $(CWD)/utils/CarlaMathUtils.hpp   $(CARLA_UTILS_HPP)
+CARLA_OSC_UTILS_HPP    = $(CWD)/utils/CarlaOscUtils.hpp    $(CARLA_UTILS_HPP)
+CARLA_SHM_UTILS_HPP    = $(CWD)/utils/CarlaShmUtils.hpp    $(CARLA_UTILS_HPP)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # utils (base classes)
 
-CARLA_MUTEX_HPP          = $(CWD)/utils/CarlaMutex.hpp        $(CARLA_UTILS_HPP)
-CARLA_RING_BUFFER_HPP    = $(CWD)/utils/CarlaRingBuffer.hpp   $(CARLA_UTILS_HPP)
-CARLA_STRING_HPP         = $(CWD)/utils/CarlaString.hpp       $(CARLA_JUCE_UTILS_HPP)
-CARLA_THREAD_HPP         = $(CWD)/utils/CarlaThread.hpp       $(CARLA_MUTEX_HPP) $(CARLA_STRING_HPP)
-LINKED_LIST_HPP          = $(CWD)/utils/LinkedList.hpp        $(CARLA_UTILS_HPP)
-LV2_ATOM_RING_BUFFER_HPP = $(CWD)/utils/Lv2AtomRingBuffer.hpp $(CARLA_MATH_UTILS_HPP) $(CARLA_MUTEX_HPP) $(CARLA_RING_BUFFER_HPP)
-RT_LINKED_LIST_HPP       = $(CWD)/utils/RtLinkedList.hpp      $(LINKED_LIST_HPP)
+CARLA_MUTEX_HPP       = $(CWD)/utils/CarlaMutex.hpp      $(CARLA_UTILS_HPP)
+CARLA_RING_BUFFER_HPP = $(CWD)/utils/CarlaRingBuffer.hpp $(CARLA_MATH_UTILS_HPP)
+CARLA_STRING_HPP      = $(CWD)/utils/CarlaString.hpp     $(CARLA_JUCE_UTILS_HPP)
+CARLA_THREAD_HPP      = $(CWD)/utils/CarlaThread.hpp     $(CARLA_MUTEX_HPP) $(CARLA_STRING_HPP)
+LINKED_LIST_HPP       = $(CWD)/utils/LinkedList.hpp      $(CARLA_UTILS_HPP)
+RT_LINKED_LIST_HPP    = $(CWD)/utils/RtLinkedList.hpp    $(LINKED_LIST_HPP)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # utils (plugin stuff)
@@ -55,18 +55,21 @@ CARLA_VST_UTILS_HPP    = $(CWD)/utils/CarlaVstUtils.hpp    $(CARLA_UTILS_HPP)
 # ----------------------------------------------------------------------------------------------------------------------------
 # utils (misc stuff)
 
-CARLA_BACKEND_UTILS_HPP = $(CWD)/utils/CarlaBackendUtils.hpp $(CARLA_BACKEND_H) $(CARLA_HOST_H) $(CARLA_STRING_HPP)
-CARLA_BRIDGE_UTILS_HPP  = $(CWD)/utils/CarlaBridgeUtils.hpp  $(CARLA_RING_BUFFER_HPP)
-CARLA_ENGINE_UTILS_HPP  = $(CWD)/utils/CarlaEngineUtils.hpp  $(CARLA_ENGINE_HPP) $(CARLA_UTILS_HPP)
-CARLA_PIPE_UTILS_HPP    = $(CWD)/utils/CarlaPipeUtils.hpp    $(CARLA_MUTEX_HPP) $(CARLA_STRING_HPP)
-CARLA_STATE_UTILS_HPP   = $(CWD)/utils/CarlaStateUtils.hpp   $(CARLA_BACKEND_H) $(LINKED_LIST_HPP)
-CARLA_STATE_UTILS_CPP   = $(CWD)/utils/CarlaStateUtils.cpp   $(CARLA_STATE_UTILS_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_MIDI_H)
+CARLA_BACKEND_UTILS_HPP  = $(CWD)/utils/CarlaBackendUtils.hpp  $(CARLA_BACKEND_H) $(CARLA_HOST_H) $(CARLA_STRING_HPP)
+CARLA_BRIDGE_UTILS_HPP   = $(CWD)/utils/CarlaBridgeUtils.hpp   $(CARLA_RING_BUFFER_HPP)
+CARLA_ENGINE_UTILS_HPP   = $(CWD)/utils/CarlaEngineUtils.hpp   $(CARLA_ENGINE_HPP) $(CARLA_UTILS_HPP)
+CARLA_PATCHBAY_UTILS_HPP = $(CWD)/utils/CarlaPatchbayUtils.hpp $(LINKED_LIST_HPP)
+CARLA_PIPE_UTILS_HPP     = $(CWD)/utils/CarlaPipeUtils.hpp     $(CARLA_MUTEX_HPP) $(CARLA_STRING_HPP)
+CARLA_STATE_UTILS_HPP    = $(CWD)/utils/CarlaStateUtils.hpp    $(CARLA_BACKEND_H) $(LINKED_LIST_HPP)
+CARLA_STATE_UTILS_CPP    = $(CWD)/utils/CarlaStateUtils.cpp    $(CARLA_STATE_UTILS_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_MIDI_H)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # utils (advanced classes)
 
-CARLA_EXTERNAL_UI_HPP = $(CWD)/utils/CarlaExternalUI.hpp $(CARLA_PIPE_UTILS_HPP)
-CARLA_LIB_COUNTER_HPP = $(CWD)/utils/CarlaLibCounter.hpp $(CARLA_LIB_UTILS_HPP) $(CARLA_MUTEX_HPP) $(LINKED_LIST_HPP)
+CARLA_EXTERNAL_UI_HPP    = $(CWD)/utils/CarlaExternalUI.hpp   $(CARLA_PIPE_UTILS_HPP)
+CARLA_LIB_COUNTER_HPP    = $(CWD)/utils/CarlaLibCounter.hpp   $(CARLA_LIB_UTILS_HPP) $(CARLA_MUTEX_HPP) $(LINKED_LIST_HPP)
+CARLA_STRING_LIST_HPP    = $(CWD)/utils/CarlaStringList.hpp   $(CARLA_STRING_HPP) $(LINKED_LIST_HPP)
+LV2_ATOM_RING_BUFFER_HPP = $(CWD)/utils/Lv2AtomRingBuffer.hpp $(CARLA_MUTEX_HPP) $(CARLA_RING_BUFFER_HPP)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # modules
@@ -82,16 +85,21 @@ RTMIDI_HPP              = $(CWD)/modules/rtmidi/RtMidi.h           $(CARLA_DEFIN
 # backend/engine
 
 CARLA_ENGINE_OSC_HPP           = $(CWD)/backend/engine/CarlaEngineOsc.hpp      $(CARLA_BACKEND_H) $(CARLA_OSC_UTILS_HPP) $(CARLA_STRING_HPP)
+CARLA_ENGINE_GRAPH_HPP         = $(CWD)/backend/engine/CarlaEngineGraph.hpp    $(CARLA_ENGINE_HPP) $(CARLA_MUTEX_HPP) $(CARLA_PATCHBAY_UTILS_HPP) $(CARLA_STRING_LIST_HPP)
 CARLA_ENGINE_THREAD_HPP        = $(CWD)/backend/engine/CarlaEngineThread.hpp   $(CARLA_BACKEND_H) $(CARLA_THREAD_HPP)
 CARLA_ENGINE_INTERNAL_HPP      = $(CWD)/backend/engine/CarlaEngineInternal.hpp $(CARLA_ENGINE_HPP) $(CARLA_ENGINE_OSC_HPP) $(CARLA_ENGINE_THREAD_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_MUTEX_HPP) $(LINKED_LIST_HPP)
 
 CARLA_ENGINE_CPP_DEPS          = $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_ENGINE_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_STATE_UTILS_HPP) $(CARLA_MIDI_H) $(JACK_BRIDGE_HPP)
 CARLA_ENGINE_BRIDGE_CPP_DEPS   = $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_BRIDGE_UTILS_HPP) $(CARLA_MIDI_H) $(JACK_BRIDGE_HPP)
+CARLA_ENGINE_CLIENT_CPP_DEPS   = $(CARLA_ENGINE_UTILS_HPP)
+CARLA_ENGINE_DATA_CPP_DEPS     = $(CARLA_ENGINE_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_MIDI_H)
 CARLA_ENGINE_INTERNAL_CPP_DEPS = $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_MIDI_H) $(CARLA_MATH_UTILS_HPP)
 CARLA_ENGINE_JACK_CPP_DEPS     = $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_ENGINE_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_MIDI_H) $(JACK_BRIDGE_HPP)
 CARLA_ENGINE_JUCE_CPP_DEPS     = $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_BACKEND_UTILS_HPP)
 CARLA_ENGINE_NATIVE_CPP_DEPS   = $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_STATE_UTILS_HPP) $(CARLA_EXTERNAL_UI_HPP) $(CARLA_NATIVE_HPP) $(CARLA_DSSI_UTILS_CPP) $(CARLA_STATE_UTILS_CPP)
 CARLA_ENGINE_OSC_CPP_DEPS      = $(CARLA_ENGINE_HPP) $(CARLA_ENGINE_OSC_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BRIDGE_UTILS_HPP) $(CARLA_MIDI_H)
+CARLA_ENGINE_OSC_SEND_CPP_DEPS = $(CARLA_BACKEND_UTILS_HPP) $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_MIDI_H)
+CARLA_ENGINE_PORTS_CPP_DEPS    = $(CARLA_ENGINE_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(CARLA_MIDI_H)
 CARLA_ENGINE_RTAUDIO_CPP_DEPS  = $(CARLA_ENGINE_INTERNAL_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_MATH_UTILS_HPP) $(RT_LINKED_LIST_HPP) $(RTAUDIO_HPP) $(RTMIDI_HPP)
 CARLA_ENGINE_THREAD_CPP_DEPS   = $(CARLA_ENGINE_HPP) $(CARLA_ENGINE_THREAD_HPP) $(CARLA_PLUGIN_HPP)
 
