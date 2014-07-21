@@ -17,7 +17,6 @@
 
 #include "CarlaEngineInternal.hpp"
 #include "CarlaPlugin.hpp"
-#include "CarlaMIDI.h"
 
 CARLA_BACKEND_START_NAMESPACE
 

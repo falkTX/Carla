@@ -18,7 +18,6 @@
 #ifndef CARLA_ENGINE_INTERNAL_HPP_INCLUDED
 #define CARLA_ENGINE_INTERNAL_HPP_INCLUDED
 
-#include "CarlaEngine.hpp"
 #include "CarlaEngineOsc.hpp"
 #include "CarlaEngineThread.hpp"
 #include "CarlaEngineUtils.hpp"

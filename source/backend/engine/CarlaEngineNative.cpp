@@ -45,10 +45,6 @@ using juce::XmlElement;
 
 CARLA_BACKEND_START_NAMESPACE
 
-#if 0
-} // Fix editor indentation
-#endif
-
 // -----------------------------------------------------------------------
 
 class CarlaEngineNativeUI : public CarlaExternalUI

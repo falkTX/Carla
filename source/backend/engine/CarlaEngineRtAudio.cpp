@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaEngineInternal.hpp"
 #include "CarlaEngineGraph.hpp"
+#include "CarlaEngineInternal.hpp"
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaStringList.hpp"
