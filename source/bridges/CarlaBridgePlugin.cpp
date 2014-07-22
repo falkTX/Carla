@@ -29,7 +29,8 @@
 # include <signal.h>
 #endif
 
-#ifdef HAVE_JUCE_UI
+// TODO
+#if 0
 # include "juce_gui_basics.h"
 using juce::JUCEApplication;
 using juce::JUCEApplicationBase;
@@ -214,7 +215,7 @@ public:
         }
     }
 
-#ifndef HAVE_JUCE_UI
+#if 1
     void idle()
     {
         CARLA_SAFE_ASSERT_RETURN(fEngine != nullptr,);
@@ -243,7 +244,7 @@ public:
 
     void exec(int argc, char* argv[])
     {
-#ifdef HAVE_JUCE_UI
+#if 0
         gBridgeClient = this;
         JUCEApplicationBase::createInstance = &juce_CreateApplication;
         JUCEApplicationBase::main(JUCE_MAIN_FUNCTION_ARGS);

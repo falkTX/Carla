@@ -23,7 +23,7 @@
 #include "CarlaPatchbayUtils.hpp"
 #include "CarlaStringList.hpp"
 
-#ifdef HAVE_JUCE_UI
+#if 0
 # include "juce_audio_processors.h"
 using juce::AudioProcessorGraph;
 using juce::AudioSampleBuffer;
@@ -105,7 +105,7 @@ struct RackGraph {
     void processHelper(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames);
 };
 
-#ifdef HAVE_JUCE_UI
+#if 0
 // -----------------------------------------------------------------------
 // PatchbayGraph
 

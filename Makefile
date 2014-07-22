@@ -36,17 +36,13 @@ ALL_LIBS += source/backend/carla_engine.a
 ALL_LIBS += source/backend/carla_engine_plugin.a
 ALL_LIBS += source/backend/carla_plugin.a
 
-ifeq ($(HAVE_AF_DEPS),true)
-ALL_LIBS += source/modules/audio_decoder.a
-endif
-
 ALL_LIBS += source/modules/jackbridge.a
 
 ALL_LIBS += source/modules/juce_audio_basics.a
 ALL_LIBS += source/modules/juce_audio_formats.a
 ALL_LIBS += source/modules/juce_core.a
 
-ifeq ($(HAVE_JUCE_UI),true)
+ifeq ($(MACOS_OR_WIN32),true)
 ALL_LIBS += source/modules/juce_audio_devices.a
 ALL_LIBS += source/modules/juce_audio_processors.a
 ALL_LIBS += source/modules/juce_data_structures.a
@@ -458,14 +454,6 @@ ifeq ($(HAIKU),true)
 USE_COLORS=false
 endif
 
-ifeq ($(MACOS),true)
-USE_VST3=true
-endif
-
-ifeq ($(WIN32),true)
-USE_VST3=true
-endif
-
 ifeq ($(USE_COLORS),true)
 ANS_NO=\033[31m NO \033[0m
 ANS_YES=\033[32m YES \033[0m
@@ -518,7 +506,7 @@ ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 	@echo "DSSI:    $(ANS_YES)"
 	@echo "LV2:     $(ANS_YES)"
 	@echo "VST:     $(ANS_YES)"
-ifeq ($(USE_VST3),true)
+ifeq ($(MACOS_OR_WIN32),true)
 	@echo "VST3:    $(ANS_YES)"
 else
 	@echo "VST3:    $(ANS_NO)  $(mZ)Windows and MacOS only$(mE)"
@@ -604,35 +592,10 @@ endif
 	@echo ""
 
 	@echo "$(tS)---> Internal plugins: $(tE)"
-ifeq ($(HAVE_AF_DEPS),true)
-ifeq ($(HAVE_FFMPEG),true)
-	@echo "AudioFile:  $(ANS_YES) (with ffmpeg)"
-else
-	@echo "AudioFile:  $(ANS_YES) (without ffmpeg) $(mS)ffmpeg/libav missing$(mE)"
-endif
-else
-	@echo "AudioFile:  $(ANS_NO)  $(mS)libsndfile missing$(mE)"
-endif
-ifeq ($(HAVE_MF_DEPS),true)
-	@echo "MidiFile:   $(ANS_YES)"
-else
-	@echo "MidiFile:   $(ANS_NO)  $(mS)LibSMF missing$(mE)"
-endif
-ifeq ($(HAVE_PM_DEPS),true)
-	@echo "ProjectM:   $(ANS_YES)"
-else
-	@echo "ProjectM:   $(ANS_NO)  $(mS)ProjectM missing$(mE)"
-endif
 ifneq ($(WIN32),true)
 	@echo "Carla-Rack: $(ANS_YES)"
 else
 	@echo "Carla-Rack: $(ANS_NO)  $(mS)Not available for Windows$(mE)"
-endif
-	@echo "DPF Stuff:  $(ANS_YES)"
-ifeq ($(HAVE_JUCE),true)
-	@echo "Juce Stuff: $(ANS_YES)"
-else
-	@echo "Juce Stuff: $(ANS_NO)  $(mS)Juce deps missing or unavailable$(mE)"
 endif
 ifeq ($(HAVE_ZYN_DEPS),true)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)

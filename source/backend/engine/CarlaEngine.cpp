@@ -73,9 +73,10 @@ uint CarlaEngine::getDriverCount()
         count += 1;
 
 #ifndef BUILD_BRIDGE
-    count += getRtAudioApiCount();
-# ifdef HAVE_JUCE_UI
+# if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
     count += getJuceApiCount();
+# else
+    count += getRtAudioApiCount();
 # endif
 #endif
 
@@ -92,19 +93,19 @@ const char* CarlaEngine::getDriverName(const uint index2)
         return "JACK";
 
 #ifndef BUILD_BRIDGE
+# if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+    if (const uint count = getJuceApiCount())
+    {
+        if (index < count)
+            return getJuceApiName(index);
+        index -= count;
+    }
+# else
     if (const uint count = getRtAudioApiCount())
     {
         if (index < count)
             return getRtAudioApiName(index);
         index -= count;
-    }
-
-# ifdef HAVE_JUCE_UI
-    if (const uint count = getRtAudioApiCount())
-    {
-        if (index < count)
-            return getJuceApiName(index);
-        //index -= count;
     }
 # endif
 #endif
@@ -126,19 +127,19 @@ const char* const* CarlaEngine::getDriverDeviceNames(const uint index2)
     }
 
 #ifndef BUILD_BRIDGE
+# if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+    if (const uint count = getJuceApiCount())
+    {
+        if (index < count)
+            return getJuceApiDeviceNames(index);
+        index -= count;
+    }
+# else
     if (const uint count = getRtAudioApiCount())
     {
         if (index < count)
             return getRtAudioApiDeviceNames(index);
         index -= count;
-    }
-
-# ifdef HAVE_JUCE_UI
-    if (const uint count = getRtAudioApiCount())
-    {
-        if (index < count)
-            return getJuceApiDeviceNames(index);
-        //index -= count;
     }
 # endif
 #endif
@@ -164,19 +165,19 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2
     }
 
 #ifndef BUILD_BRIDGE
+# if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+    if (const uint count = getJuceApiCount())
+    {
+        if (index < count)
+            return getJuceDeviceInfo(index, deviceName);
+        index -= count;
+    }
+# else
     if (const uint count = getRtAudioApiCount())
     {
         if (index < count)
             return getRtAudioDeviceInfo(index, deviceName);
         index -= count;
-    }
-
-# ifdef HAVE_JUCE_UI
-    if (const uint count = getRtAudioApiCount())
-    {
-        if (index < count)
-            return getJuceDeviceInfo(index, deviceName);
-        //index -= count;
     }
 # endif
 #endif
@@ -194,6 +195,21 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
         return newJack();
 
 #ifndef BUILD_BRIDGE
+# if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+    // -------------------------------------------------------------------
+    // macos
+
+    if (std::strcmp(driverName, "CoreAudio") == 0)
+        return newJuce(AUDIO_API_CORE);
+
+    // -------------------------------------------------------------------
+    // windows
+
+    if (std::strcmp(driverName, "ASIO") == 0)
+        return newJuce(AUDIO_API_ASIO);
+    if (std::strcmp(driverName, "DirectSound") == 0)
+        return newJuce(AUDIO_API_DS);
+#else
     // -------------------------------------------------------------------
     // common
 
@@ -204,39 +220,11 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
     // linux
 
     if (std::strcmp(driverName, "ALSA") == 0)
-        //return newJuce(AUDIO_API_ALSA);
         return newRtAudio(AUDIO_API_ALSA);
-
     if (std::strcmp(driverName, "OSS") == 0)
         return newRtAudio(AUDIO_API_OSS);
     if (std::strcmp(driverName, "PulseAudio") == 0)
         return newRtAudio(AUDIO_API_PULSE);
-
-    // -------------------------------------------------------------------
-    // macos
-
-    if (std::strcmp(driverName, "CoreAudio") == 0)
-# ifdef HAVE_JUCE_UI
-        return newJuce(AUDIO_API_CORE);
-# else
-        return newRtAudio(AUDIO_API_DS);
-# endif
-
-    // -------------------------------------------------------------------
-    // windows
-
-    if (std::strcmp(driverName, "ASIO") == 0)
-# ifdef HAVE_JUCE_UI
-        return newJuce(AUDIO_API_ASIO);
-# else
-        return newRtAudio(AUDIO_API_DS);
-# endif
-
-    if (std::strcmp(driverName, "DirectSound") == 0)
-# ifdef HAVE_JUCE_UI
-        return newJuce(AUDIO_API_DS);
-# else
-        return newRtAudio(AUDIO_API_DS);
 # endif
 #endif
 

@@ -144,9 +144,7 @@ endif
 # --------------------------------------------------------------
 # Check for optional libs (required by backend or bridges)
 
-ifeq ($(MACOS_OR_WIN32),true)
-HAVE_JUCE_UI    = true
-else
+ifneq ($(MACOS_OR_WIN32),true)
 HAVE_FFMPEG     = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
 HAVE_GTK2       = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3       = $(shell pkg-config --exists gtk+-3.0 && echo true)
@@ -154,7 +152,6 @@ HAVE_QT4        = $(shell pkg-config --exists QtCore QtGui && echo true)
 HAVE_QT5        = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
 ifeq ($(LINUX),true)
 HAVE_ALSA       = $(shell pkg-config --exists alsa && echo true)
-HAVE_JUCE_UI    = $(shell pkg-config --exists x11 xinerama xext xcursor freetype2 TODO && echo true)
 HAVE_PULSEAUDIO = $(shell pkg-config --exists libpulse-simple && echo true)
 HAVE_X11        = $(shell pkg-config --exists x11 && echo true)
 endif
@@ -211,15 +208,11 @@ endif
 # --------------------------------------------------------------
 # Check for optional libs (required by internal plugins)
 
-HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
-HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk_images ntk && echo true)
+HAVE_ZYN_DEPS    = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
+HAVE_ZYN_UI_DEPS = $(shell pkg-config --exists ntk_images ntk && echo true)
 
 # --------------------------------------------------------------
 # Set base defines
-
-ifeq ($(HAVE_JUCE_UI),true)
-BASE_FLAGS += -DHAVE_JUCE_UI
-endif
 
 ifeq ($(HAVE_X11),true)
 BASE_FLAGS += -DHAVE_X11
@@ -228,8 +221,8 @@ endif
 # --------------------------------------------------------------
 # Set libs stuff (part 1)
 
-LIBLO_FLAGS  = $(shell pkg-config --cflags liblo)
-LIBLO_LIBS   = $(shell pkg-config --libs liblo)
+LIBLO_FLAGS = $(shell pkg-config --cflags liblo)
+LIBLO_LIBS  = $(shell pkg-config --libs liblo)
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 FLUIDSYNTH_FLAGS = $(shell pkg-config --cflags fluidsynth)
@@ -261,26 +254,18 @@ RTMEMPOOL_LIBS = -lpthread
 endif
 
 ifeq ($(LINUX),true)
-JACKBRIDGE_LIBS          = -ldl -lpthread -lrt
-JUCE_CORE_LIBS           = -ldl -lpthread -lrt
-ifeq ($(HAVE_JUCE_UI),true)
-JUCE_EVENTS_FLAGS        = $(shell pkg-config --cflags x11)
-JUCE_EVENTS_LIBS         = $(shell pkg-config --libs x11)
-JUCE_GRAPHICS_FLAGS      = $(shell pkg-config --cflags x11 xinerama xext freetype2)
-JUCE_GRAPHICS_LIBS       = $(shell pkg-config --libs x11 xinerama xext freetype2)
-JUCE_GUI_BASICS_FLAGS    = $(shell pkg-config --cflags x11 xinerama xext xcursor)
-JUCE_GUI_BASICS_LIBS     = $(shell pkg-config --libs x11 xinerama xext xcursor)
-endif
-LILV_LIBS                = -ldl -lm -lrt
+JACKBRIDGE_LIBS       = -ldl -lpthread -lrt
+JUCE_CORE_LIBS        = -ldl -lpthread -lrt
+LILV_LIBS             = -ldl -lm -lrt
 ifeq ($(HAVE_ALSA),true)
-RTAUDIO_FLAGS           += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
-RTAUDIO_LIBS            += $(shell pkg-config --libs alsa) -lpthread
-RTMIDI_FLAGS            += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
-RTMIDI_LIBS             += $(shell pkg-config --libs alsa)
+RTAUDIO_FLAGS        += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
+RTAUDIO_LIBS         += $(shell pkg-config --libs alsa) -lpthread
+RTMIDI_FLAGS         += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
+RTMIDI_LIBS          += $(shell pkg-config --libs alsa)
 endif
 ifeq ($(HAVE_PULSEAUDIO),true)
-RTAUDIO_FLAGS           += $(shell pkg-config --cflags libpulse-simple) -D__LINUX_PULSE__
-RTAUDIO_LIBS            += $(shell pkg-config --libs libpulse-simple)
+RTAUDIO_FLAGS        += $(shell pkg-config --cflags libpulse-simple) -D__LINUX_PULSE__
+RTAUDIO_LIBS         += $(shell pkg-config --libs libpulse-simple)
 endif
 endif
 

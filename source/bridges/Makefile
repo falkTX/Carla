@@ -35,7 +35,7 @@ BUILD_PLUGIN_FLAGS += -DVESTIGE_HEADER
 endif
 endif
 
-ifeq ($(HAVE_JUCE_UI),true)
+ifeq ($(MACOS_OR_WIN32),true)
 LINK_PLUGIN_FLAGS += $(JUCE_AUDIO_PROCESSORS_LIBS)
 LINK_PLUGIN_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
 LINK_PLUGIN_FLAGS += $(JUCE_EVENTS_LIBS)
@@ -383,67 +383,6 @@ OBJS_UI_LV2_QT5 = CarlaBridgeUI-LV2__lv2-qt5.o \
 # --------------------------------------------------------------
 # native
 
-OBJS_PLUGIN = \
-	jackplugin/CarlaJackPlugin__plugin.o \
-	CarlaBridgeClient__plugin.o \
-	CarlaBridgeOsc__plugin.o \
-	../backend/engine/CarlaEngine__native.o \
-	../backend/engine/CarlaEngineData__native.o \
-	../backend/engine/CarlaEngineInternal__native.o \
-	../backend/engine/CarlaEngineOsc__native.o \
-	../backend/engine/CarlaEngineThread__native.o \
-	../backend/engine/CarlaEngineJack__native.o \
-	../backend/engine/CarlaEngineBridge__native.o \
-	../backend/plugin/CarlaPlugin__native.o \
-	../backend/plugin/CarlaPluginInternal__native.o \
-	../backend/plugin/CarlaPluginThread__native.o \
-	../backend/plugin/CarlaPluginUi__native.o \
-	../backend/plugin/NativePlugin__native.o \
-	../backend/plugin/LadspaPlugin__native.o \
-	../backend/plugin/DssiPlugin__native.o \
-	../backend/plugin/Lv2Plugin__native.o \
-	../backend/plugin/VstPlugin__native.o \
-	../backend/plugin/Vst3Plugin__native.o \
-	../backend/plugin/AuPlugin__native.o \
-	../backend/plugin/JucePlugin__native.o \
-	../backend/plugin/FluidSynthPlugin__native.o \
-	../backend/plugin/LinuxSamplerPlugin__native.o \
-	../backend/CarlaStandalone__native.o
-
-LIBS_PLUGIN = \
-	../modules/jackbridge.a \
-	../modules/juce_audio_basics.a \
-	../modules/juce_audio_formats.a \
-	../modules/juce_events.a \
-	../modules/juce_core.a \
-	../modules/rtmempool.a
-
-ifeq ($(HAVE_JUCE_UI),true)
-LIBS_PLUGIN += \
-	../modules/juce_audio_processors.a \
-	../modules/juce_data_structures.a \
-	../modules/juce_data_structures.a \
-	../modules/juce_graphics.a \
-	../modules/juce_gui_basics.a \
-	../modules/juce_gui_extra.a
-endif
-
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-LIBS_PLUGIN += \
-	../modules/lilv.a
-endif
-
-jackplugin/libjack.so.0: $(OBJS_PLUGIN) $(LIBS_PLUGIN)
-	$(CXX) $(OBJS_PLUGIN) -Wl,--start-group $(LIBS_PLUGIN) -Wl,--end-group $(NATIVE_LINK_FLAGS) -shared -o $@
-
-%__plugin.o: %.cpp
-	$(CXX) $< $(NATIVE_BUILD_FLAGS) -DBRIDGE_JACK -DJACKBRIDGE_EXPORT -c -o $@
-
-#  $(NATIVE_LINK_FLAGS)
-
-# --------------------------------------------------------------
-# native
-
 OBJS_NATIVE  = CarlaBridgePlugin__native.o \
 	CarlaBridgeClient__native.o CarlaBridgeOsc__native.o
 
@@ -490,10 +429,9 @@ LIBS_NATIVE = \
 	../modules/juce_core.a \
 	../modules/rtmempool.a
 
-ifeq ($(HAVE_JUCE_UI),true)
+ifeq ($(MACOS_OR_WIN32),true)
 LIBS_NATIVE += \
 	../modules/juce_audio_processors.a \
-	../modules/juce_data_structures.a \
 	../modules/juce_data_structures.a \
 	../modules/juce_events.a \
 	../modules/juce_graphics.a \
@@ -553,7 +491,7 @@ LIBS_POSIX32 = \
 	../modules/lilv.posix32.a \
 	../modules/rtmempool.posix32.a
 
-ifeq ($(HAVE_JUCE),true)
+ifeq ($(MACOS),true)
 LIBS_POSIX32 += \
 	../modules/juce_audio_basics.posix32.a \
 	../modules/juce_audio_processors.posix32.a \
@@ -611,7 +549,7 @@ LIBS_POSIX64 = \
 	../modules/lilv.posix64.a \
 	../modules/rtmempool.posix64.a
 
-ifeq ($(HAVE_JUCE),true)
+ifeq ($(MACOS),true)
 LIBS_POSIX64 += \
 	../modules/juce_audio_basics.posix64.a \
 	../modules/juce_audio_processors.posix64.a \
@@ -669,7 +607,6 @@ LIBS_WIN32 = \
 	../modules/lilv.win32.a \
 	../modules/rtmempool.win32.a
 
-ifeq ($(HAVE_JUCE),true)
 LIBS_WIN32 += \
 	../modules/juce_audio_basics.win32.a \
 	../modules/juce_audio_processors.win32.a \
@@ -678,7 +615,6 @@ LIBS_WIN32 += \
 	../modules/juce_events.win32.a \
 	../modules/juce_graphics.win32.a \
 	../modules/juce_gui_basics.win32.a
-endif
 
 ../../bin/carla-bridge-win32.exe: $(OBJS_WIN32) $(LIBS_WIN32) ../modules/jackbridge-win32.dll
 	$(CXX) $(OBJS_WIN32) -Wl,--start-group $(LIBS_WIN32) -Wl,--end-group $(WIN_LINK_FLAGS) $(WIN_32BIT_FLAGS) -ljackbridge-win32 -o $@
@@ -727,7 +663,6 @@ LIBS_WIN64 = \
 	../modules/lilv.win64.a \
 	../modules/rtmempool.win64.a
 
-ifeq ($(HAVE_JUCE),true)
 LIBS_WIN64 += \
 	../modules/juce_audio_basics.win64.a \
 	../modules/juce_audio_processors.win64.a \
@@ -736,7 +671,6 @@ LIBS_WIN64 += \
 	../modules/juce_events.win64.a \
 	../modules/juce_graphics.win64.a \
 	../modules/juce_gui_basics.win64.a
-endif
 
 ../../bin/carla-bridge-win64.exe: $(OBJS_WIN64) $(LIBS_WIN64) ../modules/jackbridge-win64.dll
 	$(CXX) $(OBJS_WIN64) -Wl,--start-group $(LIBS_WIN64) -Wl,--end-group $(WIN_LINK_FLAGS) $(WIN_64BIT_FLAGS) -ljackbridge-win64 -o $@

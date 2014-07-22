@@ -18,24 +18,7 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
-#ifdef HAVE_JUCE_UI
-
-#if defined(CARLA_OS_MAC)
-/*
- * Missing functions in OSX.
- */
-namespace std {
-inline float
-fmin(float __x, float __y)
-{ return __builtin_fminf(__x, __y); }
-inline float
-fmax(float __x, float __y)
-{ return __builtin_fmaxf(__x, __y); }
-inline float
-rint(float __x)
-{ return __builtin_rintf(__x); }
-}
-#endif
+#if (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
 
 #include "CarlaBackendUtils.hpp"
 #include "JucePluginWindow.hpp"
@@ -983,7 +966,7 @@ public:
 
     void* getNativeHandle() const noexcept override
     {
-        return (fInstance != nullptr) ? fInstance-> /* TODO */ : nullptr;
+        return (fInstance != nullptr) ? fInstance->getPlatformSpecificData() : nullptr;
     }
 
     // -------------------------------------------------------------------
@@ -1144,7 +1127,7 @@ private:
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // HAVE_JUCE_UI
+#endif // defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -1154,7 +1137,7 @@ CarlaPlugin* CarlaPlugin::newJuce(const Initializer& init, const char* const for
 {
     carla_debug("CarlaPlugin::newJuce({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "}, %s)", init.engine, init.filename, init.name, init.label, init.uniqueId, format);
 
-#ifdef HAVE_JUCE_UI
+#if (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
     JucePlugin* const plugin(new JucePlugin(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name, /*init.label,*/ init.uniqueId, format))

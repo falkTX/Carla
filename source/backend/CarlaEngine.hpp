@@ -1118,23 +1118,25 @@ public:
     // JACK
     static CarlaEngine*       newJack();
 
-#ifndef BUILD_BRIDGE
-    // RtAudio
-    static CarlaEngine*       newRtAudio(const AudioApi api);
-    static uint               getRtAudioApiCount();
-    static const char*        getRtAudioApiName(const uint index);
-    static const char* const* getRtAudioApiDeviceNames(const uint index);
-    static const EngineDriverDeviceInfo* getRtAudioDeviceInfo(const uint index, const char* const deviceName);
-
+#ifdef BUILD_BRIDGE
+    // Bridge
+    static CarlaEngine*       newBridge(const char* const audioBaseName, const char* const controlBaseName, const char* const timeBaseName);
+#else
+# if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
     // Juce
     static CarlaEngine*       newJuce(const AudioApi api);
     static uint               getJuceApiCount();
     static const char*        getJuceApiName(const uint index);
     static const char* const* getJuceApiDeviceNames(const uint index);
     static const EngineDriverDeviceInfo* getJuceDeviceInfo(const uint index, const char* const deviceName);
-#else
-    // Bridge
-    static CarlaEngine*       newBridge(const char* const audioBaseName, const char* const controlBaseName, const char* const timeBaseName);
+# else
+    // RtAudio
+    static CarlaEngine*       newRtAudio(const AudioApi api);
+    static uint               getRtAudioApiCount();
+    static const char*        getRtAudioApiName(const uint index);
+    static const char* const* getRtAudioApiDeviceNames(const uint index);
+    static const EngineDriverDeviceInfo* getRtAudioDeviceInfo(const uint index, const char* const deviceName);
+# endif
 #endif
 
     // -------------------------------------------------------------------

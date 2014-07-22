@@ -18,7 +18,7 @@
 #define CARLA_NATIVE_PLUGIN_LV2
 #include "carla-native-base.cpp"
 
-#include "CarlaMathUtils.hpp"
+// #include "CarlaMathUtils.hpp"
 #include "CarlaString.hpp"
 
 #include "lv2/atom.h"
@@ -37,67 +37,10 @@
 #include "juce_audio_basics.h"
 using juce::FloatVectorOperations;
 
-#ifdef HAVE_JUCE_UI
-
-#include "juce_gui_basics.h"
-
-using juce::Array;
-using juce::JUCEApplicationBase;
-using juce::MessageManager;
-//using juce::MessageManagerLock;
-using juce::Thread;
-
-using juce::initialiseJuce_GUI;
-using juce::shutdownJuce_GUI;
-
-static Array<void*> gActivePlugins;
-
-# ifdef CARLA_OS_LINUX
-// -----------------------------------------------------------------------
-// Juce Message Thread
-
-class JuceMessageThread : public Thread
-{
-public:
-    JuceMessageThread()
-      : Thread("JuceMessageThread"),
-        fInitialised(false)
-    {
-        startThread(7);
-
-        while (! fInitialised)
-            sleep(1);
-    }
-
-    ~JuceMessageThread()
-    {
-        signalThreadShouldExit();
-        JUCEApplicationBase::quit();
-        waitForThreadToExit(5000);
-        clearSingletonInstance();
-    }
-
-    void run() override
-    {
-        initialiseJuce_GUI();
-
-        MessageManager::getInstance()->setCurrentThreadAsMessageThread();
-        fInitialised = true;
-
-        while ((! threadShouldExit()) && MessageManager::getInstance()->runDispatchLoopUntil(250))
-        {}
-    }
-
-    juce_DeclareSingleton(JuceMessageThread, false);
-
-private:
-    bool fInitialised;
-};
-
-juce_ImplementSingleton(JuceMessageThread)
-# endif
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+# include "juce_gui_basics.h"
+static juce::Array<void*> gActivePlugins;
 #endif
-
 
 // -----------------------------------------------------------------------
 // LV2 descriptor functions
@@ -111,9 +54,6 @@ public:
         : fHandle(nullptr),
           fDescriptor(desc),
           fMidiEventCount(0),
-#ifdef HAVE_JUCE_UI
-          fUiWasShown(false),
-#endif
           fIsProcessing(false),
           fVolume(1.0f),
           fDryWet(1.0f),
@@ -148,6 +88,12 @@ public:
         fHost.ui_open_file           = host_ui_open_file;
         fHost.ui_save_file           = host_ui_save_file;
         fHost.dispatcher             = host_dispatcher;
+
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+        if (gActivePlugins.size() == 0)
+            juce::initialiseJuce_GUI();
+        gActivePlugins.add(this);
+#endif
 
         const LV2_Options_Option* options   = nullptr;
         const LV2_URID_Map*       uridMap   = nullptr;
@@ -208,15 +154,20 @@ public:
     ~NativePlugin()
     {
         CARLA_ASSERT(fHandle == nullptr);
-#ifdef HAVE_JUCE_UI
-        CARLA_ASSERT(! fUiWasShown);
-#endif
 
         if (fHost.resourceDir != nullptr)
         {
             delete[] fHost.resourceDir;
             fHost.resourceDir = nullptr;
         }
+
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+        jassert(gActivePlugins.contains(this));
+        gActivePlugins.removeFirstMatchingValue(this);
+
+        if (gActivePlugins.size() == 0)
+            juce::shutdownJuce_GUI();
+#endif
     }
 
     bool init()
@@ -276,20 +227,6 @@ public:
             fDescriptor->cleanup(fHandle);
 
         fHandle = nullptr;
-
-#ifdef HAVE_JUCE_UI
-        if (fUiWasShown)
-        {
-            CARLA_SAFE_ASSERT_RETURN(gActivePlugins.contains(this),);
-
-            gActivePlugins.removeFirstMatchingValue(this);
-
-            if (gActivePlugins.size() == 0)
-                JuceMessageThread::deleteInstance();
-
-            fUiWasShown = false;
-        }
-#endif
     }
 
     void lv2_run(const uint32_t frames)
@@ -729,22 +666,7 @@ protected:
     void handleUiShow()
     {
         if (fDescriptor->ui_show != nullptr)
-        {
-#ifdef HAVE_JUCE_UI
-            if (fDescriptor->hints & PLUGIN_NEEDS_UI_JUCE)
-            {
-                if (gActivePlugins.size() == 0)
-                    JuceMessageThread::getInstance();
-
-                fDescriptor->ui_show(fHandle, true);
-
-                fUiWasShown = true;
-                gActivePlugins.add(this);
-            }
-            else
-#endif
-                fDescriptor->ui_show(fHandle, true);
-        }
+            fDescriptor->ui_show(fHandle, true);
 
         fUI.isVisible = true;
     }
@@ -908,9 +830,6 @@ private:
     NativeMidiEvent fMidiEvents[kMaxMidiEvents*2];
     NativeTimeInfo  fTimeInfo;
 
-#ifdef HAVE_JUCE_UI
-    bool  fUiWasShown;
-#endif
     bool  fIsProcessing;
     float fVolume;
     float fDryWet;

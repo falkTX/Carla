@@ -25,7 +25,7 @@ CarlaPlugin* CarlaPlugin::newAU(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newAU({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.uniqueId);
 
-#if defined(WANT_AU) && defined(HAVE_JUCE_UI)
+#if defined(WANT_AU) && defined(CARLA_OS_MAC)
     return newJuce(init, "AU");
 #else
     init.engine->setLastError("AU support not available");

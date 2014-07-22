@@ -19,7 +19,6 @@
 # error Build this file with debug ON please
 #endif
 
-#define HAVE_JUCE
 #define VESTIGE_HEADER
 
 #include "CarlaUtils.hpp"

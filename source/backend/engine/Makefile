@@ -20,12 +20,14 @@ OBJS = \
 	CarlaEngineThread.cpp.o
 
 OBJSa = $(OBJS) \
-	CarlaEngineJack.cpp.o \
-	CarlaEngineRtAudio.cpp.o
+	CarlaEngineJack.cpp.o
 
-ifeq ($(HAVE_JUCE_UI),true)
+ifeq ($(MACOS_OR_WIN32),true)
 OBJSa += \
 	CarlaEngineJuce.cpp.o
+else
+OBJSa += \
+	CarlaEngineRtAudio.cpp.o
 endif
 
 ifneq ($(WIN32),true)

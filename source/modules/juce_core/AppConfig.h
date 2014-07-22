@@ -81,7 +81,7 @@
 #define JUCE_MODULE_AVAILABLE_juce_video                 0
 
 // conditional
-#ifdef HAVE_JUCE_UI
+#if JUCE_MAC || JUCE_WINDOWS
 # define JUCE_MODULE_AVAILABLE_juce_audio_devices        1
 # define JUCE_MODULE_AVAILABLE_juce_audio_processors     1
 # define JUCE_MODULE_AVAILABLE_juce_data_structures      1

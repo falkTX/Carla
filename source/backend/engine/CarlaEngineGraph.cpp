@@ -22,7 +22,7 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 
-#ifdef HAVE_JUCE_UI
+#if 0
 using juce::AudioPluginInstance;
 using juce::AudioProcessor;
 using juce::AudioProcessorEditor;
@@ -729,7 +729,7 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
     }
 }
 
-#ifdef HAVE_JUCE_UI
+#if 0
 // -----------------------------------------------------------------------
 
 class CarlaPluginInstance : public AudioPluginInstance
@@ -1073,7 +1073,7 @@ void EngineInternalGraph::create(const bool isRack, const double sampleRate, con
         CARLA_SAFE_ASSERT_RETURN(fRack == nullptr,);
         fRack = new RackGraph(bufferSize, inputs, outputs);
     }
-#ifdef HAVE_JUCE_UI
+#if 0
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay == nullptr,);
@@ -1103,7 +1103,7 @@ void EngineInternalGraph::destroy() noexcept
         delete fRack;
         fRack = nullptr;
     }
-#ifdef HAVE_JUCE_UI
+#if 0
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
@@ -1122,7 +1122,7 @@ void EngineInternalGraph::setBufferSize(const uint32_t bufferSize)
         CARLA_SAFE_ASSERT_RETURN(fRack != nullptr,);
         fRack->setBufferSize(bufferSize);
     }
-#ifdef HAVE_JUCE_UI
+#if 0
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
@@ -1139,7 +1139,7 @@ void EngineInternalGraph::setSampleRate(const double sampleRate)
     {
         CARLA_SAFE_ASSERT_RETURN(fRack != nullptr,);
     }
-#ifdef HAVE_JUCE_UI
+#if 0
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
@@ -1160,7 +1160,7 @@ void EngineInternalGraph::setOffline(const bool offline)
         CARLA_SAFE_ASSERT_RETURN(fRack != nullptr,);
         fRack->setOffline(offline);
     }
-#ifdef HAVE_JUCE_UI
+#if 0
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
@@ -1195,7 +1195,7 @@ void EngineInternalGraph::process(CarlaEngine::ProtectedData* const data, const 
         CARLA_SAFE_ASSERT_RETURN(fRack != nullptr,);
         fRack->processHelper(data, inBuf, outBuf, frames);
     }
-#ifdef HAVE_JUCE_UI
+#if 0
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);

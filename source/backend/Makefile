@@ -25,7 +25,7 @@ ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 STANDALONE_LIBS += ../modules/lilv.a
 endif
 
-ifeq ($(HAVE_JUCE_UI),true)
+ifeq ($(MACOS_OR_WIN32),true)
 STANDALONE_LIBS += ../modules/juce_audio_devices.a
 STANDALONE_LIBS += ../modules/juce_audio_processors.a
 STANDALONE_LIBS += ../modules/juce_data_structures.a
@@ -59,7 +59,7 @@ ifeq ($(HAVE_LINUXSAMPLER),true)
 STANDALONE_FLAGS += $(LINUXSAMPLER_LIBS)
 endif
 
-ifeq ($(HAVE_JUCE_UI),true)
+ifeq ($(MACOS_OR_WIN32),true)
 STANDALONE_FLAGS += $(JUCE_AUDIO_DEVICES_LIBS)
 STANDALONE_FLAGS += $(JUCE_AUDIO_PROCESSORS_LIBS)
 STANDALONE_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)

@@ -27,89 +27,15 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaOscUtils.hpp"
-#include "CarlaThread.hpp"
 
 #include "juce_audio_formats.h"
 
-#ifdef BUILD_BRIDGE
-# undef HAVE_JUCE_UI
-#endif
-
-#ifdef HAVE_JUCE_UI
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 # include "juce_gui_basics.h"
-using juce::initialiseJuce_GUI;
-using juce::shutdownJuce_GUI;
-using juce::MessageManager;
-using juce::Thread;
 #endif
 
 namespace CB = CarlaBackend;
 using CB::EngineOptions;
-
-using juce::AudioFormat;
-using juce::AudioFormatManager;
-using juce::String;
-using juce::StringArray;
-
-// -------------------------------------------------------------------------------------------------------------------
-// Juce Message Thread
-
-#if defined(HAVE_JUCE_UI) && defined(CARLA_OS_LINUX)
-
-class JuceMessageThread : public Thread
-{
-public:
-    JuceMessageThread()
-      : Thread("JuceMessageThread"),
-        fInitialised(false)
-    {
-    }
-
-    ~JuceMessageThread() override
-    {
-        stop();
-    }
-
-    void start()
-    {
-        CARLA_SAFE_ASSERT_RETURN(! fInitialised,);
-
-        fInitialised = false;
-
-        startThread(7);
-
-        while (! fInitialised)
-            sleep(1);
-    }
-
-    void stop()
-    {
-        signalThreadShouldExit();
-        waitForThreadToExit(5000);
-    }
-
-protected:
-    void run() override
-    {
-        MessageManager* const msgMgr(MessageManager::getInstance());
-        CARLA_SAFE_ASSERT_RETURN(msgMgr != nullptr,);
-
-        msgMgr->setCurrentThreadAsMessageThread();
-        fInitialised = true;
-
-        while ((! threadShouldExit()) && MessageManager::getInstance()->runDispatchLoopUntil(250))
-        {}
-
-        fInitialised = false;
-    }
-
-private:
-    volatile bool fInitialised;
-
-    CARLA_DECLARE_NON_COPY_CLASS(JuceMessageThread)
-};
-
-#endif // defined(HAVE_JUCE_UI) && defined(CARLA_OS_LINUX)
 
 // -------------------------------------------------------------------------------------------------------------------
 // Single, standalone engine
@@ -125,10 +51,6 @@ struct CarlaBackendStandalone {
 
     CarlaString lastError;
 
-#if defined(HAVE_JUCE_UI) && defined(CARLA_OS_LINUX)
-    JuceMessageThread juceMsgThread;
-#endif
-
     CarlaBackendStandalone()
         : engine(nullptr),
           engineCallback(nullptr),
@@ -143,60 +65,15 @@ struct CarlaBackendStandalone {
         engineOptions.preferPluginBridges = false;
         engineOptions.preferUiBridges     = false;
 #else
-        if (std::getenv("LADISH_APP_NAME") != nullptr || std::getenv("NSM_URL") != nullptr)
-            return;
-
-        CarlaThread::setCurrentThreadName("Carla");
+        if (std::getenv("LADISH_APP_NAME") == nullptr && std::getenv("NSM_URL") == nullptr)
+            juce::Thread::setCurrentThreadName("Carla");
 #endif
     }
 
     ~CarlaBackendStandalone()
     {
         CARLA_SAFE_ASSERT(engine == nullptr);
-#ifdef HAVE_JUCE_UI
-        CARLA_SAFE_ASSERT(MessageManager::getInstanceWithoutCreating() == nullptr);
-#endif
     }
-
-#ifdef HAVE_JUCE_UI
-    void init()
-    {
-        JUCE_AUTORELEASEPOOL
-        {
-            initialiseJuce_GUI();
-# ifdef CARLA_OS_LINUX
-            juceMsgThread.start();
-# else
-            if (MessageManager* const msgMgr = MessageManager::getInstance())
-                msgMgr->setCurrentThreadAsMessageThread();
-# endif
-        }
-    }
-
-    void close()
-    {
-        JUCE_AUTORELEASEPOOL
-        {
-# ifdef CARLA_OS_LINUX
-            juceMsgThread.stop();
-# else
-            MessageManager::deleteInstance();
-# endif
-            shutdownJuce_GUI();
-        }
-    }
-
-# ifndef CARLA_OS_LINUX
-    void idle()
-    {
-        JUCE_AUTORELEASEPOOL
-        {
-            if (MessageManager* const msgMgr = MessageManager::getInstanceWithoutCreating())
-                msgMgr->runDispatchLoopUntil(5);
-        }
-    }
-# endif
-#endif
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaBackendStandalone)
@@ -619,20 +496,12 @@ const char* carla_get_complete_license_text()
         // end
         text4 += "</ul>";
 
-        // code snippets
-        text5 += "<p>Additionally, Carla uses code snippets from the following projects:</p>";
-        text5 += "<ul>";
-        text5 += "<li>Pointer and data leak utils from JUCE, http://www.rawmaterialsoftware.com/juce.php</li>";
-        text5 += "<li>Shared memory utils from dssi-vst, http://www.breakfastquay.com/dssi-vst/</li>";
-        text5 += "<li>Real-time memory pool, by Nedko Arnaudov</li>";
-        text5 += "</ul>";
-
 #ifdef WANT_LINUXSAMPLER
         // LinuxSampler GPL exception
-        text5 += "<p>(*) Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors.</p>";
+        text4 += "<p>(*) Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors.</p>";
 #endif
 
-        retText = text1 + text2 + text3 + text4 + text5;
+        retText = text1 + text2 + text3 + text4;
     }
 
     return retText;
@@ -658,15 +527,19 @@ const char* carla_get_supported_file_extensions()
 #endif
 
         // Audio files
-        AudioFormatManager afm;
-        afm.registerBasicFormats();
-
-        for (AudioFormat **it=afm.begin(), **end=afm.end(); it != end; ++it)
         {
-            const StringArray& exts((*it)->getFileExtensions());
+            using namespace juce;
 
-            for (String *eit=exts.begin(), *eend=exts.end(); eit != eend; ++eit)
-                retText += String(";*" + (*eit)).toRawUTF8();
+            AudioFormatManager afm;
+            afm.registerBasicFormats();
+
+            for (AudioFormat **it=afm.begin(), **end=afm.end(); it != end; ++it)
+            {
+                const StringArray& exts((*it)->getFileExtensions());
+
+                for (String *eit=exts.begin(), *eend=exts.end(); eit != eend; ++eit)
+                    retText += String(";*" + (*eit)).toRawUTF8();
+            }
         }
 
         // MIDI files
@@ -683,28 +556,28 @@ const char* carla_get_supported_file_extensions()
 
 // -------------------------------------------------------------------------------------------------------------------
 
-unsigned int carla_get_engine_driver_count()
+uint carla_get_engine_driver_count()
 {
     carla_debug("carla_get_engine_driver_count()");
 
     return CarlaEngine::getDriverCount();
 }
 
-const char* carla_get_engine_driver_name(unsigned int index)
+const char* carla_get_engine_driver_name(uint index)
 {
     carla_debug("carla_get_engine_driver_name(%i)", index);
 
     return CarlaEngine::getDriverName(index);
 }
 
-const char* const* carla_get_engine_driver_device_names(unsigned int index)
+const char* const* carla_get_engine_driver_device_names(uint index)
 {
     carla_debug("carla_get_engine_driver_device_names(%i)", index);
 
     return CarlaEngine::getDriverDeviceNames(index);
 }
 
-const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(unsigned int index, const char* name)
+const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(uint index, const char* name)
 {
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', nullptr);
     carla_debug("carla_get_engine_driver_device_info(%i, \"%s\")", index, name);
@@ -726,18 +599,18 @@ const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(unsigned int i
 
 // -------------------------------------------------------------------------------------------------------------------
 
-unsigned int carla_get_internal_plugin_count()
+uint carla_get_internal_plugin_count()
 {
     carla_debug("carla_get_internal_plugin_count()");
 
 #ifdef WANT_NATIVE
-    return static_cast<unsigned int>(CarlaPlugin::getNativePluginCount());
+    return static_cast<uint>(CarlaPlugin::getNativePluginCount());
 #else
     return 0;
 #endif
 }
 
-const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int index)
+const CarlaNativePluginInfo* carla_get_internal_plugin_info(uint index)
 {
     carla_debug("carla_get_internal_plugin_info(%i)", index);
 
@@ -874,10 +747,10 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 
     if (gStandalone.engine->init(clientName))
     {
-        gStandalone.lastError = "No error";
-#ifdef HAVE_JUCE_UI
-        gStandalone.init();
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+        juce::initialiseJuce_GUI();
 #endif
+        gStandalone.lastError = "No error";
         return true;
     }
     else
@@ -944,10 +817,10 @@ bool carla_engine_init_bridge(const char audioBaseName[6+1], const char controlB
 
     if (gStandalone.engine->init(clientName))
     {
-        gStandalone.lastError = "No error";
-#ifdef HAVE_JUCE_UI
-        gStandalone.init();
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+        juce::initialiseJuce_GUI();
 #endif
+        gStandalone.lastError = "No error";
         return true;
     }
     else
@@ -979,10 +852,9 @@ bool carla_engine_close()
     if (! closed)
         gStandalone.lastError = gStandalone.engine->getLastError();
 
-#ifdef HAVE_JUCE_UI
-    gStandalone.close();
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+    juce::shutdownJuce_GUI();
 #endif
-
     delete gStandalone.engine;
     gStandalone.engine = nullptr;
 
@@ -994,9 +866,6 @@ void carla_engine_idle()
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
 
     gNSM.idle();
-#if defined(HAVE_JUCE_UI) && ! defined(CARLA_OS_LINUX)
-    gStandalone.idle();
-#endif
     gStandalone.engine->idle();
 }
 
@@ -1070,27 +939,27 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
 
     case CB::ENGINE_OPTION_MAX_PARAMETERS:
         CARLA_SAFE_ASSERT_RETURN(value >= 0,);
-        gStandalone.engineOptions.maxParameters = static_cast<unsigned int>(value);
+        gStandalone.engineOptions.maxParameters = static_cast<uint>(value);
         break;
 
     case CB::ENGINE_OPTION_UI_BRIDGES_TIMEOUT:
         CARLA_SAFE_ASSERT_RETURN(value >= 0,);
-        gStandalone.engineOptions.uiBridgesTimeout = static_cast<unsigned int>(value);
+        gStandalone.engineOptions.uiBridgesTimeout = static_cast<uint>(value);
         break;
 
     case CB::ENGINE_OPTION_AUDIO_NUM_PERIODS:
         CARLA_SAFE_ASSERT_RETURN(value >= 2 && value <= 3,);
-        gStandalone.engineOptions.audioNumPeriods = static_cast<unsigned int>(value);
+        gStandalone.engineOptions.audioNumPeriods = static_cast<uint>(value);
         break;
 
     case CB::ENGINE_OPTION_AUDIO_BUFFER_SIZE:
         CARLA_SAFE_ASSERT_RETURN(value >= 8,);
-        gStandalone.engineOptions.audioBufferSize = static_cast<unsigned int>(value);
+        gStandalone.engineOptions.audioBufferSize = static_cast<uint>(value);
         break;
 
     case CB::ENGINE_OPTION_AUDIO_SAMPLE_RATE:
         CARLA_SAFE_ASSERT_RETURN(value >= 22050,);
-        gStandalone.engineOptions.audioSampleRate = static_cast<unsigned int>(value);
+        gStandalone.engineOptions.audioSampleRate = static_cast<uint>(value);
         break;
 
     case CB::ENGINE_OPTION_AUDIO_DEVICE:

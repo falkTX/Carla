@@ -66,14 +66,6 @@ OBJS += \
 	notes.cpp.o
 endif
 
-ifeq ($(HAVE_JUCE_UI),true)
-# --------------------------------------------------------------
-# JUCE based plugins
-
-OBJS += \
-	juce-patchbay.cpp.o
-endif
-
 # --------------------------------------------------------------
 # ZynAddSubFX
 
@@ -161,9 +153,6 @@ audio-file.cpp.o: audio-file.cpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 bigmeter.cpp.o: bigmeter.cpp $(CXXDEPS) ../CarlaNativeExtUI.hpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-juce-patchbay.cpp.o: juce-patchbay.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 midi-file.cpp.o: midi-file.cpp midi-base.hpp $(CXXDEPS)

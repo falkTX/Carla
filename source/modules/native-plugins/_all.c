@@ -41,13 +41,6 @@ extern void carla_register_native_plugin_bigmeter();
 extern void carla_register_native_plugin_notes();
 #endif
 
-#ifdef HAVE_JUCE_UI
-// JUCE based plugins
-extern void carla_register_native_plugin_jucepatchbay();
-extern void carla_register_native_plugin_vex_fx();
-extern void carla_register_native_plugin_vex_synth();
-#endif
-
 #ifdef WANT_ZYNADDSUBFX
 // ZynAddSubFX
 extern void carla_register_native_plugin_zynaddsubfx_fx();
@@ -78,13 +71,6 @@ void carla_register_all_plugins()
     // External-UI plugins
     carla_register_native_plugin_bigmeter();
     carla_register_native_plugin_notes();
-#endif
-
-#ifdef HAVE_JUCE_UI
-    // JUCE based plugins
-    carla_register_native_plugin_jucepatchbay();
-    carla_register_native_plugin_vex_fx();
-    carla_register_native_plugin_vex_synth();
 #endif
 
 #ifdef WANT_ZYNADDSUBFX

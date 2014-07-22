@@ -44,7 +44,7 @@ endif
 # --------------------------------------------------------------
 # Coomon
 
-ifeq ($(HAVE_JUCE_UI),true)
+ifeq ($(MACOS_OR_WIN32),true)
 LINK_FLAGS += $(JUCE_AUDIO_PROCESSORS_LIBS)
 LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
 LINK_FLAGS += $(JUCE_EVENTS_LIBS)
@@ -75,7 +75,7 @@ LIBS += ../modules/juce_audio_formats.a
 LIBS += ../modules/juce_core.a
 LIBS += ../modules/rtmempool.a
 
-ifeq ($(HAVE_JUCE_UI),true)
+ifeq ($(MACOS_OR_WIN32),true)
 LIBS += ../modules/juce_audio_processors.a
 LIBS += ../modules/juce_data_structures.a
 LIBS += ../modules/juce_events.a

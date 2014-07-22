@@ -10,9 +10,10 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils -isystem ../modules
-BUILD_CXX_FLAGS += -I../includes/ladspa -I../includes/vst -I../includes/vst3
-#-Wno-multichar
-
+BUILD_CXX_FLAGS += -I../includes/ladspa -I../includes/vst
+ifeq ($(MACOS_OR_WIN32),true)
+BUILD_CXX_FLAGS += -I../includes/vst3
+endif
 ifeq ($(MACOS),true)
 BUILD_CXX_FLAGS += -ObjC++
 endif
@@ -21,11 +22,11 @@ endif
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
-ifeq ($(MACOS),true)
-BUILD_CXX_FLAGS += -DWANT_AU
-endif
 ifeq ($(MACOS_OR_WIN32),true)
 BUILD_CXX_FLAGS += -DWANT_VST3
+endif
+ifeq ($(MACOS),true)
+BUILD_CXX_FLAGS += -DWANT_AU
 endif
 ifeq ($(CARLA_VESTIGE_HEADER),true)
 BUILD_CXX_FLAGS += -DVESTIGE_HEADER
