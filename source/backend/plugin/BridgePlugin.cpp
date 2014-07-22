@@ -353,7 +353,7 @@ public:
             osc_send_quit(pData->osc.data);
         }
 
-        pData->osc.data.free();
+        pData->osc.data.clear();
         pData->osc.thread.stopThread(3000);
 
         if (fNeedsSemDestroy)

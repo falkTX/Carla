@@ -408,7 +408,7 @@ public:
     {
         if (yesNo)
         {
-            pData->osc.data.free();
+            pData->osc.data.clear();
             pData->osc.thread.startThread();
         }
         else
@@ -419,7 +419,7 @@ public:
             {
                 osc_send_hide(pData->osc.data);
                 osc_send_quit(pData->osc.data);
-                pData->osc.data.free();
+                pData->osc.data.clear();
             }
 
             pData->osc.thread.stopThread(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));

@@ -41,10 +41,10 @@ struct CarlaOscData {
 
     ~CarlaOscData() noexcept
     {
-        free();
+        clear();
     }
 
-    void free() noexcept
+    void clear() noexcept
     {
         if (path != nullptr)
         {
@@ -56,7 +56,7 @@ struct CarlaOscData {
         {
             try {
                 lo_address_free(source);
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("lo_address_free source");
             source = nullptr;
         }
 
@@ -64,7 +64,7 @@ struct CarlaOscData {
         {
             try {
                 lo_address_free(target);
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("lo_address_free target");
             target = nullptr;
         }
     }

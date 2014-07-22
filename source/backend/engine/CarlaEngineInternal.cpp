@@ -71,13 +71,12 @@ EngineNextAction::EngineNextAction() noexcept
 
 EngineNextAction::~EngineNextAction() noexcept
 {
-    CARLA_SAFE_ASSERT(opcode == kEnginePostActionNull);
+    CARLA_SAFE_ASSERT(opcode.get() == kEnginePostActionNull);
 }
 
 void EngineNextAction::ready() const noexcept
 {
-    mutex.lock();
-    mutex.unlock();
+    waitEvent.reset();
 }
 
 // -----------------------------------------------------------------------
@@ -131,38 +130,37 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(plugins == nullptr, "Invalid engine internal data (err #3)");
 #endif
 
-    aboutToClose    = false;
-    curPluginCount  = 0;
-    maxPluginNumber = 0;
-    nextPluginId    = 0;
+    aboutToClose   = false;
+    curPluginCount = 0;
+    nextPluginId   = 0;
 
     switch (options.processMode)
     {
-    case ENGINE_PROCESS_MODE_SINGLE_CLIENT:
-    case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
-        maxPluginNumber = MAX_DEFAULT_PLUGINS;
-        break;
-
     case ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
         maxPluginNumber = MAX_RACK_PLUGINS;
-        events.in  = new EngineEvent[kMaxEngineEventInternalCount];
-        events.out = new EngineEvent[kMaxEngineEventInternalCount];
         break;
-
     case ENGINE_PROCESS_MODE_PATCHBAY:
         maxPluginNumber = MAX_PATCHBAY_PLUGINS;
-        events.in  = new EngineEvent[kMaxEngineEventInternalCount];
-        events.out = new EngineEvent[kMaxEngineEventInternalCount];
         break;
-
     case ENGINE_PROCESS_MODE_BRIDGE:
         maxPluginNumber = 1;
-        events.in  = new EngineEvent[kMaxEngineEventInternalCount];
-        events.out = new EngineEvent[kMaxEngineEventInternalCount];
+        break;
+    default:
+        maxPluginNumber = MAX_DEFAULT_PLUGINS;
         break;
     }
 
-    CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(maxPluginNumber != 0, "Invalid engine process mode");
+    switch (options.processMode)
+    {
+    case ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
+    case ENGINE_PROCESS_MODE_PATCHBAY:
+    case ENGINE_PROCESS_MODE_BRIDGE:
+        events.in  = new EngineEvent[kMaxEngineEventInternalCount];
+        events.out = new EngineEvent[kMaxEngineEventInternalCount];
+        break;
+    default:
+        break;
+    }
 
     nextPluginId = maxPluginNumber;
 
@@ -171,15 +169,12 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
 
     timeInfo.clear();
 
-#ifndef BUILD_BRIDGE
-    plugins = new EnginePluginData[maxPluginNumber];
-    carla_zeroStruct(plugins, maxPluginNumber);
-#endif
-
     osc.init(clientName);
 
 #ifndef BUILD_BRIDGE
     oscData = osc.getControlData();
+    plugins = new EnginePluginData[maxPluginNumber];
+    carla_zeroStruct(plugins, maxPluginNumber);
 #endif
 
     nextAction.ready();
@@ -193,7 +188,7 @@ void CarlaEngine::ProtectedData::close()
     CARLA_SAFE_ASSERT(name.isNotEmpty());
     CARLA_SAFE_ASSERT(plugins != nullptr);
     CARLA_SAFE_ASSERT(nextPluginId == maxPluginNumber);
-    CARLA_SAFE_ASSERT(nextAction.opcode == kEnginePostActionNull);
+    CARLA_SAFE_ASSERT(nextAction.opcode.get() == kEnginePostActionNull);
 
     aboutToClose = true;
 
@@ -280,7 +275,9 @@ void CarlaEngine::ProtectedData::doPluginsSwitch() noexcept
 
 void CarlaEngine::ProtectedData::doNextPluginAction(const bool unlock) noexcept
 {
-    switch (nextAction.opcode)
+    const EnginePostAction action(nextAction.opcode.exchange(kEnginePostActionNull));
+
+    switch (action)
     {
     case kEnginePostActionNull:
         break;
@@ -301,11 +298,8 @@ void CarlaEngine::ProtectedData::doNextPluginAction(const bool unlock) noexcept
     nextAction.pluginId = 0;
     nextAction.value    = 0;
 
-    if (unlock)
-    {
-        nextAction.mutex.tryLock();
-        nextAction.mutex.unlock();
-    }
+    if (unlock && action != kEnginePostActionNull)
+        nextAction.waitEvent.signal();
 }
 
 // -----------------------------------------------------------------------
@@ -314,19 +308,18 @@ void CarlaEngine::ProtectedData::doNextPluginAction(const bool unlock) noexcept
 ScopedActionLock::ScopedActionLock(CarlaEngine::ProtectedData* const data, const EnginePostAction action, const uint pluginId, const uint value, const bool lockWait) noexcept
     : fData(data)
 {
-    fData->nextAction.mutex.lock();
+    CARLA_SAFE_ASSERT_RETURN(action != kEnginePostActionNull,);
+    CARLA_SAFE_ASSERT_RETURN(fData->nextAction.opcode.get() == kEnginePostActionNull,);
 
-    CARLA_SAFE_ASSERT_RETURN(fData->nextAction.opcode == kEnginePostActionNull,);
-
-    fData->nextAction.opcode   = action;
     fData->nextAction.pluginId = pluginId;
     fData->nextAction.value    = value;
+    fData->nextAction.opcode   = action;
 
     if (lockWait)
     {
         // block wait for unlock on processing side
         carla_stdout("ScopedPluginAction(%i) - blocking START", pluginId);
-        fData->nextAction.mutex.lock();
+        fData->nextAction.waitEvent.wait(2000);
         carla_stdout("ScopedPluginAction(%i) - blocking DONE", pluginId);
     }
     else
@@ -337,7 +330,7 @@ ScopedActionLock::ScopedActionLock(CarlaEngine::ProtectedData* const data, const
 
 ScopedActionLock::~ScopedActionLock() noexcept
 {
-    fData->nextAction.mutex.unlock();
+    //fData->nextAction.mutex.unlock();
 }
 
 // -----------------------------------------------------------------------

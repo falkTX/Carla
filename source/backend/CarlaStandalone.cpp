@@ -1203,6 +1203,7 @@ bool carla_remove_all_plugins()
     return false;
 }
 
+#ifndef BUILD_BRIDGE
 const char* carla_rename_plugin(uint pluginId, const char* newName)
 {
     CARLA_SAFE_ASSERT_RETURN(newName != nullptr && newName[0] != '\0', nullptr);
@@ -1252,6 +1253,7 @@ bool carla_switch_plugins(uint pluginIdA, uint pluginIdB)
     gStandalone.lastError = "Engine is not running";
     return false;
 }
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 

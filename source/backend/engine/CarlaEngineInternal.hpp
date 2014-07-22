@@ -22,6 +22,10 @@
 #include "CarlaEngineThread.hpp"
 #include "CarlaEngineUtils.hpp"
 
+#include "juce_core.h"
+using juce::Atomic;
+using juce::WaitableEvent;
+
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
@@ -112,10 +116,10 @@ enum EnginePostAction {
 };
 
 struct EngineNextAction {
-    EnginePostAction opcode;
+    Atomic<EnginePostAction> opcode;
     uint pluginId;
     uint value;
-    CarlaMutex mutex;
+    WaitableEvent waitEvent;
 
     EngineNextAction() noexcept;
     ~EngineNextAction() noexcept;

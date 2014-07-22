@@ -564,6 +564,7 @@ CARLA_EXPORT bool carla_remove_plugin(uint pluginId);
  */
 CARLA_EXPORT bool carla_remove_all_plugins();
 
+#ifndef BUILD_BRIDGE
 /*!
  * Rename a plugin.\n
  * Returns the new name, or NULL if the operation failed.
@@ -592,6 +593,7 @@ CARLA_EXPORT bool carla_replace_plugin(uint pluginId);
  * @param pluginIdB Plugin B
  */
 CARLA_EXPORT bool carla_switch_plugins(uint pluginIdA, uint pluginIdB);
+#endif
 
 /*!
  * Load a plugin state.

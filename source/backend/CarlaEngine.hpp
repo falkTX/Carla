@@ -759,6 +759,7 @@ public:
      */
     bool removeAllPlugins();
 
+#ifndef BUILD_BRIDGE
     /*!
      * Rename plugin with id @a id to @a newName.
      * Returns the new name, or null if the operation failed.
@@ -783,6 +784,7 @@ public:
      * Switch plugins with id @a idA and @a idB.
      */
     bool switchPlugins(const uint idA, const uint idB);
+#endif
 
     /*!
      * Get plugin with id @a id.

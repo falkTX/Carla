@@ -1658,7 +1658,7 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
     // FIXME - remove debug prints later
     carla_stdout("CarlaPlugin::updateOscData(%p, \"%s\")", source, url);
 
-    pData->osc.data.free();
+    pData->osc.data.clear();
 
     const int proto = lo_address_get_protocol(source);
 

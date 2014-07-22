@@ -162,7 +162,7 @@ void CarlaEngineOsc::close() noexcept
     fServerPathUDP.clear();
 
 #ifndef BUILD_BRIDGE
-    fControlData.free();
+    fControlData.clear();
 #endif
 }
 
@@ -448,7 +448,7 @@ int CarlaEngineOsc::handleMsgUnregister()
         return 1;
     }
 
-    fControlData.free();
+    fControlData.clear();
     return 0;
 }
 #endif

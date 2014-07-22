@@ -44,7 +44,7 @@ void CarlaEngineThread::run() noexcept
     CARLA_SAFE_ASSERT(kEngine->isRunning());
     carla_debug("CarlaEngineThread::run()");
 
-    bool hasUi, oscRegisted, needsSingleThread;
+    bool hasUI, oscRegisted, needsSingleThread;
     float value;
 
     for (; kEngine->isRunning() && ! shouldThreadExit();)
@@ -62,7 +62,7 @@ void CarlaEngineThread::run() noexcept
             CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr && plugin->isEnabled());
             CARLA_SAFE_ASSERT_UINT2(i == plugin->getId(), i, plugin->getId());
 
-            hasUi             = (plugin->getHints() & PLUGIN_HAS_CUSTOM_UI);
+            hasUI             = (plugin->getHints() & PLUGIN_HAS_CUSTOM_UI);
             needsSingleThread = (plugin->getHints() & PLUGIN_NEEDS_SINGLE_THREAD);
 
             // -----------------------------------------------------------
@@ -77,7 +77,7 @@ void CarlaEngineThread::run() noexcept
                     } CARLA_SAFE_EXCEPTION("postRtEventsRun()")
                 }
 
-                if (oscRegisted || (hasUi && ! needsSingleThread))
+                if (oscRegisted || (hasUI && ! needsSingleThread))
                 {
                     // ---------------------------------------------------
                     // Update parameter outputs
@@ -100,7 +100,7 @@ void CarlaEngineThread::run() noexcept
                         }
 
                         // Update UI
-                        if (hasUi && ! needsSingleThread)
+                        if (hasUI && ! needsSingleThread)
                             plugin->uiParameterChange(j, value);
                     }
                 }
