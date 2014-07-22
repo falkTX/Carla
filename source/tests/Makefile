@@ -115,12 +115,16 @@ CarlaMutex: CarlaMutex.cpp ../utils/CarlaMutex.hpp
 	$(CXX) $< -lpthread -o $@
 	valgrind --leak-check=full ./$@
 
+# ifneq ($(MACOS_OR_WIN32),true)
+# 	 ../modules/rtaudio.a ../modules/rtmidi.a \
+# endif
+
 Engine: Engine.cpp
 	$(CXX) $< \
 	../backend/standalone/CarlaStandalone.cpp.o \
 	-Wl,--start-group \
 	../backend/carla_engine.a ../backend/carla_plugin.a ../modules/native-plugins.a \
-	../modules/dgl.a ../modules/jackbridge.a ../modules/lilv.a ../modules/rtmempool.a ../modules/rtaudio.a ../modules/rtmidi.a \
+	../modules/dgl.a ../modules/jackbridge.a ../modules/lilv.a ../modules/rtmempool.a \
 	-Wl,--end-group \
 	$(PEDANTIC_CXX_FLAGS) $(shell pkg-config --libs alsa libpulse-simple liblo QtCore QtXml fluidsynth linuxsampler x11 gl smf fftw3 mxml zlib ntk_images ntk) -o $@
 	env LD_LIBRARY_PATH=../backend valgrind --leak-check=full ./$@

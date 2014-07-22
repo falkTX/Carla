@@ -281,10 +281,6 @@ JUCE_GRAPHICS_LIBS         = -framework Cocoa -framework QuartzCore
 JUCE_GUI_BASICS_LIBS       = -framework Cocoa
 JUCE_GUI_EXTRA_LIBS        = -framework Cocoa -framework IOKit
 LILV_LIBS                  = -ldl -lm
-RTAUDIO_FLAGS             += -D__MACOSX_CORE__
-RTAUDIO_LIBS              += -framework CoreAudio -framework CoreFoundation -lpthread
-RTMIDI_FLAGS              += -D__MACOSX_CORE__
-RTMIDI_LIBS               += -framework CoreAudio -framework CoreMIDI -framework CoreFoundation
 endif
 
 ifeq ($(WIN32),true)
@@ -295,9 +291,6 @@ JUCE_CORE_LIBS          = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 
 JUCE_GRAPHICS_LIBS      = -lgdi32
 JUCE_GUI_BASICS_LIBS    = -lgdi32 -limm32 -lcomdlg32 -lole32
 LILV_LIBS               = -lm
-RTAUDIO_FLAGS          += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__
-RTAUDIO_LIBS           += -ldsound -lpthread
-RTMIDI_FLAGS           += -D__WINDOWS_MM__
 endif
 
 # --------------------------------------------------------------

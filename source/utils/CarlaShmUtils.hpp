@@ -203,7 +203,7 @@ void carla_shm_unmap(shm_t& shm, void* const ptr, const size_t size) noexcept
 
     try {
 #ifdef CARLA_OS_WIN
-        const Handle map = shm.map;
+        const HANDLE map = shm.map;
         shm.map = nullptr;
 
         ::UnmapViewOfFile(ptr);

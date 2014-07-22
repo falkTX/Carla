@@ -50,6 +50,9 @@ ALL_LIBS += source/modules/juce_events.a
 ALL_LIBS += source/modules/juce_graphics.a
 ALL_LIBS += source/modules/juce_gui_basics.a
 ALL_LIBS += source/modules/juce_gui_extra.a
+else
+ALL_LIBS += source/modules/rtaudio.a
+ALL_LIBS += source/modules/rtmidi.a
 endif
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
@@ -57,9 +60,7 @@ ALL_LIBS += source/modules/lilv.a
 endif
 
 ALL_LIBS += source/modules/native-plugins.a
-ALL_LIBS += source/modules/rtaudio.a
 ALL_LIBS += source/modules/rtmempool.a
-ALL_LIBS += source/modules/rtmidi.a
 
 ifeq ($(HAVE_QT4),true)
 ALL_LIBS += source/modules/theme.qt4.a
