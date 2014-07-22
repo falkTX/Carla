@@ -574,7 +574,7 @@ public:
             pData->options.preferPluginBridges = false;
             pData->options.preferUiBridges     = false;
             init("Carla-Rack");
-            pData->graph.create(false, pData->sampleRate, pData->bufferSize, 0, 0);
+            pData->graph.create(true, pData->sampleRate, pData->bufferSize, 0, 0);
         }
 
         if (pData->options.resourceDir != nullptr)
@@ -1485,6 +1485,7 @@ public:
             handlePtr->bufferSizeChanged(static_cast<uint32_t>(value));
             return 0;
         case PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
+            CARLA_SAFE_ASSERT_RETURN(opt > 0.0, 0);
             handlePtr->sampleRateChanged(static_cast<double>(opt));
             return 0;
         case PLUGIN_OPCODE_OFFLINE_CHANGED:
