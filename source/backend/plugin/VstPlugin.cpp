@@ -19,9 +19,9 @@
 #include "CarlaEngine.hpp"
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-# define USE_JUCE_FOR_VST 0
-#else
 # define USE_JUCE_FOR_VST 1
+#else
+# define USE_JUCE_FOR_VST 0
 #endif
 
 #if defined(WANT_VST) && ! USE_JUCE_FOR_VST
