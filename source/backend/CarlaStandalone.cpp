@@ -349,7 +349,7 @@ static CarlaNSM gNSM;
 
 static const char* const gNullCharPtr = "";
 
-static void checkStringPtr(const char*& charPtr)
+static void checkStringPtr(const char*& charPtr) noexcept
 {
     if (charPtr == nullptr)
         charPtr = gNullCharPtr;
@@ -948,7 +948,7 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
         if (gStandalone.engineOptions.audioDevice != nullptr)
             delete[] gStandalone.engineOptions.audioDevice;
 
-        gStandalone.engineOptions.audioDevice = carla_strdup(valueStr);
+        gStandalone.engineOptions.audioDevice = carla_strdup_safe(valueStr);
         break;
 
     case CB:: ENGINE_OPTION_NSM_INIT:
@@ -963,7 +963,7 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
         if (gStandalone.engineOptions.binaryDir != nullptr)
             delete[] gStandalone.engineOptions.binaryDir;
 
-        gStandalone.engineOptions.binaryDir = carla_strdup(valueStr);
+        gStandalone.engineOptions.binaryDir = carla_strdup_safe(valueStr);
         break;
 
     case CB::ENGINE_OPTION_PATH_RESOURCES:
@@ -972,7 +972,7 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
         if (gStandalone.engineOptions.resourceDir != nullptr)
             delete[] gStandalone.engineOptions.resourceDir;
 
-        gStandalone.engineOptions.resourceDir = carla_strdup(valueStr);
+        gStandalone.engineOptions.resourceDir = carla_strdup_safe(valueStr);
         break;
 
     case CB::ENGINE_OPTION_FRONTEND_WIN_ID:
@@ -1339,17 +1339,20 @@ const CarlaPluginInfo* carla_get_plugin_info(uint pluginId)
         info.optionsEnabled   = plugin->getOptionsEnabled();
 
         plugin->getLabel(strBufLabel);
-        info.label = carla_strdup(strBufLabel);
+        info.label = carla_strdup_safe(strBufLabel);
 
         plugin->getMaker(strBufMaker);
-        info.maker = carla_strdup(strBufMaker);
+        info.maker = carla_strdup_safe(strBufMaker);
 
         plugin->getCopyright(strBufCopyright);
-        info.copyright = carla_strdup(strBufCopyright);
+        info.copyright = carla_strdup_safe(strBufCopyright);
 
         checkStringPtr(info.filename);
         checkStringPtr(info.name);
         checkStringPtr(info.iconName);
+        checkStringPtr(info.label);
+        checkStringPtr(info.maker);
+        checkStringPtr(info.copyright);
 
         return &info;
     }
@@ -1471,13 +1474,17 @@ const CarlaParameterInfo* carla_get_parameter_info(uint pluginId, uint32_t param
             info.scalePointCount = plugin->getParameterScalePointCount(parameterId);
 
             plugin->getParameterName(parameterId, strBufName);
-            info.name = carla_strdup(strBufName);
+            info.name = carla_strdup_safe(strBufName);
 
             plugin->getParameterSymbol(parameterId, strBufSymbol);
-            info.symbol = carla_strdup(strBufSymbol);
+            info.symbol = carla_strdup_safe(strBufSymbol);
 
             plugin->getParameterUnit(parameterId, strBufUnit);
-            info.unit = carla_strdup(strBufUnit);
+            info.unit = carla_strdup_safe(strBufUnit);
+
+            checkStringPtr(info.name);
+            checkStringPtr(info.symbol);
+            checkStringPtr(info.unit);
         }
         else
             carla_stderr2("carla_get_parameter_info(%i, %i) - parameterId out of bounds", pluginId, parameterId);
@@ -1520,7 +1527,8 @@ const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(uint pluginId, ui
                 info.value = plugin->getParameterScalePointValue(parameterId, scalePointId);
 
                 plugin->getParameterScalePointLabel(parameterId, scalePointId, strBufLabel);
-                info.label = carla_strdup(strBufLabel);
+                info.label = carla_strdup_safe(strBufLabel);
+                checkStringPtr(info.label);
             }
             else
                 carla_stderr2("carla_get_parameter_scalepoint_info(%i, %i, %i) - scalePointId out of bounds", pluginId, parameterId, scalePointId);

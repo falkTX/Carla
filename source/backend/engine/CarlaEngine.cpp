@@ -757,7 +757,7 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB)
 }
 #endif
 
-CarlaPlugin* CarlaEngine::getPlugin(const uint id) const
+CarlaPlugin* CarlaEngine::getPlugin(const uint id) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN_ERRN(pData->plugins != nullptr, "Invalid engine internal data");
     CARLA_SAFE_ASSERT_RETURN_ERRN(pData->curPluginCount != 0, "Invalid engine internal data");
@@ -771,7 +771,7 @@ CarlaPlugin* CarlaEngine::getPluginUnchecked(const uint id) const noexcept
     return pData->plugins[id].plugin;
 }
 
-const char* CarlaEngine::getUniquePluginName(const char* const name) const
+const char* CarlaEngine::getUniquePluginName(const char* const name) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', nullptr);
     carla_debug("CarlaEngine::getUniquePluginName(\"%s\")", name);
@@ -851,7 +851,7 @@ const char* CarlaEngine::getUniquePluginName(const char* const name) const
         sname += " (2)";
     }
 
-    return sname.dup();
+    return sname.dupSafe();
 }
 
 // -----------------------------------------------------------------------

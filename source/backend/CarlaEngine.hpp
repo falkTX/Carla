@@ -789,7 +789,7 @@ public:
     /*!
      * Get plugin with id @a id.
      */
-    CarlaPlugin* getPlugin(const uint id) const;
+    CarlaPlugin* getPlugin(const uint id) const noexcept;
 
     /*!
      * Get plugin with id @a id, faster unchecked version.
@@ -800,7 +800,7 @@ public:
      * Get a unique plugin name within the engine.
      * Returned variable must be deleted if non-null.
      */
-    const char* getUniquePluginName(const char* const name) const;
+    const char* getUniquePluginName(const char* const name) const noexcept;
 
     // -------------------------------------------------------------------
     // Project management

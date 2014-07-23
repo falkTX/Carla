@@ -551,6 +551,14 @@ public:
         return carla_strdup(fBuffer);
     }
 
+    /*
+     * Return a duplicate string buffer or null.
+     */
+    const char* dupSafe() const noexcept
+    {
+        return carla_strdup_safe(fBuffer);
+    }
+
     // -------------------------------------------------------------------
     // base64 stuff, based on http://www.adp-gmbh.ch/cpp/common/base64.html
     // Copyright (C) 2004-2008 René Nyffenegger

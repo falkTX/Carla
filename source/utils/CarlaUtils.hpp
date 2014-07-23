@@ -284,6 +284,33 @@ const char* carla_strdup_free(char* const strBuf)
     return buffer;
 }
 
+/*
+ * Custom 'strdup' function, safe version.
+ * Returned value may be null.
+ */
+static inline
+const char* carla_strdup_safe(const char* const strBuf) noexcept
+{
+    CARLA_SAFE_ASSERT(strBuf != nullptr);
+
+    const std::size_t bufferLen = (strBuf != nullptr) ? std::strlen(strBuf) : 0;
+    char* buffer;
+
+    try {
+        buffer = new char[bufferLen+1];
+    }
+    catch(...) {
+        return nullptr;
+    }
+
+    if (strBuf != nullptr && bufferLen > 0)
+        std::strncpy(buffer, strBuf, bufferLen);
+
+    buffer[bufferLen] = '\0';
+
+    return buffer;
+}
+
 // -----------------------------------------------------------------------
 // memory functions
 
