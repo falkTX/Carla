@@ -1352,7 +1352,7 @@ protected:
 
                 const void* extraStuff = nullptr;
 
-                // check if using GIG, SF2 or SFZ 16outs
+                // check if using GIG or SF2 16outs
                 static const char kUse16OutsSuffix[] = " (16 outs)";
 
                 const PluginType ptype(getPluginTypeFromString(stateSave.type));

@@ -398,7 +398,7 @@ bool StateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                         else if (cTag.equalsIgnoreCase("key"))
                             stateCustomData->key = xmlSafeStringCharDup(cText, false);
                         else if (cTag.equalsIgnoreCase("value"))
-                            stateCustomData->value = xmlSafeStringCharDup(cText, false);
+                            stateCustomData->value = carla_strdup(cText.toRawUTF8()); //xmlSafeStringCharDup(cText, false);
                     }
 
                     customData.append(stateCustomData);
@@ -437,42 +437,42 @@ String StateSave::toString() const
         case PLUGIN_NONE:
             break;
         case PLUGIN_INTERNAL:
-            infoXml << "    <Label>"    << xmlSafeString(label, true)  << "</Label>\n";
+            infoXml << "   <Label>"    << xmlSafeString(label, true)  << "</Label>\n";
             break;
         case PLUGIN_LADSPA:
-            infoXml << "    <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
-            infoXml << "    <Label>"    << xmlSafeString(label, true)  << "</Label>\n";
-            infoXml << "    <UniqueID>" << uniqueId                    << "</UniqueID>\n";
+            infoXml << "   <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
+            infoXml << "   <Label>"    << xmlSafeString(label, true)  << "</Label>\n";
+            infoXml << "   <UniqueID>" << uniqueId                    << "</UniqueID>\n";
             break;
         case PLUGIN_DSSI:
-            infoXml << "    <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
-            infoXml << "    <Label>"    << xmlSafeString(label, true)  << "</Label>\n";
+            infoXml << "   <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
+            infoXml << "   <Label>"    << xmlSafeString(label, true)  << "</Label>\n";
             break;
         case PLUGIN_LV2:
-            infoXml << "    <Bundle>"   << xmlSafeString(binary, true) << "</Bundle>\n";
-            infoXml << "    <URI>"      << xmlSafeString(label, true)  << "</URI>\n";
+            infoXml << "   <Bundle>"   << xmlSafeString(binary, true) << "</Bundle>\n";
+            infoXml << "   <URI>"      << xmlSafeString(label, true)  << "</URI>\n";
             break;
         case PLUGIN_VST:
-            infoXml << "    <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
-            infoXml << "    <UniqueID>" << uniqueId                    << "</UniqueID>\n";
+            infoXml << "   <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
+            infoXml << "   <UniqueID>" << uniqueId                    << "</UniqueID>\n";
             break;
         case PLUGIN_VST3:
             // TODO?
-            infoXml << "    <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
-            infoXml << "    <UniqueID>" << uniqueId                    << "</UniqueID>\n";
+            infoXml << "   <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
+            infoXml << "   <UniqueID>" << uniqueId                    << "</UniqueID>\n";
             break;
         case PLUGIN_AU:
             // TODO?
-            infoXml << "    <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
-            infoXml << "    <UniqueID>" << uniqueId                    << "</UniqueID>\n";
+            infoXml << "   <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
+            infoXml << "   <UniqueID>" << uniqueId                    << "</UniqueID>\n";
             break;
         case PLUGIN_GIG:
         case PLUGIN_SF2:
-            infoXml << "    <Filename>"   << xmlSafeString(binary, true) << "</Filename>\n";
-            infoXml << "    <Label>"      << xmlSafeString(label, true)  << "</Label>\n";
+            infoXml << "   <Filename>"   << xmlSafeString(binary, true) << "</Filename>\n";
+            infoXml << "   <Label>"      << xmlSafeString(label, true)  << "</Label>\n";
             break;
         case PLUGIN_SFZ:
-            infoXml << "    <Filename>"   << xmlSafeString(binary, true) << "</Filename>\n";
+            infoXml << "   <Filename>"   << xmlSafeString(binary, true) << "</Filename>\n";
             break;
         }
 
