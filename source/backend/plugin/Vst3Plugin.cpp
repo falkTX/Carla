@@ -21,16 +21,20 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
+// -------------------------------------------------------------------------------------------------------------------
+
 CarlaPlugin* CarlaPlugin::newVST3(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newVST3({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.uniqueId);
 
-#if defined(WANT_VST) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
     return newJuce(init, "VST3");
 #else
     init.engine->setLastError("VST3 support not available");
     return nullptr;
 #endif
 }
+
+// -------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE

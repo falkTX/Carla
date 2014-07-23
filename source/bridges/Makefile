@@ -25,14 +25,8 @@ LINK_PLUGIN_FLAGS  += $(JUCE_AUDIO_BASICS_LIBS)
 LINK_PLUGIN_FLAGS  += $(JUCE_AUDIO_FORMATS_LIBS)
 LINK_PLUGIN_FLAGS  += $(JUCE_CORE_LIBS)
 
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-BUILD_PLUGIN_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST -DWANT_VST3
-ifeq ($(MACOS),true)
-BUILD_CXX_FLAGS += -DWANT_AU
-endif
 ifeq ($(CARLA_VESTIGE_HEADER),true)
 BUILD_PLUGIN_FLAGS += -DVESTIGE_HEADER
-endif
 endif
 
 ifeq ($(MACOS_OR_WIN32),true)
@@ -75,17 +69,15 @@ WIN_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) -L../modules
 # --------------------------------------------------------------
 # Plugin bridges (Native)
 
-NATIVE_BUILD_FLAGS  = $(POSIX_BUILD_FLAGS) -DWANT_NATIVE
+NATIVE_BUILD_FLAGS  = $(POSIX_BUILD_FLAGS)
 NATIVE_LINK_FLAGS   = $(POSIX_LINK_FLAGS)
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
-NATIVE_BUILD_FLAGS += -DWANT_FLUIDSYNTH
 NATIVE_BUILD_FLAGS += $(FLUIDSYNTH_FLAGS)
 NATIVE_LINK_FLAGS  += $(FLUIDSYNTH_LIBS)
 endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
-NATIVE_BUILD_FLAGS += -DWANT_LINUXSAMPLER
 NATIVE_BUILD_FLAGS += $(LINUXSAMPLER_FLAGS)
 NATIVE_LINK_FLAGS  += $(LINUXSAMPLER_LIBS)
 endif
@@ -105,8 +97,6 @@ TARGETS = native
 
 # --------------------------------------------------------------
 # UI bridges
-
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 
 BUILD_UI_FLAGS = $(BUILD_CXX_FLAGS) -DBUILD_BRIDGE_UI
 LINK_UI_FLAGS  = $(LINK_FLAGS)
@@ -191,8 +181,6 @@ ifeq ($(WIN32),true)
 # TARGETS += ui_lv2-windows
 # TARGETS += ui_vst-hwnd
 endif
-
-endif # CARLA_PLUGIN_SUPPORT
 
 # --------------------------------------------------------------
 
@@ -427,6 +415,7 @@ LIBS_NATIVE = \
 	../modules/juce_audio_basics.a \
 	../modules/juce_audio_formats.a \
 	../modules/juce_core.a \
+	../modules/lilv.a \
 	../modules/rtmempool.a
 
 ifeq ($(MACOS_OR_WIN32),true)
@@ -437,11 +426,6 @@ LIBS_NATIVE += \
 	../modules/juce_graphics.a \
 	../modules/juce_gui_basics.a \
 	../modules/juce_gui_extra.a
-endif
-
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-LIBS_NATIVE += \
-	../modules/lilv.a
 endif
 
 ../../bin/carla-bridge-native: $(OBJS_NATIVE) $(LIBS_NATIVE)

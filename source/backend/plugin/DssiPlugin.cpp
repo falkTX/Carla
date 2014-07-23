@@ -18,8 +18,6 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
-#ifdef WANT_DSSI
-
 #include "CarlaDssiUtils.hpp"
 
 #include "CarlaBase64Utils.hpp"
@@ -2281,19 +2279,12 @@ private:
 
 LinkedList<const char*> DssiPlugin::sMultiSynthList;
 
-CARLA_BACKEND_END_NAMESPACE
-
-#endif // WANT_DSSI
-
 // -------------------------------------------------------------------------------------------------------------------
-
-CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newDSSI({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.label, init.uniqueId);
 
-#ifdef WANT_DSSI
     DssiPlugin* const plugin(new DssiPlugin(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name, init.label))
@@ -2312,12 +2303,8 @@ CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init)
     }
 
     return plugin;
-#else
-    init.engine->setLastError("DSSI support not available");
-    return nullptr;
-#endif
 }
 
-CARLA_BACKEND_END_NAMESPACE
-
 // -------------------------------------------------------------------------------------------------------------------
+
+CARLA_BACKEND_END_NAMESPACE

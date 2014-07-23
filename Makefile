@@ -35,12 +35,13 @@ BIN: libs backend bridges discovery plugin theme
 ALL_LIBS += source/backend/carla_engine.a
 ALL_LIBS += source/backend/carla_engine_plugin.a
 ALL_LIBS += source/backend/carla_plugin.a
-
 ALL_LIBS += source/modules/jackbridge.a
-
 ALL_LIBS += source/modules/juce_audio_basics.a
 ALL_LIBS += source/modules/juce_audio_formats.a
 ALL_LIBS += source/modules/juce_core.a
+ALL_LIBS += source/modules/lilv.a
+ALL_LIBS += source/modules/native-plugins.a
+ALL_LIBS += source/modules/rtmempool.a
 
 ifeq ($(MACOS_OR_WIN32),true)
 ALL_LIBS += source/modules/juce_audio_devices.a
@@ -54,13 +55,6 @@ else
 ALL_LIBS += source/modules/rtaudio.a
 ALL_LIBS += source/modules/rtmidi.a
 endif
-
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-ALL_LIBS += source/modules/lilv.a
-endif
-
-ALL_LIBS += source/modules/native-plugins.a
-ALL_LIBS += source/modules/rtmempool.a
 
 ifeq ($(HAVE_QT4),true)
 ALL_LIBS += source/modules/theme.qt4.a
@@ -502,7 +496,6 @@ endif
 
 	@echo "$(tS)---> Plugin formats: $(tE)"
 	@echo "Internal:$(ANS_YES)"
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 	@echo "LADSPA:  $(ANS_YES)"
 	@echo "DSSI:    $(ANS_YES)"
 	@echo "LV2:     $(ANS_YES)"
@@ -517,17 +510,8 @@ ifeq ($(MACOS),true)
 else
 	@echo "AU:      $(ANS_NO)  $(mZ)MacOS only$(mE)"
 endif
-else
-	@echo "LADSPA:  $(ANS_NO)  $(mS)Plugins disabled$(mE)"
-	@echo "DSSI:    $(ANS_NO)  $(mS)Plugins disabled$(mE)"
-	@echo "LV2:     $(ANS_NO)  $(mS)Plugins disabled$(mE)"
-	@echo "VST:     $(ANS_NO)  $(mS)Plugins disabled$(mE)"
-	@echo "VST3:    $(ANS_NO)  $(mS)Plugins disabled$(mE)"
-	@echo "AU:      $(ANS_NO)  $(mS)Plugins disabled$(mE)"
-endif
 	@echo ""
 
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 	@echo "$(tS)---> LV2 UI toolkit support: $(tE)"
 # 	@echo "External:$(ANS_YES) (direct+bridge)"
 ifeq ($(HAVE_GTK2),true)
@@ -566,10 +550,8 @@ endif
 # 	@echo "Windows: $(ANS_NO)  $(mZ)Windows only$(mE)"
 # endif
 	@echo ""
-endif
 
 	@echo "$(tS)---> File formats: $(tE)"
-ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
 ifeq ($(HAVE_LINUXSAMPLER),true)
 	@echo "GIG:$(ANS_YES)"
 else
@@ -584,11 +566,6 @@ ifeq ($(HAVE_LINUXSAMPLER),true)
 	@echo "SFZ:$(ANS_YES)"
 else
 	@echo "SFZ:$(ANS_NO)  $(mS)LinuxSampler missing$(mE)"
-endif
-else
-	@echo "GIG:$(ANS_NO)  $(mS)Samplers disabled$(mE)"
-	@echo "SF2:$(ANS_NO)  $(mS)Samplers disabled$(mE)"
-	@echo "SFZ:$(ANS_NO)  $(mS)Samplers disabled$(mE)"
 endif
 	@echo ""
 

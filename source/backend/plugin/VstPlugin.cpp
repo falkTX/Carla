@@ -20,11 +20,9 @@
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 # define USE_JUCE_FOR_VST 1
-#else
-# define USE_JUCE_FOR_VST 0
 #endif
 
-#if defined(WANT_VST) && ! USE_JUCE_FOR_VST
+#ifndef USE_JUCE_FOR_VST
 
 #include "CarlaVstUtils.hpp"
 
@@ -2528,7 +2526,7 @@ VstPlugin* VstPlugin::sLastVstPlugin = nullptr;
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // WANT_VST && ! USE_JUCE_FOR_VST
+#endif // ! USE_JUCE_FOR_VST
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -2538,10 +2536,9 @@ CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newVST({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.uniqueId);
 
-#ifdef WANT_VST
-# if USE_JUCE_FOR_VST
+#if USE_JUCE_FOR_VST
     return newJuce(init, "VST");
-# else
+#else
     VstPlugin* const plugin(new VstPlugin(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name, init.uniqueId))
@@ -2560,13 +2557,9 @@ CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
     }
 
     return plugin;
-# endif
-#else
-    init.engine->setLastError("VST support not available");
-    return nullptr;
 #endif
 }
 
-CARLA_BACKEND_END_NAMESPACE
-
 // -------------------------------------------------------------------------------------------------------------------
+
+CARLA_BACKEND_END_NAMESPACE

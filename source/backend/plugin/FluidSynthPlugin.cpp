@@ -18,7 +18,7 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
-#ifdef WANT_FLUIDSYNTH
+#ifdef HAVE_FLUIDSYNTH
 
 #include "CarlaMathUtils.hpp"
 
@@ -1671,15 +1671,17 @@ private:
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // WANT_FLUIDSYNTH
+#endif // HAVE_FLUIDSYNTH
 
 CARLA_BACKEND_START_NAMESPACE
+
+// -------------------------------------------------------------------------------------------------------------------
 
 CarlaPlugin* CarlaPlugin::newFluidSynth(const Initializer& init, const bool use16Outs)
 {
     carla_debug("CarlaPlugin::newFluidSynth({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "}, %s)", init.engine, init.filename, init.name, init.label, init.uniqueId, bool2str(use16Outs));
 
-#ifdef WANT_FLUIDSYNTH
+#ifdef HAVE_FLUIDSYNTH
     if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && use16Outs)
     {
         init.engine->setLastError("Carla's rack mode can only work with Stereo modules, please choose the 2-channel only SoundFont version");
@@ -1711,5 +1713,21 @@ CarlaPlugin* CarlaPlugin::newFluidSynth(const Initializer& init, const bool use1
     (void)use16Outs;
 #endif
 }
+
+CarlaPlugin* CarlaPlugin::newFileSF2(const Initializer& init, const bool use16Outs)
+{
+    carla_debug("CarlaPlugin::newFileSF2({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
+#ifdef HAVE_FLUIDSYNTH
+    return newFluidSynth(init, use16Outs);
+#else
+    init.engine->setLastError("SF2 support not available");
+    return nullptr;
+
+    // unused
+    (void)use16Outs;
+#endif
+}
+
+// -------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE

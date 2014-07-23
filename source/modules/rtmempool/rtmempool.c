@@ -1,7 +1,7 @@
 /*
  * RealTime Memory Pool, heavily based on work by Nedko Arnaudov
  * Copyright (C) 2006-2009 Nedko Arnaudov <nedko@arnaudov.name>
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -16,10 +16,9 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#define __THROW
-
-#include "rtmempool.h"
 #include "list.h"
+#include "rtmempool.h"
+#include "rtmempool-lv2.h"
 
 #include <assert.h>
 #include <pthread.h>
@@ -374,9 +373,6 @@ void rtsafe_memory_pool_deallocate(RtMemPool_Handle handle, void* memoryPtr)
     }
 }
 
-#ifdef WANT_LV2
-# include "rtmempool-lv2.h"
-
 void lv2_rtmempool_init(LV2_RtMemPool_Pool* poolPtr)
 {
     poolPtr->create  = rtsafe_memory_pool_create;
@@ -394,4 +390,3 @@ void lv2_rtmempool_init_deprecated(LV2_RtMemPool_Pool_Deprecated* poolPtr)
     poolPtr->allocate_sleepy = rtsafe_memory_pool_allocate_sleepy;
     poolPtr->deallocate = rtsafe_memory_pool_deallocate;
 }
-#endif

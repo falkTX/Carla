@@ -122,7 +122,7 @@ void CarlaBridgeOsc::close()
     }
 
     fServerPath.clear();
-    fControlData.free();
+    fControlData.clear();
 
     CARLA_ASSERT(fName.isEmpty());
     CARLA_ASSERT(fServerPath.isEmpty());

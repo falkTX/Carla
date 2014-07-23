@@ -447,56 +447,47 @@ const char* carla_get_complete_license_text()
         text1 += "<ul>";
 
         // Plugin formats
-#ifdef WANT_LADSPA
         text2 += "<li>LADSPA plugin support, http://www.ladspa.org/</li>";
-#endif
-#ifdef WANT_DSSI
         text2 += "<li>DSSI plugin support, http://dssi.sourceforge.net/</li>";
-#endif
-#ifdef WANT_LV2
         text2 += "<li>LV2 plugin support, http://lv2plug.in/</li>";
-#endif
-#ifdef WANT_VST
-# ifdef VESTIGE_HEADER
+#ifdef VESTIGE_HEADER
         text2 += "<li>VST plugin support, using VeSTige header by Javier Serrano Polo</li>";
-# else
+#else
         text2 += "<li>VST plugin support, using official VST SDK 2.4 (trademark of Steinberg Media Technologies GmbH)</li>";
-# endif
 #endif
-#ifdef WANT_AU
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+        text2 += "<li>VST3 plugin support</li>"; // FIXME
+#endif
+#ifdef CARLA_OS_MAC
         text2 += "<li>AU plugin support</li>"; // FIXME
 #endif
 
         // Sample kit libraries
-#ifdef WANT_FLUIDSYNTH
+#ifdef HAVE_FLUIDSYNTH
         text2 += "<li>FluidSynth library for SF2 support, http://www.fluidsynth.org/</li>";
 #endif
-#ifdef WANT_LINUXSAMPLER
+#ifdef HAVE_LINUXSAMPLER
         text2 += "<li>LinuxSampler library for GIG and SFZ support*, http://www.linuxsampler.org/</li>";
 #endif
 
-#ifdef WANT_NATIVE
         // Internal plugins
         text3 += "<li>NekoFilter plugin code, based on lv2fil by Nedko Arnaudov and Fons Adriaensen</li>";
-# ifdef WANT_ZYNADDSUBFX
+#ifdef WANT_ZYNADDSUBFX
         text3 += "<li>ZynAddSubFX plugin code, http://zynaddsubfx.sf.net/</li>";
-#  ifdef WANT_ZYNADDSUBFX_UI
+# ifdef WANT_ZYNADDSUBFX_UI
         text3 += "<li>ZynAddSubFX UI using NTK, http://non.tuxfamily.org/wiki/NTK</li>";
-#  endif
 # endif
 #endif
 
         // misc libs
         text4 += "<li>liblo library for OSC support, http://liblo.sourceforge.net/</li>";
-#ifdef WANT_LV2
         text4 += "<li>serd, sord, sratom and lilv libraries for LV2 discovery, http://drobilla.net/software/lilv/</li>";
-#endif
         text4 += "<li>RtAudio+RtMidi libraries for extra Audio and MIDI support, http://www.music.mcgill.ca/~gary/rtaudio/</li>";
 
         // end
         text4 += "</ul>";
 
-#ifdef WANT_LINUXSAMPLER
+#ifdef HAVE_LINUXSAMPLER
         // LinuxSampler GPL exception
         text4 += "<p>(*) Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors.</p>";
 #endif
@@ -519,10 +510,10 @@ const char* carla_get_supported_file_extensions()
         retText += "*.carxp;*.carxs";
 
         // Sample kits
-#ifdef WANT_FLUIDSYNTH
+#ifdef HAVE_FLUIDSYNTH
         retText += ";*.sf2";
 #endif
-#ifdef WANT_LINUXSAMPLER
+#ifdef HAVE_LINUXSAMPLER
         retText += ";*.gig;*.sfz";
 #endif
 
@@ -603,18 +594,13 @@ uint carla_get_internal_plugin_count()
 {
     carla_debug("carla_get_internal_plugin_count()");
 
-#ifdef WANT_NATIVE
     return static_cast<uint>(CarlaPlugin::getNativePluginCount());
-#else
-    return 0;
-#endif
 }
 
 const CarlaNativePluginInfo* carla_get_internal_plugin_info(uint index)
 {
     carla_debug("carla_get_internal_plugin_info(%i)", index);
 
-#ifdef WANT_NATIVE
     static CarlaNativePluginInfo info;
 
     const NativePluginDescriptor* const nativePlugin(CarlaPlugin::getNativePluginDescriptor(index));
@@ -654,12 +640,6 @@ const CarlaNativePluginInfo* carla_get_internal_plugin_info(uint index)
      checkStringPtr(info.copyright);
 
     return &info;
-#else
-    return nullptr;
-
-    // unused
-    (void)index;
-#endif
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -2272,17 +2252,7 @@ const char* carla_get_host_osc_url_udp()
 
 // -------------------------------------------------------------------------------------------------------------------
 
-#ifdef WANT_DSSI
-# include "CarlaDssiUtils.cpp"
-#endif
-
+#include "CarlaDssiUtils.cpp"
 #include "CarlaStateUtils.cpp"
-
-#if 0
-int main(int argc, char* argv[])
-{
-    return 0;
-}
-#endif
 
 // -------------------------------------------------------------------------------------------------------------------

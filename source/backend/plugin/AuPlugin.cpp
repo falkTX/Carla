@@ -21,16 +21,20 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
+// -------------------------------------------------------------------------------------------------------------------
+
 CarlaPlugin* CarlaPlugin::newAU(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newAU({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.uniqueId);
 
-#if defined(WANT_AU) && defined(CARLA_OS_MAC)
+#if defined(CARLA_OS_MAC)
     return newJuce(init, "AU");
 #else
     init.engine->setLastError("AU support not available");
     return nullptr;
 #endif
 }
+
+// -------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE

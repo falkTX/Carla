@@ -72,47 +72,6 @@ struct ParamSymbol {
 
 // -----------------------------------------------------------------------
 
-CarlaPlugin* CarlaPlugin::newFileGIG(const Initializer& init, const bool use16Outs)
-{
-    carla_debug("CarlaPlugin::newFileGIG({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
-#ifdef WANT_LINUXSAMPLER
-    return newLinuxSampler(init, "GIG", use16Outs);
-#else
-    init.engine->setLastError("GIG support not available");
-    return nullptr;
-
-    // unused
-    (void)use16Outs;
-#endif
-}
-
-CarlaPlugin* CarlaPlugin::newFileSF2(const Initializer& init, const bool use16Outs)
-{
-    carla_debug("CarlaPlugin::newFileSF2({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
-#if defined(WANT_FLUIDSYNTH)
-    return newFluidSynth(init, use16Outs);
-#elif defined(WANT_LINUXSAMPLER)
-    return newLinuxSampler(init, "SF2", use16Outs);
-#else
-    init.engine->setLastError("SF2 support not available");
-    return nullptr;
-
-    // unused
-    (void)use16Outs;
-#endif
-}
-
-CarlaPlugin* CarlaPlugin::newFileSFZ(const Initializer& init)
-{
-    carla_debug("CarlaPlugin::newFileSFZ({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
-#ifdef WANT_LINUXSAMPLER
-    return newLinuxSampler(init, "SFZ", false);
-#else
-    init.engine->setLastError("SFZ support not available");
-    return nullptr;
-#endif
-}
-
 // -------------------------------------------------------------------
 // Constructor and destructor
 

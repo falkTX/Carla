@@ -21,26 +21,20 @@
 #include "CarlaMIDI.h"
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-# define WANT_JUCE_PROCESSORS
+# define USE_JUCE_PROCESSORS
 # include "juce_audio_processors.h"
 #endif
 
-#ifdef WANT_LADSPA
-# include "CarlaLadspaUtils.hpp"
-#endif
-#ifdef WANT_DSSI
-# include "CarlaDssiUtils.cpp"
-#endif
-#ifdef WANT_LV2
-# include "CarlaLv2Utils.hpp"
-#endif
-#ifdef WANT_VST
-# include "CarlaVstUtils.hpp"
-#endif
-#ifdef WANT_FLUIDSYNTH
+#include "CarlaLadspaUtils.hpp"
+#include "CarlaDssiUtils.cpp"
+#include "CarlaLv2Utils.hpp"
+#include "CarlaVstUtils.hpp"
+
+#ifdef HAVE_FLUIDSYNTH
 # include <fluidsynth.h>
 #endif
-#ifdef WANT_LINUXSAMPLER
+
+#ifdef HAVE_LINUXSAMPLER
 # include "linuxsampler/EngineFactory.h"
 #endif
 
@@ -75,7 +69,7 @@ static void print_lib_error(const char* const filename)
         DISCOVERY_OUT("error", error);
 }
 
-#if defined(WANT_VST) && ! defined(CARLA_OS_MAC)
+#ifndef CARLA_OS_MAC
 // --------------------------------------------------------------------------
 // VST stuff
 
@@ -267,9 +261,9 @@ static intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t
 
     return ret;
 }
-#endif
+#endif // ! CARLA_OS_MAC
 
-#ifdef WANT_LINUXSAMPLER
+#ifdef HAVE_LINUXSAMPLER
 // --------------------------------------------------------------------------
 // LinuxSampler stuff
 
@@ -399,13 +393,12 @@ private:
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(LinuxSamplerScopedEngine)
 };
-#endif
+#endif // HAVE_LINUXSAMPLER
 
 // ------------------------------ Plugin Checks -----------------------------
 
 static void do_ladspa_check(void*& libHandle, const char* const filename, const bool init)
 {
-#ifdef WANT_LADSPA
     LADSPA_Descriptor_Function descFn = (LADSPA_Descriptor_Function)lib_symbol(libHandle, "ladspa_descriptor");
 
     if (descFn == nullptr)
@@ -635,20 +628,10 @@ static void do_ladspa_check(void*& libHandle, const char* const filename, const 
         DISCOVERY_OUT("parameters.outs", parametersOuts);
         DISCOVERY_OUT("end", "------------");
     }
-#else
-    DISCOVERY_OUT("error", "LADSPA support not available");
-    return;
-
-    // unused
-    (void)libHandle;
-    (void)filename;
-    (void)init;
-#endif
 }
 
 static void do_dssi_check(void*& libHandle, const char* const filename, const bool init)
 {
-#ifdef WANT_DSSI
     DSSI_Descriptor_Function descFn = (DSSI_Descriptor_Function)lib_symbol(libHandle, "dssi_descriptor");
 
     if (descFn == nullptr)
@@ -946,20 +929,10 @@ static void do_dssi_check(void*& libHandle, const char* const filename, const bo
         DISCOVERY_OUT("parameters.outs", parametersOuts);
         DISCOVERY_OUT("end", "------------");
     }
-#else
-    DISCOVERY_OUT("error", "DSSI support not available");
-    return;
-
-    // unused
-    (void)libHandle;
-    (void)filename;
-    (void)init;
-#endif
 }
 
 static void do_lv2_check(const char* const bundle, const bool init)
 {
-#ifdef WANT_LV2
     Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
 
     // Convert bundle filename to URI
@@ -1161,20 +1134,11 @@ static void do_lv2_check(const char* const bundle, const bool init)
 
         delete rdfDescriptor;
     }
-#else
-    DISCOVERY_OUT("error", "LV2 support not available");
-    return;
-
-    // unused
-    (void)bundle;
-    (void)init;
-#endif
 }
 
 #ifndef CARLA_OS_MAC
 static void do_vst_check(void*& libHandle, const bool init)
 {
-# ifdef WANT_VST
     VST_Function vstFn = (VST_Function)lib_symbol(libHandle, "VSTPluginMain");
 
     if (vstFn == nullptr)
@@ -1402,19 +1366,10 @@ static void do_vst_check(void*& libHandle, const bool init)
         effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effIdle), 0, 0, nullptr, 0.0f);
 
     effect->dispatcher(effect, effClose, 0, 0, nullptr, 0.0f);
-
-#else
-    DISCOVERY_OUT("error", "VST support not available");
-    return;
-
-    // unused
-    (void)libHandle;
-    (void)init;
-#endif
 }
 #endif // ! CARLA_OS_MAC
 
-#ifdef WANT_JUCE_PROCESSORS
+#ifdef USE_JUCE_PROCESSORS
 static void do_juce_check(const char* const filename, const char* const stype, const bool init)
 {
     using namespace juce;
@@ -1424,17 +1379,9 @@ static void do_juce_check(const char* const filename, const char* const stype, c
     if (stype == nullptr)
         return;
 
-    else if (std::strcmp(stype, "LADSPA") == 0)
-    {
-#if defined(WANT_LADSPA) && JUCE_PLUGINHOST_LADSPA && defined(JUCE_LINUX)
-        pluginFormat = new LADSPAPluginFormat();
-#else
-        DISCOVERY_OUT("error", "LADSPA support not available");
-#endif
-    }
     else if (std::strcmp(stype, "VST") == 0)
     {
-#if defined(WANT_VST) && JUCE_PLUGINHOST_VST
+#if JUCE_PLUGINHOST_VST
         pluginFormat = new VSTPluginFormat();
 #else
         DISCOVERY_OUT("error", "VST support not available");
@@ -1442,7 +1389,7 @@ static void do_juce_check(const char* const filename, const char* const stype, c
     }
     else if (std::strcmp(stype, "VST3") == 0)
     {
-#if defined(WANT_VST3) && JUCE_PLUGINHOST_VST3
+#if JUCE_PLUGINHOST_VST3
         pluginFormat = new VST3PluginFormat();
 #else
         DISCOVERY_OUT("error", "VST3 support not available");
@@ -1450,7 +1397,7 @@ static void do_juce_check(const char* const filename, const char* const stype, c
     }
     else if (std::strcmp(stype, "AU") == 0)
     {
-#if defined(WANT_AU) && JUCE_PLUGINHOST_AU && defined(JUCE_MAC)
+#if JUCE_PLUGINHOST_AU
         pluginFormat = new AudioUnitPluginFormat();
 #else
         DISCOVERY_OUT("error", "AU support not available");
@@ -1520,7 +1467,7 @@ static void do_juce_check(const char* const filename, const char* const stype, c
 
 static void do_fluidsynth_check(const char* const filename, const bool init)
 {
-#ifdef WANT_FLUIDSYNTH
+#ifdef HAVE_FLUIDSYNTH
     if (! fluid_is_soundfont(filename))
     {
         DISCOVERY_OUT("error", "Not a SF2 file");
@@ -1593,7 +1540,7 @@ static void do_fluidsynth_check(const char* const filename, const bool init)
     DISCOVERY_OUT("parameters.ins", 13); // defined in Carla
     DISCOVERY_OUT("parameters.outs", 1);
     DISCOVERY_OUT("end", "------------");
-#else
+#else // HAVE_FLUIDSYNTH
     DISCOVERY_OUT("error", "SF2 support not available");
     return;
 
@@ -1605,7 +1552,7 @@ static void do_fluidsynth_check(const char* const filename, const bool init)
 
 static void do_linuxsampler_check(const char* const filename, const char* const stype, const bool init)
 {
-#ifdef WANT_LINUXSAMPLER
+#ifdef HAVE_LINUXSAMPLER
     const File file(filename);
 
     if (! file.existsAsFile())
@@ -1618,7 +1565,7 @@ static void do_linuxsampler_check(const char* const filename, const char* const 
         const LinuxSamplerScopedEngine engine(filename, stype);
     else
         LinuxSamplerScopedEngine::outputInfo(nullptr, 0, file.getFileNameWithoutExtension().toRawUTF8());
-#else
+#else // HAVE_LINUXSAMPLER
     DISCOVERY_OUT("error", stype << " support not available");
     return;
 
@@ -1725,14 +1672,14 @@ int main(int argc, char* argv[])
 #endif
         break;
     case PLUGIN_VST3:
-#ifdef WANT_JUCE_PROCESSORS
+#ifdef USE_JUCE_PROCESSORS
         do_juce_check(filename, "VST3", doInit);
 #else
         DISCOVERY_OUT("error", "VST3 support not available");
 #endif
         break;
     case PLUGIN_AU:
-#ifdef WANT_JUCE_PROCESSORS
+#ifdef USE_JUCE_PROCESSORS
         do_juce_check(filename, "AU", doInit);
 #else
         DISCOVERY_OUT("error", "AU support not available");

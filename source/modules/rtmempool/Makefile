@@ -10,10 +10,6 @@ include ../../Makefile.mk
 
 BUILD_C_FLAGS += $(RTMEMPOOL_FLAGS) -I. -I../../includes
 
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-BUILD_C_FLAGS += -DWANT_LV2
-endif
-
 # --------------------------------------------------------------
 
 OBJS         = rtmempool.c.o

@@ -22,8 +22,6 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
-#ifdef WANT_LV2
-
 #include "CarlaLv2Utils.hpp"
 
 #include "CarlaBase64Utils.hpp"
@@ -43,13 +41,9 @@ using juce::File;
 #define URI_CARLA_ATOM_WORKER     "http://kxstudio.sf.net/ns/carla/atomWorker"
 #define URI_CARLA_FRONTEND_WIN_ID "http://kxstudio.sf.net/ns/carla/frontendWinId"
 
-// -----------------------------------------------------
-
 CARLA_BACKEND_START_NAMESPACE
 
-#if 0
-}
-#endif
+// -----------------------------------------------------
 
 // Maximum default buffer size
 const uint MAX_DEFAULT_BUFFER_SIZE = 8192; // 0x2000
@@ -5820,19 +5814,12 @@ int CarlaEngineOsc::handleMsgLv2UridMap(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
 #undef lv2PluginPtr
 
-CARLA_BACKEND_END_NAMESPACE
-
-#endif // WANT_LV2
-
 // -------------------------------------------------------------------------------------------------------------------
-
-CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newLV2({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.name, init.label, init.uniqueId);
 
-#ifdef WANT_LV2
     Lv2Plugin* const plugin(new Lv2Plugin(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name, init.label))
@@ -5851,12 +5838,8 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
     }
 
     return plugin;
-#else
-    init.engine->setLastError("LV2 support not available");
-    return nullptr;
-#endif
 }
 
-CARLA_BACKEND_END_NAMESPACE
-
 // -------------------------------------------------------------------------------------------------------------------
+
+CARLA_BACKEND_END_NAMESPACE

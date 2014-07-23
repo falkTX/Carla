@@ -18,8 +18,6 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
-#ifdef WANT_NATIVE
-
 #include "CarlaMathUtils.hpp"
 #include "CarlaNative.h"
 
@@ -41,9 +39,7 @@ void carla_register_native_plugin(const NativePluginDescriptor* desc)
 
 CARLA_BACKEND_START_NAMESPACE
 
-#if 0
-}
-#endif
+// -----------------------------------------------------
 
 struct NativePluginMidiData {
     uint32_t  count;
@@ -2436,15 +2432,8 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NativePlugin)
 };
 
-CARLA_BACKEND_END_NAMESPACE
-
-#endif // WANT_NATIVE
-
 // -----------------------------------------------------------------------
 
-CARLA_BACKEND_START_NAMESPACE
-
-#ifdef WANT_NATIVE
 size_t CarlaPlugin::getNativePluginCount() noexcept
 {
     return NativePlugin::getPluginCount();
@@ -2454,7 +2443,6 @@ const NativePluginDescriptor* CarlaPlugin::getNativePluginDescriptor(const size_
 {
     return NativePlugin::getPluginDescriptor(index);
 }
-#endif
 
 // -----------------------------------------------------------------------
 
@@ -2462,7 +2450,6 @@ CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newNative({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.label, init.uniqueId);
 
-#ifdef WANT_NATIVE
     NativePlugin* const plugin(new NativePlugin(init.engine, init.id));
 
     if (! plugin->init(init.name, init.label))
@@ -2481,12 +2468,8 @@ CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)
     }
 
     return plugin;
-#else
-    init.engine->setLastError("Internal plugins support not available");
-    return nullptr;
-#endif
 }
 
-CARLA_BACKEND_END_NAMESPACE
-
 // -----------------------------------------------------------------------
+
+CARLA_BACKEND_END_NAMESPACE

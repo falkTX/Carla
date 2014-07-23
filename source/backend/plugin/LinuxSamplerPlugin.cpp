@@ -24,7 +24,7 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
-#ifdef WANT_LINUXSAMPLER
+#ifdef HAVE_LINUXSAMPLER
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
@@ -1327,15 +1327,17 @@ private:
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // WANT_LINUXSAMPLER
+#endif // HAVE_LINUXSAMPLER
 
 CARLA_BACKEND_START_NAMESPACE
+
+// -------------------------------------------------------------------------------------------------------------------
 
 CarlaPlugin* CarlaPlugin::newLinuxSampler(const Initializer& init, const char* const format, const bool use16Outs)
 {
     carla_debug("LinuxSamplerPlugin::newLinuxSampler({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "}, %s, %s)", init.engine, init.filename, init.name, init.label, init.uniqueId, format, bool2str(use16Outs));
 
-#ifdef WANT_LINUXSAMPLER
+#ifdef HAVE_LINUXSAMPLER
     if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && use16Outs)
     {
         init.engine->setLastError("Carla's rack mode can only work with Stereo modules, please choose the 2-channel only sample-library version");
@@ -1371,5 +1373,32 @@ CarlaPlugin* CarlaPlugin::newLinuxSampler(const Initializer& init, const char* c
     (void)use16Outs;
 #endif
 }
+
+CarlaPlugin* CarlaPlugin::newFileGIG(const Initializer& init, const bool use16Outs)
+{
+    carla_debug("CarlaPlugin::newFileGIG({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(use16Outs));
+#ifdef HAVE_LINUXSAMPLER
+    return newLinuxSampler(init, "GIG", use16Outs);
+#else
+    init.engine->setLastError("GIG support not available");
+    return nullptr;
+
+    // unused
+    (void)use16Outs;
+#endif
+}
+
+CarlaPlugin* CarlaPlugin::newFileSFZ(const Initializer& init)
+{
+    carla_debug("CarlaPlugin::newFileSFZ({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
+#ifdef HAVE_LINUXSAMPLER
+    return newLinuxSampler(init, "SFZ", false);
+#else
+    init.engine->setLastError("SFZ support not available");
+    return nullptr;
+#endif
+}
+
+// -------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE

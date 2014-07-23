@@ -7,12 +7,6 @@
 # --------------------------------------------------------------
 # Modify to enable/disable specific features
 
-# Support for LADSPA, DSSI, LV2, VST and AU plugins
-CARLA_PLUGIN_SUPPORT = true
-
-# Support for GIG, SF2 and SFZ sample banks (through fluidsynth and linuxsampler)
-CARLA_SAMPLERS_SUPPORT = true
-
 # Use the free vestige header instead of the official VST SDK
 CARLA_VESTIGE_HEADER = true
 
@@ -157,10 +151,8 @@ HAVE_X11        = $(shell pkg-config --exists x11 && echo true)
 endif
 endif
 
-ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
 HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)
 HAVE_LINUXSAMPLER = $(shell pkg-config --exists linuxsampler && echo true)
-endif
 
 # --------------------------------------------------------------
 # Set Qt tools
@@ -214,8 +206,20 @@ HAVE_ZYN_UI_DEPS = $(shell pkg-config --exists ntk_images ntk && echo true)
 # --------------------------------------------------------------
 # Set base defines
 
+ifeq ($(HAVE_FLUIDSYNTH),true)
+BASE_FLAGS += -DHAVE_FLUIDSYNTH
+endif
+
+ifeq ($(HAVE_LINUXSAMPLER),true)
+BASE_FLAGS += -DHAVE_LINUXSAMPLER
+endif
+
 ifeq ($(HAVE_X11),true)
 BASE_FLAGS += -DHAVE_X11
+endif
+
+ifeq ($(CARLA_VESTIGE_HEADER),true)
+BASE_FLAGS += -DVESTIGE_HEADER
 endif
 
 # --------------------------------------------------------------

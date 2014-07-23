@@ -285,7 +285,6 @@ void osc_send_bridge_error(const CarlaOscData& oscData, const char* const error)
 }
 #endif
 
-#if defined(BRIDGE_LV2) || defined(WANT_LV2)
 static inline
 void osc_send_lv2_atom_transfer(const CarlaOscData& oscData, const uint32_t portIndex, const char* const atomBuf) noexcept
 {
@@ -314,7 +313,6 @@ void osc_send_lv2_urid_map(const CarlaOscData& oscData, const uint32_t urid, con
     std::strcat(targetPath, "/lv2_urid_map");
     try_lo_send(oscData.target, targetPath, "is", static_cast<int32_t>(urid), uri);
 }
-#endif
 
 // -----------------------------------------------------------------------
 

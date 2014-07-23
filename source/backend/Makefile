@@ -16,12 +16,9 @@ STANDALONE_LIBS += ../modules/jackbridge.a
 STANDALONE_LIBS += ../modules/juce_audio_basics.a
 STANDALONE_LIBS += ../modules/juce_audio_formats.a
 STANDALONE_LIBS += ../modules/juce_core.a
+STANDALONE_LIBS += ../modules/lilv.a
 STANDALONE_LIBS += ../modules/native-plugins.a
 STANDALONE_LIBS += ../modules/rtmempool.a
-
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-STANDALONE_LIBS += ../modules/lilv.a
-endif
 
 ifeq ($(MACOS_OR_WIN32),true)
 STANDALONE_LIBS += ../modules/juce_audio_devices.a
@@ -43,20 +40,9 @@ STANDALONE_FLAGS += $(JUCE_CORE_LIBS)
 STANDALONE_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
 STANDALONE_FLAGS += $(JUCE_AUDIO_FORMATS_LIBS)
 STANDALONE_FLAGS += $(LIBLO_LIBS)
+STANDALONE_FLAGS += $(LILV_LIBS)
 STANDALONE_FLAGS += $(NATIVE_PLUGINS_LIBS)
 STANDALONE_FLAGS += $(RTMEMPOOL_LIBS)
-
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-STANDALONE_FLAGS += $(LILV_LIBS)
-endif
-
-ifeq ($(HAVE_FLUIDSYNTH),true)
-STANDALONE_FLAGS += $(FLUIDSYNTH_LIBS)
-endif
-
-ifeq ($(HAVE_LINUXSAMPLER),true)
-STANDALONE_FLAGS += $(LINUXSAMPLER_LIBS)
-endif
 
 ifeq ($(MACOS_OR_WIN32),true)
 STANDALONE_FLAGS += $(JUCE_AUDIO_DEVICES_LIBS)
@@ -69,6 +55,14 @@ STANDALONE_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
 else
 STANDALONE_FLAGS += $(RTAUDIO_LIBS)
 STANDALONE_FLAGS += $(RTMIDI_LIBS)
+endif
+
+ifeq ($(HAVE_FLUIDSYNTH),true)
+STANDALONE_FLAGS += $(FLUIDSYNTH_LIBS)
+endif
+
+ifeq ($(HAVE_LINUXSAMPLER),true)
+STANDALONE_FLAGS += $(LINUXSAMPLER_LIBS)
 endif
 
 ifeq ($(HAVE_X11),true)

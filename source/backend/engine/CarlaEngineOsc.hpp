@@ -136,10 +136,8 @@ private:
     int handleMsgNoteOff(CARLA_ENGINE_OSC_HANDLE_ARGS2);
 #endif
 
-#ifdef WANT_LV2
     int handleMsgLv2AtomTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgLv2UridMap(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-#endif
 
     // -----------------------------------------------------------------------
 

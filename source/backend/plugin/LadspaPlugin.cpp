@@ -18,18 +18,10 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
-#ifdef WANT_LADSPA
-
 #include "CarlaLadspaUtils.hpp"
 #include "CarlaMathUtils.hpp"
 
-// -----------------------------------------------------
-
 CARLA_BACKEND_START_NAMESPACE
-
-#if 0
-}
-#endif
 
 // -----------------------------------------------------
 
@@ -1715,19 +1707,12 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LadspaPlugin)
 };
 
-CARLA_BACKEND_END_NAMESPACE
-
-#endif // WANT_LADSPA
-
 // -------------------------------------------------------------------------------------------------------------------
-
-CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newLADSPA(const Initializer& init, const LADSPA_RDF_Descriptor* const rdfDescriptor)
 {
     carla_debug("CarlaPlugin::newLADSPA({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "}, %p)", init.engine, init.filename, init.name, init.label, init.uniqueId, rdfDescriptor);
 
-#ifdef WANT_LADSPA
     LadspaPlugin* const plugin(new LadspaPlugin(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name, init.label, rdfDescriptor))
@@ -1746,12 +1731,8 @@ CarlaPlugin* CarlaPlugin::newLADSPA(const Initializer& init, const LADSPA_RDF_De
     }
 
     return plugin;
-#else
-    init.engine->setLastError("LADSPA support not available");
-    return nullptr;
-#endif
 }
 
-CARLA_BACKEND_END_NAMESPACE
-
 // -------------------------------------------------------------------------------------------------------------------
+
+CARLA_BACKEND_END_NAMESPACE

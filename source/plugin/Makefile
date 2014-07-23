@@ -13,36 +13,16 @@ BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils -isystem ../modules
 BUILD_CXX_FLAGS += $(NATIVE_PLUGINS_FLAGS)
 
 # --------------------------------------------------------------
-# Common
+# Link flags
 
+LINK_FLAGS += $(JACKBRIDGE_LIBS)
 LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
 LINK_FLAGS += $(JUCE_AUDIO_FORMATS_LIBS)
 LINK_FLAGS += $(JUCE_CORE_LIBS)
 LINK_FLAGS += $(LIBLO_LIBS)
-LINK_FLAGS += $(RTMEMPOOL_LIBS)
-
-# --------------------------------------------------------------
-# Engine
-
-LINK_FLAGS += $(JACKBRIDGE_LIBS)
-
-# --------------------------------------------------------------
-# Plugin
-
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 LINK_FLAGS += $(LILV_LIBS)
-endif
-
-ifeq ($(HAVE_FLUIDSYNTH),true)
-LINK_FLAGS += $(FLUIDSYNTH_LIBS)
-endif
-
-ifeq ($(HAVE_LINUXSAMPLER),true)
-LINK_FLAGS += $(LINUXSAMPLER_LIBS)
-endif
-
-# --------------------------------------------------------------
-# Coomon
+LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)
+LINK_FLAGS += $(RTMEMPOOL_LIBS)
 
 ifeq ($(MACOS_OR_WIN32),true)
 LINK_FLAGS += $(JUCE_AUDIO_PROCESSORS_LIBS)
@@ -53,14 +33,20 @@ LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
 LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
 endif
 
+ifeq ($(HAVE_FLUIDSYNTH),true)
+LINK_FLAGS += $(FLUIDSYNTH_LIBS)
+endif
+
+ifeq ($(HAVE_LINUXSAMPLER),true)
+LINK_FLAGS += $(LINUXSAMPLER_LIBS)
+endif
+
 ifeq ($(HAVE_X11),true)
 LINK_FLAGS += $(X11_LIBS)
 endif
 
 # --------------------------------------------------------------
 # Native
-
-LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)
 
 # --------------------------------------------------------------
 # Libs
@@ -73,6 +59,7 @@ LIBS += ../modules/jackbridge.a
 LIBS += ../modules/juce_audio_basics.a
 LIBS += ../modules/juce_audio_formats.a
 LIBS += ../modules/juce_core.a
+LIBS += ../modules/lilv.a
 LIBS += ../modules/rtmempool.a
 
 ifeq ($(MACOS_OR_WIN32),true)
@@ -82,10 +69,6 @@ LIBS += ../modules/juce_events.a
 LIBS += ../modules/juce_graphics.a
 LIBS += ../modules/juce_gui_basics.a
 LIBS += ../modules/juce_gui_extra.a
-endif
-
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-LIBS += ../modules/lilv.a
 endif
 
 # --------------------------------------------------------------
