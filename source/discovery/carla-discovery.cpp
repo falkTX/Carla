@@ -25,6 +25,11 @@
 # include "juce_audio_processors.h"
 #endif
 
+#ifdef BUILD_BRIDGE
+# undef HAVE_FLUIDSYNTH
+# undef HAVE_LINUXSAMPLER
+#endif
+
 #include "CarlaLadspaUtils.hpp"
 #include "CarlaDssiUtils.cpp"
 #include "CarlaLv2Utils.hpp"

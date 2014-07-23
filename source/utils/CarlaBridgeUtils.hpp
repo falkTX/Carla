@@ -90,11 +90,11 @@ struct BridgeTimeInfo {
 struct BridgeShmControl {
     union {
         void* runServer;
-        char _padServer[32];
+        char _padServer[64];
     };
     union {
         void* runClient;
-        char _padClient[32];
+        char _padClient[64];
     };
     StackBuffer buffer;
 };

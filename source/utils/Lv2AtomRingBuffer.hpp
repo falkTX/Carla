@@ -112,8 +112,6 @@ public:
     // NOTE: must have been locked before
     bool get(const LV2_Atom*& atom, uint32_t& portIndex) noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(atom != nullptr, false);
-
         if (const LV2_Atom* const retAtom = readAtom(portIndex))
         {
             atom = retAtom;

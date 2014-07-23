@@ -44,10 +44,10 @@
   */
 
 struct HeapBuffer {
-    uint32_t    size;
-    std::size_t head, tail, wrtn;
-    bool        invalidateCommit;
-    uint8_t*    buf;
+    uint32_t size;
+    uint32_t head, tail, wrtn;
+    bool     invalidateCommit;
+    uint8_t* buf;
 
     void copyDataFrom(const HeapBuffer& rb) noexcept
     {
@@ -63,9 +63,9 @@ struct HeapBuffer {
 
 struct StackBuffer {
     static const uint32_t size = 4096;
-    std::size_t head, tail, wrtn;
-    bool        invalidateCommit;
-    uint8_t     buf[size];
+    uint32_t head, tail, wrtn;
+    bool     invalidateCommit;
+    uint8_t  buf[size];
 };
 
 // -----------------------------------------------------------------------
@@ -192,7 +192,7 @@ public:
         return tryRead(&d, sizeof(double)) ? d : 0.0;
     }
 
-    void readCustomData(void* const data, const std::size_t size) noexcept
+    void readCustomData(void* const data, const uint32_t size) noexcept
     {
         if (! tryRead(data, size))
             carla_zeroBytes(data, size);
@@ -242,7 +242,7 @@ public:
         tryWrite(&value, sizeof(double));
     }
 
-    void writeCustomData(const void* const value, const std::size_t size) noexcept
+    void writeCustomData(const void* const value, const uint32_t size) noexcept
     {
         tryWrite(value, size);
     }
@@ -268,7 +268,7 @@ protected:
 
     // -------------------------------------------------------------------
 
-    bool tryRead(void* const buf, const std::size_t size) noexcept
+    bool tryRead(void* const buf, const uint32_t size) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(buf != nullptr, false);
@@ -281,9 +281,9 @@ protected:
 
         uint8_t* const bytebuf(static_cast<uint8_t*>(buf));
 
-        const std::size_t head(fBuffer->head);
-        const std::size_t tail(fBuffer->tail);
-        const std::size_t wrap((head > tail) ? 0 : fBuffer->size);
+        const uint32_t head(fBuffer->head);
+        const uint32_t tail(fBuffer->tail);
+        const uint32_t wrap((head > tail) ? 0 : fBuffer->size);
 
         if (size > wrap + head - tail)
         {
@@ -291,12 +291,12 @@ protected:
             return false;
         }
 
-        std::size_t readto(tail + size);
+        uint32_t readto(tail + size);
 
         if (readto > fBuffer->size)
         {
             readto -= fBuffer->size;
-            const std::size_t firstpart(fBuffer->size - tail);
+            const uint32_t firstpart(fBuffer->size - tail);
             std::memcpy(bytebuf, fBuffer->buf + tail, firstpart);
             std::memcpy(bytebuf + firstpart, fBuffer->buf, readto);
         }
@@ -312,7 +312,7 @@ protected:
         return true;
     }
 
-    void tryWrite(const void* const buf, const std::size_t size) noexcept
+    void tryWrite(const void* const buf, const uint32_t size) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(buf != nullptr,);
@@ -321,9 +321,9 @@ protected:
 
         const uint8_t* const bytebuf(static_cast<const uint8_t*>(buf));
 
-        const std::size_t tail(fBuffer->tail);
-        const std::size_t wrtn(fBuffer->wrtn);
-        const std::size_t wrap((tail > wrtn) ? 0 : fBuffer->size);
+        const uint32_t tail(fBuffer->tail);
+        const uint32_t wrtn(fBuffer->wrtn);
+        const uint32_t wrap((tail > wrtn) ? 0 : fBuffer->size);
 
         if (size >= wrap + tail - wrtn)
         {
@@ -332,12 +332,12 @@ protected:
             return;
         }
 
-        std::size_t writeto(wrtn + size);
+        uint32_t writeto(wrtn + size);
 
         if (writeto > fBuffer->size)
         {
             writeto -= fBuffer->size;
-            const std::size_t firstpart(fBuffer->size - wrtn);
+            const uint32_t firstpart(fBuffer->size - wrtn);
             std::memcpy(fBuffer->buf + wrtn, bytebuf, firstpart);
             std::memcpy(fBuffer->buf, bytebuf + firstpart, writeto);
         }

@@ -28,18 +28,19 @@
 # include <signal.h>
 #endif
 
-// TODO
-#if 0
+#include "juce_core.h"
+
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 # include "juce_gui_basics.h"
 using juce::JUCEApplication;
 using juce::JUCEApplicationBase;
-using juce::String;
 using juce::Timer;
 #endif
 
-#include "juce_core.h"
-
 using CarlaBackend::CarlaEngine;
+using CarlaBackend::EngineCallbackOpcode;
+using CarlaBackend::EngineCallbackOpcode2Str;
+
 using juce::File;
 using juce::String;
 
@@ -101,11 +102,11 @@ static void initSignalHandler()
 
 // -------------------------------------------------------------------------
 
-#if 0
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 static CarlaBridge::CarlaBridgeClient* gBridgeClient = nullptr;
 
 class CarlaJuceApp : public JUCEApplication,
-                            Timer
+                     private Timer
 {
 public:
     CarlaJuceApp()  {}
@@ -154,10 +155,6 @@ static JUCEApplicationBase* juce_CreateApplication() { return new CarlaJuceApp()
 
 CARLA_BRIDGE_START_NAMESPACE
 
-#if 0
-} // Fix editor indentation
-#endif
-
 // -------------------------------------------------------------------------
 
 class CarlaPluginClient : public CarlaBridgeClient
@@ -184,9 +181,6 @@ public:
     {
         carla_debug("CarlaPluginClient::~CarlaPluginClient()");
 
-#if 0
-        gBridgeClient = nullptr;
-#endif
         carla_engine_close();
     }
 
@@ -198,7 +192,6 @@ public:
     void oscInit(const char* const url)
     {
         CarlaBridgeClient::oscInit(url);
-
         fEngine->setOscBridgeData(&fOscData);
     }
 
@@ -221,10 +214,11 @@ public:
 
         gIsInitiated = true;
 
-#if 0
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
         gBridgeClient = this;
         JUCEApplicationBase::createInstance = &juce_CreateApplication;
         JUCEApplicationBase::main(JUCE_MAIN_FUNCTION_ARGS);
+        gBridgeClient = nullptr;
 #else
         for (; ! gCloseNow;)
         {
@@ -240,7 +234,6 @@ public:
         return; (void)argc; (void)argv;
     }
 
-#if 1
     void idle()
     {
         CARLA_SAFE_ASSERT_RETURN(fEngine != nullptr,);
@@ -259,7 +252,6 @@ public:
             }
         }
     }
-#endif
 
     // ---------------------------------------------------------------------
     // plugin management
@@ -312,7 +304,7 @@ public:
     // ---------------------------------------------------------------------
 
 protected:
-    void handleCallback(const CarlaBackend::EngineCallbackOpcode action, const int value1, const int value2, const float value3, const char* const valueStr)
+    void handleCallback(const EngineCallbackOpcode action, const int value1, const int value2, const float value3, const char* const valueStr)
     {
         CARLA_BACKEND_USE_NAMESPACE;
 
@@ -354,9 +346,9 @@ private:
     const CarlaEngine* fEngine;
     String             fProjFilename;
 
-    static void callback(void* ptr, CarlaBackend::EngineCallbackOpcode action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr)
+    static void callback(void* ptr, EngineCallbackOpcode action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr)
     {
-        carla_debug("CarlaPluginClient::callback(%p, %i:%s, %i, %i, %i, %f, \"%s\")", ptr, action, CarlaBackend::EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
+        carla_debug("CarlaPluginClient::callback(%p, %i:%s, %i, %i, %i, %f, \"%s\")", ptr, action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
         CARLA_SAFE_ASSERT_RETURN(ptr != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(pluginId == 0,);
 

@@ -455,7 +455,6 @@ OBJS_POSIX32 += \
 	../backend/plugin/CarlaPluginInternal__posix32.o \
 	../backend/plugin/CarlaPluginThread__posix32.o \
 	../backend/plugin/CarlaPluginUi__posix32.o \
-	../backend/plugin/NativePlugin__posix32.o \
 	../backend/plugin/LadspaPlugin__posix32.o \
 	../backend/plugin/DssiPlugin__posix32.o \
 	../backend/plugin/Lv2Plugin__posix32.o \
@@ -513,7 +512,6 @@ OBJS_POSIX64 += \
 	../backend/plugin/CarlaPluginInternal__posix64.o \
 	../backend/plugin/CarlaPluginThread__posix64.o \
 	../backend/plugin/CarlaPluginUi__posix64.o \
-	../backend/plugin/NativePlugin__posix64.o \
 	../backend/plugin/LadspaPlugin__posix64.o \
 	../backend/plugin/DssiPlugin__posix64.o \
 	../backend/plugin/Lv2Plugin__posix64.o \
@@ -559,8 +557,12 @@ OBJS_WIN32  = CarlaBridgePlugin__win32.o \
 # carla-engine
 OBJS_WIN32 += \
 	../backend/engine/CarlaEngine__win32.o \
+	../backend/engine/CarlaEngineClient__win32.o \
+	../backend/engine/CarlaEngineData__win32.o \
 	../backend/engine/CarlaEngineInternal__win32.o \
 	../backend/engine/CarlaEngineOsc__win32.o \
+	../backend/engine/CarlaEngineOscSend__win32.o \
+	../backend/engine/CarlaEnginePorts__win32.o \
 	../backend/engine/CarlaEngineThread__win32.o \
 	../backend/engine/CarlaEngineBridge__win32.o \
 	../backend/engine/CarlaEngineJack__win32.o
@@ -571,16 +573,13 @@ OBJS_WIN32 += \
 	../backend/plugin/CarlaPluginInternal__win32.o \
 	../backend/plugin/CarlaPluginThread__win32.o \
 	../backend/plugin/CarlaPluginUi__win32.o \
-	../backend/plugin/NativePlugin__win32.o \
 	../backend/plugin/LadspaPlugin__win32.o \
 	../backend/plugin/DssiPlugin__win32.o \
 	../backend/plugin/Lv2Plugin__win32.o \
 	../backend/plugin/VstPlugin__win32.o \
 	../backend/plugin/Vst3Plugin__win32.o \
 	../backend/plugin/AuPlugin__win32.o \
-	../backend/plugin/JucePlugin__win32.o \
-	../backend/plugin/FluidSynthPlugin__win32.o \
-	../backend/plugin/LinuxSamplerPlugin__win32.o
+	../backend/plugin/JucePlugin__win32.o
 
 # carla-standalone
 OBJS_WIN32 += \
@@ -615,8 +614,12 @@ OBJS_WIN64  = CarlaBridgePlugin__win64.o \
 # carla-engine
 OBJS_WIN64 += \
 	../backend/engine/CarlaEngine__win64.o \
+	../backend/engine/CarlaEngineClient__win64.o \
+	../backend/engine/CarlaEngineData__win64.o \
 	../backend/engine/CarlaEngineInternal__win64.o \
 	../backend/engine/CarlaEngineOsc__win64.o \
+	../backend/engine/CarlaEngineOscSend__win64.o \
+	../backend/engine/CarlaEnginePorts__win64.o \
 	../backend/engine/CarlaEngineThread__win64.o \
 	../backend/engine/CarlaEngineBridge__win64.o \
 	../backend/engine/CarlaEngineJack__win64.o
@@ -627,16 +630,13 @@ OBJS_WIN64 += \
 	../backend/plugin/CarlaPluginInternal__win64.o \
 	../backend/plugin/CarlaPluginThread__win64.o \
 	../backend/plugin/CarlaPluginUi__win64.o \
-	../backend/plugin/NativePlugin__win64.o \
 	../backend/plugin/LadspaPlugin__win64.o \
 	../backend/plugin/DssiPlugin__win64.o \
 	../backend/plugin/Lv2Plugin__win64.o \
 	../backend/plugin/VstPlugin__win64.o \
 	../backend/plugin/Vst3Plugin__win64.o \
 	../backend/plugin/AuPlugin__win64.o \
-	../backend/plugin/JucePlugin__win64.o \
-	../backend/plugin/FluidSynthPlugin__win64.o \
-	../backend/plugin/LinuxSamplerPlugin__win64.o
+	../backend/plugin/JucePlugin__win64.o
 
 # carla-standalone
 OBJS_WIN64 += \

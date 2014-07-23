@@ -1908,6 +1908,7 @@ public:
         }
 
         carla_stdout("Carla Server Info:");
+        carla_stdout("  sizeof(StackBuffer):      " P_SIZE, sizeof(StackBuffer));
         carla_stdout("  sizeof(BridgeShmControl): " P_SIZE, sizeof(BridgeShmControl));
         carla_stdout("  sizeof(BridgeTimeInfo):   " P_SIZE, sizeof(BridgeTimeInfo));
 
@@ -1916,6 +1917,7 @@ public:
 
         // initial values
         fShmControl.writeOpcode(kPluginBridgeOpcodeNull);
+        fShmControl.writeInt(static_cast<int32_t>(sizeof(StackBuffer)));
         fShmControl.writeInt(static_cast<int32_t>(sizeof(BridgeShmControl)));
         fShmControl.writeInt(static_cast<int32_t>(sizeof(BridgeTimeInfo)));
 
@@ -2081,6 +2083,7 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 
     if (! plugin->init(init.filename, init.name, init.label, bridgeBinary))
     {
+        init.engine->registerEnginePlugin(init.id, nullptr);
         delete plugin;
         return nullptr;
     }

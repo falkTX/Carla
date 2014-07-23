@@ -31,8 +31,8 @@
 
     @see VSTPluginFormat, VST3PluginFormat, AudioPluginFormat, AudioPluginFormatManager, JUCE_PLUGINHOST_VST, JUCE_PLUGINHOST_AU
 */
-#if defined(JUCE_WINDOWS) || defined(JUCE_MAC)
-# define JUCE_PLUGINHOST_VST3 1 // FIXME
+#if JUCE_WINDOWS || JUCE_MAC
+# define JUCE_PLUGINHOST_VST3 1
 #else
 # define JUCE_PLUGINHOST_VST3 0
 #endif
@@ -42,8 +42,12 @@
 
     @see AudioUnitPluginFormat, AudioPluginFormat, AudioPluginFormatManager, JUCE_PLUGINHOST_VST
 */
-#define JUCE_PLUGINHOST_AU 1
+#if JUCE_MAC
+# define JUCE_PLUGINHOST_AU 1
+#else
+# define JUCE_PLUGINHOST_AU 0
+#endif
 
-#define JUCE_PLUGINHOST_LADSPA 1
+#define JUCE_PLUGINHOST_LADSPA 0
 
 #endif // CARLA_JUCE_AUDIO_PROCESSORS_APPCONFIG_H_INCLUDED

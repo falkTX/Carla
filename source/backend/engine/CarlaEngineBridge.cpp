@@ -214,7 +214,7 @@ public:
           CarlaThread("CarlaEngineBridge"),
           fIsRunning(false)
     {
-        carla_debug("CarlaEngineBridge::CarlaEngineBridge()");
+        carla_stdout("CarlaEngineBridge::CarlaEngineBridge(%s, %s, %s)", audioBaseName, controlBaseName, timeBaseName);
 
         fShmAudioPool.filename  = "/carla-bridge_shm_";
         fShmAudioPool.filename += audioBaseName;
@@ -295,6 +295,9 @@ public:
         opcode = fShmControl.readOpcode();
         CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeOpcodeNull, opcode);
 
+        const uint32_t stackBufferSize = fShmControl.readUInt();
+        CARLA_SAFE_ASSERT_INT2(stackBufferSize == sizeof(StackBuffer), stackBufferSize, sizeof(StackBuffer));
+
         const uint32_t shmStructSize = fShmControl.readUInt();
         CARLA_SAFE_ASSERT_INT2(shmStructSize == sizeof(BridgeShmControl), shmStructSize, sizeof(BridgeShmControl));
 
@@ -312,8 +315,9 @@ public:
         carla_stdout("Carla Client Info:");
         carla_stdout("  BufferSize: %i", pData->bufferSize);
         carla_stdout("  SampleRate: %f", pData->sampleRate);
-        carla_stdout("  sizeof(BridgeShmControl): %i/" P_SIZE, shmStructSize,  sizeof(BridgeShmControl));
-        carla_stdout("  sizeof(BridgeTimeInfo):   %i/" P_SIZE, timeStructSize, sizeof(BridgeTimeInfo));
+        carla_stdout("  sizeof(StackBuffer):      %i/" P_SIZE, stackBufferSize, sizeof(StackBuffer));
+        carla_stdout("  sizeof(BridgeShmControl): %i/" P_SIZE, shmStructSize,   sizeof(BridgeShmControl));
+        carla_stdout("  sizeof(BridgeTimeInfo):   %i/" P_SIZE, timeStructSize,  sizeof(BridgeTimeInfo));
 
         CarlaThread::startThread();
         CarlaEngine::init(clientName);

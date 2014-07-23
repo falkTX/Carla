@@ -135,7 +135,7 @@ const EngineEvent& CarlaEngineEventPort::getEvent(const uint32_t index) const no
 {
     CARLA_SAFE_ASSERT_RETURN(kIsInput, kFallbackEngineEvent);
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, kFallbackEngineEvent);
-    CARLA_SAFE_ASSERT_RETURN(kProcessMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == ENGINE_PROCESS_MODE_PATCHBAY, kFallbackEngineEvent);
+    CARLA_SAFE_ASSERT_RETURN(kProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && kProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, kFallbackEngineEvent);
     CARLA_SAFE_ASSERT_RETURN(index < kMaxEngineEventInternalCount, kFallbackEngineEvent);
 
     return fBuffer[index];
@@ -155,7 +155,7 @@ bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
 {
     CARLA_SAFE_ASSERT_RETURN(! kIsInput, false);
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
-    CARLA_SAFE_ASSERT_RETURN(kProcessMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
+    CARLA_SAFE_ASSERT_RETURN(kProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && kProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, false);
     CARLA_SAFE_ASSERT_RETURN(type != kEngineControlEventTypeNull, false);
     CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, false);
     CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.0f);
@@ -200,7 +200,7 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
 {
     CARLA_SAFE_ASSERT_RETURN(! kIsInput, false);
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
-    CARLA_SAFE_ASSERT_RETURN(kProcessMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
+    CARLA_SAFE_ASSERT_RETURN(kProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && kProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, false);
     CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, false);
     CARLA_SAFE_ASSERT_RETURN(size > 0 && size <= EngineMidiEvent::kDataSize, false);
     CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);

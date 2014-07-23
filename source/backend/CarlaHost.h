@@ -382,6 +382,7 @@ CARLA_EXPORT const char* const* carla_get_engine_driver_device_names(uint index)
  */
 CARLA_EXPORT const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(uint index, const char* name);
 
+#ifndef BUILD_BRIDGE
 /*!
  * Get how many internal plugins are available.
  */
@@ -392,6 +393,7 @@ CARLA_EXPORT uint carla_get_internal_plugin_count();
  * @param index Internal plugin Id
  */
 CARLA_EXPORT const CarlaNativePluginInfo* carla_get_internal_plugin_info(uint index);
+#endif
 
 #ifdef __cplusplus
 /*!

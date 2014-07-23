@@ -455,6 +455,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             break;
 
         case PLUGIN_INTERNAL:
+#ifndef BUILD_BRIDGE
             /*if (std::strcmp(label, "FluidSynth") == 0)
             {
                 use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
@@ -476,6 +477,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
                 plugin = CarlaPlugin::newLinuxSampler(initializer, "SFZ", use16Outs);
             }*/
             plugin = CarlaPlugin::newNative(initializer);
+#endif
             break;
 
         case PLUGIN_LADSPA:
@@ -503,17 +505,23 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             break;
 
         case PLUGIN_GIG:
+#ifndef BUILD_BRIDGE
             use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
             plugin = CarlaPlugin::newFileGIG(initializer, use16Outs);
+#endif
             break;
 
         case PLUGIN_SF2:
+#ifndef BUILD_BRIDGE
             use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
             plugin = CarlaPlugin::newFileSF2(initializer, use16Outs);
+#endif
             break;
 
         case PLUGIN_SFZ:
+#ifndef BUILD_BRIDGE
             plugin = CarlaPlugin::newFileSFZ(initializer);
+#endif
             break;
         }
     }

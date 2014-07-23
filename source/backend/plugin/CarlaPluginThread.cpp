@@ -175,10 +175,11 @@ void CarlaPluginThread::run()
         break;
 
     case PLUGIN_THREAD_BRIDGE:
-        //env.insert("ENGINE_BRIDGE_SHM_IDS", fExtra2.buffer());
-        //env.insert("ENGINE_BRIDGE_CLIENT_NAME", name);
-        //env.insert("ENGINE_BRIDGE_OSC_URL", QString("%1/%2").arg(fEngine->getOscServerPathUDP()).arg(fPlugin->getId()));
-        //env.insert("WINEDEBUG", "-all");
+        // FIXME
+        carla_setenv("ENGINE_BRIDGE_SHM_IDS", fExtra2.buffer());
+        carla_setenv("ENGINE_BRIDGE_CLIENT_NAME", name.toRawUTF8());
+        carla_setenv("ENGINE_BRIDGE_OSC_URL", String(String(fEngine->getOscServerPathUDP()) + String("/") + String(fPlugin->getId())).toRawUTF8());
+        carla_setenv("WINEDEBUG", "-all");
 
         /* osc-url  */ arguments.add(String(fEngine->getOscServerPathUDP()) + String("/") + String(fPlugin->getId()));
         /* stype    */ arguments.add(fExtra1.buffer());

@@ -72,11 +72,26 @@ source/backend/carla_%_plugin.a: .FORCE
 source/backend/carla_%.a: .FORCE
 	$(MAKE) -C source/backend/$* ../carla_$*.a
 
+source/modules/jackbridge-%: .FORCE
+	$(MAKE) -C source/modules/jackbridge ../jackbridge-$*
+
 source/modules/%.qt4.a: .FORCE
 	$(MAKE) -C source/modules/$* ../$*.qt4.a
 
 source/modules/%.qt5.a: .FORCE
 	$(MAKE) -C source/modules/$* ../$*.qt5.a
+
+source/modules/%.posix32.a: .FORCE
+	$(MAKE) -C source/modules/$* ../$*.posix32.a
+
+source/modules/%.posix64.a: .FORCE
+	$(MAKE) -C source/modules/$* ../$*.posix64.a
+
+source/modules/%.win32.a: .FORCE
+	$(MAKE) -C source/modules/$* ../$*.win32.a
+
+source/modules/%.win64.a: .FORCE
+	$(MAKE) -C source/modules/$* ../$*.win64.a
 
 source/modules/%.a: .FORCE
 	$(MAKE) -C source/modules/$* ../$*.a
@@ -124,31 +139,99 @@ bin/styles/carlastyle$(LIB_EXT): .FORCE
 	$(MAKE) -C source/modules/theme
 
 # --------------------------------------------------------------
-# Binaries (variants)
+# Binaries (posix32)
 
-posix32:
+LIBS_POSIX32 += source/modules/jackbridge.posix32.a
+LIBS_POSIX32 += source/modules/juce_audio_basics.posix32.a
+LIBS_POSIX32 += source/modules/juce_audio_devices.posix32.a
+LIBS_POSIX32 += source/modules/juce_audio_formats.posix32.a
+LIBS_POSIX32 += source/modules/juce_audio_processors.posix32.a
+LIBS_POSIX32 += source/modules/juce_core.posix32.a
+LIBS_POSIX32 += source/modules/juce_data_structures.posix32.a
+LIBS_POSIX32 += source/modules/juce_events.posix32.a
+LIBS_POSIX32 += source/modules/juce_graphics.posix32.a
+LIBS_POSIX32 += source/modules/juce_gui_basics.posix32.a
+LIBS_POSIX32 += source/modules/juce_gui_extra.posix32.a
+LIBS_POSIX32 += source/modules/lilv.posix32.a
+LIBS_POSIX32 += source/modules/rtmempool.posix32.a
+
+posix32: $(LIBS_POSIX32)
 	$(MAKE) -C source/bridges posix32
 	$(MAKE) -C source/discovery posix32
 
-posix64:
+# --------------------------------------------------------------
+# Binaries (posix64)
+
+LIBS_POSIX64 += source/modules/jackbridge.posix64.a
+LIBS_POSIX64 += source/modules/juce_audio_basics.posix64.a
+LIBS_POSIX64 += source/modules/juce_audio_devices.posix64.a
+LIBS_POSIX64 += source/modules/juce_audio_formats.posix64.a
+LIBS_POSIX64 += source/modules/juce_audio_processors.posix64.a
+LIBS_POSIX64 += source/modules/juce_core.posix64.a
+LIBS_POSIX64 += source/modules/juce_data_structures.posix64.a
+LIBS_POSIX64 += source/modules/juce_events.posix64.a
+LIBS_POSIX64 += source/modules/juce_graphics.posix64.a
+LIBS_POSIX64 += source/modules/juce_gui_basics.posix64.a
+LIBS_POSIX64 += source/modules/juce_gui_extra.posix64.a
+LIBS_POSIX64 += source/modules/lilv.posix64.a
+LIBS_POSIX64 += source/modules/rtmempool.posix64.a
+
+posix64: $(LIBS_POSIX64)
 	$(MAKE) -C source/bridges posix64
 	$(MAKE) -C source/discovery posix64
 
-win32:
+# --------------------------------------------------------------
+# Binaries (win32)
+
+LIBS_WIN32 += source/modules/jackbridge-win32.dll
+LIBS_WIN32 += source/modules/juce_audio_basics.win32.a
+LIBS_WIN32 += source/modules/juce_audio_devices.win32.a
+LIBS_WIN32 += source/modules/juce_audio_formats.win32.a
+LIBS_WIN32 += source/modules/juce_audio_processors.win32.a
+LIBS_WIN32 += source/modules/juce_core.win32.a
+LIBS_WIN32 += source/modules/juce_data_structures.win32.a
+LIBS_WIN32 += source/modules/juce_events.win32.a
+LIBS_WIN32 += source/modules/juce_graphics.win32.a
+LIBS_WIN32 += source/modules/juce_gui_basics.win32.a
+LIBS_WIN32 += source/modules/juce_gui_extra.win32.a
+LIBS_WIN32 += source/modules/lilv.win32.a
+LIBS_WIN32 += source/modules/rtmempool.win32.a
+
+win32: $(LIBS_WIN32)
 	$(MAKE) -C source/bridges win32
 	$(MAKE) -C source/discovery win32
 
-win64:
+# --------------------------------------------------------------
+# Binaries (win64)
+
+LIBS_WIN64 += source/modules/jackbridge-win64.dll
+LIBS_WIN64 += source/modules/juce_audio_basics.win64.a
+LIBS_WIN64 += source/modules/juce_audio_devices.win64.a
+LIBS_WIN64 += source/modules/juce_audio_formats.win64.a
+LIBS_WIN64 += source/modules/juce_audio_processors.win64.a
+LIBS_WIN64 += source/modules/juce_core.win64.a
+LIBS_WIN64 += source/modules/juce_data_structures.win64.a
+LIBS_WIN64 += source/modules/juce_events.win64.a
+LIBS_WIN64 += source/modules/juce_graphics.win64.a
+LIBS_WIN64 += source/modules/juce_gui_basics.win64.a
+LIBS_WIN64 += source/modules/juce_gui_extra.win64.a
+LIBS_WIN64 += source/modules/lilv.win64.a
+LIBS_WIN64 += source/modules/rtmempool.win64.a
+
+win64: $(LIBS_WIN64)
 	$(MAKE) -C source/bridges win64
 	$(MAKE) -C source/discovery win64
 
+# --------------------------------------------------------------
+# Binaries (wine)
+
 wine32:
 	$(MAKE) -C source/modules jackbridge-wine32
-	$(LINK) source/modules/jackbridge-win32.dll.so source/bridges/jackbridge-win32.dll
+	cp -f source/modules/jackbridge-win32.dll.so bin/jackbridge-win32.dll
 
 wine64:
 	$(MAKE) -C source/modules jackbridge-wine64
-	$(LINK) source/modules/jackbridge-win64.dll.so source/bridges/jackbridge-win64.dll
+	cp -f source/modules/jackbridge-win64.dll.so bin/jackbridge-win64.dll
 
 # --------------------------------------------------------------
 # Resources

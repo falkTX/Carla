@@ -30,7 +30,8 @@
 
 #include "juce_audio_formats.h"
 
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+#if (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)) && ! defined(BUILD_BRIDGE)
+# define USE_JUCE_GUI
 # include "juce_gui_basics.h"
 #endif
 
@@ -522,6 +523,7 @@ const char* carla_get_supported_file_extensions()
         retText += ";*.gig;*.sfz";
 #endif
 
+#ifndef BUILD_BRIDGE
         // Audio files
         {
             using namespace juce;
@@ -537,6 +539,7 @@ const char* carla_get_supported_file_extensions()
                     retText += String(";*" + (*eit)).toRawUTF8();
             }
         }
+#endif
 
         // MIDI files
         retText += ";*.mid;*.midi";
@@ -593,6 +596,7 @@ const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(uint index, co
     return nullptr;
 }
 
+#ifndef BUILD_BRIDGE
 // -------------------------------------------------------------------------------------------------------------------
 
 uint carla_get_internal_plugin_count()
@@ -646,6 +650,7 @@ const CarlaNativePluginInfo* carla_get_internal_plugin_info(uint index)
 
     return &info;
 }
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -732,7 +737,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 
     if (gStandalone.engine->init(clientName))
     {
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+#ifdef USE_JUCE_GUI
         juce::initialiseJuce_GUI();
 #endif
         gStandalone.lastError = "No error";
@@ -802,7 +807,7 @@ bool carla_engine_init_bridge(const char audioBaseName[6+1], const char controlB
 
     if (gStandalone.engine->init(clientName))
     {
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+#ifdef USE_JUCE_GUI
         juce::initialiseJuce_GUI();
 #endif
         gStandalone.lastError = "No error";
@@ -837,7 +842,7 @@ bool carla_engine_close()
     if (! closed)
         gStandalone.lastError = gStandalone.engine->getLastError();
 
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+#ifdef USE_JUCE_GUI
     juce::shutdownJuce_GUI();
 #endif
     delete gStandalone.engine;
