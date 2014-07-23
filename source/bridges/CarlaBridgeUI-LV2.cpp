@@ -577,9 +577,7 @@ public:
 
         for (;;)
         {
-            oscWait();
-
-            if (fIsReady)
+            if (fIsReady || ! oscIdle())
                 return;
         }
     }

@@ -778,12 +778,12 @@ public:
      * The next call to addPlugin() will use this id, replacing the selected plugin.
      * @note This function requires addPlugin() to be called afterwards, as soon as possible.
      */
-    bool replacePlugin(const uint id);
+    bool replacePlugin(const uint id) noexcept;
 
     /*!
      * Switch plugins with id @a idA and @a idB.
      */
-    bool switchPlugins(const uint idA, const uint idB);
+    bool switchPlugins(const uint idA, const uint idB) noexcept;
 #endif
 
     /*!
@@ -800,7 +800,7 @@ public:
      * Get a unique plugin name within the engine.
      * Returned variable must be deleted if non-null.
      */
-    const char* getUniquePluginName(const char* const name) const noexcept;
+    const char* getUniquePluginName(const char* const name) const;
 
     // -------------------------------------------------------------------
     // Project management
@@ -969,7 +969,7 @@ public:
     /*!
      * Set the engine option @a option to @a value or @a valueStr.
      */
-    void setOption(const EngineOption option, const int value, const char* const valueStr);
+    void setOption(const EngineOption option, const int value, const char* const valueStr) noexcept;
 
     // -------------------------------------------------------------------
     // OSC Stuff

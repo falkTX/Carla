@@ -698,7 +698,7 @@ bool CarlaEngine::clonePlugin(const uint id)
     return true;
 }
 
-bool CarlaEngine::replacePlugin(const uint id)
+bool CarlaEngine::replacePlugin(const uint id) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN_ERR(! pData->isIdling, "An operation is still being processed, please wait for it to finish");
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data");
@@ -724,7 +724,7 @@ bool CarlaEngine::replacePlugin(const uint id)
     return true;
 }
 
-bool CarlaEngine::switchPlugins(const uint idA, const uint idB)
+bool CarlaEngine::switchPlugins(const uint idA, const uint idB) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN_ERR(! pData->isIdling, "An operation is still being processed, please wait for it to finish");
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data");
@@ -771,7 +771,7 @@ CarlaPlugin* CarlaEngine::getPluginUnchecked(const uint id) const noexcept
     return pData->plugins[id].plugin;
 }
 
-const char* CarlaEngine::getUniquePluginName(const char* const name) const noexcept
+const char* CarlaEngine::getUniquePluginName(const char* const name) const
 {
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', nullptr);
     carla_debug("CarlaEngine::getUniquePluginName(\"%s\")", name);
@@ -851,7 +851,7 @@ const char* CarlaEngine::getUniquePluginName(const char* const name) const noexc
         sname += " (2)";
     }
 
-    return sname.dupSafe();
+    return sname.dup();
 }
 
 // -----------------------------------------------------------------------
@@ -1296,7 +1296,7 @@ void CarlaEngine::setAboutToClose() noexcept
 // -----------------------------------------------------------------------
 // Global options
 
-void CarlaEngine::setOption(const EngineOption option, const int value, const char* const valueStr)
+void CarlaEngine::setOption(const EngineOption option, const int value, const char* const valueStr) noexcept
 {
     carla_debug("CarlaEngine::setOption(%i:%s, %i, \"%s\")", option, EngineOption2Str(option), value, valueStr);
 
@@ -1370,7 +1370,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         if (pData->options.audioDevice != nullptr)
             delete[] pData->options.audioDevice;
 
-        pData->options.audioDevice = carla_strdup(valueStr);
+        pData->options.audioDevice = carla_strdup_safe(valueStr);
         break;
 
     case ENGINE_OPTION_PATH_BINARIES:
@@ -1379,7 +1379,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         if (pData->options.binaryDir != nullptr)
             delete[] pData->options.binaryDir;
 
-        pData->options.binaryDir = carla_strdup(valueStr);
+        pData->options.binaryDir = carla_strdup_safe(valueStr);
         break;
 
     case ENGINE_OPTION_PATH_RESOURCES:
@@ -1388,7 +1388,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         if (pData->options.resourceDir != nullptr)
             delete[] pData->options.resourceDir;
 
-        pData->options.resourceDir = carla_strdup(valueStr);
+        pData->options.resourceDir = carla_strdup_safe(valueStr);
         break;
 
     case ENGINE_OPTION_FRONTEND_WIN_ID:

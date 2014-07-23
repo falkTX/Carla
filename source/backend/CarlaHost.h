@@ -864,7 +864,6 @@ CARLA_EXPORT void carla_set_ctrl_channel(uint pluginId, int8_t channel);
  */
 CARLA_EXPORT void carla_set_parameter_value(uint pluginId, uint32_t parameterId, float value);
 
-#ifndef BUILD_BRIDGE
 /*!
  * Change a plugin's parameter MIDI channel.
  * @param pluginId    Plugin
@@ -880,7 +879,6 @@ CARLA_EXPORT void carla_set_parameter_midi_channel(uint pluginId, uint32_t param
  * @param cc          New MIDI cc
  */
 CARLA_EXPORT void carla_set_parameter_midi_cc(uint pluginId, uint32_t parameterId, int16_t cc);
-#endif
 
 /*!
  * Change a plugin's current program.

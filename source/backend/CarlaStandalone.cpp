@@ -64,6 +64,11 @@ struct CarlaBackendStandalone {
         engineOptions.forceStereo         = false;
         engineOptions.preferPluginBridges = false;
         engineOptions.preferUiBridges     = false;
+
+        using juce::File;
+        File binaryDir(File::getSpecialLocation(File::currentApplicationFile).getParentDirectory());
+        engineOptions.binaryDir   = carla_strdup_safe(binaryDir.getFullPathName().toRawUTF8());
+        engineOptions.resourceDir = carla_strdup_safe(binaryDir.getChildFile("resources").getFullPathName().toRawUTF8());
 #else
         if (std::getenv("LADISH_APP_NAME") == nullptr && std::getenv("NSM_URL") == nullptr)
             juce::Thread::setCurrentThreadName("Carla");
@@ -2033,7 +2038,6 @@ void carla_set_parameter_value(uint pluginId, uint32_t parameterId, float value)
     carla_stderr2("carla_set_parameter_value(%i, %i, %f) - could not find plugin", pluginId, parameterId, value);
 }
 
-#ifndef BUILD_BRIDGE
 void carla_set_parameter_midi_channel(uint pluginId, uint32_t parameterId, uint8_t channel)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
@@ -2069,7 +2073,6 @@ void carla_set_parameter_midi_cc(uint pluginId, uint32_t parameterId, int16_t cc
 
     carla_stderr2("carla_set_parameter_midi_cc(%i, %i, %i) - could not find plugin", pluginId, parameterId, cc);
 }
-#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 

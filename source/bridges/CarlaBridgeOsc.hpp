@@ -61,7 +61,6 @@ public:
 
     void init(const char* const url);
     void idle() const;
-    void idleWait() const;
     void close();
 
     // -------------------------------------------------------------------
@@ -116,8 +115,8 @@ private:
     int handleMsgPluginSaveNow();
     int handleMsgPluginSetParameterMidiChannel(CARLA_BRIDGE_OSC_HANDLE_ARGS);
     int handleMsgPluginSetParameterMidiCC(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-    int handleMsgPluginSetChunk(CARLA_BRIDGE_OSC_HANDLE_ARGS);
     int handleMsgPluginSetCustomData(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+    int handleMsgPluginSetChunk(CARLA_BRIDGE_OSC_HANDLE_ARGS);
 #endif
 
     // -------------------------------------------------------------------

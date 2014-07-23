@@ -2272,9 +2272,9 @@ public:
         // set icon
 
         if (std::strcmp(fDescriptor->label, "audiofile") == 0)
-            pData->iconName = carla_strdup("file");
+            pData->iconName = carla_strdup_safe("file");
         else if (std::strcmp(fDescriptor->label, "midifile") == 0)
-            pData->iconName = carla_strdup("file");
+            pData->iconName = carla_strdup_safe("file");
 
         // ---------------------------------------------------------------
         // get info

@@ -138,11 +138,6 @@ bool CarlaBridgeClient::oscIdle() const
 #endif
 }
 
-void CarlaBridgeClient::oscWait() const
-{
-    fOsc.idleWait();
-}
-
 void CarlaBridgeClient::oscClose()
 {
     carla_debug("CarlaBridgeClient::oscClose()");

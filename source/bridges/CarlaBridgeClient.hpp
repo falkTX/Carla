@@ -26,9 +26,7 @@
 
 CARLA_BRIDGE_START_NAMESPACE
 
-#if 0
-} // Fix editor indentation
-#endif
+// -----------------------------------------------------------------------
 
 class CarlaBridgeClient
 {
@@ -75,7 +73,6 @@ public:
 
     void oscInit(const char* const url);
     bool oscIdle() const;
-    void oscWait() const;
     void oscClose();
 
     bool isOscControlRegistered() const noexcept;
@@ -163,6 +160,8 @@ private:
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeClient)
 };
+
+// -----------------------------------------------------------------------
 
 CARLA_BRIDGE_END_NAMESPACE
 
