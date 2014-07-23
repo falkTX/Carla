@@ -28,6 +28,7 @@
 #include "CarlaPlugin.hpp"
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaBinaryUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaStateUtils.hpp"
 
@@ -1355,6 +1356,7 @@ protected:
                 // check if using GIG or SF2 16outs
                 static const char kUse16OutsSuffix[] = " (16 outs)";
 
+                const BinaryType btype(getBinaryTypeFromFile(stateSave.binary));
                 const PluginType ptype(getPluginTypeFromString(stateSave.type));
 
                 if (CarlaString(stateSave.label).endsWith(kUse16OutsSuffix))
@@ -1365,7 +1367,7 @@ protected:
 
                 // TODO - proper find&load plugins
 
-                if (addPlugin(ptype, stateSave.binary, stateSave.name, stateSave.label, stateSave.uniqueId, extraStuff))
+                if (addPlugin(btype, ptype, stateSave.binary, stateSave.name, stateSave.label, stateSave.uniqueId, extraStuff))
                 {
                     if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
                         plugin->loadStateSave(stateSave);

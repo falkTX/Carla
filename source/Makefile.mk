@@ -135,6 +135,12 @@ ifneq ($(shell pkg-config --exists liblo && echo true),true)
 $(error liblo missing, cannot continue)
 endif
 
+ifeq ($(LINUX),true)
+ifeq (,$(wildcard /usr/include/magic.h))
+$(error libmagic missing, cannot continue)
+endif
+endif
+
 # --------------------------------------------------------------
 # Check for optional libs (required by backend or bridges)
 

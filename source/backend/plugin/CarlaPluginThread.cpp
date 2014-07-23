@@ -140,6 +140,9 @@ void CarlaPluginThread::run()
     if (name.isEmpty())
         name = "(none)";
 
+    if (fLabel.isEmpty())
+        fLabel = "\"\"";
+
     StringArray arguments;
 
 #ifndef CARLA_OS_WIN
