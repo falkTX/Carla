@@ -54,8 +54,8 @@ class AudioOutputDevicePlugin : public AudioOutputDevice
 public:
     AudioOutputDevicePlugin(const CarlaEngine* const engine, const CarlaPlugin* const plugin, const bool uses16Outs)
         : AudioOutputDevice(std::map<String, DeviceCreationParameter*>()),
-          fEngine(engine),
-          fPlugin(plugin)
+          kEngine(engine),
+          kPlugin(plugin)
     {
         CARLA_ASSERT(engine != nullptr);
         CARLA_ASSERT(plugin != nullptr);
@@ -73,17 +73,17 @@ public:
 
     bool IsPlaying() override
     {
-        return (fEngine->isRunning() && fPlugin->isEnabled());
+        return (kEngine->isRunning() && kPlugin->isEnabled());
     }
 
     uint MaxSamplesPerCycle() override
     {
-        return fEngine->getBufferSize();
+        return kEngine->getBufferSize();
     }
 
     uint SampleRate() override
     {
-        return uint(fEngine->getSampleRate());
+        return uint(kEngine->getSampleRate());
     }
 
     String Driver() override
@@ -107,8 +107,8 @@ public:
     // -------------------------------------------------------------------
 
 private:
-    const CarlaEngine* const fEngine;
-    const CarlaPlugin* const fPlugin;
+    const CarlaEngine* const kEngine;
+    const CarlaPlugin* const kPlugin;
 };
 
 // -----------------------------------------------------------------------
@@ -154,11 +154,41 @@ public:
     }
 };
 
+// -----------------------------------------------------------------------
+// LinuxSampler Engines
+
+struct EngineGIG {
+    Engine* const engine;
+
+    EngineGIG()
+        : engine(EngineFactory::Create("GIG")) { carla_stderr2("LS GIG engine created"); }
+
+    ~EngineGIG()
+    {
+        EngineFactory::Destroy(engine);
+        carla_stderr2("LS GIG engine destroyed");
+    }
+};
+
+struct EngineSFZ {
+    Engine* const engine;
+
+    EngineSFZ()
+        : engine(EngineFactory::Create("SFZ")) { carla_stderr2("LS SFZ engine created"); }
+
+    ~EngineSFZ()
+    {
+        EngineFactory::Destroy(engine);
+        carla_stderr2("LS SFZ engine destroyed");
+    }
+};
+
 } // namespace LinuxSampler
 
 // -----------------------------------------------------------------------
 
 using juce::File;
+using juce::SharedResourcePointer;
 using juce::StringArray;
 
 CARLA_BACKEND_START_NAMESPACE
@@ -176,7 +206,6 @@ public:
           fLabel(nullptr),
           fMaker(nullptr),
           fRealName(nullptr),
-          fEngine(nullptr),
           fAudioOutputDevice(nullptr),
           fMidiInputDevice(nullptr),
           fMidiInputPort(nullptr),
@@ -208,48 +237,43 @@ public:
             pData->active = false;
         }
 
-        if (fEngine != nullptr)
+        if (fMidiInputDevice != nullptr)
         {
-            if (fMidiInputDevice != nullptr)
+            if (fMidiInputPort != nullptr)
             {
-                if (fMidiInputPort != nullptr)
+                for (uint i=0; i<kMaxChannels; ++i)
                 {
-                    for (uint i=0; i<kMaxChannels; ++i)
+                    if (fSamplerChannels[i] != nullptr)
                     {
-                        if (fSamplerChannels[i] != nullptr)
+                        if (fEngineChannels[i] != nullptr)
                         {
-                            if (fEngineChannels[i] != nullptr)
-                            {
-                                fMidiInputPort->Disconnect(fEngineChannels[i]);
-                                fEngineChannels[i]->DisconnectAudioOutputDevice();
-                                fEngineChannels[i] = nullptr;
-                            }
-
-                            fSampler.RemoveSamplerChannel(fSamplerChannels[i]);
-                            fSamplerChannels[i] = nullptr;
+                            fMidiInputPort->Disconnect(fEngineChannels[i]);
+                            fEngineChannels[i]->DisconnectAudioOutputDevice();
+                            fEngineChannels[i] = nullptr;
                         }
-                    }
 
-                    delete fMidiInputPort;
-                    fMidiInputPort = nullptr;
+                        sSampler->RemoveSamplerChannel(fSamplerChannels[i]);
+                        fSamplerChannels[i] = nullptr;
+                    }
                 }
 
-                delete fMidiInputDevice;
-                fMidiInputDevice = nullptr;
+                delete fMidiInputPort;
+                fMidiInputPort = nullptr;
             }
 
-            if (fAudioOutputDevice != nullptr)
-            {
-                delete fAudioOutputDevice;
-                fAudioOutputDevice = nullptr;
-            }
-
-            fInstrument = nullptr;
-
-            LinuxSampler::EngineFactory::Destroy(fEngine);
-            fEngine = nullptr;
+            //sSampler->DestroyMidiInputDevice(fMidiInputDevice);
+            delete fMidiInputDevice;
+            fMidiInputDevice = nullptr;
         }
 
+        if (fAudioOutputDevice != nullptr)
+        {
+            //sSampler->DestroyAudioOutputDevice(fAudioOutputDevice);
+            delete fAudioOutputDevice;
+            fAudioOutputDevice = nullptr;
+        }
+
+        fInstrument = nullptr;
         fInstrumentIds.clear();
 
         if (fLabel != nullptr)
@@ -1157,27 +1181,16 @@ public:
         }
 
         // ---------------------------------------------------------------
-        // Create the LinuxSampler Engine
-
-        try {
-            fEngine = LinuxSampler::EngineFactory::Create(kIsGIG ? "GIG" : "SFZ");
-        }
-        catch(LinuxSampler::Exception& e) {
-            pData->engine->setLastError(e.what());
-            return false;
-        }
-
-        // ---------------------------------------------------------------
         // Init LinuxSampler stuff
 
         fAudioOutputDevice = new LinuxSampler::AudioOutputDevicePlugin(pData->engine, this, kUses16Outs);
 
-        fMidiInputDevice = new LinuxSampler::MidiInputDevicePlugin(&fSampler);
+        fMidiInputDevice = new LinuxSampler::MidiInputDevicePlugin(sSampler);
         fMidiInputPort   = fMidiInputDevice->CreateMidiPortPlugin();
 
         for (uint i=0; i<kMaxChannels; ++i)
         {
-            fSamplerChannels[i] = fSampler.AddSamplerChannel();
+            fSamplerChannels[i] = sSampler->AddSamplerChannel();
             CARLA_SAFE_ASSERT_CONTINUE(fSamplerChannels[i] != nullptr);
 
             fSamplerChannels[i]->SetEngineType(kIsGIG ? "GIG" : "SFZ");
@@ -1206,7 +1219,7 @@ public:
         // ---------------------------------------------------------------
         // Get the Engine's Instrument Manager
 
-        fInstrument = fEngine->GetInstrumentManager();
+        fInstrument = kIsGIG ? sEngineGIG->engine->GetInstrumentManager() : sEngineSFZ->engine->GetInstrumentManager();
 
         if (fInstrument == nullptr)
         {
@@ -1300,9 +1313,6 @@ private:
 
     int32_t fCurMidiProgs[MAX_MIDI_CHANNELS];
 
-    LinuxSampler::Sampler fSampler;
-    LinuxSampler::Engine* fEngine;
-
     LinuxSampler::SamplerChannel* fSamplerChannels[MAX_MIDI_CHANNELS];
     LinuxSampler::EngineChannel*  fEngineChannels[MAX_MIDI_CHANNELS];
 
@@ -1312,6 +1322,10 @@ private:
 
     LinuxSampler::InstrumentManager* fInstrument;
     std::vector<LinuxSampler::InstrumentManager::instrument_id_t> fInstrumentIds;
+
+    SharedResourcePointer<LinuxSampler::Sampler>   sSampler;
+    SharedResourcePointer<LinuxSampler::EngineGIG> sEngineGIG;
+    SharedResourcePointer<LinuxSampler::EngineSFZ> sEngineSFZ;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LinuxSamplerPlugin)
 };
