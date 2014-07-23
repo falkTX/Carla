@@ -102,9 +102,31 @@ static void initSignalHandler()
 
 // -------------------------------------------------------------------------
 
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 static CarlaBridge::CarlaBridgeClient* gBridgeClient = nullptr;
+static CarlaString gProjectFilename;
 
+static void gIdle()
+{
+    carla_engine_idle();
+
+    if (gBridgeClient != nullptr)
+        gBridgeClient->oscIdle();
+
+    if (gSaveNow)
+    {
+        gSaveNow = false;
+
+        if (gProjectFilename.isNotEmpty())
+        {
+            if (! carla_save_plugin_state(0, gProjectFilename))
+                carla_stderr("Plugin preset save failed, error was:\n%s", carla_get_last_error());
+        }
+    }
+}
+
+// -------------------------------------------------------------------------
+
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 class CarlaJuceApp : public JUCEApplication,
                      private Timer
 {
@@ -135,10 +157,7 @@ public:
 
     void timerCallback() override
     {
-        carla_engine_idle();
-
-        if (gBridgeClient != nullptr)
-            gBridgeClient->oscIdle();
+        gIdle();
 
         if (gCloseNow)
         {
@@ -212,20 +231,20 @@ public:
                 carla_stderr("Plugin preset load failed, error was:\n%s", carla_get_last_error());
         }
 
-        gIsInitiated = true;
+        gBridgeClient = this;
+        gIsInitiated  = true;
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-        gBridgeClient = this;
         JUCEApplicationBase::createInstance = &juce_CreateApplication;
         JUCEApplicationBase::main(JUCE_MAIN_FUNCTION_ARGS);
-        gBridgeClient = nullptr;
 #else
         for (; ! gCloseNow;)
         {
-            idle();
+            gIdle();
             carla_msleep(25);
         }
 #endif
+        gBridgeClient = nullptr;
 
         carla_set_engine_about_to_close();
         carla_remove_plugin(0);
@@ -234,32 +253,13 @@ public:
         return; (void)argc; (void)argv;
     }
 
-    void idle()
-    {
-        CARLA_SAFE_ASSERT_RETURN(fEngine != nullptr,);
-
-        carla_engine_idle();
-        CarlaBridgeClient::oscIdle();
-
-        if (gSaveNow)
-        {
-            gSaveNow = false;
-
-            if (fProjFilename.isNotEmpty())
-            {
-                if (! carla_save_plugin_state(0, fProjFilename.toRawUTF8()))
-                    carla_stderr("Plugin preset save failed, error was:\n%s", carla_get_last_error());
-            }
-        }
-    }
-
     // ---------------------------------------------------------------------
     // plugin management
 
-    void saveNow()
+    void prepareForSave()
     {
         CARLA_SAFE_ASSERT_RETURN(fEngine != nullptr,);
-        carla_debug("CarlaPluginClient::saveNow()");
+        carla_debug("CarlaPluginClient::prepareForSave()");
 
         carla_prepare_for_save(0);
 
@@ -393,7 +393,7 @@ int CarlaBridgeOsc::handleMsgPluginSaveNow()
     CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
     carla_debug("CarlaBridgeOsc::handleMsgPluginSaveNow()");
 
-    ((CarlaPluginClient*)fClient)->saveNow();
+    ((CarlaPluginClient*)fClient)->prepareForSave();
     return 0;
 }
 
