@@ -44,7 +44,7 @@ class FluidSynthPlugin : public CarlaPlugin
 public:
     FluidSynthPlugin(CarlaEngine* const engine, const uint id, const bool use16Outs)
         : CarlaPlugin(engine, id),
-          fUses16Outs(use16Outs),
+          kUse16Outs(use16Outs),
           fSettings(nullptr),
           fSynth(nullptr),
           fSynthId(0),
@@ -467,36 +467,33 @@ public:
         if (std::strcmp(key, "midiPrograms") != 0)
             return carla_stderr2("FluidSynthPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
-        if (fUses16Outs)
+        StringArray midiProgramList(StringArray::fromTokens(value, ":", ""));
+
+        if (midiProgramList.size() == MAX_MIDI_CHANNELS)
         {
-            StringArray midiProgramList(StringArray::fromTokens(value, ":", ""));
-
-            if (midiProgramList.size() == MAX_MIDI_CHANNELS)
+            uint8_t channel = 0;
+            for (String *it=midiProgramList.begin(), *end=midiProgramList.end(); it != end; ++it)
             {
-                uint8_t channel = 0;
-                for (String *it=midiProgramList.begin(), *end=midiProgramList.end(); it != end; ++it)
+                const int index(it->getIntValue());
+
+                if (index >= 0 && index < static_cast<int>(pData->midiprog.count))
                 {
-                    const int index(it->getIntValue());
+                    const uint32_t bank    = pData->midiprog.data[index].bank;
+                    const uint32_t program = pData->midiprog.data[index].program;
 
-                    if (index >= 0 && index < static_cast<int>(pData->midiprog.count))
+                    fluid_synth_program_select(fSynth, channel, fSynthId, bank, program);
+                    fCurMidiProgs[channel] = index;
+
+                    if (pData->ctrlChannel == static_cast<int32_t>(channel))
                     {
-                        const uint32_t bank    = pData->midiprog.data[index].bank;
-                        const uint32_t program = pData->midiprog.data[index].program;
-
-                        fluid_synth_program_select(fSynth, channel, fSynthId, bank, program);
-                        fCurMidiProgs[channel] = index;
-
-                        if (pData->ctrlChannel == static_cast<int32_t>(channel))
-                        {
-                            pData->midiprog.current = index;
-                            pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
-                        }
+                        pData->midiprog.current = index;
+                        pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
                     }
-
-                    ++channel;
                 }
-                CARLA_SAFE_ASSERT(channel == MAX_MIDI_CHANNELS);
+
+                ++channel;
             }
+            CARLA_SAFE_ASSERT(channel == MAX_MIDI_CHANNELS);
         }
 
         CarlaPlugin::setCustomData(type, key, value, sendGui);
@@ -549,7 +546,7 @@ public:
         clearBuffers();
 
         uint32_t aOuts, params;
-        aOuts  = fUses16Outs ? 32 : 2;
+        aOuts  = kUse16Outs ? 32 : 2;
         params = FluidSynthParametersMax;
 
         pData->audioOut.createNew(aOuts);
@@ -561,7 +558,7 @@ public:
         // ---------------------------------------
         // Audio Outputs
 
-        if (fUses16Outs)
+        if (kUse16Outs)
         {
             for (uint32_t i=0; i < 32; ++i)
             {
@@ -892,16 +889,15 @@ public:
         pData->hints |= PLUGIN_IS_SYNTH;
         pData->hints |= PLUGIN_CAN_VOLUME;
 
-        if (! fUses16Outs)
+        if (! kUse16Outs)
             pData->hints |= PLUGIN_CAN_BALANCE;
 
         // extra plugin hints
         pData->extraHints  = 0x0;
         pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_IN;
+        pData->extraHints |= PLUGIN_EXTRA_HINT_USES_MULTI_PROGS;
 
-        if (fUses16Outs)
-            pData->extraHints |= PLUGIN_EXTRA_HINT_USES_MULTI_PROGS;
-        else
+        if (kUse16Outs)
             pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
 
         bufferSizeChanged(pData->engine->getBufferSize());
@@ -1406,7 +1402,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Fill plugin buffers and Run plugin
 
-        if (fUses16Outs)
+        if (kUse16Outs)
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
                 FloatVectorOperations::clear(fAudio16Buffers[i], static_cast<int>(frames));
@@ -1422,7 +1418,7 @@ public:
         // Post-processing (volume and balance)
 
         {
-            // note - balance not possible with fUses16Outs, so we can safely skip fAudioOutBuffers
+            // note - balance not possible with kUse16Outs, so we can safely skip fAudioOutBuffers
             const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) > 0 && pData->postProc.volume != 1.0f;
             const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) > 0 && (pData->postProc.balanceLeft != -1.0f || pData->postProc.balanceRight != 1.0f);
 
@@ -1457,7 +1453,7 @@ public:
                 }
 
                 // Volume
-                if (fUses16Outs)
+                if (kUse16Outs)
                 {
                     for (uint32_t k=0; k < frames; ++k)
                         outBuffer[i][k+timeOffset] = fAudio16Buffers[i][k] * pData->postProc.volume;
@@ -1471,7 +1467,7 @@ public:
 
         } // End of Post-processing
 #else
-        if (fUses16Outs)
+        if (kUse16Outs)
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
@@ -1489,7 +1485,7 @@ public:
 
     void bufferSizeChanged(const uint32_t newBufferSize) override
     {
-        if (! fUses16Outs)
+        if (! kUse16Outs)
             return;
 
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
@@ -1546,7 +1542,7 @@ public:
     {
         static const char xtrue[]  = "true";
         static const char xfalse[] = "false";
-        return fUses16Outs ? xtrue : xfalse;
+        return kUse16Outs ? xtrue : xfalse;
     }
 
     // -------------------------------------------------------------------
@@ -1600,7 +1596,7 @@ public:
 
         CarlaString label2(label);
 
-        if (fUses16Outs && ! label2.endsWith(" (16 outs)"))
+        if (kUse16Outs && ! label2.endsWith(" (16 outs)"))
             label2 += " (16 outs)";
 
         fLabel          = label2.dup();
@@ -1653,7 +1649,7 @@ private:
         FluidSynthParametersMax  = 14
     };
 
-    const bool fUses16Outs;
+    const bool kUse16Outs;
 
     fluid_settings_t* fSettings;
     fluid_synth_t*    fSynth;

@@ -476,6 +476,8 @@ const StateSave& CarlaPlugin::getStateSave()
     pData->stateSave.clear();
     prepareForSave();
 
+    const PluginType pluginType(getType());
+
     char strBuf[STR_MAX+1];
 
     // ---------------------------------------------------------------
@@ -527,7 +529,7 @@ const StateSave& CarlaPlugin::getStateSave()
     // ---------------------------------------------------------------
     // Current Program
 
-    if (pData->prog.current >= 0 && getType() != PLUGIN_LV2)
+    if (pData->prog.current >= 0 && pluginType != PLUGIN_LV2)
     {
         pData->stateSave.currentProgramIndex = pData->prog.current;
         pData->stateSave.currentProgramName  = carla_strdup(pData->prog.names[pData->prog.current]);
@@ -536,7 +538,7 @@ const StateSave& CarlaPlugin::getStateSave()
     // ---------------------------------------------------------------
     // Current MIDI Program
 
-    if (pData->midiprog.current >= 0 && getType() != PLUGIN_LV2)
+    if (pData->midiprog.current >= 0 && pluginType != PLUGIN_LV2 && pluginType != PLUGIN_GIG && pluginType != PLUGIN_SF2)
     {
         const MidiProgramData& mpData(pData->midiprog.getCurrent());
 
