@@ -1211,7 +1211,7 @@ void CarlaEngine::callback(const EngineCallbackOpcode action, const uint pluginI
     {
         try {
             pData->callback(pData->callbackPtr, action, pluginId, value1, value2, value3, valueStr);
-        } catch(...) {}
+        } CARLA_SAFE_EXCEPTION("callback");
     }
 
     if (action == ENGINE_CALLBACK_IDLE)
@@ -1241,7 +1241,7 @@ const char* CarlaEngine::runFileCallback(const FileCallbackOpcode action, const 
     {
         try {
             ret = pData->fileCallback(pData->fileCallbackPtr, action, isDir, title, filter);
-        } catch(...) {}
+        } CARLA_SAFE_EXCEPTION("runFileCallback");
     }
 
     return ret;

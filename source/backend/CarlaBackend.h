@@ -226,11 +226,6 @@ const uint PLUGIN_OPTION_SEND_PITCHBEND = 0x080;
  */
 const uint PLUGIN_OPTION_SEND_ALL_SOUND_OFF = 0x100;
 
-/*!
- * Send MIDI CC automation output feedback.
- */
-const uint PLUGIN_OPTION_SEND_FEEDBACK = 0x200;
-
 /** @} */
 
 /* ------------------------------------------------------------------------------------------------------------

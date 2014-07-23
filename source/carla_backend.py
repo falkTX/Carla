@@ -242,9 +242,6 @@ PLUGIN_OPTION_SEND_PITCHBEND = 0x080
 # Send MIDI all-sounds/notes-off events, single note-offs otherwise.
 PLUGIN_OPTION_SEND_ALL_SOUND_OFF = 0x100
 
-# Send MIDI CC automation output feedback.
-PLUGIN_OPTION_SEND_FEEDBACK = 0x200
-
 # ------------------------------------------------------------------------------------------------------------
 # Parameter Hints
 # Various parameter hints.
