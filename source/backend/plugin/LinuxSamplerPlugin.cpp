@@ -168,10 +168,11 @@ CARLA_BACKEND_START_NAMESPACE
 class LinuxSamplerPlugin : public CarlaPlugin
 {
 public:
-    LinuxSamplerPlugin(CarlaEngine* const engine, const uint id, const char* const format, const bool use16Outs)
+    LinuxSamplerPlugin(CarlaEngine* const engine, const uint id, const bool isGIG, const bool use16Outs)
         : CarlaPlugin(engine, id),
-          fUses16Outs(use16Outs),
-          fFormat(carla_strdup(format)),
+          kIsGIG(isGIG),
+          kUses16Outs(use16Outs && isGIG),
+          kMaxChannels(isGIG ? MAX_MIDI_CHANNELS : 1),
           fLabel(nullptr),
           fMaker(nullptr),
           fRealName(nullptr),
@@ -181,14 +182,14 @@ public:
           fMidiInputPort(nullptr),
           fInstrument(nullptr)
     {
-        carla_debug("LinuxSamplerPlugin::LinuxSamplerPlugin(%p, %i, %s, %s)", engine, id, format, bool2str(use16Outs));
+        carla_debug("LinuxSamplerPlugin::LinuxSamplerPlugin(%p, %i, %s, %s)", engine, id, bool2str(isGIG), bool2str(use16Outs));
 
-        for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
-        {
-            fCurMidiProgs[0]    = 0;
-            fSamplerChannels[i] = nullptr;
-            fEngineChannels[i]  = nullptr;
-        }
+        carla_zeroStruct(fCurMidiProgs,    MAX_MIDI_CHANNELS);
+        carla_zeroStruct(fEngineChannels,  MAX_MIDI_CHANNELS);
+        carla_zeroStruct(fSamplerChannels, MAX_MIDI_CHANNELS);
+
+        if (use16Outs && ! isGIG)
+            carla_stderr("Tried to use SFZ with 16 stereo outs, this doesn't make much sense so single stereo mode will be used instead");
     }
 
     ~LinuxSamplerPlugin() override
@@ -213,7 +214,7 @@ public:
             {
                 if (fMidiInputPort != nullptr)
                 {
-                    for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
+                    for (uint i=0; i<kMaxChannels; ++i)
                     {
                         if (fSamplerChannels[i] != nullptr)
                         {
@@ -251,12 +252,6 @@ public:
 
         fInstrumentIds.clear();
 
-        if (fFormat != nullptr)
-        {
-            delete[] fFormat;
-            fFormat = nullptr;
-        }
-
         if (fLabel != nullptr)
         {
             delete[] fLabel;
@@ -283,7 +278,7 @@ public:
 
     PluginType getType() const noexcept override
     {
-        return getPluginTypeFromString(fFormat);
+        return kIsGIG ? PLUGIN_GIG : PLUGIN_SFZ;
     }
 
     PluginCategory getCategory() const noexcept override
@@ -360,13 +355,16 @@ public:
 
     void prepareForSave() override
     {
-        char strBuf[STR_MAX+1];
-        std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i", fCurMidiProgs[0],  fCurMidiProgs[1],  fCurMidiProgs[2],  fCurMidiProgs[3],
-                                                                                          fCurMidiProgs[4],  fCurMidiProgs[5],  fCurMidiProgs[6],  fCurMidiProgs[7],
-                                                                                          fCurMidiProgs[8],  fCurMidiProgs[9],  fCurMidiProgs[10], fCurMidiProgs[11],
-                                                                                          fCurMidiProgs[12], fCurMidiProgs[13], fCurMidiProgs[14], fCurMidiProgs[15]);
+        if (kMaxChannels > 1 && fInstrumentIds.size() > 1)
+        {
+            char strBuf[STR_MAX+1];
+            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i", fCurMidiProgs[0],  fCurMidiProgs[1],  fCurMidiProgs[2],  fCurMidiProgs[3],
+                                                                                              fCurMidiProgs[4],  fCurMidiProgs[5],  fCurMidiProgs[6],  fCurMidiProgs[7],
+                                                                                              fCurMidiProgs[8],  fCurMidiProgs[9],  fCurMidiProgs[10], fCurMidiProgs[11],
+                                                                                              fCurMidiProgs[12], fCurMidiProgs[13], fCurMidiProgs[14], fCurMidiProgs[15]);
 
-        CarlaPlugin::setCustomData(CUSTOM_DATA_TYPE_STRING, "midiPrograms", strBuf, false);
+            CarlaPlugin::setCustomData(CUSTOM_DATA_TYPE_STRING, "midiPrograms", strBuf, false);
+        }
     }
 
     // -------------------------------------------------------------------
@@ -396,7 +394,7 @@ public:
         if (std::strcmp(key, "midiPrograms") != 0)
             return carla_stderr2("LinuxSamplerPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
-        if (fUses16Outs)
+        if (kMaxChannels > 1 && fInstrumentIds.size() > 1)
         {
             StringArray midiProgramList(StringArray::fromTokens(value, ":", ""));
 
@@ -445,13 +443,16 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
 
-        if (index >= 0 && pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
+        const int8_t channel(kIsGIG ? pData->ctrlChannel : 0);
+
+        if (index >= 0 && channel >= 0 && channel < MAX_MIDI_CHANNELS)
         {
             const uint32_t bank    = pData->midiprog.data[index].bank;
             const uint32_t program = pData->midiprog.data[index].program;
             const uint32_t rIndex  = bank*128 + program;
 
-            LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[pData->ctrlChannel]);
+            LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[channel]);
+            CARLA_SAFE_ASSERT_RETURN(engineChannel != nullptr,);
 
             const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
@@ -464,10 +465,10 @@ public:
             {
                 try {
                     fInstrument->LoadInstrumentInBackground(fInstrumentIds[rIndex], engineChannel);
-                } catch(...) {}
+                } CARLA_SAFE_EXCEPTION("LinuxSampler setMidiProgram loadInstrument");
             }
 
-            fCurMidiProgs[pData->ctrlChannel] = index;
+            fCurMidiProgs[channel] = index;
         }
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
@@ -498,7 +499,7 @@ public:
         clearBuffers();
 
         uint32_t aOuts;
-        aOuts = fUses16Outs ? 32 : 2;
+        aOuts = kUses16Outs ? 32 : 2;
 
         pData->audioOut.createNew(aOuts);
 
@@ -508,7 +509,7 @@ public:
         // ---------------------------------------
         // Audio Outputs
 
-        if (fUses16Outs)
+        if (kUses16Outs)
         {
             for (uint32_t i=0; i < 32; ++i)
             {
@@ -596,17 +597,18 @@ public:
         pData->hints |= PLUGIN_IS_SYNTH;
         pData->hints |= PLUGIN_CAN_VOLUME;
 
-        if (! fUses16Outs)
+        if (! kUses16Outs)
             pData->hints |= PLUGIN_CAN_BALANCE;
 
         // extra plugin hints
         pData->extraHints  = 0x0;
         pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_IN;
 
-        if (fUses16Outs)
-            pData->extraHints |= PLUGIN_EXTRA_HINT_USES_MULTI_PROGS;
-        else
+        if (! kUses16Outs)
             pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
+
+        if (fInstrumentIds.size() > 1)
+            pData->extraHints |= PLUGIN_EXTRA_HINT_USES_MULTI_PROGS;
 
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
@@ -625,7 +627,7 @@ public:
         pData->midiprog.clear();
 
         // Query new programs
-        uint32_t count = uint32_t(fInstrumentIds.size());
+        const uint32_t count(static_cast<uint32_t>(fInstrumentIds.size()));
 
         // sound kits must always have at least 1 midi-program
         CARLA_SAFE_ASSERT_RETURN(count > 0,);
@@ -664,7 +666,7 @@ public:
 
         if (doInit)
         {
-            for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
+            for (uint i=0; i<kMaxChannels; ++i)
             {
                 CARLA_SAFE_ASSERT_CONTINUE(fEngineChannels[i] != nullptr);
 
@@ -922,7 +924,8 @@ public:
                             {
                                 if (pData->midiprog.data[k].bank == bankId && pData->midiprog.data[k].program == progId)
                                 {
-                                    LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[pData->ctrlChannel]);
+                                    LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[kIsGIG ? event.channel : 0]);
+                                    CARLA_SAFE_ASSERT_CONTINUE(engineChannel != nullptr);
 
                                     /*if (pData->engine->isOffline())
                                     {
@@ -1131,7 +1134,7 @@ public:
     {
         static const char xtrue[]  = "true";
         static const char xfalse[] = "false";
-        return fUses16Outs ? xtrue : xfalse;
+        return kUses16Outs ? xtrue : xfalse;
     }
 
     bool init(const char* const filename, const char* const name, const char* const label)
@@ -1153,27 +1156,13 @@ public:
             return false;
         }
 
-        if (label == nullptr || label[0] == '\0')
-        {
-            pData->engine->setLastError("null label");
-            return false;
-        }
-
-        // ---------------------------------------------------------------
-        // Store format
-
-        CarlaString cstype(fFormat);
-        cstype.toLower();
-        const char* const ctype(cstype.buffer());
-
         // ---------------------------------------------------------------
         // Create the LinuxSampler Engine
 
         try {
-            fEngine = LinuxSampler::EngineFactory::Create(ctype);
+            fEngine = LinuxSampler::EngineFactory::Create(kIsGIG ? "GIG" : "SFZ");
         }
-        catch (LinuxSampler::Exception& e)
-        {
+        catch(LinuxSampler::Exception& e) {
             pData->engine->setLastError(e.what());
             return false;
         }
@@ -1181,17 +1170,17 @@ public:
         // ---------------------------------------------------------------
         // Init LinuxSampler stuff
 
-        fAudioOutputDevice = new LinuxSampler::AudioOutputDevicePlugin(pData->engine, this, fUses16Outs);
+        fAudioOutputDevice = new LinuxSampler::AudioOutputDevicePlugin(pData->engine, this, kUses16Outs);
 
         fMidiInputDevice = new LinuxSampler::MidiInputDevicePlugin(&fSampler);
         fMidiInputPort   = fMidiInputDevice->CreateMidiPortPlugin();
 
-        for (uint i=0; i < MAX_MIDI_CHANNELS; ++i)
+        for (uint i=0; i<kMaxChannels; ++i)
         {
             fSamplerChannels[i] = fSampler.AddSamplerChannel();
             CARLA_SAFE_ASSERT_CONTINUE(fSamplerChannels[i] != nullptr);
 
-            fSamplerChannels[i]->SetEngineType(ctype);
+            fSamplerChannels[i]->SetEngineType(kIsGIG ? "GIG" : "SFZ");
             fSamplerChannels[i]->SetAudioOutputDevice(fAudioOutputDevice);
 
             fEngineChannels[i] = fSamplerChannels[i]->GetEngineChannel();
@@ -1200,7 +1189,7 @@ public:
             fEngineChannels[i]->Connect(fAudioOutputDevice);
             fEngineChannels[i]->Volume(LinuxSampler::kVolumeMax);
 
-            if (fUses16Outs)
+            if (kUses16Outs)
             {
                 fEngineChannels[i]->SetOutputChannel(0, i*2);
                 fEngineChannels[i]->SetOutputChannel(1, i*2 +1);
@@ -1257,9 +1246,9 @@ public:
             return false;
         }
 
-        CarlaString label2(label);
+        CarlaString label2(label != nullptr ? label : File(filename).getFileNameWithoutExtension().toRawUTF8());
 
-        if (fUses16Outs && ! label2.endsWith(" (16 outs)"))
+        if (kUses16Outs && ! label2.endsWith(" (16 outs)"))
             label2 += " (16 outs)";
 
         fLabel    = label2.dup();
@@ -1273,7 +1262,7 @@ public:
         else if (fRealName[0] != '\0')
             pData->name = pData->engine->getUniquePluginName(fRealName);
         else
-            pData->name = pData->engine->getUniquePluginName(label);
+            pData->name = pData->engine->getUniquePluginName(fLabel);
 
         // ---------------------------------------------------------------
         // register client
@@ -1301,8 +1290,10 @@ public:
     // -------------------------------------------------------------------
 
 private:
-    const bool  fUses16Outs;
-    const char* fFormat;
+    const bool kIsGIG; // SFZ if false
+    const bool kUses16Outs;
+    const uint kMaxChannels; // 1 or 16 depending on format
+
     const char* fLabel;
     const char* fMaker;
     const char* fRealName;
@@ -1338,6 +1329,15 @@ CarlaPlugin* CarlaPlugin::newLinuxSampler(const Initializer& init, const char* c
     carla_debug("LinuxSamplerPlugin::newLinuxSampler({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "}, %s, %s)", init.engine, init.filename, init.name, init.label, init.uniqueId, format, bool2str(use16Outs));
 
 #ifdef HAVE_LINUXSAMPLER
+    CarlaString sformat(format);
+    sformat.toLower();
+
+    if (sformat != "gig" && sformat != "sfz")
+    {
+        init.engine->setLastError("Unsupported format requested for LinuxSampler");
+        return nullptr;
+    }
+
     if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && use16Outs)
     {
         init.engine->setLastError("Carla's rack mode can only work with Stereo modules, please choose the 2-channel only sample-library version");
@@ -1353,7 +1353,7 @@ CarlaPlugin* CarlaPlugin::newLinuxSampler(const Initializer& init, const char* c
         return nullptr;
     }
 
-    LinuxSamplerPlugin* const plugin(new LinuxSamplerPlugin(init.engine, init.id, format, use16Outs));
+    LinuxSamplerPlugin* const plugin(new LinuxSamplerPlugin(init.engine, init.id, (sformat == "gig"), use16Outs));
 
     if (! plugin->init(init.filename, init.name, init.label))
     {
