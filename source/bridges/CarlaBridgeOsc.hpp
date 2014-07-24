@@ -49,9 +49,7 @@
 
 CARLA_BRIDGE_START_NAMESPACE
 
-#if 0
-} // Fix editor indentation
-#endif
+// -----------------------------------------------------------------------
 
 class CarlaBridgeOsc
 {
@@ -90,6 +88,7 @@ private:
     CarlaString  fServerPath;
     lo_server    fServer;
 
+#ifdef BUILD_BRIDGE_UI
     // -------------------------------------------------------------------
 
     int handleMessage(const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg);
@@ -98,7 +97,6 @@ private:
     int handleMsgHide();
     int handleMsgQuit();
 
-#ifdef BUILD_BRIDGE_UI
     int handleMsgUiConfigure(CARLA_BRIDGE_OSC_HANDLE_ARGS);
     int handleMsgUiControl(CARLA_BRIDGE_OSC_HANDLE_ARGS);
     int handleMsgUiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS);
@@ -109,22 +107,24 @@ private:
     int handleMsgLv2UiAtomTransfer(CARLA_BRIDGE_OSC_HANDLE_ARGS);
     int handleMsgLv2UiUridMap(CARLA_BRIDGE_OSC_HANDLE_ARGS);
 # endif
-#endif
 
     // -------------------------------------------------------------------
+
+    static int osc_message_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* userData)
+    {
+        return ((CarlaBridgeOsc*)userData)->handleMessage(path, argc, argv, types, msg);
+    }
+#endif
 
     static void osc_error_handler(int num, const char* msg, const char* path)
     {
         carla_stderr("CarlaBridgeOsc::osc_error_handler(%i, \"%s\", \"%s\")", num, msg, path);
     }
 
-    static int osc_message_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* userData)
-    {
-        return ((CarlaBridgeOsc*)userData)->handleMessage(path, argc, argv, types, msg);
-    }
-
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeOsc)
 };
+
+// -----------------------------------------------------------------------
 
 CARLA_BRIDGE_END_NAMESPACE
 

@@ -1216,6 +1216,10 @@ void CarlaEngine::callback(const EngineCallbackOpcode action, const uint pluginI
 
     if (action == ENGINE_CALLBACK_IDLE)
         pData->isIdling = true;
+#ifdef BUILD_BRIDGE
+    else if (action == ENGINE_CALLBACK_UI_STATE_CHANGED && value1 != 1)
+        oscSend_bridge_configure("CarlaBridgeHideGUI", "");
+#endif
 
     if (pData->callback != nullptr)
     {

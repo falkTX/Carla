@@ -79,7 +79,9 @@ void CarlaBridgeOsc::init(const char* const url)
         std::free(tmpServerPath);
     }
 
+#ifdef BUILD_BRIDGE_UI
     lo_server_add_method(fServer, nullptr, nullptr, osc_message_handler, this);
+#endif
 
     CARLA_ASSERT(fName.isNotEmpty());
     CARLA_ASSERT(fServerPath.isNotEmpty());
@@ -118,6 +120,7 @@ void CarlaBridgeOsc::close()
     CARLA_ASSERT(fServer == nullptr);
 }
 
+#ifdef BUILD_BRIDGE_UI
 // -----------------------------------------------------------------------
 
 int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg)
@@ -156,7 +159,6 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
     if (std::strcmp(method, "quit") == 0)
         return handleMsgQuit();
 
-#ifdef BUILD_BRIDGE_UI
     // UI methods
     if (std::strcmp(method, "configure") == 0)
         return handleMsgUiConfigure(argc, argv, types);
@@ -178,13 +180,11 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
     if (std::strcmp(method, "lv2_urid_map") == 0)
         return handleMsgLv2UiUridMap(argc, argv, types);
 # endif
-#endif
 
     carla_stderr("CarlaBridgeOsc::handleMessage(\"%s\", ...) - received unsupported OSC method '%s'", path, method);
     return 1;
 }
 
-#ifdef BUILD_BRIDGE_UI
 int CarlaBridgeOsc::handleMsgShow()
 {
     CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);

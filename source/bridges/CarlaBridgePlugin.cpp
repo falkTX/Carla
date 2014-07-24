@@ -264,26 +264,16 @@ protected:
 
         switch (action)
         {
-        case ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
-            if (isOscControlRegistered())
-            {
-                CARLA_SAFE_ASSERT_RETURN(value1 >= 0,);
-                fEngine->oscSend_bridge_parameter_value(static_cast<uint32_t>(value1), value3);
-            }
+        case ENGINE_CALLBACK_ENGINE_STOPPED:
+        case ENGINE_CALLBACK_PLUGIN_REMOVED:
+            gCloseNow = true;
             break;
 
         case ENGINE_CALLBACK_UI_STATE_CHANGED:
-            if (! isOscControlRegistered())
-            {
-                if (value1 != 1 && gIsInitiated)
-                    gCloseNow = true;
-            }
-            else
-            {
-                // show-gui button
-                fEngine->oscSend_bridge_configure(CARLA_BRIDGE_MSG_HIDE_GUI, "");
-            }
+            if (gIsInitiated && value1 != 1 && ! isOscControlRegistered())
+                gCloseNow = true;
             break;
+
         default:
             break;
         }
@@ -307,36 +297,6 @@ private:
         return ((CarlaPluginClient*)ptr)->handleCallback(action, value1, value2, value3, valueStr);
     }
 };
-
-// -------------------------------------------------------------------------
-
-int CarlaBridgeOsc::handleMsgShow()
-{
-    carla_debug("CarlaBridgeOsc::handleMsgShow()");
-
-    if (carla_get_plugin_info(0)->hints & CarlaBackend::PLUGIN_HAS_CUSTOM_UI)
-        carla_show_custom_ui(0, true);
-
-    return 0;
-}
-
-int CarlaBridgeOsc::handleMsgHide()
-{
-    carla_debug("CarlaBridgeOsc::handleMsgHide()");
-
-    if (carla_get_plugin_info(0)->hints & CarlaBackend::PLUGIN_HAS_CUSTOM_UI)
-        carla_show_custom_ui(0, false);
-
-    return 0;
-}
-
-int CarlaBridgeOsc::handleMsgQuit()
-{
-    carla_debug("CarlaBridgeOsc::handleMsgQuit()");
-
-    gCloseNow = true;
-    return 0;
-}
 
 #if 0
 // -------------------------------------------------------------------------
