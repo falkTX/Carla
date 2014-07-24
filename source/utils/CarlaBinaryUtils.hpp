@@ -21,13 +21,13 @@
 #include "CarlaBackend.h"
 #include "CarlaUtils.hpp"
 
-#ifdef CARLA_OS_LINUX
+#if defined(CARLA_OS_LINUX) && ! defined(BUILD_BRIDGE)
 # include "magic.h"
 #endif
 
 CARLA_BACKEND_START_NAMESPACE
 
-#ifdef CARLA_OS_LINUX
+#if defined(CARLA_OS_LINUX) && ! defined(BUILD_BRIDGE)
 // -----------------------------------------------------------------------
 
 class CarlaMagic
@@ -72,7 +72,7 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
 {
     carla_stdout("getBinaryTypeFromFile(\"%s\")", filename);
 
-#ifdef CARLA_OS_LINUX
+#if defined(CARLA_OS_LINUX) && ! defined(BUILD_BRIDGE)
     if (filename == nullptr || filename[0] == '\0')
         return BINARY_NATIVE;
 

@@ -214,6 +214,11 @@ public:
         return (void*)fWindow;
     }
 
+    void* getDisplay() const noexcept
+    {
+        return fDisplay;
+    }
+
 private:
     Display* fDisplay;
     Window   fWindow;

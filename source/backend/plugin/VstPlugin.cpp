@@ -426,7 +426,9 @@ public:
             CarlaString uiTitle(pData->name);
             uiTitle += " (GUI)";
 
-            void* vstPtr;
+            intptr_t value  = 0;
+            void*    vstPtr = nullptr;
+            ERect*  vstRect = nullptr;
 
             if (fUi.window == nullptr && fUi.type == UI::UI_EMBED)
             {
@@ -460,17 +462,22 @@ public:
             else
                 vstPtr = const_cast<char*>(uiTitle.buffer());
 
-            if (dispatcher(effEditOpen, 0, 0, vstPtr, 0.0f) != 0)
+            dispatcher(effEditGetRect, 0, 0, &vstRect, 0.0f);
+
+#ifdef HAVE_X11
+            value = (intptr_t)fUi.window->getDisplay();
+#endif
+
+            if (dispatcher(effEditOpen, 0, value, vstPtr, 0.0f) != 0)
             {
                 if (fUi.type == UI::UI_EMBED)
                 {
-                    ERect* vstRect = nullptr;
-
-                    dispatcher(effEditGetRect, 0, 0, &vstRect, 0.0f);
+                    if (vstRect == nullptr || vstRect->right - vstRect->left < 2)
+                        dispatcher(effEditGetRect, 0, 0, &vstRect, 0.0f);
 
                     if (vstRect != nullptr)
                     {
-                        const int width(vstRect->right  - vstRect->left);
+                        const int width(vstRect->right - vstRect->left);
                         const int height(vstRect->bottom - vstRect->top);
 
                         CARLA_SAFE_ASSERT_INT2(width > 1 && height > 1, width, height);

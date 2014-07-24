@@ -40,6 +40,9 @@ public:
     virtual void setTitle(const char* const title) = 0;
     virtual void setTransientWinId(const uintptr_t winId) = 0;
     virtual void* getPtr() const noexcept = 0;
+#ifdef HAVE_X11
+    virtual void* getDisplay() const noexcept = 0;
+#endif
 
     static bool tryTransientWinIdMatch(const uintptr_t pid, const char* const uiTitle, const uintptr_t winId);
 

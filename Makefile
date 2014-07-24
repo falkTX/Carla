@@ -542,7 +542,7 @@ ANS_YES=" YES "
 endif
 
 features:
-	@echo "$(tS)---> Engine driver $(tE)"
+	@echo "$(tS)---> Engine drivers $(tE)"
 	@echo "JACK:       $(ANS_YES)"
 ifeq ($(LINUX),true)
 ifeq ($(HAVE_ALSA),true)
