@@ -443,8 +443,12 @@ OBJS_POSIX32  = CarlaBridgePlugin__posix32.o \
 # carla-engine
 OBJS_POSIX32 += \
 	../backend/engine/CarlaEngine__posix32.o \
+	../backend/engine/CarlaEngineClient__posix32.o \
+	../backend/engine/CarlaEngineData__posix32.o \
 	../backend/engine/CarlaEngineInternal__posix32.o \
 	../backend/engine/CarlaEngineOsc__posix32.o \
+	../backend/engine/CarlaEngineOscSend__posix32.o \
+	../backend/engine/CarlaEnginePorts__posix32.o \
 	../backend/engine/CarlaEngineThread__posix32.o \
 	../backend/engine/CarlaEngineJack__posix32.o \
 	../backend/engine/CarlaEngineBridge__posix32.o
@@ -461,9 +465,7 @@ OBJS_POSIX32 += \
 	../backend/plugin/VstPlugin__posix32.o \
 	../backend/plugin/Vst3Plugin__posix32.o \
 	../backend/plugin/AuPlugin__posix32.o \
-	../backend/plugin/JucePlugin__posix32.o \
-	../backend/plugin/FluidSynthPlugin__posix32.o \
-	../backend/plugin/LinuxSamplerPlugin__posix32.o
+	../backend/plugin/JucePlugin__posix32.o
 
 # carla-standalone
 OBJS_POSIX32 += \
@@ -471,14 +473,15 @@ OBJS_POSIX32 += \
 
 # libs
 LIBS_POSIX32 = \
+	../modules/jackbridge.posix32.a \
+	../modules/juce_audio_basics.posix32.a \
+	../modules/juce_core.posix32.a \
 	../modules/lilv.posix32.a \
 	../modules/rtmempool.posix32.a
 
 ifeq ($(MACOS),true)
 LIBS_POSIX32 += \
-	../modules/juce_audio_basics.posix32.a \
 	../modules/juce_audio_processors.posix32.a \
-	../modules/juce_core.posix32.a \
 	../modules/juce_data_structures.posix32.a \
 	../modules/juce_events.posix32.a \
 	../modules/juce_graphics.posix32.a \
@@ -500,8 +503,12 @@ OBJS_POSIX64  = CarlaBridgePlugin__posix64.o \
 # carla-engine
 OBJS_POSIX64 += \
 	../backend/engine/CarlaEngine__posix64.o \
+	../backend/engine/CarlaEngineClient__posix64.o \
+	../backend/engine/CarlaEngineData__posix64.o \
 	../backend/engine/CarlaEngineInternal__posix64.o \
 	../backend/engine/CarlaEngineOsc__posix64.o \
+	../backend/engine/CarlaEngineOscSend__posix64.o \
+	../backend/engine/CarlaEnginePorts__posix64.o \
 	../backend/engine/CarlaEngineThread__posix64.o \
 	../backend/engine/CarlaEngineJack__posix64.o \
 	../backend/engine/CarlaEngineBridge__posix64.o
@@ -518,9 +525,7 @@ OBJS_POSIX64 += \
 	../backend/plugin/VstPlugin__posix64.o \
 	../backend/plugin/Vst3Plugin__posix64.o \
 	../backend/plugin/AuPlugin__posix32.o \
-	../backend/plugin/JucePlugin__posix64.o \
-	../backend/plugin/FluidSynthPlugin__posix64.o \
-	../backend/plugin/LinuxSamplerPlugin__posix64.o
+	../backend/plugin/JucePlugin__posix64.o
 
 # carla-standalone
 OBJS_POSIX64 += \
@@ -528,14 +533,15 @@ OBJS_POSIX64 += \
 
 # libs
 LIBS_POSIX64 = \
+	../modules/jackbridge.posix64.a \
+	../modules/juce_audio_basics.posix64.a \
+	../modules/juce_core.posix64.a \
 	../modules/lilv.posix64.a \
 	../modules/rtmempool.posix64.a
 
 ifeq ($(MACOS),true)
 LIBS_POSIX64 += \
-	../modules/juce_audio_basics.posix64.a \
 	../modules/juce_audio_processors.posix64.a \
-	../modules/juce_core.posix64.a \
 	../modules/juce_data_structures.posix64.a \
 	../modules/juce_events.posix64.a \
 	../modules/juce_graphics.posix64.a \
