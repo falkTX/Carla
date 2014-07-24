@@ -50,27 +50,28 @@ enum PluginBridgeInfoType {
 };
 
 enum PluginBridgeOpcode {
-    kPluginBridgeOpcodeNull              =  0,
-    kPluginBridgeOpcodeSetAudioPool      =  1, // long
-    kPluginBridgeOpcodeSetBufferSize     =  2, // int
-    kPluginBridgeOpcodeSetSampleRate     =  3, // float
-    kPluginBridgeOpcodeSetParameterRt    =  4, // int, float
-    kPluginBridgeOpcodeSetParameterNonRt =  5, // int, float
-    kPluginBridgeOpcodeSetProgram        =  6, // int
-    kPluginBridgeOpcodeSetMidiProgram    =  7, // int
-    kPluginBridgeOpcodeMidiEvent         =  8, // long, int, char[] (long = timeFrame, int = size max 4)
-    kPluginBridgeOpcodeProcess           =  9,
-    kPluginBridgeOpcodeQuit              = 10
+    kPluginBridgeOpcodeNull                    =  0,
+    kPluginBridgeOpcodeSetAudioPool            =  1, // long
+    kPluginBridgeOpcodeSetBufferSize           =  2, // int
+    kPluginBridgeOpcodeSetSampleRate           =  3, // float
+    kPluginBridgeOpcodeSetParameterRt          =  4, // int, float
+    kPluginBridgeOpcodeSetParameterNonRt       =  5, // int, float
+    kPluginBridgeOpcodeSetParameterMidiChannel =  6, // int, float
+    kPluginBridgeOpcodeSetParameterMidiCC      =  7, // int, float
+    kPluginBridgeOpcodeSetProgram              =  8, // int
+    kPluginBridgeOpcodeSetMidiProgram          =  9, // int
+    kPluginBridgeOpcodeSetCustomData           = 10, // str, str, str
+    kPluginBridgeOpcodeSetChunkFile            = 11, // str
+    kPluginBridgeOpcodePrepareForSave          = 12,
+    kPluginBridgeOpcodeMidiEvent               = 13, // long, int, char[] (long = timeFrame, int = size max 4)
+    kPluginBridgeOpcodeProcess                 = 14,
+    kPluginBridgeOpcodeShowUI                  = 15,
+    kPluginBridgeOpcodeHideUI                  = 16,
+    kPluginBridgeOpcodeQuit                    = 17
 };
 
-const char* const CARLA_BRIDGE_MSG_HIDE_GUI   = "CarlaBridgeHideGUI";   //!< Plugin -> Host call, tells host GUI is now hidden
-const char* const CARLA_BRIDGE_MSG_SAVED      = "CarlaBridgeSaved";     //!< Plugin -> Host call, tells host state is saved
-#if 0
-const char* const CARLA_BRIDGE_MSG_SAVE_NOW   = "CarlaBridgeSaveNow";   //!< Host -> Plugin call, tells plugin to save state now
-const char* const CARLA_BRIDGE_MSG_SET_CHUNK  = "CarlaBridgeSetChunk";  //!< Host -> Plugin call, tells plugin to set chunk in file \a value
-const char* const CARLA_BRIDGE_MSG_SET_CUSTOM = "CarlaBridgeSetCustom"; //!< Host -> Plugin call, tells plugin to set a custom data set using \a value ("type·key·rvalue").
-//If \a type is 'chunk' or 'binary' \a rvalue refers to chunk file.
-#endif
+const char* const CARLA_BRIDGE_MSG_HIDE_GUI = "CarlaBridgeHideGUI";   //!< Plugin -> Host call, tells host GUI is now hidden
+const char* const CARLA_BRIDGE_MSG_SAVED    = "CarlaBridgeSaved";     //!< Plugin -> Host call, tells host state is saved
 
 // -----------------------------------------------------------------------
 

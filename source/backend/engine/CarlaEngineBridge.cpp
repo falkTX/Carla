@@ -463,6 +463,50 @@ public:
                     break;
                 }
 
+                case kPluginBridgeOpcodePrepareForSave: {
+                    carla_prepare_for_save(0);
+
+                    for (uint32_t i=0, count=carla_get_custom_data_count(0); i<count; ++i)
+                    {
+                        const CarlaBackend::CustomData* const cdata(carla_get_custom_data(0, i));
+                        CARLA_SAFE_ASSERT_CONTINUE(cdata != nullptr);
+
+                        oscSend_bridge_set_custom_data(cdata->type, cdata->key, cdata->value);
+                    }
+
+                    //if (fPlugin->getOptionsEnabled() & CarlaBackend::PLUGIN_OPTION_USE_CHUNKS)
+                    {
+                        //if (const char* const chunkData = carla_get_chunk_data(0))
+                        {
+#if 0
+                            QString filePath;
+                            filePath = QDir::tempPath();
+            #ifdef Q_OS_WIN
+                            filePath += "\\.CarlaChunk_";
+            #else
+                            filePath += "/.CarlaChunk_";
+            #endif
+                            filePath += fPlugin->getName();
+
+                            QFile file(filePath);
+
+                            if (file.open(QIODevice::WriteOnly))
+                            {
+                                QByteArray chunk((const char*)data, dataSize);
+                                file.write(chunk);
+                                file.close();
+                                fEngine->oscSend_bridge_set_chunk_data(filePath.toUtf8().constData());
+                            }
+#endif
+                        }
+                    }
+
+                    carla_stdout("-----------------------------------------------------, got prepare for save");
+
+                    oscSend_bridge_configure(CARLA_BRIDGE_MSG_SAVED, "");
+                    break;
+                }
+
                 case kPluginBridgeOpcodeMidiEvent: {
                     const int64_t time(fShmControl.readLong());
                     const int32_t size(fShmControl.readInt());
@@ -543,9 +587,25 @@ public:
                     break;
                 }
 
+                case kPluginBridgeOpcodeShowUI:
+                    carla_stdout("-----------------------------------------------------, got SHOW UI");
+
+                    carla_show_custom_ui(0, true);
+                    break;
+
+                case kPluginBridgeOpcodeHideUI:
+                    carla_stdout("-----------------------------------------------------, got HIDE UI");
+
+                    carla_show_custom_ui(0, false);
+                    break;
+
                 case kPluginBridgeOpcodeQuit:
                     signalThreadShouldExit();
                     fIsRunning = false;
+                    break;
+
+                default:
+                    carla_stderr2("Unhandled Plugin opcode %i", opcode);
                     break;
                 }
             }

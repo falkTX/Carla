@@ -86,6 +86,7 @@ public:
     // ---------------------------------------------------------------------
 
 protected:
+#ifdef BUILD_BRIDGE_UI
     void sendOscConfigure(const char* const key, const char* const value) const;
     void sendOscControl(const int32_t index, const float value) const;
     void sendOscProgram(const uint32_t index) const;
@@ -93,14 +94,13 @@ protected:
     void sendOscMidi(const uint8_t midiBuf[4]) const;
     void sendOscExiting() const;
 
-#ifdef BRIDGE_LV2
+# ifdef BRIDGE_LV2
     void sendOscLv2AtomTransfer(const int32_t portIndex, const char* const atomBuf) const;
     void sendOscLv2UridMap(const uint32_t urid, const char* const uri) const;
-#endif
+# endif
 
     // ---------------------------------------------------------------------
 
-#ifdef BUILD_BRIDGE_UI
     void* getContainerId();
     bool  uiLibOpen(const char* const filename);
     bool  uiLibClose();
@@ -155,7 +155,6 @@ private:
     } fUI;
 #else
     friend class CarlaPluginClient;
-    friend class JackBridgeClient;
 #endif
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeClient)

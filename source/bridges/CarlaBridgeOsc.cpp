@@ -20,10 +20,6 @@
 
 CARLA_BRIDGE_START_NAMESPACE
 
-#if 0
-} // Fix editor indentation
-#endif
-
 // -----------------------------------------------------------------------
 
 CarlaBridgeOsc::CarlaBridgeOsc(CarlaBridgeClient* const client)
@@ -160,42 +156,28 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
     if (std::strcmp(method, "quit") == 0)
         return handleMsgQuit();
 
-#ifdef BRIDGE_LV2
-    // LV2 methods
-    if (std::strcmp(method, "lv2_atom_transfer") == 0)
-        return handleMsgLv2AtomTransfer(argc, argv, types);
-    if (std::strcmp(method, "lv2_urid_map") == 0)
-        return handleMsgLv2UridMap(argc, argv, types);
-#endif
-
 #ifdef BUILD_BRIDGE_UI
     // UI methods
     if (std::strcmp(method, "configure") == 0)
-        return handleMsgConfigure(argc, argv, types);
+        return handleMsgUiConfigure(argc, argv, types);
     if (std::strcmp(method, "control") == 0)
-        return handleMsgControl(argc, argv, types);
+        return handleMsgUiControl(argc, argv, types);
     if (std::strcmp(method, "program") == 0)
-        return handleMsgProgram(argc, argv, types);
+        return handleMsgUiProgram(argc, argv, types);
     if (std::strcmp(method, "midi-program") == 0)
-        return handleMsgMidiProgram(argc, argv, types);
+        return handleMsgUiMidiProgram(argc, argv, types);
     if (std::strcmp(method, "midi") == 0)
-        return handleMsgMidi(argc, argv, types);
+        return handleMsgUiMidi(argc, argv, types);
     if (std::strcmp(method, "sample-rate") == 0)
         return 0; // unused
-#endif
 
-#if defined(BUILD_BRIDGE_PLUGIN) && ! defined(BRIDGE_JACK)
-    // Plugin methods
-    if (std::strcmp(method, "plugin_save_now") == 0)
-        return handleMsgPluginSaveNow();
-    if (std::strcmp(method, "plugin_set_parameter_midi_channel") == 0)
-        return handleMsgPluginSetParameterMidiChannel(argc, argv, types);
-    if (std::strcmp(method, "plugin_set_parameter_midi_cc") == 0)
-        return handleMsgPluginSetParameterMidiCC(argc, argv, types);
-    if (std::strcmp(method, "plugin_set_chunk") == 0)
-        return handleMsgPluginSetChunk(argc, argv, types);
-    if (std::strcmp(method, "plugin_set_custom_data") == 0)
-        return handleMsgPluginSetCustomData(argc, argv, types);
+# ifdef BRIDGE_LV2
+    // LV2 methods
+    if (std::strcmp(method, "lv2_atom_transfer") == 0)
+        return handleMsgLv2UiAtomTransfer(argc, argv, types);
+    if (std::strcmp(method, "lv2_urid_map") == 0)
+        return handleMsgLv2UiUridMap(argc, argv, types);
+# endif
 #endif
 
     carla_stderr("CarlaBridgeOsc::handleMessage(\"%s\", ...) - received unsupported OSC method '%s'", path, method);
@@ -233,7 +215,7 @@ int CarlaBridgeOsc::handleMsgQuit()
     return 0;
 }
 
-int CarlaBridgeOsc::handleMsgConfigure(CARLA_BRIDGE_OSC_HANDLE_ARGS)
+int CarlaBridgeOsc::handleMsgUiConfigure(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "ss");
     CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
@@ -246,7 +228,7 @@ int CarlaBridgeOsc::handleMsgConfigure(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     (void)argv;
 }
 
-int CarlaBridgeOsc::handleMsgControl(CARLA_BRIDGE_OSC_HANDLE_ARGS)
+int CarlaBridgeOsc::handleMsgUiControl(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "if");
     CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
@@ -262,7 +244,7 @@ int CarlaBridgeOsc::handleMsgControl(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     return 0;
 }
 
-int CarlaBridgeOsc::handleMsgProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS)
+int CarlaBridgeOsc::handleMsgUiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(1, "i");
     CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
@@ -277,7 +259,7 @@ int CarlaBridgeOsc::handleMsgProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     return 0;
 }
 
-int CarlaBridgeOsc::handleMsgMidiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS)
+int CarlaBridgeOsc::handleMsgUiMidiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "ii");
     CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
@@ -294,7 +276,7 @@ int CarlaBridgeOsc::handleMsgMidiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     return 0;
 }
 
-int CarlaBridgeOsc::handleMsgMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS)
+int CarlaBridgeOsc::handleMsgUiMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(1, "m");
     CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
@@ -329,6 +311,9 @@ int CarlaBridgeOsc::handleMsgMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 
     return 0;
 }
+
 #endif // BUILD_BRIDGE_UI
+
+// -----------------------------------------------------------------------
 
 CARLA_BRIDGE_END_NAMESPACE

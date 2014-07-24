@@ -1156,7 +1156,7 @@ private:
 
 #define lv2ClientPtr ((CarlaLv2Client*)fClient)
 
-int CarlaBridgeOsc::handleMsgLv2AtomTransfer(CARLA_BRIDGE_OSC_HANDLE_ARGS)
+int CarlaBridgeOsc::handleMsgLv2UiAtomTransfer(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "is");
     carla_debug("CarlaBridgeOsc::handleMsgLv2AtomTransfer()");
@@ -1178,7 +1178,7 @@ int CarlaBridgeOsc::handleMsgLv2AtomTransfer(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     return 0;
 }
 
-int CarlaBridgeOsc::handleMsgLv2UridMap(CARLA_BRIDGE_OSC_HANDLE_ARGS)
+int CarlaBridgeOsc::handleMsgLv2UiUridMap(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "is");
     carla_debug("CarlaBridgeOsc::handleMsgLv2UridMap()");

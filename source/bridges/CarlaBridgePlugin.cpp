@@ -254,54 +254,6 @@ public:
     }
 
     // ---------------------------------------------------------------------
-    // plugin management
-
-    void prepareForSave()
-    {
-        CARLA_SAFE_ASSERT_RETURN(fEngine != nullptr,);
-        carla_debug("CarlaPluginClient::prepareForSave()");
-
-        carla_prepare_for_save(0);
-
-        for (uint32_t i=0, count=carla_get_custom_data_count(0); i<count; ++i)
-        {
-            const CarlaBackend::CustomData* const cdata(carla_get_custom_data(0, i));
-            CARLA_SAFE_ASSERT_CONTINUE(cdata != nullptr);
-
-            fEngine->oscSend_bridge_set_custom_data(cdata->type, cdata->key, cdata->value);
-        }
-
-        //if (fPlugin->getOptionsEnabled() & CarlaBackend::PLUGIN_OPTION_USE_CHUNKS)
-        {
-            //if (const char* const chunkData = carla_get_chunk_data(0))
-            {
-#if 0
-                QString filePath;
-                filePath = QDir::tempPath();
-#ifdef Q_OS_WIN
-                filePath += "\\.CarlaChunk_";
-#else
-                filePath += "/.CarlaChunk_";
-#endif
-                filePath += fPlugin->getName();
-
-                QFile file(filePath);
-
-                if (file.open(QIODevice::WriteOnly))
-                {
-                    QByteArray chunk((const char*)data, dataSize);
-                    file.write(chunk);
-                    file.close();
-                    fEngine->oscSend_bridge_set_chunk_data(filePath.toUtf8().constData());
-                }
-#endif
-            }
-        }
-
-        fEngine->oscSend_bridge_configure(CARLA_BRIDGE_MSG_SAVED, "");
-    }
-
-    // ---------------------------------------------------------------------
 
 protected:
     void handleCallback(const EngineCallbackOpcode action, const int value1, const int value2, const float value3, const char* const valueStr)
@@ -386,16 +338,8 @@ int CarlaBridgeOsc::handleMsgQuit()
     return 0;
 }
 
+#if 0
 // -------------------------------------------------------------------------
-
-int CarlaBridgeOsc::handleMsgPluginSaveNow()
-{
-    CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
-    carla_debug("CarlaBridgeOsc::handleMsgPluginSaveNow()");
-
-    ((CarlaPluginClient*)fClient)->prepareForSave();
-    return 0;
-}
 
 int CarlaBridgeOsc::handleMsgPluginSetParameterMidiChannel(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
@@ -474,6 +418,7 @@ int CarlaBridgeOsc::handleMsgPluginSetChunk(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     carla_set_chunk_data(0, chunkData.toRawUTF8());
     return 0;
 }
+#endif
 
 CARLA_BRIDGE_END_NAMESPACE
 

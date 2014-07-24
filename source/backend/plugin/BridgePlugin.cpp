@@ -347,12 +347,6 @@ public:
                 fShmControl.waitForServer(3);
         }
 
-        if (pData->osc.data.target != nullptr)
-        {
-            osc_send_hide(pData->osc.data);
-            osc_send_quit(pData->osc.data);
-        }
-
         pData->osc.data.clear();
         pData->osc.thread.stopThread(3000);
 
@@ -490,22 +484,30 @@ public:
 
     void prepareForSave() override
     {
-#if 0
-        m_saved = false;
-        osc_send_configure(&osc.data, CARLA_BRIDGE_MSG_SAVE_NOW, "");
+        fSaved = false;
+
+        {
+            const CarlaMutexLocker _cml(fShmControl.lock);
+
+            fShmControl.writeOpcode(kPluginBridgeOpcodePrepareForSave);
+            fShmControl.commitWrite();
+        }
+
+        carla_stdout("BridgePlugin::prepareForSave() - sent, now waiting...");
 
         for (int i=0; i < 200; ++i)
         {
-            if (m_saved)
+            if (fSaved)
                 break;
-            carla_msleep(50);
+            carla_msleep(30);
+            pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+            pData->engine->idle();
         }
 
-        if (! m_saved)
+        if (! fSaved)
             carla_stderr("BridgePlugin::prepareForSave() - Timeout while requesting save state");
         else
-            carla_debug("BridgePlugin::prepareForSave() - success!");
-#endif
+            carla_stdout("BridgePlugin::prepareForSave() - success!");
     }
 
     // -------------------------------------------------------------------
@@ -618,17 +620,20 @@ public:
 
     void showCustomUI(const bool yesNo) override
     {
+        {
+            const CarlaMutexLocker _cml(fShmControl.lock);
+
+            fShmControl.writeOpcode(yesNo ? kPluginBridgeOpcodeShowUI : kPluginBridgeOpcodeHideUI);
+            fShmControl.commitWrite();
+        }
+
         if (yesNo)
         {
-            osc_send_show(pData->osc.data);
-
             pData->tryTransient();
         }
         else
         {
             pData->transientTryCounter = 0;
-
-            osc_send_hide(pData->osc.data);
         }
     }
 

@@ -5780,6 +5780,7 @@ private:
 
 #define lv2PluginPtr ((Lv2Plugin*)plugin)
 
+#ifndef BUILD_BRIDGE
 int CarlaEngineOsc::handleMsgLv2AtomTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "is");
@@ -5811,6 +5812,7 @@ int CarlaEngineOsc::handleMsgLv2UridMap(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     lv2PluginPtr->handleUridMap(static_cast<LV2_URID>(urid), uri);
     return 0;
 }
+#endif
 
 #undef lv2PluginPtr
 

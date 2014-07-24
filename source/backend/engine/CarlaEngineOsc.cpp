@@ -279,12 +279,17 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         return 0;
     }
 
-    // Common OSC methods (DSSI and bridge UIs)
+    // Common OSC methods (all bridges)
     if (std::strcmp(method, "update") == 0)
     {
         const lo_address source(lo_message_get_source(msg));
         return handleMsgUpdate(plugin, argc, argv, types, source);
     }
+    if (std::strcmp(method, "exiting") == 0)
+        return handleMsgExiting(plugin);
+
+#ifndef BUILD_BRIDGE
+    // Common OSC methods (DSSI and bridge UIs)
     if (std::strcmp(method, "configure") == 0)
         return handleMsgConfigure(plugin, argc, argv, types);
     if (std::strcmp(method, "control") == 0)
@@ -293,10 +298,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         return handleMsgProgram(plugin, argc, argv, types);
     if (std::strcmp(method, "midi") == 0)
         return handleMsgMidi(plugin, argc, argv, types);
-    if (std::strcmp(method, "exiting") == 0)
-        return handleMsgExiting(plugin);
 
-#ifndef BUILD_BRIDGE
     // Internal methods
     if (std::strcmp(method, "set_active") == 0)
         return handleMsgSetActive(plugin, argc, argv, types);
@@ -379,16 +381,40 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         if (std::strcmp(bmethod, "error") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeError, argc, argv, types);
     }
-#endif
 
     // Plugin-specific methods
     if (std::strcmp(method, "lv2_atom_transfer") == 0)
         return handleMsgLv2AtomTransfer(plugin, argc, argv, types);
     if (std::strcmp(method, "lv2_urid_map") == 0)
         return handleMsgLv2UridMap(plugin, argc, argv, types);
+#endif
 
     carla_stderr("CarlaEngineOsc::handleMessage() - unsupported OSC method '%s'", method);
     return 1;
+}
+
+// -----------------------------------------------------------------------
+
+int CarlaEngineOsc::handleMsgUpdate(CARLA_ENGINE_OSC_HANDLE_ARGS2, const lo_address source)
+{
+    carla_debug("CarlaEngineOsc::handleMsgUpdate()");
+    CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "s");
+
+    const char* const url = (const char*)&argv[0]->s;
+
+    plugin->updateOscData(source, url);
+    return 0;
+}
+
+int CarlaEngineOsc::handleMsgExiting(CARLA_ENGINE_OSC_HANDLE_ARGS1)
+{
+    carla_debug("CarlaEngineOsc::handleMsgExiting()");
+
+    // TODO - check for non-UIs (dssi-vst) and set to -1 instead
+    fEngine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, plugin->getId(), 0, 0, 0.0f, nullptr);
+
+    plugin->showCustomUI(false);
+    return 0;
 }
 
 // -----------------------------------------------------------------------
@@ -449,20 +475,8 @@ int CarlaEngineOsc::handleMsgUnregister()
     fControlData.clear();
     return 0;
 }
-#endif
 
 // -----------------------------------------------------------------------
-
-int CarlaEngineOsc::handleMsgUpdate(CARLA_ENGINE_OSC_HANDLE_ARGS2, const lo_address source)
-{
-    carla_debug("CarlaEngineOsc::handleMsgUpdate()");
-    CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "s");
-
-    const char* const url = (const char*)&argv[0]->s;
-
-    plugin->updateOscData(source, url);
-    return 0;
-}
 
 int CarlaEngineOsc::handleMsgConfigure(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
@@ -569,20 +583,8 @@ int CarlaEngineOsc::handleMsgMidi(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 #endif
 }
 
-int CarlaEngineOsc::handleMsgExiting(CARLA_ENGINE_OSC_HANDLE_ARGS1)
-{
-    carla_debug("CarlaEngineOsc::handleMsgExiting()");
-
-    // TODO - check for non-UIs (dssi-vst) and set to -1 instead
-    fEngine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, plugin->getId(), 0, 0, 0.0f, nullptr);
-
-    plugin->showCustomUI(false);
-    return 0;
-}
-
 // -----------------------------------------------------------------------
 
-#ifndef BUILD_BRIDGE
 int CarlaEngineOsc::handleMsgSetActive(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
     carla_debug("CarlaEngineOsc::handleMsgSetActive()");
@@ -750,7 +752,7 @@ int CarlaEngineOsc::handleMsgNoteOff(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     plugin->sendMidiSingleNote(static_cast<uint8_t>(channel), static_cast<uint8_t>(note), 0, true, false, true);
     return 0;
 }
-#endif
+#endif // ! BUILD_BRIDGE
 
 // -----------------------------------------------------------------------
 

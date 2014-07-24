@@ -94,29 +94,21 @@ private:
 
     int handleMessage(const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg);
 
-#ifdef BUILD_BRIDGE_UI
-    int handleMsgConfigure(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-    int handleMsgControl(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-    int handleMsgProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-    int handleMsgMidiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-    int handleMsgMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-#endif
-
     int handleMsgShow();
     int handleMsgHide();
     int handleMsgQuit();
 
-#ifdef BRIDGE_LV2
-    int handleMsgLv2AtomTransfer(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-    int handleMsgLv2UridMap(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-#endif
+#ifdef BUILD_BRIDGE_UI
+    int handleMsgUiConfigure(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+    int handleMsgUiControl(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+    int handleMsgUiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+    int handleMsgUiMidiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+    int handleMsgUiMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS);
 
-#ifdef BUILD_BRIDGE_PLUGIN
-    int handleMsgPluginSaveNow();
-    int handleMsgPluginSetParameterMidiChannel(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-    int handleMsgPluginSetParameterMidiCC(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-    int handleMsgPluginSetCustomData(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-    int handleMsgPluginSetChunk(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+# ifdef BRIDGE_LV2
+    int handleMsgLv2UiAtomTransfer(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+    int handleMsgLv2UiUridMap(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+# endif
 #endif
 
     // -------------------------------------------------------------------

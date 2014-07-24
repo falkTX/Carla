@@ -154,6 +154,8 @@ void CarlaBridgeClient::sendOscUpdate() const
         osc_send_update(fOscData, fOsc.getServerPath());
 }
 
+// ---------------------------------------------------------------------
+
 #ifdef BUILD_BRIDGE_PLUGIN
 void CarlaBridgeClient::sendOscBridgeUpdate() const
 {
@@ -174,6 +176,7 @@ void CarlaBridgeClient::sendOscBridgeError(const char* const error) const
 
 // ---------------------------------------------------------------------
 
+#ifdef BUILD_BRIDGE_UI
 void CarlaBridgeClient::sendOscConfigure(const char* const key, const char* const value) const
 {
     carla_debug("CarlaBridgeClient::sendOscConfigure(\"%s\", \"%s\")", key, value);
@@ -242,7 +245,6 @@ void CarlaBridgeClient::sendOscLv2UridMap(const uint32_t urid, const char* const
 
 // ---------------------------------------------------------------------
 
-#ifdef BUILD_BRIDGE_UI
 void* CarlaBridgeClient::getContainerId()
 {
     carla_debug("CarlaBridgeClient::getContainerId()");
@@ -285,6 +287,8 @@ const char* CarlaBridgeClient::uiLibError()
 
     return lib_error(fUI.filename);
 }
-#endif
+#endif // BUILD_BRIDGE_UI
+
+// ---------------------------------------------------------------------
 
 CARLA_BRIDGE_END_NAMESPACE

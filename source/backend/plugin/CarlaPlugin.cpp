@@ -490,7 +490,6 @@ const StateSave& CarlaPlugin::getStateSave()
     pData->stateSave.label    = carla_strdup(strBuf);
     pData->stateSave.uniqueId = getUniqueId();
     pData->stateSave.options  = pData->options;
-    carla_stdout("Options: 0x%x | 0x%x", pData->options, pData->stateSave.options);
 
     if (pData->filename != nullptr)
         pData->stateSave.binary = carla_strdup(pData->filename);

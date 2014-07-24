@@ -108,19 +108,18 @@ private:
 
     int handleMessage(const bool isTCP, const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg);
 
+    int handleMsgUpdate(CARLA_ENGINE_OSC_HANDLE_ARGS2, const lo_address source);
+    int handleMsgExiting(CARLA_ENGINE_OSC_HANDLE_ARGS1);
+
 #ifndef BUILD_BRIDGE
     int handleMsgRegister(const bool isTCP, const int argc, const lo_arg* const* const argv, const char* const types, const lo_address source);
     int handleMsgUnregister();
-#endif
 
-    int handleMsgUpdate(CARLA_ENGINE_OSC_HANDLE_ARGS2, const lo_address source);
     int handleMsgConfigure(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgControl(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgMidi(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-    int handleMsgExiting(CARLA_ENGINE_OSC_HANDLE_ARGS1);
 
-#ifndef BUILD_BRIDGE
     int handleMsgSetActive(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgSetDryWet(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgSetVolume(CARLA_ENGINE_OSC_HANDLE_ARGS2);
@@ -134,10 +133,10 @@ private:
     int handleMsgSetMidiProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgNoteOn(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgNoteOff(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-#endif
 
     int handleMsgLv2AtomTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgLv2UridMap(CARLA_ENGINE_OSC_HANDLE_ARGS2);
+#endif
 
     // -----------------------------------------------------------------------
 
