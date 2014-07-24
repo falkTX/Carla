@@ -28,7 +28,7 @@
 
 #include "CarlaBase64Utils.hpp"
 #include "CarlaMathUtils.hpp"
-#include "CarlaPluginUi.hpp"
+#include "CarlaPluginUI.hpp"
 
 #include "juce_core.h"
 

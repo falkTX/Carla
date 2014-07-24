@@ -2268,6 +2268,7 @@ const char* carla_get_host_osc_url_udp()
 
 // -------------------------------------------------------------------------------------------------------------------
 
+#include "CarlaPluginUI.cpp"
 #include "CarlaDssiUtils.cpp"
 #include "CarlaStateUtils.cpp"
 

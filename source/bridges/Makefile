@@ -392,7 +392,6 @@ OBJS_NATIVE += \
 	../backend/plugin/CarlaPlugin__native.o \
 	../backend/plugin/CarlaPluginInternal__native.o \
 	../backend/plugin/CarlaPluginThread__native.o \
-	../backend/plugin/CarlaPluginUi__native.o \
 	../backend/plugin/NativePlugin__native.o \
 	../backend/plugin/LadspaPlugin__native.o \
 	../backend/plugin/DssiPlugin__native.o \
@@ -458,7 +457,6 @@ OBJS_POSIX32 += \
 	../backend/plugin/CarlaPlugin__posix32.o \
 	../backend/plugin/CarlaPluginInternal__posix32.o \
 	../backend/plugin/CarlaPluginThread__posix32.o \
-	../backend/plugin/CarlaPluginUi__posix32.o \
 	../backend/plugin/LadspaPlugin__posix32.o \
 	../backend/plugin/DssiPlugin__posix32.o \
 	../backend/plugin/Lv2Plugin__posix32.o \
@@ -518,7 +516,6 @@ OBJS_POSIX64 += \
 	../backend/plugin/CarlaPlugin__posix64.o \
 	../backend/plugin/CarlaPluginInternal__posix64.o \
 	../backend/plugin/CarlaPluginThread__posix64.o \
-	../backend/plugin/CarlaPluginUi__posix64.o \
 	../backend/plugin/LadspaPlugin__posix64.o \
 	../backend/plugin/DssiPlugin__posix64.o \
 	../backend/plugin/Lv2Plugin__posix64.o \
@@ -578,7 +575,6 @@ OBJS_WIN32 += \
 	../backend/plugin/CarlaPlugin__win32.o \
 	../backend/plugin/CarlaPluginInternal__win32.o \
 	../backend/plugin/CarlaPluginThread__win32.o \
-	../backend/plugin/CarlaPluginUi__win32.o \
 	../backend/plugin/LadspaPlugin__win32.o \
 	../backend/plugin/DssiPlugin__win32.o \
 	../backend/plugin/Lv2Plugin__win32.o \
@@ -635,7 +631,6 @@ OBJS_WIN64 += \
 	../backend/plugin/CarlaPlugin__win64.o \
 	../backend/plugin/CarlaPluginInternal__win64.o \
 	../backend/plugin/CarlaPluginThread__win64.o \
-	../backend/plugin/CarlaPluginUi__win64.o \
 	../backend/plugin/LadspaPlugin__win64.o \
 	../backend/plugin/DssiPlugin__win64.o \
 	../backend/plugin/Lv2Plugin__win64.o \

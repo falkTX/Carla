@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaPluginUi.hpp"
+#include "CarlaPluginUI.hpp"
 
 #ifdef HAVE_X11
 # include <sys/types.h>
@@ -25,7 +25,7 @@
 #endif
 
 #ifdef HAVE_X11
-# include "CarlaPluginUi_X11Icon.hpp"
+# include "CarlaPluginUI_X11Icon.hpp"
 
 // -----------------------------------------------------
 // X11

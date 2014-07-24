@@ -1673,6 +1673,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const uint, cons
 
 CARLA_BACKEND_END_NAMESPACE
 
+#include "CarlaPluginUI.cpp"
 #include "CarlaDssiUtils.cpp"
 #include "CarlaStateUtils.cpp"
 

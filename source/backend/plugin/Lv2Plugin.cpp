@@ -25,7 +25,7 @@
 #include "CarlaLv2Utils.hpp"
 
 #include "CarlaBase64Utils.hpp"
-#include "CarlaPluginUi.hpp"
+#include "CarlaPluginUI.hpp"
 #include "Lv2AtomRingBuffer.hpp"
 
 #include "../engine/CarlaEngineOsc.hpp"

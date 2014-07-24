@@ -12,7 +12,6 @@ OBJS = \
 	CarlaPlugin.cpp.o \
 	CarlaPluginInternal.cpp.o \
 	CarlaPluginThread.cpp.o \
-	CarlaPluginUi.cpp.o \
 	NativePlugin.cpp.o \
 	BridgePlugin.cpp.o \
 	LadspaPlugin.cpp.o \
@@ -57,9 +56,6 @@ CarlaPluginInternal.cpp.o: CarlaPluginInternal.cpp $(CARLA_PLUGIN_INTERNAL_CPP_D
 
 CarlaPluginThread.cpp.o: CarlaPluginThread.cpp $(CARLA_PLUGIN_THREAD_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-CarlaPluginUi.cpp.o: CarlaPluginUi.cpp $(CARLA_PLUGIN_UI_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(X11_FLAGS) -c -o $@
 
 NativePlugin.cpp.o: NativePlugin.cpp $(NATIVE_PLUGIN_CPP_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@

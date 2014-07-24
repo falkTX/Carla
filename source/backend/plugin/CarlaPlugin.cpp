@@ -20,7 +20,7 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
-#include "CarlaPluginUi.hpp"
+#include "CarlaPluginUI.hpp"
 
 #include <ctime>
 
