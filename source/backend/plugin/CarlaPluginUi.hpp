@@ -57,8 +57,9 @@ public:
 #endif
 
 protected:
+    bool fIsIdling;
     CloseCallback* fCallback;
-    CarlaPluginUi(CloseCallback* const cb) noexcept : fCallback(cb) {}
+    CarlaPluginUi(CloseCallback* const cb) noexcept : fIsIdling(false), fCallback(cb) {}
 };
 
 // -----------------------------------------------------

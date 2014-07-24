@@ -30,7 +30,16 @@
 // -----------------------------------------------------
 // X11
 
+typedef void (*EventProcPtr)(XEvent* ev);
+
 static const int X11Key_Escape = 9;
+static bool gErrorTriggered = false;
+
+static int temporaryErrorHandler(Display*, XErrorEvent*)
+{
+    gErrorTriggered = true;
+    return 0;
+}
 
 class X11PluginUi : public CarlaPluginUi
 {
@@ -39,7 +48,9 @@ public:
         : CarlaPluginUi(cb),
           fDisplay(nullptr),
           fWindow(0),
-          fIsVisible(false)
+          fIsVisible(false),
+          fFirstShow(true),
+          fEventProc(nullptr)
      {
         fDisplay = XOpenDisplay(nullptr);
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);
@@ -66,11 +77,11 @@ public:
         Atom wmDelete = XInternAtom(fDisplay, "WM_DELETE_WINDOW", True);
         XSetWMProtocols(fDisplay, fWindow, &wmDelete, 1);
 
-        pid_t pid = getpid();
-        Atom _nwp = XInternAtom(fDisplay, "_NET_WM_PID", False);
+        const pid_t pid = getpid();
+        const Atom _nwp = XInternAtom(fDisplay, "_NET_WM_PID", False);
         XChangeProperty(fDisplay, fWindow, _nwp, XA_CARDINAL, 32, PropModeReplace, (const uchar*)&pid, 1);
 
-        Atom _nwi = XInternAtom(fDisplay, "_NET_WM_ICON", False);
+        const Atom _nwi = XInternAtom(fDisplay, "_NET_WM_ICON", False);
         XChangeProperty(fDisplay, fWindow, _nwi, XA_CARDINAL, 32, PropModeReplace, (const uchar*)sCarlaX11Icon, sCarlaX11IconSize);
 
         if (parentId != 0)
@@ -105,7 +116,34 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
 
+        if (fFirstShow)
+        {
+            if (const Window childWindow = getChildWindow())
+            {
+                const Atom _xevp = XInternAtom(fDisplay, "_XEventProc", False);
+
+                gErrorTriggered = false;
+                const XErrorHandler oldErrorHandler(XSetErrorHandler(temporaryErrorHandler));
+
+                Atom actualType;
+                int actualFormat;
+                ulong nitems, bytesAfter;
+                uchar* data = nullptr;
+
+                XGetWindowProperty(fDisplay, childWindow, _xevp, 0, 1, False, AnyPropertyType, &actualType, &actualFormat, &nitems, &bytesAfter, &data);
+                XSetErrorHandler(oldErrorHandler);
+
+                if (nitems == 1 && ! gErrorTriggered)
+                {
+                    fEventProc = *reinterpret_cast<EventProcPtr*>(data);
+                    XMapRaised(fDisplay, childWindow);
+                }
+            }
+        }
+
         fIsVisible = true;
+        fFirstShow = false;
+
         XMapRaised(fDisplay, fWindow);
         XFlush(fDisplay);
     }
@@ -122,6 +160,11 @@ public:
 
     void idle() override
     {
+        // prevent recursion
+        if (fIsIdling) return;
+
+        fIsIdling = true;
+
         for (XEvent event; XPending(fDisplay) > 0;)
         {
             XNextEvent(fDisplay, &event);
@@ -157,7 +200,11 @@ public:
 
             if (type != nullptr)
                 XFree(type);
+            else if (fEventProc != nullptr)
+                fEventProc(&event);
         }
+
+        fIsIdling = false;
     }
 
     void focus() override
@@ -219,10 +266,33 @@ public:
         return fDisplay;
     }
 
+protected:
+    Window getChildWindow() const
+    {
+        CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(fWindow != 0, 0);
+
+        Window rootWindow, parentWindow, ret = 0;
+        Window* childWindows = nullptr;
+        uint numChildren = 0;
+
+        XQueryTree(fDisplay, fWindow, &rootWindow, &parentWindow, &childWindows, &numChildren);
+
+        if (numChildren > 0 && childWindows != nullptr)
+        {
+            ret = childWindows[0];
+            XFree(childWindows);
+        }
+
+        return ret;
+    }
+
 private:
     Display* fDisplay;
     Window   fWindow;
     bool     fIsVisible;
+    bool     fFirstShow;
+    EventProcPtr fEventProc;
 };
 #endif
 
@@ -258,10 +328,10 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
     const ScopedDisplay sd;
     CARLA_SAFE_ASSERT_RETURN(sd.display != nullptr, true);
 
-    Atom _ncl = XInternAtom(sd.display, "_NET_CLIENT_LIST" , False);
-    Atom _nwn = XInternAtom(sd.display, "_NET_WM_NAME", False);
-    Atom _nwp = XInternAtom(sd.display, "_NET_WM_PID", False);
-    Atom utf8 = XInternAtom(sd.display, "UTF8_STRING", True);
+    const Atom _ncl = XInternAtom(sd.display, "_NET_CLIENT_LIST" , False);
+    const Atom _nwn = XInternAtom(sd.display, "_NET_WM_NAME", False);
+    const Atom _nwp = XInternAtom(sd.display, "_NET_WM_PID", False);
+    const Atom utf8 = XInternAtom(sd.display, "UTF8_STRING", True);
 
     Atom actualType;
     int actualFormat;
@@ -360,13 +430,14 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
     if (lastGoodWindow == 0)
         return false;
 
-    Atom _nwt = XInternAtom(sd.display ,"_NET_WM_STATE", False);
-    Atom _nws[2];
-    _nws[0] = XInternAtom(sd.display, "_NET_WM_STATE_SKIP_TASKBAR", False);
-    _nws[1] = XInternAtom(sd.display, "_NET_WM_STATE_SKIP_PAGER", False);
+    const Atom _nwt    = XInternAtom(sd.display ,"_NET_WM_STATE", False);
+    const Atom _nws[2] = {
+        XInternAtom(sd.display, "_NET_WM_STATE_SKIP_TASKBAR", False),
+        XInternAtom(sd.display, "_NET_WM_STATE_SKIP_PAGER", False)
+    };
     XChangeProperty(sd.display, lastGoodWindow, _nwt, XA_ATOM, 32, PropModeAppend, (const uchar*)_nws, 2);
 
-    Atom _nwi = XInternAtom(sd.display, "_NET_WM_ICON", False);
+    const Atom _nwi = XInternAtom(sd.display, "_NET_WM_ICON", False);
     XChangeProperty(sd.display, lastGoodWindow, _nwi, XA_CARDINAL, 32, PropModeReplace, (const uchar*)sCarlaX11Icon, sCarlaX11IconSize);
 
     XSetTransientForHint(sd.display, lastGoodWindow, (Window)winId);

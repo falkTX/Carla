@@ -19,7 +19,7 @@
 #include "CarlaEngine.hpp"
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-# define USE_JUCE_FOR_VST 1
+# define USE_JUCE_FOR_VST
 #endif
 
 #ifndef USE_JUCE_FOR_VST
@@ -1785,7 +1785,7 @@ protected:
     {
 #ifdef DEBUG
         if (opcode != audioMasterGetTime)
-        carla_debug("VstPlugin::handleAudioMasterCallback(%02i:%s, %i, " P_INTPTR ", %p, %f)", opcode, vstEffectOpcode2str(opcode), index, value, ptr, opt);
+        carla_debug("VstPlugin::handleAudioMasterCallback(%02i:%s, %i, " P_INTPTR ", %p, %f)", opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
 #endif
 
         intptr_t ret = 0;
@@ -1793,8 +1793,7 @@ protected:
         switch (opcode)
         {
         case audioMasterAutomate: {
-            if (! pData->enabled)
-                break;
+            CARLA_SAFE_ASSERT_BREAK(pData->enabled);
 
             // plugins should never do this:
             CARLA_SAFE_ASSERT_INT(index >= 0 && index < static_cast<int32_t>(pData->param.count), index);
@@ -1835,8 +1834,8 @@ protected:
             break;
 
         case audioMasterIdle:
-            if (fUi.window != nullptr)
-                fUi.window->idle();
+            //pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+            //pData->engine->idle();
             break;
 
 #if ! VST_FORCE_DEPRECATED
@@ -2543,7 +2542,7 @@ CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newVST({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.uniqueId);
 
-#if USE_JUCE_FOR_VST
+#ifdef USE_JUCE_FOR_VST
     return newJuce(init, "VST");
 #else
     VstPlugin* const plugin(new VstPlugin(init.engine, init.id));

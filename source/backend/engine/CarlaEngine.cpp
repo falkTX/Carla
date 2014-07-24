@@ -447,7 +447,9 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     else
 #endif // ! BUILD_BRIDGE
     {
+#ifndef BUILD_BRIDGE
         bool use16Outs;
+#endif
         setLastError("Invalid or unsupported plugin type");
 
         switch (ptype)
@@ -1217,8 +1219,44 @@ void CarlaEngine::callback(const EngineCallbackOpcode action, const uint pluginI
     if (action == ENGINE_CALLBACK_IDLE)
         pData->isIdling = true;
 #ifdef BUILD_BRIDGE
-    else if (action == ENGINE_CALLBACK_UI_STATE_CHANGED && value1 != 1)
-        oscSend_bridge_configure("CarlaBridgeHideGUI", "");
+    else
+    {
+        switch (action)
+        {
+        case ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
+            CARLA_SAFE_ASSERT_BREAK(value1 >= 0);
+            oscSend_bridge_parameter_value(static_cast<uint>(value1), value3);
+            break;
+        case ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
+            CARLA_SAFE_ASSERT_BREAK(value1 >= 0);
+            oscSend_bridge_default_value(static_cast<uint>(value1), value3);
+            break;
+        case ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
+            CARLA_SAFE_ASSERT_BREAK(value1 >= 0);
+            CARLA_SAFE_ASSERT_BREAK(value2 >= -1 && value2 <= 0x5F);
+            oscSend_bridge_parameter_midi_cc(static_cast<uint>(value1), static_cast<int16_t>(value2));
+            break;
+        case ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
+            CARLA_SAFE_ASSERT_BREAK(value1 >= 0);
+            CARLA_SAFE_ASSERT_BREAK(value2 >= 0 && value2 < MAX_MIDI_CHANNELS);
+            oscSend_bridge_parameter_midi_channel(static_cast<uint>(value1), static_cast<uint8_t>(value2));
+            break;
+        case ENGINE_CALLBACK_PROGRAM_CHANGED:
+            CARLA_SAFE_ASSERT_BREAK(value1 >= -1);
+            oscSend_bridge_current_program(value1);
+            break;
+        case ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
+            CARLA_SAFE_ASSERT_BREAK(value1 >= -1);
+            oscSend_bridge_current_midi_program(value1);
+            break;
+        case ENGINE_CALLBACK_UI_STATE_CHANGED:
+            if (value1 != 1)
+                oscSend_bridge_configure("CarlaBridgeHideGUI", "");
+            break;
+        default:
+            break;
+        }
+    }
 #endif
 
     if (pData->callback != nullptr)
