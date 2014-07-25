@@ -15,13 +15,11 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaBridgeClient.hpp"
-
 #include "CarlaEngine.hpp"
 #include "CarlaHost.h"
 
 #include "CarlaBackendUtils.hpp"
-#include "CarlaBridgeUtils.hpp"
+#include "CarlaOscUtils.hpp"
 #include "CarlaMIDI.h"
 
 #ifdef CARLA_OS_UNIX
@@ -102,15 +100,11 @@ static void initSignalHandler()
 
 // -------------------------------------------------------------------------
 
-static CarlaBridge::CarlaBridgeClient* gBridgeClient = nullptr;
 static CarlaString gProjectFilename;
 
 static void gIdle()
 {
     carla_engine_idle();
-
-    if (gBridgeClient != nullptr)
-        gBridgeClient->oscIdle();
 
     if (gSaveNow)
     {
@@ -172,19 +166,15 @@ static JUCEApplicationBase* juce_CreateApplication() { return new CarlaJuceApp()
 
 // -------------------------------------------------------------------------
 
-CARLA_BRIDGE_START_NAMESPACE
-
-// -------------------------------------------------------------------------
-
-class CarlaPluginClient : public CarlaBridgeClient
+class CarlaBridgePlugin
 {
 public:
-    CarlaPluginClient(const bool useBridge, const char* const clientName, const char* const audioBaseName, const char* const controlBaseName, const char* const timeBaseName)
-        : CarlaBridgeClient(nullptr),
-          fEngine(nullptr)
+    CarlaBridgePlugin(const bool useBridge, const char* const clientName, const char* const audioBaseName, const char* const controlBaseName, const char* const timeBaseName)
+        : fEngine(nullptr),
+          fOscServerThread(nullptr)
     {
         CARLA_ASSERT(clientName != nullptr && clientName[0] != '\0');
-        carla_debug("CarlaPluginClient::CarlaPluginClient(%s, \"%s\", %s, %s, %s)", bool2str(useBridge), clientName, audioBaseName, controlBaseName, timeBaseName);
+        carla_debug("CarlaBridgePlugin::CarlaBridgePlugin(%s, \"%s\", %s, %s, %s)", bool2str(useBridge), clientName, audioBaseName, controlBaseName, timeBaseName);
 
         carla_set_engine_callback(callback, this);
 
@@ -196,9 +186,9 @@ public:
         fEngine = carla_get_engine();
     }
 
-    ~CarlaPluginClient() override
+    ~CarlaBridgePlugin()
     {
-        carla_debug("CarlaPluginClient::~CarlaPluginClient()");
+        carla_debug("CarlaBridgePlugin::~CarlaBridgePlugin()");
 
         carla_engine_close();
     }
@@ -208,11 +198,74 @@ public:
         return (fEngine != nullptr);
     }
 
+    // ---------------------------------------------------------------------
+
     void oscInit(const char* const url)
     {
-        CarlaBridgeClient::oscInit(url);
-        fEngine->setOscBridgeData(&fOscData);
+        fOscServerThread = lo_server_thread_new_with_proto(nullptr, LO_UDP, osc_error_handler);
+
+        CARLA_SAFE_ASSERT_RETURN(fOscServerThread != nullptr,)
+
+        {
+            char* const host = lo_url_get_hostname(url);
+            char* const port = lo_url_get_port(url);
+            fOscControlData.path   = carla_strdup_free(lo_url_get_path(url));
+            fOscControlData.target = lo_address_new_with_proto(LO_UDP, host, port);
+
+            std::free(host);
+            std::free(port);
+        }
+
+        if (char* const tmpServerPath = lo_server_thread_get_url(fOscServerThread))
+        {
+            std::srand((uint)(uintptr_t)this);
+            std::srand((uint)(uintptr_t)&url);
+
+            CarlaString oscName("plug-" + CarlaString(std::rand() % 99999));
+
+            fOscServerPath  = tmpServerPath;
+            fOscServerPath += oscName;
+            std::free(tmpServerPath);
+        }
+
+        fEngine->setOscBridgeData(&fOscControlData);
     }
+
+    void oscClose()
+    {
+        fEngine->setOscBridgeData(nullptr);
+
+        if (fOscServerThread != nullptr)
+        {
+            lo_server_thread_free(fOscServerThread);
+            fOscServerThread = nullptr;
+        }
+
+        fOscControlData.clear();
+        fOscServerPath.clear();
+    }
+
+    // ---------------------------------------------------------------------
+
+    void sendOscUpdate() const noexcept
+    {
+        if (fOscControlData.target != nullptr)
+            osc_send_update(fOscControlData, fOscServerPath);
+    }
+
+    void sendOscBridgeUpdate() const noexcept
+    {
+        if (fOscControlData.target != nullptr)
+            osc_send_bridge_update(fOscControlData, fOscControlData.path);
+    }
+
+    void sendOscBridgeError(const char* const error) const noexcept
+    {
+        if (fOscControlData.target != nullptr)
+            osc_send_bridge_error(fOscControlData, error);
+    }
+
+    // ---------------------------------------------------------------------
 
     void exec(const bool useOsc, int argc, char* argv[])
     {
@@ -231,7 +284,6 @@ public:
                 carla_stderr("Plugin preset load failed, error was:\n%s", carla_get_last_error());
         }
 
-        gBridgeClient = this;
         gIsInitiated  = true;
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
@@ -244,7 +296,6 @@ public:
             carla_msleep(25);
         }
 #endif
-        gBridgeClient = nullptr;
 
         carla_set_engine_about_to_close();
         carla_remove_plugin(0);
@@ -270,7 +321,7 @@ protected:
             break;
 
         case ENGINE_CALLBACK_UI_STATE_CHANGED:
-            if (gIsInitiated && value1 != 1 && ! isOscControlRegistered())
+            if (gIsInitiated && value1 != 1 && fOscControlData.target == nullptr)
                 gCloseNow = true;
             break;
 
@@ -288,65 +339,26 @@ private:
     const CarlaEngine* fEngine;
     String             fProjFilename;
 
+    CarlaOscData     fOscControlData;
+    CarlaString      fOscServerPath;
+    lo_server_thread fOscServerThread;
+
     static void callback(void* ptr, EngineCallbackOpcode action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr)
     {
-        carla_debug("CarlaPluginClient::callback(%p, %i:%s, %i, %i, %i, %f, \"%s\")", ptr, action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
+        carla_debug("CarlaBridgePlugin::callback(%p, %i:%s, %i, %i, %i, %f, \"%s\")", ptr, action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
         CARLA_SAFE_ASSERT_RETURN(ptr != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(pluginId == 0,);
 
-        return ((CarlaPluginClient*)ptr)->handleCallback(action, value1, value2, value3, valueStr);
+        return ((CarlaBridgePlugin*)ptr)->handleCallback(action, value1, value2, value3, valueStr);
+    }
+
+    static void osc_error_handler(int num, const char* msg, const char* path)
+    {
+        carla_stderr("CarlaBridgePlugin::osc_error_handler(%i, \"%s\", \"%s\")", num, msg, path);
     }
 };
 
 #if 0
-// -------------------------------------------------------------------------
-
-int CarlaBridgeOsc::handleMsgPluginSetParameterMidiChannel(CARLA_BRIDGE_OSC_HANDLE_ARGS)
-{
-    CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "ii");
-    CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
-    carla_debug("CarlaBridgeOsc::handleMsgPluginSetParameterMidiChannel()");
-
-    const int32_t index   = argv[0]->i;
-    const int32_t channel = argv[1]->i;
-
-    CARLA_SAFE_ASSERT_RETURN(index >= 0, 0);
-    CARLA_SAFE_ASSERT_RETURN(channel >= 0 && channel < MAX_MIDI_CHANNELS, 0);
-
-    carla_set_parameter_midi_channel(0, static_cast<uint32_t>(index), static_cast<uint8_t>(channel));
-    return 0;
-}
-
-int CarlaBridgeOsc::handleMsgPluginSetParameterMidiCC(CARLA_BRIDGE_OSC_HANDLE_ARGS)
-{
-    CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "ii");
-    CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
-    carla_debug("CarlaBridgeOsc::handleMsgPluginSetParameterMidiCC()");
-
-    const int32_t index  = argv[0]->i;
-    const int32_t cc     = argv[1]->i;
-
-    CARLA_SAFE_ASSERT_RETURN(index >= 0, 0);
-    CARLA_SAFE_ASSERT_RETURN(cc >= 1 && cc < 0x5F, 0);
-
-    carla_set_parameter_midi_cc(0, static_cast<uint32_t>(index), static_cast<int16_t>(cc));
-    return 0;
-}
-
-int CarlaBridgeOsc::handleMsgPluginSetCustomData(CARLA_BRIDGE_OSC_HANDLE_ARGS)
-{
-    CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(3, "sss");
-    CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
-    carla_debug("CarlaBridgeOsc::handleMsgPluginSetCustomData()");
-
-    const char* const type  = (const char*)&argv[0]->s;
-    const char* const key   = (const char*)&argv[1]->s;
-    const char* const value = (const char*)&argv[2]->s;
-
-    carla_set_custom_data(0, type, key, value);
-    return 0;
-}
-
 int CarlaBridgeOsc::handleMsgPluginSetChunk(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(1, "s");
@@ -380,14 +392,10 @@ int CarlaBridgeOsc::handleMsgPluginSetChunk(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 }
 #endif
 
-CARLA_BRIDGE_END_NAMESPACE
-
 // -------------------------------------------------------------------------
 
 int main(int argc, char* argv[])
 {
-    CARLA_BRIDGE_USE_NAMESPACE;
-
     // ---------------------------------------------------------------------
     // Check argument count
 
@@ -479,11 +487,11 @@ int main(int argc, char* argv[])
     }
 
     // ---------------------------------------------------------------------
-    // Init plugin client
+    // Init plugin bridge
 
-    CarlaPluginClient client(useBridge, clientName, bridgeBaseAudioName, bridgeBaseControlName, bridgeBaseTimeName);
+    CarlaBridgePlugin bridge(useBridge, clientName, bridgeBaseAudioName, bridgeBaseControlName, bridgeBaseTimeName);
 
-    if (! client.isOk())
+    if (! bridge.isOk())
     {
         carla_stderr("Failed to init engine, error was:\n%s", carla_get_last_error());
         return 1;
@@ -493,7 +501,7 @@ int main(int argc, char* argv[])
     // Init OSC
 
     if (useOsc)
-        client.oscInit(oscUrl);
+        bridge.oscInit(oscUrl);
 
     // ---------------------------------------------------------------------
     // Listen for ctrl+c or sigint/sigterm events
@@ -511,8 +519,8 @@ int main(int argc, char* argv[])
 
         if (useOsc)
         {
-            client.sendOscUpdate();
-            client.sendOscBridgeUpdate();
+            bridge.sendOscUpdate();
+            bridge.sendOscBridgeUpdate();
         }
         else
         {
@@ -525,7 +533,7 @@ int main(int argc, char* argv[])
             }
         }
 
-        client.exec(useOsc, argc, argv);
+        bridge.exec(useOsc, argc, argv);
     }
     else
     {
@@ -535,14 +543,14 @@ int main(int argc, char* argv[])
         carla_stderr("Plugin failed to load, error was:\n%s", lastError);
 
         if (useOsc)
-            client.sendOscBridgeError(lastError);
+            bridge.sendOscBridgeError(lastError);
     }
 
     // ---------------------------------------------------------------------
     // Close OSC
 
     if (useOsc)
-        client.oscClose();
+        bridge.oscClose();
 
     return ret;
 }

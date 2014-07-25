@@ -7,9 +7,8 @@
 include ../Makefile.mk
 
 # --------------------------------------------------------------
-# Common
 
-BUILD_CXX_FLAGS += -DBUILD_BRIDGE
+BUILD_CXX_FLAGS += -DBUILD_BRIDGE -DBUILD_BRIDGE_PLUGIN
 BUILD_CXX_FLAGS += -I. -I../backend -I../includes -I../utils -isystem ../modules
 BUILD_CXX_FLAGS += $(LIBLO_FLAGS)
 LINK_FLAGS      += $(LIBLO_LIBS)
@@ -17,7 +16,7 @@ LINK_FLAGS      += $(LIBLO_LIBS)
 # --------------------------------------------------------------
 # Plugin bridges
 
-BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS) -DBUILD_BRIDGE_PLUGIN
+BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS)
 BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin
 
 LINK_PLUGIN_FLAGS   = $(LINK_FLAGS)
@@ -106,10 +105,7 @@ win64:   ../../bin/carla-bridge-win64.exe
 # --------------------------------------------------------------
 # native
 
-OBJS_NATIVE  = \
-	CarlaBridgePlugin__native.o \
-	CarlaBridgeClient__native.o \
-	CarlaBridgeOsc__native.o
+OBJS_NATIVE  = CarlaBridgePlugin__native.o
 
 # carla-engine
 OBJS_NATIVE += \
@@ -173,8 +169,7 @@ endif
 # --------------------------------------------------------------
 # posix32
 
-OBJS_POSIX32  = CarlaBridgePlugin__posix32.o \
-	CarlaBridgeClient__posix32.o CarlaBridgeOsc__posix32.o
+OBJS_POSIX32  = CarlaBridgePlugin__posix32.o
 
 # carla-engine
 OBJS_POSIX32 += \
@@ -232,8 +227,7 @@ endif
 # --------------------------------------------------------------
 # posix64
 
-OBJS_POSIX64  = CarlaBridgePlugin__posix64.o \
-	CarlaBridgeClient__posix64.o CarlaBridgeOsc__posix64.o
+OBJS_POSIX64  = CarlaBridgePlugin__posix64.o
 
 # carla-engine
 OBJS_POSIX64 += \
@@ -291,8 +285,7 @@ endif
 # --------------------------------------------------------------
 # win32
 
-OBJS_WIN32  = CarlaBridgePlugin__win32.o \
-	CarlaBridgeClient__win32.o CarlaBridgeOsc__win32.o
+OBJS_WIN32  = CarlaBridgePlugin__win32.o
 
 # carla-engine
 OBJS_WIN32 += \
@@ -347,8 +340,7 @@ LIBS_WIN32 += \
 # --------------------------------------------------------------
 # win64
 
-OBJS_WIN64  = CarlaBridgePlugin__win64.o \
-	CarlaBridgeClient__win64.o CarlaBridgeOsc__win64.o
+OBJS_WIN64  = CarlaBridgePlugin__win64.o
 
 # carla-engine
 OBJS_WIN64 += \
