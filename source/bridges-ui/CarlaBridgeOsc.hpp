@@ -1,6 +1,6 @@
 /*
  * Carla Bridge OSC
- * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -81,32 +81,31 @@ public:
     // -------------------------------------------------------------------
 
 private:
-    CarlaBridgeClient* const fClient;
+    CarlaBridgeClient* const kClient;
 
     CarlaOscData fControlData;
     CarlaString  fName;
     CarlaString  fServerPath;
     lo_server    fServer;
 
-#ifdef BUILD_BRIDGE_UI
     // -------------------------------------------------------------------
 
     int handleMessage(const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg);
+
+    int handleMsgConfigure(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+    int handleMsgControl(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+    int handleMsgProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+    int handleMsgMidiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+    int handleMsgMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS);
 
     int handleMsgShow();
     int handleMsgHide();
     int handleMsgQuit();
 
-    int handleMsgUiConfigure(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-    int handleMsgUiControl(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-    int handleMsgUiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-    int handleMsgUiMidiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-    int handleMsgUiMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-
-# ifdef BRIDGE_LV2
-    int handleMsgLv2UiAtomTransfer(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-    int handleMsgLv2UiUridMap(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-# endif
+#ifdef BRIDGE_LV2
+    int handleMsgLv2AtomTransfer(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+    int handleMsgLv2UridMap(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+#endif
 
     // -------------------------------------------------------------------
 
@@ -114,7 +113,6 @@ private:
     {
         return ((CarlaBridgeOsc*)userData)->handleMessage(path, argc, argv, types, msg);
     }
-#endif
 
     static void osc_error_handler(int num, const char* msg, const char* path)
     {

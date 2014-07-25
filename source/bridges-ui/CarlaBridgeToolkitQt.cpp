@@ -26,29 +26,9 @@
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 # include <QtWidgets/QApplication>
 # include <QtWidgets/QMainWindow>
-# ifdef Q_WS_X11
-#  undef Q_WS_X11
-# endif
 #else
 # include <QtGui/QApplication>
 # include <QtGui/QMainWindow>
-# ifdef Q_WS_X11
-#  include <QtGui/QX11EmbedContainer>
-# endif
-#endif
-
-#if defined(BRIDGE_COCOA) || defined(BRIDGE_HWND) || defined(BRIDGE_X11)
-# define BRIDGE_CONTAINER
-# ifndef BRIDGE_X11
-typedef QWidget QEmbedContainer;
-# else
-#  ifdef Q_WS_X11
-typedef QX11EmbedContainer QEmbedContainer;
-#  else
-#   warning Using X11 UI bridge without QX11EmbedContainer
-typedef QWidget QEmbedContainer;
-#  endif
-# endif
 #endif
 
 CARLA_BRIDGE_START_NAMESPACE
@@ -59,12 +39,6 @@ CARLA_BRIDGE_START_NAMESPACE
 static const char* const appName = "Carla-Qt4UIs";
 #elif defined(BRIDGE_QT5)
 static const char* const appName = "Carla-Qt5UIs";
-#elif defined(BRIDGE_COCOA)
-static const char* const appName = "Carla-CocoaUIs";
-#elif defined(BRIDGE_HWND)
-static const char* const appName = "Carla-HWNDUIs";
-#elif defined(BRIDGE_X11)
-static const char* const appName = "Carla-X11UIs";
 #else
 static const char* const appName = "Carla-UIs";
 #endif
@@ -85,9 +59,6 @@ public:
           CarlaBridgeToolkit(client, uiTitle),
           fApp(nullptr),
           fWindow(nullptr),
-#ifdef BRIDGE_CONTAINER
-          fEmbedContainer(nullptr),
-#endif
           fMsgTimer(0),
           fNeedsShow(false)
     {
@@ -162,16 +133,16 @@ public:
         }
 
         fWindow->setWindowIcon(QIcon::fromTheme("carla", QIcon(":/scalable/carla.svg")));
-        fWindow->setWindowTitle(kUiTitle);
+        fWindow->setWindowTitle(kWindowTitle);
 
         {
             QSettings settings("falkTX", appName);
 
-            if (settings.contains(QString("%1/pos_x").arg(kUiTitle)))
+            if (settings.contains(QString("%1/pos_x").arg(kWindowTitle)))
             {
                 bool hasX, hasY;
-                const int posX(settings.value(QString("%1/pos_x").arg(kUiTitle), fWindow->x()).toInt(&hasX));
-                const int posY(settings.value(QString("%1/pos_y").arg(kUiTitle), fWindow->y()).toInt(&hasY));
+                const int posX(settings.value(QString("%1/pos_x").arg(kWindowTitle), fWindow->x()).toInt(&hasX));
+                const int posY(settings.value(QString("%1/pos_y").arg(kWindowTitle), fWindow->y()).toInt(&hasY));
 
                 if (hasX && hasY)
                     fWindow->move(posX, posY);
@@ -179,8 +150,8 @@ public:
                 if (kClient->isResizable())
                 {
                     bool hasWidth, hasHeight;
-                    const int width(settings.value(QString("%1/width").arg(kUiTitle), fWindow->width()).toInt(&hasWidth));
-                    const int height(settings.value(QString("%1/height").arg(kUiTitle), fWindow->height()).toInt(&hasHeight));
+                    const int width(settings.value(QString("%1/width").arg(kWindowTitle), fWindow->width()).toInt(&hasWidth));
+                    const int height(settings.value(QString("%1/height").arg(kWindowTitle), fWindow->height()).toInt(&hasHeight));
 
                     if (hasWidth && hasHeight)
                         fWindow->resize(width, height);
@@ -222,23 +193,13 @@ public:
         if (fWindow != nullptr)
         {
             QSettings settings("falkTX", appName);
-            settings.setValue(QString("%1/pos_x").arg(kUiTitle), fWindow->x());
-            settings.setValue(QString("%1/pos_y").arg(kUiTitle), fWindow->y());
-            settings.setValue(QString("%1/width").arg(kUiTitle), fWindow->width());
-            settings.setValue(QString("%1/height").arg(kUiTitle), fWindow->height());
+            settings.setValue(QString("%1/pos_x").arg(kWindowTitle), fWindow->x());
+            settings.setValue(QString("%1/pos_y").arg(kWindowTitle), fWindow->y());
+            settings.setValue(QString("%1/width").arg(kWindowTitle), fWindow->width());
+            settings.setValue(QString("%1/height").arg(kWindowTitle), fWindow->height());
             settings.sync();
 
             fWindow->close();
-
-#ifdef BRIDGE_CONTAINER
-            if (fEmbedContainer != nullptr)
-            {
-                fEmbedContainer->close();
-
-                delete fEmbedContainer;
-                fEmbedContainer = nullptr;
-            }
-#endif
 
             delete fWindow;
             fWindow = nullptr;
@@ -288,34 +249,9 @@ public:
         emit setSizeSafeSignal(width, height);
     }
 
-#ifdef BRIDGE_CONTAINER
-    void* getContainerId()
-    {
-        CARLA_ASSERT(fWindow != nullptr);
-        carla_debug("CarlaBridgeToolkitQt::getContainerId()");
-
-        if (fEmbedContainer == nullptr)
-        {
-            fEmbedContainer = new QEmbedContainer(fWindow);
-
-            fWindow->setCentralWidget(fEmbedContainer);
-            fWindow->adjustSize();
-
-            fEmbedContainer->setParent(fWindow);
-            fEmbedContainer->show();
-        }
-
-        return (void*)fEmbedContainer->winId();
-    }
-#endif
-
 protected:
     QApplication* fApp;
     QMainWindow* fWindow;
-
-#ifdef BRIDGE_CONTAINER
-    QEmbedContainer* fEmbedContainer;
-#endif
 
     int  fMsgTimer;
     bool fNeedsShow;
@@ -359,11 +295,6 @@ private slots:
             fWindow->resize(width, height);
         else
             fWindow->setFixedSize(width, height);
-
-#ifdef BRIDGE_CONTAINER
-        if (fEmbedContainer != nullptr)
-            fEmbedContainer->setFixedSize(width, height);
-#endif
     }
 };
 
@@ -383,6 +314,8 @@ CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeClient* const clien
 // -------------------------------------------------------------------------
 
 CARLA_BRIDGE_END_NAMESPACE
+
+// -------------------------------------------------------------------------
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 # include "resources.qt5.cpp"

@@ -18,12 +18,7 @@
 #include "CarlaBridgeClient.hpp"
 #include "CarlaBridgeToolkit.hpp"
 
-#if defined(BRIDGE_COCOA) || defined(BRIDGE_HWND) || defined(BRIDGE_X11)
-# error Embed UI uses Qt
-#endif
-
 #include <gtk/gtk.h>
-//#include <QtCore/QSettings> // FIXME
 
 CARLA_BRIDGE_START_NAMESPACE
 
@@ -42,10 +37,10 @@ static char** gargv = nullptr;
 
 // -------------------------------------------------------------------------
 
-class CarlaToolkitGtk : public CarlaBridgeToolkit
+class CarlaBridgeToolkitGtk : public CarlaBridgeToolkit
 {
 public:
-    CarlaToolkitGtk(CarlaBridgeClient* const client, const char* const uiTitle)
+    CarlaBridgeToolkitGtk(CarlaBridgeClient* const client, const char* const uiTitle)
         : CarlaBridgeToolkit(client, uiTitle),
           fNeedsShow(false),
           fWindow(nullptr),
@@ -54,19 +49,19 @@ public:
           fLastWidth(0),
           fLastHeight(0)
     {
-        carla_debug("CarlaToolkitGtk::CarlaToolkitGtk(%p, \"%s\")", client, uiTitle);
+        carla_debug("CarlaBridgeToolkitGtk::CarlaBridgeToolkitGtk(%p, \"%s\")", client, uiTitle);
     }
 
-    ~CarlaToolkitGtk() override
+    ~CarlaBridgeToolkitGtk() override
     {
         CARLA_ASSERT(fWindow == nullptr);
-        carla_debug("CarlaToolkitGtk::~CarlaToolkitGtk()");
+        carla_debug("CarlaBridgeToolkitGtk::~CarlaBridgeToolkitGtk()");
     }
 
     void init() override
     {
         CARLA_ASSERT(fWindow == nullptr);
-        carla_debug("CarlaToolkitGtk::init()");
+        carla_debug("CarlaBridgeToolkitGtk::init()");
 
         gtk_init(&gargc, &gargv);
 
@@ -79,7 +74,7 @@ public:
     {
         CARLA_ASSERT(kClient != nullptr);
         CARLA_ASSERT(fWindow != nullptr);
-        carla_debug("CarlaToolkitGtk::exec(%s)", bool2str(showGui));
+        carla_debug("CarlaBridgeToolkitGtk::exec(%s)", bool2str(showGui));
 
         GtkWidget* const widget((GtkWidget*)kClient->getWidget());
 
@@ -139,7 +134,7 @@ public:
 
     void quit() override
     {
-        carla_debug("CarlaToolkitGtk::quit()");
+        carla_debug("CarlaBridgeToolkitGtk::quit()");
 
         if (fWindow != nullptr)
         {
@@ -153,7 +148,7 @@ public:
 
     void show() override
     {
-        carla_debug("CarlaToolkitGtk::show()");
+        carla_debug("CarlaBridgeToolkitGtk::show()");
 
         fNeedsShow = true;
 
@@ -163,7 +158,7 @@ public:
 
     void hide() override
     {
-        carla_debug("CarlaToolkitGtk::hide()");
+        carla_debug("CarlaBridgeToolkitGtk::hide()");
 
         fNeedsShow = false;
 
@@ -174,7 +169,7 @@ public:
     void resize(int width, int height) override
     {
         CARLA_ASSERT(fWindow != nullptr);
-        carla_debug("CarlaToolkitGtk::resize(%i, %i)", width, height);
+        carla_debug("CarlaBridgeToolkitGtk::resize(%i, %i)", width, height);
 
         if (fWindow != nullptr)
             gtk_window_resize(GTK_WINDOW(fWindow), width, height);
@@ -193,7 +188,7 @@ protected:
 
     void handleDestroy()
     {
-        carla_debug("CarlaToolkitGtk::handleDestroy()");
+        carla_debug("CarlaBridgeToolkitGtk::handleDestroy()");
 
         fWindow = nullptr;
 
@@ -225,7 +220,7 @@ private:
     {
         CARLA_ASSERT(data != nullptr);
 
-        if (CarlaToolkitGtk* const _this_ = (CarlaToolkitGtk*)data)
+        if (CarlaBridgeToolkitGtk* const _this_ = (CarlaBridgeToolkitGtk*)data)
             _this_->handleDestroy();
 
         gtk_main_quit();
@@ -235,7 +230,7 @@ private:
     {
         CARLA_ASSERT(data != nullptr);
 
-        if (CarlaToolkitGtk* const _this_ = (CarlaToolkitGtk*)data)
+        if (CarlaBridgeToolkitGtk* const _this_ = (CarlaBridgeToolkitGtk*)data)
             return _this_->handleTimeout();
 
         return false;
@@ -246,7 +241,9 @@ private:
 
 CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeClient* const client, const char* const uiTitle)
 {
-    return new CarlaToolkitGtk(client, uiTitle);
+    return new CarlaBridgeToolkitGtk(client, uiTitle);
 }
+
+// -------------------------------------------------------------------------
 
 CARLA_BRIDGE_END_NAMESPACE

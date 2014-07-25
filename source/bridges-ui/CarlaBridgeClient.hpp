@@ -19,10 +19,7 @@
 #define CARLA_BRIDGE_CLIENT_HPP_INCLUDED
 
 #include "CarlaBridgeOsc.hpp"
-
-#ifdef BUILD_BRIDGE_UI
-# include "CarlaBridgeToolkit.hpp"
-#endif
+#include "CarlaBridgeToolkit.hpp"
 
 CARLA_BRIDGE_START_NAMESPACE
 
@@ -34,7 +31,6 @@ public:
     CarlaBridgeClient(const char* const uiTitle);
     virtual ~CarlaBridgeClient();
 
-#ifdef BUILD_BRIDGE_UI
     // ---------------------------------------------------------------------
     // ui initialization
 
@@ -66,7 +62,6 @@ public:
     void toolkitResize(const int width, const int height);
     void toolkitExec(const bool showGui);
     void toolkitQuit();
-#endif
 
     // ---------------------------------------------------------------------
     // osc stuff
@@ -78,15 +73,9 @@ public:
     bool isOscControlRegistered() const noexcept;
     void sendOscUpdate() const;
 
-#ifdef BUILD_BRIDGE_PLUGIN
-    void sendOscBridgeUpdate() const;
-    void sendOscBridgeError(const char* const error) const;
-#endif
-
     // ---------------------------------------------------------------------
 
 protected:
-#ifdef BUILD_BRIDGE_UI
     void sendOscConfigure(const char* const key, const char* const value) const;
     void sendOscControl(const int32_t index, const float value) const;
     void sendOscProgram(const uint32_t index) const;
@@ -94,10 +83,10 @@ protected:
     void sendOscMidi(const uint8_t midiBuf[4]) const;
     void sendOscExiting() const;
 
-# ifdef BRIDGE_LV2
+#ifdef BRIDGE_LV2
     void sendOscLv2AtomTransfer(const int32_t portIndex, const char* const atomBuf) const;
     void sendOscLv2UridMap(const uint32_t urid, const char* const uri) const;
-# endif
+#endif
 
     // ---------------------------------------------------------------------
 
@@ -106,7 +95,6 @@ protected:
     bool  uiLibClose();
     void* uiLibSymbol(const char* const symbol);
     const char* uiLibError();
-#endif
 
     // ---------------------------------------------------------------------
 
@@ -114,7 +102,6 @@ private:
     CarlaBridgeOsc fOsc;
     const CarlaOscData& fOscData;
 
-#ifdef BUILD_BRIDGE_UI
     struct UI {
         CarlaBridgeToolkit* const toolkit;
         CarlaString filename;
@@ -146,16 +133,12 @@ private:
             toolkit->quit();
         }
 
-# ifdef CARLA_PROPER_CPP11_SUPPORT
+#ifdef CARLA_PROPER_CPP11_SUPPORT
         UI() = delete;
         UI(UI&) = delete;
         UI(const UI&) = delete;
-# endif
-
-    } fUI;
-#else
-    friend class CarlaPluginClient;
 #endif
+    } fUI;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeClient)
 };

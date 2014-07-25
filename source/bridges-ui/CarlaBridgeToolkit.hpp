@@ -1,6 +1,6 @@
 /*
  * Carla Bridge Toolkit
- * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,19 +19,16 @@
 #define CARLA_BRIDGE_TOOLKIT_HPP_INCLUDED
 
 #include "CarlaBridge.hpp"
-#include "CarlaJuceUtils.hpp"
+#include "CarlaString.hpp"
 
 CARLA_BRIDGE_START_NAMESPACE
 
-#if 0
-} // Fix editor indentation
-#endif
+// -----------------------------------------------------------------------
 
 class CarlaBridgeToolkit
 {
 public:
-    CarlaBridgeToolkit(CarlaBridgeClient* const client, const char* const uiTitle);
-    virtual ~CarlaBridgeToolkit();
+    virtual ~CarlaBridgeToolkit() {}
 
     virtual void init() = 0;
     virtual void exec(const bool showGui) = 0;
@@ -41,16 +38,22 @@ public:
     virtual void hide() = 0;
     virtual void resize(const int width, const int height) = 0;
 
-    virtual void* getContainerId();
+    virtual void* getContainerId() const { return nullptr; }
 
     static CarlaBridgeToolkit* createNew(CarlaBridgeClient* const client, const char* const uiTitle);
 
 protected:
     CarlaBridgeClient* const kClient;
-    const char* const kUiTitle;
+    const CarlaString        kWindowTitle;
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeToolkit)
+    CarlaBridgeToolkit(CarlaBridgeClient* const client, const char* const title)
+        : kClient(client),
+          kWindowTitle(title) {}
+
+    CARLA_LEAK_DETECTOR(CarlaBridgeToolkit)
 };
+
+// -----------------------------------------------------------------------
 
 CARLA_BRIDGE_END_NAMESPACE
 
