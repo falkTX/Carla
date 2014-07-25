@@ -19,8 +19,8 @@ ifeq ($(CARLA_VESTIGE_HEADER),true)
 BUILD_VST_FLAGS += -DVESTIGE_HEADER
 endif
 
-LINK_FLAGS += $(LIBLO_LIBS)
 LINK_FLAGS += $(JUCE_CORE_LIBS)
+LINK_FLAGS += $(LIBLO_LIBS)
 
 # --------------------------------------------------------------
 
@@ -36,8 +36,8 @@ LINK_LV2_QT4_FLAGS      = $(LINK_FLAGS) $(shell pkg-config --libs QtCore QtGui) 
 BUILD_LV2_QT5_FLAGS     = $(BUILD_LV2_FLAGS) -DBRIDGE_QT5 -DBRIDGE_LV2_QT5 $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
 LINK_LV2_QT5_FLAGS      = $(LINK_FLAGS) $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets) -ldl
 
-BUILD_LV2_X11_FLAGS     = $(BUILD_LV2_FLAGS) -DBRIDGE_X11 -DBRIDGE_LV2_X11
-LINK_LV2_X11_FLAGS      = $(LINK_FLAGS) -ldl
+BUILD_LV2_X11_FLAGS     = $(BUILD_LV2_FLAGS) -DBRIDGE_X11 -DBRIDGE_LV2_X11 $(X11_FLAGS)
+LINK_LV2_X11_FLAGS      = $(LINK_FLAGS) $(X11_LIBS) -ldl
 
 BUILD_LV2_COCOA_FLAGS   = $(BUILD_LV2_FLAGS) -DBRIDGE_COCOA -DBRIDGE_LV2_COCOA
 LINK_LV2_COCOA_FLAGS    = $(LINK_FLAGS) -ldl
@@ -45,25 +45,25 @@ LINK_LV2_COCOA_FLAGS    = $(LINK_FLAGS) -ldl
 BUILD_LV2_WINDOWS_FLAGS = $(BUILD_LV2_FLAGS) -DBRIDGE_HWND -DBRIDGE_LV2_HWND
 LINK_LV2_WINDOWS_FLAGS  = $(LINK_FLAGS) -static -mwindows
 
-BUILD_VST_X11_FLAGS     = $(BUILD_VST_FLAGS) -DBRIDGE_X11 -DBRIDGE_VST_X11
-LINK_VST_X11_FLAGS      = $(LINK_FLAGS) -ldl
+BUILD_VST_X11_FLAGS     = $(BUILD_VST_FLAGS) -DBRIDGE_X11 -DBRIDGE_VST_X11 $(X11_FLAGS)
+LINK_VST_X11_FLAGS      = $(LINK_FLAGS) $(X11_LIBS) -ldl
 
 # --------------------------------------------------------------
 
 ifeq ($(HAVE_GTK2),true)
-TARGETS += ui_lv2-gtk2
+# TARGETS += ui_lv2-gtk2
 endif
 
 ifeq ($(HAVE_GTK3),true)
-TARGETS += ui_lv2-gtk3
+# TARGETS += ui_lv2-gtk3
 endif
 
 ifeq ($(HAVE_QT4),true)
-TARGETS += ui_lv2-qt4
+# TARGETS += ui_lv2-qt4
 endif
 
 ifeq ($(HAVE_QT5),true)
-TARGETS += ui_lv2-qt5
+# TARGETS += ui_lv2-qt5
 endif
 
 ifeq ($(HAVE_X11),true)
@@ -81,10 +81,7 @@ endif
 
 # --------------------------------------------------------------
 
-# all: $(TARGETS)
-
-# TODO
-all:
+all: $(TARGETS)
 
 ui_lv2-gtk2:    ../../bin/carla-bridge-lv2-gtk2
 ui_lv2-gtk3:    ../../bin/carla-bridge-lv2-gtk3
@@ -237,7 +234,7 @@ OBJS_VST_X11 = \
 	CarlaBridgeToolkitPlugin__vst-x11.o \
 	CarlaBridgeUI-VST__vst-x11.o \
 
-../../bin/carla-bridge-vst-x11: $(OBJS_VST_X11) $(OBJS_VST_LIBS) ../modules/theme.a
+../../bin/carla-bridge-vst-x11: $(OBJS_VST_X11) $(OBJS_VST_LIBS)
 	$(CXX) $^ $(LINK_VST_X11_FLAGS) -o $@
 
 %__vst-x11.o: %.cpp

@@ -41,11 +41,11 @@ static int temporaryErrorHandler(Display*, XErrorEvent*)
     return 0;
 }
 
-class X11PluginUi : public CarlaPluginUi
+class X11PluginUi : public CarlaPluginUI
 {
 public:
     X11PluginUi(CloseCallback* const cb, const uintptr_t parentId) noexcept
-        : CarlaPluginUi(cb),
+        : CarlaPluginUI(cb),
           fDisplay(nullptr),
           fWindow(0),
           fIsVisible(false),
@@ -184,7 +184,7 @@ public:
                 {
                     fIsVisible = false;
                     CARLA_SAFE_ASSERT_CONTINUE(fCallback != nullptr);
-                    fCallback->handlePluginUiClosed();
+                    fCallback->handlePluginUIClosed();
                 }
                 break;
 
@@ -193,7 +193,7 @@ public:
                 {
                     fIsVisible = false;
                     CARLA_SAFE_ASSERT_CONTINUE(fCallback != nullptr);
-                    fCallback->handlePluginUiClosed();
+                    fCallback->handlePluginUIClosed();
                 }
                 break;
             }
@@ -298,7 +298,7 @@ private:
 
 // -----------------------------------------------------
 
-bool CarlaPluginUi::tryTransientWinIdMatch(const uintptr_t pid, const char* const uiTitle, const uintptr_t winId)
+bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* const uiTitle, const uintptr_t winId)
 {
     CARLA_SAFE_ASSERT_RETURN(uiTitle != nullptr && uiTitle[0] != '\0', true);
     CARLA_SAFE_ASSERT_RETURN(winId != 0, true);
@@ -456,7 +456,7 @@ bool CarlaPluginUi::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 // -----------------------------------------------------
 
 #ifdef CARLA_OS_MAC
-CarlaPluginUi* CarlaPluginUi::newCocoa(CloseCallback*, uintptr_t)
+CarlaPluginUI* CarlaPluginUI::newCocoa(CloseCallback*, uintptr_t)
 {
     //return new CocoaPluginUi(cb, parentId);
     return nullptr;
@@ -464,7 +464,7 @@ CarlaPluginUi* CarlaPluginUi::newCocoa(CloseCallback*, uintptr_t)
 #endif
 
 #ifdef CARLA_OS_WIN
-CarlaPluginUi* CarlaPluginUi::newWindows(CloseCallback*, uintptr_t)
+CarlaPluginUI* CarlaPluginUI::newWindows(CloseCallback*, uintptr_t)
 {
     //return new WindowsPluginUi(cb, parentId);
     return nullptr;
@@ -472,7 +472,7 @@ CarlaPluginUi* CarlaPluginUi::newWindows(CloseCallback*, uintptr_t)
 #endif
 
 #ifdef HAVE_X11
-CarlaPluginUi* CarlaPluginUi::newX11(CloseCallback* cb, uintptr_t parentId)
+CarlaPluginUI* CarlaPluginUI::newX11(CloseCallback* cb, uintptr_t parentId)
 {
     return new X11PluginUi(cb, parentId);
 }

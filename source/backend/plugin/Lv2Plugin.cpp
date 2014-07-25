@@ -379,7 +379,7 @@ struct Lv2PluginOptions {
 // -----------------------------------------------------
 
 class Lv2Plugin : public CarlaPlugin,
-                         CarlaPluginUi::CloseCallback
+                         CarlaPluginUI::CloseCallback
 {
 public:
     Lv2Plugin(CarlaEngine* const engine, const uint id)
@@ -1175,7 +1175,7 @@ public:
 
                     case LV2_UI_COCOA:
 # ifdef CARLA_OS_MAC
-                        fUi.window = CarlaPluginUi::newCocoa(this, frontendWinId);
+                        fUi.window = CarlaPluginUI::newCocoa(this, frontendWinId);
 # else
                         msg = "UI is for MacOS only";
 # endif
@@ -1183,7 +1183,7 @@ public:
 
                     case LV2_UI_WINDOWS:
 # ifdef CARLA_OS_WIN
-                        fUi.window = CarlaPluginUi::newWindows(this, frontendWinId);
+                        fUi.window = CarlaPluginUI::newWindows(this, frontendWinId);
 # else
                         msg = "UI is for Windows only";
 # endif
@@ -1191,7 +1191,7 @@ public:
 
                     case LV2_UI_X11:
 # ifdef HAVE_X11
-                        fUi.window = CarlaPluginUi::newX11(this, frontendWinId);
+                        fUi.window = CarlaPluginUI::newX11(this, frontendWinId);
 # else
                         msg = "UI is only for systems with X11";
 # endif
@@ -3879,38 +3879,32 @@ public:
         if (bridgeBinary.isEmpty())
             return nullptr;
 
-#ifdef CARLA_OS_LINUX
-        // test for local build
-        if (bridgeBinary.endsWith("/source/backend/"))
-            bridgeBinary += "../bridges/";
-#endif
-
         switch (type)
         {
         case LV2_UI_GTK2:
-            bridgeBinary += "carla-bridge-lv2-gtk2";
+            bridgeBinary += OS_SEP_STR "carla-bridge-lv2-gtk2";
             break;
         case LV2_UI_GTK3:
-            bridgeBinary += "carla-bridge-lv2-gtk3";
+            bridgeBinary += OS_SEP_STR "carla-bridge-lv2-gtk3";
             break;
         case LV2_UI_QT4:
-            bridgeBinary += "carla-bridge-lv2-qt4";
+            bridgeBinary += OS_SEP_STR "carla-bridge-lv2-qt4";
             break;
         case LV2_UI_QT5:
-            bridgeBinary += "carla-bridge-lv2-qt5";
+            bridgeBinary += OS_SEP_STR "carla-bridge-lv2-qt5";
             break;
         case LV2_UI_COCOA:
-            bridgeBinary += "carla-bridge-lv2-cocoa";
+            bridgeBinary += OS_SEP_STR "carla-bridge-lv2-cocoa";
             break;
         case LV2_UI_WINDOWS:
-            bridgeBinary += "carla-bridge-lv2-windows";
+            bridgeBinary += OS_SEP_STR "carla-bridge-lv2-windows";
             break;
         case LV2_UI_X11:
-            bridgeBinary += "carla-bridge-lv2-x11";
+            bridgeBinary += OS_SEP_STR "carla-bridge-lv2-x11";
             break;
         case LV2_UI_EXTERNAL:
         case LV2_UI_OLD_EXTERNAL:
-            bridgeBinary += "carla-bridge-lv2-external";
+            bridgeBinary += OS_SEP_STR "carla-bridge-lv2-external";
             break;
         default:
             return nullptr;
@@ -4235,10 +4229,10 @@ public:
 
     // -------------------------------------------------------------------
 
-    void handleExternalUiClosed()
+    void handleExternalUIClosed()
     {
         CARLA_SAFE_ASSERT_RETURN(fUi.type == UI::TYPE_EXTERNAL,);
-        carla_debug("Lv2Plugin::handleExternalUiClosed()");
+        carla_debug("Lv2Plugin::handleExternalUIClosed()");
 
         if (fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->cleanup != nullptr)
             fUi.descriptor->cleanup(fUi.handle);
@@ -4248,11 +4242,11 @@ public:
         pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
     }
 
-    void handlePluginUiClosed() override
+    void handlePluginUIClosed() override
     {
         CARLA_SAFE_ASSERT_RETURN(fUi.type == UI::TYPE_EMBED,);
         CARLA_SAFE_ASSERT_RETURN(fUi.window != nullptr,);
-        carla_debug("Lv2Plugin::handlePluginUiClosed()");
+        carla_debug("Lv2Plugin::handlePluginUIClosed()");
 
         fUi.window->hide();
 
@@ -4266,10 +4260,10 @@ public:
 
     // -------------------------------------------------------------------
 
-    uint32_t handleUiPortMap(const char* const symbol) const noexcept
+    uint32_t handleUIPortMap(const char* const symbol) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(symbol != nullptr && symbol[0] != '\0', LV2UI_INVALID_PORT_INDEX);
-        carla_debug("Lv2Plugin::handleUiPortMap(\"%s\")", symbol);
+        carla_debug("Lv2Plugin::handleUIPortMap(\"%s\")", symbol);
 
         for (uint32_t i=0; i < fRdfDescriptor->PortCount; ++i)
         {
@@ -4280,23 +4274,23 @@ public:
         return LV2UI_INVALID_PORT_INDEX;
     }
 
-    int handleUiResize(const int width, const int height)
+    int handleUIResize(const int width, const int height)
     {
         CARLA_SAFE_ASSERT_RETURN(fUi.window != nullptr, 1);
         CARLA_SAFE_ASSERT_RETURN(width > 0, 1);
         CARLA_SAFE_ASSERT_RETURN(height > 0, 1);
-        carla_debug("Lv2Plugin::handleUiResize(%i, %i)", width, height);
+        carla_debug("Lv2Plugin::handleUIResize(%i, %i)", width, height);
 
         fUi.window->setSize(static_cast<uint>(width), static_cast<uint>(height), true);
 
         return 0;
     }
 
-    void handleUiWrite(const uint32_t rindex, const uint32_t bufferSize, const uint32_t format, const void* const buffer)
+    void handleUIWrite(const uint32_t rindex, const uint32_t bufferSize, const uint32_t format, const void* const buffer)
     {
         CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(bufferSize > 0,);
-        carla_debug("Lv2Plugin::handleUiWrite(%i, %i, %i, %p)", rindex, bufferSize, format, buffer);
+        carla_debug("Lv2Plugin::handleUIWrite(%i, %i, %i, %p)", rindex, bufferSize, format, buffer);
 
         uint32_t index = LV2UI_INVALID_PORT_INDEX;
 
@@ -4350,7 +4344,7 @@ public:
         } break;
 
         default:
-            carla_stdout("Lv2Plugin::handleUiWrite(%i, %i, %i:\"%s\", %p) - unknown format", rindex, bufferSize, format, carla_lv2_urid_unmap(this, format), buffer);
+            carla_stdout("Lv2Plugin::handleUIWrite(%i, %i, %i:\"%s\", %p) - unknown format", rindex, bufferSize, format, carla_lv2_urid_unmap(this, format), buffer);
             break;
         }
     }
@@ -5282,7 +5276,7 @@ private:
         const LV2UI_Descriptor* descriptor;
         const LV2_RDF_UI*       rdfDescriptor;
 
-        CarlaPluginUi* window;
+        CarlaPluginUI* window;
 
         UI()
             : type(TYPE_NULL),
@@ -5724,7 +5718,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(controller != nullptr,);
         carla_debug("carla_lv2_external_ui_closed(%p)", controller);
 
-        ((Lv2Plugin*)controller)->handleExternalUiClosed();
+        ((Lv2Plugin*)controller)->handleExternalUIClosed();
     }
 
     // -------------------------------------------------------------------
@@ -5735,7 +5729,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, LV2UI_INVALID_PORT_INDEX);
         carla_debug("carla_lv2_ui_port_map(%p, \"%s\")", handle, symbol);
 
-        return ((Lv2Plugin*)handle)->handleUiPortMap(symbol);
+        return ((Lv2Plugin*)handle)->handleUIPortMap(symbol);
     }
 
     // -------------------------------------------------------------------
@@ -5746,7 +5740,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, 1);
         carla_debug("carla_lv2_ui_resize(%p, %i, %i)", handle, width, height);
 
-        return ((Lv2Plugin*)handle)->handleUiResize(width, height);
+        return ((Lv2Plugin*)handle)->handleUIResize(width, height);
     }
 
     // -------------------------------------------------------------------
@@ -5757,7 +5751,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(controller != nullptr,);
         carla_debug("carla_lv2_ui_write_function(%p, %i, %i, %i, %p)", controller, port_index, buffer_size, format, buffer);
 
-        ((Lv2Plugin*)controller)->handleUiWrite(port_index, buffer_size, format, buffer);
+        ((Lv2Plugin*)controller)->handleUIWrite(port_index, buffer_size, format, buffer);
     }
 
     // -------------------------------------------------------------------

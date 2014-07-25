@@ -470,14 +470,13 @@ public:
 
     void uiClose() override
     {
-        CarlaBridgeClient::uiClose();
-
         if (fHandle != nullptr && fDescriptor != nullptr && fDescriptor->cleanup != nullptr)
         {
             fDescriptor->cleanup(fHandle);
             fHandle = nullptr;
         }
 
+        CarlaBridgeClient::uiClose();
         uiLibClose();
     }
 
@@ -492,15 +491,6 @@ public:
     bool isResizable() const override
     {
         return fIsResizable;
-    }
-
-    bool needsReparent() const override
-    {
-#if defined(BRIDGE_COCOA) || defined(BRIDGE_HWND) || defined(BRIDGE_X11)
-        return true;
-#else
-        return false;
-#endif
     }
 
     // ---------------------------------------------------------------------
@@ -1154,14 +1144,14 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaLv2Client)
 };
 
-#define lv2ClientPtr ((CarlaLv2Client*)fClient)
+#define lv2ClientPtr ((CarlaLv2Client*)kClient)
 
-int CarlaBridgeOsc::handleMsgLv2UiAtomTransfer(CARLA_BRIDGE_OSC_HANDLE_ARGS)
+int CarlaBridgeOsc::handleMsgLv2AtomTransfer(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "is");
     carla_debug("CarlaBridgeOsc::handleMsgLv2AtomTransfer()");
 
-    if (fClient == nullptr)
+    if (kClient == nullptr)
         return 1;
 
     const int32_t   portIndex = argv[0]->i;
@@ -1178,12 +1168,12 @@ int CarlaBridgeOsc::handleMsgLv2UiAtomTransfer(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     return 0;
 }
 
-int CarlaBridgeOsc::handleMsgLv2UiUridMap(CARLA_BRIDGE_OSC_HANDLE_ARGS)
+int CarlaBridgeOsc::handleMsgLv2UridMap(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "is");
     carla_debug("CarlaBridgeOsc::handleMsgLv2UridMap()");
 
-    if (fClient == nullptr)
+    if (kClient == nullptr)
         return 1;
 
     const int32_t    urid = argv[0]->i;

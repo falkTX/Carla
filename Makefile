@@ -28,7 +28,7 @@ all: BIN RES UI WIDGETS
 # --------------------------------------------------------------
 # Binaries (native)
 
-BIN: libs backend bridges discovery plugin theme
+BIN: libs backend bridges-plugin bridges-ui discovery plugin theme
 
 # --------------------------------------------------------------
 
@@ -105,10 +105,15 @@ bin/libcarla_standalone2$(LIB_EXT): libs .FORCE
 
 # --------------------------------------------------------------
 
-bridges: bin/carla-bridge-native$(APP_EXT)
+bridges-plugin: bin/carla-bridge-native$(APP_EXT)
 
 bin/carla-bridge-native$(APP_EXT): libs .FORCE
 	$(MAKE) -C source/bridges-plugin
+
+# --------------------------------------------------------------
+
+bridges-ui: libs .FORCE
+	$(MAKE) -C source/bridges-ui
 
 # --------------------------------------------------------------
 
@@ -124,7 +129,7 @@ plugin: bin/carla-native.lv2/manifest.ttl
 bin/carla-native.lv2/carla-native$(LIB_EXT): backend .FORCE
 	$(MAKE) -C source/plugin ../../$@
 
-bin/carla-native.lv2/manifest.ttl: bin/carla-native-lv2-export$(APP_EXT) bridges discovery .FORCE
+bin/carla-native.lv2/manifest.ttl: bin/carla-native-lv2-export$(APP_EXT) bridges-plugin discovery .FORCE
 	cd bin && ./carla-native-lv2-export$(APP_EXT); cd ..
 	cd bin/carla-native.lv2 && $(LINK) ../*bridge-* ../carla-discovery-* .; cd ..
 

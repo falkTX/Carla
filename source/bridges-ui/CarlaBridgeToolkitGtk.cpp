@@ -81,19 +81,19 @@ public:
         gtk_container_add(GTK_CONTAINER(fWindow), widget);
 
         gtk_window_set_resizable(GTK_WINDOW(fWindow), kClient->isResizable());
-        gtk_window_set_title(GTK_WINDOW(fWindow), kUiTitle);
+        gtk_window_set_title(GTK_WINDOW(fWindow), kWindowTitle);
 
 #if 0
         {
             QSettings settings("falkTX", appName);
 
-            if (settings.contains(QString("%1/pos_x").arg(kUiTitle)))
+            if (settings.contains(QString("%1/pos_x").arg(kWindowTitle)))
             {
                 gtk_window_get_position(GTK_WINDOW(fWindow), &fLastX, &fLastY);
 
                 bool hasX, hasY;
-                fLastX = settings.value(QString("%1/pos_x").arg(kUiTitle), fLastX).toInt(&hasX);
-                fLastY = settings.value(QString("%1/pos_y").arg(kUiTitle), fLastY).toInt(&hasY);
+                fLastX = settings.value(QString("%1/pos_x").arg(kWindowTitle), fLastX).toInt(&hasX);
+                fLastY = settings.value(QString("%1/pos_y").arg(kWindowTitle), fLastY).toInt(&hasY);
 
                 if (hasX && hasY)
                     gtk_window_move(GTK_WINDOW(fWindow), fLastX, fLastY);
@@ -103,8 +103,8 @@ public:
                     gtk_window_get_size(GTK_WINDOW(fWindow), &fLastWidth, &fLastHeight);
 
                     bool hasWidth, hasHeight;
-                    fLastWidth  = settings.value(QString("%1/width").arg(kUiTitle), fLastWidth).toInt(&hasWidth);
-                    fLastHeight = settings.value(QString("%1/height").arg(kUiTitle), fLastHeight).toInt(&hasHeight);
+                    fLastWidth  = settings.value(QString("%1/width").arg(kWindowTitle), fLastWidth).toInt(&hasWidth);
+                    fLastHeight = settings.value(QString("%1/height").arg(kWindowTitle), fLastHeight).toInt(&hasHeight);
 
                     if (hasWidth && hasHeight)
                         gtk_window_resize(GTK_WINDOW(fWindow), fLastWidth, fLastHeight);
@@ -194,10 +194,10 @@ protected:
 
 #if 0
         QSettings settings("falkTX", appName);
-        settings.setValue(QString("%1/pos_x").arg(kUiTitle), fLastX);
-        settings.setValue(QString("%1/pos_y").arg(kUiTitle), fLastY);
-        settings.setValue(QString("%1/width").arg(kUiTitle), fLastWidth);
-        settings.setValue(QString("%1/height").arg(kUiTitle), fLastHeight);
+        settings.setValue(QString("%1/pos_x").arg(kWindowTitle), fLastX);
+        settings.setValue(QString("%1/pos_y").arg(kWindowTitle), fLastY);
+        settings.setValue(QString("%1/width").arg(kWindowTitle), fLastWidth);
+        settings.setValue(QString("%1/height").arg(kWindowTitle), fLastHeight);
 #endif
     }
 

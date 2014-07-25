@@ -1,6 +1,6 @@
 /*
  * Carla Bridge UI, VST version
- * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,13 +20,6 @@
 #include "CarlaVstUtils.hpp"
 #include "CarlaMIDI.h"
 
-#include <QtCore/QObject> // FIXME
-#include <QtCore/QTimerEvent>
-
-#if defined(Q_WS_X11) && (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
-# include <QtGui/QX11Info>
-#endif
-
 CARLA_BRIDGE_START_NAMESPACE
 
 // -------------------------------------------------------------------------
@@ -35,17 +28,13 @@ CARLA_BRIDGE_START_NAMESPACE
 uint32_t bufferSize = 512;
 double   sampleRate = 44100.0;
 
-class CarlaVstClient : public QObject,
-                       public CarlaBridgeClient
+class CarlaVstClient : public CarlaBridgeClient
 {
 public:
     CarlaVstClient(const char* const uiTitle)
-        : QObject(nullptr),
-          CarlaBridgeClient(uiTitle)
+        : CarlaBridgeClient(uiTitle)
     {
         effect = nullptr;
-
-        idleTimer = 0;
         needIdle  = false;
 
         // make client valid
@@ -108,9 +97,9 @@ public:
         effect->resvd1 = ToVstPtr(this);
 #endif
 
-        int32_t value = 0;
-#if defined(Q_WS_X11) && (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
-        value = (int64_t)QX11Info::display();
+        intptr_t value = 0;
+#if defined(HAVE_X11) && defined(BRIDGE_X11)
+        value = (intptr_t)getContainerId2();
 #endif
 
         effect->dispatcher(effect, effOpen, 0, 0, nullptr, 0.0f);
@@ -145,20 +134,18 @@ public:
                 toolkitResize(width, height);
         }
 
-        idleTimer = startTimer(50);
-
         return true;
     }
 
     void uiIdle() override
     {
-        // TODO
+        if (needIdle)
+            effect->dispatcher(effect, effIdle, 0, 0, nullptr, 0.0f);
+        effect->dispatcher(effect, effEditIdle, 0, 0, nullptr, 0.0f);
     }
 
     void uiClose() override
     {
-        CarlaBridgeClient::uiClose();
-
         if (effect != nullptr)
         {
             effect->dispatcher(effect, effEditClose, 0, 0, nullptr, 0.0f);
@@ -166,6 +153,7 @@ public:
             effect = nullptr;
         }
 
+        CarlaBridgeClient::uiClose();
         uiLibClose();
     }
 
@@ -180,11 +168,6 @@ public:
     bool isResizable() const override
     {
         return false;
-    }
-
-    bool needsReparent() const override
-    {
-        return true;
     }
 
     // ---------------------------------------------------------------------
@@ -241,7 +224,7 @@ public:
 
     intptr_t handleAudioMasterGetTime()
     {
-        memset(&vstTimeInfo, 0, sizeof(VstTimeInfo_R));
+        memset(&vstTimeInfo, 0, sizeof(VstTimeInfo));
 
         vstTimeInfo.sampleRate = sampleRate;
 
@@ -420,8 +403,8 @@ public:
             break;
 
         case audioMasterGetTime:
-            static VstTimeInfo_R timeInfo;
-            memset(&timeInfo, 0, sizeof(VstTimeInfo_R));
+            static VstTimeInfo timeInfo;
+            memset(&timeInfo, 0, sizeof(VstTimeInfo));
             timeInfo.sampleRate = sampleRate;
 
             // Tempo
@@ -507,27 +490,12 @@ public:
         return ret;
     }
 
-protected:
-    void timerEvent(QTimerEvent* const event)
-    {
-        if (event->timerId() == idleTimer && effect)
-        {
-            if (needIdle)
-                effect->dispatcher(effect, effIdle, 0, 0, nullptr, 0.0f);
-
-            effect->dispatcher(effect, effEditIdle, 0, 0, nullptr, 0.0f);
-        }
-
-        QObject::timerEvent(event);
-    }
-
 private:
     int unique1;
 
     AEffect* effect;
-    VstTimeInfo_R vstTimeInfo;
+    VstTimeInfo vstTimeInfo;
 
-    int idleTimer;
     bool needIdle;
     static CarlaVstClient* lastVstPlugin;
 

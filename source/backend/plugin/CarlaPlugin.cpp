@@ -1385,7 +1385,7 @@ void CarlaPlugin::idle()
     CarlaString uiTitle(pData->name);
     uiTitle += " (GUI)";
 
-    if (CarlaPluginUi::tryTransientWinIdMatch(pData->osc.data.target != nullptr ? pData->osc.thread.getPid() : 0, uiTitle, pData->engine->getOptions().frontendWinId))
+    if (CarlaPluginUI::tryTransientWinIdMatch(pData->osc.data.target != nullptr ? pData->osc.thread.getPid() : 0, uiTitle, pData->engine->getOptions().frontendWinId))
         pData->transientTryCounter = 0;
 }
 

@@ -38,7 +38,8 @@ public:
     virtual void hide() = 0;
     virtual void resize(const int width, const int height) = 0;
 
-    virtual void* getContainerId() const { return nullptr; }
+    virtual void* getContainerId() const  { return nullptr; }
+    virtual void* getContainerId2() const { return nullptr; }
 
     static CarlaBridgeToolkit* createNew(CarlaBridgeClient* const client, const char* const uiTitle);
 

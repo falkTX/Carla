@@ -1,6 +1,6 @@
 /*
  * Carla Bridge Client
- * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -43,7 +43,6 @@ public:
 
     virtual void* getWidget() const = 0;
     virtual bool isResizable() const = 0;
-    virtual bool needsReparent() const = 0;
 
     // ---------------------------------------------------------------------
     // ui processing
@@ -91,6 +90,7 @@ protected:
     // ---------------------------------------------------------------------
 
     void* getContainerId();
+    void* getContainerId2();
     bool  uiLibOpen(const char* const filename);
     bool  uiLibClose();
     void* uiLibSymbol(const char* const symbol);

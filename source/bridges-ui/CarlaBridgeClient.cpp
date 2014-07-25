@@ -1,6 +1,6 @@
 /*
  * Carla Bridge Client
- * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -211,6 +211,12 @@ void* CarlaBridgeClient::getContainerId()
 {
     carla_debug("CarlaBridgeClient::getContainerId()");
     return fUI.toolkit->getContainerId();
+}
+
+void* CarlaBridgeClient::getContainerId2()
+{
+    carla_debug("CarlaBridgeClient::getContainerId2()");
+    return fUI.toolkit->getContainerId2();
 }
 
 bool CarlaBridgeClient::uiLibOpen(const char* const filename)

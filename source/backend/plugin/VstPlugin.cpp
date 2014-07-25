@@ -51,7 +51,7 @@ const uint PLUGIN_WANTS_MIDI_INPUT      = 0x8000;
 // -----------------------------------------------------
 
 class VstPlugin : public CarlaPlugin,
-                         CarlaPluginUi::CloseCallback
+                         CarlaPluginUI::CloseCallback
 {
 public:
     VstPlugin(CarlaEngine* const engine, const uint id)
@@ -437,16 +437,16 @@ public:
 
 #if defined(CARLA_OS_LINUX)
 # ifdef HAVE_X11
-                fUi.window = CarlaPluginUi::newX11(this, frontendWinId);
+                fUi.window = CarlaPluginUI::newX11(this, frontendWinId);
 # else
                 msg = "UI is only for systems with X11";
 # endif
 #elif defined(CARLA_OS_MAC)
 # ifdef __LP64__
-                fUi.window = CarlaPluginUi::newCocoa(this, frontendWinId);
+                fUi.window = CarlaPluginUI::newCocoa(this, frontendWinId);
 # endif
 #elif defined(CARLA_OS_WIN)
-                fUi.window = CarlaPluginUi::newWindows(this, frontendWinId);
+                fUi.window = CarlaPluginUI::newWindows(this, frontendWinId);
 #else
                 msg = "Unknown UI type";
 #endif
@@ -1760,11 +1760,11 @@ public:
     // -------------------------------------------------------------------
 
 protected:
-    void handlePluginUiClosed() override
+    void handlePluginUIClosed() override
     {
         CARLA_SAFE_ASSERT_RETURN(fUi.type == UI::UI_EMBED || fUi.type == UI::UI_EXTERNAL,);
         CARLA_SAFE_ASSERT_RETURN(fUi.window != nullptr,);
-        carla_debug("VstPlugin::handlePluginUiClosed()");
+        carla_debug("VstPlugin::handlePluginUIClosed()");
 
         showCustomUI(false);
         pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
@@ -2041,7 +2041,7 @@ protected:
             if (index == 0xedcd && value == 0 && ptr != nullptr && std::strcmp((const char*)ptr, "EditorClosed") == 0)
             {
                 CARLA_SAFE_ASSERT_BREAK(fUi.type == UI::UI_EXTERNAL);
-                handlePluginUiClosed();
+                handlePluginUIClosed();
                 break;
             }
             // TODO - cockos extensions
@@ -2295,13 +2295,7 @@ public:
                 CarlaString bridgeBinary(pData->engine->getOptions().binaryDir);
 
 #if defined(CARLA_OS_LINUX)
-                bridgeBinary += "carla-bridge-vst-x11";
-#elif defined(CARLA_OS_MAC)
-                bridgeBinary += "carla-bridge-vst-mac";
-#elif defined(CARLA_OS_WIN)
-                bridgeBinary += "carla-bridge-vst-hwnd.exe";
-#else
-                bridgeBinary.clear();
+                bridgeBinary += OS_SEP_STR "carla-bridge-vst-x11";
 #endif
 
                 if (bridgeBinary.isNotEmpty() && File(bridgeBinary.buffer()).existsAsFile())
@@ -2377,7 +2371,7 @@ private:
         } type;
 
         bool isVisible; // not used in OSC mode
-        CarlaPluginUi* window;
+        CarlaPluginUI* window;
 
         UI()
             : type(UI_NULL),

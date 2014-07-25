@@ -22,16 +22,16 @@
 
 // -----------------------------------------------------
 
-class CarlaPluginUi
+class CarlaPluginUI
 {
 public:
     class CloseCallback {
     public:
         virtual ~CloseCallback() {}
-        virtual void handlePluginUiClosed() = 0;
+        virtual void handlePluginUIClosed() = 0;
     };
 
-    virtual ~CarlaPluginUi() {}
+    virtual ~CarlaPluginUI() {}
     virtual void show() = 0;
     virtual void hide() = 0;
     virtual void focus() = 0;
@@ -47,19 +47,19 @@ public:
     static bool tryTransientWinIdMatch(const uintptr_t pid, const char* const uiTitle, const uintptr_t winId);
 
 #ifdef CARLA_OS_MAC
-    static CarlaPluginUi* newCocoa(CloseCallback*, uintptr_t);
+    static CarlaPluginUI* newCocoa(CloseCallback*, uintptr_t);
 #endif
 #ifdef CARLA_OS_WIN
-    static CarlaPluginUi* newWindows(CloseCallback*, uintptr_t);
+    static CarlaPluginUI* newWindows(CloseCallback*, uintptr_t);
 #endif
 #ifdef HAVE_X11
-    static CarlaPluginUi* newX11(CloseCallback*, uintptr_t);
+    static CarlaPluginUI* newX11(CloseCallback*, uintptr_t);
 #endif
 
 protected:
     bool fIsIdling;
     CloseCallback* fCallback;
-    CarlaPluginUi(CloseCallback* const cb) noexcept : fIsIdling(false), fCallback(cb) {}
+    CarlaPluginUI(CloseCallback* const cb) noexcept : fIsIdling(false), fCallback(cb) {}
 };
 
 // -----------------------------------------------------
