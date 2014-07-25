@@ -8,7 +8,7 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -DBUILD_BRIDGE -DBUILD_BRIDGE_PLUGIN
+BUILD_CXX_FLAGS += -DBUILD_BRIDGE
 BUILD_CXX_FLAGS += -I. -I../backend -I../includes -I../utils -isystem ../modules
 BUILD_CXX_FLAGS += $(LIBLO_FLAGS)
 LINK_FLAGS      += $(LIBLO_LIBS)

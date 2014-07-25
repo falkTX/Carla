@@ -185,7 +185,6 @@ void osc_send_sample_rate(const CarlaOscData& oscData, const float sampleRate) n
     try_lo_send(oscData.target, targetPath, "f", sampleRate);
 }
 
-#ifdef BUILD_BRIDGE
 static inline
 void osc_send_update(const CarlaOscData& oscData, const char* const url) noexcept
 {
@@ -199,20 +198,6 @@ void osc_send_update(const CarlaOscData& oscData, const char* const url) noexcep
     std::strcat(targetPath, "/update");
     try_lo_send(oscData.target, targetPath, "s", url);
 }
-
-static inline
-void osc_send_exiting(const CarlaOscData& oscData) noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr && oscData.path[0] != '\0',);
-    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
-    carla_debug("osc_send_exiting(path:\"%s\")", oscData.path);
-
-    char targetPath[std::strlen(oscData.path)+9];
-    std::strcpy(targetPath, oscData.path);
-    std::strcat(targetPath, "/exiting");
-    try_lo_send(oscData.target, targetPath, "");
-}
-#endif
 
 static inline
 void osc_send_show(const CarlaOscData& oscData) noexcept
@@ -253,9 +238,21 @@ void osc_send_quit(const CarlaOscData& oscData) noexcept
     try_lo_send(oscData.target, targetPath, "");
 }
 
+static inline
+void osc_send_exiting(const CarlaOscData& oscData) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr && oscData.path[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
+    carla_debug("osc_send_exiting(path:\"%s\")", oscData.path);
+
+    char targetPath[std::strlen(oscData.path)+9];
+    std::strcpy(targetPath, oscData.path);
+    std::strcat(targetPath, "/exiting");
+    try_lo_send(oscData.target, targetPath, "");
+}
+
 // -----------------------------------------------------------------------
 
-#ifdef BUILD_BRIDGE_PLUGIN
 static inline
 void osc_send_bridge_update(const CarlaOscData& oscData, const char* const url) noexcept
 {
@@ -283,7 +280,8 @@ void osc_send_bridge_error(const CarlaOscData& oscData, const char* const error)
     std::strcat(targetPath, "/bridge_error");
     try_lo_send(oscData.target, targetPath, "s", error);
 }
-#endif
+
+// -----------------------------------------------------------------------
 
 static inline
 void osc_send_lv2_atom_transfer(const CarlaOscData& oscData, const uint32_t portIndex, const char* const atomBuf) noexcept

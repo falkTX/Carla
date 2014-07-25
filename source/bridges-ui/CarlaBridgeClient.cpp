@@ -16,10 +16,7 @@
  */
 
 #include "CarlaBridgeClient.hpp"
-
-#ifdef BUILD_BRIDGE_UI
-# include "CarlaLibUtils.hpp"
-#endif
+#include "CarlaLibUtils.hpp"
 
 CARLA_BRIDGE_START_NAMESPACE
 
@@ -27,19 +24,11 @@ CARLA_BRIDGE_START_NAMESPACE
 
 CarlaBridgeClient::CarlaBridgeClient(const char* const uiTitle)
     : fOsc(this),
-      fOscData(fOsc.getControlData())
-#ifdef BUILD_BRIDGE_UI
-    , fUI(CarlaBridgeToolkit::createNew(this, uiTitle))
-#endif
+      fOscData(fOsc.getControlData()),
+      fUI(CarlaBridgeToolkit::createNew(this, uiTitle))
 {
-#ifdef BUILD_BRIDGE_UI
     CARLA_ASSERT(uiTitle != nullptr && uiTitle[0] != '\0');
-#endif
     carla_debug("CarlaBridgeClient::CarlaBridgeClient(\"%s\")", uiTitle);
-
-#ifndef BUILD_BRIDGE_UI
-    return; (void)uiTitle; // unused
-#endif
 }
 
 CarlaBridgeClient::~CarlaBridgeClient()
@@ -47,7 +36,6 @@ CarlaBridgeClient::~CarlaBridgeClient()
     carla_debug("CarlaBridgeClient::~CarlaBridgeClient()");
 }
 
-#ifdef BUILD_BRIDGE_UI
 // ---------------------------------------------------------------------
 // ui initialization
 
@@ -111,7 +99,6 @@ void CarlaBridgeClient::toolkitQuit()
 
     fUI.close();
 }
-#endif
 
 // ---------------------------------------------------------------------
 // osc stuff
@@ -127,11 +114,7 @@ bool CarlaBridgeClient::oscIdle() const
 {
     fOsc.idle();
 
-#ifdef BUILD_BRIDGE_UI
     return ! fUI.quit;
-#else
-    return true;
-#endif
 }
 
 void CarlaBridgeClient::oscClose()
@@ -156,27 +139,6 @@ void CarlaBridgeClient::sendOscUpdate() const
 
 // ---------------------------------------------------------------------
 
-#ifdef BUILD_BRIDGE_PLUGIN
-void CarlaBridgeClient::sendOscBridgeUpdate() const
-{
-    carla_debug("CarlaBridgeClient::sendOscBridgeUpdate()");
-
-    if (fOscData.target != nullptr)
-        osc_send_bridge_update(fOscData, fOscData.path);
-}
-
-void CarlaBridgeClient::sendOscBridgeError(const char* const error) const
-{
-    carla_debug("CarlaBridgeClient::sendOscBridgeError(\"%s\")", error);
-
-    if (fOscData.target != nullptr)
-        osc_send_bridge_error(fOscData, error);
-}
-#endif
-
-// ---------------------------------------------------------------------
-
-#ifdef BUILD_BRIDGE_UI
 void CarlaBridgeClient::sendOscConfigure(const char* const key, const char* const value) const
 {
     carla_debug("CarlaBridgeClient::sendOscConfigure(\"%s\", \"%s\")", key, value);
@@ -287,7 +249,6 @@ const char* CarlaBridgeClient::uiLibError()
 
     return lib_error(fUI.filename);
 }
-#endif // BUILD_BRIDGE_UI
 
 // ---------------------------------------------------------------------
 
