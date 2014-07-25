@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #ifndef CARLA_BRIDGE_TOOLKIT_HPP_INCLUDED
@@ -31,7 +31,7 @@ public:
     virtual ~CarlaBridgeToolkit() {}
 
     virtual void init() = 0;
-    virtual void exec(const bool showGui) = 0;
+    virtual void exec(const bool showUI) = 0;
     virtual void quit() = 0;
 
     virtual void show() = 0;
@@ -41,15 +41,15 @@ public:
     virtual void* getContainerId() const  { return nullptr; }
     virtual void* getContainerId2() const { return nullptr; }
 
-    static CarlaBridgeToolkit* createNew(CarlaBridgeClient* const client, const char* const uiTitle);
+    static CarlaBridgeToolkit* createNew(CarlaBridgeClient* const client, const char* const windowTitle);
 
 protected:
     CarlaBridgeClient* const kClient;
     const CarlaString        kWindowTitle;
 
-    CarlaBridgeToolkit(CarlaBridgeClient* const client, const char* const title)
+    CarlaBridgeToolkit(CarlaBridgeClient* const client, const char* const windowTitle)
         : kClient(client),
-          kWindowTitle(title) {}
+          kWindowTitle(windowTitle) {}
 
     CARLA_LEAK_DETECTOR(CarlaBridgeToolkit)
 };

@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #include "CarlaBridgeClient.hpp"
@@ -54,15 +54,15 @@ class CarlaBridgeToolkitQt: public QObject,
       Q_OBJECT
 
 public:
-    CarlaBridgeToolkitQt(CarlaBridgeClient* const client, const char* const uiTitle)
+    CarlaBridgeToolkitQt(CarlaBridgeClient* const client, const char* const windowTitle)
         : QObject(nullptr),
-          CarlaBridgeToolkit(client, uiTitle),
+          CarlaBridgeToolkit(client, windowTitle),
           fApp(nullptr),
           fWindow(nullptr),
           fMsgTimer(0),
           fNeedsShow(false)
     {
-        carla_debug("CarlaBridgeToolkitQt::CarlaBridgeToolkitQt(%p, \"%s\")", client, uiTitle);
+        carla_debug("CarlaBridgeToolkitQt::CarlaBridgeToolkitQt(%p, \"%s\")", client, windowTitle);
 
         connect(this, SIGNAL(setSizeSafeSignal(int,int)), SLOT(setSizeSafeSlot(int,int)));
     }
@@ -107,12 +107,12 @@ public:
         fWindow->hide();
     }
 
-    void exec(const bool showGui) override
+    void exec(const bool showUI) override
     {
         CARLA_ASSERT(kClient != nullptr);
         CARLA_ASSERT(fApp != nullptr);
         CARLA_ASSERT(fWindow != nullptr);
-        carla_debug("CarlaBridgeToolkitQt::exec(%s)", bool2str(showGui));
+        carla_debug("CarlaBridgeToolkitQt::exec(%s)", bool2str(showUI));
 
 #if defined(BRIDGE_QT4) || defined(BRIDGE_QT5)
         QWidget* const widget((QWidget*)kClient->getWidget());
@@ -162,7 +162,7 @@ public:
                 fWindow->setWindowFlags(fWindow->windowFlags() | Qt::WindowStaysOnTopHint);
         }
 
-        if (showGui || fNeedsShow)
+        if (showUI || fNeedsShow)
         {
             show();
             fNeedsShow = false;
@@ -306,9 +306,9 @@ private slots:
 
 // -------------------------------------------------------------------------
 
-CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeClient* const client, const char* const uiTitle)
+CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeClient* const client, const char* const windowTitle)
 {
-    return new CarlaBridgeToolkitQt(client, uiTitle);
+    return new CarlaBridgeToolkitQt(client, windowTitle);
 }
 
 // -------------------------------------------------------------------------

@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #include "CarlaBridgeClient.hpp"
@@ -28,12 +28,12 @@ class CarlaBridgeToolkitPlugin : public CarlaBridgeToolkit,
                                  private CarlaPluginUI::CloseCallback
 {
 public:
-    CarlaBridgeToolkitPlugin(CarlaBridgeClient* const client, const char* const uiTitle)
-        : CarlaBridgeToolkit(client, uiTitle),
+    CarlaBridgeToolkitPlugin(CarlaBridgeClient* const client, const char* const windowTitle)
+        : CarlaBridgeToolkit(client, windowTitle),
           fUI(nullptr),
           fIdling(false)
     {
-        carla_debug("CarlaBridgeToolkitPlugin::CarlaBridgeToolkitPlugin(%p, \"%s\")", client, uiTitle);
+        carla_debug("CarlaBridgeToolkitPlugin::CarlaBridgeToolkitPlugin(%p, \"%s\")", client, windowTitle);
     }
 
     ~CarlaBridgeToolkitPlugin() override
@@ -150,9 +150,9 @@ private:
 
 // -------------------------------------------------------------------------
 
-CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeClient* const client, const char* const uiTitle)
+CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeClient* const client, const char* const windowTitle)
 {
-    return new CarlaBridgeToolkitPlugin(client, uiTitle);
+    return new CarlaBridgeToolkitPlugin(client, windowTitle);
 }
 
 // -------------------------------------------------------------------------

@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #include "CarlaBridgeClient.hpp"
@@ -40,8 +40,8 @@ static char** gargv = nullptr;
 class CarlaBridgeToolkitGtk : public CarlaBridgeToolkit
 {
 public:
-    CarlaBridgeToolkitGtk(CarlaBridgeClient* const client, const char* const uiTitle)
-        : CarlaBridgeToolkit(client, uiTitle),
+    CarlaBridgeToolkitGtk(CarlaBridgeClient* const client, const char* const windowTitle)
+        : CarlaBridgeToolkit(client, windowTitle),
           fNeedsShow(false),
           fWindow(nullptr),
           fLastX(0),
@@ -49,7 +49,7 @@ public:
           fLastWidth(0),
           fLastHeight(0)
     {
-        carla_debug("CarlaBridgeToolkitGtk::CarlaBridgeToolkitGtk(%p, \"%s\")", client, uiTitle);
+        carla_debug("CarlaBridgeToolkitGtk::CarlaBridgeToolkitGtk(%p, \"%s\")", client, windowTitle);
     }
 
     ~CarlaBridgeToolkitGtk() override
@@ -70,11 +70,11 @@ public:
         gtk_widget_hide(fWindow);
     }
 
-    void exec(const bool showGui) override
+    void exec(const bool showUI) override
     {
         CARLA_ASSERT(kClient != nullptr);
         CARLA_ASSERT(fWindow != nullptr);
-        carla_debug("CarlaBridgeToolkitGtk::exec(%s)", bool2str(showGui));
+        carla_debug("CarlaBridgeToolkitGtk::exec(%s)", bool2str(showUI));
 
         GtkWidget* const widget((GtkWidget*)kClient->getWidget());
 
@@ -116,7 +116,7 @@ public:
         }
 #endif
 
-        if (showGui || fNeedsShow)
+        if (showUI || fNeedsShow)
         {
             show();
             fNeedsShow = false;
@@ -239,9 +239,9 @@ private:
 
 // -------------------------------------------------------------------------
 
-CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeClient* const client, const char* const uiTitle)
+CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeClient* const client, const char* const windowTitle)
 {
-    return new CarlaBridgeToolkitGtk(client, uiTitle);
+    return new CarlaBridgeToolkitGtk(client, windowTitle);
 }
 
 // -------------------------------------------------------------------------
