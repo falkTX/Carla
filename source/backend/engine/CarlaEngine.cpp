@@ -1219,7 +1219,7 @@ void CarlaEngine::callback(const EngineCallbackOpcode action, const uint pluginI
     if (action == ENGINE_CALLBACK_IDLE)
         pData->isIdling = true;
 #ifdef BUILD_BRIDGE
-    else
+    else if (pData->oscData != nullptr)
     {
         switch (action)
         {
