@@ -108,7 +108,7 @@ bin/libcarla_standalone2$(LIB_EXT): libs .FORCE
 bridges: bin/carla-bridge-native$(APP_EXT)
 
 bin/carla-bridge-native$(APP_EXT): libs .FORCE
-	$(MAKE) -C source/bridges
+	$(MAKE) -C source/bridges-plugin
 
 # --------------------------------------------------------------
 
@@ -157,7 +157,7 @@ LIBS_POSIX32 += source/modules/juce_gui_extra.posix32.a
 endif
 
 posix32: $(LIBS_POSIX32)
-	$(MAKE) -C source/bridges posix32
+	$(MAKE) -C source/bridges-plugin posix32
 	$(MAKE) -C source/discovery posix32
 
 # --------------------------------------------------------------
@@ -179,7 +179,7 @@ LIBS_POSIX64 += source/modules/juce_gui_extra.posix64.a
 endif
 
 posix64: $(LIBS_POSIX64)
-	$(MAKE) -C source/bridges posix64
+	$(MAKE) -C source/bridges-plugin posix64
 	$(MAKE) -C source/discovery posix64
 
 # --------------------------------------------------------------
@@ -197,7 +197,7 @@ LIBS_WIN32 += source/modules/lilv.win32.a
 LIBS_WIN32 += source/modules/rtmempool.win32.a
 
 win32: $(LIBS_WIN32)
-	$(MAKE) -C source/bridges win32
+	$(MAKE) -C source/bridges-plugin win32
 	$(MAKE) -C source/discovery win32
 
 # --------------------------------------------------------------
@@ -215,7 +215,7 @@ LIBS_WIN64 += source/modules/lilv.win64.a
 LIBS_WIN64 += source/modules/rtmempool.win64.a
 
 win64: $(LIBS_WIN64)
-	$(MAKE) -C source/bridges win64
+	$(MAKE) -C source/bridges-plugin win64
 	$(MAKE) -C source/discovery win64
 
 # --------------------------------------------------------------
@@ -334,7 +334,8 @@ source/%.py: source/widgets/%.py
 
 clean:
 	$(MAKE) clean -C source/backend
-	$(MAKE) clean -C source/bridges
+	$(MAKE) clean -C source/bridges-plugin
+	$(MAKE) clean -C source/bridges-ui
 	$(MAKE) clean -C source/discovery
 	$(MAKE) clean -C source/modules
 	$(MAKE) clean -C source/plugin
