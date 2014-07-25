@@ -212,7 +212,8 @@ public:
     CarlaEngineBridge(const char* const audioBaseName, const char* const controlBaseName, const char* const timeBaseName)
         : CarlaEngine(),
           CarlaThread("CarlaEngineBridge"),
-          fIsRunning(false)
+          fIsRunning(false),
+          fNextUIState(-1)
     {
         carla_stdout("CarlaEngineBridge::CarlaEngineBridge(%s, %s, %s)", audioBaseName, controlBaseName, timeBaseName);
 
@@ -356,6 +357,20 @@ public:
     const char* getCurrentDriverName() const noexcept
     {
         return "Bridge";
+    }
+
+    void idle() noexcept override
+    {
+        CarlaEngine::idle();
+
+        if (fNextUIState == -1 || ! fIsRunning)
+            return;
+
+        try {
+            carla_show_custom_ui(0, bool(fNextUIState));
+        } CARLA_SAFE_EXCEPTION("bridge show_custom_ui");
+
+        fNextUIState = -1;
     }
 
     // -------------------------------------
@@ -589,14 +604,12 @@ public:
 
                 case kPluginBridgeOpcodeShowUI:
                     carla_stdout("-----------------------------------------------------, got SHOW UI");
-
-                    carla_show_custom_ui(0, true);
+                    fNextUIState = 1;
                     break;
 
                 case kPluginBridgeOpcodeHideUI:
                     carla_stdout("-----------------------------------------------------, got HIDE UI");
-
-                    carla_show_custom_ui(0, false);
+                    fNextUIState = 0;
                     break;
 
                 case kPluginBridgeOpcodeQuit:
@@ -615,6 +628,8 @@ public:
         }
 
         fIsRunning = false;
+
+        callback(ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0.0f, nullptr);
     }
 
 private:
@@ -623,6 +638,7 @@ private:
     BridgeTime      fShmTime;
 
     volatile bool fIsRunning;
+    volatile int  fNextUIState;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineBridge)
 };

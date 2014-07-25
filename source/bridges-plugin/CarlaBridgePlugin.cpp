@@ -228,11 +228,15 @@ public:
             std::free(tmpServerPath);
         }
 
+        lo_server_thread_start(fOscServerThread);
+
         fEngine->setOscBridgeData(&fOscControlData);
     }
 
     void oscClose()
     {
+        lo_server_thread_stop(fOscServerThread);
+
         fEngine->setOscBridgeData(nullptr);
 
         if (fOscServerThread != nullptr)
@@ -284,7 +288,7 @@ public:
                 carla_stderr("Plugin preset load failed, error was:\n%s", carla_get_last_error());
         }
 
-        gIsInitiated  = true;
+        gIsInitiated = true;
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
         JUCEApplicationBase::createInstance = &juce_CreateApplication;
