@@ -24,14 +24,6 @@ CARLA_BRIDGE_START_NAMESPACE
 
 // -------------------------------------------------------------------------
 
-#if defined(BRIDGE_GTK2)
-static const char* const appName = "Carla-Gtk2UIs";
-#elif defined(BRIDGE_GTK3)
-static const char* const appName = "Carla-Gtk3UIs";
-#else
-static const char* const appName = "Carla-UIs";
-#endif
-
 static int    gargc = 0;
 static char** gargv = nullptr;
 
@@ -82,39 +74,6 @@ public:
 
         gtk_window_set_resizable(GTK_WINDOW(fWindow), kClient->isResizable());
         gtk_window_set_title(GTK_WINDOW(fWindow), kWindowTitle);
-
-#if 0
-        {
-            QSettings settings("falkTX", appName);
-
-            if (settings.contains(QString("%1/pos_x").arg(kWindowTitle)))
-            {
-                gtk_window_get_position(GTK_WINDOW(fWindow), &fLastX, &fLastY);
-
-                bool hasX, hasY;
-                fLastX = settings.value(QString("%1/pos_x").arg(kWindowTitle), fLastX).toInt(&hasX);
-                fLastY = settings.value(QString("%1/pos_y").arg(kWindowTitle), fLastY).toInt(&hasY);
-
-                if (hasX && hasY)
-                    gtk_window_move(GTK_WINDOW(fWindow), fLastX, fLastY);
-
-                if (kClient->isResizable())
-                {
-                    gtk_window_get_size(GTK_WINDOW(fWindow), &fLastWidth, &fLastHeight);
-
-                    bool hasWidth, hasHeight;
-                    fLastWidth  = settings.value(QString("%1/width").arg(kWindowTitle), fLastWidth).toInt(&hasWidth);
-                    fLastHeight = settings.value(QString("%1/height").arg(kWindowTitle), fLastHeight).toInt(&hasHeight);
-
-                    if (hasWidth && hasHeight)
-                        gtk_window_resize(GTK_WINDOW(fWindow), fLastWidth, fLastHeight);
-                }
-            }
-
-            if (settings.value("Engine/UIsAlwaysOnTop", true).toBool())
-               gtk_window_set_keep_above(GTK_WINDOW(fWindow), true);
-        }
-#endif
 
         if (showUI || fNeedsShow)
         {
@@ -191,14 +150,6 @@ protected:
         carla_debug("CarlaBridgeToolkitGtk::handleDestroy()");
 
         fWindow = nullptr;
-
-#if 0
-        QSettings settings("falkTX", appName);
-        settings.setValue(QString("%1/pos_x").arg(kWindowTitle), fLastX);
-        settings.setValue(QString("%1/pos_y").arg(kWindowTitle), fLastY);
-        settings.setValue(QString("%1/width").arg(kWindowTitle), fLastWidth);
-        settings.setValue(QString("%1/height").arg(kWindowTitle), fLastHeight);
-#endif
     }
 
     gboolean handleTimeout()

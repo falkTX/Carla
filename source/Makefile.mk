@@ -53,7 +53,7 @@ endif
 BASE_FLAGS = -Wall -Wextra -pipe -DREAL_BUILD
 BASE_OPTS  = -O2 -ffast-math -mtune=generic -msse -msse2 -mfpmath=sse -fdata-sections -ffunction-sections
 LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,-O1 -Wl,--as-needed -Wl,--gc-sections
-# -Wl,--strip-all
+# LINK_OPTS += -Wl,--strip-all
 
 ifeq ($(MACOS),true)
 # MacOS linker flags

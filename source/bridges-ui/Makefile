@@ -51,19 +51,19 @@ LINK_VST_X11_FLAGS      = $(LINK_FLAGS) $(X11_LIBS) -ldl
 # --------------------------------------------------------------
 
 ifeq ($(HAVE_GTK2),true)
-# TARGETS += ui_lv2-gtk2
+TARGETS += ui_lv2-gtk2
 endif
 
 ifeq ($(HAVE_GTK3),true)
-# TARGETS += ui_lv2-gtk3
+TARGETS += ui_lv2-gtk3
 endif
 
 ifeq ($(HAVE_QT4),true)
-# TARGETS += ui_lv2-qt4
+TARGETS += ui_lv2-qt4
 endif
 
 ifeq ($(HAVE_QT5),true)
-# TARGETS += ui_lv2-qt5
+TARGETS += ui_lv2-qt5
 endif
 
 ifeq ($(HAVE_X11),true)

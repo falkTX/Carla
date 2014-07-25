@@ -19,7 +19,6 @@
 #include "CarlaBridgeToolkit.hpp"
 #include "CarlaStyle.hpp"
 
-#include <QtCore/QSettings> // FIXME
 #include <QtCore/QThread>
 #include <QtCore/QTimerEvent>
 
@@ -34,14 +33,6 @@
 CARLA_BRIDGE_START_NAMESPACE
 
 // -------------------------------------------------------------------------
-
-#if defined(BRIDGE_QT4)
-static const char* const appName = "Carla-Qt4UIs";
-#elif defined(BRIDGE_QT5)
-static const char* const appName = "Carla-Qt5UIs";
-#else
-static const char* const appName = "Carla-UIs";
-#endif
 
 static int   qargc = 0;
 static char* qargv[0] = {};
@@ -84,24 +75,6 @@ public:
 
         fApp = new QApplication(qargc, qargv);
 
-        {
-            QSettings settings("falkTX", "Carla");
-
-            if (settings.value("Main/UseProTheme", true).toBool())
-            {
-                CarlaStyle* const style(new CarlaStyle());
-                fApp->setStyle(style);
-                //style->ready(fApp);
-
-//                 QString color(settings.value("Main/ProThemeColor", "Black").toString());
-//
-//                 if (color == "System")
-//                     pass(); //style->setColorScheme(CarlaStyle::COLOR_SYSTEM);
-//                 else
-//                     style->setColorScheme(CarlaStyle::COLOR_BLACK);
-            }
-        }
-
         fWindow = new QMainWindow(nullptr);
         fWindow->resize(30, 30);
         fWindow->hide();
@@ -114,7 +87,6 @@ public:
         CARLA_ASSERT(fWindow != nullptr);
         carla_debug("CarlaBridgeToolkitQt::exec(%s)", bool2str(showUI));
 
-#if defined(BRIDGE_QT4) || defined(BRIDGE_QT5)
         QWidget* const widget((QWidget*)kClient->getWidget());
 
         fWindow->setCentralWidget(widget);
@@ -122,7 +94,6 @@ public:
 
         widget->setParent(fWindow);
         widget->show();
-#endif
 
         if (! kClient->isResizable())
         {
@@ -133,34 +104,7 @@ public:
         }
 
         fWindow->setWindowIcon(QIcon::fromTheme("carla", QIcon(":/scalable/carla.svg")));
-        fWindow->setWindowTitle(kWindowTitle);
-
-        {
-            QSettings settings("falkTX", appName);
-
-            if (settings.contains(QString("%1/pos_x").arg(kWindowTitle)))
-            {
-                bool hasX, hasY;
-                const int posX(settings.value(QString("%1/pos_x").arg(kWindowTitle), fWindow->x()).toInt(&hasX));
-                const int posY(settings.value(QString("%1/pos_y").arg(kWindowTitle), fWindow->y()).toInt(&hasY));
-
-                if (hasX && hasY)
-                    fWindow->move(posX, posY);
-
-                if (kClient->isResizable())
-                {
-                    bool hasWidth, hasHeight;
-                    const int width(settings.value(QString("%1/width").arg(kWindowTitle), fWindow->width()).toInt(&hasWidth));
-                    const int height(settings.value(QString("%1/height").arg(kWindowTitle), fWindow->height()).toInt(&hasHeight));
-
-                    if (hasWidth && hasHeight)
-                        fWindow->resize(width, height);
-                }
-            }
-
-            if (settings.value("Engine/UIsAlwaysOnTop", true).toBool())
-                fWindow->setWindowFlags(fWindow->windowFlags() | Qt::WindowStaysOnTopHint);
-        }
+        fWindow->setWindowTitle(kWindowTitle.buffer());
 
         if (showUI || fNeedsShow)
         {
@@ -192,13 +136,6 @@ public:
 
         if (fWindow != nullptr)
         {
-            QSettings settings("falkTX", appName);
-            settings.setValue(QString("%1/pos_x").arg(kWindowTitle), fWindow->x());
-            settings.setValue(QString("%1/pos_y").arg(kWindowTitle), fWindow->y());
-            settings.setValue(QString("%1/width").arg(kWindowTitle), fWindow->width());
-            settings.setValue(QString("%1/height").arg(kWindowTitle), fWindow->height());
-            settings.sync();
-
             fWindow->close();
 
             delete fWindow;
