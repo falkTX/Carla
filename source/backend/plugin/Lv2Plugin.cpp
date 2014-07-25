@@ -393,6 +393,7 @@ public:
           fCvInBuffers(nullptr),
           fCvOutBuffers(nullptr),
           fParamBuffers(nullptr),
+          fCanInit2(true),
           fLatencyChanged(false),
           fLatencyIndex(-1),
           fFirstActive(true),
@@ -700,7 +701,7 @@ public:
         if (fLatencyIndex == -1 && ! (hasMidiIn || needsFixedBuffer()))
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        if (pData->engine->getProccessMode() != ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        if (fCanInit2 && pData->engine->getProccessMode() != ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
         {
             if (pData->options & PLUGIN_OPTION_FORCE_STEREO)
                 options |= PLUGIN_OPTION_FORCE_STEREO;
@@ -2140,7 +2141,7 @@ public:
         if (fEventsOut.ctrl != nullptr && fEventsOut.ctrl->port == nullptr)
             fEventsOut.ctrl->port = pData->event.portOut;
 
-        if (forcedStereoIn || forcedStereoOut)
+        if (fCanInit2 && (forcedStereoIn || forcedStereoOut))
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
         else
             pData->options &= ~PLUGIN_OPTION_FORCE_STEREO;
@@ -2174,7 +2175,11 @@ public:
         // extra plugin hints
         pData->extraHints = 0x0;
 
-        if (fExt.state != nullptr || fExt.worker != nullptr)
+        if (! fCanInit2)
+        {
+            // can't run in rack
+        }
+        else if (fExt.state != nullptr || fExt.worker != nullptr)
         {
             if ((aIns == 0 || aIns == 2) && (aOuts == 0 || aOuts == 2) && evIns.count() <= 1 && evOuts.count() <= 1)
                 pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
@@ -4756,6 +4761,9 @@ public:
             return false;
         }
 
+        if (std::strcmp(uri, "http://hyperglitch.com/dev/VocProc") == 0)
+            fCanInit2 = false;
+
         // ---------------------------------------------------------------
         // set default options
 
@@ -4765,7 +4773,7 @@ public:
         if (fLatencyIndex >= 0 || getMidiInCount() > 0 || needsFixedBuffer())
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        if (pData->engine->getOptions().forceStereo)
+        if (fCanInit2 && pData->engine->getOptions().forceStereo)
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
 
         if (getMidiInCount() > 0)
@@ -5223,6 +5231,7 @@ private:
     float** fCvOutBuffers;
     float*  fParamBuffers;
 
+    bool    fCanInit2; // some plugins don't like 2 instances
     bool    fLatencyChanged;
     int32_t fLatencyIndex; // -1 if invalid
 
