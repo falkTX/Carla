@@ -21,6 +21,7 @@
 #ifndef BUILD_BRIDGE
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaBase64Utils.hpp"
 #include "CarlaBridgeUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaShmUtils.hpp"
@@ -53,6 +54,13 @@
             return 1;                                                                                                        \
         }                                                                                                                    \
     }
+
+// -------------------------------------------------------------------------------------------------------------------
+
+using juce::File;
+using juce::MemoryBlock;
+using juce::String;
+using juce::StringArray;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -282,7 +290,6 @@ struct BridgeTime {
 
 // -------------------------------------------------------------------------------------------------------------------
 
-// FIXME - use CarlaString
 struct BridgeParamInfo {
     float value;
     CarlaString name;
@@ -362,7 +369,7 @@ public:
 
         clearBuffers();
 
-        //info.chunk.clear();
+        fInfo.chunk.clear();
     }
 
     // -------------------------------------------------------------------
@@ -404,20 +411,14 @@ public:
     // -------------------------------------------------------------------
     // Information (current data)
 
-    int32_t getChunkData(void** const dataPtr) const noexcept override
+    std::size_t getChunkData(void** const dataPtr) noexcept override
     {
-        CARLA_ASSERT(pData->options & PLUGIN_OPTION_USE_CHUNKS);
-        CARLA_ASSERT(dataPtr != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS, 0);
+        CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(fInfo.chunk.size() > 0, 0);
 
-#if 0
-        if (! info.chunk.isEmpty())
-        {
-            *dataPtr = info.chunk.data();
-            return info.chunk.size();
-        }
-#endif
-
-        return 0;
+        *dataPtr = fInfo.chunk.data();
+        return fInfo.chunk.size();
     }
 
     // -------------------------------------------------------------------
@@ -588,32 +589,29 @@ public:
 
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
+#endif
 
     void setChunkData(const char* const stringData) override
     {
-        CARLA_ASSERT(m_hints & PLUGIN_USES_CHUNKS);
-        CARLA_ASSERT(stringData);
+        CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS,);
+        CARLA_SAFE_ASSERT_RETURN(stringData != nullptr,);
 
-        QString filePath;
-        filePath  = QDir::tempPath();
-        filePath += "/.CarlaChunk_";
-        filePath += m_name;
+        String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
 
-        filePath = QDir::toNativeSeparators(filePath);
+        filePath += OS_SEP_STR;
+        filePath += ".CarlaChunk_";
+        filePath += fShmAudioPool.filename.buffer() + 18;
 
-        QFile file(filePath);
-
-        if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+        if (File(filePath).replaceWithText(stringData))
         {
-            QTextStream out(&file);
-            out << stringData;
-            file.close();
-            osc_send_configure(&osc.data, CARLA_BRIDGE_MSG_SET_CHUNK, filePath.toUtf8().constData());
-        }
+            const CarlaMutexLocker _cml(fShmControl.lock);
 
-        pData->updateParameterValues(this, pData->engine->isOscControlRegistered(), true, false);
+            fShmControl.writeOpcode(kPluginBridgeOpcodeSetChunkFile);
+            fShmControl.writeInt(filePath.length());
+            fShmControl.writeCustomData(filePath.toRawUTF8(), filePath.length());
+            fShmControl.commitWrite();
+        }
     }
-#endif
 
     // -------------------------------------------------------------------
     // Set ui stuff
@@ -1707,51 +1705,45 @@ public:
 
         case kPluginBridgeSetChunkData: {
             CARLA_BRIDGE_CHECK_OSC_TYPES(1, "s");
-#if 0
-            const char* const chunkFileChar = (const char*)&argv[0]->s;
 
-            CARLA_ASSERT(chunkFileChar);
+            const char* const chunkFilePath = (const char*)&argv[0]->s;
 
-            QString chunkFileStr(chunkFileChar);
+            CARLA_SAFE_ASSERT_BREAK(chunkFilePath != nullptr);
+
+            String realChunkFilePath(chunkFilePath);
+            carla_stdout("chunk save path BEFORE => %s", realChunkFilePath.toRawUTF8());
 
 #ifndef CARLA_OS_WIN
             // Using Wine, fix temp dir
-            if (m_binary == BINARY_WIN32 || m_binary == BINARY_WIN64)
+            if (fBinaryType == BINARY_WIN32 || fBinaryType == BINARY_WIN64)
             {
                 // Get WINEPREFIX
-                QString wineDir;
+                String wineDir;
                 if (const char* const WINEPREFIX = getenv("WINEPREFIX"))
-                    wineDir = QString(WINEPREFIX);
+                    wineDir = String(WINEPREFIX);
                 else
-                    wineDir = QDir::homePath() + "/.wine";
+                    wineDir = File::getSpecialLocation(File::userHomeDirectory).getFullPathName() + "/.wine";
 
-                QStringList chunkFileStrSplit1 = chunkFileStr.split(":/");
-                QStringList chunkFileStrSplit2 = chunkFileStrSplit1.at(1).split("\\");
+                const StringArray driveLetterSplit(StringArray::fromTokens(realChunkFilePath, ":/", ""));
 
-                QString wineDrive = chunkFileStrSplit1.at(0).toLower();
-                QString wineTMP   = chunkFileStrSplit2.at(0);
-                QString baseName  = chunkFileStrSplit2.at(1);
+                realChunkFilePath  = wineDir;
+                realChunkFilePath += "/drive_";
+                realChunkFilePath += driveLetterSplit[0].toLowerCase();
+                realChunkFilePath += "/";
+                realChunkFilePath += driveLetterSplit[1];
 
-                chunkFileStr  = wineDir;
-                chunkFileStr += "/drive_";
-                chunkFileStr += wineDrive;
-                chunkFileStr += "/";
-                chunkFileStr += wineTMP;
-                chunkFileStr += "/";
-                chunkFileStr += baseName;
-                chunkFileStr  = QDir::toNativeSeparators(chunkFileStr);
+                realChunkFilePath  = realChunkFilePath.replace("\\", "/");
+                carla_stdout("chunk save path AFTER => %s", realChunkFilePath.toRawUTF8());
             }
 #endif
 
-            QFile chunkFile(chunkFileStr);
+            File chunkFile(realChunkFilePath);
 
-            if (chunkFile.open(QIODevice::ReadOnly))
+            if (chunkFile.existsAsFile())
             {
-                info.chunk = chunkFile.readAll();
-                chunkFile.close();
-                chunkFile.remove();
+                fInfo.chunk = carla_getChunkFromBase64String(chunkFile.loadFileAsString().toRawUTF8());
+                chunkFile.deleteFile();
             }
-#endif
             break;
         }
 
@@ -1994,6 +1986,18 @@ public:
             return false;
         }
 
+        // ---------------------------------------------------------------
+        // set default options
+
+        pData->options  = 0x0;
+        pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        pData->options |= PLUGIN_OPTION_USE_CHUNKS;
+        pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+        pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+        pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+        pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+        pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+
         return true;
     }
 
@@ -2024,7 +2028,7 @@ private:
         CarlaString label;
         CarlaString maker;
         CarlaString copyright;
-        //QByteArray chunk;
+        std::vector<uint8_t> chunk;
 
         Info()
             : aIns(0),

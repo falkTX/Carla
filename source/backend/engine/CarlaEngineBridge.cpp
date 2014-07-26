@@ -31,6 +31,9 @@
 #include <cerrno>
 #include <ctime>
 
+using juce::File;
+using juce::String;
+
 #ifdef JACKBRIDGE_EXPORT
 // -------------------------------------------------------------------
 
@@ -43,10 +46,6 @@ bool jackbridge_is_ok() noexcept
 // -------------------------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
-
-#if 0
-} // Fix editor indentation
-#endif
 
 // -------------------------------------------------------------------
 
@@ -478,6 +477,38 @@ public:
                     break;
                 }
 
+                case kPluginBridgeOpcodeSetChunkFile: {
+                    const uint32_t size(fShmControl.readUInt());
+                    CARLA_SAFE_ASSERT_BREAK(size > 0);
+
+                    char chunkFilePathTry[size+1];
+                    carla_zeroChar(chunkFilePathTry, size+1);
+                    fShmControl.readCustomData(chunkFilePathTry, size);
+
+                    CARLA_SAFE_ASSERT_BREAK(chunkFilePathTry[0] != '\0');
+
+                    String chunkFilePath(chunkFilePathTry);
+#ifdef CARLA_OS_WIN
+                    if (chunkFilePath.startsWith("/"))
+                    {
+                        // running under Wine, posix host
+                        chunkFilePath = chunkFilePath.replaceSection(0, 1, "Z:\\");
+                        chunkFilePath = chunkFilePath.replace("/", "\\");
+                    }
+#endif
+
+                    File chunkFile(chunkFilePath);
+                    CARLA_SAFE_ASSERT_BREAK(chunkFile.existsAsFile());
+
+                    String chunkData(chunkFile.loadFileAsString());
+                    chunkFile.deleteFile();
+                    CARLA_SAFE_ASSERT_BREAK(chunkData.isNotEmpty());
+
+                    carla_set_chunk_data(0, chunkData.toRawUTF8());
+                    carla_stdout("chunk sent, size:%i", chunkData.length());
+                    break;
+                }
+
                 case kPluginBridgeOpcodePrepareForSave: {
                     carla_prepare_for_save(0);
 
@@ -491,28 +522,16 @@ public:
 
                     //if (fPlugin->getOptionsEnabled() & CarlaBackend::PLUGIN_OPTION_USE_CHUNKS)
                     {
-                        //if (const char* const chunkData = carla_get_chunk_data(0))
+                        if (const char* const chunkData = carla_get_chunk_data(0))
                         {
-#if 0
-                            QString filePath;
-                            filePath = QDir::tempPath();
-            #ifdef Q_OS_WIN
-                            filePath += "\\.CarlaChunk_";
-            #else
-                            filePath += "/.CarlaChunk_";
-            #endif
-                            filePath += fPlugin->getName();
+                            String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
 
-                            QFile file(filePath);
+                            filePath += OS_SEP_STR;
+                            filePath += ".CarlaChunk_";
+                            filePath += fShmAudioPool.filename.buffer() + 18;
 
-                            if (file.open(QIODevice::WriteOnly))
-                            {
-                                QByteArray chunk((const char*)data, dataSize);
-                                file.write(chunk);
-                                file.close();
-                                fEngine->oscSend_bridge_set_chunk_data(filePath.toUtf8().constData());
-                            }
-#endif
+                            if (File(filePath).replaceWithText(chunkData))
+                                oscSend_bridge_set_chunk_data(filePath.toRawUTF8());
                         }
                     }
 

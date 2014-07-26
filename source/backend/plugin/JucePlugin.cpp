@@ -21,6 +21,7 @@
 #if (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaBase64Utils.hpp"
 #include "JucePluginWindow.hpp"
 
 #include "juce_audio_processors.h"
@@ -113,7 +114,27 @@ public:
     // -------------------------------------------------------------------
     // Information (current data)
 
-    // nothing
+    std::size_t getChunkData(void** const dataPtr) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS, 0);
+        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
+
+        *dataPtr = nullptr;
+
+        try {
+            fChunk.reset();
+            fInstance->getStateInformation(fChunk);
+        } CARLA_SAFE_EXCEPTION_RETURN("JucePlugin::getChunkData", 0);
+
+        if (const std::size_t size = fChunk.getSize())
+        {
+            *dataPtr = fChunk.getData();
+            return size;
+        }
+
+        return 0;
+    }
 
     // -------------------------------------------------------------------
     // Information (per-plugin data)
@@ -125,7 +146,7 @@ public:
         uint options = 0x0;
 
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-        //options |= PLUGIN_OPTION_USE_CHUNKS;
+        options |= PLUGIN_OPTION_USE_CHUNKS;
 
         if (fInstance->acceptsMidi())
         {
@@ -227,16 +248,34 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
+    void setChunkData(const char* const stringData) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS,);
+        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(stringData != nullptr,);
+
+        std::vector<uint8_t> chunk(carla_getChunkFromBase64String(stringData));
+        CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0,);
+
+        {
+            const ScopedSingleProcessLocker spl(this, true);
+            fInstance->setStateInformation(chunk.data(), chunk.size());
+        }
+
+#ifdef BUILD_BRIDGE
+        const bool sendOsc(false);
+#else
+        const bool sendOsc(pData->engine->isOscControlRegistered());
+#endif
+        pData->updateParameterValues(this, sendOsc, true, false);
+    }
+
     // -------------------------------------------------------------------
     // Set ui stuff
 
     void showCustomUI(const bool yesNo) override
     {
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
-
-#ifdef CARLA_OS_LINUX
-        const MessageManagerLock mmLock;
-#endif
 
         if (yesNo)
         {
@@ -1032,10 +1071,6 @@ public:
             return false;
         }
 
-#ifdef CARLA_OS_LINUX
-        const MessageManagerLock mmLock;
-#endif
-
         // ---------------------------------------------------------------
         // fix path for wine usage
 
@@ -1096,7 +1131,7 @@ public:
         pData->options  = 0x0;
         pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
         pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-        //pData->options |= PLUGIN_OPTION_USE_CHUNKS;
+        pData->options |= PLUGIN_OPTION_USE_CHUNKS;
 
         if (fInstance->acceptsMidi())
         {
@@ -1117,6 +1152,7 @@ private:
     AudioSampleBuffer   fAudioBuffer;
     MidiBuffer          fMidiBuffer;
     CurrentPositionInfo fPosInfo;
+    MemoryBlock         fChunk;
 
     const char* fUniqueId;
 

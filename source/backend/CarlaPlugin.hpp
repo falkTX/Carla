@@ -263,7 +263,7 @@ public:
      *
      * \see setChunkData()
      */
-    virtual int32_t getChunkData(void** const dataPtr) const noexcept;
+    virtual std::size_t getChunkData(void** const dataPtr) noexcept;
 
     // -------------------------------------------------------------------
     // Information (per-plugin data)

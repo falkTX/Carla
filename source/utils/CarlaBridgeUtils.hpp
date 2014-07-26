@@ -60,8 +60,8 @@ enum PluginBridgeOpcode {
     kPluginBridgeOpcodeSetParameterMidiCC      =  7, // int, float
     kPluginBridgeOpcodeSetProgram              =  8, // int
     kPluginBridgeOpcodeSetMidiProgram          =  9, // int
-    kPluginBridgeOpcodeSetCustomData           = 10, // str, str, str
-    kPluginBridgeOpcodeSetChunkFile            = 11, // str
+    kPluginBridgeOpcodeSetCustomData           = 10, // int/size, str, int/size, str, int/size, str
+    kPluginBridgeOpcodeSetChunkFile            = 11, // int/size, str
     kPluginBridgeOpcodePrepareForSave          = 12,
     kPluginBridgeOpcodeMidiEvent               = 13, // long, int, char[] (long = timeFrame, int = size max 4)
     kPluginBridgeOpcodeProcess                 = 14,

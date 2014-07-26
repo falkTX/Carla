@@ -362,40 +362,6 @@ private:
     }
 };
 
-#if 0
-int CarlaBridgeOsc::handleMsgPluginSetChunk(CARLA_BRIDGE_OSC_HANDLE_ARGS)
-{
-    CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(1, "s");
-    CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
-    carla_debug("CarlaBridgeOsc::handleMsgPluginSetChunk()");
-
-    const char* const chunkFilePathTry = (const char*)&argv[0]->s;
-
-    CARLA_SAFE_ASSERT_RETURN(chunkFilePathTry != nullptr && chunkFilePathTry[0] != '\0', 0);
-
-    String chunkFilePath(chunkFilePathTry);
-
-#ifdef CARLA_OS_WIN
-    if (chunkFilePath.startsWith("/"))
-    {
-        // running under Wine, posix host
-        chunkFilePath = chunkFilePath.replaceSection(0, 1, "Z:\\");
-        chunkFilePath = chunkFilePath.replace("/", "\\");
-    }
-#endif
-
-    File chunkFile(chunkFilePath);
-    CARLA_SAFE_ASSERT_RETURN(chunkFile.existsAsFile(), 0);
-
-    String chunkData(chunkFile.loadFileAsString());
-    chunkFile.deleteFile();
-    CARLA_SAFE_ASSERT_RETURN(chunkData.isNotEmpty(), 0);
-
-    carla_set_chunk_data(0, chunkData.toRawUTF8());
-    return 0;
-}
-#endif
-
 // -------------------------------------------------------------------------
 
 int main(int argc, char* argv[])

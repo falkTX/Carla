@@ -1682,7 +1682,6 @@ const char* carla_get_chunk_data(uint pluginId)
             if (data != nullptr && dataSize > 0)
             {
                 chunkData = CarlaString::asBase64(data, static_cast<std::size_t>(dataSize));
-
                 return chunkData;
             }
             else

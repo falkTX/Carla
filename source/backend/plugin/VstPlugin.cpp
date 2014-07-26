@@ -182,7 +182,7 @@ public:
     // -------------------------------------------------------------------
     // Information (current data)
 
-    int32_t getChunkData(void** const dataPtr) const noexcept override
+    std::size_t getChunkData(void** const dataPtr) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS, 0);
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, 0);
@@ -191,7 +191,9 @@ public:
         *dataPtr = nullptr;
 
         try {
-            return static_cast<int32_t>(dispatcher(effGetChunk, 0 /* bank */, 0, dataPtr, 0.0f));
+            const intptr_t ret = dispatcher(effGetChunk, 0 /* bank */, 0, dataPtr, 0.0f);
+            CARLA_SAFE_ASSERT_RETURN(ret >= 0, 0);
+            return static_cast<std::size_t>(ret);
         } CARLA_SAFE_EXCEPTION_RETURN("VstPlugin::getChunkData", 0);
     }
 

@@ -261,7 +261,7 @@ const CustomData& CarlaPlugin::getCustomData(const uint32_t index) const noexcep
     return pData->custom.getAt(index, kCustomDataNull);
 }
 
-int32_t CarlaPlugin::getChunkData(void** const dataPtr) const noexcept
+std::size_t CarlaPlugin::getChunkData(void** const dataPtr) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
     CARLA_SAFE_ASSERT(false); // this should never happen

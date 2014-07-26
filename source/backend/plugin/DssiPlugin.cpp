@@ -143,7 +143,7 @@ public:
     // -------------------------------------------------------------------
     // Information (current data)
 
-    int32_t getChunkData(void** const dataPtr) const noexcept override
+    std::size_t getChunkData(void** const dataPtr) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fUsesCustomData, 0);
         CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS, 0);
@@ -162,7 +162,7 @@ public:
             ret = fDssiDescriptor->get_custom_data(fHandle, dataPtr, &dataSize);
         } CARLA_SAFE_EXCEPTION_RETURN("DssiPlugin::getChunkData", 0);
 
-        return (ret != 0) ? static_cast<int32_t>(dataSize) : 0;
+        return (ret != 0) ? dataSize : 0;
     }
 
     // -------------------------------------------------------------------
