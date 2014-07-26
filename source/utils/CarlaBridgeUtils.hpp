@@ -22,62 +22,71 @@
 
 // -----------------------------------------------------------------------
 
-enum PluginBridgeInfoType {
-    kPluginBridgeNull,
-    kPluginBridgePong = 0,
-    kPluginBridgePluginInfo1,          // uuh    => category, hints, uniqueId
-    kPluginBridgePluginInfo2,          // ssss   => realName, label, maker, copyright
-    kPluginBridgeAudioCount,           // uu     => ins, outs
-    kPluginBridgeMidiCount,            // uu     => ins, outs
-    kPluginBridgeParameterCount,       // uu     => ins, outs
-    kPluginBridgeProgramCount,         // u      => count
-    kPluginBridgeMidiProgramCount,     // u      => count
-    kPluginBridgeParameterData,        // uiuuss => index, rindex, type, hints, name, unit
-    kPluginBridgeParameterRanges1,     // ufff   => index, def, min, max
-    kPluginBridgeParameterRanges2,     // ufff   => index, step, stepSmall, stepLarge
-    kPluginBridgeParameterMidiCC,      // ui     => index, cc
-    kPluginBridgeParameterMidiChannel, // uu     => index, channel
-    kPluginBridgeParameterValue,       // uf     => index, value
-    kPluginBridgeDefaultValue,         // uf     => index, value
-    kPluginBridgeCurrentProgram,       // i      => index
-    kPluginBridgeCurrentMidiProgram,   // i      => index
-    kPluginBridgeProgramName,          // us     => index, name
-    kPluginBridgeMidiProgramData,      // uuus   => index, bank, program, name
-    kPluginBridgeConfigure,            // ss     => key, value
-    kPluginBridgeSetCustomData,        // sss    => type, key, value
-    kPluginBridgeSetChunkData,         // s      => chunkFile
-    kPluginBridgeLatency,              // u      => value
-    kPluginBridgeUpdateNow,            //
-    kPluginBridgeError                 //
+// carla-plugin receives these via osc
+enum PluginBridgeOscInfoType {
+    kPluginBridgeOscNull = 0,
+    kPluginBridgeOscPong,
+    kPluginBridgeOscPluginInfo1,          // uuh    => category, hints, uniqueId
+    kPluginBridgeOscPluginInfo2,          // ssss   => realName, label, maker, copyright
+    kPluginBridgeOscAudioCount,           // uu     => ins, outs
+    kPluginBridgeOscMidiCount,            // uu     => ins, outs
+    kPluginBridgeOscParameterCount,       // uu     => ins, outs
+    kPluginBridgeOscProgramCount,         // u      => count
+    kPluginBridgeOscMidiProgramCount,     // u      => count
+    kPluginBridgeOscParameterData,        // uiuuss => index, rindex, type, hints, name, unit
+    kPluginBridgeOscParameterRanges1,     // ufff   => index, def, min, max
+    kPluginBridgeOscParameterRanges2,     // ufff   => index, step, stepSmall, stepLarge
+    kPluginBridgeOscParameterMidiCC,      // ui     => index, cc
+    kPluginBridgeOscParameterMidiChannel, // uu     => index, channel
+    kPluginBridgeOscParameterValue,       // uf     => index, value
+    kPluginBridgeOscDefaultValue,         // uf     => index, value
+    kPluginBridgeOscCurrentProgram,       // i      => index
+    kPluginBridgeOscCurrentMidiProgram,   // i      => index
+    kPluginBridgeOscProgramName,          // us     => index, name
+    kPluginBridgeOscMidiProgramData,      // uuus   => index, bank, program, name
+    kPluginBridgeOscConfigure,            // ss     => key, value
+    kPluginBridgeOscSetCustomData,        // sss    => type, key, value
+    kPluginBridgeOscSetChunkDataFile,     // s      => chunkFile
+    kPluginBridgeOscLatency,              // u      => value
+    kPluginBridgeOscReady,
+    kPluginBridgeOscError
 };
 
+// carla-plugin sends these during RT
 enum PluginBridgeRtOpcode {
-    kPluginBridgeRtOpcodeNull = 0,
-    kPluginBridgeRtOpcodeSetParameter,   // int, float
-    kPluginBridgeRtOpcodeSetProgram,     // int
-    kPluginBridgeRtOpcodeSetMidiProgram, // int
-    kPluginBridgeRtOpcodeMidiEvent,      // uint/frame, uint/size, char[]
-    kPluginBridgeRtOpcodeProcess,
-    kPluginBridgeRtOpcodeQuit
+    kPluginBridgeRtNull = 0,
+    kPluginBridgeRtSetParameter,   // int, float
+    kPluginBridgeRtSetProgram,     // int
+    kPluginBridgeRtSetMidiProgram, // int
+    kPluginBridgeRtMidiEvent,      // uint/frame, uint/size, char[]
+    kPluginBridgeRtProcess
 };
 
+// carla-plugin sends these during non-RT
 enum PluginBridgeNonRtOpcode {
-    kPluginBridgeNonRtOpcodeNull = 0,
-    kPluginBridgeNonRtOpcodePing,
-    kPluginBridgeNonRtOpcodeSetAudioPool,            // ulong/ptr
-    kPluginBridgeNonRtOpcodeSetBufferSize,           // uint
-    kPluginBridgeNonRtOpcodeSetSampleRate,           // double
-    kPluginBridgeNonRtOpcodeSetParameterValue,       // int, float
-    kPluginBridgeNonRtOpcodeSetParameterMidiChannel, // byte, float
-    kPluginBridgeNonRtOpcodeSetParameterMidiCC,      // short, float
-    kPluginBridgeNonRtOpcodeSetProgram,              // int
-    kPluginBridgeNonRtOpcodeSetMidiProgram,          // int
-    kPluginBridgeNonRtOpcodeSetCustomData,           // uint/size, str, uint/size, str, uint/size, str
-    kPluginBridgeNonRtOpcodeSetChunkFile,            // uint/size, str/file
-    kPluginBridgeNonRtOpcodePrepareForSave,
-    kPluginBridgeNonRtOpcodeShowUI,                  // bool
-    kPluginBridgeNonRtOpcodeQuit
+    kPluginBridgeNonRtNull = 0,
+    kPluginBridgeNonRtPing,
+    kPluginBridgeNonRtActivate,
+    kPluginBridgeNonRtDectivate,
+    kPluginBridgeNonRtSetAudioPool,            // ulong/ptr
+    kPluginBridgeNonRtSetBufferSize,           // uint
+    kPluginBridgeNonRtSetSampleRate,           // double
+    kPluginBridgeNonRtSetOffline,
+    kPluginBridgeNonRtSetOnline,
+    kPluginBridgeNonRtSetParameterValue,       // int, float
+    kPluginBridgeNonRtSetParameterMidiChannel, // byte, float
+    kPluginBridgeNonRtSetParameterMidiCC,      // short, float
+    kPluginBridgeNonRtSetProgram,              // int
+    kPluginBridgeNonRtSetMidiProgram,          // int
+    kPluginBridgeNonRtSetCustomData,           // uint/size, str, uint/size, str, uint/size, str
+    kPluginBridgeNonRtSetChunkDataFile,        // uint/size, str/file
+    kPluginBridgeNonRtPrepareForSave,
+    kPluginBridgeNonRtShowUI,
+    kPluginBridgeNonRtHideUI,
+    kPluginBridgeNonRtQuit
 };
+
+// -----------------------------------------------------------------------
 
 const char* const CARLA_BRIDGE_MSG_HIDE_GUI = "CarlaBridgeHideGUI"; //!< Plugin -> Host configure, tells host GUI is now hidden
 const char* const CARLA_BRIDGE_MSG_SAVED    = "CarlaBridgeSaved";   //!< Plugin -> Host configure, tells host state is saved
@@ -106,13 +115,13 @@ struct BridgeTimeInfo {
     double barStartTick, ticksPerBeat, beatsPerMinute;
 };
 
-struct BridgeShmRtData {
+struct BridgeRtData {
     BridgeSemaphore sem;
     BridgeTimeInfo timeInfo;
     StackBuffer ringBuffer;
 };
 
-struct BridgeShmNonRtData {
+struct BridgeNonRtData {
     BridgeSemaphore sem;
     BigStackBuffer ringBuffer;
 };
@@ -120,94 +129,139 @@ struct BridgeShmNonRtData {
 // -----------------------------------------------------------------------
 
 static inline
-const char* PluginBridgeInfoType2str(const PluginBridgeInfoType type) noexcept
+const char* PluginBridgeOscInfoType2str(const PluginBridgeOscInfoType type) noexcept
 {
     switch (type)
     {
-    case kPluginBridgePong:
-        return "kPluginBridgePong";
-    case kPluginBridgePluginInfo1:
-        return "kPluginBridgePluginInfo1";
-    case kPluginBridgePluginInfo2:
-        return "kPluginBridgePluginInfo2";
-    case kPluginBridgeAudioCount:
-        return "kPluginBridgeAudioCount";
-    case kPluginBridgeMidiCount:
-        return "kPluginBridgeMidiCount";
-    case kPluginBridgeParameterCount:
-        return "kPluginBridgeParameterCount";
-    case kPluginBridgeProgramCount:
-        return "kPluginBridgeProgramCount";
-    case kPluginBridgeMidiProgramCount:
-        return "kPluginBridgeMidiProgramCount";
-    case kPluginBridgeParameterData:
-        return "kPluginBridgeParameterData";
-    case kPluginBridgeParameterRanges1:
-        return "kPluginBridgeParameterRanges1";
-    case kPluginBridgeParameterRanges2:
-        return "kPluginBridgeParameterRanges2";
-    case kPluginBridgeParameterMidiCC:
-        return "kPluginBridgeParameterMidiCC";
-    case kPluginBridgeParameterMidiChannel:
-        return "kPluginBridgeParameterMidiChannel";
-    case kPluginBridgeParameterValue:
-        return "kPluginBridgeParameterValue";
-    case kPluginBridgeDefaultValue:
-        return "kPluginBridgeDefaultValue";
-    case kPluginBridgeCurrentProgram:
-        return "kPluginBridgeCurrentProgram";
-    case kPluginBridgeCurrentMidiProgram:
-        return "kPluginBridgeCurrentMidiProgram";
-    case kPluginBridgeProgramName:
-        return "kPluginBridgeProgramName";
-    case kPluginBridgeMidiProgramData:
-        return "kPluginBridgeMidiProgramData";
-    case kPluginBridgeConfigure:
-        return "kPluginBridgeConfigure";
-    case kPluginBridgeSetCustomData:
-        return "kPluginBridgeSetCustomData";
-    case kPluginBridgeSetChunkData:
-        return "kPluginBridgeSetChunkData";
-    case kPluginBridgeUpdateNow:
-        return "kPluginBridgeUpdateNow";
-    case kPluginBridgeError:
-        return "kPluginBridgeError";
+    case kPluginBridgeOscNull:
+        return "kPluginBridgeOscNull";
+    case kPluginBridgeOscPong:
+        return "kPluginBridgeOscPong";
+    case kPluginBridgeOscPluginInfo1:
+        return "kPluginBridgeOscPluginInfo1";
+    case kPluginBridgeOscPluginInfo2:
+        return "kPluginBridgeOscPluginInfo2";
+    case kPluginBridgeOscAudioCount:
+        return "kPluginBridgeOscAudioCount";
+    case kPluginBridgeOscMidiCount:
+        return "kPluginBridgeOscMidiCount";
+    case kPluginBridgeOscParameterCount:
+        return "kPluginBridgeOscParameterCount";
+    case kPluginBridgeOscProgramCount:
+        return "kPluginBridgeOscProgramCount";
+    case kPluginBridgeOscMidiProgramCount:
+        return "kPluginBridgeOscMidiProgramCount";
+    case kPluginBridgeOscParameterData:
+        return "kPluginBridgeOscParameterData";
+    case kPluginBridgeOscParameterRanges1:
+        return "kPluginBridgeOscParameterRanges1";
+    case kPluginBridgeOscParameterRanges2:
+        return "kPluginBridgeOscParameterRanges2";
+    case kPluginBridgeOscParameterMidiCC:
+        return "kPluginBridgeOscParameterMidiCC";
+    case kPluginBridgeOscParameterMidiChannel:
+        return "kPluginBridgeOscParameterMidiChannel";
+    case kPluginBridgeOscParameterValue:
+        return "kPluginBridgeOscParameterValue";
+    case kPluginBridgeOscDefaultValue:
+        return "kPluginBridgeOscDefaultValue";
+    case kPluginBridgeOscCurrentProgram:
+        return "kPluginBridgeOscCurrentProgram";
+    case kPluginBridgeOscCurrentMidiProgram:
+        return "kPluginBridgeOscCurrentMidiProgram";
+    case kPluginBridgeOscProgramName:
+        return "kPluginBridgeOscProgramName";
+    case kPluginBridgeOscMidiProgramData:
+        return "kPluginBridgeOscMidiProgramData";
+    case kPluginBridgeOscConfigure:
+        return "kPluginBridgeOscConfigure";
+    case kPluginBridgeOscSetCustomData:
+        return "kPluginBridgeOscSetCustomData";
+    case kPluginBridgeOscSetChunkDataFile:
+        return "kPluginBridgeOscSetChunkDataFile";
+    case kPluginBridgeOscLatency:
+        return "kPluginBridgeOscLatency";
+    case kPluginBridgeOscReady:
+        return "kPluginBridgeOscReady";
+    case kPluginBridgeOscError:
+        return "kPluginBridgeOscError";
     }
 
-    carla_stderr("CarlaBackend::PluginBridgeInfoType2str(%i) - invalid type", type);
+    carla_stderr("CarlaBackend::PluginBridgeOscInfoType2str(%i) - invalid type", type);
     return nullptr;
 }
 
 static inline
-const char* PluginBridgeOpcode2str(const PluginBridgeOpcode opcode) noexcept
+const char* PluginBridgeRtOpcode2str(const PluginBridgeRtOpcode opcode) noexcept
 {
     switch (opcode)
     {
-    case kPluginBridgeOpcodeNull:
-        return "kPluginBridgeOpcodeNull";
-    case kPluginBridgeOpcodeSetAudioPool:
-        return "kPluginBridgeOpcodeSetAudioPool";
-    case kPluginBridgeOpcodeSetBufferSize:
-        return "kPluginBridgeOpcodeSetBufferSize";
-    case kPluginBridgeOpcodeSetSampleRate:
-        return "kPluginBridgeOpcodeSetSampleRate";
-    case kPluginBridgeOpcodeSetParameterRt:
-        return "kPluginBridgeOpcodeSetParameterRt";
-    case kPluginBridgeOpcodeSetParameterNonRt:
-        return "kPluginBridgeOpcodeSetParameterNonRt";
-    case kPluginBridgeOpcodeSetProgram:
-        return "kPluginBridgeOpcodeSetProgram";
-    case kPluginBridgeOpcodeSetMidiProgram:
-        return "kPluginBridgeOpcodeSetMidiProgram";
-    case kPluginBridgeOpcodeMidiEvent:
-        return "kPluginBridgeOpcodeMidiEvent";
-    case kPluginBridgeOpcodeProcess:
-        return "kPluginBridgeOpcodeProcess";
-    case kPluginBridgeOpcodeQuit:
-        return "kPluginBridgeOpcodeQuit";
+    case kPluginBridgeRtNull:
+        return "kPluginBridgeRtNull";
+    case kPluginBridgeRtSetParameter:
+        return "kPluginBridgeRtSetParameter";
+    case kPluginBridgeRtSetProgram:
+        return "kPluginBridgeRtSetProgram";
+    case kPluginBridgeRtSetMidiProgram:
+        return "kPluginBridgeRtSetMidiProgram";
+    case kPluginBridgeRtMidiEvent:
+        return "kPluginBridgeRtMidiEvent";
+    case kPluginBridgeRtProcess:
+        return "kPluginBridgeRtProcess";
     }
 
-    carla_stderr("CarlaBackend::PluginBridgeOpcode2str(%i) - invalid opcode", opcode);
+    carla_stderr("CarlaBackend::PluginBridgeRtOpcode2str(%i) - invalid opcode", opcode);
+    return nullptr;
+}
+
+static inline
+const char* PluginBridgeNonRtOpcode2str(const PluginBridgeNonRtOpcode opcode) noexcept
+{
+    switch (opcode)
+    {
+    case kPluginBridgeNonRtNull:
+        return "kPluginBridgeNonRtNull";
+    case kPluginBridgeNonRtPing:
+        return "kPluginBridgeNonRtPing";
+    case kPluginBridgeNonRtActivate:
+        return "kPluginBridgeNonRtActivate";
+    case kPluginBridgeNonRtDectivate:
+        return "kPluginBridgeNonRtDectivate";
+    case kPluginBridgeNonRtSetAudioPool:
+        return "kPluginBridgeNonRtSetAudioPool";
+    case kPluginBridgeNonRtSetBufferSize:
+        return "kPluginBridgeNonRtSetBufferSize";
+    case kPluginBridgeNonRtSetSampleRate:
+        return "kPluginBridgeNonRtSetSampleRate";
+    case kPluginBridgeNonRtSetOffline:
+        return "kPluginBridgeNonRtSetOffline";
+    case kPluginBridgeNonRtSetOnline:
+        return "kPluginBridgeNonRtSetOnline";
+    case kPluginBridgeNonRtSetParameterValue:
+        return "kPluginBridgeNonRtSetParameterValue";
+    case kPluginBridgeNonRtSetParameterMidiChannel:
+        return "kPluginBridgeNonRtSetParameterMidiChannel";
+    case kPluginBridgeNonRtSetParameterMidiCC:
+        return "kPluginBridgeNonRtSetParameterMidiCC";
+    case kPluginBridgeNonRtSetProgram:
+        return "kPluginBridgeNonRtSetProgram";
+    case kPluginBridgeNonRtSetMidiProgram:
+        return "kPluginBridgeNonRtSetMidiProgram";
+    case kPluginBridgeNonRtSetCustomData:
+        return "kPluginBridgeNonRtSetCustomData";
+    case kPluginBridgeNonRtSetChunkDataFile:
+        return "kPluginBridgeNonRtSetChunkDataFile";
+    case kPluginBridgeNonRtPrepareForSave:
+        return "kPluginBridgeNonRtPrepareForSave";
+    case kPluginBridgeNonRtShowUI:
+        return "kPluginBridgeNonRtShowUI";
+    case kPluginBridgeNonRtHideUI:
+        return "kPluginBridgeNonRtHideUI";
+    case kPluginBridgeNonRtQuit:
+        return "kPluginBridgeNonRtQuit";
+    }
+
+    carla_stderr("CarlaBackend::PluginBridgeNonRtOpcode2str(%i) - invalid opcode", opcode);
     return nullptr;
 }
 
