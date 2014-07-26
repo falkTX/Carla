@@ -23,6 +23,7 @@
 // -----------------------------------------------------------------------
 
 enum PluginBridgeInfoType {
+    kPluginBridgeNull,
     kPluginBridgePong = 0,
     kPluginBridgePluginInfo1,          // uuh    => category, hints, uniqueId
     kPluginBridgePluginInfo2,          // ssss   => realName, label, maker, copyright
@@ -45,33 +46,41 @@ enum PluginBridgeInfoType {
     kPluginBridgeConfigure,            // ss     => key, value
     kPluginBridgeSetCustomData,        // sss    => type, key, value
     kPluginBridgeSetChunkData,         // s      => chunkFile
+    kPluginBridgeLatency,              // u      => value
     kPluginBridgeUpdateNow,            //
     kPluginBridgeError                 //
 };
 
-enum PluginBridgeOpcode {
-    kPluginBridgeOpcodeNull                    =  0,
-    kPluginBridgeOpcodeSetAudioPool            =  1, // long
-    kPluginBridgeOpcodeSetBufferSize           =  2, // int
-    kPluginBridgeOpcodeSetSampleRate           =  3, // float
-    kPluginBridgeOpcodeSetParameterRt          =  4, // int, float
-    kPluginBridgeOpcodeSetParameterNonRt       =  5, // int, float
-    kPluginBridgeOpcodeSetParameterMidiChannel =  6, // int, float
-    kPluginBridgeOpcodeSetParameterMidiCC      =  7, // int, float
-    kPluginBridgeOpcodeSetProgram              =  8, // int
-    kPluginBridgeOpcodeSetMidiProgram          =  9, // int
-    kPluginBridgeOpcodeSetCustomData           = 10, // int/size, str, int/size, str, int/size, str
-    kPluginBridgeOpcodeSetChunkFile            = 11, // int/size, str
-    kPluginBridgeOpcodePrepareForSave          = 12,
-    kPluginBridgeOpcodeMidiEvent               = 13, // long, int, char[] (long = timeFrame, int = size max 4)
-    kPluginBridgeOpcodeProcess                 = 14,
-    kPluginBridgeOpcodeShowUI                  = 15,
-    kPluginBridgeOpcodeHideUI                  = 16,
-    kPluginBridgeOpcodeQuit                    = 17
+enum PluginBridgeRtOpcode {
+    kPluginBridgeRtOpcodeNull = 0,
+    kPluginBridgeRtOpcodeSetParameter,   // int, float
+    kPluginBridgeRtOpcodeSetProgram,     // int
+    kPluginBridgeRtOpcodeSetMidiProgram, // int
+    kPluginBridgeRtOpcodeMidiEvent,      // uint/frame, uint/size, char[]
+    kPluginBridgeRtOpcodeProcess,
+    kPluginBridgeRtOpcodeQuit
 };
 
-const char* const CARLA_BRIDGE_MSG_HIDE_GUI = "CarlaBridgeHideGUI";   //!< Plugin -> Host call, tells host GUI is now hidden
-const char* const CARLA_BRIDGE_MSG_SAVED    = "CarlaBridgeSaved";     //!< Plugin -> Host call, tells host state is saved
+enum PluginBridgeNonRtOpcode {
+    kPluginBridgeNonRtOpcodeNull = 0,
+    kPluginBridgeNonRtOpcodePing,
+    kPluginBridgeNonRtOpcodeSetAudioPool,            // ulong/ptr
+    kPluginBridgeNonRtOpcodeSetBufferSize,           // uint
+    kPluginBridgeNonRtOpcodeSetSampleRate,           // double
+    kPluginBridgeNonRtOpcodeSetParameterValue,       // int, float
+    kPluginBridgeNonRtOpcodeSetParameterMidiChannel, // byte, float
+    kPluginBridgeNonRtOpcodeSetParameterMidiCC,      // short, float
+    kPluginBridgeNonRtOpcodeSetProgram,              // int
+    kPluginBridgeNonRtOpcodeSetMidiProgram,          // int
+    kPluginBridgeNonRtOpcodeSetCustomData,           // uint/size, str, uint/size, str, uint/size, str
+    kPluginBridgeNonRtOpcodeSetChunkFile,            // uint/size, str/file
+    kPluginBridgeNonRtOpcodePrepareForSave,
+    kPluginBridgeNonRtOpcodeShowUI,                  // bool
+    kPluginBridgeNonRtOpcodeQuit
+};
+
+const char* const CARLA_BRIDGE_MSG_HIDE_GUI = "CarlaBridgeHideGUI"; //!< Plugin -> Host configure, tells host GUI is now hidden
+const char* const CARLA_BRIDGE_MSG_SAVED    = "CarlaBridgeSaved";   //!< Plugin -> Host configure, tells host state is saved
 
 // -----------------------------------------------------------------------
 
