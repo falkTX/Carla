@@ -68,6 +68,13 @@ struct StackBuffer {
     uint8_t  buf[size];
 };
 
+struct BigStackBuffer {
+    static const uint32_t size = 16384;
+    uint32_t head, tail, wrtn;
+    bool     invalidateCommit;
+    uint8_t  buf[size];
+};
+
 // -----------------------------------------------------------------------
 // CarlaRingBuffer templated class
 

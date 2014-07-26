@@ -75,6 +75,17 @@ const char* const CARLA_BRIDGE_MSG_SAVED    = "CarlaBridgeSaved";     //!< Plugi
 
 // -----------------------------------------------------------------------
 
+struct BridgeSemaphore {
+    union {
+        void* server;
+        char _padServer[32];
+    };
+    union {
+        void* client;
+        char _padClient[32];
+    };
+};
+
 struct BridgeTimeInfo {
     bool playing;
     uint64_t frame;
@@ -86,18 +97,15 @@ struct BridgeTimeInfo {
     double barStartTick, ticksPerBeat, beatsPerMinute;
 };
 
-// -----------------------------------------------------------------------
+struct BridgeShmRtData {
+    BridgeSemaphore sem;
+    BridgeTimeInfo timeInfo;
+    StackBuffer ringBuffer;
+};
 
-struct BridgeShmControl {
-    union {
-        void* runServer;
-        char _padServer[64];
-    };
-    union {
-        void* runClient;
-        char _padClient[64];
-    };
-    StackBuffer buffer;
+struct BridgeShmNonRtData {
+    BridgeSemaphore sem;
+    BigStackBuffer ringBuffer;
 };
 
 // -----------------------------------------------------------------------
