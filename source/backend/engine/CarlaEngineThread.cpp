@@ -115,14 +115,6 @@ void CarlaEngineThread::run() noexcept
             }
         }
 
-#ifdef BUILD_BRIDGE
-        // ---------------------------------------------------------------
-        // Send pong
-
-        if (oscRegisted)
-            kEngine->oscSend_bridge_pong();
-#endif
-
         carla_msleep(25);
     }
 }

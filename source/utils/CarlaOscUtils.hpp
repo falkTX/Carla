@@ -254,16 +254,16 @@ void osc_send_exiting(const CarlaOscData& oscData) noexcept
 // -----------------------------------------------------------------------
 
 static inline
-void osc_send_bridge_update(const CarlaOscData& oscData, const char* const url) noexcept
+void osc_send_bridge_ready(const CarlaOscData& oscData, const char* const url) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr && oscData.path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(url != nullptr && url[0] != '\0',);
-    carla_debug("osc_send_bridge_update(path:\"%s\", \"%s\")", oscData.path, url);
+    carla_debug("osc_send_bridge_ready(path:\"%s\", \"%s\")", oscData.path, url);
 
-    char targetPath[std::strlen(oscData.path)+19];
+    char targetPath[std::strlen(oscData.path)+18];
     std::strcpy(targetPath, oscData.path);
-    std::strcat(targetPath, "/bridge_update_now");
+    std::strcat(targetPath, "/bridge_ready");
     try_lo_send(oscData.target, targetPath, "s", url);
 }
 

@@ -297,18 +297,18 @@ void CarlaEngine::oscSend_bridge_set_custom_data(const char* const type, const c
     try_lo_send(pData->oscData->target, targetPath, "sss", type, key, value);
 }
 
-void CarlaEngine::oscSend_bridge_set_chunk_data(const char* const chunkFile) const noexcept
+void CarlaEngine::oscSend_bridge_set_chunk_data_file(const char* const chunkDataFile) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->path != nullptr && pData->oscData->path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->target != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(chunkFile != nullptr && chunkFile[0] != '\0',);
-    carla_debug("CarlaEngine::oscSend_bridge_set_chunk_data(\"%s\")", chunkFile);
+    CARLA_SAFE_ASSERT_RETURN(chunkDataFile != nullptr && chunkDataFile[0] != '\0',);
+    carla_debug("CarlaEngine::oscSend_bridge_set_chunk_data_file(\"%s\")", chunkDataFile);
 
-    char targetPath[std::strlen(pData->oscData->path)+23];
+    char targetPath[std::strlen(pData->oscData->path)+28];
     std::strcpy(targetPath, pData->oscData->path);
-    std::strcat(targetPath, "/bridge_set_chunk_data");
-    try_lo_send(pData->oscData->target, targetPath, "s", chunkFile);
+    std::strcat(targetPath, "/bridge_set_chunk_data_file");
+    try_lo_send(pData->oscData->target, targetPath, "s", chunkDataFile);
 }
 
 void CarlaEngine::oscSend_bridge_pong() const noexcept

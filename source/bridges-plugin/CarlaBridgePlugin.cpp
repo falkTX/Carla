@@ -169,17 +169,17 @@ static JUCEApplicationBase* juce_CreateApplication() { return new CarlaJuceApp()
 class CarlaBridgePlugin
 {
 public:
-    CarlaBridgePlugin(const bool useBridge, const char* const clientName, const char* const audioBaseName, const char* const controlBaseName, const char* const timeBaseName)
+    CarlaBridgePlugin(const bool useBridge, const char* const clientName, const char* const audioPoolBaseName, const char* const rtBaseName, const char* const nonRtBaseName)
         : fEngine(nullptr),
           fOscServerThread(nullptr)
     {
         CARLA_ASSERT(clientName != nullptr && clientName[0] != '\0');
-        carla_debug("CarlaBridgePlugin::CarlaBridgePlugin(%s, \"%s\", %s, %s, %s)", bool2str(useBridge), clientName, audioBaseName, controlBaseName, timeBaseName);
+        carla_debug("CarlaBridgePlugin::CarlaBridgePlugin(%s, \"%s\", %s, %s, %s)", bool2str(useBridge), clientName, audioPoolBaseName, rtBaseName, nonRtBaseName);
 
         carla_set_engine_callback(callback, this);
 
         if (useBridge)
-            carla_engine_init_bridge(audioBaseName, controlBaseName, timeBaseName, clientName);
+            carla_engine_init_bridge(audioPoolBaseName, rtBaseName, nonRtBaseName, clientName);
         else
             carla_engine_init("JACK", clientName);
 
@@ -260,7 +260,7 @@ public:
     void sendOscBridgeUpdate() const noexcept
     {
         if (fOscControlData.target != nullptr)
-            osc_send_bridge_update(fOscControlData, fOscControlData.path);
+            osc_send_bridge_ready(fOscControlData, fOscControlData.path);
     }
 
     void sendOscBridgeError(const char* const error) const noexcept
@@ -491,6 +491,9 @@ int main(int argc, char* argv[])
         {
             bridge.sendOscUpdate();
             bridge.sendOscBridgeUpdate();
+
+            // FIXME
+            carla_set_active(0, true);
         }
         else
         {

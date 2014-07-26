@@ -33,7 +33,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -------------------------------------------------------------------
 // Bridge Helper, defined in BridgePlugin.cpp
 
-extern int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeInfoType type,
+extern int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeOscInfoType type,
                                        const int argc, const lo_arg* const* const argv, const char* const types);
 #endif
 
@@ -333,53 +333,55 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         const char* const bmethod(method+7);
 
         if (std::strcmp(bmethod, "pong") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgePong, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscPong, argc, argv, types);
         if (std::strcmp(bmethod, "plugin_info1") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgePluginInfo1, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscPluginInfo1, argc, argv, types);
         if (std::strcmp(bmethod, "plugin_info2") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgePluginInfo2, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscPluginInfo2, argc, argv, types);
         if (std::strcmp(bmethod, "audio_count") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeAudioCount, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscAudioCount, argc, argv, types);
         if (std::strcmp(bmethod, "midi_count") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeMidiCount, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscMidiCount, argc, argv, types);
         if (std::strcmp(bmethod, "parameter_count") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeParameterCount, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterCount, argc, argv, types);
         if (std::strcmp(bmethod, "program_count") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeProgramCount, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscProgramCount, argc, argv, types);
         if (std::strcmp(bmethod, "midi_program_count") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeMidiProgramCount, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscMidiProgramCount, argc, argv, types);
         if (std::strcmp(bmethod, "parameter_data") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeParameterData, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterData, argc, argv, types);
         if (std::strcmp(bmethod, "parameter_ranges1") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeParameterRanges1, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterRanges1, argc, argv, types);
         if (std::strcmp(bmethod, "parameter_ranges2") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeParameterRanges2, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterRanges2, argc, argv, types);
         if (std::strcmp(bmethod, "parameter_midi_cc") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeParameterMidiCC, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterMidiCC, argc, argv, types);
         if (std::strcmp(bmethod, "parameter_midi_channel") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeParameterMidiChannel, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterMidiChannel, argc, argv, types);
         if (std::strcmp(bmethod, "parameter_value") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeParameterValue, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterValue, argc, argv, types);
         if (std::strcmp(bmethod, "default_value") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeDefaultValue, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscDefaultValue, argc, argv, types);
         if (std::strcmp(bmethod, "current_program") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeCurrentProgram, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscCurrentProgram, argc, argv, types);
         if (std::strcmp(bmethod, "current_midi_program") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeCurrentMidiProgram, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscCurrentMidiProgram, argc, argv, types);
         if (std::strcmp(bmethod, "program_name") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeProgramName, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscProgramName, argc, argv, types);
         if (std::strcmp(bmethod, "midi_program_data") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeMidiProgramData, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscMidiProgramData, argc, argv, types);
         if (std::strcmp(bmethod, "configure") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeConfigure, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscConfigure, argc, argv, types);
         if (std::strcmp(bmethod, "set_custom_data") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeSetCustomData, argc, argv, types);
-        if (std::strcmp(bmethod, "set_chunk_data") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeSetChunkData, argc, argv, types);
-        if (std::strcmp(bmethod, "update_now") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeUpdateNow, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscSetCustomData, argc, argv, types);
+        if (std::strcmp(bmethod, "set_chunk_data_file") == 0)
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscSetChunkDataFile, argc, argv, types);
+        if (std::strcmp(bmethod, "latency") == 0)
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscLatency, argc, argv, types);
+        if (std::strcmp(bmethod, "ready") == 0)
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscReady, argc, argv, types);
         if (std::strcmp(bmethod, "error") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeError, argc, argv, types);
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscError, argc, argv, types);
     }
 
     // Plugin-specific methods

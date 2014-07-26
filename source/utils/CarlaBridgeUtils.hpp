@@ -55,7 +55,8 @@ enum PluginBridgeOscInfoType {
 // carla-plugin sends these during RT
 enum PluginBridgeRtOpcode {
     kPluginBridgeRtNull = 0,
-    kPluginBridgeRtSetParameter,   // int, float
+    kPluginBridgeRtSetAudioPool,   // ulong/ptr
+    kPluginBridgeRtSetParameter,   // uint, float
     kPluginBridgeRtSetProgram,     // int
     kPluginBridgeRtSetMidiProgram, // int
     kPluginBridgeRtMidiEvent,      // uint/frame, uint/size, char[]
@@ -67,15 +68,14 @@ enum PluginBridgeNonRtOpcode {
     kPluginBridgeNonRtNull = 0,
     kPluginBridgeNonRtPing,
     kPluginBridgeNonRtActivate,
-    kPluginBridgeNonRtDectivate,
-    kPluginBridgeNonRtSetAudioPool,            // ulong/ptr
+    kPluginBridgeNonRtDeactivate,
     kPluginBridgeNonRtSetBufferSize,           // uint
     kPluginBridgeNonRtSetSampleRate,           // double
     kPluginBridgeNonRtSetOffline,
     kPluginBridgeNonRtSetOnline,
-    kPluginBridgeNonRtSetParameterValue,       // int, float
-    kPluginBridgeNonRtSetParameterMidiChannel, // byte, float
-    kPluginBridgeNonRtSetParameterMidiCC,      // short, float
+    kPluginBridgeNonRtSetParameterValue,       // uint, float
+    kPluginBridgeNonRtSetParameterMidiChannel, // uint, byte
+    kPluginBridgeNonRtSetParameterMidiCC,      // uint, short
     kPluginBridgeNonRtSetProgram,              // int
     kPluginBridgeNonRtSetMidiProgram,          // int
     kPluginBridgeNonRtSetCustomData,           // uint/size, str, uint/size, str, uint/size, str
@@ -83,6 +83,11 @@ enum PluginBridgeNonRtOpcode {
     kPluginBridgeNonRtPrepareForSave,
     kPluginBridgeNonRtShowUI,
     kPluginBridgeNonRtHideUI,
+    kPluginBridgeNonRtUiParameterChange,       // uint, float
+    kPluginBridgeNonRtUiProgramChange,         // uint
+    kPluginBridgeNonRtUiMidiProgramChange,     // uint
+    kPluginBridgeNonRtUiNoteOn,                // byte, byte, byte
+    kPluginBridgeNonRtUiNoteOff,               // byte, byte
     kPluginBridgeNonRtQuit
 };
 
@@ -122,7 +127,7 @@ struct BridgeRtData {
 };
 
 struct BridgeNonRtData {
-    BridgeSemaphore sem;
+    //BridgeSemaphore sem;
     BigStackBuffer ringBuffer;
 };
 
@@ -198,6 +203,8 @@ const char* PluginBridgeRtOpcode2str(const PluginBridgeRtOpcode opcode) noexcept
     {
     case kPluginBridgeRtNull:
         return "kPluginBridgeRtNull";
+    case kPluginBridgeRtSetAudioPool:
+        return "kPluginBridgeRtSetAudioPool";
     case kPluginBridgeRtSetParameter:
         return "kPluginBridgeRtSetParameter";
     case kPluginBridgeRtSetProgram:
@@ -225,10 +232,8 @@ const char* PluginBridgeNonRtOpcode2str(const PluginBridgeNonRtOpcode opcode) no
         return "kPluginBridgeNonRtPing";
     case kPluginBridgeNonRtActivate:
         return "kPluginBridgeNonRtActivate";
-    case kPluginBridgeNonRtDectivate:
-        return "kPluginBridgeNonRtDectivate";
-    case kPluginBridgeNonRtSetAudioPool:
-        return "kPluginBridgeNonRtSetAudioPool";
+    case kPluginBridgeNonRtDeactivate:
+        return "kPluginBridgeNonRtDeactivate";
     case kPluginBridgeNonRtSetBufferSize:
         return "kPluginBridgeNonRtSetBufferSize";
     case kPluginBridgeNonRtSetSampleRate:
@@ -257,6 +262,16 @@ const char* PluginBridgeNonRtOpcode2str(const PluginBridgeNonRtOpcode opcode) no
         return "kPluginBridgeNonRtShowUI";
     case kPluginBridgeNonRtHideUI:
         return "kPluginBridgeNonRtHideUI";
+    case kPluginBridgeNonRtUiParameterChange:
+        return "kPluginBridgeNonRtUiParameterChange";
+    case kPluginBridgeNonRtUiProgramChange:
+        return "kPluginBridgeNonRtUiProgramChange";
+    case kPluginBridgeNonRtUiMidiProgramChange:
+        return "kPluginBridgeNonRtUiMidiProgramChange";
+    case kPluginBridgeNonRtUiNoteOn:
+        return "kPluginBridgeNonRtUiNoteOn";
+    case kPluginBridgeNonRtUiNoteOff:
+        return "kPluginBridgeNonRtUiNoteOff";
     case kPluginBridgeNonRtQuit:
         return "kPluginBridgeNonRtQuit";
     }

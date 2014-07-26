@@ -1165,7 +1165,7 @@ public:
     void oscSend_bridge_midi_program_data(const uint32_t index, const uint32_t bank, const uint32_t program, const char* const name) const noexcept;
     void oscSend_bridge_configure(const char* const key, const char* const value) const noexcept;
     void oscSend_bridge_set_custom_data(const char* const type, const char* const key, const char* const value) const noexcept;
-    void oscSend_bridge_set_chunk_data(const char* const chunkFile) const noexcept;
+    void oscSend_bridge_set_chunk_data_file(const char* const chunkDataFile) const noexcept;
     void oscSend_bridge_set_peaks() const noexcept;
     void oscSend_bridge_pong() const noexcept;
 #else
