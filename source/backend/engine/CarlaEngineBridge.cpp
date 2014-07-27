@@ -388,12 +388,12 @@ public:
 
             case kPluginBridgeNonRtActivate:
                 if (plugin != nullptr && plugin->isEnabled())
-                    plugin->activate();
+                    plugin->setActive(true, false, false);
                 break;
 
             case kPluginBridgeNonRtDeactivate:
                 if (plugin != nullptr && plugin->isEnabled())
-                    plugin->deactivate();
+                    plugin->setActive(false, false, false);
                 break;
 
             case kPluginBridgeNonRtSetBufferSize: {

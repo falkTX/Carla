@@ -494,6 +494,8 @@ int main(int argc, char* argv[])
         }
         else
         {
+            carla_set_active(0, true);
+
             if (const CarlaPluginInfo* const pluginInfo = carla_get_plugin_info(0))
             {
                 if (pluginInfo->hints & CarlaBackend::PLUGIN_HAS_CUSTOM_UI)

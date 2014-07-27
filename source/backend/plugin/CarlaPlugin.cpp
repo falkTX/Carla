@@ -910,7 +910,9 @@ void CarlaPlugin::setEnabled(const bool yesNo) noexcept
 
 void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool sendCallback) noexcept
 {
+#ifndef BUILD_BRIDGE
     CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+#endif
 
     if (pData->active == active)
         return;

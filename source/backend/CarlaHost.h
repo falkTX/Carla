@@ -799,15 +799,6 @@ CARLA_EXPORT float carla_get_input_peak_value(uint pluginId, bool isLeft);
  */
 CARLA_EXPORT float carla_get_output_peak_value(uint pluginId, bool isLeft);
 
-#ifndef BUILD_BRIDGE
-/*!
- * Enable a plugin's option.
- * @param pluginId Plugin
- * @param option   An option from PluginOptions
- * @param yesNo    New enabled state
- */
-CARLA_EXPORT void carla_set_option(uint pluginId, uint option, bool yesNo);
-
 /*!
  * Enable or disable a plugin.
  * @param pluginId Plugin
@@ -815,6 +806,7 @@ CARLA_EXPORT void carla_set_option(uint pluginId, uint option, bool yesNo);
  */
 CARLA_EXPORT void carla_set_active(uint pluginId, bool onOff);
 
+#ifndef BUILD_BRIDGE
 /*!
  * Change a plugin's internal dry/wet.
  * @param pluginId Plugin
@@ -856,6 +848,14 @@ CARLA_EXPORT void carla_set_panning(uint pluginId, float value);
  * @param channel  New channel
  */
 CARLA_EXPORT void carla_set_ctrl_channel(uint pluginId, int8_t channel);
+
+/*!
+ * Enable a plugin's option.
+ * @param pluginId Plugin
+ * @param option   An option from PluginOptions
+ * @param yesNo    New enabled state
+ */
+CARLA_EXPORT void carla_set_option(uint pluginId, uint option, bool yesNo);
 #endif
 
 /*!

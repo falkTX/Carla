@@ -1932,18 +1932,6 @@ float carla_get_output_peak_value(uint pluginId, bool isLeft)
 
 // -------------------------------------------------------------------------------------------------------------------
 
-#ifndef BUILD_BRIDGE
-void carla_set_option(uint pluginId, uint option, bool yesNo)
-{
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
-    carla_debug("carla_set_option(%i, %i, %s)", pluginId, option, bool2str(yesNo));
-
-    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
-        return plugin->setOption(option, yesNo, false);
-
-    carla_stderr2("carla_set_option(%i, %i, %s) - could not find plugin", pluginId, option, bool2str(yesNo));
-}
-
 void carla_set_active(uint pluginId, bool onOff)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
@@ -1955,6 +1943,7 @@ void carla_set_active(uint pluginId, bool onOff)
     carla_stderr2("carla_set_active(%i, %s) - could not find plugin", pluginId, bool2str(onOff));
 }
 
+#ifndef BUILD_BRIDGE
 void carla_set_drywet(uint pluginId, float value)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
@@ -2020,6 +2009,17 @@ void carla_set_ctrl_channel(uint pluginId, int8_t channel)
         return plugin->setCtrlChannel(channel, true, false);
 
     carla_stderr2("carla_set_ctrl_channel(%i, %i) - could not find plugin", pluginId, channel);
+}
+
+void carla_set_option(uint pluginId, uint option, bool yesNo)
+{
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+    carla_debug("carla_set_option(%i, %i, %s)", pluginId, option, bool2str(yesNo));
+
+    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
+        return plugin->setOption(option, yesNo, false);
+
+    carla_stderr2("carla_set_option(%i, %i, %s) - could not find plugin", pluginId, option, bool2str(yesNo));
 }
 #endif
 
