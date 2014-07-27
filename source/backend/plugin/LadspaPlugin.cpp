@@ -428,6 +428,8 @@ public:
             else
                 carla_safe_assert_int("latency >= 0", __FILE__, __LINE__, latency);
         }
+
+        CarlaPlugin::idle();
     }
 
     // -------------------------------------------------------------------

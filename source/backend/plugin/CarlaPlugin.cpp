@@ -1631,11 +1631,6 @@ bool CarlaPlugin::updateOscDataExtra()
     return false;
 }
 
-// void CarlaPlugin::freeOscData()
-// {
-//     pData->osc.data.free();
-// }
-
 bool CarlaPlugin::waitForOscGuiShow()
 {
     carla_stdout("CarlaPlugin::waitForOscGuiShow()");
