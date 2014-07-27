@@ -201,6 +201,8 @@ public:
 
     void readCustomData(void* const data, const uint32_t size) noexcept
     {
+        CARLA_SAFE_ASSERT_RETURN(size > 0,);
+
         if (! tryRead(data, size))
             carla_zeroBytes(data, size);
     }
@@ -251,6 +253,8 @@ public:
 
     void writeCustomData(const void* const value, const uint32_t size) noexcept
     {
+        CARLA_SAFE_ASSERT_RETURN(size > 0,);
+
         tryWrite(value, size);
     }
 

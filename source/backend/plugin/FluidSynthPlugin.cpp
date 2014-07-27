@@ -373,6 +373,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (internal stuff)
 
+#ifndef BUILD_BRIDGE
     void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept override
     {
         if (channel >= 0 && channel < MAX_MIDI_CHANNELS)
@@ -380,6 +381,7 @@ public:
 
         CarlaPlugin::setCtrlChannel(channel, sendOsc, sendCallback);
     }
+#endif
 
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)

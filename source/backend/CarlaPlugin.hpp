@@ -499,7 +499,6 @@ public:
      * \note Force-Stereo plugins only!
      */
     void setPanning(const float value, const bool sendOsc, const bool sendCallback) noexcept;
-#endif
 
     /*!
      * Set the plugin's midi control channel.
@@ -508,6 +507,7 @@ public:
      * \param sendCallback Send message change to registered callback
      */
     virtual void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept;
+#endif
 
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)

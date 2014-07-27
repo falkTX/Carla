@@ -849,7 +849,6 @@ CARLA_EXPORT void carla_set_balance_right(uint pluginId, float value);
  * @param value    New value
  */
 CARLA_EXPORT void carla_set_panning(uint pluginId, float value);
-#endif
 
 /*!
  * Change a plugin's internal control channel.
@@ -857,6 +856,7 @@ CARLA_EXPORT void carla_set_panning(uint pluginId, float value);
  * @param channel  New channel
  */
 CARLA_EXPORT void carla_set_ctrl_channel(uint pluginId, int8_t channel);
+#endif
 
 /*!
  * Change a plugin's parameter value.

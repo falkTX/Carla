@@ -546,6 +546,7 @@ public:
         CarlaPlugin::setName(newName);
     }
 
+#ifndef BUILD_BRIDGE
     void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept override
     {
         if (channel >= 0 && channel < MAX_MIDI_CHANNELS && pData->midiprog.count > 0)
@@ -553,6 +554,7 @@ public:
 
         CarlaPlugin::setCtrlChannel(channel, sendOsc, sendCallback);
     }
+#endif
 
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)

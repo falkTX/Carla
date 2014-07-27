@@ -694,7 +694,7 @@ void CarlaPlugin::ProtectedData::tryTransient() noexcept
 
 void CarlaPlugin::ProtectedData::updateParameterValues(CarlaPlugin* const plugin, const bool sendOsc, const bool sendCallback, const bool useDefault) noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,);
+    CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback || useDefault,);
 
     for (uint32_t i=0; i < param.count; ++i)
     {
@@ -708,7 +708,6 @@ void CarlaPlugin::ProtectedData::updateParameterValues(CarlaPlugin* const plugin
         {
             if (useDefault)
                 engine->oscSend_control_set_default_value(id, i, value);
-
             engine->oscSend_control_set_parameter_value(id, static_cast<int32_t>(i), value);
         }
 #endif
@@ -717,7 +716,6 @@ void CarlaPlugin::ProtectedData::updateParameterValues(CarlaPlugin* const plugin
         {
             if (useDefault)
                 engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, id, static_cast<int>(i), 0, value, nullptr);
-
             engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, id, static_cast<int>(i), 0, value, nullptr);
         }
     }

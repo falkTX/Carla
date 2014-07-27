@@ -2009,7 +2009,6 @@ void carla_set_panning(uint pluginId, float value)
 
     carla_stderr2("carla_set_panning(%i, %f) - could not find plugin", pluginId, value);
 }
-#endif
 
 void carla_set_ctrl_channel(uint pluginId, int8_t channel)
 {
@@ -2022,6 +2021,7 @@ void carla_set_ctrl_channel(uint pluginId, int8_t channel)
 
     carla_stderr2("carla_set_ctrl_channel(%i, %i) - could not find plugin", pluginId, channel);
 }
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 

@@ -44,7 +44,7 @@ bool jackbridge_is_ok() noexcept
 #endif
 
 template<typename T>
-bool jackbridge_shm_map2(char* shm, T*& value)
+bool jackbridge_shm_map2(char* shm, T*& value) noexcept
 {
     value = (T*)jackbridge_shm_map(shm, sizeof(T));
     return (value != nullptr);
@@ -61,14 +61,14 @@ struct BridgeAudioPool {
     float* data;
     char shm[32];
 
-    BridgeAudioPool()
+    BridgeAudioPool() noexcept
         : data(nullptr)
     {
         carla_zeroChar(shm, 32);
         jackbridge_shm_init(shm);
     }
 
-    ~BridgeAudioPool()
+    ~BridgeAudioPool() noexcept
     {
         // should be cleared by now
         CARLA_SAFE_ASSERT(data == nullptr);
@@ -76,14 +76,14 @@ struct BridgeAudioPool {
         clear();
     }
 
-    bool attach()
+    bool attach() noexcept
     {
         jackbridge_shm_attach(shm, filename);
 
         return jackbridge_shm_is_valid(shm);
     }
 
-    void clear()
+    void clear() noexcept
     {
         filename.clear();
 
@@ -103,14 +103,14 @@ struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
     BridgeRtData* data;
     char shm[32];
 
-    BridgeRtControl()
+    BridgeRtControl() noexcept
         : data(nullptr)
     {
         carla_zeroChar(shm, 32);
         jackbridge_shm_init(shm);
     }
 
-    ~BridgeRtControl()
+    ~BridgeRtControl() noexcept
     {
         // should be cleared by now
         CARLA_SAFE_ASSERT(data == nullptr);
@@ -118,14 +118,14 @@ struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
         clear();
     }
 
-    bool attach()
+    bool attach() noexcept
     {
         jackbridge_shm_attach(shm, filename);
 
         return jackbridge_shm_is_valid(shm);
     }
 
-    void clear()
+    void clear() noexcept
     {
         filename.clear();
 
@@ -135,7 +135,7 @@ struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
             jackbridge_shm_close(shm);
     }
 
-    bool mapData()
+    bool mapData() noexcept
     {
         CARLA_SAFE_ASSERT(data == nullptr);
 
@@ -179,14 +179,14 @@ struct BridgeNonRtControl : public CarlaRingBuffer<BigStackBuffer> {
         clear();
     }
 
-    bool attach()
+    bool attach() noexcept
     {
         jackbridge_shm_attach(shm, filename);
 
         return jackbridge_shm_is_valid(shm);
     }
 
-    void clear()
+    void clear() noexcept
     {
         filename.clear();
 
@@ -196,7 +196,7 @@ struct BridgeNonRtControl : public CarlaRingBuffer<BigStackBuffer> {
             jackbridge_shm_close(shm);
     }
 
-    bool mapData()
+    bool mapData() noexcept
     {
         CARLA_SAFE_ASSERT(data == nullptr);
 
@@ -353,12 +353,14 @@ public:
     {
         CarlaEngine::idle();
 
-        handleNonRtData();
+        try {
+            handleNonRtData();
+        } CARLA_SAFE_EXCEPTION("handleNonRtData");
     }
 
     // -------------------------------------------------------------------
 
-    void clear()
+    void clear() noexcept
     {
         fShmAudioPool.clear();
         fShmRtControl.clear();
@@ -444,7 +446,26 @@ public:
             }
 
             case kPluginBridgeNonRtSetCustomData: {
-                // TODO
+                // type
+                const uint32_t typeSize(fShmNonRtControl.readUInt());
+                char typeStr[typeSize+1];
+                carla_zeroChar(typeStr, typeSize+1);
+                fShmNonRtControl.readCustomData(typeStr, typeSize);
+
+                // key
+                const uint32_t keySize(fShmNonRtControl.readUInt());
+                char keyStr[keySize+1];
+                carla_zeroChar(keyStr, keySize+1);
+                fShmNonRtControl.readCustomData(keyStr, keySize);
+
+                // value
+                const uint32_t valueSize(fShmNonRtControl.readUInt());
+                char valueStr[valueSize+1];
+                carla_zeroChar(valueStr, valueSize+1);
+                fShmNonRtControl.readCustomData(valueStr, valueSize);
+
+                if (plugin != nullptr && plugin->isEnabled())
+                    plugin->setCustomData(typeStr, keyStr, valueStr, true);
                 break;
             }
 
@@ -488,7 +509,6 @@ public:
                 for (uint32_t i=0, count=plugin->getCustomDataCount(); i<count; ++i)
                 {
                     const CustomData& cdata(plugin->getCustomData(i));
-
                     oscSend_bridge_set_custom_data(cdata.type, cdata.key, cdata.value);
                 }
 
