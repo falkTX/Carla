@@ -328,6 +328,8 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
     const ScopedDisplay sd;
     CARLA_SAFE_ASSERT_RETURN(sd.display != nullptr, true);
 
+    const Window rootWindow(DefaultRootWindow(sd.display));
+
     const Atom _ncl = XInternAtom(sd.display, "_NET_CLIENT_LIST" , False);
     const Atom _nwn = XInternAtom(sd.display, "_NET_WM_NAME", False);
     const Atom _nwp = XInternAtom(sd.display, "_NET_WM_PID", False);
@@ -338,7 +340,7 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
     ulong numWindows, bytesAfter;
     uchar* data = nullptr;
 
-    int status = XGetWindowProperty(sd.display, DefaultRootWindow(sd.display), _ncl, 0L, (~0L), False, AnyPropertyType, &actualType, &actualFormat, &numWindows, &bytesAfter, &data);
+    int status = XGetWindowProperty(sd.display, rootWindow, _ncl, 0L, (~0L), False, AnyPropertyType, &actualType, &actualFormat, &numWindows, &bytesAfter, &data);
 
     CARLA_SAFE_ASSERT_RETURN(data != nullptr, true);
     const ScopedFreeData sfd(data);
@@ -440,7 +442,33 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
     const Atom _nwi = XInternAtom(sd.display, "_NET_WM_ICON", False);
     XChangeProperty(sd.display, lastGoodWindow, _nwi, XA_CARDINAL, 32, PropModeReplace, (const uchar*)sCarlaX11Icon, sCarlaX11IconSize);
 
-    XSetTransientForHint(sd.display, lastGoodWindow, (Window)winId);
+    const Window hostWinId((Window)winId);
+
+    XSetTransientForHint(sd.display, lastGoodWindow, hostWinId);
+
+    // center the plugin UI
+    {
+        int hostX, hostY, pluginX, pluginY;
+        uint hostWidth, hostHeight, pluginWidth, pluginHeight, border, depth;
+        Window retWindow;
+
+        if (XGetGeometry(sd.display, hostWinId,      &retWindow, &hostX,   &hostY,   &hostWidth,   &hostHeight,   &border, &depth) != 0 &&
+            XGetGeometry(sd.display, lastGoodWindow, &retWindow, &pluginX, &pluginY, &pluginWidth, &pluginHeight, &border, &depth) != 0)
+        {
+            if (XTranslateCoordinates(sd.display, hostWinId,      rootWindow, hostX,   hostY,   &hostX,   &hostY,   &retWindow) == True &&
+                XTranslateCoordinates(sd.display, lastGoodWindow, rootWindow, pluginX, pluginY, &pluginX, &pluginY, &retWindow) == True)
+            {
+                const int newX = hostX + int(hostWidth/2  - pluginWidth/2);
+                const int newY = hostY + int(hostHeight/2 - pluginHeight/2);
+
+                XMoveWindow(sd.display, lastGoodWindow, newX, newY);
+            }
+        }
+    }
+
+    // focusing the host UI and then the plugin UI forces the WM to repaint the plugin window icon
+    XRaiseWindow(sd.display, hostWinId);
+    XSetInputFocus(sd.display, hostWinId, RevertToPointerRoot, CurrentTime);
 
     XRaiseWindow(sd.display, lastGoodWindow);
     XSetInputFocus(sd.display, lastGoodWindow, RevertToPointerRoot, CurrentTime);

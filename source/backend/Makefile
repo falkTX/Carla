@@ -101,7 +101,7 @@ doxygen: CarlaBackend.doxygen
 
 # --------------------------------------------------------------
 
-CarlaStandalone.cpp.o: CarlaStandalone.cpp $(CARLA_STANDALONE_CPP_DEPS)
+CarlaStandalone.cpp.o: $(CARLA_STANDALONE_CPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
