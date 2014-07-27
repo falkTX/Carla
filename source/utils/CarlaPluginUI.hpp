@@ -44,7 +44,7 @@ public:
     virtual void* getDisplay() const noexcept = 0;
 #endif
 
-    static bool tryTransientWinIdMatch(const uintptr_t pid, const char* const uiTitle, const uintptr_t winId);
+    static bool tryTransientWinIdMatch(const uintptr_t pid, const char* const uiTitle, const uintptr_t winId, const bool centerUI);
 
 #ifdef CARLA_OS_MAC
     static CarlaPluginUI* newCocoa(CloseCallback*, uintptr_t);

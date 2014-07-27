@@ -298,7 +298,7 @@ private:
 
 // -----------------------------------------------------
 
-bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* const uiTitle, const uintptr_t winId)
+bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* const uiTitle, const uintptr_t winId, const bool centerUI)
 {
     CARLA_SAFE_ASSERT_RETURN(uiTitle != nullptr && uiTitle[0] != '\0', true);
     CARLA_SAFE_ASSERT_RETURN(winId != 0, true);
@@ -446,7 +446,7 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 
     XSetTransientForHint(sd.display, lastGoodWindow, hostWinId);
 
-    // center the plugin UI
+    if (centerUI)
     {
         int hostX, hostY, pluginX, pluginY;
         uint hostWidth, hostHeight, pluginWidth, pluginHeight, border, depth;
