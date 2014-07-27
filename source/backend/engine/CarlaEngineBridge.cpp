@@ -682,6 +682,50 @@ protected:
                     break;
                 }
 
+                case kPluginBridgeRtAllSoundOff: {
+                    const uint32_t time(fShmRtControl.readUInt());
+
+                    CARLA_SAFE_ASSERT_BREAK(pData->events.in != nullptr);
+
+                    for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
+                    {
+                        EngineEvent& event(pData->events.in[i]);
+
+                        if (event.type != kEngineEventTypeNull)
+                            continue;
+
+                        event.type    = kEngineEventTypeControl;
+                        event.time    = time;
+                        event.channel = 0;
+                        event.ctrl.type  = kEngineControlEventTypeAllSoundOff;
+                        event.ctrl.param = 0;
+                        event.ctrl.value = 0.0f;
+                        break;
+                    }
+                }
+
+                case kPluginBridgeRtAllNotesOff: {
+                    const uint32_t time(fShmRtControl.readUInt());
+
+                    CARLA_SAFE_ASSERT_BREAK(pData->events.in != nullptr);
+
+                    for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
+                    {
+                        EngineEvent& event(pData->events.in[i]);
+
+                        if (event.type != kEngineEventTypeNull)
+                            continue;
+
+                        event.type    = kEngineEventTypeControl;
+                        event.time    = time;
+                        event.channel = 0;
+                        event.ctrl.type  = kEngineControlEventTypeAllNotesOff;
+                        event.ctrl.param = 0;
+                        event.ctrl.value = 0.0f;
+                        break;
+                    }
+                }
+
                 case kPluginBridgeRtProcess: {
                     CARLA_SAFE_ASSERT_BREAK(fShmAudioPool.data != nullptr);
 

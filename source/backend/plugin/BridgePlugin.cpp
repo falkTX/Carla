@@ -995,7 +995,11 @@ public:
                                     value = std::rint(value);
                             }
 
-                            setParameterValue(k, value, false, false, false);
+                            fShmRtControl.writeOpcode(kPluginBridgeRtSetParameter);
+                            fShmRtControl.writeInt(static_cast<int32_t>(k));
+                            fShmRtControl.writeFloat(value);
+                            fShmRtControl.commitWrite();
+
                             pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                             break;
                         }
@@ -1035,7 +1039,11 @@ public:
                                     if (pData->midiprog.data[k].bank == nextBankId && pData->midiprog.data[k].program == nextProgramId)
                                     {
                                         const int32_t index(static_cast<int32_t>(k));
-                                        setMidiProgram(index, false, false, false);
+
+                                        fShmRtControl.writeOpcode(kPluginBridgeRtSetMidiProgram);
+                                        fShmRtControl.writeInt(index);
+                                        fShmRtControl.commitWrite();
+
                                         pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, index, 0, 0.0f);
                                         break;
                                     }
@@ -1050,7 +1058,9 @@ public:
                     case kEngineControlEventTypeAllSoundOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-                            // TODO
+                            fShmRtControl.writeOpcode(kPluginBridgeRtAllSoundOff);
+                            fShmRtControl.writeInt(static_cast<int32_t>(event.time));
+                            fShmRtControl.commitWrite();
                         }
                         break;
 
@@ -1063,7 +1073,9 @@ public:
                                 sendMidiAllNotesOffToCallback();
                             }
 
-                            // TODO
+                            fShmRtControl.writeOpcode(kPluginBridgeRtAllNotesOff);
+                            fShmRtControl.writeInt(static_cast<int32_t>(event.time));
+                            fShmRtControl.commitWrite();
                         }
                         break;
                     } // switch (ctrlEvent.type)
@@ -1092,18 +1104,16 @@ public:
                     if (status == MIDI_STATUS_PITCH_WHEEL_CONTROL && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
                         continue;
 
-                    {
-                          fShmRtControl.writeOpcode(kPluginBridgeRtMidiEvent);
-                          fShmRtControl.writeInt(static_cast<int32_t>(event.time));
-                          fShmRtControl.writeInt(midiEvent.size);
+                    fShmRtControl.writeOpcode(kPluginBridgeRtMidiEvent);
+                    fShmRtControl.writeInt(static_cast<int32_t>(event.time));
+                    fShmRtControl.writeInt(midiEvent.size);
 
-                          fShmRtControl.writeByte(static_cast<uint8_t>(status + channel));
+                    fShmRtControl.writeByte(static_cast<uint8_t>(status + channel));
 
-                          for (uint8_t j=1; j < midiEvent.size; ++j)
-                              fShmRtControl.writeByte(midiEvent.data[j]);
+                    for (uint8_t j=1; j < midiEvent.size; ++j)
+                        fShmRtControl.writeByte(midiEvent.data[j]);
 
-                          fShmRtControl.commitWrite();
-                    }
+                    fShmRtControl.commitWrite();
 
                     if (status == MIDI_STATUS_NOTE_ON)
                         pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
@@ -1974,18 +1984,6 @@ public:
             pData->engine->setLastError("Failed to register plugin client");
             return false;
         }
-
-        // ---------------------------------------------------------------
-        // set default options
-
-        pData->options  = 0x0;
-        pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-        pData->options |= PLUGIN_OPTION_USE_CHUNKS;
-        pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
-        pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-        pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-        pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
-        pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
         return true;
     }

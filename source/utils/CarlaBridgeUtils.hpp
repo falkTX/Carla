@@ -59,6 +59,8 @@ enum PluginBridgeRtOpcode {
     kPluginBridgeRtSetProgram,     // int
     kPluginBridgeRtSetMidiProgram, // int
     kPluginBridgeRtMidiEvent,      // uint/frame, uint/size, char[]
+    kPluginBridgeRtAllSoundOff,    // uint/frame
+    kPluginBridgeRtAllNotesOff,    // uint/frame
     kPluginBridgeRtProcess
 };
 
@@ -207,6 +209,10 @@ const char* PluginBridgeRtOpcode2str(const PluginBridgeRtOpcode opcode) noexcept
         return "kPluginBridgeRtSetMidiProgram";
     case kPluginBridgeRtMidiEvent:
         return "kPluginBridgeRtMidiEvent";
+    case kPluginBridgeRtAllSoundOff:
+        return "kPluginBridgeRtAllSoundOff";
+    case kPluginBridgeRtAllNotesOff:
+        return "kPluginBridgeRtAllNotesOff";
     case kPluginBridgeRtProcess:
         return "kPluginBridgeRtProcess";
     }
