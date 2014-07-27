@@ -34,9 +34,9 @@
 using juce::File;
 using juce::String;
 
-#ifdef JACKBRIDGE_EXPORT
 // -------------------------------------------------------------------
 
+#ifdef JACKBRIDGE_EXPORT
 bool jackbridge_is_ok() noexcept
 {
     return true;
@@ -324,10 +324,7 @@ public:
         CarlaEngine::close();
 
         stopThread(5000);
-
-        fShmAudioPool.clear();
-        fShmRtControl.clear();
-        fShmNonRtControl.clear();
+        clear();
 
         return true;
     }
@@ -375,7 +372,8 @@ public:
             const PluginBridgeNonRtOpcode opcode(fShmNonRtControl.readOpcode());
             CarlaPlugin* const plugin(pData->plugins[0].plugin);
 
-            carla_stdout("CarlaEngineBridgeNonRtThread::run() - got opcode: %s", PluginBridgeNonRtOpcode2str(opcode));
+            if (opcode != kPluginBridgeNonRtPing)
+                carla_stdout("CarlaEngineBridge::handleNonRtData() - got opcode: %s", PluginBridgeNonRtOpcode2str(opcode));
 
             switch (opcode)
             {
@@ -421,29 +419,11 @@ public:
                 break;
 
             case kPluginBridgeNonRtSetParameterValue: {
-                const uint32_t index(fShmNonRtControl.readInt());
+                const uint32_t index(fShmNonRtControl.readUInt());
                 const float    value(fShmNonRtControl.readFloat());
 
                 if (plugin != nullptr && plugin->isEnabled())
                     plugin->setParameterValue(index, value, false, false, false);
-                break;
-            }
-
-            case kPluginBridgeNonRtSetParameterMidiChannel: {
-                const uint32_t index(fShmNonRtControl.readInt());
-                const uint8_t  channel(fShmNonRtControl.readByte());
-
-                if (plugin != nullptr && plugin->isEnabled())
-                    plugin->setParameterMidiChannel(index, channel, false, false);
-                break;
-            }
-
-            case kPluginBridgeNonRtSetParameterMidiCC: {
-                const uint32_t index(fShmNonRtControl.readInt());
-                const int16_t  cc(fShmNonRtControl.readShort());
-
-                if (plugin != nullptr && plugin->isEnabled())
-                    plugin->setParameterMidiCC(index, cc, false, false);
                 break;
             }
 

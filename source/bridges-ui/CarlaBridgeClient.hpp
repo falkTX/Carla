@@ -83,7 +83,7 @@ protected:
     void sendOscExiting() const;
 
 #ifdef BRIDGE_LV2
-    void sendOscLv2AtomTransfer(const int32_t portIndex, const char* const atomBuf) const;
+    void sendOscLv2AtomTransfer(const uint32_t portIndex, const char* const atomBuf) const;
     void sendOscLv2UridMap(const uint32_t urid, const char* const uri) const;
 #endif
 

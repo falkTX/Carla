@@ -24,17 +24,17 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 
 #ifdef BUILD_BRIDGE
-void CarlaEngine::oscSend_bridge_plugin_info1(const PluginCategory category, const uint hints, const int64_t uniqueId) const noexcept
+void CarlaEngine::oscSend_bridge_plugin_info1(const PluginCategory category, const uint hints, const uint optionsAvailable, const uint optionsEnabled, const int64_t uniqueId) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->path != nullptr && pData->oscData->path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->target != nullptr,);
-    carla_debug("CarlaEngine::oscSend_bridge_plugin_info1(%i:%s, %X, " P_INT64 ")", category, PluginCategory2Str(category), hints, uniqueId);
+    carla_debug("CarlaEngine::oscSend_bridge_plugin_info1(%i:%s, %X, %X, %X, " P_INT64 ")", category, PluginCategory2Str(category), hints, optionsAvailable, optionsEnabled, uniqueId);
 
     char targetPath[std::strlen(pData->oscData->path)+21];
     std::strcpy(targetPath, pData->oscData->path);
     std::strcat(targetPath, "/bridge_plugin_info1");
-    try_lo_send(pData->oscData->target, targetPath, "iih", static_cast<int32_t>(category), static_cast<int32_t>(hints), uniqueId);
+    try_lo_send(pData->oscData->target, targetPath, "iiiih", static_cast<int32_t>(category), static_cast<int32_t>(hints), static_cast<int32_t>(optionsAvailable), static_cast<int32_t>(optionsEnabled), uniqueId);
 }
 
 void CarlaEngine::oscSend_bridge_plugin_info2(const char* const realName, const char* const label, const char* const maker, const char* const copyright) const noexcept
@@ -119,19 +119,33 @@ void CarlaEngine::oscSend_bridge_midi_program_count(const uint32_t count) const 
     try_lo_send(pData->oscData->target, targetPath, "i", static_cast<int32_t>(count));
 }
 
-void CarlaEngine::oscSend_bridge_parameter_data(const uint32_t index, const int32_t rindex, const ParameterType type, const uint hints, const char* const name, const char* const unit) const noexcept
+void CarlaEngine::oscSend_bridge_parameter_data1(const uint32_t index, const int32_t rindex, const ParameterType type, const uint hints, const int16_t cc) const noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData->path != nullptr && pData->oscData->path[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(pData->oscData->target != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < 0x9F,); // FIXME
+    carla_debug("CarlaEngine::oscSend_bridge_parameter_data1(%i, %i, %i:%s, %X, %i)", index, rindex, type, ParameterType2Str(type), hints, cc);
+
+    char targetPath[std::strlen(pData->oscData->path)+25];
+    std::strcpy(targetPath, pData->oscData->path);
+    std::strcat(targetPath, "/bridge_parameter_data1");
+    try_lo_send(pData->oscData->target, targetPath, "iiiii", static_cast<int32_t>(index), static_cast<int32_t>(rindex), static_cast<int32_t>(type), static_cast<int32_t>(hints), static_cast<int32_t>(cc));
+}
+
+void CarlaEngine::oscSend_bridge_parameter_data2(const uint32_t index, const char* const name, const char* const unit) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->path != nullptr && pData->oscData->path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->target != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(name != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(unit != nullptr,);
-    carla_debug("CarlaEngine::oscSend_bridge_parameter_data(%i, %i, %i:%s, %X, \"%s\", \"%s\")", index, rindex, type, ParameterType2Str(type), hints, name, unit);
+    carla_debug("CarlaEngine::oscSend_bridge_parameter_data2(%i, \"%s\", \"%s\")", index, name, unit);
 
-    char targetPath[std::strlen(pData->oscData->path)+24];
+    char targetPath[std::strlen(pData->oscData->path)+25];
     std::strcpy(targetPath, pData->oscData->path);
-    std::strcat(targetPath, "/bridge_parameter_data");
-    try_lo_send(pData->oscData->target, targetPath, "iiiiss", static_cast<int32_t>(index), static_cast<int32_t>(rindex), static_cast<int32_t>(type), static_cast<int32_t>(hints), name, unit);
+    std::strcat(targetPath, "/bridge_parameter_data2");
+    try_lo_send(pData->oscData->target, targetPath, "iss", static_cast<int32_t>(index), name, unit);
 }
 
 void CarlaEngine::oscSend_bridge_parameter_ranges1(const uint32_t index, const float def, const float min, const float max) const noexcept
@@ -158,32 +172,6 @@ void CarlaEngine::oscSend_bridge_parameter_ranges2(const uint32_t index, const f
     std::strcpy(targetPath, pData->oscData->path);
     std::strcat(targetPath, "/bridge_parameter_ranges2");
     try_lo_send(pData->oscData->target, targetPath, "ifff", static_cast<int32_t>(index), step, stepSmall, stepLarge);
-}
-
-void CarlaEngine::oscSend_bridge_parameter_midi_cc(const uint32_t index, const int16_t cc) const noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData->path != nullptr && pData->oscData->path[0] != '\0',);
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData->target != nullptr,);
-    carla_debug("CarlaEngine::oscSend_bridge_parameter_midi_cc(%i, %i)", index, cc);
-
-    char targetPath[std::strlen(pData->oscData->path)+26];
-    std::strcpy(targetPath, pData->oscData->path);
-    std::strcat(targetPath, "/bridge_parameter_midi_cc");
-    try_lo_send(pData->oscData->target, targetPath, "ii", static_cast<int32_t>(index), static_cast<int32_t>(cc));
-}
-
-void CarlaEngine::oscSend_bridge_parameter_midi_channel(const uint32_t index, const uint8_t channel) const noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData->path != nullptr && pData->oscData->path[0] != '\0',);
-    CARLA_SAFE_ASSERT_RETURN(pData->oscData->target != nullptr,);
-    carla_debug("CarlaEngine::oscSend_bridge_parameter_midi_channel(%i, %i)", index, channel);
-
-    char targetPath[std::strlen(pData->oscData->path)+31];
-    std::strcpy(targetPath, pData->oscData->path);
-    std::strcat(targetPath, "/bridge_parameter_midi_channel");
-    try_lo_send(pData->oscData->target, targetPath, "ii", static_cast<int32_t>(index), static_cast<int32_t>(channel));
 }
 
 void CarlaEngine::oscSend_bridge_parameter_value(const uint32_t index, const float value) const noexcept

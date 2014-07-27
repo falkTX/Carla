@@ -1205,7 +1205,9 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
+#ifndef BUILD_BRIDGE
             bool allNotesOffSent = false;
+#endif
             bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t numEvents  = pData->event.portIn->getEventCount();
@@ -1302,7 +1304,6 @@ public:
                                 break;
                             }
                         }
-#endif
 
                         // Control plugin parameters
                         uint32_t k;
@@ -1339,6 +1340,7 @@ public:
                         // check if event is already handled
                         if (k != pData->param.count)
                             break;
+#endif
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
@@ -1396,11 +1398,13 @@ public:
                     case kEngineControlEventTypeAllNotesOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
+#ifndef BUILD_BRIDGE
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
                                 sendMidiAllNotesOffToCallback();
                             }
+#endif
 
                             if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                                 continue;

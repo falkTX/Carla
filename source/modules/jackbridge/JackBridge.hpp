@@ -1,6 +1,6 @@
 /*
  * JackBridge
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -378,13 +378,12 @@ CARLA_EXPORT bool jackbridge_set_property_change_callback(jack_client_t* client,
 CARLA_EXPORT bool jackbridge_sem_init(void* sem) noexcept;
 CARLA_EXPORT bool jackbridge_sem_destroy(void* sem) noexcept;
 CARLA_EXPORT bool jackbridge_sem_post(void* sem) noexcept;
-CARLA_EXPORT bool jackbridge_sem_timedwait(void* sem, int secs);
-CARLA_EXPORT bool jackbridge_sem_wait(void* sem);
+CARLA_EXPORT bool jackbridge_sem_timedwait(void* sem, int secs) noexcept;
 
-CARLA_EXPORT bool  jackbridge_shm_is_valid(const void* shm);
-CARLA_EXPORT void  jackbridge_shm_init(void* shm);
-CARLA_EXPORT void  jackbridge_shm_attach(void* shm, const char* name);
-CARLA_EXPORT void  jackbridge_shm_close(void* shm);
-CARLA_EXPORT void* jackbridge_shm_map(void* shm, size_t size);
+CARLA_EXPORT bool  jackbridge_shm_is_valid(const void* shm) noexcept;
+CARLA_EXPORT void  jackbridge_shm_init(void* shm) noexcept;
+CARLA_EXPORT void  jackbridge_shm_attach(void* shm, const char* name) noexcept;
+CARLA_EXPORT void  jackbridge_shm_close(void* shm) noexcept;
+CARLA_EXPORT void* jackbridge_shm_map(void* shm, size_t size) noexcept;
 
 #endif // JACKBRIDGE_HPP_INCLUDED

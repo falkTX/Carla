@@ -94,24 +94,25 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
       bufferSize(0),
       sampleRate(0.0),
       aboutToClose(false),
-      isIdling(false),
+      isIdling(0),
       curPluginCount(0),
       maxPluginNumber(0),
-      nextPluginId(0)
 #ifndef BUILD_BRIDGE
-      , plugins(nullptr)
-#endif
+      nextPluginId(0),
+      plugins(nullptr) {}
+#else
+      nextPluginId(0)
 {
-#ifdef BUILD_BRIDGE
     carla_zeroStruct(plugins, 1);
-#endif
 }
+#endif
 
 CarlaEngine::ProtectedData::~ProtectedData() noexcept
 {
     CARLA_SAFE_ASSERT(curPluginCount == 0);
     CARLA_SAFE_ASSERT(maxPluginNumber == 0);
     CARLA_SAFE_ASSERT(nextPluginId == 0);
+    CARLA_SAFE_ASSERT(isIdling == 0);
 #ifndef BUILD_BRIDGE
     CARLA_SAFE_ASSERT(plugins == nullptr);
 #endif

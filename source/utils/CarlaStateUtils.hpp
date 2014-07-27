@@ -36,8 +36,10 @@ struct StateParameter {
     const char* name;
     const char* symbol;
     float       value;
+#ifndef BUILD_BRIDGE
     uint8_t     midiChannel;
     int16_t     midiCC;
+#endif
 
     StateParameter() noexcept;
     ~StateParameter() noexcept;
@@ -69,14 +71,16 @@ struct StateSave {
     const char* binary;
     int64_t     uniqueId;
 
-    bool  active;
-    float dryWet;
-    float volume;
-    float balanceLeft;
-    float balanceRight;
-    float panning;
+#ifndef BUILD_BRIDGE
+    bool   active;
+    float  dryWet;
+    float  volume;
+    float  balanceLeft;
+    float  balanceRight;
+    float  panning;
     int8_t ctrlChannel;
     uint   options;
+#endif
 
     int32_t     currentProgramIndex;
     const char* currentProgramName;

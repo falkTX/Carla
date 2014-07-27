@@ -188,7 +188,7 @@ void CarlaBridgeClient::sendOscExiting() const
 }
 
 #ifdef BRIDGE_LV2
-void CarlaBridgeClient::sendOscLv2AtomTransfer(const int32_t portIndex, const char* const atomBuf) const
+void CarlaBridgeClient::sendOscLv2AtomTransfer(const uint32_t portIndex, const char* const atomBuf) const
 {
     carla_debug("CarlaBridgeClient::sendOscLv2TransferAtom(%i, \"%s\")", portIndex, atomBuf);
 

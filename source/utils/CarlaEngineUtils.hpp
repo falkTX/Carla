@@ -165,6 +165,7 @@ void fillJuceMidiBufferFromEngineEvents(juce::MidiBuffer& midiBuffer, const Engi
         if (engineEvent.type == kEngineEventTypeNull)
             break;
 
+#ifndef BUILD_BRIDGE
         else if (engineEvent.type == kEngineEventTypeControl)
         {
             const EngineControlEvent& ctrlEvent(engineEvent.ctrl);
@@ -172,6 +173,7 @@ void fillJuceMidiBufferFromEngineEvents(juce::MidiBuffer& midiBuffer, const Engi
             ctrlEvent.convertToMidiData(engineEvent.channel, size, mdata);
             mdataPtr = mdata;
         }
+#endif
         else if (engineEvent.type == kEngineEventTypeMidi)
         {
             const EngineMidiEvent& midiEvent(engineEvent.midi);

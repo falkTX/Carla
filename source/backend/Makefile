@@ -110,11 +110,3 @@ CarlaStandalone.cpp.o: CarlaStandalone.cpp $(CARLA_STANDALONE_CPP_DEPS)
 	$(CXX) $< $(LIBS_START) $(STANDALONE_LIBS) $(LIBS_END) $(LINK_FLAGS) $(STANDALONE_FLAGS) $(SHARED) -o $@
 
 # --------------------------------------------------------------
-
-carla_%.a:
-	$(MAKE) -C $* ../carla_$*.a
-
-../modules/%.a:
-	$(MAKE) -C ../modules/$* ../$*.a
-
-# --------------------------------------------------------------

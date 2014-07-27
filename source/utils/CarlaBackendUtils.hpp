@@ -168,6 +168,7 @@ const char* InternalParameterIndex2Str(const InternalParameterIndex index) noexc
     {
     case PARAMETER_NULL:
         return "PARAMETER_NULL";
+#ifndef BUILD_BRIDGE
     case PARAMETER_ACTIVE:
         return "PARAMETER_ACTIVE";
     case PARAMETER_DRYWET:
@@ -182,6 +183,7 @@ const char* InternalParameterIndex2Str(const InternalParameterIndex index) noexc
         return "PARAMETER_PANNING";
     case PARAMETER_CTRL_CHANNEL:
         return "PARAMETER_CTRL_CHANNEL";
+#endif
     case PARAMETER_MAX:
         return "PARAMETER_MAX";
     }
@@ -209,16 +211,18 @@ const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode) noexcept
         return "ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED";
     case ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
         return "ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED";
+#ifndef BUILD_BRIDGE
     case ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
         return "ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED";
     case ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
         return "ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED";
+    case ENGINE_CALLBACK_OPTION_CHANGED:
+        return "ENGINE_CALLBACK_OPTION_CHANGED";
+#endif
     case ENGINE_CALLBACK_PROGRAM_CHANGED:
         return "ENGINE_CALLBACK_PROGRAM_CHANGED";
     case ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
         return "ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED";
-    case ENGINE_CALLBACK_OPTION_CHANGED:
-        return "ENGINE_CALLBACK_OPTION_CHANGED";
     case ENGINE_CALLBACK_UI_STATE_CHANGED:
         return "ENGINE_CALLBACK_UI_STATE_CHANGED";
     case ENGINE_CALLBACK_NOTE_ON:
@@ -235,6 +239,7 @@ const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode) noexcept
         return "ENGINE_CALLBACK_RELOAD_PROGRAMS";
     case ENGINE_CALLBACK_RELOAD_ALL:
         return "ENGINE_CALLBACK_RELOAD_ALL";
+#ifndef BUILD_BRIDGE
     case ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED:
         return "ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED";
     case ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED:
@@ -253,6 +258,7 @@ const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode) noexcept
         return "ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED";
     case ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED:
         return "ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED";
+#endif
     case ENGINE_CALLBACK_ENGINE_STARTED:
         return "ENGINE_CALLBACK_ENGINE_STARTED";
     case ENGINE_CALLBACK_ENGINE_STOPPED:

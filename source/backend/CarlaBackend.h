@@ -465,6 +465,7 @@ typedef enum {
 
     /*!
      * VST3 plugin.
+     * @note Windows and MacOS only
      */
     PLUGIN_VST3 = 6,
 
@@ -587,6 +588,7 @@ typedef enum {
      */
     PARAMETER_NULL = -1,
 
+#ifndef BUILD_BRIDGE
     /*!
      * Active parameter, boolean type.\n
      * Default is 'false'.
@@ -628,6 +630,7 @@ typedef enum {
      * Range -1...15 (-1 = off).
      */
     PARAMETER_CTRL_CHANNEL = -8,
+#endif
 
     /*!
      * Max value, defined only for convenience.
@@ -694,6 +697,7 @@ typedef enum {
      */
     ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED = 6,
 
+#ifndef BUILD_BRIDGE
     /*!
      * A parameter's MIDI CC has changed.
      * @param pluginId Plugin Id
@@ -711,27 +715,28 @@ typedef enum {
     ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED = 8,
 
     /*!
-     * The current program of a plugin has changed.
-     * @param pluginId Plugin Id
-     * @param value1   New program index
-     */
-    ENGINE_CALLBACK_PROGRAM_CHANGED = 9,
-
-    /*!
-     * The current MIDI program of a plugin has changed.
-     * @param pluginId Plugin Id
-     * @param value1   New MIDI program index
-     */
-    ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED = 10,
-
-    /*!
      * A plugin option has changed.
      * @param pluginId Plugin Id
      * @param value1   Option
      * @param value2   New on/off state (1 for on, 0 for off)
      * @see PluginOptions
      */
-    ENGINE_CALLBACK_OPTION_CHANGED = 11,
+    ENGINE_CALLBACK_OPTION_CHANGED = 9,
+#endif
+
+    /*!
+     * The current program of a plugin has changed.
+     * @param pluginId Plugin Id
+     * @param value1   New program index
+     */
+    ENGINE_CALLBACK_PROGRAM_CHANGED = 10,
+
+    /*!
+     * The current MIDI program of a plugin has changed.
+     * @param pluginId Plugin Id
+     * @param value1   New MIDI program index
+     */
+    ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED = 11,
 
     /*!
      * A plugin's custom UI state has changed.
@@ -790,6 +795,7 @@ typedef enum {
      */
     ENGINE_CALLBACK_RELOAD_ALL = 19,
 
+#ifndef BUILD_BRIDGE
     /*!
      * A patchbay client has been added.
      * @param pluginId Client Id
@@ -859,6 +865,7 @@ typedef enum {
      * @param pluginId Connection Id
      */
     ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED = 28,
+#endif
 
     /*!
      * Engine started.
@@ -1346,7 +1353,8 @@ typedef struct {
     {
         return value * (max - min) + min;
     }
-#endif
+#endif // __cplusplus
+
 } ParameterRanges;
 
 /*!

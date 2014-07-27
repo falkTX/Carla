@@ -1,6 +1,6 @@
 /*
  * JackBridge (Part 2, Semaphore functions)
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -24,13 +24,13 @@
 CARLA_EXPORT bool jackbridge_sem_init(void* sem) noexcept;
 CARLA_EXPORT bool jackbridge_sem_destroy(void* sem) noexcept;
 CARLA_EXPORT bool jackbridge_sem_post(void* sem) noexcept;
-CARLA_EXPORT bool jackbridge_sem_timedwait(void* sem, int secs);
+CARLA_EXPORT bool jackbridge_sem_timedwait(void* sem, int secs) noexcept;
 
-CARLA_EXPORT bool  jackbridge_shm_is_valid(void* shm);
-CARLA_EXPORT void  jackbridge_shm_init(void* shm);
-CARLA_EXPORT void  jackbridge_shm_attach(void* shm, const char* name);
-CARLA_EXPORT void  jackbridge_shm_close(void* shm);
-CARLA_EXPORT void* jackbridge_shm_map(void* shm, size_t size);
+CARLA_EXPORT bool  jackbridge_shm_is_valid(const void* shm) noexcept;
+CARLA_EXPORT void  jackbridge_shm_init(void* shm) noexcept;
+CARLA_EXPORT void  jackbridge_shm_attach(void* shm, const char* name) noexcept;
+CARLA_EXPORT void  jackbridge_shm_close(void* shm) noexcept;
+CARLA_EXPORT void* jackbridge_shm_map(void* shm, size_t size) noexcept;
 #endif
 
 // -----------------------------------------------------------------------------
@@ -51,34 +51,29 @@ bool jackbridge_sem_post(void*) noexcept
     return false;
 }
 
-bool jackbridge_sem_timedwait(void*, int)
+bool jackbridge_sem_timedwait(void*, int) noexcept
 {
     return false;
 }
 
-bool jackbridge_sem_wait(void*)
+bool jackbridge_shm_is_valid(const void*) noexcept
 {
     return false;
 }
 
-bool jackbridge_shm_is_valid(const void*)
-{
-    return false;
-}
-
-void jackbridge_shm_init(void*)
+void jackbridge_shm_init(void*) noexcept
 {
 }
 
-void jackbridge_shm_attach(void*, const char*)
+void jackbridge_shm_attach(void*, const char*) noexcept
 {
 }
 
-void jackbridge_shm_close(void*)
+void jackbridge_shm_close(void*) noexcept
 {
 }
 
-void* jackbridge_shm_map(void*, size_t)
+void* jackbridge_shm_map(void*, size_t) noexcept
 {
     return nullptr;
 }
@@ -104,11 +99,13 @@ bool jackbridge_sem_post(void* sem) noexcept
     return (sem_post((sem_t*)sem) == 0);
 }
 
-bool jackbridge_sem_timedwait(void* sem, int secs)
+bool jackbridge_sem_timedwait(void* sem, int secs) noexcept
 {
 #ifdef CARLA_OS_MAC
         alarm(secs);
-        return (sem_wait((sem_t*)sem) == 0);
+        try {
+            return (sem_wait((sem_t*)sem) == 0);
+        } CARLA_SAFE_EXCEPTION_RETURN("sem_wait", false);
 #else
         timespec timeout;
 
@@ -120,45 +117,37 @@ bool jackbridge_sem_timedwait(void* sem, int secs)
 # else
         clock_gettime(CLOCK_REALTIME, &timeout);
 # endif
-
         timeout.tv_sec += secs;
-        return (sem_timedwait((sem_t*)sem, &timeout) == 0);
+
+        try {
+            return (sem_timedwait((sem_t*)sem, &timeout) == 0);
+        } CARLA_SAFE_EXCEPTION_RETURN("sem_timedwait", false);
 #endif
 }
 
-bool jackbridge_sem_wait(void* sem)
+bool jackbridge_shm_is_valid(const void* shm) noexcept
 {
-    return (sem_wait((sem_t*)sem) == 0);
+    return carla_is_shm_valid(*(const shm_t*)shm);
 }
 
-bool jackbridge_shm_is_valid(const void* shm)
+void jackbridge_shm_init(void* shm) noexcept
 {
-    const shm_t* t = (const shm_t*)shm;
-    return carla_is_shm_valid(*t);
+    carla_shm_init(*(shm_t*)shm);
 }
 
-void jackbridge_shm_init(void* shm)
+void jackbridge_shm_attach(void* shm, const char* name) noexcept
 {
-    shm_t* t = (shm_t*)shm;
-    carla_shm_init(*t);
+    *(shm_t*)shm = carla_shm_attach(name);
 }
 
-void jackbridge_shm_attach(void* shm, const char* name)
+void jackbridge_shm_close(void* shm) noexcept
 {
-    shm_t* t = (shm_t*)shm;
-    *t = carla_shm_attach(name);
+    carla_shm_close(*(shm_t*)shm);
 }
 
-void jackbridge_shm_close(void* shm)
+void* jackbridge_shm_map(void* shm, size_t size) noexcept
 {
-    shm_t* t = (shm_t*)shm;
-    carla_shm_close(*t);
-}
-
-void* jackbridge_shm_map(void* shm, size_t size)
-{
-    shm_t* t = (shm_t*)shm;
-    return carla_shm_map(*t, size);
+    return carla_shm_map(*(shm_t*)shm, size);
 }
 
 #endif // ! JACKBRIDGE_DUMMY

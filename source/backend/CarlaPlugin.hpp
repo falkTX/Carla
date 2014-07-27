@@ -538,6 +538,7 @@ public:
      */
     void setParameterValueByRealIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept;
 
+#ifndef BUILD_BRIDGE
     /*!
      * Set parameter's \a parameterId MIDI channel to \a channel.\n
      * \a channel must be between 0 and 15.
@@ -549,6 +550,7 @@ public:
      * \a cc must be between 0 and 95 (0x5F), or -1 for invalid.
      */
     void setParameterMidiCC(const uint32_t parameterId, int16_t cc, const bool sendOsc, const bool sendCallback) noexcept;
+#endif
 
     /*!
      * Add a custom data set.\n
@@ -743,7 +745,6 @@ public:
      * \note Non-RT call
      */
     void sendMidiSingleNote(const uint8_t channel, const uint8_t note, const uint8_t velo, const bool sendGui, const bool sendOsc, const bool sendCallback);
-#endif
 
     /*!
      * Send all midi notes off to the host callback.\n
@@ -751,6 +752,7 @@ public:
      * \note RT call
      */
     void sendMidiAllNotesOffToCallback();
+#endif
 
     // -------------------------------------------------------------------
     // Post-poned events

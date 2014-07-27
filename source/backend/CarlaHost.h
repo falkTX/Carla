@@ -514,7 +514,6 @@ CARLA_EXPORT bool carla_patchbay_disconnect(uint connectionId);
  * Force the engine to resend all patchbay clients, ports and connections again.
  */
 CARLA_EXPORT bool carla_patchbay_refresh();
-#endif
 
 /*!
  * Start playback of the engine transport.
@@ -541,6 +540,7 @@ CARLA_EXPORT uint64_t carla_get_current_transport_frame();
  * Get the engine transport information.
  */
 CARLA_EXPORT const CarlaTransportInfo* carla_get_transport_info();
+#endif
 
 /*!
  * Add a new plugin.\n
@@ -799,6 +799,7 @@ CARLA_EXPORT float carla_get_input_peak_value(uint pluginId, bool isLeft);
  */
 CARLA_EXPORT float carla_get_output_peak_value(uint pluginId, bool isLeft);
 
+#ifndef BUILD_BRIDGE
 /*!
  * Enable a plugin's option.
  * @param pluginId Plugin
@@ -814,7 +815,6 @@ CARLA_EXPORT void carla_set_option(uint pluginId, uint option, bool yesNo);
  */
 CARLA_EXPORT void carla_set_active(uint pluginId, bool onOff);
 
-#ifndef BUILD_BRIDGE
 /*!
  * Change a plugin's internal dry/wet.
  * @param pluginId Plugin
@@ -866,6 +866,7 @@ CARLA_EXPORT void carla_set_ctrl_channel(uint pluginId, int8_t channel);
  */
 CARLA_EXPORT void carla_set_parameter_value(uint pluginId, uint32_t parameterId, float value);
 
+#ifndef BUILD_BRIDGE
 /*!
  * Change a plugin's parameter MIDI channel.
  * @param pluginId    Plugin
@@ -881,6 +882,7 @@ CARLA_EXPORT void carla_set_parameter_midi_channel(uint pluginId, uint32_t param
  * @param cc          New MIDI cc
  */
 CARLA_EXPORT void carla_set_parameter_midi_cc(uint pluginId, uint32_t parameterId, int16_t cc);
+#endif
 
 /*!
  * Change a plugin's current program.

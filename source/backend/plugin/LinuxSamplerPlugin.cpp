@@ -795,7 +795,9 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
+#ifndef BUILD_BRIDGE
             bool allNotesOffSent = false;
+#endif
             bool sampleAccurate  = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t nEvents = pData->event.portIn->getEventCount();
@@ -892,7 +894,6 @@ public:
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
                             }
                         }
-#endif
 
                         // Control plugin parameters
                         for (uint32_t k=0; k < pData->param.count; ++k)
@@ -923,6 +924,7 @@ public:
                             setParameterValue(k, value, false, false, false);
                             pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
+#endif
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
@@ -982,11 +984,13 @@ public:
                     case kEngineControlEventTypeAllNotesOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
+#ifndef BUILD_BRIDGE
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
                                 sendMidiAllNotesOffToCallback();
                             }
+#endif
 
                             fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_NOTES_OFF, 0, event.channel, static_cast<int32_t>(sampleAccurate ? startTime : event.time));
                         }

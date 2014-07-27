@@ -1145,18 +1145,17 @@ public:
     // Bridge/Controller OSC stuff
 
 #ifdef BUILD_BRIDGE
-    void oscSend_bridge_plugin_info1(const PluginCategory category, const uint hints, const int64_t uniqueId) const noexcept;
+    void oscSend_bridge_plugin_info1(const PluginCategory category, const uint hints, const uint optionsAvailable, const uint optionsEnabled, const int64_t uniqueId) const noexcept;
     void oscSend_bridge_plugin_info2(const char* const realName, const char* const label, const char* const maker, const char* const copyright) const noexcept;
     void oscSend_bridge_audio_count(const uint32_t ins, const uint32_t outs) const noexcept;
     void oscSend_bridge_midi_count(const uint32_t ins, const uint32_t outs) const noexcept;
     void oscSend_bridge_parameter_count(const uint32_t ins, const uint32_t outs) const noexcept;
     void oscSend_bridge_program_count(const uint32_t count) const noexcept;
     void oscSend_bridge_midi_program_count(const uint32_t count) const noexcept;
-    void oscSend_bridge_parameter_data(const uint32_t index, const int32_t rindex, const ParameterType type, const uint hints, const char* const name, const char* const unit) const noexcept;
+    void oscSend_bridge_parameter_data1(const uint32_t index, const int32_t rindex, const ParameterType type, const uint hints, const int16_t cc) const noexcept;
+    void oscSend_bridge_parameter_data2(const uint32_t index, const char* const name, const char* const unit) const noexcept;
     void oscSend_bridge_parameter_ranges1(const uint32_t index, const float def, const float min, const float max) const noexcept;
     void oscSend_bridge_parameter_ranges2(const uint32_t index, const float step, const float stepSmall, const float stepLarge) const noexcept;
-    void oscSend_bridge_parameter_midi_cc(const uint32_t index, const int16_t cc) const noexcept;
-    void oscSend_bridge_parameter_midi_channel(const uint32_t index, const uint8_t channel) const noexcept;
     void oscSend_bridge_parameter_value(const uint32_t index, const float value) const noexcept;
     void oscSend_bridge_default_value(const uint32_t index, const float value) const noexcept;
     void oscSend_bridge_current_program(const int32_t index) const noexcept;

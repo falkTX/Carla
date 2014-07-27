@@ -41,6 +41,19 @@ static const shm_t gNullCarlaShm = { -1, nullptr };
 #endif
 
 /*
+ * Check if a shared memory object is valid.
+ */
+static inline
+bool carla_is_shm_valid(const shm_t& shm) noexcept
+{
+#ifdef CARLA_OS_WIN
+    return (shm.shm != nullptr && shm.shm != INVALID_HANDLE_VALUE);
+#else
+    return (shm.fd >= 0);
+#endif
+}
+
+/*
  * Initialize a shared memory object to an invalid state.
  */
 static inline
@@ -52,19 +65,6 @@ void carla_shm_init(shm_t& shm) noexcept
 #else
     shm.fd       = -1;
     shm.filename = nullptr;
-#endif
-}
-
-/*
- * Check if a shared memory object is valid.
- */
-static inline
-bool carla_is_shm_valid(const shm_t& shm) noexcept
-{
-#ifdef CARLA_OS_WIN
-    return (shm.shm != nullptr && shm.shm != INVALID_HANDLE_VALUE);
-#else
-    return (shm.fd >= 0);
 #endif
 }
 
@@ -85,7 +85,7 @@ shm_t carla_shm_create(const char* const filename) noexcept
         ret.map = nullptr;
 #else
         ret.fd       = ::shm_open(filename, O_CREAT|O_EXCL|O_RDWR, 0600);
-        ret.filename = (ret.fd >= 0) ? carla_strdup(filename) : nullptr;
+        ret.filename = (ret.fd >= 0) ? carla_strdup_safe(filename) : nullptr;
 #endif
     }
     catch(...) {
@@ -155,7 +155,7 @@ void carla_shm_close(shm_t& shm) noexcept
  * @note One shared memory object can only have one mapping at a time.
  */
 static inline
-void* carla_shm_map(shm_t& shm, const size_t size) noexcept
+void* carla_shm_map(shm_t& shm, const std::size_t size) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm), nullptr);
     CARLA_SAFE_ASSERT_RETURN(size > 0, nullptr);
@@ -192,7 +192,7 @@ void* carla_shm_map(shm_t& shm, const size_t size) noexcept
  * Unmap a shared memory object address.
  */
 static inline
-void carla_shm_unmap(shm_t& shm, void* const ptr, const size_t size) noexcept
+void carla_shm_unmap(shm_t& shm, void* const ptr, const std::size_t size) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm),);
     CARLA_SAFE_ASSERT_RETURN(ptr != nullptr,);
@@ -214,9 +214,8 @@ void carla_shm_unmap(shm_t& shm, void* const ptr, const size_t size) noexcept
 #endif
     } CARLA_SAFE_EXCEPTION("carla_shm_unmap");
 
-    return; // unused depending on platform
-    (void)shm;
-    (void)size;
+    // unused depending on platform
+    return; (void)shm; (void)size;
 }
 
 // -----------------------------------------------------------------------

@@ -1064,7 +1064,6 @@ public:
                                 break;
                             }
                         }
-#endif
 
                         // Control plugin parameters
                         for (uint32_t k=0; k < pData->param.count; ++k)
@@ -1096,7 +1095,7 @@ public:
                             pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                             break;
                         }
-
+#endif
                         break;
                     } // case kEngineControlEventTypeParameter
 
@@ -1159,7 +1158,6 @@ public:
                 }
             }
         }
-#endif
 
         // --------------------------------------------------------------------------------------------------------
         // Control Output
@@ -1186,6 +1184,7 @@ public:
                 }
             }
         } // End of Control Output
+#endif
     }
 
     bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)

@@ -630,9 +630,10 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
-            bool allNotesOffSent  = false;
-
-            uint32_t numEvents  = pData->event.portIn->getEventCount();
+#ifndef BUILD_BRIDGE
+            bool allNotesOffSent = false;
+#endif
+            uint32_t numEvents = pData->event.portIn->getEventCount();
             uint32_t nextBankId;
 
             if (pData->midiprog.current >= 0 && pData->midiprog.count > 0)
@@ -711,7 +712,6 @@ public:
                                 break;
                             }
                         }
-#endif
 
                         // Control plugin parameters
                         uint32_t k;
@@ -748,6 +748,7 @@ public:
                         // check if event is already handled
                         if (k != pData->param.count)
                             break;
+#endif
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
@@ -799,11 +800,13 @@ public:
                     case kEngineControlEventTypeAllNotesOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
+#ifndef BUILD_BRIDGE
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
                                 sendMidiAllNotesOffToCallback();
                             }
+#endif
 
                             uint8_t midiData[3];
                             midiData[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + i);

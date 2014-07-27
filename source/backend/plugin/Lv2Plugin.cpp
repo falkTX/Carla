@@ -2002,7 +2002,7 @@ public:
                     if (LV2_IS_PORT_MIDI_MAP_CC(portMidiMap.Type))
                     {
                         if (portMidiMap.Number < 0x5F && ! MIDI_IS_CONTROL_BANK_SELECT(portMidiMap.Number))
-                            pData->param.data[j].midiCC = int16_t(portMidiMap.Number);
+                            pData->param.data[j].midiCC = static_cast<int16_t>(portMidiMap.Number);
                     }
                 }
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
@@ -2811,7 +2811,9 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
+#ifndef BUILD_BRIDGE
             bool allNotesOffSent  = false;
+#endif
             bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t numEvents = (fEventsIn.ctrl->port != nullptr) ? fEventsIn.ctrl->port->getEventCount() : 0;
@@ -2933,7 +2935,6 @@ public:
                                 break;
                             }
                         }
-#endif
 
                         // Control plugin parameters
                         uint32_t k;
@@ -2970,6 +2971,7 @@ public:
                         // check if event is already handled
                         if (k != pData->param.count)
                             break;
+#endif
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
@@ -3039,11 +3041,13 @@ public:
                     case kEngineControlEventTypeAllNotesOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
+#ifndef BUILD_BRIDGE
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
                                 sendMidiAllNotesOffToCallback();
                             }
+#endif
 
                             const uint32_t mtime(isSampleAccurate ? startTime : event.time);
 
@@ -3246,6 +3250,7 @@ public:
             }
         }
 
+#ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
         // Control Output
 
@@ -3271,6 +3276,7 @@ public:
                 }
             }
         } // End of Control Output
+#endif
 
         // --------------------------------------------------------------------------------------------------------
         // Final work

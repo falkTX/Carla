@@ -527,22 +527,22 @@ ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED = 7
 # @param value2   New MIDI channel
 ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED = 8
 
-# The current program of a plugin has changed.
-# @param pluginId Plugin Id
-# @param value1   New program index
-ENGINE_CALLBACK_PROGRAM_CHANGED = 9
-
-# The current MIDI program of a plugin has changed.
-# @param pluginId Plugin Id
-# @param value1   New MIDI program index
-ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED = 10
-
 # A plugin option has changed.
 # @param pluginId Plugin Id
 # @param value1   Option
 # @param value2   New on/off state (1 for on, 0 for off)
 # @see PluginOptions
-ENGINE_CALLBACK_OPTION_CHANGED = 11
+ENGINE_CALLBACK_OPTION_CHANGED = 9
+
+# The current program of a plugin has changed.
+# @param pluginId Plugin Id
+# @param value1   New program index
+ENGINE_CALLBACK_PROGRAM_CHANGED = 10
+
+# The current MIDI program of a plugin has changed.
+# @param pluginId Plugin Id
+# @param value1   New MIDI program index
+ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED = 11
 
 # A plugin's custom UI state has changed.
 # @param pluginId Plugin Id

@@ -1088,7 +1088,6 @@ bool carla_patchbay_refresh()
     gStandalone.lastError = "Engine is not running";
     return false;
 }
-#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -1153,6 +1152,7 @@ const CarlaTransportInfo* carla_get_transport_info()
 
     return &retInfo;
 }
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -1677,7 +1677,7 @@ const char* carla_get_chunk_data(uint pluginId)
         if (plugin->getOptionsEnabled() & CB::PLUGIN_OPTION_USE_CHUNKS)
         {
             void* data = nullptr;
-            const int32_t dataSize(plugin->getChunkData(&data));
+            const std::size_t dataSize(plugin->getChunkData(&data));
 
             if (data != nullptr && dataSize > 0)
             {
@@ -1932,6 +1932,7 @@ float carla_get_output_peak_value(uint pluginId, bool isLeft)
 
 // -------------------------------------------------------------------------------------------------------------------
 
+#ifndef BUILD_BRIDGE
 void carla_set_option(uint pluginId, uint option, bool yesNo)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
@@ -1954,7 +1955,6 @@ void carla_set_active(uint pluginId, bool onOff)
     carla_stderr2("carla_set_active(%i, %s) - could not find plugin", pluginId, bool2str(onOff));
 }
 
-#ifndef BUILD_BRIDGE
 void carla_set_drywet(uint pluginId, float value)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
@@ -2042,6 +2042,7 @@ void carla_set_parameter_value(uint pluginId, uint32_t parameterId, float value)
     carla_stderr2("carla_set_parameter_value(%i, %i, %f) - could not find plugin", pluginId, parameterId, value);
 }
 
+#ifndef BUILD_BRIDGE
 void carla_set_parameter_midi_channel(uint pluginId, uint32_t parameterId, uint8_t channel)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
@@ -2077,6 +2078,7 @@ void carla_set_parameter_midi_cc(uint pluginId, uint32_t parameterId, int16_t cc
 
     carla_stderr2("carla_set_parameter_midi_cc(%i, %i, %i) - could not find plugin", pluginId, parameterId, cc);
 }
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 

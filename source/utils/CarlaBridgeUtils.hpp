@@ -26,28 +26,27 @@
 enum PluginBridgeOscInfoType {
     kPluginBridgeOscNull = 0,
     kPluginBridgeOscPong,
-    kPluginBridgeOscPluginInfo1,          // uuh    => category, hints, uniqueId
-    kPluginBridgeOscPluginInfo2,          // ssss   => realName, label, maker, copyright
-    kPluginBridgeOscAudioCount,           // uu     => ins, outs
-    kPluginBridgeOscMidiCount,            // uu     => ins, outs
-    kPluginBridgeOscParameterCount,       // uu     => ins, outs
-    kPluginBridgeOscProgramCount,         // u      => count
-    kPluginBridgeOscMidiProgramCount,     // u      => count
-    kPluginBridgeOscParameterData,        // uiuuss => index, rindex, type, hints, name, unit
-    kPluginBridgeOscParameterRanges1,     // ufff   => index, def, min, max
-    kPluginBridgeOscParameterRanges2,     // ufff   => index, step, stepSmall, stepLarge
-    kPluginBridgeOscParameterMidiCC,      // ui     => index, cc
-    kPluginBridgeOscParameterMidiChannel, // uu     => index, channel
-    kPluginBridgeOscParameterValue,       // uf     => index, value
-    kPluginBridgeOscDefaultValue,         // uf     => index, value
-    kPluginBridgeOscCurrentProgram,       // i      => index
-    kPluginBridgeOscCurrentMidiProgram,   // i      => index
-    kPluginBridgeOscProgramName,          // us     => index, name
-    kPluginBridgeOscMidiProgramData,      // uuus   => index, bank, program, name
-    kPluginBridgeOscConfigure,            // ss     => key, value
-    kPluginBridgeOscSetCustomData,        // sss    => type, key, value
-    kPluginBridgeOscSetChunkDataFile,     // s      => chunkFile
-    kPluginBridgeOscLatency,              // u      => value
+    kPluginBridgeOscPluginInfo1,          // uuuuh => category, hints, optionsAvailable, optionsEnabled, uniqueId
+    kPluginBridgeOscPluginInfo2,          // ssss  => realName, label, maker, copyright
+    kPluginBridgeOscAudioCount,           // uu    => ins, outs
+    kPluginBridgeOscMidiCount,            // uu    => ins, outs
+    kPluginBridgeOscParameterCount,       // uu    => ins, outs
+    kPluginBridgeOscProgramCount,         // u     => count
+    kPluginBridgeOscMidiProgramCount,     // u     => count
+    kPluginBridgeOscParameterData1,       // uiuui => index, rindex, type, hints, cc
+    kPluginBridgeOscParameterData2,       // uss   => index, name, unit
+    kPluginBridgeOscParameterRanges1,     // ufff  => index, def, min, max
+    kPluginBridgeOscParameterRanges2,     // ufff  => index, step, stepSmall, stepLarge
+    kPluginBridgeOscParameterValue,       // uf    => index, value
+    kPluginBridgeOscDefaultValue,         // uf    => index, value
+    kPluginBridgeOscCurrentProgram,       // i     => index
+    kPluginBridgeOscCurrentMidiProgram,   // i     => index
+    kPluginBridgeOscProgramName,          // us    => index, name
+    kPluginBridgeOscMidiProgramData,      // uuus  => index, bank, program, name
+    kPluginBridgeOscConfigure,            // ss    => key, value
+    kPluginBridgeOscSetCustomData,        // sss   => type, key, value
+    kPluginBridgeOscSetChunkDataFile,     // s     => chunkFile
+    kPluginBridgeOscLatency,              // u     => value
     kPluginBridgeOscReady,
     kPluginBridgeOscError
 };
@@ -74,8 +73,6 @@ enum PluginBridgeNonRtOpcode {
     kPluginBridgeNonRtSetOffline,
     kPluginBridgeNonRtSetOnline,
     kPluginBridgeNonRtSetParameterValue,       // uint, float
-    kPluginBridgeNonRtSetParameterMidiChannel, // uint, byte
-    kPluginBridgeNonRtSetParameterMidiCC,      // uint, short
     kPluginBridgeNonRtSetProgram,              // int
     kPluginBridgeNonRtSetMidiProgram,          // int
     kPluginBridgeNonRtSetCustomData,           // uint/size, str, uint/size, str, uint/size, str
@@ -127,7 +124,6 @@ struct BridgeRtData {
 };
 
 struct BridgeNonRtData {
-    //BridgeSemaphore sem;
     BigStackBuffer ringBuffer;
 };
 
@@ -156,16 +152,14 @@ const char* PluginBridgeOscInfoType2str(const PluginBridgeOscInfoType type) noex
         return "kPluginBridgeOscProgramCount";
     case kPluginBridgeOscMidiProgramCount:
         return "kPluginBridgeOscMidiProgramCount";
-    case kPluginBridgeOscParameterData:
-        return "kPluginBridgeOscParameterData";
+    case kPluginBridgeOscParameterData1:
+        return "kPluginBridgeOscParameterData1";
+    case kPluginBridgeOscParameterData2:
+        return "kPluginBridgeOscParameterData2";
     case kPluginBridgeOscParameterRanges1:
         return "kPluginBridgeOscParameterRanges1";
     case kPluginBridgeOscParameterRanges2:
         return "kPluginBridgeOscParameterRanges2";
-    case kPluginBridgeOscParameterMidiCC:
-        return "kPluginBridgeOscParameterMidiCC";
-    case kPluginBridgeOscParameterMidiChannel:
-        return "kPluginBridgeOscParameterMidiChannel";
     case kPluginBridgeOscParameterValue:
         return "kPluginBridgeOscParameterValue";
     case kPluginBridgeOscDefaultValue:
@@ -244,10 +238,6 @@ const char* PluginBridgeNonRtOpcode2str(const PluginBridgeNonRtOpcode opcode) no
         return "kPluginBridgeNonRtSetOnline";
     case kPluginBridgeNonRtSetParameterValue:
         return "kPluginBridgeNonRtSetParameterValue";
-    case kPluginBridgeNonRtSetParameterMidiChannel:
-        return "kPluginBridgeNonRtSetParameterMidiChannel";
-    case kPluginBridgeNonRtSetParameterMidiCC:
-        return "kPluginBridgeNonRtSetParameterMidiCC";
     case kPluginBridgeNonRtSetProgram:
         return "kPluginBridgeNonRtSetProgram";
     case kPluginBridgeNonRtSetMidiProgram:

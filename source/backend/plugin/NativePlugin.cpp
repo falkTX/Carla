@@ -1388,7 +1388,9 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
+#ifndef BUILD_BRIDGE
             bool allNotesOffSent = false;
+#endif
             bool sampleAccurate  = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t time, nEvents = pData->event.portIn->getEventCount();
@@ -1438,8 +1440,7 @@ public:
                 case kEngineEventTypeNull:
                     break;
 
-                case kEngineEventTypeControl:
-                {
+                case kEngineEventTypeControl: {
                     const EngineControlEvent& ctrlEvent = event.ctrl;
 
                     switch (ctrlEvent.type)
@@ -1447,8 +1448,7 @@ public:
                     case kEngineControlEventTypeNull:
                         break;
 
-                    case kEngineControlEventTypeParameter:
-                    {
+                    case kEngineControlEventTypeParameter: {
 #ifndef BUILD_BRIDGE
                         // Control backend stuff
                         if (event.channel == pData->ctrlChannel)
@@ -1496,7 +1496,6 @@ public:
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
                             }
                         }
-#endif
 
                         // Control plugin parameters
                         for (uint32_t k=0; k < pData->param.count; ++k)
@@ -1527,6 +1526,7 @@ public:
                             setParameterValue(k, value, false, false, false);
                             pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
+#endif
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
@@ -1542,7 +1542,6 @@ public:
 
                             fMidiEventCount += 1;
                         }
-
                         break;
                     }
 
@@ -1596,11 +1595,13 @@ public:
                     case kEngineControlEventTypeAllNotesOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
+#ifndef BUILD_BRIDGE
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
                                 sendMidiAllNotesOffToCallback();
                             }
+#endif
 
                             if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                                 continue;
@@ -1616,12 +1617,10 @@ public:
                         }
                         break;
                     }
-
                     break;
                 }
 
-                case kEngineEventTypeMidi:
-                {
+                case kEngineEventTypeMidi: {
                     if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                         continue;
 
@@ -1685,6 +1684,7 @@ public:
 
         if (fMidiOut.count > 0 || pData->event.portOut != nullptr)
         {
+#ifndef BUILD_BRIDGE
             float value, curValue;
 
             for (uint32_t k=0; k < pData->param.count; ++k)
@@ -1701,6 +1701,7 @@ public:
                     pData->event.portOut->writeControlEvent(0, pData->param.data[k].midiChannel, kEngineControlEventTypeParameter, static_cast<uint16_t>(pData->param.data[k].midiCC), value);
                 }
             }
+#endif
 
             // reverse lookup MIDI events
             for (uint32_t k = (kPluginMaxMidiEvents*2)-1; k >= fMidiEventCount; --k)

@@ -348,16 +348,14 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscProgramCount, argc, argv, types);
         if (std::strcmp(bmethod, "midi_program_count") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscMidiProgramCount, argc, argv, types);
-        if (std::strcmp(bmethod, "parameter_data") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterData, argc, argv, types);
+        if (std::strcmp(bmethod, "parameter_data1") == 0)
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterData1, argc, argv, types);
+        if (std::strcmp(bmethod, "parameter_data2") == 0)
+            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterData2, argc, argv, types);
         if (std::strcmp(bmethod, "parameter_ranges1") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterRanges1, argc, argv, types);
         if (std::strcmp(bmethod, "parameter_ranges2") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterRanges2, argc, argv, types);
-        if (std::strcmp(bmethod, "parameter_midi_cc") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterMidiCC, argc, argv, types);
-        if (std::strcmp(bmethod, "parameter_midi_channel") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterMidiChannel, argc, argv, types);
         if (std::strcmp(bmethod, "parameter_value") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterValue, argc, argv, types);
         if (std::strcmp(bmethod, "default_value") == 0)

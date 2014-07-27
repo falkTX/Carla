@@ -80,9 +80,13 @@ StateParameter::StateParameter() noexcept
       index(-1),
       name(nullptr),
       symbol(nullptr),
+#ifndef BUILD_BRIDGE
       value(0.0f),
       midiChannel(0),
       midiCC(-1) {}
+#else
+      value(0.0f) {}
+#endif
 
 StateParameter::~StateParameter() noexcept
 {
@@ -134,6 +138,7 @@ StateSave::StateSave() noexcept
       label(nullptr),
       binary(nullptr),
       uniqueId(0),
+#ifndef BUILD_BRIDGE
       active(false),
       dryWet(1.0f),
       volume(1.0f),
@@ -142,6 +147,7 @@ StateSave::StateSave() noexcept
       panning(0.0f),
       ctrlChannel(-1),
       options(0x0),
+#endif
       currentProgramIndex(-1),
       currentProgramName(nullptr),
       currentMidiBank(-1),
@@ -187,6 +193,7 @@ void StateSave::clear() noexcept
     }
 
     uniqueId = 0;
+#ifndef BUILD_BRIDGE
     active = false;
     dryWet = 1.0f;
     volume = 1.0f;
@@ -195,6 +202,7 @@ void StateSave::clear() noexcept
     panning      = 0.0f;
     ctrlChannel  = -1;
     options      = 0x0;
+#endif
     currentProgramIndex = -1;
     currentMidiBank     = -1;
     currentMidiProgram  = -1;
@@ -261,6 +269,7 @@ bool StateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                 const String& tag(xmlData->getTagName());
                 const String  text(xmlData->getAllSubText().trim());
 
+#ifndef BUILD_BRIDGE
                 // -------------------------------------------------------
                 // Internal Data
 
@@ -303,6 +312,9 @@ bool StateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                     if (value > 0)
                         options = static_cast<uint>(value);
                 }
+#else
+                if (false) {}
+#endif
 
                 // -------------------------------------------------------
                 // Program (current)
@@ -364,6 +376,8 @@ bool StateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                         {
                             stateParameter->value = pText.getFloatValue();
                         }
+
+#ifndef BUILD_BRIDGE
                         else if (pTag.equalsIgnoreCase("midichannel") || pTag.equalsIgnoreCase("midi-channel"))
                         {
                             const int channel(pText.getIntValue());
@@ -376,6 +390,7 @@ bool StateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                             if (cc >= 1 && cc < 0x5F)
                                 stateParameter->midiCC = static_cast<int16_t>(cc);
                         }
+#endif
                     }
 
                     parameters.append(stateParameter);
@@ -483,6 +498,7 @@ String StateSave::toString() const
 
     content << "  <Data>\n";
 
+#ifndef BUILD_BRIDGE
     {
         String dataXml;
 
@@ -508,6 +524,7 @@ String StateSave::toString() const
 
         content << dataXml;
     }
+#endif
 
     for (StateParameterItenerator it = parameters.begin(); it.valid(); it.next())
     {
@@ -524,11 +541,13 @@ String StateSave::toString() const
         if (stateParameter->isInput)
             parameterXml << "    <Value>" << String(stateParameter->value, 15) << "</Value>\n";
 
+#ifndef BUILD_BRIDGE
         if (stateParameter->midiCC > 0)
         {
             parameterXml << "    <MidiCC>"      << stateParameter->midiCC        << "</MidiCC>\n";
             parameterXml << "    <MidiChannel>" << stateParameter->midiChannel+1 << "</MidiChannel>\n";
         }
+#endif
 
         parameterXml << "   </Parameter>\n";
 

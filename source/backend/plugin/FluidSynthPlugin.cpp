@@ -674,8 +674,6 @@ public:
             pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/ | PARAMETER_IS_BOOLEAN;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
-            pData->param.data[j].midiCC = -1;
-            pData->param.data[j].midiChannel = 0;
             pData->param.ranges[j].min = 0.0f;
             pData->param.ranges[j].max = 1.0f;
             pData->param.ranges[j].def = 1.0f;
@@ -689,8 +687,6 @@ public:
             pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
-            pData->param.data[j].midiCC = -1;
-            pData->param.data[j].midiChannel = 0;
             pData->param.ranges[j].min = 0.0f;
             pData->param.ranges[j].max = 1.2f;
             pData->param.ranges[j].def = FLUID_REVERB_DEFAULT_ROOMSIZE;
@@ -704,8 +700,6 @@ public:
             pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
-            pData->param.data[j].midiCC = -1;
-            pData->param.data[j].midiChannel = 0;
             pData->param.ranges[j].min = 0.0f;
             pData->param.ranges[j].max = 1.0f;
             pData->param.ranges[j].def = FLUID_REVERB_DEFAULT_DAMP;
@@ -720,7 +714,6 @@ public:
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
             pData->param.data[j].midiCC = MIDI_CONTROL_REVERB_SEND_LEVEL;
-            pData->param.data[j].midiChannel = 0;
             pData->param.ranges[j].min = 0.0f;
             pData->param.ranges[j].max = 1.0f;
             pData->param.ranges[j].def = FLUID_REVERB_DEFAULT_LEVEL;
@@ -734,8 +727,6 @@ public:
             pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
-            pData->param.data[j].midiCC = -1;
-            pData->param.data[j].midiChannel = 0;
             pData->param.ranges[j].min = 0.0f;
             pData->param.ranges[j].max = 10.0f; // should be 100, but that sounds too much
             pData->param.ranges[j].def = FLUID_REVERB_DEFAULT_WIDTH;
@@ -749,8 +740,6 @@ public:
             pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_BOOLEAN;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
-            pData->param.data[j].midiCC = -1;
-            pData->param.data[j].midiChannel = 0;
             pData->param.ranges[j].min = 0.0f;
             pData->param.ranges[j].max = 1.0f;
             pData->param.ranges[j].def = 1.0f;
@@ -764,8 +753,6 @@ public:
             pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
-            pData->param.data[j].midiCC = -1;
-            pData->param.data[j].midiChannel = 0;
             pData->param.ranges[j].min = 0.0f;
             pData->param.ranges[j].max = 99.0f;
             pData->param.ranges[j].def = FLUID_CHORUS_DEFAULT_N;
@@ -779,8 +766,6 @@ public:
             pData->param.data[j].hints  = PARAMETER_IS_ENABLED;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
-            pData->param.data[j].midiCC = 0; //MIDI_CONTROL_CHORUS_SEND_LEVEL;
-            pData->param.data[j].midiChannel = 0;
             pData->param.ranges[j].min = 0.0f;
             pData->param.ranges[j].max = 10.0f;
             pData->param.ranges[j].def = FLUID_CHORUS_DEFAULT_LEVEL;
@@ -794,8 +779,6 @@ public:
             pData->param.data[j].hints  = PARAMETER_IS_ENABLED;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
-            pData->param.data[j].midiCC = -1;
-            pData->param.data[j].midiChannel = 0;
             pData->param.ranges[j].min = 0.29f;
             pData->param.ranges[j].max = 5.0f;
             pData->param.ranges[j].def = FLUID_CHORUS_DEFAULT_SPEED;
@@ -809,8 +792,6 @@ public:
             pData->param.data[j].hints  = PARAMETER_IS_ENABLED;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
-            pData->param.data[j].midiCC = -1;
-            pData->param.data[j].midiChannel = 0;
             pData->param.ranges[j].min = 0.0f;
             pData->param.ranges[j].max = float(2048.0 * 1000.0 / pData->engine->getSampleRate()); // FIXME?
             pData->param.ranges[j].def = FLUID_CHORUS_DEFAULT_DEPTH;
@@ -824,8 +805,6 @@ public:
             pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER | PARAMETER_USES_SCALEPOINTS;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
-            pData->param.data[j].midiCC = -1;
-            pData->param.data[j].midiChannel = 0;
             pData->param.ranges[j].min = FLUID_CHORUS_MOD_SINE;
             pData->param.ranges[j].max = FLUID_CHORUS_MOD_TRIANGLE;
             pData->param.ranges[j].def = FLUID_CHORUS_DEFAULT_TYPE;
@@ -839,8 +818,6 @@ public:
             pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
-            pData->param.data[j].midiCC = -1;
-            pData->param.data[j].midiChannel = 0;
             pData->param.ranges[j].min = 1.0f;
             pData->param.ranges[j].max = 512.0f; // max theoric is 65535
             pData->param.ranges[j].def = (float)fluid_synth_get_polyphony(fSynth);
@@ -854,8 +831,6 @@ public:
             pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER | PARAMETER_USES_SCALEPOINTS;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
-            pData->param.data[j].midiCC = -1;
-            pData->param.data[j].midiChannel = 0;
             pData->param.ranges[j].min = FLUID_INTERP_NONE;
             pData->param.ranges[j].max = FLUID_INTERP_HIGHEST;
             pData->param.ranges[j].def = FLUID_INTERP_DEFAULT;
@@ -869,8 +844,6 @@ public:
             pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE | PARAMETER_IS_INTEGER;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
-            pData->param.data[j].midiCC = -1;
-            pData->param.data[j].midiChannel = 0;
             pData->param.ranges[j].min = 0.0f;
             pData->param.ranges[j].max = 65535.0f;
             pData->param.ranges[j].def = 0.0f;
@@ -1097,8 +1070,9 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
+#ifndef BUILD_BRIDGE
             bool allNotesOffSent = false;
-
+#endif
             uint32_t time, nEvents = pData->event.portIn->getEventCount();
             uint32_t timeOffset = 0;
 
@@ -1191,7 +1165,6 @@ public:
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
                             }
                         }
-#endif
 
                         // Control plugin parameters
                         for (uint32_t k=0; k < pData->param.count; ++k)
@@ -1222,6 +1195,7 @@ public:
                             setParameterValue(k, value, false, false, false);
                             pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
+#endif
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
@@ -1272,11 +1246,13 @@ public:
                     case kEngineControlEventTypeAllNotesOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
+#ifndef BUILD_BRIDGE
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
                                 sendMidiAllNotesOffToCallback();
                             }
+#endif
 
 #ifdef FLUIDSYNTH_VERSION_NEW_API
                             fluid_synth_all_notes_off(fSynth, event.channel);
@@ -1359,6 +1335,7 @@ public:
 
         } // End of Event Input and Processing
 
+#ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
         // Control Output
 
@@ -1374,6 +1351,7 @@ public:
             }
 
         } // End of Control Output
+#endif
     }
 
     bool processSingle(float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)

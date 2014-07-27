@@ -1171,7 +1171,9 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
+#ifndef BUILD_BRIDGE
             bool       allNotesOffSent  = false;
+#endif
             const bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t numEvents  = pData->event.portIn->getEventCount();
@@ -1274,7 +1276,6 @@ public:
                                 break;
                             }
                         }
-#endif
 
                         // Control plugin parameters
                         uint32_t k;
@@ -1311,6 +1312,7 @@ public:
                         // check if event is already handled
                         if (k != pData->param.count)
                             break;
+#endif
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
@@ -1373,11 +1375,13 @@ public:
                     case kEngineControlEventTypeAllNotesOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
+#ifndef BUILD_BRIDGE
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
                                 sendMidiAllNotesOffToCallback();
                             }
+#endif
 
                             if (midiEventCount >= kPluginMaxMidiEvents)
                                 continue;
@@ -1547,7 +1551,6 @@ public:
                 }
             }
         }
-#endif
 
         // --------------------------------------------------------------------------------------------------------
         // Control Output
@@ -1574,6 +1577,7 @@ public:
                 }
             }
         } // End of Control Output
+#endif
     }
 
     bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset, const ulong midiEventCount)

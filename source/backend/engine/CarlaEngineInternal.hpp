@@ -157,7 +157,7 @@ struct CarlaEngine::ProtectedData {
     double   sampleRate;
 
     bool aboutToClose;    // don't re-activate thread if true
-    bool isIdling;        // don't allow any operations while idling
+    int  isIdling;        // don't allow any operations while idling
     uint curPluginCount;  // number of plugins loaded (0...max)
     uint maxPluginNumber; // number of plugins allowed (0, 16, 99 or 255)
     uint nextPluginId;    // invalid if == maxPluginNumber
