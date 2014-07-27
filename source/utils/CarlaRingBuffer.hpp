@@ -231,9 +231,19 @@ public:
         tryWrite(&value, sizeof(int16_t));
     }
 
+    void writeUShort(const uint16_t value) noexcept
+    {
+        tryWrite(&value, sizeof(uint16_t));
+    }
+
     void writeInt(const int32_t value) noexcept
     {
         tryWrite(&value, sizeof(int32_t));
+    }
+
+    void writeUInt(const uint32_t value) noexcept
+    {
+        tryWrite(&value, sizeof(uint32_t));
     }
 
     void writeLong(const int64_t value) noexcept

@@ -1276,7 +1276,7 @@ public:
                                 break;
                             }
                         }
-
+#endif
                         // Control plugin parameters
                         uint32_t k;
                         for (k=0; k < pData->param.count; ++k)
@@ -1312,7 +1312,6 @@ public:
                         // check if event is already handled
                         if (k != pData->param.count)
                             break;
-#endif
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {

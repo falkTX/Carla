@@ -429,6 +429,24 @@ public:
                 break;
             }
 
+            case kPluginBridgeNonRtSetParameterMidiChannel: {
+                const uint32_t index(fShmNonRtControl.readUInt());
+                const uint8_t  channel(fShmNonRtControl.readByte());
+
+                if (plugin != nullptr && plugin->isEnabled())
+                    plugin->setParameterMidiChannel(index, channel, false, false);
+                break;
+            }
+
+            case kPluginBridgeNonRtSetParameterMidiCC: {
+                const uint32_t index(fShmNonRtControl.readUInt());
+                const int16_t  cc(fShmNonRtControl.readShort());
+
+                if (plugin != nullptr && plugin->isEnabled())
+                    plugin->setParameterMidiCC(index, cc, false, false);
+                break;
+            }
+
             case kPluginBridgeNonRtSetProgram: {
                 const int32_t index(fShmNonRtControl.readInt());
 
@@ -647,133 +665,104 @@ protected:
                     break;
                 }
 
-                case kPluginBridgeRtSetParameter: {
-                    const uint32_t index(fShmRtControl.readUInt());
+                case kPluginBridgeRtControlEventParameter: {
+                    const uint32_t time(fShmRtControl.readUInt());
+                    const uint8_t  channel(fShmRtControl.readByte());
+                    const uint16_t param(fShmRtControl.readUShort());
                     const float    value(fShmRtControl.readFloat());
 
-                    if (plugin != nullptr && plugin->isEnabled())
-                        plugin->setParameterValue(index, value, false, false, false);
+                    if (EngineEvent* const event = getNextFreeInputEvent())
+                    {
+                        event->type    = kEngineEventTypeControl;
+                        event->time    = time;
+                        event->channel = channel;
+                        event->ctrl.type  = kEngineControlEventTypeParameter;
+                        event->ctrl.param = param;
+                        event->ctrl.value = value;
+                    }
                     break;
                 }
 
-                case kPluginBridgeRtMidiData: {
+                case kPluginBridgeRtControlEventMidiBank: {
                     const uint32_t time(fShmRtControl.readUInt());
-                    const uint32_t size(fShmRtControl.readUInt());
-                    CARLA_SAFE_ASSERT_BREAK(size > 0 && size <= 4);
+                    const uint8_t  channel(fShmRtControl.readByte());
+                    const uint16_t index(fShmRtControl.readUShort());
+
+                    if (EngineEvent* const event = getNextFreeInputEvent())
+                    {
+                        event->type    = kEngineEventTypeControl;
+                        event->time    = time;
+                        event->channel = channel;
+                        event->ctrl.type  = kEngineControlEventTypeMidiBank;
+                        event->ctrl.param = index;
+                        event->ctrl.value = 0.0f;
+                    }
+                    break;
+                }
+
+                case kPluginBridgeRtControlEventMidiProgram: {
+                    const uint32_t time(fShmRtControl.readUInt());
+                    const uint8_t  channel(fShmRtControl.readByte());
+                    const uint16_t index(fShmRtControl.readUShort());
+
+                    if (EngineEvent* const event = getNextFreeInputEvent())
+                    {
+                        event->type    = kEngineEventTypeControl;
+                        event->time    = time;
+                        event->channel = channel;
+                        event->ctrl.type  = kEngineControlEventTypeMidiProgram;
+                        event->ctrl.param = index;
+                        event->ctrl.value = 0.0f;
+                    }
+                    break;
+                }
+
+                case kPluginBridgeRtControlEventAllSoundOff: {
+                    const uint32_t time(fShmRtControl.readUInt());
+                    const uint8_t  channel(fShmRtControl.readByte());
+
+                    if (EngineEvent* const event = getNextFreeInputEvent())
+                    {
+                        event->type    = kEngineEventTypeControl;
+                        event->time    = time;
+                        event->channel = channel;
+                        event->ctrl.type  = kEngineControlEventTypeAllSoundOff;
+                        event->ctrl.param = 0;
+                        event->ctrl.value = 0.0f;
+                    }
+                }
+
+                case kPluginBridgeRtControlEventAllNotesOff: {
+                    const uint32_t time(fShmRtControl.readUInt());
+                    const uint8_t  channel(fShmRtControl.readByte());
+
+                    if (EngineEvent* const event = getNextFreeInputEvent())
+                    {
+                        event->type    = kEngineEventTypeControl;
+                        event->time    = time;
+                        event->channel = channel;
+                        event->ctrl.type  = kEngineControlEventTypeAllNotesOff;
+                        event->ctrl.param = 0;
+                        event->ctrl.value = 0.0f;
+                    }
+                }
+
+                case kPluginBridgeRtMidiEvent: {
+                    const uint32_t time(fShmRtControl.readUInt());
+                    const uint8_t  size(fShmRtControl.readByte());
+                    CARLA_SAFE_ASSERT_BREAK(size > 0);
 
                     uint8_t data[size];
 
                     for (uint32_t i=0; i < size; ++i)
                         data[i] = fShmRtControl.readByte();
 
-                    CARLA_SAFE_ASSERT_BREAK(pData->events.in != nullptr);
-
-                    for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
+                    if (EngineEvent* const event = getNextFreeInputEvent())
                     {
-                        EngineEvent& event(pData->events.in[i]);
-
-                        if (event.type != kEngineEventTypeNull)
-                            continue;
-
-                        event.time = time;
-                        event.fillFromMidiData(static_cast<uint8_t>(size), data);
-                        break;
+                        event->time = time;
+                        event->fillFromMidiData(size, data);
                     }
                     break;
-                }
-
-                case kPluginBridgeRtMidiBank: {
-                    const uint32_t time(fShmRtControl.readUInt());
-                    const uint8_t  chnnl(fShmRtControl.readByte());
-                    const uint16_t index(fShmRtControl.readUShort());
-
-                    CARLA_SAFE_ASSERT_BREAK(pData->events.in != nullptr);
-
-                    for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
-                    {
-                        EngineEvent& event(pData->events.in[i]);
-
-                        if (event.type != kEngineEventTypeNull)
-                            continue;
-
-                        event.type    = kEngineEventTypeControl;
-                        event.time    = time;
-                        event.channel = chnnl;
-                        event.ctrl.type  = kEngineControlEventTypeMidiProgram;
-                        event.ctrl.param = index;
-                        event.ctrl.value = 0.0f;
-                        break;
-                    }
-                    break;
-                }
-
-                case kPluginBridgeRtMidiProgram: {
-                    const uint32_t time(fShmRtControl.readUInt());
-                    const uint8_t  chnnl(fShmRtControl.readByte());
-                    const uint16_t index(fShmRtControl.readUShort());
-
-                    CARLA_SAFE_ASSERT_BREAK(pData->events.in != nullptr);
-
-                    for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
-                    {
-                        EngineEvent& event(pData->events.in[i]);
-
-                        if (event.type != kEngineEventTypeNull)
-                            continue;
-
-                        event.type    = kEngineEventTypeControl;
-                        event.time    = time;
-                        event.channel = chnnl;
-                        event.ctrl.type  = kEngineControlEventTypeMidiBank;
-                        event.ctrl.param = index;
-                        event.ctrl.value = 0.0f;
-                        break;
-                    }
-                    break;
-                }
-
-                case kPluginBridgeRtAllSoundOff: {
-                    const uint32_t time(fShmRtControl.readUInt());
-
-                    CARLA_SAFE_ASSERT_BREAK(pData->events.in != nullptr);
-
-                    for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
-                    {
-                        EngineEvent& event(pData->events.in[i]);
-
-                        if (event.type != kEngineEventTypeNull)
-                            continue;
-
-                        event.type    = kEngineEventTypeControl;
-                        event.time    = time;
-                        event.channel = 0;
-                        event.ctrl.type  = kEngineControlEventTypeAllSoundOff;
-                        event.ctrl.param = 0;
-                        event.ctrl.value = 0.0f;
-                        break;
-                    }
-                }
-
-                case kPluginBridgeRtAllNotesOff: {
-                    const uint32_t time(fShmRtControl.readUInt());
-
-                    CARLA_SAFE_ASSERT_BREAK(pData->events.in != nullptr);
-
-                    for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
-                    {
-                        EngineEvent& event(pData->events.in[i]);
-
-                        if (event.type != kEngineEventTypeNull)
-                            continue;
-
-                        event.type    = kEngineEventTypeControl;
-                        event.time    = time;
-                        event.channel = 0;
-                        event.ctrl.type  = kEngineControlEventTypeAllNotesOff;
-                        event.ctrl.param = 0;
-                        event.ctrl.value = 0.0f;
-                        break;
-                    }
                 }
 
                 case kPluginBridgeRtProcess: {
@@ -837,6 +826,19 @@ protected:
 
         fIsRunning = false;
         callback(ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0.0f, nullptr);
+    }
+
+    // called from process thread above
+    EngineEvent* getNextFreeInputEvent() const noexcept
+    {
+        for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
+        {
+            EngineEvent& event(pData->events.in[i]);
+
+            if (event.type == kEngineEventTypeNull)
+                return &event;
+        }
+        return nullptr;
     }
 
     // -------------------------------------------------------------------

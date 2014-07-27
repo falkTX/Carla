@@ -1064,7 +1064,7 @@ public:
                                 break;
                             }
                         }
-
+#endif
                         // Control plugin parameters
                         for (uint32_t k=0; k < pData->param.count; ++k)
                         {
@@ -1095,7 +1095,6 @@ public:
                             pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                             break;
                         }
-#endif
                         break;
                     } // case kEngineControlEventTypeParameter
 

@@ -1120,37 +1120,49 @@ void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float
     }
 }
 
-#ifndef BUILD_BRIDGE
-void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, uint8_t channel, const bool sendOsc, const bool sendCallback) noexcept
+void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, const uint8_t channel, const bool sendOsc, const bool sendCallback) noexcept
 {
+#ifndef BUILD_BRIDGE
     CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+#endif
     CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
     CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
 
     pData->param.data[parameterId].midiChannel = channel;
 
+#ifndef BUILD_BRIDGE
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_midi_channel(pData->id, parameterId, channel);
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED, pData->id, static_cast<int>(parameterId), channel, 0.0f, nullptr);
+#else
+    // unused
+    return; (void)sendOsc; (void)sendCallback;
+#endif
 }
 
-void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, int16_t cc, const bool sendOsc, const bool sendCallback) noexcept
+void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, const int16_t cc, const bool sendOsc, const bool sendCallback) noexcept
 {
+#ifndef BUILD_BRIDGE
     CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+#endif
     CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
     CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc <= 0x5F,);
 
     pData->param.data[parameterId].midiCC = cc;
 
+#ifndef BUILD_BRIDGE
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_midi_cc(pData->id, parameterId, cc);
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED, pData->id, static_cast<int>(parameterId), cc, 0.0f, nullptr);
+#else
+    // unused
+    return; (void)sendOsc; (void)sendCallback;
+#endif
 }
-#endif // ! BUILD_BRIDGE
 
 void CarlaPlugin::setCustomData(const char* const type, const char* const key, const char* const value, const bool)
 {

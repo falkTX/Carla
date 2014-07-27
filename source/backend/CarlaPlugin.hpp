@@ -538,19 +538,17 @@ public:
      */
     void setParameterValueByRealIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept;
 
-#ifndef BUILD_BRIDGE
     /*!
      * Set parameter's \a parameterId MIDI channel to \a channel.\n
      * \a channel must be between 0 and 15.
      */
-    void setParameterMidiChannel(const uint32_t parameterId, uint8_t channel, const bool sendOsc, const bool sendCallback) noexcept;
+    virtual void setParameterMidiChannel(const uint32_t parameterId, const uint8_t channel, const bool sendOsc, const bool sendCallback) noexcept;
 
     /*!
      * Set parameter's \a parameterId MIDI CC to \a cc.\n
      * \a cc must be between 0 and 95 (0x5F), or -1 for invalid.
      */
-    void setParameterMidiCC(const uint32_t parameterId, int16_t cc, const bool sendOsc, const bool sendCallback) noexcept;
-#endif
+    virtual void setParameterMidiCC(const uint32_t parameterId, const int16_t cc, const bool sendOsc, const bool sendCallback) noexcept;
 
     /*!
      * Add a custom data set.\n

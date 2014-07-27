@@ -522,7 +522,7 @@ public:
             const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
 
             fShmNonRtControl.writeOpcode(kPluginBridgeNonRtSetOption);
-            fShmNonRtControl.writeInt(static_cast<int32_t>(option));
+            fShmNonRtControl.writeUInt(option);
             fShmNonRtControl.writeBool(yesNo);
             fShmNonRtControl.commitWrite();
         }
@@ -532,6 +532,8 @@ public:
 
     void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept override
     {
+        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+
         {
             const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
 
@@ -548,7 +550,7 @@ public:
 
     void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
         fParams[parameterId].value = fixedValue;
@@ -557,12 +559,48 @@ public:
             const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
 
             fShmNonRtControl.writeOpcode(kPluginBridgeNonRtSetParameterValue);
-            fShmNonRtControl.writeInt(static_cast<int32_t>(parameterId));
+            fShmNonRtControl.writeUInt(parameterId);
             fShmNonRtControl.writeFloat(value);
             fShmNonRtControl.commitWrite();
         }
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
+    }
+
+    void setParameterMidiChannel(const uint32_t parameterId, const uint8_t channel, const bool sendOsc, const bool sendCallback) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
+
+        {
+            const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
+
+            fShmNonRtControl.writeOpcode(kPluginBridgeNonRtSetParameterValue);
+            fShmNonRtControl.writeUInt(parameterId);
+            fShmNonRtControl.writeByte(channel);
+            fShmNonRtControl.commitWrite();
+        }
+
+        CarlaPlugin::setParameterMidiChannel(parameterId, channel, sendOsc, sendCallback);
+    }
+
+    void setParameterMidiCC(const uint32_t parameterId, const int16_t cc, const bool sendOsc, const bool sendCallback) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc <= 0x5F,);
+
+        {
+            const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
+
+            fShmNonRtControl.writeOpcode(kPluginBridgeNonRtSetParameterMidiCC);
+            fShmNonRtControl.writeUInt(parameterId);
+            fShmNonRtControl.writeShort(cc);
+            fShmNonRtControl.commitWrite();
+        }
+
+        CarlaPlugin::setParameterMidiCC(parameterId, cc, sendOsc, sendCallback);
     }
 
     void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
@@ -631,11 +669,13 @@ public:
 
         if (File(filePath).replaceWithText(stringData))
         {
+            const uint32_t ulength(static_cast<uint32_t>(filePath.length()));
+
             const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
 
             fShmNonRtControl.writeOpcode(kPluginBridgeNonRtSetChunkDataFile);
-            fShmNonRtControl.writeInt(filePath.length());
-            fShmNonRtControl.writeCustomData(filePath.toRawUTF8(), static_cast<uint32_t>(filePath.length()));
+            fShmNonRtControl.writeUInt(ulength);
+            fShmNonRtControl.writeCustomData(filePath.toRawUTF8(), ulength);
             fShmNonRtControl.commitWrite();
         }
     }
@@ -896,9 +936,9 @@ public:
                     data2 = note.note;
                     data3 = note.velo;
 
-                    fShmRtControl.writeOpcode(kPluginBridgeRtMidiData);
-                    fShmRtControl.writeInt(0); // time
-                    fShmRtControl.writeInt(3); // size
+                    fShmRtControl.writeOpcode(kPluginBridgeRtMidiEvent);
+                    fShmRtControl.writeUInt(0); // time
+                    fShmRtControl.writeByte(3); // size
                     fShmRtControl.writeByte(data1);
                     fShmRtControl.writeByte(data2);
                     fShmRtControl.writeByte(data3);
@@ -934,7 +974,6 @@ public:
                         break;
 
                     case kEngineControlEventTypeParameter:
-                    {
                         // Control backend stuff
                         if (event.channel == pData->ctrlChannel)
                         {
@@ -985,67 +1024,21 @@ public:
                             }
                         }
 
-                        // Control plugin parameters
-                        uint32_t k;
-                        for (k=0; k < pData->param.count; ++k)
-                        {
-                            if (pData->param.data[k].midiChannel != event.channel)
-                                continue;
-                            if (pData->param.data[k].midiCC != ctrlEvent.param)
-                                continue;
-                            if (pData->param.data[k].type != PARAMETER_INPUT)
-                                continue;
-                            if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
-                                continue;
-
-                            float value;
-
-                            if (pData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
-                            {
-                                value = (ctrlEvent.value < 0.5f) ? pData->param.ranges[k].min : pData->param.ranges[k].max;
-                            }
-                            else
-                            {
-                                value = pData->param.ranges[k].getUnnormalizedValue(ctrlEvent.value);
-
-                                if (pData->param.data[k].hints & PARAMETER_IS_INTEGER)
-                                    value = std::rint(value);
-                            }
-
-                            fShmRtControl.writeOpcode(kPluginBridgeRtSetParameter);
-                            fShmRtControl.writeInt(static_cast<int32_t>(k));
-                            fShmRtControl.writeFloat(value);
-                            fShmRtControl.commitWrite();
-
-                            pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
-                            break;
-                        }
-
-                        // check if event is already handled
-                        if (k != pData->param.count)
-                            break;
-
-                        if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
-                        {
-                            fShmRtControl.writeOpcode(kPluginBridgeRtMidiData);
-                            fShmRtControl.writeInt(static_cast<int32_t>(event.time));
-                            fShmRtControl.writeInt(3);
-                            fShmRtControl.writeByte(static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + event.channel));
-                            fShmRtControl.writeByte(static_cast<uint8_t>(ctrlEvent.param));
-                            fShmRtControl.writeByte(static_cast<uint8_t>(ctrlEvent.value*127.0f));
-                            fShmRtControl.commitWrite();
-                        }
-
+                        fShmRtControl.writeOpcode(kPluginBridgeRtControlEventParameter);
+                        fShmRtControl.writeUInt(event.time);
+                        fShmRtControl.writeByte(event.channel);
+                        fShmRtControl.writeUShort(event.ctrl.param);
+                        fShmRtControl.writeFloat(event.ctrl.value);
+                        fShmRtControl.commitWrite();
                         break;
-                    } // case kEngineControlEventTypeParameter
 
                     case kEngineControlEventTypeMidiBank:
                         if (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
                         {
-                            fShmRtControl.writeOpcode(kPluginBridgeRtMidiBank);
-                            fShmRtControl.writeInt(static_cast<int32_t>(event.time));
+                            fShmRtControl.writeOpcode(kPluginBridgeRtControlEventMidiBank);
+                            fShmRtControl.writeUInt(event.time);
                             fShmRtControl.writeByte(event.channel);
-                            fShmRtControl.writeShort(static_cast<int16_t>(ctrlEvent.param));
+                            fShmRtControl.writeUShort(event.ctrl.param);
                             fShmRtControl.commitWrite();
                         }
                         break;
@@ -1053,10 +1046,10 @@ public:
                     case kEngineControlEventTypeMidiProgram:
                         if (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
                         {
-                            fShmRtControl.writeOpcode(kPluginBridgeRtMidiProgram);
-                            fShmRtControl.writeInt(static_cast<int32_t>(event.time));
+                            fShmRtControl.writeOpcode(kPluginBridgeRtControlEventMidiProgram);
+                            fShmRtControl.writeUInt(event.time);
                             fShmRtControl.writeByte(event.channel);
-                            fShmRtControl.writeShort(static_cast<int16_t>(ctrlEvent.param));
+                            fShmRtControl.writeUShort(event.ctrl.param);
                             fShmRtControl.commitWrite();
                         }
                         break;
@@ -1064,8 +1057,9 @@ public:
                     case kEngineControlEventTypeAllSoundOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-                            fShmRtControl.writeOpcode(kPluginBridgeRtAllSoundOff);
-                            fShmRtControl.writeInt(static_cast<int32_t>(event.time));
+                            fShmRtControl.writeOpcode(kPluginBridgeRtControlEventAllSoundOff);
+                            fShmRtControl.writeUInt(event.time);
+                            fShmRtControl.writeByte(event.channel);
                             fShmRtControl.commitWrite();
                         }
                         break;
@@ -1079,8 +1073,9 @@ public:
                                 sendMidiAllNotesOffToCallback();
                             }
 
-                            fShmRtControl.writeOpcode(kPluginBridgeRtAllNotesOff);
-                            fShmRtControl.writeInt(static_cast<int32_t>(event.time));
+                            fShmRtControl.writeOpcode(kPluginBridgeRtControlEventAllNotesOff);
+                            fShmRtControl.writeUInt(event.time);
+                            fShmRtControl.writeByte(event.channel);
                             fShmRtControl.commitWrite();
                         }
                         break;
@@ -1088,11 +1083,10 @@ public:
                     break;
                 } // case kEngineEventTypeControl
 
-                case kEngineEventTypeMidi:
-                {
+                case kEngineEventTypeMidi: {
                     const EngineMidiEvent& midiEvent(event.midi);
 
-                    if (midiEvent.size == 0 || midiEvent.size > 4)
+                    if (midiEvent.size == 0 || midiEvent.size >= MAX_MIDI_VALUE)
                         continue;
 
                     uint8_t status  = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
@@ -1110,9 +1104,9 @@ public:
                     if (status == MIDI_STATUS_PITCH_WHEEL_CONTROL && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
                         continue;
 
-                    fShmRtControl.writeOpcode(kPluginBridgeRtMidiData);
-                    fShmRtControl.writeInt(static_cast<int32_t>(event.time));
-                    fShmRtControl.writeInt(midiEvent.size);
+                    fShmRtControl.writeOpcode(kPluginBridgeRtMidiEvent);
+                    fShmRtControl.writeUInt(event.time);
+                    fShmRtControl.writeByte(midiEvent.size);
 
                     fShmRtControl.writeByte(static_cast<uint8_t>(status + channel));
 
@@ -1125,9 +1119,7 @@ public:
                         pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
                     else if (status == MIDI_STATUS_NOTE_OFF)
                         pData->postponeRtEvent(kPluginPostRtEventNoteOff, channel, midiEvent.data[1], 0.0f);
-
-                    break;
-                }
+                } break;
                 }
             }
 
@@ -1287,22 +1279,39 @@ public:
 
     void bufferSizeChanged(const uint32_t newBufferSize) override
     {
-        const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
-
         resizeAudioPool(newBufferSize);
 
-        fShmNonRtControl.writeOpcode(kPluginBridgeNonRtSetBufferSize);
-        fShmNonRtControl.writeInt(static_cast<int32_t>(newBufferSize));
-        fShmNonRtControl.commitWrite();
+        {
+            const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
+            fShmNonRtControl.writeOpcode(kPluginBridgeNonRtSetBufferSize);
+            fShmNonRtControl.writeUInt(newBufferSize);
+            fShmNonRtControl.commitWrite();
+        }
+
+        fShmRtControl.waitForServer(1);
     }
 
     void sampleRateChanged(const double newSampleRate) override
     {
-        const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
+        {
+            const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
+            fShmNonRtControl.writeOpcode(kPluginBridgeNonRtSetSampleRate);
+            fShmNonRtControl.writeDouble(newSampleRate);
+            fShmNonRtControl.commitWrite();
+        }
 
-        fShmNonRtControl.writeOpcode(kPluginBridgeNonRtSetSampleRate);
-        fShmNonRtControl.writeDouble(newSampleRate);
-        fShmNonRtControl.commitWrite();
+        fShmRtControl.waitForServer(1);
+    }
+
+    void offlineModeChanged(const bool isOffline) override
+    {
+        {
+            const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
+            fShmNonRtControl.writeOpcode(isOffline ? kPluginBridgeNonRtSetOffline : kPluginBridgeNonRtSetOnline);
+            fShmNonRtControl.commitWrite();
+        }
+
+        fShmRtControl.waitForServer(1);
     }
 
     // -------------------------------------------------------------------
