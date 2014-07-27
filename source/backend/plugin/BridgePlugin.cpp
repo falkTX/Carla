@@ -936,6 +936,7 @@ public:
 
                     fShmRtControl.writeOpcode(kPluginBridgeRtMidiEvent);
                     fShmRtControl.writeUInt(0); // time
+                    fShmRtControl.writeByte(0); // port
                     fShmRtControl.writeByte(3); // size
                     fShmRtControl.writeByte(data1);
                     fShmRtControl.writeByte(data2);
@@ -1104,11 +1105,10 @@ public:
 
                     fShmRtControl.writeOpcode(kPluginBridgeRtMidiEvent);
                     fShmRtControl.writeUInt(event.time);
+                    fShmRtControl.writeByte(midiEvent.port);
                     fShmRtControl.writeByte(midiEvent.size);
 
-                    fShmRtControl.writeByte(static_cast<uint8_t>(status + channel));
-
-                    for (uint8_t j=1; j < midiEvent.size; ++j)
+                    for (uint8_t j=0; j < midiEvent.size; ++j)
                         fShmRtControl.writeByte(midiEvent.data[j]);
 
                     fShmRtControl.commitWrite();

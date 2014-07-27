@@ -147,8 +147,8 @@ public:
 
     uint8_t readByte() noexcept
     {
-        int8_t ub = -1;
-        return (tryRead(&ub, sizeof(int8_t)) && ub >= 0 && ub <= INT_LEAST8_MAX) ? static_cast<uint8_t>(ub) : 0;
+        uint8_t B = 0;
+        return tryRead(&B, sizeof(uint8_t)) ? B : 0;
     }
 
     int16_t readShort() noexcept
@@ -159,8 +159,8 @@ public:
 
     uint16_t readUShort() noexcept
     {
-        int16_t us = -1;
-        return (tryRead(&us, sizeof(int16_t)) && us >= 0 && us <= INT_LEAST16_MAX) ? static_cast<uint16_t>(us) : 0;
+        uint16_t us = 0;
+        return tryRead(&us, sizeof(uint16_t)) ? us : 0;
     }
 
     int32_t readInt() noexcept
@@ -171,8 +171,8 @@ public:
 
     uint32_t readUInt() noexcept
     {
-        int32_t ui = -1;
-        return (tryRead(&ui, sizeof(int32_t)) && ui >= 0 && ui <= INT_LEAST32_MAX) ? static_cast<uint32_t>(ui) : 0;
+        uint32_t ui = 0;
+        return tryRead(&ui, sizeof(int32_t)) ? ui : 0;
     }
 
     int64_t readLong() noexcept
@@ -183,8 +183,8 @@ public:
 
     uint64_t readULong() noexcept
     {
-        int64_t ul = -1;
-        return (tryRead(&ul, sizeof(int64_t)) && ul >= 0 && ul <= INT_LEAST64_MAX) ? static_cast<uint64_t>(ul) : 0;
+        uint64_t ul = 0;
+        return tryRead(&ul, sizeof(int64_t)) ? ul : 0;
     }
 
     float readFloat() noexcept

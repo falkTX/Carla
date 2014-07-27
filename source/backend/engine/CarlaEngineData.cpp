@@ -169,7 +169,7 @@ void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data
             midi.data[0] = midiStatus;
 
             uint8_t i=1;
-            for (; i < midi.size; ++i)
+            for (; i < size; ++i)
                 midi.data[i] = data[i];
             for (; i < EngineMidiEvent::kDataSize; ++i)
                 midi.data[i] = 0;

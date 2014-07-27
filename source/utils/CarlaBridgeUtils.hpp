@@ -60,7 +60,7 @@ enum PluginBridgeRtOpcode {
     kPluginBridgeRtControlEventMidiProgram, // uint/frame, byte/chan, ushort
     kPluginBridgeRtControlEventAllSoundOff, // uint/frame, byte/chan
     kPluginBridgeRtControlEventAllNotesOff, // uint/frame, byte/chan
-    kPluginBridgeRtMidiEvent,               // uint/frame, byte/size, byte[]/data
+    kPluginBridgeRtMidiEvent,               // uint/frame, byte/port, byte/size, byte[]/data
     kPluginBridgeRtProcess
 };
 

@@ -652,7 +652,7 @@ protected:
                 const PluginBridgeRtOpcode opcode(fShmRtControl.readOpcode());
                 CarlaPlugin* const plugin(pData->plugins[0].plugin);
 
-                if (opcode != kPluginBridgeRtProcess) {
+                if (opcode != kPluginBridgeRtProcess && opcode != kPluginBridgeRtMidiEvent) {
                     carla_stdout("CarlaEngineBridgeRtThread::run() - got opcode: %s", PluginBridgeRtOpcode2str(opcode));
                 }
 
@@ -752,18 +752,41 @@ protected:
 
                 case kPluginBridgeRtMidiEvent: {
                     const uint32_t time(fShmRtControl.readUInt());
+                    const uint8_t  port(fShmRtControl.readByte());
                     const uint8_t  size(fShmRtControl.readByte());
                     CARLA_SAFE_ASSERT_BREAK(size > 0);
 
                     uint8_t data[size];
 
-                    for (uint32_t i=0; i < size; ++i)
+                    for (uint8_t i=0; i<size; ++i)
                         data[i] = fShmRtControl.readByte();
 
                     if (EngineEvent* const event = getNextFreeInputEvent())
                     {
-                        event->time = time;
-                        event->fillFromMidiData(size, data);
+                        event->type    = kEngineEventTypeMidi;
+                        event->time    = time;
+                        event->channel = MIDI_GET_CHANNEL_FROM_DATA(data);
+
+                        event->midi.port = port;
+                        event->midi.size = size;
+
+                        if (size > EngineMidiEvent::kDataSize)
+                        {
+                            event->midi.dataExt = data;
+                            std::memset(event->midi.data, 0, sizeof(uint8_t)*EngineMidiEvent::kDataSize);
+                        }
+                        else
+                        {
+                            event->midi.data[0] = MIDI_GET_STATUS_FROM_DATA(data);
+
+                            uint8_t i=1;
+                            for (; i < size; ++i)
+                                event->midi.data[i] = data[i];
+                            for (; i < EngineMidiEvent::kDataSize; ++i)
+                                event->midi.data[i] = 0;
+
+                            event->midi.dataExt = nullptr;
+                        }
                     }
                     break;
                 }
