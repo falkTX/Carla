@@ -412,12 +412,12 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             plugin = CarlaPlugin::newBridge(initializer, btype, ptype, bridgeBinary);
         }
 # ifdef CARLA_OS_LINUX
-        else if (btype == BINARY_WIN32)
+        // fallback to dssi-vst if possible
+        else if (btype == BINARY_WIN32 && File("/usr/lib/dssi/dssi-vst.so").existsAsFile())
         {
-            // fallback to dssi-vst
             File file(filename);
 
-            CarlaString label2(file.getFullPathName().toRawUTF8());
+            CarlaString label2(file.getFileName().toRawUTF8());
             label2.replace(' ', '*');
 
             CarlaPlugin::Initializer init2 = {
@@ -1011,7 +1011,7 @@ bool CarlaEngine::loadProject(const char* const filename)
                     plugin->loadStateSave(stateSave);
             }
             else
-                carla_stderr2("Failed to load a plugin, error was:%s\n", getLastError());
+                carla_stderr2("Failed to load a plugin, error was:\n%s", getLastError());
         }
 
         if (isPreset)
