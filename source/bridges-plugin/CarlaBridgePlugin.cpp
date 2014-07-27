@@ -130,7 +130,7 @@ public:
 
     void initialise(const String&) override
     {
-        startTimer(30);
+        startTimer(15);
     }
 
     void shutdown() override
@@ -297,7 +297,7 @@ public:
         for (; ! gCloseNow;)
         {
             gIdle();
-            carla_msleep(25);
+            carla_msleep(15);
         }
 #endif
 

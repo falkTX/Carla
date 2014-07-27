@@ -1122,7 +1122,7 @@ public:
 
 #ifdef BUILD_BRIDGE
     // Bridge
-    static CarlaEngine*       newBridge(const char* const audioBaseName, const char* const controlBaseName, const char* const timeBaseName);
+    static CarlaEngine*       newBridge(const char* const audioPoolBaseName, const char* const rtBaseName, const char* const nonRtBaseName);
 #else
 # if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
     // Juce

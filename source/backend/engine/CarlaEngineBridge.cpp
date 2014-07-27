@@ -163,7 +163,7 @@ struct BridgeNonRtControl : public CarlaRingBuffer<BigStackBuffer> {
     BridgeNonRtData* data;
     char shm[32];
 
-    BridgeNonRtControl()
+    BridgeNonRtControl() noexcept
         : CarlaRingBuffer<BigStackBuffer>(),
           data(nullptr)
     {
@@ -171,7 +171,7 @@ struct BridgeNonRtControl : public CarlaRingBuffer<BigStackBuffer> {
         jackbridge_shm_init(shm);
     }
 
-    ~BridgeNonRtControl()
+    ~BridgeNonRtControl() noexcept
     {
         // should be cleared by now
         CARLA_SAFE_ASSERT(data == nullptr);
@@ -485,8 +485,7 @@ public:
                 if (chunkFilePath.startsWith("/"))
                 {
                     // running under Wine, posix host
-                    chunkFilePath = chunkFilePath.replaceSection(0, 1, "Z:\\");
-                    chunkFilePath = chunkFilePath.replace("/", "\\");
+                    chunkFilePath = chunkFilePath.replaceSection(0, 1, "Z:\\").replace("/", "\\");
                 }
 #endif
 
@@ -543,27 +542,46 @@ public:
                 break;
 
             case kPluginBridgeNonRtUiParameterChange: {
-                // TODO
+                const uint32_t index(fShmNonRtControl.readUInt());
+                const float    value(fShmNonRtControl.readFloat());
+
+                if (plugin != nullptr && plugin->isEnabled())
+                    plugin->uiParameterChange(index, value);
                 break;
             }
 
             case kPluginBridgeNonRtUiProgramChange: {
-                // TODO
+                const uint32_t index(fShmNonRtControl.readUInt());
+
+                if (plugin != nullptr && plugin->isEnabled())
+                    plugin->uiProgramChange(index);
                 break;
             }
 
             case kPluginBridgeNonRtUiMidiProgramChange: {
-                // TODO
+                const uint32_t index(fShmNonRtControl.readUInt());
+
+                if (plugin != nullptr && plugin->isEnabled())
+                    plugin->uiMidiProgramChange(index);
                 break;
             }
 
             case kPluginBridgeNonRtUiNoteOn: {
-                // TODO
+                const uint8_t chnl(fShmNonRtControl.readByte());
+                const uint8_t note(fShmNonRtControl.readByte());
+                const uint8_t velo(fShmNonRtControl.readByte());
+
+                if (plugin != nullptr && plugin->isEnabled())
+                    plugin->uiNoteOn(chnl, note, velo);
                 break;
             }
 
             case kPluginBridgeNonRtUiNoteOff: {
-                // TODO
+                const uint8_t chnl(fShmNonRtControl.readByte());
+                const uint8_t note(fShmNonRtControl.readByte());
+
+                if (plugin != nullptr && plugin->isEnabled())
+                    plugin->uiNoteOff(chnl, note);
                 break;
             }
 
@@ -667,7 +685,7 @@ protected:
                 case kPluginBridgeRtProcess: {
                     CARLA_SAFE_ASSERT_BREAK(fShmAudioPool.data != nullptr);
 
-                    if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock(true)) // FIXME - always lock?
+                    if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock(false))
                     {
                         const BridgeTimeInfo& bridgeTimeInfo(fShmRtControl.data->timeInfo);
 
@@ -742,9 +760,9 @@ private:
 
 // -----------------------------------------------------------------------
 
-CarlaEngine* CarlaEngine::newBridge(const char* const audioBaseName, const char* const controlBaseName, const char* const timeBaseName)
+CarlaEngine* CarlaEngine::newBridge(const char* const audioPoolBaseName, const char* const rtBaseName, const char* const nonRtBaseName)
 {
-    return new CarlaEngineBridge(audioBaseName, controlBaseName, timeBaseName);
+    return new CarlaEngineBridge(audioPoolBaseName, rtBaseName, nonRtBaseName);
 }
 
 CARLA_BACKEND_END_NAMESPACE
