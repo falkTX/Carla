@@ -861,6 +861,16 @@ CarlaEngine* CarlaEngine::newBridge(const char* const audioPoolBaseName, const c
     return new CarlaEngineBridge(audioPoolBaseName, rtBaseName, nonRtBaseName);
 }
 
+// -----------------------------------------------------------------------
+
+// TODO later
+#if defined(CARLA_OS_WIN)
+CarlaPlugin* CarlaPlugin::newNative(const CarlaPlugin::Initializer&)              { return nullptr; }
+CarlaPlugin* CarlaPlugin::newFileGIG(const CarlaPlugin::Initializer&, const bool) { return nullptr; }
+CarlaPlugin* CarlaPlugin::newFileSF2(const CarlaPlugin::Initializer&, const bool) { return nullptr; }
+CarlaPlugin* CarlaPlugin::newFileSFZ(const CarlaPlugin::Initializer&)             { return nullptr; }
+#endif
+
 CARLA_BACKEND_END_NAMESPACE
 
 // -----------------------------------------------------------------------

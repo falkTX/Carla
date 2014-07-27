@@ -81,24 +81,14 @@ public:
 
     PluginType getType() const noexcept override
     {
-        PluginType type = PLUGIN_NONE;
-
-        try {
-            type = getPluginTypeFromString(fDesc.pluginFormatName.toRawUTF8());
-        } catch(...) {}
-
-        return type;
+        return getPluginTypeFromString(fDesc.pluginFormatName.toRawUTF8());
     }
 
     PluginCategory getCategory() const noexcept override
     {
-        PluginCategory category = PLUGIN_CATEGORY_NONE;
-
-        try {
-            category = getPluginCategoryFromName(fDesc.category.toRawUTF8());
-        } catch(...) {}
-
-        return category;
+        if (fDesc.isInstrument)
+            return PLUGIN_CATEGORY_SYNTH;
+        return getPluginCategoryFromName(fDesc.category.toRawUTF8());
     }
 
     int64_t getUniqueId() const noexcept override
@@ -505,10 +495,11 @@ public:
         }
 
         // plugin hints
-        pData->hints = 0x0;
+        pData->hints  = 0x0;
+        pData->hints |= PLUGIN_NEEDS_FIXED_BUFFERS;
 
         if (fDesc.isInstrument)
-           pData->hints |= PLUGIN_IS_SYNTH;
+            pData->hints |= PLUGIN_IS_SYNTH;
 
         if (fInstance->hasEditor())
         {
@@ -590,11 +581,6 @@ public:
             fInstance->reset();
             pData->needsReset = false;
         }
-
-        // --------------------------------------------------------------------------------------------------------
-        // TimeInfo
-
-        // TODO
 
         // --------------------------------------------------------------------------------------------------------
         // Event Input
