@@ -56,9 +56,9 @@ enum PluginBridgeRtOpcode {
     kPluginBridgeRtNull = 0,
     kPluginBridgeRtSetAudioPool,   // ulong/ptr
     kPluginBridgeRtSetParameter,   // uint, float
-    kPluginBridgeRtSetProgram,     // int
-    kPluginBridgeRtSetMidiProgram, // int
-    kPluginBridgeRtMidiEvent,      // uint/frame, uint/size, char[]
+    kPluginBridgeRtMidiData,       // uint/frame, uint/size, char[]
+    kPluginBridgeRtMidiBank,       // uint/frame, byte/chan, ushort
+    kPluginBridgeRtMidiProgram,    // uint/frame, byte/chan, ushort
     kPluginBridgeRtAllSoundOff,    // uint/frame
     kPluginBridgeRtAllNotesOff,    // uint/frame
     kPluginBridgeRtProcess
@@ -79,6 +79,8 @@ enum PluginBridgeNonRtOpcode {
     kPluginBridgeNonRtSetMidiProgram,          // int
     kPluginBridgeNonRtSetCustomData,           // uint/size, str, uint/size, str, uint/size, str
     kPluginBridgeNonRtSetChunkDataFile,        // uint/size, str/file
+    kPluginBridgeNonRtSetCtrlChannel,          // short
+    kPluginBridgeNonRtSetOption,               // uint/option, bool
     kPluginBridgeNonRtPrepareForSave,
     kPluginBridgeNonRtShowUI,
     kPluginBridgeNonRtHideUI,
@@ -203,12 +205,12 @@ const char* PluginBridgeRtOpcode2str(const PluginBridgeRtOpcode opcode) noexcept
         return "kPluginBridgeRtSetAudioPool";
     case kPluginBridgeRtSetParameter:
         return "kPluginBridgeRtSetParameter";
-    case kPluginBridgeRtSetProgram:
-        return "kPluginBridgeRtSetProgram";
-    case kPluginBridgeRtSetMidiProgram:
-        return "kPluginBridgeRtSetMidiProgram";
-    case kPluginBridgeRtMidiEvent:
-        return "kPluginBridgeRtMidiEvent";
+    case kPluginBridgeRtMidiData:
+        return "kPluginBridgeRtMidiData";
+    case kPluginBridgeRtMidiBank:
+        return "kPluginBridgeRtMidiBank";
+    case kPluginBridgeRtMidiProgram:
+        return "kPluginBridgeRtMidiProgram";
     case kPluginBridgeRtAllSoundOff:
         return "kPluginBridgeRtAllSoundOff";
     case kPluginBridgeRtAllNotesOff:
@@ -252,6 +254,10 @@ const char* PluginBridgeNonRtOpcode2str(const PluginBridgeNonRtOpcode opcode) no
         return "kPluginBridgeNonRtSetCustomData";
     case kPluginBridgeNonRtSetChunkDataFile:
         return "kPluginBridgeNonRtSetChunkDataFile";
+    case kPluginBridgeNonRtSetCtrlChannel:
+        return "kPluginBridgeNonRtSetCtrlChannel";
+    case kPluginBridgeNonRtSetOption:
+        return "kPluginBridgeNonRtSetOption";
     case kPluginBridgeNonRtPrepareForSave:
         return "kPluginBridgeNonRtPrepareForSave";
     case kPluginBridgeNonRtShowUI:

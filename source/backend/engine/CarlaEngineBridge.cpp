@@ -500,6 +500,24 @@ public:
                 break;
             }
 
+            case kPluginBridgeNonRtSetCtrlChannel: {
+                const int16_t channel(fShmNonRtControl.readShort());
+                CARLA_SAFE_ASSERT_BREAK(channel >= -1 && channel < MAX_MIDI_CHANNELS);
+
+                if (plugin != nullptr && plugin->isEnabled())
+                    plugin->setCtrlChannel(static_cast<int8_t>(channel), false, false);
+                break;
+            }
+
+            case kPluginBridgeNonRtSetOption: {
+                const uint32_t option(fShmNonRtControl.readUInt());
+                const bool     yesNo(fShmNonRtControl.readBool());
+
+                if (plugin != nullptr && plugin->isEnabled())
+                    plugin->setOption(option, yesNo, false);
+                break;
+            }
+
             case kPluginBridgeNonRtPrepareForSave: {
                 if (plugin == nullptr || ! plugin->isEnabled()) break;
 
@@ -638,25 +656,7 @@ protected:
                     break;
                 }
 
-                case kPluginBridgeRtSetProgram: {
-                    const int32_t index(fShmRtControl.readInt());
-                    CARLA_SAFE_ASSERT_BREAK(index >= -1);
-
-                    if (plugin != nullptr && plugin->isEnabled())
-                        plugin->setProgram(index, false, false, false);
-                    break;
-                }
-
-                case kPluginBridgeRtSetMidiProgram: {
-                    const int32_t index(fShmRtControl.readInt());
-                    CARLA_SAFE_ASSERT_BREAK(index >= -1);
-
-                    if (plugin != nullptr && plugin->isEnabled())
-                        plugin->setMidiProgram(index, false, false, false);
-                    break;
-                }
-
-                case kPluginBridgeRtMidiEvent: {
+                case kPluginBridgeRtMidiData: {
                     const uint32_t time(fShmRtControl.readUInt());
                     const uint32_t size(fShmRtControl.readUInt());
                     CARLA_SAFE_ASSERT_BREAK(size > 0 && size <= 4);
@@ -677,6 +677,56 @@ protected:
 
                         event.time = time;
                         event.fillFromMidiData(static_cast<uint8_t>(size), data);
+                        break;
+                    }
+                    break;
+                }
+
+                case kPluginBridgeRtMidiBank: {
+                    const uint32_t time(fShmRtControl.readUInt());
+                    const uint8_t  chnnl(fShmRtControl.readByte());
+                    const uint16_t index(fShmRtControl.readUShort());
+
+                    CARLA_SAFE_ASSERT_BREAK(pData->events.in != nullptr);
+
+                    for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
+                    {
+                        EngineEvent& event(pData->events.in[i]);
+
+                        if (event.type != kEngineEventTypeNull)
+                            continue;
+
+                        event.type    = kEngineEventTypeControl;
+                        event.time    = time;
+                        event.channel = chnnl;
+                        event.ctrl.type  = kEngineControlEventTypeMidiProgram;
+                        event.ctrl.param = index;
+                        event.ctrl.value = 0.0f;
+                        break;
+                    }
+                    break;
+                }
+
+                case kPluginBridgeRtMidiProgram: {
+                    const uint32_t time(fShmRtControl.readUInt());
+                    const uint8_t  chnnl(fShmRtControl.readByte());
+                    const uint16_t index(fShmRtControl.readUShort());
+
+                    CARLA_SAFE_ASSERT_BREAK(pData->events.in != nullptr);
+
+                    for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
+                    {
+                        EngineEvent& event(pData->events.in[i]);
+
+                        if (event.type != kEngineEventTypeNull)
+                            continue;
+
+                        event.type    = kEngineEventTypeControl;
+                        event.time    = time;
+                        event.channel = chnnl;
+                        event.ctrl.type  = kEngineControlEventTypeMidiBank;
+                        event.ctrl.param = index;
+                        event.ctrl.value = 0.0f;
                         break;
                     }
                     break;

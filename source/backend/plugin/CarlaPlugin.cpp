@@ -1032,10 +1032,13 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_PANNING, 0, fixedValue, nullptr);
 }
+#endif
 
 void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept
 {
+#ifndef BUILD_BRIDGE
     CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+#endif
     CARLA_SAFE_ASSERT_RETURN(channel >= -1 && channel < MAX_MIDI_CHANNELS,);
 
     if (pData->ctrlChannel == channel)
@@ -1043,6 +1046,7 @@ void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const
 
     pData->ctrlChannel = channel;
 
+#ifndef BUILD_BRIDGE
     const float channelf(channel);
 
     if (sendOsc && pData->engine->isOscControlRegistered())
@@ -1050,8 +1054,11 @@ void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_CTRL_CHANNEL, 0, channelf, nullptr);
-}
+#else
+    // unused
+    return; (void)sendOsc; (void)sendCallback;
 #endif
+}
 
 // -------------------------------------------------------------------
 // Set data (plugin-specific stuff)

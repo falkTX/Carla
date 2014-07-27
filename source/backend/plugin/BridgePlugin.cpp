@@ -516,7 +516,32 @@ public:
     // -------------------------------------------------------------------
     // Set data (internal stuff)
 
-    // nothing
+    void setOption(const uint option, const bool yesNo, const bool sendCallback) override
+    {
+        {
+            const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
+
+            fShmNonRtControl.writeOpcode(kPluginBridgeNonRtSetOption);
+            fShmNonRtControl.writeInt(static_cast<int32_t>(option));
+            fShmNonRtControl.writeBool(yesNo);
+            fShmNonRtControl.commitWrite();
+        }
+
+        CarlaPlugin::setOption(option, yesNo, sendCallback);
+    }
+
+    void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept override
+    {
+        {
+            const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
+
+            fShmNonRtControl.writeOpcode(kPluginBridgeNonRtSetCtrlChannel);
+            fShmNonRtControl.writeShort(channel);
+            fShmNonRtControl.commitWrite();
+        }
+
+        CarlaPlugin::setCtrlChannel(channel, sendOsc, sendCallback);
+    }
 
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
@@ -871,9 +896,9 @@ public:
                     data2 = note.note;
                     data3 = note.velo;
 
-                    fShmRtControl.writeOpcode(kPluginBridgeRtMidiEvent);
-                    fShmRtControl.writeInt(0);
-                    fShmRtControl.writeInt(3);
+                    fShmRtControl.writeOpcode(kPluginBridgeRtMidiData);
+                    fShmRtControl.writeInt(0); // time
+                    fShmRtControl.writeInt(3); // size
                     fShmRtControl.writeByte(data1);
                     fShmRtControl.writeByte(data2);
                     fShmRtControl.writeByte(data3);
@@ -890,15 +915,7 @@ public:
 
             bool allNotesOffSent = false;
 
-            uint32_t numEvents = pData->event.portIn->getEventCount();
-            uint32_t nextBankId;
-
-            if (pData->midiprog.current >= 0 && pData->midiprog.count > 0)
-                nextBankId = pData->midiprog.data[pData->midiprog.current].bank;
-            else
-                nextBankId = 0;
-
-            for (uint32_t i=0; i < numEvents; ++i)
+            for (uint32_t i=0, numEvents = pData->event.portIn->getEventCount(); i < numEvents; ++i)
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 
@@ -1010,7 +1027,7 @@ public:
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
-                            fShmRtControl.writeOpcode(kPluginBridgeRtMidiEvent);
+                            fShmRtControl.writeOpcode(kPluginBridgeRtMidiData);
                             fShmRtControl.writeInt(static_cast<int32_t>(event.time));
                             fShmRtControl.writeInt(3);
                             fShmRtControl.writeByte(static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + event.channel));
@@ -1023,35 +1040,24 @@ public:
                     } // case kEngineControlEventTypeParameter
 
                     case kEngineControlEventTypeMidiBank:
-                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
-                            nextBankId = ctrlEvent.param;
+                        if (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
+                        {
+                            fShmRtControl.writeOpcode(kPluginBridgeRtMidiBank);
+                            fShmRtControl.writeInt(static_cast<int32_t>(event.time));
+                            fShmRtControl.writeByte(event.channel);
+                            fShmRtControl.writeShort(static_cast<int16_t>(ctrlEvent.param));
+                            fShmRtControl.commitWrite();
+                        }
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
-                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        if (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
                         {
-                            const uint32_t nextProgramId(ctrlEvent.param);
-
-                            if (pData->midiprog.count > 0)
-                            {
-                                for (uint32_t k=0; k < pData->midiprog.count; ++k)
-                                {
-                                    if (pData->midiprog.data[k].bank == nextBankId && pData->midiprog.data[k].program == nextProgramId)
-                                    {
-                                        const int32_t index(static_cast<int32_t>(k));
-
-                                        fShmRtControl.writeOpcode(kPluginBridgeRtSetMidiProgram);
-                                        fShmRtControl.writeInt(index);
-                                        fShmRtControl.commitWrite();
-
-                                        pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, index, 0, 0.0f);
-                                        break;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                            }
+                            fShmRtControl.writeOpcode(kPluginBridgeRtMidiProgram);
+                            fShmRtControl.writeInt(static_cast<int32_t>(event.time));
+                            fShmRtControl.writeByte(event.channel);
+                            fShmRtControl.writeShort(static_cast<int16_t>(ctrlEvent.param));
+                            fShmRtControl.commitWrite();
                         }
                         break;
 
@@ -1104,7 +1110,7 @@ public:
                     if (status == MIDI_STATUS_PITCH_WHEEL_CONTROL && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
                         continue;
 
-                    fShmRtControl.writeOpcode(kPluginBridgeRtMidiEvent);
+                    fShmRtControl.writeOpcode(kPluginBridgeRtMidiData);
                     fShmRtControl.writeInt(static_cast<int32_t>(event.time));
                     fShmRtControl.writeInt(midiEvent.size);
 
