@@ -564,14 +564,13 @@ public:
     virtual void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui);
 
     /*!
-     * Set the complete chunk data as \a stringData.\n
-     * \a stringData must a base64 encoded string of binary data.
+     * Set the complete chunk data as \a data.\n
      *
      * \see getChunkData()
      *
-     * \note Make sure to verify the plugin supports chunks before calling this function!
+     * \note Make sure to verify the plugin supports chunks before calling this function
      */
-    virtual void setChunkData(const char* const stringData);
+    virtual void setChunkData(const void* const data, const std::size_t dataSize);
 
     /*!
      * Change the current plugin program to \a index.

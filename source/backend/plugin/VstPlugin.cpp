@@ -26,7 +26,6 @@
 
 #include "CarlaVstUtils.hpp"
 
-#include "CarlaBase64Utils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaPluginUI.hpp"
 
@@ -328,29 +327,24 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setChunkData(const char* const stringData) override
+    void setChunkData(const void* const data, const std::size_t dataSize) override
     {
         CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS,);
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(stringData != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(dataSize > 0,);
 
         if (fLastChunk != nullptr)
-        {
             std::free(fLastChunk);
-            fLastChunk = nullptr;
-        }
 
-        std::vector<uint8_t> chunk(carla_getChunkFromBase64String(stringData));
-        CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0,);
-
-        fLastChunk = std::malloc(chunk.size());
+        fLastChunk = std::malloc(dataSize);
         CARLA_SAFE_ASSERT_RETURN(fLastChunk != nullptr,);
 
-        std::memcpy(fLastChunk, chunk.data(), chunk.size());
+        std::memcpy(fLastChunk, data, dataSize);
 
         {
             const ScopedSingleProcessLocker spl(this, true);
-            dispatcher(effSetChunk, 0 /* bank */, static_cast<intptr_t>(chunk.size()), fLastChunk, 0.0f);
+            dispatcher(effSetChunk, 0 /* bank */, static_cast<intptr_t>(dataSize), fLastChunk, 0.0f);
         }
 
         // simulate an updateDisplay callback
@@ -1775,22 +1769,24 @@ protected:
         pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
     }
 
-    intptr_t dispatcher(int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt) const
+    intptr_t dispatcher(int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, 0);
 #ifdef DEBUG
         if (opcode != effIdle && opcode != effEditIdle && opcode != effProcessEvents)
-        carla_debug("VstPlugin::dispatcher(%02i:%s, %i, " P_INTPTR ", %p, %f)", opcode, vstEffectOpcode2str(opcode), index, value, ptr, opt);
+            carla_debug("VstPlugin::dispatcher(%02i:%s, %i, " P_INTPTR ", %p, %f)", opcode, vstEffectOpcode2str(opcode), index, value, ptr, opt);
 #endif
 
-        return fEffect->dispatcher(fEffect, opcode, index, value, ptr, opt);
+        try {
+            return fEffect->dispatcher(fEffect, opcode, index, value, ptr, opt);
+        } CARLA_SAFE_EXCEPTION_RETURN("Vst dispatcher", 0);
     }
 
     intptr_t handleAudioMasterCallback(const int32_t opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
     {
 #ifdef DEBUG
         if (opcode != audioMasterGetTime)
-        carla_debug("VstPlugin::handleAudioMasterCallback(%02i:%s, %i, " P_INTPTR ", %p, %f)", opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+            carla_debug("VstPlugin::handleAudioMasterCallback(%02i:%s, %i, " P_INTPTR ", %p, %f)", opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
 #endif
 
         intptr_t ret = 0;

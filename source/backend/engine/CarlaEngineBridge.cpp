@@ -32,6 +32,7 @@
 #include <ctime>
 
 using juce::File;
+using juce::MemoryBlock;
 using juce::String;
 
 // -------------------------------------------------------------------
@@ -506,15 +507,15 @@ public:
                     chunkFilePath = chunkFilePath.replaceSection(0, 1, "Z:\\").replace("/", "\\");
                 }
 #endif
-
                 File chunkFile(chunkFilePath);
                 CARLA_SAFE_ASSERT_BREAK(chunkFile.existsAsFile());
 
-                String chunkData(chunkFile.loadFileAsString());
+                MemoryBlock memBlock;
+                chunkFile.loadFileAsData(memBlock);
                 chunkFile.deleteFile();
-                CARLA_SAFE_ASSERT_BREAK(chunkData.isNotEmpty());
 
-                plugin->setChunkData(chunkData.toRawUTF8());
+                CARLA_SAFE_ASSERT_BREAK(memBlock.getSize() > 0);
+                plugin->setChunkData(memBlock.getData(), memBlock.getSize());
                 break;
             }
 
@@ -549,16 +550,18 @@ public:
 
                 if (plugin->getOptionsEnabled() & PLUGIN_OPTION_USE_CHUNKS)
                 {
-                    if (const char* const chunkData = carla_get_chunk_data(0))
-                    //if (const char* const chunkData = plugin->getChunkData())
+                    void* data = nullptr;
+                    if (const std::size_t dataSize = plugin->getChunkData(&data))
                     {
+                        CARLA_SAFE_ASSERT_BREAK(data != nullptr);
+
                         String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
 
                         filePath += OS_SEP_STR;
                         filePath += ".CarlaChunk_";
                         filePath += fShmAudioPool.filename.buffer() + 18;
 
-                        if (File(filePath).replaceWithText(chunkData))
+                        if (File(filePath).replaceWithData(data, dataSize))
                             oscSend_bridge_set_chunk_data_file(filePath.toRawUTF8());
                     }
                 }

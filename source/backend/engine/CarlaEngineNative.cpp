@@ -28,6 +28,7 @@
 #include "CarlaPlugin.hpp"
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaBase64Utils.hpp"
 #include "CarlaBinaryUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaStateUtils.hpp"
@@ -460,7 +461,10 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(cdata), true);
 
             if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
-                plugin->setChunkData(cdata);
+            {
+                std::vector<uint8_t> chunk(carla_getChunkFromBase64String(cdata));
+                plugin->setChunkData(chunk.data(), chunk.size());
+            }
 
             delete[] cdata;
         }

@@ -21,7 +21,6 @@
 #if (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
 
 #include "CarlaBackendUtils.hpp"
-#include "CarlaBase64Utils.hpp"
 #include "JucePluginWindow.hpp"
 
 #include "juce_audio_processors.h"
@@ -238,18 +237,16 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setChunkData(const char* const stringData) override
+    void setChunkData(const void* const data, const std::size_t dataSize) override
     {
         CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS,);
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(stringData != nullptr,);
-
-        std::vector<uint8_t> chunk(carla_getChunkFromBase64String(stringData));
-        CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0,);
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(dataSize > 0,);
 
         {
             const ScopedSingleProcessLocker spl(this, true);
-            fInstance->setStateInformation(chunk.data(), chunk.size());
+            fInstance->setStateInformation(data, dataSize);
         }
 
 #ifdef BUILD_BRIDGE

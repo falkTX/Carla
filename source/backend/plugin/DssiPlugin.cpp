@@ -19,8 +19,6 @@
 #include "CarlaEngine.hpp"
 
 #include "CarlaDssiUtils.hpp"
-
-#include "CarlaBase64Utils.hpp"
 #include "CarlaMathUtils.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
@@ -341,7 +339,7 @@ public:
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
 
-    void setChunkData(const char* const stringData) override
+    void setChunkData(const void* const data, const std::size_t dataSize) override
     {
         CARLA_SAFE_ASSERT_RETURN(fUsesCustomData,);
         CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS,);
@@ -349,16 +347,14 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor->set_custom_data != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle2 == nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(stringData != nullptr,);
-
-        std::vector<uint8_t> chunk(carla_getChunkFromBase64String(stringData));
-        CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0,);
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(dataSize > 0,);
 
         {
             const ScopedSingleProcessLocker spl(this, true);
 
             try {
-                fDssiDescriptor->set_custom_data(fHandle, chunk.data(), chunk.size());
+                fDssiDescriptor->set_custom_data(fHandle, const_cast<void*>(data), dataSize);
             } CARLA_SAFE_EXCEPTION("DssiPlugin::setChunkData");
         }
 

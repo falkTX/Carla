@@ -19,6 +19,7 @@
 #include "CarlaEngine.hpp"
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaBase64Utils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaPluginUI.hpp"
 
@@ -790,7 +791,10 @@ void CarlaPlugin::loadStateSave(const StateSave& stateSave)
     // Part 6 - set chunk
 
     if (stateSave.chunk != nullptr && (pData->options & PLUGIN_OPTION_USE_CHUNKS) != 0)
-        setChunkData(stateSave.chunk);
+    {
+        std::vector<uint8_t> chunk(carla_getChunkFromBase64String(stateSave.chunk));
+        setChunkData(chunk.data(), chunk.size());
+    }
 
 #ifndef BUILD_BRIDGE
     // ---------------------------------------------------------------
@@ -1204,9 +1208,10 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
     pData->custom.append(newData);
 }
 
-void CarlaPlugin::setChunkData(const char* const stringData)
+void CarlaPlugin::setChunkData(const void* const data, const std::size_t dataSize)
 {
-    CARLA_SAFE_ASSERT_RETURN(stringData != nullptr && stringData[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(dataSize > 0,);
     CARLA_SAFE_ASSERT(false); // this should never happen
 }
 

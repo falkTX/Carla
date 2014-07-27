@@ -26,6 +26,7 @@
 #include "CarlaPlugin.hpp"
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaBase64Utils.hpp"
 #include "CarlaOscUtils.hpp"
 
 #include "juce_audio_formats.h"
@@ -2141,7 +2142,10 @@ void carla_set_chunk_data(uint pluginId, const char* chunkData)
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
     {
         if (plugin->getOptionsEnabled() & CB::PLUGIN_OPTION_USE_CHUNKS)
-            return plugin->setChunkData(chunkData);
+        {
+            std::vector<uint8_t> chunk(carla_getChunkFromBase64String(chunkData));
+            return plugin->setChunkData(chunk.data(), chunk.size());
+        }
 
         carla_stderr2("carla_set_chunk_data(%i, \"%s\") - plugin does not use chunks", pluginId, chunkData);
         return;

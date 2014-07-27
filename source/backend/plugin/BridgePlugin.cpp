@@ -21,7 +21,6 @@
 #ifndef BUILD_BRIDGE
 
 #include "CarlaBackendUtils.hpp"
-#include "CarlaBase64Utils.hpp"
 #include "CarlaBridgeUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaShmUtils.hpp"
@@ -380,8 +379,6 @@ public:
         fShmNonRtControl.clear();
 
         clearBuffers();
-
-        fInfo.chunk.clear();
     }
 
     // -------------------------------------------------------------------
@@ -427,10 +424,10 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS, 0);
         CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
-        CARLA_SAFE_ASSERT_RETURN(fInfo.chunk.size() > 0, 0);
+        CARLA_SAFE_ASSERT_RETURN(fInfo.chunk.getSize() > 0, 0);
 
-        *dataPtr = fInfo.chunk.data();
-        return fInfo.chunk.size();
+        *dataPtr = fInfo.chunk.getData();
+        return fInfo.chunk.getSize();
     }
 
     // -------------------------------------------------------------------
@@ -656,10 +653,11 @@ public:
     }
 #endif
 
-    void setChunkData(const char* const stringData) override
+    void setChunkData(const void* const data, const std::size_t dataSize) override
     {
         CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS,);
-        CARLA_SAFE_ASSERT_RETURN(stringData != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(dataSize > 0,);
 
         String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
 
@@ -667,7 +665,7 @@ public:
         filePath += ".CarlaChunk_";
         filePath += fShmAudioPool.filename.buffer() + 18;
 
-        if (File(filePath).replaceWithText(stringData))
+        if (File(filePath).replaceWithData(data, dataSize))
         {
             const uint32_t ulength(static_cast<uint32_t>(filePath.length()));
 
@@ -1755,7 +1753,8 @@ public:
 
             if (chunkFile.existsAsFile())
             {
-                fInfo.chunk = carla_getChunkFromBase64String(chunkFile.loadFileAsString().toRawUTF8());
+                fInfo.chunk.reset();
+                chunkFile.loadFileAsData(fInfo.chunk);
                 chunkFile.deleteFile();
             }
             break;
@@ -2031,7 +2030,7 @@ private:
         CarlaString label;
         CarlaString maker;
         CarlaString copyright;
-        std::vector<uint8_t> chunk;
+        MemoryBlock chunk;
 
         Info()
             : aIns(0),
