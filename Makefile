@@ -489,9 +489,41 @@ install:
 		$(DESTDIR)$(PREFIX)/share/carla/resources/zynaddsubfx/
 
 	# Install resources (re-use python files)
-	cd $(DESTDIR)/ && \
-		$(LINK) $(PREFIX)/share/carla/*.py $(PREFIX)/share/carla/resources/
-	cd $(CURDIR)
+	$(LINK) $(PREFIX)/share/carla/carla_backend.py            $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/carla_config.py             $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/carla_database.py           $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/carla_host.py               $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/carla_rack.py               $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/carla_settings.py           $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/carla_skin.py               $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/carla_shared.py             $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/carla_style.py              $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/carla_widgets.py            $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/canvaspreviewframe.py       $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/digitalpeakmeter.py         $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/externalui.py               $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ledbutton.py                $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/paramspinbox.py             $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/patchcanvas.py              $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/patchcanvas_theme.py        $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/pixmapbutton.py             $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/pixmapdial.py               $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/pixmapkeyboard.py           $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/resources_rc.py             $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_about.py           $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_database.py        $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_edit.py            $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_host.py            $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_parameter.py       $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_basic_fx.py $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_calf.py     $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_default.py  $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_zita.py     $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_zynfx.py    $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_refresh.py         $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_settings.py        $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_settings_driver.py $(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_inputdialog_value.py     $(PREFIX)/share/carla/resources/
 
 	# Link resources for lv2 plugin
 	rm -rf $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources
