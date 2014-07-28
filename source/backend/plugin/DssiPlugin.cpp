@@ -1868,12 +1868,12 @@ public:
 
     void updateOscURL() override
     {
-        // DSSI does not support this, hide and reshow UI if instead
+        // DSSI does not support this
         if (! pData->osc.thread.isThreadRunning())
             return;
 
         showCustomUI(false);
-        showCustomUI(true);
+        //showCustomUI(true);
     }
 
     // -------------------------------------------------------------------
