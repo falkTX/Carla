@@ -709,6 +709,9 @@ public:
     {
         if (pData->osc.thread.isThreadRunning())
         {
+            if (fTimedOut && pData->active)
+                setActive(false, true, true);
+
             const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
 
             fShmNonRtControl.writeOpcode(kPluginBridgeNonRtPing);
@@ -869,7 +872,7 @@ public:
         bool timedOut = true;
 
         try {
-            timedOut = waitForServer();
+            timedOut = waitForServer(1);
         } catch(...) {}
 
         if (! timedOut)
@@ -888,7 +891,7 @@ public:
         bool timedOut = true;
 
         try {
-            timedOut = waitForServer();
+            timedOut = waitForServer(1);
         } catch(...) {}
 
         if (! timedOut)
