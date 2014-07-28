@@ -305,10 +305,10 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 
 #if defined(CARLA_OS_MAC)
     return true;
-    (void)pid;
+    (void)pid; (void)centerUI;
 #elif defined(CARLA_OS_WIN)
     return true;
-    (void)pid;
+    (void)pid; (void)centerUI;
 #elif defined(HAVE_X11)
     struct ScopedDisplay {
         Display* display;

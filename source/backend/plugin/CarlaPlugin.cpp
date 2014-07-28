@@ -509,7 +509,7 @@ const StateSave& CarlaPlugin::getStateSave()
 
         if (data != nullptr && dataSize > 0)
         {
-            pData->stateSave.chunk = CarlaString::asBase64(data, static_cast<std::size_t>(dataSize)).dup();
+            pData->stateSave.chunk = CarlaString::asBase64(data, dataSize).dup();
 
             // Don't save anything else if using chunks
             return pData->stateSave;

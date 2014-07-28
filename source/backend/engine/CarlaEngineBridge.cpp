@@ -23,6 +23,7 @@
 #include "CarlaPlugin.hpp"
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaBase64Utils.hpp"
 #include "CarlaBridgeUtils.hpp"
 #include "CarlaMIDI.h"
 
@@ -500,22 +501,22 @@ public:
                 if (plugin == nullptr || ! plugin->isEnabled()) break;
 
                 String chunkFilePath(chunkFilePathTry);
+
 #ifdef CARLA_OS_WIN
+                // check if running under Wine
                 if (chunkFilePath.startsWith("/"))
-                {
-                    // running under Wine, posix host
                     chunkFilePath = chunkFilePath.replaceSection(0, 1, "Z:\\").replace("/", "\\");
-                }
 #endif
+
                 File chunkFile(chunkFilePath);
                 CARLA_SAFE_ASSERT_BREAK(chunkFile.existsAsFile());
 
-                MemoryBlock memBlock;
-                chunkFile.loadFileAsData(memBlock);
+                String chunkDataBase64(chunkFile.loadFileAsString());
                 chunkFile.deleteFile();
+                CARLA_SAFE_ASSERT_BREAK(chunkDataBase64.isNotEmpty());
 
-                CARLA_SAFE_ASSERT_BREAK(memBlock.getSize() > 0);
-                plugin->setChunkData(memBlock.getData(), memBlock.getSize());
+                std::vector<uint8_t> chunk(carla_getChunkFromBase64String(chunkDataBase64.toRawUTF8()));
+                plugin->setChunkData(chunk.data(), chunk.size());
                 break;
             }
 
@@ -555,13 +556,16 @@ public:
                     {
                         CARLA_SAFE_ASSERT_BREAK(data != nullptr);
 
+                        CarlaString dataBase64 = CarlaString::asBase64(data, dataSize);
+                        CARLA_SAFE_ASSERT_RETURN(dataBase64.length() > 0,);
+
                         String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
 
                         filePath += OS_SEP_STR;
                         filePath += ".CarlaChunk_";
-                        filePath += fShmAudioPool.filename.buffer() + 18;
+                        filePath += fShmNonRtControl.filename.buffer() + 24;
 
-                        if (File(filePath).replaceWithData(data, dataSize))
+                        if (File(filePath).replaceWithText(dataBase64.buffer()))
                             oscSend_bridge_set_chunk_data_file(filePath.toRawUTF8());
                     }
                 }
