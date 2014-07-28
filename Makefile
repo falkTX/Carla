@@ -448,6 +448,7 @@ install:
 		bin/styles/* \
 		$(DESTDIR)$(PREFIX)/lib/carla/styles/
 
+	# Install theme (lv2 plugin)
 	install -m 644 \
 		bin/styles/* \
 		$(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/styles/
@@ -488,8 +489,8 @@ install:
 		$(DESTDIR)$(PREFIX)/share/carla/resources/zynaddsubfx/
 
 	# Install resources (re-use python files)
-	cd $(DESTDIR)$(PREFIX)/share/carla/resources/ && \
-		$(LINK) ../*.py .
+	cd $(DESTDIR)/ && \
+		$(LINK) $(PREFIX)/share/carla/*.py $(PREFIX)/share/carla/resources/
 	cd $(CURDIR)
 
 	# Link resources for lv2 plugin
