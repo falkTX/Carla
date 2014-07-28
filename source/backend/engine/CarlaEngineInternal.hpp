@@ -144,7 +144,11 @@ struct CarlaEngine::ProtectedData {
     CarlaEngineOsc    osc;
     CarlaEngineThread thread;
 
+#ifdef BUILD_BRIDGE
+    CarlaOscData* oscData;
+#else
     const CarlaOscData* oscData;
+#endif
 
     EngineCallbackFunc callback;
     void*              callbackPtr;

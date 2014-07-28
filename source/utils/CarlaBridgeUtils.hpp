@@ -82,6 +82,7 @@ enum PluginBridgeNonRtOpcode {
     kPluginBridgeNonRtSetCustomData,           // uint/size, str[], uint/size, str[], uint/size, str[] TODO plugin
     kPluginBridgeNonRtSetChunkDataFile,        // uint/size, str[]/file
     kPluginBridgeNonRtSetCtrlChannel,          // short
+    kPluginBridgeNonRtSetId,                   // uint
     kPluginBridgeNonRtSetOption,               // uint/option, bool
     kPluginBridgeNonRtPrepareForSave,
     kPluginBridgeNonRtShowUI,
@@ -262,6 +263,8 @@ const char* PluginBridgeNonRtOpcode2str(const PluginBridgeNonRtOpcode opcode) no
         return "kPluginBridgeNonRtSetChunkDataFile";
     case kPluginBridgeNonRtSetCtrlChannel:
         return "kPluginBridgeNonRtSetCtrlChannel";
+    case kPluginBridgeNonRtSetId:
+        return "kPluginBridgeNonRtSetId";
     case kPluginBridgeNonRtSetOption:
         return "kPluginBridgeNonRtSetOption";
     case kPluginBridgeNonRtPrepareForSave:

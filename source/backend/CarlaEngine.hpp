@@ -1005,7 +1005,7 @@ public:
     /*!
      * Set OSC bridge data.
      */
-    void setOscBridgeData(const CarlaOscData* const oscData) const noexcept;
+    void setOscBridgeData(CarlaOscData* const oscData) const noexcept;
 #endif
 
     // -------------------------------------------------------------------

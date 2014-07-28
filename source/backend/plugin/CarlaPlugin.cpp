@@ -1636,6 +1636,13 @@ bool CarlaPlugin::updateOscDataExtra()
     return false;
 }
 
+void CarlaPlugin::updateOscURL()
+{
+    const String newURL(String(pData->engine->getOscServerPathUDP()) + String("/") + String(pData->id));
+
+    osc_send_update_url(pData->osc.data, newURL.toRawUTF8());
+}
+
 bool CarlaPlugin::waitForOscGuiShow()
 {
     carla_stdout("CarlaPlugin::waitForOscGuiShow()");

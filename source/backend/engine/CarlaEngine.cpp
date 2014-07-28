@@ -588,6 +588,13 @@ bool CarlaEngine::removePlugin(const uint id)
 #ifndef BUILD_BRIDGE
     const ScopedActionLock sal(pData, kEnginePostActionRemovePlugin, id, 0, isRunning());
 
+    for (uint i=id; i < pData->curPluginCount; ++i)
+    {
+        CarlaPlugin* const plugin2(pData->plugins[i].plugin);
+        CARLA_SAFE_ASSERT_BREAK(plugin2 != nullptr);
+        plugin2->updateOscURL();
+    }
+
     if (isOscControlRegistered())
         oscSend_control_remove_plugin(id);
 #else
@@ -746,6 +753,12 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB) noexcept
     pData->thread.stopThread(500);
 
     const ScopedActionLock sal(pData, kEnginePostActionSwitchPlugins, idA, idB, isRunning());
+
+    if (CarlaPlugin* const plugin = pData->plugins[idA].plugin)
+        plugin->updateOscURL();
+
+    if (CarlaPlugin* const plugin = pData->plugins[idB].plugin)
+        plugin->updateOscURL();
 
     // TODO
     //if (isOscControlRegistered())
@@ -1471,7 +1484,7 @@ const char* CarlaEngine::getOscServerPathUDP() const noexcept
 }
 
 #ifdef BUILD_BRIDGE
-void CarlaEngine::setOscBridgeData(const CarlaOscData* const oscData) const noexcept
+void CarlaEngine::setOscBridgeData(CarlaOscData* const oscData) const noexcept
 {
     pData->oscData = oscData;
 }

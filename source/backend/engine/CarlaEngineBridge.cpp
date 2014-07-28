@@ -529,6 +529,14 @@ public:
                 break;
             }
 
+            case kPluginBridgeNonRtSetId: {
+                const uint32_t newId(fShmNonRtControl.readUInt());
+                const String   newURL(String(pData->osc.getServerPathUDP()) + String("/") + String(newId));
+
+                pData->oscData->setNewURL(newURL.toRawUTF8());
+                break;
+            }
+
             case kPluginBridgeNonRtSetOption: {
                 const uint32_t option(fShmNonRtControl.readUInt());
                 const bool     yesNo(fShmNonRtControl.readBool());

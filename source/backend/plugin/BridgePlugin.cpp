@@ -515,6 +515,17 @@ public:
     // -------------------------------------------------------------------
     // Set data (internal stuff)
 
+    void setId(const uint newId) noexcept
+    {
+        CarlaPlugin::setId(newId);
+
+        const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
+
+        fShmNonRtControl.writeOpcode(kPluginBridgeNonRtSetId);
+        fShmNonRtControl.writeUInt(newId);
+        fShmNonRtControl.commitWrite();
+    }
+
     void setOption(const uint option, const bool yesNo, const bool sendCallback) override
     {
         {

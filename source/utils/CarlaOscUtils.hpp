@@ -69,6 +69,31 @@ struct CarlaOscData {
         }
     }
 
+    void setNewURL(const char* const url)
+    {
+        if (path != nullptr)
+        {
+            delete[] path;
+            path = nullptr;
+        }
+
+        if (source != nullptr)
+        {
+            try {
+                lo_address_free(source);
+            } CARLA_SAFE_EXCEPTION("lo_address_free source");
+            source = nullptr;
+        }
+
+        char* const host = lo_url_get_hostname(url);
+        char* const port = lo_url_get_port(url);
+        path   = carla_strdup_free(lo_url_get_path(url));
+        target = lo_address_new_with_proto(LO_UDP, host, port);
+
+        std::free(host);
+        std::free(port);
+    }
+
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaOscData)
 };
@@ -196,6 +221,20 @@ void osc_send_update(const CarlaOscData& oscData, const char* const url) noexcep
     char targetPath[std::strlen(oscData.path)+8];
     std::strcpy(targetPath, oscData.path);
     std::strcat(targetPath, "/update");
+    try_lo_send(oscData.target, targetPath, "s", url);
+}
+
+static inline
+void osc_send_update_url(const CarlaOscData& oscData, const char* const url) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr && oscData.path[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);;
+    CARLA_SAFE_ASSERT_RETURN(url != nullptr && url[0] != '\0',);
+    carla_debug("osc_send_update_url(path:\"%s\", \"%s\")", oscData.path, url);
+
+    char targetPath[std::strlen(oscData.path)+12];
+    std::strcpy(targetPath, oscData.path);
+    std::strcat(targetPath, "/update_url");
     try_lo_send(oscData.target, targetPath, "s", url);
 }
 

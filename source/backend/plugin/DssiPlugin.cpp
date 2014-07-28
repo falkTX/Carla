@@ -1864,6 +1864,19 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // OSC stuff
+
+    void updateOscURL() override
+    {
+        // DSSI does not support this, hide and reshow UI if instead
+        if (! pData->osc.thread.isThreadRunning())
+            return;
+
+        showCustomUI(false);
+        showCustomUI(true);
+    }
+
+    // -------------------------------------------------------------------
     // Post-poned UI Stuff
 
     void uiParameterChange(const uint32_t index, const float value) noexcept override

@@ -416,7 +416,7 @@ public:
      *
      * \see getId()
      */
-    void setId(const uint newId) noexcept;
+    virtual void setId(const uint newId) noexcept;
 
     /*!
      * Set the plugin's name to \a newName.
@@ -722,9 +722,10 @@ public:
     virtual bool updateOscDataExtra();
 
     /*!
-     * Free the plugin's internal OSC memory data.
+     * Update the plugin's OSC URL used in UI bridges.
+     * This is called when removing or switching plugins.
      */
-    //void freeOscData();
+    virtual void updateOscURL();
 
     /*!
      * Show the plugin's OSC based GUI.\n
