@@ -264,7 +264,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
 
     if (plugin == nullptr || plugin->getId() != pluginId)
     {
-        carla_stderr("CarlaEngineOsc::handleMessage() - invalid plugin id '%i', probably has been removed", pluginId);
+        carla_stderr("CarlaEngineOsc::handleMessage() - invalid plugin id '%i', probably has been removed (path: '%s')", pluginId, path);
         return 0;
     }
 
