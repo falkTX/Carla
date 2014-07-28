@@ -77,12 +77,12 @@ struct CarlaOscData {
             path = nullptr;
         }
 
-        if (source != nullptr)
+        if (target != nullptr)
         {
             try {
-                lo_address_free(source);
-            } CARLA_SAFE_EXCEPTION("lo_address_free source");
-            source = nullptr;
+                lo_address_free(target);
+            } CARLA_SAFE_EXCEPTION("lo_address_free target");
+            target = nullptr;
         }
 
         char* const host = lo_url_get_hostname(url);

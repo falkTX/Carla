@@ -515,17 +515,6 @@ public:
     // -------------------------------------------------------------------
     // Set data (internal stuff)
 
-    void setId(const uint newId) noexcept
-    {
-        CarlaPlugin::setId(newId);
-
-        const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
-
-        fShmNonRtControl.writeOpcode(kPluginBridgeNonRtSetId);
-        fShmNonRtControl.writeUInt(newId);
-        fShmNonRtControl.commitWrite();
-    }
-
     void setOption(const uint option, const bool yesNo, const bool sendCallback) override
     {
         {
@@ -1343,9 +1332,85 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // OSC stuff
+
+    void updateOscURL() override
+    {
+        const String newURL(String(pData->engine->getOscServerPathUDP()) + String("/") + String(pData->id));
+        const uint32_t ulength(static_cast<uint32_t>(newURL.length()));
+
+        const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
+
+        fShmNonRtControl.writeOpcode(kPluginBridgeNonRtSetOscURL);
+        fShmNonRtControl.writeUInt(ulength);
+        fShmNonRtControl.writeCustomData(newURL.toRawUTF8(), ulength);
+        fShmNonRtControl.commitWrite();
+    }
+
+    // -------------------------------------------------------------------
     // Post-poned UI Stuff
 
-    // nothing
+    void uiParameterChange(const uint32_t index, const float value) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(index < pData->param.count,);
+
+        const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
+
+        fShmNonRtControl.writeOpcode(kPluginBridgeNonRtUiParameterChange);
+        fShmNonRtControl.writeUInt(index);
+        fShmNonRtControl.writeFloat(value);
+        fShmNonRtControl.commitWrite();
+    }
+
+    void uiProgramChange(const uint32_t index) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count,);
+
+        const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
+
+        fShmNonRtControl.writeOpcode(kPluginBridgeNonRtUiProgramChange);
+        fShmNonRtControl.writeUInt(index);
+        fShmNonRtControl.commitWrite();
+    }
+
+    void uiMidiProgramChange(const uint32_t index) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count,);
+
+        const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
+
+        fShmNonRtControl.writeOpcode(kPluginBridgeNonRtUiMidiProgramChange);
+        fShmNonRtControl.writeUInt(index);
+        fShmNonRtControl.commitWrite();
+    }
+
+    void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
+        CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
+        CARLA_SAFE_ASSERT_RETURN(velo > 0 && velo < MAX_MIDI_VALUE,);
+
+        const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
+
+        fShmNonRtControl.writeOpcode(kPluginBridgeNonRtUiNoteOn);
+        fShmNonRtControl.writeByte(channel);
+        fShmNonRtControl.writeByte(note);
+        fShmNonRtControl.writeByte(velo);
+        fShmNonRtControl.commitWrite();
+    }
+
+    void uiNoteOff(const uint8_t channel, const uint8_t note) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
+        CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
+
+        const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
+
+        fShmNonRtControl.writeOpcode(kPluginBridgeNonRtUiNoteOff);
+        fShmNonRtControl.writeByte(channel);
+        fShmNonRtControl.writeByte(note);
+        fShmNonRtControl.commitWrite();
+    }
 
     // -------------------------------------------------------------------
 

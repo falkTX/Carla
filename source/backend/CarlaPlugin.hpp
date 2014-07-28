@@ -416,7 +416,7 @@ public:
      *
      * \see getId()
      */
-    virtual void setId(const uint newId) noexcept;
+    void setId(const uint newId) noexcept;
 
     /*!
      * Set the plugin's name to \a newName.

@@ -529,11 +529,17 @@ public:
                 break;
             }
 
-            case kPluginBridgeNonRtSetId: {
-                const uint32_t newId(fShmNonRtControl.readUInt());
-                const String   newURL(String(pData->osc.getServerPathUDP()) + String("/") + String(newId));
+            case kPluginBridgeNonRtSetOscURL: {
+                const uint32_t size(fShmNonRtControl.readUInt());
 
-                pData->oscData->setNewURL(newURL.toRawUTF8());
+                char url[size+1];
+                carla_zeroChar(url, size+1);
+                fShmNonRtControl.readCustomData(url, size);
+
+                CARLA_SAFE_ASSERT_BREAK(url[0] != '\0');
+                if (plugin == nullptr || ! plugin->isEnabled()) break;
+
+                pData->oscData->setNewURL(url);
                 break;
             }
 
