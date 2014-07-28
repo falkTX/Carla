@@ -165,6 +165,10 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
     if (std::strcmp(method, "sample-rate") == 0)
         return 0; // unused
 
+    // special
+    if (std::strcmp(method, "update_url") == 0)
+        return handleMsgUpdateURL(argc, argv, types);
+
 #ifdef BRIDGE_LV2
     // LV2 methods
     if (std::strcmp(method, "lv2_atom_transfer") == 0)
@@ -301,6 +305,18 @@ int CarlaBridgeOsc::handleMsgMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS)
         kClient->noteOn(channel, note, velo);
     }
 
+    return 0;
+}
+
+int CarlaBridgeOsc::handleMsgUpdateURL(CARLA_BRIDGE_OSC_HANDLE_ARGS)
+{
+    CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(1, "s");
+    CARLA_SAFE_ASSERT_RETURN(kClient != nullptr, 1);
+    carla_debug("CarlaBridgeOsc::handleMsgUpdateURL()");
+
+    const char* const url = (const char*)&argv[0]->s;
+
+    fControlData.setNewURL(url);
     return 0;
 }
 

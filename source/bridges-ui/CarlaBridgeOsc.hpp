@@ -97,6 +97,7 @@ private:
     int handleMsgProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS);
     int handleMsgMidiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS);
     int handleMsgMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+    int handleMsgUpdateURL(CARLA_BRIDGE_OSC_HANDLE_ARGS);
 
     int handleMsgShow();
     int handleMsgHide();
