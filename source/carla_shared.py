@@ -535,7 +535,7 @@ def initHost(initName, libPrefix = None, failError = True):
     elif CWDl.endswith("source"):
         gCarla.pathBinaries = os.path.abspath(os.path.join(CWD, "..", "bin"))
 
-    elif CWDl.endswith("bin"):
+    elif CWDl.endswith("bin") or os.path.isfile(sys.path[0]):
         gCarla.pathBinaries = CWD
 
     # -------------------------------------------------------------

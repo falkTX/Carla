@@ -189,7 +189,7 @@ class CarlaPatchbayW(QFrame):
         self.fPeaksIn.setVisible(showMeters)
         self.fPeaksOut.setVisible(showMeters)
 
-        showKeyboard = settings.value("ShowKeyboard", True, type=bool)
+        showKeyboard = settings.value("ShowKeyboard", not(MACOS or WINDOWS), type=bool)
         self.fParent.ui.act_settings_show_keyboard.setChecked(showKeyboard)
         self.fKeys.setVisible(showKeyboard)
 

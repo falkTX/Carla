@@ -283,7 +283,7 @@ class CarlaSettingsW(QDialog):
             if gCarla.isPlugin:
                 self.ui.lw_page.hideRow(self.TAB_INDEX_PATHS)
 
-        if WINDOWS:
+        if WINDOWS and not config_UseQt5:
             self.ui.group_main_theme.setEnabled(False)
             self.ui.ch_main_theme_pro.setChecked(False)
 

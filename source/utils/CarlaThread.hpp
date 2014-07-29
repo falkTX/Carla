@@ -66,7 +66,7 @@ public:
      */
     bool isThreadRunning() const noexcept
     {
-#ifdef CARLA_OS_WIN
+#ifdef PTW32_DLLPORT
         return (fHandle.p != nullptr);
 #else
         return (fHandle != 0);
@@ -97,7 +97,7 @@ public:
 
         if (pthread_create(&handle, nullptr, _entryPoint, this) == 0)
         {
-#ifdef CARLA_OS_WIN
+#ifdef PTW32_DLLPORT
             CARLA_SAFE_ASSERT_RETURN(handle.p != nullptr, false);
 #else
             CARLA_SAFE_ASSERT_RETURN(handle != 0, false);
@@ -215,7 +215,7 @@ private:
      */
     void _init() noexcept
     {
-#ifdef CARLA_OS_WIN
+#ifdef PTW32_DLLPORT
         fHandle.p = nullptr;
         fHandle.x = 0;
 #else
@@ -228,7 +228,7 @@ private:
      */
     void _copyFrom(const pthread_t& handle) noexcept
     {
-#ifdef CARLA_OS_WIN
+#ifdef PTW32_DLLPORT
         fHandle.p = handle.p;
         fHandle.x = handle.x;
 #else
@@ -241,7 +241,7 @@ private:
      */
     void _copyTo(volatile pthread_t& handle) const noexcept
     {
-#ifdef CARLA_OS_WIN
+#ifdef PTW32_DLLPORT
         handle.p = fHandle.p;
         handle.x = fHandle.x;
 #else

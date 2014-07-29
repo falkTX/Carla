@@ -54,7 +54,7 @@ class CarlaApplication(object):
         elif CWDl.endswith("resources"):
             if CWDl.endswith("native-plugins%sresources" % os.sep):
                 stylesDir = os.path.abspath(os.path.join(CWD, "..", "..", "..", "..", "bin"))
-            elif "carla-native.lv2" in sys.argv[0]:
+            elif "carla-native.lv2" in sys.argv[0].lower():
                 stylesDir = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lib", "lv2", "carla-native.lv2"))
             else:
                 stylesDir = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lib", "carla"))
@@ -62,7 +62,7 @@ class CarlaApplication(object):
         elif CWDl.endswith("source"):
             stylesDir = os.path.abspath(os.path.join(CWD, "..", "bin"))
 
-        if stylesDir:
+        if stylesDir and os.path.exists(stylesDir):
             QApplication.addLibraryPath(stylesDir)
 
         elif not config_UseQt5:
@@ -90,6 +90,10 @@ class CarlaApplication(object):
 
             QApplication.setDesktopSettingsAware(False)
             QApplication.setFont(customFont)
+
+            # fix Qt5 not finding plarform dir on Windows
+            if WINDOWS:
+                QApplication.addLibraryPath(CWD)
 
         # set style
         QApplication.setStyle("carla" if stylesDir else "fusion")
