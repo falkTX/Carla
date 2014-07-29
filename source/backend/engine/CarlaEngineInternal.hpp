@@ -26,6 +26,9 @@
 using juce::Atomic;
 using juce::WaitableEvent;
 
+// FIXME only use CARLA_PREVENT_HEAP_ALLOCATION for structs
+//       maybe separate macro
+
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
@@ -87,6 +90,7 @@ private:
         PatchbayGraph* fPatchbay;
     };
 
+    CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalGraph)
 };
 #endif

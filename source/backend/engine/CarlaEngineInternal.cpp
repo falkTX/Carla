@@ -67,7 +67,8 @@ EngineInternalTime::EngineInternalTime() noexcept
 EngineNextAction::EngineNextAction() noexcept
     : opcode(kEnginePostActionNull),
       pluginId(0),
-      value(0) {}
+      value(0),
+      waitEvent() {}
 
 EngineNextAction::~EngineNextAction() noexcept
 {
@@ -97,15 +98,25 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
       isIdling(0),
       curPluginCount(0),
       maxPluginNumber(0),
-#ifndef BUILD_BRIDGE
       nextPluginId(0),
-      plugins(nullptr) {}
-#else
-      nextPluginId(0)
-{
-    carla_zeroStruct(plugins, 1);
-}
+      lastError(),
+      name(),
+      options(),
+      timeInfo(),
+#ifndef BUILD_BRIDGE
+      plugins(nullptr),
 #endif
+      events(),
+#ifndef BUILD_BRIDGE
+      graph(),
+#endif
+      time(),
+      nextAction()
+{
+#ifdef BUILD_BRIDGE
+    carla_zeroStruct(plugins, 1);
+#endif
+}
 
 CarlaEngine::ProtectedData::~ProtectedData() noexcept
 {
