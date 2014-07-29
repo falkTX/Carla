@@ -20,6 +20,9 @@
 
 #include "CarlaUtils.hpp"
 
+#undef NULL
+#define NULL nullptr
+
 #include "lv2/lv2.h"
 #include "lv2/atom.h"
 #include "lv2/atom-forge.h"

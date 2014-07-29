@@ -21,21 +21,10 @@
 
 #define VESTIGE_HEADER
 
-#include "CarlaUtils.hpp"
-
-#undef NULL
-#define NULL nullptr
-
 #include "CarlaLadspaUtils.hpp"
 #include "CarlaDssiUtils.cpp"
 #include "CarlaLv2Utils.hpp"
 #include "CarlaVstUtils.hpp"
-
-// used in dssi utils
-#include "juce_core.h"
-#include <QtCore/QDir>
-#include <QtCore/QFileInfo>
-#include <QtCore/QStringList>
 
 // -----------------------------------------------------------------------
 

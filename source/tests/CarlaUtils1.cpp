@@ -459,8 +459,9 @@ static void test_CarlaBackendUtils() noexcept
 
 static void test_CarlaBridgeUtils() noexcept
 {
-    carla_stdout(PluginBridgeInfoType2str(kPluginBridgePong));
-    carla_stdout(PluginBridgeOpcode2str(kPluginBridgeOpcodeNull));
+    carla_stdout(PluginBridgeOscInfoType2str(kPluginBridgeOscPong));
+    carla_stdout(PluginBridgeRtOpcode2str(kPluginBridgeRtNull));
+    carla_stdout(PluginBridgeNonRtOpcode2str(kPluginBridgeNonRtNull));
 }
 
 // -----------------------------------------------------------------------

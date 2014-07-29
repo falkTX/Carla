@@ -28,9 +28,9 @@ GNU_CXX_FLAGS += -std=c++11 -std=gnu++11 -Weffc++ -Wzero-as-null-pointer-constan
 # --------------------------------------------------------------
 
 PEDANTIC_CXX_FLAGS  = $(BASE_FLAGS)
-PEDANTIC_CXX_FLAGS += -std=c++11 -pedantic -pedantic-errors -Weffc++
+PEDANTIC_CXX_FLAGS += -std=c++11 -pedantic -pedantic-errors
 PEDANTIC_CXX_FLAGS += -isystem /opt/kxstudio/include
-PEDANTIC_CXX_FLAGS += -Wno-vla -Wno-vla-extension
+PEDANTIC_CXX_FLAGS += -Weffc++ -Wno-vla
 ifeq ($(CC),clang-3.4)
 PEDANTIC_CXX_FLAGS += -Wno-vla-extension
 else
@@ -79,8 +79,7 @@ CarlaUtils1: CarlaUtils1.cpp ../utils/*.hpp
 
 CarlaUtils2: CarlaUtils2.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ \
-		 ../modules/juce_core.a ../modules/lilv.a -ldl -lpthread -lrt \
-		 $(shell pkg-config --cflags --libs QtCore) -isystem /usr/include/qt4
+		 ../modules/juce_core.a ../modules/lilv.a -ldl -lpthread -lrt
 	valgrind --leak-check=full ./$@
 
 CarlaUtils3: CarlaUtils3.cpp ../utils/*.hpp
@@ -89,8 +88,7 @@ CarlaUtils3: CarlaUtils3.cpp ../utils/*.hpp
 
 CarlaUtils4: CarlaUtils4.cpp ../utils/CarlaStateUtils.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ \
-		../modules/juce_core.a -ldl -lpthread -lrt \
-		$(shell pkg-config --cflags --libs QtCore) -isystem /usr/include/qt4
+		../modules/juce_core.a -ldl -lpthread -lrt
 	valgrind --leak-check=full ./$@
 
 Exceptions: Exceptions.cpp
