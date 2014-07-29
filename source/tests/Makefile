@@ -23,12 +23,12 @@ ANSI_FLAGS += -ansi -pedantic -pedantic-errors -Waggregate-return
 # --------------------------------------------------------------
 
 GNU_CXX_FLAGS  = $(BASE_FLAGS)
-GNU_CXX_FLAGS += -std=c++11 -std=gnu++11 -Wzero-as-null-pointer-constant
+GNU_CXX_FLAGS += -std=c++11 -std=gnu++11 -Weffc++ -Wzero-as-null-pointer-constant
 
 # --------------------------------------------------------------
 
 PEDANTIC_CXX_FLAGS  = $(BASE_FLAGS)
-PEDANTIC_CXX_FLAGS += -std=c++11 -pedantic -pedantic-errors
+PEDANTIC_CXX_FLAGS += -std=c++11 -pedantic -pedantic-errors -Weffc++
 PEDANTIC_CXX_FLAGS += -isystem /opt/kxstudio/include
 PEDANTIC_CXX_FLAGS += -Wno-vla -Wno-vla-extension
 ifeq ($(CC),clang-3.4)

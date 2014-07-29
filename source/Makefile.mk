@@ -113,7 +113,7 @@ BASE_FLAGS += -Wlogical-op
 endif
 endif
 CFLAGS     += -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes
-CXXFLAGS   += -Wnon-virtual-dtor -Woverloaded-virtual
+CXXFLAGS   += -Weffc++ -Wnon-virtual-dtor -Woverloaded-virtual
 ifeq ($(LINUX),true)
 CFLAGS     += -isystem /opt/kxstudio/include
 CXXFLAGS   += -isystem /opt/kxstudio/include
