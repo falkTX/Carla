@@ -1353,7 +1353,7 @@ typedef struct {
     {
         return value * (max - min) + min;
     }
-#endif // __cplusplus
+#endif /* __cplusplus */
 
 } ParameterRanges;
 
