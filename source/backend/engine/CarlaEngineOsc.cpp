@@ -41,8 +41,15 @@ extern int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBr
 
 CarlaEngineOsc::CarlaEngineOsc(CarlaEngine* const engine) noexcept
     : fEngine(engine),
+#ifndef BUILD_BRIDGE
+      fControlData(),
+#endif
+      fName(),
+      fServerPathTCP(),
+      fServerPathUDP(),
       fServerTCP(nullptr),
-      fServerUDP(nullptr)
+      fServerUDP(nullptr),
+      leakDetector()
 {
     CARLA_SAFE_ASSERT(engine != nullptr);
     carla_debug("CarlaEngineOsc::CarlaEngineOsc(%p)", engine);
