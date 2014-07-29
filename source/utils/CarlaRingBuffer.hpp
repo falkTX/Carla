@@ -75,6 +75,9 @@ struct BigStackBuffer {
     uint8_t  buf[size];
 };
 
+#define HeapBuffer_INIT  {0, 0, 0, 0, false, nullptr}
+#define StackBuffer_INIT {0, 0, 0, false, {0}}
+
 // -----------------------------------------------------------------------
 // CarlaRingBuffer templated class
 
@@ -85,12 +88,9 @@ public:
     CarlaRingBuffer() noexcept
         : fBuffer(nullptr) {}
 
-    CarlaRingBuffer(BufferStruct* const ringBuf) noexcept
-        : fBuffer(ringBuf)
-    {
-        if (ringBuf != nullptr)
-            clear();
-    }
+    virtual ~CarlaRingBuffer() noexcept {}
+
+    // -------------------------------------------------------------------
 
     void clear() noexcept
     {
@@ -376,7 +376,7 @@ protected:
 private:
     BufferStruct* fBuffer;
 
-    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(CarlaRingBuffer)
 };
 
@@ -387,12 +387,9 @@ class CarlaHeapRingBuffer : public CarlaRingBuffer<HeapBuffer>
 {
 public:
     CarlaHeapRingBuffer() noexcept
-        : CarlaRingBuffer<HeapBuffer>()
-    {
-        carla_zeroStruct(fHeapBuffer);
-    }
+        : fHeapBuffer(HeapBuffer_INIT) {}
 
-    ~CarlaHeapRingBuffer() noexcept
+    ~CarlaHeapRingBuffer() noexcept override
     {
         if (fHeapBuffer.buf == nullptr)
             return;
@@ -430,7 +427,7 @@ public:
 private:
     HeapBuffer fHeapBuffer;
 
-    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(CarlaHeapRingBuffer)
 };
 
@@ -441,12 +438,15 @@ class CarlaStackRingBuffer : public CarlaRingBuffer<StackBuffer>
 {
 public:
     CarlaStackRingBuffer() noexcept
-        : CarlaRingBuffer<StackBuffer>(&fStackBuffer) {}
+        : fStackBuffer(StackBuffer_INIT)
+    {
+        setRingBuffer(&fStackBuffer, true); // FIXME
+    }
 
 private:
     StackBuffer fStackBuffer;
 
-    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(CarlaStackRingBuffer)
 };
 

@@ -209,6 +209,17 @@ private:                               \
     static void operator delete(void*);
 #endif
 
+/* Define CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION */
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+# define CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION  \
+private:                                        \
+    static void* operator new(size_t) = delete;
+#else
+# define CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION  \
+private:                                        \
+    static void* operator new(size_t);
+#endif
+
 /* Define EXTERN_C */
 #ifdef __cplusplus
 # define EXTERN_C extern "C"
