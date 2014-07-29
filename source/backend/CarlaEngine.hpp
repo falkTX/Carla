@@ -241,6 +241,7 @@ struct EngineOptions {
 #ifndef DOXYGEN
     EngineOptions() noexcept;
     ~EngineOptions() noexcept;
+    CARLA_DECLARE_NON_COPY_STRUCT(EngineOptions)
 #endif
 };
 

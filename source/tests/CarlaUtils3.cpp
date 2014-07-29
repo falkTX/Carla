@@ -30,7 +30,7 @@
 class LeakTestClass
 {
 public:
-    LeakTestClass()noexcept
+    LeakTestClass() noexcept
         : i(0) {}
 
 private:

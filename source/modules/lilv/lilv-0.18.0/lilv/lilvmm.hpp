@@ -17,6 +17,8 @@
 #ifndef LILV_LILVMM_HPP
 #define LILV_LILVMM_HPP
 
+#include "CarlaDefines.h"
+
 #include "lilv/lilv.h"
 
 #if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1)
@@ -97,6 +99,12 @@ struct Node {
 	LILV_WRAP0_CONST(bool,        node, is_bool);
 	LILV_WRAP0_CONST(bool,        node, as_bool);
 
+	Node& operator=(const Node& copy) {
+		lilv_node_free(me);
+		me = lilv_node_duplicate(copy.me);
+		return *this;
+	}
+
 	LilvNode* me;
 };
 
@@ -108,6 +116,8 @@ struct ScalePoint {
 	LILV_WRAP0(const LilvNode*, scale_point, get_value);
 
 	const LilvScalePoint* me;
+
+	//CARLA_DECLARE_NON_COPY_STRUCT(ScalePoint)
 };
 
 struct PluginClass {
@@ -120,6 +130,8 @@ struct PluginClass {
 	LILV_WRAP0(LilvPluginClasses*, plugin_class, get_children);
 
 	const LilvPluginClass* me;
+
+	//CARLA_DECLARE_NON_COPY_STRUCT(PluginClass)
 };
 
 #define LILV_WRAP_COLL(CT, ET, prefix) \
@@ -165,6 +177,8 @@ struct UI {
 	LILV_WRAP0(Nodes, ui, get_extension_data);
 
 	const LilvUI* me;
+
+	//CARLA_DECLARE_NON_COPY_STRUCT(UI)
 };
 
 struct UIs {
@@ -198,6 +212,8 @@ struct Port {
 
 	const LilvPlugin* parent;
 	const LilvPort*   me;
+
+	//CARLA_DECLARE_NON_COPY_STRUCT(Port)
 };
 
 struct Plugin {
@@ -254,6 +270,8 @@ struct Plugin {
 	}
 
 	const LilvPlugin* me;
+
+	//CARLA_DECLARE_NON_COPY_STRUCT(Plugin)
 };
 
 struct Plugins {
@@ -265,15 +283,13 @@ struct Instance {
 	inline Instance(LilvInstance* instance) : me(instance) {}
 
 	LILV_DEPRECATED
-	inline Instance(Plugin plugin, double sample_rate) {
-		me = lilv_plugin_instantiate(plugin, sample_rate, nullptr);
-	}
+	inline Instance(Plugin plugin, double sample_rate)
+		: me(lilv_plugin_instantiate(plugin, sample_rate, nullptr)) {}
 
 	LILV_DEPRECATED inline Instance(Plugin              plugin,
 	                                double              sample_rate,
-	                                LV2_Feature* const* features) {
-		me = lilv_plugin_instantiate(plugin, sample_rate, features);
-	}
+	                                LV2_Feature* const* features)
+		me(lilv_plugin_instantiate(plugin, sample_rate, features)) {}
 
 	static inline Instance* create(Plugin              plugin,
 	                               double              sample_rate,
@@ -307,11 +323,13 @@ struct Instance {
 	}
 
 	LilvInstance* me;
+
+	//CARLA_DECLARE_NON_COPY_STRUCT(Instance)
 };
 
 struct World {
-	inline World() : me(lilv_world_new()) {}
-	inline ~World() { lilv_world_free(me); }
+	inline          World() : me(lilv_world_new()) {}
+	inline virtual ~World() { lilv_world_free(me); }
 
 	inline LilvNode* new_uri(const char* uri) const {
 		return lilv_new_uri(me, uri);
@@ -343,6 +361,8 @@ struct World {
 	LILV_WRAP1(int, world, load_resource, const LilvNode*, resource);
 
 	LilvWorld* me;
+
+	CARLA_DECLARE_NON_COPY_STRUCT(World)
 };
 
 } /* namespace Lilv */

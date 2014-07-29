@@ -48,22 +48,6 @@
 #endif
 
 // -----------------------------------------------------------------------
-// Declare non copyable and prevent heap allocation
-
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-# define LINKED_LIST_DECLARATIONS(ClassName)         \
-    ClassName(ClassName&) = delete;                  \
-    ClassName(const ClassName&) = delete;            \
-    ClassName& operator=(const ClassName&) = delete; \
-    static void* operator new(size_t) = delete;
-#else
-# define LINKED_LIST_DECLARATIONS(ClassName) \
-    ClassName(ClassName&);                   \
-    ClassName(const ClassName&);             \
-    ClassName& operator=(const ClassName&);
-#endif
-
-// -----------------------------------------------------------------------
 // Abstract Linked List class
 // _allocate() and _deallocate are virtual calls provided by subclasses
 
@@ -85,10 +69,9 @@ protected:
 
     AbstractLinkedList(const bool isClass) noexcept
         : kIsClass(isClass),
-          kDataSize(sizeof(Data))
-    {
-        _init();
-    }
+          kDataSize(sizeof(Data)),
+          fCount(0),
+          fQueue({&fQueue, &fQueue}) {}
 
 public:
     virtual ~AbstractLinkedList() noexcept
@@ -384,9 +367,10 @@ private:
     void _createData(Data* const data, const T& value) noexcept
     {
         if (kIsClass)
-            new(data)Data();
+            new(data)Data({value, {nullptr, nullptr}});
+        else
+            data->value = value;
 
-        data->value = value;
         ++fCount;
     }
 
@@ -397,9 +381,9 @@ private:
             _createData(data, value);
 
             if (inTail)
-                __list_add(&data->siblings, queue->prev, queue);
+                __list_add(data->siblings, queue->prev, queue);
             else
-                __list_add(&data->siblings, queue, queue->next);
+                __list_add(data->siblings, queue, queue->next);
 
             return true;
         }
@@ -454,12 +438,12 @@ private:
    /*
     * Insert a new entry between two known consecutive entries.
     */
-    static void __list_add(ListHead* const new_, ListHead* const prev, ListHead* const next) noexcept
+    static void __list_add(ListHead& new_, ListHead* const prev, ListHead* const next) noexcept
     {
-        next->prev = new_;
-        new_->next = next;
-        new_->prev = prev;
-        prev->next = new_;
+        next->prev = &new_;
+        new_.next  = next;
+        new_.prev  = prev;
+        prev->next = &new_;
     }
 
    /*
@@ -500,7 +484,8 @@ private:
 
     template<typename> friend class RtLinkedList;
 
-    LINKED_LIST_DECLARATIONS(AbstractLinkedList)
+    CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_CLASS(AbstractLinkedList)
 };
 
 // -----------------------------------------------------------------------
@@ -526,7 +511,8 @@ protected:
         std::free(dataPtr);
     }
 
-    LINKED_LIST_DECLARATIONS(LinkedList)
+    CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_CLASS(LinkedList)
 };
 
 // -----------------------------------------------------------------------

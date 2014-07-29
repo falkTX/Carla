@@ -429,7 +429,7 @@ public:
         return cState;
     }
 
-    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
 };
 
 // -----------------------------------------------------------------------

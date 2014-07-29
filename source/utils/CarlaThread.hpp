@@ -37,11 +37,14 @@ protected:
      * Constructor.
      */
     CarlaThread(const char* const threadName = nullptr) noexcept
-        : fName(threadName),
-          fShouldExit(false)
-    {
-        _init();
-    }
+        : fLock(),
+          fName(threadName),
+#ifdef PTW32_DLLPORT
+          fHandle(nullptr, 0)
+#else
+          fHandle(0),
+#endif
+          fShouldExit(false) {}
 
     /*
      * Destructor.

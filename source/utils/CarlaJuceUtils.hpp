@@ -96,9 +96,7 @@ private:
     {
     public:
         LeakCounter() noexcept
-        {
-            numObjects = 0;
-        }
+            : numObjects(0) {}
 
         ~LeakCounter() noexcept
         {

@@ -66,7 +66,8 @@ struct PatchbayGroupList {
     LinkedList<GroupNameToId> list;
 
     PatchbayGroupList() noexcept
-        : lastId(0) {}
+        : lastId(0),
+          list() {}
 
     void clear() noexcept
     {
@@ -159,7 +160,8 @@ struct PatchbayPortList {
     LinkedList<PortNameToId> list;
 
     PatchbayPortList() noexcept
-        : lastId(0) {}
+        : lastId(0),
+          list() {}
 
     void clear() noexcept
     {
@@ -247,7 +249,8 @@ struct PatchbayConnectionList {
     LinkedList<ConnectionToId> list;
 
     PatchbayConnectionList() noexcept
-        : lastId(0) {}
+        : lastId(0),
+          list() {}
 
     void clear() noexcept
     {

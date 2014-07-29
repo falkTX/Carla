@@ -56,6 +56,9 @@ public:
 
 private:
     const magic_t fMagic;
+
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_STRUCT(CarlaMagic)
 };
 
 static const CarlaMagic& getCarlaMagicInstance()
