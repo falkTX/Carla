@@ -40,20 +40,20 @@ public:
      * Empty string.
      */
     explicit CarlaString() noexcept
-    {
-        _init();
-    }
+        : fBuffer(_null()),
+          fBufferLen(0) {}
 
     /*
      * Simple character.
      */
     explicit CarlaString(const char c) noexcept
+        : fBuffer(_null()),
+          fBufferLen(0)
     {
         char ch[2];
         ch[0] = c;
         ch[1] = '\0';
 
-        _init();
         _dup(ch);
     }
 
@@ -61,8 +61,9 @@ public:
      * Simple char string.
      */
     explicit CarlaString(char* const strBuf) noexcept
+        : fBuffer(_null()),
+          fBufferLen(0)
     {
-        _init();
         _dup(strBuf);
     }
 
@@ -70,8 +71,9 @@ public:
      * Simple const char string.
      */
     explicit CarlaString(const char* const strBuf) noexcept
+        : fBuffer(_null()),
+          fBufferLen(0)
     {
-        _init();
         _dup(strBuf);
     }
 
@@ -79,12 +81,13 @@ public:
      * Integer.
      */
     explicit CarlaString(const int value) noexcept
+        : fBuffer(_null()),
+          fBufferLen(0)
     {
         char strBuf[0xff+1];
         std::snprintf(strBuf, 0xff, "%d", value);
         strBuf[0xff] = '\0';
 
-        _init();
         _dup(strBuf);
     }
 
@@ -92,12 +95,13 @@ public:
      * Unsigned integer, possibly in hexadecimal.
      */
     explicit CarlaString(const unsigned int value, const bool hexadecimal = false) noexcept
+        : fBuffer(_null()),
+          fBufferLen(0)
     {
         char strBuf[0xff+1];
         std::snprintf(strBuf, 0xff, hexadecimal ? "0x%x" : "%u", value);
         strBuf[0xff] = '\0';
 
-        _init();
         _dup(strBuf);
     }
 
@@ -105,12 +109,13 @@ public:
      * Long integer.
      */
     explicit CarlaString(const long value) noexcept
+        : fBuffer(_null()),
+          fBufferLen(0)
     {
         char strBuf[0xff+1];
         std::snprintf(strBuf, 0xff, "%ld", value);
         strBuf[0xff] = '\0';
 
-        _init();
         _dup(strBuf);
     }
 
@@ -118,12 +123,13 @@ public:
      * Long unsigned integer, possibly hexadecimal.
      */
     explicit CarlaString(const unsigned long value, const bool hexadecimal = false) noexcept
+        : fBuffer(_null()),
+          fBufferLen(0)
     {
         char strBuf[0xff+1];
         std::snprintf(strBuf, 0xff, hexadecimal ? "0x%lx" : "%lu", value);
         strBuf[0xff] = '\0';
 
-        _init();
         _dup(strBuf);
     }
 
@@ -131,12 +137,13 @@ public:
      * Long long integer.
      */
     explicit CarlaString(const long long value) noexcept
+        : fBuffer(_null()),
+          fBufferLen(0)
     {
         char strBuf[0xff+1];
         std::snprintf(strBuf, 0xff, "%lld", value);
         strBuf[0xff] = '\0';
 
-        _init();
         _dup(strBuf);
     }
 
@@ -144,12 +151,13 @@ public:
      * Long long unsigned integer, possibly hexadecimal.
      */
     explicit CarlaString(const unsigned long long value, const bool hexadecimal = false) noexcept
+        : fBuffer(_null()),
+          fBufferLen(0)
     {
         char strBuf[0xff+1];
         std::snprintf(strBuf, 0xff, hexadecimal ? "0x%llx" : "%llu", value);
         strBuf[0xff] = '\0';
 
-        _init();
         _dup(strBuf);
     }
 
@@ -157,12 +165,13 @@ public:
      * Single-precision floating point number.
      */
     explicit CarlaString(const float value) noexcept
+        : fBuffer(_null()),
+          fBufferLen(0)
     {
         char strBuf[0xff+1];
         std::snprintf(strBuf, 0xff, "%f", value);
         strBuf[0xff] = '\0';
 
-        _init();
         _dup(strBuf);
     }
 
@@ -170,12 +179,13 @@ public:
      * Double-precision floating point number.
      */
     explicit CarlaString(const double value) noexcept
+        : fBuffer(_null()),
+          fBufferLen(0)
     {
         char strBuf[0xff+1];
         std::snprintf(strBuf, 0xff, "%g", value);
         strBuf[0xff] = '\0';
 
-        _init();
         _dup(strBuf);
     }
 
@@ -186,8 +196,9 @@ public:
      * Create string from another string.
      */
     CarlaString(const CarlaString& str) noexcept
+        : fBuffer(_null()),
+          fBufferLen(0)
     {
-        _init();
         _dup(str.fBuffer);
     }
 
@@ -751,16 +762,6 @@ private:
     }
 
     /*
-     * Shared init function.
-     * Called on all constructors.
-     */
-    void _init() noexcept
-    {
-        fBuffer    = _null();
-        fBufferLen = 0;
-    }
-
-    /*
      * Helper function.
      * Called whenever the string needs to be allocated.
      *
@@ -783,7 +784,11 @@ private:
             fBuffer    = (char*)std::malloc(fBufferLen+1);
 
             if (fBuffer == nullptr)
-                return _init();
+            {
+                fBuffer    = _null();
+                fBufferLen = 0;
+                return;
+            }
 
             std::strcpy(fBuffer, strBuf);
 
@@ -800,7 +805,8 @@ private:
             CARLA_SAFE_ASSERT(fBuffer != nullptr);
             std::free(fBuffer);
 
-            _init();
+            fBuffer    = _null();
+            fBufferLen = 0;
         }
     }
 
