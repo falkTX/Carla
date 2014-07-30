@@ -11,9 +11,20 @@ fi
 export MACOS="true"
 export CC=clang
 export CXX=clang++
-export CXFREEZE=/opt/carla/bin/cxfreeze
+export CXFREEZE="/opt/carla/bin/cxfreeze --include-modules=re,sip,subprocess,inspect"
 
-# Build python stuff
+unset CFLAGS
+unset CXXFLAGS
+unset LDLAGS
+
+export PATH=/opt/carla/bin:/opt/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+export PKG_CONFIG_PATH=/opt/carla/lib/pkgconfig:/opt/carla64/lib/pkgconfig
+
+make libs
+
+exit
+
+# Build 32bit bridges
 export PATH=/opt/carla/bin:/opt/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=/opt/carla/lib/pkgconfig:/opt/carla64/lib/pkgconfig
 
@@ -42,14 +53,14 @@ rm -rf ./build ./build-lv2
 
 cp ./source/carla ./source/Carla.pyw
 python3 ./data/macos/bundle.py bdist_mac --bundle-name=Carla
-rm ./source/*.pyw
+rm ./source/Carla.pyw
 
 cp ./source/carla-plugin                                 ./source/carla-plugin.pyw
 cp ./source/modules/native-plugins/resources/bigmeter-ui ./source/bigmeter-ui.pyw
 cp ./source/modules/native-plugins/resources/notes-ui    ./source/notes-ui.pyw
-$CXFREEZE --include-modules=re,sip,subprocess,inspect --target-dir=./build/plugin/ ./source/carla-plugin.pyw
-$CXFREEZE --include-modules=re,sip,subprocess,inspect --target-dir=./build/plugin/ ./source/bigmeter-ui.pyw
-$CXFREEZE --include-modules=re,sip,subprocess,inspect --target-dir=./build/plugin/ ./source/notes-ui.pyw
+$CXFREEZE --target-dir=./build/plugin/ ./source/carla-plugin.pyw
+$CXFREEZE --target-dir=./build/plugin/ ./source/bigmeter-ui.pyw
+$CXFREEZE --target-dir=./build/plugin/ ./source/notes-ui.pyw
 rm ./source/*.pyw
 
 cd build

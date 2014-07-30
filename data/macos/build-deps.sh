@@ -146,70 +146,6 @@ export CC=clang
 export CXX=clang
 
 # ------------------------------------------------------------------------------------
-# qt5-base download
-
-if [ ! -d qtbase-opensource-src-5.3.0 ]; then
-curl -L http://download.qt-project.org/official_releases/qt/5.3/5.3.0/submodules/qtbase-opensource-src-5.3.0.tar.gz -o qtbase-opensource-src-5.3.0.tar.gz
-tar -xf qtbase-opensource-src-5.3.0.tar.gz
-fi
-
-# ------------------------------------------------------------------------------------
-# qt5-base 32bit (minimal, static)
-
-if [ ! -f qtbase-opensource-src-5.3.0_32/build-done ]; then
-export CFLAGS="-O2 -mtune=generic -msse -msse2 -m32 -fPIC -DPIC"
-export CXXFLAGS=$CFLAGS
-export LDFLAGS="-m32"
-export PREFIX=/opt/carla32
-export PATH=$PREFIX/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
-export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
-cp -r qtbase-opensource-src-5.3.0 qtbase-opensource-src-5.3.0_32
-cd qtbase-opensource-src-5.3.0_32
-export CFG_ARCH=i386
-export QMAKESPEC=macx-clang-32
-./configure -release -static -opensource -confirm-license -force-pkg-config -platform macx-clang-32 \
-            -prefix $PREFIX -plugindir $PREFIX/lib/qt5/plugins -headerdir $PREFIX/include/qt5 \
-            -qt-freetype -qt-libjpeg -qt-libpng -qt-pcre -qt-sql-sqlite -qt-zlib -opengl no -qpa cocoa \
-            -no-directfb -no-eglfs -no-kms -no-linuxfb -no-mtdev -no-xcb -no-xcb-xlib \
-            -no-sse3 -no-ssse3 -no-sse4.1 -no-sse4.2 -no-avx -no-avx2 -no-mips_dsp -no-mips_dspr2 \
-            -no-cups -no-dbus -no-evdev -no-fontconfig -no-harfbuzz -no-iconv -no-icu -no-gif -no-glib -no-nis -no-openssl -no-pch -no-sql-ibase -no-sql-odbc \
-            -no-audio-backend -no-qml-debug -no-separate-debug-info \
-            -no-compile-examples -no-framework -no-gui -no-widgets -nomake examples -nomake tests -nomake tools -make libs
-make -j 2
-sudo make install
-touch build-done
-cd ..
-fi
-
-# ------------------------------------------------------------------------------------
-# qt5-base 64bit (minimal, static)
-
-if [ ! -f qtbase-opensource-src-5.3.0_64/build-done ]; then
-export CFLAGS="-O2 -mtune=generic -msse -msse2 -m64 -fPIC -DPIC"
-export CXXFLAGS=$CFLAGS
-export LDFLAGS="-m64"
-export PREFIX=/opt/carla64
-export PATH=$PREFIX/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
-export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
-cp -r qtbase-opensource-src-5.3.0 qtbase-opensource-src-5.3.0_64
-cd qtbase-opensource-src-5.3.0_64
-export CFG_ARCH=x86_64
-export QMAKESPEC=macx-clang
-./configure -release -static -opensource -confirm-license -force-pkg-config -platform macx-clang \
-            -prefix $PREFIX -plugindir $PREFIX/lib/qt5/plugins -headerdir $PREFIX/include/qt5 \
-            -qt-freetype -qt-libjpeg -qt-libpng -qt-pcre -qt-sql-sqlite -qt-zlib -opengl no -qpa cocoa \
-            -no-directfb -no-eglfs -no-kms -no-linuxfb -no-mtdev -no-xcb -no-xcb-xlib \
-            -no-sse3 -no-ssse3 -no-sse4.1 -no-sse4.2 -no-avx -no-avx2 -no-mips_dsp -no-mips_dspr2 \
-            -no-cups -no-dbus -no-evdev -no-fontconfig -no-harfbuzz -no-iconv -no-icu -no-gif -no-glib -no-nis -no-openssl -no-pch -no-sql-ibase -no-sql-odbc \
-            -no-audio-backend -no-qml-debug -no-separate-debug-info \
-            -no-compile-examples -no-framework -no-gui -no-widgets -nomake examples -nomake tests -nomake tools -make libs
-make -j 2
-sudo make install
-touch build-done
-cd ..
-fi
-
-# ------------------------------------------------------------------------------------
 # set flags for qt stuff
 
 export CFLAGS="-O2 -mtune=generic -msse -msse2 -m64 -fPIC -DPIC"
@@ -226,16 +162,16 @@ export QMAKESPEC=macx-clang
 # ------------------------------------------------------------------------------------
 # qt5-base download (5.2.1 for now)
 
-if [ ! -d qtbase-opensource-src-5.2.1 ]; then
-curl -L http://download.qt-project.org/official_releases/qt/5.2/5.2.1/submodules/qtbase-opensource-src-5.2.1.tar.gz -o qtbase-opensource-src-5.2.1.tar.gz
-tar -xf qtbase-opensource-src-5.2.1.tar.gz
+if [ ! -d qtbase-opensource-src-5.3.1 ]; then
+curl -L http://download.qt-project.org/official_releases/qt/5.3/5.3.1/submodules/qtbase-opensource-src-5.3.1.tar.gz -o qtbase-opensource-src-5.3.1.tar.gz
+tar -xf qtbase-opensource-src-5.3.1.tar.gz
 fi
 
 # ------------------------------------------------------------------------------------
 # qt5-base (regular, 64bit, shared, framework)
 
-if [ ! -f qtbase-opensource-src-5.2.1/build-done ]; then
-cd qtbase-opensource-src-5.2.1
+if [ ! -f qtbase-opensource-src-5.3.1/build-done ]; then
+cd qtbase-opensource-src-5.3.1
 ./configure -release -shared -opensource -confirm-license -force-pkg-config -platform macx-clang -framework \
             -prefix $PREFIX -plugindir $PREFIX/lib/qt5/plugins -headerdir $PREFIX/include/qt5 \
             -qt-freetype -qt-libjpeg -qt-libpng -qt-pcre -qt-sql-sqlite -qt-zlib -opengl desktop -qpa cocoa \
@@ -256,13 +192,13 @@ fi
 # ------------------------------------------------------------------------------------
 # qt5-mac-extras
 
-if [ ! -d qtmacextras-opensource-src-5.2.1 ]; then
-curl -L http://download.qt-project.org/official_releases/qt/5.2/5.2.1/submodules/qtmacextras-opensource-src-5.2.1.tar.gz -o qtmacextras-opensource-src-5.2.1.tar.gz
-tar -xf qtmacextras-opensource-src-5.2.1.tar.gz
+if [ ! -d qtmacextras-opensource-src-5.3.1 ]; then
+curl -L http://download.qt-project.org/official_releases/qt/5.3/5.3.1/submodules/qtmacextras-opensource-src-5.3.1.tar.gz -o qtmacextras-opensource-src-5.3.1.tar.gz
+tar -xf qtmacextras-opensource-src-5.3.1.tar.gz
 fi
 
-if [ ! -f qtmacextras-opensource-src-5.2.1/build-done ]; then
-cd qtmacextras-opensource-src-5.2.1
+if [ ! -f qtmacextras-opensource-src-5.3.1/build-done ]; then
+cd qtmacextras-opensource-src-5.3.1
 qmake
 make -j 2
 sudo make install
@@ -273,13 +209,13 @@ fi
 # ------------------------------------------------------------------------------------
 # qt5-svg
 
-if [ ! -d qtsvg-opensource-src-5.2.1 ]; then
-curl -L http://download.qt-project.org/official_releases/qt/5.2/5.2.1/submodules/qtsvg-opensource-src-5.2.1.tar.gz -o qtsvg-opensource-src-5.2.1.tar.gz
-tar -xf qtsvg-opensource-src-5.2.1.tar.gz
+if [ ! -d qtsvg-opensource-src-5.3.1 ]; then
+curl -L http://download.qt-project.org/official_releases/qt/5.3/5.3.1/submodules/qtsvg-opensource-src-5.3.1.tar.gz -o qtsvg-opensource-src-5.3.1.tar.gz
+tar -xf qtsvg-opensource-src-5.3.1.tar.gz
 fi
 
-if [ ! -f qtsvg-opensource-src-5.2.1/build-done ]; then
-cd qtsvg-opensource-src-5.2.1
+if [ ! -f qtsvg-opensource-src-5.3.1/build-done ]; then
+cd qtsvg-opensource-src-5.3.1
 qmake
 make -j 2
 sudo make install
@@ -290,13 +226,13 @@ fi
 # ------------------------------------------------------------------------------------
 # python
 
-if [ ! -d Python-3.3.5 ]; then
-curl -O https://www.python.org/ftp/python/3.3.5/Python-3.3.5.tgz
-tar -xf Python-3.3.5.tgz
+if [ ! -d Python-3.4.1 ]; then
+curl -O https://www.python.org/ftp/python/3.4.1/Python-3.4.1.tgz
+tar -xf Python-3.4.1.tgz
 fi
 
-if [ ! -f Python-3.3.5/build-done ]; then
-cd Python-3.3.5
+if [ ! -f Python-3.4.1/build-done ]; then
+cd Python-3.4.1
 ./configure --prefix=$PREFIX
 make
 sudo make install
@@ -307,13 +243,13 @@ fi
 # ------------------------------------------------------------------------------------
 # sip
 
-if [ ! -d sip-4.15.5 ]; then
-curl -L http://sourceforge.net/projects/pyqt/files/sip/sip-4.15.5/sip-4.15.5.tar.gz -o sip-4.15.5.tar.gz
-tar -xf sip-4.15.5.tar.gz
+if [ ! -d sip-4.16.2 ]; then
+curl -L http://sourceforge.net/projects/pyqt/files/sip/sip-4.16.2/sip-4.16.2.tar.gz -o sip-4.16.2.tar.gz
+tar -xf sip-4.16.2.tar.gz
 fi
 
-if [ ! -f sip-4.15.5/build-done ]; then
-cd sip-4.15.5
+if [ ! -f sip-4.16.2/build-done ]; then
+cd sip-4.16.2
 python3 configure.py
 make
 sudo make install
@@ -324,13 +260,13 @@ fi
 # ------------------------------------------------------------------------------------
 # pyqt5
 
-if [ ! -d PyQt-gpl-5.2.1 ]; then
-curl -L http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.2.1/PyQt-gpl-5.2.1.tar.gz -o PyQt-gpl-5.2.1.tar.gz
-tar -xf PyQt-gpl-5.2.1.tar.gz
+if [ ! -d PyQt-gpl-5.3.1 ]; then
+curl -L http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.3.1/PyQt-gpl-5.3.1.tar.gz -o PyQt-gpl-5.3.1.tar.gz
+tar -xf PyQt-gpl-5.3.1.tar.gz
 fi
 
-if [ ! -f PyQt-gpl-5.2.1/build-done ]; then
-cd PyQt-gpl-5.2.1
+if [ ! -f PyQt-gpl-5.3.1/build-done ]; then
+cd PyQt-gpl-5.3.1
 python3 configure.py --confirm-license
 make
 sudo make install
