@@ -77,7 +77,7 @@ juce_data_structures.cpp.%64.o: $(CPP_DEPS)
 
 # --------------------------------------------------------------
 
-MM_DEPS = juce_data_structures.mm juce_data_structures.h AppConfig.h */*.mm */*.cpp */*.h
+MM_DEPS = juce_data_structures.mm juce_data_structures.h AppConfig.h */*.cpp */*.h
 
 juce_data_structures.mm.o: $(MM_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@

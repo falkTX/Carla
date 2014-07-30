@@ -97,6 +97,12 @@
 # define P_INTPTR  "%i"
 # define P_UINTPTR "%x"
 # define P_SIZE    "%u"
+#elif defined(CARLA_OS_MAC) && defined(__LP64__)
+# define P_INT64   "%lli"
+# define P_UINT64  "%llu"
+# define P_INTPTR  "%li"
+# define P_UINTPTR "%lx"
+# define P_SIZE    "%lu"
 #elif defined(__WORDSIZE) && __WORDSIZE == 64
 # define P_INT64   "%li"
 # define P_UINT64  "%lu"

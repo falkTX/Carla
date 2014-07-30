@@ -21,6 +21,7 @@
 #if (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaMathUtils.hpp"
 #include "JucePluginWindow.hpp"
 
 #include "juce_audio_processors.h"

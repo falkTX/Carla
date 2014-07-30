@@ -51,11 +51,14 @@ endif
 # Common build and link flags
 
 BASE_FLAGS = -Wall -Wextra -pipe -DREAL_BUILD
-BASE_OPTS  = -O2 -ffast-math -mtune=generic -msse -msse2 -mfpmath=sse -fdata-sections -ffunction-sections
+BASE_OPTS  = -O2 -ffast-math -mtune=generic -msse -msse2 -fdata-sections -ffunction-sections
 LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,-O1 -Wl,--as-needed -Wl,--gc-sections
 # LINK_OPTS += -Wl,--strip-all
 
-ifeq ($(MACOS),true)
+ifneq ($(MACOS),true)
+# MacOS doesn't support this
+BASE_OPTS += -mfpmath=sse
+else
 # MacOS linker flags
 LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,-dead_strip -Wl,-dead_strip_dylibs
 endif
@@ -148,8 +151,6 @@ ifneq ($(MACOS_OR_WIN32),true)
 HAVE_FFMPEG     = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
 HAVE_GTK2       = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3       = $(shell pkg-config --exists gtk+-3.0 && echo true)
-HAVE_QT4        = $(shell pkg-config --exists QtCore QtGui && echo true)
-HAVE_QT5        = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
 ifeq ($(LINUX),true)
 HAVE_ALSA       = $(shell pkg-config --exists alsa && echo true)
 HAVE_PULSEAUDIO = $(shell pkg-config --exists libpulse-simple && echo true)
@@ -157,6 +158,8 @@ HAVE_X11        = $(shell pkg-config --exists x11 && echo true)
 endif
 endif
 
+HAVE_QT4          = $(shell pkg-config --exists QtCore QtGui && echo true)
+HAVE_QT5          = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
 HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)
 HAVE_LINUXSAMPLER = $(shell pkg-config --exists linuxsampler && echo true)
 

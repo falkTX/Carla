@@ -77,7 +77,7 @@ juce_audio_formats.cpp.%64.o: $(CPP_DEPS)
 
 # --------------------------------------------------------------
 
-MM_DEPS = juce_audio_formats.mm juce_audio_formats.h AppConfig.h */*.mm */*.cpp */*.h
+MM_DEPS = juce_audio_formats.mm juce_audio_formats.h AppConfig.h */*.cpp */*.h
 
 juce_audio_formats.mm.o: $(MM_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@

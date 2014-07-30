@@ -39,10 +39,10 @@ using juce::FloatVectorOperations;
 using juce::String;
 using juce::StringArray;
 
+CARLA_BACKEND_START_NAMESPACE
+
 class CarlaEngineJack;
 class CarlaEngineJackClient;
-
-CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
 // Fallback data
