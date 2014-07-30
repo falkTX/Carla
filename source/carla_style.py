@@ -42,7 +42,6 @@ from carla_shared import *
 class CarlaApplication(object):
     def __init__(self, appName = "Carla2", libPrefix = None):
         object.__init__(self)
-        print("on init")
 
         # try to find styles dir
         stylesDir = ""
