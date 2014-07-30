@@ -42,6 +42,7 @@ from carla_shared import *
 class CarlaApplication(object):
     def __init__(self, appName = "Carla2", libPrefix = None):
         object.__init__(self)
+        print("on init")
 
         # try to find styles dir
         stylesDir = ""
@@ -92,7 +93,7 @@ class CarlaApplication(object):
             QApplication.setFont(customFont)
 
             # fix Qt5 not finding plarform dir on Windows
-            if WINDOWS:
+            if MACOS or WINDOWS:
                 QApplication.addLibraryPath(CWD)
 
         # set style

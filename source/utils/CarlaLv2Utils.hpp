@@ -20,8 +20,10 @@
 
 #include "CarlaUtils.hpp"
 
-#undef NULL
-#define NULL nullptr
+#ifndef nullptr
+# undef NULL
+# define NULL nullptr
+#endif
 
 #include "lv2/lv2.h"
 #include "lv2/atom.h"

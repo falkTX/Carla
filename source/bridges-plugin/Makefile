@@ -161,7 +161,7 @@ LIBS_NATIVE += \
 endif
 
 ../../bin/carla-bridge-native: $(OBJS_NATIVE) $(LIBS_NATIVE)
-	$(CXX) $(OBJS_NATIVE) -Wl,--start-group $(LIBS_NATIVE) -Wl,--end-group $(NATIVE_LINK_FLAGS) -o $@
+	$(CXX) $(OBJS_NATIVE) $(LIBS_START) $(LIBS_NATIVE) $(LIBS_END) $(NATIVE_LINK_FLAGS) -o $@
 
 %__native.o: %.cpp
 	$(CXX) $< $(NATIVE_BUILD_FLAGS) -c -o $@
@@ -219,7 +219,7 @@ LIBS_POSIX32 += \
 endif
 
 ../../bin/carla-bridge-posix32: $(OBJS_POSIX32) $(LIBS_POSIX32)
-	$(CXX) $(OBJS_POSIX32) -Wl,--start-group $(LIBS_POSIX32) -Wl,--end-group $(POSIX_LINK_FLAGS) $(POSIX_32BIT_FLAGS) -o $@
+	$(CXX) $(OBJS_POSIX32) $(LIBS_START) $(LIBS_POSIX32) $(LIBS_END) $(POSIX_LINK_FLAGS) $(POSIX_32BIT_FLAGS) -o $@
 
 %__posix32.o: %.cpp
 	$(CXX) $< $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) -c -o $@
@@ -277,7 +277,7 @@ LIBS_POSIX64 += \
 endif
 
 ../../bin/carla-bridge-posix64: $(OBJS_POSIX64) $(LIBS_POSIX64)
-	$(CXX) $(OBJS_POSIX64) -Wl,--start-group $(LIBS_POSIX64) -Wl,--end-group $(POSIX_LINK_FLAGS) $(POSIX_64BIT_FLAGS) -o $@
+	$(CXX) $(OBJS_POSIX64) $(LIBS_START) $(LIBS_POSIX64) $(LIBS_END) $(POSIX_LINK_FLAGS) $(POSIX_64BIT_FLAGS) -o $@
 
 %__posix64.o: %.cpp
 	$(CXX) $< $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) -c -o $@
@@ -332,7 +332,7 @@ LIBS_WIN32 += \
 	../modules/juce_gui_basics.win32.a
 
 ../../bin/carla-bridge-win32.exe: $(OBJS_WIN32) $(LIBS_WIN32) ../modules/jackbridge-win32.dll
-	$(CXX) $(OBJS_WIN32) -Wl,--start-group $(LIBS_WIN32) -Wl,--end-group $(WIN_LINK_FLAGS) $(WIN_32BIT_FLAGS) -ljackbridge-win32 -o $@
+	$(CXX) $(OBJS_WIN32) $(LIBS_START) $(LIBS_WIN32) $(LIBS_END) $(WIN_LINK_FLAGS) $(WIN_32BIT_FLAGS) -ljackbridge-win32 -o $@
 
 %__win32.o: %.cpp
 	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) -c -o $@
@@ -387,7 +387,7 @@ LIBS_WIN64 += \
 	../modules/juce_gui_basics.win64.a
 
 ../../bin/carla-bridge-win64.exe: $(OBJS_WIN64) $(LIBS_WIN64) ../modules/jackbridge-win64.dll
-	$(CXX) $(OBJS_WIN64) -Wl,--start-group $(LIBS_WIN64) -Wl,--end-group $(WIN_LINK_FLAGS) $(WIN_64BIT_FLAGS) -ljackbridge-win64 -o $@
+	$(CXX) $(OBJS_WIN64) $(LIBS_START) $(LIBS_WIN64) $(LIBS_END) $(WIN_LINK_FLAGS) $(WIN_64BIT_FLAGS) -ljackbridge-win64 -o $@
 
 %__win64.o: %.cpp
 	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) -c -o $@
