@@ -223,7 +223,9 @@ protected:
 
         fClientId = clientId;
 
-        fProjectPath  = projectPath;
+        fProjectPath  = juce::File::getCurrentWorkingDirectory().getFullPathName().toRawUTF8();
+        fProjectPath += OS_SEP_STR;
+        fProjectPath += projectPath;
         fProjectPath += ".carxp";
 
         CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0);
