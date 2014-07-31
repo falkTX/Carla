@@ -25,11 +25,11 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
-    from PyQt5.QtCore import qCritical, QModelIndex, QTimer
+    from PyQt5.QtCore import qCritical, QFileInfo, QModelIndex, QTimer
     from PyQt5.QtGui import QPalette
     from PyQt5.QtWidgets import QApplication, QFileSystemModel, QListWidgetItem, QMainWindow
 else:
-    from PyQt4.QtCore import qCritical, QModelIndex, QTimer
+    from PyQt4.QtCore import qCritical, QFileInfo, QModelIndex, QTimer
     from PyQt4.QtGui import QApplication, QFileSystemModel, QListWidgetItem, QMainWindow, QPalette
 
 # ------------------------------------------------------------------------------------------------------------
@@ -397,7 +397,7 @@ class HostWindow(QMainWindow):
         self.loadProjectNow()
 
     def loadProjectLater(self, filename):
-        self.fProjectFilename = filename
+        self.fProjectFilename = QFileInfo(filename).absoluteFilePath()
         self.setProperWindowTitle()
         QTimer.singleShot(0, self.slot_loadProjectNow)
 
