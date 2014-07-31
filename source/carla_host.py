@@ -788,12 +788,13 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_fileOpen(self):
-        fileFilter  = self.tr("Carla Project File (*.carxp)")
-        filenameTry = QFileDialog.getOpenFileName(self, self.tr("Open Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)
+        fileFilter = self.tr("Carla Project File (*.carxp)")
+        filename   = QFileDialog.getOpenFileName(self, self.tr("Open Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)
 
-        if not filenameTry:
+        if config_UseQt5:
+            filename = filename[0]
+        if not filename:
             return
-        filename = filenameTry if isinstance(filenameTry, str) else filenameTry[0]
 
         newFile = True
 
@@ -818,14 +819,15 @@ class HostWindow(QMainWindow):
         if self.fProjectFilename and not saveAs:
             return self.saveProjectNow()
 
-        fileFilter  = self.tr("Carla Project File (*.carxp)")
-        filenameTry = QFileDialog.getSaveFileName(self, self.tr("Save Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)
+        fileFilter = self.tr("Carla Project File (*.carxp)")
+        filename   = QFileDialog.getSaveFileName(self, self.tr("Save Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)
 
-        if not filenameTry:
+        if config_UseQt5:
+            filename = filename[0]
+        if not filename:
             return
-        filename = filenameTry if isinstance(filenameTry, str) else filenameTry[0]
 
-        if not filename.endswith(".carxp"):
+        if not filename.lower().endswith(".carxp"):
             filename += ".carxp"
 
         if self.fProjectFilename != filename:
@@ -1330,6 +1332,8 @@ def fileCallback(ptr, action, isDir, title, filter):
     elif action == FILE_CALLBACK_SAVE:
         ret = QFileDialog.getSaveFileName(gCarla.gui, charPtrToString(title), "", charPtrToString(filter), QFileDialog.ShowDirsOnly if isDir else 0x0)
 
+    if config_UseQt5:
+        ret = ret[0]
     if not ret:
         return None
 

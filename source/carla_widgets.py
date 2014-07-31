@@ -1094,15 +1094,19 @@ class PluginEdit(QDialog):
 
             self.fCurrentStateFilename = None
 
-        fileFilter  = self.tr("Carla State File (*.carxs)")
-        filenameTry = QFileDialog.getSaveFileName(self, self.tr("Save Plugin State File"), filter=fileFilter)
+        fileFilter = self.tr("Carla State File (*.carxs)")
+        filename   = QFileDialog.getSaveFileName(self, self.tr("Save Plugin State File"), filter=fileFilter)
 
-        if filenameTry:
-            if not filenameTry.lower().endswith(".carxs"):
-                filenameTry += ".carxs"
+        if config_UseQt5:
+            filename = filename[0]
+        if not filename:
+            return
 
-            self.fCurrentStateFilename = filenameTry
-            gCarla.host.save_plugin_state(self.fPluginId, self.fCurrentStateFilename)
+        if not filename.lower().endswith(".carxs"):
+            filename += ".carxs"
+
+        self.fCurrentStateFilename = filename
+        gCarla.host.save_plugin_state(self.fPluginId, self.fCurrentStateFilename)
 
     @pyqtSlot()
     def slot_stateLoad(self):
@@ -1122,12 +1126,16 @@ class PluginEdit(QDialog):
 
             return
 
-        fileFilter  = self.tr("Carla State File (*.carxs)")
-        filenameTry = QFileDialog.getOpenFileName(self, self.tr("Open Plugin State File"), filter=fileFilter)
+        fileFilter = self.tr("Carla State File (*.carxs)")
+        filename   = QFileDialog.getOpenFileName(self, self.tr("Open Plugin State File"), filter=fileFilter)
 
-        if filenameTry:
-            self.fCurrentStateFilename = filenameTry
-            gCarla.host.load_plugin_state(self.fPluginId, self.fCurrentStateFilename)
+        if config_UseQt5:
+            filename = filename[0]
+        if not filename:
+            return
+
+        self.fCurrentStateFilename = filename
+        gCarla.host.load_plugin_state(self.fPluginId, self.fCurrentStateFilename)
 
     #------------------------------------------------------------------
 

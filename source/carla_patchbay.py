@@ -996,26 +996,30 @@ class CarlaPatchbayW(QFrame):
     def slot_canvasSaveImage(self):
         newPath = QFileDialog.getSaveFileName(self, self.tr("Save Image"), filter=self.tr("PNG Image (*.png);;JPEG Image (*.jpg)"))
 
-        if newPath:
-            self.scene.clearSelection()
+        if config_UseQt5:
+            newPath = newPath[0]
+        if not newPath:
+            return
 
-            if newPath.lower().endswith((".jpg",)):
-                imgFormat = "JPG"
-            elif newPath.lower().endswith((".png",)):
-                imgFormat = "PNG"
-            else:
-                # File-dialog may not auto-add the extension
-                imgFormat = "PNG"
-                newPath  += ".png"
+        self.scene.clearSelection()
 
-            self.fExportImage = QImage(self.scene.sceneRect().width(), self.scene.sceneRect().height(), QImage.Format_RGB32)
-            painter = QPainter(self.fExportImage)
-            painter.save()
-            painter.setRenderHint(QPainter.Antialiasing) # TODO - set true, cleanup this
-            painter.setRenderHint(QPainter.TextAntialiasing)
-            self.scene.render(painter)
-            self.fExportImage.save(newPath, imgFormat, 100)
-            painter.restore()
+        if newPath.lower().endswith((".jpg",)):
+            imgFormat = "JPG"
+        elif newPath.lower().endswith((".png",)):
+            imgFormat = "PNG"
+        else:
+            # File-dialog may not auto-add the extension
+            imgFormat = "PNG"
+            newPath  += ".png"
+
+        self.fExportImage = QImage(self.scene.sceneRect().width(), self.scene.sceneRect().height(), QImage.Format_RGB32)
+        painter = QPainter(self.fExportImage)
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing) # TODO - set true, cleanup this
+        painter.setRenderHint(QPainter.TextAntialiasing)
+        self.scene.render(painter)
+        self.fExportImage.save(newPath, imgFormat, 100)
+        painter.restore()
 
     # -----------------------------------------------------------------
 
