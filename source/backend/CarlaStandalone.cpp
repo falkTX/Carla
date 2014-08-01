@@ -223,14 +223,13 @@ protected:
 
         fClientId = clientId;
 
-        fProjectPath  = juce::File::getCurrentWorkingDirectory().getFullPathName().toRawUTF8();
-        fProjectPath += OS_SEP_STR;
-        fProjectPath += projectPath;
+        fProjectPath  = projectPath;
         fProjectPath += ".carxp";
 
         CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0);
 
-        gStandalone.engine->loadProject(fProjectPath);
+        if (juce::File(fProjectPath.buffer()).existsAsFile())
+            gStandalone.engine->loadProject(fProjectPath);
 
 #ifndef BUILD_ANSI_TEST
         lo_send_from(lo_message_get_source(msg), fOscServer, LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/open", "OK");

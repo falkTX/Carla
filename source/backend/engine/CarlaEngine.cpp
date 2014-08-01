@@ -1108,38 +1108,43 @@ bool CarlaEngine::saveProject(const char* const filename)
     }
 
 #ifndef BUILD_BRIDGE
+    bool saveConnections = true;
+
     // if we're running inside some session-manager, let them handle the connections
     if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
     {
         if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr || std::getenv("LADISH_APP_NAME") != nullptr || std::getenv("NSM_URL") != nullptr)
-            return true;
+            saveConnections = false;
     }
 
-    if (const char* const* patchbayConns = getPatchbayConnections())
+    if (saveConnections)
     {
-        if (! firstPlugin)
-            out << "\n";
-
-        out << " <Patchbay>\n";
-
-        for (int i=0; patchbayConns[i] != nullptr && patchbayConns[i+1] != nullptr; ++i, ++i )
+        if (const char* const* patchbayConns = getPatchbayConnections())
         {
-            const char* const connSource(patchbayConns[i]);
-            const char* const connTarget(patchbayConns[i+1]);
+            if (! firstPlugin)
+                out << "\n";
 
-            CARLA_SAFE_ASSERT_CONTINUE(connSource != nullptr && connSource[0] != '\0');
-            CARLA_SAFE_ASSERT_CONTINUE(connTarget != nullptr && connTarget[0] != '\0');
+            out << " <Patchbay>\n";
 
-            out << "  <Connection>\n";
-            out << "   <Source>" << connSource << "</Source>\n";
-            out << "   <Target>" << connTarget << "</Target>\n";
-            out << "  </Connection>\n";
+            for (int i=0; patchbayConns[i] != nullptr && patchbayConns[i+1] != nullptr; ++i, ++i )
+            {
+                const char* const connSource(patchbayConns[i]);
+                const char* const connTarget(patchbayConns[i+1]);
 
-            delete[] connSource;
-            delete[] connTarget;
+                CARLA_SAFE_ASSERT_CONTINUE(connSource != nullptr && connSource[0] != '\0');
+                CARLA_SAFE_ASSERT_CONTINUE(connTarget != nullptr && connTarget[0] != '\0');
+
+                out << "  <Connection>\n";
+                out << "   <Source>" << connSource << "</Source>\n";
+                out << "   <Target>" << connTarget << "</Target>\n";
+                out << "  </Connection>\n";
+
+                delete[] connSource;
+                delete[] connTarget;
+            }
+
+            out << " </Patchbay>\n";
         }
-
-        out << " </Patchbay>\n";
     }
 #endif
 
