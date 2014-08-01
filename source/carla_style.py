@@ -55,7 +55,7 @@ class CarlaApplication(object):
             if CWDl.endswith("native-plugins%sresources" % os.sep):
                 stylesDir = os.path.abspath(os.path.join(CWD, "..", "..", "..", "..", "bin"))
             elif "carla-native.lv2" in sys.argv[0].lower():
-                stylesDir = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lib", "lv2", "carla-native.lv2"))
+                stylesDir = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lv2", "carla-native.lv2"))
             else:
                 stylesDir = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lib", "carla"))
 
