@@ -13,6 +13,6 @@
 4.  OSC control seems to work well, but has not been tested in great detail.
     Be sure to report any issues.
 
-5.  Carla "PRO" theme, Carla-Control and ZynAddSubFX internal plugin are not available for Windows at this point.
+5.  LinuxSampler (used for GIG and SFZ file loading) and ZynAddSubFX internal plugin is not available for Windows at this point.
 
 6.  Carla-Control is not available at this point (needs to be reworked for the 2.0 codebase).
