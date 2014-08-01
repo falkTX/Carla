@@ -23,7 +23,8 @@ export LDLAGS=-m64
 export PATH=/opt/carla/bin:/opt/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=/opt/carla/lib/pkgconfig:/opt/carla64/lib/pkgconfig
 
-# make $JOBS
+make clean
+make $JOBS
 
 ##############################################################################################
 # Build 32bit bridges
@@ -47,56 +48,54 @@ unset CXXFLAGS
 unset LDLAGS
 unset PKG_CONFIG_PATH
 
-# cd source
 rm -rf ./build ./build-lv2
+rm -f bin/carla-bridge-lv2-cocoa # TODO
+rm -f bin/carla-bridge-lv2-qt5
 
-cp ./source/carla ./source/Carla.pyw
+mkdir build
+
+cp ./source/carla               ./source/Carla.pyw
+cp ./bin/resources/carla-plugin ./source/carla-plugin.pyw
+cp ./bin/resources/bigmeter-ui  ./source/bigmeter-ui.pyw
+cp ./bin/resources/notes-ui     ./source/notes-ui.pyw
 python3 ./data/macos/bundle.py bdist_mac --bundle-name=Carla
-rm ./source/Carla.pyw
+$CXFREEZE --target-dir=./build/plugin/ ./source/carla-plugin.pyw
+$CXFREEZE --target-dir=./build/plugin/ ./source/bigmeter-ui.pyw
+$CXFREEZE --target-dir=./build/plugin/ ./source/notes-ui.pyw
+rm ./source/*.pyw
 
-#cp ./source/modules/native-plugins/resources/carla-plugin ./source/carla-plugin.pyw
-#cp ./source/modules/native-plugins/resources/bigmeter-ui  ./source/bigmeter-ui.pyw
-#cp ./source/modules/native-plugins/resources/notes-ui     ./source/notes-ui.pyw
-#$CXFREEZE --target-dir=./build/plugin/ ./source/carla-plugin.pyw
-#$CXFREEZE --target-dir=./build/plugin/ ./source/bigmeter-ui.pyw
-#$CXFREEZE --target-dir=./build/plugin/ ./source/notes-ui.pyw
-#rm ./source/*.pyw
+mkdir -p build/Carla.app/Contents/MacOS
+mkdir -p build/Carla.app/Contents/MacOS/resources
+mkdir -p build/Carla.app/Contents/MacOS/styles
+cp    bin/*.dylib           build/Carla.app/Contents/MacOS/
+cp    bin/carla-bridge-*    build/Carla.app/Contents/MacOS/
+cp    bin/carla-discovery-* build/Carla.app/Contents/MacOS/
+cp -r bin/resources/*       build/Carla.app/Contents/MacOS/resources/
+cp    bin/styles/*          build/Carla.app/Contents/MacOS/styles/
 
-cd build
+find build/ -type f -name "*.py" -delete
+mv build/plugin/* build/Carla.app/Contents/MacOS/resources/
+rmdir build/plugin
 
-mkdir -p Carla.app/Contents/MacOS
-mkdir -p Carla.app/Contents/MacOS/styles
-cp ../bin/*.dylib           Carla.app/Contents/MacOS/
-cp ../bin/carla-bridge-*    Carla.app/Contents/MacOS/
-cp ../bin/carla-discovery-* Carla.app/Contents/MacOS/
-cp ../bin/styles/*          Carla.app/Contents/MacOS/styles/
-#cp -r ../bin/resources Carla.app/Contents/MacOS/
+cd build/Carla.app/Contents/MacOS/resources/
+ln -s ../styles styles
+cd ../../../../..
 
-#find . -type f -name "*.py" -delete
-#mv plugin/* Carla.app/Contents/MacOS/resources/
-#rmdir plugin
-
-cd Carla.app/Contents/MacOS/styles
+cd build/Carla.app/Contents/MacOS/styles
 install_name_tool -change "/opt/carla/lib/QtCore.framework/Versions/5/QtCore"       @executable_path/QtCore    carlastyle.dylib
 install_name_tool -change "/opt/carla/lib/QtGui.framework/Versions/5/QtGui"         @executable_path/QtGui     carlastyle.dylib
 install_name_tool -change "/opt/carla/lib/QtWidgets.framework/Versions/5/QtWidgets" @executable_path/QtWidgets carlastyle.dylib
-cd ../../../..
+cd ../../../../..
 
-exit
+mkdir build-lv2
+mkdir build-lv2/carla-native.lv2
+mkdir build-lv2/carla-native.lv2/resources
+mkdir build-lv2/carla-native.lv2/styles
 
-mkdir ../build-lv2
-cd ../build-lv2
-
-cp -r ../bin/carla-native.lv2/ carla-native.lv2
-rm -r ./carla-native.lv2/resources
-cp -r ../build/Carla.app/Contents/MacOS/resources/ carla-native.lv2/resources
-
-rm -rf carla-native.lv2/styles
-mkdir carla-native.lv2/styles
-cp ../bin/carla-bridge-*                      carla-native.lv2/
-cp ../bin/carla-discovery-*                   carla-native.lv2/
-cp ../build/Carla.app/Contents/MacOS/styles/* carla-native.lv2/styles/
-
-cd ..
+cp bin/carla-native.lv2/*.* build-lv2/carla-native.lv2/
+cp bin/carla-bridge-*       build-lv2/carla-native.lv2/
+cp bin/carla-discovery-*    build-lv2/carla-native.lv2/
+cp -r build/Carla.app/Contents/MacOS/resources/* build-lv2/carla-native.lv2/resources/
+cp    build/Carla.app/Contents/MacOS/styles/*    build-lv2/carla-native.lv2/styles/
 
 ##############################################################################################
