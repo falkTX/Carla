@@ -465,10 +465,10 @@ const char* carla_get_complete_license_text()
         text2 += "<li>VST plugin support, using official VST SDK 2.4 (trademark of Steinberg Media Technologies GmbH)</li>";
 #endif
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-        text2 += "<li>VST3 plugin support</li>"; // FIXME
+        text2 += "<li>VST3 plugin support, using official VST SDK 3.6 (trademark of Steinberg Media Technologies GmbH)</li>";
 #endif
 #ifdef CARLA_OS_MAC
-        text2 += "<li>AU plugin support</li>"; // FIXME
+        text2 += "<li>AU plugin support</li>";
 #endif
 
         // Sample kit libraries
@@ -491,17 +491,19 @@ const char* carla_get_complete_license_text()
         // misc libs
         text4 += "<li>liblo library for OSC support, http://liblo.sourceforge.net/</li>";
         text4 += "<li>serd, sord, sratom and lilv libraries for LV2 discovery, http://drobilla.net/software/lilv/</li>";
+#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
         text4 += "<li>RtAudio+RtMidi libraries for extra Audio and MIDI support, http://www.music.mcgill.ca/~gary/rtaudio/</li>";
+#endif
 
         // end
-        text4 += "</ul>";
+        text5 += "</ul>";
 
 #ifdef HAVE_LINUXSAMPLER
         // LinuxSampler GPL exception
-        text4 += "<p>(*) Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors.</p>";
+        text5 += "<p>(*) Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors.</p>";
 #endif
 
-        retText = text1 + text2 + text3 + text4;
+        retText = text1 + text2 + text3 + text4 + text5;
     }
 
     return retText;
