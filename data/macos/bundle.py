@@ -17,7 +17,7 @@ options  = {
   "packages": ["re", "sip", "subprocess", "inspect"]
 }
 
-boptions  = {
+boptions = {
   "iconfile": "./resources/ico/carla.icns"
 }
 

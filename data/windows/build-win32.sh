@@ -25,10 +25,10 @@ export WINDRES=$MINGW-windres
 
 export WINEARCH=win32
 export WINEPREFIX=~/.winepy3_x86
-export PYTHON_EXE="C:\\\\Python34\\\\python.exe"
+export PYTHON_EXE="wine C:\\\\Python34\\\\python.exe"
 
-export CXFREEZE="wine $PYTHON_EXE C:\\\\Python34\\\\Scripts\\\\cxfreeze"
-export PYUIC="wine $PYTHON_EXE -m PyQt5.uic.pyuic"
+export CXFREEZE="$PYTHON_EXE C:\\\\Python34\\\\Scripts\\\\cxfreeze"
+export PYUIC="$PYTHON_EXE -m PyQt5.uic.pyuic"
 export PYRCC="wine C:\\\\Python34\\\\Lib\\\\site-packages\\\\PyQt5\\\\pyrcc5.exe"
 
 export DEFAULT_QT=5
@@ -52,14 +52,19 @@ make $JOBS backend
 # Build UI bridges
 # make $JOBS -C source/bridges ui_lv2-win32 ui_vst-hwnd
 
+export PYTHONPATH=`pwd`/source
+
 rm -rf ./data/windows/Carla
 cp ./source/carla ./source/carla.pyw
-$CXFREEZE --include-modules=subprocess,inspect --target-dir=".\\data\\windows\\Carla" ".\\source\\carla.pyw"
+$PYTHON_EXE ./data/windows/app.py build_exe
 rm -f ./source/carla.pyw
+mv build data/windows/Carla
 
 cd data/windows/
 cp ../../bin/*.dll Carla/
 cp ../../bin/*.exe Carla/
+mv Carla/exe.*/* Carla/
+rmdir Carla/exe.*
 
 rm -f Carla/PyQt5.Qsci.pyd Carla/PyQt5.QtNetwork.pyd Carla/PyQt5.QtSql.pyd Carla/PyQt5.QtTest.pyd
 
@@ -97,4 +102,4 @@ cd ../..
 
 # Testing:
 echo "export WINEPREFIX=~/.winepy3_x86"
-echo "wine $PYTHON_EXE ./source/carla -platformpluginpath \"C:\\\\Python34\\\\Lib\\\\site-packages\\\\PyQt5\\\\plugins\\\\platforms\""
+echo "$PYTHON_EXE ./source/carla -platformpluginpath \"C:\\\\Python34\\\\Lib\\\\site-packages\\\\PyQt5\\\\plugins\\\\platforms\""

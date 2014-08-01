@@ -50,7 +50,12 @@ int sfx_app_autorun_now()
         strcat(cmdBuf, sfx_app_argv[i]);
     }
 
+#ifdef WIN32
+    ShellExecute(NULL, "open", cmdBuf, NULL, NULL, SW_SHOWNORMAL);
+    return 0;
+#else
     return system(cmdBuf);
+#endif
 }
 
 char* sfx_get_tmp_path(int withAppName)
