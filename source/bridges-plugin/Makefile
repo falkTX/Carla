@@ -252,7 +252,7 @@ OBJS_POSIX64 += \
 	../backend/plugin/Lv2Plugin__posix64.o \
 	../backend/plugin/VstPlugin__posix64.o \
 	../backend/plugin/Vst3Plugin__posix64.o \
-	../backend/plugin/AuPlugin__posix32.o \
+	../backend/plugin/AuPlugin__posix64.o \
 	../backend/plugin/JucePlugin__posix64.o
 
 # carla-standalone
