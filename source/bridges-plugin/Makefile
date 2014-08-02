@@ -8,7 +8,7 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -DBUILD_BRIDGE -DBRIDGE_PLUGIN
+BUILD_CXX_FLAGS += -DBUILD_BRIDGE
 BUILD_CXX_FLAGS += -I. -I../backend -I../includes -I../utils -isystem ../modules
 BUILD_CXX_FLAGS += $(LIBLO_FLAGS)
 LINK_FLAGS      += $(LIBLO_LIBS)
@@ -43,7 +43,7 @@ endif
 # --------------------------------------------------------------
 # Plugin bridges (POSIX)
 
-POSIX_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS)
+POSIX_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS) -DBRIDGE_PLUGIN
 POSIX_32BIT_FLAGS = $(32BIT_FLAGS)
 POSIX_64BIT_FLAGS = $(64BIT_FLAGS)
 POSIX_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS)
@@ -60,7 +60,7 @@ endif
 # --------------------------------------------------------------
 # Plugin bridges (Windows)
 
-WIN_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS) -DJACKBRIDGE_EXPORT
+WIN_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS) -DBRIDGE_PLUGIN -DJACKBRIDGE_EXPORT
 WIN_32BIT_FLAGS = $(32BIT_FLAGS)
 WIN_64BIT_FLAGS = $(64BIT_FLAGS)
 WIN_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) -L../modules
