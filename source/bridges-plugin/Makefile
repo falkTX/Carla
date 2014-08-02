@@ -43,7 +43,7 @@ endif
 # --------------------------------------------------------------
 # Plugin bridges (POSIX)
 
-POSIX_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS) -DBRIDGE_PLUGIN
+POSIX_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS)
 POSIX_32BIT_FLAGS = $(32BIT_FLAGS)
 POSIX_64BIT_FLAGS = $(64BIT_FLAGS)
 POSIX_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS)
@@ -60,7 +60,7 @@ endif
 # --------------------------------------------------------------
 # Plugin bridges (Windows)
 
-WIN_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS) -DBRIDGE_PLUGIN -DJACKBRIDGE_EXPORT
+WIN_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS) -DJACKBRIDGE_EXPORT
 WIN_32BIT_FLAGS = $(32BIT_FLAGS)
 WIN_64BIT_FLAGS = $(64BIT_FLAGS)
 WIN_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) -L../modules
@@ -222,7 +222,7 @@ endif
 	$(CXX) $(OBJS_POSIX32) $(LIBS_START) $(LIBS_POSIX32) $(LIBS_END) $(POSIX_LINK_FLAGS) $(POSIX_32BIT_FLAGS) -o $@
 
 %__posix32.o: %.cpp
-	$(CXX) $< $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) -c -o $@
+	$(CXX) $< $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) -DBRIDGE_PLUGIN -c -o $@
 
 # --------------------------------------------------------------
 # posix64
@@ -280,7 +280,7 @@ endif
 	$(CXX) $(OBJS_POSIX64) $(LIBS_START) $(LIBS_POSIX64) $(LIBS_END) $(POSIX_LINK_FLAGS) $(POSIX_64BIT_FLAGS) -o $@
 
 %__posix64.o: %.cpp
-	$(CXX) $< $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) -c -o $@
+	$(CXX) $< $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) -DBRIDGE_PLUGIN -c -o $@
 
 # --------------------------------------------------------------
 # win32
@@ -335,7 +335,7 @@ LIBS_WIN32 += \
 	$(CXX) $(OBJS_WIN32) $(LIBS_START) $(LIBS_WIN32) $(LIBS_END) $(WIN_LINK_FLAGS) $(WIN_32BIT_FLAGS) -ljackbridge-win32 -o $@
 
 %__win32.o: %.cpp
-	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) -c -o $@
+	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) -DBRIDGE_PLUGIN -c -o $@
 
 # --------------------------------------------------------------
 # win64
@@ -390,7 +390,7 @@ LIBS_WIN64 += \
 	$(CXX) $(OBJS_WIN64) $(LIBS_START) $(LIBS_WIN64) $(LIBS_END) $(WIN_LINK_FLAGS) $(WIN_64BIT_FLAGS) -ljackbridge-win64 -o $@
 
 %__win64.o: %.cpp
-	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) -c -o $@
+	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) -DBRIDGE_PLUGIN -c -o $@
 
 # --------------------------------------------------------------
 
