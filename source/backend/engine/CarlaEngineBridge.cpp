@@ -907,8 +907,7 @@ CarlaEngine* CarlaEngine::newBridge(const char* const audioPoolBaseName, const c
 
 // -----------------------------------------------------------------------
 
-// TODO later
-#if defined(CARLA_OS_WIN)
+#ifdef BRIDGE_PLUGIN
 CarlaPlugin* CarlaPlugin::newNative(const CarlaPlugin::Initializer&)              { return nullptr; }
 CarlaPlugin* CarlaPlugin::newFileGIG(const CarlaPlugin::Initializer&, const bool) { return nullptr; }
 CarlaPlugin* CarlaPlugin::newFileSF2(const CarlaPlugin::Initializer&, const bool) { return nullptr; }
