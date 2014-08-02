@@ -62,6 +62,9 @@ class CarlaApplication(object):
         elif CWDl.endswith("source"):
             stylesDir = os.path.abspath(os.path.join(CWD, "..", "bin"))
 
+        elif CWDl.endswith("bin") or os.path.isfile(sys.path[0]):
+            stylesDir = CWD
+
         if stylesDir and os.path.exists(stylesDir):
             QApplication.addLibraryPath(stylesDir)
 
@@ -76,10 +79,6 @@ class CarlaApplication(object):
         if not useProTheme:
             self._createApp(appName)
             return
-
-        # fix Qt5 not finding plarform dir on Mac and Windows
-        if MACOS or WINDOWS:
-            QApplication.addLibraryPath(CWD)
 
         # set style
         QApplication.setStyle("carla" if stylesDir else "fusion")

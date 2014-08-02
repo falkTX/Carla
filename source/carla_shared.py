@@ -527,8 +527,8 @@ def initHost(initName, libPrefix = None, failError = True):
     elif CWDl.endswith("resources"):
         if CWDl.endswith("native-plugins%sresources" % os.sep):
             gCarla.pathBinaries = os.path.abspath(os.path.join(CWD, "..", "..", "..", "..", "bin"))
-        elif "carla-native.lv2" in sys.argv[0]:
-            gCarla.pathBinaries = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lib", "lv2", "carla-native.lv2"))
+        elif "carla-native.lv2" in sys.argv[0].lower():
+            gCarla.pathBinaries = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lv2", "carla-native.lv2"))
         else:
             gCarla.pathBinaries = os.path.abspath(os.path.join(CWD, ".."))
 
