@@ -32,8 +32,7 @@ public:
      * Constructor.
      */
     CarlaMutex() noexcept
-        : fMutex(),
-          fTryLockWasCalled(false)
+        : fTryLockWasCalled(false)
     {
         pthread_mutex_init(&fMutex, nullptr);
     }
@@ -104,11 +103,6 @@ public:
      * Constructor.
      */
     CarlaRecursiveMutex() noexcept
-#ifdef CARLA_OS_WIN
-        : fSection()
-#else
-        : fMutex()
-#endif
     {
 #ifdef CARLA_OS_WIN
         InitializeCriticalSection(&fSection);

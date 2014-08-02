@@ -93,9 +93,6 @@ public:
     private:
         mutable RtMemPool_Handle fHandle;
         const size_t             kDataSize;
-
-        CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPY_CLASS(Pool)
     };
 
     // -------------------------------------------------------------------
@@ -164,9 +161,9 @@ private:
             this->_createData(data, value);
 
             if (inTail)
-                this->__list_add(data->siblings, this->fQueue.prev, &(this->fQueue));
+                this->__list_add(&data->siblings, this->fQueue.prev, &this->fQueue);
             else
-                this->__list_add(data->siblings, &(this->fQueue), this->fQueue.next);
+                this->__list_add(&data->siblings, &this->fQueue, this->fQueue.next);
 
             return true;
         }
@@ -174,8 +171,7 @@ private:
         return false;
     }
 
-    CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(RtLinkedList)
+    LINKED_LIST_DECLARATIONS(RtLinkedList)
 };
 
 // -----------------------------------------------------------------------

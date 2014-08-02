@@ -57,10 +57,8 @@ struct CarlaBackendStandalone {
         : engine(nullptr),
           engineCallback(nullptr),
           engineCallbackPtr(nullptr),
-          engineOptions(),
           fileCallback(nullptr),
-          fileCallbackPtr(nullptr),
-          lastError()
+          fileCallbackPtr(nullptr)
     {
 #ifdef BUILD_BRIDGE
         engineOptions.processMode         = CB::ENGINE_PROCESS_MODE_BRIDGE;
@@ -104,8 +102,6 @@ class CarlaNSM
 public:
     CarlaNSM() noexcept
         : fOscServer(nullptr),
-          fClientId(),
-          fProjectPath(),
           fHasBroadcast(false),
           fHasShowHideUI(false) {}
 

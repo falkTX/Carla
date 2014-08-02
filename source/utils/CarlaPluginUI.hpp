@@ -60,8 +60,6 @@ protected:
     bool fIsIdling;
     CloseCallback* fCallback;
     CarlaPluginUI(CloseCallback* const cb) noexcept : fIsIdling(false), fCallback(cb) {}
-
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaPluginUI)
 };
 
 // -----------------------------------------------------

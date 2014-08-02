@@ -45,20 +45,11 @@
 #define CARLA_LEAK_DETECTOR(ClassName)                                            \
     friend class ::LeakedObjectDetector<ClassName>;                               \
     static const char* getLeakedObjectClassName() noexcept { return #ClassName; } \
-    ::LeakedObjectDetector<ClassName> leakDetector;
-
-#define CARLA_LEAK_DETECTOR_NAME(ClassName, leakDetectorName)                     \
-    friend class ::LeakedObjectDetector<ClassName>;                               \
-    static const char* getLeakedObjectClassName() noexcept { return #ClassName; } \
-    ::LeakedObjectDetector<ClassName> leakDetectorName;
+    ::LeakedObjectDetector<ClassName> CARLA_JOIN_MACRO(leakDetector, __LINE__);
 
 #define CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ClassName) \
     CARLA_DECLARE_NON_COPY_CLASS(ClassName)                      \
     CARLA_LEAK_DETECTOR(ClassName)
-
-#define CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR_NAME(ClassName, leakDetectorName) \
-    CARLA_DECLARE_NON_COPY_CLASS(ClassName)                                             \
-    CARLA_LEAK_DETECTOR_NAME(ClassName, leakDetectorName)
 
 //==============================================================================
 /**
@@ -105,7 +96,9 @@ private:
     {
     public:
         LeakCounter() noexcept
-            : numObjects(0) {}
+        {
+            numObjects = 0;
+        }
 
         ~LeakCounter() noexcept
         {

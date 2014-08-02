@@ -163,12 +163,14 @@ public:
     CarlaStringList() noexcept
         : LinkedList<CarlaString>(true) {}
 
+#if 0
     CarlaStringList(const CarlaStringList& list) noexcept
         : LinkedList<CarlaString>(true)
     {
         for (Itenerator it = list.begin(); it.valid(); it.next())
             LinkedList<CarlaString>::append(it.getValue());
     }
+#endif
 
     ~CarlaStringList() noexcept
     {
@@ -224,7 +226,8 @@ public:
         return *this;
     }
 
-    CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
+private:
+    LinkedList<CarlaString> fList;
 };
 
 // -----------------------------------------------------------------------

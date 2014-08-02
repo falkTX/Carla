@@ -152,9 +152,7 @@ StateSave::StateSave() noexcept
       currentProgramName(nullptr),
       currentMidiBank(-1),
       currentMidiProgram(-1),
-      chunk(nullptr),
-      parameters(),
-      customData() {}
+      chunk(nullptr) {}
 
 StateSave::~StateSave() noexcept
 {

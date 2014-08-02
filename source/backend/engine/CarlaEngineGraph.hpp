@@ -76,10 +76,6 @@ struct RackGraph {
         float* inBuf[2];
         float* inBufTmp[2];
         float* outBuf[2];
-        // c++ compat stuff
-        Audio() noexcept;
-        CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPY_CLASS(Audio)
     } audio;
 
     struct MIDI {
@@ -87,10 +83,6 @@ struct RackGraph {
         LinkedList<PortNameToId> outs;
         const char* getName(const bool isInput, const uint portId) const noexcept;
         uint getPortId(const bool isInput, const char portName[], bool* const ok = nullptr) const noexcept;
-        MIDI() noexcept;
-        // c++ compat stuff
-        CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPY_CLASS(MIDI)
     } midi;
 
     RackGraph(const uint32_t bufferSize, const uint32_t inputs, const uint32_t outputs) noexcept;
