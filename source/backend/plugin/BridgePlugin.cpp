@@ -2041,11 +2041,11 @@ public:
         fInitiated = false;
         fLastPongCounter = 0;
 
-        for (; fLastPongCounter < 200; ++fLastPongCounter)
+        for (; fLastPongCounter++ < 500;)
         {
             if (fInitiated || ! pData->osc.thread.isThreadRunning())
                 break;
-            carla_msleep(30);
+            carla_msleep(25);
             pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
             pData->engine->idle();
         }
