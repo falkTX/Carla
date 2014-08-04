@@ -53,7 +53,7 @@ class AudioOutputDevicePlugin : public AudioOutputDevice
 {
 public:
     AudioOutputDevicePlugin(const CarlaEngine* const engine, const CarlaPlugin* const plugin, const bool uses16Outs)
-        : AudioOutputDevice(std::map<String, DeviceCreationParameter*>()),
+        : AudioOutputDevice(std::map<std::string, DeviceCreationParameter*>()),
           kEngine(engine),
           kPlugin(plugin)
     {
@@ -86,7 +86,7 @@ public:
         return uint(kEngine->getSampleRate());
     }
 
-    String Driver() override
+    std::string Driver() override
     {
         return "AudioOutputDevicePlugin";
     }
@@ -95,6 +95,11 @@ public:
     {
         return new AudioChannel(channelNr, nullptr, 0);
     }
+
+    // -------------------------------------------------------------------
+
+           bool isAutonomousDevice() override { return false; }
+    static bool isAutonomousDriver()          { return false; }
 
     // -------------------------------------------------------------------
     // Give public access to the RenderAudio call
@@ -130,7 +135,7 @@ class MidiInputDevicePlugin : public MidiInputDevice
 {
 public:
     MidiInputDevicePlugin(Sampler* const sampler)
-        : MidiInputDevice(std::map<String, DeviceCreationParameter*>(), sampler) {}
+        : MidiInputDevice(std::map<std::string, DeviceCreationParameter*>(), sampler) {}
 
     // -------------------------------------------------------------------
     // LinuxSampler virtual methods
@@ -138,7 +143,7 @@ public:
     void Listen()     override {}
     void StopListen() override {}
 
-    String Driver() override
+    std::string Driver() override
     {
         return "MidiInputDevicePlugin";
     }
@@ -147,6 +152,14 @@ public:
     {
         return new MidiInputPortPlugin(this, int(Ports.size()));
     }
+
+    // -------------------------------------------------------------------
+
+           bool isAutonomousDevice() override { return false; }
+    static bool isAutonomousDriver()          { return false; }
+
+    // -------------------------------------------------------------------
+    // Easy MidiInputPortPlugin creation
 
     MidiInputPortPlugin* CreateMidiPortPlugin()
     {
