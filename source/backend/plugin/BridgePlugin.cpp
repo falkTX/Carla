@@ -103,14 +103,13 @@ struct BridgeAudioPool {
     size_t size;
     shm_t shm;
 
-    BridgeAudioPool()
-        : data(nullptr),
-          size(0)
-    {
-        carla_shm_init(shm);
-    }
+    BridgeAudioPool() noexcept
+        : filename(),
+          data(nullptr),
+          size(0),
+          shm(shm_t_INIT) {}
 
-    ~BridgeAudioPool()
+    ~BridgeAudioPool() noexcept
     {
         // should be cleared by now
         CARLA_SAFE_ASSERT(data == nullptr);
@@ -118,7 +117,7 @@ struct BridgeAudioPool {
         clear();
     }
 
-    void clear()
+    void clear() noexcept
     {
         filename.clear();
 
@@ -135,7 +134,7 @@ struct BridgeAudioPool {
         carla_shm_close(shm);
     }
 
-    void resize(const uint32_t bufferSize, const uint32_t portCount)
+    void resize(const uint32_t bufferSize, const uint32_t portCount) noexcept
     {
         if (data != nullptr)
             carla_shm_unmap(shm, data, size);
@@ -159,11 +158,9 @@ struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
     shm_t shm;
 
     BridgeRtControl()
-        : CarlaRingBuffer<StackBuffer>(),
-          data(nullptr)
-    {
-        carla_shm_init(shm);
-    }
+        : filename(),
+          data(nullptr),
+          shm(shm_t_INIT) {}
 
     ~BridgeRtControl()
     {
@@ -173,7 +170,7 @@ struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
         clear();
     }
 
-    void clear()
+    void clear() noexcept
     {
         filename.clear();
 
@@ -189,9 +186,9 @@ struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
         carla_shm_close(shm);
     }
 
-    bool mapData()
+    bool mapData() noexcept
     {
-        CARLA_ASSERT(data == nullptr);
+        CARLA_SAFE_ASSERT(data == nullptr);
 
         if (carla_shm_map<BridgeRtData>(shm, data))
         {
@@ -202,7 +199,7 @@ struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
         return false;
     }
 
-    void unmapData()
+    void unmapData() noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
 
@@ -212,7 +209,7 @@ struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
         setRingBuffer(nullptr, false);
     }
 
-    bool waitForServer(const int secs)
+    bool waitForServer(const int secs) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
 
@@ -237,14 +234,13 @@ struct BridgeNonRtControl : public CarlaRingBuffer<BigStackBuffer> {
     BridgeNonRtData* data;
     shm_t shm;
 
-    BridgeNonRtControl()
-        : CarlaRingBuffer<BigStackBuffer>(),
-          data(nullptr)
-    {
-        carla_shm_init(shm);
-    }
+    BridgeNonRtControl() noexcept
+        : mutex(),
+          filename(),
+          data(nullptr),
+          shm(shm_t_INIT) {}
 
-    ~BridgeNonRtControl()
+    ~BridgeNonRtControl() noexcept
     {
         // should be cleared by now
         CARLA_SAFE_ASSERT(data == nullptr);
@@ -252,7 +248,7 @@ struct BridgeNonRtControl : public CarlaRingBuffer<BigStackBuffer> {
         clear();
     }
 
-    void clear()
+    void clear() noexcept
     {
         filename.clear();
 
@@ -268,7 +264,7 @@ struct BridgeNonRtControl : public CarlaRingBuffer<BigStackBuffer> {
         carla_shm_close(shm);
     }
 
-    bool mapData()
+    bool mapData() noexcept
     {
         CARLA_SAFE_ASSERT(data == nullptr);
 
@@ -281,7 +277,7 @@ struct BridgeNonRtControl : public CarlaRingBuffer<BigStackBuffer> {
         return false;
     }
 
-    void unmapData()
+    void unmapData() noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
 
@@ -307,7 +303,9 @@ struct BridgeParamInfo {
     CarlaString unit;
 
     BridgeParamInfo() noexcept
-        : value(0.0f) {}
+        : value(0.0f),
+          name(),
+          unit() {}
 
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeParamInfo)
 };
@@ -327,7 +325,13 @@ public:
           fNeedsSemDestroy(false),
           fTimedOut(false),
           fLastPongCounter(-1),
-          fParams(nullptr)
+          fBridgeBinary(),
+          fShmAudioPool(),
+          fShmRtControl(),
+          fShmNonRtControl(),
+          fInfo(),
+          fParams(nullptr),
+          leakDetector_BridgePlugin()
     {
         carla_debug("BridgePlugin::BridgePlugin(%p, %i, %s, %s)", engine, id, BinaryType2Str(btype), PluginType2Str(ptype));
 
@@ -666,7 +670,7 @@ public:
 
         String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
 
-        filePath += OS_SEP_STR;
+        filePath += CARLA_OS_SEP_STR;
         filePath += ".CarlaChunk_";
         filePath += fShmAudioPool.filename.buffer() + 18;
 
@@ -2123,7 +2127,12 @@ private:
               mOuts(0),
               category(PLUGIN_CATEGORY_NONE),
               optionsAvailable(0),
-              uniqueId(0) {}
+              uniqueId(0),
+              name(),
+              label(),
+              maker(),
+              copyright(),
+              chunk() {}
     } fInfo;
 
     BridgeParamInfo* fParams;

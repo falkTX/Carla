@@ -138,12 +138,17 @@ public:
         : CarlaPlugin(engine, id),
           fHandle(nullptr),
           fHandle2(nullptr),
+          fHost(),
           fDescriptor(nullptr),
           fIsProcessing(false),
           fIsUiVisible(false),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
-          fMidiEventCount(0)
+          fMidiEventCount(0),
+          fMidiIn(),
+          fMidiOut(),
+          fTimeInfo(),
+          leakDetector_NativePlugin()
     {
         carla_debug("NativePlugin::NativePlugin(%p, %i)", engine, id);
 

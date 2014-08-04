@@ -30,9 +30,8 @@ class NotesPlugin : public NativePluginAndUiClass
 public:
     NotesPlugin(const NativeHostDescriptor* const host)
         : NativePluginAndUiClass(host, "/notes-ui"),
-          fCurPage(1)
-    {
-    }
+          fCurPage(1),
+          leakDetector_NotesPlugin() {}
 
 protected:
     // -------------------------------------------------------------------
@@ -118,6 +117,9 @@ static const NativePluginDescriptor notesDesc = {
 };
 
 // -----------------------------------------------------------------------
+
+CARLA_EXPORT
+void carla_register_native_plugin_notes();
 
 CARLA_EXPORT
 void carla_register_native_plugin_notes()

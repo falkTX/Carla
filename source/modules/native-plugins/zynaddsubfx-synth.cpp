@@ -843,6 +843,9 @@ static const NativePluginDescriptor zynaddsubfxDesc = {
 // -----------------------------------------------------------------------
 
 CARLA_EXPORT
+void carla_register_native_plugin_zynaddsubfx_synth();
+
+CARLA_EXPORT
 void carla_register_native_plugin_zynaddsubfx_synth()
 {
     carla_register_native_plugin(&zynaddsubfxDesc);

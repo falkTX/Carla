@@ -64,7 +64,8 @@ struct BridgeAudioPool {
     char shm[32];
 
     BridgeAudioPool() noexcept
-        : data(nullptr)
+        : filename(),
+          data(nullptr)
     {
         carla_zeroChar(shm, 32);
         jackbridge_shm_init(shm);
@@ -106,7 +107,8 @@ struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
     char shm[32];
 
     BridgeRtControl() noexcept
-        : data(nullptr)
+        : filename(),
+          data(nullptr)
     {
         carla_zeroChar(shm, 32);
         jackbridge_shm_init(shm);
@@ -166,7 +168,7 @@ struct BridgeNonRtControl : public CarlaRingBuffer<BigStackBuffer> {
     char shm[32];
 
     BridgeNonRtControl() noexcept
-        : CarlaRingBuffer<BigStackBuffer>(),
+        : filename(),
           data(nullptr)
     {
         carla_zeroChar(shm, 32);
@@ -228,8 +230,12 @@ public:
     CarlaEngineBridge(const char* const audioPoolBaseName, const char* const rtBaseName, const char* const nonRtBaseName)
         : CarlaEngine(),
           CarlaThread("CarlaEngineBridge"),
+          fShmAudioPool(),
+          fShmRtControl(),
+          fShmNonRtControl(),
           fIsRunning(false),
-          fIsOffline(false)
+          fIsOffline(false),
+          leakDetector_CarlaEngineBridge()
     {
         carla_stdout("CarlaEngineBridge::CarlaEngineBridge(\"%s\", \"%s\", \"%s\")", audioPoolBaseName, rtBaseName, nonRtBaseName);
 
@@ -575,7 +581,7 @@ public:
 
                         String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
 
-                        filePath += OS_SEP_STR;
+                        filePath += CARLA_OS_SEP_STR;
                         filePath += ".CarlaChunk_";
                         filePath += fShmNonRtControl.filename.buffer() + 24;
 

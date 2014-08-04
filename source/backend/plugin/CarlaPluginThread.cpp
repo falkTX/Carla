@@ -58,7 +58,12 @@ CarlaPluginThread::CarlaPluginThread(CarlaBackend::CarlaEngine* const engine, Ca
       fEngine(engine),
       fPlugin(plugin),
       fMode(mode),
-      fProcess(nullptr)
+      fBinary(),
+      fLabel(),
+      fExtra1(),
+      fExtra2(),
+      fProcess(nullptr),
+      leakDetector_CarlaPluginThread()
 {
     carla_debug("CarlaPluginThread::CarlaPluginThread(%p, %p, %s)", engine, plugin, PluginThreadMode2str(mode));
 }

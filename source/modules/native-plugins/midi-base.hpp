@@ -52,7 +52,10 @@ class MidiPattern
 {
 public:
     MidiPattern(AbstractMidiPlayer* const player)
-        : kPlayer(player)
+        : kPlayer(player),
+          fMutex(),
+          fData(),
+          leakDetector_MidiPattern()
           //fStartTime(0),
           //fDuration(0)
     {
@@ -230,6 +233,8 @@ private:
         const CarlaMutexLocker sl(fMutex);
         fData.append(event);
     }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiPattern)
 };
 
 #endif // MIDI_BASE_HPP_INCLUDED

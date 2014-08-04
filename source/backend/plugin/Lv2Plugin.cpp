@@ -374,6 +374,8 @@ struct Lv2PluginOptions {
             windowTitle = nullptr;
         }
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(Lv2PluginOptions);
 };
 
 // -----------------------------------------------------
@@ -396,8 +398,21 @@ public:
           fCanInit2(true),
           fLatencyChanged(false),
           fLatencyIndex(-1),
+          fAtomBufferIn(),
+          fAtomBufferOut(),
+          fAtomForge(),
+          fCvIn(),
+          fCvOut(),
+          fEventsIn(),
+          fEventsOut(),
+          fLv2Options(),
+          fCustomURIDs(),
           fFirstActive(true),
-          fLastStateChunk(nullptr)
+          fLastStateChunk(nullptr),
+          fLastTimeInfo(),
+          fExt(),
+          fUI(),
+          leakDetector_Lv2Plugin()
     {
         carla_debug("Lv2Plugin::Lv2Plugin(%p, %i)", engine, id);
 
@@ -445,11 +460,11 @@ public:
         carla_debug("Lv2Plugin::~Lv2Plugin()");
 
         // close UI
-        if (fUi.type != UI::TYPE_NULL)
+        if (fUI.type != UI::TYPE_NULL)
         {
             showCustomUI(false);
 
-            if (fUi.type == UI::TYPE_OSC)
+            if (fUI.type == UI::TYPE_OSC)
             {
                 pData->osc.thread.stopThread(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
             }
@@ -467,19 +482,19 @@ public:
                 if (fFeatures[kFeatureIdExternalUi] != nullptr && fFeatures[kFeatureIdExternalUi]->data != nullptr)
                     delete (LV2_External_UI_Host*)fFeatures[kFeatureIdExternalUi]->data;
 
-                fUi.descriptor = nullptr;
+                fUI.descriptor = nullptr;
                 pData->uiLibClose();
             }
 
 #ifndef LV2_UIS_ONLY_BRIDGES
-            if (fUi.window != nullptr)
+            if (fUI.window != nullptr)
             {
-                delete fUi.window;
-                fUi.window = nullptr;
+                delete fUI.window;
+                fUI.window = nullptr;
             }
 #endif
 
-            fUi.rdfDescriptor = nullptr;
+            fUI.rdfDescriptor = nullptr;
         }
 
         pData->singleMutex.lock();
@@ -978,8 +993,8 @@ public:
             ((LV2_External_UI_Host*)fFeatures[kFeatureIdExternalUi]->data)->plugin_human_id = fLv2Options.windowTitle;
 
 #ifndef LV2_UIS_ONLY_BRIDGES
-        if (fUi.window != nullptr)
-            fUi.window->setTitle(fLv2Options.windowTitle);
+        if (fUI.window != nullptr)
+            fUI.window->setTitle(fLv2Options.windowTitle);
 #endif
     }
 
@@ -1112,12 +1127,12 @@ public:
 
     void showCustomUI(const bool yesNo) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUi.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
 
         if (! yesNo)
             pData->transientTryCounter = 0;
 
-        if (fUi.type == UI::TYPE_OSC)
+        if (fUI.type == UI::TYPE_OSC)
         {
             if (yesNo)
             {
@@ -1139,31 +1154,31 @@ public:
         }
 
         // take some precautions
-        CARLA_SAFE_ASSERT_RETURN(fUi.descriptor != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fUi.rdfDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.descriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.rdfDescriptor != nullptr,);
 
         if (yesNo)
         {
-            CARLA_SAFE_ASSERT_RETURN(fUi.descriptor->instantiate != nullptr,);
-            CARLA_SAFE_ASSERT_RETURN(fUi.descriptor->cleanup != nullptr,);
+            CARLA_SAFE_ASSERT_RETURN(fUI.descriptor->instantiate != nullptr,);
+            CARLA_SAFE_ASSERT_RETURN(fUI.descriptor->cleanup != nullptr,);
         }
         else
         {
-            if (fUi.handle == nullptr)
+            if (fUI.handle == nullptr)
                 return;
         }
 
         if (yesNo)
         {
-            if (fUi.handle == nullptr)
+            if (fUI.handle == nullptr)
             {
 #ifndef LV2_UIS_ONLY_BRIDGES
-                if (fUi.type == UI::TYPE_EMBED)
+                if (fUI.type == UI::TYPE_EMBED)
                 {
                     const char* msg = nullptr;
                     const uintptr_t frontendWinId(pData->engine->getOptions().frontendWinId);
 
-                    switch (fUi.rdfDescriptor->Type)
+                    switch (fUI.rdfDescriptor->Type)
                     {
                     case LV2_UI_GTK2:
                     case LV2_UI_GTK3:
@@ -1176,7 +1191,7 @@ public:
 
                     case LV2_UI_COCOA:
 # ifdef CARLA_OS_MAC
-                        fUi.window = CarlaPluginUI::newCocoa(this, frontendWinId);
+                        fUI.window = CarlaPluginUI::newCocoa(this, frontendWinId);
 # else
                         msg = "UI is for MacOS only";
 # endif
@@ -1184,7 +1199,7 @@ public:
 
                     case LV2_UI_WINDOWS:
 # ifdef CARLA_OS_WIN
-                        fUi.window = CarlaPluginUI::newWindows(this, frontendWinId);
+                        fUI.window = CarlaPluginUI::newWindows(this, frontendWinId);
 # else
                         msg = "UI is for Windows only";
 # endif
@@ -1192,7 +1207,7 @@ public:
 
                     case LV2_UI_X11:
 # ifdef HAVE_X11
-                        fUi.window = CarlaPluginUI::newX11(this, frontendWinId);
+                        fUI.window = CarlaPluginUI::newX11(this, frontendWinId);
 # else
                         msg = "UI is only for systems with X11";
 # endif
@@ -1203,37 +1218,37 @@ public:
                         break;
                     }
 
-                    if (fUi.window == nullptr && fExt.uishow == nullptr)
+                    if (fUI.window == nullptr && fExt.uishow == nullptr)
                     {
                         return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, msg);
                         // unused
                         (void)frontendWinId;
                     }
 
-                    if (fUi.window != nullptr)
+                    if (fUI.window != nullptr)
                     {
-                        fUi.window->setTitle(fLv2Options.windowTitle);
-                        fFeatures[kFeatureIdUiParent]->data = fUi.window->getPtr();
+                        fUI.window->setTitle(fLv2Options.windowTitle);
+                        fFeatures[kFeatureIdUiParent]->data = fUI.window->getPtr();
                     }
                 }
 #endif
 
-                fUi.widget = nullptr;
-                fUi.handle = fUi.descriptor->instantiate(fUi.descriptor, fRdfDescriptor->URI, fUi.rdfDescriptor->Bundle,
-                                                         carla_lv2_ui_write_function, this, &fUi.widget, fFeatures);
+                fUI.widget = nullptr;
+                fUI.handle = fUI.descriptor->instantiate(fUI.descriptor, fRdfDescriptor->URI, fUI.rdfDescriptor->Bundle,
+                                                         carla_lv2_ui_write_function, this, &fUI.widget, fFeatures);
             }
 
-            CARLA_SAFE_ASSERT(fUi.handle != nullptr);
-            CARLA_SAFE_ASSERT(fUi.type != UI::TYPE_EXTERNAL || fUi.widget != nullptr);
+            CARLA_SAFE_ASSERT(fUI.handle != nullptr);
+            CARLA_SAFE_ASSERT(fUI.type != UI::TYPE_EXTERNAL || fUI.widget != nullptr);
 
-            if (fUi.handle == nullptr || (fUi.type == UI::TYPE_EXTERNAL && fUi.widget == nullptr))
+            if (fUI.handle == nullptr || (fUI.type == UI::TYPE_EXTERNAL && fUI.widget == nullptr))
             {
-                fUi.widget = nullptr;
+                fUI.widget = nullptr;
 
-                if (fUi.handle != nullptr)
+                if (fUI.handle != nullptr)
                 {
-                    fUi.descriptor->cleanup(fUi.handle);
-                    fUi.handle = nullptr;
+                    fUI.descriptor->cleanup(fUI.handle);
+                    fUI.handle = nullptr;
                 }
 
                 return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, "Plugin refused to open its own UI");
@@ -1242,15 +1257,15 @@ public:
             updateUi();
 
 #ifndef LV2_UIS_ONLY_BRIDGES
-            if (fUi.type == UI::TYPE_EMBED)
+            if (fUI.type == UI::TYPE_EMBED)
             {
-                if (fUi.window != nullptr)
+                if (fUI.window != nullptr)
                 {
-                    fUi.window->show();
+                    fUI.window->show();
                 }
                 else if (fExt.uishow != nullptr)
                 {
-                    fExt.uishow->show(fUi.handle);
+                    fExt.uishow->show(fUI.handle);
 # ifndef BUILD_BRIDGE
                     pData->tryTransient();
 # endif
@@ -1259,7 +1274,7 @@ public:
             else
 #endif
             {
-                LV2_EXTERNAL_UI_SHOW((LV2_External_UI_Widget*)fUi.widget);
+                LV2_EXTERNAL_UI_SHOW((LV2_External_UI_Widget*)fUI.widget);
 #ifndef BUILD_BRIDGE
                 pData->tryTransient();
 #endif
@@ -1268,25 +1283,25 @@ public:
         else
         {
 #ifndef LV2_UIS_ONLY_BRIDGES
-            if (fUi.type == UI::TYPE_EMBED)
+            if (fUI.type == UI::TYPE_EMBED)
             {
-                if (fUi.window != nullptr)
-                    fUi.window->hide();
+                if (fUI.window != nullptr)
+                    fUI.window->hide();
                 else if (fExt.uishow != nullptr)
-                    fExt.uishow->hide(fUi.handle);
+                    fExt.uishow->hide(fUI.handle);
             }
             else
 #endif
             {
-                CARLA_SAFE_ASSERT(fUi.widget != nullptr);
+                CARLA_SAFE_ASSERT(fUI.widget != nullptr);
 
-                if (fUi.widget != nullptr)
-                    LV2_EXTERNAL_UI_HIDE((LV2_External_UI_Widget*)fUi.widget);
+                if (fUI.widget != nullptr)
+                    LV2_EXTERNAL_UI_HIDE((LV2_External_UI_Widget*)fUI.widget);
             }
 
-            fUi.descriptor->cleanup(fUi.handle);
-            fUi.handle = nullptr;
-            fUi.widget = nullptr;
+            fUI.descriptor->cleanup(fUI.handle);
+            fUI.handle = nullptr;
+            fUI.widget = nullptr;
         }
     }
 
@@ -1301,7 +1316,7 @@ public:
 
             uint32_t portIndex;
             const LV2_Atom* atom;
-            const bool hasPortEvent(fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->port_event != nullptr);
+            const bool hasPortEvent(fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr);
 
             for (; tmpRingBuffer.get(atom, portIndex);)
             {
@@ -1310,7 +1325,7 @@ public:
                     CARLA_SAFE_ASSERT_CONTINUE(fExt.worker != nullptr && fExt.worker->work != nullptr);
                     fExt.worker->work(fHandle, carla_lv2_worker_respond, this, atom->size, LV2_ATOM_BODY_CONST(atom));
                 }
-                else if (fUi.type == UI::TYPE_OSC)
+                else if (fUI.type == UI::TYPE_OSC)
                 {
                     if (pData->osc.data.target != nullptr)
                     {
@@ -1321,7 +1336,7 @@ public:
                 else
                 {
                     if (hasPortEvent)
-                        fUi.descriptor->port_event(fUi.handle, portIndex, atom->size, CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, atom);
+                        fUI.descriptor->port_event(fUI.handle, portIndex, atom->size, CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, atom);
                 }
             }
         }
@@ -1353,16 +1368,16 @@ public:
                 carla_safe_assert_int("latency >= 0", __FILE__, __LINE__, latency);
         }
 
-        if (fUi.handle != nullptr && fUi.descriptor != nullptr)
+        if (fUI.handle != nullptr && fUI.descriptor != nullptr)
         {
-            if (fUi.type == UI::TYPE_EXTERNAL && fUi.widget != nullptr)
-                LV2_EXTERNAL_UI_RUN((LV2_External_UI_Widget*)fUi.widget);
+            if (fUI.type == UI::TYPE_EXTERNAL && fUI.widget != nullptr)
+                LV2_EXTERNAL_UI_RUN((LV2_External_UI_Widget*)fUI.widget);
 #ifndef LV2_UIS_ONLY_BRIDGES
-            else if (fUi.type == UI::TYPE_EMBED && fUi.window != nullptr)
-                fUi.window->idle();
+            else if (fUI.type == UI::TYPE_EMBED && fUI.window != nullptr)
+                fUI.window->idle();
 
             // note: UI might have been closed by ext-ui or window idle
-            if (fUi.handle != nullptr && fExt.uiidle != nullptr && fExt.uiidle->idle(fUi.handle) != 0)
+            if (fUI.handle != nullptr && fExt.uiidle != nullptr && fExt.uiidle->idle(fUI.handle) != 0)
             {
                 showCustomUI(false);
                 pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
@@ -2129,10 +2144,10 @@ public:
             pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
         }
 
-        if (fExt.worker != nullptr || (fUi.type != UI::TYPE_NULL && fEventsIn.count > 0 && (fEventsIn.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
+        if (fExt.worker != nullptr || (fUI.type != UI::TYPE_NULL && fEventsIn.count > 0 && (fEventsIn.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
             fAtomBufferIn.createBuffer(eventBufferSize);
 
-        if (fExt.worker != nullptr || (fUi.type != UI::TYPE_NULL && fEventsOut.count > 0 && (fEventsOut.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
+        if (fExt.worker != nullptr || (fUI.type != UI::TYPE_NULL && fEventsOut.count > 0 && (fEventsOut.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
             fAtomBufferOut.createBuffer(eventBufferSize);
 
         if (fEventsIn.ctrl != nullptr && fEventsIn.ctrl->port == nullptr)
@@ -2152,11 +2167,11 @@ public:
         if (isRealtimeSafe())
             pData->hints |= PLUGIN_IS_RTSAFE;
 
-        if (fUi.type != UI::TYPE_NULL)
+        if (fUI.type != UI::TYPE_NULL)
         {
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
 
-            if (fUi.type == UI::TYPE_EMBED)
+            if (fUI.type == UI::TYPE_EMBED)
                 pData->hints |= PLUGIN_NEEDS_SINGLE_THREAD;
         }
 
@@ -3710,30 +3725,30 @@ public:
 
     void uiParameterChange(const uint32_t index, const float value) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUi.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
         CARLA_SAFE_ASSERT_RETURN(index < pData->param.count,);
 
-        if (fUi.type == UI::TYPE_OSC)
+        if (fUI.type == UI::TYPE_OSC)
         {
             if (pData->osc.data.target != nullptr)
                 osc_send_control(pData->osc.data, pData->param.data[index].rindex, value);
         }
         else
         {
-            if (fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->port_event != nullptr)
+            if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr)
             {
                 CARLA_SAFE_ASSERT_RETURN(pData->param.data[index].rindex >= 0,);
-                fUi.descriptor->port_event(fUi.handle, static_cast<uint32_t>(pData->param.data[index].rindex), sizeof(float), 0, &value);
+                fUI.descriptor->port_event(fUI.handle, static_cast<uint32_t>(pData->param.data[index].rindex), sizeof(float), 0, &value);
             }
         }
     }
 
     void uiMidiProgramChange(const uint32_t index) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUi.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
         CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count,);
 
-        if (fUi.type == UI::TYPE_OSC)
+        if (fUI.type == UI::TYPE_OSC)
         {
             if (pData->osc.data.target != nullptr)
                 osc_send_midi_program(pData->osc.data, pData->midiprog.data[index].bank, pData->midiprog.data[index].program);
@@ -3741,18 +3756,18 @@ public:
         else
         {
             if (fExt.uiprograms != nullptr && fExt.uiprograms->select_program != nullptr)
-                fExt.uiprograms->select_program(fUi.handle, pData->midiprog.data[index].bank, pData->midiprog.data[index].program);
+                fExt.uiprograms->select_program(fUI.handle, pData->midiprog.data[index].bank, pData->midiprog.data[index].program);
         }
     }
 
     void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUi.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
         CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
         CARLA_SAFE_ASSERT_RETURN(velo > 0 && velo < MAX_MIDI_VALUE,);
 
-        if (fUi.type == UI::TYPE_OSC)
+        if (fUI.type == UI::TYPE_OSC)
         {
             if (pData->osc.data.target != nullptr)
             {
@@ -3765,7 +3780,7 @@ public:
         }
         else
         {
-            if (fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->port_event != nullptr && fEventsIn.ctrl != nullptr)
+            if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr && fEventsIn.ctrl != nullptr)
             {
                 LV2_Atom_MidiEvent midiEv;
                 midiEv.event.time.frames = 0;
@@ -3775,18 +3790,18 @@ public:
                 midiEv.data[1] = note;
                 midiEv.data[2] = velo;
 
-                fUi.descriptor->port_event(fUi.handle, fEventsIn.ctrl->rindex, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
+                fUI.descriptor->port_event(fUI.handle, fEventsIn.ctrl->rindex, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
             }
         }
     }
 
     void uiNoteOff(const uint8_t channel, const uint8_t note) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUi.type != UI::TYPE_NULL,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
         CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
 
-        if (fUi.type == UI::TYPE_OSC)
+        if (fUI.type == UI::TYPE_OSC)
         {
             if (pData->osc.data.target != nullptr)
             {
@@ -3798,7 +3813,7 @@ public:
         }
         else
         {
-            if (fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->port_event != nullptr && fEventsIn.ctrl != nullptr)
+            if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr && fEventsIn.ctrl != nullptr)
             {
                 LV2_Atom_MidiEvent midiEv;
                 midiEv.event.time.frames = 0;
@@ -3808,7 +3823,7 @@ public:
                 midiEv.data[1] = note;
                 midiEv.data[2] = 0;
 
-                fUi.descriptor->port_event(fUi.handle, fEventsIn.ctrl->rindex, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
+                fUI.descriptor->port_event(fUI.handle, fEventsIn.ctrl->rindex, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
             }
         }
     }
@@ -3848,16 +3863,16 @@ public:
         CARLA_SAFE_ASSERT_RETURN(uiId < fRdfDescriptor->UICount, false);
 
 #ifndef LV2_UIS_ONLY_INPROCESS
-        const LV2_RDF_UI* const rdfUi(&fRdfDescriptor->UIs[uiId]);
+        const LV2_RDF_UI* const rdfUI(&fRdfDescriptor->UIs[uiId]);
 
-        if (std::strstr(rdfUi->URI, "http://calf.sourceforge.net/plugins/gui/") != nullptr)
+        if (std::strstr(rdfUI->URI, "http://calf.sourceforge.net/plugins/gui/") != nullptr)
             return false;
 
-        for (uint32_t i=0; i < rdfUi->FeatureCount; ++i)
+        for (uint32_t i=0; i < rdfUI->FeatureCount; ++i)
         {
-            if (std::strcmp(rdfUi->Features[i].URI, LV2_INSTANCE_ACCESS_URI) == 0)
+            if (std::strcmp(rdfUI->Features[i].URI, LV2_INSTANCE_ACCESS_URI) == 0)
                 return false;
-            if (std::strcmp(rdfUi->Features[i].URI, LV2_DATA_ACCESS_URI) == 0)
+            if (std::strcmp(rdfUI->Features[i].URI, LV2_DATA_ACCESS_URI) == 0)
                 return false;
         }
 
@@ -3869,13 +3884,13 @@ public:
 
     bool isUiResizable() const noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(fUi.rdfDescriptor != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fUI.rdfDescriptor != nullptr, false);
 
-        for (uint32_t i=0; i < fUi.rdfDescriptor->FeatureCount; ++i)
+        for (uint32_t i=0; i < fUI.rdfDescriptor->FeatureCount; ++i)
         {
-            if (std::strcmp(fUi.rdfDescriptor->Features[i].URI, LV2_UI__fixedSize) == 0)
+            if (std::strcmp(fUI.rdfDescriptor->Features[i].URI, LV2_UI__fixedSize) == 0)
                 return false;
-            if (std::strcmp(fUi.rdfDescriptor->Features[i].URI, LV2_UI__noUserResize) == 0)
+            if (std::strcmp(fUI.rdfDescriptor->Features[i].URI, LV2_UI__noUserResize) == 0)
                 return false;
         }
 
@@ -3892,29 +3907,29 @@ public:
         switch (type)
         {
         case LV2_UI_GTK2:
-            bridgeBinary += OS_SEP_STR "carla-bridge-lv2-gtk2";
+            bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-lv2-gtk2";
             break;
         case LV2_UI_GTK3:
-            bridgeBinary += OS_SEP_STR "carla-bridge-lv2-gtk3";
+            bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-lv2-gtk3";
             break;
         case LV2_UI_QT4:
-            bridgeBinary += OS_SEP_STR "carla-bridge-lv2-qt4";
+            bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-lv2-qt4";
             break;
         case LV2_UI_QT5:
-            bridgeBinary += OS_SEP_STR "carla-bridge-lv2-qt5";
+            bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-lv2-qt5";
             break;
         case LV2_UI_COCOA:
-            bridgeBinary += OS_SEP_STR "carla-bridge-lv2-cocoa";
+            bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-lv2-cocoa";
             break;
         case LV2_UI_WINDOWS:
-            bridgeBinary += OS_SEP_STR "carla-bridge-lv2-windows";
+            bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-lv2-windows";
             break;
         case LV2_UI_X11:
-            bridgeBinary += OS_SEP_STR "carla-bridge-lv2-x11";
+            bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-lv2-x11";
             break;
         case LV2_UI_EXTERNAL:
         case LV2_UI_OLD_EXTERNAL:
-            bridgeBinary += OS_SEP_STR "carla-bridge-lv2-external";
+            bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-lv2-external";
             break;
         default:
             return nullptr;
@@ -3994,25 +4009,25 @@ public:
 
     void updateUi()
     {
-        CARLA_SAFE_ASSERT_RETURN(fUi.handle != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fUi.descriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.handle != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.descriptor != nullptr,);
         carla_debug("Lv2Plugin::updateUi()");
 
         // update midi program
         if (fExt.uiprograms != nullptr && pData->midiprog.count > 0 && pData->midiprog.current >= 0)
         {
             const MidiProgramData& curData(pData->midiprog.getCurrent());
-            fExt.uiprograms->select_program(fUi.handle, curData.bank, curData.program);
+            fExt.uiprograms->select_program(fUI.handle, curData.bank, curData.program);
         }
 
         // update control ports
-        if (fUi.descriptor->port_event != nullptr)
+        if (fUI.descriptor->port_event != nullptr)
         {
             float value;
             for (uint32_t i=0; i < pData->param.count; ++i)
             {
                 value = getParameterValue(i);
-                fUi.descriptor->port_event(fUi.handle, static_cast<uint32_t>(pData->param.data[i].rindex), sizeof(float), CARLA_URI_MAP_ID_NULL, &value);
+                fUI.descriptor->port_event(fUI.handle, static_cast<uint32_t>(pData->param.data[i].rindex), sizeof(float), CARLA_URI_MAP_ID_NULL, &value);
             }
         }
     }
@@ -4035,7 +4050,7 @@ public:
 
         fCustomURIDs.append(carla_strdup(uri));
 
-        if (fUi.type == UI::TYPE_OSC && pData->osc.data.target != nullptr)
+        if (fUI.type == UI::TYPE_OSC && pData->osc.data.target != nullptr)
             osc_send_lv2_urid_map(pData->osc.data, urid, uri);
 
         return urid;
@@ -4241,30 +4256,30 @@ public:
 
     void handleExternalUIClosed()
     {
-        CARLA_SAFE_ASSERT_RETURN(fUi.type == UI::TYPE_EXTERNAL,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type == UI::TYPE_EXTERNAL,);
         carla_debug("Lv2Plugin::handleExternalUIClosed()");
 
-        if (fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->cleanup != nullptr)
-            fUi.descriptor->cleanup(fUi.handle);
+        if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->cleanup != nullptr)
+            fUI.descriptor->cleanup(fUI.handle);
 
-        fUi.handle = nullptr;
-        fUi.widget = nullptr;
+        fUI.handle = nullptr;
+        fUI.widget = nullptr;
         pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
     }
 
     void handlePluginUIClosed() override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUi.type == UI::TYPE_EMBED,);
-        CARLA_SAFE_ASSERT_RETURN(fUi.window != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type == UI::TYPE_EMBED,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
         carla_debug("Lv2Plugin::handlePluginUIClosed()");
 
-        fUi.window->hide();
+        fUI.window->hide();
 
-        if (fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->cleanup != nullptr)
-            fUi.descriptor->cleanup(fUi.handle);
+        if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->cleanup != nullptr)
+            fUI.descriptor->cleanup(fUI.handle);
 
-        fUi.handle = nullptr;
-        fUi.widget = nullptr;
+        fUI.handle = nullptr;
+        fUI.widget = nullptr;
         pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
     }
 
@@ -4286,12 +4301,12 @@ public:
 
     int handleUIResize(const int width, const int height)
     {
-        CARLA_SAFE_ASSERT_RETURN(fUi.window != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr, 1);
         CARLA_SAFE_ASSERT_RETURN(width > 0, 1);
         CARLA_SAFE_ASSERT_RETURN(height > 0, 1);
         carla_debug("Lv2Plugin::handleUIResize(%i, %i)", width, height);
 
-        fUi.window->setSize(static_cast<uint>(width), static_cast<uint>(height), true);
+        fUI.window->setSize(static_cast<uint>(width), static_cast<uint>(height), true);
 
         return 0;
     }
@@ -4934,7 +4949,7 @@ public:
             }
         }
 
-        fUi.rdfDescriptor = &fRdfDescriptor->UIs[iFinal];
+        fUI.rdfDescriptor = &fRdfDescriptor->UIs[iFinal];
 
         // ---------------------------------------------------------------
         // check supported ui features
@@ -4942,32 +4957,32 @@ public:
         bool canContinue = true;
         bool canDelete = true;
 
-        for (uint32_t i=0; i < fUi.rdfDescriptor->FeatureCount; ++i)
+        for (uint32_t i=0; i < fUI.rdfDescriptor->FeatureCount; ++i)
         {
-            if (! is_lv2_ui_feature_supported(fUi.rdfDescriptor->Features[i].URI))
+            if (! is_lv2_ui_feature_supported(fUI.rdfDescriptor->Features[i].URI))
             {
-                carla_stderr("Plugin UI requires a feature that is not supported:\n%s", fUi.rdfDescriptor->Features[i].URI);
+                carla_stderr("Plugin UI requires a feature that is not supported:\n%s", fUI.rdfDescriptor->Features[i].URI);
 
-                if (LV2_IS_FEATURE_REQUIRED(fUi.rdfDescriptor->Features[i].Type))
+                if (LV2_IS_FEATURE_REQUIRED(fUI.rdfDescriptor->Features[i].Type))
                 {
                     canContinue = false;
                     break;
                 }
             }
-            if (std::strcmp(fUi.rdfDescriptor->Features[i].URI, LV2_UI__makeResident) == 0)
+            if (std::strcmp(fUI.rdfDescriptor->Features[i].URI, LV2_UI__makeResident) == 0)
                 canDelete = false;
         }
 
         if (! canContinue)
         {
-            fUi.rdfDescriptor = nullptr;
+            fUI.rdfDescriptor = nullptr;
             return;
         }
 
         // ---------------------------------------------------------------
         // initialize ui according to type
 
-        const LV2_Property uiType(fUi.rdfDescriptor->Type);
+        const LV2_Property uiType(fUI.rdfDescriptor->Type);
 
         if (iFinal == eQt4 || iFinal == eQt5 || iFinal == eGtk2 || iFinal == eGtk3 || iFinal == eCocoa || iFinal == eWindows || iFinal == eX11 || iFinal == eExt)
         {
@@ -4977,8 +4992,8 @@ public:
             if (const char* const bridgeBinary = getUiBridgeBinary(uiType))
             {
                 carla_stdout("Will use OSC-Bridge UI, binary: \"%s\"", bridgeBinary);
-                fUi.type = UI::TYPE_OSC;
-                pData->osc.thread.setOscData(bridgeBinary, fDescriptor->URI, fUi.rdfDescriptor->URI);
+                fUI.type = UI::TYPE_OSC;
+                pData->osc.thread.setOscData(bridgeBinary, fDescriptor->URI, fUI.rdfDescriptor->URI);
                 delete[] bridgeBinary;
                 return;
             }
@@ -4986,24 +5001,24 @@ public:
             if (iFinal == eQt4 || iFinal == eQt5 || iFinal == eGtk2 || iFinal == eGtk3)
             {
                 carla_stderr2("Failed to find UI bridge binary, cannot use UI");
-                fUi.rdfDescriptor = nullptr;
+                fUI.rdfDescriptor = nullptr;
                 return;
             }
         }
 
 #ifdef LV2_UIS_ONLY_BRIDGES
         carla_stderr2("Failed to get an UI working, canBridge:%s", bool2str(isUiBridgeable(static_cast<uint32_t>(iFinal))));
-        fUi.rdfDescriptor = nullptr;
+        fUI.rdfDescriptor = nullptr;
         return;
 #endif
 
         // ---------------------------------------------------------------
         // open UI DLL
 
-        if (! pData->uiLibOpen(fUi.rdfDescriptor->Binary, canDelete))
+        if (! pData->uiLibOpen(fUI.rdfDescriptor->Binary, canDelete))
         {
-            carla_stderr2("Could not load UI library, error was:\n%s", pData->libError(fUi.rdfDescriptor->Binary));
-            fUi.rdfDescriptor = nullptr;
+            carla_stderr2("Could not load UI library, error was:\n%s", pData->libError(fUI.rdfDescriptor->Binary));
+            fUI.rdfDescriptor = nullptr;
             return;
         }
 
@@ -5016,7 +5031,7 @@ public:
         {
             carla_stderr2("Could not find the LV2UI Descriptor in the UI library");
             pData->uiLibClose();
-            fUi.rdfDescriptor = nullptr;
+            fUI.rdfDescriptor = nullptr;
             return;
         }
 
@@ -5024,17 +5039,17 @@ public:
         // get UI descriptor that matches UI URI
 
         uint32_t i = 0;
-        while ((fUi.descriptor = uiDescFn(i++)))
+        while ((fUI.descriptor = uiDescFn(i++)))
         {
-            if (std::strcmp(fUi.descriptor->URI, fUi.rdfDescriptor->URI) == 0)
+            if (std::strcmp(fUI.descriptor->URI, fUI.rdfDescriptor->URI) == 0)
                 break;
         }
 
-        if (fUi.descriptor == nullptr)
+        if (fUI.descriptor == nullptr)
         {
             carla_stderr2("Could not find the requested GUI in the plugin UI library");
             pData->uiLibClose();
-            fUi.rdfDescriptor = nullptr;
+            fUI.rdfDescriptor = nullptr;
             return;
         }
 
@@ -5045,30 +5060,30 @@ public:
         {
         case LV2_UI_QT4:
             carla_stdout("Will use LV2 Qt4 UI, NOT!");
-            fUi.type = UI::TYPE_EMBED;
+            fUI.type = UI::TYPE_EMBED;
             break;
         case LV2_UI_QT5:
             carla_stdout("Will use LV2 Qt5 UI, NOT!");
-            fUi.type = UI::TYPE_EMBED;
+            fUI.type = UI::TYPE_EMBED;
             break;
         case LV2_UI_GTK2:
             carla_stdout("Will use LV2 Gtk2 UI, NOT!");
-            fUi.type = UI::TYPE_EMBED;
+            fUI.type = UI::TYPE_EMBED;
             break;
         case LV2_UI_GTK3:
             carla_stdout("Will use LV2 Gtk3 UI, NOT!");
-            fUi.type = UI::TYPE_EMBED;
+            fUI.type = UI::TYPE_EMBED;
             break;
 #ifdef CARLA_OS_MAC
         case LV2_UI_COCOA:
             carla_stdout("Will use LV2 Cocoa UI");
-            fUi.type = UI::TYPE_EMBED;
+            fUI.type = UI::TYPE_EMBED;
             break;
 #endif
 #ifdef CARLA_OS_WIN
         case LV2_UI_WINDOWS:
             carla_stdout("Will use LV2 Windows UI");
-            fUi.type = UI::TYPE_EMBED;
+            fUI.type = UI::TYPE_EMBED;
             break;
 #endif
         case LV2_UI_X11:
@@ -5077,20 +5092,20 @@ public:
 #else
             carla_stdout("Will use LV2 X11 UI, NOT!");
 #endif
-            fUi.type = UI::TYPE_EMBED;
+            fUI.type = UI::TYPE_EMBED;
             break;
         case LV2_UI_EXTERNAL:
         case LV2_UI_OLD_EXTERNAL:
             carla_stdout("Will use LV2 External UI");
-            fUi.type = UI::TYPE_EXTERNAL;
+            fUI.type = UI::TYPE_EXTERNAL;
             break;
         }
 
-        if (fUi.type == UI::TYPE_NULL)
+        if (fUI.type == UI::TYPE_NULL)
         {
             pData->uiLibClose();
-            fUi.descriptor = nullptr;
-            fUi.rdfDescriptor = nullptr;
+            fUI.descriptor = nullptr;
+            fUI.rdfDescriptor = nullptr;
             return;
         }
 
@@ -5170,12 +5185,12 @@ public:
         // ---------------------------------------------------------------
         // initialize ui extensions
 
-        if (fUi.descriptor->extension_data == nullptr)
+        if (fUI.descriptor->extension_data == nullptr)
             return;
 
-        fExt.uiidle     = (const LV2UI_Idle_Interface*)fUi.descriptor->extension_data(LV2_UI__idleInterface);
-        fExt.uishow     = (const LV2UI_Show_Interface*)fUi.descriptor->extension_data(LV2_UI__showInterface);
-        fExt.uiprograms = (const LV2_Programs_UI_Interface*)fUi.descriptor->extension_data(LV2_PROGRAMS__UIInterface);
+        fExt.uiidle     = (const LV2UI_Idle_Interface*)fUI.descriptor->extension_data(LV2_UI__idleInterface);
+        fExt.uishow     = (const LV2UI_Show_Interface*)fUI.descriptor->extension_data(LV2_UI__showInterface);
+        fExt.uiprograms = (const LV2_Programs_UI_Interface*)fUI.descriptor->extension_data(LV2_PROGRAMS__UIInterface);
 
         // check if invalid
         if (fExt.uiidle != nullptr && fExt.uiidle->idle == nullptr)
@@ -5274,6 +5289,8 @@ private:
               uiidle(nullptr),
               uishow(nullptr),
               uiprograms(nullptr) {}
+
+        CARLA_DECLARE_NON_COPY_STRUCT(Extensions);
     } fExt;
 
     struct UI {
@@ -5308,7 +5325,9 @@ private:
             CARLA_ASSERT(rdfDescriptor == nullptr);
             CARLA_ASSERT(window == nullptr);
         }
-    } fUi;
+
+        CARLA_DECLARE_NON_COPY_STRUCT(UI);
+    } fUI;
 
     // -------------------------------------------------------------------
     // Event Feature

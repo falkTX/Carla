@@ -1444,6 +1444,9 @@ static const NativePluginDescriptor fxReverbDesc = {
 // -----------------------------------------------------------------------
 
 CARLA_EXPORT
+void carla_register_native_plugin_zynaddsubfx_fx();
+
+CARLA_EXPORT
 void carla_register_native_plugin_zynaddsubfx_fx()
 {
     carla_register_native_plugin(&fxAlienWahDesc);

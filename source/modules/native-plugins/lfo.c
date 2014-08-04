@@ -78,7 +78,7 @@ static uint32_t lfo_get_parameter_count(NativePluginHandle handle)
     (void)handle;
 }
 
-const NativeParameter* lfo_get_parameter_info(NativePluginHandle handle, uint32_t index)
+static const NativeParameter* lfo_get_parameter_info(NativePluginHandle handle, uint32_t index)
 {
     if (index > PARAM_COUNT)
         return NULL;
@@ -315,7 +315,9 @@ static const NativePluginDescriptor lfoDesc = {
 
 // -----------------------------------------------------------------------
 
-void carla_register_native_plugin_lfo()
+void carla_register_native_plugin_lfo(void);
+
+void carla_register_native_plugin_lfo(void)
 {
     carla_register_native_plugin(&lfoDesc);
 }

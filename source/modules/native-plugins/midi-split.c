@@ -133,7 +133,9 @@ static const NativePluginDescriptor midisplitDesc = {
 
 // -----------------------------------------------------------------------
 
-void carla_register_native_plugin_midisplit()
+void carla_register_native_plugin_midisplit(void);
+
+void carla_register_native_plugin_midisplit(void)
 {
     carla_register_native_plugin(&midisplitDesc);
 }

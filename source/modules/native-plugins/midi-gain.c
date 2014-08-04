@@ -71,7 +71,7 @@ static uint32_t midigain_get_parameter_count(NativePluginHandle handle)
     (void)handle;
 }
 
-const NativeParameter* midigain_get_parameter_info(NativePluginHandle handle, uint32_t index)
+static const NativeParameter* midigain_get_parameter_info(NativePluginHandle handle, uint32_t index)
 {
     if (index > PARAM_COUNT)
         return NULL;
@@ -263,7 +263,9 @@ static const NativePluginDescriptor midigainDesc = {
 
 // -----------------------------------------------------------------------
 
-void carla_register_native_plugin_midigain()
+void carla_register_native_plugin_midigain(void);
+
+void carla_register_native_plugin_midigain(void)
 {
     carla_register_native_plugin(&midigainDesc);
 }

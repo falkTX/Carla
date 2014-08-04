@@ -38,7 +38,8 @@ public:
           fAudioOutBuffers(nullptr),
           fParamBuffers(nullptr),
           fLatencyChanged(false),
-          fLatencyIndex(-1)
+          fLatencyIndex(-1),
+          leakDetector_LadspaPlugin()
     {
         carla_debug("LadspaPlugin::LadspaPlugin(%p, %i)", engine, id);
     }

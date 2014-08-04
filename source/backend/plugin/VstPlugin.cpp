@@ -58,10 +58,19 @@ public:
           fUnique1(1),
           fEffect(nullptr),
           fMidiEventCount(0),
+          fTimeInfo(),
           fNeedIdle(false),
           fLastChunk(nullptr),
           fIsProcessing(false),
-          fUnique2(2)
+#ifdef PTW32_DLLPORT
+          fProcThread({nullptr, 0}),
+#else
+          fProcThread(0),
+#endif
+          fEvents(),
+          fUI(),
+          fUnique2(2),
+          leakDetector_VstPlugin()
     {
         carla_debug("VstPlugin::VstPlugin(%p, %i)", engine, id);
 
@@ -94,7 +103,7 @@ public:
         {
             showCustomUI(false);
 
-            if (fUi.type == UI::UI_OSC)
+            if (fUI.type == UI::UI_OSC)
                 pData->osc.thread.stopThread(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
         }
 
@@ -305,11 +314,11 @@ public:
     {
         CarlaPlugin::setName(newName);
 
-        if (fUi.window != nullptr)
+        if (fUI.window != nullptr)
         {
             CarlaString guiTitle(pData->name);
             guiTitle += " (GUI)";
-            fUi.window->setTitle(guiTitle.buffer());
+            fUI.window->setTitle(guiTitle.buffer());
         }
     }
 
@@ -391,7 +400,7 @@ public:
 
     void showCustomUI(const bool yesNo) override
     {
-        if (fUi.type == UI::UI_OSC)
+        if (fUI.type == UI::UI_OSC)
         {
             if (yesNo)
             {
@@ -414,7 +423,7 @@ public:
             return;
         }
 
-        if (fUi.isVisible == yesNo)
+        if (fUI.isVisible == yesNo)
             return;
 
         if (yesNo)
@@ -426,47 +435,47 @@ public:
             void*    vstPtr = nullptr;
             ERect*  vstRect = nullptr;
 
-            if (fUi.window == nullptr && fUi.type == UI::UI_EMBED)
+            if (fUI.window == nullptr && fUI.type == UI::UI_EMBED)
             {
                 const char* msg = nullptr;
                 const uintptr_t frontendWinId(pData->engine->getOptions().frontendWinId);
 
 #if defined(CARLA_OS_LINUX)
 # ifdef HAVE_X11
-                fUi.window = CarlaPluginUI::newX11(this, frontendWinId);
+                fUI.window = CarlaPluginUI::newX11(this, frontendWinId);
 # else
                 msg = "UI is only for systems with X11";
 # endif
 #elif defined(CARLA_OS_MAC)
 # ifdef __LP64__
-                fUi.window = CarlaPluginUI::newCocoa(this, frontendWinId);
+                fUI.window = CarlaPluginUI::newCocoa(this, frontendWinId);
 # endif
 #elif defined(CARLA_OS_WIN)
-                fUi.window = CarlaPluginUI::newWindows(this, frontendWinId);
+                fUI.window = CarlaPluginUI::newWindows(this, frontendWinId);
 #else
                 msg = "Unknown UI type";
 #endif
 
-                if (fUi.window == nullptr)
+                if (fUI.window == nullptr)
                     return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, msg);
 
-                fUi.window->setTitle(uiTitle.buffer());
+                fUI.window->setTitle(uiTitle.buffer());
             }
 
-            if (fUi.type == UI::UI_EMBED)
-                vstPtr = fUi.window->getPtr();
+            if (fUI.type == UI::UI_EMBED)
+                vstPtr = fUI.window->getPtr();
             else
                 vstPtr = const_cast<char*>(uiTitle.buffer());
 
             dispatcher(effEditGetRect, 0, 0, &vstRect, 0.0f);
 
 #ifdef HAVE_X11
-            value = (intptr_t)fUi.window->getDisplay();
+            value = (intptr_t)fUI.window->getDisplay();
 #endif
 
             if (dispatcher(effEditOpen, 0, value, vstPtr, 0.0f) != 0)
             {
-                if (fUi.type == UI::UI_EMBED)
+                if (fUI.type == UI::UI_EMBED)
                 {
                     if (vstRect == nullptr || vstRect->right - vstRect->left < 2)
                         dispatcher(effEditGetRect, 0, 0, &vstRect, 0.0f);
@@ -479,10 +488,10 @@ public:
                         CARLA_SAFE_ASSERT_INT2(width > 1 && height > 1, width, height);
 
                         if (width > 1 && height > 1)
-                            fUi.window->setSize(static_cast<uint>(width), static_cast<uint>(height), false);
+                            fUI.window->setSize(static_cast<uint>(width), static_cast<uint>(height), false);
                     }
 
-                    fUi.window->show();
+                    fUI.window->show();
                 }
                 else
                 {
@@ -490,14 +499,14 @@ public:
                         pData->transientTryCounter = 1;
                 }
 
-                fUi.isVisible = true;
+                fUI.isVisible = true;
             }
             else
             {
-                if (fUi.type == UI::UI_EMBED)
+                if (fUI.type == UI::UI_EMBED)
                 {
-                    delete fUi.window;
-                    fUi.window = nullptr;
+                    delete fUI.window;
+                    fUI.window = nullptr;
                 }
 
                 return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, "Plugin refused to open its own UI");
@@ -505,12 +514,12 @@ public:
         }
         else
         {
-            fUi.isVisible = false;
+            fUI.isVisible = false;
 
-            if (fUi.type == UI::UI_EMBED)
+            if (fUI.type == UI::UI_EMBED)
             {
-                CARLA_SAFE_ASSERT_RETURN(fUi.window != nullptr,);
-                fUi.window->hide();
+                CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
+                fUI.window->hide();
             }
             else
             {
@@ -526,11 +535,11 @@ public:
         if (fNeedIdle)
             dispatcher(effIdle, 0, 0, nullptr, 0.0f);
 
-        if (fUi.window != nullptr)
+        if (fUI.window != nullptr)
         {
-            fUi.window->idle();
+            fUI.window->idle();
 
-            if (fUi.isVisible)
+            if (fUI.isVisible)
                 dispatcher(effEditIdle, 0, 0, nullptr, 0.0f);
         }
 
@@ -839,7 +848,7 @@ public:
         {
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
 
-            if (fUi.type == UI::UI_EMBED)
+            if (fUI.type == UI::UI_EMBED)
                 pData->hints |= PLUGIN_NEEDS_SINGLE_THREAD;
         }
 
@@ -1697,7 +1706,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(index < pData->param.count,);
 
-        if (fUi.type != UI::UI_OSC)
+        if (fUI.type != UI::UI_OSC)
             return;
         if (pData->osc.data.target == nullptr)
             return;
@@ -1709,7 +1718,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(index < pData->prog.count,);
 
-        if (fUi.type != UI::UI_OSC)
+        if (fUI.type != UI::UI_OSC)
             return;
         if (pData->osc.data.target == nullptr)
             return;
@@ -1723,7 +1732,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
         CARLA_SAFE_ASSERT_RETURN(velo > 0 && velo < MAX_MIDI_VALUE,);
 
-        if (fUi.type != UI::UI_OSC)
+        if (fUI.type != UI::UI_OSC)
             return;
         if (pData->osc.data.target == nullptr)
             return;
@@ -1742,7 +1751,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
         CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
 
-        if (fUi.type != UI::UI_OSC)
+        if (fUI.type != UI::UI_OSC)
             return;
         if (pData->osc.data.target == nullptr)
             return;
@@ -1761,8 +1770,8 @@ public:
 protected:
     void handlePluginUIClosed() override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUi.type == UI::UI_EMBED || fUi.type == UI::UI_EXTERNAL,);
-        CARLA_SAFE_ASSERT_RETURN(fUi.window != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.type == UI::UI_EMBED || fUI.type == UI::UI_EXTERNAL,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
         carla_debug("VstPlugin::handlePluginUIClosed()");
 
         showCustomUI(false);
@@ -1813,7 +1822,7 @@ protected:
                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, fixedValue);
             }
             // Called from UI
-            else if (fUi.isVisible)
+            else if (fUI.isVisible)
             {
                 CarlaPlugin::setParameterValue(uindex, fixedValue, false, true, true);
             }
@@ -1961,10 +1970,10 @@ protected:
 #endif
 
         case audioMasterSizeWindow:
-            CARLA_SAFE_ASSERT_BREAK(fUi.window != nullptr);
+            CARLA_SAFE_ASSERT_BREAK(fUI.window != nullptr);
             CARLA_SAFE_ASSERT_BREAK(index > 0);
             CARLA_SAFE_ASSERT_BREAK(value > 0);
-            fUi.window->setSize(static_cast<uint>(index), static_cast<uint>(value), true);
+            fUI.window->setSize(static_cast<uint>(index), static_cast<uint>(value), true);
             ret = 1;
             break;
 
@@ -2041,7 +2050,7 @@ protected:
         case audioMasterVendorSpecific:
             if (index == 0xedcd && value == 0 && ptr != nullptr && std::strcmp((const char*)ptr, "EditorClosed") == 0)
             {
-                CARLA_SAFE_ASSERT_BREAK(fUi.type == UI::UI_EXTERNAL);
+                CARLA_SAFE_ASSERT_BREAK(fUI.type == UI::UI_EXTERNAL);
                 handlePluginUIClosed();
                 break;
             }
@@ -2068,7 +2077,7 @@ protected:
 
         case audioMasterUpdateDisplay:
             // Idle UI if visible
-            if (fUi.isVisible)
+            if (fUI.isVisible)
                 dispatcher(effEditIdle, 0, 0, nullptr, 0.0f);
 
             // Update current program
@@ -2249,7 +2258,7 @@ public:
 
             if (strBuf[0] != '\0')
                 pData->name = pData->engine->getUniquePluginName(strBuf);
-            else if (const char* const shortname = std::strrchr(filename, OS_SEP))
+            else if (const char* const shortname = std::strrchr(filename, CARLA_OS_SEP))
                 pData->name = pData->engine->getUniquePluginName(shortname+1);
             else
                 pData->name = pData->engine->getUniquePluginName("unknown");
@@ -2289,26 +2298,26 @@ public:
 
         if (fEffect->flags & effFlagsHasEditor)
         {
-            fUi.type = UI::UI_EMBED;
+            fUI.type = UI::UI_EMBED;
 
             if ((fEffect->flags & effFlagsProgramChunks) == 0 && pData->engine->getOptions().preferUiBridges)
             {
                 CarlaString bridgeBinary(pData->engine->getOptions().binaryDir);
 
 #if defined(CARLA_OS_LINUX)
-                bridgeBinary += OS_SEP_STR "carla-bridge-vst-x11";
+                bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-vst-x11";
 #endif
 
                 if (bridgeBinary.isNotEmpty() && File(bridgeBinary.buffer()).existsAsFile())
                 {
                     pData->osc.thread.setOscData(bridgeBinary, nullptr);
-                    fUi.type = UI::UI_OSC;
+                    fUI.type = UI::UI_OSC;
                 }
             }
         }
         else if (vstPluginCanDo(fEffect, "ExternalUI"))
         {
-            fUi.type = UI::UI_EXTERNAL;
+            fUI.type = UI::UI_EXTERNAL;
         }
 
         // ---------------------------------------------------------------
@@ -2361,6 +2370,8 @@ private:
         {
             carla_fill<VstEvent*>(data, nullptr, kPluginMaxMidiEvents*2);
         }
+
+        CARLA_DECLARE_NON_COPY_STRUCT(FixedVstEvents);
     } fEvents;
 
     struct UI {
@@ -2389,9 +2400,11 @@ private:
                 window = nullptr;
             }
         }
-    } fUi;
 
-    int  fUnique2;
+        CARLA_DECLARE_NON_COPY_STRUCT(UI);
+    } fUI;
+
+    int fUnique2;
 
     static VstPlugin* sLastVstPlugin;
 

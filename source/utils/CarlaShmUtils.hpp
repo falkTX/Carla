@@ -22,10 +22,12 @@
 
 #ifdef CARLA_OS_WIN
 struct shm_t { HANDLE shm; HANDLE map; };
+# define shm_t_INIT {nullptr, nullptr}
 #else
 # include <fcntl.h>
 # include <sys/mman.h>
 struct shm_t { int fd; const char* filename; };
+# define shm_t_INIT {-1, nullptr}
 #endif
 
 // -----------------------------------------------------------------------

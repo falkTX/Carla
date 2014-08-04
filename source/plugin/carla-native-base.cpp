@@ -38,6 +38,13 @@ using CarlaBackend::CarlaPlugin;
 
 struct PluginListManager {
     PluginListManager()
+#ifdef CARLA_NATIVE_PLUGIN_DSSI
+        : dssiDescs(),
+#endif
+#ifdef CARLA_NATIVE_PLUGIN_LV2
+        : lv2Descs(),
+#endif
+          descs()
     {
         for (size_t i=0, count = CarlaPlugin::getNativePluginCount(); i < count; ++i)
         {

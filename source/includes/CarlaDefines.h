@@ -238,7 +238,7 @@ private:                                        \
 # endif
 #endif
 
-/* Define OS_SEP */
+/* Define CARLA_OS_SEP */
 #ifdef CARLA_OS_WIN
 # define CARLA_OS_SEP     '\\'
 # define CARLA_OS_SEP_STR "\\"

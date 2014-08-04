@@ -171,7 +171,11 @@ class CarlaBridgePlugin
 public:
     CarlaBridgePlugin(const bool useBridge, const char* const clientName, const char* const audioPoolBaseName, const char* const rtBaseName, const char* const nonRtBaseName)
         : fEngine(nullptr),
-          fOscServerThread(nullptr)
+          fProjFilename(),
+          fOscControlData(),
+          fOscServerPath(),
+          fOscServerThread(nullptr),
+          leakDetector_CarlaBridgePlugin()
     {
         CARLA_ASSERT(clientName != nullptr && clientName[0] != '\0');
         carla_debug("CarlaBridgePlugin::CarlaBridgePlugin(%s, \"%s\", %s, %s, %s)", bool2str(useBridge), clientName, audioPoolBaseName, rtBaseName, nonRtBaseName);
@@ -360,6 +364,8 @@ private:
     {
         carla_stderr("CarlaBridgePlugin::osc_error_handler(%i, \"%s\", \"%s\")", num, msg, path);
     }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgePlugin)
 };
 
 // -------------------------------------------------------------------------

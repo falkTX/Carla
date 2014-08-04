@@ -56,7 +56,7 @@ static uint32_t miditranspose_get_parameter_count(NativePluginHandle handle)
     (void)handle;
 }
 
-const NativeParameter* miditranspose_get_parameter_info(NativePluginHandle handle, uint32_t index)
+static const NativeParameter* miditranspose_get_parameter_info(NativePluginHandle handle, uint32_t index)
 {
     if (index != 0)
         return NULL;
@@ -192,7 +192,9 @@ static const NativePluginDescriptor miditransposeDesc = {
 
 // -----------------------------------------------------------------------
 
-void carla_register_native_plugin_miditranspose()
+void carla_register_native_plugin_miditranspose(void);
+
+void carla_register_native_plugin_miditranspose(void)
 {
     carla_register_native_plugin(&miditransposeDesc);
 }

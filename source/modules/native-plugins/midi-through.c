@@ -114,7 +114,9 @@ static const NativePluginDescriptor midithroughDesc = {
 
 // -----------------------------------------------------------------------
 
-void carla_register_native_plugin_midithrough()
+void carla_register_native_plugin_midithrough(void);
+
+void carla_register_native_plugin_midithrough(void)
 {
     carla_register_native_plugin(&midithroughDesc);
 }

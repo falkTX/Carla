@@ -29,15 +29,16 @@ class Lv2AtomRingBuffer : public CarlaRingBuffer<HeapBuffer>
 {
 public:
     Lv2AtomRingBuffer() noexcept
-        : CarlaRingBuffer<HeapBuffer>(),
-          fNeedsDataDelete(true)
-    {
-        carla_zeroStruct(fHeapBuffer);
-    }
+        : fMutex(),
+          fHeapBuffer(HeapBuffer_INIT),
+          fNeedsDataDelete(true),
+          fRetAtom{{0,0}, {0}} {}
 
     Lv2AtomRingBuffer(Lv2AtomRingBuffer& ringBuf, uint8_t buf[]) noexcept
-        : CarlaRingBuffer<HeapBuffer>(),
-          fNeedsDataDelete(false)
+        : fMutex(),
+          fHeapBuffer(HeapBuffer_INIT),
+          fNeedsDataDelete(false),
+          fRetAtom{{0,0}, {0}}
     {
         fHeapBuffer.buf  = buf;
         fHeapBuffer.size = ringBuf.fHeapBuffer.size;
@@ -204,7 +205,7 @@ private:
 
     friend class Lv2AtomQueue;
 
-    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(Lv2AtomRingBuffer)
 };
 

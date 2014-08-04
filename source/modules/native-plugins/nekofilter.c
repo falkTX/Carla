@@ -88,7 +88,9 @@ static const NativePluginDescriptor nekofilterDesc = {
 
 // -----------------------------------------------------------------------
 
-void carla_register_native_plugin_nekofilter()
+void carla_register_native_plugin_nekofilter(void);
+
+void carla_register_native_plugin_nekofilter(void)
 {
     carla_register_native_plugin(&nekofilterDesc);
 }

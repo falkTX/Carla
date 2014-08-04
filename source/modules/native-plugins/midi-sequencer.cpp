@@ -252,9 +252,12 @@ static const NativePluginDescriptor midisequencerDesc = {
 // -----------------------------------------------------------------------
 
 CARLA_EXPORT
+void carla_register_native_plugin_midisequencer();
+
+CARLA_EXPORT
 void carla_register_native_plugin_midisequencer()
 {
-    carla_register_native_plugin(&midiSequencerDesc);
+    carla_register_native_plugin(&midisequencerDesc);
 }
 
 // -----------------------------------------------------------------------

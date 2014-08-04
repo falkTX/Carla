@@ -482,6 +482,8 @@ struct JackBridge {
             lib = nullptr;
         }
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(JackBridge);
 };
 
 static const JackBridge bridge;

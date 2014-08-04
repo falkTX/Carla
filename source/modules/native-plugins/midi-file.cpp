@@ -29,7 +29,8 @@ public:
     MidiFilePlugin(const NativeHostDescriptor* const host)
         : NativePluginClass(host),
           fMidiOut(this),
-          fWasPlayingBefore(false) {}
+          fWasPlayingBefore(false),
+          leakDetector_MidiFilePlugin() {}
 
 protected:
     // -------------------------------------------------------------------
@@ -185,8 +186,9 @@ private:
                     continue;
 
                 const double time(midiMessage.getTimeStamp()*sampleRate);
+                CARLA_SAFE_ASSERT_CONTINUE(time >= 0.0);
 
-                fMidiOut.addRaw(time, midiMessage.getRawData(), static_cast<uint8_t>(dataSize));
+                fMidiOut.addRaw(static_cast<uint64_t>(time), midiMessage.getRawData(), static_cast<uint8_t>(dataSize));
             }
         }
     }
@@ -215,6 +217,9 @@ static const NativePluginDescriptor midifileDesc = {
 };
 
 // -----------------------------------------------------------------------
+
+CARLA_EXPORT
+void carla_register_native_plugin_midifile();
 
 CARLA_EXPORT
 void carla_register_native_plugin_midifile()

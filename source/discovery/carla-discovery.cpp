@@ -944,8 +944,8 @@ static void do_lv2_check(const char* const bundle, const bool init)
     CarlaString sBundle("file://");
     sBundle += bundle;
 
-    if (! sBundle.endsWith(OS_SEP))
-        sBundle += OS_SEP_STR;
+    if (! sBundle.endsWith(CARLA_OS_SEP))
+        sBundle += CARLA_OS_SEP_STR;
 
     // Load bundle
     lv2World.load_bundle(sBundle);
@@ -1508,7 +1508,7 @@ static void do_fluidsynth_check(const char* const filename, const bool init)
 
     CarlaString name;
 
-    if (const char* const shortname = std::strrchr(filename, OS_SEP))
+    if (const char* const shortname = std::strrchr(filename, CARLA_OS_SEP))
         name = shortname+1;
     else
         name = filename;

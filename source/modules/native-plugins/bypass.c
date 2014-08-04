@@ -92,7 +92,9 @@ static const NativePluginDescriptor bypassDesc = {
 
 // -----------------------------------------------------------------------
 
-void carla_register_native_plugin_bypass()
+void carla_register_native_plugin_bypass(void);
+
+void carla_register_native_plugin_bypass(void)
 {
     carla_register_native_plugin(&bypassDesc);
 }

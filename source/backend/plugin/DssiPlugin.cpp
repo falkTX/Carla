@@ -40,7 +40,8 @@ public:
           fAudioOutBuffers(nullptr),
           fParamBuffers(nullptr),
           fLatencyChanged(false),
-          fLatencyIndex(-1)
+          fLatencyIndex(-1),
+          leakDetector_DssiPlugin()
     {
         carla_debug("DssiPlugin::DssiPlugin(%p, %i)", engine, id);
 

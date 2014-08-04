@@ -34,9 +34,8 @@ public:
         : NativePluginAndUiClass(host, "/bigmeter-ui"),
           fColor(1),
           fOutLeft(0.0f),
-          fOutRight(0.0f)
-    {
-    }
+          fOutRight(0.0f),
+          leakDetector_BigMeterPlugin() {}
 
 protected:
     // -------------------------------------------------------------------
@@ -187,6 +186,9 @@ static const NativePluginDescriptor bigmeterDesc = {
 };
 
 // -----------------------------------------------------------------------
+
+CARLA_EXPORT
+void carla_register_native_plugin_bigmeter();
 
 CARLA_EXPORT
 void carla_register_native_plugin_bigmeter()

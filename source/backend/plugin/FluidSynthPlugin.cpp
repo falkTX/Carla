@@ -49,7 +49,8 @@ public:
           fSynth(nullptr),
           fSynthId(0),
           fAudio16Buffers(nullptr),
-          fLabel(nullptr)
+          fLabel(nullptr),
+          leakDetector_FluidSynthPlugin()
     {
         carla_debug("FluidSynthPlugin::FluidSynthPlugin(%p, %i, %s)", engine, id,  bool2str(use16Outs));
 

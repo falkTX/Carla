@@ -18,36 +18,38 @@
 #include "CarlaDefines.h"
 
 // Simple plugins
-extern void carla_register_native_plugin_bypass();
-extern void carla_register_native_plugin_lfo();
-extern void carla_register_native_plugin_midigain();
-extern void carla_register_native_plugin_midisplit();
-extern void carla_register_native_plugin_midithrough();
-extern void carla_register_native_plugin_miditranspose();
-extern void carla_register_native_plugin_nekofilter();
+extern void carla_register_native_plugin_bypass(void);
+extern void carla_register_native_plugin_lfo(void);
+extern void carla_register_native_plugin_midigain(void);
+extern void carla_register_native_plugin_midisplit(void);
+extern void carla_register_native_plugin_midithrough(void);
+extern void carla_register_native_plugin_miditranspose(void);
+extern void carla_register_native_plugin_nekofilter(void);
 
 // Audio File
-extern void carla_register_native_plugin_audiofile();
+extern void carla_register_native_plugin_audiofile(void);
 
 // MIDI File
-extern void carla_register_native_plugin_midifile();
+extern void carla_register_native_plugin_midifile(void);
 
 #ifndef CARLA_OS_WIN
 // Carla
-extern void carla_register_native_plugin_carla();
+extern void carla_register_native_plugin_carla(void);
 
 // External-UI plugins
-extern void carla_register_native_plugin_bigmeter();
-extern void carla_register_native_plugin_notes();
+extern void carla_register_native_plugin_bigmeter(void);
+extern void carla_register_native_plugin_notes(void);
 #endif
 
 #ifdef WANT_ZYNADDSUBFX
 // ZynAddSubFX
-extern void carla_register_native_plugin_zynaddsubfx_fx();
-extern void carla_register_native_plugin_zynaddsubfx_synth();
+extern void carla_register_native_plugin_zynaddsubfx_fx(void);
+extern void carla_register_native_plugin_zynaddsubfx_synth(void);
 #endif
 
-void carla_register_all_plugins()
+void carla_register_all_plugins(void);
+
+void carla_register_all_plugins(void)
 {
     // Simple plugins
     carla_register_native_plugin_bypass();

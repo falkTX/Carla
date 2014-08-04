@@ -359,7 +359,8 @@ const MidiProgramData& PluginMidiProgramData::getCurrent() const noexcept
 // ProtectedData::ExternalNotes
 
 CarlaPlugin::ProtectedData::ExternalNotes::ExternalNotes() noexcept
-    : dataPool(32, 152),
+    : mutex(),
+      dataPool(32, 152),
       data(dataPool) {}
 
 CarlaPlugin::ProtectedData::ExternalNotes::~ExternalNotes() noexcept
@@ -385,7 +386,8 @@ void CarlaPlugin::ProtectedData::ExternalNotes::clear() noexcept
 // ProtectedData::PostRtEvents
 
 CarlaPlugin::ProtectedData::PostRtEvents::PostRtEvents() noexcept
-    : dataPool(128, 128),
+    : mutex(),
+      dataPool(128, 128),
       data(dataPool),
       dataPendingRT(dataPool) {}
 
@@ -431,7 +433,8 @@ CarlaPlugin::ProtectedData::PostProc::PostProc() noexcept
 // -----------------------------------------------------------------------
 
 CarlaPlugin::ProtectedData::OSC::OSC(CarlaEngine* const eng, CarlaPlugin* const plug) noexcept
-    : thread(eng, plug) {}
+    : data(),
+      thread(eng, plug) {}
 
 // -----------------------------------------------------------------------
 
@@ -456,6 +459,21 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       name(nullptr),
       filename(nullptr),
       iconName(nullptr),
+      audioIn(),
+      audioOut(),
+      event(),
+      param(),
+      prog(),
+      midiprog(),
+      custom(),
+      masterMutex(),
+      singleMutex(),
+      stateSave(),
+      extNotes(),
+      postRtEvents(),
+#ifndef BUILD_BRIDGE
+      postProc(),
+#endif
       osc(eng, plug) {}
 
 CarlaPlugin::ProtectedData::~ProtectedData() noexcept

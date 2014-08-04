@@ -55,7 +55,8 @@ public:
     AudioOutputDevicePlugin(const CarlaEngine* const engine, const CarlaPlugin* const plugin, const bool uses16Outs)
         : AudioOutputDevice(std::map<std::string, DeviceCreationParameter*>()),
           kEngine(engine),
-          kPlugin(plugin)
+          kPlugin(plugin),
+          leakDetector_AudioOutputDevicePlugin()
     {
         CARLA_ASSERT(engine != nullptr);
         CARLA_ASSERT(plugin != nullptr);
@@ -114,6 +115,8 @@ public:
 private:
     const CarlaEngine* const kEngine;
     const CarlaPlugin* const kPlugin;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AudioOutputDevicePlugin)
 };
 
 // -----------------------------------------------------------------------
@@ -123,9 +126,12 @@ class MidiInputPortPlugin : public MidiInputPort
 {
 public:
     MidiInputPortPlugin(MidiInputDevice* const device, const int portNum)
-        : MidiInputPort(device, portNum) {}
+        : MidiInputPort(device, portNum),
+          leakDetector_MidiInputPortPlugin() {}
 
     ~MidiInputPortPlugin() override {}
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiInputPortPlugin)
 };
 
 // -----------------------------------------------------------------------
@@ -135,7 +141,8 @@ class MidiInputDevicePlugin : public MidiInputDevice
 {
 public:
     MidiInputDevicePlugin(Sampler* const sampler)
-        : MidiInputDevice(std::map<std::string, DeviceCreationParameter*>(), sampler) {}
+        : MidiInputDevice(std::map<std::string, DeviceCreationParameter*>(), sampler),
+          leakDetector_MidiInputDevicePlugin() {}
 
     // -------------------------------------------------------------------
     // LinuxSampler virtual methods
@@ -164,6 +171,8 @@ public:
     {
         return new MidiInputPortPlugin(this, int(Ports.size()));
     }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiInputDevicePlugin)
 };
 
 // -----------------------------------------------------------------------
@@ -203,7 +212,10 @@ public:
           fRealName(nullptr),
           fAudioOutputDevice(nullptr),
           fMidiInputPort(nullptr),
-          fInstrument(nullptr)
+          fInstrument(nullptr),
+          fInstrumentIds(),
+          sSampler(),
+          leakDetector_LinuxSamplerPlugin()
     {
         carla_debug("LinuxSamplerPlugin::LinuxSamplerPlugin(%p, %i, %s, %s)", engine, id, bool2str(isGIG), bool2str(use16Outs));
 
@@ -420,17 +432,19 @@ public:
                         LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[channel]);
                         CARLA_SAFE_ASSERT_CONTINUE(engineChannel != nullptr);
 
+                        const uint32_t uindex(static_cast<uint32_t>(index));
+
                         if (pData->engine->isOffline())
                         {
                             try {
-                                engineChannel->PrepareLoadInstrument(pData->filename, index);
+                                engineChannel->PrepareLoadInstrument(pData->filename, uindex);
                                 engineChannel->LoadInstrument();
                             } CARLA_SAFE_EXCEPTION("LoadInstrument");
                         }
                         else
                         {
                             try {
-                                fInstrument->LoadInstrumentInBackground(fInstrumentIds[index], engineChannel);
+                                fInstrument->LoadInstrumentInBackground(fInstrumentIds[uindex], engineChannel);
                             } CARLA_SAFE_EXCEPTION("LoadInstrumentInBackground");
                         }
 
@@ -464,19 +478,21 @@ public:
             LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[channel]);
             CARLA_SAFE_ASSERT_RETURN(engineChannel != nullptr,);
 
+            const uint32_t uindex(static_cast<uint32_t>(index));
+
             const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
             if (pData->engine->isOffline())
             {
                 try {
-                    engineChannel->PrepareLoadInstrument(pData->filename, index);
+                    engineChannel->PrepareLoadInstrument(pData->filename, uindex);
                     engineChannel->LoadInstrument();
                 } CARLA_SAFE_EXCEPTION("LoadInstrument");
             }
             else
             {
                 try {
-                    fInstrument->LoadInstrumentInBackground(fInstrumentIds[index], engineChannel);
+                    fInstrument->LoadInstrumentInBackground(fInstrumentIds[uindex], engineChannel);
                 } CARLA_SAFE_EXCEPTION("LoadInstrumentInBackground");
             }
 
