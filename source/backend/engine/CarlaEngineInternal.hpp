@@ -124,6 +124,7 @@ struct EngineNextAction {
     EngineNextAction() noexcept;
     ~EngineNextAction() noexcept;
     void ready() const noexcept;
+    void clearAndReset() noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(EngineNextAction)
 };

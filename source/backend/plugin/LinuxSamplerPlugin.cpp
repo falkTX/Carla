@@ -153,17 +153,17 @@ public:
         return new MidiInputPortPlugin(this, int(Ports.size()));
     }
 
-    void DeleteMidiPort(MidiInputPort* const port)
-    {
-          delete (MidiInputPortPlugin*)port;
-    }
-
     // -------------------------------------------------------------------
 
            bool isAutonomousDevice() override { return false; }
     static bool isAutonomousDriver()          { return false; }
 
     // -------------------------------------------------------------------
+
+    MidiInputPortPlugin* CreateMidiPortPlugin()
+    {
+        return new MidiInputPortPlugin(this, int(Ports.size()));
+    }
 };
 
 // -----------------------------------------------------------------------
@@ -175,10 +175,7 @@ struct SamplerPlugin {
 
     SamplerPlugin()
         : sampler(),
-          midiIn(&sampler)
-    {
-        carla_stderr2("SamplerPlugin created");
-    }
+          midiIn(&sampler) {}
 };
 
 } // namespace LinuxSampler
@@ -205,14 +202,13 @@ public:
           fMaker(nullptr),
           fRealName(nullptr),
           fAudioOutputDevice(nullptr),
-          //fMidiInputDevice(nullptr),
-          fMidiInputPort(nullptr)//,
-          //fInstrument(nullptr)
+          fMidiInputPort(nullptr),
+          fInstrument(nullptr)
     {
         carla_debug("LinuxSamplerPlugin::LinuxSamplerPlugin(%p, %i, %s, %s)", engine, id, bool2str(isGIG), bool2str(use16Outs));
 
-        carla_zeroStruct(fCurMidiProgs,    MAX_MIDI_CHANNELS);
-        //carla_zeroStruct(fEngineChannels,  MAX_MIDI_CHANNELS);
+        carla_zeroStruct(fCurProgs,        MAX_MIDI_CHANNELS);
+        carla_zeroStruct(fEngineChannels,  MAX_MIDI_CHANNELS);
         carla_zeroStruct(fSamplerChannels, MAX_MIDI_CHANNELS);
 
         if (use16Outs && ! isGIG)
@@ -235,40 +231,30 @@ public:
             pData->active = false;
         }
 
-        //if (fMidiInputDevice != nullptr)
+        if (fMidiInputPort != nullptr)
         {
-            if (fMidiInputPort != nullptr)
+            for (uint i=0; i<kMaxChannels; ++i)
             {
-                for (uint i=0; i<kMaxChannels; ++i)
+                if (fSamplerChannels[i] != nullptr)
                 {
-                    if (fSamplerChannels[i] != nullptr)
+                    if (fEngineChannels[i] != nullptr)
                     {
-                        //if (fEngineChannels[i] != nullptr)
-                        {
-                            fMidiInputPort->Disconnect(fSamplerChannels[i]->GetEngineChannel());
-                            //fMidiInputPort->Disconnect(fEngineChannels[i]);
-                            //fEngineChannels[i]->DisconnectAudioOutputDevice();
-                            //fEngineChannels[i] = nullptr;
-                        }
-
-                        sSampler->sampler.RemoveSamplerChannel(fSamplerChannels[i]);
-                        fSamplerChannels[i] = nullptr;
+                        fMidiInputPort->Disconnect(fEngineChannels[i]);
+                        fEngineChannels[i]->DisconnectAudioOutputDevice();
+                        fEngineChannels[i] = nullptr;
                     }
-                }
 
-                sSampler->midiIn.DeleteMidiPort(fMidiInputPort);
-                //delete fMidiInputPort;
-                fMidiInputPort = nullptr;
+                    sSampler->sampler.RemoveSamplerChannel(fSamplerChannels[i]);
+                    fSamplerChannels[i] = nullptr;
+                }
             }
 
-            //sSampler->DestroyMidiInputDevice(fMidiInputDevice);
-            //delete fMidiInputDevice;
-            //fMidiInputDevice = nullptr;
+            delete fMidiInputPort;
+            fMidiInputPort = nullptr;
         }
 
         if (fAudioOutputDevice != nullptr)
         {
-            //sSampler->DestroyAudioOutputDevice(fAudioOutputDevice);
             delete fAudioOutputDevice;
             fAudioOutputDevice = nullptr;
         }
@@ -382,12 +368,12 @@ public:
         if (kMaxChannels > 1 && fInstrumentIds.size() > 1)
         {
             char strBuf[STR_MAX+1];
-            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i", fCurMidiProgs[0],  fCurMidiProgs[1],  fCurMidiProgs[2],  fCurMidiProgs[3],
-                                                                                              fCurMidiProgs[4],  fCurMidiProgs[5],  fCurMidiProgs[6],  fCurMidiProgs[7],
-                                                                                              fCurMidiProgs[8],  fCurMidiProgs[9],  fCurMidiProgs[10], fCurMidiProgs[11],
-                                                                                              fCurMidiProgs[12], fCurMidiProgs[13], fCurMidiProgs[14], fCurMidiProgs[15]);
+            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i", fCurProgs[0],  fCurProgs[1],  fCurProgs[2],  fCurProgs[3],
+                                                                                              fCurProgs[4],  fCurProgs[5],  fCurProgs[6],  fCurProgs[7],
+                                                                                              fCurProgs[8],  fCurProgs[9],  fCurProgs[10], fCurProgs[11],
+                                                                                              fCurProgs[12], fCurProgs[13], fCurProgs[14], fCurProgs[15]);
 
-            CarlaPlugin::setCustomData(CUSTOM_DATA_TYPE_STRING, "midiPrograms", strBuf, false);
+            CarlaPlugin::setCustomData(CUSTOM_DATA_TYPE_STRING, "programs", strBuf, false);
         }
     }
 
@@ -397,7 +383,7 @@ public:
     void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept override
     {
         if (channel >= 0 && channel < MAX_MIDI_CHANNELS)
-            pData->midiprog.current = fCurMidiProgs[channel];
+            pData->prog.current = fCurProgs[channel];
 
         CarlaPlugin::setCtrlChannel(channel, sendOsc, sendCallback);
     }
@@ -415,46 +401,50 @@ public:
         if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) != 0)
             return carla_stderr2("LinuxSamplerPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
-        if (std::strcmp(key, "midiPrograms") != 0)
+        if (std::strcmp(key, "programs") != 0)
             return carla_stderr2("LinuxSamplerPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
         if (kMaxChannels > 1 && fInstrumentIds.size() > 1)
         {
-            StringArray midiProgramList(StringArray::fromTokens(value, ":", ""));
+            StringArray programList(StringArray::fromTokens(value, ":", ""));
 
-            if (midiProgramList.size() == MAX_MIDI_CHANNELS)
+            if (programList.size() == MAX_MIDI_CHANNELS)
             {
                 uint8_t channel = 0;
-                for (juce::String *it=midiProgramList.begin(), *end=midiProgramList.end(); it != end; ++it)
+                for (juce::String *it=programList.begin(), *end=programList.end(); it != end; ++it)
                 {
                     const int index(it->getIntValue());
 
-                    if (index >= 0 && index < static_cast<int>(pData->midiprog.count))
+                    if (index >= 0 && index < static_cast<int>(pData->prog.count))
                     {
-                        const uint32_t bank    = pData->midiprog.data[index].bank;
-                        const uint32_t program = pData->midiprog.data[index].program;
-                        const uint32_t rIndex  = bank*128 + program;
+                        LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[channel]);
+                        CARLA_SAFE_ASSERT_CONTINUE(engineChannel != nullptr);
 
-                        /*if (pData->engine->isOffline())
+                        if (pData->engine->isOffline())
                         {
-                            fEngineChannels[channel]->PrepareLoadInstrument(pData->filename, rIndex);
-                            fEngineChannels[channel]->LoadInstrument();
+                            try {
+                                engineChannel->PrepareLoadInstrument(pData->filename, index);
+                                engineChannel->LoadInstrument();
+                            } CARLA_SAFE_EXCEPTION("LoadInstrument");
                         }
-                        else*/
+                        else
                         {
-                            fInstrument->LoadInstrumentInBackground(fInstrumentIds[rIndex], fEngineChannels[channel]);
+                            try {
+                                fInstrument->LoadInstrumentInBackground(fInstrumentIds[index], engineChannel);
+                            } CARLA_SAFE_EXCEPTION("LoadInstrumentInBackground");
                         }
 
-                        fCurMidiProgs[channel] = index;
+                        fCurProgs[channel] = index;
 
                         if (pData->ctrlChannel == static_cast<int32_t>(channel))
                         {
-                            pData->midiprog.current = index;
-                            pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
+                            pData->prog.current = index;
+                            pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
                         }
                     }
 
-                    ++channel;
+                    if (++channel >= MAX_MIDI_CHANNELS)
+                        break;
                 }
                 CARLA_SAFE_ASSERT(channel == MAX_MIDI_CHANNELS);
             }
@@ -463,39 +453,37 @@ public:
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
 
-    void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
+    void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
+        CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
 
         const int8_t channel(kIsGIG ? pData->ctrlChannel : 0);
 
         if (index >= 0 && channel >= 0 && channel < MAX_MIDI_CHANNELS)
         {
-            const uint32_t bank    = pData->midiprog.data[index].bank;
-            const uint32_t program = pData->midiprog.data[index].program;
-            const uint32_t rIndex  = bank*128 + program;
-
             LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[channel]);
             CARLA_SAFE_ASSERT_RETURN(engineChannel != nullptr,);
 
             const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
-            /*if (pData->engine->isOffline())
-            {
-                engineChannel->PrepareLoadInstrument(pData->filename, rIndex);
-                engineChannel->LoadInstrument();
-            }
-            else*/
+            if (pData->engine->isOffline())
             {
                 try {
-                    fInstrument->LoadInstrumentInBackground(fInstrumentIds[rIndex], engineChannel);
-                } CARLA_SAFE_EXCEPTION("LinuxSampler setMidiProgram loadInstrument");
+                    engineChannel->PrepareLoadInstrument(pData->filename, index);
+                    engineChannel->LoadInstrument();
+                } CARLA_SAFE_EXCEPTION("LoadInstrument");
+            }
+            else
+            {
+                try {
+                    fInstrument->LoadInstrumentInBackground(fInstrumentIds[index], engineChannel);
+                } CARLA_SAFE_EXCEPTION("LoadInstrumentInBackground");
             }
 
-            fCurMidiProgs[channel] = index;
+            fCurProgs[channel] = index;
         }
 
-        CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
+        CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
     }
 
     // -------------------------------------------------------------------
@@ -648,7 +636,7 @@ public:
         carla_debug("LinuxSamplerPlugin::reloadPrograms(%s)", bool2str(doInit));
 
         // Delete old programs
-        pData->midiprog.clear();
+        pData->prog.clear();
 
         // Query new programs
         const uint32_t count(static_cast<uint32_t>(fInstrumentIds.size()));
@@ -656,35 +644,24 @@ public:
         // sound kits must always have at least 1 midi-program
         CARLA_SAFE_ASSERT_RETURN(count > 0,);
 
-        pData->midiprog.createNew(count);
+        pData->prog.createNew(count);
 
         // Update data
-        LinuxSampler::InstrumentManager::instrument_info_t info;
-
-        for (uint32_t i=0; i < pData->midiprog.count; ++i)
+        for (uint32_t i=0; i < pData->prog.count; ++i)
         {
-            pData->midiprog.data[i].bank    = i / 128;
-            pData->midiprog.data[i].program = i % 128;
-
             try {
-                info = fInstrument->GetInstrumentInfo(fInstrumentIds[i]);
-            }
-            catch (const LinuxSampler::InstrumentManagerException&)
-            {
-                continue;
-            }
-
-            pData->midiprog.data[i].name = carla_strdup(info.InstrumentName.c_str());
+                pData->prog.names[i] = carla_strdup(fInstrument->GetInstrumentName(fInstrumentIds[i]).c_str());
+            } CARLA_SAFE_EXCEPTION_CONTINUE("GetInstrumentInfo");
         }
 
 #ifndef BUILD_BRIDGE
         // Update OSC Names
         if (pData->engine->isOscControlRegistered())
         {
-            pData->engine->oscSend_control_set_midi_program_count(pData->id, count);
+            pData->engine->oscSend_control_set_program_count(pData->id, count);
 
             for (uint32_t i=0; i < count; ++i)
-                pData->engine->oscSend_control_set_midi_program_data(pData->id, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
+                pData->engine->oscSend_control_set_program_name(pData->id, i, pData->prog.names[i]);
         }
 #endif
 
@@ -694,13 +671,14 @@ public:
             {
                 CARLA_SAFE_ASSERT_CONTINUE(fEngineChannels[i] != nullptr);
 
-                /*fEngineChannels[i]->PrepareLoadInstrument(pData->filename, 0);
-                fEngineChannels[i]->LoadInstrument();*/
-                fInstrument->LoadInstrumentInBackground(fInstrumentIds[0], fEngineChannels[i]);
-                fCurMidiProgs[i] = 0;
+                try {
+                    fInstrument->LoadInstrumentInBackground(fInstrumentIds[0], fEngineChannels[i]);
+                } CARLA_SAFE_EXCEPTION("LoadInstrumentInBackground");
+
+                fCurProgs[i] = 0;
             }
 
-            pData->midiprog.current = 0;
+            pData->prog.current = 0;
         }
         else
         {
@@ -804,11 +782,6 @@ public:
             uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
 
-            uint32_t nextBankIds[MAX_MIDI_CHANNELS] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 0, 0, 0, 0, 0, 0 };
-
-            if (pData->midiprog.current >= 0 && pData->midiprog.count > 0 && pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
-                nextBankIds[pData->ctrlChannel] = pData->midiprog.data[pData->midiprog.current].bank;
-
             for (uint32_t i=0; i < nEvents; ++i)
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
@@ -822,9 +795,6 @@ public:
                     {
                         startTime  = 0;
                         timeOffset = event.time;
-
-                        if (pData->midiprog.current >= 0 && pData->midiprog.count > 0 && pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
-                            nextBankIds[pData->ctrlChannel] = pData->midiprog.data[pData->midiprog.current].bank;
                     }
                     else
                         startTime += timeOffset;
@@ -934,42 +904,35 @@ public:
                     }
 
                     case kEngineControlEventTypeMidiBank:
-                        if (event.channel < MAX_MIDI_CHANNELS && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
-                            nextBankIds[event.channel] = ctrlEvent.param;
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
                         if (event.channel < MAX_MIDI_CHANNELS && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
                         {
-                            const uint32_t bankId(nextBankIds[event.channel]);
-                            const uint32_t progId(ctrlEvent.param);
-                            const uint32_t rIndex = bankId*128 + progId;
+                            const uint32_t programId(ctrlEvent.param);
+                            CARLA_SAFE_ASSERT_CONTINUE(programId < fInstrumentIds.size());
 
-                            for (uint32_t k=0; k < pData->midiprog.count; ++k)
+                            LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[kIsGIG ? event.channel : 0]);
+                            CARLA_SAFE_ASSERT_CONTINUE(engineChannel != nullptr);
+
+                            if (pData->engine->isOffline())
                             {
-                                if (pData->midiprog.data[k].bank == bankId && pData->midiprog.data[k].program == progId)
-                                {
-                                    LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[kIsGIG ? event.channel : 0]);
-                                    CARLA_SAFE_ASSERT_CONTINUE(engineChannel != nullptr);
-
-                                    /*if (pData->engine->isOffline())
-                                    {
-                                        engineChannel->PrepareLoadInstrument(pData->filename, rIndex);
-                                        engineChannel->LoadInstrument();
-                                    }
-                                    else*/
-                                    {
-                                        fInstrument->LoadInstrumentInBackground(fInstrumentIds[rIndex], engineChannel);
-                                    }
-
-                                    fCurMidiProgs[event.channel] = static_cast<int32_t>(k);
-
-                                    if (event.channel == pData->ctrlChannel)
-                                        pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, static_cast<int32_t>(k), 0, 0.0f);
-
-                                    break;
-                                }
+                                try {
+                                    engineChannel->PrepareLoadInstrument(pData->filename, programId);
+                                    engineChannel->LoadInstrument();
+                                } CARLA_SAFE_EXCEPTION("LoadInstrument");
                             }
+                            else
+                            {
+                                try {
+                                    fInstrument->LoadInstrumentInBackground(fInstrumentIds[programId], engineChannel);
+                                } CARLA_SAFE_EXCEPTION("LoadInstrumentInBackground");
+                            }
+
+                            fCurProgs[event.channel] = static_cast<int32_t>(programId);
+
+                            if (pData->ctrlChannel == event.channel)
+                                pData->postponeRtEvent(kPluginPostRtEventProgramChange, static_cast<int32_t>(programId), 0, 0.0f);
                         }
                         break;
 
@@ -1187,7 +1150,7 @@ public:
         // Init LinuxSampler stuff
 
         fAudioOutputDevice = new LinuxSampler::AudioOutputDevicePlugin(pData->engine, this, kUses16Outs);
-        fMidiInputPort     = sSampler->midiIn.CreateMidiPort();
+        fMidiInputPort     = sSampler->midiIn.CreateMidiPortPlugin();
 
         for (uint i=0; i<kMaxChannels; ++i)
         {
@@ -1197,32 +1160,42 @@ public:
             fSamplerChannels[i]->SetEngineType(kIsGIG ? "GIG" : "SFZ");
             fSamplerChannels[i]->SetAudioOutputDevice(fAudioOutputDevice);
 
-            //fEngineChannels[i] = fSamplerChannels[i]->GetEngineChannel();
-            //CARLA_SAFE_ASSERT_CONTINUE(fEngineChannels[i] != nullptr);
+            fEngineChannels[i] = fSamplerChannels[i]->GetEngineChannel();
+            CARLA_SAFE_ASSERT_CONTINUE(fEngineChannels[i] != nullptr);
 
-            //fEngineChannels[i]->Connect(fAudioOutputDevice);
-            //fEngineChannels[i]->Volume(LinuxSampler::kVolumeMax);
+            fEngineChannels[i]->Connect(fAudioOutputDevice); // FIXME
+            fEngineChannels[i]->Pan(0.0f);
+            fEngineChannels[i]->Volume(LinuxSampler::kVolumeMax);
 
-            //if (kUses16Outs)
+            if (kUses16Outs)
             {
-                //fEngineChannels[i]->SetOutputChannel(0, i*2);
-                //fEngineChannels[i]->SetOutputChannel(1, i*2 +1);
-                //fMidiInputPort->Connect(fSamplerChannels[i]->GetEngineChannel(), static_cast<LinuxSampler::midi_chan_t>(i));
+                fEngineChannels[i]->SetOutputChannel(0, i*2);
+                fEngineChannels[i]->SetOutputChannel(1, i*2 +1);
+                fMidiInputPort->Connect(fEngineChannels[i], static_cast<LinuxSampler::midi_chan_t>(i));
             }
-            //else
+            else
             {
-                //fEngineChannels[i]->SetOutputChannel(0, 0);
-                //fEngineChannels[i]->SetOutputChannel(1, 1);
-                fMidiInputPort->Connect(fSamplerChannels[i]->GetEngineChannel(), LinuxSampler::midi_chan_all);
+                fEngineChannels[i]->SetOutputChannel(0, 0);
+                fEngineChannels[i]->SetOutputChannel(1, 1);
+                fMidiInputPort->Connect(fEngineChannels[i], LinuxSampler::midi_chan_all);
             }
+        }
 
-            //fMidiInputPort->Connect(fEngineChannels[i], static_cast<LinuxSampler::midi_chan_t>(i));
+        // ---------------------------------------------------------------
+        // Get Engine
+
+        LinuxSampler::Engine* const engine(fEngineChannels[0]->GetEngine());
+
+        if (engine == nullptr)
+        {
+            pData->engine->setLastError("Failed to get LinuxSampler instrument manager");
+            return false;
         }
 
         // ---------------------------------------------------------------
         // Get the Engine's Instrument Manager
 
-        fInstrument = kIsGIG ? sEngineGIG->engine->GetInstrumentManager() : sEngineSFZ->engine->GetInstrumentManager();
+        fInstrument = engine->GetInstrumentManager();
 
         if (fInstrument == nullptr)
         {
@@ -1314,18 +1287,16 @@ private:
     const char* fMaker;
     const char* fRealName;
 
-    int32_t fCurMidiProgs[MAX_MIDI_CHANNELS];
+    int32_t fCurProgs[MAX_MIDI_CHANNELS];
 
     LinuxSampler::SamplerChannel* fSamplerChannels[MAX_MIDI_CHANNELS];
-    //LinuxSampler::EngineChannel*  fEngineChannels[MAX_MIDI_CHANNELS];
+    LinuxSampler::EngineChannel*  fEngineChannels[MAX_MIDI_CHANNELS];
 
     LinuxSampler::AudioOutputDevicePlugin* fAudioOutputDevice;
-    LinuxSampler::MidiInputPort*           fMidiInputPort;
+    LinuxSampler::MidiInputPortPlugin*     fMidiInputPort;
 
-    //LinuxSampler::MidiInputDevicePlugin*   fMidiInputDevice;
-
-    //LinuxSampler::InstrumentManager* fInstrument;
-    //std::vector<LinuxSampler::InstrumentManager::instrument_id_t> fInstrumentIds;
+    LinuxSampler::InstrumentManager* fInstrument;
+    std::vector<LinuxSampler::InstrumentManager::instrument_id_t> fInstrumentIds;
 
     SharedResourcePointer<LinuxSampler::SamplerPlugin> sSampler;
 

@@ -623,11 +623,13 @@ bool CarlaEngine::removeAllPlugins()
 
     pData->thread.stopThread(500);
 
+    const uint32_t curPluginCount(pData->curPluginCount);
+
     const ScopedActionLock sal(pData, kEnginePostActionZeroCount, 0, 0, isRunning());
 
     callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
 
-    for (uint i=0; i < pData->maxPluginNumber; ++i)
+    for (uint i=0; i < curPluginCount; ++i)
     {
         EnginePluginData& pluginData(pData->plugins[i]);
 

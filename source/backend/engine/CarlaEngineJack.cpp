@@ -1598,12 +1598,31 @@ protected:
             }
         }
 
+        pData->nextAction.waitEvent.reset();
+
 #ifndef BUILD_BRIDGE
         carla_fill<jack_port_t*>(fRackPorts, nullptr, kRackPortCount);
 #endif
 
         fClient = nullptr;
         callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
+    }
+
+    // -------------------------------------------------------------------
+
+    void handlePluginJackShutdownCallback(CarlaPlugin* const plugin)
+    {
+        CarlaEngineJackClient* const engineClient((CarlaEngineJackClient*)plugin->getEngineClient());
+        CARLA_SAFE_ASSERT_RETURN(engineClient != nullptr,);
+
+        plugin->tryLock(true);
+        engineClient->invalidate();
+        plugin->unlock();
+
+        if (pData->nextAction.pluginId == plugin->getId())
+            pData->nextAction.clearAndReset();
+
+        callback(ENGINE_CALLBACK_PLUGIN_UNAVAILABLE, plugin->getId(), 0, 0, 0.0f, "Killed by JACK");
     }
 
     // -------------------------------------------------------------------
@@ -1980,19 +1999,17 @@ private:
     static int carla_jack_process_callback_plugin(jack_nframes_t nframes, void* arg)
     {
         CarlaPlugin* const plugin((CarlaPlugin*)arg);
+        CARLA_SAFE_ASSERT_RETURN(plugin != nullptr && plugin->isEnabled(), 0);
 
-        if (plugin != nullptr && plugin->isEnabled())
+        CarlaEngineJack* const engine((CarlaEngineJack*)plugin->getEngine());
+        CARLA_SAFE_ASSERT_RETURN(engine != nullptr, 0);
+
+        if (plugin->tryLock(engine->fFreewheel))
         {
-            CarlaEngineJack* const engine((CarlaEngineJack*)plugin->getEngine());
-            CARLA_SAFE_ASSERT_RETURN(engine != nullptr,0);
-
-            if (plugin->tryLock(engine->fFreewheel))
-            {
-                plugin->initBuffers();
-                engine->saveTransportInfo();
-                engine->processPlugin(plugin, nframes);
-                plugin->unlock();
-            }
+            plugin->initBuffers();
+            engine->saveTransportInfo();
+            engine->processPlugin(plugin, nframes);
+            plugin->unlock();
         }
 
         return 0;
@@ -2006,21 +2023,12 @@ private:
     static void carla_jack_shutdown_callback_plugin(void* arg)
     {
         CarlaPlugin* const plugin((CarlaPlugin*)arg);
+        CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
 
-        if (plugin != nullptr /*&& plugin->isEnabled()*/)
-        {
-            CarlaEngine* const engine(plugin->getEngine());
-            CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
+        CarlaEngineJack* const engine((CarlaEngineJack*)plugin->getEngine());
+        CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
 
-            CarlaEngineJackClient* const engineClient((CarlaEngineJackClient*)plugin->getEngineClient());
-            CARLA_SAFE_ASSERT_RETURN(engineClient != nullptr,);
-
-            plugin->tryLock(true);
-            engineClient->invalidate();
-            plugin->unlock();
-
-            engine->callback(ENGINE_CALLBACK_PLUGIN_UNAVAILABLE, plugin->getId(), 0, 0, 0.0f, "Killed by JACK");
-        }
+        engine->handlePluginJackShutdownCallback(plugin);
     }
 #endif
 

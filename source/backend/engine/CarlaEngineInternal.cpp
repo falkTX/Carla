@@ -79,6 +79,14 @@ void EngineNextAction::ready() const noexcept
     waitEvent.reset();
 }
 
+void EngineNextAction::clearAndReset() noexcept
+{
+    opcode   = kEnginePostActionNull;
+    pluginId = 0;
+    value    = 0;
+    waitEvent.reset();
+}
+
 // -----------------------------------------------------------------------
 // CarlaEngine::ProtectedData
 
