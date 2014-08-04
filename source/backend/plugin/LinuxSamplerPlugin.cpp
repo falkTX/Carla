@@ -153,46 +153,31 @@ public:
         return new MidiInputPortPlugin(this, int(Ports.size()));
     }
 
+    void DeleteMidiPort(MidiInputPort* const port)
+    {
+          delete (MidiInputPortPlugin*)port;
+    }
+
     // -------------------------------------------------------------------
 
            bool isAutonomousDevice() override { return false; }
     static bool isAutonomousDriver()          { return false; }
 
     // -------------------------------------------------------------------
-    // Easy MidiInputPortPlugin creation
-
-    MidiInputPortPlugin* CreateMidiPortPlugin()
-    {
-        return new MidiInputPortPlugin(this, int(Ports.size()));
-    }
 };
 
 // -----------------------------------------------------------------------
-// LinuxSampler Engines
+// SamplerPlugin
 
-struct EngineGIG {
-    Engine* const engine;
+struct SamplerPlugin {
+    Sampler sampler;
+    MidiInputDevicePlugin midiIn;
 
-    EngineGIG()
-        : engine(EngineFactory::Create("GIG")) { carla_stderr2("LS GIG engine created"); }
-
-    ~EngineGIG()
+    SamplerPlugin()
+        : sampler(),
+          midiIn(&sampler)
     {
-        EngineFactory::Destroy(engine);
-        carla_stderr2("LS GIG engine destroyed");
-    }
-};
-
-struct EngineSFZ {
-    Engine* const engine;
-
-    EngineSFZ()
-        : engine(EngineFactory::Create("SFZ")) { carla_stderr2("LS SFZ engine created"); }
-
-    ~EngineSFZ()
-    {
-        EngineFactory::Destroy(engine);
-        carla_stderr2("LS SFZ engine destroyed");
+        carla_stderr2("SamplerPlugin created");
     }
 };
 
@@ -220,14 +205,14 @@ public:
           fMaker(nullptr),
           fRealName(nullptr),
           fAudioOutputDevice(nullptr),
-          fMidiInputDevice(nullptr),
-          fMidiInputPort(nullptr),
-          fInstrument(nullptr)
+          //fMidiInputDevice(nullptr),
+          fMidiInputPort(nullptr)//,
+          //fInstrument(nullptr)
     {
         carla_debug("LinuxSamplerPlugin::LinuxSamplerPlugin(%p, %i, %s, %s)", engine, id, bool2str(isGIG), bool2str(use16Outs));
 
         carla_zeroStruct(fCurMidiProgs,    MAX_MIDI_CHANNELS);
-        carla_zeroStruct(fEngineChannels,  MAX_MIDI_CHANNELS);
+        //carla_zeroStruct(fEngineChannels,  MAX_MIDI_CHANNELS);
         carla_zeroStruct(fSamplerChannels, MAX_MIDI_CHANNELS);
 
         if (use16Outs && ! isGIG)
@@ -250,7 +235,7 @@ public:
             pData->active = false;
         }
 
-        if (fMidiInputDevice != nullptr)
+        //if (fMidiInputDevice != nullptr)
         {
             if (fMidiInputPort != nullptr)
             {
@@ -258,25 +243,27 @@ public:
                 {
                     if (fSamplerChannels[i] != nullptr)
                     {
-                        if (fEngineChannels[i] != nullptr)
+                        //if (fEngineChannels[i] != nullptr)
                         {
-                            fMidiInputPort->Disconnect(fEngineChannels[i]);
-                            fEngineChannels[i]->DisconnectAudioOutputDevice();
-                            fEngineChannels[i] = nullptr;
+                            fMidiInputPort->Disconnect(fSamplerChannels[i]->GetEngineChannel());
+                            //fMidiInputPort->Disconnect(fEngineChannels[i]);
+                            //fEngineChannels[i]->DisconnectAudioOutputDevice();
+                            //fEngineChannels[i] = nullptr;
                         }
 
-                        sSampler->RemoveSamplerChannel(fSamplerChannels[i]);
+                        sSampler->sampler.RemoveSamplerChannel(fSamplerChannels[i]);
                         fSamplerChannels[i] = nullptr;
                     }
                 }
 
-                delete fMidiInputPort;
+                sSampler->midiIn.DeleteMidiPort(fMidiInputPort);
+                //delete fMidiInputPort;
                 fMidiInputPort = nullptr;
             }
 
             //sSampler->DestroyMidiInputDevice(fMidiInputDevice);
-            delete fMidiInputDevice;
-            fMidiInputDevice = nullptr;
+            //delete fMidiInputDevice;
+            //fMidiInputDevice = nullptr;
         }
 
         if (fAudioOutputDevice != nullptr)
@@ -1200,36 +1187,36 @@ public:
         // Init LinuxSampler stuff
 
         fAudioOutputDevice = new LinuxSampler::AudioOutputDevicePlugin(pData->engine, this, kUses16Outs);
-
-        fMidiInputDevice = new LinuxSampler::MidiInputDevicePlugin(sSampler);
-        fMidiInputPort   = fMidiInputDevice->CreateMidiPortPlugin();
+        fMidiInputPort     = sSampler->midiIn.CreateMidiPort();
 
         for (uint i=0; i<kMaxChannels; ++i)
         {
-            fSamplerChannels[i] = sSampler->AddSamplerChannel();
+            fSamplerChannels[i] = sSampler->sampler.AddSamplerChannel();
             CARLA_SAFE_ASSERT_CONTINUE(fSamplerChannels[i] != nullptr);
 
             fSamplerChannels[i]->SetEngineType(kIsGIG ? "GIG" : "SFZ");
             fSamplerChannels[i]->SetAudioOutputDevice(fAudioOutputDevice);
 
-            fEngineChannels[i] = fSamplerChannels[i]->GetEngineChannel();
-            CARLA_SAFE_ASSERT_CONTINUE(fEngineChannels[i] != nullptr);
+            //fEngineChannels[i] = fSamplerChannels[i]->GetEngineChannel();
+            //CARLA_SAFE_ASSERT_CONTINUE(fEngineChannels[i] != nullptr);
 
-            fEngineChannels[i]->Connect(fAudioOutputDevice);
-            fEngineChannels[i]->Volume(LinuxSampler::kVolumeMax);
+            //fEngineChannels[i]->Connect(fAudioOutputDevice);
+            //fEngineChannels[i]->Volume(LinuxSampler::kVolumeMax);
 
-            if (kUses16Outs)
+            //if (kUses16Outs)
             {
-                fEngineChannels[i]->SetOutputChannel(0, i*2);
-                fEngineChannels[i]->SetOutputChannel(1, i*2 +1);
+                //fEngineChannels[i]->SetOutputChannel(0, i*2);
+                //fEngineChannels[i]->SetOutputChannel(1, i*2 +1);
+                //fMidiInputPort->Connect(fSamplerChannels[i]->GetEngineChannel(), static_cast<LinuxSampler::midi_chan_t>(i));
             }
-            else
+            //else
             {
-                fEngineChannels[i]->SetOutputChannel(0, 0);
-                fEngineChannels[i]->SetOutputChannel(1, 1);
+                //fEngineChannels[i]->SetOutputChannel(0, 0);
+                //fEngineChannels[i]->SetOutputChannel(1, 1);
+                fMidiInputPort->Connect(fSamplerChannels[i]->GetEngineChannel(), LinuxSampler::midi_chan_all);
             }
 
-            fMidiInputPort->Connect(fEngineChannels[i], static_cast<LinuxSampler::midi_chan_t>(i));
+            //fMidiInputPort->Connect(fEngineChannels[i], static_cast<LinuxSampler::midi_chan_t>(i));
         }
 
         // ---------------------------------------------------------------
@@ -1330,18 +1317,17 @@ private:
     int32_t fCurMidiProgs[MAX_MIDI_CHANNELS];
 
     LinuxSampler::SamplerChannel* fSamplerChannels[MAX_MIDI_CHANNELS];
-    LinuxSampler::EngineChannel*  fEngineChannels[MAX_MIDI_CHANNELS];
+    //LinuxSampler::EngineChannel*  fEngineChannels[MAX_MIDI_CHANNELS];
 
     LinuxSampler::AudioOutputDevicePlugin* fAudioOutputDevice;
-    LinuxSampler::MidiInputDevicePlugin*   fMidiInputDevice;
-    LinuxSampler::MidiInputPortPlugin*     fMidiInputPort;
+    LinuxSampler::MidiInputPort*           fMidiInputPort;
 
-    LinuxSampler::InstrumentManager* fInstrument;
-    std::vector<LinuxSampler::InstrumentManager::instrument_id_t> fInstrumentIds;
+    //LinuxSampler::MidiInputDevicePlugin*   fMidiInputDevice;
 
-    SharedResourcePointer<LinuxSampler::Sampler>   sSampler;
-    SharedResourcePointer<LinuxSampler::EngineGIG> sEngineGIG;
-    SharedResourcePointer<LinuxSampler::EngineSFZ> sEngineSFZ;
+    //LinuxSampler::InstrumentManager* fInstrument;
+    //std::vector<LinuxSampler::InstrumentManager::instrument_id_t> fInstrumentIds;
+
+    SharedResourcePointer<LinuxSampler::SamplerPlugin> sSampler;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LinuxSamplerPlugin)
 };
