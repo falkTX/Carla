@@ -569,6 +569,7 @@ public:
             port->invalidate();
         }
 
+        fActive     = false;
         fJackClient = nullptr;
     }
 
@@ -1619,8 +1620,8 @@ protected:
         engineClient->invalidate();
         plugin->unlock();
 
-        if (pData->nextAction.pluginId == plugin->getId())
-            pData->nextAction.clearAndReset();
+        //if (pData->nextAction.pluginId == plugin->getId())
+        //    pData->nextAction.clearAndReset();
 
         callback(ENGINE_CALLBACK_PLUGIN_UNAVAILABLE, plugin->getId(), 0, 0, 0.0f, "Killed by JACK");
     }

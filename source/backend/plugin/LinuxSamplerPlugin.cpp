@@ -647,11 +647,15 @@ public:
         pData->prog.createNew(count);
 
         // Update data
+        LinuxSampler::InstrumentManager::instrument_info_t info;
+
         for (uint32_t i=0; i < pData->prog.count; ++i)
         {
             try {
-                pData->prog.names[i] = carla_strdup(fInstrument->GetInstrumentName(fInstrumentIds[i]).c_str());
+                info = fInstrument->GetInstrumentInfo(fInstrumentIds[i]);
             } CARLA_SAFE_EXCEPTION_CONTINUE("GetInstrumentInfo");
+
+            pData->prog.names[i] = carla_strdup_safe(info.InstrumentName.c_str());
         }
 
 #ifndef BUILD_BRIDGE
@@ -669,10 +673,11 @@ public:
         {
             for (uint i=0; i<kMaxChannels; ++i)
             {
-                CARLA_SAFE_ASSERT_CONTINUE(fEngineChannels[i] != nullptr);
+                LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[i]);
+                CARLA_SAFE_ASSERT_CONTINUE(engineChannel != nullptr);
 
                 try {
-                    fInstrument->LoadInstrumentInBackground(fInstrumentIds[0], fEngineChannels[i]);
+                    fInstrument->LoadInstrumentInBackground(fInstrumentIds[0], engineChannel);
                 } CARLA_SAFE_EXCEPTION("LoadInstrumentInBackground");
 
                 fCurProgs[i] = 0;
@@ -1163,9 +1168,9 @@ public:
             fEngineChannels[i] = fSamplerChannels[i]->GetEngineChannel();
             CARLA_SAFE_ASSERT_CONTINUE(fEngineChannels[i] != nullptr);
 
-            fEngineChannels[i]->Connect(fAudioOutputDevice); // FIXME
             fEngineChannels[i]->Pan(0.0f);
-            fEngineChannels[i]->Volume(LinuxSampler::kVolumeMax);
+            fEngineChannels[i]->Volume(kIsGIG ? LinuxSampler::kVolumeMax/10.0f : LinuxSampler::kVolumeMax); // FIXME
+            fEngineChannels[i]->Connect(fAudioOutputDevice);
 
             if (kUses16Outs)
             {

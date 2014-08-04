@@ -658,7 +658,7 @@ class PluginEdit(QDialog):
         self.ui.ch_send_all_sound_off.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
         self.ui.ch_send_all_sound_off.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
 
-        self.ui.sw_programs.setCurrentIndex(0 if self.fPluginInfo['type'] == PLUGIN_VST else 1)
+        self.ui.sw_programs.setCurrentIndex(0 if self.fPluginInfo['type'] in (PLUGIN_VST, PLUGIN_GIG, PLUGIN_SFZ) else 1)
 
         # Show/hide keyboard
         showKeyboard = (self.fPluginInfo['category'] == PLUGIN_CATEGORY_SYNTH or midiCountInfo['ins'] > 0 < midiCountInfo['outs'])
@@ -1049,7 +1049,7 @@ class PluginEdit(QDialog):
                 self.ui.sb_ctrl_channel.setValue(self.fControlChannel+1)
                 self.ui.sb_ctrl_channel.blockSignals(False)
                 self.ui.keyboard.allNotesOff()
-                self._updateCtrlMidiProgram()
+                self._updateCtrlPrograms()
 
             elif index >= 0:
                 for paramType, paramId, paramWidget in self.fParameterList:
@@ -1214,7 +1214,7 @@ class PluginEdit(QDialog):
             gCarla.host.set_ctrl_channel(self.fPluginId, self.fControlChannel)
 
         self.ui.keyboard.allNotesOff()
-        self._updateCtrlMidiProgram()
+        self._updateCtrlPrograms()
 
     #------------------------------------------------------------------
 
@@ -1415,17 +1415,22 @@ class PluginEdit(QDialog):
 
             self.fTabIconTimers.append(ICON_STATE_NULL)
 
-    def _updateCtrlMidiProgram(self):
-        if self.fPluginInfo['type'] not in (PLUGIN_INTERNAL, PLUGIN_SF2):
-            return
-        elif self.fPluginInfo['category'] != PLUGIN_CATEGORY_SYNTH:
+    def _updateCtrlPrograms(self):
+        if self.fPluginInfo['category'] != PLUGIN_CATEGORY_SYNTH or self.fPluginInfo['type'] not in (PLUGIN_INTERNAL, PLUGIN_SF2, PLUGIN_GIG):
             return
 
         if self.fControlChannel < 0:
+            self.ui.cb_programs.setEnabled(False)
             self.ui.cb_midi_programs.setEnabled(False)
             return
 
+        self.ui.cb_programs.setEnabled(True)
         self.ui.cb_midi_programs.setEnabled(True)
+
+        pIndex = gCarla.host.get_current_program_index(self.fPluginId)
+
+        if self.ui.cb_programs.currentIndex() != pIndex:
+            self.setProgram(pIndex)
 
         mpIndex = gCarla.host.get_current_midi_program_index(self.fPluginId)
 
