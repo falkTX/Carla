@@ -33,9 +33,11 @@ public:
     };
 
     CarlaExternalUI()
-        : fUiState(UiNone)
-    {
-    }
+        : fFilename(),
+          fSampleRate(),
+          fUiTitle(),
+          fUiState(UiNone),
+          leakDetector_CarlaExternalUI() {}
 
     ~CarlaExternalUI() override
     {

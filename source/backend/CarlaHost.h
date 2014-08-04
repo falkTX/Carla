@@ -137,6 +137,7 @@ typedef struct _CarlaPluginInfo {
      */
     _CarlaPluginInfo() noexcept;
     ~_CarlaPluginInfo() noexcept;
+    CARLA_DECLARE_NON_COPY_STRUCT(_CarlaPluginInfo)
 #endif
 
 } CarlaPluginInfo;
@@ -212,6 +213,7 @@ typedef struct _CarlaNativePluginInfo {
      * C++ constructor.
      */
     _CarlaNativePluginInfo() noexcept;
+    CARLA_DECLARE_NON_COPY_STRUCT(_CarlaNativePluginInfo)
 #endif
 
 } CarlaNativePluginInfo;
@@ -267,6 +269,7 @@ typedef struct _CarlaParameterInfo {
      */
     _CarlaParameterInfo() noexcept;
     ~_CarlaParameterInfo() noexcept;
+    CARLA_DECLARE_NON_COPY_STRUCT(_CarlaParameterInfo)
 #endif
 
 } CarlaParameterInfo;
@@ -292,6 +295,7 @@ typedef struct _CarlaScalePointInfo {
      */
     _CarlaScalePointInfo() noexcept;
     ~_CarlaScalePointInfo() noexcept;
+    CARLA_DECLARE_NON_COPY_STRUCT(_CarlaScalePointInfo)
 #endif
 
 } CarlaScalePointInfo;

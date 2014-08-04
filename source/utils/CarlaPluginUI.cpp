@@ -41,10 +41,10 @@ static int temporaryErrorHandler(Display*, XErrorEvent*)
     return 0;
 }
 
-class X11PluginUi : public CarlaPluginUI
+class X11PluginUI : public CarlaPluginUI
 {
 public:
-    X11PluginUi(CloseCallback* const cb, const uintptr_t parentId) noexcept
+    X11PluginUI(CloseCallback* const cb, const uintptr_t parentId) noexcept
         : CarlaPluginUI(cb),
           fDisplay(nullptr),
           fWindow(0),
@@ -88,7 +88,7 @@ public:
             setTransientWinId(parentId);
     }
 
-    ~X11PluginUi() override
+    ~X11PluginUI() override
     {
         CARLA_SAFE_ASSERT(! fIsVisible);
 
@@ -293,6 +293,8 @@ private:
     bool     fIsVisible;
     bool     fFirstShow;
     EventProcPtr fEventProc;
+
+    CARLA_DECLARE_NON_COPY_CLASS(X11PluginUI)
 };
 #endif
 
@@ -314,6 +316,9 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
         Display* display;
         ScopedDisplay() : display(XOpenDisplay(nullptr)) {}
         ~ScopedDisplay() { if (display!=nullptr) XCloseDisplay(display); }
+        // c++ compat stuff
+        CARLA_PREVENT_HEAP_ALLOCATION
+        CARLA_DECLARE_NON_COPY_CLASS(ScopedDisplay)
     };
     struct ScopedFreeData {
         union {
@@ -323,6 +328,9 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
         ScopedFreeData(char* d) : data(d) {}
         ScopedFreeData(uchar* d) : udata(d) {}
         ~ScopedFreeData() { XFree(data); }
+        // c++ compat stuff
+        CARLA_PREVENT_HEAP_ALLOCATION
+        CARLA_DECLARE_NON_COPY_CLASS(ScopedFreeData)
     };
 
     const ScopedDisplay sd;
@@ -502,7 +510,7 @@ CarlaPluginUI* CarlaPluginUI::newWindows(CloseCallback*, uintptr_t)
 #ifdef HAVE_X11
 CarlaPluginUI* CarlaPluginUI::newX11(CloseCallback* cb, uintptr_t parentId)
 {
-    return new X11PluginUi(cb, parentId);
+    return new X11PluginUI(cb, parentId);
 }
 #endif
 

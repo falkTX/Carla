@@ -93,14 +93,16 @@ public:
     private:
         mutable RtMemPool_Handle fHandle;
         const size_t             kDataSize;
+
+        CARLA_PREVENT_HEAP_ALLOCATION
+        CARLA_DECLARE_NON_COPY_CLASS(Pool)
     };
 
     // -------------------------------------------------------------------
     // Now the actual rt-linkedlist code
 
-    RtLinkedList(Pool& memPool, const bool isClass = false) noexcept
-        : AbstractLinkedList<T>(isClass),
-          fMemPool(memPool) {}
+    RtLinkedList(Pool& memPool) noexcept
+        : fMemPool(memPool) {}
 
     bool append_sleepy(const T& value) noexcept
     {
@@ -161,9 +163,9 @@ private:
             this->_createData(data, value);
 
             if (inTail)
-                this->__list_add(&data->siblings, this->fQueue.prev, &this->fQueue);
+                this->__list_add(data->siblings, this->fQueue.prev, &(this->fQueue));
             else
-                this->__list_add(&data->siblings, &this->fQueue, this->fQueue.next);
+                this->__list_add(data->siblings, &(this->fQueue), this->fQueue.next);
 
             return true;
         }
@@ -171,7 +173,8 @@ private:
         return false;
     }
 
-    LINKED_LIST_DECLARATIONS(RtLinkedList)
+    CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_CLASS(RtLinkedList)
 };
 
 // -----------------------------------------------------------------------

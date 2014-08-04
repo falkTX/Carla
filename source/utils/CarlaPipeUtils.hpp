@@ -39,10 +39,12 @@ class CarlaPipeServer
 {
 protected:
     CarlaPipeServer()
-        : fPipeRecv(-1),
+        : fWriteLock(),
+          fPipeRecv(-1),
           fPipeSend(-1),
           fIsReading(false),
-          fPid(-1)
+          fPid(-1),
+          fTmpStr()
     {
         carla_debug("CarlaPipeServer::CarlaPipeServer()");
 

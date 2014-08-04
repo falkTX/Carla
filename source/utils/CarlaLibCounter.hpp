@@ -27,7 +27,9 @@
 class LibCounter
 {
 public:
-    LibCounter() noexcept {}
+    LibCounter() noexcept
+        : fMutex(),
+          fLibs() {}
 
     ~LibCounter() noexcept
     {

@@ -121,6 +121,8 @@ static void test_CarlaUtils()
                     str4 = nullptr;
                 }
             }
+
+            CARLA_DECLARE_NON_COPY_STRUCT(TestStruct)
         };
 
         TestStruct a, b, c;

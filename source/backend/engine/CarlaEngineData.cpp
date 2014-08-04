@@ -245,7 +245,8 @@ EngineTimeInfo::EngineTimeInfo() noexcept
     : playing(false),
       frame(0),
       usecs(0),
-      valid(0x0) {}
+      valid(0x0),
+      bbt() {}
 
 void EngineTimeInfo::clear() noexcept
 {

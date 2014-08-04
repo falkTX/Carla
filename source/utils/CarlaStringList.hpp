@@ -18,7 +18,6 @@
 #ifndef CARLA_STRING_LIST_HPP_INCLUDED
 #define CARLA_STRING_LIST_HPP_INCLUDED
 
-#include "CarlaString.hpp"
 #include "LinkedList.hpp"
 
 // -----------------------------------------------------------------------
@@ -39,7 +38,7 @@ public:
         copy(ptr.fCharList);
     }
 
-    CharStringListPtr(const LinkedList<CarlaString>& list) noexcept
+    CharStringListPtr(const LinkedList<const char*>& list) noexcept
         : fCharList(nullptr)
     {
         copy(list);
@@ -49,6 +48,8 @@ public:
     {
         clear();
     }
+
+    // -------------------------------------------------------------------
 
     operator const char* const*() const noexcept
     {
@@ -69,12 +70,14 @@ public:
         return *this;
     }
 
-    CharStringListPtr& operator=(const LinkedList<CarlaString>& list) noexcept
+    CharStringListPtr& operator=(const LinkedList<const char*>& list) noexcept
     {
         clear();
         copy(list);
         return *this;
     }
+
+    // -------------------------------------------------------------------
 
 protected:
     void clear() noexcept
@@ -119,7 +122,7 @@ protected:
         fCharList = tmpList;
     }
 
-    void copy(const LinkedList<CarlaString>& list) noexcept
+    void copy(const LinkedList<const char*>& list) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fCharList == nullptr,);
 
@@ -133,22 +136,17 @@ protected:
         } CARLA_SAFE_EXCEPTION_RETURN("CharStringListPtr::copy",);
 
         size_t i=0;
-        for (LinkedList<CarlaString>::Itenerator it = list.begin(); it.valid(); it.next(), ++i)
+        for (LinkedList<const char*>::Itenerator it = list.begin(); it.valid(); it.next(), ++i)
         {
-            const CarlaString& string(it.getValue());
-
-            try {
-                tmpList[i] = string.dup();
-            }
-            catch(...) {
-                tmpList[i] = nullptr;
-                break;
-            }
+            tmpList[i] = carla_strdup_safe(it.getValue());
+            CARLA_SAFE_ASSERT_BREAK(tmpList[i] != nullptr);
         }
 
         tmpList[count] = nullptr;
         fCharList = tmpList;
     }
+
+    // -------------------------------------------------------------------
 
 private:
     const char* const* fCharList;
@@ -157,49 +155,143 @@ private:
 // -----------------------------------------------------------------------
 // CarlaStringList
 
-class CarlaStringList : public LinkedList<CarlaString>
+class CarlaStringList : public LinkedList<const char*>
 {
 public:
     CarlaStringList() noexcept
-        : LinkedList<CarlaString>(true) {}
+        : LinkedList<const char*>() {}
 
-#if 0
     CarlaStringList(const CarlaStringList& list) noexcept
-        : LinkedList<CarlaString>(true)
+        : LinkedList<const char*>()
     {
         for (Itenerator it = list.begin(); it.valid(); it.next())
-            LinkedList<CarlaString>::append(it.getValue());
+            LinkedList<const char*>::append(carla_strdup_safe(it.getValue()));
     }
-#endif
 
-    ~CarlaStringList() noexcept
+    ~CarlaStringList() noexcept override
     {
         clear();
     }
 
-    bool append(const char* const strBuf) noexcept
+    // -------------------------------------------------------------------
+
+    void clear() noexcept
     {
-        const CarlaString string(strBuf);
-        return LinkedList<CarlaString>::append(string);
+        for (Itenerator it = begin(); it.valid(); it.next())
+        {
+            if (const char* const string = it.getValue())
+                delete[] string;
+        }
+
+        LinkedList<const char*>::clear();
     }
 
-    bool appendAt(const char* const strBuf, const Itenerator& it) noexcept
+    // -------------------------------------------------------------------
+
+    bool append(const char* const string) noexcept
     {
-        const CarlaString string(strBuf);
-        return LinkedList<CarlaString>::appendAt(string, it);
+        CARLA_SAFE_ASSERT_RETURN(string != nullptr, false);
+
+        if (const char* const stringDup = carla_strdup_safe(string))
+        {
+            if (LinkedList<const char*>::append(stringDup))
+                return true;
+            delete[] stringDup;
+        }
+
+        return false;
     }
 
-    bool insert(const char* const strBuf) noexcept
+    bool appendAt(const char* const string, const Itenerator& it) noexcept
     {
-        const CarlaString string(strBuf);
-        return LinkedList<CarlaString>::insert(string);
+        CARLA_SAFE_ASSERT_RETURN(string != nullptr, false);
+
+        if (const char* const stringDup = carla_strdup_safe(string))
+        {
+            if (LinkedList<const char*>::appendAt(stringDup, it))
+                return true;
+            delete[] stringDup;
+        }
+
+        return false;
     }
 
-    bool insertAt(const char* const strBuf, const Itenerator& it) noexcept
+    bool insert(const char* const string) noexcept
     {
-        const CarlaString string(strBuf);
-        return LinkedList<CarlaString>::insertAt(string, it);
+        CARLA_SAFE_ASSERT_RETURN(string != nullptr, false);
+
+        if (const char* const stringDup = carla_strdup_safe(string))
+        {
+            if (LinkedList<const char*>::insert(stringDup))
+                return true;
+            delete[] stringDup;
+        }
+
+        return false;
     }
+
+    bool insertAt(const char* const string, const Itenerator& it) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(string != nullptr, false);
+
+        if (const char* const stringDup = carla_strdup_safe(string))
+        {
+            if (LinkedList<const char*>::insertAt(stringDup, it))
+                return true;
+            delete[] stringDup;
+        }
+
+        return false;
+    }
+
+    // -------------------------------------------------------------------
+
+    void remove(Itenerator& it) noexcept
+    {
+        if (const char* const string = it.getValue())
+            delete[] string;
+
+        LinkedList<const char*>::remove(it);
+    }
+
+    bool removeOne(const char* const string) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(string != nullptr, false);
+
+        for (Itenerator it = begin(); it.valid(); it.next())
+        {
+            const char* const stringComp(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(stringComp != nullptr);
+
+            if (std::strcmp(string, stringComp) != 0)
+                continue;
+
+            delete[] stringComp;
+            LinkedList<const char*>::remove(it);
+            return true;
+        }
+
+        return false;
+    }
+
+    void removeAll(const char* const string) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(string != nullptr,);
+
+        for (Itenerator it = begin(); it.valid(); it.next())
+        {
+            const char* const stringComp(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(stringComp != nullptr);
+
+            if (std::strcmp(string, stringComp) != 0)
+                continue;
+
+            delete[] stringComp;
+            LinkedList<const char*>::remove(it);
+        }
+    }
+
+    // -------------------------------------------------------------------
 
     CharStringListPtr toCharStringListPtr() const noexcept
     {
@@ -210,8 +302,13 @@ public:
     {
         clear();
 
+        CARLA_SAFE_ASSERT_RETURN(charStringList != nullptr, *this);
+
         for (int i=0; charStringList[i] != nullptr; ++i)
-            append(charStringList[i]);
+        {
+            if (const char* const string = carla_strdup_safe(charStringList[i]))
+                LinkedList<const char*>::append(string);
+        }
 
         return *this;
     }
@@ -221,13 +318,15 @@ public:
         clear();
 
         for (Itenerator it = list.begin(); it.valid(); it.next())
-            LinkedList<CarlaString>::append(it.getValue());
+        {
+            if (const char* const string = carla_strdup_safe(it.getValue()))
+                LinkedList<const char*>::append(string);
+        }
 
         return *this;
     }
 
-private:
-    LinkedList<CarlaString> fList;
+    CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
 };
 
 // -----------------------------------------------------------------------

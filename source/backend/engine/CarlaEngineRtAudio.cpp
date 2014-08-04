@@ -157,7 +157,13 @@ public:
           fAudioInCount(0),
           fAudioOutCount(0),
           fLastEventTime(0),
-          fMidiOutVector(3)
+          fDeviceName(),
+          fMidiIns(),
+          fMidiInEvents(),
+          fMidiOuts(),
+          fMidiOutMutex(),
+          fMidiOutVector(3),
+          leakDetector_CarlaEngineRtAudio()
     {
         carla_debug("CarlaEngineRtAudio::CarlaEngineRtAudio(%i)", api);
 
@@ -949,7 +955,8 @@ private:
         RtLinkedList<RtMidiEvent> dataPending;
 
         RtMidiEvents()
-            : dataPool(512, 512),
+            : mutex(),
+              dataPool(512, 512),
               data(dataPool),
               dataPending(dataPool) {}
 

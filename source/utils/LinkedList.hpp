@@ -20,8 +20,6 @@
 
 #include "CarlaUtils.hpp"
 
-#include <new>
-
 // -----------------------------------------------------------------------
 // Define list_entry and list_entry_const
 
@@ -48,26 +46,10 @@
 #endif
 
 // -----------------------------------------------------------------------
-// Declare non copyable and prevent heap allocation
-
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-# define LINKED_LIST_DECLARATIONS(ClassName)         \
-    ClassName(ClassName&) = delete;                  \
-    ClassName(const ClassName&) = delete;            \
-    ClassName& operator=(const ClassName&) = delete; \
-    static void* operator new(size_t) = delete;
-#else
-# define LINKED_LIST_DECLARATIONS(ClassName) \
-    ClassName(ClassName&);                   \
-    ClassName(const ClassName&);             \
-    ClassName& operator=(const ClassName&);
-#endif
-
-// -----------------------------------------------------------------------
 // Abstract Linked List class
 // _allocate() and _deallocate are virtual calls provided by subclasses
 
-// NOTE: data-type classes are not allowed to throw
+// NOTE: this class is meant for non-polymorphic data types only!
 
 template<typename T>
 class AbstractLinkedList
@@ -83,12 +65,10 @@ protected:
         ListHead siblings;
     };
 
-    AbstractLinkedList(const bool isClass) noexcept
-        : kIsClass(isClass),
-          kDataSize(sizeof(Data))
-    {
-        _init();
-    }
+    AbstractLinkedList() noexcept
+        : kDataSize(sizeof(Data)),
+          fCount(0),
+          fQueue({&fQueue, &fQueue}) {}
 
 public:
     virtual ~AbstractLinkedList() noexcept
@@ -158,8 +138,6 @@ public:
             Data* const data = list_entry(entry, Data, siblings);
             CARLA_SAFE_ASSERT_CONTINUE(data != nullptr);
 
-            if (kIsClass)
-                data->~Data();
             _deallocate(data);
         }
 
@@ -364,7 +342,6 @@ public:
     }
 
 protected:
-    const bool   kIsClass;
     const size_t kDataSize;
 
     size_t   fCount;
@@ -383,11 +360,9 @@ private:
 
     void _createData(Data* const data, const T& value) noexcept
     {
-        if (kIsClass)
-            new(data)Data();
-
-        data->value = value;
         ++fCount;
+        data->value = value;
+        //std::memcpy(data->value, value, kDataSize);
     }
 
     bool _add(const T& value, const bool inTail, ListHead* const queue) noexcept
@@ -397,9 +372,9 @@ private:
             _createData(data, value);
 
             if (inTail)
-                __list_add(&data->siblings, queue->prev, queue);
+                __list_add(data->siblings, queue->prev, queue);
             else
-                __list_add(&data->siblings, queue, queue->next);
+                __list_add(data->siblings, queue, queue->next);
 
             return true;
         }
@@ -413,11 +388,8 @@ private:
         entry->next = nullptr;
         entry->prev = nullptr;
 
-        --fCount;
-
-        if (kIsClass)
-            data->~Data();
         _deallocate(data);
+        --fCount;
     }
 
     const T& _get(ListHead* const entry, const T& fallback) const noexcept
@@ -454,12 +426,12 @@ private:
    /*
     * Insert a new entry between two known consecutive entries.
     */
-    static void __list_add(ListHead* const new_, ListHead* const prev, ListHead* const next) noexcept
+    static void __list_add(ListHead& newl, ListHead* const prev, ListHead* const next) noexcept
     {
-        next->prev = new_;
-        new_->next = next;
-        new_->prev = prev;
-        prev->next = new_;
+        next->prev = &newl;
+        newl.next  = next;
+        newl.prev  = prev;
+        prev->next = &newl;
     }
 
    /*
@@ -479,10 +451,10 @@ private:
         ListHead* const at = head->next;
 
         first->prev = head;
-        head->next = first;
+        head->next  = first;
 
         last->next = at;
-        at->prev = last;
+        at->prev   = last;
     }
 
     static void __list_splice_tail(ListHead* const list, ListHead* const head) noexcept
@@ -492,7 +464,7 @@ private:
         ListHead* const at = head->prev;
 
         first->prev = at;
-        at->next = first;
+        at->next    = first;
 
         last->next = head;
         head->prev = last;
@@ -500,7 +472,8 @@ private:
 
     template<typename> friend class RtLinkedList;
 
-    LINKED_LIST_DECLARATIONS(AbstractLinkedList)
+    CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_CLASS(AbstractLinkedList)
 };
 
 // -----------------------------------------------------------------------
@@ -510,8 +483,7 @@ template<typename T>
 class LinkedList : public AbstractLinkedList<T>
 {
 public:
-    LinkedList(const bool isClass = false) noexcept
-        : AbstractLinkedList<T>(isClass) {}
+    LinkedList() noexcept {}
 
 protected:
     typename AbstractLinkedList<T>::Data* _allocate() noexcept override
@@ -526,7 +498,8 @@ protected:
         std::free(dataPtr);
     }
 
-    LINKED_LIST_DECLARATIONS(LinkedList)
+    CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_CLASS(LinkedList)
 };
 
 // -----------------------------------------------------------------------

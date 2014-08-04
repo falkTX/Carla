@@ -86,7 +86,24 @@ const char* getCarlaRackFullPortNameFromId(const /*RackGraphCarlaPortIds*/ uint 
 }
 
 // -----------------------------------------------------------------------
+// RackGraph Audio
+
+RackGraph::Audio::Audio() noexcept
+    : mutex(),
+      connectedIn1(),
+      connectedIn2(),
+      connectedOut1(),
+      connectedOut2(),
+      inBuf{0, 0},
+      inBufTmp{0, 0},
+      outBuf{0, 0} {}
+
+// -----------------------------------------------------------------------
 // RackGraph MIDI
+
+RackGraph::MIDI::MIDI() noexcept
+    : ins(),
+      outs() {}
 
 const char* RackGraph::MIDI::getName(const bool isInput, const uint portId) const noexcept
 {
@@ -124,9 +141,13 @@ uint RackGraph::MIDI::getPortId(const bool isInput, const char portName[], bool*
 // RackGraph
 
 RackGraph::RackGraph(const uint32_t bufferSize, const uint32_t ins, const uint32_t outs) noexcept
-    : inputs(ins),
+    : connections(),
+      inputs(ins),
       outputs(outs),
-      isOffline(false)
+      isOffline(false),
+      retCon(),
+      audio(),
+      midi()
 {
     audio.inBuf[0]    = audio.inBuf[1]    = nullptr;
     audio.inBufTmp[0] = audio.inBufTmp[1] = nullptr;

@@ -73,7 +73,8 @@ public:
         : CarlaEngineAudioPort(client, isInputPort),
           fJackClient(jackClient),
           fJackPort(jackPort),
-          kDeletionCallback(delCallback)
+          kDeletionCallback(delCallback),
+          leakDetector_CarlaEngineJackAudioPort()
     {
         carla_debug("CarlaEngineJackAudioPort::CarlaEngineJackAudioPort(%s, %p, %p)", bool2str(isInputPort), jackClient, jackPort);
 
@@ -163,7 +164,8 @@ public:
         : CarlaEngineCVPort(client, isInputPort),
           fJackClient(jackClient),
           fJackPort(jackPort),
-          kDeletionCallback(delCallback)
+          kDeletionCallback(delCallback),
+          leakDetector_CarlaEngineJackCVPort()
     {
         carla_debug("CarlaEngineJackCVPort::CarlaEngineJackCVPort(%s, %p, %p)", bool2str(isInputPort), jackClient, jackPort);
 
@@ -252,7 +254,9 @@ public:
           fJackClient(jackClient),
           fJackPort(jackPort),
           fJackBuffer(nullptr),
-          kDeletionCallback(delCallback)
+          fRetEvent(kFallbackJackEngineEvent),
+          kDeletionCallback(delCallback),
+          leakDetector_CarlaEngineJackEventPort()
     {
         carla_debug("CarlaEngineJackEventPort::CarlaEngineJackEventPort(%s, %p, %p)", bool2str(isInputPort), jackClient, jackPort);
 
@@ -429,7 +433,11 @@ public:
     CarlaEngineJackClient(const CarlaEngine& engine, jack_client_t* const jackClient)
         : CarlaEngineClient(engine),
           fJackClient(jackClient),
-          fUseClient(engine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || engine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+          fUseClient(engine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || engine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS),
+          fAudioPorts(),
+          fCVPorts(),
+          fEventPorts(),
+          leakDetector_CarlaEngineJackClient()
     {
         carla_debug("CarlaEngineJackClient::CarlaEngineJackClient(%p)", jackClient);
 
@@ -619,11 +627,18 @@ public:
     CarlaEngineJack()
         : CarlaEngine(),
           fClient(nullptr),
+          fTransportPos(),
           fTransportState(JackTransportStopped),
-          fFreewheel(false)
+          fFreewheel(false),
 #ifdef BUILD_BRIDGE
-        , fIsRunning(false)
+          fIsRunning(false),
+#else
+          fUsedGroups(),
+          fUsedPorts(),
+          fUsedConnections(),
+          fNewGroups(),
 #endif
+          leakDetector_CarlaEngineJack()
     {
         carla_debug("CarlaEngineJack::CarlaEngineJack()");
 

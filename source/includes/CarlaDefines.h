@@ -200,40 +200,51 @@ private:                                         \
 #ifdef CARLA_PROPER_CPP11_SUPPORT
 # define CARLA_PREVENT_HEAP_ALLOCATION \
 private:                               \
-    static void* operator new(size_t) = delete; \
+    static void* operator new(std::size_t) = delete; \
     static void operator delete(void*) = delete;
 #else
 # define CARLA_PREVENT_HEAP_ALLOCATION \
 private:                               \
-    static void* operator new(size_t); \
+    static void* operator new(std::size_t); \
     static void operator delete(void*);
 #endif
 
-/* Define EXTERN_C */
-#ifdef __cplusplus
-# define EXTERN_C extern "C"
+/* Define CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION */
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+# define CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION  \
+private:                                        \
+    static void* operator new(std::size_t) = delete;
 #else
-# define EXTERN_C
+# define CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION  \
+private:                                        \
+    static void* operator new(std::size_t);
+#endif
+
+/* Define CARLA_EXTERN_C */
+#ifdef __cplusplus
+# define CARLA_EXTERN_C extern "C"
+#else
+# define CARLA_EXTERN_C
 #endif
 
 /* Define CARLA_EXPORT */
 #ifdef BUILD_BRIDGE
-# define CARLA_EXPORT EXTERN_C
+# define CARLA_EXPORT CARLA_EXTERN_C
 #else
 # if defined(CARLA_OS_WIN) && ! defined(__WINE__)
-#  define CARLA_EXPORT EXTERN_C __declspec (dllexport)
+#  define CARLA_EXPORT CARLA_EXTERN_C __declspec (dllexport)
 # else
-#  define CARLA_EXPORT EXTERN_C __attribute__ ((visibility("default")))
+#  define CARLA_EXPORT CARLA_EXTERN_C __attribute__ ((visibility("default")))
 # endif
 #endif
 
 /* Define OS_SEP */
 #ifdef CARLA_OS_WIN
-# define OS_SEP     '\\'
-# define OS_SEP_STR "\\"
+# define CARLA_OS_SEP     '\\'
+# define CARLA_OS_SEP_STR "\\"
 #else
-# define OS_SEP     '/'
-# define OS_SEP_STR "/"
+# define CARLA_OS_SEP     '/'
+# define CARLA_OS_SEP_STR "/"
 #endif
 
 /* Useful typedefs */

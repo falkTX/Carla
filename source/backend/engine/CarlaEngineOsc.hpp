@@ -93,16 +93,16 @@ public:
 private:
     CarlaEngine* const fEngine;
 
+#ifndef BUILD_BRIDGE
+    CarlaOscData fControlData; // for carla-control
+#endif
+
     CarlaString fName;
 
     CarlaString fServerPathTCP;
     CarlaString fServerPathUDP;
     lo_server   fServerTCP;
     lo_server   fServerUDP;
-
-#ifndef BUILD_BRIDGE
-    CarlaOscData fControlData; // for carla-control
-#endif
 
     // -------------------------------------------------------------------
 
