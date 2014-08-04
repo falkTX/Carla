@@ -125,6 +125,7 @@ void CarlaPluginThread::run()
         switch (fMode)
         {
         case PLUGIN_THREAD_NULL:
+        case PLUGIN_THREAD_BRIDGE:
             break;
 
         case PLUGIN_THREAD_DSSI_GUI:
@@ -134,9 +135,6 @@ void CarlaPluginThread::run()
             fProcess->kill();
             fProcess = nullptr;
             return;
-
-        case PLUGIN_THREAD_BRIDGE:
-            break;
         }
     }
 
@@ -156,6 +154,9 @@ void CarlaPluginThread::run()
 #endif
 
     arguments.add(fBinary.buffer());
+
+    // use a global mutex to ensure bridge environment is correct
+    static CarlaMutex sEnvMutex;
 
     switch (fMode)
     {
@@ -183,18 +184,18 @@ void CarlaPluginThread::run()
         break;
 
     case PLUGIN_THREAD_BRIDGE:
-        // FIXME
-        carla_setenv("ENGINE_BRIDGE_SHM_IDS", fExtra2.buffer());
-        carla_setenv("ENGINE_BRIDGE_CLIENT_NAME", name.toRawUTF8());
-        carla_setenv("ENGINE_BRIDGE_OSC_URL", String(String(fEngine->getOscServerPathUDP()) + String("/") + String(fPlugin->getId())).toRawUTF8());
-        carla_setenv("WINEDEBUG", "-all");
-
         /* osc-url  */ arguments.add(String(fEngine->getOscServerPathUDP()) + String("/") + String(fPlugin->getId()));
         /* stype    */ arguments.add(fExtra1.buffer());
         /* filename */ arguments.add(fPlugin->getFilename());
         /* name     */ arguments.add(name);
         /* label    */ arguments.add(fLabel.buffer());
         /* uniqueId */ arguments.add(String(static_cast<juce::int64>(fPlugin->getUniqueId())));
+
+        sEnvMutex.lock();
+        carla_setenv("ENGINE_BRIDGE_SHM_IDS", fExtra2.buffer());
+        carla_setenv("ENGINE_BRIDGE_CLIENT_NAME", name.toRawUTF8());
+        carla_setenv("ENGINE_BRIDGE_OSC_URL", String(String(fEngine->getOscServerPathUDP()) + String("/") + String(fPlugin->getId())).toRawUTF8());
+        carla_setenv("WINEDEBUG", "-all");
         break;
     }
 
@@ -249,6 +250,7 @@ void CarlaPluginThread::run()
         break;
 
     case PLUGIN_THREAD_BRIDGE:
+        sEnvMutex.unlock();
         //fProcess->waitForFinished(-1);
 
         while (fProcess->isRunning() && ! shouldThreadExit())
