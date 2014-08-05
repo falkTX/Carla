@@ -161,6 +161,7 @@ wait_child(
   return false;
 }
 
+static
 void
 nekoui_run(
   struct control * control_ptr)
@@ -236,6 +237,7 @@ nekoui_run(
   free(msg);
 }
 
+static
 void
 nekoui_show(
   struct control * control_ptr)
@@ -253,6 +255,7 @@ nekoui_show(
   (void)ign;
 }
 
+static
 void
 nekoui_hide(
   struct control * control_ptr)
@@ -270,6 +273,7 @@ nekoui_hide(
   (void)ign;
 }
 
+static
 void
 nekoui_quit(
   struct control * control_ptr)
