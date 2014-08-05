@@ -120,6 +120,7 @@ CXXFLAGS   += -Weffc++ -Wnon-virtual-dtor -Woverloaded-virtual
 ifeq ($(LINUX),true)
 CFLAGS     += -isystem /opt/kxstudio/include
 CXXFLAGS   += -isystem /opt/kxstudio/include
+CXXFLAGS   += -isystem /opt/kxstudio/include/ntk
 endif
 ifeq ($(MACOS),true)
 CFLAGS     += -isystem /opt/kxstudio/include

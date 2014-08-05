@@ -24,7 +24,7 @@
 // Define list_entry and list_entry_const
 
 #ifndef offsetof
-# define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+# define offsetof(TYPE, MEMBER) ((std::size_t) &((TYPE *)0)->MEMBER)
 #endif
 
 #if (defined(__GNUC__) || defined(__clang__)) && ! defined(__STRICT_ANSI__)
@@ -144,7 +144,7 @@ public:
         _init();
     }
 
-    size_t count() const noexcept
+    std::size_t count() const noexcept
     {
         return fCount;
     }
@@ -174,11 +174,11 @@ public:
         return _add(value, false, it.fEntry->prev);
     }
 
-    const T& getAt(const size_t index, const T& fallback) const noexcept
+    const T& getAt(const std::size_t index, const T& fallback) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fCount > 0 && index < fCount, fallback);
 
-        size_t i = 0;
+        std::size_t i = 0;
         ListHead* entry;
         ListHead* entry2;
 
@@ -193,11 +193,11 @@ public:
         return fallback;
     }
 
-    T& getAt(const size_t index, T& fallback) const noexcept
+    T& getAt(const std::size_t index, T& fallback) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fCount > 0 && index < fCount, fallback);
 
-        size_t i = 0;
+        std::size_t i = 0;
         ListHead* entry;
         ListHead* entry2;
 
@@ -212,11 +212,11 @@ public:
         return fallback;
     }
 
-    T getAt(const size_t index, T& fallback, const bool removeObj) noexcept
+    T getAt(const std::size_t index, T& fallback, const bool removeObj) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fCount > 0 && index < fCount, fallback);
 
-        size_t i = 0;
+        std::size_t i = 0;
         ListHead* entry;
         ListHead* entry2;
 
@@ -342,10 +342,10 @@ public:
     }
 
 protected:
-    const size_t kDataSize;
+    const std::size_t kDataSize;
 
-    size_t   fCount;
-    ListHead fQueue;
+    std::size_t fCount;
+    ListHead    fQueue;
 
     virtual Data* _allocate() noexcept = 0;
     virtual void  _deallocate(Data* const dataPtr) noexcept = 0;

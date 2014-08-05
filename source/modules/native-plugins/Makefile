@@ -25,7 +25,7 @@ endif
 # Flags for ZynAddSubFX
 
 ifeq ($(HAVE_ZYN_DEPS),true)
-ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS)
+ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS) -isystem zynaddsubfx
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags fftw3 mxml zlib)
 ifneq ($(MACOS),true)
 ZYN_CXX_FLAGS += -DHAVE_SCHEDULER
@@ -168,10 +168,10 @@ zynaddsubfx-%.cpp.o: zynaddsubfx-%.cpp $(CXXDEPS) $(ZYN_UI_FILES_H)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
 zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp $(ZYN_UI_FILES_H)
-	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
+	$(CXX) $< $(ZYN_CXX_FLAGS) -w -c -o $@
 
 zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
-	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
+	$(CXX) $< $(ZYN_CXX_FLAGS) -w -c -o $@
 
 zynaddsubfx/UI/%.cpp: zynaddsubfx/UI/%.fl
 	ntk-fluid -c -o zynaddsubfx/UI/$*.cpp -h zynaddsubfx/UI/$*.h $<

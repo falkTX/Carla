@@ -39,27 +39,67 @@ using juce::FloatVectorOperations;
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 # include "juce_gui_basics.h"
-static juce::Array<void*> gActivePlugins;
+using juce::ScopedJuceInitialiser_GUI;
+using juce::SharedResourcePointer;
 #endif
+
+// -----------------------------------------------------------------------
+// -Weffc++ compat ext widget
+
+extern "C" {
+
+typedef struct _LV2_External_UI_Widget_Compat {
+  void (*run )(struct _LV2_External_UI_Widget_Compat*);
+  void (*show)(struct _LV2_External_UI_Widget_Compat*);
+  void (*hide)(struct _LV2_External_UI_Widget_Compat*);
+
+  _LV2_External_UI_Widget_Compat()
+      : run(nullptr), show(nullptr), hide(nullptr) {}
+
+} LV2_External_UI_Widget_Compat;
+
+}
 
 // -----------------------------------------------------------------------
 // LV2 descriptor functions
 
-class NativePlugin : public LV2_External_UI_Widget
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Weffc++"
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Weffc++"
+#endif
+class NativePlugin : public LV2_External_UI_Widget_Compat
 {
+#if defined(__clang__)
+# pragma clang diagnostic pop
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
 public:
     static const uint32_t kMaxMidiEvents = 512;
 
     NativePlugin(const NativePluginDescriptor* const desc, const double sampleRate, const char* const bundlePath, const LV2_Feature* const* features)
         : fHandle(nullptr),
+          fHost(),
           fDescriptor(desc),
+          fProgramDesc({0, 0, nullptr}),
           fMidiEventCount(0),
+          fTimeInfo(),
           fIsProcessing(false),
           fVolume(1.0f),
           fDryWet(1.0f),
           fBufferSize(0),
           fSampleRate(sampleRate),
-          fUridMap(nullptr)
+          fUridMap(nullptr),
+          fURIs(),
+          fUI(),
+          fPorts(),
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+          sJuceGUI(),
+#endif
+          leakDetector_NativePlugin()
     {
         run  = extui_run;
         show = extui_show;
@@ -88,12 +128,6 @@ public:
         fHost.ui_open_file           = host_ui_open_file;
         fHost.ui_save_file           = host_ui_save_file;
         fHost.dispatcher             = host_dispatcher;
-
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-        if (gActivePlugins.size() == 0)
-            juce::initialiseJuce_GUI();
-        gActivePlugins.add(this);
-#endif
 
         const LV2_Options_Option* options   = nullptr;
         const LV2_URID_Map*       uridMap   = nullptr;
@@ -160,14 +194,6 @@ public:
             delete[] fHost.resourceDir;
             fHost.resourceDir = nullptr;
         }
-
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-        jassert(gActivePlugins.contains(this));
-        gActivePlugins.removeFirstMatchingValue(this);
-
-        if (gActivePlugins.size() == 0)
-            juce::shutdownJuce_GUI();
-#endif
     }
 
     bool init()
@@ -194,7 +220,7 @@ public:
         carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
 
         fPorts.init(fDescriptor, fHandle);
-        fUris.map(fUridMap);
+        fURIs.map(fUridMap);
 
         return true;
     }
@@ -271,7 +297,7 @@ public:
                 if (event->time.frames >= frames)
                     break;
 
-                if (event->body.type == fUris.midiEvent)
+                if (event->body.type == fURIs.midiEvent)
                 {
                     if (fMidiEventCount >= kMaxMidiEvents*2)
                         continue;
@@ -289,11 +315,11 @@ public:
                     continue;
                 }
 
-                if (event->body.type == fUris.atomBlank)
+                if (event->body.type == fURIs.atomBlank)
                 {
                     const LV2_Atom_Object* const obj((const LV2_Atom_Object*)&event->body);
 
-                    if (obj->body.otype != fUris.timePos)
+                    if (obj->body.otype != fURIs.timePos)
                         continue;
 
                     LV2_Atom* bar = nullptr;
@@ -305,32 +331,32 @@ public:
                     LV2_Atom* speed = nullptr;
 
                     lv2_atom_object_get(obj,
-                                        fUris.timeBar, &bar,
-                                        fUris.timeBarBeat, &barBeat,
-                                        fUris.timeBeatsPerBar, &beatsPerBar,
-                                        fUris.timeBeatsPerMinute, &bpm,
-                                        fUris.timeBeatUnit, &beatUnit,
-                                        fUris.timeFrame, &frame,
-                                        fUris.timeSpeed, &speed,
+                                        fURIs.timeBar, &bar,
+                                        fURIs.timeBarBeat, &barBeat,
+                                        fURIs.timeBeatsPerBar, &beatsPerBar,
+                                        fURIs.timeBeatsPerMinute, &bpm,
+                                        fURIs.timeBeatUnit, &beatUnit,
+                                        fURIs.timeFrame, &frame,
+                                        fURIs.timeSpeed, &speed,
                                         nullptr);
 
-                    if (bpm != nullptr && bpm->type == fUris.atomFloat)
+                    if (bpm != nullptr && bpm->type == fURIs.atomFloat)
                     {
                         fTimeInfo.bbt.beatsPerMinute = ((LV2_Atom_Float*)bpm)->body;
                         fTimeInfo.bbt.valid = true;
                     }
 
-                    if (beatsPerBar != nullptr && beatsPerBar->type == fUris.atomFloat)
+                    if (beatsPerBar != nullptr && beatsPerBar->type == fURIs.atomFloat)
                     {
                         float beatsPerBarValue = ((LV2_Atom_Float*)beatsPerBar)->body;
                         fTimeInfo.bbt.beatsPerBar = beatsPerBarValue;
 
-                        if (bar != nullptr && bar->type == fUris.atomLong)
+                        if (bar != nullptr && bar->type == fURIs.atomLong)
                         {
                             //float barValue = ((LV2_Atom_Long*)bar)->body;
                             //curPosInfo.ppqPositionOfLastBarStart = barValue * beatsPerBarValue;
 
-                            if (barBeat != nullptr && barBeat->type == fUris.atomFloat)
+                            if (barBeat != nullptr && barBeat->type == fURIs.atomFloat)
                             {
                                 //float barBeatValue = ((LV2_Atom_Float*)barBeat)->body;
                                 //curPosInfo.ppqPosition = curPosInfo.ppqPositionOfLastBarStart + barBeatValue;
@@ -338,10 +364,10 @@ public:
                         }
                     }
 
-                    if (beatUnit != nullptr && beatUnit->type == fUris.atomFloat)
+                    if (beatUnit != nullptr && beatUnit->type == fURIs.atomFloat)
                         fTimeInfo.bbt.beatType = ((LV2_Atom_Float*)beatUnit)->body;
 
-                    if (frame != nullptr && frame->type == fUris.atomLong)
+                    if (frame != nullptr && frame->type == fURIs.atomLong)
                     {
                         const int64_t value(((LV2_Atom_Long*)frame)->body);
                         CARLA_SAFE_ASSERT_CONTINUE(value >= 0);
@@ -349,7 +375,7 @@ public:
                         fTimeInfo.frame = static_cast<uint64_t>(value);
                     }
 
-                    if (speed != nullptr && speed->type == fUris.atomFloat)
+                    if (speed != nullptr && speed->type == fURIs.atomFloat)
                         fTimeInfo.playing = ((LV2_Atom_Float*)speed)->body == 1.0f;
 
                     continue;
@@ -364,7 +390,7 @@ public:
 
                     if (event == nullptr)
                         continue;
-                    if (event->body.type != fUris.midiEvent)
+                    if (event->body.type != fURIs.midiEvent)
                         continue;
                     if (event->body.size > 4)
                         continue;
@@ -498,7 +524,7 @@ public:
 
         if (char* const state = fDescriptor->get_state(fHandle))
         {
-            store(handle, fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/chunk"), state, std::strlen(state), fUris.atomString, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE);
+            store(handle, fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/chunk"), state, std::strlen(state), fURIs.atomString, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE);
             std::free(state);
             return LV2_STATE_SUCCESS;
         }
@@ -521,7 +547,7 @@ public:
             return LV2_STATE_ERR_UNKNOWN;
         if (data == nullptr)
             return LV2_STATE_ERR_UNKNOWN;
-        if (type != fUris.atomString)
+        if (type != fURIs.atomString)
             return LV2_STATE_ERR_BAD_TYPE;
 
         fDescriptor->set_state(fHandle, (const char*)data);
@@ -889,7 +915,7 @@ private:
             timeBeatsPerBar    = uridMap->map(uridMap->handle, LV2_TIME__beatsPerBar);
             timeBeatsPerMinute = uridMap->map(uridMap->handle, LV2_TIME__beatsPerMinute);
         }
-    } fUris;
+    } fURIs;
 
     struct UI {
         const LV2_External_UI_Host* host;
@@ -1092,21 +1118,25 @@ private:
         CARLA_DECLARE_NON_COPY_STRUCT(Ports);
     } fPorts;
 
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+    SharedResourcePointer<ScopedJuceInitialiser_GUI> sJuceGUI;
+#endif
+
     // -------------------------------------------------------------------
 
-    #define handlePtr ((NativePlugin*)_this_)
+    #define handlePtr ((NativePlugin*)self)
 
-    static void extui_run(LV2_External_UI_Widget* _this_)
+    static void extui_run(LV2_External_UI_Widget_Compat* self)
     {
         handlePtr->handleUiRun();
     }
 
-    static void extui_show(LV2_External_UI_Widget* _this_)
+    static void extui_show(LV2_External_UI_Widget_Compat* self)
     {
         handlePtr->handleUiShow();
     }
 
-    static void extui_hide(LV2_External_UI_Widget* _this_)
+    static void extui_hide(LV2_External_UI_Widget_Compat* self)
     {
         handlePtr->handleUiHide();
     }

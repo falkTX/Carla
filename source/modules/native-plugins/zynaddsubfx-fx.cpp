@@ -16,14 +16,15 @@
  */
 
 #include "CarlaNative.hpp"
+#include "CarlaMathUtils.hpp"
 
-#include "zynaddsubfx/Effects/Alienwah.h"
-#include "zynaddsubfx/Effects/Chorus.h"
-#include "zynaddsubfx/Effects/Distorsion.h"
-#include "zynaddsubfx/Effects/DynamicFilter.h"
-#include "zynaddsubfx/Effects/Echo.h"
-#include "zynaddsubfx/Effects/Phaser.h"
-#include "zynaddsubfx/Effects/Reverb.h"
+#include "Effects/Alienwah.h"
+#include "Effects/Chorus.h"
+#include "Effects/Distorsion.h"
+#include "Effects/DynamicFilter.h"
+#include "Effects/Echo.h"
+#include "Effects/Phaser.h"
+#include "Effects/Reverb.h"
 
 #include "juce_audio_basics.h"
 using juce::FloatVectorOperations;
@@ -40,9 +41,10 @@ protected:
           fEffect(nullptr),
           efxoutl(nullptr),
           efxoutr(nullptr),
-          fFirstInit(true)
+          leakDetector_FxAbstractPlugin()
     {
-        const uint32_t bufferSize(getBufferSize());
+        const int bufferSize(static_cast<int>(getBufferSize()));
+
         efxoutl = new float[bufferSize];
         efxoutr = new float[bufferSize];
 
@@ -81,7 +83,7 @@ protected:
 
     float getParameterValue(const uint32_t index) const final
     {
-        return fEffect->getpar(index+2);
+        return static_cast<float>(fEffect->getpar(static_cast<int>(index+2)));
     }
 
     // -------------------------------------------------------------------
@@ -97,22 +99,14 @@ protected:
 
     void setParameterValue(const uint32_t index, const float value) final
     {
-        fFirstInit = false;
-        fEffect->changepar(index+2, value);
+        fEffect->changepar(static_cast<int>(index+2), static_cast<uchar>(carla_fixValue(0.0f, 127.0f, value)));
     }
 
     void setMidiProgram(const uint8_t, const uint32_t, const uint32_t program) final
     {
-        fFirstInit = false;
-        fEffect->setpreset(program);
+        fEffect->setpreset(static_cast<uchar>(program));
 
-        const float volume(float(fEffect->getpar(0))/127.0f);
-        hostSetVolume(volume);
-
-        const unsigned char pan(fEffect->getpar(1));
-        const float panning(float(pan)/63.5f-1.0f);
-        hostSetPanning(panning);
-
+        // reset volume and pan
         fEffect->changepar(0, 127);
         fEffect->changepar(1, 64);
     }
@@ -123,20 +117,26 @@ protected:
     void activate() final
     {
         fEffect->cleanup();
-
-        if (fFirstInit)
-        {
-            fFirstInit = false;
-            hostSetDryWet(0.5f);
-        }
     }
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) final
     {
+        const int iframes(static_cast<int>(frames));
+
+        if (outBuffer[0] != inBuffer[0])
+            FloatVectorOperations::copyWithMultiply(outBuffer[0], inBuffer[0], 0.5f, iframes);
+        else
+            FloatVectorOperations::multiply(outBuffer[0], 0.5f, iframes);
+
+        if (outBuffer[1] != inBuffer[1])
+            FloatVectorOperations::copyWithMultiply(outBuffer[1], inBuffer[1], 0.5f, iframes);
+        else
+            FloatVectorOperations::multiply(outBuffer[1], 0.5f, iframes);
+
         fEffect->out(Stereo<float*>(inBuffer[0], inBuffer[1]));
 
-        FloatVectorOperations::copy(outBuffer[0], efxoutl, frames);
-        FloatVectorOperations::copy(outBuffer[1], efxoutr, frames);
+        FloatVectorOperations::addWithMultiply(outBuffer[0], efxoutl, 0.5f, iframes);
+        FloatVectorOperations::addWithMultiply(outBuffer[1], efxoutr, 0.5f, iframes);
     }
 
     // -------------------------------------------------------------------
@@ -144,35 +144,37 @@ protected:
 
     void bufferSizeChanged(const uint32_t bufferSize) final
     {
+        const int ibufferSize(static_cast<int>(getBufferSize()));
+
         delete[] efxoutl;
         delete[] efxoutr;
         efxoutl = new float[bufferSize];
         efxoutr = new float[bufferSize];
-        FloatVectorOperations::clear(efxoutl, bufferSize);
-        FloatVectorOperations::clear(efxoutr, bufferSize);
+        FloatVectorOperations::clear(efxoutl, ibufferSize);
+        FloatVectorOperations::clear(efxoutr, ibufferSize);
 
-        doReinit(bufferSize, getSampleRate());
+        doReinit(getSampleRate(), bufferSize);
     }
 
     void sampleRateChanged(const double sampleRate) final
     {
-        doReinit(getBufferSize(), sampleRate);
+        doReinit(sampleRate, getBufferSize());
     }
 
-    void doReinit(const uint32_t bufferSize, const double sampleRate)
+    void doReinit(const double sampleRate, const uint32_t bufferSize)
     {
-        float params[fParamCount];
+        uchar params[fParamCount];
 
-        for (uint32_t i=0; i < fParamCount; ++i)
+        for (int i=0, count=static_cast<int>(fParamCount); i<count; ++i)
             params[i] = fEffect->getpar(i+2);
 
-        reinit(bufferSize, sampleRate);
+        reinit(static_cast<uint>(sampleRate), static_cast<int>(bufferSize));
 
-        for (uint32_t i=0; i < fParamCount; ++i)
+        for (int i=0, count=static_cast<int>(fParamCount); i<count; ++i)
             fEffect->changepar(i+2, params[i]);
     }
 
-    virtual void reinit(const uint32_t bufferSize, const double sampleRate) = 0;
+    virtual void reinit(const uint sampleRate, const int bufferSize) = 0;
 
     // -------------------------------------------------------------------
 
@@ -182,7 +184,8 @@ protected:
     Effect* fEffect;
     float*  efxoutl;
     float*  efxoutr;
-    bool    fFirstInit;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxAbstractPlugin)
 };
 
 // -----------------------------------------------------------------------
@@ -191,9 +194,10 @@ class FxAlienWahPlugin : public FxAbstractPlugin
 {
 public:
     FxAlienWahPlugin(const NativeHostDescriptor* const host)
-        : FxAbstractPlugin(host, 11, 4)
+        : FxAbstractPlugin(host, 11, 4),
+          leakDetector_FxAlienWahPlugin()
     {
-        fEffect = new Alienwah(false, efxoutl, efxoutr, getSampleRate(), getBufferSize());
+        fEffect = new Alienwah(false, efxoutl, efxoutr, static_cast<uint>(getSampleRate()), static_cast<int>(getBufferSize()));
     }
 
 protected:
@@ -320,7 +324,7 @@ protected:
 
     // -------------------------------------------------------------------
 
-    void reinit(const uint32_t bufferSize, const double sampleRate)
+    void reinit(const uint sampleRate, const int bufferSize) override
     {
         delete fEffect;
         fEffect = new Alienwah(false, efxoutl, efxoutr, sampleRate, bufferSize);
@@ -336,9 +340,10 @@ class FxChorusPlugin : public FxAbstractPlugin
 {
 public:
     FxChorusPlugin(const NativeHostDescriptor* const host)
-        : FxAbstractPlugin(host, 12, 10)
+        : FxAbstractPlugin(host, 12, 10),
+          leakDetector_FxChorusPlugin()
     {
-        fEffect = new Chorus(false, efxoutl, efxoutr, getSampleRate(), getBufferSize());
+        fEffect = new Chorus(false, efxoutl, efxoutr, static_cast<uint>(getSampleRate()), static_cast<int>(getBufferSize()));
     }
 
 protected:
@@ -489,7 +494,7 @@ protected:
 
     // -------------------------------------------------------------------
 
-    void reinit(const uint32_t bufferSize, const double sampleRate)
+    void reinit(const uint sampleRate, const int bufferSize) override
     {
         delete fEffect;
         fEffect = new Chorus(false, efxoutl, efxoutr, sampleRate, bufferSize);
@@ -505,9 +510,10 @@ class FxDistortionPlugin : public FxAbstractPlugin
 {
 public:
     FxDistortionPlugin(const NativeHostDescriptor* const host)
-        : FxAbstractPlugin(host, 11, 6)
+        : FxAbstractPlugin(host, 11, 6),
+          leakDetector_FxDistortionPlugin()
     {
-        fEffect = new Distorsion(false, efxoutl, efxoutr, getSampleRate(), getBufferSize());
+        fEffect = new Distorsion(false, efxoutl, efxoutr, static_cast<uint>(getSampleRate()), static_cast<int>(getBufferSize()));
     }
 
 protected:
@@ -666,7 +672,7 @@ protected:
 
     // -------------------------------------------------------------------
 
-    void reinit(const uint32_t bufferSize, const double sampleRate)
+    void reinit(const uint sampleRate, const int bufferSize) override
     {
         delete fEffect;
         fEffect = new Distorsion(false, efxoutl, efxoutr, sampleRate, bufferSize);
@@ -682,9 +688,10 @@ class FxDynamicFilterPlugin : public FxAbstractPlugin
 {
 public:
     FxDynamicFilterPlugin(const NativeHostDescriptor* const host)
-        : FxAbstractPlugin(host, 10, 5)
+        : FxAbstractPlugin(host, 10, 5),
+          leakDetector_FxDynamicFilterPlugin()
     {
-        fEffect = new DynamicFilter(false, efxoutl, efxoutr, getSampleRate(), getBufferSize());
+        fEffect = new DynamicFilter(false, efxoutl, efxoutr, static_cast<uint>(getSampleRate()), static_cast<int>(getBufferSize()));
     }
 
 protected:
@@ -809,7 +816,7 @@ protected:
 
     // -------------------------------------------------------------------
 
-    void reinit(const uint32_t bufferSize, const double sampleRate)
+    void reinit(const uint sampleRate, const int bufferSize) override
     {
         delete fEffect;
         fEffect = new DynamicFilter(false, efxoutl, efxoutr, sampleRate, bufferSize);
@@ -825,9 +832,10 @@ class FxEchoPlugin : public FxAbstractPlugin
 {
 public:
     FxEchoPlugin(const NativeHostDescriptor* const host)
-        : FxAbstractPlugin(host, 7, 9)
+        : FxAbstractPlugin(host, 7, 9),
+          leakDetector_FxEchoPlugin()
     {
-        fEffect = new Echo(false, efxoutl, efxoutr, getSampleRate(), getBufferSize());
+        fEffect = new Echo(false, efxoutl, efxoutr, static_cast<uint>(getSampleRate()), static_cast<int>(getBufferSize()));
     }
 
 protected:
@@ -940,7 +948,7 @@ protected:
 
     // -------------------------------------------------------------------
 
-    void reinit(const uint32_t bufferSize, const double sampleRate)
+    void reinit(const uint sampleRate, const int bufferSize) override
     {
         delete fEffect;
         fEffect = new Echo(false, efxoutl, efxoutr, sampleRate, bufferSize);
@@ -956,9 +964,10 @@ class FxPhaserPlugin : public FxAbstractPlugin
 {
 public:
     FxPhaserPlugin(const NativeHostDescriptor* const host)
-        : FxAbstractPlugin(host, 15, 12)
+        : FxAbstractPlugin(host, 15, 12),
+          leakDetector_FxPhaserPlugin()
     {
-        fEffect = new Phaser(false, efxoutl, efxoutr, getSampleRate(), getBufferSize());
+        fEffect = new Phaser(false, efxoutl, efxoutr, static_cast<uint>(getSampleRate()), static_cast<int>(getBufferSize()));
     }
 
 protected:
@@ -1132,7 +1141,7 @@ protected:
 
     // -------------------------------------------------------------------
 
-    void reinit(const uint32_t bufferSize, const double sampleRate)
+    void reinit(const uint sampleRate, const int bufferSize) override
     {
         delete fEffect;
         fEffect = new Phaser(false, efxoutl, efxoutr, sampleRate, bufferSize);
@@ -1148,9 +1157,10 @@ class FxReverbPlugin : public FxAbstractPlugin
 {
 public:
     FxReverbPlugin(const NativeHostDescriptor* const host)
-        : FxAbstractPlugin(host, 13, 13)
+        : FxAbstractPlugin(host, 13, 13),
+          leakDetector_FxReverbPlugin()
     {
-        fEffect = new Reverb(false, efxoutl, efxoutr, getSampleRate(), getBufferSize());
+        fEffect = new Reverb(false, efxoutl, efxoutr, static_cast<uint>(getSampleRate()), static_cast<int>(getBufferSize()));
     }
 
 protected:
@@ -1310,7 +1320,7 @@ protected:
 
     // -------------------------------------------------------------------
 
-    void reinit(const uint32_t bufferSize, const double sampleRate)
+    void reinit(const uint sampleRate, const int bufferSize) override
     {
         delete fEffect;
         fEffect = new Reverb(false, efxoutl, efxoutr, sampleRate, bufferSize);

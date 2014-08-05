@@ -22,10 +22,10 @@
 
 #include "CarlaMathUtils.hpp"
 
-#include "zynaddsubfx/DSP/FFTwrapper.h"
-#include "zynaddsubfx/Misc/Master.h"
-#include "zynaddsubfx/Misc/Part.h"
-#include "zynaddsubfx/Misc/Util.h"
+#include "DSP/FFTwrapper.h"
+#include "Misc/Master.h"
+#include "Misc/Part.h"
+#include "Misc/Util.h"
 
 #ifdef WANT_ZYNADDSUBFX_UI
 # ifdef override
@@ -33,8 +33,8 @@
 #  undef override
 # endif
 
-# include "zynaddsubfx/UI/common.H"
-# include "zynaddsubfx/UI/MasterUI.h"
+# include "UI/common.H"
+# include "UI/MasterUI.h"
 # include <FL/Fl_Shared_Image.H>
 # include <FL/Fl_Tiled_Image.H>
 # include <FL/Fl_Theme.H>
@@ -77,9 +77,9 @@ class ZynAddSubFxPrograms
 {
 public:
     ZynAddSubFxPrograms()
-        : fInitiated(false)
-    {
-    }
+        : fInitiated(false),
+          fRetProgram({0, 0, nullptr}),
+          fPrograms() {}
 
     ~ZynAddSubFxPrograms()
     {
@@ -112,7 +112,7 @@ public:
         // refresh banks
         master.bank.rescanforbanks();
 
-        for (uint32_t i=0, size = master.bank.banks.size(); i < size; ++i)
+        for (uint32_t i=0, size=static_cast<uint32_t>(master.bank.banks.size()); i<size; ++i)
         {
             if (master.bank.banks[i].dir.empty())
                 continue;
@@ -165,12 +165,12 @@ public:
         }
     }
 
-    uint32_t count()
+    uint32_t count() const noexcept
     {
-        return fPrograms.count();
+        return static_cast<uint32_t>(fPrograms.count());
     }
 
-    const NativeMidiProgram* getInfo(const uint32_t index)
+    const NativeMidiProgram* getInfo(const uint32_t index) const noexcept
     {
         if (index >= fPrograms.count())
             return nullptr;
@@ -191,12 +191,12 @@ private:
       uint32_t prog;
       const char* name;
 
-      ProgramInfo(uint32_t bank_, uint32_t prog_, const char* name_)
+      ProgramInfo(uint32_t bank_, uint32_t prog_, const char* name_) noexcept
         : bank(bank_),
           prog(prog_),
-          name(carla_strdup(name_)) {}
+          name(carla_strdup_safe(name_)) {}
 
-      ~ProgramInfo()
+      ~ProgramInfo() noexcept
       {
           if (name != nullptr)
           {
@@ -215,9 +215,10 @@ private:
     };
 
     bool fInitiated;
-    NativeMidiProgram fRetProgram;
+    mutable NativeMidiProgram fRetProgram;
     LinkedList<const ProgramInfo*> fPrograms;
 
+    CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(ZynAddSubFxPrograms)
 };
 
@@ -292,8 +293,8 @@ public:
         }
 
         synth = new SYNTH_T();
-        synth->buffersize = host->get_buffer_size(host->handle);
-        synth->samplerate = host->get_sample_rate(host->handle);
+        synth->buffersize = static_cast<int>(host->get_buffer_size(host->handle));
+        synth->samplerate = static_cast<uint>(host->get_sample_rate(host->handle));
 
         if (synth->buffersize > 32)
             synth->buffersize = 32;
@@ -302,14 +303,14 @@ public:
 
         config.init();
         config.cfg.SoundBufferSize = synth->buffersize;
-        config.cfg.SampleRate      = synth->samplerate;
+        config.cfg.SampleRate      = static_cast<int>(synth->samplerate);
         config.cfg.GzipCompression = 0;
 
-        sprng(std::time(nullptr));
+        sprng(static_cast<prng_t>(std::time(nullptr)));
 
         denormalkillbuf = new float[synth->buffersize];
         for (int i=0; i < synth->buffersize; ++i)
-            denormalkillbuf[i] = (RND - 0.5f) * 1e-16;
+            denormalkillbuf[i] = (RND - 0.5f) * 1e-16f;
 
         Master::getInstance();
     }
@@ -326,6 +327,7 @@ public:
 private:
     int fCount;
 
+    CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(ZynAddSubFxInstanceCount)
 };
 
@@ -536,6 +538,9 @@ private:
     volatile uint8_t  fNextChannel;
     volatile uint32_t fNextBank;
     volatile uint32_t fNextProgram;
+
+    CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_CLASS(ZynAddSubFxThread)
 };
 
 // -----------------------------------------------------------------------
@@ -546,9 +551,10 @@ public:
     ZynAddSubFxPlugin(const NativeHostDescriptor* const host)
         : NativePluginClass(host),
           fMaster(new Master()),
-          fSampleRate(getSampleRate()),
+          fSampleRate(static_cast<uint>(getSampleRate())),
           fIsActive(false),
-          fThread(fMaster, host)
+          fThread(fMaster, host),
+          leakDetector_ZynAddSubFxPlugin()
     {
         fThread.startThread();
 
@@ -556,11 +562,6 @@ public:
             fMaster->partonoff(i, 1);
 
         sPrograms.init();
-
-#if 0
-        // create instance if needed
-        getGlobalMutex();
-#endif
     }
 
     ~ZynAddSubFxPlugin() override
@@ -643,46 +644,42 @@ protected:
     {
         if (pthread_mutex_trylock(&fMaster->mutex) != 0)
         {
-            FloatVectorOperations::clear(outBuffer[0], frames);
-            FloatVectorOperations::clear(outBuffer[1], frames);
+            FloatVectorOperations::clear(outBuffer[0], static_cast<int>(frames));
+            FloatVectorOperations::clear(outBuffer[1], static_cast<int>(frames));
             return;
         }
-
-#if 0
-        const CarlaMutexLocker csm(getGlobalMutex());
-#endif
 
         for (uint32_t i=0; i < midiEventCount; ++i)
         {
             const NativeMidiEvent* const midiEvent(&midiEvents[i]);
 
             const uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent->data);
-            const uint8_t channel = MIDI_GET_CHANNEL_FROM_DATA(midiEvent->data);
+            const char    channel = MIDI_GET_CHANNEL_FROM_DATA(midiEvent->data);
 
             if (MIDI_IS_STATUS_NOTE_OFF(status))
             {
-                const uint8_t note = midiEvent->data[1];
+                const char note = static_cast<char>(midiEvent->data[1]);
 
                 fMaster->noteOff(channel, note);
             }
             else if (MIDI_IS_STATUS_NOTE_ON(status))
             {
-                const uint8_t note = midiEvent->data[1];
-                const uint8_t velo = midiEvent->data[2];
+                const char note = static_cast<char>(midiEvent->data[1]);
+                const char velo = static_cast<char>(midiEvent->data[2]);
 
                 fMaster->noteOn(channel, note, velo);
             }
             else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status))
             {
-                const uint8_t note     = midiEvent->data[1];
-                const uint8_t pressure = midiEvent->data[2];
+                const char note     = static_cast<char>(midiEvent->data[1]);
+                const char pressure = static_cast<char>(midiEvent->data[2]);
 
                 fMaster->polyphonicAftertouch(channel, note, pressure);
             }
             else if (MIDI_IS_STATUS_CONTROL_CHANGE(status))
             {
-                const uint8_t control = midiEvent->data[1];
-                const uint8_t value   = midiEvent->data[2];
+                const int control = midiEvent->data[1];
+                const int value   = midiEvent->data[2];
 
                 fMaster->setController(channel, control, value);
             }
@@ -729,7 +726,7 @@ protected:
     void setState(const char* const data) override
     {
         fThread.stopLoadProgramLater();
-        fMaster->putalldata((char*)data, 0);
+        fMaster->putalldata(const_cast<char*>(data), 0);
         fMaster->applyparameters(true);
     }
 
@@ -747,7 +744,7 @@ protected:
 
     void sampleRateChanged(const double sampleRate) final
     {
-        fSampleRate = sampleRate;
+        fSampleRate = static_cast<uint>(sampleRate);
         deleteMaster();
         sInstanceCount.maybeReinit(getHostHandle());
         initMaster();
@@ -784,21 +781,11 @@ protected:
     // -------------------------------------------------------------------
 
 private:
-    Master*  fMaster;
-    unsigned fSampleRate;
-    bool     fIsActive;
+    Master* fMaster;
+    uint    fSampleRate;
+    bool    fIsActive;
 
     ZynAddSubFxThread fThread;
-
-#if 0
-    // -------------------------------------------------------------------
-
-    static CarlaMutex& getGlobalMutex() noexcept
-    {
-        static CarlaMutex m;
-        return m;
-    }
-#endif
 
     // -------------------------------------------------------------------
 
