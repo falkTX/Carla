@@ -53,7 +53,7 @@ namespace LiveConstantEditor
     inline void setFromString (double& v,         const String& s)    { v = parseDouble (s); }
     inline void setFromString (float& v,          const String& s)    { v = (float) parseDouble (s); }
     inline void setFromString (String& v,         const String& s)    { v = s; }
-    inline void setFromString (Colour& v,         const String& s)    { v = Colour ((int) parseInt (s)); }
+    inline void setFromString (Colour& v,         const String& s)    { v = Colour ((uint32) parseInt (s)); }
 
     template <typename Type>
     inline String getAsString (const Type& v, bool)              { return String (v); }
@@ -66,6 +66,9 @@ namespace LiveConstantEditor
     inline String getAsString (int64 v, bool preferHex)          { return intToString ((int64) v, preferHex); }
     inline String getAsString (uint64 v, bool preferHex)         { return intToString ((int64) v, preferHex); }
     inline String getAsString (Colour v, bool)                   { return intToString ((int) v.getARGB(), true); }
+
+    template <typename Type>    struct isStringType              { enum { value = 0 }; };
+    template <>                 struct isStringType<String>      { enum { value = 1 }; };
 
     template <typename Type>
     inline String getAsCode (Type& v, bool preferHex)       { return getAsString (v, preferHex); }
@@ -90,6 +93,7 @@ namespace LiveConstantEditor
         virtual String getCodeValue (bool preferHex) const = 0;
         virtual void setStringValue (const String&) = 0;
         virtual String getOriginalStringValue (bool preferHex) const = 0;
+        virtual bool isString() const = 0;
 
         String name, sourceFile;
         int sourceLine;
@@ -175,6 +179,7 @@ namespace LiveConstantEditor
         String getCodeValue (bool preferHex) const override             { return getAsCode (value, preferHex); }
         String getOriginalStringValue (bool preferHex) const override   { return getAsString (originalValue, preferHex); }
         void setStringValue (const String& s) override                  { setFromString (value, s); }
+        bool isString() const override                                  { return isStringType<Type>::value; }
 
         Type value, originalValue;
 
