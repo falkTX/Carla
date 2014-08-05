@@ -1597,15 +1597,18 @@ int main(int argc, char* argv[])
     CarlaString filenameStr(filename);
     filenameStr.toLower();
 
-    if (filenameStr.contains("fluidsynth", true))
+    if (type != PLUGIN_GIG && type != PLUGIN_SF2 && type != PLUGIN_SFZ)
     {
-        DISCOVERY_OUT("info", "skipping fluidsynth based plugin");
-        return 0;
-    }
-    if (filenameStr.contains("linuxsampler", true) || filenameStr.endsWith("ls16.so"))
-    {
-        DISCOVERY_OUT("info", "skipping linuxsampler based plugin");
-        return 0;
+        if (filenameStr.contains("fluidsynth", true))
+        {
+            DISCOVERY_OUT("info", "skipping fluidsynth based plugin");
+            return 0;
+        }
+        if (filenameStr.contains("linuxsampler", true) || filenameStr.endsWith("ls16.so"))
+        {
+            DISCOVERY_OUT("info", "skipping linuxsampler based plugin");
+            return 0;
+        }
     }
 
     bool openLib = false;
