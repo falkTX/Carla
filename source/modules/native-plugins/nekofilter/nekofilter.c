@@ -53,6 +53,7 @@ struct nekofilter
 #endif
 };
 
+static
 NativePluginHandle
 nekofilter_instantiate(
   const NativeHostDescriptor* host)
@@ -139,6 +140,7 @@ nekofilter_instantiate(
 
 #define nekofilter_ptr ((struct nekofilter *)handle)
 
+static
 uint32_t
 nekofilter_get_parameter_count(
   NativePluginHandle handle)
@@ -149,6 +151,7 @@ nekofilter_get_parameter_count(
   (void)handle;
 }
 
+static
 const NativeParameter*
 nekofilter_get_parameter_info(
   NativePluginHandle handle,
@@ -281,6 +284,7 @@ ready:
   return &param;
 }
 
+static
 float
 nekofilter_get_parameter_value(
   NativePluginHandle handle,
@@ -299,6 +303,7 @@ nekofilter_get_parameter_value(
   }
 }
 
+static
 void
 nekofilter_set_parameter_value(
   NativePluginHandle handle,
@@ -318,6 +323,7 @@ nekofilter_set_parameter_value(
   }
 }
 
+static
 void
 nekofilter_process(
   NativePluginHandle handle,
@@ -342,7 +348,9 @@ nekofilter_process(
 }
 
 #ifdef WANT_UI
-void nekofilter_ui_show(
+static
+void
+nekofilter_ui_show(
   NativePluginHandle handle,
   bool show)
 {
@@ -359,14 +367,18 @@ void nekofilter_ui_show(
     nekoui_hide(nekofilter_ptr->ui);
 }
 
-void nekofilter_ui_idle(
+static
+void
+nekofilter_ui_idle(
   NativePluginHandle handle)
 {
   if (nekofilter_ptr->ui != NULL)
     nekoui_run(nekofilter_ptr->ui);
 }
 
-void nekofilter_ui_set_parameter_value(
+static
+void
+nekofilter_ui_set_parameter_value(
   NativePluginHandle handle,
   uint32_t index,
   float value)
@@ -376,6 +388,7 @@ void nekofilter_ui_set_parameter_value(
 }
 #endif
 
+static
 void
 nekofilter_cleanup(
   NativePluginHandle handle)

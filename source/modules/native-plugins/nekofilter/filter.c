@@ -29,14 +29,15 @@
 
 #include "filter.h"
 
-static float exp2ap(float x)
+static
+float
+exp2ap(float x)
 {
     int i;
 
-    i = (int)(floor(x));
-    x -= i;
-//    return ldexp(1 + x * (0.66 + 0.34 * x), i);
-    return ldexp(1 + x * (0.6930 + x * (0.2416 + x * (0.0517 + x * 0.0137))), i);
+    i  = (int)(floorf(x));
+    x -= (float)i;
+    return ldexpf(1.0f + x * (0.6930f + x * (0.2416f + x * (0.0517f + x * 0.0137f))), i);
 }
 
 struct param_sect
@@ -46,6 +47,7 @@ struct param_sect
   float z1, z2;
 };
 
+static
 void
 param_sect_init(
   struct param_sect * sect_ptr)
@@ -55,10 +57,11 @@ param_sect_init(
   sect_ptr->a = sect_ptr->s1 = sect_ptr->s2 = sect_ptr->z1 = sect_ptr->z2 = 0.0f;
 }
 
+static
 void
 param_sect_proc(
   struct param_sect * sect_ptr,
-  int k,
+  unsigned long k,
   float * sig,
   float f,
   float b,
@@ -80,7 +83,7 @@ param_sect_proc(
     else if (f > 2.0f * sect_ptr->f) f = 2.0f * sect_ptr->f;
     sect_ptr->f = f;
     sect_ptr->s1 = -cosf(6.283185f * f);
-    d1 = (sect_ptr->s1 - s1) / k;
+    d1 = (sect_ptr->s1 - s1) / (float)k;
     u2 = true;
   }
 
@@ -90,7 +93,7 @@ param_sect_proc(
     else if (g > 2.0f * sect_ptr->g) g = 2.0f * sect_ptr->g;
     sect_ptr->g = g;
     sect_ptr->a = 0.5f * (g - 1.0f);
-    da = (sect_ptr->a - a) / k;
+    da = (sect_ptr->a - a) / (float)k;
     u2 = true;
   }
 
@@ -106,7 +109,7 @@ param_sect_proc(
   {
     b *= 7 * f / sqrtf(g);
     sect_ptr->s2 = (1 - b) / (1 + b);
-    d2 = (sect_ptr->s2 - s2) / k;
+    d2 = (sect_ptr->s2 - s2) / (float)k;
   }
 
   while (k--)
@@ -133,7 +136,7 @@ struct filter
   const float ** band_parameters; /* [band_index * BAND_PARAMETERS_COUNT + parameter_index] */
 
   float gain;
-  int fade;
+  unsigned long fade;
   struct param_sect * sect;     /* [band_index] */
 };
 
@@ -232,7 +235,8 @@ filter_run(
   float * output_buffer,
   unsigned long samples_count)
 {
-  int i, j, k;
+  unsigned long i, j, k;
+  unsigned long bands_count;
   const float * p;
   float sig[48];
   float t, g, d;
@@ -240,22 +244,21 @@ filter_run(
   float sfreq[filter_ptr->bands_count];
   float sband[filter_ptr->bands_count];
   float sgain[filter_ptr->bands_count];
-  float bands_count;
 
   bands_count = filter_ptr->bands_count;
 
-  fgain = exp2ap(0.1661 * *filter_ptr->global_parameters[GLOBAL_PARAMETER_GAIN]);
+  fgain = exp2ap(0.1661f * *filter_ptr->global_parameters[GLOBAL_PARAMETER_GAIN]);
 
   for (j = 0; j < bands_count; ++j)
   {
     t = *filter_ptr->band_parameters[BAND_PARAMETERS_COUNT * j + BAND_PARAMETER_FREQUENCY] / filter_ptr->sample_rate;
-    if (t < 0.0002)
+    if (t < 0.0002f)
     {
-      t = 0.0002;
+      t = 0.0002f;
     }
-    else if (t > 0.4998)
+    else if (t > 0.4998f)
     {
-      t = 0.4998;
+      t = 0.4998f;
     }
     sfreq[j] = t;
 
@@ -263,11 +266,11 @@ filter_run(
 
     if (*filter_ptr->band_parameters[BAND_PARAMETERS_COUNT * j + BAND_PARAMETER_ACTIVE] > 0.0)
     {
-      sgain[j] = exp2ap(0.1661 * *filter_ptr->band_parameters[BAND_PARAMETERS_COUNT * j + BAND_PARAMETER_GAIN]);
+      sgain[j] = exp2ap(0.1661f * *filter_ptr->band_parameters[BAND_PARAMETERS_COUNT * j + BAND_PARAMETER_GAIN]);
     }
     else
     {
-      sgain[j] = 1.0;
+      sgain[j] = 1.0f;
     }
   }
 
@@ -278,17 +281,17 @@ filter_run(
     t = fgain;
     g = filter_ptr->gain;
 
-    if (t > 1.25 * g)
+    if (t > 1.25f * g)
     {
-      t = 1.25 * g;
+      t = 1.25f * g;
     }
-    else if (t < 0.80 * g)
+    else if (t < 0.80f * g)
     {
-      t = 0.80 * g;
+      t = 0.80f * g;
     }
 
     filter_ptr->gain = t;
-    d = (t - g) / k;
+    d = (t - g) / (float)k;
     for (i = 0; i < k; ++i)
     {
       g += d;
@@ -301,10 +304,10 @@ filter_run(
     }
 
     j = filter_ptr->fade;
-    g = j / 16.0;
+    g = (float)j / 16.0f;
     p = 0;
 
-    if (*filter_ptr->global_parameters[GLOBAL_PARAMETER_ACTIVE] > 0.0)
+    if (*filter_ptr->global_parameters[GLOBAL_PARAMETER_ACTIVE] > 0.0f)
     {
       if (j == 16)
       {
@@ -335,11 +338,11 @@ filter_run(
     }
     else
     {
-      d = (j / 16.0 - g) / k;
+      d = ((float)j / 16.0f - g) / (float)k;
       for (i = 0; i < k; ++i)
       {
         g += d;
-        output_buffer[i] = g * sig[i] + (1 - g) * input_buffer[i];
+        output_buffer[i] = g * sig[i] + (1.0f - g) * input_buffer[i];
       }
     }
 

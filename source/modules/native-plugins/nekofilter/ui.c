@@ -341,7 +341,7 @@ static int clone_fn(void * context)
 
 #endif
 
-static bool do_fork(char * argv[6], int* ret /*, int pipe1[2], int pipe2[2]*/)
+static bool do_fork(char* const argv[6], int* ret /*, int pipe1[2], int pipe2[2]*/)
 {
   int ret2 = *ret = FORK();
 
@@ -355,7 +355,7 @@ static bool do_fork(char * argv[6], int* ret /*, int pipe1[2], int pipe2[2]*/)
     close(pipe2[0]);
 #endif
 
-    execvp(argv[0], /*(char **)*/argv);
+    execvp(argv[0], argv);
     fprintf(stderr, "exec of UI failed: %s\n", strerror(errno));
     _exit(0);
     return false;
@@ -385,13 +385,17 @@ nekoui_instantiate(
   int ret;
   int i;
   char ch;
+  char ap2[18], ap26[18], ap27[18];
+  strcpy(ap2,  "/usr/bin/python2");
+  strcpy(ap26, "/usr/bin/python2.6");
+  strcpy(ap27, "/usr/bin/python2,7");
 
-  if (access("/usr/bin/python2", F_OK) != -1)
-    argv[0] = "/usr/bin/python2";
-  else if (access("/usr/bin/python2.7", F_OK) != -1)
-    argv[0] = "/usr/bin/python2.7";
-  else if (access("/usr/bin/python2.6", F_OK) != -1)
-    argv[0] = "/usr/bin/python2.6";
+  if (access(ap2, F_OK) != -1)
+    argv[0] = ap2;
+  else if (access(ap27, F_OK) != -1)
+    argv[0] = ap27;
+  else if (access(ap26, F_OK) != -1)
+    argv[0] = ap26;
   else
     goto fail;
 
@@ -537,6 +541,7 @@ fail:
   return NULL;
 }
 
+static
 void
 nekoui_cleanup(
   struct control * control_ptr)
@@ -545,7 +550,9 @@ nekoui_cleanup(
   free(control_ptr);
 }
 
-void nekoui_set_parameter_value(
+static
+void
+nekoui_set_parameter_value(
   struct control * control_ptr,
   uint32_t index,
   float value)

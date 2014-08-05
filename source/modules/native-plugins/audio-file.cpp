@@ -52,10 +52,15 @@ public:
         : NativePluginClass(host),
           fLoopMode(false),
           fDoProcess(false),
-          fLength(0)
-          //fThread("AudioFilePluginThread")
+          fLength(0),
+          //fThread("AudioFilePluginThread"),
+          fReaderBuffer(),
+          fReaderMutex(),
+          fReader(),
+          fReaderSource(),
+          leakDetector_AudioFilePlugin()
     {
-        fReaderBuffer.setSize(2, getBufferSize());
+        fReaderBuffer.setSize(2, static_cast<int>(getBufferSize()));
     }
 
     ~AudioFilePlugin() override
@@ -142,6 +147,7 @@ protected:
     void process(float**, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
     {
         const NativeTimeInfo* const timePos(getTimeInfo());
+        const int iframes(static_cast<int>(frames));
 
         float* const out1(outBuffer[0]);
         float* const out2(outBuffer[1]);
@@ -149,19 +155,19 @@ protected:
         if (fLength == 0 || ! fDoProcess)
         {
             //carla_stderr("P: no process");
-            FloatVectorOperations::clear(out1, frames);
-            FloatVectorOperations::clear(out2, frames);
+            FloatVectorOperations::clear(out1, iframes);
+            FloatVectorOperations::clear(out2, iframes);
             return;
         }
 
-        const int64_t nextReadPos(fLoopMode ? (timePos->frame % fLength) : timePos->frame);
+        const int64_t nextReadPos(fLoopMode ? (static_cast<int64_t>(timePos->frame) % fLength) : static_cast<int64_t>(timePos->frame));
 
         // not playing
         if (! timePos->playing)
         {
             //carla_stderr("P: not playing");
-            FloatVectorOperations::clear(out1, frames);
-            FloatVectorOperations::clear(out2, frames);
+            FloatVectorOperations::clear(out1, iframes);
+            FloatVectorOperations::clear(out2, iframes);
 
             const CarlaMutexLocker cml(fReaderMutex);
 
@@ -179,10 +185,10 @@ protected:
         if (fReader == nullptr)
             return;
 
-        fReader->read(&fReaderBuffer, 0, frames, nextReadPos, true, true);
+        fReader->read(&fReaderBuffer, 0, iframes, nextReadPos, true, true);
 
-        FloatVectorOperations::copy(out1, fReaderBuffer.getReadPointer(0), frames);
-        FloatVectorOperations::copy(out2, fReaderBuffer.getReadPointer(1), frames);
+        FloatVectorOperations::copy(out1, fReaderBuffer.getReadPointer(0), iframes);
+        FloatVectorOperations::copy(out2, fReaderBuffer.getReadPointer(1), iframes);
     }
 
     // -------------------------------------------------------------------
@@ -204,7 +210,7 @@ protected:
 
     void bufferSizeChanged(const uint32_t bufferSize) override
     {
-        fReaderBuffer.setSize(2, bufferSize);
+        fReaderBuffer.setSize(2, static_cast<int>(bufferSize));
     }
 
 private:
@@ -303,6 +309,9 @@ static const NativePluginDescriptor audiofileDesc = {
 };
 
 // -----------------------------------------------------------------------
+
+CARLA_EXPORT
+void carla_register_native_plugin_audiofile();
 
 CARLA_EXPORT
 void carla_register_native_plugin_audiofile()
