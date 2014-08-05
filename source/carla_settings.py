@@ -236,10 +236,10 @@ class CarlaSettingsW(QDialog):
     PATH_INDEX_LV2    = 2
     PATH_INDEX_VST    = 3
     PATH_INDEX_VST3   = 4
-    PATH_INDEX_AU     = 5
-    PATH_INDEX_GIG    = 6
-    PATH_INDEX_SF2    = 7
-    PATH_INDEX_SFZ    = 8
+    PATH_INDEX_AU     = 5 if MACOS else -2
+    PATH_INDEX_GIG    = 6 if MACOS else 5
+    PATH_INDEX_SF2    = 7 if MACOS else 6
+    PATH_INDEX_SFZ    = 8 if MACOS else 7
 
     # Single and Multiple client mode is only for JACK,
     # but we still want to match QComboBox index to defines,
@@ -288,7 +288,9 @@ class CarlaSettingsW(QDialog):
             self.ui.ch_main_theme_pro.setChecked(False)
 
         if not MACOS:
-            self.ui.cb_paths.removeItem(self.ui.cb_paths.findText("AU"))
+            auIndex = self.ui.cb_paths.findText("AU")
+            self.ui.cb_paths.removeItem(auIndex)
+            self.ui.tw_paths.removeWidget(self.ui.tw_paths.widget(auIndex))
 
         # -------------------------------------------------------------
         # Set-up connections
@@ -569,7 +571,7 @@ class CarlaSettingsW(QDialog):
             curIndex = self.ui.tw_paths.currentIndex()
 
             if curIndex == self.PATH_INDEX_LADSPA:
-                paths = DEFAULT_LADSPA_PATH.split(splitter)
+                paths = gCarla.DEFAULT_LADSPA_PATH
                 paths.sort()
                 self.ui.lw_ladspa.clear()
 
@@ -578,7 +580,7 @@ class CarlaSettingsW(QDialog):
                     self.ui.lw_ladspa.addItem(path)
 
             elif curIndex == self.PATH_INDEX_DSSI:
-                paths = DEFAULT_DSSI_PATH.split(splitter)
+                paths = gCarla.DEFAULT_DSSI_PATH
                 paths.sort()
                 self.ui.lw_dssi.clear()
 
@@ -587,7 +589,7 @@ class CarlaSettingsW(QDialog):
                     self.ui.lw_dssi.addItem(path)
 
             elif curIndex == self.PATH_INDEX_LV2:
-                paths = DEFAULT_LV2_PATH.split(splitter)
+                paths = gCarla.DEFAULT_LV2_PATH
                 paths.sort()
                 self.ui.lw_lv2.clear()
 
@@ -596,7 +598,7 @@ class CarlaSettingsW(QDialog):
                     self.ui.lw_lv2.addItem(path)
 
             elif curIndex == self.PATH_INDEX_VST:
-                paths = DEFAULT_VST_PATH.split(splitter)
+                paths = gCarla.DEFAULT_VST_PATH
                 paths.sort()
                 self.ui.lw_vst.clear()
 
@@ -605,7 +607,7 @@ class CarlaSettingsW(QDialog):
                     self.ui.lw_vst.addItem(path)
 
             elif curIndex == self.PATH_INDEX_VST3:
-                paths = DEFAULT_VST3_PATH.split(splitter)
+                paths = gCarla.DEFAULT_VST3_PATH
                 paths.sort()
                 self.ui.lw_vst3.clear()
 
@@ -614,7 +616,7 @@ class CarlaSettingsW(QDialog):
                     self.ui.lw_vst3.addItem(path)
 
             elif curIndex == self.PATH_INDEX_AU:
-                paths = DEFAULT_AU_PATH.split(splitter)
+                paths = gCarla.DEFAULT_AU_PATH
                 paths.sort()
                 self.ui.lw_au.clear()
 
@@ -623,7 +625,7 @@ class CarlaSettingsW(QDialog):
                     self.ui.lw_au.addItem(path)
 
             elif curIndex == self.PATH_INDEX_GIG:
-                paths = DEFAULT_GIG_PATH.split(splitter)
+                paths = gCarla.DEFAULT_GIG_PATH
                 paths.sort()
                 self.ui.lw_gig.clear()
 
@@ -632,7 +634,7 @@ class CarlaSettingsW(QDialog):
                     self.ui.lw_gig.addItem(path)
 
             elif curIndex == self.PATH_INDEX_SF2:
-                paths = DEFAULT_SF2_PATH.split(splitter)
+                paths = gCarla.DEFAULT_SF2_PATH
                 paths.sort()
                 self.ui.lw_sf2.clear()
 
@@ -641,7 +643,7 @@ class CarlaSettingsW(QDialog):
                     self.ui.lw_sf2.addItem(path)
 
             elif curIndex == self.PATH_INDEX_SFZ:
-                paths = DEFAULT_SFZ_PATH.split(splitter)
+                paths = gCarla.DEFAULT_SFZ_PATH
                 paths.sort()
                 self.ui.lw_sfz.clear()
 
@@ -770,9 +772,6 @@ class CarlaSettingsW(QDialog):
 
     @pyqtSlot(int)
     def slot_pluginPathTabChanged(self, index):
-        if index >= self.PATH_INDEX_AU and not MACOS:
-            self.ui.tw_paths.setCurrentIndex(index+1)
-
         if index == self.PATH_INDEX_LADSPA:
             row = self.ui.lw_ladspa.currentRow()
         elif index == self.PATH_INDEX_DSSI:
