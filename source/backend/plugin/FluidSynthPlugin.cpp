@@ -904,7 +904,7 @@ public:
 
             // initial check to know how many midi-programs we have
             f_sfont->iteration_start(f_sfont);
-            while (f_sfont->iteration_next(f_sfont, &f_preset))
+            for (; f_sfont->iteration_next(f_sfont, &f_preset);)
                 ++count;
 
             // sound kits must always have at least 1 midi-program

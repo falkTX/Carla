@@ -328,7 +328,7 @@ public:
             return;
         }
 
-        outputInfo(&info, ids.size());
+        outputInfo(&info, nullptr, ids.size() > 1);
     }
 
     ~LinuxSamplerScopedEngine()
@@ -340,7 +340,7 @@ public:
         }
     }
 
-    static void outputInfo(const LinuxSampler::InstrumentManager::instrument_info_t* const info, const size_t programs, const char* const basename = nullptr)
+    static void outputInfo(const LinuxSampler::InstrumentManager::instrument_info_t* const info, const char* const basename, const bool has16Outs)
     {
         CarlaString name;
         const char* label;
@@ -372,7 +372,7 @@ public:
         DISCOVERY_OUT("end", "------------");
 
         // 16 channels
-        if (name.isEmpty() || programs <= 1)
+        if (name.isEmpty() || ! has16Outs)
             return;
 
         name += " (16 outputs)";
@@ -402,7 +402,7 @@ private:
 
 // ------------------------------ Plugin Checks -----------------------------
 
-static void do_ladspa_check(void*& libHandle, const char* const filename, const bool init)
+static void do_ladspa_check(void*& libHandle, const char* const filename, const bool doInit)
 {
     LADSPA_Descriptor_Function descFn = (LADSPA_Descriptor_Function)lib_symbol(libHandle, "ladspa_descriptor");
 
@@ -423,7 +423,7 @@ static void do_ladspa_check(void*& libHandle, const char* const filename, const 
             return;
         }
 
-        if (init && descriptor->instantiate != nullptr && descriptor->cleanup != nullptr)
+        if (doInit && descriptor->instantiate != nullptr && descriptor->cleanup != nullptr)
         {
             LADSPA_Handle handle = descriptor->instantiate(descriptor, kSampleRatei);
 
@@ -514,7 +514,7 @@ static void do_ladspa_check(void*& libHandle, const char* const filename, const 
             }
         }
 
-        if (init)
+        if (doInit)
         {
             // -----------------------------------------------------------------------
             // start crash-free plugin test
@@ -635,7 +635,7 @@ static void do_ladspa_check(void*& libHandle, const char* const filename, const 
     }
 }
 
-static void do_dssi_check(void*& libHandle, const char* const filename, const bool init)
+static void do_dssi_check(void*& libHandle, const char* const filename, const bool doInit)
 {
     DSSI_Descriptor_Function descFn = (DSSI_Descriptor_Function)lib_symbol(libHandle, "dssi_descriptor");
 
@@ -664,7 +664,7 @@ static void do_dssi_check(void*& libHandle, const char* const filename, const bo
             return;
         }
 
-        if (init && ldescriptor->instantiate != nullptr && ldescriptor->cleanup != nullptr)
+        if (doInit && ldescriptor->instantiate != nullptr && ldescriptor->cleanup != nullptr)
         {
             LADSPA_Handle handle = ldescriptor->instantiate(ldescriptor, kSampleRatei);
 
@@ -780,7 +780,7 @@ static void do_dssi_check(void*& libHandle, const char* const filename, const bo
             delete[] ui;
         }
 
-        if (init)
+        if (doInit)
         {
             // -----------------------------------------------------------------------
             // start crash-free plugin test
@@ -936,7 +936,7 @@ static void do_dssi_check(void*& libHandle, const char* const filename, const bo
     }
 }
 
-static void do_lv2_check(const char* const bundle, const bool init)
+static void do_lv2_check(const char* const bundle, const bool doInit)
 {
     Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
 
@@ -981,7 +981,7 @@ static void do_lv2_check(const char* const bundle, const bool init)
             continue;
         }
 
-        if (init)
+        if (doInit)
         {
             // test if DLL is loadable, twice
             void* const libHandle1 = lib_open(rdfDescriptor->Binary);
@@ -1142,7 +1142,7 @@ static void do_lv2_check(const char* const bundle, const bool init)
 }
 
 #ifndef CARLA_OS_MAC
-static void do_vst_check(void*& libHandle, const bool init)
+static void do_vst_check(void*& libHandle, const bool doInit)
 {
     VST_Function vstFn = (VST_Function)lib_symbol(libHandle, "VSTPluginMain");
 
@@ -1244,7 +1244,7 @@ static void do_vst_check(void*& libHandle, const bool init)
         // -----------------------------------------------------------------------
         // start crash-free plugin test
 
-        if (init)
+        if (doInit)
         {
             if (gVstNeedsIdle)
                 effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effIdle), 0, 0, nullptr, 0.0f);
@@ -1375,7 +1375,7 @@ static void do_vst_check(void*& libHandle, const bool init)
 #endif // ! CARLA_OS_MAC
 
 #ifdef USE_JUCE_PROCESSORS
-static void do_juce_check(const char* const filename, const char* const stype, const bool init)
+static void do_juce_check(const char* const filename, const char* const stype, const bool doInit)
 {
     using namespace juce;
 
@@ -1434,7 +1434,7 @@ static void do_juce_check(const char* const filename, const char* const stype, c
         if (desc->isInstrument)
             hints |= PLUGIN_IS_SYNTH;
 
-        if (init)
+        if (doInit)
         {
             if (AudioPluginInstance* const instance = pluginFormat->createInstanceFromDescription(*desc, kSampleRate, kBufferSize))
             {
@@ -1470,9 +1470,17 @@ static void do_juce_check(const char* const filename, const char* const stype, c
 }
 #endif
 
-static void do_fluidsynth_check(const char* const filename, const bool init)
+static void do_fluidsynth_check(const char* const filename, const bool doInit)
 {
 #ifdef HAVE_FLUIDSYNTH
+    const File file(filename);
+
+    if (! file.existsAsFile())
+    {
+        DISCOVERY_OUT("error", "Requested file is not valid or does not exist");
+        return;
+    }
+
     if (! fluid_is_soundfont(filename))
     {
         DISCOVERY_OUT("error", "Not a SF2 file");
@@ -1481,10 +1489,14 @@ static void do_fluidsynth_check(const char* const filename, const bool init)
 
     int programs = 0;
 
-    if (init)
+    if (doInit)
     {
         fluid_settings_t* const f_settings = new_fluid_settings();
+        CARLA_SAFE_ASSERT_RETURN(f_settings != nullptr,);
+
         fluid_synth_t* const f_synth = new_fluid_synth(f_settings);
+        CARLA_SAFE_ASSERT_RETURN(f_synth != nullptr,);
+
         const int f_id = fluid_synth_sfload(f_synth, filename, 0);
 
         if (f_id < 0)
@@ -1493,28 +1505,20 @@ static void do_fluidsynth_check(const char* const filename, const bool init)
             return;
         }
 
-        fluid_sfont_t* f_sfont;
-        fluid_preset_t f_preset;
+        if (fluid_sfont_t* const f_sfont = fluid_synth_get_sfont_by_id(f_synth, static_cast<uint>(f_id)))
+        {
+            fluid_preset_t f_preset;
 
-        f_sfont = fluid_synth_get_sfont_by_id(f_synth, static_cast<uint>(f_id));
-
-        f_sfont->iteration_start(f_sfont);
-        while (f_sfont->iteration_next(f_sfont, &f_preset))
-            programs += 1;
+            f_sfont->iteration_start(f_sfont);
+            for (; f_sfont->iteration_next(f_sfont, &f_preset);)
+                ++programs;
+        }
 
         delete_fluid_synth(f_synth);
         delete_fluid_settings(f_settings);
     }
 
-    CarlaString name;
-
-    if (const char* const shortname = std::strrchr(filename, CARLA_OS_SEP))
-        name = shortname+1;
-    else
-        name = filename;
-
-    name.truncate(name.rfind('.'));
-
+    CarlaString name(file.getFileNameWithoutExtension().toRawUTF8());
     CarlaString label(name);
 
     // 2 channels
@@ -1530,7 +1534,7 @@ static void do_fluidsynth_check(const char* const filename, const bool init)
     DISCOVERY_OUT("end", "------------");
 
     // 16 channels
-    if (name.isEmpty() || programs <= 1)
+    if (doInit && (name.isEmpty() || programs <= 1))
         return;
 
     name += " (16 outputs)";
@@ -1551,11 +1555,11 @@ static void do_fluidsynth_check(const char* const filename, const bool init)
 
     // unused
     (void)filename;
-    (void)init;
+    (void)doInit;
 #endif
 }
 
-static void do_linuxsampler_check(const char* const filename, const char* const stype, const bool init)
+static void do_linuxsampler_check(const char* const filename, const char* const stype, const bool doInit)
 {
 #ifdef HAVE_LINUXSAMPLER
     const File file(filename);
@@ -1566,17 +1570,17 @@ static void do_linuxsampler_check(const char* const filename, const char* const 
         return;
     }
 
-    if (init)
+    if (doInit)
         const LinuxSamplerScopedEngine engine(filename, stype);
     else
-        LinuxSamplerScopedEngine::outputInfo(nullptr, 0, file.getFileNameWithoutExtension().toRawUTF8());
+        LinuxSamplerScopedEngine::outputInfo(nullptr, file.getFileNameWithoutExtension().toRawUTF8(), std::strcmp(stype, "gig") == 0);
 #else // HAVE_LINUXSAMPLER
     DISCOVERY_OUT("error", stype << " support not available");
     return;
 
     // unused
     (void)filename;
-    (void)init;
+    (void)doInit;
 #endif
 }
 
