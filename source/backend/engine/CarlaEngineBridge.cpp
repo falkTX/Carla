@@ -320,6 +320,9 @@ public:
         carla_stdout("  sizeof(BridgeRtData):    %i/" P_SIZE, shmRtDataSize,    sizeof(BridgeRtData));
         carla_stdout("  sizeof(BridgeNonRtData): %i/" P_SIZE, shmNonRtDataSize, sizeof(BridgeNonRtData));
 
+        if (shmRtDataSize != sizeof(BridgeRtData) || shmNonRtDataSize != sizeof(BridgeNonRtData))
+            return false;
+
         startThread();
 
         CarlaEngine::init(clientName);
