@@ -246,6 +246,9 @@ public:
             return false;
         }
 
+        iParams.nChannels = carla_fixValue(0U, 128U, iParams.nChannels);
+        oParams.nChannels = carla_fixValue(0U, 128U, oParams.nChannels);
+
         RtAudio::StreamOptions rtOptions;
         rtOptions.flags = RTAUDIO_MINIMIZE_LATENCY | RTAUDIO_HOG_DEVICE | RTAUDIO_SCHEDULE_REALTIME | RTAUDIO_NONINTERLEAVED;
         rtOptions.streamName = clientName;
