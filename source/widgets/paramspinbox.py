@@ -418,8 +418,18 @@ class ParamSpinBox(QAbstractSpinBox):
         if self.fIsReadOnly:
             return
 
-        step      = int((value - self.fMinimum) / self.fStep + 0.5)
-        realValue = self.fMinimum + (step * self.fStep)
+        if value <= self.fMinimum:
+            realValue = self.fMinimum
+        elif value >= self.fMaximum:
+            realValue = self.fMaximum
+        else:
+            curStep   = int((value - self.fMinimum) / self.fStep + 0.5)
+            realValue = self.fMinimum + (self.fStep * curStep)
+
+            if realValue < self.fMinimum:
+                realValue = self.fMinimum
+            elif realValue > self.fMaximum:
+                realValue = self.fMaximum
 
         self.setValue(realValue)
 
