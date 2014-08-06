@@ -25,6 +25,15 @@
 # define NULL nullptr
 #endif
 
+// disable -Wdocumentation for LV2 headers
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wdocumentation"
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wdocumentation"
+#endif
+
 #include "lv2/lv2.h"
 #include "lv2/atom.h"
 #include "lv2/atom-forge.h"
@@ -61,10 +70,17 @@
 #include "lv2/lv2_programs.h"
 #include "lv2/lv2_rtmempool.h"
 
-#include "lv2_rdf.hpp"
-
 #include "lilv/lilvmm.hpp"
 #include "sratom/sratom.h"
+
+// enable -Wdocumentation again
+#if defined(__clang__)
+# pragma clang diagnostic pop
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
+
+#include "lv2_rdf.hpp"
 
 #ifdef USE_QT
 # include <QtCore/QStringList>

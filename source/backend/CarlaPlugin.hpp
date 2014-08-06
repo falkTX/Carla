@@ -57,11 +57,11 @@ struct StateSave;
 /*!
  * Carla Backend base plugin class
  *
- * This is the base class for all available plugin types available in Carla Backend.\n
- * All virtual calls are implemented in this class as fallback (except reload and process),\n
+ * This is the base class for all available plugin types available in Carla Backend.
+ * All virtual calls are implemented in this class as fallback (except reload and process),
  * so it's safe to only override needed calls.
  *
- * \see PluginType
+ * @see PluginType
  */
 class CarlaPlugin
 {
@@ -69,8 +69,8 @@ protected:
     /*!
      * This is the constructor of the base plugin class.
      *
-     * \param engine The engine which this plugin belongs to, must not be null
-     * \param id     The 'id' of this plugin, must be between 0 and CarlaEngine::maxPluginNumber()
+     * @param engine The engine which this plugin belongs to, must not be null
+     * @param id     The 'id' of this plugin, must be between 0 and CarlaEngine::maxPluginNumber()
      */
     CarlaPlugin(CarlaEngine* const engine, const uint id);
 
@@ -86,54 +86,54 @@ public:
     /*!
      * Get the plugin's type (a subclass of CarlaPlugin).
      *
-     * \note Plugin bridges will return their respective plugin type, there is no plugin type such as "bridge".\n
+     * @note Plugin bridges will return their respective plugin type, there is no plugin type such as "bridge".
      *       To check if a plugin is a bridge use:
-     * \code
+     * @code
      * if (getHints() & PLUGIN_IS_BRIDGE)
      *     ...
-     * \endcode
+     * @endcode
      */
     virtual PluginType getType() const noexcept = 0;
 
     /*!
      * Get the plugin's id (as passed in the constructor).
      *
-     * \see setId()
+     * @see setId()
      */
     uint getId() const noexcept;
 
     /*!
      * Get the plugin's hints.
      *
-     * \see PluginHints
+     * @see PluginHints
      */
     uint getHints() const noexcept;
 
     /*!
      * Get the plugin's options (currently in use).
      *
-     * \see PluginOptions, getAvailableOptions() and setOption()
+     * @see PluginOptions, getAvailableOptions() and setOption()
      */
     uint getOptionsEnabled() const noexcept;
 
     /*!
-     * Check if the plugin is enabled.\n
+     * Check if the plugin is enabled.
      * When a plugin is disabled, it will never be processed or managed in any way.
      *
-     * \see setEnabled()
+     * @see setEnabled()
      */
     bool isEnabled() const noexcept;
 
     /*!
-     * Get the plugin's internal name.\n
+     * Get the plugin's internal name.
      * This name is unique within all plugins in an engine.
      *
-     * \see getRealName() and setName()
+     * @see getRealName() and setName()
      */
     const char* getName() const noexcept;
 
     /*!
-     * Get the currently loaded DLL filename for this plugin.\n
+     * Get the currently loaded DLL filename for this plugin.
      * (Sound kits return their exact filename).
      */
     const char* getFilename() const noexcept;
@@ -149,7 +149,7 @@ public:
     virtual PluginCategory getCategory() const noexcept;
 
     /*!
-     * Get the plugin's native unique Id.\n
+     * Get the plugin's native unique Id.
      * May return 0 on plugin types that don't support Ids.
      */
     virtual int64_t getUniqueId() const noexcept;
@@ -183,13 +183,13 @@ public:
     virtual uint32_t getMidiOutCount() const noexcept;
 
     /*!
-     * Get the number of parameters.\n
+     * Get the number of parameters.
      * To know the number of parameter inputs and outputs separately use getParameterCountInfo() instead.
      */
     uint32_t getParameterCount() const noexcept;
 
     /*!
-     * Get the number of scalepoints for parameter \a parameterId.
+     * Get the number of scalepoints for parameter @a parameterId.
      */
     virtual uint32_t getParameterScalePointCount(const uint32_t parameterId) const noexcept;
 
@@ -214,54 +214,54 @@ public:
     /*!
      * Get the current program number (-1 if unset).
      *
-     * \see setProgram()
+     * @see setProgram()
      */
     int32_t getCurrentProgram() const noexcept;
 
     /*!
      * Get the current MIDI program number (-1 if unset).
      *
-     * \see setMidiProgram()
-     * \see setMidiProgramById()
+     * @see setMidiProgram()
+     * @see setMidiProgramById()
      */
     int32_t getCurrentMidiProgram() const noexcept;
 
     /*!
-     * Get the parameter data of \a parameterId.
+     * Get the parameter data of @a parameterId.
      */
     const ParameterData& getParameterData(const uint32_t parameterId) const noexcept;
 
     /*!
-     * Get the parameter ranges of \a parameterId.
+     * Get the parameter ranges of @a parameterId.
      */
     const ParameterRanges& getParameterRanges(const uint32_t parameterId) const noexcept;
 
     /*!
-     * Check if parameter \a parameterId is of output type.
+     * Check if parameter @a parameterId is of output type.
      */
     bool isParameterOutput(const uint32_t parameterId) const noexcept;
 
     /*!
-     * Get the MIDI program at \a index.
+     * Get the MIDI program at @a index.
      *
-     * \see getMidiProgramName()
+     * @see getMidiProgramName()
      */
     const MidiProgramData& getMidiProgramData(const uint32_t index) const noexcept;
 
     /*!
-     * Get the custom data set at \a index.
+     * Get the custom data set at @a index.
      *
-     * \see getCustomDataCount() and setCustomData()
+     * @see getCustomDataCount() and setCustomData()
      */
     const CustomData& getCustomData(const uint32_t index) const noexcept;
 
     /*!
-     * Get the complete plugin chunk data into \a dataPtr.
+     * Get the complete plugin chunk data into @a dataPtr.
      *
-     * \note Make sure to verify the plugin supports chunks before calling this function!
+     * @note Make sure to verify the plugin supports chunks before calling this function!
      * \return The size of the chunk or 0 if invalid.
      *
-     * \see setChunkData()
+     * @see setChunkData()
      */
     virtual std::size_t getChunkData(void** const dataPtr) noexcept;
 
@@ -271,17 +271,17 @@ public:
     /*!
      * Get the plugin available options.
      *
-     * \see PluginOptions, getOptions() and setOption()
+     * @see PluginOptions, getOptions() and setOption()
      */
     virtual uint getOptionsAvailable() const noexcept;
 
     /*!
-     * Get the current parameter value of \a parameterId.
+     * Get the current parameter value of @a parameterId.
      */
     virtual float getParameterValue(const uint32_t parameterId) const noexcept;
 
     /*!
-     * Get the scalepoint \a scalePointId value of the parameter \a parameterId.
+     * Get the scalepoint @a scalePointId value of the parameter @a parameterId.
      */
     virtual float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) const noexcept;
 
@@ -303,61 +303,61 @@ public:
     /*!
      * Get the plugin's (real) name.
      *
-     * \see getName() and setName()
+     * @see getName() and setName()
      */
     virtual void getRealName(char* const strBuf) const noexcept;
 
     /*!
-     * Get the name of the parameter \a parameterId.
+     * Get the name of the parameter @a parameterId.
      */
     virtual void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept;
 
     /*!
-     * Get the symbol of the parameter \a parameterId.
+     * Get the symbol of the parameter @a parameterId.
      */
     virtual void getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept;
 
     /*!
-     * Get the custom text of the parameter \a parameterId.
+     * Get the custom text of the parameter @a parameterId.
      */
     virtual void getParameterText(const uint32_t parameterId, char* const strBuf) const noexcept;
 
     /*!
-     * Get the unit of the parameter \a parameterId.
+     * Get the unit of the parameter @a parameterId.
      */
     virtual void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept;
 
     /*!
-     * Get the scalepoint \a scalePointId label of the parameter \a parameterId.
+     * Get the scalepoint @a scalePointId label of the parameter @a parameterId.
      */
     virtual void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept;
 
     /*!
-     * Get the current parameter value of \a parameterId.
-     * \a parameterId can be negative to allow internal parameters.
-     * \see InternalParametersIndex
+     * Get the current parameter value of @a parameterId.
+     * @a parameterId can be negative to allow internal parameters.
+     * @see InternalParametersIndex
      */
     float getInternalParameterValue(const int32_t parameterId) const noexcept;
 
     /*!
-     * Get the name of the program at \a index.
+     * Get the name of the program at @a index.
      */
     void getProgramName(const uint32_t index, char* const strBuf) const noexcept;
 
     /*!
-     * Get the name of the MIDI program at \a index.
+     * Get the name of the MIDI program at @a index.
      *
-     * \see getMidiProgramInfo()
+     * @see getMidiProgramInfo()
      */
     void getMidiProgramName(const uint32_t index, char* const strBuf) const noexcept;
 
     /*!
-     * Get information about the plugin's parameter count.\n
-     * This is used to check how many input, output and total parameters are available.\n
+     * Get information about the plugin's parameter count.
+     * This is used to check how many input, output and total parameters are available.
      *
-     * \note Some parameters might not be input or output (ie, invalid).
+     * @note Some parameters might not be input or output (ie, invalid).
      *
-     * \see getParameterCount()
+     * @see getParameterCount()
      */
     void getParameterCountInfo(uint32_t& ins, uint32_t& outs) const noexcept;
 
@@ -380,31 +380,31 @@ public:
     virtual void randomizeParameters() noexcept;
 
     /*!
-     * Get the plugin's save state.\n
+     * Get the plugin's save state.
      * The plugin will automatically call prepareForSave() as needed.
      *
-     * \see loadStateSave()
+     * @see loadStateSave()
      */
     const StateSave& getStateSave();
 
     /*!
      * Get the plugin's save state.
      *
-     * \see getStateSave()
+     * @see getStateSave()
      */
     void loadStateSave(const StateSave& stateSave);
 
     /*!
-     * Save the current plugin state to \a filename.
+     * Save the current plugin state to @a filename.
      *
-     * \see loadStateFromFile()
+     * @see loadStateFromFile()
      */
     bool saveStateToFile(const char* const filename);
 
     /*!
-     * Save the plugin state from \a filename.
+     * Save the plugin state from @a filename.
      *
-     * \see saveStateToFile()
+     * @see saveStateToFile()
      */
     bool loadStateFromFile(const char* const filename);
 
@@ -412,91 +412,91 @@ public:
     // Set data (internal stuff)
 
     /*!
-     * Set the plugin's id to \a newId.
+     * Set the plugin's id to @a newId.
      *
-     * \see getId()
+     * @see getId()
      */
     void setId(const uint newId) noexcept;
 
     /*!
-     * Set the plugin's name to \a newName.
+     * Set the plugin's name to @a newName.
      *
-     * \see getName() and getRealName()
+     * @see getName() and getRealName()
      */
     virtual void setName(const char* const newName);
 
     /*!
      * Set a plugin's option.
      *
-     * \see getOptions() and getAvailableOptions()
+     * @see getOptions() and getAvailableOptions()
      */
     virtual void setOption(const uint option, const bool yesNo, const bool sendCallback);
 
     /*!
-     * Enable or disable the plugin according to \a yesNo. \n
+     * Enable or disable the plugin according to @a yesNo.
      * When a plugin is disabled, it will never be processed or managed in any way.
      *
-     * \see isEnabled()
+     * @see isEnabled()
      */
     void setEnabled(const bool yesNo) noexcept;
 
     /*!
-     * Set plugin as active according to \a active.
+     * Set plugin as active according to @a active.
      *
-     * \param sendOsc Send message change over OSC
-     * \param sendCallback Send message change to registered callback
+     * @param sendOsc Send message change over OSC
+     * @param sendCallback Send message change to registered callback
      */
     void setActive(const bool active, const bool sendOsc, const bool sendCallback) noexcept;
 
 #ifndef BUILD_BRIDGE
     /*!
-     * Set the plugin's dry/wet signal value to \a value.\n
-     * \a value must be between 0.0 and 1.0.
+     * Set the plugin's dry/wet signal value to @a value.
+     * @a value must be between 0.0 and 1.0.
      *
-     * \param sendOsc Send message change over OSC
-     * \param sendCallback Send message change to registered callback
+     * @param sendOsc Send message change over OSC
+     * @param sendCallback Send message change to registered callback
      */
     void setDryWet(const float value, const bool sendOsc, const bool sendCallback) noexcept;
 
     /*!
-     * Set the plugin's output volume to \a value.\n
-     * \a value must be between 0.0 and 1.27.
+     * Set the plugin's output volume to @a value.
+     * @a value must be between 0.0 and 1.27.
      *
-     * \param sendOsc Send message change over OSC
-     * \param sendCallback Send message change to registered callback
+     * @param sendOsc Send message change over OSC
+     * @param sendCallback Send message change to registered callback
      */
     void setVolume(const float value, const bool sendOsc, const bool sendCallback) noexcept;
 
     /*!
-     * Set the plugin's output left balance value to \a value.\n
-     * \a value must be between -1.0 and 1.0.
+     * Set the plugin's output left balance value to @a value.
+     * @a value must be between -1.0 and 1.0.
      *
-     * \param sendOsc Send message change over OSC
-     * \param sendCallback Send message change to registered callback
+     * @param sendOsc Send message change over OSC
+     * @param sendCallback Send message change to registered callback
      *
-     * \note Pure-Stereo plugins only!
+     * @note Pure-Stereo plugins only!
      */
     void setBalanceLeft(const float value, const bool sendOsc, const bool sendCallback) noexcept;
 
     /*!
-     * Set the plugin's output right balance value to \a value.\n
-     * \a value must be between -1.0 and 1.0.
+     * Set the plugin's output right balance value to @a value.
+     * @a value must be between -1.0 and 1.0.
      *
-     * \param sendOsc Send message change over OSC
-     * \param sendCallback Send message change to registered callback
+     * @param sendOsc Send message change over OSC
+     * @param sendCallback Send message change to registered callback
      *
-     * \note Pure-Stereo plugins only!
+     * @note Pure-Stereo plugins only!
      */
     void setBalanceRight(const float value, const bool sendOsc, const bool sendCallback) noexcept;
 
     /*!
-     * Set the plugin's output panning value to \a value.\n
-     * \a value must be between -1.0 and 1.0.
+     * Set the plugin's output panning value to @a value.
+     * @a value must be between -1.0 and 1.0.
      *
-     * \param sendOsc Send message change over OSC
-     * \param sendCallback Send message change to registered callback
+     * @param sendOsc Send message change over OSC
+     * @param sendCallback Send message change to registered callback
      *
-     * \note Force-Stereo plugins only!
+     * @note Force-Stereo plugins only!
      */
     void setPanning(const float value, const bool sendOsc, const bool sendCallback) noexcept;
 #endif
@@ -504,8 +504,8 @@ public:
     /*!
      * Set the plugin's midi control channel.
      *
-     * \param sendOsc Send message change over OSC
-     * \param sendCallback Send message change to registered callback
+     * @param sendOsc Send message change over OSC
+     * @param sendCallback Send message change to registered callback
      */
     virtual void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept;
 
@@ -515,94 +515,92 @@ public:
     /*!
      * Set a plugin's parameter value.
      *
-     * \param parameterId The parameter to change
-     * \param value The new parameter value, must be within the parameter's range
-     * \param sendGui Send message change to plugin's custom GUI, if any
-     * \param sendOsc Send message change over OSC
-     * \param sendCallback Send message change to registered callback
+     * @param parameterId The parameter to change
+     * @param value The new parameter value, must be within the parameter's range
+     * @param sendGui Send message change to plugin's custom GUI, if any
+     * @param sendOsc Send message change over OSC
+     * @param sendCallback Send message change to registered callback
      *
-     * \see getParameterValue()
+     * @see getParameterValue()
      */
     virtual void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept;
 
     /*!
-     * Set a plugin's parameter value, including internal parameters.\n
-     * \a rindex can be negative to allow internal parameters change (as defined in InternalParametersIndex).
+     * Set a plugin's parameter value, including internal parameters.
+     * @a rindex can be negative to allow internal parameters change (as defined in InternalParametersIndex).
      *
-     * \see setParameterValue()
-     * \see setActive()
-     * \see setDryWet()
-     * \see setVolume()
-     * \see setBalanceLeft()
-     * \see setBalanceRight()
+     * @see setParameterValue()
+     * @see setActive()
+     * @see setDryWet()
+     * @see setVolume()
+     * @see setBalanceLeft()
+     * @see setBalanceRight()
      */
     void setParameterValueByRealIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept;
 
     /*!
-     * Set parameter's \a parameterId MIDI channel to \a channel.\n
-     * \a channel must be between 0 and 15.
+     * Set parameter's @a parameterId MIDI channel to @a channel.
+     * @a channel must be between 0 and 15.
      */
     virtual void setParameterMidiChannel(const uint32_t parameterId, const uint8_t channel, const bool sendOsc, const bool sendCallback) noexcept;
 
     /*!
-     * Set parameter's \a parameterId MIDI CC to \a cc.\n
-     * \a cc must be between 0 and 95 (0x5F), or -1 for invalid.
+     * Set parameter's @a parameterId MIDI CC to @a cc.
+     * @a cc must be between 0 and 95 (0x5F), or -1 for invalid.
      */
     virtual void setParameterMidiCC(const uint32_t parameterId, const int16_t cc, const bool sendOsc, const bool sendCallback) noexcept;
 
     /*!
-     * Add a custom data set.\n
-     * If \a key already exists, its current value will be swapped with \a value.
+     * Add a custom data set.
+     * If @a key already exists, its current value will be swapped with @a value.
      *
-     * \param type Type of data used in \a value.
-     * \param key A key identifing this data set.
-     * \param value The value of the data set, of type \a type.
-     * \param sendGui Send message change to plugin's custom GUI, if any
+     * @param type Type of data used in @a value.
+     * @param key A key identifing this data set.
+     * @param value The value of the data set, of type @a type.
+     * @param sendGui Send message change to plugin's custom GUI, if any
      *
-     * \see getCustomDataCount() and getCustomData()
+     * @see getCustomDataCount() and getCustomData()
      */
     virtual void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui);
 
     /*!
-     * Set the complete chunk data as \a data.\n
+     * Set the complete chunk data as @a data.
      *
-     * \see getChunkData()
+     * @see getChunkData()
      *
-     * \note Make sure to verify the plugin supports chunks before calling this function
+     * @note Make sure to verify the plugin supports chunks before calling this function
      */
     virtual void setChunkData(const void* const data, const std::size_t dataSize);
 
     /*!
-     * Change the current plugin program to \a index.
+     * Change the current plugin program to @a index.
      *
-     * If \a index is negative the plugin's program will be considered unset.\n
+     * If @a index is negative the plugin's program will be considered unset.
      * The plugin's default parameter values will be updated when this function is called.
      *
-     * \param index New program index to use
-     * \param sendGui Send message change to plugin's custom GUI, if any
-     * \param sendOsc Send message change over OSC
-     * \param sendCallback Send message change to registered callback
-     * \param block Block the audio callback
+     * @param index New program index to use
+     * @param sendGui Send message change to plugin's custom GUI, if any
+     * @param sendOsc Send message change over OSC
+     * @param sendCallback Send message change to registered callback
      */
     virtual void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept;
 
     /*!
-     * Change the current MIDI plugin program to \a index.
+     * Change the current MIDI plugin program to @a index.
      *
-     * If \a index is negative the plugin's program will be considered unset.\n
+     * If @a index is negative the plugin's program will be considered unset.
      * The plugin's default parameter values will be updated when this function is called.
      *
-     * \param index New program index to use
-     * \param sendGui Send message change to plugin's custom GUI, if any
-     * \param sendOsc Send message change over OSC
-     * \param sendCallback Send message change to registered callback
-     * \param block Block the audio callback
+     * @param index New program index to use
+     * @param sendGui Send message change to plugin's custom GUI, if any
+     * @param sendOsc Send message change over OSC
+     * @param sendCallback Send message change to registered callback
      */
     virtual void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept;
 
     /*!
-     * This is an overloaded call to setMidiProgram().\n
-     * It changes the current MIDI program using \a bank and \a program values instead of index.
+     * This is an overloaded call to setMidiProgram().
+     * It changes the current MIDI program using @a bank and @a program values instead of index.
      */
     void setMidiProgramById(const uint32_t bank, const uint32_t program, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept;
 
@@ -612,14 +610,14 @@ public:
     /*!
      * Idle function.
      *
-     * \note This function must be always called from the main thread.
+     * @note This function must be always called from the main thread.
      */
     virtual void idle();
 
     /*!
-     * Show (or hide) the plugin's custom UI according to \a yesNo.
+     * Show (or hide) the plugin's custom UI according to @a yesNo.
      *
-     * \note This function must be always called from the main thread.
+     * @note This function must be always called from the main thread.
      */
     virtual void showCustomUI(const bool yesNo);
 
@@ -627,7 +625,7 @@ public:
     // Plugin state
 
     /*!
-     * Reload the plugin's entire state (including programs).\n
+     * Reload the plugin's entire state (including programs).
      * The plugin will be disabled during this call.
      */
     virtual void reload() = 0;
@@ -710,13 +708,13 @@ public:
     void registerToOscClient() noexcept;
 
     /*!
-     * Update the plugin's internal OSC data according to \a source and \a url.\n
+     * Update the plugin's internal OSC data according to @a source and @a url.
      * This is used for OSC-GUI bridges.
      */
     void updateOscData(const lo_address& source, const char* const url);
 
     /*!
-     * Update the plugin's extra OSC data, called from the start of updateOscData().\n
+     * Update the plugin's extra OSC data, called from the start of updateOscData().
      * The default implementation does nothing.
      */
     virtual bool updateOscDataExtra();
@@ -728,7 +726,7 @@ public:
     virtual void updateOscURL();
 
     /*!
-     * Show the plugin's OSC based GUI.\n
+     * Show the plugin's OSC based GUI.
      * This is a handy function that waits for the GUI to respond and automatically asks it to show itself.
      */
     bool waitForOscGuiShow();
@@ -738,16 +736,16 @@ public:
 
 #ifndef BUILD_BRIDGE
     /*!
-     * Send a single midi note to be processed in the next audio callback.\n
+     * Send a single midi note to be processed in the next audio callback.
      * A note with 0 velocity means note-off.
-     * \note Non-RT call
+     * @note Non-RT call
      */
     void sendMidiSingleNote(const uint8_t channel, const uint8_t note, const uint8_t velo, const bool sendGui, const bool sendOsc, const bool sendCallback);
 
     /*!
-     * Send all midi notes off to the host callback.\n
+     * Send all midi notes off to the host callback.
      * This doesn't send the actual MIDI All-Notes-Off event, but 128 note-offs instead (IFF ctrlChannel is valid).
-     * \note RT call
+     * @note RT call
      */
     void sendMidiAllNotesOffToCallback();
 #endif
@@ -843,7 +841,7 @@ public:
     // Plugin initializers
 
     /*!
-     * Get a plugin's binary type.\n
+     * Get a plugin's binary type.
      * This is always BINARY_NATIVE unless the plugin is a bridge.
      */
     virtual BinaryType getBinaryType() const noexcept
@@ -904,7 +902,7 @@ protected:
     // Helper classes
 
     /*!
-     * Fully disable plugin in scope and also its engine client.\n
+     * Fully disable plugin in scope and also its engine client.
      * May wait-block on constructor for plugin process to end.
      */
     class ScopedDisabler
@@ -921,8 +919,8 @@ protected:
     };
 
     /*!
-     * Lock the plugin's own run/process call.\n
-     * Plugin will still work as normal, but output only silence.\n
+     * Lock the plugin's own run/process call.
+     * Plugin will still work as normal, but output only silence.
      * On destructor needsReset flag might be set if the plugin might have missed some events.
      */
     class ScopedSingleProcessLocker

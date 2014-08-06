@@ -1203,7 +1203,7 @@ protected:
 
     void handleJackSampleRateCallback(const double newSampleRate)
     {
-        if (pData->sampleRate == newSampleRate)
+        if (carla_compareFloats(pData->sampleRate, newSampleRate))
             return;
 
         pData->sampleRate = newSampleRate;

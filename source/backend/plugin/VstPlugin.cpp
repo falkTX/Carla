@@ -686,7 +686,7 @@ public:
                         carla_stderr2("WARNING - Broken plugin parameter min > max (with cockos extensions)");
                         min = max - 0.1f;
                     }
-                    else if (min == max)
+                    else if (carla_compareFloats(min, max))
                     {
                         carla_stderr2("WARNING - Broken plugin parameter min == max (with cockos extensions)");
                         max = min + 0.1f;
@@ -728,7 +728,7 @@ public:
                         carla_stderr2("WARNING - Broken plugin parameter min > max");
                         min = max - 0.1f;
                     }
-                    else if (min == max)
+                    else if (carla_compareFloats(min, max))
                     {
                         carla_stderr2("WARNING - Broken plugin parameter min == max");
                         max = min + 0.1f;
@@ -1593,9 +1593,9 @@ public:
         // Post-processing (dry/wet, volume and balance)
 
         {
-            const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) != 0 && pData->postProc.volume != 1.0f;
-            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && pData->postProc.dryWet != 1.0f;
-            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && (pData->postProc.balanceLeft != -1.0f || pData->postProc.balanceRight != 1.0f);
+            const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) != 0 && ! carla_compareFloats(pData->postProc.volume, 1.0f);
+            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && ! carla_compareFloats(pData->postProc.dryWet, 1.0f);
+            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_compareFloats(pData->postProc.balanceLeft, -1.0f) && carla_compareFloats(pData->postProc.balanceRight, 1.0f));
 
             bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];

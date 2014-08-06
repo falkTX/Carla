@@ -21,6 +21,7 @@
 #include "CarlaUtils.hpp"
 
 #include <cmath>
+#include <limits>
 
 // -----------------------------------------------------------------------
 // math functions (base)
@@ -94,6 +95,16 @@ uint32_t carla_nextPowerOf2(uint32_t size) noexcept
     size |= size >> 8;
     size |= size >> 16;
     return ++size;
+}
+
+/*
+ * Safely compare two floating point numbers.
+ */
+template<typename T>
+static inline
+bool carla_compareFloats(const T& v1, const T& v2)
+{
+    return std::abs(v1-v2) < std::numeric_limits<T>::epsilon();
 }
 
 #if 0

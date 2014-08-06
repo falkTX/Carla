@@ -1311,19 +1311,16 @@ class Host(object):
     # Load a file of any type.
     # This will try to load a generic file as a plugin,
     # either by direct handling (GIG, SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
-    # @param Filename Filename
     # @see carla_get_supported_file_extensions()
     def load_file(self, filename):
         return bool(self.lib.carla_load_file(filename.encode("utf-8")))
 
     # Load a Carla project file.
-    # @param Filename Filename
     # @note Currently loaded plugins are not removed; call carla_remove_all_plugins() first if needed.
     def load_project(self, filename):
         return bool(self.lib.carla_load_project(filename.encode("utf-8")))
 
     # Save current project to a file.
-    # @param Filename Filename
     def save_project(self, filename):
         return bool(self.lib.carla_save_project(filename.encode("utf-8")))
 
@@ -1355,7 +1352,6 @@ class Host(object):
         self.lib.carla_transport_pause()
 
     # Relocate the engine transport to a specific frame.
-    # @param frames Frame to relocate to.
     def transport_relocate(self, frame):
         self.lib.carla_transport_relocate(frame)
 
@@ -1682,8 +1678,8 @@ class Host(object):
         self.lib.carla_set_custom_data(pluginId, type_.encode("utf-8"), key.encode("utf-8"), value.encode("utf-8"))
 
     # Set a plugin's chunk data.
-    # @param pluginId Plugin
-    # @param value    New value
+    # @param pluginId  Plugin
+    # @param chunkData New chunk data
     # @see PLUGIN_OPTION_USE_CHUNKS and carla_get_chunk_data()
     def set_chunk_data(self, pluginId, chunkData):
         self.lib.carla_set_chunk_data(pluginId, chunkData.encode("utf-8"))

@@ -15,6 +15,9 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+// include this first to ignore documentation warnings
+#include "CarlaLv2Utils.hpp"
+
 #define CARLA_NATIVE_PLUGIN_LV2
 #include "carla-native-base.cpp"
 

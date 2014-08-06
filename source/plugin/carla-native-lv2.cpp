@@ -15,24 +15,14 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+// include this first to ignore documentation warnings
+#include "CarlaLv2Utils.hpp"
+
 #define CARLA_NATIVE_PLUGIN_LV2
 #include "carla-native-base.cpp"
 
-// #include "CarlaMathUtils.hpp"
+#include "CarlaMathUtils.hpp"
 #include "CarlaString.hpp"
-
-#include "lv2/atom.h"
-#include "lv2/atom-util.h"
-#include "lv2/buf-size.h"
-#include "lv2/instance-access.h"
-#include "lv2/midi.h"
-#include "lv2/options.h"
-#include "lv2/state.h"
-#include "lv2/time.h"
-#include "lv2/ui.h"
-#include "lv2/urid.h"
-#include "lv2/lv2_external_ui.h"
-#include "lv2/lv2_programs.h"
 
 #include "juce_audio_basics.h"
 using juce::FloatVectorOperations;
@@ -274,7 +264,7 @@ public:
 
             curValue = *fPorts.paramsPtr[i];
 
-            if (fPorts.paramsLast[i] != curValue && (fDescriptor->get_parameter_info(fHandle, i)->hints & PARAMETER_IS_OUTPUT) == 0)
+            if ((! carla_compareFloats(fPorts.paramsLast[i], curValue)) && (fDescriptor->get_parameter_info(fHandle, i)->hints & PARAMETER_IS_OUTPUT) == 0)
             {
                 fPorts.paramsLast[i] = curValue;
                 fDescriptor->set_parameter_value(fHandle, i, curValue);

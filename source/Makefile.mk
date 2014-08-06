@@ -106,11 +106,11 @@ endif
 
 ifeq ($(TESTBUILD),true)
 BASE_FLAGS += -Werror -Wcast-qual -Wconversion -Wformat -Wformat-security -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wundef -Wwrite-strings
-BASE_FLAGS += -Wcast-align -Wfloat-equal -Wpointer-arith -Wstrict-overflow=5 -Waggregate-return -Wabi -Winit-self -Wuninitialized -Wold-style-definition
+BASE_FLAGS += -Wfloat-equal -Wpointer-arith -Wstrict-overflow=5 -Waggregate-return -Wabi -Winit-self -Wuninitialized -Wold-style-definition
 BASE_FLAGS += -Wdocumentation -Wdocumentation-unknown-command
 # BASE_FLAGS += -Weverything
 ifneq ($(CC),clang)
-BASE_FLAGS += -Wunsafe-loop-optimizations
+BASE_FLAGS += -Wcast-align -Wunsafe-loop-optimizations
 endif
 ifneq ($(MACOS),true)
 BASE_FLAGS += -Wmissing-declarations -Wsign-conversion

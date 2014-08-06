@@ -953,7 +953,7 @@ void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool se
 
     const float fixedValue(carla_fixValue<float>(0.0f, 1.0f, value));
 
-    if (pData->postProc.dryWet == fixedValue)
+    if (carla_compareFloats(pData->postProc.dryWet, fixedValue))
         return;
 
     pData->postProc.dryWet = fixedValue;
@@ -971,7 +971,7 @@ void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool se
 
     const float fixedValue(carla_fixValue<float>(0.0f, 1.27f, value));
 
-    if (pData->postProc.volume == fixedValue)
+    if (carla_compareFloats(pData->postProc.volume, fixedValue))
         return;
 
     pData->postProc.volume = fixedValue;
@@ -989,7 +989,7 @@ void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bo
 
     const float fixedValue(carla_fixValue<float>(-1.0f, 1.0f, value));
 
-    if (pData->postProc.balanceLeft == fixedValue)
+    if (carla_compareFloats(pData->postProc.balanceLeft, fixedValue))
         return;
 
     pData->postProc.balanceLeft = fixedValue;
@@ -1007,7 +1007,7 @@ void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const b
 
     const float fixedValue(carla_fixValue<float>(-1.0f, 1.0f, value));
 
-    if (pData->postProc.balanceRight == fixedValue)
+    if (carla_compareFloats(pData->postProc.balanceRight, fixedValue))
         return;
 
     pData->postProc.balanceRight = fixedValue;
@@ -1025,7 +1025,7 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
 
     const float fixedValue(carla_fixValue<float>(-1.0f, 1.0f, value));
 
-    if (pData->postProc.panning == fixedValue)
+    if (carla_compareFloats(pData->postProc.panning, fixedValue))
         return;
 
     pData->postProc.panning = fixedValue;
@@ -1117,8 +1117,8 @@ void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float
     {
         if (pData->param.data[i].rindex == rindex)
         {
-            if (getParameterValue(i) != value)
-                setParameterValue(i, value, sendGui, sendOsc, sendCallback);
+            //if (! carla_compareFloats(getParameterValue(i), value))
+            setParameterValue(i, value, sendGui, sendOsc, sendCallback);
             break;
         }
     }

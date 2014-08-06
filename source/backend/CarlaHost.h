@@ -49,7 +49,7 @@ using CarlaBackend::CarlaPlugin;
  *
  * This API makes it possible to use the Carla Backend in a standalone host application..
  *
- * None of the returned values in this API calls need to be deleted or free'd.\n
+ * None of the returned values in this API calls need to be deleted or free'd.
  * When a function fails (returns false or NULL), use carla_get_last_error() to find out what went wrong.
  * @{
  */
@@ -85,20 +85,20 @@ typedef struct _CarlaPluginInfo {
     uint optionsAvailable;
 
     /*!
-     * Plugin options currently enabled.\n
+     * Plugin options currently enabled.
      * Some options are enabled but not available, which means they will always be on.
      * @see PluginOptions
      */
     uint optionsEnabled;
 
     /*!
-     * Plugin filename.\n
+     * Plugin filename.
      * This can be the plugin binary or resource file.
      */
     const char* filename;
 
     /*!
-     * Plugin name.\n
+     * Plugin name.
      * This name is unique within a Carla instance.
      * @see carla_get_real_plugin_name()
      */
@@ -120,13 +120,13 @@ typedef struct _CarlaPluginInfo {
     const char* copyright;
 
     /*!
-     * Icon name for this plugin, in lowercase.\n
+     * Icon name for this plugin, in lowercase.
      * Default is "plugin".
      */
     const char* iconName;
 
     /*!
-     * Plugin unique Id.\n
+     * Plugin unique Id.
      * This Id is dependant on the plugin type and may sometimes be 0.
      */
     int64_t uniqueId;
@@ -348,13 +348,13 @@ typedef struct _CarlaTransportInfo {
  * Carla Host API (C functions) */
 
 /*!
- * Get the complete license text of used third-party code and features.\n
+ * Get the complete license text of used third-party code and features.
  * Returned string is in basic html format.
  */
 CARLA_EXPORT const char* carla_get_complete_license_text();
 
 /*!
- * Get all the supported file extensions in carla_load_file().\n
+ * Get all the supported file extensions in carla_load_file().
  * Returned string uses this syntax:
  * @code
  * "*.ext1;*.ext2;*.ext3"
@@ -408,7 +408,7 @@ CARLA_EXPORT const CarlaEngine* carla_get_engine();
 #endif
 
 /*!
- * Initialize the engine.\n
+ * Initialize the engine.
  * Make sure to call carla_engine_idle() at regular intervals afterwards.
  * @param driverName Driver to use
  * @param clientName Engine master client name
@@ -418,23 +418,19 @@ CARLA_EXPORT bool carla_engine_init(const char* driverName, const char* clientNa
 #ifdef BUILD_BRIDGE
 /*!
  * Initialize the engine in bridged mode.
- * @param audioBaseName   Shared memory key for audio pool
- * @param controlBaseName Shared memory key for control messages
- * @param timeBaseName    Shared memory key for time info
- * @param clientName      Engine master client name
  */
 CARLA_EXPORT bool carla_engine_init_bridge(const char audioBaseName[6+1], const char rtBaseName[6+1], const char nonRtBaseName[6+1], const char* clientName);
 #endif
 
 /*!
- * Close the engine.\n
- * This function always closes the engine even if it returns false.\n
+ * Close the engine.
+ * This function always closes the engine even if it returns false.
  * In other words, even when something goes wrong when closing the engine it still be closed nonetheless.
  */
 CARLA_EXPORT bool carla_engine_close();
 
 /*!
- * Idle the engine.\n
+ * Idle the engine.
  * Do not call this if the engine is not running.
  */
 CARLA_EXPORT void carla_engine_idle();
@@ -445,7 +441,7 @@ CARLA_EXPORT void carla_engine_idle();
 CARLA_EXPORT bool carla_is_engine_running();
 
 /*!
- * Tell the engine it's about to close.\n
+ * Tell the engine it's about to close.
  * This is used to prevent the engine thread(s) from reactivating.
  */
 CARLA_EXPORT void carla_set_engine_about_to_close();
@@ -475,24 +471,21 @@ CARLA_EXPORT void carla_set_engine_option(EngineOption option, int value, const 
 CARLA_EXPORT void carla_set_file_callback(FileCallbackFunc func, void* ptr);
 
 /*!
- * Load a file of any type.\n
+ * Load a file of any type.
  * This will try to load a generic file as a plugin,
  * either by direct handling (GIG, SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
- * @param Filename Filename
  * @see carla_get_supported_file_extensions()
  */
 CARLA_EXPORT bool carla_load_file(const char* filename);
 
 /*!
  * Load a Carla project file.
- * @param Filename Filename
  * @note Currently loaded plugins are not removed; call carla_remove_all_plugins() first if needed.
  */
 CARLA_EXPORT bool carla_load_project(const char* filename);
 
 /*!
  * Save current project to a file.
- * @param Filename Filename
  */
 CARLA_EXPORT bool carla_save_project(const char* filename);
 
@@ -531,7 +524,6 @@ CARLA_EXPORT void carla_transport_pause();
 
 /*!
  * Relocate the engine transport to a specific frame.
- * @param frames Frame to relocate to.
  */
 CARLA_EXPORT void carla_transport_relocate(uint64_t frame);
 
@@ -547,7 +539,7 @@ CARLA_EXPORT const CarlaTransportInfo* carla_get_transport_info();
 #endif
 
 /*!
- * Add a new plugin.\n
+ * Add a new plugin.
  * If you don't know the binary type use the BINARY_NATIVE macro.
  * @param btype    Binary type
  * @param ptype    Plugin type
@@ -572,7 +564,7 @@ CARLA_EXPORT bool carla_remove_all_plugins();
 
 #ifndef BUILD_BRIDGE
 /*!
- * Rename a plugin.\n
+ * Rename a plugin.
  * Returns the new name, or NULL if the operation failed.
  * @param pluginId Plugin to rename
  * @param newName  New plugin name
@@ -586,7 +578,7 @@ CARLA_EXPORT const char* carla_rename_plugin(uint pluginId, const char* newName)
 CARLA_EXPORT bool carla_clone_plugin(uint pluginId);
 
 /*!
- * Prepare replace of a plugin.\n
+ * Prepare replace of a plugin.
  * The next call to carla_add_plugin() will use this id, replacing the current plugin.
  * @param pluginId Plugin to replace
  * @note This function requires carla_add_plugin() to be called afterwards *as soon as possible*.
@@ -749,7 +741,7 @@ CARLA_EXPORT const char* carla_get_program_name(uint pluginId, uint32_t programI
 CARLA_EXPORT const char* carla_get_midi_program_name(uint pluginId, uint32_t midiProgramId);
 
 /*!
- * Get a plugin's real name.\n
+ * Get a plugin's real name.
  * This is the name the plugin uses to identify itself; may not be unique.
  * @param pluginId Plugin
  */
@@ -914,14 +906,14 @@ CARLA_EXPORT void carla_set_custom_data(uint pluginId, const char* type, const c
 
 /*!
  * Set a plugin's chunk data.
- * @param pluginId Plugin
- * @param value    New value
+ * @param pluginId  Plugin
+ * @param chunkData New chunk data
  * @see PLUGIN_OPTION_USE_CHUNKS and carla_get_chunk_data()
  */
 CARLA_EXPORT void carla_set_chunk_data(uint pluginId, const char* chunkData);
 
 /*!
- * Tell a plugin to prepare for save.\n
+ * Tell a plugin to prepare for save.
  * This should be called before saving custom data sets.
  * @param pluginId Plugin
  */
@@ -941,7 +933,7 @@ CARLA_EXPORT void carla_randomize_parameters(uint pluginId);
 
 #ifndef BUILD_BRIDGE
 /*!
- * Send a single note of a plugin.\n
+ * Send a single note of a plugin.
  * If velocity is 0, note-off is sent; note-on otherwise.
  * @param pluginId Plugin
  * @param channel  Note channel

@@ -506,15 +506,15 @@ String StateSave::toString() const
 
         dataXml << "   <Active>" << (active ? "Yes" : "No") << "</Active>\n";
 
-        if (dryWet != 1.0f)
+        if (! carla_compareFloats(dryWet, 1.0f))
             dataXml << "   <DryWet>"        << String(dryWet, 7)       << "</DryWet>\n";
-        if (volume != 1.0f)
+        if (! carla_compareFloats(volume, 1.0f))
             dataXml << "   <Volume>"        << String(volume, 7)       << "</Volume>\n";
-        if (balanceLeft != -1.0f)
+        if (! carla_compareFloats(balanceLeft, -1.0f))
             dataXml << "   <Balance-Left>"  << String(balanceLeft, 7)  << "</Balance-Left>\n";
-        if (balanceRight != 1.0f)
+        if (! carla_compareFloats(balanceRight, 1.0f))
             dataXml << "   <Balance-Right>" << String(balanceRight, 7) << "</Balance-Right>\n";
-        if (panning != 0.0f)
+        if (! carla_compareFloats(panning, 0.0f))
             dataXml << "   <Panning>"       << String(panning, 7)      << "</Panning>\n";
 
         if (ctrlChannel < 0)

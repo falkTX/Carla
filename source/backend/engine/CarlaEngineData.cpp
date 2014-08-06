@@ -262,7 +262,7 @@ bool EngineTimeInfo::operator==(const EngineTimeInfo& timeInfo) const noexcept
         return false;
     if ((valid & kValidBBT) == 0)
         return true;
-    if (timeInfo.bbt.beatsPerMinute != bbt.beatsPerMinute)
+    if (! carla_compareFloats(timeInfo.bbt.beatsPerMinute, bbt.beatsPerMinute))
         return false;
     return true;
 }
