@@ -106,10 +106,11 @@ endif
 
 ifeq ($(TESTBUILD),true)
 BASE_FLAGS += -Werror -Wcast-qual -Wconversion -Wformat -Wformat-security -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wundef -Wwrite-strings
-BASE_FLAGS += -Wfloat-equal -Wpointer-arith -Wstrict-overflow=5 -Waggregate-return -Wabi -Winit-self -Wuninitialized -Wold-style-definition
+BASE_FLAGS += -Wfloat-equal -Wpointer-arith -Wabi -Winit-self -Wuninitialized #-Wstrict-overflow=5
+ifeq ($(CC),clang)
 BASE_FLAGS += -Wdocumentation -Wdocumentation-unknown-command
 # BASE_FLAGS += -Weverything
-ifneq ($(CC),clang)
+else
 BASE_FLAGS += -Wcast-align -Wunsafe-loop-optimizations
 endif
 ifneq ($(MACOS),true)
@@ -118,7 +119,7 @@ ifneq ($(CC),clang)
 BASE_FLAGS += -Wlogical-op
 endif
 endif
-CFLAGS     += -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes
+CFLAGS     += -Wold-style-definition -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes
 CXXFLAGS   += -Weffc++ -Wnon-virtual-dtor -Woverloaded-virtual
 ifeq ($(LINUX),true)
 CFLAGS     += -isystem /opt/kxstudio/include

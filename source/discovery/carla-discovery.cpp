@@ -572,9 +572,9 @@ static void do_ladspa_check(void*& libHandle, const char* const filename, const 
                         DISCOVERY_OUT("warning", "Parameter '" << portName << "' is broken: min > max");
                         max = min + 0.1f;
                     }
-                    else if (max - min == 0.0f)
+                    else if (carla_compareFloats(min, max))
                     {
-                        DISCOVERY_OUT("warning", "Parameter '" << portName << "' is broken: max - min == 0");
+                        DISCOVERY_OUT("warning", "Parameter '" << portName << "' is broken: max == min");
                         max = min + 0.1f;
                     }
 
@@ -838,9 +838,9 @@ static void do_dssi_check(void*& libHandle, const char* const filename, const bo
                         DISCOVERY_OUT("warning", "Parameter '" << portName << "' is broken: min > max");
                         max = min + 0.1f;
                     }
-                    else if (max - min == 0.0f)
+                    else if (carla_compareFloats(min, max))
                     {
-                        DISCOVERY_OUT("warning", "Parameter '" << portName << "' is broken: max - min == 0");
+                        DISCOVERY_OUT("warning", "Parameter '" << portName << "' is broken: max == min");
                         max = min + 0.1f;
                     }
 

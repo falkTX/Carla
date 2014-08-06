@@ -638,6 +638,7 @@ public:
           fUsedPorts(),
           fUsedConnections(),
           fNewGroups(),
+          fRetConns(),
 #endif
           leakDetector_CarlaEngineJack()
     {
@@ -710,7 +711,7 @@ public:
         carla_zeroStruct<jack_position_t>(fTransportPos);
 
 #ifdef BUILD_BRIDGE
-        if (pData->bufferSize == 0 || pData->sampleRate == 0.0)
+        if (pData->bufferSize == 0 || carla_compareFloats(pData->sampleRate, 0.0))
         {
             // open temp client to get initial buffer-size and sample-rate values
             if (jack_client_t* const tmpClient = jackbridge_client_open(clientName, JackNullOption, nullptr))

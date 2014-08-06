@@ -52,8 +52,6 @@ static NativePluginHandle lfo_instantiate(const NativeHostDescriptor* host)
     if (handle == NULL)
         return NULL;
 
-    host->dispatcher(host->handle, HOST_OPCODE_SET_PROCESS_PRECISION, 0, 32, NULL, 0.0f);
-
     handle->host       = host;
     handle->mode       = 1;
     handle->speed      = 1.0f;

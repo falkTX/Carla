@@ -15,12 +15,10 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-// include this first to ignore documentation warnings
-#include "CarlaLv2Utils.hpp"
-
 #define CARLA_NATIVE_PLUGIN_LV2
 #include "carla-native-base.cpp"
 
+#include "CarlaLv2Utils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaString.hpp"
 
@@ -78,8 +76,6 @@ public:
           fMidiEventCount(0),
           fTimeInfo(),
           fIsProcessing(false),
-          fVolume(1.0f),
-          fDryWet(1.0f),
           fBufferSize(0),
           fSampleRate(sampleRate),
           fUridMap(nullptr),
@@ -253,8 +249,6 @@ public:
             return;
         }
 
-        const int iframes(static_cast<int>(frames));
-
         // Check for updated parameters
         float curValue;
 
@@ -366,7 +360,7 @@ public:
                     }
 
                     if (speed != nullptr && speed->type == fURIs.atomFloat)
-                        fTimeInfo.playing = ((LV2_Atom_Float*)speed)->body == 1.0f;
+                        fTimeInfo.playing = carla_compareFloats(((LV2_Atom_Float*)speed)->body, 1.0f);
 
                     continue;
                 }
@@ -406,21 +400,6 @@ public:
         fIsProcessing = true;
         fDescriptor->process(fHandle, fPorts.audioIns, fPorts.audioOuts, frames, fMidiEvents, fMidiEventCount);
         fIsProcessing = false;
-
-        if (fDryWet != 1.0f && fDescriptor->audioIns == fDescriptor->audioOuts)
-        {
-            for (uint32_t i=0; i < fDescriptor->audioOuts; ++i)
-            {
-                FloatVectorOperations::multiply(fPorts.audioIns[i], fVolume*(1.0f-fDryWet), iframes);
-                FloatVectorOperations::multiply(fPorts.audioOuts[i], fVolume*fDryWet, iframes);
-                FloatVectorOperations::add(fPorts.audioOuts[i], fPorts.audioIns[i], iframes);
-            }
-        }
-        else if (fVolume != 1.0f)
-        {
-            for (uint32_t i=0; i < fDescriptor->audioOuts; ++i)
-                FloatVectorOperations::multiply(fPorts.audioOuts[i], fVolume, iframes);
-        }
 
         // TODO - midi out
 
@@ -784,21 +763,6 @@ protected:
         switch (opcode)
         {
         case HOST_OPCODE_NULL:
-            break;
-        case HOST_OPCODE_SET_VOLUME:
-            fVolume = opt;
-            break;
-        case HOST_OPCODE_SET_DRYWET:
-            fDryWet = opt;
-            break;
-        case HOST_OPCODE_SET_BALANCE_LEFT:
-        case HOST_OPCODE_SET_BALANCE_RIGHT:
-        case HOST_OPCODE_SET_PANNING:
-            // nothing
-            break;
-        case HOST_OPCODE_GET_PARAMETER_MIDI_CC:
-        case HOST_OPCODE_SET_PARAMETER_MIDI_CC:
-        case HOST_OPCODE_SET_PROCESS_PRECISION:
         case HOST_OPCODE_UPDATE_PARAMETER:
         case HOST_OPCODE_UPDATE_MIDI_PROGRAM:
         case HOST_OPCODE_RELOAD_PARAMETERS:
@@ -817,6 +781,7 @@ protected:
         (void)index;
         (void)value;
         (void)ptr;
+        (void)opt;
     }
 
     void updateParameterOutputs()
@@ -846,9 +811,7 @@ private:
     NativeMidiEvent fMidiEvents[kMaxMidiEvents*2];
     NativeTimeInfo  fTimeInfo;
 
-    bool  fIsProcessing;
-    float fVolume;
-    float fDryWet;
+    bool fIsProcessing;
 
     // Lv2 host data
     uint32_t fBufferSize;

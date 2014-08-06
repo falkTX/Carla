@@ -97,21 +97,13 @@ typedef enum {
 } NativePluginDispatcherOpcode;
 
 typedef enum {
-    HOST_OPCODE_NULL                  = 0,  // nothing
-    HOST_OPCODE_SET_VOLUME            = 1,  // uses opt
-    HOST_OPCODE_SET_DRYWET            = 2,  // uses opt
-    HOST_OPCODE_SET_BALANCE_LEFT      = 3,  // uses opt
-    HOST_OPCODE_SET_BALANCE_RIGHT     = 4,  // uses opt
-    HOST_OPCODE_SET_PANNING           = 5,  // uses opt
-    HOST_OPCODE_GET_PARAMETER_MIDI_CC = 6,  // uses index; return answer
-    HOST_OPCODE_SET_PARAMETER_MIDI_CC = 7,  // uses index and value
-    HOST_OPCODE_SET_PROCESS_PRECISION = 8,  // uses value
-    HOST_OPCODE_UPDATE_PARAMETER      = 9,  // uses index, -1 for all
-    HOST_OPCODE_UPDATE_MIDI_PROGRAM   = 10, // uses index, -1 for all; may use value for channel
-    HOST_OPCODE_RELOAD_PARAMETERS     = 11, // nothing
-    HOST_OPCODE_RELOAD_MIDI_PROGRAMS  = 12, // nothing
-    HOST_OPCODE_RELOAD_ALL            = 13, // nothing
-    HOST_OPCODE_UI_UNAVAILABLE        = 14  // nothing
+    HOST_OPCODE_NULL                  = 0, // nothing
+    HOST_OPCODE_UPDATE_PARAMETER      = 1, // uses index, -1 for all
+    HOST_OPCODE_UPDATE_MIDI_PROGRAM   = 2, // uses index, -1 for all; may use value for channel
+    HOST_OPCODE_RELOAD_PARAMETERS     = 3, // nothing
+    HOST_OPCODE_RELOAD_MIDI_PROGRAMS  = 4, // nothing
+    HOST_OPCODE_RELOAD_ALL            = 5, // nothing
+    HOST_OPCODE_UI_UNAVAILABLE        = 6  // nothing
 } NativeHostDispatcherOpcode;
 
 // -----------------------------------------------------------------------

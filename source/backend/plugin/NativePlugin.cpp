@@ -988,9 +988,9 @@ public:
             else if (max < min)
                 min = max;
 
-            if (max - min == 0.0f)
+            if (carla_compareFloats(min, max))
             {
-                carla_stderr2("WARNING - Broken plugin parameter '%s': max - min == 0.0f", paramInfo->name);
+                carla_stderr2("WARNING - Broken plugin parameter '%s': max == min", paramInfo->name);
                 max = min + 0.1f;
             }
 
@@ -2136,37 +2136,6 @@ protected:
         switch (opcode)
         {
         case ::HOST_OPCODE_NULL:
-            break;
-#ifdef BUILD_BRIDGE
-        case ::HOST_OPCODE_SET_VOLUME:
-        case ::HOST_OPCODE_SET_DRYWET:
-        case ::HOST_OPCODE_SET_BALANCE_LEFT:
-        case ::HOST_OPCODE_SET_BALANCE_RIGHT:
-        case ::HOST_OPCODE_SET_PANNING:
-            break;
-#else
-        case ::HOST_OPCODE_SET_VOLUME:
-            setVolume(opt, true, true);
-            break;
-        case ::HOST_OPCODE_SET_DRYWET:
-            setDryWet(opt, true, true);
-            break;
-        case ::HOST_OPCODE_SET_BALANCE_LEFT:
-            setBalanceLeft(opt, true, true);
-            break;
-        case ::HOST_OPCODE_SET_BALANCE_RIGHT:
-            setBalanceRight(opt, true, true);
-            break;
-        case ::HOST_OPCODE_SET_PANNING:
-            setPanning(opt, true, true);
-            break;
-#endif
-        case ::HOST_OPCODE_GET_PARAMETER_MIDI_CC:
-        case ::HOST_OPCODE_SET_PARAMETER_MIDI_CC:
-            // TODO
-            break;
-        case ::HOST_OPCODE_SET_PROCESS_PRECISION:
-            // TODO
             break;
         case ::HOST_OPCODE_UPDATE_PARAMETER:
             // TODO

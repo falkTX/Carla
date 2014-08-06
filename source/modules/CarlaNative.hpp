@@ -153,62 +153,6 @@ protected:
     // -------------------------------------------------------------------
     // Host dispatcher calls
 
-    void hostSetVolume(const float value) const
-    {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
-
-        pHost->dispatcher(pHost->handle, HOST_OPCODE_SET_VOLUME, 0, 0, nullptr, value);
-    }
-
-    void hostSetDryWet(const float value) const
-    {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
-
-        pHost->dispatcher(pHost->handle, HOST_OPCODE_SET_DRYWET, 0, 0, nullptr, value);
-    }
-
-    void hostSetBalanceLeft(const float value) const
-    {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
-
-        pHost->dispatcher(pHost->handle, HOST_OPCODE_SET_BALANCE_LEFT, 0, 0, nullptr, value);
-    }
-
-    void hostSetBalanceRight(const float value) const
-    {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
-
-        pHost->dispatcher(pHost->handle, HOST_OPCODE_SET_BALANCE_RIGHT, 0, 0, nullptr, value);
-    }
-
-    void hostSetPanning(const float value) const
-    {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
-
-        pHost->dispatcher(pHost->handle, HOST_OPCODE_SET_PANNING, 0, 0, nullptr, value);
-    }
-
-    intptr_t hostGetParameterMidiCC(const int32_t index) const
-    {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, -1);
-
-        return pHost->dispatcher(pHost->handle, HOST_OPCODE_GET_PARAMETER_MIDI_CC, index, 0, nullptr, 0.0f);
-    }
-
-    void hostSetParameterMidiCC(const int32_t index, const intptr_t value) const
-    {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
-
-        pHost->dispatcher(pHost->handle, HOST_OPCODE_SET_PARAMETER_MIDI_CC, index, value, nullptr, 0.0f);
-    }
-
-    void hostSetProcessPrecision(const intptr_t value) const
-    {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
-
-        pHost->dispatcher(pHost->handle, HOST_OPCODE_SET_PROCESS_PRECISION, 0, value, nullptr, 0.0f);
-    }
-
     void hostUpdateParameter(const int32_t index) const
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
