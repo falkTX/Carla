@@ -579,7 +579,7 @@ public:
         {
             const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
 
-            fShmNonRtControl.writeOpcode(kPluginBridgeNonRtSetParameterValue);
+            fShmNonRtControl.writeOpcode(kPluginBridgeNonRtSetParameterMidiChannel);
             fShmNonRtControl.writeUInt(parameterId);
             fShmNonRtControl.writeByte(channel);
             fShmNonRtControl.commitWrite();

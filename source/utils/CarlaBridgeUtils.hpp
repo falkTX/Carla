@@ -115,7 +115,7 @@ struct BridgeSemaphore {
 
 // needs to be 64bit aligned
 struct BridgeTimeInfo {
-    bool     playing : 8;
+    bool     playing : 64; // 8 bytes
     uint64_t frame;
     uint64_t usecs;
     uint32_t valid;
