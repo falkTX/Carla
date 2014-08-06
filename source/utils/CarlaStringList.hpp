@@ -97,7 +97,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(c != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fCharList == nullptr,);
 
-        size_t count = 0;
+        std::size_t count = 0;
         for (; c[count] != nullptr; ++count) {}
         CARLA_SAFE_ASSERT_RETURN(count > 0,);
 
@@ -107,18 +107,14 @@ protected:
             tmpList = new const char*[count+1];
         } CARLA_SAFE_EXCEPTION_RETURN("CharStringListPtr::copy",);
 
-        for (size_t i=0; i<count; ++i)
+        tmpList[count] = nullptr;
+
+        for (std::size_t i=0; i<count; ++i)
         {
-            try {
-                tmpList[i] = carla_strdup(c[i]);
-            }
-            catch(...) {
-                tmpList[i] = nullptr;
-                break;
-            }
+            tmpList[i] = carla_strdup_safe(c[i]);
+            CARLA_SAFE_ASSERT_BREAK(tmpList[i] != nullptr);
         }
 
-        tmpList[count] = nullptr;
         fCharList = tmpList;
     }
 
@@ -126,7 +122,7 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(fCharList == nullptr,);
 
-        const size_t count(list.count());
+        const std::size_t count(list.count());
         CARLA_SAFE_ASSERT_RETURN(count > 0,);
 
         const char** tmpList;
@@ -135,14 +131,16 @@ protected:
             tmpList = new const char*[count+1];
         } CARLA_SAFE_EXCEPTION_RETURN("CharStringListPtr::copy",);
 
-        size_t i=0;
+        tmpList[count] = nullptr;
+
+        std::size_t i=0;
         for (LinkedList<const char*>::Itenerator it = list.begin(); it.valid(); it.next(), ++i)
         {
             tmpList[i] = carla_strdup_safe(it.getValue());
             CARLA_SAFE_ASSERT_BREAK(tmpList[i] != nullptr);
         }
+        CARLA_SAFE_ASSERT(i == count);
 
-        tmpList[count] = nullptr;
         fCharList = tmpList;
     }
 
