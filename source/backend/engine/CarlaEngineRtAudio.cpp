@@ -65,6 +65,8 @@ static void initRtAudioAPIsIfNeeded()
             continue;
         if (api == RtAudio::WINDOWS_DS)
             continue;
+        if (api == RtAudio::WINDOWS_WASAPI)
+            continue;
         if (api == RtAudio::UNIX_JACK && ! jackbridge_is_ok())
             continue;
 
@@ -100,6 +102,8 @@ static const char* getRtAudioApiName(const RtAudio::Api api) noexcept
         return "ASIO";
     case RtAudio::WINDOWS_DS:
         return "DirectSound";
+    case RtAudio::WINDOWS_WASAPI:
+        return "WASAPI";
     case RtAudio::RTAUDIO_DUMMY:
         return "Dummy";
     }
@@ -136,6 +140,7 @@ static RtMidi::Api getMatchedAudioMidiAPI(const RtAudio::Api rtApi) noexcept
 
     case RtAudio::WINDOWS_ASIO:
     case RtAudio::WINDOWS_DS:
+    case RtAudio::WINDOWS_WASAPI:
         return RtMidi::WINDOWS_MM;
 
     case RtAudio::RTAUDIO_DUMMY:
@@ -254,7 +259,7 @@ public:
         try {
             fAudio.openStream(&oParams, (iParams.nChannels > 0) ? &iParams : nullptr, RTAUDIO_FLOAT32, pData->options.audioSampleRate, &bufferFrames, carla_rtaudio_process_callback, this, &rtOptions);
         }
-        catch (const RtError& e) {
+        catch (const RtAudioError& e) {
             setLastError(e.what());
             return false;
         }
@@ -271,7 +276,7 @@ public:
         try {
             fAudio.startStream();
         }
-        catch (const RtError& e)
+        catch (const RtAudioError& e)
         {
             close();
             setLastError(e.what());
@@ -299,7 +304,7 @@ public:
                 try {
                     fAudio.stopStream();
                 }
-                catch (const RtError& e)
+                catch (const RtAudioError& e)
                 {
                     if (! hasError)
                     {

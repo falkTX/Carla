@@ -403,7 +403,7 @@ class RtAudio
   ~RtAudio() throw();
 
   //! Returns the audio API specifier for the current instance of RtAudio.
-  RtAudio::Api getCurrentApi( void ) throw();
+  RtAudio::Api getCurrentApi( void ) const throw();
 
   //! A public function that queries for the number of audio devices available.
   /*!
@@ -674,7 +674,7 @@ public:
 
   RtApi();
   virtual ~RtApi();
-  virtual RtAudio::Api getCurrentApi( void ) = 0;
+  virtual RtAudio::Api getCurrentApi( void ) const = 0;
   virtual unsigned int getDeviceCount( void ) = 0;
   virtual RtAudio::DeviceInfo getDeviceInfo( unsigned int device ) = 0;
   virtual unsigned int getDefaultInputDevice( void );
@@ -823,7 +823,7 @@ protected:
 //
 // **************************************************************** //
 
-inline RtAudio::Api RtAudio :: getCurrentApi( void ) throw() { return rtapi_->getCurrentApi(); }
+inline RtAudio::Api RtAudio :: getCurrentApi( void ) const throw() { return rtapi_->getCurrentApi(); }
 inline unsigned int RtAudio :: getDeviceCount( void ) throw() { return rtapi_->getDeviceCount(); }
 inline RtAudio::DeviceInfo RtAudio :: getDeviceInfo( unsigned int device ) { return rtapi_->getDeviceInfo( device ); }
 inline unsigned int RtAudio :: getDefaultInputDevice( void ) throw() { return rtapi_->getDefaultInputDevice(); }
@@ -852,7 +852,7 @@ public:
 
   RtApiCore();
   ~RtApiCore();
-  RtAudio::Api getCurrentApi( void ) { return RtAudio::MACOSX_CORE; }
+  RtAudio::Api getCurrentApi( void ) const { return RtAudio::MACOSX_CORE; }
   unsigned int getDeviceCount( void );
   RtAudio::DeviceInfo getDeviceInfo( unsigned int device );
   unsigned int getDefaultOutputDevice( void );
@@ -890,7 +890,7 @@ public:
 
   RtApiJack();
   ~RtApiJack();
-  RtAudio::Api getCurrentApi( void ) { return RtAudio::UNIX_JACK; }
+  RtAudio::Api getCurrentApi( void ) const { return RtAudio::UNIX_JACK; }
   unsigned int getDeviceCount( void );
   RtAudio::DeviceInfo getDeviceInfo( unsigned int device );
   void closeStream( void );
@@ -923,7 +923,7 @@ public:
 
   RtApiAsio();
   ~RtApiAsio();
-  RtAudio::Api getCurrentApi( void ) { return RtAudio::WINDOWS_ASIO; }
+  RtAudio::Api getCurrentApi( void ) const { return RtAudio::WINDOWS_ASIO; }
   unsigned int getDeviceCount( void );
   RtAudio::DeviceInfo getDeviceInfo( unsigned int device );
   void closeStream( void );
@@ -959,7 +959,7 @@ public:
 
   RtApiDs();
   ~RtApiDs();
-  RtAudio::Api getCurrentApi( void ) { return RtAudio::WINDOWS_DS; }
+  RtAudio::Api getCurrentApi( void ) const { return RtAudio::WINDOWS_DS; }
   unsigned int getDeviceCount( void );
   unsigned int getDefaultOutputDevice( void );
   unsigned int getDefaultInputDevice( void );
@@ -1000,7 +1000,7 @@ public:
   RtApiWasapi();
   ~RtApiWasapi();
 
-  RtAudio::Api getCurrentApi( void ) { return RtAudio::WINDOWS_WASAPI; }
+  RtAudio::Api getCurrentApi( void ) const { return RtAudio::WINDOWS_WASAPI; }
   unsigned int getDeviceCount( void );
   RtAudio::DeviceInfo getDeviceInfo( unsigned int device );
   unsigned int getDefaultOutputDevice( void );
@@ -1035,7 +1035,7 @@ public:
 
   RtApiAlsa();
   ~RtApiAlsa();
-  RtAudio::Api getCurrentApi() { return RtAudio::LINUX_ALSA; }
+  RtAudio::Api getCurrentApi() const { return RtAudio::LINUX_ALSA; }
   unsigned int getDeviceCount( void );
   RtAudio::DeviceInfo getDeviceInfo( unsigned int device );
   void closeStream( void );
@@ -1067,7 +1067,7 @@ class RtApiPulse: public RtApi
 {
 public:
   ~RtApiPulse();
-  RtAudio::Api getCurrentApi() { return RtAudio::LINUX_PULSE; }
+  RtAudio::Api getCurrentApi() const { return RtAudio::LINUX_PULSE; }
   unsigned int getDeviceCount( void );
   RtAudio::DeviceInfo getDeviceInfo( unsigned int device );
   void closeStream( void );
@@ -1101,7 +1101,7 @@ public:
 
   RtApiOss();
   ~RtApiOss();
-  RtAudio::Api getCurrentApi() { return RtAudio::LINUX_OSS; }
+  RtAudio::Api getCurrentApi() const { return RtAudio::LINUX_OSS; }
   unsigned int getDeviceCount( void );
   RtAudio::DeviceInfo getDeviceInfo( unsigned int device );
   void closeStream( void );
@@ -1132,7 +1132,7 @@ class RtApiDummy: public RtApi
 public:
 
   RtApiDummy() { errorText_ = "RtApiDummy: This class provides no functionality."; error( RtAudioError::WARNING ); }
-  RtAudio::Api getCurrentApi( void ) { return RtAudio::RTAUDIO_DUMMY; }
+  RtAudio::Api getCurrentApi( void ) const { return RtAudio::RTAUDIO_DUMMY; }
   unsigned int getDeviceCount( void ) { return 0; }
   RtAudio::DeviceInfo getDeviceInfo( unsigned int /*device*/ ) { RtAudio::DeviceInfo info; return info; }
   void closeStream( void ) {}

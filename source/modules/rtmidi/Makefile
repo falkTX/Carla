@@ -39,7 +39,7 @@ debug:
 
 # --------------------------------------------------------------
 
-RtMidi.cpp.o: RtMidi.cpp RtMidi.h RtError.h
+RtMidi.cpp.o: RtMidi.cpp RtMidi.h
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
