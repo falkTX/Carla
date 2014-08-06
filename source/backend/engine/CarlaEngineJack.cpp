@@ -23,6 +23,7 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 #include "CarlaPatchbayUtils.hpp"
+#include "CarlaStringList.hpp"
 
 #include "jackbridge/JackBridge.hpp"
 #include "jackey.h"
@@ -1136,7 +1137,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, nullptr);
         carla_debug("CarlaEngineJack::getPatchbayConnections()");
 
-        LinkedList<const char*> connList;
+        CarlaStringList connList;
 
         if (const char** const ports = jackbridge_get_ports(fClient, nullptr, nullptr, JackPortIsOutput))
         {
@@ -1151,8 +1152,8 @@ public:
                 {
                     for (int j=0; connections[j] != nullptr; ++j)
                     {
-                        connList.append(carla_strdup(fullPortName));
-                        connList.append(carla_strdup(connections[j]));
+                        connList.append(fullPortName);
+                        connList.append(connections[j]);
                     }
 
                     jackbridge_free(connections);
@@ -1162,20 +1163,12 @@ public:
             jackbridge_free(ports);
         }
 
-        const size_t connCount(connList.count());
-
-        if (connCount == 0)
+        if (connList.count() == 0)
             return nullptr;
 
-        const char** const retConns = new const char*[connCount+1];
+        fRetConns = connList.toCharStringListPtr();
 
-        for (size_t i=0; i < connCount; ++i)
-            retConns[i] = connList.getAt(i, nullptr);
-
-        retConns[connCount] = nullptr;
-        connList.clear();
-
-        return retConns;
+        return fRetConns;
     }
 
     void restorePatchbayConnection(const char* const connSource, const char* const connTarget) override
@@ -1670,6 +1663,8 @@ private:
     PatchbayPortList       fUsedPorts;
     PatchbayConnectionList fUsedConnections;
     LinkedList<uint>       fNewGroups;
+
+    mutable CharStringListPtr fRetConns;
 
     bool findPluginIdAndIcon(const char* const clientName, int& pluginId, PatchbayIcon& icon) noexcept
     {

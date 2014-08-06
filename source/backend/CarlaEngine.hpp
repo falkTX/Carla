@@ -1089,6 +1089,7 @@ protected:
 
     /*!
      * Virtual functions for handling patchbay state.
+     * Do not free returned data.
      */
     virtual const char* const* getPatchbayConnections() const;
     virtual void restorePatchbayConnection(const char* const sourcePort, const char* const targetPort);

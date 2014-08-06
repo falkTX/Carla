@@ -1140,9 +1140,6 @@ bool CarlaEngine::saveProject(const char* const filename)
                 out << "   <Source>" << connSource << "</Source>\n";
                 out << "   <Target>" << connTarget << "</Target>\n";
                 out << "  </Connection>\n";
-
-                delete[] connSource;
-                delete[] connTarget;
             }
 
             out << " </Patchbay>\n";
