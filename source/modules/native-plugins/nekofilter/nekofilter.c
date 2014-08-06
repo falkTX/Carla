@@ -2,7 +2,7 @@
 /*****************************************************************************
  *
  *   Copyright (C) 2006,2007,2008,2009 Nedko Arnaudov <nedko@arnaudov.name>
- *   Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ *   Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by

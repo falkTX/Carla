@@ -2,7 +2,7 @@
 /*****************************************************************************
  *
  * Copyright (C) 2009 Nedko Arnaudov <nedko@arnaudov.name>
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * LV2 UI bundle shared library for communicating with a DSSI UI
  *
