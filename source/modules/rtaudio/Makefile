@@ -47,7 +47,7 @@ debug:
 
 # --------------------------------------------------------------
 
-RtAudio.cpp.o: RtAudio.cpp RtAudio.h RtError.h
+RtAudio.cpp.o: RtAudio.cpp RtAudio.h
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 # --------------------------------------------------------------

@@ -37,7 +37,7 @@ static const char* const kBase64Chars =
 static inline
 uint8_t findBase64CharIndex(const char c)
 {
-    static const uint8_t kBase64CharsLen(std::strlen(kBase64Chars));
+    static const uint8_t kBase64CharsLen(static_cast<uint8_t>(std::strlen(kBase64Chars)));
 
     for (uint8_t i=0; i<kBase64CharsLen; ++i)
     {
