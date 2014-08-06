@@ -452,9 +452,9 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
         group_box.setSplit(True, PORT_MODE_OUTPUT)
 
         if features.handle_group_pos:
-            group_box.setPos(canvas.settings.value("CanvasPositions/%s_OUTPUT" % group_name, CanvasGetNewGroupPos(), type=QPointF))
+            group_box.setPos(canvas.settings.value("CanvasPositions/%s_OUTPUT" % group_name, CanvasGetNewGroupPos(False), type=QPointF))
         else:
-            group_box.setPos(CanvasGetNewGroupPos())
+            group_box.setPos(CanvasGetNewGroupPos(False))
 
         group_sbox = CanvasBox(group_id, group_name, icon)
         group_sbox.setSplit(True, PORT_MODE_INPUT)
@@ -478,7 +478,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
         group_box.setSplit(False)
 
         if features.handle_group_pos:
-            group_box.setPos(canvas.settings.value("CanvasPositions/%s" % group_name, CanvasGetNewGroupPos(), type=QPointF))
+            group_box.setPos(canvas.settings.value("CanvasPositions/%s" % group_name, CanvasGetNewGroupPos(False), type=QPointF))
         else:
             # Special ladish fake-split groups
             horizontal = bool(icon == ICON_HARDWARE or icon == ICON_LADISH_ROOM)
@@ -921,15 +921,18 @@ def disconnectPorts(connection_id):
     if canvas.debug:
         qDebug("PatchCanvas::disconnectPorts(%i)" % connection_id)
 
-    port_1_id = port_2_id = 0
-    line = None
+    line  = None
     item1 = None
     item2 = None
+    group1id = port1id = 0
+    group2id = port2id = 0
 
     for connection in canvas.connection_list:
         if connection.connection_id == connection_id:
-            port_1_id = connection.port_out_id
-            port_2_id = connection.port_in_id
+            group1id = connection.group_out_id
+            group2id = connection.group_in_id
+            port1id = connection.port_out_id
+            port2id = connection.port_in_id
             line = connection.widget
             canvas.connection_list.remove(connection)
             break
@@ -939,7 +942,7 @@ def disconnectPorts(connection_id):
         return
 
     for port in canvas.port_list:
-        if port.port_id == port_1_id:
+        if port.group_id == group1id and port.port_id == port1id:
             item1 = port.widget
             break
 
@@ -948,7 +951,7 @@ def disconnectPorts(connection_id):
         return
 
     for port in canvas.port_list:
-        if port.port_id == port_2_id:
+        if port.group_id == group2id and port.port_id == port2id:
             item2 = port.widget
             break
 
@@ -996,29 +999,7 @@ def handlePluginRemoved(plugin_id):
 
 # Extra Internal functions
 
-def CanvasGetGroupName(group_id):
-    if canvas.debug:
-        qDebug("PatchCanvas::CanvasGetGroupName(%i)" % group_id)
-
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            return group.group_name
-
-    qCritical("PatchCanvas::CanvasGetGroupName(%i) - unable to find group" % group_id)
-    return ""
-
-def CanvasGetGroupPortCount(group_id):
-    if canvas.debug:
-        qDebug("PatchCanvas::CanvasGetGroupPortCount(%i)" % group_id)
-
-    port_count = 0
-    for port in canvas.port_list:
-        if port.group_id == group_id:
-            port_count += 1
-
-    return port_count
-
-def CanvasGetNewGroupPos(horizontal=False):
+def CanvasGetNewGroupPos(horizontal):
     if canvas.debug:
         qDebug("PatchCanvas::CanvasGetNewGroupPos(%s)" % bool2str(horizontal))
 
@@ -1063,27 +1044,15 @@ def CanvasGetPortConnectionList(group_id, port_id):
     if canvas.debug:
         qDebug("PatchCanvas::CanvasGetPortConnectionList(%i, %i)" % (group_id, port_id))
 
-    port_con_list = []
+    conn_list = []
 
     for connection in canvas.connection_list:
-        if connection.port_out_id == port_id or connection.port_in_id == port_id:
-            port_con_list.append(connection.connection_id)
+        if connection.group_out_id == group_id and connection.port_out_id == port_id:
+            conn_list.append((connection.connection_id, connection.group_in_id, connection.port_in_id))
+        elif connection.group_in_id == group_id and connection.port_in_id == port_id:
+            conn_list.append((connection.connection_id, connection.group_out_id, connection.port_out_id))
 
-    return port_con_list
-
-def CanvasGetConnectedPort(connection_id, port_id):
-    if canvas.debug:
-        qDebug("PatchCanvas::CanvasGetConnectedPort(%i, %i)" % (connection_id, port_id))
-
-    for connection in canvas.connection_list:
-        if connection.connection_id == connection_id:
-            if connection.port_out_id == port_id:
-                return connection.port_in_id
-            else:
-                return connection.port_out_id
-
-    qCritical("PatchCanvas::CanvasGetConnectedPort(%i, %i) - unable to find connection" % (connection_id, port_id))
-    return 0
+    return conn_list
 
 def CanvasRemoveAnimation(f_animation):
     if canvas.debug:
@@ -1930,13 +1899,12 @@ class CanvasPort(QGraphicsItem):
         menu = QMenu()
         discMenu = QMenu("Disconnect", menu)
 
-        port_con_list = CanvasGetPortConnectionList(self.m_group_id, self.m_port_id)
+        conn_list = CanvasGetPortConnectionList(self.m_group_id, self.m_port_id)
 
-        if len(port_con_list) > 0:
-            for port_id in port_con_list:
-                port_con_id = CanvasGetConnectedPort(port_id, self.m_port_id)
-                act_x_disc = discMenu.addAction(CanvasGetFullPortName(self.m_group_id, port_con_id))
-                act_x_disc.setData(port_id)
+        if len(conn_list) > 0:
+            for conn_id, group_id, port_id in conn_list:
+                act_x_disc = discMenu.addAction(CanvasGetFullPortName(group_id, port_id))
+                act_x_disc.setData(conn_id)
                 act_x_disc.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
         else:
             act_x_disc = discMenu.addAction("No connections")
@@ -1960,8 +1928,8 @@ class CanvasPort(QGraphicsItem):
         act_selected = menu.exec_(event.screenPos())
 
         if act_selected == act_x_disc_all:
-            for port_id in port_con_list:
-                canvas.callback(ACTION_PORTS_DISCONNECT, port_id, 0, "")
+            for conn_id, group_id, port_id in conn_list:
+                canvas.callback(ACTION_PORTS_DISCONNECT, conn_id, 0, "")
 
         elif act_selected == act_x_info:
             canvas.callback(ACTION_PORT_INFO, self.m_port_id, 0, "")
@@ -2501,21 +2469,20 @@ class CanvasBox(QGraphicsItem):
         menu = QMenu()
         discMenu = QMenu("Disconnect", menu)
 
-        port_con_list = []
-        port_con_list_ids = []
+        conn_list     = []
+        conn_list_ids = []
 
         for port_id in self.m_port_list_ids:
-            tmp_port_con_list = CanvasGetPortConnectionList(self.m_group_id, port_id)
-            for port_con_id in tmp_port_con_list:
-                if port_con_id not in port_con_list:
-                    port_con_list.append(port_con_id)
-                    port_con_list_ids.append(port_id)
+            tmp_conn_list = CanvasGetPortConnectionList(self.m_group_id, port_id)
+            for conn_id, group_id, port_id in tmp_conn_list:
+                if conn_id not in conn_list_ids:
+                    conn_list.append((conn_id, group_id, port_id))
+                    conn_list_ids.append(conn_id)
 
-        if len(port_con_list) > 0:
-            for i in range(len(port_con_list)):
-                port_con_id = CanvasGetConnectedPort(port_con_list[i], port_con_list_ids[i])
-                act_x_disc = discMenu.addAction(CanvasGetFullPortName(self.m_group_id, port_con_id))
-                act_x_disc.setData(port_con_list[i])
+        if len(conn_list) > 0:
+            for conn_id, group_id, port_id in conn_list:
+                act_x_disc = discMenu.addAction(CanvasGetFullPortName(group_id, port_id))
+                act_x_disc.setData(conn_id)
                 act_x_disc.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
         else:
             act_x_disc = discMenu.addAction("No connections")
@@ -2572,8 +2539,8 @@ class CanvasBox(QGraphicsItem):
             pass
 
         elif act_selected == act_x_disc_all:
-            for port_id in port_con_list:
-                canvas.callback(ACTION_PORTS_DISCONNECT, port_id, 0, "")
+            for conn_id in conn_list_ids:
+                canvas.callback(ACTION_PORTS_DISCONNECT, conn_id, 0, "")
 
         elif act_selected == act_x_info:
             canvas.callback(ACTION_GROUP_INFO, self.m_group_id, 0, "")
