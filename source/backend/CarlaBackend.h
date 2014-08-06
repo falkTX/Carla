@@ -117,7 +117,7 @@ const uint ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE = 0x8;
  */
 
 /*!
- * Plugin is a bridge.\n
+ * Plugin is a bridge.
  * This hint is required because "bridge" itself is not a plugin type.
  */
 const uint PLUGIN_IS_BRIDGE = 0x001;
@@ -302,7 +302,7 @@ const uint PARAMETER_USES_CUSTOM_TEXT = 0x400;
  */
 
 /*!
- * Patchbay port is input.\n
+ * Patchbay port is input.
  * When this hint is not set, port is assumed to be output.
  */
 const uint PATCHBAY_PORT_IS_INPUT = 0x1;
@@ -336,7 +336,7 @@ const uint PATCHBAY_PORT_TYPE_MIDI = 0x8;
  */
 
 /*!
- * Boolean string type URI.\n
+ * Boolean string type URI.
  * Only "true" and "false" are valid values.
  */
 const char* const CUSTOM_DATA_TYPE_BOOLEAN = "http://kxstudio.sf.net/ns/carla/boolean";
@@ -579,7 +579,7 @@ typedef enum {
  * Internal Parameter Index */
 
 /*!
- * Special parameters used internally in Carla.\n
+ * Special parameters used internally in Carla.
  * Plugins do not know about their existence.
  */
 typedef enum {
@@ -590,43 +590,43 @@ typedef enum {
 
 #ifndef BUILD_BRIDGE
     /*!
-     * Active parameter, boolean type.\n
+     * Active parameter, boolean type.
      * Default is 'false'.
      */
     PARAMETER_ACTIVE = -2,
 
     /*!
-     * Dry/Wet parameter.\n
+     * Dry/Wet parameter.
      * Range 0.0...1.0; default is 1.0.
      */
     PARAMETER_DRYWET = -3,
 
     /*!
-     * Volume parameter.\n
+     * Volume parameter.
      * Range 0.0...1.27; default is 1.0.
      */
     PARAMETER_VOLUME = -4,
 
     /*!
-     * Stereo Balance-Left parameter.\n
+     * Stereo Balance-Left parameter.
      * Range -1.0...1.0; default is -1.0.
      */
     PARAMETER_BALANCE_LEFT = -5,
 
     /*!
-     * Stereo Balance-Right parameter.\n
+     * Stereo Balance-Right parameter.
      * Range -1.0...1.0; default is 1.0.
      */
     PARAMETER_BALANCE_RIGHT = -6,
 
     /*!
-     * Mono Panning parameter.\n
+     * Mono Panning parameter.
      * Range -1.0...1.0; default is 0.0.
      */
     PARAMETER_PANNING = -7,
 
     /*!
-     * MIDI Control channel, integer type.\n
+     * MIDI Control channel, integer type.
      * Range -1...15 (-1 = off).
      */
     PARAMETER_CTRL_CHANNEL = -8,
@@ -643,82 +643,82 @@ typedef enum {
  * Engine Callback Opcode */
 
 /*!
- * Engine callback opcodes.\n
+ * Engine callback opcodes.
  * Front-ends must never block indefinitely during a callback.
  * @see EngineCallbackFunc, CarlaEngine::setCallback() and carla_set_engine_callback()
  */
 typedef enum {
     /*!
-     * Debug.\n
+     * Debug.
      * This opcode is undefined and used only for testing purposes.
      */
     ENGINE_CALLBACK_DEBUG = 0,
 
     /*!
      * A plugin has been added.
-     * @param pluginId Plugin Id
-     * @param valueStr Plugin name
+     * @a pluginId Plugin Id
+     * @a valueStr Plugin name
      */
     ENGINE_CALLBACK_PLUGIN_ADDED = 1,
 
     /*!
      * A plugin has been removed.
-     * @param pluginId Plugin Id
+     * @a pluginId Plugin Id
      */
     ENGINE_CALLBACK_PLUGIN_REMOVED = 2,
 
     /*!
      * A plugin has been renamed.
-     * @param pluginId Plugin Id
-     * @param valueStr New plugin name
+     * @a pluginId Plugin Id
+     * @a valueStr New plugin name
      */
     ENGINE_CALLBACK_PLUGIN_RENAMED = 3,
 
     /*!
      * A plugin has become unavailable.
-     * @param pluginId Plugin Id
-     * @param valueStr Related error string
+     * @a pluginId Plugin Id
+     * @a valueStr Related error string
      */
     ENGINE_CALLBACK_PLUGIN_UNAVAILABLE = 4,
 
     /*!
      * A parameter value has changed.
-     * @param pluginId Plugin Id
-     * @param value1   Parameter index
-     * @param value3   New parameter value
+     * @a pluginId Plugin Id
+     * @a value1   Parameter index
+     * @a value3   New parameter value
      */
     ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED = 5,
 
     /*!
      * A parameter default has changed.
-     * @param pluginId Plugin Id
-     * @param value1   Parameter index
-     * @param value3   New default value
+     * @a pluginId Plugin Id
+     * @a value1   Parameter index
+     * @a value3   New default value
      */
     ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED = 6,
 
 #ifndef BUILD_BRIDGE
     /*!
      * A parameter's MIDI CC has changed.
-     * @param pluginId Plugin Id
-     * @param value1   Parameter index
-     * @param value2   New MIDI CC
+     * @a pluginId Plugin Id
+     * @a value1   Parameter index
+     * @a value2   New MIDI CC
      */
     ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED = 7,
 
     /*!
      * A parameter's MIDI channel has changed.
-     * @param pluginId Plugin Id
-     * @param value1   Parameter index
-     * @param value2   New MIDI channel
+     * @a pluginId Plugin Id
+     * @a value1   Parameter index
+     * @a value2   New MIDI channel
      */
     ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED = 8,
 
     /*!
      * A plugin option has changed.
-     * @param pluginId Plugin Id
-     * @param value1   Option
-     * @param value2   New on/off state (1 for on, 0 for off)
+     * @a pluginId Plugin Id
+     * @a value1   Option
+     * @a value2   New on/off state (1 for on, 0 for off)
      * @see PluginOptions
      */
     ENGINE_CALLBACK_OPTION_CHANGED = 9,
@@ -726,152 +726,152 @@ typedef enum {
 
     /*!
      * The current program of a plugin has changed.
-     * @param pluginId Plugin Id
-     * @param value1   New program index
+     * @a pluginId Plugin Id
+     * @a value1   New program index
      */
     ENGINE_CALLBACK_PROGRAM_CHANGED = 10,
 
     /*!
      * The current MIDI program of a plugin has changed.
-     * @param pluginId Plugin Id
-     * @param value1   New MIDI program index
+     * @a pluginId Plugin Id
+     * @a value1   New MIDI program index
      */
     ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED = 11,
 
     /*!
      * A plugin's custom UI state has changed.
-     * @param pluginId Plugin Id
-     * @param value1   New state, as follows:\n
-     *                  0: UI is now hidden\n
-     *                  1: UI is now visible\n
+     * @a pluginId Plugin Id
+     * @a value1   New state, as follows:
+     *                  0: UI is now hidden
+     *                  1: UI is now visible
      *                 -1: UI has crashed and should not be shown again
      */
     ENGINE_CALLBACK_UI_STATE_CHANGED = 12,
 
     /*!
      * A note has been pressed.
-     * @param pluginId Plugin Id
-     * @param value1   Channel
-     * @param value2   Note
-     * @param value3   Velocity
+     * @a pluginId Plugin Id
+     * @a value1   Channel
+     * @a value2   Note
+     * @a value3   Velocity
      */
     ENGINE_CALLBACK_NOTE_ON = 13,
 
     /*!
      * A note has been released.
-     * @param pluginId Plugin Id
-     * @param value1   Channel
-     * @param value2   Note
+     * @a pluginId Plugin Id
+     * @a value1   Channel
+     * @a value2   Note
      */
     ENGINE_CALLBACK_NOTE_OFF = 14,
 
     /*!
      * A plugin needs update.
-     * @param pluginId Plugin Id
+     * @a pluginId Plugin Id
      */
     ENGINE_CALLBACK_UPDATE = 15,
 
     /*!
      * A plugin's data/information has changed.
-     * @param pluginId Plugin Id
+     * @a pluginId Plugin Id
      */
     ENGINE_CALLBACK_RELOAD_INFO = 16,
 
     /*!
      * A plugin's parameters have changed.
-     * @param pluginId Plugin Id
+     * @a pluginId Plugin Id
      */
     ENGINE_CALLBACK_RELOAD_PARAMETERS = 17,
 
     /*!
      * A plugin's programs have changed.
-     * @param pluginId Plugin Id
+     * @a pluginId Plugin Id
      */
     ENGINE_CALLBACK_RELOAD_PROGRAMS = 18,
 
     /*!
      * A plugin state has changed.
-     * @param pluginId Plugin Id
+     * @a pluginId Plugin Id
      */
     ENGINE_CALLBACK_RELOAD_ALL = 19,
 
 #ifndef BUILD_BRIDGE
     /*!
      * A patchbay client has been added.
-     * @param pluginId Client Id
-     * @param value1   Client icon
-     * @param value2   Plugin Id (-1 if not a plugin)
-     * @param valueStr Client name
+     * @a pluginId Client Id
+     * @a value1   Client icon
+     * @a value2   Plugin Id (-1 if not a plugin)
+     * @a valueStr Client name
      * @see PatchbayIcon
      */
     ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED = 20,
 
     /*!
      * A patchbay client has been removed.
-     * @param pluginId Client Id
+     * @a pluginId Client Id
      */
     ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED = 21,
 
     /*!
      * A patchbay client has been renamed.
-     * @param pluginId Client Id
-     * @param valueStr New client name
+     * @a pluginId Client Id
+     * @a valueStr New client name
      */
     ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED = 22,
 
     /*!
      * A patchbay client data has changed.
-     * @param pluginId Client Id
-     * @param value1   New icon
-     * @param value2   New plugin Id (-1 if not a plugin)
+     * @a pluginId Client Id
+     * @a value1   New icon
+     * @a value2   New plugin Id (-1 if not a plugin)
      * @see PatchbayIcon
      */
     ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED = 23,
 
     /*!
      * A patchbay port has been added.
-     * @param pluginId Client Id
-     * @param value1   Port Id
-     * @param value2   Port hints
-     * @param valueStr Port name
+     * @a pluginId Client Id
+     * @a value1   Port Id
+     * @a value2   Port hints
+     * @a valueStr Port name
      * @see PatchbayPortHints
      */
     ENGINE_CALLBACK_PATCHBAY_PORT_ADDED = 24,
 
     /*!
      * A patchbay port has been removed.
-     * @param pluginId Client Id
-     * @param value1   Port Id
+     * @a pluginId Client Id
+     * @a value1   Port Id
      */
     ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED = 25,
 
     /*!
      * A patchbay port has been renamed.
-     * @param pluginId Client Id
-     * @param value1   Port Id
-     * @param valueStr New port name
+     * @a pluginId Client Id
+     * @a value1   Port Id
+     * @a valueStr New port name
      */
     ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED = 26,
 
     /*!
      * A patchbay connection has been added.
-     * @param pluginId Connection Id
-     * @param valueStr Out group and port plus in group and port, in "og:op:ig:ip" syntax.
+     * @a pluginId Connection Id
+     * @a valueStr Out group and port plus in group and port, in "og:op:ig:ip" syntax.
      */
     ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED = 27,
 
     /*!
      * A patchbay connection has been removed.
-     * @param pluginId Connection Id
+     * @a pluginId Connection Id
      */
     ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED = 28,
 #endif
 
     /*!
      * Engine started.
-     * @param value1   Process mode
-     * @param value2   Transport mode
-     * @param valuestr Engine driver
+     * @a value1   Process mode
+     * @a value2   Transport mode
+     * @a valuestr Engine driver
      * @see EngineProcessMode
      * @see EngineTransportMode
      */
@@ -884,32 +884,32 @@ typedef enum {
 
     /*!
      * Engine process mode has changed.
-     * @param value1 New process mode
+     * @a value1 New process mode
      * @see EngineProcessMode
      */
     ENGINE_CALLBACK_PROCESS_MODE_CHANGED = 31,
 
     /*!
      * Engine transport mode has changed.
-     * @param value1 New transport mode
+     * @a value1 New transport mode
      * @see EngineTransportMode
      */
     ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED = 32,
 
     /*!
      * Engine buffer-size changed.
-     * @param value1 New buffer size
+     * @a value1 New buffer size
      */
     ENGINE_CALLBACK_BUFFER_SIZE_CHANGED = 33,
 
     /*!
      * Engine sample-rate changed.
-     * @param value3 New sample rate
+     * @a value3 New sample rate
      */
     ENGINE_CALLBACK_SAMPLE_RATE_CHANGED = 34,
 
     /*!
-     * Idle frontend.\n
+     * Idle frontend.
      * This is used by the engine during long operations that might block the frontend,
      * giving it the possibility to idle while the operation is still in place.
      */
@@ -917,13 +917,13 @@ typedef enum {
 
     /*!
      * Show a message as information.
-     * @param valueStr The message
+     * @a valueStr The message
      */
     ENGINE_CALLBACK_INFO = 36,
 
     /*!
      * Show a message as an error.
-     * @param valueStr The message
+     * @a valueStr The message
      */
     ENGINE_CALLBACK_ERROR = 37,
 
@@ -943,27 +943,27 @@ typedef enum {
  */
 typedef enum {
     /*!
-     * Debug.\n
+     * Debug.
      * This option is undefined and used only for testing purposes.
      */
     ENGINE_OPTION_DEBUG = 0,
 
     /*!
-     * Set the engine processing mode.\n
+     * Set the engine processing mode.
      * Default is ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS on Linux and ENGINE_PROCESS_MODE_CONTINUOUS_RACK for all other OSes.
      * @see EngineProcessMode
      */
     ENGINE_OPTION_PROCESS_MODE = 1,
 
     /*!
-     * Set the engine transport mode.\n
+     * Set the engine transport mode.
      * Default is ENGINE_TRANSPORT_MODE_JACK on Linux and ENGINE_TRANSPORT_MODE_INTERNAL for all other OSes.
      * @see EngineTransportMode
      */
     ENGINE_OPTION_TRANSPORT_MODE = 2,
 
     /*!
-     * Force mono plugins as stereo, by running 2 instances at the same time.\n
+     * Force mono plugins as stereo, by running 2 instances at the same time.
      * Default is false, but always true when process mode is ENGINE_PROCESS_MODE_CONTINUOUS_RACK.
      * @note Not supported by all plugins
      * @see PLUGIN_OPTION_FORCE_STEREO
@@ -971,55 +971,55 @@ typedef enum {
     ENGINE_OPTION_FORCE_STEREO = 3,
 
     /*!
-     * Use plugin bridges whenever possible.\n
+     * Use plugin bridges whenever possible.
      * Default is no, EXPERIMENTAL.
      */
     ENGINE_OPTION_PREFER_PLUGIN_BRIDGES = 4,
 
     /*!
-     * Use UI bridges whenever possible, otherwise UIs will be directly handled in the main backend thread.\n
+     * Use UI bridges whenever possible, otherwise UIs will be directly handled in the main backend thread.
      * Default is yes.
      */
     ENGINE_OPTION_PREFER_UI_BRIDGES = 5,
 
     /*!
-     * Make custom plugin UIs always-on-top.\n
+     * Make custom plugin UIs always-on-top.
      * Default is yes.
      */
     ENGINE_OPTION_UIS_ALWAYS_ON_TOP = 6,
 
     /*!
-     * Maximum number of parameters allowed.\n
+     * Maximum number of parameters allowed.
      * Default is MAX_DEFAULT_PARAMETERS.
      */
     ENGINE_OPTION_MAX_PARAMETERS = 7,
 
     /*!
-     * Timeout value for how much to wait for UI bridges to respond, in milliseconds.\n
+     * Timeout value for how much to wait for UI bridges to respond, in milliseconds.
      * Default is 4000 (4 seconds).
      */
     ENGINE_OPTION_UI_BRIDGES_TIMEOUT = 8,
 
     /*!
-     * Number of audio periods.\n
+     * Number of audio periods.
      * Default is 2.
      */
     ENGINE_OPTION_AUDIO_NUM_PERIODS = 9,
 
     /*!
-     * Audio buffer size.\n
+     * Audio buffer size.
      * Default is 512.
      */
     ENGINE_OPTION_AUDIO_BUFFER_SIZE = 10,
 
     /*!
-     * Audio sample rate.\n
+     * Audio sample rate.
      * Default is 44100.
      */
     ENGINE_OPTION_AUDIO_SAMPLE_RATE = 11,
 
     /*!
-     * Audio device (within a driver).\n
+     * Audio device (within a driver).
      * Default unset.
      */
     ENGINE_OPTION_AUDIO_DEVICE = 12,
@@ -1030,14 +1030,14 @@ typedef enum {
     ENGINE_OPTION_NSM_INIT = 13,
 
     /*!
-     * Set path to the binary files.\n
+     * Set path to the binary files.
      * Default unset.
      * @note Must be set for plugin and UI bridges to work
      */
     ENGINE_OPTION_PATH_BINARIES = 14,
 
     /*!
-     * Set path to the resource files.\n
+     * Set path to the resource files.
      * Default unset.
      * @note Must be set for some internal plugins to work
      */
@@ -1059,19 +1059,19 @@ typedef enum {
  */
 typedef enum {
     /*!
-     * Single client mode.\n
+     * Single client mode.
      * Inputs and outputs are added dynamically as needed by plugins.
      */
     ENGINE_PROCESS_MODE_SINGLE_CLIENT = 0,
 
     /*!
-     * Multiple client mode.\n
+     * Multiple client mode.
      * It has 1 master client + 1 client per plugin.
      */
     ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS = 1,
 
     /*!
-     * Single client, 'rack' mode.\n
+     * Single client, 'rack' mode.
      * Processes plugins in order of Id, with forced stereo always on.
      */
     ENGINE_PROCESS_MODE_CONTINUOUS_RACK = 2,
@@ -1102,7 +1102,7 @@ typedef enum {
     ENGINE_TRANSPORT_MODE_INTERNAL = 0,
 
     /*!
-     * Transport from JACK.\n
+     * Transport from JACK.
      * Only available if driver name is "JACK".
      */
     ENGINE_TRANSPORT_MODE_JACK = 1,
@@ -1123,13 +1123,13 @@ typedef enum {
  * File Callback Opcode */
 
 /*!
- * File callback opcodes.\n
+ * File callback opcodes.
  * Front-ends must always block-wait for user input.
  * @see FileCallbackFunc, CarlaEngine::setFileCallback() and carla_set_file_callback()
  */
 typedef enum {
     /*!
-     * Debug.\n
+     * Debug.
      * This opcode is undefined and used only for testing purposes.
      */
     FILE_CALLBACK_DEBUG = 0,
@@ -1154,37 +1154,37 @@ typedef enum {
  */
 enum PatchbayIcon {
     /*!
-     * Generic application icon.\n
+     * Generic application icon.
      * Used for all non-plugin clients that don't have a specific icon.
      */
     PATCHBAY_ICON_APPLICATION = 0,
 
     /*!
-     * Plugin icon.\n
+     * Plugin icon.
      * Used for all plugin clients that don't have a specific icon.
      */
     PATCHBAY_ICON_PLUGIN = 1,
 
     /*!
-     * Hardware icon.\n
+     * Hardware icon.
      * Used for hardware (audio or MIDI) clients.
      */
     PATCHBAY_ICON_HARDWARE = 2,
 
     /*!
-     * Carla icon.\n
+     * Carla icon.
      * Used for the main app.
      */
     PATCHBAY_ICON_CARLA = 3,
 
     /*!
-     * DISTRHO icon.\n
+     * DISTRHO icon.
      * Used for DISTRHO based plugins.
      */
     PATCHBAY_ICON_DISTRHO = 4,
 
     /*!
-     * File icon.\n
+     * File icon.
      * Used for file type plugins (like GIG and SF2).
      */
     PATCHBAY_ICON_FILE = 5
@@ -1194,7 +1194,7 @@ enum PatchbayIcon {
  * Carla Backend API (C stuff) */
 
 /*!
- * Engine callback function.\n
+ * Engine callback function.
  * Front-ends must never block indefinitely during a callback.
  * @see EngineCallbackOpcode, CarlaEngine::setCallback() and carla_set_engine_callback()
  */
@@ -1232,14 +1232,14 @@ typedef struct {
     int32_t rindex;
 
     /*!
-     * Currently mapped MIDI CC.\n
-     * A value lower than 0 means invalid or unused.\n
+     * Currently mapped MIDI CC.
+     * A value lower than 0 means invalid or unused.
      * Maximum allowed value is 95 (0x5F). - FIXME
      */
     int16_t midiCC;
 
     /*!
-     * Currently mapped MIDI channel.\n
+     * Currently mapped MIDI channel.
      * Counts from 0 to 15.
      */
     uint8_t midiChannel;
@@ -1412,13 +1412,13 @@ typedef struct {
     uint hints;
 
     /*!
-     * Available buffer sizes.\n
+     * Available buffer sizes.
      * Terminated with 0.
      */
     const uint32_t* bufferSizes;
 
     /*!
-     * Available sample rates.\n
+     * Available sample rates.
      * Terminated with 0.0.
      */
     const double* sampleRates;

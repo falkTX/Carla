@@ -485,162 +485,162 @@ PARAMETER_MAX = -9
 ENGINE_CALLBACK_DEBUG = 0
 
 # A plugin has been added.
-# @param pluginId Plugin Id
-# @param valueStr Plugin name
+# @a pluginId Plugin Id
+# @a valueStr Plugin name
 ENGINE_CALLBACK_PLUGIN_ADDED = 1
 
 # A plugin has been removed.
-# @param pluginId Plugin Id
+# @a pluginId Plugin Id
 ENGINE_CALLBACK_PLUGIN_REMOVED = 2
 
 # A plugin has been renamed.
-# @param pluginId Plugin Id
-# @param valueStr New plugin name
+# @a pluginId Plugin Id
+# @a valueStr New plugin name
 ENGINE_CALLBACK_PLUGIN_RENAMED = 3
 
 # A plugin has become unavailable.
-# @param pluginId Plugin Id
-# @param valueStr Related error string
+# @a pluginId Plugin Id
+# @a valueStr Related error string
 ENGINE_CALLBACK_PLUGIN_UNAVAILABLE = 4
 
 # A parameter value has changed.
-# @param pluginId Plugin Id
-# @param value1   Parameter index
-# @param value3   New parameter value
+# @a pluginId Plugin Id
+# @a value1   Parameter index
+# @a value3   New parameter value
 ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED = 5
 
 # A parameter default has changed.
-# @param pluginId Plugin Id
-# @param value1   Parameter index
-# @param value3   New default value
+# @a pluginId Plugin Id
+# @a value1   Parameter index
+# @a value3   New default value
 ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED = 6
 
 # A parameter's MIDI CC has changed.
-# @param pluginId Plugin Id
-# @param value1   Parameter index
-# @param value2   New MIDI CC
+# @a pluginId Plugin Id
+# @a value1   Parameter index
+# @a value2   New MIDI CC
 ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED = 7
 
 # A parameter's MIDI channel has changed.
-# @param pluginId Plugin Id
-# @param value1   Parameter index
-# @param value2   New MIDI channel
+# @a pluginId Plugin Id
+# @a value1   Parameter index
+# @a value2   New MIDI channel
 ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED = 8
 
 # A plugin option has changed.
-# @param pluginId Plugin Id
-# @param value1   Option
-# @param value2   New on/off state (1 for on, 0 for off)
+# @a pluginId Plugin Id
+# @a value1   Option
+# @a value2   New on/off state (1 for on, 0 for off)
 # @see PluginOptions
 ENGINE_CALLBACK_OPTION_CHANGED = 9
 
 # The current program of a plugin has changed.
-# @param pluginId Plugin Id
-# @param value1   New program index
+# @a pluginId Plugin Id
+# @a value1   New program index
 ENGINE_CALLBACK_PROGRAM_CHANGED = 10
 
 # The current MIDI program of a plugin has changed.
-# @param pluginId Plugin Id
-# @param value1   New MIDI program index
+# @a pluginId Plugin Id
+# @a value1   New MIDI program index
 ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED = 11
 
 # A plugin's custom UI state has changed.
-# @param pluginId Plugin Id
-# @param value1   New state, as follows:
+# @a pluginId Plugin Id
+# @a value1   New state, as follows:
 #                  0: UI is now hidden
 #                  1: UI is now visible
 #                 -1: UI has crashed and should not be shown again
 ENGINE_CALLBACK_UI_STATE_CHANGED = 12
 
 # A note has been pressed.
-# @param pluginId Plugin Id
-# @param value1   Channel
-# @param value2   Note
-# @param value3   Velocity
+# @a pluginId Plugin Id
+# @a value1   Channel
+# @a value2   Note
+# @a value3   Velocity
 ENGINE_CALLBACK_NOTE_ON = 13
 
 # A note has been released.
-# @param pluginId Plugin Id
-# @param value1   Channel
-# @param value2   Note
+# @a pluginId Plugin Id
+# @a value1   Channel
+# @a value2   Note
 ENGINE_CALLBACK_NOTE_OFF = 14
 
 # A plugin needs update.
-# @param pluginId Plugin Id
+# @a pluginId Plugin Id
 ENGINE_CALLBACK_UPDATE = 15
 
 # A plugin's data/information has changed.
-# @param pluginId Plugin Id
+# @a pluginId Plugin Id
 ENGINE_CALLBACK_RELOAD_INFO = 16
 
 # A plugin's parameters have changed.
-# @param pluginId Plugin Id
+# @a pluginId Plugin Id
 ENGINE_CALLBACK_RELOAD_PARAMETERS = 17
 
 # A plugin's programs have changed.
-# @param pluginId Plugin Id
+# @a pluginId Plugin Id
 ENGINE_CALLBACK_RELOAD_PROGRAMS = 18
 
 # A plugin state has changed.
-# @param pluginId Plugin Id
+# @a pluginId Plugin Id
 ENGINE_CALLBACK_RELOAD_ALL = 19
 
 # A patchbay client has been added.
-# @param pluginId Client Id
-# @param value1   Client icon
-# @param value2   Plugin Id (-1 if not a plugin)
-# @param valueStr Client name
+# @a pluginId Client Id
+# @a value1   Client icon
+# @a value2   Plugin Id (-1 if not a plugin)
+# @a valueStr Client name
 # @see PatchbayIcon
 ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED = 20
 
 # A patchbay client has been removed.
-# @param pluginId Client Id
+# @a pluginId Client Id
 ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED = 21
 
 # A patchbay client has been renamed.
-# @param pluginId Client Id
-# @param valueStr New client name
+# @a pluginId Client Id
+# @a valueStr New client name
 ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED = 22
 
 # A patchbay client data has changed.
-# @param pluginId Client Id
-# @param value1   New icon
-# @param value2   New plugin Id (-1 if not a plugin)
+# @a pluginId Client Id
+# @a value1   New icon
+# @a value2   New plugin Id (-1 if not a plugin)
 # @see PatchbayIcon
 ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED = 23
 
 # A patchbay port has been added.
-# @param pluginId Client Id
-# @param value1   Port Id
-# @param value2   Port hints
-# @param valueStr Port name
+# @a pluginId Client Id
+# @a value1   Port Id
+# @a value2   Port hints
+# @a valueStr Port name
 # @see PatchbayPortHints
 ENGINE_CALLBACK_PATCHBAY_PORT_ADDED = 24
 
 # A patchbay port has been removed.
-# @param pluginId Client Id
-# @param value1   Port Id
+# @a pluginId Client Id
+# @a value1   Port Id
 ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED = 25
 
 # A patchbay port has been renamed.
-# @param pluginId Client Id
-# @param value1   Port Id
-# @param valueStr New port name
+# @a pluginId Client Id
+# @a value1   Port Id
+# @a valueStr New port name
 ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED = 26
 
 # A patchbay connection has been added.
-# @param pluginId Connection Id
-# @param valueStr Out group, port plus in group and port, in "og:op:ig:ip" syntax.
+# @a pluginId Connection Id
+# @a valueStr Out group, port plus in group and port, in "og:op:ig:ip" syntax.
 ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED = 27
 
 # A patchbay connection has been removed.
-# @param pluginId Connection Id
+# @a pluginId Connection Id
 ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED = 28
 
 # Engine started.
-# @param value1   Process mode
-# @param value2   Transport mode
-# @param valuestr Engine driver
+# @a value1   Process mode
+# @a value2   Transport mode
+# @a valuestr Engine driver
 # @see EngineProcessMode
 # @see EngineTransportMode
 ENGINE_CALLBACK_ENGINE_STARTED = 29
@@ -649,21 +649,21 @@ ENGINE_CALLBACK_ENGINE_STARTED = 29
 ENGINE_CALLBACK_ENGINE_STOPPED = 30
 
 # Engine process mode has changed.
-# @param value1 New process mode
+# @a value1 New process mode
 # @see EngineProcessMode
 ENGINE_CALLBACK_PROCESS_MODE_CHANGED = 31
 
 # Engine transport mode has changed.
-# @param value1 New transport mode
+# @a value1 New transport mode
 # @see EngineTransportMode
 ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED = 32
 
 # Engine buffer-size changed.
-# @param value1 New buffer size
+# @a value1 New buffer size
 ENGINE_CALLBACK_BUFFER_SIZE_CHANGED = 33
 
 # Engine sample-rate changed.
-# @param value3 New sample rate
+# @a value3 New sample rate
 ENGINE_CALLBACK_SAMPLE_RATE_CHANGED = 34
 
 # Idle frontend.
@@ -672,11 +672,11 @@ ENGINE_CALLBACK_SAMPLE_RATE_CHANGED = 34
 ENGINE_CALLBACK_IDLE = 35
 
 # Show a message as information.
-# @param valueStr The message
+# @a valueStr The message
 ENGINE_CALLBACK_INFO = 36
 
 # Show a message as an error.
-# @param valueStr The message
+# @a valueStr The message
 ENGINE_CALLBACK_ERROR = 37
 
 # The engine has crashed or malfunctioned and will no longer work.
@@ -1308,7 +1308,7 @@ class Host(object):
         self._fileCallback = FileCallbackFunc(func)
         self.lib.carla_set_file_callback(self._fileCallback, None)
 
-    # Load a file of any type.\n
+    # Load a file of any type.
     # This will try to load a generic file as a plugin,
     # either by direct handling (GIG, SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
     # @param Filename Filename
@@ -1391,7 +1391,7 @@ class Host(object):
     def remove_all_plugins(self):
         return bool(self.lib.carla_remove_all_plugins())
 
-    # Rename a plugin.\n
+    # Rename a plugin.
     # Returns the new name, or NULL if the operation failed.
     # @param pluginId Plugin to rename
     # @param newName  New plugin name
@@ -1403,7 +1403,7 @@ class Host(object):
     def clone_plugin(self, pluginId):
         return bool(self.lib.carla_clone_plugin(pluginId))
 
-    # Prepare replace of a plugin.\n
+    # Prepare replace of a plugin.
     # The next call to carla_add_plugin() will use this id, replacing the current plugin.
     # @param pluginId Plugin to replace
     # @note This function requires carla_add_plugin() to be called afterwards *as soon as possible*.
@@ -1543,7 +1543,7 @@ class Host(object):
     def get_midi_program_name(self, pluginId, midiProgramId):
         return charPtrToString(self.lib.carla_get_midi_program_name(pluginId, midiProgramId))
 
-    # Get a plugin's real name.\n
+    # Get a plugin's real name.
     # This is the name the plugin uses to identify itself; may not be unique.
     # @param pluginId Plugin
     def get_real_plugin_name(self, pluginId):
@@ -1688,7 +1688,7 @@ class Host(object):
     def set_chunk_data(self, pluginId, chunkData):
         self.lib.carla_set_chunk_data(pluginId, chunkData.encode("utf-8"))
 
-    # Tell a plugin to prepare for save.\n
+    # Tell a plugin to prepare for save.
     # This should be called before saving custom data sets.
     # @param pluginId Plugin
     def prepare_for_save(self, pluginId):
@@ -1704,7 +1704,7 @@ class Host(object):
     def randomize_parameters(self, pluginId):
         self.lib.carla_randomize_parameters(pluginId)
 
-    # Send a single note of a plugin.\n
+    # Send a single note of a plugin.
     # If velocity is 0, note-off is sent; note-on otherwise.
     # @param pluginId Plugin
     # @param channel  Note channel
