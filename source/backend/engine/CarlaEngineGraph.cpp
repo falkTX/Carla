@@ -1240,7 +1240,7 @@ bool CarlaEngine::patchbayConnect(const uint groupA, const uint portA, const uin
 {
     CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
     CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(), false);
-    carla_stdout("CarlaEngine::patchbayConnect(%u, %u, %u, %u)", groupA, portA, groupB, portB);
+    carla_debug("CarlaEngine::patchbayConnect(%u, %u, %u, %u)", groupA, portA, groupB, portB);
 
     if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
     {
@@ -1258,7 +1258,7 @@ bool CarlaEngine::patchbayDisconnect(const uint connectionId)
 {
     CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
     CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(), false);
-    carla_stdout("CarlaEngine::patchbayDisconnect(%u)", connectionId);
+    carla_debug("CarlaEngine::patchbayDisconnect(%u)", connectionId);
 
     if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
     {
