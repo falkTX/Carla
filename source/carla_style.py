@@ -48,24 +48,33 @@ class CarlaApplication(object):
 
         CWDl = CWD.lower()
 
+        # standalone, installed system-wide linux
         if libPrefix is not None:
             stylesDir = os.path.join(libPrefix, "lib", "carla")
 
-        elif CWDl.endswith("resources"):
-            if CWDl.endswith("native-plugins%sresources" % os.sep):
-                stylesDir = os.path.abspath(os.path.join(CWD, "..", "..", "..", "..", "bin"))
-            elif "carla-native.lv2" in sys.argv[0].lower():
-                stylesDir = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lv2", "carla-native.lv2"))
-            else:
-                stylesDir = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lib", "carla"))
-
+        # standalone, local source
         elif CWDl.endswith("source"):
             stylesDir = os.path.abspath(os.path.join(CWD, "..", "bin"))
 
-        elif CWDl.endswith("bin") or os.path.isfile(sys.path[0]):
+        # plugin
+        elif CWDl.endswith("resources"):
+            # system-wide
+            if CWDl.endswith("/share/carla/resources"):
+                stylesDir = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lib", "carla"))
+
+            # local source
+            elif CWDl.endswith("native-plugins%sresources" % os.sep):
+                stylesDir = os.path.abspath(os.path.join(CWD, "..", "..", "..", "..", "bin"))
+
+            # other
+            else:
+                stylesDir = os.path.abspath(os.path.join(CWD, ".."))
+
+        # everything else
+        else:
             stylesDir = CWD
 
-        if stylesDir and os.path.exists(stylesDir):
+        if os.path.exists(stylesDir):
             QApplication.addLibraryPath(stylesDir)
 
         elif not config_UseQt5:

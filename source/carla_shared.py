@@ -520,40 +520,48 @@ def initHost(initName, libPrefix = None, failError = True):
     # Set binary dir
 
     CWDl = CWD.lower()
+    print(CWD)
 
+    # standalone, installed system-wide linux
     if libPrefix is not None:
-        gCarla.pathBinaries = os.path.join(libPrefix, "lib", "carla")
+        gCarla.pathBinaries  = os.path.join(libPrefix, "lib", "carla")
+        gCarla.pathResources = os.path.join(libPrefix, "share", "carla", "resources")
 
-    elif CWDl.endswith("resources"):
-        if CWDl.endswith("native-plugins%sresources" % os.sep):
-            gCarla.pathBinaries = os.path.abspath(os.path.join(CWD, "..", "..", "..", "..", "bin"))
-        elif "carla-native.lv2" in sys.argv[0].lower():
-            gCarla.pathBinaries = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lv2", "carla-native.lv2"))
-        else:
-            gCarla.pathBinaries = os.path.abspath(os.path.join(CWD, ".."))
-
+    # standalone, local source
     elif CWDl.endswith("source"):
-        gCarla.pathBinaries = os.path.abspath(os.path.join(CWD, "..", "bin"))
+        gCarla.pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "bin"))
+        gCarla.pathResources = os.path.join(gCarla.pathBinaries, "resources")
 
-    elif CWDl.endswith("bin") or os.path.isfile(sys.path[0]):
-        gCarla.pathBinaries = CWD
+    # plugin
+    elif CWDl.endswith("resources"):
+        # system-wide
+        if CWDl.endswith("/share/carla/resources"):
+            gCarla.pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lib", "carla"))
+            gCarla.pathResources = CWD
+
+        # local source
+        elif CWDl.endswith("native-plugins%sresources" % os.sep):
+            gCarla.pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "..", "..", "..", "bin"))
+            gCarla.pathResources = CWD
+
+        # other
+        else:
+            gCarla.pathBinaries  = os.path.abspath(os.path.join(CWD, ".."))
+            gCarla.pathResources = CWD
+
+    # everything else
+    else:
+        gCarla.pathBinaries  = CWD
+        gCarla.pathResources = os.path.join(gCarla.pathBinaries, "resources")
 
     # -------------------------------------------------------------
     # Fail if binary dir is not found
 
-    if not (gCarla.pathBinaries or gCarla.isPlugin):
+    if not (os.path.exists(gCarla.pathBinaries) or gCarla.isPlugin):
         if failError:
             QMessageBox.critical(None, "Error", "Failed to find the carla library, cannot continue")
             sys.exit(1)
         return
-
-    # -------------------------------------------------------------
-    # Set resources dir
-
-    if libPrefix is not None:
-        gCarla.pathResources = os.path.join(libPrefix, "share", "carla", "resources")
-    else:
-        gCarla.pathResources = os.path.join(gCarla.pathBinaries, "resources")
 
     # -------------------------------------------------------------
     # Print info
