@@ -77,6 +77,9 @@ class CarlaApplication(object):
         if os.path.exists(stylesDir):
             QApplication.addLibraryPath(stylesDir)
 
+            if WINDOWS:
+                stylesDir = ""
+
         elif not config_UseQt5:
             self._createApp(appName)
             return
