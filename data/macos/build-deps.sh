@@ -48,24 +48,6 @@ cd ..
 fi
 
 # ------------------------------------------------------------------------------------
-# zlib
-
-if [ ! -d zlib-1.2.8 ]; then
-curl -O http://zlib.net/zlib-1.2.8.tar.gz
-tar -xf zlib-1.2.8.tar.gz
-fi
-
-if [ ! -f zlib-1.2.8_$ARCH/build-done ]; then
-cp -r zlib-1.2.8 zlib-1.2.8_$ARCH
-cd zlib-1.2.8_$ARCH
-./configure --static --prefix=$PREFIX
-make
-sudo make install
-touch build-done
-cd ..
-fi
-
-# ------------------------------------------------------------------------------------
 # liblo
 
 if [ ! -d liblo-0.28 ]; then
@@ -77,6 +59,30 @@ if [ ! -f liblo-0.28_$ARCH/build-done ]; then
 cp -r liblo-0.28 liblo-0.28_$ARCH
 cd liblo-0.28_$ARCH
 ./configure --enable-static --disable-shared --prefix=$PREFIX
+make
+sudo make install
+touch build-done
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+
+if [ "$ARCH" == "32" ]; then
+return
+fi
+
+# ------------------------------------------------------------------------------------
+# zlib
+
+if [ ! -d zlib-1.2.8 ]; then
+curl -O http://zlib.net/zlib-1.2.8.tar.gz
+tar -xf zlib-1.2.8.tar.gz
+fi
+
+if [ ! -f zlib-1.2.8_$ARCH/build-done ]; then
+cp -r zlib-1.2.8 zlib-1.2.8_$ARCH
+cd zlib-1.2.8_$ARCH
+./configure --static --prefix=$PREFIX
 make
 sudo make install
 touch build-done
