@@ -75,8 +75,13 @@ struct BigStackBuffer {
     uint8_t  buf[size];
 };
 
-#define HeapBuffer_INIT  {0, 0, 0, 0, false, nullptr}
-#define StackBuffer_INIT {0, 0, 0, false, {0}}
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+# define HeapBuffer_INIT  {0, 0, 0, 0, false, nullptr}
+# define StackBuffer_INIT {0, 0, 0, false, {0}}
+#else
+# define HeapBuffer_INIT
+# define StackBuffer_INIT
+#endif
 
 // -----------------------------------------------------------------------
 // CarlaRingBuffer templated class
@@ -387,7 +392,12 @@ class CarlaHeapRingBuffer : public CarlaRingBuffer<HeapBuffer>
 {
 public:
     CarlaHeapRingBuffer() noexcept
-        : fHeapBuffer(HeapBuffer_INIT) {}
+        : fHeapBuffer(HeapBuffer_INIT)
+    {
+#ifndef CARLA_PROPER_CPP11_SUPPORT
+        carla_zeroStruct(fHeapBuffer);
+#endif
+    }
 
     ~CarlaHeapRingBuffer() noexcept override
     {
@@ -440,7 +450,11 @@ public:
     CarlaStackRingBuffer() noexcept
         : fStackBuffer(StackBuffer_INIT)
     {
+#ifdef CARLA_PROPER_CPP11_SUPPORT
         setRingBuffer(&fStackBuffer, false);
+#else
+        setRingBuffer(&fStackBuffer, true);
+#endif
     }
 
 private:

@@ -26,7 +26,7 @@
 #endif
 
 // disable -Wdocumentation for LV2 headers
-#if defined(__clang__)
+#if defined(__clang__) && (__clang_major__ * 100 + __clang_minor__) > 300
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wdocumentation"
 #endif
@@ -71,7 +71,7 @@
 #include "sratom/sratom.h"
 
 // enable -Wdocumentation again
-#if defined(__clang__)
+#if defined(__clang__) && (__clang_major__ * 100 + __clang_minor__) > 300
 # pragma clang diagnostic pop
 #endif
 

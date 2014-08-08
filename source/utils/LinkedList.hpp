@@ -67,8 +67,15 @@ protected:
 
     AbstractLinkedList() noexcept
         : kDataSize(sizeof(Data)),
-          fCount(0),
-          fQueue({&fQueue, &fQueue}) {}
+          fCount(0)
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+        , fQueue({&fQueue, &fQueue}) {}
+#else
+    {
+        fQueue.next = &fQueue;
+        fQueue.prev = &fQueue;
+    }
+#endif
 
 public:
     virtual ~AbstractLinkedList() noexcept

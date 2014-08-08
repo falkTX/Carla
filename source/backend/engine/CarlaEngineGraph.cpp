@@ -93,10 +93,18 @@ RackGraph::Audio::Audio() noexcept
       connectedIn1(),
       connectedIn2(),
       connectedOut1(),
-      connectedOut2(),
-      inBuf{0, 0},
+      connectedOut2()
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+    , inBuf{0, 0},
       inBufTmp{0, 0},
       outBuf{0, 0} {}
+#else
+    {
+        inBuf[0]    = inBuf[1]    = nullptr;
+        inBufTmp[0] = inBufTmp[1] = nullptr;
+        outBuf[0]   = outBuf[1]   = nullptr;
+    }
+#endif
 
 // -----------------------------------------------------------------------
 // RackGraph MIDI
@@ -149,10 +157,6 @@ RackGraph::RackGraph(const uint32_t bufferSize, const uint32_t ins, const uint32
       audio(),
       midi()
 {
-    audio.inBuf[0]    = audio.inBuf[1]    = nullptr;
-    audio.inBufTmp[0] = audio.inBufTmp[1] = nullptr;
-    audio.outBuf[0]   = audio.outBuf[1]   = nullptr;
-
     setBufferSize(bufferSize);
 }
 

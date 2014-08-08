@@ -108,7 +108,7 @@ ifeq ($(TESTBUILD),true)
 BASE_FLAGS += -Werror -Wcast-qual -Wconversion -Wformat -Wformat-security -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wundef -Wwrite-strings
 BASE_FLAGS += -Wfloat-equal -Wpointer-arith -Wabi -Winit-self -Wuninitialized #-Wstrict-overflow=5
 ifeq ($(CC),clang)
-BASE_FLAGS += -Wdocumentation -Wdocumentation-unknown-command
+# BASE_FLAGS += -Wdocumentation -Wdocumentation-unknown-command
 # BASE_FLAGS += -Weverything
 else
 BASE_FLAGS += -Wcast-align -Wunsafe-loop-optimizations

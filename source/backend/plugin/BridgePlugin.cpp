@@ -106,8 +106,14 @@ struct BridgeAudioPool {
     BridgeAudioPool() noexcept
         : filename(),
           data(nullptr),
-          size(0),
-          shm(shm_t_INIT) {}
+          size(0)
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+        , shm(shm_t_INIT) {}
+#else
+    {
+        carla_shm_init(shm);
+    }
+#endif
 
     ~BridgeAudioPool() noexcept
     {
@@ -159,10 +165,16 @@ struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
 
     BridgeRtControl()
         : filename(),
-          data(nullptr),
-          shm(shm_t_INIT) {}
+          data(nullptr)
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+        , shm(shm_t_INIT) {}
+#else
+    {
+        carla_shm_init(shm);
+    }
+#endif
 
-    ~BridgeRtControl()
+    ~BridgeRtControl() noexcept override
     {
         // should be cleared by now
         CARLA_SAFE_ASSERT(data == nullptr);
@@ -237,10 +249,16 @@ struct BridgeNonRtControl : public CarlaRingBuffer<BigStackBuffer> {
     BridgeNonRtControl() noexcept
         : mutex(),
           filename(),
-          data(nullptr),
-          shm(shm_t_INIT) {}
+          data(nullptr)
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+        , shm(shm_t_INIT) {}
+#else
+    {
+        carla_shm_init(shm);
+    }
+#endif
 
-    ~BridgeNonRtControl() noexcept
+    ~BridgeNonRtControl() noexcept override
     {
         // should be cleared by now
         CARLA_SAFE_ASSERT(data == nullptr);

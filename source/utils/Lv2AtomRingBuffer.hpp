@@ -31,15 +31,27 @@ public:
     Lv2AtomRingBuffer() noexcept
         : fMutex(),
           fHeapBuffer(HeapBuffer_INIT),
-          fNeedsDataDelete(true),
-          fRetAtom{{0,0}, {0}} {}
+          fNeedsDataDelete(true)
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+        , fRetAtom{{0,0}, {0}} {}
+#else
+    {
+        carla_zeroStruct(fHeapBuffer);
+    }
+#endif
 
     Lv2AtomRingBuffer(Lv2AtomRingBuffer& ringBuf, uint8_t buf[]) noexcept
         : fMutex(),
           fHeapBuffer(HeapBuffer_INIT),
-          fNeedsDataDelete(false),
-          fRetAtom{{0,0}, {0}}
+          fNeedsDataDelete(false)
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+        , fRetAtom{{0,0}, {0}}
     {
+#else
+    {
+        carla_zeroStruct(fHeapBuffer);
+#endif
+
         fHeapBuffer.buf  = buf;
         fHeapBuffer.size = ringBuf.fHeapBuffer.size;
 

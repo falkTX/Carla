@@ -247,7 +247,7 @@ public:
 
         {
             const ScopedSingleProcessLocker spl(this, true);
-            fInstance->setStateInformation(data, dataSize);
+            fInstance->setStateInformation(data, static_cast<int>(dataSize));
         }
 
 #ifdef BUILD_BRIDGE

@@ -114,7 +114,7 @@ struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
         jackbridge_shm_init(shm);
     }
 
-    ~BridgeRtControl() noexcept
+    ~BridgeRtControl() noexcept override
     {
         // should be cleared by now
         CARLA_SAFE_ASSERT(data == nullptr);
@@ -175,7 +175,7 @@ struct BridgeNonRtControl : public CarlaRingBuffer<BigStackBuffer> {
         jackbridge_shm_init(shm);
     }
 
-    ~BridgeNonRtControl() noexcept
+    ~BridgeNonRtControl() noexcept override
     {
         // should be cleared by now
         CARLA_SAFE_ASSERT(data == nullptr);

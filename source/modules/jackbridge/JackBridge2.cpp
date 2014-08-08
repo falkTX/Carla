@@ -101,8 +101,10 @@ bool jackbridge_sem_post(void* sem) noexcept
 
 bool jackbridge_sem_timedwait(void* sem, int secs) noexcept
 {
+    CARLA_SAFE_ASSERT_RETURN(secs > 0, false);
+
 #ifdef CARLA_OS_MAC
-        alarm(secs);
+        alarm(static_cast<uint>(secs));
         try {
             return (sem_wait((sem_t*)sem) == 0);
         } CARLA_SAFE_EXCEPTION_RETURN("sem_wait", false);
