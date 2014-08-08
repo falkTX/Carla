@@ -78,7 +78,9 @@ class ZynAddSubFxPrograms
 public:
     ZynAddSubFxPrograms()
         : fInitiated(false),
+#ifdef CARLA_PROPER_CPP11_SUPPORT
           fRetProgram({0, 0, nullptr}),
+#endif
           fPrograms() {}
 
     ~ZynAddSubFxPrograms()
@@ -318,7 +320,7 @@ public:
     void maybeReinit(const NativeHostDescriptor* const host)
     {
         if (host->get_buffer_size(host->handle) == static_cast<uint32_t>(synth->buffersize) &&
-            host->get_sample_rate(host->handle) == static_cast<double>(synth->samplerate))
+            carla_compareFloats(host->get_sample_rate(host->handle), static_cast<double>(synth->samplerate)))
             return;
 
         reinit(host);

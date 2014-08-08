@@ -72,7 +72,9 @@ public:
         : fHandle(nullptr),
           fHost(),
           fDescriptor(desc),
+#ifdef CARLA_PROPER_CPP11_SUPPORT
           fProgramDesc({0, 0, nullptr}),
+#endif
           fMidiEventCount(0),
           fTimeInfo(),
           fIsProcessing(false),
