@@ -25,7 +25,7 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
-    from PyQt5.QtCore import QSettings
+    from PyQt5.QtCore import Qt, QSettings
     from PyQt5.QtGui import QColor, QFont, QPalette
     from PyQt5.QtWidgets import QApplication
 else:
@@ -234,6 +234,9 @@ class CarlaApplication(object):
             self.fApp.setWindowIcon(QIcon(":/scalable/carla-control.svg"))
         else:
             self.fApp.setWindowIcon(QIcon(":/scalable/carla.svg"))
+
+        if MACOS and config_UseQt5:
+            self.fApp.setAttribute(Qt.AA_DontShowIconsInMenus)
 
     def arguments(self):
         return self.fApp.arguments()

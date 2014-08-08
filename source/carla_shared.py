@@ -57,10 +57,7 @@ from carla_backend import *
 # Platform specific stuff
 
 if MACOS:
-    if config_UseQt5:
-        pass
-        #from PyQt5.QtGui import qt_mac_set_menubar_icons
-    else:
+    if not config_UseQt5:
         from PyQt4.QtGui import qt_mac_set_menubar_icons
         qt_mac_set_menubar_icons(False)
 

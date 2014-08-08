@@ -27,7 +27,7 @@ from carla_config import *
 if config_UseQt5:
     from PyQt5.QtCore import qCritical, QFileInfo, QModelIndex, QTimer
     from PyQt5.QtGui import QPalette
-    from PyQt5.QtWidgets import QApplication, QFileSystemModel, QListWidgetItem, QMainWindow
+    from PyQt5.QtWidgets import QAction, QApplication, QFileSystemModel, QListWidgetItem, QMainWindow
 else:
     from PyQt4.QtCore import qCritical, QFileInfo, QModelIndex, QTimer
     from PyQt4.QtGui import QApplication, QFileSystemModel, QListWidgetItem, QMainWindow, QPalette
@@ -174,6 +174,14 @@ class HostWindow(QMainWindow):
             gCarla.gui  = self
             gCarla.host = Host("")
             self.fContainer = CarlaDummyW(self)
+
+        if MACOS and config_UseQt5:
+            self.ui.act_file_quit.setMenuRole(QAction.QuitRole)
+            self.ui.act_settings_configure.setMenuRole(QAction.PreferencesRole)
+            self.ui.act_help_about.setMenuRole(QAction.AboutRole)
+            self.ui.act_help_about_qt.setMenuRole(QAction.AboutQtRole)
+            self.ui.menu_Settings.setTitle("Panels")
+            #self.ui.menu_Help.hide()
 
         # -------------------------------------------------------------
         # Set callback, TODO put somewhere else
