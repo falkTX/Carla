@@ -5,6 +5,7 @@
 # Imports (cx_Freeze)
 
 from cx_Freeze import setup, Executable
+from os import getenv
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
@@ -14,7 +15,9 @@ from carla_host import VERSION
 # ------------------------------------------------------------------------------------------------------------
 
 options  = {
-  "packages": ["re", "sip", "subprocess", "inspect"]
+  "packages": ["re", "sip", "subprocess", "inspect"],
+  "create_shared_zip":    False,
+  "append_script_to_exe": True
 }
 
 boptions = {
@@ -25,6 +28,6 @@ setup(name = "Carla",
       version = VERSION,
       description = "Carla Plugin Host",
       options = {"build_exe": options, "bdist_mac": boptions},
-      executables = [Executable("./source/Carla.pyw")])
+      executables = [Executable("./source/%s.pyw" % getenv("SCRIPT_NAME"))])
 
 # ------------------------------------------------------------------------------------------------------------
