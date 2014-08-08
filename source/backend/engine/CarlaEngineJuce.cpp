@@ -48,15 +48,15 @@ struct JuceCleanup : public DeletedAtShutdown {
 static void initJuceDevicesIfNeeded()
 {
     static AudioDeviceManager sDeviceManager;
-    static bool needsInit = true;
 
-    if (! needsInit)
+    if (gDeviceTypes.size() != 0)
         return;
 
-    needsInit = false;
-    new JuceCleanup();
-
     sDeviceManager.createAudioDeviceTypes(gDeviceTypes);
+
+    CARLA_SAFE_ASSERT_RETURN(gDeviceTypes.size() != 0,);
+
+    new JuceCleanup();
 
     // remove JACK from device list
     for (int i=0, count=gDeviceTypes.size(); i < count; ++i)
