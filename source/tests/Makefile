@@ -105,6 +105,12 @@ RDF: RDF.cpp ../modules/ladspa_rdf.hpp ../modules/lv2_rdf.hpp
 
 # --------------------------------------------------------------
 
+sem: sem.cpp ../modules/jackbridge/*
+	$(CXX) $< -Wall -Wextra -O0 -g -I../utils -I../includes -DREAL_BUILD -o $@
+	./$@
+
+# --------------------------------------------------------------
+
 ChildProcess: ChildProcess.cpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) ../modules/juce_core.a -ldl -lpthread -lrt -o $@
 	valgrind --leak-check=full ./$@

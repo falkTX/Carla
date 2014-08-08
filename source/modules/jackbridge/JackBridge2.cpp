@@ -79,23 +79,37 @@ void* jackbridge_shm_map(void*, size_t) noexcept
 }
 #else //JACKBRIDGE_DUMMY
 
+#include <cerrno>
 #include <ctime>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <semaphore.h>
 
 #ifdef CARLA_OS_MAC
-# include <dispatch/dispatch.h>
-#else
-# include <semaphore.h>
+extern "C" {
+#include "osx_sem_timedwait.c"
+}
 #endif
+
+// TODO - check noexcept on OSX
 
 bool jackbridge_sem_init(void* sem) noexcept
 {
 #ifdef CARLA_OS_MAC
-    const dispatch_semaphore_t sema = dispatch_semaphore_create(0);
-    //std::memcpy(sem, sema, sizeof(dispatch_semaphore_t));
-    *(dispatch_semaphore_t*)sem = sema;
-    return sema != nullptr;
+    static ulong sCounter = 0;
+    ++sCounter;
+
+    std::srand(static_cast<uint>(std::time(nullptr)));
+
+    char strBuf[0xff+1];
+    carla_zeroChar(strBuf, 0xff+1);
+    std::sprintf(strBuf, "carla-sem-%i-%li", std::rand(), sCounter);
+
+    sem_unlink(strBuf);
+
+    sem_t* const sema = sem_open(strBuf, O_CREAT, O_RDWR, 0);
+    std::memcpy(sem, &sema, sizeof(sem_t*));
+    return (sema != nullptr && sema != SEM_FAILED);
 #else
     return (sem_init((sem_t*)sem, 1, 0) == 0);
 #endif
@@ -104,8 +118,7 @@ bool jackbridge_sem_init(void* sem) noexcept
 bool jackbridge_sem_destroy(void* sem) noexcept
 {
 #ifdef CARLA_OS_MAC
-    dispatch_release(*(dispatch_semaphore_t*)sem);
-    return true;
+    return (sem_close(*(sem_t**)sem) == 0);
 #else
     return (sem_destroy((sem_t*)sem) == 0);
 #endif
@@ -114,36 +127,37 @@ bool jackbridge_sem_destroy(void* sem) noexcept
 bool jackbridge_sem_post(void* sem) noexcept
 {
 #ifdef CARLA_OS_MAC
-    return (dispatch_semaphore_signal(*(dispatch_semaphore_t*)sem) == 0);
+    sem_t* const sema = *(sem_t**)sem;
 #else
-    return (sem_post((sem_t*)sem) == 0);
+    sem_t* const sema = (sem_t*)sem;
 #endif
+    return (sem_post(sema) == 0);
 }
 
 bool jackbridge_sem_timedwait(void* sem, int secs) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(secs > 0, false);
-
 #ifdef CARLA_OS_MAC
-    const dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, secs*1000);
-    return (dispatch_semaphore_wait(*(dispatch_semaphore_t*)sem, timeout) == 0);
+    sem_t* const sema = *(sem_t**)sem;
 #else
+    sem_t* const sema = (sem_t*)sem;
+#endif
+
     timespec timeout;
 
-# ifdef CARLA_OS_WIN
+#ifdef CARLA_OS_LINUX
+    clock_gettime(CLOCK_REALTIME, &timeout);
+#else
     timeval now;
     gettimeofday(&now, nullptr);
     timeout.tv_sec  = now.tv_sec;
     timeout.tv_nsec = now.tv_usec * 1000;
-# else
-    clock_gettime(CLOCK_REALTIME, &timeout);
-# endif
+#endif
     timeout.tv_sec += secs;
 
     try {
-        return (sem_timedwait((sem_t*)sem, &timeout) == 0);
+        return (sem_timedwait(sema, &timeout) == 0);
     } CARLA_SAFE_EXCEPTION_RETURN("sem_timedwait", false);
-#endif
 }
 
 bool jackbridge_shm_is_valid(const void* shm) noexcept
