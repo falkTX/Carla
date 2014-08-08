@@ -34,6 +34,9 @@ LINK_PLUGIN_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
 LINK_PLUGIN_FLAGS += $(JUCE_EVENTS_LIBS)
 LINK_PLUGIN_FLAGS += $(JUCE_GRAPHICS_LIBS)
 LINK_PLUGIN_FLAGS += $(JUCE_GUI_BASICS_LIBS)
+ifeq ($(MACOS),true)
+LINK_PLUGIN_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
+endif
 endif
 
 ifeq ($(HAVE_X11),true)
@@ -156,8 +159,12 @@ LIBS_NATIVE += \
 	../modules/juce_data_structures.a \
 	../modules/juce_events.a \
 	../modules/juce_graphics.a \
-	../modules/juce_gui_basics.a \
+	../modules/juce_gui_basics.a
+
+ifeq ($(MACOS),true)
+LIBS_NATIVE += \
 	../modules/juce_gui_extra.a
+endif
 endif
 
 ../../bin/carla-bridge-native: $(OBJS_NATIVE) $(LIBS_NATIVE)
@@ -215,7 +222,8 @@ LIBS_POSIX32 += \
 	../modules/juce_data_structures.posix32.a \
 	../modules/juce_events.posix32.a \
 	../modules/juce_graphics.posix32.a \
-	../modules/juce_gui_basics.posix32.a
+	../modules/juce_gui_basics.posix32.a \
+	../modules/juce_gui_extra.posix32.a
 endif
 
 ../../bin/carla-bridge-posix32: $(OBJS_POSIX32) $(LIBS_POSIX32)
@@ -273,7 +281,8 @@ LIBS_POSIX64 += \
 	../modules/juce_data_structures.posix64.a \
 	../modules/juce_events.posix64.a \
 	../modules/juce_graphics.posix64.a \
-	../modules/juce_gui_basics.posix64.a
+	../modules/juce_gui_basics.posix64.a \
+	../modules/juce_gui_extra.posix64.a
 endif
 
 ../../bin/carla-bridge-posix64: $(OBJS_POSIX64) $(LIBS_POSIX64)

@@ -27,7 +27,9 @@ STANDALONE_LIBS += ../modules/juce_data_structures.a
 STANDALONE_LIBS += ../modules/juce_events.a
 STANDALONE_LIBS += ../modules/juce_graphics.a
 STANDALONE_LIBS += ../modules/juce_gui_basics.a
+ifeq ($(MACOS),true)
 STANDALONE_LIBS += ../modules/juce_gui_extra.a
+endif
 else
 STANDALONE_LIBS += ../modules/rtaudio.a
 STANDALONE_LIBS += ../modules/rtmidi.a
@@ -51,7 +53,9 @@ STANDALONE_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
 STANDALONE_FLAGS += $(JUCE_EVENTS_LIBS)
 STANDALONE_FLAGS += $(JUCE_GRAPHICS_LIBS)
 STANDALONE_FLAGS += $(JUCE_GUI_BASICS_LIBS)
+ifeq ($(MACOS),true)
 STANDALONE_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
+endif
 else
 STANDALONE_FLAGS += $(RTAUDIO_LIBS)
 STANDALONE_FLAGS += $(RTMIDI_LIBS)

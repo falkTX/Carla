@@ -86,16 +86,19 @@ LIBS_posix32 += ../modules/juce_gui_basics.posix32.a
 LIBS_posix64 += ../modules/juce_gui_basics.posix64.a
 LIBS_win32   += ../modules/juce_gui_basics.win32.a
 LIBS_win64   += ../modules/juce_gui_basics.win64.a
+ifeq ($(MACOS),true)
+LIBS         += ../modules/juce_gui_extra.a
+LIBS_posix32 += ../modules/juce_gui_extra.posix32.a
+LIBS_posix64 += ../modules/juce_gui_extra.posix64.a
+endif
 LINK_FLAGS   += $(JUCE_AUDIO_PROCESSORS_LIBS)
 LINK_FLAGS   += $(JUCE_DATA_STRUCTURES_LIBS)
 LINK_FLAGS   += $(JUCE_EVENTS_LIBS)
 LINK_FLAGS   += $(JUCE_GRAPHICS_LIBS)
 LINK_FLAGS   += $(JUCE_GUI_BASICS_LIBS)
-endif
-
 ifeq ($(MACOS),true)
-LIBS         += ../modules/juce_gui_extra.a
 LINK_FLAGS   += $(JUCE_GUI_EXTRA_LIBS)
+endif
 endif
 
 POSIX_BUILD_FLAGS = $(BUILD_CXX_FLAGS)

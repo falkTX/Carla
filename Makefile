@@ -50,7 +50,9 @@ ALL_LIBS += source/modules/juce_data_structures.a
 ALL_LIBS += source/modules/juce_events.a
 ALL_LIBS += source/modules/juce_graphics.a
 ALL_LIBS += source/modules/juce_gui_basics.a
+ifeq ($(MACOS),true)
 ALL_LIBS += source/modules/juce_gui_extra.a
+endif
 else
 ALL_LIBS += source/modules/rtaudio.a
 ALL_LIBS += source/modules/rtmidi.a
