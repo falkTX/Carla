@@ -89,7 +89,7 @@ shm_t carla_shm_create(const char* const filename) noexcept
         ret.fd       = ::shm_open(filename, O_CREAT|O_EXCL|O_RDWR, 0600);
         ret.filename = (ret.fd >= 0) ? carla_strdup_safe(filename) : nullptr;
 
-        if (ret.filename == nullptr)
+        if (ret.fd >= 0 && ret.filename == nullptr)
         {
             ::close(ret.fd);
             ::shm_unlink(filename);
