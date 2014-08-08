@@ -46,9 +46,9 @@ public:
           fNeedsDataDelete(false)
 #ifdef CARLA_PROPER_CPP11_SUPPORT
         , fRetAtom{{0,0}, {0}}
+#endif
     {
-#else
-    {
+#ifndef CARLA_PROPER_CPP11_SUPPORT
         carla_zeroStruct(fHeapBuffer);
 #endif
 

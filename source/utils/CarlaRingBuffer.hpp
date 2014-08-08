@@ -392,12 +392,13 @@ class CarlaHeapRingBuffer : public CarlaRingBuffer<HeapBuffer>
 {
 public:
     CarlaHeapRingBuffer() noexcept
-        : fHeapBuffer(HeapBuffer_INIT)
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+        : fHeapBuffer(HeapBuffer_INIT) {}
+#else
     {
-#ifndef CARLA_PROPER_CPP11_SUPPORT
         carla_zeroStruct(fHeapBuffer);
-#endif
     }
+#endif
 
     ~CarlaHeapRingBuffer() noexcept override
     {
@@ -448,14 +449,16 @@ class CarlaStackRingBuffer : public CarlaRingBuffer<StackBuffer>
 {
 public:
     CarlaStackRingBuffer() noexcept
+#ifdef CARLA_PROPER_CPP11_SUPPORT
         : fStackBuffer(StackBuffer_INIT)
     {
-#ifdef CARLA_PROPER_CPP11_SUPPORT
         setRingBuffer(&fStackBuffer, false);
-#else
-        setRingBuffer(&fStackBuffer, true);
-#endif
     }
+#else
+    {
+        setRingBuffer(&fStackBuffer, true);
+    }
+#endif
 
 private:
     StackBuffer fStackBuffer;
