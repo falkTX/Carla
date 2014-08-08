@@ -79,7 +79,6 @@ void* jackbridge_shm_map(void*, size_t) noexcept
 }
 #else //JACKBRIDGE_DUMMY
 
-#include <cerrno>
 #include <ctime>
 #include <sys/time.h>
 #include <sys/types.h>
