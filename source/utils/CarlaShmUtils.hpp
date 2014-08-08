@@ -88,6 +88,13 @@ shm_t carla_shm_create(const char* const filename) noexcept
 #else
         ret.fd       = ::shm_open(filename, O_CREAT|O_EXCL|O_RDWR, 0600);
         ret.filename = (ret.fd >= 0) ? carla_strdup_safe(filename) : nullptr;
+
+        if (ret.filename == nullptr)
+        {
+            ::close(ret.fd);
+            ::shm_unlink(filename);
+            ret.fd = -1;
+        }
 #endif
     }
     catch(...) {
@@ -182,8 +189,11 @@ void* carla_shm_map(shm_t& shm, const std::size_t size) noexcept
         shm.map = map;
         return ptr;
 #else
-        const int ret = ::ftruncate(shm.fd, static_cast<off_t>(size));
-        CARLA_SAFE_ASSERT_RETURN(ret == 0, nullptr);
+        if (shm.filename != nullptr)
+        {
+            const int ret = ::ftruncate(shm.fd, static_cast<off_t>(size));
+            CARLA_SAFE_ASSERT_RETURN(ret == 0, nullptr);
+        }
 
         return ::mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED, shm.fd, 0);
 #endif

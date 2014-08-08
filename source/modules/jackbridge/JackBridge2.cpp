@@ -82,21 +82,42 @@ void* jackbridge_shm_map(void*, size_t) noexcept
 #include <ctime>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <semaphore.h>
+
+#ifdef CARLA_OS_MAC
+# include <dispatch/dispatch.h>
+#else
+# include <semaphore.h>
+#endif
 
 bool jackbridge_sem_init(void* sem) noexcept
 {
+#ifdef CARLA_OS_MAC
+    const dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+    //std::memcpy(sem, sema, sizeof(dispatch_semaphore_t));
+    *(dispatch_semaphore_t*)sem = sema;
+    return sema != nullptr;
+#else
     return (sem_init((sem_t*)sem, 1, 0) == 0);
+#endif
 }
 
 bool jackbridge_sem_destroy(void* sem) noexcept
 {
+#ifdef CARLA_OS_MAC
+    dispatch_release(*(dispatch_semaphore_t*)sem);
+    return true;
+#else
     return (sem_destroy((sem_t*)sem) == 0);
+#endif
 }
 
 bool jackbridge_sem_post(void* sem) noexcept
 {
+#ifdef CARLA_OS_MAC
+    return (dispatch_semaphore_signal(*(dispatch_semaphore_t*)sem) == 0);
+#else
     return (sem_post((sem_t*)sem) == 0);
+#endif
 }
 
 bool jackbridge_sem_timedwait(void* sem, int secs) noexcept
@@ -104,26 +125,24 @@ bool jackbridge_sem_timedwait(void* sem, int secs) noexcept
     CARLA_SAFE_ASSERT_RETURN(secs > 0, false);
 
 #ifdef CARLA_OS_MAC
-        alarm(static_cast<uint>(secs));
-        try {
-            return (sem_wait((sem_t*)sem) == 0);
-        } CARLA_SAFE_EXCEPTION_RETURN("sem_wait", false);
+    const dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, secs*1000);
+    return (dispatch_semaphore_wait(*(dispatch_semaphore_t*)sem, timeout) == 0);
 #else
-        timespec timeout;
+    timespec timeout;
 
 # ifdef CARLA_OS_WIN
-        timeval now;
-        gettimeofday(&now, nullptr);
-        timeout.tv_sec  = now.tv_sec;
-        timeout.tv_nsec = now.tv_usec * 1000;
+    timeval now;
+    gettimeofday(&now, nullptr);
+    timeout.tv_sec  = now.tv_sec;
+    timeout.tv_nsec = now.tv_usec * 1000;
 # else
-        clock_gettime(CLOCK_REALTIME, &timeout);
+    clock_gettime(CLOCK_REALTIME, &timeout);
 # endif
-        timeout.tv_sec += secs;
+    timeout.tv_sec += secs;
 
-        try {
-            return (sem_timedwait((sem_t*)sem, &timeout) == 0);
-        } CARLA_SAFE_EXCEPTION_RETURN("sem_timedwait", false);
+    try {
+        return (sem_timedwait((sem_t*)sem, &timeout) == 0);
+    } CARLA_SAFE_EXCEPTION_RETURN("sem_timedwait", false);
 #endif
 }
 
