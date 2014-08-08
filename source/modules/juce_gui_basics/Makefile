@@ -77,7 +77,7 @@ juce_gui_basics.cpp.%64.o: $(CPP_DEPS)
 
 # --------------------------------------------------------------
 
-MM_DEPS = juce_gui_basics.mm juce_gui_basics.h AppConfig.h */*.mm */*.cpp */*.h
+MM_DEPS = juce_gui_basics.cpp juce_gui_basics.h AppConfig.h */*.mm */*.cpp */*.h
 
 juce_gui_basics.mm.o: $(MM_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@

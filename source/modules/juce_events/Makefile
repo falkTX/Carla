@@ -77,7 +77,7 @@ juce_events.cpp.%64.o: $(CPP_DEPS)
 
 # --------------------------------------------------------------
 
-MM_DEPS = juce_events.mm juce_events.h AppConfig.h */*.mm */*.cpp */*.h
+MM_DEPS = juce_events.cpp juce_events.h AppConfig.h */*.mm */*.cpp */*.h
 
 juce_events.mm.o: $(MM_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@

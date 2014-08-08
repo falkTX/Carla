@@ -89,7 +89,7 @@ juce_audio_processors.cpp.%64.o: $(CPP_DEPS)
 
 # --------------------------------------------------------------
 
-MM_DEPS = juce_audio_processors.mm juce_audio_processors.h AppConfig.h */*.mm */*.cpp */*.h
+MM_DEPS = juce_audio_processors.cpp juce_audio_processors.h AppConfig.h */*.mm */*.cpp */*.h
 
 juce_audio_processors.mm.o: $(MM_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@

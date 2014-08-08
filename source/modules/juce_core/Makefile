@@ -77,7 +77,7 @@ juce_core.cpp.%64.o: $(CPP_DEPS)
 
 # --------------------------------------------------------------
 
-MM_DEPS = juce_core.mm juce_core.h AppConfig.h */*.mm */*.cpp */*.h
+MM_DEPS = juce_core.cpp juce_core.h AppConfig.h */*.mm */*.cpp */*.h
 
 juce_core.mm.o: $(MM_DEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
