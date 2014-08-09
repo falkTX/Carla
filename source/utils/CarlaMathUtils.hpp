@@ -52,7 +52,7 @@ T carla_minPositive(const T& v1, const T& v2) noexcept
         return (v2 > 0) ? v2 : 0;
     if (v2 < 0)
         return (v1 > 0) ? v1 : 0;
-    return (v1 < v2 ? v1 : v2);
+    return (v1 < v2) ? v1 : v2;
 }
 
 /*

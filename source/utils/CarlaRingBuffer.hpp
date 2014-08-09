@@ -284,7 +284,7 @@ public:
 protected:
     void setRingBuffer(BufferStruct* const ringBuf, const bool reset) noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(ringBuf != fBuffer,);
+        CARLA_SAFE_ASSERT_RETURN(fBuffer != ringBuf,);
 
         fBuffer = ringBuf;
 

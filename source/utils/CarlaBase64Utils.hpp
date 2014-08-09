@@ -54,7 +54,7 @@ bool isBase64Char(const char c)
     return (std::isalnum(c) || (c == '+') || (c == '/'));
 }
 
-}
+} // namespace CarlaBase64Helpers
 
 // -----------------------------------------------------------------------
 

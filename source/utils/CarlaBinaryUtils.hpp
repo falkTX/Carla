@@ -60,12 +60,6 @@ private:
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaMagic)
 };
-
-static const CarlaMagic& getCarlaMagicInstance()
-{
-    static CarlaMagic magic;
-    return magic;
-}
 #endif
 
 // -----------------------------------------------------------------------
@@ -79,7 +73,7 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
     if (filename == nullptr || filename[0] == '\0')
         return BINARY_NATIVE;
 
-    const CarlaMagic& magic(getCarlaMagicInstance());
+    static const CarlaMagic magic;
 
     const char* const output(magic.getFileDescription(filename));
 
@@ -87,7 +81,7 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
         return BINARY_NATIVE;
 
     if (std::strstr(output, "PE32 executable") != nullptr && std::strstr(output, "MS Windows") != nullptr)
-        return std::strstr(output, "x86-64") != nullptr ? BINARY_WIN64 : BINARY_WIN32;
+        return (std::strstr(output, "x86-64") != nullptr) ? BINARY_WIN64 : BINARY_WIN32;
 
     if (std::strstr(output, "ELF") != nullptr)
         return (std::strstr(output, "x86-64") != nullptr || std::strstr(output, "aarch64") != nullptr) ? BINARY_POSIX64 : BINARY_POSIX32;

@@ -65,7 +65,7 @@ bool lib_close(void* const lib) noexcept
 
 /*
  * Get a library symbol (must not be null).
- * May return null if the symbol is not found.
+ * Returns null if the symbol is not found.
  */
 static inline
 void* lib_symbol(void* const lib, const char* const symbol) noexcept

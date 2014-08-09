@@ -298,10 +298,7 @@ const char* carla_strdup_safe(const char* const strBuf) noexcept
 
     try {
         buffer = new char[bufferLen+1];
-    }
-    catch(...) {
-        return nullptr;
-    }
+    } CARLA_SAFE_EXCEPTION_RETURN("carla_strdup_safe", nullptr);
 
     if (strBuf != nullptr && bufferLen > 0)
         std::strncpy(buffer, strBuf, bufferLen);

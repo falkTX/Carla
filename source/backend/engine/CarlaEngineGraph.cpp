@@ -829,6 +829,7 @@ public:
             carla_zeroStruct<EngineEvent>(engineEvents, kMaxEngineEventInternalCount);
             fillEngineEventsFromJuceMidiBuffer(engineEvents, midi);
         }
+        midi.clear();
 
         const uint32_t bufferSize(static_cast<uint32_t>(audio.getNumSamples()));
 
@@ -1069,6 +1070,7 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float*
     {
         carla_zeroStruct<EngineEvent>(data->events.out, kMaxEngineEventInternalCount);
         fillEngineEventsFromJuceMidiBuffer(data->events.out, midiBuffer);
+        midiBuffer.clear();
     }
 }
 #endif
