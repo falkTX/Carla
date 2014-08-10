@@ -385,7 +385,7 @@ nekoui_instantiate(
   int ret;
   int i;
   char ch;
-  char ap2[18], ap26[18], ap27[18];
+  char ap2[24], ap26[24], ap27[24];
   strcpy(ap2,  "/usr/bin/python2");
   strcpy(ap26, "/usr/bin/python2.6");
   strcpy(ap27, "/usr/bin/python2,7");
