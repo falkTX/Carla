@@ -105,11 +105,11 @@ const char* const CARLA_BRIDGE_MSG_SAVED    = "CarlaBridgeSaved";   //!< Plugin 
 struct BridgeSemaphore {
     union {
         void* server;
-        char _padServer[32];
+        char _padServer[64];
     };
     union {
         void* client;
-        char _padClient[32];
+        char _padClient[64];
     };
 };
 
