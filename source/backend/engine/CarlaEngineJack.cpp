@@ -1991,6 +1991,7 @@ private:
         return 0;
     }
 
+    // NOTE: JACK1 returns void, JACK2 returns int
     static int carla_jack_port_rename_callback(jack_port_id_t port, const char* oldName, const char* newName, void* arg)
     {
         handlePtr->handleJackPortRenameCallback(port, oldName, newName);

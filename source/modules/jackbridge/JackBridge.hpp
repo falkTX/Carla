@@ -80,6 +80,8 @@
 #define JACK_POSITION_MASK (JackPositionBBT|JackPositionTimecode|JackBBTFrameOffset|JackAudioVideoRatio|JackVideoFrameOffset)
 #define EXTENDED_TIME_INFO
 
+extern "C" {
+
 enum JackOptions {
     JackNullOption    = 0x00,
     JackNoStartServer = 0x01,
@@ -156,7 +158,7 @@ typedef uint32_t jack_port_id_t;
 typedef uint64_t jack_time_t;
 typedef uint64_t jack_uuid_t;
 typedef uint64_t jack_unique_t;
-typedef unsigned char jack_midi_data_t;
+typedef uchar jack_midi_data_t;
 typedef float jack_default_audio_sample_t;
 
 typedef enum JackOptions jack_options_t;
@@ -261,6 +263,8 @@ typedef void (*JackTimebaseCallback)(jack_transport_state_t state, jack_nframes_
 typedef void (*JackSessionCallback)(jack_session_event_t* event, void* arg);
 typedef void (*JackPropertyChangeCallback)(jack_uuid_t subject, const char* key, jack_property_change_t change, void* arg);
 
+} // extern "C"
+
 #endif // ! JACKBRIDGE_DIRECT
 
 bool jackbridge_is_ok() noexcept;
@@ -303,7 +307,7 @@ CARLA_EXPORT jack_nframes_t jackbridge_get_sample_rate(jack_client_t* client);
 CARLA_EXPORT jack_nframes_t jackbridge_get_buffer_size(jack_client_t* client);
 CARLA_EXPORT float          jackbridge_cpu_load(jack_client_t* client);
 
-CARLA_EXPORT jack_port_t* jackbridge_port_register(jack_client_t* client, const char* port_name, const char* port_type, unsigned long flags, unsigned long buffer_size);
+CARLA_EXPORT jack_port_t* jackbridge_port_register(jack_client_t* client, const char* port_name, const char* port_type, ulong flags, ulong buffer_size);
 CARLA_EXPORT bool         jackbridge_port_unregister(jack_client_t* client, jack_port_t* port);
 CARLA_EXPORT void*        jackbridge_port_get_buffer(jack_port_t* port, jack_nframes_t nframes);
 
@@ -340,7 +344,7 @@ CARLA_EXPORT void jackbridge_port_get_latency_range(jack_port_t* port, jack_late
 CARLA_EXPORT void jackbridge_port_set_latency_range(jack_port_t* port, jack_latency_callback_mode_t mode, jack_latency_range_t* range);
 CARLA_EXPORT bool jackbridge_recompute_total_latencies(jack_client_t* client);
 
-CARLA_EXPORT const char** jackbridge_get_ports(jack_client_t* client, const char* port_name_pattern, const char* type_name_pattern, unsigned long flags);
+CARLA_EXPORT const char** jackbridge_get_ports(jack_client_t* client, const char* port_name_pattern, const char* type_name_pattern, ulong flags);
 CARLA_EXPORT jack_port_t* jackbridge_port_by_name(jack_client_t* client, const char* port_name);
 CARLA_EXPORT jack_port_t* jackbridge_port_by_id(jack_client_t* client, jack_port_id_t port_id);
 

@@ -61,7 +61,7 @@ typedef jack_nframes_t (*jacksym_get_sample_rate)(jack_client_t*);
 typedef jack_nframes_t (*jacksym_get_buffer_size)(jack_client_t*);
 typedef float          (*jacksym_cpu_load)(jack_client_t*);
 
-typedef jack_port_t* (*jacksym_port_register)(jack_client_t*, const char*, const char*, unsigned long, unsigned long);
+typedef jack_port_t* (*jacksym_port_register)(jack_client_t*, const char*, const char*, ulong, ulong);
 typedef int          (*jacksym_port_unregister)(jack_client_t*, jack_port_t*);
 typedef void*        (*jacksym_port_get_buffer)(jack_port_t*, jack_nframes_t);
 
@@ -98,7 +98,7 @@ typedef void (*jacksym_port_get_latency_range)(jack_port_t*, jack_latency_callba
 typedef void (*jacksym_port_set_latency_range)(jack_port_t*, jack_latency_callback_mode_t, jack_latency_range_t*);
 typedef int  (*jacksym_recompute_total_latencies)(jack_client_t*);
 
-typedef const char** (*jacksym_get_ports)(jack_client_t*, const char*, const char*, unsigned long);
+typedef const char** (*jacksym_get_ports)(jack_client_t*, const char*, const char*, ulong);
 typedef jack_port_t* (*jacksym_port_by_name)(jack_client_t*, const char*);
 typedef jack_port_t* (*jacksym_port_by_id)(jack_client_t*, jack_port_id_t);
 
@@ -874,7 +874,7 @@ float jackbridge_cpu_load(jack_client_t* client)
 
 // -----------------------------------------------------------------------------
 
-jack_port_t* jackbridge_port_register(jack_client_t* client, const char* port_name, const char* port_type, unsigned long flags, unsigned long buffer_size)
+jack_port_t* jackbridge_port_register(jack_client_t* client, const char* port_name, const char* port_type, ulong flags, ulong buffer_size)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
@@ -1248,7 +1248,7 @@ bool jackbridge_recompute_total_latencies(jack_client_t* client)
 
 // -----------------------------------------------------------------------------
 
-const char** jackbridge_get_ports(jack_client_t* client, const char* port_name_pattern, const char* type_name_pattern, unsigned long flags)
+const char** jackbridge_get_ports(jack_client_t* client, const char* port_name_pattern, const char* type_name_pattern, ulong flags)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
