@@ -40,12 +40,14 @@ make clean
 # Build PyQt5 resources
 make $JOBS UI RES WIDGETS
 
+# FIXME: linuxsampler fails to link on 64bit
+
 # Build discovery
-make $JOBS discovery
+make $JOBS discovery HAVE_LINUXSAMPLER=false
 mv bin/carla-discovery-native.exe bin/carla-discovery-win64.exe
 
 # Build backend
-make $JOBS backend
+make $JOBS backend HAVE_LINUXSAMPLER=false
 
 # Build Plugin bridges
 # make $JOBS bridges
