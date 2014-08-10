@@ -161,26 +161,31 @@ bool jackbridge_sem_timedwait(void* sem, int secs) noexcept
 
 bool jackbridge_shm_is_valid(const void* shm) noexcept
 {
+    CARLA_SAFE_ASSERT_RETURN(shm != nullptr, false);
     return carla_is_shm_valid(*(const shm_t*)shm);
 }
 
 void jackbridge_shm_init(void* shm) noexcept
 {
+    CARLA_SAFE_ASSERT_RETURN(shm != nullptr,);
     carla_shm_init(*(shm_t*)shm);
 }
 
 void jackbridge_shm_attach(void* shm, const char* name) noexcept
 {
+    CARLA_SAFE_ASSERT_RETURN(shm != nullptr,);
     *(shm_t*)shm = carla_shm_attach(name);
 }
 
 void jackbridge_shm_close(void* shm) noexcept
 {
+    CARLA_SAFE_ASSERT_RETURN(shm != nullptr,);
     carla_shm_close(*(shm_t*)shm);
 }
 
 void* jackbridge_shm_map(void* shm, size_t size) noexcept
 {
+    CARLA_SAFE_ASSERT_RETURN(shm != nullptr, nullptr);
     return carla_shm_map(*(shm_t*)shm, size);
 }
 

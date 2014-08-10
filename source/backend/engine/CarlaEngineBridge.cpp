@@ -61,13 +61,13 @@ CARLA_BACKEND_START_NAMESPACE
 struct BridgeAudioPool {
     CarlaString filename;
     float* data;
-    char shm[32];
+    char shm[64];
 
     BridgeAudioPool() noexcept
         : filename(),
           data(nullptr)
     {
-        carla_zeroChar(shm, 32);
+        carla_zeroChar(shm, 64);
         jackbridge_shm_init(shm);
     }
 
@@ -104,13 +104,13 @@ struct BridgeAudioPool {
 struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
     CarlaString filename;
     BridgeRtData* data;
-    char shm[32];
+    char shm[64];
 
     BridgeRtControl() noexcept
         : filename(),
           data(nullptr)
     {
-        carla_zeroChar(shm, 32);
+        carla_zeroChar(shm, 64);
         jackbridge_shm_init(shm);
     }
 
@@ -165,13 +165,13 @@ struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
 struct BridgeNonRtControl : public CarlaRingBuffer<BigStackBuffer> {
     CarlaString filename;
     BridgeNonRtData* data;
-    char shm[32];
+    char shm[64];
 
     BridgeNonRtControl() noexcept
         : filename(),
           data(nullptr)
     {
-        carla_zeroChar(shm, 32);
+        carla_zeroChar(shm, 64);
         jackbridge_shm_init(shm);
     }
 
