@@ -30,6 +30,8 @@ using namespace juce;
 
 CARLA_BACKEND_START_NAMESPACE
 
+// -----------------------------------------------------
+
 class JucePlugin : public CarlaPlugin,
                    public AudioPlayHead,
                    public AudioProcessorListener
@@ -37,8 +39,16 @@ class JucePlugin : public CarlaPlugin,
 public:
     JucePlugin(CarlaEngine* const engine, const uint id)
         : CarlaPlugin(engine, id),
+          fDesc(),
           fInstance(nullptr),
-          fAudioBuffer(1, 0)
+          fFormatManager(),
+          fAudioBuffer(),
+          fMidiBuffer(),
+          fPosInfo(),
+          fChunk(),
+          fUniqueId(nullptr),
+          fWindow(),
+          leakDetector_JucePlugin()
     {
         carla_debug("JucePlugin::JucePlugin(%p, %i)", engine, id);
 

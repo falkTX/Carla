@@ -82,6 +82,9 @@ endif
 
 ifeq ($(DEBUG),true)
 BASE_FLAGS += -DDEBUG -O0 -g
+ifeq ($(WIN32),true)
+BASE_FLAGS += -msse -msse2
+endif
 LINK_OPTS   =
 else
 BASE_FLAGS += -DNDEBUG $(BASE_OPTS) -fvisibility=hidden
@@ -131,9 +134,14 @@ ifeq ($(MACOS),true)
 CFLAGS     += -isystem /opt/kxstudio/include
 CXXFLAGS   += -isystem /opt/kxstudio/include
 endif
+ifeq ($(WIN64),true)
+CFLAGS     += -isystem /opt/mingw64/include
+CXXFLAGS   += -isystem /opt/mingw64/include
+else
 ifeq ($(WIN32),true)
 CFLAGS     += -isystem /opt/mingw32/include
 CXXFLAGS   += -isystem /opt/mingw32/include
+endif
 endif
 endif
 

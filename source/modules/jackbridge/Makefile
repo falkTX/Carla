@@ -170,11 +170,9 @@ debug:
 # --------------------------------------------------------------
 
 %.wine32.o: %
-# 	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -DJACKBRIDGE_EXPORT -c -o $@
 	$(WINECXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -DJACKBRIDGE_EXPORTING -c -o $@
 
 %.wine64.o: %
-# 	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -DJACKBRIDGE_EXPORT -c -o $@
 	$(WINECXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -DJACKBRIDGE_EXPORTING -c -o $@
 
 # --------------------------------------------------------------

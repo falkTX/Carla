@@ -18,6 +18,9 @@
 #define JACKBRIDGE_HPP_INCLUDED
 
 #ifdef __WINE__
+# if defined(WIN64) || defined(_WIN64) || defined(__WIN64__)
+#  define __WINE64__
+# endif
 # undef WIN32
 # undef WIN64
 # undef _WIN32
@@ -28,18 +31,20 @@
 
 #include "CarlaDefines.h"
 
-#ifdef JACKBRIDGE_EXPORTING
+#if defined(JACKBRIDGE_EXPORTING)
 # if defined(CARLA_OS_WIN) && ! defined(__WINE__)
 #  define JACKBRIDGE_EXPORT extern "C" __declspec (dllexport)
 # else
 #  define JACKBRIDGE_EXPORT extern "C" __attribute__ ((visibility("default")))
 # endif
-#else
+#elif defined(JACKBRIDGE_EXPORTING_LATER)
 # if defined(CARLA_OS_WIN) && ! defined(__WINE__)
 #  define JACKBRIDGE_EXPORT extern "C" __declspec (dllimport)
 # else
-#  define JACKBRIDGE_EXPORT
+#  define JACKBRIDGE_EXPORT extern "C"
 # endif
+#else
+# define JACKBRIDGE_EXPORT
 #endif
 
 #ifdef JACKBRIDGE_DIRECT

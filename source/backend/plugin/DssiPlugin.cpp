@@ -355,7 +355,7 @@ public:
             const ScopedSingleProcessLocker spl(this, true);
 
             try {
-                fDssiDescriptor->set_custom_data(fHandle, const_cast<void*>(data), dataSize);
+                fDssiDescriptor->set_custom_data(fHandle, const_cast<void*>(data), static_cast<ulong>(dataSize));
             } CARLA_SAFE_EXCEPTION("DssiPlugin::setChunkData");
         }
 

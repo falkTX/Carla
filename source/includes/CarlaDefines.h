@@ -89,7 +89,7 @@
 # define P_INT64   "%I64i"
 # define P_UINT64  "%I64u"
 # define P_INTPTR  "%I64i"
-# define P_UINTPTR "%I64x"
+# define P_UINTPTR "%llx"
 # define P_SIZE    "%I64u"
 #elif defined(CARLA_OS_WIN32)
 # define P_INT64   "%I64i"

@@ -18,7 +18,7 @@
 #ifndef JUCE_PLUGIN_WINDOW_HPP_INCLUDED
 #define JUCE_PLUGIN_WINDOW_HPP_INCLUDED
 
-#include "CarlaUtils.hpp"
+#include "CarlaJuceUtils.hpp"
 
 #include "juce_gui_basics.h"
 
@@ -39,7 +39,8 @@ class JucePluginWindow : public DocumentWindow
 public:
     JucePluginWindow()
         : DocumentWindow("JucePluginWindow", Colour(50, 50, 200), DocumentWindow::closeButton, false),
-          fClosed(false)
+          fClosed(false),
+          leakDetector_JucePluginWindow()
     {
         setVisible(false);
         //setAlwaysOnTop(true);
@@ -104,7 +105,7 @@ protected:
 private:
     volatile bool fClosed;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JucePluginWindow)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JucePluginWindow)
 };
 
 } // namespace juce

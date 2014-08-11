@@ -510,7 +510,6 @@ bool jackbridge_is_ok(void) noexcept
 #elif defined(JACKBRIDGE_DIRECT)
     return true;
 #else
-    carla_stdout("HERE 001");
     return (getBridgeInstance().lib != nullptr);
 #endif
 }
@@ -559,7 +558,6 @@ jack_client_t* jackbridge_client_open(const char* client_name, jack_options_t op
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_client_open(client_name, options, status);
 #else
-    carla_stdout("HERE 002, %s", client_name);
     if (getBridgeInstance().client_open_ptr != nullptr)
         return getBridgeInstance().client_open_ptr(client_name, options, status);
 #endif
@@ -575,7 +573,6 @@ bool jackbridge_client_close(jack_client_t* client)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_client_close(client) == 0);
 #else
-    carla_stdout("HERE 003");
     if (getBridgeInstance().client_close_ptr != nullptr)
         return (getBridgeInstance().client_close_ptr(client) == 0);
 #endif

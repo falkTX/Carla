@@ -719,7 +719,7 @@ public:
         if (pData->bufferSize == 0 || carla_compareFloats(pData->sampleRate, 0.0))
         {
             // open temp client to get initial buffer-size and sample-rate values
-            if (jack_client_t* const tmpClient = jackbridge_client_open(clientName, JackNullOption, nullptr))
+            if (jack_client_t* const tmpClient = jackbridge_client_open(clientName, JackNoStartServer, nullptr))
             {
                 pData->bufferSize = jackbridge_get_buffer_size(tmpClient);
                 pData->sampleRate = jackbridge_get_sample_rate(tmpClient);
