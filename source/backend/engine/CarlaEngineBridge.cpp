@@ -38,13 +38,6 @@ using juce::String;
 
 // -------------------------------------------------------------------
 
-#ifdef JACKBRIDGE_EXPORT
-bool jackbridge_is_ok() noexcept
-{
-    return true;
-}
-#endif
-
 template<typename T>
 bool jackbridge_shm_map2(char* shm, T*& value) noexcept
 {

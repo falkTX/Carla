@@ -63,7 +63,7 @@ endif
 # --------------------------------------------------------------
 # Plugin bridges (Windows)
 
-WIN_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS) -DJACKBRIDGE_EXPORT
+WIN_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS) -DJACKBRIDGE_EXPORTING
 WIN_32BIT_FLAGS = $(32BIT_FLAGS)
 WIN_64BIT_FLAGS = $(64BIT_FLAGS)
 WIN_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) -L../modules

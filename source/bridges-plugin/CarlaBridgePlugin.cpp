@@ -443,7 +443,7 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Set client name
 
-    CarlaString clientName((name != nullptr) ? name : label);
+    CarlaString clientName((name != nullptr && name[0] != '\0') ? name : label);
 
     if (clientName.isEmpty())
         clientName = juce::File(filename).getFileNameWithoutExtension().toRawUTF8();

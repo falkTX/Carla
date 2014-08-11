@@ -86,14 +86,26 @@ source/modules/%.qt5.a: .FORCE
 source/modules/%.posix32.a: .FORCE
 	$(MAKE) -C source/modules/$* ../$*.posix32.a
 
+source/modules/%.posix32e.a: .FORCE
+	$(MAKE) -C source/modules/$* ../$*.posix32e.a
+
 source/modules/%.posix64.a: .FORCE
 	$(MAKE) -C source/modules/$* ../$*.posix64.a
+
+source/modules/%.posix64e.a: .FORCE
+	$(MAKE) -C source/modules/$* ../$*.posix64e.a
 
 source/modules/%.win32.a: .FORCE
 	$(MAKE) -C source/modules/$* ../$*.win32.a
 
+source/modules/%.win32e.a: .FORCE
+	$(MAKE) -C source/modules/$* ../$*.win32e.a
+
 source/modules/%.win64.a: .FORCE
 	$(MAKE) -C source/modules/$* ../$*.win64.a
+
+source/modules/%.win64e.a: .FORCE
+	$(MAKE) -C source/modules/$* ../$*.win64e.a
 
 source/modules/%.a: .FORCE
 	$(MAKE) -C source/modules/$* ../$*.a
@@ -229,12 +241,12 @@ win64: $(LIBS_WIN64)
 # Binaries (wine)
 
 wine32:
-	$(MAKE) -C source/modules jackbridge-wine32
-	cp -f source/modules/jackbridge-win32.dll.so bin/jackbridge-win32.dll
+	$(MAKE) -C source/modules/jackbridge wine32
+	cp -f source/modules/jackbridge-wine32.dll.so bin/jackbridge-win32.dll
 
 wine64:
-	$(MAKE) -C source/modules jackbridge-wine64
-	cp -f source/modules/jackbridge-win64.dll.so bin/jackbridge-win64.dll
+	$(MAKE) -C source/modules/jackbridge wine64
+	cp -f source/modules/jackbridge-wine64.dll.so bin/jackbridge-win64.dll
 
 # --------------------------------------------------------------
 # Resources

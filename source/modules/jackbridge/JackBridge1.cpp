@@ -22,14 +22,16 @@
 
 // -----------------------------------------------------------------------------
 
+extern "C" {
+
 typedef void        (*jacksym_get_version)(int*, int*, int*, int*);
-typedef const char* (*jacksym_get_version_string)();
+typedef const char* (*jacksym_get_version_string)(void);
 
 typedef jack_client_t* (*jacksym_client_open)(const char*, jack_options_t, jack_status_t*, ...);
 typedef const char*    (*jacksym_client_rename)(jack_client_t* client, const char* new_name);
 typedef int            (*jacksym_client_close)(jack_client_t*);
 
-typedef int   (*jacksym_client_name_size)();
+typedef int   (*jacksym_client_name_size)(void);
 typedef char* (*jacksym_get_client_name)(jack_client_t*);
 
 typedef char* (*jacksym_get_uuid_for_client_name)(jack_client_t*, const char*);
@@ -90,8 +92,8 @@ typedef int (*jacksym_connect)(jack_client_t*, const char*, const char*);
 typedef int (*jacksym_disconnect)(jack_client_t*, const char*, const char*);
 typedef int (*jacksym_port_disconnect)(jack_client_t*, jack_port_t*);
 
-typedef int    (*jacksym_port_name_size)();
-typedef int    (*jacksym_port_type_size)();
+typedef int    (*jacksym_port_name_size)(void);
+typedef int    (*jacksym_port_type_size)(void);
 typedef size_t (*jacksym_port_type_get_buffer_size)(jack_client_t*, const char*);
 
 typedef void (*jacksym_port_get_latency_range)(jack_port_t*, jack_latency_callback_mode_t, jack_latency_range_t*);
@@ -132,6 +134,8 @@ typedef int  (*jacksym_remove_property)(jack_client_t*, jack_uuid_t, const char*
 typedef int  (*jacksym_remove_properties)(jack_client_t*, jack_uuid_t);
 typedef int  (*jacksym_remove_all_properties)(jack_client_t*);
 typedef int  (*jacksym_set_property_change_callback)(jack_client_t*, JackPropertyChangeCallback, void*);
+
+} // extern "C"
 
 // -----------------------------------------------------------------------------
 
@@ -486,31 +490,42 @@ struct JackBridge {
     CARLA_DECLARE_NON_COPY_STRUCT(JackBridge);
 };
 
-static const JackBridge bridge;
+// -----------------------------------------------------------------------------
 
-#endif // ! JACKBRIDGE_DIRECT
+static const JackBridge& getBridgeInstance() noexcept
+{
+    static const JackBridge bridge;
+    return bridge;
+}
+
+#endif // ! (defined(JACKBRIDGE_DIRECT) || defined(JACKBRIDGE_DUMMY))
 
 // -----------------------------------------------------------------------------
 
-bool jackbridge_is_ok() noexcept
+JACKBRIDGE_EXPORT
+bool jackbridge_is_ok(void) noexcept
 {
-#if defined(JACKBRIDGE_DUMMY) || defined(JACKBRIDGE_DIRECT)
+#if defined(JACKBRIDGE_DUMMY)
+    return false;
+#elif defined(JACKBRIDGE_DIRECT)
     return true;
 #else
-    return (bridge.lib != nullptr);
+    carla_stdout("HERE 001");
+    return (getBridgeInstance().lib != nullptr);
 #endif
 }
 
 // -----------------------------------------------------------------------------
 
+JACKBRIDGE_EXPORT
 void jackbridge_get_version(int* major_ptr, int* minor_ptr, int* micro_ptr, int* proto_ptr)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_get_version(major_ptr, minor_ptr, micro_ptr, proto_ptr);
 #else
-    if (bridge.get_version_ptr != nullptr)
-        return bridge.get_version_ptr(major_ptr, minor_ptr, micro_ptr, proto_ptr);
+    if (getBridgeInstance().get_version_ptr != nullptr)
+        return getBridgeInstance().get_version_ptr(major_ptr, minor_ptr, micro_ptr, proto_ptr);
 #endif
     if (major_ptr != nullptr)
         *major_ptr = 0;
@@ -522,778 +537,842 @@ void jackbridge_get_version(int* major_ptr, int* minor_ptr, int* micro_ptr, int*
         *proto_ptr = 0;
 }
 
-const char* jackbridge_get_version_string()
+JACKBRIDGE_EXPORT
+const char* jackbridge_get_version_string(void)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_get_version_string();
 #else
-    if (bridge.get_version_string_ptr != nullptr)
-        return bridge.get_version_string_ptr();
+    if (getBridgeInstance().get_version_string_ptr != nullptr)
+        return getBridgeInstance().get_version_string_ptr();
 #endif
     return nullptr;
 }
 
 // -----------------------------------------------------------------------------
 
-jack_client_t* jackbridge_client_open(const char* client_name, jack_options_t options, jack_status_t* status, ...)
+JACKBRIDGE_EXPORT
+jack_client_t* jackbridge_client_open(const char* client_name, jack_options_t options, jack_status_t* status)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_client_open(client_name, options, status);
 #else
-    if (bridge.client_open_ptr != nullptr)
-        return bridge.client_open_ptr(client_name, options, status);
+    carla_stdout("HERE 002, %s", client_name);
+    if (getBridgeInstance().client_open_ptr != nullptr)
+        return getBridgeInstance().client_open_ptr(client_name, options, status);
 #endif
     if (status != nullptr)
         *status = JackServerError;
     return nullptr;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_client_close(jack_client_t* client)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_client_close(client) == 0);
 #else
-    if (bridge.client_close_ptr != nullptr)
-        return (bridge.client_close_ptr(client) == 0);
+    carla_stdout("HERE 003");
+    if (getBridgeInstance().client_close_ptr != nullptr)
+        return (getBridgeInstance().client_close_ptr(client) == 0);
 #endif
     return false;
 }
 
 // -----------------------------------------------------------------------------
 
-int jackbridge_client_name_size()
+JACKBRIDGE_EXPORT
+int jackbridge_client_name_size(void)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_client_name_size();
 #else
-    if (bridge.client_name_size_ptr != nullptr)
-        return bridge.client_name_size_ptr();
+    if (getBridgeInstance().client_name_size_ptr != nullptr)
+        return getBridgeInstance().client_name_size_ptr();
 #endif
     return 0;
 }
 
+JACKBRIDGE_EXPORT
 char* jackbridge_get_client_name(jack_client_t* client)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_get_client_name(client);
 #else
-    if (bridge.get_client_name_ptr != nullptr)
-        return bridge.get_client_name_ptr(client);
+    if (getBridgeInstance().get_client_name_ptr != nullptr)
+        return getBridgeInstance().get_client_name_ptr(client);
 #endif
     return nullptr;
 }
 
 // -----------------------------------------------------------------------------
 
+JACKBRIDGE_EXPORT
 char* jackbridge_get_uuid_for_client_name(jack_client_t* client, const char* name)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_get_uuid_for_client_name(client, name);
 #else
-    if (bridge.get_uuid_for_client_name_ptr != nullptr)
-        return bridge.get_uuid_for_client_name_ptr(client, name);
+    if (getBridgeInstance().get_uuid_for_client_name_ptr != nullptr)
+        return getBridgeInstance().get_uuid_for_client_name_ptr(client, name);
 #endif
     return nullptr;
 }
 
+JACKBRIDGE_EXPORT
 char* jackbridge_get_client_name_by_uuid(jack_client_t* client, const char* uuid)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_get_client_name_by_uuid(client, uuid);
 #else
-    if (bridge.get_client_name_by_uuid_ptr != nullptr)
-        return bridge.get_client_name_by_uuid_ptr(client, uuid);
+    if (getBridgeInstance().get_client_name_by_uuid_ptr != nullptr)
+        return getBridgeInstance().get_client_name_by_uuid_ptr(client, uuid);
 #endif
     return nullptr;
 }
 
 // -----------------------------------------------------------------------------
 
+JACKBRIDGE_EXPORT
 bool jackbridge_activate(jack_client_t* client)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_activate(client) == 0);
 #else
-    if (bridge.activate_ptr != nullptr)
-        return (bridge.activate_ptr(client) == 0);
+    if (getBridgeInstance().activate_ptr != nullptr)
+        return (getBridgeInstance().activate_ptr(client) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_deactivate(jack_client_t* client)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_deactivate(client) == 0);
 #else
-    if (bridge.deactivate_ptr != nullptr)
-        return (bridge.deactivate_ptr(client) == 0);
+    if (getBridgeInstance().deactivate_ptr != nullptr)
+        return (getBridgeInstance().deactivate_ptr(client) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_is_realtime(jack_client_t* client)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_is_realtime(client);
 #else
-    if (bridge.is_realtime_ptr != nullptr)
-        return bridge.is_realtime_ptr(client);
+    if (getBridgeInstance().is_realtime_ptr != nullptr)
+        return getBridgeInstance().is_realtime_ptr(client);
 #endif
     return false;
 }
 
 // -----------------------------------------------------------------------------
 
+JACKBRIDGE_EXPORT
 bool jackbridge_set_thread_init_callback(jack_client_t* client, JackThreadInitCallback thread_init_callback, void* arg)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_set_thread_init_callback(client, thread_init_callback, arg) == 0);
 #else
-    if (bridge.set_thread_init_callback_ptr != nullptr)
-        return (bridge.set_thread_init_callback_ptr(client, thread_init_callback, arg) == 0);
+    if (getBridgeInstance().set_thread_init_callback_ptr != nullptr)
+        return (getBridgeInstance().set_thread_init_callback_ptr(client, thread_init_callback, arg) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 void jackbridge_on_shutdown(jack_client_t* client, JackShutdownCallback shutdown_callback, void* arg)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     jack_on_shutdown(client, shutdown_callback, arg);
 #else
-    if (bridge.on_shutdown_ptr != nullptr)
-        bridge.on_shutdown_ptr(client, shutdown_callback, arg);
+    if (getBridgeInstance().on_shutdown_ptr != nullptr)
+        getBridgeInstance().on_shutdown_ptr(client, shutdown_callback, arg);
 #endif
 }
 
+JACKBRIDGE_EXPORT
 void jackbridge_on_info_shutdown(jack_client_t* client, JackInfoShutdownCallback shutdown_callback, void* arg)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     jack_on_info_shutdown(client, shutdown_callback, arg);
 #else
-    if (bridge.on_info_shutdown_ptr != nullptr)
-        bridge.on_info_shutdown_ptr(client, shutdown_callback, arg);
+    if (getBridgeInstance().on_info_shutdown_ptr != nullptr)
+        getBridgeInstance().on_info_shutdown_ptr(client, shutdown_callback, arg);
 #endif
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_set_process_callback(jack_client_t* client, JackProcessCallback process_callback, void* arg)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_set_process_callback(client, process_callback, arg) == 0);
 #else
-    if (bridge.set_process_callback_ptr != nullptr)
-        return (bridge.set_process_callback_ptr(client, process_callback, arg) == 0);
+    if (getBridgeInstance().set_process_callback_ptr != nullptr)
+        return (getBridgeInstance().set_process_callback_ptr(client, process_callback, arg) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_set_freewheel_callback(jack_client_t* client, JackFreewheelCallback freewheel_callback, void* arg)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_set_freewheel_callback(client, freewheel_callback, arg) == 0);
 #else
-    if (bridge.set_freewheel_callback_ptr != nullptr)
-        return (bridge.set_freewheel_callback_ptr(client, freewheel_callback, arg) == 0);
+    if (getBridgeInstance().set_freewheel_callback_ptr != nullptr)
+        return (getBridgeInstance().set_freewheel_callback_ptr(client, freewheel_callback, arg) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_set_buffer_size_callback(jack_client_t* client, JackBufferSizeCallback bufsize_callback, void* arg)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_set_buffer_size_callback(client, bufsize_callback, arg) == 0);
 #else
-    if (bridge.set_buffer_size_callback_ptr != nullptr)
-        return (bridge.set_buffer_size_callback_ptr(client, bufsize_callback, arg) == 0);
+    if (getBridgeInstance().set_buffer_size_callback_ptr != nullptr)
+        return (getBridgeInstance().set_buffer_size_callback_ptr(client, bufsize_callback, arg) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_set_sample_rate_callback(jack_client_t* client, JackSampleRateCallback srate_callback, void* arg)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_set_sample_rate_callback(client, srate_callback, arg) == 0);
 #else
-    if (bridge.set_sample_rate_callback_ptr != nullptr)
-        return (bridge.set_sample_rate_callback_ptr(client, srate_callback, arg) == 0);
+    if (getBridgeInstance().set_sample_rate_callback_ptr != nullptr)
+        return (getBridgeInstance().set_sample_rate_callback_ptr(client, srate_callback, arg) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_set_client_registration_callback(jack_client_t* client, JackClientRegistrationCallback registration_callback, void* arg)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_set_client_registration_callback(client, registration_callback, arg) == 0);
 #else
-    if (bridge.set_client_registration_callback_ptr != nullptr)
-        return (bridge.set_client_registration_callback_ptr(client, registration_callback, arg) == 0);
+    if (getBridgeInstance().set_client_registration_callback_ptr != nullptr)
+        return (getBridgeInstance().set_client_registration_callback_ptr(client, registration_callback, arg) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_set_port_registration_callback(jack_client_t* client, JackPortRegistrationCallback registration_callback, void *arg)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_set_port_registration_callback(client, registration_callback, arg) == 0);
 #else
-    if (bridge.set_port_registration_callback_ptr != nullptr)
-        return (bridge.set_port_registration_callback_ptr(client, registration_callback, arg) == 0);
+    if (getBridgeInstance().set_port_registration_callback_ptr != nullptr)
+        return (getBridgeInstance().set_port_registration_callback_ptr(client, registration_callback, arg) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_set_port_rename_callback(jack_client_t* client, JackPortRenameCallback rename_callback, void* arg)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_set_port_rename_callback(client, rename_callback, arg) == 0);
 #else
-    if (bridge.set_port_rename_callback_ptr != nullptr)
-        return (bridge.set_port_rename_callback_ptr(client, rename_callback, arg) == 0);
+    if (getBridgeInstance().set_port_rename_callback_ptr != nullptr)
+        return (getBridgeInstance().set_port_rename_callback_ptr(client, rename_callback, arg) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_set_port_connect_callback(jack_client_t* client, JackPortConnectCallback connect_callback, void* arg)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_set_port_connect_callback(client, connect_callback, arg) == 0);
 #else
-    if (bridge.set_port_connect_callback_ptr != nullptr)
-        return (bridge.set_port_connect_callback_ptr(client, connect_callback, arg) == 0);
+    if (getBridgeInstance().set_port_connect_callback_ptr != nullptr)
+        return (getBridgeInstance().set_port_connect_callback_ptr(client, connect_callback, arg) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_set_xrun_callback(jack_client_t* client, JackXRunCallback xrun_callback, void* arg)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_set_xrun_callback(client, xrun_callback, arg) == 0);
 #else
-    if (bridge.set_xrun_callback_ptr != nullptr)
-        return (bridge.set_xrun_callback_ptr(client, xrun_callback, arg) == 0);
+    if (getBridgeInstance().set_xrun_callback_ptr != nullptr)
+        return (getBridgeInstance().set_xrun_callback_ptr(client, xrun_callback, arg) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_set_latency_callback(jack_client_t* client, JackLatencyCallback latency_callback, void* arg)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_set_latency_callback(client, latency_callback, arg) == 0);
 #else
-    if (bridge.set_latency_callback_ptr != nullptr)
-        return (bridge.set_latency_callback_ptr(client, latency_callback, arg) == 0);
+    if (getBridgeInstance().set_latency_callback_ptr != nullptr)
+        return (getBridgeInstance().set_latency_callback_ptr(client, latency_callback, arg) == 0);
 #endif
     return false;
 }
 
 // -----------------------------------------------------------------------------
 
+JACKBRIDGE_EXPORT
 bool jackbridge_set_freewheel(jack_client_t* client, bool onoff)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_set_freewheel(client, onoff);
 #else
-    if (bridge.set_freewheel_ptr != nullptr)
-        return bridge.set_freewheel_ptr(client, onoff);
+    if (getBridgeInstance().set_freewheel_ptr != nullptr)
+        return getBridgeInstance().set_freewheel_ptr(client, onoff);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_set_buffer_size(jack_client_t* client, jack_nframes_t nframes)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_set_buffer_size(client, nframes);
 #else
-    if (bridge.set_buffer_size_ptr != nullptr)
-        return bridge.set_buffer_size_ptr(client, nframes);
+    if (getBridgeInstance().set_buffer_size_ptr != nullptr)
+        return getBridgeInstance().set_buffer_size_ptr(client, nframes);
 #endif
     return false;
 }
 
 // -----------------------------------------------------------------------------
 
+JACKBRIDGE_EXPORT
 jack_nframes_t jackbridge_get_sample_rate(jack_client_t* client)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_get_sample_rate(client);
 #else
-    if (bridge.get_sample_rate_ptr != nullptr)
-        return bridge.get_sample_rate_ptr(client);
+    if (getBridgeInstance().get_sample_rate_ptr != nullptr)
+        return getBridgeInstance().get_sample_rate_ptr(client);
 #endif
     return 0;
 }
 
+JACKBRIDGE_EXPORT
 jack_nframes_t jackbridge_get_buffer_size(jack_client_t* client)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_get_buffer_size(client);
 #else
-    if (bridge.get_buffer_size_ptr != nullptr)
-        return bridge.get_buffer_size_ptr(client);
+    if (getBridgeInstance().get_buffer_size_ptr != nullptr)
+        return getBridgeInstance().get_buffer_size_ptr(client);
 #endif
     return 0;
 }
 
+JACKBRIDGE_EXPORT
 float jackbridge_cpu_load(jack_client_t* client)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_cpu_load(client);
 #else
-    if (bridge.cpu_load_ptr != nullptr)
-        return bridge.cpu_load_ptr(client);
+    if (getBridgeInstance().cpu_load_ptr != nullptr)
+        return getBridgeInstance().cpu_load_ptr(client);
 #endif
     return 0.0f;
 }
 
 // -----------------------------------------------------------------------------
 
+JACKBRIDGE_EXPORT
 jack_port_t* jackbridge_port_register(jack_client_t* client, const char* port_name, const char* port_type, ulong flags, ulong buffer_size)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_port_register(client, port_name, port_type, flags, buffer_size);
 #else
-    if (bridge.port_register_ptr != nullptr)
-        return bridge.port_register_ptr(client, port_name, port_type, flags, buffer_size);
+    if (getBridgeInstance().port_register_ptr != nullptr)
+        return getBridgeInstance().port_register_ptr(client, port_name, port_type, flags, buffer_size);
 #endif
     return nullptr;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_port_unregister(jack_client_t* client, jack_port_t* port)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_port_unregister(client, port) == 0);
 #else
-    if (bridge.port_unregister_ptr != nullptr)
-        return (bridge.port_unregister_ptr(client, port) == 0);
+    if (getBridgeInstance().port_unregister_ptr != nullptr)
+        return (getBridgeInstance().port_unregister_ptr(client, port) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 void* jackbridge_port_get_buffer(jack_port_t* port, jack_nframes_t nframes)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_port_get_buffer(port, nframes);
 #else
-    if (bridge.port_get_buffer_ptr != nullptr)
-        return bridge.port_get_buffer_ptr(port, nframes);
+    if (getBridgeInstance().port_get_buffer_ptr != nullptr)
+        return getBridgeInstance().port_get_buffer_ptr(port, nframes);
 #endif
     return nullptr;
 }
 
 // -----------------------------------------------------------------------------
 
+JACKBRIDGE_EXPORT
 const char* jackbridge_port_name(const jack_port_t* port)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_port_name(port);
 #else
-    if (bridge.port_name_ptr != nullptr)
-        return bridge.port_name_ptr(port);
+    if (getBridgeInstance().port_name_ptr != nullptr)
+        return getBridgeInstance().port_name_ptr(port);
 #endif
     return nullptr;
 }
 
+JACKBRIDGE_EXPORT
 jack_uuid_t jackbridge_port_uuid(const jack_port_t* port)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_port_uuid(port);
 #else
-    if (bridge.port_uuid_ptr != nullptr)
-        return bridge.port_uuid_ptr(port);
+    if (getBridgeInstance().port_uuid_ptr != nullptr)
+        return getBridgeInstance().port_uuid_ptr(port);
 #endif
     return 0;
 }
 
+JACKBRIDGE_EXPORT
 const char* jackbridge_port_short_name(const jack_port_t* port)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_port_short_name(port);
 #else
-    if (bridge.port_short_name_ptr != nullptr)
-        return bridge.port_short_name_ptr(port);
+    if (getBridgeInstance().port_short_name_ptr != nullptr)
+        return getBridgeInstance().port_short_name_ptr(port);
 #endif
     return nullptr;
 }
 
+JACKBRIDGE_EXPORT
 int jackbridge_port_flags(const jack_port_t* port)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_port_flags(port);
 #else
-    if (bridge.port_flags_ptr != nullptr)
-        return bridge.port_flags_ptr(port);
+    if (getBridgeInstance().port_flags_ptr != nullptr)
+        return getBridgeInstance().port_flags_ptr(port);
 #endif
     return 0x0;
 }
 
+JACKBRIDGE_EXPORT
 const char* jackbridge_port_type(const jack_port_t* port)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_port_type(port);
 #else
-    if (bridge.port_type_ptr != nullptr)
-        return bridge.port_type_ptr(port);
+    if (getBridgeInstance().port_type_ptr != nullptr)
+        return getBridgeInstance().port_type_ptr(port);
 #endif
     return nullptr;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_port_is_mine(const jack_client_t* client, const jack_port_t* port)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_port_is_mine(client, port);
 #else
-    if (bridge.port_is_mine_ptr != nullptr)
-        return bridge.port_is_mine_ptr(client, port);
+    if (getBridgeInstance().port_is_mine_ptr != nullptr)
+        return getBridgeInstance().port_is_mine_ptr(client, port);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 int jackbridge_port_connected(const jack_port_t* port)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_port_connected(port);
 #else
-    if (bridge.port_connected_ptr != nullptr)
-        return bridge.port_connected_ptr(port);
+    if (getBridgeInstance().port_connected_ptr != nullptr)
+        return getBridgeInstance().port_connected_ptr(port);
 #endif
     return 0;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_port_connected_to(const jack_port_t* port, const char* port_name)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_port_connected_to(port, port_name);
 #else
-    if (bridge.port_connected_to_ptr != nullptr)
-        return bridge.port_connected_to_ptr(port, port_name);
+    if (getBridgeInstance().port_connected_to_ptr != nullptr)
+        return getBridgeInstance().port_connected_to_ptr(port, port_name);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 const char** jackbridge_port_get_connections(const jack_port_t* port)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_port_get_connections(port);
 #else
-    if (bridge.port_get_connections_ptr != nullptr)
-        return bridge.port_get_connections_ptr(port);
+    if (getBridgeInstance().port_get_connections_ptr != nullptr)
+        return getBridgeInstance().port_get_connections_ptr(port);
 #endif
     return nullptr;
 }
 
+JACKBRIDGE_EXPORT
 const char** jackbridge_port_get_all_connections(const jack_client_t* client, const jack_port_t* port)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_port_get_all_connections(client, port);
 #else
-    if (bridge.port_get_all_connections_ptr != nullptr)
-        return bridge.port_get_all_connections_ptr(client, port);
+    if (getBridgeInstance().port_get_all_connections_ptr != nullptr)
+        return getBridgeInstance().port_get_all_connections_ptr(client, port);
 #endif
     return nullptr;
 }
 
 // -----------------------------------------------------------------------------
 
+JACKBRIDGE_EXPORT
 bool jackbridge_port_set_name(jack_port_t* port, const char* port_name)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_port_set_name(port, port_name) == 0);
 #else
-    if (bridge.port_set_name_ptr != nullptr)
-        return (bridge.port_set_name_ptr(port, port_name) == 0);
+    if (getBridgeInstance().port_set_name_ptr != nullptr)
+        return (getBridgeInstance().port_set_name_ptr(port, port_name) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_port_set_alias(jack_port_t* port, const char* alias)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_port_set_alias(port, alias) == 0);
 #else
-    if (bridge.port_set_alias_ptr != nullptr)
-        return (bridge.port_set_alias_ptr(port, alias) == 0);
+    if (getBridgeInstance().port_set_alias_ptr != nullptr)
+        return (getBridgeInstance().port_set_alias_ptr(port, alias) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_port_unset_alias(jack_port_t* port, const char* alias)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_port_unset_alias(port, alias) == 0);
 #else
-    if (bridge.port_unset_alias_ptr != nullptr)
-        return (bridge.port_unset_alias_ptr(port, alias) == 0);
+    if (getBridgeInstance().port_unset_alias_ptr != nullptr)
+        return (getBridgeInstance().port_unset_alias_ptr(port, alias) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 int jackbridge_port_get_aliases(const jack_port_t* port, char* const aliases[2])
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_port_get_aliases(port, aliases) == 0);
 #else
-    if (bridge.port_get_aliases_ptr != nullptr)
-        return bridge.port_get_aliases_ptr(port, aliases);
+    if (getBridgeInstance().port_get_aliases_ptr != nullptr)
+        return getBridgeInstance().port_get_aliases_ptr(port, aliases);
 #endif
     return 0;
 }
 
 // -----------------------------------------------------------------------------
 
+JACKBRIDGE_EXPORT
 bool jackbridge_port_request_monitor(jack_port_t* port, bool onoff)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_port_request_monitor(port, onoff) == 0);
 #else
-    if (bridge.port_request_monitor_ptr != nullptr)
-        return (bridge.port_request_monitor_ptr(port, onoff) == 0);
+    if (getBridgeInstance().port_request_monitor_ptr != nullptr)
+        return (getBridgeInstance().port_request_monitor_ptr(port, onoff) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_port_request_monitor_by_name(jack_client_t* client, const char* port_name, bool onoff)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_port_request_monitor_by_name(client, port_name, onoff) == 0);
 #else
-    if (bridge.port_request_monitor_by_name_ptr != nullptr)
-        return (bridge.port_request_monitor_by_name_ptr(client, port_name, onoff) == 0);
+    if (getBridgeInstance().port_request_monitor_by_name_ptr != nullptr)
+        return (getBridgeInstance().port_request_monitor_by_name_ptr(client, port_name, onoff) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_port_ensure_monitor(jack_port_t* port, bool onoff)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_port_ensure_monitor(port, onoff) == 0);
 #else
-    if (bridge.port_ensure_monitor_ptr != nullptr)
-        return (bridge.port_ensure_monitor_ptr(port, onoff) == 0);
+    if (getBridgeInstance().port_ensure_monitor_ptr != nullptr)
+        return (getBridgeInstance().port_ensure_monitor_ptr(port, onoff) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_port_monitoring_input(jack_port_t* port)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_port_monitoring_input(port);
 #else
-    if (bridge.port_monitoring_input_ptr != nullptr)
-        return bridge.port_monitoring_input_ptr(port);
+    if (getBridgeInstance().port_monitoring_input_ptr != nullptr)
+        return getBridgeInstance().port_monitoring_input_ptr(port);
 #endif
     return false;
 }
 
 // -----------------------------------------------------------------------------
 
+JACKBRIDGE_EXPORT
 bool jackbridge_connect(jack_client_t* client, const char* source_port, const char* destination_port)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_connect(client, source_port, destination_port) == 0);
 #else
-    if (bridge.connect_ptr != nullptr)
-        return (bridge.connect_ptr(client, source_port, destination_port) == 0);
+    if (getBridgeInstance().connect_ptr != nullptr)
+        return (getBridgeInstance().connect_ptr(client, source_port, destination_port) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_disconnect(jack_client_t* client, const char* source_port, const char* destination_port)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_disconnect(client, source_port, destination_port) == 0);
 #else
-    if (bridge.disconnect_ptr != nullptr)
-        return (bridge.disconnect_ptr(client, source_port, destination_port) == 0);
+    if (getBridgeInstance().disconnect_ptr != nullptr)
+        return (getBridgeInstance().disconnect_ptr(client, source_port, destination_port) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_port_disconnect(jack_client_t* client, jack_port_t* port)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_port_disconnect(client, port) == 0);
 #else
-    if (bridge.port_disconnect_ptr != nullptr)
-        return (bridge.port_disconnect_ptr(client, port) == 0);
+    if (getBridgeInstance().port_disconnect_ptr != nullptr)
+        return (getBridgeInstance().port_disconnect_ptr(client, port) == 0);
 #endif
     return false;
 }
 
 // -----------------------------------------------------------------------------
 
-int jackbridge_port_name_size()
+JACKBRIDGE_EXPORT
+int jackbridge_port_name_size(void)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_port_name_size();
 #else
-    if (bridge.port_name_size_ptr != nullptr)
-        return bridge.port_name_size_ptr();
+    if (getBridgeInstance().port_name_size_ptr != nullptr)
+        return getBridgeInstance().port_name_size_ptr();
 #endif
     return 0;
 }
 
-int jackbridge_port_type_size()
+JACKBRIDGE_EXPORT
+int jackbridge_port_type_size(void)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_port_type_size();
 #else
-    if (bridge.port_type_size_ptr != nullptr)
-        return bridge.port_type_size_ptr();
+    if (getBridgeInstance().port_type_size_ptr != nullptr)
+        return getBridgeInstance().port_type_size_ptr();
 #endif
     return 0;
 }
 
+JACKBRIDGE_EXPORT
 size_t jackbridge_port_type_get_buffer_size(jack_client_t* client, const char* port_type)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_port_type_get_buffer_size(client, port_type);
 #else
-    if (bridge.port_type_get_buffer_size_ptr != nullptr)
-        return bridge.port_type_get_buffer_size_ptr(client, port_type);
+    if (getBridgeInstance().port_type_get_buffer_size_ptr != nullptr)
+        return getBridgeInstance().port_type_get_buffer_size_ptr(client, port_type);
 #endif
     return 0;
 }
 
 // -----------------------------------------------------------------------------
 
+JACKBRIDGE_EXPORT
 void jackbridge_port_get_latency_range(jack_port_t* port, jack_latency_callback_mode_t mode, jack_latency_range_t* range)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_port_get_latency_range(port, mode, range);
 #else
-    if (bridge.port_get_latency_range_ptr != nullptr)
-        return bridge.port_get_latency_range_ptr(port, mode, range);
+    if (getBridgeInstance().port_get_latency_range_ptr != nullptr)
+        return getBridgeInstance().port_get_latency_range_ptr(port, mode, range);
 #endif
     range->min = 0;
     range->max = 0;
 }
 
+JACKBRIDGE_EXPORT
 void jackbridge_port_set_latency_range(jack_port_t* port, jack_latency_callback_mode_t mode, jack_latency_range_t* range)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     jack_port_set_latency_range(port, mode, range);
 #else
-    if (bridge.port_set_latency_range_ptr != nullptr)
-        bridge.port_set_latency_range_ptr(port, mode, range);
+    if (getBridgeInstance().port_set_latency_range_ptr != nullptr)
+        getBridgeInstance().port_set_latency_range_ptr(port, mode, range);
 #endif
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_recompute_total_latencies(jack_client_t* client)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_recompute_total_latencies(client) == 0);
 #else
-    if (bridge.recompute_total_latencies_ptr != nullptr)
-        return (bridge.recompute_total_latencies_ptr(client) == 0);
+    if (getBridgeInstance().recompute_total_latencies_ptr != nullptr)
+        return (getBridgeInstance().recompute_total_latencies_ptr(client) == 0);
 #endif
     return false;
 }
 
 // -----------------------------------------------------------------------------
 
+JACKBRIDGE_EXPORT
 const char** jackbridge_get_ports(jack_client_t* client, const char* port_name_pattern, const char* type_name_pattern, ulong flags)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_get_ports(client, port_name_pattern, type_name_pattern, flags);
 #else
-    if (bridge.get_ports_ptr != nullptr)
-        return bridge.get_ports_ptr(client, port_name_pattern, type_name_pattern, flags);
+    if (getBridgeInstance().get_ports_ptr != nullptr)
+        return getBridgeInstance().get_ports_ptr(client, port_name_pattern, type_name_pattern, flags);
 #endif
     return nullptr;
 }
 
+JACKBRIDGE_EXPORT
 jack_port_t* jackbridge_port_by_name(jack_client_t* client, const char* port_name)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_port_by_name(client, port_name);
 #else
-    if (bridge.port_by_name_ptr != nullptr)
-        return bridge.port_by_name_ptr(client, port_name);
+    if (getBridgeInstance().port_by_name_ptr != nullptr)
+        return getBridgeInstance().port_by_name_ptr(client, port_name);
 #endif
     return nullptr;
 }
 
+JACKBRIDGE_EXPORT
 jack_port_t* jackbridge_port_by_id(jack_client_t* client, jack_port_id_t port_id)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_port_by_id(client, port_id);
 #else
-    if (bridge.port_by_id_ptr != nullptr)
-        return bridge.port_by_id_ptr(client, port_id);
+    if (getBridgeInstance().port_by_id_ptr != nullptr)
+        return getBridgeInstance().port_by_id_ptr(client, port_id);
 #endif
     return nullptr;
 }
 
 // -----------------------------------------------------------------------------
 
+JACKBRIDGE_EXPORT
 void jackbridge_free(void* ptr)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_free(ptr);
 #else
-    if (bridge.free_ptr != nullptr)
-        return bridge.free_ptr(ptr);
+    if (getBridgeInstance().free_ptr != nullptr)
+        return getBridgeInstance().free_ptr(ptr);
 
     // just in case
     std::free(ptr);
@@ -1302,135 +1381,146 @@ void jackbridge_free(void* ptr)
 
 // -----------------------------------------------------------------------------
 
+JACKBRIDGE_EXPORT
 uint32_t jackbridge_midi_get_event_count(void* port_buffer)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_midi_get_event_count(port_buffer);
 #else
-    if (bridge.midi_get_event_count_ptr != nullptr)
-        return bridge.midi_get_event_count_ptr(port_buffer);
+    if (getBridgeInstance().midi_get_event_count_ptr != nullptr)
+        return getBridgeInstance().midi_get_event_count_ptr(port_buffer);
 #endif
     return 0;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_midi_event_get(jack_midi_event_t* event, void* port_buffer, uint32_t event_index)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_midi_event_get(event, port_buffer, event_index) == 0);
 #else
-    if (bridge.midi_event_get_ptr != nullptr)
-        return (bridge.midi_event_get_ptr(event, port_buffer, event_index) == 0);
+    if (getBridgeInstance().midi_event_get_ptr != nullptr)
+        return (getBridgeInstance().midi_event_get_ptr(event, port_buffer, event_index) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 void jackbridge_midi_clear_buffer(void* port_buffer)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     jack_midi_clear_buffer(port_buffer);
 #else
-    if (bridge.midi_clear_buffer_ptr != nullptr)
-        bridge.midi_clear_buffer_ptr(port_buffer);
+    if (getBridgeInstance().midi_clear_buffer_ptr != nullptr)
+        getBridgeInstance().midi_clear_buffer_ptr(port_buffer);
 #endif
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_midi_event_write(void* port_buffer, jack_nframes_t time, const jack_midi_data_t* data, size_t data_size)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_midi_event_write(port_buffer, time, data, data_size) == 0);
 #else
-    if (bridge.midi_event_write_ptr != nullptr)
-        return (bridge.midi_event_write_ptr(port_buffer, time, data, data_size) == 0);
+    if (getBridgeInstance().midi_event_write_ptr != nullptr)
+        return (getBridgeInstance().midi_event_write_ptr(port_buffer, time, data, data_size) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 jack_midi_data_t* jackbridge_midi_event_reserve(void* port_buffer, jack_nframes_t time, size_t data_size)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_midi_event_reserve(port_buffer, time, data_size);
 #else
-    if (bridge.midi_event_reserve_ptr != nullptr)
-        return bridge.midi_event_reserve_ptr(port_buffer, time, data_size);
+    if (getBridgeInstance().midi_event_reserve_ptr != nullptr)
+        return getBridgeInstance().midi_event_reserve_ptr(port_buffer, time, data_size);
 #endif
     return nullptr;
 }
 
 // -----------------------------------------------------------------------------
 
+JACKBRIDGE_EXPORT
 bool jackbridge_release_timebase(jack_client_t* client)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_release_timebase(client) == 0);
 #else
-    if (bridge.release_timebase_ptr != nullptr)
-        return (bridge.release_timebase_ptr(client) == 0);
+    if (getBridgeInstance().release_timebase_ptr != nullptr)
+        return (getBridgeInstance().release_timebase_ptr(client) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_set_sync_callback(jack_client_t* client, JackSyncCallback sync_callback, void* arg)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_set_sync_callback(client, sync_callback, arg) == 0);
 #else
-    if (bridge.set_sync_callback_ptr != nullptr)
-        return (bridge.set_sync_callback_ptr(client, sync_callback, arg) == 0);
+    if (getBridgeInstance().set_sync_callback_ptr != nullptr)
+        return (getBridgeInstance().set_sync_callback_ptr(client, sync_callback, arg) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_set_sync_timeout(jack_client_t* client, jack_time_t timeout)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_set_sync_timeout(client, timeout) == 0);
 #else
-    if (bridge.set_sync_timeout_ptr != nullptr)
-        return (bridge.set_sync_timeout_ptr(client, timeout) == 0);
+    if (getBridgeInstance().set_sync_timeout_ptr != nullptr)
+        return (getBridgeInstance().set_sync_timeout_ptr(client, timeout) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_set_timebase_callback(jack_client_t* client, bool conditional, JackTimebaseCallback timebase_callback, void* arg)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_set_timebase_callback(client, conditional, timebase_callback, arg) == 0);
 #else
-    if (bridge.set_timebase_callback_ptr != nullptr)
-        return (bridge.set_timebase_callback_ptr(client, conditional, timebase_callback, arg) == 0);
+    if (getBridgeInstance().set_timebase_callback_ptr != nullptr)
+        return (getBridgeInstance().set_timebase_callback_ptr(client, conditional, timebase_callback, arg) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_transport_locate(jack_client_t* client, jack_nframes_t frame)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_transport_locate(client, frame) == 0);
 #else
-    if (bridge.transport_locate_ptr != nullptr)
-        return (bridge.transport_locate_ptr(client, frame) == 0);
+    if (getBridgeInstance().transport_locate_ptr != nullptr)
+        return (getBridgeInstance().transport_locate_ptr(client, frame) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 jack_transport_state_t jackbridge_transport_query(const jack_client_t* client, jack_position_t* pos)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_transport_query(client, pos);
 #else
-    if (bridge.transport_query_ptr != nullptr)
-        return bridge.transport_query_ptr(client, pos);
+    if (getBridgeInstance().transport_query_ptr != nullptr)
+        return getBridgeInstance().transport_query_ptr(client, pos);
 #endif
     if (pos != nullptr)
     {
@@ -1441,157 +1531,170 @@ jack_transport_state_t jackbridge_transport_query(const jack_client_t* client, j
     return JackTransportStopped;
 }
 
+JACKBRIDGE_EXPORT
 jack_nframes_t jackbridge_get_current_transport_frame(const jack_client_t* client)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_get_current_transport_frame(client);
 #else
-    if (bridge.get_current_transport_frame_ptr != nullptr)
-        return bridge.get_current_transport_frame_ptr(client);
+    if (getBridgeInstance().get_current_transport_frame_ptr != nullptr)
+        return getBridgeInstance().get_current_transport_frame_ptr(client);
 #endif
     return 0;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_transport_reposition(jack_client_t* client, const jack_position_t* pos)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_transport_reposition(client, pos) == 0);
 #else
-    if (bridge.transport_reposition_ptr != nullptr)
-        return (bridge.transport_reposition_ptr(client, pos) == 0);
+    if (getBridgeInstance().transport_reposition_ptr != nullptr)
+        return (getBridgeInstance().transport_reposition_ptr(client, pos) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 void jackbridge_transport_start(jack_client_t* client)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     jack_transport_start(client);
 #else
-    if (bridge.transport_start_ptr != nullptr)
-        bridge.transport_start_ptr(client);
+    if (getBridgeInstance().transport_start_ptr != nullptr)
+        getBridgeInstance().transport_start_ptr(client);
 #endif
 }
 
+JACKBRIDGE_EXPORT
 void jackbridge_transport_stop(jack_client_t* client)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     jack_transport_stop(client);
 #else
-    if (bridge.transport_stop_ptr != nullptr)
-        bridge.transport_stop_ptr(client);
+    if (getBridgeInstance().transport_stop_ptr != nullptr)
+        getBridgeInstance().transport_stop_ptr(client);
 #endif
 }
 
 // -----------------------------------------------------------------------------
 
+JACKBRIDGE_EXPORT
 bool jackbridge_set_property(jack_client_t* client, jack_uuid_t subject, const char* key, const char* value, const char* type)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_set_property(client, subject, key, value, type) == 0);
 #else
-    if (bridge.set_property_ptr != nullptr)
-        return (bridge.set_property_ptr(client, subject, key, value, type) == 0);
+    if (getBridgeInstance().set_property_ptr != nullptr)
+        return (getBridgeInstance().set_property_ptr(client, subject, key, value, type) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_get_property(jack_uuid_t subject, const char* key, char** value, char** type)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_get_property(subject, key, value, type) == 0);
 #else
-    if (bridge.get_property_ptr != nullptr)
-        return (bridge.get_property_ptr(subject, key, value, type) == 0);
+    if (getBridgeInstance().get_property_ptr != nullptr)
+        return (getBridgeInstance().get_property_ptr(subject, key, value, type) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 void jackbridge_free_description(jack_description_t* desc, bool free_description_itself)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     jack_free_description(desc, free_description_itself);
 #else
-    if (bridge.free_description_ptr != nullptr)
-        bridge.free_description_ptr(desc, free_description_itself);
+    if (getBridgeInstance().free_description_ptr != nullptr)
+        getBridgeInstance().free_description_ptr(desc, free_description_itself);
 #endif
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_get_properties(jack_uuid_t subject, jack_description_t* desc)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_get_properties(subject, desc) == 0);
 #else
-    if (bridge.get_properties_ptr != nullptr)
-        return (bridge.get_properties_ptr(subject, desc) == 0);
+    if (getBridgeInstance().get_properties_ptr != nullptr)
+        return (getBridgeInstance().get_properties_ptr(subject, desc) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_get_all_properties(jack_description_t** descs)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_get_all_properties(descs) == 0);
 #else
-    if (bridge.get_all_properties_ptr != nullptr)
-        return (bridge.get_all_properties_ptr(descs) == 0);
+    if (getBridgeInstance().get_all_properties_ptr != nullptr)
+        return (getBridgeInstance().get_all_properties_ptr(descs) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_remove_property(jack_client_t* client, jack_uuid_t subject, const char* key)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_remove_property(client, subject, key) == 0);
 #else
-    if (bridge.remove_property_ptr != nullptr)
-        return (bridge.remove_property_ptr(client, subject, key) == 0);
+    if (getBridgeInstance().remove_property_ptr != nullptr)
+        return (getBridgeInstance().remove_property_ptr(client, subject, key) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 int jackbridge_remove_properties(jack_client_t* client, jack_uuid_t subject)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_remove_properties(client, subject);
 #else
-    if (bridge.remove_properties_ptr != nullptr)
-        return bridge.remove_properties_ptr(client, subject);
+    if (getBridgeInstance().remove_properties_ptr != nullptr)
+        return getBridgeInstance().remove_properties_ptr(client, subject);
 #endif
     return 0;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_remove_all_properties(jack_client_t* client)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_remove_all_properties(client) == 0);
 #else
-    if (bridge.remove_all_properties_ptr != nullptr)
-        return (bridge.remove_all_properties_ptr(client) == 0);
+    if (getBridgeInstance().remove_all_properties_ptr != nullptr)
+        return (getBridgeInstance().remove_all_properties_ptr(client) == 0);
 #endif
     return false;
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_set_property_change_callback(jack_client_t* client, JackPropertyChangeCallback callback, void* arg)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_set_property_change_callback(client, callback, arg) == 0);
 #else
-    if (bridge.set_property_change_callback_ptr != nullptr)
-        return (bridge.set_property_change_callback_ptr(client, callback, arg) == 0);
+    if (getBridgeInstance().set_property_change_callback_ptr != nullptr)
+        return (getBridgeInstance().set_property_change_callback_ptr(client, callback, arg) == 0);
 #endif
     return false;
 }

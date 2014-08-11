@@ -84,7 +84,7 @@ public:
         case ENGINE_PROCESS_MODE_SINGLE_CLIENT:
         case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
             CARLA_SAFE_ASSERT_RETURN(jackClient != nullptr && jackPort != nullptr,);
-#ifndef CARLA_OS_WIN
+#ifndef BUILD_BRIDGE
             if (const jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
                 jackbridge_set_property(jackClient, uuid, JACKEY_SIGNAL_TYPE, "AUDIO", "text/plain");
 #endif
@@ -102,10 +102,12 @@ public:
 
         if (fJackClient != nullptr && fJackPort != nullptr)
         {
+#ifndef BUILD_BRIDGE
             try {
                 if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
                     jackbridge_remove_property(fJackClient, uuid, JACKEY_SIGNAL_TYPE);
             } CARLA_SAFE_EXCEPTION("Audio port remove meta type");
+#endif
 
             try {
                 jackbridge_port_unregister(fJackClient, fJackPort);
@@ -175,7 +177,7 @@ public:
         case ENGINE_PROCESS_MODE_SINGLE_CLIENT:
         case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
             CARLA_SAFE_ASSERT_RETURN(jackClient != nullptr && jackPort != nullptr,);
-#ifndef CARLA_OS_WIN
+#ifndef BUILD_BRIDGE
             if (const jack_uuid_t uuid = jackbridge_port_uuid(jackPort))
                 jackbridge_set_property(jackClient, uuid, JACKEY_SIGNAL_TYPE, "CV", "text/plain");
 #endif
@@ -193,10 +195,12 @@ public:
 
         if (fJackClient != nullptr && fJackPort != nullptr)
         {
+#ifndef BUILD_BRIDGE
             try {
                 if (const jack_uuid_t uuid = jackbridge_port_uuid(fJackPort))
                     jackbridge_remove_property(fJackClient, uuid, JACKEY_SIGNAL_TYPE);
             } CARLA_SAFE_EXCEPTION("CV port remove meta type");
+#endif
 
             try {
                 jackbridge_port_unregister(fJackClient, fJackPort);
@@ -703,6 +707,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0', false);
+        CARLA_SAFE_ASSERT_RETURN(jackbridge_is_ok(), false);
         carla_debug("CarlaEngineJack::init(\"%s\")", clientName);
 
         fFreewheel      = false;
@@ -720,6 +725,11 @@ public:
                 pData->sampleRate = jackbridge_get_sample_rate(tmpClient);
 
                 jackbridge_client_close(tmpClient);
+            }
+            else
+            {
+                carla_stderr2("Failed to init temporary jack client");
+                return false;
             }
         }
 

@@ -14,87 +14,33 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "CarlaDefines.h"
-
 #include "JackBridge.hpp"
-#include "CarlaShmUtils.hpp"
 
-#ifndef JACKBRIDGE_HPP_INCLUDED
-// don't include the whole JACK API in this file
-CARLA_EXPORT bool jackbridge_sem_init(void* sem) noexcept;
-CARLA_EXPORT bool jackbridge_sem_destroy(void* sem) noexcept;
-CARLA_EXPORT bool jackbridge_sem_post(void* sem) noexcept;
-CARLA_EXPORT bool jackbridge_sem_timedwait(void* sem, int secs) noexcept;
-
-CARLA_EXPORT bool  jackbridge_shm_is_valid(const void* shm) noexcept;
-CARLA_EXPORT void  jackbridge_shm_init(void* shm) noexcept;
-CARLA_EXPORT void  jackbridge_shm_attach(void* shm, const char* name) noexcept;
-CARLA_EXPORT void  jackbridge_shm_close(void* shm) noexcept;
-CARLA_EXPORT void* jackbridge_shm_map(void* shm, size_t size) noexcept;
-#endif
+#ifdef JACKBRIDGE_DUMMY
+# include "CarlaUtils.hpp"
+#else
+# include <ctime>
+# include <sys/time.h>
+# include <sys/types.h>
+# include <semaphore.h>
+# ifdef CARLA_OS_MAC
+extern "C" {
+#  include "osx_sem_timedwait.c"
+}
+# endif
+# include "CarlaShmUtils.hpp"
+#endif // ! JACKBRIDGE_DUMMY
 
 // -----------------------------------------------------------------------------
 
-#ifdef JACKBRIDGE_DUMMY
-bool jackbridge_sem_init(void*) noexcept
-{
-    return false;
-}
-
-bool jackbridge_sem_destroy(void*) noexcept
-{
-    return false;
-}
-
-bool jackbridge_sem_post(void*) noexcept
-{
-    return false;
-}
-
-bool jackbridge_sem_timedwait(void*, int) noexcept
-{
-    return false;
-}
-
-bool jackbridge_shm_is_valid(const void*) noexcept
-{
-    return false;
-}
-
-void jackbridge_shm_init(void*) noexcept
-{
-}
-
-void jackbridge_shm_attach(void*, const char*) noexcept
-{
-}
-
-void jackbridge_shm_close(void*) noexcept
-{
-}
-
-void* jackbridge_shm_map(void*, size_t) noexcept
-{
-    return nullptr;
-}
-#else //JACKBRIDGE_DUMMY
-
-#include <ctime>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <semaphore.h>
-
-#ifdef CARLA_OS_MAC
-extern "C" {
-#include "osx_sem_timedwait.c"
-}
-#endif
-
 // TODO - check noexcept on OSX
 
+JACKBRIDGE_EXPORT
 bool jackbridge_sem_init(void* sem) noexcept
 {
-#ifdef CARLA_OS_MAC
+#if defined(JACKBRIDGE_DUMMY)
+    return false;
+#elif defined(CARLA_OS_MAC)
     static ulong sCounter = 0;
     ++sCounter;
 
@@ -114,81 +60,116 @@ bool jackbridge_sem_init(void* sem) noexcept
 #endif
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_sem_destroy(void* sem) noexcept
 {
-#ifdef CARLA_OS_MAC
+#if defined(JACKBRIDGE_DUMMY)
+    return false;
+#elif defined(CARLA_OS_MAC)
     return (sem_close(*(sem_t**)sem) == 0);
 #else
     return (sem_destroy((sem_t*)sem) == 0);
 #endif
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_sem_post(void* sem) noexcept
 {
-#ifdef CARLA_OS_MAC
-    sem_t* const sema = *(sem_t**)sem;
+#ifdef JACKBRIDGE_DUMMY
+    return false;
 #else
+# ifdef CARLA_OS_MAC
+    sem_t* const sema = *(sem_t**)sem;
+# else
     sem_t* const sema = (sem_t*)sem;
-#endif
+# endif
     return (sem_post(sema) == 0);
+#endif
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_sem_timedwait(void* sem, int secs) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(secs > 0, false);
-#ifdef CARLA_OS_MAC
-    sem_t* const sema = *(sem_t**)sem;
+
+#ifdef JACKBRIDGE_DUMMY
+    return false;
 #else
+# ifdef CARLA_OS_MAC
+    sem_t* const sema = *(sem_t**)sem;
+# else
     sem_t* const sema = (sem_t*)sem;
-#endif
+# endif
 
     timespec timeout;
 
-#ifdef CARLA_OS_LINUX
+# ifdef CARLA_OS_LINUX
     clock_gettime(CLOCK_REALTIME, &timeout);
-#else
+# else
     timeval now;
     gettimeofday(&now, nullptr);
     timeout.tv_sec  = now.tv_sec;
     timeout.tv_nsec = now.tv_usec * 1000;
-#endif
+# endif
     timeout.tv_sec += secs;
 
     try {
         return (sem_timedwait(sema, &timeout) == 0);
     } CARLA_SAFE_EXCEPTION_RETURN("sem_timedwait", false);
+#endif
 }
 
+JACKBRIDGE_EXPORT
 bool jackbridge_shm_is_valid(const void* shm) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(shm != nullptr, false);
+#ifdef JACKBRIDGE_DUMMY
+    return false;
+#else
     return carla_is_shm_valid(*(const shm_t*)shm);
+#endif
 }
 
+JACKBRIDGE_EXPORT
 void jackbridge_shm_init(void* shm) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(shm != nullptr,);
+
+#ifndef JACKBRIDGE_DUMMY
     carla_shm_init(*(shm_t*)shm);
+#endif
 }
 
+JACKBRIDGE_EXPORT
 void jackbridge_shm_attach(void* shm, const char* name) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(shm != nullptr,);
+
+#ifndef JACKBRIDGE_DUMMY
     *(shm_t*)shm = carla_shm_attach(name);
+#endif
 }
 
+JACKBRIDGE_EXPORT
 void jackbridge_shm_close(void* shm) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(shm != nullptr,);
+
+#ifndef JACKBRIDGE_DUMMY
     carla_shm_close(*(shm_t*)shm);
+#endif
 }
 
+JACKBRIDGE_EXPORT
 void* jackbridge_shm_map(void* shm, size_t size) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(shm != nullptr, nullptr);
-    return carla_shm_map(*(shm_t*)shm, size);
-}
 
-#endif // ! JACKBRIDGE_DUMMY
+#ifdef JACKBRIDGE_DUMMY
+    return nullptr;
+#else
+    return carla_shm_map(*(shm_t*)shm, size);
+#endif
+}
 
 // -----------------------------------------------------------------------------
