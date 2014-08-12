@@ -80,7 +80,13 @@ public:
     CarlaEngineJuce(AudioIODeviceType* const devType)
         : CarlaEngine(),
           AudioIODeviceCallback(),
-          fDeviceType(devType)
+          fDevice(),
+          fDeviceType(devType),
+          fMidiIns(),
+          fMidiInEvents(),
+          fMidiOuts(),
+          fMidiOutMutex(),
+          leakDetector_CarlaEngineJuce()
     {
         carla_debug("CarlaEngineJuce::CarlaEngineJuce(%p)", devType);
 
@@ -761,7 +767,8 @@ private:
         RtLinkedList<RtMidiEvent> dataPending;
 
         RtMidiEvents()
-            : dataPool(512, 512),
+            : mutex(),
+              dataPool(512, 512),
               data(dataPool),
               dataPending(dataPool) {}
 
@@ -797,7 +804,7 @@ private:
     LinkedList<MidiOutPort> fMidiOuts;
     CarlaMutex              fMidiOutMutex;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJuce)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJuce)
 };
 
 // -----------------------------------------

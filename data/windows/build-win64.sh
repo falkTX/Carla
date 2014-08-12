@@ -15,14 +15,12 @@ export WIN32=true
 export WIN64=true
 
 export PATH=$MINGW_PATH/bin:$MINGW_PATH/$MINGW/bin:$PATH
-export AR=$MINGW-ar
 export CC=$MINGW-gcc
 export CXX=$MINGW-g++
-export MOC=$MINGW-moc
-export RCC=$MINGW-rcc
-export UIC=$MINGW-uic
-export STRIP=$MINGW-strip
 export WINDRES=$MINGW-windres
+
+export CFLAGS=-DPTW32_STATIC_LIB
+export CXXFLAGS=-DPTW32_STATIC_LIB
 
 export WINEARCH=win64
 export WINEPREFIX=~/.winepy3_x64

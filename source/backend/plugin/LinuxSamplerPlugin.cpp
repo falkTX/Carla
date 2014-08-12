@@ -471,7 +471,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
 
-        const int8_t channel(kIsGIG ? pData->ctrlChannel : 0);
+        const int8_t channel(kIsGIG ? pData->ctrlChannel : int8_t(0));
 
         if (index >= 0 && channel >= 0 && channel < MAX_MIDI_CHANNELS)
         {
