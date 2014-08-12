@@ -74,9 +74,6 @@ source/backend/carla_%_plugin.a: .FORCE
 source/backend/carla_%.a: .FORCE
 	$(MAKE) -C source/backend/$* ../carla_$*.a
 
-source/modules/jackbridge-%: .FORCE
-	$(MAKE) -C source/modules/jackbridge ../jackbridge-$*
-
 source/modules/%.qt4.a: .FORCE
 	$(MAKE) -C source/modules/$* ../$*.qt4.a
 
@@ -204,7 +201,7 @@ posix64: $(LIBS_POSIX64)
 # --------------------------------------------------------------
 # Binaries (win32)
 
-LIBS_WIN32 += source/modules/jackbridge-win32.dll
+LIBS_WIN32 += source/modules/jackbridge.win32e.a
 LIBS_WIN32 += source/modules/juce_audio_basics.win32.a
 LIBS_WIN32 += source/modules/juce_audio_processors.win32.a
 LIBS_WIN32 += source/modules/juce_core.win32.a
@@ -222,7 +219,7 @@ win32: $(LIBS_WIN32)
 # --------------------------------------------------------------
 # Binaries (win64)
 
-LIBS_WIN64 += source/modules/jackbridge-win64.dll
+LIBS_WIN64 += source/modules/jackbridge.win64e.a
 LIBS_WIN64 += source/modules/juce_audio_basics.win64.a
 LIBS_WIN64 += source/modules/juce_audio_processors.win64.a
 LIBS_WIN64 += source/modules/juce_core.win64.a
@@ -242,11 +239,11 @@ win64: $(LIBS_WIN64)
 
 wine32:
 	$(MAKE) -C source/modules/jackbridge wine32
-	cp -f source/modules/jackbridge-wine32.dll.so bin/jackbridge-win32.dll
+	cp -f source/modules/jackbridge-wine32.dll.so bin/jackbridge-wine32.dll
 
 wine64:
 	$(MAKE) -C source/modules/jackbridge wine64
-	cp -f source/modules/jackbridge-wine64.dll.so bin/jackbridge-win64.dll
+	cp -f source/modules/jackbridge-wine64.dll.so bin/jackbridge-wine64.dll
 
 # --------------------------------------------------------------
 # Resources

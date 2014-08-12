@@ -63,10 +63,10 @@ endif
 # --------------------------------------------------------------
 # Plugin bridges (Windows)
 
-WIN_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS) -DJACKBRIDGE_EXPORTING_LATER
+WIN_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS)
 WIN_32BIT_FLAGS = $(32BIT_FLAGS)
 WIN_64BIT_FLAGS = $(64BIT_FLAGS)
-WIN_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) -L../modules
+WIN_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS)
 
 # --------------------------------------------------------------
 # Plugin bridges (Native)
@@ -328,6 +328,7 @@ OBJS_WIN32 += \
 
 # libs
 LIBS_WIN32 = \
+	../modules/jackbridge.win32e.a \
 	../modules/lilv.win32.a \
 	../modules/rtmempool.win32.a
 
@@ -340,8 +341,8 @@ LIBS_WIN32 += \
 	../modules/juce_graphics.win32.a \
 	../modules/juce_gui_basics.win32.a
 
-../../bin/carla-bridge-win32.exe: $(OBJS_WIN32) $(LIBS_WIN32) ../modules/jackbridge-win32.dll
-	$(CXX) $(OBJS_WIN32) $(LIBS_START) $(LIBS_WIN32) $(LIBS_END) $(WIN_LINK_FLAGS) $(WIN_32BIT_FLAGS) -ljackbridge-win32 -o $@
+../../bin/carla-bridge-win32.exe: $(OBJS_WIN32) $(LIBS_WIN32)
+	$(CXX) $(OBJS_WIN32) $(LIBS_START) $(LIBS_WIN32) $(LIBS_END) $(WIN_LINK_FLAGS) $(WIN_32BIT_FLAGS) -o $@
 
 %__win32.o: %.cpp
 	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) -DBRIDGE_PLUGIN -c -o $@
@@ -383,6 +384,7 @@ OBJS_WIN64 += \
 
 # libs
 LIBS_WIN64 = \
+	../modules/jackbridge.win64e.a \
 	../modules/lilv.win64.a \
 	../modules/rtmempool.win64.a
 
@@ -395,8 +397,8 @@ LIBS_WIN64 += \
 	../modules/juce_graphics.win64.a \
 	../modules/juce_gui_basics.win64.a
 
-../../bin/carla-bridge-win64.exe: $(OBJS_WIN64) $(LIBS_WIN64) ../modules/jackbridge-win64.dll
-	$(CXX) $(OBJS_WIN64) $(LIBS_START) $(LIBS_WIN64) $(LIBS_END) $(WIN_LINK_FLAGS) $(WIN_64BIT_FLAGS) -ljackbridge-win64 -o $@
+../../bin/carla-bridge-win64.exe: $(OBJS_WIN64) $(LIBS_WIN64)
+	$(CXX) $(OBJS_WIN64) $(LIBS_START) $(LIBS_WIN64) $(LIBS_END) $(WIN_LINK_FLAGS) $(WIN_64BIT_FLAGS) -o $@
 
 %__win64.o: %.cpp
 	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) -DBRIDGE_PLUGIN -c -o $@

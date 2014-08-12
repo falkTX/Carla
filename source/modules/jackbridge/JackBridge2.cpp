@@ -35,7 +35,6 @@ extern "C" {
 
 // TODO - check noexcept on OSX
 
-JACKBRIDGE_EXPORT
 bool jackbridge_sem_init(void* sem) noexcept
 {
 #if defined(JACKBRIDGE_DUMMY)
@@ -60,7 +59,6 @@ bool jackbridge_sem_init(void* sem) noexcept
 #endif
 }
 
-JACKBRIDGE_EXPORT
 bool jackbridge_sem_destroy(void* sem) noexcept
 {
 #if defined(JACKBRIDGE_DUMMY)
@@ -72,7 +70,6 @@ bool jackbridge_sem_destroy(void* sem) noexcept
 #endif
 }
 
-JACKBRIDGE_EXPORT
 bool jackbridge_sem_post(void* sem) noexcept
 {
 #ifdef JACKBRIDGE_DUMMY
@@ -87,7 +84,6 @@ bool jackbridge_sem_post(void* sem) noexcept
 #endif
 }
 
-JACKBRIDGE_EXPORT
 bool jackbridge_sem_timedwait(void* sem, int secs) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(secs > 0, false);
@@ -119,7 +115,6 @@ bool jackbridge_sem_timedwait(void* sem, int secs) noexcept
 #endif
 }
 
-JACKBRIDGE_EXPORT
 bool jackbridge_shm_is_valid(const void* shm) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(shm != nullptr, false);
@@ -130,7 +125,6 @@ bool jackbridge_shm_is_valid(const void* shm) noexcept
 #endif
 }
 
-JACKBRIDGE_EXPORT
 void jackbridge_shm_init(void* shm) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(shm != nullptr,);
@@ -140,7 +134,6 @@ void jackbridge_shm_init(void* shm) noexcept
 #endif
 }
 
-JACKBRIDGE_EXPORT
 void jackbridge_shm_attach(void* shm, const char* name) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(shm != nullptr,);
@@ -150,7 +143,6 @@ void jackbridge_shm_attach(void* shm, const char* name) noexcept
 #endif
 }
 
-JACKBRIDGE_EXPORT
 void jackbridge_shm_close(void* shm) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(shm != nullptr,);
@@ -160,7 +152,6 @@ void jackbridge_shm_close(void* shm) noexcept
 #endif
 }
 
-JACKBRIDGE_EXPORT
 void* jackbridge_shm_map(void* shm, size_t size) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(shm != nullptr, nullptr);

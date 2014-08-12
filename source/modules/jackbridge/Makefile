@@ -25,18 +25,13 @@ OBJS_posix64  = JackBridge1.cpp.posix64.o  JackBridge2.cpp.posix64.o
 OBJS_win32    = JackBridge1.cpp.win32.o    JackBridge2.cpp.win32.o
 OBJS_win64    = JackBridge1.cpp.win64.o    JackBridge2.cpp.win64.o
 
-OBJS_posix32d = JackBridge1.cpp.posix32d.o JackBridge2.cpp.posix32d.o
-OBJS_posix64d = JackBridge1.cpp.posix64d.o JackBridge2.cpp.posix64d.o
-OBJS_win32d   = JackBridge1.cpp.win32d.o   JackBridge2.cpp.win32d.o
-OBJS_win64d   = JackBridge1.cpp.win64d.o   JackBridge2.cpp.win64d.o
+OBJS_posix32e = JackBridgeExport.cpp.posix32e.o
+OBJS_posix64e = JackBridgeExport.cpp.posix64e.o
+OBJS_win64e   = JackBridgeExport.cpp.win64e.o
+OBJS_win32e   = JackBridgeExport.cpp.win32e.o
 
-OBJS_posix32e = JackBridgeExport.cpp.posix32.o
-OBJS_posix64e = JackBridgeExport.cpp.posix64.o
-OBJS_win64e   = JackBridgeExport.cpp.win64.o
-OBJS_win32e   = JackBridgeExport.cpp.win32.o
-
-OBJS_wine32   = JackBridge1.cpp.wine32.o   JackBridge2.cpp.wine32.o
-OBJS_wine64   = JackBridge1.cpp.wine64.o   JackBridge2.cpp.wine64.o
+OBJS_wine32   = JackBridge1.cpp.wine32.o JackBridge2.cpp.wine32.o JackBridge3.cpp.wine32.o
+OBJS_wine64   = JackBridge1.cpp.wine64.o JackBridge2.cpp.wine64.o JackBridge3.cpp.wine64.o
 
 # --------------------------------------------------------------
 
@@ -105,25 +100,25 @@ debug:
 
 # --------------------------------------------------------------
 
-../jackbridge-posix32e.so: $(OBJS_posix32e)
-	$(CXX) $^ -shared $(LINK_FLAGS) $(32BIT_FLAGS) -o $@
+../jackbridge-wine32.dll.so: $(OBJS_wine32) JackBridgeExport.def
+	$(WINECXX) $^ -shared $(WINE_32BIT_FLAGS) $(WINE_LINK_FLAGS) -o $@
 
-../jackbridge-posix64e.so: $(OBJS_posix64e)
-	$(CXX) $^ -shared $(LINK_FLAGS) $(64BIT_FLAGS) -o $@
+../jackbridge-wine64.dll.so: $(OBJS_wine64) JackBridgeExport.def
+	$(WINECXX) $^ -shared $(WINE_64BIT_FLAGS) $(WINE_LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
 
-../jackbridge-win32.dll: $(OBJS_win32d)
-	$(CXX) $^ -shared $(LINK_FLAGS) -Wl,--output-def,$@.def,--out-implib,$@.a -o $@
+JackBridge1.cpp.o: JackBridge1.cpp JackBridge.hpp
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-../jackbridge-win64.dll: $(OBJS_win64d)
-	$(CXX) $^ -shared $(LINK_FLAGS) -Wl,--output-def,$@.def,--out-implib,$@.a -o $@
+JackBridge2.cpp.o: JackBridge2.cpp JackBridge.hpp
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-../jackbridge-wine32.dll.so: $(OBJS_wine32) ../jackbridge-win32.dll.def
-	$(WINECXX) $^ -shared $(WINE_32BIT_FLAGS) $(WINE_LINK_FLAGS) -o $@
+JackBridgeExport.cpp.%32e.o: JackBridgeExport.cpp JackBridgeExport.hpp JackBridge.hpp
+	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -fpermissive -c -o $@
 
-../jackbridge-wine64.dll.so: $(OBJS_wine64) ../jackbridge-win64.dll.def
-	$(WINECXX) $^ -shared $(WINE_64BIT_FLAGS) $(WINE_LINK_FLAGS) -o $@
+JackBridgeExport.cpp.%64e.o: JackBridgeExport.cpp JackBridgeExport.hpp JackBridge.hpp
+	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -fpermissive -c -o $@
 
 # --------------------------------------------------------------
 
@@ -141,43 +136,10 @@ debug:
 
 # --------------------------------------------------------------
 
-%.posix32d.o: %
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -DJACKBRIDGE_DUMMY -DJACKBRIDGE_EXPORTING -Wno-unused-parameter -c -o $@
-
-%.posix64d.o: %
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -DJACKBRIDGE_DUMMY -DJACKBRIDGE_EXPORTING -Wno-unused-parameter -c -o $@
-
-%.win64d.o: %
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -DJACKBRIDGE_DUMMY -DJACKBRIDGE_EXPORTING -Wno-unused-parameter -c -o $@
-
-%.win32d.o: %
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -DJACKBRIDGE_DUMMY -DJACKBRIDGE_EXPORTING -Wno-unused-parameter -c -o $@
-
-# --------------------------------------------------------------
-
-%.posix32e.o: %
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
-
-%.posix64e.o: %
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
-
-%.win64e.o: %
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
-
-%.win32e.o: %
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
-
-# --------------------------------------------------------------
-
 %.wine32.o: %
-	$(WINECXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -DJACKBRIDGE_EXPORTING -c -o $@
+	$(WINECXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
 %.wine64.o: %
-	$(WINECXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -DJACKBRIDGE_EXPORTING -c -o $@
-
-# --------------------------------------------------------------
-
-JackBridge%.cpp.o: JackBridge%.cpp JackBridge.hpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	$(WINECXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
