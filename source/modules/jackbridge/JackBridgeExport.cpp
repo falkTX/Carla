@@ -28,16 +28,13 @@ public:
           func(nullptr)
     {
 #ifdef CARLA_OS_WIN64
-        lib = LoadLibraryA("jackbridge-wine64.dll");
-        //lib = lib_open("jackbridge-wine64.dll");
+        lib = lib_open("jackbridge-wine64.dll");
 #else
-        lib = LoadLibraryA("jackbridge-wine32.dll");
-        //lib = lib_open("jackbridge-wine32.dll");
+        lib = lib_open("jackbridge-wine32.dll");
 #endif
         CARLA_SAFE_ASSERT_RETURN(lib != nullptr,);
 
-        //func = (jackbridge_exported_function_type)lib_symbol(lib, "jackbridge_get_exported_functions");
-        func = (jackbridge_exported_function_type)GetProcAddress(lib, "jackbridge_get_exported_functions");
+        func = (jackbridge_exported_function_type)lib_symbol(lib, "jackbridge_get_exported_functions");
         CARLA_SAFE_ASSERT_RETURN(func != nullptr,);
     }
 
@@ -45,8 +42,7 @@ public:
     {
         if (lib == nullptr)
             return;
-        FreeLibrary(lib);
-        //lib_close(lib);
+        lib_close(lib);
         lib  = nullptr;
         func = nullptr;
     }
@@ -66,22 +62,11 @@ public:
         CARLA_SAFE_ASSERT_RETURN(funcs->unique1 == funcs->unique2, fallback);
         CARLA_SAFE_ASSERT_RETURN(funcs->shm_map_ptr != nullptr, fallback);
 
-        carla_stdout("Got wine functions, ptr: %p; testcode: 0x%lx | 0x%lx", funcs, funcs->unique1, funcs->unique2);
-
-#if 1
-        carla_stdout("Starting tests...");
-        carla_stdout("1. register a jack client");
-        jack_client_t* client = funcs->client_open_ptr("test", JackNoStartServer, nullptr);
-        carla_stdout("2. closing the jack client");
-        funcs->client_close_ptr(client);
-#endif
-
         return *funcs;
     }
 
 private:
-    HMODULE lib;
-    //void* lib;
+    void* lib;
     jackbridge_exported_function_type func;
 
     CARLA_PREVENT_HEAP_ALLOCATION
@@ -116,7 +101,6 @@ const char* jackbridge_get_version_string(void)
 
 jack_client_t* jackbridge_client_open(const char* client_name, jack_options_t options, jack_status_t* status)
 {
-    carla_stdout("client_open BEFORE %p 0x%x %p", client_name, options, status);
     return getBridgeInstance().client_open_ptr(client_name, options, status);
 }
 

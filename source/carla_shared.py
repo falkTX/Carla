@@ -517,7 +517,6 @@ def initHost(initName, libPrefix = None, failError = True):
     # Set binary dir
 
     CWDl = CWD.lower()
-    print(CWD)
 
     # standalone, installed system-wide linux
     if libPrefix is not None:

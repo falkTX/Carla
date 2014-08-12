@@ -557,8 +557,6 @@ jack_client_t* jackbridge_client_open(const char* client_name, jack_options_t op
 #elif defined(JACKBRIDGE_DIRECT)
     return jack_client_open(client_name, options, status);
 #else
-    carla_stdout("client_open AFTER %p 0x%x %p", client_name, options, status);
-
     if (getBridgeInstance().client_open_ptr != nullptr)
         return getBridgeInstance().client_open_ptr(client_name, options, status);
 #endif

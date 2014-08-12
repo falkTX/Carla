@@ -134,8 +134,6 @@ const JackBridgeExportedFunctions* jackbridge_get_exported_functions()
     funcs.shm_close_ptr                        = jackbridge_shm_close;
     funcs.shm_map_ptr                          = jackbridge_shm_map;
 
-    carla_stdout("jackbridge_get_exported_functions called, ptr=%p", &funcs);
-
     return &funcs;
 }
 
