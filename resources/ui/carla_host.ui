@@ -175,7 +175,7 @@
      <x>0</x>
      <y>0</y>
      <width>688</width>
-     <height>19</height>
+     <height>17</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -265,6 +265,7 @@
      <string>&amp;Help</string>
     </property>
     <addaction name="act_help_about"/>
+    <addaction name="act_help_about_juce"/>
     <addaction name="act_help_about_qt"/>
    </widget>
    <addaction name="menu_File"/>
@@ -644,6 +645,11 @@
    </property>
    <property name="text">
     <string>Show Canvas &amp;Keyboard</string>
+   </property>
+  </action>
+  <action name="act_help_about_juce">
+   <property name="text">
+    <string>About &amp;JUCE</string>
    </property>
   </action>
  </widget>

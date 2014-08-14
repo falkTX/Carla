@@ -37,6 +37,7 @@ else:
 # Imports (Custom)
 
 import ui_carla_about
+import ui_carla_about_juce
 import ui_carla_edit
 import ui_carla_parameter
 
@@ -120,7 +121,6 @@ class CarlaAboutW(QDialog):
             self.ui.l_extended.hide()
             self.ui.tabWidget.removeTab(1)
             self.ui.tabWidget.removeTab(1)
-            self.adjustSize()
 
         else:
             self.ui.l_extended.setText(gCarla.host.get_complete_license_text())
@@ -187,6 +187,27 @@ class CarlaAboutW(QDialog):
                                           "<li>http://ll-plugins.nongnu.org/lv2/ext/miditype</li>"
                                           "</ul>"))
             self.ui.l_vst.setText(self.tr("<p>About 85&#37; complete (missing vst bank/presets and some minor stuff)</p>"))
+
+        self.adjustSize()
+        self.setFixedSize(self.size())
+
+    def done(self, r):
+        QDialog.done(self, r)
+        self.close()
+
+# ------------------------------------------------------------------------------------------------------------
+# JUCE About dialog
+
+class JuceAboutW(QDialog):
+    def __init__(self, parent):
+        QDialog.__init__(self, parent)
+        self.ui = ui_carla_about_juce.Ui_JuceAboutW()
+        self.ui.setupUi(self)
+
+        self.ui.l_text2.setText(self.tr("This program uses JUCE version %s." % (gCarla.host.get_juce_version() if gCarla.host is not None else "3.0")))
+
+        self.adjustSize()
+        self.setFixedSize(self.size())
 
     def done(self, r):
         QDialog.done(self, r)

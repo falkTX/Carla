@@ -354,6 +354,11 @@ typedef struct _CarlaTransportInfo {
 CARLA_EXPORT const char* carla_get_complete_license_text();
 
 /*!
+ * Get the juce version used in the current Carla build.
+ */
+CARLA_EXPORT const char* carla_get_juce_version();
+
+/*!
  * Get all the supported file extensions in carla_load_file().
  * Returned string uses this syntax:
  * @code

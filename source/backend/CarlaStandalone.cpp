@@ -512,6 +512,23 @@ const char* carla_get_complete_license_text()
     return retText;
 }
 
+const char* carla_get_juce_version()
+{
+    carla_debug("carla_get_juce_version()");
+
+    static CarlaString retVersion;
+
+    if (retVersion.isEmpty())
+    {
+        if (const char* const version = juce::SystemStats::getJUCEVersion().toRawUTF8())
+            retVersion = version+6;
+        else
+            retVersion = "3.0";
+    }
+
+    return retVersion;
+}
+
 const char* carla_get_supported_file_extensions()
 {
     carla_debug("carla_get_supported_file_extensions()");

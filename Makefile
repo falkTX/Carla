@@ -271,6 +271,7 @@ RES = \
 	bin/resources/pixmapkeyboard.py \
 	bin/resources/resources_rc.py \
 	bin/resources/ui_carla_about.py \
+	bin/resources/ui_carla_about_juce.py \
 	bin/resources/ui_carla_database.py \
 	bin/resources/ui_carla_edit.py \
 	bin/resources/ui_carla_host.py \
@@ -309,6 +310,7 @@ bin/resources/%.py: source/%.py
 UIs = \
 	source/ui_carla_control.py \
 	source/ui_carla_about.py \
+	source/ui_carla_about_juce.py \
 	source/ui_carla_database.py \
 	source/ui_carla_edit.py \
 	source/ui_carla_host.py \
@@ -521,6 +523,7 @@ install:
 	$(LINK) $(PREFIX)/share/carla/pixmapkeyboard.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/resources_rc.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_about.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_about_juce.py      $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_database.py        $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_edit.py            $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_host.py            $(DESTDIR)$(PREFIX)/share/carla/resources/

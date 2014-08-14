@@ -1224,6 +1224,10 @@ class Host(object):
     def get_complete_license_text(self):
         return charPtrToString(self.lib.carla_get_complete_license_text())
 
+    # Get the juce version used in the current Carla build.
+    def get_juce_version(self):
+        return charPtrToString(self.lib.carla_get_juce_version())
+
     # Get all the supported file extensions in carla_load_file().
     # Returned string uses this syntax:
     # @code
@@ -1741,6 +1745,9 @@ class Host(object):
 
         self.lib.carla_get_complete_license_text.argtypes = None
         self.lib.carla_get_complete_license_text.restype = c_char_p
+
+        self.lib.carla_get_juce_version.argtypes = None
+        self.lib.carla_get_juce_version.restype = c_char_p
 
         self.lib.carla_get_supported_file_extensions.argtypes = None
         self.lib.carla_get_supported_file_extensions.restype = c_char_p
