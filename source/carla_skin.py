@@ -1438,6 +1438,9 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
 # ------------------------------------------------------------------------------------------------------------
 
 def createPluginSlot(parent, pluginId):
+    if not gCarla.useCustomSkins:
+        return PluginSlot_Default(parent, pluginId)
+
     pluginInfo  = gCarla.host.get_plugin_info(pluginId)
     pluginName  = gCarla.host.get_real_plugin_name(pluginId)
     pluginLabel = pluginInfo['label']
@@ -1461,7 +1464,6 @@ def createPluginSlot(parent, pluginId):
         #return PluginSlot_Nekobi(parent, pluginId)
 
     return PluginSlot_BasicFX(parent, pluginId)
-    return PluginSlot_Default(parent, pluginId)
 
 # ------------------------------------------------------------------------------------------------------------
 # Main Testing

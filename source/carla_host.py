@@ -458,6 +458,12 @@ class HostWindow(QMainWindow):
         except:
             maxParameters = CARLA_DEFAULT_MAX_PARAMETERS
 
+        # int values
+        try:
+            useCustomSkins = settings.value(CARLA_KEY_MAIN_USE_CUSTOM_SKINS, CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS, type=bool)
+        except:
+            useCustomSkins = CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS
+
         try:
             uiBridgesTimeout = settings.value(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT, CARLA_DEFAULT_UI_BRIDGES_TIMEOUT, type=int)
         except:
@@ -541,7 +547,8 @@ class HostWindow(QMainWindow):
         gCarla.host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE,          0,                   audioDevice)
 
         # save this for later
-        gCarla.maxParameters = maxParameters
+        gCarla.maxParameters  = maxParameters
+        gCarla.useCustomSkins = useCustomSkins
 
         # return selected driver name
         return audioDriver

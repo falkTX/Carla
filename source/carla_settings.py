@@ -56,6 +56,7 @@ CARLA_DEFAULT_MAIN_PROJECT_FOLDER   = QDir.homePath()
 CARLA_DEFAULT_MAIN_USE_PRO_THEME    = True
 CARLA_DEFAULT_MAIN_PRO_THEME_COLOR  = "Black"
 CARLA_DEFAULT_MAIN_REFRESH_INTERVAL = 20
+CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS = True
 
 # Canvas
 CARLA_DEFAULT_CANVAS_THEME            = "Modern Dark"
@@ -342,6 +343,7 @@ class CarlaSettingsW(QDialog):
         self.ui.ch_main_theme_pro.setChecked(settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, type=bool))
         self.ui.cb_main_theme_color.setCurrentIndex(self.ui.cb_main_theme_color.findText(settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, CARLA_DEFAULT_MAIN_PRO_THEME_COLOR, type=str)))
         self.ui.sb_main_refresh_interval.setValue(settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL, CARLA_DEFAULT_MAIN_REFRESH_INTERVAL, type=int))
+        self.ui.cb_main_use_custom_skins.setChecked(settings.value(CARLA_KEY_MAIN_USE_CUSTOM_SKINS, CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS, type=bool))
 
         # ---------------------------------------
         # Canvas
@@ -453,6 +455,7 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_MAIN_USE_PRO_THEME,    self.ui.ch_main_theme_pro.isChecked())
         settings.setValue(CARLA_KEY_MAIN_PRO_THEME_COLOR,  self.ui.cb_main_theme_color.currentText())
         settings.setValue(CARLA_KEY_MAIN_REFRESH_INTERVAL, self.ui.sb_main_refresh_interval.value())
+        settings.setValue(CARLA_KEY_MAIN_USE_CUSTOM_SKINS, self.ui.cb_main_use_custom_skins.isChecked())
 
         # ---------------------------------------
 
@@ -537,9 +540,10 @@ class CarlaSettingsW(QDialog):
     def slot_resetSettings(self):
         if self.ui.lw_page.currentRow() == self.TAB_INDEX_MAIN:
             self.ui.le_main_proj_folder.setText(CARLA_DEFAULT_MAIN_PROJECT_FOLDER)
-            self.ui.ch_theme_pro.setChecked(CARLA_DEFAULT_MAIN_USE_PRO_THEME)
-            self.ui.cb_theme_color.setCurrentIndex(self.ui.cb_theme_color.findText(CARLA_DEFAULT_MAIN_PRO_THEME_COLOR))
-            self.ui.sb_gui_refresh.setValue(CARLA_DEFAULT_MAIN_REFRESH_INTERVAL)
+            self.ui.ch_main_theme_pro.setChecked(CARLA_DEFAULT_MAIN_USE_PRO_THEME)
+            self.ui.cb_main_theme_color.setCurrentIndex(self.ui.cb_theme_color.findText(CARLA_DEFAULT_MAIN_PRO_THEME_COLOR))
+            self.ui.sb_main_refresh_interval.setValue(CARLA_DEFAULT_MAIN_REFRESH_INTERVAL)
+            self.ui.cb_main_use_custom_skins.setChecked(CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS)
 
         elif self.ui.lw_page.currentRow() == self.TAB_INDEX_CANVAS:
             self.ui.cb_canvas_theme.setCurrentIndex(self.ui.cb_canvas_theme.findText(CARLA_DEFAULT_CANVAS_THEME))

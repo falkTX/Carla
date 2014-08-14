@@ -186,6 +186,7 @@ CARLA_KEY_MAIN_PROJECT_FOLDER   = "Main/ProjectFolder"   # str
 CARLA_KEY_MAIN_USE_PRO_THEME    = "Main/UseProTheme"     # bool
 CARLA_KEY_MAIN_PRO_THEME_COLOR  = "Main/ProThemeColor"   # str
 CARLA_KEY_MAIN_REFRESH_INTERVAL = "Main/RefreshInterval" # int
+CARLA_KEY_MAIN_USE_CUSTOM_SKINS = "Main/UseCustomSkins"  # bool
 
 CARLA_KEY_CANVAS_THEME            = "Canvas/Theme"          # str
 CARLA_KEY_CANVAS_SIZE             = "Canvas/Size"           # str "NxN"
@@ -245,6 +246,8 @@ class CarlaObject(object):
         'transportMode',
         # current max parameters
         'maxParameters',
+        # wherever to use custom skins
+        'useCustomSkins',
         # binary dir
         'pathBinaries',
         # resources dir
@@ -273,8 +276,9 @@ gCarla.processMode       = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS if LINUX else EN
 gCarla.processModeForced = False
 gCarla.transportMode     = ENGINE_TRANSPORT_MODE_JACK if LINUX else ENGINE_TRANSPORT_MODE_INTERNAL
 gCarla.maxParameters     = MAX_DEFAULT_PARAMETERS
-gCarla.pathBinaries  = ""
-gCarla.pathResources = ""
+gCarla.useCustomSkins = True
+gCarla.pathBinaries   = ""
+gCarla.pathResources  = ""
 
 # ------------------------------------------------------------------------------------------------------------
 # Default Plugin Folders (get)
