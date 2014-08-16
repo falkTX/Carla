@@ -25,11 +25,11 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, pyqtSlot, QByteArray, QSettings
+    from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QSettings
     from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
     from PyQt5.QtWidgets import QDialog, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 else:
-    from PyQt4.QtCore import pyqtSignal, pyqtSlot, QByteArray, QSettings
+    from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QSettings
     from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
     from PyQt4.QtGui import QDialog, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 
@@ -191,6 +191,9 @@ class CarlaAboutW(QDialog):
         self.adjustSize()
         self.setFixedSize(self.size())
 
+        if WINDOWS:
+            self.setWindowFlags(self.windowFlags()|Qt.MSWindowsFixedSizeDialogHint)
+
     def done(self, r):
         QDialog.done(self, r)
         self.close()
@@ -208,6 +211,9 @@ class JuceAboutW(QDialog):
 
         self.adjustSize()
         self.setFixedSize(self.size())
+
+        if WINDOWS:
+            self.setWindowFlags(self.windowFlags()|Qt.MSWindowsFixedSizeDialogHint)
 
     def done(self, r):
         QDialog.done(self, r)
