@@ -24,116 +24,116 @@
 
 extern "C" {
 
-typedef void        (*jacksym_get_version)(int*, int*, int*, int*);
-typedef const char* (*jacksym_get_version_string)(void);
+typedef void        (__cdecl *jacksym_get_version)(int*, int*, int*, int*);
+typedef const char* (__cdecl *jacksym_get_version_string)(void);
 
-typedef jack_client_t* (*jacksym_client_open)(const char*, jack_options_t, jack_status_t*, ...);
-typedef const char*    (*jacksym_client_rename)(jack_client_t* client, const char* new_name);
-typedef int            (*jacksym_client_close)(jack_client_t*);
+typedef jack_client_t* (__cdecl *jacksym_client_open)(const char*, jack_options_t, jack_status_t*, ...);
+typedef const char*    (__cdecl *jacksym_client_rename)(jack_client_t* client, const char* new_name);
+typedef int            (__cdecl *jacksym_client_close)(jack_client_t*);
 
-typedef int   (*jacksym_client_name_size)(void);
-typedef char* (*jacksym_get_client_name)(jack_client_t*);
+typedef int   (__cdecl *jacksym_client_name_size)(void);
+typedef char* (__cdecl *jacksym_get_client_name)(jack_client_t*);
 
-typedef char* (*jacksym_get_uuid_for_client_name)(jack_client_t*, const char*);
-typedef char* (*jacksym_get_client_name_by_uuid)(jack_client_t*, const char*);
+typedef char* (__cdecl *jacksym_get_uuid_for_client_name)(jack_client_t*, const char*);
+typedef char* (__cdecl *jacksym_get_client_name_by_uuid)(jack_client_t*, const char*);
 
-typedef int (*jacksym_activate)(jack_client_t*);
-typedef int (*jacksym_deactivate)(jack_client_t*);
-typedef int (*jacksym_is_realtime)(jack_client_t*);
+typedef int (__cdecl *jacksym_activate)(jack_client_t*);
+typedef int (__cdecl *jacksym_deactivate)(jack_client_t*);
+typedef int (__cdecl *jacksym_is_realtime)(jack_client_t*);
 
-typedef int  (*jacksym_set_thread_init_callback)(jack_client_t*, JackThreadInitCallback, void*);
-typedef void (*jacksym_on_shutdown)(jack_client_t*, JackShutdownCallback, void*);
-typedef void (*jacksym_on_info_shutdown)(jack_client_t*, JackInfoShutdownCallback, void*);
-typedef int  (*jacksym_set_process_callback)(jack_client_t*, JackProcessCallback, void*);
-typedef int  (*jacksym_set_freewheel_callback)(jack_client_t*, JackFreewheelCallback, void*);
-typedef int  (*jacksym_set_buffer_size_callback)(jack_client_t*, JackBufferSizeCallback, void*);
-typedef int  (*jacksym_set_sample_rate_callback)(jack_client_t*, JackSampleRateCallback, void*);
-typedef int  (*jacksym_set_client_registration_callback)(jack_client_t*, JackClientRegistrationCallback, void*);
-typedef int  (*jacksym_set_port_registration_callback)(jack_client_t*, JackPortRegistrationCallback, void*);
-typedef int  (*jacksym_set_port_rename_callback)(jack_client_t*, JackPortRenameCallback, void*);
-typedef int  (*jacksym_set_port_connect_callback)(jack_client_t*, JackPortConnectCallback, void*);
-typedef int  (*jacksym_set_graph_order_callback)(jack_client_t*, JackGraphOrderCallback, void*);
-typedef int  (*jacksym_set_xrun_callback)(jack_client_t*, JackXRunCallback, void*);
-typedef int  (*jacksym_set_latency_callback)(jack_client_t*, JackLatencyCallback, void*);
+typedef int  (__cdecl *jacksym_set_thread_init_callback)(jack_client_t*, JackThreadInitCallback, void*);
+typedef void (__cdecl *jacksym_on_shutdown)(jack_client_t*, JackShutdownCallback, void*);
+typedef void (__cdecl *jacksym_on_info_shutdown)(jack_client_t*, JackInfoShutdownCallback, void*);
+typedef int  (__cdecl *jacksym_set_process_callback)(jack_client_t*, JackProcessCallback, void*);
+typedef int  (__cdecl *jacksym_set_freewheel_callback)(jack_client_t*, JackFreewheelCallback, void*);
+typedef int  (__cdecl *jacksym_set_buffer_size_callback)(jack_client_t*, JackBufferSizeCallback, void*);
+typedef int  (__cdecl *jacksym_set_sample_rate_callback)(jack_client_t*, JackSampleRateCallback, void*);
+typedef int  (__cdecl *jacksym_set_client_registration_callback)(jack_client_t*, JackClientRegistrationCallback, void*);
+typedef int  (__cdecl *jacksym_set_port_registration_callback)(jack_client_t*, JackPortRegistrationCallback, void*);
+typedef int  (__cdecl *jacksym_set_port_rename_callback)(jack_client_t*, JackPortRenameCallback, void*);
+typedef int  (__cdecl *jacksym_set_port_connect_callback)(jack_client_t*, JackPortConnectCallback, void*);
+typedef int  (__cdecl *jacksym_set_graph_order_callback)(jack_client_t*, JackGraphOrderCallback, void*);
+typedef int  (__cdecl *jacksym_set_xrun_callback)(jack_client_t*, JackXRunCallback, void*);
+typedef int  (__cdecl *jacksym_set_latency_callback)(jack_client_t*, JackLatencyCallback, void*);
 
-typedef int (*jacksym_set_freewheel)(jack_client_t*, int);
-typedef int (*jacksym_set_buffer_size)(jack_client_t*, jack_nframes_t);
+typedef int (__cdecl *jacksym_set_freewheel)(jack_client_t*, int);
+typedef int (__cdecl *jacksym_set_buffer_size)(jack_client_t*, jack_nframes_t);
 
-typedef jack_nframes_t (*jacksym_get_sample_rate)(jack_client_t*);
-typedef jack_nframes_t (*jacksym_get_buffer_size)(jack_client_t*);
-typedef float          (*jacksym_cpu_load)(jack_client_t*);
+typedef jack_nframes_t (__cdecl *jacksym_get_sample_rate)(jack_client_t*);
+typedef jack_nframes_t (__cdecl *jacksym_get_buffer_size)(jack_client_t*);
+typedef float          (__cdecl *jacksym_cpu_load)(jack_client_t*);
 
-typedef jack_port_t* (*jacksym_port_register)(jack_client_t*, const char*, const char*, ulong, ulong);
-typedef int          (*jacksym_port_unregister)(jack_client_t*, jack_port_t*);
-typedef void*        (*jacksym_port_get_buffer)(jack_port_t*, jack_nframes_t);
+typedef jack_port_t* (__cdecl *jacksym_port_register)(jack_client_t*, const char*, const char*, ulong, ulong);
+typedef int          (__cdecl *jacksym_port_unregister)(jack_client_t*, jack_port_t*);
+typedef void*        (__cdecl *jacksym_port_get_buffer)(jack_port_t*, jack_nframes_t);
 
-typedef const char*  (*jacksym_port_name)(const jack_port_t*);
-typedef jack_uuid_t  (*jacksym_port_uuid)(const jack_port_t*);
-typedef const char*  (*jacksym_port_short_name)(const jack_port_t*);
-typedef int          (*jacksym_port_flags)(const jack_port_t*);
-typedef const char*  (*jacksym_port_type)(const jack_port_t*);
-typedef int          (*jacksym_port_is_mine)(const jack_client_t*, const jack_port_t*);
-typedef int          (*jacksym_port_connected)(const jack_port_t*);
-typedef int          (*jacksym_port_connected_to)(const jack_port_t*, const char*);
-typedef const char** (*jacksym_port_get_connections)(const jack_port_t*);
-typedef const char** (*jacksym_port_get_all_connections)(const jack_client_t*, const jack_port_t*);
+typedef const char*  (__cdecl *jacksym_port_name)(const jack_port_t*);
+typedef jack_uuid_t  (__cdecl *jacksym_port_uuid)(const jack_port_t*);
+typedef const char*  (__cdecl *jacksym_port_short_name)(const jack_port_t*);
+typedef int          (__cdecl *jacksym_port_flags)(const jack_port_t*);
+typedef const char*  (__cdecl *jacksym_port_type)(const jack_port_t*);
+typedef int          (__cdecl *jacksym_port_is_mine)(const jack_client_t*, const jack_port_t*);
+typedef int          (__cdecl *jacksym_port_connected)(const jack_port_t*);
+typedef int          (__cdecl *jacksym_port_connected_to)(const jack_port_t*, const char*);
+typedef const char** (__cdecl *jacksym_port_get_connections)(const jack_port_t*);
+typedef const char** (__cdecl *jacksym_port_get_all_connections)(const jack_client_t*, const jack_port_t*);
 
-typedef int (*jacksym_port_set_name)(jack_port_t*, const char*);
-typedef int (*jacksym_port_set_alias)(jack_port_t*, const char*);
-typedef int (*jacksym_port_unset_alias)(jack_port_t*, const char*);
-typedef int (*jacksym_port_get_aliases)(const jack_port_t*, char* const aliases[2]);
+typedef int (__cdecl *jacksym_port_set_name)(jack_port_t*, const char*);
+typedef int (__cdecl *jacksym_port_set_alias)(jack_port_t*, const char*);
+typedef int (__cdecl *jacksym_port_unset_alias)(jack_port_t*, const char*);
+typedef int (__cdecl *jacksym_port_get_aliases)(const jack_port_t*, char* const aliases[2]);
 
-typedef int (*jacksym_port_request_monitor)(jack_port_t*, int);
-typedef int (*jacksym_port_request_monitor_by_name)(jack_client_t*, const char*, int);
-typedef int (*jacksym_port_ensure_monitor)(jack_port_t*, int);
-typedef int (*jacksym_port_monitoring_input)(jack_port_t*);
+typedef int (__cdecl *jacksym_port_request_monitor)(jack_port_t*, int);
+typedef int (__cdecl *jacksym_port_request_monitor_by_name)(jack_client_t*, const char*, int);
+typedef int (__cdecl *jacksym_port_ensure_monitor)(jack_port_t*, int);
+typedef int (__cdecl *jacksym_port_monitoring_input)(jack_port_t*);
 
-typedef int (*jacksym_connect)(jack_client_t*, const char*, const char*);
-typedef int (*jacksym_disconnect)(jack_client_t*, const char*, const char*);
-typedef int (*jacksym_port_disconnect)(jack_client_t*, jack_port_t*);
+typedef int (__cdecl *jacksym_connect)(jack_client_t*, const char*, const char*);
+typedef int (__cdecl *jacksym_disconnect)(jack_client_t*, const char*, const char*);
+typedef int (__cdecl *jacksym_port_disconnect)(jack_client_t*, jack_port_t*);
 
-typedef int    (*jacksym_port_name_size)(void);
-typedef int    (*jacksym_port_type_size)(void);
-typedef size_t (*jacksym_port_type_get_buffer_size)(jack_client_t*, const char*);
+typedef int    (__cdecl *jacksym_port_name_size)(void);
+typedef int    (__cdecl *jacksym_port_type_size)(void);
+typedef size_t (__cdecl *jacksym_port_type_get_buffer_size)(jack_client_t*, const char*);
 
-typedef void (*jacksym_port_get_latency_range)(jack_port_t*, jack_latency_callback_mode_t, jack_latency_range_t*);
-typedef void (*jacksym_port_set_latency_range)(jack_port_t*, jack_latency_callback_mode_t, jack_latency_range_t*);
-typedef int  (*jacksym_recompute_total_latencies)(jack_client_t*);
+typedef void (__cdecl *jacksym_port_get_latency_range)(jack_port_t*, jack_latency_callback_mode_t, jack_latency_range_t*);
+typedef void (__cdecl *jacksym_port_set_latency_range)(jack_port_t*, jack_latency_callback_mode_t, jack_latency_range_t*);
+typedef int  (__cdecl *jacksym_recompute_total_latencies)(jack_client_t*);
 
-typedef const char** (*jacksym_get_ports)(jack_client_t*, const char*, const char*, ulong);
-typedef jack_port_t* (*jacksym_port_by_name)(jack_client_t*, const char*);
-typedef jack_port_t* (*jacksym_port_by_id)(jack_client_t*, jack_port_id_t);
+typedef const char** (__cdecl *jacksym_get_ports)(jack_client_t*, const char*, const char*, ulong);
+typedef jack_port_t* (__cdecl *jacksym_port_by_name)(jack_client_t*, const char*);
+typedef jack_port_t* (__cdecl *jacksym_port_by_id)(jack_client_t*, jack_port_id_t);
 
-typedef void (*jacksym_free)(void*);
+typedef void (__cdecl *jacksym_free)(void*);
 
-typedef uint32_t (*jacksym_midi_get_event_count)(void*);
-typedef int      (*jacksym_midi_event_get)(jack_midi_event_t*, void*, uint32_t);
-typedef void     (*jacksym_midi_clear_buffer)(void*);
-typedef int      (*jacksym_midi_event_write)(void*, jack_nframes_t, const jack_midi_data_t*, size_t);
-typedef jack_midi_data_t* (*jacksym_midi_event_reserve)(void*, jack_nframes_t, size_t);
+typedef uint32_t (__cdecl *jacksym_midi_get_event_count)(void*);
+typedef int      (__cdecl *jacksym_midi_event_get)(jack_midi_event_t*, void*, uint32_t);
+typedef void     (__cdecl *jacksym_midi_clear_buffer)(void*);
+typedef int      (__cdecl *jacksym_midi_event_write)(void*, jack_nframes_t, const jack_midi_data_t*, size_t);
+typedef jack_midi_data_t* (__cdecl *jacksym_midi_event_reserve)(void*, jack_nframes_t, size_t);
 
-typedef int (*jacksym_release_timebase)(jack_client_t*);
-typedef int (*jacksym_set_sync_callback)(jack_client_t*, JackSyncCallback, void*);
-typedef int (*jacksym_set_sync_timeout)(jack_client_t*, jack_time_t);
-typedef int (*jacksym_set_timebase_callback)(jack_client_t*, int, JackTimebaseCallback, void*);
-typedef int (*jacksym_transport_locate)(jack_client_t*, jack_nframes_t);
+typedef int (__cdecl *jacksym_release_timebase)(jack_client_t*);
+typedef int (__cdecl *jacksym_set_sync_callback)(jack_client_t*, JackSyncCallback, void*);
+typedef int (__cdecl *jacksym_set_sync_timeout)(jack_client_t*, jack_time_t);
+typedef int (__cdecl *jacksym_set_timebase_callback)(jack_client_t*, int, JackTimebaseCallback, void*);
+typedef int (__cdecl *jacksym_transport_locate)(jack_client_t*, jack_nframes_t);
 
-typedef jack_transport_state_t (*jacksym_transport_query)(const jack_client_t*, jack_position_t*);
-typedef jack_nframes_t         (*jacksym_get_current_transport_frame)(const jack_client_t*);
+typedef jack_transport_state_t (__cdecl *jacksym_transport_query)(const jack_client_t*, jack_position_t*);
+typedef jack_nframes_t         (__cdecl *jacksym_get_current_transport_frame)(const jack_client_t*);
 
-typedef int  (*jacksym_transport_reposition)(jack_client_t*, const jack_position_t*);
-typedef void (*jacksym_transport_start)(jack_client_t*);
-typedef void (*jacksym_transport_stop)(jack_client_t*);
+typedef int  (__cdecl *jacksym_transport_reposition)(jack_client_t*, const jack_position_t*);
+typedef void (__cdecl *jacksym_transport_start)(jack_client_t*);
+typedef void (__cdecl *jacksym_transport_stop)(jack_client_t*);
 
-typedef int  (*jacksym_set_property)(jack_client_t*, jack_uuid_t, const char*, const char*, const char*);
-typedef int  (*jacksym_get_property)(jack_uuid_t, const char*, char**, char**);
-typedef void (*jacksym_free_description)(jack_description_t*, int);
-typedef int  (*jacksym_get_properties)(jack_uuid_t, jack_description_t*);
-typedef int  (*jacksym_get_all_properties)(jack_description_t**);
-typedef int  (*jacksym_remove_property)(jack_client_t*, jack_uuid_t, const char*);
-typedef int  (*jacksym_remove_properties)(jack_client_t*, jack_uuid_t);
-typedef int  (*jacksym_remove_all_properties)(jack_client_t*);
-typedef int  (*jacksym_set_property_change_callback)(jack_client_t*, JackPropertyChangeCallback, void*);
+typedef int  (__cdecl *jacksym_set_property)(jack_client_t*, jack_uuid_t, const char*, const char*, const char*);
+typedef int  (__cdecl *jacksym_get_property)(jack_uuid_t, const char*, char**, char**);
+typedef void (__cdecl *jacksym_free_description)(jack_description_t*, int);
+typedef int  (__cdecl *jacksym_get_properties)(jack_uuid_t, jack_description_t*);
+typedef int  (__cdecl *jacksym_get_all_properties)(jack_description_t**);
+typedef int  (__cdecl *jacksym_remove_property)(jack_client_t*, jack_uuid_t, const char*);
+typedef int  (__cdecl *jacksym_remove_properties)(jack_client_t*, jack_uuid_t);
+typedef int  (__cdecl *jacksym_remove_all_properties)(jack_client_t*);
+typedef int  (__cdecl *jacksym_set_property_change_callback)(jack_client_t*, JackPropertyChangeCallback, void*);
 
 } // extern "C"
 
@@ -347,6 +347,8 @@ struct JackBridge {
     {
 # if defined(CARLA_OS_MAC)
         const char* const filename("libjack.dylib");
+# elif defined(CARLA_OS_WIN64)
+        const char* const filename("libjack64.dll");
 # elif defined(CARLA_OS_WIN)
         const char* const filename("libjack.dll");
 # else
@@ -505,7 +507,7 @@ static const JackBridge& getBridgeInstance() noexcept
 
 // -----------------------------------------------------------------------------
 
-bool jackbridge_is_ok(void) noexcept
+bool jackbridge_is_ok() noexcept
 {
 #if defined(JACKBRIDGE_DUMMY)
     return false;
@@ -537,7 +539,7 @@ void jackbridge_get_version(int* major_ptr, int* minor_ptr, int* micro_ptr, int*
         *proto_ptr = 0;
 }
 
-const char* jackbridge_get_version_string(void)
+const char* jackbridge_get_version_string()
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
@@ -579,7 +581,7 @@ bool jackbridge_client_close(jack_client_t* client)
 
 // -----------------------------------------------------------------------------
 
-int jackbridge_client_name_size(void)
+int jackbridge_client_name_size()
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
@@ -1203,7 +1205,7 @@ bool jackbridge_port_disconnect(jack_client_t* client, jack_port_t* port)
 
 // -----------------------------------------------------------------------------
 
-int jackbridge_port_name_size(void)
+int jackbridge_port_name_size()
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
@@ -1215,7 +1217,7 @@ int jackbridge_port_name_size(void)
     return 0;
 }
 
-int jackbridge_port_type_size(void)
+int jackbridge_port_type_size()
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)

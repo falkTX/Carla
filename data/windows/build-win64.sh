@@ -33,7 +33,7 @@ export PYRCC="wine C:\\\\Python34\\\\Lib\\\\site-packages\\\\PyQt5\\\\pyrcc5.exe
 export DEFAULT_QT=5
 
 # Clean build
-make clean
+# make clean
 
 # Build PyQt5 resources
 make $JOBS UI RES WIDGETS

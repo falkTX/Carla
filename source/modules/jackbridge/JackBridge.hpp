@@ -255,24 +255,24 @@ typedef struct _jack_position jack_position_t;
 typedef struct _jack_session_event jack_session_event_t;
 typedef struct _jack_session_command_t jack_session_command_t;
 
-typedef void (*JackLatencyCallback)(jack_latency_callback_mode_t mode, void* arg);
-typedef int  (*JackProcessCallback)(jack_nframes_t nframes, void* arg);
-typedef void (*JackThreadInitCallback)(void* arg);
-typedef int  (*JackGraphOrderCallback)(void* arg);
-typedef int  (*JackXRunCallback)(void* arg);
-typedef int  (*JackBufferSizeCallback)(jack_nframes_t nframes, void* arg);
-typedef int  (*JackSampleRateCallback)(jack_nframes_t nframes, void* arg);
-typedef void (*JackPortRegistrationCallback)(jack_port_id_t port, int register_, void* arg);
-typedef void (*JackClientRegistrationCallback)(const char* name, int register_, void* arg);
-typedef void (*JackPortConnectCallback)(jack_port_id_t a, jack_port_id_t b, int connect, void* arg);
-typedef int  (*JackPortRenameCallback)(jack_port_id_t port, const char* old_name, const char* new_name, void* arg); // NOTE: returns void in JACK1, int in JACK2
-typedef void (*JackFreewheelCallback)(int starting, void* arg);
-typedef void (*JackShutdownCallback)(void* arg);
-typedef void (*JackInfoShutdownCallback)(jack_status_t code, const char* reason, void* arg);
-typedef int  (*JackSyncCallback)(jack_transport_state_t state, jack_position_t* pos, void* arg);
-typedef void (*JackTimebaseCallback)(jack_transport_state_t state, jack_nframes_t nframes, jack_position_t* pos, int new_pos, void* arg);
-typedef void (*JackSessionCallback)(jack_session_event_t* event, void* arg);
-typedef void (*JackPropertyChangeCallback)(jack_uuid_t subject, const char* key, jack_property_change_t change, void* arg);
+typedef void (__cdecl *JackLatencyCallback)(jack_latency_callback_mode_t mode, void* arg);
+typedef int  (__cdecl *JackProcessCallback)(jack_nframes_t nframes, void* arg);
+typedef void (__cdecl *JackThreadInitCallback)(void* arg);
+typedef int  (__cdecl *JackGraphOrderCallback)(void* arg);
+typedef int  (__cdecl *JackXRunCallback)(void* arg);
+typedef int  (__cdecl *JackBufferSizeCallback)(jack_nframes_t nframes, void* arg);
+typedef int  (__cdecl *JackSampleRateCallback)(jack_nframes_t nframes, void* arg);
+typedef void (__cdecl *JackPortRegistrationCallback)(jack_port_id_t port, int register_, void* arg);
+typedef void (__cdecl *JackClientRegistrationCallback)(const char* name, int register_, void* arg);
+typedef void (__cdecl *JackPortConnectCallback)(jack_port_id_t a, jack_port_id_t b, int connect, void* arg);
+typedef int  (__cdecl *JackPortRenameCallback)(jack_port_id_t port, const char* old_name, const char* new_name, void* arg); // NOTE: returns void in JACK1, int in JACK2
+typedef void (__cdecl *JackFreewheelCallback)(int starting, void* arg);
+typedef void (__cdecl *JackShutdownCallback)(void* arg);
+typedef void (__cdecl *JackInfoShutdownCallback)(jack_status_t code, const char* reason, void* arg);
+typedef int  (__cdecl *JackSyncCallback)(jack_transport_state_t state, jack_position_t* pos, void* arg);
+typedef void (__cdecl *JackTimebaseCallback)(jack_transport_state_t state, jack_nframes_t nframes, jack_position_t* pos, int new_pos, void* arg);
+typedef void (__cdecl *JackSessionCallback)(jack_session_event_t* event, void* arg);
+typedef void (__cdecl *JackPropertyChangeCallback)(jack_uuid_t subject, const char* key, jack_property_change_t change, void* arg);
 
 } // extern "C"
 

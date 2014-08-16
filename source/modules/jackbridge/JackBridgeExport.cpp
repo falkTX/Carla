@@ -83,7 +83,7 @@ static const JackBridgeExportedFunctions& getBridgeInstance() noexcept
 
 // -----------------------------------------------------------------------------
 
-bool jackbridge_is_ok(void) noexcept
+bool jackbridge_is_ok() noexcept
 {
     const JackBridgeExportedFunctions& instance(getBridgeInstance());
     return (instance.unique1 != 0 && instance.unique1 == instance.unique2);
@@ -94,7 +94,7 @@ void jackbridge_get_version(int* major_ptr, int* minor_ptr, int* micro_ptr, int*
     return getBridgeInstance().get_version_ptr(major_ptr, minor_ptr, micro_ptr, proto_ptr);
 }
 
-const char* jackbridge_get_version_string(void)
+const char* jackbridge_get_version_string()
 {
     return getBridgeInstance().get_version_string_ptr();
 }
@@ -109,7 +109,7 @@ bool jackbridge_client_close(jack_client_t* client)
     return getBridgeInstance().client_close_ptr(client);
 }
 
-int jackbridge_client_name_size(void)
+int jackbridge_client_name_size()
 {
     return getBridgeInstance().client_name_size_ptr();
 }
@@ -354,12 +354,12 @@ bool jackbridge_port_disconnect(jack_client_t* client, jack_port_t* port)
     return getBridgeInstance().port_disconnect_ptr(client, port);
 }
 
-int jackbridge_port_name_size(void)
+int jackbridge_port_name_size()
 {
     return getBridgeInstance().port_name_size_ptr();
 }
 
-int jackbridge_port_type_size(void)
+int jackbridge_port_type_size()
 {
     return getBridgeInstance().port_type_size_ptr();
 }
