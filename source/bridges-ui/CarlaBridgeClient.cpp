@@ -97,7 +97,7 @@ void CarlaBridgeClient::toolkitQuit()
 {
     carla_debug("CarlaBridgeClient::toolkitQuit()");
 
-    fUI.close();
+    fUI.quit = true;
 }
 
 // ---------------------------------------------------------------------
