@@ -525,9 +525,7 @@ int main(int argc, char* argv[])
     const bool useOsc = std::strcmp(oscUrl, "null");
 
     // try to get sampleRate value
-    const char* const sampleRateStr = getenv("CARLA_SAMPLE_RATE");
-
-    if (sampleRateStr)
+    if (const char* const sampleRateStr = getenv("CARLA_SAMPLE_RATE"))
         sampleRate = atof(sampleRateStr);
 
     // Init VST client
@@ -535,7 +533,10 @@ int main(int argc, char* argv[])
 
     // Init OSC
     if (useOsc)
+    {
         client.oscInit(oscUrl);
+        client.sendOscUpdate();
+    }
 
     // Load UI
     int ret;
