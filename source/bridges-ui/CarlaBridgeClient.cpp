@@ -110,9 +110,12 @@ void CarlaBridgeClient::oscInit(const char* const url)
     fOsc.init(url);
 }
 
-bool CarlaBridgeClient::oscIdle() const
+bool CarlaBridgeClient::oscIdle(const bool onlyOnce) const
 {
-    fOsc.idle();
+    if (onlyOnce)
+        fOsc.idleOnce();
+    else
+        fOsc.idle();
 
     return ! fUI.quit;
 }

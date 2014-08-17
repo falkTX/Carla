@@ -567,7 +567,7 @@ public:
 
         for (;;)
         {
-            if (fIsReady || ! oscIdle())
+            if (fIsReady || ! oscIdle(true))
                 return;
         }
     }

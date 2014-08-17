@@ -59,6 +59,7 @@ public:
 
     void init(const char* const url);
     void idle() const;
+    void idleOnce() const;
     void close();
 
     // -------------------------------------------------------------------

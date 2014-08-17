@@ -88,6 +88,14 @@ void CarlaBridgeOsc::idle() const
     for (; lo_server_recv_noblock(fServer, 0) != 0;) {}
 }
 
+void CarlaBridgeOsc::idleOnce() const
+{
+    if (fServer == nullptr)
+        return;
+
+    lo_server_recv_noblock(fServer, 0);
+}
+
 void CarlaBridgeOsc::close()
 {
     CARLA_ASSERT(fControlData.source == nullptr); // must never be used

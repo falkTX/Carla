@@ -66,7 +66,7 @@ public:
     // osc stuff
 
     void oscInit(const char* const url);
-    bool oscIdle() const;
+    bool oscIdle(const bool onlyOnce = false) const;
     void oscClose();
 
     bool isOscControlRegistered() const noexcept;
