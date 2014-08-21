@@ -22,10 +22,6 @@
 #include "CarlaEngineThread.hpp"
 #include "CarlaEngineUtils.hpp"
 
-#include "juce_core.h"
-using juce::Atomic;
-using juce::WaitableEvent;
-
 // FIXME only use CARLA_PREVENT_HEAP_ALLOCATION for structs
 // maybe separate macro
 
@@ -120,10 +116,10 @@ enum EnginePostAction {
 };
 
 struct EngineNextAction {
-    Atomic<EnginePostAction> opcode;
+    EnginePostAction opcode;
     uint pluginId;
     uint value;
-    WaitableEvent waitEvent;
+    CarlaMutex mutex;
 
     EngineNextAction() noexcept;
     ~EngineNextAction() noexcept;

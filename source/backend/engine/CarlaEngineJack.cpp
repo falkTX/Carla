@@ -1618,13 +1618,12 @@ protected:
             }
         }
 
-        pData->nextAction.waitEvent.reset();
-
+        fClient = nullptr;
 #ifndef BUILD_BRIDGE
         carla_fill<jack_port_t*>(fRackPorts, nullptr, kRackPortCount);
 #endif
+        runPendingRtEvents();
 
-        fClient = nullptr;
         callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
     }
 

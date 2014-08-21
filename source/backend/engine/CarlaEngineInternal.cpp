@@ -68,24 +68,26 @@ EngineNextAction::EngineNextAction() noexcept
     : opcode(kEnginePostActionNull),
       pluginId(0),
       value(0),
-      waitEvent() {}
+      mutex() {}
 
 EngineNextAction::~EngineNextAction() noexcept
 {
-    CARLA_SAFE_ASSERT(opcode.get() == kEnginePostActionNull);
+    CARLA_SAFE_ASSERT(opcode == kEnginePostActionNull);
 }
 
 void EngineNextAction::ready() const noexcept
 {
-    waitEvent.reset();
+    mutex.lock();
+    mutex.unlock();
 }
 
 void EngineNextAction::clearAndReset() noexcept
 {
+    mutex.lock();
     opcode   = kEnginePostActionNull;
     pluginId = 0;
     value    = 0;
-    waitEvent.reset();
+    mutex.unlock();
 }
 
 // -----------------------------------------------------------------------
@@ -208,7 +210,7 @@ void CarlaEngine::ProtectedData::close()
     CARLA_SAFE_ASSERT(name.isNotEmpty());
     CARLA_SAFE_ASSERT(plugins != nullptr);
     CARLA_SAFE_ASSERT(nextPluginId == maxPluginNumber);
-    CARLA_SAFE_ASSERT(nextAction.opcode.get() == kEnginePostActionNull);
+    CARLA_SAFE_ASSERT(nextAction.opcode == kEnginePostActionNull);
 
     aboutToClose = true;
 
@@ -295,9 +297,7 @@ void CarlaEngine::ProtectedData::doPluginsSwitch() noexcept
 
 void CarlaEngine::ProtectedData::doNextPluginAction(const bool unlock) noexcept
 {
-    const EnginePostAction action(nextAction.opcode.exchange(kEnginePostActionNull));
-
-    switch (action)
+    switch (nextAction.opcode)
     {
     case kEnginePostActionNull:
         break;
@@ -318,8 +318,11 @@ void CarlaEngine::ProtectedData::doNextPluginAction(const bool unlock) noexcept
     nextAction.pluginId = 0;
     nextAction.value    = 0;
 
-    if (unlock && action != kEnginePostActionNull)
-        nextAction.waitEvent.signal();
+    if (unlock)
+    {
+        nextAction.mutex.tryLock();
+        nextAction.mutex.unlock();
+    }
 }
 
 // -----------------------------------------------------------------------
@@ -328,18 +331,18 @@ void CarlaEngine::ProtectedData::doNextPluginAction(const bool unlock) noexcept
 ScopedActionLock::ScopedActionLock(CarlaEngine::ProtectedData* const data, const EnginePostAction action, const uint pluginId, const uint value, const bool lockWait) noexcept
     : fData(data)
 {
+    CARLA_SAFE_ASSERT_RETURN(fData->nextAction.opcode == kEnginePostActionNull,);
     CARLA_SAFE_ASSERT_RETURN(action != kEnginePostActionNull,);
-    CARLA_SAFE_ASSERT_RETURN(fData->nextAction.opcode.get() == kEnginePostActionNull,);
 
+    fData->nextAction.opcode   = action;
     fData->nextAction.pluginId = pluginId;
     fData->nextAction.value    = value;
-    fData->nextAction.opcode   = action;
 
     if (lockWait)
     {
         // block wait for unlock on processing side
         carla_stdout("ScopedPluginAction(%i) - blocking START", pluginId);
-        fData->nextAction.waitEvent.wait(2000);
+        fData->nextAction.mutex.lock();
         carla_stdout("ScopedPluginAction(%i) - blocking DONE", pluginId);
     }
     else
@@ -350,7 +353,7 @@ ScopedActionLock::ScopedActionLock(CarlaEngine::ProtectedData* const data, const
 
 ScopedActionLock::~ScopedActionLock() noexcept
 {
-    //fData->nextAction.mutex.unlock();
+    fData->nextAction.mutex.unlock();
 }
 
 // -----------------------------------------------------------------------
