@@ -632,7 +632,10 @@ public:
 
             for (; i++ < 3;)
                 strBuf[strBufIndex++] = '=';
+        }
 
+        if (strBufIndex != 0)
+        {
             strBuf[strBufIndex] = '\0';
             ret += strBuf;
         }
