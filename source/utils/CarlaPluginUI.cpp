@@ -44,8 +44,8 @@ static int temporaryErrorHandler(Display*, XErrorEvent*)
 class X11PluginUI : public CarlaPluginUI
 {
 public:
-    X11PluginUI(CloseCallback* const cb, const uintptr_t parentId) noexcept
-        : CarlaPluginUI(cb),
+    X11PluginUI(CloseCallback* const cb, const uintptr_t parentId, const bool isResizable) noexcept
+        : CarlaPluginUI(cb, isResizable),
           fDisplay(nullptr),
           fWindow(0),
           fIsVisible(false),
@@ -62,6 +62,9 @@ public:
 
         attr.border_pixel = 0;
         attr.event_mask   = KeyPressMask|KeyReleaseMask;
+
+        if (fIsResizable)
+            attr.event_mask |= StructureNotifyMask;
 
         fWindow = XCreateWindow(fDisplay, RootWindow(fDisplay, screen),
                                 0, 0, 300, 300, 0,
@@ -176,6 +179,13 @@ public:
 
             switch (event.type)
             {
+            case ConfigureNotify:
+                    CARLA_SAFE_ASSERT_CONTINUE(fCallback != nullptr);
+                    CARLA_SAFE_ASSERT_CONTINUE(event.xconfigure.width > 0);
+                    CARLA_SAFE_ASSERT_CONTINUE(event.xconfigure.height > 0);
+                    fCallback->handlePluginUIResized(event.xconfigure.width, event.xconfigure.height);
+                    break;
+
             case ClientMessage:
                 type = XGetAtomName(fDisplay, event.xclient.message_type);
                 CARLA_SAFE_ASSERT_CONTINUE(type != nullptr);
@@ -224,17 +234,21 @@ public:
 
         XResizeWindow(fDisplay, fWindow, width, height);
 
-        XSizeHints sizeHints;
-        carla_zeroStruct<XSizeHints>(sizeHints);
+        if (! fIsResizable)
+        {
+            XSizeHints sizeHints;
+            carla_zeroStruct<XSizeHints>(sizeHints);
 
-        sizeHints.flags      = PSize|PMinSize|PMaxSize;
-        sizeHints.width      = static_cast<int>(width);
-        sizeHints.height     = static_cast<int>(height);
-        sizeHints.min_width  = static_cast<int>(width);
-        sizeHints.min_height = static_cast<int>(height);
-        sizeHints.max_width  = static_cast<int>(width);
-        sizeHints.max_height = static_cast<int>(height);
-        XSetNormalHints(fDisplay, fWindow, &sizeHints);
+            sizeHints.flags      = PSize|PMinSize|PMaxSize;
+            sizeHints.width      = static_cast<int>(width);
+            sizeHints.height     = static_cast<int>(height);
+            sizeHints.min_width  = static_cast<int>(width);
+            sizeHints.min_height = static_cast<int>(height);
+            sizeHints.max_width  = static_cast<int>(width);
+            sizeHints.max_height = static_cast<int>(height);
+
+            XSetNormalHints(fDisplay, fWindow, &sizeHints);
+        }
 
         if (forceUpdate)
             XFlush(fDisplay);
@@ -494,7 +508,7 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 #ifdef CARLA_OS_MAC
 CarlaPluginUI* CarlaPluginUI::newCocoa(CloseCallback*, uintptr_t)
 {
-    //return new CocoaPluginUi(cb, parentId);
+    //return new CocoaPluginUi(cb, parentId, false);
     return nullptr;
 }
 #endif
@@ -502,15 +516,15 @@ CarlaPluginUI* CarlaPluginUI::newCocoa(CloseCallback*, uintptr_t)
 #ifdef CARLA_OS_WIN
 CarlaPluginUI* CarlaPluginUI::newWindows(CloseCallback*, uintptr_t)
 {
-    //return new WindowsPluginUi(cb, parentId);
+    //return new WindowsPluginUi(cb, parentId, false);
     return nullptr;
 }
 #endif
 
 #ifdef HAVE_X11
-CarlaPluginUI* CarlaPluginUI::newX11(CloseCallback* cb, uintptr_t parentId)
+CarlaPluginUI* CarlaPluginUI::newX11(CloseCallback* cb, uintptr_t parentId, bool isResizable)
 {
-    return new X11PluginUI(cb, parentId);
+    return new X11PluginUI(cb, parentId, isResizable);
 }
 #endif
 

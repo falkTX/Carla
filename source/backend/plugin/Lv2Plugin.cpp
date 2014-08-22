@@ -1207,7 +1207,7 @@ public:
 
                     case LV2_UI_X11:
 # ifdef HAVE_X11
-                        fUI.window = CarlaPluginUI::newX11(this, frontendWinId);
+                        fUI.window = CarlaPluginUI::newX11(this, frontendWinId, isUiResizable());
 # else
                         msg = "UI is only for systems with X11";
 # endif
@@ -4283,6 +4283,16 @@ public:
         pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
     }
 
+    void handlePluginUIResized(const uint width, const uint height) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fUI.type == UI::TYPE_EMBED,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
+        carla_stdout("Lv2Plugin::handlePluginUIResized(%u, %u)", width, height);
+
+        if (fUI.handle != nullptr && fExt.uiresize != nullptr)
+            fExt.uiresize->ui_resize(fUI.handle, width, height);
+    }
+
     // -------------------------------------------------------------------
 
     uint32_t handleUIPortMap(const char* const symbol) const noexcept
@@ -5190,6 +5200,7 @@ public:
 
         fExt.uiidle     = (const LV2UI_Idle_Interface*)fUI.descriptor->extension_data(LV2_UI__idleInterface);
         fExt.uishow     = (const LV2UI_Show_Interface*)fUI.descriptor->extension_data(LV2_UI__showInterface);
+        fExt.uiresize   = (const LV2UI_Resize*)fUI.descriptor->extension_data(LV2_UI__resize);
         fExt.uiprograms = (const LV2_Programs_UI_Interface*)fUI.descriptor->extension_data(LV2_PROGRAMS__UIInterface);
 
         // check if invalid
@@ -5198,6 +5209,9 @@ public:
 
         if (fExt.uishow != nullptr && (fExt.uishow->show == nullptr || fExt.uishow->hide == nullptr))
             fExt.uishow = nullptr;
+
+        if (fExt.uiresize != nullptr && fExt.uiresize->ui_resize == nullptr)
+            fExt.uiresize = nullptr;
 
         if (fExt.uiprograms != nullptr && fExt.uiprograms->select_program == nullptr)
             fExt.uiprograms = nullptr;
@@ -5279,6 +5293,7 @@ private:
         const LV2_Programs_Interface* programs;
         const LV2UI_Idle_Interface* uiidle;
         const LV2UI_Show_Interface* uishow;
+        const LV2UI_Resize* uiresize;
         const LV2_Programs_UI_Interface* uiprograms;
 
         Extensions()
@@ -5288,6 +5303,7 @@ private:
               programs(nullptr),
               uiidle(nullptr),
               uishow(nullptr),
+              uiresize(nullptr),
               uiprograms(nullptr) {}
 
         CARLA_DECLARE_NON_COPY_STRUCT(Extensions);

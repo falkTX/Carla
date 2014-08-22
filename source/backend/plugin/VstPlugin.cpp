@@ -442,7 +442,7 @@ public:
 
 #if defined(CARLA_OS_LINUX)
 # ifdef HAVE_X11
-                fUI.window = CarlaPluginUI::newX11(this, frontendWinId);
+                fUI.window = CarlaPluginUI::newX11(this, frontendWinId, false);
 # else
                 msg = "UI is only for systems with X11";
 # endif
@@ -1777,6 +1777,18 @@ protected:
         showCustomUI(false);
         pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
     }
+
+    void handlePluginUIResized(const uint width, const uint height) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fUI.type == UI::UI_EMBED,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
+        carla_debug("VstPlugin::handlePluginUIResized(%u, %u)", width, height);
+
+        return; // unused
+        (void)width; (void)height;
+    }
+
+    // -------------------------------------------------------------------
 
     intptr_t dispatcher(int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt) const noexcept
     {

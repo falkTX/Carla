@@ -29,6 +29,7 @@ public:
     public:
         virtual ~CloseCallback() {}
         virtual void handlePluginUIClosed() = 0;
+        virtual void handlePluginUIResized(const uint width, const uint height) = 0;
     };
 
     virtual ~CarlaPluginUI() {}
@@ -53,13 +54,18 @@ public:
     static CarlaPluginUI* newWindows(CloseCallback*, uintptr_t);
 #endif
 #ifdef HAVE_X11
-    static CarlaPluginUI* newX11(CloseCallback*, uintptr_t);
+    static CarlaPluginUI* newX11(CloseCallback*, uintptr_t, bool);
 #endif
 
 protected:
     bool fIsIdling;
+    bool fIsResizable;
     CloseCallback* fCallback;
-    CarlaPluginUI(CloseCallback* const cb) noexcept : fIsIdling(false), fCallback(cb) {}
+
+    CarlaPluginUI(CloseCallback* const cb, const bool isResizable) noexcept
+        : fIsIdling(false),
+          fIsResizable(isResizable),
+          fCallback(cb) {}
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaPluginUI)
 };
