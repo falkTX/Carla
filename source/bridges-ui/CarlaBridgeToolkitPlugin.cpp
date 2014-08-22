@@ -52,7 +52,7 @@ public:
 #elif defined(CARLA_OS_WIN) && defined(BRIDGE_HWND)
         fUI = CarlaPluginUI::newWindows(this, 0);
 #elif defined(HAVE_X11) && defined(BRIDGE_X11)
-        fUI = CarlaPluginUI::newX11(this, 0);
+        fUI = CarlaPluginUI::newX11(this, 0, false); // TODO: check if UI is resizable
 #endif
         CARLA_SAFE_ASSERT_RETURN(fUI != nullptr,);
 
@@ -139,6 +139,10 @@ protected:
     void handlePluginUIClosed() override
     {
         fIdling = false;
+    }
+
+    void handlePluginUIResized(uint,uint) override
+    {
     }
 
     // ---------------------------------------------------------------------
