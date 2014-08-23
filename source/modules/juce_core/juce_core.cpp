@@ -53,6 +53,8 @@
 
 #if JUCE_WINDOWS
  #include <ctime>
+
+ #define _WINSOCK_DEPRECATED_NO_WARNINGS 1
  #include <winsock2.h>
  #include <ws2tcpip.h>
 
@@ -95,7 +97,6 @@
 #endif
 
 #if JUCE_MAC || JUCE_IOS
- #include <execinfo.h>
  #include <xlocale.h>
  #include <mach/mach.h>
 #endif
