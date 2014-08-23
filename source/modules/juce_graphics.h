@@ -21,7 +21,9 @@
 #include "juce_core.h"
 #include "juce_events.h"
 
-#include "juce_graphics/AppConfig.h"
-#include "juce_graphics/juce_graphics.h"
+#if JUCE_MAC || JUCE_WINDOWS
+# include "juce_graphics/AppConfig.h"
+# include "juce_graphics/juce_graphics.h"
+#endif
 
 #endif // CARLA_JUCE_GRAPHICS_H_INCLUDED

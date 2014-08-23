@@ -183,7 +183,8 @@ public:
                     CARLA_SAFE_ASSERT_CONTINUE(fCallback != nullptr);
                     CARLA_SAFE_ASSERT_CONTINUE(event.xconfigure.width > 0);
                     CARLA_SAFE_ASSERT_CONTINUE(event.xconfigure.height > 0);
-                    fCallback->handlePluginUIResized(event.xconfigure.width, event.xconfigure.height);
+                    fCallback->handlePluginUIResized(static_cast<uint>(event.xconfigure.width),
+                                                     static_cast<uint>(event.xconfigure.height));
                     break;
 
             case ClientMessage:

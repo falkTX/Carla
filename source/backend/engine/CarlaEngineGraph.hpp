@@ -116,8 +116,8 @@ struct PatchbayGraph  {
     AudioProcessorGraph graph;
     AudioSampleBuffer audioBuffer;
     MidiBuffer midiBuffer;
-    const int inputs;
-    const int outputs;
+    const uint32_t inputs;
+    const uint32_t outputs;
     mutable CharStringListPtr retCon;
 
     PatchbayGraph(const int bufferSize, const double sampleRate, const uint32_t inputs, const uint32_t outputs);

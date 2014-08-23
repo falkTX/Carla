@@ -758,7 +758,8 @@ class CarlaPluginInstance : public AudioPluginInstance
 public:
     CarlaPluginInstance(CarlaPlugin* const plugin)
         : fPlugin(plugin),
-          fGraph(nullptr) {}
+          fGraph(nullptr),
+          leakDetector_CarlaPluginInstance() {}
 
     ~CarlaPluginInstance() override
     {
@@ -894,38 +895,41 @@ public:
 private:
     CarlaPlugin* const fPlugin;
     AudioProcessorGraph* fGraph;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginInstance)
 };
 
 // -----------------------------------------------------------------------
 // PatchbayGraph
 
-static const int kAudioInputNodeStart  = MAX_PATCHBAY_PLUGINS*1+1;
-static const int kAudioOutputNodeStart = MAX_PATCHBAY_PLUGINS*2+1;
-
-static const int kMidiInputNodeId  = MAX_PATCHBAY_PLUGINS*3+1;
-static const int kMidiOutputNodeId = MAX_PATCHBAY_PLUGINS*3+2;
+static const uint32_t kAudioInputNodeStart  = MAX_PATCHBAY_PLUGINS*1+1;
+static const uint32_t kAudioOutputNodeStart = MAX_PATCHBAY_PLUGINS*2+1;
+static const uint32_t kMidiInputNodeId      = MAX_PATCHBAY_PLUGINS*3+1;
+static const uint32_t kMidiOutputNodeId     = MAX_PATCHBAY_PLUGINS*3+2;
 
 PatchbayGraph::PatchbayGraph(const int bufferSize, const double sampleRate, const uint32_t ins, const uint32_t outs)
     : graph(),
       audioBuffer(),
       midiBuffer(),
-      inputs(static_cast<int>(carla_fixValue(0U, MAX_PATCHBAY_PLUGINS, ins))),
-      outputs(static_cast<int>(carla_fixValue(0U, MAX_PATCHBAY_PLUGINS, outs))),
+      inputs(carla_fixValue(0U, MAX_PATCHBAY_PLUGINS, ins)),
+      outputs(carla_fixValue(0U, MAX_PATCHBAY_PLUGINS, outs)),
       retCon()
 {
-    graph.setPlayConfigDetails(inputs, outputs, sampleRate, bufferSize);
+    graph.setPlayConfigDetails(static_cast<int>(inputs), static_cast<int>(outputs), sampleRate, bufferSize);
     graph.prepareToPlay(sampleRate, bufferSize);
-    audioBuffer.setSize(jmax(inputs, outputs), bufferSize);
+
+    audioBuffer.setSize(static_cast<int>(jmax(inputs, outputs)), bufferSize);
+
     midiBuffer.ensureSize(kMaxEngineEventInternalCount*2);
     midiBuffer.clear();
 
-    for (int i=0; i<inputs; ++i)
+    for (uint32_t i=0; i<inputs; ++i)
     {
         AudioProcessorGraph::AudioGraphIOProcessor* const proc(new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode));
         graph.addNode(proc, kAudioInputNodeStart+i);
     }
 
-    for (int i=0; i<outputs; ++i)
+    for (uint32_t i=0; i<outputs; ++i)
     {
         AudioProcessorGraph::AudioGraphIOProcessor* const proc(new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode));
         graph.addNode(proc, kAudioOutputNodeStart+i);
@@ -1053,7 +1057,7 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float*
     {
         int i=0;
 
-        for (; i<inputs; ++i)
+        for (; i < static_cast<int>(inputs); ++i)
             FloatVectorOperations::copy(audioBuffer.getWritePointer(i), inBuf[i], frames);
 
         // clear remaining channels
@@ -1065,7 +1069,7 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float*
 
     // put juce audio in carla buffer
     {
-        for (int i=0; i<outputs; ++i)
+        for (int i=0; i < static_cast<int>(outputs); ++i)
             FloatVectorOperations::copy(outBuf[i], audioBuffer.getReadPointer(i), frames);
     }
 
@@ -1340,3 +1344,16 @@ void CarlaEngine::restorePatchbayConnection(const char* const connSource, const 
 // -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
+
+// -----------------------------------------------------------------------
+// need to build juce_audio_processors on non-win/mac OSes
+
+#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+# include "juce_audio_processors.h"
+namespace juce {
+# include "juce_audio_processors/processors/juce_AudioProcessor.cpp"
+# include "juce_audio_processors/processors/juce_AudioProcessorGraph.cpp"
+}
+#endif
+
+// -----------------------------------------------------------------------

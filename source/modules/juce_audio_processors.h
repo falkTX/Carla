@@ -21,6 +21,7 @@
 #include "juce_gui_basics.h"
 #include "juce_audio_basics.h"
 
+// patched to not use gui on non-win/mac
 #include "juce_audio_processors/AppConfig.h"
 #include "juce_audio_processors/juce_audio_processors.h"
 

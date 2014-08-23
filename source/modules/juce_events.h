@@ -18,13 +18,11 @@
 #ifndef CARLA_JUCE_EVENTS_H_INCLUDED
 #define CARLA_JUCE_EVENTS_H_INCLUDED
 
-#if ! (JUCE_MAC || JUCE_WINDOWS)
-# error Don't want juce_events with the current setup
-#endif
-
 #include "juce_core.h"
 
-#include "juce_events/AppConfig.h"
-#include "juce_events/juce_events.h"
+#if JUCE_MAC || JUCE_WINDOWS
+# include "juce_events/AppConfig.h"
+# include "juce_events/juce_events.h"
+#endif
 
 #endif // CARLA_JUCE_EVENTS_H_INCLUDED

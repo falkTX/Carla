@@ -13,3 +13,4 @@ for M in $MODULES; do
 done
 
 find $CARLA_MODULES_DIR -name juce_module_info -delete
+rm source/modules/juce_*/juce_*.mm

@@ -20,7 +20,9 @@
 
 #include "juce_gui_basics.h"
 
-#include "juce_gui_extra/AppConfig.h"
-#include "juce_gui_extra/juce_gui_extra.h"
+#if JUCE_MAC || JUCE_WINDOWS
+# include "juce_gui_extra/AppConfig.h"
+# include "juce_gui_extra/juce_gui_extra.h"
+#endif
 
 #endif // CARLA_JUCE_GUI_EXTRA_H_INCLUDED

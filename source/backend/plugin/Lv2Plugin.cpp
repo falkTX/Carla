@@ -4290,7 +4290,7 @@ public:
         carla_stdout("Lv2Plugin::handlePluginUIResized(%u, %u)", width, height);
 
         if (fUI.handle != nullptr && fExt.uiresize != nullptr)
-            fExt.uiresize->ui_resize(fUI.handle, width, height);
+            fExt.uiresize->ui_resize(fUI.handle, static_cast<int>(width), static_cast<int>(height));
     }
 
     // -------------------------------------------------------------------

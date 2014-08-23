@@ -20,7 +20,9 @@
 
 #include "juce_events.h"
 
-#include "juce_data_structures/AppConfig.h"
-#include "juce_data_structures/juce_data_structures.h"
+#if JUCE_MAC || JUCE_WINDOWS
+# include "juce_data_structures/AppConfig.h"
+# include "juce_data_structures/juce_data_structures.h"
+#endif
 
 #endif // CARLA_JUCE_DATA_STRUCTURES_H_INCLUDED

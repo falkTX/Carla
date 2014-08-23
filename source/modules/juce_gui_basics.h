@@ -21,7 +21,9 @@
 #include "juce_graphics.h"
 #include "juce_data_structures.h"
 
-#include "juce_gui_basics/AppConfig.h"
-#include "juce_gui_basics/juce_gui_basics.h"
+#if JUCE_MAC || JUCE_WINDOWS
+# include "juce_gui_basics/AppConfig.h"
+# include "juce_gui_basics/juce_gui_basics.h"
+#endif
 
 #endif // CARLA_JUCE_GUI_BASICS_H_INCLUDED

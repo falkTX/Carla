@@ -22,7 +22,9 @@
 #include "juce_audio_basics.h"
 #include "juce_audio_formats.h"
 
-#include "juce_audio_devices/AppConfig.h"
-#include "juce_audio_devices/juce_audio_devices.h"
+#if JUCE_MAC || JUCE_WINDOWS
+# include "juce_audio_devices/AppConfig.h"
+# include "juce_audio_devices/juce_audio_devices.h"
+#endif
 
 #endif // CARLA_JUCE_AUDIO_DEVICES_H_INCLUDED
