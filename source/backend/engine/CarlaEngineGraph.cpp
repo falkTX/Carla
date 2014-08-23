@@ -1349,11 +1349,98 @@ CARLA_BACKEND_END_NAMESPACE
 // need to build juce_audio_processors on non-win/mac OSes
 
 #if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-# include "juce_audio_processors.h"
+
+#include "juce_audio_processors.h"
+#include "juce_events.h"
+
 namespace juce {
-# include "juce_audio_processors/processors/juce_AudioProcessor.cpp"
-# include "juce_audio_processors/processors/juce_AudioProcessorGraph.cpp"
+
+#include "juce_events/broadcasters/juce_AsyncUpdater.cpp"
+#include "juce_events/messages/juce_ApplicationBase.cpp"
+#include "juce_events/messages/juce_MessageManager.cpp"
+#include "juce_audio_processors/processors/juce_AudioProcessor.cpp"
+#include "juce_audio_processors/processors/juce_AudioProcessorGraph.cpp"
+
+class JuceEventsThread : public Thread
+{
+public:
+    JuceEventsThread()
+        : Thread("JuceEventsThread"),
+          fLock(),
+          fQueue(),
+          leakDetector_JuceEventsThread() {}
+
+    ~JuceEventsThread()
+    {
+        stopThread(-1);
+
+        const ScopedLock sl(fLock);
+        fQueue.clear();
+    }
+
+    void postMessage(MessageManager::MessageBase* const msg)
+    {
+        const ScopedLock sl(fLock);
+        fQueue.add(msg);
+    }
+
+protected:
+    void run() override
+    {
+        for (; ! threadShouldExit();)
+        {
+            {
+                const ScopedLock sl(fLock);
+
+                for (MessageManager::MessageBase **it = fQueue.begin(), **end = fQueue.end(); it != end; ++it)
+                {
+                    MessageManager::MessageBase* const msg(*it);
+
+                    JUCE_TRY
+                    {
+                        msg->messageCallback();
+                    }
+                    JUCE_CATCH_EXCEPTION
+                }
+            }
+
+            sleep(10);
+        }
+    }
+
+private:
+    CriticalSection fLock;
+    ReferenceCountedArray<MessageManager::MessageBase> fQueue;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JuceEventsThread)
+};
+
+static JuceEventsThread& getJuceEventsThreadInstance()
+{
+    static JuceEventsThread sJuceEventsThread;
+    return sJuceEventsThread;
 }
+
+void MessageManager::doPlatformSpecificInitialisation()
+{
+    JuceEventsThread& juceEventsThread(getJuceEventsThreadInstance());
+    juceEventsThread.startThread();
+}
+
+void MessageManager::doPlatformSpecificShutdown()
+{
+    JuceEventsThread& juceEventsThread(getJuceEventsThreadInstance());
+    juceEventsThread.stopThread(-1);
+}
+
+bool MessageManager::postMessageToSystemQueue(MessageManager::MessageBase* const message)
+{
+    JuceEventsThread& juceEventsThread(getJuceEventsThreadInstance());
+    juceEventsThread.postMessage(message);
+    return true;
+}
+
+} // namespace juce
 #endif
 
 // -----------------------------------------------------------------------
