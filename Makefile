@@ -686,7 +686,7 @@ endif
 ifeq ($(HAVE_LINUXSAMPLER),true)
 	@echo "GIG:$(ANS_YES)"
 else
-	@echo "GIG:$(ANS_NO)  $(mS)LinuxSampler missing$(mE)"
+	@echo "GIG:$(ANS_NO)  $(mS)LinuxSampler missing or too old$(mE)"
 endif
 ifeq ($(HAVE_FLUIDSYNTH),true)
 	@echo "SF2:$(ANS_YES)"
@@ -696,7 +696,7 @@ endif
 ifeq ($(HAVE_LINUXSAMPLER),true)
 	@echo "SFZ:$(ANS_YES)"
 else
-	@echo "SFZ:$(ANS_NO)  $(mS)LinuxSampler missing$(mE)"
+	@echo "SFZ:$(ANS_NO)  $(mS)LinuxSampler missing or too old$(mE)"
 endif
 	@echo ""
 

@@ -175,7 +175,7 @@ endif
 HAVE_QT4          = $(shell pkg-config --exists QtCore QtGui && echo true)
 HAVE_QT5          = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
 HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)
-HAVE_LINUXSAMPLER = $(shell pkg-config --exists linuxsampler && echo true)
+HAVE_LINUXSAMPLER = $(shell pkg-config --atleast-version=1.0.0.svn41 linuxsampler && echo true)
 
 # --------------------------------------------------------------
 # Set Qt tools
