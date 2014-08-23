@@ -23,14 +23,10 @@
 #include "CarlaPatchbayUtils.hpp"
 #include "CarlaStringList.hpp"
 
-#if 0
-# include "juce_audio_processors.h"
+#include "juce_audio_processors.h"
 using juce::AudioProcessorGraph;
 using juce::AudioSampleBuffer;
 using juce::MidiBuffer;
-#else
-# include "juce_audio_basics.h"
-#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -113,7 +109,6 @@ struct RackGraph {
     void processHelper(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames);
 };
 
-#if 0
 // -----------------------------------------------------------------------
 // PatchbayGraph
 
@@ -123,7 +118,7 @@ struct PatchbayGraph  {
     MidiBuffer midiBuffer;
     const int inputs;
     const int outputs;
-    //CharStringListPtr retCon;
+    mutable CharStringListPtr retCon;
 
     PatchbayGraph(const int bufferSize, const double sampleRate, const uint32_t inputs, const uint32_t outputs);
     ~PatchbayGraph();
@@ -137,15 +132,14 @@ struct PatchbayGraph  {
     void removePlugin(CarlaPlugin* const plugin);
     void removeAllPlugins();
 
-    //bool connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
-    //bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept;
+    bool connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
+    bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept;
 
-    //const char* const* getConnections() const noexcept;
-    //bool getPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept;
+    const char* const* getConnections() const noexcept;
+    bool getGroupAndPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept;
 
     void process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const int frames);
 };
-#endif
 
 // -----------------------------------------------------------------------
 
