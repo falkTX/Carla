@@ -5222,7 +5222,7 @@ public:
     void handleTransferAtom(const uint32_t portIndex, const LV2_Atom* const atom)
     {
         CARLA_SAFE_ASSERT_RETURN(atom != nullptr,);
-        carla_stdout("Lv2Plugin::handleTransferAtom(%i, %p)", portIndex, atom);
+        carla_debug("Lv2Plugin::handleTransferAtom(%i, %p)", portIndex, atom);
 
         fAtomBufferIn.put(atom, portIndex);
     }

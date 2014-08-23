@@ -735,8 +735,10 @@ public:
         {
             for (uint32_t i=uridCount; i < urid; ++i)
                 fCustomURIDs.append(nullptr);
+
+            fCustomURIDs.append(carla_strdup(uri));
         }
-        else
+        else // urid == uridCount
         {
             fCustomURIDs.append(carla_strdup(uri));
         }
