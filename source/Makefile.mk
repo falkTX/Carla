@@ -162,7 +162,6 @@ endif
 # Check for optional libs (required by backend or bridges)
 
 ifneq ($(MACOS_OR_WIN32),true)
-HAVE_FFMPEG     = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
 HAVE_GTK2       = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3       = $(shell pkg-config --exists gtk+-3.0 && echo true)
 ifeq ($(LINUX),true)

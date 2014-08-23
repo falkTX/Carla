@@ -18,14 +18,16 @@ Packagers can make use of the 'PREFIX' and 'DESTDIR' variable during install, li
 The required build dependencies are: <i>(devel packages of these)</i>
 
  - liblo
- - Qt5
- - PyQt5 (python3 version)
+ - Qt4/5
+ - PyQt4/5 (python3 version)
+ - X11 (Linux only)
 
 Optional for extended LV2 UIs support:
 
  - Gtk2
  - Gtk3
  - Qt4
+ - Qt5
 
 Optional for extra samplers support:
 
@@ -33,18 +35,10 @@ Optional for extra samplers support:
  - LinuxSampler
 
 Optional for extra native plugins:
- - OpenGL
  - NTK
- - libsmf
- - libsndfile
- - ffmpeg/libav
  - fftw3
  - mxml
  - zlib
-
-To run Carla-Control, you'll additionally need:
-
- - python3-liblo
 
 Optional but recommended:
 
