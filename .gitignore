@@ -38,8 +38,11 @@ qrc_resources.cpp
 ui_*.py
 
 # Misc files
+*.aria2
+*.deb
 *.meta4
 *.ttl
+*.zip
 
 # PyQt widgets
 source/canvaspreviewframe.py
@@ -76,8 +79,12 @@ carla-discovery-posix64
 carla-frontend
 carla-native-lv2-export
 
+data/linux/unzipfx2cat32
+data/linux/unzipfx2cat64
 data/windows/Carla
 data/windows/CarlaControl
+data/windows/Carla-*-win32/
+data/windows/Carla-*-win64/
 source/bridges/jackplugin/libjack.so.0
 source/frontend/Makefile
 source/tests/ansi-pedantic-test_*
