@@ -1960,6 +1960,16 @@ const void* CarlaPlugin::getNativeDescriptor() const noexcept
     return nullptr;
 }
 
+uint32_t CarlaPlugin::getPatchbayNodeId() const noexcept
+{
+    return pData->nodeId;
+}
+
+void CarlaPlugin::setPatchbayNodeId(const uint32_t nodeId) noexcept
+{
+    pData->nodeId = nodeId;
+}
+
 // -------------------------------------------------------------------
 // Scoped Disabler
 

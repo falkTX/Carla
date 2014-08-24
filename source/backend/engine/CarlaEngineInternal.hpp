@@ -77,6 +77,12 @@ public:
     // special direct process with connections already handled, used in JACK and Plugin
     void processRack(CarlaEngine::ProtectedData* const data, const float* inBuf[2], float* outBuf[2], const uint32_t frames);
 
+    // used for internal patchbay mode
+    void addPlugin(CarlaPlugin* const plugin);
+    void replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* const newPlugin);
+    void removePlugin(CarlaPlugin* const plugin);
+    void removeAllPlugins();
+
 private:
     bool fIsRack;
     bool fIsReady;
@@ -209,6 +215,26 @@ struct CarlaEngine::ProtectedData {
     ProtectedData() = delete;
     CARLA_DECLARE_NON_COPY_STRUCT(ProtectedData)
 #endif
+};
+
+// -----------------------------------------------------------------------
+
+class PendingRtEventsRunner
+{
+public:
+    PendingRtEventsRunner(CarlaEngine* const engine) noexcept
+        : fEngine(engine) {}
+
+    ~PendingRtEventsRunner() noexcept
+    {
+        fEngine->runPendingRtEvents();
+    }
+
+private:
+    CarlaEngine* const fEngine;
+
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_CLASS(PendingRtEventsRunner)
 };
 
 // -----------------------------------------------------------------------

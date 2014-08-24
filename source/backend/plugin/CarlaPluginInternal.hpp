@@ -217,6 +217,7 @@ struct CarlaPlugin::ProtectedData {
     uint id;
     uint hints;
     uint options;
+    uint32_t nodeId;
 
     bool active;
     bool enabled;

@@ -478,11 +478,13 @@ public:
 protected:
     void audioDeviceIOCallback(const float** inputChannelData, int numInputChannels, float** outputChannelData, int numOutputChannels, int numSamples) override
     {
+        const PendingRtEventsRunner prt(this);
+
         // assert juce buffers
-        CARLA_SAFE_ASSERT_RETURN(numInputChannels >= 0,        runPendingRtEvents());
-        CARLA_SAFE_ASSERT_RETURN(numOutputChannels > 0,        runPendingRtEvents());
-        CARLA_SAFE_ASSERT_RETURN(outputChannelData != nullptr, runPendingRtEvents());
-        CARLA_SAFE_ASSERT_RETURN(numSamples == static_cast<int>(pData->bufferSize), runPendingRtEvents());
+        CARLA_SAFE_ASSERT_RETURN(numInputChannels >= 0,);
+        CARLA_SAFE_ASSERT_RETURN(numOutputChannels > 0,);
+        CARLA_SAFE_ASSERT_RETURN(outputChannelData != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(numSamples == static_cast<int>(pData->bufferSize),);
 
         const uint32_t nframes(static_cast<uint32_t>(numSamples));
 
@@ -581,9 +583,6 @@ protected:
         }
 
         fMidiOutMutex.unlock();
-
-        runPendingRtEvents();
-        return;
     }
 
     void audioDeviceAboutToStart(AudioIODevice* /*device*/) override

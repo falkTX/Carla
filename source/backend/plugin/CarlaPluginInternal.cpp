@@ -444,6 +444,7 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       id(idx),
       hints(0x0),
       options(0x0),
+      nodeId(0),
       active(false),
       enabled(false),
       needsReset(false),

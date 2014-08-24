@@ -460,7 +460,7 @@ public:
     {
         carla_debug("CarlaEngineJackClient::~CarlaEngineJackClient()");
 
-        if (kEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS && fJackClient != nullptr) // FIXME
+        if (getProcessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS && fJackClient != nullptr) // FIXME
             jackbridge_client_close(fJackClient);
 
         // ports must have been deleted by now!
@@ -473,9 +473,9 @@ public:
     {
         carla_debug("CarlaEngineJackClient::activate()");
 
-        if (kEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+        if (getProcessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
-            CARLA_SAFE_ASSERT_RETURN(fJackClient != nullptr && ! fActive,);
+            CARLA_SAFE_ASSERT_RETURN(fJackClient != nullptr && ! isActive(),);
 
             try {
                 jackbridge_activate(fJackClient);
@@ -489,9 +489,9 @@ public:
     {
         carla_debug("CarlaEngineJackClient::deactivate()");
 
-        if (kEngine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+        if (getProcessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
-            CARLA_SAFE_ASSERT_RETURN(fJackClient != nullptr && fActive,);
+            CARLA_SAFE_ASSERT_RETURN(fJackClient != nullptr && isActive(),);
 
             try {
                 jackbridge_deactivate(fJackClient);
@@ -535,6 +535,8 @@ public:
 
             CARLA_SAFE_ASSERT_RETURN(jackPort != nullptr, nullptr);
         }
+
+        _addName(isInput, name);
 
         // Create Engine port
         switch (portType)
@@ -582,8 +584,8 @@ public:
             port->invalidate();
         }
 
-        fActive     = false;
         fJackClient = nullptr;
+        CarlaEngineClient::deactivate();
     }
 
     const char* getJackClientName() const noexcept
@@ -767,7 +769,8 @@ public:
             jackbridge_set_port_rename_callback(fClient, carla_jack_port_rename_callback, this);
         }
 
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+            pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         {
             fRackPorts[kRackPortAudioIn1]  = jackbridge_port_register(fClient, "audio-in1",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
             fRackPorts[kRackPortAudioIn2]  = jackbridge_port_register(fClient, "audio-in2",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
@@ -776,18 +779,15 @@ public:
             fRackPorts[kRackPortEventIn]   = jackbridge_port_register(fClient, "events-in",  JACK_DEFAULT_MIDI_TYPE,  JackPortIsInput, 0);
             fRackPorts[kRackPortEventOut]  = jackbridge_port_register(fClient, "events-out", JACK_DEFAULT_MIDI_TYPE,  JackPortIsOutput, 0);
 
-            pData->graph.create(true, pData->sampleRate, pData->bufferSize, 0, 0);
-        }
-        else if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-        {
-            fRackPorts[kRackPortAudioIn1]  = jackbridge_port_register(fClient, "audio-in1",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
-            fRackPorts[kRackPortAudioIn2]  = jackbridge_port_register(fClient, "audio-in2",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
-            fRackPorts[kRackPortAudioOut1] = jackbridge_port_register(fClient, "audio-out1", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
-            fRackPorts[kRackPortAudioOut2] = jackbridge_port_register(fClient, "audio-out2", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
-            fRackPorts[kRackPortEventIn]   = jackbridge_port_register(fClient, "events-in",  JACK_DEFAULT_MIDI_TYPE,  JackPortIsInput, 0);
-            fRackPorts[kRackPortEventOut]  = jackbridge_port_register(fClient, "events-out", JACK_DEFAULT_MIDI_TYPE,  JackPortIsOutput, 0);
-
-            pData->graph.create(false, pData->sampleRate, pData->bufferSize, 2, 2);
+            if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+            {
+                pData->graph.create(true, pData->sampleRate, pData->bufferSize, 0, 0);
+            }
+            else
+            {
+                pData->graph.create(false, pData->sampleRate, pData->bufferSize, 2, 2);
+                CarlaEngine::patchbayRefresh();
+            }
         }
 
         if (jackbridge_activate(fClient))
@@ -1299,31 +1299,9 @@ protected:
 
     void handleJackProcessCallback(const uint32_t nframes)
     {
+        const PendingRtEventsRunner prt(this);
+
         saveTransportInfo();
-
-        if (pData->curPluginCount == 0)
-        {
-#ifndef BUILD_BRIDGE
-            // pass-through
-            if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-            {
-                float* const audioIn1  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn1], nframes);
-                float* const audioIn2  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn2], nframes);
-                float* const audioOut1 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut1], nframes);
-                float* const audioOut2 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut2], nframes);
-                void*  const eventOut  = jackbridge_port_get_buffer(fRackPorts[kRackPortEventOut], nframes);
-
-                FloatVectorOperations::copy(audioOut1, audioIn1, static_cast<int>(nframes));
-                FloatVectorOperations::copy(audioOut2, audioIn2, static_cast<int>(nframes));
-
-                jackbridge_midi_clear_buffer(eventOut);
-
-                return runPendingRtEvents();
-            }
-#else
-            return runPendingRtEvents();
-#endif
-        }
 
 #ifdef BUILD_BRIDGE
         CarlaPlugin* const plugin(pData->plugins[0].plugin);
@@ -1334,9 +1312,24 @@ protected:
             processPlugin(plugin, nframes);
             plugin->unlock();
         }
-
-        return runPendingRtEvents();
 #else
+        if (pData->curPluginCount == 0 && pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        {
+            // pass-through
+            // TODO MIDI as well
+            float* const audioIn1  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn1], nframes);
+            float* const audioIn2  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn2], nframes);
+            float* const audioOut1 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut1], nframes);
+            float* const audioOut2 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut2], nframes);
+            void*  const eventOut  = jackbridge_port_get_buffer(fRackPorts[kRackPortEventOut], nframes);
+
+            FloatVectorOperations::copy(audioOut1, audioIn1, static_cast<int>(nframes));
+            FloatVectorOperations::copy(audioOut2, audioIn2, static_cast<int>(nframes));
+
+            jackbridge_midi_clear_buffer(eventOut);
+            return;
+        }
+
         if (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
         {
             for (uint i=0; i < pData->curPluginCount; ++i)
@@ -1350,12 +1343,9 @@ protected:
                     plugin->unlock();
                 }
             }
-
-            return runPendingRtEvents();
         }
-
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
-            pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        else if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+                 pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         {
             // get buffers from jack
             float* const audioIn1  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn1], nframes);
@@ -1452,12 +1442,8 @@ protected:
                         jackbridge_midi_event_write(eventOut, engineEvent.time, dataPtr, size);
                 }
             }
-
-            return runPendingRtEvents();
         }
 #endif // ! BUILD_BRIDGE
-
-        runPendingRtEvents();
     }
 
     void handleJackLatencyCallback(const jack_latency_callback_mode_t /*mode*/)
@@ -1836,6 +1822,8 @@ private:
         // query connections, after all ports are in place
         if (const char** const ports = jackbridge_get_ports(fClient, nullptr, nullptr, JackPortIsOutput))
         {
+            char strBuf[STR_MAX+1];
+
             for (int i=0; ports[i] != nullptr; ++i)
             {
                 const char* const fullPortName(ports[i]);
@@ -1861,7 +1849,6 @@ private:
                         CARLA_SAFE_ASSERT_CONTINUE(targetPort.group > 0);
                         CARLA_SAFE_ASSERT_CONTINUE(targetPort.port > 0);
 
-                        char strBuf[STR_MAX+1];
                         std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", thisPort.group, thisPort.port, targetPort.group, targetPort.port);
                         strBuf[STR_MAX] = '\0';
 

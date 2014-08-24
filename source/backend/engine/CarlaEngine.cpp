@@ -539,6 +539,9 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
         pData->thread.stopThread(500);
         pData->thread.startThread();
 
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+            pData->graph.replacePlugin(oldPlugin, plugin);
+
         const bool  wasActive = oldPlugin->getInternalParameterValue(PARAMETER_ACTIVE) >= 0.5f;
         const float oldDryWet = oldPlugin->getInternalParameterValue(PARAMETER_DRYWET);
         const float oldVolume = oldPlugin->getInternalParameterValue(PARAMETER_VOLUME);
@@ -561,6 +564,9 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     {
         ++pData->curPluginCount;
         callback(ENGINE_CALLBACK_PLUGIN_ADDED, id, 0, 0, 0.0f, plugin->getName());
+
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+            pData->graph.addPlugin(plugin);
     }
 
     return true;
@@ -605,6 +611,9 @@ bool CarlaEngine::removePlugin(const uint id)
     carla_zeroStruct(pData->plugins, 1);
 #endif
 
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        pData->graph.removePlugin(plugin);
+
     delete plugin;
 
     if (isRunning() && ! pData->aboutToClose)
@@ -631,6 +640,9 @@ bool CarlaEngine::removeAllPlugins()
 
     const bool lockWait(isRunning());
     const ScopedActionLock sal(pData, kEnginePostActionZeroCount, 0, 0, lockWait);
+
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        pData->graph.removeAllPlugins();
 
     callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
 
@@ -753,24 +765,32 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB) noexcept
     CARLA_SAFE_ASSERT_RETURN_ERR(idB < pData->curPluginCount, "Invalid plugin Id");
     carla_debug("CarlaEngine::switchPlugins(%i)", idA, idB);
 
-    CarlaPlugin* const pluginA(pData->plugins[idA].plugin);
-    CarlaPlugin* const pluginB(pData->plugins[idB].plugin);
+    {
+        CarlaPlugin* const pluginA(pData->plugins[idA].plugin);
+        CarlaPlugin* const pluginB(pData->plugins[idB].plugin);
 
-    CARLA_SAFE_ASSERT_RETURN_ERR(pluginA != nullptr, "Could not find plugin to switch");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pluginA != nullptr, "Could not find plugin to switch");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pluginA->getId() == idA, "Invalid engine internal data");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pluginB->getId() == idB, "Invalid engine internal data");
+        CARLA_SAFE_ASSERT_RETURN_ERR(pluginA != nullptr, "Could not find plugin to switch");
+        CARLA_SAFE_ASSERT_RETURN_ERR(pluginA != nullptr, "Could not find plugin to switch");
+        CARLA_SAFE_ASSERT_RETURN_ERR(pluginA->getId() == idA, "Invalid engine internal data");
+        CARLA_SAFE_ASSERT_RETURN_ERR(pluginB->getId() == idB, "Invalid engine internal data");
+    }
 
     pData->thread.stopThread(500);
 
     const bool lockWait(isRunning() && pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS);
     const ScopedActionLock sal(pData, kEnginePostActionSwitchPlugins, idA, idB, lockWait);
 
-    if (CarlaPlugin* const plugin = pData->plugins[idA].plugin)
-        plugin->updateOscURL();
+    CarlaPlugin* const pluginA(pData->plugins[idA].plugin);
+    CarlaPlugin* const pluginB(pData->plugins[idB].plugin);
 
-    if (CarlaPlugin* const plugin = pData->plugins[idB].plugin)
-        plugin->updateOscURL();
+    if (pluginA != nullptr && pluginB != nullptr)
+    {
+        pluginA->updateOscURL();
+        pluginB->updateOscURL();
+
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+            pData->graph.replacePlugin(pluginA, pluginB);
+    }
 
     // TODO
     //if (isOscControlRegistered())

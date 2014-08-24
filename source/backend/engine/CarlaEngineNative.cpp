@@ -605,7 +605,7 @@ public:
         fIsRunning = false;
 
         removeAllPlugins();
-        runPendingRtEvents();
+        //runPendingRtEvents();
         close();
 
         pData->graph.destroy();
@@ -1071,17 +1071,18 @@ protected:
 #endif
 
         // just in case
-        runPendingRtEvents();
+        //runPendingRtEvents();
     }
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount)
     {
+        const PendingRtEventsRunner prt(this);
+
         if (pData->curPluginCount == 0 && ! fIsPatchbay)
         {
             FloatVectorOperations::copy(outBuffer[0], inBuffer[0], static_cast<int>(frames));
             FloatVectorOperations::copy(outBuffer[1], inBuffer[1], static_cast<int>(frames));
-
-            return runPendingRtEvents();;
+            return;
         }
 
         // ---------------------------------------------------------------
@@ -1200,8 +1201,6 @@ protected:
                 pHost->write_midi_event(pHost->handle, &midiEvent);
             }
         }
-
-        runPendingRtEvents();
     }
 
     // -------------------------------------------------------------------

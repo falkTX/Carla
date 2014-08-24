@@ -545,7 +545,7 @@ public:
      * All constructor parameters are constant and will never change in the lifetime of the client.
      * Client starts in deactivated state.
      */
-    CarlaEngineClient(const CarlaEngine& engine) noexcept;
+    CarlaEngineClient(const CarlaEngine& engine);
 
     /*!
      * The destructor.
@@ -595,17 +595,32 @@ public:
     /*!
      * Get this client's engine.
      */
-    const CarlaEngine& getEngine() const noexcept
-    {
-        return kEngine;
-    }
+    const CarlaEngine& getEngine() const noexcept;
+
+    /*!
+     * Get the engine's process mode.
+     */
+    EngineProcessMode getProcessMode() const noexcept;
+
+    /*!
+     * Get an input port name.
+     */
+    const char* getAudioInputPortName(const uint index) const noexcept;
+
+    /*!
+     * Get an input port name.
+     */
+    const char* getAudioOutputPortName(const uint index) const noexcept;
 
 #ifndef DOXYGEN
 protected:
-    const CarlaEngine& kEngine;
+    /*!
+     * Internal data, for CarlaEngineClient subclasses only.
+     */
+    struct ProtectedData;
+    ProtectedData* const pData;
 
-    bool     fActive;
-    uint32_t fLatency;
+    void _addName(const bool, const char* const);
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineClient)
 #endif
@@ -1044,10 +1059,12 @@ protected:
     ProtectedData* const pData;
 
     /*!
-     * Some internal classes read directly from pData.
+     * Some internal classes read directly from pData or call protected functions.
      */
+    friend class CarlaPluginInstance;
     friend class EngineInternalGraph;
     friend class ScopedActionLock;
+    friend class PendingRtEventsRunner;
     friend struct PatchbayGraph;
     friend struct RackGraph;
 

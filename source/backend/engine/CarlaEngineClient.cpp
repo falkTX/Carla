@@ -17,44 +17,68 @@
 
 #include "CarlaEngineUtils.hpp"
 
+#include "CarlaStringList.hpp"
+
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
 // Carla Engine client (Abstract)
 
-CarlaEngineClient::CarlaEngineClient(const CarlaEngine& engine) noexcept
-    : kEngine(engine),
-      fActive(false),
-      fLatency(0)
+struct CarlaEngineClient::ProtectedData {
+    const CarlaEngine& engine;
+
+    bool     active;
+    uint32_t latency;
+
+    CarlaStringList audioInList;
+    CarlaStringList audioOutList;
+
+    ProtectedData(const CarlaEngine& eng)
+        :  engine(eng),
+           active(false),
+           latency(0),
+           audioInList(),
+           audioOutList() {}
+
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+    ProtectedData() = delete;
+    CARLA_DECLARE_NON_COPY_STRUCT(ProtectedData)
+#endif
+};
+
+CarlaEngineClient::CarlaEngineClient(const CarlaEngine& engine)
+    : pData(new ProtectedData(engine))
 {
     carla_debug("CarlaEngineClient::CarlaEngineClient()");
 }
 
 CarlaEngineClient::~CarlaEngineClient() noexcept
 {
-    CARLA_SAFE_ASSERT(! fActive);
+    CARLA_SAFE_ASSERT(! pData->active);
     carla_debug("CarlaEngineClient::~CarlaEngineClient()");
+
+    delete pData;
 }
 
 void CarlaEngineClient::activate() noexcept
 {
-    CARLA_SAFE_ASSERT(! fActive);
+    CARLA_SAFE_ASSERT(! pData->active);
     carla_debug("CarlaEngineClient::activate()");
 
-    fActive = true;
+    pData->active = true;
 }
 
 void CarlaEngineClient::deactivate() noexcept
 {
-    CARLA_SAFE_ASSERT(fActive);
+    CARLA_SAFE_ASSERT(pData->active);
     carla_debug("CarlaEngineClient::deactivate()");
 
-    fActive = false;
+    pData->active = false;
 }
 
 bool CarlaEngineClient::isActive() const noexcept
 {
-    return fActive;
+    return pData->active;
 }
 
 bool CarlaEngineClient::isOk() const noexcept
@@ -64,18 +88,20 @@ bool CarlaEngineClient::isOk() const noexcept
 
 uint32_t CarlaEngineClient::getLatency() const noexcept
 {
-    return fLatency;
+    return pData->latency;
 }
 
 void CarlaEngineClient::setLatency(const uint32_t samples) noexcept
 {
-    fLatency = samples;
+    pData->latency = samples;
 }
 
 CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const char* const name, const bool isInput)
 {
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', nullptr);
     carla_debug("CarlaEngineClient::addPort(%i:%s, \"%s\", %s)", portType, EnginePortType2Str(portType), name, bool2str(isInput));
+
+    _addName(isInput, name);
 
     switch (portType)
     {
@@ -91,6 +117,40 @@ CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const
 
     carla_stderr("CarlaEngineClient::addPort(%i, \"%s\", %s) - invalid type", portType, name, bool2str(isInput));
     return nullptr;
+}
+
+const CarlaEngine& CarlaEngineClient::getEngine() const noexcept
+{
+    return pData->engine;
+}
+
+EngineProcessMode CarlaEngineClient::getProcessMode() const noexcept
+{
+    return pData->engine.getProccessMode();
+}
+
+const char* CarlaEngineClient::getAudioInputPortName(const uint index) const noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(index < pData->audioInList.count(), nullptr);
+
+    return pData->audioInList.getAt(index, nullptr);
+}
+
+const char* CarlaEngineClient::getAudioOutputPortName(const uint index) const noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(index < pData->audioOutList.count(), nullptr);
+
+    return pData->audioOutList.getAt(index, nullptr);
+}
+
+void CarlaEngineClient::_addName(const bool isInput, const char* const name)
+{
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
+
+    if (isInput)
+        pData->audioInList.append(name);
+    else
+        pData->audioOutList.append(name);
 }
 
 // -----------------------------------------------------------------------

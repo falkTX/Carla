@@ -603,13 +603,15 @@ public:
 protected:
     void handleAudioProcessCallback(void* outputBuffer, void* inputBuffer, uint nframes, double streamTime, RtAudioStreamStatus status)
     {
+        const PendingRtEventsRunner prt(this);
+
         // get buffers from RtAudio
         const float* const insPtr  = (const float*)inputBuffer;
               float* const outsPtr =       (float*)outputBuffer;
 
         // assert rtaudio buffers
-        CARLA_SAFE_ASSERT_RETURN(outputBuffer      != nullptr, runPendingRtEvents());
-        CARLA_SAFE_ASSERT_RETURN(pData->bufferSize == nframes, runPendingRtEvents());
+        CARLA_SAFE_ASSERT_RETURN(outputBuffer      != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(pData->bufferSize == nframes,);
 
         // initialize rtaudio input
         const float* inBuf[fAudioInCount];
@@ -717,12 +719,8 @@ protected:
 
         fMidiOutMutex.unlock();
 
-        runPendingRtEvents();
-        return;
-
-        // unused
-        (void)streamTime;
-        (void)status;
+        return; // unused
+        (void)streamTime; (void)status;
     }
 
     void handleMidiCallback(double timeStamp, std::vector<uchar>* const message)

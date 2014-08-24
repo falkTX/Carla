@@ -837,6 +837,18 @@ public:
      */
     virtual const void* getNativeDescriptor() const noexcept;
 
+    /*!
+     * Get the plugin's patchbay nodeId.
+     * @see setPatchbayNodeId()
+     */
+    uint32_t getPatchbayNodeId() const noexcept;
+
+    /*!
+     * Set the plugin's patchbay nodeId.
+     * @see getPatchbayNodeId()
+     */
+    void setPatchbayNodeId(const uint32_t nodeId) noexcept;
+
     // -------------------------------------------------------------------
     // Plugin initializers
 
