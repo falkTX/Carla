@@ -797,7 +797,6 @@ const String getProcessorFullPortName(AudioProcessor* const proc, const uint32_t
     CARLA_SAFE_ASSERT_RETURN(proc != nullptr, String());
     CARLA_SAFE_ASSERT_RETURN(portId >= kAudioInputPortOffset, String());
     CARLA_SAFE_ASSERT_RETURN(portId <= kMidiOutputPortOffset, String());
-    carla_stdout("getProcessorFullPortName(%p, %u)", proc, portId);
 
     String fullPortName(proc->getName());
 
@@ -838,14 +837,12 @@ void addNodeToPatchbay(CarlaEngine* const engine, const uint32_t groupId, const 
 
     for (int i=0, numInputs=proc->getNumInputChannels(); i<numInputs; ++i)
     {
-        carla_stdout("add in %i|%i", groupId, static_cast<int>(kAudioInputPortOffset)+i);
         engine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, groupId, static_cast<int>(kAudioInputPortOffset)+i,
                          PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, proc->getInputChannelName(i).toRawUTF8());
     }
 
     for (int i=0, numOutputs=proc->getNumOutputChannels(); i<numOutputs; ++i)
     {
-        carla_stdout("add out %i|%i", groupId, static_cast<int>(kAudioOutputPortOffset)+i);
         engine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, groupId, static_cast<int>(kAudioOutputPortOffset)+i,
                          PATCHBAY_PORT_TYPE_AUDIO, 0.0f, proc->getOutputChannelName(i).toRawUTF8());
     }
@@ -1276,7 +1273,6 @@ void PatchbayGraph::removeAllPlugins(CarlaEngine* const engine)
 bool PatchbayGraph::connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr, false);
-    carla_stdout("PatchbayGraph::connect(%p, %u, %u, %u, %u)", engine, groupA, portA, groupB, portB);
 
     uint adjustedPortA = portA;
     uint adjustedPortB = portB;
