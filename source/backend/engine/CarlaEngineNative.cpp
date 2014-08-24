@@ -90,7 +90,7 @@ protected:
 
             try {
                 fEngine->setOption(static_cast<EngineOption>(option), value, valueStr);
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("setOption");
 
             delete[] valueStr;
         }
@@ -102,7 +102,7 @@ protected:
 
             try {
                 ok = fEngine->loadFile(filename);
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("loadFile");
 
             delete[] filename;
         }
@@ -114,7 +114,7 @@ protected:
 
             try {
                 ok = fEngine->loadProject(filename);
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("loadProject");
 
             delete[] filename;
         }
@@ -126,7 +126,7 @@ protected:
 
             try {
                 ok = fEngine->saveProject(filename);
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("saveProject");
 
             delete[] filename;
         }
@@ -141,7 +141,7 @@ protected:
 
             try {
                 ok = fEngine->patchbayConnect(groupA, portA, groupB, portB);
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("patchbayConnect");
         }
         else if (std::strcmp(msg, "patchbay_disconnect") == 0)
         {
@@ -151,13 +151,13 @@ protected:
 
             try {
                 ok = fEngine->patchbayDisconnect(connectionId);
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("patchbayDisconnect");
         }
         else if (std::strcmp(msg, "patchbay_refresh") == 0)
         {
             try {
                 ok = fEngine->patchbayRefresh();
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("patchbayRefresh");
         }
         else if (std::strcmp(msg, "transport_play") == 0)
         {
@@ -1234,6 +1234,9 @@ protected:
                     uiServerCallback(ENGINE_CALLBACK_PLUGIN_ADDED, i, 0, 0, 0.0f, plugin->getName());
                 }
             }
+
+            if (fIsPatchbay)
+                patchbayRefresh();
         }
         else
         {
