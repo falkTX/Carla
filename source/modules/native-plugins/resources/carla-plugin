@@ -573,21 +573,21 @@ class CarlaMiniW(ExternalUI, HostWindow):
 
             elif msg.startswith("PEAKS_"):
                 pluginId = int(msg.replace("PEAKS_", ""))
-                in1, in2, out1, out2 = [float(i) for i in self.fPipeRecv.readline().strip().split(":")]
+                in1, in2, out1, out2 = [float(i) for i in self.readlineblock().split(":")]
                 gCarla.host._set_peaks(pluginId, in1, in2, out1, out2)
 
             elif msg.startswith("PARAMVAL_"):
                 pluginId, paramId = [int(i) for i in msg.replace("PARAMVAL_", "").split(":")]
-                paramValue = float(self.fPipeRecv.readline().strip())
+                paramValue = float(self.readlineblock())
                 gCarla.host._set_parameterValueS(pluginId, paramId, paramValue)
 
             elif msg.startswith("ENGINE_CALLBACK_"):
                 action   = int(msg.replace("ENGINE_CALLBACK_", ""))
-                pluginId = int(self.fPipeRecv.readline().strip())
-                value1   = int(self.fPipeRecv.readline().strip())
-                value2   = int(self.fPipeRecv.readline().strip())
-                value3   = float(self.fPipeRecv.readline().strip())
-                valueStr = self.fPipeRecv.readline().strip().replace("\r", "\n")
+                pluginId = int(self.readlineblock())
+                value1   = int(self.readlineblock())
+                value2   = int(self.readlineblock())
+                value3   = float(self.readlineblock())
+                valueStr = self.readlineblock().replace("\r", "\n")
 
                 if action == ENGINE_CALLBACK_PLUGIN_RENAMED:
                     gCarla.host._set_pluginName(pluginId, valueStr)
@@ -613,14 +613,14 @@ class CarlaMiniW(ExternalUI, HostWindow):
                 pluginId = int(msg.replace("PLUGIN_INFO_", ""))
                 gCarla.host._add(pluginId)
 
-                type_, category, hints, uniqueId, optsAvail, optsEnabled = [int(i) for i in self.fPipeRecv.readline().strip().split(":")]
-                filename  = self.fPipeRecv.readline().strip().replace("\r", "\n")
-                name      = self.fPipeRecv.readline().strip().replace("\r", "\n")
-                iconName  = self.fPipeRecv.readline().strip().replace("\r", "\n")
-                realName  = self.fPipeRecv.readline().strip().replace("\r", "\n")
-                label     = self.fPipeRecv.readline().strip().replace("\r", "\n")
-                maker     = self.fPipeRecv.readline().strip().replace("\r", "\n")
-                copyright = self.fPipeRecv.readline().strip().replace("\r", "\n")
+                type_, category, hints, uniqueId, optsAvail, optsEnabled = [int(i) for i in self.readlineblock().split(":")]
+                filename  = self.readlineblock().replace("\r", "\n")
+                name      = self.readlineblock().replace("\r", "\n")
+                iconName  = self.readlineblock().replace("\r", "\n")
+                realName  = self.readlineblock().replace("\r", "\n")
+                label     = self.readlineblock().replace("\r", "\n")
+                maker     = self.readlineblock().replace("\r", "\n")
+                copyright = self.readlineblock().replace("\r", "\n")
 
                 pinfo = {
                     'type': type_,
@@ -654,9 +654,9 @@ class CarlaMiniW(ExternalUI, HostWindow):
 
             elif msg.startswith("PARAMETER_DATA_"):
                 pluginId, paramId = [int(i) for i in msg.replace("PARAMETER_DATA_", "").split(":")]
-                paramType, paramHints, midiChannel, midiCC = [int(i) for i in self.fPipeRecv.readline().strip().split(":")]
-                paramName = self.fPipeRecv.readline().strip().replace("\r", "\n")
-                paramUnit = self.fPipeRecv.readline().strip().replace("\r", "\n")
+                paramType, paramHints, midiChannel, midiCC = [int(i) for i in self.readlineblock().split(":")]
+                paramName = self.readlineblock().replace("\r", "\n")
+                paramUnit = self.readlineblock().replace("\r", "\n")
 
                 paramInfo = {
                     'name': paramName,
@@ -678,7 +678,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
 
             elif msg.startswith("PARAMETER_RANGES_"):
                 pluginId, paramId = [int(i) for i in msg.replace("PARAMETER_RANGES_", "").split(":")]
-                def_, min_, max_, step, stepSmall, stepLarge = [float(i) for i in self.fPipeRecv.readline().strip().split(":")]
+                def_, min_, max_, step, stepSmall, stepLarge = [float(i) for i in self.readlineblock().split(":")]
 
                 paramRanges = {
                     'def': def_,
@@ -697,7 +697,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
 
             elif msg.startswith("PROGRAM_NAME_"):
                 pluginId, progId = [int(i) for i in msg.replace("PROGRAM_NAME_", "").split(":")]
-                progName = self.fPipeRecv.readline().strip().replace("\r", "\n")
+                progName = self.readlineblock().replace("\r", "\n")
                 gCarla.host._set_programNameS(pluginId, progId, progName)
 
             elif msg.startswith("MIDI_PROGRAM_COUNT_"):
@@ -707,12 +707,12 @@ class CarlaMiniW(ExternalUI, HostWindow):
 
             elif msg.startswith("MIDI_PROGRAM_DATA_"):
                 pluginId, midiProgId = [int(i) for i in msg.replace("MIDI_PROGRAM_DATA_", "").split(":")]
-                bank, program = [int(i) for i in self.fPipeRecv.readline().strip().split(":")]
-                name = self.fPipeRecv.readline().strip().replace("\r", "\n")
+                bank, program = [int(i) for i in self.readlineblock().split(":")]
+                name = self.readlineblock().replace("\r", "\n")
                 gCarla.host._set_midiProgramDataS(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
 
             elif msg == "error":
-                error = self.fPipeRecv.readline().strip().replace("\r", "\n")
+                error = self.readlineblock().replace("\r", "\n")
                 engineCallback(None, ENGINE_CALLBACK_ERROR, 0, 0, 0, 0.0, error)
 
             elif msg == "show":
@@ -726,7 +726,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
                 self.d_uiQuit()
 
             elif msg == "uiTitle":
-                uiTitle = self.fPipeRecv.readline().strip().replace("\r", "\n")
+                uiTitle = self.readlineblock().replace("\r", "\n")
                 self.d_uiTitleChanged(uiTitle)
 
             else:

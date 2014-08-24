@@ -22,6 +22,7 @@
 from os import fdopen, O_NONBLOCK
 from fcntl import fcntl, F_GETFL, F_SETFL
 from sys import argv
+from time import sleep
 
 # -----------------------------------------------------------------------
 # External UI
@@ -140,26 +141,26 @@ class ExternalUI(object):
                 return True
 
             elif msg == "control":
-                index = int(self.fPipeRecv.readline())
-                value = float(self.fPipeRecv.readline())
+                index = int(self.readlineblock())
+                value = float(self.readlineblock())
                 self.d_parameterChanged(index, value)
 
             elif msg == "program":
-                channel = int(self.fPipeRecv.readline())
-                bank    = int(self.fPipeRecv.readline())
-                program = int(self.fPipeRecv.readline())
+                channel = int(self.readlineblock())
+                bank    = int(self.readlineblock())
+                program = int(self.readlineblock())
                 self.d_programChanged(channel, bank, program)
 
             elif msg == "configure":
-                key   = self.fPipeRecv.readline().strip().replace("\r", "\n")
-                value = self.fPipeRecv.readline().strip().replace("\r", "\n")
+                key   = self.readlineblock().replace("\r", "\n")
+                value = self.readlineblock().replace("\r", "\n")
                 self.d_stateChanged(key, value)
 
             elif msg == "note":
-                onOff    = bool(self.fPipeRecv.readline().strip() == "true")
-                channel  = int(self.fPipeRecv.readline())
-                note     = int(self.fPipeRecv.readline())
-                velocity = int(self.fPipeRecv.readline())
+                onOff    = bool(self.readlineblock() == "true")
+                channel  = int(self.readlineblock())
+                note     = int(self.readlineblock())
+                velocity = int(self.readlineblock())
                 self.d_noteReceived(onOff, channel, note, velocity)
 
             elif msg == "show":
@@ -173,7 +174,7 @@ class ExternalUI(object):
                 self.d_uiQuit()
 
             elif msg == "uiTitle":
-                uiTitle = self.fPipeRecv.readline().strip().replace("\r", "\n")
+                uiTitle = self.readlineblock().replace("\r", "\n")
                 self.d_uiTitleChanged(uiTitle)
 
             else:
@@ -183,6 +184,27 @@ class ExternalUI(object):
 
     # -------------------------------------------------------------------
     # Internal stuff
+
+    def readlineblock(self):
+        if self.fPipeRecv is None:
+            return ""
+
+        # try a maximum of 20 times
+        # 20 * 50ms = 1000ms
+        for x in range(20):
+            try:
+                msg = self.fPipeRecv.readline()
+            except IOError:
+                msg = ""
+
+            if msg:
+                return msg.strip()
+
+            # try again in 50 ms
+            sleep(0.050)
+
+        print("readlineblock timed out")
+        return ""
 
     def send(self, lines):
         if self.fPipeSend is None:
