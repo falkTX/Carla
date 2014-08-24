@@ -523,13 +523,13 @@ class CarlaMiniW(ExternalUI, HostWindow):
         if sys.argv[0].lower().endswith("/carla-plugin-patchbay"):
             from carla_patchbay import CarlaPatchbayW
             self.fContainer = CarlaPatchbayW(self)
+            self.setupContainer(True, self.fContainer.themeData)
         else:
             from carla_rack import CarlaRackW
             self.fContainer = CarlaRackW(self)
+            self.setupContainer(False)
 
-        self.setupContainer(False)
         self.setWindowTitle(self.fUiName)
-
         self.showUiIfTesting()
 
     # -------------------------------------------------------------------
