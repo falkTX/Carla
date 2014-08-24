@@ -1682,6 +1682,7 @@ CARLA_BACKEND_END_NAMESPACE
 #include "CarlaPluginUI.cpp"
 #include "CarlaDssiUtils.cpp"
 #include "CarlaStateUtils.cpp"
+#include "CarlaJuceEvents.cpp"
 
 #endif
 

@@ -1023,7 +1023,6 @@ public:
     bool isInputChannelStereoPair(int)   const override { return false; }
     bool isOutputChannelStereoPair(int)  const override { return false; }
     bool silenceInProducesSilenceOut()   const override { return true;  }
-    bool hasEditor()                     const override { return false; }
     bool acceptsMidi()                   const override { return fPlugin->getDefaultEventInPort()  != nullptr; }
     bool producesMidi()                  const override { return fPlugin->getDefaultEventOutPort() != nullptr; }
 
@@ -1037,7 +1036,10 @@ public:
     int getNumPrograms()                       override { return 0; }
     int getCurrentProgram()                    override { return 0; }
 
+#if ! JUCE_AUDIO_PROCESSOR_NO_GUI
+    bool hasEditor()                     const override { return false; }
     AudioProcessorEditor* createEditor()       override { return nullptr; }
+#endif
 
     // -------------------------------------------------------------------
 

@@ -69,6 +69,11 @@
 
 #define JUCE_USE_VFORK 1
 
+#if ! (JUCE_MAC || JUCE_WINDOWS)
+# define JUCE_MODAL_LOOPS_PERMITTED  0
+# define JUCE_AUDIO_PROCESSOR_NO_GUI 1
+#endif
+
 // always enabled
 #define JUCE_MODULE_AVAILABLE_juce_audio_basics          1
 #define JUCE_MODULE_AVAILABLE_juce_audio_formats         1

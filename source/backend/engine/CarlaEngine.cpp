@@ -565,8 +565,10 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
         ++pData->curPluginCount;
         callback(ENGINE_CALLBACK_PLUGIN_ADDED, id, 0, 0, 0.0f, plugin->getName());
 
+#ifndef BUILD_BRIDGE
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
             pData->graph.addPlugin(plugin);
+#endif
     }
 
     return true;
@@ -641,8 +643,10 @@ bool CarlaEngine::removeAllPlugins()
     const bool lockWait(isRunning());
     const ScopedActionLock sal(pData, kEnginePostActionZeroCount, 0, 0, lockWait);
 
+#ifndef BUILD_BRIDGE
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         pData->graph.removeAllPlugins();
+#endif
 
     callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
 
