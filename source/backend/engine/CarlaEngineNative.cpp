@@ -1333,6 +1333,33 @@ protected:
             }
         }
 
+        if (fIsPatchbay)
+        {
+            if (const char* const* const patchbayConns = getPatchbayConnections())
+            {
+                if (! firstPlugin)
+                    out << "\n";
+
+                out << " <Patchbay>\n";
+
+                for (int i=0; patchbayConns[i] != nullptr && patchbayConns[i+1] != nullptr; ++i, ++i )
+                {
+                    const char* const connSource(patchbayConns[i]);
+                    const char* const connTarget(patchbayConns[i+1]);
+
+                    CARLA_SAFE_ASSERT_CONTINUE(connSource != nullptr && connSource[0] != '\0');
+                    CARLA_SAFE_ASSERT_CONTINUE(connTarget != nullptr && connTarget[0] != '\0');
+
+                    out << "  <Connection>\n";
+                    out << "   <Source>" << connSource << "</Source>\n";
+                    out << "   <Target>" << connTarget << "</Target>\n";
+                    out << "  </Connection>\n";
+                }
+
+                out << " </Patchbay>\n";
+            }
+        }
+
         out << "</CARLA-PROJECT>\n";
 
         return strdup(out.toString().toRawUTF8());
@@ -1340,8 +1367,8 @@ protected:
 
     void setState(const char* const data)
     {
-        const String text(data);
-        XmlDocument xml(text);
+        const String state(data);
+        XmlDocument xml(state);
 
         ScopedPointer<XmlElement> xmlElement(xml.getDocumentElement(true));
         CARLA_SAFE_ASSERT_RETURN(xmlElement != nullptr,);
@@ -1361,6 +1388,8 @@ protected:
             {
                 StateSave stateSave;
                 stateSave.fillFromXmlElement(elem);
+
+                //callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
 
                 CARLA_SAFE_ASSERT_CONTINUE(stateSave.type != nullptr);
 
@@ -1385,8 +1414,49 @@ protected:
                     if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
                         plugin->loadStateSave(stateSave);
                 }
+                else
+                    carla_stderr2("Failed to load a plugin, error was:\n%s", getLastError());
 
                 //pluginsAdded = true;
+            }
+        }
+
+        //callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
+        // now handle connections
+        for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
+        {
+            const String& tagName(elem->getTagName());
+
+            if (tagName.equalsIgnoreCase("patchbay"))
+            {
+                CarlaString sourcePort, targetPort;
+
+                for (XmlElement* patchElem = elem->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
+                {
+                    const String& patchTag(patchElem->getTagName());
+
+                    sourcePort.clear();
+                    targetPort.clear();
+
+                    if (! patchTag.equalsIgnoreCase("connection"))
+                        continue;
+
+                    for (XmlElement* connElem = patchElem->getFirstChildElement(); connElem != nullptr; connElem = connElem->getNextElement())
+                    {
+                        const String& tag(connElem->getTagName());
+                        const String  text(connElem->getAllSubText().trim());
+
+                        if (tag.equalsIgnoreCase("source"))
+                            sourcePort = text.toRawUTF8();
+                        else if (tag.equalsIgnoreCase("target"))
+                            targetPort = text.toRawUTF8();
+                    }
+
+                    if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
+                        restorePatchbayConnection(sourcePort, targetPort);
+                }
+                break;
             }
         }
 

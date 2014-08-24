@@ -1157,7 +1157,7 @@ bool CarlaEngine::saveProject(const char* const filename)
 
     if (saveConnections)
     {
-        if (const char* const* patchbayConns = getPatchbayConnections())
+        if (const char* const* const patchbayConns = getPatchbayConnections())
         {
             if (! firstPlugin)
                 out << "\n";
