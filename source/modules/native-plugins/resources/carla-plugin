@@ -520,7 +520,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
         ExternalUI.__init__(self)
         HostWindow.__init__(self, None)
 
-        if False:
+        if sys.argv[0].lower().endswith("/carla-plugin-patchbay"):
             from carla_patchbay import CarlaPatchbayW
             self.fContainer = CarlaPatchbayW(self)
         else:
