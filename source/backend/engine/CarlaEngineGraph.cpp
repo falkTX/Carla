@@ -958,10 +958,17 @@ public:
 
     void processBlock(AudioSampleBuffer& audio, MidiBuffer& midi)
     {
+        if (! fPlugin->isEnabled())
+        {
+            audio.clear();
+            midi.clear();
+            return;
+        }
+
         CarlaEngine* const engine(fPlugin->getEngine());
         CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
 
-        if (! fPlugin->isEnabled() || ! fPlugin->tryLock(engine->isOffline()))
+        if (! fPlugin->tryLock(engine->isOffline()))
         {
             audio.clear();
             midi.clear();
@@ -1020,7 +1027,7 @@ public:
                 }
             }
 
-            fPlugin->getEngine()->setPluginPeaks(fPlugin->getId(), inPeaks, outPeaks);
+            engine->setPluginPeaks(fPlugin->getId(), inPeaks, outPeaks);
         }
         else
         {
@@ -1248,14 +1255,14 @@ void PatchbayGraph::removePlugin(CarlaPlugin* const plugin)
     CARLA_SAFE_ASSERT_RETURN(graph.removeNode(plugin->getPatchbayNodeId()),);
 }
 
-void PatchbayGraph::removeAllPlugins(CarlaEngine* const engine, const uint32_t count)
+void PatchbayGraph::removeAllPlugins(CarlaEngine* const engine)
 {
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
-    carla_debug("PatchbayGraph::removeAllPlugins(%p, %u)", engine, count);
+    carla_debug("PatchbayGraph::removeAllPlugins(%p)", engine);
 
-    for (uint i=0; i<count; ++i)
+    for (uint i=0, count=engine->getCurrentPluginCount(); i<count; ++i)
     {
-        CarlaPlugin* const plugin(engine->getPluginUnchecked(i));
+        CarlaPlugin* const plugin(engine->getPlugin(i));
         CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr);
 
         AudioProcessorGraph::Node* const node(graph.getNodeForId(plugin->getPatchbayNodeId()));
@@ -1698,10 +1705,10 @@ void EngineInternalGraph::removePlugin(CarlaPlugin* const plugin)
     fPatchbay->removePlugin(plugin);
 }
 
-void EngineInternalGraph::removeAllPlugins(CarlaEngine* const engine, const uint32_t count)
+void EngineInternalGraph::removeAllPlugins(CarlaEngine* const engine)
 {
     CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
-    fPatchbay->removeAllPlugins(engine, count);
+    fPatchbay->removeAllPlugins(engine);
 }
 
 // -----------------------------------------------------------------------

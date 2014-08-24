@@ -131,7 +131,7 @@ struct PatchbayGraph  {
     void addPlugin(CarlaPlugin* const plugin);
     void replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* const newPlugin);
     void removePlugin(CarlaPlugin* const plugin);
-    void removeAllPlugins(CarlaEngine* const engine, const uint32_t count);
+    void removeAllPlugins(CarlaEngine* const engine);
 
     bool connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
     bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept;

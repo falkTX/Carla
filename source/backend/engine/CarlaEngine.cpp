@@ -596,6 +596,9 @@ bool CarlaEngine::removePlugin(const uint id)
     pData->thread.stopThread(500);
 
 #ifndef BUILD_BRIDGE
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        pData->graph.removePlugin(plugin);
+
     const bool lockWait(isRunning() /*&& pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS*/);
     const ScopedActionLock sal(pData, kEnginePostActionRemovePlugin, id, 0, lockWait);
 
@@ -605,12 +608,6 @@ bool CarlaEngine::removePlugin(const uint id)
         CARLA_SAFE_ASSERT_BREAK(plugin2 != nullptr);
         plugin2->updateOscURL();
     }
-
-    // TESTING used in patchbay removal
-    CARLA_SAFE_ASSERT(plugin->getId() == id);
-
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-        pData->graph.removePlugin(plugin);
 
     if (isOscControlRegistered())
         oscSend_control_remove_plugin(id);
@@ -641,15 +638,15 @@ bool CarlaEngine::removeAllPlugins()
 
     pData->thread.stopThread(500);
 
+#ifndef BUILD_BRIDGE
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        pData->graph.removeAllPlugins(this);
+#endif
+
     const uint32_t curPluginCount(pData->curPluginCount);
 
     const bool lockWait(isRunning());
     const ScopedActionLock sal(pData, kEnginePostActionZeroCount, 0, 0, lockWait);
-
-#ifndef BUILD_BRIDGE
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-        pData->graph.removeAllPlugins(this, curPluginCount);
-#endif
 
     callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
 
@@ -780,9 +777,12 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB) noexcept
         CARLA_SAFE_ASSERT_RETURN_ERR(pluginA != nullptr, "Could not find plugin to switch");
         CARLA_SAFE_ASSERT_RETURN_ERR(pluginA->getId() == idA, "Invalid engine internal data");
         CARLA_SAFE_ASSERT_RETURN_ERR(pluginB->getId() == idB, "Invalid engine internal data");
-    }
 
-    pData->thread.stopThread(500);
+        pData->thread.stopThread(500);
+
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+            pData->graph.replacePlugin(pluginA, pluginB);
+    }
 
     const bool lockWait(isRunning() /*&& pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS*/);
     const ScopedActionLock sal(pData, kEnginePostActionSwitchPlugins, idA, idB, lockWait);
@@ -794,9 +794,6 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB) noexcept
     {
         pluginA->updateOscURL();
         pluginB->updateOscURL();
-
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-            pData->graph.replacePlugin(pluginA, pluginB);
     }
 
     // TODO
