@@ -138,8 +138,8 @@ struct PatchbayGraph  {
     void clearConnections();
     void refreshConnections(CarlaEngine* const engine);
 
-    const char* const* getConnections() const noexcept;
-    bool getGroupAndPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept;
+    const char* const* getConnections() const;
+    bool getGroupAndPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const;
 
     void process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const int frames);
 };
