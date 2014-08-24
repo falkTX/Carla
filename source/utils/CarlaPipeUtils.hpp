@@ -407,7 +407,9 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fPipeSend != -1,);
 
-        const CarlaMutexTryLocker cmtl(fWriteLock);
+        // TESTING remove later
+        const bool wasLocked(! fWriteLock.tryLock());
+        CARLA_SAFE_ASSERT_RETURN(wasLocked, fWriteLock.unlock());
 
         try {
             ssize_t ignore = ::write(fPipeSend, msg, std::strlen(msg));
@@ -419,7 +421,9 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fPipeSend != -1,);
 
-        const CarlaMutexTryLocker cmtl(fWriteLock);
+        // TESTING remove later
+        const bool wasLocked(! fWriteLock.tryLock());
+        CARLA_SAFE_ASSERT_RETURN(wasLocked, fWriteLock.unlock());
 
         try {
             ssize_t ignore = ::write(fPipeSend, msg, size);
@@ -431,7 +435,9 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fPipeSend != -1,);
 
-        const CarlaMutexTryLocker cmtl(fWriteLock);
+        // TESTING remove later
+        const bool wasLocked(! fWriteLock.tryLock());
+        CARLA_SAFE_ASSERT_RETURN(wasLocked, fWriteLock.unlock());
 
         const size_t size(msg != nullptr ? std::strlen(msg) : 0);
 
