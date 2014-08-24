@@ -1350,6 +1350,8 @@ void PatchbayGraph::refreshConnections(CarlaEngine* const engine)
 {
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
 
+    connections.clear();
+
     for (int i=0, count=graph.getNumNodes(); i<count; ++i)
     {
         AudioProcessorGraph::Node* const node(graph.getNode(i));
