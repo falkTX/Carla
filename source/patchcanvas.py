@@ -68,8 +68,8 @@ ACTION_GROUP_INFO       =  0 # group_id, N, N
 ACTION_GROUP_RENAME     =  1 # group_id, N, new_name
 ACTION_GROUP_SPLIT      =  2 # group_id, N, N
 ACTION_GROUP_JOIN       =  3 # group_id, N, N
-ACTION_PORT_INFO        =  4 # port_id, N, N
-ACTION_PORT_RENAME      =  5 # port_id, N, new_name
+ACTION_PORT_INFO        =  4 # group_id, port_id, N
+ACTION_PORT_RENAME      =  5 # group_id, port_id, new_name
 ACTION_PORTS_CONNECT    =  6 # N, N, "outG:outP:inG:inP"
 ACTION_PORTS_DISCONNECT =  7 # conn_id, N, N
 ACTION_PLUGIN_CLONE     =  8 # plugin_id, N, N
@@ -1730,8 +1730,8 @@ class CanvasPort(QGraphicsItem):
         QGraphicsItem.__init__(self, parent)
 
         # Save Variables, useful for later
-        self.m_group_id = group_id
-        self.m_port_id  = port_id
+        self.m_group_id  = group_id
+        self.m_port_id   = port_id
         self.m_port_mode = port_mode
         self.m_port_type = port_type
         self.m_port_name = port_name
@@ -1816,7 +1816,8 @@ class CanvasPort(QGraphicsItem):
                 self.m_cursor_moving = True
 
                 for connection in canvas.connection_list:
-                    if connection.port_out_id == self.m_port_id or connection.port_in_id == self.m_port_id:
+                    if ((connection.group_out_id == self.m_group_id and connection.port_out_id == self.m_port_id) or
+                        (connection.group_in_id  == self.m_group_id and connection.port_in_id  == self.m_port_id)):
                         connection.widget.setLocked(True)
 
             if not self.m_line_mov:
@@ -1864,14 +1865,22 @@ class CanvasPort(QGraphicsItem):
                 self.m_line_mov = None
 
             for connection in canvas.connection_list:
-                if connection.port_out_id == self.m_port_id or connection.port_in_id == self.m_port_id:
+                if ((connection.group_out_id == self.m_group_id and connection.port_out_id == self.m_port_id) or
+                    (connection.group_in_id  == self.m_group_id and connection.port_in_id  == self.m_port_id)):
                     connection.widget.setLocked(False)
 
             if self.m_hover_item:
                 # TODO: a better way to check already existing connection
                 for connection in canvas.connection_list:
-                    if ( (connection.port_out_id == self.m_port_id and connection.port_in_id == self.m_hover_item.getPortId()) or
-                         (connection.port_out_id == self.m_hover_item.getPortId() and connection.port_in_id == self.m_port_id) ):
+                    hover_group_id = self.m_hover_item.getGroupId()
+                    hover_port_id  = self.m_hover_item.getPortId()
+
+                    if (
+                        (connection.group_out_id == self.m_group_id and connection.port_out_id == self.m_port_id and
+                         connection.group_in_id  == hover_group_id  and connection.port_in_id  == hover_port_id) or
+                        (connection.group_out_id == hover_group_id  and connection.port_out_id == hover_port_id and
+                         connection.group_in_id  == self.m_group_id and connection.port_in_id  == self.m_port_id)
+                       ):
                         canvas.callback(ACTION_PORTS_DISCONNECT, connection.connection_id, 0, "")
                         break
                 else:
@@ -1932,12 +1941,12 @@ class CanvasPort(QGraphicsItem):
                 canvas.callback(ACTION_PORTS_DISCONNECT, conn_id, 0, "")
 
         elif act_selected == act_x_info:
-            canvas.callback(ACTION_PORT_INFO, self.m_port_id, 0, "")
+            canvas.callback(ACTION_PORT_INFO, self.m_group_id, self.m_port_id, "")
 
         elif act_selected == act_x_rename:
             new_name_try = QInputDialog.getText(None, "Rename Port", "New name:", QLineEdit.Normal, self.m_port_name)
             if new_name_try[1] and new_name_try[0]: # 1 - bool ok, 0 - return text
-                canvas.callback(ACTION_PORT_RENAME, self.m_port_id, 0, new_name_try[0])
+                canvas.callback(ACTION_PORT_RENAME, self.m_group_id, self.m_port_id, new_name_try[0])
 
         event.accept()
 
@@ -2045,7 +2054,8 @@ class CanvasPort(QGraphicsItem):
 
         if self.isSelected() != self.m_last_selected_state:
             for connection in canvas.connection_list:
-                if connection.port_out_id == self.m_port_id or connection.port_in_id == self.m_port_id:
+                if ((connection.group_out_id == self.m_group_id and connection.port_out_id == self.m_port_id) or
+                    (connection.group_in_id  == self.m_group_id and connection.port_in_id  == self.m_port_id)):
                     connection.widget.setLineSelected(self.isSelected())
 
         if canvas.theme.idx == Theme.THEME_OOSTUDIO and canvas.theme.port_bg_pixmap:
