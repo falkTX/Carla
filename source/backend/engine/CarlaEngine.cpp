@@ -606,6 +606,9 @@ bool CarlaEngine::removePlugin(const uint id)
         plugin2->updateOscURL();
     }
 
+    // TESTING used in patchbay removal
+    CARLA_SAFE_ASSERT(plugin->getId() == id);
+
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         pData->graph.removePlugin(plugin);
 
@@ -645,7 +648,7 @@ bool CarlaEngine::removeAllPlugins()
 
 #ifndef BUILD_BRIDGE
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-        pData->graph.removeAllPlugins();
+        pData->graph.removeAllPlugins(this, curPluginCount);
 #endif
 
     callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);

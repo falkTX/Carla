@@ -81,7 +81,7 @@ public:
     void addPlugin(CarlaPlugin* const plugin);
     void replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* const newPlugin);
     void removePlugin(CarlaPlugin* const plugin);
-    void removeAllPlugins();
+    void removeAllPlugins(CarlaEngine* const engine, const uint32_t count);
 
 private:
     bool fIsRack;
