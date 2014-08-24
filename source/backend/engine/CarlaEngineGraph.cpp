@@ -902,17 +902,23 @@ private:
 // -----------------------------------------------------------------------
 // PatchbayGraph
 
-static const uint32_t kAudioInputNodeStart  = MAX_PATCHBAY_PLUGINS*1+1;
-static const uint32_t kAudioOutputNodeStart = MAX_PATCHBAY_PLUGINS*2+1;
-static const uint32_t kMidiInputNodeId      = MAX_PATCHBAY_PLUGINS*3+1;
-static const uint32_t kMidiOutputNodeId     = MAX_PATCHBAY_PLUGINS*3+2;
+static const uint32_t kAudioInputNodeId  = MAX_PATCHBAY_PLUGINS+1;
+static const uint32_t kAudioOutputNodeId = MAX_PATCHBAY_PLUGINS+2;
+static const uint32_t kMidiInputNodeId   = MAX_PATCHBAY_PLUGINS+3;
+static const uint32_t kMidiOutputNodeId  = MAX_PATCHBAY_PLUGINS+4;
+
+static const uint32_t kAudioInputPortOffset  = MAX_PATCHBAY_PLUGINS*0;
+static const uint32_t kAudioOutputPortOffset = MAX_PATCHBAY_PLUGINS*1;
+static const uint32_t kMidiInputPortOffset   = MAX_PATCHBAY_PLUGINS*2;
+static const uint32_t kMidiOutputPortOffset  = MAX_PATCHBAY_PLUGINS*2+1;
 
 PatchbayGraph::PatchbayGraph(const int bufferSize, const double sampleRate, const uint32_t ins, const uint32_t outs)
-    : graph(),
+    : connections(),
+      graph(),
       audioBuffer(),
       midiBuffer(),
-      inputs(carla_fixValue(0U, MAX_PATCHBAY_PLUGINS, ins)),
-      outputs(carla_fixValue(0U, MAX_PATCHBAY_PLUGINS, outs)),
+      inputs(carla_fixValue(0U, MAX_PATCHBAY_PLUGINS-2, ins)),
+      outputs(carla_fixValue(0U, MAX_PATCHBAY_PLUGINS-2, outs)),
       retCon()
 {
     graph.setPlayConfigDetails(static_cast<int>(inputs), static_cast<int>(outputs), sampleRate, bufferSize);
@@ -923,16 +929,14 @@ PatchbayGraph::PatchbayGraph(const int bufferSize, const double sampleRate, cons
     midiBuffer.ensureSize(kMaxEngineEventInternalCount*2);
     midiBuffer.clear();
 
-    for (uint32_t i=0; i<inputs; ++i)
     {
         AudioProcessorGraph::AudioGraphIOProcessor* const proc(new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode));
-        graph.addNode(proc, kAudioInputNodeStart+i);
+        graph.addNode(proc, kAudioInputNodeId);
     }
 
-    for (uint32_t i=0; i<outputs; ++i)
     {
         AudioProcessorGraph::AudioGraphIOProcessor* const proc(new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode));
-        graph.addNode(proc, kAudioOutputNodeStart+i);
+        graph.addNode(proc, kAudioOutputNodeId);
     }
 
     {
@@ -1016,11 +1020,73 @@ void PatchbayGraph::removeAllPlugins()
     // TODO
 }
 
-bool PatchbayGraph::connect(CarlaEngine* const engine, const uint /*groupA*/, const uint /*portA*/, const uint /*groupB*/, const uint /*portB*/) noexcept
+bool PatchbayGraph::connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr, false);
+    carla_stdout("PatchbayGraph::connect(%p, %u, %u, %u, %u)", engine, groupA, portA, groupB, portB);
 
-    return false;
+    uint offsetA = 0;
+    uint offsetB = 0;
+
+    switch (groupA)
+    {
+    case kAudioInputNodeId:
+        offsetA = kAudioInputPortOffset;
+        CARLA_SAFE_ASSERT_RETURN(portA >= offsetA, false);
+        break;
+    case kAudioOutputNodeId:
+        offsetA = kAudioOutputPortOffset;
+        CARLA_SAFE_ASSERT_RETURN(portA >= offsetA, false);
+        break;
+    case kMidiInputNodeId:
+        offsetA = kMidiInputPortOffset;
+        CARLA_SAFE_ASSERT_RETURN(portA == offsetA, false);
+        break;
+    case kMidiOutputNodeId:
+        offsetA = kMidiOutputPortOffset;
+        CARLA_SAFE_ASSERT_RETURN(portA == offsetA, false);
+        break;
+    }
+
+    switch (groupB)
+    {
+    case kAudioInputNodeId:
+        offsetB = kAudioInputPortOffset;
+        CARLA_SAFE_ASSERT_RETURN(portB >= offsetB, false);
+        break;
+    case kAudioOutputNodeId:
+        offsetB = kAudioOutputPortOffset;
+        CARLA_SAFE_ASSERT_RETURN(portB >= offsetB, false);
+        break;
+    case kMidiInputNodeId:
+        offsetB = kMidiInputPortOffset;
+        CARLA_SAFE_ASSERT_RETURN(portB == offsetB, false);
+        break;
+    case kMidiOutputNodeId:
+        offsetB = kMidiOutputPortOffset;
+        CARLA_SAFE_ASSERT_RETURN(portB == offsetB, false);
+        break;
+    }
+
+    carla_stdout("PatchbayGraph::connect converted : %u, %u, %u, %u", groupA, portA-offsetA, groupB, portB-offsetB);
+
+    if (! graph.addConnection(groupA, static_cast<int>(portA-offsetA), groupB, static_cast<int>(portB-offsetB)))
+    {
+        engine->setLastError("Failed from juce");
+        return false;
+    }
+
+    ConnectionToId connectionToId;
+    connectionToId.setData(++connections.lastId, groupA, portA, groupB, portB);
+
+    char strBuf[STR_MAX+1];
+    strBuf[STR_MAX] = '\0';
+    std::snprintf(strBuf, STR_MAX, "%u:%u:%u:%u", groupA, portA, groupB, portB);
+
+    engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+
+    connections.list.append(connectionToId);
+    return true;
 }
 
 bool PatchbayGraph::disconnect(CarlaEngine* const engine, const uint /*connectionId*/) noexcept
@@ -1278,9 +1344,41 @@ bool CarlaEngine::patchbayRefresh()
         setLastError("Unsupported operation");
         return false;
     }
-    else
+
+    CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
+
+    PatchbayGraph* const graph = pData->graph.getPatchbayGraph();
+    CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
+
+    carla_stdout("Patchbay refresh here");
+
+    for (int i=0, count=graph->graph.getNumNodes(); i<count; ++i)
     {
-        // TODO
+        AudioProcessorGraph::Node* const node(graph->graph.getNode(i));
+        CARLA_SAFE_ASSERT_CONTINUE(node != nullptr);
+
+        AudioProcessor* const proc(node->getProcessor());
+        CARLA_SAFE_ASSERT_CONTINUE(proc != nullptr);
+
+        const uint groupId(node->nodeId);
+
+        callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, groupId, PATCHBAY_ICON_HARDWARE, -1, 0.0f, proc->getName().toRawUTF8());
+
+        for (int j=0, numInputs=proc->getNumInputChannels(); j<numInputs; ++j)
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, groupId, static_cast<int>(kAudioOutputPortOffset)+j,
+                     PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, proc->getInputChannelName(j).toRawUTF8());
+
+        for (int j=0, numOutputs=proc->getNumOutputChannels(); j<numOutputs; ++j)
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, groupId, static_cast<int>(kAudioInputPortOffset)+j,
+                     PATCHBAY_PORT_TYPE_AUDIO, 0.0f, proc->getOutputChannelName(j).toRawUTF8());
+
+        if (proc->acceptsMidi())
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, groupId, static_cast<int>(kMidiOutputPortOffset),
+                     PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT, 0.0f, "events-in");
+
+        if (proc->producesMidi())
+            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, groupId, static_cast<int>(kMidiInputPortOffset),
+                     PATCHBAY_PORT_TYPE_MIDI, 0.0f, "events-out");
     }
 
     return false;
@@ -1344,103 +1442,5 @@ void CarlaEngine::restorePatchbayConnection(const char* const connSource, const 
 // -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
-
-// -----------------------------------------------------------------------
-// need to build juce_audio_processors on non-win/mac OSes
-
-#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-
-#include "juce_audio_processors.h"
-#include "juce_events.h"
-
-namespace juce {
-
-#include "juce_events/broadcasters/juce_AsyncUpdater.cpp"
-#include "juce_events/messages/juce_ApplicationBase.cpp"
-#include "juce_events/messages/juce_MessageManager.cpp"
-#include "juce_audio_processors/processors/juce_AudioProcessor.cpp"
-#include "juce_audio_processors/processors/juce_AudioProcessorGraph.cpp"
-
-class JuceEventsThread : public Thread
-{
-public:
-    JuceEventsThread()
-        : Thread("JuceEventsThread"),
-          fLock(),
-          fQueue(),
-          leakDetector_JuceEventsThread() {}
-
-    ~JuceEventsThread()
-    {
-        stopThread(-1);
-
-        const ScopedLock sl(fLock);
-        fQueue.clear();
-    }
-
-    void postMessage(MessageManager::MessageBase* const msg)
-    {
-        const ScopedLock sl(fLock);
-        fQueue.add(msg);
-    }
-
-protected:
-    void run() override
-    {
-        for (; ! threadShouldExit();)
-        {
-            {
-                const ScopedLock sl(fLock);
-
-                for (MessageManager::MessageBase **it = fQueue.begin(), **end = fQueue.end(); it != end; ++it)
-                {
-                    MessageManager::MessageBase* const msg(*it);
-
-                    JUCE_TRY
-                    {
-                        msg->messageCallback();
-                    }
-                    JUCE_CATCH_EXCEPTION
-                }
-            }
-
-            sleep(10);
-        }
-    }
-
-private:
-    CriticalSection fLock;
-    ReferenceCountedArray<MessageManager::MessageBase> fQueue;
-
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JuceEventsThread)
-};
-
-static JuceEventsThread& getJuceEventsThreadInstance()
-{
-    static JuceEventsThread sJuceEventsThread;
-    return sJuceEventsThread;
-}
-
-void MessageManager::doPlatformSpecificInitialisation()
-{
-    JuceEventsThread& juceEventsThread(getJuceEventsThreadInstance());
-    juceEventsThread.startThread();
-}
-
-void MessageManager::doPlatformSpecificShutdown()
-{
-    JuceEventsThread& juceEventsThread(getJuceEventsThreadInstance());
-    juceEventsThread.stopThread(-1);
-}
-
-bool MessageManager::postMessageToSystemQueue(MessageManager::MessageBase* const message)
-{
-    JuceEventsThread& juceEventsThread(getJuceEventsThreadInstance());
-    juceEventsThread.postMessage(message);
-    return true;
-}
-
-} // namespace juce
-#endif
 
 // -----------------------------------------------------------------------

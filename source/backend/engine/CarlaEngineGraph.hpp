@@ -113,6 +113,7 @@ struct RackGraph {
 // PatchbayGraph
 
 struct PatchbayGraph  {
+    PatchbayConnectionList connections;
     AudioProcessorGraph graph;
     AudioSampleBuffer audioBuffer;
     MidiBuffer midiBuffer;

@@ -31,9 +31,12 @@
 
 #include "juce_audio_formats.h"
 
-#if (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)) && ! defined(BUILD_BRIDGE)
-# define USE_JUCE_GUI
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 # include "juce_gui_basics.h"
+#else
+namespace juce {
+# include "juce_events/messages/juce_Initialisation.h"
+} // namespace juce
 #endif
 
 namespace CB = CarlaBackend;
@@ -762,7 +765,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 
     if (gStandalone.engine->init(clientName))
     {
-#ifdef USE_JUCE_GUI
+#ifndef BUILD_BRIDGE
         juce::initialiseJuce_GUI();
 #endif
         gStandalone.lastError = "No error";
@@ -832,9 +835,6 @@ bool carla_engine_init_bridge(const char audioBaseName[6+1], const char rtBaseNa
 
     if (gStandalone.engine->init(clientName))
     {
-#ifdef USE_JUCE_GUI
-        juce::initialiseJuce_GUI();
-#endif
         gStandalone.lastError = "No error";
         return true;
     }
@@ -867,7 +867,7 @@ bool carla_engine_close()
     if (! closed)
         gStandalone.lastError = gStandalone.engine->getLastError();
 
-#ifdef USE_JUCE_GUI
+#ifndef BUILD_BRIDGE
     juce::shutdownJuce_GUI();
 #endif
     delete gStandalone.engine;
@@ -2300,5 +2300,133 @@ const char* carla_get_host_osc_url_udp()
 #include "CarlaPluginUI.cpp"
 #include "CarlaDssiUtils.cpp"
 #include "CarlaStateUtils.cpp"
+
+// -------------------------------------------------------------------------------------------------------------------
+// need to build juce_audio_processors on non-win/mac OSes
+
+#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+
+#undef KeyPress
+#include "juce_audio_processors.h"
+#include "juce_events.h"
+
+namespace juce {
+
+#include "juce_events/broadcasters/juce_AsyncUpdater.cpp"
+#include "juce_events/messages/juce_ApplicationBase.cpp"
+#include "juce_events/messages/juce_DeletedAtShutdown.cpp"
+#include "juce_events/messages/juce_MessageManager.cpp"
+#include "juce_audio_processors/processors/juce_AudioProcessor.cpp"
+#include "juce_audio_processors/processors/juce_AudioProcessorGraph.cpp"
+
+class JuceEventsThread : public Thread
+{
+public:
+    JuceEventsThread()
+        : Thread("JuceEventsThread"),
+          fInitializing(false),
+          fLock(),
+          fQueue(),
+          leakDetector_JuceEventsThread() {}
+
+    ~JuceEventsThread()
+    {
+        signalThreadShouldExit();
+        stopThread(2000);
+
+        const ScopedLock sl(fLock);
+        fQueue.clear();
+    }
+
+    bool postMessage(MessageManager::MessageBase* const msg)
+    {
+        const ScopedLock sl(fLock);
+        fQueue.add(msg);
+        return true;
+    }
+
+    bool isInitializing() const noexcept
+    {
+        return fInitializing;
+    }
+
+protected:
+    void run() override
+    {
+        fInitializing = true;
+
+        if (MessageManager* const msgMgr = MessageManager::getInstance())
+            msgMgr->setCurrentThreadAsMessageThread();
+
+        fInitializing = false;
+
+        for (; ! threadShouldExit();)
+        {
+            // dispatch messages until no more present, then sleep
+            for (; dispatchNextInternalMessage();) {}
+
+            sleep(25);
+        }
+    }
+
+private:
+    bool fInitializing;
+    CriticalSection fLock;
+    ReferenceCountedArray<MessageManager::MessageBase> fQueue;
+
+    MessageManager::MessageBase::Ptr popNextMessage()
+    {
+        const ScopedLock sl(fLock);
+        return fQueue.removeAndReturn(0);
+    }
+
+    bool dispatchNextInternalMessage()
+    {
+        if (const MessageManager::MessageBase::Ptr msg = popNextMessage())
+        {
+            JUCE_TRY
+            {
+                msg->messageCallback();
+                return true;
+            }
+            JUCE_CATCH_EXCEPTION
+        }
+
+        return false;
+    }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JuceEventsThread)
+};
+
+static JuceEventsThread& getJuceEventsThreadInstance()
+{
+    static JuceEventsThread sJuceEventsThread;
+    return sJuceEventsThread;
+}
+
+void MessageManager::doPlatformSpecificInitialisation()
+{
+    JuceEventsThread& juceEventsThread(getJuceEventsThreadInstance());
+
+    if (! juceEventsThread.isInitializing())
+        juceEventsThread.startThread();
+}
+
+void MessageManager::doPlatformSpecificShutdown()
+{
+    JuceEventsThread& juceEventsThread(getJuceEventsThreadInstance());
+
+    if (! juceEventsThread.isInitializing())
+        juceEventsThread.stopThread(-1);
+}
+
+bool MessageManager::postMessageToSystemQueue(MessageManager::MessageBase* const message)
+{
+    JuceEventsThread& juceEventsThread(getJuceEventsThreadInstance());
+    return juceEventsThread.postMessage(message);
+}
+
+} // namespace juce
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
