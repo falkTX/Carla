@@ -940,6 +940,9 @@ public:
 
         if (const int numChan = audio.getNumChannels())
         {
+            if (fPlugin->getAudioInCount() == 0)
+                audio.clear();
+
             float* audioBuffers[numChan];
 
             for (int i=0; i<numChan; ++i)
@@ -983,10 +986,11 @@ public:
 
         if (CarlaEngineEventPort* const port = fPlugin->getDefaultEventOutPort())
         {
-            const EngineEvent* const engineEvents(port->fBuffer);
+            /*const*/ EngineEvent* const engineEvents(port->fBuffer);
             CARLA_SAFE_ASSERT_RETURN(engineEvents != nullptr,);
 
             fillJuceMidiBufferFromEngineEvents(midi, engineEvents);
+            carla_zeroStruct<EngineEvent>(engineEvents, kMaxEngineEventInternalCount);
         }
     }
 
@@ -1175,10 +1179,8 @@ void PatchbayGraph::removePlugin(CarlaPlugin* const plugin)
     // TODO
     //removePluginFromPatchbay(plugin);
 
-    graph.removeNode(plugin->getPatchbayNodeId());
-
     // Fix plugin Ids properties
-    for (uint i=plugin->getId(), count=engine->getCurrentPluginCount(); i<count; ++i)
+    for (uint i=0, count=engine->getCurrentPluginCount(); i<count; ++i)
     {
         CarlaPlugin* const plugin2(engine->getPlugin(i));
         CARLA_SAFE_ASSERT_BREAK(plugin2 != nullptr);
@@ -1189,6 +1191,8 @@ void PatchbayGraph::removePlugin(CarlaPlugin* const plugin)
             node->properties.set("pluginId", static_cast<int>(plugin2->getId()));
         }
     }
+
+    CARLA_SAFE_ASSERT_RETURN(graph.removeNode(plugin->getPatchbayNodeId()),);
 }
 
 void PatchbayGraph::removeAllPlugins()

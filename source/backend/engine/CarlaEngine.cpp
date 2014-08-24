@@ -594,7 +594,7 @@ bool CarlaEngine::removePlugin(const uint id)
     pData->thread.stopThread(500);
 
 #ifndef BUILD_BRIDGE
-    const bool lockWait(isRunning() && pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS);
+    const bool lockWait(isRunning() /*&& pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS*/);
     const ScopedActionLock sal(pData, kEnginePostActionRemovePlugin, id, 0, lockWait);
 
     for (uint i=id; i < pData->curPluginCount; ++i)
@@ -604,15 +604,15 @@ bool CarlaEngine::removePlugin(const uint id)
         plugin2->updateOscURL();
     }
 
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        pData->graph.removePlugin(plugin);
+
     if (isOscControlRegistered())
         oscSend_control_remove_plugin(id);
 #else
     pData->curPluginCount = 0;
     carla_zeroStruct(pData->plugins, 1);
 #endif
-
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-        pData->graph.removePlugin(plugin);
 
     delete plugin;
 
@@ -777,7 +777,7 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB) noexcept
 
     pData->thread.stopThread(500);
 
-    const bool lockWait(isRunning() && pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS);
+    const bool lockWait(isRunning() /*&& pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS*/);
     const ScopedActionLock sal(pData, kEnginePostActionSwitchPlugins, idA, idB, lockWait);
 
     CarlaPlugin* const pluginA(pData->plugins[idA].plugin);

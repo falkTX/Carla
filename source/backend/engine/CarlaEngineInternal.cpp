@@ -331,8 +331,11 @@ void CarlaEngine::ProtectedData::doNextPluginAction(const bool unlock) noexcept
 ScopedActionLock::ScopedActionLock(CarlaEngine::ProtectedData* const data, const EnginePostAction action, const uint pluginId, const uint value, const bool lockWait) noexcept
     : fData(data)
 {
-    CARLA_SAFE_ASSERT_RETURN(fData->nextAction.opcode == kEnginePostActionNull,);
     CARLA_SAFE_ASSERT_RETURN(action != kEnginePostActionNull,);
+
+    fData->nextAction.mutex.lock();
+
+    CARLA_SAFE_ASSERT_RETURN(fData->nextAction.opcode == kEnginePostActionNull,);
 
     fData->nextAction.opcode   = action;
     fData->nextAction.pluginId = pluginId;
@@ -353,6 +356,7 @@ ScopedActionLock::ScopedActionLock(CarlaEngine::ProtectedData* const data, const
 
 ScopedActionLock::~ScopedActionLock() noexcept
 {
+    CARLA_SAFE_ASSERT(fData->nextAction.opcode == kEnginePostActionNull);
     fData->nextAction.mutex.unlock();
 }
 

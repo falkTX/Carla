@@ -741,6 +741,11 @@
                     <string>Continuous Rack</string>
                    </property>
                   </item>
+                  <item>
+                   <property name="text">
+                    <string>Patchbay (EXPERIMENTAL)</string>
+                   </property>
+                  </item>
                  </widget>
                 </item>
                </layout>
@@ -757,7 +762,12 @@
                  <widget class="QComboBox" name="cb_engine_process_mode_other">
                   <item>
                    <property name="text">
-                    <string>Continuous Rack (EXPERIMENTAL)</string>
+                    <string>Continuous Rack</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Patchbay (EXPERIMENTAL)</string>
                    </property>
                   </item>
                  </widget>
