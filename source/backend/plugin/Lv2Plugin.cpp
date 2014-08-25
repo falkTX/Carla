@@ -1329,7 +1329,7 @@ public:
                 {
                     if (pData->osc.data.target != nullptr)
                     {
-                        CarlaString chunk(CarlaString::asBase64(atom, atom->size));
+                        CarlaString chunk(CarlaString::asBase64(atom, sizeof(LV2_Atom)+atom->size));
                         osc_send_lv2_atom_transfer(pData->osc.data, portIndex, chunk.buffer());
                     }
                 }
