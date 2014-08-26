@@ -322,6 +322,9 @@ struct World {
 	inline LilvNode* new_uri(const char* uri) const {
 		return lilv_new_uri(me, uri);
 	}
+        inline LilvNode* new_file_uri(const char* host, const char* path) const {
+                return lilv_new_file_uri(me, host, path);
+        }
 	inline LilvNode* new_string(const char* str) const {
 		return lilv_new_string(me, str);
 	}

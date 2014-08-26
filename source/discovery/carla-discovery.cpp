@@ -940,12 +940,13 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
 {
     Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
 
-    // Convert bundle filename to URI
-    CarlaString sBundle("file://");
-    sBundle += bundle;
+    Lilv::Node bundleNode(lv2World.new_file_uri(nullptr, bundle));
+    CARLA_SAFE_ASSERT_RETURN(bundleNode.is_uri(),);
 
-    if (! sBundle.endsWith(CARLA_OS_SEP))
-        sBundle += CARLA_OS_SEP_STR;
+    CarlaString sBundle(bundleNode.as_uri());
+
+    if (! sBundle.endsWith("/"))
+        sBundle += "/";
 
     // Load bundle
     lv2World.load_bundle(sBundle);
