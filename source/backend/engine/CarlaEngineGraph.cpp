@@ -1110,6 +1110,7 @@ PatchbayGraph::PatchbayGraph(const int bufferSize, const double sampleRate, cons
       midiBuffer(),
       inputs(carla_fixValue(0U, MAX_PATCHBAY_PLUGINS-2, ins)),
       outputs(carla_fixValue(0U, MAX_PATCHBAY_PLUGINS-2, outs)),
+      ignorePathbay(false),
       retCon()
 {
     graph.setPlayConfigDetails(static_cast<int>(inputs), static_cast<int>(outputs), sampleRate, bufferSize);
@@ -1197,7 +1198,8 @@ void PatchbayGraph::addPlugin(CarlaPlugin* const plugin)
     node->properties.set("isPlugin", true);
     node->properties.set("pluginId", static_cast<int>(plugin->getId()));
 
-    addNodeToPatchbay(plugin->getEngine(), node->nodeId, static_cast<int>(plugin->getId()), instance);
+    if (! ignorePathbay)
+        addNodeToPatchbay(plugin->getEngine(), node->nodeId, static_cast<int>(plugin->getId()), instance);
 }
 
 void PatchbayGraph::replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* const newPlugin)
@@ -1220,7 +1222,8 @@ void PatchbayGraph::replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* con
     node->properties.set("isPlugin", true);
     node->properties.set("pluginId", static_cast<int>(newPlugin->getId()));
 
-    addNodeToPatchbay(newPlugin->getEngine(), node->nodeId, static_cast<int>(newPlugin->getId()), instance);
+    if (! ignorePathbay)
+        addNodeToPatchbay(newPlugin->getEngine(), node->nodeId, static_cast<int>(newPlugin->getId()), instance);
 }
 
 void PatchbayGraph::removePlugin(CarlaPlugin* const plugin)
@@ -1234,7 +1237,8 @@ void PatchbayGraph::removePlugin(CarlaPlugin* const plugin)
     AudioProcessorGraph::Node* const node(graph.getNodeForId(plugin->getPatchbayNodeId()));
     CARLA_SAFE_ASSERT_RETURN(node != nullptr,);
 
-    removeNodeFromPatchbay(engine, plugin->getPatchbayNodeId(), node->getProcessor());
+    if (! ignorePathbay)
+        removeNodeFromPatchbay(engine, plugin->getPatchbayNodeId(), node->getProcessor());
 
     // Fix plugin Ids properties
     for (uint i=plugin->getId(), count=engine->getCurrentPluginCount(); i<count; ++i)
@@ -1265,7 +1269,9 @@ void PatchbayGraph::removeAllPlugins(CarlaEngine* const engine)
         AudioProcessorGraph::Node* const node(graph.getNodeForId(plugin->getPatchbayNodeId()));
         CARLA_SAFE_ASSERT_CONTINUE(node != nullptr);
 
-        removeNodeFromPatchbay(engine, node->nodeId, node->getProcessor());
+        if (! ignorePathbay)
+            removeNodeFromPatchbay(engine, node->nodeId, node->getProcessor());
+
         graph.removeNode(node->nodeId);
     }
 }
@@ -1361,7 +1367,8 @@ void PatchbayGraph::refreshConnections(CarlaEngine* const engine)
         if (node->properties.getWithDefault("isPlugin", false) == juce::var(true))
             clientId = node->properties.getWithDefault("pluginId", -1);
 
-        addNodeToPatchbay(engine, node->nodeId, clientId, proc);
+        if (! ignorePathbay)
+            addNodeToPatchbay(engine, node->nodeId, clientId, proc);
     }
 
     char strBuf[STR_MAX+1];
@@ -1707,6 +1714,12 @@ void EngineInternalGraph::removeAllPlugins(CarlaEngine* const engine)
 {
     CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
     fPatchbay->removeAllPlugins(engine);
+}
+
+void EngineInternalGraph::setIgnorePatchbay(const bool ignore) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
+    fPatchbay->ignorePathbay = ignore;
 }
 
 // -----------------------------------------------------------------------

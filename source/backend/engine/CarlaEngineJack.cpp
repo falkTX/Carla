@@ -1112,6 +1112,7 @@ public:
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         {
             fExternalPatchbay = external;
+            pData->graph.setIgnorePatchbay(external);
 
             if (! external)
                 return CarlaEngine::patchbayRefresh(false);

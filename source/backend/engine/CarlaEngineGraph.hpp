@@ -119,6 +119,7 @@ struct PatchbayGraph  {
     MidiBuffer midiBuffer;
     const uint32_t inputs;
     const uint32_t outputs;
+    bool ignorePathbay;
     mutable CharStringListPtr retCon;
 
     PatchbayGraph(const int bufferSize, const double sampleRate, const uint32_t inputs, const uint32_t outputs);

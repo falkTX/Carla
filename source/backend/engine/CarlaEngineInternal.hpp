@@ -83,6 +83,8 @@ public:
     void removePlugin(CarlaPlugin* const plugin);
     void removeAllPlugins(CarlaEngine* const engine);
 
+    void setIgnorePatchbay(const bool ignore) noexcept;
+
 private:
     bool fIsRack;
     bool fIsReady;
