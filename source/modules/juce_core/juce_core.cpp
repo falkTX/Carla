@@ -97,6 +97,7 @@
 #endif
 
 #if JUCE_MAC || JUCE_IOS
+ #include <execinfo.h>
  #include <xlocale.h>
  #include <mach/mach.h>
 #endif
