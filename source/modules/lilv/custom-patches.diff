@@ -1,6 +1,7 @@
-diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/lilv/lilv.h lilv-0.18.0/lilv/lilv.h
---- lilv-0.18.0.orig/lilv/lilv.h	2014-01-04 04:17:29.000000000 +0000
-+++ lilv-0.18.0/lilv/lilv.h	2014-04-14 20:49:45.340264688 +0000
+diff --git a/source/modules/lilv/lilv-0.20.0/lilv/lilv.h b/source/modules/lilv/lilv-0.20.0/lilv/lilv.h
+index 5c26681..ca673e4 100644
+--- a/source/modules/lilv/lilv-0.20.0/lilv/lilv.h
++++ b/source/modules/lilv/lilv-0.20.0/lilv/lilv.h
 @@ -26,8 +26,9 @@
  #include <stdint.h>
  #include <stdio.h>
@@ -13,36 +14,48 @@ diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/lilv/lilv.h lilv-0.18.0/lilv/lil
  
  #ifdef LILV_SHARED
  #    ifdef _WIN32
-@@ -1228,7 +1229,7 @@
- LILV_API
- LilvState*
- lilv_state_new_from_world(LilvWorld*      world,
+@@ -1152,9 +1153,9 @@ lilv_port_get_scale_points(const LilvPlugin* plugin,
+    @return A new LilvState which must be freed with lilv_state_free(), or NULL.
+ */
+ LILV_API LilvState*
+-lilv_state_new_from_world(LilvWorld*      world,
 -                          LV2_URID_Map*   map,
+-                          const LilvNode* subject);
++lilv_state_new_from_world(LilvWorld*          world,
 +                          const LV2_URID_Map* map,
-                           const LilvNode* subject);
++                          const LilvNode*     subject);
  
  /**
-@@ -1247,7 +1248,7 @@
- LILV_API
- LilvState*
- lilv_state_new_from_file(LilvWorld*      world,
+    Load a state snapshot from a file.
+@@ -1172,18 +1173,18 @@ lilv_state_new_from_world(LilvWorld*      world,
+    new memory consumed once this function returns.
+ */
+ LILV_API LilvState*
+-lilv_state_new_from_file(LilvWorld*      world,
 -                         LV2_URID_Map*   map,
+-                         const LilvNode* subject,
+-                         const char*     path);
++lilv_state_new_from_file(LilvWorld*          world,
 +                         const LV2_URID_Map* map,
-                          const LilvNode* subject,
-                          const char*     path);
- 
-@@ -1257,7 +1258,7 @@
- LILV_API
- LilvState*
- lilv_state_new_from_string(LilvWorld*    world,
--                           LV2_URID_Map* map,
-+                           const LV2_URID_Map* map,
-                            const char*   str);
++                         const LilvNode*     subject,
++                         const char*         path);
  
  /**
-@@ -1428,7 +1429,8 @@
- LILV_API
- void
+    Load a state snapshot from a string made by lilv_state_to_string().
+ */
+ LILV_API LilvState*
+-lilv_state_new_from_string(LilvWorld*    world,
+-                           LV2_URID_Map* map,
+-                           const char*   str);
++lilv_state_new_from_string(LilvWorld*          world,
++                           const LV2_URID_Map* map,
++                           const char*         str);
+ 
+ /**
+    Function to get a port value.
+@@ -1352,7 +1353,8 @@ typedef void (*LilvSetPortValueFunc)(const char* port_symbol,
+ */
+ LILV_API void
  lilv_state_restore(const LilvState*           state,
 -                   LilvInstance*              instance,
 +                   const LV2_State_Interface* iface,
@@ -50,54 +63,60 @@ diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/lilv/lilv.h lilv-0.18.0/lilv/lil
                     LilvSetPortValueFunc       set_value,
                     void*                      user_data,
                     uint32_t                   flags,
-@@ -1782,6 +1784,25 @@
+@@ -1695,6 +1697,21 @@ LILV_API const LilvNode*
  lilv_ui_get_binary_uri(const LilvUI* ui);
  
  /**
 +  Custom calls
 +*/
-+LILV_API
-+const LilvNodes*
++LILV_API const LilvNodes*
 +lilv_ui_get_supported_features(const LilvUI* ui);
 +
-+LILV_API
-+const LilvNodes*
++LILV_API const LilvNodes*
 +lilv_ui_get_required_features(const LilvUI* ui);
 +
-+LILV_API
-+const LilvNodes*
++LILV_API const LilvNodes*
 +lilv_ui_get_optional_features(const LilvUI* ui);
 +
-+LILV_API
-+const LilvNodes*
++LILV_API const LilvNodes*
 +lilv_ui_get_extension_data(const LilvUI* ui);
 +
 +/**
     @}
     @}
  */
-diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/lilv/lilvmm.hpp lilv-0.18.0/lilv/lilvmm.hpp
---- lilv-0.18.0.orig/lilv/lilvmm.hpp	2013-03-19 04:05:10.000000000 +0000
-+++ lilv-0.18.0/lilv/lilvmm.hpp	2014-04-14 20:55:29.312713841 +0000
-@@ -35,6 +35,9 @@
+diff --git a/source/modules/lilv/lilv-0.20.0/lilv/lilvmm.hpp b/source/modules/lilv/lilv-0.20.0/lilv/lilvmm.hpp
+index b9b3a69..0d82f3f 100644
+--- a/source/modules/lilv/lilv-0.20.0/lilv/lilvmm.hpp
++++ b/source/modules/lilv/lilv-0.20.0/lilv/lilvmm.hpp
+@@ -17,6 +17,8 @@
+ #ifndef LILV_LILVMM_HPP
+ #define LILV_LILVMM_HPP
+ 
++#include "CarlaDefines.h"
++
+ #include "lilv/lilv.h"
+ 
+ #if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1)
+@@ -35,6 +37,9 @@ uri_to_path(const char* uri) {
  #define LILV_WRAP0(RT, prefix, name) \
  	inline RT name() { return lilv_ ## prefix ## _ ## name (me); }
  
 +#define LILV_WRAP0_CONST(RT, prefix, name) \
-+	inline RT name() const { return lilv_ ## prefix ## _ ## name (me); }
++        inline RT name() const { return lilv_ ## prefix ## _ ## name (me); }
 +
  #define LILV_WRAP0_VOID(prefix, name) \
  	inline void name() { lilv_ ## prefix ## _ ## name(me); }
  
-@@ -65,6 +68,7 @@
+@@ -65,6 +70,7 @@ uri_to_path(const char* uri) {
  #endif
  
  struct Node {
-+	inline Node(LilvNode* node)       : me(node) {}
++        inline Node(LilvNode* node)       : me(node) {}
  	inline Node(const LilvNode* node) : me(lilv_node_duplicate(node)) {}
  	inline Node(const Node& copy)     : me(lilv_node_duplicate(copy.me)) {}
  
-@@ -78,20 +82,20 @@
+@@ -78,20 +84,26 @@ struct Node {
  
  	LILV_WRAP_CONVERSION(LilvNode);
  
@@ -129,10 +148,16 @@ diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/lilv/lilvmm.hpp lilv-0.18.0/lilv
 +	LILV_WRAP0_CONST(int,         node, as_int);
 +	LILV_WRAP0_CONST(bool,        node, is_bool);
 +	LILV_WRAP0_CONST(bool,        node, as_bool);
++
++        Node& operator=(const Node& copy) {
++                lilv_node_free(me);
++                me = lilv_node_duplicate(copy.me);
++                return *this;
++        }
  
  	LilvNode* me;
  };
-@@ -126,7 +130,7 @@
+@@ -126,7 +138,7 @@ struct PluginClass {
  	LILV_WRAP0(LilvIter*, prefix, begin); \
  	LILV_WRAP1(LilvIter*, prefix, next, LilvIter*, i); \
  	LILV_WRAP1(bool, prefix, is_end, LilvIter*, i); \
@@ -141,7 +166,18 @@ diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/lilv/lilvmm.hpp lilv-0.18.0/lilv
  
  struct PluginClasses {
  	LILV_WRAP_COLL(PluginClasses, PluginClass, plugin_classes);
-@@ -148,15 +152,14 @@
+@@ -141,22 +153,24 @@ struct ScalePoints {
+ struct Nodes {
+ 	LILV_WRAP_COLL(Nodes, Node, nodes);
+ 	LILV_WRAP1(bool, nodes, contains, const Node, node);
+-	LILV_WRAP0(Node, nodes, get_first);
++
++        inline Node get_first() const {
++              return Node((const LilvNode*)lilv_nodes_get_first(me));
++        }
+ };
+ 
+ struct UI {
  	inline UI(const LilvUI* c_obj) : me(c_obj) {}
  	LILV_WRAP_CONVERSION(const LilvUI);
  
@@ -154,38 +190,49 @@ diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/lilv/lilvmm.hpp lilv-0.18.0/lilv
 -	           const LilvNode*,     container_type,
 -	           const LilvNode**,    ui_type);*/
 -	LILV_WRAP1(bool, ui, is_a, const LilvNode*, class_uri);
-+	LILV_WRAP0(Node,  ui, get_uri);
-+	LILV_WRAP1(bool,  ui, is_a, LilvNode*, ui_class);
-+	LILV_WRAP0(Node,  ui, get_bundle_uri);
-+	LILV_WRAP0(Node,  ui, get_binary_uri);
-+	LILV_WRAP0(Nodes, ui, get_supported_features);
-+	LILV_WRAP0(Nodes, ui, get_required_features);
-+	LILV_WRAP0(Nodes, ui, get_optional_features);
-+	LILV_WRAP0(Nodes, ui, get_extension_data);
++        LILV_WRAP0(Node,  ui, get_uri);
++        LILV_WRAP1(bool,  ui, is_a, LilvNode*, ui_class);
++        LILV_WRAP0(Node,  ui, get_bundle_uri);
++        LILV_WRAP0(Node,  ui, get_binary_uri);
++        LILV_WRAP0(Nodes, ui, get_supported_features);
++        LILV_WRAP0(Nodes, ui, get_required_features);
++        LILV_WRAP0(Nodes, ui, get_optional_features);
++        LILV_WRAP0(Nodes, ui, get_extension_data);
  
  	const LilvUI* me;
  };
-@@ -260,7 +263,7 @@
+@@ -258,16 +272,14 @@ struct Plugins {
+ struct Instance {
+ 	inline Instance(LilvInstance* instance) : me(instance) {}
  
- 	LILV_DEPRECATED
- 	inline Instance(Plugin plugin, double sample_rate) {
+-	LILV_DEPRECATED
+-	inline Instance(Plugin plugin, double sample_rate) {
 -		me = lilv_plugin_instantiate(plugin, sample_rate, NULL);
-+		me = lilv_plugin_instantiate(plugin, sample_rate, nullptr);
- 	}
+-	}
++        LILV_DEPRECATED
++        inline Instance(Plugin plugin, double sample_rate)
++                : me(lilv_plugin_instantiate(plugin, sample_rate, NULL)) {}
  
- 	LILV_DEPRECATED inline Instance(Plugin              plugin,
-@@ -275,7 +278,7 @@
- 		LilvInstance* me = lilv_plugin_instantiate(
- 			plugin, sample_rate, features);
+-	LILV_DEPRECATED inline Instance(Plugin              plugin,
+-	                                double              sample_rate,
+-	                                LV2_Feature* const* features) {
+-		me = lilv_plugin_instantiate(plugin, sample_rate, features);
+-	}
++        LILV_DEPRECATED inline Instance(Plugin              plugin,
++                                        double              sample_rate,
++                                        LV2_Feature* const* features)
++                : me(lilv_plugin_instantiate(plugin, sample_rate, features)) {}
  
--		return me ? new Instance(me) : NULL;
-+		return me ? new Instance(me) : nullptr;
- 	}
+ 	static inline Instance* create(Plugin              plugin,
+ 	                               double              sample_rate,
+@@ -304,22 +316,22 @@ struct Instance {
+ };
  
- 	LILV_WRAP_CONVERSION(LilvInstance);
-@@ -307,19 +310,19 @@
- 	inline World() : me(lilv_world_new()) {}
- 	inline ~World() { lilv_world_free(me); }
+ struct World {
+-	inline World() : me(lilv_world_new()) {}
+-	inline ~World() { lilv_world_free(me); }
++	inline          World() : me(lilv_world_new()) {}
++	inline virtual ~World() { lilv_world_free(me); }
  
 -	inline LilvNode* new_uri(const char* uri) {
 +	inline LilvNode* new_uri(const char* uri) const {
@@ -208,10 +255,20 @@ diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/lilv/lilvmm.hpp lilv-0.18.0/lilv
  		return lilv_new_bool(me, val);
  	}
  	inline Nodes find_nodes(const LilvNode* subject,
-diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/lilv_internal.h lilv-0.18.0/src/lilv_internal.h
---- lilv-0.18.0.orig/src/lilv_internal.h	2014-01-04 04:02:22.000000000 +0000
-+++ lilv-0.18.0/src/lilv_internal.h	2014-04-14 20:31:23.028483446 +0000
-@@ -50,7 +50,7 @@
+@@ -337,6 +349,8 @@ struct World {
+ 	LILV_WRAP1(int, world, load_resource, const LilvNode*, resource);
+ 
+ 	LilvWorld* me;
++
++        CARLA_DECLARE_NON_COPY_STRUCT(World)
+ };
+ 
+ } /* namespace Lilv */
+diff --git a/source/modules/lilv/lilv-0.20.0/src/lilv_internal.h b/source/modules/lilv/lilv-0.20.0/src/lilv_internal.h
+index ed2c13a..8d30b39 100644
+--- a/source/modules/lilv/lilv-0.20.0/src/lilv_internal.h
++++ b/source/modules/lilv/lilv-0.20.0/src/lilv_internal.h
+@@ -50,7 +50,7 @@ static inline char* dlerror(void) { return "Unknown error"; }
  #include "lilv/lilv.h"
  
  #ifdef LILV_DYN_MANIFEST
@@ -220,9 +277,10 @@ diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/lilv_internal.h lilv-0.18.0/
  #endif
  
  /*
-diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/plugin.c lilv-0.18.0/src/plugin.c
---- lilv-0.18.0.orig/src/plugin.c	2014-01-04 21:23:47.000000000 +0000
-+++ lilv-0.18.0/src/plugin.c	2014-04-14 20:44:13.939913922 +0000
+diff --git a/source/modules/lilv/lilv-0.20.0/src/plugin.c b/source/modules/lilv/lilv-0.20.0/src/plugin.c
+index 9c966b6..7bd6e60 100644
+--- a/source/modules/lilv/lilv-0.20.0/src/plugin.c
++++ b/source/modules/lilv/lilv-0.20.0/src/plugin.c
 @@ -27,7 +27,7 @@
  #include "lilv_config.h"
  #include "lilv_internal.h"
@@ -232,9 +290,10 @@ diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/plugin.c lilv-0.18.0/src/plu
  
  #define NS_DOAP (const uint8_t*)"http://usefulinc.com/ns/doap#"
  #define NS_FOAF (const uint8_t*)"http://xmlns.com/foaf/0.1/"
-diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/port.c lilv-0.18.0/src/port.c
---- lilv-0.18.0.orig/src/port.c	2014-01-04 04:04:20.000000000 +0000
-+++ lilv-0.18.0/src/port.c	2014-04-14 20:33:03.708189391 +0000
+diff --git a/source/modules/lilv/lilv-0.20.0/src/port.c b/source/modules/lilv/lilv-0.20.0/src/port.c
+index 6bf8fc7..0a50891 100644
+--- a/source/modules/lilv/lilv-0.20.0/src/port.c
++++ b/source/modules/lilv/lilv-0.20.0/src/port.c
 @@ -20,8 +20,8 @@
  #include <stdlib.h>
  #include <string.h>
@@ -246,9 +305,10 @@ diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/port.c lilv-0.18.0/src/port.
  
  #include "lilv_internal.h"
  
-diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/state.c lilv-0.18.0/src/state.c
---- lilv-0.18.0.orig/src/state.c	2013-12-16 03:17:00.000000000 +0000
-+++ lilv-0.18.0/src/state.c	2014-04-14 20:39:02.307711987 +0000
+diff --git a/source/modules/lilv/lilv-0.20.0/src/state.c b/source/modules/lilv/lilv-0.20.0/src/state.c
+index 68d48f1..fa54484 100644
+--- a/source/modules/lilv/lilv-0.20.0/src/state.c
++++ b/source/modules/lilv/lilv-0.20.0/src/state.c
 @@ -18,10 +18,10 @@
  #include <stdio.h>
  #include <string.h>
@@ -264,9 +324,9 @@ diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/state.c lilv-0.18.0/src/stat
  
  #include "lilv_config.h"
  #include "lilv_internal.h"
-@@ -399,30 +399,18 @@
- LILV_API
- void
+@@ -397,30 +397,18 @@ lilv_state_new_from_instance(const LilvPlugin*          plugin,
+ 
+ LILV_API void
  lilv_state_restore(const LilvState*           state,
 -                   LilvInstance*              instance,
 +                   const LV2_State_Interface* iface,
@@ -299,99 +359,110 @@ diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/state.c lilv-0.18.0/src/stat
  	if (set_value) {
  		for (uint32_t i = 0; i < state->num_values; ++i) {
  			const PortValue* val = &state->values[i];
-@@ -569,7 +557,7 @@
- LILV_API
- LilvState*
- lilv_state_new_from_world(LilvWorld*      world,
+@@ -571,9 +559,9 @@ new_state_from_model(LilvWorld*       world,
+ }
+ 
+ LILV_API LilvState*
+-lilv_state_new_from_world(LilvWorld*      world,
 -                          LV2_URID_Map*   map,
+-                          const LilvNode* node)
++lilv_state_new_from_world(LilvWorld*          world,
 +                          const LV2_URID_Map* map,
-                           const LilvNode* node)
++                          const LilvNode*     node)
  {
  	if (!lilv_node_is_uri(node) && !lilv_node_is_blank(node)) {
-@@ -587,7 +575,7 @@
- LILV_API
- LilvState*
- lilv_state_new_from_file(LilvWorld*      world,
+ 		LILV_ERRORF("Subject `%s' is not a URI or blank node.\n",
+@@ -588,10 +576,10 @@ lilv_state_new_from_world(LilvWorld*      world,
+ }
+ 
+ LILV_API LilvState*
+-lilv_state_new_from_file(LilvWorld*      world,
 -                         LV2_URID_Map*   map,
+-                         const LilvNode* subject,
+-                         const char*     path)
++lilv_state_new_from_file(LilvWorld*          world,
 +                         const LV2_URID_Map* map,
-                          const LilvNode* subject,
-                          const char*     path)
++                         const LilvNode*     subject,
++                         const char*         path)
  {
-@@ -641,7 +629,7 @@
- LILV_API
- LilvState*
- lilv_state_new_from_string(LilvWorld*    world,
+ 	if (subject && !lilv_node_is_uri(subject)
+ 	    && !lilv_node_is_blank(subject)) {
+@@ -641,9 +629,9 @@ set_prefixes(SerdEnv* env)
+ }
+ 
+ LILV_API LilvState*
+-lilv_state_new_from_string(LilvWorld*    world,
 -                           LV2_URID_Map* map,
+-                           const char*   str)
++lilv_state_new_from_string(LilvWorld*          world,
 +                           const LV2_URID_Map* map,
-                            const char*   str)
++                           const char*         str)
  {
  	if (!str) {
-diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/ui.c lilv-0.18.0/src/ui.c
---- lilv-0.18.0.orig/src/ui.c	2012-03-27 03:41:41.000000000 +0000
-+++ lilv-0.18.0/src/ui.c	2014-04-14 20:46:20.491810535 +0000
-@@ -128,3 +128,59 @@
- 	assert(ui->binary_uri);
+ 		return NULL;
+diff --git a/source/modules/lilv/lilv-0.20.0/src/ui.c b/source/modules/lilv/lilv-0.20.0/src/ui.c
+index 0f4f2f6..a3e17da 100644
+--- a/source/modules/lilv/lilv-0.20.0/src/ui.c
++++ b/source/modules/lilv/lilv-0.20.0/src/ui.c
+@@ -109,3 +109,54 @@ lilv_ui_get_binary_uri(const LilvUI* ui)
+ {
  	return ui->binary_uri;
  }
 +
 +static LilvNodes*
-+lilv_ui_get_value_internal(const LilvUI* ui,
-+                           const SordNode* predicate)
++lilv_ui_get_value_internal(const LilvUI* ui, const SordNode* predicate)
 +{
-+	assert(ui);
-+	return lilv_world_find_nodes_internal(ui->world, ui->uri->node, predicate, NULL);
++       assert(ui);
++       return lilv_world_find_nodes_internal(ui->world, ui->uri->node, predicate, NULL);
 +}
 +
-+LILV_API
-+const LilvNodes*
++LILV_API const LilvNodes*
 +lilv_ui_get_supported_features(const LilvUI* ui)
 +{
-+	assert(ui);
-+	LilvNodes* optional = lilv_ui_get_optional_features(ui);
-+	LilvNodes* required = lilv_ui_get_required_features(ui);
-+	LilvNodes* result   = lilv_nodes_new();
++       assert(ui);
++       LilvNodes* optional = lilv_ui_get_optional_features(ui);
++       LilvNodes* required = lilv_ui_get_required_features(ui);
++       LilvNodes* result   = lilv_nodes_new();
 +
-+	LILV_FOREACH(nodes, i, optional)
-+		zix_tree_insert((ZixTree*)result, lilv_node_duplicate(lilv_nodes_get(optional, i)), NULL);
++       LILV_FOREACH(nodes, i, optional)
++               zix_tree_insert((ZixTree*)result, lilv_node_duplicate(lilv_nodes_get(optional, i)), NULL);
 +
-+	LILV_FOREACH(nodes, i, required)
-+		zix_tree_insert((ZixTree*)result, lilv_node_duplicate(lilv_nodes_get(required, i)), NULL);
++       LILV_FOREACH(nodes, i, required)
++               zix_tree_insert((ZixTree*)result, lilv_node_duplicate(lilv_nodes_get(required, i)), NULL);
 +
-+	lilv_nodes_free(optional);
-+	lilv_nodes_free(required);
++       lilv_nodes_free(optional);
++       lilv_nodes_free(required);
 +
-+	return result;
++       return result;
 +}
 +
-+LILV_API
-+const LilvNodes*
++LILV_API const LilvNodes*
 +lilv_ui_get_required_features(const LilvUI* ui)
 +{
-+	assert(ui);
-+	assert(ui->world);
-+	return lilv_ui_get_value_internal(ui, ui->world->uris.lv2_requiredFeature);
++       assert(ui);
++       assert(ui->world);
++       return lilv_ui_get_value_internal(ui, ui->world->uris.lv2_requiredFeature);
 +}
 +
-+LILV_API
-+const LilvNodes*
++LILV_API const LilvNodes*
 +lilv_ui_get_optional_features(const LilvUI* ui)
 +{
-+	assert(ui);
-+	assert(ui->world);
-+	return lilv_ui_get_value_internal(ui, ui->world->uris.lv2_optionalFeature);
++       assert(ui);
++       assert(ui->world);
++       return lilv_ui_get_value_internal(ui, ui->world->uris.lv2_optionalFeature);
 +}
 +
-+LILV_API
-+const LilvNodes*
++LILV_API const LilvNodes*
 +lilv_ui_get_extension_data(const LilvUI* ui)
 +{
-+	assert(ui);
-+	assert(ui->world);
-+	return lilv_ui_get_value_internal(ui, ui->world->uris.lv2_extensionData);
++       assert(ui);
++       assert(ui->world);
++       return lilv_ui_get_value_internal(ui, ui->world->uris.lv2_extensionData);
 +}
-diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/util.c lilv-0.18.0/src/util.c
---- lilv-0.18.0.orig/src/util.c	2012-08-09 20:51:00.000000000 +0000
-+++ lilv-0.18.0/src/util.c	2014-04-14 20:43:49.832743279 +0000
+diff --git a/source/modules/lilv/lilv-0.20.0/src/util.c b/source/modules/lilv/lilv-0.20.0/src/util.c
+index f1c9c1c..7ca7ca0 100644
+--- a/source/modules/lilv/lilv-0.20.0/src/util.c
++++ b/source/modules/lilv/lilv-0.20.0/src/util.c
 @@ -29,7 +29,6 @@
  #include <string.h>
  
@@ -400,7 +471,7 @@ diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/util.c lilv-0.18.0/src/util.
  #    include <windows.h>
  #    include <direct.h>
  #    include <io.h>
-@@ -426,7 +425,7 @@
+@@ -426,7 +425,7 @@ lilv_symlink(const char* oldpath, const char* newpath)
  	int ret = 0;
  	if (strcmp(oldpath, newpath)) {
  #ifdef _WIN32
@@ -409,9 +480,10 @@ diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/util.c lilv-0.18.0/src/util.
  #else
  		ret = symlink(oldpath, newpath);
  #endif
-diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/world.c lilv-0.18.0/src/world.c
---- lilv-0.18.0.orig/src/world.c	2013-12-27 19:45:19.000000000 +0000
-+++ lilv-0.18.0/src/world.c	2014-04-14 20:45:37.828508116 +0000
+diff --git a/source/modules/lilv/lilv-0.20.0/src/world.c b/source/modules/lilv/lilv-0.20.0/src/world.c
+index 41fe16f..76db7fc 100644
+--- a/source/modules/lilv/lilv-0.20.0/src/world.c
++++ b/source/modules/lilv/lilv-0.20.0/src/world.c
 @@ -19,7 +19,7 @@
  #include <stdlib.h>
  #include <string.h>
@@ -420,4 +492,38 @@ diff -U 3 -H -w -E -d -r -N -- lilv-0.18.0.orig/src/world.c lilv-0.18.0/src/worl
 +#include "lv2/presets.h"
  
  #include "lilv_internal.h"
+ 
+diff --git a/source/modules/lilv/sratom-0.4.6/sratom/sratom.h b/source/modules/lilv/sratom-0.4.6/sratom/sratom.h
+index bb1af95..67855d5 100644
+--- a/source/modules/lilv/sratom-0.4.6/sratom/sratom.h
++++ b/source/modules/lilv/sratom-0.4.6/sratom/sratom.h
+@@ -23,9 +23,9 @@
+ 
+ #include <stdint.h>
+ 
+-#include "lv2/lv2plug.in/ns/ext/urid/urid.h"
+-#include "lv2/lv2plug.in/ns/ext/atom/atom.h"
+-#include "lv2/lv2plug.in/ns/ext/atom/forge.h"
++#include "lv2/atom.h"
++#include "lv2/atom-forge.h"
++#include "lv2/urid.h"
+ #include "serd/serd.h"
+ #include "sord/sord.h"
+ 
+diff --git a/source/modules/lilv/sratom-0.4.6/src/sratom.c b/source/modules/lilv/sratom-0.4.6/src/sratom.c
+index 4d8add7..555bbda 100644
+--- a/source/modules/lilv/sratom-0.4.6/src/sratom.c
++++ b/source/modules/lilv/sratom-0.4.6/src/sratom.c
+@@ -22,9 +22,9 @@
+ #include <stdlib.h>
+ #include <string.h>
+ 
+-#include "lv2/lv2plug.in/ns/ext/atom/forge.h"
+-#include "lv2/lv2plug.in/ns/ext/atom/util.h"
+-#include "lv2/lv2plug.in/ns/ext/midi/midi.h"
++#include "lv2/atom-forge.h"
++#include "lv2/atom-util.h"
++#include "lv2/midi.h"
+ 
+ #include "sratom/sratom.h"
  
