@@ -56,6 +56,10 @@ class CarlaApplication(object):
         elif CWDl.endswith("source"):
             stylesDir = os.path.abspath(os.path.join(CWD, "..", "bin"))
 
+            if WINDOWS:
+                # Fixes local wine build
+                QApplication.addLibraryPath("C:\\Python34\\Lib\\site-packages\\PyQt5\\plugins")
+
         # plugin
         elif CWDl.endswith("resources"):
             # system-wide
