@@ -68,6 +68,8 @@ class CarlaMultiW(QTabWidget):
         parent.ui.act_plugins_center.triggered.connect(self.fRack.slot_pluginsCenter)
         parent.ui.act_plugins_panic.triggered.connect(self.fRack.slot_pluginsDisable)
 
+        parent.ui.act_canvas_show_internal.triggered.connect(self.fPatchbay.slot_canvasShowInternal)
+        parent.ui.act_canvas_show_external.triggered.connect(self.fPatchbay.slot_canvasShowExternal)
         parent.ui.act_canvas_arrange.setEnabled(False) # TODO, later
         parent.ui.act_canvas_arrange.triggered.connect(self.fPatchbay.slot_canvasArrange)
         parent.ui.act_canvas_refresh.triggered.connect(self.fPatchbay.slot_canvasRefresh)

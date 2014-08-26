@@ -1752,8 +1752,11 @@ bool CarlaEngine::patchbayDisconnect(const uint connectionId)
     return false;
 }
 
-bool CarlaEngine::patchbayRefresh()
+bool CarlaEngine::patchbayRefresh(const bool external)
 {
+    // subclasses should handle this
+    CARLA_SAFE_ASSERT_RETURN(! external, false);
+
     if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
     {
         // This is implemented in engine subclasses for MIDI support

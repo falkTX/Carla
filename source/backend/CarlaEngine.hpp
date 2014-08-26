@@ -936,7 +936,7 @@ public:
     /*!
      * Force the engine to resend all patchbay clients, ports and connections again.
      */
-    virtual bool patchbayRefresh();
+    virtual bool patchbayRefresh(const bool external);
 #endif
 
     // -------------------------------------------------------------------

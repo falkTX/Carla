@@ -1344,8 +1344,10 @@ class Host(object):
         return bool(self.lib.carla_patchbay_disconnect(connectionId))
 
     # Force the engine to resend all patchbay clients, ports and connections again.
-    def patchbay_refresh(self):
-        return bool(self.lib.carla_patchbay_refresh())
+    # @param external Wherever to show external/hardware ports instead of internal ones.
+    #                 Only valid in patchbay engine mode, other modes will ignore this.
+    def patchbay_refresh(self, external):
+        return bool(self.lib.carla_patchbay_refresh(external))
 
     # Start playback of the engine transport.
     def transport_play(self):
@@ -1809,7 +1811,7 @@ class Host(object):
         self.lib.carla_patchbay_disconnect.argtypes = [c_uint]
         self.lib.carla_patchbay_disconnect.restype = c_bool
 
-        self.lib.carla_patchbay_refresh.argtypes = None
+        self.lib.carla_patchbay_refresh.argtypes = [c_bool]
         self.lib.carla_patchbay_refresh.restype = c_bool
 
         self.lib.carla_transport_play.argtypes = None

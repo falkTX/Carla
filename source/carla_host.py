@@ -251,6 +251,13 @@ class HostWindow(QMainWindow):
         self.ui.act_engine_stop.setEnabled(False)
         self.ui.act_plugin_remove_all.setEnabled(False)
 
+        if gCarla.externalPatchbay:
+            self.ui.act_canvas_show_internal.setChecked(False)
+            self.ui.act_canvas_show_external.setChecked(True)
+        else:
+            self.ui.act_canvas_show_internal.setChecked(True)
+            self.ui.act_canvas_show_external.setChecked(False)
+
         self.ui.menu_PluginMacros.setEnabled(False)
         self.ui.menu_Canvas.setEnabled(False)
 

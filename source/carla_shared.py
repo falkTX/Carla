@@ -246,6 +246,8 @@ class CarlaObject(object):
         'transportMode',
         # current max parameters
         'maxParameters',
+        # wherever to use external patchbay mode
+        'externalPatchbay',
         # wherever to use custom skins
         'useCustomSkins',
         # binary dir
@@ -276,6 +278,7 @@ gCarla.processMode       = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS if LINUX else EN
 gCarla.processModeForced = False
 gCarla.transportMode     = ENGINE_TRANSPORT_MODE_JACK if LINUX else ENGINE_TRANSPORT_MODE_INTERNAL
 gCarla.maxParameters     = MAX_DEFAULT_PARAMETERS
+gCarla.externalPatchbay  = False
 gCarla.useCustomSkins = True
 gCarla.pathBinaries   = ""
 gCarla.pathResources  = ""

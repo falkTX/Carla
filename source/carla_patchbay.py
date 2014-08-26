@@ -207,6 +207,8 @@ class CarlaPatchbayW(QFrame):
         parent.ui.act_plugins_center.triggered.connect(self.slot_pluginsCenter)
         parent.ui.act_plugins_panic.triggered.connect(self.slot_pluginsDisable)
 
+        parent.ui.act_canvas_show_internal.triggered.connect(self.slot_canvasShowInternal)
+        parent.ui.act_canvas_show_external.triggered.connect(self.slot_canvasShowExternal)
         parent.ui.act_canvas_arrange.setEnabled(False) # TODO, later
         parent.ui.act_canvas_arrange.triggered.connect(self.slot_canvasArrange)
         parent.ui.act_canvas_refresh.triggered.connect(self.slot_canvasRefresh)
@@ -655,7 +657,7 @@ class CarlaPatchbayW(QFrame):
         self.slot_miniCanvasCheckAll()
 
         if gCarla.host.is_engine_running():
-            gCarla.host.patchbay_refresh()
+            gCarla.host.patchbay_refresh(gCarla.externalPatchbay)
 
     # -----------------------------------------------------------------
 
@@ -949,11 +951,33 @@ class CarlaPatchbayW(QFrame):
         patchcanvas.arrange()
 
     @pyqtSlot()
+    def slot_canvasShowInternal(self):
+        gCarla.externalPatchbay = False
+        self.fParent.ui.act_canvas_show_internal.blockSignals(True)
+        self.fParent.ui.act_canvas_show_external.blockSignals(True)
+        self.fParent.ui.act_canvas_show_internal.setChecked(True)
+        self.fParent.ui.act_canvas_show_external.setChecked(False)
+        self.fParent.ui.act_canvas_show_internal.blockSignals(False)
+        self.fParent.ui.act_canvas_show_external.blockSignals(False)
+        self.slot_canvasRefresh()
+
+    @pyqtSlot()
+    def slot_canvasShowExternal(self):
+        gCarla.externalPatchbay = True
+        self.fParent.ui.act_canvas_show_internal.blockSignals(True)
+        self.fParent.ui.act_canvas_show_external.blockSignals(True)
+        self.fParent.ui.act_canvas_show_internal.setChecked(False)
+        self.fParent.ui.act_canvas_show_external.setChecked(True)
+        self.fParent.ui.act_canvas_show_internal.blockSignals(False)
+        self.fParent.ui.act_canvas_show_external.blockSignals(False)
+        self.slot_canvasRefresh()
+
+    @pyqtSlot()
     def slot_canvasRefresh(self):
         patchcanvas.clear()
 
         if gCarla.host is not None and gCarla.host.is_engine_running():
-            gCarla.host.patchbay_refresh()
+            gCarla.host.patchbay_refresh(gCarla.externalPatchbay)
 
             for pitem in self.fPluginList:
                 if pitem is None:

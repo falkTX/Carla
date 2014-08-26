@@ -156,7 +156,7 @@ protected:
         else if (std::strcmp(msg, "patchbay_refresh") == 0)
         {
             try {
-                ok = fEngine->patchbayRefresh();
+                ok = fEngine->patchbayRefresh(false);
             } CARLA_SAFE_EXCEPTION("patchbayRefresh");
         }
         else if (std::strcmp(msg, "transport_play") == 0)
@@ -1236,7 +1236,7 @@ protected:
             }
 
             if (fIsPatchbay)
-                patchbayRefresh();
+                patchbayRefresh(false);
         }
         else
         {

@@ -173,8 +173,7 @@ public:
         fDevice->start(this);
 
         CarlaEngine::init(clientName);
-
-        patchbayRefresh();
+        patchbayRefresh(false);
 
         return true;
     }
@@ -250,7 +249,7 @@ public:
     // -------------------------------------------------------------------
     // Patchbay
 
-    bool patchbayRefresh() override
+    bool patchbayRefresh(const bool /*external*/) override
     {
         CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(), false);
 
@@ -471,6 +470,8 @@ public:
     {
         PatchbayGraph* const graph(pData->graph.getPatchbayGraph());
         CARLA_SAFE_ASSERT_RETURN(graph != nullptr,);
+
+        graph->refreshConnections(this);
     }
 
     // -------------------------------------------------------------------

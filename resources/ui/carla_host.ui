@@ -243,6 +243,9 @@
      <addaction name="act_canvas_zoom_out"/>
      <addaction name="act_canvas_zoom_100"/>
     </widget>
+    <addaction name="act_canvas_show_internal"/>
+    <addaction name="act_canvas_show_external"/>
+    <addaction name="separator"/>
     <addaction name="act_canvas_arrange"/>
     <addaction name="act_canvas_refresh"/>
     <addaction name="menu_Canvas_Zoom"/>
@@ -650,6 +653,22 @@
   <action name="act_help_about_juce">
    <property name="text">
     <string>About &amp;JUCE</string>
+   </property>
+  </action>
+  <action name="act_canvas_show_internal">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Internal</string>
+   </property>
+  </action>
+  <action name="act_canvas_show_external">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show External</string>
    </property>
   </action>
  </widget>

@@ -636,6 +636,7 @@ public:
           fClient(nullptr),
           fTransportPos(),
           fTransportState(JackTransportStopped),
+          fExternalPatchbay(true),
           fFreewheel(false),
 #ifdef BUILD_BRIDGE
           fIsRunning(false),
@@ -712,8 +713,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(jackbridge_is_ok(), false);
         carla_debug("CarlaEngineJack::init(\"%s\")", clientName);
 
-        fFreewheel      = false;
-        fTransportState = JackTransportStopped;
+        fFreewheel        = false;
+        fTransportState   = JackTransportStopped;
+        fExternalPatchbay = true;
 
         carla_zeroStruct<jack_position_t>(fTransportPos);
 
@@ -761,13 +763,12 @@ public:
         const char* const jackClientName(jackbridge_get_client_name(fClient));
 
         if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
-        {
             initJackPatchbay(jackClientName);
-            jackbridge_set_client_registration_callback(fClient, carla_jack_client_registration_callback, this);
-            jackbridge_set_port_registration_callback(fClient, carla_jack_port_registration_callback, this);
-            jackbridge_set_port_connect_callback(fClient, carla_jack_port_connect_callback, this);
-            jackbridge_set_port_rename_callback(fClient, carla_jack_port_rename_callback, this);
-        }
+
+        jackbridge_set_client_registration_callback(fClient, carla_jack_client_registration_callback, this);
+        jackbridge_set_port_registration_callback(fClient, carla_jack_port_registration_callback, this);
+        jackbridge_set_port_connect_callback(fClient, carla_jack_port_connect_callback, this);
+        jackbridge_set_port_rename_callback(fClient, carla_jack_port_rename_callback, this);
 
         if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
             pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
@@ -786,7 +787,7 @@ public:
             else
             {
                 pData->graph.create(false, pData->sampleRate, pData->bufferSize, 2, 2);
-                CarlaEngine::patchbayRefresh();
+                patchbayRefresh(false);
             }
         }
 
@@ -1051,7 +1052,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
 
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! fExternalPatchbay)
             return CarlaEngine::patchbayConnect(groupA, portA, groupB, portB);
 
         const char* const fullPortNameA = fUsedPorts.getFullPortName(groupA, portA);
@@ -1075,7 +1076,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
 
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! fExternalPatchbay)
             return CarlaEngine::patchbayDisconnect(connectionId);
 
         for (LinkedList<ConnectionToId>::Itenerator it = fUsedConnections.list.begin(); it.valid(); it.next())
@@ -1104,12 +1105,17 @@ public:
         return false;
     }
 
-    bool patchbayRefresh() override
+    bool patchbayRefresh(const bool external) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
 
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-            return CarlaEngine::patchbayRefresh();
+        {
+            fExternalPatchbay = external;
+
+            if (! external)
+                return CarlaEngine::patchbayRefresh(false);
+        }
 
         fUsedGroups.clear();
         fUsedPorts.clear();
@@ -1185,7 +1191,7 @@ public:
 
                 CARLA_SAFE_ASSERT_CONTINUE(jackPort != nullptr);
 
-                if (const char** connections = jackbridge_port_get_all_connections(fClient, jackPort))
+                if (const char** const connections = jackbridge_port_get_all_connections(fClient, jackPort))
                 {
                     for (int j=0; connections[j] != nullptr; ++j)
                     {
@@ -1456,6 +1462,9 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
 
+        // ignore this if on internal patchbay mode
+        if (! fExternalPatchbay) return;
+
         // do nothing on client registration, wait for first port
         if (reg) return;
 
@@ -1473,6 +1482,9 @@ protected:
 
     void handleJackPortRegistrationCallback(const jack_port_id_t port, const bool reg)
     {
+        // ignore this if on internal patchbay mode
+        if (! fExternalPatchbay) return;
+
         const jack_port_t* const jackPort(jackbridge_port_by_id(fClient, port));
         CARLA_SAFE_ASSERT_RETURN(jackPort != nullptr,);
 
@@ -1522,6 +1534,9 @@ protected:
 
     void handleJackPortConnectCallback(const jack_port_id_t a, const jack_port_id_t b, const bool connect)
     {
+        // ignore this if on internal patchbay mode
+        if (! fExternalPatchbay) return;
+
         const jack_port_t* const jackPortA(jackbridge_port_by_id(fClient, a));
         CARLA_SAFE_ASSERT_RETURN(jackPortA != nullptr,);
 
@@ -1574,6 +1589,9 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(oldName != nullptr && oldName[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(newName != nullptr && newName[0] != '\0',);
 
+        // ignore this if on internal patchbay mode
+        if (! fExternalPatchbay) return;
+
         for (LinkedList<GroupNameToId>::Itenerator it = fUsedGroups.list.begin(); it.valid(); it.next())
         {
             GroupNameToId& groupNameToId(it.getValue());
@@ -1591,6 +1609,9 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(oldFullName != nullptr && oldFullName[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(newFullName != nullptr && newFullName[0] != '\0',);
+
+        // ignore this if on internal patchbay mode
+        if (! fExternalPatchbay) return;
 
         const jack_port_t* const jackPort(jackbridge_port_by_id(fClient, port));
         CARLA_SAFE_ASSERT_RETURN(jackPort != nullptr,);
@@ -1670,6 +1691,7 @@ private:
     jack_client_t*         fClient;
     jack_position_t        fTransportPos;
     jack_transport_state_t fTransportState;
+    bool fExternalPatchbay;
     bool fFreewheel;
 
     // -------------------------------------------------------------------
@@ -1749,7 +1771,7 @@ private:
 
     void initJackPatchbay(const char* const ourName)
     {
-        CARLA_SAFE_ASSERT_RETURN(pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY,);
+        CARLA_SAFE_ASSERT_RETURN(pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY || fExternalPatchbay,);
         CARLA_SAFE_ASSERT_RETURN(ourName != nullptr && ourName[0] != '\0',);
 
         StringArray parsedGroups;

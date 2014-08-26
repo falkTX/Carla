@@ -275,7 +275,8 @@ class PluginHost(object):
         gCarla.gui.send(["patchbay_disconnect", connectionId])
         return True
 
-    def patchbay_refresh(self):
+    def patchbay_refresh(self, external):
+        # don't send external param, never used in plugins
         gCarla.gui.send(["patchbay_refresh"])
         return True
 
