@@ -8,10 +8,10 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-SERD_VERSION   = 0.18.2
-SORD_VERSION   = 0.12.0
-SRATOM_VERSION = 0.4.4
-LILV_VERSION   = 0.18.0
+SERD_VERSION   = 0.20.0
+SORD_VERSION   = 0.12.2
+SRATOM_VERSION = 0.4.6
+LILV_VERSION   = 0.20.0
 
 # --------------------------------------------------------------
 
