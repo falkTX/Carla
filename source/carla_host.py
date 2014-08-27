@@ -711,7 +711,7 @@ class HostWindow(QMainWindow):
 
         # ---------------------------------------------
 
-        if not gCarla.isPlugin:
+        if gCarla.host is not None and not gCarla.isPlugin:
             # engine
             self.setEngineSettings(settings)
 
@@ -725,14 +725,14 @@ class HostWindow(QMainWindow):
             SF2_PATH    = toList(settings.value("Paths/SF2",    gCarla.DEFAULT_SF2_PATH))
             SFZ_PATH    = toList(settings.value("Paths/SFZ",    gCarla.DEFAULT_SFZ_PATH))
 
-            os.environ["LADSPA_PATH"] = splitter.join(LADSPA_PATH)
-            os.environ["DSSI_PATH"]   = splitter.join(DSSI_PATH)
-            os.environ["LV2_PATH"]    = splitter.join(LV2_PATH)
-            os.environ["VST_PATH"]    = splitter.join(VST_PATH)
-            os.environ["AU_PATH"]     = splitter.join(AU_PATH)
-            os.environ["GIG_PATH"]    = splitter.join(GIG_PATH)
-            os.environ["SF2_PATH"]    = splitter.join(SF2_PATH)
-            os.environ["SFZ_PATH"]    = splitter.join(SFZ_PATH)
+            gCarla.host.setenv("LADSPA_PATH", splitter.join(LADSPA_PATH))
+            gCarla.host.setenv("DSSI_PATH",   splitter.join(DSSI_PATH))
+            gCarla.host.setenv("LV2_PATH",    splitter.join(LV2_PATH))
+            gCarla.host.setenv("VST_PATH",    splitter.join(VST_PATH))
+            gCarla.host.setenv("AU_PATH",     splitter.join(AU_PATH))
+            gCarla.host.setenv("GIG_PATH",    splitter.join(GIG_PATH))
+            gCarla.host.setenv("SF2_PATH",    splitter.join(SF2_PATH))
+            gCarla.host.setenv("SFZ_PATH",    splitter.join(SFZ_PATH))
 
         # ---------------------------------------------
 

@@ -20,6 +20,7 @@
 # Imports (Global)
 
 from ctypes import *
+from os import environ
 from platform import architecture
 from sys import platform, maxsize
 
@@ -1742,6 +1743,14 @@ class Host(object):
     def get_host_osc_url_udp(self):
         return charPtrToString(self.lib.carla_get_host_osc_url_udp())
 
+    # extra
+    def setenv(self, key, value):
+        environ[key] = value
+
+        if WINDOWS:
+            keyvalue = "%s=%s" % (key, value)
+            self.msvcrt._putenv(keyvalue.encode("utf-8"))
+
     def _init(self, libName):
         self.lib = cdll.LoadLibrary(libName)
 
@@ -2008,3 +2017,8 @@ class Host(object):
 
         self.lib.carla_get_host_osc_url_udp.argtypes = None
         self.lib.carla_get_host_osc_url_udp.restype = c_char_p
+
+        if WINDOWS:
+            self.msvcrt = cdll.msvcrt
+            self.msvcrt._putenv.argtypes = [c_char_p]
+            self.msvcrt._putenv.restype = None
