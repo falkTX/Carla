@@ -15,7 +15,15 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "CarlaJuceUtils.hpp"
 #include "CarlaPluginUI.hpp"
+
+#if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
+# include "juce_gui_basics.h"
+using juce::Colour;
+using juce::ComponentPeer;
+using juce::DocumentWindow;
+#endif
 
 #ifdef HAVE_X11
 # include <sys/types.h>
@@ -24,11 +32,97 @@
 # include <X11/Xutil.h>
 #endif
 
-#ifdef HAVE_X11
-# include "CarlaPluginUI_X11Icon.hpp"
+// -----------------------------------------------------
+// JUCE
+
+#if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
+class JucePluginUI : public CarlaPluginUI,
+                     public DocumentWindow
+{
+public:
+    JucePluginUI(CloseCallback* const cb, const uintptr_t /*parentId*/)
+        : CarlaPluginUI(cb, false),
+          DocumentWindow("JucePluginUI", Colour(50, 50, 200), DocumentWindow::closeButton, false),
+          fClosed(false),
+          leakDetector_JucePluginUI()
+    {
+        setVisible(false);
+        //setAlwaysOnTop(true);
+        setOpaque(true);
+        setResizable(false, false);
+        setUsingNativeTitleBar(true);
+
+        addToDesktop();
+    }
+
+protected:
+    void closeButtonPressed() override
+    {
+        fClosed = true;
+    }
+
+    void show() override
+    {
+        fClosed = false;
+
+        DocumentWindow::setVisible(true);
+    }
+
+    void hide() override
+    {
+        DocumentWindow::setVisible(false);
+    }
+
+    void focus() override
+    {
+        DocumentWindow::toFront(true);
+    }
+
+    void idle() override
+    {
+        if (fClosed)
+        {
+            fClosed = false;
+            CARLA_SAFE_ASSERT_RETURN(fCallback != nullptr,);
+            fCallback->handlePluginUIClosed();
+        }
+    }
+
+    void setSize(const uint width, const uint height, const bool /*forceUpdate*/) override
+    {
+        DocumentWindow::setSize(static_cast<int>(width), static_cast<int>(height));
+    }
+
+    void setTitle(const char* const title) override
+    {
+        DocumentWindow::setName(title);
+    }
+
+    void setTransientWinId(const uintptr_t /*winId*/) override
+    {
+    }
+
+    void* getPtr() const noexcept override
+    {
+        if (ComponentPeer* const peer = getPeer())
+            return peer->getNativeHandle();
+
+        carla_stdout("getPtr() failed");
+        return nullptr;
+    }
+
+private:
+    volatile bool fClosed;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JucePluginUI)
+};
+#endif
 
 // -----------------------------------------------------
 // X11
+
+#ifdef HAVE_X11
+# include "CarlaPluginUI_X11Icon.hpp"
 
 typedef void (*EventProcPtr)(XEvent* ev);
 
@@ -50,7 +144,8 @@ public:
           fWindow(0),
           fIsVisible(false),
           fFirstShow(true),
-          fEventProc(nullptr)
+          fEventProc(nullptr),
+          leakDetector_X11PluginUI()
      {
         fDisplay = XOpenDisplay(nullptr);
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);
@@ -309,9 +404,9 @@ private:
     bool     fFirstShow;
     EventProcPtr fEventProc;
 
-    CARLA_DECLARE_NON_COPY_CLASS(X11PluginUI)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(X11PluginUI)
 };
-#endif
+#endif // HAVE_X11
 
 // -----------------------------------------------------
 
@@ -507,18 +602,16 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 // -----------------------------------------------------
 
 #ifdef CARLA_OS_MAC
-CarlaPluginUI* CarlaPluginUI::newCocoa(CloseCallback*, uintptr_t)
+CarlaPluginUI* CarlaPluginUI::newCocoa(CloseCallback* cb, uintptr_t parentId)
 {
-    //return new CocoaPluginUi(cb, parentId, false);
-    return nullptr;
+    return new JucePluginUI(cb, parentId);
 }
 #endif
 
 #ifdef CARLA_OS_WIN
-CarlaPluginUI* CarlaPluginUI::newWindows(CloseCallback*, uintptr_t)
+CarlaPluginUI* CarlaPluginUI::newWindows(CloseCallback* cb, uintptr_t parentId)
 {
-    //return new WindowsPluginUi(cb, parentId, false);
-    return nullptr;
+    return new JucePluginUI(cb, parentId);
 }
 #endif
 
