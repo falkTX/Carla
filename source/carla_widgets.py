@@ -47,10 +47,10 @@ from pixmapkeyboard import PixmapKeyboardHArea
 # ------------------------------------------------------------------------------------------------------------
 # Carla GUI defines
 
-ICON_STATE_NULL  = 0
-ICON_STATE_OFF   = 1
-ICON_STATE_WAIT  = 2
 ICON_STATE_ON    = 3
+ICON_STATE_WAIT1 = 2
+ICON_STATE_WAIT2 = 1
+ICON_STATE_OFF   = 0
 
 # ------------------------------------------------------------------------------------------------------------
 # Fake plugin info for easy testing
@@ -1036,11 +1036,11 @@ class PluginEdit(QDialog):
         # Check Tab icons
         for i in range(len(self.fTabIconTimers)):
             if self.fTabIconTimers[i] == ICON_STATE_ON:
-                self.fTabIconTimers[i] = ICON_STATE_WAIT
-            elif self.fTabIconTimers[i] == ICON_STATE_WAIT:
+                self.fTabIconTimers[i] = ICON_STATE_WAIT1
+            elif self.fTabIconTimers[i] == ICON_STATE_WAIT1:
+                self.fTabIconTimers[i] = ICON_STATE_WAIT2
+            elif self.fTabIconTimers[i] == ICON_STATE_WAIT2:
                 self.fTabIconTimers[i] = ICON_STATE_OFF
-            elif self.fTabIconTimers[i] == ICON_STATE_OFF:
-                self.fTabIconTimers[i] = ICON_STATE_NULL
                 self.ui.tabWidget.setTabIcon(i+1, self.fTabIconOff)
 
         # Check parameters needing update
@@ -1088,7 +1088,7 @@ class PluginEdit(QDialog):
                     if paramType == PARAMETER_INPUT:
                         tabIndex = paramWidget.getTabIndex()
 
-                        if self.fTabIconTimers[tabIndex-1] == ICON_STATE_NULL:
+                        if self.fTabIconTimers[tabIndex-1] == ICON_STATE_OFF:
                             self.ui.tabWidget.setTabIcon(tabIndex, self.fTabIconOn)
 
                         self.fTabIconTimers[tabIndex-1] = ICON_STATE_ON
@@ -1440,7 +1440,7 @@ class PluginEdit(QDialog):
             if paramType == PARAMETER_INPUT:
                 self.ui.tabWidget.setTabIcon(tabIndex, self.fTabIconOff)
 
-            self.fTabIconTimers.append(ICON_STATE_NULL)
+            self.fTabIconTimers.append(ICON_STATE_OFF)
 
     def _updateCtrlPrograms(self):
         if self.fPluginInfo['category'] != PLUGIN_CATEGORY_SYNTH or self.fPluginInfo['type'] not in (PLUGIN_INTERNAL, PLUGIN_SF2, PLUGIN_GIG):
