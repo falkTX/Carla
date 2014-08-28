@@ -67,12 +67,12 @@ else:
 # ------------------------------------------------------------------------------------------------------------
 # Convert a ctypes c_char_p into a python string
 
-def charPtrToString(value):
-    if not value:
+def charPtrToString(charPtr):
+    if not charPtr:
         return ""
-    if isinstance(value, str):
-        return value
-    return value.decode("utf-8", errors="ignore")
+    if isinstance(charPtr, str):
+        return charPtr
+    return charPtr.decode("utf-8", errors="ignore")
 
 # ------------------------------------------------------------------------------------------------------------
 # Convert a ctypes POINTER(c_char_p) into a python string list
