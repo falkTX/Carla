@@ -29,13 +29,18 @@ import sys
 
 if config_UseQt5:
     from PyQt5.Qt import PYQT_VERSION_STR
-    from PyQt5.QtCore import qFatal, qVersion, qWarning, QDir
+    from PyQt5.QtCore import pyqtWrapperType, qFatal, qVersion, qWarning, QDir
     from PyQt5.QtGui import QIcon
     from PyQt5.QtWidgets import QFileDialog, QMessageBox
 else:
     from PyQt4.Qt import PYQT_VERSION_STR
-    from PyQt4.QtCore import qFatal, qVersion, qWarning, QDir
+    from PyQt4.QtCore import pyqtWrapperType, qFatal, qVersion, qWarning, QDir
     from PyQt4.QtGui import QFileDialog, QIcon, QMessageBox
+
+# ------------------------------------------------------------------------------------------------------------
+# Import ABC
+
+from abc import ABCMeta, abstractmethod
 
 # ------------------------------------------------------------------------------------------------------------
 # Import Signal
@@ -634,5 +639,11 @@ def CustomMessageBox(parent, icon, title, text, extraText="", buttons=QMessageBo
     msgBox.setStandardButtons(buttons)
     msgBox.setDefaultButton(defButton)
     return msgBox.exec_()
+
+# ------------------------------------------------------------------------------------------------------------
+# An empty class used to resolve metaclass conflicts between ABC and PyQt modules
+
+class PyQtMetaClass(pyqtWrapperType, ABCMeta):
+    pass
 
 # ------------------------------------------------------------------------------------------------------------

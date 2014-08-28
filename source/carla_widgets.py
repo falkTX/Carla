@@ -25,11 +25,11 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QSettings, QTimer
+    from PyQt5.QtCore import pyqtSignal, pyqtSlot, pyqtWrapperType, Qt, QByteArray, QSettings, QTimer
     from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
     from PyQt5.QtWidgets import QDialog, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 else:
-    from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QSettings, QTimer
+    from PyQt4.QtCore import pyqtSignal, pyqtSlot, pyqtWrapperType, Qt, QByteArray, QSettings, QTimer
     from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
     from PyQt4.QtGui import QDialog, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 
@@ -395,6 +395,38 @@ class PluginParameter(QWidget):
         return gCarla.host.get_parameter_text(self.fPluginId, self.fParameterId)
 
 # ------------------------------------------------------------------------------------------------------------
+# Plugin Editor Parent (Meta class)
+
+class PluginEditParentMeta(metaclass=ABCMeta):
+    @abstractmethod
+    def recheckPluginHints(self, hints):
+        raise NotImplementedError
+
+    @abstractmethod
+    def editDialogChanged(self, visible):
+        raise NotImplementedError
+
+    @abstractmethod
+    def parameterValueChanged(self, parameterId, value):
+        raise NotImplementedError
+
+    @abstractmethod
+    def programChanged(self, index):
+        raise NotImplementedError
+
+    @abstractmethod
+    def midiProgramChanged(self, index):
+        raise NotImplementedError
+
+    @abstractmethod
+    def notePressed(self, note):
+        raise NotImplementedError
+
+    @abstractmethod
+    def noteReleased(self, note):
+        raise NotImplementedError
+
+# ------------------------------------------------------------------------------------------------------------
 # Plugin Editor (Built-in)
 
 class PluginEdit(QDialog):
@@ -404,6 +436,9 @@ class PluginEdit(QDialog):
         QDialog.__init__(self, gCarla.gui)
         self.ui = ui_carla_edit.Ui_PluginEdit()
         self.ui.setupUi(self)
+
+        if False:
+            parent = PluginEditParent()
 
         # -------------------------------------------------------------
         # Internal stuff

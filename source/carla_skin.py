@@ -47,7 +47,7 @@ from pixmapdial import PixmapDial
 # ------------------------------------------------------------------------------------------------------------
 # Abstract plugin slot
 
-class AbstractPluginSlot(QFrame):
+class AbstractPluginSlot(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
     def __init__(self, parent, pluginId):
         QFrame.__init__(self, parent)
 

@@ -94,7 +94,7 @@ class PluginInfo(object):
 # ------------------------------------------------------------------------------------------------
 # Patchbay widget
 
-class CarlaPatchbayW(QFrame):
+class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
     def __init__(self, parent, doSetup = True, onlyPatchbay = True, is3D = False):
         QFrame.__init__(self, parent)
 
@@ -391,10 +391,19 @@ class CarlaPatchbayW(QFrame):
     # -----------------------------------------------------------------
     # called by PluginEdit to plugin skin parent, ignored here
 
+    def recheckPluginHints(self, hints):
+        pass
+
     def editDialogChanged(self, visible):
         pass
 
-    def recheckPluginHints(self, hints):
+    def parameterValueChanged(self, parameterId, value):
+        pass
+
+    def programChanged(self, index):
+        pass
+
+    def midiProgramChanged(self, index):
         pass
 
     def notePressed(self, note):
