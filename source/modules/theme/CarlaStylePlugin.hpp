@@ -1,7 +1,7 @@
 /*
  * Carla Style, based on Qt5 fusion style
  * Copyright (C) 2012 Digia Plc and/or its subsidiary(-ies)
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -36,11 +36,14 @@ class CarlaStylePlugin : public QStylePlugin
 #endif
 
 public:
-    CarlaStylePlugin(QObject* parent = nullptr);
+    CarlaStylePlugin(QObject* parentObj = nullptr);
+
     QStyle* create(const QString& key) override;
 #if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
     QStringList keys() const override;
 #endif
+
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaStylePlugin);
 };
 
 #endif // CARLA_STYLE_PLUGIN_HPP_INCLUDED

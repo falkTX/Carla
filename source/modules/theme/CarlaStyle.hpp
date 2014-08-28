@@ -1,7 +1,7 @@
 /*
  * Carla Style, based on Qt5 fusion style
  * Copyright (C) 2012 Digia Plc and/or its subsidiary(-ies)
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -61,6 +61,8 @@ public:
 private:
     CarlaStylePrivate* const d;
     friend class CarlaStylePrivate;
+
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaStyle);
 };
 
 #endif // CARLA_STYLE_HPP_INCLUDED
