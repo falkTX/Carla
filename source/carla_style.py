@@ -62,7 +62,7 @@ class CarlaApplication(object):
 
         # plugin
         elif CWDl.endswith("resources"):
-            # system-wide
+            # installed system-wide linux
             if CWDl.endswith("/share/carla/resources"):
                 stylesDir = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lib", "carla"))
 
@@ -84,7 +84,10 @@ class CarlaApplication(object):
             if WINDOWS:
                 stylesDir = ""
 
-        elif not config_UseQt5:
+        elif config_UseQt5:
+            stylesDir = ""
+
+        else:
             self._createApp(appName)
             return
 
@@ -259,3 +262,5 @@ class CarlaApplication(object):
 
     def quit(self):
         self.fApp.quit()
+
+# ------------------------------------------------------------------------------------------------------------

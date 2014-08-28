@@ -473,7 +473,7 @@ else:
     gCarla.DEFAULT_SFZ_PATH    = DEFAULT_SFZ_PATH.split(splitter)
 
 # ------------------------------------------------------------------------------------------------------------
-# Search for Carla tools
+# Set CWD
 
 CWD = sys.path[0]
 
@@ -481,29 +481,12 @@ CWD = sys.path[0]
 if os.path.isfile(CWD):
     CWD = os.path.dirname(CWD)
 
-# find tool
-def findTool(toolName):
-    path = os.path.join(CWD, toolName)
-    if os.path.exists(path):
-        return path
-
-    if gCarla.pathBinaries:
-        path = os.path.join(gCarla.pathBinaries, toolName)
-        if os.path.exists(path):
-            return path
-
-    for p in PATH:
-        path = os.path.join(p, toolName)
-        if os.path.exists(path):
-            return path
-
-    return ""
-
 # ------------------------------------------------------------------------------------------------------------
 # Init host
+# TODO move to carla_host.py
 
 def initHost(initName, libPrefix = None, failError = True):
-    # -------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------
     # Set Carla library name
 
     libname = "libcarla_"
@@ -520,7 +503,7 @@ def initHost(initName, libPrefix = None, failError = True):
     else:
         libname += ".so"
 
-    # -------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------
     # Set binary dir
 
     CWDl = CWD.lower()
@@ -537,7 +520,7 @@ def initHost(initName, libPrefix = None, failError = True):
 
     # plugin
     elif CWDl.endswith("resources"):
-        # system-wide
+        # installed system-wide linux
         if CWDl.endswith("/share/carla/resources"):
             gCarla.pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lib", "carla"))
             gCarla.pathResources = CWD
@@ -557,16 +540,16 @@ def initHost(initName, libPrefix = None, failError = True):
         gCarla.pathBinaries  = CWD
         gCarla.pathResources = os.path.join(gCarla.pathBinaries, "resources")
 
-    # -------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------
     # Fail if binary dir is not found
 
-    if not (os.path.exists(gCarla.pathBinaries) or gCarla.isPlugin):
+    if not os.path.exists(gCarla.pathBinaries):
         if failError:
-            QMessageBox.critical(None, "Error", "Failed to find the carla library, cannot continue")
+            QMessageBox.critical(None, "Error", "Failed to find the carla binaries, cannot continue")
             sys.exit(1)
         return
 
-    # -------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------
     # Print info
 
     print("Carla %s started, status:" % VERSION)
@@ -576,7 +559,7 @@ def initHost(initName, libPrefix = None, failError = True):
     print("  Binary dir:     %s" % gCarla.pathBinaries)
     print("  Resources dir:  %s" % gCarla.pathResources)
 
-    # -------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------
     # Init host
 
     if gCarla.host is None:
@@ -586,6 +569,7 @@ def initHost(initName, libPrefix = None, failError = True):
             print("hmmmm...")
             return
 
+    # If it's a plugin the paths are already set
     if not gCarla.isPlugin:
         gCarla.host.set_engine_option(ENGINE_OPTION_PATH_BINARIES,  0, gCarla.pathBinaries)
         gCarla.host.set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, gCarla.pathResources)
@@ -622,6 +606,7 @@ def getIcon(icon, size = 16):
 
 # ------------------------------------------------------------------------------------------------------------
 # Signal handler
+# TODO move to carla_host.py or something
 
 def signalHandler(sig, frame):
     if gCarla.gui is None:
@@ -688,3 +673,5 @@ def CustomMessageBox(parent, icon, title, text, extraText="", buttons=QMessageBo
     msgBox.setStandardButtons(buttons)
     msgBox.setDefaultButton(defButton)
     return msgBox.exec_()
+
+# ------------------------------------------------------------------------------------------------------------

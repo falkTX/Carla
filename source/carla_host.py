@@ -1172,7 +1172,7 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_handleSIGUSR1(self):
         print("Got SIGUSR1 -> Saving project now")
-        QTimer.singleShot(0, self.slot_fileSave)
+        self.slot_fileSave()
 
     @pyqtSlot()
     def slot_handleSIGTERM(self):
@@ -1186,7 +1186,8 @@ class HostWindow(QMainWindow):
 
         # set our gui as parent for all plugins UIs
         if gCarla.host is not None:
-            gCarla.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, "%x" % self.winId())
+            winIdStr = "%x" % self.winId()
+            gCarla.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, winIdStr)
 
     def timerEvent(self, event):
         if event.timerId() == self.fIdleTimerFast:
