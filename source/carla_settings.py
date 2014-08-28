@@ -39,62 +39,8 @@ else:
 import ui_carla_settings
 import ui_carla_settings_driver
 
-from carla_style import *
+from carla_shared import *
 from patchcanvas_theme import *
-
-# ------------------------------------------------------------------------------------------------------------
-# PatchCanvas defines
-
-CANVAS_ANTIALIASING_SMALL = 1
-CANVAS_EYECANDY_SMALL     = 1
-
-# ------------------------------------------------------------------------------------------------------------
-# Carla defaults
-
-# Main
-CARLA_DEFAULT_MAIN_PROJECT_FOLDER   = QDir.homePath()
-CARLA_DEFAULT_MAIN_USE_PRO_THEME    = True
-CARLA_DEFAULT_MAIN_PRO_THEME_COLOR  = "Black"
-CARLA_DEFAULT_MAIN_REFRESH_INTERVAL = 20
-CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS = True
-
-# Canvas
-CARLA_DEFAULT_CANVAS_THEME            = "Modern Dark"
-CARLA_DEFAULT_CANVAS_SIZE             = "3100x2400"
-CARLA_DEFAULT_CANVAS_SIZE_WIDTH       = 3100
-CARLA_DEFAULT_CANVAS_SIZE_HEIGHT      = 2400
-CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES = True
-CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS = True
-CARLA_DEFAULT_CANVAS_EYE_CANDY        = CANVAS_EYECANDY_SMALL
-CARLA_DEFAULT_CANVAS_USE_OPENGL       = False
-CARLA_DEFAULT_CANVAS_ANTIALIASING     = CANVAS_ANTIALIASING_SMALL
-CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING  = False
-
-# Engine
-CARLA_DEFAULT_FORCE_STEREO          = False
-CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES = False
-CARLA_DEFAULT_PREFER_UI_BRIDGES     = True
-CARLA_DEFAULT_UIS_ALWAYS_ON_TOP     = True
-CARLA_DEFAULT_MAX_PARAMETERS        = MAX_DEFAULT_PARAMETERS
-CARLA_DEFAULT_UI_BRIDGES_TIMEOUT    = 4000
-
-CARLA_DEFAULT_AUDIO_NUM_PERIODS     = 2
-CARLA_DEFAULT_AUDIO_BUFFER_SIZE     = 512
-CARLA_DEFAULT_AUDIO_SAMPLE_RATE     = 44100
-
-if WINDOWS:
-    CARLA_DEFAULT_AUDIO_DRIVER = "DirectSound"
-elif MACOS:
-    CARLA_DEFAULT_AUDIO_DRIVER = "CoreAudio"
-else:
-    CARLA_DEFAULT_AUDIO_DRIVER = "JACK"
-
-if LINUX:
-    CARLA_DEFAULT_PROCESS_MODE   = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS
-    CARLA_DEFAULT_TRANSPORT_MODE = ENGINE_TRANSPORT_MODE_JACK
-else:
-    CARLA_DEFAULT_PROCESS_MODE   = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
-    CARLA_DEFAULT_TRANSPORT_MODE = ENGINE_TRANSPORT_MODE_INTERNAL
 
 # ------------------------------------------------------------------------------------------------------------
 # ...
@@ -815,6 +761,9 @@ class CarlaSettingsW(QDialog):
 # Main
 
 if __name__ == '__main__':
+    from carla_host import initHost
+    from carla_style import CarlaApplication
+
     app = CarlaApplication()
 
     initHost("Settings", None, False)

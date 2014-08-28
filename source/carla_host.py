@@ -185,13 +185,6 @@ class HostWindow(QMainWindow):
             #self.ui.menu_Help.hide()
 
         # -------------------------------------------------------------
-        # Set callback, TODO put somewhere else
-
-        if gCarla.host is not None:
-            gCarla.host.set_engine_callback(engineCallback)
-            gCarla.host.set_file_callback(fileCallback)
-
-        # -------------------------------------------------------------
         # Internal stuff
 
         self.fIdleTimerFast = 0
@@ -1368,3 +1361,103 @@ def fileCallback(ptr, action, isDir, title, filter):
     gCarla.gui._fileRet = c_char_p(ret.encode("utf-8"))
     retval = cast(byref(gCarla.gui._fileRet), POINTER(c_uintptr))
     return retval.contents.value
+
+# ------------------------------------------------------------------------------------------------------------
+# Init host
+
+def initHost(initName, libPrefix = None, failError = True):
+    # --------------------------------------------------------------------------------------------------------
+    # Set Carla library name
+
+    libname = "libcarla_"
+
+    if gCarla.isControl:
+        libname += "control2"
+    else:
+        libname += "standalone2"
+
+    if WINDOWS:
+        libname += ".dll"
+    elif MACOS:
+        libname += ".dylib"
+    else:
+        libname += ".so"
+
+    # --------------------------------------------------------------------------------------------------------
+    # Set binary dir
+
+    CWDl = CWD.lower()
+
+    # standalone, installed system-wide linux
+    if libPrefix is not None:
+        gCarla.pathBinaries  = os.path.join(libPrefix, "lib", "carla")
+        gCarla.pathResources = os.path.join(libPrefix, "share", "carla", "resources")
+
+    # standalone, local source
+    elif CWDl.endswith("source"):
+        gCarla.pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "bin"))
+        gCarla.pathResources = os.path.join(gCarla.pathBinaries, "resources")
+
+    # plugin
+    elif CWDl.endswith("resources"):
+        # installed system-wide linux
+        if CWDl.endswith("/share/carla/resources"):
+            gCarla.pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lib", "carla"))
+            gCarla.pathResources = CWD
+
+        # local source
+        elif CWDl.endswith("native-plugins%sresources" % os.sep):
+            gCarla.pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "..", "..", "..", "bin"))
+            gCarla.pathResources = CWD
+
+        # other
+        else:
+            gCarla.pathBinaries  = os.path.abspath(os.path.join(CWD, ".."))
+            gCarla.pathResources = CWD
+
+    # everything else
+    else:
+        gCarla.pathBinaries  = CWD
+        gCarla.pathResources = os.path.join(gCarla.pathBinaries, "resources")
+
+    # --------------------------------------------------------------------------------------------------------
+    # Fail if binary dir is not found
+
+    if not os.path.exists(gCarla.pathBinaries):
+        if failError:
+            QMessageBox.critical(None, "Error", "Failed to find the carla binaries, cannot continue")
+            sys.exit(1)
+        return
+
+    # --------------------------------------------------------------------------------------------------------
+    # Print info
+
+    print("Carla %s started, status:" % VERSION)
+    print("  Python version: %s" % sys.version.split(" ",1)[0])
+    print("  Qt version:     %s" % qVersion())
+    print("  PyQt version:   %s" % PYQT_VERSION_STR)
+    print("  Binary dir:     %s" % gCarla.pathBinaries)
+    print("  Resources dir:  %s" % gCarla.pathResources)
+
+    # --------------------------------------------------------------------------------------------------------
+    # Init host
+
+    if gCarla.host is None:
+        try:
+            gCarla.host = Host(os.path.join(gCarla.pathBinaries, libname))
+        except:
+            print("hmmmm...")
+            return
+
+    gCarla.host.set_engine_callback(engineCallback)
+    gCarla.host.set_file_callback(fileCallback)
+
+    # If it's a plugin the paths are already set
+    if not gCarla.isPlugin:
+        gCarla.host.set_engine_option(ENGINE_OPTION_PATH_BINARIES,  0, gCarla.pathBinaries)
+        gCarla.host.set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, gCarla.pathResources)
+
+        if not gCarla.isControl:
+            gCarla.host.set_engine_option(ENGINE_OPTION_NSM_INIT, os.getpid(), initName)
+
+# ------------------------------------------------------------------------------------------------------------

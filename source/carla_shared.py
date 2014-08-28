@@ -180,6 +180,12 @@ MIDI_CC_LIST = (
 )
 
 # ------------------------------------------------------------------------------------------------------------
+# PatchCanvas defines
+
+CANVAS_ANTIALIASING_SMALL = 1
+CANVAS_EYECANDY_SMALL     = 1
+
+# ------------------------------------------------------------------------------------------------------------
 # Carla Settings keys
 
 CARLA_KEY_MAIN_PROJECT_FOLDER   = "Main/ProjectFolder"   # str
@@ -196,7 +202,6 @@ CARLA_KEY_CANVAS_EYE_CANDY        = "Canvas/EyeCandy"       # enum
 CARLA_KEY_CANVAS_USE_OPENGL       = "Canvas/UseOpenGL"      # bool
 CARLA_KEY_CANVAS_ANTIALIASING     = "Canvas/Antialiasing"   # enum
 CARLA_KEY_CANVAS_HQ_ANTIALIASING  = "Canvas/HQAntialiasing" # bool
-CARLA_KEY_CUSTOM_PAINTING         = "UseCustomPainting"     # bool
 
 CARLA_KEY_ENGINE_DRIVER_PREFIX         = "Engine/Driver-"
 CARLA_KEY_ENGINE_AUDIO_DRIVER          = "Engine/AudioDriver"         # str
@@ -218,6 +223,57 @@ CARLA_KEY_PATHS_AU     = "Paths/AU"
 CARLA_KEY_PATHS_GIG    = "Paths/GIG"
 CARLA_KEY_PATHS_SF2    = "Paths/SF2"
 CARLA_KEY_PATHS_SFZ    = "Paths/SFZ"
+
+# if pro theme is on and color is black
+CARLA_KEY_CUSTOM_PAINTING = "UseCustomPainting" # bool
+
+# ------------------------------------------------------------------------------------------------------------
+# Carla Settings defaults
+
+# Main
+CARLA_DEFAULT_MAIN_PROJECT_FOLDER   = QDir.homePath()
+CARLA_DEFAULT_MAIN_USE_PRO_THEME    = True
+CARLA_DEFAULT_MAIN_PRO_THEME_COLOR  = "Black"
+CARLA_DEFAULT_MAIN_REFRESH_INTERVAL = 20
+CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS = True
+
+# Canvas
+CARLA_DEFAULT_CANVAS_THEME            = "Modern Dark"
+CARLA_DEFAULT_CANVAS_SIZE             = "3100x2400"
+CARLA_DEFAULT_CANVAS_SIZE_WIDTH       = 3100
+CARLA_DEFAULT_CANVAS_SIZE_HEIGHT      = 2400
+CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES = True
+CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS = True
+CARLA_DEFAULT_CANVAS_EYE_CANDY        = CANVAS_EYECANDY_SMALL
+CARLA_DEFAULT_CANVAS_USE_OPENGL       = False
+CARLA_DEFAULT_CANVAS_ANTIALIASING     = CANVAS_ANTIALIASING_SMALL
+CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING  = False
+
+# Engine
+CARLA_DEFAULT_FORCE_STEREO          = False
+CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES = False
+CARLA_DEFAULT_PREFER_UI_BRIDGES     = True
+CARLA_DEFAULT_UIS_ALWAYS_ON_TOP     = True
+CARLA_DEFAULT_MAX_PARAMETERS        = MAX_DEFAULT_PARAMETERS
+CARLA_DEFAULT_UI_BRIDGES_TIMEOUT    = 4000
+
+CARLA_DEFAULT_AUDIO_NUM_PERIODS     = 2
+CARLA_DEFAULT_AUDIO_BUFFER_SIZE     = 512
+CARLA_DEFAULT_AUDIO_SAMPLE_RATE     = 44100
+
+if WINDOWS:
+    CARLA_DEFAULT_AUDIO_DRIVER = "DirectSound"
+elif MACOS:
+    CARLA_DEFAULT_AUDIO_DRIVER = "CoreAudio"
+else:
+    CARLA_DEFAULT_AUDIO_DRIVER = "JACK"
+
+if LINUX:
+    CARLA_DEFAULT_PROCESS_MODE   = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS
+    CARLA_DEFAULT_TRANSPORT_MODE = ENGINE_TRANSPORT_MODE_JACK
+else:
+    CARLA_DEFAULT_PROCESS_MODE   = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+    CARLA_DEFAULT_TRANSPORT_MODE = ENGINE_TRANSPORT_MODE_INTERNAL
 
 # ------------------------------------------------------------------------------------------------------------
 # Global Carla object
@@ -274,9 +330,9 @@ gCarla.isLocal   = True
 gCarla.isPlugin  = False
 gCarla.bufferSize = 0
 gCarla.sampleRate = 0.0
-gCarla.processMode       = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS if LINUX else ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+gCarla.processMode       = CARLA_DEFAULT_PROCESS_MODE
 gCarla.processModeForced = False
-gCarla.transportMode     = ENGINE_TRANSPORT_MODE_JACK if LINUX else ENGINE_TRANSPORT_MODE_INTERNAL
+gCarla.transportMode     = CARLA_DEFAULT_TRANSPORT_MODE
 gCarla.maxParameters     = MAX_DEFAULT_PARAMETERS
 gCarla.externalPatchbay  = False
 gCarla.useCustomSkins = True
@@ -482,102 +538,6 @@ if os.path.isfile(CWD):
     CWD = os.path.dirname(CWD)
 
 # ------------------------------------------------------------------------------------------------------------
-# Init host
-# TODO move to carla_host.py
-
-def initHost(initName, libPrefix = None, failError = True):
-    # --------------------------------------------------------------------------------------------------------
-    # Set Carla library name
-
-    libname = "libcarla_"
-
-    if gCarla.isControl:
-        libname += "control2"
-    else:
-        libname += "standalone2"
-
-    if WINDOWS:
-        libname += ".dll"
-    elif MACOS:
-        libname += ".dylib"
-    else:
-        libname += ".so"
-
-    # --------------------------------------------------------------------------------------------------------
-    # Set binary dir
-
-    CWDl = CWD.lower()
-
-    # standalone, installed system-wide linux
-    if libPrefix is not None:
-        gCarla.pathBinaries  = os.path.join(libPrefix, "lib", "carla")
-        gCarla.pathResources = os.path.join(libPrefix, "share", "carla", "resources")
-
-    # standalone, local source
-    elif CWDl.endswith("source"):
-        gCarla.pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "bin"))
-        gCarla.pathResources = os.path.join(gCarla.pathBinaries, "resources")
-
-    # plugin
-    elif CWDl.endswith("resources"):
-        # installed system-wide linux
-        if CWDl.endswith("/share/carla/resources"):
-            gCarla.pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lib", "carla"))
-            gCarla.pathResources = CWD
-
-        # local source
-        elif CWDl.endswith("native-plugins%sresources" % os.sep):
-            gCarla.pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "..", "..", "..", "bin"))
-            gCarla.pathResources = CWD
-
-        # other
-        else:
-            gCarla.pathBinaries  = os.path.abspath(os.path.join(CWD, ".."))
-            gCarla.pathResources = CWD
-
-    # everything else
-    else:
-        gCarla.pathBinaries  = CWD
-        gCarla.pathResources = os.path.join(gCarla.pathBinaries, "resources")
-
-    # --------------------------------------------------------------------------------------------------------
-    # Fail if binary dir is not found
-
-    if not os.path.exists(gCarla.pathBinaries):
-        if failError:
-            QMessageBox.critical(None, "Error", "Failed to find the carla binaries, cannot continue")
-            sys.exit(1)
-        return
-
-    # --------------------------------------------------------------------------------------------------------
-    # Print info
-
-    print("Carla %s started, status:" % VERSION)
-    print("  Python version: %s" % sys.version.split(" ",1)[0])
-    print("  Qt version:     %s" % qVersion())
-    print("  PyQt version:   %s" % PYQT_VERSION_STR)
-    print("  Binary dir:     %s" % gCarla.pathBinaries)
-    print("  Resources dir:  %s" % gCarla.pathResources)
-
-    # --------------------------------------------------------------------------------------------------------
-    # Init host
-
-    if gCarla.host is None:
-        try:
-            gCarla.host = Host(os.path.join(gCarla.pathBinaries, libname))
-        except:
-            print("hmmmm...")
-            return
-
-    # If it's a plugin the paths are already set
-    if not gCarla.isPlugin:
-        gCarla.host.set_engine_option(ENGINE_OPTION_PATH_BINARIES,  0, gCarla.pathBinaries)
-        gCarla.host.set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, gCarla.pathResources)
-
-        if not gCarla.isControl:
-            gCarla.host.set_engine_option(ENGINE_OPTION_NSM_INIT, os.getpid(), initName)
-
-# ------------------------------------------------------------------------------------------------------------
 # Check if a value is a number (float support)
 
 def isNumber(value):
@@ -637,6 +597,7 @@ def getAndSetPath(parent, currentPath, lineEdit):
 
 # ------------------------------------------------------------------------------------------------------------
 # Get plugin type as string
+# TODO - move into new carla_utils.py
 
 def getPluginTypeAsString(ptype):
     if ptype == PLUGIN_INTERNAL:

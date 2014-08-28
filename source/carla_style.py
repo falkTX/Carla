@@ -16,6 +16,8 @@
 #
 # For a full copy of the GNU General Public License see the GPL.txt file
 
+# TODO - rename to carla_app.py
+
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Config)
 
@@ -93,7 +95,7 @@ class CarlaApplication(object):
 
         # base settings
         settings    = QSettings("falkTX", appName)
-        useProTheme = settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool)
+        useProTheme = settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, type=bool)
 
         if not useProTheme:
             self._createApp(appName)
@@ -108,7 +110,7 @@ class CarlaApplication(object):
         self.fApp.setStyle("carla" if stylesDir else "fusion")
 
         # set palette
-        proThemeColor = settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower()
+        proThemeColor = settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, CARLA_DEFAULT_MAIN_PRO_THEME_COLOR, type=str).lower()
 
         if proThemeColor == "black":
             self.fPalBlack = QPalette()
