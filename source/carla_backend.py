@@ -225,7 +225,7 @@ PLUGIN_OPTION_FORCE_STEREO = 0x002
 # Map MIDI programs to plugin programs.
 PLUGIN_OPTION_MAP_PROGRAM_CHANGES = 0x004
 
-# Use chunks to save and restore data.
+# Use chunks to save and restore data instead of parameter values.
 PLUGIN_OPTION_USE_CHUNKS = 0x008
 
 # Send MIDI control change events.

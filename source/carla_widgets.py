@@ -25,11 +25,11 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QSettings
+    from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QSettings, QTimer
     from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
     from PyQt5.QtWidgets import QDialog, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 else:
-    from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QSettings
+    from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QSettings, QTimer
     from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
     from PyQt4.QtGui import QDialog, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 
@@ -583,6 +583,14 @@ class PluginEdit(QDialog):
             self.resize(self.width(), self.height()-self.ui.scrollArea.height())
 
         self.fFirstInit = False
+
+        # Workaround for a Qt4 bug, see https://bugreports.qt-project.org/browse/QTBUG-7792
+        QTimer.singleShot(0, self.slot_fixNameWordWrap)
+
+    @pyqtSlot()
+    def slot_fixNameWordWrap(self):
+        self.adjustSize()
+        self.setMinimumSize(self.width(), self.height())
 
     #------------------------------------------------------------------
 
@@ -1478,11 +1486,11 @@ if __name__ == '__main__':
 
     app = CarlaApplication()
 
-    gui1 = CarlaAboutW(None)
-    gui1.show()
+    #gui1 = CarlaAboutW(None)
+    #gui1.show()
 
-    gui2 = PluginParameter(None, gFakeParamInfo, 0, 0)
-    gui2.show()
+    #gui2 = PluginParameter(None, gFakeParamInfo, 0, 0)
+    #gui2.show()
 
     gui3 = PluginEdit(None, 0)
     gui3.show()

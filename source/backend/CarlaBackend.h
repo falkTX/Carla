@@ -197,7 +197,7 @@ const uint PLUGIN_OPTION_FORCE_STEREO = 0x002;
 const uint PLUGIN_OPTION_MAP_PROGRAM_CHANGES = 0x004;
 
 /*!
- * Use chunks to save and restore data.
+ * Use chunks to save and restore data instead of parameter values.
  */
 const uint PLUGIN_OPTION_USE_CHUNKS = 0x008;
 
