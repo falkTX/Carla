@@ -25,11 +25,11 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
-    from PyQt5.QtCore import qCritical, QRectF
+    from PyQt5.QtCore import QRectF
     from PyQt5.QtGui import QPainter, QPixmap
     from PyQt5.QtWidgets import QPushButton
 else:
-    from PyQt4.QtCore import qCritical, QRectF
+    from PyQt4.QtCore import QRectF
     from PyQt4.QtGui import QPainter, QPixmap, QPushButton
 
 # ------------------------------------------------------------------------------------------------------------

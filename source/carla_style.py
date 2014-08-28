@@ -28,11 +28,11 @@ from carla_config import *
 
 if config_UseQt5:
     from PyQt5.QtCore import Qt, QSettings
-    from PyQt5.QtGui import QColor, QFont, QPalette
+    from PyQt5.QtGui import QColor, QPalette
     from PyQt5.QtWidgets import QApplication
 else:
     from PyQt4.QtCore import QSettings
-    from PyQt4.QtGui import QApplication, QColor, QFont, QPalette
+    from PyQt4.QtGui import QApplication, QColor, QPalette
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
