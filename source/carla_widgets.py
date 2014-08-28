@@ -47,10 +47,10 @@ from pixmapkeyboard import PixmapKeyboardHArea
 # ------------------------------------------------------------------------------------------------------------
 # Carla GUI defines
 
-ICON_STATE_ON    = 3
-ICON_STATE_WAIT1 = 2
-ICON_STATE_WAIT2 = 1
-ICON_STATE_OFF   = 0
+ICON_STATE_ON    = 3 # turns on, sets as wait1
+ICON_STATE_WAIT1 = 2 # sets as wait2
+ICON_STATE_WAIT2 = 1 # turns off, sets as off
+ICON_STATE_OFF   = 0 # do nothing
 
 # ------------------------------------------------------------------------------------------------------------
 # Fake plugin info for easy testing

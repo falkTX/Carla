@@ -69,7 +69,7 @@ class AbstractPluginSlot(QFrame):
         self.fLastGreenLedState = False
         self.fLastBlueLedState  = False
 
-        self.fParameterIconTimer = ICON_STATE_NULL
+        self.fParameterIconTimer = ICON_STATE_OFF
         self.fParameterList      = [] # index, widget
 
         if gCarla.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK or gCarla.host is None:
@@ -442,12 +442,12 @@ class AbstractPluginSlot(QFrame):
 
     def idleSlow(self):
         if self.fParameterIconTimer == ICON_STATE_ON:
-            self.fParameterIconTimer = ICON_STATE_WAIT
+            self.fParameterIconTimer = ICON_STATE_WAIT1
             self.parameterActivityChanged(True)
-        elif self.fParameterIconTimer == ICON_STATE_WAIT:
+        elif self.fParameterIconTimer == ICON_STATE_WAIT1:
+            self.fParameterIconTimer = ICON_STATE_WAIT2
+        elif self.fParameterIconTimer == ICON_STATE_WAIT2:
             self.fParameterIconTimer = ICON_STATE_OFF
-        elif self.fParameterIconTimer == ICON_STATE_OFF:
-            self.fParameterIconTimer = ICON_STATE_NULL
             self.parameterActivityChanged(False)
 
         self.fEditDialog.idleSlow()
