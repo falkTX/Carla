@@ -1751,6 +1751,14 @@ class Host(object):
             keyvalue = "%s=%s" % (key, value)
             self.msvcrt._putenv(keyvalue.encode("utf-8"))
 
+    # extra
+    def unsetenv(self, key):
+        environ.pop(key)
+
+        if WINDOWS:
+            keyrm = "%s=" % key
+            self.msvcrt._putenv(keyrm.encode("utf-8"))
+
     def _init(self, libName):
         self.lib = cdll.LoadLibrary(libName)
 
@@ -2022,3 +2030,5 @@ class Host(object):
             self.msvcrt = cdll.msvcrt
             self.msvcrt._putenv.argtypes = [c_char_p]
             self.msvcrt._putenv.restype = None
+        else:
+            self.msvcrt = None
