@@ -1911,22 +1911,22 @@ class CarlaHostNull(CarlaHostMeta):
         return False
 
     def engine_idle(self):
-        pass
+        return
 
     def is_engine_running(self):
         return False
 
     def set_engine_about_to_close(self):
-        pass
+        return
 
     def set_engine_callback(self, func):
-        pass
+        return
 
     def set_engine_option(self, option, value, valueStr):
-        pass
+        return
 
     def set_file_callback(self, func):
-        pass
+        return
 
     def load_file(self, filename):
         return False
@@ -1947,13 +1947,13 @@ class CarlaHostNull(CarlaHostMeta):
         return False
 
     def transport_play(self):
-        pass
+        return
 
     def transport_pause(self):
-        pass
+        return
 
     def transport_relocate(self, frame):
-        pass
+        return
 
     def get_current_transport_frame(self):
         return 0
@@ -2067,64 +2067,64 @@ class CarlaHostNull(CarlaHostMeta):
         return 0.0
 
     def set_option(self, pluginId, option, yesNo):
-        pass
+        return
 
     def set_active(self, pluginId, onOff):
-        pass
+        return
 
     def set_drywet(self, pluginId, value):
-        pass
+        return
 
     def set_volume(self, pluginId, value):
-        pass
+        return
 
     def set_balance_left(self, pluginId, value):
-        pass
+        return
 
     def set_balance_right(self, pluginId, value):
-        pass
+        return
 
     def set_panning(self, pluginId, value):
-        pass
+        return
 
     def set_ctrl_channel(self, pluginId, channel):
-        pass
+        return
 
     def set_parameter_value(self, pluginId, parameterId, value):
-        pass
+        return
 
     def set_parameter_midi_channel(self, pluginId, parameterId, channel):
-        pass
+        return
 
     def set_parameter_midi_cc(self, pluginId, parameterId, cc):
-        pass
+        return
 
     def set_program(self, pluginId, programId):
-        pass
+        return
 
     def set_midi_program(self, pluginId, midiProgramId):
-        pass
+        return
 
     def set_custom_data(self, pluginId, type_, key, value):
-        pass
+        return
 
     def set_chunk_data(self, pluginId, chunkData):
-        pass
+        return
 
     def prepare_for_save(self, pluginId):
-        pass
+        return
 
     def reset_parameters(self, pluginId):
-        pass
+        return
 
     def randomize_parameters(self, pluginId):
-        pass
+        return
 
     def send_midi_note(self, pluginId, channel, note, velocity):
-        pass
+        return
 
     def show_custom_ui(self, pluginId, yesNo):
-        pass
+        return
 
     def get_buffer_size(self):
         return 0
