@@ -538,6 +538,9 @@ else:
 
 CWD = sys.path[0]
 
+if not CWD:
+    CWD = os.path.dirname(sys.argv[0])
+
 # make it work with cxfreeze
 if os.path.isfile(CWD):
     CWD = os.path.dirname(CWD)

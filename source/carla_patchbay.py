@@ -665,7 +665,7 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
         self.fParent.updateContainer(self.themeData)
         self.slot_miniCanvasCheckAll()
 
-        if gCarla.host.is_engine_running():
+        if gCarla.host is not None and gCarla.host.is_engine_running():
             gCarla.host.patchbay_refresh(gCarla.externalPatchbay)
 
     # -----------------------------------------------------------------

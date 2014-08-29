@@ -920,7 +920,9 @@ class HostWindow(QMainWindow):
         if not dialog.exec_():
             return
 
-        if gCarla.host is not None and not gCarla.host.is_engine_running():
+        if gCarla.host is None:
+            return
+        if not gCarla.host.is_engine_running():
             QMessageBox.warning(self, self.tr("Warning"), self.tr("Cannot add new plugins while engine is stopped"))
             return
 
