@@ -38,11 +38,6 @@ else:
     from PyQt4.QtGui import QFileDialog, QIcon, QMessageBox
 
 # ------------------------------------------------------------------------------------------------------------
-# Import ABC
-
-from abc import ABCMeta, abstractmethod
-
-# ------------------------------------------------------------------------------------------------------------
 # Import Signal
 
 from signal import signal, SIGINT, SIGTERM

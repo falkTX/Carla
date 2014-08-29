@@ -1460,11 +1460,11 @@ def initHost(initName, libPrefix = None, failError = True):
     # Init host
 
     if gCarla.host is None:
-        try:
-            gCarla.host = Host(os.path.join(gCarla.pathBinaries, libname))
-        except:
-            print("hmmmm...")
-            return
+        #try:
+            gCarla.host = CarlaHostDLL(os.path.join(gCarla.pathBinaries, libname))
+        #except:
+            #print("hmmmm...")
+            #return
 
     gCarla.host.set_engine_callback(engineCallback)
     gCarla.host.set_file_callback(fileCallback)
