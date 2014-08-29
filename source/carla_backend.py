@@ -1240,6 +1240,11 @@ else:
 #class CarlaHostMeta(object):
 class CarlaHostMeta(metaclass=ABCMeta):
     def __init__(self):
+        # info about this host object
+        self.isControl = False
+        self.isPlugin  = False
+
+        # use _putenv on windows
         if not WINDOWS:
             self.msvcrt = None
             return
@@ -2717,6 +2722,9 @@ class PluginStoreInfo(object):
 class CarlaHostPlugin(CarlaHostMeta, metaclass=ABCMeta):
     def __init__(self):
         CarlaHostMeta.__init__(self)
+
+        # info about this host object
+        self.isPlugin = True
 
         # text data to return when requested
         self.fCompleteLicentText = ""

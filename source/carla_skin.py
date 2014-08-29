@@ -90,7 +90,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
         # -------------------------------------------------------------
         # Set-up GUI
 
-        self.fEditDialog = PluginEdit(self, self.fPluginId)
+        self.fEditDialog = PluginEdit(self, gCarla.host, self.fPluginId)
 
         # -------------------------------------------------------------
         # Set-up common widgets (as none)

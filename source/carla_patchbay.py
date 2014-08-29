@@ -254,9 +254,9 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
 
     def addPlugin(self, pluginId, isProjectLoading):
         if self.fIsOnlyPatchbay:
-            pitem = PluginEdit(self, pluginId)
+            pitem = PluginEdit(self, gCarla.host, pluginId)
         else:
-            pitem = PluginInfo(self, pluginId)
+            pitem = PluginInfo(self, gCarla.host, pluginId)
 
         self.fPluginList.append(pitem)
         self.fPluginCount += 1

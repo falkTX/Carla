@@ -1030,11 +1030,11 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_aboutCarla(self):
-        CarlaAboutW(self).exec_()
+        CarlaAboutW(self, gCarla.host).exec_()
 
     @pyqtSlot()
     def slot_aboutJuce(self):
-        JuceAboutW(self).exec_()
+        JuceAboutW(self, gCarla.host).exec_()
 
     @pyqtSlot()
     def slot_aboutQt(self):
