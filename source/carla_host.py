@@ -526,6 +526,28 @@ class HostWindow(QMainWindow):
             return audioDriver
 
         # -------------------------------------------------------------
+        # plugin paths
+
+        LADSPA_PATH = toList(settings.value(CARLA_KEY_PATHS_LADSPA, gCarla.DEFAULT_LADSPA_PATH))
+        DSSI_PATH   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   gCarla.DEFAULT_DSSI_PATH))
+        LV2_PATH    = toList(settings.value(CARLA_KEY_PATHS_LV2,    gCarla.DEFAULT_LV2_PATH))
+        VST_PATH    = toList(settings.value(CARLA_KEY_PATHS_VST,    gCarla.DEFAULT_VST_PATH))
+        VST3_PATH   = toList(settings.value(CARLA_KEY_PATHS_VST3,   gCarla.DEFAULT_VST3_PATH))
+        AU_PATH     = toList(settings.value(CARLA_KEY_PATHS_AU,     gCarla.DEFAULT_AU_PATH))
+        GIG_PATH    = toList(settings.value(CARLA_KEY_PATHS_GIG,    gCarla.DEFAULT_GIG_PATH))
+        SF2_PATH    = toList(settings.value(CARLA_KEY_PATHS_SF2,    gCarla.DEFAULT_SF2_PATH))
+        SFZ_PATH    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    gCarla.DEFAULT_SFZ_PATH))
+
+        gCarla.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LADSPA, splitter.join(LADSPA_PATH))
+        gCarla.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(DSSI_PATH))
+        gCarla.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2,    splitter.join(LV2_PATH))
+        gCarla.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST,    splitter.join(VST_PATH))
+        gCarla.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_AU,     splitter.join(AU_PATH))
+        gCarla.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_GIG,    splitter.join(GIG_PATH))
+        gCarla.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(SF2_PATH))
+        gCarla.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(SFZ_PATH))
+
+        # -------------------------------------------------------------
         # apply to engine
 
         gCarla.host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,          forceStereo,         "")
@@ -707,25 +729,6 @@ class HostWindow(QMainWindow):
         if gCarla.host is not None and not gCarla.isPlugin:
             # engine
             self.setEngineSettings(settings)
-
-            # plugin paths
-            LADSPA_PATH = toList(settings.value("Paths/LADSPA", gCarla.DEFAULT_LADSPA_PATH))
-            DSSI_PATH   = toList(settings.value("Paths/DSSI",   gCarla.DEFAULT_DSSI_PATH))
-            LV2_PATH    = toList(settings.value("Paths/LV2",    gCarla.DEFAULT_LV2_PATH))
-            VST_PATH    = toList(settings.value("Paths/VST",    gCarla.DEFAULT_VST_PATH))
-            AU_PATH     = toList(settings.value("Paths/AU",     gCarla.DEFAULT_AU_PATH))
-            GIG_PATH    = toList(settings.value("Paths/GIG",    gCarla.DEFAULT_GIG_PATH))
-            SF2_PATH    = toList(settings.value("Paths/SF2",    gCarla.DEFAULT_SF2_PATH))
-            SFZ_PATH    = toList(settings.value("Paths/SFZ",    gCarla.DEFAULT_SFZ_PATH))
-
-            gCarla.host.setenv("LADSPA_PATH", splitter.join(LADSPA_PATH))
-            gCarla.host.setenv("DSSI_PATH",   splitter.join(DSSI_PATH))
-            gCarla.host.setenv("LV2_PATH",    splitter.join(LV2_PATH))
-            gCarla.host.setenv("VST_PATH",    splitter.join(VST_PATH))
-            gCarla.host.setenv("AU_PATH",     splitter.join(AU_PATH))
-            gCarla.host.setenv("GIG_PATH",    splitter.join(GIG_PATH))
-            gCarla.host.setenv("SF2_PATH",    splitter.join(SF2_PATH))
-            gCarla.host.setenv("SFZ_PATH",    splitter.join(SFZ_PATH))
 
         # ---------------------------------------------
 
