@@ -4487,6 +4487,12 @@ public:
         }
 
         // ---------------------------------------------------------------
+        // Init LV2 World if needed, sets LV2_PATH for lilv
+
+        Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
+        lv2World.initIfNeeded(pData->engine->getOptions().pathLV2);
+
+        // ---------------------------------------------------------------
         // get plugin from lv2_rdf (lilv)
 
         fRdfDescriptor = lv2_rdf_new(uri, true);

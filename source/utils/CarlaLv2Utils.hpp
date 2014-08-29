@@ -364,13 +364,22 @@ public:
         return lv2World;
     }
 
-    void initIfNeeded()
+    void initIfNeeded(const char* const LV2_PATH)
     {
+        CARLA_SAFE_ASSERT_RETURN(LV2_PATH != nullptr && LV2_PATH[0] != '\0',);
+
         if (! needsInit)
             return;
 
         needsInit = false;
+
+        char* const oldLv2Path(std::getenv("LV2_PATH"));
+        carla_setenv("LV2_PATH", LV2_PATH);
+
         Lilv::World::load_all();
+
+        if (oldLv2Path != nullptr)
+            carla_setenv("LV2_PATH", oldLv2Path);
     }
 
     void load_bundle(const char* const bundle)
@@ -447,14 +456,11 @@ public:
 // Create new RDF object (using lilv)
 
 static inline
-const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
+const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
 {
     CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', nullptr);
 
     Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
-
-    if (doInit)
-        lv2World.initIfNeeded();
 
     const LilvPlugin* const cPlugin(lv2World.getPlugin(uri));
 
@@ -1095,7 +1101,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool doInit)
     // -------------------------------------------------------------------
     // Set Plugin Presets
 
-    if (doInit)
+    if (loadPresets)
     {
         Lilv::Nodes presetNodes(lilvPlugin.get_related(lv2World.preset_preset));
 

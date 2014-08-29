@@ -430,7 +430,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
                 uniqueId
             };
 
-            char* const oldVstPath(getenv("VST_PATH"));
+            char* const oldVstPath(std::getenv("VST_PATH"));
             carla_setenv("VST_PATH", file.getParentDirectory().getFullPathName().toRawUTF8());
 
             plugin = CarlaPlugin::newDSSI(init2);
