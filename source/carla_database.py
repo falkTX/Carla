@@ -682,7 +682,7 @@ class SearchPluginsThread(QThread):
 
         if self.fCheckGIG:
             settings = QSettings()
-            GIG_PATH = toList(settings.value(CARLA_KEY_PATHS_GIG, gCarla.DEFAULT_GIG_PATH))
+            GIG_PATH = toList(settings.value(CARLA_KEY_PATHS_GIG, CARLA_DEFAULT_GIG_PATH))
             del settings
 
             self._checkKIT(GIG_PATH, "gig")
@@ -692,7 +692,7 @@ class SearchPluginsThread(QThread):
 
         if self.fCheckSF2:
             settings = QSettings()
-            SF2_PATH = toList(settings.value(CARLA_KEY_PATHS_SF2, gCarla.DEFAULT_SF2_PATH))
+            SF2_PATH = toList(settings.value(CARLA_KEY_PATHS_SF2, CARLA_DEFAULT_SF2_PATH))
             del settings
 
             self._checkKIT(SF2_PATH, "sf2")
@@ -702,7 +702,7 @@ class SearchPluginsThread(QThread):
 
         if self.fCheckSFZ:
             settings = QSettings()
-            SFZ_PATH = toList(settings.value(CARLA_KEY_PATHS_SFZ, gCarla.DEFAULT_SFZ_PATH))
+            SFZ_PATH = toList(settings.value(CARLA_KEY_PATHS_SFZ, CARLA_DEFAULT_SFZ_PATH))
             del settings
 
             self._checkKIT(SFZ_PATH, "sfz")
@@ -717,7 +717,7 @@ class SearchPluginsThread(QThread):
         self._pluginLook(self.fLastCheckValue, "LADSPA plugins...")
 
         settings = QSettings()
-        LADSPA_PATH = toList(settings.value(CARLA_KEY_PATHS_LADSPA, gCarla.DEFAULT_LADSPA_PATH))
+        LADSPA_PATH = toList(settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH))
 
         for iPATH in LADSPA_PATH:
             binaries = findBinaries(iPATH, OS)
@@ -750,7 +750,7 @@ class SearchPluginsThread(QThread):
         self._pluginLook(self.fLastCheckValue, "DSSI plugins...")
 
         settings = QSettings()
-        DSSI_PATH = toList(settings.value(CARLA_KEY_PATHS_DSSI, gCarla.DEFAULT_DSSI_PATH))
+        DSSI_PATH = toList(settings.value(CARLA_KEY_PATHS_DSSI, CARLA_DEFAULT_DSSI_PATH))
 
         for iPATH in DSSI_PATH:
             binaries = findBinaries(iPATH, OS)
@@ -783,7 +783,7 @@ class SearchPluginsThread(QThread):
         self._pluginLook(self.fLastCheckValue, "LV2 bundles...")
 
         settings = QSettings()
-        LV2_PATH = toList(settings.value(CARLA_KEY_PATHS_LV2, gCarla.DEFAULT_LV2_PATH))
+        LV2_PATH = toList(settings.value(CARLA_KEY_PATHS_LV2, CARLA_DEFAULT_LV2_PATH))
 
         for iPATH in LV2_PATH:
             bundles = findLV2Bundles(iPATH)
@@ -819,7 +819,7 @@ class SearchPluginsThread(QThread):
             self._pluginLook(self.fLastCheckValue, "VST plugins...")
 
         settings = QSettings()
-        VST_PATH = toList(settings.value(CARLA_KEY_PATHS_VST, gCarla.DEFAULT_VST_PATH))
+        VST_PATH = toList(settings.value(CARLA_KEY_PATHS_VST, CARLA_DEFAULT_VST_PATH))
 
         for iPATH in VST_PATH:
             if MACOS and not isWine:
@@ -858,7 +858,7 @@ class SearchPluginsThread(QThread):
             self._pluginLook(self.fLastCheckValue, "VST3 plugins...")
 
         settings = QSettings()
-        VST3_PATH = toList(settings.value(CARLA_KEY_PATHS_VST3, gCarla.DEFAULT_VST3_PATH))
+        VST3_PATH = toList(settings.value(CARLA_KEY_PATHS_VST3, CARLA_DEFAULT_VST3_PATH))
 
         for iPATH in VST3_PATH:
             if MACOS and not isWine:
@@ -895,7 +895,7 @@ class SearchPluginsThread(QThread):
         self._pluginLook(self.fLastCheckValue, "AU plugins...")
 
         settings = QSettings()
-        AU_PATH = toList(settings.value(CARLA_KEY_PATHS_AU, gCarla.DEFAULT_AU_PATH))
+        AU_PATH = toList(settings.value(CARLA_KEY_PATHS_AU, CARLA_DEFAULT_AU_PATH))
 
         for iPATH in AU_PATH:
             binaries = findBinaries(iPATH, "MACOS")

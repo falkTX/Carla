@@ -281,70 +281,6 @@ else:
     CARLA_DEFAULT_TRANSPORT_MODE = ENGINE_TRANSPORT_MODE_INTERNAL
 
 # ------------------------------------------------------------------------------------------------------------
-# Global Carla object
-
-class CarlaObject(object):
-    __slots__ = [
-        # Host library object
-        'host',
-        # Host Window
-        'gui',
-        # bool, is controller
-        'isControl',
-        # bool, is running local
-        'isLocal',
-        # bool, is plugin
-        'isPlugin',
-        # current buffer size
-        'bufferSize',
-        # current sample rate
-        'sampleRate',
-        # current process mode
-        'processMode',
-        # check if process mode is forced (rack/patchbay)
-        'processModeForced',
-        # current transport mode
-        'transportMode',
-        # current max parameters
-        'maxParameters',
-        # wherever to use external patchbay mode
-        'externalPatchbay',
-        # wherever to use custom skins
-        'useCustomSkins',
-        # binary dir
-        'pathBinaries',
-        # resources dir
-        'pathResources',
-        # default paths
-        'DEFAULT_LADSPA_PATH',
-        'DEFAULT_DSSI_PATH',
-        'DEFAULT_LV2_PATH',
-        'DEFAULT_VST_PATH',
-        'DEFAULT_VST3_PATH',
-        'DEFAULT_AU_PATH',
-        'DEFAULT_GIG_PATH',
-        'DEFAULT_SF2_PATH',
-        'DEFAULT_SFZ_PATH'
-    ]
-
-gCarla = CarlaObject()
-gCarla.host = None
-gCarla.gui  = None
-gCarla.isControl = False
-gCarla.isLocal   = True
-gCarla.isPlugin  = False
-gCarla.bufferSize = 0
-gCarla.sampleRate = 0.0
-gCarla.processMode       = CARLA_DEFAULT_PROCESS_MODE
-gCarla.processModeForced = False
-gCarla.transportMode     = CARLA_DEFAULT_TRANSPORT_MODE
-gCarla.maxParameters     = MAX_DEFAULT_PARAMETERS
-gCarla.externalPatchbay  = False
-gCarla.useCustomSkins = True
-gCarla.pathBinaries   = ""
-gCarla.pathResources  = ""
-
-# ------------------------------------------------------------------------------------------------------------
 # Default Plugin Folders (get)
 
 DEFAULT_LADSPA_PATH = ""
@@ -512,26 +448,93 @@ if WINDOWS:
     del reg
 
 if readEnvVars:
-    gCarla.DEFAULT_LADSPA_PATH = os.getenv("LADSPA_PATH", DEFAULT_LADSPA_PATH).split(splitter)
-    gCarla.DEFAULT_DSSI_PATH   = os.getenv("DSSI_PATH",   DEFAULT_DSSI_PATH).split(splitter)
-    gCarla.DEFAULT_LV2_PATH    = os.getenv("LV2_PATH",    DEFAULT_LV2_PATH).split(splitter)
-    gCarla.DEFAULT_VST_PATH    = os.getenv("VST_PATH",    DEFAULT_VST_PATH).split(splitter)
-    gCarla.DEFAULT_VST3_PATH   = os.getenv("VST3_PATH",   DEFAULT_VST3_PATH).split(splitter)
-    gCarla.DEFAULT_AU_PATH     = os.getenv("AU_PATH",     DEFAULT_AU_PATH).split(splitter)
-    gCarla.DEFAULT_GIG_PATH    = os.getenv("GIG_PATH",    DEFAULT_GIG_PATH).split(splitter)
-    gCarla.DEFAULT_SF2_PATH    = os.getenv("SF2_PATH",    DEFAULT_SF2_PATH).split(splitter)
-    gCarla.DEFAULT_SFZ_PATH    = os.getenv("SFZ_PATH",    DEFAULT_SFZ_PATH).split(splitter)
+    CARLA_DEFAULT_LADSPA_PATH = os.getenv("LADSPA_PATH", DEFAULT_LADSPA_PATH).split(splitter)
+    CARLA_DEFAULT_DSSI_PATH   = os.getenv("DSSI_PATH",   DEFAULT_DSSI_PATH).split(splitter)
+    CARLA_DEFAULT_LV2_PATH    = os.getenv("LV2_PATH",    DEFAULT_LV2_PATH).split(splitter)
+    CARLA_DEFAULT_VST_PATH    = os.getenv("VST_PATH",    DEFAULT_VST_PATH).split(splitter)
+    CARLA_DEFAULT_VST3_PATH   = os.getenv("VST3_PATH",   DEFAULT_VST3_PATH).split(splitter)
+    CARLA_DEFAULT_AU_PATH     = os.getenv("AU_PATH",     DEFAULT_AU_PATH).split(splitter)
+    CARLA_DEFAULT_GIG_PATH    = os.getenv("GIG_PATH",    DEFAULT_GIG_PATH).split(splitter)
+    CARLA_DEFAULT_SF2_PATH    = os.getenv("SF2_PATH",    DEFAULT_SF2_PATH).split(splitter)
+    CARLA_DEFAULT_SFZ_PATH    = os.getenv("SFZ_PATH",    DEFAULT_SFZ_PATH).split(splitter)
 
 else:
-    gCarla.DEFAULT_LADSPA_PATH = DEFAULT_LADSPA_PATH.split(splitter)
-    gCarla.DEFAULT_DSSI_PATH   = DEFAULT_DSSI_PATH.split(splitter)
-    gCarla.DEFAULT_LV2_PATH    = DEFAULT_LV2_PATH.split(splitter)
-    gCarla.DEFAULT_VST_PATH    = DEFAULT_VST_PATH.split(splitter)
-    gCarla.DEFAULT_VST3_PATH   = DEFAULT_VST3_PATH.split(splitter)
-    gCarla.DEFAULT_AU_PATH     = DEFAULT_AU_PATH.split(splitter)
-    gCarla.DEFAULT_GIG_PATH    = DEFAULT_GIG_PATH.split(splitter)
-    gCarla.DEFAULT_SF2_PATH    = DEFAULT_SF2_PATH.split(splitter)
-    gCarla.DEFAULT_SFZ_PATH    = DEFAULT_SFZ_PATH.split(splitter)
+    CARLA_DEFAULT_LADSPA_PATH = DEFAULT_LADSPA_PATH.split(splitter)
+    CARLA_DEFAULT_DSSI_PATH   = DEFAULT_DSSI_PATH.split(splitter)
+    CARLA_DEFAULT_LV2_PATH    = DEFAULT_LV2_PATH.split(splitter)
+    CARLA_DEFAULT_VST_PATH    = DEFAULT_VST_PATH.split(splitter)
+    CARLA_DEFAULT_VST3_PATH   = DEFAULT_VST3_PATH.split(splitter)
+    CARLA_DEFAULT_AU_PATH     = DEFAULT_AU_PATH.split(splitter)
+    CARLA_DEFAULT_GIG_PATH    = DEFAULT_GIG_PATH.split(splitter)
+    CARLA_DEFAULT_SF2_PATH    = DEFAULT_SF2_PATH.split(splitter)
+    CARLA_DEFAULT_SFZ_PATH    = DEFAULT_SFZ_PATH.split(splitter)
+
+# ------------------------------------------------------------------------------------------------------------
+# Default Plugin Folders (cleanup)
+
+del DEFAULT_LADSPA_PATH
+del DEFAULT_DSSI_PATH
+del DEFAULT_LV2_PATH
+del DEFAULT_VST_PATH
+del DEFAULT_VST3_PATH
+del DEFAULT_AU_PATH
+del DEFAULT_GIG_PATH
+del DEFAULT_SF2_PATH
+del DEFAULT_SFZ_PATH
+
+# ------------------------------------------------------------------------------------------------------------
+# Global Carla object
+
+class CarlaObject(object):
+    __slots__ = [
+        # Host library object
+        'host',
+        # Host Window
+        'gui',
+        # bool, is controller
+        'isControl',
+        # bool, is running local
+        'isLocal',
+        # bool, is plugin
+        'isPlugin',
+        # current buffer size
+        'bufferSize',
+        # current sample rate
+        'sampleRate',
+        # current process mode
+        'processMode',
+        # check if process mode is forced (rack/patchbay)
+        'processModeForced',
+        # current transport mode
+        'transportMode',
+        # current max parameters
+        'maxParameters',
+        # wherever to use external patchbay mode
+        'externalPatchbay',
+        # wherever to use custom skins
+        'useCustomSkins',
+        # binary dir
+        'pathBinaries',
+        # resources dir
+        'pathResources'
+    ]
+
+gCarla = CarlaObject()
+gCarla.host = None
+gCarla.gui  = None
+gCarla.isControl = False
+gCarla.isLocal   = True
+gCarla.isPlugin  = False
+gCarla.bufferSize = 0
+gCarla.sampleRate = 0.0
+gCarla.processMode       = CARLA_DEFAULT_PROCESS_MODE
+gCarla.processModeForced = False
+gCarla.transportMode     = CARLA_DEFAULT_TRANSPORT_MODE
+gCarla.maxParameters     = MAX_DEFAULT_PARAMETERS
+gCarla.externalPatchbay  = False
+gCarla.useCustomSkins = True
+gCarla.pathBinaries   = ""
+gCarla.pathResources  = ""
 
 # ------------------------------------------------------------------------------------------------------------
 # Set CWD

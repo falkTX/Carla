@@ -335,15 +335,15 @@ class CarlaSettingsW(QDialog):
         # --------------------------------------------
         # Paths
 
-        ladspas = toList(settings.value(CARLA_KEY_PATHS_LADSPA, gCarla.DEFAULT_LADSPA_PATH))
-        dssis   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   gCarla.DEFAULT_DSSI_PATH))
-        lv2s    = toList(settings.value(CARLA_KEY_PATHS_LV2,    gCarla.DEFAULT_LV2_PATH))
-        vsts    = toList(settings.value(CARLA_KEY_PATHS_VST,    gCarla.DEFAULT_VST_PATH))
-        vst3s   = toList(settings.value(CARLA_KEY_PATHS_VST3,   gCarla.DEFAULT_VST3_PATH))
-        aus     = toList(settings.value(CARLA_KEY_PATHS_AU,     gCarla.DEFAULT_AU_PATH))
-        gigs    = toList(settings.value(CARLA_KEY_PATHS_GIG,    gCarla.DEFAULT_GIG_PATH))
-        sf2s    = toList(settings.value(CARLA_KEY_PATHS_SF2,    gCarla.DEFAULT_SF2_PATH))
-        sfzs    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    gCarla.DEFAULT_SFZ_PATH))
+        ladspas = toList(settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH))
+        dssis   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH))
+        lv2s    = toList(settings.value(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH))
+        vsts    = toList(settings.value(CARLA_KEY_PATHS_VST,    CARLA_DEFAULT_VST_PATH))
+        vst3s   = toList(settings.value(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH))
+        aus     = toList(settings.value(CARLA_KEY_PATHS_AU,     CARLA_DEFAULT_AU_PATH))
+        gigs    = toList(settings.value(CARLA_KEY_PATHS_GIG,    CARLA_DEFAULT_GIG_PATH))
+        sf2s    = toList(settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH))
+        sfzs    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH))
 
         ladspas.sort()
         dssis.sort()
@@ -521,7 +521,7 @@ class CarlaSettingsW(QDialog):
             curIndex = self.ui.tw_paths.currentIndex()
 
             if curIndex == self.PATH_INDEX_LADSPA:
-                paths = gCarla.DEFAULT_LADSPA_PATH
+                paths = CARLA_DEFAULT_LADSPA_PATH
                 paths.sort()
                 self.ui.lw_ladspa.clear()
 
@@ -530,7 +530,7 @@ class CarlaSettingsW(QDialog):
                     self.ui.lw_ladspa.addItem(path)
 
             elif curIndex == self.PATH_INDEX_DSSI:
-                paths = gCarla.DEFAULT_DSSI_PATH
+                paths = CARLA_DEFAULT_DSSI_PATH
                 paths.sort()
                 self.ui.lw_dssi.clear()
 
@@ -539,7 +539,7 @@ class CarlaSettingsW(QDialog):
                     self.ui.lw_dssi.addItem(path)
 
             elif curIndex == self.PATH_INDEX_LV2:
-                paths = gCarla.DEFAULT_LV2_PATH
+                paths = CARLA_DEFAULT_LV2_PATH
                 paths.sort()
                 self.ui.lw_lv2.clear()
 
@@ -548,7 +548,7 @@ class CarlaSettingsW(QDialog):
                     self.ui.lw_lv2.addItem(path)
 
             elif curIndex == self.PATH_INDEX_VST:
-                paths = gCarla.DEFAULT_VST_PATH
+                paths = CARLA_DEFAULT_VST_PATH
                 paths.sort()
                 self.ui.lw_vst.clear()
 
@@ -557,7 +557,7 @@ class CarlaSettingsW(QDialog):
                     self.ui.lw_vst.addItem(path)
 
             elif curIndex == self.PATH_INDEX_VST3:
-                paths = gCarla.DEFAULT_VST3_PATH
+                paths = CARLA_DEFAULT_VST3_PATH
                 paths.sort()
                 self.ui.lw_vst3.clear()
 
@@ -566,7 +566,7 @@ class CarlaSettingsW(QDialog):
                     self.ui.lw_vst3.addItem(path)
 
             elif curIndex == self.PATH_INDEX_AU:
-                paths = gCarla.DEFAULT_AU_PATH
+                paths = CARLA_DEFAULT_AU_PATH
                 paths.sort()
                 self.ui.lw_au.clear()
 
@@ -575,7 +575,7 @@ class CarlaSettingsW(QDialog):
                     self.ui.lw_au.addItem(path)
 
             elif curIndex == self.PATH_INDEX_GIG:
-                paths = gCarla.DEFAULT_GIG_PATH
+                paths = CARLA_DEFAULT_GIG_PATH
                 paths.sort()
                 self.ui.lw_gig.clear()
 
@@ -584,7 +584,7 @@ class CarlaSettingsW(QDialog):
                     self.ui.lw_gig.addItem(path)
 
             elif curIndex == self.PATH_INDEX_SF2:
-                paths = gCarla.DEFAULT_SF2_PATH
+                paths = CARLA_DEFAULT_SF2_PATH
                 paths.sort()
                 self.ui.lw_sf2.clear()
 
@@ -593,7 +593,7 @@ class CarlaSettingsW(QDialog):
                     self.ui.lw_sf2.addItem(path)
 
             elif curIndex == self.PATH_INDEX_SFZ:
-                paths = gCarla.DEFAULT_SFZ_PATH
+                paths = CARLA_DEFAULT_SFZ_PATH
                 paths.sort()
                 self.ui.lw_sfz.clear()
 
