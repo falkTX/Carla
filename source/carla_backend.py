@@ -2414,6 +2414,8 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_get_host_osc_url_udp.argtypes = None
         self.lib.carla_get_host_osc_url_udp.restype = c_char_p
 
+    # --------------------------------------------------------------------------------------------------------
+
     def get_complete_license_text(self):
         return charPtrToString(self.lib.carla_get_complete_license_text())
 
@@ -2682,5 +2684,468 @@ class CarlaHostDLL(CarlaHostMeta):
 
     def get_host_osc_url_udp(self):
         return charPtrToString(self.lib.carla_get_host_osc_url_udp())
+
+# ------------------------------------------------------------------------------------------------------------
+# Helper object for CarlaHostPlugin
+
+class PluginStoreInfo(object):
+    __slots__ = [
+        'pluginInfo',
+        'pluginRealName',
+        'internalValues',
+        'audioCountInfo',
+        'midiCountInfo',
+        'parameterCount',
+        'parameterCountInfo',
+        'parameterInfo',
+        'parameterData',
+        'parameterRanges',
+        'parameterValues',
+        'programCount',
+        'programCurrent',
+        'programNames',
+        'midiProgramCount',
+        'midiProgramCurrent',
+        'midiProgramData',
+        'peaks'
+    ]
+
+# ------------------------------------------------------------------------------------------------------------
+# Carla Host object for plugins (using pipes)
+
+#class CarlaHostPlugin(CarlaHostMeta):
+class CarlaHostPlugin(CarlaHostMeta, metaclass=ABCMeta):
+    def __init__(self):
+        CarlaHostMeta.__init__(self)
+
+        # text data to return when requested
+        self.fCompleteLicentText = ""
+        self.fJuceVersion        = ""
+        self.fSupportedFileExts  = ""
+        self.fLastError          = ""
+        self.fOscUrlTCP          = ""
+        self.fOscUrlUDP          = ""
+
+        # plugin info
+        self.fPluginsInfo = []
+
+        # transport info
+        self.fTransportInfo = {
+            "playing": False,
+            "frame": 0,
+            "bar": 0,
+            "beat": 0,
+            "tick": 0,
+            "bpm": 0.0
+        }
+
+        # some other vars
+        self.fHostName   = ""
+        self.fBufferSize = 0
+        self.fSampleRate = 0.0
+
+    # --------------------------------------------------------------------------------------------------------
+
+    # Needs to be reimplemented
+    @abstractmethod
+    def sendMsg(self, lines):
+        raise NotImplementedError
+
+    # internal, sets error if sendMsg failed
+    def sendMsgAndSetError(self, lines):
+        if self.sendMsg(lines):
+            return True
+
+        self.fLastError = "Communication error with backend"
+        return False
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def get_complete_license_text(self):
+        return self.fCompleteLicentText
+
+    def get_juce_version(self):
+        return self.fJuceVersion
+
+    def get_supported_file_extensions(self):
+        return self.fSupportedFileExts
+
+    def get_engine_driver_count(self):
+        return 1
+
+    def get_engine_driver_name(self, index):
+        return "Plugin"
+
+    def get_engine_driver_device_names(self, index):
+        return [self.fHostName]
+
+    def get_engine_driver_device_info(self, index, name):
+        return PyEngineDriverDeviceInfo
+
+    def get_internal_plugin_count(self):
+        return 0
+
+    def get_internal_plugin_info(self, index):
+        return PyCarlaNativePluginInfo
+
+    def set_engine_callback(self, func):
+        return # TODO
+
+    def set_engine_option(self, option, value, valueStr):
+        self.sendMsg(["set_engine_option", option, value, valueStr])
+
+    def set_file_callback(self, func):
+        return # TODO
+
+    def load_file(self, filename):
+        return self.sendMsgAndSetError(["load_file", filename])
+
+    def load_project(self, filename):
+        return self.sendMsgAndSetError(["load_project", filename])
+
+    def save_project(self, filename):
+        return self.sendMsgAndSetError(["save_project", filename])
+
+    def patchbay_connect(self, groupIdA, portIdA, groupIdB, portIdB):
+        return self.sendMsgAndSetError(["patchbay_connect", groupIdA, portIdA, groupIdB, portIdB])
+
+    def patchbay_disconnect(self, connectionId):
+        return self.sendMsgAndSetError(["patchbay_disconnect", connectionId])
+
+    def patchbay_refresh(self, external):
+        # don't send external param, never used in plugins
+        return self.sendMsgAndSetError(["patchbay_refresh"])
+
+    def transport_play(self):
+        self.sendMsg(["transport_play"])
+
+    def transport_pause(self):
+        self.sendMsg(["transport_pause"])
+
+    def transport_relocate(self, frame):
+        self.sendMsg(["transport_relocate"])
+
+    def get_current_transport_frame(self):
+        return self.fTransportInfo['frame']
+
+    def get_transport_info(self):
+        return self.fTransportInfo
+
+    def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr):
+        return self.sendMsgAndSetError(["add_plugin", btype, ptype, filename, name, label, uniqueId])
+
+    def remove_plugin(self, pluginId):
+        return self.sendMsgAndSetError(["remove_plugin", pluginId])
+
+    def remove_all_plugins(self):
+        return self.sendMsgAndSetError(["remove_all_plugins"])
+
+    def rename_plugin(self, pluginId, newName):
+        if self.sendMsg(["rename_plugin", pluginId, newName]):
+            return newName
+
+        self.fLastError = "Communication error with backend"
+        return ""
+
+    def clone_plugin(self, pluginId):
+        return self.sendMsgAndSetError(["clone_plugin", pluginId])
+
+    def replace_plugin(self, pluginId):
+        return self.sendMsgAndSetError(["replace_plugin", pluginId])
+
+    def switch_plugins(self, pluginIdA, pluginIdB):
+        return self.sendMsgAndSetError(["switch_plugins", pluginIdA, pluginIdB])
+
+    def load_plugin_state(self, pluginId, filename):
+        return self.sendMsgAndSetError(["load_plugin_state", pluginId, filename])
+
+    def save_plugin_state(self, pluginId, filename):
+        return self.sendMsgAndSetError(["save_plugin_state", pluginId, filename])
+
+    def get_plugin_info(self, pluginId):
+        return self.fPluginsInfo[pluginId].pluginInfo
+
+    def get_audio_port_count_info(self, pluginId):
+        return self.fPluginsInfo[pluginId].audioCountInfo
+
+    def get_midi_port_count_info(self, pluginId):
+        return self.fPluginsInfo[pluginId].midiCountInfo
+
+    def get_parameter_count_info(self, pluginId):
+        return self.fPluginsInfo[pluginId].parameterCountInfo
+
+    def get_parameter_info(self, pluginId, parameterId):
+        return self.fPluginsInfo[pluginId].parameterInfo[parameterId]
+
+    def get_parameter_scalepoint_info(self, pluginId, parameterId, scalePointId):
+        return PyCarlaScalePointInfo
+
+    def get_parameter_data(self, pluginId, parameterId):
+        return self.fPluginsInfo[pluginId].parameterData[parameterId]
+
+    def get_parameter_ranges(self, pluginId, parameterId):
+        return self.fPluginsInfo[pluginId].parameterRanges[parameterId]
+
+    def get_midi_program_data(self, pluginId, midiProgramId):
+        return self.fPluginsInfo[pluginId].midiProgramData[midiProgramId]
+
+    def get_custom_data(self, pluginId, customDataId):
+        return PyCustomData
+
+    def get_chunk_data(self, pluginId):
+        return ""
+
+    def get_parameter_count(self, pluginId):
+        return self.fPluginsInfo[pluginId].parameterCount
+
+    def get_program_count(self, pluginId):
+        return self.fPluginsInfo[pluginId].programCount
+
+    def get_midi_program_count(self, pluginId):
+        return self.fPluginsInfo[pluginId].midiProgramCount
+
+    def get_custom_data_count(self, pluginId):
+        return 0
+
+    def get_parameter_text(self, pluginId, parameterId):
+        return ""
+
+    def get_program_name(self, pluginId, programId):
+        return self.fPluginsInfo[pluginId].programNames[programId]
+
+    def get_midi_program_name(self, pluginId, midiProgramId):
+        return self.fPluginsInfo[pluginId].midiProgramData[midiProgramId]['label']
+
+    def get_real_plugin_name(self, pluginId):
+        return self.fPluginsInfo[pluginId].pluginRealName
+
+    def get_current_program_index(self, pluginId):
+        return self.fPluginsInfo[pluginId].programCurrent
+
+    def get_current_midi_program_index(self, pluginId):
+        return self.fPluginsInfo[pluginId].midiProgramCurrent
+
+    def get_default_parameter_value(self, pluginId, parameterId):
+        return self.fPluginsInfo[pluginId].parameterRanges[parameterId]['def']
+
+    def get_current_parameter_value(self, pluginId, parameterId):
+        return self.fPluginsInfo[pluginId].parameterValues[parameterId]
+
+    def get_internal_parameter_value(self, pluginId, parameterId):
+        if parameterId == PARAMETER_NULL or parameterId <= PARAMETER_MAX:
+            return 0.0
+        if parameterId < 0:
+            return self.fPluginsInfo[pluginId].internalValues[abs(parameterId)-2]
+
+        return self.fPluginsInfo[pluginId].parameterValues[parameterId]
+
+    def get_input_peak_value(self, pluginId, isLeft):
+        return self.fPluginsInfo[pluginId].peaks[0 if isLeft else 1]
+
+    def get_output_peak_value(self, pluginId, isLeft):
+        return self.fPluginsInfo[pluginId].peaks[2 if isLeft else 3]
+
+    def set_option(self, pluginId, option, yesNo):
+        self.sendMsg(["set_option", pluginId, option, yesNo])
+
+    def set_active(self, pluginId, onOff):
+        self.sendMsg(["set_active", pluginId, onOff])
+
+    def set_drywet(self, pluginId, value):
+        self.sendMsg(["set_drywet", pluginId, value])
+
+    def set_volume(self, pluginId, value):
+        self.sendMsg(["set_volume", pluginId, value])
+
+    def set_balance_left(self, pluginId, value):
+        self.sendMsg(["set_balance_left", pluginId, value])
+
+    def set_balance_right(self, pluginId, value):
+        self.sendMsg(["set_balance_right", pluginId, value])
+
+    def set_panning(self, pluginId, value):
+        self.sendMsg(["set_panning", pluginId, value])
+
+    def set_ctrl_channel(self, pluginId, channel):
+        self.sendMsg(["set_ctrl_channel", pluginId, channel])
+
+    def set_parameter_value(self, pluginId, parameterId, value):
+        self.sendMsg(["set_parameter_value", pluginId, parameterId, value])
+
+    def set_parameter_midi_channel(self, pluginId, parameterId, channel):
+        self.sendMsg(["set_parameter_midi_channel", pluginId, parameterId, channel])
+
+    def set_parameter_midi_cc(self, pluginId, parameterId, cc):
+        self.sendMsg(["set_parameter_midi_cc", pluginId, parameterId, cc])
+
+    def set_program(self, pluginId, programId):
+        self.sendMsg(["set_program", pluginId, programId])
+
+    def set_midi_program(self, pluginId, midiProgramId):
+        self.sendMsg(["set_midi_program", pluginId, midiProgramId])
+
+    def set_custom_data(self, pluginId, type_, key, value):
+        self.sendMsg(["set_custom_data", pluginId, type_, key, value])
+
+    def set_chunk_data(self, pluginId, chunkData):
+        self.sendMsg(["set_chunk_data", pluginId, chunkData])
+
+    def prepare_for_save(self, pluginId):
+        self.sendMsg(["prepare_for_save", pluginId])
+
+    def reset_parameters(self, pluginId):
+        self.sendMsg(["reset_parameters", pluginId])
+
+    def randomize_parameters(self, pluginId):
+        self.sendMsg(["randomize_parameters", pluginId])
+
+    def send_midi_note(self, pluginId, channel, note, velocity):
+        self.sendMsg(["send_midi_note", pluginId, channel, note, velocity])
+
+    def show_custom_ui(self, pluginId, yesNo):
+        self.sendMsg(["show_custom_ui", pluginId, yesNo])
+
+    def get_buffer_size(self):
+        return self.fBufferSize
+
+    def get_sample_rate(self):
+        return self.fSampleRate
+
+    def get_last_error(self):
+        return self.fLastError
+
+    def get_host_osc_url_tcp(self):
+        return self.fOscUrlTCP
+
+    def get_host_osc_url_udp(self):
+        return self.fOscUrlUDP
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def _add(self, pluginId):
+        if len(self.fPluginsInfo) != pluginId:
+            return
+
+        info = PluginStoreInfo()
+        info.pluginInfo     = PyCarlaPluginInfo
+        info.pluginRealName = ""
+        info.internalValues = [0.0, 1.0, 1.0, -1.0, 1.0, 0.0, -1.0]
+        info.audioCountInfo = PyCarlaPortCountInfo
+        info.midiCountInfo  = PyCarlaPortCountInfo
+        info.parameterCount = 0
+        info.parameterCountInfo = PyCarlaPortCountInfo
+        info.parameterInfo   = []
+        info.parameterData   = []
+        info.parameterRanges = []
+        info.parameterValues = []
+        info.programCount   = 0
+        info.programCurrent = -1
+        info.programNames   = []
+        info.midiProgramCount   = 0
+        info.midiProgramCurrent = -1
+        info.midiProgramData    = []
+        info.peaks = [0.0, 0.0, 0.0, 0.0]
+        self.fPluginsInfo.append(info)
+
+    def _set_pluginInfo(self, pluginId, info):
+        self.fPluginsInfo[pluginId].pluginInfo = info
+
+    def _set_pluginName(self, pluginId, name):
+        self.fPluginsInfo[pluginId].pluginInfo['name'] = name
+
+    def _set_pluginRealName(self, pluginId, realName):
+        self.fPluginsInfo[pluginId].pluginRealName = realName
+
+    def _set_internalValue(self, pluginId, paramIndex, value):
+        if pluginId < len(self.fPluginsInfo) and PARAMETER_NULL > paramIndex > PARAMETER_MAX:
+            self.fPluginsInfo[pluginId].internalValues[abs(paramIndex)-2] = float(value)
+
+    def _set_audioCountInfo(self, pluginId, info):
+        self.fPluginsInfo[pluginId].audioCountInfo = info
+
+    def _set_midiCountInfo(self, pluginId, info):
+        self.fPluginsInfo[pluginId].midiCountInfo = info
+
+    def _set_parameterCountInfo(self, pluginId, count, info):
+        self.fPluginsInfo[pluginId].parameterCount = count
+        self.fPluginsInfo[pluginId].parameterCountInfo = info
+
+        # clear
+        self.fPluginsInfo[pluginId].parameterInfo  = []
+        self.fPluginsInfo[pluginId].parameterData  = []
+        self.fPluginsInfo[pluginId].parameterRanges = []
+        self.fPluginsInfo[pluginId].parameterValues = []
+
+        # add placeholders
+        for x in range(count):
+            self.fPluginsInfo[pluginId].parameterInfo.append(PyCarlaParameterInfo)
+            self.fPluginsInfo[pluginId].parameterData.append(PyParameterData)
+            self.fPluginsInfo[pluginId].parameterRanges.append(PyParameterRanges)
+            self.fPluginsInfo[pluginId].parameterValues.append(0.0)
+
+    def _set_programCount(self, pluginId, count):
+        self.fPluginsInfo[pluginId].programCount = count
+
+        # clear
+        self.fPluginsInfo[pluginId].programNames = []
+
+        # add placeholders
+        for x in range(count):
+            self.fPluginsInfo[pluginId].programNames.append("")
+
+    def _set_midiProgramCount(self, pluginId, count):
+        self.fPluginsInfo[pluginId].midiProgramCount = count
+
+        # clear
+        self.fPluginsInfo[pluginId].midiProgramData = []
+
+        # add placeholders
+        for x in range(count):
+            self.fPluginsInfo[pluginId].midiProgramData.append(PyMidiProgramData)
+
+    def _set_parameterInfo(self, pluginId, paramIndex, info):
+        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
+            self.fPluginsInfo[pluginId].parameterInfo[paramIndex] = info
+
+    def _set_parameterData(self, pluginId, paramIndex, data):
+        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
+            self.fPluginsInfo[pluginId].parameterData[paramIndex] = data
+
+    def _set_parameterRanges(self, pluginId, paramIndex, ranges):
+        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
+            self.fPluginsInfo[pluginId].parameterRanges[paramIndex] = ranges
+
+    def _set_parameterValue(self, pluginId, paramIndex, value):
+        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
+            self.fPluginsInfo[pluginId].parameterValues[paramIndex] = value
+
+    def _set_parameterDefault(self, pluginId, paramIndex, value):
+        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
+            self.fPluginsInfo[pluginId].parameterRanges[paramIndex]['def'] = value
+
+    def _set_parameterMidiChannel(self, pluginId, paramIndex, channel):
+        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
+            self.fPluginsInfo[pluginId].parameterData[paramIndex]['midiChannel'] = channel
+
+    def _set_parameterMidiCC(self, pluginId, paramIndex, cc):
+        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
+            self.fPluginsInfo[pluginId].parameterData[paramIndex]['midiCC'] = cc
+
+    def _set_currentProgram(self, pluginId, pIndex):
+        self.fPluginsInfo[pluginId].programCurrent = pIndex
+
+    def _set_currentMidiProgram(self, pluginId, mpIndex):
+        self.fPluginsInfo[pluginId].midiProgramCurrent = mpIndex
+
+    def _set_programName(self, pluginId, pIndex, name):
+        if pIndex < self.fPluginsInfo[pluginId].programCount:
+            self.fPluginsInfo[pluginId].programNames[pIndex] = name
+
+    def _set_midiProgramData(self, pluginId, mpIndex, data):
+        if mpIndex < self.fPluginsInfo[pluginId].midiProgramCount:
+            self.fPluginsInfo[pluginId].midiProgramData[mpIndex] = data
+
+    def _set_peaks(self, pluginId, in1, in2, out1, out2):
+        self.fPluginsInfo[pluginId].peaks = [in1, in2, out1, out2]
 
 # ------------------------------------------------------------------------------------------------------------
