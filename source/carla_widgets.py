@@ -398,6 +398,7 @@ class PluginParameter(QWidget):
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Editor Parent (Meta class)
 
+#class PluginEditParentMeta():
 class PluginEditParentMeta(metaclass=ABCMeta):
     @abstractmethod
     def editDialogChanged(self, visible):
@@ -434,12 +435,12 @@ class PluginEdit(QDialog):
     kParamsPerPage = 8
 
     def __init__(self, parent, pluginId):
-        QDialog.__init__(self, gCarla.gui)
+        QDialog.__init__(self, parent.window() if parent is not None else None)
         self.ui = ui_carla_edit.Ui_PluginEdit()
         self.ui.setupUi(self)
 
         if False:
-            parent = PluginEditParent()
+            parent = PluginEditParentMeta()
 
         # -------------------------------------------------------------
         # Internal stuff
@@ -452,8 +453,8 @@ class PluginEdit(QDialog):
         self.fCurrentProgram = -1
         self.fCurrentMidiProgram = -1
         self.fCurrentStateFilename = None
-        self.fControlChannel  = int(gCarla.host.get_internal_parameter_value(pluginId, PARAMETER_CTRL_CHANNEL)) if gCarla.host is not None else 0
-        self.fFirstInit       = True
+        self.fControlChannel = int(gCarla.host.get_internal_parameter_value(pluginId, PARAMETER_CTRL_CHANNEL)) if gCarla.host is not None else 0
+        self.fFirstInit      = True
 
         self.fParameterCount = 0
         self.fParameterList  = []     # (type, id, widget)
