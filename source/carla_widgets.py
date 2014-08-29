@@ -42,6 +42,7 @@ import ui_carla_edit
 import ui_carla_parameter
 
 from carla_shared import *
+from carla_utils import *
 from pixmapkeyboard import PixmapKeyboardHArea
 
 # ------------------------------------------------------------------------------------------------------------
@@ -399,11 +400,11 @@ class PluginParameter(QWidget):
 
 class PluginEditParentMeta(metaclass=ABCMeta):
     @abstractmethod
-    def recheckPluginHints(self, hints):
+    def editDialogChanged(self, visible):
         raise NotImplementedError
 
     @abstractmethod
-    def editDialogChanged(self, visible):
+    def pluginHintsChanged(self, hints):
         raise NotImplementedError
 
     @abstractmethod
@@ -737,7 +738,7 @@ class PluginEdit(QDialog):
 
         # Force-Update parent for new hints
         if self.fRealParent and not self.fFirstInit:
-            self.fRealParent.recheckPluginHints(pluginHints)
+            self.fRealParent.pluginHintsChanged(pluginHints)
 
     def reloadParameters(self):
         # Reset

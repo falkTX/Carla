@@ -391,10 +391,10 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
     # -----------------------------------------------------------------
     # called by PluginEdit to plugin skin parent, ignored here
 
-    def recheckPluginHints(self, hints):
+    def editDialogChanged(self, visible):
         pass
 
-    def editDialogChanged(self, visible):
+    def pluginHintsChanged(self, hints):
         pass
 
     def parameterValueChanged(self, parameterId, value):

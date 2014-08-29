@@ -189,12 +189,6 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
 
     #------------------------------------------------------------------
 
-    def recheckPluginHints(self, hints):
-        self.fPluginInfo['hints'] = hints
-
-        if self.b_gui is not None:
-            self.b_gui.setEnabled(bool(hints & PLUGIN_HAS_CUSTOM_UI))
-
     def setId(self, idx):
         self.fPluginId = idx
         self.fEditDialog.setId(idx)
@@ -322,14 +316,6 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
         self.b_enable.setChecked(onOff)
         self.b_enable.blockSignals(False)
 
-    def editDialogChanged(self, visible):
-        if self.b_edit is None:
-            return
-
-        self.b_edit.blockSignals(True)
-        self.b_edit.setChecked(visible)
-        self.b_edit.blockSignals(False)
-
     def customUiStateChanged(self, state):
         if self.b_gui is None:
             return
@@ -358,6 +344,26 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
 
         self.led_midi.setChecked(onOff)
 
+    def optionChanged(self, option, yesNo):
+        pass
+
+    # -----------------------------------------------------------------
+    # PluginEdit callbacks
+
+    def editDialogChanged(self, visible):
+        if self.b_edit is None:
+            return
+
+        self.b_edit.blockSignals(True)
+        self.b_edit.setChecked(visible)
+        self.b_edit.blockSignals(False)
+
+    def pluginHintsChanged(self, hints):
+        self.fPluginInfo['hints'] = hints
+
+        if self.b_gui is not None:
+            self.b_gui.setEnabled(bool(hints & PLUGIN_HAS_CUSTOM_UI))
+
     def parameterValueChanged(self, parameterId, value):
         for paramIndex, paramWidget in self.fParameterList:
             if paramIndex != parameterId:
@@ -383,9 +389,6 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
         self.cb_presets.blockSignals(True)
         self.cb_presets.setCurrentIndex(index)
         self.cb_presets.blockSignals(False)
-
-    def optionChanged(self, option, yesNo):
-        pass
 
     def notePressed(self, note):
         pass
@@ -1100,13 +1103,13 @@ class PluginSlot_Calf(AbstractPluginSlot):
 
     #------------------------------------------------------------------
 
-    def recheckPluginHints(self, hints):
+    def pluginHintsChanged(self, hints):
         if hints & PLUGIN_HAS_CUSTOM_UI:
             self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOn, self.fButtonFont)
         else:
             self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOff, self.fButtonFont)
 
-        AbstractPluginSlot.recheckPluginHints(self, hints)
+        AbstractPluginSlot.pluginHintsChanged(self, hints)
 
 # ------------------------------------------------------------------------------------------------------------
 

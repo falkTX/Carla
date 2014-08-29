@@ -249,6 +249,7 @@ wine64:
 # Resources
 
 RES = \
+	bin/resources/carla_app.py \
 	bin/resources/carla_backend.py \
 	bin/resources/carla_config.py \
 	bin/resources/carla_database.py \
@@ -258,7 +259,7 @@ RES = \
 	bin/resources/carla_settings.py \
 	bin/resources/carla_skin.py \
 	bin/resources/carla_shared.py \
-	bin/resources/carla_style.py \
+	bin/resources/carla_utils.py \
 	bin/resources/carla_widgets.py \
 	bin/resources/canvaspreviewframe.py \
 	bin/resources/digitalpeakmeter.py \
@@ -503,6 +504,7 @@ install:
 		$(DESTDIR)$(PREFIX)/share/carla/resources/zynaddsubfx/
 
 	# Install resources (re-use python files)
+	$(LINK) $(PREFIX)/share/carla/carla_app.py                $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_backend.py            $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_config.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_database.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
@@ -512,7 +514,7 @@ install:
 	$(LINK) $(PREFIX)/share/carla/carla_settings.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_skin.py               $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_shared.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/carla_style.py              $(DESTDIR)$(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/carla_utils.py              $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_widgets.py            $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/canvaspreviewframe.py       $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/digitalpeakmeter.py         $(DESTDIR)$(PREFIX)/share/carla/resources/
