@@ -224,11 +224,9 @@ class CarlaSettingsW(QDialog):
                 self.ui.cb_canvas_use_opengl.setChecked(False)
                 self.ui.cb_canvas_use_opengl.setEnabled(False)
 
+        # FIXME - allow plugin but disable engine driver and mode
         if gCarla.isPlugin or not hasEngine:
             self.ui.lw_page.hideRow(self.TAB_INDEX_ENGINE)
-
-            if gCarla.isPlugin:
-                self.ui.lw_page.hideRow(self.TAB_INDEX_PATHS)
 
         if WINDOWS and not config_UseQt5:
             self.ui.group_main_theme.setEnabled(False)

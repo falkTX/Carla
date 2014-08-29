@@ -421,15 +421,13 @@ class HostWindow(QMainWindow):
     # Internal stuff (engine)
 
     def setEngineSettings(self, settings = None):
-        if gCarla.isPlugin:
-            return "Plugin"
         if self.fSessionManagerName == "Non Session Manager":
             return "JACK"
 
         if settings is None: settings = QSettings()
 
         # -------------------------------------------------------------
-        # read settings
+        # read settings (engine base)
 
         # bool values
         try:
@@ -458,75 +456,13 @@ class HostWindow(QMainWindow):
         except:
             maxParameters = CARLA_DEFAULT_MAX_PARAMETERS
 
-        # int values
-        try:
-            useCustomSkins = settings.value(CARLA_KEY_MAIN_USE_CUSTOM_SKINS, CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS, type=bool)
-        except:
-            useCustomSkins = CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS
-
         try:
             uiBridgesTimeout = settings.value(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT, CARLA_DEFAULT_UI_BRIDGES_TIMEOUT, type=int)
         except:
             uiBridgesTimeout = CARLA_DEFAULT_UI_BRIDGES_TIMEOUT
 
-        # enums
-        try:
-            processMode = settings.value(CARLA_KEY_ENGINE_PROCESS_MODE, CARLA_DEFAULT_PROCESS_MODE, type=int)
-        except:
-            processMode = CARLA_DEFAULT_PROCESS_MODE
-
-        try:
-            transportMode = settings.value(CARLA_KEY_ENGINE_TRANSPORT_MODE, CARLA_DEFAULT_TRANSPORT_MODE, type=int)
-        except:
-            transportMode = CARLA_DEFAULT_TRANSPORT_MODE
-
-        # driver name
-        try:
-            audioDriver = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER, type=str)
-        except:
-            audioDriver = CARLA_DEFAULT_AUDIO_DRIVER
-
-        # driver options
-        try:
-            audioDevice = settings.value("%s%s/Device" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), "", type=str)
-        except:
-            audioDevice = ""
-
-        try:
-            audioNumPeriods = settings.value("%s%s/NumPeriods" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_NUM_PERIODS, type=int)
-        except:
-            audioNumPeriods = CARLA_DEFAULT_AUDIO_NUM_PERIODS
-
-        try:
-            audioBufferSize = settings.value("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_BUFFER_SIZE, type=int)
-        except:
-            audioBufferSize = CARLA_DEFAULT_AUDIO_BUFFER_SIZE
-
-        try:
-            audioSampleRate = settings.value("%s%s/SampleRate" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_SAMPLE_RATE, type=int)
-        except:
-            audioSampleRate = CARLA_DEFAULT_AUDIO_SAMPLE_RATE
-
-        if gCarla.processModeForced:
-            processMode = gCarla.processMode
-
         # -------------------------------------------------------------
-        # fix things if needed
-
-        if processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
-            forceStereo = True
-        elif processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS and LADISH_APP_NAME:
-            print("LADISH detected but using multiple clients (not allowed), forcing single client now")
-            processMode = ENGINE_PROCESS_MODE_SINGLE_CLIENT
-
-        if audioDriver != "JACK" and transportMode == ENGINE_TRANSPORT_MODE_JACK:
-            transportMode = ENGINE_TRANSPORT_MODE_INTERNAL
-
-        if gCarla.host is None:
-            return audioDriver
-
-        # -------------------------------------------------------------
-        # plugin paths
+        # read settings (plugin paths)
 
         LADSPA_PATH = toList(settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH))
         DSSI_PATH   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH))
@@ -538,6 +474,94 @@ class HostWindow(QMainWindow):
         SF2_PATH    = toList(settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH))
         SFZ_PATH    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH))
 
+        # -------------------------------------------------------------
+        # read settings (other)
+
+        # int values
+        try:
+            useCustomSkins = settings.value(CARLA_KEY_MAIN_USE_CUSTOM_SKINS, CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS, type=bool)
+        except:
+            useCustomSkins = CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS
+
+        # -------------------------------------------------------------
+        # read settings (engine advanced)
+
+        if gCarla.isPlugin:
+            audioDriver = "Plugin"
+
+        else:
+            # enums
+            try:
+                processMode = settings.value(CARLA_KEY_ENGINE_PROCESS_MODE, CARLA_DEFAULT_PROCESS_MODE, type=int)
+            except:
+                processMode = CARLA_DEFAULT_PROCESS_MODE
+
+            try:
+                transportMode = settings.value(CARLA_KEY_ENGINE_TRANSPORT_MODE, CARLA_DEFAULT_TRANSPORT_MODE, type=int)
+            except:
+                transportMode = CARLA_DEFAULT_TRANSPORT_MODE
+
+            # driver name
+            try:
+                audioDriver = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER, type=str)
+            except:
+                audioDriver = CARLA_DEFAULT_AUDIO_DRIVER
+
+            # driver options
+            try:
+                audioDevice = settings.value("%s%s/Device" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), "", type=str)
+            except:
+                audioDevice = ""
+
+            try:
+                audioNumPeriods = settings.value("%s%s/NumPeriods" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_NUM_PERIODS, type=int)
+            except:
+                audioNumPeriods = CARLA_DEFAULT_AUDIO_NUM_PERIODS
+
+            try:
+                audioBufferSize = settings.value("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_BUFFER_SIZE, type=int)
+            except:
+                audioBufferSize = CARLA_DEFAULT_AUDIO_BUFFER_SIZE
+
+            try:
+                audioSampleRate = settings.value("%s%s/SampleRate" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_SAMPLE_RATE, type=int)
+            except:
+                audioSampleRate = CARLA_DEFAULT_AUDIO_SAMPLE_RATE
+
+            # -------------------------------------------------------------
+            # fix things if needed
+
+            if processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
+                forceStereo = True
+            elif processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS and LADISH_APP_NAME:
+                print("LADISH detected but using multiple clients (not allowed), forcing single client now")
+                processMode = ENGINE_PROCESS_MODE_SINGLE_CLIENT
+
+            if audioDriver != "JACK" and transportMode == ENGINE_TRANSPORT_MODE_JACK:
+                transportMode = ENGINE_TRANSPORT_MODE_INTERNAL
+
+        if gCarla.processModeForced or gCarla.isPlugin:
+            processMode = gCarla.processMode
+
+        # -------------------------------------------------------------
+        # save this for later
+
+        gCarla.maxParameters  = maxParameters
+        gCarla.useCustomSkins = useCustomSkins
+
+        if gCarla.host is None:
+            return audioDriver
+
+        # -------------------------------------------------------------
+        # apply settings
+
+        gCarla.host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,          forceStereo,         "")
+        gCarla.host.set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, preferPluginBridges, "")
+        gCarla.host.set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     preferUiBridges,     "")
+        gCarla.host.set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     uisAlwaysOnTop,      "")
+        gCarla.host.set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        maxParameters,       "")
+        gCarla.host.set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    uiBridgesTimeout,    "")
+
         gCarla.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LADSPA, splitter.join(LADSPA_PATH))
         gCarla.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(DSSI_PATH))
         gCarla.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2,    splitter.join(LV2_PATH))
@@ -548,31 +572,18 @@ class HostWindow(QMainWindow):
         gCarla.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(SF2_PATH))
         gCarla.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(SFZ_PATH))
 
+        if not gCarla.isPlugin:
+            gCarla.host.set_engine_option(ENGINE_OPTION_PROCESS_MODE,          processMode,         "")
+            gCarla.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE,        transportMode,       "")
+
+            gCarla.host.set_engine_option(ENGINE_OPTION_AUDIO_NUM_PERIODS,     audioNumPeriods,     "")
+            gCarla.host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE,     audioBufferSize,     "")
+            gCarla.host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE,     audioSampleRate,     "")
+            gCarla.host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE,          0,                   audioDevice)
+
         # -------------------------------------------------------------
-        # apply to engine
-
-        gCarla.host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,          forceStereo,         "")
-        gCarla.host.set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     uisAlwaysOnTop,      "")
-
-        gCarla.host.set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, preferPluginBridges, "")
-        gCarla.host.set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     preferUiBridges,     "")
-
-        gCarla.host.set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        maxParameters,       "")
-        gCarla.host.set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    uiBridgesTimeout,    "")
-
-        gCarla.host.set_engine_option(ENGINE_OPTION_PROCESS_MODE,          processMode,         "")
-        gCarla.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE,        transportMode,       "")
-
-        gCarla.host.set_engine_option(ENGINE_OPTION_AUDIO_NUM_PERIODS,     audioNumPeriods,     "")
-        gCarla.host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE,     audioBufferSize,     "")
-        gCarla.host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE,     audioSampleRate,     "")
-        gCarla.host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE,          0,                   audioDevice)
-
-        # save this for later
-        gCarla.maxParameters  = maxParameters
-        gCarla.useCustomSkins = useCustomSkins
-
         # return selected driver name
+
         return audioDriver
 
     def startEngine(self):
