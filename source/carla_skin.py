@@ -1469,7 +1469,7 @@ def createPluginSlot(parent, pluginId):
 # Main Testing
 
 if __name__ == '__main__':
-    from carla_style import CarlaApplication
+    from carla_app import CarlaApplication
     import resources_rc
 
     app = CarlaApplication("Carla-Skins")

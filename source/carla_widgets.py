@@ -1517,7 +1517,7 @@ class PluginEdit(QDialog):
 # Main
 
 if __name__ == '__main__':
-    from carla_style import CarlaApplication
+    from carla_app import CarlaApplication
 
     app = CarlaApplication()
 

@@ -19,7 +19,7 @@
 # -----------------------------------------------------------------------
 # Imports (ExternalUI)
 
-from carla_style import CarlaApplication
+from carla_app import CarlaApplication
 from externalui import ExternalUI
 from digitalpeakmeter import DigitalPeakMeter
 

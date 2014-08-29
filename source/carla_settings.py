@@ -761,8 +761,8 @@ class CarlaSettingsW(QDialog):
 # Main
 
 if __name__ == '__main__':
+    from carla_app import CarlaApplication
     from carla_host import initHost
-    from carla_style import CarlaApplication
 
     app = CarlaApplication()
 

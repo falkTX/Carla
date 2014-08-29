@@ -16,8 +16,6 @@
 #
 # For a full copy of the GNU General Public License see the GPL.txt file
 
-# TODO - rename to carla_app.py
-
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Config)
 

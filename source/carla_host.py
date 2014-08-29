@@ -37,9 +37,9 @@ else:
 
 import ui_carla_host
 
+from carla_app import *
 from carla_database import *
 from carla_settings import *
-from carla_style import *
 from carla_widgets import *
 
 # ------------------------------------------------------------------------------------------------------------
