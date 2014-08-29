@@ -427,6 +427,8 @@ if not WINDOWS:
             DEFAULT_VST_PATH  += ":" + winePrefix + "/drive_c/Program Files (x86)/VstPlugins"
             DEFAULT_VST3_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/VST3"
 
+    del winePrefix
+
 # ------------------------------------------------------------------------------------------------------------
 # Default Plugin Folders (set)
 

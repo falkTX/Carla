@@ -748,6 +748,33 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     if (gStandalone.engineOptions.audioDevice != nullptr)
         gStandalone.engine->setOption(CB::ENGINE_OPTION_AUDIO_DEVICE,   0, gStandalone.engineOptions.audioDevice);
 
+    if (gStandalone.engineOptions.pathLADSPA != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_LADSPA, gStandalone.engineOptions.pathLADSPA);
+
+    if (gStandalone.engineOptions.pathDSSI != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_DSSI, gStandalone.engineOptions.pathDSSI);
+
+    if (gStandalone.engineOptions.pathLV2 != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_LV2, gStandalone.engineOptions.pathLV2);
+
+    if (gStandalone.engineOptions.pathVST != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_VST, gStandalone.engineOptions.pathVST);
+
+    if (gStandalone.engineOptions.pathVST3 != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_VST3, gStandalone.engineOptions.pathVST3);
+
+    if (gStandalone.engineOptions.pathAU != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_AU, gStandalone.engineOptions.pathAU);
+
+    if (gStandalone.engineOptions.pathGIG != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_GIG, gStandalone.engineOptions.pathGIG);
+
+    if (gStandalone.engineOptions.pathSF2 != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_SF2, gStandalone.engineOptions.pathSF2);
+
+    if (gStandalone.engineOptions.pathSFZ != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_SFZ, gStandalone.engineOptions.pathSFZ);
+
     if (gStandalone.engineOptions.binaryDir != nullptr && gStandalone.engineOptions.binaryDir[0] != '\0')
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,  0, gStandalone.engineOptions.binaryDir);
 
@@ -816,22 +843,49 @@ bool carla_engine_init_bridge(const char audioBaseName[6+1], const char rtBaseNa
     gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_UI_BRIDGES,     false, nullptr);
 
     if (const char* const uisAlwaysOnTop = std::getenv("ENGINE_OPTION_UIS_ALWAYS_ON_TOP"))
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_UIS_ALWAYS_ON_TOP,      (std::strcmp(uisAlwaysOnTop, "true") == 0) ? 1 : 0, nullptr);
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_UIS_ALWAYS_ON_TOP, (std::strcmp(uisAlwaysOnTop, "true") == 0) ? 1 : 0, nullptr);
 
     if (const char* const maxParameters = std::getenv("ENGINE_OPTION_MAX_PARAMETERS"))
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_MAX_PARAMETERS,          std::atoi(maxParameters), nullptr);
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_MAX_PARAMETERS,     std::atoi(maxParameters), nullptr);
 
     if (const char* const uiBridgesTimeout = std::getenv("ENGINE_OPTION_UI_BRIDGES_TIMEOUT"))
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_UI_BRIDGES_TIMEOUT,      std::atoi(uiBridgesTimeout), nullptr);
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_UI_BRIDGES_TIMEOUT, std::atoi(uiBridgesTimeout), nullptr);
+
+    if (const char* const pathLADSPA = std::getenv("ENGINE_OPTION_PLUGIN_PATH_LADSPA"))
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_LADSPA, pathLADSPA);
+
+    if (const char* const pathDSSI = std::getenv("ENGINE_OPTION_PLUGIN_PATH_DSSI"))
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_DSSI, pathDSSI);
+
+    if (const char* const pathLV2 = std::getenv("ENGINE_OPTION_PLUGIN_PATH_LV2"))
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_LV2, pathLV2);
+
+    if (const char* const pathVST = std::getenv("ENGINE_OPTION_PLUGIN_PATH_VST"))
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_VST, pathVST);
+
+    if (const char* const pathVST3 = std::getenv("ENGINE_OPTION_PLUGIN_PATH_VST3"))
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_VST3, pathVST3);
+
+    if (const char* const pathAU = std::getenv("ENGINE_OPTION_PLUGIN_PATH_AU"))
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_AU, pathAU);
+
+    if (const char* const pathGIG = std::getenv("ENGINE_OPTION_PLUGIN_PATH_GIG"))
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_GIG, pathGIG);
+
+    if (const char* const pathSF2 = std::getenv("ENGINE_OPTION_PLUGIN_PATH_SF2"))
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_SF2, pathSF2);
+
+    if (const char* const pathSFZ = std::getenv("ENGINE_OPTION_PLUGIN_PATH_SFZ"))
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_SFZ, pathSFZ);
 
     if (const char* const binaryDir = std::getenv("ENGINE_OPTION_PATH_BINARIES"))
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,        0, binaryDir);
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,   0, binaryDir);
 
     if (const char* const resourceDir = std::getenv("ENGINE_OPTION_PATH_RESOURCES"))
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,       0, resourceDir);
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,  0, resourceDir);
 
     if (const char* const frontendWinId = std::getenv("ENGINE_OPTION_FRONTEND_WIN_ID"))
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_FRONTEND_WIN_ID,      0, frontendWinId);
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_FRONTEND_WIN_ID, 0, frontendWinId);
 
     if (gStandalone.engine->init(clientName))
     {
@@ -996,7 +1050,55 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
         CARLA_SAFE_ASSERT_RETURN(value > CB::PLUGIN_NONE,);
         CARLA_SAFE_ASSERT_RETURN(value <= CB::PLUGIN_SFZ,);
         CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr,);
-        // TODO
+
+        switch (value)
+        {
+        case CB::PLUGIN_LADSPA:
+            if (gStandalone.engineOptions.pathLADSPA != nullptr)
+                delete[] gStandalone.engineOptions.pathLADSPA;
+            gStandalone.engineOptions.pathLADSPA = carla_strdup_safe(valueStr);
+            break;
+        case CB::PLUGIN_DSSI:
+            if (gStandalone.engineOptions.pathDSSI != nullptr)
+                delete[] gStandalone.engineOptions.pathDSSI;
+            gStandalone.engineOptions.pathDSSI = carla_strdup_safe(valueStr);
+            break;
+        case CB::PLUGIN_LV2:
+            if (gStandalone.engineOptions.pathLV2 != nullptr)
+                delete[] gStandalone.engineOptions.pathLV2;
+            gStandalone.engineOptions.pathLV2 = carla_strdup_safe(valueStr);
+            break;
+        case CB::PLUGIN_VST:
+            if (gStandalone.engineOptions.pathVST != nullptr)
+                delete[] gStandalone.engineOptions.pathVST;
+            gStandalone.engineOptions.pathVST = carla_strdup_safe(valueStr);
+            break;
+        case CB::PLUGIN_VST3:
+            if (gStandalone.engineOptions.pathVST3 != nullptr)
+                delete[] gStandalone.engineOptions.pathVST3;
+            gStandalone.engineOptions.pathVST3 = carla_strdup_safe(valueStr);
+            break;
+        case CB::PLUGIN_AU:
+            if (gStandalone.engineOptions.pathAU != nullptr)
+                delete[] gStandalone.engineOptions.pathAU;
+            gStandalone.engineOptions.pathAU = carla_strdup_safe(valueStr);
+            break;
+        case CB::PLUGIN_GIG:
+            if (gStandalone.engineOptions.pathGIG != nullptr)
+                delete[] gStandalone.engineOptions.pathGIG;
+            gStandalone.engineOptions.pathGIG = carla_strdup_safe(valueStr);
+            break;
+        case CB::PLUGIN_SF2:
+            if (gStandalone.engineOptions.pathSF2 != nullptr)
+                delete[] gStandalone.engineOptions.pathSF2;
+            gStandalone.engineOptions.pathSF2 = carla_strdup_safe(valueStr);
+            break;
+        case CB::PLUGIN_SFZ:
+            if (gStandalone.engineOptions.pathSFZ != nullptr)
+                delete[] gStandalone.engineOptions.pathSFZ;
+            gStandalone.engineOptions.pathSFZ = carla_strdup_safe(valueStr);
+            break;
+        }
         break;
 
     case CB::ENGINE_OPTION_PATH_BINARIES:
