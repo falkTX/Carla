@@ -200,6 +200,15 @@ EngineOptions::EngineOptions() noexcept
       audioBufferSize(512),
       audioSampleRate(44100),
       audioDevice(nullptr),
+      pathLADSPA(nullptr),
+      pathDSSI(nullptr),
+      pathLV2(nullptr),
+      pathVST(nullptr),
+      pathVST3(nullptr),
+      pathAU(nullptr),
+      pathGIG(nullptr),
+      pathSF2(nullptr),
+      pathSFZ(nullptr),
       binaryDir(nullptr),
       resourceDir(nullptr),
       frontendWinId(0) {}
@@ -210,6 +219,60 @@ EngineOptions::~EngineOptions() noexcept
     {
         delete[] audioDevice;
         audioDevice = nullptr;
+    }
+
+    if (pathLADSPA != nullptr)
+    {
+        delete[] pathLADSPA;
+        pathLADSPA = nullptr;
+    }
+
+    if (pathDSSI != nullptr)
+    {
+        delete[] pathDSSI;
+        pathDSSI = nullptr;
+    }
+
+    if (pathLV2 != nullptr)
+    {
+        delete[] pathLV2;
+        pathLV2 = nullptr;
+    }
+
+    if (pathVST != nullptr)
+    {
+        delete[] pathVST;
+        pathVST = nullptr;
+    }
+
+    if (pathVST3 != nullptr)
+    {
+        delete[] pathVST3;
+        pathVST3 = nullptr;
+    }
+
+    if (pathAU != nullptr)
+    {
+        delete[] pathAU;
+        pathAU = nullptr;
+    }
+
+    if (pathGIG != nullptr)
+    {
+        delete[] pathGIG;
+        pathGIG = nullptr;
+    }
+
+    if (pathSF2 != nullptr)
+    {
+        delete[] pathSF2;
+        pathSF2 = nullptr;
+    }
+
+    if (pathSFZ != nullptr)
+    {
+        delete[] pathSFZ;
+        pathSFZ = nullptr;
     }
 
     if (binaryDir != nullptr)

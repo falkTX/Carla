@@ -1466,6 +1466,13 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         pData->options.audioDevice = carla_strdup_safe(valueStr);
         break;
 
+    case ENGINE_OPTION_PLUGIN_PATH:
+        CARLA_SAFE_ASSERT_RETURN(value > PLUGIN_NONE,);
+        CARLA_SAFE_ASSERT_RETURN(value <= PLUGIN_SFZ,);
+        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr,);
+        // TODO
+        break;
+
     case ENGINE_OPTION_PATH_BINARIES:
         CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
 

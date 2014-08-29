@@ -986,6 +986,13 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
         gStandalone.engineOptions.audioDevice = carla_strdup_safe(valueStr);
         break;
 
+    case CB::ENGINE_OPTION_PLUGIN_PATH:
+        CARLA_SAFE_ASSERT_RETURN(value > CB::PLUGIN_NONE,);
+        CARLA_SAFE_ASSERT_RETURN(value <= CB::PLUGIN_SFZ,);
+        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr,);
+        // TODO
+        break;
+
     case CB:: ENGINE_OPTION_NSM_INIT:
         CARLA_SAFE_ASSERT_RETURN(value != 0,);
         CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);

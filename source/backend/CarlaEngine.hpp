@@ -233,6 +233,16 @@ struct EngineOptions {
     uint audioSampleRate;
     const char* audioDevice;
 
+    const char* pathLADSPA;
+    const char* pathDSSI;
+    const char* pathLV2;
+    const char* pathVST;
+    const char* pathVST3;
+    const char* pathAU;
+    const char* pathGIG;
+    const char* pathSF2;
+    const char* pathSFZ;
+
     const char* binaryDir;
     const char* resourceDir;
 

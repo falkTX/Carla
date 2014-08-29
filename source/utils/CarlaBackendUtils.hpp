@@ -318,6 +318,8 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_AUDIO_DEVICE";
     case ENGINE_OPTION_NSM_INIT:
         return "ENGINE_OPTION_NSM_INIT";
+    case ENGINE_OPTION_PLUGIN_PATH:
+        return "ENGINE_OPTION_PLUGIN_PATH";
     case ENGINE_OPTION_PATH_BINARIES:
         return "ENGINE_OPTION_PATH_BINARIES";
     case ENGINE_OPTION_PATH_RESOURCES:
