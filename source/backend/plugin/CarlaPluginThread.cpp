@@ -105,8 +105,7 @@ uintptr_t CarlaPluginThread::getPid() const
 {
     CARLA_SAFE_ASSERT_RETURN(fProcess != nullptr, 0);
 
-    return 0;
-    //return (uintptr_t)fProcess->pid();
+    return (uintptr_t)fProcess->getPID();
 }
 
 void CarlaPluginThread::run()
