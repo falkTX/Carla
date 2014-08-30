@@ -208,11 +208,15 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
 
     #------------------------------------------------------------------
 
-    def setActive(self, active, sendGui=False, sendCallback=True):
+    def setActive(self, active, sendCallback=False, sendHost=True):
         self.fIsActive = active
 
-        if sendGui:      self.activeChanged(active)
-        if sendCallback: gCarla.host.set_active(self.fPluginId, active)
+        if sendCallback:
+            self.fParameterIconTimer = ICON_STATE_ON
+            self.activeChanged(active)
+
+        if sendHost:
+            gCarla.host.set_active(self.fPluginId, active)
 
         if active:
             self.fEditDialog.clearNotes()
@@ -254,14 +258,13 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
     #------------------------------------------------------------------
 
     def setParameterValue(self, parameterId, value, sendCallback):
-        self.fParameterIconTimer = ICON_STATE_ON
-
         if parameterId == PARAMETER_ACTIVE:
             return self.setActive(bool(value), True, False)
 
         self.fEditDialog.setParameterValue(parameterId, value)
 
         if sendCallback:
+            self.fParameterIconTimer = ICON_STATE_ON
             self.parameterValueChanged(parameterId, value)
 
     def setParameterDefault(self, parameterId, value):
@@ -276,17 +279,17 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
     #------------------------------------------------------------------
 
     def setProgram(self, index, sendCallback):
-        self.fParameterIconTimer = ICON_STATE_ON
         self.fEditDialog.setProgram(index)
 
         if sendCallback:
+            self.fParameterIconTimer = ICON_STATE_ON
             self.programChanged(index)
 
     def setMidiProgram(self, index, sendCallback):
-        self.fParameterIconTimer = ICON_STATE_ON
         self.fEditDialog.setMidiProgram(index)
 
         if sendCallback:
+            self.fParameterIconTimer = ICON_STATE_ON
             self.midiProgramChanged(index)
 
     #------------------------------------------------------------------
@@ -360,6 +363,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
 
     def pluginHintsChanged(self, hints):
         self.fPluginInfo['hints'] = hints
+
+        self.ui.dial_drywet.setVisible(hints & PLUGIN_CAN_DRYWET)
+        self.ui.dial_vol.setVisible(hints & PLUGIN_CAN_VOLUME)
 
         if self.b_gui is not None:
             self.b_gui.setEnabled(bool(hints & PLUGIN_HAS_CUSTOM_UI))
@@ -908,6 +914,7 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
         self.ui.dial_drywet.setMinimum(0.0)
         self.ui.dial_drywet.setMaximum(1.0)
         self.ui.dial_drywet.forceWhiteLabelGradientText()
+        self.ui.dial_drywet.setVisible(self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET)
 
         self.ui.dial_vol.setIndex(PARAMETER_VOLUME)
         self.ui.dial_vol.setPixmap(3)
@@ -916,6 +923,7 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
         self.ui.dial_vol.setMinimum(0.0)
         self.ui.dial_vol.setMaximum(1.27)
         self.ui.dial_vol.forceWhiteLabelGradientText()
+        self.ui.dial_vol.setVisible(self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME)
 
         self.fParameterList.append([PARAMETER_DRYWET, self.ui.dial_drywet])
         self.fParameterList.append([PARAMETER_VOLUME, self.ui.dial_vol])

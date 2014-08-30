@@ -267,7 +267,7 @@ class PluginParameter(QWidget):
         self.ui.widget.setMinimum(pInfo['minimum'])
         self.ui.widget.setMaximum(pInfo['maximum'])
         self.ui.widget.setDefault(pInfo['default'])
-        self.ui.widget.setValue(pInfo['current'], False)
+        self.ui.widget.setValue(pInfo['current'])
         self.ui.widget.setLabel(pInfo['unit'])
         self.ui.widget.setStep(pInfo['step'])
         self.ui.widget.setStepSmall(pInfo['stepSmall'])
@@ -328,8 +328,10 @@ class PluginParameter(QWidget):
     def setDefault(self, value):
         self.ui.widget.setDefault(value)
 
-    def setValue(self, value, send=True):
-        self.ui.widget.setValue(value, send)
+    def setValue(self, value):
+        self.ui.widget.blockSignals(True)
+        self.ui.widget.setValue(value)
+        self.ui.widget.blockSignals(False)
 
     def setMidiControl(self, control):
         self.fMidiControl = control
@@ -411,8 +413,8 @@ class PluginParameter(QWidget):
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Editor Parent (Meta class)
 
-#class PluginEditParentMeta():
-class PluginEditParentMeta(metaclass=ABCMeta):
+class PluginEditParentMeta():
+#class PluginEditParentMeta(metaclass=ABCMeta):
     @abstractmethod
     def editDialogChanged(self, visible):
         raise NotImplementedError
@@ -454,6 +456,7 @@ class PluginEdit(QDialog):
         self.ui.setupUi(self)
 
         if False:
+            # kdevelop likes this :)
             parent = PluginEditParentMeta()
             host = CarlaHostMeta()
 
@@ -461,64 +464,60 @@ class PluginEdit(QDialog):
         # Internal stuff
 
         self.fGeometry   = QByteArray()
+        self.fParent     = parent
         self.fPluginId   = pluginId
-        self.fPuginInfo  = None
-        self.fRealParent = parent
+        self.fPluginInfo = None
 
-        self.fCurrentProgram = -1
-        self.fCurrentMidiProgram = -1
         self.fCurrentStateFilename = None
         self.fControlChannel = int(host.get_internal_parameter_value(pluginId, PARAMETER_CTRL_CHANNEL))
         self.fFirstInit      = True
 
-        self.fParameterCount = 0
-        self.fParameterList  = []     # (type, id, widget)
+        self.fParameterList      = [] # (type, id, widget)
         self.fParametersToUpdate = [] # (id, value)
 
         self.fPlayingNotes = [] # (channel, note)
 
-        self.fTabIconOff = QIcon(":/bitmaps/led_off.png")
-        self.fTabIconOn  = QIcon(":/bitmaps/led_yellow.png")
-        self.fTabIconCount  = 0
+        self.fTabIconOff    = QIcon(":/bitmaps/led_off.png")
+        self.fTabIconOn     = QIcon(":/bitmaps/led_yellow.png")
         self.fTabIconTimers = []
 
         # -------------------------------------------------------------
         # Set-up GUI
 
-        self.ui.dial_drywet.setCustomPaintMode(self.ui.dial_drywet.CUSTOM_PAINT_MODE_CARLA_WET)
+        #self.ui.dial_drywet.setCustomPaintMode(self.ui.dial_drywet.CUSTOM_PAINT_MODE_CARLA_WET)
         self.ui.dial_drywet.setPixmap(3)
         self.ui.dial_drywet.setLabel("Dry/Wet")
+        self.ui.dial_drywet.setCustomPaintMode(self.ui.dial_drywet.CUSTOM_PAINT_MODE_CARLA_WET)
         self.ui.dial_drywet.setMinimum(0.0)
         self.ui.dial_drywet.setMaximum(1.0)
+        self.ui.dial_drywet.setValue(host.get_internal_parameter_value(pluginId, PARAMETER_DRYWET))
 
         self.ui.dial_vol.setCustomPaintMode(self.ui.dial_vol.CUSTOM_PAINT_MODE_CARLA_VOL)
         self.ui.dial_vol.setPixmap(3)
         self.ui.dial_vol.setLabel("Volume")
         self.ui.dial_vol.setMinimum(0.0)
         self.ui.dial_vol.setMaximum(1.27)
+        self.ui.dial_vol.setValue(host.get_internal_parameter_value(pluginId, PARAMETER_VOLUME))
 
         self.ui.dial_b_left.setCustomPaintMode(self.ui.dial_b_left.CUSTOM_PAINT_MODE_CARLA_L)
         self.ui.dial_b_left.setPixmap(4)
         self.ui.dial_b_left.setLabel("L")
         self.ui.dial_b_left.setMinimum(-1.0)
         self.ui.dial_b_left.setMaximum(1.0)
+        self.ui.dial_b_left.setValue(host.get_internal_parameter_value(pluginId, PARAMETER_BALANCE_LEFT))
 
         self.ui.dial_b_right.setCustomPaintMode(self.ui.dial_b_right.CUSTOM_PAINT_MODE_CARLA_R)
         self.ui.dial_b_right.setPixmap(4)
         self.ui.dial_b_right.setLabel("R")
         self.ui.dial_b_right.setMinimum(-1.0)
         self.ui.dial_b_right.setMaximum(1.0)
+        self.ui.dial_b_right.setValue(host.get_internal_parameter_value(pluginId, PARAMETER_BALANCE_RIGHT))
 
         self.ui.dial_pan.setCustomPaintMode(self.ui.dial_b_right.CUSTOM_PAINT_MODE_CARLA_PAN)
         self.ui.dial_pan.setPixmap(4)
         self.ui.dial_pan.setLabel("Pan")
         self.ui.dial_pan.setMinimum(-1.0)
         self.ui.dial_pan.setMaximum(1.0)
-
-        self.ui.dial_drywet.setValue(host.get_internal_parameter_value(pluginId, PARAMETER_DRYWET))
-        self.ui.dial_vol.setValue(host.get_internal_parameter_value(pluginId, PARAMETER_VOLUME))
-        self.ui.dial_b_left.setValue(host.get_internal_parameter_value(pluginId, PARAMETER_BALANCE_LEFT))
-        self.ui.dial_b_right.setValue(host.get_internal_parameter_value(pluginId, PARAMETER_BALANCE_RIGHT))
         self.ui.dial_pan.setValue(host.get_internal_parameter_value(pluginId, PARAMETER_PANNING))
 
         self.ui.sb_ctrl_channel.setValue(self.fControlChannel+1)
@@ -535,6 +534,8 @@ class PluginEdit(QDialog):
         self.ui.rb_pan.setEnabled(False)
 
         self.reloadAll()
+
+        self.fFirstInit = False
 
         # -------------------------------------------------------------
         # Set-up connections
@@ -596,7 +597,7 @@ class PluginEdit(QDialog):
 
         # Update all parameter values
         for paramType, paramId, paramWidget in self.fParameterList:
-            paramWidget.setValue(self.host.get_current_parameter_value(self.fPluginId, paramId), False)
+            paramWidget.setValue(self.host.get_current_parameter_value(self.fPluginId, paramId))
             paramWidget.update()
 
         self.fParametersToUpdate = []
@@ -616,10 +617,8 @@ class PluginEdit(QDialog):
         if not self.ui.scrollArea.isEnabled():
             self.resize(self.width(), self.height()-self.ui.scrollArea.height())
 
-        self.fFirstInit = False
-
         # Workaround for a Qt4 bug, see https://bugreports.qt-project.org/browse/QTBUG-7792
-        QTimer.singleShot(0, self.slot_fixNameWordWrap)
+        if LINUX: QTimer.singleShot(0, self.slot_fixNameWordWrap)
 
     @pyqtSlot()
     def slot_fixNameWordWrap(self):
@@ -629,7 +628,7 @@ class PluginEdit(QDialog):
     #------------------------------------------------------------------
 
     def reloadInfo(self):
-        pluginName     = self.host.get_real_plugin_name(self.fPluginId)
+        realPluginName = self.host.get_real_plugin_name(self.fPluginId)
         #audioCountInfo = self.host.get_audio_port_count_info(self.fPluginId)
         midiCountInfo  = self.host.get_midi_port_count_info(self.fPluginId)
         #paramCountInfo = self.host.get_parameter_count_info(self.fPluginId)
@@ -638,60 +637,30 @@ class PluginEdit(QDialog):
 
         self.ui.le_type.setText(getPluginTypeAsString(self.fPluginInfo['type']))
 
-        if pluginName:
-            self.ui.label_name.setEnabled(True)
-            self.ui.le_name.setEnabled(True)
-            self.ui.le_name.setText(pluginName)
-            self.ui.le_name.setToolTip(pluginName)
-        else:
-            self.ui.label_name.setEnabled(False)
-            self.ui.le_name.setEnabled(False)
-            self.ui.le_name.setText("")
-            self.ui.le_name.setToolTip("")
+        self.ui.label_name.setEnabled(bool(realPluginName))
+        self.ui.le_name.setEnabled(bool(realPluginName))
+        self.ui.le_name.setText(realPluginName)
+        self.ui.le_name.setToolTip(realPluginName)
 
-        if self.fPluginInfo['label']:
-            self.ui.label_label.setEnabled(True)
-            self.ui.le_label.setEnabled(True)
-            self.ui.le_label.setText(self.fPluginInfo['label'])
-            self.ui.le_label.setToolTip(self.fPluginInfo['label'])
-        else:
-            self.ui.label_label.setEnabled(False)
-            self.ui.le_label.setEnabled(False)
-            self.ui.le_label.setText("")
-            self.ui.le_label.setToolTip("")
+        self.ui.label_label.setEnabled(bool(self.fPluginInfo['label']))
+        self.ui.le_label.setEnabled(bool(self.fPluginInfo['label']))
+        self.ui.le_label.setText(self.fPluginInfo['label'])
+        self.ui.le_label.setToolTip(self.fPluginInfo['label'])
 
-        if self.fPluginInfo['maker']:
-            self.ui.label_maker.setEnabled(True)
-            self.ui.le_maker.setEnabled(True)
-            self.ui.le_maker.setText(self.fPluginInfo['maker'])
-            self.ui.le_maker.setToolTip(self.fPluginInfo['maker'])
-        else:
-            self.ui.label_maker.setEnabled(False)
-            self.ui.le_maker.setEnabled(False)
-            self.ui.le_maker.setText("")
-            self.ui.le_maker.setToolTip("")
+        self.ui.label_maker.setEnabled(bool(self.fPluginInfo['maker']))
+        self.ui.le_maker.setEnabled(bool(self.fPluginInfo['maker']))
+        self.ui.le_maker.setText(self.fPluginInfo['maker'])
+        self.ui.le_maker.setToolTip(self.fPluginInfo['maker'])
 
-        if self.fPluginInfo['copyright']:
-            self.ui.label_copyright.setEnabled(True)
-            self.ui.le_copyright.setEnabled(True)
-            self.ui.le_copyright.setText(self.fPluginInfo['copyright'])
-            self.ui.le_copyright.setToolTip(self.fPluginInfo['copyright'])
-        else:
-            self.ui.label_copyright.setEnabled(False)
-            self.ui.le_copyright.setEnabled(False)
-            self.ui.le_copyright.setText("")
-            self.ui.le_copyright.setToolTip("")
+        self.ui.label_copyright.setEnabled(bool(self.fPluginInfo['copyright']))
+        self.ui.le_copyright.setEnabled(bool(self.fPluginInfo['copyright']))
+        self.ui.le_copyright.setText(self.fPluginInfo['copyright'])
+        self.ui.le_copyright.setToolTip(self.fPluginInfo['copyright'])
 
-        if self.fPluginInfo['uniqueId'] != 0:
-            self.ui.label_unique_id.setEnabled(True)
-            self.ui.le_unique_id.setEnabled(True)
-            self.ui.le_unique_id.setText(str(self.fPluginInfo['uniqueId']))
-            self.ui.le_unique_id.setToolTip(str(self.fPluginInfo['uniqueId']))
-        else:
-            self.ui.label_unique_id.setEnabled(False)
-            self.ui.le_unique_id.setEnabled(False)
-            self.ui.le_unique_id.setText("")
-            self.ui.le_unique_id.setToolTip("")
+        self.ui.label_unique_id.setEnabled(bool(self.fPluginInfo['uniqueId']))
+        self.ui.le_unique_id.setEnabled(bool(self.fPluginInfo['uniqueId']))
+        self.ui.le_unique_id.setText(str(self.fPluginInfo['uniqueId']))
+        self.ui.le_unique_id.setToolTip(str(self.fPluginInfo['uniqueId']))
 
         self.ui.label_plugin.setText("\n%s\n" % self.fPluginInfo['name'])
         self.setWindowTitle(self.fPluginInfo['name'])
@@ -728,18 +697,15 @@ class PluginEdit(QDialog):
         self.ui.scrollArea.setEnabled(showKeyboard)
         self.ui.scrollArea.setVisible(showKeyboard)
 
-        # Force-Update parent for new hints
-        if self.fRealParent and not self.fFirstInit:
-            self.fRealParent.pluginHintsChanged(pluginHints)
+        # Force-update parent for new hints
+        if self.fParent is not None and not self.fFirstInit:
+            self.fParent.pluginHintsChanged(pluginHints)
 
     def reloadParameters(self):
         # Reset
-        self.fParameterCount = 0
-        self.fParameterList  = []
+        self.fParameterList      = []
         self.fParametersToUpdate = []
-
-        self.fTabIconCount  = 0
-        self.fTabIconTimers = []
+        self.fTabIconTimers      = []
 
         # Remove all previous parameters
         for x in range(self.ui.tabWidget.count()-1):
@@ -748,104 +714,14 @@ class PluginEdit(QDialog):
 
         parameterCount = self.host.get_parameter_count(self.fPluginId)
 
+        # -----------------------------------------------------------------
+
         if parameterCount <= 0:
-            pass
+            return
 
-        elif parameterCount <= gCarla.maxParameters:
-            paramInputListFull  = []
-            paramOutputListFull = []
+        # -----------------------------------------------------------------
 
-            paramInputList   = [] # ([params], width)
-            paramInputWidth  = 0
-            paramOutputList  = [] # ([params], width)
-            paramOutputWidth = 0
-
-            for i in range(parameterCount):
-                paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
-                paramData   = self.host.get_parameter_data(self.fPluginId, i)
-                paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
-                paramValue  = self.host.get_current_parameter_value(self.fPluginId, i)
-
-                if paramData['type'] not in (PARAMETER_INPUT, PARAMETER_OUTPUT):
-                    continue
-                if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                    continue
-
-                parameter = {
-                    'type':  paramData['type'],
-                    'hints': paramData['hints'],
-                    'name':  paramInfo['name'],
-                    'unit':  paramInfo['unit'],
-                    'scalePoints': [],
-
-                    'index':   paramData['index'],
-                    'default': paramRanges['def'],
-                    'minimum': paramRanges['min'],
-                    'maximum': paramRanges['max'],
-                    'step':    paramRanges['step'],
-                    'stepSmall': paramRanges['stepSmall'],
-                    'stepLarge': paramRanges['stepLarge'],
-                    'midiCC':    paramData['midiCC'],
-                    'midiChannel': paramData['midiChannel']+1,
-
-                    'current': paramValue
-                }
-
-                for j in range(paramInfo['scalePointCount']):
-                    scalePointInfo = self.host.get_parameter_scalepoint_info(self.fPluginId, i, j)
-
-                    parameter['scalePoints'].append({
-                        'value': scalePointInfo['value'],
-                        'label': scalePointInfo['label']
-                    })
-
-                #parameter['name'] = parameter['name'][:30] + (parameter['name'][30:] and "...")
-
-                # -----------------------------------------------------------------
-                # Get width values, in packs of 10
-
-                if parameter['type'] == PARAMETER_INPUT:
-                    paramInputWidthTMP = QFontMetrics(self.font()).width(parameter['name'])
-
-                    if paramInputWidthTMP > paramInputWidth:
-                        paramInputWidth = paramInputWidthTMP
-
-                    paramInputList.append(parameter)
-
-                    if len(paramInputList) == self.kParamsPerPage:
-                        paramInputListFull.append((paramInputList, paramInputWidth))
-                        paramInputList  = []
-                        paramInputWidth = 0
-
-                else:
-                    paramOutputWidthTMP = QFontMetrics(self.font()).width(parameter['name'])
-
-                    if paramOutputWidthTMP > paramOutputWidth:
-                        paramOutputWidth = paramOutputWidthTMP
-
-                    paramOutputList.append(parameter)
-
-                    if len(paramOutputList) == self.kParamsPerPage:
-                        paramOutputListFull.append((paramOutputList, paramOutputWidth))
-                        paramOutputList  = []
-                        paramOutputWidth = 0
-
-            # for i in range(parameterCount)
-            else:
-                # Final page width values
-                if 0 < len(paramInputList) < 10:
-                    paramInputListFull.append((paramInputList, paramInputWidth))
-
-                if 0 < len(paramOutputList) < 10:
-                    paramOutputListFull.append((paramOutputList, paramOutputWidth))
-
-            # -----------------------------------------------------------------
-            # Create parameter tabs + widgets
-
-            self._createParameterWidgets(PARAMETER_INPUT,  paramInputListFull,  self.tr("Parameters"))
-            self._createParameterWidgets(PARAMETER_OUTPUT, paramOutputListFull, self.tr("Outputs"))
-
-        else: # > gCarla.maxParameters
+        if parameterCount > gCarla.maxParameters:
             fakeName = self.tr("This plugin has too many parameters to display here!")
 
             paramFakeListFull = []
@@ -876,6 +752,100 @@ class PluginEdit(QDialog):
             paramFakeListFull.append((paramFakeList, paramFakeWidth))
 
             self._createParameterWidgets(PARAMETER_UNKNOWN, paramFakeListFull, self.tr("Information"))
+            return
+
+        # -----------------------------------------------------------------
+
+        paramInputList   = []
+        paramOutputList  = []
+        paramInputWidth  = 0
+        paramOutputWidth = 0
+
+        paramInputListFull  = [] # ([params], width)
+        paramOutputListFull = [] # ([params], width)
+
+        for i in range(parameterCount):
+            paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
+            paramData   = self.host.get_parameter_data(self.fPluginId, i)
+            paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
+            paramValue  = self.host.get_current_parameter_value(self.fPluginId, i)
+
+            if paramData['type'] not in (PARAMETER_INPUT, PARAMETER_OUTPUT):
+                continue
+            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
+                continue
+
+            parameter = {
+                'type':  paramData['type'],
+                'hints': paramData['hints'],
+                'name':  paramInfo['name'],
+                'unit':  paramInfo['unit'],
+                'scalePoints': [],
+
+                'index':   paramData['index'],
+                'default': paramRanges['def'],
+                'minimum': paramRanges['min'],
+                'maximum': paramRanges['max'],
+                'step':    paramRanges['step'],
+                'stepSmall': paramRanges['stepSmall'],
+                'stepLarge': paramRanges['stepLarge'],
+                'midiCC':    paramData['midiCC'],
+                'midiChannel': paramData['midiChannel']+1,
+
+                'current': paramValue
+            }
+
+            for j in range(paramInfo['scalePointCount']):
+                scalePointInfo = self.host.get_parameter_scalepoint_info(self.fPluginId, i, j)
+
+                parameter['scalePoints'].append({
+                    'value': scalePointInfo['value'],
+                    'label': scalePointInfo['label']
+                })
+
+            #parameter['name'] = parameter['name'][:30] + (parameter['name'][30:] and "...")
+
+            # -----------------------------------------------------------------
+            # Get width values, in packs of 10
+
+            if parameter['type'] == PARAMETER_INPUT:
+                paramInputWidthTMP = QFontMetrics(self.font()).width(parameter['name'])
+
+                if paramInputWidthTMP > paramInputWidth:
+                    paramInputWidth = paramInputWidthTMP
+
+                paramInputList.append(parameter)
+
+                if len(paramInputList) == self.kParamsPerPage:
+                    paramInputListFull.append((paramInputList, paramInputWidth))
+                    paramInputList  = []
+                    paramInputWidth = 0
+
+            else:
+                paramOutputWidthTMP = QFontMetrics(self.font()).width(parameter['name'])
+
+                if paramOutputWidthTMP > paramOutputWidth:
+                    paramOutputWidth = paramOutputWidthTMP
+
+                paramOutputList.append(parameter)
+
+                if len(paramOutputList) == self.kParamsPerPage:
+                    paramOutputListFull.append((paramOutputList, paramOutputWidth))
+                    paramOutputList  = []
+                    paramOutputWidth = 0
+
+        # for i in range(parameterCount)
+        else:
+            # Final page width values
+            if 0 < len(paramInputList) < 10:
+                paramInputListFull.append((paramInputList, paramInputWidth))
+
+            if 0 < len(paramOutputList) < 10:
+                paramOutputListFull.append((paramOutputList, paramOutputWidth))
+
+        # Create parameter tabs + widgets
+        self._createParameterWidgets(PARAMETER_INPUT,  paramInputListFull,  self.tr("Parameters"))
+        self._createParameterWidgets(PARAMETER_OUTPUT, paramOutputListFull, self.tr("Outputs"))
 
     def reloadPrograms(self):
         # Programs
@@ -893,11 +863,9 @@ class PluginEdit(QDialog):
                 #pName = pName[:40] + (pName[40:] and "...")
                 self.ui.cb_programs.addItem(pName)
 
-            self.fCurrentProgram = self.host.get_current_program_index(self.fPluginId)
-            self.ui.cb_programs.setCurrentIndex(self.fCurrentProgram)
+            self.ui.cb_programs.setCurrentIndex(self.host.get_current_program_index(self.fPluginId))
 
         else:
-            self.fCurrentProgram = -1
             self.ui.cb_programs.setEnabled(False)
             self.ui.label_programs.setEnabled(False)
 
@@ -922,11 +890,9 @@ class PluginEdit(QDialog):
 
                 self.ui.cb_midi_programs.addItem("%03i:%03i - %s" % (mpBank+1, mpProg+1, mpName))
 
-            self.fCurrentMidiProgram = self.host.get_current_midi_program_index(self.fPluginId)
-            self.ui.cb_midi_programs.setCurrentIndex(self.fCurrentMidiProgram)
+            self.ui.cb_midi_programs.setCurrentIndex(self.host.get_current_midi_program_index(self.fPluginId))
 
         else:
-            self.fCurrentMidiProgram = -1
             self.ui.cb_midi_programs.setEnabled(False)
             self.ui.label_midi_programs.setEnabled(False)
 
@@ -1108,7 +1074,7 @@ class PluginEdit(QDialog):
                     if paramId != index:
                         continue
 
-                    paramWidget.setValue(value, False)
+                    paramWidget.setValue(value)
 
                     if paramType == PARAMETER_INPUT:
                         tabIndex = paramWidget.getTabIndex()
@@ -1125,9 +1091,10 @@ class PluginEdit(QDialog):
 
         # Update parameter outputs
         for paramType, paramId, paramWidget in self.fParameterList:
-            if paramType == PARAMETER_OUTPUT:
-                value = self.host.get_current_parameter_value(self.fPluginId, paramId)
-                paramWidget.setValue(value, False)
+            if paramType != PARAMETER_OUTPUT:
+                continue
+
+            paramWidget.setValue(self.host.get_current_parameter_value(self.fPluginId, paramId))
 
     #------------------------------------------------------------------
 
@@ -1224,36 +1191,36 @@ class PluginEdit(QDialog):
     def slot_dryWetChanged(self, value):
         self.host.set_drywet(self.fPluginId, value)
 
-        if self.fRealParent is not None:
-            self.fRealParent.parameterValueChanged(PARAMETER_DRYWET, value)
+        if self.fParent is not None:
+            self.fParent.parameterValueChanged(PARAMETER_DRYWET, value)
 
     @pyqtSlot(int)
     def slot_volumeChanged(self, value):
         self.host.set_volume(self.fPluginId, value)
 
-        if self.fRealParent is not None:
-            self.fRealParent.parameterValueChanged(PARAMETER_VOLUME, value)
+        if self.fParent is not None:
+            self.fParent.parameterValueChanged(PARAMETER_VOLUME, value)
 
     @pyqtSlot(int)
     def slot_balanceLeftChanged(self, value):
         self.host.set_balance_left(self.fPluginId, value)
 
-        if self.fRealParent is not None:
-            self.fRealParent.parameterValueChanged(PARAMETER_BALANCE_LEFT, value)
+        if self.fParent is not None:
+            self.fParent.parameterValueChanged(PARAMETER_BALANCE_LEFT, value)
 
     @pyqtSlot(int)
     def slot_balanceRightChanged(self, value):
         self.host.set_balance_right(self.fPluginId, value)
 
-        if self.fRealParent is not None:
-            self.fRealParent.parameterValueChanged(PARAMETER_BALANCE_RIGHT, value)
+        if self.fParent is not None:
+            self.fParent.parameterValueChanged(PARAMETER_BALANCE_RIGHT, value)
 
     @pyqtSlot(int)
     def slot_panChanged(self, value):
         self.host.set_panning(self.fPluginId, value)
 
-        if self.fRealParent is not None:
-            self.fRealParent.parameterValueChanged(PARAMETER_PANNING, value)
+        if self.fParent is not None:
+            self.fParent.parameterValueChanged(PARAMETER_PANNING, value)
 
     @pyqtSlot(int)
     def slot_ctrlChannelChanged(self, value):
@@ -1269,8 +1236,8 @@ class PluginEdit(QDialog):
     def slot_parameterValueChanged(self, parameterId, value):
         self.host.set_parameter_value(self.fPluginId, parameterId, value)
 
-        if self.fRealParent is not None:
-            self.fRealParent.parameterValueChanged(parameterId, value)
+        if self.fParent is not None:
+            self.fParent.parameterValueChanged(parameterId, value)
 
     @pyqtSlot(int, int)
     def slot_parameterMidiControlChanged(self, parameterId, control):
@@ -1284,19 +1251,17 @@ class PluginEdit(QDialog):
 
     @pyqtSlot(int)
     def slot_programIndexChanged(self, index):
-        self.fCurrentProgram = index
         self.host.set_program(self.fPluginId, index)
 
-        if self.fRealParent is not None:
-            self.fRealParent.programChanged(index)
+        if self.fParent is not None:
+            self.fParent.programChanged(index)
 
     @pyqtSlot(int)
     def slot_midiProgramIndexChanged(self, index):
-        self.fCurrentMidiProgram = index
         self.host.set_midi_program(self.fPluginId, index)
 
-        if self.fRealParent is not None:
-            self.fRealParent.midiProgramChanged(index)
+        if self.fParent is not None:
+            self.fParent.midiProgramChanged(index)
 
     #------------------------------------------------------------------
 
@@ -1305,23 +1270,23 @@ class PluginEdit(QDialog):
         if self.fControlChannel >= 0:
             self.host.send_midi_note(self.fPluginId, self.fControlChannel, note, 100)
 
-        if self.fRealParent is not None:
-            self.fRealParent.notePressed(note)
+        if self.fParent is not None:
+            self.fParent.notePressed(note)
 
     @pyqtSlot(int)
     def slot_noteOff(self, note):
         if self.fControlChannel >= 0:
             self.host.send_midi_note(self.fPluginId, self.fControlChannel, note, 0)
 
-        if self.fRealParent is not None:
-            self.fRealParent.noteReleased(note)
+        if self.fParent is not None:
+            self.fParent.noteReleased(note)
 
     #------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_finished(self):
-        if self.fRealParent is not None:
-            self.fRealParent.editDialogChanged(False)
+        if self.fParent is not None:
+            self.fParent.editDialogChanged(False)
 
     #------------------------------------------------------------------
 

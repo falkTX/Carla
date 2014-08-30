@@ -246,7 +246,7 @@ class ParamSpinBox(QAbstractSpinBox):
         self.fMaximum = value
         self.fBar.setMaximum(value)
 
-    def setValue(self, value, send=True):
+    def setValue(self, value):
         value = geFixedValue(self.fName, value, self.fMinimum, self.fMaximum)
 
         if self.fValue == value:
@@ -258,9 +258,7 @@ class ParamSpinBox(QAbstractSpinBox):
         if self.fUseScalePoints:
             self._setScalePointValue(value)
 
-        if send:
-            self.valueChanged.emit(value)
-
+        self.valueChanged.emit(value)
         self.update()
 
         return True

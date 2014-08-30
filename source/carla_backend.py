@@ -1237,8 +1237,8 @@ else:
 # ------------------------------------------------------------------------------------------------------------
 # Carla Host object (Meta)
 
-#class CarlaHostMeta(object):
-class CarlaHostMeta(metaclass=ABCMeta):
+class CarlaHostMeta(object):
+#class CarlaHostMeta(metaclass=ABCMeta):
     def __init__(self):
         # info about this host object
         self.isControl = False
@@ -2718,8 +2718,8 @@ class PluginStoreInfo(object):
 # ------------------------------------------------------------------------------------------------------------
 # Carla Host object for plugins (using pipes)
 
-#class CarlaHostPlugin(CarlaHostMeta):
-class CarlaHostPlugin(CarlaHostMeta, metaclass=ABCMeta):
+class CarlaHostPlugin(CarlaHostMeta):
+#class CarlaHostPlugin(CarlaHostMeta, metaclass=ABCMeta):
     def __init__(self):
         CarlaHostMeta.__init__(self)
 
