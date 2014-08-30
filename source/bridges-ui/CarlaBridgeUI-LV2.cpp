@@ -1242,8 +1242,8 @@ int main(int argc, char* argv[])
     const bool useOsc(std::strcmp(oscUrl, "null") != 0);
 
     // try to get sampleRate value
-    if (const char* const sampleRateStr = getenv("CARLA_SAMPLE_RATE"))
-        gSampleRate = atof(sampleRateStr);
+    if (const char* const sampleRateStr = std::getenv("CARLA_SAMPLE_RATE"))
+        gSampleRate = std::atof(sampleRateStr);
 
     // Init LV2 client
     CarlaLv2Client client(uiTitle);

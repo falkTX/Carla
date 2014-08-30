@@ -525,8 +525,8 @@ int main(int argc, char* argv[])
     const bool useOsc = std::strcmp(oscUrl, "null");
 
     // try to get sampleRate value
-    if (const char* const sampleRateStr = getenv("CARLA_SAMPLE_RATE"))
-        sampleRate = atof(sampleRateStr);
+    if (const char* const sampleRateStr = std::getenv("CARLA_SAMPLE_RATE"))
+        sampleRate = std::atof(sampleRateStr);
 
     // Init VST client
     CarlaVstClient client(uiTitle);

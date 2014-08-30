@@ -158,6 +158,60 @@ void CarlaPluginThread::run()
     // use a global mutex to ensure bridge environment is correct
     static CarlaMutex sEnvMutex;
 
+    char strBuf[STR_MAX+1];
+    strBuf[STR_MAX] = '\0';
+
+    const EngineOptions& options(fEngine->getOptions());
+
+    sEnvMutex.lock();
+
+    std::snprintf(strBuf, STR_MAX, "%f", fEngine->getSampleRate());
+    carla_setenv("CARLA_SAMPLE_RATE", strBuf);
+
+    std::snprintf(strBuf, STR_MAX, "%u", options.maxParameters);
+    carla_setenv("ENGINE_OPTION_MAX_PARAMETERS", strBuf);
+
+    std::snprintf(strBuf, STR_MAX, "%u", options.uiBridgesTimeout);
+    carla_setenv("ENGINE_OPTION_UI_BRIDGES_TIMEOUT",strBuf);
+
+    carla_setenv("ENGINE_OPTION_UIS_ALWAYS_ON_TOP", bool2str(options.uisAlwaysOnTop));
+
+    if (options.pathLADSPA != nullptr && options.pathLADSPA[0] != '\0')
+        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_LADSPA", options.pathLADSPA);
+
+    if (options.pathDSSI != nullptr && options.pathDSSI[0] != '\0')
+        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_DSSI", options.pathDSSI);
+
+    if (options.pathLV2 != nullptr && options.pathLV2[0] != '\0')
+        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_LV2", options.pathLV2);
+
+    if (options.pathVST != nullptr && options.pathVST[0] != '\0')
+        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST", options.pathVST);
+
+    if (options.pathVST3 != nullptr && options.pathVST3[0] != '\0')
+        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST3", options.pathVST3);
+
+    if (options.pathAU != nullptr && options.pathAU[0] != '\0')
+        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_AU", options.pathAU);
+
+    if (options.pathGIG != nullptr && options.pathGIG[0] != '\0')
+        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_GIG", options.pathGIG);
+
+    if (options.pathSF2 != nullptr && options.pathSF2[0] != '\0')
+        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_SF2", options.pathSF2);
+
+    if (options.pathSFZ != nullptr && options.pathSFZ[0] != '\0')
+        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_SFZ", options.pathSFZ);
+
+    if (options.binaryDir != nullptr && options.binaryDir[0] != '\0')
+        carla_setenv("ENGINE_OPTION_PATH_BINARIES", options.binaryDir);
+
+    if (options.resourceDir != nullptr && options.resourceDir[0] != '\0')
+        carla_setenv("ENGINE_OPTION_PATH_RESOURCES", options.resourceDir);
+
+    std::snprintf(strBuf, STR_MAX, P_UINTPTR, options.frontendWinId);
+    carla_setenv("ENGINE_OPTION_FRONTEND_WIN_ID", strBuf);
+
     switch (fMode)
     {
     case PLUGIN_THREAD_NULL:
@@ -171,11 +225,11 @@ void CarlaPluginThread::run()
         break;
 
     case PLUGIN_THREAD_LV2_GUI:
-        /* osc-url  */ arguments.add(String(fEngine->getOscServerPathUDP()) + String("/") + String(fPlugin->getId()));
-        /* URI      */ arguments.add(fLabel.buffer());  // Plugin URI
-        /* ui-URI   */ arguments.add(fExtra1.buffer()); // UI URI
-        /* ui-URI   */ arguments.add(fExtra2.buffer()); // bundle
-        /* ui-title */ arguments.add(name + String(" (GUI)"));
+        /* osc-url   */ arguments.add(String(fEngine->getOscServerPathUDP()) + String("/") + String(fPlugin->getId()));
+        /* URI       */ arguments.add(fLabel.buffer());
+        /* UI URI    */ arguments.add(fExtra1.buffer());
+        /* UI Bundle */ arguments.add(fExtra2.buffer());
+        /* UI Title  */ arguments.add(name + String(" (GUI)"));
         break;
 
     case PLUGIN_THREAD_VST_GUI:
@@ -192,7 +246,6 @@ void CarlaPluginThread::run()
         /* label    */ arguments.add(fLabel.buffer());
         /* uniqueId */ arguments.add(String(static_cast<juce::int64>(fPlugin->getUniqueId())));
 
-        sEnvMutex.lock();
         carla_setenv("ENGINE_BRIDGE_SHM_IDS", fExtra2.buffer());
         carla_setenv("ENGINE_BRIDGE_CLIENT_NAME", name.toRawUTF8());
         carla_setenv("ENGINE_BRIDGE_OSC_URL", String(String(fEngine->getOscServerPathUDP()) + String("/") + String(fPlugin->getId())).toRawUTF8());
@@ -201,10 +254,10 @@ void CarlaPluginThread::run()
     }
 
     carla_stdout("starting app..");
-    //qWarning() << arguments;
 
     fProcess->start(arguments);
-    //fProcess->waitForStarted();
+
+    sEnvMutex.unlock();
 
     switch (fMode)
     {
@@ -251,7 +304,6 @@ void CarlaPluginThread::run()
         break;
 
     case PLUGIN_THREAD_BRIDGE:
-        sEnvMutex.unlock();
         //fProcess->waitForFinished(-1);
 
         while (fProcess->isRunning() && ! shouldThreadExit())
@@ -284,42 +336,6 @@ void CarlaPluginThread::run()
     carla_stdout("app finished");
     fProcess = nullptr;
 }
-
-// -----------------------------------------------------------------------
-
-#if 0
-    QProcessEnvironment env(QProcessEnvironment::systemEnvironment());
-    const EngineOptions& options(fEngine->getOptions());
-
-    char strBuf[STR_MAX+1];
-    env.insert("ENGINE_OPTION_UIS_ALWAYS_ON_TOP", options.uisAlwaysOnTop ? "true" : "false");
-
-    if (options.maxParameters != 0)
-    {
-        std::sprintf(strBuf, "%u", options.maxParameters);
-        env.insert("ENGINE_OPTION_MAX_PARAMETERS", strBuf);
-    }
-
-    if (options.uiBridgesTimeout != 0)
-    {
-        std::sprintf(strBuf, "%u", options.uiBridgesTimeout);
-        env.insert("ENGINE_OPTION_UI_BRIDGES_TIMEOUT", strBuf);
-    }
-
-    if (options.frontendWinId != 0)
-    {
-        std::sprintf(strBuf, P_UINTPTR, options.frontendWinId);
-        env.insert("ENGINE_OPTION_FRONTEND_WIN_ID", strBuf);
-    }
-
-    if (options.binaryDir != nullptr)
-        env.insert("ENGINE_OPTION_PATH_BINARIES", options.binaryDir);
-
-    if (options.resourceDir != nullptr)
-        env.insert("ENGINE_OPTION_PATH_RESOURCES", options.resourceDir);
-
-    fProcess->setProcessEnvironment(env);
-#endif
 
 // -----------------------------------------------------------------------
 
