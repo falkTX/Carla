@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>378</width>
-    <height>69</height>
+    <width>374</width>
+    <height>71</height>
    </rect>
   </property>
   <property name="contextMenuPolicy">
@@ -24,7 +24,7 @@
     <number>2</number>
    </property>
    <property name="topMargin">
-    <number>1</number>
+    <number>3</number>
    </property>
    <property name="rightMargin">
     <number>2</number>
@@ -175,6 +175,9 @@
       <widget class="QLabel" name="label_name">
        <property name="text">
         <string>PluginName</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
        </property>
       </widget>
      </item>

@@ -45,9 +45,44 @@ from carla_widgets import *
 from pixmapdial import PixmapDial
 
 # ------------------------------------------------------------------------------------------------------------
+# Try to "shortify" a parameter name
+
+def getParameterShortName(paramName):
+    paramName = paramName.split("/",1)[0].split(" (",1)[0].split(" [",1)[0].strip()
+    paramLow  = paramName.lower()
+
+    # Cut generic names
+    if "bandwidth" in paramLow:
+        paramName = paramName.replace("andwidth", "w")
+    elif "distortion" in paramLow:
+        paramName = paramName.replace("istortion", "ist")
+    elif "frequency" in paramLow:
+        paramName = paramName.replace("requency", "req")
+    elif "output" in paramLow:
+        paramName = paramName.replace("utput", "ut")
+    elif "threshold" in paramLow:
+        paramName = paramName.replace("hreshold", "hres")
+
+    # Cut useless prefix
+    elif paramLow.startswith("room "):
+        paramName = paramName.split(" ",1)[1]
+
+    # Cut useless suffix
+    elif paramLow.endswith(" level"):
+        paramName = paramName.rsplit(" ",1)[0]
+    elif paramLow.endswith(" time"):
+        paramName = paramName.rsplit(" ",1)[0]
+
+    if len(paramName) > 8:
+        paramName = paramName[:8]
+
+    return paramName.strip()
+
+# ------------------------------------------------------------------------------------------------------------
 # Abstract plugin slot
 
-class AbstractPluginSlot(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
+class AbstractPluginSlot(QFrame, PluginEditParentMeta):
+#class AbstractPluginSlot(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
     def __init__(self, parent, pluginId):
         QFrame.__init__(self, parent)
 
@@ -776,10 +811,9 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
         # -------------------------------------------------------------
         # Set-up GUI
 
-        labelFont = QFont()
+        labelFont = self.ui.label_name.font()
         labelFont.setBold(True)
         labelFont.setPointSize(9)
-
         self.ui.label_name.setFont(labelFont)
 
         r = 40
@@ -847,23 +881,12 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
 
             if paramData['type'] != PARAMETER_INPUT:
                 continue
+            if paramData['hints'] & PARAMETER_IS_BOOLEAN:
+                continue
             if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
                 continue
 
-            paramName = paramInfo['name'].split("/", 1)[0].split(" (", 1)[0].strip()
-            paramLow  = paramName.lower()
-
-            if "Bandwidth" in paramName:
-                paramName = paramName.replace("Bandwidth", "Bw")
-            elif "Frequency" in paramName:
-                paramName = paramName.replace("Frequency", "Freq")
-            elif "Output" in paramName:
-                paramName = paramName.replace("Output", "Out")
-            elif paramLow == "threshold":
-                paramName = "Thres"
-
-            if len(paramName) > 9:
-                paramName = paramName[:9]
+            paramName = getParameterShortName(paramInfo['name'])
 
             #if self.fPluginInfo['category'] == PLUGIN_CATEGORY_FILTER:
                 #_r =  55 + float(i)/8*200
@@ -892,7 +915,6 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
             widget.setCustomPaintColor(QColor(_r, _g, _b))
             widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_COLOR)
             widget.forceWhiteLabelGradientText()
-
             widget.setMinimum(paramRanges['min'])
             widget.setMaximum(paramRanges['max'])
 
@@ -957,7 +979,7 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
         painter.setBrush(Qt.transparent)
 
         painter.setPen(QPen(QColor(42, 42, 42), 1))
-        painter.drawRect(0, 1, self.width()-1, 76)
+        painter.drawRect(0, 1, self.width()-1, 79-3)
 
         painter.setPen(QPen(QColor(60, 60, 60), 1))
         painter.drawLine(0, 0, self.width(), 0)
@@ -1285,6 +1307,16 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
         self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
         self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
 
+        labelFont = self.ui.label_name.font()
+        labelFont.setBold(True)
+        labelFont.setPointSize(9)
+        self.ui.label_name.setFont(labelFont)
+
+        presetFont = self.ui.label_presets.font()
+        presetFont.setBold(True)
+        presetFont.setPointSize(8)
+        self.ui.label_presets.setFont(presetFont)
+
         # -------------------------------------------------------------
         # Set-up parameters
 
@@ -1298,9 +1330,12 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
 
             if paramData['type'] != PARAMETER_INPUT:
                 continue
+            if paramData['hints'] & PARAMETER_IS_BOOLEAN:
+                continue
+            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
+                continue
 
             paramName = paramInfo['name']
-            #paramLow  = paramName.lower()
 
             # real zyn fx plugins
             if self.fPluginInfo['label'] == "zynalienwah":
@@ -1363,34 +1398,43 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
                 elif i ==  9: paramName = "R.S."
                 elif i == 10: paramName = "I.del"
 
-            #elif paramLow.find("damp"):
-                #paramName = "Damp"
-            #elif paramLow.find("frequency"):
-                #paramName = "Freq"
-
-            # Cut generic names
-            #elif paramName == "Depth":      paramName = "Dpth"
-            #elif paramName == "Feedback":   paramName = "Fb"
-            #elif paramName == "L/R Cross": #paramName = "L/R"
-            #elif paramName == "Random":     paramName = "Rnd"
+            else:
+                paramName = getParameterShortName(paramInfo['name'])
 
             widget = PixmapDial(self, i)
 
             widget.setPixmap(5)
             widget.setLabel(paramName)
             widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-            #widget.setMidWhiteText()
-
             widget.setMinimum(paramRanges['min'])
             widget.setMaximum(paramRanges['max'])
 
             if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
                 widget.setEnabled(False)
 
-            self.ui.container.layout().insertWidget(index, widget)
+            self.ui.w_knobs.layout().insertWidget(index, widget)
             index += 1
 
             self.fParameterList.append([i, widget])
+
+        self.ui.dial_drywet.setIndex(PARAMETER_DRYWET)
+        self.ui.dial_drywet.setPixmap(5)
+        self.ui.dial_drywet.setLabel("Wet")
+        self.ui.dial_drywet.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
+        self.ui.dial_drywet.setMinimum(0.0)
+        self.ui.dial_drywet.setMaximum(1.0)
+        self.ui.dial_drywet.setVisible(self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET)
+
+        self.ui.dial_vol.setIndex(PARAMETER_VOLUME)
+        self.ui.dial_vol.setPixmap(5)
+        self.ui.dial_vol.setLabel("Vol")
+        self.ui.dial_vol.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
+        self.ui.dial_vol.setMinimum(0.0)
+        self.ui.dial_vol.setMaximum(1.27)
+        self.ui.dial_vol.setVisible(self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME)
+
+        self.fParameterList.append([PARAMETER_DRYWET, self.ui.dial_drywet])
+        self.fParameterList.append([PARAMETER_VOLUME, self.ui.dial_vol])
 
         # -------------------------------------------------------------
         # Set-up MIDI programs
@@ -1426,13 +1470,15 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
 
         self.label_name = self.ui.label_name
 
+        self.led_control   = self.ui.led_control
+        self.led_midi      = self.ui.led_midi
+        self.led_audio_in  = self.ui.led_audio_in
+        self.led_audio_out = self.ui.led_audio_out
+
         self.peak_in  = self.ui.peak_in
         self.peak_out = self.ui.peak_out
 
         self.ready()
-
-        self.peak_in.setOrientation(self.peak_in.VERTICAL)
-        self.peak_out.setOrientation(self.peak_out.VERTICAL)
 
         self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
         self.ui.cb_presets.currentIndexChanged.connect(self.slot_midiProgramChanged)
@@ -1440,7 +1486,21 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
-        return 70
+        return 74
+
+    #------------------------------------------------------------------
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setBrush(Qt.transparent)
+
+        painter.setPen(QPen(QColor(60, 60, 60), 1))
+        painter.drawRect(0, 1, self.width()-1, 74-3)
+
+        painter.setPen(QPen(QColor(94, 94, 94), 1))
+        painter.drawLine(0, 0, self.width(), 0)
+
+        AbstractPluginSlot.paintEvent(self, event)
 
 # ------------------------------------------------------------------------------------------------------------
 

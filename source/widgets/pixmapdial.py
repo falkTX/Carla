@@ -129,11 +129,6 @@ class PixmapDial(QDial):
         self.fLabelGradientColor2 = QColor(0, 0, 0, 0)
         self.fLabelGradientColorT = [Qt.white, Qt.darkGray]
 
-    #def setMidWhiteText(self):
-        #self.fColor1 = QColor(0, 0, 0, 255)
-        #self.fColor2 = QColor(0, 0, 0, 0)
-        #self.fColorT = [QColor("#BBB"), Qt.darkGray]
-
     def updateSizes(self):
         self.fPixmapWidth  = self.fPixmap.width()
         self.fPixmapHeight = self.fPixmap.height()
