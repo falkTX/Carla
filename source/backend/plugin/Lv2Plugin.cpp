@@ -5009,7 +5009,7 @@ public:
             {
                 carla_stdout("Will use OSC-Bridge UI, binary: \"%s\"", bridgeBinary);
                 fUI.type = UI::TYPE_OSC;
-                pData->osc.thread.setOscData(bridgeBinary, fDescriptor->URI, fUI.rdfDescriptor->URI);
+                pData->osc.thread.setOscData(bridgeBinary, fRdfDescriptor->URI, fUI.rdfDescriptor->URI, fUI.rdfDescriptor->Bundle);
                 delete[] bridgeBinary;
                 return;
             }

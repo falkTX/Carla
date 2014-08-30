@@ -51,12 +51,12 @@ public:
     // ---------------------------------------------------------------------
     // ui initialization
 
-    bool uiInit(const char* binary, const char*) override
+    bool uiInit(const char* binary, const char*, const char*) override
     {
         // -----------------------------------------------------------------
         // init
 
-        CarlaBridgeClient::uiInit(binary, nullptr);
+        CarlaBridgeClient::uiInit(binary, nullptr, nullptr);
 
         // -----------------------------------------------------------------
         // open DLL
@@ -541,7 +541,7 @@ int main(int argc, char* argv[])
     // Load UI
     int ret;
 
-    if (client.uiInit(binary, nullptr))
+    if (client.uiInit(binary, nullptr, nullptr))
     {
         client.toolkitExec(!useOsc);
         ret = 0;

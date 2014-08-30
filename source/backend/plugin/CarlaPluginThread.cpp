@@ -172,8 +172,9 @@ void CarlaPluginThread::run()
 
     case PLUGIN_THREAD_LV2_GUI:
         /* osc-url  */ arguments.add(String(fEngine->getOscServerPathUDP()) + String("/") + String(fPlugin->getId()));
-        /* URI      */ arguments.add(fLabel.buffer());
-        /* ui-URI   */ arguments.add(fExtra1.buffer());
+        /* URI      */ arguments.add(fLabel.buffer());  // Plugin URI
+        /* ui-URI   */ arguments.add(fExtra1.buffer()); // UI URI
+        /* ui-URI   */ arguments.add(fExtra2.buffer()); // bundle
         /* ui-title */ arguments.add(name + String(" (GUI)"));
         break;
 

@@ -350,12 +350,27 @@ public:
     // ---------------------------------------------------------------------
     // ui initialization
 
-    bool uiInit(const char* pluginURI, const char* uiURI) override
+    bool uiInit(const char* pluginURI, const char* uiURI, const char* uiBundle) override
     {
+        // -----------------------------------------------------------------
+        // load bundle
+
+        Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
+
+        Lilv::Node bundleNode(lv2World.new_file_uri(nullptr, uiBundle));
+        CARLA_SAFE_ASSERT_RETURN(bundleNode.is_uri(), false);
+
+        CarlaString sBundle(bundleNode.as_uri());
+
+        if (! sBundle.endsWith("/"))
+            sBundle += "/";
+
+        lv2World.load_bundle(sBundle);
+
         // -----------------------------------------------------------------
         // init
 
-        CarlaBridgeClient::uiInit(pluginURI, uiURI);
+        CarlaBridgeClient::uiInit(pluginURI, uiURI, uiBundle);
 
         // -----------------------------------------------------------------
         // get plugin from lv2_rdf (lilv)
@@ -1212,16 +1227,17 @@ int main(int argc, char* argv[])
 {
     CARLA_BRIDGE_USE_NAMESPACE
 
-    if (argc != 5)
+    if (argc != 6)
     {
-        carla_stderr("usage: %s <osc-url|\"null\"> <plugin-uri> <ui-uri> <ui-title>", argv[0]);
+        carla_stderr("usage: %s <osc-url|\"null\"> <plugin-bundle> <plugin-uri> <ui-uri> <ui-title>", argv[0]);
         return 1;
     }
 
     const char* oscUrl    = argv[1];
     const char* pluginURI = argv[2];
     const char* uiURI     = argv[3];
-    const char* uiTitle   = argv[4];
+    const char* uiBundle  = argv[4];
+    const char* uiTitle   = argv[5];
 
     const bool useOsc(std::strcmp(oscUrl, "null") != 0);
 
@@ -1242,7 +1258,7 @@ int main(int argc, char* argv[])
     // Load UI
     int ret;
 
-    if (client.uiInit(pluginURI, uiURI))
+    if (client.uiInit(pluginURI, uiURI, uiBundle))
     {
         client.toolkitExec(!useOsc);
         ret = 0;

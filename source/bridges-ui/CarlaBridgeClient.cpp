@@ -39,7 +39,7 @@ CarlaBridgeClient::~CarlaBridgeClient()
 // ---------------------------------------------------------------------
 // ui initialization
 
-bool CarlaBridgeClient::uiInit(const char* const, const char* const)
+bool CarlaBridgeClient::uiInit(const char*, const char* const, const char* const)
 {
     carla_debug("CarlaBridgeClient::uiInit()");
 
