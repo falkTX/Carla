@@ -49,7 +49,8 @@
 
         <file>bitmaps/carla_about.png</file>
         <file>bitmaps/background_3bandeq.png</file>
-        <file>bitmaps/background_calf.png</file>
+        <file>bitmaps/background_calf_black.png</file>
+        <file>bitmaps/background_calf_blue.png</file>
         <file>bitmaps/background_nekobi.png</file>
         <file>bitmaps/background_nekobi_left.png</file>
         <file>bitmaps/background_nekobi_right.png</file>
@@ -89,6 +90,14 @@
         <file>bitmaps/dial_05d.png</file>
         <file>bitmaps/dial_06.png</file>
         <file>bitmaps/dial_06d.png</file>
+        <file>bitmaps/dial_07.png</file>
+        <file>bitmaps/dial_07d.png</file>
+        <file>bitmaps/dial_08.png</file>
+        <file>bitmaps/dial_08d.png</file>
+        <file>bitmaps/dial_09.png</file>
+        <file>bitmaps/dial_09d.png</file>
+        <file>bitmaps/dial_10.png</file>
+        <file>bitmaps/dial_10d.png</file>
 
         <file>bitmaps/kbd_h_dark.png</file>
         <file>bitmaps/kbd_v_dark.png</file>

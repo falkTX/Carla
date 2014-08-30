@@ -988,6 +988,162 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
 
 # ------------------------------------------------------------------------------------------------------------
 
+class PluginSlot_Calf(AbstractPluginSlot):
+    def __init__(self, parent, pluginId):
+        AbstractPluginSlot.__init__(self, parent, pluginId)
+        self.ui = ui_carla_plugin_calf.Ui_PluginWidget()
+        self.ui.setupUi(self)
+
+        audioCount = gCarla.host.get_audio_port_count_info(self.fPluginId) if gCarla.host is not None else {'ins': 2, 'outs': 2 }
+        midiCount  = gCarla.host.get_midi_port_count_info(self.fPluginId) if gCarla.host is not None else {'ins': 1, 'outs': 0 }
+
+        # -------------------------------------------------------------
+        # Internal stuff
+
+        self.fButtonFont = self.ui.b_gui.font()
+        self.fButtonFont.setBold(False)
+        self.fButtonFont.setPointSize(8)
+
+        # Use black for mono plugins
+        self.fBackgroundBlack = audioCount['ins'] == 1
+
+        self.fButtonColorOn  = QColor( 18,  41,  87)
+        self.fButtonColorOff = QColor(150, 150, 150)
+
+        # -------------------------------------------------------------
+        # Set-up GUI
+
+        self.setStyleSheet("""
+            QLabel#label_name, QLabel#label_audio_in, QLabel#label_audio_out, QLabel#label_midi {
+                color: #BBB;
+            }
+            PluginSlot_Calf#PluginWidget {
+                background-image: url(:/bitmaps/background_calf_%s.png);
+                background-repeat: repeat-xy;
+                border: 2px;
+            }
+        """ % ("black" if self.fBackgroundBlack else "blue"))
+
+        self.ui.b_gui.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
+        self.ui.b_edit.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
+        self.ui.b_remove.setPixmaps(":/bitmaps/button_calf1.png", ":/bitmaps/button_calf1_down.png", ":/bitmaps/button_calf1_hover.png")
+
+        self.ui.b_edit.setTopText(self.tr("Edit"), self.fButtonColorOn, self.fButtonFont)
+        self.ui.b_remove.setTopText(self.tr("Remove"), self.fButtonColorOn, self.fButtonFont)
+
+        if self.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI:
+            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOn, self.fButtonFont)
+        else:
+            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOff, self.fButtonFont)
+
+        labelFont = self.ui.label_name.font()
+        labelFont.setBold(True)
+        labelFont.setPointSize(10)
+        self.ui.label_name.setFont(labelFont)
+
+        if audioCount['ins'] == 0:
+            self.ui.label_audio_in.hide()
+            self.ui.peak_in.hide()
+
+            if audioCount['outs'] > 0:
+                self.ui.peak_out.setMinimumWidth(200)
+
+        if audioCount['outs'] == 0:
+            self.ui.label_audio_out.hide()
+            self.ui.peak_out.hide()
+
+        if midiCount['ins'] == 0:
+            self.ui.label_midi.hide()
+            self.ui.led_midi.hide()
+
+        # -------------------------------------------------------------
+        # Set-up parameters
+
+        parameterCount = gCarla.host.get_parameter_count(self.fPluginId) if gCarla.host is not None else 0
+
+        index = 0
+        limit = 7 if midiCount['ins'] == 0 else 6
+        for i in range(parameterCount):
+            if index >= limit:
+                break
+
+            paramInfo   = gCarla.host.get_parameter_info(self.fPluginId, i)
+            paramData   = gCarla.host.get_parameter_data(self.fPluginId, i)
+            paramRanges = gCarla.host.get_parameter_ranges(self.fPluginId, i)
+
+            if paramData['type'] != PARAMETER_INPUT:
+                continue
+            if paramData['hints'] & PARAMETER_IS_BOOLEAN:
+                continue
+            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
+                continue
+
+            paramName = getParameterShortName(paramInfo['name'])
+
+            widget = PixmapDial(self, i)
+            widget.setPixmap(7)
+            widget.setLabel(paramName)
+            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
+            widget.setMinimum(paramRanges['min'])
+            widget.setMaximum(paramRanges['max'])
+
+            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
+                widget.setEnabled(False)
+
+            self.ui.w_knobs.layout().insertWidget(index, widget)
+            index += 1
+
+            self.fParameterList.append([i, widget])
+
+        # -------------------------------------------------------------
+
+        self.b_gui    = self.ui.b_gui
+        self.b_edit   = self.ui.b_edit
+        self.b_remove = self.ui.b_remove
+
+        self.label_name    = self.ui.label_name
+        self.led_midi      = self.ui.led_midi
+
+        self.peak_in  = self.ui.peak_in
+        self.peak_out = self.ui.peak_out
+
+        self.ready()
+
+        self.ui.led_midi.setColor(self.ui.led_midi.CALF)
+
+        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
+
+    #------------------------------------------------------------------
+
+    def getFixedHeight(self):
+        return 88
+
+    #------------------------------------------------------------------
+
+    def pluginHintsChanged(self, hints):
+        if hints & PLUGIN_HAS_CUSTOM_UI:
+            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOn, self.fButtonFont)
+        else:
+            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOff, self.fButtonFont)
+
+        AbstractPluginSlot.pluginHintsChanged(self, hints)
+
+    #------------------------------------------------------------------
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setBrush(Qt.transparent)
+
+        painter.setPen(QPen(QColor(20, 20, 20) if self.fBackgroundBlack else QColor(75, 86, 99), 1))
+        painter.drawRect(0, 1, self.width()-1, 88-3)
+
+        painter.setPen(QPen(QColor(45, 45, 45) if self.fBackgroundBlack else QColor(86, 99, 114), 1))
+        painter.drawLine(0, 0, self.width(), 0)
+
+        AbstractPluginSlot.paintEvent(self, event)
+
+# ------------------------------------------------------------------------------------------------------------
+
 class PluginSlot_Nekobi(AbstractPluginSlot):
     def __init__(self, parent, pluginId):
         AbstractPluginSlot.__init__(self, parent, pluginId)
@@ -1037,106 +1193,6 @@ class PluginSlot_Nekobi(AbstractPluginSlot):
         painter.drawPixmap(rightTarget, self.fPixmapRight, self.fPixmapRightRect)
 
         AbstractPluginSlot.paintEvent(self, event)
-
-# ------------------------------------------------------------------------------------------------------------
-
-class PluginSlot_Calf(AbstractPluginSlot):
-    def __init__(self, parent, pluginId):
-        AbstractPluginSlot.__init__(self, parent, pluginId)
-        self.ui = ui_carla_plugin_calf.Ui_PluginWidget()
-        self.ui.setupUi(self)
-
-        # -------------------------------------------------------------
-        # Internal stuff
-
-        self.fButtonFont = QFont()
-        #self.fButtonFont.setBold(False)
-        self.fButtonFont.setPointSize(8)
-
-        self.fButtonColorOn  = QColor( 18,  41,  87)
-        self.fButtonColorOff = QColor(150, 150, 150)
-
-        # -------------------------------------------------------------
-        # Set-up GUI
-
-        self.setStyleSheet("""
-            QLabel#label_audio_in, QLabel#label_audio_out, QLabel#label_midi {
-                color: black;
-            }
-            PluginSlot_Calf#PluginWidget {
-                background-image: url(:/bitmaps/background_calf.png);
-                background-repeat: repeat-xy;
-                border: 2px;
-            }
-        """)
-
-        self.ui.b_gui.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
-        self.ui.b_edit.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
-        self.ui.b_remove.setPixmaps(":/bitmaps/button_calf1.png", ":/bitmaps/button_calf1_down.png", ":/bitmaps/button_calf1_hover.png")
-
-        self.ui.b_edit.setTopText(self.tr("Edit"), self.fButtonColorOn, self.fButtonFont)
-        self.ui.b_remove.setTopText(self.tr("Remove"), self.fButtonColorOn, self.fButtonFont)
-
-        if self.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI:
-            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOn, self.fButtonFont)
-        else:
-            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOff, self.fButtonFont)
-
-        labelFont = self.ui.label_name.font()
-        labelFont.setBold(True)
-        labelFont.setPointSize(labelFont.pointSize()+3)
-        self.ui.label_name.setFont(labelFont)
-
-        audioCount = gCarla.host.get_audio_port_count_info(self.fPluginId) if gCarla.host is not None else {'ins': 2, 'outs': 2 }
-        midiCount  = gCarla.host.get_midi_port_count_info(self.fPluginId) if gCarla.host is not None else {'ins': 1, 'outs': 0 }
-
-        if audioCount['ins'] == 0:
-            self.ui.label_audio_in.hide()
-            self.ui.peak_in.hide()
-
-            if audioCount['outs'] > 0:
-                self.ui.peak_out.setMinimumWidth(200)
-
-        if audioCount['outs'] == 0:
-            self.ui.label_audio_out.hide()
-            self.ui.peak_out.hide()
-
-        if midiCount['ins'] == 0:
-            self.ui.label_midi.hide()
-            self.ui.led_midi.hide()
-
-        # -------------------------------------------------------------
-
-        self.b_gui    = self.ui.b_gui
-        self.b_edit   = self.ui.b_edit
-        self.b_remove = self.ui.b_remove
-
-        self.label_name    = self.ui.label_name
-        self.led_midi      = self.ui.led_midi
-
-        self.peak_in  = self.ui.peak_in
-        self.peak_out = self.ui.peak_out
-
-        self.ready()
-
-        self.ui.led_midi.setColor(self.ui.led_midi.CALF)
-
-        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
-
-    #------------------------------------------------------------------
-
-    def getFixedHeight(self):
-        return 70
-
-    #------------------------------------------------------------------
-
-    def pluginHintsChanged(self, hints):
-        if hints & PLUGIN_HAS_CUSTOM_UI:
-            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOn, self.fButtonFont)
-        else:
-            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOff, self.fButtonFont)
-
-        AbstractPluginSlot.pluginHintsChanged(self, hints)
 
 # ------------------------------------------------------------------------------------------------------------
 

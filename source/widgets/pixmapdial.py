@@ -159,7 +159,7 @@ class PixmapDial(QDial):
 
         self.fLabelPos.setX(float(self.fPixmapBaseSize)/2.0 - float(self.fLabelWidth)/2.0)
 
-        if self.fPixmapNum in ("01", "02"):
+        if self.fPixmapNum in ("01", "02", "07", "08", "09", "10"):
             self.fLabelPos.setY(self.fPixmapBaseSize + self.fLabelHeight)
         else:
             self.fLabelPos.setY(self.fPixmapBaseSize + self.fLabelHeight/2)
