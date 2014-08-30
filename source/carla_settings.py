@@ -224,8 +224,7 @@ class CarlaSettingsW(QDialog):
                 self.ui.cb_canvas_use_opengl.setChecked(False)
                 self.ui.cb_canvas_use_opengl.setEnabled(False)
 
-        # FIXME - allow plugin but disable engine driver and mode
-        if gCarla.isPlugin or not hasEngine:
+        if not hasEngine:
             self.ui.lw_page.hideRow(self.TAB_INDEX_ENGINE)
 
         if WINDOWS and not config_UseQt5:
@@ -236,6 +235,14 @@ class CarlaSettingsW(QDialog):
             auIndex = self.ui.cb_paths.findText("AU")
             self.ui.cb_paths.removeItem(auIndex)
             self.ui.tw_paths.removeWidget(self.ui.tw_paths.widget(auIndex))
+
+        if gCarla.isPlugin:
+            self.ui.cb_engine_audio_driver.setCurrentIndex(0)
+            self.ui.cb_engine_audio_driver.setEnabled(False)
+            self.ui.cb_engine_process_mode_other.setCurrentIndex(gCarla.processMode-self.PROCESS_MODE_NON_JACK_PADDING)
+            self.ui.cb_engine_process_mode_other.setEnabled(False)
+            self.ui.sw_engine_process_mode.setCurrentIndex(1)
+            self.ui.tb_engine_driver_config.setEnabled(False)
 
         # -------------------------------------------------------------
         # Set-up connections
