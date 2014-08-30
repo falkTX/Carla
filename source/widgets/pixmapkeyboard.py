@@ -471,6 +471,7 @@ class PixmapKeyboardHArea(QScrollArea):
 
         QTimer.singleShot(0, self.slot_initScrollbarValue)
 
+    # FIXME use change event
     def setEnabled(self, yesNo):
         self.keyboard.setEnabled(yesNo)
         QScrollArea.setEnabled(self, yesNo)

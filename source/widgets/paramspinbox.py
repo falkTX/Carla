@@ -309,6 +309,7 @@ class ParamSpinBox(QAbstractSpinBox):
         self.setButtonSymbols(QAbstractSpinBox.UpDownArrows if yesNo else QAbstractSpinBox.NoButtons)
         QAbstractSpinBox.setReadOnly(self, yesNo)
 
+    # FIXME use change event
     def setEnabled(self, yesNo):
         self.fBar.setEnabled(yesNo)
         QAbstractSpinBox.setEnabled(self, yesNo)
