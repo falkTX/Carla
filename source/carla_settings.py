@@ -52,17 +52,22 @@ SAMPLE_RATE_LIST = (22050, 32000, 44100, 48000, 88200, 96000, 176400, 192000)
 # Driver Settings
 
 class DriverSettingsW(QDialog):
-    def __init__(self, parent, driverIndex, driverName):
+    def __init__(self, parent, host, driverIndex, driverName):
         QDialog.__init__(self, parent)
+        self.host = host
         self.ui = ui_carla_settings_driver.Ui_DriverSettingsW()
         self.ui.setupUi(self)
+
+        if False:
+            # kdevelop likes this :)
+            host = CarlaHostMeta()
 
         # -------------------------------------------------------------
         # Internal stuff
 
         self.fDriverIndex = driverIndex
         self.fDriverName  = driverName
-        self.fDeviceNames = gCarla.host.get_engine_driver_device_names(driverIndex) if gCarla.host is not None else []
+        self.fDeviceNames = host.get_engine_driver_device_names(driverIndex)
 
         self.fBufferSizes = BUFFER_SIZE_LIST
         self.fSampleRates = SAMPLE_RATE_LIST
@@ -140,8 +145,8 @@ class DriverSettingsW(QDialog):
         self.ui.cb_buffersize.clear()
         self.ui.cb_samplerate.clear()
 
-        if deviceName and gCarla.host is not None:
-            driverDeviceInfo  = gCarla.host.get_engine_driver_device_info(self.fDriverIndex, deviceName)
+        if deviceName:
+            driverDeviceInfo  = self.host.get_engine_driver_device_info(self.fDriverIndex, deviceName)
             self.fBufferSizes = driverDeviceInfo['bufferSizes']
             self.fSampleRates = driverDeviceInfo['sampleRates']
         else:
@@ -189,25 +194,27 @@ class CarlaSettingsW(QDialog):
     PATH_INDEX_SFZ    = 8 if MACOS else 7
 
     # Single and Multiple client mode is only for JACK,
-    # but we still want to match QComboBox index to defines,
+    # but we still want to match QComboBox index to backend defines,
     # so add +2 pos padding if driverName != "JACK".
     PROCESS_MODE_NON_JACK_PADDING = 2
 
-    def __init__(self, parent, hasCanvas, hasCanvasGL, hasEngine):
+    def __init__(self, parent, host, hasCanvas, hasCanvasGL, hasEngine):
         QDialog.__init__(self, parent)
+        self.host = host
         self.ui = ui_carla_settings.Ui_CarlaSettingsW()
         self.ui.setupUi(self)
+
+        if False:
+            # kdevelop likes this :)
+            host = CarlaHostMeta()
 
         self.ui.lw_page.setFixedWidth(48 + 6 + 6 + QFontMetrics(self.ui.lw_page.font()).width("88888888"))
 
         # -------------------------------------------------------------
         # Set-up GUI
 
-        if gCarla.host is not None:
-            for i in range(gCarla.host.get_engine_driver_count()):
-                self.ui.cb_engine_audio_driver.addItem(gCarla.host.get_engine_driver_name(i))
-        else:
-            self.ui.tb_engine_driver_config.setEnabled(False)
+        for i in range(host.get_engine_driver_count()):
+            self.ui.cb_engine_audio_driver.addItem(host.get_engine_driver_name(i))
 
         for i in range(Theme.THEME_MAX):
             self.ui.cb_canvas_theme.addItem(getThemeName(i))
@@ -236,7 +243,7 @@ class CarlaSettingsW(QDialog):
             self.ui.cb_paths.removeItem(auIndex)
             self.ui.tw_paths.removeWidget(self.ui.tw_paths.widget(auIndex))
 
-        if gCarla.isPlugin:
+        if host.isPlugin:
             self.ui.cb_engine_audio_driver.setCurrentIndex(0)
             self.ui.cb_engine_audio_driver.setEnabled(False)
             self.ui.cb_engine_process_mode_other.setCurrentIndex(gCarla.processMode-self.PROCESS_MODE_NON_JACK_PADDING)
@@ -324,11 +331,13 @@ class CarlaSettingsW(QDialog):
             processModeIndex = settings.value(CARLA_KEY_ENGINE_PROCESS_MODE, ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, type=int)
             self.ui.cb_engine_process_mode_jack.setCurrentIndex(processModeIndex)
             self.ui.sw_engine_process_mode.setCurrentIndex(0)
+            self.ui.tb_engine_driver_config.setEnabled(False)
         else:
             processModeIndex  = settings.value(CARLA_KEY_ENGINE_PROCESS_MODE, ENGINE_PROCESS_MODE_CONTINUOUS_RACK, type=int)
             processModeIndex -= self.PROCESS_MODE_NON_JACK_PADDING
             self.ui.cb_engine_process_mode_other.setCurrentIndex(processModeIndex)
             self.ui.sw_engine_process_mode.setCurrentIndex(1)
+            self.ui.tb_engine_driver_config.setEnabled(True)
 
         self.ui.sb_engine_max_params.setValue(settings.value(CARLA_KEY_ENGINE_MAX_PARAMETERS, CARLA_DEFAULT_MAX_PARAMETERS, type=int))
         self.ui.ch_engine_uis_always_on_top.setChecked(settings.value(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, CARLA_DEFAULT_UIS_ALWAYS_ON_TOP, type=bool))
@@ -623,7 +632,7 @@ class CarlaSettingsW(QDialog):
     def slot_showAudioDriverSettings(self):
         driverIndex = self.ui.cb_engine_audio_driver.currentIndex()
         driverName  = self.ui.cb_engine_audio_driver.currentText()
-        DriverSettingsW(self, driverIndex, driverName).exec_()
+        DriverSettingsW(self, self.host, driverIndex, driverName).exec_()
 
     @pyqtSlot()
     def slot_addPluginPath(self):
@@ -769,11 +778,10 @@ if __name__ == '__main__':
     from carla_app import CarlaApplication
     from carla_host import initHost
 
-    app = CarlaApplication()
+    app  = CarlaApplication()
+    host = initHost("Settings", None, False)
 
-    initHost("Settings", None, False)
-
-    gui = CarlaSettingsW(None, True, True, True)
+    gui = CarlaSettingsW(None, host, True, True, True)
     gui.show()
 
     sys.exit(app.exec_())

@@ -354,7 +354,7 @@ class HostWindow(QMainWindow):
 
     def openSettingsWindow(self, hasCanvas, hasCanvasGL):
         hasEngine = bool(self.fSessionManagerName != "Non Session Manager")
-        dialog = CarlaSettingsW(self, hasCanvas, hasCanvasGL, hasEngine)
+        dialog = CarlaSettingsW(self, gCarla.host, hasCanvas, hasCanvasGL, hasEngine)
         return dialog.exec_()
 
     def setupContainer(self, showCanvas, canvasThemeData = []):
@@ -1476,5 +1476,7 @@ def initHost(initName, libPrefix = None, failError = True):
 
         if not gCarla.isControl:
             gCarla.host.set_engine_option(ENGINE_OPTION_NSM_INIT, os.getpid(), initName)
+
+    return gCarla.host
 
 # ------------------------------------------------------------------------------------------------------------

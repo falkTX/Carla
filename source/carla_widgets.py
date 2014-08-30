@@ -1457,9 +1457,10 @@ class PluginEdit(QDialog):
 
 if __name__ == '__main__':
     from carla_app import CarlaApplication
+    from carla_host import initHost
 
-    app = CarlaApplication()
-    host = CarlaHostNull()
+    app  = CarlaApplication()
+    host = initHost("Widgets", None, False)
 
     #gui1 = CarlaAboutW(None)
     #gui1.show()
