@@ -56,10 +56,14 @@ def getParameterShortName(paramName):
         paramName = paramName.replace("andwidth", "w")
     elif "distortion" in paramLow:
         paramName = paramName.replace("istortion", "ist")
+    elif "feedback" in paramLow:
+        paramName = paramName.replace("eedback", "b")
     elif "frequency" in paramLow:
         paramName = paramName.replace("requency", "req")
     elif "output" in paramLow:
         paramName = paramName.replace("utput", "ut")
+    elif "random" in paramLow:
+        paramName = paramName.replace("andom", "nd")
     elif "threshold" in paramLow:
         paramName = paramName.replace("hreshold", "hres")
 
@@ -73,8 +77,8 @@ def getParameterShortName(paramName):
     elif paramLow.endswith(" time"):
         paramName = paramName.rsplit(" ",1)[0]
 
-    if len(paramName) > 8:
-        paramName = paramName[:8]
+    if len(paramName) > 7:
+        paramName = paramName[:7]
 
     return paramName.strip()
 
@@ -1101,8 +1105,8 @@ class PluginSlot_Calf(AbstractPluginSlot):
         self.b_edit   = self.ui.b_edit
         self.b_remove = self.ui.b_remove
 
-        self.label_name    = self.ui.label_name
-        self.led_midi      = self.ui.led_midi
+        self.label_name = self.ui.label_name
+        self.led_midi   = self.ui.led_midi
 
         self.peak_in  = self.ui.peak_in
         self.peak_out = self.ui.peak_out
@@ -1402,7 +1406,7 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
                 elif i == 5: paramName = "Fb"
                 elif i == 7: paramName = "L/R"
 
-            if self.fPluginInfo['label'] == "zynchorus":
+            elif self.fPluginInfo['label'] == "zynchorus":
                 if   i == 0: paramName = "Freq"
                 elif i == 1: paramName = "Rnd"
                 elif i == 2: paramName = "L type" # combobox
@@ -1567,9 +1571,9 @@ def createPluginSlot(parent, pluginId):
     pluginInfo  = gCarla.host.get_plugin_info(pluginId)
     pluginName  = gCarla.host.get_real_plugin_name(pluginId)
     pluginLabel = pluginInfo['label']
+    pluginMaker = pluginInfo['maker']
     uniqueId    = pluginInfo['uniqueId']
 
-    #pluginMaker = pluginInfo['maker']
     #pluginIcon  = pluginInfo['iconName']
 
     if pluginInfo['type'] == PLUGIN_INTERNAL:
@@ -1579,6 +1583,8 @@ def createPluginSlot(parent, pluginId):
     elif pluginInfo['type'] == PLUGIN_LADSPA:
         if (pluginLabel == "zita-reverb" and uniqueId == 3701) or (pluginLabel == "zita-reverb-amb" and uniqueId == 3702):
             return PluginSlot_ZitaRev(parent, pluginId)
+        if pluginLabel.startswith("Zyn") and pluginMaker.startswith("Josep Andreu"):
+            return PluginSlot_ZynFX(parent, pluginId)
 
     if pluginName.split(" ", 1)[0].lower() == "calf":
         return PluginSlot_Calf(parent, pluginId)
