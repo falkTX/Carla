@@ -27,12 +27,12 @@ from carla_config import *
 from math import cos, floor, pi, sin
 
 if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QPointF, QRectF, QTimer, QSize
+    from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QEvent, QPointF, QRectF, QTimer, QSize
     from PyQt5.QtGui import QColor, QConicalGradient, QFont, QFontMetrics
     from PyQt5.QtGui import QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
     from PyQt5.QtWidgets import QDial
 else:
-    from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QPointF, QRectF, QTimer, QSize
+    from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QEvent, QPointF, QRectF, QTimer, QSize
     from PyQt4.QtGui import QColor, QConicalGradient, QFont, QFontMetrics
     from PyQt4.QtGui import QDial, QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
 
@@ -196,16 +196,6 @@ class PixmapDial(QDial):
         self.updateSizes()
         self.update()
 
-    def setEnabled(self, enabled):
-        if self.isEnabled() == enabled:
-            return
-
-        QDial.setEnabled(self, enabled)
-
-        self.fPixmap.load(":/bitmaps/dial_%s%s.png" % (self.fPixmapNum, "" if enabled else "d"))
-        self.updateSizes()
-        self.update()
-
     def setIndex(self, index):
         self.fIndex = index
 
@@ -254,11 +244,20 @@ class PixmapDial(QDial):
         self.fRealValue = float(value)/10000.0 * (self.fMaximum - self.fMinimum) + self.fMinimum
         self.realValueChanged.emit(self.fRealValue)
 
+    @pyqtSlot()
+    def slot_updatePixmap(self):
+        self.setPixmap(int(self.fPixmapNum))
+
     def minimumSizeHint(self):
         return QSize(self.fPixmapBaseSize, self.fPixmapBaseSize)
 
     def sizeHint(self):
         return QSize(self.fPixmapBaseSize, self.fPixmapBaseSize)
+
+    def changeEvent(self, event):
+        if event.type() == QEvent.EnabledChange:
+            QTimer.singleShot(0, self.slot_updatePixmap)
+        QDial.changeEvent(self, event)
 
     def enterEvent(self, event):
         self.fIsHovered = True

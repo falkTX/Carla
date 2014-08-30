@@ -464,9 +464,6 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
     #------------------------------------------------------------------
 
     def drawOutline(self):
-        # FIXME - broken in Qt4
-        if MACOS: return
-
         painter = QPainter(self)
 
         if self.fIsSelected:
@@ -1378,7 +1375,6 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
             #elif paramName == "Random":     paramName = "Rnd"
 
             widget = PixmapDial(self, i)
-            widget.setEnabled(True)
 
             widget.setPixmap(5)
             widget.setLabel(paramName)
@@ -1388,8 +1384,8 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
             widget.setMinimum(paramRanges['min'])
             widget.setMaximum(paramRanges['max'])
 
-            #if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                #widget.setEnabled(False)
+            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
+                widget.setEnabled(False)
 
             self.ui.container.layout().insertWidget(index, widget)
             index += 1
