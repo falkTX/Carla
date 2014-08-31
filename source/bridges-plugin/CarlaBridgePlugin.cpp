@@ -325,6 +325,7 @@ protected:
         {
         case ENGINE_CALLBACK_ENGINE_STOPPED:
         case ENGINE_CALLBACK_PLUGIN_REMOVED:
+        case ENGINE_CALLBACK_QUIT:
             gCloseNow = true;
             break;
 

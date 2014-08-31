@@ -578,7 +578,7 @@ public:
                         CARLA_SAFE_ASSERT_BREAK(data != nullptr);
 
                         CarlaString dataBase64 = CarlaString::asBase64(data, dataSize);
-                        CARLA_SAFE_ASSERT_RETURN(dataBase64.length() > 0,);
+                        CARLA_SAFE_ASSERT_BREAK(dataBase64.length() > 0);
 
                         String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
 
@@ -651,6 +651,7 @@ public:
 
             case kPluginBridgeNonRtQuit:
                 signalThreadShouldExit();
+                callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
                 break;
             }
         }
@@ -868,6 +869,10 @@ protected:
 
                     break;
                 }
+
+                case kPluginBridgeRtQuit:
+                    signalThreadShouldExit();
+                    break;
                 }
             }
 

@@ -274,7 +274,7 @@ void CarlaPluginThread::run()
             // we only get here if UI was closed or thread asked to exit
             if (fProcess->isRunning() && shouldThreadExit())
             {
-                //fProcess->waitForFinished(static_cast<int>(fEngine->getOptions().uiBridgesTimeout));
+                fProcess->waitForProcessToFinish(static_cast<int>(fEngine->getOptions().uiBridgesTimeout));
 
                 if (fProcess->isRunning())
                 {
@@ -309,12 +309,19 @@ void CarlaPluginThread::run()
             carla_sleep(1);
 
         // we only get here if bridge crashed or thread asked to exit
-        if (shouldThreadExit())
+        if (fProcess->isRunning() && shouldThreadExit())
         {
-            fProcess->getExitCode(); // TEST
+            fProcess->waitForProcessToFinish(2000);
 
             if (fProcess->isRunning())
+            {
+                carla_stdout("CarlaPluginThread::run() - bridge refused to close, force kill now");
                 fProcess->kill();
+            }
+            else
+            {
+                carla_stdout("CarlaPluginThread::run() - bridge auto-closed successfully");
+            }
         }
         else
         {

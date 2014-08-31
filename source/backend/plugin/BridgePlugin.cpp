@@ -383,6 +383,9 @@ public:
             fShmNonRtControl.writeOpcode(kPluginBridgeNonRtQuit);
             fShmNonRtControl.commitWrite();
 
+            fShmRtControl.writeOpcode(kPluginBridgeRtQuit);
+            fShmRtControl.commitWrite();
+
             if (! fTimedOut)
                 fShmRtControl.waitForServer(3);
         }

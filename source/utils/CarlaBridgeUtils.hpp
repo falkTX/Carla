@@ -61,7 +61,8 @@ enum PluginBridgeRtOpcode {
     kPluginBridgeRtControlEventAllSoundOff, // uint/frame, byte/chan
     kPluginBridgeRtControlEventAllNotesOff, // uint/frame, byte/chan
     kPluginBridgeRtMidiEvent,               // uint/frame, byte/port, byte/size, byte[]/data
-    kPluginBridgeRtProcess
+    kPluginBridgeRtProcess,
+    kPluginBridgeRtQuit
 };
 
 // carla-plugin sends these during non-RT
@@ -221,6 +222,8 @@ const char* PluginBridgeRtOpcode2str(const PluginBridgeRtOpcode opcode) noexcept
         return "kPluginBridgeRtMidiEvent";
     case kPluginBridgeRtProcess:
         return "kPluginBridgeRtProcess";
+    case kPluginBridgeRtQuit:
+        return "kPluginBridgeRtQuit";
     }
 
     carla_stderr("CarlaBackend::PluginBridgeRtOpcode2str(%i) - invalid opcode", opcode);
