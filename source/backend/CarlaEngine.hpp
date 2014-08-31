@@ -24,6 +24,11 @@
 struct CarlaOscData;
 #endif
 
+namespace juce {
+class MemoryOutputStream;
+class XmlDocument;
+}
+
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
@@ -1109,6 +1114,16 @@ protected:
      * @note RT call
      */
     void setPluginPeaks(const uint pluginId, float const inPeaks[2], float const outPeaks[2]) noexcept;
+
+    /*!
+     * Common save project function for main engine and plugin.
+     */
+    void saveProjectInternal(juce::MemoryOutputStream& outStrm) const;
+
+    /*!
+     * Common load project function for main engine and plugin.
+     */
+    bool loadProjectInternal(juce::XmlDocument& xmlDoc);
 
 #ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------

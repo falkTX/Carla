@@ -987,114 +987,7 @@ bool CarlaEngine::loadProject(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN_ERR(file.existsAsFile(), "Requested file does not exist or is not a readable file");
 
     XmlDocument xml(file);
-    ScopedPointer<XmlElement> xmlElement(xml.getDocumentElement(true));
-    CARLA_SAFE_ASSERT_RETURN_ERR(xmlElement != nullptr, "Failed to parse project file");
-
-    const String& xmlType(xmlElement->getTagName());
-    const bool isPreset(xmlType.equalsIgnoreCase("carla-preset"));
-
-    if (! (xmlType.equalsIgnoreCase("carla-project") || isPreset))
-    {
-        setLastError("Not a valid Carla project or preset file");
-        return false;
-    }
-
-    // completely load file
-    xmlElement = xml.getDocumentElement(false);
-    CARLA_SAFE_ASSERT_RETURN_ERR(xmlElement != nullptr, "Failed to completely parse project file");
-
-    // handle plugins first
-    for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
-    {
-        const String& tagName(elem->getTagName());
-
-        if (isPreset || tagName.equalsIgnoreCase("plugin"))
-        {
-            StateSave stateSave;
-            stateSave.fillFromXmlElement(isPreset ? xmlElement.get() : elem);
-
-            callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
-
-            CARLA_SAFE_ASSERT_CONTINUE(stateSave.type != nullptr);
-
-            const void* extraStuff = nullptr;
-
-            // check if using GIG or SF2 16outs
-            static const char kUse16OutsSuffix[] = " (16 outs)";
-
-            const BinaryType btype(getBinaryTypeFromFile(stateSave.binary));
-            const PluginType ptype(getPluginTypeFromString(stateSave.type));
-
-            if (CarlaString(stateSave.label).endsWith(kUse16OutsSuffix))
-            {
-                if (ptype == PLUGIN_GIG || ptype == PLUGIN_SF2)
-                    extraStuff = "true";
-            }
-
-            // TODO - proper find&load plugins
-
-            if (addPlugin(btype, ptype, stateSave.binary, stateSave.name, stateSave.label, stateSave.uniqueId, extraStuff))
-            {
-                if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
-                    plugin->loadStateSave(stateSave);
-            }
-            else
-                carla_stderr2("Failed to load a plugin, error was:\n%s", getLastError());
-        }
-
-        if (isPreset)
-            return true;
-    }
-
-#ifndef BUILD_BRIDGE
-    callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
-
-    // if we're running inside some session-manager, let them handle the connections
-    if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
-    {
-        if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr || std::getenv("LADISH_APP_NAME") != nullptr || std::getenv("NSM_URL") != nullptr)
-            return true;
-    }
-
-    // now handle connections
-    for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
-    {
-        const String& tagName(elem->getTagName());
-
-        if (tagName.equalsIgnoreCase("patchbay"))
-        {
-            CarlaString sourcePort, targetPort;
-
-            for (XmlElement* patchElem = elem->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
-            {
-                const String& patchTag(patchElem->getTagName());
-
-                sourcePort.clear();
-                targetPort.clear();
-
-                if (! patchTag.equalsIgnoreCase("connection"))
-                    continue;
-
-                for (XmlElement* connElem = patchElem->getFirstChildElement(); connElem != nullptr; connElem = connElem->getNextElement())
-                {
-                    const String& tag(connElem->getTagName());
-                    const String  text(connElem->getAllSubText().trim());
-
-                    if (tag.equalsIgnoreCase("source"))
-                        sourcePort = text.toRawUTF8();
-                    else if (tag.equalsIgnoreCase("target"))
-                        targetPort = text.toRawUTF8();
-                }
-
-                if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
-                    restorePatchbayConnection(sourcePort, targetPort);
-            }
-            break;
-        }
-    }
-#endif
-
-    return true;
+    return loadProjectInternal(xml);
 }
 
 bool CarlaEngine::saveProject(const char* const filename)
@@ -1103,76 +996,7 @@ bool CarlaEngine::saveProject(const char* const filename)
     carla_debug("CarlaEngine::saveProject(\"%s\")", filename);
 
     MemoryOutputStream out;
-    out << "<?xml version='1.0' encoding='UTF-8'?>\n";
-    out << "<!DOCTYPE CARLA-PROJECT>\n";
-    out << "<CARLA-PROJECT VERSION='2.0'>\n";
-
-    bool firstPlugin = true;
-    char strBuf[STR_MAX+1];
-
-    for (uint i=0; i < pData->curPluginCount; ++i)
-    {
-        CarlaPlugin* const plugin(pData->plugins[i].plugin);
-
-        if (plugin != nullptr && plugin->isEnabled())
-        {
-            if (! firstPlugin)
-                out << "\n";
-
-            strBuf[0] = '\0';
-
-            plugin->getRealName(strBuf);
-
-            //if (strBuf[0] != '\0')
-            //    out << QString(" <!-- %1 -->\n").arg(xmlSafeString(strBuf, true));
-
-            out << " <Plugin>\n";
-            out << plugin->getStateSave().toString();
-            out << " </Plugin>\n";
-
-            firstPlugin = false;
-        }
-    }
-
-#ifndef BUILD_BRIDGE
-    bool saveConnections = true;
-
-    // if we're running inside some session-manager, let them handle the connections
-    if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
-    {
-        if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr || std::getenv("LADISH_APP_NAME") != nullptr || std::getenv("NSM_URL") != nullptr)
-            saveConnections = false;
-    }
-
-    if (saveConnections)
-    {
-        if (const char* const* const patchbayConns = getPatchbayConnections())
-        {
-            if (! firstPlugin)
-                out << "\n";
-
-            out << " <Patchbay>\n";
-
-            for (int i=0; patchbayConns[i] != nullptr && patchbayConns[i+1] != nullptr; ++i, ++i )
-            {
-                const char* const connSource(patchbayConns[i]);
-                const char* const connTarget(patchbayConns[i+1]);
-
-                CARLA_SAFE_ASSERT_CONTINUE(connSource != nullptr && connSource[0] != '\0');
-                CARLA_SAFE_ASSERT_CONTINUE(connTarget != nullptr && connTarget[0] != '\0');
-
-                out << "  <Connection>\n";
-                out << "   <Source>" << connSource << "</Source>\n";
-                out << "   <Target>" << connTarget << "</Target>\n";
-                out << "  </Connection>\n";
-            }
-
-            out << " </Patchbay>\n";
-        }
-    }
-#endif
-
-    out << "</CARLA-PROJECT>\n";
+    saveProjectInternal(out);
 
     File file(filename);
 
@@ -1670,6 +1494,210 @@ void CarlaEngine::setPluginPeaks(const uint pluginId, float const inPeaks[2], fl
     pluginData.insPeak[1]  = inPeaks[1];
     pluginData.outsPeak[0] = outPeaks[0];
     pluginData.outsPeak[1] = outPeaks[1];
+}
+
+void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStrm) const
+{
+    outStrm << "<?xml version='1.0' encoding='UTF-8'?>\n";
+    outStrm << "<!DOCTYPE CARLA-PROJECT>\n";
+    outStrm << "<CARLA-PROJECT VERSION='2.0'>\n";
+
+    bool firstPlugin = true;
+    char strBuf[STR_MAX+1];
+
+    for (uint i=0; i < pData->curPluginCount; ++i)
+    {
+        CarlaPlugin* const plugin(pData->plugins[i].plugin);
+
+        if (plugin != nullptr && plugin->isEnabled())
+        {
+            if (! firstPlugin)
+                outStrm << "\n";
+
+            strBuf[0] = '\0';
+
+            plugin->getRealName(strBuf);
+
+            //if (strBuf[0] != '\0')
+            //    out << QString(" <!-- %1 -->\n").arg(xmlSafeString(strBuf, true));
+
+            outStrm << " <Plugin>\n";
+            outStrm << plugin->getStateSave().toString();
+            outStrm << " </Plugin>\n";
+
+            firstPlugin = false;
+        }
+    }
+
+#ifndef BUILD_BRIDGE
+    bool saveConnections = true;
+
+    // if we're running inside some session-manager, let them handle the connections
+    if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
+    {
+        /**/ if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr)
+            saveConnections = false;
+        else if (std::getenv("LADISH_APP_NAME") != nullptr)
+            saveConnections = false;
+        else if (std::getenv("NSM_URL") != nullptr)
+            saveConnections = false;
+    }
+    else if (pData->options.processMode != ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+    {
+        if (std::strcmp(getCurrentDriverName(), "Plugin") == 0)
+            saveConnections = false;
+    }
+
+    if (saveConnections)
+    {
+        if (const char* const* const patchbayConns = getPatchbayConnections())
+        {
+            if (! firstPlugin)
+                outStrm << "\n";
+
+            outStrm << " <Patchbay>\n";
+
+            for (int i=0; patchbayConns[i] != nullptr && patchbayConns[i+1] != nullptr; ++i, ++i )
+            {
+                const char* const connSource(patchbayConns[i]);
+                const char* const connTarget(patchbayConns[i+1]);
+
+                CARLA_SAFE_ASSERT_CONTINUE(connSource != nullptr && connSource[0] != '\0');
+                CARLA_SAFE_ASSERT_CONTINUE(connTarget != nullptr && connTarget[0] != '\0');
+
+                outStrm << "  <Connection>\n";
+                outStrm << "   <Source>" << connSource << "</Source>\n";
+                outStrm << "   <Target>" << connTarget << "</Target>\n";
+                outStrm << "  </Connection>\n";
+            }
+
+            outStrm << " </Patchbay>\n";
+        }
+    }
+#endif
+
+    outStrm << "</CARLA-PROJECT>\n";
+}
+
+bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
+{
+    ScopedPointer<XmlElement> xmlElement(xmlDoc.getDocumentElement(true));
+    CARLA_SAFE_ASSERT_RETURN_ERR(xmlElement != nullptr, "Failed to parse project file");
+
+    const String& xmlType(xmlElement->getTagName());
+    const bool isPreset(xmlType.equalsIgnoreCase("carla-preset"));
+
+    if (! (xmlType.equalsIgnoreCase("carla-project") || isPreset))
+    {
+        setLastError("Not a valid Carla project or preset file");
+        return false;
+    }
+
+    // completely load file
+    xmlElement = xmlDoc.getDocumentElement(false);
+    CARLA_SAFE_ASSERT_RETURN_ERR(xmlElement != nullptr, "Failed to completely parse project file");
+
+    // handle plugins first
+    for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
+    {
+        const String& tagName(elem->getTagName());
+
+        if (isPreset || tagName.equalsIgnoreCase("plugin"))
+        {
+            StateSave stateSave;
+            stateSave.fillFromXmlElement(isPreset ? xmlElement.get() : elem);
+
+            callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
+            CARLA_SAFE_ASSERT_CONTINUE(stateSave.type != nullptr);
+
+            const void* extraStuff = nullptr;
+
+            // check if using GIG or SF2 16outs
+            static const char kUse16OutsSuffix[] = " (16 outs)";
+
+            const BinaryType btype(getBinaryTypeFromFile(stateSave.binary));
+            const PluginType ptype(getPluginTypeFromString(stateSave.type));
+
+            if (CarlaString(stateSave.label).endsWith(kUse16OutsSuffix))
+            {
+                if (ptype == PLUGIN_GIG || ptype == PLUGIN_SF2)
+                    extraStuff = "true";
+            }
+
+            // TODO - proper find&load plugins
+
+            if (addPlugin(btype, ptype, stateSave.binary, stateSave.name, stateSave.label, stateSave.uniqueId, extraStuff))
+            {
+                if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
+                    plugin->loadStateSave(stateSave);
+            }
+            else
+                carla_stderr2("Failed to load a plugin, error was:\n%s", getLastError());
+        }
+
+        if (isPreset)
+            return true;
+    }
+
+#ifndef BUILD_BRIDGE
+    callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
+    // if we're running inside some session-manager, let them handle the connections
+    if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
+    {
+        /**/ if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr)
+            return true;
+        else if (std::getenv("LADISH_APP_NAME") != nullptr)
+            return true;
+        else if (std::getenv("NSM_URL") != nullptr)
+            return true;
+    }
+    else if (pData->options.processMode != ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+    {
+        if (std::strcmp(getCurrentDriverName(), "Plugin") == 0)
+            return true;
+    }
+
+    // now handle connections
+    for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
+    {
+        const String& tagName(elem->getTagName());
+
+        if (tagName.equalsIgnoreCase("patchbay"))
+        {
+            CarlaString sourcePort, targetPort;
+
+            for (XmlElement* patchElem = elem->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
+            {
+                const String& patchTag(patchElem->getTagName());
+
+                sourcePort.clear();
+                targetPort.clear();
+
+                if (! patchTag.equalsIgnoreCase("connection"))
+                    continue;
+
+                for (XmlElement* connElem = patchElem->getFirstChildElement(); connElem != nullptr; connElem = connElem->getNextElement())
+                {
+                    const String& tag(connElem->getTagName());
+                    const String  text(connElem->getAllSubText().trim());
+
+                    if (tag.equalsIgnoreCase("source"))
+                        sourcePort = text.toRawUTF8();
+                    else if (tag.equalsIgnoreCase("target"))
+                        targetPort = text.toRawUTF8();
+                }
+
+                if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
+                    restorePatchbayConnection(sourcePort, targetPort);
+            }
+            break;
+        }
+    }
+#endif
+
+    return true;
 }
 
 // -----------------------------------------------------------------------
