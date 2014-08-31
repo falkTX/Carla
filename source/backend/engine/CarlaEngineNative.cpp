@@ -82,11 +82,11 @@ protected:
         {
             uint32_t option;
             int32_t value;
-            const char* valueStr;
+            const char* valueStr = nullptr;
 
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(option), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(value), true);
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(valueStr), true);
+            readNextLineAsString(valueStr); // can be null
 
             try {
                 fEngine->setOption(static_cast<EngineOption>(option), value, valueStr);

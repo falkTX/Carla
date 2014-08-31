@@ -1529,7 +1529,7 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStrm) const
         outStrm << "  <AU_PATH>"     << xmlSafeString(options.pathAU,     true) << "</AU_PATH>\n";
         outStrm << "  <GIG_PATH>"    << xmlSafeString(options.pathGIG,    true) << "</GIG_PATH>\n";
         outStrm << "  <SF2_PATH>"    << xmlSafeString(options.pathSF2,    true) << "</SF2_PATH>\n";
-        outStrm << "  <SFZ_PATH>"    << xmlSafeString(options.pathSFZ,    true) << "</_PATH>\n";
+        outStrm << "  <SFZ_PATH>"    << xmlSafeString(options.pathSFZ,    true) << "</SFZ_PATH>\n";
     }
 
     outStrm << " </EngineSettings>\n";
@@ -1568,10 +1568,7 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStrm) const
             saveConnections = false;
         else if (std::getenv("NSM_URL") != nullptr)
             saveConnections = false;
-    }
-    else if (pData->options.processMode != ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-    {
-        if (std::strcmp(getCurrentDriverName(), "Plugin") == 0)
+        else if (std::strcmp(getCurrentDriverName(), "Plugin") == 0)
             saveConnections = false;
     }
 
@@ -1620,6 +1617,124 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
     // completely load file
     xmlElement = xmlDoc.getDocumentElement(false);
     CARLA_SAFE_ASSERT_RETURN_ERR(xmlElement != nullptr, "Failed to completely parse project file");
+
+    const bool isPlugin(std::strcmp(getCurrentDriverName(), "Plugin") == 0);
+
+    // engine settings
+    for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
+    {
+        const String& tagName(elem->getTagName());
+
+        if (! tagName.equalsIgnoreCase("enginesettings"))
+            continue;
+
+        for (XmlElement* settElem = elem->getFirstChildElement(); settElem != nullptr; settElem = settElem->getNextElement())
+        {
+            const String& tag(settElem->getTagName());
+            const String  text(settElem->getAllSubText().trim());
+
+           /** some settings might be incorrect or require extra work,
+               so we call setOption rather than modifying them direly */
+
+           int option = -1;
+           int value  = 0;
+           const char* valueStr = nullptr;
+
+            /**/ if (tag.equalsIgnoreCase("forcestereo"))
+            {
+                option = ENGINE_OPTION_FORCE_STEREO;
+                value  = text.equalsIgnoreCase("true");
+            }
+            else if (tag.equalsIgnoreCase("preferpluginbridges"))
+            {
+                option = ENGINE_OPTION_PREFER_PLUGIN_BRIDGES;
+                value  = text.equalsIgnoreCase("true");
+            }
+            else if (tag.equalsIgnoreCase("preferuibridges"))
+            {
+                option = ENGINE_OPTION_PREFER_UI_BRIDGES;
+                value  = text.equalsIgnoreCase("true");
+            }
+            else if (tag.equalsIgnoreCase("uisalwaysontop"))
+            {
+                option = ENGINE_OPTION_UIS_ALWAYS_ON_TOP;
+                value  = text.equalsIgnoreCase("true");
+            }
+            else if (tag.equalsIgnoreCase("maxparameters"))
+            {
+                option = ENGINE_OPTION_MAX_PARAMETERS;
+                value  = text.getIntValue();
+            }
+            else if (tag.equalsIgnoreCase("uibridgestimeout"))
+            {
+                option = ENGINE_OPTION_UI_BRIDGES_TIMEOUT;
+                value  = text.getIntValue();
+            }
+            else if (isPlugin)
+            {
+                /**/ if (tag.equalsIgnoreCase("LADSPA_PATH"))
+                {
+                    option   = ENGINE_OPTION_PLUGIN_PATH;
+                    value    = PLUGIN_LADSPA;
+                    valueStr = text.toRawUTF8();
+                }
+                else if (tag.equalsIgnoreCase("DSSI_PATH"))
+                {
+                    option   = ENGINE_OPTION_PLUGIN_PATH;
+                    value    = PLUGIN_DSSI;
+                    valueStr = text.toRawUTF8();
+                }
+                else if (tag.equalsIgnoreCase("LV2_PATH"))
+                {
+                    option   = ENGINE_OPTION_PLUGIN_PATH;
+                    value    = PLUGIN_LV2;
+                    valueStr = text.toRawUTF8();
+                }
+                else if (tag.equalsIgnoreCase("VST_PATH"))
+                {
+                    option   = ENGINE_OPTION_PLUGIN_PATH;
+                    value    = PLUGIN_VST;
+                    valueStr = text.toRawUTF8();
+                }
+                else if (tag.equalsIgnoreCase("VST3_PATH"))
+                {
+                    option   = ENGINE_OPTION_PLUGIN_PATH;
+                    value    = PLUGIN_VST3;
+                    valueStr = text.toRawUTF8();
+                }
+                else if (tag.equalsIgnoreCase("AU_PATH"))
+                {
+                    option   = ENGINE_OPTION_PLUGIN_PATH;
+                    value    = PLUGIN_AU;
+                    valueStr = text.toRawUTF8();
+                }
+                else if (tag.equalsIgnoreCase("GIG_PATH"))
+                {
+                    option   = ENGINE_OPTION_PLUGIN_PATH;
+                    value    = PLUGIN_GIG;
+                    valueStr = text.toRawUTF8();
+                }
+                else if (tag.equalsIgnoreCase("SF2_PATH"))
+                {
+                    option   = ENGINE_OPTION_PLUGIN_PATH;
+                    value    = PLUGIN_SF2;
+                    valueStr = text.toRawUTF8();
+                }
+                else if (tag.equalsIgnoreCase("SFZ_PATH"))
+                {
+                    option   = ENGINE_OPTION_PLUGIN_PATH;
+                    value    = PLUGIN_SFZ;
+                    valueStr = text.toRawUTF8();
+                }
+            }
+
+            CARLA_SAFE_ASSERT_CONTINUE(option != -1);
+
+            setOption(static_cast<EngineOption>(option), value, valueStr);
+        }
+
+        break;
+    }
 
     // handle plugins first
     for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
@@ -1676,10 +1791,7 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
             return true;
         else if (std::getenv("NSM_URL") != nullptr)
             return true;
-    }
-    else if (pData->options.processMode != ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-    {
-        if (std::strcmp(getCurrentDriverName(), "Plugin") == 0)
+        else if (std::strcmp(getCurrentDriverName(), "Plugin") == 0)
             return true;
     }
 
@@ -1688,36 +1800,36 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
     {
         const String& tagName(elem->getTagName());
 
-        if (tagName.equalsIgnoreCase("patchbay"))
+        if (! tagName.equalsIgnoreCase("patchbay"))
+            continue;
+
+        CarlaString sourcePort, targetPort;
+
+        for (XmlElement* patchElem = elem->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
         {
-            CarlaString sourcePort, targetPort;
+            const String& patchTag(patchElem->getTagName());
 
-            for (XmlElement* patchElem = elem->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
+            sourcePort.clear();
+            targetPort.clear();
+
+            if (! patchTag.equalsIgnoreCase("connection"))
+                continue;
+
+            for (XmlElement* connElem = patchElem->getFirstChildElement(); connElem != nullptr; connElem = connElem->getNextElement())
             {
-                const String& patchTag(patchElem->getTagName());
+                const String& tag(connElem->getTagName());
+                const String  text(connElem->getAllSubText().trim());
 
-                sourcePort.clear();
-                targetPort.clear();
-
-                if (! patchTag.equalsIgnoreCase("connection"))
-                    continue;
-
-                for (XmlElement* connElem = patchElem->getFirstChildElement(); connElem != nullptr; connElem = connElem->getNextElement())
-                {
-                    const String& tag(connElem->getTagName());
-                    const String  text(connElem->getAllSubText().trim());
-
-                    if (tag.equalsIgnoreCase("source"))
-                        sourcePort = text.toRawUTF8();
-                    else if (tag.equalsIgnoreCase("target"))
-                        targetPort = text.toRawUTF8();
-                }
-
-                if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
-                    restorePatchbayConnection(sourcePort, targetPort);
+                /**/ if (tag.equalsIgnoreCase("source"))
+                    sourcePort = text.toRawUTF8();
+                else if (tag.equalsIgnoreCase("target"))
+                    targetPort = text.toRawUTF8();
             }
-            break;
+
+            if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
+                restorePatchbayConnection(sourcePort, targetPort);
         }
+        break;
     }
 #endif
 
