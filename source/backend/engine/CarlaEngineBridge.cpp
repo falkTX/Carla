@@ -254,6 +254,12 @@ public:
     {
         carla_debug("CarlaEngineBridge::init(\"%s\")", clientName);
 
+        if (! pData->init(clientName))
+        {
+            setLastError("Failed to init internal data");
+            return false;
+        }
+
         if (! fShmAudioPool.attach())
         {
             carla_stdout("Failed to attach to audio pool shared memory");
@@ -318,7 +324,6 @@ public:
 
         startThread();
 
-        CarlaEngine::init(clientName);
         return true;
     }
 

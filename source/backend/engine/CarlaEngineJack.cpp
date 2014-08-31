@@ -720,6 +720,12 @@ public:
         carla_zeroStruct<jack_position_t>(fTransportPos);
 
 #ifdef BUILD_BRIDGE
+        if (! pData->init(clientName))
+        {
+            setLastError("Failed to init internal data");
+            return false;
+        }
+
         if (pData->bufferSize == 0 || carla_compareFloats(pData->sampleRate, 0.0))
         {
             // open temp client to get initial buffer-size and sample-rate values
@@ -739,7 +745,7 @@ public:
 
         fIsRunning = true;
 
-        return CarlaEngine::init(clientName);
+        return true;
 #else
         fClient = jackbridge_client_open(clientName, JackNullOption, nullptr);
 
@@ -752,7 +758,12 @@ public:
         const char* const jackClientName(jackbridge_get_client_name(fClient));
 
         if (! pData->init(jackClientName))
+        {
+            jackbridge_client_close(fClient);
+            fClient = nullptr;
+            setLastError("Failed to init internal data");
             return false;
+        }
 
         pData->bufferSize = jackbridge_get_buffer_size(fClient);
         pData->sampleRate = jackbridge_get_sample_rate(fClient);
