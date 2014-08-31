@@ -34,13 +34,6 @@ using juce::FloatVectorOperations;
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
-// Forward declarations of CarlaEngine port classes
-
-class CarlaEngineAudioPort;
-class CarlaEngineCVPort;
-class CarlaEngineEventPort;
-
-// -----------------------------------------------------------------------
 // Maximum pre-allocated events for some plugin types
 
 const ushort kPluginMaxMidiEvents = 512;
@@ -245,6 +238,8 @@ struct CarlaPlugin::ProtectedData {
     // data 2
     PluginAudioData audioIn;
     PluginAudioData audioOut;
+    PluginCVData cvIn;
+    PluginCVData cvOut;
     PluginEventData event;
     PluginParameterData param;
     PluginProgramData prog;

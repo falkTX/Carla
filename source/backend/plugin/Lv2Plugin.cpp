@@ -401,8 +401,6 @@ public:
           fAtomBufferIn(),
           fAtomBufferOut(),
           fAtomForge(),
-          fCvIn(),
-          fCvOut(),
           fEventsIn(),
           fEventsOut(),
           fLv2Options(),
@@ -1515,7 +1513,7 @@ public:
 
         if (cvIns > 0)
         {
-            fCvIn.createNew(cvIns);
+            pData->cvIn.createNew(cvIns);
             fCvInBuffers = new float*[cvIns];
 
             for (uint32_t i=0; i < cvIns; ++i)
@@ -1524,7 +1522,7 @@ public:
 
         if (cvOuts > 0)
         {
-            fCvOut.createNew(cvOuts);
+            pData->cvOut.createNew(cvOuts);
             fCvOutBuffers = new float*[cvOuts];
 
             for (uint32_t i=0; i < cvOuts; ++i)
@@ -1654,14 +1652,14 @@ public:
                 if (LV2_IS_PORT_INPUT(portTypes))
                 {
                     const uint32_t j = iCvIn++;
-                    fCvIn.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true);
-                    fCvIn.ports[j].rindex = i;
+                    pData->cvIn.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true);
+                    pData->cvIn.ports[j].rindex = i;
                 }
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
                 {
                     const uint32_t j = iCvOut++;
-                    fCvOut.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, false);
-                    fCvOut.ports[j].rindex = i;
+                    pData->cvOut.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, false);
+                    pData->cvOut.ports[j].rindex = i;
                 }
                 else
                     carla_stderr("WARNING - Got a broken Port (CV, but not input or output)");
@@ -2731,19 +2729,19 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // CV ports
 
-        float* cvInBuf[fCvIn.count /*> 0 ? fCvIn.count : 1*/];
-        float* cvOutBuf[fCvOut.count /*> 0 ? fCvOut.count : 1*/];
+        float* cvInBuf[pData->cvIn.count /*> 0 ? pData->cvIn.count : 1*/];
+        float* cvOutBuf[pData->cvOut.count /*> 0 ? pData->cvOut.count : 1*/];
 
-        for (uint32_t i=0; i < fCvIn.count; ++i)
+        for (uint32_t i=0; i < pData->cvIn.count; ++i)
         {
-            CARLA_SAFE_ASSERT_CONTINUE(fCvIn.ports[i].port != nullptr);
-            cvInBuf[i] = fCvIn.ports[i].port->getBuffer();
+            CARLA_SAFE_ASSERT_CONTINUE(pData->cvIn.ports[i].port != nullptr);
+            cvInBuf[i] = pData->cvIn.ports[i].port->getBuffer();
         }
 
-        for (uint32_t i=0; i < fCvOut.count; ++i)
+        for (uint32_t i=0; i < pData->cvOut.count; ++i)
         {
-            CARLA_SAFE_ASSERT_CONTINUE(fCvOut.ports[i].port != nullptr);
-            cvOutBuf[i] = fCvOut.ports[i].port->getBuffer();
+            CARLA_SAFE_ASSERT_CONTINUE(pData->cvOut.ports[i].port != nullptr);
+            cvOutBuf[i] = pData->cvOut.ports[i].port->getBuffer();
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -3320,11 +3318,11 @@ public:
         {
             CARLA_SAFE_ASSERT_RETURN(audioOutBuf != nullptr, false);
         }
-        if (fCvIn.count > 0)
+        if (pData->cvIn.count > 0)
         {
             CARLA_SAFE_ASSERT_RETURN(cvInBuf != nullptr, false);
         }
-        if (fCvOut.count > 0)
+        if (pData->cvOut.count > 0)
         {
             CARLA_SAFE_ASSERT_RETURN(cvOutBuf != nullptr, false);
         }
@@ -3359,10 +3357,10 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Set CV buffers
 
-        for (uint32_t i=0; i < fCvIn.count; ++i)
+        for (uint32_t i=0; i < pData->cvIn.count; ++i)
             FloatVectorOperations::copy(fCvInBuffers[i], cvInBuf[i]+timeOffset, static_cast<int>(frames));
 
-        for (uint32_t i=0; i < fCvOut.count; ++i)
+        for (uint32_t i=0; i < pData->cvOut.count; ++i)
             FloatVectorOperations::clear(fCvOutBuffers[i], static_cast<int>(frames));
 
         // --------------------------------------------------------------------------------------------------------
@@ -3532,28 +3530,28 @@ public:
             }
         }
 
-        for (uint32_t i=0; i < fCvIn.count; ++i)
+        for (uint32_t i=0; i < pData->cvIn.count; ++i)
         {
             if (fCvInBuffers[i] != nullptr)
                 delete[] fCvInBuffers[i];
             fCvInBuffers[i] = new float[newBufferSize];
 
-            fDescriptor->connect_port(fHandle, fCvIn.ports[i].rindex, fCvInBuffers[i]);
+            fDescriptor->connect_port(fHandle, pData->cvIn.ports[i].rindex, fCvInBuffers[i]);
 
             if (fHandle2 != nullptr)
-                fDescriptor->connect_port(fHandle2, fCvIn.ports[i].rindex, fCvInBuffers[i]);
+                fDescriptor->connect_port(fHandle2, pData->cvIn.ports[i].rindex, fCvInBuffers[i]);
         }
 
-        for (uint32_t i=0; i < fCvOut.count; ++i)
+        for (uint32_t i=0; i < pData->cvOut.count; ++i)
         {
             if (fCvOutBuffers[i] != nullptr)
                 delete[] fCvOutBuffers[i];
             fCvOutBuffers[i] = new float[newBufferSize];
 
-            fDescriptor->connect_port(fHandle, fCvOut.ports[i].rindex, fCvOutBuffers[i]);
+            fDescriptor->connect_port(fHandle, pData->cvOut.ports[i].rindex, fCvOutBuffers[i]);
 
             if (fHandle2 != nullptr)
-                fDescriptor->connect_port(fHandle2, fCvOut.ports[i].rindex, fCvOutBuffers[i]);
+                fDescriptor->connect_port(fHandle2, pData->cvOut.ports[i].rindex, fCvOutBuffers[i]);
         }
 
         const int newBufferSizeInt(static_cast<int>(newBufferSize));
@@ -3619,8 +3617,6 @@ public:
 
     void initBuffers() const noexcept override
     {
-        fCvIn.initBuffers();
-        fCvOut.initBuffers();
         fEventsIn.initBuffers();
         fEventsOut.initBuffers();
 
@@ -3663,7 +3659,7 @@ public:
 
         if (fCvInBuffers != nullptr)
         {
-            for (uint32_t i=0; i < fCvIn.count; ++i)
+            for (uint32_t i=0; i < pData->cvIn.count; ++i)
             {
                 if (fCvInBuffers[i] != nullptr)
                 {
@@ -3678,7 +3674,7 @@ public:
 
         if (fCvOutBuffers != nullptr)
         {
-            for (uint32_t i=0; i < fCvOut.count; ++i)
+            for (uint32_t i=0; i < pData->cvOut.count; ++i)
             {
                 if (fCvOutBuffers[i] != nullptr)
                 {
@@ -3697,8 +3693,6 @@ public:
             fParamBuffers = nullptr;
         }
 
-        fCvIn.clear();
-        fCvOut.clear();
         fEventsIn.clear();
         fEventsOut.clear();
 
@@ -5278,9 +5272,6 @@ private:
     Lv2AtomRingBuffer fAtomBufferIn;
     Lv2AtomRingBuffer fAtomBufferOut;
     LV2_Atom_Forge    fAtomForge;
-
-    PluginCVData fCvIn;
-    PluginCVData fCvOut;
 
     Lv2PluginEventData fEventsIn;
     Lv2PluginEventData fEventsOut;

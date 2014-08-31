@@ -173,6 +173,16 @@ uint32_t CarlaPlugin::getAudioOutCount() const noexcept
     return pData->audioOut.count;
 }
 
+uint32_t CarlaPlugin::getCVInCount() const noexcept
+{
+    return pData->cvIn.count;
+}
+
+uint32_t CarlaPlugin::getCVOutCount() const noexcept
+{
+    return pData->cvOut.count;
+}
+
 uint32_t CarlaPlugin::getMidiInCount() const noexcept
 {
     return (pData->extraHints & PLUGIN_EXTRA_HINT_HAS_MIDI_IN) ? 1 : 0;
@@ -1396,6 +1406,8 @@ void CarlaPlugin::initBuffers() const noexcept
 {
     pData->audioIn.initBuffers();
     pData->audioOut.initBuffers();
+    pData->cvIn.initBuffers();
+    pData->cvOut.initBuffers();
     pData->event.initBuffers();
 }
 
@@ -1938,6 +1950,16 @@ CarlaEngineAudioPort* CarlaPlugin::getAudioInPort(const uint32_t index) const no
 CarlaEngineAudioPort* CarlaPlugin::getAudioOutPort(const uint32_t index) const noexcept
 {
     return pData->audioOut.ports[index].port;
+}
+
+CarlaEngineCVPort* CarlaPlugin::getCVInPort(const uint32_t index) const noexcept
+{
+    return pData->cvIn.ports[index].port;
+}
+
+CarlaEngineCVPort* CarlaPlugin::getCVOutPort(const uint32_t index) const noexcept
+{
+    return pData->cvOut.ports[index].port;
 }
 
 CarlaEngineEventPort* CarlaPlugin::getDefaultEventInPort() const noexcept

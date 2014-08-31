@@ -462,6 +462,8 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       iconName(nullptr),
       audioIn(),
       audioOut(),
+      cvIn(),
+      cvOut(),
       event(),
       param(),
       prog(),
@@ -602,6 +604,8 @@ void CarlaPlugin::ProtectedData::clearBuffers() noexcept
 
     audioIn.clear();
     audioOut.clear();
+    cvIn.clear();
+    cvOut.clear();
     param.clear();
     event.clear();
 }

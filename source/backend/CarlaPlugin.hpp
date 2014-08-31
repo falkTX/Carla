@@ -45,6 +45,7 @@ CARLA_BACKEND_START_NAMESPACE
  */
 
 class CarlaEngineAudioPort;
+class CarlaEngineCVPort;
 class CarlaEngineEventPort;
 
 /*!
@@ -171,6 +172,16 @@ public:
      * Get the number of audio outputs.
      */
     uint32_t getAudioOutCount() const noexcept;
+
+    /*!
+     * Get the number of CV inputs.
+     */
+    uint32_t getCVInCount() const noexcept;
+
+    /*!
+     * Get the number of CV outputs.
+     */
+    uint32_t getCVOutCount() const noexcept;
 
     /*!
      * Get the number of MIDI inputs.
@@ -816,6 +827,16 @@ public:
     CarlaEngineAudioPort* getAudioOutPort(const uint32_t index) const noexcept;
 
     /*!
+     * Get a plugin's CV input port.
+     */
+    CarlaEngineCVPort* getCVInPort(const uint32_t index) const noexcept;
+
+    /*!
+     * Get a plugin's CV output port.
+     */
+    CarlaEngineCVPort* getCVOutPort(const uint32_t index) const noexcept;
+
+    /*!
      * Get the plugin's default event input port.
      */
     CarlaEngineEventPort* getDefaultEventInPort() const noexcept;
@@ -879,8 +900,8 @@ public:
         const int64_t uniqueId;
     };
 
-    static size_t getNativePluginCount() noexcept;
-    static const NativePluginDescriptor* getNativePluginDescriptor(const size_t index) noexcept;
+    static std::size_t getNativePluginCount() noexcept;
+    static const NativePluginDescriptor* getNativePluginDescriptor(const std::size_t index) noexcept;
 
     static CarlaPlugin* newNative(const Initializer& init);
     static CarlaPlugin* newBridge(const Initializer& init, const BinaryType btype, const PluginType ptype, const char* const bridgeBinary);

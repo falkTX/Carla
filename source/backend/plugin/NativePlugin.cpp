@@ -2408,12 +2408,12 @@ private:
 
 // -----------------------------------------------------------------------
 
-size_t CarlaPlugin::getNativePluginCount() noexcept
+std::size_t CarlaPlugin::getNativePluginCount() noexcept
 {
     return NativePlugin::getPluginCount();
 }
 
-const NativePluginDescriptor* CarlaPlugin::getNativePluginDescriptor(const size_t index) noexcept
+const NativePluginDescriptor* CarlaPlugin::getNativePluginDescriptor(const std::size_t index) noexcept
 {
     return NativePlugin::getPluginDescriptor(index);
 }
