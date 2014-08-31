@@ -1643,22 +1643,22 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
             /**/ if (tag.equalsIgnoreCase("forcestereo"))
             {
                 option = ENGINE_OPTION_FORCE_STEREO;
-                value  = text.equalsIgnoreCase("true");
+                value  = text.equalsIgnoreCase("true") ? 1 : 0;
             }
             else if (tag.equalsIgnoreCase("preferpluginbridges"))
             {
                 option = ENGINE_OPTION_PREFER_PLUGIN_BRIDGES;
-                value  = text.equalsIgnoreCase("true");
+                value  = text.equalsIgnoreCase("true") ? 1 : 0;
             }
             else if (tag.equalsIgnoreCase("preferuibridges"))
             {
                 option = ENGINE_OPTION_PREFER_UI_BRIDGES;
-                value  = text.equalsIgnoreCase("true");
+                value  = text.equalsIgnoreCase("true") ? 1 : 0;
             }
             else if (tag.equalsIgnoreCase("uisalwaysontop"))
             {
                 option = ENGINE_OPTION_UIS_ALWAYS_ON_TOP;
-                value  = text.equalsIgnoreCase("true");
+                value  = text.equalsIgnoreCase("true") ? 1 : 0;
             }
             else if (tag.equalsIgnoreCase("maxparameters"))
             {
