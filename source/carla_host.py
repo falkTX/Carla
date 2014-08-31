@@ -379,7 +379,8 @@ class HostWindow(QMainWindow):
             self.ui.menu_Canvas_Zoom.setVisible(False)
             self.ui.miniCanvasPreview.hide()
 
-        self.ui.splitter.insertWidget(1, self.fContainer)
+        self.setCentralWidget(self.fContainer)
+        self.ui.centralwidget = self.fContainer
 
     def updateContainer(self, canvasThemeData):
         canvasWidth, canvasHeight, canvasBg, canvasBrush, canvasPen = canvasThemeData
@@ -719,10 +720,10 @@ class HostWindow(QMainWindow):
             self.ui.act_settings_show_toolbar.setChecked(showToolbar)
             self.ui.toolBar.setVisible(showToolbar)
 
-            if settings.contains("SplitterState"):
-                self.ui.splitter.restoreState(settings.value("SplitterState", ""))
-            else:
-                self.ui.splitter.setSizes([210, 99999])
+            #if settings.contains("SplitterState"):
+                #self.ui.splitter.restoreState(settings.value("SplitterState", ""))
+            #else:
+                #self.ui.splitter.setSizes([210, 99999])
 
             diskFolders = toList(settings.value("DiskFolders", [HOME]))
 
@@ -775,7 +776,7 @@ class HostWindow(QMainWindow):
         settings = QSettings()
 
         settings.setValue("Geometry", self.saveGeometry())
-        settings.setValue("SplitterState", self.ui.splitter.saveState())
+        #settings.setValue("SplitterState", self.ui.splitter.saveState())
         settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
 
         diskFolders = []

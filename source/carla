@@ -25,8 +25,10 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
+    from PyQt5.QtCore import QEvent
     from PyQt5.QtWidgets import QLabel, QTabWidget
 else:
+    from PyQt4.QtCore import QEvent
     from PyQt4.QtGui import QLabel, QTabWidget
 
 # ------------------------------------------------------------------------------------------------------------
@@ -232,6 +234,9 @@ class CarlaHostW(HostWindow):
         self.fInfoLabel.setAlignment(Qt.AlignRight|Qt.AlignVCenter)
         self.fInfoLabel.setText("Engine stopped")
 
+        self.fDockLocation = Qt.LeftDockWidgetArea
+        self.fDockFloating = 0
+
         if MACOS and False: # TODO: check if NOT using pro theme
             self.fInfoLabel.hide()
             self.setUnifiedTitleAndToolBarOnMac(True)
@@ -239,7 +244,13 @@ class CarlaHostW(HostWindow):
         # -------------------------------------------------------------
 
         self.ui.act_settings_show_toolbar.triggered.connect(self.slot_toolbarShown)
-        self.ui.splitter.splitterMoved.connect(self.slot_splitterMoved)
+        self.ui.dockWidget.dockLocationChanged.connect(self.slot_dockLocationChanged)
+        self.ui.dockWidget.topLevelChanged.connect(self.slot_dockTopLevelChanged)
+
+        self.ui.dockWidget.installEventFilter(self)
+
+        self.ui.dockWidgetTitleBar = QWidget(self)
+        self.ui.dockWidget.setTitleBarWidget(self.ui.dockWidgetTitleBar)
 
         QTimer.singleShot(0, self.slot_initWidgets)
 
@@ -257,9 +268,17 @@ class CarlaHostW(HostWindow):
 
     def updateInfoLabelXandSize(self):
         tabBar = self.fContainer.tabBar()
-        x = tabBar.width() + self.ui.tabUtils.width() + 20
+        x      = tabBar.width() + 20
+        width  = self.fContainer.width() - tabBar.width() - 20
+
+        if self.fDockLocation == Qt.LeftDockWidgetArea and self.fDockFloating <= 1:
+            x += self.ui.dockWidget.width()
+
         self.fInfoLabel.move(x, self.fInfoLabel.y())
-        self.fInfoLabel.resize(self.fContainer.width()-tabBar.width()-20, self.fInfoLabel.height())
+        self.fInfoLabel.resize(width, self.fInfoLabel.height())
+
+        if self.fDockFloating == 1:
+            self.fDockFloating = 2
 
     def updateInfoLabelY(self):
         tabBar = self.fContainer.tabBar()
@@ -275,8 +294,11 @@ class CarlaHostW(HostWindow):
     @pyqtSlot()
     def slot_initWidgets(self):
         tabBar = self.fContainer.tabBar()
-        x = tabBar.width() + self.ui.tabUtils.width() + 20
+        x = tabBar.width() + 20
         y = tabBar.mapFromParent(self.ui.centralwidget.pos()).y()
+
+        if self.fDockLocation == Qt.LeftDockWidgetArea and self.fDockFloating <= 1:
+            x += self.ui.tabUtils.width()
 
         self.fInfoLabel.move(x, y)
         self.fInfoLabel.resize(self.fContainer.width()-tabBar.width()-20, tabBar.height())
@@ -286,8 +308,14 @@ class CarlaHostW(HostWindow):
         self.fContainer.setCurrentIndex(0)
         self.fContainer.fixCanvasPreviewSize()
 
-    @pyqtSlot()
-    def slot_splitterMoved(self):
+    @pyqtSlot(bool)
+    def slot_dockTopLevelChanged(self, top):
+        self.fDockFloating = 1 if top else 0
+        self.updateInfoLabelXandSize()
+
+    @pyqtSlot(Qt.DockWidgetArea)
+    def slot_dockLocationChanged(self, area):
+        self.fDockLocation = area
         self.updateInfoLabelXandSize()
 
     @pyqtSlot()
@@ -295,6 +323,11 @@ class CarlaHostW(HostWindow):
         self.updateInfoLabelY()
 
     # -----------------------------------------------------------------
+
+    def eventFilter(self, obj, event):
+        if obj == self.ui.dockWidget and event.type() == QEvent.Resize:
+            self.updateInfoLabelXandSize()
+        return HostWindow.eventFilter(self, obj, event)
 
     def resizeEvent(self, event):
         HostWindow.resizeEvent(self, event)
