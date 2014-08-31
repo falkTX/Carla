@@ -21,10 +21,7 @@
 #include "CarlaBackend.h"
 #include "LinkedList.hpp"
 
-namespace juce {
-class String;
-class XmlElement;
-}
+#include "juce_core.h"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -100,6 +97,17 @@ struct StateSave {
 
     CARLA_DECLARE_NON_COPY_STRUCT(StateSave)
 };
+
+static inline
+juce::String xmlSafeString(const juce::String& string, const bool toXml)
+{
+    juce::String newString(string);
+
+    if (toXml)
+        return newString.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("'","&apos;").replace("\"","&quot;");
+    else
+        return newString.replace("&lt;","<").replace("&gt;",">").replace("&apos;","'").replace("&quot;","\"").replace("&amp;","&");
+}
 
 // -----------------------------------------------------------------------
 

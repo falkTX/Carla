@@ -1502,7 +1502,38 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStrm) const
     outStrm << "<!DOCTYPE CARLA-PROJECT>\n";
     outStrm << "<CARLA-PROJECT VERSION='2.0'>\n";
 
-    bool firstPlugin = true;
+    const bool isPlugin(std::strcmp(getCurrentDriverName(), "Plugin") == 0);
+    const EngineOptions& options(pData->options);
+
+    // save appropriate engine settings
+    outStrm << " <EngineSettings>\n";
+
+    //processMode
+    //transportMode
+
+    outStrm << "  <ForceStereo>"         << bool2str(options.forceStereo)         << "</ForceStereo>\n";
+    outStrm << "  <PreferPluginBridges>" << bool2str(options.preferPluginBridges) << "</PreferPluginBridges>\n";
+    outStrm << "  <PreferUiBridges>"     << bool2str(options.preferUiBridges)     << "</PreferUiBridges>\n";
+    outStrm << "  <UIsAlwaysOnTop>"      << bool2str(options.uisAlwaysOnTop)      << "</UIsAlwaysOnTop>\n";
+
+    outStrm << "  <MaxParameters>"       << String(options.maxParameters)    << "</MaxParameters>\n";
+    outStrm << "  <UIBridgesTimeout>"    << String(options.uiBridgesTimeout) << "</UIBridgesTimeout>\n";
+
+    if (isPlugin)
+    {
+        outStrm << "  <LADSPA_PATH>" << xmlSafeString(options.pathLADSPA, true) << "</LADSPA_PATH>\n";
+        outStrm << "  <DSSI_PATH>"   << xmlSafeString(options.pathDSSI,   true) << "</DSSI_PATH>\n";
+        outStrm << "  <LV2_PATH>"    << xmlSafeString(options.pathLV2,    true) << "</LV2_PATH>\n";
+        outStrm << "  <VST_PATH>"    << xmlSafeString(options.pathVST,    true) << "</VST_PATH>\n";
+        outStrm << "  <VST3_PATH>"   << xmlSafeString(options.pathVST3,   true) << "</VST3_PATH>\n";
+        outStrm << "  <AU_PATH>"     << xmlSafeString(options.pathAU,     true) << "</AU_PATH>\n";
+        outStrm << "  <GIG_PATH>"    << xmlSafeString(options.pathGIG,    true) << "</GIG_PATH>\n";
+        outStrm << "  <SF2_PATH>"    << xmlSafeString(options.pathSF2,    true) << "</SF2_PATH>\n";
+        outStrm << "  <SFZ_PATH>"    << xmlSafeString(options.pathSFZ,    true) << "</_PATH>\n";
+    }
+
+    outStrm << " </EngineSettings>\n";
+
     char strBuf[STR_MAX+1];
 
     for (uint i=0; i < pData->curPluginCount; ++i)
@@ -1511,21 +1542,17 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStrm) const
 
         if (plugin != nullptr && plugin->isEnabled())
         {
-            if (! firstPlugin)
-                outStrm << "\n";
+            outStrm << "\n";
 
             strBuf[0] = '\0';
-
             plugin->getRealName(strBuf);
 
-            //if (strBuf[0] != '\0')
-            //    out << QString(" <!-- %1 -->\n").arg(xmlSafeString(strBuf, true));
+            if (strBuf[0] != '\0')
+                outStrm << " <!-- " << xmlSafeString(strBuf, true) << " -->\n";
 
             outStrm << " <Plugin>\n";
             outStrm << plugin->getStateSave().toString();
             outStrm << " </Plugin>\n";
-
-            firstPlugin = false;
         }
     }
 
@@ -1552,10 +1579,7 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStrm) const
     {
         if (const char* const* const patchbayConns = getPatchbayConnections())
         {
-            if (! firstPlugin)
-                outStrm << "\n";
-
-            outStrm << " <Patchbay>\n";
+            outStrm << "\n <Patchbay>\n";
 
             for (int i=0; patchbayConns[i] != nullptr && patchbayConns[i+1] != nullptr; ++i, ++i )
             {

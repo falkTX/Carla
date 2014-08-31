@@ -21,7 +21,6 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 
-#include "juce_core.h"
 using juce::String;
 using juce::XmlElement;
 
@@ -49,19 +48,6 @@ static String getNewLineSplittedString(const String& string)
     newString += string.substring(i);
 
     return newString;
-}
-
-// -----------------------------------------------------------------------
-// xmlSafeString
-
-static String xmlSafeString(const String& string, const bool toXml)
-{
-    String newString(string);
-
-    if (toXml)
-        return newString.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("'","&apos;").replace("\"","&quot;");
-    else
-        return newString.replace("&lt;","<").replace("&gt;",">").replace("&apos;","'").replace("&quot;","\"").replace("&amp;","&");
 }
 
 // -----------------------------------------------------------------------
