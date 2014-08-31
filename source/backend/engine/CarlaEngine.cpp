@@ -259,17 +259,6 @@ uint CarlaEngine::getMaxPluginNumber() const noexcept
 // -----------------------------------------------------------------------
 // Virtual, per-engine type calls
 
-bool CarlaEngine::init(const char* const clientName)
-{
-    carla_debug("CarlaEngine::init(\"%s\")", clientName);
-
-    if (! pData->init(clientName))
-        return false;
-
-    callback(ENGINE_CALLBACK_ENGINE_STARTED, 0, pData->options.processMode, pData->options.transportMode, 0.0f, getCurrentDriverName());
-    return true;
-}
-
 bool CarlaEngine::close()
 {
     carla_debug("CarlaEngine::close()");

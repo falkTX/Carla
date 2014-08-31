@@ -165,6 +165,13 @@ public:
             return false;
         }
 
+        if (! pData->init(clientName))
+        {
+            close();
+            setLastError("Failed to init internal data");
+            return false;
+        }
+
         pData->bufferSize = static_cast<uint32_t>(fDevice->getCurrentBufferSizeSamples());
         pData->sampleRate = fDevice->getCurrentSampleRate();
 
@@ -172,9 +179,9 @@ public:
 
         fDevice->start(this);
 
-        CarlaEngine::init(clientName);
         patchbayRefresh(false);
 
+        callback(ENGINE_CALLBACK_ENGINE_STARTED, 0, pData->options.processMode, pData->options.transportMode, 0.0f, getCurrentDriverName());
         return true;
     }
 
@@ -182,18 +189,14 @@ public:
     {
         carla_debug("CarlaEngineJuce::close()");
 
-        bool hasError = !CarlaEngine::close();
+        bool hasError = false;
 
-        if (fDevice != nullptr)
-        {
-            if (fDevice->isPlaying())
-                fDevice->stop();
+        // stop stream first
+        if (fDevice != nullptr && fDevice->isPlaying())
+            fDevice->stop();
 
-            if (fDevice->isOpen())
-                fDevice->close();
-
-            fDevice = nullptr;
-        }
+        // clear engine data
+        CarlaEngine::close();
 
         pData->graph.destroy();
 
@@ -222,6 +225,15 @@ public:
 
         fMidiOuts.clear();
         fMidiOutMutex.unlock();
+
+        // close stream
+        if (fDevice != nullptr)
+        {
+            if (fDevice->isOpen())
+                fDevice->close();
+
+            fDevice = nullptr;
+        }
 
         return !hasError;
     }

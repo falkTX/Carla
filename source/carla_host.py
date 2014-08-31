@@ -254,6 +254,9 @@ class HostWindow(QMainWindow):
         self.ui.menu_PluginMacros.setEnabled(False)
         self.ui.menu_Canvas.setEnabled(False)
 
+        self.ui.dockWidgetTitleBar = QWidget(self)
+        self.ui.dockWidget.setTitleBarWidget(self.ui.dockWidgetTitleBar)
+
         self.setTransportMenuEnabled(False)
 
         # -------------------------------------------------------------

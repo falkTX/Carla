@@ -621,11 +621,17 @@ protected:
     {
         carla_debug("CarlaEngineNative::init(\"%s\")", clientName);
 
+        if (! pData->init(clientName))
+        {
+            close();
+            setLastError("Failed to init internal data");
+            return false;
+        }
+
         pData->bufferSize = pHost->get_buffer_size(pHost->handle);
         pData->sampleRate = pHost->get_sample_rate(pHost->handle);
 
         fIsRunning = true;
-        CarlaEngine::init(clientName);
         return true;
     }
 

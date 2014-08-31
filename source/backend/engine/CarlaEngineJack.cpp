@@ -749,6 +749,11 @@ public:
             return false;
         }
 
+        const char* const jackClientName(jackbridge_get_client_name(fClient));
+
+        if (! pData->init(jackClientName))
+            return false;
+
         pData->bufferSize = jackbridge_get_buffer_size(fClient);
         pData->sampleRate = jackbridge_get_sample_rate(fClient);
 
@@ -759,8 +764,6 @@ public:
         jackbridge_set_latency_callback(fClient, carla_jack_latency_callback, this);
         jackbridge_set_process_callback(fClient, carla_jack_process_callback, this);
         jackbridge_on_shutdown(fClient, carla_jack_shutdown_callback, this);
-
-        const char* const jackClientName(jackbridge_get_client_name(fClient));
 
         if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
             initJackPatchbay(jackClientName);
@@ -793,10 +796,17 @@ public:
 
         if (jackbridge_activate(fClient))
         {
-            CarlaEngine::init(jackClientName);
+            callback(ENGINE_CALLBACK_ENGINE_STARTED, 0, pData->options.processMode, pData->options.transportMode, 0.0f, getCurrentDriverName());
             return true;
         }
 
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+            pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        {
+            pData->graph.destroy();
+        }
+
+        pData->close();
         jackbridge_client_close(fClient);
         fClient = nullptr;
 
@@ -809,51 +819,47 @@ public:
     {
         carla_debug("CarlaEngineJack::close()");
 
-        CarlaEngine::close();
-
 #ifdef BUILD_BRIDGE
+        CarlaEngine::close();
         fClient    = nullptr;
         fIsRunning = false;
         return true;
 #else
-        if (jackbridge_deactivate(fClient))
-        {
-            if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
-                pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-            {
-                if (fRackPorts[0] != nullptr)
-                {
-                    jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioIn1]);
-                    jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioIn2]);
-                    jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioOut1]);
-                    jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioOut2]);
-                    jackbridge_port_unregister(fClient, fRackPorts[kRackPortEventIn]);
-                    jackbridge_port_unregister(fClient, fRackPorts[kRackPortEventOut]);
-                    carla_fill<jack_port_t*>(fRackPorts, nullptr, kRackPortCount);
-                }
+        // deactivate first
+        const bool deactivated(jackbridge_deactivate(fClient));
 
-                pData->graph.destroy();
-            }
-
-            if (jackbridge_client_close(fClient))
-            {
-                fClient = nullptr;
-                return true;
-            }
-            else
-                setLastError("Failed to close the JACK client");
-        }
-        else
-            setLastError("Failed to deactivate the JACK client");
-
-        fClient = nullptr;
+        // clear engine data
+        CarlaEngine::close();
 
         fUsedGroups.clear();
         fUsedPorts.clear();
         fUsedConnections.clear();
         fNewGroups.clear();
 
-        return false;
+        // clear rack/patchbay stuff
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+            pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        {
+            if (deactivated)
+            {
+                jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioIn1]);
+                jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioIn2]);
+                jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioOut1]);
+                jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioOut2]);
+                jackbridge_port_unregister(fClient, fRackPorts[kRackPortEventIn]);
+                jackbridge_port_unregister(fClient, fRackPorts[kRackPortEventOut]);
+            }
+            carla_fill<jack_port_t*>(fRackPorts, nullptr, kRackPortCount);
+
+            pData->graph.destroy();
+        }
+
+        // close client
+        if (deactivated)
+            jackbridge_client_close(fClient);
+
+        fClient = nullptr;
+        return true;
 #endif
     }
 
@@ -1354,6 +1360,9 @@ protected:
         else if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
                  pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         {
+            CARLA_SAFE_ASSERT_RETURN(pData->events.in  != nullptr,);
+            CARLA_SAFE_ASSERT_RETURN(pData->events.out != nullptr,);
+
             // get buffers from jack
             float* const audioIn1  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn1], nframes);
             float* const audioIn2  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn2], nframes);
@@ -1362,7 +1371,7 @@ protected:
             void* const  eventIn   = jackbridge_port_get_buffer(fRackPorts[kRackPortEventIn],  nframes);
             void* const  eventOut  = jackbridge_port_get_buffer(fRackPorts[kRackPortEventOut], nframes);
 
-#if 0
+#if 1
             // assert buffers
             CARLA_SAFE_ASSERT(audioIn1 != nullptr);
             CARLA_SAFE_ASSERT(audioIn2 != nullptr);

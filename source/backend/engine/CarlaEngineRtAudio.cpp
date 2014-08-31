@@ -267,6 +267,13 @@ public:
             return false;
         }
 
+        if (! pData->init(clientName))
+        {
+            close();
+            setLastError("Failed to init internal data");
+            return false;
+        }
+
         pData->bufferSize = bufferFrames;
         pData->sampleRate = fAudio.getStreamSampleRate();
 
@@ -286,9 +293,9 @@ public:
             return false;
         }
 
-        CarlaEngine::init(clientName);
         patchbayRefresh(false);
 
+        callback(ENGINE_CALLBACK_ENGINE_STARTED, 0, pData->options.processMode, pData->options.transportMode, 0.0f, getCurrentDriverName());
         return true;
     }
 
@@ -297,27 +304,23 @@ public:
         CARLA_SAFE_ASSERT(fAudioOutCount != 0);
         carla_debug("CarlaEngineRtAudio::close()");
 
-        bool hasError = !CarlaEngine::close();
+        bool hasError = false;
 
-        if (fAudio.isStreamOpen())
+        // stop stream first
+        if (fAudio.isStreamOpen() && fAudio.isStreamRunning())
         {
-            if (fAudio.isStreamRunning())
-            {
-                try {
-                    fAudio.stopStream();
-                }
-                catch (const RtAudioError& e)
-                {
-                    if (! hasError)
-                    {
-                        setLastError(e.what());
-                        hasError = true;
-                    }
-                }
+            try {
+                fAudio.stopStream();
             }
-
-            fAudio.closeStream();
+            catch (const RtAudioError& e)
+            {
+                setLastError(e.what());
+                hasError = true;
+            }
         }
+
+        // clear engine data
+        CarlaEngine::close();
 
         pData->graph.destroy();
 
@@ -352,6 +355,10 @@ public:
         fAudioOutCount = 0;
         fLastEventTime = 0;
         fDeviceName.clear();
+
+        // close stream
+        if (fAudio.isStreamOpen())
+            fAudio.closeStream();
 
         return !hasError;
     }

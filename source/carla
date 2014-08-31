@@ -249,9 +249,6 @@ class CarlaHostW(HostWindow):
 
         self.ui.dockWidget.installEventFilter(self)
 
-        self.ui.dockWidgetTitleBar = QWidget(self)
-        self.ui.dockWidget.setTitleBarWidget(self.ui.dockWidgetTitleBar)
-
         QTimer.singleShot(0, self.slot_initWidgets)
 
     # -----------------------------------------------------------------

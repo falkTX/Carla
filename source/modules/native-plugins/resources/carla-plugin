@@ -127,7 +127,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
             elif msg.startswith("PARAMVAL_"):
                 pluginId, paramId = [int(i) for i in msg.replace("PARAMVAL_", "").split(":")]
                 paramValue = float(self.readlineblock())
-                gCarla.host._set_parameterValueS(pluginId, paramId, paramValue)
+                gCarla.host._set_parameterValue(pluginId, paramId, paramValue)
 
             elif msg.startswith("ENGINE_CALLBACK_"):
                 action   = int(msg.replace("ENGINE_CALLBACK_", ""))
@@ -141,9 +141,9 @@ class CarlaMiniW(ExternalUI, HostWindow):
                     gCarla.host._set_pluginName(pluginId, valueStr)
                 elif action == ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
                     if value1 < 0:
-                        gCarla.host._set_parameterValueInt(pluginId, value1, value3)
+                        gCarla.host._set_internalValue(pluginId, value1, value3)
                     else:
-                        gCarla.host._set_parameterValueS(pluginId, value1, value3)
+                        gCarla.host._set_parameterValue(pluginId, value1, value3)
                 elif action == ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
                     gCarla.host._set_parameterDefault(pluginId, value1, value3)
                 elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
@@ -212,7 +212,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
                     'unit': paramUnit,
                     'scalePointCount': 0,
                 }
-                gCarla.host._set_parameterInfoS(pluginId, paramId, paramInfo)
+                gCarla.host._set_parameterInfo(pluginId, paramId, paramInfo)
 
                 paramData = {
                     'type': paramType,
@@ -222,7 +222,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
                     'midiCC': midiCC,
                     'midiChannel': midiChannel
                 }
-                gCarla.host._set_parameterDataS(pluginId, paramId, paramData)
+                gCarla.host._set_parameterData(pluginId, paramId, paramData)
 
             elif msg.startswith("PARAMETER_RANGES_"):
                 pluginId, paramId = [int(i) for i in msg.replace("PARAMETER_RANGES_", "").split(":")]
@@ -236,7 +236,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
                     'stepSmall': stepSmall,
                     'stepLarge': stepLarge
                 }
-                gCarla.host._set_parameterRangeS(pluginId, paramId, paramRanges)
+                gCarla.host._set_parameterRanges(pluginId, paramId, paramRanges)
 
             elif msg.startswith("PROGRAM_COUNT_"):
                 pluginId, count, current = [int(i) for i in msg.replace("PROGRAM_COUNT_", "").split(":")]
@@ -246,7 +246,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
             elif msg.startswith("PROGRAM_NAME_"):
                 pluginId, progId = [int(i) for i in msg.replace("PROGRAM_NAME_", "").split(":")]
                 progName = self.readlineblock().replace("\r", "\n")
-                gCarla.host._set_programNameS(pluginId, progId, progName)
+                gCarla.host._set_programName(pluginId, progId, progName)
 
             elif msg.startswith("MIDI_PROGRAM_COUNT_"):
                 pluginId, count, current = [int(i) for i in msg.replace("MIDI_PROGRAM_COUNT_", "").split(":")]
@@ -257,7 +257,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
                 pluginId, midiProgId = [int(i) for i in msg.replace("MIDI_PROGRAM_DATA_", "").split(":")]
                 bank, program = [int(i) for i in self.readlineblock().split(":")]
                 name = self.readlineblock().replace("\r", "\n")
-                gCarla.host._set_midiProgramDataS(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
+                gCarla.host._set_midiProgramData(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
 
             elif msg == "error":
                 error = self.readlineblock().replace("\r", "\n")

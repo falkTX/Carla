@@ -719,7 +719,7 @@ public:
      * Initialize/start the engine, using @a clientName.
      * When the engine is intialized, you need to call idle() at regular intervals.
      */
-    virtual bool init(const char* const clientName);
+    virtual bool init(const char* const clientName) = 0;
 
     /*!
      * Close engine.
