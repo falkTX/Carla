@@ -334,10 +334,11 @@ def checkFileSFZ(filename, tool):
 class SearchPluginsThread(QThread):
     pluginLook = pyqtSignal(int, str)
 
-    def __init__(self, parent):
+    def __init__(self, parent, pathBinaries):
         QThread.__init__(self, parent)
 
         self.fContinueChecking = False
+        self.fPathBinaries     = pathBinaries
 
         self.fCheckNative  = False
         self.fCheckPosix32 = False
@@ -360,7 +361,7 @@ class SearchPluginsThread(QThread):
         else:
             toolNative = "carla-discovery-native"
 
-        self.fToolNative = os.path.join(gCarla.pathBinaries, toolNative)
+        self.fToolNative = os.path.join(pathBinaries, toolNative)
 
         if not os.path.exists(self.fToolNative):
             self.fToolNative = ""
@@ -485,25 +486,25 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
             if self.fCheckPosix32:
-                self._checkLADSPA(OS, os.path.join(gCarla.pathBinaries, "carla-discovery-posix32"))
+                self._checkLADSPA(OS, os.path.join(self.fPathBinaries, "carla-discovery-posix32"))
                 settingsDB.setValue("Plugins/LADSPA_posix32", self.fLadspaPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckPosix64:
-                self._checkLADSPA(OS, os.path.join(gCarla.pathBinaries, "carla-discovery-posix64"))
+                self._checkLADSPA(OS, os.path.join(self.fPathBinaries, "carla-discovery-posix64"))
                 settingsDB.setValue("Plugins/LADSPA_posix64", self.fLadspaPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin32:
-                self._checkLADSPA("WINDOWS", os.path.join(gCarla.pathBinaries, "carla-discovery-win32.exe"), not WINDOWS)
+                self._checkLADSPA("WINDOWS", os.path.join(self.fPathBinaries, "carla-discovery-win32.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/LADSPA_win32", self.fLadspaPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin64:
-                self._checkLADSPA("WINDOWS", os.path.join(gCarla.pathBinaries, "carla-discovery-win64.exe"), not WINDOWS)
+                self._checkLADSPA("WINDOWS", os.path.join(self.fPathBinaries, "carla-discovery-win64.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/LADSPA_win64", self.fLadspaPlugins)
 
             settingsDB.sync()
@@ -535,25 +536,25 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
             if self.fCheckPosix32:
-                self._checkDSSI(OS, os.path.join(gCarla.pathBinaries, "carla-discovery-posix32"))
+                self._checkDSSI(OS, os.path.join(self.fPathBinaries, "carla-discovery-posix32"))
                 settingsDB.setValue("Plugins/DSSI_posix32", self.fDssiPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckPosix64:
-                self._checkDSSI(OS, os.path.join(gCarla.pathBinaries, "carla-discovery-posix64"))
+                self._checkDSSI(OS, os.path.join(self.fPathBinaries, "carla-discovery-posix64"))
                 settingsDB.setValue("Plugins/DSSI_posix64", self.fDssiPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin32:
-                self._checkDSSI("WINDOWS", os.path.join(gCarla.pathBinaries, "carla-discovery-win32.exe"), not WINDOWS)
+                self._checkDSSI("WINDOWS", os.path.join(self.fPathBinaries, "carla-discovery-win32.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/DSSI_win32", self.fDssiPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin64:
-                self._checkDSSI("WINDOWS", os.path.join(gCarla.pathBinaries, "carla-discovery-win64.exe"), not WINDOWS)
+                self._checkDSSI("WINDOWS", os.path.join(self.fPathBinaries, "carla-discovery-win64.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/DSSI_win64", self.fDssiPlugins)
 
             settingsDB.sync()
@@ -568,25 +569,25 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
             if self.fCheckPosix32:
-                self._checkLV2(os.path.join(gCarla.pathBinaries, "carla-discovery-posix32"))
+                self._checkLV2(os.path.join(self.fPathBinaries, "carla-discovery-posix32"))
                 settingsDB.setValue("Plugins/LV2_posix32", self.fLv2Plugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckPosix64:
-                self._checkLV2(os.path.join(gCarla.pathBinaries, "carla-discovery-posix64"))
+                self._checkLV2(os.path.join(self.fPathBinaries, "carla-discovery-posix64"))
                 settingsDB.setValue("Plugins/LV2_posix64", self.fLv2Plugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin32:
-                self._checkLV2(os.path.join(gCarla.pathBinaries, "carla-discovery-win32.exe"), not WINDOWS)
+                self._checkLV2(os.path.join(self.fPathBinaries, "carla-discovery-win32.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/LV2_win32", self.fLv2Plugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin64:
-                self._checkLV2(os.path.join(gCarla.pathBinaries, "carla-discovery-win64.exe"), not WINDOWS)
+                self._checkLV2(os.path.join(self.fPathBinaries, "carla-discovery-win64.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/LV2_win64", self.fLv2Plugins)
 
             settingsDB.sync()
@@ -601,25 +602,25 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
             if self.fCheckPosix32:
-                self._checkVST(OS, os.path.join(gCarla.pathBinaries, "carla-discovery-posix32"))
+                self._checkVST(OS, os.path.join(self.fPathBinaries, "carla-discovery-posix32"))
                 settingsDB.setValue("Plugins/VST_posix32", self.fVstPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckPosix64:
-                self._checkVST(OS, os.path.join(gCarla.pathBinaries, "carla-discovery-posix64"))
+                self._checkVST(OS, os.path.join(self.fPathBinaries, "carla-discovery-posix64"))
                 settingsDB.setValue("Plugins/VST_posix64", self.fVstPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin32:
-                self._checkVST("WINDOWS", os.path.join(gCarla.pathBinaries, "carla-discovery-win32.exe"), not WINDOWS)
+                self._checkVST("WINDOWS", os.path.join(self.fPathBinaries, "carla-discovery-win32.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/VST_win32", self.fVstPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin64:
-                self._checkVST("WINDOWS", os.path.join(gCarla.pathBinaries, "carla-discovery-win64.exe"), not WINDOWS)
+                self._checkVST("WINDOWS", os.path.join(self.fPathBinaries, "carla-discovery-win64.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/VST_win64", self.fVstPlugins)
 
             settingsDB.sync()
@@ -634,25 +635,25 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
             if self.fCheckPosix32 and MACOS:
-                self._checkVST3(OS, os.path.join(gCarla.pathBinaries, "carla-discovery-posix32"))
+                self._checkVST3(OS, os.path.join(self.fPathBinaries, "carla-discovery-posix32"))
                 settingsDB.setValue("Plugins/VST3_posix32", self.fVst3Plugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckPosix64 and MACOS:
-                self._checkVST3(OS, os.path.join(gCarla.pathBinaries, "carla-discovery-posix64"))
+                self._checkVST3(OS, os.path.join(self.fPathBinaries, "carla-discovery-posix64"))
                 settingsDB.setValue("Plugins/VST3_posix64", self.fVst3Plugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin32:
-                self._checkVST3("WINDOWS", os.path.join(gCarla.pathBinaries, "carla-discovery-win32.exe"), not WINDOWS)
+                self._checkVST3("WINDOWS", os.path.join(self.fPathBinaries, "carla-discovery-win32.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/VST3_win32", self.fVst3Plugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin64:
-                self._checkVST3("WINDOWS", os.path.join(gCarla.pathBinaries, "carla-discovery-win64.exe"), not WINDOWS)
+                self._checkVST3("WINDOWS", os.path.join(self.fPathBinaries, "carla-discovery-win64.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/VST3_win64", self.fVst3Plugins)
 
             settingsDB.sync()
@@ -667,13 +668,13 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
             if self.fCheckPosix32:
-                self._checkAU(os.path.join(gCarla.pathBinaries, "carla-discovery-posix32"))
+                self._checkAU(os.path.join(self.fPathBinaries, "carla-discovery-posix32"))
                 settingsDB.setValue("Plugins/AU_posix32", self.fAuPlugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckPosix64:
-                self._checkAU(os.path.join(gCarla.pathBinaries, "carla-discovery-posix64"))
+                self._checkAU(os.path.join(self.fPathBinaries, "carla-discovery-posix64"))
                 settingsDB.setValue("Plugins/AU_posix64", self.fAuPlugins)
 
             settingsDB.sync()
@@ -964,15 +965,16 @@ class SearchPluginsThread(QThread):
 # Plugin Refresh Dialog
 
 class PluginRefreshW(QDialog):
-    def __init__(self, parent):
+    def __init__(self, parent, host):
         QDialog.__init__(self, parent)
+        self.host = host
         self.ui = ui_carla_refresh.Ui_PluginRefreshW()
         self.ui.setupUi(self)
 
         # -------------------------------------------------------------
         # Internal stuff
 
-        self.fThread = SearchPluginsThread(self)
+        self.fThread = SearchPluginsThread(self, host.pathBinaries)
 
         # -------------------------------------------------------------
         # Load settings
@@ -997,11 +999,11 @@ class PluginRefreshW(QDialog):
             self.ui.ch_posix32.setText("MacOS 32bit")
             self.ui.ch_posix64.setText("MacOS 64bit")
 
-        hasNative  = os.path.exists(os.path.join(gCarla.pathBinaries, "carla-discovery-native"))
-        hasPosix32 = os.path.exists(os.path.join(gCarla.pathBinaries, "carla-discovery-posix32"))
-        hasPosix64 = os.path.exists(os.path.join(gCarla.pathBinaries, "carla-discovery-posix64"))
-        hasWin32   = os.path.exists(os.path.join(gCarla.pathBinaries, "carla-discovery-win32.exe"))
-        hasWin64   = os.path.exists(os.path.join(gCarla.pathBinaries, "carla-discovery-win64.exe"))
+        hasNative  = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-native"))
+        hasPosix32 = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-posix32"))
+        hasPosix64 = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-posix64"))
+        hasWin32   = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-win32.exe"))
+        hasWin64   = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-win64.exe"))
 
         if hasPosix32 and not WINDOWS:
             self.ui.ico_posix32.setPixmap(self.fIconYes)
@@ -1132,9 +1134,9 @@ class PluginRefreshW(QDialog):
         self.ui.group_options.setEnabled(False)
 
         if self.ui.ch_do_checks.isChecked():
-            gCarla.host.unsetenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS")
+            self.host.unsetenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS")
         else:
-            gCarla.host.setenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS", "true")
+            self.host.setenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS", "true")
 
         native, posix32, posix64, win32, win64 = (self.ui.ch_native.isChecked(),
                                                   self.ui.ch_posix32.isChecked(), self.ui.ch_posix64.isChecked(),
@@ -1237,8 +1239,9 @@ class PluginRefreshW(QDialog):
 # Plugin Database Dialog
 
 class PluginDatabaseW(QDialog):
-    def __init__(self, parent):
+    def __init__(self, parent, host):
         QDialog.__init__(self, parent)
+        self.host = host
         self.ui = ui_carla_database.Ui_PluginDatabaseW()
         self.ui.setupUi(self)
 
@@ -1321,7 +1324,7 @@ class PluginDatabaseW(QDialog):
 
     @pyqtSlot()
     def slot_refreshPlugins(self):
-        if PluginRefreshW(self).exec_():
+        if PluginRefreshW(self, self.host).exec_():
             self._reAddPlugins()
 
             if self.fRealParent:
@@ -1509,14 +1512,14 @@ class PluginDatabaseW(QDialog):
         for plugins in internalPlugins:
             internalCount += len(plugins)
 
-        canRefreshInternals = not (gCarla.isControl or gCarla.isPlugin or gCarla.host is None)
+        canRefreshInternals = not (self.host.isControl or self.host.isPlugin)
 
-        if  canRefreshInternals and internalCount != gCarla.host.get_internal_plugin_count():
-            internalCount   = gCarla.host.get_internal_plugin_count()
+        if  canRefreshInternals and internalCount != self.host.get_internal_plugin_count():
+            internalCount   = self.host.get_internal_plugin_count()
             internalPlugins = []
 
-            for i in range(gCarla.host.get_internal_plugin_count()):
-                descInfo = gCarla.host.get_internal_plugin_info(i)
+            for i in range(self.host.get_internal_plugin_count()):
+                descInfo = self.host.get_internal_plugin_info(i)
                 plugins  = checkPluginInternal(descInfo)
 
                 if plugins:
@@ -1742,12 +1745,13 @@ class PluginDatabaseW(QDialog):
 
 if __name__ == '__main__':
     from carla_app import CarlaApplication
+    from carla_host import initHost
 
     app = CarlaApplication()
 
-    initHost("Settings", None, False)
+    host = initHost("Settings", None, False, False, False)
 
-    gui = PluginDatabaseW(None)
+    gui = PluginDatabaseW(None, host)
     gui.show()
 
     sys.exit(app.exec_())

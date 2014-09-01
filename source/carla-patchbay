@@ -26,10 +26,10 @@ from carla_patchbay import CarlaPatchbayW
 # Main Window
 
 class CarlaHostW(HostWindow):
-    def __init__(self, parent=None):
-        HostWindow.__init__(self, parent)
+    def __init__(self, host):
+        HostWindow.__init__(self, host)
 
-        self.fContainer = CarlaPatchbayW(self)
+        self.fContainer = CarlaPatchbayW(self, host)
         self.setupContainer(True, self.fContainer.themeData)
 
 # ------------------------------------------------------------------------------------------------------------
@@ -62,18 +62,13 @@ if __name__ == '__main__':
     # -------------------------------------------------------------
     # Init host backend
 
-    gCarla.isControl   = False
-    gCarla.isLocal     = True
-    gCarla.isPlugin    = False
-    gCarla.processMode = ENGINE_PROCESS_MODE_PATCHBAY
-    gCarla.processModeForced = True
-
-    initHost(initName, libPrefix)
+    host = initHost(initName, libPrefix, False, False, True)
+    host.processMode = ENGINE_PROCESS_MODE_PATCHBAY
 
     # -------------------------------------------------------------
     # Create GUI
 
-    gCarla.gui = CarlaHostW()
+    gCarla.gui = CarlaHostW(host)
 
     # -------------------------------------------------------------
     # Load project file if set

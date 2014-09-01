@@ -56,7 +56,7 @@ class CarlaRackItem(QListWidgetItem):
     # -----------------------------------------------------------------
 
     def createWidget(self, pluginId):
-        self.widget = createPluginSlot(self.fParent, pluginId)
+        self.widget = createPluginSlot(self.fParent, self.fParent.host, pluginId, True) # FIXME useSkins opt
         self.widget.setFixedHeight(self.widget.getFixedHeight())
 
         self.setSizeHint(QSize(640, self.widget.getFixedHeight()))
@@ -77,10 +77,17 @@ class CarlaRackItem(QListWidgetItem):
 # Rack widget list
 
 class CarlaRackList(QListWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, host):
         QListWidget.__init__(self, parent)
+        self.host = host
 
-        exts = gCarla.host.get_supported_file_extensions().split(";") if gCarla.host is not None else ["wav",]
+        if False:
+            # kdevelop likes this :)
+            host = CarlaHostMeta()
+
+        # -------------------------------------------------------------
+
+        exts = host.get_supported_file_extensions().split(";")
 
         # plugin files
         exts.append("dll")
@@ -164,18 +171,18 @@ class CarlaRackList(QListWidget):
 
         if tryItem is not None:
             pluginId = tryItem.widget.getPluginId()
-            gCarla.host.replace_plugin(pluginId)
+            self.host.replace_plugin(pluginId)
 
         for url in urls:
             filename = url.toLocalFile()
 
-            if not gCarla.host.load_file(filename):
+            if not self.host.load_file(filename):
                 CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
                                  self.tr("Failed to load file"),
-                                 gCarla.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+                                 self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
         if tryItem is not None:
-            gCarla.host.replace_plugin(self.parent().fPluginCount)
+            self.host.replace_plugin(self.parent().fPluginCount)
             #tryItem.widget.setActive(True, True, True)
 
     def mousePressEvent(self, event):
@@ -196,8 +203,15 @@ class CarlaRackList(QListWidget):
 # Rack widget
 
 class CarlaRackW(QFrame):
-    def __init__(self, parent, doSetup = True):
+    def __init__(self, parent, host, doSetup = True):
         QFrame.__init__(self, parent)
+        self.host = host
+
+        if False:
+            # kdevelop likes this :)
+            host = CarlaHostMeta()
+
+        # -------------------------------------------------------------
 
         self.fLayout = QHBoxLayout(self)
         self.fLayout.setContentsMargins(0, 0, 0, 0)
@@ -214,7 +228,7 @@ class CarlaRackW(QFrame):
         self.fPadRight.setObjectName("PadRight")
         self.fPadRight.setText("")
 
-        self.fRack = CarlaRackList(self)
+        self.fRack = CarlaRackList(self, host)
         self.fRack.setObjectName("CarlaRackList")
         self.fRack.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.fRack.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -436,7 +450,7 @@ class CarlaRackW(QFrame):
 
     @pyqtSlot()
     def slot_pluginsEnable(self):
-        if not gCarla.host.is_engine_running():
+        if not self.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):
@@ -448,7 +462,7 @@ class CarlaRackW(QFrame):
 
     @pyqtSlot()
     def slot_pluginsDisable(self):
-        if not gCarla.host.is_engine_running():
+        if not self.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):
@@ -460,7 +474,7 @@ class CarlaRackW(QFrame):
 
     @pyqtSlot()
     def slot_pluginsVolume100(self):
-        if not gCarla.host.is_engine_running():
+        if not self.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):
@@ -472,7 +486,7 @@ class CarlaRackW(QFrame):
 
     @pyqtSlot()
     def slot_pluginsMute(self):
-        if not gCarla.host.is_engine_running():
+        if not self.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):
@@ -484,7 +498,7 @@ class CarlaRackW(QFrame):
 
     @pyqtSlot()
     def slot_pluginsWet100(self):
-        if not gCarla.host.is_engine_running():
+        if not self.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):
@@ -496,7 +510,7 @@ class CarlaRackW(QFrame):
 
     @pyqtSlot()
     def slot_pluginsBypass(self):
-        if not gCarla.host.is_engine_running():
+        if not self.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):
@@ -508,7 +522,7 @@ class CarlaRackW(QFrame):
 
     @pyqtSlot()
     def slot_pluginsCenter(self):
-        if not gCarla.host.is_engine_running():
+        if not self.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):

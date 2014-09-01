@@ -42,11 +42,11 @@ from carla_rack import CarlaRackW
 # Tab widget (rack + patchbay)
 
 class CarlaMultiW(QTabWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, host):
         QTabWidget.__init__(self, parent)
 
-        self.fRack     = CarlaRackW(parent, False)
-        self.fPatchbay = CarlaPatchbayW(parent, False, False)
+        self.fRack     = CarlaRackW(parent, host, False)
+        self.fPatchbay = CarlaPatchbayW(parent, host, False, False)
         self.fParent   = parent
 
         self.fUseCustomPaint = False
@@ -215,13 +215,13 @@ class CarlaMultiW(QTabWidget):
 # Main Window
 
 class CarlaHostW(HostWindow):
-    def __init__(self, parent=None):
-        HostWindow.__init__(self, parent)
+    def __init__(self, host):
+        HostWindow.__init__(self, host)
 
         # -------------------------------------------------------------
         # Set-up container
 
-        self.fContainer = CarlaMultiW(self)
+        self.fContainer = CarlaMultiW(self, host)
         self.setupContainer(True, self.fContainer.fPatchbay.themeData)
 
         self.fContainer.setUseCustomPaint(self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING])
@@ -370,12 +370,14 @@ if __name__ == '__main__':
     gCarla.isLocal     = True
     gCarla.isPlugin    = False
 
-    initHost(initName, libPrefix)
+    host = initHost(initName, libPrefix)
+    host.isControl   = False
+    host.isPlugin    = False
 
     # -------------------------------------------------------------
     # Create GUI
 
-    gCarla.gui = CarlaHostW()
+    gCarla.gui = CarlaHostW(host)
 
     # -------------------------------------------------------------
     # Load project file if set

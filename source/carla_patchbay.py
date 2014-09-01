@@ -61,9 +61,9 @@ CARLA_DEFAULT_CANVAS_SIZE_WIDTH  = 3100
 CARLA_DEFAULT_CANVAS_SIZE_HEIGHT = 2400
 
 # ------------------------------------------------------------------------------------------------
-# Patchbay info class, used in main carla as replacement for PluginEdit
+# Dummt class used in main carla as replacement for PluginEdit
 
-class PluginInfo(object):
+class DummyPluginEdit(object):
     def __init__(self, parent, pluginId):
         object.__init__(self)
 
@@ -94,9 +94,17 @@ class PluginInfo(object):
 # ------------------------------------------------------------------------------------------------
 # Patchbay widget
 
-class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
-    def __init__(self, parent, doSetup = True, onlyPatchbay = True, is3D = False):
+class CarlaPatchbayW(QFrame, PluginEditParentMeta):
+#class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
+    def __init__(self, parent, host, doSetup = True, onlyPatchbay = True, is3D = False):
         QFrame.__init__(self, parent)
+        self.host = host
+
+        if False:
+            # kdevelop likes this :)
+            self.host = host = CarlaHostMeta()
+
+        # -------------------------------------------------------------
 
         self.fLayout = QGridLayout(self)
         self.fLayout.setContentsMargins(0, 0, 0, 0)
@@ -132,8 +140,9 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
         self.fPluginCount = 0
         self.fPluginList  = []
 
-        self.fIsOnlyPatchbay  = onlyPatchbay
-        self.fSelectedPlugins = []
+        self.fExternalPatchbay = False
+        self.fIsOnlyPatchbay   = onlyPatchbay
+        self.fSelectedPlugins  = []
 
         self.fCanvasWidth  = 0
         self.fCanvasHeight = 0
@@ -254,15 +263,15 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
 
     def addPlugin(self, pluginId, isProjectLoading):
         if self.fIsOnlyPatchbay:
-            pitem = PluginEdit(self, gCarla.host, pluginId)
+            pitem = PluginEdit(self, self.host, pluginId)
         else:
-            pitem = PluginInfo(self, pluginId)
+            pitem = DummyPluginEdit(self, pluginId)
 
         self.fPluginList.append(pitem)
         self.fPluginCount += 1
 
         if self.fIsOnlyPatchbay and not isProjectLoading:
-            gCarla.host.set_active(pluginId, True)
+            self.host.set_active(pluginId, True)
 
     def removePlugin(self, pluginId):
         patchcanvas.handlePluginRemoved(pluginId)
@@ -340,11 +349,11 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
         for pluginId in self.fSelectedPlugins:
             self.fPeaksCleared = False
             if self.fPeaksIn.isVisible():
-                self.fPeaksIn.displayMeter(1, gCarla.host.get_input_peak_value(pluginId, True))
-                self.fPeaksIn.displayMeter(2, gCarla.host.get_input_peak_value(pluginId, False))
+                self.fPeaksIn.displayMeter(1, self.host.get_input_peak_value(pluginId, True))
+                self.fPeaksIn.displayMeter(2, self.host.get_input_peak_value(pluginId, False))
             if self.fPeaksOut.isVisible():
-                self.fPeaksOut.displayMeter(1, gCarla.host.get_output_peak_value(pluginId, True))
-                self.fPeaksOut.displayMeter(2, gCarla.host.get_output_peak_value(pluginId, False))
+                self.fPeaksOut.displayMeter(1, self.host.get_output_peak_value(pluginId, True))
+                self.fPeaksOut.displayMeter(2, self.host.get_output_peak_value(pluginId, False))
             return
 
         if self.fPeaksCleared:
@@ -549,34 +558,34 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
     @pyqtSlot(int)
     def slot_noteOn(self, note):
         for pluginId in self.fSelectedPlugins:
-            gCarla.host.send_midi_note(pluginId, 0, note, 100)
+            self.host.send_midi_note(pluginId, 0, note, 100)
 
     @pyqtSlot(int)
     def slot_noteOff(self, note):
         for pluginId in self.fSelectedPlugins:
-            gCarla.host.send_midi_note(pluginId, 0, note, 0)
+            self.host.send_midi_note(pluginId, 0, note, 0)
 
     # -----------------------------------------------------------------
 
     @pyqtSlot()
     def slot_pluginsEnable(self):
-        if not gCarla.host.is_engine_running():
+        if not self.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):
-            gCarla.host.set_active(i, True)
+            self.host.set_active(i, True)
 
     @pyqtSlot()
     def slot_pluginsDisable(self):
-        if not gCarla.host.is_engine_running():
+        if not self.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):
-            gCarla.host.set_active(i, False)
+            self.host.set_active(i, False)
 
     @pyqtSlot()
     def slot_pluginsVolume100(self):
-        if not gCarla.host.is_engine_running():
+        if not self.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):
@@ -586,11 +595,11 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
 
             if pitem.getHints() & PLUGIN_CAN_VOLUME:
                 pitem.setParameterValue(PARAMETER_VOLUME, 1.0)
-                gCarla.host.set_volume(i, 1.0)
+                self.host.set_volume(i, 1.0)
 
     @pyqtSlot()
     def slot_pluginsMute(self):
-        if not gCarla.host.is_engine_running():
+        if not self.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):
@@ -600,11 +609,11 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
 
             if pitem.getHints() & PLUGIN_CAN_VOLUME:
                 pitem.setParameterValue(PARAMETER_VOLUME, 0.0)
-                gCarla.host.set_volume(i, 0.0)
+                self.host.set_volume(i, 0.0)
 
     @pyqtSlot()
     def slot_pluginsWet100(self):
-        if not gCarla.host.is_engine_running():
+        if not self.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):
@@ -614,11 +623,11 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
 
             if pitem.getHints() & PLUGIN_CAN_DRYWET:
                 pitem.setParameterValue(PARAMETER_DRYWET, 1.0)
-                gCarla.host.set_drywet(i, 1.0)
+                self.host.set_drywet(i, 1.0)
 
     @pyqtSlot()
     def slot_pluginsBypass(self):
-        if not gCarla.host.is_engine_running():
+        if not self.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):
@@ -628,11 +637,11 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
 
             if pitem.getHints() & PLUGIN_CAN_DRYWET:
                 pitem.setParameterValue(PARAMETER_DRYWET, 0.0)
-                gCarla.host.set_drywet(i, 0.0)
+                self.host.set_drywet(i, 0.0)
 
     @pyqtSlot()
     def slot_pluginsCenter(self):
-        if not gCarla.host.is_engine_running():
+        if not self.host.is_engine_running():
             return
 
         for i in range(self.fPluginCount):
@@ -643,12 +652,12 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
             if pitem.getHints() & PLUGIN_CAN_BALANCE:
                 pitem.setParameterValue(PARAMETER_BALANCE_LEFT, -1.0)
                 pitem.setParameterValue(PARAMETER_BALANCE_RIGHT, 1.0)
-                gCarla.host.set_balance_left(i, -1.0)
-                gCarla.host.set_balance_right(i, 1.0)
+                self.host.set_balance_left(i, -1.0)
+                self.host.set_balance_right(i, 1.0)
 
             if pitem.getHints() & PLUGIN_CAN_PANNING:
                 pitem.setParameterValue(PARAMETER_PANNING, 0.0)
-                gCarla.host.set_panning(i, 0.0)
+                self.host.set_panning(i, 0.0)
 
     # -----------------------------------------------------------------
 
@@ -665,8 +674,8 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
         self.fParent.updateContainer(self.themeData)
         self.slot_miniCanvasCheckAll()
 
-        if gCarla.host is not None and gCarla.host.is_engine_running():
-            gCarla.host.patchbay_refresh(gCarla.externalPatchbay)
+        if self.host.is_engine_running():
+            self.host.patchbay_refresh(self.fExternalPatchbay)
 
     # -----------------------------------------------------------------
 
@@ -870,7 +879,7 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
             print("sorry, can't map this plugin to canvas client", pluginId, self.fPluginCount)
             return
 
-        patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(gCarla.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI))
+        patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(self.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI))
 
     @pyqtSlot(int)
     def slot_handlePatchbayClientRemovedCallback(self, clientId):
@@ -907,7 +916,7 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
             print("sorry, can't map this plugin to canvas client", pluginId, self.getPluginCount())
             return
 
-        patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(gCarla.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI))
+        patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(self.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI))
 
     @pyqtSlot(int, int, int, str)
     def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portName):
@@ -961,7 +970,7 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
 
     @pyqtSlot()
     def slot_canvasShowInternal(self):
-        gCarla.externalPatchbay = False
+        self.fExternalPatchbay = False
         self.fParent.ui.act_canvas_show_internal.blockSignals(True)
         self.fParent.ui.act_canvas_show_external.blockSignals(True)
         self.fParent.ui.act_canvas_show_internal.setChecked(True)
@@ -972,7 +981,7 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
 
     @pyqtSlot()
     def slot_canvasShowExternal(self):
-        gCarla.externalPatchbay = True
+        self.fExternalPatchbay = True
         self.fParent.ui.act_canvas_show_internal.blockSignals(True)
         self.fParent.ui.act_canvas_show_external.blockSignals(True)
         self.fParent.ui.act_canvas_show_internal.setChecked(False)
@@ -985,8 +994,8 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
     def slot_canvasRefresh(self):
         patchcanvas.clear()
 
-        if gCarla.host is not None and gCarla.host.is_engine_running():
-            gCarla.host.patchbay_refresh(gCarla.externalPatchbay)
+        if self.host.is_engine_running():
+            self.host.patchbay_refresh(self.fExternalPatchbay)
 
             for pitem in self.fPluginList:
                 if pitem is None:
@@ -1064,6 +1073,8 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
 # Canvas callback
 
 def canvasCallback(action, value1, value2, valueStr):
+    host = gCarla.gui.host
+
     if action == patchcanvas.ACTION_GROUP_INFO:
         pass
 
@@ -1089,19 +1100,19 @@ def canvasCallback(action, value1, value2, valueStr):
     elif action == patchcanvas.ACTION_PORTS_CONNECT:
         gOut, pOut, gIn, pIn = [int(i) for i in valueStr.split(":")]
 
-        if not gCarla.host.patchbay_connect(gOut, pOut, gIn, pIn):
-            print("Connection failed:", gCarla.host.get_last_error())
+        if not host.patchbay_connect(gOut, pOut, gIn, pIn):
+            print("Connection failed:", host.get_last_error())
 
     elif action == patchcanvas.ACTION_PORTS_DISCONNECT:
         connectionId = value1
 
-        if not gCarla.host.patchbay_disconnect(connectionId):
-            print("Disconnect failed:", gCarla.host.get_last_error())
+        if not host.patchbay_disconnect(connectionId):
+            print("Disconnect failed:", host.get_last_error())
 
     elif action == patchcanvas.ACTION_PLUGIN_CLONE:
         pluginId = value1
 
-        gCarla.host.clone_plugin(pluginId)
+        host.clone_plugin(pluginId)
 
     elif action == patchcanvas.ACTION_PLUGIN_EDIT:
         pluginId = value1
@@ -1112,14 +1123,14 @@ def canvasCallback(action, value1, value2, valueStr):
         pluginId = value1
         newName  = valueStr
 
-        gCarla.host.rename_plugin(pluginId, newName)
+        host.rename_plugin(pluginId, newName)
 
     elif action == patchcanvas.ACTION_PLUGIN_REMOVE:
         pluginId = value1
 
-        gCarla.host.remove_plugin(pluginId)
+        host.remove_plugin(pluginId)
 
     elif action == patchcanvas.ACTION_PLUGIN_SHOW_UI:
         pluginId = value1
 
-        gCarla.host.show_custom_ui(pluginId, True)
+        host.show_custom_ui(pluginId, True)

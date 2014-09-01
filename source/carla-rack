@@ -26,10 +26,10 @@ from carla_rack import CarlaRackW
 # Main Window
 
 class CarlaHostW(HostWindow):
-    def __init__(self, parent=None):
-        HostWindow.__init__(self, parent)
+    def __init__(self, host):
+        HostWindow.__init__(self, host)
 
-        self.fContainer = CarlaRackW(self)
+        self.fContainer = CarlaRackW(self, host)
         self.setupContainer(False)
 
 # ------------------------------------------------------------------------------------------------------------
@@ -62,18 +62,13 @@ if __name__ == '__main__':
     # -------------------------------------------------------------
     # Init host backend
 
-    gCarla.isControl   = False
-    gCarla.isLocal     = True
-    gCarla.isPlugin    = False
-    gCarla.processMode = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
-    gCarla.processModeForced = True
-
-    initHost(initName, libPrefix)
+    host = initHost(initName, libPrefix, False, False, True)
+    host.processMode = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
 
     # -------------------------------------------------------------
     # Create GUI
 
-    gCarla.gui = CarlaHostW()
+    gCarla.gui = CarlaHostW(host)
 
     # -------------------------------------------------------------
     # Load project file if set

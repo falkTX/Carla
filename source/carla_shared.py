@@ -484,54 +484,22 @@ del DEFAULT_SFZ_PATH
 
 class CarlaObject(object):
     __slots__ = [
-        # Host library object
-        'host',
         # Host Window
         'gui',
-        # bool, is controller
-        'isControl',
-        # bool, is running local
-        'isLocal',
-        # bool, is plugin
-        'isPlugin',
         # current buffer size
         'bufferSize',
         # current sample rate
         'sampleRate',
-        # current process mode
-        'processMode',
-        # check if process mode is forced (rack/patchbay)
-        'processModeForced',
-        # current transport mode
-        'transportMode',
-        # current max parameters
-        'maxParameters',
         # wherever to use external patchbay mode
         'externalPatchbay',
         # wherever to use custom skins
-        'useCustomSkins',
-        # binary dir
-        'pathBinaries',
-        # resources dir
-        'pathResources'
+        'useCustomSkins'
     ]
 
 gCarla = CarlaObject()
-gCarla.host = None
-gCarla.gui  = None
-gCarla.isControl = False
-gCarla.isLocal   = True
-gCarla.isPlugin  = False
+gCarla.gui = None
 gCarla.bufferSize = 0
 gCarla.sampleRate = 0.0
-gCarla.processMode       = CARLA_DEFAULT_PROCESS_MODE
-gCarla.processModeForced = False
-gCarla.transportMode     = CARLA_DEFAULT_TRANSPORT_MODE
-gCarla.maxParameters     = MAX_DEFAULT_PARAMETERS
-gCarla.externalPatchbay  = False
-gCarla.useCustomSkins = True
-gCarla.pathBinaries   = ""
-gCarla.pathResources  = ""
 
 # ------------------------------------------------------------------------------------------------------------
 # Set CWD

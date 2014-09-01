@@ -1244,6 +1244,22 @@ class CarlaHostMeta(object):
         self.isControl = False
         self.isPlugin  = False
 
+        # settings
+        self.processMode   = 0
+        self.transportMode = 0
+
+        # settings
+        self.forceStereo         = False
+        self.preferPluginBridges = False
+        self.preferUIBridges     = False
+        self.uisAlwaysOnTop      = False
+        self.maxParameters       = 0
+        self.uiBridgesTimeout    = 0
+
+        # settings
+        self.pathBinaries  = ""
+        self.pathResources = ""
+
         # use _putenv on windows
         if not WINDOWS:
             self.msvcrt = None

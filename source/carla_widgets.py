@@ -720,7 +720,7 @@ class PluginEdit(QDialog):
 
         # -----------------------------------------------------------------
 
-        if parameterCount > gCarla.maxParameters:
+        if parameterCount > self.host.maxParameters:
             fakeName = self.tr("This plugin has too many parameters to display here!")
 
             paramFakeListFull = []
