@@ -1460,7 +1460,7 @@ if __name__ == '__main__':
     from carla_host import initHost
 
     app  = CarlaApplication()
-    host = initHost("Widgets", None, False)
+    host = initHost("Widgets", None, False, False, False)
 
     #gui1 = CarlaAboutW(None)
     #gui1.show()

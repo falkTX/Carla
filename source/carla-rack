@@ -63,7 +63,9 @@ if __name__ == '__main__':
     # Init host backend
 
     host = initHost(initName, libPrefix, False, False, True)
-    host.processMode = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+    host.processMode       = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+    host.processModeForced = True
+    loadHostSettings(host)
 
     # -------------------------------------------------------------
     # Create GUI

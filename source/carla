@@ -366,13 +366,8 @@ if __name__ == '__main__':
     # -------------------------------------------------------------
     # Init host backend
 
-    gCarla.isControl   = False
-    gCarla.isLocal     = True
-    gCarla.isPlugin    = False
-
-    host = initHost(initName, libPrefix)
-    host.isControl   = False
-    host.isPlugin    = False
+    host = initHost(initName, libPrefix, False, False, True)
+    loadHostSettings(host)
 
     # -------------------------------------------------------------
     # Create GUI

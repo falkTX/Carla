@@ -406,10 +406,11 @@ class SearchPluginsThread(QThread):
         self.fContinueChecking = False
 
     def run(self):
+        pluginCount = 0
+        settingsDB  = QSettings("falkTX", "CarlaPlugins2")
+
         self.fContinueChecking = True
         self.fCurCount = 0
-        pluginCount    = 0
-        settingsDB     = QSettings("falkTX", "CarlaPlugins2")
 
         if self.fCheckLADSPA: pluginCount += 1
         if self.fCheckDSSI:   pluginCount += 1
@@ -629,31 +630,31 @@ class SearchPluginsThread(QThread):
 
         if self.fCheckVST3:
             if self.fCheckNative:
-                self._checkVST3(OS, self.fToolNative)
+                self._checkVST3(self.fToolNative)
                 settingsDB.setValue("Plugins/VST3_native", self.fVst3Plugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckPosix32 and MACOS:
-                self._checkVST3(OS, os.path.join(self.fPathBinaries, "carla-discovery-posix32"))
+                self._checkVST3(os.path.join(self.fPathBinaries, "carla-discovery-posix32"))
                 settingsDB.setValue("Plugins/VST3_posix32", self.fVst3Plugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckPosix64 and MACOS:
-                self._checkVST3(OS, os.path.join(self.fPathBinaries, "carla-discovery-posix64"))
+                self._checkVST3(os.path.join(self.fPathBinaries, "carla-discovery-posix64"))
                 settingsDB.setValue("Plugins/VST3_posix64", self.fVst3Plugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin32:
-                self._checkVST3("WINDOWS", os.path.join(self.fPathBinaries, "carla-discovery-win32.exe"), not WINDOWS)
+                self._checkVST3(os.path.join(self.fPathBinaries, "carla-discovery-win32.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/VST3_win32", self.fVst3Plugins)
 
             if not self.fContinueChecking: return
 
             if self.fCheckWin64:
-                self._checkVST3("WINDOWS", os.path.join(self.fPathBinaries, "carla-discovery-win64.exe"), not WINDOWS)
+                self._checkVST3(os.path.join(self.fPathBinaries, "carla-discovery-win64.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/VST3_win64", self.fVst3Plugins)
 
             settingsDB.sync()
@@ -682,7 +683,7 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
         if self.fCheckGIG:
-            settings = QSettings()
+            settings = QSettings("falkTX", "Carla2")
             GIG_PATH = toList(settings.value(CARLA_KEY_PATHS_GIG, CARLA_DEFAULT_GIG_PATH))
             del settings
 
@@ -692,7 +693,7 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
         if self.fCheckSF2:
-            settings = QSettings()
+            settings = QSettings("falkTX", "Carla2")
             SF2_PATH = toList(settings.value(CARLA_KEY_PATHS_SF2, CARLA_DEFAULT_SF2_PATH))
             del settings
 
@@ -702,7 +703,7 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking: return
 
         if self.fCheckSFZ:
-            settings = QSettings()
+            settings = QSettings("falkTX", "Carla2")
             SFZ_PATH = toList(settings.value(CARLA_KEY_PATHS_SFZ, CARLA_DEFAULT_SFZ_PATH))
             del settings
 
@@ -717,8 +718,9 @@ class SearchPluginsThread(QThread):
 
         self._pluginLook(self.fLastCheckValue, "LADSPA plugins...")
 
-        settings = QSettings()
+        settings = QSettings("falkTX", "Carla2")
         LADSPA_PATH = toList(settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH))
+        del settings
 
         for iPATH in LADSPA_PATH:
             binaries = findBinaries(iPATH, OS)
@@ -750,8 +752,9 @@ class SearchPluginsThread(QThread):
 
         self._pluginLook(self.fLastCheckValue, "DSSI plugins...")
 
-        settings = QSettings()
+        settings = QSettings("falkTX", "Carla2")
         DSSI_PATH = toList(settings.value(CARLA_KEY_PATHS_DSSI, CARLA_DEFAULT_DSSI_PATH))
+        del settings
 
         for iPATH in DSSI_PATH:
             binaries = findBinaries(iPATH, OS)
@@ -783,8 +786,9 @@ class SearchPluginsThread(QThread):
 
         self._pluginLook(self.fLastCheckValue, "LV2 bundles...")
 
-        settings = QSettings()
+        settings = QSettings("falkTX", "Carla2")
         LV2_PATH = toList(settings.value(CARLA_KEY_PATHS_LV2, CARLA_DEFAULT_LV2_PATH))
+        del settings
 
         for iPATH in LV2_PATH:
             bundles = findLV2Bundles(iPATH)
@@ -819,8 +823,9 @@ class SearchPluginsThread(QThread):
         else:
             self._pluginLook(self.fLastCheckValue, "VST plugins...")
 
-        settings = QSettings()
+        settings = QSettings("falkTX", "Carla2")
         VST_PATH = toList(settings.value(CARLA_KEY_PATHS_VST, CARLA_DEFAULT_VST_PATH))
+        del settings
 
         for iPATH in VST_PATH:
             if MACOS and not isWine:
@@ -849,7 +854,7 @@ class SearchPluginsThread(QThread):
 
         self.fLastCheckValue += self.fCurPercentValue
 
-    def _checkVST3(self, OS, tool, isWine=False):
+    def _checkVST3(self, tool, isWine=False):
         vst3Binaries = []
         self.fVst3Plugins = []
 
@@ -858,8 +863,9 @@ class SearchPluginsThread(QThread):
         else:
             self._pluginLook(self.fLastCheckValue, "VST3 plugins...")
 
-        settings = QSettings()
+        settings = QSettings("falkTX", "Carla2")
         VST3_PATH = toList(settings.value(CARLA_KEY_PATHS_VST3, CARLA_DEFAULT_VST3_PATH))
+        del settings
 
         for iPATH in VST3_PATH:
             if MACOS and not isWine:
@@ -895,8 +901,9 @@ class SearchPluginsThread(QThread):
         # FIXME - this probably uses bundles
         self._pluginLook(self.fLastCheckValue, "AU plugins...")
 
-        settings = QSettings()
+        settings = QSettings("falkTX", "Carla2")
         AU_PATH = toList(settings.value(CARLA_KEY_PATHS_AU, CARLA_DEFAULT_AU_PATH))
+        del settings
 
         for iPATH in AU_PATH:
             binaries = findBinaries(iPATH, "MACOS")
@@ -971,21 +978,26 @@ class PluginRefreshW(QDialog):
         self.ui = ui_carla_refresh.Ui_PluginRefreshW()
         self.ui.setupUi(self)
 
-        # -------------------------------------------------------------
+        if False:
+            # kdevelop likes this :)
+            host = CarlaHostMeta()
+            self.host = host
+
+        # ----------------------------------------------------------------------------------------------------
         # Internal stuff
 
-        self.fThread = SearchPluginsThread(self, host.pathBinaries)
+        hasNative  = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-native"))
+        hasPosix32 = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-posix32"))
+        hasPosix64 = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-posix64"))
+        hasWin32   = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-win32.exe"))
+        hasWin64   = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-win64.exe"))
 
-        # -------------------------------------------------------------
-        # Load settings
-
-        self.loadSettings()
-
-        # -------------------------------------------------------------
-        # Set-up GUI
-
+        self.fThread  = SearchPluginsThread(self, host.pathBinaries)
         self.fIconYes = getIcon("dialog-ok-apply").pixmap(16, 16)
         self.fIconNo  = getIcon("dialog-error").pixmap(16, 16)
+
+        # ----------------------------------------------------------------------------------------------------
+        # Set-up GUI
 
         self.ui.b_skip.setVisible(False)
 
@@ -999,38 +1011,28 @@ class PluginRefreshW(QDialog):
             self.ui.ch_posix32.setText("MacOS 32bit")
             self.ui.ch_posix64.setText("MacOS 64bit")
 
-        hasNative  = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-native"))
-        hasPosix32 = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-posix32"))
-        hasPosix64 = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-posix64"))
-        hasWin32   = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-win32.exe"))
-        hasWin64   = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-win64.exe"))
-
         if hasPosix32 and not WINDOWS:
             self.ui.ico_posix32.setPixmap(self.fIconYes)
         else:
             self.ui.ico_posix32.setPixmap(self.fIconNo)
-            self.ui.ch_posix32.setChecked(False)
             self.ui.ch_posix32.setEnabled(False)
 
         if hasPosix64 and not WINDOWS:
             self.ui.ico_posix64.setPixmap(self.fIconYes)
         else:
             self.ui.ico_posix64.setPixmap(self.fIconNo)
-            self.ui.ch_posix64.setChecked(False)
             self.ui.ch_posix64.setEnabled(False)
 
         if hasWin32:
             self.ui.ico_win32.setPixmap(self.fIconYes)
         else:
             self.ui.ico_win32.setPixmap(self.fIconNo)
-            self.ui.ch_win32.setChecked(False)
             self.ui.ch_win32.setEnabled(False)
 
         if hasWin64:
             self.ui.ico_win64.setPixmap(self.fIconYes)
         else:
             self.ui.ico_win64.setPixmap(self.fIconNo)
-            self.ui.ch_win64.setChecked(False)
             self.ui.ch_win64.setEnabled(False)
 
         if haveLRDF:
@@ -1042,27 +1044,27 @@ class PluginRefreshW(QDialog):
             if kIs64bit:
                 hasNative = hasWin64
                 hasNonNative = hasWin32
-                self.ui.ch_win64.setChecked(False)
+                self.ui.ch_win64.setEnabled(False)
                 self.ui.ch_win64.setVisible(False)
                 self.ui.ico_win64.setVisible(False)
                 self.ui.label_win64.setVisible(False)
             else:
                 hasNative = hasWin32
                 hasNonNative = hasWin64
-                self.ui.ch_win32.setChecked(False)
+                self.ui.ch_win32.setEnabled(False)
                 self.ui.ch_win32.setVisible(False)
                 self.ui.ico_win32.setVisible(False)
                 self.ui.label_win32.setVisible(False)
         else:
             if kIs64bit:
                 hasNonNative = bool(hasPosix32 or hasWin32 or hasWin64)
-                self.ui.ch_posix64.setChecked(False)
+                self.ui.ch_posix64.setEnabled(False)
                 self.ui.ch_posix64.setVisible(False)
                 self.ui.ico_posix64.setVisible(False)
                 self.ui.label_posix64.setVisible(False)
             else:
                 hasNonNative = bool(hasPosix64 or hasWin32 or hasWin64)
-                self.ui.ch_posix32.setChecked(False)
+                self.ui.ch_posix32.setEnabled(False)
                 self.ui.ch_posix32.setVisible(False)
                 self.ui.ico_posix32.setVisible(False)
                 self.ui.label_posix32.setVisible(False)
@@ -1071,36 +1073,30 @@ class PluginRefreshW(QDialog):
             self.ui.ico_native.setPixmap(self.fIconYes)
         else:
             self.ui.ico_native.setPixmap(self.fIconNo)
-            self.ui.ch_native.setChecked(False)
             self.ui.ch_native.setEnabled(False)
-            self.ui.ch_gig.setChecked(False)
             self.ui.ch_gig.setEnabled(False)
-            self.ui.ch_sf2.setChecked(False)
             self.ui.ch_sf2.setEnabled(False)
-            self.ui.ch_sfz.setChecked(False)
             self.ui.ch_sfz.setEnabled(False)
             if not hasNonNative:
-                self.ui.ch_ladspa.setChecked(False)
                 self.ui.ch_ladspa.setEnabled(False)
-                self.ui.ch_dssi.setChecked(False)
                 self.ui.ch_dssi.setEnabled(False)
-                self.ui.ch_lv2.setChecked(False)
                 self.ui.ch_lv2.setEnabled(False)
-                self.ui.ch_vst.setChecked(False)
                 self.ui.ch_vst.setEnabled(False)
-                self.ui.ch_vst3.setChecked(False)
                 self.ui.ch_vst3.setEnabled(False)
-                self.ui.ch_au.setChecked(False)
                 self.ui.ch_au.setEnabled(False)
 
         if not MACOS:
-            self.ui.ch_au.setChecked(False)
-            self.ui.ch_au.setEnabled(False)
             self.ui.ch_au.setVisible(False)
 
-        # -------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
+        # Load settings
+
+        self.loadSettings()
+
+        # ----------------------------------------------------------------------------------------------------
         # Set-up connections
 
+        self.finished.connect(self.slot_saveSettings)
         self.ui.b_start.clicked.connect(self.slot_start)
         self.ui.b_skip.clicked.connect(self.slot_skip)
         self.ui.ch_native.clicked.connect(self.slot_checkTools)
@@ -1120,7 +1116,53 @@ class PluginRefreshW(QDialog):
         self.fThread.pluginLook.connect(self.slot_handlePluginLook)
         self.fThread.finished.connect(self.slot_handlePluginThreadFinished)
 
+        # ----------------------------------------------------------------------------------------------------
+        # Post-connect setup
+
         self.slot_checkTools()
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def loadSettings(self):
+        settings = QSettings("falkTX", "CarlaRefresh2")
+        self.ui.ch_ladspa.setChecked(settings.value("PluginDatabase/SearchLADSPA", True, type=bool) and self.ui.ch_ladspa.isEnabled())
+        self.ui.ch_dssi.setChecked(settings.value("PluginDatabase/SearchDSSI", True, type=bool) and self.ui.ch_dssi.isEnabled())
+        self.ui.ch_lv2.setChecked(settings.value("PluginDatabase/SearchLV2", True, type=bool) and self.ui.ch_lv2.isEnabled())
+        self.ui.ch_vst.setChecked(settings.value("PluginDatabase/SearchVST", True, type=bool) and self.ui.ch_vst.isEnabled())
+        self.ui.ch_vst3.setChecked(settings.value("PluginDatabase/SearchVST3", (MACOS or WINDOWS), type=bool) and self.ui.ch_vst3.isEnabled())
+        self.ui.ch_au.setChecked(settings.value("PluginDatabase/SearchAU", True, type=bool) and self.ui.ch_au.isEnabled())
+        self.ui.ch_gig.setChecked(settings.value("PluginDatabase/SearchGIG", False, type=bool) and self.ui.ch_gig.isEnabled())
+        self.ui.ch_sf2.setChecked(settings.value("PluginDatabase/SearchSF2", False, type=bool) and self.ui.ch_sf2.isEnabled())
+        self.ui.ch_sfz.setChecked(settings.value("PluginDatabase/SearchSFZ", False, type=bool) and self.ui.ch_sfz.isEnabled())
+        self.ui.ch_native.setChecked(settings.value("PluginDatabase/SearchNative", True, type=bool) and self.ui.ch_native.isEnabled())
+        self.ui.ch_posix32.setChecked(settings.value("PluginDatabase/SearchPOSIX32", False, type=bool) and self.ui.ch_posix32.isEnabled())
+        self.ui.ch_posix64.setChecked(settings.value("PluginDatabase/SearchPOSIX64", False, type=bool) and self.ui.ch_posix64.isEnabled())
+        self.ui.ch_win32.setChecked(settings.value("PluginDatabase/SearchWin32", False, type=bool) and self.ui.ch_win32.isEnabled())
+        self.ui.ch_win64.setChecked(settings.value("PluginDatabase/SearchWin64", False, type=bool) and self.ui.ch_win64.isEnabled())
+        self.ui.ch_do_checks.setChecked(settings.value("PluginDatabase/DoChecks", False, type=bool))
+
+    # --------------------------------------------------------------------------------------------------------
+
+    @pyqtSlot()
+    def slot_saveSettings(self):
+        settings = QSettings("falkTX", "CarlaRefresh2")
+        settings.setValue("PluginDatabase/SearchLADSPA", self.ui.ch_ladspa.isChecked())
+        settings.setValue("PluginDatabase/SearchDSSI", self.ui.ch_dssi.isChecked())
+        settings.setValue("PluginDatabase/SearchLV2", self.ui.ch_lv2.isChecked())
+        settings.setValue("PluginDatabase/SearchVST", self.ui.ch_vst.isChecked())
+        settings.setValue("PluginDatabase/SearchVST3", self.ui.ch_vst3.isChecked())
+        settings.setValue("PluginDatabase/SearchAU", self.ui.ch_au.isChecked())
+        settings.setValue("PluginDatabase/SearchGIG", self.ui.ch_gig.isChecked())
+        settings.setValue("PluginDatabase/SearchSF2", self.ui.ch_sf2.isChecked())
+        settings.setValue("PluginDatabase/SearchSFZ", self.ui.ch_sfz.isChecked())
+        settings.setValue("PluginDatabase/SearchNative", self.ui.ch_native.isChecked())
+        settings.setValue("PluginDatabase/SearchPOSIX32", self.ui.ch_posix32.isChecked())
+        settings.setValue("PluginDatabase/SearchPOSIX64", self.ui.ch_posix64.isChecked())
+        settings.setValue("PluginDatabase/SearchWin32", self.ui.ch_win32.isChecked())
+        settings.setValue("PluginDatabase/SearchWin64", self.ui.ch_win64.isChecked())
+        settings.setValue("PluginDatabase/DoChecks", self.ui.ch_do_checks.isChecked())
+
+    # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_start(self):
@@ -1151,9 +1193,13 @@ class PluginRefreshW(QDialog):
         self.fThread.setSearchPluginTypes(ladspa, dssi, lv2, vst, vst3, au, gig, sf2, sfz)
         self.fThread.start()
 
+    # --------------------------------------------------------------------------------------------------------
+
     @pyqtSlot()
     def slot_skip(self):
         killDiscovery()
+
+    # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_checkTools(self):
@@ -1162,10 +1208,14 @@ class PluginRefreshW(QDialog):
                         self.ui.ch_au.isChecked() or self.ui.ch_gig.isChecked() or self.ui.ch_sf2.isChecked() or self.ui.ch_sfz.isChecked())
         self.ui.b_start.setEnabled(enabled1 and enabled2)
 
+    # --------------------------------------------------------------------------------------------------------
+
     @pyqtSlot(int, str)
     def slot_handlePluginLook(self, percent, plugin):
         self.ui.progressBar.setFormat("%s" % plugin)
         self.ui.progressBar.setValue(percent)
+
+    # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_handlePluginThreadFinished(self):
@@ -1179,45 +1229,9 @@ class PluginRefreshW(QDialog):
         self.ui.group_types.setEnabled(True)
         self.ui.group_options.setEnabled(True)
 
-    def loadSettings(self):
-        settings = QSettings()
-        self.ui.ch_ladspa.setChecked(settings.value("PluginDatabase/SearchLADSPA", True, type=bool))
-        self.ui.ch_dssi.setChecked(settings.value("PluginDatabase/SearchDSSI", True, type=bool))
-        self.ui.ch_lv2.setChecked(settings.value("PluginDatabase/SearchLV2", True, type=bool))
-        self.ui.ch_vst.setChecked(settings.value("PluginDatabase/SearchVST", True, type=bool))
-        self.ui.ch_vst3.setChecked(settings.value("PluginDatabase/SearchVST3", (MACOS or WINDOWS), type=bool))
-        self.ui.ch_au.setChecked(settings.value("PluginDatabase/SearchAU", True, type=bool))
-        self.ui.ch_gig.setChecked(settings.value("PluginDatabase/SearchGIG", False, type=bool))
-        self.ui.ch_sf2.setChecked(settings.value("PluginDatabase/SearchSF2", False, type=bool))
-        self.ui.ch_sfz.setChecked(settings.value("PluginDatabase/SearchSFZ", False, type=bool))
-        self.ui.ch_native.setChecked(settings.value("PluginDatabase/SearchNative", True, type=bool))
-        self.ui.ch_posix32.setChecked(settings.value("PluginDatabase/SearchPOSIX32", False, type=bool))
-        self.ui.ch_posix64.setChecked(settings.value("PluginDatabase/SearchPOSIX64", False, type=bool))
-        self.ui.ch_win32.setChecked(settings.value("PluginDatabase/SearchWin32", False, type=bool))
-        self.ui.ch_win64.setChecked(settings.value("PluginDatabase/SearchWin64", False, type=bool))
-        self.ui.ch_do_checks.setChecked(settings.value("PluginDatabase/DoChecks", False, type=bool))
-
-    def saveSettings(self):
-        settings = QSettings()
-        settings.setValue("PluginDatabase/SearchLADSPA", self.ui.ch_ladspa.isChecked())
-        settings.setValue("PluginDatabase/SearchDSSI", self.ui.ch_dssi.isChecked())
-        settings.setValue("PluginDatabase/SearchLV2", self.ui.ch_lv2.isChecked())
-        settings.setValue("PluginDatabase/SearchVST", self.ui.ch_vst.isChecked())
-        settings.setValue("PluginDatabase/SearchVST3", self.ui.ch_vst3.isChecked())
-        settings.setValue("PluginDatabase/SearchAU", self.ui.ch_au.isChecked())
-        settings.setValue("PluginDatabase/SearchGIG", self.ui.ch_gig.isChecked())
-        settings.setValue("PluginDatabase/SearchSF2", self.ui.ch_sf2.isChecked())
-        settings.setValue("PluginDatabase/SearchSFZ", self.ui.ch_sfz.isChecked())
-        settings.setValue("PluginDatabase/SearchNative", self.ui.ch_native.isChecked())
-        settings.setValue("PluginDatabase/SearchPOSIX32", self.ui.ch_posix32.isChecked())
-        settings.setValue("PluginDatabase/SearchPOSIX64", self.ui.ch_posix64.isChecked())
-        settings.setValue("PluginDatabase/SearchWin32", self.ui.ch_win32.isChecked())
-        settings.setValue("PluginDatabase/SearchWin64", self.ui.ch_win64.isChecked())
-        settings.setValue("PluginDatabase/DoChecks", self.ui.ch_do_checks.isChecked())
+    # --------------------------------------------------------------------------------------------------------
 
     def closeEvent(self, event):
-        self.saveSettings()
-
         if self.fThread.isRunning():
             self.fThread.stop()
             killDiscovery()
@@ -1230,6 +1244,8 @@ class PluginRefreshW(QDialog):
             self.reject()
 
         QDialog.closeEvent(self, event)
+
+    # --------------------------------------------------------------------------------------------------------
 
     def done(self, r):
         QDialog.done(self, r)
@@ -1245,19 +1261,19 @@ class PluginDatabaseW(QDialog):
         self.ui = ui_carla_database.Ui_PluginDatabaseW()
         self.ui.setupUi(self)
 
-        # -------------------------------------------------------------
+        if False:
+            # kdevelop likes this :)
+            host = CarlaHostMeta()
+            self.host = host
+
+        # ----------------------------------------------------------------------------------------------------
         # Internal stuff
 
         self.fLastTableIndex = 0
         self.fRetPlugin  = None
         self.fRealParent = parent
 
-        # -------------------------------------------------------------
-        # Load settings
-
-        self.loadSettings()
-
-        # -------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # Set-up GUI
 
         self.ui.b_add.setEnabled(False)
@@ -1271,9 +1287,15 @@ class PluginDatabaseW(QDialog):
             self.ui.ch_bridged_wine.setChecked(False)
             self.ui.ch_bridged_wine.setEnabled(False)
 
-        # -------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
+        # Load settings
+
+        self.loadSettings()
+
+        # ----------------------------------------------------------------------------------------------------
         # Set-up connections
 
+        self.finished.connect(self.slot_saveSettings)
         self.ui.b_add.clicked.connect(self.slot_addPlugin)
         self.ui.b_refresh.clicked.connect(self.slot_refreshPlugins)
         self.ui.tb_filters.clicked.connect(self.slot_maybeShowFilters)
@@ -1300,7 +1322,12 @@ class PluginDatabaseW(QDialog):
         self.ui.ch_gui.clicked.connect(self.slot_checkFilters)
         self.ui.ch_stereo.clicked.connect(self.slot_checkFilters)
 
-        # -------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
+        # Post-connect setup
+
+        self._reAddPlugins()
+
+    # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_addPlugin(self):
@@ -1329,6 +1356,62 @@ class PluginDatabaseW(QDialog):
 
             if self.fRealParent:
                 self.fRealParent.setLoadRDFsNeeded()
+
+    # --------------------------------------------------------------------------------------------------------
+
+    @pyqtSlot()
+    def slot_saveSettings(self):
+        settings = QSettings("falkTX", "CarlaDatabase2")
+        settings.setValue("PluginDatabase/Geometry", self.saveGeometry())
+        settings.setValue("PluginDatabase/TableGeometry%s" % ("5" if config_UseQt5 else "4"), self.ui.tableWidget.horizontalHeader().saveState())
+        settings.setValue("PluginDatabase/ShowFilters", (self.ui.tb_filters.arrowType() == Qt.UpArrow))
+        settings.setValue("PluginDatabase/ShowEffects", self.ui.ch_effects.isChecked())
+        settings.setValue("PluginDatabase/ShowInstruments", self.ui.ch_instruments.isChecked())
+        settings.setValue("PluginDatabase/ShowMIDI", self.ui.ch_midi.isChecked())
+        settings.setValue("PluginDatabase/ShowOther", self.ui.ch_other.isChecked())
+        settings.setValue("PluginDatabase/ShowInternal", self.ui.ch_internal.isChecked())
+        settings.setValue("PluginDatabase/ShowLADSPA", self.ui.ch_ladspa.isChecked())
+        settings.setValue("PluginDatabase/ShowDSSI", self.ui.ch_dssi.isChecked())
+        settings.setValue("PluginDatabase/ShowLV2", self.ui.ch_lv2.isChecked())
+        settings.setValue("PluginDatabase/ShowVST", self.ui.ch_vst.isChecked())
+        settings.setValue("PluginDatabase/ShowVST3", self.ui.ch_vst3.isChecked())
+        settings.setValue("PluginDatabase/ShowAU", self.ui.ch_au.isChecked())
+        settings.setValue("PluginDatabase/ShowKits", self.ui.ch_kits.isChecked())
+        settings.setValue("PluginDatabase/ShowNative", self.ui.ch_native.isChecked())
+        settings.setValue("PluginDatabase/ShowBridged", self.ui.ch_bridged.isChecked())
+        settings.setValue("PluginDatabase/ShowBridgedWine", self.ui.ch_bridged_wine.isChecked())
+        settings.setValue("PluginDatabase/ShowRtSafe", self.ui.ch_rtsafe.isChecked())
+        settings.setValue("PluginDatabase/ShowHasGUI", self.ui.ch_gui.isChecked())
+        settings.setValue("PluginDatabase/ShowStereoOnly", self.ui.ch_stereo.isChecked())
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def loadSettings(self):
+        settings = QSettings("falkTX", "CarlaDatabase2")
+        self.restoreGeometry(settings.value("PluginDatabase/Geometry", ""))
+        self.ui.tableWidget.horizontalHeader().restoreState(settings.value("PluginDatabase/TableGeometry%s" % ("_5" if config_UseQt5 else ""), ""))
+        self.ui.ch_effects.setChecked(settings.value("PluginDatabase/ShowEffects", True, type=bool))
+        self.ui.ch_instruments.setChecked(settings.value("PluginDatabase/ShowInstruments", True, type=bool))
+        self.ui.ch_midi.setChecked(settings.value("PluginDatabase/ShowMIDI", True, type=bool))
+        self.ui.ch_other.setChecked(settings.value("PluginDatabase/ShowOther", True, type=bool))
+        self.ui.ch_internal.setChecked(settings.value("PluginDatabase/ShowInternal", True, type=bool))
+        self.ui.ch_ladspa.setChecked(settings.value("PluginDatabase/ShowLADSPA", True, type=bool))
+        self.ui.ch_dssi.setChecked(settings.value("PluginDatabase/ShowDSSI", True, type=bool))
+        self.ui.ch_lv2.setChecked(settings.value("PluginDatabase/ShowLV2", True, type=bool))
+        self.ui.ch_vst.setChecked(settings.value("PluginDatabase/ShowVST", True, type=bool))
+        self.ui.ch_vst3.setChecked(settings.value("PluginDatabase/ShowVST3", (MACOS or WINDOWS), type=bool))
+        self.ui.ch_au.setChecked(settings.value("PluginDatabase/ShowAU", True, type=bool))
+        self.ui.ch_kits.setChecked(settings.value("PluginDatabase/ShowKits", True, type=bool))
+        self.ui.ch_native.setChecked(settings.value("PluginDatabase/ShowNative", True, type=bool))
+        self.ui.ch_bridged.setChecked(settings.value("PluginDatabase/ShowBridged", True, type=bool))
+        self.ui.ch_bridged_wine.setChecked(settings.value("PluginDatabase/ShowBridgedWine", True, type=bool))
+        self.ui.ch_rtsafe.setChecked(settings.value("PluginDatabase/ShowRtSafe", False, type=bool))
+        self.ui.ch_gui.setChecked(settings.value("PluginDatabase/ShowHasGUI", False, type=bool))
+        self.ui.ch_stereo.setChecked(settings.value("PluginDatabase/ShowStereoOnly", False, type=bool))
+
+        self._showFilters(settings.value("PluginDatabase/ShowFilters", False, type=bool))
+
+    # --------------------------------------------------------------------------------------------------------
 
     def _checkFilters(self):
         text = self.ui.lineEdit.text().lower()
@@ -1433,9 +1516,13 @@ class PluginDatabaseW(QDialog):
                   text in self.ui.tableWidget.item(i, 13).text().lower())):
                 self.ui.tableWidget.hideRow(i)
 
+    # --------------------------------------------------------------------------------------------------------
+
     def _showFilters(self, yesNo):
         self.ui.tb_filters.setArrowType(Qt.UpArrow if yesNo else Qt.DownArrow)
         self.ui.frame.setVisible(yesNo)
+
+    # --------------------------------------------------------------------------------------------------------
 
     def _addPluginToTable(self, plugin, ptype):
         if plugin['API'] != PLUGIN_QUERY_API_VERSION and not ptype == self.tr("Internal"):
@@ -1486,6 +1573,8 @@ class PluginDatabaseW(QDialog):
 
         self.fLastTableIndex += 1
 
+    # --------------------------------------------------------------------------------------------------------
+
     def _reAddPlugins(self):
         settingsDB = QSettings("falkTX", "CarlaPlugins2")
 
@@ -1504,7 +1593,7 @@ class PluginDatabaseW(QDialog):
         auCount     = 0
         kitCount    = 0
 
-        # ---------------------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # Internal
 
         internalPlugins = toList(settingsDB.value("Plugins/Internal", []))
@@ -1533,7 +1622,7 @@ class PluginDatabaseW(QDialog):
 
         del internalPlugins
 
-        # ---------------------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # LADSPA
 
         ladspaPlugins  = []
@@ -1550,7 +1639,7 @@ class PluginDatabaseW(QDialog):
 
         del ladspaPlugins
 
-        # ---------------------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # DSSI
 
         dssiPlugins  = []
@@ -1567,7 +1656,7 @@ class PluginDatabaseW(QDialog):
 
         del dssiPlugins
 
-        # ---------------------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # LV2
 
         lv2Plugins  = []
@@ -1584,7 +1673,7 @@ class PluginDatabaseW(QDialog):
 
         del lv2Plugins
 
-        # ---------------------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # VST
 
         vstPlugins  = []
@@ -1601,7 +1690,7 @@ class PluginDatabaseW(QDialog):
 
         del vstPlugins
 
-        # ---------------------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # VST3
 
         vst3Plugins  = []
@@ -1618,7 +1707,7 @@ class PluginDatabaseW(QDialog):
 
         del vst3Plugins
 
-        # ---------------------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # AU
 
         if MACOS:
@@ -1634,7 +1723,7 @@ class PluginDatabaseW(QDialog):
 
             del auPlugins
 
-        # ---------------------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # Kits
 
         gigs = toList(settingsDB.value("Plugins/GIG", []))
@@ -1646,7 +1735,7 @@ class PluginDatabaseW(QDialog):
 
         del gigs
 
-        # ---------------------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
 
         sf2s = toList(settingsDB.value("Plugins/SF2", []))
 
@@ -1657,7 +1746,7 @@ class PluginDatabaseW(QDialog):
 
         del sf2s
 
-        # ---------------------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
 
         sfzs = toList(settingsDB.value("Plugins/SFZ", []))
 
@@ -1668,7 +1757,7 @@ class PluginDatabaseW(QDialog):
 
         del sfzs
 
-        # ---------------------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
 
         self.ui.tableWidget.setSortingEnabled(True)
         self.ui.tableWidget.sortByColumn(0, Qt.AscendingOrder)
@@ -1682,59 +1771,7 @@ class PluginDatabaseW(QDialog):
 
         self._checkFilters()
 
-    def loadSettings(self):
-        settings = QSettings()
-        self.restoreGeometry(settings.value("PluginDatabase/Geometry", ""))
-        self.ui.tableWidget.horizontalHeader().restoreState(settings.value("PluginDatabase/TableGeometry%s" % ("_5" if config_UseQt5 else ""), ""))
-        self.ui.ch_effects.setChecked(settings.value("PluginDatabase/ShowEffects", True, type=bool))
-        self.ui.ch_instruments.setChecked(settings.value("PluginDatabase/ShowInstruments", True, type=bool))
-        self.ui.ch_midi.setChecked(settings.value("PluginDatabase/ShowMIDI", True, type=bool))
-        self.ui.ch_other.setChecked(settings.value("PluginDatabase/ShowOther", True, type=bool))
-        self.ui.ch_internal.setChecked(settings.value("PluginDatabase/ShowInternal", True, type=bool))
-        self.ui.ch_ladspa.setChecked(settings.value("PluginDatabase/ShowLADSPA", True, type=bool))
-        self.ui.ch_dssi.setChecked(settings.value("PluginDatabase/ShowDSSI", True, type=bool))
-        self.ui.ch_lv2.setChecked(settings.value("PluginDatabase/ShowLV2", True, type=bool))
-        self.ui.ch_vst.setChecked(settings.value("PluginDatabase/ShowVST", True, type=bool))
-        self.ui.ch_vst3.setChecked(settings.value("PluginDatabase/ShowVST3", (MACOS or WINDOWS), type=bool))
-        self.ui.ch_au.setChecked(settings.value("PluginDatabase/ShowAU", True, type=bool))
-        self.ui.ch_kits.setChecked(settings.value("PluginDatabase/ShowKits", True, type=bool))
-        self.ui.ch_native.setChecked(settings.value("PluginDatabase/ShowNative", True, type=bool))
-        self.ui.ch_bridged.setChecked(settings.value("PluginDatabase/ShowBridged", True, type=bool))
-        self.ui.ch_bridged_wine.setChecked(settings.value("PluginDatabase/ShowBridgedWine", True, type=bool))
-        self.ui.ch_rtsafe.setChecked(settings.value("PluginDatabase/ShowRtSafe", False, type=bool))
-        self.ui.ch_gui.setChecked(settings.value("PluginDatabase/ShowHasGUI", False, type=bool))
-        self.ui.ch_stereo.setChecked(settings.value("PluginDatabase/ShowStereoOnly", False, type=bool))
-
-        self._showFilters(settings.value("PluginDatabase/ShowFilters", False, type=bool))
-        self._reAddPlugins()
-
-    def saveSettings(self):
-        settings = QSettings()
-        settings.setValue("PluginDatabase/Geometry", self.saveGeometry())
-        settings.setValue("PluginDatabase/TableGeometry%s" % ("_5" if config_UseQt5 else ""), self.ui.tableWidget.horizontalHeader().saveState())
-        settings.setValue("PluginDatabase/ShowFilters", (self.ui.tb_filters.arrowType() == Qt.UpArrow))
-        settings.setValue("PluginDatabase/ShowEffects", self.ui.ch_effects.isChecked())
-        settings.setValue("PluginDatabase/ShowInstruments", self.ui.ch_instruments.isChecked())
-        settings.setValue("PluginDatabase/ShowMIDI", self.ui.ch_midi.isChecked())
-        settings.setValue("PluginDatabase/ShowOther", self.ui.ch_other.isChecked())
-        settings.setValue("PluginDatabase/ShowInternal", self.ui.ch_internal.isChecked())
-        settings.setValue("PluginDatabase/ShowLADSPA", self.ui.ch_ladspa.isChecked())
-        settings.setValue("PluginDatabase/ShowDSSI", self.ui.ch_dssi.isChecked())
-        settings.setValue("PluginDatabase/ShowLV2", self.ui.ch_lv2.isChecked())
-        settings.setValue("PluginDatabase/ShowVST", self.ui.ch_vst.isChecked())
-        settings.setValue("PluginDatabase/ShowVST3", self.ui.ch_vst3.isChecked())
-        settings.setValue("PluginDatabase/ShowAU", self.ui.ch_au.isChecked())
-        settings.setValue("PluginDatabase/ShowKits", self.ui.ch_kits.isChecked())
-        settings.setValue("PluginDatabase/ShowNative", self.ui.ch_native.isChecked())
-        settings.setValue("PluginDatabase/ShowBridged", self.ui.ch_bridged.isChecked())
-        settings.setValue("PluginDatabase/ShowBridgedWine", self.ui.ch_bridged_wine.isChecked())
-        settings.setValue("PluginDatabase/ShowRtSafe", self.ui.ch_rtsafe.isChecked())
-        settings.setValue("PluginDatabase/ShowHasGUI", self.ui.ch_gui.isChecked())
-        settings.setValue("PluginDatabase/ShowStereoOnly", self.ui.ch_stereo.isChecked())
-
-    def closeEvent(self, event):
-        self.saveSettings()
-        QDialog.closeEvent(self, event)
+    # --------------------------------------------------------------------------------------------------------
 
     def done(self, r):
         QDialog.done(self, r)
@@ -1745,13 +1782,15 @@ class PluginDatabaseW(QDialog):
 
 if __name__ == '__main__':
     from carla_app import CarlaApplication
-    from carla_host import initHost
+    from carla_host import initHost, loadHostSettings
 
-    app = CarlaApplication()
-
-    host = initHost("Settings", None, False, False, False)
+    app  = CarlaApplication()
+    host = initHost("Database", None, False, False, False)
+    loadHostSettings(host)
 
     gui = PluginDatabaseW(None, host)
     gui.show()
 
-    sys.exit(app.exec_())
+    app.exit_exec()
+
+# ------------------------------------------------------------------------------------------------------------

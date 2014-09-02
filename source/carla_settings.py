@@ -849,31 +849,13 @@ if __name__ == '__main__':
     from carla_app import CarlaApplication
     from carla_host import initHost, loadHostSettings
 
-    app = CarlaApplication()
+    app  = CarlaApplication()
+    host = initHost("Settings", None, False, False, False)
+    loadHostSettings(host)
 
-    host1 = initHost("Settings", None, False, False, True)
-    host2 = initHost("Settings", None, False, True, True)
+    gui = CarlaSettingsW(None, host, True, True, True)
+    gui.show()
 
-    # DLL loads settings
-    loadHostSettings(host1)
+    app.exit_exec()
 
-    # Plugin forces settings test
-    host2.processMode         = ENGINE_PROCESS_MODE_PATCHBAY
-    host2.transportMode       = ENGINE_TRANSPORT_MODE_PLUGIN
-    host2.forceStereo         = True
-    host2.preferPluginBridges = True
-    host2.preferUIBridges     = False
-    host2.uisAlwaysOnTop      = False
-    host2.maxParameters       = 5
-    host2.uiBridgesTimeout    = 5
-
-    gui1 = CarlaSettingsW(None, host1, True, True, True)
-    gui2 = CarlaSettingsW(None, host2, True, True, True)
-
-    gui1.setWindowTitle("Settings - DLL")
-    gui2.setWindowTitle("Settings - Plugin")
-
-    gui1.show()
-    gui2.show()
-
-    sys.exit(app.exec_())
+# ------------------------------------------------------------------------------------------------------------
