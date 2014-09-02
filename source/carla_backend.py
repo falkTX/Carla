@@ -1240,6 +1240,7 @@ else:
 class CarlaHostMeta(object):
 #class CarlaHostMeta(metaclass=ABCMeta):
     def __init__(self):
+
         # info about this host object
         self.isControl = False
         self.isPlugin  = False
@@ -2168,6 +2169,9 @@ class CarlaHostNull(CarlaHostMeta):
 class CarlaHostDLL(CarlaHostMeta):
     def __init__(self, libName):
         CarlaHostMeta.__init__(self)
+
+        # info about this host object
+        self.isPlugin = False
 
         self.lib = cdll.LoadLibrary(libName)
 

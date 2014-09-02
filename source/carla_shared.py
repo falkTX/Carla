@@ -484,22 +484,11 @@ del DEFAULT_SFZ_PATH
 
 class CarlaObject(object):
     __slots__ = [
-        # Host Window
-        'gui',
-        # current buffer size
-        'bufferSize',
-        # current sample rate
-        'sampleRate',
-        # wherever to use external patchbay mode
-        'externalPatchbay',
-        # wherever to use custom skins
-        'useCustomSkins'
+        'gui' # Host Window
     ]
 
 gCarla = CarlaObject()
 gCarla.gui = None
-gCarla.bufferSize = 0
-gCarla.sampleRate = 0.0
 
 # ------------------------------------------------------------------------------------------------------------
 # Set CWD

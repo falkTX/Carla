@@ -207,6 +207,7 @@ class CarlaSettingsW(QDialog):
         if False:
             # kdevelop likes this :)
             host = CarlaHostMeta()
+            self.host = host
 
         self.ui.lw_page.setFixedWidth(48 + 6 + 6 + QFontMetrics(self.ui.lw_page.font()).width("88888888"))
 
@@ -246,7 +247,7 @@ class CarlaSettingsW(QDialog):
         if host.isPlugin:
             self.ui.cb_engine_audio_driver.setCurrentIndex(0)
             self.ui.cb_engine_audio_driver.setEnabled(False)
-            self.ui.cb_engine_process_mode_other.setCurrentIndex(gCarla.processMode-self.PROCESS_MODE_NON_JACK_PADDING)
+            self.ui.cb_engine_process_mode_other.setCurrentIndex(host.processMode-self.PROCESS_MODE_NON_JACK_PADDING)
             self.ui.cb_engine_process_mode_other.setEnabled(False)
             self.ui.sw_engine_process_mode.setCurrentIndex(1)
             self.ui.tb_engine_driver_config.setEnabled(False)
@@ -778,10 +779,18 @@ if __name__ == '__main__':
     from carla_app import CarlaApplication
     from carla_host import initHost
 
-    app  = CarlaApplication()
-    host = initHost("Settings", None, False)
+    app = CarlaApplication()
 
-    gui = CarlaSettingsW(None, host, True, True, True)
-    gui.show()
+    host1 = initHost("Settings", None, False, False, True)
+    host2 = initHost("Settings", None, False, True, True)
+
+    gui1 = CarlaSettingsW(None, host1, True, True, True)
+    gui2 = CarlaSettingsW(None, host2, True, True, True)
+
+    gui1.setWindowTitle("Settings - DLL")
+    gui2.setWindowTitle("Settings - Plugin")
+
+    gui1.show()
+    gui2.show()
 
     sys.exit(app.exec_())
