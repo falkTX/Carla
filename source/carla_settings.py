@@ -61,8 +61,9 @@ class DriverSettingsW(QDialog):
         if False:
             # kdevelop likes this :)
             host = CarlaHostMeta()
+            self.host = host
 
-        # -------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # Internal stuff
 
         self.fDriverIndex = driverIndex
@@ -72,27 +73,27 @@ class DriverSettingsW(QDialog):
         self.fBufferSizes = BUFFER_SIZE_LIST
         self.fSampleRates = SAMPLE_RATE_LIST
 
-        # -------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # Set-up GUI
 
         for name in self.fDeviceNames:
             self.ui.cb_device.addItem(name)
 
-        # -------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # Load settings
 
         self.loadSettings()
 
-        # -------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # Set-up connections
 
         self.accepted.connect(self.slot_saveSettings)
         self.ui.cb_device.currentIndexChanged.connect(self.slot_updateDeviceInfo)
 
-        # -------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
 
     def loadSettings(self):
-        settings = QSettings()
+        settings = QSettings("falkTX", "Carla2")
 
         audioDevice     = settings.value("%s%s/Device"     % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), "",                              type=str)
         audioNumPeriods = settings.value("%s%s/NumPeriods" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), CARLA_DEFAULT_AUDIO_NUM_PERIODS, type=int)
@@ -126,14 +127,18 @@ class DriverSettingsW(QDialog):
         else:
             self.ui.cb_samplerate.setCurrentIndex(len(self.fSampleRates)/2)
 
+    # --------------------------------------------------------------------------------------------------------
+
     @pyqtSlot()
     def slot_saveSettings(self):
-        settings = QSettings()
+        settings = QSettings("falkTX", "Carla2")
 
         settings.setValue("%s%s/Device"     % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_device.currentText())
         settings.setValue("%s%s/NumPeriods" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.sb_numperiods.value())
         settings.setValue("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_buffersize.currentText())
         settings.setValue("%s%s/SampleRate" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, self.fDriverName), self.ui.cb_samplerate.currentText())
+
+    # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_updateDeviceInfo(self):
@@ -167,6 +172,8 @@ class DriverSettingsW(QDialog):
             if oldSampleRate == ssrate:
                 self.ui.cb_samplerate.setCurrentIndex(self.ui.cb_samplerate.count()-1)
 
+    # --------------------------------------------------------------------------------------------------------
+
     def done(self, r):
         QDialog.done(self, r)
         self.close()
@@ -198,6 +205,8 @@ class CarlaSettingsW(QDialog):
     # so add +2 pos padding if driverName != "JACK".
     PROCESS_MODE_NON_JACK_PADDING = 2
 
+    # --------------------------------------------------------------------------------------------------------
+
     def __init__(self, parent, host, hasCanvas, hasCanvasGL, hasEngine):
         QDialog.__init__(self, parent)
         self.host = host
@@ -209,10 +218,10 @@ class CarlaSettingsW(QDialog):
             host = CarlaHostMeta()
             self.host = host
 
-        self.ui.lw_page.setFixedWidth(48 + 6 + 6 + QFontMetrics(self.ui.lw_page.font()).width("88888888"))
-
-        # -------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # Set-up GUI
+
+        self.ui.lw_page.setFixedWidth(48 + 6 + 6 + QFontMetrics(self.ui.lw_page.font()).width("88888888"))
 
         for i in range(host.get_engine_driver_count()):
             self.ui.cb_engine_audio_driver.addItem(host.get_engine_driver_name(i))
@@ -220,39 +229,37 @@ class CarlaSettingsW(QDialog):
         for i in range(Theme.THEME_MAX):
             self.ui.cb_canvas_theme.addItem(getThemeName(i))
 
-        # -------------------------------------------------------------
-        # Load settings
-
-        self.loadSettings()
-
-        if not hasCanvas:
-            self.ui.lw_page.hideRow(self.TAB_INDEX_CANVAS)
-
-            if not hasCanvasGL:
-                self.ui.cb_canvas_use_opengl.setChecked(False)
-                self.ui.cb_canvas_use_opengl.setEnabled(False)
-
-        if not hasEngine:
-            self.ui.lw_page.hideRow(self.TAB_INDEX_ENGINE)
-
         if WINDOWS and not config_UseQt5:
             self.ui.group_main_theme.setEnabled(False)
-            self.ui.ch_main_theme_pro.setChecked(False)
 
         if not MACOS:
             auIndex = self.ui.cb_paths.findText("AU")
             self.ui.cb_paths.removeItem(auIndex)
             self.ui.tw_paths.removeWidget(self.ui.tw_paths.widget(auIndex))
 
-        if host.isPlugin:
-            self.ui.cb_engine_audio_driver.setCurrentIndex(0)
-            self.ui.cb_engine_audio_driver.setEnabled(False)
-            self.ui.cb_engine_process_mode_other.setCurrentIndex(host.processMode-self.PROCESS_MODE_NON_JACK_PADDING)
-            self.ui.cb_engine_process_mode_other.setEnabled(False)
-            self.ui.sw_engine_process_mode.setCurrentIndex(1)
-            self.ui.tb_engine_driver_config.setEnabled(False)
+        if not hasCanvas:
+            self.ui.lw_page.hideRow(self.TAB_INDEX_CANVAS)
 
-        # -------------------------------------------------------------
+        elif not hasCanvasGL:
+            self.ui.cb_canvas_use_opengl.setEnabled(False)
+            self.ui.cb_canvas_render_hq_aa.setEnabled(False)
+
+        if not hasEngine:
+            self.ui.lw_page.hideRow(self.TAB_INDEX_ENGINE)
+
+        if host.isPlugin:
+            self.ui.cb_engine_audio_driver.setEnabled(False)
+
+        if host.processModeForced:
+            self.ui.cb_engine_process_mode_jack.setEnabled(False)
+            self.ui.cb_engine_process_mode_other.setEnabled(False)
+
+        # ----------------------------------------------------------------------------------------------------
+        # Load settings
+
+        self.loadSettings()
+
+        # ----------------------------------------------------------------------------------------------------
         # Set-up connections
 
         self.accepted.connect(self.slot_saveSettings)
@@ -277,7 +284,7 @@ class CarlaSettingsW(QDialog):
         self.ui.lw_sf2.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_sfz.currentRowChanged.connect(self.slot_pluginPathRowChanged)
 
-        # -------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # Post-connect setup
 
         self.ui.lw_ladspa.setCurrentRow(0)
@@ -292,19 +299,21 @@ class CarlaSettingsW(QDialog):
 
         self.ui.lw_page.setCurrentCell(0, 0)
 
-    def loadSettings(self):
-        settings = QSettings()
+    # --------------------------------------------------------------------------------------------------------
 
-        # ---------------------------------------
+    def loadSettings(self):
+        settings = QSettings("falkTX", "Carla2")
+
+        # ----------------------------------------------------------------------------------------------------
         # Main
 
         self.ui.le_main_proj_folder.setText(settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER, CARLA_DEFAULT_MAIN_PROJECT_FOLDER, type=str))
-        self.ui.ch_main_theme_pro.setChecked(settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, type=bool))
+        self.ui.ch_main_theme_pro.setChecked(settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, type=bool) and self.ui.group_main_theme.isEnabled())
         self.ui.cb_main_theme_color.setCurrentIndex(self.ui.cb_main_theme_color.findText(settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, CARLA_DEFAULT_MAIN_PRO_THEME_COLOR, type=str)))
         self.ui.sb_main_refresh_interval.setValue(settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL, CARLA_DEFAULT_MAIN_REFRESH_INTERVAL, type=int))
         self.ui.cb_main_use_custom_skins.setChecked(settings.value(CARLA_KEY_MAIN_USE_CUSTOM_SKINS, CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS, type=bool))
 
-        # ---------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # Canvas
 
         self.ui.cb_canvas_theme.setCurrentIndex(self.ui.cb_canvas_theme.findText(settings.value(CARLA_KEY_CANVAS_THEME, CARLA_DEFAULT_CANVAS_THEME, type=str)))
@@ -312,42 +321,43 @@ class CarlaSettingsW(QDialog):
         self.ui.cb_canvas_bezier_lines.setChecked(settings.value(CARLA_KEY_CANVAS_USE_BEZIER_LINES, CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES, type=bool))
         self.ui.cb_canvas_hide_groups.setChecked(settings.value(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS, CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS, type=bool))
         self.ui.cb_canvas_eyecandy.setCheckState(settings.value(CARLA_KEY_CANVAS_EYE_CANDY, CARLA_DEFAULT_CANVAS_EYE_CANDY, type=int))
-        self.ui.cb_canvas_use_opengl.setChecked(settings.value(CARLA_KEY_CANVAS_USE_OPENGL, CARLA_DEFAULT_CANVAS_USE_OPENGL, type=bool))
+        self.ui.cb_canvas_use_opengl.setChecked(settings.value(CARLA_KEY_CANVAS_USE_OPENGL, CARLA_DEFAULT_CANVAS_USE_OPENGL, type=bool) and self.ui.cb_canvas_use_opengl.isEnabled())
         self.ui.cb_canvas_render_aa.setCheckState(settings.value(CARLA_KEY_CANVAS_ANTIALIASING, CARLA_DEFAULT_CANVAS_ANTIALIASING, type=int))
-        self.ui.cb_canvas_render_hq_aa.setChecked(settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING, CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING, type=bool))
+        self.ui.cb_canvas_render_hq_aa.setChecked(settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING, CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING, type=bool) and self.ui.cb_canvas_render_hq_aa.isEnabled())
 
-        # --------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # Engine
 
-        audioDriver = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER, type=str)
-
-        for i in range(self.ui.cb_engine_audio_driver.count()):
-            if self.ui.cb_engine_audio_driver.itemText(i) == audioDriver:
-                self.ui.cb_engine_audio_driver.setCurrentIndex(i)
-                break
+        if self.host.isPlugin:
+            audioDriver = "Plugin"
+            self.ui.cb_engine_audio_driver.setCurrentIndex(0)
         else:
-            self.ui.cb_engine_audio_driver.setCurrentIndex(-1)
+            audioDriver = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER, type=str)
+
+            for i in range(self.ui.cb_engine_audio_driver.count()):
+                if self.ui.cb_engine_audio_driver.itemText(i) == audioDriver:
+                    self.ui.cb_engine_audio_driver.setCurrentIndex(i)
+                    break
+            else:
+                self.ui.cb_engine_audio_driver.setCurrentIndex(-1)
 
         if audioDriver == "JACK":
-            processModeIndex = settings.value(CARLA_KEY_ENGINE_PROCESS_MODE, ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, type=int)
-            self.ui.cb_engine_process_mode_jack.setCurrentIndex(processModeIndex)
+            self.ui.cb_engine_process_mode_jack.setCurrentIndex(self.host.processMode)
             self.ui.sw_engine_process_mode.setCurrentIndex(0)
             self.ui.tb_engine_driver_config.setEnabled(False)
         else:
-            processModeIndex  = settings.value(CARLA_KEY_ENGINE_PROCESS_MODE, ENGINE_PROCESS_MODE_CONTINUOUS_RACK, type=int)
-            processModeIndex -= self.PROCESS_MODE_NON_JACK_PADDING
-            self.ui.cb_engine_process_mode_other.setCurrentIndex(processModeIndex)
+            self.ui.cb_engine_process_mode_other.setCurrentIndex(self.host.processMode-self.PROCESS_MODE_NON_JACK_PADDING)
             self.ui.sw_engine_process_mode.setCurrentIndex(1)
-            self.ui.tb_engine_driver_config.setEnabled(True)
+            self.ui.tb_engine_driver_config.setEnabled(not self.host.isPlugin)
 
-        self.ui.sb_engine_max_params.setValue(settings.value(CARLA_KEY_ENGINE_MAX_PARAMETERS, CARLA_DEFAULT_MAX_PARAMETERS, type=int))
-        self.ui.ch_engine_uis_always_on_top.setChecked(settings.value(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, CARLA_DEFAULT_UIS_ALWAYS_ON_TOP, type=bool))
-        self.ui.ch_engine_prefer_ui_bridges.setChecked(settings.value(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES, CARLA_DEFAULT_PREFER_UI_BRIDGES, type=bool))
-        self.ui.sb_engine_ui_bridges_timeout.setValue(settings.value(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT, CARLA_DEFAULT_UI_BRIDGES_TIMEOUT, type=int))
-        self.ui.ch_engine_force_stereo.setChecked(settings.value(CARLA_KEY_ENGINE_FORCE_STEREO, CARLA_DEFAULT_FORCE_STEREO, type=bool))
-        self.ui.ch_engine_prefer_plugin_bridges.setChecked(settings.value(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES, type=bool))
+        self.ui.sb_engine_max_params.setValue(self.host.maxParameters)
+        self.ui.ch_engine_uis_always_on_top.setChecked(self.host.uisAlwaysOnTop)
+        self.ui.ch_engine_prefer_ui_bridges.setChecked(self.host.preferUIBridges)
+        self.ui.sb_engine_ui_bridges_timeout.setValue(self.host.uiBridgesTimeout)
+        self.ui.ch_engine_force_stereo.setChecked(self.host.forceStereo)
+        self.ui.ch_engine_prefer_plugin_bridges.setChecked(self.host.preferPluginBridges)
 
-        # --------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # Paths
 
         ladspas = toList(settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH))
@@ -406,11 +416,14 @@ class CarlaSettingsW(QDialog):
             if not sfz: continue
             self.ui.lw_sfz.addItem(sfz)
 
+    # --------------------------------------------------------------------------------------------------------
+
     @pyqtSlot()
     def slot_saveSettings(self):
-        settings = QSettings()
+        settings = QSettings("falkTX", "Carla2")
 
-        # ---------------------------------------
+        # ----------------------------------------------------------------------------------------------------
+        # Main
 
         settings.setValue(CARLA_KEY_MAIN_PROJECT_FOLDER,   self.ui.le_main_proj_folder.text())
         settings.setValue(CARLA_KEY_MAIN_USE_PRO_THEME,    self.ui.ch_main_theme_pro.isChecked())
@@ -418,7 +431,8 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_MAIN_REFRESH_INTERVAL, self.ui.sb_main_refresh_interval.value())
         settings.setValue(CARLA_KEY_MAIN_USE_CUSTOM_SKINS, self.ui.cb_main_use_custom_skins.isChecked())
 
-        # ---------------------------------------
+        # ----------------------------------------------------------------------------------------------------
+        # Canvas
 
         settings.setValue(CARLA_KEY_CANVAS_THEME,            self.ui.cb_canvas_theme.currentText())
         settings.setValue(CARLA_KEY_CANVAS_SIZE,             self.ui.cb_canvas_size.currentText())
@@ -429,26 +443,44 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_CANVAS_HQ_ANTIALIASING,  self.ui.cb_canvas_render_hq_aa.isChecked())
         settings.setValue(CARLA_KEY_CANVAS_ANTIALIASING,     self.ui.cb_canvas_render_aa.checkState()) # 0, 1, 2 match their enum variants
 
-        # --------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
+        # Engine
 
         audioDriver = self.ui.cb_engine_audio_driver.currentText()
 
-        if audioDriver:
+        if audioDriver and not self.host.isPlugin:
             settings.setValue(CARLA_KEY_ENGINE_AUDIO_DRIVER, audioDriver)
 
-            if audioDriver == "JACK":
-                settings.setValue(CARLA_KEY_ENGINE_PROCESS_MODE, self.ui.cb_engine_process_mode_jack.currentIndex())
-            else:
-                settings.setValue(CARLA_KEY_ENGINE_PROCESS_MODE, self.ui.cb_engine_process_mode_other.currentIndex()+self.PROCESS_MODE_NON_JACK_PADDING)
+        if not self.host.processModeForced:
+            processMode = self.ui.cb_engine_process_mode_jack.currentIndex() if audioDriver == "JACK" else self.ui.cb_engine_process_mode_other.currentIndex()+self.PROCESS_MODE_NON_JACK_PADDING
 
-        settings.setValue(CARLA_KEY_ENGINE_MAX_PARAMETERS, self.ui.sb_engine_max_params.value())
-        settings.setValue(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, self.ui.ch_engine_uis_always_on_top.isChecked())
-        settings.setValue(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES, self.ui.ch_engine_prefer_ui_bridges.isChecked())
-        settings.setValue(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT, self.ui.sb_engine_ui_bridges_timeout.value())
-        settings.setValue(CARLA_KEY_ENGINE_FORCE_STEREO, self.ui.ch_engine_force_stereo.isChecked())
-        settings.setValue(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, self.ui.ch_engine_prefer_plugin_bridges.isChecked())
+            settings.setValue(CARLA_KEY_ENGINE_PROCESS_MODE, processMode)
 
-        # --------------------------------------------
+            self.host.set_engine_option(ENGINE_OPTION_PROCESS_MODE, processMode, "")
+
+        forceStereo         = self.ui.ch_engine_force_stereo.isChecked()
+        preferPluginBridges = self.ui.ch_engine_prefer_plugin_bridges.isChecked()
+        preferUIBridges     = self.ui.ch_engine_prefer_ui_bridges.isChecked()
+        uisAlwaysOnTop      = self.ui.ch_engine_uis_always_on_top.isChecked()
+        maxParameters       = self.ui.sb_engine_max_params.value()
+        uiBridgesTimeout    = self.ui.sb_engine_ui_bridges_timeout.value()
+
+        settings.setValue(CARLA_KEY_ENGINE_FORCE_STEREO,          forceStereo)
+        settings.setValue(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, preferPluginBridges)
+        settings.setValue(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES,     preferUIBridges)
+        settings.setValue(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP,     uisAlwaysOnTop)
+        settings.setValue(CARLA_KEY_ENGINE_MAX_PARAMETERS,        maxParameters)
+        settings.setValue(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT,    uiBridgesTimeout)
+
+        self.host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,          forceStereo,         "")
+        self.host.set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, preferPluginBridges, "")
+        self.host.set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     preferUIBridges,     "")
+        self.host.set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     uisAlwaysOnTop,      "")
+        self.host.set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        maxParameters,       "")
+        self.host.set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    uiBridgesTimeout,    "")
+
+        # ----------------------------------------------------------------------------------------------------
+        # Paths
 
         ladspas = []
         dssis   = []
@@ -497,14 +529,32 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_PATHS_SF2,    sf2s)
         settings.setValue(CARLA_KEY_PATHS_SFZ,    sfzs)
 
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LADSPA, splitter.join(ladspas))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(dssis))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2,    splitter.join(lv2s))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST,    splitter.join(vsts))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST3,   splitter.join(vst3s))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_AU,     splitter.join(aus))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_GIG,    splitter.join(gigs))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(sf2s))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(sfzs))
+
+    # --------------------------------------------------------------------------------------------------------
+
     @pyqtSlot()
     def slot_resetSettings(self):
+        # ----------------------------------------------------------------------------------------------------
+        # Main
+
         if self.ui.lw_page.currentRow() == self.TAB_INDEX_MAIN:
             self.ui.le_main_proj_folder.setText(CARLA_DEFAULT_MAIN_PROJECT_FOLDER)
-            self.ui.ch_main_theme_pro.setChecked(CARLA_DEFAULT_MAIN_USE_PRO_THEME)
-            self.ui.cb_main_theme_color.setCurrentIndex(self.ui.cb_theme_color.findText(CARLA_DEFAULT_MAIN_PRO_THEME_COLOR))
+            self.ui.ch_main_theme_pro.setChecked(CARLA_DEFAULT_MAIN_USE_PRO_THEME and self.ui.group_main_theme.isEnabled())
+            self.ui.cb_main_theme_color.setCurrentIndex(self.ui.cb_main_theme_color.findText(CARLA_DEFAULT_MAIN_PRO_THEME_COLOR))
             self.ui.sb_main_refresh_interval.setValue(CARLA_DEFAULT_MAIN_REFRESH_INTERVAL)
             self.ui.cb_main_use_custom_skins.setChecked(CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS)
+
+        # ----------------------------------------------------------------------------------------------------
+        # Canvas
 
         elif self.ui.lw_page.currentRow() == self.TAB_INDEX_CANVAS:
             self.ui.cb_canvas_theme.setCurrentIndex(self.ui.cb_canvas_theme.findText(CARLA_DEFAULT_CANVAS_THEME))
@@ -512,12 +562,25 @@ class CarlaSettingsW(QDialog):
             self.ui.cb_canvas_bezier_lines.setChecked(CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES)
             self.ui.cb_canvas_hide_groups.setChecked(CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS)
             self.ui.cb_canvas_eyecandy.setCheckState(Qt.PartiallyChecked) # CARLA_DEFAULT_CANVAS_EYE_CANDY
-            self.ui.cb_canvas_use_opengl.setChecked(CARLA_DEFAULT_CANVAS_USE_OPENGL)
+            self.ui.cb_canvas_use_opengl.setChecked(CARLA_DEFAULT_CANVAS_USE_OPENGL and self.ui.cb_canvas_use_opengl.isEnabled())
             self.ui.cb_canvas_render_aa.setCheckState(Qt.PartiallyChecked) # CARLA_DEFAULT_CANVAS_ANTIALIASING
-            self.ui.cb_canvas_render_hq_aa.setChecked(CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING)
+            self.ui.cb_canvas_render_hq_aa.setChecked(CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING and self.ui.cb_canvas_render_hq_aa.isEnabled())
+
+        # ----------------------------------------------------------------------------------------------------
+        # Engine
 
         elif self.ui.lw_page.currentRow() == self.TAB_INDEX_ENGINE:
-            self.ui.cb_engine_audio_driver.setCurrentIndex(0)
+            if not self.host.isPlugin:
+                self.ui.cb_engine_audio_driver.setCurrentIndex(0)
+
+            if not self.host.processModeForced:
+                if self.ui.cb_engine_audio_driver.currentText() == "JACK":
+                    self.ui.cb_engine_process_mode_jack.setCurrentIndex(CARLA_DEFAULT_PROCESS_MODE)
+                    self.ui.sw_engine_process_mode.setCurrentIndex(0) # show all modes
+                else:
+                    self.ui.cb_engine_process_mode_other.setCurrentIndex(CARLA_DEFAULT_PROCESS_MODE-self.PROCESS_MODE_NON_JACK_PADDING)
+                    self.ui.sw_engine_process_mode.setCurrentIndex(1) # hide single+multi client modes
+
             self.ui.sb_engine_max_params.setValue(CARLA_DEFAULT_MAX_PARAMETERS)
             self.ui.ch_engine_uis_always_on_top.setChecked(CARLA_DEFAULT_UIS_ALWAYS_ON_TOP)
             self.ui.ch_engine_prefer_ui_bridges.setChecked(CARLA_DEFAULT_PREFER_UI_BRIDGES)
@@ -525,12 +588,8 @@ class CarlaSettingsW(QDialog):
             self.ui.ch_engine_force_stereo.setChecked(CARLA_DEFAULT_FORCE_STEREO)
             self.ui.ch_engine_prefer_plugin_bridges.setChecked(CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES)
 
-            if self.ui.cb_engine_audio_driver.currentText() == "JACK":
-                self.ui.cb_engine_process_mode_jack.setCurrentIndex(ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
-                self.ui.sw_engine_process_mode.setCurrentIndex(0) # show all modes
-            else:
-                self.ui.cb_engine_process_mode_other.setCurrentIndex(ENGINE_PROCESS_MODE_CONTINUOUS_RACK-self.PROCESS_MODE_NON_JACK_PADDING)
-                self.ui.sw_engine_process_mode.setCurrentIndex(1) # hide single+multi client modes
+        # ----------------------------------------------------------------------------------------------------
+        # Paths
 
         elif self.ui.lw_page.currentRow() == self.TAB_INDEX_PATHS:
             curIndex = self.ui.tw_paths.currentIndex()
@@ -616,9 +675,14 @@ class CarlaSettingsW(QDialog):
                     if not path: continue
                     self.ui.lw_sfz.addItem(path)
 
+    # --------------------------------------------------------------------------------------------------------
+
     @pyqtSlot()
     def slot_getAndSetProjectPath(self):
+        # FIXME
         getAndSetPath(self, self.ui.le_main_proj_folder.text(), self.ui.le_main_proj_folder)
+
+    # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_engineAudioDriverChanged(self):
@@ -634,6 +698,8 @@ class CarlaSettingsW(QDialog):
         driverIndex = self.ui.cb_engine_audio_driver.currentIndex()
         driverName  = self.ui.cb_engine_audio_driver.currentText()
         DriverSettingsW(self, self.host, driverIndex, driverName).exec_()
+
+    # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_addPluginPath(self):
@@ -735,6 +801,8 @@ class CarlaSettingsW(QDialog):
         elif curIndex == self.PATH_INDEX_SFZ:
             self.ui.lw_sfz.currentItem().setText(newPath)
 
+    # --------------------------------------------------------------------------------------------------------
+
     @pyqtSlot(int)
     def slot_pluginPathTabChanged(self, index):
         if index == self.PATH_INDEX_LADSPA:
@@ -768,6 +836,8 @@ class CarlaSettingsW(QDialog):
         self.ui.b_paths_remove.setEnabled(check)
         self.ui.b_paths_change.setEnabled(check)
 
+    # --------------------------------------------------------------------------------------------------------
+
     def done(self, r):
         QDialog.done(self, r)
         self.close()
@@ -777,12 +847,25 @@ class CarlaSettingsW(QDialog):
 
 if __name__ == '__main__':
     from carla_app import CarlaApplication
-    from carla_host import initHost
+    from carla_host import initHost, loadHostSettings
 
     app = CarlaApplication()
 
     host1 = initHost("Settings", None, False, False, True)
     host2 = initHost("Settings", None, False, True, True)
+
+    # DLL loads settings
+    loadHostSettings(host1)
+
+    # Plugin forces settings test
+    host2.processMode         = ENGINE_PROCESS_MODE_PATCHBAY
+    host2.transportMode       = ENGINE_TRANSPORT_MODE_PLUGIN
+    host2.forceStereo         = True
+    host2.preferPluginBridges = True
+    host2.preferUIBridges     = False
+    host2.uisAlwaysOnTop      = False
+    host2.maxParameters       = 5
+    host2.uiBridgesTimeout    = 5
 
     gui1 = CarlaSettingsW(None, host1, True, True, True)
     gui2 = CarlaSettingsW(None, host2, True, True, True)

@@ -1246,8 +1246,9 @@ class CarlaHostMeta(object):
         self.isPlugin  = False
 
         # settings
-        self.processMode   = 0
-        self.transportMode = 0
+        self.processMode   = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+        self.transportMode = ENGINE_TRANSPORT_MODE_INTERNAL
+        self.processModeForced = False
 
         # settings
         self.forceStereo         = False
@@ -2744,7 +2745,8 @@ class CarlaHostPlugin(CarlaHostMeta):
         CarlaHostMeta.__init__(self)
 
         # info about this host object
-        self.isPlugin = True
+        self.isPlugin          = True
+        self.processModeForced = True
 
         # text data to return when requested
         self.fCompleteLicentText = ""

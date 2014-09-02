@@ -1452,12 +1452,14 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError):
     # --------------------------------------------------------------------------------------------------------
     # Init host
 
-    # TODO handle failError == False
-
-    if isPlugin:
-        host = CarlaHostPlugin()
+    if failError:
+        # no try
+        host = CarlaHostPlugin() if isPlugin else CarlaHostDLL(os.path.join(pathBinaries, libname))
     else:
-        host = CarlaHostDLL(os.path.join(pathBinaries, libname))
+        try:
+            host = CarlaHostPlugin() if isPlugin else CarlaHostDLL(os.path.join(pathBinaries, libname))
+        except:
+            host = CarlaHostNull()
 
     host.isControl = isControl
     host.isPlugin  = isPlugin
@@ -1476,5 +1478,67 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError):
             host.set_engine_option(ENGINE_OPTION_NSM_INIT, os.getpid(), initName)
 
     return host
+
+# ------------------------------------------------------------------------------------------------------------
+# Load host settings (fills host vars with common host settings)
+
+def loadHostSettings(host):
+    # kdevelop likes this :)
+    if False: host = CarlaHostMeta()
+
+    settings = QSettings("falkTX", "Carla2")
+
+    # bool values
+    try:
+        host.forceStereo = settings.value(CARLA_KEY_ENGINE_FORCE_STEREO, CARLA_DEFAULT_FORCE_STEREO, type=bool)
+    except:
+        host.forceStereo = CARLA_DEFAULT_FORCE_STEREO
+
+    try:
+        host.preferPluginBridges = settings.value(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES, type=bool)
+    except:
+        host.preferPluginBridges = CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES
+
+    try:
+        host.preferUiBridges = settings.value(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES, CARLA_DEFAULT_PREFER_UI_BRIDGES, type=bool)
+    except:
+        host.preferUiBridges = CARLA_DEFAULT_PREFER_UI_BRIDGES
+
+    try:
+        host.uisAlwaysOnTop = settings.value(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, CARLA_DEFAULT_UIS_ALWAYS_ON_TOP, type=bool)
+    except:
+        host.uisAlwaysOnTop = CARLA_DEFAULT_UIS_ALWAYS_ON_TOP
+
+    # int values
+    try:
+        host.maxParameters = settings.value(CARLA_KEY_ENGINE_MAX_PARAMETERS, CARLA_DEFAULT_MAX_PARAMETERS, type=int)
+    except:
+        host.maxParameters = CARLA_DEFAULT_MAX_PARAMETERS
+
+    try:
+        host.uiBridgesTimeout = settings.value(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT, CARLA_DEFAULT_UI_BRIDGES_TIMEOUT, type=int)
+    except:
+        host.uiBridgesTimeout = CARLA_DEFAULT_UI_BRIDGES_TIMEOUT
+
+    if host.isPlugin:
+        return
+
+    # enums
+    try:
+        host.processMode = settings.value(CARLA_KEY_ENGINE_PROCESS_MODE, CARLA_DEFAULT_PROCESS_MODE, type=int)
+    except:
+        host.processMode = CARLA_DEFAULT_PROCESS_MODE
+
+    try:
+        host.transportMode = settings.value(CARLA_KEY_ENGINE_TRANSPORT_MODE, CARLA_DEFAULT_TRANSPORT_MODE, type=int)
+    except:
+        host.transportMode = CARLA_DEFAULT_TRANSPORT_MODE
+
+    # --------------------------------------------------------------------------------------------------------
+    # fix things if needed
+
+    if host.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS and LADISH_APP_NAME:
+        print("LADISH detected but using multiple clients (not allowed), forcing single client now")
+        host.processMode = ENGINE_PROCESS_MODE_SINGLE_CLIENT
 
 # ------------------------------------------------------------------------------------------------------------
