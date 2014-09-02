@@ -57,112 +57,62 @@ NSM_URL         = os.getenv("NSM_URL")
 # ------------------------------------------------------------------------------------------------------------
 # Dummy widget
 
-class CarlaDummyW(object):
-    def __init__(self, parent):
-        object.__init__(self)
+class HostWidgetMeta(object):
+#class HostWidgetMeta(metaclass=ABCMeta):
 
-    # -----------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------
 
     def getPluginCount(self):
-        return 0
-
-    # -----------------------------------------------------------------
+        raise NotImplementedError
 
     def addPlugin(self, pluginId, isProjectLoading):
-        pass
+        raise NotImplementedError
 
     def removePlugin(self, pluginId):
-        pass
+        raise NotImplementedError
 
     def renamePlugin(self, pluginId, newName):
-        pass
+        raise NotImplementedError
 
     def disablePlugin(self, pluginId, errorMsg):
-        pass
+        raise NotImplementedError
 
     def removeAllPlugins(self):
-        pass
-
-    # -----------------------------------------------------------------
+        raise NotImplementedError
 
     def engineStarted(self):
-        pass
+        raise NotImplementedError
 
     def engineStopped(self):
-        pass
-
-    def engineChanged(self):
-        pass
-
-    # -----------------------------------------------------------------
+        raise NotImplementedError
 
     def idleFast(self):
-        pass
+        raise NotImplementedError
 
     def idleSlow(self):
-        pass
-
-    # -----------------------------------------------------------------
+        raise NotImplementedError
 
     def projectLoadingStarted(self):
-        pass
+        raise NotImplementedError
 
     def projectLoadingFinished(self):
-        pass
-
-    # -----------------------------------------------------------------
+        raise NotImplementedError
 
     def saveSettings(self, settings):
-        pass
+        raise NotImplementedError
 
     def showEditDialog(self, pluginId):
-        pass
+        raise NotImplementedError
 
 # ------------------------------------------------------------------------------------------------------------
 # Host Window
 
 class HostWindow(QMainWindow):
     # signals
-    DebugCallback = pyqtSignal(int, int, int, float, str)
-    PluginAddedCallback = pyqtSignal(int, str)
-    PluginRemovedCallback = pyqtSignal(int)
-    PluginRenamedCallback = pyqtSignal(int, str)
-    PluginUnavailableCallback = pyqtSignal(int, str)
-    ParameterValueChangedCallback = pyqtSignal(int, int, float)
-    ParameterDefaultChangedCallback = pyqtSignal(int, int, float)
-    ParameterMidiCcChangedCallback = pyqtSignal(int, int, int)
-    ParameterMidiChannelChangedCallback = pyqtSignal(int, int, int)
-    ProgramChangedCallback = pyqtSignal(int, int)
-    MidiProgramChangedCallback = pyqtSignal(int, int)
-    OptionChangedCallback = pyqtSignal(int, int, bool)
-    UiStateChangedCallback = pyqtSignal(int, int)
-    NoteOnCallback = pyqtSignal(int, int, int, int)
-    NoteOffCallback = pyqtSignal(int, int, int)
-    UpdateCallback = pyqtSignal(int)
-    ReloadInfoCallback = pyqtSignal(int)
-    ReloadParametersCallback = pyqtSignal(int)
-    ReloadProgramsCallback = pyqtSignal(int)
-    ReloadAllCallback = pyqtSignal(int)
-    PatchbayClientAddedCallback = pyqtSignal(int, int, int, str)
-    PatchbayClientRemovedCallback = pyqtSignal(int)
-    PatchbayClientRenamedCallback = pyqtSignal(int, str)
-    PatchbayClientDataChangedCallback = pyqtSignal(int, int, int)
-    PatchbayPortAddedCallback = pyqtSignal(int, int, int, str)
-    PatchbayPortRemovedCallback = pyqtSignal(int, int)
-    PatchbayPortRenamedCallback = pyqtSignal(int, int, str)
-    PatchbayConnectionAddedCallback = pyqtSignal(int, int, int, int, int)
-    PatchbayConnectionRemovedCallback = pyqtSignal(int, int, int)
-    EngineStartedCallback = pyqtSignal(int, int, str)
-    EngineStoppedCallback = pyqtSignal()
-    ProcessModeChangedCallback = pyqtSignal(int)
-    TransportModeChangedCallback = pyqtSignal(int)
-    BufferSizeChangedCallback = pyqtSignal(int)
-    SampleRateChangedCallback = pyqtSignal(float)
-    InfoCallback = pyqtSignal(str)
-    ErrorCallback = pyqtSignal(str)
-    QuitCallback = pyqtSignal()
     SIGTERM = pyqtSignal()
     SIGUSR1 = pyqtSignal()
+
+    # --------------------------------------------------------------------------------------------------------
 
     def __init__(self, host):
         QMainWindow.__init__(self)
@@ -173,27 +123,17 @@ class HostWindow(QMainWindow):
         if False:
             # kdevelop likes this :)
             host = CarlaHostMeta()
-            self.host = CarlaHostMeta()
+            self.host = host
+            self.fContainer = HostWidgetMeta(self, host)
             gCarla.gui = self
-            self.fContainer = CarlaDummyW(self)
 
-        if MACOS and config_UseQt5:
-            self.ui.act_file_quit.setMenuRole(QAction.QuitRole)
-            self.ui.act_settings_configure.setMenuRole(QAction.PreferencesRole)
-            self.ui.act_help_about.setMenuRole(QAction.AboutRole)
-            self.ui.act_help_about_juce.setMenuRole(QAction.AboutRole)
-            self.ui.act_help_about_qt.setMenuRole(QAction.AboutQtRole)
-            self.ui.menu_Settings.setTitle("Panels")
-            #self.ui.menu_Help.hide()
-
-        # -------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # Internal stuff
+
+        self.fSampleRate = 0.0
 
         self.fIdleTimerFast = 0
         self.fIdleTimerSlow = 0
-
-        self.fIsProjectLoading = False
-        self.fProjectFilename  = ""
 
         self.fLadspaRdfNeedsUpdate = True
         self.fLadspaRdfList = []
@@ -202,15 +142,16 @@ class HostWindow(QMainWindow):
         self.fLastTransportState = False
         self.fTransportText = ""
 
-        # when true, call engineChanged() asap
-        self.fEngineChanged = False
+        self.fProjectFilename = ""
+        self.fIsProjectLoading = False
 
         # first attempt of auto-start engine doesn't show an error
         self.fFirstEngineInit = True
 
+        # to be filled with key-value pairs of current settings
         self.fSavedSettings = {}
 
-        if self.host.isPlugin:
+        if host.isPlugin:
             self.fClientName         = "Carla-Plugin"
             self.fSessionManagerName = "Plugin"
         elif LADISH_APP_NAME:
@@ -223,12 +164,7 @@ class HostWindow(QMainWindow):
             self.fClientName         = "Carla"
             self.fSessionManagerName = ""
 
-        # -------------------------------------------------------------
-        # Load Settings
-
-        self.loadSettings(True)
-
-        # -------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # Set up GUI (engine stopped)
 
         if self.host.isPlugin:
@@ -246,10 +182,6 @@ class HostWindow(QMainWindow):
         self.ui.act_engine_stop.setEnabled(False)
         self.ui.act_plugin_remove_all.setEnabled(False)
 
-        #if gCarla.externalPatchbay:
-            #self.ui.act_canvas_show_internal.setChecked(False)
-            #self.ui.act_canvas_show_external.setChecked(True)
-        #else:
         self.ui.act_canvas_show_internal.setChecked(True)
         self.ui.act_canvas_show_external.setChecked(False)
 
@@ -261,7 +193,7 @@ class HostWindow(QMainWindow):
 
         self.setTransportMenuEnabled(False)
 
-        # -------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # Set up GUI (disk)
 
         self.fDirModel = QFileSystemModel(self)
@@ -275,21 +207,24 @@ class HostWindow(QMainWindow):
         self.ui.fileTreeView.setColumnHidden(3, True)
         self.ui.fileTreeView.setHeaderHidden(True)
 
-        # -------------------------------------------------------------
-        # Set up GUI (disk)
+        # ----------------------------------------------------------------------------------------------------
+        # Set up GUI (special stuff for Mac OS)
 
-        #self.item1 = QListWidgetItem(self.ui.lw_plugins)
-        #self.item1.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled|Qt.ItemIsDragEnabled)
-        #self.item1.setIcon(QIcon(":/bitmaps/thumbs/zita-rev1.png"))
-        #self.item1.setText("zita-rev1")
-        #item1.setTextAlignment(Qt.ali)
-        #self.ui.lw_plugins.()
+        if MACOS and config_UseQt5:
+            self.ui.act_file_quit.setMenuRole(QAction.QuitRole)
+            self.ui.act_settings_configure.setMenuRole(QAction.PreferencesRole)
+            self.ui.act_help_about.setMenuRole(QAction.AboutRole)
+            self.ui.act_help_about_juce.setMenuRole(QAction.AboutRole)
+            self.ui.act_help_about_qt.setMenuRole(QAction.AboutQtRole)
+            self.ui.menu_Settings.setTitle("Panels")
+            #self.ui.menu_Help.hide()
 
-        # -------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
+        # Load Settings
 
-        self.setProperWindowTitle()
+        self.loadSettings(True)
 
-        # -------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # Connect actions to functions
 
         self.ui.act_file_new.triggered.connect(self.slot_fileNew)
@@ -318,12 +253,15 @@ class HostWindow(QMainWindow):
         self.ui.b_disk_remove.clicked.connect(self.slot_diskFolderRemove)
         self.ui.fileTreeView.doubleClicked.connect(self.slot_fileTreeDoubleClicked)
 
-        self.DebugCallback.connect(self.slot_handleDebugCallback)
+        self.SIGUSR1.connect(self.slot_handleSIGUSR1)
+        self.SIGTERM.connect(self.slot_handleSIGTERM)
 
-        self.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
-        self.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
-        self.PluginRenamedCallback.connect(self.slot_handlePluginRenamedCallback)
-        self.PluginUnavailableCallback.connect(self.slot_handlePluginUnavailableCallback)
+        host.DebugCallback.connect(self.slot_handleDebugCallback)
+
+        host.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
+        host.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
+        host.PluginRenamedCallback.connect(self.slot_handlePluginRenamedCallback)
+        host.PluginUnavailableCallback.connect(self.slot_handlePluginUnavailableCallback)
 
         # parameter (rack, patchbay)
         # program, midi-program, ui-state (rack, patchbay)
@@ -331,28 +269,34 @@ class HostWindow(QMainWindow):
         # update, reload (rack, patchbay)
         # patchbay
 
-        self.EngineStartedCallback.connect(self.slot_handleEngineStartedCallback)
-        self.EngineStoppedCallback.connect(self.slot_handleEngineStoppedCallback)
+        host.EngineStartedCallback.connect(self.slot_handleEngineStartedCallback)
+        host.EngineStoppedCallback.connect(self.slot_handleEngineStoppedCallback)
 
-        self.ProcessModeChangedCallback.connect(self.slot_handleProcessModeChangedCallback)
-        self.TransportModeChangedCallback.connect(self.slot_handleTransportModeChangedCallback)
+        host.SampleRateChangedCallback.connect(self.slot_handleSampleRateChangedCallback)
 
-        self.BufferSizeChangedCallback.connect(self.slot_handleBufferSizeChangedCallback)
-        self.SampleRateChangedCallback.connect(self.slot_handleSampleRateChangedCallback)
+        host.InfoCallback.connect(self.slot_handleInfoCallback)
+        host.ErrorCallback.connect(self.slot_handleErrorCallback)
+        host.QuitCallback.connect(self.slot_handleQuitCallback)
 
-        self.InfoCallback.connect(self.slot_handleInfoCallback)
-        self.ErrorCallback.connect(self.slot_handleErrorCallback)
-        self.QuitCallback.connect(self.slot_handleQuitCallback)
-
-        self.SIGUSR1.connect(self.slot_handleSIGUSR1)
-        self.SIGTERM.connect(self.slot_handleSIGTERM)
-
-        # -------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # Final setup
 
+        self.setProperWindowTitle()
         QTimer.singleShot(0, self.slot_engineStart)
 
-    # -----------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------
+
+    def setProperWindowTitle(self):
+        title = self.fClientName
+
+        if self.fProjectFilename:
+            title += " - %s" % os.path.basename(self.fProjectFilename)
+        if self.fSessionManagerName:
+            title += " (%s)" % self.fSessionManagerName
+
+        self.setWindowTitle(title)
+
+    # --------------------------------------------------------------------------------------------------------
     # Called by containers
 
     def openSettingsWindow(self, hasCanvas, hasCanvasGL):
@@ -390,7 +334,7 @@ class HostWindow(QMainWindow):
         self.ui.miniCanvasPreview.setViewTheme(canvasBg, canvasBrush, canvasPen)
         self.ui.miniCanvasPreview.init(self.fContainer.scene, canvasWidth, canvasHeight, self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING])
 
-    # -----------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------
     # Internal stuff (files)
 
     def loadProjectNow(self):
@@ -405,10 +349,6 @@ class HostWindow(QMainWindow):
         self.fIsProjectLoading = False
         self.fContainer.projectLoadingFinished()
 
-    @pyqtSlot()
-    def slot_loadProjectNow(self):
-        self.loadProjectNow()
-
     def loadProjectLater(self, filename):
         self.fProjectFilename = QFileInfo(filename).absoluteFilePath()
         self.setProperWindowTitle()
@@ -420,392 +360,7 @@ class HostWindow(QMainWindow):
 
         self.host.save_project(self.fProjectFilename)
 
-    # -----------------------------------------------------------------
-    # Internal stuff (engine)
-
-    def setEngineSettings(self, settings = None):
-        if settings is None: settings = QSettings()
-
-        # -------------------------------------------------------------
-        # read settings (engine base)
-
-        # bool values
-        try:
-            forceStereo = settings.value(CARLA_KEY_ENGINE_FORCE_STEREO, CARLA_DEFAULT_FORCE_STEREO, type=bool)
-        except:
-            forceStereo = CARLA_DEFAULT_FORCE_STEREO
-
-        try:
-            preferPluginBridges = settings.value(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES, type=bool)
-        except:
-            preferPluginBridges = CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES
-
-        try:
-            preferUiBridges = settings.value(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES, CARLA_DEFAULT_PREFER_UI_BRIDGES, type=bool)
-        except:
-            preferUiBridges = CARLA_DEFAULT_PREFER_UI_BRIDGES
-
-        try:
-            uisAlwaysOnTop = settings.value(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, CARLA_DEFAULT_UIS_ALWAYS_ON_TOP, type=bool)
-        except:
-            uisAlwaysOnTop = CARLA_DEFAULT_UIS_ALWAYS_ON_TOP
-
-        # int values
-        try:
-            maxParameters = settings.value(CARLA_KEY_ENGINE_MAX_PARAMETERS, CARLA_DEFAULT_MAX_PARAMETERS, type=int)
-        except:
-            maxParameters = CARLA_DEFAULT_MAX_PARAMETERS
-
-        try:
-            uiBridgesTimeout = settings.value(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT, CARLA_DEFAULT_UI_BRIDGES_TIMEOUT, type=int)
-        except:
-            uiBridgesTimeout = CARLA_DEFAULT_UI_BRIDGES_TIMEOUT
-
-        # -------------------------------------------------------------
-        # read settings (plugin paths)
-
-        LADSPA_PATH = toList(settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH))
-        DSSI_PATH   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH))
-        LV2_PATH    = toList(settings.value(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH))
-        VST_PATH    = toList(settings.value(CARLA_KEY_PATHS_VST,    CARLA_DEFAULT_VST_PATH))
-        VST3_PATH   = toList(settings.value(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH))
-        AU_PATH     = toList(settings.value(CARLA_KEY_PATHS_AU,     CARLA_DEFAULT_AU_PATH))
-        GIG_PATH    = toList(settings.value(CARLA_KEY_PATHS_GIG,    CARLA_DEFAULT_GIG_PATH))
-        SF2_PATH    = toList(settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH))
-        SFZ_PATH    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH))
-
-        # -------------------------------------------------------------
-        # read settings (other)
-
-        # int values
-        try:
-            useCustomSkins = settings.value(CARLA_KEY_MAIN_USE_CUSTOM_SKINS, CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS, type=bool)
-        except:
-            useCustomSkins = CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS
-
-        # -------------------------------------------------------------
-        # read settings (engine advanced)
-
-        if self.host.isPlugin:
-            audioDriver = "Plugin"
-
-        else:
-            # enums
-            try:
-                processMode = settings.value(CARLA_KEY_ENGINE_PROCESS_MODE, CARLA_DEFAULT_PROCESS_MODE, type=int)
-            except:
-                processMode = CARLA_DEFAULT_PROCESS_MODE
-
-            try:
-                transportMode = settings.value(CARLA_KEY_ENGINE_TRANSPORT_MODE, CARLA_DEFAULT_TRANSPORT_MODE, type=int)
-            except:
-                transportMode = CARLA_DEFAULT_TRANSPORT_MODE
-
-            # driver name
-            try:
-                audioDriver = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER, type=str)
-            except:
-                audioDriver = CARLA_DEFAULT_AUDIO_DRIVER
-
-            # driver options
-            try:
-                audioDevice = settings.value("%s%s/Device" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), "", type=str)
-            except:
-                audioDevice = ""
-
-            try:
-                audioNumPeriods = settings.value("%s%s/NumPeriods" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_NUM_PERIODS, type=int)
-            except:
-                audioNumPeriods = CARLA_DEFAULT_AUDIO_NUM_PERIODS
-
-            try:
-                audioBufferSize = settings.value("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_BUFFER_SIZE, type=int)
-            except:
-                audioBufferSize = CARLA_DEFAULT_AUDIO_BUFFER_SIZE
-
-            try:
-                audioSampleRate = settings.value("%s%s/SampleRate" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_SAMPLE_RATE, type=int)
-            except:
-                audioSampleRate = CARLA_DEFAULT_AUDIO_SAMPLE_RATE
-
-            # -------------------------------------------------------------
-            # fix things if needed
-
-            if processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
-                forceStereo = True
-            elif processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS and LADISH_APP_NAME:
-                print("LADISH detected but using multiple clients (not allowed), forcing single client now")
-                processMode = ENGINE_PROCESS_MODE_SINGLE_CLIENT
-
-            if audioDriver != "JACK" and transportMode == ENGINE_TRANSPORT_MODE_JACK:
-                transportMode = ENGINE_TRANSPORT_MODE_INTERNAL
-
-        if self.host.isPlugin:
-            processMode = self.host.processMode
-
-        # -------------------------------------------------------------
-        # save this for later
-
-        self.host.maxParameters = maxParameters
-
-        # -------------------------------------------------------------
-        # apply settings
-
-        self.host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,          forceStereo,         "")
-        self.host.set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, preferPluginBridges, "")
-        self.host.set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     preferUiBridges,     "")
-        self.host.set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     uisAlwaysOnTop,      "")
-        self.host.set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        maxParameters,       "")
-        self.host.set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    uiBridgesTimeout,    "")
-
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LADSPA, splitter.join(LADSPA_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(DSSI_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2,    splitter.join(LV2_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST,    splitter.join(VST_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST3,   splitter.join(VST3_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_AU,     splitter.join(AU_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_GIG,    splitter.join(GIG_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(SF2_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(SFZ_PATH))
-
-        if not self.host.isPlugin:
-            self.host.set_engine_option(ENGINE_OPTION_PROCESS_MODE,          processMode,         "")
-            self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE,        transportMode,       "")
-
-            self.host.set_engine_option(ENGINE_OPTION_AUDIO_NUM_PERIODS,     audioNumPeriods,     "")
-            self.host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE,     audioBufferSize,     "")
-            self.host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE,     audioSampleRate,     "")
-            self.host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE,          0,                   audioDevice)
-
-        # -------------------------------------------------------------
-        # return selected driver name
-
-        return audioDriver
-
-    def startEngine(self):
-        audioDriver = self.setEngineSettings()
-
-        if not self.host.engine_init(audioDriver, self.fClientName):
-            if self.fFirstEngineInit:
-                self.fFirstEngineInit = False
-                return
-
-            audioError = self.host.get_last_error()
-
-            if audioError:
-                QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s', possible reasons:\n%s" % (audioDriver, audioError)))
-            else:
-                QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s'" % audioDriver))
-            return
-
-        self.fFirstEngineInit = False
-
-    def stopEngine(self):
-        if self.fContainer.getPluginCount() > 0:
-            ask = QMessageBox.question(self, self.tr("Warning"), self.tr("There are still some plugins loaded, you need to remove them to stop the engine.\n"
-                                                                         "Do you want to do this now?"),
-                                                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            if ask != QMessageBox.Yes:
-                return
-
-            self.ui.act_plugin_remove_all.setEnabled(False)
-            self.fContainer.removeAllPlugins()
-
-        if self.host.is_engine_running() and not self.host.engine_close():
-            print(self.host.get_last_error())
-
-    # -----------------------------------------------------------------
-    # Internal stuff (plugins)
-
-    def getExtraPtr(self, plugin):
-        ptype = plugin['type']
-
-        if ptype == PLUGIN_LADSPA:
-            uniqueId = plugin['uniqueId']
-
-            self.maybeLoadRDFs()
-
-            for rdfItem in self.fLadspaRdfList:
-                if rdfItem.UniqueID == uniqueId:
-                    return pointer(rdfItem)
-
-        elif ptype in (PLUGIN_GIG, PLUGIN_SF2):
-            if plugin['name'].lower().endswith(" (16 outputs)"):
-                return c_char_p("true".encode("utf-8"))
-
-        return None
-
-    def maybeLoadRDFs(self):
-        if not self.fLadspaRdfNeedsUpdate:
-            return
-
-        self.fLadspaRdfNeedsUpdate = False
-        self.fLadspaRdfList = []
-
-        if not haveLRDF:
-            return
-
-        settingsDir  = os.path.join(HOME, ".config", "falkTX")
-        frLadspaFile = os.path.join(settingsDir, "ladspa_rdf.db")
-
-        if os.path.exists(frLadspaFile):
-            frLadspa = open(frLadspaFile, 'r')
-
-            try:
-                self.fLadspaRdfList = ladspa_rdf.get_c_ladspa_rdfs(json.load(frLadspa))
-            except:
-                pass
-
-            frLadspa.close()
-
-    def setLoadRDFsNeeded(self):
-        self.fLadspaRdfNeedsUpdate = True
-
-    # -----------------------------------------------------------------
-    # Internal stuff (transport)
-
-    def refreshTransport(self, forced = False):
-        if gCarla.sampleRate == 0.0 or not self.host.is_engine_running():
-            return
-
-        timeInfo = self.host.get_transport_info()
-        playing  = bool(timeInfo['playing'])
-        frame    = int(timeInfo['frame'])
-
-        if playing != self.fLastTransportState or forced:
-            if playing:
-                icon = getIcon("media-playback-pause")
-                self.ui.act_transport_play.setChecked(True)
-                self.ui.act_transport_play.setIcon(icon)
-                self.ui.act_transport_play.setText(self.tr("&Pause"))
-            else:
-                icon = getIcon("media-playback-start")
-                self.ui.act_transport_play.setChecked(False)
-                self.ui.act_transport_play.setIcon(icon)
-                self.ui.act_transport_play.setText(self.tr("&Play"))
-
-            self.fLastTransportState = playing
-
-        if frame != self.fLastTransportFrame or forced:
-            time = frame / gCarla.sampleRate
-            secs = time % 60
-            mins = (time / 60) % 60
-            hrs  = (time / 3600) % 60
-
-            self.fTextTransport = "Transport %s, at %02i:%02i:%02i" % ("playing" if playing else "stopped", hrs, mins, secs)
-            self.fLastTransportFrame = frame
-
-    def setTransportMenuEnabled(self, enabled):
-        self.ui.act_transport_play.setEnabled(enabled)
-        self.ui.act_transport_stop.setEnabled(enabled)
-        self.ui.act_transport_backwards.setEnabled(enabled)
-        self.ui.act_transport_forwards.setEnabled(enabled)
-        self.ui.menu_Transport.setEnabled(enabled)
-
-    # -----------------------------------------------------------------
-    # Internal stuff (settings)
-
-    def loadSettings(self, firstTime):
-        settings = QSettings()
-
-        if firstTime:
-            self.restoreGeometry(settings.value("Geometry", ""))
-
-            showToolbar = settings.value("ShowToolbar", True, type=bool)
-            self.ui.act_settings_show_toolbar.setChecked(showToolbar)
-            self.ui.toolBar.setVisible(showToolbar)
-
-            #if settings.contains("SplitterState"):
-                #self.ui.splitter.restoreState(settings.value("SplitterState", ""))
-            #else:
-                #self.ui.splitter.setSizes([210, 99999])
-
-            diskFolders = toList(settings.value("DiskFolders", [HOME]))
-
-            self.ui.cb_disk.setItemData(0, HOME)
-
-            for i in range(len(diskFolders)):
-                if i == 0: continue
-                folder = diskFolders[i]
-                self.ui.cb_disk.addItem(os.path.basename(folder), folder)
-
-            #if MACOS and not settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool):
-            #    self.setUnifiedTitleAndToolBarOnMac(True)
-
-        # ---------------------------------------------
-
-        if not self.host.isPlugin:
-            # engine
-            self.setEngineSettings(settings)
-
-        # ---------------------------------------------
-
-        # TODO
-
-        self.fSavedSettings = {
-            CARLA_KEY_MAIN_PROJECT_FOLDER:     settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER,     CARLA_DEFAULT_MAIN_PROJECT_FOLDER,     type=str),
-            CARLA_KEY_MAIN_REFRESH_INTERVAL:   settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL,   CARLA_DEFAULT_MAIN_REFRESH_INTERVAL,   type=int),
-            CARLA_KEY_CANVAS_THEME:            settings.value(CARLA_KEY_CANVAS_THEME,            CARLA_DEFAULT_CANVAS_THEME,            type=str),
-            CARLA_KEY_CANVAS_SIZE:             settings.value(CARLA_KEY_CANVAS_SIZE,             CARLA_DEFAULT_CANVAS_SIZE,             type=str),
-            CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS: settings.value(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS, CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS, type=bool),
-            CARLA_KEY_CANVAS_USE_BEZIER_LINES: settings.value(CARLA_KEY_CANVAS_USE_BEZIER_LINES, CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES, type=bool),
-            CARLA_KEY_CANVAS_EYE_CANDY:        settings.value(CARLA_KEY_CANVAS_EYE_CANDY,        CARLA_DEFAULT_CANVAS_EYE_CANDY,        type=int),
-            CARLA_KEY_CANVAS_USE_OPENGL:       settings.value(CARLA_KEY_CANVAS_USE_OPENGL,       CARLA_DEFAULT_CANVAS_USE_OPENGL,       type=bool),
-            CARLA_KEY_CANVAS_ANTIALIASING:     settings.value(CARLA_KEY_CANVAS_ANTIALIASING,     CARLA_DEFAULT_CANVAS_ANTIALIASING,     type=int),
-            CARLA_KEY_CANVAS_HQ_ANTIALIASING:  settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING,  CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING,  type=bool),
-            CARLA_KEY_CUSTOM_PAINTING:        (settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool) and
-                                               settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower() == "black")
-        }
-
-        # ---------------------------------------------
-
-        if self.fIdleTimerFast != 0:
-            self.killTimer(self.fIdleTimerFast)
-            self.fIdleTimerFast = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL])
-
-        if self.fIdleTimerSlow != 0:
-            self.killTimer(self.fIdleTimerSlow)
-            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL]*4)
-
-    def saveSettings(self):
-        settings = QSettings()
-
-        settings.setValue("Geometry", self.saveGeometry())
-        #settings.setValue("SplitterState", self.ui.splitter.saveState())
-        settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
-
-        diskFolders = []
-
-        for i in range(self.ui.cb_disk.count()):
-            diskFolders.append(self.ui.cb_disk.itemData(i))
-
-        settings.setValue("DiskFolders", diskFolders)
-
-        self.fContainer.saveSettings(settings)
-
-    # -----------------------------------------------------------------
-    # Internal stuff (gui)
-
-    def killTimers(self):
-        if self.fIdleTimerFast != 0:
-            self.killTimer(self.fIdleTimerFast)
-            self.fIdleTimerFast = 0
-
-        if self.fIdleTimerSlow != 0:
-            self.killTimer(self.fIdleTimerSlow)
-            self.fIdleTimerSlow = 0
-
-    def setProperWindowTitle(self):
-        title = self.fClientName
-
-        if self.fProjectFilename:
-            title += " - %s" % os.path.basename(self.fProjectFilename)
-        if self.fSessionManagerName:
-            title += " (%s)" % self.fSessionManagerName
-
-        self.setWindowTitle(title)
-
-    # -----------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_fileNew(self):
@@ -867,12 +422,133 @@ class HostWindow(QMainWindow):
     def slot_fileSaveAs(self):
         self.slot_fileSave(True)
 
-    # -----------------------------------------------------------------
-
     @pyqtSlot()
-    def slot_engineStart(self, doStart = True):
-        if doStart: self.startEngine()
+    def slot_loadProjectNow(self):
+        self.loadProjectNow()
 
+    # --------------------------------------------------------------------------------------------------------
+    # Internal stuff (engine)
+
+    def setEngineSettings(self):
+        settings = QSettings("falkTX", "Carla2")
+
+        # ----------------------------------------------------------------------------------------------------
+        # main settings
+
+        setHostSettings(self.host)
+
+        # ----------------------------------------------------------------------------------------------------
+        # plugin paths
+
+        LADSPA_PATH = toList(settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH))
+        DSSI_PATH   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH))
+        LV2_PATH    = toList(settings.value(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH))
+        VST_PATH    = toList(settings.value(CARLA_KEY_PATHS_VST,    CARLA_DEFAULT_VST_PATH))
+        VST3_PATH   = toList(settings.value(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH))
+        AU_PATH     = toList(settings.value(CARLA_KEY_PATHS_AU,     CARLA_DEFAULT_AU_PATH))
+        GIG_PATH    = toList(settings.value(CARLA_KEY_PATHS_GIG,    CARLA_DEFAULT_GIG_PATH))
+        SF2_PATH    = toList(settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH))
+        SFZ_PATH    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH))
+
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LADSPA, splitter.join(LADSPA_PATH))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(DSSI_PATH))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2,    splitter.join(LV2_PATH))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST,    splitter.join(VST_PATH))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST3,   splitter.join(VST3_PATH))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_AU,     splitter.join(AU_PATH))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_GIG,    splitter.join(GIG_PATH))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(SF2_PATH))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(SFZ_PATH))
+
+        # ----------------------------------------------------------------------------------------------------
+        # don't continue if plugin
+
+        if self.host.isPlugin:
+            return "Plugin"
+
+        # ----------------------------------------------------------------------------------------------------
+        # driver and device settings
+
+        # driver name
+        try:
+            audioDriver = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER, type=str)
+        except:
+            audioDriver = CARLA_DEFAULT_AUDIO_DRIVER
+
+        # driver options
+        try:
+            audioDevice = settings.value("%s%s/Device" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), "", type=str)
+        except:
+            audioDevice = ""
+
+        try:
+            audioNumPeriods = settings.value("%s%s/NumPeriods" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_NUM_PERIODS, type=int)
+        except:
+            audioNumPeriods = CARLA_DEFAULT_AUDIO_NUM_PERIODS
+
+        try:
+            audioBufferSize = settings.value("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_BUFFER_SIZE, type=int)
+        except:
+            audioBufferSize = CARLA_DEFAULT_AUDIO_BUFFER_SIZE
+
+        try:
+            audioSampleRate = settings.value("%s%s/SampleRate" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_SAMPLE_RATE, type=int)
+        except:
+            audioSampleRate = CARLA_DEFAULT_AUDIO_SAMPLE_RATE
+
+        self.host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE,      0,               audioDevice)
+        self.host.set_engine_option(ENGINE_OPTION_AUDIO_NUM_PERIODS, audioNumPeriods, "")
+        self.host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, audioBufferSize, "")
+        self.host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, audioSampleRate, "")
+
+        # ----------------------------------------------------------------------------------------------------
+        # fix things if needed
+
+        if audioDriver != "JACK" and self.host.transportMode == ENGINE_TRANSPORT_MODE_JACK:
+            self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, ENGINE_TRANSPORT_MODE_INTERNAL, "")
+
+        # ----------------------------------------------------------------------------------------------------
+        # return selected driver name
+
+        return audioDriver
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def startEngine(self):
+        audioDriver = self.setEngineSettings()
+
+        if not self.host.engine_init(audioDriver, self.fClientName):
+            if self.fFirstEngineInit:
+                self.fFirstEngineInit = False
+                return
+
+            audioError = self.host.get_last_error()
+
+            if audioError:
+                QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s', possible reasons:\n%s" % (audioDriver, audioError)))
+            else:
+                QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s'" % audioDriver))
+            return
+
+        self.fFirstEngineInit = False
+
+    def stopEngine(self):
+        if self.fContainer.getPluginCount() > 0:
+            ask = QMessageBox.question(self, self.tr("Warning"), self.tr("There are still some plugins loaded, you need to remove them to stop the engine.\n"
+                                                                         "Do you want to do this now?"),
+                                                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if ask != QMessageBox.Yes:
+                return
+
+            self.ui.act_plugin_remove_all.setEnabled(False)
+            self.fContainer.removeAllPlugins()
+
+        if self.host.is_engine_running() and not self.host.engine_close():
+            print(self.host.get_last_error())
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def handleEngineStarted(self):
         check = self.host.is_engine_running()
         self.ui.menu_PluginMacros.setEnabled(check)
         self.ui.menu_Canvas.setEnabled(check)
@@ -894,10 +570,7 @@ class HostWindow(QMainWindow):
 
             self.fContainer.engineStarted()
 
-    @pyqtSlot()
-    def slot_engineStop(self, doStop = True):
-        if doStop: self.stopEngine()
-
+    def handleEngineStopped(self):
         # FIXME?
         if self.fContainer.getPluginCount() > 0:
             self.ui.act_plugin_remove_all.setEnabled(False)
@@ -922,7 +595,228 @@ class HostWindow(QMainWindow):
             self.fTextTransport = ""
             self.fContainer.engineStopped()
 
+    # --------------------------------------------------------------------------------------------------------
+
+    @pyqtSlot()
+    def slot_engineStart(self):
+        self.startEngine()
+        #self.handleEngineStarted()
+
+    @pyqtSlot()
+    def slot_engineStop(self):
+        self.stopEngine()
+        #self.handleEngineStopped()
+
+    # --------------------------------------------------------------------------------------------------------
+
+    @pyqtSlot(str)
+    def slot_handleEngineStartedCallback(self, processMode, transportMode, driverName):
+        self.fSampleRate = self.host.get_sample_rate()
+        self.handleEngineStarted()
+        self.startTimers()
+
+    @pyqtSlot()
+    def slot_handleEngineStoppedCallback(self):
+        self.killTimers()
+        self.handleEngineStopped()
+        self.fSampleRate = 0.0
+
+    # --------------------------------------------------------------------------------------------------------
+    # Internal stuff (timers)
+
+    def startTimers(self):
+        if self.fIdleTimerFast == 0:
+            self.fIdleTimerFast = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL])
+
+        if self.fIdleTimerSlow == 0:
+            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL]*4)
+
+    def restartTimersIfNeeded(self):
+        if self.fIdleTimerFast != 0:
+            self.killTimer(self.fIdleTimerFast)
+            self.fIdleTimerFast = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL])
+
+        if self.fIdleTimerSlow != 0:
+            self.killTimer(self.fIdleTimerSlow)
+            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL]*4)
+
+    def killTimers(self):
+        if self.fIdleTimerFast != 0:
+            self.killTimer(self.fIdleTimerFast)
+            self.fIdleTimerFast = 0
+
+        if self.fIdleTimerSlow != 0:
+            self.killTimer(self.fIdleTimerSlow)
+            self.fIdleTimerSlow = 0
+
     # -----------------------------------------------------------------
+    # Internal stuff (plugins)
+
+    def getExtraPtr(self, plugin):
+        ptype = plugin['type']
+
+        if ptype == PLUGIN_LADSPA:
+            uniqueId = plugin['uniqueId']
+
+            self.maybeLoadRDFs()
+
+            for rdfItem in self.fLadspaRdfList:
+                if rdfItem.UniqueID == uniqueId:
+                    return pointer(rdfItem)
+
+        elif ptype in (PLUGIN_GIG, PLUGIN_SF2):
+            if plugin['name'].lower().endswith(" (16 outputs)"):
+                return c_char_p("true".encode("utf-8"))
+
+        return None
+
+    def maybeLoadRDFs(self):
+        if not self.fLadspaRdfNeedsUpdate:
+            return
+
+        self.fLadspaRdfNeedsUpdate = False
+        self.fLadspaRdfList = []
+
+        if not haveLRDF:
+            return
+
+        settingsDir  = os.path.join(HOME, ".config", "falkTX")
+        frLadspaFile = os.path.join(settingsDir, "ladspa_rdf.db")
+
+        if os.path.exists(frLadspaFile):
+            frLadspa = open(frLadspaFile, 'r')
+
+            try:
+                self.fLadspaRdfList = ladspa_rdf.get_c_ladspa_rdfs(json.load(frLadspa))
+            except:
+                pass
+
+            frLadspa.close()
+
+    def setLoadRDFsNeeded(self):
+        self.fLadspaRdfNeedsUpdate = True
+
+    # -----------------------------------------------------------------
+    # Internal stuff (transport)
+
+    def refreshTransport(self, forced = False):
+        if self.fSampleRate == 0.0 or not self.host.is_engine_running():
+            return
+
+        timeInfo = self.host.get_transport_info()
+        playing  = bool(timeInfo['playing'])
+        frame    = int(timeInfo['frame'])
+
+        if playing != self.fLastTransportState or forced:
+            if playing:
+                icon = getIcon("media-playback-pause")
+                self.ui.act_transport_play.setChecked(True)
+                self.ui.act_transport_play.setIcon(icon)
+                self.ui.act_transport_play.setText(self.tr("&Pause"))
+            else:
+                icon = getIcon("media-playback-start")
+                self.ui.act_transport_play.setChecked(False)
+                self.ui.act_transport_play.setIcon(icon)
+                self.ui.act_transport_play.setText(self.tr("&Play"))
+
+            self.fLastTransportState = playing
+
+        if frame != self.fLastTransportFrame or forced:
+            time = frame / self.fSampleRate
+            secs = time % 60
+            mins = (time / 60) % 60
+            hrs  = (time / 3600) % 60
+
+            self.fTextTransport = "Transport %s, at %02i:%02i:%02i" % ("playing" if playing else "stopped", hrs, mins, secs)
+            self.fLastTransportFrame = frame
+
+    def setTransportMenuEnabled(self, enabled):
+        self.ui.act_transport_play.setEnabled(enabled)
+        self.ui.act_transport_stop.setEnabled(enabled)
+        self.ui.act_transport_backwards.setEnabled(enabled)
+        self.ui.act_transport_forwards.setEnabled(enabled)
+        self.ui.menu_Transport.setEnabled(enabled)
+
+    # -----------------------------------------------------------------
+    # Internal stuff (settings)
+
+    def loadSettings(self, firstTime):
+        settings = QSettings()
+
+        if firstTime:
+            self.restoreGeometry(settings.value("Geometry", ""))
+
+            showToolbar = settings.value("ShowToolbar", True, type=bool)
+            self.ui.act_settings_show_toolbar.setChecked(showToolbar)
+            self.ui.toolBar.setVisible(showToolbar)
+
+            #if settings.contains("SplitterState"):
+                #self.ui.splitter.restoreState(settings.value("SplitterState", ""))
+            #else:
+                #self.ui.splitter.setSizes([210, 99999])
+
+            diskFolders = toList(settings.value("DiskFolders", [HOME]))
+
+            self.ui.cb_disk.setItemData(0, HOME)
+
+            for i in range(len(diskFolders)):
+                if i == 0: continue
+                folder = diskFolders[i]
+                self.ui.cb_disk.addItem(os.path.basename(folder), folder)
+
+            #if MACOS and not settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool):
+            #    self.setUnifiedTitleAndToolBarOnMac(True)
+
+        # ---------------------------------------------
+
+        if not self.host.isPlugin:
+            # engine
+            self.setEngineSettings()
+
+        # ---------------------------------------------
+
+        # TODO
+
+        self.fSavedSettings = {
+            CARLA_KEY_MAIN_PROJECT_FOLDER:     settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER,     CARLA_DEFAULT_MAIN_PROJECT_FOLDER,     type=str),
+            CARLA_KEY_MAIN_REFRESH_INTERVAL:   settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL,   CARLA_DEFAULT_MAIN_REFRESH_INTERVAL,   type=int),
+            CARLA_KEY_MAIN_USE_CUSTOM_SKINS:   settings.value(CARLA_KEY_MAIN_USE_CUSTOM_SKINS,   CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS,   type=bool),
+            CARLA_KEY_CANVAS_THEME:            settings.value(CARLA_KEY_CANVAS_THEME,            CARLA_DEFAULT_CANVAS_THEME,            type=str),
+            CARLA_KEY_CANVAS_SIZE:             settings.value(CARLA_KEY_CANVAS_SIZE,             CARLA_DEFAULT_CANVAS_SIZE,             type=str),
+            CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS: settings.value(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS, CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS, type=bool),
+            CARLA_KEY_CANVAS_USE_BEZIER_LINES: settings.value(CARLA_KEY_CANVAS_USE_BEZIER_LINES, CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES, type=bool),
+            CARLA_KEY_CANVAS_EYE_CANDY:        settings.value(CARLA_KEY_CANVAS_EYE_CANDY,        CARLA_DEFAULT_CANVAS_EYE_CANDY,        type=int),
+            CARLA_KEY_CANVAS_USE_OPENGL:       settings.value(CARLA_KEY_CANVAS_USE_OPENGL,       CARLA_DEFAULT_CANVAS_USE_OPENGL,       type=bool),
+            CARLA_KEY_CANVAS_ANTIALIASING:     settings.value(CARLA_KEY_CANVAS_ANTIALIASING,     CARLA_DEFAULT_CANVAS_ANTIALIASING,     type=int),
+            CARLA_KEY_CANVAS_HQ_ANTIALIASING:  settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING,  CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING,  type=bool),
+            CARLA_KEY_CUSTOM_PAINTING:        (settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool) and
+                                               settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower() == "black")
+        }
+
+        # ---------------------------------------------
+
+        self.restartTimersIfNeeded()
+
+        # ---------------------------------------------
+
+    def saveSettings(self):
+        settings = QSettings()
+
+        settings.setValue("Geometry", self.saveGeometry())
+        #settings.setValue("SplitterState", self.ui.splitter.saveState())
+        settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
+
+        diskFolders = []
+
+        for i in range(self.ui.cb_disk.count()):
+            diskFolders.append(self.ui.cb_disk.itemData(i))
+
+        settings.setValue("DiskFolders", diskFolders)
+
+        self.fContainer.saveSettings(settings)
+
+    # -----------------------------------------------------------------
+    # Internal stuff (gui)
 
     @pyqtSlot()
     def slot_pluginAdd(self, pluginToReplace = -1):
@@ -1115,47 +1009,10 @@ class HostWindow(QMainWindow):
 
     # -----------------------------------------------------------------
 
-    @pyqtSlot(str)
-    def slot_handleEngineStartedCallback(self, processMode, transportMode, driverName):
-        self.host.processMode   = processMode
-        self.host.transportMode = transportMode
-        gCarla.bufferSize    = self.host.get_buffer_size()
-        gCarla.sampleRate    = self.host.get_sample_rate()
-
-        self.slot_engineStart(False)
-
-        if self.fIdleTimerFast == 0:
-            self.fIdleTimerFast = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL])
-        if self.fIdleTimerSlow == 0:
-            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL]*4)
-
-    @pyqtSlot()
-    def slot_handleEngineStoppedCallback(self):
-        self.killTimers()
-        self.slot_engineStop(False)
-
-        gCarla.bufferSize = 0
-        gCarla.sampleRate = 0.0
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(int)
-    def slot_handleProcessModeChangedCallback(self, newProcessMode):
-        self.fEngineChanged = True
-
-    @pyqtSlot(int)
-    def slot_handleTransportModeChangedCallback(self, newTransportMode):
-        self.fEngineChanged = True
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(int)
-    def slot_handleBufferSizeChangedCallback(self, newBufferSize):
-        self.fEngineChanged = True
-
     @pyqtSlot(float)
     def slot_handleSampleRateChangedCallback(self, newSampleRate):
-        self.fEngineChanged = True
+        self.fSampleRate = newSampleRate
+        self.refreshTransport(True)
 
     # -----------------------------------------------------------------
 
@@ -1192,19 +1049,22 @@ class HostWindow(QMainWindow):
         winIdStr = "%x" % self.winId()
         self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, winIdStr)
 
+    def hideEvent(self, event):
+        # disable parent
+        self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, "0")
+
+        QMainWindow.hideEvent(self, event)
+
+    # -----------------------------------------------------------------
+
     def timerEvent(self, event):
         if event.timerId() == self.fIdleTimerFast:
-            #if not gCarla.isPlugin:
-            self.host.engine_idle()
-            self.refreshTransport()
-
+            #if not self.host.isPlugin:
             self.fContainer.idleFast()
+            self.refreshTransport()
+            self.host.engine_idle()
 
         elif event.timerId() == self.fIdleTimerSlow:
-            if self.fEngineChanged:
-                self.fContainer.engineChanged()
-                self.fEngineChanged = False
-
             self.fContainer.idleSlow()
 
         QMainWindow.timerEvent(self, event)
@@ -1243,118 +1103,111 @@ class HostWindow(QMainWindow):
 # ------------------------------------------------------------------------------------------------------------
 # Engine callback
 
-def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
-    if action == ENGINE_CALLBACK_PROCESS_MODE_CHANGED:
-        gCarla.processMode = value1
-        if gCarla.gui is not None:
-            gCarla.gui.ProcessModeChangedCallback.emit(value1)
-        return
+def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
+    # kdevelop likes this :)
+    if False: host = CarlaHostMeta()
 
-    if action == ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED:
-        gCarla.transportMode = value1
-        if gCarla.gui is not None:
-            gCarla.gui.TransportModeChangedCallback.emit(value1)
-        return
+    # FIXME
+    if host is None: host = gCarla.gui.host
 
-    if action == ENGINE_CALLBACK_BUFFER_SIZE_CHANGED:
-        gCarla.bufferSize = value1
-        if gCarla.gui is not None:
-            gCarla.gui.BufferSizeChangedCallback.emit(value1)
-        return
-
-    if action == ENGINE_CALLBACK_SAMPLE_RATE_CHANGED:
-        gCarla.sampleRate = value1
-        if gCarla.gui is not None:
-            gCarla.gui.SampleRateChangedCallback.emit(value3)
-        return
-
-    if gCarla.gui is None:
-        print("WARNING: Got engine callback but UI is not ready : ", pluginId, value1, value2, value3, valueStr)
-        return
+    if action in (ENGINE_CALLBACK_ENGINE_STARTED,
+                  ENGINE_CALLBACK_PROCESS_MODE_CHANGED,
+                  ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED):
+        if action == ENGINE_CALLBACK_ENGINE_STARTED:
+            host.processMode   = value1
+            host.transportMode = value2
+        elif action == ENGINE_CALLBACK_PROCESS_MODE_CHANGED:
+            host.processMode   = value1
+        elif action == ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED:
+            host.transportMode = value1
 
     valueStr = charPtrToString(valueStr)
 
     if action == ENGINE_CALLBACK_DEBUG:
-        gCarla.gui.DebugCallback.emit(pluginId, value1, value2, value3, valueStr)
+        host.DebugCallback.emit(pluginId, value1, value2, value3, valueStr)
     elif action == ENGINE_CALLBACK_PLUGIN_ADDED:
-        gCarla.gui.PluginAddedCallback.emit(pluginId, valueStr)
+        host.PluginAddedCallback.emit(pluginId, valueStr)
     elif action == ENGINE_CALLBACK_PLUGIN_REMOVED:
-        gCarla.gui.PluginRemovedCallback.emit(pluginId)
+        host.PluginRemovedCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_PLUGIN_RENAMED:
-        gCarla.gui.PluginRenamedCallback.emit(pluginId, valueStr)
+        host.PluginRenamedCallback.emit(pluginId, valueStr)
     elif action == ENGINE_CALLBACK_PLUGIN_UNAVAILABLE:
-        gCarla.gui.PluginUnavailableCallback.emit(pluginId, valueStr)
+        host.PluginUnavailableCallback.emit(pluginId, valueStr)
     elif action == ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
-        gCarla.gui.ParameterValueChangedCallback.emit(pluginId, value1, value3)
+        host.ParameterValueChangedCallback.emit(pluginId, value1, value3)
     elif action == ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
-        gCarla.gui.ParameterDefaultChangedCallback.emit(pluginId, value1, value3)
+        host.ParameterDefaultChangedCallback.emit(pluginId, value1, value3)
     elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
-        gCarla.gui.ParameterMidiCcChangedCallback.emit(pluginId, value1, value2)
+        host.ParameterMidiCcChangedCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
-        gCarla.gui.ParameterMidiChannelChangedCallback.emit(pluginId, value1, value2)
+        host.ParameterMidiChannelChangedCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_PROGRAM_CHANGED:
-        gCarla.gui.ProgramChangedCallback.emit(pluginId, value1)
+        host.ProgramChangedCallback.emit(pluginId, value1)
     elif action == ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
-        gCarla.gui.MidiProgramChangedCallback.emit(pluginId, value1)
+        host.MidiProgramChangedCallback.emit(pluginId, value1)
     elif action == ENGINE_CALLBACK_OPTION_CHANGED:
-        gCarla.gui.OptionChangedCallback.emit(pluginId, value1, bool(value2))
+        host.OptionChangedCallback.emit(pluginId, value1, bool(value2))
     elif action == ENGINE_CALLBACK_UI_STATE_CHANGED:
-        gCarla.gui.UiStateChangedCallback.emit(pluginId, value1)
+        host.UiStateChangedCallback.emit(pluginId, value1)
     elif action == ENGINE_CALLBACK_NOTE_ON:
-        gCarla.gui.NoteOnCallback.emit(pluginId, value1, value2, int(value3))
+        host.NoteOnCallback.emit(pluginId, value1, value2, int(value3))
     elif action == ENGINE_CALLBACK_NOTE_OFF:
-        gCarla.gui.NoteOffCallback.emit(pluginId, value1, value2)
+        host.NoteOffCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_UPDATE:
-        gCarla.gui.UpdateCallback.emit(pluginId)
+        host.UpdateCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_RELOAD_INFO:
-        gCarla.gui.ReloadInfoCallback.emit(pluginId)
+        host.ReloadInfoCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_RELOAD_PARAMETERS:
-        gCarla.gui.ReloadParametersCallback.emit(pluginId)
+        host.ReloadParametersCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_RELOAD_PROGRAMS:
-        gCarla.gui.ReloadProgramsCallback.emit(pluginId)
+        host.ReloadProgramsCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_RELOAD_ALL:
-        gCarla.gui.ReloadAllCallback.emit(pluginId)
+        host.ReloadAllCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED:
-        gCarla.gui.PatchbayClientAddedCallback.emit(pluginId, value1, value2, valueStr)
+        host.PatchbayClientAddedCallback.emit(pluginId, value1, value2, valueStr)
     elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED:
-        gCarla.gui.PatchbayClientRemovedCallback.emit(pluginId)
+        host.PatchbayClientRemovedCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED:
-        gCarla.gui.PatchbayClientRenamedCallback.emit(pluginId, valueStr)
+        host.PatchbayClientRenamedCallback.emit(pluginId, valueStr)
     elif action == ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED:
-        gCarla.gui.PatchbayClientDataChangedCallback.emit(pluginId, value1, value2)
+        host.PatchbayClientDataChangedCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_PATCHBAY_PORT_ADDED:
-        gCarla.gui.PatchbayPortAddedCallback.emit(pluginId, value1, value2, valueStr)
+        host.PatchbayPortAddedCallback.emit(pluginId, value1, value2, valueStr)
     elif action == ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED:
-        gCarla.gui.PatchbayPortRemovedCallback.emit(pluginId, value1)
+        host.PatchbayPortRemovedCallback.emit(pluginId, value1)
     elif action == ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED:
-        gCarla.gui.PatchbayPortRenamedCallback.emit(pluginId, value1, valueStr)
+        host.PatchbayPortRenamedCallback.emit(pluginId, value1, valueStr)
     elif action == ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED:
-        gOut, pOut, gIn, pIn = [int(i) for i in valueStr.split(":")]
-        gCarla.gui.PatchbayConnectionAddedCallback.emit(pluginId, gOut, pOut, gIn, pIn)
+        gOut, pOut, gIn, pIn = [int(i) for i in valueStr.split(":")] # FIXME
+        host.PatchbayConnectionAddedCallback.emit(pluginId, gOut, pOut, gIn, pIn)
     elif action == ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED:
-        gCarla.gui.PatchbayConnectionRemovedCallback.emit(pluginId, value1, value2)
+        host.PatchbayConnectionRemovedCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_ENGINE_STARTED:
-        gCarla.gui.EngineStartedCallback.emit(value1, value2, valueStr)
+        host.EngineStartedCallback.emit(value1, value2, valueStr)
     elif action == ENGINE_CALLBACK_ENGINE_STOPPED:
-        gCarla.gui.killTimers()
-        gCarla.gui.EngineStoppedCallback.emit()
+        host.EngineStoppedCallback.emit()
+    elif action == ENGINE_CALLBACK_PROCESS_MODE_CHANGED:
+        host.ProcessModeChangedCallback.emit(value1)
+    elif action == ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED:
+        host.TransportModeChangedCallback.emit(value1)
+    elif action == ENGINE_CALLBACK_BUFFER_SIZE_CHANGED:
+        host.BufferSizeChangedCallback.emit(value1)
+    elif action == ENGINE_CALLBACK_SAMPLE_RATE_CHANGED:
+        host.SampleRateChangedCallback.emit(value3)
     elif action == ENGINE_CALLBACK_IDLE:
         QApplication.instance().processEvents()
     elif action == ENGINE_CALLBACK_INFO:
-        gCarla.gui.InfoCallback.emit(valueStr)
+        host.InfoCallback.emit(valueStr)
     elif action == ENGINE_CALLBACK_ERROR:
-        gCarla.gui.ErrorCallback.emit(valueStr)
+        host.ErrorCallback.emit(valueStr)
     elif action == ENGINE_CALLBACK_QUIT:
-        gCarla.gui.QuitCallback.emit()
+        host.QuitCallback.emit()
 
 # ------------------------------------------------------------------------------------------------------------
 # File callback
 
 def fileCallback(ptr, action, isDir, title, filter):
-    if gCarla.gui is None:
-        return None
-
-    ret = ""
+    ret = ("", "") if config_UseQt5 else ""
 
     if action == FILE_CALLBACK_DEBUG:
         pass
@@ -1368,14 +1221,22 @@ def fileCallback(ptr, action, isDir, title, filter):
     if not ret:
         return None
 
-    gCarla.gui._fileRet = c_char_p(ret.encode("utf-8"))
-    retval = cast(byref(gCarla.gui._fileRet), POINTER(c_uintptr))
+    global fileRet
+    fileRet = c_char_p(ret.encode("utf-8"))
+    retval  = cast(byref(fileRet), POINTER(c_uintptr))
     return retval.contents.value
 
 # ------------------------------------------------------------------------------------------------------------
 # Init host
 
-def initHost(initName, libPrefix, isControl, isPlugin, failError):
+def initHost(initName, libPrefixOrPluginClass, isControl, isPlugin, failError):
+    if isPlugin:
+        PluginClass = libPrefixOrPluginClass
+        libPrefix   = None
+    else:
+        PluginClass = None
+        libPrefix   = libPrefixOrPluginClass
+
     # --------------------------------------------------------------------------------------------------------
     # Set Carla library name
 
@@ -1454,17 +1315,17 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError):
 
     if failError:
         # no try
-        host = CarlaHostPlugin() if isPlugin else CarlaHostDLL(os.path.join(pathBinaries, libname))
+        host = PluginClass() if isPlugin else CarlaHostDLL(os.path.join(pathBinaries, libname))
     else:
         try:
-            host = CarlaHostPlugin() if isPlugin else CarlaHostDLL(os.path.join(pathBinaries, libname))
+            host = PluginClass() if isPlugin else CarlaHostDLL(os.path.join(pathBinaries, libname))
         except:
             host = CarlaHostNull()
 
     host.isControl = isControl
     host.isPlugin  = isPlugin
 
-    host.set_engine_callback(engineCallback)
+    host.set_engine_callback(lambda h,a,p,v1,v2,v3,vs: engineCallback(host,a,p,v1,v2,v3,vs))
     host.set_file_callback(fileCallback)
 
     # If it's a plugin the paths are already set
@@ -1480,7 +1341,7 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError):
     return host
 
 # ------------------------------------------------------------------------------------------------------------
-# Load host settings (fills host vars with common host settings)
+# Load host settings
 
 def loadHostSettings(host):
     # kdevelop likes this :)
@@ -1540,5 +1401,27 @@ def loadHostSettings(host):
     if host.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS and LADISH_APP_NAME:
         print("LADISH detected but using multiple clients (not allowed), forcing single client now")
         host.processMode = ENGINE_PROCESS_MODE_SINGLE_CLIENT
+
+# ------------------------------------------------------------------------------------------------------------
+# Set host settings
+
+def setHostSettings(host):
+    # kdevelop likes this :)
+    if False: host = CarlaHostMeta()
+
+    host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,          host.forceStereo,         "")
+    host.set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, host.preferPluginBridges, "")
+    host.set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     host.preferUIBridges,     "")
+    host.set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     host.uisAlwaysOnTop,      "")
+    host.set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        host.maxParameters,       "")
+    host.set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    host.uiBridgesTimeout,    "")
+
+    if host.isPlugin:
+        return
+
+    host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE,        host.transportMode,       "")
+
+    if not host.processModeForced:
+        host.set_engine_option(ENGINE_OPTION_PROCESS_MODE,      host.processMode,         "")
 
 # ------------------------------------------------------------------------------------------------------------

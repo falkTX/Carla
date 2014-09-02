@@ -45,6 +45,13 @@ class CarlaMultiW(QTabWidget):
     def __init__(self, parent, host):
         QTabWidget.__init__(self, parent)
 
+        if False:
+            # kdevelop likes this :)
+            host = CarlaHostMeta()
+            self.host = host
+
+        # -------------------------------------------------------------
+
         self.fRack     = CarlaRackW(parent, host, False)
         self.fPatchbay = CarlaPatchbayW(parent, host, False, False)
         self.fParent   = parent
@@ -84,36 +91,36 @@ class CarlaMultiW(QTabWidget):
 
         parent.ui.act_settings_configure.triggered.connect(self.fPatchbay.slot_configureCarla)
 
-        parent.ParameterValueChangedCallback.connect(self.fRack.slot_handleParameterValueChangedCallback)
-        parent.ParameterValueChangedCallback.connect(self.fPatchbay.slot_handleParameterValueChangedCallback)
-        parent.ParameterDefaultChangedCallback.connect(self.fRack.slot_handleParameterDefaultChangedCallback)
-        parent.ParameterMidiChannelChangedCallback.connect(self.fRack.slot_handleParameterMidiChannelChangedCallback)
-        parent.ParameterMidiCcChangedCallback.connect(self.fRack.slot_handleParameterMidiCcChangedCallback)
-        parent.ProgramChangedCallback.connect(self.fRack.slot_handleProgramChangedCallback)
-        parent.MidiProgramChangedCallback.connect(self.fRack.slot_handleMidiProgramChangedCallback)
-        parent.OptionChangedCallback.connect(self.fRack.slot_handleOptionChangedCallback)
-        parent.UiStateChangedCallback.connect(self.fRack.slot_handleUiStateChangedCallback)
-        parent.NoteOnCallback.connect(self.fRack.slot_handleNoteOnCallback)
-        parent.NoteOnCallback.connect(self.fPatchbay.slot_handleNoteOnCallback)
-        parent.NoteOffCallback.connect(self.fRack.slot_handleNoteOffCallback)
-        parent.NoteOffCallback.connect(self.fPatchbay.slot_handleNoteOffCallback)
-        parent.UpdateCallback.connect(self.fRack.slot_handleUpdateCallback)
-        parent.ReloadInfoCallback.connect(self.fRack.slot_handleReloadInfoCallback)
-        parent.ReloadParametersCallback.connect(self.fRack.slot_handleReloadParametersCallback)
-        parent.ReloadParametersCallback.connect(self.fPatchbay.slot_handleReloadParametersCallback)
-        parent.ReloadProgramsCallback.connect(self.fRack.slot_handleReloadProgramsCallback)
-        parent.ReloadAllCallback.connect(self.fRack.slot_handleReloadAllCallback)
-        parent.ReloadAllCallback.connect(self.fPatchbay.slot_handleReloadAllCallback)
+        host.ParameterValueChangedCallback.connect(self.fRack.slot_handleParameterValueChangedCallback)
+        host.ParameterValueChangedCallback.connect(self.fPatchbay.slot_handleParameterValueChangedCallback)
+        host.ParameterDefaultChangedCallback.connect(self.fRack.slot_handleParameterDefaultChangedCallback)
+        host.ParameterMidiChannelChangedCallback.connect(self.fRack.slot_handleParameterMidiChannelChangedCallback)
+        host.ParameterMidiCcChangedCallback.connect(self.fRack.slot_handleParameterMidiCcChangedCallback)
+        host.ProgramChangedCallback.connect(self.fRack.slot_handleProgramChangedCallback)
+        host.MidiProgramChangedCallback.connect(self.fRack.slot_handleMidiProgramChangedCallback)
+        host.OptionChangedCallback.connect(self.fRack.slot_handleOptionChangedCallback)
+        host.UiStateChangedCallback.connect(self.fRack.slot_handleUiStateChangedCallback)
+        host.NoteOnCallback.connect(self.fRack.slot_handleNoteOnCallback)
+        host.NoteOnCallback.connect(self.fPatchbay.slot_handleNoteOnCallback)
+        host.NoteOffCallback.connect(self.fRack.slot_handleNoteOffCallback)
+        host.NoteOffCallback.connect(self.fPatchbay.slot_handleNoteOffCallback)
+        host.UpdateCallback.connect(self.fRack.slot_handleUpdateCallback)
+        host.ReloadInfoCallback.connect(self.fRack.slot_handleReloadInfoCallback)
+        host.ReloadParametersCallback.connect(self.fRack.slot_handleReloadParametersCallback)
+        host.ReloadParametersCallback.connect(self.fPatchbay.slot_handleReloadParametersCallback)
+        host.ReloadProgramsCallback.connect(self.fRack.slot_handleReloadProgramsCallback)
+        host.ReloadAllCallback.connect(self.fRack.slot_handleReloadAllCallback)
+        host.ReloadAllCallback.connect(self.fPatchbay.slot_handleReloadAllCallback)
 
-        parent.PatchbayClientAddedCallback.connect(self.fPatchbay.slot_handlePatchbayClientAddedCallback)
-        parent.PatchbayClientRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayClientRemovedCallback)
-        parent.PatchbayClientRenamedCallback.connect(self.fPatchbay.slot_handlePatchbayClientRenamedCallback)
-        parent.PatchbayClientDataChangedCallback.connect(self.fPatchbay.slot_handlePatchbayClientDataChangedCallback)
-        parent.PatchbayPortAddedCallback.connect(self.fPatchbay.slot_handlePatchbayPortAddedCallback)
-        parent.PatchbayPortRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayPortRemovedCallback)
-        parent.PatchbayPortRenamedCallback.connect(self.fPatchbay.slot_handlePatchbayPortRenamedCallback)
-        parent.PatchbayConnectionAddedCallback.connect(self.fPatchbay.slot_handlePatchbayConnectionAddedCallback)
-        parent.PatchbayConnectionRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayConnectionRemovedCallback)
+        host.PatchbayClientAddedCallback.connect(self.fPatchbay.slot_handlePatchbayClientAddedCallback)
+        host.PatchbayClientRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayClientRemovedCallback)
+        host.PatchbayClientRenamedCallback.connect(self.fPatchbay.slot_handlePatchbayClientRenamedCallback)
+        host.PatchbayClientDataChangedCallback.connect(self.fPatchbay.slot_handlePatchbayClientDataChangedCallback)
+        host.PatchbayPortAddedCallback.connect(self.fPatchbay.slot_handlePatchbayPortAddedCallback)
+        host.PatchbayPortRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayPortRemovedCallback)
+        host.PatchbayPortRenamedCallback.connect(self.fPatchbay.slot_handlePatchbayPortRenamedCallback)
+        host.PatchbayConnectionAddedCallback.connect(self.fPatchbay.slot_handlePatchbayConnectionAddedCallback)
+        host.PatchbayConnectionRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayConnectionRemovedCallback)
 
     # -----------------------------------------------------------------
 
@@ -143,17 +150,14 @@ class CarlaMultiW(QTabWidget):
     # -----------------------------------------------------------------
 
     def engineStarted(self):
+        pass
         #self.fRack.engineStarted()
         #self.fPatchbay.engineStarted()
-        self.fParent.engineChanged()
 
     def engineStopped(self):
         #self.fRack.engineStopped()
         self.fPatchbay.engineStopped()
         self.fParent.engineStopped()
-
-    def engineChanged(self):
-        self.fParent.engineChanged()
 
     # -----------------------------------------------------------------
 
@@ -257,9 +261,9 @@ class CarlaHostW(HostWindow):
         self.fInfoText = ""
         self.fInfoLabel.setText("Engine stopped")
 
-    def engineChanged(self):
-        self.fInfoText = "Engine running | SampleRate: %g | BufferSize: %i" % (gCarla.sampleRate, gCarla.bufferSize)
-        self.fInfoLabel.setText("%s | %s" % (self.fInfoText, self.fTextTransport))
+    #def engineChanged(self):
+        #self.fInfoText = "Engine running | SampleRate: %g | BufferSize: %i" % (gCarla.sampleRate, gCarla.bufferSize)
+        #self.fInfoLabel.setText("%s | %s" % (self.fInfoText, self.fTextTransport))
 
     # -----------------------------------------------------------------
 

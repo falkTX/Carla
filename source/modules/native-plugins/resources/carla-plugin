@@ -26,11 +26,11 @@ from externalui import ExternalUI
 # Host Plugin object
 
 class PluginHost(CarlaHostPlugin):
-    def __init__(self, sampleRate):
+    def __init__(self):
         CarlaHostPlugin.__init__(self)
 
         self.fIsRunning  = True
-        self.fSampleRate = sampleRate
+        self.fSampleRate = float(sys.argv[1]) if len(sys.argv) > 1 else 44100.0
 
     # -------------------------------------------------------------------
 
@@ -64,17 +64,27 @@ class PluginHost(CarlaHostPlugin):
 # Main Window
 
 class CarlaMiniW(ExternalUI, HostWindow):
-    def __init__(self):
+    def __init__(self, host):
+        # need to init this first
+        gCarla.gui = self
+
+        # now the regular stuff
         ExternalUI.__init__(self)
-        HostWindow.__init__(self, None)
+        HostWindow.__init__(self, host)
+        self.host = host
+
+        if False:
+            # kdevelop likes this :)
+            host = CarlaHostPlugin()
+            self.host = host
 
         if sys.argv[0].lower().endswith("/carla-plugin-patchbay"):
             from carla_patchbay import CarlaPatchbayW
-            self.fContainer = CarlaPatchbayW(self)
+            self.fContainer = CarlaPatchbayW(self, host)
             self.setupContainer(True, self.fContainer.themeData)
         else:
             from carla_rack import CarlaRackW
-            self.fContainer = CarlaRackW(self)
+            self.fContainer = CarlaRackW(self, host)
             self.setupContainer(False)
 
         self.setWindowTitle(self.fUiName)
@@ -122,12 +132,12 @@ class CarlaMiniW(ExternalUI, HostWindow):
             elif msg.startswith("PEAKS_"):
                 pluginId = int(msg.replace("PEAKS_", ""))
                 in1, in2, out1, out2 = [float(i) for i in self.readlineblock().split(":")]
-                gCarla.host._set_peaks(pluginId, in1, in2, out1, out2)
+                self.host._set_peaks(pluginId, in1, in2, out1, out2)
 
             elif msg.startswith("PARAMVAL_"):
                 pluginId, paramId = [int(i) for i in msg.replace("PARAMVAL_", "").split(":")]
                 paramValue = float(self.readlineblock())
-                gCarla.host._set_parameterValue(pluginId, paramId, paramValue)
+                self.host._set_parameterValue(pluginId, paramId, paramValue)
 
             elif msg.startswith("ENGINE_CALLBACK_"):
                 action   = int(msg.replace("ENGINE_CALLBACK_", ""))
@@ -138,28 +148,28 @@ class CarlaMiniW(ExternalUI, HostWindow):
                 valueStr = self.readlineblock().replace("\r", "\n")
 
                 if action == ENGINE_CALLBACK_PLUGIN_RENAMED:
-                    gCarla.host._set_pluginName(pluginId, valueStr)
+                    self.host._set_pluginName(pluginId, valueStr)
                 elif action == ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
                     if value1 < 0:
-                        gCarla.host._set_internalValue(pluginId, value1, value3)
+                        self.host._set_internalValue(pluginId, value1, value3)
                     else:
-                        gCarla.host._set_parameterValue(pluginId, value1, value3)
+                        self.host._set_parameterValue(pluginId, value1, value3)
                 elif action == ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
-                    gCarla.host._set_parameterDefault(pluginId, value1, value3)
+                    self.host._set_parameterDefault(pluginId, value1, value3)
                 elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
-                    gCarla.host._set_parameterMidiCC(pluginId, value1, value2)
+                    self.host._set_parameterMidiCC(pluginId, value1, value2)
                 elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
-                    gCarla.host._set_parameterMidiChannel(pluginId, value1, value2)
+                    self.host._set_parameterMidiChannel(pluginId, value1, value2)
                 elif action == ENGINE_CALLBACK_PROGRAM_CHANGED:
-                    gCarla.host._set_currentProgram(pluginId, value1)
+                    self.host._set_currentProgram(pluginId, value1)
                 elif action == ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
-                    gCarla.host._set_currentMidiProgram(pluginId, value1)
+                    self.host._set_currentMidiProgram(pluginId, value1)
 
                 engineCallback(None, action, pluginId, value1, value2, value3, valueStr)
 
             elif msg.startswith("PLUGIN_INFO_"):
                 pluginId = int(msg.replace("PLUGIN_INFO_", ""))
-                gCarla.host._add(pluginId)
+                self.host._add(pluginId)
 
                 type_, category, hints, uniqueId, optsAvail, optsEnabled = [int(i) for i in self.readlineblock().split(":")]
                 filename  = self.readlineblock().replace("\r", "\n")
@@ -185,20 +195,20 @@ class CarlaMiniW(ExternalUI, HostWindow):
                     'patchbayClientId': 0,
                     'uniqueId': uniqueId
                 }
-                gCarla.host._set_pluginInfo(pluginId, pinfo)
-                gCarla.host._set_pluginRealName(pluginId, realName)
+                self.host._set_pluginInfo(pluginId, pinfo)
+                self.host._set_pluginRealName(pluginId, realName)
 
             elif msg.startswith("AUDIO_COUNT_"):
                 pluginId, ins, outs = [int(i) for i in msg.replace("AUDIO_COUNT_", "").split(":")]
-                gCarla.host._set_audioCountInfo(pluginId, {'ins': ins, 'outs': outs})
+                self.host._set_audioCountInfo(pluginId, {'ins': ins, 'outs': outs})
 
             elif msg.startswith("MIDI_COUNT_"):
                 pluginId, ins, outs = [int(i) for i in msg.replace("MIDI_COUNT_", "").split(":")]
-                gCarla.host._set_midiCountInfo(pluginId, {'ins': ins, 'outs': outs})
+                self.host._set_midiCountInfo(pluginId, {'ins': ins, 'outs': outs})
 
             elif msg.startswith("PARAMETER_COUNT_"):
                 pluginId, ins, outs, count = [int(i) for i in msg.replace("PARAMETER_COUNT_", "").split(":")]
-                gCarla.host._set_parameterCountInfo(pluginId, count, {'ins': ins, 'outs': outs})
+                self.host._set_parameterCountInfo(pluginId, count, {'ins': ins, 'outs': outs})
 
             elif msg.startswith("PARAMETER_DATA_"):
                 pluginId, paramId = [int(i) for i in msg.replace("PARAMETER_DATA_", "").split(":")]
@@ -212,7 +222,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
                     'unit': paramUnit,
                     'scalePointCount': 0,
                 }
-                gCarla.host._set_parameterInfo(pluginId, paramId, paramInfo)
+                self.host._set_parameterInfo(pluginId, paramId, paramInfo)
 
                 paramData = {
                     'type': paramType,
@@ -222,7 +232,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
                     'midiCC': midiCC,
                     'midiChannel': midiChannel
                 }
-                gCarla.host._set_parameterData(pluginId, paramId, paramData)
+                self.host._set_parameterData(pluginId, paramId, paramData)
 
             elif msg.startswith("PARAMETER_RANGES_"):
                 pluginId, paramId = [int(i) for i in msg.replace("PARAMETER_RANGES_", "").split(":")]
@@ -236,28 +246,28 @@ class CarlaMiniW(ExternalUI, HostWindow):
                     'stepSmall': stepSmall,
                     'stepLarge': stepLarge
                 }
-                gCarla.host._set_parameterRanges(pluginId, paramId, paramRanges)
+                self.host._set_parameterRanges(pluginId, paramId, paramRanges)
 
             elif msg.startswith("PROGRAM_COUNT_"):
                 pluginId, count, current = [int(i) for i in msg.replace("PROGRAM_COUNT_", "").split(":")]
-                gCarla.host._set_programCount(pluginId, count)
-                gCarla.host._set_currentProgram(pluginId, current)
+                self.host._set_programCount(pluginId, count)
+                self.host._set_currentProgram(pluginId, current)
 
             elif msg.startswith("PROGRAM_NAME_"):
                 pluginId, progId = [int(i) for i in msg.replace("PROGRAM_NAME_", "").split(":")]
                 progName = self.readlineblock().replace("\r", "\n")
-                gCarla.host._set_programName(pluginId, progId, progName)
+                self.host._set_programName(pluginId, progId, progName)
 
             elif msg.startswith("MIDI_PROGRAM_COUNT_"):
                 pluginId, count, current = [int(i) for i in msg.replace("MIDI_PROGRAM_COUNT_", "").split(":")]
-                gCarla.host._set_midiProgramCount(pluginId, count)
-                gCarla.host._set_currentMidiProgram(pluginId, current)
+                self.host._set_midiProgramCount(pluginId, count)
+                self.host._set_currentMidiProgram(pluginId, current)
 
             elif msg.startswith("MIDI_PROGRAM_DATA_"):
                 pluginId, midiProgId = [int(i) for i in msg.replace("MIDI_PROGRAM_DATA_", "").split(":")]
                 bank, program = [int(i) for i in self.readlineblock().split(":")]
                 name = self.readlineblock().replace("\r", "\n")
-                gCarla.host._set_midiProgramData(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
+                self.host._set_midiProgramData(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
 
             elif msg == "error":
                 error = self.readlineblock().replace("\r", "\n")
@@ -297,34 +307,25 @@ if __name__ == '__main__':
     setUpSignals()
 
     # -------------------------------------------------------------
-    # Init plugin host data
+    # Init host backend
 
-    gCarla.isControl   = False
-    gCarla.isLocal     = True
-    gCarla.isPlugin    = True
-    gCarla.processMode = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+    host = initHost("Carla-Plugin", PluginHost, False, True, True)
+    host.processMode = ENGINE_PROCESS_MODE_PATCHBAY if sys.argv[0].lower().endswith("/carla-plugin-patchbay") else ENGINE_PROCESS_MODE_CONTINUOUS_RACK
 
-    # -------------------------------------------------------------
-    # Create GUI first
-
-    gCarla.gui = CarlaMiniW()
+    # FIXME
+    loadHostSettings(host)
 
     # -------------------------------------------------------------
-    # Init plugin host now
+    # Create GUI
 
-    gCarla.host = PluginHost(gCarla.gui.d_getSampleRate())
+    gCarla.gui = CarlaMiniW(host)
 
-    initHost("Carla-Plugin")
+    # -------------------------------------------------------------
+    # simulate an engire started callback FIXME
 
-    # simulate an engire started callback
-    engineCallback(None, ENGINE_CALLBACK_ENGINE_STARTED, 0, ENGINE_PROCESS_MODE_CONTINUOUS_RACK, ENGINE_TRANSPORT_MODE_PLUGIN, 0.0, "Plugin")
+    engineCallback(host, ENGINE_CALLBACK_ENGINE_STARTED, 0, host.processMode, ENGINE_TRANSPORT_MODE_PLUGIN, 0.0, "Plugin")
 
     # -------------------------------------------------------------
     # App-Loop
 
-    ret = app.exec_()
-
-    # disable parenting
-    gCarla.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, "0")
-
-    sys.exit(ret)
+    app.exit_exec()

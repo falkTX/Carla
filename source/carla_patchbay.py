@@ -102,7 +102,8 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
 
         if False:
             # kdevelop likes this :)
-            self.host = host = CarlaHostMeta()
+            host = CarlaHostMeta()
+            self.host = host
 
         # -------------------------------------------------------------
 
@@ -230,29 +231,29 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
 
         parent.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
 
-        parent.ParameterValueChangedCallback.connect(self.slot_handleParameterValueChangedCallback)
-        parent.ParameterDefaultChangedCallback.connect(self.slot_handleParameterDefaultChangedCallback)
-        parent.ParameterMidiChannelChangedCallback.connect(self.slot_handleParameterMidiChannelChangedCallback)
-        parent.ParameterMidiCcChangedCallback.connect(self.slot_handleParameterMidiCcChangedCallback)
-        parent.ProgramChangedCallback.connect(self.slot_handleProgramChangedCallback)
-        parent.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
-        parent.OptionChangedCallback.connect(self.slot_handleOptionChangedCallback)
-        parent.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
-        parent.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
-        parent.UpdateCallback.connect(self.slot_handleUpdateCallback)
-        parent.ReloadInfoCallback.connect(self.slot_handleReloadInfoCallback)
-        parent.ReloadParametersCallback.connect(self.slot_handleReloadParametersCallback)
-        parent.ReloadProgramsCallback.connect(self.slot_handleReloadProgramsCallback)
-        parent.ReloadAllCallback.connect(self.slot_handleReloadAllCallback)
-        parent.PatchbayClientAddedCallback.connect(self.slot_handlePatchbayClientAddedCallback)
-        parent.PatchbayClientRemovedCallback.connect(self.slot_handlePatchbayClientRemovedCallback)
-        parent.PatchbayClientRenamedCallback.connect(self.slot_handlePatchbayClientRenamedCallback)
-        parent.PatchbayClientDataChangedCallback.connect(self.slot_handlePatchbayClientDataChangedCallback)
-        parent.PatchbayPortAddedCallback.connect(self.slot_handlePatchbayPortAddedCallback)
-        parent.PatchbayPortRemovedCallback.connect(self.slot_handlePatchbayPortRemovedCallback)
-        parent.PatchbayPortRenamedCallback.connect(self.slot_handlePatchbayPortRenamedCallback)
-        parent.PatchbayConnectionAddedCallback.connect(self.slot_handlePatchbayConnectionAddedCallback)
-        parent.PatchbayConnectionRemovedCallback.connect(self.slot_handlePatchbayConnectionRemovedCallback)
+        host.ParameterValueChangedCallback.connect(self.slot_handleParameterValueChangedCallback)
+        host.ParameterDefaultChangedCallback.connect(self.slot_handleParameterDefaultChangedCallback)
+        host.ParameterMidiChannelChangedCallback.connect(self.slot_handleParameterMidiChannelChangedCallback)
+        host.ParameterMidiCcChangedCallback.connect(self.slot_handleParameterMidiCcChangedCallback)
+        host.ProgramChangedCallback.connect(self.slot_handleProgramChangedCallback)
+        host.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
+        host.OptionChangedCallback.connect(self.slot_handleOptionChangedCallback)
+        host.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
+        host.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
+        host.UpdateCallback.connect(self.slot_handleUpdateCallback)
+        host.ReloadInfoCallback.connect(self.slot_handleReloadInfoCallback)
+        host.ReloadParametersCallback.connect(self.slot_handleReloadParametersCallback)
+        host.ReloadProgramsCallback.connect(self.slot_handleReloadProgramsCallback)
+        host.ReloadAllCallback.connect(self.slot_handleReloadAllCallback)
+        host.PatchbayClientAddedCallback.connect(self.slot_handlePatchbayClientAddedCallback)
+        host.PatchbayClientRemovedCallback.connect(self.slot_handlePatchbayClientRemovedCallback)
+        host.PatchbayClientRenamedCallback.connect(self.slot_handlePatchbayClientRenamedCallback)
+        host.PatchbayClientDataChangedCallback.connect(self.slot_handlePatchbayClientDataChangedCallback)
+        host.PatchbayPortAddedCallback.connect(self.slot_handlePatchbayPortAddedCallback)
+        host.PatchbayPortRemovedCallback.connect(self.slot_handlePatchbayPortRemovedCallback)
+        host.PatchbayPortRenamedCallback.connect(self.slot_handlePatchbayPortRenamedCallback)
+        host.PatchbayConnectionAddedCallback.connect(self.slot_handlePatchbayConnectionAddedCallback)
+        host.PatchbayConnectionRemovedCallback.connect(self.slot_handlePatchbayConnectionRemovedCallback)
 
     # -----------------------------------------------------------------
 
@@ -336,9 +337,6 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
 
     def engineStopped(self):
         patchcanvas.clear()
-
-    def engineChanged(self):
-        pass
 
     # -----------------------------------------------------------------
 

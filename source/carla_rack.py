@@ -305,21 +305,21 @@ class CarlaRackW(QFrame):
 
         parent.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
 
-        parent.ParameterValueChangedCallback.connect(self.slot_handleParameterValueChangedCallback)
-        parent.ParameterDefaultChangedCallback.connect(self.slot_handleParameterDefaultChangedCallback)
-        parent.ParameterMidiChannelChangedCallback.connect(self.slot_handleParameterMidiChannelChangedCallback)
-        parent.ParameterMidiCcChangedCallback.connect(self.slot_handleParameterMidiCcChangedCallback)
-        parent.ProgramChangedCallback.connect(self.slot_handleProgramChangedCallback)
-        parent.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
-        parent.OptionChangedCallback.connect(self.slot_handleOptionChangedCallback)
-        parent.UiStateChangedCallback.connect(self.slot_handleUiStateChangedCallback)
-        parent.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
-        parent.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
-        parent.UpdateCallback.connect(self.slot_handleUpdateCallback)
-        parent.ReloadInfoCallback.connect(self.slot_handleReloadInfoCallback)
-        parent.ReloadParametersCallback.connect(self.slot_handleReloadParametersCallback)
-        parent.ReloadProgramsCallback.connect(self.slot_handleReloadProgramsCallback)
-        parent.ReloadAllCallback.connect(self.slot_handleReloadAllCallback)
+        host.ParameterValueChangedCallback.connect(self.slot_handleParameterValueChangedCallback)
+        host.ParameterDefaultChangedCallback.connect(self.slot_handleParameterDefaultChangedCallback)
+        host.ParameterMidiChannelChangedCallback.connect(self.slot_handleParameterMidiChannelChangedCallback)
+        host.ParameterMidiCcChangedCallback.connect(self.slot_handleParameterMidiCcChangedCallback)
+        host.ProgramChangedCallback.connect(self.slot_handleProgramChangedCallback)
+        host.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
+        host.OptionChangedCallback.connect(self.slot_handleOptionChangedCallback)
+        host.UiStateChangedCallback.connect(self.slot_handleUiStateChangedCallback)
+        host.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
+        host.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
+        host.UpdateCallback.connect(self.slot_handleUpdateCallback)
+        host.ReloadInfoCallback.connect(self.slot_handleReloadInfoCallback)
+        host.ReloadParametersCallback.connect(self.slot_handleReloadParametersCallback)
+        host.ReloadProgramsCallback.connect(self.slot_handleReloadProgramsCallback)
+        host.ReloadAllCallback.connect(self.slot_handleReloadAllCallback)
 
     # -----------------------------------------------------------------
 
@@ -398,9 +398,6 @@ class CarlaRackW(QFrame):
         pass
 
     def engineStopped(self):
-        pass
-
-    def engineChanged(self):
         pass
 
     # -----------------------------------------------------------------
