@@ -567,16 +567,15 @@ class HostWindow(QMainWindow):
             self.setTransportMenuEnabled(check)
 
         if check:
-            if not self.host.isPlugin:
-                self.refreshTransport(True)
-
+            self.fLastTransportFrame = 0
+            self.fLastTransportState = False
+            self.refreshTransport(True)
             self.fContainer.engineStarted()
 
     def handleEngineStopped(self):
-        # FIXME?
-        if self.fContainer.getPluginCount() > 0:
-            self.ui.act_plugin_remove_all.setEnabled(False)
-            self.fContainer.removeAllPlugins()
+        # just in case
+        self.ui.act_plugin_remove_all.setEnabled(False)
+        self.fContainer.removeAllPlugins()
 
         check = self.host.is_engine_running()
         self.ui.menu_PluginMacros.setEnabled(check)
@@ -668,7 +667,9 @@ class HostWindow(QMainWindow):
 
         elif ptype in (PLUGIN_GIG, PLUGIN_SF2):
             if plugin['name'].lower().endswith(" (16 outputs)"):
-                return c_char_p("true".encode("utf-8"))
+                global _true
+                _true = c_char_p("true".encode("utf-8"))
+                return _true
 
         return None
 
@@ -695,6 +696,7 @@ class HostWindow(QMainWindow):
 
             frLadspa.close()
 
+    # FIXME - put above?
     def setLoadRDFsNeeded(self):
         self.fLadspaRdfNeedsUpdate = True
 
@@ -771,12 +773,6 @@ class HostWindow(QMainWindow):
 
         # ---------------------------------------------
 
-        if not self.host.isPlugin:
-            # engine
-            self.setEngineSettings()
-
-        # ---------------------------------------------
-
         # TODO
 
         self.fSavedSettings = {
@@ -796,6 +792,8 @@ class HostWindow(QMainWindow):
         }
 
         # ---------------------------------------------
+
+        self.setEngineSettings()
 
         self.restartTimersIfNeeded()
 
@@ -871,6 +869,33 @@ class HostWindow(QMainWindow):
 
         #self.fContainer.removeAllPlugins()
         #self.host.remove_all_plugins()
+
+    # -----------------------------------------------------------------
+
+    # TODO clear this, move them into containers
+    @pyqtSlot(int, str)
+    def slot_handlePluginAddedCallback(self, pluginId, pluginName):
+        self.fContainer.addPlugin(pluginId, self.fIsProjectLoading)
+
+        # FIXME ask host directly for plugin count
+        if self.fContainer.getPluginCount() == 1:
+            self.ui.act_plugin_remove_all.setEnabled(True)
+
+    @pyqtSlot(int)
+    def slot_handlePluginRemovedCallback(self, pluginId):
+        self.fContainer.removePlugin(pluginId)
+
+        # FIXME ask host directly for plugin count
+        if self.fContainer.getPluginCount() == 0:
+            self.ui.act_plugin_remove_all.setEnabled(False)
+
+    @pyqtSlot(int, str)
+    def slot_handlePluginRenamedCallback(self, pluginId, newName):
+        self.fContainer.renamePlugin(pluginId, newName)
+
+    @pyqtSlot(int, str)
+    def slot_handlePluginUnavailableCallback(self, pluginId, errorMsg):
+        self.fContainer.disablePlugin(pluginId, errorMsg)
 
     # -----------------------------------------------------------------
 
@@ -984,30 +1009,6 @@ class HostWindow(QMainWindow):
     def slot_handleDebugCallback(self, pluginId, value1, value2, value3, valueStr):
         print("DEBUG:", pluginId, value1, value2, value3, valueStr)
         #self.ui.pte_log.appendPlainText(valueStr.replace("[30;1m", "DEBUG: ").replace("[31m", "ERROR: ").replace("[0m", "").replace("\n", ""))
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(int, str)
-    def slot_handlePluginAddedCallback(self, pluginId, pluginName):
-        self.fContainer.addPlugin(pluginId, self.fIsProjectLoading)
-
-        if self.fContainer.getPluginCount() == 1:
-            self.ui.act_plugin_remove_all.setEnabled(True)
-
-    @pyqtSlot(int)
-    def slot_handlePluginRemovedCallback(self, pluginId):
-        self.fContainer.removePlugin(pluginId)
-
-        if self.fContainer.getPluginCount() == 0:
-            self.ui.act_plugin_remove_all.setEnabled(False)
-
-    @pyqtSlot(int, str)
-    def slot_handlePluginRenamedCallback(self, pluginId, newName):
-        self.fContainer.renamePlugin(pluginId, newName)
-
-    @pyqtSlot(int, str)
-    def slot_handlePluginUnavailableCallback(self, pluginId, errorMsg):
-        self.fContainer.disablePlugin(pluginId, errorMsg)
 
     # -----------------------------------------------------------------
 
