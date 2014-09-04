@@ -342,13 +342,18 @@ class CarlaSettingsW(QDialog):
                 self.ui.cb_engine_audio_driver.setCurrentIndex(-1)
 
         if audioDriver == "JACK":
-            self.ui.cb_engine_process_mode_jack.setCurrentIndex(self.host.processMode)
             self.ui.sw_engine_process_mode.setCurrentIndex(0)
             self.ui.tb_engine_driver_config.setEnabled(False)
         else:
-            self.ui.cb_engine_process_mode_other.setCurrentIndex(self.host.processMode-self.PROCESS_MODE_NON_JACK_PADDING)
             self.ui.sw_engine_process_mode.setCurrentIndex(1)
             self.ui.tb_engine_driver_config.setEnabled(not self.host.isPlugin)
+
+        self.ui.cb_engine_process_mode_jack.setCurrentIndex(self.host.processMode)
+
+        if self.host.processMode >= self.PROCESS_MODE_NON_JACK_PADDING:
+            self.ui.cb_engine_process_mode_other.setCurrentIndex(self.host.processMode-self.PROCESS_MODE_NON_JACK_PADDING)
+        else:
+            self.ui.cb_engine_process_mode_other.setCurrentIndex(0)
 
         self.ui.sb_engine_max_params.setValue(self.host.maxParameters)
         self.ui.ch_engine_uis_always_on_top.setChecked(self.host.uisAlwaysOnTop)
