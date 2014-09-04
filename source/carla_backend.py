@@ -1514,6 +1514,17 @@ class CarlaHostMeta(QObject):
     def get_transport_info(self):
         raise NotImplementedError
 
+    # Current number of plugins loaded.
+    @abstractmethod
+    def get_current_plugin_count(self):
+        raise NotImplementedError
+
+    # Maximum number of loadable plugins allowed.
+    # Returns 0 if engine is not started.
+    @abstractmethod
+    def get_max_plugin_number(self):
+        raise NotImplementedError
+
     # Add a new plugin.
     # If you don't know the binary type use the BINARY_NATIVE macro.
     # @param btype    Binary type
@@ -2035,6 +2046,12 @@ class CarlaHostNull(CarlaHostMeta):
     def get_transport_info(self):
         return PyCarlaTransportInfo
 
+    def get_current_plugin_count(self):
+        return 0
+
+    def get_max_plugin_number(self):
+        return 0
+
     def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr):
         return False
 
@@ -2311,6 +2328,12 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_get_transport_info.argtypes = None
         self.lib.carla_get_transport_info.restype = POINTER(CarlaTransportInfo)
 
+        self.lib.carla_get_current_plugin_count.argtypes = None
+        self.lib.carla_get_current_plugin_count.restype = c_uint32
+
+        self.lib.carla_get_max_plugin_number.argtypes = None
+        self.lib.carla_get_max_plugin_number.restype = c_uint32
+
         self.lib.carla_add_plugin.argtypes = [c_enum, c_enum, c_char_p, c_char_p, c_char_p, c_int64, c_void_p]
         self.lib.carla_add_plugin.restype = c_bool
 
@@ -2578,6 +2601,12 @@ class CarlaHostDLL(CarlaHostMeta):
 
     def get_transport_info(self):
         return structToDict(self.lib.carla_get_transport_info().contents)
+
+    def get_current_plugin_count(self):
+        return int(self.lib.carla_get_current_plugin_count())
+
+    def get_max_plugin_number(self):
+        return int(self.lib.carla_get_max_plugin_number())
 
     def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr):
         cfilename = filename.encode("utf-8") if filename else None
@@ -2911,6 +2940,12 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     def get_transport_info(self):
         return self.fTransportInfo
+
+    def get_current_plugin_count(self):
+        return len(self.fPluginsInfo)
+
+    def get_max_plugin_number(self):
+        return 0 # TODO
 
     def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr):
         return self.sendMsgAndSetError(["add_plugin", btype, ptype, filename, name, label, uniqueId])

@@ -231,6 +231,10 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
 
         parent.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
 
+        host.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
+        host.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
+        host.PluginRenamedCallback.connect(self.slot_handlePluginRenamedCallback)
+        host.PluginUnavailableCallback.connect(self.slot_handlePluginUnavailableCallback)
         host.ParameterValueChangedCallback.connect(self.slot_handleParameterValueChangedCallback)
         host.ParameterDefaultChangedCallback.connect(self.slot_handleParameterDefaultChangedCallback)
         host.ParameterMidiChannelChangedCallback.connect(self.slot_handleParameterMidiChannelChangedCallback)
@@ -677,6 +681,24 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
 
     # -----------------------------------------------------------------
 
+    @pyqtSlot(int, str)
+    def slot_handlePluginAddedCallback(self, pluginId, pluginName):
+        self.addPlugin(pluginId, self.fParent.isProjectLoading())
+
+    @pyqtSlot(int)
+    def slot_handlePluginRemovedCallback(self, pluginId):
+        self.removePlugin(pluginId)
+
+    @pyqtSlot(int, str)
+    def slot_handlePluginRenamedCallback(self, pluginId, newName):
+        self.renamePlugin(pluginId, newName)
+
+    @pyqtSlot(int, str)
+    def slot_handlePluginUnavailableCallback(self, pluginId, errorMsg):
+        self.disablePlugin(pluginId, errorMsg)
+
+    # -----------------------------------------------------------------
+
     @pyqtSlot(int, int, float)
     def slot_handleParameterValueChangedCallback(self, pluginId, index, value):
         if pluginId >= self.fPluginCount:
@@ -911,7 +933,7 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
         if pluginId < 0:
             return
         if pluginId >= self.fPluginCount:
-            print("sorry, can't map this plugin to canvas client", pluginId, self.getPluginCount())
+            print("sorry, can't map this plugin to canvas client", pluginId, self.fPluginCount)
             return
 
         patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(self.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI))

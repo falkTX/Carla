@@ -546,6 +546,17 @@ CARLA_EXPORT const CarlaTransportInfo* carla_get_transport_info();
 #endif
 
 /*!
+ * Current number of plugins loaded.
+ */
+CARLA_EXPORT uint32_t carla_get_current_plugin_count();
+
+/*!
+ * Maximum number of loadable plugins allowed.
+ * Returns 0 if engine is not started.
+ */
+CARLA_EXPORT uint32_t carla_get_max_plugin_number();
+
+/*!
  * Add a new plugin.
  * If you don't know the binary type use the BINARY_NATIVE macro.
  * @param btype    Binary type

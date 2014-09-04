@@ -62,20 +62,17 @@ class HostWidgetMeta(object):
 
     # --------------------------------------------------------------------------------------------------------
 
-    def getPluginCount(self):
-        raise NotImplementedError
+    #def addPlugin(self, pluginId, isProjectLoading):
+        #raise NotImplementedError
 
-    def addPlugin(self, pluginId, isProjectLoading):
-        raise NotImplementedError
+    #def removePlugin(self, pluginId):
+        #raise NotImplementedError
 
-    def removePlugin(self, pluginId):
-        raise NotImplementedError
+    #def renamePlugin(self, pluginId, newName):
+        #raise NotImplementedError
 
-    def renamePlugin(self, pluginId, newName):
-        raise NotImplementedError
-
-    def disablePlugin(self, pluginId, errorMsg):
-        raise NotImplementedError
+    #def disablePlugin(self, pluginId, errorMsg):
+        #raise NotImplementedError
 
     def removeAllPlugins(self):
         raise NotImplementedError
@@ -256,24 +253,14 @@ class HostWindow(QMainWindow):
         self.SIGUSR1.connect(self.slot_handleSIGUSR1)
         self.SIGTERM.connect(self.slot_handleSIGTERM)
 
-        host.DebugCallback.connect(self.slot_handleDebugCallback)
+        host.EngineStartedCallback.connect(self.slot_handleEngineStartedCallback)
+        host.EngineStoppedCallback.connect(self.slot_handleEngineStoppedCallback)
+        host.SampleRateChangedCallback.connect(self.slot_handleSampleRateChangedCallback)
 
         host.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
         host.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
-        host.PluginRenamedCallback.connect(self.slot_handlePluginRenamedCallback)
-        host.PluginUnavailableCallback.connect(self.slot_handlePluginUnavailableCallback)
 
-        # parameter (rack, patchbay)
-        # program, midi-program, ui-state (rack, patchbay)
-        # note on, off (rack, patchbay)
-        # update, reload (rack, patchbay)
-        # patchbay
-
-        host.EngineStartedCallback.connect(self.slot_handleEngineStartedCallback)
-        host.EngineStoppedCallback.connect(self.slot_handleEngineStoppedCallback)
-
-        host.SampleRateChangedCallback.connect(self.slot_handleSampleRateChangedCallback)
-
+        host.DebugCallback.connect(self.slot_handleDebugCallback)
         host.InfoCallback.connect(self.slot_handleInfoCallback)
         host.ErrorCallback.connect(self.slot_handleErrorCallback)
         host.QuitCallback.connect(self.slot_handleQuitCallback)
@@ -282,6 +269,7 @@ class HostWindow(QMainWindow):
         # Final setup
 
         self.setProperWindowTitle()
+
         QTimer.singleShot(0, self.slot_engineStart)
 
     # --------------------------------------------------------------------------------------------------------
@@ -298,6 +286,15 @@ class HostWindow(QMainWindow):
 
     # --------------------------------------------------------------------------------------------------------
     # Called by containers
+
+    def isProjectLoading(self):
+        return self.fIsProjectLoading
+
+    def getSavedSettings(self):
+        return self.fSavedSettings
+
+    def setLoadRDFsNeeded(self):
+        self.fLadspaRdfNeedsUpdate = True
 
     def openSettingsWindow(self, hasCanvas, hasCanvasGL):
         hasEngine = bool(self.fSessionManagerName != "Non Session Manager")
@@ -335,6 +332,19 @@ class HostWindow(QMainWindow):
         canvasWidth, canvasHeight, canvasBg, canvasBrush, canvasPen = canvasThemeData
         self.ui.miniCanvasPreview.setViewTheme(canvasBg, canvasBrush, canvasPen)
         self.ui.miniCanvasPreview.init(self.fContainer.scene, canvasWidth, canvasHeight, self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING])
+
+    # --------------------------------------------------------------------------------------------------------
+    # Called by the signal handler
+
+    @pyqtSlot()
+    def slot_handleSIGUSR1(self):
+        print("Got SIGUSR1 -> Saving project now")
+        self.slot_fileSave()
+
+    @pyqtSlot()
+    def slot_handleSIGTERM(self):
+        print("Got SIGTERM -> Closing now")
+        self.close()
 
     # --------------------------------------------------------------------------------------------------------
     # Internal stuff (files)
@@ -382,7 +392,7 @@ class HostWindow(QMainWindow):
 
         newFile = True
 
-        if self.fContainer.getPluginCount() > 0:
+        if self.host.get_current_plugin_count() > 0:
             ask = QMessageBox.question(self, self.tr("Question"), self.tr("There are some plugins loaded, do you want to remove them now?"),
                                                                           QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             newFile = (ask == QMessageBox.Yes)
@@ -516,7 +526,8 @@ class HostWindow(QMainWindow):
 
     # --------------------------------------------------------------------------------------------------------
 
-    def startEngine(self):
+    @pyqtSlot()
+    def slot_engineStart(self):
         audioDriver = self.setEngineSettings()
 
         if not self.host.engine_init(audioDriver, self.fClientName):
@@ -534,8 +545,9 @@ class HostWindow(QMainWindow):
 
         self.fFirstEngineInit = False
 
-    def stopEngine(self):
-        if self.fContainer.getPluginCount() > 0:
+    @pyqtSlot()
+    def slot_engineStop(self):
+        if self.host.get_current_plugin_count() > 0:
             ask = QMessageBox.question(self, self.tr("Warning"), self.tr("There are still some plugins loaded, you need to remove them to stop the engine.\n"
                                                                          "Do you want to do this now?"),
                                                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
@@ -550,7 +562,10 @@ class HostWindow(QMainWindow):
 
     # --------------------------------------------------------------------------------------------------------
 
-    def handleEngineStarted(self):
+    @pyqtSlot(str)
+    def slot_handleEngineStartedCallback(self, processMode, transportMode, driverName):
+        self.fSampleRate = self.host.get_sample_rate()
+
         check = self.host.is_engine_running()
         self.ui.menu_PluginMacros.setEnabled(check)
         self.ui.menu_Canvas.setEnabled(check)
@@ -572,7 +587,12 @@ class HostWindow(QMainWindow):
             self.refreshTransport(True)
             self.fContainer.engineStarted()
 
-    def handleEngineStopped(self):
+        self.startTimers()
+
+    @pyqtSlot()
+    def slot_handleEngineStoppedCallback(self):
+        self.killTimers()
+
         # just in case
         self.ui.act_plugin_remove_all.setEnabled(False)
         self.fContainer.removeAllPlugins()
@@ -596,62 +616,80 @@ class HostWindow(QMainWindow):
             self.fTextTransport = ""
             self.fContainer.engineStopped()
 
-    # --------------------------------------------------------------------------------------------------------
-
-    @pyqtSlot()
-    def slot_engineStart(self):
-        self.startEngine()
-        #self.handleEngineStarted()
-
-    @pyqtSlot()
-    def slot_engineStop(self):
-        self.stopEngine()
-        #self.handleEngineStopped()
-
-    # --------------------------------------------------------------------------------------------------------
-
-    @pyqtSlot(str)
-    def slot_handleEngineStartedCallback(self, processMode, transportMode, driverName):
-        self.fSampleRate = self.host.get_sample_rate()
-        self.handleEngineStarted()
-        self.startTimers()
-
-    @pyqtSlot()
-    def slot_handleEngineStoppedCallback(self):
-        self.killTimers()
-        self.handleEngineStopped()
         self.fSampleRate = 0.0
 
+    @pyqtSlot(float)
+    def slot_handleSampleRateChangedCallback(self, newSampleRate):
+        self.fSampleRate = newSampleRate
+        self.refreshTransport(True)
+
     # --------------------------------------------------------------------------------------------------------
-    # Internal stuff (timers)
-
-    def startTimers(self):
-        if self.fIdleTimerFast == 0:
-            self.fIdleTimerFast = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL])
-
-        if self.fIdleTimerSlow == 0:
-            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL]*4)
-
-    def restartTimersIfNeeded(self):
-        if self.fIdleTimerFast != 0:
-            self.killTimer(self.fIdleTimerFast)
-            self.fIdleTimerFast = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL])
-
-        if self.fIdleTimerSlow != 0:
-            self.killTimer(self.fIdleTimerSlow)
-            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL]*4)
-
-    def killTimers(self):
-        if self.fIdleTimerFast != 0:
-            self.killTimer(self.fIdleTimerFast)
-            self.fIdleTimerFast = 0
-
-        if self.fIdleTimerSlow != 0:
-            self.killTimer(self.fIdleTimerSlow)
-            self.fIdleTimerSlow = 0
-
-    # -----------------------------------------------------------------
     # Internal stuff (plugins)
+
+    @pyqtSlot()
+    def slot_pluginAdd(self, pluginToReplace = -1):
+        dialog = PluginDatabaseW(self, self.host)
+
+        if not dialog.exec_():
+            return
+
+        if not self.host.is_engine_running():
+            QMessageBox.warning(self, self.tr("Warning"), self.tr("Cannot add new plugins while engine is stopped"))
+            return
+
+        btype    = dialog.fRetPlugin['build']
+        ptype    = dialog.fRetPlugin['type']
+        filename = dialog.fRetPlugin['filename']
+        label    = dialog.fRetPlugin['label']
+        uniqueId = dialog.fRetPlugin['uniqueId']
+        extraPtr = self.getExtraPtr(dialog.fRetPlugin)
+
+        if pluginToReplace >= 0:
+            if not self.host.replace_plugin(pluginToReplace):
+                CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to replace plugin"), self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+                return
+
+        ok = self.host.add_plugin(btype, ptype, filename, None, label, uniqueId, extraPtr)
+
+        if pluginToReplace >= 0:
+            self.host.replace_plugin(self.host.get_max_plugin_number())
+
+        if not ok:
+            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"), self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+
+    @pyqtSlot()
+    def slot_pluginRemoveAll(self):
+        self.ui.act_plugin_remove_all.setEnabled(False)
+
+        count = self.host.get_current_plugin_count()
+
+        if count == 0:
+            return
+
+        self.fContainer.projectLoadingStarted()
+
+        app = QApplication.instance()
+        for i in range(count):
+            app.processEvents()
+            self.host.remove_plugin(count-i-1)
+
+        self.fContainer.projectLoadingFinished()
+
+        #self.fContainer.removeAllPlugins()
+        #self.host.remove_all_plugins()
+
+    # --------------------------------------------------------------------------------------------------------
+
+    @pyqtSlot(int, str)
+    def slot_handlePluginAddedCallback(self, pluginId, pluginName):
+        self.ui.act_plugin_remove_all.setEnabled(self.host.get_current_plugin_count() > 0)
+
+    @pyqtSlot(int)
+    def slot_handlePluginRemovedCallback(self, pluginId):
+        self.ui.act_plugin_remove_all.setEnabled(self.host.get_current_plugin_count() > 0)
+
+    # --------------------------------------------------------------------------------------------------------
+    # Internal stuff (plugin data)
 
     def getExtraPtr(self, plugin):
         ptype = plugin['type']
@@ -696,11 +734,35 @@ class HostWindow(QMainWindow):
 
             frLadspa.close()
 
-    # FIXME - put above?
-    def setLoadRDFsNeeded(self):
-        self.fLadspaRdfNeedsUpdate = True
+    # --------------------------------------------------------------------------------------------------------
+    # Internal stuff (timers)
 
-    # -----------------------------------------------------------------
+    def startTimers(self):
+        if self.fIdleTimerFast == 0:
+            self.fIdleTimerFast = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL])
+
+        if self.fIdleTimerSlow == 0:
+            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL]*4)
+
+    def restartTimersIfNeeded(self):
+        if self.fIdleTimerFast != 0:
+            self.killTimer(self.fIdleTimerFast)
+            self.fIdleTimerFast = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL])
+
+        if self.fIdleTimerSlow != 0:
+            self.killTimer(self.fIdleTimerSlow)
+            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL]*4)
+
+    def killTimers(self):
+        if self.fIdleTimerFast != 0:
+            self.killTimer(self.fIdleTimerFast)
+            self.fIdleTimerFast = 0
+
+        if self.fIdleTimerSlow != 0:
+            self.killTimer(self.fIdleTimerSlow)
+            self.fIdleTimerSlow = 0
+
+    # --------------------------------------------------------------------------------------------------------
     # Internal stuff (transport)
 
     def refreshTransport(self, forced = False):
@@ -708,8 +770,8 @@ class HostWindow(QMainWindow):
             return
 
         timeInfo = self.host.get_transport_info()
-        playing  = bool(timeInfo['playing'])
-        frame    = int(timeInfo['frame'])
+        playing  = timeInfo['playing']
+        frame    = timeInfo['frame']
 
         if playing != self.fLastTransportState or forced:
             if playing:
@@ -740,6 +802,48 @@ class HostWindow(QMainWindow):
         self.ui.act_transport_backwards.setEnabled(enabled)
         self.ui.act_transport_forwards.setEnabled(enabled)
         self.ui.menu_Transport.setEnabled(enabled)
+
+    @pyqtSlot(bool)
+    def slot_transportPlayPause(self, toggled):
+        if not self.host.is_engine_running():
+            return
+
+        if toggled:
+            self.host.transport_play()
+        else:
+            self.host.transport_pause()
+
+        self.refreshTransport()
+
+    @pyqtSlot()
+    def slot_transportStop(self):
+        if not self.host.is_engine_running():
+            return
+
+        self.host.transport_pause()
+        self.host.transport_relocate(0)
+
+        self.refreshTransport()
+
+    @pyqtSlot()
+    def slot_transportBackwards(self):
+        if not self.host.is_engine_running():
+            return
+
+        newFrame = self.host.get_current_transport_frame() - 100000
+
+        if newFrame < 0:
+            newFrame = 0
+
+        self.host.transport_relocate(newFrame)
+
+    @pyqtSlot()
+    def slot_transportForwards(self):
+        if not self.host.is_engine_running():
+            return
+
+        newFrame = self.host.get_current_transport_frame() + 100000
+        self.host.transport_relocate(newFrame)
 
     # -----------------------------------------------------------------
     # Internal stuff (settings)
@@ -819,131 +923,6 @@ class HostWindow(QMainWindow):
     # Internal stuff (gui)
 
     @pyqtSlot()
-    def slot_pluginAdd(self, pluginToReplace = -1):
-        dialog = PluginDatabaseW(self, self.host)
-
-        if not dialog.exec_():
-            return
-
-        if not self.host.is_engine_running():
-            QMessageBox.warning(self, self.tr("Warning"), self.tr("Cannot add new plugins while engine is stopped"))
-            return
-
-        btype    = dialog.fRetPlugin['build']
-        ptype    = dialog.fRetPlugin['type']
-        filename = dialog.fRetPlugin['filename']
-        label    = dialog.fRetPlugin['label']
-        uniqueId = dialog.fRetPlugin['uniqueId']
-        extraPtr = self.getExtraPtr(dialog.fRetPlugin)
-
-        if pluginToReplace >= 0:
-            if not self.host.replace_plugin(pluginToReplace):
-                CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to replace plugin"), self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
-                return
-
-        ok = self.host.add_plugin(btype, ptype, filename, None, label, uniqueId, extraPtr)
-
-        if pluginToReplace >= 0:
-            self.host.replace_plugin(self.fContainer.getPluginCount())
-
-        if not ok:
-            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"), self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
-
-    @pyqtSlot()
-    def slot_pluginRemoveAll(self):
-        self.ui.act_plugin_remove_all.setEnabled(False)
-
-        count = self.fContainer.getPluginCount()
-
-        if count == 0:
-            return
-
-        self.fContainer.projectLoadingStarted()
-
-        app = QApplication.instance()
-        for i in range(count):
-            app.processEvents()
-            self.host.remove_plugin(count-i-1)
-
-        self.fContainer.projectLoadingFinished()
-
-        #self.fContainer.removeAllPlugins()
-        #self.host.remove_all_plugins()
-
-    # -----------------------------------------------------------------
-
-    # TODO clear this, move them into containers
-    @pyqtSlot(int, str)
-    def slot_handlePluginAddedCallback(self, pluginId, pluginName):
-        self.fContainer.addPlugin(pluginId, self.fIsProjectLoading)
-
-        # FIXME ask host directly for plugin count
-        if self.fContainer.getPluginCount() == 1:
-            self.ui.act_plugin_remove_all.setEnabled(True)
-
-    @pyqtSlot(int)
-    def slot_handlePluginRemovedCallback(self, pluginId):
-        self.fContainer.removePlugin(pluginId)
-
-        # FIXME ask host directly for plugin count
-        if self.fContainer.getPluginCount() == 0:
-            self.ui.act_plugin_remove_all.setEnabled(False)
-
-    @pyqtSlot(int, str)
-    def slot_handlePluginRenamedCallback(self, pluginId, newName):
-        self.fContainer.renamePlugin(pluginId, newName)
-
-    @pyqtSlot(int, str)
-    def slot_handlePluginUnavailableCallback(self, pluginId, errorMsg):
-        self.fContainer.disablePlugin(pluginId, errorMsg)
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(bool)
-    def slot_transportPlayPause(self, toggled):
-        if not self.host.is_engine_running():
-            return
-
-        if toggled:
-            self.host.transport_play()
-        else:
-            self.host.transport_pause()
-
-        self.refreshTransport()
-
-    @pyqtSlot()
-    def slot_transportStop(self):
-        if not self.host.is_engine_running():
-            return
-
-        self.host.transport_pause()
-        self.host.transport_relocate(0)
-
-        self.refreshTransport()
-
-    @pyqtSlot()
-    def slot_transportBackwards(self):
-        if not self.host.is_engine_running():
-            return
-
-        newFrame = self.host.get_current_transport_frame() - 100000
-
-        if newFrame < 0:
-            newFrame = 0
-
-        self.host.transport_relocate(newFrame)
-
-    @pyqtSlot()
-    def slot_transportForwards(self):
-        if not self.host.is_engine_running():
-            return
-
-        newFrame = self.host.get_current_transport_frame() + 100000
-        self.host.transport_relocate(newFrame)
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot()
     def slot_aboutCarla(self):
         CarlaAboutW(self, self.host).exec_()
 
@@ -1008,16 +987,6 @@ class HostWindow(QMainWindow):
     @pyqtSlot(int, int, int, float, str)
     def slot_handleDebugCallback(self, pluginId, value1, value2, value3, valueStr):
         print("DEBUG:", pluginId, value1, value2, value3, valueStr)
-        #self.ui.pte_log.appendPlainText(valueStr.replace("[30;1m", "DEBUG: ").replace("[31m", "ERROR: ").replace("[0m", "").replace("\n", ""))
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(float)
-    def slot_handleSampleRateChangedCallback(self, newSampleRate):
-        self.fSampleRate = newSampleRate
-        self.refreshTransport(True)
-
-    # -----------------------------------------------------------------
 
     @pyqtSlot(str)
     def slot_handleInfoCallback(self, info):
@@ -1029,19 +998,7 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_handleQuitCallback(self):
-        pass
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot()
-    def slot_handleSIGUSR1(self):
-        print("Got SIGUSR1 -> Saving project now")
-        self.slot_fileSave()
-
-    @pyqtSlot()
-    def slot_handleSIGTERM(self):
-        print("Got SIGTERM -> Closing now")
-        self.close()
+        pass # TODO
 
     # -----------------------------------------------------------------
 
@@ -1082,7 +1039,7 @@ class HostWindow(QMainWindow):
         elif self.host.is_engine_running():
             self.host.set_engine_about_to_close()
 
-            count = self.fContainer.getPluginCount()
+            count = self.host.get_current_plugin_count()
 
             if count > 0:
                 # simulate project loading, to disable container
@@ -1099,7 +1056,7 @@ class HostWindow(QMainWindow):
                 #self.fContainer.removeAllPlugins()
                 #self.host.remove_all_plugins()
 
-            self.stopEngine()
+            self.slot_engineStop()
 
         QMainWindow.closeEvent(self, event)
 

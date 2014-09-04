@@ -84,6 +84,7 @@ class CarlaRackList(QListWidget):
         if False:
             # kdevelop likes this :)
             host = CarlaHostMeta()
+            self.host = host
 
         # -------------------------------------------------------------
 
@@ -210,6 +211,7 @@ class CarlaRackW(QFrame):
         if False:
             # kdevelop likes this :)
             host = CarlaHostMeta()
+            self.host = host
 
         # -------------------------------------------------------------
 
@@ -305,6 +307,10 @@ class CarlaRackW(QFrame):
 
         parent.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
 
+        host.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
+        host.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
+        host.PluginRenamedCallback.connect(self.slot_handlePluginRenamedCallback)
+        host.PluginUnavailableCallback.connect(self.slot_handlePluginUnavailableCallback)
         host.ParameterValueChangedCallback.connect(self.slot_handleParameterValueChangedCallback)
         host.ParameterDefaultChangedCallback.connect(self.slot_handleParameterDefaultChangedCallback)
         host.ParameterMidiChannelChangedCallback.connect(self.slot_handleParameterMidiChannelChangedCallback)
@@ -320,11 +326,6 @@ class CarlaRackW(QFrame):
         host.ReloadParametersCallback.connect(self.slot_handleReloadParametersCallback)
         host.ReloadProgramsCallback.connect(self.slot_handleReloadProgramsCallback)
         host.ReloadAllCallback.connect(self.slot_handleReloadAllCallback)
-
-    # -----------------------------------------------------------------
-
-    def getPluginCount(self):
-        return self.fPluginCount
 
     # -----------------------------------------------------------------
 
@@ -539,6 +540,24 @@ class CarlaRackW(QFrame):
             return
 
         self.fParent.loadSettings(False)
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(int, str)
+    def slot_handlePluginAddedCallback(self, pluginId, pluginName):
+        self.addPlugin(pluginId, self.fParent.isProjectLoading())
+
+    @pyqtSlot(int)
+    def slot_handlePluginRemovedCallback(self, pluginId):
+        self.removePlugin(pluginId)
+
+    @pyqtSlot(int, str)
+    def slot_handlePluginRenamedCallback(self, pluginId, newName):
+        self.renamePlugin(pluginId, newName)
+
+    @pyqtSlot(int, str)
+    def slot_handlePluginUnavailableCallback(self, pluginId, errorMsg):
+        self.disablePlugin(pluginId, errorMsg)
 
     # -----------------------------------------------------------------
 

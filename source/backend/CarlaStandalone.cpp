@@ -1291,6 +1291,24 @@ const CarlaTransportInfo* carla_get_transport_info()
 
 // -------------------------------------------------------------------------------------------------------------------
 
+uint32_t carla_get_current_plugin_count()
+{
+    if (gStandalone.engine != nullptr)
+        return gStandalone.engine->getCurrentPluginCount();
+
+    return 0;
+}
+
+uint32_t carla_get_max_plugin_number()
+{
+    if (gStandalone.engine != nullptr)
+        return gStandalone.engine->getMaxPluginNumber();
+
+    return 0;
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
 bool carla_add_plugin(BinaryType btype, PluginType ptype, const char* filename, const char* name, const char* label, int64_t uniqueId, const void* extraPtr)
 {
     CARLA_SAFE_ASSERT_RETURN(label != nullptr /*&& label[0] != '\0'*/, false);

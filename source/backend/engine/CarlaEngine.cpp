@@ -729,7 +729,7 @@ bool CarlaEngine::replacePlugin(const uint id) noexcept
     carla_debug("CarlaEngine::replacePlugin(%i)", id);
 
     // might use this to reset
-    if (id == pData->curPluginCount || id == pData->maxPluginNumber)
+    if (id == pData->maxPluginNumber)
     {
         pData->nextPluginId = pData->maxPluginNumber;
         return true;
