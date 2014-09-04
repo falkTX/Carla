@@ -310,6 +310,8 @@ class HostWindow(QMainWindow):
             self.ui.miniCanvasPreview.setViewTheme(canvasBg, canvasBrush, canvasPen)
             self.ui.miniCanvasPreview.init(self.fContainer.scene, canvasWidth, canvasHeight, self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING])
         else:
+            self.ui.act_canvas_show_internal.setEnabled(False)
+            self.ui.act_canvas_show_external.setEnabled(False)
             self.ui.act_canvas_arrange.setVisible(False)
             self.ui.act_canvas_print.setVisible(False)
             self.ui.act_canvas_refresh.setVisible(False)
@@ -1386,14 +1388,15 @@ def loadHostSettings(host):
 
     # enums
     try:
-        host.processMode = settings.value(CARLA_KEY_ENGINE_PROCESS_MODE, CARLA_DEFAULT_PROCESS_MODE, type=int)
-    except:
-        host.processMode = CARLA_DEFAULT_PROCESS_MODE
-
-    try:
         host.transportMode = settings.value(CARLA_KEY_ENGINE_TRANSPORT_MODE, CARLA_DEFAULT_TRANSPORT_MODE, type=int)
     except:
         host.transportMode = CARLA_DEFAULT_TRANSPORT_MODE
+
+    if not host.processModeForced:
+        try:
+            host.processMode = settings.value(CARLA_KEY_ENGINE_PROCESS_MODE, CARLA_DEFAULT_PROCESS_MODE, type=int)
+        except:
+            host.processMode = CARLA_DEFAULT_PROCESS_MODE
 
     # --------------------------------------------------------------------------------------------------------
     # fix things if needed
@@ -1419,9 +1422,7 @@ def setHostSettings(host):
     if host.isPlugin:
         return
 
+    host.set_engine_option(ENGINE_OPTION_PROCESS_MODE,          host.processMode,         "")
     host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE,        host.transportMode,       "")
-
-    if not host.processModeForced:
-        host.set_engine_option(ENGINE_OPTION_PROCESS_MODE,      host.processMode,         "")
 
 # ------------------------------------------------------------------------------------------------------------
