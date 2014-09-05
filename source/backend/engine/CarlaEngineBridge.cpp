@@ -224,6 +224,7 @@ public:
         : CarlaEngine(),
           CarlaThread("CarlaEngineBridge"),
           fShmAudioPool(),
+          fShmCVPool(),
           fShmRtControl(),
           fShmNonRtControl(),
           fIsRunning(false),
@@ -234,6 +235,9 @@ public:
 
         fShmAudioPool.filename  = "/carla-bridge_shm_ap_";
         fShmAudioPool.filename += audioPoolBaseName;
+
+        //fShmCVPool.filename  = "/carla-bridge_shm_cvp_";
+        //fShmCVPool.filename += cvPoolBaseName;
 
         fShmRtControl.filename  = "/carla-bridge_shm_rt_";
         fShmRtControl.filename += rtBaseName;
@@ -694,6 +698,13 @@ protected:
                     break;
                 }
 
+                case kPluginBridgeRtSetCVPool: {
+                    const uint64_t poolSize(fShmRtControl.readULong());
+                    CARLA_SAFE_ASSERT_BREAK(poolSize > 0);
+                    fShmCVPool.data = (float*)jackbridge_shm_map(fShmCVPool.shm, static_cast<size_t>(poolSize));
+                    break;
+                }
+
                 case kPluginBridgeRtControlEventParameter: {
                     const uint32_t time(fShmRtControl.readUInt());
                     const uint8_t  channel(fShmRtControl.readByte());
@@ -824,16 +835,25 @@ protected:
                     {
                         const BridgeTimeInfo& bridgeTimeInfo(fShmRtControl.data->timeInfo);
 
-                        const uint32_t inCount(plugin->getAudioInCount());
-                        const uint32_t outCount(plugin->getAudioOutCount());
+                        const uint32_t audioInCount(plugin->getAudioInCount());
+                        const uint32_t audioOutCount(plugin->getAudioOutCount());
+                        const uint32_t cvInCount(plugin->getCVInCount());
+                        const uint32_t cvOutCount(plugin->getCVOutCount());
 
-                        float* inBuffer[inCount];
-                        float* outBuffer[outCount];
+                        const float* audioIn[audioInCount];
+                        /* */ float* audioOut[audioOutCount];
+                        const float* cvIn[cvInCount];
+                        /* */ float* cvOut[cvOutCount];
 
-                        for (uint32_t i=0; i < inCount; ++i)
-                            inBuffer[i] = fShmAudioPool.data + i*pData->bufferSize;
-                        for (uint32_t i=0; i < outCount; ++i)
-                            outBuffer[i] = fShmAudioPool.data + (i+inCount)*pData->bufferSize;
+                        for (uint32_t i=0; i < audioInCount; ++i)
+                            audioIn[i] = fShmAudioPool.data + i*pData->bufferSize;
+                        for (uint32_t i=0; i < audioOutCount; ++i)
+                            audioOut[i] = fShmAudioPool.data + (i+audioInCount)*pData->bufferSize;
+
+                        for (uint32_t i=0; i < cvInCount; ++i)
+                            cvIn[i] = fShmAudioPool.data + i*pData->bufferSize;
+                        for (uint32_t i=0; i < cvOutCount; ++i)
+                            cvOut[i] = fShmAudioPool.data + (i+cvInCount)*pData->bufferSize;
 
                         EngineTimeInfo& timeInfo(pData->timeInfo);
 
@@ -857,7 +877,7 @@ protected:
                         }
 
                         plugin->initBuffers();
-                        plugin->process(inBuffer, outBuffer, pData->bufferSize);
+                        plugin->process(audioIn, audioOut, cvIn, cvOut, pData->bufferSize);
                         plugin->unlock();
                     }
 
@@ -901,6 +921,7 @@ protected:
 
 private:
     BridgeAudioPool    fShmAudioPool;
+    BridgeAudioPool    fShmCVPool;
     BridgeRtControl    fShmRtControl;
     BridgeNonRtControl fShmNonRtControl;
 

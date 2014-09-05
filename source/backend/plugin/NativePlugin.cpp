@@ -1880,7 +1880,7 @@ public:
 #else
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
         {
-            for (k=0; k < frames; ++k)
+            for (uint32_t k=0; k < frames; ++k)
                 audioOut[i][k+timeOffset] = fAudioOutBuffers[i][k];
         }
 #endif
