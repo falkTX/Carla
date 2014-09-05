@@ -55,6 +55,7 @@ enum PluginBridgeOscInfoType {
 enum PluginBridgeRtOpcode {
     kPluginBridgeRtNull = 0,
     kPluginBridgeRtSetAudioPool,            // ulong/ptr
+    kPluginBridgeRtSetCVPool,               // ulong/ptr
     kPluginBridgeRtControlEventParameter,   // uint/frame, byte/chan, ushort, float
     kPluginBridgeRtControlEventMidiBank,    // uint/frame, byte/chan, ushort
     kPluginBridgeRtControlEventMidiProgram, // uint/frame, byte/chan, ushort
@@ -208,6 +209,8 @@ const char* PluginBridgeRtOpcode2str(const PluginBridgeRtOpcode opcode) noexcept
         return "kPluginBridgeRtNull";
     case kPluginBridgeRtSetAudioPool:
         return "kPluginBridgeRtSetAudioPool";
+    case kPluginBridgeRtSetCVPool:
+        return "kPluginBridgeRtSetCVPool";
     case kPluginBridgeRtControlEventParameter:
         return "kPluginBridgeRtControlEventParameter";
     case kPluginBridgeRtControlEventMidiBank:

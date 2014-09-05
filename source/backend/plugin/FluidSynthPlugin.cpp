@@ -1002,7 +1002,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
-    void process(float** const, float** const outBuffer, const uint32_t frames) override
+    void process(const float** const, float** const audioOut, const float** const, float** const, const uint32_t frames) override
     {
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -1011,7 +1011,7 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(outBuffer[i], static_cast<int>(frames));
+                FloatVectorOperations::clear(audioOut[i], static_cast<int>(frames));
             return;
         }
 
@@ -1093,7 +1093,7 @@ public:
 
                 if (time > timeOffset)
                 {
-                    if (processSingle(outBuffer, time - timeOffset, timeOffset))
+                    if (processSingle(audioOut, time - timeOffset, timeOffset))
                     {
                         timeOffset = time;
 
@@ -1330,7 +1330,7 @@ public:
             pData->postRtEvents.trySplice();
 
             if (frames > timeOffset)
-                processSingle(outBuffer, frames - timeOffset, timeOffset);
+                processSingle(audioOut, frames - timeOffset, timeOffset);
 
         } // End of Event Input and Processing
 

@@ -553,7 +553,7 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
     // safe copy
     float inBuf0[frames];
     float inBuf1[frames];
-    float* inBuf[2] = { inBuf0, inBuf1 };
+    const float* inBuf[2] = { inBuf0, inBuf1 };
 
     // initialize audio inputs
     FloatVectorOperations::copy(inBuf0, inBufReal[0], iframes);
@@ -613,7 +613,7 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
 
         // process
         plugin->initBuffers();
-        plugin->process(inBuf, outBuf, frames);
+        plugin->process(inBuf, outBuf, nullptr, nullptr, frames);
         plugin->unlock();
 
         // if plugin has no audio inputs, add input buffer
@@ -985,6 +985,8 @@ public:
 
         midi.clear();
 
+        // TODO - CV support
+
         const uint32_t bufferSize(static_cast<uint32_t>(audio.getNumSamples()));
 
         if (const int numChan = audio.getNumChannels())
@@ -1011,7 +1013,7 @@ public:
                 }
             }
 
-            fPlugin->process(audioBuffers, audioBuffers, bufferSize);
+            fPlugin->process(const_cast<const float**>(audioBuffers), audioBuffers, nullptr, nullptr, bufferSize);
 
             for (int i=0; i<numChan; ++i)
             {
@@ -1028,7 +1030,7 @@ public:
         }
         else
         {
-            fPlugin->process(nullptr, nullptr, bufferSize);
+            fPlugin->process(nullptr, nullptr, nullptr, nullptr, bufferSize);
         }
 
         midi.clear();

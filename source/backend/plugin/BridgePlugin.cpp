@@ -345,6 +345,7 @@ public:
           fLastPongCounter(-1),
           fBridgeBinary(),
           fShmAudioPool(),
+          fShmCVPool(),
           fShmRtControl(),
           fShmNonRtControl(),
           fInfo(),
@@ -923,7 +924,7 @@ public:
             fTimedOut = false;
     }
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
+    void process(const float** const audioIn, float** const audioOut, const float** const cvIn, float** const cvOut, const uint32_t frames) override
     {
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -932,7 +933,9 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(outBuffer[i], static_cast<int>(frames));
+                FloatVectorOperations::clear(audioOut[i], static_cast<int>(frames));
+            for (uint32_t i=0; i < pData->cvOut.count; ++i)
+                FloatVectorOperations::clear(cvOut[i], static_cast<int>(frames));
             return;
         }
 
@@ -1158,20 +1161,28 @@ public:
 
         } // End of Event Input
 
-        processSingle(inBuffer, outBuffer, frames);
+        processSingle(audioIn, audioOut, cvIn, cvOut, frames);
     }
 
-    bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames)
+    bool processSingle(const float** const audioIn, float** const audioOut, const float** const cvIn, float** const cvOut, const uint32_t frames)
     {
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 
         if (pData->audioIn.count > 0)
         {
-            CARLA_SAFE_ASSERT_RETURN(inBuffer != nullptr, false);
+            CARLA_SAFE_ASSERT_RETURN(audioIn != nullptr, false);
         }
         if (pData->audioOut.count > 0)
         {
-            CARLA_SAFE_ASSERT_RETURN(outBuffer != nullptr, false);
+            CARLA_SAFE_ASSERT_RETURN(audioOut != nullptr, false);
+        }
+        if (pData->cvIn.count > 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(cvIn != nullptr, false);
+        }
+        if (pData->cvOut.count > 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(cvOut != nullptr, false);
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -1184,17 +1195,20 @@ public:
         else if (! pData->singleMutex.tryLock())
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(outBuffer[i], static_cast<int>(frames));
+                FloatVectorOperations::clear(audioOut[i], static_cast<int>(frames));
+            for (uint32_t i=0; i < pData->cvOut.count; ++i)
+                FloatVectorOperations::clear(cvOut[i], static_cast<int>(frames));
             return false;
         }
 
         // --------------------------------------------------------------------------------------------------------
         // Reset audio buffers
 
-        //std::memset(fShmAudioPool.data, 0, fShmAudioPool.size);
-
         for (uint32_t i=0; i < fInfo.aIns; ++i)
-            FloatVectorOperations::copy(fShmAudioPool.data + (i * frames), inBuffer[i], static_cast<int>(frames));
+            FloatVectorOperations::copy(fShmAudioPool.data + (i * frames), audioIn[i], static_cast<int>(frames));
+
+        for (uint32_t i=0; i < fInfo.cvIns; ++i)
+            FloatVectorOperations::copy(fShmCVPool.data + (i * frames), cvIn[i], static_cast<int>(frames));
 
         // --------------------------------------------------------------------------------------------------------
         // TimeInfo
@@ -1236,7 +1250,10 @@ public:
         }
 
         for (uint32_t i=0; i < fInfo.aOuts; ++i)
-            FloatVectorOperations::copy(outBuffer[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), static_cast<int>(frames));
+            FloatVectorOperations::copy(audioOut[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), static_cast<int>(frames));
+
+        for (uint32_t i=0; i < fInfo.cvOuts; ++i)
+            FloatVectorOperations::copy(cvOut[i], fShmCVPool.data + ((i + fInfo.cvIns) * frames), static_cast<int>(frames));
 
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
@@ -1256,8 +1273,8 @@ public:
                 {
                     for (uint32_t k=0; k < frames; ++k)
                     {
-                        bufValue        = inBuffer[(pData->audioIn.count == 1) ? 0 : i][k];
-                        outBuffer[i][k] = (outBuffer[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
+                        bufValue        = audioIn[(pData->audioIn.count == 1) ? 0 : i][k];
+                        audioOut[i][k] = (audioOut[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
                     }
                 }
 
@@ -1269,7 +1286,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        FloatVectorOperations::copy(oldBufLeft, outBuffer[i], static_cast<int>(frames));
+                        FloatVectorOperations::copy(oldBufLeft, audioOut[i], static_cast<int>(frames));
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
@@ -1280,14 +1297,14 @@ public:
                         if (isPair)
                         {
                             // left
-                            outBuffer[i][k]  = oldBufLeft[k]     * (1.0f - balRangeL);
-                            outBuffer[i][k] += outBuffer[i+1][k] * (1.0f - balRangeR);
+                            audioOut[i][k]  = oldBufLeft[k]     * (1.0f - balRangeL);
+                            audioOut[i][k] += audioOut[i+1][k] * (1.0f - balRangeR);
                         }
                         else
                         {
                             // right
-                            outBuffer[i][k]  = outBuffer[i][k] * balRangeR;
-                            outBuffer[i][k] += oldBufLeft[k]   * balRangeL;
+                            audioOut[i][k]  = audioOut[i][k] * balRangeR;
+                            audioOut[i][k] += oldBufLeft[k]   * balRangeL;
                         }
                     }
                 }
@@ -1296,7 +1313,7 @@ public:
                 if (doVolume)
                 {
                     for (uint32_t k=0; k < frames; ++k)
-                        outBuffer[i][k] *= pData->postProc.volume;
+                        audioOut[i][k] *= pData->postProc.volume;
                 }
             }
 
@@ -1310,7 +1327,7 @@ public:
 
     void bufferSizeChanged(const uint32_t newBufferSize) override
     {
-        resizeAudioPool(newBufferSize);
+        resizeAudioAndCVPool(newBufferSize);
 
         {
             const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
@@ -2126,11 +2143,13 @@ private:
     CarlaString fBridgeBinary;
 
     BridgeAudioPool    fShmAudioPool;
+    BridgeAudioPool    fShmCVPool;
     BridgeRtControl    fShmRtControl;
     BridgeNonRtControl fShmNonRtControl;
 
     struct Info {
         uint32_t aIns, aOuts;
+        uint32_t cvIns, cvOuts;
         uint32_t mIns, mOuts;
         PluginCategory category;
         uint optionsAvailable;
@@ -2144,6 +2163,8 @@ private:
         Info()
             : aIns(0),
               aOuts(0),
+              cvIns(0),
+              cvOuts(0),
               mIns(0),
               mOuts(0),
               category(PLUGIN_CATEGORY_NONE),
@@ -2158,12 +2179,17 @@ private:
 
     BridgeParamInfo* fParams;
 
-    void resizeAudioPool(const uint32_t bufferSize)
+    void resizeAudioAndCVPool(const uint32_t bufferSize)
     {
         fShmAudioPool.resize(bufferSize, fInfo.aIns+fInfo.aOuts);
+        fShmCVPool.resize(bufferSize, fInfo.cvIns+fInfo.cvOuts);
 
         fShmRtControl.writeOpcode(kPluginBridgeRtSetAudioPool);
         fShmRtControl.writeLong(static_cast<int64_t>(fShmAudioPool.size));
+
+        fShmRtControl.writeOpcode(kPluginBridgeRtSetCVPool);
+        fShmRtControl.writeLong(static_cast<int64_t>(fShmCVPool.size));
+
         fShmRtControl.commitWrite();
 
         waitForServer();
@@ -2216,9 +2242,29 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 
     plugin->reload();
 
-    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
+    bool canRun = true;
+
+    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
     {
-        init.engine->setLastError("Carla's rack mode can only work with Stereo Bridged plugins, sorry!");
+        if (! plugin->canRunInRack())
+        {
+            init.engine->setLastError("Carla's rack mode can only work with Stereo Bridged plugins, sorry!");
+            canRun = false;
+        }
+        else if (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0)
+        {
+            init.engine->setLastError("Carla's rack mode cannot work with plugins that have CV ports, sorry!");
+            canRun = false;
+        }
+    }
+    else if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_PATCHBAY && (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0))
+    {
+        init.engine->setLastError("CV ports in patchbay mode is still TODO");
+        canRun = false;
+    }
+
+    if (! canRun)
+    {
         delete plugin;
         return nullptr;
     }

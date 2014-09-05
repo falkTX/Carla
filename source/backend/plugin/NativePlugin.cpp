@@ -1277,7 +1277,7 @@ public:
         }
     }
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
+    void process(const float** const audioIn, float** const audioOut, const float** const cvIn, float** const cvOut, const uint32_t frames) override
     {
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -1286,8 +1286,9 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(outBuffer[i], static_cast<int>(frames));
-
+                FloatVectorOperations::clear(audioOut[i], static_cast<int>(frames));
+            for (uint32_t i=0; i < pData->cvOut.count; ++i)
+                FloatVectorOperations::clear(cvOut[i], static_cast<int>(frames));
             return;
         }
 
@@ -1419,7 +1420,7 @@ public:
 
                 if (time > timeOffset && sampleAccurate)
                 {
-                    if (processSingle(inBuffer, outBuffer, time - timeOffset, timeOffset))
+                    if (processSingle(audioIn, audioOut, cvIn, cvOut, time - timeOffset, timeOffset))
                     {
                         startTime  = 0;
                         timeOffset = time;
@@ -1670,7 +1671,7 @@ public:
             pData->postRtEvents.trySplice();
 
             if (frames > timeOffset)
-                processSingle(inBuffer, outBuffer, frames - timeOffset, timeOffset);
+                processSingle(audioIn, audioOut, cvIn, cvOut, frames - timeOffset, timeOffset);
 
         } // End of Event Input and Processing
 
@@ -1679,7 +1680,7 @@ public:
 
         else
         {
-            processSingle(inBuffer, outBuffer, frames, 0);
+            processSingle(audioIn, audioOut, cvIn, cvOut, frames, 0);
 
         } // End of Plugin processing (no events)
 
@@ -1725,27 +1726,26 @@ public:
         } // End of Control and MIDI Output
     }
 
-    bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
+    bool processSingle(const float** const audioIn, float** const audioOut, const float** const cvIn, float** const cvOut, const uint32_t frames, const uint32_t timeOffset)
     {
-        CARLA_ASSERT(frames > 0);
-
-        if (frames == 0)
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 
         if (pData->audioIn.count > 0)
         {
-            CARLA_ASSERT(inBuffer != nullptr);
-            if (inBuffer == nullptr)
-                return false;
+            CARLA_SAFE_ASSERT_RETURN(audioIn != nullptr, false);
         }
         if (pData->audioOut.count > 0)
         {
-            CARLA_ASSERT(outBuffer != nullptr);
-            if (outBuffer == nullptr)
-                return false;
+            CARLA_SAFE_ASSERT_RETURN(audioOut != nullptr, false);
         }
-
-        uint32_t i, k;
+        if (pData->cvIn.count > 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(cvIn != nullptr, false);
+        }
+        if (pData->cvOut.count > 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(cvOut != nullptr, false);
+        }
 
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
@@ -1756,23 +1756,39 @@ public:
         }
         else if (! pData->singleMutex.tryLock())
         {
-            for (i=0; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
-                for (k=0; k < frames; ++k)
-                    outBuffer[i][k+timeOffset] = 0.0f;
+                for (uint32_t k=0; k < frames; ++k)
+                    audioOut[i][k+timeOffset] = 0.0f;
+            }
+            for (uint32_t i=0; i < pData->cvOut.count; ++i)
+            {
+                for (uint32_t k=0; k < frames; ++k)
+                    cvOut[i][k+timeOffset] = 0.0f;
             }
 
             return false;
         }
 
         // --------------------------------------------------------------------------------------------------------
-        // Reset audio buffers
+        // Set audio buffers
 
-        for (i=0; i < pData->audioIn.count; ++i)
-            FloatVectorOperations::copy(fAudioInBuffers[i], inBuffer[i]+timeOffset, static_cast<int>(frames));
+        for (uint32_t i=0; i < pData->audioIn.count; ++i)
+            FloatVectorOperations::copy(fAudioInBuffers[i], audioIn[i]+timeOffset, static_cast<int>(frames));
 
-        for (i=0; i < pData->audioOut.count; ++i)
+        for (uint32_t i=0; i < pData->audioOut.count; ++i)
             FloatVectorOperations::clear(fAudioOutBuffers[i], static_cast<int>(frames));
+
+#if 0
+        // --------------------------------------------------------------------------------------------------------
+        // Set CV buffers
+
+        for (uint32_t i=0; i < pData->cvIn.count; ++i)
+            FloatVectorOperations::copy(fCvInBuffers[i], cvIn[i]+timeOffset, static_cast<int>(frames));
+
+        for (uint32_t i=0; i < pData->cvOut.count; ++i)
+            FloatVectorOperations::clear(fCvOutBuffers[i], static_cast<int>(frames));
+#endif
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -1810,12 +1826,12 @@ public:
             bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];
 
-            for (i=0; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
                 // Dry/Wet
                 if (doDryWet)
                 {
-                    for (k=0; k < frames; ++k)
+                    for (uint32_t k=0; k < frames; ++k)
                     {
                         bufValue = fAudioInBuffers[(pData->audioIn.count == 1) ? 0 : i][k];
                         fAudioOutBuffers[i][k] = (fAudioOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
@@ -1836,7 +1852,7 @@ public:
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (pData->postProc.balanceRight + 1.0f)/2.0f;
 
-                    for (k=0; k < frames; ++k)
+                    for (uint32_t k=0; k < frames; ++k)
                     {
                         if (isPair)
                         {
@@ -1855,17 +1871,25 @@ public:
 
                 // Volume (and buffer copy)
                 {
-                    for (k=0; k < frames; ++k)
-                        outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k] * pData->postProc.volume;
+                    for (uint32_t k=0; k < frames; ++k)
+                        audioOut[i][k+timeOffset] = fAudioOutBuffers[i][k] * pData->postProc.volume;
                 }
             }
 
         } // End of Post-processing
 #else
-        for (i=0; i < pData->audioOut.count; ++i)
+        for (uint32_t i=0; i < pData->audioOut.count; ++i)
         {
             for (k=0; k < frames; ++k)
-                outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k];
+                audioOut[i][k+timeOffset] = fAudioOutBuffers[i][k];
+        }
+#endif
+
+#if 0
+        for (uint32_t i=0; i < pData->cvOut.count; ++i)
+        {
+            for (uint32_t k=0; k < frames; ++k)
+                cvOut[i][k+timeOffset] = fCvOutBuffers[i][k];
         }
 #endif
 
@@ -2434,9 +2458,29 @@ CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)
 
     plugin->reload();
 
-    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
+    bool canRun = true;
+
+    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
     {
-        init.engine->setLastError("Carla's rack mode can only work with Mono or Stereo Internal plugins, sorry!");
+        if (! plugin->canRunInRack())
+        {
+            init.engine->setLastError("Carla's rack mode can only work with Mono or Stereo Internal plugins, sorry!");
+            canRun = false;
+        }
+        else if (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0)
+        {
+            init.engine->setLastError("Carla's rack mode cannot work with plugins that have CV ports, sorry!");
+            canRun = false;
+        }
+    }
+    else if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_PATCHBAY && (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0))
+    {
+        init.engine->setLastError("CV ports in patchbay mode is still TODO");
+        canRun = false;
+    }
+
+    if (! canRun)
+    {
         delete plugin;
         return nullptr;
     }

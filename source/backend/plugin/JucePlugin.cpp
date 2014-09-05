@@ -568,7 +568,7 @@ public:
         } catch(...) {}
     }
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
+    void process(const float** const audioIn, float** const audioOut, const float** const, float** const, const uint32_t frames) override
     {
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -577,7 +577,7 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(outBuffer[i], static_cast<int>(frames));
+                FloatVectorOperations::clear(audioOut[i], static_cast<int>(frames));
             return;
         }
 
@@ -877,7 +877,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Process
 
-        processSingle(inBuffer, outBuffer, frames);
+        processSingle(audioIn, audioOut, frames);
 
         // --------------------------------------------------------------------------------------------------------
         // MIDI Output

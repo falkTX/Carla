@@ -1955,45 +1955,61 @@ private:
 
     void processPlugin(CarlaPlugin* const plugin, const uint32_t nframes)
     {
-        const uint32_t inCount(plugin->getAudioInCount());
-        const uint32_t outCount(plugin->getAudioOutCount());
+        const uint32_t audioInCount(plugin->getAudioInCount());
+        const uint32_t audioOutCount(plugin->getAudioOutCount());
+        const uint32_t cvInCount(plugin->getCVInCount());
+        const uint32_t cvOutCount(plugin->getCVOutCount());
 
-        float* inBuffer[inCount];
-        float* outBuffer[outCount];
+        const float* audioIn[audioInCount];
+        /* */ float* audioOut[audioOutCount];
+        const float* cvIn[cvInCount];
+        /* */ float* cvOut[cvOutCount];
+
+        for (uint32_t i=0; i < audioInCount; ++i)
+        {
+            CarlaEngineAudioPort* const port(plugin->getAudioInPort(i));
+            audioIn[i] = port->getBuffer();
+        }
+
+        for (uint32_t i=0; i < audioOutCount; ++i)
+        {
+            CarlaEngineAudioPort* const port(plugin->getAudioOutPort(i));
+            audioOut[i] = port->getBuffer();
+        }
+
+        for (uint32_t i=0; i < cvInCount; ++i)
+        {
+            CarlaEngineCVPort* const port(plugin->getCVInPort(i));
+            cvIn[i] = port->getBuffer();
+        }
+
+        for (uint32_t i=0; i < cvOutCount; ++i)
+        {
+            CarlaEngineCVPort* const port(plugin->getCVOutPort(i));
+            cvOut[i] = port->getBuffer();
+        }
 
         float inPeaks[2] = { 0.0f };
         float outPeaks[2] = { 0.0f };
 
-        for (uint32_t i=0; i < inCount; ++i)
-        {
-            CarlaEngineAudioPort* const port(plugin->getAudioInPort(i));
-            inBuffer[i] = port->getBuffer();
-        }
-
-        for (uint32_t i=0; i < outCount; ++i)
-        {
-            CarlaEngineAudioPort* const port(plugin->getAudioOutPort(i));
-            outBuffer[i] = port->getBuffer();
-        }
-
-        for (uint32_t i=0; i < inCount && i < 2; ++i)
+        for (uint32_t i=0; i < audioInCount && i < 2; ++i)
         {
             for (uint32_t j=0; j < nframes; ++j)
             {
-                const float absV(std::abs(inBuffer[i][j]));
+                const float absV(std::abs(audioIn[i][j]));
 
                 if (absV > inPeaks[i])
                     inPeaks[i] = absV;
             }
         }
 
-        plugin->process(inBuffer, outBuffer, nframes);
+        plugin->process(audioIn, audioOut, cvIn, cvOut, nframes);
 
-        for (uint32_t i=0; i < outCount && i < 2; ++i)
+        for (uint32_t i=0; i < audioOutCount && i < 2; ++i)
         {
             for (uint32_t j=0; j < nframes; ++j)
             {
-                const float absV(std::abs(outBuffer[i][j]));
+                const float absV(std::abs(audioOut[i][j]));
 
                 if (absV > outPeaks[i])
                     outPeaks[i] = absV;

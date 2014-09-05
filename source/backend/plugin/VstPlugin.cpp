@@ -1052,7 +1052,7 @@ public:
         } catch(...) {}
     }
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
+    void process(const float** const audioIn, float** const audioOut, const float** const, float** const, const uint32_t frames) override
     {
         fProcThread = pthread_self();
 
@@ -1063,7 +1063,7 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(outBuffer[i], static_cast<int>(frames));
+                FloatVectorOperations::clear(audioOut[i], static_cast<int>(frames));
             return;
         }
 
@@ -1228,7 +1228,7 @@ public:
 
                 if (isSampleAccurate && event.time > timeOffset)
                 {
-                    if (processSingle(inBuffer, outBuffer, event.time - timeOffset, timeOffset))
+                    if (processSingle(audioIn, audioOut, event.time - timeOffset, timeOffset))
                     {
                         startTime  = 0;
                         timeOffset = event.time;
@@ -1472,7 +1472,7 @@ public:
             pData->postRtEvents.trySplice();
 
             if (frames > timeOffset)
-                processSingle(inBuffer, outBuffer, frames - timeOffset, timeOffset);
+                processSingle(audioIn, audioOut, frames - timeOffset, timeOffset);
 
         } // End of Event Input and Processing
 
@@ -1481,7 +1481,7 @@ public:
 
         else
         {
-            processSingle(inBuffer, outBuffer, frames, 0);
+            processSingle(audioIn, audioOut, frames, 0);
 
         } // End of Plugin processing (no events)
 
@@ -1513,7 +1513,7 @@ public:
         } // End of MIDI Output
     }
 
-    bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
+    bool processSingle(const float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
     {
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 
@@ -1551,7 +1551,7 @@ public:
         float* vstOutBuffer[pData->audioOut.count];
 
         for (uint32_t i=0; i < pData->audioIn.count; ++i)
-            vstInBuffer[i] = inBuffer[i]+timeOffset;
+            vstInBuffer[i] = const_cast<float*>(inBuffer[i]+timeOffset);
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
             vstOutBuffer[i] = outBuffer[i]+timeOffset;
 
