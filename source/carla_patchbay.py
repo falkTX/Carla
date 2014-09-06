@@ -235,20 +235,6 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
         host.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
         host.PluginRenamedCallback.connect(self.slot_handlePluginRenamedCallback)
         host.PluginUnavailableCallback.connect(self.slot_handlePluginUnavailableCallback)
-        host.ParameterValueChangedCallback.connect(self.slot_handleParameterValueChangedCallback)
-        host.ParameterDefaultChangedCallback.connect(self.slot_handleParameterDefaultChangedCallback)
-        host.ParameterMidiChannelChangedCallback.connect(self.slot_handleParameterMidiChannelChangedCallback)
-        host.ParameterMidiCcChangedCallback.connect(self.slot_handleParameterMidiCcChangedCallback)
-        host.ProgramChangedCallback.connect(self.slot_handleProgramChangedCallback)
-        host.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
-        host.OptionChangedCallback.connect(self.slot_handleOptionChangedCallback)
-        host.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
-        host.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
-        host.UpdateCallback.connect(self.slot_handleUpdateCallback)
-        host.ReloadInfoCallback.connect(self.slot_handleReloadInfoCallback)
-        host.ReloadParametersCallback.connect(self.slot_handleReloadParametersCallback)
-        host.ReloadProgramsCallback.connect(self.slot_handleReloadProgramsCallback)
-        host.ReloadAllCallback.connect(self.slot_handleReloadAllCallback)
         host.PatchbayClientAddedCallback.connect(self.slot_handlePatchbayClientAddedCallback)
         host.PatchbayClientRemovedCallback.connect(self.slot_handlePatchbayClientRemovedCallback)
         host.PatchbayClientRenamedCallback.connect(self.slot_handlePatchbayClientRenamedCallback)
@@ -266,7 +252,8 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
 
     # -----------------------------------------------------------------
 
-    def addPlugin(self, pluginId, isProjectLoading):
+    @pyqtSlot(int, str)
+    def slot_handlePluginAddedCallback(self, pluginId, pluginName):
         if self.fIsOnlyPatchbay:
             pitem = PluginEdit(self, self.host, pluginId)
         else:
@@ -275,10 +262,11 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
         self.fPluginList.append(pitem)
         self.fPluginCount += 1
 
-        if self.fIsOnlyPatchbay and not isProjectLoading:
+        if self.fIsOnlyPatchbay and not self.fParent.isProjectLoading():
             self.host.set_active(pluginId, True)
 
-    def removePlugin(self, pluginId):
+    @pyqtSlot(int)
+    def slot_handlePluginRemovedCallback(self, pluginId):
         patchcanvas.handlePluginRemoved(pluginId)
 
         if pluginId in self.fSelectedPlugins:
@@ -300,9 +288,10 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
         # push all plugins 1 slot back
         for i in range(pluginId, self.fPluginCount):
             pitem = self.fPluginList[i]
-            pitem.setId(i)
+            pitem.setPluginId(i)
 
-    def renamePlugin(self, pluginId, newName):
+    @pyqtSlot(int, str)
+    def slot_handlePluginRenamedCallback(self, pluginId, newName):
         if pluginId >= self.fPluginCount:
             return
 
@@ -312,13 +301,16 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
 
         pitem.setName(newName)
 
-    def disablePlugin(self, pluginId, errorMsg):
+    @pyqtSlot(int, str)
+    def slot_handlePluginUnavailableCallback(self, pluginId, errorMsg):
         if pluginId >= self.fPluginCount:
             return
 
         pitem = self.fPluginList[pluginId]
         if pitem is None:
             return
+
+    # -----------------------------------------------------------------
 
     def removeAllPlugins(self):
         for pitem in self.fPluginList:
@@ -678,198 +670,6 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
 
         if self.host.is_engine_running():
             self.host.patchbay_refresh(self.fExternalPatchbay)
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(int, str)
-    def slot_handlePluginAddedCallback(self, pluginId, pluginName):
-        self.addPlugin(pluginId, self.fParent.isProjectLoading())
-
-    @pyqtSlot(int)
-    def slot_handlePluginRemovedCallback(self, pluginId):
-        self.removePlugin(pluginId)
-
-    @pyqtSlot(int, str)
-    def slot_handlePluginRenamedCallback(self, pluginId, newName):
-        self.renamePlugin(pluginId, newName)
-
-    @pyqtSlot(int, str)
-    def slot_handlePluginUnavailableCallback(self, pluginId, errorMsg):
-        self.disablePlugin(pluginId, errorMsg)
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(int, int, float)
-    def slot_handleParameterValueChangedCallback(self, pluginId, index, value):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.setParameterValue(index, value)
-
-    @pyqtSlot(int, int, float)
-    def slot_handleParameterDefaultChangedCallback(self, pluginId, index, value):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.setParameterDefault(index, value)
-
-    @pyqtSlot(int, int, int)
-    def slot_handleParameterMidiCcChangedCallback(self, pluginId, index, cc):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.setParameterMidiControl(index, cc)
-
-    @pyqtSlot(int, int, int)
-    def slot_handleParameterMidiChannelChangedCallback(self, pluginId, index, channel):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.setParameterMidiChannel(index, channel)
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(int, int)
-    def slot_handleProgramChangedCallback(self, pluginId, index):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.setProgram(index)
-
-    @pyqtSlot(int, int)
-    def slot_handleMidiProgramChangedCallback(self, pluginId, index):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.setMidiProgram(index)
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(int, int, bool)
-    def slot_handleOptionChangedCallback(self, pluginId, option, yesNo):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.setOption(option, yesNo)
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(int, int, int, int)
-    def slot_handleNoteOnCallback(self, pluginId, channel, note, velo):
-        if pluginId in self.fSelectedPlugins:
-            self.fKeys.keyboard.sendNoteOn(note, False)
-
-        if not self.fIsOnlyPatchbay:
-            return
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.sendNoteOn(channel, note)
-
-    @pyqtSlot(int, int, int)
-    def slot_handleNoteOffCallback(self, pluginId, channel, note):
-        if pluginId in self.fSelectedPlugins:
-            self.fKeys.keyboard.sendNoteOff(note, False)
-
-        if not self.fIsOnlyPatchbay:
-            return
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.sendNoteOff(channel, note)
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(int)
-    def slot_handleUpdateCallback(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.updateInfo()
-
-    @pyqtSlot(int)
-    def slot_handleReloadInfoCallback(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.reloadInfo()
-
-    @pyqtSlot(int)
-    def slot_handleReloadParametersCallback(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.reloadParameters()
-
-    @pyqtSlot(int)
-    def slot_handleReloadProgramsCallback(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.reloadPrograms()
-
-    @pyqtSlot(int)
-    def slot_handleReloadAllCallback(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.reloadAll()
 
     # -----------------------------------------------------------------
 

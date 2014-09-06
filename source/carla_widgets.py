@@ -574,6 +574,39 @@ class PluginEdit(QDialog):
         self.ui.b_save_state.clicked.connect(self.slot_stateSave)
         self.ui.b_load_state.clicked.connect(self.slot_stateLoad)
 
+        host.UpdateCallback.connect(self.slot_handleUpdateCallback)
+        host.ReloadInfoCallback.connect(self.slot_handleReloadInfoCallback)
+        host.ReloadParametersCallback.connect(self.slot_handleReloadParametersCallback)
+        host.ReloadProgramsCallback.connect(self.slot_handleReloadProgramsCallback)
+        host.ReloadAllCallback.connect(self.slot_handleReloadAllCallback)
+
+    #------------------------------------------------------------------
+
+    @pyqtSlot(int)
+    def slot_handleUpdateCallback(self, pluginId):
+        if self.fPluginId == pluginId:
+            self.updateInfo()
+
+    @pyqtSlot(int)
+    def slot_handleReloadInfoCallback(self, pluginId):
+        if self.fPluginId == pluginId:
+            self.reloadInfo()
+
+    @pyqtSlot(int)
+    def slot_handleReloadParametersCallback(self, pluginId):
+        if self.fPluginId == pluginId:
+            self.reloadParameters()
+
+    @pyqtSlot(int)
+    def slot_handleReloadProgramsCallback(self, pluginId):
+        if self.fPluginId == pluginId:
+            self.reloadPrograms()
+
+    @pyqtSlot(int)
+    def slot_handleReloadAllCallback(self, pluginId):
+        if self.fPluginId == pluginId:
+            self.reloadAll()
+
     #------------------------------------------------------------------
 
     def updateInfo(self):
@@ -913,7 +946,7 @@ class PluginEdit(QDialog):
     def getHints(self):
         return self.fPluginInfo['hints']
 
-    def setId(self, idx):
+    def setPluginId(self, idx):
         self.fPluginId = idx
 
     def setName(self, name):

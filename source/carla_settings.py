@@ -207,7 +207,7 @@ class CarlaSettingsW(QDialog):
 
     # --------------------------------------------------------------------------------------------------------
 
-    def __init__(self, parent, host, hasCanvas, hasCanvasGL, hasEngine):
+    def __init__(self, parent, host, hasCanvas, hasCanvasGL):
         QDialog.__init__(self, parent)
         self.host = host
         self.ui = ui_carla_settings.Ui_CarlaSettingsW()
@@ -243,9 +243,6 @@ class CarlaSettingsW(QDialog):
         elif not hasCanvasGL:
             self.ui.cb_canvas_use_opengl.setEnabled(False)
             self.ui.cb_canvas_render_hq_aa.setEnabled(False)
-
-        if not hasEngine:
-            self.ui.lw_page.hideRow(self.TAB_INDEX_ENGINE)
 
         if host.isPlugin:
             self.ui.cb_engine_audio_driver.setEnabled(False)
@@ -685,7 +682,7 @@ class CarlaSettingsW(QDialog):
     @pyqtSlot()
     def slot_getAndSetProjectPath(self):
         # FIXME
-        getAndSetPath(self, self.ui.le_main_proj_folder.text(), self.ui.le_main_proj_folder)
+        getAndSetPath(self, self.ui.le_main_proj_folder)
 
     # --------------------------------------------------------------------------------------------------------
 

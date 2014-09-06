@@ -91,6 +91,11 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         QFrame.__init__(self, parent)
         self.host = host
 
+        if False:
+            # kdevelop likes this :)
+            host = CarlaHostMeta()
+            self.host = host
+
         # -------------------------------------------------------------
         # Get plugin info
 
@@ -152,6 +157,72 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         self.peak_in  = None
         self.peak_out = None
+
+        # -------------------------------------------------------------
+        # Set-up connections
+
+        host.ParameterValueChangedCallback.connect(self.slot_handleParameterValueChangedCallback)
+        host.ParameterDefaultChangedCallback.connect(self.slot_handleParameterDefaultChangedCallback)
+        host.ParameterMidiChannelChangedCallback.connect(self.slot_handleParameterMidiChannelChangedCallback)
+        host.ParameterMidiCcChangedCallback.connect(self.slot_handleParameterMidiCcChangedCallback)
+        host.ProgramChangedCallback.connect(self.slot_handleProgramChangedCallback)
+        host.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
+        host.OptionChangedCallback.connect(self.slot_handleOptionChangedCallback)
+        host.UiStateChangedCallback.connect(self.slot_handleUiStateChangedCallback)
+        host.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
+        host.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(int, int, float)
+    def slot_handleParameterValueChangedCallback(self, pluginId, index, value):
+        if self.fPluginId == pluginId:
+            self.setParameterValue(index, value, True)
+
+    @pyqtSlot(int, int, float)
+    def slot_handleParameterDefaultChangedCallback(self, pluginId, index, value):
+        if self.fPluginId == pluginId:
+            self.setParameterDefault(index, value)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleParameterMidiCcChangedCallback(self, pluginId, index, cc):
+        if self.fPluginId == pluginId:
+            self.setParameterMidiControl(index, cc)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleParameterMidiChannelChangedCallback(self, pluginId, index, channel):
+        if self.fPluginId == pluginId:
+            self.setParameterMidiChannel(index, channel)
+
+    @pyqtSlot(int, int)
+    def slot_handleProgramChangedCallback(self, pluginId, index):
+        if self.fPluginId == pluginId:
+            self.setProgram(index, True)
+
+    @pyqtSlot(int, int)
+    def slot_handleMidiProgramChangedCallback(self, pluginId, index):
+        if self.fPluginId == pluginId:
+            self.setMidiProgram(index, True)
+
+    @pyqtSlot(int, int, bool)
+    def slot_handleOptionChangedCallback(self, pluginId, option, yesNo):
+        if self.fPluginId == pluginId:
+            self.setOption(option, yesNo)
+
+    @pyqtSlot(int, int)
+    def slot_handleUiStateChangedCallback(self, pluginId, state):
+        if self.fPluginId == pluginId:
+            self.customUiStateChanged(state)
+
+    @pyqtSlot(int, int, int, int)
+    def slot_handleNoteOnCallback(self, pluginId, channel, note, velo):
+        if self.fPluginId == pluginId:
+            self.sendNoteOn(channel, note)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleNoteOffCallback(self, pluginId, channel, note):
+        if self.fPluginId == pluginId:
+            self.sendNoteOff(channel, note)
 
     #------------------------------------------------------------------
 
@@ -226,9 +297,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
     #------------------------------------------------------------------
 
-    def setId(self, idx):
+    def setPluginId(self, idx):
         self.fPluginId = idx
-        self.fEditDialog.setId(idx)
+        self.fEditDialog.setPluginId(idx)
 
     def setName(self, name):
         self.fEditDialog.setName(name)
@@ -1560,8 +1631,8 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
 
 # ------------------------------------------------------------------------------------------------------------
 
-def createPluginSlot(parent, host, pluginId, useCustomSkins):
-    if not useCustomSkins:
+def createPluginSlot(parent, host, pluginId, useSkins):
+    if not useSkins:
         return PluginSlot_Default(parent, host, pluginId)
 
     pluginInfo  = host.get_plugin_info(pluginId)

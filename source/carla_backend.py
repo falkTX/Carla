@@ -31,9 +31,9 @@ from platform import architecture
 from sys import platform, maxsize
 
 if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, QObject
+    from PyQt5.QtCore import pyqtSignal, pyqtWrapperType, QObject
 else:
-    from PyQt4.QtCore import pyqtSignal, QObject
+    from PyQt4.QtCore import pyqtSignal, pyqtWrapperType, QObject
 
 # ------------------------------------------------------------------------------------------------------------
 # 64bit check
@@ -1245,10 +1245,16 @@ else:
     BINARY_NATIVE = BINARY_OTHER
 
 # ------------------------------------------------------------------------------------------------------------
+# An empty class used to resolve metaclass conflicts between ABC and PyQt modules
+
+class PyQtMetaClass(pyqtWrapperType, ABCMeta):
+    pass
+
+# ------------------------------------------------------------------------------------------------------------
 # Carla Host object (Meta)
 
 class CarlaHostMeta(QObject):
-#class CarlaHostMeta(QObject, metaclass=ABCMeta):
+#class CarlaHostMeta(QObject, metaclass=PyQtMetaClass):
     # signals
     DebugCallback = pyqtSignal(int, int, int, float, str)
     PluginAddedCallback = pyqtSignal(int, str)
@@ -2820,7 +2826,7 @@ class PluginStoreInfo(object):
 # Carla Host object for plugins (using pipes)
 
 class CarlaHostPlugin(CarlaHostMeta):
-#class CarlaHostPlugin(CarlaHostMeta, metaclass=ABCMeta):
+#class CarlaHostPlugin(CarlaHostMeta, metaclass=PyQtMetaClass):
     def __init__(self):
         CarlaHostMeta.__init__(self)
 

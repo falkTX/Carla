@@ -62,18 +62,6 @@ class HostWidgetMeta(object):
 
     # --------------------------------------------------------------------------------------------------------
 
-    #def addPlugin(self, pluginId, isProjectLoading):
-        #raise NotImplementedError
-
-    #def removePlugin(self, pluginId):
-        #raise NotImplementedError
-
-    #def renamePlugin(self, pluginId, newName):
-        #raise NotImplementedError
-
-    #def disablePlugin(self, pluginId, errorMsg):
-        #raise NotImplementedError
-
     def removeAllPlugins(self):
         raise NotImplementedError
 
@@ -297,8 +285,7 @@ class HostWindow(QMainWindow):
         self.fLadspaRdfNeedsUpdate = True
 
     def openSettingsWindow(self, hasCanvas, hasCanvasGL):
-        hasEngine = bool(self.fSessionManagerName != "Non Session Manager")
-        dialog = CarlaSettingsW(self, self.host, hasCanvas, hasCanvasGL, hasEngine)
+        dialog = CarlaSettingsW(self, self.host, hasCanvas, hasCanvasGL)
         return dialog.exec_()
 
     def setupContainer(self, showCanvas, canvasThemeData = []):
@@ -1070,16 +1057,13 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
     # FIXME
     if host is None: host = gCarla.gui.host
 
-    if action in (ENGINE_CALLBACK_ENGINE_STARTED,
-                  ENGINE_CALLBACK_PROCESS_MODE_CHANGED,
-                  ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED):
-        if action == ENGINE_CALLBACK_ENGINE_STARTED:
-            host.processMode   = value1
-            host.transportMode = value2
-        elif action == ENGINE_CALLBACK_PROCESS_MODE_CHANGED:
-            host.processMode   = value1
-        elif action == ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED:
-            host.transportMode = value1
+    if action == ENGINE_CALLBACK_ENGINE_STARTED:
+        host.processMode   = value1
+        host.transportMode = value2
+    elif action == ENGINE_CALLBACK_PROCESS_MODE_CHANGED:
+        host.processMode   = value1
+    elif action == ENGINE_CALLBACK_TRANSPORT_MODE_CHANGED:
+        host.transportMode = value1
 
     valueStr = charPtrToString(valueStr)
 
