@@ -35,6 +35,7 @@ else:
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
 
+from carla_host import *
 from carla_skin import *
 
 # ------------------------------------------------------------------------------------------------------------
@@ -226,7 +227,8 @@ class CarlaRackList(QListWidget):
 # ------------------------------------------------------------------------------------------------------------
 # Rack widget
 
-class CarlaRackW(QFrame):
+class CarlaRackW(QFrame, HostWidgetMeta):
+#class CarlaRackW(QFrame, HostWidgetMeta, metaclass=PyQtMetaClass):
     def __init__(self, parent, host, doSetup = True):
         QFrame.__init__(self, parent)
         self.host = host
@@ -364,6 +366,7 @@ class CarlaRackW(QFrame):
             pitem.setPluginId(i)
 
     # -----------------------------------------------------------------
+    # HostWidgetMeta methods
 
     def removeAllPlugins(self):
         while self.fRack.takeItem(0):
@@ -379,15 +382,11 @@ class CarlaRackW(QFrame):
         self.fPluginCount = 0
         self.fPluginList  = []
 
-    # -----------------------------------------------------------------
-
     def engineStarted(self):
         pass
 
     def engineStopped(self):
         pass
-
-    # -----------------------------------------------------------------
 
     def idleFast(self):
         for pitem in self.fPluginList:
@@ -403,15 +402,11 @@ class CarlaRackW(QFrame):
 
             pitem.getWidget().idleSlow()
 
-    # -----------------------------------------------------------------
-
     def projectLoadingStarted(self):
         self.fRack.setEnabled(False)
 
     def projectLoadingFinished(self):
         self.fRack.setEnabled(True)
-
-    # -----------------------------------------------------------------
 
     def saveSettings(self, settings):
         pass
@@ -509,7 +504,8 @@ class CarlaRackW(QFrame):
 
     @pyqtSlot()
     def slot_configureCarla(self):
-        if self.fParent is None or not self.fParent.openSettingsWindow(False, False):
+        dialog = CarlaSettingsW(self, self.host, False, False)
+        if not dialog.exec_():
             return
 
         self.fParent.loadSettings(False)

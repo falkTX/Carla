@@ -284,10 +284,6 @@ class HostWindow(QMainWindow):
     def setLoadRDFsNeeded(self):
         self.fLadspaRdfNeedsUpdate = True
 
-    def openSettingsWindow(self, hasCanvas, hasCanvasGL):
-        dialog = CarlaSettingsW(self, self.host, hasCanvas, hasCanvasGL)
-        return dialog.exec_()
-
     def setupContainer(self, showCanvas, canvasThemeData = []):
         if showCanvas:
             canvasWidth, canvasHeight, canvasBg, canvasBrush, canvasPen = canvasThemeData

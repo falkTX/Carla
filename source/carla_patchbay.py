@@ -38,7 +38,7 @@ else:
 
 import patchcanvas
 
-from carla_widgets import *
+from carla_host import *
 from digitalpeakmeter import DigitalPeakMeter
 from pixmapkeyboard import PixmapKeyboardHArea
 
@@ -61,7 +61,7 @@ CARLA_DEFAULT_CANVAS_SIZE_WIDTH  = 3100
 CARLA_DEFAULT_CANVAS_SIZE_HEIGHT = 2400
 
 # ------------------------------------------------------------------------------------------------
-# Dummt class used in main carla as replacement for PluginEdit
+# Dummy class used in main carla as replacement for PluginEdit
 
 class DummyPluginEdit(object):
     def __init__(self, parent, pluginId):
@@ -94,8 +94,8 @@ class DummyPluginEdit(object):
 # ------------------------------------------------------------------------------------------------
 # Patchbay widget
 
-class CarlaPatchbayW(QFrame, PluginEditParentMeta):
-#class CarlaPatchbayW(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
+class CarlaPatchbayW(QFrame, PluginEditParentMeta, HostWidgetMeta):
+#class CarlaPatchbayW(QFrame, PluginEditParentMeta, HostWidgetMeta, metaclass=PyQtMetaClass):
     def __init__(self, parent, host, doSetup = True, onlyPatchbay = True, is3D = False):
         QFrame.__init__(self, parent)
         self.host = host
@@ -294,8 +294,11 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
             pedit.setPluginId(i)
 
     # -----------------------------------------------------------------
+    # HostWidgetMeta methods
 
     def removeAllPlugins(self):
+        patchcanvas.handleAllPluginsRemoved()
+
         for pedit in self.fPluginList:
             if pedit is None:
                 break
@@ -307,17 +310,11 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
 
         self.clearSideStuff()
 
-        patchcanvas.handlePluginRemoved(0)
-
-    # -----------------------------------------------------------------
-
     def engineStarted(self):
         pass
 
     def engineStopped(self):
         patchcanvas.clear()
-
-    # -----------------------------------------------------------------
 
     def idleFast(self):
         if self.fPluginCount == 0:
@@ -348,15 +345,12 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
                 break
             pedit.idleSlow()
 
-    # -----------------------------------------------------------------
-
     def projectLoadingStarted(self):
-        pass
+        self.fView.setEnabled(False)
 
     def projectLoadingFinished(self):
+        self.fView.setEnabled(True)
         QTimer.singleShot(1000, self.slot_canvasRefresh)
-
-    # -----------------------------------------------------------------
 
     def saveSettings(self, settings):
         settings.setValue("ShowMeters", self.fParent.ui.act_settings_show_meters.isChecked())
@@ -636,7 +630,8 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
 
     @pyqtSlot()
     def slot_configureCarla(self):
-        if self.fParent is None or not self.fParent.openSettingsWindow(True, hasGL):
+        dialog = CarlaSettingsW(self, self.host, True, hasGL)
+        if not dialog.exec_():
             return
 
         self.fParent.loadSettings(False)

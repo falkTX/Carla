@@ -997,6 +997,17 @@ def handlePluginRemoved(plugin_id):
         if group.split and group.widgets[1]:
             group.widgets[1].m_plugin_id -= 1
 
+def handleAllPluginsRemoved():
+    if canvas.debug:
+        qDebug("PatchCanvas::handleAllPluginsRemoved()")
+
+    for group in canvas.group_list:
+        group.plugin_id -= 1
+        group.widgets[0].m_plugin_id -= 1
+
+        if group.split and group.widgets[1]:
+            group.widgets[1].m_plugin_id -= 1
+
 # Extra Internal functions
 
 def CanvasGetNewGroupPos(horizontal):

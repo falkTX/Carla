@@ -56,7 +56,7 @@ class CarlaMultiW(QTabWidget):
         self.fPatchbay = CarlaPatchbayW(parent, host, False, False)
         self.fParent   = parent
 
-        self.fUseCustomPaint = False
+        self.fUseCustomPaint = parent.getSavedSettings()[CARLA_KEY_CUSTOM_PAINTING]
 
         self.addTab(self.fRack, "Plugins")
         self.addTab(self.fPatchbay, "Patchbay")
@@ -64,6 +64,7 @@ class CarlaMultiW(QTabWidget):
         #self.fPatchbay.hide()
         #self.removeTab(1)
         #self.fPatchbay.setParent(None)
+        #self.fPatchbay.setWindowTitle(parent.windowTitle())
         #self.fPatchbay.show()
 
         self.scene = self.fPatchbay.scene
@@ -94,23 +95,11 @@ class CarlaMultiW(QTabWidget):
         parent.ui.act_settings_configure.triggered.connect(self.fPatchbay.slot_configureCarla)
 
     # -----------------------------------------------------------------
-
-    def fixCanvasPreviewSize(self):
-        self.fPatchbay.resize(self.fRack.size())
-        self.fPatchbay.slot_miniCanvasCheckSize()
-
-    def setUseCustomPaint(self, useCustomPaint):
-        if self.fUseCustomPaint != useCustomPaint:
-            self.fUseCustomPaint = useCustomPaint
-            self.update()
-
-    # -----------------------------------------------------------------
+    # HostWidgetMeta methods
 
     def removeAllPlugins(self):
         self.fRack.removeAllPlugins()
         self.fPatchbay.removeAllPlugins()
-
-    # -----------------------------------------------------------------
 
     def engineStarted(self):
         self.fRack.engineStarted()
@@ -122,8 +111,6 @@ class CarlaMultiW(QTabWidget):
         self.fPatchbay.engineStopped()
         self.fParent.engineStopped()
 
-    # -----------------------------------------------------------------
-
     def idleFast(self):
         self.fRack.idleFast()
         self.fPatchbay.idleFast()
@@ -131,8 +118,6 @@ class CarlaMultiW(QTabWidget):
     def idleSlow(self):
         self.fRack.idleSlow()
         self.fPatchbay.idleSlow()
-
-    # -----------------------------------------------------------------
 
     def projectLoadingStarted(self):
         self.fRack.projectLoadingStarted()
@@ -142,14 +127,18 @@ class CarlaMultiW(QTabWidget):
         self.fRack.projectLoadingFinished()
         self.fPatchbay.projectLoadingFinished()
 
-    # -----------------------------------------------------------------
-
     def saveSettings(self, settings):
         self.fRack.saveSettings(settings)
         self.fPatchbay.saveSettings(settings)
 
     def showEditDialog(self, pluginId):
         self.fRack.showEditDialog(pluginId)
+
+    # -----------------------------------------------------------------
+
+    def fixCanvasPreviewSize(self):
+        self.fPatchbay.resize(self.fRack.size())
+        self.fPatchbay.slot_miniCanvasCheckSize()
 
     # -----------------------------------------------------------------
 
@@ -182,8 +171,6 @@ class CarlaHostW(HostWindow):
 
         self.fContainer = CarlaMultiW(self, host)
         self.setupContainer(True, self.fContainer.fPatchbay.themeData)
-
-        self.fContainer.setUseCustomPaint(self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING])
 
         # -------------------------------------------------------------
         # Set-up GUI stuff
@@ -287,6 +274,11 @@ class CarlaHostW(HostWindow):
         if obj == self.ui.dockWidget and event.type() == QEvent.Resize:
             self.updateInfoLabelXandSize()
         return HostWindow.eventFilter(self, obj, event)
+
+    #def closeEvent(self, event):
+        #HostWindow.closeEvent(self, event)
+        ## needed if using separate patchbay window
+        #QApplication.instance().quit()
 
     def resizeEvent(self, event):
         HostWindow.resizeEvent(self, event)
