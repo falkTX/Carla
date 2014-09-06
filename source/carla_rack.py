@@ -315,6 +315,10 @@ class CarlaRackW(QFrame):
         # -------------------------------------------------------------
         # Connect actions to functions
 
+        host.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
+        host.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
+        host.ReloadAllCallback.connect(self.slot_handleReloadAllCallback)
+
         if not doSetup: return
 
         parent.ui.menu_Canvas.hide()
@@ -329,10 +333,6 @@ class CarlaRackW(QFrame):
         parent.ui.act_plugins_panic.triggered.connect(self.slot_pluginsDisable)
 
         parent.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
-
-        host.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
-        host.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
-        host.ReloadAllCallback.connect(self.slot_handleReloadAllCallback)
 
     # -----------------------------------------------------------------
 

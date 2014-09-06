@@ -93,23 +93,6 @@ class CarlaMultiW(QTabWidget):
 
         parent.ui.act_settings_configure.triggered.connect(self.fPatchbay.slot_configureCarla)
 
-        host.PluginAddedCallback.connect(self.fRack.slot_handlePluginAddedCallback)
-        host.PluginAddedCallback.connect(self.fPatchbay.slot_handlePluginAddedCallback)
-        host.PluginRemovedCallback.connect(self.fRack.slot_handlePluginRemovedCallback)
-        host.PluginRemovedCallback.connect(self.fPatchbay.slot_handlePluginRemovedCallback)
-
-        host.ReloadAllCallback.connect(self.fRack.slot_handleReloadAllCallback)
-
-        host.PatchbayClientAddedCallback.connect(self.fPatchbay.slot_handlePatchbayClientAddedCallback)
-        host.PatchbayClientRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayClientRemovedCallback)
-        host.PatchbayClientRenamedCallback.connect(self.fPatchbay.slot_handlePatchbayClientRenamedCallback)
-        host.PatchbayClientDataChangedCallback.connect(self.fPatchbay.slot_handlePatchbayClientDataChangedCallback)
-        host.PatchbayPortAddedCallback.connect(self.fPatchbay.slot_handlePatchbayPortAddedCallback)
-        host.PatchbayPortRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayPortRemovedCallback)
-        host.PatchbayPortRenamedCallback.connect(self.fPatchbay.slot_handlePatchbayPortRenamedCallback)
-        host.PatchbayConnectionAddedCallback.connect(self.fPatchbay.slot_handlePatchbayConnectionAddedCallback)
-        host.PatchbayConnectionRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayConnectionRemovedCallback)
-
     # -----------------------------------------------------------------
 
     def fixCanvasPreviewSize(self):

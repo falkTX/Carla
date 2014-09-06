@@ -206,6 +206,18 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
         # -------------------------------------------------------------
         # Connect actions to functions (part 2)
 
+        host.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
+        host.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
+        host.PatchbayClientAddedCallback.connect(self.slot_handlePatchbayClientAddedCallback)
+        host.PatchbayClientRemovedCallback.connect(self.slot_handlePatchbayClientRemovedCallback)
+        host.PatchbayClientRenamedCallback.connect(self.slot_handlePatchbayClientRenamedCallback)
+        host.PatchbayClientDataChangedCallback.connect(self.slot_handlePatchbayClientDataChangedCallback)
+        host.PatchbayPortAddedCallback.connect(self.slot_handlePatchbayPortAddedCallback)
+        host.PatchbayPortRemovedCallback.connect(self.slot_handlePatchbayPortRemovedCallback)
+        host.PatchbayPortRenamedCallback.connect(self.slot_handlePatchbayPortRenamedCallback)
+        host.PatchbayConnectionAddedCallback.connect(self.slot_handlePatchbayConnectionAddedCallback)
+        host.PatchbayConnectionRemovedCallback.connect(self.slot_handlePatchbayConnectionRemovedCallback)
+
         if not doSetup: return
 
         parent.ui.act_plugins_enable.triggered.connect(self.slot_pluginsEnable)
@@ -230,18 +242,6 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
         parent.ui.act_canvas_save_image.triggered.connect(self.slot_canvasSaveImage)
 
         parent.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
-
-        host.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
-        host.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
-        host.PatchbayClientAddedCallback.connect(self.slot_handlePatchbayClientAddedCallback)
-        host.PatchbayClientRemovedCallback.connect(self.slot_handlePatchbayClientRemovedCallback)
-        host.PatchbayClientRenamedCallback.connect(self.slot_handlePatchbayClientRenamedCallback)
-        host.PatchbayClientDataChangedCallback.connect(self.slot_handlePatchbayClientDataChangedCallback)
-        host.PatchbayPortAddedCallback.connect(self.slot_handlePatchbayPortAddedCallback)
-        host.PatchbayPortRemovedCallback.connect(self.slot_handlePatchbayPortRemovedCallback)
-        host.PatchbayPortRenamedCallback.connect(self.slot_handlePatchbayPortRenamedCallback)
-        host.PatchbayConnectionAddedCallback.connect(self.slot_handlePatchbayConnectionAddedCallback)
-        host.PatchbayConnectionRemovedCallback.connect(self.slot_handlePatchbayConnectionRemovedCallback)
 
     # -----------------------------------------------------------------
 
