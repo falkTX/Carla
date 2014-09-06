@@ -694,12 +694,12 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         label   = sender.fLabel
 
         if index in (PARAMETER_DRYWET, PARAMETER_VOLUME):
-            default = 1.0
+            default   = 1.0
             resetText = self.tr("Reset (%i%%)" % int(default*100.0))
             minimText = self.tr("Set to Minimum (%i%%)" % int(minimum*100.0))
             maximText = self.tr("Set to Maximum (%i%%)" % int(maximum*100.0))
         else:
-            default = self.host.get_default_parameter_value(self.fPluginId, index)
+            default   = self.host.get_default_parameter_value(self.fPluginId, index)
             resetText = self.tr("Reset (%f)" % default)
             minimText = self.tr("Set to Minimum (%f)" % minimum)
             maximText = self.tr("Set to Maximum (%f)" % maximum)

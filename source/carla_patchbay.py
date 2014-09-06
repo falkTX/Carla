@@ -245,19 +245,28 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
 
     # -----------------------------------------------------------------
 
-    def getPluginCount(self):
-        return self.fPluginCount
+    def getPluginEditDialog(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return None
+
+        pedit = self.fPluginList[pluginId]
+        if pedit is None:
+            return None
+        if False:
+            pedit = DummyPluginEdit(self, 0)
+
+        return pedit
 
     # -----------------------------------------------------------------
 
     @pyqtSlot(int, str)
     def slot_handlePluginAddedCallback(self, pluginId, pluginName):
         if self.fIsOnlyPatchbay:
-            pitem = PluginEdit(self, self.host, pluginId)
+            pedit = PluginEdit(self, self.host, pluginId)
         else:
-            pitem = DummyPluginEdit(self, pluginId)
+            pedit = DummyPluginEdit(self, pluginId)
 
-        self.fPluginList.append(pitem)
+        self.fPluginList.append(pedit)
         self.fPluginCount += 1
 
         if self.fIsOnlyPatchbay and not self.fParent.isProjectLoading():
@@ -270,32 +279,28 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
         if pluginId in self.fSelectedPlugins:
             self.clearSideStuff()
 
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
+        pedit = self.getPluginEditDialog(pluginId)
 
         self.fPluginCount -= 1
         self.fPluginList.pop(pluginId)
 
-        pitem.close()
-        del pitem
+        if pedit is not None:
+            pedit.close()
+            del pedit
 
         # push all plugins 1 slot back
         for i in range(pluginId, self.fPluginCount):
-            pitem = self.fPluginList[i]
-            pitem.setPluginId(i)
+            pedit = self.fPluginList[i]
+            pedit.setPluginId(i)
 
     # -----------------------------------------------------------------
 
     def removeAllPlugins(self):
-        for pitem in self.fPluginList:
-            if pitem is None:
+        for pedit in self.fPluginList:
+            if pedit is None:
                 break
-            pitem.close()
-            del pitem
+            pedit.close()
+            del pedit
 
         self.fPluginCount = 0
         self.fPluginList  = []
@@ -338,10 +343,10 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
         self.fPeaksOut.displayMeter(2, 0.0, True)
 
     def idleSlow(self):
-        for pitem in self.fPluginList:
-            if pitem is None:
+        for pedit in self.fPluginList:
+            if pedit is None:
                 break
-            pitem.idleSlow()
+            pedit.idleSlow()
 
     # -----------------------------------------------------------------
 
@@ -360,14 +365,10 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
         settings.setValue("VerticalScrollBarValue", self.fView.verticalScrollBar().value())
 
     def showEditDialog(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return
+        pedit = self.getPluginEditDialog(pluginId)
 
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.show()
+        if pedit:
+            pedit.show()
 
     # -----------------------------------------------------------------
     # called by PluginEdit to plugin skin parent, ignored here
@@ -561,12 +562,12 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
             return
 
         for i in range(self.fPluginCount):
-            pitem = self.fPluginList[i]
-            if pitem is None:
+            pedit = self.fPluginList[i]
+            if pedit is None:
                 break
 
-            if pitem.getHints() & PLUGIN_CAN_VOLUME:
-                pitem.setParameterValue(PARAMETER_VOLUME, 1.0)
+            if pedit.getHints() & PLUGIN_CAN_VOLUME:
+                pedit.setParameterValue(PARAMETER_VOLUME, 1.0)
                 self.host.set_volume(i, 1.0)
 
     @pyqtSlot()
@@ -575,12 +576,12 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
             return
 
         for i in range(self.fPluginCount):
-            pitem = self.fPluginList[i]
-            if pitem is None:
+            pedit = self.fPluginList[i]
+            if pedit is None:
                 break
 
-            if pitem.getHints() & PLUGIN_CAN_VOLUME:
-                pitem.setParameterValue(PARAMETER_VOLUME, 0.0)
+            if pedit.getHints() & PLUGIN_CAN_VOLUME:
+                pedit.setParameterValue(PARAMETER_VOLUME, 0.0)
                 self.host.set_volume(i, 0.0)
 
     @pyqtSlot()
@@ -589,12 +590,12 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
             return
 
         for i in range(self.fPluginCount):
-            pitem = self.fPluginList[i]
-            if pitem is None:
+            pedit = self.fPluginList[i]
+            if pedit is None:
                 break
 
-            if pitem.getHints() & PLUGIN_CAN_DRYWET:
-                pitem.setParameterValue(PARAMETER_DRYWET, 1.0)
+            if pedit.getHints() & PLUGIN_CAN_DRYWET:
+                pedit.setParameterValue(PARAMETER_DRYWET, 1.0)
                 self.host.set_drywet(i, 1.0)
 
     @pyqtSlot()
@@ -603,12 +604,12 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
             return
 
         for i in range(self.fPluginCount):
-            pitem = self.fPluginList[i]
-            if pitem is None:
+            pedit = self.fPluginList[i]
+            if pedit is None:
                 break
 
-            if pitem.getHints() & PLUGIN_CAN_DRYWET:
-                pitem.setParameterValue(PARAMETER_DRYWET, 0.0)
+            if pedit.getHints() & PLUGIN_CAN_DRYWET:
+                pedit.setParameterValue(PARAMETER_DRYWET, 0.0)
                 self.host.set_drywet(i, 0.0)
 
     @pyqtSlot()
@@ -617,18 +618,18 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
             return
 
         for i in range(self.fPluginCount):
-            pitem = self.fPluginList[i]
-            if pitem is None:
+            pedit = self.fPluginList[i]
+            if pedit is None:
                 break
 
-            if pitem.getHints() & PLUGIN_CAN_BALANCE:
-                pitem.setParameterValue(PARAMETER_BALANCE_LEFT, -1.0)
-                pitem.setParameterValue(PARAMETER_BALANCE_RIGHT, 1.0)
+            if pedit.getHints() & PLUGIN_CAN_BALANCE:
+                pedit.setParameterValue(PARAMETER_BALANCE_LEFT, -1.0)
+                pedit.setParameterValue(PARAMETER_BALANCE_RIGHT, 1.0)
                 self.host.set_balance_left(i, -1.0)
                 self.host.set_balance_right(i, 1.0)
 
-            if pitem.getHints() & PLUGIN_CAN_PANNING:
-                pitem.setParameterValue(PARAMETER_PANNING, 0.0)
+            if pedit.getHints() & PLUGIN_CAN_PANNING:
+                pedit.setParameterValue(PARAMETER_PANNING, 0.0)
                 self.host.set_panning(i, 0.0)
 
     # -----------------------------------------------------------------
@@ -795,10 +796,10 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
         if self.host.is_engine_running():
             self.host.patchbay_refresh(self.fExternalPatchbay)
 
-            for pitem in self.fPluginList:
-                if pitem is None:
+            for pedit in self.fPluginList:
+                if pedit is None:
                     break
-                pitem.reloadAll()
+                pedit.reloadAll()
 
         QTimer.singleShot(1000 if self.fParent.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY] else 0, self.fMiniCanvasPreview.update)
 
