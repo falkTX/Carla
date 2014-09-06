@@ -332,8 +332,6 @@ class CarlaRackW(QFrame):
 
         host.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
         host.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
-        host.PluginRenamedCallback.connect(self.slot_handlePluginRenamedCallback)
-        host.PluginUnavailableCallback.connect(self.slot_handlePluginUnavailableCallback)
         host.ReloadAllCallback.connect(self.slot_handleReloadAllCallback)
 
     # -----------------------------------------------------------------
@@ -364,22 +362,6 @@ class CarlaRackW(QFrame):
         for i in range(pluginId, self.fPluginCount):
             pitem = self.fPluginList[i]
             pitem.setPluginId(i)
-
-    @pyqtSlot(int, str)
-    def slot_handlePluginRenamedCallback(self, pluginId, newName):
-        widget = self.getPluginSlotWidget(pluginId)
-
-        if widget is None:
-            return
-
-        widget.setName(newName)
-
-    @pyqtSlot(int, str)
-    def slot_handlePluginUnavailableCallback(self, pluginId, errorMsg):
-        widget = self.getPluginSlotWidget(pluginId)
-
-        if widget is None:
-            return
 
     # -----------------------------------------------------------------
 

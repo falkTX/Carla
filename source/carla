@@ -97,10 +97,6 @@ class CarlaMultiW(QTabWidget):
         host.PluginAddedCallback.connect(self.fPatchbay.slot_handlePluginAddedCallback)
         host.PluginRemovedCallback.connect(self.fRack.slot_handlePluginRemovedCallback)
         host.PluginRemovedCallback.connect(self.fPatchbay.slot_handlePluginRemovedCallback)
-        host.PluginRenamedCallback.connect(self.fRack.slot_handlePluginRenamedCallback)
-        host.PluginRenamedCallback.connect(self.fPatchbay.slot_handlePluginRenamedCallback)
-        host.PluginUnavailableCallback.connect(self.fRack.slot_handlePluginUnavailableCallback)
-        host.PluginUnavailableCallback.connect(self.fPatchbay.slot_handlePluginUnavailableCallback)
 
         host.ReloadAllCallback.connect(self.fRack.slot_handleReloadAllCallback)
 

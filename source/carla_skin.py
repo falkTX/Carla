@@ -161,6 +161,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         # -------------------------------------------------------------
         # Set-up connections
 
+        host.PluginRenamedCallback.connect(self.slot_handlePluginRenamedCallback)
+        host.PluginUnavailableCallback.connect(self.slot_handlePluginUnavailableCallback)
         host.ParameterValueChangedCallback.connect(self.slot_handleParameterValueChangedCallback)
         host.ParameterDefaultChangedCallback.connect(self.slot_handleParameterDefaultChangedCallback)
         host.ParameterMidiChannelChangedCallback.connect(self.slot_handleParameterMidiChannelChangedCallback)
@@ -173,6 +175,16 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         host.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
 
     # -----------------------------------------------------------------
+
+    @pyqtSlot(int, str)
+    def slot_handlePluginRenamedCallback(self, pluginId, newName):
+        if self.fPluginId == pluginId:
+            self.setName(newName)
+
+    @pyqtSlot(int, str)
+    def slot_handlePluginUnavailableCallback(self, pluginId, errorMsg):
+        if self.fPluginId == pluginId:
+            pass
 
     @pyqtSlot(int, int, float)
     def slot_handleParameterValueChangedCallback(self, pluginId, index, value):

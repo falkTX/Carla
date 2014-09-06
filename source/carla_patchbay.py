@@ -233,8 +233,6 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
 
         host.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
         host.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
-        host.PluginRenamedCallback.connect(self.slot_handlePluginRenamedCallback)
-        host.PluginUnavailableCallback.connect(self.slot_handlePluginUnavailableCallback)
         host.PatchbayClientAddedCallback.connect(self.slot_handlePatchbayClientAddedCallback)
         host.PatchbayClientRemovedCallback.connect(self.slot_handlePatchbayClientRemovedCallback)
         host.PatchbayClientRenamedCallback.connect(self.slot_handlePatchbayClientRenamedCallback)
@@ -289,26 +287,6 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
         for i in range(pluginId, self.fPluginCount):
             pitem = self.fPluginList[i]
             pitem.setPluginId(i)
-
-    @pyqtSlot(int, str)
-    def slot_handlePluginRenamedCallback(self, pluginId, newName):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.setName(newName)
-
-    @pyqtSlot(int, str)
-    def slot_handlePluginUnavailableCallback(self, pluginId, errorMsg):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
 
     # -----------------------------------------------------------------
 
