@@ -164,21 +164,21 @@ static intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t
         break;
 
     case audioMasterCurrentId:
-        if (gVstCurrentUniqueId == 0) DISCOVERY_OUT("warning", "plugin asked for uniqueId, but it's currently 0");
+        if (gVstCurrentUniqueId == 0) DISCOVERY_OUT("warning", "Plugin asked for uniqueId, but it's currently 0");
 
         ret = gVstCurrentUniqueId;
         break;
 
     case DECLARE_VST_DEPRECATED(audioMasterWantMidi):
-        if (gVstWantsMidi) DISCOVERY_OUT("warning", "plugin requested MIDI more than once");
+        if (gVstWantsMidi) DISCOVERY_OUT("warning", "Plugin requested MIDI more than once");
 
         gVstWantsMidi = true;
         ret = 1;
         break;
 
     case audioMasterGetTime:
-        if (! gVstIsProcessing) DISCOVERY_OUT("warning", "plugin requested timeInfo out of process");
-        if (! gVstWantsTime)    DISCOVERY_OUT("warning", "plugin requested timeInfo but didn't ask if host could do \"sendVstTimeInfo\"");
+        if (! gVstIsProcessing) DISCOVERY_OUT("warning", "Plugin requested timeInfo out of process");
+        if (! gVstWantsTime)    DISCOVERY_OUT("warning", "Plugin requested timeInfo but didn't ask if host could do \"sendVstTimeInfo\"");
 
         carla_zeroStruct<VstTimeInfo>(timeInfo);
         timeInfo.sampleRate = kSampleRate;
@@ -208,7 +208,7 @@ static intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t
         break;
 
     case DECLARE_VST_DEPRECATED(audioMasterNeedIdle):
-        if (gVstNeedsIdle) DISCOVERY_OUT("warning", "plugin requested idle more than once");
+        if (gVstNeedsIdle) DISCOVERY_OUT("warning", "Plugin requested idle more than once");
 
         gVstNeedsIdle = true;
         ret = 1;
@@ -1030,15 +1030,15 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
 
             for (uint32_t j=0; j < rdfDescriptor->FeatureCount && supported; ++j)
             {
-                const LV2_RDF_Feature* const rdfFeature(&rdfDescriptor->Features[j]);
+                const LV2_RDF_Feature& feature(rdfDescriptor->Features[j]);
 
-                if (is_lv2_feature_supported(rdfFeature->URI))
+                if (std::strcmp(feature.URI, LV2_DATA_ACCESS_URI) == 0 || std::strcmp(feature.URI, LV2_INSTANCE_ACCESS_URI) == 0)
                 {
-                    pass();
+                    DISCOVERY_OUT("warning", "Plugin '" << rdfDescriptor->URI << "' DSP wants UI feature '" << feature.URI << "', ignoring this");
                 }
-                else if (LV2_IS_FEATURE_REQUIRED(rdfFeature->Type))
+                else if (LV2_IS_FEATURE_REQUIRED(feature.Type) && ! is_lv2_feature_supported(feature.URI))
                 {
-                    DISCOVERY_OUT("error", "Plugin '" << rdfDescriptor->URI << "' requires a non-supported feature '" << rdfFeature->URI << "'");
+                    DISCOVERY_OUT("error", "Plugin '" << rdfDescriptor->URI << "' requires a non-supported feature '" << feature.URI << "'");
                     supported = false;
                     break;
                 }

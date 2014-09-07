@@ -219,6 +219,9 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
         elif line.startswith("carla-discovery::info::"):
             print("%s - %s" % (line, filename))
 
+        elif line.startswith("carla-discovery::warning::"):
+            print("%s - %s" % (line, filename))
+
         elif line.startswith("carla-discovery::error::"):
             print("%s - %s" % (line, filename))
 
@@ -263,6 +266,8 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
                     del pinfo
                     pinfo = None
                     continue
+            else:
+                print("%s - %s" % (line, filename))
 
     # FIXME?
     tmp = gDiscoveryProcess

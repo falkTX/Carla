@@ -4593,19 +4593,20 @@ public:
         // Check supported features
         for (uint32_t j=0; j < fRdfDescriptor->FeatureCount && canContinue; ++j)
         {
-            if (! is_lv2_feature_supported(fRdfDescriptor->Features[j].URI))
+            const LV2_RDF_Feature& feature(fRdfDescriptor->Features[j]);
+
+            if (std::strcmp(feature.URI, LV2_DATA_ACCESS_URI) == 0 || std::strcmp(feature.URI, LV2_INSTANCE_ACCESS_URI) == 0)
+            {
+                carla_stderr("Plugin DSP wants UI feature '%s', ignoring this", feature.URI);
+            }
+            else if (LV2_IS_FEATURE_REQUIRED(feature.Type) && ! is_lv2_feature_supported(feature.URI))
             {
                 CarlaString msg("Plugin wants a feature that is not supported:\n");
-                msg += fRdfDescriptor->Features[j].URI;
+                msg += feature.URI;
 
-                if (LV2_IS_FEATURE_REQUIRED(fRdfDescriptor->Features[j].Type))
-                {
-                    canContinue = false;
-                    pData->engine->setLastError(msg);
-                    break;
-                }
-                else
-                    carla_stderr("%s", msg.buffer());
+                canContinue = false;
+                pData->engine->setLastError(msg);
+                break;
             }
         }
 
