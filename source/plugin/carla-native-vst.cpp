@@ -274,7 +274,7 @@ public:
                     fMidiEvents[fMidiEventCount].size = 3;
 
                     for (uint32_t j=0; j < 3; ++j)
-                        fMidiEvents[fMidiEventCount].data[i] = static_cast<uint8_t>(vstMidiEvent->midiData[i]);
+                        fMidiEvents[fMidiEventCount].data[j] = static_cast<uint8_t>(vstMidiEvent->midiData[j]);
 
                     fMidiEventCount += 1;
                 }
