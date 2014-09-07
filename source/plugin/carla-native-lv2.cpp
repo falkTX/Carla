@@ -200,9 +200,7 @@ public:
         }
 
         fHandle = fDescriptor->instantiate(&fHost);
-
-        if (fHandle == nullptr)
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
 
         carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kMaxMidiEvents*2);
         carla_zeroStruct<NativeTimeInfo>(fTimeInfo);

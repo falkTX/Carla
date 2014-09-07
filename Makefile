@@ -145,7 +145,7 @@ bin/carla-native.lv2/manifest.ttl: bin/carla-native-lv2-export$(APP_EXT) bridges
 	cd bin/carla-native.lv2 && $(LINK) ../*bridge-* ../carla-discovery-* .; cd ..
 
 bin/carla-native-lv2-export$(APP_EXT): bin/carla-native.lv2/carla-native$(LIB_EXT) .FORCE
-	$(MAKE) -C source/plugin ../../$@
+	$(MAKE) -C source/plugin
 
 # --------------------------------------------------------------
 
@@ -378,6 +378,7 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/styles/
 	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/
 	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/styles/
+	install -d $(DESTDIR)$(PREFIX)/lib/vst/
 	install -d $(DESTDIR)$(PREFIX)/lib/pkgconfig/
 	install -d $(DESTDIR)$(PREFIX)/include/carla/
 	install -d $(DESTDIR)$(PREFIX)/include/carla/includes/
@@ -444,6 +445,11 @@ install:
 		bin/carla-native.lv2/carla-native.* \
 		bin/carla-native.lv2/*.ttl \
 		$(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/
+
+	# Install vst plugin
+	install -m 644 \
+		bin/carla-native-vst*.* \
+		$(DESTDIR)$(PREFIX)/lib/vst/
 
 	# Install binaries (backend)
 	install -m 755 \
@@ -546,6 +552,10 @@ install:
 	# Link resources for lv2 plugin
 	rm -rf $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources
 	$(LINK) $(PREFIX)/share/carla/resources/ $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/
+
+	# Link resources for vst plugin
+	rm -rf $(DESTDIR)$(PREFIX)/lib/vst/carla-resources
+	$(LINK) $(PREFIX)/lib/lv2/carla-native.lv2/resources $(DESTDIR)$(PREFIX)/lib/vst/carla-resources
 
 	# Adjust PREFIX value in script files
 	sed -i "s?X-PREFIX-X?$(PREFIX)?" \

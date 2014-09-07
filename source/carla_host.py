@@ -99,8 +99,8 @@ class HostWindow(QMainWindow):
 
     # --------------------------------------------------------------------------------------------------------
 
-    def __init__(self, host):
-        QMainWindow.__init__(self)
+    def __init__(self, host, parent=None):
+        QMainWindow.__init__(self, parent)
         self.host = host
         self.ui = ui_carla_host.Ui_CarlaHostW()
         self.ui.setupUi(self)

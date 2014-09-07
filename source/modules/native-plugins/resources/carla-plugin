@@ -64,13 +64,13 @@ class PluginHost(CarlaHostPlugin):
 # Main Window
 
 class CarlaMiniW(ExternalUI, HostWindow):
-    def __init__(self, host):
+    def __init__(self, host, parent=None):
         # need to init this first
         gCarla.gui = self
 
         # now the regular stuff
         ExternalUI.__init__(self)
-        HostWindow.__init__(self, host)
+        HostWindow.__init__(self, host, parent)
         self.host = host
 
         if False:
@@ -94,10 +94,12 @@ class CarlaMiniW(ExternalUI, HostWindow):
     # ExternalUI Callbacks
 
     def d_uiShow(self):
-        self.show()
+        if self.parent() is None:
+            self.show()
 
     def d_uiHide(self):
-        self.hide()
+        if self.parent() is None:
+            self.hide()
 
     def d_uiQuit(self):
         self.close()
@@ -293,6 +295,58 @@ class CarlaMiniW(ExternalUI, HostWindow):
         return True
 
 # ------------------------------------------------------------------------------------------------------------
+# Embed plugin UI
+
+if LINUX and not config_UseQt5:
+    from PyQt4.QtGui import QLabel, QHBoxLayout, QX11EmbedWidget
+
+    class CarlaEmbedW(QX11EmbedWidget):
+        def __init__(self, host, winId):
+            QX11EmbedWidget.__init__(self)
+            self.host = host
+
+            self.fWinId = winId
+
+            self.fLayout = QVBoxLayout(self)
+            self.fLayout.setContentsMargins(0, 0, 0, 0)
+            self.fLayout.setSpacing(0)
+            self.setLayout(self.fLayout)
+
+            gCarla.gui = CarlaMiniW(host, self)
+            gCarla.gui.hide()
+
+            gCarla.gui.ui.act_file_quit.setEnabled(False)
+            gCarla.gui.ui.menu_File.setEnabled(False)
+            gCarla.gui.ui.menu_File.setVisible(False)
+            #menuBar = gCarla.gui.menuBar()
+            #menuBar.removeAction(gCarla.gui.ui.menu_File.menuAction())
+
+            self.addWidget(gCarla.gui.menuBar())
+            self.addWidget(gCarla.gui.ui.toolBar)
+            self.addWidget(gCarla.gui.centralWidget())
+
+            self.setFixedSize(740, 512)
+            self.embedInto(winId)
+            self.show()
+
+        def addWidget(self, widget):
+            widget.setParent(self)
+            self.fLayout.addWidget(widget)
+
+        def showEvent(self, event):
+            QX11EmbedWidget.showEvent(self, event)
+
+            # set our gui as parent for all plugins UIs
+            winIdStr = "%x" % self.fWinId
+            self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, winIdStr)
+
+        def hideEvent(self, event):
+            # disable parent
+            self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, "0")
+
+            QX11EmbedWidget.hideEvent(self, event)
+
+# ------------------------------------------------------------------------------------------------------------
 # Main
 
 if __name__ == '__main__':
@@ -310,7 +364,8 @@ if __name__ == '__main__':
     # Init host backend
 
     host = initHost("Carla-Plugin", PluginHost, False, True, True)
-    host.processMode = ENGINE_PROCESS_MODE_PATCHBAY if sys.argv[0].lower().endswith("/carla-plugin-patchbay") else ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+    host.processMode       = ENGINE_PROCESS_MODE_PATCHBAY if sys.argv[0].lower().endswith("/carla-plugin-patchbay") else ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+    host.processModeForced = True
 
     # FIXME
     loadHostSettings(host)
@@ -318,7 +373,17 @@ if __name__ == '__main__':
     # -------------------------------------------------------------
     # Create GUI
 
-    gCarla.gui = CarlaMiniW(host)
+    try:
+        winId = int(os.getenv("CARLA_PLUGIN_EMBED_WINID"))
+    except:
+        winId = 0
+
+    host.setenv("CARLA_PLUGIN_EMBED_WINID", "0")
+
+    if LINUX and winId != 0 and not config_UseQt5:
+        gui = CarlaEmbedW(host, winId)
+    else:
+        gui = CarlaMiniW(host)
 
     # -------------------------------------------------------------
     # simulate an engire started callback FIXME

@@ -78,6 +78,14 @@ TARGETS = \
 	../../bin/carla-native.lv2/carla-native$(LIB_EXT) \
 	../../bin/carla-native-lv2-export$(APP_EXT)
 
+ifeq ($(LINUX),true)
+ifeq ($(DEFAULT_QT),4)
+TARGETS += \
+	../../bin/carla-native-vstfx$(LIB_EXT) \
+	../../bin/carla-native-vstsyn$(LIB_EXT)
+endif
+endif
+
 # --------------------------------------------------------------
 
 all: $(TARGETS)
@@ -100,6 +108,12 @@ carla-native-lv2.cpp.o: carla-native-lv2.cpp carla-native-base.cpp ../modules/Ca
 carla-native-lv2-export.cpp.o: carla-native-lv2-export.cpp carla-native-base.cpp ../modules/CarlaNative.h
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
+carla-native-vst.cpp.fx.o: carla-native-vst.cpp carla-native-base.cpp ../modules/CarlaNative.h
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+carla-native-vst.cpp.syn.o: carla-native-vst.cpp carla-native-base.cpp ../modules/CarlaNative.h
+	$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_SYNTH -c -o $@
+
 # --------------------------------------------------------------
 
 ../../bin/carla-native.lv2/carla-native$(LIB_EXT): carla-native-lv2.cpp.o $(LIBS)
@@ -107,5 +121,11 @@ carla-native-lv2-export.cpp.o: carla-native-lv2-export.cpp carla-native-base.cpp
 
 ../../bin/carla-native-lv2-export$(APP_EXT): carla-native-lv2-export.cpp.o $(LIBS)
 	$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) -o $@
+
+../../bin/carla-native-vstfx$(LIB_EXT): carla-native-vst.cpp.fx.o $(LIBS)
+	$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
+
+../../bin/carla-native-vstsyn$(LIB_EXT): carla-native-vst.cpp.syn.o $(LIBS)
+	$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
