@@ -96,7 +96,8 @@ def findVST3Binaries(binPath):
 def findLV2Bundles(bundlePath):
     bundles = []
 
-    for root, dirs, files in os.walk(bundlePath):
+    for root, dirs, files in os.walk(bundlePath, followlinks=True):
+        if root == bundlePath: continue
         if os.path.exists(os.path.join(root, "manifest.ttl")):
             bundles.append(root)
 
@@ -105,7 +106,8 @@ def findLV2Bundles(bundlePath):
 def findMacVSTBundles(bundlePath, isVST3):
     bundles = []
 
-    for root, dirs, files in os.walk(bundlePath):
+    for root, dirs, files in os.walk(bundlePath, followlinks=True):
+        if root == bundlePath: continue
         for name in [name for name in dirs if name.lower().endswith(".vst3" if isVST3 else ".vst")]:
             bundles.append(os.path.join(root, name))
 
@@ -267,7 +269,7 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
                     pinfo = None
                     continue
             else:
-                print("%s - %s" % (line, filename))
+                print("%s - %s (unknown property)" % (line, filename))
 
     # FIXME?
     tmp = gDiscoveryProcess
