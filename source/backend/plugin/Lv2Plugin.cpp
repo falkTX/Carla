@@ -38,8 +38,7 @@ extern "C" {
 
 using juce::File;
 
-#define URI_CARLA_ATOM_WORKER     "http://kxstudio.sf.net/ns/carla/atomWorker"
-#define URI_CARLA_FRONTEND_WIN_ID "http://kxstudio.sf.net/ns/carla/frontendWinId"
+#define URI_CARLA_ATOM_WORKER "http://kxstudio.sf.net/ns/carla/atomWorker"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -108,12 +107,13 @@ const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE  = 37;
 const uint32_t CARLA_URI_MAP_ID_TIME_FRAME             = 38;
 const uint32_t CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND = 39;
 const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 40;
-const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 41;
-const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 42;
-const uint32_t CARLA_URI_MAP_ID_UI_WINDOW_TITLE        = 43;
-const uint32_t CARLA_URI_MAP_ID_CARLA_ATOM_WORKER      = 44;
-const uint32_t CARLA_URI_MAP_ID_CARLA_FRONTEND_WIN_ID  = 45;
-const uint32_t CARLA_URI_MAP_ID_COUNT                  = 46;
+const uint32_t CARLA_URI_MAP_ID_TIME_TICKS_PER_BEAT    = 41;
+const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 42;
+const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 43;
+const uint32_t CARLA_URI_MAP_ID_UI_WINDOW_TITLE        = 44;
+const uint32_t CARLA_URI_MAP_ID_CARLA_ATOM_WORKER      = 45;
+const uint32_t CARLA_URI_MAP_ID_CARLA_TRANSIENT_WIN_ID = 46;
+const uint32_t CARLA_URI_MAP_ID_COUNT                  = 47;
 
 // LV2 Feature Ids
 const uint32_t kFeatureIdBufSizeBounded   =  0;
@@ -339,7 +339,7 @@ struct Lv2PluginOptions {
         LV2_Options_Option& optFrontendWinId(opts[FrontendWinId]);
         optFrontendWinId.context = LV2_OPTIONS_INSTANCE;
         optFrontendWinId.subject = 0;
-        optFrontendWinId.key     = CARLA_URI_MAP_ID_CARLA_FRONTEND_WIN_ID;
+        optFrontendWinId.key     = CARLA_URI_MAP_ID_CARLA_TRANSIENT_WIN_ID;
         optFrontendWinId.size    = sizeof(int64_t);
         optFrontendWinId.type    = CARLA_URI_MAP_ID_ATOM_LONG;
         optFrontendWinId.value   = &frontendWinId;
@@ -2079,7 +2079,9 @@ public:
                 // check if parameter is not enabled or automable
                 if (LV2_IS_PORT_NOT_ON_GUI(portProps))
                     pData->param.data[j].hints &= ~(PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE);
-                else if (LV2_IS_PORT_CAUSES_ARTIFACTS(portProps) || LV2_IS_PORT_EXPENSIVE(portProps) || LV2_IS_PORT_NOT_AUTOMATIC(portProps))
+                else if (LV2_IS_PORT_CAUSES_ARTIFACTS(portProps) || LV2_IS_PORT_EXPENSIVE(portProps))
+                    pData->param.data[j].hints &= ~PARAMETER_IS_AUTOMABLE;
+                else if (LV2_IS_PORT_NOT_AUTOMATIC(portProps) || LV2_IS_PORT_NON_AUTOMABLE(portProps))
                     pData->param.data[j].hints &= ~PARAMETER_IS_AUTOMABLE;
 
                 pData->param.ranges[j].min = min;
@@ -2667,6 +2669,13 @@ public:
                         doPostRt = true;
                     }
                     break;
+                case LV2_PORT_DESIGNATION_TIME_TICKS_PER_BEAT:
+                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && ! carla_compareFloats(fLastTimeInfo.bbt.ticksPerBeat, timeInfo.bbt.ticksPerBeat))
+                    {
+                        fParamBuffers[k] = static_cast<float>(timeInfo.bbt.ticksPerBeat);
+                        doPostRt = true;
+                    }
+                    break;
                 }
 
                 if (doPostRt)
@@ -2709,6 +2718,9 @@ public:
 
                     lv2_atom_forge_key(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE);
                     lv2_atom_forge_float(&fAtomForge, static_cast<float>(timeInfo.bbt.beatsPerMinute));
+
+                    lv2_atom_forge_key(&fAtomForge, CARLA_URI_MAP_ID_TIME_TICKS_PER_BEAT);
+                    lv2_atom_forge_double(&fAtomForge, static_cast<float>(timeInfo.bbt.ticksPerBeat));
                 }
 
                 lv2_atom_forge_pop(&fAtomForge, &forgeFrame);
@@ -5617,6 +5629,8 @@ private:
             return CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND;
         if (std::strcmp(uri, LV2_TIME__speed) == 0)
             return CARLA_URI_MAP_ID_TIME_SPEED;
+        if (std::strcmp(uri, LV2_KXSTUDIO_PROPERTIES__TimePositionTicksPerBeat) == 0)
+            return CARLA_URI_MAP_ID_TIME_TICKS_PER_BEAT;
 
         // Others
         if (std::strcmp(uri, LV2_MIDI__MidiEvent) == 0)
@@ -5627,10 +5641,10 @@ private:
             return CARLA_URI_MAP_ID_UI_WINDOW_TITLE;
 
         // Custom
+        if (std::strcmp(uri, LV2_KXSTUDIO_PROPERTIES__TransientWindowId) == 0)
+            return CARLA_URI_MAP_ID_CARLA_TRANSIENT_WIN_ID;
         if (std::strcmp(uri, URI_CARLA_ATOM_WORKER) == 0)
             return CARLA_URI_MAP_ID_CARLA_ATOM_WORKER;
-        if (std::strcmp(uri, URI_CARLA_FRONTEND_WIN_ID) == 0)
-            return CARLA_URI_MAP_ID_CARLA_FRONTEND_WIN_ID;
 
         // Custom types
         return ((Lv2Plugin*)handle)->getCustomURID(uri);
@@ -5729,6 +5743,8 @@ private:
             return LV2_TIME__framesPerSecond;
         if (urid == CARLA_URI_MAP_ID_TIME_SPEED)
             return LV2_TIME__speed;
+        if (urid == CARLA_URI_MAP_ID_TIME_TICKS_PER_BEAT)
+            return LV2_KXSTUDIO_PROPERTIES__TimePositionTicksPerBeat;
 
         // Others
         if (urid == CARLA_URI_MAP_ID_MIDI_EVENT)
@@ -5741,8 +5757,8 @@ private:
         // Custom
         if (urid == CARLA_URI_MAP_ID_CARLA_ATOM_WORKER)
             return URI_CARLA_ATOM_WORKER;
-        if (urid == CARLA_URI_MAP_ID_CARLA_FRONTEND_WIN_ID)
-            return URI_CARLA_FRONTEND_WIN_ID;
+        if (urid == CARLA_URI_MAP_ID_CARLA_TRANSIENT_WIN_ID)
+            return LV2_KXSTUDIO_PROPERTIES__TransientWindowId;
 
         // Custom types
         return ((Lv2Plugin*)handle)->getCustomURIDString(urid);

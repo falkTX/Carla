@@ -64,6 +64,7 @@
 #include "lv2/lv2-miditype.h"
 #include "lv2/lv2-midifunctions.h"
 #include "lv2/lv2_external_ui.h"
+#include "lv2/lv2_kxstudio_properties.h"
 #include "lv2/lv2_programs.h"
 #include "lv2/lv2_rtmempool.h"
 
@@ -185,6 +186,7 @@ public:
     Lilv::Node pprop_notAutomatic;
     Lilv::Node pprop_notOnGUI;
     Lilv::Node pprop_trigger;
+    Lilv::Node pprop_nonAutomable;
 
     // Unit Hints
     Lilv::Node unit_name;
@@ -309,6 +311,7 @@ public:
           pprop_notAutomatic (new_uri(LV2_PORT_PROPS__notAutomatic)),
           pprop_notOnGUI     (new_uri(LV2_PORT_PROPS__notOnGUI)),
           pprop_trigger      (new_uri(LV2_PORT_PROPS__trigger)),
+          pprop_nonAutomable (new_uri(LV2_KXSTUDIO_PROPERTIES__NonAutomable)),
 
           unit_name          (new_uri(LV2_UNITS__name)),
           unit_render        (new_uri(LV2_UNITS__render)),
@@ -783,6 +786,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     rdfPort->Properties |= LV2_PORT_NOT_ON_GUI;
                 if (lilvPort.has_property(lv2World.pprop_trigger))
                     rdfPort->Properties |= LV2_PORT_TRIGGER;
+                if (lilvPort.has_property(lv2World.pprop_nonAutomable))
+                    rdfPort->Properties |= LV2_PORT_NON_AUTOMABLE;
 
                 if (lilvPort.has_property(lv2World.reportsLatency))
                     rdfPort->Designation = LV2_PORT_DESIGNATION_LATENCY;
@@ -881,6 +886,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_FRAMES_PER_SECOND;
                         else if (std::strcmp(designation, LV2_TIME__speed) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_SPEED;
+                        else if (std::strcmp(designation, LV2_KXSTUDIO_PROPERTIES__TimePositionTicksPerBeat) == 0)
+                            rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_TICKS_PER_BEAT;
                         else if (std::strncmp(designation, LV2_PARAMETERS_PREFIX, std::strlen(LV2_PARAMETERS_PREFIX)) == 0)
                             pass();
                         else if (std::strncmp(designation, LV2_PORT_GROUPS_PREFIX, std::strlen(LV2_PORT_GROUPS_PREFIX)) == 0)
