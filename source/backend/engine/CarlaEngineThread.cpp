@@ -45,7 +45,7 @@ void CarlaEngineThread::run() noexcept
     CARLA_SAFE_ASSERT(kEngine->isRunning());
     carla_debug("CarlaEngineThread::run()");
 
-    bool hasUI, oscRegisted, needsSingleThread;
+    bool needsSingleThread, needsUiUpdates, oscRegisted;
     float value;
 
     for (; kEngine->isRunning() && ! shouldThreadExit();)
@@ -63,57 +63,54 @@ void CarlaEngineThread::run() noexcept
             CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr && plugin->isEnabled());
             CARLA_SAFE_ASSERT_UINT2(i == plugin->getId(), i, plugin->getId());
 
-            hasUI             = (plugin->getHints() & PLUGIN_HAS_CUSTOM_UI);
             needsSingleThread = (plugin->getHints() & PLUGIN_NEEDS_SINGLE_THREAD);
+            needsUiUpdates    = (plugin->getHints() & PLUGIN_HAS_CUSTOM_UI) && ! needsSingleThread;
 
             // -----------------------------------------------------------
             // Process postponed events
 
-            if (oscRegisted || ! needsSingleThread)
+            if (! needsSingleThread)
             {
-                if (! needsSingleThread)
-                {
-                    try {
-                        plugin->postRtEventsRun();
-                    } CARLA_SAFE_EXCEPTION("postRtEventsRun()")
-                }
+                try {
+                    plugin->postRtEventsRun();
+                } CARLA_SAFE_EXCEPTION("postRtEventsRun()")
+            }
 
-                if (oscRegisted || (hasUI && ! needsSingleThread))
-                {
-                    // ---------------------------------------------------
-                    // Update parameter outputs
+            if (oscRegisted || needsUiUpdates)
+            {
+                // -------------------------------------------------------
+                // Update parameter outputs
 
-                    for (uint32_t j=0, pcount=plugin->getParameterCount(); j < pcount; ++j)
+                for (uint32_t j=0, pcount=plugin->getParameterCount(); j < pcount; ++j)
+                {
+                    if (! plugin->isParameterOutput(j))
+                        continue;
+
+                    value = plugin->getParameterValue(j);
+
+                    // Update OSC engine client
+                    if (oscRegisted)
                     {
-                        if (! plugin->isParameterOutput(j))
-                            continue;
-
-                        value = plugin->getParameterValue(j);
-
-                        // Update OSC engine client
-                        if (oscRegisted)
-                        {
 #ifdef BUILD_BRIDGE
-                            kEngine->oscSend_bridge_parameter_value(j, value);
+                        kEngine->oscSend_bridge_parameter_value(j, value);
 #else
-                            kEngine->oscSend_control_set_parameter_value(i, static_cast<int32_t>(j), value);
+                        kEngine->oscSend_control_set_parameter_value(i, static_cast<int32_t>(j), value);
 #endif
-                        }
-
-                        // Update UI
-                        if (hasUI && ! needsSingleThread)
-                            plugin->uiParameterChange(j, value);
                     }
+
+                    // Update UI
+                    if (needsUiUpdates)
+                        plugin->uiParameterChange(j, value);
                 }
+            }
 
 #ifndef BUILD_BRIDGE
-                // -------------------------------------------------------
-                // Update OSC control client peaks
+            // -----------------------------------------------------------
+            // Update OSC control client peaks
 
-                if (oscRegisted)
-                    kEngine->oscSend_control_set_peaks(i);
+            if (oscRegisted)
+                kEngine->oscSend_control_set_peaks(i);
 #endif
-            }
         }
 
         carla_msleep(25);
