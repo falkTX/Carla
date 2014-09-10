@@ -50,6 +50,8 @@
 # include <QtGui/QWizard>
 #endif
 
+#include <cstdio>
+
 #define BEGIN_STYLE_PIXMAPCACHE(a) \
     QRect rect = option->rect; \
     QPixmap internalPixmapCache; \
