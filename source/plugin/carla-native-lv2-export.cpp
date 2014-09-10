@@ -186,7 +186,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
 
     NativePluginHandle pluginHandle = nullptr;
 
-    if (! pluginLabel.startsWithIgnoreCase("carla-"))
+    if (! pluginLabel.startsWithIgnoreCase("carla"))
     {
         pluginHandle = pluginDesc->instantiate(&hostDesc);
         CARLA_SAFE_ASSERT_RETURN(pluginHandle != nullptr,)
