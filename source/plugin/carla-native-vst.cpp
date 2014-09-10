@@ -327,7 +327,7 @@ public:
             else
                 fTimeInfo.bbt.beatsPerMinute = 120.0;
 
-            if (vstTimeInfo->flags & kVstPpqPosValid|kVstTimeSigValid)
+            if (vstTimeInfo->flags & (kVstPpqPosValid|kVstTimeSigValid))
             {
                 const int    ppqPerBar = vstTimeInfo->timeSigNumerator * 4 / vstTimeInfo->timeSigDenominator;
                 const double barBeats  = (std::fmod(vstTimeInfo->ppqPos, ppqPerBar) / ppqPerBar) * vstTimeInfo->timeSigDenominator;
