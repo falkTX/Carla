@@ -172,8 +172,7 @@ public:
             try {
                 if (lo_server_recv_noblock(fOscServer, 0) == 0)
                     break;
-            }
-            CARLA_SAFE_EXCEPTION_CONTINUE("NSM OSC idle")
+            } CARLA_SAFE_EXCEPTION_CONTINUE("NSM OSC idle")
         }
     }
 
