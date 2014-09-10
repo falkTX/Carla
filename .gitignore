@@ -77,7 +77,7 @@ carla-discovery-posix32
 carla-discovery-posix64
 
 carla-frontend
-carla-native-lv2-export
+carla-lv2-export
 
 data/linux/unzipfx2cat32
 data/linux/unzipfx2cat64

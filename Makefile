@@ -135,16 +135,7 @@ bin/carla-discovery-native$(APP_EXT): libs .FORCE
 
 # --------------------------------------------------------------
 
-plugin: bin/carla-native.lv2/manifest.ttl
-
-bin/carla-native.lv2/carla-native$(LIB_EXT): backend .FORCE
-	$(MAKE) -C source/plugin ../../$@
-
-bin/carla-native.lv2/manifest.ttl: bin/carla-native-lv2-export$(APP_EXT) bridges-plugin discovery .FORCE
-	cd bin && ./carla-native-lv2-export$(APP_EXT); cd ..
-	cd bin/carla-native.lv2 && $(LINK) ../*bridge-* ../carla-discovery-* .; cd ..
-
-bin/carla-native-lv2-export$(APP_EXT): bin/carla-native.lv2/carla-native$(LIB_EXT) .FORCE
+plugin: libs .FORCE
 	$(MAKE) -C source/plugin
 
 # --------------------------------------------------------------
@@ -380,8 +371,7 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/bin/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/styles/
-	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/
-	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/styles/
+	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
 	install -d $(DESTDIR)$(PREFIX)/lib/vst/
 	install -d $(DESTDIR)$(PREFIX)/lib/pkgconfig/
 	install -d $(DESTDIR)$(PREFIX)/include/carla/
@@ -446,13 +436,14 @@ install:
 
 	# Install lv2 plugin
 	install -m 644 \
-		bin/carla-native.lv2/carla-native.* \
-		bin/carla-native.lv2/*.ttl \
-		$(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/
+		bin/carla.lv2/carla.* \
+		bin/carla.lv2/*.ttl \
+		$(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
 
 	# Install vst plugin
 	install -m 644 \
-		bin/carla-native-vst*.* \
+		bin/CarlaRack*.* \
+		bin/CarlaPatchbay*.* \
 		$(DESTDIR)$(PREFIX)/lib/vst/
 
 	# Install binaries (backend)
@@ -461,21 +452,10 @@ install:
 		bin/carla-discovery-* \
 		$(DESTDIR)$(PREFIX)/lib/carla/
 
-	# Install binaries (lv2 plugin)
-	install -m 755 \
-		bin/*bridge-* \
-		bin/carla-discovery-* \
-		$(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/
-
 	# Install theme
 	install -m 644 \
 		bin/styles/* \
 		$(DESTDIR)$(PREFIX)/lib/carla/styles/
-
-	# Install theme (lv2 plugin)
-	install -m 644 \
-		bin/styles/* \
-		$(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/styles/
 
 	# Install python code
 	install -m 644 \
@@ -553,13 +533,22 @@ install:
 	$(LINK) $(PREFIX)/share/carla/ui_carla_settings_driver.py $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_inputdialog_value.py     $(DESTDIR)$(PREFIX)/share/carla/resources/
 
+	# Link binaries for lv2 plugin
+	@for i in $(shell find $(DESTDIR)$(PREFIX)/lib/carla/ -maxdepth 1 -type f -exec basename {} ';'); do \
+		$(LINK) $(PREFIX)/lib/carla/$$i $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/; \
+	done
+	rm -f $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/libcarla_*.*
+
+	# Link styles for lv2 plugin
+	$(LINK) $(PREFIX)/lib/carla/styles/ $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
+
 	# Link resources for lv2 plugin
-	rm -rf $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/resources
-	$(LINK) $(PREFIX)/share/carla/resources/ $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/
+	rm -rf $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/resources
+	$(LINK) $(PREFIX)/share/carla/resources/ $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
 
 	# Link resources for vst plugin
 	rm -rf $(DESTDIR)$(PREFIX)/lib/vst/carla-resources
-	$(LINK) $(PREFIX)/lib/lv2/carla-native.lv2/resources $(DESTDIR)$(PREFIX)/lib/vst/carla-resources
+	$(LINK) $(PREFIX)/lib/lv2/carla.lv2/resources $(DESTDIR)$(PREFIX)/lib/vst/carla-resources
 
 	# Adjust PREFIX value in script files
 	sed -i "s?X-PREFIX-X?$(PREFIX)?" \
@@ -577,6 +566,8 @@ install:
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/carla*
+	rm -f $(DESTDIR)$(PREFIX)/lib/vst/CarlaRack*.*
+	rm -f $(DESTDIR)$(PREFIX)/lib/vst/CarlaPatchbay*.*
 	rm -f $(DESTDIR)$(PREFIX)/lib/pkgconfig/carla-standalone.pc
 	rm -f $(DESTDIR)$(PREFIX)/share/applications/carla.desktop
 	rm -f $(DESTDIR)$(PREFIX)/share/applications/carla-control.desktop
@@ -587,7 +578,8 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/share/mime/packages/carla.xml
 	rm -rf $(DESTDIR)$(PREFIX)/include/carla/
 	rm -rf $(DESTDIR)$(PREFIX)/lib/carla/
-	rm -rf $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/
+	rm -rf $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
+	rm -rf $(DESTDIR)$(PREFIX)/lib/vst/carla-resources
 	rm -rf $(DESTDIR)$(PREFIX)/share/carla/
 
 # --------------------------------------------------------------

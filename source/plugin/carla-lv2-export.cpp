@@ -16,7 +16,7 @@
  */
 
 #define CARLA_NATIVE_PLUGIN_LV2
-#include "carla-native-base.cpp"
+#include "carla-base.cpp"
 
 #include "juce_core.h"
 
@@ -121,7 +121,7 @@ static void writeManifestFile(PluginListManager& plm)
 
         text += "<http://kxstudio.sf.net/carla/plugins/" + label + ">\n";
         text += "    a lv2:Plugin ;\n";
-        text += "    lv2:binary <carla-native" PLUGIN_EXT "> ;\n";
+        text += "    lv2:binary <carla" PLUGIN_EXT "> ;\n";
         text += "    rdfs:seeAlso <" + label + ".ttl> .\n";
         text += "\n";
     }
@@ -131,7 +131,7 @@ static void writeManifestFile(PluginListManager& plm)
 
     text += "<http://kxstudio.sf.net/carla/ui>\n";
     text += "    a <" LV2_EXTERNAL_UI__Widget "> ;\n";
-    text += "    ui:binary <carla-native" PLUGIN_EXT "> ;\n";
+    text += "    ui:binary <carla" PLUGIN_EXT "> ;\n";
     text += "    lv2:extensionData ui:idleInterface ,\n";
     text += "                      ui:showInterface ,\n";
     text += "                      <" LV2_PROGRAMS__UIInterface "> ;\n";
@@ -140,7 +140,7 @@ static void writeManifestFile(PluginListManager& plm)
     // -------------------------------------------------------------------
     // Write file now
 
-    std::fstream manifest("carla-native.lv2/manifest.ttl", std::ios::out);
+    std::fstream manifest("carla.lv2/manifest.ttl", std::ios::out);
     manifest << text.toRawUTF8();
     manifest.close();
 }
@@ -155,7 +155,7 @@ static intptr_t host_dispatcher(NativeHostHandle, NativeHostDispatcherOpcode, in
 static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
 {
     const String pluginLabel(pluginDesc->label);
-    const String pluginFile("carla-native.lv2/" + pluginLabel + ".ttl");
+    const String pluginFile("carla.lv2/" + pluginLabel + ".ttl");
 
     uint32_t portIndex = 0;
     String text;

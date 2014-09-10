@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#define CARLA_NATIVE_PLUGIN_LV2
-#include "carla-native-base.cpp"
+#define CARLA_NATIVE_PLUGIN_VST
+#include "carla-base.cpp"
 
 #include "CarlaMathUtils.hpp"
 #include "juce_core.h"

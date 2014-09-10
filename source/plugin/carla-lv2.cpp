@@ -16,7 +16,7 @@
  */
 
 #define CARLA_NATIVE_PLUGIN_LV2
-#include "carla-native-base.cpp"
+#include "carla-base.cpp"
 
 #include "CarlaLv2Utils.hpp"
 #include "CarlaMathUtils.hpp"

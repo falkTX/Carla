@@ -74,20 +74,22 @@ endif
 
 # --------------------------------------------------------------
 
-TARGETS = 
+TARGETS =
 
 ifneq ($(WIN32),true)
 TARGETS += \
-	../../bin/carla-native.lv2/carla-native$(LIB_EXT) \
-	../../bin/carla-native-lv2-export$(APP_EXT)
+	../../bin/carla.lv2/carla$(LIB_EXT) \
+	../../bin/carla-lv2-export$(APP_EXT)
 endif
 
 ifeq ($(LINUX),true)
 ifeq ($(DEFAULT_QT),4)
 ifeq ($(HAVE_X11),true)
 TARGETS += \
-	../../bin/carla-native-vstfx$(LIB_EXT) \
-	../../bin/carla-native-vstsyn$(LIB_EXT)
+	../../bin/CarlaRack$(LIB_EXT) \
+	../../bin/CarlaRackFX$(LIB_EXT) \
+	../../bin/CarlaPatchbay$(LIB_EXT) \
+	../../bin/CarlaPatchbayFX$(LIB_EXT)
 endif
 endif
 endif
@@ -98,40 +100,52 @@ all: $(TARGETS)
 
 clean:
 	$(RM) $(TARGETS) *.o
-	$(RM) carla-native.lv2/*.*
+	$(RM) carla.lv2/*.*
 
 debug:
 	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------
 
-carla-native-base.cpp.o: carla-native-base.cpp ../modules/CarlaNative.h
+carla-base.cpp.o: carla-base.cpp ../modules/CarlaNative.h
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-carla-native-lv2.cpp.o: carla-native-lv2.cpp carla-native-base.cpp ../modules/CarlaNative.h
+carla-lv2.cpp.o: carla-lv2.cpp carla-base.cpp ../modules/CarlaNative.h
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-carla-native-lv2-export.cpp.o: carla-native-lv2-export.cpp carla-native-base.cpp ../modules/CarlaNative.h
+carla-lv2-export.cpp.o: carla-lv2-export.cpp carla-base.cpp ../modules/CarlaNative.h
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-carla-native-vst.cpp.fx.o: carla-native-vst.cpp carla-native-base.cpp ../modules/CarlaNative.h
+carla-vst.cpp.rack-fx.o: carla-vst.cpp carla-base.cpp ../modules/CarlaNative.h
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-carla-native-vst.cpp.syn.o: carla-native-vst.cpp carla-native-base.cpp ../modules/CarlaNative.h
+carla-vst.cpp.rack-syn.o: carla-vst.cpp carla-base.cpp ../modules/CarlaNative.h
 	$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_SYNTH -c -o $@
+
+carla-vst.cpp.patchbay-fx.o: carla-vst.cpp carla-base.cpp ../modules/CarlaNative.h
+	$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_PATCHBAY -c -o $@
+
+carla-vst.cpp.patchbay-syn.o: carla-vst.cpp carla-base.cpp ../modules/CarlaNative.h
+	$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_PATCHBAY -DCARLA_PLUGIN_SYNTH -c -o $@
 
 # --------------------------------------------------------------
 
-../../bin/carla-native.lv2/carla-native$(LIB_EXT): carla-native-lv2.cpp.o $(LIBS)
+../../bin/carla.lv2/carla$(LIB_EXT): carla-lv2.cpp.o $(LIBS)
 	$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
 
-../../bin/carla-native-lv2-export$(APP_EXT): carla-native-lv2-export.cpp.o $(LIBS)
+../../bin/carla-lv2-export$(APP_EXT): carla-lv2-export.cpp.o $(LIBS)
 	$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) -o $@
 
-../../bin/carla-native-vstfx$(LIB_EXT): carla-native-vst.cpp.fx.o $(LIBS)
+../../bin/CarlaRack$(LIB_EXT): carla-vst.cpp.rack-syn.o $(LIBS)
 	$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
 
-../../bin/carla-native-vstsyn$(LIB_EXT): carla-native-vst.cpp.syn.o $(LIBS)
+../../bin/CarlaRackFX$(LIB_EXT): carla-vst.cpp.rack-fx.o $(LIBS)
+	$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
+
+../../bin/CarlaPatchbay$(LIB_EXT): carla-vst.cpp.patchbay-syn.o $(LIBS)
+	$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
+
+../../bin/CarlaPatchbayFX$(LIB_EXT): carla-vst.cpp.patchbay-fx.o $(LIBS)
 	$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------

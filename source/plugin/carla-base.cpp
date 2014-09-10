@@ -44,6 +44,9 @@ struct PluginListManager {
 #ifdef CARLA_NATIVE_PLUGIN_LV2
         : lv2Descs(),
 #endif
+#ifdef CARLA_NATIVE_PLUGIN_VST
+        : _dummy(0),
+#endif
           descs()
     {
         for (size_t i=0, count = CarlaPlugin::getNativePluginCount(); i < count; ++i)
@@ -104,6 +107,9 @@ struct PluginListManager {
 #endif
 #ifdef CARLA_NATIVE_PLUGIN_LV2
     LinkedList<const LV2_Descriptor*> lv2Descs;
+#endif
+#ifdef CARLA_NATIVE_PLUGIN_VST
+    char _dummy;
 #endif
     LinkedList<const NativePluginDescriptor*> descs;
 };
