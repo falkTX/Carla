@@ -67,7 +67,7 @@ static LV2_URID test_lv2_uridMap(LV2_URID_Map_Handle, const char*)
 static void test_CarlaLv2Utils()
 {
     Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
-    lv2World.initIfNeeded();
+    lv2World.initIfNeeded(std::getenv("LV2_PATH"));
 
     // getPlugin
     const LilvPlugin* const plugin(lv2World.getPlugin("urn:juced:DrumSynth"));

@@ -10,7 +10,8 @@ BASE_FLAGS  = -Wall -Wextra -Werror -pipe -DREAL_BUILD -fPIC -DPIC -DDEBUG -O0 -
 BASE_FLAGS += -I. -I../backend -I../includes -I../utils -isystem ../modules
 BASE_FLAGS += -Wcast-align -Wcast-qual -Wconversion -Wmissing-declarations -Wsign-conversion
 BASE_FLAGS += -Wformat -Wformat-security -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wundef -Wwrite-strings
-BASE_FLAGS += -Wfloat-equal -Wpointer-arith -Wabi -Winit-self -Wuninitialized -Wunused-parameter
+BASE_FLAGS += -Wpointer-arith -Wabi -Winit-self -Wuninitialized -Wunused-parameter
+# -Wfloat-equal
 ifneq ($(CC),clang-3.4)
 BASE_FLAGS += -Wlogical-op -Wunsafe-loop-optimizations
 endif
@@ -71,41 +72,41 @@ ansi-pedantic-test_cxx11: ansi-pedantic-test.cpp ../backend/Carla*.h
 
 CarlaRingBuffer: CarlaRingBuffer.cpp ../utils/CarlaRingBuffer.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
-	valgrind --leak-check=full ./$@
+	./$@ && valgrind --leak-check=full ./$@
 
 CarlaString: CarlaString.cpp ../utils/CarlaString.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
-	valgrind --leak-check=full ./$@
+	./$@ && valgrind --leak-check=full ./$@
 
 CarlaUtils1: CarlaUtils1.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
-	valgrind --leak-check=full ./$@
+	./$@ && valgrind --leak-check=full ./$@
 
 CarlaUtils2: CarlaUtils2.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ \
 		 ../modules/juce_core.a ../modules/lilv.a -ldl -lpthread -lrt
-	valgrind --leak-check=full ./$@
+	./$@ && valgrind --leak-check=full ./$@
 
 CarlaUtils3: CarlaUtils3.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ -ldl -lrt
-	valgrind --leak-check=full ./$@
+	./$@ && valgrind --leak-check=full ./$@
 
 CarlaUtils4: CarlaUtils4.cpp ../utils/CarlaStateUtils.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ \
 		../modules/juce_core.a -ldl -lpthread -lrt
-	valgrind --leak-check=full ./$@
+	./$@ && valgrind --leak-check=full ./$@
 
 Exceptions: Exceptions.cpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
-	valgrind --leak-check=full ./$@
+	./$@ && valgrind --leak-check=full ./$@
 
 Print: Print.cpp ../utils/CarlaUtils.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
-	valgrind --leak-check=full ./$@
+	./$@ && valgrind --leak-check=full ./$@
 
 RDF: RDF.cpp ../modules/ladspa_rdf.hpp ../modules/lv2_rdf.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
-	valgrind --leak-check=full ./$@
+	./$@ && valgrind --leak-check=full ./$@
 
 # --------------------------------------------------------------
 

@@ -26,6 +26,7 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
+#include <float.h>
 
 #include "filter.h"
 
@@ -38,6 +39,15 @@ exp2ap(float x)
     i  = (int)(floorf(x));
     x -= (float)i;
     return ldexpf(1.0f + x * (0.6930f + x * (0.2416f + x * (0.0517f + x * 0.0137f))), i);
+}
+
+static
+bool
+compare_floats(
+  const float v1,
+  const float v2)
+{
+  return fabs(v1-v2) < FLT_EPSILON;
 }
 
 struct param_sect
@@ -77,7 +87,7 @@ param_sect_proc(
   d2 = 0;
   da = 0;
 
-  if (f != sect_ptr->f)
+  if (! compare_floats(f, sect_ptr->f))
   {
     if      (f < 0.5f * sect_ptr->f) f = 0.5f * sect_ptr->f;
     else if (f > 2.0f * sect_ptr->f) f = 2.0f * sect_ptr->f;
@@ -87,7 +97,7 @@ param_sect_proc(
     u2 = true;
   }
 
-  if (g != sect_ptr->g)
+  if (! compare_floats(g, sect_ptr->g))
   {
     if      (g < 0.5f * sect_ptr->g) g = 0.5f * sect_ptr->g;
     else if (g > 2.0f * sect_ptr->g) g = 2.0f * sect_ptr->g;
@@ -97,7 +107,7 @@ param_sect_proc(
     u2 = true;
   }
 
-  if (b != sect_ptr->b)
+  if (! compare_floats(b, sect_ptr->b))
   {
     if      (b < 0.5f * sect_ptr->b) b = 0.5f * sect_ptr->b;
     else if (b > 2.0f * sect_ptr->b) b = 2.0f * sect_ptr->b;

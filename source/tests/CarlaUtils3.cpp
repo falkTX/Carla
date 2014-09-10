@@ -95,7 +95,7 @@ static void test_CarlaLibUtils() noexcept
     lc.close(test1); lc.close(test2); lc.close(test3);
 
     // test if the pointer changes after all closed
-    void* const test1b = lc.open("/usr/lib/liblo.so");
+    void* const test1b = lc.open("/usr/lib/liblo.so.0");
     assert(test1 != test1b);
     lc.close(test1b);
 

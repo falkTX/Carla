@@ -66,6 +66,25 @@ const T& carla_max(const T& v1, const T& v2, const T& max) noexcept
 }
 
 /*
+ * Return the higher negative of 2 values.
+ * If one of the values is zero, returns zero.
+ * If one value is positive but the other negative, returns the negative.
+ * Returned value is guaranteed to be <= 0.
+ */
+template<typename T>
+static inline
+T carla_maxNegative(const T& v1, const T& v2) noexcept
+{
+    if (v1 == 0 || v2 == 0)
+        return 0;
+    if (v1 > 0)
+        return (v2 < 0) ? v2 : 0;
+    if (v2 > 0)
+        return (v1 < 0) ? v1 : 0;
+    return (v1 > v2) ? v1 : v2;
+}
+
+/*
  * Fix bounds of 'value' between 'min' and 'max'.
  */
 template<typename T>
@@ -97,14 +116,38 @@ uint32_t carla_nextPowerOf2(uint32_t size) noexcept
     return ++size;
 }
 
+// -----------------------------------------------------------------------
+// math functions (floating numbers)
+
 /*
  * Safely compare two floating point numbers.
+ * Returns true if they match.
  */
 template<typename T>
 static inline
 bool carla_compareFloats(const T& v1, const T& v2)
 {
     return std::abs(v1-v2) < std::numeric_limits<T>::epsilon();
+}
+
+/*
+ * Safely check if a floating point number is zero.
+ */
+template<typename T>
+static inline
+bool carla_isZero(const T& value)
+{
+    return std::abs(value) < std::numeric_limits<T>::epsilon();
+}
+
+/*
+ * Safely check if a floating point number is not zero.
+ */
+template<typename T>
+static inline
+bool carla_isNotZero(const T& value)
+{
+    return std::abs(value) >= std::numeric_limits<T>::epsilon();
 }
 
 #if 0
