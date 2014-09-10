@@ -709,12 +709,26 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
 
     // vst fields
     effect->magic    = kEffectMagic;
-    effect->uniqueID = CCONST('C', 'r', 'l', 'a');
 #ifdef VESTIGE_HEADER
     int32_t* const version = (int32_t*)&effect->unknown1;
     *version = CARLA_VERSION_HEX;
 #else
     effect->version = CARLA_VERSION_HEX;
+#endif
+
+    static const int32_t uniqueId = CCONST('C', 'r', 'l', 'a');
+#ifdef CARLA_PLUGIN_SYNTH
+# ifdef CARLA_PLUGIN_PATCHBAY
+    effect->uniqueID = uniqueId+4;
+# else
+    effect->uniqueID = uniqueId+3;
+# endif
+#else
+# ifdef CARLA_PLUGIN_PATCHBAY
+    effect->uniqueID = uniqueId+2;
+# else
+    effect->uniqueID = uniqueId+1;
+# endif
 #endif
 
     // plugin fields
