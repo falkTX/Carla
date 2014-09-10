@@ -21,6 +21,14 @@
 #include "CarlaMathUtils.hpp"
 #include "juce_core.h"
 
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+# include "juce_gui_basics.h"
+#else
+namespace juce {
+# include "juce_events/messages/juce_Initialisation.h"
+} // namespace juce
+#endif
+
 #ifdef VESTIGE_HEADER
 # include "vestige/aeffectx.h"
 #define effFlagsProgramChunks (1 << 5)
@@ -38,8 +46,11 @@ struct ERect {
 # include "vst/aeffectx.h"
 #endif
 
-uint32_t d_lastBufferSize = 0;
-double   d_lastSampleRate = 0.0;
+using juce::ScopedJuceInitialiser_GUI;
+using juce::SharedResourcePointer;
+
+static uint32_t d_lastBufferSize = 0;
+static double   d_lastSampleRate = 0.0;
 
 // -----------------------------------------------------------------------
 
@@ -60,6 +71,7 @@ public:
           fTimeInfo(),
           fVstRect(),
           fStateChunk(nullptr),
+          sJuceInitialiser(),
           leakDetector_NativePlugin()
     {
         fHost.handle      = this;
@@ -453,6 +465,8 @@ private:
     ERect           fVstRect;
 
     char* fStateChunk;
+
+    SharedResourcePointer<ScopedJuceInitialiser_GUI> sJuceInitialiser;
 
     // -------------------------------------------------------------------
 

@@ -23,13 +23,18 @@
 #include "CarlaString.hpp"
 
 #include "juce_audio_basics.h"
-using juce::FloatVectorOperations;
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 # include "juce_gui_basics.h"
+#else
+namespace juce {
+# include "juce_events/messages/juce_Initialisation.h"
+} // namespace juce
+#endif
+
+using juce::FloatVectorOperations;
 using juce::ScopedJuceInitialiser_GUI;
 using juce::SharedResourcePointer;
-#endif
 
 // -----------------------------------------------------------------------
 // -Weffc++ compat ext widget
@@ -85,9 +90,7 @@ public:
           fURIs(),
           fUI(),
           fPorts(),
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-          sJuceGUI(),
-#endif
+          sJuceInitialiser(),
           leakDetector_NativePlugin()
     {
         run  = extui_run;
@@ -1202,9 +1205,7 @@ private:
         CARLA_DECLARE_NON_COPY_STRUCT(Ports);
     } fPorts;
 
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-    SharedResourcePointer<ScopedJuceInitialiser_GUI> sJuceGUI;
-#endif
+    SharedResourcePointer<ScopedJuceInitialiser_GUI> sJuceInitialiser;
 
     // -------------------------------------------------------------------
 

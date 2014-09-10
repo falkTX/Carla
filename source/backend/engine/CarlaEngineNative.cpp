@@ -553,7 +553,7 @@ public:
     CarlaEngineNative(const NativeHostDescriptor* const host, const bool isPatchbay)
         : CarlaEngine(),
           pHost(host),
-          fIsPatchbay(isPatchbay),
+          kIsPatchbay(isPatchbay),
           fIsActive(false),
           fIsRunning(false),
           fUiServer(this),
@@ -564,7 +564,7 @@ public:
         carla_zeroChar(fTmpBuf, STR_MAX+1);
 
         // set-up engine
-        if (fIsPatchbay)
+        if (kIsPatchbay)
         {
             pData->options.processMode         = ENGINE_PROCESS_MODE_PATCHBAY;
             pData->options.transportMode       = ENGINE_TRANSPORT_MODE_PLUGIN;
@@ -672,12 +672,18 @@ protected:
 
     void bufferSizeChanged(const uint32_t newBufferSize)
     {
+        if (pData->bufferSize == newBufferSize)
+            return;
+
         pData->bufferSize = newBufferSize;
         CarlaEngine::bufferSizeChanged(newBufferSize);
     }
 
     void sampleRateChanged(const double newSampleRate)
     {
+        if (carla_compareFloats(pData->sampleRate, newSampleRate))
+            return;
+
         pData->sampleRate = newSampleRate;
         CarlaEngine::sampleRateChanged(newSampleRate);
     }
@@ -1084,7 +1090,7 @@ protected:
     {
         const PendingRtEventsRunner prt(this);
 
-        if (pData->curPluginCount == 0 && ! fIsPatchbay)
+        if (pData->curPluginCount == 0 && ! kIsPatchbay)
         {
             FloatVectorOperations::copy(outBuffer[0], inBuffer[0], static_cast<int>(frames));
             FloatVectorOperations::copy(outBuffer[1], inBuffer[1], static_cast<int>(frames));
@@ -1142,7 +1148,7 @@ protected:
             }
         }
 
-        if (fIsPatchbay)
+        if (kIsPatchbay)
         {
             // -----------------------------------------------------------
             // process
@@ -1154,8 +1160,8 @@ protected:
             // -----------------------------------------------------------
             // create audio buffers
 
-            const float* inBuf[2]  = { inBuffer[0], inBuffer[1] };
-                  float* outBuf[2] = { outBuffer[0], outBuffer[1] };
+            const float* inBuf[2]  = {  inBuffer[0],  inBuffer[1] };
+            /* */ float* outBuf[2] = { outBuffer[0], outBuffer[1] };
 
             // -----------------------------------------------------------
             // process
@@ -1221,7 +1227,7 @@ protected:
 
             CarlaString path(pHost->resourceDir);
 
-            if (fIsPatchbay)
+            if (kIsPatchbay)
                 path += "/carla-plugin-patchbay";
             else
                 path += "/carla-plugin";
@@ -1241,7 +1247,7 @@ protected:
                 }
             }
 
-            if (fIsPatchbay)
+            if (kIsPatchbay)
                 patchbayRefresh(false);
         }
         else
@@ -1457,7 +1463,7 @@ public:
 private:
     const NativeHostDescriptor* const pHost;
 
-    const bool fIsPatchbay; // rack if false
+    const bool kIsPatchbay; // rack if false
     bool fIsActive, fIsRunning;
     CarlaEngineNativeUI fUiServer;
 

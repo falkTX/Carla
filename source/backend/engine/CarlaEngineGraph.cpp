@@ -1525,7 +1525,7 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float*
             FloatVectorOperations::copy(audioBuffer.getWritePointer(i), inBuf[i], frames);
 
         // clear remaining channels
-        for (int count=audioBuffer.getNumChannels(); i<count; ++i)
+        for (const int count=audioBuffer.getNumChannels(); i<count; ++i)
             audioBuffer.clear(i, 0, frames);
     }
 

@@ -1394,7 +1394,7 @@ protected:
 
             // create audio buffers
             const float* inBuf[2]  = { audioIn1, audioIn2 };
-                  float* outBuf[2] = { audioOut1, audioOut2 };
+            /**/  float* outBuf[2] = { audioOut1, audioOut2 };
 
             // initialize events
             carla_zeroStruct<EngineEvent>(pData->events.in,  kMaxEngineEventInternalCount);
