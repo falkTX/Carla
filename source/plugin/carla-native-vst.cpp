@@ -311,7 +311,7 @@ public:
         if (sampleFrames <= 0)
             return;
 
-        static const int kWantVstTimeFlags(kVstTransportPlaying|kVstPpqPosValid|kVstTempoValid|kVstBarsValid|kVstTimeSigValid);
+        static const int kWantVstTimeFlags(kVstTransportPlaying|kVstPpqPosValid|kVstTempoValid|kVstTimeSigValid);
 
         if (const VstTimeInfo* const vstTimeInfo = (const VstTimeInfo*)fAudioMaster(fEffect, audioMasterGetTime, 0, kWantVstTimeFlags, nullptr, 0.0f))
         {
@@ -327,32 +327,25 @@ public:
             else
                 fTimeInfo.bbt.beatsPerMinute = 120.0;
 
-            if (vstTimeInfo->flags & kVstTimeSigValid)
-            {
-                fTimeInfo.bbt.beatsPerBar = static_cast<float>(vstTimeInfo->timeSigNumerator);
-                fTimeInfo.bbt.beatType    = static_cast<float>(vstTimeInfo->timeSigDenominator);
-            }
-            else
-            {
-                fTimeInfo.bbt.beatsPerBar = 4.0f;
-                fTimeInfo.bbt.beatType    = 4.0f;
-            }
-
-            if (vstTimeInfo->flags & kVstPpqPosValid)
+            if (vstTimeInfo->flags & kVstPpqPosValid|kVstTimeSigValid)
             {
                 const int    ppqPerBar = vstTimeInfo->timeSigNumerator * 4 / vstTimeInfo->timeSigDenominator;
                 const double barBeats  = (std::fmod(vstTimeInfo->ppqPos, ppqPerBar) / ppqPerBar) * vstTimeInfo->timeSigDenominator;
                 const double rest      =  std::fmod(barBeats, 1.0);
 
-                fTimeInfo.bbt.bar  = static_cast<int32_t>(vstTimeInfo->ppqPos)/ppqPerBar + 1;
-                fTimeInfo.bbt.beat = static_cast<int32_t>(barBeats-rest+1.0);
-                fTimeInfo.bbt.tick = static_cast<int32_t>(rest*fTimeInfo.bbt.ticksPerBeat+0.5);
+                fTimeInfo.bbt.bar         = static_cast<int32_t>(vstTimeInfo->ppqPos)/ppqPerBar + 1;
+                fTimeInfo.bbt.beat        = static_cast<int32_t>(barBeats-rest+1.0);
+                fTimeInfo.bbt.tick        = static_cast<int32_t>(rest*fTimeInfo.bbt.ticksPerBeat+0.5);
+                fTimeInfo.bbt.beatsPerBar = static_cast<float>(vstTimeInfo->timeSigNumerator);
+                fTimeInfo.bbt.beatType    = static_cast<float>(vstTimeInfo->timeSigDenominator);
             }
             else
             {
-                fTimeInfo.bbt.bar  = 1;
-                fTimeInfo.bbt.beat = 1;
-                fTimeInfo.bbt.tick = 0;
+                fTimeInfo.bbt.bar         = 1;
+                fTimeInfo.bbt.beat        = 1;
+                fTimeInfo.bbt.tick        = 0;
+                fTimeInfo.bbt.beatsPerBar = 4.0f;
+                fTimeInfo.bbt.beatType    = 4.0f;
             }
 
             fTimeInfo.bbt.barStartTick = fTimeInfo.bbt.ticksPerBeat*fTimeInfo.bbt.beatsPerBar*(fTimeInfo.bbt.bar-1);
