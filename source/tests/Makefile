@@ -6,12 +6,13 @@
 
 # --------------------------------------------------------------
 
-BASE_FLAGS  = -Wall -Wextra -Werror -fPIC -DPIC -pipe -DREAL_BUILD -DDEBUG -O0 -g
+BASE_FLAGS  = -Wall -Wextra -Werror -pipe -DREAL_BUILD -fPIC -DPIC -DDEBUG -O0 -g
 BASE_FLAGS += -I. -I../backend -I../includes -I../utils -isystem ../modules
-BASE_FLAGS += -Wcast-align -Wcast-qual -Wconversion -Wmissing-declarations -Wsign-conversion -Wuninitialized -Wunused-parameter
+BASE_FLAGS += -Wcast-align -Wcast-qual -Wconversion -Wmissing-declarations -Wsign-conversion
 BASE_FLAGS += -Wformat -Wformat-security -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wundef -Wwrite-strings
+BASE_FLAGS += -Wfloat-equal -Wpointer-arith -Wabi -Winit-self -Wuninitialized -Wunused-parameter
 ifneq ($(CC),clang-3.4)
-BASE_FLAGS += -Wlogical-op
+BASE_FLAGS += -Wlogical-op -Wunsafe-loop-optimizations
 endif
 
 # --------------------------------------------------------------
@@ -23,18 +24,21 @@ ANSI_FLAGS += -ansi -pedantic -pedantic-errors -Waggregate-return
 # --------------------------------------------------------------
 
 GNU_CXX_FLAGS  = $(BASE_FLAGS)
-GNU_CXX_FLAGS += -std=c++11 -std=gnu++11 -Weffc++ -Wzero-as-null-pointer-constant
+GNU_CXX_FLAGS += -std=c++11 -std=gnu++11 -Weffc++ -Wnon-virtual-dtor -Woverloaded-virtual
+ifneq ($(CC),clang-3.4)
+GNU_CXX_FLAGS += -Wzero-as-null-pointer-constant
+endif
 
 # --------------------------------------------------------------
 
 PEDANTIC_CXX_FLAGS  = $(BASE_FLAGS)
 PEDANTIC_CXX_FLAGS += -std=c++11 -pedantic -pedantic-errors
 PEDANTIC_CXX_FLAGS += -isystem /opt/kxstudio/include
-PEDANTIC_CXX_FLAGS += -Weffc++ -Wno-vla
+PEDANTIC_CXX_FLAGS += -Weffc++ -Wnon-virtual-dtor -Woverloaded-virtual -Wno-vla
 ifeq ($(CC),clang-3.4)
 PEDANTIC_CXX_FLAGS += -Wno-vla-extension
 else
-PEDANTIC_CXX_FLAGS += -Wunsafe-loop-optimizations -Wzero-as-null-pointer-constant
+PEDANTIC_CXX_FLAGS += -Wzero-as-null-pointer-constant
 endif
 
 # --------------------------------------------------------------
