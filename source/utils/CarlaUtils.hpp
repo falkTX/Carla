@@ -82,9 +82,15 @@ void carla_debug(const char* const fmt, ...) noexcept
     try {
         ::va_list args;
         ::va_start(args, fmt);
+#ifndef QTCREATOR_TEST
         std::fprintf(stdout, "\x1b[30;1m");
+#endif
         std::vfprintf(stdout, fmt, args);
+#ifndef QTCREATOR_TEST
         std::fprintf(stdout, "\x1b[0m\n");
+#else
+        std::fprintf(stdout, "\n");
+#endif
         ::va_end(args);
     } catch (...) {}
 }
@@ -129,9 +135,15 @@ void carla_stderr2(const char* const fmt, ...) noexcept
     try {
         ::va_list args;
         ::va_start(args, fmt);
+#ifndef QTCREATOR_TEST
         std::fprintf(stderr, "\x1b[31m");
+#endif
         std::vfprintf(stderr, fmt, args);
+#ifndef QTCREATOR_TEST
         std::fprintf(stderr, "\x1b[0m\n");
+#else
+        std::fprintf(stderr, "\n");
+#endif
         ::va_end(args);
     } catch (...) {}
 }
