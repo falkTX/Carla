@@ -135,8 +135,12 @@ bin/carla-discovery-native$(APP_EXT): libs .FORCE
 
 # --------------------------------------------------------------
 
-plugin: libs .FORCE
+plugin: bin/carla.lv2/manifest.ttl
 	$(MAKE) -C source/plugin
+
+bin/carla.lv2/manifest.ttl: bin/carla-lv2-export$(APP_EXT) bridges-plugin bridges-ui discovery
+	cd bin && ./carla-lv2-export$(APP_EXT); cd ..
+	cd bin/carla.lv2 && $(LINK) ../*bridge-* ../carla-discovery-* .; cd ..
 
 # --------------------------------------------------------------
 
