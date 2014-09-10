@@ -595,7 +595,7 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
     return true;
 #else
     return true;
-    (void)pid;
+    (void)pid; (void)centerUI;
 #endif
 }
 

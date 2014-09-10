@@ -445,6 +445,7 @@ public:
                 fUI.window = CarlaPluginUI::newX11(this, frontendWinId, false);
 # else
                 msg = "UI is only for systems with X11";
+                (void)frontendWinId; // unused
 # endif
 #elif defined(CARLA_OS_MAC)
 # ifdef __LP64__

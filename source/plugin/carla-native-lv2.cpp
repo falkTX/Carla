@@ -428,7 +428,7 @@ public:
                     fBufferSize = static_cast<uint32_t>(value);
 
                     if (fDescriptor->dispatcher != nullptr)
-                        fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, fBufferSize, nullptr, 0.0f);
+                        fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, value, nullptr, 0.0f);
                 }
                 else
                     carla_stderr("Host changed maxBlockLength but with wrong value type");
