@@ -149,10 +149,14 @@ bin/carla-native-lv2-export$(APP_EXT): bin/carla-native.lv2/carla-native$(LIB_EX
 
 # --------------------------------------------------------------
 
+ifeq ($(HAVE_QT),true)
 theme: bin/styles/carlastyle$(LIB_EXT)
 
 bin/styles/carlastyle$(LIB_EXT): .FORCE
 	$(MAKE) -C source/modules/theme
+else
+theme:
+endif
 
 # --------------------------------------------------------------
 # Binaries (posix32)
@@ -589,7 +593,6 @@ uninstall:
 # --------------------------------------------------------------
 
 USE_COLORS=true
-USE_VST3=false
 
 ifeq ($(HAIKU),true)
 USE_COLORS=false
@@ -609,6 +612,34 @@ ANS_YES=" YES "
 endif
 
 features:
+	@echo "$(tS)---> Main features $(tE)"
+ifeq ($(HAVE_PYQT),true)
+	@echo "Front-End:  $(ANS_YES)"
+ifneq ($(WIN32),true)
+	@echo "LV2 plugin: $(ANS_YES)"
+else
+	@echo "LV2 plugin: $(ANS_NO)  $(mZ)Not available for Windows$(mE)"
+endif
+ifeq ($(LINUX),true)
+ifeq ($(DEFAULT_QT),4)
+ifeq ($(HAVE_X11),true)
+	@echo "VST plugin: $(ANS_YES)"
+else # HAVE_X11
+	@echo "VST plugin: $(ANS_NO)  $(mS)X11 missing$(mE)"
+endif
+else # DEFAULT_QT
+	@echo "VST plugin: $(ANS_NO)  $(mZ)Qt4 only$(mE)"
+endif
+else # LINUX
+	@echo "VST plugin: $(ANS_NO)  $(mZ)Linux only$(mE)"
+endif
+else
+	@echo "Front-End:  $(ANS_NO)  $(mS)Missing PyQt$(mE)"
+	@echo "LV2 plugin: $(ANS_NO)  $(mS)No front-end$(mE)"
+	@echo "VST plugin: $(ANS_NO)  $(mS)No front-end$(mE)"
+endif
+	@echo ""
+
 	@echo "$(tS)---> Engine drivers $(tE)"
 	@echo "JACK:       $(ANS_YES)"
 ifeq ($(LINUX),true)
@@ -645,7 +676,19 @@ endif
 	@echo "LADSPA:  $(ANS_YES)"
 	@echo "DSSI:    $(ANS_YES)"
 	@echo "LV2:     $(ANS_YES)"
-	@echo "VST:     $(ANS_YES)"
+ifeq ($(MACOS_OR_WIN32),true)
+	@echo "VST:     $(ANS_YES) (with UI)"
+else
+ifeq ($(LINUX),true)
+ifeq ($(HAVE_X11),true)
+	@echo "VST:     $(ANS_YES) (with UI)"
+else
+	@echo "VST:     $(ANS_YES) (without UI) $(mS)Missing X11$(mE)"
+endif
+else # LINUX
+	@echo "VST:     $(ANS_YES) (without UI) $(mZ)Linux, Mac and Windows only$(mE)"
+endif
+endif
 ifeq ($(MACOS_OR_WIN32),true)
 	@echo "VST3:    $(ANS_YES)"
 else
@@ -659,7 +702,7 @@ endif
 	@echo ""
 
 	@echo "$(tS)---> LV2 UI toolkit support: $(tE)"
-# 	@echo "External:$(ANS_YES) (direct+bridge)"
+	@echo "External:$(ANS_YES) (direct)"
 ifeq ($(HAVE_GTK2),true)
 	@echo "Gtk2:    $(ANS_YES) (bridge)"
 else

@@ -210,10 +210,37 @@ HAVE_QT5=false
 endif
 endif
 
+ifeq ($(HAVE_QT4),true)
+HAVE_QT=true
+endif
+ifeq ($(HAVE_QT5),true)
+HAVE_QT=true
+endif
+
+# --------------------------------------------------------------
+# Set PyQt tools
+
+PYUIC4 ?= /usr/bin/pyuic4
+PYUIC5 ?= /usr/bin/pyuic5
+
+ifneq (,$(wildcard $(PYUIC4)))
+HAVE_PYQT=true
+HAVE_PYQT4=true
+else
+HAVE_PYQT4=false
+endif
+
+ifneq (,$(wildcard $(PYUIC5)))
+HAVE_PYQT=true
+HAVE_PYQT5=true
+else
+HAVE_PYQT5=false
+endif
+
 # --------------------------------------------------------------
 # Set default Qt used in frontend
 
-ifeq ($(HAVE_QT4),true)
+ifeq ($(HAVE_PYQT4),true)
 DEFAULT_QT ?= 4
 else
 DEFAULT_QT ?= 5

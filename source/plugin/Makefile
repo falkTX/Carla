@@ -74,15 +74,21 @@ endif
 
 # --------------------------------------------------------------
 
-TARGETS = \
+TARGETS = 
+
+ifneq ($(WIN32),true)
+TARGETS += \
 	../../bin/carla-native.lv2/carla-native$(LIB_EXT) \
 	../../bin/carla-native-lv2-export$(APP_EXT)
+endif
 
 ifeq ($(LINUX),true)
 ifeq ($(DEFAULT_QT),4)
+ifeq ($(HAVE_X11),true)
 TARGETS += \
 	../../bin/carla-native-vstfx$(LIB_EXT) \
 	../../bin/carla-native-vstsyn$(LIB_EXT)
+endif
 endif
 endif
 
