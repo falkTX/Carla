@@ -1580,12 +1580,19 @@ void carla_register_native_plugin_carla()
 // -----------------------------------------------------------------------
 
 CARLA_EXPORT
-const NativePluginDescriptor* get_carla_native_plugin();
-
-const NativePluginDescriptor* get_carla_native_plugin()
+const NativePluginDescriptor* carla_get_native_rack_plugin();
+const NativePluginDescriptor* carla_get_native_rack_plugin()
 {
     CARLA_BACKEND_USE_NAMESPACE;
     return &carlaRackDesc;
+}
+
+CARLA_EXPORT
+const NativePluginDescriptor* carla_get_native_patchbay_plugin();
+const NativePluginDescriptor* carla_get_native_patchbay_plugin()
+{
+    CARLA_BACKEND_USE_NAMESPACE;
+    return &carlaPatchbayDesc;
 }
 
 // -----------------------------------------------------------------------

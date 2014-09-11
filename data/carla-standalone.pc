@@ -4,7 +4,7 @@ libdir=${exec_prefix}/lib/carla
 includedir=${prefix}/include/carla
 
 Name: carla-standalone
-Version: 1.9.1
+Version: 1.9.5
 Description: Carla Host Standalone
 Libs: -Wl,rpath=${libdir} -L${libdir} -lcarla_standalone2
 Cflags: -DREAL_BUILD -I${includedir} -I${includedir}/includes
