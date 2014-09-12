@@ -40,19 +40,23 @@ endif
 
 # --------------------------------------------------------------
 
+ifeq ($(HAVE_QT4),true)
 FILES_qt4 = \
 	moc_CarlaStyle.qt4.cpp \
 	moc_CarlaStyleAnimations.qt4.cpp \
 	moc_CarlaStylePlugin.qt4.cpp \
 	moc_CarlaStylePrivate.qt4.cpp \
 	resources.qt4.cpp
+endif
 
+ifeq ($(HAVE_QT5),true)
 FILES_qt5 = \
 	moc_CarlaStyle.qt5.cpp \
 	moc_CarlaStyleAnimations.qt5.cpp \
 	moc_CarlaStylePlugin.qt5.cpp \
 	moc_CarlaStylePrivate.qt5.cpp \
 	resources.qt5.cpp
+endif
 
 ifeq ($(DEFAULT_QT),4)
 FILES_shared = $(FILES_qt4)
@@ -62,6 +66,7 @@ endif
 
 # --------------------------------------------------------------
 
+ifeq ($(HAVE_QT4),true)
 OBJS_qt4 = \
 	CarlaStyle.cpp.qt4.o \
 	moc_CarlaStyle.qt4.cpp.o \
@@ -69,6 +74,12 @@ OBJS_qt4 = \
 	moc_CarlaStylePrivate.qt4.cpp.o \
 	resources.qt4.cpp.o
 
+OBJS_qt4_shared = $(OBJS_qt4) \
+	CarlaStylePlugin.cpp.qt4.o \
+	moc_CarlaStylePlugin.qt4.cpp.o
+endif
+
+ifeq ($(HAVE_QT5),true)
 OBJS_qt5 = \
 	CarlaStyle.cpp.qt5.o \
 	moc_CarlaStyle.qt5.cpp.o \
@@ -76,29 +87,30 @@ OBJS_qt5 = \
 	moc_CarlaStylePrivate.qt5.cpp.o \
 	resources.qt5.cpp.o
 
-ifeq ($(DEFAULT_QT),4)
-OBJS_shared += $(OBJS_qt4) \
-	CarlaStylePlugin.cpp.qt4.o \
-	moc_CarlaStylePlugin.qt4.cpp.o
-else
-OBJS_shared += $(OBJS_qt5) \
+OBJS_qt5_shared = $(OBJS_qt5) \
 	CarlaStylePlugin.cpp.qt5.o \
 	moc_CarlaStylePlugin.qt5.cpp.o
 endif
 
+ifeq ($(DEFAULT_QT),4)
+OBJS_shared += $(OBJS_qt4_shared)
+else
+OBJS_shared += $(OBJS_qt5_shared)
+endif
+
 # --------------------------------------------------------------
 
-ifeq ($(WIN32),true)
-CARLASTYLE = styles/carlastyle.dll
-else
-ifeq ($(MACOS),true)
-CARLASTYLE = styles/carlastyle.dylib
-else
-CARLASTYLE = styles/carlastyle.so
-endif
-endif
+all:
 
-all: $(CARLASTYLE)
+ifeq ($(DEFAULT_QT),4)
+ifeq ($(HAVE_QT4),true)
+all: styles/carlastyle$(LIB_EXT)
+endif
+else # DEFAULT_QT
+ifeq ($(HAVE_QT5),true)
+all: styles/carlastyle$(LIB_EXT)
+endif
+endif
 
 qt4: ../theme.qt4.a
 qt5: ../theme.qt5.a
@@ -156,16 +168,16 @@ resources.qt5.cpp: ../../../resources/resources-theme.qrc
 # --------------------------------------------------------------
 
 clean:
-	$(RM) *.o ../theme*.a $(CARLASTYLE) $(FILES_qt4) $(FILES_qt5)
+	$(RM) *.o ../theme*.a styles/carlastyle$(LIB_EXT) $(FILES_qt4) $(FILES_qt5)
 
 debug:
 	$(MAKE) DEBUG=true
 
-install: $(CARLASTYLE) styles/carlastyle.json
+install: styles/carlastyle$(LIB_EXT) styles/carlastyle.json
 	install -d $(QT_STYLES_DIR)
 	install -m 644 $^ $(QT_STYLES_DIR)
 
-install-main: $(CARLASTYLE) styles/carlastyle.json
+install-main: styles/carlastyle$(LIB_EXT) styles/carlastyle.json
 	install -d $(STYLES_DIR)
 	install -m 644 $^ $(STYLES_DIR)
 
