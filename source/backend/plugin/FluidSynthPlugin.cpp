@@ -1074,7 +1074,6 @@ public:
 #ifndef BUILD_BRIDGE
             bool allNotesOffSent = false;
 #endif
-            uint32_t time, nEvents = pData->event.portIn->getEventCount();
             uint32_t timeOffset = 0;
 
             uint32_t nextBankIds[MAX_MIDI_CHANNELS] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 0, 0, 0, 0, 0, 0 };
@@ -1082,20 +1081,20 @@ public:
             if (pData->midiprog.current >= 0 && pData->midiprog.count > 0 && pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
                 nextBankIds[pData->ctrlChannel] = pData->midiprog.data[pData->midiprog.current].bank;
 
-            for (uint32_t i=0; i < nEvents; ++i)
+            for (uint32_t i=0, numEvents=pData->event.portIn->getEventCount(); i < numEvents; ++i)
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 
-                time = event.time;
+                if (event.time >= frames)
+                    continue;
 
-                CARLA_SAFE_ASSERT_CONTINUE(time < frames);
-                CARLA_SAFE_ASSERT_BREAK(time >= timeOffset);
+                CARLA_ASSERT_INT2(event.time >= timeOffset, event.time, timeOffset);
 
-                if (time > timeOffset)
+                if (event.time > timeOffset)
                 {
-                    if (processSingle(audioOut, time - timeOffset, timeOffset))
+                    if (processSingle(audioOut, event.time - timeOffset, timeOffset))
                     {
-                        timeOffset = time;
+                        timeOffset = event.time;
 
                         if (pData->midiprog.current >= 0 && pData->midiprog.count > 0 && pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
                             nextBankIds[pData->ctrlChannel] = pData->midiprog.data[pData->midiprog.current].bank;
@@ -1215,6 +1214,7 @@ public:
                             const uint32_t bankId(nextBankIds[event.channel]);
                             const uint32_t progId(ctrlEvent.param);
 
+                            // TODO int32_t midiprog.find(bank, prog)
                             for (uint32_t k=0; k < pData->midiprog.count; ++k)
                             {
                                 if (pData->midiprog.data[k].bank == bankId && pData->midiprog.data[k].program == progId)
@@ -1265,66 +1265,85 @@ public:
                     break;
                 }
 
-                case kEngineEventTypeMidi:
-                {
+                case kEngineEventTypeMidi: {
                     const EngineMidiEvent& midiEvent(event.midi);
 
-                    uint8_t status  = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
-                    uint8_t channel = event.channel;
+                    if (midiEvent.size > EngineMidiEvent::kDataSize)
+                        continue;
+
+                    uint8_t status = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
 
                     // Fix bad note-off
-                    if (MIDI_IS_STATUS_NOTE_ON(status) && midiEvent.data[2] == 0)
+                    if (status == MIDI_STATUS_NOTE_ON && midiEvent.data[2] == 0)
                         status = MIDI_STATUS_NOTE_OFF;
 
-                    if (MIDI_IS_STATUS_NOTE_OFF(status))
+                    switch (status)
                     {
+                    case MIDI_STATUS_NOTE_OFF: {
                         const uint8_t note = midiEvent.data[1];
 
-                        fluid_synth_noteoff(fSynth, channel, note);
+                        fluid_synth_noteoff(fSynth, event.channel, note);
 
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, channel, note, 0.0f);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, event.channel, note, 0.0f);
+                        break;
                     }
-                    else if (MIDI_IS_STATUS_NOTE_ON(status))
-                    {
+
+                    case MIDI_STATUS_NOTE_ON: {
                         const uint8_t note = midiEvent.data[1];
                         const uint8_t velo = midiEvent.data[2];
 
-                        fluid_synth_noteon(fSynth, channel, note, velo);
+                        fluid_synth_noteon(fSynth, event.channel, note, velo);
 
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, note, velo);
-                    }
-                    else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) != 0)
-                    {
-                        //const uint8_t note     = midiEvent.data[1];
-                        //const uint8_t pressure = midiEvent.data[2];
-
-                        // TODO, not in fluidsynth API
-                    }
-                    else if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0)
-                    {
-                        const uint8_t control = midiEvent.data[1];
-                        const uint8_t value   = midiEvent.data[2];
-
-                        fluid_synth_cc(fSynth, channel, control, value);
-                    }
-                    else if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) != 0)
-                    {
-                        const uint8_t pressure = midiEvent.data[1];
-
-                        fluid_synth_channel_pressure(fSynth, channel, pressure);;
-                    }
-                    else if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) != 0)
-                    {
-                        const uint8_t lsb = midiEvent.data[1];
-                        const uint8_t msb = midiEvent.data[2];
-                        const int   value = ((msb << 7) | lsb);
-
-                        fluid_synth_pitch_bend(fSynth, channel, value);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, event.channel, note, velo);
+                        break;
                     }
 
-                    break;
-                }
-                }
+                    case MIDI_STATUS_POLYPHONIC_AFTERTOUCH:
+                        if (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
+                        {
+                            //const uint8_t note     = midiEvent.data[1];
+                            //const uint8_t pressure = midiEvent.data[2];
+
+                            // not in fluidsynth API
+                        }
+                        break;
+
+                    case MIDI_STATUS_CONTROL_CHANGE:
+                        if (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+                        {
+                            const uint8_t control = midiEvent.data[1];
+                            const uint8_t value   = midiEvent.data[2];
+
+                            fluid_synth_cc(fSynth, event.channel, control, value);
+                        }
+                        break;
+
+                    case MIDI_STATUS_CHANNEL_PRESSURE:
+                        if (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE)
+                        {
+                            const uint8_t pressure = midiEvent.data[1];
+
+                            fluid_synth_channel_pressure(fSynth, event.channel, pressure);;
+                        }
+                        break;
+
+                    case MIDI_STATUS_PITCH_WHEEL_CONTROL:
+                        if (pData->options & PLUGIN_OPTION_SEND_PITCHBEND)
+                        {
+                            const uint8_t lsb = midiEvent.data[1];
+                            const uint8_t msb = midiEvent.data[2];
+                            const int   value = ((msb << 7) | lsb);
+
+                            fluid_synth_pitch_bend(fSynth, event.channel, value);
+                        }
+                        break;
+
+                    default:
+                        continue;
+                        break;
+                    } // switch (status)
+                } break;
+                } // switch (event.type)
             }
 
             pData->postRtEvents.trySplice();

@@ -1,6 +1,6 @@
 /*
  * Carla common MIDI code
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -35,17 +35,23 @@
 #define MIDI_STATUS_CHANNEL_PRESSURE                   0xD0 // pressure (0-127), none
 #define MIDI_STATUS_PITCH_WHEEL_CONTROL                0xE0 // LSB (0-127), MSB (0-127)
 
-#define MIDI_IS_STATUS_NOTE_OFF(status)                (((status) < MIDI_STATUS_BIT) && ((status) & MIDI_STATUS_BIT) == MIDI_STATUS_NOTE_OFF)
-#define MIDI_IS_STATUS_NOTE_ON(status)                 (((status) < MIDI_STATUS_BIT) && ((status) & MIDI_STATUS_BIT) == MIDI_STATUS_NOTE_ON)
-#define MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status)   (((status) < MIDI_STATUS_BIT) && ((status) & MIDI_STATUS_BIT) == MIDI_STATUS_POLYPHONIC_AFTERTOUCH)
-#define MIDI_IS_STATUS_CONTROL_CHANGE(status)          (((status) < MIDI_STATUS_BIT) && ((status) & MIDI_STATUS_BIT) == MIDI_STATUS_CONTROL_CHANGE)
-#define MIDI_IS_STATUS_PROGRAM_CHANGE(status)          (((status) < MIDI_STATUS_BIT) && ((status) & MIDI_STATUS_BIT) == MIDI_STATUS_PROGRAM_CHANGE)
-#define MIDI_IS_STATUS_CHANNEL_PRESSURE(status)        (((status) < MIDI_STATUS_BIT) && ((status) & MIDI_STATUS_BIT) == MIDI_STATUS_CHANNEL_PRESSURE)
-#define MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status)     (((status) < MIDI_STATUS_BIT) && ((status) & MIDI_STATUS_BIT) == MIDI_STATUS_PITCH_WHEEL_CONTROL)
+// MIDI Message type
+#define MIDI_IS_CHANNEL_MESSAGE(status) ((status) >= MIDI_STATUS_NOTE_OFF && (status) <  MIDI_STATUS_BIT)
+#define MIDI_IS_SYSTEM_MESSAGE(status)  ((status) >= MIDI_STATUS_BIT      && (status) <= 0xFF)
+#define MIDI_IS_OSC_MESSAGE(status)     ((status) == '/'                  || (status) == '#')
+
+// MIDI Channel message type
+#define MIDI_IS_STATUS_NOTE_OFF(status)                (MIDI_IS_CHANNEL_MESSAGE(status) && ((status) & MIDI_STATUS_BIT) == MIDI_STATUS_NOTE_OFF)
+#define MIDI_IS_STATUS_NOTE_ON(status)                 (MIDI_IS_CHANNEL_MESSAGE(status) && ((status) & MIDI_STATUS_BIT) == MIDI_STATUS_NOTE_ON)
+#define MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status)   (MIDI_IS_CHANNEL_MESSAGE(status) && ((status) & MIDI_STATUS_BIT) == MIDI_STATUS_POLYPHONIC_AFTERTOUCH)
+#define MIDI_IS_STATUS_CONTROL_CHANGE(status)          (MIDI_IS_CHANNEL_MESSAGE(status) && ((status) & MIDI_STATUS_BIT) == MIDI_STATUS_CONTROL_CHANGE)
+#define MIDI_IS_STATUS_PROGRAM_CHANGE(status)          (MIDI_IS_CHANNEL_MESSAGE(status) && ((status) & MIDI_STATUS_BIT) == MIDI_STATUS_PROGRAM_CHANGE)
+#define MIDI_IS_STATUS_CHANNEL_PRESSURE(status)        (MIDI_IS_CHANNEL_MESSAGE(status) && ((status) & MIDI_STATUS_BIT) == MIDI_STATUS_CHANNEL_PRESSURE)
+#define MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status)     (MIDI_IS_CHANNEL_MESSAGE(status) && ((status) & MIDI_STATUS_BIT) == MIDI_STATUS_PITCH_WHEEL_CONTROL)
 
 // MIDI Utils
-#define MIDI_GET_STATUS_FROM_DATA(data)                ((data[0] < MIDI_STATUS_BIT) ? data[0] & MIDI_STATUS_BIT  : data[0])
-#define MIDI_GET_CHANNEL_FROM_DATA(data)               ((data[0] < MIDI_STATUS_BIT) ? data[0] & MIDI_CHANNEL_BIT : 0)
+#define MIDI_GET_STATUS_FROM_DATA(data)                (MIDI_IS_CHANNEL_MESSAGE(data[0]) ? data[0] & MIDI_STATUS_BIT  : data[0])
+#define MIDI_GET_CHANNEL_FROM_DATA(data)               (MIDI_IS_CHANNEL_MESSAGE(data[0]) ? data[0] & MIDI_CHANNEL_BIT : 0)
 
 // Control Change Messages List
 #define MIDI_CONTROL_BANK_SELECT                       0x00 // 0-127, MSB

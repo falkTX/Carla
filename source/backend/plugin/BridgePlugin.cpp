@@ -966,7 +966,7 @@ public:
                     CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
                     uint8_t data1, data2, data3;
-                    data1 = static_cast<uint8_t>((note.velo > 0 ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF) | (note.channel & MIDI_CHANNEL_BIT));
+                    data1 = uint8_t((note.velo > 0 ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF) | (note.channel & MIDI_CHANNEL_BIT));
                     data2 = note.note;
                     data3 = note.velo;
 
@@ -990,7 +990,7 @@ public:
 
             bool allNotesOffSent = false;
 
-            for (uint32_t i=0, numEvents = pData->event.portIn->getEventCount(); i < numEvents; ++i)
+            for (uint32_t i=0, numEvents=pData->event.portIn->getEventCount(); i < numEvents; ++i)
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 
@@ -1124,11 +1124,9 @@ public:
                     if (midiEvent.size == 0 || midiEvent.size >= MAX_MIDI_VALUE)
                         continue;
 
-                    uint8_t status  = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
-                    uint8_t channel = event.channel;
+                    const uint8_t* const midiData(midiEvent.size > EngineMidiEvent::kDataSize ? midiEvent.dataExt : midiEvent.data);
 
-                    if (MIDI_IS_STATUS_NOTE_ON(status) && midiEvent.data[2] == 0)
-                        status = MIDI_STATUS_NOTE_OFF;
+                    uint8_t status = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiData));
 
                     if (status == MIDI_STATUS_CHANNEL_PRESSURE && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
                         continue;
@@ -1139,20 +1137,26 @@ public:
                     if (status == MIDI_STATUS_PITCH_WHEEL_CONTROL && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
                         continue;
 
+                    // Fix bad note-off
+                    if (status == MIDI_STATUS_NOTE_ON && midiData[2] == 0)
+                        status = MIDI_STATUS_NOTE_OFF;
+
                     fShmRtControl.writeOpcode(kPluginBridgeRtMidiEvent);
                     fShmRtControl.writeUInt(event.time);
                     fShmRtControl.writeByte(midiEvent.port);
                     fShmRtControl.writeByte(midiEvent.size);
 
-                    for (uint8_t j=0; j < midiEvent.size; ++j)
-                        fShmRtControl.writeByte(midiEvent.data[j]);
+                    fShmRtControl.writeByte(uint8_t(midiData[0] | (event.channel & MIDI_CHANNEL_BIT)));
+
+                    for (uint8_t j=1; j < midiEvent.size; ++j)
+                        fShmRtControl.writeByte(midiData[j]);
 
                     fShmRtControl.commitWrite();
 
                     if (status == MIDI_STATUS_NOTE_ON)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, event.channel, midiData[1], midiData[2]);
                     else if (status == MIDI_STATUS_NOTE_OFF)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, channel, midiEvent.data[1], 0.0f);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, event.channel, midiData[1], 0.0f);
                 } break;
                 }
             }

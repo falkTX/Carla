@@ -609,7 +609,7 @@ public:
                     CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
                     uint8_t midiEvent[3];
-                    midiEvent[0] = static_cast<uint8_t>((note.velo > 0 ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF) | (note.channel & MIDI_CHANNEL_BIT));
+                    midiEvent[0] = uint8_t((note.velo > 0 ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF) | (note.channel & MIDI_CHANNEL_BIT));
                     midiEvent[1] = note.note;
                     midiEvent[2] = note.velo;
 
@@ -627,7 +627,6 @@ public:
 #ifndef BUILD_BRIDGE
             bool allNotesOffSent = false;
 #endif
-            uint32_t numEvents = pData->event.portIn->getEventCount();
             uint32_t nextBankId;
 
             if (pData->midiprog.current >= 0 && pData->midiprog.count > 0)
@@ -635,7 +634,7 @@ public:
             else
                 nextBankId = 0;
 
-            for (uint32_t i=0; i < numEvents; ++i)
+            for (uint32_t i=0, numEvents=pData->event.portIn->getEventCount(); i < numEvents; ++i)
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 
@@ -746,8 +745,8 @@ public:
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
                             uint8_t midiData[3];
-                            midiData[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + i);
-                            midiData[1] = static_cast<uint8_t>(ctrlEvent.param);
+                            midiData[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            midiData[1] = uint8_t(ctrlEvent.param);
                             midiData[2] = uint8_t(ctrlEvent.value*127.0f);
 
                             fMidiBuffer.addEvent(midiData, 3, static_cast<int>(event.time));
@@ -782,7 +781,7 @@ public:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
                             uint8_t midiData[3];
-                            midiData[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + i);
+                            midiData[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
                             midiData[2] = 0;
 
@@ -802,7 +801,7 @@ public:
 #endif
 
                             uint8_t midiData[3];
-                            midiData[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + i);
+                            midiData[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             midiData[1] = MIDI_CONTROL_ALL_NOTES_OFF;
                             midiData[2] = 0;
 
@@ -813,16 +812,12 @@ public:
                     break;
                 } // case kEngineEventTypeControl
 
-                case kEngineEventTypeMidi:
-                {
+                case kEngineEventTypeMidi: {
                     const EngineMidiEvent& midiEvent(event.midi);
 
-                    uint8_t status  = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
-                    uint8_t channel = event.channel;
+                    const uint8_t* const midiData(midiEvent.size > EngineMidiEvent::kDataSize ? midiEvent.dataExt : midiEvent.data);
 
-                    // Fix bad note-off
-                    if (MIDI_IS_STATUS_NOTE_ON(status) && midiEvent.data[2] == 0)
-                        status = MIDI_STATUS_NOTE_OFF;
+                    uint8_t status = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiData));
 
                     if (status == MIDI_STATUS_CHANNEL_PRESSURE && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
                         continue;
@@ -833,15 +828,22 @@ public:
                     if (status == MIDI_STATUS_PITCH_WHEEL_CONTROL && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
                         continue;
 
-                    fMidiBuffer.addEvent(midiEvent.data, midiEvent.size, static_cast<int>(event.time));
+                    // Fix bad note-off
+                    if (status == MIDI_STATUS_NOTE_ON && midiData[2] == 0)
+                        status = MIDI_STATUS_NOTE_OFF;
+
+                    // put back channel in data
+                    uint8_t midiData2[midiEvent.size];
+                    midiData2[0] = uint8_t(status | (event.channel & MIDI_CHANNEL_BIT));
+                    std::memcpy(midiData2+1, midiData+1, static_cast<std::size_t>(midiEvent.size-1));
+
+                    fMidiBuffer.addEvent(midiData2, midiEvent.size, static_cast<int>(event.time));
 
                     if (status == MIDI_STATUS_NOTE_ON)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, event.channel, midiData[1], midiData[2]);
                     else if (status == MIDI_STATUS_NOTE_OFF)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, channel, midiEvent.data[1], 0.0f);
-
-                    break;
-                } // case kEngineEventTypeMidi
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, event.channel, midiData[1], 0.0f);
+                } break;
                 } // switch (event.type)
             }
 

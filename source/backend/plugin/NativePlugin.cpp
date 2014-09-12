@@ -1302,32 +1302,32 @@ public:
         {
             if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
+                fMidiEventCount = MAX_MIDI_CHANNELS*2;
+
                 for (uint8_t k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; ++k)
                 {
-                    fMidiEvents[k].data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + k);
+                    fMidiEvents[k].data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (k & MIDI_CHANNEL_BIT));
                     fMidiEvents[k].data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
                     fMidiEvents[k].data[2] = 0;
                     fMidiEvents[k].size    = 3;
 
-                    fMidiEvents[k+i].data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + k);
+                    fMidiEvents[k+i].data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (k & MIDI_CHANNEL_BIT));
                     fMidiEvents[k+i].data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
                     fMidiEvents[k+i].data[2] = 0;
                     fMidiEvents[k+i].size    = 3;
                 }
-
-                fMidiEventCount = MAX_MIDI_CHANNELS*2;
             }
             else if (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
             {
+                fMidiEventCount = MAX_MIDI_NOTE;
+
                 for (uint8_t k=0; k < MAX_MIDI_NOTE; ++k)
                 {
-                    fMidiEvents[k].data[0] = static_cast<uint8_t>(MIDI_STATUS_NOTE_OFF + pData->ctrlChannel);
+                    fMidiEvents[k].data[0] = uint8_t(MIDI_STATUS_NOTE_OFF | (pData->ctrlChannel & MIDI_CHANNEL_BIT));
                     fMidiEvents[k].data[1] = k;
                     fMidiEvents[k].data[2] = 0;
                     fMidiEvents[k].size    = 3;
                 }
-
-                fMidiEventCount = MAX_MIDI_NOTE;
             }
 
             pData->needsReset = false;
@@ -1372,19 +1372,18 @@ public:
             {
                 ExternalMidiNote note = { 0, 0, 0 };
 
-                //for (RtLinkedList<ExternalMidiNote>::Itenerator it = pData->extNotes.data.begin(); it.valid(); it.next())
-                while (fMidiEventCount < kPluginMaxMidiEvents*2 && ! pData->extNotes.data.isEmpty())
+                for (; fMidiEventCount < kPluginMaxMidiEvents*2 && ! pData->extNotes.data.isEmpty();)
                 {
                     note = pData->extNotes.data.getFirst(note, true);
 
                     CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
-                    fMidiEvents[fMidiEventCount].data[0] = static_cast<uint8_t>((note.velo > 0 ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF) | (note.channel & MIDI_CHANNEL_BIT));
-                    fMidiEvents[fMidiEventCount].data[1] = note.note;
-                    fMidiEvents[fMidiEventCount].data[2] = note.velo;
-                    fMidiEvents[fMidiEventCount].size    = 3;
+                    NativeMidiEvent& nativeEvent(fMidiEvents[fMidiEventCount++]);
 
-                    fMidiEventCount += 1;
+                    nativeEvent.data[0] = uint8_t((note.velo > 0 ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF) | (note.channel & MIDI_CHANNEL_BIT));
+                    nativeEvent.data[1] = note.note;
+                    nativeEvent.data[2] = note.velo;
+                    nativeEvent.size    = 3;
                 }
 
                 pData->extNotes.mutex.unlock();
@@ -1399,31 +1398,30 @@ public:
 #endif
             bool sampleAccurate  = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
-            uint32_t time, nEvents = pData->event.portIn->getEventCount();
             uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
-            uint32_t nextBankId = 0;
+            uint32_t nextBankId;
 
             if (pData->midiprog.current >= 0 && pData->midiprog.count > 0)
                 nextBankId = pData->midiprog.data[pData->midiprog.current].bank;
+            else
+                nextBankId = 0;
 
-            for (uint32_t i=0; i < nEvents; ++i)
+            for (uint32_t i=0, numEvents=pData->event.portIn->getEventCount(); i < numEvents; ++i)
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 
-                time = event.time;
-
-                if (time >= frames)
+                if (event.time >= frames)
                     continue;
 
-                CARLA_ASSERT_INT2(time >= timeOffset, time, timeOffset);
+                CARLA_ASSERT_INT2(event.time >= timeOffset, event.time, timeOffset);
 
-                if (time > timeOffset && sampleAccurate)
+                if (event.time > timeOffset && sampleAccurate)
                 {
-                    if (processSingle(audioIn, audioOut, cvIn, cvOut, time - timeOffset, timeOffset))
+                    if (processSingle(audioIn, audioOut, cvIn, cvOut, event.time - timeOffset, timeOffset))
                     {
                         startTime  = 0;
-                        timeOffset = time;
+                        timeOffset = event.time;
 
                         if (pData->midiprog.current >= 0 && pData->midiprog.count > 0)
                             nextBankId = pData->midiprog.data[pData->midiprog.current].bank;
@@ -1538,14 +1536,14 @@ public:
                             if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                                 continue;
 
-                            fMidiEvents[fMidiEventCount].port    = 0;
-                            fMidiEvents[fMidiEventCount].time    = sampleAccurate ? startTime : time;
-                            fMidiEvents[fMidiEventCount].data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + event.channel);
-                            fMidiEvents[fMidiEventCount].data[1] = static_cast<uint8_t>(ctrlEvent.param);
-                            fMidiEvents[fMidiEventCount].data[2] = uint8_t(ctrlEvent.value*127.0f);
-                            fMidiEvents[fMidiEventCount].size    = 3;
+                            NativeMidiEvent& nativeEvent(fMidiEvents[fMidiEventCount++]);
+                            carla_zeroStruct(nativeEvent);
 
-                            fMidiEventCount += 1;
+                            nativeEvent.time    = sampleAccurate ? startTime : event.time;
+                            nativeEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            nativeEvent.data[1] = uint8_t(ctrlEvent.param);
+                            nativeEvent.data[2] = uint8_t(ctrlEvent.value*127.0f);
+                            nativeEvent.size    = 3;
                         }
                         break;
                     }
@@ -1586,14 +1584,15 @@ public:
                             if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                                 continue;
 
-                            fMidiEvents[fMidiEventCount].port    = 0;
-                            fMidiEvents[fMidiEventCount].time    = sampleAccurate ? startTime : time;
-                            fMidiEvents[fMidiEventCount].data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + event.channel);
-                            fMidiEvents[fMidiEventCount].data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
-                            fMidiEvents[fMidiEventCount].data[2] = 0;
-                            fMidiEvents[fMidiEventCount].size    = 3;
+                            NativeMidiEvent& nativeEvent(fMidiEvents[fMidiEventCount++]);
+                            carla_zeroStruct(nativeEvent);
 
-                            fMidiEventCount += 1;
+                            nativeEvent.port    = 0;
+                            nativeEvent.time    = sampleAccurate ? startTime : event.time;
+                            nativeEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            nativeEvent.data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
+                            nativeEvent.data[2] = 0;
+                            nativeEvent.size    = 3;
                         }
                         break;
 
@@ -1611,14 +1610,14 @@ public:
                             if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                                 continue;
 
-                            fMidiEvents[fMidiEventCount].port    = 0;
-                            fMidiEvents[fMidiEventCount].time    = sampleAccurate ? startTime : time;
-                            fMidiEvents[fMidiEventCount].data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + event.channel);
-                            fMidiEvents[fMidiEventCount].data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
-                            fMidiEvents[fMidiEventCount].data[2] = 0;
-                            fMidiEvents[fMidiEventCount].size    = 3;
+                            NativeMidiEvent& nativeEvent(fMidiEvents[fMidiEventCount++]);
+                            carla_zeroStruct(nativeEvent);
 
-                            fMidiEventCount += 1;
+                            nativeEvent.time    = sampleAccurate ? startTime : event.time;
+                            nativeEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            nativeEvent.data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
+                            nativeEvent.data[2] = 0;
+                            nativeEvent.size    = 3;
                         }
                         break;
                     }
@@ -1631,41 +1630,43 @@ public:
 
                     const EngineMidiEvent& midiEvent(event.midi);
 
-                    uint8_t status  = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
-                    uint8_t channel = event.channel;
+                    if (midiEvent.size > 4)
+                        continue;
+                    static_assert(4 <= EngineMidiEvent::kDataSize, "Incorrect data");
 
-                    if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
+                    uint8_t status = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
+
+                    if (status == MIDI_STATUS_CHANNEL_PRESSURE && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
                         continue;
-                    if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
+                    if (status == MIDI_STATUS_CONTROL_CHANGE && (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
                         continue;
-                    if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
+                    if (status == MIDI_STATUS_POLYPHONIC_AFTERTOUCH && (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
                         continue;
-                    if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
+                    if (status == MIDI_STATUS_PITCH_WHEEL_CONTROL && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
                         continue;
 
                     // Fix bad note-off
                     if (status == MIDI_STATUS_NOTE_ON && midiEvent.data[2] == 0)
                         status = MIDI_STATUS_NOTE_OFF;
 
-                    fMidiEvents[fMidiEventCount].port = 0;
-                    fMidiEvents[fMidiEventCount].time = sampleAccurate ? startTime : time;
-                    fMidiEvents[fMidiEventCount].size = midiEvent.size;
+                    NativeMidiEvent& nativeEvent(fMidiEvents[fMidiEventCount++]);
+                    carla_zeroStruct(nativeEvent);
 
-                    fMidiEvents[fMidiEventCount].data[0] = static_cast<uint8_t>(status + channel);
-                    fMidiEvents[fMidiEventCount].data[1] = midiEvent.data[1];
-                    fMidiEvents[fMidiEventCount].data[2] = midiEvent.data[2];
-                    fMidiEvents[fMidiEventCount].data[3] = midiEvent.data[3];
+                    nativeEvent.port = midiEvent.port;
+                    nativeEvent.time = sampleAccurate ? startTime : event.time;
+                    nativeEvent.size = midiEvent.size;
 
-                    fMidiEventCount += 1;
+                    nativeEvent.data[0] = uint8_t(status | (event.channel & MIDI_CHANNEL_BIT));
+                    nativeEvent.data[1] = midiEvent.size >= 2 ? midiEvent.data[1] : 0;
+                    nativeEvent.data[2] = midiEvent.size >= 3 ? midiEvent.data[2] : 0;
+                    nativeEvent.data[3] = midiEvent.size == 4 ? midiEvent.data[3] : 0;
 
                     if (status == MIDI_STATUS_NOTE_ON)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, event.channel, midiEvent.data[1], midiEvent.data[2]);
                     else if (status == MIDI_STATUS_NOTE_OFF)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, channel, midiEvent.data[1], 0.0f);
-
-                    break;
-                }
-                }
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, event.channel, midiEvent.data[1], 0.0f);
+                } break;
+                } // switch (event.type)
             }
 
             pData->postRtEvents.trySplice();

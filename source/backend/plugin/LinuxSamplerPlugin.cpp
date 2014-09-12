@@ -799,11 +799,10 @@ public:
 #endif
             bool sampleAccurate  = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
-            uint32_t nEvents = pData->event.portIn->getEventCount();
             uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
 
-            for (uint32_t i=0; i < nEvents; ++i)
+            for (uint32_t i=0, numEvents=pData->event.portIn->getEventCount(); i < numEvents; ++i)
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 
@@ -982,42 +981,38 @@ public:
                     break;
                 }
 
-                case kEngineEventTypeMidi:
-                {
+                case kEngineEventTypeMidi: {
                     const EngineMidiEvent& midiEvent(event.midi);
 
-                    uint8_t status  = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
-                    uint8_t channel = event.channel;
+                    const uint8_t* const midiData(midiEvent.size > EngineMidiEvent::kDataSize ? midiEvent.dataExt : midiEvent.data);
+
+                    uint8_t status = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiData));
+
+                    if (status == MIDI_STATUS_CHANNEL_PRESSURE && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
+                        continue;
+                    if (status == MIDI_STATUS_CONTROL_CHANGE && (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
+                        continue;
+                    if (status == MIDI_STATUS_POLYPHONIC_AFTERTOUCH && (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
+                        continue;
+                    if (status == MIDI_STATUS_PITCH_WHEEL_CONTROL && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
+                        continue;
 
                     // Fix bad note-off
-                    if (MIDI_IS_STATUS_NOTE_ON(status) && midiEvent.data[2] == 0)
+                    if (status == MIDI_STATUS_NOTE_ON && midiData[2] == 0)
                         status = MIDI_STATUS_NOTE_OFF;
 
-                    if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
-                        continue;
-                    if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
-                        continue;
-                    if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
-                        continue;
-                    if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
-                        continue;
-
                     // put back channel in data
-                    uint8_t data[EngineMidiEvent::kDataSize];
-                    std::memcpy(data, event.midi.data, EngineMidiEvent::kDataSize);
+                    uint8_t midiData2[midiEvent.size];
+                    midiData2[0] = uint8_t(status | (event.channel & MIDI_CHANNEL_BIT));
+                    std::memcpy(midiData2+1, midiData+1, static_cast<std::size_t>(midiEvent.size-1));
 
-                    if (status < 0xF0 && channel < MAX_MIDI_CHANNELS)
-                        data[0] = uint8_t(data[0] + channel);
-
-                    fMidiInputPort->DispatchRaw(data, static_cast<int32_t>(sampleAccurate ? startTime : event.time));
+                    fMidiInputPort->DispatchRaw(midiData2, static_cast<int32_t>(sampleAccurate ? startTime : event.time));
 
                     if (status == MIDI_STATUS_NOTE_ON)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, data[1], data[2]);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, event.channel, midiData[1], midiData[2]);
                     else if (status == MIDI_STATUS_NOTE_OFF)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, channel,data[1], 0.0f);
-
-                    break;
-                }
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, event.channel, midiData[1], 0.0f);
+                } break;
                 }
             }
 

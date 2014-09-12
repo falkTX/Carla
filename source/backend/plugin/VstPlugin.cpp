@@ -47,6 +47,8 @@ const uint PLUGIN_HAS_COCKOS_EXTENSIONS = 0x2000;
 const uint PLUGIN_USES_OLD_VSTSDK       = 0x4000;
 const uint PLUGIN_WANTS_MIDI_INPUT      = 0x8000;
 
+static const int32_t kVstMidiEventSize = static_cast<int32_t>(sizeof(VstMidiEvent));
+
 // -----------------------------------------------------
 
 class VstPlugin : public CarlaPlugin,
@@ -1083,13 +1085,13 @@ public:
                 for (uint8_t i=0, k=MAX_MIDI_CHANNELS; i < MAX_MIDI_CHANNELS; ++i)
                 {
                     fMidiEvents[k].type = kVstMidiType;
-                    fMidiEvents[k].byteSize    = static_cast<int32_t>(sizeof(VstMidiEvent));
-                    fMidiEvents[k].midiData[0] = static_cast<char>(MIDI_STATUS_CONTROL_CHANGE + k);
+                    fMidiEvents[k].byteSize    = kVstMidiEventSize;
+                    fMidiEvents[k].midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (k & MIDI_CHANNEL_BIT));
                     fMidiEvents[k].midiData[1] = MIDI_CONTROL_ALL_NOTES_OFF;
 
                     fMidiEvents[k+i].type = kVstMidiType;
-                    fMidiEvents[k+i].byteSize    = static_cast<int32_t>(sizeof(VstMidiEvent));
-                    fMidiEvents[k+i].midiData[0] = static_cast<char>(MIDI_STATUS_CONTROL_CHANGE + k);
+                    fMidiEvents[k+i].byteSize    = kVstMidiEventSize;
+                    fMidiEvents[k+i].midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (k & MIDI_CHANNEL_BIT));
                     fMidiEvents[k+i].midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
                 }
             }
@@ -1100,9 +1102,9 @@ public:
                 for (uint8_t i=0; i < MAX_MIDI_NOTE; ++i)
                 {
                     fMidiEvents[i].type = kVstMidiType;
-                    fMidiEvents[i].byteSize    = static_cast<int32_t>(sizeof(VstMidiEvent));
-                    fMidiEvents[i].midiData[0] = static_cast<char>(MIDI_STATUS_NOTE_OFF + pData->ctrlChannel);
-                    fMidiEvents[i].midiData[1] = static_cast<char>(i);
+                    fMidiEvents[i].byteSize    = kVstMidiEventSize;
+                    fMidiEvents[i].midiData[0] = char(MIDI_STATUS_NOTE_OFF | (pData->ctrlChannel & MIDI_CHANNEL_BIT));
+                    fMidiEvents[i].midiData[1] = char(i);
                 }
             }
 
@@ -1193,13 +1195,13 @@ public:
 
                     CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
-                    fMidiEvents[fMidiEventCount].type = kVstMidiType;
-                    fMidiEvents[fMidiEventCount].byteSize    = static_cast<int32_t>(sizeof(VstMidiEvent));
-                    fMidiEvents[fMidiEventCount].midiData[0] = static_cast<char>((note.velo > 0 ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF) | (note.channel & MIDI_CHANNEL_BIT));
-                    fMidiEvents[fMidiEventCount].midiData[1] = static_cast<char>(note.note);
-                    fMidiEvents[fMidiEventCount].midiData[2] = static_cast<char>(note.velo);
+                    VstMidiEvent& vstMidiEvent(fMidiEvents[fMidiEventCount++]);
 
-                    ++fMidiEventCount;
+                    vstMidiEvent.type        = kVstMidiType;
+                    vstMidiEvent.byteSize    = kVstMidiEventSize;
+                    vstMidiEvent.midiData[0] = char((note.velo > 0 ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF) | (note.channel & MIDI_CHANNEL_BIT));
+                    vstMidiEvent.midiData[1] = char(note.note);
+                    vstMidiEvent.midiData[2] = char(note.velo);
                 }
 
                 pData->extNotes.mutex.unlock();
@@ -1214,11 +1216,10 @@ public:
 #endif
             bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
-            uint32_t numEvents  = pData->event.portIn->getEventCount();
             uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
 
-            for (uint32_t i=0; i < numEvents; ++i)
+            for (uint32_t i=0, numEvents = pData->event.portIn->getEventCount(); i < numEvents; ++i)
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 
@@ -1350,16 +1351,15 @@ public:
                             if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                                 continue;
 
-                            carla_zeroStruct<VstMidiEvent>(fMidiEvents[fMidiEventCount]);
+                            VstMidiEvent& vstMidiEvent(fMidiEvents[fMidiEventCount++]);
+                            carla_zeroStruct(vstMidiEvent);
 
-                            fMidiEvents[fMidiEventCount].type = kVstMidiType;
-                            fMidiEvents[fMidiEventCount].byteSize    = static_cast<int32_t>(sizeof(VstMidiEvent));
-                            fMidiEvents[fMidiEventCount].midiData[0] = static_cast<char>(MIDI_STATUS_CONTROL_CHANGE + event.channel);
-                            fMidiEvents[fMidiEventCount].midiData[1] = static_cast<char>(ctrlEvent.param);
-                            fMidiEvents[fMidiEventCount].midiData[2] = char(ctrlEvent.value*127.0f);
-                            fMidiEvents[fMidiEventCount].deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : event.time);
-
-                            ++fMidiEventCount;
+                            vstMidiEvent.type        = kVstMidiType;
+                            vstMidiEvent.byteSize    = kVstMidiEventSize;
+                            vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : event.time);
+                            vstMidiEvent.midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            vstMidiEvent.midiData[1] = char(ctrlEvent.param);
+                            vstMidiEvent.midiData[2] = char(ctrlEvent.value*127.0f);
                         }
 
                         break;
@@ -1386,15 +1386,14 @@ public:
                             if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                                 continue;
 
-                            carla_zeroStruct<VstMidiEvent>(fMidiEvents[fMidiEventCount]);
+                            VstMidiEvent& vstMidiEvent(fMidiEvents[fMidiEventCount++]);
+                            carla_zeroStruct(vstMidiEvent);
 
-                            fMidiEvents[fMidiEventCount].type = kVstMidiType;
-                            fMidiEvents[fMidiEventCount].byteSize    = static_cast<int32_t>(sizeof(VstMidiEvent));
-                            fMidiEvents[fMidiEventCount].midiData[0] = static_cast<char>(MIDI_STATUS_CONTROL_CHANGE + event.channel);
-                            fMidiEvents[fMidiEventCount].midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
-                            fMidiEvents[fMidiEventCount].deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : event.time);
-
-                            ++fMidiEventCount;
+                            vstMidiEvent.type        = kVstMidiType;
+                            vstMidiEvent.byteSize    = kVstMidiEventSize;
+                            vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : event.time);
+                            vstMidiEvent.midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            vstMidiEvent.midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
                         }
                         break;
 
@@ -1412,15 +1411,14 @@ public:
                             if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                                 continue;
 
-                            carla_zeroStruct<VstMidiEvent>(fMidiEvents[fMidiEventCount]);
+                            VstMidiEvent& vstMidiEvent(fMidiEvents[fMidiEventCount++]);
+                            carla_zeroStruct(vstMidiEvent);
 
-                            fMidiEvents[fMidiEventCount].type = kVstMidiType;
-                            fMidiEvents[fMidiEventCount].byteSize    = static_cast<int32_t>(sizeof(VstMidiEvent));
-                            fMidiEvents[fMidiEventCount].midiData[0] = static_cast<char>(MIDI_STATUS_CONTROL_CHANGE + event.channel);
-                            fMidiEvents[fMidiEventCount].midiData[1] = MIDI_CONTROL_ALL_NOTES_OFF;
-                            fMidiEvents[fMidiEventCount].deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : event.time);
-
-                            ++fMidiEventCount;
+                            vstMidiEvent.type        = kVstMidiType;
+                            vstMidiEvent.byteSize    = kVstMidiEventSize;
+                            vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : event.time);
+                            vstMidiEvent.midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            vstMidiEvent.midiData[1] = MIDI_CONTROL_ALL_NOTES_OFF;
                         }
                         break;
                     } // switch (ctrlEvent.type)
@@ -1433,12 +1431,11 @@ public:
 
                     const EngineMidiEvent& midiEvent(event.midi);
 
-                    uint8_t status  = static_cast<uint8_t>(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
-                    uint8_t channel = event.channel;
+                    if (midiEvent.size > 3)
+                        continue;
+                    static_assert(3 <= EngineMidiEvent::kDataSize, "Incorrect data");
 
-                    // Fix bad note-off (per VST spec)
-                    if (MIDI_IS_STATUS_NOTE_ON(status) && midiEvent.data[2] == 0)
-                        status = MIDI_STATUS_NOTE_OFF;
+                    uint8_t status = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
 
                     if (status == MIDI_STATUS_CHANNEL_PRESSURE && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
                         continue;
@@ -1449,24 +1446,25 @@ public:
                     if (status == MIDI_STATUS_PITCH_WHEEL_CONTROL && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
                         continue;
 
-                    carla_zeroStruct<VstMidiEvent>(fMidiEvents[fMidiEventCount]);
+                    // Fix bad note-off
+                    if (status == MIDI_STATUS_NOTE_ON && midiEvent.data[2] == 0)
+                        status = MIDI_STATUS_NOTE_OFF;
 
-                    fMidiEvents[fMidiEventCount].type = kVstMidiType;
-                    fMidiEvents[fMidiEventCount].byteSize    = static_cast<int32_t>(sizeof(VstMidiEvent));
-                    fMidiEvents[fMidiEventCount].midiData[0] = static_cast<char>(status + channel);
-                    fMidiEvents[fMidiEventCount].midiData[1] = static_cast<char>(midiEvent.data[1]);
-                    fMidiEvents[fMidiEventCount].midiData[2] = static_cast<char>(midiEvent.data[2]);
-                    fMidiEvents[fMidiEventCount].deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : event.time);
+                    VstMidiEvent& vstMidiEvent(fMidiEvents[fMidiEventCount++]);
+                    carla_zeroStruct(vstMidiEvent);
 
-                    ++fMidiEventCount;
+                    vstMidiEvent.type        = kVstMidiType;
+                    vstMidiEvent.byteSize    = kVstMidiEventSize;
+                    vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : event.time);
+                    vstMidiEvent.midiData[0] = char(status | (event.channel & MIDI_CHANNEL_BIT));
+                    vstMidiEvent.midiData[1] = char(midiEvent.size >= 2 ? midiEvent.data[1] : 0);
+                    vstMidiEvent.midiData[2] = char(midiEvent.size >= 3 ? midiEvent.data[2] : 0);
 
                     if (status == MIDI_STATUS_NOTE_ON)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, event.channel, midiEvent.data[1], midiEvent.data[2]);
                     else if (status == MIDI_STATUS_NOTE_OFF)
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, channel, midiEvent.data[1], 0.0f);
-
-                    break;
-                } // case kEngineEventTypeMidi
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, event.channel, midiEvent.data[1], 0.0f);
+                } break;
                 } // switch (event.type)
             }
 
@@ -1497,18 +1495,17 @@ public:
                 if (fMidiEvents[k].type == 0)
                     break;
 
-                CARLA_SAFE_ASSERT_CONTINUE(fMidiEvents[k].deltaFrames >= 0);
-                CARLA_SAFE_ASSERT_CONTINUE(fMidiEvents[k].midiData[0] != 0);
+                const VstMidiEvent& vstMidiEvent(fMidiEvents[k]);
 
-                const uint8_t status(static_cast<uint8_t>(fMidiEvents[k].midiData[0]));
-                const uint8_t channel(static_cast<uint8_t>(status < MIDI_STATUS_BIT ? status & MIDI_CHANNEL_BIT : 0));
+                CARLA_SAFE_ASSERT_CONTINUE(vstMidiEvent.deltaFrames >= 0);
+                CARLA_SAFE_ASSERT_CONTINUE(vstMidiEvent.midiData[0] != 0);
 
                 uint8_t midiData[3];
-                midiData[0] = static_cast<uint8_t>(fMidiEvents[k].midiData[0]);
-                midiData[1] = static_cast<uint8_t>(fMidiEvents[k].midiData[1]);
-                midiData[2] = static_cast<uint8_t>(fMidiEvents[k].midiData[2]);
+                midiData[0] = static_cast<uint8_t>(vstMidiEvent.midiData[0]);
+                midiData[1] = static_cast<uint8_t>(vstMidiEvent.midiData[1]);
+                midiData[2] = static_cast<uint8_t>(vstMidiEvent.midiData[2]);
 
-                pData->event.portOut->writeMidiEvent(static_cast<uint32_t>(fMidiEvents[k].deltaFrames), channel, 0, 3, midiData);
+                pData->event.portOut->writeMidiEvent(static_cast<uint32_t>(vstMidiEvent.deltaFrames), MIDI_GET_CHANNEL_FROM_DATA(midiData), 0, 3, midiData);
             }
 
         } // End of MIDI Output
@@ -1740,7 +1737,7 @@ public:
 
         uint8_t midiData[4];
         midiData[0] = 0;
-        midiData[1] = static_cast<uint8_t>(MIDI_STATUS_NOTE_ON + channel);
+        midiData[1] = uint8_t(MIDI_STATUS_NOTE_ON | (channel & MIDI_CHANNEL_BIT));
         midiData[2] = note;
         midiData[3] = velo;
 
@@ -1759,7 +1756,7 @@ public:
 
         uint8_t midiData[4];
         midiData[0] = 0;
-        midiData[1] = static_cast<uint8_t>(MIDI_STATUS_NOTE_OFF + channel);
+        midiData[1] = uint8_t(MIDI_STATUS_NOTE_OFF | (channel & MIDI_CHANNEL_BIT));
         midiData[2] = note;
         midiData[3] = 0;
 
