@@ -42,6 +42,7 @@ import ui_carla_plugin_zita
 import ui_carla_plugin_zynfx
 
 from carla_widgets import *
+from digitalpeakmeter import DigitalPeakMeter
 from pixmapdial import PixmapDial
 
 # ------------------------------------------------------------------------------------------------------------
@@ -1081,135 +1082,6 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
 
 # ------------------------------------------------------------------------------------------------------------
 
-class PluginSlot_OpenAV(AbstractPluginSlot):
-    def __init__(self, parent, host, pluginId):
-        AbstractPluginSlot.__init__(self, parent, host, pluginId)
-        self.ui = ui_carla_plugin_basic_fx.Ui_PluginWidget()
-        self.ui.setupUi(self)
-
-        # -------------------------------------------------------------
-        # Set-up GUI
-
-        QFontDatabase.addApplicationFont(":/fonts/uranium.ttf")
-
-        labelFont = QFont()
-        labelFont.setFamily("Uranium")
-        labelFont.setPointSize(13)
-        labelFont.setCapitalization(QFont.AllUppercase)
-        self.ui.label_name.setFont(labelFont)
-
-        self.setStyleSheet("""
-            PluginSlot_OpenAV#PluginWidget {
-                background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                                  stop: 0 #303030, stop: 0.35 #111111, stop: 1.0 #111111);
-            }
-        """)
-
-        self.ui.label_name.setStyleSheet("* { color: #FF5100; }")
-        #self.ui.line.setStyleSheet("* { background-color: #FF5100; color: #FF5100; }")
-
-        self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
-        self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
-        self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
-
-        # -------------------------------------------------------------
-        # Set-up parameters
-
-        parameterCount = self.host.get_parameter_count(self.fPluginId)
-
-        index = 0
-        for i in range(parameterCount):
-            if index >= 8:
-                break
-
-            paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
-            paramData   = self.host.get_parameter_data(self.fPluginId, i)
-            paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
-
-            if paramData['type'] != PARAMETER_INPUT:
-                continue
-            if paramData['hints'] & PARAMETER_IS_BOOLEAN:
-                continue
-            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                continue
-
-            paramName = getParameterShortName(paramInfo['name'])
-
-            widget = PixmapDial(self, i)
-            widget.setPixmap(11)
-            widget.setLabel(paramName)
-            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-            widget.setMinimum(paramRanges['min'])
-            widget.setMaximum(paramRanges['max'])
-
-            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                widget.setEnabled(False)
-
-            self.ui.w_knobs.layout().insertWidget(index, widget)
-            index += 1
-
-            self.fParameterList.append([i, widget])
-
-        self.ui.dial_drywet.setIndex(PARAMETER_DRYWET)
-        self.ui.dial_drywet.setPixmap(11)
-        self.ui.dial_drywet.setLabel("Dry/Wet")
-        self.ui.dial_drywet.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-        self.ui.dial_drywet.setMinimum(0.0)
-        self.ui.dial_drywet.setMaximum(1.0)
-        self.ui.dial_drywet.setVisible(self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET)
-
-        self.ui.dial_vol.setIndex(PARAMETER_VOLUME)
-        self.ui.dial_vol.setPixmap(11)
-        self.ui.dial_vol.setLabel("Volume")
-        self.ui.dial_vol.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-        self.ui.dial_vol.setMinimum(0.0)
-        self.ui.dial_vol.setMaximum(1.27)
-        self.ui.dial_vol.setVisible(self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME)
-
-        self.fParameterList.append([PARAMETER_DRYWET, self.ui.dial_drywet])
-        self.fParameterList.append([PARAMETER_VOLUME, self.ui.dial_vol])
-
-        # -------------------------------------------------------------
-
-        self.b_enable = self.ui.b_enable
-        self.b_gui    = self.ui.b_gui
-        self.b_edit   = self.ui.b_edit
-
-        self.label_name = self.ui.label_name
-
-        self.led_control   = self.ui.led_control
-        self.led_midi      = self.ui.led_midi
-        self.led_audio_in  = self.ui.led_audio_in
-        self.led_audio_out = self.ui.led_audio_out
-
-        self.peak_in  = self.ui.peak_in
-        self.peak_out = self.ui.peak_out
-
-        self.ready()
-
-        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
-
-    #------------------------------------------------------------------
-
-    def getFixedHeight(self):
-        return 79
-
-    #------------------------------------------------------------------
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setBrush(Qt.transparent)
-
-        painter.setPen(QPen(QColor(42, 42, 42), 1))
-        painter.drawRect(0, 1, self.width()-1, 79-3)
-
-        painter.setPen(QPen(QColor(60, 60, 60), 1))
-        painter.drawLine(0, 0, self.width(), 0)
-
-        AbstractPluginSlot.paintEvent(self, event)
-
-# ------------------------------------------------------------------------------------------------------------
-
 class PluginSlot_Calf(AbstractPluginSlot):
     def __init__(self, parent, host, pluginId):
         AbstractPluginSlot.__init__(self, parent, host, pluginId)
@@ -1360,6 +1232,138 @@ class PluginSlot_Calf(AbstractPluginSlot):
         painter.drawRect(0, 1, self.width()-1, 88-3)
 
         painter.setPen(QPen(QColor(45, 45, 45) if self.fBackgroundBlack else QColor(86, 99, 114), 1))
+        painter.drawLine(0, 0, self.width(), 0)
+
+        AbstractPluginSlot.paintEvent(self, event)
+
+# ------------------------------------------------------------------------------------------------------------
+
+class PluginSlot_OpenAV(AbstractPluginSlot):
+    def __init__(self, parent, host, pluginId):
+        AbstractPluginSlot.__init__(self, parent, host, pluginId)
+        self.ui = ui_carla_plugin_basic_fx.Ui_PluginWidget()
+        self.ui.setupUi(self)
+
+        # -------------------------------------------------------------
+        # Set-up GUI
+
+        QFontDatabase.addApplicationFont(":/fonts/uranium.ttf")
+
+        labelFont = QFont()
+        labelFont.setFamily("Uranium")
+        labelFont.setPointSize(13)
+        labelFont.setCapitalization(QFont.AllUppercase)
+        self.ui.label_name.setFont(labelFont)
+
+        self.setStyleSheet("""
+            PluginSlot_OpenAV#PluginWidget {
+                background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                                  stop: 0 #303030, stop: 0.35 #111111, stop: 1.0 #111111);
+            }
+        """)
+
+        self.ui.label_name.setStyleSheet("* { color: #FF5100; }")
+        #self.ui.line.setStyleSheet("* { background-color: #FF5100; color: #FF5100; }")
+
+        self.ui.peak_in.setMeterStyle(DigitalPeakMeter.STYLE_OPENAV)
+        self.ui.peak_out.setMeterStyle(DigitalPeakMeter.STYLE_OPENAV)
+
+        self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
+        self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
+        self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
+
+        # -------------------------------------------------------------
+        # Set-up parameters
+
+        parameterCount = self.host.get_parameter_count(self.fPluginId)
+
+        index = 0
+        for i in range(parameterCount):
+            if index >= 8:
+                break
+
+            paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
+            paramData   = self.host.get_parameter_data(self.fPluginId, i)
+            paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
+
+            if paramData['type'] != PARAMETER_INPUT:
+                continue
+            if paramData['hints'] & PARAMETER_IS_BOOLEAN:
+                continue
+            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
+                continue
+
+            paramName = getParameterShortName(paramInfo['name'])
+
+            widget = PixmapDial(self, i)
+            widget.setPixmap(11)
+            widget.setLabel(paramName)
+            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
+            widget.setMinimum(paramRanges['min'])
+            widget.setMaximum(paramRanges['max'])
+
+            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
+                widget.setEnabled(False)
+
+            self.ui.w_knobs.layout().insertWidget(index, widget)
+            index += 1
+
+            self.fParameterList.append([i, widget])
+
+        self.ui.dial_drywet.setIndex(PARAMETER_DRYWET)
+        self.ui.dial_drywet.setPixmap(13)
+        self.ui.dial_drywet.setLabel("Dry/Wet")
+        self.ui.dial_drywet.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
+        self.ui.dial_drywet.setMinimum(0.0)
+        self.ui.dial_drywet.setMaximum(1.0)
+        self.ui.dial_drywet.setVisible(self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET)
+
+        self.ui.dial_vol.setIndex(PARAMETER_VOLUME)
+        self.ui.dial_vol.setPixmap(12)
+        self.ui.dial_vol.setLabel("Volume")
+        self.ui.dial_vol.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
+        self.ui.dial_vol.setMinimum(0.0)
+        self.ui.dial_vol.setMaximum(1.27)
+        self.ui.dial_vol.setVisible(self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME)
+
+        self.fParameterList.append([PARAMETER_DRYWET, self.ui.dial_drywet])
+        self.fParameterList.append([PARAMETER_VOLUME, self.ui.dial_vol])
+
+        # -------------------------------------------------------------
+
+        self.b_enable = self.ui.b_enable
+        self.b_gui    = self.ui.b_gui
+        self.b_edit   = self.ui.b_edit
+
+        self.label_name = self.ui.label_name
+
+        self.led_control   = self.ui.led_control
+        self.led_midi      = self.ui.led_midi
+        self.led_audio_in  = self.ui.led_audio_in
+        self.led_audio_out = self.ui.led_audio_out
+
+        self.peak_in  = self.ui.peak_in
+        self.peak_out = self.ui.peak_out
+
+        self.ready()
+
+        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
+
+    #------------------------------------------------------------------
+
+    def getFixedHeight(self):
+        return 79
+
+    #------------------------------------------------------------------
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setBrush(Qt.transparent)
+
+        painter.setPen(QPen(QColor(42, 42, 42), 1))
+        painter.drawRect(0, 1, self.width()-1, 79-3)
+
+        painter.setPen(QPen(QColor(60, 60, 60), 1))
         painter.drawLine(0, 0, self.width(), 0)
 
         AbstractPluginSlot.paintEvent(self, event)
@@ -1595,6 +1599,9 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
         presetFont.setPointSize(8)
         self.ui.label_presets.setFont(presetFont)
 
+        self.ui.peak_in.setMeterStyle(DigitalPeakMeter.STYLE_OPENAV)
+        self.ui.peak_out.setMeterStyle(DigitalPeakMeter.STYLE_OPENAV)
+
         # -------------------------------------------------------------
         # Set-up parameters
 
@@ -1764,7 +1771,7 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
-        return 74
+        return 75
 
     #------------------------------------------------------------------
 
