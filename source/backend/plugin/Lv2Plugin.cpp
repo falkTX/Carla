@@ -2887,6 +2887,7 @@ public:
 
                 case kEngineEventTypeControl: {
                     const EngineControlEvent& ctrlEvent(event.ctrl);
+                    bool sendAsMIDI = false;
 
                     switch (ctrlEvent.type)
                     {
@@ -2982,23 +2983,7 @@ public:
                             break;
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
-                        {
-                            uint8_t midiData[3];
-                            midiData[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + event.channel);
-                            midiData[1] = static_cast<uint8_t>(ctrlEvent.param);
-                            midiData[2] = uint8_t(ctrlEvent.value*127.0f);
-
-                            const uint32_t mtime(isSampleAccurate ? startTime : event.time);
-
-                            if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
-                                lv2_atom_buffer_write(&evInAtomIters[fEventsIn.ctrlIndex], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
-
-                            else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
-                                lv2_event_write(&evInEventIters[fEventsIn.ctrlIndex], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
-
-                            else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
-                                lv2midi_put_event(&evInMidiStates[fEventsIn.ctrlIndex], mtime, 3, midiData);
-                        }
+                            sendAsMIDI = true;
                         break;
                     } // case kEngineControlEventTypeParameter
 
@@ -3027,23 +3012,7 @@ public:
 
                     case kEngineControlEventTypeAllSoundOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
-                        {
-                            const uint32_t mtime(isSampleAccurate ? startTime : event.time);
-
-                            uint8_t midiData[3];
-                            midiData[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + event.channel);
-                            midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
-                            midiData[2] = 0;
-
-                            if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
-                                lv2_atom_buffer_write(&evInAtomIters[fEventsIn.ctrlIndex], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
-
-                            else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
-                                lv2_event_write(&evInEventIters[fEventsIn.ctrlIndex], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
-
-                            else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
-                                lv2midi_put_event(&evInMidiStates[fEventsIn.ctrlIndex], mtime, 3, midiData);
-                        }
+                            sendAsMIDI = true;
                         break;
 
                     case kEngineControlEventTypeAllNotesOff:
@@ -3056,25 +3025,27 @@ public:
                                 sendMidiAllNotesOffToCallback();
                             }
 #endif
-
-                            const uint32_t mtime(isSampleAccurate ? startTime : event.time);
-
-                            uint8_t midiData[3];
-                            midiData[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + event.channel);
-                            midiData[1] = MIDI_CONTROL_ALL_NOTES_OFF;
-                            midiData[2] = 0;
-
-                            if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
-                                lv2_atom_buffer_write(&evInAtomIters[fEventsIn.ctrlIndex], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
-
-                            else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
-                                lv2_event_write(&evInEventIters[fEventsIn.ctrlIndex], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
-
-                            else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
-                                lv2midi_put_event(&evInMidiStates[fEventsIn.ctrlIndex], mtime, 3, midiData);
+                            sendAsMIDI = true;
                         }
                         break;
                     } // switch (ctrlEvent.type)
+                    if (sendAsMIDI)
+                    {
+                        uint8_t midiData[3];
+                        uint8_t midiSize = 0;
+                        ctrlEvent.convertToMidiData(event.channel, midiSize, midiData);
+
+                        const uint32_t mtime(isSampleAccurate ? startTime : event.time);
+
+                        if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
+                            lv2_atom_buffer_write(&evInAtomIters[fEventsIn.ctrlIndex], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, midiSize, midiData);
+
+                        else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
+                            lv2_event_write(&evInEventIters[fEventsIn.ctrlIndex], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, midiSize, midiData);
+
+                        else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
+                            lv2midi_put_event(&evInMidiStates[fEventsIn.ctrlIndex], mtime, midiSize, midiData);
+                    }
                     break;
                 } // case kEngineEventTypeControl
 
