@@ -2984,7 +2984,7 @@ public:
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
                             uint8_t midiData[3];
-                            midiData[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + i);
+                            midiData[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + event.channel);
                             midiData[1] = static_cast<uint8_t>(ctrlEvent.param);
                             midiData[2] = uint8_t(ctrlEvent.value*127.0f);
 
@@ -3031,7 +3031,7 @@ public:
                             const uint32_t mtime(isSampleAccurate ? startTime : event.time);
 
                             uint8_t midiData[3];
-                            midiData[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + i);
+                            midiData[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + event.channel);
                             midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
                             midiData[2] = 0;
 
@@ -3060,7 +3060,7 @@ public:
                             const uint32_t mtime(isSampleAccurate ? startTime : event.time);
 
                             uint8_t midiData[3];
-                            midiData[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + i);
+                            midiData[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE + event.channel);
                             midiData[1] = MIDI_CONTROL_ALL_NOTES_OFF;
                             midiData[2] = 0;
 
