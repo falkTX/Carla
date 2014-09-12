@@ -3101,14 +3101,20 @@ public:
 
                     const uint32_t j = fEventsIn.ctrlIndex;
 
+                    // copy event with channel in status byte
+                    uint8_t mdata[midiEvent.size];
+                    mdata[0] = status + channel;
+                    for (uint8_t i=1; i < midiEvent.size; ++i)
+                        mdata[i] = midiEvent.data[i];
+
                     if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
-                        lv2_atom_buffer_write(&evInAtomIters[j], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, midiEvent.size, midiEvent.data);
+                        lv2_atom_buffer_write(&evInAtomIters[j], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, midiEvent.size, mdata);
 
                     else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
-                        lv2_event_write(&evInEventIters[j], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, midiEvent.size, midiEvent.data);
+                        lv2_event_write(&evInEventIters[j], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, midiEvent.size, mdata);
 
                     else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
-                        lv2midi_put_event(&evInMidiStates[j], mtime, midiEvent.size, midiEvent.data);
+                        lv2midi_put_event(&evInMidiStates[j], mtime, midiEvent.size, mdata);
 
                     if (status == MIDI_STATUS_NOTE_ON)
                         pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
