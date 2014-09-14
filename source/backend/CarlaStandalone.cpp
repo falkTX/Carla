@@ -2056,7 +2056,11 @@ float carla_get_current_parameter_value(uint pluginId, uint32_t parameterId)
 
 float carla_get_internal_parameter_value(uint pluginId, int32_t parameterId)
 {
+#ifdef BUILD_BRIDGE
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0.0f);
+#else
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, (parameterId == CB::PARAMETER_CTRL_CHANNEL) ? -1.0f : 0.0f);
+#endif
     CARLA_SAFE_ASSERT_RETURN(parameterId != CB::PARAMETER_NULL && parameterId > CB::PARAMETER_MAX, 0.0f);
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
