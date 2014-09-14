@@ -71,7 +71,18 @@ class DummyPluginEdit(object):
 
     #------------------------------------------------------------------
 
-    def setId(self, idx):
+    def clearNotes(self):
+        pass
+
+    def noteOn(self, channel, note, velocity):
+        pass
+
+    def noteOff(self, channel, note):
+        pass
+
+    #------------------------------------------------------------------
+
+    def setPluginId(self, idx):
         self.fPluginId = idx
 
     #------------------------------------------------------------------
@@ -208,6 +219,8 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, HostWidgetMeta):
 
         host.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
         host.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
+        host.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
+        host.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
         host.PatchbayClientAddedCallback.connect(self.slot_handlePatchbayClientAddedCallback)
         host.PatchbayClientRemovedCallback.connect(self.slot_handlePatchbayClientRemovedCallback)
         host.PatchbayClientRenamedCallback.connect(self.slot_handlePatchbayClientRenamedCallback)
@@ -293,6 +306,16 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, HostWidgetMeta):
             pedit = self.fPluginList[i]
             pedit.setPluginId(i)
 
+    @pyqtSlot(int, int, int, int)
+    def slot_handleNoteOnCallback(self, pluginId, channel, note, velocity):
+        if pluginId in self.fSelectedPlugins:
+            self.fKeys.keyboard.sendNoteOn(note, False)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleNoteOffCallback(self, pluginId, channel, note):
+        if pluginId in self.fSelectedPlugins:
+            self.fKeys.keyboard.sendNoteOff(note, False)
+
     # -----------------------------------------------------------------
     # HostWidgetMeta methods
 
@@ -365,27 +388,32 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, HostWidgetMeta):
             pedit.show()
 
     # -----------------------------------------------------------------
-    # called by PluginEdit to plugin skin parent, ignored here
+    # PluginEdit callbacks
 
-    def editDialogChanged(self, visible):
+    def editDialogVisibilityChanged(self, pluginId, visible):
         pass
 
-    def pluginHintsChanged(self, hints):
+    def editDialogPluginHintsChanged(self, pluginId, hints):
         pass
 
-    def parameterValueChanged(self, parameterId, value):
+    def editDialogParameterValueChanged(self, pluginId, parameterId, value):
         pass
 
-    def programChanged(self, index):
+    def editDialogProgramChanged(self, pluginId, index):
         pass
 
-    def midiProgramChanged(self, index):
+    def editDialogMidiProgramChanged(self, pluginId, index):
         pass
 
-    def notePressed(self, note):
-        pass
+    def editDialogNotePressed(self, pluginId, note):
+        if pluginId in self.fSelectedPlugins:
+            self.fKeys.keyboard.sendNoteOn(note, False)
 
-    def noteReleased(self, note):
+    def editDialogNoteReleased(self, pluginId, note):
+        if pluginId in self.fSelectedPlugins:
+            self.fKeys.keyboard.sendNoteOff(note, False)
+
+    def editDialogMidiActivityChanged(self, pluginId, onOff):
         pass
 
     # -----------------------------------------------------------------
@@ -527,10 +555,16 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, HostWidgetMeta):
         for pluginId in self.fSelectedPlugins:
             self.host.send_midi_note(pluginId, 0, note, 100)
 
+            pedit = self.getPluginEditDialog(pluginId)
+            pedit.noteOn(0, note, 100)
+
     @pyqtSlot(int)
     def slot_noteOff(self, note):
         for pluginId in self.fSelectedPlugins:
             self.host.send_midi_note(pluginId, 0, note, 0)
+
+            pedit = self.getPluginEditDialog(pluginId)
+            pedit.noteOff(0, note)
 
     # -----------------------------------------------------------------
 

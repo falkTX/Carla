@@ -4466,7 +4466,7 @@ public:
     // -------------------------------------------------------------------
 
 public:
-    bool init(const char* const bundle, const char* const name, const char* const uri)
+    bool init(const char* const name, const char* const uri)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -4476,12 +4476,6 @@ public:
         if (pData->client != nullptr)
         {
             pData->engine->setLastError("Plugin client is already registered");
-            return false;
-        }
-
-        if (bundle == nullptr || bundle[0] == '\0')
-        {
-            pData->engine->setLastError("null bundle");
             return false;
         }
 
@@ -4495,7 +4489,11 @@ public:
         // Init LV2 World if needed, sets LV2_PATH for lilv
 
         Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
-        lv2World.initIfNeeded(pData->engine->getOptions().pathLV2);
+
+        if (pData->engine->getOptions().pathLV2 != nullptr && pData->engine->getOptions().pathLV2[0] != '\0')
+            lv2World.initIfNeeded(pData->engine->getOptions().pathLV2);
+        else
+            lv2World.initIfNeeded(std::getenv("LV2_PATH"));
 
         // ---------------------------------------------------------------
         // get plugin from lv2_rdf (lilv)
@@ -4525,7 +4523,7 @@ public:
             // -----------------------------------------------------------
             // all ok, get lib descriptor
 
-            const LV2_Lib_Descriptor* const libDesc = libDescFn(bundle, nullptr);
+            const LV2_Lib_Descriptor* const libDesc = libDescFn(fRdfDescriptor->Bundle, nullptr);
 
             if (libDesc == nullptr)
             {
@@ -4627,8 +4625,6 @@ public:
             pData->name = pData->engine->getUniquePluginName(name);
         else
             pData->name = pData->engine->getUniquePluginName(fRdfDescriptor->Name);
-
-        pData->filename = carla_strdup(bundle);
 
         // ---------------------------------------------------------------
         // register client
@@ -5896,7 +5892,7 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
 
     Lv2Plugin* const plugin(new Lv2Plugin(init.engine, init.id));
 
-    if (! plugin->init(init.filename, init.name, init.label))
+    if (! plugin->init(init.name, init.label))
     {
         delete plugin;
         return nullptr;

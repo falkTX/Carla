@@ -452,7 +452,6 @@ String StateSave::toString() const
             infoXml << "   <Label>"    << xmlSafeString(label, true)  << "</Label>\n";
             break;
         case PLUGIN_LV2:
-            infoXml << "   <Bundle>"   << xmlSafeString(binary, true) << "</Bundle>\n";
             infoXml << "   <URI>"      << xmlSafeString(label, true)  << "</URI>\n";
             break;
         case PLUGIN_VST:

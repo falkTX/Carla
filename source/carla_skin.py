@@ -143,6 +143,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             if self.fPeaksOutputCount > 2:
                 self.fPeaksOutputCount = 2
 
+        # used during testing
+        self.fIdleTimerId = 0
+
         # -------------------------------------------------------------
         # Set-up GUI
 
@@ -182,8 +185,6 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         host.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
         host.OptionChangedCallback.connect(self.slot_handleOptionChangedCallback)
         host.UiStateChangedCallback.connect(self.slot_handleUiStateChangedCallback)
-        host.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
-        host.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
 
     # -----------------------------------------------------------------
 
@@ -236,16 +237,6 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
     def slot_handleUiStateChangedCallback(self, pluginId, state):
         if self.fPluginId == pluginId:
             self.customUiStateChanged(state)
-
-    @pyqtSlot(int, int, int, int)
-    def slot_handleNoteOnCallback(self, pluginId, channel, note, velo):
-        if self.fPluginId == pluginId:
-            self.sendNoteOn(channel, note)
-
-    @pyqtSlot(int, int, int)
-    def slot_handleNoteOffCallback(self, pluginId, channel, note):
-        if self.fPluginId == pluginId:
-            self.sendNoteOff(channel, note)
 
     #------------------------------------------------------------------
 
@@ -396,7 +387,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         if sendCallback:
             self.fParameterIconTimer = ICON_STATE_ON
-            self.parameterValueChanged(parameterId, value)
+            self.editDialogParameterValueChanged(self.fPluginId, parameterId, value)
 
     def setParameterDefault(self, parameterId, value):
         self.fEditDialog.setParameterDefault(parameterId, value)
@@ -414,29 +405,19 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         if sendCallback:
             self.fParameterIconTimer = ICON_STATE_ON
-            self.programChanged(index)
+            self.editDialogProgramChanged(self.fPluginId, index)
 
     def setMidiProgram(self, index, sendCallback):
         self.fEditDialog.setMidiProgram(index)
 
         if sendCallback:
             self.fParameterIconTimer = ICON_STATE_ON
-            self.midiProgramChanged(index)
+            self.editDialogMidiProgramChanged(self.fPluginId, index)
 
     #------------------------------------------------------------------
 
     def setOption(self, option, yesNo):
         self.fEditDialog.setOption(option, yesNo)
-
-    #------------------------------------------------------------------
-
-    def sendNoteOn(self, channel, note):
-        if self.fEditDialog.sendNoteOn(channel, note):
-            self.midiActivityChanged(True)
-
-    def sendNoteOff(self, channel, note):
-        if self.fEditDialog.sendNoteOff(channel, note):
-            self.midiActivityChanged(False)
 
     #------------------------------------------------------------------
 
@@ -484,7 +465,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
     # -----------------------------------------------------------------
     # PluginEdit callbacks
 
-    def editDialogChanged(self, visible):
+    def editDialogVisibilityChanged(self, pluginId, visible):
         if self.b_edit is None:
             return
 
@@ -492,16 +473,19 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         self.b_edit.setChecked(visible)
         self.b_edit.blockSignals(False)
 
-    def pluginHintsChanged(self, hints):
+    def editDialogPluginHintsChanged(self, pluginId, hints):
         self.fPluginInfo['hints'] = hints
 
-        self.ui.dial_drywet.setVisible(hints & PLUGIN_CAN_DRYWET)
-        self.ui.dial_vol.setVisible(hints & PLUGIN_CAN_VOLUME)
+        for paramIndex, paramWidget in self.fParameterList:
+            if paramIndex == PARAMETER_DRYWET:
+                paramWidget.setVisible(hints & PLUGIN_CAN_DRYWET)
+            elif paramIndex == PARAMETER_VOLUME:
+                paramWidget.setVisible(hints & PLUGIN_CAN_VOLUME)
 
         if self.b_gui is not None:
             self.b_gui.setEnabled(bool(hints & PLUGIN_HAS_CUSTOM_UI))
 
-    def parameterValueChanged(self, parameterId, value):
+    def editDialogParameterValueChanged(self, pluginId, parameterId, value):
         for paramIndex, paramWidget in self.fParameterList:
             if paramIndex != parameterId:
                 continue
@@ -511,7 +495,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             paramWidget.blockSignals(False)
             break
 
-    def programChanged(self, index):
+    def editDialogProgramChanged(self, pluginId, index):
         if self.cb_presets is None:
             return
 
@@ -519,7 +503,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         self.cb_presets.setCurrentIndex(index)
         self.cb_presets.blockSignals(False)
 
-    def midiProgramChanged(self, index):
+    def editDialogMidiProgramChanged(self, pluginId, index):
         if self.cb_presets is None:
             return
 
@@ -527,11 +511,14 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         self.cb_presets.setCurrentIndex(index)
         self.cb_presets.blockSignals(False)
 
-    def notePressed(self, note):
+    def editDialogNotePressed(self, pluginId, note):
         pass
 
-    def noteReleased(self, note):
+    def editDialogNoteReleased(self, pluginId, note):
         pass
+
+    def editDialogMidiActivityChanged(self, pluginId, onOff):
+        self.midiActivityChanged(onOff)
 
     #------------------------------------------------------------------
 
@@ -636,6 +623,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         actReplace = menu.addAction(self.tr("Replace..."))
         actRename  = menu.addAction(self.tr("Rename..."))
         actRemove  = menu.addAction(self.tr("Remove"))
+
+        if self.fIdleTimerId != 0:
+            actRemove.setVisible(False)
 
         actSel = menu.exec_(QCursor.pos())
 
@@ -780,6 +770,28 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         self.setMidiProgram(index, False)
 
     #------------------------------------------------------------------
+
+    def testTimer(self):
+        self.fIdleTimerId = self.startTimer(25)
+
+    #------------------------------------------------------------------
+
+    def closeEvent(self, event):
+        if self.fIdleTimerId != 0:
+            self.killTimer(self.fIdleTimerId)
+            self.fIdleTimerId = 0
+
+            self.host.engine_close()
+
+        QFrame.closeEvent(self, event)
+
+    def timerEvent(self, event):
+        if event.timerId() == self.fIdleTimerId:
+            self.host.engine_idle()
+            self.idleFast()
+            self.idleSlow()
+
+        QFrame.timerEvent(self, event)
 
     def paintEvent(self, event):
         self.drawOutline()
@@ -1150,6 +1162,10 @@ class PluginSlot_Calf(AbstractPluginSlot):
             self.ui.label_midi.hide()
             self.ui.led_midi.hide()
 
+        if self.fIdleTimerId != 0:
+            self.ui.b_remove.setEnabled(False)
+            self.ui.b_remove.setVisible(False)
+
         # -------------------------------------------------------------
         # Set-up parameters
 
@@ -1214,13 +1230,13 @@ class PluginSlot_Calf(AbstractPluginSlot):
 
     #------------------------------------------------------------------
 
-    def pluginHintsChanged(self, hints):
+    def editDialogPluginHintsChanged(self, pluginId, hints):
         if hints & PLUGIN_HAS_CUSTOM_UI:
             self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOn, self.fButtonFont)
         else:
             self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOff, self.fButtonFont)
 
-        AbstractPluginSlot.pluginHintsChanged(self, hints)
+        AbstractPluginSlot.editDialogPluginHintsChanged(self, pluginId, hints)
 
     #------------------------------------------------------------------
 
@@ -1827,15 +1843,22 @@ def createPluginSlot(parent, host, pluginId, useSkins):
 
 if __name__ == '__main__':
     from carla_app import CarlaApplication
+    from carla_host import initHost, loadHostSettings
     import resources_rc
 
     app = CarlaApplication("Carla-Skins")
-    #gui = PluginSlot_BasicFX(None, 0)
-    #gui = PluginSlot_Calf(None, 0)
-    #gui = PluginSlot_Default(None, 0)
-    #gui = PluginSlot_ZitaRev(None, 0)
-    gui = PluginSlot_ZynFX(None, 0)
-    gui.setSelected(True)
+    host = initHost("Skins", None, False, False, False)
+    loadHostSettings(host)
+
+    host.engine_init("JACK", "Carla-Widgets")
+    host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, "", "", "zynreverb", 0, None)
+    #host.add_plugin(BINARY_NATIVE, PLUGIN_DSSI, "/usr/lib/dssi/karplong.so", "karplong", "karplong", 0, None)
+    #host.add_plugin(BINARY_NATIVE, PLUGIN_LV2, "", "", "http://www.openavproductions.com/sorcer", 0, None)
+    #host.add_plugin(BINARY_NATIVE, PLUGIN_LV2, "", "", "http://calf.sourceforge.net/plugins/Compressor", 0, None)
+    host.set_active(0, True)
+
+    gui = createPluginSlot(None, host, 0, True)
+    gui.testTimer()
     gui.show()
 
     app.exec_()

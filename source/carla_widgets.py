@@ -245,6 +245,7 @@ class PluginParameter(QWidget):
         if False:
             # kdevelop likes this :)
             host = CarlaHostMeta()
+            self.host = host
 
         # -------------------------------------------------------------
         # Internal stuff
@@ -416,31 +417,35 @@ class PluginParameter(QWidget):
 class PluginEditParentMeta():
 #class PluginEditParentMeta(metaclass=ABCMeta):
     @abstractmethod
-    def editDialogChanged(self, visible):
+    def editDialogVisibilityChanged(self, pluginId, visible):
         raise NotImplementedError
 
     @abstractmethod
-    def pluginHintsChanged(self, hints):
+    def editDialogPluginHintsChanged(self, pluginId, hints):
         raise NotImplementedError
 
     @abstractmethod
-    def parameterValueChanged(self, parameterId, value):
+    def editDialogParameterValueChanged(self, pluginId, parameterId, value):
         raise NotImplementedError
 
     @abstractmethod
-    def programChanged(self, index):
+    def editDialogProgramChanged(self, pluginId, index):
         raise NotImplementedError
 
     @abstractmethod
-    def midiProgramChanged(self, index):
+    def editDialogMidiProgramChanged(self, pluginId, index):
         raise NotImplementedError
 
     @abstractmethod
-    def notePressed(self, note):
+    def editDialogNotePressed(self, pluginId, note):
         raise NotImplementedError
 
     @abstractmethod
-    def noteReleased(self, note):
+    def editDialogNoteReleased(self, pluginId, note):
+        raise NotImplementedError
+
+    @abstractmethod
+    def editDialogMidiActivityChanged(self, pluginId, onOff):
         raise NotImplementedError
 
 # ------------------------------------------------------------------------------------------------------------
@@ -459,6 +464,7 @@ class PluginEdit(QDialog):
             # kdevelop likes this :)
             parent = PluginEditParentMeta()
             host = CarlaHostMeta()
+            self.host = host
 
         # -------------------------------------------------------------
         # Internal stuff
@@ -480,6 +486,9 @@ class PluginEdit(QDialog):
         self.fTabIconOff    = QIcon(":/bitmaps/led_off.png")
         self.fTabIconOn     = QIcon(":/bitmaps/led_yellow.png")
         self.fTabIconTimers = []
+
+        # used during testing
+        self.fIdleTimerId = 0
 
         # -------------------------------------------------------------
         # Set-up GUI
@@ -574,6 +583,8 @@ class PluginEdit(QDialog):
         self.ui.b_save_state.clicked.connect(self.slot_stateSave)
         self.ui.b_load_state.clicked.connect(self.slot_stateLoad)
 
+        host.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
+        host.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
         host.UpdateCallback.connect(self.slot_handleUpdateCallback)
         host.ReloadInfoCallback.connect(self.slot_handleReloadInfoCallback)
         host.ReloadParametersCallback.connect(self.slot_handleReloadParametersCallback)
@@ -581,6 +592,36 @@ class PluginEdit(QDialog):
         host.ReloadAllCallback.connect(self.slot_handleReloadAllCallback)
 
     #------------------------------------------------------------------
+
+    @pyqtSlot(int, int, int, int)
+    def slot_handleNoteOnCallback(self, pluginId, channel, note, velocity):
+        if self.fPluginId != pluginId: return
+
+        if self.fControlChannel == channel:
+            self.ui.keyboard.sendNoteOn(note, False)
+
+        playItem = (channel, note)
+
+        if playItem not in self.fPlayingNotes:
+            self.fPlayingNotes.append(playItem)
+
+        if len(self.fPlayingNotes) == 1 and self.fParent is not None:
+            self.fParent.editDialogMidiActivityChanged(self.fPluginId, True)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleNoteOffCallback(self, pluginId, channel, note):
+        if self.fPluginId != pluginId: return
+
+        if self.fControlChannel == channel:
+            self.ui.keyboard.sendNoteOff(note, False)
+
+        playItem = (channel, note)
+
+        if playItem in self.fPlayingNotes:
+            self.fPlayingNotes.remove(playItem)
+
+        if len(self.fPlayingNotes) == 0 and self.fParent is not None:
+            self.fParent.editDialogMidiActivityChanged(self.fPluginId, False)
 
     @pyqtSlot(int)
     def slot_handleUpdateCallback(self, pluginId):
@@ -731,7 +772,7 @@ class PluginEdit(QDialog):
 
         # Force-update parent for new hints
         if self.fParent is not None and not self.fFirstInit:
-            self.fParent.pluginHintsChanged(pluginHints)
+            self.fParent.editDialogPluginHintsChanged(self.fPluginId, pluginHints)
 
     def reloadParameters(self):
         # Reset
@@ -941,6 +982,14 @@ class PluginEdit(QDialog):
          self.fPlayingNotes = []
          self.ui.keyboard.allNotesOff()
 
+    def noteOn(self, channel, note, velocity):
+        if self.fControlChannel == channel:
+            self.ui.keyboard.sendNoteOn(note, False)
+
+    def noteOff(self, channel, note):
+        if self.fControlChannel == channel:
+            self.ui.keyboard.sendNoteOff(note, False)
+
     #------------------------------------------------------------------
 
     def getHints(self):
@@ -1017,30 +1066,6 @@ class PluginEdit(QDialog):
         widget.blockSignals(True)
         widget.setChecked(yesNo)
         widget.blockSignals(False)
-
-    #------------------------------------------------------------------
-
-    def sendNoteOn(self, channel, note):
-        if self.fControlChannel == channel:
-            self.ui.keyboard.sendNoteOn(note, False)
-
-        playItem = (channel, note)
-
-        if playItem not in self.fPlayingNotes:
-            self.fPlayingNotes.append(playItem)
-
-        return bool(len(self.fPlayingNotes) == 1)
-
-    def sendNoteOff(self, channel, note):
-        if self.fControlChannel == channel:
-            self.ui.keyboard.sendNoteOff(note, False)
-
-        playItem = (channel, note)
-
-        if playItem in self.fPlayingNotes:
-            self.fPlayingNotes.remove(playItem)
-
-        return bool(len(self.fPlayingNotes) == 0)
 
     #------------------------------------------------------------------
 
@@ -1224,35 +1249,35 @@ class PluginEdit(QDialog):
         self.host.set_drywet(self.fPluginId, value)
 
         if self.fParent is not None:
-            self.fParent.parameterValueChanged(PARAMETER_DRYWET, value)
+            self.fParent.editDialogParameterValueChanged(self.fPluginId, PARAMETER_DRYWET, value)
 
     @pyqtSlot(int)
     def slot_volumeChanged(self, value):
         self.host.set_volume(self.fPluginId, value)
 
         if self.fParent is not None:
-            self.fParent.parameterValueChanged(PARAMETER_VOLUME, value)
+            self.fParent.editDialogParameterValueChanged(self.fPluginId, PARAMETER_VOLUME, value)
 
     @pyqtSlot(int)
     def slot_balanceLeftChanged(self, value):
         self.host.set_balance_left(self.fPluginId, value)
 
         if self.fParent is not None:
-            self.fParent.parameterValueChanged(PARAMETER_BALANCE_LEFT, value)
+            self.fParent.editDialogParameterValueChanged(self.fPluginId, PARAMETER_BALANCE_LEFT, value)
 
     @pyqtSlot(int)
     def slot_balanceRightChanged(self, value):
         self.host.set_balance_right(self.fPluginId, value)
 
         if self.fParent is not None:
-            self.fParent.parameterValueChanged(PARAMETER_BALANCE_RIGHT, value)
+            self.fParent.editDialogParameterValueChanged(self.fPluginId, PARAMETER_BALANCE_RIGHT, value)
 
     @pyqtSlot(int)
     def slot_panChanged(self, value):
         self.host.set_panning(self.fPluginId, value)
 
         if self.fParent is not None:
-            self.fParent.parameterValueChanged(PARAMETER_PANNING, value)
+            self.fParent.editDialogParameterValueChanged(self.fPluginId, PARAMETER_PANNING, value)
 
     @pyqtSlot(int)
     def slot_ctrlChannelChanged(self, value):
@@ -1269,7 +1294,7 @@ class PluginEdit(QDialog):
         self.host.set_parameter_value(self.fPluginId, parameterId, value)
 
         if self.fParent is not None:
-            self.fParent.parameterValueChanged(parameterId, value)
+            self.fParent.editDialogParameterValueChanged(self.fPluginId, parameterId, value)
 
     @pyqtSlot(int, int)
     def slot_parameterMidiControlChanged(self, parameterId, control):
@@ -1286,14 +1311,14 @@ class PluginEdit(QDialog):
         self.host.set_program(self.fPluginId, index)
 
         if self.fParent is not None:
-            self.fParent.programChanged(index)
+            self.fParent.editDialogProgramChanged(self.fPluginId, index)
 
     @pyqtSlot(int)
     def slot_midiProgramIndexChanged(self, index):
         self.host.set_midi_program(self.fPluginId, index)
 
         if self.fParent is not None:
-            self.fParent.midiProgramChanged(index)
+            self.fParent.editDialogMidiProgramChanged(self.fPluginId, index)
 
     #------------------------------------------------------------------
 
@@ -1303,7 +1328,7 @@ class PluginEdit(QDialog):
             self.host.send_midi_note(self.fPluginId, self.fControlChannel, note, 100)
 
         if self.fParent is not None:
-            self.fParent.notePressed(note)
+            self.fParent.editDialogNotePressed(self.fPluginId, note)
 
     @pyqtSlot(int)
     def slot_noteOff(self, note):
@@ -1311,14 +1336,14 @@ class PluginEdit(QDialog):
             self.host.send_midi_note(self.fPluginId, self.fControlChannel, note, 0)
 
         if self.fParent is not None:
-            self.fParent.noteReleased(note)
+            self.fParent.editDialogNoteReleased(self.fPluginId, note)
 
     #------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_finished(self):
         if self.fParent is not None:
-            self.fParent.editDialogChanged(False)
+            self.fParent.editDialogVisibilityChanged(self.fPluginId, False)
 
     #------------------------------------------------------------------
 
@@ -1481,6 +1506,27 @@ class PluginEdit(QDialog):
 
     #------------------------------------------------------------------
 
+    def testTimer(self):
+        self.fIdleTimerId = self.startTimer(50)
+
+    #------------------------------------------------------------------
+
+    def closeEvent(self, event):
+        if self.fIdleTimerId != 0:
+            self.killTimer(self.fIdleTimerId)
+            self.fIdleTimerId = 0
+
+            self.host.engine_close()
+
+        QDialog.closeEvent(self, event)
+
+    def timerEvent(self, event):
+        if event.timerId() == self.fIdleTimerId:
+            self.host.engine_idle()
+            self.idleSlow()
+
+        QDialog.timerEvent(self, event)
+
     def done(self, r):
         QDialog.done(self, r)
         self.close()
@@ -1490,18 +1536,21 @@ class PluginEdit(QDialog):
 
 if __name__ == '__main__':
     from carla_app import CarlaApplication
-    from carla_host import initHost
+    from carla_host import initHost, loadHostSettings
 
     app  = CarlaApplication()
     host = initHost("Widgets", None, False, False, False)
+    loadHostSettings(host)
 
-    #gui1 = CarlaAboutW(None)
+    host.engine_init("JACK", "Carla-Widgets")
+    host.add_plugin(BINARY_NATIVE, PLUGIN_DSSI, "/usr/lib/dssi/karplong.so", "karplong", "karplong", 0, None)
+    host.set_active(0, True)
+
+    #gui1 = CarlaAboutW(None, host)
     #gui1.show()
 
-    #gui2 = PluginParameter(None, gFakeParamInfo, 0, 0)
-    #gui2.show()
-
-    gui3 = PluginEdit(None, host, 0)
-    gui3.show()
+    gui2 = PluginEdit(None, host, 0)
+    gui2.testTimer()
+    gui2.show()
 
     app.exit_exec()
