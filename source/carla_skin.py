@@ -298,6 +298,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             paramWidget.realValueChanged.connect(self.slot_parameterValueChanged)
             paramWidget.setValue(self.host.get_internal_parameter_value(self.fPluginId, paramIndex))
 
+        self.setWindowTitle(self.fPluginInfo['name'])
+
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
@@ -1787,7 +1789,7 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
-        return 75
+        return 77
 
     #------------------------------------------------------------------
 
@@ -1796,7 +1798,7 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
         painter.setBrush(Qt.transparent)
 
         painter.setPen(QPen(QColor(60, 60, 60), 1))
-        painter.drawRect(0, 1, self.width()-1, 74-3)
+        painter.drawRect(0, 1, self.width()-1, self.height()-3)
 
         painter.setPen(QPen(QColor(94, 94, 94), 1))
         painter.drawLine(0, 0, self.width(), 0)
