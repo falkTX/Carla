@@ -31,7 +31,8 @@ public:
     CarlaBridgeToolkitPlugin(CarlaBridgeClient* const client, const char* const windowTitle)
         : CarlaBridgeToolkit(client, windowTitle),
           fUI(nullptr),
-          fIdling(false)
+          fIdling(false),
+          leakDetector_CarlaBridgeToolkitPlugin()
     {
         carla_debug("CarlaBridgeToolkitPlugin::CarlaBridgeToolkitPlugin(%p, \"%s\")", client, windowTitle);
     }
@@ -112,9 +113,11 @@ public:
     void resize(int width, int height) override
     {
         CARLA_SAFE_ASSERT_RETURN(fUI != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(width >= 0,);
+        CARLA_SAFE_ASSERT_RETURN(height >= 0,);
         carla_debug("CarlaBridgeToolkitPlugin::resize(%i, %i)", width, height);
 
-        fUI->setSize(width, height, false);
+        fUI->setSize(static_cast<uint>(width), static_cast<uint>(height), false);
     }
 
     void* getContainerId() const override
@@ -150,6 +153,8 @@ protected:
 private:
     CarlaPluginUI* fUI;
     bool fIdling;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeToolkitPlugin)
 };
 
 // -------------------------------------------------------------------------

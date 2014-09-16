@@ -110,6 +110,7 @@ private:
 
         UI(CarlaBridgeToolkit* const toolkit_)
             : toolkit(toolkit_),
+              filename(),
               lib(nullptr),
               quit(false)
         {
@@ -135,8 +136,7 @@ private:
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
         UI() = delete;
-        UI(UI&) = delete;
-        UI(const UI&) = delete;
+        CARLA_DECLARE_NON_COPY_STRUCT(UI)
 #endif
     } fUI;
 

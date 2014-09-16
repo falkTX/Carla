@@ -49,9 +49,10 @@ protected:
 
     CarlaBridgeToolkit(CarlaBridgeClient* const client, const char* const windowTitle)
         : kClient(client),
-          kWindowTitle(windowTitle) {}
+          kWindowTitle(windowTitle),
+          leakDetector_CarlaBridgeToolkit() {}
 
-    CARLA_LEAK_DETECTOR(CarlaBridgeToolkit)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeToolkit)
 };
 
 // -----------------------------------------------------------------------

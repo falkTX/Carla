@@ -51,7 +51,8 @@ public:
           fApp(nullptr),
           fWindow(nullptr),
           fMsgTimer(0),
-          fNeedsShow(false)
+          fNeedsShow(false),
+          leakDetector_CarlaBridgeToolkitQt()
     {
         carla_debug("CarlaBridgeToolkitQt::CarlaBridgeToolkitQt(%p, \"%s\")", client, windowTitle);
 
@@ -208,12 +209,12 @@ protected:
     }
 
 private:
-    void timerEvent(QTimerEvent* const event)
+    void timerEvent(QTimerEvent* const ev)
     {
-        if (event->timerId() == fMsgTimer)
+        if (ev->timerId() == fMsgTimer)
             handleTimeout();
 
-        QObject::timerEvent(event);
+        QObject::timerEvent(ev);
     }
 
 signals:
@@ -233,6 +234,10 @@ private slots:
         else
             fWindow->setFixedSize(width, height);
     }
+
+#ifndef MOC_PARSING
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeToolkitQt)
+#endif
 };
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
@@ -253,6 +258,10 @@ CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeClient* const clien
 CARLA_BRIDGE_END_NAMESPACE
 
 // -------------------------------------------------------------------------
+
+// missing declaration
+int qInitResources();
+int qCleanupResources();
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 # include "resources.qt5.cpp"

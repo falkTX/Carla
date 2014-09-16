@@ -24,7 +24,11 @@ CARLA_BRIDGE_START_NAMESPACE
 
 CarlaBridgeOsc::CarlaBridgeOsc(CarlaBridgeClient* const client)
     : kClient(client),
-      fServer(nullptr)
+      fControlData(),
+      fName(),
+      fServerPath(),
+      fServer(nullptr),
+      leakDetector_CarlaBridgeOsc()
 {
     CARLA_ASSERT(client != nullptr);
     carla_debug("CarlaBridgeOsc::CarlaBridgeOsc(%p)", client);
@@ -288,11 +292,11 @@ int CarlaBridgeOsc::handleMsgMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 
     const uint8_t* const data = argv[0]->m;
     uint8_t status  = data[1];
-    uint8_t channel = status & 0x0F;
+    uint8_t channel = status & MIDI_CHANNEL_BIT;
 
     // Fix bad note-off
     if (MIDI_IS_STATUS_NOTE_ON(status) && data[3] == 0)
-        status -= 0x10;
+        status = uint8_t(MIDI_STATUS_NOTE_OFF | (channel & MIDI_CHANNEL_BIT));
 
     if (MIDI_IS_STATUS_NOTE_OFF(status))
     {

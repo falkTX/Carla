@@ -32,13 +32,15 @@ class CarlaVstClient : public CarlaBridgeClient
 {
 public:
     CarlaVstClient(const char* const uiTitle)
-        : CarlaBridgeClient(uiTitle)
+        : CarlaBridgeClient(uiTitle),
+          unique1(0),
+          effect(nullptr),
+          needIdle(false),
+          unique2(1),
+          leakDetector_CarlaVstClient()
     {
-        effect = nullptr;
-        needIdle  = false;
-
         // make client valid
-        srand(uiTitle[0]);
+        srand((uint)(uintptr_t)uiTitle[0]);
         unique1 = unique2 = rand();
     }
 
@@ -106,9 +108,9 @@ public:
         effect->dispatcher(effect, effMainsChanged, 0, 0, nullptr, 0.0f);
 
 #if ! VST_FORCE_DEPRECATED
-        effect->dispatcher(effect, effSetBlockSizeAndSampleRate, 0, bufferSize, nullptr, sampleRate);
+        effect->dispatcher(effect, effSetBlockSizeAndSampleRate, 0, bufferSize, nullptr, static_cast<float>(sampleRate));
 #endif
-        effect->dispatcher(effect, effSetSampleRate, 0, 0, nullptr, sampleRate);
+        effect->dispatcher(effect, effSetSampleRate, 0, 0, nullptr, static_cast<float>(sampleRate));
         effect->dispatcher(effect, effSetBlockSize, 0, bufferSize, nullptr, 0.0f);
         effect->dispatcher(effect, effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
 
@@ -201,43 +203,10 @@ public:
 
     void handleAudioMasterAutomate(const uint32_t index, const float value)
     {
-        effect->setParameter(effect, index, value);
+        effect->setParameter(effect, static_cast<int32_t>(index), value);
 
         if (isOscControlRegistered())
-            sendOscControl(index, value);
-    }
-
-    intptr_t handleAudioMasterGetCurrentProcessLevel()
-    {
-        return kVstProcessLevelUser;
-    }
-
-    intptr_t handleAudioMasterGetBlockSize()
-    {
-        return bufferSize;
-    }
-
-    intptr_t handleAudioMasterGetSampleRate()
-    {
-        return sampleRate;
-    }
-
-    intptr_t handleAudioMasterGetTime()
-    {
-        memset(&vstTimeInfo, 0, sizeof(VstTimeInfo));
-
-        vstTimeInfo.sampleRate = sampleRate;
-
-        // Tempo
-        vstTimeInfo.tempo  = 120.0;
-        vstTimeInfo.flags |= kVstTempoValid;
-
-        // Time Signature
-        vstTimeInfo.timeSigNumerator   = 4;
-        vstTimeInfo.timeSigDenominator = 4;
-        vstTimeInfo.flags |= kVstTimeSigValid;
-
-        return (intptr_t)&vstTimeInfo;
+            sendOscControl(static_cast<int32_t>(index), value);
     }
 
     void handleAudioMasterNeedIdle()
@@ -259,13 +228,13 @@ public:
 
             if (vstMidiEvent->type != kVstMidiType)
             {
-                uint8_t status = vstMidiEvent->midiData[0];
+                uint8_t status = uint8_t(vstMidiEvent->midiData[0]);
 
                 // Fix bad note-off
                 if (MIDI_IS_STATUS_NOTE_ON(status) && vstMidiEvent->midiData[2] == 0)
-                    status -= 0x10;
+                    status = uint8_t(status - 0x10);
 
-                uint8_t midiBuf[4] = { 0, status, (uint8_t)vstMidiEvent->midiData[1], (uint8_t)vstMidiEvent->midiData[2] };
+                uint8_t midiBuf[4] = { 0, status, uint8_t(vstMidiEvent->midiData[1]), uint8_t(vstMidiEvent->midiData[2]) };
                 sendOscMidi(midiBuf);
             }
         }
@@ -356,7 +325,7 @@ public:
                     self = nullptr;
             }
 
-            if (self)
+            if (self != nullptr)
             {
                 if (! self->effect)
                     self->effect = effect;
@@ -385,8 +354,8 @@ public:
         switch (opcode)
         {
         case audioMasterAutomate:
-            if (self)
-                self->handleAudioMasterAutomate(index, opt);
+            if (self != nullptr && index >= 0)
+                self->handleAudioMasterAutomate(static_cast<uint32_t>(index), opt);
             break;
 
         case audioMasterVersion:
@@ -403,24 +372,25 @@ public:
             break;
 
         case audioMasterGetTime:
-            static VstTimeInfo timeInfo;
-            memset(&timeInfo, 0, sizeof(VstTimeInfo));
-            timeInfo.sampleRate = sampleRate;
+            static VstTimeInfo vstTimeInfo;
+            carla_zeroStruct(vstTimeInfo);
+
+            vstTimeInfo.sampleRate = sampleRate;
 
             // Tempo
-            timeInfo.tempo  = 120.0;
-            timeInfo.flags |= kVstTempoValid;
+            vstTimeInfo.tempo  = 120.0;
+            vstTimeInfo.flags |= kVstTempoValid;
 
             // Time Signature
-            timeInfo.timeSigNumerator   = 4;
-            timeInfo.timeSigDenominator = 4;
-            timeInfo.flags |= kVstTimeSigValid;
+            vstTimeInfo.timeSigNumerator   = 4;
+            vstTimeInfo.timeSigDenominator = 4;
+            vstTimeInfo.flags |= kVstTimeSigValid;
 
-            ret = (intptr_t)&timeInfo;
+            ret = (intptr_t)&vstTimeInfo;
             break;
 
         case audioMasterProcessEvents:
-            if (self && ptr)
+            if (self != nullptr && ptr != nullptr)
                 ret = self->handleAudioMasterProcessEvents((const VstEvents*)ptr);
             break;
 
@@ -432,16 +402,16 @@ public:
 #endif
 
         case audioMasterSizeWindow:
-            if (self && index > 0 && value > 0)
-                ret = self->handleAdioMasterSizeWindow(index, value);
+            if (self != nullptr && index > 0 && value > 0)
+                ret = self->handleAdioMasterSizeWindow(index, static_cast<int32_t>(value));
             break;
 
         case audioMasterGetSampleRate:
-            ret = sampleRate;
+            ret = static_cast<intptr_t>(sampleRate);
             break;
 
         case audioMasterGetBlockSize:
-            ret = bufferSize;
+            ret = static_cast<intptr_t>(bufferSize);
             break;
 
         case audioMasterGetCurrentProcessLevel:
@@ -453,12 +423,12 @@ public:
             break;
 
         case audioMasterGetVendorString:
-            if (ptr)
+            if (ptr != nullptr)
                 std::strcpy((char*)ptr, "falkTX");
             break;
 
         case audioMasterGetProductString:
-            if (ptr)
+            if (ptr != nullptr)
                 std::strcpy((char*)ptr, "Carla-Bridge");
             break;
 
@@ -467,7 +437,7 @@ public:
             break;
 
         case audioMasterCanDo:
-            if (ptr)
+            if (ptr != nullptr)
                 ret = hostCanDo((const char*)ptr);
             break;
 
@@ -476,7 +446,7 @@ public:
             break;
 
         case audioMasterUpdateDisplay:
-            if (self)
+            if (self != nullptr)
                 self->handleAudioMasterUpdateDisplay();
             break;
 
@@ -494,12 +464,13 @@ private:
     int unique1;
 
     AEffect* effect;
-    VstTimeInfo vstTimeInfo;
 
     bool needIdle;
     static CarlaVstClient* lastVstPlugin;
 
     int unique2;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaVstClient)
 };
 
 CarlaVstClient* CarlaVstClient::lastVstPlugin = nullptr;

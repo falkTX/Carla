@@ -32,8 +32,9 @@ CARLA_BRIDGE_START_NAMESPACE
 
 // -----------------------------------------------------
 
-static uint32_t gBufferSize = 1024;
-static double   gSampleRate = 44100.0;
+//static uint32_t gBufferSize  = 1024;
+static int      gBufferSizei = 1024;
+static double   gSampleRate  = 44100.0;
 
 // Maximum default buffer size
 const unsigned int MAX_DEFAULT_BUFFER_SIZE = 8192; // 0x2000
@@ -194,12 +195,16 @@ public:
           fDescriptor(nullptr),
           fRdfDescriptor(nullptr),
           fRdfUiDescriptor(nullptr),
+          fOptions(),
           fIsReady(false),
 #if defined(BRIDGE_COCOA) || defined(BRIDGE_HWND) || defined(BRIDGE_X11)
-          fIsResizable(false)
+          fIsResizable(false),
 #else
-          fIsResizable(true)
+          fIsResizable(true),
 #endif
+          fCustomURIDs(),
+          fExt(),
+          leakDetector_CarlaLv2Client()
     {
         carla_fill<LV2_Feature*>(fFeatures, nullptr, kFeatureCount+1);
 
@@ -209,8 +214,8 @@ public:
         // ---------------------------------------------------------------
         // initialize options
 
-        fOptions.minBufferSize = gBufferSize;
-        fOptions.maxBufferSize = gBufferSize;
+        fOptions.minBufferSize = gBufferSizei;
+        fOptions.maxBufferSize = gBufferSizei;
         fOptions.sampleRate    = gSampleRate;
 
         // ---------------------------------------------------------------
@@ -449,9 +454,10 @@ public:
         // -----------------------------------------------------------
         // check if not resizable
 
-        for (uint32_t i=0; i < fRdfUiDescriptor->FeatureCount && fIsResizable; ++i)
+        for (uint32_t j=0; j < fRdfUiDescriptor->FeatureCount && fIsResizable; ++j)
         {
-            if (std::strcmp(fRdfUiDescriptor->Features[i].URI, LV2_UI__fixedSize) == 0 || std::strcmp(fRdfUiDescriptor->Features[i].URI, LV2_UI__noUserResize) == 0)
+            if (std::strcmp(fRdfUiDescriptor->Features[j].URI, LV2_UI__fixedSize   ) == 0 ||
+                std::strcmp(fRdfUiDescriptor->Features[j].URI, LV2_UI__noUserResize) == 0)
             {
                 fIsResizable = false;
                 break;
@@ -515,11 +521,12 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,)
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0,)
 
         if (fDescriptor->port_event == nullptr)
             return;
 
-        fDescriptor->port_event(fHandle, rindex, sizeof(float), 0, &value);
+        fDescriptor->port_event(fHandle, static_cast<uint32_t>(rindex), sizeof(float), 0, &value);
     }
 
     void setProgram(const uint32_t) override
@@ -548,7 +555,7 @@ public:
         midiEv.event.time.frames = 0;
         midiEv.event.body.type   = CARLA_URI_MAP_ID_MIDI_EVENT;
         midiEv.event.body.size   = 3;
-        midiEv.data[0] = MIDI_STATUS_NOTE_ON + channel;
+        midiEv.data[0] = uint8_t(MIDI_STATUS_NOTE_ON | (channel & MIDI_CHANNEL_BIT));
         midiEv.data[1] = note;
         midiEv.data[2] = velo;
 
@@ -567,7 +574,7 @@ public:
         midiEv.event.time.frames = 0;
         midiEv.event.body.type   = CARLA_URI_MAP_ID_MIDI_EVENT;
         midiEv.event.body.size   = 3;
-        midiEv.data[0] = MIDI_STATUS_NOTE_OFF + channel;
+        midiEv.data[0] = uint8_t(MIDI_STATUS_NOTE_OFF | (channel & MIDI_CHANNEL_BIT));
         midiEv.data[1] = note;
         midiEv.data[2] = 0;
 
@@ -596,7 +603,7 @@ public:
 
         LV2_URID urid = CARLA_URI_MAP_ID_NULL;
 
-        for (size_t i=0; i < fCustomURIDs.count(); ++i)
+        for (uint32_t i=0, count=static_cast<uint32_t>(fCustomURIDs.count()); i<count; ++i)
         {
             const char* const thisUri(fCustomURIDs.getAt(i, nullptr));
 
@@ -609,7 +616,7 @@ public:
 
         if (urid == CARLA_URI_MAP_ID_NULL)
         {
-            urid = fCustomURIDs.count();
+            urid = static_cast<LV2_URID>(fCustomURIDs.count());
             fCustomURIDs.append(carla_strdup(uri));
         }
 
@@ -681,7 +688,7 @@ public:
             const float value(*(const float*)buffer);
 
             if (isOscControlRegistered())
-                sendOscControl(portIndex, value);
+                sendOscControl(static_cast<int32_t>(portIndex), value);
         }
         else if (format == CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM || CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)
         {
@@ -724,7 +731,7 @@ public:
             return;
         }
 
-        const uint32_t uridCount(fCustomURIDs.count());
+        const uint32_t uridCount(static_cast<uint32_t>(fCustomURIDs.count()));
 
         if (urid < uridCount)
         {
@@ -1197,7 +1204,7 @@ int CarlaBridgeOsc::handleMsgLv2AtomTransfer(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0, 0);
 
     const LV2_Atom* const atom((const LV2_Atom*)chunk.data());
-    lv2ClientPtr->handleAtomTransfer(portIndex, atom);
+    lv2ClientPtr->handleAtomTransfer(static_cast<uint32_t>(portIndex), atom);
     return 0;
 }
 
@@ -1215,7 +1222,7 @@ int CarlaBridgeOsc::handleMsgLv2UridMap(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     if (urid < 0)
         return 0;
 
-    lv2ClientPtr->handleUridMap(urid, uri);
+    lv2ClientPtr->handleUridMap(static_cast<LV2_URID>(urid), uri);
     return 0;
 }
 

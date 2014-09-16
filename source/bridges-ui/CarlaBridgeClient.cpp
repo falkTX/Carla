@@ -25,7 +25,8 @@ CARLA_BRIDGE_START_NAMESPACE
 CarlaBridgeClient::CarlaBridgeClient(const char* const uiTitle)
     : fOsc(this),
       fOscData(fOsc.getControlData()),
-      fUI(CarlaBridgeToolkit::createNew(this, uiTitle))
+      fUI(CarlaBridgeToolkit::createNew(this, uiTitle)),
+      leakDetector_CarlaBridgeClient()
 {
     CARLA_ASSERT(uiTitle != nullptr && uiTitle[0] != '\0');
     carla_debug("CarlaBridgeClient::CarlaBridgeClient(\"%s\")", uiTitle);

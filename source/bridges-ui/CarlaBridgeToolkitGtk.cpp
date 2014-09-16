@@ -39,7 +39,8 @@ public:
           fLastX(0),
           fLastY(0),
           fLastWidth(0),
-          fLastHeight(0)
+          fLastHeight(0),
+          leakDetector_CarlaBridgeToolkitGtk()
     {
         carla_debug("CarlaBridgeToolkitGtk::CarlaBridgeToolkitGtk(%p, \"%s\")", client, windowTitle);
     }
@@ -186,6 +187,8 @@ private:
 
         return false;
     }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeToolkitGtk)
 };
 
 // -------------------------------------------------------------------------
