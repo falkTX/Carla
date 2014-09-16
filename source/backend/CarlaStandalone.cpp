@@ -73,7 +73,7 @@ struct CarlaBackendStandalone {
         engineOptions.preferUiBridges     = false;
 
         using juce::File;
-        File binaryDir(File::getSpecialLocation(File::currentApplicationFile).getParentDirectory());
+        File binaryDir(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory());
         engineOptions.binaryDir   = carla_strdup_safe(binaryDir.getFullPathName().toRawUTF8());
         engineOptions.resourceDir = carla_strdup_safe(binaryDir.getChildFile("resources").getFullPathName().toRawUTF8());
 #else
@@ -2424,6 +2424,38 @@ const char* carla_get_host_osc_url_udp()
     }
 
     return gStandalone.engine->getOscServerPathUDP();
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
+const char* carla_get_library_filename()
+{
+    carla_debug("carla_get_library_filename()");
+
+    static CarlaString ret;
+
+    if (ret.isEmpty())
+    {
+        using juce::File;
+        ret = File(File::getSpecialLocation(File::currentExecutableFile)).getFullPathName().toRawUTF8();
+    }
+
+    return ret;
+}
+
+const char* carla_get_library_folder()
+{
+    carla_debug("carla_get_library_folder()");
+
+    static CarlaString ret;
+
+    if (ret.isEmpty())
+    {
+        using juce::File;
+        ret = File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory()).getFullPathName().toRawUTF8();
+    }
+
+    return ret;
 }
 
 // -------------------------------------------------------------------------------------------------------------------

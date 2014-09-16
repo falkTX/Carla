@@ -994,6 +994,16 @@ CARLA_EXPORT const char* carla_get_host_osc_url_tcp();
  */
 CARLA_EXPORT const char* carla_get_host_osc_url_udp();
 
+/*!
+ * Get the current carla library filename.
+ */
+CARLA_EXPORT const char* carla_get_library_filename();
+
+/*!
+ * Get the folder where the current use carla library resides.
+ */
+CARLA_EXPORT const char* carla_get_library_folder();
+
 /** @} */
 
 #endif /* CARLA_HOST_H_INCLUDED */
