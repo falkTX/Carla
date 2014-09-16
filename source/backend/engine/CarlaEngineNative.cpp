@@ -845,8 +845,10 @@ protected:
 
     void uiServerCallback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr)
     {
-        CARLA_SAFE_ASSERT_RETURN(fIsRunning,);
-        CARLA_SAFE_ASSERT_RETURN(fUiServer.isOk(),);
+        if (! fIsRunning)
+            return;
+        if (! fUiServer.isOk())
+            return;
 
         CarlaPlugin* plugin;
 
