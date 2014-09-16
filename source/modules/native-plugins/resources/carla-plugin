@@ -29,30 +29,44 @@ class PluginHost(CarlaHostPlugin):
     def __init__(self):
         CarlaHostPlugin.__init__(self)
 
+        if False:
+            # kdevelop likes this :)
+            self.fExternalUI = ExternalUI()
+
+        # ---------------------------------------------------------------
+
+        self.fExternalUI = None
         self.fIsRunning  = True
         self.fSampleRate = float(sys.argv[1]) if len(sys.argv) > 1 else 44100.0
 
     # -------------------------------------------------------------------
 
+    def setExternalUI(self, extUI):
+        self.fExternalUI = extUI
+
     def sendMsg(self, lines):
-        # FIXME
-        gCarla.gui.send(lines)
+        if self.fExternalUI is None:
+            return False
+
+        self.fExternalUI.send(lines)
         return True
 
     # -------------------------------------------------------------------
 
     def engine_init(self, driverName, clientName):
+        self.fIsRunning = True
         return True
 
     def engine_close(self):
+        self.fIsRunning = False
         return True
 
     def engine_idle(self):
-        if gCarla.gui.idleExternalUI():
+        if self.fExternalUI.idleExternalUI():
             return
 
         self.fIsRunning = False
-        gCarla.gui.d_uiQuit()
+        self.fExternalUI.d_uiQuit()
 
     def is_engine_running(self):
         return self.fIsRunning
@@ -65,18 +79,16 @@ class PluginHost(CarlaHostPlugin):
 
 class CarlaMiniW(ExternalUI, HostWindow):
     def __init__(self, host, parent=None):
-        # need to init this first
-        gCarla.gui = self
-
-        # now the regular stuff
         ExternalUI.__init__(self)
         HostWindow.__init__(self, host, parent)
         self.host = host
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostPlugin()
+            host = PluginHost()
             self.host = host
+
+        host.setExternalUI(self)
 
         if sys.argv[0].lower().endswith("/carla-plugin-patchbay"):
             from carla_patchbay import CarlaPatchbayW
@@ -88,7 +100,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
             self.setupContainer(False)
 
         self.setWindowTitle(self.fUiName)
-        self.showUiIfTesting()
+        self.ready()
 
     # -------------------------------------------------------------------
     # ExternalUI Callbacks
@@ -167,7 +179,32 @@ class CarlaMiniW(ExternalUI, HostWindow):
                 elif action == ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
                     self.host._set_currentMidiProgram(pluginId, value1)
 
-                engineCallback(None, action, pluginId, value1, value2, value3, valueStr)
+                engineCallback(self.host, action, pluginId, value1, value2, value3, valueStr)
+
+            elif msg.startswith("ENGINE_OPTION_"):
+                option = int(msg.replace("ENGINE_OPTION_", ""))
+                value  = self.readlineblock()
+
+                if option == ENGINE_OPTION_PROCESS_MODE:
+                    self.host.processMode = int(value)
+                elif option == ENGINE_OPTION_TRANSPORT_MODE:
+                    self.host.transportMode = int(value)
+                elif option == ENGINE_OPTION_FORCE_STEREO:
+                    self.host.forceStereo = bool(value == "true")
+                elif option == ENGINE_OPTION_PREFER_PLUGIN_BRIDGES:
+                    self.host.preferPluginBridges = bool(value == "true")
+                elif option == ENGINE_OPTION_PREFER_UI_BRIDGES:
+                    self.host.preferUIBridges = bool(value == "true")
+                elif option == ENGINE_OPTION_UIS_ALWAYS_ON_TOP:
+                    self.host.uisAlwaysOnTop = bool(value == "true")
+                elif option == ENGINE_OPTION_MAX_PARAMETERS:
+                    self.host.maxParameters = int(value)
+                elif option == ENGINE_OPTION_UI_BRIDGES_TIMEOUT:
+                    self.host.uiBridgesTimeout = int(value)
+                elif option == ENGINE_OPTION_PATH_BINARIES:
+                    self.host.pathBinaries = value
+                elif option == ENGINE_OPTION_PATH_RESOURCES:
+                    self.host.pathResources = value
 
             elif msg.startswith("PLUGIN_INFO_"):
                 pluginId = int(msg.replace("PLUGIN_INFO_", ""))
@@ -273,7 +310,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
 
             elif msg == "error":
                 error = self.readlineblock().replace("\r", "\n")
-                engineCallback(None, ENGINE_CALLBACK_ERROR, 0, 0, 0, 0.0, error)
+                engineCallback(self.host, ENGINE_CALLBACK_ERROR, 0, 0, 0, 0.0, error)
 
             elif msg == "show":
                 self.d_uiShow()

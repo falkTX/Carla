@@ -1050,9 +1050,6 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
     # kdevelop likes this :)
     if False: host = CarlaHostMeta()
 
-    # FIXME
-    if host is None: host = gCarla.gui.host
-
     if action == ENGINE_CALLBACK_ENGINE_STARTED:
         host.processMode   = value1
         host.transportMode = value2
@@ -1301,9 +1298,9 @@ def loadHostSettings(host):
         host.preferPluginBridges = CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES
 
     try:
-        host.preferUiBridges = settings.value(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES, CARLA_DEFAULT_PREFER_UI_BRIDGES, type=bool)
+        host.preferUIBridges = settings.value(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES, CARLA_DEFAULT_PREFER_UI_BRIDGES, type=bool)
     except:
-        host.preferUiBridges = CARLA_DEFAULT_PREFER_UI_BRIDGES
+        host.preferUIBridges = CARLA_DEFAULT_PREFER_UI_BRIDGES
 
     try:
         host.uisAlwaysOnTop = settings.value(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, CARLA_DEFAULT_UIS_ALWAYS_ON_TOP, type=bool)

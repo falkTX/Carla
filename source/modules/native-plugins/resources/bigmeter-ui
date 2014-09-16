@@ -44,7 +44,7 @@ class DistrhoUIBigMeter(ExternalUI, DigitalPeakMeter):
 
         self.fIdleTimer = self.startTimer(30)
 
-        self.showUiIfTesting()
+        self.ready()
 
     # -------------------------------------------------------------------
     # DSP Callbacks

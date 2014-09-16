@@ -90,7 +90,7 @@ class DistrhoUINotes(ExternalUI, QWidget):
 
         self.fIdleTimer = self.startTimer(50)
 
-        self.showUiIfTesting()
+        self.ready()
 
     def saveCurrentTextState(self):
         pageKey   = "pageText #%i" % self.fCurPage

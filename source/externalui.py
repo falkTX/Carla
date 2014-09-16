@@ -54,11 +54,13 @@ class ExternalUI(object):
             self.fPipeRecv = None
             self.fPipeSend = None
 
-        # send empty line (just newline char)
-        self.send([""])
 
-    def showUiIfTesting(self):
-        if self.fPipeRecv is None:
+    def ready(self):
+        if self.fPipeRecv is not None:
+            # send empty line (just newline char)
+            self.send([""])
+        else:
+            # testing, show UI only
             self.d_uiShow()
 
     # -------------------------------------------------------------------

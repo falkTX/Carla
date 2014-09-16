@@ -845,10 +845,8 @@ protected:
 
     void uiServerCallback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr)
     {
-        if (! fIsRunning)
-            return;
-        if (! fUiServer.isOk())
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fIsRunning,);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.isOk(),);
 
         CarlaPlugin* plugin;
 
@@ -919,6 +917,65 @@ protected:
         fUiServer.writeMsg(fTmpBuf);
 
         fUiServer.writeAndFixMsg(valueStr);
+    }
+
+    void uiServerOptions()
+    {
+        CARLA_SAFE_ASSERT_RETURN(fIsRunning,);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.isOk(),);
+
+        const EngineOptions& options(getOptions());
+        const CarlaMutexLocker cml(fUiServer.getWriteLock());
+
+        std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PROCESS_MODE);
+        fUiServer.writeMsg(fTmpBuf);
+        std::sprintf(fTmpBuf, "%i\n", options.processMode);
+        fUiServer.writeMsg(fTmpBuf);
+
+        std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_TRANSPORT_MODE);
+        fUiServer.writeMsg(fTmpBuf);
+        std::sprintf(fTmpBuf, "%i\n", options.transportMode);
+        fUiServer.writeMsg(fTmpBuf);
+
+        std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_FORCE_STEREO);
+        fUiServer.writeMsg(fTmpBuf);
+        std::sprintf(fTmpBuf, "%s\n", bool2str(options.forceStereo));
+        fUiServer.writeMsg(fTmpBuf);
+
+        std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PREFER_PLUGIN_BRIDGES);
+        fUiServer.writeMsg(fTmpBuf);
+        std::sprintf(fTmpBuf, "%s\n", bool2str(options.preferPluginBridges));
+        fUiServer.writeMsg(fTmpBuf);
+
+        std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PREFER_UI_BRIDGES);
+        fUiServer.writeMsg(fTmpBuf);
+        std::sprintf(fTmpBuf, "%s\n", bool2str(options.preferUiBridges));
+        fUiServer.writeMsg(fTmpBuf);
+
+        std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_UIS_ALWAYS_ON_TOP);
+        fUiServer.writeMsg(fTmpBuf);
+        std::sprintf(fTmpBuf, "%s\n", bool2str(options.uisAlwaysOnTop));
+        fUiServer.writeMsg(fTmpBuf);
+
+        std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_MAX_PARAMETERS);
+        fUiServer.writeMsg(fTmpBuf);
+        std::sprintf(fTmpBuf, "%i\n", options.maxParameters);
+        fUiServer.writeMsg(fTmpBuf);
+
+        std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_UI_BRIDGES_TIMEOUT);
+        fUiServer.writeMsg(fTmpBuf);
+        std::sprintf(fTmpBuf, "%i\n", options.uiBridgesTimeout);
+        fUiServer.writeMsg(fTmpBuf);
+
+        std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PATH_BINARIES);
+        fUiServer.writeMsg(fTmpBuf);
+        std::sprintf(fTmpBuf, "%s\n", options.binaryDir);
+        fUiServer.writeMsg(fTmpBuf);
+
+        std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PATH_RESOURCES);
+        fUiServer.writeMsg(fTmpBuf);
+        std::sprintf(fTmpBuf, "%s\n", options.resourceDir);
+        fUiServer.writeMsg(fTmpBuf);
     }
 
     // -------------------------------------------------------------------
@@ -1262,6 +1319,8 @@ protected:
             fUiServer.setData(path, pData->sampleRate, pHost->uiName);
             fUiServer.start();
 
+            uiServerOptions();
+
             for (uint i=0; i < pData->curPluginCount; ++i)
             {
                 CarlaPlugin* const plugin(pData->plugins[i].plugin);
@@ -1306,7 +1365,7 @@ protected:
 
             for (uint32_t j=0, count=plugin->getParameterCount(); j < count; ++j)
             {
-                if (plugin->isParameterOutput(j))
+                if (! plugin->isParameterOutput(j))
                     continue;
 
                 const CarlaMutexLocker cml(fUiServer.getWriteLock());
