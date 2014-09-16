@@ -335,7 +335,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
 # Embed plugin UI
 
 if LINUX and not config_UseQt5:
-    from PyQt4.QtGui import QLabel, QHBoxLayout, QX11EmbedWidget
+    from PyQt4.QtGui import QHBoxLayout, QX11EmbedWidget
 
     class CarlaEmbedW(QX11EmbedWidget):
         def __init__(self, host, winId):
@@ -349,18 +349,18 @@ if LINUX and not config_UseQt5:
             self.fLayout.setSpacing(0)
             self.setLayout(self.fLayout)
 
-            gCarla.gui = CarlaMiniW(host, self)
-            gCarla.gui.hide()
+            gui = CarlaMiniW(host, self)
+            gui.hide()
 
-            gCarla.gui.ui.act_file_quit.setEnabled(False)
-            gCarla.gui.ui.menu_File.setEnabled(False)
-            gCarla.gui.ui.menu_File.setVisible(False)
-            #menuBar = gCarla.gui.menuBar()
-            #menuBar.removeAction(gCarla.gui.ui.menu_File.menuAction())
+            gui.ui.act_file_quit.setEnabled(False)
+            gui.ui.menu_File.setEnabled(False)
+            gui.ui.menu_File.setVisible(False)
+            #menuBar = gui.menuBar()
+            #menuBar.removeAction(gui.ui.menu_File.menuAction())
 
-            self.addWidget(gCarla.gui.menuBar())
-            self.addWidget(gCarla.gui.ui.toolBar)
-            self.addWidget(gCarla.gui.centralWidget())
+            self.addWidget(gui.menuBar())
+            self.addWidget(gui.ui.toolBar)
+            self.addWidget(gui.centralWidget())
 
             self.setFixedSize(740, 512)
             self.embedInto(winId)

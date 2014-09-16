@@ -104,13 +104,13 @@ class HostWindow(QMainWindow):
         self.host = host
         self.ui = ui_carla_host.Ui_CarlaHostW()
         self.ui.setupUi(self)
+        gCarla.gui = self
 
         if False:
             # kdevelop likes this :)
             host = CarlaHostMeta()
             self.host = host
             self.fContainer = HostWidgetMeta(self, host)
-            gCarla.gui = self
 
         # ----------------------------------------------------------------------------------------------------
         # Internal stuff

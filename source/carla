@@ -326,7 +326,7 @@ if __name__ == '__main__':
     # -------------------------------------------------------------
     # Create GUI
 
-    gCarla.gui = CarlaHostW(host)
+    gui = CarlaHostW(host)
 
     # -------------------------------------------------------------
     # Load project file if set
@@ -339,12 +339,12 @@ if __name__ == '__main__':
         if arg.startswith("--with-appname=") or arg.startswith("--with-libprefix="):
             pass
         elif os.path.exists(arg):
-            gCarla.gui.loadProjectLater(arg)
+            gui.loadProjectLater(arg)
 
     # -------------------------------------------------------------
     # Show GUI
 
-    gCarla.gui.show()
+    gui.show()
 
     # -------------------------------------------------------------
     # App-Loop
