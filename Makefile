@@ -282,6 +282,7 @@ RES = \
 	bin/resources/ui_carla_plugin_basic_fx.py \
 	bin/resources/ui_carla_plugin_calf.py \
 	bin/resources/ui_carla_plugin_default.py \
+	bin/resources/ui_carla_plugin_sf2.py \
 	bin/resources/ui_carla_plugin_zita.py \
 	bin/resources/ui_carla_plugin_zynfx.py \
 	bin/resources/ui_carla_refresh.py \
@@ -319,8 +320,9 @@ UIs = \
 	source/ui_carla_host.py \
 	source/ui_carla_parameter.py \
 	source/ui_carla_plugin_basic_fx.py \
-	source/ui_carla_plugin_default.py \
 	source/ui_carla_plugin_calf.py \
+	source/ui_carla_plugin_default.py \
+	source/ui_carla_plugin_sf2.py \
 	source/ui_carla_plugin_zita.py \
 	source/ui_carla_plugin_zynfx.py \
 	source/ui_carla_refresh.py \
@@ -532,6 +534,7 @@ install:
 	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_basic_fx.py $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_calf.py     $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_default.py  $(DESTDIR)$(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_sf2.py      $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_zita.py     $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_zynfx.py    $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_refresh.py         $(DESTDIR)$(PREFIX)/share/carla/resources/

@@ -38,6 +38,7 @@ else:
 import ui_carla_plugin_default
 import ui_carla_plugin_basic_fx
 import ui_carla_plugin_calf
+import ui_carla_plugin_sf2
 import ui_carla_plugin_zita
 import ui_carla_plugin_zynfx
 
@@ -283,14 +284,14 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             self.led_audio_out.setEnabled(False)
 
         if self.peak_in is not None:
-            self.peak_in.setColor(self.peak_in.GREEN)
+            self.peak_in.setColor(DigitalPeakMeter.GREEN)
             self.peak_in.setChannels(self.fPeaksInputCount)
-            self.peak_in.setOrientation(self.peak_in.HORIZONTAL)
+            self.peak_in.setOrientation(DigitalPeakMeter.HORIZONTAL)
 
         if self.peak_out is not None:
-            self.peak_out.setColor(self.peak_in.BLUE)
+            self.peak_out.setColor(DigitalPeakMeter.BLUE)
             self.peak_out.setChannels(self.fPeaksOutputCount)
-            self.peak_out.setOrientation(self.peak_out.HORIZONTAL)
+            self.peak_out.setOrientation(DigitalPeakMeter.HORIZONTAL)
 
         for paramIndex, paramWidget in self.fParameterList:
             paramWidget.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -1440,6 +1441,119 @@ class PluginSlot_Nekobi(AbstractPluginSlot):
 
 # ------------------------------------------------------------------------------------------------------------
 
+class PluginSlot_SF2(AbstractPluginSlot):
+    def __init__(self, parent, host, pluginId):
+        AbstractPluginSlot.__init__(self, parent, host, pluginId)
+        self.ui = ui_carla_plugin_sf2.Ui_PluginWidget()
+        self.ui.setupUi(self)
+
+        # -------------------------------------------------------------
+        # Set-up GUI
+
+        #labelFont = self.ui.label_name.font()
+        #labelFont.setBold(True)
+        #labelFont.setPointSize(9)
+        #self.ui.label_name.setFont(labelFont)
+
+        self.setStyleSheet("""
+            PluginSlot_SF2#PluginWidget {
+                background-image: url(:/bitmaps/background_3bandeq.png);
+                background-repeat: repeat-xy;
+            }
+            QLabel#label_name {
+                color: #BBB;
+            }
+        """)
+
+        self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
+        self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
+
+        # -------------------------------------------------------------
+        # Set-up parameters
+
+        parameterCount = self.host.get_parameter_count(self.fPluginId)
+
+        index = 0
+        for i in range(parameterCount):
+            if index >= 8:
+                break
+
+            paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
+            paramData   = self.host.get_parameter_data(self.fPluginId, i)
+            paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
+
+            if paramData['type'] != PARAMETER_INPUT:
+                continue
+            if paramData['hints'] & PARAMETER_IS_BOOLEAN:
+                continue
+            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
+                continue
+
+            paramName = getParameterShortName(paramInfo['name'])
+
+            widget = PixmapDial(self, i)
+            widget.setPixmap(3)
+            widget.setLabel(paramName)
+            widget.setMinimum(paramRanges['min'])
+            widget.setMaximum(paramRanges['max'])
+
+            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
+                widget.setEnabled(False)
+
+            self.ui.w_knobs.layout().insertWidget(index, widget)
+            index += 1
+
+            self.fParameterList.append([i, widget])
+
+        self.ui.dial_vol.setIndex(PARAMETER_VOLUME)
+        self.ui.dial_vol.setPixmap(3)
+        self.ui.dial_vol.setLabel("Volume")
+        self.ui.dial_vol.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_VOL)
+        self.ui.dial_vol.setMinimum(0.0)
+        self.ui.dial_vol.setMaximum(1.27)
+        self.ui.dial_vol.forceWhiteLabelGradientText()
+        self.ui.dial_vol.setVisible(self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME)
+
+        self.fParameterList.append([PARAMETER_VOLUME, self.ui.dial_vol])
+
+        # -------------------------------------------------------------
+
+        self.b_enable = self.ui.b_enable
+        self.b_edit   = self.ui.b_edit
+
+        self.label_name = self.ui.label_name
+
+        self.led_control   = self.ui.led_control
+        self.led_midi      = self.ui.led_midi
+        self.led_audio_out = self.ui.led_audio_out
+
+        self.peak_out = self.ui.peak_out
+
+        self.ready()
+
+        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
+
+    #------------------------------------------------------------------
+
+    def getFixedHeight(self):
+        return 79
+
+    #------------------------------------------------------------------
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setBrush(Qt.transparent)
+
+        painter.setPen(QPen(QColor(42, 42, 42), 1))
+        painter.drawRect(0, 1, self.width()-1, 79-3)
+
+        painter.setPen(QPen(QColor(60, 60, 60), 1))
+        painter.drawLine(0, 0, self.width(), 0)
+
+        AbstractPluginSlot.paintEvent(self, event)
+
+# ------------------------------------------------------------------------------------------------------------
+
 class PluginSlot_ZitaRev(AbstractPluginSlot):
     def __init__(self, parent, host, pluginId):
         AbstractPluginSlot.__init__(self, parent, host, pluginId)
@@ -1818,6 +1932,9 @@ def createPluginSlot(parent, host, pluginId, useSkins):
     uniqueId    = pluginInfo['uniqueId']
 
     #pluginIcon  = pluginInfo['iconName']
+
+    if pluginInfo['type'] == PLUGIN_SF2:
+        return PluginSlot_SF2(parent, host, pluginId)
 
     if pluginMaker == "OpenAV Productions":
         return PluginSlot_OpenAV(parent, host, pluginId)
