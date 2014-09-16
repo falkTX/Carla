@@ -226,6 +226,12 @@ const uint PLUGIN_OPTION_SEND_PITCHBEND = 0x080;
  */
 const uint PLUGIN_OPTION_SEND_ALL_SOUND_OFF = 0x100;
 
+/*!
+ * Send MIDI bank/program changes.
+ * @note: This option conflicts with PLUGIN_OPTION_MAP_PROGRAM_CHANGES and cannot be used at the same time.
+ */
+const uint PLUGIN_OPTION_SEND_PROGRAM_CHANGES = 0x200;
+
 /** @} */
 
 /* ------------------------------------------------------------------------------------------------------------

@@ -554,6 +554,7 @@ class PluginEdit(QDialog):
         self.ui.ch_force_stereo.clicked.connect(self.slot_optionChanged)
         self.ui.ch_map_program_changes.clicked.connect(self.slot_optionChanged)
         self.ui.ch_use_chunks.clicked.connect(self.slot_optionChanged)
+        self.ui.ch_send_program_changes.clicked.connect(self.slot_optionChanged)
         self.ui.ch_send_control_changes.clicked.connect(self.slot_optionChanged)
         self.ui.ch_send_channel_pressure.clicked.connect(self.slot_optionChanged)
         self.ui.ch_send_note_aftertouch.clicked.connect(self.slot_optionChanged)
@@ -744,14 +745,14 @@ class PluginEdit(QDialog):
         self.ui.dial_b_right.setEnabled(pluginHints & PLUGIN_CAN_BALANCE)
         self.ui.dial_pan.setEnabled(pluginHints & PLUGIN_CAN_PANNING)
 
+        self.ui.ch_use_chunks.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_USE_CHUNKS)
+        self.ui.ch_use_chunks.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_USE_CHUNKS)
         self.ui.ch_fixed_buffer.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_FIXED_BUFFERS)
         self.ui.ch_fixed_buffer.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_FIXED_BUFFERS)
         self.ui.ch_force_stereo.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_FORCE_STEREO)
         self.ui.ch_force_stereo.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_FORCE_STEREO)
         self.ui.ch_map_program_changes.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
         self.ui.ch_map_program_changes.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
-        self.ui.ch_use_chunks.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_USE_CHUNKS)
-        self.ui.ch_use_chunks.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_USE_CHUNKS)
         self.ui.ch_send_control_changes.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
         self.ui.ch_send_control_changes.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
         self.ui.ch_send_channel_pressure.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE)
@@ -762,6 +763,11 @@ class PluginEdit(QDialog):
         self.ui.ch_send_pitchbend.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_PITCHBEND)
         self.ui.ch_send_all_sound_off.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
         self.ui.ch_send_all_sound_off.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+
+        canSendPrograms = bool((self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) != 0 and
+                               (self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) == 0)
+        self.ui.ch_send_program_changes.setEnabled(canSendPrograms)
+        self.ui.ch_send_program_changes.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
 
         self.ui.sw_programs.setCurrentIndex(0 if self.fPluginInfo['type'] in (PLUGIN_VST, PLUGIN_GIG, PLUGIN_SFZ) else 1)
 
@@ -1042,14 +1048,16 @@ class PluginEdit(QDialog):
         self.ui.cb_midi_programs.blockSignals(False)
 
     def setOption(self, option, yesNo):
-        if option == PLUGIN_OPTION_FIXED_BUFFERS:
+        if option == PLUGIN_OPTION_USE_CHUNKS:
+            widget = self.ui.ch_use_chunks
+        elif option == PLUGIN_OPTION_FIXED_BUFFERS:
             widget = self.ui.ch_fixed_buffer
         elif option == PLUGIN_OPTION_FORCE_STEREO:
             widget = self.ui.ch_force_stereo
         elif option == PLUGIN_OPTION_MAP_PROGRAM_CHANGES:
             widget = self.ui.ch_map_program_changes
-        elif option == PLUGIN_OPTION_USE_CHUNKS:
-            widget = self.ui.ch_use_chunks
+        elif option == PLUGIN_OPTION_SEND_PROGRAM_CHANGES:
+            widget = self.ui.ch_send_program_changes
         elif option == PLUGIN_OPTION_SEND_CONTROL_CHANGES:
             widget = self.ui.ch_send_control_changes
         elif option == PLUGIN_OPTION_SEND_CHANNEL_PRESSURE:
@@ -1219,14 +1227,16 @@ class PluginEdit(QDialog):
     def slot_optionChanged(self, clicked):
         sender = self.sender()
 
-        if sender == self.ui.ch_fixed_buffer:
+        if sender == self.ui.ch_use_chunks:
+            option = PLUGIN_OPTION_USE_CHUNKS
+        elif sender == self.ui.ch_fixed_buffer:
             option = PLUGIN_OPTION_FIXED_BUFFERS
         elif sender == self.ui.ch_force_stereo:
             option = PLUGIN_OPTION_FORCE_STEREO
         elif sender == self.ui.ch_map_program_changes:
             option = PLUGIN_OPTION_MAP_PROGRAM_CHANGES
-        elif sender == self.ui.ch_use_chunks:
-            option = PLUGIN_OPTION_USE_CHUNKS
+        elif sender == self.ui.ch_send_program_changes:
+            option = PLUGIN_OPTION_SEND_PROGRAM_CHANGES
         elif sender == self.ui.ch_send_control_changes:
             option = PLUGIN_OPTION_SEND_CONTROL_CHANGES
         elif sender == self.ui.ch_send_channel_pressure:
@@ -1240,7 +1250,30 @@ class PluginEdit(QDialog):
         else:
             return
 
+        #--------------------------------------------------------------
+        # handle map-program-changes and send-program-changes conflict
+
+        if option == PLUGIN_OPTION_MAP_PROGRAM_CHANGES and clicked:
+            self.ui.ch_send_program_changes.setEnabled(False)
+
+            # disable send-program-changes if needed
+            if self.ui.ch_send_program_changes.isChecked():
+                self.host.set_option(self.fPluginId, PLUGIN_OPTION_SEND_PROGRAM_CHANGES, False)
+
+        #--------------------------------------------------------------
+        # set option
+
         self.host.set_option(self.fPluginId, option, clicked)
+
+        #--------------------------------------------------------------
+        # handle map-program-changes and send-program-changes conflict
+
+        if option == PLUGIN_OPTION_MAP_PROGRAM_CHANGES and not clicked:
+            self.ui.ch_send_program_changes.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
+
+            # restore send-program-changes if needed
+            if self.ui.ch_send_program_changes.isChecked():
+                self.host.set_option(self.fPluginId, PLUGIN_OPTION_SEND_PROGRAM_CHANGES, True)
 
     #------------------------------------------------------------------
 

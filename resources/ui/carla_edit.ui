@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>469</width>
-    <height>407</height>
+    <width>501</width>
+    <height>431</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -343,14 +343,14 @@
           <item>
            <widget class="QCheckBox" name="ch_fixed_buffer">
             <property name="text">
-             <string>Fixed-size buffer</string>
+             <string>Fixed-Size Buffer</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QCheckBox" name="ch_force_stereo">
             <property name="text">
-             <string>Force stereo (needs restart)</string>
+             <string>Force Stereo (needs restart)</string>
             </property>
            </widget>
           </item>
@@ -383,7 +383,14 @@
           <item>
            <widget class="QCheckBox" name="ch_map_program_changes">
             <property name="text">
-             <string>Map Program changes</string>
+             <string>Map Program Changes</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="ch_send_program_changes">
+            <property name="text">
+             <string>Send Bank/Program Changes</string>
             </property>
            </widget>
           </item>

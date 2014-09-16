@@ -724,6 +724,7 @@ public:
 
         if (hasMidiIn)
         {
+            options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
             options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
             options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
             options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
@@ -3004,25 +3005,66 @@ public:
                     } // case kEngineControlEventTypeParameter
 
                     case kEngineControlEventTypeMidiBank:
-                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
-                            nextBankId = ctrlEvent.param;
+                        if (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
+                        {
+                            if (event.channel == pData->ctrlChannel)
+                                nextBankId = ctrlEvent.param;
+                        }
+                        else if (pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
+                        {
+                            uint8_t midiData[3];
+                            midiData[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            midiData[1] = MIDI_CONTROL_BANK_SELECT;
+                            midiData[2] = uint8_t(ctrlEvent.param);
+
+                            const uint32_t mtime(isSampleAccurate ? startTime : event.time);
+
+                            if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
+                                lv2_atom_buffer_write(&evInAtomIters[fEventsIn.ctrlIndex], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                            else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
+                                lv2_event_write(&evInEventIters[fEventsIn.ctrlIndex], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                            else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
+                                lv2midi_put_event(&evInMidiStates[fEventsIn.ctrlIndex], mtime, 3, midiData);
+                        }
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
-                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        if (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
                         {
-                            const uint32_t nextProgramId = ctrlEvent.param;
-
-                            for (uint32_t k=0; k < pData->midiprog.count; ++k)
+                            if (event.channel == pData->ctrlChannel)
                             {
-                                if (pData->midiprog.data[k].bank == nextBankId && pData->midiprog.data[k].program == nextProgramId)
+                                const uint32_t nextProgramId = ctrlEvent.param;
+
+                                for (uint32_t k=0; k < pData->midiprog.count; ++k)
                                 {
-                                    const int32_t index(static_cast<int32_t>(k));
-                                    setMidiProgram(index, false, false, false);
-                                    pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, index, 0, 0.0f);
-                                    break;
+                                    if (pData->midiprog.data[k].bank == nextBankId && pData->midiprog.data[k].program == nextProgramId)
+                                    {
+                                        const int32_t index(static_cast<int32_t>(k));
+                                        setMidiProgram(index, false, false, false);
+                                        pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, index, 0, 0.0f);
+                                        break;
+                                    }
                                 }
                             }
+                        }
+                        else if (pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
+                        {
+                            uint8_t midiData[2];
+                            midiData[0] = uint8_t(MIDI_STATUS_PROGRAM_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            midiData[1] = uint8_t(ctrlEvent.param);
+
+                            const uint32_t mtime(isSampleAccurate ? startTime : event.time);
+
+                            if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
+                                lv2_atom_buffer_write(&evInAtomIters[fEventsIn.ctrlIndex], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 2, midiData);
+
+                            else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
+                                lv2_event_write(&evInEventIters[fEventsIn.ctrlIndex], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 2, midiData);
+
+                            else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
+                                lv2midi_put_event(&evInMidiStates[fEventsIn.ctrlIndex], mtime, 2, midiData);
                         }
                         break;
 
