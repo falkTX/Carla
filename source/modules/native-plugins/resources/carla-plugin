@@ -359,7 +359,9 @@ if LINUX and not config_UseQt5:
             #menuBar.removeAction(gui.ui.menu_File.menuAction())
 
             self.addWidget(gui.menuBar())
+            self.addLine()
             self.addWidget(gui.ui.toolBar)
+            self.addLine()
             self.addWidget(gui.centralWidget())
 
             self.setFixedSize(740, 512)
@@ -369,6 +371,14 @@ if LINUX and not config_UseQt5:
         def addWidget(self, widget):
             widget.setParent(self)
             self.fLayout.addWidget(widget)
+
+        def addLine(self):
+            line = QFrame(self)
+            line.setFrameShadow(QFrame.Sunken)
+            line.setFrameShape(QFrame.HLine)
+            line.setLineWidth(0)
+            line.setMidLineWidth(1)
+            self.fLayout.addWidget(line)
 
         def showEvent(self, event):
             QX11EmbedWidget.showEvent(self, event)
