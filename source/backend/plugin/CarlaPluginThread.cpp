@@ -167,46 +167,71 @@ void CarlaPluginThread::run()
     std::snprintf(strBuf, STR_MAX, "%f", fEngine->getSampleRate());
     carla_setenv("CARLA_SAMPLE_RATE", strBuf);
 
+    carla_setenv("ENGINE_OPTION_FORCE_STEREO",          bool2str(options.forceStereo));
+    carla_setenv("ENGINE_OPTION_PREFER_PLUGIN_BRIDGES", bool2str(options.preferPluginBridges));
+    carla_setenv("ENGINE_OPTION_PREFER_UI_BRIDGES",     bool2str(options.preferUiBridges));
+    carla_setenv("ENGINE_OPTION_UIS_ALWAYS_ON_TOP",     bool2str(options.uisAlwaysOnTop));
+
     std::snprintf(strBuf, STR_MAX, "%u", options.maxParameters);
     carla_setenv("ENGINE_OPTION_MAX_PARAMETERS", strBuf);
 
     std::snprintf(strBuf, STR_MAX, "%u", options.uiBridgesTimeout);
     carla_setenv("ENGINE_OPTION_UI_BRIDGES_TIMEOUT",strBuf);
 
-    carla_setenv("ENGINE_OPTION_UIS_ALWAYS_ON_TOP", bool2str(options.uisAlwaysOnTop));
-
-    if (options.pathLADSPA != nullptr && options.pathLADSPA[0] != '\0')
+    if (options.pathLADSPA != nullptr)
         carla_setenv("ENGINE_OPTION_PLUGIN_PATH_LADSPA", options.pathLADSPA);
+    else
+        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_LADSPA", "");
 
-    if (options.pathDSSI != nullptr && options.pathDSSI[0] != '\0')
+    if (options.pathDSSI != nullptr)
         carla_setenv("ENGINE_OPTION_PLUGIN_PATH_DSSI", options.pathDSSI);
+    else
+        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_DSSI", "");
 
-    if (options.pathLV2 != nullptr && options.pathLV2[0] != '\0')
+    if (options.pathLV2 != nullptr)
         carla_setenv("ENGINE_OPTION_PLUGIN_PATH_LV2", options.pathLV2);
+    else
+        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_LV2", "");
 
-    if (options.pathVST != nullptr && options.pathVST[0] != '\0')
+    if (options.pathVST != nullptr)
         carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST", options.pathVST);
+    else
+        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST", "");
 
-    if (options.pathVST3 != nullptr && options.pathVST3[0] != '\0')
+    if (options.pathVST3 != nullptr)
         carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST3", options.pathVST3);
+    else
+        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST3", "");
 
-    if (options.pathAU != nullptr && options.pathAU[0] != '\0')
+    if (options.pathAU != nullptr)
         carla_setenv("ENGINE_OPTION_PLUGIN_PATH_AU", options.pathAU);
+    else
+        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_AU", "");
 
-    if (options.pathGIG != nullptr && options.pathGIG[0] != '\0')
+    if (options.pathGIG != nullptr)
         carla_setenv("ENGINE_OPTION_PLUGIN_PATH_GIG", options.pathGIG);
+    else
+        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_GIG", "");
 
-    if (options.pathSF2 != nullptr && options.pathSF2[0] != '\0')
+    if (options.pathSF2 != nullptr)
         carla_setenv("ENGINE_OPTION_PLUGIN_PATH_SF2", options.pathSF2);
+    else
+        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_SF2", "");
 
-    if (options.pathSFZ != nullptr && options.pathSFZ[0] != '\0')
+    if (options.pathSFZ != nullptr)
         carla_setenv("ENGINE_OPTION_PLUGIN_PATH_SFZ", options.pathSFZ);
+    else
+        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_SFZ", "");
 
-    if (options.binaryDir != nullptr && options.binaryDir[0] != '\0')
+    if (options.binaryDir != nullptr)
         carla_setenv("ENGINE_OPTION_PATH_BINARIES", options.binaryDir);
+    else
+        carla_setenv("ENGINE_OPTION_PATH_BINARIES", "");
 
-    if (options.resourceDir != nullptr && options.resourceDir[0] != '\0')
+    if (options.resourceDir != nullptr)
         carla_setenv("ENGINE_OPTION_PATH_RESOURCES", options.resourceDir);
+    else
+        carla_setenv("ENGINE_OPTION_PATH_RESOURCES", "");
 
     std::snprintf(strBuf, STR_MAX, P_UINTPTR, options.frontendWinId);
     carla_setenv("ENGINE_OPTION_FRONTEND_WIN_ID", strBuf);
