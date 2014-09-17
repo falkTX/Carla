@@ -646,6 +646,8 @@ protected:
     {
         carla_debug("CarlaEngineNative::init(\"%s\")", clientName);
 
+        fIsRunning = true;
+
         if (! pData->init(clientName))
         {
             close();
@@ -656,7 +658,13 @@ protected:
         pData->bufferSize = pHost->get_buffer_size(pHost->handle);
         pData->sampleRate = pHost->get_sample_rate(pHost->handle);
 
-        fIsRunning = true;
+        return true;
+    }
+
+    bool close() override
+    {
+        fIsRunning = false;
+        CarlaEngine::close();
         return true;
     }
 

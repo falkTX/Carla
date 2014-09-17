@@ -720,8 +720,11 @@ public:
         carla_zeroStruct<jack_position_t>(fTransportPos);
 
 #ifdef BUILD_BRIDGE
+        fIsRunning = true;
+
         if (! pData->init(clientName))
         {
+            close();
             setLastError("Failed to init internal data");
             return false;
         }
@@ -738,12 +741,11 @@ public:
             }
             else
             {
-                carla_stderr2("Failed to init temporary jack client");
+                close();
+                setLastError("Failed to init temporary jack client");
                 return false;
             }
         }
-
-        fIsRunning = true;
 
         return true;
 #else
@@ -831,11 +833,13 @@ public:
         carla_debug("CarlaEngineJack::close()");
 
 #ifdef BUILD_BRIDGE
-        CarlaEngine::close();
         fClient    = nullptr;
         fIsRunning = false;
+        CarlaEngine::close();
         return true;
 #else
+        CARLA_SAFE_ASSERT_RETURN_ERR(fClient != nullptr, "JACK Client is null");
+
         // deactivate first
         const bool deactivated(jackbridge_deactivate(fClient));
 

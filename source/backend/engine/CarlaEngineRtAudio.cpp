@@ -365,7 +365,7 @@ public:
 
     bool isRunning() const noexcept override
     {
-        return fAudio.isStreamRunning();
+        return fAudio.isStreamOpen();
     }
 
     bool isOffline() const noexcept override

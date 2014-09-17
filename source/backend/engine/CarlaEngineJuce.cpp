@@ -240,7 +240,7 @@ public:
 
     bool isRunning() const noexcept override
     {
-        return fDevice != nullptr && fDevice->isPlaying();
+        return fDevice != nullptr && fDevice->isOpen();
     }
 
     bool isOffline() const noexcept override
