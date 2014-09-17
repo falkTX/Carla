@@ -376,21 +376,19 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Check argument count
 
-    if (argc != 7)
+    if (argc != 5)
     {
-        carla_stdout("usage: %s <osc-url|\"null\"> <type> <filename> <name|\"(none)\"> <label> <uniqueId>", argv[0]);
+        carla_stdout("usage: %s <type> <filename> <label> <uniqueId>", argv[0]);
         return 1;
     }
 
     // ---------------------------------------------------------------------
     // Get args
 
-    const char* const oscUrl   = argv[1];
-    const char* const stype    = argv[2];
-    const char* const filename = argv[3];
-    const char*       name     = argv[4];
-    const char*       label    = argv[5];
-    const int64_t     uniqueId = static_cast<int64_t>(std::atoll(argv[6]));
+    const char* const stype    = argv[1];
+    const char* const filename = argv[2];
+    const char*       label    = argv[3];
+    const int64_t     uniqueId = static_cast<int64_t>(std::atoll(argv[4]));
 
     // ---------------------------------------------------------------------
     // Check plugin type
@@ -404,18 +402,20 @@ int main(int argc, char* argv[])
     }
 
     // ---------------------------------------------------------------------
-    // Set name as null if invalid
+    // Set name
 
-    if (std::strlen(name) == 0 || std::strcmp(name, "(none)") == 0)
+    const char* name(std::getenv("CARLA_CLIENT_NAME"));
+
+    if (name != nullptr && (name[0] == '\0' || std::strcmp(name, "(none)") == 0))
         name = nullptr;
 
     // ---------------------------------------------------------------------
     // Setup options
 
+    const char* const oscUrl(std::getenv("ENGINE_BRIDGE_OSC_URL"));
     const char* const shmIds(std::getenv("ENGINE_BRIDGE_SHM_IDS"));
 
-    const bool useBridge = (shmIds != nullptr);
-    const bool useOsc    = (std::strcmp(oscUrl, "null") != 0 && std::strcmp(oscUrl, "(null)") != 0 && std::strcmp(oscUrl, "NULL") != 0);
+    const bool useBridge = (shmIds != nullptr && oscUrl != nullptr);
 
     // ---------------------------------------------------------------------
     // Setup bridge ids
@@ -444,7 +444,7 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Set client name
 
-    CarlaString clientName((name != nullptr && name[0] != '\0') ? name : label);
+    CarlaString clientName(name != nullptr ? name : label);
 
     if (clientName.isEmpty())
         clientName = juce::File(filename).getFileNameWithoutExtension().toRawUTF8();
@@ -477,7 +477,7 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Init OSC
 
-    if (useOsc)
+    if (useBridge)
         bridge.oscInit(oscUrl);
 
     // ---------------------------------------------------------------------
@@ -494,7 +494,7 @@ int main(int argc, char* argv[])
     {
         ret = 0;
 
-        if (useOsc)
+        if (useBridge)
         {
             bridge.sendOscUpdate();
             bridge.sendOscBridgeUpdate();
@@ -510,7 +510,7 @@ int main(int argc, char* argv[])
             }
         }
 
-        bridge.exec(useOsc, argc, argv);
+        bridge.exec(useBridge, argc, argv);
     }
     else
     {
@@ -519,14 +519,14 @@ int main(int argc, char* argv[])
         const char* const lastError(carla_get_last_error());
         carla_stderr("Plugin failed to load, error was:\n%s", lastError);
 
-        if (useOsc)
+        if (useBridge)
             bridge.sendOscBridgeError(lastError);
     }
 
     // ---------------------------------------------------------------------
     // Close OSC
 
-    if (useOsc)
+    if (useBridge)
         bridge.oscClose();
 
     return ret;

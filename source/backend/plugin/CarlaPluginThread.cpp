@@ -164,6 +164,8 @@ void CarlaPluginThread::run()
 
     sEnvMutex.lock();
 
+    carla_setenv("CARLA_CLIENT_NAME", name.toRawUTF8());
+
     std::snprintf(strBuf, STR_MAX, "%f", fEngine->getSampleRate());
     carla_setenv("CARLA_SAMPLE_RATE", strBuf);
 
@@ -263,16 +265,13 @@ void CarlaPluginThread::run()
         break;
 
     case PLUGIN_THREAD_BRIDGE:
-        /* osc-url  */ arguments.add(String(fEngine->getOscServerPathUDP()) + String("/") + String(fPlugin->getId()));
         /* stype    */ arguments.add(fExtra1.buffer());
         /* filename */ arguments.add(fPlugin->getFilename());
-        /* name     */ arguments.add(name);
         /* label    */ arguments.add(fLabel.buffer());
         /* uniqueId */ arguments.add(String(static_cast<juce::int64>(fPlugin->getUniqueId())));
 
-        carla_setenv("ENGINE_BRIDGE_SHM_IDS", fExtra2.buffer());
-        carla_setenv("ENGINE_BRIDGE_CLIENT_NAME", name.toRawUTF8());
         carla_setenv("ENGINE_BRIDGE_OSC_URL", String(String(fEngine->getOscServerPathUDP()) + String("/") + String(fPlugin->getId())).toRawUTF8());
+        carla_setenv("ENGINE_BRIDGE_SHM_IDS", fExtra2.buffer());
         carla_setenv("WINEDEBUG", "-all");
         break;
     }
