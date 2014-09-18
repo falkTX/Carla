@@ -777,8 +777,12 @@ ENGINE_OPTION_PATH_BINARIES = 15
 # @note Must be set for some internal plugins to work
 ENGINE_OPTION_PATH_RESOURCES = 16
 
+# Prevent bad plugin and UI behaviour.
+# @note: Linux only
+ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 17
+
 # Set frontend winId, used to define as parent window for plugin UIs.
-ENGINE_OPTION_FRONTEND_WIN_ID = 17
+ENGINE_OPTION_FRONTEND_WIN_ID = 18
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine Process Mode
@@ -1315,6 +1319,7 @@ class CarlaHostMeta(QObject):
         self.forceStereo         = False
         self.preferPluginBridges = False
         self.preferUIBridges     = False
+        self.preventBadBehaviour = False
         self.uisAlwaysOnTop      = False
         self.maxParameters       = 0
         self.uiBridgesTimeout    = 0

@@ -1352,6 +1352,21 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         pData->options.resourceDir = carla_strdup_safe(valueStr);
         break;
 
+    case ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR:
+        CARLA_SAFE_ASSERT_RETURN(pData->options.binaryDir != nullptr && pData->options.binaryDir[0] != '\0',);
+#ifdef CARLA_OS_LINUX
+        if (value != 0)
+        {
+            CarlaString interposerPath(CarlaString(pData->options.binaryDir) + CARLA_OS_SEP_STR "libcarlainterposer.so");
+            ::setenv("LD_PRELOAD", interposerPath.buffer(), 1);
+        }
+        else
+        {
+            ::unsetenv("LD_PRELOAD");
+        }
+#endif
+        break;
+
     case ENGINE_OPTION_FRONTEND_WIN_ID:
         CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
         const long long winId(std::strtoll(valueStr, nullptr, 16));

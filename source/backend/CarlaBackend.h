@@ -1057,9 +1057,15 @@ typedef enum {
     ENGINE_OPTION_PATH_RESOURCES = 16,
 
     /*!
+     * Prevent bad plugin and UI behaviour.
+     * @note: Linux only
+     */
+    ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 17,
+
+    /*!
      * Set frontend winId, used to define as parent window for plugin UIs.
      */
-    ENGINE_OPTION_FRONTEND_WIN_ID = 17
+    ENGINE_OPTION_FRONTEND_WIN_ID = 18
 
 } EngineOption;
 

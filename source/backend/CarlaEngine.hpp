@@ -251,6 +251,7 @@ struct EngineOptions {
     const char* binaryDir;
     const char* resourceDir;
 
+    bool preventBadBehaviour;
     uintptr_t frontendWinId;
 
 #ifndef DOXYGEN

@@ -324,6 +324,8 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_PATH_BINARIES";
     case ENGINE_OPTION_PATH_RESOURCES:
         return "ENGINE_OPTION_PATH_RESOURCES";
+    case ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR:
+        return "ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR";
     case ENGINE_OPTION_FRONTEND_WIN_ID:
         return "ENGINE_OPTION_FRONTEND_WIN_ID";
     }

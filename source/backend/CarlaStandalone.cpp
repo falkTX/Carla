@@ -780,6 +780,8 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     if (gStandalone.engineOptions.resourceDir != nullptr && gStandalone.engineOptions.resourceDir[0] != '\0')
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES, 0, gStandalone.engineOptions.resourceDir);
 
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR, gStandalone.engineOptions.preventBadBehaviour ? 1 : 0,  nullptr);
+
     if (gStandalone.engineOptions.frontendWinId != 0)
     {
         char strBuf[STR_MAX+1];
@@ -883,6 +885,9 @@ bool carla_engine_init_bridge(const char audioBaseName[6+1], const char rtBaseNa
 
     if (const char* const resourceDir = std::getenv("ENGINE_OPTION_PATH_RESOURCES"))
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,  0, resourceDir);
+
+    if (const char* const preventBadBehaviour = std::getenv("ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR"))
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR, (std::strcmp(preventBadBehaviour, "true") == 0) ? 1 : 0, nullptr);
 
     if (const char* const frontendWinId = std::getenv("ENGINE_OPTION_FRONTEND_WIN_ID"))
         gStandalone.engine->setOption(CB::ENGINE_OPTION_FRONTEND_WIN_ID, 0, frontendWinId);
@@ -1117,6 +1122,11 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
             delete[] gStandalone.engineOptions.resourceDir;
 
         gStandalone.engineOptions.resourceDir = carla_strdup_safe(valueStr);
+        break;
+
+    case CB::ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR:
+        CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
+        gStandalone.engineOptions.preventBadBehaviour = (value != 0);
         break;
 
     case CB::ENGINE_OPTION_FRONTEND_WIN_ID:

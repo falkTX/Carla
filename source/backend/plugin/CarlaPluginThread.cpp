@@ -235,8 +235,15 @@ void CarlaPluginThread::run()
     else
         carla_setenv("ENGINE_OPTION_PATH_RESOURCES", "");
 
+    carla_setenv("ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR", bool2str(options.preventBadBehaviour));
+
     std::snprintf(strBuf, STR_MAX, P_UINTPTR, options.frontendWinId);
     carla_setenv("ENGINE_OPTION_FRONTEND_WIN_ID", strBuf);
+
+#ifdef CARLA_OS_LINUX
+    const char* const oldPreload(std::getenv("LD_PRELOAD"));
+    ::unsetenv("LD_PRELOAD");
+#endif
 
     switch (fMode)
     {
@@ -279,6 +286,11 @@ void CarlaPluginThread::run()
     carla_stdout("starting app..");
 
     fProcess->start(arguments);
+
+#ifdef CARLA_OS_LINUX
+    if (oldPreload != nullptr)
+        ::setenv("LD_PRELOAD", oldPreload, 1);
+#endif
 
     sEnvMutex.unlock();
 

@@ -211,6 +211,7 @@ EngineOptions::EngineOptions() noexcept
       pathSFZ(nullptr),
       binaryDir(nullptr),
       resourceDir(nullptr),
+      preventBadBehaviour(false),
       frontendWinId(0) {}
 
 EngineOptions::~EngineOptions() noexcept
