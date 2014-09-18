@@ -13,7 +13,9 @@ BUILD_CXX_FLAGS += -I../includes -I../utils -isystem ../modules
 
 # --------------------------------------------------------------
 
-TARGETS = ../../bin/libcarlainterposer$(LIB_EXT)
+ifeq ($(LINUX),true)
+TARGETS = ../../bin/libcarla_interposer.so
+endif
 
 # --------------------------------------------------------------
 
@@ -32,7 +34,7 @@ interposer.cpp.o: interposer.cpp
 
 # --------------------------------------------------------------
 
-../../bin/libcarlainterposer$(LIB_EXT): interposer.cpp.o
+../../bin/libcarla_interposer.so: interposer.cpp.o
 	$(CXX) $< $(SHARED) $(LINK_FLAGS) -ldl -o $@
 
 # --------------------------------------------------------------

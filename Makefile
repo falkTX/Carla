@@ -28,7 +28,7 @@ all: BIN RES UI WIDGETS
 # --------------------------------------------------------------
 # Binaries (native)
 
-BIN: libs backend bridges-plugin bridges-ui discovery plugin theme
+BIN: libs backend bridges-plugin bridges-ui discovery interposer plugin theme
 
 # --------------------------------------------------------------
 
@@ -132,6 +132,13 @@ discovery: bin/carla-discovery-native$(APP_EXT)
 
 bin/carla-discovery-native$(APP_EXT): libs .FORCE
 	$(MAKE) -C source/discovery
+
+# --------------------------------------------------------------
+
+interposer: bin/libcarla_interposer.so
+
+bin/libcarla_interposer.so: .FORCE
+	$(MAKE) -C source/interposer
 
 # --------------------------------------------------------------
 
@@ -441,6 +448,13 @@ install:
 	install -m 644 \
 		bin/libcarla_standalone2.* \
 		$(DESTDIR)$(PREFIX)/lib/carla/
+
+ifeq ($(LINUX),true)
+	# Install interposer
+	install -m 644 \
+		bin/libcarla_interposer.so \
+		$(DESTDIR)$(PREFIX)/lib/carla/
+endif
 
 	# Install lv2 plugin
 	install -m 644 \
