@@ -709,7 +709,8 @@ public:
 
         uint options = 0x0;
 
-        options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        if (fExt.programs != nullptr)
+            options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         if (fLatencyIndex == -1 && ! (hasMidiIn || needsFixedBuffer()))
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
@@ -1466,8 +1467,6 @@ public:
                 params += 1;
         }
 
-        recheckExtensions();
-
         if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && (aIns == 1 || aOuts == 1) && fExt.state == nullptr && fExt.worker == nullptr)
         {
             if (fHandle2 == nullptr)
@@ -2032,8 +2031,7 @@ public:
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
                         pData->param.special[j] = PARAMETER_SPECIAL_LATENCY;
-                        CARLA_SAFE_ASSERT(fLatencyIndex == -1);
-                        fLatencyIndex = static_cast<int32_t>(j);
+                        CARLA_SAFE_ASSERT(fLatencyIndex == static_cast<int32_t>(j));
                     }
                     else if (LV2_IS_PORT_DESIGNATION_SAMPLE_RATE(portDesignation))
                     {
@@ -4050,6 +4048,29 @@ public:
             if (fExt.worker != nullptr && fExt.worker->work == nullptr)
                 fExt.worker = nullptr;
         }
+
+        CARLA_SAFE_ASSERT_RETURN(fLatencyIndex == -1,);
+
+        for (uint32_t i=0, count=fRdfDescriptor->PortCount, iCtrl=0; i<count; ++i)
+        {
+            const LV2_Property portTypes(fRdfDescriptor->Ports[i].Types);
+
+            if (! LV2_IS_PORT_CONTROL(portTypes))
+                continue;
+
+            iCtrl++;
+
+            if (! LV2_IS_PORT_OUTPUT(portTypes))
+                continue;
+
+            const LV2_Property portDesignation(fRdfDescriptor->Ports[i].Designation);
+
+            if (! LV2_IS_PORT_DESIGNATION_LATENCY(portDesignation))
+                continue;
+
+            fLatencyIndex = static_cast<int32_t>(iCtrl);
+            break;
+        }
     }
 
     // -------------------------------------------------------------------
@@ -4844,11 +4865,15 @@ public:
         if (std::strcmp(uri, "http://hyperglitch.com/dev/VocProc") == 0)
             fCanInit2 = false;
 
+        recheckExtensions();
+
         // ---------------------------------------------------------------
         // set default options
 
         pData->options  = 0x0;
-        pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+        if (fExt.programs != nullptr)
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         if (fLatencyIndex >= 0 || getMidiInCount() > 0 || needsFixedBuffer())
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;

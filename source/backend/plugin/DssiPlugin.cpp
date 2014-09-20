@@ -15,6 +15,9 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+// TODO: set fUsesCustomData and latency index before init finishes
+// TODO: common laterncy code
+
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
@@ -169,6 +172,8 @@ public:
 
     uint getOptionsAvailable() const noexcept override
     {
+        CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr, 0x0);
+
 #ifdef __USE_GNU
         const bool isDssiVst(strcasestr(pData->filename, "dssi-vst") != nullptr);
 #else
@@ -177,7 +182,8 @@ public:
 
         uint options = 0x0;
 
-        options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        if (fDssiDescriptor->get_program != nullptr && fDssiDescriptor->select_program != nullptr)
+            options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         if (! isDssiVst)
         {
@@ -2160,8 +2166,7 @@ public:
         const bool isDssiVst(std::strstr(pData->filename, "dssi-vst") != nullptr);
 #endif
 
-        pData->options  = 0x0;
-        pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        pData->options = 0x0;
 
         if (fLatencyIndex >= 0 || isDssiVst)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
@@ -2171,6 +2176,9 @@ public:
 
         if (fUsesCustomData)
             pData->options |= PLUGIN_OPTION_USE_CHUNKS;
+
+        if (fDssiDescriptor->get_program != nullptr && fDssiDescriptor->select_program != nullptr)
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         if (fDssiDescriptor->run_synth != nullptr || fDssiDescriptor->run_multiple_synths != nullptr)
         {
