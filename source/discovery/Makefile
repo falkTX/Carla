@@ -11,7 +11,7 @@ include $(CWD)/Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils -isystem ../modules
-BUILD_CXX_FLAGS += -I../includes/ladspa -I../includes/vst
+BUILD_CXX_FLAGS += -I../includes/vst
 ifeq ($(MACOS_OR_WIN32),true)
 BUILD_CXX_FLAGS += -I../includes/vst3
 endif
@@ -47,20 +47,19 @@ LIBS_win32    = ../modules/lilv.win32.a
 LIBS_win64    = ../modules/lilv.win64.a
 LINK_FLAGS    = $(LILV_LIBS)
 
-LIBS         += ../modules/juce_audio_basics.a
-LIBS_posix32 += ../modules/juce_audio_basics.posix32.a
-LIBS_posix64 += ../modules/juce_audio_basics.posix64.a
-LIBS_win32   += ../modules/juce_audio_basics.win32.a
-LIBS_win64   += ../modules/juce_audio_basics.win64.a
 LIBS         += ../modules/juce_core.a
 LIBS_posix32 += ../modules/juce_core.posix32.a
 LIBS_posix64 += ../modules/juce_core.posix64.a
 LIBS_win32   += ../modules/juce_core.win32.a
 LIBS_win64   += ../modules/juce_core.win64.a
-LINK_FLAGS   += $(JUCE_AUDIO_BASICS_LIBS)
 LINK_FLAGS   += $(JUCE_CORE_LIBS)
 
 ifeq ($(MACOS_OR_WIN32),true)
+LIBS         += ../modules/juce_audio_basics.a
+LIBS_posix32 += ../modules/juce_audio_basics.posix32.a
+LIBS_posix64 += ../modules/juce_audio_basics.posix64.a
+LIBS_win32   += ../modules/juce_audio_basics.win32.a
+LIBS_win64   += ../modules/juce_audio_basics.win64.a
 LIBS         += ../modules/juce_audio_processors.a
 LIBS_posix32 += ../modules/juce_audio_processors.posix32.a
 LIBS_posix64 += ../modules/juce_audio_processors.posix64.a
@@ -91,6 +90,7 @@ LIBS         += ../modules/juce_gui_extra.a
 LIBS_posix32 += ../modules/juce_gui_extra.posix32.a
 LIBS_posix64 += ../modules/juce_gui_extra.posix64.a
 endif
+LINK_FLAGS   += $(JUCE_AUDIO_BASICS_LIBS)
 LINK_FLAGS   += $(JUCE_AUDIO_PROCESSORS_LIBS)
 LINK_FLAGS   += $(JUCE_DATA_STRUCTURES_LIBS)
 LINK_FLAGS   += $(JUCE_EVENTS_LIBS)

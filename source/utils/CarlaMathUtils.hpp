@@ -150,7 +150,6 @@ bool carla_isNotZero(const T& value)
     return std::abs(value) >= std::numeric_limits<T>::epsilon();
 }
 
-#if 0
 // -----------------------------------------------------------------------
 // math functions (extended)
 
@@ -192,7 +191,6 @@ void carla_zeroFloat(float* const data, const std::size_t numSamples) noexcept
 
     std::memset(data, 0, numSamples*sizeof(float));
 }
-#endif
 
 #if defined(CARLA_OS_MAC) && ! defined(DISTRHO_OS_MAC)
 // -----------------------------------------------------------------------

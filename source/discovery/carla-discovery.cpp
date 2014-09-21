@@ -45,9 +45,8 @@
 
 #include <iostream>
 
-#include "juce_audio_basics.h"
+#include "juce_core.h"
 using juce::File;
-using juce::FloatVectorOperations;
 using juce::String;
 using juce::StringArray;
 
@@ -200,7 +199,7 @@ static intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t
         break;
 
     case DECLARE_VST_DEPRECATED(audioMasterGetNumAutomatableParameters):
-        ret = carla_fixValue<intptr_t>(0, MAX_DEFAULT_PARAMETERS, effect->numParams);
+        ret = carla_minPositive(effect->numParams, static_cast<int>(MAX_DEFAULT_PARAMETERS));
         break;
 
     case DECLARE_VST_DEPRECATED(audioMasterGetParameterQuantization):
@@ -550,7 +549,7 @@ static void do_ladspa_check(void*& libHandle, const char* const filename, const 
 
                 if (LADSPA_IS_PORT_AUDIO(portDescriptor))
                 {
-                    FloatVectorOperations::clear(bufferAudio[iA], kBufferSize);
+                    carla_zeroFloat(bufferAudio[iA], kBufferSize);
                     descriptor->connect_port(handle, j, bufferAudio[iA++]);
                 }
                 else if (LADSPA_IS_PORT_CONTROL(portDescriptor))
@@ -816,7 +815,7 @@ static void do_dssi_check(void*& libHandle, const char* const filename, const bo
 
                 if (LADSPA_IS_PORT_AUDIO(portDescriptor))
                 {
-                    FloatVectorOperations::clear(bufferAudio[iA], kBufferSize);
+                    carla_zeroFloat(bufferAudio[iA], kBufferSize);
                     ldescriptor->connect_port(handle, j, bufferAudio[iA++]);
                 }
                 else if (LADSPA_IS_PORT_CONTROL(portDescriptor))
@@ -1266,14 +1265,14 @@ static void do_vst_check(void*& libHandle, const bool doInit)
             for (int j=0; j < audioIns; ++j)
             {
                 bufferAudioIn[j] = new float[kBufferSize];
-                FloatVectorOperations::clear(bufferAudioIn[j], kBufferSize);
+                carla_zeroFloat(bufferAudioIn[j], kBufferSize);
             }
 
             float* bufferAudioOut[audioOuts];
             for (int j=0; j < audioOuts; ++j)
             {
                 bufferAudioOut[j] = new float[kBufferSize];
-                FloatVectorOperations::clear(bufferAudioOut[j], kBufferSize);
+                carla_zeroFloat(bufferAudioOut[j], kBufferSize);
             }
 
             struct VstEventsFixed {

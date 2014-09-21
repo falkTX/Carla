@@ -1,57 +1,71 @@
 # QtCreator project file
 
-QT = core
-
 TARGET   = carla-discovery-qtcreator
 TEMPLATE = app
-VERSION  = 0.5.0
+VERSION  = 1.9
 
 # -------------------------------------------------------
 
-CONFIG     = debug
-CONFIG    += link_pkgconfig qt shared warn_on
+CONFIG  = debug
+CONFIG += link_pkgconfig warn_on
 
-DEFINES    = DEBUG
-DEFINES   += QTCREATOR_TEST
+# -------------------------------------------------------
 
-DEFINES   += WANT_LADSPA
-DEFINES   += WANT_DSSI
-DEFINES   += WANT_LV2
-DEFINES   += WANT_VST
-DEFINES   += WANT_FLUIDSYNTH
-DEFINES   += WANT_LINUXSAMPLER
+DEFINES  = DEBUG REAL_BUILD
+DEFINES += QTCREATOR_TEST
+
+DEFINES += HAVE_FLUIDSYNTH
+DEFINES += HAVE_LINUXSAMPLER
+DEFINES += HAVE_X11
+DEFINES += VESTIGE_HEADER
+DEFINES += WANT_ZYNADDSUBFX
+DEFINES += WANT_ZYNADDSUBFX_UI
+
+# -------------------------------------------------------
 
 PKGCONFIG  = fluidsynth
 PKGCONFIG += linuxsampler
 
-SOURCES = \
-    carla-discovery.cpp
+# -------------------------------------------------------
+
+LIBS  = ../modules/juce_core.a
+LIBS += ../modules/lilv.a
+LIBS += -ldl
 
 # -------------------------------------------------------
+
+SOURCES = \
+    carla-discovery.cpp
 
 HEADERS  = \
     ../backend/CarlaBackend.hpp
 
 HEADERS += \
     ../includes/CarlaDefines.hpp \
-    ../includes/CarlaMIDI.h \
-    ../includes/ladspa_rdf.hpp \
-    ../includes/lv2_rdf.hpp \
+    ../includes/CarlaMIDI.h
+
+HEADERS += \
+    ../modules/ladspa_rdf.hpp \
+    ../modules/lv2_rdf.hpp
+
+HEADERS += \
     ../utils/CarlaUtils.hpp \
-    ../utils/CarlaBase64Utils.hpp \
-    ../utils/CarlaJuceUtils.hpp \
+    ../utils/CarlaBackendUtils.hpp \
     ../utils/CarlaLibUtils.hpp \
+    ../utils/CarlaMathUtils.hpp \
     ../utils/CarlaLadspaUtils.hpp \
+    ../utils/CarlaDssiUtils.hpp \
     ../utils/CarlaLv2Utils.hpp \
-    ../utils/CarlaVstUtils.hpp \
-    ../utils/CarlaString.hpp
+    ../utils/CarlaVstUtils.hpp
 
 INCLUDEPATH = \
     ../backend \
     ../includes \
+    ../modules \
     ../utils
 
-LIBS  = -ldl
-LIBS += ../libs/lilv.a
+# -------------------------------------------------------
 
-QMAKE_CXXFLAGS *= -std=c++0x
+QMAKE_CXXFLAGS *= -std=c++11
+
+# -------------------------------------------------------
