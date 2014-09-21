@@ -224,6 +224,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         if self.fPluginId == pluginId:
             self.setProgram(index, True)
 
+
     @pyqtSlot(int, int)
     def slot_handleMidiProgramChangedCallback(self, pluginId, index):
         if self.fPluginId == pluginId:
@@ -410,12 +411,16 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             self.fParameterIconTimer = ICON_STATE_ON
             self.editDialogProgramChanged(self.fPluginId, index)
 
+        self.updateParameterValues()
+
     def setMidiProgram(self, index, sendCallback):
         self.fEditDialog.setMidiProgram(index)
 
         if sendCallback:
             self.fParameterIconTimer = ICON_STATE_ON
             self.editDialogMidiProgramChanged(self.fPluginId, index)
+
+        self.updateParameterValues()
 
     #------------------------------------------------------------------
 
@@ -506,6 +511,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         self.cb_presets.setCurrentIndex(index)
         self.cb_presets.blockSignals(False)
 
+        # FIXME
+        self.updateParameterValues()
+
     def editDialogMidiProgramChanged(self, pluginId, index):
         if self.cb_presets is None:
             return
@@ -513,6 +521,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         self.cb_presets.blockSignals(True)
         self.cb_presets.setCurrentIndex(index)
         self.cb_presets.blockSignals(False)
+
+        # FIXME
+        self.updateParameterValues()
 
     def editDialogNotePressed(self, pluginId, note):
         pass
@@ -677,6 +688,15 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             if not self.host.remove_plugin(self.fPluginId):
                 CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
                                        self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+
+    def updateParameterValues(self):
+        for paramIndex, paramWidget in self.fParameterList:
+            if paramIndex < 0:
+                continue
+
+            paramWidget.blockSignals(True)
+            paramWidget.setValue(self.host.get_current_parameter_value(self.fPluginId, paramIndex))
+            paramWidget.blockSignals(False)
 
     #------------------------------------------------------------------
 

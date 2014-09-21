@@ -584,6 +584,8 @@ class PluginEdit(QDialog):
         self.ui.b_save_state.clicked.connect(self.slot_stateSave)
         self.ui.b_load_state.clicked.connect(self.slot_stateLoad)
 
+        #host.ProgramChangedCallback.connect(self.slot_handleProgramChangedCallback)
+        #host.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
         host.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
         host.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
         host.UpdateCallback.connect(self.slot_handleUpdateCallback)
@@ -671,8 +673,9 @@ class PluginEdit(QDialog):
 
         # Update all parameter values
         for paramType, paramId, paramWidget in self.fParameterList:
+            paramWidget.blockSignals(True)
             paramWidget.setValue(self.host.get_current_parameter_value(self.fPluginId, paramId))
-            paramWidget.update()
+            paramWidget.blockSignals(False)
 
         self.fParametersToUpdate = []
 
@@ -1041,11 +1044,13 @@ class PluginEdit(QDialog):
         self.ui.cb_programs.blockSignals(True)
         self.ui.cb_programs.setCurrentIndex(index)
         self.ui.cb_programs.blockSignals(False)
+        self._updateParameterValues()
 
     def setMidiProgram(self, index):
         self.ui.cb_midi_programs.blockSignals(True)
         self.ui.cb_midi_programs.setCurrentIndex(index)
         self.ui.cb_midi_programs.blockSignals(False)
+        self._updateParameterValues()
 
     def setOption(self, option, yesNo):
         if option == PLUGIN_OPTION_USE_CHUNKS:
@@ -1155,11 +1160,13 @@ class PluginEdit(QDialog):
         self.fParametersToUpdate = []
 
         # Update parameter outputs
-        for paramType, paramId, paramWidget in self.fParameterList:
-            if paramType != PARAMETER_OUTPUT:
-                continue
+        #for paramType, paramId, paramWidget in self.fParameterList:
+            #if paramType != PARAMETER_OUTPUT:
+                #continue
 
-            paramWidget.setValue(self.host.get_current_parameter_value(self.fPluginId, paramId))
+            #paramWidget.blockSignals(True)
+            #paramWidget.setValue(self.host.get_current_parameter_value(self.fPluginId, paramId))
+            #paramWidget.blockSignals(False)
 
     #------------------------------------------------------------------
 
@@ -1346,12 +1353,16 @@ class PluginEdit(QDialog):
         if self.fParent is not None:
             self.fParent.editDialogProgramChanged(self.fPluginId, index)
 
+        self._updateParameterValues()
+
     @pyqtSlot(int)
     def slot_midiProgramIndexChanged(self, index):
         self.host.set_midi_program(self.fPluginId, index)
 
         if self.fParent is not None:
             self.fParent.editDialogMidiProgramChanged(self.fPluginId, index)
+
+        self._updateParameterValues()
 
     #------------------------------------------------------------------
 
@@ -1536,6 +1547,12 @@ class PluginEdit(QDialog):
 
         if self.ui.cb_midi_programs.currentIndex() != mpIndex:
             self.setMidiProgram(mpIndex)
+
+    def _updateParameterValues(self):
+        for paramType, paramId, paramWidget in self.fParameterList:
+            paramWidget.blockSignals(True)
+            paramWidget.setValue(self.host.get_current_parameter_value(self.fPluginId, paramId))
+            paramWidget.blockSignals(False)
 
     #------------------------------------------------------------------
 
