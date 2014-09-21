@@ -108,10 +108,10 @@ public:
         effect->dispatcher(effect, effMainsChanged, 0, 0, nullptr, 0.0f);
 
 #if ! VST_FORCE_DEPRECATED
-        effect->dispatcher(effect, effSetBlockSizeAndSampleRate, 0, bufferSize, nullptr, static_cast<float>(sampleRate));
+        effect->dispatcher(effect, effSetBlockSizeAndSampleRate, 0, static_cast<intptr_t>(bufferSize), nullptr, static_cast<float>(sampleRate));
 #endif
         effect->dispatcher(effect, effSetSampleRate, 0, 0, nullptr, static_cast<float>(sampleRate));
-        effect->dispatcher(effect, effSetBlockSize, 0, bufferSize, nullptr, 0.0f);
+        effect->dispatcher(effect, effSetBlockSize, 0, static_cast<intptr_t>(bufferSize), nullptr, 0.0f);
         effect->dispatcher(effect, effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
 
         if (effect->dispatcher(effect, effEditOpen, 0, value, getContainerId(), 0.0f) != 1)
@@ -184,7 +184,7 @@ public:
     void setProgram(const uint32_t index) override
     {
         if (effect != nullptr)
-            effect->dispatcher(effect, effSetProgram, 0, index, nullptr, 0.0f);
+            effect->dispatcher(effect, effSetProgram, 0, static_cast<intptr_t>(index), nullptr, 0.0f);
     }
 
     void setMidiProgram(const uint32_t, const uint32_t) override
