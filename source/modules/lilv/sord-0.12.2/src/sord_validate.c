@@ -242,7 +242,7 @@ check_restriction(SordModel*      model,
 			        sord_node_get_string(type),
 			        sord_node_get_string(lower));
 		}
-			        
+
 		sord_iter_free(l);
 		return good;
 	}
@@ -267,7 +267,7 @@ check_restriction(SordModel*      model,
 			        sord_node_get_string(type),
 			        sord_node_get_string(upper));
 		}
-			        
+
 		sord_iter_free(u);
 		return good;
 	}

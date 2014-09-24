@@ -1,3 +1,9 @@
+sord (0.12.3) unstable;
+
+  * Reduce memory usage and increase performance with a better data structure
+
+ -- David Robillard <d@drobilla.net>  Tue, 23 Sep 2014 00:27:22 -0400
+
 sord (0.12.2) stable;
 
   * Fix iteration over an entire graph (* * * graph)

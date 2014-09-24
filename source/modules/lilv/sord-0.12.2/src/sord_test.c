@@ -533,10 +533,17 @@ main(int argc, char** argv)
 	sord_add(sord, tup);
 	sord_remove(sord, tup);
 	if (sord_num_quads(sord) != 1) {
-		fprintf(stderr, "Removed failed (%zu quads, expected 1)\n",
+		fprintf(stderr, "Remove failed (%zu quads, expected 1)\n",
 		        sord_num_quads(sord));
 		goto fail;
 	}
+
+	SordIter* iter = sord_find(sord, tup);
+	if (!sord_iter_end(iter)) {
+		fprintf(stderr, "Found removed tuple\n");
+		goto fail;
+	}
+	sord_iter_free(iter);
 
 	sord_free(sord);
 
