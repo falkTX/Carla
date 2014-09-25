@@ -1977,6 +1977,9 @@ class CarlaHostNull(CarlaHostMeta):
     def __init__(self):
         CarlaHostMeta.__init__(self)
 
+        self.fEngineCallback = None
+        self.fEngineRunning  = False
+
     def get_complete_license_text(self):
         return ""
 
@@ -2005,10 +2008,16 @@ class CarlaHostNull(CarlaHostMeta):
         return PyCarlaNativePluginInfo
 
     def engine_init(self, driverName, clientName):
-        return False
+        self.fEngineRunning = True
+        if self.fEngineCallback is not None:
+            self.fEngineCallback(None, ENGINE_CALLBACK_ENGINE_STARTED, 0, self.processMode, self.transportMode, 0.0, driverName)
+        return True
 
     def engine_close(self):
-        return False
+        self.fEngineRunning = False
+        if self.fEngineCallback is not None:
+            self.fEngineCallback(None, ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0.0, "")
+        return True
 
     def engine_idle(self):
         return
@@ -2020,7 +2029,7 @@ class CarlaHostNull(CarlaHostMeta):
         return
 
     def set_engine_callback(self, func):
-        return
+        self.fEngineCallback = func
 
     def set_engine_option(self, option, value, valueStr):
         return
