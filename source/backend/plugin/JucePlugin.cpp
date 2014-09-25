@@ -890,7 +890,7 @@ public:
         }
     }
 
-    bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames)
+    bool processSingle(const float** const inBuffer, float** const outBuffer, const uint32_t frames)
     {
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 

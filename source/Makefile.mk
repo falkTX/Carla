@@ -216,6 +216,9 @@ endif
 ifeq ($(HAVE_QT5),true)
 HAVE_QT=true
 endif
+ifeq ($(WIN32),true)
+HAVE_QT=true
+endif
 
 # --------------------------------------------------------------
 # Set PyQt tools
