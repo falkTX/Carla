@@ -1,8 +1,9 @@
-sord (0.12.3) unstable;
+sord (0.13.0) unstable;
 
   * Reduce memory usage and increase performance with a better data structure
+  * Add sord_erase() for erasing statements via an iterator.
 
- -- David Robillard <d@drobilla.net>  Tue, 23 Sep 2014 00:27:22 -0400
+ -- David Robillard <d@drobilla.net>  Wed, 24 Sep 2014 14:58:49 -0400
 
 sord (0.12.2) stable;
 

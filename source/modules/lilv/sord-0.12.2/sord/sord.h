@@ -443,6 +443,8 @@ sord_contains(SordModel* model, const SordQuad pat);
 
 /**
    Add a quad to a model.
+
+   Calling this function invalidates all iterators on `model`.
 */
 SORD_API
 bool
@@ -451,11 +453,24 @@ sord_add(SordModel* model, const SordQuad quad);
 /**
    Remove a quad from a model.
 
-   Note that is it illegal to remove while iterating over `model`.
+   Calling this function invalidates all iterators on `model`.  To remove quads
+   while iterating, use sord_erase() instead.
 */
 SORD_API
 void
 sord_remove(SordModel* model, const SordQuad quad);
+
+/**
+   Remove a quad from a model via an iterator.
+
+   Calling this function invalidates all iterators on `model` except `iter`.
+
+   @param iter Iterator to the element to erase, which is incremented to the
+   next value on return.
+*/
+SORD_API
+SerdStatus
+sord_erase(SordModel* model, SordIter* iter);
 
 /**
    @}

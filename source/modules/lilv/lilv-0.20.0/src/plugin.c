@@ -142,12 +142,15 @@ lilv_plugin_load(LilvPlugin* p)
 	SerdReader* reader = sord_new_reader(p->world->model, env, SERD_TURTLE,
 	                                     bundle_uri_node);
 
-	SordIter* prototypes = sord_search(p->world->model,
-	                                   p->plugin_uri->node,
-	                                   p->world->uris.lv2_prototype,
-	                                   NULL, NULL);
-	FOREACH_MATCH(prototypes) {
-		const SordNode* t         = sord_iter_get_node(prototypes, SORD_OBJECT);
+	SordModel* prototypes = lilv_world_filter_model(p->world,
+	                                                p->world->model,
+	                                                p->plugin_uri->node,
+	                                                p->world->uris.lv2_prototype,
+	                                                NULL, NULL);
+	SordModel* skel = sord_new(p->world->world, SORD_SPO, false);
+	SordIter*  iter = sord_begin(prototypes);
+	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
+		const SordNode* t         = sord_iter_get_node(iter, SORD_OBJECT);
 		LilvNode*       prototype = lilv_node_new_from_node(p->world, t);
 
 		lilv_world_load_resource(p->world, prototype);
@@ -158,13 +161,22 @@ lilv_plugin_load(LilvPlugin* p)
 			SordQuad quad;
 			sord_iter_get(statements, quad);
 			quad[0] = p->plugin_uri->node;
-			sord_add(p->world->model, quad);
+			sord_add(skel, quad);
 		}
 
 		sord_iter_free(statements);
 		lilv_node_free(prototype);
 	}
-	sord_iter_free(prototypes);
+	sord_iter_free(iter);
+
+	for (iter = sord_begin(skel); !sord_iter_end(iter); sord_iter_next(iter)) {
+		SordQuad quad;
+		sord_iter_get(iter, quad);
+		sord_add(p->world->model, quad);
+	}
+	sord_iter_free(iter);
+	sord_free(skel);
+	sord_free(prototypes);
 
 	// Parse all the plugin's data files into RDF model
 	LILV_FOREACH(nodes, i, p->data_uris) {

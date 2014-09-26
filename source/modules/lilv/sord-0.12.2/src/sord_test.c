@@ -73,7 +73,7 @@ generate(SordWorld* world,
 		}
 
 		for (unsigned j = 0; j < n_objects_per; ++j) {
-			SordQuad tup = { ids[0], ids[1], ids[2 + j] };
+			SordQuad tup = { ids[0], ids[1], ids[2 + j], graph };
 			if (!sord_add(sord, tup)) {
 				return test_fail("Fail: Failed to add quad\n");
 			}
@@ -91,7 +91,7 @@ generate(SordWorld* world,
 	tup[0] = uri(world, 98);
 	tup[1] = uri(world, 4);
 	tup[2] = sord_new_literal(world, 0, USTR("hello"), NULL);
-	tup[3] = 0;
+	tup[3] = graph;
 	sord_add(sord, tup);
 	sord_node_free(world, (SordNode*)tup[2]);
 	tup[2] = sord_new_literal(world, uri(world, 5), USTR("hello"), NULL);
@@ -103,7 +103,7 @@ generate(SordWorld* world,
 	tup[0] = uri(world, 96);
 	tup[1] = uri(world, 4);
 	tup[2] = sord_new_literal(world, uri(world, 4), USTR("hello"), NULL);
-	tup[3] = 0;
+	tup[3] = graph;
 	sord_add(sord, tup);
 	sord_node_free(world, (SordNode*)tup[2]);
 	tup[2] = sord_new_literal(world, uri(world, 5), USTR("hello"), NULL);
@@ -115,7 +115,7 @@ generate(SordWorld* world,
 	tup[0] = uri(world, 94);
 	tup[1] = uri(world, 5);
 	tup[2] = sord_new_literal(world, 0, USTR("hello"), NULL);
-	tup[3] = 0;
+	tup[3] = graph;
 	sord_add(sord, tup);
 	sord_node_free(world, (SordNode*)tup[2]);
 	tup[2] = sord_new_literal(world, NULL, USTR("hello"), "en-gb");
@@ -127,7 +127,7 @@ generate(SordWorld* world,
 	tup[0] = uri(world, 92);
 	tup[1] = uri(world, 6);
 	tup[2] = sord_new_literal(world, 0, USTR("hello"), "en-us");
-	tup[3] = 0;
+	tup[3] = graph;
 	sord_add(sord, tup);
 	sord_node_free(world, (SordNode*)tup[2]);
 	tup[2] = sord_new_literal(world, NULL, USTR("hello"), "en-gb");
@@ -518,7 +518,7 @@ main(int argc, char** argv)
 	}
 
 	// Test removing
-	sord = sord_new(world, SORD_SPO, false);
+	sord = sord_new(world, SORD_SPO, true);
 	tup[0] = uri(world, 1);
 	tup[1] = uri(world, 2);
 	tup[2] = sord_new_literal(world, 0, USTR("hello"), NULL);
@@ -542,6 +542,36 @@ main(int argc, char** argv)
 	if (!sord_iter_end(iter)) {
 		fprintf(stderr, "Found removed tuple\n");
 		goto fail;
+	}
+	sord_iter_free(iter);
+
+	// Load a couple graphs
+	SordNode* graph42 = uri(world, 42);
+	SordNode* graph43 = uri(world, 43);
+	generate(world, sord, 1, graph42);
+	generate(world, sord, 1, graph43);
+
+	// Remove one graph via iterator
+	SerdStatus st;
+	iter = sord_search(sord, NULL, NULL, NULL, graph43);
+	while (!sord_iter_end(iter)) {
+		if ((st = sord_erase(sord, iter))) {
+			fprintf(stderr, "Remove by iterator failed (%s)\n",
+			        serd_strerror(st));
+			goto fail;
+		}
+	}
+	sord_iter_free(iter);
+
+	// Ensure only the other graph is left
+	SordQuad quad;
+	SordQuad pat = { 0, 0, 0, graph42 };
+	for (iter = sord_begin(sord); !sord_iter_end(iter); sord_iter_next(iter)) {
+		sord_iter_get(iter, quad);
+		if (!sord_quad_match(quad, pat)) {
+			fprintf(stderr, "Graph removal via iteration failed\n");
+			goto fail;
+		}
 	}
 	sord_iter_free(iter);
 

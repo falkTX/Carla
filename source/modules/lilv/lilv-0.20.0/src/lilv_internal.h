@@ -326,6 +326,14 @@ lilv_world_find_nodes_internal(LilvWorld*      world,
                                const SordNode* predicate,
                                const SordNode* object);
 
+SordModel*
+lilv_world_filter_model(LilvWorld*      world,
+                        SordModel*      model,
+                        const SordNode* subject,
+                        const SordNode* predicate,
+                        const SordNode* object,
+                        const SordNode* graph);
+
 #define FOREACH_MATCH(iter) \
 	for (; !sord_iter_end(iter); sord_iter_next(iter))
 

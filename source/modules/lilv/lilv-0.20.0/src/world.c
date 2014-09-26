@@ -241,6 +241,25 @@ lilv_world_ask(LilvWorld*      world,
 		world->model, subject->node, predicate->node, object->node, NULL);
 }
 
+SordModel*
+lilv_world_filter_model(LilvWorld*      world,
+                        SordModel*      model,
+                        const SordNode* subject,
+                        const SordNode* predicate,
+                        const SordNode* object,
+                        const SordNode* graph)
+{
+	SordModel* results = sord_new(world->world, SORD_SPO, false);
+	SordIter*  i       = sord_search(model, subject, predicate, object, graph);
+	for (; !sord_iter_end(i); sord_iter_next(i)) {
+		SordQuad quad;
+		sord_iter_get(i, quad);
+		sord_add(results, quad);
+	}
+	sord_iter_free(i);
+	return results;
+}
+
 LilvNodes*
 lilv_world_find_nodes_internal(LilvWorld*      world,
                                const SordNode* subject,
@@ -508,6 +527,7 @@ lilv_world_load_dyn_manifest(LilvWorld*      world,
 		rewind(fd);
 
 		// Parse generated data file
+		// FIXME
 		const SerdNode* base   = sord_node_to_serd_node(dmanifest);
 		SerdEnv*        env    = serd_env_new(base);
 		SerdReader*     reader = sord_new_reader(
@@ -606,15 +626,13 @@ static int
 lilv_world_drop_graph(LilvWorld* world, LilvNode* graph)
 {
 	SordIter* i = sord_search(world->model, NULL, NULL, NULL, graph->node);
-	
 	while (!sord_iter_end(i)) {
-		// Get quad and increment iter so sord_remove doesn't invalidate it
-		SordQuad quad;
-		sord_iter_get(i, quad);
-		sord_iter_next(i);
-
-		// Remove quad (nodes may now be deleted, quad is invalid)
-		sord_remove(world->model, quad);
+		const SerdStatus st = sord_erase(world->model, i);
+		if (st) {
+			LILV_ERRORF("Error removing statement from <%s> (%s)\n",
+			            lilv_node_as_uri(graph), serd_strerror(st));
+			return st;
+		}
 	}
 	sord_iter_free(i);
 
@@ -825,13 +843,16 @@ lilv_world_load_resource(LilvWorld*      world,
 		return -1;
 	}
 
+	SordModel* files = lilv_world_filter_model(world,
+	                                           world->model,
+	                                           resource->node,
+	                                           world->uris.rdfs_seeAlso,
+	                                           NULL, NULL);
+
+	SordIter* f      = sord_begin(files);
 	int       n_read = 0;
-	SordIter* files  = sord_search(world->model,
-	                               resource->node,
-	                               world->uris.rdfs_seeAlso,
-	                               NULL, NULL);
-	FOREACH_MATCH(files) {
-		const SordNode* file      = sord_iter_get_node(files, SORD_OBJECT);
+	FOREACH_MATCH(f) {
+		const SordNode* file      = sord_iter_get_node(f, SORD_OBJECT);
 		const uint8_t*  file_str  = sord_node_get_string(file);
 		LilvNode*       file_node = lilv_node_new_from_node(world, file);
 		if (sord_node_get_type(file) != SORD_URI) {
@@ -841,8 +862,9 @@ lilv_world_load_resource(LilvWorld*      world,
 		}
 		lilv_node_free(file_node);
 	}
-	sord_iter_free(files);
+	sord_iter_free(f);
 
+	sord_free(files);
 	return n_read;
 }
 
@@ -856,13 +878,16 @@ lilv_world_unload_resource(LilvWorld*      world,
 		return -1;
 	}
 
+	SordModel* files = lilv_world_filter_model(world,
+	                                           world->model,
+	                                           resource->node,
+	                                           world->uris.rdfs_seeAlso,
+	                                           NULL, NULL);
+
+	SordIter* f         = sord_begin(files);
 	int       n_dropped = 0;
-	SordIter* files     = sord_search(world->model,
-	                                  resource->node,
-	                                  world->uris.rdfs_seeAlso,
-	                                  NULL, NULL);
-	FOREACH_MATCH(files) {
-		const SordNode* file      = sord_iter_get_node(files, SORD_OBJECT);
+	FOREACH_MATCH(f) {
+		const SordNode* file      = sord_iter_get_node(f, SORD_OBJECT);
 		LilvNode*       file_node = lilv_node_new_from_node(world, file);
 		if (sord_node_get_type(file) != SORD_URI) {
 			LILV_ERRORF("rdfs:seeAlso node `%s' is not a URI\n",
@@ -873,8 +898,9 @@ lilv_world_unload_resource(LilvWorld*      world,
 		}
 		lilv_node_free(file_node);
 	}
-	sord_iter_free(files);
+	sord_iter_free(f);
 
+	sord_free(files);
 	return n_dropped;
 }
 

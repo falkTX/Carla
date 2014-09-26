@@ -119,6 +119,7 @@ struct SordModelImpl {
 	ZixBTree* indices[NUM_ORDERS];
 
 	size_t n_quads;
+	size_t n_iters;
 };
 
 /** Mode for searching or iteration */
@@ -135,7 +136,7 @@ struct SordIterImpl {
 	const SordModel* sord;               ///< Model being iterated over
 	ZixBTreeIter*    cur;                ///< Current DB cursor
 	SordQuad         pat;                ///< Pattern (in ordering order)
-	int              ordering[TUP_LEN];  ///< Store ordering
+	SordOrder        order;              ///< Store order (which index)
 	SearchMode       mode;               ///< Iteration mode
 	int              n_prefix;           ///< Prefix for RANGE and FILTER_RANGE
 	bool             end;                ///< True iff reached end
@@ -370,7 +371,7 @@ sord_iter_seek_match_range(SordIter* iter)
 			return false;  // Found match
 
 		for (int i = 0; i < iter->n_prefix; ++i) {
-			const int idx = iter->ordering[i];
+			const int idx = orderings[iter->order][i];
 			if (!sord_id_match(key[idx], iter->pat[idx])) {
 				iter->end = true;  // Reached end of valid range
 				return true;
@@ -385,18 +386,16 @@ static SordIter*
 sord_iter_new(const SordModel* sord, ZixBTreeIter* cur, const SordQuad pat,
               SordOrder order, SearchMode mode, int n_prefix)
 {
-	const int* ordering = orderings[order];
-
 	SordIter* iter = (SordIter*)malloc(sizeof(SordIter));
 	iter->sord        = sord;
 	iter->cur         = cur;
+	iter->order       = order;
 	iter->mode        = mode;
 	iter->n_prefix    = n_prefix;
 	iter->end         = false;
 	iter->skip_graphs = order < GSPO;
 	for (int i = 0; i < TUP_LEN; ++i) {
-		iter->pat[i]      = pat[i];
-		iter->ordering[i] = ordering[i];
+		iter->pat[i] = pat[i];
 	}
 
 	switch (iter->mode) {
@@ -422,6 +421,8 @@ sord_iter_new(const SordModel* sord, ZixBTreeIter* cur, const SordQuad pat,
 	              (void*)iter, TUP_FMT_ARGS(pat), TUP_FMT_ARGS(value),
 	              iter->end, iter->skip_graphs);
 #endif
+
+	++((SordModel*)sord)->n_iters;
 	return iter;
 }
 
@@ -469,7 +470,7 @@ sord_iter_next(SordIter* iter)
 			key = (const SordNode**)zix_btree_get(iter->cur);
 			assert(key);
 			for (int i = 0; i < iter->n_prefix; ++i) {
-				const int idx = iter->ordering[i];
+				const int idx = orderings[iter->order][i];
 				if (!sord_id_match(key[idx], iter->pat[idx])) {
 					iter->end = true;
 					SORD_ITER_LOG("%p reached non-match end\n", (void*)iter);
@@ -515,6 +516,7 @@ sord_iter_free(SordIter* iter)
 {
 	SORD_ITER_LOG("%p Free\n", (void*)iter);
 	if (iter) {
+		--((SordModel*)iter->sord)->n_iters;
 		zix_btree_iter_free(iter->cur);
 		free(iter);
 	}
@@ -632,6 +634,7 @@ sord_new(SordWorld* world, unsigned indices, bool graphs)
 	SordModel* sord = (SordModel*)malloc(sizeof(struct SordModelImpl));
 	sord->world   = world;
 	sord->n_quads = 0;
+	sord->n_iters = 0;
 
 	for (unsigned i = 0; i < (NUM_ORDERS / 2); ++i) {
 		const int* const ordering   = orderings[i];
@@ -767,7 +770,7 @@ sord_begin(const SordModel* sord)
 		return NULL;
 	} else {
 		ZixBTreeIter* cur = zix_btree_begin(sord->indices[DEFAULT_ORDER]);
-		SordQuad pat = { 0, 0, 0, 0 };
+		SordQuad      pat = { 0, 0, 0, 0 };
 		return sord_iter_new(sord, cur, pat, DEFAULT_ORDER, ALL, 0);
 	}
 }
@@ -1183,6 +1186,8 @@ sord_add(SordModel* sord, const SordQuad tup)
 		error(sord->world, SERD_ERR_BAD_ARG,
 		      "attempt to add quad with NULL field\n");
 		return false;
+	} else if (sord->n_iters > 0) {
+		error(sord->world, SERD_ERR_BAD_ARG, "added tuple during iteration\n");
 	}
 
 	const SordNode** quad = (const SordNode**)malloc(sizeof(SordQuad));
@@ -1209,11 +1214,14 @@ void
 sord_remove(SordModel* sord, const SordQuad tup)
 {
 	SORD_WRITE_LOG("Remove " TUP_FMT "\n", TUP_FMT_ARGS(tup));
+	if (sord->n_iters > 0) {
+		error(sord->world, SERD_ERR_BAD_ARG, "remove with iterator\n");
+	}
 
 	SordNode* quad = NULL;
 	for (unsigned i = 0; i < NUM_ORDERS; ++i) {
 		if (sord->indices[i]) {
-			if (zix_btree_remove(sord->indices[i], tup, (void**)&quad)) {
+			if (zix_btree_remove(sord->indices[i], tup, (void**)&quad, NULL)) {
 				assert(i == 0);  // Assuming index coherency
 				return;  // Quad not found, do nothing
 			}
@@ -1226,4 +1234,36 @@ sord_remove(SordModel* sord, const SordQuad tup)
 		sord_drop_quad_ref(sord, tup[i], (SordQuadIndex)i);
 
 	--sord->n_quads;
+}
+
+SerdStatus
+sord_erase(SordModel* sord, SordIter* iter)
+{
+	if (sord->n_iters > 1) {
+		error(sord->world, SERD_ERR_BAD_ARG, "erased with many iterators\n");
+	}
+
+	SordQuad tup;
+	sord_iter_get(iter, tup);
+
+	SORD_WRITE_LOG("Remove " TUP_FMT "\n", TUP_FMT_ARGS(tup));
+
+	SordNode* quad = NULL;
+	for (unsigned i = 0; i < NUM_ORDERS; ++i) {
+		if (sord->indices[i]) {
+			if (zix_btree_remove(sord->indices[i], tup, (void**)&quad,
+			                     i == iter->order ? &iter->cur : NULL)) {
+				return (i == 0) ? SERD_ERR_NOT_FOUND : SERD_ERR_INTERNAL;
+			}
+		}
+	}
+	iter->end = zix_btree_iter_is_end(iter->cur);
+
+	free(quad);
+
+	for (int i = 0; i < TUP_LEN; ++i)
+		sord_drop_quad_ref(sord, tup[i], (SordQuadIndex)i);
+
+	--sord->n_quads;
+	return SERD_SUCCESS;
 }

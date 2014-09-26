@@ -159,6 +159,7 @@ cleanup(void)
 #define TEST_ASSERT(check) do {\
 	test_count++;\
 	if (!(check)) {\
+		assert(false);\
 		error_count++;\
 		fprintf(stderr, "lilv_test.c:%d: error: %s\n", __LINE__, #check);\
 	}\

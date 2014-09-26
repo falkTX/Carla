@@ -78,10 +78,16 @@ ZIX_API ZixStatus
 zix_btree_insert(ZixBTree* t, void* e);
 
 /**
-   Remove the value `e` from `t`, set `removed` to the removed pointer.
+   Remove the value `e` from `t`.
+
+   @param out Set to point to the removed pointer (which may not equal `e`).
+
+   @param next If non-NULL, pointed to the value following `e`.  If *next is
+   also non-NULL, the iterator is reused, otherwise a new one is allocated.  To
+   reuse an iterator, no items may have been added since its creation.
 */
 ZIX_API ZixStatus
-zix_btree_remove(ZixBTree* t, const void* e, void** removed);
+zix_btree_remove(ZixBTree* t, const void* e, void** out, ZixBTreeIter** next);
 
 /**
    Set `ti` to an element equal to `e` in `t`.
