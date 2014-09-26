@@ -71,8 +71,13 @@ WIN_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS)
 # --------------------------------------------------------------
 # Plugin bridges (Native)
 
+ifeq ($(WIN32),true)
+NATIVE_BUILD_FLAGS  = $(WIN_BUILD_FLAGS)
+NATIVE_LINK_FLAGS   = $(WIN_LINK_FLAGS)
+else
 NATIVE_BUILD_FLAGS  = $(POSIX_BUILD_FLAGS)
 NATIVE_LINK_FLAGS   = $(POSIX_LINK_FLAGS)
+endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 NATIVE_BUILD_FLAGS += $(FLUIDSYNTH_FLAGS)
@@ -167,7 +172,7 @@ LIBS_NATIVE += \
 endif
 endif
 
-../../bin/carla-bridge-native: $(OBJS_NATIVE) $(LIBS_NATIVE)
+../../bin/carla-bridge-native$(APP_EXT): $(OBJS_NATIVE) $(LIBS_NATIVE)
 	$(CXX) $(OBJS_NATIVE) $(LIBS_START) $(LIBS_NATIVE) $(LIBS_END) $(NATIVE_LINK_FLAGS) -o $@
 
 %__native.o: %.cpp
