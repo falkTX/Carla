@@ -147,7 +147,7 @@ public:
         fHandle = fDescriptor->instantiate(&fHost);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
 
-        carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kMaxMidiEvents);
+        carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kMaxMidiEvents*2);
         carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
 
         return true;
@@ -190,7 +190,7 @@ public:
                     fDescriptor->activate(fHandle);
 
                 fMidiEventCount = 0;
-                carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kMaxMidiEvents);
+                carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kMaxMidiEvents*2);
                 carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
             }
             else
@@ -460,7 +460,7 @@ private:
 
     // Temporary data
     uint32_t        fMidiEventCount;
-    NativeMidiEvent fMidiEvents[kMaxMidiEvents];
+    NativeMidiEvent fMidiEvents[kMaxMidiEvents*2];
     NativeTimeInfo  fTimeInfo;
     ERect           fVstRect;
 
