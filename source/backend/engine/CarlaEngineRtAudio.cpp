@@ -29,6 +29,8 @@
 #include "rtaudio/RtAudio.h"
 #include "rtmidi/RtMidi.h"
 
+using juce::jmax;
+using juce::AudioSampleBuffer;
 using juce::FloatVectorOperations;
 
 CARLA_BACKEND_START_NAMESPACE
@@ -159,10 +161,13 @@ public:
     CarlaEngineRtAudio(const RtAudio::Api api)
         : CarlaEngine(),
           fAudio(api),
+          fAudioInterleaved(false),
           fAudioInCount(0),
           fAudioOutCount(0),
           fLastEventTime(0),
           fDeviceName(),
+          fAudioIntBufIn(),
+          fAudioIntBufOut(),
           fMidiIns(),
           fMidiInEvents(),
           fMidiOuts(),
@@ -248,14 +253,17 @@ public:
 
         iParams.nChannels = carla_fixValue(0U, 128U, iParams.nChannels);
         oParams.nChannels = carla_fixValue(0U, 128U, oParams.nChannels);
+        fAudioInterleaved = fAudio.getCurrentApi() == RtAudio::LINUX_PULSE;
 
         RtAudio::StreamOptions rtOptions;
-        rtOptions.flags = RTAUDIO_MINIMIZE_LATENCY | RTAUDIO_HOG_DEVICE | RTAUDIO_SCHEDULE_REALTIME | RTAUDIO_NONINTERLEAVED;
+        rtOptions.flags = RTAUDIO_MINIMIZE_LATENCY | RTAUDIO_HOG_DEVICE | RTAUDIO_SCHEDULE_REALTIME;
         rtOptions.streamName = clientName;
         rtOptions.priority = 85;
 
         if (fAudio.getCurrentApi() == RtAudio::LINUX_ALSA && ! deviceSet)
             rtOptions.flags |= RTAUDIO_ALSA_USE_DEFAULT;
+        if (! fAudioInterleaved)
+            rtOptions.flags |= RTAUDIO_NONINTERLEAVED;
 
         uint bufferFrames = pData->options.audioBufferSize;
 
@@ -280,6 +288,9 @@ public:
         fAudioInCount  = iParams.nChannels;
         fAudioOutCount = oParams.nChannels;
         fLastEventTime = 0;
+
+        fAudioIntBufIn.setSize(static_cast<int>(fAudioInCount), static_cast<int>(bufferFrames));
+        fAudioIntBufOut.setSize(static_cast<int>(fAudioOutCount), static_cast<int>(bufferFrames));
 
         pData->graph.create(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK, pData->sampleRate, pData->bufferSize, fAudioInCount, fAudioOutCount);
 
@@ -615,25 +626,46 @@ protected:
 
         // get buffers from RtAudio
         const float* const insPtr  = (const float*)inputBuffer;
-              float* const outsPtr =       (float*)outputBuffer;
+        /* */ float* const outsPtr =       (float*)outputBuffer;
 
         // assert rtaudio buffers
         CARLA_SAFE_ASSERT_RETURN(outputBuffer      != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(pData->bufferSize == nframes,);
 
-        // initialize rtaudio input
+        // set rtaudio buffers as non-interleaved
         const float* inBuf[fAudioInCount];
+        /* */ float* outBuf[fAudioOutCount];
 
-        for (uint i=0; i < fAudioInCount; ++i)
-            inBuf[i] = insPtr+(nframes*i);
+        if (fAudioInterleaved)
+        {
+            float* inBuf2[fAudioInCount];
 
-        // initialize rtaudio output
-        float* outBuf[fAudioOutCount];
+            for (int i=0, count=static_cast<int>(fAudioInCount); i<count; ++i)
+            {
+                inBuf [i] = fAudioIntBufIn.getReadPointer(i);
+                inBuf2[i] = fAudioIntBufIn.getWritePointer(i);
+            }
+            for (int i=0, count=static_cast<int>(fAudioOutCount); i<count; ++i)
+                outBuf[i] = fAudioIntBufOut.getWritePointer(i);
 
-        for (uint i=0; i < fAudioOutCount; ++i)
-            outBuf[i] = outsPtr+(nframes*i);
+            // init input
+            for (uint i=0; i<nframes; ++i)
+                for (uint j=0; j<fAudioInCount; ++j)
+                    inBuf2[j][i] = insPtr[i*fAudioInCount+j];
 
-        FloatVectorOperations::clear(outsPtr, static_cast<int>(nframes*fAudioOutCount));
+            // clear output
+            fAudioIntBufOut.clear();
+        }
+        else
+        {
+            for (uint i=0; i < fAudioInCount; ++i)
+                inBuf[i] = insPtr+(nframes*i);
+            for (uint i=0; i < fAudioOutCount; ++i)
+                outBuf[i] = outsPtr+(nframes*i);
+
+            // clear output
+            FloatVectorOperations::clear(outsPtr, static_cast<int>(nframes*fAudioOutCount));
+        }
 
         // initialize events
         carla_zeroStruct<EngineEvent>(pData->events.in,  kMaxEngineEventInternalCount);
@@ -723,6 +755,13 @@ protected:
                     }
                 }
             }
+        }
+
+        if (fAudioInterleaved)
+        {
+            for (uint i=0; i < nframes; ++i)
+                for (uint j=0; j<fAudioOutCount; ++j)
+                    outsPtr[i*fAudioOutCount+j] = outBuf[j][i];
         }
 
         fMidiOutMutex.unlock();
@@ -939,12 +978,17 @@ private:
     RtAudio fAudio;
 
     // useful info
+    bool fAudioInterleaved;
     uint fAudioInCount;
     uint fAudioOutCount;
     uint64_t fLastEventTime;
 
     // current device name
     CarlaString fDeviceName;
+
+    // temp buffer for interleaved audio
+    AudioSampleBuffer fAudioIntBufIn;
+    AudioSampleBuffer fAudioIntBufOut;
 
     struct MidiInPort {
         RtMidiIn* port;
