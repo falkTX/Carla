@@ -54,49 +54,6 @@ ICON_STATE_WAIT2 = 1 # turns off, sets as off
 ICON_STATE_OFF   = 0 # do nothing
 
 # ------------------------------------------------------------------------------------------------------------
-# Fake plugin info for easy testing
-
-gFakePluginInfo = {
-    "type": PLUGIN_NONE,
-    "category": PLUGIN_CATEGORY_SYNTH,
-    "hints": PLUGIN_IS_SYNTH|PLUGIN_CAN_DRYWET|PLUGIN_CAN_VOLUME|PLUGIN_CAN_PANNING,
-    "optionsAvailable": 0x1FF, # all
-    "optionsEnabled": 0x1FF, # all
-    "filename": "AwesoomeFilename.what",
-    "name": "Awesoome Name",
-    "label": "awesoomeLabel",
-    "maker": "Awesoome Maker",
-    "copyright": "Awesoome Copyright",
-    "iconName": "plugin",
-    "uniqueId": 0
-}
-
-gFakeParamInfo = {
-    "type": PARAMETER_INPUT,
-    "hints": PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE,
-    "name":  "Parameter Name",
-    "unit":  "",
-    "scalePoints": [],
-
-    "index":   0,
-    "default": 0.0,
-    "minimum": 0.0,
-    "maximum": 1.0,
-    "step":    0.001,
-    "stepSmall": 0.0001,
-    "stepLarge": 0.01,
-    "midiCC":   -1,
-    "midiChannel": 1,
-
-    "current": 0.0
-}
-
-gFakePortCountInfo = {
-    "ins": 0,
-    "outs": 0
-}
-
-# ------------------------------------------------------------------------------------------------------------
 # Carla About dialog
 
 class CarlaAboutW(QDialog):
@@ -124,7 +81,7 @@ class CarlaAboutW(QDialog):
 
         if host.isControl or host.isPlugin:
             self.ui.l_extended.hide()
-            self.ui.tabWidget.removeTab(1)
+            self.ui.tabWidget.removeTab(2)
             self.ui.tabWidget.removeTab(1)
 
         else:

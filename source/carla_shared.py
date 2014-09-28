@@ -56,10 +56,9 @@ from carla_backend import *
 # ------------------------------------------------------------------------------------------------------------
 # Platform specific stuff
 
-if MACOS:
-    if not config_UseQt5:
-        from PyQt4.QtGui import qt_mac_set_menubar_icons
-        qt_mac_set_menubar_icons(False)
+if MACOS and not config_UseQt5:
+    from PyQt4.QtGui import qt_mac_set_menubar_icons
+    qt_mac_set_menubar_icons(False)
 
 elif WINDOWS:
     WINDIR = os.getenv("WINDIR")
@@ -253,7 +252,7 @@ CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING  = False
 CARLA_DEFAULT_FORCE_STEREO          = False
 CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES = False
 CARLA_DEFAULT_PREFER_UI_BRIDGES     = True
-CARLA_DEFAULT_UIS_ALWAYS_ON_TOP     = True
+CARLA_DEFAULT_UIS_ALWAYS_ON_TOP     = False
 CARLA_DEFAULT_MAX_PARAMETERS        = MAX_DEFAULT_PARAMETERS
 CARLA_DEFAULT_UI_BRIDGES_TIMEOUT    = 4000
 
