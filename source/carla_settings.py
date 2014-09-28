@@ -454,32 +454,33 @@ class CarlaSettingsW(QDialog):
             settings.setValue(CARLA_KEY_ENGINE_AUDIO_DRIVER, audioDriver)
 
         if not self.host.processModeForced:
+            # engine sends callback if processMode really changes
             processMode = self.ui.cb_engine_process_mode_jack.currentIndex() if audioDriver == "JACK" else self.ui.cb_engine_process_mode_other.currentIndex()+self.PROCESS_MODE_NON_JACK_PADDING
-
-            settings.setValue(CARLA_KEY_ENGINE_PROCESS_MODE, processMode)
 
             self.host.set_engine_option(ENGINE_OPTION_PROCESS_MODE, processMode, "")
 
-        forceStereo         = self.ui.ch_engine_force_stereo.isChecked()
-        preferPluginBridges = self.ui.ch_engine_prefer_plugin_bridges.isChecked()
-        preferUIBridges     = self.ui.ch_engine_prefer_ui_bridges.isChecked()
-        uisAlwaysOnTop      = self.ui.ch_engine_uis_always_on_top.isChecked()
-        maxParameters       = self.ui.sb_engine_max_params.value()
-        uiBridgesTimeout    = self.ui.sb_engine_ui_bridges_timeout.value()
+            settings.setValue(CARLA_KEY_ENGINE_PROCESS_MODE, processMode)
 
-        settings.setValue(CARLA_KEY_ENGINE_FORCE_STEREO,          forceStereo)
-        settings.setValue(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, preferPluginBridges)
-        settings.setValue(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES,     preferUIBridges)
-        settings.setValue(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP,     uisAlwaysOnTop)
-        settings.setValue(CARLA_KEY_ENGINE_MAX_PARAMETERS,        maxParameters)
-        settings.setValue(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT,    uiBridgesTimeout)
+        self.host.forceStereo         = self.ui.ch_engine_force_stereo.isChecked()
+        self.host.preferPluginBridges = self.ui.ch_engine_prefer_plugin_bridges.isChecked()
+        self.host.preferUIBridges     = self.ui.ch_engine_prefer_ui_bridges.isChecked()
+        self.host.uisAlwaysOnTop      = self.ui.ch_engine_uis_always_on_top.isChecked()
+        self.host.maxParameters       = self.ui.sb_engine_max_params.value()
+        self.host.uiBridgesTimeout    = self.ui.sb_engine_ui_bridges_timeout.value()
 
-        self.host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,          forceStereo,         "")
-        self.host.set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, preferPluginBridges, "")
-        self.host.set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     preferUIBridges,     "")
-        self.host.set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     uisAlwaysOnTop,      "")
-        self.host.set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        maxParameters,       "")
-        self.host.set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    uiBridgesTimeout,    "")
+        self.host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,          self.host.forceStereo,         "")
+        self.host.set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, self.host.preferPluginBridges, "")
+        self.host.set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     self.host.preferUIBridges,     "")
+        self.host.set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     self.host.uisAlwaysOnTop,      "")
+        self.host.set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        self.host.maxParameters,       "")
+        self.host.set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    self.host.uiBridgesTimeout,    "")
+
+        settings.setValue(CARLA_KEY_ENGINE_FORCE_STEREO,          self.host.forceStereo)
+        settings.setValue(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, self.host.preferPluginBridges)
+        settings.setValue(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES,     self.host.preferUIBridges)
+        settings.setValue(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP,     self.host.uisAlwaysOnTop)
+        settings.setValue(CARLA_KEY_ENGINE_MAX_PARAMETERS,        self.host.maxParameters)
+        settings.setValue(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT,    self.host.uiBridgesTimeout)
 
         # ----------------------------------------------------------------------------------------------------
         # Paths
@@ -521,16 +522,6 @@ class CarlaSettingsW(QDialog):
         for i in range(self.ui.lw_sfz.count()):
             sfzs.append(self.ui.lw_sfz.item(i).text())
 
-        settings.setValue(CARLA_KEY_PATHS_LADSPA, ladspas)
-        settings.setValue(CARLA_KEY_PATHS_DSSI,   dssis)
-        settings.setValue(CARLA_KEY_PATHS_LV2,    lv2s)
-        settings.setValue(CARLA_KEY_PATHS_VST,    vsts)
-        settings.setValue(CARLA_KEY_PATHS_VST3,   vst3s)
-        settings.setValue(CARLA_KEY_PATHS_AU,     aus)
-        settings.setValue(CARLA_KEY_PATHS_GIG,    gigs)
-        settings.setValue(CARLA_KEY_PATHS_SF2,    sf2s)
-        settings.setValue(CARLA_KEY_PATHS_SFZ,    sfzs)
-
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LADSPA, splitter.join(ladspas))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(dssis))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2,    splitter.join(lv2s))
@@ -540,6 +531,16 @@ class CarlaSettingsW(QDialog):
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_GIG,    splitter.join(gigs))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(sf2s))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(sfzs))
+
+        settings.setValue(CARLA_KEY_PATHS_LADSPA, ladspas)
+        settings.setValue(CARLA_KEY_PATHS_DSSI,   dssis)
+        settings.setValue(CARLA_KEY_PATHS_LV2,    lv2s)
+        settings.setValue(CARLA_KEY_PATHS_VST,    vsts)
+        settings.setValue(CARLA_KEY_PATHS_VST3,   vst3s)
+        settings.setValue(CARLA_KEY_PATHS_AU,     aus)
+        settings.setValue(CARLA_KEY_PATHS_GIG,    gigs)
+        settings.setValue(CARLA_KEY_PATHS_SF2,    sf2s)
+        settings.setValue(CARLA_KEY_PATHS_SFZ,    sfzs)
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -855,7 +856,7 @@ if __name__ == '__main__':
     host = initHost("Settings", None, False, False, False)
     loadHostSettings(host)
 
-    gui = CarlaSettingsW(None, host, True, True, True)
+    gui = CarlaSettingsW(None, host, True, True)
     gui.show()
 
     app.exit_exec()

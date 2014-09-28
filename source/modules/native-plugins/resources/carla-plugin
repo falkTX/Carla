@@ -99,6 +99,8 @@ class CarlaMiniW(ExternalUI, HostWindow):
             self.fContainer = CarlaRackW(self, host)
             self.setupContainer(False)
 
+        self.fFirstInit = True
+
         self.setWindowTitle(self.fUiName)
         self.ready()
 
@@ -183,7 +185,11 @@ class CarlaMiniW(ExternalUI, HostWindow):
 
             elif msg.startswith("ENGINE_OPTION_"):
                 option = int(msg.replace("ENGINE_OPTION_", ""))
+                forced = bool(self.readlineblock() == "true")
                 value  = self.readlineblock()
+
+                if self.fFirstInit and not forced:
+                    continue
 
                 if option == ENGINE_OPTION_PROCESS_MODE:
                     self.host.processMode = int(value)
@@ -313,6 +319,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
                 engineCallback(self.host, ENGINE_CALLBACK_ERROR, 0, 0, 0, 0.0, error)
 
             elif msg == "show":
+                self.fFirstInit = False
                 self.d_uiShow()
 
             elif msg == "hide":

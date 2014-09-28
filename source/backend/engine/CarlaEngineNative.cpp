@@ -81,6 +81,12 @@ public:
         return fWriteLock;
     }
 
+    void show() noexcept
+    {
+        const CarlaMutexLocker cml(fWriteLock);
+        writeMsg("show\n", 5);
+    }
+
 protected:
     bool msgReceived(const char* const msg) noexcept override
     {
@@ -568,6 +574,7 @@ public:
           fIsActive(false),
           fIsRunning(false),
           fUiServer(this),
+          fOptionsForced(false),
           leakDetector_CarlaEngineNative()
     {
         carla_debug("CarlaEngineNative::CarlaEngineNative()");
@@ -939,50 +946,70 @@ protected:
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PROCESS_MODE);
         fUiServer.writeMsg(fTmpBuf);
+        std::sprintf(fTmpBuf, "%s\n", bool2str(fOptionsForced));
+        fUiServer.writeMsg(fTmpBuf);
         std::sprintf(fTmpBuf, "%i\n", options.processMode);
         fUiServer.writeMsg(fTmpBuf);
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_TRANSPORT_MODE);
+        fUiServer.writeMsg(fTmpBuf);
+        std::sprintf(fTmpBuf, "%s\n", bool2str(fOptionsForced));
         fUiServer.writeMsg(fTmpBuf);
         std::sprintf(fTmpBuf, "%i\n", options.transportMode);
         fUiServer.writeMsg(fTmpBuf);
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_FORCE_STEREO);
         fUiServer.writeMsg(fTmpBuf);
+        std::sprintf(fTmpBuf, "%s\n", bool2str(fOptionsForced));
+        fUiServer.writeMsg(fTmpBuf);
         std::sprintf(fTmpBuf, "%s\n", bool2str(options.forceStereo));
         fUiServer.writeMsg(fTmpBuf);
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PREFER_PLUGIN_BRIDGES);
+        fUiServer.writeMsg(fTmpBuf);
+        std::sprintf(fTmpBuf, "%s\n", bool2str(fOptionsForced));
         fUiServer.writeMsg(fTmpBuf);
         std::sprintf(fTmpBuf, "%s\n", bool2str(options.preferPluginBridges));
         fUiServer.writeMsg(fTmpBuf);
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PREFER_UI_BRIDGES);
         fUiServer.writeMsg(fTmpBuf);
+        std::sprintf(fTmpBuf, "%s\n", bool2str(fOptionsForced));
+        fUiServer.writeMsg(fTmpBuf);
         std::sprintf(fTmpBuf, "%s\n", bool2str(options.preferUiBridges));
         fUiServer.writeMsg(fTmpBuf);
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_UIS_ALWAYS_ON_TOP);
+        fUiServer.writeMsg(fTmpBuf);
+        std::sprintf(fTmpBuf, "%s\n", bool2str(fOptionsForced));
         fUiServer.writeMsg(fTmpBuf);
         std::sprintf(fTmpBuf, "%s\n", bool2str(options.uisAlwaysOnTop));
         fUiServer.writeMsg(fTmpBuf);
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_MAX_PARAMETERS);
         fUiServer.writeMsg(fTmpBuf);
+        std::sprintf(fTmpBuf, "%s\n", bool2str(fOptionsForced));
+        fUiServer.writeMsg(fTmpBuf);
         std::sprintf(fTmpBuf, "%i\n", options.maxParameters);
         fUiServer.writeMsg(fTmpBuf);
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_UI_BRIDGES_TIMEOUT);
+        fUiServer.writeMsg(fTmpBuf);
+        std::sprintf(fTmpBuf, "%s\n", bool2str(fOptionsForced));
         fUiServer.writeMsg(fTmpBuf);
         std::sprintf(fTmpBuf, "%i\n", options.uiBridgesTimeout);
         fUiServer.writeMsg(fTmpBuf);
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PATH_BINARIES);
         fUiServer.writeMsg(fTmpBuf);
+        std::sprintf(fTmpBuf, "%s\n", bool2str(fOptionsForced));
+        fUiServer.writeMsg(fTmpBuf);
         std::sprintf(fTmpBuf, "%s\n", options.binaryDir);
         fUiServer.writeMsg(fTmpBuf);
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PATH_RESOURCES);
+        fUiServer.writeMsg(fTmpBuf);
+        std::sprintf(fTmpBuf, "%s\n", bool2str(fOptionsForced));
         fUiServer.writeMsg(fTmpBuf);
         std::sprintf(fTmpBuf, "%s\n", options.resourceDir);
         fUiServer.writeMsg(fTmpBuf);
@@ -1327,9 +1354,11 @@ protected:
             carla_stdout("Trying to start carla-plugin using \"%s\"", path.buffer());
 
             fUiServer.setData(path, pData->sampleRate, pHost->uiName);
-            fUiServer.start();
+            fUiServer.start(false);
 
             uiServerOptions();
+
+            fUiServer.show();
 
             for (uint i=0; i < pData->curPluginCount; ++i)
             {
@@ -1414,6 +1443,7 @@ protected:
 
     void setState(const char* const data)
     {
+        fOptionsForced = true;
         const String state(data);
         XmlDocument xml(state);
         loadProjectInternal(xml);
@@ -1561,6 +1591,7 @@ private:
     bool fIsActive, fIsRunning;
     CarlaEngineNativeUI fUiServer;
 
+    bool fOptionsForced;
     char fTmpBuf[STR_MAX+1];
 
     CarlaPlugin* _getFirstPlugin() const noexcept

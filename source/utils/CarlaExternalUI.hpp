@@ -58,9 +58,12 @@ public:
         fUiTitle    = uiTitle;
     }
 
-    void start() noexcept
+    void start(const bool show = true) noexcept
     {
         CarlaPipeServer::start(fFilename, fSampleRate, fUiTitle);
+
+        if (! show)
+            return;
 
         const CarlaMutexLocker cml(fWriteLock);
         writeMsg("show\n", 5);
