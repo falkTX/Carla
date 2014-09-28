@@ -6,10 +6,6 @@
 
 include ../../Makefile.mk
 
-ifneq ($(HAVE_QT),true)
-$(error No Qt version available)
-endif
-
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I. -I../../includes -I../../utils
