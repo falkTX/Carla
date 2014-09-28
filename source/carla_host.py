@@ -549,27 +549,24 @@ class HostWindow(QMainWindow):
     def slot_handleEngineStartedCallback(self, processMode, transportMode, driverName):
         self.fSampleRate = self.host.get_sample_rate()
 
-        check = self.host.is_engine_running()
-        self.ui.menu_PluginMacros.setEnabled(check)
-        self.ui.menu_Canvas.setEnabled(check)
+        self.ui.menu_PluginMacros.setEnabled(True)
+        self.ui.menu_Canvas.setEnabled(True)
 
         if not self.host.isPlugin:
-            self.ui.act_engine_start.setEnabled(not check)
-            self.ui.act_engine_stop.setEnabled(check)
+            self.ui.act_engine_start.setEnabled(False)
+            self.ui.act_engine_stop.setEnabled(True)
 
             if not self.fSessionManagerName:
-                self.ui.act_file_open.setEnabled(check)
-                self.ui.act_file_save.setEnabled(check)
-                self.ui.act_file_save_as.setEnabled(check)
+                self.ui.act_file_open.setEnabled(True)
+                self.ui.act_file_save.setEnabled(True)
+                self.ui.act_file_save_as.setEnabled(True)
 
-            self.setTransportMenuEnabled(check)
+            self.setTransportMenuEnabled(True)
 
-        if check:
-            self.fLastTransportFrame = 0
-            self.fLastTransportState = False
-            self.refreshTransport(True)
-            self.fContainer.engineStarted()
-
+        self.fLastTransportFrame = 0
+        self.fLastTransportState = False
+        self.refreshTransport(True)
+        self.fContainer.engineStarted()
         self.startTimers()
 
     @pyqtSlot()
@@ -580,26 +577,23 @@ class HostWindow(QMainWindow):
         self.ui.act_plugin_remove_all.setEnabled(False)
         self.fContainer.removeAllPlugins()
 
-        check = self.host.is_engine_running()
-        self.ui.menu_PluginMacros.setEnabled(check)
-        self.ui.menu_Canvas.setEnabled(check)
+        self.ui.menu_PluginMacros.setEnabled(False)
+        self.ui.menu_Canvas.setEnabled(False)
 
         if not self.host.isPlugin:
-            self.ui.act_engine_start.setEnabled(not check)
-            self.ui.act_engine_stop.setEnabled(check)
+            self.ui.act_engine_start.setEnabled(True)
+            self.ui.act_engine_stop.setEnabled(False)
 
             if not self.fSessionManagerName:
-                self.ui.act_file_open.setEnabled(check)
-                self.ui.act_file_save.setEnabled(check)
-                self.ui.act_file_save_as.setEnabled(check)
+                self.ui.act_file_open.setEnabled(False)
+                self.ui.act_file_save.setEnabled(False)
+                self.ui.act_file_save_as.setEnabled(False)
 
-            self.setTransportMenuEnabled(check)
-
-        if not check:
-            self.fTextTransport = ""
-            self.fContainer.engineStopped()
+            self.setTransportMenuEnabled(False)
 
         self.fSampleRate = 0.0
+        self.fTransportText = ""
+        self.fContainer.engineStopped()
 
     @pyqtSlot(float)
     def slot_handleSampleRateChangedCallback(self, newSampleRate):
@@ -776,7 +770,7 @@ class HostWindow(QMainWindow):
             mins = (time / 60) % 60
             hrs  = (time / 3600) % 60
 
-            self.fTextTransport = "Transport %s, at %02i:%02i:%02i" % ("playing" if playing else "stopped", hrs, mins, secs)
+            self.fTransportText = "Transport %s, at %02i:%02i:%02i" % ("playing" if playing else "stopped", hrs, mins, secs)
             self.fLastTransportFrame = frame
 
     def setTransportMenuEnabled(self, enabled):

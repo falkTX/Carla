@@ -201,7 +201,7 @@ class CarlaHostW(HostWindow):
 
     def engineChanged(self):
         self.fInfoText = "Engine running | SampleRate: %g | BufferSize: %i" % (self.host.get_sample_rate(), self.host.get_buffer_size())
-        self.fInfoLabel.setText("%s | %s" % (self.fInfoText, self.fTextTransport))
+        self.fInfoLabel.setText("%s | %s" % (self.fInfoText, self.fTransportText))
 
     def engineStarted(self):
         self.engineChanged()
@@ -288,7 +288,7 @@ class CarlaHostW(HostWindow):
         HostWindow.timerEvent(self, event)
 
         if event.timerId() == self.fIdleTimerFast:
-            self.fInfoLabel.setText("%s | %s" % (self.fInfoText, self.fTextTransport))
+            self.fInfoLabel.setText("%s | %s" % (self.fInfoText, self.fTransportText))
 
 # ------------------------------------------------------------------------------------------------------------
 # Main
