@@ -9,3 +9,4 @@ Type=Application
 Categories=AudioVideo;AudioEditing;Qt;
 MimeType=application/x-carla-project;
 Version=1.0
+X-NSM-capable=true
