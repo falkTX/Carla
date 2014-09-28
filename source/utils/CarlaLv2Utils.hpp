@@ -376,13 +376,7 @@ public:
 
         needsInit = false;
 
-        char* const oldLv2Path(std::getenv("LV2_PATH"));
-        carla_setenv("LV2_PATH", LV2_PATH);
-
-        Lilv::World::load_all();
-
-        if (oldLv2Path != nullptr)
-            carla_setenv("LV2_PATH", oldLv2Path);
+        Lilv::World::load_all(LV2_PATH);
     }
 
     void load_bundle(const char* const bundle)

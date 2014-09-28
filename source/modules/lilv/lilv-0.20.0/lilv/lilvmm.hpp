@@ -344,7 +344,7 @@ struct World {
 	}
 
 	LILV_WRAP2_VOID(world, set_option, const char*, uri, LilvNode*, value);
-	LILV_WRAP0_VOID(world, load_all);
+	LILV_WRAP1_VOID(world, load_all, const char*, lv2_path);
 	LILV_WRAP1_VOID(world, load_bundle, LilvNode*, bundle_uri);
 	LILV_WRAP0(const LilvPluginClass*, world, get_plugin_class);
 	LILV_WRAP0(const LilvPluginClasses*, world, get_plugin_classes);
