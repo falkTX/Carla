@@ -10,6 +10,14 @@ include $(CWD)/Makefile.mk
 
 # --------------------------------------------------------------
 
+ifeq ($(WIN64),true)
+winv = "64"
+else
+winv = "32"
+endif
+
+# --------------------------------------------------------------
+
 BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils -isystem ../modules
 BUILD_CXX_FLAGS += -I../includes/vst
 ifeq ($(MACOS_OR_WIN32),true)
@@ -143,7 +151,8 @@ win64:   ../../bin/carla-discovery-win64.exe
 	$(CXX) $(OBJS) $(LIBS_START) $(LIBS) $(LIBS_END) $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) $(POSIX_LINK_FLAGS) -o $@
 
 ../../bin/carla-discovery-native.exe: $(OBJS) $(DEPS) $(LIBS)
-	$(CXX) $(OBJS) $(LIBS_START) $(LIBS) $(LIBS_END) $(WIN_BUILD_FLAGS) $(NATIVE_FLAGS) $(WIN_LINK_FLAGS) -o $@
+	$(CXX) $(OBJS) $(LIBS_START) $(LIBS) $(LIBS_END) $(WIN_BUILD_FLAGS) $(NATIVE_FLAGS) $(WIN_LINK_FLAGS) -o $@ && \
+	cd ../../bin/ && ln -s carla-discovery-native.exe carla-discovery-win$(winv).exe
 
 ../../bin/carla-discovery-posix32: $(OBJS) $(DEPS) $(LIBS_posix32)
 	$(CXX) $(OBJS) $(LIBS_START) $(LIBS_posix32) $(LIBS_END) $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@
