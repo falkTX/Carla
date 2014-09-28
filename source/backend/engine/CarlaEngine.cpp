@@ -1282,54 +1282,80 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
     case ENGINE_OPTION_PLUGIN_PATH:
         CARLA_SAFE_ASSERT_RETURN(value > PLUGIN_NONE,);
         CARLA_SAFE_ASSERT_RETURN(value <= PLUGIN_SFZ,);
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr,);
 
         switch (value)
         {
         case PLUGIN_LADSPA:
             if (pData->options.pathLADSPA != nullptr)
                 delete[] pData->options.pathLADSPA;
-            pData->options.pathLADSPA = carla_strdup_safe(valueStr);
+            if (valueStr != nullptr)
+                pData->options.pathLADSPA = carla_strdup_safe(valueStr);
+            else
+                pData->options.pathLADSPA = nullptr;
             break;
         case PLUGIN_DSSI:
             if (pData->options.pathDSSI != nullptr)
                 delete[] pData->options.pathDSSI;
-            pData->options.pathDSSI = carla_strdup_safe(valueStr);
+            if (valueStr != nullptr)
+                pData->options.pathDSSI = carla_strdup_safe(valueStr);
+            else
+                pData->options.pathDSSI = nullptr;
             break;
         case PLUGIN_LV2:
             if (pData->options.pathLV2 != nullptr)
                 delete[] pData->options.pathLV2;
-            pData->options.pathLV2 = carla_strdup_safe(valueStr);
+            if (valueStr != nullptr)
+                pData->options.pathLV2 = carla_strdup_safe(valueStr);
+            else
+                pData->options.pathLV2 = nullptr;
             break;
         case PLUGIN_VST:
             if (pData->options.pathVST != nullptr)
                 delete[] pData->options.pathVST;
-            pData->options.pathVST = carla_strdup_safe(valueStr);
+            if (valueStr != nullptr)
+                pData->options.pathVST = carla_strdup_safe(valueStr);
+            else
+                pData->options.pathVST = nullptr;
             break;
         case PLUGIN_VST3:
             if (pData->options.pathVST3 != nullptr)
                 delete[] pData->options.pathVST3;
-            pData->options.pathVST3 = carla_strdup_safe(valueStr);
+            if (valueStr != nullptr)
+                pData->options.pathVST3 = carla_strdup_safe(valueStr);
+            else
+                pData->options.pathVST3 = nullptr;
             break;
         case PLUGIN_AU:
             if (pData->options.pathAU != nullptr)
                 delete[] pData->options.pathAU;
-            pData->options.pathAU = carla_strdup_safe(valueStr);
+            if (valueStr != nullptr)
+                pData->options.pathAU = carla_strdup_safe(valueStr);
+            else
+                pData->options.pathAU = nullptr;
             break;
         case PLUGIN_GIG:
             if (pData->options.pathGIG != nullptr)
                 delete[] pData->options.pathGIG;
-            pData->options.pathGIG = carla_strdup_safe(valueStr);
+            if (valueStr != nullptr)
+                pData->options.pathGIG = carla_strdup_safe(valueStr);
+            else
+                pData->options.pathGIG = nullptr;
             break;
         case PLUGIN_SF2:
             if (pData->options.pathSF2 != nullptr)
                 delete[] pData->options.pathSF2;
-            pData->options.pathSF2 = carla_strdup_safe(valueStr);
+            if (valueStr != nullptr)
+                pData->options.pathSF2 = carla_strdup_safe(valueStr);
+            else
+                pData->options.pathSF2 = nullptr;
             break;
         case PLUGIN_SFZ:
             if (pData->options.pathSFZ != nullptr)
                 delete[] pData->options.pathSFZ;
-            pData->options.pathSFZ = carla_strdup_safe(valueStr);
+            if (valueStr != nullptr)
+                pData->options.pathSFZ = carla_strdup_safe(valueStr);
+            else
+                pData->options.pathSFZ = nullptr;
             break;
         }
         break;
