@@ -455,60 +455,57 @@ const char* carla_get_complete_license_text()
 
     if (retText.isEmpty())
     {
-        CarlaString text1, text2, text3, text4, text5;
-
-        text1 += "<p>This current Carla build is using the following features and 3rd-party code:</p>";
-        text1 += "<ul>";
+        retText =
+        "<p>This current Carla build is using the following features and 3rd-party code:</p>"
+        "<ul>"
 
         // Plugin formats
-        text2 += "<li>LADSPA plugin support, http://www.ladspa.org/</li>";
-        text2 += "<li>DSSI plugin support, http://dssi.sourceforge.net/</li>";
-        text2 += "<li>LV2 plugin support, http://lv2plug.in/</li>";
+        "<li>LADSPA plugin support - http://www.ladspa.org/</li>"
+        "<li>DSSI plugin support - http://dssi.sourceforge.net/</li>"
+        "<li>LV2 plugin support - http://lv2plug.in/</li>"
 #ifdef VESTIGE_HEADER
-        text2 += "<li>VST plugin support, using VeSTige header by Javier Serrano Polo</li>";
+        "<li>VST plugin support using VeSTige header by Javier Serrano Polo</li>"
 #else
-        text2 += "<li>VST plugin support, using official VST SDK 2.4 (trademark of Steinberg Media Technologies GmbH)</li>";
+        "<li>VST plugin support using official VST SDK 2.4 (trademark of Steinberg Media Technologies GmbH)</li>"
 #endif
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-        text2 += "<li>VST3 plugin support, using official VST SDK 3.6 (trademark of Steinberg Media Technologies GmbH)</li>";
+        "<li>VST3 plugin support using official VST SDK 3.6 (trademark of Steinberg Media Technologies GmbH)</li>"
 #endif
 #ifdef CARLA_OS_MAC
-        text2 += "<li>AU plugin support</li>";
+        "<li>AU plugin support</li>"
 #endif
 
         // Sample kit libraries
 #ifdef HAVE_FLUIDSYNTH
-        text2 += "<li>FluidSynth library for SF2 support, http://www.fluidsynth.org/</li>";
+        "<li>FluidSynth library for SF2 support - http://www.fluidsynth.org/</li>"
 #endif
 #ifdef HAVE_LINUXSAMPLER
-        text2 += "<li>LinuxSampler library for GIG and SFZ support*, http://www.linuxsampler.org/</li>";
+        "<li>LinuxSampler library for GIG and SFZ support* - http://www.linuxsampler.org/</li>"
 #endif
 
         // Internal plugins
-        text3 += "<li>NekoFilter plugin code, based on lv2fil by Nedko Arnaudov and Fons Adriaensen</li>";
+        "<li>NekoFilter plugin code based on lv2fil by Nedko Arnaudov and Fons Adriaensen</li>"
 #ifdef WANT_ZYNADDSUBFX
-        text3 += "<li>ZynAddSubFX plugin code, http://zynaddsubfx.sf.net/</li>";
-# ifdef WANT_ZYNADDSUBFX_UI
-        text3 += "<li>ZynAddSubFX UI using NTK, http://non.tuxfamily.org/wiki/NTK</li>";
-# endif
+        "<li>ZynAddSubFX plugin code - http://zynaddsubfx.sf.net/</li>"
 #endif
 
         // misc libs
-        text4 += "<li>liblo library for OSC support, http://liblo.sourceforge.net/</li>";
-        text4 += "<li>serd, sord, sratom and lilv libraries for LV2 discovery, http://drobilla.net/software/lilv/</li>";
+        "<li>base64 utilities based on code by Ren\u00E9 Nyffenegger - http://www.adp-gmbh.ch/cpp/common/base64.html</li>"
+        "<li>liblo library for OSC support - http://liblo.sourceforge.net/</li>"
+        "<li>rtmempool library by Nedko Arnaudov"
+        "<li>serd, sord, sratom and lilv libraries for LV2 discovery - http://drobilla.net/software/lilv/</li>"
 #if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-        text4 += "<li>RtAudio+RtMidi libraries for extra Audio and MIDI support, http://www.music.mcgill.ca/~gary/rtaudio/</li>";
+        "<li>RtAudio+RtMidi libraries for extra Audio and MIDI support - http://www.music.mcgill.ca/~gary/rtaudio/</li>"
 #endif
 
         // end
-        text5 += "</ul>";
+        "</ul>"
 
 #ifdef HAVE_LINUXSAMPLER
         // LinuxSampler GPL exception
-        text5 += "<p>(*) Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors.</p>";
+        "<p>(*) Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors.</p>"
 #endif
-
-        retText = text1 + text2 + text3 + text4 + text5;
+        ;
     }
 
     return retText;
@@ -539,16 +536,24 @@ const char* carla_get_supported_file_extensions()
 
     if (retText.isEmpty())
     {
+        retText =
         // Base types
-        retText += "*.carxp;*.carxs";
-
-        // Sample kits
+        "*.carxp;*.carxs"
+        // MIDI files
+        ";*.mid;*.midi"
 #ifdef HAVE_FLUIDSYNTH
-        retText += ";*.sf2";
+        // fluidsynth (sf2)
+        ";*.sf2"
 #endif
 #ifdef HAVE_LINUXSAMPLER
-        retText += ";*.gig;*.sfz";
+        // linuxsampler (gig and sfz)
+        ";*.gig;*.sfz"
 #endif
+#ifdef WANT_ZYNADDSUBFX
+        // zynaddsubfx presets
+        ";*.xmz;*.xiz"
+#endif
+        ;
 
 #ifndef BUILD_BRIDGE
         // Audio files
@@ -558,22 +563,18 @@ const char* carla_get_supported_file_extensions()
             AudioFormatManager afm;
             afm.registerBasicFormats();
 
+            String juceFormats;
+
             for (AudioFormat **it=afm.begin(), **end=afm.end(); it != end; ++it)
             {
                 const StringArray& exts((*it)->getFileExtensions());
 
                 for (String *eit=exts.begin(), *eend=exts.end(); eit != eend; ++eit)
-                    retText += String(";*" + (*eit)).toRawUTF8();
+                    juceFormats += String(";*" + (*eit)).toRawUTF8();
             }
+
+            retText += juceFormats.toRawUTF8();
         }
-#endif
-
-        // MIDI files
-        retText += ";*.mid;*.midi";
-
-        // Plugin presets
-#ifdef WANT_ZYNADDSUBFX
-        retText += ";*.xmz;*.xiz";
 #endif
     }
 

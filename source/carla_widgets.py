@@ -115,7 +115,7 @@ class CarlaAboutW(QDialog):
 
             self.ui.l_ladspa.setText(self.tr("Everything! (Including LRDF)"))
             self.ui.l_dssi.setText(self.tr("Everything! (Including CustomData/Chunks)"))
-            self.ui.l_lv2.setText(self.tr("About 90&#37; complete (using custom extensions)<br/>"
+            self.ui.l_lv2.setText(self.tr("About 95&#37; complete (using custom extensions)<br/>"
                                           "Implemented Feature/Extensions:"
                                           "<ul>"
                                           "<li>http://lv2plug.in/ns/ext/atom</li>"
@@ -144,6 +144,7 @@ class CarlaAboutW(QDialog):
                                           "<li>http://home.gna.org/lv2dynparam/rtmempool/v1</li>"
                                           "<li>http://kxstudio.sf.net/ns/lv2ext/external-ui</li>"
                                           "<li>http://kxstudio.sf.net/ns/lv2ext/programs</li>"
+                                          "<li>http://kxstudio.sf.net/ns/lv2ext/props</li>"
                                           "<li>http://kxstudio.sf.net/ns/lv2ext/rtmempool</li>"
                                           "<li>http://ll-plugins.nongnu.org/lv2/ext/midimap</li>"
                                           "<li>http://ll-plugins.nongnu.org/lv2/ext/miditype</li>"
