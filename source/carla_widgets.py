@@ -490,6 +490,7 @@ class PluginEdit(QDialog):
 
         self.ui.scrollArea = PixmapKeyboardHArea(self)
         self.ui.keyboard   = self.ui.scrollArea.keyboard
+        self.ui.keyboard.setEnabled(self.fControlChannel >= 0)
         self.layout().addWidget(self.ui.scrollArea)
 
         self.ui.scrollArea.setEnabled(False)
@@ -1485,6 +1486,8 @@ class PluginEdit(QDialog):
             self.fTabIconTimers.append(ICON_STATE_OFF)
 
     def _updateCtrlPrograms(self):
+        self.ui.keyboard.setEnabled(self.fControlChannel >= 0)
+
         if self.fPluginInfo['category'] != PLUGIN_CATEGORY_SYNTH or self.fPluginInfo['type'] not in (PLUGIN_INTERNAL, PLUGIN_SF2, PLUGIN_GIG):
             return
 
