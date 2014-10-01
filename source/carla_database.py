@@ -167,6 +167,7 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
     if LINUX or MACOS:
         command.append("env")
         command.append("LANG=C")
+        command.append("LD_PRELOAD=")
         if isWine:
             command.append("WINEDEBUG=-all")
             command.append("wine")

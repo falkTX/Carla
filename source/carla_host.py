@@ -31,7 +31,7 @@ if config_UseQt5:
     from PyQt5.QtWidgets import QAction, QApplication, QFileSystemModel, QListWidgetItem, QMainWindow
 else:
     from PyQt4.QtCore import qCritical, QFileInfo, QModelIndex, QPointF, QTimer
-    from PyQt4.QtGui import QApplication, QFileSystemModel, QImage, QListWidgetItem, QMainWindow, QPalette, QPrinter, QPrintDialog
+    from PyQt4.QtGui import QAction, QApplication, QFileSystemModel, QImage, QListWidgetItem, QMainWindow, QPalette, QPrinter, QPrintDialog
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -268,7 +268,7 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
             self.ui.act_file_quit.setMenuRole(QAction.QuitRole)
             self.ui.act_settings_configure.setMenuRole(QAction.PreferencesRole)
             self.ui.act_help_about.setMenuRole(QAction.AboutRole)
-            self.ui.act_help_about_juce.setMenuRole(QAction.AboutRole)
+            self.ui.act_help_about_juce.setMenuRole(QAction.AboutQtRole)
             self.ui.act_help_about_qt.setMenuRole(QAction.AboutQtRole)
             self.ui.menu_Settings.setTitle("Panels")
             #self.ui.menu_Help.hide()
@@ -527,13 +527,7 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         self.updateCanvasInitialPos()
 
     # --------------------------------------------------------------------------------------------------------
-    # Called by containers
-
-    def isProjectLoading(self):
-        return self.fIsProjectLoading
-
-    def getSavedSettings(self):
-        return self.fSavedSettings
+    # Called by PluginDatabaseW
 
     def setLoadRDFsNeeded(self):
         self.fLadspaRdfNeedsUpdate = True
@@ -839,7 +833,7 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         while self.ui.rack.takeItem(0):
             pass
 
-        #self.clearSideStuff()
+        self.clearSideStuff()
 
         for pitem in self.fPluginList:
             if pitem is None:
@@ -1619,8 +1613,6 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
         settings.setValue("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().value())
 
-        #self.fContainer.saveSettings(settings)
-
     # -----------------------------------------------------------------
     # Internal stuff (gui)
 
@@ -1784,14 +1776,13 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
 
         QMainWindow.timerEvent(self, event)
 
+    # -----------------------------------------------------------------
+
     def closeEvent(self, event):
         self.killTimers()
         self.saveSettings()
 
-        if self.host.isPlugin:
-            pass
-
-        elif self.host.is_engine_running():
+        if self.host.is_engine_running() and not self.host.isPlugin:
             self.host.set_engine_about_to_close()
 
             count = self.host.get_current_plugin_count()
