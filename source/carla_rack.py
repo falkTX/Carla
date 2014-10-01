@@ -27,10 +27,10 @@ from carla_config import *
 if config_UseQt5:
     from PyQt5.QtCore import Qt, QSize, QTimer
     from PyQt5.QtGui import QPixmap
-    from PyQt5.QtWidgets import QAbstractItemView, QApplication, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QScrollBar
+    from PyQt5.QtWidgets import QAbstractItemView, QApplication, QHBoxLayout, QLabel, QListWidget, QListWidgetItem
 else:
     from PyQt4.QtCore import Qt, QSize, QTimer
-    from PyQt4.QtGui import QAbstractItemView, QApplication, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QPixmap, QScrollBar
+    from PyQt4.QtGui import QAbstractItemView, QApplication, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QPixmap
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)

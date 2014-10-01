@@ -27,11 +27,10 @@ from carla_config import *
 if config_UseQt5:
     from PyQt5.QtCore import QPointF, QTimer
     from PyQt5.QtGui import QImage
-    from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
     from PyQt5.QtWidgets import QFrame, QGraphicsView, QGridLayout
 else:
     from PyQt4.QtCore import QPointF, QTimer
-    from PyQt4.QtGui import QFrame, QGraphicsView, QGridLayout, QImage, QPrinter, QPrintDialog
+    from PyQt4.QtGui import QFrame, QGraphicsView, QGridLayout, QImage
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
@@ -53,53 +52,3 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta):
 
         # -------------------------------------------------------------
         # Connect actions to functions
-
-        #self.fKeys.keyboard.noteOn.connect(self.slot_noteOn)
-        #self.fKeys.keyboard.noteOff.connect(self.slot_noteOff)
-
-        # -------------------------------------------------------------
-        # Connect actions to functions (part 2)
-
-        #host.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
-        #host.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(int, int, int, int)
-    def slot_handleNoteOnCallback(self, pluginId, channel, note, velocity):
-        if pluginId in self.fSelectedPlugins:
-            self.fKeys.keyboard.sendNoteOn(note, False)
-
-    @pyqtSlot(int, int, int)
-    def slot_handleNoteOffCallback(self, pluginId, channel, note):
-        if pluginId in self.fSelectedPlugins:
-            self.fKeys.keyboard.sendNoteOff(note, False)
-
-    # -----------------------------------------------------------------
-    # PluginEdit callbacks
-
-    def editDialogNotePressed(self, pluginId, note):
-        if pluginId in self.fSelectedPlugins:
-            self.fKeys.keyboard.sendNoteOn(note, False)
-
-    def editDialogNoteReleased(self, pluginId, note):
-        if pluginId in self.fSelectedPlugins:
-            self.fKeys.keyboard.sendNoteOff(note, False)
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(int)
-    def slot_noteOn(self, note):
-        for pluginId in self.fSelectedPlugins:
-            self.host.send_midi_note(pluginId, 0, note, 100)
-
-            pedit = self.getPluginEditDialog(pluginId)
-            pedit.noteOn(0, note, 100)
-
-    @pyqtSlot(int)
-    def slot_noteOff(self, note):
-        for pluginId in self.fSelectedPlugins:
-            self.host.send_midi_note(pluginId, 0, note, 0)
-
-            pedit = self.getPluginEditDialog(pluginId)
-            pedit.noteOff(0, note)
