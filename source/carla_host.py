@@ -25,28 +25,37 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
-    from PyQt5.QtCore import qCritical, QFileInfo, QModelIndex, QTimer
+    from PyQt5.QtCore import qCritical, QFileInfo, QModelIndex, QPointF, QTimer
     from PyQt5.QtGui import QPalette
     from PyQt5.QtWidgets import QAction, QApplication, QFileSystemModel, QListWidgetItem, QMainWindow
 else:
-    from PyQt4.QtCore import qCritical, QFileInfo, QModelIndex, QTimer
+    from PyQt4.QtCore import qCritical, QFileInfo, QModelIndex, QPointF, QTimer
     from PyQt4.QtGui import QApplication, QFileSystemModel, QListWidgetItem, QMainWindow, QPalette
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
+import patchcanvas
 import ui_carla_host
 
 from carla_app import *
 from carla_database import *
 from carla_settings import *
 from carla_widgets import *
+from digitalpeakmeter import DigitalPeakMeter
+from pixmapkeyboard import PixmapKeyboardHArea
 
 # ------------------------------------------------------------------------------------------------------------
-# PatchCanvas defines
+# Try Import OpenGL
 
-CANVAS_ANTIALIASING_SMALL = 1
-CANVAS_EYECANDY_SMALL     = 1
+try:
+    if config_UseQt5:
+        from PyQt5.QtOpenGL import QGLWidget
+    else:
+        from PyQt4.QtOpenGL import QGLWidget
+    hasGL = True
+except:
+    hasGL = False
 
 # ------------------------------------------------------------------------------------------------------------
 # Session Management support
@@ -99,7 +108,7 @@ class HostWindow(QMainWindow):
 
     # --------------------------------------------------------------------------------------------------------
 
-    def __init__(self, host, parent=None):
+    def __init__(self, host, withCanvas=True, parent=None):
         QMainWindow.__init__(self, parent)
         self.host = host
         self.ui = ui_carla_host.Ui_CarlaHostW()
@@ -149,6 +158,17 @@ class HostWindow(QMainWindow):
             self.fClientName         = "Carla"
             self.fSessionManagerName = ""
 
+        self.fMovingViaMiniCanvas = False
+        self.fPeaksCleared = True
+        self.fPluginCount = 0
+        self.fPluginList  = []
+
+        self.fExternalPatchbay = False
+        self.fSelectedPlugins  = []
+
+        self.fCanvasWidth  = 0
+        self.fCanvasHeight = 0
+
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (engine stopped)
 
@@ -193,6 +213,30 @@ class HostWindow(QMainWindow):
         self.ui.fileTreeView.setHeaderHidden(True)
 
         # ----------------------------------------------------------------------------------------------------
+        # Set up GUI (plugins)
+
+        # ----------------------------------------------------------------------------------------------------
+        # Set up GUI (patchbay)
+
+        self.ui.peak_in.setColor(DigitalPeakMeter.BLUE)
+        self.ui.peak_in.setChannels(2)
+        self.ui.peak_in.setOrientation(DigitalPeakMeter.VERTICAL)
+        self.ui.peak_in.setFixedWidth(25)
+
+        self.ui.peak_out.setColor(DigitalPeakMeter.GREEN)
+        self.ui.peak_out.setChannels(2)
+        self.ui.peak_out.setOrientation(DigitalPeakMeter.VERTICAL)
+        self.ui.peak_out.setFixedWidth(25)
+
+        self.ui.scrollArea = PixmapKeyboardHArea(self.ui.patchbay)
+        self.ui.keyboard   = self.ui.scrollArea.keyboard
+        self.ui.patchbay.layout().addWidget(self.ui.scrollArea, 1, 0, 1, 0)
+
+        self.ui.scrollArea.setEnabled(False)
+
+        self.ui.miniCanvasPreview.setRealParent(self)
+
+        # ----------------------------------------------------------------------------------------------------
         # Set up GUI (special stuff for Mac OS)
 
         if MACOS and config_UseQt5:
@@ -208,6 +252,22 @@ class HostWindow(QMainWindow):
         # Load Settings
 
         self.loadSettings(True)
+
+        # ----------------------------------------------------------------------------------------------------
+        # Set-up Canvas
+
+        self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
+        self.ui.graphicsView.setScene(self.scene)
+        self.ui.graphicsView.setRenderHint(QPainter.Antialiasing, bool(self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] == patchcanvas.ANTIALIASING_FULL))
+
+        if self.fSavedSettings[CARLA_KEY_CANVAS_USE_OPENGL] and hasGL:
+            self.ui.glView = QGLWidget(self)
+            self.ui.graphicsView.setViewport(self.ui.glView)
+            self.ui.graphicsView.setRenderHint(QPainter.HighQualityAntialiasing, self.fSavedSettings[CARLA_KEY_CANVAS_HQ_ANTIALIASING])
+
+        self.setupCanvas()
+
+        QTimer.singleShot(100, self.slot_restoreScrollbarValues)
 
         # ----------------------------------------------------------------------------------------------------
         # Connect actions to functions
@@ -229,6 +289,9 @@ class HostWindow(QMainWindow):
         self.ui.act_transport_backwards.triggered.connect(self.slot_transportBackwards)
         self.ui.act_transport_forwards.triggered.connect(self.slot_transportForwards)
 
+        self.ui.act_settings_show_meters.toggled.connect(self.slot_showCanvasMeters)
+        self.ui.act_settings_show_keyboard.toggled.connect(self.slot_showCanvasKeyboard)
+
         self.ui.act_help_about.triggered.connect(self.slot_aboutCarla)
         self.ui.act_help_about_juce.triggered.connect(self.slot_aboutJuce)
         self.ui.act_help_about_qt.triggered.connect(self.slot_aboutQt)
@@ -237,6 +300,15 @@ class HostWindow(QMainWindow):
         self.ui.b_disk_add.clicked.connect(self.slot_diskFolderAdd)
         self.ui.b_disk_remove.clicked.connect(self.slot_diskFolderRemove)
         self.ui.fileTreeView.doubleClicked.connect(self.slot_fileTreeDoubleClicked)
+
+        self.ui.graphicsView.horizontalScrollBar().valueChanged.connect(self.slot_horizontalScrollBarChanged)
+        self.ui.graphicsView.verticalScrollBar().valueChanged.connect(self.slot_verticalScrollBarChanged)
+
+        self.scene.scaleChanged.connect(self.slot_canvasScaleChanged)
+        self.scene.sceneGroupMoved.connect(self.slot_canvasItemMoved)
+        self.scene.pluginSelected.connect(self.slot_canvasPluginSelected)
+
+        self.ui.miniCanvasPreview.miniCanvasMoved.connect(self.slot_miniCanvasMoved)
 
         self.SIGUSR1.connect(self.slot_handleSIGUSR1)
         self.SIGTERM.connect(self.slot_handleSIGTERM)
@@ -248,6 +320,16 @@ class HostWindow(QMainWindow):
         host.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
         host.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
 
+        host.PatchbayClientAddedCallback.connect(self.slot_handlePatchbayClientAddedCallback)
+        host.PatchbayClientRemovedCallback.connect(self.slot_handlePatchbayClientRemovedCallback)
+        host.PatchbayClientRenamedCallback.connect(self.slot_handlePatchbayClientRenamedCallback)
+        host.PatchbayClientDataChangedCallback.connect(self.slot_handlePatchbayClientDataChangedCallback)
+        host.PatchbayPortAddedCallback.connect(self.slot_handlePatchbayPortAddedCallback)
+        host.PatchbayPortRemovedCallback.connect(self.slot_handlePatchbayPortRemovedCallback)
+        host.PatchbayPortRenamedCallback.connect(self.slot_handlePatchbayPortRenamedCallback)
+        host.PatchbayConnectionAddedCallback.connect(self.slot_handlePatchbayConnectionAddedCallback)
+        host.PatchbayConnectionRemovedCallback.connect(self.slot_handlePatchbayConnectionRemovedCallback)
+
         host.DebugCallback.connect(self.slot_handleDebugCallback)
         host.InfoCallback.connect(self.slot_handleInfoCallback)
         host.ErrorCallback.connect(self.slot_handleErrorCallback)
@@ -257,6 +339,11 @@ class HostWindow(QMainWindow):
         # Final setup
 
         self.setProperWindowTitle()
+
+        # FIXME: Qt4 needs this so it properly creates & resizes the canvas
+        self.ui.tabWidget.setCurrentIndex(1)
+        self.ui.tabWidget.setCurrentIndex(0)
+        self.fixCanvasPreviewSize()
 
         QTimer.singleShot(0, self.slot_engineStart)
 
@@ -272,6 +359,120 @@ class HostWindow(QMainWindow):
 
         self.setWindowTitle(title)
 
+    def setupCanvas(self):
+        pOptions = patchcanvas.options_t()
+        pOptions.theme_name       = self.fSavedSettings[CARLA_KEY_CANVAS_THEME]
+        pOptions.auto_hide_groups = self.fSavedSettings[CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS]
+        pOptions.use_bezier_lines = self.fSavedSettings[CARLA_KEY_CANVAS_USE_BEZIER_LINES]
+        pOptions.antialiasing     = self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING]
+        pOptions.eyecandy         = self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY]
+
+        pFeatures = patchcanvas.features_t()
+        pFeatures.group_info   = False
+        pFeatures.group_rename = False
+        pFeatures.port_info    = False
+        pFeatures.port_rename  = False
+        pFeatures.handle_group_pos = True
+
+        patchcanvas.setOptions(pOptions)
+        patchcanvas.setFeatures(pFeatures)
+        patchcanvas.init("Carla2", self.scene, canvasCallback, False)
+
+        tryCanvasSize = self.fSavedSettings[CARLA_KEY_CANVAS_SIZE].split("x")
+
+        if len(tryCanvasSize) == 2 and tryCanvasSize[0].isdigit() and tryCanvasSize[1].isdigit():
+            self.fCanvasWidth  = int(tryCanvasSize[0])
+            self.fCanvasHeight = int(tryCanvasSize[1])
+        else:
+            self.fCanvasWidth  = CARLA_DEFAULT_CANVAS_SIZE_WIDTH
+            self.fCanvasHeight = CARLA_DEFAULT_CANVAS_SIZE_HEIGHT
+
+        patchcanvas.setCanvasSize(0, 0, self.fCanvasWidth, self.fCanvasHeight)
+        patchcanvas.setInitialPos(self.fCanvasWidth / 2, self.fCanvasHeight / 2)
+        self.ui.graphicsView.setSceneRect(0, 0, self.fCanvasWidth, self.fCanvasHeight)
+
+        self.fThemeData = [self.fCanvasWidth, self.fCanvasHeight, patchcanvas.canvas.theme.canvas_bg, patchcanvas.canvas.theme.rubberband_brush, patchcanvas.canvas.theme.rubberband_pen.color()]
+
+        self.updateContainer(self.fThemeData)
+
+    def updateCanvasInitialPos(self):
+        x = self.ui.graphicsView.horizontalScrollBar().value() + self.width()/4
+        y = self.ui.graphicsView.verticalScrollBar().value() + self.height()/4
+        patchcanvas.setInitialPos(x, y)
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(bool)
+    def slot_showCanvasMeters(self, yesNo):
+        self.ui.peak_in.setVisible(yesNo)
+        self.ui.peak_out.setVisible(yesNo)
+
+    @pyqtSlot(bool)
+    def slot_showCanvasKeyboard(self, yesNo):
+        self.ui.scrollArea.setVisible(yesNo)
+
+    @pyqtSlot()
+    def slot_restoreScrollbarValues(self):
+        settings = QSettings()
+        self.ui.graphicsView.horizontalScrollBar().setValue(settings.value("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().maximum()/2, type=int))
+        self.ui.graphicsView.verticalScrollBar().setValue(settings.value("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().maximum()/2, type=int))
+
+    @pyqtSlot()
+    def slot_miniCanvasCheckAll(self):
+        self.slot_miniCanvasCheckSize()
+        self.slot_horizontalScrollBarChanged(self.ui.graphicsView.horizontalScrollBar().value())
+        self.slot_verticalScrollBarChanged(self.ui.graphicsView.verticalScrollBar().value())
+
+    @pyqtSlot()
+    def slot_miniCanvasCheckSize(self):
+        self.ui.miniCanvasPreview.setViewSize(float(self.width()) / self.fCanvasWidth, float(self.height()) / self.fCanvasHeight)
+
+    @pyqtSlot(int)
+    def slot_horizontalScrollBarChanged(self, value):
+        if self.fMovingViaMiniCanvas: return
+
+        maximum = self.ui.graphicsView.horizontalScrollBar().maximum()
+        if maximum == 0:
+            xp = 0
+        else:
+            xp = float(value) / maximum
+        self.ui.miniCanvasPreview.setViewPosX(xp)
+        self.updateCanvasInitialPos()
+
+    @pyqtSlot(int)
+    def slot_verticalScrollBarChanged(self, value):
+        if self.fMovingViaMiniCanvas: return
+
+        maximum = self.ui.graphicsView.verticalScrollBar().maximum()
+        if maximum == 0:
+            yp = 0
+        else:
+            yp = float(value) / maximum
+        self.ui.miniCanvasPreview.setViewPosY(yp)
+        self.updateCanvasInitialPos()
+
+    @pyqtSlot(float)
+    def slot_canvasScaleChanged(self, scale):
+        self.ui.miniCanvasPreview.setViewScale(scale)
+
+    @pyqtSlot(int, int, QPointF)
+    def slot_canvasItemMoved(self, group_id, split_mode, pos):
+        self.ui.miniCanvasPreview.update()
+
+    @pyqtSlot(list)
+    def slot_canvasPluginSelected(self, pluginList):
+        self.ui.keyboard.allNotesOff(False)
+        self.ui.scrollArea.setEnabled(len(pluginList) != 0) # and self.fPluginCount > 0
+        self.fSelectedPlugins = pluginList
+
+    @pyqtSlot(float, float)
+    def slot_miniCanvasMoved(self, xp, yp):
+        self.fMovingViaMiniCanvas = True
+        self.ui.graphicsView.horizontalScrollBar().setValue(xp * self.ui.graphicsView.horizontalScrollBar().maximum())
+        self.ui.graphicsView.verticalScrollBar().setValue(yp * self.ui.graphicsView.verticalScrollBar().maximum())
+        self.fMovingViaMiniCanvas = False
+        self.updateCanvasInitialPos()
+
     # --------------------------------------------------------------------------------------------------------
     # Called by containers
 
@@ -285,36 +486,37 @@ class HostWindow(QMainWindow):
         self.fLadspaRdfNeedsUpdate = True
 
     def setupContainer(self, showCanvas, canvasThemeData = []):
-        if showCanvas:
-            canvasWidth, canvasHeight, canvasBg, canvasBrush, canvasPen = canvasThemeData
-            self.ui.miniCanvasPreview.setViewTheme(canvasBg, canvasBrush, canvasPen)
-            self.ui.miniCanvasPreview.init(self.fContainer.scene, canvasWidth, canvasHeight, self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING])
-        else:
-            self.ui.act_canvas_show_internal.setEnabled(False)
-            self.ui.act_canvas_show_external.setEnabled(False)
-            self.ui.act_canvas_arrange.setVisible(False)
-            self.ui.act_canvas_print.setVisible(False)
-            self.ui.act_canvas_refresh.setVisible(False)
-            self.ui.act_canvas_save_image.setVisible(False)
-            self.ui.act_canvas_zoom_100.setVisible(False)
-            self.ui.act_canvas_zoom_fit.setVisible(False)
-            self.ui.act_canvas_zoom_in.setVisible(False)
-            self.ui.act_canvas_zoom_out.setVisible(False)
-            self.ui.act_settings_show_meters.setVisible(False)
-            self.ui.act_settings_show_keyboard.setVisible(False)
-            self.ui.menu_Canvas.setEnabled(False)
-            self.ui.menu_Canvas.setVisible(False)
-            self.ui.menu_Canvas_Zoom.setEnabled(False)
-            self.ui.menu_Canvas_Zoom.setVisible(False)
-            self.ui.miniCanvasPreview.hide()
+        #if showCanvas:
+        #canvasWidth, canvasHeight, canvasBg, canvasBrush, canvasPen = canvasThemeData
+        #self.ui.miniCanvasPreview.setViewTheme(canvasBg, canvasBrush, canvasPen)
+        #self.ui.miniCanvasPreview.init(self.fContainer.scene, canvasWidth, canvasHeight, self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING])
+        #else:
+            #self.ui.act_canvas_show_internal.setEnabled(False)
+            #self.ui.act_canvas_show_external.setEnabled(False)
+            #self.ui.act_canvas_arrange.setVisible(False)
+            #self.ui.act_canvas_print.setVisible(False)
+            #self.ui.act_canvas_refresh.setVisible(False)
+            #self.ui.act_canvas_save_image.setVisible(False)
+            #self.ui.act_canvas_zoom_100.setVisible(False)
+            #self.ui.act_canvas_zoom_fit.setVisible(False)
+            #self.ui.act_canvas_zoom_in.setVisible(False)
+            #self.ui.act_canvas_zoom_out.setVisible(False)
+            #self.ui.act_settings_show_meters.setVisible(False)
+            #self.ui.act_settings_show_keyboard.setVisible(False)
+            #self.ui.menu_Canvas.setEnabled(False)
+            #self.ui.menu_Canvas.setVisible(False)
+            #self.ui.menu_Canvas_Zoom.setEnabled(False)
+            #self.ui.menu_Canvas_Zoom.setVisible(False)
+            #self.ui.miniCanvasPreview.hide()
 
-        self.setCentralWidget(self.fContainer)
-        self.ui.centralwidget = self.fContainer
+        self.fContainer.hide()
+        #self.setCentralWidget(self.fContainer)
+        #self.ui.centralwidget = self.fContainer
 
     def updateContainer(self, canvasThemeData):
         canvasWidth, canvasHeight, canvasBg, canvasBrush, canvasPen = canvasThemeData
         self.ui.miniCanvasPreview.setViewTheme(canvasBg, canvasBrush, canvasPen)
-        self.ui.miniCanvasPreview.init(self.fContainer.scene, canvasWidth, canvasHeight, self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING])
+        self.ui.miniCanvasPreview.init(self.scene, canvasWidth, canvasHeight, self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING])
 
     # --------------------------------------------------------------------------------------------------------
     # Called by the signal handler
@@ -665,6 +867,117 @@ class HostWindow(QMainWindow):
     def slot_handlePluginRemovedCallback(self, pluginId):
         self.ui.act_plugin_remove_all.setEnabled(self.host.get_current_plugin_count() > 0)
 
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(int, int, int, str)
+    def slot_handlePatchbayClientAddedCallback(self, clientId, clientIcon, pluginId, clientName):
+        pcSplit = patchcanvas.SPLIT_UNDEF
+        pcIcon  = patchcanvas.ICON_APPLICATION
+
+        if clientIcon == PATCHBAY_ICON_PLUGIN:
+            pcIcon = patchcanvas.ICON_PLUGIN
+        if clientIcon == PATCHBAY_ICON_HARDWARE:
+            pcIcon = patchcanvas.ICON_HARDWARE
+        elif clientIcon == PATCHBAY_ICON_CARLA:
+            pass
+        elif clientIcon == PATCHBAY_ICON_DISTRHO:
+            pcIcon = patchcanvas.ICON_DISTRHO
+        elif clientIcon == PATCHBAY_ICON_FILE:
+            pcIcon = patchcanvas.ICON_FILE
+
+        patchcanvas.addGroup(clientId, clientName, pcSplit, pcIcon)
+
+        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+
+        if pluginId < 0:
+            return
+        if pluginId >= self.fPluginCount:
+            print("sorry, can't map this plugin to canvas client", pluginId, self.fPluginCount)
+            return
+
+        patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(self.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI))
+
+    @pyqtSlot(int)
+    def slot_handlePatchbayClientRemovedCallback(self, clientId):
+        #if not self.fEngineStarted: return
+        patchcanvas.removeGroup(clientId)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+
+    @pyqtSlot(int, str)
+    def slot_handlePatchbayClientRenamedCallback(self, clientId, newClientName):
+        patchcanvas.renameGroup(clientId, newClientName)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+
+    @pyqtSlot(int, int, int)
+    def slot_handlePatchbayClientDataChangedCallback(self, clientId, clientIcon, pluginId):
+        pcIcon = patchcanvas.ICON_APPLICATION
+
+        if clientIcon == PATCHBAY_ICON_PLUGIN:
+            pcIcon = patchcanvas.ICON_PLUGIN
+        if clientIcon == PATCHBAY_ICON_HARDWARE:
+            pcIcon = patchcanvas.ICON_HARDWARE
+        elif clientIcon == PATCHBAY_ICON_CARLA:
+            pass
+        elif clientIcon == PATCHBAY_ICON_DISTRHO:
+            pcIcon = patchcanvas.ICON_DISTRHO
+        elif clientIcon == PATCHBAY_ICON_FILE:
+            pcIcon = patchcanvas.ICON_FILE
+
+        patchcanvas.setGroupIcon(clientId, pcIcon)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+
+        if pluginId < 0:
+            return
+        if pluginId >= self.fPluginCount:
+            print("sorry, can't map this plugin to canvas client", pluginId, self.fPluginCount)
+            return
+
+        patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(self.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI))
+
+    @pyqtSlot(int, int, int, str)
+    def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portName):
+        isAlternate = False
+
+        if (portFlags & PATCHBAY_PORT_IS_INPUT):
+            portMode = patchcanvas.PORT_MODE_INPUT
+        else:
+            portMode = patchcanvas.PORT_MODE_OUTPUT
+
+        if (portFlags & PATCHBAY_PORT_TYPE_AUDIO):
+            portType = patchcanvas.PORT_TYPE_AUDIO_JACK
+        elif (portFlags & PATCHBAY_PORT_TYPE_CV):
+            isAlternate = True
+            portType = patchcanvas.PORT_TYPE_AUDIO_JACK
+        elif (portFlags & PATCHBAY_PORT_TYPE_MIDI):
+            portType = patchcanvas.PORT_TYPE_MIDI_JACK
+        else:
+            portType = patchcanvas.PORT_TYPE_NULL
+
+        patchcanvas.addPort(clientId, portId, portName, portMode, portType, isAlternate)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+
+    @pyqtSlot(int, int)
+    def slot_handlePatchbayPortRemovedCallback(self, groupId, portId):
+        #if not self.fEngineStarted: return
+        patchcanvas.removePort(groupId, portId)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+
+    @pyqtSlot(int, int, str)
+    def slot_handlePatchbayPortRenamedCallback(self, groupId, portId, newPortName):
+        patchcanvas.renamePort(groupId, portId, newPortName)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+
+    @pyqtSlot(int, int, int, int, int)
+    def slot_handlePatchbayConnectionAddedCallback(self, connectionId, groupOutId, portOutId, groupInId, portInId):
+        patchcanvas.connectPorts(connectionId, groupOutId, portOutId, groupInId, portInId)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+
+    @pyqtSlot(int, int, int)
+    def slot_handlePatchbayConnectionRemovedCallback(self, connectionId, portOutId, portInId):
+        #if not self.fEngineStarted: return
+        patchcanvas.disconnectPorts(connectionId)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+
     # --------------------------------------------------------------------------------------------------------
     # Internal stuff (plugin data)
 
@@ -852,6 +1165,15 @@ class HostWindow(QMainWindow):
             #if MACOS and not settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool):
             #    self.setUnifiedTitleAndToolBarOnMac(True)
 
+            showMeters = settings.value("ShowMeters", False, type=bool)
+            self.ui.act_settings_show_meters.setChecked(showMeters)
+            self.ui.peak_in.setVisible(showMeters)
+            self.ui.peak_out.setVisible(showMeters)
+
+            showKeyboard = settings.value("ShowKeyboard", not(MACOS or WINDOWS), type=bool)
+            self.ui.act_settings_show_keyboard.setChecked(showKeyboard)
+            self.ui.scrollArea.setVisible(showKeyboard)
+
         # ---------------------------------------------
 
         # TODO
@@ -893,6 +1215,11 @@ class HostWindow(QMainWindow):
             diskFolders.append(self.ui.cb_disk.itemData(i))
 
         settings.setValue("DiskFolders", diskFolders)
+
+        settings.setValue("ShowMeters", self.ui.act_settings_show_meters.isChecked())
+        settings.setValue("ShowKeyboard", self.ui.act_settings_show_keyboard.isChecked())
+        settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
+        settings.setValue("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().value())
 
         self.fContainer.saveSettings(settings)
 
@@ -994,15 +1321,58 @@ class HostWindow(QMainWindow):
 
     # -----------------------------------------------------------------
 
+    def fixCanvasPreviewSize(self):
+        self.ui.patchbay.resize(self.ui.plugins.size())
+        self.slot_miniCanvasCheckSize()
+
+    def resizeEvent(self, event):
+        QMainWindow.resizeEvent(self, event)
+
+        if self.ui.tabWidget.currentIndex() == 0:
+            self.fixCanvasPreviewSize()
+        else:
+            self.slot_miniCanvasCheckSize()
+
+    # -----------------------------------------------------------------
+
+    def idleFast(self):
+        self.host.engine_idle()
+        self.refreshTransport()
+
+        if self.fPluginCount == 0:
+            return
+
+        for pluginId in self.fSelectedPlugins:
+            self.fPeaksCleared = False
+            if self.ui.peak_in.isVisible():
+                self.ui.peak_in.displayMeter(1, self.host.get_input_peak_value(pluginId, True))
+                self.ui.peak_in.displayMeter(2, self.host.get_input_peak_value(pluginId, False))
+            if self.ui.peak_out.isVisible():
+                self.ui.peak_out.displayMeter(1, self.host.get_output_peak_value(pluginId, True))
+                self.ui.peak_out.displayMeter(2, self.host.get_output_peak_value(pluginId, False))
+            return
+
+        if self.fPeaksCleared:
+            return
+
+        self.fPeaksCleared = True
+        self.ui.peak_in.displayMeter(1, 0.0, True)
+        self.ui.peak_in.displayMeter(2, 0.0, True)
+        self.ui.peak_out.displayMeter(1, 0.0, True)
+        self.ui.peak_out.displayMeter(2, 0.0, True)
+
+    def idleSlow(self):
+        for pedit in self.fPluginList:
+            if pedit is None:
+                break
+            pedit.idleSlow()
+
     def timerEvent(self, event):
         if event.timerId() == self.fIdleTimerFast:
-            #if not self.host.isPlugin:
-            self.fContainer.idleFast()
-            self.refreshTransport()
-            self.host.engine_idle()
+            self.idleFast()
 
         elif event.timerId() == self.fIdleTimerSlow:
-            self.fContainer.idleSlow()
+            self.idleSlow()
 
         QMainWindow.timerEvent(self, event)
 
@@ -1036,6 +1406,72 @@ class HostWindow(QMainWindow):
             self.slot_engineStop()
 
         QMainWindow.closeEvent(self, event)
+
+# ------------------------------------------------------------------------------------------------
+# Canvas callback
+
+def canvasCallback(action, value1, value2, valueStr):
+    host = gCarla.gui.host
+
+    if action == patchcanvas.ACTION_GROUP_INFO:
+        pass
+
+    elif action == patchcanvas.ACTION_GROUP_RENAME:
+        pass
+
+    elif action == patchcanvas.ACTION_GROUP_SPLIT:
+        groupId = value1
+        patchcanvas.splitGroup(groupId)
+        gCarla.gui.ui.miniCanvasPreview.update()
+
+    elif action == patchcanvas.ACTION_GROUP_JOIN:
+        groupId = value1
+        patchcanvas.joinGroup(groupId)
+        gCarla.gui.ui.miniCanvasPreview.update()
+
+    elif action == patchcanvas.ACTION_PORT_INFO:
+        pass
+
+    elif action == patchcanvas.ACTION_PORT_RENAME:
+        pass
+
+    elif action == patchcanvas.ACTION_PORTS_CONNECT:
+        gOut, pOut, gIn, pIn = [int(i) for i in valueStr.split(":")]
+
+        if not host.patchbay_connect(gOut, pOut, gIn, pIn):
+            print("Connection failed:", host.get_last_error())
+
+    elif action == patchcanvas.ACTION_PORTS_DISCONNECT:
+        connectionId = value1
+
+        if not host.patchbay_disconnect(connectionId):
+            print("Disconnect failed:", host.get_last_error())
+
+    elif action == patchcanvas.ACTION_PLUGIN_CLONE:
+        pluginId = value1
+
+        host.clone_plugin(pluginId)
+
+    elif action == patchcanvas.ACTION_PLUGIN_EDIT:
+        pluginId = value1
+
+        gCarla.gui.fContainer.showEditDialog(pluginId)
+
+    elif action == patchcanvas.ACTION_PLUGIN_RENAME:
+        pluginId = value1
+        newName  = valueStr
+
+        host.rename_plugin(pluginId, newName)
+
+    elif action == patchcanvas.ACTION_PLUGIN_REMOVE:
+        pluginId = value1
+
+        host.remove_plugin(pluginId)
+
+    elif action == patchcanvas.ACTION_PLUGIN_SHOW_UI:
+        pluginId = value1
+
+        host.show_custom_ui(pluginId, True)
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine callback

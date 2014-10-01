@@ -6,21 +6,92 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>739</width>
-    <height>467</height>
+    <width>870</width>
+    <height>681</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
-  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout_3">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="margin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>1</number>
+      </property>
+      <widget class="QWidget" name="plugins">
+       <attribute name="title">
+        <string>Plugins</string>
+       </attribute>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="QLabel" name="pad_left">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QListWidget" name="listWidget"/>
+        </item>
+        <item>
+         <widget class="QLabel" name="pad_right">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="patchbay">
+       <attribute name="title">
+        <string>Patchbay</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>1</number>
+        </property>
+        <property name="spacing">
+         <number>1</number>
+        </property>
+        <item row="0" column="1">
+         <widget class="QGraphicsView" name="graphicsView"/>
+        </item>
+        <item row="0" column="2">
+         <widget class="DigitalPeakMeter" name="peak_out" native="true"/>
+        </item>
+        <item row="0" column="0">
+         <widget class="DigitalPeakMeter" name="peak_in" native="true"/>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>739</width>
-     <height>19</height>
+     <width>870</width>
+     <height>17</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -310,7 +381,6 @@
          <property name="frameShadow">
           <enum>QFrame::Sunken</enum>
          </property>
-         <zorder>tabUtils</zorder>
         </widget>
        </item>
       </layout>
@@ -686,6 +756,12 @@
    <class>CanvasPreviewFrame</class>
    <extends>QFrame</extends>
    <header>canvaspreviewframe.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>DigitalPeakMeter</class>
+   <extends>QWidget</extends>
+   <header>digitalpeakmeter.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

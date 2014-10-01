@@ -67,7 +67,7 @@ class CarlaMultiW(QTabWidget):
         #self.fPatchbay.setWindowTitle(parent.windowTitle())
         #self.fPatchbay.show()
 
-        self.scene = self.fPatchbay.scene
+        #self.scene = self.fPatchbay.scene
 
         parent.ui.act_plugins_enable.triggered.connect(self.fRack.slot_pluginsEnable)
         parent.ui.act_plugins_disable.triggered.connect(self.fRack.slot_pluginsDisable)
@@ -136,10 +136,6 @@ class CarlaMultiW(QTabWidget):
 
     # -----------------------------------------------------------------
 
-    def fixCanvasPreviewSize(self):
-        self.fPatchbay.resize(self.fRack.size())
-        self.fPatchbay.slot_miniCanvasCheckSize()
-
     # -----------------------------------------------------------------
 
     def paintEvent(self, event):
@@ -170,7 +166,7 @@ class CarlaHostW(HostWindow):
         # Set-up container
 
         self.fContainer = CarlaMultiW(self, host)
-        self.setupContainer(True, self.fContainer.fPatchbay.themeData)
+        self.setupContainer(False)
 
         # -------------------------------------------------------------
         # Set-up GUI stuff
@@ -248,11 +244,6 @@ class CarlaHostW(HostWindow):
 
         self.fInfoLabel.move(x, y)
         self.fInfoLabel.resize(self.fContainer.width()-tabBar.width()-20, tabBar.height())
-
-        # FIXME: Qt4 needs this so it properly creates & resizes the canvas
-        self.fContainer.setCurrentIndex(1)
-        self.fContainer.setCurrentIndex(0)
-        self.fContainer.fixCanvasPreviewSize()
 
     @pyqtSlot(bool)
     def slot_dockTopLevelChanged(self, top):

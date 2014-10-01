@@ -42,24 +42,6 @@ from carla_host import *
 from digitalpeakmeter import DigitalPeakMeter
 from pixmapkeyboard import PixmapKeyboardHArea
 
-# ------------------------------------------------------------------------------------------------------------
-# Try Import OpenGL
-
-try:
-    if config_UseQt5:
-        from PyQt5.QtOpenGL import QGLWidget
-    else:
-        from PyQt4.QtOpenGL import QGLWidget
-    hasGL = True
-except:
-    hasGL = False
-
-# ------------------------------------------------------------------------------------------------------------
-# Carla Canvas defaults
-
-CARLA_DEFAULT_CANVAS_SIZE_WIDTH  = 3100
-CARLA_DEFAULT_CANVAS_SIZE_HEIGHT = 2400
-
 # ------------------------------------------------------------------------------------------------
 # Dummy class used in main carla as replacement for PluginEdit
 
@@ -111,150 +93,44 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, HostWidgetMeta):
         QFrame.__init__(self, parent)
         self.host = host
 
-        if False:
-            # kdevelop likes this :)
-            host = CarlaHostMeta()
-            self.host = host
-
-        # -------------------------------------------------------------
-
-        self.fLayout = QGridLayout(self)
-        self.fLayout.setContentsMargins(0, 0, 0, 0)
-        self.fLayout.setSpacing(1)
-        self.setLayout(self.fLayout)
-
-        self.fView = QGraphicsView(self)
-        self.fKeys = PixmapKeyboardHArea(self)
-
-        self.fPeaksIn  = DigitalPeakMeter(self)
-        self.fPeaksOut = DigitalPeakMeter(self)
-        self.fPeaksCleared = True
-
-        self.fPeaksIn.setColor(DigitalPeakMeter.BLUE)
-        self.fPeaksIn.setChannels(2)
-        self.fPeaksIn.setOrientation(DigitalPeakMeter.VERTICAL)
-        self.fPeaksIn.setFixedWidth(25)
-
-        self.fPeaksOut.setColor(DigitalPeakMeter.GREEN)
-        self.fPeaksOut.setChannels(2)
-        self.fPeaksOut.setOrientation(DigitalPeakMeter.VERTICAL)
-        self.fPeaksOut.setFixedWidth(25)
-
-        self.fLayout.addWidget(self.fPeaksIn, 0, 0)
-        self.fLayout.addWidget(self.fView, 0, 1) # self.fViewWidget if is3D else
-        self.fLayout.addWidget(self.fPeaksOut, 0, 2)
-        self.fLayout.addWidget(self.fKeys, 1, 0, 1, 0)
-
-        # -------------------------------------------------------------
-        # Internal stuff
-
-        self.fParent      = parent
-        self.fPluginCount = 0
-        self.fPluginList  = []
-
-        self.fExternalPatchbay = False
-        self.fIsOnlyPatchbay   = onlyPatchbay
-        self.fSelectedPlugins  = []
-
-        self.fCanvasWidth  = 0
-        self.fCanvasHeight = 0
-
-        # -------------------------------------------------------------
-        # Set-up Canvas Preview
-
-        self.fMiniCanvasPreview = self.fParent.ui.miniCanvasPreview
-        self.fMiniCanvasPreview.setRealParent(self)
-        self.fMovingViaMiniCanvas = False
-
-        # -------------------------------------------------------------
-        # Set-up Canvas
-
-        self.scene = patchcanvas.PatchScene(self, self.fView)
-        self.fView.setScene(self.scene)
-        self.fView.setRenderHint(QPainter.Antialiasing, bool(parent.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] == patchcanvas.ANTIALIASING_FULL))
-
-        if parent.fSavedSettings[CARLA_KEY_CANVAS_USE_OPENGL] and hasGL: # and not is3D:
-            self.fViewWidget = QGLWidget(self)
-            self.fView.setViewport(self.fViewWidget)
-            self.fView.setRenderHint(QPainter.HighQualityAntialiasing, parent.fSavedSettings[CARLA_KEY_CANVAS_HQ_ANTIALIASING])
-
-        self.setupCanvas()
-
-        QTimer.singleShot(100, self.slot_restoreScrollbarValues)
-
         # -------------------------------------------------------------
         # Connect actions to functions
 
-        parent.ui.act_settings_show_meters.toggled.connect(self.slot_showCanvasMeters)
-        parent.ui.act_settings_show_keyboard.toggled.connect(self.slot_showCanvasKeyboard)
-
-        self.fView.horizontalScrollBar().valueChanged.connect(self.slot_horizontalScrollBarChanged)
-        self.fView.verticalScrollBar().valueChanged.connect(self.slot_verticalScrollBarChanged)
-
-        self.scene.scaleChanged.connect(self.slot_canvasScaleChanged)
-        self.scene.sceneGroupMoved.connect(self.slot_canvasItemMoved)
-        self.scene.pluginSelected.connect(self.slot_canvasPluginSelected)
-
-        self.fMiniCanvasPreview.miniCanvasMoved.connect(self.slot_miniCanvasMoved)
-
-        self.fKeys.keyboard.noteOn.connect(self.slot_noteOn)
-        self.fKeys.keyboard.noteOff.connect(self.slot_noteOff)
-
-        # -------------------------------------------------------------
-        # Load Settings
-
-        settings = QSettings()
-
-        showMeters = settings.value("ShowMeters", False, type=bool)
-        self.fParent.ui.act_settings_show_meters.setChecked(showMeters)
-        self.fPeaksIn.setVisible(showMeters)
-        self.fPeaksOut.setVisible(showMeters)
-
-        showKeyboard = settings.value("ShowKeyboard", not(MACOS or WINDOWS), type=bool)
-        self.fParent.ui.act_settings_show_keyboard.setChecked(showKeyboard)
-        self.fKeys.setVisible(showKeyboard)
+        #self.fKeys.keyboard.noteOn.connect(self.slot_noteOn)
+        #self.fKeys.keyboard.noteOff.connect(self.slot_noteOff)
 
         # -------------------------------------------------------------
         # Connect actions to functions (part 2)
 
-        host.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
-        host.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
-        host.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
-        host.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
-        host.PatchbayClientAddedCallback.connect(self.slot_handlePatchbayClientAddedCallback)
-        host.PatchbayClientRemovedCallback.connect(self.slot_handlePatchbayClientRemovedCallback)
-        host.PatchbayClientRenamedCallback.connect(self.slot_handlePatchbayClientRenamedCallback)
-        host.PatchbayClientDataChangedCallback.connect(self.slot_handlePatchbayClientDataChangedCallback)
-        host.PatchbayPortAddedCallback.connect(self.slot_handlePatchbayPortAddedCallback)
-        host.PatchbayPortRemovedCallback.connect(self.slot_handlePatchbayPortRemovedCallback)
-        host.PatchbayPortRenamedCallback.connect(self.slot_handlePatchbayPortRenamedCallback)
-        host.PatchbayConnectionAddedCallback.connect(self.slot_handlePatchbayConnectionAddedCallback)
-        host.PatchbayConnectionRemovedCallback.connect(self.slot_handlePatchbayConnectionRemovedCallback)
+        #host.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
+        #host.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
+        #host.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
+        #host.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
 
-        if not doSetup: return
+        #if not doSetup: return
 
-        parent.ui.act_plugins_enable.triggered.connect(self.slot_pluginsEnable)
-        parent.ui.act_plugins_disable.triggered.connect(self.slot_pluginsDisable)
-        parent.ui.act_plugins_volume100.triggered.connect(self.slot_pluginsVolume100)
-        parent.ui.act_plugins_mute.triggered.connect(self.slot_pluginsMute)
-        parent.ui.act_plugins_wet100.triggered.connect(self.slot_pluginsWet100)
-        parent.ui.act_plugins_bypass.triggered.connect(self.slot_pluginsBypass)
-        parent.ui.act_plugins_center.triggered.connect(self.slot_pluginsCenter)
-        parent.ui.act_plugins_panic.triggered.connect(self.slot_pluginsDisable)
+        #parent.ui.act_plugins_enable.triggered.connect(self.slot_pluginsEnable)
+        #parent.ui.act_plugins_disable.triggered.connect(self.slot_pluginsDisable)
+        #parent.ui.act_plugins_volume100.triggered.connect(self.slot_pluginsVolume100)
+        #parent.ui.act_plugins_mute.triggered.connect(self.slot_pluginsMute)
+        #parent.ui.act_plugins_wet100.triggered.connect(self.slot_pluginsWet100)
+        #parent.ui.act_plugins_bypass.triggered.connect(self.slot_pluginsBypass)
+        #parent.ui.act_plugins_center.triggered.connect(self.slot_pluginsCenter)
+        #parent.ui.act_plugins_panic.triggered.connect(self.slot_pluginsDisable)
 
-        parent.ui.act_canvas_show_internal.triggered.connect(self.slot_canvasShowInternal)
-        parent.ui.act_canvas_show_external.triggered.connect(self.slot_canvasShowExternal)
-        parent.ui.act_canvas_arrange.setEnabled(False) # TODO, later
-        parent.ui.act_canvas_arrange.triggered.connect(self.slot_canvasArrange)
-        parent.ui.act_canvas_refresh.triggered.connect(self.slot_canvasRefresh)
-        parent.ui.act_canvas_zoom_fit.triggered.connect(self.slot_canvasZoomFit)
-        parent.ui.act_canvas_zoom_in.triggered.connect(self.slot_canvasZoomIn)
-        parent.ui.act_canvas_zoom_out.triggered.connect(self.slot_canvasZoomOut)
-        parent.ui.act_canvas_zoom_100.triggered.connect(self.slot_canvasZoomReset)
-        parent.ui.act_canvas_print.triggered.connect(self.slot_canvasPrint)
-        parent.ui.act_canvas_save_image.triggered.connect(self.slot_canvasSaveImage)
+        #parent.ui.act_canvas_show_internal.triggered.connect(self.slot_canvasShowInternal)
+        #parent.ui.act_canvas_show_external.triggered.connect(self.slot_canvasShowExternal)
+        #parent.ui.act_canvas_arrange.setEnabled(False) # TODO, later
+        #parent.ui.act_canvas_arrange.triggered.connect(self.slot_canvasArrange)
+        #parent.ui.act_canvas_refresh.triggered.connect(self.slot_canvasRefresh)
+        #parent.ui.act_canvas_zoom_fit.triggered.connect(self.slot_canvasZoomFit)
+        #parent.ui.act_canvas_zoom_in.triggered.connect(self.slot_canvasZoomIn)
+        #parent.ui.act_canvas_zoom_out.triggered.connect(self.slot_canvasZoomOut)
+        #parent.ui.act_canvas_zoom_100.triggered.connect(self.slot_canvasZoomReset)
+        #parent.ui.act_canvas_print.triggered.connect(self.slot_canvasPrint)
+        #parent.ui.act_canvas_save_image.triggered.connect(self.slot_canvasSaveImage)
 
-        parent.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
+        #parent.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
 
     # -----------------------------------------------------------------
 
@@ -320,7 +196,7 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, HostWidgetMeta):
     # HostWidgetMeta methods
 
     def removeAllPlugins(self):
-        patchcanvas.handleAllPluginsRemoved()
+        #patchcanvas.handleAllPluginsRemoved()
 
         for pedit in self.fPluginList:
             if pedit is None:
@@ -337,49 +213,20 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, HostWidgetMeta):
         pass
 
     def engineStopped(self):
-        patchcanvas.clear()
-
-    def idleFast(self):
-        if self.fPluginCount == 0:
-            return
-
-        for pluginId in self.fSelectedPlugins:
-            self.fPeaksCleared = False
-            if self.fPeaksIn.isVisible():
-                self.fPeaksIn.displayMeter(1, self.host.get_input_peak_value(pluginId, True))
-                self.fPeaksIn.displayMeter(2, self.host.get_input_peak_value(pluginId, False))
-            if self.fPeaksOut.isVisible():
-                self.fPeaksOut.displayMeter(1, self.host.get_output_peak_value(pluginId, True))
-                self.fPeaksOut.displayMeter(2, self.host.get_output_peak_value(pluginId, False))
-            return
-
-        if self.fPeaksCleared:
-            return
-
-        self.fPeaksCleared = True
-        self.fPeaksIn.displayMeter(1, 0.0, True)
-        self.fPeaksIn.displayMeter(2, 0.0, True)
-        self.fPeaksOut.displayMeter(1, 0.0, True)
-        self.fPeaksOut.displayMeter(2, 0.0, True)
-
-    def idleSlow(self):
-        for pedit in self.fPluginList:
-            if pedit is None:
-                break
-            pedit.idleSlow()
+        pass
+        #patchcanvas.clear()
 
     def projectLoadingStarted(self):
-        self.fView.setEnabled(False)
+        pass
+        #self.fView.setEnabled(False)
 
     def projectLoadingFinished(self):
-        self.fView.setEnabled(True)
-        QTimer.singleShot(1000, self.slot_canvasRefresh)
+        pass
+        #self.fView.setEnabled(True)
+        #QTimer.singleShot(1000, self.slot_canvasRefresh)
 
     def saveSettings(self, settings):
-        settings.setValue("ShowMeters", self.fParent.ui.act_settings_show_meters.isChecked())
-        settings.setValue("ShowKeyboard", self.fParent.ui.act_settings_show_keyboard.isChecked())
-        settings.setValue("HorizontalScrollBarValue", self.fView.horizontalScrollBar().value())
-        settings.setValue("VerticalScrollBarValue", self.fView.verticalScrollBar().value())
+        pass
 
     def showEditDialog(self, pluginId):
         pedit = self.getPluginEditDialog(pluginId)
@@ -419,134 +266,18 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, HostWidgetMeta):
     # -----------------------------------------------------------------
 
     def clearSideStuff(self):
-        self.scene.clearSelection()
+        #self.scene.clearSelection()
 
         self.fSelectedPlugins = []
 
-        self.fKeys.keyboard.allNotesOff(False)
-        self.fKeys.setEnabled(False)
+        #self.fKeys.keyboard.allNotesOff(False)
+        #self.fKeys.setEnabled(False)
 
-        self.fPeaksCleared = True
-        self.fPeaksIn.displayMeter(1, 0.0, True)
-        self.fPeaksIn.displayMeter(2, 0.0, True)
-        self.fPeaksOut.displayMeter(1, 0.0, True)
-        self.fPeaksOut.displayMeter(2, 0.0, True)
-
-    def setupCanvas(self):
-        pOptions = patchcanvas.options_t()
-        pOptions.theme_name       = self.fParent.fSavedSettings[CARLA_KEY_CANVAS_THEME]
-        pOptions.auto_hide_groups = self.fParent.fSavedSettings[CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS]
-        pOptions.use_bezier_lines = self.fParent.fSavedSettings[CARLA_KEY_CANVAS_USE_BEZIER_LINES]
-        pOptions.antialiasing     = self.fParent.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING]
-        pOptions.eyecandy         = self.fParent.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY]
-
-        pFeatures = patchcanvas.features_t()
-        pFeatures.group_info   = False
-        pFeatures.group_rename = False
-        pFeatures.port_info    = False
-        pFeatures.port_rename  = False
-        pFeatures.handle_group_pos = True
-
-        patchcanvas.setOptions(pOptions)
-        patchcanvas.setFeatures(pFeatures)
-        patchcanvas.init("Carla2", self.scene, canvasCallback, False)
-
-        tryCanvasSize = self.fParent.fSavedSettings[CARLA_KEY_CANVAS_SIZE].split("x")
-
-        if len(tryCanvasSize) == 2 and tryCanvasSize[0].isdigit() and tryCanvasSize[1].isdigit():
-            self.fCanvasWidth  = int(tryCanvasSize[0])
-            self.fCanvasHeight = int(tryCanvasSize[1])
-        else:
-            self.fCanvasWidth  = CARLA_DEFAULT_CANVAS_SIZE_WIDTH
-            self.fCanvasHeight = CARLA_DEFAULT_CANVAS_SIZE_HEIGHT
-
-        patchcanvas.setCanvasSize(0, 0, self.fCanvasWidth, self.fCanvasHeight)
-        patchcanvas.setInitialPos(self.fCanvasWidth / 2, self.fCanvasHeight / 2)
-        self.fView.setSceneRect(0, 0, self.fCanvasWidth, self.fCanvasHeight)
-
-        self.themeData = [self.fCanvasWidth, self.fCanvasHeight, patchcanvas.canvas.theme.canvas_bg, patchcanvas.canvas.theme.rubberband_brush, patchcanvas.canvas.theme.rubberband_pen.color()]
-
-    def updateCanvasInitialPos(self):
-        x = self.fView.horizontalScrollBar().value() + self.width()/4
-        y = self.fView.verticalScrollBar().value() + self.height()/4
-        patchcanvas.setInitialPos(x, y)
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(bool)
-    def slot_showCanvasMeters(self, yesNo):
-        self.fPeaksIn.setVisible(yesNo)
-        self.fPeaksOut.setVisible(yesNo)
-
-    @pyqtSlot(bool)
-    def slot_showCanvasKeyboard(self, yesNo):
-        self.fKeys.setVisible(yesNo)
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot()
-    def slot_miniCanvasCheckAll(self):
-        self.slot_miniCanvasCheckSize()
-        self.slot_horizontalScrollBarChanged(self.fView.horizontalScrollBar().value())
-        self.slot_verticalScrollBarChanged(self.fView.verticalScrollBar().value())
-
-    @pyqtSlot()
-    def slot_miniCanvasCheckSize(self):
-        self.fMiniCanvasPreview.setViewSize(float(self.width()) / self.fCanvasWidth, float(self.height()) / self.fCanvasHeight)
-
-    @pyqtSlot(int)
-    def slot_horizontalScrollBarChanged(self, value):
-        if self.fMovingViaMiniCanvas: return
-
-        maximum = self.fView.horizontalScrollBar().maximum()
-        if maximum == 0:
-            xp = 0
-        else:
-            xp = float(value) / maximum
-        self.fMiniCanvasPreview.setViewPosX(xp)
-        self.updateCanvasInitialPos()
-
-    @pyqtSlot(int)
-    def slot_verticalScrollBarChanged(self, value):
-        if self.fMovingViaMiniCanvas: return
-
-        maximum = self.fView.verticalScrollBar().maximum()
-        if maximum == 0:
-            yp = 0
-        else:
-            yp = float(value) / maximum
-        self.fMiniCanvasPreview.setViewPosY(yp)
-        self.updateCanvasInitialPos()
-
-    @pyqtSlot()
-    def slot_restoreScrollbarValues(self):
-        settings = QSettings()
-        self.fView.horizontalScrollBar().setValue(settings.value("HorizontalScrollBarValue", self.fView.horizontalScrollBar().maximum()/2, type=int))
-        self.fView.verticalScrollBar().setValue(settings.value("VerticalScrollBarValue", self.fView.verticalScrollBar().maximum()/2, type=int))
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(float)
-    def slot_canvasScaleChanged(self, scale):
-        self.fMiniCanvasPreview.setViewScale(scale)
-
-    @pyqtSlot(int, int, QPointF)
-    def slot_canvasItemMoved(self, group_id, split_mode, pos):
-        self.fMiniCanvasPreview.update()
-
-    @pyqtSlot(list)
-    def slot_canvasPluginSelected(self, pluginList):
-        self.fKeys.keyboard.allNotesOff(False)
-        self.fKeys.setEnabled(len(pluginList) != 0) # and self.fPluginCount > 0
-        self.fSelectedPlugins = pluginList
-
-    @pyqtSlot(float, float)
-    def slot_miniCanvasMoved(self, xp, yp):
-        self.fMovingViaMiniCanvas = True
-        self.fView.horizontalScrollBar().setValue(xp * self.fView.horizontalScrollBar().maximum())
-        self.fView.verticalScrollBar().setValue(yp * self.fView.verticalScrollBar().maximum())
-        self.fMovingViaMiniCanvas = False
-        self.updateCanvasInitialPos()
+        #self.fPeaksCleared = True
+        #self.fPeaksIn.displayMeter(1, 0.0, True)
+        #self.fPeaksIn.displayMeter(2, 0.0, True)
+        #self.fPeaksOut.displayMeter(1, 0.0, True)
+        #self.fPeaksOut.displayMeter(2, 0.0, True)
 
     # -----------------------------------------------------------------
 
@@ -674,121 +405,10 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, HostWidgetMeta):
 
         self.setupCanvas()
         self.fParent.updateContainer(self.themeData)
-        self.slot_miniCanvasCheckAll()
+        #self.slot_miniCanvasCheckAll()
 
         if self.host.is_engine_running():
             self.host.patchbay_refresh(self.fExternalPatchbay)
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(int, int, int, str)
-    def slot_handlePatchbayClientAddedCallback(self, clientId, clientIcon, pluginId, clientName):
-        pcSplit = patchcanvas.SPLIT_UNDEF
-        pcIcon  = patchcanvas.ICON_APPLICATION
-
-        if clientIcon == PATCHBAY_ICON_PLUGIN:
-            pcIcon = patchcanvas.ICON_PLUGIN
-        if clientIcon == PATCHBAY_ICON_HARDWARE:
-            pcIcon = patchcanvas.ICON_HARDWARE
-        elif clientIcon == PATCHBAY_ICON_CARLA:
-            pass
-        elif clientIcon == PATCHBAY_ICON_DISTRHO:
-            pcIcon = patchcanvas.ICON_DISTRHO
-        elif clientIcon == PATCHBAY_ICON_FILE:
-            pcIcon = patchcanvas.ICON_FILE
-
-        patchcanvas.addGroup(clientId, clientName, pcSplit, pcIcon)
-
-        QTimer.singleShot(0, self.fMiniCanvasPreview.update)
-
-        if pluginId < 0:
-            return
-        if pluginId >= self.fPluginCount:
-            print("sorry, can't map this plugin to canvas client", pluginId, self.fPluginCount)
-            return
-
-        patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(self.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI))
-
-    @pyqtSlot(int)
-    def slot_handlePatchbayClientRemovedCallback(self, clientId):
-        #if not self.fEngineStarted: return
-        patchcanvas.removeGroup(clientId)
-        QTimer.singleShot(0, self.fMiniCanvasPreview.update)
-
-    @pyqtSlot(int, str)
-    def slot_handlePatchbayClientRenamedCallback(self, clientId, newClientName):
-        patchcanvas.renameGroup(clientId, newClientName)
-        QTimer.singleShot(0, self.fMiniCanvasPreview.update)
-
-    @pyqtSlot(int, int, int)
-    def slot_handlePatchbayClientDataChangedCallback(self, clientId, clientIcon, pluginId):
-        pcIcon = patchcanvas.ICON_APPLICATION
-
-        if clientIcon == PATCHBAY_ICON_PLUGIN:
-            pcIcon = patchcanvas.ICON_PLUGIN
-        if clientIcon == PATCHBAY_ICON_HARDWARE:
-            pcIcon = patchcanvas.ICON_HARDWARE
-        elif clientIcon == PATCHBAY_ICON_CARLA:
-            pass
-        elif clientIcon == PATCHBAY_ICON_DISTRHO:
-            pcIcon = patchcanvas.ICON_DISTRHO
-        elif clientIcon == PATCHBAY_ICON_FILE:
-            pcIcon = patchcanvas.ICON_FILE
-
-        patchcanvas.setGroupIcon(clientId, pcIcon)
-        QTimer.singleShot(0, self.fMiniCanvasPreview.update)
-
-        if pluginId < 0:
-            return
-        if pluginId >= self.fPluginCount:
-            print("sorry, can't map this plugin to canvas client", pluginId, self.fPluginCount)
-            return
-
-        patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(self.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI))
-
-    @pyqtSlot(int, int, int, str)
-    def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portName):
-        isAlternate = False
-
-        if (portFlags & PATCHBAY_PORT_IS_INPUT):
-            portMode = patchcanvas.PORT_MODE_INPUT
-        else:
-            portMode = patchcanvas.PORT_MODE_OUTPUT
-
-        if (portFlags & PATCHBAY_PORT_TYPE_AUDIO):
-            portType = patchcanvas.PORT_TYPE_AUDIO_JACK
-        elif (portFlags & PATCHBAY_PORT_TYPE_CV):
-            isAlternate = True
-            portType = patchcanvas.PORT_TYPE_AUDIO_JACK
-        elif (portFlags & PATCHBAY_PORT_TYPE_MIDI):
-            portType = patchcanvas.PORT_TYPE_MIDI_JACK
-        else:
-            portType = patchcanvas.PORT_TYPE_NULL
-
-        patchcanvas.addPort(clientId, portId, portName, portMode, portType, isAlternate)
-        QTimer.singleShot(0, self.fMiniCanvasPreview.update)
-
-    @pyqtSlot(int, int)
-    def slot_handlePatchbayPortRemovedCallback(self, groupId, portId):
-        #if not self.fEngineStarted: return
-        patchcanvas.removePort(groupId, portId)
-        QTimer.singleShot(0, self.fMiniCanvasPreview.update)
-
-    @pyqtSlot(int, int, str)
-    def slot_handlePatchbayPortRenamedCallback(self, groupId, portId, newPortName):
-        patchcanvas.renamePort(groupId, portId, newPortName)
-        QTimer.singleShot(0, self.fMiniCanvasPreview.update)
-
-    @pyqtSlot(int, int, int, int, int)
-    def slot_handlePatchbayConnectionAddedCallback(self, connectionId, groupOutId, portOutId, groupInId, portInId):
-        patchcanvas.connectPorts(connectionId, groupOutId, portOutId, groupInId, portInId)
-        QTimer.singleShot(0, self.fMiniCanvasPreview.update)
-
-    @pyqtSlot(int, int, int)
-    def slot_handlePatchbayConnectionRemovedCallback(self, connectionId, portOutId, portInId):
-        #if not self.fEngineStarted: return
-        patchcanvas.disconnectPorts(connectionId)
-        QTimer.singleShot(0, self.fMiniCanvasPreview.update)
 
     # -----------------------------------------------------------------
 
@@ -820,7 +440,7 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, HostWidgetMeta):
 
     @pyqtSlot()
     def slot_canvasRefresh(self):
-        patchcanvas.clear()
+        #patchcanvas.clear()
 
         if self.host.is_engine_running():
             self.host.patchbay_refresh(self.fExternalPatchbay)
@@ -892,73 +512,3 @@ class CarlaPatchbayW(QFrame, PluginEditParentMeta, HostWidgetMeta):
         painter.restore()
 
     # -----------------------------------------------------------------
-
-    def resizeEvent(self, event):
-        QFrame.resizeEvent(self, event)
-        self.slot_miniCanvasCheckSize()
-
-# ------------------------------------------------------------------------------------------------
-# Canvas callback
-
-def canvasCallback(action, value1, value2, valueStr):
-    host = gCarla.gui.host
-
-    if action == patchcanvas.ACTION_GROUP_INFO:
-        pass
-
-    elif action == patchcanvas.ACTION_GROUP_RENAME:
-        pass
-
-    elif action == patchcanvas.ACTION_GROUP_SPLIT:
-        groupId = value1
-        patchcanvas.splitGroup(groupId)
-        gCarla.gui.ui.miniCanvasPreview.update()
-
-    elif action == patchcanvas.ACTION_GROUP_JOIN:
-        groupId = value1
-        patchcanvas.joinGroup(groupId)
-        gCarla.gui.ui.miniCanvasPreview.update()
-
-    elif action == patchcanvas.ACTION_PORT_INFO:
-        pass
-
-    elif action == patchcanvas.ACTION_PORT_RENAME:
-        pass
-
-    elif action == patchcanvas.ACTION_PORTS_CONNECT:
-        gOut, pOut, gIn, pIn = [int(i) for i in valueStr.split(":")]
-
-        if not host.patchbay_connect(gOut, pOut, gIn, pIn):
-            print("Connection failed:", host.get_last_error())
-
-    elif action == patchcanvas.ACTION_PORTS_DISCONNECT:
-        connectionId = value1
-
-        if not host.patchbay_disconnect(connectionId):
-            print("Disconnect failed:", host.get_last_error())
-
-    elif action == patchcanvas.ACTION_PLUGIN_CLONE:
-        pluginId = value1
-
-        host.clone_plugin(pluginId)
-
-    elif action == patchcanvas.ACTION_PLUGIN_EDIT:
-        pluginId = value1
-
-        gCarla.gui.fContainer.showEditDialog(pluginId)
-
-    elif action == patchcanvas.ACTION_PLUGIN_RENAME:
-        pluginId = value1
-        newName  = valueStr
-
-        host.rename_plugin(pluginId, newName)
-
-    elif action == patchcanvas.ACTION_PLUGIN_REMOVE:
-        pluginId = value1
-
-        host.remove_plugin(pluginId)
-
-    elif action == patchcanvas.ACTION_PLUGIN_SHOW_UI:
-        pluginId = value1
-
-        host.show_custom_ui(pluginId, True)
