@@ -134,9 +134,7 @@ public:
             return;
 
         const lo_address addr = lo_address_new_from_url(NSM_URL);
-
-        if (addr == nullptr)
-            return;
+        CARLA_SAFE_ASSERT_RETURN(addr != nullptr,);
 
         const int proto = lo_address_get_protocol(addr);
 

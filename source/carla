@@ -165,121 +165,121 @@ class CarlaHostW(HostWindow):
         # -------------------------------------------------------------
         # Set-up container
 
-        self.fContainer = CarlaMultiW(self, host)
-        self.setupContainer(False)
+        #self.fContainer = CarlaMultiW(self, host)
+        #self.setupContainer(False)
 
         # -------------------------------------------------------------
         # Set-up GUI stuff
 
-        self.fInfoText  = ""
-        self.fInfoLabel = QLabel(self)
-        self.fInfoLabel.setAlignment(Qt.AlignRight|Qt.AlignVCenter)
-        self.fInfoLabel.setText("Engine stopped")
+        #self.fInfoText  = ""
+        #self.fInfoLabel = QLabel(self)
+        #self.fInfoLabel.setAlignment(Qt.AlignRight|Qt.AlignVCenter)
+        #self.fInfoLabel.setText("Engine stopped")
 
-        self.fDockLocation = Qt.LeftDockWidgetArea
-        self.fDockFloating = 0
+        #self.fDockLocation = Qt.LeftDockWidgetArea
+        #self.fDockFloating = 0
 
-        if MACOS and False: # TODO: check if NOT using pro theme
-            self.fInfoLabel.hide()
-            self.setUnifiedTitleAndToolBarOnMac(True)
+        #if MACOS and False: # TODO: check if NOT using pro theme
+            #self.fInfoLabel.hide()
+            #self.setUnifiedTitleAndToolBarOnMac(True)
 
         # -------------------------------------------------------------
 
-        self.ui.act_settings_show_toolbar.triggered.connect(self.slot_toolbarShown)
-        self.ui.dockWidget.dockLocationChanged.connect(self.slot_dockLocationChanged)
-        self.ui.dockWidget.topLevelChanged.connect(self.slot_dockTopLevelChanged)
+        #self.ui.act_settings_show_toolbar.triggered.connect(self.slot_toolbarShown)
+        #self.ui.dockWidget.dockLocationChanged.connect(self.slot_dockLocationChanged)
+        #self.ui.dockWidget.topLevelChanged.connect(self.slot_dockTopLevelChanged)
 
-        self.ui.dockWidget.installEventFilter(self)
+        #self.ui.dockWidget.installEventFilter(self)
 
-        QTimer.singleShot(0, self.slot_initWidgets)
-
-    # -----------------------------------------------------------------
-
-    def engineChanged(self):
-        self.fInfoText = "Engine running | SampleRate: %g | BufferSize: %i" % (self.host.get_sample_rate(), self.host.get_buffer_size())
-        self.fInfoLabel.setText("%s | %s" % (self.fInfoText, self.fTransportText))
-
-    def engineStarted(self):
-        self.engineChanged()
-
-    def engineStopped(self):
-        self.fInfoText = ""
-        self.fInfoLabel.setText("Engine stopped")
+        #QTimer.singleShot(0, self.slot_initWidgets)
 
     # -----------------------------------------------------------------
 
-    def updateInfoLabelXandSize(self):
-        tabBar = self.fContainer.tabBar()
-        x      = tabBar.width() + 20
-        width  = self.fContainer.width() - tabBar.width() - 20
+    #def engineChanged(self):
+        #self.fInfoText = "Engine running | SampleRate: %g | BufferSize: %i" % (self.host.get_sample_rate(), self.host.get_buffer_size())
+        #self.fInfoLabel.setText("%s | %s" % (self.fInfoText, self.fTransportText))
 
-        if self.fDockLocation == Qt.LeftDockWidgetArea and self.fDockFloating <= 1:
-            x += self.ui.dockWidget.width()
+    #def engineStarted(self):
+        #self.engineChanged()
 
-        self.fInfoLabel.move(x, self.fInfoLabel.y())
-        self.fInfoLabel.resize(width, self.fInfoLabel.height())
-
-        if self.fDockFloating == 1:
-            self.fDockFloating = 2
-
-    def updateInfoLabelY(self):
-        tabBar = self.fContainer.tabBar()
-        y = tabBar.mapFromParent(self.ui.centralwidget.pos()).y()
-
-        if not self.ui.toolBar.isVisible():
-            y -= self.ui.toolBar.height()
-
-        self.fInfoLabel.move(self.fInfoLabel.x(), y)
+    #def engineStopped(self):
+        #self.fInfoText = ""
+        #self.fInfoLabel.setText("Engine stopped")
 
     # -----------------------------------------------------------------
 
-    @pyqtSlot()
-    def slot_initWidgets(self):
-        tabBar = self.fContainer.tabBar()
-        x = tabBar.width() + 20
-        y = tabBar.mapFromParent(self.ui.centralwidget.pos()).y()
+    #def updateInfoLabelXandSize(self):
+        #tabBar = self.fContainer.tabBar()
+        #x      = tabBar.width() + 20
+        #width  = self.fContainer.width() - tabBar.width() - 20
 
-        if self.fDockLocation == Qt.LeftDockWidgetArea and self.fDockFloating <= 1:
-            x += self.ui.tabUtils.width()
+        #if self.fDockLocation == Qt.LeftDockWidgetArea and self.fDockFloating <= 1:
+            #x += self.ui.dockWidget.width()
 
-        self.fInfoLabel.move(x, y)
-        self.fInfoLabel.resize(self.fContainer.width()-tabBar.width()-20, tabBar.height())
+        #self.fInfoLabel.move(x, self.fInfoLabel.y())
+        #self.fInfoLabel.resize(width, self.fInfoLabel.height())
 
-    @pyqtSlot(bool)
-    def slot_dockTopLevelChanged(self, top):
-        self.fDockFloating = 1 if top else 0
-        self.updateInfoLabelXandSize()
+        #if self.fDockFloating == 1:
+            #self.fDockFloating = 2
 
-    @pyqtSlot(Qt.DockWidgetArea)
-    def slot_dockLocationChanged(self, area):
-        self.fDockLocation = area
-        self.updateInfoLabelXandSize()
+    #def updateInfoLabelY(self):
+        #tabBar = self.fContainer.tabBar()
+        #y = tabBar.mapFromParent(self.ui.centralwidget.pos()).y()
 
-    @pyqtSlot()
-    def slot_toolbarShown(self):
-        self.updateInfoLabelY()
+        #if not self.ui.toolBar.isVisible():
+            #y -= self.ui.toolBar.height()
+
+        #self.fInfoLabel.move(self.fInfoLabel.x(), y)
 
     # -----------------------------------------------------------------
 
-    def eventFilter(self, obj, event):
-        if obj == self.ui.dockWidget and event.type() == QEvent.Resize:
-            self.updateInfoLabelXandSize()
-        return HostWindow.eventFilter(self, obj, event)
+    #@pyqtSlot()
+    #def slot_initWidgets(self):
+        #tabBar = self.fContainer.tabBar()
+        #x = tabBar.width() + 20
+        #y = tabBar.mapFromParent(self.ui.centralwidget.pos()).y()
+
+        #if self.fDockLocation == Qt.LeftDockWidgetArea and self.fDockFloating <= 1:
+            #x += self.ui.tabUtils.width()
+
+        #self.fInfoLabel.move(x, y)
+        #self.fInfoLabel.resize(self.fContainer.width()-tabBar.width()-20, tabBar.height())
+
+    #@pyqtSlot(bool)
+    #def slot_dockTopLevelChanged(self, top):
+        #self.fDockFloating = 1 if top else 0
+        #self.updateInfoLabelXandSize()
+
+    #@pyqtSlot(Qt.DockWidgetArea)
+    #def slot_dockLocationChanged(self, area):
+        #self.fDockLocation = area
+        #self.updateInfoLabelXandSize()
+
+    #@pyqtSlot()
+    #def slot_toolbarShown(self):
+        #self.updateInfoLabelY()
+
+    # -----------------------------------------------------------------
+
+    #def eventFilter(self, obj, event):
+        #if obj == self.ui.dockWidget and event.type() == QEvent.Resize:
+            #self.updateInfoLabelXandSize()
+        #return HostWindow.eventFilter(self, obj, event)
 
     #def closeEvent(self, event):
         #HostWindow.closeEvent(self, event)
         ## needed if using separate patchbay window
         #QApplication.instance().quit()
 
-    def resizeEvent(self, event):
-        HostWindow.resizeEvent(self, event)
-        self.updateInfoLabelXandSize()
+    #def resizeEvent(self, event):
+        #HostWindow.resizeEvent(self, event)
+        #self.updateInfoLabelXandSize()
 
-    def timerEvent(self, event):
-        HostWindow.timerEvent(self, event)
+    #def timerEvent(self, event):
+        #HostWindow.timerEvent(self, event)
 
-        if event.timerId() == self.fIdleTimerFast:
-            self.fInfoLabel.setText("%s | %s" % (self.fInfoText, self.fTransportText))
+        #if event.timerId() == self.fIdleTimerFast:
+            #self.fInfoLabel.setText("%s | %s" % (self.fInfoText, self.fTransportText))
 
 # ------------------------------------------------------------------------------------------------------------
 # Main
